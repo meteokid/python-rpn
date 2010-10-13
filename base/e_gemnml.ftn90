@@ -51,6 +51,8 @@
 #include "path.cdk"
 #include "lun.cdk"
 #include <clib_interface.cdk>
+
+      include 'gemdyn_version.inc'
 !
       logical  set_dcst, set_dcst_8
       external set_dcst, set_dcst_8
@@ -82,24 +84,8 @@
               stop   'In e_gemnml: After ptopo_nml'
       if (e_gement_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1) &
               stop   'In e_gemnml: After e_gement_nml '
-!
-      if (phy_nml  (trim(Path_work_S)//'/model_settings.nml',set_dcst, &
-               phy_L,6) .ne. 1) stop   'In e_gemnml: After phy_nml'
-!
-      call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
-      call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
-      call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
-      call phy_optl ('ICELAC'    , P_pbl_icelac_L,1, 'GET',.True.,err)
-      call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
-      call phy_optl ('RADSLOPE'  , P_radslope_L ,1,  'GET',.True.,err)
-!
-      call low2up (P_pbl_schsl_S,dumc)
-      P_pbl_schsl_S = dumc
-      call low2up (P_pbl_schurb_S,dumc)
-      P_pbl_schurb_S = dumc
-!
       if (itf_cpl_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1) &
-                            stop    'In e_gemnml: After itf_cpl_nml'
+              stop   'In e_gemnml: After itf_cpl_nml'
 !
       LAM = Grd_typ_S(1:1).eq.'L'
 !
@@ -133,7 +119,10 @@
          endif
 
       endif
-!
+
+      write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
+                     trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
+
       err = grid_nml     ('print')
       err = ptopo_nml    ('print')
       err = e_gement_nml ('print')
@@ -174,12 +163,29 @@
       pnj   = njfi
       pnjv  = njv
 !
+      if (phy_nml  (trim(Path_work_S)//'/model_settings.nml',set_dcst, &
+               phy_L,6) .ne. 1) stop   'In e_gemnml: After phy_nml'
+!
+      call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
+      call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
+      call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
+      call phy_optl ('ICELAC'    , P_pbl_icelac_L,1, 'GET',.True.,err)
+      call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
+      call phy_optl ('RADSLOPE'  , P_radslope_L ,1,  'GET',.True.,err)
+!
+      call low2up (P_pbl_schsl_S,dumc)
+      P_pbl_schsl_S = dumc
+      call low2up (P_pbl_schurb_S,dumc)
+      P_pbl_schurb_S = dumc
+
       return
 !
  999  write(6,1004)
       call e_arret('e_gemnml')
 !
 !--------------------------------------------------------------------
+ 1001 format (/3x,60('*')/3x,'Package: ',a,5x,'version: ',a/ &
+               3x,'Release of: ',a,5x,'COMPILER: 'a/3x,60('*')/)
  1004 format(/' Mod_runstrt_S must be specified in LAM configuration ', &
              /' when Pil_3df_L is .T. - ABORT -'/)
  1005 format(/' Pil_jobstrt_S and Pil_jobend_S must both', &

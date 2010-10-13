@@ -23,19 +23,21 @@
 ! Opr_opszp2_8       | vertical    second der operator                 |
 ! Opr_xevec_8        | horizontal eigenvectors                         |
 ! Opr_xeval_8        | horizontal eigenvalues                          |
-! Opr_zevec_8        | right vertical eigenvectors                   |
-! Opr_lzevec_8       | left vertical eigenvectors
+! Opr_zevec_8        | right vertical eigenvectors                     |
+! Opr_lzevec_8       | left vertical eigenvectors                      !
 ! Opr_zeval_8        | vertical   eigenvalues                          |
-! Opr_evvec_8        | even eigenvectors                               | 
+! Opr_evvec_8        | even eigenvectors                               |
 ! Opr_odvec_8        | odd  eigenvectors                               |  
 !----------------------------------------------------------------------
 !
 !
 #endif
 !
-      DCL_DYNVAR(Opr, opsxp0_8,    real*8, (*))
+      real*8, dimension(:), pointer :: Opr_opsxp0_8, Opr_opsyp0_8, &
+                                       Opr_evvec_8 , Opr_odvec_8
+      common /Opr_pntr/ Opr_opsxp0_8, Opr_opsyp0_8, Opr_evvec_8 , Opr_odvec_8
+
       DCL_DYNVAR(Opr, opsxp2_8,    real*8, (*))
-      DCL_DYNVAR(Opr, opsyp0_8,    real*8, (*))
       DCL_DYNVAR(Opr, opsyp2_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszp0_8,    real*8, (*))
       DCL_DYNVAR(Opr, opszpm_8,    real*8, (*))
@@ -46,5 +48,3 @@
       DCL_DYNVAR(Opr, zevec_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, lzevec_8 ,    real*8, (*))
       DCL_DYNVAR(Opr, zeval_8 ,    real*8, (*))
-      DCL_DYNVAR(Opr, evvec_8 ,    real*8, (*))
-      DCL_DYNVAR(Opr, odvec_8 ,    real*8, (*))  

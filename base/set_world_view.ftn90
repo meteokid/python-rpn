@@ -69,28 +69,35 @@
 !
       logical  set_dcst_8
       integer  gem_nml,v4d_nml,v4d_config,gemdm_config,grid_nml, &
-               itf_cpl_nml,series_nml,adw_nml,adw_config
+               itf_cpl_nml,series_nml,adw_nml,adw_config,rpn_comm_init_multigrid
       external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml, &
                v4d_config, gemdm_config, grid_nml, itf_cpl_nml,  &
-               series_nml,adw_nml,adw_config
+               series_nml,adw_nml,adw_config,rpn_comm_init_multigrid
 !*
-      integer ierr,cte_ok,f1,f2,f3,f4,f5,f6
-      character(len=256) :: msg_S
+      integer ierr,cte_ok,f1,f2,f3,f4,f5,f6,mydomain,ndomains
+      character(len=256) :: msg_S,my_dir
 !
 !-------------------------------------------------------------------
 !
+! Initializing domain and working directory
+!
+      call rpn_comm_mydomain ('UM_EXEC_NDOMAINS', mydomain, ndomains)
+
+      write(my_dir,'(a,i7.7)') 'domain_',mydomain
+
+      call base_dir_env (trim(my_dir))
+!
 ! Initializing MPI and processor topology (pe_zero_topo on PE #0 only)
 !
-      call rpn_comm_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc,  &
-                                     Ptopo_npex  , Ptopo_npey )
+      f1 = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
+                                          Ptopo_npex  , Ptopo_npey, ndomains )
+
       call msg_set_can_write(Ptopo_myproc == 0)
-      call base_dir_env
-      call handle_error(clib_isdir(Path_input_S),'set_world_view','task_input')
+
+      call handle_error (clib_isdir(Path_input_S),'set_world_view','task_input')
 !
 ! Continue initialization steps
 !
-      ierr= clib_chdir (Path_work_S  )
-
       call pe_all_topo
 
       cte_ok = 0

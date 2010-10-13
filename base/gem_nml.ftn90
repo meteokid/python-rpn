@@ -157,6 +157,9 @@
       Hzd_difva_L= .false.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
+      Hzd_pwr_tr = -1
+      Hzd_lnr_tr = -1.
+      Hzd_tr3d_name_S = ''
       Vspng_nk = 0
       Vspng_coef    =20000.
       do i = 1, Vspng_maxn

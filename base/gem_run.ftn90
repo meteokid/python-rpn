@@ -80,6 +80,7 @@
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "lun.cdk"
+#include "cstv.cdk"
 #include "step.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
@@ -88,36 +89,46 @@
 #include "hzd.cdk"
 #include "modconst.cdk"
 !
+      character*16   datev
       logical bkup_L,flag
       integer last_step,fstep,istep,step0,stepf,upperlimit
-!*
+      real*8 dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
+!
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write (6,900) Mod_runstrt_S
+      dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+      call incdatsd (datev,Mod_runstrt_S,dayfrac)
+
+      if (Lun_out.gt.0) write (6,900) datev
 
       call blocstat (.true.)
 
-      fstep = Step_total
+                      fstep = Step_total
       if (F_dgtflt_L) fstep = Init_dfnp-1
 
-      last_step = min ( Step_total, Lctl_step + Step_rsti  &
-                              - mod(Lctl_step , Step_rsti) )
-      if (F_dgtflt_L) last_step = Init_dfnp-1
-!
-      upperlimit = max(fstep,Step_total)
-      if (Rstri_idon_L) upperlimit = max(Init_dfnp-1,Step_total)
-!
-      call out_outdir (Lctl_step, upperlimit)
-!
-      if (Lctl_step.eq.0) then
-         call out_dyn (.false., .true.)
-         call pw_update_UVT ('P')
-         call pw_update_GPW
+      last_step  = (Lctl_step/Step_rsti)*Step_rsti + Step_rsti
+      upperlimit = min(Step_total,last_step)
+      if (F_dgtflt_L) then
+         if (last_step.ge.(Init_dfnp-1)/2 ) last_step = fstep
+      else
+         last_step = min(Step_total,last_step)
       endif
-!
-      call out_dyn (.true., .false.)
-      if (.not.F_dgtflt_L) call out_launchpost (.false.)
-!
+
+      if ( .not. Rstri_rstn_L ) then
+         call out_outdir (Lctl_step, upperlimit)
+
+         if (Lctl_step.eq.0) then
+            call out_dyn (.false., .true.)
+            call pw_update_UVT ('P')
+            call pw_update_GPW
+         endif
+
+         call out_dyn (.true., .false.)
+         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
+         call out_launchpost (.false.)
+      endif
+
       step0 = Lctl_step+1
       stepf = last_step
 !

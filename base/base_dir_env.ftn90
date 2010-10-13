@@ -15,9 +15,10 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**s/r base_dir_env - Initialize basic directory paths
 !
-      subroutine base_dir_env
+      subroutine base_dir_env (F_domain_S)
       implicit none
 !
+      character*(*) F_domain_S
 !author
 !     Michel Desgagne - Spring 2008
 !
@@ -33,9 +34,17 @@
 !
 !-------------------------------------------------------------------
 !
-      err = clib_getcwd (Path_work_S)
-      Path_input_S = trim(Path_work_S)//'/../input'
-      Path_output_S= trim(Path_work_S)//'/../output'
+      err = clib_getenv ('TASK_WORK'  ,Path_work_S  )
+      err = clib_getenv ('TASK_INPUT' ,Path_input_S )
+      err = clib_getenv ('TASK_OUTPUT',Path_output_S)
+
+      Path_work_S   = trim(Path_work_S  ) // '/' // F_domain_S
+      Path_input_S  = trim(Path_input_S ) // '/' // F_domain_S
+      Path_output_S = trim(Path_output_S) // '/' // F_domain_S
+
+! Directory Path_work_S has been created by Um_runmod.ksh
+
+      err = clib_chdir (trim(Path_work_S))
 !
 !-------------------------------------------------------------------
 !

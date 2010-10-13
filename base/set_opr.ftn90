@@ -83,10 +83,10 @@
 !     Initialize projection operators to ZERO_8
 !
       dim = 3*G_ni
-      call hpalloc(Opr_opsxp0_8_ ,dim, err,8)
+      allocate (Opr_opsxp0_8(dim))
       call hpalloc(Opr_opsxp2_8_ ,dim, err,8)
       dim = 3*G_nj
-      call hpalloc(Opr_opsyp0_8_ ,dim, err,8)
+      allocate (Opr_opsyp0_8(dim))
       call hpalloc(Opr_opsyp2_8_ ,dim, err,8)
       dim = 3*G_nk
       call hpalloc(Opr_opszp0_8_ ,dim, err,8)
@@ -185,8 +185,7 @@
 !         Eigenmodes with definite parity
             NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
             dim = NSTOR*NSTOR
-            call hpalloc(Opr_evvec_8_ ,dim, err,8)
-            call hpalloc(Opr_odvec_8_ ,dim, err,8)
+            allocate (Opr_evvec_8(dim) ,Opr_odvec_8(dim))
             call  set_poic_par ( Opr_xeval_8, Opr_evvec_8, Opr_odvec_8, &
                                                G_xg_8(1), G_ni, NSTOR )
          endif

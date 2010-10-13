@@ -42,12 +42,13 @@
 !
 !implicits
 #include "lun.cdk"
+#include "hzd.cdk"
 #include "tr3d.cdk"
 #include "itf_phy_buses.cdk"
 !
-      logical hu_L,wload
-      integer i,k,indx1
-      character*16 tr_name
+      logical hu_L,wload,flag
+      integer i,j,k,indx1,cnt
+      character*16 tr_name,dumc
 !*
 !     __________________________________________________________________
 !
@@ -106,6 +107,30 @@
             write (Lun_out,1002) trim(Tr3d_name_S(i)),i
          end do
       endif
+!
+! Trim user list of tracers to horizontally diffuse (Hzd_tr3d_name_S)
+! to fit the current list of tracers of this run
+!
+      Hzd_tr3d_ntr = 0
+      do i=1, HZD_MAXTR
+         call low2up (Hzd_tr3d_name_S(i),dumc)
+         flag=.false.
+         do k=1,tr3d_ntr
+            if (trim(dumc).eq.trim(Tr3d_name_S(k))) then
+               do j=1,Hzd_tr3d_ntr
+                  if (trim(dumc).eq.trim(Hzd_tr3d_name_S(j)))flag=.true.
+               end do
+               if (.not.flag) then
+                  Hzd_tr3d_ntr = Hzd_tr3d_ntr + 1
+                  flag=.true.
+                  cycle
+               else
+                  flag=.false.
+               endif
+            endif
+         end do
+         if (flag) Hzd_tr3d_name_S(Hzd_tr3d_ntr) = dumc
+      end do
 !
  1002 format (2x,a16,2x,i4)
 !

@@ -65,40 +65,46 @@
 !----------------------------------------------------------------------
 !
 #endif
-       DCL_DYNVAR(Hzd,    xp0_8, real*8, (*))
-       DCL_DYNVAR(Hzd,    yp0_8, real*8, (*))
-       DCL_DYNVAR(Hzd,    xp2_8, real*8, (*))
-       DCL_DYNVAR(Hzd,    yp2_8, real*8, (*))
-       DCL_DYNVAR(Hzd,  yp2su_8, real*8, (*))
-       DCL_DYNVAR(Hzd,  xevec_8, real*8, (*))
-       DCL_DYNVAR(Hzd,  xeval_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     au_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     cu_8, real*8, (*))
-       DCL_DYNVAR(Hzd, deltau_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     av_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     cv_8, real*8, (*))
-       DCL_DYNVAR(Hzd, deltav_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     as_8, real*8, (*))
-       DCL_DYNVAR(Hzd,     cs_8, real*8, (*))
-       DCL_DYNVAR(Hzd, deltas_8, real*8, (*))
-       DCL_DYNVAR(Hzd,  evvec_8, real*8, (*))
-       DCL_DYNVAR(Hzd,  odvec_8, real*8, (*))
-!
+       real*8, dimension(:), pointer :: Hzd_au_8  ,Hzd_cu_8  ,Hzd_deltau_8  ,&
+                                        Hzd_av_8  ,Hzd_cv_8  ,Hzd_deltav_8  ,&
+                                        Hzd_as_8  ,Hzd_cs_8  ,Hzd_deltas_8  ,&
+                                        Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,&
+                                        Hzd_xp0_8, Hzd_yp0_8                ,&
+                                        Hzd_evvec_8, Hzd_odvec_8            ,&
+                                        Hzd_wevec_8, Hzd_wuevec_8           ,&
+                                        Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
+                                        Hzd_xevec_8, Hzd_xeval_8
+                                        
+       common /Hzd_pntr/ Hzd_au_8  ,Hzd_cu_8  ,Hzd_deltau_8  ,&
+                         Hzd_av_8  ,Hzd_cv_8  ,Hzd_deltav_8  ,&
+                         Hzd_as_8  ,Hzd_cs_8  ,Hzd_deltas_8  ,&
+                         Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,&
+                         Hzd_xp0_8,Hzd_yp0_8                 ,&
+                         Hzd_evvec_8,Hzd_odvec_8             ,&
+                         Hzd_wevec_8,Hzd_wuevec_8            ,&
+                         Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
+                         Hzd_xevec_8, Hzd_xeval_8
+
        DCL_DYNVAR(Hz1d,   yp2_8, real*8, (*))
        DCL_DYNVAR(Hz1d, yp2su_8, real*8, (*))
        DCL_DYNVAR(Hz1d,deltau_8, real*8, (*))
        DCL_DYNVAR(Hz1d,deltav_8, real*8, (*))
        DCL_DYNVAR(Hz1d,deltas_8, real*8, (*))
 !
+       integer HZD_MAXTR
+       parameter ( HZD_MAXTR = 500 )
+
+       integer Hzd_tr3d_ntr,Hzd_pwr,Hzd_pwr_tr
+       character*8  Hzd_tr3d_name_S(HZD_MAXTR)
        character*12 Hzd_type_S
        logical Hzd_ho_L,Hzd_difva_L
        logical Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L
        logical Hzd_1d_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L
-       integer Hzd_pwr
-       real Hzd_lnR,Hzd_cdiff
-       common /hzdi/ Hzd_pwr
-       common /hzdr/ Hzd_lnR,Hzd_cdiff
-       common /hzdc/ Hzd_type_S
+       real Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_cdiff_tr
+
+       common /hzdi/ Hzd_tr3d_ntr,Hzd_pwr,Hzd_pwr_tr
+       common /hzdr/ Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_cdiff_tr
+       common /hzdc/ Hzd_type_S,Hzd_tr3d_name_S
        common /hzdl/ Hzd_ho_L,Hzd_difva_L
        common /hzdl/ Hzd_t1_0_L,Hzd_t1_1_L,Hzd_t0_0_L,Hzd_t0_1_L
        common /hzdl/ Hzd_1d_L,Hzd_hzdmain_0_L,Hzd_hzdmain_1_L

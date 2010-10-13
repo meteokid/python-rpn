@@ -73,9 +73,14 @@
 !
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
-      Hzd_lnr    = min(max(0.,Hzd_lnr),0.9999999)
-      Hzd_pwr    = Hzd_pwr / 2
-      Hzd_pwr    = min(max(2,Hzd_pwr*2),8)
+      Hzd_lnr    = min(max(0.,Hzd_lnr   ),0.9999999)
+      Hzd_pwr    = Hzd_pwr    / 2
+      Hzd_pwr    = min(max(2,Hzd_pwr   *2),8)
+      if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
+      if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
+      Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
+      Hzd_pwr_tr = Hzd_pwr_tr / 2
+      Hzd_pwr_tr = min(max(2,Hzd_pwr_tr*2),8)
 !
       if (G_lam) then
          Glb_pil_n = Grd_extension

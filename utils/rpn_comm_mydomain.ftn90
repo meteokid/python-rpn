@@ -1,0 +1,29 @@
+      subroutine RPN_COMM_mydomain (F_ENVVAR_S,mydomain,ndomains)
+      implicit none
+!
+      character*(*) F_ENVVAR_S
+      integer mydomain,ndomains
+!
+      include 'mpif.h'
+#include <clib_interface.cdk>
+
+      character*16 ndomains_S
+      integer ierr, pe_tot, pe_me, npe_per_domain
+!
+!-------------------------------------------------------------------
+!
+      call MPI_init (ierr)
+
+      ierr = clib_getenv (F_ENVVAR_S,ndomains_S)
+      read(ndomains_S,*) ndomains
+
+      call MPI_COMM_SIZE(MPI_COMM_WORLD,pe_tot,ierr)
+      call MPI_COMM_RANK(MPI_COMM_WORLD,pe_me ,ierr)
+
+      npe_per_domain = pe_tot / ndomains
+      mydomain       = pe_me  / npe_per_domain
+!
+!-------------------------------------------------------------------
+!
+      return
+      end

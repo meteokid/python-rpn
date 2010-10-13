@@ -33,23 +33,27 @@
 #include "version.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
+      include 'gemdyn_version.inc'
 !
       integer  exdb,ptopo_nml
       external exdb,ptopo_nml
 !
+      character*50 DSTP
       integer err
 !
 !-------------------------------------------------------------------
 !
-      call base_dir_env
-
       err= clib_mkdir (Path_output_S)
       err= clib_mkdir (Path_work_S  )
 
       call  open_status_file2 (trim(Path_output_S)//'/status_mod.dot')
       call write_status_file2 ('_status=ABORT' )
 
-      err = exdb(Version_mod_S//Version_dstp_S,Version_S, 'NON')
+      err = clib_getenv ('ATM_MODEL_DSTP',DSTP)
+      err = clib_getenv ('GEMBNDL_VERSION',Version_number_S)
+      Version_title_S = 'GEMDM --- Release of: '//trim(DSTP)
+
+      err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
 !
 ! Read namelist ptopo from file model_settings
 !
@@ -62,7 +66,12 @@
          F_npx = 0
          F_npy = 0
       endif
-!
+
+      write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
+                     trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
+
+ 1001 format (/3x,60('*')/3x,'Package: ',a,5x,'version: ',a/ &
+               3x,'Release of: ',a,5x,'COMPILER: 'a/3x,60('*')/)
  8000 format (/,'========= ABORT IN S/R PE_TOPO ============='/)
 !
 !-------------------------------------------------------------------

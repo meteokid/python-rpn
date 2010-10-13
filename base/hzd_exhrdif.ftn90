@@ -16,157 +16,70 @@
 !**s/r hzd_exhrdif - applies horizontal explicit diffusion
 !
 #include "model_macros_f.h"
-      subroutine hzd_exhrdif ( F_u, F_v, f_zd, F_w, F_t, F_s, DIST_DIM, Nk )
-!
+      subroutine hzd_exhrdif (F_f2hzd, F_grd_S, NK)
       implicit none
 !
-      integer DIST_DIM, Nk
-!
-      real     F_u(DIST_SHAPE,Nk)   , F_v(DIST_SHAPE,Nk), &
-               F_zd(DIST_SHAPE,Nk+1), F_w(DIST_SHAPE,Nk+1), &
-               F_t(DIST_SHAPE,Nk+1) , F_s(DIST_SHAPE)
+      character*(*) F_grd_S
+      integer       DIST_DIM, Nk
+      real          F_f2hzd (*)
 !
 !AUTHORs    C. Girard & M. Desgagne
 !
 !revision
-! v3_21 - Desgagne M. - initial MPI version
-! v3_30 - Desgagne M. - openMP precision in shared variables
+! v3_21 - Desgagne M.    - initial MPI version
+! v3_30 - Desgagne M.    - openMP precision in shared variables
+! v4_15 - Desgagne M.    - refonte majeure
 !
-!arguments
-!  Name        I/O        Description
-!----------------------------------------------------------------
-!----------------------------------------------------------------
-! 
-!implicits
 #include "glb_ld.cdk"
 #include "hzd.cdk"
-#include "schm.cdk"
-#include "ver.cdk"
-#include "dcst.cdk"
 !
-      integer i,j,k, nn, mm, nij,i0,in,j0,jn
-      real*8 pt25,nu_dif,epsilon,khdim,lnr,visco
+      integer i,j,k, nn, mm, nij, i0,in,j0,jn, stag_x,stag_y
+      real wk1(LDIST_SHAPE,Nk),rnr,pwr
+      real*8 pt25,nu_dif,epsilon,lnr,visco
+
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
-      real smu(LDIST_SHAPE,Nk)  ,smv(LDIST_SHAPE,Nk), &
-           smzd(LDIST_SHAPE,Nk+1),smt(LDIST_SHAPE,Nk+1), &
-           smw(LDIST_SHAPE,Nk+1)
-      real*8 exner_8(DIST_SHAPE,Nk+1),wkx_8(DIST_SHAPE),wky_8(DIST_SHAPE)
-      logical diff_theta
-      diff_theta=.false.
-!*
 !     __________________________________________________________________
 !
+      rnr = Hzd_lnr
+      pwr = Hzd_pwr
+      if (F_grd_S.eq.'S_TR') then
+         rnr = Hzd_lnr_tr
+         pwr = Hzd_pwr_tr
+      endif
+
+      lnr = 1.0d0 - exp(rnr)
+
       nu_dif = 0.d0
-      lnr    = 1.0d0 - exp(Hzd_lnr)
-      if (Hzd_pwr.gt.0) nu_dif = pt25*lnr**(2.d0/Hzd_pwr)
-      nu_dif = min(nu_dif,pt25-epsilon)
+      if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
+      nu_dif = min ( nu_dif, pt25-epsilon)
+      visco  = min ( nu_dif, pt25 )
+
       if (nu_dif.lt.1.0e-10) return
-      i0=Minx
-      in=Maxx
-      j0=Miny
-      jn=Maxy
-      nij=(in-i0+1)*(jn-j0+1)
-!
-      visco = min ( nu_dif, pt25 )
-!
-      call rpn_comm_xch_halo ( F_u  , LDIST_DIM, l_ni,l_nj,G_nk, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo ( F_v  , LDIST_DIM, l_ni,l_nj,G_nk, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo ( F_zd, LDIST_DIM, l_ni,l_nj,G_nk+1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      if(.not.Schm_hydro_L) then
-         call rpn_comm_xch_halo ( F_w  , LDIST_DIM, l_ni,l_nj,G_nk+1, &
-              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      endif
-!
-      if(diff_theta) then
 
-         if(.not.Schm_theoc_L)then
-            call handle_error(-1,'hzd_exhrdif','hzd_exhrdif : Code a revoir')
-         endif
+      i0 = Minx
+      in = Maxx
+      j0 = Miny
+      jn = Maxy
+      nij= (in-i0+1)*(jn-j0+1)
+      nn = pwr/2
+      
+      stag_x = 0
+      stag_y = 0
+      if (F_grd_S.eq.'U') stag_x = 1
+      if (F_grd_S.eq.'V') stag_y = 1
 
-         call rpn_comm_xch_halo ( F_t  , LDIST_DIM, l_ni,l_nj,G_nk+1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call rpn_comm_xch_halo ( F_s  , LDIST_DIM, l_ni,l_nj,     1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      endif
+      call rpn_comm_xch_halo ( F_f2hzd, LDIST_DIM, l_ni,l_nj, Nk, &
+                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-      nn=Hzd_pwr/2
-!
-!$omp parallel shared( visco,nn) private(wkx_8,wky_8)
-!
-      if(diff_theta) then
-!
-!        theta = T * exp(-cappa*(zeta+Bs))
-!    
-!$omp do
-         do k=1,l_nk+1
-            do j=j0,jn
-            do i=i0,jn
-               wkx_8(i,j)=Dcst_cappa_8*(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
-            enddo
-            enddo
-            call vexp(wky_8,wkx_8,nij)
-            call vrec(wkx_8,wky_8,nij)
-            do j=j0,jn
-            do i=i0,jn
-               exner_8(i,j,k)=wky_8(i,j)
-               F_t(i,j,k)=F_t(i,j,k)*wkx_8(i,j)
-            enddo
-            enddo
-         enddo
-!$omp enddo
-      endif
-!
       do mm=1,nn
-!
-         call hzd_nudeln (F_u  ,smu  ,LDIST_DIM,Nk  ,visco,1,0,mm,nn)
-         call hzd_nudeln (F_v  ,smv  ,LDIST_DIM,Nk  ,visco,0,1,mm,nn)
-!********not physical, done nevertheless*******
-         call hzd_nudeln (F_zd ,smzd, LDIST_DIM,Nk+1,visco,0,0,mm,nn)
-         if(.not.Schm_hydro_L) then
-            call hzd_nudeln (F_w  ,smw,  LDIST_DIM,Nk+1,visco,0,0,mm,nn)
-         endif
-!
-         if(diff_theta)then
-            call hzd_nudeln (F_t  ,smt,  LDIST_DIM,Nk+1,visco,0,0,mm,nn)
-         endif
-!
-         if(mm.ne.nn) then
-!$omp single
-            call rpn_comm_xch_halo( smu  , LDIST_DIM, l_ni,l_nj,G_nk, &
-                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call rpn_comm_xch_halo( smv  , LDIST_DIM, l_ni,l_nj,G_nk, &
-                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call rpn_comm_xch_halo( smzd , LDIST_DIM, l_ni,l_nj,G_nk+1, &
-                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            if(.not.Schm_hydro_L) then
-               call rpn_comm_xch_halo( smw  , LDIST_DIM, l_ni,l_nj,G_nk+1, &
-                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            endif
-!     
-            if(diff_theta) then
-               call rpn_comm_xch_halo( smt  , LDIST_DIM, l_ni,l_nj,G_nk+1, &
-                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            endif
-!$omp end single
-         endif
-!
+
+         call hzd_nudeln (F_f2hzd, wk1, LDIST_DIM, Nk, visco, stag_x,stag_y, mm,nn)
+
+         if (mm.ne.nn) call rpn_comm_xch_halo( wk1, LDIST_DIM, l_ni,l_nj,G_nk, &
+                                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
       end do
-!
-      if(diff_theta) then
-!$omp do
-        do k=1,l_nk+1
-        do j=j0,jn
-        do i=i0,jn
-          F_t(i,j,k)=F_t(i,j,k)*exner_8(i,j,k)
-        enddo
-        enddo
-        enddo
-!$omp enddo
-      endif
-!$omp end parallel
+
 !     __________________________________________________________________
 !
       return

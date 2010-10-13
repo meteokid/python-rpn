@@ -33,12 +33,8 @@
 #include "lctl.cdk"
 #include <clib_interface.cdk>
 !
-      character*2    postcnt_S
-      character*1024 filen,filen_
-      logical flag
-      integer i, err, unf, counter, maxcount
-      data counter,maxcount /1,5/
-      save counter
+      character*1024 filen,filen_link
+      integer i, err, unf
 !
 !----------------------------------------------------------------------
 !
@@ -46,35 +42,21 @@
 
       if (Out_post_L .or. F_forceit_L) then
       
-         flag = .false.
-         do i = counter, maxcount
-            write (postcnt_S,'(i2.2)') i
-            filen = trim(Path_output_S)//'/output_ready_'//postcnt_S
-            err   = clib_fileexist(trim(filen))
-            if (err.lt.0) then
-               flag = .true.
-               exit
-            endif
-         end do
-         counter = i + 1
-
-         if (flag) then
-            filen_=trim(filen)//'_'
-            open  (unf,file=filen_,access='SEQUENTIAL',form='FORMATTED')
-            write (unf,'(a)') Out_laststep_S
-            close (unf)
-            err = clib_rename ( filen_, filen )
+         filen      = trim(Path_output_S)//'/output_ready_MASTER'
+         filen_link = trim(Path_output_S)//'/output_ready'
+         unf   = 474
+         open  (unf,file=filen,access='SEQUENTIAL',form='FORMATTED',position='APPEND')
+         write (unf,'(a,x,a)') trim(Out_laststep_S)
+         close (unf)
+         if (.not.F_forceit_L) then
+            err = clib_symlink ( trim(filen), trim(filen_link) )
             write (6,1001) trim(Out_laststep_S),lctl_step
-         else
-            print*, ' OUTPUT-POSTPROCESSING CANNOT BE LAUNCHED '
-            print*, ' You must launch the following command yourself: '
-            print*, ' Um_process_output.ksh ', trim(Path_output_S)//'/'//trim(Out_laststep_S)
          endif
-         if (counter.gt.maxcount) counter=1
 
       endif
+
       endif
-!
+
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a,' was released for postprocessing at timestep: ',i)
 !
 !----------------------------------------------------------------------

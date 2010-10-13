@@ -13,46 +13,40 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r e_initntr
+!**s/r hzd_ctrl - 
 !
-      subroutine e_initntr
+#include "model_macros_f.h"
+!
+      subroutine hzd_ctrl (F_f2hzd, F_grd_S, NK)
       implicit none
 !
-!author   Michel Desgagne -- Fal 2008 --
+      character*(*) F_grd_S
+      integer DIST_DIM, Nk
+      real    F_f2hzd (*)
+!
+!author
+!     Michel Desgagne -- Fall 2010
 !
 !revision
-! v3_31 - M. Desgagne       - Initial version
+! v4_15 - Desgagne M.       - initial version 
 !
-#include "path.cdk"
-#include "version.cdk"
-#include <clib_interface.cdk>
+#include "glb_ld.cdk"
+#include "hzd.cdk"
 !
-      integer  exdb
-      external exdb
+!     _________________________________________________________________
+!
+      if ( Hzd_cdiff .le. 0.0 ) return
 
-      character*50 DSTP
-      integer err
-!
-!--------------------------------------------------------------------
-!
-      err = clib_getcwd (Path_work_S)
-      Path_input_S = trim(Path_work_S)//'/../input'
-      Path_output_S= trim(Path_work_S)//'/../output'
+      if (Hzd_type_S.eq.'HO_IMP') &
+         call hzd_ho (F_f2hzd, F_grd_S, NK)
 
-      err= clib_mkdir (Path_output_S)
-      err= clib_mkdir (Path_work_S  )
-      err= clib_chdir (Path_work_S  )
-
-      err = clib_getenv ('ATM_MODEL_DSTP',DSTP)
-      err = clib_getenv ('GEMBNDL_VERSION',Version_number_S)
-      Version_title_S = 'GEMNTR --- Release of: '//trim(DSTP)
-
-      call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
-      call write_status_file2 ('_status=ABORT' )
-      err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
+      if (Hzd_type_S.eq.'HO_EXP') then
+         if (.not.G_lam) &
+         call handle_error(-1,'hzd_ctrl','HO_EXP NOT avalaible for global config')
+         call hzd_exhrdif (F_f2hzd, F_grd_S, NK)
+      endif
 !
-!--------------------------------------------------------------------
+!     _________________________________________________________________
 !
       return
       end
-

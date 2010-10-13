@@ -42,7 +42,7 @@
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
 !
-      stepno = max(1,current_step)
+      stepno = current_step
       if (Out3_postfreq .gt. 0) then
          last_step_post = stepno / Out3_postfreq
          last_step_post = (last_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq

@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine hzd_main 
-!
       implicit none
 !
 !author
@@ -41,6 +40,8 @@
 !                           - Move psadj code in new s/r psadj
 ! v4_05 - Plante A.         - Diffusion of w all the time
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_15 - Desgagne M.       - refonte majeure
+!
 !object
 !	
 !arguments
@@ -49,22 +50,18 @@
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
-#include "lun.cdk"
-#include "fft.cdk"
 #include "hzd.cdk"
-#include "eigv.cdk"
-#include "vt0.cdk"
 #include "vt1.cdk"
-#include "schm.cdk"
 #include "vspng.cdk"
 
       logical no_hzd,no_vspng
-      integer err,i,j,k
+      integer i
+      real, pointer, dimension(:,:,:) :: tr
 !
 !     _________________________________________________________________
 !
-      no_hzd   = (.not.Hzd_ho_L) .or. (.not.Hzd_hzdmain_0_L)
-      no_vspng = Vspng_nk.lt.1
+      no_hzd   = (.not.Hzd_ho_L) .or.  (.not.Hzd_hzdmain_0_L)
+      no_vspng = (Vspng_nk.lt.1)
 
       if (no_hzd .and. no_vspng) return
 
@@ -78,52 +75,38 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(tt1)'
       gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(st1)'
 
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1)
 
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 !
-!************************************
-!  1. Implicit horizontal diffusion *
-!************************************
+!***************************
+!  1. Horizontal diffusion *
+!***************************
 !
       if ( .not. no_hzd ) then
-      call tmg_start0(10,'HZD      ')
+         call tmg_start0(10,'HZD      ')
+
+         call hzd_ctrl ( ut1, 'U', G_nk  )
+         call hzd_ctrl ( vt1, 'V', G_nk  )
+         
+         call hzd_ctrl (zdt1, 'S', G_nk+1)
+         call hzd_ctrl ( wt1, 'S', G_nk+1)
+
+         do i=1, Hzd_tr3d_ntr
+            nullify (tr)
+            gmmstat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr,meta3d)
+            if (gmmstat.eq.0) call hzd_ctrl ( tr, 'S_TR', G_nk+1 )
+         end do
+
+         call tmg_stop0(10)
+      endif
+!     
+!***********************
+!  2. Vertical sponge  *
+!***********************
 !
-      if (Hzd_type_S.eq.'HO_EXP') then
-         if (.not.G_lam) &
-            call handle_error(-1,'hzd_main','ABORT .not.G_lam.and.Hzd_type=HO_EXP')
-         if (Lun_debug_L) write(Lun_out,1001) 'hzd_exhrdif'
-         call hzd_exhrdif ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
-      else
-         if (Fft_fast_L) then
-!           use FFT in diffusion-solver
-            if (G_lam) then
-               if (Lun_debug_L) write(Lun_out,1001) 'hzd_hof_lam'
-               call hzd_hof_lam  ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
-            else
-               if (Lun_debug_L) write(Lun_out,1001) 'hzd_hof'
-               call hzd_hof      ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)               
-            endif
-         else
-!           use MXMA in diffusion-solver
-            if ( .not. Eigv_parity_L) then
-               if (Lun_debug_L) write(Lun_out,1001) 'hzd_ho'
-               call hzd_ho       ( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
-            else
-               if (Lun_debug_L) write(Lun_out,1001) 'hzd_ho_parite'
-               call hzd_ho_parite( ut1, vt1, zdt1, wt1, tt1, st1, LDIST_DIM, G_nk)
-            endif
-         endif
-!     
-      endif
-      call tmg_stop0(10)
-      endif
-!     
       if ( .not. no_vspng ) then
-         if (Lun_debug_L) write(Lun_out,1002)
          call tmg_start0 (11,'VSPNG    ')
          if (G_lam) then
             call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
@@ -140,9 +123,6 @@
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 !
       call pw_update_UVT ('P')
-!
- 1001 format(/,3X,'HORIZONTAL DIFFUSION REQUIRED: ',a)
- 1002 format(/,3X,'VERTICAL SPONGE REQUIRED: ')
 !
 !     _________________________________________________________________
 !
