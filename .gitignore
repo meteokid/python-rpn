@@ -1,3 +1,7 @@
 *.pyc
 *.fst
+*.fst0
 *.Abs
+*.o
+*.mod
+build/
