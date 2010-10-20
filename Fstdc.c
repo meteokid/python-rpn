@@ -643,9 +643,9 @@ static char Fstdc_datematch__doc__[] =
         @exception TypeError";
 
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
-    int datelu, debut, fin;
-    float delta;
-    double modulo,ddelta=(double)delta;
+    int datelu=0, debut=0, fin=0;
+    float delta=0.;
+    double modulo,ddelta;
     float toler=.00023; //tolerance d'erreur de 5 sec
     F77_REAL8 fnhours=0;
     F77_INTEGER fdat1,fdat2;
@@ -653,6 +653,7 @@ static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "iiif",&datelu,&debut,&fin,&delta)) {
         return NULL;
     }
+	 ddelta = (double)delta;
     if (fin != -1 && datelu > fin)
         return Py_BuildValue("i",0);
     if (debut != -1) {
@@ -976,7 +977,7 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     return NULL;
 }
 
-
+/*
 static char Fstdc_mapdscrpt__doc__[] =
 "Interface to get map descriptors for use with PyNGL\nmyMapDescDict = Fstdc_mapdscrpt(x1,y1,x2,y2,ni,nj,cgrtyp,ig1,ig2,ig3,ig4)\n@param ...TODO... \n@return python dict with keys/values";
 
@@ -1001,9 +1002,9 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
     return Py_BuildValue("{s:f,s:f,s:f,s:f,s:f,s:f,s:f}",
         "polat",polat,"polong",polong,"rot",rot,
         "lat1",lat1,"lon1",lon1,"lat2",lat2,"lon2",lon2);
-/*        return Py_BuildValue("f",rot); */
+    // return Py_BuildValue("f",rot);
 }
-
+*/
 
 /* List of methods defined in the module */
 
@@ -1025,7 +1026,7 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"datematch",	(PyCFunction)Fstdc_datematch,	METH_VARARGS,	Fstdc_datematch__doc__},
     {"level_to_ip1",(PyCFunction)Fstdc_level_to_ip1,METH_VARARGS,	Fstdc_level_to_ip1__doc__},
     {"ip1_to_level",(PyCFunction)Fstdc_ip1_to_level,METH_VARARGS,	Fstdc_ip1_to_level__doc__},
-    {"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
+    //{"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
     {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
     {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
     {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
