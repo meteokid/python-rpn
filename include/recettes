@@ -22,6 +22,10 @@ RCOMPIL = r.compile $(MPI) $(OMP) -includes $(INCLUDE_PATH) $(INCLUDE_MOD)
 
 VGRID         = descrip
 
+MODULOPT      = modulopt_stubs
+#PROF          = prof_003
+PROF          = prof_stubs
+
 CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
 CHM         = chm_stubs
 #CHM         = chm
@@ -36,8 +40,8 @@ LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib
 LIBS     = gemdyn $(V4D) $(PHY) $(PATCH) $(CPL) $(OTHERS)
 
 LCLPO   = malib$(EC_ARCH)
-mainntr = maingemntr_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
-maindm  = maingemdm_$(BASE_ARCH)_${ATM_MODEL_VERSION}.Abs
+mainntr = maingemntr_$(BASE_ARCH).Abs
+maindm  = maingemdm_$(BASE_ARCH).Abs
 rmpo:
 	/bin/rm -f $(LCLPO)/*.o
 #
