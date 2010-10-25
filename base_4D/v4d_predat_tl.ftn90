@@ -1,0 +1,131 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_predat_tl - TLM of v4d_predat 
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_predat_tl (F_u  ,F_v  ,F_t  ,F_zd  ,F_s  ,F_fiptx  ,F_w  ,F_q  , &  
+                                F_u_m,F_v_m,F_t_m,F_zd_m,F_s_m,F_fiptx_m,F_w_m,F_q_m,F_topo, &
+                                Mminx, Mmaxx, Mminy, Mmaxy)
+!
+      implicit none
+!
+      integer ipart
+!
+      integer Mminx,Mmaxx,Mminy,Mmaxy
+      real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v    (Mminx:Mmaxx,Mminy:Mmaxy,  *), &
+           F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,  *), &
+           F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
+           F_w(Mminx:Mmaxx,Mminy:Mmaxy,*), F_q    (Mminx:Mmaxx,Mminy:Mmaxy,0:*)
+!
+      real F_u_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v_m    (Mminx:Mmaxx,Mminy:Mmaxy,  *), &
+           F_t_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd_m   (Mminx:Mmaxx,Mminy:Mmaxy,  *), &
+           F_s_m (Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx_m(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
+           F_w_m (Mminx:Mmaxx,Mminy:Mmaxy,*), F_q_m    (Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
+           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
+!
+!author M.Tanguay
+!
+!revision
+! v3_03 - Tanguay M.        - initial MPI version
+! v3_11 - Tanguay M.        - modify evaluation of Ind_pip
+! v3_21 - Tanguay M.        - Revision Openmp 
+!                           - do filtering at t=0 in v4d_predat
+! v3_22 - Tanguay M.        - Change positioning of hzd_hoffld for psd 
+! v3_30 - Tanguay M.        - Change parameters of initw2 
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+! v4_12 - Tanguay M.        - Adapt to revised predat
+! v4_13 - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     see id section
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vth.cdk"
+#include "vth_m.cdk"
+#include "hzd.cdk"
+      include "v4dg.inc"
+!
+      integer i,j,k
+!     __________________________________________________________________
+!
+      if( Lun_out.gt.0 ) write(Lun_out,1003) 
+!
+!     TRAJECTORY and TLM
+!     ------------------
+      call diag_fip_tl (F_fiptx  ,F_s  ,F_t  ,F_q  , &
+                        F_fiptx_m,F_s_m,F_t_m,F_q_m,F_topo,LDIST_DIM,l_nk)
+!
+!     TRAJECTORY
+!     ----------
+      if (.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) & 
+          call v4d_uv2img (F_u_m, F_v_m, Mminx, Mmaxx, Mminy, Mmaxy)
+!
+      if (Hzd_t1_0_L) call hzd_hoffld (F_u_m, LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_0_L) call hzd_hoffld (F_v_m, LDIST_DIM, G_nk, 2)
+!
+!     TLM
+!     ---
+      if (.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) & 
+          call v4d_uv2img (F_u, F_v, Mminx, Mmaxx, Mminy, Mmaxy)
+!
+      if (Hzd_t1_0_L) call hzd_hoffld (F_u, LDIST_DIM, G_nk, 1)
+      if (Hzd_t1_0_L) call hzd_hoffld (F_v, LDIST_DIM, G_nk, 2)
+!
+      if(.FALSE.)then
+!
+      else
+         do k= 1, G_nk+1
+            do j = 1, l_nj
+               do i = 1, l_ni
+!
+!                 TRAJECTORY
+!                 ----------
+                  F_zd_m(i,j,k)=0.
+                  F_w_m (i,j,k)=0.
+!
+!                 TLM
+!                 ---
+                  F_zd(i,j,k)=0.
+                  F_w (i,j,k)=0.
+!
+               end do
+            end do
+         end do
+      endif
+!
+!     TRAJECTORY
+!     ----------
+      if (Hzd_t1_0_L) call hzd_hoffld (F_zd_m, LDIST_DIM, G_nk+1, 3)
+!
+!     TLM
+!     ---
+      if (Hzd_t1_0_L) call hzd_hoffld (F_zd, LDIST_DIM, G_nk+1, 3)
+!
+1003  format(//,'TLM of PREPROCESSING DATA: (S/R V4D_PREDAT_TL PART 3)', &
+              /,'=====================================================',//)
+!
+!     __________________________________________________________________
+      return
+      end

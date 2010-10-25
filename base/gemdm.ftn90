@@ -35,6 +35,8 @@
 ! v3_21 - Valcke, S.        - add oasis coupling termination
 ! v3_22 - Dugas, B.         - add gemclimdm entry point
 ! v3_30 - Desgagne M.       - new physics, coupling interface
+! v4_13 - Tanguay M.        - correction to allow set_sor when 4D-Var
+! v4_30 - Tanguay M.        - Revision
 !
 !object
 !	
@@ -88,11 +90,14 @@
 !C              Additional settings for 4D-Var 
 !               ------------------------------
       call v4d_setting ( )
-      v4d_flag = v4d_options()
 !
 !C             Initialize commons for output control
 !              -------------------------------------
       call set_sor( )
+!
+!C             Run GEM or 4D-Var
+!              -----------------
+      v4d_flag = v4d_options()
 !
       if ( .not. v4d_flag) call gem_ctrl ( ) 
 !

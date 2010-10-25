@@ -1,0 +1,145 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!*s/r sol_hcr_ad - ADJ of sol_hcr 
+!
+#include "model_macros_f.h"
+!
+      subroutine sol_hcr_ad (F_sol_8,F_rhs_8,F_w1_8,F_w2_8,F_dg1_8,F_dg2_8,F_dwfft_8, &
+                             iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk)
+!
+      implicit none
+!
+      integer iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk
+      real*8 F_sol_8 (Minx:Maxx,Miny:Maxy,Nk), &
+             F_rhs_8 (Minx:Maxx,Miny:Maxy,Nk), &
+              F_w1_8 (Minx:Maxx,Miny:Maxy,Nk), &
+              F_w2_8 (Minx:Maxx,Miny:Maxy,Nk), &
+              F_dg1_8(*),F_dg2_8(*),F_dwfft_8(*)
+!
+!author M.Tanguay
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version
+! v2_31 - Tanguay M.        - adapt to f90 native dynamic memory allocation 
+! v3_00 - Tanguay M.        - adapt to restructured sol_hcr 
+! v3_02 - Tanguay M.        - ADJ of Eigv_parity_L done
+! v3_03 - Tanguay M.        - Adjoint Lam configuration 
+! v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+! v3_21 - Tanguay M.        - Revision Openmp
+! v3_30 - Tanguay M.        - adjust OPENMP
+! v3_30 - Tanguay M.        - add parameter iln in sol_main
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     see id section
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_sol_8      I/O
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "ldnh.cdk"
+#include "sol.cdk"
+#include "opr.cdk"
+#include "eigv.cdk"
+#include "ptopo.cdk"
+#include "fft.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
+#include "trp.cdk"
+!
+      integer i, j, k, k0, offi, offj, Gni, Gnj,NSTOR,nev
+!
+      real*8 ZERO_8
+      parameter( ZERO_8 = 0.0 )
+!
+      if (.not.Fft_fast_L) call handle_error(-1,'sol_hcr_ad','.not.Fft_fast_L NOT DONE')
+      if (Eigv_parity_L  ) call handle_error(-1,'sol_hcr_ad','  Eigv_parity_L NOT DONE')
+!
+! Calculate length of working vector without pilot region
+      Gni=G_ni-Lam_pil_w-Lam_pil_e
+      Gnj=G_nj-Lam_pil_s-Lam_pil_n
+!
+!     ADJ of
+!     inverse projection
+!
+!!$omp parallel shared( G_nk )
+!!$omp do
+      do j=1+pil_s,Nj-pil_n
+         call dgemm('N','N', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0, &
+                    F_sol_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1), &
+                    Opr_zevec_8,g_nk,0.0d0, &
+                    F_w2_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+      enddo
+!!$omp enddo
+!!$omp end parallel
+!
+      if (Fft_fast_L) then
+         if (G_lam) then
+!
+         call sol_fft8_lam_ad ( F_w2_8, F_w1_8, Fft_pri_8, &
+                           Minx, Maxx, Miny, Maxy, ldnh_nj, &
+                  trp_12smin, trp_12smax, Schm_nith, trp_12sn , &
+                  G_ni, G_nj, trp_22min , trp_22max, trp_22n  , &
+                  trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj, &
+                  Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8, &
+                  F_dg2_8,F_dwfft_8)
+         else
+!
+         call sol_fft8_2_ad ( F_w2_8, F_w1_8, Fft_pri_8, &
+                              Minx, Maxx, Miny, Maxy, ldnh_nj, &
+                  trp_12smin, trp_12smax, Schm_nith, trp_12sn , &
+                  G_ni, G_nj, trp_22min , trp_22max, trp_22n  , &
+                  trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj, &
+                  Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8, &
+                  F_dg2_8,F_dwfft_8)
+!
+         endif
+      else
+!     NOT DONE
+      endif
+!
+!!$omp parallel shared( offi,offj,G_nk )
+!
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+!
+!!$omp do
+      do j=1+pil_s,Nj-pil_n
+         do k=1,Schm_nith
+            do i = 1+pil_w, Ni-pil_e
+               F_w1_8(i,j,k)= Opr_opsxp0_8(G_ni+offi+i) * &
+                              Opr_opsyp0_8(G_nj+offj+j) * F_w1_8(i,j,k)
+            enddo
+         end do
+         call dgemm('N','T', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0, &
+                    F_w1_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1), &
+                    Opr_lzevec_8,g_nk,0.0d0, &
+                    F_rhs_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
+      end do
+!!$omp enddo
+!
+!!$omp end parallel
+!
+!     ---------------------------------------------------------------
+! 
+      return
+      end

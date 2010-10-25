@@ -1,0 +1,303 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_setscalp - Initialization of the inner product
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_setscalp
+!
+      implicit none
+!
+!author M.Tanguay
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version
+! v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate
+!                           - preserve model fields content
+!                           - adapt for tracers in tr3d  
+! v3_02 - Laroche S.        - modified weight for hu (V4dj_trwt(n))
+! v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+! v4_13 - Tanguay M.        - Adjustments GEM413 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     see id section
+!	
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "lun.cdk"
+#include "vt1.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "tr3d.cdk"
+#include "v4dj.cdk"
+#include "v4dc.cdk"
+#include "ptopo.cdk"
+!
+      real, pointer, dimension(:,:,:) :: tr
+      integer i,j,k,n,m,pnerr,indx,offj
+      real pr1
+!
+      real*8, parameter :: ZERO_8 = 0.0
+      real*8, parameter :: HALF_8 = 0.5
+!
+      real wu  (LDIST_SHAPE,l_nk+1),  wv (LDIST_SHAPE,l_nk+1)
+      real wt  (LDIST_SHAPE,l_nk+2),  ws (LDIST_SHAPE)
+      real wtr (LDIST_SHAPE,l_nk+2,Tr3d_ntr)
+!
+!     -----------------------------------------------------------------
+!     TEMPORAIRE (CAUTION: MODIFY STAGGERED INTEGRAL)  
+!
+      if(Lun_out.gt.0) write(Lun_out,1000)
+!
+!     Allocation memory for cost function coefficients
+!     ------------------------------------------------
+      call hpalloc(V4dj_thickx_  , l_ni,  pnerr, 1)
+      call hpalloc(V4dj_thickxu_ , l_ni,  pnerr, 1)
+      call hpalloc(V4dj_thicky_  , l_nj,  pnerr, 1)
+      call hpalloc(V4dj_thickyv_ , l_njv, pnerr, 1)
+!CCC  call hpalloc(V4dj_thickz_  , l_nk+1,pnerr, 1)
+      call hpalloc(V4dj_thickz_  , l_nk+2,pnerr, 1)
+!
+!     -------------------------------------------
+!     Initialization of weights for each variable
+!     -------------------------------------------
+      V4dj_uvwt = 1.
+      V4dj_tpwt = Dcst_cpd_8/Cstv_tstr_8 
+!
+!     ----------------------------------------------------
+!     NOTE: Weight for surf.pres. is given with respect to
+!     the 3D area.
+!     ----------------------------------------------------
+!CCC  V4dj_spwt =   Geomg_z_8(l_nk)*Dcst_rgasv_8*Cstv_tstr_8 
+      V4dj_spwt =   Dcst_rgasv_8*Cstv_tstr_8 
+!
+      if (Tr3d_ntr.gt.0) then
+          do n=1,Tr3d_ntr
+             V4dj_trwt(n) = ( Dcst_chlc_8**2 )/ ( Dcst_cpd_8 * 270. )
+          enddo
+      endif
+!
+!     ----------------------------------
+!     Integral with respect to longitude
+!     ----------------------------------
+!
+!     Staggering scalar grid
+!     ----------------------
+      do i=1,l_ni
+      V4dj_thickx(i) = Geomg_hxu_8(i-1)
+      end do
+!
+!     Staggering u grid
+!     -----------------
+      do i=1,l_ni
+      V4dj_thickxu(i)= Geomg_hx_8(i)
+      end do
+!
+!     ---------------------------------
+!     Integral with respect to latitude
+!     ---------------------------------
+!
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+!
+!     Staggering scalar grid
+!     ----------------------
+      do j=1,l_nj
+!CCC  TEMPORAIRE 
+!CCC  V4dj_thicky(j) = Geomg_hsyv_8(j-1)
+      indx = offj + j
+      V4dj_thicky(j) = &  
+              sin((G_yg_8(indx+2)+G_yg_8(indx+1))* HALF_8)-  &
+              sin((G_yg_8(indx+1)+G_yg_8(indx  ))* HALF_8)
+      end do
+!
+!     Staggering v grid
+!     -----------------
+      do j=1,l_njv
+!CCC  TEMPORAIRE 
+!CCC  V4dj_thickyv(j)= Geomg_hsy_8(j)
+      indx = offj + j
+      V4dj_thickyv(j)= sin( G_yg_8(indx+1))-sin(G_yg_8(indx)) 
+      end do
+!
+!     ---------------------------------
+!     Integral with respect to vertical
+!     ---------------------------------
+!CCC  V4dj_thickz(1)   = .5*( Geomg_z_8(2   ) - Geomg_z_8(1     ) )
+!CCC  do k=2,l_nk-1
+!CCC  V4dj_thickz(k)   = .5*( Geomg_z_8(k+1 ) - Geomg_z_8(k-1   ) )
+!CCC  end do
+!CCC  V4dj_thickz(l_nk)= .5*( Geomg_z_8(l_nk) - Geomg_z_8(l_nk-1) )
+!
+      do k=1,l_nk+2
+      V4dj_thickz(k) = 1. 
+      end do
+!
+!     ------------------------------------
+!     Inverse of total area without ray**2
+!     ------------------------------------
+!CCC  V4dj_invarea = 4.* Dcst_pi_8 **2 * (Geomg_z_8(l_nk) -  Cstv_pitop_8)
+      V4dj_invarea = 1. 
+      V4dj_invarea = 1./V4dj_invarea
+!
+!     Get fields in memory
+!     --------------------
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(st1)'
+!
+!     -----------------------
+!     Keep original variables 
+!     -----------------------
+      wu = ut1
+      wv = vt1
+      wt = tt1
+      ws = st1
+!
+!     ----------------------
+!     Reinitialize variables
+!     ----------------------
+      ut1 = 0.
+      vt1 = 0.
+      tt1 = 0.
+      st1 = 0.
+!
+      do k = 1,l_nk+1
+      do j = 1,l_nj
+      do i = 1,l_niu
+      ut1(i,j,k) = V4dj_thickxu(i) * V4dj_thicky(j) * V4dj_thickz(k) * &
+                   V4dj_uvwt * V4dj_invarea
+      end do
+      end do
+      end do
+!
+      do k = 1,l_nk+1
+      do j = 1,l_njv
+      do i = 1,l_ni
+      vt1(i,j,k) = V4dj_thickx(i) * V4dj_thickyv(j) * V4dj_thickz(k) * &
+                   V4dj_uvwt * V4dj_invarea
+      end do
+      end do
+      end do
+!
+      do k = 1,l_nk+2
+      do j = 1,l_nj
+      do i = 1,l_ni
+      tt1(i,j,k)  = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * &
+                    V4dj_tpwt * V4dj_invarea
+      end do
+      end do
+      end do
+!
+      do j = 1,l_nj
+      do i = 1,l_ni
+      st1(i,j) = V4dj_thickx(i) * V4dj_thicky(j) * &
+                 V4dj_spwt * V4dj_invarea
+      end do
+      end do
+!
+      do n=1,Tr3d_ntr
+!
+         gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,meta3d)
+!
+!        -----------------------
+!        Keep original variables 
+!        -----------------------
+         do k=1,l_nk+2
+         do j=l_miny,l_maxy
+         do i=l_minx,l_maxx
+            wtr(i,j,k,n) = tr(i,j,k) 
+         end do
+         end do
+         end do
+!
+!        ----------------------
+!        Reinitialize variables
+!        ----------------------
+         do k=1,l_nk+2
+         do j=l_miny,l_maxy
+         do i=l_minx,l_maxx
+            tr(i,j,k) = ZERO_8
+         end do
+         end do
+         end do
+         do k = 1,l_nk+2
+         do j = 1,l_nj
+         do i = 1,l_ni
+!CCC        tr(i,j,k) = V4dj_thickx(i) * V4dj_thicky(j) * V4dj_thickz(k) * &
+!CCC                    V4dj_trwt(n) * V4dj_invarea
+            tr(i,j,k) = 10.**10 
+         end do
+         end do
+         end do
+!
+      enddo
+!
+      call v4d_cainin (V4dc_ncv,V4dc_scalp)
+!
+!     Get fields in memory
+!     --------------------
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(ut1)'
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(vt1)'
+      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(tt1)'
+      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'v4d_setscalp ERROR at gmm_get(st1)'
+!
+!     ------------------------
+!     Reset original variables
+!     ------------------------
+      ut1 = wu
+      vt1 = wv
+      tt1 = wt
+      st1 = ws
+!
+      do n=1,Tr3d_ntr
+!
+         gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,meta3d)
+!
+         do k=1,l_nk+2
+         do j=l_miny,l_maxy
+         do i=l_minx,l_maxx
+            tr(i,j,k) = wtr(i,j,k,n)
+         end do
+         end do
+         end do
+!
+      enddo
+!
+ 1000 format( &
+      //,'INITIALIZATION INNER PRODUCT (S/R V4D_SETSCALP)', &
+       /,'===============================================', &
+      //)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

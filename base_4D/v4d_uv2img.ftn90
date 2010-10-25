@@ -1,0 +1,79 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_uv2img - Convert components to wind images 
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_uv2img ( F_u, F_v, Mminx, Mmaxx, Mminy, Mmaxy )
+!
+      implicit none
+!
+      integer Mminx,Mmaxx,Mminy,Mmaxy
+      real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*)
+!
+!author M.Tanguay
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version 
+! v3_03 - Tanguay M.        - use Ind comdeck
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_10 - Tanguay M.        - Staggered version TL/AD updated 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     see id section
+!     (Based on e_uv2img GEM MPI v_2.0.0)
+!
+!arguments
+!     none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "lun.cdk"
+#include "dcst.cdk"
+!
+      integer i,j,k
+      real*8 pdsc1_8
+!
+      if (Lun_out.gt.0) write(Lun_out,1000)
+!
+!     Calculation of wind images from components 
+!     ------------------------------------------
+      do j= 1, l_nj
+         pdsc1_8 = Geomg_cy_8(j) / Dcst_rayt_8 
+         do k=1,G_nk
+            do i= 1, l_niu
+               F_u(i,j,k) = pdsc1_8 * F_u(i,j,k)
+            end do
+         end do
+      end do
+!
+      do j= 1, l_njv
+         pdsc1_8 = Geomg_cyv_8(j) / Dcst_rayt_8
+         do k=1,G_nk
+            do i= 1, l_ni
+               F_v(i,j,k) = pdsc1_8 * F_v(i,j,k)
+            end do
+         end do
+      end do
+!
+ 1000 format( &
+      /,'CONVERT COMPONENTS TO WIND IMAGES: (S/R V4D_UV2IMG)', &
+      /,'===================================================')
+!
+      return
+      end

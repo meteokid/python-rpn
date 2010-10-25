@@ -1,0 +1,78 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_rwtraj - Read (Write) from (on) TRAJ WA file at each time
+!                   Dispatch to v4d_rwtraj_dyn or v4d_rwtraj_phy  
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_rwtraj (numtr,u,v,w,a,b,c,mlni,mlnj,lnkm,lnkt)
+!
+!-------------------------------------------------------------------------
+!  CAUTION: Parameters list is extended ONLY when numtr=5
+!-------------------------------------------------------------------------
+!
+      implicit none
+!
+      integer numtr,mlni,mlnj,lnkm,lnkt
+!
+!c    real, optional :: u(*),v(*),w(*),x(*),y(*)  KO NAOS
+!c    real, optional :: a(*),b(*),c(*),d(*)       KO NAOS
+      real           :: u(*),v(*),w(*)
+      real           :: a(*),b(*),c(*)
+!
+!author M.Tanguay
+!
+!revision
+! v4_04 - Tanguay M.        - initial MPI version
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_12 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!
+!
+!arguments
+! Name         I/O     Description
+!-------------------------------------------------------------------------
+! numtr        I       Indicates which portion of TRAJECTORY to Read-Write 
+!-------------------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+      include "v4dg.inc"
+!
+      if (.NOT. (V4dg_conf.ne.0 .and. V4dg_oktr_L) ) return
+!
+!     For Dynamics
+!     ------------
+      if ( 1.le.numtr.and.numtr.le.19) call v4d_rwtraj_dyn (numtr,u,v,w,a,b,c,mlni,mlnj,lnkm,lnkt)
+!
+!     For Physics 
+!     -----------
+!!!   if (20.le.numtr.and.numtr.le.39) call v4d_rwtraj_phy (numtr) 
+!
+!     For Conversion from 3D-Var to GEM variables (or vis-versa) 
+!     ----------------------------------------------------------
+      if ( 40.le.numtr.and.numtr.le.44) call v4d_rwtraj_cvn (numtr)
+!
+!     For Output on Standard file 
+!     ---------------------------
+      if ( 45.le.numtr.and.numtr.le.49) call v4d_rwtraj_out (numtr)
+!
+      if (numtr.gt.50) call handle_error(-1,'v4d_rwtraj','RWTRAJ numtr not DONE')
+!
+      return
+      end

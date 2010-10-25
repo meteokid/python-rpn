@@ -1,0 +1,89 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_ezuvint_ad - ADJ of v4d_ezuvint   
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_ezuvint_ad (zuo,zvo,px,py,npts,zui,zvi,ax,ay,cx,cy, &
+                                 i1,i2,j1,j2,nk,jmin,jmax,ni,grtypi,degree) 
+!
+      implicit none
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,degree
+!
+      real zuo(nk,npts),zvo(nk,npts),zui(i1:i2,j1:j2,nk),zvi(i1:i2,j1:j2,nk), &
+           px(npts),py(npts),ax(i1:i2),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)
+!
+      character*1 grtypi
+!
+!author M.Tanguay
+!
+!revision
+! v3_00 - Tanguay M.        - initial MPI version
+! v3_30 - Fillion L.        - Avoid polar treatment when in LAM mode 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!  see id section
+!
+!Adjoint of
+!arguments
+! Name         I/O        Description
+!----------------------------------------------------------------
+! zuo zvo       O         Interpolated wind fields at positions px,py
+! px            I         Position x in INPUT grid
+! py            I         Position y in INPUT grid
+! npts          I         Number of positions in zuo zvo
+! zui zvi       I         Wind fields on INPUT grid
+! ax            I         X axe of INPUT grid
+! ay            I         Y axe of INPUT grid
+! cx            I         AX difference on INPUT grid
+! cy            I         AY difference on INPUT grid
+! i1-i2         I         Dimension x in INPUT grid
+! j1-j2         I         Dimension y in INPUT grid
+! nk            I         Dimension z in INPUT grid
+! jmin          I         Lower  limit j
+! jmax          I         Higher limit j
+! ni            I         Period if grid='G', Heart if grid = 'Z'
+! grtypi        I         Type of INPUT grid
+! degree        I         Degree of interpolation
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+!
+!     Adjoint of
+!     Polar correction if wind interpolation
+!     --------------------------------------
+      if (.not.G_lam) then
+      call v4d_corrvec_ad (zuo,zvo,npts,zui,zvi,ax,ay,cx,cy,i1,i2,j1,j2,nk, &
+                           jmin,jmax,ni,grtypi,degree) 
+      endif
+!
+!     Adjoint of
+!     Scalar interpolation of zvo at positions px,py from zvi on input grid
+!     ---------------------------------------------------------------------
+      call v4d_interp_ad  (zvo,px,py,npts,zvi,ax,ay,cx,cy,i1,i2,j1,j2,nk, &
+                           jmin,jmax,ni,grtypi,degree)
+!
+!     Adjoint of
+!     Scalar interpolation of zuo at positions px,py from zui on input grid
+!     ---------------------------------------------------------------------
+      call v4d_interp_ad  (zuo,px,py,npts,zui,ax,ay,cx,cy,i1,i2,j1,j2,nk, &
+                           jmin,jmax,ni,grtypi,degree)
+!
+      return
+      end
