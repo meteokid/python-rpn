@@ -1,0 +1,106 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_rwfldx - Read (Write) a specific field from (on) WA file 
+!                   when the field has no HALO
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_rwfldx (F_field,Ni,Nj,Nk, &
+                             F_addr,F_diag_L,F_name_S,F_adjoint_L,F_diff,F_icode)
+!
+      implicit none
+!
+      integer NI,Nj,Nk,F_icode
+      real F_field(*)
+!
+      integer F_iun,F_addr,F_diff
+      logical F_diag_L,F_adjoint_L
+      character*8 F_name_S
+!
+!author M.Tanguay
+!
+!revision
+! v2_31 - Tanguay M.        - initial MPI version
+! v3_21 - Tanguay M.        - Revision Openmp
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     see id section
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_field      I/O                 Field without HALO
+! Ni Nj Nk     I                   Dimensions of F_field 
+! F_addr       I/O                 Position in WA file
+! F_diag_L     I                   Give diagnostics if TRUE 
+! F_name_S     I                   Name of the field
+! F_adjoint_L  I                   TRUE if adjoint run
+! F_diff       I                   To be subtracted from position if adjoint run 
+! F_icode      I                   If F_icode.GT.0 -Write F_field on WA file 
+!                                  If F_icode.LE.0 -Read  F_field from WA file
+!----------------------------------------------------------------
+!
+!implicits
+#include "lun.cdk"
+      include "v4dg.inc"
+!
+      integer ind
+!
+      if (F_icode.gt.0) then
+!
+!         Write F_field INCORE 
+!         --------------------
+          if(V4dg_trsize.lt.F_addr + Ni*Nj*Nk -1) call handle_error(-1,'v4d_rwfldx','V4dg_trsize.lt.F_addr + Ni*Nj*Nk -1') 
+!
+          do ind = 1,Ni*Nj*Nk
+             V4dg_trincore(F_addr + ind - 1) = F_field(ind)
+          enddo
+!
+!         Diagnostics
+!         -----------
+          if(F_diag_L) write(Lun_out,*) & 
+                       'WA FILE: wawrit ','Waf_adr = ',F_addr,'for ',F_name_S
+!
+!         Update address
+!         --------------
+          F_addr = F_addr + Ni*Nj*Nk 
+!
+      else
+!
+!         Read F_field INCORE 
+!         -------------------
+          do ind = 1,Ni*Nj*Nk
+             F_field(ind) = V4dg_trincore(F_addr + ind - 1)
+          enddo
+!
+!         Diagnostics
+!         -----------
+          if(F_diag_L) write(Lun_out,*) &
+                       'WA FILE: waread ','Waf_adr = ',F_addr,'for ',F_name_S
+!
+!         Update address
+!         --------------
+          if(     F_adjoint_L) F_addr = F_addr - F_diff 
+          if(.not.F_adjoint_L) F_addr = F_addr + Ni*Nj*Nk 
+!
+      endif
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

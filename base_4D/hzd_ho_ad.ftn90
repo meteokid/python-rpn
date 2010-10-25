@@ -1,0 +1,139 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r hzd_ho_ad - ADJ of hzd_ho 
+!
+#include "model_macros_f.h"
+      subroutine hzd_ho_ad (F_f2hzd, F_grd_S, NK)
+      implicit none
+!
+      character*1 F_grd_S
+      integer     DIST_DIM, Nk
+      real        F_f2hzd (*)
+!
+!author M.Tanguay
+!
+!revision
+! v2_21 - Tanguay M.        - initial MPI version
+! v2_31 - Tanguay M.        - ADJ of control for diffusion on momentum only
+! v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+! v3_11 - Tanguay M.        - AIXport+Opti+OpenMP for TLM-ADJ
+!                           - Remove F_xfis
+! v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L
+! v4_04 - Tanguay M.        - Staggered version TL/AD
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+! see id section
+! 
+#include "fft.cdk"
+#include "glb_ld.cdk"
+#include "trp.cdk"
+#include "hzd.cdk"
+#include "opr.cdk"
+#include "ptopo.cdk"
+#include "eigv.cdk"
+!
+      integer dpwr, nev, NSTOR, trpmin,trpmax,trpn
+      real cdiff
+      real*8  wk1_8(LDIST_SHAPE, NK)
+      real*8, pointer, dimension (:) :: a,c,d,xp,yp,evvec,odvec,wh_evec
+!     __________________________________________________________________
+!
+      if (.NOT.Fft_fast_L) call handle_error(-1,'hzd_ho_ad','.NOT.Fft_fast_L not completed') 
+      if (G_lam)           call handle_error(-1,'hzd_ho_ad','G_lam not completed') 
+!
+      cdiff = Hzd_cdiff
+      dpwr  = Hzd_pwr
+
+      nev   = (G_ni+2)/ 2
+      NSTOR = nev + ( 1 - mod(nev,2) )
+
+      trpmin  =  trp_12dmin
+      trpmax  =  trp_12dmax
+      trpn    =  trp_12dn
+      evvec   => Opr_evvec_8
+      odvec   => Opr_odvec_8
+      wh_evec => Hzd_wevec_8
+
+      if (F_grd_S.eq.'U') then
+         a       => Hzd_au_8
+         c       => Hzd_cu_8
+         d       => Hzd_deltau_8
+         xp      => Hzd_xp0_8
+         yp      => Opr_opsyp0_8
+         evvec   => Hzd_evvec_8
+         odvec   => Hzd_odvec_8
+         wh_evec => Hzd_wuevec_8
+      endif
+
+      if (F_grd_S.eq.'V') then
+         a       => Hzd_av_8
+         c       => Hzd_cv_8
+         d       => Hzd_deltav_8
+         xp      => Opr_opsxp0_8
+         yp      => Hzd_yp0_8
+      endif
+
+      if (F_grd_S.eq.'S') then
+         a       => Hzd_as_8
+         c       => Hzd_cs_8
+         d       => Hzd_deltas_8
+         xp      => Opr_opsxp0_8
+         yp      => Opr_opsyp0_8
+         trpmin  =  trp_p12dmin
+         trpmax  =  trp_p12dmax
+         trpn    =  trp_p12dn
+      endif
+
+      if (F_grd_S.eq.'S_TR') then
+         a       => Hzd_astr_8
+         c       => Hzd_cstr_8
+         d       => Hzd_deltastr_8
+         xp      => Opr_opsxp0_8
+         yp      => Opr_opsyp0_8
+         trpmin  =  trp_p12dmin
+         trpmax  =  trp_p12dmax
+         trpn    =  trp_p12dn
+         cdiff   =  Hzd_cdiff_tr
+         dpwr    =  Hzd_pwr_tr
+      endif
+
+      dpwr  = dpwr / 2
+
+      if (Fft_fast_L) then
+
+         if (G_lam) then
+
+!        NOT COMPLETED 
+
+         else
+
+            call hzd_solfft_ad  ( F_f2hzd, wk1_8, Fft_pri_8, a,c,d, &
+                 trpmin,trpmax,trp_22min,trp_22max,                 &
+                 trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni,      &
+                 l_ni,l_nj, trpn, xp, yp, Hzd_cdiff, Ptopo_npex,Ptopo_npey )
+
+         endif
+
+      else
+
+!        NOT COMPLETED 
+
+      endif
+!     __________________________________________________________________
+!
+      return
+      end

@@ -1,0 +1,60 @@
+#if defined (DOC)
+!
+!**comdeck vth_m.cdk
+!
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
+! v4_12 - Tanguay M.        - TL/AD Thermo upstream positions
+!
+!______________________________________________________________________
+!                                                                      |
+!  GMM variables at TIME th (t0-dt/2) (TRAJECTORY)                     |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+!  uth               | U: x component of velocity                      |
+!  vth               | V: y component of velocity                      |
+! zdth               | Zdot: generalized vertical velocity             |
+!--------------------|-------------------------------------------------|
+!  xth               | upstream x position                             |
+!  yth               | upstream y position                             |
+!  zth               | upstream z position                             |
+! xcth               | upstream x position in cartesian coordinate     |
+! ycth               | upstream y position in cartesian coordinate     |
+! zcth               | upstream z position in cartesian coordinate     |
+! ***h_thermo        | same as above but for thermo levels             |
+!----------------------------------------------------------------------
+!
+#endif
+!
+      real, pointer, dimension (:,:,:) :: uth_m         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: vth_m         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
+      real, pointer, dimension (:,:,:) :: zdth_m        => null() ! effective dimensions are (LDIST_SHAPE,   l_nk+1)
+      real, pointer, dimension (:    ) :: xth_m         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: yth_m         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zth_m         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: xcth_m        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: ycth_m        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+      real, pointer, dimension (:    ) :: zcth_m        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
+!
+      real, pointer, dimension (:    ) :: xth_thermo_m  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: yth_thermo_m  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zth_thermo_m  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: xcth_thermo_m => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: ycth_thermo_m => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+      real, pointer, dimension (:    ) :: zcth_thermo_m => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
+!
+      character(len=8) :: gmmk_uth_m_s  , gmmk_vth_m_s  , gmmk_zdth_m_s
+      character(len=8) :: gmmk_xth_m_s  , gmmk_yth_m_s  , gmmk_zth_m_s
+      character(len=8) :: gmmk_xcth_m_s , gmmk_ycth_m_s , gmmk_zcth_m_s
+!
+      character(len=8) :: gmmk_xth_thermo_m_s , gmmk_yth_thermo_m_s , gmmk_zth_thermo_m_s
+      character(len=8) :: gmmk_xcth_thermo_m_s, gmmk_ycth_thermo_m_s, gmmk_zcth_thermo_m_s
+!
+      common /vth_m_n_gmm / gmmk_uth_m_s  , gmmk_vth_m_s  , gmmk_zdth_m_s
+      common /vth_m_n_gmm / gmmk_xth_m_s  , gmmk_yth_m_s  , gmmk_zth_m_s
+      common /vth_m_n_gmm / gmmk_xcth_m_s , gmmk_ycth_m_s , gmmk_zcth_m_s
+!
+      common /vth_m_n_gmm/ gmmk_xth_thermo_m_s , gmmk_yth_thermo_m_s , gmmk_zth_thermo_m_s
+      common /vth_m_n_gmm/ gmmk_xcth_thermo_m_s, gmmk_ycth_thermo_m_s, gmmk_zcth_thermo_m_s

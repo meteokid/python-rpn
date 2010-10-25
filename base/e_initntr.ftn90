@@ -31,17 +31,28 @@
       external exdb
 
       character*50 DSTP
-      integer err
+      character(len=256) :: my_dir
+      integer err,mydomain,ndomains
 !
 !--------------------------------------------------------------------
 !
-      err = clib_getcwd (Path_work_S)
-      Path_input_S = trim(Path_work_S)//'/../input'
-      Path_output_S= trim(Path_work_S)//'/../output'
+      call rpn_comm_mydomain ('UM_EXEC_NDOMAINS', mydomain, ndomains)
 
+      write(my_dir,'(a,i4.4)') 'cfg_',mydomain
+
+      err = clib_getenv ('TASK_WORK'  ,Path_work_S  )
+      err = clib_getenv ('TASK_INPUT' ,Path_input_S )
+      err = clib_getenv ('TASK_OUTPUT',Path_output_S)
+
+      Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)
+      Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
+      Path_output_S = trim(Path_output_S) // '/' // trim(my_dir)
+
+! Directory Path_work_S has been created by Um_runmod.ksh
+
+      err = clib_chdir (trim(Path_work_S))
+	
       err= clib_mkdir (Path_output_S)
-      err= clib_mkdir (Path_work_S  )
-      err= clib_chdir (Path_work_S  )
 
       err = clib_getenv ('ATM_MODEL_DSTP',DSTP)
       err = clib_getenv ('GEMBNDL_VERSION',Version_number_S)
@@ -50,6 +61,8 @@
       call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
       call write_status_file2 ('_status=ABORT' )
       err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
+
+      call gemtim3 (6)
 !
 !--------------------------------------------------------------------
 !

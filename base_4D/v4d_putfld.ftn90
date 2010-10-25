@@ -1,0 +1,97 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_putfld - Put model profiles on Pr_ihdlout  
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_putfld (cdvar,kstatus,gomvar_8,kdim,kobs,indexvar)
+!
+      use v4d_prof
+!
+      implicit none
+!
+      character*2,INTENT(IN)   :: cdvar
+      integer,    INTENT(INOUT):: kstatus
+      integer,    INTENT(IN)   :: kdim,kobs,indexvar
+      real*8, pointer, dimension(:,:) :: gomvar_8
+!
+!author
+!     P. Gauthier
+!
+!revision
+! v3_00 - P. Gauthier        - initial MPI version
+! v3_00   M. Tanguay         - adapt to Simon's exchange
+! v3_01 - M. Tanguay         - correction for empty processors 
+! v3_11 - M. Tanguay         - correct relationship between stepob and timestep
+! v4_30 - Tanguay M.         - Revision
+!
+!object
+!
+!arguments
+! Name         I/O                 Description
+!----------------------------------------------------------------
+! cdvar        I                   Type of profiles 
+! kstatus      IO                  Status of the job
+! gomvar_8     I                   Model profiles     
+! kdim         I                   Vertical dimension  
+! kobs         I                   Number of observed profiles 
+! indexvar     I                   Index of variable 
+!----------------------------------------------------------------
+!
+#include <prof_f.h>
+#include "lctl.cdk"
+#include "ptopo.cdk"
+      include "v4dg.inc"
+!
+      integer  prof_wrrec
+      external prof_wrrec
+      integer icma, indx, indy, nbin, istat
+!
+!     Prepare number of processors in X and Y to be send to 3D-Var
+!     ------------------------------------------------------------
+      indx = Ptopo_npex-1
+      indy = Ptopo_npey-1
+      call mvbits(indx,0,16,indy,16)
+!
+!     Establish at which bin we are
+!     -----------------------------
+      nbin = (Lctl_step - Pr_ibin0) / V4dg_stepob + 1
+!
+!     Store simulation no. in each PROF record
+!     ----------------------------------------
+      istat = prof_pvar (Pr_ihdlout,  Pr_nsim4d, PRM_EVNT)
+!
+!     Store number of processors in X and Y in each PROF record
+!     ---------------------------------------------------------
+      istat = prof_pvar (Pr_ihdlout, indy, PRM_PEXY ) + istat
+!
+!     Store profiles of the variable 
+!     ------------------------------
+      icma = 0
+      icma = ibset ( icma, indexvar )
+      istat = prof_pvar (Pr_ihdlout, icma, PRM_MVAR ) + istat
+!
+      if(kobs.ne.0) then
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,nbin) % obstag, V2D_OTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, Pr_l_mv(indexvar,nbin) % mdltag, V2D_MTAG ) + istat
+      istat = prof_pvar (Pr_ihdlout, gomvar_8, indexvar ) + istat
+      endif
+!
+      istat = prof_wrrec(Pr_ihdlout) + istat
+!
+      kstatus = kstatus + istat
+!
+      end 

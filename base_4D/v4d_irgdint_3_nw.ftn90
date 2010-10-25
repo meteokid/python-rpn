@@ -1,0 +1,191 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_irgdint_3_nw - Cubic interpolation without wrap around,
+!                         based on EZ_IRGDINT_3_NW (Y.Chartier EZSCINT 2001)
+!
+      subroutine v4d_irgdint_3_nw (zo,px,py,npts,ax,ay,cx,cy,zi,i1,i2,j1,j2,nk,jmin,jmax)
+!
+      implicit none
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax
+      real zo(nk,npts),zi(i1:i2,j1:j2,nk), &
+           px(npts),py(npts),ax(i1:i2),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)
+!
+!author M.Tanguay
+!
+!revision
+! v3_00 - Tanguay M.        - initial MPI version
+! v3_11 - Tanguay M.        - correction for px or py negative  
+! v3_31 - Tanguay M.        - Add OPENMP directives 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!  see id section
+!
+!arguments
+! Name         I/O        Description
+!----------------------------------------------------------------
+! zo            O         Interpolated field at positions px,py
+! px            I         Position x in INPUT grid
+! py            I         Position y in INPUT grid
+! npts          I         Number of positions in zo
+! zi            I         Field on INPUT grid
+! ax            I         X axe of INPUT grid
+! ay            I         Y axe of INPUT grid
+! cx            I         AX difference on INPUT grid
+! cy            I         AY difference on INPUT grid
+! i1-i2         I         Dimension x in INPUT grid
+! j1-j2         I         Dimension y in INPUT grid
+! nk            I         Dimension z in INPUT grid
+! jmin          I         Lower  limit j
+! jmax          I         Higher limit j
+!----------------------------------------------------------------
+!
+      integer i,j,n,k
+      real*8 a11_8,a12_8,a13_8,a14_8,a21_8,a22_8,a23_8,a24_8, &
+             a31_8,a32_8,a33_8,a34_8,a41_8,a42_8,a43_8,a44_8, &
+             b11_8,b12_8,b13_8,b14_8
+!
+      real*8 x1_8,x2_8,x3_8,x4_8,y1_8,y2_8,y3_8,y4_8, &
+             a1_8,a2_8,a3_8,a4_8,b1_8,b2_8,b3_8,b4_8, &
+             c1_8,c2_8,c3_8,c4_8,c5_8,c6_8, &
+             x_8,y_8
+!
+!     Definition of in-line functions
+!     -------------------------------
+      real fa,fa2,fa3,fa4
+      real*8 z1_8,z2_8,z3_8,z4_8
+!
+#define fa(a1_8,a2_8,a3_8,a4_8,x_8,x1_8,x2_8,x3_8) ( a1_8+(x_8-x1_8)*(a2_8+(x_8-x2_8)*(a3_8+a4_8*(x_8-x3_8))) )
+!c       fa (a1_8,a2_8,a3_8,a4_8,x_8,x1_8,x2_8,x3_8) &
+!c          =a1_8+(x_8-x1_8)*(a2_8+(x_8-x2_8)*(a3_8+a4_8*(x_8-x3_8)))
+!
+         fa2(c1_8,a1_8,a2_8) &
+            =c1_8*(a2_8-a1_8)
+!
+         fa3(c1_8,c2_8,c3_8,a1_8,a2_8,a3_8) &
+            =c2_8*(c3_8*(a3_8-a2_8)-c1_8*(a2_8-a1_8))
+!
+         fa4(c1_8,c2_8,c3_8,c4_8,c5_8,c6_8,a1_8,a2_8,a3_8,a4_8) &
+            =c4_8*(c5_8*(c6_8*(a4_8-a3_8) &
+            -c3_8*(a3_8-a2_8))-c2_8*(c3_8*(a3_8-a2_8)-c1_8*(a2_8-a1_8)))
+!
+!$omp parallel private(i,j,k,x1_8,x2_8,x3_8,x4_8,y1_8,y2_8,y3_8,y4_8, &
+!$omp                  z1_8,z2_8,z3_8,z4_8,x_8,y_8, &
+!$omp                  b1_8,b2_8,b3_8,b4_8, &
+!$omp                  a11_8,a12_8,a13_8,a14_8, &
+!$omp                  a21_8,a22_8,a23_8,a24_8, &
+!$omp                  a31_8,a32_8,a33_8,a34_8, &
+!$omp                  a41_8,a42_8,a43_8,a44_8, &
+!$omp                  b11_8,b12_8,b13_8,b14_8)
+!
+!$omp do 
+      do n=1,npts
+      do k=1,nk
+!
+         i = min(i2-2,  max(i1+1,  ifix(px(n))))
+         j = min(jmax-2,max(jmin+1,ifix(py(n))))
+!
+         if (px(n).lt.0.) i = i-1 
+!
+         if (py(n).lt.0.) j = j-1 
+!
+         x1_8=ax(i-1)
+         x2_8=ax(i)
+         x3_8=ax(i+1)
+         x4_8=ax(i+2)
+!
+         y1_8=ay(j-1)
+         y2_8=ay(j)
+         y3_8=ay(j+1)
+         y4_8=ay(j+2)
+!
+         x_8 = x2_8 + (x3_8-x2_8)*(px(n)-i)
+         y_8 = ay(j) + (ay(j+1)-ay(j))*(py(n)-j)
+!
+!     interpolation row 1  
+!     -------------------
+         z1_8=zi(i-1,j-1,k)
+         z2_8=zi(i  ,j-1,k)
+         z3_8=zi(i+1,j-1,k)
+         z4_8=zi(i+2,j-1,k)
+!
+         a11_8 = z1_8
+         a12_8 = fa2(dble(cx(i,1)),z1_8,z2_8)
+         a13_8 = fa3(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),z1_8,z2_8,z3_8)
+         a14_8 = fa4(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)), &
+                     dble(cx(i,4)),dble(cx(i,5)),dble(cx(i,6)),z1_8,z2_8,z3_8,z4_8)
+         b1_8  = fa(a11_8,a12_8,a13_8,a14_8,x_8,x1_8,x2_8,x3_8)
+!
+!     interpolation row 2 
+!     -------------------
+         z1_8=zi(i-1,j,k)
+         z2_8=zi(i  ,j,k)
+         z3_8=zi(i+1,j,k)
+         z4_8=zi(i+2,j,k)
+!
+         a21_8 = z1_8
+         a22_8 = fa2(dble(cx(i,1)),z1_8,z2_8)
+         a23_8 = fa3(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),z1_8,z2_8,z3_8)
+         a24_8 = fa4(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)), &
+                     dble(cx(i,4)),dble(cx(i,5)),dble(cx(i,6)),z1_8,z2_8,z3_8,z4_8)
+         b2_8  = fa(a21_8,a22_8,a23_8,a24_8,x_8,x1_8,x2_8,x3_8)
+!
+!     interpolation row 3 
+!     -------------------
+         z1_8=zi(i-1,j+1,k)
+         z2_8=zi(i  ,j+1,k)
+         z3_8=zi(i+1,j+1,k)
+         z4_8=zi(i+2,j+1,k)
+!
+         a31_8 = z1_8
+         a32_8 = fa2(dble(cx(i,1)),z1_8,z2_8)
+         a33_8 = fa3(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),z1_8,z2_8,z3_8)
+         a34_8 = fa4(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),dble(cx(i,4)), &
+                     dble(cx(i,5)),dble(cx(i,6)),z1_8,z2_8,z3_8,z4_8)
+         b3_8  = fa(a31_8,a32_8,a33_8,a34_8,x_8,x1_8,x2_8,x3_8)
+!
+!     interpolation row 4 
+!     -------------------
+         z1_8=zi(i-1,j+2,k)
+         z2_8=zi(i  ,j+2,k)
+         z3_8=zi(i+1,j+2,k)
+         z4_8=zi(i+2,j+2,k)
+!
+         a41_8 = z1_8
+         a42_8 = fa2(dble(cx(i,1)),z1_8,z2_8)
+         a43_8 = fa3(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),z1_8,z2_8,z3_8)
+         a44_8 = fa4(dble(cx(i,1)),dble(cx(i,2)),dble(cx(i,3)),dble(cx(i,4)), &
+                     dble(cx(i,5)),dble(cx(i,6)),z1_8,z2_8,z3_8,z4_8)
+         b4_8  = fa(a41_8,a42_8,a43_8,a44_8,x_8,x1_8,x2_8,x3_8)
+!
+!     interpolation column 
+!     --------------------
+         b11_8 = b1_8
+         b12_8 = fa2(dble(cy(j,1)),b1_8,b2_8)
+         b13_8 = fa3(dble(cy(j,1)),dble(cy(j,2)),dble(cy(j,3)),b1_8,b2_8,b3_8)
+         b14_8 = fa4(dble(cy(j,1)),dble(cy(j,2)),dble(cy(j,3)), &
+                     dble(cy(j,4)),dble(cy(j,5)),dble(cy(j,6)),b1_8,b2_8,b3_8,b4_8)
+         zo(k,n) = fa(b11_8,b12_8,b13_8,b14_8,y_8,y1_8,y2_8,y3_8)
+!
+      enddo
+      enddo
+!$omp enddo 
+!
+!$omp end parallel 
+!
+      return
+      end

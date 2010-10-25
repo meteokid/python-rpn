@@ -83,7 +83,7 @@
 !
       call rpn_comm_mydomain ('UM_EXEC_NDOMAINS', mydomain, ndomains)
 
-      write(my_dir,'(a,i7.7)') 'domain_',mydomain
+      write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 
       call base_dir_env (trim(my_dir))
 !

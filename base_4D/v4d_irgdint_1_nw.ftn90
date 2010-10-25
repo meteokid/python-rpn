@@ -1,0 +1,93 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_irgdint_1_nw - Linear interpolation without wrap around,
+!                         based on EZ_IRGDINT_1_NW (Y.Chartier EZSCINT 2001)
+!
+      subroutine v4d_irgdint_1_nw (zo,px,py,npts,ax,ay,zi,i1,i2,j1,j2,nk,jmin,jmax)
+!
+      implicit none
+!
+      integer npts,i1,i2,j1,j2,nk,jmin,jmax
+      real zo(nk,npts),px(npts),py(npts), &
+           zi(i1:i2,j1:j2,nk),ax(i1:i2),ay(j1:j2)
+!
+!author M.Tanguay
+!
+!revision
+! v3_00 - Tanguay M.        - initial MPI version
+! v3_11 - Tanguay M.        - correction for px or py negative
+! v3_31 - Tanguay M.        - Add OPENMP directives 
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!  see id section
+!
+!arguments
+! Name         I/O        Description
+!----------------------------------------------------------------
+! zo            O         Interpolated field at positions px,py
+! px            I         Position x in INPUT grid
+! py            I         Position y in INPUT grid
+! npts          I         Number of positions in zo
+! zi            I         Field on INPUT grid
+! ax            I         X axe of INPUT grid
+! ay            I         Y axe of INPUT grid
+! i1-i2         I         Dimension x in INPUT grid
+! j1-j2         I         Dimension y in INPUT grid
+! nk            I         Dimension z in INPUT grid
+! jmin          I         Lower  limit j
+! jmax          I         Higher limit j
+!----------------------------------------------------------------
+!
+      integer i,j,n,k
+      real*8 x_8,y_8,x1_8,x2_8,y1_8,y2_8,dx_8,dy_8
+!
+!$omp parallel private(i,j,k,x1_8,x2_8,y1_8,y2_8, &
+!$omp                  x_8,y_8,dx_8,dy_8)
+!
+!$omp do
+      do n=1,npts
+      do k=1,nk
+!
+         i = min(i2-1,  max(i1,  ifix(px(n))))
+         j = min(jmax-1,max(jmin,ifix(py(n))))
+!
+         if (px(n).lt.0.) i = i-1 
+!
+         if (py(n).lt.0.) j = j-1 
+!
+         x1_8=ax(i)
+         x2_8=ax(i+1)
+!
+         x_8 = x1_8 + (x2_8-x1_8)*(px(n)-i)
+         y_8 = ay(j) + (ay(j+1)-ay(j))*(py(n)-j)
+!
+         dx_8 = (x_8 - x1_8)/(x2_8-x1_8)
+         dy_8 = (y_8 - ay(j))/(ay(j+1)-ay(j))
+!
+         y1_8 = dble(zi(i,j,  k)) + (dble(zi(i+1,j,  k))-dble(zi(i,j,  k))) * dx_8 
+         y2_8 = dble(zi(i,j+1,k)) + (dble(zi(i+1,j+1,k))-dble(zi(i,j+1,k))) * dx_8 
+
+         zo(k,n) = y1_8 + (y2_8 - y1_8) * dy_8
+!
+      enddo
+      enddo
+!$omp enddo
+!
+!$omp end parallel
+!
+      return
+      end

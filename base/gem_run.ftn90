@@ -55,6 +55,7 @@
 ! v4_05 - Desgagne M.       - Restrict length of digital filter
 ! v4_05 - Plante-Girard     - Remove surfix
 ! v4_11 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
+! v4_30 - Tanguay M.        - Revision
 !
 !object
 !	Performs the integration of the model
@@ -88,9 +89,10 @@
 #include "clim.cdk"
 #include "hzd.cdk"
 #include "modconst.cdk"
+      include "v4dg.inc"
 !
       character*16   datev
-      logical bkup_L,flag
+      logical bkup_L,flag,identity_4dvar_L
       integer last_step,fstep,istep,step0,stepf,upperlimit
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -101,7 +103,21 @@
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
 
       if (Lun_out.gt.0) write (6,900) datev
-
+!
+      identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L
+!
+!C    4D-Var: Control Cost function at INITIAL time
+!     ---------------------------------------------
+      if ( V4dg_conf.ne.0 ) then
+!
+!          Store TRAJ variables for conversion from 3D-Var to GEM
+!          ------------------------------------------------------
+           call v4d_rwtraj (41)
+!
+           call v4d_ctrlcst ()
+!
+      endif
+!
       call blocstat (.true.)
 
                       fstep = Step_total
@@ -123,7 +139,11 @@
             call pw_update_UVT ('P')
             call pw_update_GPW
          endif
-
+!
+!        Store TRAJ variables for Output on STD file 
+!        -------------------------------------------
+         if ( V4dg_conf.ne.0 ) call v4d_rwtraj (46) 
+!
          call out_dyn (.true., .false.)
          if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
          call out_launchpost (.false.)
@@ -156,6 +176,8 @@
 !     --------------------------------------------------
          if ( Clim_inincr_L ) call itf_phy_inincr
 !
+         if ( .not.identity_4dvar_L ) then
+!
 !C    Diffusion, Dynamics and Physics
 !     -------------------------------
 !        Dynamics timestep
@@ -174,12 +196,31 @@
 
          call hzd_main ()
 !
+         endif
+!
 !C    Digital filter
 !     --------------
          if ( F_dgtflt_L ) call digflt
 !
+!
+!C    4D-Var: Control Cost function at .NOT.INITIAL time
+!     --------------------------------------------------
+         if ( V4dg_conf.ne.0 ) then
+!
+!            Store TRAJ variables for conversion from 3D-Var to GEM variables
+!            ----------------------------------------------------------------
+             call v4d_rwtraj (41)
+!
+             call v4d_ctrlcst
+!
+         endif
+!
 !C    Perform output if required
 !     --------------------------
+!
+!        Store TRAJ variables for Output on STD file
+!        -------------------------------------------
+         if ( V4dg_conf.ne.0 ) call v4d_rwtraj (46)
 !
          call out_dyn (.true., .false.)
 !

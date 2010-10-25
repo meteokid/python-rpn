@@ -1,0 +1,11 @@
+!
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+!
+      namelist /var4d/ V4dg_sensib_L  , V4dg_twin_L  , V4dg_4dvar_L
+      namelist /var4d/ V4dg_sgvc_L    , V4dg_sgvc_dt0, V4dg_anincr_L
+      namelist /var4d/ V4dg_chum_s    , V4dg_conf    , V4dg_identity_L
+      namelist /var4d/ V4dg_grd_L     , V4dg_stepob  , V4dm_itmax 
+      namelist /var4d/ V4dm_simax     , V4dg_inv     , V4dz_degree
+      namelist /var4d/ V4dzga_degree  , V4dzge_degree, V4dg_pruv_L
+      namelist /var4d/  V4dj_mask_L     
+

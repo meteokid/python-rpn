@@ -1,0 +1,464 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r v4d_setting - Additional settings for 4D-Var 
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_setting 
+!
+      use v4d_prof, only: Pr_wopen_L, Pr_ropen_L, Pr_read_L, Pr_llfrm_L, Pr_traj0to9_L, & 
+                          Pr_varindx, Pr_varname, Pr_dsnooze_8, Pr_traj0to9_L, Pr_mode_S
+!
+      use v4dz
+!
+      implicit none
+!
+!author M.Tanguay
+!
+!revision
+! v2_10 - Tanguay M.        - initial MPI version
+! v2_31 - Tanguay M.        - move v4d_setscalp after set_dync 
+!                           - WA files incore
+!                           - adapt for tracers in tr3d  
+! v3_00 - Ek N.             - initializations for V4dg_4dvar_L and for interp. of profiles 
+! v3_00 - Tanguay M.        - adapt to Simon's exchange
+!                           - incore option for WA file Conversion 
+! v3_00 - Laroche S.        - additions for simplified physics
+! v3_01 - Tanguay M.        - add V4dg_sgvc_L
+!                           - introduce GAUSS=GEM option
+! v3_02 - Buehner M.        - added section for ref state file for NLMX event (SV job)
+!                           - changed call readlalo to readinit
+!                           - no 3hr preliminary integration for SV job
+! v3_02 - Tanguay M.        - V4dz_degree in namelist var4d
+! v3_03 - Tanguay M.        - Adjoint Lam and NoHyd configuration 
+! v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
+!                           - Remove V4dg_ga_eq_ge_L
+!                           - Add option for profiles done on U-V grids for winds 
+! v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ 
+! v3_20 - Zadra A.          - Introduce V4dg_sgvc_dt0  
+! v3_30 - Tanguay M.        - Validation for LAM version 
+! v4_04 - Tanguay M.        - Staggered version TL/AD 
+! v4_10 - Tanguay M.        - Renamed v4d_settraj as v4d_vmm_trajectory 
+! v4_12 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
+! v4_30 - Tanguay M.        - Revision
+!
+!object
+!     1) Allocate WA files and VMM space
+!     2) Set control variables 
+!     3) Set inner product in control space variables
+!	
+!arguments
+!     none
+!
+!implicits
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+#include "v4dc.cdk"
+#include "step.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
+#include <prof_f.h>
+#include "dcst.cdk"
+#include "ptopo.cdk"
+#include "path.cdk"
+#include "init.cdk"
+      include "v4dg.inc"
+!
+!modules
+      external hpalloc,longueur
+!
+      integer pnerr,timobmax,i,j,i1,i2,j1,j2,lun_4dvar,longueur, &
+              ierr,fnom,ilun_out,status,offi,offj,indx,itotal
+!
+      real*8 rad2deg_8
+      real*8, parameter :: CLXXX_8 = 180.0
+      real*8, parameter :: ONE_8   = 1.0 
+      real*8, parameter :: TWO_8   = 2.0 
+      real*8, parameter :: HALF_8  = 0.5 
+!
+      real*8, dimension(:),allocatable :: xgu_8, ygv_8
+!
+      character(len=256) cfilename_S
+      character(len=3)  cprocno_S
+!
+      integer, parameter :: MAX_TRSIZE = 300 
+      integer trsize (MAX_TRSIZE)
+!
+!----------------------------------------------------------------------------------------
+!
+      if (V4dg_conf.eq.0) return
+!
+!     Initialize the sigma trajectory option for 4dvar
+!
+      V4dg_phy_wsigm_L = .true.
+      call phy_opti('LIN_PBL', V4dg_phy_pbl, 1, 'GET', .false., pnerr)
+!C
+!C    Allocate VMM space for TRAJECTORY
+!C    ---------------------------------
+      call v4d_vmm_trajectory ()
+!
+!C    Initialize starting address of TRAJECTORY incore (TRINCORE) 
+!C    -----------------------------------------------------------
+      V4dg_addtr = 1
+!
+!C    ----------------------------------------------
+!C    Set size of TRINCORE as build in in V4d_RWTRAJ
+!C    ----------------------------------------------
+!
+             trsize      = 0
+             V4dg_trsize = 0 
+!
+             itotal = Step_total +3 
+!
+!            numtr.eq.1
+!            ----------
+             trsize(1) = itotal*(3*(l_nk+2) + 1)*l_ni*l_nj 
+!
+!            numtr.eq.2
+!            ----------
+             trsize(2) = itotal*((6+Tr3d_ntr)*(l_nk+2) + 1)*l_ni*l_nj 
+             if (.not. Schm_hydro_L) & 
+             trsize(2) = itotal*(2*(l_nk+2)    )*l_ni*l_nj + trsize(2) 
+!
+!            numtr.eq.3
+!            ----------
+             trsize(3) = itotal*(6*(l_nk+2)    )*l_ni*l_nj*Schm_itcn
+!
+!            numtr.eq.4
+!            ----------
+             trsize(4) = itotal*(3*(l_nk+2)    )*l_ni*l_nj*Schm_itcn
+!
+!            numtr.eq.5
+!            -----------
+             trsize(5) = itotal*(3*(l_nk+2)    )*l_ni*l_nj*Schm_itcn
+!
+!            numtr.eq.6
+!            ----------
+             trsize(6) = itotal*(7*(l_nk+2)    )*l_ni*l_nj*Schm_itcn
+             if (.not.Schm_hydro_L) &
+             trsize(6) = itotal*(2*(l_nk+2)    )*l_ni*l_nj*Schm_itcn + trsize(6)
+!
+!            numtr.eq.7
+!            ----------
+             trsize(7) = itotal*(5*(l_nk+2) + 1)*l_ni*l_nj*Schm_itcn
+             if (.not. Schm_hydro_L) & 
+             trsize(7) = itotal*(1*(l_nk+2)    )*l_ni*l_nj*Schm_itcn + trsize(7) 
+!
+!            numtr.eq.8
+!            ----------
+             trsize(8) = itotal*(2*(l_nk+2) + 1)*l_ni*l_nj*Schm_itcn*Schm_itnlh
+             if (.not. Schm_hydro_L) & 
+             trsize(8) = itotal*(1*(l_nk+2)    )*l_ni*l_nj*Schm_itcn*Schm_itnlh + trsize(8)
+!
+!            numtr.eq.9
+!            ----------
+             trsize(9) = itotal*(1*(l_nk+2) + 1)*l_ni*l_nj*Schm_itcn*Schm_itnlh
+!
+!            numtr.eq.10
+!            ---------------------
+!            Size for nesting TRAJ
+!            ---------------------
+             if (G_lam) then
+             trsize(10) = (itotal+1)*((5+Tr3d_ntr)*(l_nk+2) + 1)*l_ni*l_nj
+             if (.not. Schm_hydro_L) & 
+             trsize(10) = (itotal+1)*(           1*(l_nk+2)    )*l_ni*l_nj + trsize(10)
+             endif
+!
+!            numtr.eq.11
+!            -----------
+             trsize(11) = itotal*((6+Tr3d_ntr)*(l_nk+2) + 1)*l_ni*l_nj
+             if (.not. Schm_hydro_L) &
+             trsize(11) = itotal*(2*(l_nk+2)    )*l_ni*l_nj + trsize(11)
+!
+             do i=1,MAX_TRSIZE
+                V4dg_trsize = V4dg_trsize + trsize(i)
+             enddo
+!
+             allocate (V4dg_trincore(V4dg_trsize))
+!
+!C    -------------------------------------
+!C    Set control variables for 4D-Var runs
+!C    -------------------------------------
+!
+         if (Lun_out.gt.0) write(Lun_out,1000)
+!
+!        Initialize dimensions
+!        ---------------------
+         V4dc_ncv    = l_ni  *               l_njv  * (l_nk+1) + & 
+                       l_ni  * (1+Tr3d_ntr)* l_nj   * (l_nk+2) + &
+                       l_niu *               l_nj   * (l_nk+1) + l_ni * l_nj 
+!
+!        V4dc_nupd is the number of updates for building Hessian in M1QN3
+!        ----------------------------------------------------------------
+         V4dc_nupd   = 10
+!CCC     if (V4dg_conf/100.eq.1) V4dc_nupd = 1 
+!
+         V4dc_nwkmin = 4 * V4dc_ncv + V4dc_nupd * (2 * V4dc_ncv + 1)
+!
+!        Initialize memory arrays 
+!        ------------------------
+         if (.not.(V4dg_4dvar_L.or.V4dg_sgvc_L)) then
+         call hpalloc(V4dc_xcv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_gcv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_scalp_ , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_ycv_   , V4dc_ncv   , pnerr, 1)
+         call hpalloc(V4dc_wkmin_ , V4dc_nwkmin, pnerr, 1)
+         endif
+!
+      if (V4dg_4dvar_L.or.V4dg_sgvc_L) then
+!
+!        Redirect output to allow printings for each proc
+!        ------------------------------------------------
+         lun_4dvar = 0 
+         if (Ptopo_myproc.le.9) then
+         write(cprocno_S,fmt='(i1)') Ptopo_myproc
+         else
+         write(cprocno_S,fmt='(i2)') Ptopo_myproc
+         endif
+         cfilename_S = trim(Path_output_S)// &
+                       '/Output_From_Proc_No.'//trim(cprocno_S)
+         ierr = fnom(lun_4dvar,trim(cfilename_S),'SEQ+APPEND',0)
+!
+         ilun_out = Lun_out
+         Lun_out  = lun_4dvar
+!
+!        Define path to the "exchange" directory with 3D-Var 
+!        ---------------------------------------------------
+         Path_xchg_S = trim(Path_output_S)//'/xchgdir'
+!
+!        Flag to do 3hr TRAJ run to get to the starting date of the assimilation
+!        -----------------------------------------------------------------------
+         Pr_traj0to9_L = .false.
+!
+!        Do not perform initial 3hr integration for SV job - initial time = synoptic time!!!!
+!        ------------------------------------------------------------------------------------
+         if (V4dg_sgvc_L) Pr_traj0to9_L = .true.       
+!
+         write(Lun_out,*) 'Flag to do 3hr TRAJ run TRAJ0TO9_L = ',Pr_traj0to9_L
+!
+!        Initialization of static information regarding PROF files 
+!        ---------------------------------------------------------
+         Pr_llfrm_L = .true.
+         Pr_dsnooze_8 = 0.01
+         Pr_mode_S = 'FILE'
+         write(Lun_out,*) 'SNOOZE TIME = ',Pr_dsnooze_8,' LLFRM = ',Pr_llfrm_L
+!
+         if (V4dg_sgvc_L) then
+!
+!        Input parameters from 3dvar
+!        ---------------------------
+         call v4d_readinit ()
+!
+         else
+!
+!        Initialize the obs variable indices
+!        -----------------------------------
+         Pr_varindx(1) = V3D_UTRU
+         Pr_varindx(2) = V3D_VTRU
+         Pr_varindx(3) = V3D_TEMP
+         Pr_varindx(4) = V3D_SPHU
+         Pr_varindx(5) = V2D_PSUR
+!
+         Pr_varname = (/'UU', 'VV', 'TT', 'HU', 'SP'/)
+!
+!        Flag to allow model-profile file to be opened 
+!        ---------------------------------------------
+         Pr_wopen_L = .false.     
+!
+!        Flag to allow adjoint model-profile file to be opened 
+!        -----------------------------------------------------
+         Pr_ropen_L = .false.     
+!
+!        Input obs lists if not already done.
+!        -----------------------------------
+         call v4d_readinit ()
+!
+!        ----------------------------------------------------
+!        Initialization for EZSCINT interpolation of profiles  
+!        ----------------------------------------------------
+!
+!        -------------------------------------------------------
+!        Type of interpolation V4dz_degree now in namelist var4d
+!        -------------------------------------------------------
+!        NOTE: 1= Linear and 3=Cubic Lagrange
+!        -------------------------------------------------------
+!
+!        Type of input grid (DEFAULT)
+!        ----------------------------
+         V4dz_grtypi = 'Z'
+!
+!        Initialize dimensions I1,I2,J1,J2, axes AX,AY
+!        and differences CX,CY of input grid used in interpolation
+!        ---------------------------------------------------------
+!
+!        Dimensions with halo
+!        --------------------
+         V4dz_i1 = l_minx
+         V4dz_i2 = l_maxx
+         V4dz_j1 = l_miny
+         V4dz_j2 = l_maxy
+!
+!        Keep horizontal dimensions of input grid used in interpolation
+!        --------------------------------------------------------------
+         i1 = V4dz_i1
+         i2 = V4dz_i2
+         j1 = V4dz_j1
+         j2 = V4dz_j2
+!
+!        Prescribe global GEM scalar Z grid axes 
+!        ---------------------------------------
+         allocate ( V4dz_ax(i2-i1+1), STAT=status )
+         allocate ( V4dz_ay(j2-j1+1), STAT=status )
+!
+         rad2deg_8 = CLXXX_8/Dcst_pi_8
+!
+         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+         offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+!
+         do i=i1,i2
+            indx = offi + i
+            V4dz_ax(i-i1+1) = G_xg_8(indx) * rad2deg_8
+         enddo
+         do j=j1,j2
+            indx = offj + j
+            V4dz_ay(j-j1+1) = G_yg_8(indx) * rad2deg_8
+         enddo
+!
+!        Prescribe global GEM staggered grid axes
+!        ----------------------------------------
+         if (V4dg_pruv_L) then
+!
+         allocate ( V4dz_axu(i2-i1+1), STAT=status )
+         allocate ( V4dz_ayv(j2-j1+1), STAT=status )
+!
+         do i=i1,i2
+            indx = offi + i
+            V4dz_axu(i-i1+1) = ((G_xg_8(indx+1)+ G_xg_8(indx)) * HALF_8) * rad2deg_8
+         enddo
+         do j=j1,j2
+            indx = offj + j
+            V4dz_ayv(j-j1+1) = ((G_yg_8(indx+1)+ G_yg_8(indx)) * HALF_8) * rad2deg_8
+         enddo
+!
+         endif
+!
+!        Evaluate AX,AY differences in CX,CY for cubic interpolation
+!        -----------------------------------------------------------
+         if (V4dz_degree.eq.3) then
+!
+            allocate ( V4dz_cx(6*(i2-i1+1)), STAT=status )
+            allocate ( V4dz_cy(6*(j2-j1+1)), STAT=status )
+!
+            call v4d_nwtncof (V4dz_cx,V4dz_cy,V4dz_ax,V4dz_ay,i1,i2,j1,j2, &
+                              l_ni,V4dz_grtypi)
+!
+            if (V4dg_pruv_L) then
+!
+            allocate ( V4dz_cxu(6*(i2-i1+1)), STAT=status )
+            allocate ( V4dz_cyv(6*(j2-j1+1)), STAT=status )
+!
+            call v4d_nwtncof (V4dz_cxu,V4dz_cy, V4dz_axu,V4dz_ay, i1,i2,j1,j2, &
+                              l_niu,'U')
+!
+            call v4d_nwtncof (V4dz_cx, V4dz_cyv,V4dz_ax, V4dz_ayv,i1,i2,j1,j2, &
+                              l_ni, 'V')
+            endif
+!
+         endif
+!
+!        Prescribe global Z grid weights proportional grid distances 
+!        -----------------------------------------------------------
+         allocate ( V4dz_wx_8 (G_ni), STAT=status )
+!
+         do i=1,G_ni
+         V4dz_wx_8(i) =( G_xg_8(i+1) &
+                        -G_xg_8(i-1))*HALF_8/(TWO_8*Dcst_pi_8)
+         enddo
+!
+!        Prescribe local Z grid cos,sin of x and local Z grid sin of y
+!        -------------------------------------------------------------
+         allocate ( V4dz_cox_8(G_ni), STAT=status )
+         allocate ( V4dz_six_8(G_ni), STAT=status )
+         allocate ( V4dz_siy_8(G_nj), STAT=status )
+!
+         do i=1,G_ni
+            V4dz_cox_8(i) = cos ( G_xg_8(i) )
+            V4dz_six_8(i) = sin ( G_xg_8(i) )
+         enddo
+!
+         do j=1,G_nj
+            V4dz_siy_8(j) = sin ( G_yg_8(j) )
+         enddo
+!
+         if (V4dg_pruv_L) then
+!
+!        Prescribe global U grid weights proportional grid distances 
+!        -----------------------------------------------------------
+         allocate (      xgu_8(0:G_niu+1), STAT=status )
+         allocate ( V4dz_wxu_8(G_niu),   STAT=status )
+!
+         do i=0,G_niu+1
+         xgu_8 (i) = (G_xg_8(i+1) + G_xg_8(i)) * HALF_8
+         enddo
+!
+         do i=1,G_niu
+         V4dz_wxu_8(i) =( xgu_8(i+1) &
+                         -xgu_8(i-1))*HALF_8/(TWO_8*Dcst_pi_8)
+         enddo
+!           
+!        Prescribe local U grid cos,sin of x
+!        -----------------------------------
+         allocate ( V4dz_coxu_8(G_niu),   STAT=status )
+         allocate ( V4dz_sixu_8(G_niu),   STAT=status )
+!
+         do i=1,G_niu
+            V4dz_coxu_8(i) = cos ( xgu_8(i) )
+            V4dz_sixu_8(i) = sin ( xgu_8(i) )
+         enddo
+!
+         deallocate ( xgu_8,    STAT=ierr )     
+!
+!        Prescribe local V grid sin of y
+!        -------------------------------
+         allocate (       ygv_8(G_njv),   STAT=status )
+         allocate ( V4dz_siyv_8(G_njv),   STAT=status )
+!
+         do j=1,G_njv
+         ygv_8 (j) = (G_yg_8(j+1) + G_yg_8(j)) * HALF_8
+         enddo
+!
+         do j=1,G_njv
+            V4dz_siyv_8(j) = sin ( ygv_8(j) )
+         enddo
+!
+         deallocate ( ygv_8,    STAT=ierr )     
+!
+         endif
+!
+         endif
+!
+      endif
+!
+ 1000 format( &
+      //,'Additional settings for 4D-VAR (S/R V4D_SETTING)', &
+       /,'================================================', &
+      //)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
