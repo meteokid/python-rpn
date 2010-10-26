@@ -11,6 +11,9 @@ monitor:
 	$(MAKE) gem_monitor_output
 	mv gem_monitor_end gem_monitor_output $(MONBINDIR)
 
+sometools: prgemnml
+	$(MAKE) gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
+
 allbin: prgemnml gem
 	$(MAKE) gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
 #	$(MAKE) gem
