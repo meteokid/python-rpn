@@ -98,22 +98,19 @@
 
       endif
 !
-!     Store TRAJ Positions TH
-!     -----------------------
-      IF (.FALSE.) call v4d_rwtraj (3) 
-!
+!     Store TRAJ Positions TH/TRAJ Winds TH
+!     -------------------------------------
+      call v4d_rwtraj (3) 
+      call v4d_rwtraj (4) 
+!     
 !     Compute the average of the t1 and t0 winds (uth,vth,zdth)
 !     
       call tmg_start0(4, 'ADW      ')
       call wndth ()
-!
-!     Store TRAJ Winds TH
-!     -------------------
-      IF (.TRUE.) call v4d_rwtraj (4) 
 !     
 !     SL Advection
 !     
-      IF(.FALSE.) call itf_adx_main (F_fnitraj)
+      call itf_adx_main (F_fnitraj)
       call tmg_stop0(4)
 !
       call tmg_start0(5, 'PRE      ')
