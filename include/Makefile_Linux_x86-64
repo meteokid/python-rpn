@@ -5,3 +5,4 @@ MPI    = -mpi
 CODEBETA = 
 UTIL     = massvp4 lapack blas hpcstools
 
+COMM_VERSION  = _30200
