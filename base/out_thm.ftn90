@@ -280,8 +280,8 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(tt1)'
       gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(fis0)'
 !_______________________________________________________________________
 !
 !     Compute Virtual temperature
@@ -339,11 +339,11 @@
 !_________________________________________________________________
 !
       if (pnme.ne.0)then
-            call ecris_fst2(topo,l_minx,l_maxx,l_miny,l_maxy,0.0, &
+            call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'ME  ',prmult_pnme,0.0,-1,1,1, 1, nbit(pnme) )
          endif
       if (pnmx.ne.0)then
-            call ecris_fst2(topo,l_minx,l_maxx,l_miny,l_maxy,0.0, &
+            call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'MX  ',1.0,0.0,-1,1,1, 1, nbit(pnmx) )
          endif
       if (pnpt.ne.0) &
@@ -394,7 +394,7 @@
          enddo
          gz_m_plus(:,:,1:l_nk)= gz(:,:,:) 
          gz_m_plus(:,:,0)=fiptx(:,:,0)+Ver_fistr_8%m(0)
-         gz_m_plus(:,:,l_nk+1)=topo(:,:)
+         gz_m_plus(:,:,l_nk+1)=fis0(:,:)
          call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
          gz_ta(:,:,l_nk+2)=gz_m_plus(:,:,l_nk+1)
 !     Precomputations for interpolation from momentum to thermo levels.
@@ -415,7 +415,7 @@
 
 !        Determine if fictitious level is above or below ground
 
-         w1(i,j) = topo(i,j) - htx(i,j,kl)
+         w1(i,j) = fis0(i,j) - htx(i,j,kl)
 
          if ( w1(i,j) .gt. 0 ) then
 
@@ -488,7 +488,7 @@
 !     Calculate PN
       if (pnpn.ne.0) then
           call vslog(w2,p0,l_ninj)
-          call pnm2(w1,tt1(l_minx,l_miny,nk+2),topo,w2,wlao, &
+          call pnm2(w1,tt1(l_minx,l_miny,nk+2),fis0,w2,wlao, &
                ttx,htx,Out3_nundr,l_minx,l_maxx,l_miny,l_maxy,1)
           if (filt(pnpn).gt.0) &
             call filter(w1,filt(pnpn),coef(pnpn),'G', .false., &

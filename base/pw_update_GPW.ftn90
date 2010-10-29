@@ -52,7 +52,7 @@
       gmmstat = gmm_get(gmmk_wt1_s,   wt1  , meta3d)
       gmmstat = gmm_get(gmmk_st1_s,   st1  , meta2d)
       gmmstat = gmm_get(gmmk_fiptx_s, fiptx, meta3d)
-      gmmstat = gmm_get(gmmk_topo_s,  topo , meta2d)
+      gmmstat = gmm_get(gmmk_fis0_s,  fis0 , meta2d)
       if (.not. Schm_hydro_L ) then
          gmmstat = gmm_get(gmmk_qt1_s, qt1, meta3d)
       endif
@@ -81,7 +81,7 @@
             wtmp2(i,1)           =     pw_pt_plus(i,j,1)
             xtmp (i,l_nk+2)      = st1(i,j)+Cstv_Zsrf_8
             pw_gzplus(i,j,1)     = fiptx(i,j,0)+Ver_fistr_8%m(0)
-            pw_gzplus(i,j,l_nk+2)= topo(i,j)
+            pw_gzplus(i,j,l_nk+2)= fis0(i,j)
          enddo
          do k= 2, l_nk+1
          do i= 1, l_ni
@@ -104,7 +104,7 @@
          do i= 1, l_ni
             r0 = wtmp(i,k)*xtmp(i,k)
             pw_gzplus(i,j,k) =  &
-            r0*pw_gzplus(i,j,k) + (1.D0-r0)*pw_gzplus(i,j,k+1) - topo(i,j)
+            r0*pw_gzplus(i,j,k) + (1.D0-r0)*pw_gzplus(i,j,k+1)-fis0(i,j)
          end do
          end do
 !

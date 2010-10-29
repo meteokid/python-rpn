@@ -85,8 +85,8 @@
       endif
 
 !     - - - - - - - - - - - - - - -
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(fis0)'
       if (.not. Schm_hydro_L) then
          gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
          if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(qt0)'
@@ -107,7 +107,7 @@
 !
       call diag_var( bspqtx, mutx, st0, qt0, 1,l_ni,1,l_nj,Lam_gbpil_t+1,l_nk)
 !
-      call diag_fip( fiptx, st0, tt0, qt0, topo, LDIST_DIM, l_nk)
+      call diag_fip( fiptx, st0, tt0, qt0, fis0, LDIST_DIM, l_nk)
 !
       call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
                     ut0  , vt0  , tt0  , st0  , qt0  , zdt0 , fiptx, &

@@ -141,10 +141,10 @@
                if (Schm_pheat_L) then
                   gmmstat = gmm_get(gmmk_st1_s  ,st1  ,meta2d)
                   gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-                  gmmstat = gmm_get(gmmk_topo_s ,topo ,meta2d)
+                  gmmstat = gmm_get(gmmk_fis0_s ,fis0 ,meta2d)
                   if(.not.Schm_hydro_L)&
                        gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
-                  call diag_fip (fiptx,st1,tt1,qt1,topo,LDIST_DIM,l_nk)
+                  call diag_fip (fiptx,st1,tt1,qt1,fis0,LDIST_DIM,l_nk)
                endif
             endif
 

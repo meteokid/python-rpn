@@ -87,8 +87,8 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
       gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(fiptx)'
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(topo)'     
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'ta2t1tx ERROR at gmm_get(fis0)'     
 !
       do k=1,l_nk+1
       do j= 1, l_nj
@@ -109,7 +109,7 @@
       enddo
       enddo
 !
-      call diag_fip(fiptx, st1, tt1, topo, 1,l_ni,1,l_nj,l_nk)
+      call diag_fip(fiptx, st1, tt1, fis0, 1,l_ni,1,l_nj,l_nk)
 !
 !*******************************************************************
 !     Non-hydrostatic model fields

@@ -98,8 +98,8 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'indata ERROR at gmm_get(st1)'
       gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'indata ERROR at gmm_get(fiptx)'
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'indata ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'indata ERROR at gmm_get(fis0)'
 !
       if (.not. Schm_hydro_L) then
          gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
@@ -108,13 +108,13 @@
          nullify (qt1)
       endif
       if ( Vtopo_L) then
-         gmmstat = gmm_get(gmmk_dtopo_s,dtopo,meta2d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dtopo)'
+         gmmstat = gmm_get(gmmk_dfis_s,dfis,meta2d)
+         if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dfis)'
       else
-         nullify (dtopo)
+         nullify (dfis)
       endif
 !
-      if ( v4d_indata2 (ut1,vt1,tt1,zdt1,st1,topo,fiptx,wt1,qt1, &
+      if ( v4d_indata2 (ut1,vt1,tt1,zdt1,st1,fis0,fiptx,wt1,qt1, &
                            l_minx,l_maxx,l_miny,l_maxy) ) goto 9999
 !
       Path_ind_S=trim(Path_input_S)//'/INIT_3D'
@@ -134,7 +134,7 @@
          if (Acid_test_L.and..not.Acid_pilot_L) then
             call acid_3df_dynp (G_ni,G_nj,unf)
          else
-            call casc_3df_dynp2 (ut1,vt1,wt1,tt1,zdt1,st1,qt1,topo,dtopo, &
+            call casc_3df_dynp2 (ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,dfis, &
                  l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,unf,Lam_runstrt_S)
          endif
       else
@@ -142,11 +142,11 @@
          err = newdate ( dat, bmf_time1, bmf_time2, -3 )
 !
          if ( Schm_theoc_L ) then
-            call theo_3D (ut1,vt1,wt1,tt1,zdt1,st1,topo, &
-                          qt1,dtopo, 'TR/',':P') ! canonical cases - generate initial data
+            call theo_3D (ut1,vt1,wt1,tt1,zdt1,st1,fis0, &
+                          qt1,dfis, 'TR/',':P') ! canonical cases - generate initial data
          else
-            call readdyn2 (ut1,vt1,wt1,tt1,zdt1,st1,fiptx,topo, &
-                           qt1,dtopo, 'TR/',':P', &
+            call readdyn2 (ut1,vt1,wt1,tt1,zdt1,st1,fiptx,fis0, &
+                           qt1,dfis, 'TR/',':P', &
                            l_minx,l_maxx,l_miny,l_maxy)
          endif	  
       endif
@@ -158,12 +158,12 @@
       if (Schm_autobar_L.and.Williamson_case.ne.0)  &
                              call wil_prepare_case 
 !
-      if (.not. v4d_predat ( ut1, vt1, tt1, zdt1, st1, topo, fiptx, wt1, qt1, &
+      if (.not. v4d_predat ( ut1, vt1, tt1, zdt1, st1, fis0, fiptx, wt1, qt1, &
                                        l_minx,l_maxx,l_miny,l_maxy) )  &
-           call    predat3 ( ut1, vt1, tt1, zdt1, st1, qt1, topo, fiptx,    &
+           call    predat3 ( ut1, vt1, tt1, zdt1, st1, qt1, fis0, fiptx,    &
                                        l_minx,l_maxx,l_miny,l_maxy)
 !
-      call glbstat2(topo,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy,1,1, 1,G_ni,1,G_nj,1,1)
+      call glbstat2(fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy,1,1, 1,G_ni,1,G_nj,1,1)
 !
  9999 if (G_lam) then
          call nest_init ()

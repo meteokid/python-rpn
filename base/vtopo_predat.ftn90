@@ -82,10 +82,10 @@
       len_x = xa - xi + 1; len_y = ya - yi + 1
 !
 ! Retrieve current orography from GMM
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(topo)'
-      gmmstat = gmm_get(gmmk_topo1_s,topo1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(topo1)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(fis0)'
+      gmmstat = gmm_get(gmmk_fis1_s,fis1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'vtopo_predat ERROR at gmm_get(fis1)'
 !
 ! Compute analysis surface pressure for current orography
       allocate(psrc_3d(xi:xa,yi:ya,nk+1),ps(xi:xa,yi:ya), &
@@ -96,12 +96,12 @@
            Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.false.)
          if (err.lt.0) call handle_error(-1,'vtopo_predat','vtopo_predat:get_px')
 !      call glbstat (psrc_3d,'p3d',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
-      call adj_ss2topo(ps,topo(xi:xa,yi:ya),psrc_3d,topo1(xi:xa,yi:ya), &
+      call adj_ss2topo(ps,fis0(xi:xa,yi:ya),psrc_3d,fis1(xi:xa,yi:ya), &
            nest_t(xi:xa,yi:ya,:),len_x*len_y,nk+1)
  
 !     Les topos valident avec la 3.3.0, le ps valident meteorologiquement.
-!      call glbstat (topo(xi:xa,yi:ya),'fisn',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
-!      call glbstat (topo1(xi:xa,yi:ya),'fiso',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
+!      call glbstat (fis0(xi:xa,yi:ya),'fisn',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
+!      call glbstat (fis1(xi:xa,yi:ya),'fiso',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
 !      call glbstat (ps,'psn',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
 !      call glbstat (psrc_3d(xi:xa,yi:ya,nk+1),'pso',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
       

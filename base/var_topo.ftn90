@@ -53,12 +53,12 @@
       parameter (two = 2.0d0)
 !     __________________________________________________________________
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(topo)'
-      gmmstat = gmm_get(gmmk_topo1_s,topo1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(topo1)'
-      gmmstat = gmm_get(gmmk_dtopo_s,dtopo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dtopo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(fis0)'
+      gmmstat = gmm_get(gmmk_fis1_s,fis1,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(fis1)'
+      gmmstat = gmm_get(gmmk_dfis_s,dfis,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dfis)'
 !
       if(Vtopo_ndt.eq.0)then
          call handle_error(-1,'var_topo','var_topo : Vtopo_ndt must be > 0')
@@ -72,8 +72,8 @@
 
       do j= 1, l_nj 
       do i= 1, l_ni
-         topo1 (i,j)  = topo(i,j)
-         topo (i,j)   = topo(i,j)  + atime * dtopo(i,j)
+         fis1 (i,j)  = fis0(i,j)
+         fis0 (i,j)  = fis0(i,j)  + atime * dfis(i,j)
       end do
       end do
 !

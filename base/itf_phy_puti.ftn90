@@ -178,13 +178,13 @@ Enddo
       If(vd%phyvar=='DLAT')localf=Geomn_latrx
       If(vd%phyvar=='DLON')localf=Geomn_lonrx
       If(vd%phyvar=='MF') Then
-         gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
+         gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
          if (GMM_IS_ERROR(gmmstat)) then
-            write(*,*)'itf_phy_puti_isba: ERROR at gmm_get(topo)'
+            write(*,*)'itf_phy_puti_isba: ERROR at gmm_get(fis0)'
             ier = -1
          endif
          Call handle_error_l(ier==0,'itf_phy_puti','put_info 1')
-         localf=topo(1:l_ni,1:nj)/Dcst_grav_8
+         localf=fis0(1:l_ni,1:nj)/Dcst_grav_8
       Endif
       If(vd%phyvar=='DXDY') Then
          Do j=1,l_nj

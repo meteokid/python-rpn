@@ -98,8 +98,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(rhsw)'
       endif
 
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(fis0)'
       gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'bac ERROR at gmm_get(ut0)'
       gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
@@ -116,17 +116,13 @@
          endif
       endif
 !
-      if (Acid_test_L)call acid_stat_bac(fiptx,nl_t,topo,st0,ut0,wt0,1)
-!     
-      call  bacp_2 (   Itr  , Itnlh , fiptx ,  topo , &
+      call  bacp_2 (   Itr  , Itnlh , fiptx ,  fis0 , &
                        ut0  ,   vt0 ,   wt0 ,   tt0 , &
                        st0  ,  zdt0 ,   qt0 , fiptx , nest_q, &
                        rhsu ,  rhsv ,  rhst ,  rhsw ,  rhsf , rhsb , &
                        nl_u ,  nl_v ,  nl_t ,  nl_w ,  nl_f , nl_b , &
                        LDIST_DIM, l_nk )
 !
-      if (Acid_test_L)call acid_stat_bac(fiptx,nl_t,topo,st0,ut0,wt0,2)
-!     
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
 !     __________________________________________________________________
 !
