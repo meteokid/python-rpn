@@ -12,4 +12,28 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+!/**
+subroutine adx_get_ij0n(i0,in,j0,jn)
+   implicit none
+   !@objective Return advection computational i,j domain
+   !@arguments
+   integer :: i0,j0,in,jn     !O, scope of advection operations
+   !@author  Stephane Chamberland, 2009-12
+   !@revisions
+#include "adx_dims.cdk"
+   !**/
+   !---------------------------------------------------------------------
+   i0 = 1
+   in = adx_mlni
+   j0 = 1
+   jn = adx_mlnj
+   if (adx_lam_L) then
+      if (adx_is_west)  i0 = adx_pil_w
+      if (adx_is_east)  in = adx_mlniu - adx_pil_e + 2
+      if (adx_is_south) j0 = adx_pil_s
+      if (adx_is_north) jn = adx_mlnjv - adx_pil_n + 2
+   endif
+!!$   print '(A,6I)','get_ij0n',adx_mlni,adx_mlnj,i0,in,j0,jn
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_get_ij0n

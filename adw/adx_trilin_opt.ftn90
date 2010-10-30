@@ -12,4 +12,102 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
+#include "stop_mpi.h"
 
+!/**
+subroutine adx_trilin_opt4(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
+                           F_dth,F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
+                           F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
+   implicit none
+!
+   !@objective switcher to call adx_setint/adx_trilin or adx_trilin_turbo
+!
+   !@arguments
+   logical :: F_has_u2_L               !I, .T. if F_u2 needs to be treated
+   real    :: F_dth                    !I, multiplicative constant (1. or timestep)
+   integer :: F_nk, F_nk_super         !I, number of vertical levels
+   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
+   integer :: F_ni, F_nj               !I, dims of position fields
+   integer :: F_i0,F_in,F_j0,F_jn,F_k0 !I, operator scope
+   real,dimension(F_ni,F_nj,F_nk) :: F_xth,F_yth,F_zth !I, x,y,z positions
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
+        F_u1, F_u2  !I, field to interpol
+   real,dimension(F_ni,F_nj,F_nk) :: F_xo,F_yo !O, F_dt * result of interp
+!**/
+
+#include "adx_nml.cdk"
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+
+   integer :: num,iimax
+   logical,parameter :: DO_HORIZ_L = .true.
+   logical,parameter :: DO_VERTI_L = .true.
+   integer, dimension(F_ni,F_nj,F_nk) :: n1,loci,locj,lock
+   real,    dimension(F_ni,F_nj,F_nk) :: capx1,capy1,capz1
+   real*8 p_z00_8
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_trilin_opt')
+   num = F_ni*F_nj*F_nk
+
+   if (.not.adw_nosetint_L) then
+
+      call adx_setint_lin_hor_ver3(n1, capx1,capy1,capz1, F_xth,F_yth,F_zth,&
+                                   F_i0,F_in,F_j0,F_jn,F_k0,F_nk, num)
+
+      call adx_trilin4(F_xo,F_u1,F_dth,n1,capx1,capy1,capz1, &
+                       F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+
+      if (F_has_u2_L) then
+         call adx_trilin4(F_yo,F_u2,F_dth,n1,capx1,capy1,capz1, &
+                          F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+      endif
+
+   else
+
+      p_z00_8 = adx_verZ_8%t(1)
+      iimax   = adx_iimax+1
+      call tmg_start0(51, 'ADPOS_IJK' )
+      call adx_trilin_ijk1 (                                              &
+          F_xth, F_yth, F_zth, capz1, loci, locj, lock,                   &
+          adx_lcx, adx_lcy, adx_lcz%s, adx_bsx_8, adx_bsy_8, adx_bsz_8%s, &
+          adx_diz_8, p_z00_8, iimax,                                      &
+          num, F_i0, F_in, F_j0, F_jn, F_k0, F_nk, adx_lnkm)
+      call tmg_stop0(51)
+
+      call tmg_start0(52, 'ADPOS_3LI' )
+      call adx_trilin_turbo3 (F_xo, F_u1, F_dth,      &
+          F_xth, F_yth, capz1, loci, locj, lock,      &
+          adx_bsx_8, adx_bsy_8, adx_xbc_8, adx_ybc_8, &
+          num, F_i0, F_in, F_j0, F_jn, F_k0, F_nk)
+
+      if (F_has_u2_L) then
+      call adx_trilin_turbo3 (F_yo, F_u2, F_dth,      &
+          F_xth, F_yth, capz1, loci, locj, lock,      &
+          adx_bsx_8, adx_bsy_8, adx_xbc_8, adx_ybc_8, &
+          num, F_i0, F_in, F_j0, F_jn, F_k0, F_nk)
+      endif
+      call tmg_stop0(52)
+
+   endif
+
+   call msg(MSG_DEBUG,'adx_trilin_opt [end]')
+
+   !---------------------------------------------------------------------
+
+   return
+end subroutine adx_trilin_opt4
+
+!==========================================================================
+!=== stubs=================================================================
+!==========================================================================
+
+subroutine adx_trilin_opt3()
+   call stop_mpi(STOP_ERROR,'adx_trilin_opt3','called a stub')
+   return
+end subroutine
+
+!/**

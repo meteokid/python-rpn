@@ -12,4 +12,29 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+!/**
+subroutine adw_get_ij0n(i0,j0,in,jn)
+   implicit none
+   !@objective
+   !@arguments
+   integer :: i0,j0,in,jn
+   !@author  Stephane Chamberland, 2009-12
+   !@revisions
+   !  2009-12,  Stephane Chamberland: original code
+#include "glb_ld.cdk"
+   !**/
+   !---------------------------------------------------------------------
+   i0=1
+   in=l_ni
+   j0=1
+   jn=l_nj
+   if (G_lam) then
+      if (l_west)  i0=pil_w
+      if (l_east)  in=l_niu - pil_e + 2
+      if (l_south) j0=pil_s
+      if (l_north) jn=l_njv - pil_n + 2
+   endif
+!!$   print '(A,6I)','get_ij0n',l_ni,l_nj,i0,in,j0,jn
+   !---------------------------------------------------------------------
+   return
+end subroutine adw_get_ij0n

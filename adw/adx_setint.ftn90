@@ -12,4 +12,96 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
+#include "stop_mpi.h"
 
+
+!/**
+subroutine adx_setint_lin_hor_ver3(F_n, &
+     F_capx, F_capy, F_capz, &
+     F_x,    F_y,   F_z,&
+     i0,in,j0,jn,k0,F_nk, F_num)
+   implicit none
+   !@objective sets localization and interpolation parameters
+   !@arguments
+   integer :: F_num           !I, nb points of computations
+   integer :: F_nk            !I, nb levels
+   integer :: i0,in,j0,jn,k0  !I, scope ofthe operator
+   real,dimension(F_num) :: &
+        F_x, F_y, F_z, &       !I, upstream position coor
+        F_capz, F_capy, F_capx !O, x precomputed displacements and interp terms
+   integer,dimension(F_num) :: &
+        F_n                    !O, pos in the 3D volume of interpolation boxes
+   !@author  alain patoine
+   !@revisions
+   ! v3_00 - Desgagne & Lee    - Lam configuration
+   ! v3_03 - Lee V. (from IBM) - added min,max on index calcs
+   ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+   ! v3_20 - Tanguay M.        - Correction for haloy.gt.2
+   ! v4_10 - Plante A.         - Use super winds for thermo
+   ! V4_14 - Plante A.         - Scope on vertical and cleanup
+   !@description
+   !Notes on computations of positions in the 3D volume of interpolation 
+   !                   boxes for adx_trilin or adx_tricub
+   !
+   !  The same algorithm applies to finding the positions in the interpolation
+   !  box for each X,Y,Z upstream position.
+   !  For example, say a given F_x(i), we try to find "ii" on advection
+   !  axis X (adx_xg_8) where F_x(i) is closest to the gridpoint adx_xg_8(ii) 
+   !  and adx_xg_8(ii) must be less than or equal to F_x(i).
+   !  The 3-D positions (ii,jj,kk) are stored in F_n, a folded 3-D array.
+!**/
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+   !---------------------------------------------------------------------
+   call adx_setint_lin_noptr1(F_n, &
+        F_capx, F_capy, F_capz, &
+        F_x,    F_y,   F_z,&
+        adx_lcx, adx_bsx_8, adx_dix_8, &
+        adx_lcy, adx_bsy_8, adx_diy_8,&
+        adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
+        i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver3
+
+!========================================================================
+!== stubs ===============================================================
+!========================================================================
+
+subroutine adx_setint()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint
+subroutine adx_setint2()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint2','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint2
+subroutine adx_setint_lin_hor_ver()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver
+subroutine adx_setint_lin_hor_ver1()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver1','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver1
+subroutine adx_setint_lin_hor_ver2()
+   implicit none
+   !---------------------------------------------------------------------
+   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver2','called a stub')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_setint_lin_hor_ver2

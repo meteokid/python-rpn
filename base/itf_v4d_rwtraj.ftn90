@@ -12,4 +12,27 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+#include "msg.h"
+!/**
+subroutine itf_v4d_rwtraj(numtr,u,v,w,x,y,a,b,c,d)
+   implicit none
+   !@objective Interface to v4d_rwtraj
+   !@arguments
+      integer :: numtr
+      real    :: u(*),v(*),w(*),x(*),y(*)
+      real    :: a(*),b(*),c(*),d(*)
+!**/
+   include "v4dg.inc"
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'itf_v4d_rwtraj')
+   if (V4dg_conf.ne.0 .and. V4dg_oktr_L) then
+      if (numtr == 5) then
+         call v4d_rwtraj(numtr,u,v,w,x,y,a)
+      else
+         call v4d_rwtraj(numtr)
+      endif
+   endif
+   call msg(MSG_DEBUG,'itf_v4d_rwtraj [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine itf_v4d_rwtraj

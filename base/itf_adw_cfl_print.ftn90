@@ -12,4 +12,28 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
 
+!/**
+subroutine itf_adw_cfl_print()
+   implicit none
+   !@objective Print CFL
+   !@arguments
+   !@author  Stephane Chamberland, Apr 2010
+!**/
+   logical :: use_adx_L
+   logical, external :: adw_get_useadx
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'itf_adw_cfl_print')
+
+   use_adx_L = adw_get_useadx()
+   if (use_adx_L) then
+      call adx_cfl_print()
+   else
+      call adw_cfl_print()
+   endif
+
+   call msg(MSG_DEBUG,'itf_adw_cfl_print [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine itf_adw_cfl_print

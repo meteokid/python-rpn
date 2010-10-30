@@ -12,4 +12,65 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+#include "model_macros_f.h"
 
+!/**
+subroutine itf_adx_main (F_nb_iter)
+   implicit none
+!
+   !@objective Initialisation before Performing advection
+!
+   !@arguments
+   integer :: F_nb_iter       !I, total number of iterations for trajectories
+!
+   !@author  Stephane Chamberland, Jan 2010
+   !@revisions
+!**/
+
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "orh.cdk"
+#include "lctl.cdk"
+#include "step.cdk"
+
+   integer, parameter :: NB_FIELDS_MAX = 999
+
+   character(len=8), dimension(2,NB_FIELDS_MAX) :: fields_lbl
+   logical, dimension(2,NB_FIELDS_MAX) :: fields_type_L
+   character(len=8), dimension(3,2,2,2) :: pos_fields_lbl
+
+   logical :: doAdwStat_L
+   integer :: istat, nfields, nk_super
+
+   real, dimension(:,:,:), allocatable, save :: su,sv,sw
+   logical, save :: is_allocated_L = .false.
+
+   !---------------------------------------------------------------------
+
+   nk_super = 2*l_nk + 1
+
+   doAdwStat_L = .false.
+   if (Step_gstat.gt.0) doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
+   doAdwStat_L = doAdwStat_L .and. &
+                 ((Orh_icn == Schm_itcn) .or. (.not.Orh_crank_L))
+
+   if (.not.is_allocated_L) then
+      is_allocated_L = .true.
+      allocate( su(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+                sv(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+                sw(l_minx:l_maxx,l_miny:l_maxy,nk_super), &
+                stat=istat)
+      call handle_error_l(istat==0,'itf_adx_main','Problem allocating mem')
+   endif
+
+   call itf_adx_get_winds2 (su,sv,sw,l_minx,l_maxx,l_miny,l_maxy,nk_super)
+
+   call itf_adx_get_field_list (fields_lbl,fields_type_L,nfields,NB_FIELDS_MAX)
+
+   call adx_main7 (su,sv,sw, fields_lbl, fields_type_L, nfields, &
+                   l_minx,l_maxx,l_miny,l_maxy, nk_super, F_nb_iter, doAdwStat_L)
+
+   !---------------------------------------------------------------------
+
+   return
+end subroutine itf_adx_main
