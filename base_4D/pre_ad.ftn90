@@ -119,8 +119,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'pre_ad ERROR at gmm_get(nest_t)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'pre_ad ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_ad ERROR at gmm_get(fis0)'
 !
 !     TRAJECTORY
 !     ----------
@@ -136,7 +136,7 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'pre_ad ERROR at gmm_get(zct1_m)'
 !
       call prep_2_ad ( rhsu ,rhsv ,ruw1  ,ruw2 ,rvw1 ,rvw2 , &
-                       xct1 ,yct1 ,zct1  ,topo ,rhsc ,rhst , &
+                       xct1 ,yct1 ,zct1  ,fis0 ,rhsc ,rhst , &
                        rhsw ,rhsf ,orhsu ,orhsv,rhsb ,nest_t, &
 !
                        ruw2_m,rvw2_m, &

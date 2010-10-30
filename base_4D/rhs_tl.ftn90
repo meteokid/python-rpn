@@ -116,8 +116,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(qt1)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tl ERROR at gmm_get(fis0)'
 !
 !     TRAJECTORY
 !     ----------
@@ -179,7 +179,7 @@
                         1,l_ni,1,l_nj,1,l_nk)       
 !
       call diag_fip_tl( fiptx  , st1  , tt1  , qt1  , &
-                        fiptx_m, st1_m, tt1_m, qt1_m, topo, LDIST_DIM, l_nk)
+                        fiptx_m, st1_m, tt1_m, qt1_m, fis0, LDIST_DIM, l_nk)
 !
       call rhsp_2_tl  ( orhsu,   orhsv,  orhsc,  orhst,  orhsw,   orhsf, &
                         ruw1,    rvw1,   rhsu,   rhsv,   nest_u,  nest_v, &

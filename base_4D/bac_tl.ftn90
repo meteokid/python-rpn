@@ -100,8 +100,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'bac_tl ERROR at gmm_get(rhsw)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'bac_tl ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'bac_tl ERROR at gmm_get(fis0)'
       gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
       if (GMM_IS_ERROR(gmmstat)) print *,'bac_tl ERROR at gmm_get(ut0)'
       gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
@@ -167,7 +167,7 @@
       w_fiptx_m = fiptx_m
 !
       call  bacp_2_tl ( &
-                       Itr , Itnlh, w_fiptx, topo , &
+                       Itr , Itnlh, w_fiptx, fis0 , &
                        ut0 , vt0  , wt0    , tt0  , &
                        st0 , zdt0 , qt0    , fiptx, nest_q, &
                        rhsu, rhsv , rhst   , rhsw , rhsf  , rhsb, &

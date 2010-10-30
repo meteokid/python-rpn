@@ -115,8 +115,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(qt1_m)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-!     if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+!     if (GMM_IS_ERROR(gmmstat)) print *,'rhs_tr ERROR at gmm_get(fis0)'
 !
 !     Perform the computation in the first 
 !     cycle of Crank-Nicholson procedure only
@@ -125,7 +125,7 @@
       call diag_var (bspqtx_m, mutx_m, st1_m, qt1_m, & 
                      1,l_ni,1,l_nj,1,l_nk)
 !
-      call diag_fip(fiptx_m, st1_m, tt1_m, qt1_m, topo, LDIST_DIM, l_nk)
+      call diag_fip(fiptx_m, st1_m, tt1_m, qt1_m, fis0, LDIST_DIM, l_nk)
 !
       if ( Orh_icn .eq. Schm_itcn ) then
 !

@@ -99,11 +99,11 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(nest_t_m)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tr ERROR at gmm_get(fis0)'
 !
       call prep_2 ( rhsu_m ,rhsv_m ,ruw1_m  ,ruw2_m ,rvw1_m ,rvw2_m , &
-                    xct1_m ,yct1_m ,zct1_m  ,topo   ,rhsc_m ,rhst_m , &
+                    xct1_m ,yct1_m ,zct1_m  ,fis0   ,rhsc_m ,rhst_m , &
                     rhsw_m ,rhsf_m ,orhsu_m ,orhsv_m,rhsb_m ,nest_t_m, &
                     LDIST_DIM, l_ni, l_nj, l_nk )
 !

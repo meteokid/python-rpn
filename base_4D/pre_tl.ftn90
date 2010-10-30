@@ -103,8 +103,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'pre_tl ERROR at gmm_get(nest_t)'
       endif
 !
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tl ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'pre_tl ERROR at gmm_get(fis0)'
 !
 !     TRAJECTORY
 !     ----------
@@ -150,7 +150,7 @@
       endif
 !
       call prep_2_tl ( rhsu ,rhsv ,ruw1  ,ruw2 ,rvw1 ,rvw2 , &
-                       xct1 ,yct1 ,zct1  ,topo ,rhsc ,rhst , &
+                       xct1 ,yct1 ,zct1  ,fis0 ,rhsc ,rhst , &
                        rhsw ,rhsf ,orhsu ,orhsv,rhsb ,nest_t, &
 !
                        rhsu_m ,rhsv_m ,ruw1_m ,ruw2_m ,rvw1_m ,rvw2_m  , &

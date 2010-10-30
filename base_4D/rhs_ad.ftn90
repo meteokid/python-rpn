@@ -112,8 +112,8 @@
          if (GMM_IS_ERROR(gmmstat)) print *,'rhs_ad ERROR at gmm_get(qt1)'
       endif
 
-      gmmstat = gmm_get(gmmk_topo_s,topo,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_ad ERROR at gmm_get(topo)'
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'rhs_ad ERROR at gmm_get(fis0)'
 !
 !     TRAJECTORY
 !     ----------
