@@ -18,7 +18,7 @@ PHY         = rpnphy
 #INCLUDE_PATH = ./ $(MODLIBPATH)/include $(PHYLIBPATH)/include
 #INCLUDE_MOD  = $(MODLIBPATH)/lib/$(EC_ARCH)/mod $(PHYLIBPATH)/lib/$(EC_ARCH)/mod
 
-RCOMPIL = r.compile $(MPI) $(OMP) -includes $(INCLUDE_PATH) $(INCLUDE_MOD)
+RCOMPIL = r.compile $(MPI) $(OMP) -includes ./ $(INCLUDE_PATH) $(INCLUDE_MOD)
 
 VGRID         = descrip
 
