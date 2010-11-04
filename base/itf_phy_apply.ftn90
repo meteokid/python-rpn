@@ -137,14 +137,13 @@
 
             if (volnm(n)(7:)  .eq. 'TT'   ) then
                gmmstat = gmm_get('PW_TT:P',pw_tplus,meta3d)
-               gmmstat = gmm_get(gmmk_tt1_s,tt1     ,meta3d)
 !$omp parallel do
                do k= 1, p_nk
                   pw_tplus (:,:,k) = pw_tplus(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
                end do
 !$omp end parallel do
-               call tt2virt (tt1, .true., 'P')
                if (Schm_pheat_L) then
+                  gmmstat = gmm_get(gmmk_tt1_s  ,tt1  ,meta3d)
                   gmmstat = gmm_get(gmmk_st1_s  ,st1  ,meta2d)
                   gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
                   gmmstat = gmm_get(gmmk_fis0_s ,fis0 ,meta2d)
@@ -157,7 +156,10 @@
          endif
 
       end do
-!
+
+      gmmstat = gmm_get(gmmk_tt1_s, tt1, meta3d)
+      call tt2virt (tt1, .true., 'P')
+
       if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then
          gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
          gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
