@@ -23,22 +23,26 @@
 #include <clib_interface.cdk>
 
       character*16 ndomains_S
-      integer ierr, pe_tot, pe_me, npe_per_domain
+      integer ierr, pe_tot, pe_me, npe_per_domain, indx1, dom_deb, dom_fin
 !
 !-------------------------------------------------------------------
 !
       call MPI_init (ierr)
 
       ierr = clib_getenv (F_ENVVAR_S,ndomains_S)
-      read(ndomains_S,*) ndomains
+      indx1= index (ndomains_S,':')
+      read (ndomains_S(1:indx1-1),*) dom_deb
+      read (ndomains_S(indx1+1:),*) dom_fin
+      ndomains = dom_fin - dom_deb + 1
 
       call MPI_COMM_SIZE(MPI_COMM_WORLD,pe_tot,ierr)
       call MPI_COMM_RANK(MPI_COMM_WORLD,pe_me ,ierr)
 
       npe_per_domain = pe_tot / ndomains
-      mydomain       = pe_me  / npe_per_domain
+      mydomain       = pe_me  / npe_per_domain + dom_deb
 !
 !-------------------------------------------------------------------
 !
       return
       end
+

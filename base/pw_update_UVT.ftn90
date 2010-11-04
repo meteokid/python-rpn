@@ -49,6 +49,8 @@
       real, pointer, dimension (:,:,:) :: vv     => null()
 !     ________________________________________________________________
 !
+      call tmg_start0 ( 20, 'PW_UVT   ' )
+!
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
       con(:)    = 1.0/cos(geomg_y_8(:)) * Dcst_rayt_8
 !
@@ -66,26 +68,35 @@
          gmmstat = gmm_get (gmmk_vt0_s, vv, meta3d)
       endif
 !
+!$omp parallel
+!$omp do
       do k=1,l_nk+2
          km1=max(k-1,1)
          pw_uu (1:l_ni,1:l_nj,k) = uu (1:l_ni,1:l_nj,km1)
          pw_vv (1:l_ni,1:l_nj,k) = vv (1:l_ni,1:l_nj,km1)
       end do
+!$omp enddo
+!$omp end parallel
 
       call itf_phy_uvgridscal (pw_uu , pw_vv , LDIST_DIM, l_nk+2, .true.)
 
+!$omp parallel
+!$omp do
       do k= 1, l_nk+2
       do j= 1, l_nj
          pw_uu (1:l_ni,j,k) = pw_uu (1:l_ni,j,k) * con(j)
          pw_vv (1:l_ni,j,k) = pw_vv (1:l_ni,j,k) * con(j)
       enddo
       enddo
+!$omp enddo
+!$omp end parallel
 !
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
       call tt2virt (pw_tt, .false., pom)
 !
+      call tmg_stop0  (20)
 !     ________________________________________________________________
 !
       return
