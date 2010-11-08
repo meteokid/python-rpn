@@ -26,6 +26,7 @@
 !
 !revision
 ! v3_31 - Desgagne M.       - initial MPI version
+! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
 #include "lun.cdk"
@@ -37,6 +38,8 @@
 #include "rstr.cdk"
 #include "modconst.cdk"
 #include "out.cdk"
+#include "clim.cdk"
+#include "cfld.cdk"
 !
 !
 !modules
@@ -86,8 +89,22 @@
 !
       call wawrit (unf,ibuf        , 1,  4)
       call wawrit (unf,rbuf        , 5,  6)
-      call wawrit (unf,Phy_busper3D,11,dim)
-      adr = 11 + dim
+!
+      call wawrit( unf,Clim_inincr_L, 11, 1 )
+      if (Clim_inincr_L) then
+         call wawrit( unf,Cfld_nbr  , 12, 1 )
+         if (Cfld_nbr > 0) then
+            call wawrit( unf,Cfld_date, 13,           Cfld_nbr )
+            call wawrit( unf,Cfld_levs, 13+  Cfld_nbr,Cfld_nbr )
+            call wawrit( unf,Cfld_list, 13+2*Cfld_nbr,Cfld_nbr )
+         endif
+         adr = 13+3*Cfld_nbr
+      else
+         adr = 12
+      endif
+!
+      call wawrit (unf,Phy_busper3D,adr,dim)
+      adr = adr + dim
       if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L) then
          call wawrit (unf,.true.,adr,1)
          adr = adr + 1

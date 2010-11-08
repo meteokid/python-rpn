@@ -105,6 +105,7 @@
 !
       Out_datyp      = 134
       Out_rewrit_L   = .false.
+      if (Clim_climat_L) Out_rewrit_L=.true.
 !
       if(Out3_nbitg .lt. 0) then
          if (lun_out.gt.0) write (Lun_out, 9154)

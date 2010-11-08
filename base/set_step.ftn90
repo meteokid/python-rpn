@@ -32,6 +32,7 @@
 ! v2_32 - Lee V.            - stepset is now an ID defined by the user, not the
 ! v2_32                       actual "set" number forced to be in sequence
 ! v3_02 - Lee V.            - eliminate steps repeated in one step set
+! v3_32 - Dugas B.          - add support for units of days and months
 !
 !
 !object
@@ -69,16 +70,23 @@
 !       steps=3,hour,<0.,48.,3.>;
 !       steps=4,init,step,<0.,6.,1.>;
 !       steps=5,step,[1,2,3,9,11];
+!       steps=6,day,<0.,31.,1.>;
+!       steps=7,month,<0.,1.,1.>;
 !
 !      Should label the stepset# sequentially: 1,2,3,....
 !      'init' - means this command only applies to output during the
 !               initialization period
+!      'month'- output in months
+!      'day'  - output in days
 !      'hour' - output in hours
 !      'step' - output in timesteps in the model
 !      '-1' with "step" will give every timestep of the model
 !      [a,b,c] means a,b and c are requested
 !      <a,b,c> means a to b, incrementing every c are requested
 !
+! Concerning the 'month' option: all months end at 24h00 on the last
+! day of a month so that, depending on the starting date, the first
+! month could be shorter than expected.
 !
 !implicits
 #include "glb_ld.cdk"
@@ -92,12 +100,15 @@
 !*
 !
       integer i,j,k,ii,num,istep
-      logical hour_flag,step_flag,found_L
-      real frarg,hour,step
-      integer transtep,stepset,argc_out
+      logical month_flag,day_flag,hour_flag,step_flag,found_L
+      real frarg,month,day,hour,step
+      integer transtep,transtep2,stepset,argc_out
       transtep(frarg) = nint(3600.0 * frarg / Cstv_dt_8)
-
-      
+      transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
+!
+      integer  transtep3
+      external transtep3
+!
       argc_out=min(F_argc,6)
       if (Lun_out.gt.0) then
           write(Lun_out,*)
@@ -121,6 +132,8 @@
 
       j=Timestep_sets
       i=0
+      month_flag= .false.
+      day_flag  = .false.
       hour_flag = .false.
       step_flag = .false.
       Timestep_id(j)=stepset
@@ -129,12 +142,26 @@
          if (index(F_argv_S(ii),'[').gt.0) then
              stuff=F_argv_S(ii)
              read(stuff(2:4),*) num
+         else if (F_argv_S(ii).eq.'month' ) then
+             month_flag= .true.
+             day_flag  = .false.
+             hour_flag = .false.
+             step_flag = .false.
+         else if (F_argv_S(ii).eq.'day' ) then
+             month_flag= .false.
+             day_flag  = .true.
+             hour_flag = .false.
+             step_flag = .false.
          else if (F_argv_S(ii).eq.'hour') then
              hour_flag = .true.
              step_flag = .false.
+             day_flag  = .false.
+             month_flag= .false.
          else if (F_argv_S(ii).eq.'step') then
              step_flag = .true.
              hour_flag = .false.
+             day_flag  = .false.
+             month_flag= .false.
          else if (F_argv_S(ii).eq.'init') then
              Timestep_init_L(j)=.true.
          else if (step_flag) then
@@ -153,6 +180,14 @@
              i = i+1
              read(F_argv_S(ii),*)hour
              Timestep(i,j)=transtep(hour) 
+         else if (day_flag) then
+             i = i+1
+             read(F_argv_S(ii),*)day
+             Timestep(i,j)=transtep2(day) 
+         else if (month_flag) then
+             i = i+1
+             read(F_argv_S(ii),*)month
+             Timestep(i,j)=transtep3(month) 
          else
              if (Lun_out.gt.0) &
              write(Lun_out,*)'SET_STEP WARNING: Timestep type not recognizable'
@@ -197,4 +232,112 @@
       endif
       return
       end
+
+      integer function transtep3 (month)
+
+!author Bernard Dugas - RPN - Sep 2008
+!
+      implicit none
+      real     month
+!
+!revision
+! v3_32 - Dugas B.          - initial version
+!
+!arguments
+! month        I    - months since startup (timestep 0)
+!
+! Note that all months end at 24h00 on the last day of a month
+! so that, depending on the starting date, the first month could
+! be shorter than expected.
+!
+!implicits
+#include "cstv.cdk"
+#include "out3.cdk"
+#include "lun.cdk"
+
+!modules
+!*
+      real*8   hours
+      logical, save :: First_call_L = .true.
+      integer, save :: Dts_month1(14),Steps_month1
+      integer  Start_date(14),Current_month(14)
+      integer  ier, MOD2,MOD3, MOD
+
+      integer  newdate
+      external newdate,datmgp2
+
+!----------------------------------------------------------------
+      if(first_call_L) then
+
+         First_call_L   = .false.
+         Start_date(14) = Out3_date
+
+!        decode Out3_date
+         call datmgp2( Start_date )
+
+!        define the end of the first month
+         Dts_month1(2) = Start_date(2)+1  ! month (1-12)
+         Dts_month1(3) = 1                ! day   (1-31)
+         Dts_month1(4) = Start_date(4)    ! year
+         Dts_month1(5) = 0                ! zulu  (0-23)
+         Dts_month1(6) = 0                ! 100*seconds since last hour 
+         if(Dts_month1(2) == 13) then
+            Dts_month1(2) = 1
+            Dts_month1(4) = Dts_month1(4)+1
+         endif
+
+!        encode this information
+         MOD2 = (Dts_month1(4)*100+Dts_month1(2))*100+1
+         MOD3 = 0 ; MOD = +3
+         ier = newdate( Dts_month1(14), MOD2,MOD3, MOD )
+         if (ier /= 0) then
+            if (Lun_out > 0) write(Lun_out,*)'transtep3: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
+            stop ' in transtep3, called by set_step'
+         endif
+
+!        number of hours between that and the start
+         call difdatr( Dts_month1(14),Start_date(14),hours )
+         Steps_month1 = nint(3600.0 * hours / Cstv_dt_8)
+
+      endif
+
+      if(month == 0) then
+
+         transtep3 = 0
+
+      elseif(month == 1) then
+
+         transtep3 = Steps_month1 
+         
+      elseif(month > 1) then
+
+!        define the current month
+         Current_month(2) = Dts_month1(2)+nint( amod( month-1, 12. ) )
+         Current_month(3) = 1
+         Current_month(4) = Dts_month1(4)+          ( month-1)/12
+         Current_month(5) = 0
+         Current_month(6) = 0
+         if(Current_month(2) > 12) then
+            Current_month(2) = Current_month(2)-12
+            Current_month(4) = Current_month(4)+1
+         endif
+
+!        encode the current month information
+         MOD2 = (Current_month(4)*100+Current_month(2))*100+1
+         MOD3 = 0 ; MOD = +3
+         ier = newdate( Current_month(14), MOD2,MOD3, MOD )
+         if (ier /= 0) then
+            if (Lun_out > 0) write(Lun_out,*)'transtep3: error un newdate(+3), MOD2,MOD3=',MOD2,MOD3
+            stop ' in transtep3, called by set_step'
+         endif
+
+!        number of hours between that and the start
+         call difdatr( Current_month(14),Dts_month1(14),hours )
+         transtep3 = Steps_month1 + nint(3600.0 * hours / Cstv_dt_8)
+
+      endif
+
+      return
+      end
+
 

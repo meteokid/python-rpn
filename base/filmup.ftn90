@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
 !**   fillup field from data in 3DF files
 #include "model_macros_f.h"
 !
@@ -59,9 +60,7 @@
       end do
       end do
       end do
-      if (Lun_debug_L.and.Ptopo_numproc.eq.1)  &
-          call statfld2 (f,nomvar(1:4),Lctl_step,"filmup ", &
-                         n1,n2,n3,n4,1,nk1,n1,n3,1,n2,n4,nk1)
+
       err = 0
  45   continue
  44   cumerr = cumerr + err

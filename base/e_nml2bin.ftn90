@@ -40,6 +40,7 @@
 ! v3_30 - Lee/Desgagne      - minimized parameters passed in labfl.bin
 ! v4_03 - Spacek/Desgagne   - ISST
 ! v4_04 - Plante A.         - Remove offline mode
+! v4_14 - Dugas B.          - add leap year control option
 !
 !arguments
 !	none
@@ -50,6 +51,7 @@
 #include "e_tr.cdk"
 #include "modconst.cdk"
 #include "path.cdk"
+#include "leap.cdk"
 #include <clib_interface.cdk>
 !
 !*
@@ -72,7 +74,7 @@
                    (E_trname_S(k),k=1,E_tr3d_ntr), &
                    (E_tr3d_sval  (k),k=1,E_tr3d_ntr)
 !
-      write(labfl) Anal_cond_L
+      write(labfl) Anal_cond_L, Leap_years_L
 !
       close (labfl)
 !

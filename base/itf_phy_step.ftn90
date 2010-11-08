@@ -19,7 +19,8 @@
 !
       subroutine itf_phy_step (F_stepno)
 
-      Use itf_phy_iface  , Only : itf_phy_geti, physics_wrapper
+      Use itf_phy_iface  , Only : itf_phy_geti, itf_phy_inincr
+      Use phy_input_iface, Only : phy_acquire_data
       implicit none
 !
       integer, INTENT(IN) :: F_stepno
@@ -30,9 +31,8 @@ Subroutine itf_phy_slb (geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &
 
          Real, Dimension(:), Pointer :: geofld, Phy_busdyn3D, Phy_busper3D, &
                                         Phy_busvol3D
-         Integer :: esiz, dsiz, fsiz, vsiz
+         Integer :: esiz, dsiz, fsiz, vsiz, kount, ni,nj,nk, pslic
          Real    :: dt, phy_timing(ni,nj)
-         Integer :: ni, nj, nk, pslic
 End Subroutine itf_phy_slb
 End Interface
 !
@@ -58,6 +58,8 @@ End Interface
 ! v4_04 - Plante A.         - Remove offline mode
 ! v4_05 - Desgagne M.       - Update AIX binding rules
 ! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
+! v4_1x - Dugas B.          - Account for increment forcings
+!                           - dumpbus3 is now all done here
 !   
 !object
 !	Computes the physical processes and apply the resulting
@@ -72,16 +74,20 @@ End Interface
 !
 !implicits
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
+#include "rstr.cdk"
+#include "clim.cdk"
 !
       integer*8 time_base
       external  time_base
 !
+      integer PG_ni,PG_nj
       logical P_timing_L
       integer, save :: pslic
       integer j, obussiz, err
@@ -89,13 +95,17 @@ End Interface
       character*512 fn
       real, dimension(:,:), allocatable :: obusval
       real dt,Lphy_timing(l_ni,l_nj),Gphy_timing(G_ni,G_nj),phy_timing(p_ni,p_nj)
+      logical dumpbus_L, dyndump_L, entdump_L
 !
-      real busper, busvol
+      real busent, busdyn, busper, busvol, hold(2)
+      pointer (pabusent,busent(*))
+      pointer (pabusdyn,busdyn(*))
       pointer (pabusper,busper(*))
       pointer (pabusvol,busvol(*))
 !
 !     ---------------------------------------------------------------
 !
+      pabusent = loc( hold(1) )
       P_timing_L = .false.
 !
       call iniobus(obussiz)
@@ -112,9 +122,16 @@ End Interface
 !
 !C    Load data into Phy_busper3D
 !               ------------------------------------------------
-      call phy_acquire_data (itf_phy_geti,Phy_busper3D,p_ni,p_nj,p_nk, &
-                   p_offi,p_offj,p_bper_siz,F_stepno,Lun_out.gt.0,err)
-      call handle_error(err,'itf_phy_step','itf_phy_step')
+      err = 0
+      if (F_stepno == 0) then
+         call phy_acquire_data (itf_phy_geti,Phy_busper3D,p_ni,p_nj,p_nk, &
+                                p_bper_siz,F_stepno, Rstri_sdon,Lun_out.gt.0,err)
+      else
+         if (Clim_inincr_L) &
+            call phy_acquire_data (itf_phy_inincr,Phy_busper3D,p_ni,p_nj,p_nk, &
+                                   p_bper_siz,F_stepno, Rstri_sdon,Lun_out.gt.0,err)
+      endif
+      call handle_error(err,'itf_phy_step','itf_phy_step')      
 !
 !C       4.	compute physics tendencies
 !		--------------------------
@@ -123,6 +140,35 @@ End Interface
                                    (F_stepno    .eq.0)  )
 
       if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
+!
+      if (G_lam) then
+        PG_ni  = G_ni - 4
+        PG_nj  = G_nj - 4
+      else
+        PG_ni  = G_ni
+        PG_nj  = G_nj
+      endif
+!
+      dumpbus_L = .false.
+      entdump_L = .false.
+      dyndump_L = .false.
+      if (P_dumpbus > 0) then
+          dumpbus_L = (mod( F_stepno,P_dumpbus ) == 0)
+          entdump_L = ((P_dumpbus_S == 'ALL') .and. (F_stepno == 0 ))
+          dyndump_L = ((P_dumpbus_S == 'ALL') .or. (index(P_dumpbus_S,'D') > 0))
+          call dumpini3( p_bent_siz,p_bdyn_siz,p_bper_siz,p_bvol_siz, &
+                         Ptopo_numproc,p_ni,p_nj, PG_ni,PG_nj, P_dumpbus_S )
+      endif
+!
+      if (dyndump_L) then
+!$omp parallel do
+         do j = 1, p_nj
+            pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
+            call dumpbusd( busdyn, j )
+         end do
+!$omp end parallel do
+         call dumpwritd( Lun_out, F_stepno, Ptopo_myproc )
+      endif
 !
       ticks_deb = time_base()
 !
@@ -140,7 +186,10 @@ End Interface
       do j = 1, p_nj
          pabusvol = loc (Phy_busvol3D((j-1)*p_bvol_siz+1))
          pabusper = loc (Phy_busper3D((j-1)*p_bper_siz+1))
-         call itf_phy_extract ( busper, busvol, obusval, F_stepno, j, p_nk )
+         pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
+         if (F_stepno == 0) pabusent = loc( geofld((j-1)*p_bent_siz+1) )
+         if (dumpbus_L) call dumpbus3( busent,busdyn,busper,busvol, j, entdump_L )
+         call itf_phy_extract( busent, busper, busvol, obusval, F_stepno, j, p_nk )
          if (P_timing_L) call itf_phy_unfold (Lphy_timing, phy_timing(1,j), j, 1, 1, 1, l_ni, 1, l_nj)
       end do
 !$omp end parallel do
@@ -172,10 +221,7 @@ End Interface
 !
       deallocate (obusval)
 !
-      if (P_pbd_dumpbus.gt.0) then
-         if (mod( F_stepno,P_pbd_dumpbus ).eq.0) &
-         call dumpwrit2( Lun_out, F_stepno, Ptopo_myproc )
-      endif
+      if (dumpbus_L) call dumpwrit3( Lun_out, F_stepno, Ptopo_myproc, entdump_L )
 !
 !C   6.	Apply physics tendencies to the appropriate dynamic fields
 !C      and insure consistency with other dynamic variables

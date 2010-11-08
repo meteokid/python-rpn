@@ -1,27 +1,24 @@
-
 #if defined (DOC)
 !
-!**comdeck mem.cdk
+!revision
+! v3_32 - Dugas B.          - initial version
 !
-! v4_04 - Tanguay M.        - Staggered version TL/AD 
+!**comdeck leap.cdk
 !
 !______________________________________________________________________
 !                                                                      |
-!  VARIABLES ASSOCIATED WITH MEMORY                                    |
+!  Leap Year CONTROL VARIABLE                                          |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
-! Mem_mx3db          | factor to multiply space needed to allocate     |
-!                    | central memory for VMM Manager                  |
-! Mem_pslic          | the slice number of the memory of the physics   |
+! Leap_years_L       | account for leap years                          |
 !----------------------------------------------------------------------
 !
 !
 #endif
-      logical Mem_phyncore_L
-      integer Mem_minmem,Mem_mx3db,Mem_pslic
+      logical Leap_years_L
 !
-      common / Meml/ Mem_phyncore_L
-      common / Memi/ Mem_minmem,Mem_mx3db,Mem_pslic
-!
+      MARK_COMMON_BEG(leap_l)
+      common / Leap_l / Leap_years_L
+      MARK_COMMON_END(leap_l)

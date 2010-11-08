@@ -13,19 +13,20 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
 !**s/r statfld2 - APRES glbcolc, calcule la moyenne, la variance, minimum et 
 !                 le maximum d un champs et imprime le resultat.
 !
 #include "model_macros_f.h"
-      subroutine statfld2 (F_field, F_nv_S, F_no, F_from_S, &
+      subroutine statfld3 (F_field, F_nv_S, F_no, F_from_S, &
                            minx,maxx,miny,maxy,mink,maxk, &
-                           F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+                           F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
 !
       implicit none
 ! 
       character*(*) F_nv_S , F_from_S
       integer minx,maxx,miny,maxy,mink,maxk, &
-              F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no
+              F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_no,F_rx
       real F_field(minx:maxx,miny:maxy,mink:maxk)
 !
 !author
@@ -113,13 +114,24 @@
 !       
 ! ** On imprime
 !
-      if(Lun_out.gt.0) write(Lun_out,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
-                                      imax,jmax,kmax,maxd,F_from_S 
+      if(Lun_out.gt.0) then
+         if (F_rx.lt.8) then
+            write(Lun_out,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+                                       imax,jmax,kmax,maxd,F_from_S 
+         else
+            write(Lun_out,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+                                       imax,jmax,kmax,maxd,F_from_S 
+         endif
+      endif
 !
- 99   format (i4,a4,' Mean:',e22.14,' Var:',e22.14,/ &
+ 98   format (i4,a4,' Mean:',1pe14.6,' Var:',1pe14.6, &
               ' Min:[(',i3,',',i3,',',i3,')', &
-              e22.14,']',' Max:[(',i3,',',i3,',',i3,')', &
-              e22.14,']',a6)
+              1pe14.6,']',' Max:[(',i3,',',i3,',',i3,')', &
+              1pe14.6,']',a6)
+ 99   format (i4,a4,' Mean:',1pe22.12,' Var:',1pe22.12,/ &
+              ' Min:[(',i3,',',i3,',',i3,')', &
+              1pe22.12,']',' Max:[(',i3,',',i3,',',i3,')', &
+              1pe22.12,']',a6)
 !
 !----------------------------------------------------------------
 !

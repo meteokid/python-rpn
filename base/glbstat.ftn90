@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
 !**s/r glbstat2 - 
 !
 #include "model_macros_f.h"
@@ -51,28 +52,29 @@
 #include "ptopo.cdk"
 #include "lctl.cdk"
 !
-      integer nk
+      integer nk,rx
       real, dimension(:,:), allocatable :: wk1
 !
 !----------------------------------------------------------------------
 !
+      read (Lctl_rxstat_S(5:),*) rx
 
-      if (Lctl_r8stat_L) then
+      if (Lctl_rxstat_S(1:3)=='GLB') then
 
          nk = Maxk-Mink+1
          allocate     (wk1(G_ni*G_nj,Mink:Maxk))
          call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
 !
          if (Ptopo_myproc.eq.0)  &
-         call statfld2 (wk1 ,F_var_S, Lctl_step, F_from_S, &
+         call statfld3 (wk1 ,F_var_S, Lctl_step, F_from_S, &
                         1,G_ni, 1,G_nj, Mink,Maxk, &
-                        F_i0,F_j0,F_k0, F_in,F_jn,F_kn)
+                        F_i0,F_j0,F_k0, F_in,F_jn,F_kn,rx)
 
       else
 
-         call statf_dm2 (F_field,F_var_S,Lctl_step,F_from_S, &
+         call statf_dm3 (F_field,F_var_S,Lctl_step,F_from_S, &
                               Minx,Maxx,Miny,Maxy,Mink,Maxk, &
-                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn)
+                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn,rx)
       endif
 !
 !----------------------------------------------------------------------

@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
 !opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r e_write_3df
 !
@@ -38,10 +39,6 @@
 !----------------------------------------------------------------------
 !
 !     Writing field 'nomvar' if fa to binary fortran file unit=unf
-!
-      prout_L=.false.
-      if (prout_L) call statfld2 (tr1,nomvar(1:4),0, &
-                    "writ3",1,nis,1,njs,1,nks,1,1,1,nis,njs,nks)
 !
       nb = 0
       nbits = 32

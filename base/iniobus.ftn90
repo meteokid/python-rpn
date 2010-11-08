@@ -89,6 +89,33 @@
 !
       k=0
       bigk = 1
+
+      if (Lctl_step.eq.0) then
+         do i = 1, P_bent_out
+            idx=p_bent_idx(i)
+            do j=1,cnt
+               if (udolist_S(j).eq.enton(idx)(1:4)) then
+                  k=k+1
+                  obus_var_S(k)=enton(idx)(1:4)
+                  obus_bus_S(k)='E'
+                  obus_offset(k)=bigk
+                  obus_idx(k)=idx
+                  obus_addr(k)=entpar(idx,1)
+                  obus_stag(k)=entpar(idx,4)
+                  obus_mult(k)=entpar(idx,6)
+                  obus_mul(k)=1.0
+                  obus_add(k)=0.0
+                  if (entpar(idx,5).gt.p_ni) then
+                     obus_shp(k)= G_nk+2
+                  else
+                     obus_shp(k)= 1
+                  endif
+                  bigk = bigk + obus_shp(k)*obus_mult(k)
+               endif
+            enddo
+         enddo
+      endif
+
       do i = 1, P_bper_out
          idx=p_bper_idx(i)
          do j=1,cnt

@@ -29,6 +29,7 @@
 ! v3_30 - Desgagne M.       - initial version
 ! v4_03 - Lee/Desgagne      - ISST
 ! v4_05 - Desgagne M.       - add Pil_lancemodel to control submission
+! v4_14 - Dugas B.          - add leap year control option
 !
 !object
 !  Default configuration and reading namelist gement
@@ -75,6 +76,8 @@
       E_schm_adcub    = .true.
 !
       E_tr3d_list_S = ''
+!
+      Leap_years_L    = .true.
 !
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then

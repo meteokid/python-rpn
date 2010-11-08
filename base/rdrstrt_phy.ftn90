@@ -26,6 +26,7 @@
 !
 !revision
 ! v3_31 - Desgagne M.       - initial version
+! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
 #include "lun.cdk"
@@ -39,6 +40,8 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
+#include "clim.cdk"
+#include "cfld.cdk"
 !
 !modules
       integer  fnom,fclos,wkoffit
@@ -98,8 +101,22 @@
          goto 999
       endif
 !
-      call waread (unf,Phy_busper3D,11,dim)
-      adr = 11 + dim
+      call waread( unf,Clim_inincr_L, 11, 1 )
+      if (Clim_inincr_L) then
+         call waread( unf,Cfld_nbr  , 12, 1 )
+         if (Cfld_nbr > 0) then
+            Allocate( Cfld_date(Cfld_nbr), Cfld_levs(Cfld_nbr), Cfld_list(Cfld_nbr), stat=ier )
+            call waread( unf,Cfld_date, 13,           Cfld_nbr )
+            call waread( unf,Cfld_levs, 13+  Cfld_nbr,Cfld_nbr )
+            call waread( unf,Cfld_list, 13+2*Cfld_nbr,Cfld_nbr )
+         endif
+         adr = 13+3*Cfld_nbr
+      else
+         adr = 12
+      endif
+!
+      call waread (unf,Phy_busper3D,adr,dim)
+      adr = adr + dim
       call waread (unf,Rstri_half_L,adr,1)
       adr = adr + 1
       if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L) then

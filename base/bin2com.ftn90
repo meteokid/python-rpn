@@ -41,6 +41,7 @@
 !                             gemntr to gemdm.
 ! v4_03 - Spacek/Desgagne   - ISST
 ! v4_04 - Plante A.         - Remove offline mode.
+! v4_14 - Dugas B.          - Read leap year control flag
 !
 !object
 !     See above id
@@ -60,6 +61,7 @@
       external fnom,wkoffit
       character*512 fn
       integer  k, unf, ierr
+      logical  Leap_years_L
 !*
 !     ---------------------------------------------------------------
 !
@@ -78,11 +80,16 @@
                    (Tr3d_username_S(k),k=1,Tr3d_userntr), &
                    (Tr3d_usersval  (k),k=1,Tr3d_userntr)
 !
-         read(unf)  Anal_cond_L
+         read(unf)  Anal_cond_L, Leap_years_L
 !
          call fclos (unf)
 !
          bin2com = 0
+!
+         if (.not.Leap_years_L) then
+            call Ignore_LeapYear()
+            if (Lun_out.gt.0) write(Lun_out,1000)
+         endif
 !
       endif
       endif
@@ -98,6 +105,9 @@
          endif
       endif
 !
+ 1000 format (//'  =============================='/&
+                '  = Leap Years will be ignored ='/&
+                '  =============================='//)
  1001 format (/' File ',a,' not available - ABORT -'/)
 !     ---------------------------------------------------------------
 !

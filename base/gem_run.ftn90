@@ -56,6 +56,7 @@
 ! v4_05 - Plante-Girard     - Remove surfix
 ! v4_11 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
 ! v4_30 - Tanguay M.        - Revision
+! v4_30 - Dugas B.          - Increment management now done in itf_phy_step
 !
 !object
 !	Performs the integration of the model
@@ -171,10 +172,6 @@
          if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,fstep
 !
          call out_outdir (istep, upperlimit)
-!
-!C    (Re-)initialize physics surface forcing increments
-!     --------------------------------------------------
-         if ( Clim_inincr_L ) call itf_phy_inincr
 !
          if ( .not.identity_4dvar_L ) then
 !

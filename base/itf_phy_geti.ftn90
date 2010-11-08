@@ -19,7 +19,8 @@
 Integer Function itf_phy_geti (vd, opt) 
 
      Use phy_input_types
-     Use phy_input_iface, Only : phy_simple_transforms
+     Use phy_input_iface, Only : phy_simple_transforms,phy_cor_twater,phy_global_fields
+     Use itf_phy_iface  , Only : itf_phy_gdef,itf_phy_fold_sfc,itf_phy_unfold_sfc
      Implicit None
 
      Type(variable), Pointer      :: vd
@@ -30,6 +31,7 @@ Integer Function itf_phy_geti (vd, opt)
 !
 !Revision
 ! v4_10 - Spacek, L.     - First revision
+! v4_1x - Dugas, B.      - Remove explicit physics dependencies
 !
 !Object
 !     This function provides I/O and horizontal interpolation
@@ -42,7 +44,7 @@ Integer Function itf_phy_geti (vd, opt)
 ! vd       Structure containing desired descriptors
 !
 !          - Input -
-! opt      allowed options: geol_hsea,geol_poin,z0cst
+! opt      allowed options: global_fields_L
 !
 !Implicits
 #include "gmm.hf"
@@ -58,6 +60,7 @@ Integer Function itf_phy_geti (vd, opt)
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
+#include "lctl.cdk"
 #include "p_geof.cdk"
 #include "lam.cdk"
 
@@ -69,29 +72,25 @@ Integer Function itf_phy_geti (vd, opt)
       Type(variable), Pointer                  :: temp
       Type(input_dimensions), Dimension(nip1)  :: idim
 
-      Character , Parameter :: esc = Char( 27 )
-
-      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun, iok, ier,jer
-      Integer :: target_file, tip, global_ni
+      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun, iok, ier,jer, rx
+      Integer :: target_file, tip, global_ni, goff, ifold
       Integer :: dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit
       Integer :: dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       Integer :: dum0,dum1,dum2,dum3,dum4,month,day,moa,jj
-      Integer :: ni,nj,nk,nijk,sgid,dgid,kind,key,indx,indi,indj,offi,offj
+      Integer :: ni,nj,nk,nijk,sgid,lgid,kind,key,indx,indi,indj,offi,offj
       Integer, Parameter :: nmax=100, fmax=50, lenmax=150
       Integer, Dimension(nip1,4) :: keys,istat
-      Logical :: found_L=.False.,interp_L, flag, ier_L
+      Logical :: found_L=.False.,NoInterp_L, flag, ier_L
       Character(LEN=1), Dimension(nip1)      :: grd,grref
       Character(LEN=1) :: typ
       Character(LEN=4) :: var
       Character(LEN=12):: lab,cdum
       Character(LEN=lenmax), Dimension(fmax) :: file_found
       Character(LEN=lenmax+15):: command
-      Real, Allocatable, Dimension(:,:) :: field,field2
-      Real, Allocatable, Dimension(:,:) :: gmg,gglsea,gmt,gdlat,gdlon,gfis,gal
-      Real, Allocatable, Dimension(:,:) :: ghs,gsnodp,gvegindx,gz0,glhtg
+      Real, Allocatable, Dimension(:,:) :: field,field2,global
       Real, Allocatable, Dimension(:)   :: ax,ay
 !
-      real globalf(G_ni,G_nj), localf(l_ni,l_nj), xfi(G_ni+1), yfi(G_nj)
+      real localf(l_ni,l_nj), xfi(G_ni+1), yfi(G_nj)
 !
       Real :: zp1,poa,poam,sum,sumt
       Real :: busent, busper
@@ -100,18 +99,19 @@ Integer Function itf_phy_geti (vd, opt)
       Pointer (pabusent,busent(*))
 !
 !     ---------------------------------------------------------------
-!opt%isurface = 1 for fcrest, opt%isurface = 3 for isba
-!
 temp=>vd
 !
 ier = fstopc('MSGLVL','SYSTEM',0)
 ier = fstopc('TOLRNC','SYSTEM',0)
 If(Lun_debug_L)ier = fstopc('MSGLVL','INFORM',0)
 If(Lun_debug_L)ier = fstopc('TOLRNC','INFORM',0)
+goff=0 ; If(G_lam) goff=2
 
 call prsdate (dum0,month,day,dum1,dum2,dum3,dum4,Mod_runstrt_S)
 
-call itf_phy_gdef (dgid, dstf_gid, xfi, yfi)
+call itf_phy_gdef (lgid, dstf_gid, xfi, yfi)
+
+read (Lctl_rxstat_S(5:),*) rx
 
 flag=.True. ; itf_phy_geti=-1 ; iun=0
 
@@ -122,6 +122,8 @@ If(Lun_debug_L) call Print_stack()
 Main1 : Do
 ! Initialization
    nft=Count_files()
+!
+   If(vd%glbfld_L) allocate( vd%globalf(G_ni,G_nj,vd%p_nu) )
 !
    If (nft/=0) Then
       istat=0
@@ -150,17 +152,17 @@ Main1 : Do
             Allocate (field(idim(tip)%ni,idim(tip)%nj))
             Allocate (ax(idim(tip)%ni),ay(idim(tip)%nj))
 !
-            If (grd(tip)=='Z') Then
+            If (grd(tip)=='Z')Then
                If(Ptopo_myproc==0)Then
-                  global_ni=G_ni+1
-                  if (G_lam) global_ni=G_ni
-                  interp_L= .not. samegrid ( iun,global_ni,G_nj,   &
+                  global_ni = G_ni+1
+                  If(G_lam) global_ni = G_ni
+                  NoInterp_L = samegrid( iun,global_ni,G_nj, &
                          idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,&
-                         Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,xfi,yfi )
+                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xfi,yfi)
                Endif
-               Call RPN_COMM_bcast (interp_L,1,"MPI_LOGICAL"  ,0,"grid",ier)
-               If(interp_L)Then
-                  ier= Read_Axes()
+               Call RPN_COMM_bcast (NoInterp_L,1,"MPI_LOGICAL"  ,0,"grid",ier)
+               If(.Not.NoInterp_L)Then
+                  ier=Read_Axes()
                   Call RPN_COMM_bcastc(grref(tip), 1,"MPI_CHARACTER" ,0,"grid",ier)
                   Call RPN_COMM_bcast (ax   ,idim(tip)%ni,"MPI_REAL" ,0,"grid",ier)
                   Call RPN_COMM_bcast (ay   ,idim(tip)%nj,"MPI_REAL" ,0,"grid",ier)
@@ -168,47 +170,69 @@ Main1 : Do
                          idim(tip)%rig1,idim(tip)%rig2,idim(tip)%rig3,idim(tip)%rig4, ax, ay)
                Endif
             Else
-               interp_L = .true.
+               NoInterp_L = .False.
                sgid = ezgdef_fmem(idim(tip)%ni,idim(tip)%nj, grd(tip),grref(tip),&
                       idim(tip)%ig1,idim(tip)%ig2,idim(tip)%ig3,idim(tip)%ig4, ax, ay)
             Endif
 !
+            If(.Not.NoInterp_L)Then
+               If(Lam_acidtest_L)then
+                  ier = ezsetopt ('INTERP_DEGREE', 'VOISIN')
+               Else
+                  ier = ezsetopt ('INTERP_DEGREE', vd%interp)
+               Endif
+            Endif
+!
             istat(tip,target_file) = Read_field()
-            If (Ptopo_myproc==0) Then
-               If (interp_L) Then
-                  ier = ezdefset ( dstf_gid, sgid )
-                  if(Lam_acidtest_L)then
-                     ier = ezsetopt ('INTERP_DEGREE', 'VOISIN')
-                  else
-                     ier = ezsetopt ('INTERP_DEGREE', vd%interp)
-                  endif
-                  ier = ezsint (globalf, field)
-               else
-                  globalf=field(1:G_ni,1:G_nj)
-               endif
-               if ((opt%isurface/=1).or.(vd%phyvar/='Z0')) &
-               ier=phy_simple_transforms(vd%phyvar,opt%z0cst,globalf)
-            endif
-
-            Call glbdist (globalf,G_ni,G_nj,localf,1,l_ni,1,l_nj,1,0,0)
-
-            call itf_phy_fold_sfc (vd%values(1,1,tip), localf, l_ni, l_nj)
-
-            If (Lun_debug_L) call statf_dm2 (localf,vd%phyvar,tip,'PUTI', &
-                                    1,l_ni,1,l_nj,1,1,1,1,1,G_ni,G_nj,1)
-
-            Call Get_global_fields (vd%phyvar,opt%isurface==1)
-
-            Deallocate(field,ax,ay)
+            If(vd%glbfld_L) Then
+!
+               If(Ptopo_myproc==0)Then
+!
+                  If (NoInterp_L) Then
+                     vd%globalf(1:G_ni,1:G_nj,tip)=field(1:G_ni,1:G_nj)
+                  Else 
+                     ier = ezdefset ( dstf_gid, sgid )
+                     ier = ezsint (vd%globalf(1,1,tip), field)
+                  Endif
+!
+                  ier = Phy_simple_transforms( vd%phyvar,vd%globalf(1:G_ni,1:G_nj,tip),vd%glbfld_L )
+!
+               Endif
+!
+            Else
+!
+               If(NoInterp_L) Then
+                  If(G_lam) Then
+                     Call glbdist( field,G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
+                  Else
+                     If(Ptopo_myproc==0)Then
+                        allocate( global(G_ni,G_nj) )
+                        global=field(1:G_ni,1:G_nj)
+                     Endif
+                     Call glbdist( global,G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
+                     If(Ptopo_myproc==0) deallocate( global )
+                  Endif
+               Else
+                  ier = ezdefset ( lgid, sgid )
+                  ier = ezsint ( localf, field )
+               Endif
+!
+               ier = Phy_simple_transforms( vd%phyvar, localf, vd%glbfld_L )
+               Call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )
+!
+            Endif
+!
+            Deallocate(field,ax,ay,Stat=ier); Call handle_error(ier,'phy_acquire_data','1')
+!
          Enddo
-
+!
          If (Ptopo_myproc==0) then
             ier= fstfrm(iun) ; ier= fclos(iun) ; iun= 0
          endif
          If (Sum(istat(:,target_file))==vd%p_nu) Exit
       Enddo
 !
-      flag = flag .and. Final_check(.true.)
+      flag = flag.and.Final_check(.true.)
 !
    Elseif (NFT==0) Then
 !
@@ -233,45 +257,69 @@ Main1 : Do
       Endif
       If(vd%phyvar=='EPONMOD')Then
           localf=1.0
-          If(.not.G_lam) Call itf_phy_vlsp (localf, l_ni, l_nj)
+          If(.not.G_lam) Call itf_phy_vlsp( localf, l_ni, l_nj )
       Endif
 !
-      ier = phy_simple_transforms(vd%phyvar,opt%z0cst,localf)
-      call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-!
-      If(Lun_debug_L) call statf_dm2 (localf,vd%phyvar,tip,'PUTI', &
-                              1,l_ni,1,l_nj,1,1,1,1,1,G_ni,G_nj,1)
-!
-      Call Get_global_fields (vd%phyvar,opt%isurface==1)
+      If(vd%glbfld_L) Then
+         call glbcolc( vd%globalf(1,1,1),G_ni,G_nj, localf,1,l_ni,1,l_nj,1 )
+         If(Ptopo_myproc==0) &
+         ier = Phy_simple_transforms( vd%phyvar,vd%globalf(1:G_ni,1:G_nj,1),vd%glbfld_L )
+      Else
+         ier = Phy_simple_transforms( vd%phyvar,localf,vd%glbfld_L )
+         call itf_phy_fold_sfc (vd%values(1:p_ni,1:p_nj,1), localf, l_ni, l_nj)
+      Endif
 !
    Endif
+!
+   If(Lun_debug_L) print *,'ITF_PHY_GETI in MAIN1 on ',trim( vd%phyvar )
 !
    If ( .Not. Associated(vd%next_value)) Exit
    vd => vd%next_value
 !
 End Do Main1
 !
-if (opt%isurface==1) then
+If(opt%global_fields_L) then
+!
    if (Ptopo_myproc==0)Then
-      Call modmg (gmg,gglsea,gmt,gdlat,gdlon,gfis,gal,ghs,gsnodp,gvegindx,  &
-                          gz0,glhtg,opt%geol_poin,opt%geol_hsea,G_ni,G_nj)
-      ier=phy_simple_transforms('Z0',opt%z0cst,gz0)
-   endif
-   vd=>temp
-   main2 : Do
-      Call Dist_global_fields (vd%phyvar)
+      vd=>temp ; Call Phy_global_fields( vd )
+   Endif
+!
+   vd=>temp ; Main2 : do
+      If(vd%glbfld_L) Then
+!
+         Do tip=1,vd%p_nu
+            Call glbdist( vd%globalf(1:G_ni,1:G_nj,tip),G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
+            call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )
+         Enddo
+         deallocate( vd%globalf,Stat=ier ); Call handle_error(ier,'itf_phy_geti','2')
+!
+      Endif
       If( .Not. Associated(vd%next_value)) Exit
       vd => vd%next_value
    End Do Main2
-endif
-
+!
+Endif
+!
 Call handle_error_l (ier==0,'itf_phy_geti','put_info 2')
 If (flag.And.Ptopo_myproc==0) Write(*,*)'All variables found!'
 Call handle_error_l(flag,'itf_phy_geti','Missing variables, see the listing')
 
-Call Cor_twater
+vd=>temp
+Call Phy_cor_twater( vd, p_ni,p_nj )
 
 If (Ptopo_myproc==0) Write(*,"(/a/72('='))")'PROCESSING ANCIENT GEOBUS'
+
+vd=>temp
+Stats : Do
+   Do tip=1,vd%p_nu
+      call itf_phy_unfold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni,l_nj )
+      If(Lun_debug_L) &
+      call statf_dm2( localf,vd%phyvar,tip,'PUTI',1,l_ni, &
+           1,l_nj,1,1,1+goff,1+goff,1,G_ni-goff,G_nj-goff,1,rx)
+   Enddo
+   If( .Not. Associated(vd%next_value)) Exit
+   vd => vd%next_value
+Enddo Stats
 
 vd=>temp
 main3 : Do
@@ -282,7 +330,7 @@ main3 : Do
             ij=vd%findx+(j-1)*p_bper_siz
             Do k=1,vd%p_nu
                ik=ij+(k-1)*p_ni
-               Phy_busper3D(ik:ik+p_ni-1) = vd%values(:,j,k)
+               Phy_busper3D(ik:ik+p_ni-1) = vd%values(1:p_ni,j,k)
             Enddo
          Enddo
       Else                ! Put into the new busent
@@ -290,7 +338,7 @@ main3 : Do
             ij=vd%findx+(j-1)*p_bent_siz
             Do k=1,vd%p_nu
                ik=ij+(k-1)*p_ni
-               geofld(ik:ik+p_ni-1) = vd%values(:,j,k)
+               geofld(ik:ik+p_ni-1) = vd%values(1:p_ni,j,k)
             Enddo
          Enddo
       Endif
@@ -434,13 +482,15 @@ If (Ptopo_myproc==0) Then
       Allocate(field2(idim(tip)%ni,idim(tip)%nj))
       ier = fstluk( field2, keys(tip,2), idim(tip)%ni,idim(tip)%nj,idim(tip)%nk)
       field = poa*field + poam*field2
-      Deallocate(field2)
+      Deallocate(field2,Stat=ier)
    Endif
    If(.Not.Lun_debug_L)ier = fstopc('MSGLVL','SYSTEM',0)
    If(.Not.Lun_debug_L)ier = fstopc('TOLRNC','SYSTEM',0)
    Read_field=1
 Endif
 !
+If(.Not.(vd%glbfld_L .Or. NoInterp_L ))&
+Call RPN_COMM_bcast (field,idim(tip)%ni*idim(tip)%nj,"MPI_REAL" ,0,"grid",ier)
 Call RPN_COMM_bcast (Read_field,1,"MPI_INTEGER"  ,0,"grid",ier)
 !
 !     ---------------------------------------------------------------
@@ -509,10 +559,10 @@ If(Ptopo_myproc==0)Then
     Else
        flag=.True..and.flag
        If(action)Then
-          If(interp_L)Then
-             Write(*,6020)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
-          Else
+          If(NoInterp_L)Then
              Write(*,6010)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
+          Else
+             Write(*,6020)Trim(vd%nomvar),Trim(vd%phyvar),vd%ip1(j),dtpr,tmpr
            Endif
        Endif
     Endif
@@ -562,210 +612,6 @@ vd=>temp
 End Subroutine Print_stack
 !
 !
-Subroutine Cor_twater
-Real :: grav,cpd,cor
-!
-!     ---------------------------------------------------------------
-! 
-grav = Dcst_grav_8
-cpd  = Dcst_cpd_8
-cor  = grav/cpd
-vd=>temp
-Do
-   If (vd%phyvar=='MF') Then
-      Allocate(gfis(p_ni,p_nj))
-      gfis=vd%values(:,:,1)
-   Endif
-   If (vd%phyvar=='MT') Then
-      Allocate(gmt(p_ni,p_nj))
-      gmt=vd%values(:,:,1)
-   Endif
-   If ( .Not. Associated(vd%next_value)) Exit
-!
-   vd => vd%next_value
-!
-End Do
-!
-vd=>temp
-!
-If (Allocated(gfis).And.Allocated(gmt)) Then
-   Do
-      If (vd%phyvar=='TWATER') Then
-         Where(gfis>gmt)vd%values(:,:,1)=vd%values(:,:,1)-(gfis-gmt)*cor
-      Endif
-      If ( .Not. Associated(vd%next_value)) Exit
-      vd => vd%next_value
-   End Do
-!
-   vd=>temp
-!
-   Deallocate(gfis,gmt)
-Endif
-!
-!     ---------------------------------------------------------------
-! 
-End Subroutine Cor_twater
-!
-Subroutine Get_global_fields (name,doit)
-     Character(len=*) ::  name
-     logical          ::  doit
-!
-if (.not.doit) return
-
-If(Ptopo_myproc==0)Then
-     If(name=='MG')Then
-       Allocate(gmg(G_ni,G_nj))
-       gmg=globalf
-     Endif
-!
-     If(name=='GLSEA')Then
-       Allocate(gglsea(G_ni,G_nj))
-       gglsea=globalf
-     Endif
-!
-     If(name=='MT')Then
-       Allocate(gmt(G_ni,G_nj))
-       gmt=globalf
-     Endif
-!
-     If(name=='ALNOSNO')Then
-       Allocate(gal(G_ni,G_nj))
-       gal=globalf
-     Endif
-!
-     If(name=='HS')Then
-       Allocate(ghs(G_ni,G_nj))
-       ghs=globalf
-     Endif
-!
-     If(name=='SNODP'.And.tip==1)Then
-       Allocate(gsnodp(G_ni,G_nj))
-       gsnodp=globalf
-     Endif
-!
-     If(name=='VEGINDX')Then
-       Allocate(gvegindx(G_ni,G_nj))
-       gvegindx=globalf
-     Endif
-!
-     If(name=='Z0')Then
-       Allocate(gz0(G_ni,G_nj))
-       gz0=globalf
-     Endif
-!
-     If(name=='LHTG')Then
-       Allocate(glhtg(G_ni,G_nj))
-       glhtg=globalf
-     Endif
-Endif
-!
-     If(name=='MF')Then
-       If(Ptopo_myproc==0)Allocate(gfis(G_ni,G_nj))
-       Call glbcolc (gfis,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1)
-     Endif
-!
-     If(name=='DLAT')Then
-       If(Ptopo_myproc==0)Allocate(gdlat(G_ni,G_nj))
-       Call glbcolc (gdlat,G_ni,G_nj, &
-                            Geomn_latrx,1,l_ni,1,l_nj,1)
-         If(Ptopo_myproc==0)Then
-            ier=phy_simple_transforms(vd%phyvar,opt%z0cst,gdlat)
-         Endif
-     Endif
-!
-     If(name=='DLON')Then
-       If(Ptopo_myproc==0)Allocate(gdlon(G_ni,G_nj))
-       Call glbcolc (gdlon,G_ni,G_nj, &
-                            Geomn_lonrx,1,l_ni,1,l_nj,1)
-         If(Ptopo_myproc==0)Then
-            ier=phy_simple_transforms(vd%phyvar,opt%z0cst,gdlon)
-         Endif
-     Endif
-!
-End Subroutine Get_global_fields
-!
-!     ---------------------------------------------------------------
-!
-Subroutine Dist_global_fields(name)
-     Character(len=*) ::  name
-!
- If(name=='MG')Then
-     Call glbdist (gmg,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gmg)
- Endif
-!
- If(name=='GLSEA')Then
-     Call glbdist (gglsea,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gglsea)
- Endif
-!
- If(name=='MT')Then
-     If(Ptopo_myproc==0)Deallocate(gmt)
- Endif
-!
- If(name=='ALNOSNO')Then
-     Call glbdist (gal,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gal)
- Endif
-!
- If(name=='HS')Then
-     Call glbdist (ghs,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(ghs)
- Endif
-!
- If(name=='SNODP')Then
-     Call glbdist (gsnodp,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gsnodp)
- Endif
-!
- If(name=='VEGINDX')Then
-     Call glbdist (gvegindx,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gvegindx)
- Endif
-!
- If(name=='Z0')Then
-     Call glbdist (gz0,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(gz0)
- Endif
-!
- If(name=='LHTG')Then
-     Call glbdist (glhtg,G_ni,G_nj, &
-                            localf,1,l_ni,1,l_nj,1,0,0)       
-     call itf_phy_fold_sfc (vd%values(1,1,1), localf, l_ni, l_nj)
-     If(Ptopo_myproc==0)Deallocate(glhtg)
- Endif
-!
- If(name=='MF')Then
-     If(Ptopo_myproc==0)Deallocate(gfis)
- Endif
-!
- If(name=='DLAT')Then
-     If(Ptopo_myproc==0)Deallocate(gdlat)
- Endif
-!
- If(name=='DLON')Then
-     If(Ptopo_myproc==0)Deallocate(gdlon)
- Endif
-!
-End Subroutine Dist_global_fields
-!
-!     ---------------------------------------------------------------
-! 
 End Function itf_phy_geti
 
 

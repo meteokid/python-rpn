@@ -30,6 +30,7 @@
 ! v3_30 - Bilodeau B.        - add call to phy_opt for offline mode
 ! v3_30 - Dugas B.           - correction to P_out_moyhr, add Out3_satues_L
 ! v4_05 - Plante A.          - add iceline option (ICELAC)
+! v4_14 - Dugas B.           - define ININCR (via call to phy_optl)
 !
 !object
 !	See above ID.
@@ -92,11 +93,12 @@
       call phy_optl('CLIMAT'     , Clim_climat_L ,1,'SET',prout,err(3))
       call phy_optl('COUPLING'   , C_coupling_L  ,1,'SET',prout,err(4))
       call phy_opti('LIN_V4D'    , V4dg_conf     ,1,'SET',prout,err(5))
+      call phy_optl('ININCR'     , Clim_inincr_L ,1,'SET',prout,err(6))
 !
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 !
-      err(6) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      err(7) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
 !
       err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
       call handle_error(err,'itf_phy_init','itf_phy_init')

@@ -33,6 +33,7 @@
 ! v4_03 - Lee/Desgagne      - ISST
 ! v4_05 - Desgagne M.       - use work path directory than input
 ! v4_13 - Lee V.            - define pil_pil with Grd_maxcfl
+! v4_30 - Dugas B.          - add leap year control option
 !
       integer ni, nila
       integer l_ni,l_nj
@@ -50,6 +51,7 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "lun.cdk"
+#include "leap.cdk"
 #include <clib_interface.cdk>
 
       include 'gemdyn_version.inc'
@@ -86,9 +88,11 @@
               stop   'In e_gemnml: After e_gement_nml '
       if (itf_cpl_nml(trim(Path_work_S)//'/model_settings.nml') .ne. 1) &
               stop   'In e_gemnml: After itf_cpl_nml'
-!
+
+      if (.not.Leap_years_L) call Ignore_leapYear()
+
       LAM = Grd_typ_S(1:1).eq.'L'
-!
+
       if ( .not. LAM ) then
          Pil_bmf_L   = .true.
          Pil_nesdt   = 1000

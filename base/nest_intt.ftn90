@@ -40,6 +40,7 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
+#include "lun.cdk"
 !
       integer  newdate
       external newdate
@@ -142,7 +143,10 @@
 !     Temporal linear interpolation
 !      
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
+!     b = nint( b * 10000000000.0_8 ) / 10000000000.0_8 ! Keep first 10 decimals
       a = one - b
+
+      if (Lun_debug_L) write(Lun_out,'(/"In nest_intt, temporal interpolation parametres A,B =",1p2e24.16/)') a,b
 
       nest_u (1:l_ni,1:l_nj,1:G_nk+1) = a*nest_u_deb (1:l_ni,1:l_nj,1:G_nk+1) + b*nest_u_fin (1:l_ni,1:l_nj,1:G_nk+1)
       nest_v (1:l_ni,1:l_nj,1:G_nk+1) = a*nest_v_deb (1:l_ni,1:l_nj,1:G_nk+1) + b*nest_v_fin (1:l_ni,1:l_nj,1:G_nk+1)

@@ -18,7 +18,7 @@ Subroutine itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D ,&
                      esiz,dsiz,fsiz,vsiz,dt,kount,phy_timing,ni,nj,nk,pslic )
   Implicit None
 
-  Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic,nthreads
+  Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
   Real, Dimension(:), Pointer ::  geofld, Phy_busdyn3D, Phy_busper3D, &
                                   Phy_busvol3D
   Real dt, phy_timing(ni,nj) 

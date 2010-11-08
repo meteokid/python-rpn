@@ -31,11 +31,11 @@
 #include "glb_ld.cdk"
 #include "hgc.cdk"
 #include "ptopo.cdk"
-#include "itf_phy_buses.cdk"
+!
       integer  ezgdef_fmem
       external ezgdef_fmem
       integer i,offi,offj,indx
-      real lxfi(p_doni),lyfi(p_donj)
+      real lxfi(l_ni),lyfi(l_nj)
       real*8 rad2deg_8 
 !
 !     ---------------------------------------------------------------
@@ -45,15 +45,15 @@
 rad2deg_8 = 180.0d0/Acos(-1.d0)
 offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
 offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-Do i=1,p_doni
-   indx = p_offi + offi + i
+Do i=1,l_ni
+   indx = offi + i
    lxfi(i) = G_xg_8(indx)*rad2deg_8
 End Do
-Do i=1,p_donj
-   indx = p_offj + offj + i
+Do i=1,l_nj
+   indx = offj + i
    lyfi(i) = G_yg_8(indx)*rad2deg_8
 End Do
-local_id  = ezgdef_fmem (p_doni , p_donj , 'Z', 'E', Hgc_ig1ro,&
+local_id  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,&
                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi , lyfi )
 !
 ! Global grid

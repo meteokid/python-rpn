@@ -17,12 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_extract ( F_busper, F_busvol, F_obusval, &
+      subroutine itf_phy_extract ( F_busent, F_busper, F_busvol, F_obusval, &
                                    F_step, F_jdo, nk )
       implicit none
 !
       integer F_step, F_jdo, nk
-      real F_busper(*), F_busvol(*), F_obusval(*)
+      real F_busent(*), F_busper(*), F_busvol(*), F_obusval(*)
 !
 !author 
 !     Michel Desgagne  -  Spring 2010
@@ -65,6 +65,9 @@
       do n=1,Obus_top
          offbo = (obus_offset(n)-1)*l_ni*l_nj + 1
          offbb =  obus_addr(n)
+         if (obus_bus_S(n).eq.'E' .and. F_step == 0) &
+         call itf_phy_unfold_td ( F_obusval(offbo), F_busent(offbb), &
+                                  n, F_jdo, l_ni, l_nj)
          if (obus_bus_S(n).eq.'P') &
          call itf_phy_unfold_td ( F_obusval(offbo), F_busper(offbb), &
                                   n, F_jdo, l_ni, l_nj)

@@ -1,18 +1,3 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
-! GEM - Library of kernel routines for the GEM numerical atmospheric model
-! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
-!                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
-! under the terms of the GNU Lesser General Public License as published by
-! the Free Software Foundation, version 2.1 of the License. This library is
-! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
-! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-! You should have received a copy of the GNU Lesser General Public License
-! along with this library; if not, write to the Free Software Foundation, Inc.,
-! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
-
 #include "acid.cdk"
 #include "hybdim.cdk"
 #include "out3.cdk"
@@ -108,7 +93,7 @@
       namelist /gem_cfgs/ Lam_acidtest_L
 !Lctl
       namelist /gem_cfgs/ Lctl_debug_L
-      namelist /gem_cfgs/ Lctl_r8stat_L
+      namelist /gem_cfgs/ Lctl_rxstat_S
 !Out3
       namelist /gem_cfgs/ Out3_cliph_L
       namelist /gem_cfgs/ Out3_closestep
@@ -136,7 +121,8 @@
       namelist /gem_cfgs/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs/ P_lmvd_high_lat
       namelist /gem_cfgs/ P_lmvd_low_lat
-      namelist /gem_cfgs/ P_pbd_dumpbus
+      namelist /gem_cfgs/ P_dumpbus
+      namelist /gem_cfgs/ P_dumpbus_S
       namelist /gem_cfgs/ P_zong_nbin
       namelist /gem_cfgs/ P_zong_znli
       namelist /gem_cfgs/ P_zong_znmod
@@ -247,7 +233,7 @@
       namelist /gem_cfgs_p/ Lam_blendoro_L
 !Lctl
       namelist /gem_cfgs_p/ Lctl_debug_L
-      namelist /gem_cfgs_p/ Lctl_r8stat_L
+      namelist /gem_cfgs_p/ Lctl_rxstat_S
 !Out3
       namelist /gem_cfgs_p/ Out3_cliph_L
       namelist /gem_cfgs_p/ Out3_closestep
@@ -269,11 +255,13 @@
       namelist /gem_cfgs_p/ Out3_unit_S
       namelist /gem_cfgs_p/ Out3_postfreq
 !P
+      namelist /gem_cfgs_p/ P_runlgt
       namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs_p/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs_p/ P_lmvd_high_lat
       namelist /gem_cfgs_p/ P_lmvd_low_lat
-      namelist /gem_cfgs_p/ P_pbd_dumpbus
+      namelist /gem_cfgs_p/ P_dumpbus
+      namelist /gem_cfgs_p/ P_dumpbus_S
       namelist /gem_cfgs_p/ P_zong_nbin
       namelist /gem_cfgs_p/ P_zong_znli
       namelist /gem_cfgs_p/ P_zong_znmod

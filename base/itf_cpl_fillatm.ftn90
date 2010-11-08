@@ -13,6 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+
 !**s/r itf_cpl_fillatm
 !
 #include "model_macros_f.h"
@@ -151,8 +152,8 @@
                                         nomvar,1,cpl_ni,1,cpl_nj,1,1,     &
                                       Lctl_step,int(Cstv_dt_8),Out3_date, &
                                              -1,-1,'..//gem_cpl_out.fst')
-            call statfld2 (atm_busou(1,1,i,1),nomvar,Lctl_step, &
-               "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
+            call statfld3 (atm_busou(1,1,i,1),nomvar,Lctl_step, &
+               "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1,4)
             end do
             do i=1,n_fldin
             nomvar = nv_read(i)(5:7)
@@ -162,8 +163,8 @@
                                         nomvar,1,cpl_ni,1,cpl_nj,1,1,     &
                                       Lctl_step,int(Cstv_dt_8),Out3_date, &
                                              -1,-1,'..//gem_cpl_in.fst')
-            call statfld2 (atm_busin(1,1,i),nomvar,Lctl_step, &
-             "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1)
+            call statfld3 (atm_busin(1,1,i),nomvar,Lctl_step, &
+             "",1,cpl_ni,1,cpl_nj,1,1, 1,1,1,cpl_ni,cpl_nj,1,4)
             end do
          endif
 !

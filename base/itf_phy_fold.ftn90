@@ -107,11 +107,11 @@
 
 !**s/r itf_phy_fold_sfc
 !
-      subroutine itf_phy_fold_sfc (d, s, ni, nj)
+      subroutine itf_phy_fold_sfc (d, s, l_ni, l_nj)
       implicit none
 !
-      integer ni,nj
-      real d(*), s(ni,nj)
+      integer l_ni,l_nj
+      real d(*), s(l_ni,l_nj)
 !
 !author 
 !     Michel Desgagne  -  sping 2010
@@ -120,7 +120,7 @@
 ! v4_14 - Desgagne M.       - initial version
 !
 !object
-!	Transfer surface data to p_runlgt space
+!	Transfer surface data from (l_ni,l_nj) space to p_runlgt space
 !
 #include "itf_phy_buses.cdk"
 !
@@ -136,6 +136,77 @@
       end do
       end do
       d(cnt+1:p_ni*p_nj) = d(cnt)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+!**s/r itf_phy_unfold_sfc
+!
+      subroutine itf_phy_unfold_sfc (d, s, l_ni,l_nj)
+      implicit none
+!
+      integer l_ni,l_nj
+      real d(*), s(l_ni,l_nj)
+!
+!author 
+!     Bernard Dugas  -  autumn 2010
+!
+!revision
+! v4_1x - Dugas B.     - initial version
+!
+!object
+!	Transfer surface data from p_runlgt space to (l_ni,l_nj) space 
+!
+#include "itf_phy_buses.cdk"
+!
+      integer i,j,cnt,maxcnt
+!
+!     ---------------------------------------------------------------
+!
+      maxcnt = min( l_ni*l_nj, p_doni*p_donj )
+      cnt = 0
+      do j= 1, p_donj
+      do i= 1, p_doni
+         cnt = min( cnt + 1, maxcnt )
+         s(i+p_offi, j+p_offj) = d(cnt)
+      end do
+      end do
+!
+      if (p_doni < l_ni) then
+         if (p_offi > 0) then
+            do j=1+p_offj,p_donj+p_offj
+            do i=1,p_offi
+               s(i,j) = s(1+p_offi,j)
+            enddo
+            enddo
+         endif
+         if (p_doni+p_offi < l_ni) then
+            do j=1+p_offj,p_donj+p_offj
+            do i=p_doni+p_offi+1,l_ni
+               s(i,j) = s(p_doni+p_offi,j)
+            enddo
+            enddo
+         endif
+      endif
+!
+      if (p_donj < l_nj) then
+         if (p_offj > 0) then
+            do j=1,p_offj
+            do i=1,l_ni
+               s(i,j) = s(i,1+p_offj)
+            enddo
+            enddo
+         endif
+         if (p_donj+p_offj < l_nj) then
+            do j=p_donj+p_offj+1,l_nj
+            do i=1,l_ni
+               s(i,j) = s(i,p_donj+p_offj)
+            enddo
+            enddo
+         endif
+      endif
 !
 !     ---------------------------------------------------------------
 !

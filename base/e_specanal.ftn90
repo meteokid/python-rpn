@@ -52,9 +52,9 @@
 #include "path.cdk"
 !
       integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                newdate, e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
+                e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
       external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                newdate, e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
+                e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
 !
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
                dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
@@ -68,7 +68,7 @@
       character*1   typ, grd, blk_S
       character*4   var
       character*12  lab
-      character*15  datec,pdate
+      character*15  pdate
       real      x1,lev,difsig,dx,dy
       real coin_lat(4),coin_lon(4),difmin,c
       integer, dimension(:), allocatable :: lookup_ip1
