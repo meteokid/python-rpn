@@ -1020,7 +1020,7 @@ Integer function itf_phy_inincr( vd,opt )
              if (Lctl_debug_L) then
                 do k=1,vd%p_nu
                    call itf_phy_unfold_sfc( vd%values(1:p_ni,1:p_nj,k), localf, l_ni,l_nj )
-                   call statf_dm2 (localf,vd%nomvar,k,'ININCR',1,l_ni, &
+                   call statf_dm3 (localf,vd%nomvar,k,'ININCR',1,l_ni, &
                         1,l_nj,1,1,1+goff,1+goff,1,G_ni-goff,G_nj-goff,1)
                 enddo
              endif

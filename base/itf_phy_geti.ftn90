@@ -314,7 +314,7 @@ Stats : Do
    Do tip=1,vd%p_nu
       call itf_phy_unfold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni,l_nj )
       If(Lun_debug_L) &
-      call statf_dm2( localf,vd%phyvar,tip,'PUTI',1,l_ni, &
+      call statf_dm3( localf,vd%phyvar,tip,'PUTI',1,l_ni, &
            1,l_nj,1,1,1+goff,1+goff,1,G_ni-goff,G_nj-goff,1,rx)
    Enddo
    If( .Not. Associated(vd%next_value)) Exit

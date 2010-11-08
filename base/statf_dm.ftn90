@@ -223,7 +223,7 @@
       return
       end 
 #if defined (AIX)
-!**s/r statf_dm16 - Comme pour statf_dm2 mais les calculs sont effectues en real(16)
+!**s/r statf_dm16 - Comme pour statf_dm3 mais les calculs sont effectues en real(16)
 !
       subroutine statf_dm16( F_field, F_nv_S, F_no, F_from_S, &
                                Minx,Maxx,Miny,Maxy,Mink,Maxk, &
@@ -239,7 +239,7 @@
 !     B Dugas
 !
 !revision
-! v4_30 - Dugas B.          - initial version (based on statf_dm2)
+! v4_30 - Dugas B.          - initial version (based on statf_dm3)
 !
 !object
 !
