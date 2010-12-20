@@ -32,6 +32,7 @@
 ! v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 ! v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
 !                             produce BCS or 3DF files
+! v4_30 - Tanguay & Plante  - Derive image winds from true winds when no interpolation
 !
 !object
 !        see above ID
@@ -52,9 +53,9 @@
 #include "e_grdc.cdk"
 #include "hgc.cdk"
 !
-      integer  ezqkdef,ezdefset,ezsetopt,ezuvint, &
+      integer  ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
                fstinf,fstlir,fstprm,e_rdhint3
-      external ezqkdef,ezdefset,ezsetopt,ezuvint, &
+      external ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
                fstinf,fstlir,fstprm,e_rdhint3
 !
       integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1,  &
@@ -72,14 +73,16 @@
       real uvw(niu*nju),c1
       real, dimension (:), allocatable :: w1,w2
       real, dimension (:,:,:), allocatable :: uun,vvn
+      real deg2rad
+      integer i1,i2,j1,j2
 !
 ! ---------------------------------------------------------------------
 !
       if (.not.Pil_bmf_L) then
-         nisu = E_Grdc_ni
+         nisu = E_Grdc_ni-1
          njsu = E_Grdc_nj
          nisv = E_Grdc_ni
-         njsv = E_Grdc_nj
+         njsv = E_Grdc_nj-1
          allocate (uun(nisu,njsu,lv),vvn(nisv,njsv,lv))
       else
          nisu = niu
@@ -87,13 +90,22 @@
          nisv = niv
          njsv = njv
       endif
+      allocate (uu(nisu*njsu))
+      allocate (vw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+      allocate (vv(nisv*njsv))
+      allocate (uw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
 !
-      allocate (uu(nisu*njsu),vw(nisu*njsu),vv(nisv*njsv),uw(nisv*njsv))
       nu = nisu*njsu
       nv = nisv*njsv
 !
+      deg2rad  = acos(-1.0)/180.
+!
       if (anal_hav(1).eq.0) then
+         print *,'-----------------------------------------------------------------------'
          print *,'NO interpolation required for winds'
+         print *,'-----------------------------------------------------------------------'
+         if (LAM) print *,'Build IMAGE winds on staggered grids in m/s (BCS)             '
+         print *,'-----------------------------------------------------------------------'
 !
 ! ---------------------------------------------------------------------
 !        NO INTERPOLATION REQUIRED
@@ -101,33 +113,6 @@
 !                                SAME TOPOGRAPHY, TOP PRESSURE
 !---------------------------------------------------------------------
 !        
-         if (LAM) then
-!
-            do k=1,lv               
-               key1 = fstlir(uu,e_fu_anal,iu,ju,nkc,datev,' ',na(k), &
-                                               ip2a,ip3a,tva,'UT1')
-               if (key1.lt.0 .or. iu.ne.nisu .or. ju.ne.njsu) then
-                   write(6,*)'e_intwind: UT1  NOT AVAILABLE'
-                   goto 55
-               endif
-               key1 = fstlir(vv,e_fu_anal,iv,jv,nkc,datev,' ',na(k), &
-                                               ip2a,ip3a,tva,'VT1')
-               if (key1.lt.0 .or. iv.ne.nisv .or. jv.ne.njsv) then
-                  write(6,*)'e_intwind: VT1  NOT AVAILABLE'
-                  goto 55
-               endif
-               do i=1,nisu*njsu
-                  uu(i) = uu(i)
-               end do
-               do i=1,nisv*njsv
-                  vv(i) = vv(i)
-               end do
-               call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
-               call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
-            end do
-!
-         else
-!
             flag_ut1 = .false.
             var_uu = 'UU  '
             var_vv = 'VV  '
@@ -153,37 +138,97 @@
                                                ip2a,ip3a,' ',var_vv)
             endif
 !
-            if ((key1.lt.0).or.(key2.lt.0)) then
-               write (6,*) 'UU  and/or VV NOT AVAILABLE'
+            if (key1.lt.0) then
+               write (6,*) 'UU  and/or UT1 NOT AVAILABLE'
+               call e_arret( 'e_intwind' )
+            endif
+            if (key2.lt.0) then
+               write (6,*) 'VV  and/or VT1 NOT AVAILABLE'
                call e_arret( 'e_intwind' )
             endif
             err = fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, &
                     P1, P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, &
                     LNG, DLF, UBC, EX1, EX2, EX3)
 !
+            if (LAM) allocate (w1(iu*ju),w2(iv*jv))
+!
             do k=1,lv
+               if (.not.LAM) then
                key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl,  &
                                         na(k), ip2a,ip3a, tva, var_uu)
+               else
+               key1 = fstlir (w1, e_fu_anal, i, j, nkc,datev,  ' ', &
+                                        na(k), ip2a,ip3a, tva, var_uu)
+               endif
+!
                if (key1.lt.0 .or. i.ne.iu  .or. j.ne.ju) then
                   write(6,*)'ERROR: UU NOT AVAILABLE,'
                   call e_arret( 'e_intwind' )
                endif
+!
+               if (.not.LAM) then
                key1 = fstlir (vw, e_fu_anal, i, j, nkc, datev, labanl,  &
                                         na(k), ip2a,ip3a, tva, var_vv)
+               else
+               key1 = fstlir (w2, e_fu_anal, i, j, nkc, datev, ' ', &
+                                        na(k), ip2a,ip3a, tva, var_vv)
+               endif 
+!
                if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
                   write(6,*)'ERROR: VV NOT AVAILABLE,'
                   call e_arret( 'e_intwind' )
                endif
 !
                if (.not. flag_ut1) then
-                  call e_arak (uu, vv, vw, uvw, nisu, njfi, njsu, njsv, 1)
-                  do i=1,nisu*njsu
-                     uu(i) = uu(i) * dcst_knams_8
-                  end do
-                  do i=1,nisv*njsv
-                     vv(i) = vv(i) * dcst_knams_8
-                  end do
+!
+                  if (LAM) then
+!
+!                    When LAM we don't use e_arak since it uses global properties to interpolate
+!                    ---------------------------------------------------------------------------  
+                     err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+                     err = ezdefset ( dstu_gid, dstf_gid )
+                     err = ezsint   ( uu,w1 )
+                     err = ezdefset ( dstv_gid, dstf_gid )
+                     err = ezsint   ( vv,w2 )
+                     !
+                     call hpalloc(payg_8,   njsu*2, err,1)
+                     call hpalloc(paygv_8,  njsv*2, err,1)
+!
+                     do j = 1,njsu
+                        yg_8(j)  = yfi(j) * deg2rad
+                     end do
+                     do j = 1,njsv
+                        ygv_8(j) = yv(j) * deg2rad
+                     end do
+!
+                     call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,yg_8,ygv_8)
+!
+                     call hpdeallc(payg_8,  err)
+                     call hpdeallc(paygv_8, err)
+!
+                     do i=1,nisu*njsu
+                        uu(i) = uu(i) * dcst_knams_8
+                     end do
+                     do i=1,nisv*njsv
+                        vv(i) = vv(i) * dcst_knams_8
+                     end do
+!
+                  else
+!
+                     call e_arak (uu, vv, vw, uvw, nisu, njfi, njsu, njsv, 1)
+                     do i=1,nisu*njsu
+                        uu(i) = uu(i) * dcst_knams_8
+                     end do
+                     do i=1,nisv*njsv
+                        vv(i) = vv(i) * dcst_knams_8
+                     end do
+!
+                  endif
+!
                else
+!
+                  if (LAM) call handle_error(-1,'e_intwind','NO INTERPOLATION LAM when UT1-VT1: TO BE TESTED')
+!
                   do i=1,nisu*njsu
                      uu(i) = uu(i)
                   end do
@@ -191,11 +236,23 @@
                      vv(i) = vw(i)
                   end do
                endif
+               if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+               else
+               call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+               call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+               endif
             end do
 !
-         endif
+            if (LAM.and..not.Pil_bmf_L) then
+               call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+               call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+               deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
+!
+               return
+!
+            endif
 !
 !---------------------------------------------------------------------
 !
@@ -268,8 +325,8 @@
          if (.not.Pil_bmf_L) then
             call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
             call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
-            deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
-            return
+         deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
+         return
          endif
 !
         if (Anal_ecmwf_L) then

@@ -19,18 +19,19 @@
 !
       integer function ens_nml                                              &
       (F_namelist_S,F_Grdtyp_S,F_ens_conf_L,F_stochphy_L,F_imrkv2,&
-       F_ens_ptp_env_u, F_ens_ptp_env_b,F_unout) 
+       F_ens_ptp_env_u, F_ens_ptp_env_b,F_ens_ptp_env_hor_f, F_unout) 
       implicit none
 !
       character* (*) F_namelist_S,F_Grdtyp_S
       logical F_ens_conf_L,F_stochphy_L
       integer F_imrkv2,F_unout
-      real F_ens_ptp_env_u, F_ens_ptp_env_b
+      real F_ens_ptp_env_u, F_ens_ptp_env_b,F_ens_ptp_env_hor_f
 !
 !author Lubos Spacek - May 2005
 !
 !revision
 ! v4_12 - Spacek L.          - called from itf_ens_init
+! v_4.1.3 - N. Gagnon.      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
 ! v_4.1.3 - N. Gagnon.      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
 !
 !object
@@ -65,7 +66,7 @@
           Ens_mc2d_nlon,   Ens_mc2d_nlat,   Ens_mc2d_ncha,   Ens_mc2d_trnl,    &
           Ens_mc2d_trnh,   Ens_dim2,    Ens_mc2d_min,    Ens_mc2d_max,     &
           Ens_mc2d_std,    Ens_mc2d_tau,    Ens_mc2d_str,     &
-          Ens_ptp_conf,Ens_ptp_env_u, Ens_ptp_env_b
+          Ens_ptp_conf,Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_env_hor_f
 !
 !--------------------------------------------------------------------
 !
@@ -113,11 +114,13 @@
       Ens_mc2d_str      = 0.0
       Ens_ptp_env_u = 1.0
       Ens_ptp_env_b = 1.0
+      Ens_ptp_env_hor_f = 1.0
 !
       F_stochphy_L  = Ens_ptp_conf
       F_imrkv2      = Ens_mc2d_ncha
       F_ens_ptp_env_u = Ens_ptp_env_u
       F_ens_ptp_env_b = Ens_ptp_env_b
+      F_ens_ptp_env_hor_f = Ens_ptp_env_hor_f
 !
       unf = 0
       found_namelist_ok = .false.
@@ -182,6 +185,7 @@
          F_imrkv2      = Ens_mc2d_ncha
          F_ens_ptp_env_u = Ens_ptp_env_u
          F_ens_ptp_env_b = Ens_ptp_env_b
+         F_ens_ptp_env_hor_f = Ens_ptp_env_hor_f
 !
          if(F_unout.ge.0)then
             write(F_unout,"(a,i5)" )'Ens_mc_seed   = ',Ens_mc_seed
@@ -196,6 +200,7 @@
             write(F_unout,'(a,i5)' )'F_imrkv2     = ',F_imrkv2
             write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_u = ',F_ens_ptp_env_u
             write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_b = ',F_ens_ptp_env_b
+            write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_hor_f = ',F_ens_ptp_env_hor_f
          endif
       else
           ens_nml = 0
