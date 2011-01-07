@@ -35,19 +35,23 @@
 #include "ens_gmm_var.cdk"
 !
       character*4 mode
-      logical done,ens_conf
+      logical done,ens_skeb_conf
       integer n,cnt,i,j,k
+      real dummy
       real con(YDIST_SHAPE)
       data mode,done /"SAVE",.false./
-      save mode,done,ens_conf
+      save mode,done,ens_skeb_conf
       logical, external :: ens_get
+ 
+      dummy = 0.
+
 !     _________________________________________________________________
 ! TODO: absolument
 !      if (.not.done) stochphy = .true.
-      if (.not.done) ens_conf = ens_get('Ens_conf')
+      if (.not.done) ens_skeb_conf = ens_get('Ens_skeb_conf')
 ! stochphy doit etre obtenu a travers une function logique du
 ! style if (.not.done) stochphy = ens_get ('STOCHPHY',stochphy)
-      if (ens_conf) then
+      if (ens_skeb_conf) then
 
          gmmstat = gmm_get(gmmk_difut1_s,difut1,meta3d)
          if (GMM_IS_ERROR(gmmstat))write(*,6000)'difut1'
@@ -95,7 +99,12 @@
             difvt1 = F_vt1 - difvt1
             call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
          endif
-
+      else
+         if (mode == "SAVE") then
+            goto 999
+         elseif (mode == "CENS") then
+            call ens_filter (dummy,dummy,dummy,dummy, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
+         endif   
       endif
 !
  999  if (mode == "SAVE") then

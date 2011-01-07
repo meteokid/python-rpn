@@ -31,8 +31,9 @@
 !
 !revision
 ! v4_12 - Spacek L.          - called from itf_ens_init
-! v_4.1.3 - N. Gagnon.      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
-! v_4.1.3 - N. Gagnon.      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
+! v_4.1.3 - N. Gagnon      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
+! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP, 
+!           L. Spacek      - remove limitation of use when in mode LAM (only SKEB is now unavailable)
 !
 !object
 !  To initialize the ensemble forecast system
@@ -140,8 +141,8 @@
       if(found_namelist_ok)then
          ens_nml = 1
 !
-         if (F_Grdtyp_S.ne.'GU') then
-            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ensemble only available with grid GU'
+         if (F_Grdtyp_S.ne.'GU'.and.Ens_skeb_conf) then
+            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU'
             ens_nml = -1
          endif
 !
