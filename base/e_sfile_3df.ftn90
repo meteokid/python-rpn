@@ -39,6 +39,7 @@
 #include "grdc.cdk"
 #include "e_tr.cdk"
 #include "path.cdk"
+#include "grd.cdk"
 !
       character*2   md
       character*15  startindx
@@ -79,8 +80,9 @@
       enddo
       yyv(njs) = yg_8(gjf) + pt5 * ( yg_8(gjf) - yg_8(gjf-1) )
 !
-      call wrgeo_3df (xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1, &
+      call wrgeo_3df2(xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1, &
                       xxu,          yyv, &
+                      Grd_xlon1,Grd_xlat1,Grd_xlon2,Grd_xlat2, &
                       za_8,zb_8,zat_8,zbt_8, &
                       lv,lv_t,Anal_hav(2),unf_casc)
 !
