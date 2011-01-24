@@ -56,7 +56,7 @@
       endif
 
  1001 format (/'====> itf_cpl_pseudoR: TREATING DATA valid: ',a)
- 1002 format (i,' =====> READING variable: ',a,' from FILE: ',a)
+ 1002 format (i7,' =====> READING variable: ',a,' from FILE: ',a)
 !
 !     ________________________________________________________________
 !

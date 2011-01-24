@@ -32,7 +32,7 @@ subroutine adx_set_interp()
    integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, ind
    integer :: i0, j0, k0, pnx, pny, pnzt, pnzm, pnzs
 
-   real*8 :: ra,rb,rc,rd, dummy
+   real*8 :: ra,rb,rc,rd
    real*8 :: prhxmn, prhymn, prhzmn, dummy, pdfi
 
    real*8 ::whx(adx_gni+2*adx_halox)

@@ -43,4 +43,5 @@
     ens_get = .false.
     if(string=='Ens_conf')ens_get=Ens_conf
     if(string=='Ens_skeb_conf')ens_get=Ens_skeb_conf
+    if(string=='Ens_ptp_conf')ens_get=Ens_ptp_conf
     end function ens_get

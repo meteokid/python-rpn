@@ -490,7 +490,7 @@ If(Ptopo_myproc==0)Then
     Endif
  Enddo
 Final_check=flag
-If(action)write(*,'/')
+If(action)write(*,'(/)')
 Endif
 !
 Call RPN_COMM_bcast (Final_check,1,"MPI_LOGICAL"  ,0,"grid",ier)
