@@ -16,6 +16,10 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #include "utils/get_corners_xy.h"
 #include "rpn_version.h"
 
+#define FSTDC_FILE_RW "RND+R/W"
+#define FSTDC_FILE_RW_OLD "RND+R/W+OLD"
+#define FSTDC_FILE_RO "RND+R/O"
+
 #define LEVEL_KIND_MSL 0
 #define LEVEL_KIND_SIG 1
 #define LEVEL_KIND_PMB 2
@@ -1068,6 +1072,10 @@ void initFstdc(void) {
     PyDict_SetItemString(d, "LEVEL_KIND_MGL", PyInt_FromLong((long)LEVEL_KIND_MGL));
     PyDict_SetItemString(d, "LEVEL_KIND_HYB", PyInt_FromLong((long)LEVEL_KIND_HYB));
     PyDict_SetItemString(d, "LEVEL_KIND_TH", PyInt_FromLong((long)LEVEL_KIND_TH));
+
+    PyDict_SetItemString(d, "FSTDC_FILE_RO", PyString_FromString((const char*)FSTDC_FILE_RO));
+    PyDict_SetItemString(d, "FSTDC_FILE_RW", PyString_FromString((const char*)FSTDC_FILE_RW));
+PyDict_SetItemString(d, "FSTDC_FILE_RW_OLD", PyString_FromString((const char*)FSTDC_FILE_RW_OLD));
 
 //#TODO: define named Cst for newdate kinds
 

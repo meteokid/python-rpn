@@ -32,6 +32,12 @@ import numpy
 #from cStringIO import StringIO
 import Fstdc
 
+
+FILE_MODE_RO=Fstdc.FSTDC_FILE_RO
+FILE_MODE_RW=Fstdc.FSTDC_FILE_RW
+FILE_MODE_RW_OLD=Fstdc.FSTDC_FILE_RW_OLD
+
+
 class RPNFile:
     """Python Class implementation of the RPN standard file interface
     instanciating this class actually opens the file
@@ -39,7 +45,7 @@ class RPNFile:
 
     myRPNFile = RPNFile(name,mode)
     @param name file name (string)
-    @param mode Type of file (string,optional), 'RND', 'SEQ', 'SEQ+R/O' or 'RND+R/O'
+    @param mode Type of file (string,optional), FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
 
     @exception TypeError if name is not
     @exception IOError if unable to open file
@@ -65,7 +71,7 @@ class RPNFile:
     del myRPNFile                        #close the file
 
     """
-    def __init__(self,name=None,mode='RND+STD') :
+    def __init__(self,name=None,mode=FILE_MODE_RW) :
         if (not name) or type(name) <> type(''):
             raise TypeError,'RPNFile, need to provide a name for the file'
         self.filename=name
@@ -1231,6 +1237,7 @@ class RPNDateRange:
 
 FirstRecord=RPNMeta()
 NextMatch=None
+
 
 if __name__ == "__main__":
     import doctest
