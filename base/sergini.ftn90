@@ -105,7 +105,7 @@
       ptgeonm(12) = 'HS'
       pnsurf =  12
       if (pnsurf.gt.CNSRGEO) then
-         write(msg,'(a,i,a,i)') 'Dimension for ptgeonm TOO SMALL (change it in p_serg.cdk), CNSRGEO= ',CNSRGEO,' should be > ',pnsurf
+         write(msg,'(a,i7,a,i7)') 'Dimension for ptgeonm TOO SMALL (change it in p_serg.cdk), CNSRGEO= ',CNSRGEO,' should be > ',pnsurf
          call handle_error(-1,'sergini',msg)
       endif
 !

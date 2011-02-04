@@ -222,7 +222,7 @@
             if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
 !
                xnerr = fstopc( 'MSGLVL','INFORM',.false. )
-               xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD', 0 )
+               xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD+R/O', 0 )
                xnerr = fstouv( Lun_clim, 'RND' )
 !
                if ( xnerr .ge. 0 ) then
@@ -263,7 +263,7 @@
 !
             if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
 !
-               xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD', 0 )
+               xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD+R/O', 0 )
                xnerr = fstouv( Lun_acli, 'RND' )
 !
                if ( xnerr .ge. 0 ) then

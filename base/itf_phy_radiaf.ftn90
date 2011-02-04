@@ -86,7 +86,7 @@
             if ((ilir.eq.1) .or.(ilir.eq.2).or. &
                 (ilir.eq.33).or.(ilir.eq.34) ) then
                write (6,1001) trim(datatype_S),trim(filename)
-               ilir = fnom (iun,filename,'STD+RND+OLD',0)
+               ilir = fnom (iun,filename,'STD+RND+OLD+R/O',0)
                ilir = fstouv (iun,'RND')
                call rd_radtab (F_value,iun,NX,status)
                inbr = fstfrm (iun)

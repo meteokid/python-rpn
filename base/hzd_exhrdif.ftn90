@@ -33,7 +33,7 @@
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 !
-      integer i,j,k, nn, mm, nij, i0,in,j0,jn, stag_x,stag_y
+      integer i,j,k, nn, mm, ni, nj, nij, i0,in,j0,jn, stag_x,stag_y
       real wk1(LDIST_SHAPE,Nk),rnr,pwr
       real*8 pt25,nu_dif,epsilon,lnr,visco
 
@@ -65,17 +65,25 @@
       
       stag_x = 0
       stag_y = 0
-      if (F_grd_S.eq.'U') stag_x = 1
-      if (F_grd_S.eq.'V') stag_y = 1
+      ni=l_ni
+      nj=l_nj
+      if (F_grd_S.eq.'U')then
+         stag_x = 1
+         ni=l_niu
+      endif
+      if (F_grd_S.eq.'V')then
+         stag_y = 1
+         nj=l_njv
+      endif
 
-      call rpn_comm_xch_halo ( F_f2hzd, LDIST_DIM, l_ni,l_nj, Nk, &
+      call rpn_comm_xch_halo ( F_f2hzd, LDIST_DIM, ni,nj, Nk, &
                        G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       do mm=1,nn
 
          call hzd_nudeln (F_f2hzd, wk1, LDIST_DIM, Nk, visco, stag_x,stag_y, mm,nn)
 
-         if (mm.ne.nn) call rpn_comm_xch_halo( wk1, LDIST_DIM, l_ni,l_nj,G_nk, &
+         if (mm.ne.nn) call rpn_comm_xch_halo( wk1, LDIST_DIM, ni,nj, Nk, &
                                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       end do

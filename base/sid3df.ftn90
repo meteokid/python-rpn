@@ -17,8 +17,8 @@
 !
 #include "model_macros_f.h"
 !
-      integer function sid3df (xpaq,ypaq,xpau,ypav,unf,done, &
-                               nia,nja,nka_m,nka_t,presstype)
+      integer function sid3df2(xpaq,ypaq,xpau,ypav,unf,done, &
+                               nia,nja,nka_m,nka_t,presstype) result(F_istat)
       implicit none
 !author
 !     Michel Desgagne - rpn - MC2 2001
@@ -29,24 +29,44 @@
       logical done
       integer unf,nia,nja,nka_m,nka_t,presstype
       real*8 xpaq(nia), ypaq(nja), xpau(nia), ypav(nja)
+
+      integer :: F_istat
 !
 #include "ifd.cdk"
 #include "bcsgrds.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
-!
+#include "grd.cdk"
+
+      real, parameter :: EPS = 1.E-6
+
       character*4 nomvar
       integer i,j,k,ni1,nj1,nk1,err
       real*8, dimension (:), allocatable :: xp1,yp1,xu1,yv1
+      real :: xlon1,xlat1,xlon2,xlat2
 !-----------------------------------------------------------------------
 !
-      sid3df  = -1
-!
-      if (.not.done) then
-!
-         read (unf,end=33,err=33)  &
-               nomvar,ni1,nj1,nka_m,nka_t,presstype
-!
+      F_istat = -1
+
+      read (unf,end=33,err=33)  &
+           nomvar,ni1,nj1,nka_m,nka_t,presstype
+      read (unf,end=33,err=33) xlon1,xlat1,xlon2,xlat2
+
+      if (abs(xlon1-Grd_xlon1) > EPS .or.  &
+           abs(xlat1-Grd_xlat1) > EPS  .or.  &
+           abs(xlon2-Grd_xlon2) > EPS  .or.  &
+           abs(xlat2-Grd_xlat2) > EPS) then
+         if (Lun_out>0) then
+            write(Lun_out,'(A)') 'ERROR: Data in 3df file should be on grid with same rotation.'
+            write(Lun_out,'(A,2F8.2,A,2F8.2,A)') 'Model: (',Grd_xlon1,Grd_xlat1,') (',Grd_xlon2,Grd_xlat2,')'
+            write(Lun_out,'(A,2F8.2,A,2F8.2,A)') '3df  : (',xlon1,xlat1,') (',xlon2,xlat2,')'
+         endif
+         F_istat = -2
+         return
+      endif
+
+      if (.not.done) then         
+
          allocate (xp1(ni1),yp1(nj1),xu1(ni1),yv1(nj1))
          read (unf,end=33,err=33) xp1,yp1,xu1,yv1
 
@@ -79,13 +99,11 @@
          endif
 !
       else
-         read (unf,end=33,err=33)  &
-               nomvar,ni1,nj1,nka_m,nka_t,presstype
          read (unf,end=33,err=33)
          read (unf,end=33,err=33)
       endif
-!
-      sid3df = 0
+
+      F_istat = 0
 !
 !-----------------------------------------------------------------------
  33   return

@@ -84,7 +84,7 @@
 
             if (Ptopo_myproc.gt.0) inbr = fstopc ('MSGLVL','SYSTEM',.false.)
             iun    = 0
-            ilir   = fnom    (iun,filename,'STD+RND+OLD',0)
+            ilir   = fnom    (iun,filename,'STD+RND+OLD+R/O',0)
             ilir   = fstouv  (iun,'RND')
             status = 200
             call F_read_cb (iun,rbuf,dim,status)
@@ -109,7 +109,7 @@
             call array_to_file (bufnml,size(bufnml),filename)
 
             iun  = 0
-            ilir = fnom (iun,filename,'STD+RND+OLD',0)
+            ilir = fnom (iun,filename,'STD+RND+OLD+R/O',0)
             ilir = fstouv (iun,'RND')
 
             status = 200
@@ -128,7 +128,7 @@
             status = 0
             if (Ptopo_myproc.eq.0) then
                iun  = 0
-               ilir = fnom    (iun,filename,'STD+RND+OLD',0)
+               ilir = fnom    (iun,filename,'STD+RND+OLD+R/O',0)
                ilir = fstouv  (iun,'RND')
 
                status = 200

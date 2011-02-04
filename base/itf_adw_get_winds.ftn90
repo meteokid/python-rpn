@@ -97,7 +97,7 @@ contains !====================================================================
       real, dimension(:,:,:), pointer :: F_uth,F_vth !I, staggered winds
       real, dimension(:,:,:), pointer :: F_u,F_v     !O, destaggered winds
       !**/
-#include "glb_ld.cdk"
+!!#include "glb_ld.cdk"
 #include "inuvl.cdk"
       !- CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids
       !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid
@@ -205,7 +205,7 @@ contains !====================================================================
       real, dimension(:,:,:), pointer :: F_ui,F_vi !I=image winds
       real, dimension(:,:,:), pointer :: F_ur,F_vr !O=real winds
      !**/
-#include "glb_ld.cdk"
+!!#include "glb_ld.cdk"
 #include "geomg.cdk"
       !      real*8 Geomg_cy_8(l_miny:l_maxy) !cosine of latitude
       integer :: i,j,k, i0,j0,in,jn
@@ -265,7 +265,7 @@ contains !====================================================================
       real, dimension(:,:,:), pointer :: F_fld_t !intent(in)
       real, dimension(:,:,:), pointer :: F_fld_m !intent(out)
       !**/
-#include "glb_ld.cdk"
+!!#include "glb_ld.cdk"
 #include "ver.cdk"
       integer :: i,j,k, i0,j0,in,jn
       real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
@@ -342,7 +342,7 @@ contains !====================================================================
       real, dimension(:,:,:), pointer :: F_fld_m !intent(in)
       real, dimension(:,:,:), pointer :: F_fld_t !intent(out)
       !**/
-#include "glb_ld.cdk"
+!!#include "glb_ld.cdk"
 #undef TYPE_CDK
 #include "ver.cdk"
       integer :: i,j,k, i0,j0,in,jn
@@ -440,7 +440,7 @@ contains !====================================================================
 
    subroutine itf_adw_combine_levels(F_su,F_um,F_ut,F_nk)
       implicit none
-#include "glb_ld.cdk"
+!!#include "glb_ld.cdk"
       !@objective Combine momentum and themro level into super vector
       !@arguments
       integer :: F_nk

@@ -57,7 +57,7 @@
 
       endif
 
- 1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a,' was released for postprocessing at timestep: ',i)
+ 1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a,' was released for postprocessing at timestep: ',i9)
 !
 !----------------------------------------------------------------------
 !

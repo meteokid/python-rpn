@@ -76,6 +76,7 @@
 !     Ens_dim2      = (Ens_mc2d_trnh+1)*(Ens_mc2d_trnh+2)/2
 !     Ens_ptp_env_u = 1.0            upper value of transition zone of vertical envelope in sigma for PTP (above that full perturbation)
 !     Ens_ptp_env_b = 1.0            bottom value of transition zone of vertical envelope in sigma for PTP (below that no perturbation)
+!     Ens_ptp_env_hor_f = 1.0        reduction factor of the horizontal latitudinal envelope for PTP (multiply the markov chain value)
 !
 !Notes:
 !
@@ -98,7 +99,7 @@
       logical Ens_stat, Ens_skeb_div, Ens_ptp_conf
       real Ens_mc3d_max, Ens_mc3d_min, Ens_mc3d_std
       real Ens_mc3d_tau, Ens_mc3d_str, Ens_skeb_alph, Ens_skeb_alpt
-      real Ens_skeb_bfc, Ens_skeb_lam, Ens_ptp_env_u, Ens_ptp_env_b
+      real Ens_skeb_bfc, Ens_skeb_lam, Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_env_hor_f
       real Ens_mc2d_min(MAX2DC), Ens_mc2d_max(MAX2DC)
       real Ens_mc2d_std(MAX2DC), Ens_mc2d_tau(MAX2DC), Ens_mc2d_str(MAX2DC)
 !
@@ -115,4 +116,4 @@
       common / Ens_r / Ens_skeb_bfc, Ens_skeb_lam
       common / Ens_r / Ens_mc2d_min, Ens_mc2d_max
       common / Ens_r / Ens_mc2d_std, Ens_mc2d_tau, Ens_mc2d_str
-      common / Ens_r / Ens_ptp_env_u, Ens_ptp_env_b 
+      common / Ens_r / Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_env_hor_f

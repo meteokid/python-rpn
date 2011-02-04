@@ -340,21 +340,21 @@
 !
       if (pnme.ne.0)then
             call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'ME  ',prmult_pnme,0.0,-1,1,1, 1, nbit(pnme) )
+              'ME  ',prmult_pnme,0.0,2,1,1, 1, nbit(pnme) )
          endif
       if (pnmx.ne.0)then
             call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'MX  ',1.0,0.0,-1,1,1, 1, nbit(pnmx) )
+              'MX  ',1.0,0.0,2,1,1, 1, nbit(pnmx) )
          endif
       if (pnpt.ne.0) &
           call ecris_fst2(ptop,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'PT  ',.01,0.0,-1,1, 1, 1, nbit(pnpt) )
+              'PT  ',.01,0.0,2,1, 1, 1, nbit(pnpt) )
       if (pnla.ne.0) &
           call ecris_fst2(Geomn_latrx,1,l_ni,1,l_nj,0.0, &
-              'LA  ',1.0,0.0,-1,1, 1, 1, nbit(pnla) )
+              'LA  ',1.0,0.0,2,1, 1, 1, nbit(pnla) )
       if (pnlo.ne.0) &
           call ecris_fst2(Geomn_lonrx,1,l_ni,1,l_nj,0.0, &
-              'LO  ',1.0,0.0,-1,1, 1, 1, nbit(pnlo) )
+              'LO  ',1.0,0.0,2,1, 1, 1, nbit(pnlo) )
 
 !_______________________________________________________________________
 !
@@ -494,7 +494,7 @@
             call filter(w1,filt(pnpn),coef(pnpn),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, 1)
           call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'PN  ',.01,0.0,-1,1, 1, 1, nbit(pnpn) )
+              'PN  ',.01,0.0,2,1, 1, 1, nbit(pnpn) )
       endif
       
 !     Calculate P0      
@@ -508,7 +508,7 @@
          call filter(w1,filt(pnp0),coef(pnp0),'G', .false.,&
               l_minx,l_maxx,l_miny,l_maxy, 1)
          call ecris_fst2(w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
-              'P0  ',.01,0.0,-1,1, 1, 1, nbit(pnp0) ) 
+              'P0  ',.01,0.0,2,1, 1, 1, nbit(pnp0) ) 
       endif
 
       if (pnww.ne.0) then

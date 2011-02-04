@@ -44,7 +44,7 @@
       character*1 gridtyp
       character*8 dumc
       integer i,j,k,n,ier,pnip1,pnip3,cnt,nis,njs,nrd, &
-              ii,jj,im,jm,g3,g4,oi,oj,datyp
+              ii,jj,im,jm,g3,g4,oi,oj,datyp,modeip1
       logical stride_L
       real*8 sum_8
       real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
@@ -58,7 +58,10 @@
 !
 !     Writing field 'nomvar' to a FST file
 !
+      modeip1=level_mode_ip1
       if ((Out_nisl.le.0).or.(Out_njsl.le.0)) return
+!     Force oldip1style for output on pressure levels
+      if (kind.eq.2) modeip1=3
 !
 !     Filter if requested and if on PRESSURE levels
 !     if (filt.gt.0) then
@@ -148,7 +151,7 @@
 
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,level_mode_ip1,dumc,.false.)
+            call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
             do j=1,Out_njsl
             do i=1,Out_nisl
                wk2(i,j)=tr2(i,j,k)
@@ -166,7 +169,7 @@
 !
          do k=1,nk_o
             n = ind_o(k)
-            if (kind.ge.0) call convip(pnip1,rf(n),kind,level_mode_ip1,dumc,.false.)
+            call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet), &
                           Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3, &
                           Out_typvar_S,nomvar,Out_etik_S,gridtyp, &

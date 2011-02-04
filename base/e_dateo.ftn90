@@ -130,7 +130,7 @@
  1003 format (/' INITIAL CONDITION VALIDITY TIME= ',a)
  2001 format (/' ABORT in e_dateo:  Trying to open file ',a)
  2002 format (/' ABORT in e_dateo:  File ',a,' not RND')
- 2003 format (/' E_DATEO:  file ',a,' open on unit: ',i)
+ 2003 format (/' E_DATEO:  file ',a,' open on unit: ',i7)
 !
 ! ---------------------------------------------------------------------
 !

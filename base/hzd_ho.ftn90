@@ -19,7 +19,7 @@
       subroutine hzd_ho (F_f2hzd, F_grd_S, NK)
       implicit none
 !
-      character*1 F_grd_S
+      character*(*) F_grd_S
       integer     DIST_DIM, Nk
       real        F_f2hzd (*)
 !
