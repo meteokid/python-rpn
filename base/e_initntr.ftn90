@@ -28,7 +28,7 @@
 #include <clib_interface.cdk>
 !
       integer  exdb
-      external exdb
+      external exdb, init_ndoms
 
       character*50 DSTP
       character(len=256) :: my_dir
@@ -36,7 +36,7 @@
 !
 !--------------------------------------------------------------------
 !
-      call rpn_comm_mydomain ('UM_EXEC_NDOMAINS', mydomain, ndomains)
+      call rpn_comm_mydomain (init_ndoms, mydomain, ndomains)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 

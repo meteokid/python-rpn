@@ -13,36 +13,51 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine RPN_COMM_mydomain (call_back, mydomain, ndomains)
+      subroutine init_ndoms (ndomains,dom_deb,err)
       implicit none
 !
-      external call_back
-      integer mydomain, ndomains
+      integer ndomains,dom_deb,err
 !
-      include 'mpif.h'
+#include <clib_interface.cdk>
 
-      integer ierr, err, err_all, pe_tot, pe_me, npe_per_domain, offset
+      character*16 ndomains_S
+      integer indx1, dom_fin
 !
 !-------------------------------------------------------------------
 !
-      call mpi_init (ierr)
-      call mpi_comm_size (MPI_COMM_WORLD,pe_tot,ierr)
-      call mpi_comm_rank (MPI_COMM_WORLD,pe_me ,ierr)
+      err  = -1
 
-      call call_back (ndomains, offset, err)
-
-      call mpi_allreduce (err,err_all,1,MPI_INTEGER,MPI_MIN,MPI_COMM_WORLD,ierr)
-
-      if (err_all.lt.0) then
-         if (pe_me.eq.0) write (6,1001) 
-         call rpn_comm_FINALIZE(ierr)
-         stop
+      if (clib_getenv ('UM_EXEC_NDOMAINS',ndomains_S).lt.0) then
+         write (6,1001) 
+         return
       endif
 
-      npe_per_domain = pe_tot / ndomains
-      mydomain       = pe_me  / npe_per_domain + offset
+      indx1= index (ndomains_S,':')
+
+      if (indx1.lt.1) then
+         write (6,1002) ndomains_S
+         return
+      endif
+
+      read (ndomains_S(1:indx1-1),*,end=33,err=33) dom_deb
+      read (ndomains_S(indx1+1: ),*,end=33,err=33) dom_fin
+
+      goto 101
+  33  write (6,1002) ndomains_S
+      return
+
+ 101  ndomains = dom_fin - dom_deb + 1
+
+      if (ndomains.lt.1) then
+         write (6,1003) ndomains,ndomains_S
+         return
+      endif
 !
- 1001 format (/' =====> Error in call_back from rpn_comm_mydomain -- ABORT --'/)
+      err = 0
+!
+ 1001 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS is undefined'/)
+ 1002 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS incorrectly defined ',a/)
+ 1003 format (/' =====> Error in init_ndoms: ndomains_S= 'i4,' Check Env variable UM_EXEC_NDOMAINS ',a/)
 !
 !-------------------------------------------------------------------
 !

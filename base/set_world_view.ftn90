@@ -72,7 +72,7 @@
                itf_cpl_nml,series_nml,adw_nml,adw_config,rpn_comm_init_multigrid
       external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml, &
                v4d_config, gemdm_config, grid_nml, itf_cpl_nml,  &
-               series_nml,adw_nml,adw_config,rpn_comm_init_multigrid
+               series_nml,adw_nml,adw_config,rpn_comm_init_multigrid,init_ndoms
 !*
       integer ierr,cte_ok,f1,f2,f3,f4,f5,f6,mydomain,ndomains
       character(len=256) :: msg_S,my_dir
@@ -81,7 +81,7 @@
 !
 ! Initializing domain and working directory
 !
-      call rpn_comm_mydomain ('UM_EXEC_NDOMAINS', mydomain, ndomains)
+      call rpn_comm_mydomain (init_ndoms, mydomain, ndomains)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 
@@ -89,8 +89,8 @@
 !
 ! Initializing MPI and processor topology (pe_zero_topo on PE #0 only)
 !
-      f1 = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
-                                          Ptopo_npex  , Ptopo_npey, ndomains )
+      f1 = rpn_comm_init_multigrid ( pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
+                                             Ptopo_npex, Ptopo_npey, ndomains )
 
       call msg_set_can_write(Ptopo_myproc == 0)
 

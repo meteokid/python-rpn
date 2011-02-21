@@ -65,6 +65,7 @@ Integer function itf_phy_inincr( vd,opt )
 !                           - IP1 no longer used for DDhhmm info. DATEO used instead
 ! v4_1x - Dugas B.          - adapt to a physics-neutral interface using the vd argument
 !                           - move call to intozon to physics itself
+! v4_40 - Dugas B.          - small adjustments to the last (major) update 
 !                             
 !
 !object
@@ -156,7 +157,7 @@ Integer function itf_phy_inincr( vd,opt )
     INTEGER      handle, iip2,iip3,nrec_clim,nrec_acli,nrec_max
     INTEGER      year, month, day, zulu, i,j,k,n,x, NbrField
     INTEGER      dateo, date1,time1, mo1, nbr, p_ni,p_nj
-    INTEGER      momid_day(12), momid_day_leap(12)
+    INTEGER      momid_day(12), momid_day_leap(12), rx
 
 !*  Variables used to manipulate the INTEGER(8) dates
     INTEGER(8),  PARAMETER :: factor10=10000000000_8, &
@@ -361,7 +362,7 @@ Integer function itf_phy_inincr( vd,opt )
 
           if ( xnerr == 1 .or. xnerr == 33 ) then
 
-             xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD', 0 )
+             xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD+R/O', 0 )
              xnerr = fstouv( Lun_acli, 'RND' )
 
              if ( xnerr >= 0 ) then
@@ -385,7 +386,7 @@ Integer function itf_phy_inincr( vd,opt )
 
              xnerr = fstopc( 'MSGLVL','INFORM', 0 )
              xnerr = fstopc( 'TOLRNC','INFORM', 0 )
-             xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD', 0 )
+             xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD+R/O', 0 )
              xnerr = fstouv( Lun_clim, 'RND' )
 
              if ( xnerr >= 0 ) then
@@ -502,10 +503,10 @@ Integer function itf_phy_inincr( vd,opt )
 
              end do 
 
-          end if
+             xnerr = fstfrm( Lun_acli )
+             xnerr = fclos ( Lun_acli )
 
-          xnerr = fstfrm( Lun_acli )
-          xnerr = fclos ( Lun_acli )
+          end if
 
 !*        Read dates of records in file imclimat
           if ( nrec_clim > 0 ) then
@@ -538,10 +539,11 @@ Integer function itf_phy_inincr( vd,opt )
 
                 end if
              end do
-          end if   
 
-          xnerr = fstfrm( Lun_clim )
-          xnerr = fclos ( Lun_clim )
+             xnerr = fstfrm( Lun_clim )
+             xnerr = fclos ( Lun_clim )
+
+          end if   
 
        end if PTOPO_MYPROC_0_2
 
@@ -565,396 +567,6 @@ Integer function itf_phy_inincr( vd,opt )
 !*     DoInincr  : Next date to be read
 !*     in a YYYY/MO/DD/HH/MM/SS format
 !*
-!
-      REAL*8       heur_8,scal_8,rad_8
-      INTEGER      xndate(14), xnday1 , xncibl(14), xnday2
-      EQUIVALENCE (xndate(14), xnday1),(xncibl(14), xnday2)
-!
-      INTEGER      xncfld
-      PARAMETER   (xncfld=6)
-      CHARACTER    gtyp_S(xncfld),gtypz_S(xncfld)
-      INTEGER      xnzig1(xncfld),xnzig2(xncfld),xnzig3(xncfld)
-      INTEGER      xnig1(xncfld), xnig2(xncfld), xnig3(xncfld)
-      INTEGER      xnig4(xncfld), xnzig4(xncfld)
-      INTEGER      xnilu(xncfld), xnjlu(xncfld)
-      CHARACTER*4  clim_S(xncfld)
-!
-      LOGICAL      acli_L,IntSol_L,IntIce_L,done
-      INTEGER      xndate1,xndate2,xniz,xnjz,lght,soit
-      INTEGER      Lun_clim,Lun_acli,Lun_activ,ppjour,aujour
-      INTEGER      xnerr,xncle,xnhold,xnpos,xnzpos,xncoupe
-      INTEGER      i,xni,xnj,xnk,xnim,xnjm,xnzm,xnmxfld
-      integer dlat,dlon,snodp,incrne,incrhs,wsoil,incricd,icedp,incrgl,glsea0,incrts,twater,incrtg,tglacier,incrtp,tsoil
-      save dlat,dlon,snodp,incrne,incrhs,wsoil,incricd,icedp,incrgl,glsea0,incrts,twater,incrtg,tglacier,incrtp,tsoil
-      CHARACTER    typvar_S,hold_S*12
-      CHARACTER*256 clima_S,anclima_S
-      CHARACTER*8  soli_S,soli2_S
-!
-      integer Done_Inincr
-      save    Done_Inincr,done
-!
-      real xrwrk3, neige
-      pointer (iwork3,xrwrk3(1))
-      real xrlon(p_ni), xrlat(p_ni), xrwrk1(p_ni), xrwrk2(p_ni)
-      real, dimension (:), allocatable :: xrclim
-      real, dimension (:), allocatable :: xrtic,xrtac
-      real busper, busper2(max(1,p_bper_siz))
-      pointer (pabusper,busper(*))
-!
-      DATA         clim_S /'SD','HS','I8','LG','TP','TM'/
-      DATA         Done_Inincr / -1 /
-      DATA         done / .false. /
-!
-!
-!*       -------------------------------------------------
-!*    0. Check the current date and time as the increments
-!*       are only updated at the beginning of a run * OR *
-!*       close to the 15th of each month at 00Z
-!*       -------------------------------------------------
-!
-      Lun_clim =  0
-      Lun_acli =  0
-!
-      heur_8    = Lctl_step * (Cstv_dt_8 / 3600. )
-      call incdatr( xnday1,Out3_date,heur_8 )
-      call datmgp2( xndate )
-!
-!*    Update the climatological ozone field every 24 hours
-!*    (and note that it is first done at timestep 1)
-!
-      if (Cstv_dt_8 .lt. 43200. ) then
-!
-         ppjour = nint( 86400. / Cstv_dt_8 )
-         aujour = mod( Lctl_step, ppjour )
-!
-         if (Rstri_sdon .gt. 0 .and. &
-             aujour     .eq. 1 ) &
-             call intozon( xndate(3), xndate(2), lun_out.gt.0 )
-!
-      endif
-!
-!*    Check to see if the current model date and time
-!*    are "close" to the 15th of the month at 12Z
-!
-      xncibl(1) = 0
-      xncibl(2) = xndate(2)
-      xncibl(3) = 15
-      xncibl(4) = xndate(4)
-      xncibl(5) = 12
-      xncibl(6) = 00
-!
-      xnday2    = idatmg2( xncibl )
-      call difdatr( xnday2,xnday1,heur_8 )
-      heur_8    = heur_8 * (3600. / Cstv_dt_8 )
-!
-      if (.not.done) then
-         call getindx ('DLAT',      'P',dlat,     lght, soit)
-         call getindx ('DLON',      'P',dlon,     lght, soit)
-         call getindx ('TWATER',    'P',twater,   lght, soit)
-         call getindx ('TGLACIER',  'P',tglacier, lght, soit)
-         call getindx ('TSOIL',     'P',tsoil,    lght, soit)
-         call getindx ('WSOIL',     'P',wsoil,    lght, soit)
-         call getindx ('SNODP',     'P',snodp,    lght, soit)
-         call getindx ('ICEDP',     'P',icedp,    lght, soit)
-         call getindx ('GLSEA0',    'P',glsea0,   lght, soit)
-         call getindx ('INCRNE',    'P',incrne,   lght, soit)
-         call getindx ('INCRHS',    'P',incrhs,   lght, soit)
-         call getindx ('INCRICD',   'P',incricd,  lght, soit)
-         call getindx ('INCRGL',    'P',incrgl,   lght, soit)
-         call getindx ('INCRTS',    'P',incrts,   lght, soit)
-         call getindx ('INCRTG',    'P',incrtg,   lght, soit)
-         call getindx ('INCRTP',    'P',incrtp,   lght, soit)
-         done=.true.
-      endif
-
-      if (((Done_Inincr.ne.xnday2)  .and. &
-           (heur_8     .ge. -0.5 )  .and. &
-           (heur_8     .lt. +0.5 )) .or. &
-          ( Lctl_step  .eq.   2   )) then
-!
-!        Make sure we only do this once per target date
-!        in the middel of each month and at Lctl_step=2
-         if ( Lctl_step .ne. 2 ) Done_Inincr = xnday2
-!
-         xnerr = newdate( xnday1, xndate1,xndate2, -3 )
-         if (Lun_out.gt.0) write(Lun_out,1000) xndate1,xndate2
-!
-         if ( Ptopo_myproc .eq. 0 ) then
-!
-!*       1. Processor 0 opens the climatological file
-!*          and finds the maximum size of a grid
-!*          -----------------------------------------
-!
-            xnerr   = 0
-            xnmxfld = 0
-!
-            xnim    = 0
-            xnjm    = 0
-            xnzm    = 0
-!
-            clima_S = trim(Path_input_S)//'/imclima'
-!
-            xnerr = wkoffit( clima_S )
-!
-            if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
-!
-               xnerr = fstopc( 'MSGLVL','INFORM',.false. )
-               xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD+R/O', 0 )
-               xnerr = fstouv( Lun_clim, 'RND' )
-!
-               if ( xnerr .ge. 0 ) then
-!
-                  if (Lun_out.gt.0) write( Lun_out,* ) &
-                  'Opening file: ', trim( clima_S )
-!
-                  xnerr = fstinf( Lun_clim, xni,xnj,xnk, &
-                                  -1, ' ', -1, -1, -1, ' ', ' ')
-!
- 0010             if ( xnerr .ge. 0 ) then
-                     xnim    = max( xnim,xni )
-                     xnjm    = max( xnjm,xnj )
-                     xnmxfld = xnim*xnjm
-                     xnerr   = fstsui( Lun_clim, xni,xnj,xnk )
-                     goto 0010
-                  endif
-!
-               endif
-!
-            endif
-!
-            if (( xnmxfld  .le. 0 ) .or. &
-                ( Lun_clim .eq. 0 )) then
-               if (Lun_out.gt.0) write( Lun_out,1001 ) trim( clima_S )
-               goto 0030
-            endif
-!
-!*       2. Try opening the analysed/climatological file
-!*          --------------------------------------------
-!
-            xnerr  =  0
-            acli_L = .false.
-!
-            anclima_S = trim( Path_input_S ) // '/imanclima'
-!
-            xnerr = wkoffit( anclima_S )
-!
-            if ( xnerr .eq. 1 .or. xnerr .eq. 33 ) then
-!
-               xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD+R/O', 0 )
-               xnerr = fstouv( Lun_acli, 'RND' )
-!
-               if ( xnerr .ge. 0 ) then
-!
-                  acli_L  = .true.
-!
-                  if (Lun_out.gt.0) write( Lun_out,* ) &
-                  'Opening file: ', trim( anclima_S )
-!
-                  xnerr = fstinf( Lun_acli, xni,xnj,xnk, &
-                                  -1, ' ', -1, -1, -1, ' ', ' ')
-!
- 0020             if ( xnerr .ge. 0 ) then
-                     xnim    = max( xnim,xni )
-                     xnjm    = max( xnjm,xnj )
-                     xnmxfld = xnim*xnjm
-                     xnerr   = fstsui( Lun_acli, xni,xnj,xnk )
-                     goto 0020
-                  endif
-!
-               endif
-!
-            endif
-!
-            if ( .not. acli_L ) then
-               if (Lun_out.gt.0) write( Lun_out,1002 )
-            else
-               if (Lun_out.gt.0) write( Lun_out,1003 ) trim( anclima_S )
-            endif
-!
-            xnzm = max( xnim,xnjm )
-!
-         endif
-!
- 0030    call RPN_COMM_bcast( Lun_clim ,1,"MPI_INTEGER",0,"grid",xnerr )
-         call RPN_COMM_bcast( xnmxfld  ,1,"MPI_INTEGER",0,"grid",xnerr )
-         call RPN_COMM_bcast( xnzm     ,1,"MPI_INTEGER",0,"grid",xnerr )
-!
-         if (( xnmxfld  .le. 0 ) .or. ( Lun_clim .eq. 0 )) &
-            call handle_error(-1 ,'itf_phy_inincr','itf_phy_inincr')
-!
-!*       Every one allocates the xncfld 2D climatology fields
-!
-         allocate (xrtic(xnzm*xncfld),xrtac(xnzm*xncfld))
-         allocate (xrclim(xnmxfld*xncfld))
-!
-!*       What (Month/Year) is the target for the increments ?
-!
-         xncibl(1) = 0
-!
-!*       Same month or next one ?
-!
-         if ( xndate(3) .ge. 15 ) then
-            xncibl(2) = mod( xndate(2),12 )+1
-         else
-            xncibl(2) = xndate(2)
-         endif
-!
-         xncibl(3) = 15
-!
-!*       Same year or next one ?
-!
-         xncibl(4) = xndate(4)
-         if ( xncibl(2) .lt. xndate(2) ) &
-         xncibl(4) = xncibl(4) + 1
-!
-         xncibl(5) = 0
-         xncibl(6) = 0
-!
-         xnday2 = idatmg2( xncibl )
-         call difdatr( xnday2,xnday1,heur_8 )
-         scal_8 = 1./(heur_8*(3600./Cstv_dt_8))
-!
-         xnpos = 1
-!
-!        print *,'Dans itf_phy_inincr: scal_8,xncibl=',scal_8,xncibl
-!        call flush( Lun_out )
-!
-         rad_8 = 180./acos( -1.0D0 )
-!
-!*       Determine whether the surface land scheme is fully
-!*       interactive or not. If it is, the TP increments will
-!*       only be used for TGLACIER(2)
-!
-         call low2up( P_pbl_schsl_S,soli_S )
-         soli2_S = soli_S
-            
-         if ((soli_S  .eq.'CLASS' .or. soli_S  .eq.'ISBA') .and. &
-             (soli2_S .eq.'CLASS' .or. soli2_S .eq.'ISBA')) then
-            IntSol_L = .true.
-         else
-            IntSol_L = .false.
-         endif
-!
-!*       Check for interactive snow (in glacier & sea ice
-!*       modules) and ice thichness (in sea ice module)
-!
-         IntIce_L = P_pbl_iceme_L
-!
-!        print *,'Dans itf_phy_inincr: soli_S ',soli_S
-!        call flush( Lun_out )
-!
-         if ( Ptopo_myproc .eq. 0 ) then
-!
-!*       3. Processor 0 reads the target month's climatic fields
-!*          ----------------------------------------------------
-!
-            do i=1,xncfld
-!
-               if ((clim_S(i).eq.'SD' .and. IntIce_L .and. IntSol_L) &
-              .or. (clim_S(i).eq.'I8' .and. IntIce_L) &
-              .or. (clim_S(i).eq.'HS' .and. IntSol_L)) then
-!
-                  if (Lun_out.gt.0) write( Lun_out,1004 ) clim_S(i)
-!
-               else
-!
-                  xncle = -1
-!
-!*                Always try reading from Lun_acli first, if possible
-!
-                  if (acli_L) &
-                     xncle = fstlir( xrclim(xnpos), Lun_acli, &
-                                     xnilu(i),xnjlu(i), xnk, -1,' ',-1, &
-                                     xncibl(2),xncibl(4),'A',clim_S(i) )
-!
-!*                Otherwise read from Lun_clim
-!
-                  if ( xncle .lt. 0 ) &
-                     xncle = fstlir( xrclim(xnpos), Lun_clim, &
-                                     xnilu(i),xnjlu(i), xnk, -1,' ', &
-                                     -1,xncibl(2),-1,'C',clim_S(i) )
-!
-                  if ( xncle .lt. 0 ) then
-                     if (Lun_out.gt.0) write( Lun_out,1005 ) clim_S(i)
-                     goto 0040
-                  endif
-!
-!*                Save the grid description parameters
-!
-                  xnerr = fstprm( xncle, xnhold,xnhold,xnhold, &
-                                  xnilu(i),xnjlu(i),xnk, &
-                                  xnhold,xnhold,xnhold,xnhold,xnhold, &
-                                  typvar_S,clim_S(i),hold_S, &
-                                  gtyp_S(i),xnig1(i),xnig2(i), &
-                                            xnig3(i),xnig4(i), &
-                                  xnhold,xnhold,xnhold,xnhold, &
-                                  xnhold,xnhold,xnhold )
-!
-                  if (gtyp_S(i).eq.'Z') then
-!
-!*                   Retreive necessary Z-grid descriptors
-!
-                     if (typvar_S.eq.'A') then
-                        Lun_activ = Lun_acli
-                     else if (typvar_S.eq.'C') then
-                        Lun_activ = Lun_clim
-                     endif
-!
-                     xnzpos = (i-1)*xnzm+1
-!
-                     xncle = fstlir( xrtic(xnzpos), Lun_activ, &
-                                     xniz,xnjz,xnhold, -1,' ', &
-                                     xnig1(i),xnig2(i),xnig3(i), &
-                                     typvar_S,'>>')
-!
-                     if ( xncle .lt. 0 .or. &
-                        xniz  .ne. xnilu(i) ) then
-                        if (Lun_out.gt.0) write( Lun_out,1006 )
-                        xncle = -1
-                        goto 0040
-                     endif
-!                       
-                     xncle = fstlir( xrtac(xnzpos), Lun_activ, &
-                                     xniz,xnjz,xnhold, -1,' ', &
-                                     xnig1(i),xnig2(i),xnig3(i), &
-                                     typvar_S,'^^')
-!
-                     if ( xncle .lt. 0 .or. &
-                          xnjz  .ne. xnjlu(i) ) then
-                        if (Lun_out.gt.0) write( Lun_out,1007 )
-                        xncle = -1
-                        goto 0040
-                     endif
-!
-                     xnerr = fstprm( xncle, xnhold,xnhold,xnhold, &
-                                     xnhold,xnhold,xnhold, &
-                                     xnhold,xnhold,xnhold,xnhold,xnhold, &
-                                     hold_S,hold_S,hold_S, &
-                                     gtypz_S(i),xnzig1(i),xnzig2(i), &
-                                                xnzig3(i),xnzig4(i), &
-                                     xnhold,xnhold,xnhold,xnhold, &
-                                     xnhold,xnhold,xnhold )
-
-                  endif
-!
-!                 print *,'Dans itf_phy_inincr: lu ',clim_S(i)
-!                 call flush( Lun_out )
-!
-               endif
-!
-               xnpos = xnpos+xnmxfld
-!
-            enddo
-!
-            xnerr = fstfrm( Lun_clim )
-            xnerr = fclos ( Lun_clim )
-!
-            if ( acli_L ) then
-               xnerr = fstfrm( Lun_acli )
-               xnerr = fclos ( Lun_acli )
-            endif
-!
-            xncle = 0
 
 
     open_acli_L = .false.
@@ -1075,7 +687,7 @@ Integer function itf_phy_inincr( vd,opt )
 
           if ( xnerr == 1 .or. xnerr == 33 ) then
 
-             xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD', 0 )
+             xnerr = fnom( Lun_acli, anclima_S , 'STD+RND+OLD+R/O', 0 )
              xnerr = fstouv( Lun_acli, 'RND' )
 
              if ( xnerr >= 0 ) then
@@ -1104,7 +716,7 @@ Integer function itf_phy_inincr( vd,opt )
 
           if ( xnerr == 1 .or. xnerr == 33 ) then
 
-             xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD', 0 )
+             xnerr = fnom( Lun_clim, clima_S , 'STD+RND+OLD+R/O', 0 )
              xnerr = fstouv( Lun_clim, 'RND' )
 
              if ( xnerr >= 0 ) then
@@ -1349,6 +961,7 @@ Integer function itf_phy_inincr( vd,opt )
 !   Define the (local physics) destination grid
     call itf_phy_gdef( dgid, dstf_gid, xfi, yfi )
 
+    read (Lctl_rxstat_S(5:),*) rx
     allocate( localf(l_ni,l_nj) )
 
 !*  Loop over all variables
@@ -1411,7 +1024,7 @@ Integer function itf_phy_inincr( vd,opt )
                 do k=1,vd%p_nu
                    call itf_phy_unfold_sfc( vd%values(1:p_ni,1:p_nj,k), localf, l_ni,l_nj )
                    call statf_dm3 (localf,vd%nomvar,k,'ININCR',1,l_ni, &
-                        1,l_nj,1,1,1+goff,1+goff,1,G_ni-goff,G_nj-goff,1)
+                     1,l_nj,1,1,1+goff,1+goff,1,G_ni-goff,G_nj-goff,1,rx)
                 enddo
              endif
                 
