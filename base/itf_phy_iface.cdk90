@@ -26,27 +26,45 @@ Integer Function itf_phy_geti(vd,opt)
    Type(input_options)     :: opt
 End Function itf_phy_geti
 !
-Integer Function itf_phy_inincr(vd,opt) 
-   Use phy_input_types
-   Implicit None
-   Type(variable), Pointer :: vd
-   Type(input_options)     :: opt
-End Function itf_phy_inincr
+Integer Function itf_phy_puti(vd,opt) 
+	Use phy_input_types
+        Implicit None
+	Type(variable), Pointer :: vd
+	Type(input_options)     :: opt
+End Function itf_phy_puti
 !
-Subroutine itf_phy_fold_sfc ( d, s, ni, nj )
-   Integer :: ni, nj
-   Real :: d(*), s(ni, nj)
-End Subroutine itf_phy_fold_sfc
+Subroutine itf_phy_puti_casc(vd,opt,istat) 
+	Use phy_input_types
+        Implicit None
+        Integer istat(*)
+	Type(variable), Pointer :: vd
+	Type(input_options)     :: opt
+End Subroutine itf_phy_puti_casc
 !
-Subroutine itf_phy_unfold_sfc ( d, s, ni, nj )
-   Integer :: ni, nj
-   Real :: d(*), s(ni, nj)
-End Subroutine itf_phy_unfold_sfc
+Integer Function itf_phy_puti_fcrest(vd,opt) 
+	Use phy_input_types
+        Implicit None
+	Type(variable), Pointer :: vd
+	Type(input_options)     :: opt
+End Function itf_phy_puti_fcrest
 !
-Subroutine itf_phy_gdef ( local_id, global_id, gxfi, gyfi )
-   Integer :: local_id, global_id
-   Real :: gxfi(*), gyfi(*)
-End Subroutine itf_phy_gdef
+Integer Function itf_phy_puti_isba(vd,opt) 
+	Use phy_input_types
+        Implicit None
+	Type(variable), Pointer :: vd
+	Type(input_options)     :: opt
+End Function itf_phy_puti_isba
+!
+Subroutine physics_wrapper(geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &
+                           p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz,   &
+                           dt, F_stepno, phy_timing, p_ni, p_nj, p_nk) 
+
+         Real, Dimension(:), Pointer :: geofld, Phy_busdyn3D, Phy_busper3D, &
+                                        Phy_busvol3D
+         Integer :: p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz, F_stepno
+         Integer :: p_ni, p_nj, p_nk
+         Real    :: dt, phy_timing(p_ni,p_nj)
+End Subroutine physics_wrapper
 !
 End Interface
 !

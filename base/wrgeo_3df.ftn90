@@ -13,17 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine wrgeo_3df ( xp,ni, yp,nj, xu, yv, &
+      subroutine wrgeo_3df2( xp,ni, yp,nj, xu, yv, xlon1,xlat1,xlon2,xlat2,&
                              am,bm,at,bt, &
                              nkm,nkt,presstype,unf )
       implicit none
 !
       integer ni,nj,nkm,nkt,presstype,unf
+      real xlon1,xlat1,xlon2,xlat2
       real*8 xp(ni),yp(nj),xu(ni),yv(nj), &
              am(nkm),bm(nkm),at(nkt),bt(nkt)
 !
 !------------------------------------------------------------------
       write (unf) '>>^^',ni,nj,nkm,nkt,presstype
+      write (unf) xlon1,xlat1,xlon2,xlat2
       write (unf) xp,yp,xu,yv
       write (unf) am,bm,at,bt
 !------------------------------------------------------------------

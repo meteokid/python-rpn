@@ -23,7 +23,10 @@
 !author  Lubos Spacek - February 2010
 !     
 !revision
-! v4_12 - Spacek L.       - initial version 
+! v4_12 - Spacek L.            - initial version 
+! v4_20 - Spacek L./Gagnon N.  - Modify the logic of the main switches (Ens_conf, 
+!                                Ens_skeb_conf and Ens_ptp_conf) to not impact 
+!                                non-ensemble users.
 !	
 #include "glb_ld.cdk"
 #include "geomg.cdk"
@@ -35,19 +38,25 @@
 #include "ens_gmm_var.cdk"
 !
       character*4 mode
-      logical done,ens_conf
+      logical done,ens_skeb_conf,ens_ptp_conf,ens_conf
       integer n,cnt,i,j,k
+      real dummy
       real con(YDIST_SHAPE)
       data mode,done /"SAVE",.false./
-      save mode,done,ens_conf
+      save mode,done,ens_skeb_conf,ens_ptp_conf,ens_conf
       logical, external :: ens_get
 !     _________________________________________________________________
-! TODO: absolument
-!      if (.not.done) stochphy = .true.
-      if (.not.done) ens_conf = ens_get('Ens_conf')
-! stochphy doit etre obtenu a travers une function logique du
-! style if (.not.done) stochphy = ens_get ('STOCHPHY',stochphy)
-      if (ens_conf) then
+      ens_conf = ens_get('Ens_conf')
+      if (.not.ens_conf) return
+
+      if (.not.done) then
+         ens_skeb_conf = ens_get('Ens_skeb_conf').And.ens_conf
+         ens_ptp_conf  = ens_get('Ens_ptp_conf') .And.ens_conf
+      endif
+!
+! Case I: ens_skeb_conf = .true.
+!
+      if (ens_skeb_conf) then
 
          gmmstat = gmm_get(gmmk_difut1_s,difut1,meta3d)
          if (GMM_IS_ERROR(gmmstat))write(*,6000)'difut1'
@@ -95,8 +104,19 @@
             difvt1 = F_vt1 - difvt1
             call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
          endif
-
+!
+! Case II: ens_skeb_conf = .false. however, in the same time
+!          ens_ptp_conf  = .true.
+!
+      elseif(ens_ptp_conf.and..not.ens_skeb_conf)then
+         if (mode == "SAVE") then
+            goto 999
+         elseif (mode == "CENS") then
+            call ens_filter (dummy,dummy,dummy,dummy, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
+         endif
       endif
+!
+! Case III: default (no action)
 !
  999  if (mode == "SAVE") then
          mode = "CENS"

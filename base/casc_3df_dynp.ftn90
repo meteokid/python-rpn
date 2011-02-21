@@ -80,9 +80,8 @@
 !        ?   5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 !
-      integer  sid3df
-      external sid3df
-!
+      integer,external :: sid3df2
+
       character*2  md
       character*4  nomvar
       character*8  dynophy,vn,hint
@@ -207,9 +206,10 @@
 ! of all input staggered grids (xpaq, ypaq, xpau and ypva).
 !
  55         if (dyn_done.and.phy_done) goto 33
-            err = sid3df (xpaq,ypaq,xpau,ypav,unf,done,nia,nja, &
+            err = sid3df2(xpaq,ypaq,xpau,ypav,unf,done,nia,nja, &
                                nka_m,nka_t,presstype)
             if (err.lt.0) then
+                if (err == -2) exit
                 if (dyn_done) then
 !               Assumes no physics data are available
                     err=0

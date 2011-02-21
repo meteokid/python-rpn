@@ -71,7 +71,7 @@
                                                  F_work_8, NWORK, info )
 !
       if ( info.ne.0 ) then
-         write(msg,'(a,i)') 'ERROR IN ?SYGV INFO = ',info
+         write(msg,'(a,i7)') 'ERROR IN ?SYGV INFO = ',info
          call handle_error(-1,'geneigl',msg)
       endif
 !

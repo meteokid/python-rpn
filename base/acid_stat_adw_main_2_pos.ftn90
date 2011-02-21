@@ -70,7 +70,7 @@
               F_j0+acid_j0,F_jn-acid_jn, &
               1,F_nk)
       else
-         write(flag_S,'(I)') F_flag
+         write(flag_S,'(I7)') F_flag
          call handle_error(-1,'acid_stat_adw_main_2_pos','error with flag='//flag_S)
       endif
 

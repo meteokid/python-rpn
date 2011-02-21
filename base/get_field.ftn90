@@ -118,7 +118,7 @@
 
       F_status = 0
 
- 1000 format (/' GET_FIELD:  file ',a,' open on unit: ',i)
+ 1000 format (/' GET_FIELD:  file ',a,' open on unit: ',i7)
  1001 format ( ' GET_FIELD: Interpolating ',a,' with scheme: ',a/)
  6000 format ( ' GET_FIELD: Variable ',a' NOT AVAILABLE')
  6001 format ( ' GET_FIELD: PROBLEM WITH ezsint'/)

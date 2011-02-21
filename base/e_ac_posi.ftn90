@@ -28,6 +28,8 @@
 !revision
 ! v3_30 - Lee V.       - initial version for GEMDM
 ! v4_03 - Lee/Desgagne - ISST
+! v4_30 - Tanguay M.   - Allow same grid in analysis and in model (BCS mode)
+! v4_30 - Tanguay M.   - Add epsilon_8
 !*
 #include "e_grids.cdk"
 #include "e_anal.cdk"
@@ -46,6 +48,8 @@
       real*8 orr, deg2rad_8
       parameter( ONE_8   = 1.0 )
       parameter( CLXXX_8 = 180.0 )
+!
+      real*8, parameter :: EPSILON_8 = 1.0e-5
 !
 !---------------------------------------------------------------------
 !
@@ -84,7 +88,7 @@
       if (e_grdc_gid.ge.e_grdc_gif) e_grdc_gid = 0
 !
       do i=1,dimgy
-         if (ypx(i).le.yfi(1)) e_grdc_gjd=i
+         if (ypx(i)-EPSILON_8.le.yfi(1)) e_grdc_gjd=i
          if (ypx(i).le.yfi(F_width+1)) e_grdc_gjdi=i
          if (ypx(i).le.yfi(njfi)) e_grdc_gjf=i
          if (ypx(i).le.yfi(njfi-F_width)) gjfi=i
@@ -92,7 +96,6 @@
       if (e_grdc_gjd.ge.e_grdc_gjf) e_grdc_gjd = 0
 !
       if ((e_grdc_gid.gt.0).and.(e_grdc_gjd.gt.0)) then
-
          if ( (e_grdc_gid-2.gt.0) .and. (e_grdc_gif+3.lt.dimgx) .and. &
               (e_grdc_gjd-2.gt.0) .and. (e_grdc_gjf+3.lt.dimgy) ) then
             e_grdc_gid = e_grdc_gid - 2
@@ -100,15 +103,27 @@
             e_grdc_gif = e_grdc_gif + 3
             e_grdc_gjf = e_grdc_gjf + 3
          else
-         print *,'e_ac_posi: '
-         print *,'trop serre, il faut que'
-         print *,'e_grdc_gid=',e_grdc_gid,'-2.gt.0'
-         print *,'e_grdc_gjd=',e_grdc_gjd,'-2.gt.0'
-         print *,'e_grdc_gif=',e_grdc_gif,'+3.lt.',dimgx
-         print *,'e_grdc_gjf=',e_grdc_gjf,'+3.lt.',dimgy
-            e_grdc_gid = 0
-            e_grdc_gjd = 0
+            if ( (e_grdc_gid.eq.1) .and. (e_grdc_gif.eq.dimgx) .and. &
+                 (e_grdc_gjd.eq.1) .and. (e_grdc_gjf.eq.dimgy) ) then
+!
+               print *,'*************************************'
+               print *,'E_AC_POSI: same_size grid as analysis'
+               print *,'*************************************'
+!
+            else
+!
+               print *,'e_ac_posi: '
+               print *,'trop serre, il faut que'
+               print *,'e_grdc_gid=',e_grdc_gid,'-2.gt.0'
+               print *,'e_grdc_gjd=',e_grdc_gjd,'-2.gt.0'
+               print *,'e_grdc_gif=',e_grdc_gif,'+3.lt.',dimgx
+               print *,'e_grdc_gjf=',e_grdc_gjf,'+3.lt.',dimgy
+               e_grdc_gid = 0
+               e_grdc_gjd = 0
+            endif
+!
          endif
+!
       else
          e_grdc_gid = 0
          e_grdc_gjd = 0

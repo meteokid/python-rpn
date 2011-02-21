@@ -51,7 +51,7 @@
 
       if (F_prout) write (6,9000) Ptopo_npeOpenMP,flag
 
- 9000 format (/' Ptopo_npeOpenMP reset to: ',I,' Rebind: ',L)
+ 9000 format (/' Ptopo_npeOpenMP reset to: ',I7,' Rebind: ',L)
 !
 !-------------------------------------------------------------------
 !

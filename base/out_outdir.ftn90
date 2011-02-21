@@ -42,7 +42,7 @@
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
 !
-      stepno = current_step
+      stepno = max(current_step,1)
       if (Out3_postfreq .gt. 0) then
          last_step_post = stepno / Out3_postfreq
          last_step_post = (last_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
@@ -74,7 +74,7 @@
       endif
       endif
 !
- 1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i)
+ 1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !
 !----------------------------------------------------------------------
 !

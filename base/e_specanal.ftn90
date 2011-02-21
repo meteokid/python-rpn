@@ -39,6 +39,7 @@
 ! v4_10 - Tanguay M.        - correction on calcul for xpxu(nia-1),ypxv(nja-1)
 ! v4_10 - Lee V.            - Adapt LAM I/O(BCS and 3DF) for reading GAUSS grid
 ! v4_14 - McTaggart-Cowan R.- Read ww if wt1 not found
+! V4_30 - Plante A.         - Correct UT1 and VT1 grid size in call to ezgdef_fmem
 !
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -585,20 +586,19 @@
           enddo
           ypxv(nja-1) = 0.5 * ( ypx(nja-1) + ypx(nja) )
 
-
           if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil).eq.0) then
 
               call hpalloc(paygv_8   ,  (nja-1)*2, err,1)
               do j=1,nja-1
                  ygv_8(j)  = ypxv(j) * deg2rad_8
               enddo
-              dstf_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro, &
-              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
-              dstu_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro, &
-              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
-              dstv_gid = ezgdef_fmem (e_grdc_ni, e_grdc_nj , 'Z', 'E', Hgc_ig1ro, &
-              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
-          else
+              dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
+              dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
+              dstv_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj-1, 'Z', 'E', Hgc_ig1ro, &
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
+           else
             write(6,*)' Abort: Insufficient coverage in Analysis'
             call e_arret('e_specanal')
           endif

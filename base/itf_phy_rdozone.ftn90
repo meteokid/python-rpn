@@ -87,7 +87,7 @@
       call array_to_file (bufnml,size(bufnml),filename)
 !
       iun  = 0
-      ilir = fnom (iun,filename,'STD+RND+OLD',0)
+      ilir = fnom (iun,filename,'STD+RND+OLD+R/O',0)
       ilir = fstouv (iun,'RND')
 !
       call rd_ozone (iun,status)
