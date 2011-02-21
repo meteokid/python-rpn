@@ -3,7 +3,7 @@ prgemnml: prgemnml.o
 	/bin/rm -f $(LCLPO)/prgemnml.o
 
 gemgrid:
-	$(RBUILD) -bidon -main gemgrid -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn  gemdyn_utils $(COMM)" -librmn $(RMN_VERSION)
+	$(RBUILD) -bidon -main gemgrid -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn gemdyn_utils $(COMM)" -librmn $(RMN_VERSION)
 
 MONBINDIR=.
 monitor:
