@@ -58,6 +58,7 @@
       integer i, j, k, n, err
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra
+      type(gmm_metadata) :: meta_busper
 !
 !     __________________________________________________________________
 !
@@ -157,9 +158,11 @@
 !**********************************************************************
 
       if ( Lctl_step .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
-         if ( .not. associated ( Phy_busper3D_digf ) )  &
-                      allocate ( Phy_busper3D_digf (p_bper_siz*p_nj))
-         Phy_busper3D_digf = Phy_busper3D
+         gmmstat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
+         gmmstat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&
+                                GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         gmmstat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
+         BUSPER_3d_digf = BUSPER_3d
       endif
 !
       Rstri_half_L = .false.

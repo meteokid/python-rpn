@@ -1,0 +1,105 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r step_nml - Read namelist time
+!
+      integer function step_nml (F_namelistf_S)
+      implicit none
+!
+      character* (*) F_namelistf_S
+!
+!authors    Michel Desgagne - Spring 2011
+! 
+!revision
+! v4_40 - Desgagne M.       - initial MPI version
+!
+!object
+!  Default configuration and reading namelist 'time'
+!
+!implicits
+#include "lun.cdk"
+#include "grd.cdk"
+#include "step.cdk"
+!
+      namelist /step/ Step_runstrt_S, Step_total, Step_rsti, &
+                      Step_bkup, Step_gstat, Step_spinphy,   &
+                      Step_dt, Step_nesdt, Step_leapyears_L
+!
+      integer  fnom,wkoffit
+      external fnom,wkoffit
+!
+      integer nrec,unf,err
+!
+!-------------------------------------------------------------------
+!
+      step_nml = -1
+!
+      if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
+         step_nml = 0
+         if (Lun_out.gt.0) write (6  ,nml=step)
+         return
+      endif
+!
+! Defaults values for ptopo namelist variables
+!
+      Step_runstrt_S  = 'NIL'
+      Step_total       = 0
+      Step_nesdt       = 0
+      Step_rsti        = 9999999
+      Step_bkup        = 9999999
+      Step_gstat       = 9999999
+      Step_spinphy     = 9999999
+      Step_dt          = -1.0
+      Step_leapyears_L = .true.
+!
+      if (F_namelistf_S .ne. '') then
+!
+         unf = 0
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
+            if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
+            goto 9999
+         endif
+         rewind(unf)
+         read (unf, nml=step, end = 9120, err=9130)
+         goto 9000
+      endif
+
+ 9120 if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
+      goto 9999
+ 9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
+      goto 9999
+!
+ 9000 if (Step_dt .lt. 0.) then
+         if (Lun_out.gt.0) write(Lun_out,*)  &
+                    ' Step_dt must be specified in namelist &step'
+         goto 9999
+      endif
+      if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
+         if (Lun_out.gt.0) write(Lun_out,*)  &
+                    ' Step_nesdt must be specified in namelist &step'
+         goto 9999
+      endif
+
+      step_nml = 1
+!
+ 7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
+ 7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
+ 7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',A/)
+!
+!-------------------------------------------------------------------
+!
+ 9999 call fclos (unf)
+      return
+      end

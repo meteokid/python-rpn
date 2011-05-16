@@ -178,6 +178,7 @@ contains
 #include "dimout.cdk"
 #include "grid.cdk"
 #include "level.cdk"
+    integer , parameter :: LEVEL_NTYP=2
     integer :: ig1,ig2
     integer :: i
     integer, save :: report_count=0

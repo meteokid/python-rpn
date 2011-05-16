@@ -29,6 +29,7 @@
 ! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
+#include "gmm.hf"
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "itf_phy_buses.cdk"
@@ -42,17 +43,21 @@
 #include "ptopo.cdk"
 #include "clim.cdk"
 #include "cfld.cdk"
+#include <clib_interface.cdk>
 !
 !modules
-      integer  fnom,fclos,wkoffit
-      external fnom,fclos,wkoffit
+      integer  fnom,fclos
+      external fnom,fclos
 !
       character*512 fn
       character*16 datev,datev_infile,startindx
-      integer dim,unf,ier,ibuf(4),adr
+      logical spin_L
+      integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),adr,gmmstat
+!      real, pointer, dimension (:,:) :: BUSPER_3d  => null()
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
+      type(gmm_metadata) :: meta_busper
 !
 !     ---------------------------------------------------------------
 !
@@ -65,64 +70,79 @@
       write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_myrow
       fn  = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
 !
-      ier = wkoffit(fn) 
-!
-      if (ier.lt.-1) then
-        fn  = 'restart_BUSPER'
-        ier = wkoffit(fn)
-      endif
-!
-      if (ier.ge.-1) then
-         ier = fnom( unf,fn,'RND+OLD',0 )
+      yela = clib_fileexist (trim(fn))
+      call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)
+      if (tousla .eq. -Ptopo_numproc) then
+         fn  = 'restart_BUSPER'
+         yela= clib_fileexist (trim(fn))
+         call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)
+         if (tousla .eq. -Ptopo_numproc) then
+            return
+         else
+            if (tousla .ne. Ptopo_numproc) then
+               if (Lun_out.gt.0) write(Lun_out,2005) 'BUSPER4spinphy_'//trim(datev)
+               return
+            endif
+         endif
       else
-         return
+         if (tousla .ne. Ptopo_numproc) then
+            if (Lun_out.gt.0) write(Lun_out,2005) 'BUSPER4spinphy_'//trim(datev)
+            return
+         endif
       endif
+!
+      ier = fnom( unf,fn,'RND+OLD',0 )
 
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
 
       call waopen (unf)
 
-      call waread (unf,ibuf          ,1,4)
-      call waread (unf,rbuf          ,5,6)
+      call waread (unf,spin_L       , 1, 1)
+      call waread (unf,Clim_inincr_L, 2, 1)
+      adr = 3
 
-      call datf2p (datev_infile,ibuf(1))
-      dim = ibuf(2)
+      if (spin_L) then
+         call waread (unf, ibuf, adr, 4)
+         adr = adr + 4
+         call waread (unf, rbuf, adr, 6)
+         adr = adr + 6
 
-      if ( (datev_infile .ne.  datev          )   .or.  &
-           (dim          .ne.  p_bper_siz*p_nj)   .or. &
-           (ibuf(3)      .ne.  Grd_ni         )   .or. &
-           (ibuf(4)      .ne.  Grd_nj         )   .or. &
-           (rbuf(1)      .ne.  Grd_dx         )   .or. &
-           (rbuf(2)      .ne.  Grd_dy         )   .or. &
-           (rbuf(3)      .ne.  Grd_xlon1      )   .or. &
-           (rbuf(4)      .ne.  Grd_xlat1      )   .or. &
-           (rbuf(5)      .ne.  Grd_xlon2      )   .or. &
-           (rbuf(6)      .ne.  Grd_xlat2      )  ) then
-         goto 999
-      endif
-!
-      call waread( unf,Clim_inincr_L, 11, 1 )
-      if (Clim_inincr_L) then
-         call waread( unf,Cfld_nbr  , 12, 1 )
-         if (Cfld_nbr > 0) then
-            Allocate( Cfld_date(Cfld_nbr), Cfld_levs(Cfld_nbr), Cfld_list(Cfld_nbr), stat=ier )
-            call waread( unf,Cfld_date, 13,           Cfld_nbr )
-            call waread( unf,Cfld_levs, 13+  Cfld_nbr,Cfld_nbr )
-            call waread( unf,Cfld_list, 13+2*Cfld_nbr,Cfld_nbr )
+         call datf2p (datev_infile,ibuf(1))
+         dim_infile = ibuf(2)
+
+         gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
+         dim = (meta_busper%l(1)%high-meta_busper%l(1)%low+1)*&
+               (meta_busper%l(2)%high-meta_busper%l(2)%low+1)
+
+         if ( (datev_infile .ne.  datev      )   .or.  &
+              (dim_infile   .ne.  dim        )   .or. &
+              (ibuf(3)      .ne.  Grd_ni     )   .or. &
+              (ibuf(4)      .ne.  Grd_nj     )   .or. &
+              (rbuf(1)      .ne.  Grd_dx     )   .or. &
+              (rbuf(2)      .ne.  Grd_dy     )   .or. &
+              (rbuf(3)      .ne.  Grd_xlon1  )   .or. &
+              (rbuf(4)      .ne.  Grd_xlat1  )   .or. &
+              (rbuf(5)      .ne.  Grd_xlon2  )   .or. &
+              (rbuf(6)      .ne.  Grd_xlat2  )  ) then
+            if (Lun_out.gt.0) write(Lun_out,2006) 'BUSPER4spinphy_'//trim(datev)
+            goto 999
          endif
-         adr = 13+3*Cfld_nbr
-      else
-         adr = 12
+
+         call waread (unf, BUSPER_3d, adr, dim)
+         adr =adr + dim
       endif
 !
-      call waread (unf,Phy_busper3D,adr,dim)
-      adr = adr + dim
-      call waread (unf,Rstri_half_L,adr,1)
-      adr = adr + 1
-      if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L) then
-         if ( .not. associated ( Phy_busper3D_digf ) )  &
-                    allocate   ( Phy_busper3D_digf (dim))
-         call waread (unf,Phy_busper3D_digf,adr,dim)
+      if (Clim_inincr_L) then
+         call waread (unf, Cfld_nbr, adr, 1)
+         adr = adr + 1
+         if (Cfld_nbr > 0) then
+            Allocate ( Cfld_date(Cfld_nbr), Cfld_levs(Cfld_nbr), &
+                       Cfld_list(Cfld_nbr), stat=ier )
+            call waread (unf, Cfld_date, adr,            Cfld_nbr )
+            call waread (unf, Cfld_levs, adr+  Cfld_nbr, Cfld_nbr )
+            call waread (unf, Cfld_list, adr+2*Cfld_nbr, Cfld_nbr )
+         endif
+         adr = adr+3*Cfld_nbr
       endif
 !
       itf_phy_busper_init_L = .true.
@@ -132,6 +152,10 @@
 !
  2000 format(/,'READING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &
              /,'============================================')
+ 2005 format(/,'INCOMPLETE SET OF PHYSICS RESTART FILE: ',a/ &
+               'WILL TRY TO CONTINUE WITHOUT'/)
+ 2006 format(/,'INCONSISTENT SET OF PHYSICS RESTART FILE: ',a/ &
+               'WILL TRY TO CONTINUE WITHOUT'/)
 !
 !     ---------------------------------------------------------------
 !      

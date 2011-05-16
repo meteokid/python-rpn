@@ -1,0 +1,486 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!***s/r yyg_initvecbc2 - to initialize communication pattern for V field
+!
+#include "model_macros_f.h"
+
+      Subroutine yyg_initvecbc2()
+      implicit none
+!
+!author
+!     Abdessamad Qaddouri/V.Lee - October 2009
+!
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "glb_pil.cdk"
+#include "yyg_pil.cdk"
+
+      integer err,Ndim,i,j,k,kk,ii,jj
+      integer imx1,imx2
+      integer imy1,imy2
+      integer kkproc
+      real*8  xx_8(G_ni,G_nj-1),yy_8(G_ni,G_nj-1)
+      real*8  xgu_8(G_ni-1),ygv_8(G_nj-1)
+      real*8  t,p,s(2,2),h1,h2
+      real*8  x_d,y_d,x_a,y_a   
+!
+!     Get global xgu,ygv,xx,yy
+       do i=1,G_ni-1
+       xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
+       enddo
+       do j=1,G_nj-1
+       ygv_8(j)= 0.5D0*(G_yg_8(j+1)+G_yg_8(j))
+       enddo
+!
+      do j=1,G_nj-1
+      do i=1,G_ni
+         xx_8(i,j)=G_xg_8(i)
+         yy_8(i,j)=ygv_8(j)
+      enddo
+      enddo
+      h1=G_xg_8(2)-G_xg_8(1)
+      h2=G_yg_8(2)-G_yg_8(1)
+!
+      allocate(Pil_vrecvw_len(Ptopo_numproc))
+      allocate(Pil_vrecvw_i(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vrecvw_j(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vrecve_len(Ptopo_numproc))
+      allocate(Pil_vrecve_i(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vrecve_j(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vrecvs_len(Ptopo_numproc))
+      allocate(Pil_vrecvs_i(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vrecvs_j(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vrecvn_len(Ptopo_numproc))
+      allocate(Pil_vrecvn_i(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vrecvn_j(Glb_pil_n*G_lnimax,Ptopo_numproc))
+
+      allocate(Pil_vsendw_len(Ptopo_numproc))
+      allocate(Pil_vsendw_xxr(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_yyr(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_imx1(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_imy1(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_imx2(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_imy2(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_s1(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsendw_s2(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+
+      allocate(Pil_vsende_len(Ptopo_numproc))
+      allocate(Pil_vsende_xxr(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_yyr(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_imx1(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_imy1(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_imx2(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_imy2(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_s1(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Pil_vsende_s2(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+
+      allocate(Pil_vsends_len(Ptopo_numproc))
+      allocate(Pil_vsends_xxr(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_yyr(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_imx1(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_imy1(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_imx2(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_imy2(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_s1(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsends_s2(Glb_pil_s*G_lnimax,Ptopo_numproc))
+
+      allocate(Pil_vsendn_len(Ptopo_numproc))
+      allocate(Pil_vsendn_xxr(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_yyr(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_imx1(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_imy1(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_imx2(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_imy2(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_s1(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Pil_vsendn_s2(Glb_pil_n*G_lnimax,Ptopo_numproc))
+
+      Pil_vrecvw_len(:) = 0
+      Pil_vrecvw_i(:,:) = 0
+      Pil_vrecvw_j(:,:) = 0
+      Pil_vsendw_len(:) = 0
+      Pil_vsendw_xxr(:,:) = 0.0
+      Pil_vsendw_yyr(:,:) = 0.0
+      Pil_vsendw_imx1(:,:) = 0
+      Pil_vsendw_imy1(:,:) = 0
+      Pil_vsendw_imx2(:,:) = 0
+      Pil_vsendw_imy2(:,:) = 0
+      Pil_vsendw_s1(:,:)=0.0
+      Pil_vsendw_s2(:,:)=0.0
+
+      Pil_vrecve_len(:) = 0
+      Pil_vrecve_i(:,:) = 0
+      Pil_vrecve_j(:,:) = 0
+      Pil_vsende_len(:) = 0
+      Pil_vsende_xxr(:,:) = 0.0
+      Pil_vsende_yyr(:,:) = 0.0
+      Pil_vsende_imx1(:,:) = 0
+      Pil_vsende_imy1(:,:) = 0
+      Pil_vsende_imx2(:,:) = 0
+      Pil_vsende_imy2(:,:) = 0
+      Pil_vsende_s1(:,:)=0.0
+      Pil_vsende_s2(:,:)=0.0
+
+      Pil_vrecvs_len(:) = 0
+      Pil_vrecvs_i(:,:) = 0
+      Pil_vrecvs_j(:,:) = 0
+      Pil_vsends_len(:) = 0
+      Pil_vsends_xxr(:,:) = 0.0
+      Pil_vsends_yyr(:,:) = 0.0
+      Pil_vsends_imx1(:,:) = 0
+      Pil_vsends_imy1(:,:) = 0
+      Pil_vsends_imx2(:,:) = 0
+      Pil_vsends_imy2(:,:) = 0
+      Pil_vsends_s1(:,:)=0.0
+      Pil_vsends_s2(:,:)=0.0
+
+      Pil_vrecvn_len(:) = 0
+      Pil_vrecvn_i(:,:) = 0
+      Pil_vrecvn_j(:,:) = 0
+      Pil_vsendn_len(:) = 0
+      Pil_vsendn_xxr(:,:) = 0.0
+      Pil_vsendn_yyr(:,:) = 0.0
+      Pil_vsendn_imx1(:,:) = 0
+      Pil_vsendn_imy1(:,:) = 0
+      Pil_vsendn_imx2(:,:) = 0
+      Pil_vsendn_imy2(:,:) = 0
+      Pil_vsendn_s1(:,:)=0.0
+      Pil_vsendn_s2(:,:)=0.0
+!
+! WEST section
+!
+      do j=1, G_nj-1
+      do i=1,glb_pil_w
+!        V vector
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a=y_a
+         call localise(imx1,imy1,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+!
+
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                    Pil_vrecvw_len(kk)=Pil_vrecvw_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0+1
+                    Pil_vrecvw_i(Pil_vrecvw_len(kk),kk)=ii
+                    Pil_vrecvw_j(Pil_vrecvw_len(kk),kk)=jj
+                endif
+             enddo       
+              
+         endif
+
+! check to send to who
+         if (max(imx1,imx2).ge.l_i0.and.         &
+             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
+             max(imy1,imy2).ge.l_j0.and.         &
+             max(imy1,imy2).le.l_j0+l_nj-1) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Pil_vsendw_len(kk)=Pil_vsendw_len(kk)+1
+                    Pil_vsendw_imx1(Pil_vsendw_len(kk),kk)=imx1-l_i0+1
+                    Pil_vsendw_imy1(Pil_vsendw_len(kk),kk)=imy1-l_j0+1
+                    Pil_vsendw_imx2(Pil_vsendw_len(kk),kk)=imx2-l_i0+1
+                    Pil_vsendw_imy2(Pil_vsendw_len(kk),kk)=imy2-l_j0+1
+                    Pil_vsendw_xxr(Pil_vsendw_len(kk),kk)=x_a
+                    Pil_vsendw_yyr(Pil_vsendw_len(kk),kk)=y_a
+                    Pil_vsendw_s1(Pil_vsendw_len(kk),kk)=s(2,2)
+                    Pil_vsendw_s2(Pil_vsendw_len(kk),kk)=s(2,1)
+                endif
+             enddo       
+         endif
+      enddo   
+      enddo   
+!
+!
+! East section
+      do j=1, G_nj-1
+      do i=G_ni-glb_pil_e+1,G_ni
+!        V vector
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a=y_a
+         call localise(imx1,imy1,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+!
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                    Pil_vrecve_len(kk)=Pil_vrecve_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0+1
+                    Pil_vrecve_i(Pil_vrecve_len(kk),kk)=ii
+                    Pil_vrecve_j(Pil_vrecve_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (max(imx1,imx2).ge.l_i0.and.         &
+             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
+             max(imy1,imy2).ge.l_j0.and.         &
+             max(imy1,imy2).le.l_j0+l_nj-1) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Pil_vsende_len(kk)=Pil_vsende_len(kk)+1
+                    Pil_vsende_imx1(Pil_vsende_len(kk),kk)=imx1-l_i0+1
+                    Pil_vsende_imy1(Pil_vsende_len(kk),kk)=imy1-l_j0+1
+                    Pil_vsende_imx2(Pil_vsende_len(kk),kk)=imx2-l_i0+1
+                    Pil_vsende_imy2(Pil_vsende_len(kk),kk)=imy2-l_j0+1
+                    Pil_vsende_xxr(Pil_vsende_len(kk),kk)=x_a
+                    Pil_vsende_yyr(Pil_vsende_len(kk),kk)=y_a
+                    Pil_vsende_s1(Pil_vsende_len(kk),kk)=s(2,2)
+                    Pil_vsende_s2(Pil_vsende_len(kk),kk)=s(2,1)
+                endif
+             enddo       
+         endif
+      enddo   
+      enddo   
+!
+! South section
+      do j=1,glb_pil_s
+      do i=1+glb_pil_w,G_ni-glb_pil_e
+!        V vector
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a=y_a
+         call localise(imx1,imy1,x_a,y_a,  &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a,  &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+!
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                    Pil_vrecvs_len(kk)=Pil_vrecvs_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0+1
+                    Pil_vrecvs_i(Pil_vrecvs_len(kk),kk)=ii
+                    Pil_vrecvs_j(Pil_vrecvs_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (max(imx1,imx2).ge.l_i0.and.         &
+             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
+             max(imy1,imy2).ge.l_j0.and.         &
+             max(imy1,imy2).le.l_j0+l_nj-1) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Pil_vsends_len(kk)=Pil_vsends_len(kk)+1
+                    Pil_vsends_imx1(Pil_vsends_len(kk),kk)=imx1-l_i0+1
+                    Pil_vsends_imy1(Pil_vsends_len(kk),kk)=imy1-l_j0+1
+                    Pil_vsends_imx2(Pil_vsends_len(kk),kk)=imx2-l_i0+1
+                    Pil_vsends_imy2(Pil_vsends_len(kk),kk)=imy2-l_j0+1
+                    Pil_vsends_xxr(Pil_vsends_len(kk),kk)=x_a
+                    Pil_vsends_yyr(Pil_vsends_len(kk),kk)=y_a
+                    Pil_vsends_s1(Pil_vsends_len(kk),kk)=s(2,2)
+                    Pil_vsends_s2(Pil_vsends_len(kk),kk)=s(2,1)
+                endif
+             enddo       
+         endif
+      enddo   
+      enddo   
+!
+! North section
+      do j=G_nj-glb_pil_n,G_nj-1
+      do i=1+glb_pil_w,G_ni-glb_pil_e
+!        V vector
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a=y_a
+         call localise(imx1,imy1,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+!
+
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (max(imx1,imx2).ge.Ptopo_gindx(1,kk).and. &
+                    max(imx1,imx2).le.Ptopo_gindx(2,kk).and. &
+                    max(imy1,imy2).ge.Ptopo_gindx(3,kk).and. &
+                    max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
+                    Pil_vrecvn_len(kk)=Pil_vrecvn_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0+1
+                    Pil_vrecvn_i(Pil_vrecvn_len(kk),kk)=ii
+                    Pil_vrecvn_j(Pil_vrecvn_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (max(imx1,imx2).ge.l_i0.and.         &
+             max(imx1,imx2).le.l_i0+l_ni-1 .and. &
+             max(imy1,imy2).ge.l_j0.and.         &
+             max(imy1,imy2).le.l_j0+l_nj-1) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Pil_vsendn_len(kk)=Pil_vsendn_len(kk)+1
+                    Pil_vsendn_imx1(Pil_vsendn_len(kk),kk)=imx1-l_i0+1
+                    Pil_vsendn_imy1(Pil_vsendn_len(kk),kk)=imy1-l_j0+1
+                    Pil_vsendn_imx2(Pil_vsendn_len(kk),kk)=imx2-l_i0+1
+                    Pil_vsendn_imy2(Pil_vsendn_len(kk),kk)=imy2-l_j0+1
+                    Pil_vsendn_xxr(Pil_vsendn_len(kk),kk)=x_a
+                    Pil_vsendn_yyr(Pil_vsendn_len(kk),kk)=y_a
+                    Pil_vsendn_s1(Pil_vsendn_len(kk),kk)=s(2,2)
+                    Pil_vsendn_s2(Pil_vsendn_len(kk),kk)=s(2,1)
+                endif
+             enddo       
+         endif
+      enddo   
+      enddo   
+
+!Check receive lengths from each processor against actual HP allocation
+      do kk=1,Ptopo_numproc
+         if (Ptopo_couleur.eq.0) then
+             kkproc = kk+Ptopo_numproc-1
+         else
+             kkproc = kk -1
+         endif
+         if (Pil_vrecvw_len(kk).gt.Glb_pil_w*G_lnjmax) then
+             write(6,1000) 'Pil_vrecvw_len',kkproc,Pil_vrecvw_len(kk),&
+                            Glb_pil_w*G_lnjmax
+           ! write(6,1001) 'Pil_vrecvw_len',kkproc,Pil_vrecvw_len(kk),&
+           !                Pil_vrecvw_i(1,kk),Pil_vrecvw_j(1,kk)
+            stop
+         endif
+         if (Pil_vrecve_len(kk).gt.Glb_pil_e*G_lnjmax) then
+             write(6,1000) 'Pil_vrecve_len',kkproc,Pil_vrecve_len(kk),&
+                            Glb_pil_e*G_lnjmax
+           ! write(6,1001) 'Pil_vrecve_len',kkproc,Pil_vrecve_len(kk),&
+           !                Pil_vrecve_i(1,kk),Pil_vrecve_j(1,kk)
+            stop
+         endif
+         if (Pil_vrecvs_len(kk).gt.Glb_pil_s*G_lnimax) then
+             write(6,1000) 'Pil_vrecvs_len',kkproc,Pil_vrecvs_len(kk),&
+                            Glb_pil_s*G_lnimax
+           ! write(6,1001) 'Pil_vrecvs_len',kkproc,Pil_vrecvs_len(kk),&
+           !                Pil_vrecvs_i(1,kk),Pil_vrecvs_j(1,kk)
+            stop
+         endif
+         if (Pil_vrecvn_len(kk).gt.Glb_pil_n*G_lnimax) then
+             write(6,1000) 'Pil_vrecvn_len',kkproc,Pil_vrecvn_len(kk),&
+                            Glb_pil_n*G_lnimax
+           ! write(6,1001) 'Pil_vrecvn_len',kkproc,Pil_vrecvn_len(kk),&
+           !                Pil_vrecvn_i(1,kk),Pil_vrecvn_j(1,kk)
+            stop
+         endif
+      enddo
+
+
+!Check send lengths to each processor against actual HP allocation
+
+      do kk=1,Ptopo_numproc
+         if (Ptopo_couleur.eq.0) then
+             kkproc = kk+Ptopo_numproc-1
+         else
+             kkproc = kk -1
+         endif
+         if (Pil_vsendw_len(kk).gt.Glb_pil_w*G_lnjmax) then
+             write(6,1000) 'Pil_vsendw_len',kkproc,Pil_vsendw_len(kk),&
+                            Glb_pil_w*G_lnjmax
+           ! write(6,1002) 'Pil_vsendw_len',kkproc,Pil_vsendw_len(kk),&
+           !                Pil_vsendw_imx1(1,kk),Pil_vsendw_imy1(1,kk),&
+           !                Pil_vsendw_imx2(1,kk),Pil_vsendw_imy2(1,kk)
+             stop
+         endif
+         if (Pil_vsende_len(kk).gt.Glb_pil_e*G_lnjmax) then
+             write(6,1000) 'Pil_vsende_len',kkproc,Pil_vsende_len(kk),&
+                            Glb_pil_e*G_lnjmax
+           ! write(6,1002) 'Pil_vsende_len',kkproc,Pil_vsende_len(kk),&
+           !                Pil_vsende_imx1(1,kk),Pil_vsende_imy1(1,kk),&
+           !                Pil_vsende_imx2(1,kk),Pil_vsende_imy2(1,kk)
+             stop
+         endif
+         if (Pil_vsends_len(kk).gt.Glb_pil_s*G_lnimax) then
+             write(6,1000) 'Pil_vsends_len',kkproc,Pil_vsends_len(kk),&
+                            Glb_pil_s*G_lnimax
+           ! write(6,1002) 'Pil_vsends_len',kkproc,Pil_vsends_len(kk),&
+           !                Pil_vsends_imx1(1,kk),Pil_vsends_imy1(1,kk),&
+           !                Pil_vsends_imx2(1,kk),Pil_vsends_imy2(1,kk)
+             stop
+         endif
+         if (Pil_vsendn_len(kk).gt.Glb_pil_n*G_lnimax) then
+             write(6,1000) 'Pil_vsendn_len',kkproc,Pil_vsendn_len(kk),&
+                            Glb_pil_n*G_lnimax
+           ! write(6,1002) 'Pil_vsendn_len',kkproc,Pil_vsendn_len(kk),&
+           !                Pil_vsendn_imx1(1,kk),Pil_vsendn_imy1(1,kk),&
+           !                Pil_vsendn_imx2(1,kk),Pil_vsendn_imy2(1,kk)
+             stop
+         endif
+      enddo
+
+ 1000 format(a15,i3,'=',i4,'bytes, max allowed=',i4)
+ 1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
+ 1002 format(a15,i3,'=',i4,'bytes imx1:',i3,' imy1:',i3,' imx2:',i3,' imy2:',i3)
+       
+!
+      return
+      end
+

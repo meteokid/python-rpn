@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r nest_init -- Initializes nesting data for LAM configuration
 !
 #include "model_macros_f.h"
@@ -28,29 +27,36 @@
 ! v3_30 - Tanguay M.           - adapt to bcs
 ! v4_05 - Plante A.            - Top nesting
 ! v4_05 - Lepine M.            - VMM replacement with GMM
+! v4_40 - Lee/Qaddouri         - Add initialization for Yin-Yang
 !
 !implicits
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "nest.cdk"
+#include "geomg.cdk"
 #include "lam.cdk"
+#include "step.cdk"
 #include "schm.cdk"
+#include "lun.cdk"
 !
       character*16 tr_name
-      integer n,id,yy,mo,dd,hh,mm,ss,dum
+      integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum
       real, pointer, dimension(:,:,:) :: tr1,trf
 !
 !     ---------------------------------------------------------------
 !
+      if (Lun_debug_L) write(Lun_out,1000)
       gmmstat = gmm_get(gmmk_ut1_s ,ut1 ,meta3d)
       gmmstat = gmm_get(gmmk_vt1_s ,vt1 ,meta3d)
       gmmstat = gmm_get(gmmk_wt1_s ,wt1 ,meta3d)
       gmmstat = gmm_get(gmmk_tt1_s ,tt1 ,meta3d)
       gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
       gmmstat = gmm_get(gmmk_st1_s ,st1 ,meta2d)
+!     call glbstat2 (st1,'st1',"nest_in",LDIST_DIM,1,1,1,G_ni,1,G_nj,1,1)
 
       if (.not. Schm_hydro_L) then
          gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
@@ -83,7 +89,109 @@
       	    gmmstat = gmm_get(tr_name,trf,meta3d)
             trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
          end do
+
+      else if (Grd_yinyang_L) then
+         gmmstat = gmm_get(gmmk_nest_u_s ,nest_u ,meta3d)
+         gmmstat = gmm_get(gmmk_nest_v_s ,nest_v ,meta3d)
+         gmmstat = gmm_get(gmmk_nest_w_s ,nest_w ,meta3d)
+         gmmstat = gmm_get(gmmk_nest_t_s ,nest_t ,meta3d)
+         gmmstat = gmm_get(gmmk_nest_zd_s,nest_zd,meta3d)
+         gmmstat = gmm_get(gmmk_nest_s_s ,nest_s ,meta2d)
+
+!     Initialization for Yin-Yang communications
+         call yyg_initscalbc()
+         call yyg_initvecbc1()
+         call yyg_initvecbc2()
+         call yyg_rhs_initscalbc()
+         nest_w  = wt1
+         nest_t  = tt1
+         nest_zd = zdt1
+         nest_s  = st1
+!     Exchange halos, interpolate and get scalar data for Yin, Yang bcs
+         call rpn_comm_xch_halo(nest_s, LDIST_DIM,l_ni,l_nj,1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(st1,nest_s,LDIST_DIM,1)
+         call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(tt1,nest_t,LDIST_DIM,G_nk+2)
+         call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk+1)
+         call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk+1,&
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk+1)
+         if (.not. Schm_hydro_L) then
+             gmmstat = gmm_get(gmmk_nest_q_s,nest_q,meta3d)
+             nest_q = qt1
+             call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2,&
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+             call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
+         endif
+
+!        Convert wind to real orientation
+!$omp parallel
+!$omp do
+         do k= 1, G_nk+1
+         do j= 1, l_nj
+         do i= 1, l_niu
+             ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
+             nest_u(i,j,k)=ut1(i,j,k)
+         enddo
+         enddo
+         do j= 1, l_njv
+         do i= 1, l_ni
+             vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
+             nest_v(i,j,k)=vt1(i,j,k)
+         enddo
+         enddo
+         enddo
+!$omp enddo
+!$omp end parallel
+
+!        Exchange halos, interpolate and get U,V for Yin, Yang bcs
+         call rpn_comm_xch_halo(nest_u,LDIST_DIM,l_niu,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk+1)
+         call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
+
+!        Convert the wind back
+!$omp parallel
+!$omp do
+      do k= 1, G_nk+1
+         do j= 1, l_nj
+         do i= 1, l_niu
+            ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
+!Is the following line necessary?
+            nest_u(i,j,k) = ut1(i,j,k)
+         enddo
+         enddo
+         do j= 1, l_njv
+         do i= 1, l_ni
+            vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
+!Is the following line necessary?
+            nest_v (i,j,k)= vt1(i,j,k)
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+
+!        Tracers in Yin-Yang
+         do n=1,Tr3d_ntr
+            tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
+            gmmstat = gmm_get(tr_name,tr1,meta3d)
+            tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+      	    gmmstat = gmm_get(tr_name,trf,meta3d)
+            trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
+            call rpn_comm_xch_halo(trf, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+            call yyg_scalbc(tr1,trf,LDIST_DIM,G_nk+2)
+         end do
+  
       else
+!     Ordinary LAM
          gmmstat = gmm_get(gmmk_nest_u_s ,nest_u ,meta3d)
          gmmstat = gmm_get(gmmk_nest_v_s ,nest_v ,meta3d)
          gmmstat = gmm_get(gmmk_nest_w_s ,nest_w ,meta3d)
@@ -110,12 +218,13 @@
       endif
 !
       Lam_previous_S= ''
-      Lam_current_S = Lam_runstrt_S
+      Lam_current_S = Step_runstrt_S
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
       call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
       Lam_tdeb      = Lam_tfin
 !
 !     ---------------------------------------------------------------
 !
+ 1000 format(3X,'NESTING INITIALIZATION (NEST_INIT)')
       return
       end

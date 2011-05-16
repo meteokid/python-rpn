@@ -1,4 +1,3 @@
-
 #if defined (DOC)
 !
 !**comdeck sol.cdk
@@ -16,6 +15,7 @@
 ! Sol_ai_8           |  sub-   diagonal of LU factorization            |
 ! Sol_bi_8           |         diagonal of LU factorization            |
 ! Sol_ci_8           |  super- diagonal of LU factorization            |
+! Sol_stencil2_8,3,4,5    | stencils for Yin-Yang  (Qaddouri)               |
 !----------------------------------------------------------------------
 !
 !
@@ -25,14 +25,25 @@
 !
       logical sol_fft_L
       integer sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
-      integer sol_niloc,sol_njloc,sol_nloc,sol_maxits
+      integer sol_niloc,sol_njloc,sol_nloc
+      integer sol_fgm_maxits, sol_yyg_maxits
       integer sol_im,sol_i0,sol_in,sol_j0,sol_jn
+      common / sol_l / sol_fft_L 
       common / sol_i / sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
-      common / sol_i / sol_niloc,sol_njloc,sol_nloc,sol_maxits
-      common / sol_i / sol_im,sol_i0,sol_in,sol_j0,sol_jn,sol_fft_L
+      common / sol_i / sol_niloc,sol_njloc,sol_nloc
+      common / sol_i / sol_fgm_maxits, sol_yyg_maxits
+      common / sol_i / sol_im,sol_i0,sol_in,sol_j0,sol_jn
 !
-      real*8 sol_eps
-      common / sol_r8/ sol_eps
+      real*8 sol_fgm_eps, sol_yyg_eps
+      common / sol_r8/ sol_fgm_eps, sol_yyg_eps
 !
+      real  , dimension(:,:,:), pointer :: Sol_rhs
+      common / sol_p / Sol_rhs
+
       real*8, dimension(:), pointer :: Sol_ai_8,Sol_bi_8,Sol_ci_8
-      common / sol_p / Sol_ai_8,Sol_bi_8,Sol_ci_8
+      real*8, dimension(:), pointer :: Sol_stencil2_8,Sol_stencil3_8
+      real*8, dimension(:), pointer :: Sol_stencil4_8,Sol_stencil5_8
+      common / sol_p8/ Sol_ai_8,Sol_bi_8,Sol_ci_8
+      common / sol_p8/ Sol_stencil2_8,Sol_stencil3_8
+      common / sol_p8/ Sol_stencil4_8,Sol_stencil5_8
+

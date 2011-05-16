@@ -28,13 +28,16 @@
 ! v4_03 - Spacek/Desgagne      - ISST
 ! v4_13 - Desgagne M.          - new interface
 ! v4_14 - Desgagne M.          - new call to generic subroutine get_field
+! v4_40 - Qaddouri/Lee         - Yin-Yang, get geophy for Yin, Yang
 !
 #include "e_cdate.cdk"
 #include "path.cdk"
 #include "e_topo.cdk"
 #include "e_grids.cdk"
+#include "grd.cdk"
 !
-      character*12 interp_S
+      character*12   interp_S
+      character*1024 fn
       integer codp1,err
       real    wk(ni,nj)
 !
@@ -47,14 +50,16 @@
       interp_S = 'CUBIC'
       if (.not. Topo_clip_oro_L) interp_S = 'LINEAR'
 
-      call get_field ( wk, ni, nj, 'ME',              &
-                       trim(Path_input_S)//'/GEOPHY', &
-                       interp_S, xfi, yfi, err)
+      fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
+      if (Grd_yinyang_L) &
+      fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
 
-      if (err.lt.0) call e_arret( 'e_gettopo' )
-!
+      call get_field ( wk, ni, nj, 'ME', trim(fn), interp_S, xfi, yfi, err)
+      
+      call handle_error(err,'e_gettopo','get_field')
+
       if (Topo_clip_oro_L) wk(:,:) = max ( 0.0, wk(:,:) )
-!
+
       call e_filtopx (F_topoi , wk , ni, nj, 'G')
 !
 !----------------------------------------------------------------------

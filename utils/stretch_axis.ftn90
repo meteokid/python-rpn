@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**function: STRETCH_AXIS2 - will return a stretched axis given the
 !                           parameters NX,F_nxla,F_xbeg,F_xend,F_dxla
 !
@@ -35,6 +34,7 @@
 ! v2_30 - A. Methot         - introduction of a new stretch grid design
 ! v2_30 -                     with upper limits on grid point spacing   
 ! v3_11 - M. Tanguay        - Introduce Grd_gauss_L 
+! v4_40 - Lee V.            - allow to create Yin-Yang grids (larger than LAM)
 !
 !object
 !        see above id
@@ -129,6 +129,30 @@
            return
 
    
+      else if (F_dxmax.gt.360.0) then
+!        the grid is yinyang
+         F_dxla_8= (F_xend-F_xbeg)/(F_nxla-1)
+         if (F_print_L) then
+         print *
+         print *,'YinYang Grid Detected: F_dxla=',F_dxla_8
+         endif
+         F_margin = (NX-F_nxla)/2
+         F_dxla = F_dxla_8
+         F_x_8(F_margin+1)=F_xbeg
+         F_x_8(NX-F_margin)=F_xend
+         do i=F_margin,1,-1
+            F_x_8(i)=F_x_8(i+1)-F_dxla_8
+         enddo
+         do i=F_margin+2,NX-F_margin-1
+            F_x_8(i)=F_x_8(i-1)+F_dxla_8
+         enddo
+         do i=NX-F_margin+1,NX
+            F_x_8(i)=F_x_8(i-1)+F_dxla_8
+         enddo
+         F_margin=0
+         F_nimax  = 0
+         F_nxla = NX
+         go to 8889
       else if ( NX .eq. F_nxla ) then
  
 !        the grid is uniform
@@ -287,18 +311,20 @@
              stretch_axis2 = -1
              return
       endif
-!                 NOTING IS DONE HERE IF F_nimax=0
+!                 NOTHING IS DONE HERE IF F_nimax=0
 !                        compute grid points in the upper limit uniform
 !                        resolution area to the left or bottom end of grid
       do i=F_nimax,1,-1
          F_x_8(i)=F_x_8(i+1)-hxmax
       enddo
-!                 NOTING IS DONE HERE IF F_nimax=0
+!                 NOTHING IS DONE HERE IF F_nimax=0
 !                        compute grid points in the upper limit uniform
 !                        resolution area to the right or top end of grid
       do i=NX-F_nimax+1,NX
          F_x_8(i)=F_x_8(i-1)+hxmax
       enddo
+
+8889  continue
 
       if (F_print_L) then
       print *,'x  = ',(F_x_8(i),i=1,NX)

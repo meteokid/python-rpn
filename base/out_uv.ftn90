@@ -17,16 +17,14 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_uv (F_wlnph_m,DIST_DIM, &
-                         nk,levtyp_S,rf,indo,nko,F_set)
+      subroutine out_uv (F_wlnph_m,DIST_DIM, nk,levset,set)
 !
       implicit none
 !
-      character*1 levtyp_S
-      integer nk,DIST_DIM,nko,indo(*),F_set
+      integer nk,DIST_DIM,levset,set
 
 !     NOTE that F_wlnph_m does not have level "0" here
-      real F_wlnph_m(DIST_SHAPE,nk+1), rf(*)
+      real F_wlnph_m(DIST_SHAPE,nk+1)
 !
 !author
 !     james caveen/andre methot - rpn july/nov 1995
@@ -46,6 +44,7 @@
 ! v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD 
 ! v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step 
 ! v4_05 - Lee V.            - adaptation to GMM
+! v4_40 - Lee V.            - change in argument call for this routine & prgen
 !
 !object
 !     output the wind images or wind components or wind module.
@@ -76,17 +75,17 @@
        include "v4dg.inc"
 !
       integer i,j,k,ii,jj,jjj,kk
-      integer pnerr, psum
+      integer pnerr, psum, kind,nko
       integer :: lastdt = -1
-      real prprlvl(nko),find
+      real find
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,gridi,grido
       logical fla,flb
       real*8 cu_8(l_nj),cv_8(l_nj),c1_8(l_nj)
       real*8 inv_rayt_8
+      integer, dimension(:), allocatable::indo
+      real ,dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres
+      real ,dimension(:), allocatable::prprlvl,rf
       real uv(minx:maxx,miny:maxy,nk+1)
-      real uv_pres(minx:maxx,miny:maxy,nko)
-      real uu_pres(minx:maxx,miny:maxy,nko)
-      real vv_pres(minx:maxx,miny:maxy,nko)
       real t3(minx:maxx,miny:maxy,G_nk+1), t4(minx:maxx,miny:maxy,G_nk+1)
       real, dimension(:,:,:), pointer :: uu,vv
       save lastdt,uu,vv
@@ -102,8 +101,8 @@
 !_______________________________________________________________________
 !
       integer pnuu,pnvv,pnuv
-      integer nbit(0:Outd_var_max(F_set)+1),filt(0:Outd_var_max(F_set)+1)
-      real    coef(0:Outd_var_max(F_set)+1)
+      integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
+      real    coef(0:Outd_var_max(set)+1)
 !
 !     initialize conversion of units
 !
@@ -117,25 +116,25 @@
       pnvv=0
       pnuv=0
 
-      do ii=0,Outd_var_max(F_set)
+      do ii=0,Outd_var_max(set)
          coef(ii)=0.0
          filt(ii)=0
          nbit(ii)=0
       enddo
 
-      do ii=1,Outd_var_max(F_set)
-        if (Outd_var_S(ii,F_set).eq.'UU')then
+      do ii=1,Outd_var_max(set)
+        if (Outd_var_S(ii,set).eq.'UU')then
            pnuu=ii
         endif
-        if (Outd_var_S(ii,F_set).eq.'VV')then
+        if (Outd_var_S(ii,set).eq.'VV')then
            pnvv=ii
         endif
-        if (Outd_var_S(ii,F_set).eq.'UV')then
+        if (Outd_var_S(ii,set).eq.'UV')then
            pnuv=ii
         endif
-        nbit(ii)=Outd_nbit(ii,F_set)
-        filt(ii)=Outd_filtpass(ii,F_set)
-        coef(ii)=Outd_filtcoef(ii,F_set)
+        nbit(ii)=Outd_nbit(ii,set)
+        filt(ii)=Outd_filtpass(ii,set)
+        coef(ii)=Outd_filtcoef(ii,set)
       enddo
       psum=pnuu+pnuv+pnvv
       if (psum.eq.0)return
@@ -281,31 +280,38 @@
       j0 = 1
       jn = l_nj
 !
-      if (levtyp_S .eq. 'M') then
+      if (Level_typ_S(levset) .eq. 'M') then
 !_______________________________________________________________________
 !
 !     6.0a    Output of (UU,VV,UV) Variables on ETA levels
 !_______________________________________________________________________
+!
+        kind=Level_kind_ip1
+!       Setup the indexing for output
+        allocate (indo( min(Level_max(levset),Level_momentum) ))
+        call out_slev(Level(1,levset), Level_max(levset), &
+                      Level_momentum,indo,nko)
 
-            if (pnuu.ne.0) &
-                 call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'UU  ',prmult,0.0,Out_kind,nk+1, indo, nko, nbit(pnuu) )
+        if (pnuu.ne.0) &
+            call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+                 'UU  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnuu) )
             
-            if (pnvv.ne.0) &
-                 call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'VV  ',prmult,0.0,Out_kind,nk+1, indo, nko, nbit(pnvv) )
-            if (pnuv.ne.0) then
-               do k = 1,G_nk+1
-                  do j = j0, jn 
-                  do i = i0, in
-                     uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
+        if (pnvv.ne.0) &
+            call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+                 'VV  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnvv) )
+        if (pnuv.ne.0) then
+            do k = 1,G_nk+1
+            do j = j0, jn 
+            do i = i0, in
+               uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
                           vv(i,j,k)*vv(i,j,k))
-                  enddo
-                  enddo
-               enddo
-               call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                    'UV  ',prmult,0.0,Out_kind,nk+1, indo, nko, nbit(pnuv) )
-            endif
+            enddo
+            enddo
+            enddo
+            call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+                 'UV  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnuv) )
+        endif
+        deallocate(indo)
 
       else
 !_______________________________________________________________________
@@ -313,6 +319,19 @@
 !     7.0B   Output UU,VV,UV on PRESSURE levels
 !_______________________________________________________________________
 !
+!       Set kind to 2 for pressure output
+        kind=2
+!       Setup the indexing for output
+        nko=Level_max(levset)
+        allocate ( indo(nko), rf(nko) , prprlvl(nko) )
+        do i = 1, nko
+           indo(i)=i
+           rf(i)= Level(i,levset)
+           prprlvl(i) = rf(i) * 100.0
+        enddo
+        allocate(uu_pres(LDIST_SHAPE,nko))
+        allocate(vv_pres(LDIST_SHAPE,nko))
+        allocate(uv_pres(LDIST_SHAPE,nko))
 
 !        Compute vertical derivative of UU,VV with respect to wlnph
 
@@ -320,16 +339,15 @@
                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
          call verder (t4, vv, F_wlnph_m,2.0,2.0, &
                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
-         do i = 1, nko
-            prprlvl(i) = rf(i) * 100.0
-         enddo
 !
 !        Compute UU
          call prgen( uu_pres,uu, t3,F_wlnph_m,prprlvl,nko, &
-                     Out3_cubuv_L, LDIST_DIM,G_nk+1)
+                     Out3_cubuv_L, LDIST_DIM,G_nk+1,&
+                     1,l_ni,1,l_nj)
 !        Compute VV
          call prgen( vv_pres,vv, t4, F_wlnph_m,prprlvl,nko, &
-                     Out3_cubuv_L, LDIST_DIM,G_nk+1)
+                     Out3_cubuv_L, LDIST_DIM,G_nk+1,&
+                     1,l_ni,1,l_nj)
          if(pnuv.ne.0) then
 !        Compute UV
              do k =  1, nko
@@ -344,7 +362,7 @@
                call filter(uv_pres,filt(pnuv),coef(pnuv),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
              call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'UV  ',prmult,0.0, Out_kind,nko, indo, nko, nbit(pnuv) )
+              'UV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuv) )
          endif
 !
          if (pnuu.ne.0) then
@@ -352,7 +370,7 @@
                call filter(uu_pres,filt(pnuu),coef(pnuu),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
              call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'UU  ',prmult,0.0, Out_kind,nko, indo, nko, nbit(pnuu) )
+              'UU  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuu) )
          endif
 !
          if (pnvv.ne.0) then
@@ -360,9 +378,10 @@
                call filter(vv_pres,filt(pnvv),coef(pnvv),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
              call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'VV  ',prmult,0.0, Out_kind,nko, indo, nko, nbit(pnvv) )
+              'VV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnvv) )
          endif
                      
+         deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres)
       endif
 !     
       return

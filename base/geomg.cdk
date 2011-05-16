@@ -33,12 +33,15 @@
 ! geomg_invDY_8      | inverse DELTAY = cos(theta)2/dsin(theta)        |
 ! geomg_invDYv_8     | inverse DELTAY for v points                     |
 !                    | n.b. DELTAY.ne.geomg_hy_8                       |
+! geomg_invcy_8      | inverse of geomg_cy_8                           |
+! geomg_invcyv_8     | inverse of geomg_cyv_8                          |
 ! geomg_invcy2_8     | inverse of geomg_cy2_8                          |
 ! geomg_invcyv2_8    | inverse of geomg_cyv2_8                         |
 !----------------------------------------------------------------------
 !
 #endif
 !
+
       DCL_DYNVAR(Geomg, x_8   ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, xu_8  ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
@@ -62,5 +65,7 @@
       DCL_DYNVAR(Geomg, invDXu_8 ,  real*8, (XDIST_SHAPE))
       DCL_DYNVAR(Geomg, invDY_8  ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invDYv_8 ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invcy_8  ,  real*8, (YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invcyv_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invcy2_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invcyv2_8,  real*8, (YDIST_SHAPE))

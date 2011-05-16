@@ -57,7 +57,7 @@
 !
       if (LAM .and. global_extend) then
          write (6,2005) 
-         stop
+         call handle_error(-1,'e_grid','')
       endif
 !
       allocate (xfi(nifi),yfi(njfi),xu(niu),yv(njv))
@@ -76,10 +76,7 @@
       ier=stretch_axis2 ( x_8, Grd_dx, Grd_x0, Grd_xl, nleft, ni, nila, &
                    r1, .false., .false., Grd_dxmax, nimax, Grd_gauss_L )
 !
-      if (ier.ne.0) then
-          write(6,*)'ERROR in generating X axis!!! ABORT!!!!'
-          call e_arret('e_gridgef')
-      endif
+      call handle_error(ier,'e_grid','ERROR in generating X axis')
 !
       if (LAM) then
          ier=stretch_axis2 ( y_8, Grd_dy, Grd_y0, Grd_yl, nbelo, Grd_nj, &
@@ -89,10 +86,7 @@
             Grd_njla, s1, .true. ,.false.,Grd_dymax,njmax, Grd_gauss_L )
       endif 
 !
-      if (ier.ne.0) then
-          write(6,*)'ERROR in generating Y axis!!! ABORT!!!!'
-          call e_arret('e_gridgef')
-      endif
+      call handle_error(ier,'e_grid','ERROR in generating Y axis')
 !
 ! call parpos_from_file (x_8, y_8, ni, Grd_nj)
 !
@@ -213,7 +207,7 @@
 !
  2005 format (/' LAM grid extends to global coverage on at least ', &
               /' one axis ---- ABORT -----'/)
- 1001 format (/1x,'COMPUTE MODEL GRID (S/R E_GRIDGEF)', &
+ 1001 format (/1x,'COMPUTE MODEL GRID (S/R E_GRID)', &
               /1x,34('='))
  1020 FORMAT (/1X,'FINAL HORIZONTAL GRID CONFIGURATION:' &
         /1X,' NI=',I4,' FROM Grd_x0=',F9.3,' TO Grd_xl=',F9.3,' DEGREES' &

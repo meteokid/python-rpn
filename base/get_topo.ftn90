@@ -34,8 +34,10 @@
 #include "path.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
+#include "grd.cdk"
 !
-      character*8 inttyp
+      character*8    inttyp
+      character*1024 fn
       integer status
       real   xfi(G_ni), yfi(G_nj), topo_destination(G_ni,G_nj)
       real*8 rad2deg_8 
@@ -56,8 +58,11 @@
          xfi(1:G_ni) = G_xg_8(1:G_ni)*rad2deg_8
          yfi(1:G_nj) = G_yg_8(1:G_nj)*rad2deg_8
 
-         call get_field ( topo_destination, G_ni, G_nj, 'ME', &
-                          trim(Path_input_S)//'/GEOPHY'     , &
+         fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
+         if (Grd_yinyang_L) &
+         fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+
+         call get_field ( topo_destination, G_ni, G_nj, 'ME', trim(fn), &
                           inttyp, xfi, yfi, status)
 
       endif

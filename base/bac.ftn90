@@ -34,6 +34,7 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard            - Open top
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_40 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds
 !
 !object
 !******************************************************************************
@@ -60,12 +61,9 @@
 #include "vt0.cdk" 
 #include "vtx.cdk" 
 #include "lctl.cdk"
-#include "acid.cdk"
 #include "nest.cdk"
 #include "wil_williamson.cdk"
-!
-!modules
-!
+#include "grd.cdk"
 !*
 !     __________________________________________________________________
 !
@@ -122,6 +120,8 @@
                        rhsu ,  rhsv ,  rhst ,  rhsw ,  rhsf , rhsb , &
                        nl_u ,  nl_v ,  nl_t ,  nl_w ,  nl_f , nl_b , &
                        LDIST_DIM, l_nk )
+!
+      if (Grd_yinyang_L) call yyg_bacwinds (ut0,vt0,zdt0,LDIST_DIM,l_nk)
 !
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
 !     __________________________________________________________________

@@ -46,37 +46,41 @@
 !	none
 !
 !implicits
-#include "e_anal.cdk"
-#include "e_schm.cdk"
 #include "e_tr.cdk"
-#include "modconst.cdk"
+#include "ptopo.cdk"
 #include "path.cdk"
-#include "leap.cdk"
+#include "modconst.cdk"
+#include "step.cdk"
 #include <clib_interface.cdk>
+#include "modipc.cdk"
 !
-!*
       integer  fnom
       external fnom
-      integer k,labfl,err
+      integer labfl,err
       character*1024 rootfn
 !
 !     ---------------------------------------------------------------
 !
-      labfl=0
-      rootfn = trim(Path_output_S)//'/INIT_SFC/'
-      err    = clib_mkdir (trim(rootfn))
-      if (fnom(labfl,trim(rootfn)//'/labfl.bin','SEQ/UNF',0).lt.0) &
-          stop 'In e_nm2bin: Trying to open file labfl.bin'
+      err = 0
+
+      if (Ptopo_myproc.eq.0) then
+         tracers_ntr = E_tr3d_ntr
+         tracers_name= ''
+         tracers_sval= 0.
+         tracers_name(1:E_tr3d_ntr) = E_trname_S (1:E_tr3d_ntr)
+         tracers_sval(1:E_tr3d_ntr) = E_tr3d_sval(1:E_tr3d_ntr)
+         Mod_runstrt_S  = Step_runstrt_S
+         labfl=0
+         rootfn = trim(Path_output_S)//'/GEMDM_input/'
+         err    = clib_mkdir (trim(rootfn))
+         err    = fnom(labfl,trim(rootfn)//'/Modntr_ipc.nml','SEQ',0)
+         if (err.ge.0) then
+            write (labfl  ,nml=modipc_cfgs)
+            close (labfl)
+         endif
+      endif
 !
-      write(labfl) Mod_runstrt_S
-!
-      write(labfl)  E_tr3d_ntr, &
-                   (E_trname_S(k),k=1,E_tr3d_ntr), &
-                   (E_tr3d_sval  (k),k=1,E_tr3d_ntr)
-!
-      write(labfl) Anal_cond_L, Leap_years_L
-!
-      close (labfl)
+      call handle_error(err,'e_nm2bin','Trying to open file labfl.bin')
 !
 !     ---------------------------------------------------------------
 !

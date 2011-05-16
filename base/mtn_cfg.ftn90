@@ -79,7 +79,6 @@
 !      	  
       Grd_rcoef = 1.0
 !
-      Lam_nesdt=0
       Lam_ctebcs_L=.true.
       
       Hzd_lnr = 0.
@@ -366,7 +365,7 @@
        endif
       Grd_dxmax=Grd_xl
       Grd_dymax=Grd_yl
-      call datp2f( idatx, Lam_runstrt_S)
+      call datp2f( idatx, Step_runstrt_S)
       Out3_date= idatx
 	  
       G_halox = min(G_halox,Grd_ni-1)

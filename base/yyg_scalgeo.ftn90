@@ -1,0 +1,367 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r yyg_scalgeo - to interpolate and exchange geophysical data 
+!                   by PE 0 on global domain
+!
+#include "model_macros_f.h"
+
+      Subroutine yyg_scalgeo(tab_dst,xx,yy,x,y, &
+                            Ni,Nj,NK,Interp_S,nomvar_S)
+      implicit none
+!
+!author
+!           Abdessamad Qaddouri/V.Lee - October 2009
+!
+      include 'mpif.h'
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "glb_pil.cdk"
+
+      integer Ni,Nj,NK,numproc
+      real  tab_dst (Ni,Nj,*)
+      real  tab_src(Ni,Nj,Nk),tabf_src(Ni,Nj,Nk)
+      real*8  tab_dst_8(Ni,Nj,Nk)
+      real*8  tabf_src_8(Ni-2*Glb_pil_w,Nj-2*Glb_pil_s,Nk)
+      integer ierr,Ndim,i,j,k
+      integer imx(Ni,Nj),imy(Ni,Nj),imxx,imyy
+      integer status(MPI_STATUS_SIZE)
+      real*8 xx(Ni,Nj),yy(Ni,Nj),xx_r(Ni,Nj),yy_r(Ni,Nj)
+      real*8  t,p,s(2,2),h1,h2,x(*),y(*)
+      real*8  x_d,y_d,x_a,y_a   
+      integer tag1,tag2,is,req(2)
+      character*16 interp_S,nomvar_S,UPinterp_S
+      
+      if (Ptopo_myproc.ne.0) return
+
+      call low2up  (interp_S,UPinterp_S)
+!     print *,'scalgeo on ',nomvar_S,interp_S
+
+!     Copy original fields to a source table
+      tab_src(1:Ni,1:Nj,1:Nk)=tab_dst(1:Ni,1:Nj,1:Nk)
+
+!     Delta X and Delta Y
+      h1=x(2)-x(1)
+      h2=y(2)-y(1)
+!
+      is=glb_pil_w
+
+      do j=1,Nj
+         do i=1,Ni
+            x_d=xx(i,j)-acos(-1.D0)
+            y_d=yy(i,j)
+
+            call smat(s,x_a,y_a,x_d,y_d)
+            x_a=x_a+(acos(-1.D0))
+            y_a= y_a
+
+            xx_r(i,j)=x_a 
+            yy_r(i,j)=y_a
+
+          call localise(imx(i,j),imy(i,j),xx_r(i,j),yy_r(i,j), &
+                          x(1+is),y(1+is),h1,h2,1,1)
+         enddo
+      enddo
+
+!
+       Ndim=NI*NJ
+       
+       tag1=12
+       tag2=13
+
+
+      if (Ptopo_couleur.eq.0) then
+        do k=1,NK
+         call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,0,tag1,Ptopo_intercomm,ierr)
+         call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,0,tag2,Ptopo_intercomm,status,ierr)
+        enddo
+
+      endif
+      if (Ptopo_couleur.eq.1) then
+       do k=1,NK
+         call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
+         call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+       enddo
+
+      endif
+
+
+         do k=1,NK
+         do j=1+is,Nj-is
+           do i=1+is,Ni-is
+              tabf_src_8(i-is,j-is,k)=dble(tabf_src(i,j,k))
+           enddo
+         enddo
+         enddo
+
+
+         if (trim(UPinterp_S).eq.'LINEAR') then
+!
+! West section
+     
+         do j=1,Nj
+         do i=1,glb_pil_w
+            imxx = min(max(Imx(i,j),1),Ni-2*is-1)
+            imyy = min(max(Imy(i,j),1),Nj-2*is-1)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_lin_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),     &
+                               imxx,imyy,1,1, Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif 
+         enddo
+         enddo
+!
+! East section
+         do j=1,Nj
+         do i=Ni-glb_pil_e+1,Ni
+            imxx = min(max(Imx(i,j),1),Ni-2*is-1)
+            imyy = min(max(Imy(i,j),1),Nj-2*is-1)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_lin_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),    &
+                               imxx,imyy,1,1, Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif  
+        
+         enddo
+         enddo
+!
+! South section
+         do j=1,glb_pil_s
+         do i=1+glb_pil_w,Ni-glb_pil_e
+            imxx = min(max(Imx(i,j),1),Ni-2*is-1)
+            imyy = min(max(Imy(i,j),1),Nj-2*is-1)
+
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_lin_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),    &
+                               imxx,imyy,1,1,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif
+
+         enddo
+         enddo
+!
+! North section
+         do j=Nj-glb_pil_n+1,Nj
+         do i=1+glb_pil_w,Ni-glb_pil_e
+            imxx = min(max(Imx(i,j),1),Ni-2*is-1)
+            imyy = min(max(Imy(i,j),1),Nj-2*is-1)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+            ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_lin_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),    &
+                               imxx,imyy,1,1,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+ 
+         endif 
+        
+         enddo
+         enddo
+
+         else if (trim(UPInterp_S).eq.'NEAREST') then
+
+! NEAREST NEIGHBOR INTERPOLATION
+!
+! West section
+     
+         do j=1,Nj
+         do i=1,glb_pil_w
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and.&
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+
+           do k=1,Nk
+              call int_near_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),   &
+                               Imx(i,j),Imy(i,j),1,1, Ni-2*is,Nj-2*is,&
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif 
+         enddo
+         enddo
+!
+! East section
+         do j=1,Nj
+         do i=Ni-glb_pil_e+1,Ni
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_near_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),   &
+                               Imx(i,j),Imy(i,j),1,1, Ni-2*is,Nj-2*is,&
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif  
+        
+         enddo
+         enddo
+!
+! South section
+         do j=1,glb_pil_s
+         do i=1+glb_pil_w,Ni-glb_pil_e
+
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+           do k=1,Nk
+              call int_near_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),   &
+                               Imx(i,j),Imy(i,j),1,1, Ni-2*is,Nj-2*is,&
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif
+
+         enddo
+         enddo
+!
+! North section
+         do j=Nj-glb_pil_n+1,Nj
+         do i=1+glb_pil_w,Ni-glb_pil_e
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_near_lag(tab_dst_8(i,j,k),tabf_src_8(1,1,k),   &
+                               Imx(i,j),Imy(i,j),1,1, Ni-2*is,Nj-2*is,&
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is),h1,h2)
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+ 
+         endif 
+        
+         enddo
+         enddo
+         else if (trim(UPInterp_S).eq.'CUBIC') then
+! CUBIC INTERPOLATION
+!
+! West section
+     
+         do j=1,Nj
+         do i=1,glb_pil_w
+!           imxx = min(max(Imx(i,j)-1,glb_pil_w+1),Ni-glb_pil_e-3)
+!           imyy = min(max(Imy(i,j)-1,glb_pil_s+1),Nj-glb_pil_n-3)
+            imxx = min(max(Imx(i,j)-1,1),Ni-2*is-3)
+            imyy = min(max(Imy(i,j)-1,1),Nj-2*is-3)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_cub_geo(tab_dst_8(i,j,k),tabf_src_8(1,1,k),     &
+                               imxx,imyy,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is))
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif 
+         enddo
+         enddo
+!
+! East section
+         do j=1,Nj
+         do i=Ni-glb_pil_e+1,Ni
+!           imxx = min(max(Imx(i,j)-1,glb_pil_w+1),Ni-glb_pil_e-3)
+!           imyy = min(max(Imy(i,j)-1,glb_pil_s+1),Nj-glb_pil_n-3)
+            imxx = min(max(Imx(i,j)-1,1),Ni-2*is-3)
+            imyy = min(max(Imy(i,j)-1,1),Nj-2*is-3)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_cub_geo(tab_dst_8(i,j,k),tabf_src_8(1,1,k),     &
+                               imxx,imyy,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is))
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif  
+        
+         enddo
+         enddo
+!
+! South section
+         do j=1,glb_pil_s
+         do i=1+glb_pil_w,Ni-glb_pil_e
+!           imxx = min(max(Imx(i,j)-1,glb_pil_w+1),Ni-glb_pil_e-3)
+!           imyy = min(max(Imy(i,j)-1,glb_pil_s+1),Nj-glb_pil_n-3)
+            imxx = min(max(Imx(i,j)-1,1),Ni-2*is-3)
+            imyy = min(max(Imy(i,j)-1,1),Nj-2*is-3)
+
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+           ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+           do k=1,Nk
+              call int_cub_geo(tab_dst_8(i,j,k),tabf_src_8(1,1,k),     &
+                               imxx,imyy,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is))
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+         endif
+
+         enddo
+         enddo
+!
+! North section
+         do j=Nj-glb_pil_n+1,Nj
+         do i=1+glb_pil_w,Ni-glb_pil_e
+!           imxx = min(max(Imx(i,j)-1,glb_pil_w+1),Ni-glb_pil_e-3)
+!           imyy = min(max(Imy(i,j)-1,glb_pil_s+1),Nj-glb_pil_n-3)
+            imxx = min(max(Imx(i,j)-1,1),Ni-2*is-3)
+            imyy = min(max(Imy(i,j)-1,1),Nj-2*is-3)
+      
+         if ( ((xx_r(i,j).ge.x(1+is)).and.(xx_r(i,j).le.x(Ni-is))).and. &
+            ((yy_r(i,j).ge.y(1+is)).and.(yy_r(i,j).le.y(Nj-is)))) then
+
+           do k=1,Nk
+              call int_cub_geo(tab_dst_8(i,j,k),tabf_src_8(1,1,k),     &
+                               imxx,imyy,Ni-2*is,Nj-2*is, &
+                               xx_r(i,j),yy_r(i,j),x(1+is),y(1+is))
+              tab_dst(i,j,k)=real(tab_dst_8(i,j,k))
+           enddo
+ 
+         endif 
+        
+         enddo
+         enddo
+
+         else
+         print*,'Cannot find interpolator'
+         stop
+         endif
+!
+      return
+      end
+

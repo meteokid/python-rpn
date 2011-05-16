@@ -16,7 +16,7 @@ gemdm_nompi:
 	make gemdm COMM_stubs=rpn_commstubs$(COMM_VERSION) MPI=
 
 gemntr:
-	cd $(LCLPO);\
+	cd $(LCLPO); /bin/rm -f $(mainntr)* bidon.o;\
 	$(RBUILD) -obj *.o -bidon -main gemntr -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI);\
 	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
@@ -28,7 +28,7 @@ gemntr:
 	echo COMM_VERSION  = $(COMM_VERSION)
 
 gemdm:
-	cd $(LCLPO);\
+	cd $(LCLPO) ; /bin/rm -f $(maindm)* bidon.o ;\
 	$(RBUILD) -obj *.o -bidon -main gemdm -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI) ;\
 	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\

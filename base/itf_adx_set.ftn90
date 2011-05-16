@@ -22,6 +22,7 @@ subroutine itf_adx_set()
    !@author Stephane Chamberland, Jan 2010
    !@revisions
    !@ v4_14 Plante A.    - add 'model/gbpil_t',Lam_gbpil_t
+   !@ v4_40 Qaddouri/Lee - add Adx_yinyang_L key
 !**/
 #include <WhiteBoard.hf>
 #include "grd.cdk"
@@ -49,6 +50,7 @@ subroutine itf_adx_set()
    istat = WB_OK
    istat = min(wb_put('model/maxcfl',grd_maxcfl,options),istat)
    istat = min(wb_put('model/is_lam',G_lam,options),istat)
+   istat = min(wb_put('model/is_yinyang',Grd_yinyang_L,options),istat)
    istat = min(wb_put('model/is_period_x',G_periodx,options),istat)
    istat = min(wb_put('model/is_period_y',G_periody,options),istat)
    istat = min(wb_put('model/G_ni',G_ni,options),istat)

@@ -51,7 +51,6 @@
       filen = trim(Out_dirname_S)// '/' // trim(filen)
       open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
                                                 position='APPEND')
-      Out_diruse_L = .true.
 
 !     Warning: Geomg_X is local, G_xg is global
       allocate(xu_8(Out_nisg),yv_8(Out_njsg))

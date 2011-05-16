@@ -20,6 +20,7 @@ subroutine adx_get_ij0n(i0,in,j0,jn)
    integer :: i0,j0,in,jn     !O, scope of advection operations
    !@author  Stephane Chamberland, 2009-12
    !@revisions
+   !@ v4_40 - Qaddouri/Lee    - Yin-Yang, expand calculation by 1 point around
 #include "adx_dims.cdk"
    !**/
    !---------------------------------------------------------------------
@@ -27,7 +28,14 @@ subroutine adx_get_ij0n(i0,in,j0,jn)
    in = adx_mlni
    j0 = 1
    jn = adx_mlnj
-   if (adx_lam_L) then
+
+   if (adx_yinyang_L) then
+      if (adx_is_west)  i0 = adx_pil_w - 1
+      if (adx_is_east)  in = adx_mlniu - adx_pil_e + 3
+      if (adx_is_south) j0 = adx_pil_s - 1
+      if (adx_is_north) jn = adx_mlnjv - adx_pil_n + 3
+
+   else if (adx_lam_L) then
       if (adx_is_west)  i0 = adx_pil_w
       if (adx_is_east)  in = adx_mlniu - adx_pil_e + 2
       if (adx_is_south) j0 = adx_pil_s

@@ -35,13 +35,12 @@
 #include "e_topo.cdk"
 #include "e_grids.cdk"
 #include "bmf.cdk"
+#include "step.cdk"
 #include "pilot.cdk"
 #include "filename.cdk"
-#include "modconst.cdk"
 !
 !object
 !  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
-!  Full 3DF file is written for initialization at date in Mod_runstrt
 !  Pil_bmf_L= TRUE forces BMF files to be written
 !*
       integer  fstfrm,newdate,fclos
@@ -56,7 +55,7 @@
 !
       bmf_dtyp = 41
       date1    = Pil_jobstrt_S
-      dayfrac  = dble(Pil_nesdt) / sec_in_day
+      dayfrac  = dble(Step_nesdt) / sec_in_day
 !
       if (Pil_bmf_L) then
           allocate ( topo (nifi*njfi) )
@@ -70,11 +69,11 @@
 !
          call datp2f   ( datev, date1 )
          err = newdate ( datev, bmf_time1, bmf_time2, -3 )
-         write (6,105) date1,bmf_time1,bmf_time2
+         write (6,105) date1
          call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
          call e_specanal
 !
-         call e_open_files (date1.eq.Mod_runstrt_S)
+         call e_open_files
 !
          call e_intthm
 !
@@ -89,9 +88,9 @@
          cnt = cnt + 1
          if (cnt .eq. Pil_lancemodel) &
             call system ( &
-           'tailjob=../../RUNENT_upload/input/tailjob_E ; &
-            if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob} ; &
-            soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob} ; fi')
+           'tailjob=../../RUNENT_upload/input/tailjob_E ; '            //&
+           'if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob} ; ' //&
+           'soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob} ; fi'      )
 
          call gemtim3 (6)
 !
@@ -99,7 +98,7 @@
 
       end do
 !     
- 105  format (/80('#'),/,1X,'PROCESSING DATASET VALID: ',a16,'=',i8.8,'.',i8.8/80('#')/)
+ 105  format (/43('#'),/,1X,'PROCESSING DATASET VALID: ',a16,/43('#'))
 !
 !---------------------------------------------------------------------
       return

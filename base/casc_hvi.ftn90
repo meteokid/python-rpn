@@ -75,7 +75,7 @@
       external get_px
 !
       logical Vertint_L
-      integer i,j,k,n,nga,err,jj
+      integer i,j,k,n,nga,err,jj,mustvinterp,mustvinterp_g
       integer nid1,njd1,ngd,ngd1,nidu,njdv
       integer, dimension (:      ), allocatable :: idx,idu,idy
       real s1,s2
@@ -201,30 +201,34 @@
          deallocate (pres)
 
          if ((presstype.eq.Ver_code).and.(G_nk+2.eq.nka_t)) then
-            Vertint_L=.false.
+            Vertint_L   = .false.
+            mustvinterp = 0
             do k=1,G_nk+2
                r1=ana_at_8(k)
                r2=Ver_a_8%t(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) Vertint_L=.true.
+               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=1
                r1=ana_bt_8(k)
                r2=Ver_b_8%t(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) Vertint_L=.true.
+               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=1
             end do
             do k=1,G_nk+1
                r1=ana_am_8(k)
                r2=Ver_a_8%m(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) Vertint_L=.true.
+               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=1
                r1=ana_bm_8(k)
                r2=Ver_b_8%m(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) Vertint_L=.true.
+               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=1
             end do
             do j=1,njd1
             do i=1,nid1
                s1=ssq0x(i,j)
                s2=exp(ssqx (i,j))*Cstv_pref_8 
-               if (abs((s1-s2)/s1).gt.1.e-5) Vertint_L=.true.
+               if (abs((s1-s2)/s1).gt.1.e-5) mustvinterp=1
             enddo
             enddo
+            call rpn_comm_allreduce ( mustvinterp,mustvinterp_g,1, &
+                               "MPI_integer","MPI_SUM","grid",err)
+            if ( mustvinterp_g .gt. 0 ) Vertint_L = .true.
          endif
          ssq0x(1:nid1,1:njd1) = log(ssq0x(1:nid1,1:njd1)/Cstv_pref_8)
       endif

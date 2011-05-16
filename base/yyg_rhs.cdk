@@ -1,0 +1,49 @@
+#if defined (DOC)
+!
+!**comdeck yyg_rhs.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH Ru,Rv Solver for Yin-Yang communication   |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Rhsx_recvw_len(M)  | Number of values to receive from each PE for    |
+!                    | its West Pilot area  (M=Ptopo_numproc)          |
+! Rhsx_recvw_i(*,M)  | local gridpoint I to receive value from PE(*)   |
+! Rhsx_recvw_j(*,M)  | local gridpoint J to receive value from PE(*)   |
+! Rhsx_sendw_len(*)  | Number of values to send to  PE (*) for West    |
+! Rhsx_sendw_imx(*,M)| closest I gridpoint on the other panel to find  |
+!                    | the value for Rhsx_sendw_xxr,Rhsx_sendw_yyr     |
+! Rhsx_sendw_imy(*,M)| closest J gridpoint on the other panel to find  |
+!                    | the value for  Rhsx_sendw_xxr,Rhsx_sendw_yyr    |
+! Rhsx_sendw_xxr(*,M)| longitude in the other panel to find the value  |
+!                    | for receiving panel                             |
+! Rhsx_sendw_yyr(*,M)| latitude in the other panel to find the value   |
+! Rhsx_sendw_sten(*,M) position J or I to find the stencil             |
+!______________________________________________________________________|
+!
+#endif
+!Declarations for Ru,Rv variables (on Phi grid)
+      integer, dimension (:  ), pointer :: Rhsx_recvw_len, Rhsx_recve_len, Rhsx_recvs_len , Rhsx_recvn_len, &
+                                           Rhsx_sendw_len, Rhsx_sende_len, Rhsx_sends_len , Rhsx_sendn_len
+      integer, dimension (:,:), pointer :: Rhsx_recvw_i  , Rhsx_recvw_j  , Rhsx_recve_i   , Rhsx_recve_j  , &
+                                           Rhsx_recvs_i  , Rhsx_recvs_j  , Rhsx_recvn_i   , Rhsx_recvn_j  , &
+                                           Rhsx_sendw_imx, Rhsx_sendw_imy, Rhsx_sendw_sten,                 &
+                                           Rhsx_sende_imx, Rhsx_sende_imy, Rhsx_sende_sten,                 &
+                                           Rhsx_sends_imx, Rhsx_sends_imy, Rhsx_sends_sten,                 &
+                                           Rhsx_sendn_imx, Rhsx_sendn_imy, Rhsx_sendn_sten
+      real*8,  dimension (:,:), pointer :: Rhsx_sendw_xxr, Rhsx_sendw_yyr, Rhsx_sende_xxr , Rhsx_sende_yyr, &
+                                           Rhsx_sends_xxr, Rhsx_sends_yyr, Rhsx_sendn_xxr , Rhsx_sendn_yyr
+
+      common/Rhsx_i/ Rhsx_recvw_len, Rhsx_recve_len, Rhsx_recvs_len , Rhsx_recvn_len, &
+                     Rhsx_sendw_len, Rhsx_sende_len, Rhsx_sends_len , Rhsx_sendn_len, &
+                     Rhsx_recvw_i  , Rhsx_recvw_j  , Rhsx_recve_i   , Rhsx_recve_j  , &
+                     Rhsx_recvs_i  , Rhsx_recvs_j  , Rhsx_recvn_i   , Rhsx_recvn_j  , &
+                     Rhsx_sendw_imx, Rhsx_sendw_imy, Rhsx_sendw_sten,                 &
+                     Rhsx_sende_imx, Rhsx_sende_imy, Rhsx_sende_sten,                 &
+                     Rhsx_sends_imx, Rhsx_sends_imy, Rhsx_sends_sten,                 &
+                     Rhsx_sendn_imx, Rhsx_sendn_imy, Rhsx_sendn_sten
+      common/Rhsx_r8/Rhsx_sendw_xxr, Rhsx_sendw_yyr, Rhsx_sende_xxr , Rhsx_sende_yyr, &
+                     Rhsx_sends_xxr, Rhsx_sends_yyr, Rhsx_sendn_xxr , Rhsx_sendn_yyr

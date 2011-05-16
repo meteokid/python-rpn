@@ -31,15 +31,20 @@ subroutine adx_cliptraj3(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,k0,F_nk, mesg)
    !@author Michel Desgagne, Spring 2008
    !@revisions
    ! v3_31 - Desgagne M.  - Initial version
+   ! v4_40 - Qaddouri/Lee - Yin-Yang trajectory clipping
 !**/
 #include "adx_grid.cdk"
    real*8,  parameter :: EPS_8 = 1.D-5
-   integer, parameter :: BCS_BASE = 4
+!  integer, parameter :: BCS_BASE = 4
+   integer :: BCS_BASE ! BCS points for Yin-Yang, normal LAM
 
    character(len=MSG_MAXLEN) :: msg_S
    integer :: n, i,j,k, cnt, sum_cnt, err, totaln
    real :: minposx,maxposx,minposy,maxposy, posxmin,posxmax,posymin,posymax
    !---------------------------------------------------------------------
+
+   BCS_BASE= 4
+   if (Adx_yinyang_L) BCS_BASE = 3
    minposx = adx_xx_8(adx_lminx+1) + EPS_8
    if (adx_is_west)  minposx = adx_xx_8(1+BCS_BASE) + EPS_8
    maxposx = adx_xx_8(adx_lmaxx-1) - EPS_8

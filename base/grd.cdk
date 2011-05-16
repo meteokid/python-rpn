@@ -1,31 +1,66 @@
+#if defined (DOC)
+!
+!**comdeck grd.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH Grid Definition                           |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Grd_typ_S          | Type of grid described using 2 characters:      |
+!                    | "GU"- Global Uniform                            |
+!                    | "GV"- Global variable resolution                |
+!                    | "GY"- Global Yin-Yang                           |
+!                    | "LU"- LAM    Uniform                            |
+! Grd_roule          | .true. for rotation, .false. for non-rotated    |
+! Grd_uniform_L      | .true. for uniform resolution                   |
+! Grd_gauss_L        | .true. for Gaussian grid                        |
+! Grd_ni             | number of points along NI                       |
+! Grd_nj             | number of points along NJ                       |
+! Grd_nila           | # of points along NI for core in variable grid  |
+! Grd_njla           | # of points along NJ for core in variable grid  |
+! Grd_left           | # of points left of core grid                   |
+! Grd_belo           | # of points below   core grid                   |
+! Grd_bsc_base       | # of points (5) minimum for                     |
+! Grd_bsc_ext1       | # of points (3) minimum for                     |
+! Grd_maxcfl         | Courrant number                                 |
+!                    | Pilot area=Grd_maxcfl +Grd_bsc_base+Grd_bsc_ext1|
+! Grd_overlap        | # of degrees to overlap along latitude axis for |
+!                    | Yin, Yang grids                                 |
+!______________________________________________________________________|
+#endif
 
-      character*2 Grd_typ_S
-      character*2 Grd_proj_S
-      logical Grd_roule, Grd_uniform_L, Grd_gauss_L
+      character*2  Grd_typ_S
+      character*12 Grd_yinyang_S
+      logical Grd_roule, Grd_uniform_L, Grd_gauss_L, Grd_yinyang_L
       integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo
       integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       integer Grd_iref, Grd_jref, Grd_maxcfl
+      integer Grd_ndomains, Grd_mydomain
       real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       real Grd_latr, Grd_lonr, Grd_x0, Grd_xl, Grd_y0, Grd_yl
       real Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot
-      real Grd_rcoef
+      real Grd_rcoef,Grd_overlap
       real*8 Grd_rot_8
 !   
-      common / Grd_c / Grd_typ_S,Grd_proj_S
-      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L
+      common / Grd_c / Grd_typ_S, Grd_yinyang_S
+      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L,Grd_yinyang_L
       common / Grd_i / Grd_ni  , Grd_nj  , Grd_nila, Grd_njla
       common / Grd_i / Grd_left, Grd_belo, Grd_iref, Grd_jref, Grd_maxcfl
       common / Grd_i / Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
+      common / Grd_i / Grd_ndomains, Grd_mydomain
       common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       common / Grd_r / Grd_latr, Grd_lonr
       common / Grd_r / Grd_x0, Grd_xl, Grd_y0, Grd_yl
       common / Grd_r / Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
-      common / Grd_r / Grd_rot(3,3),Grd_rcoef(2)
+      common / Grd_r / Grd_rot(3,3),Grd_rcoef(2),Grd_overlap
       common / Grd_r8 / Grd_rot_8(3,3)
 !
       namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj, Grd_maxcfl
       namelist /grid/ Grd_nila, Grd_njla, Grd_iref, Grd_jref
       namelist /grid/ Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
-      namelist /grid/ Grd_latr, Grd_lonr
+      namelist /grid/ Grd_latr, Grd_lonr,Grd_overlap
       namelist /grid/ Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
       namelist /grid/ Grd_gauss_L

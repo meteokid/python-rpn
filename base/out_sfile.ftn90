@@ -110,7 +110,6 @@
              err = fstouv(Out_unf ,ros)
              if (Out_debug_L) &
              write (6,101) Out_unf,trim(Out_filename_S)
-             Out_diruse_L = .true.
          endif
 !
       endif

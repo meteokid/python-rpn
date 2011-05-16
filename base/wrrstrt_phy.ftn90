@@ -29,6 +29,7 @@
 ! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
+#include "gmm.hf"
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "itf_phy_buses.cdk"
@@ -37,84 +38,78 @@
 #include "init.cdk"
 #include "rstr.cdk"
 #include "modconst.cdk"
-#include "out.cdk"
 #include "clim.cdk"
 #include "cfld.cdk"
 !
-!
-!modules
       integer  fnom,fclos
       external fnom,fclos
 !
       character*512  fn
       character*16   datev
-      integer dim,unf,ier,ibuf(4),datstp,adr
+      integer dim,unf,ier,ibuf(4),datstp,adr,gmmstat
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
+      type(gmm_metadata) :: meta_busper
 !
 !     ---------------------------------------------------------------
-!
-      dim = p_bper_siz*p_nj
-      if (dim.le.0) return
 !
       unf = 0
 !
       dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
-      call datp2f (datstp,datev)
 !
       fn='restart_BUSPER'
-      if (F_spin_L) then
-         fn= trim(Out_dirname_S)// '/' //'BUSPER4spinphy_'//trim(datev)
-         Out_diruse_L = .true.
-      endif
+      if (F_spin_L) fn= 'BUSPER4spinphy_'//trim(datev)
 !
       ier = fnom  (unf,fn,'RND',0)
       call waopen (unf)
 !
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
 !
-      ibuf(1) = datstp
-      ibuf(2) = dim
-      ibuf(3) = Grd_ni
-      ibuf(4) = Grd_nj
+      call wawrit (unf,F_spin_L     , 1, 1)
+      call wawrit (unf,Clim_inincr_L, 2, 1)
+      adr = 3
 !
-      rbuf(1) = Grd_dx
-      rbuf(2) = Grd_dy
-      rbuf(3) = Grd_xlon1
-      rbuf(4) = Grd_xlat1
-      rbuf(5) = Grd_xlon2
-      rbuf(6) = Grd_xlat2
+      if (F_spin_L) then
+         call datp2f (datstp,datev)
+         gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
+         dim = (meta_busper%l(1)%high-meta_busper%l(1)%low+1)*&
+               (meta_busper%l(2)%high-meta_busper%l(2)%low+1)
+
+         ibuf(1) = datstp
+         ibuf(2) = dim
+         ibuf(3) = Grd_ni
+         ibuf(4) = Grd_nj
 !
-      call wawrit (unf,ibuf        , 1,  4)
-      call wawrit (unf,rbuf        , 5,  6)
+         rbuf(1) = Grd_dx
+         rbuf(2) = Grd_dy
+         rbuf(3) = Grd_xlon1
+         rbuf(4) = Grd_xlat1
+         rbuf(5) = Grd_xlon2
+         rbuf(6) = Grd_xlat2
 !
-      call wawrit( unf,Clim_inincr_L, 11, 1 )
+         call wawrit (unf, ibuf, adr, 4)
+         adr = adr + 4
+         call wawrit (unf, rbuf, adr, 6)
+         adr = adr + 6
+         call wawrit (unf, BUSPER_3d, adr, dim)
+         adr = adr + dim
+      endif
+!
       if (Clim_inincr_L) then
-         call wawrit( unf,Cfld_nbr  , 12, 1 )
-         if (Cfld_nbr > 0) then
-            call wawrit( unf,Cfld_date, 13,           Cfld_nbr )
-            call wawrit( unf,Cfld_levs, 13+  Cfld_nbr,Cfld_nbr )
-            call wawrit( unf,Cfld_list, 13+2*Cfld_nbr,Cfld_nbr )
-         endif
-         adr = 13+3*Cfld_nbr
-      else
-         adr = 12
-      endif
-!
-      call wawrit (unf,Phy_busper3D,adr,dim)
-      adr = adr + dim
-      if ( Init_balgm_L .and. .not.Rstri_idon_L .and. Rstri_half_L) then
-         call wawrit (unf,.true.,adr,1)
+         call wawrit (unf, Cfld_nbr, adr, 1)
          adr = adr + 1
-         call wawrit (unf,Phy_busper3D_digf,adr,dim)
-      else
-         call wawrit (unf,.false.,adr,1)
+         if (Cfld_nbr > 0) then
+            call wawrit( unf,Cfld_date, adr,           Cfld_nbr )
+            call wawrit( unf,Cfld_levs, adr+  Cfld_nbr,Cfld_nbr )
+            call wawrit( unf,Cfld_list, adr+2*Cfld_nbr,Cfld_nbr )
+            adr = adr+3*Cfld_nbr
+         endif
       endif
-!
+
       call waclos(unf)
-      ier = fclos(unf)  
+      ier = fclos(unf) 
 !
  2000 format(/,'WRITING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &
              /,'============================================')

@@ -28,6 +28,7 @@
 ! v3_30 - Lee V.          - initial version
 ! v4_05 - Plante A.       - top blending
 ! v4_05 - Lepine M.       - VMM replacement with GMM
+! v4_40 - Lee V.          - no blending for Yin-Yang
 !
 !object
 !
@@ -37,6 +38,7 @@
 !implicits
 #include "glb_ld.cdk"
 #include "lam.cdk"
+#include "grd.cdk"
 #include "schm.cdk"
 #include "theo.cdk"
 #include "zblen.cdk"
@@ -45,7 +47,7 @@
 !
 !----------------------------------------------------------------------
 !
-      if (.not. G_lam) return
+      if (.not. G_lam.or.Grd_yinyang_L) return
 
       flag = (.not. Schm_theoc_L) .or.                    &
              (.not. ( Theo_case_S .eq. 'BUBBLE'   .or.    &

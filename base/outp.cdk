@@ -44,10 +44,10 @@
       integer Outp_grid(MAXSET)
       integer Outp_step(MAXSET)
       integer Outp_var_max(MAXSET)
-      integer Outp_sets
+      integer Outp_sets, Outp_multxmosaic
 
       COMMON /Outp_l/ Outp_dostep_L
-      COMMON /Outp/ Outp_lev,Outp_grid,Outp_step
+      COMMON /Outp/ Outp_lev,Outp_grid,Outp_step, Outp_multxmosaic
       COMMON /Outp/ Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
       COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
       COMMON /Outp_r/ Outp_filtcoef

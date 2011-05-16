@@ -55,6 +55,7 @@
 !
       integer i,j,k,n
       real, pointer, dimension(:,:,:) :: tr,tra
+      type(gmm_metadata) :: meta_busper
 !*
 !     ---------------------------------------------------------------
 !
@@ -149,8 +150,9 @@
 !******************************************************************
 !
       if ( Schm_phyms_L ) then
-         Phy_busper3D = Phy_busper3D_digf
-         deallocate (Phy_busper3D_digf)
+         gmmstat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
+         gmmstat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
+         BUSPER_3d = BUSPER_3d_digf
       endif
 !
 !     ---------------------------------------------------------------

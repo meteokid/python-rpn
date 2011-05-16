@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r  sol_fgmres -  call iterative elliptic solver 
 !
 #include "model_macros_f.h"
@@ -29,6 +28,7 @@
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
+! v4_40 - Qaddouri+Lee      - to save solver solution from last iteration
 !
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
@@ -41,13 +41,22 @@
       integer halox, haloy, minx1, maxx1, minx2, maxx2
       real*8, dimension(:  ), allocatable :: wk11,wk22,rhs1,sol1
       real*8, dimension(:,:), allocatable :: vv_8,ww_8
+      real*8, dimension(:), pointer :: sol2
       integer icode,iout,ischmi
+      integer :: lastdt = -1
+      save sol2,lastdt
 !
 !     ---------------------------------------------------------------
 !
       niloc = (Nil-pil_e)-(1+pil_w)+1
       njloc = (Njl-pil_n)-(1+pil_s)+1
       nloc  = niloc*njloc*Schm_nith
+      if (lastdt .eq. -1) then
+!     allocate and initialize sol2
+          allocate (sol2(nloc))
+          sol2 = 0.
+          lastdt = 0
+      endif 
 !
       allocate (vv_8(nloc,sol_im+1),ww_8(nloc,sol_im),wk11(nloc), &
                 wk22(nloc),rhs1(nloc),sol1(nloc))
@@ -68,7 +77,8 @@
       call tab_vec ( F_w1_8 , Minx,Maxx,Miny,Maxy, Schm_nith, &
                      rhs1   , sol_i0,sol_in,sol_j0,sol_jn, +1 )
 !
-      sol1  = 0.
+!     Initialize sol1 to last solution
+      sol1  = sol2
       iout  = 0
       icode = 0
 !
@@ -80,7 +90,9 @@
    1    continue
 !-----------------------------------------------------------------------
       call fgmres (nloc,sol_im,rhs1,sol1,ischmi,vv_8,ww_8,wk11,wk22, &
-                                      sol_eps,sol_maxits,iout,icode)
+                              sol_fgm_eps,sol_fgm_maxits,iout,icode)
+!     Save solution into sol2
+      sol2=sol1
       if (icode .eq. 1) then
 !
          if (sol_precond_S.eq.'DIAGO')         then

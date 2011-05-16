@@ -3,11 +3,6 @@
 #if !defined(ITF_PHY_CDK)
 #define ITF_PHY_CDK 1
 
-!      integer  phy_nml,phy_debu
-!      external phy_nml,phy_debu
-      integer  phy_debu
-      external phy_debu
-
       interface 
 
          integer function phy_nml(F_namelist,call_back,F_phys,F_unout)

@@ -78,7 +78,8 @@
       Ptopo_smtdyn=min(Ptopo_smtdyn,Ptopo_npeOpenMP*2)
       Ptopo_smtphy=min(Ptopo_smtphy,Ptopo_npeOpenMP*2)
 
-      if (Ptopo_myproc.eq.0) write (6, 8255) Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
+      if (Ptopo_myproc.eq.0) write (6, 8255) Ptopo_npex, Ptopo_npey, &
+                             Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
 !
 ! Initializes Path_nml_S and Path_outcfg_S
 !
@@ -140,7 +141,8 @@
          call fclos (unf)
       endif
 !
- 8255 format (/,' THREAD CONFIG: npeOpenMP, smtdyn, smtphy:'/10x,3i10/)
+ 8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
+                " OMP CONFIG (npeOpenMP x smtdyn x smtphy): ",i4,' x ',i3,' x ',i3)
 !
 !-------------------------------------------------------------------
 !      

@@ -1,0 +1,118 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r itf_phy_geom - 
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_geom (F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
+      implicit none
+!
+      character*(*) F_nomvar_S
+      integer n1,n2,F_indx, F_err
+      real F_dest(n1,n2)
+!
+!author
+!     Michel Desgagne    -   Spring 2011
+!
+!revision
+! v4_40 - Desgagne M.        - Initial version
+!
+!object
+!	See above ID.
+!	
+!arguments
+! F_dest
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "geomn.cdk"
+#include "p_geof.cdk"
+#include "dcst.cdk"
+#include "itf_phy_buses.cdk"
+!
+      integer i,j
+      real, dimension(:,:), allocatable :: wrk1
+      real*8 one_8,clxxx_8,deg2rad_8
+      parameter( one_8   = 1.0, clxxx_8 = 180.0 )
+!
+!     ---------------------------------------------------------------
+!
+  F_err=-1
+  if (n2.ne.p_nj) return
+
+  allocate (wrk1(l_ni,l_nj))
+  deg2rad_8 = acos( -one_8 )/clxxx_8
+
+  select case (trim(F_nomvar_S))
+
+  case ('DLAT')
+     wrk1=deg2rad_8*Geomn_latrx
+     do j= 1,p_nj
+        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
+     end do
+     F_err=0
+
+  case ('DLON')
+        Where(Geomn_lonrx>=0)
+           wrk1=deg2rad_8*Geomn_lonrx
+        Elsewhere
+           wrk1=deg2rad_8*(Geomn_lonrx+360.)
+        endwhere     
+     do j= 1,p_nj
+        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
+     end do
+     F_err=0
+
+  case ('MF')
+     gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+     if (gmmstat.eq.0) then
+     wrk1(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj) / Dcst_grav_8
+     do j= 1,p_nj
+        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
+     end do
+     F_err=0
+     endif
+
+  case ('DXDY')
+     do j=1,l_nj
+     do i=1,l_ni
+        wrk1(i,j)= geomg_hxu_8(i-1)*geomg_hyv_8(j-1)*     &
+                   Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(j)
+     end do
+     end do
+     do j= 1,p_nj
+        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
+     end do
+     F_err=0
+
+  case ('EPONMOD')
+     call itf_phy_vlsp (wrk1, l_ni, l_nj)
+     do j= 1,p_nj
+        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
+     end do
+     F_err=0
+
+  end select
+
+  deallocate (wrk1)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

@@ -31,13 +31,6 @@
 ! v4_03 - M. Desgagne       - ISST
 ! v4_05 - M. Desgagne       - Add timing information (gemtim3)
 !
-!implicits
-#include "pilot.cdk"
-#include "version.cdk"
-#include "itf_phy_buses.cdk"
-#include "path.cdk"
-#include "lun.cdk"
-!
 ! ---------------------------------------------------------------------
 !
 !     ================
@@ -45,24 +38,18 @@
 !     ================
 !
       call e_initntr
-
+!
       call e_gemnml
 !
-      if (Pil_3df_L) then
+      call e_grid
 !
-         call e_grid
+      call e_dateo
 !
-         call e_dateo
+      call e_dynfld
 !
-         call gemtim3 (6)
+      call e_nml2bin 
 !
-         call e_dynfld
-!
-         call e_nml2bin 
-!
-      endif
-!
-      call e_stopntr ()
+      call e_stopntr
 !
 ! ---------------------------------------------------------------------
 !

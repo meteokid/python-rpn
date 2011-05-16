@@ -13,40 +13,31 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r base_dir_env - Initialize basic directory paths
+!** s/r fst_rdhint read and perform horizontal interpolation
 !
-      subroutine base_dir_env (F_domain_S)
+      integer function fst_rdhint (   &
+                  f, dgid, ni, nj, nomvar_S, ip1, ip2, ip3, datev, &
+                  etik_S, typvar_S, interp_S, search, stdo )
       implicit none
 !
-      character*(*) F_domain_S
+      character* (*) nomvar_S,interp_S,etik_S,typvar_S,search
+      integer dgid, datev, ni, nj, ip1, ip2, ip3, stdo
+      real  f(*)
+!
 !author
-!     Michel Desgagne - Spring 2008
+!     Michel Desgagne - April 2011
 !
 !revision
-! v3_31 - Desgagne M.       - initial version
-! v4_05 - Desgagne M.       - replace basedir with work directory reference
+! v4_40 - Desgagne M.       - initial version
 !
-!implicits
-#include "path.cdk"
-#include <clib_interface.cdk>
+!implicites
 !
-      integer err
+!--------------------------------------------------------------------
 !
-!-------------------------------------------------------------------
+      fst_rdhint = -1      
 !
-      err = clib_getenv ('TASK_WORK'  ,Path_work_S  )
-      err = clib_getenv ('TASK_INPUT' ,Path_input_S )
-      err = clib_getenv ('TASK_OUTPUT',Path_output_S)
-
-      Path_work_S   = trim(Path_work_S  ) // '/' // F_domain_S
-      Path_input_S  = trim(Path_input_S ) // '/' // F_domain_S
-      Path_output_S = trim(Path_output_S) // '/' // F_domain_S
-
-! Directory Path_work_S has been created by Um_runmod.ksh
-
-      err = clib_chdir (trim(Path_work_S))
 !
-!-------------------------------------------------------------------
+!---------------------------------------------------------------------
 !
       return
       end

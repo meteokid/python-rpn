@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+!
 !*s/r rhsp_2 - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
 !              save the results for next iteration in the o's
 !
@@ -54,6 +54,7 @@
 ! v3_02 - Edouard S.        - correct bug in Ru and Rv in the non hydrostatic version
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
 !
 !object
 !     see rhs
@@ -73,8 +74,9 @@
 #include "ver.cdk"
 #include "lun.cdk"
 #include "that.cdk"
+#include "grd.cdk"
 !
-      integer i, j, k, i0, j0, in, jn, nij 
+      integer i, j, k, i0, j0, in, jn, nij,onept
 !     real*8  tdiv
       real    tdiv
       real*8  one, c1,c2,c3, BsPqbarz, fipbarz, &
@@ -320,17 +322,26 @@
 !
  1000 continue
 !$omp enddo
+!$omp  end parallel
+
+      if (Grd_yinyang_L) call yyg_rhsuv (F_oru,F_orv,DIST_DIM, G_nk)
+!
  
+!$omp parallel private(i,j,i0,j0,jn,in, onept,&
+!$omp      BsPqbarz,fipbarz,tdiv, &
+!$omp      xtmp_8,ytmp_8,wk1,wk2,ww1,barz,barzp)
 !     Indices for computing all fields on mass grid at routine output
       i0 = 1
       j0 = 1
       in = l_ni
       jn = l_nj
+      onept=0
+      if (Grd_yinyang_L) onept=1
       if (G_lam) then
-         if (l_west)  i0 = 4
-         if (l_east)  in = l_niu-2
-         if (l_south) j0 = 4
-         if (l_north) jn = l_njv-2
+         if (l_west)  i0 = 4-onept
+         if (l_east)  in = l_niu-2+onept
+         if (l_south) j0 = 4-onept
+         if (l_north) jn = l_njv-2+onept
       endif
 !
 !$omp do 
@@ -463,7 +474,7 @@
 ! Apply HORIZONTAL BOUNDARY CONDITIONS if LAM *
 !**********************************************
 !
-      if (G_lam) then
+      if (G_lam .and. .not.Grd_yinyang_L) then
           if (l_west) then
 !$omp do
              do k=1,l_nk

@@ -29,6 +29,7 @@
 ! v3_30 - Desgagne M.       - initial version
 ! v3_31 - Lee V.            - added extra CHECK for LAM grid
 ! v4_04 - Plante            - Remove offline mode
+! v4_40 - Qaddouri/Lee      - Add Yin/Yang grid
 !
 !object
 !  Default configuration and reading namelist grid
@@ -38,8 +39,8 @@
 #include "lun.cdk"
 #include "schm.cdk"
 !
-      integer  fnom
-      external fnom
+      integer  fnom, yyg_yangrid
+      external fnom, yyg_yangrid
 !
       character*120 dumc
       integer unf,nrec
@@ -74,7 +75,10 @@
       Grd_iref  = 1
       Grd_jref  = 1
       Grd_latr  = 0.
-      Grd_lonr  = 0.
+      Grd_lonr  = 180.
+      Grd_overlap=0.0
+!Orientation of Global and Yin grid
+!xlon1,xlat1 is centre of grid
       Grd_xlon1 = 180.
       Grd_xlat1 = 0.
       Grd_xlon2 = 270.
@@ -82,17 +86,22 @@
       Grd_gauss_L = .false.
 !
       if (F_namelistf_S .ne. '') then
-!
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
+            if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
+            goto 9999
+         endif
          rewind(unf)
-         read (unf, nml=grid, end = 9120, err=9120)
-!
-         call fclos (unf)
-!
+         read (unf, nml=grid, end = 9120, err=9130)
+         goto 9000
       endif
 !
-      call low2up (Grd_typ_S,dumc)
+ 9120 if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
+      goto 9999
+ 9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
+      goto 9999
+!
+ 9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S    = dumc
       Grd_bsc_base = 5
       Grd_bsc_ext1 = 3
@@ -100,30 +109,56 @@
       if (Grd_ni*Grd_nj.eq.0) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
                            'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
-         goto 9988
+         goto 9999
       endif
 !
-      if (Grd_typ_S(1:1).eq.'G') then
-         if (Grd_typ_S(2:2).eq.'U') then
+      Grd_x0=  0.0 
+      Grd_xl=360.0
+      Grd_y0=-90.0
+      Grd_yl= 90.0
+!
+      select case (Grd_typ_S(1:1))
+
+      case ('G')                             ! Global grid
+
+         select case (Grd_typ_S(2:2))
+
+         case ('U')             ! Uniform
             Grd_nila = Grd_ni
             Grd_njla = Grd_nj
-         else
+
+         case ('Y')             ! Yin-Yang
+            if (yyg_yangrid().lt.0) goto 9999
+            Grd_dxmax=370.0
+            Grd_dymax=370.0
+            Grd_nila = Grd_ni
+            Grd_njla = Grd_nj
+            Grd_maxcfl    = max(1,Grd_maxcfl)
+            Grd_bsc_adw   = Grd_maxcfl  + Grd_bsc_base
+            Grd_extension = Grd_bsc_adw + Grd_bsc_ext1
+            Grd_ni   = Grd_ni   + 2*Grd_extension
+            Grd_nj   = Grd_nj   + 2*Grd_extension
+            Grd_x0   =  45.0 - 3.0*(Grd_overlap)
+            Grd_xl   =  315.0 + 3.0*(Grd_overlap)
+            Grd_y0   = -45.0-Grd_overlap
+            Grd_yl   =  45.0+Grd_overlap
+
+         case ('V')             ! Variable resolution
             if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
                if (Lun_out.gt.0) write(Lun_out,*)  &
                           'VERIFY Grd_NILA, Grd_NJLA, Grd_DX & ', &
                           'Grd_DY IN NAMELIST grid'
-               goto 9988
+               goto 9999
             endif
-         endif
-         Grd_x0=  0.0 
-         Grd_xl=360.0
-         Grd_y0=-90.0
-         Grd_yl= 90.0
-      else
+
+         end select
+
+      case ('L')                             ! Limited area grid
+
          if (Grd_dx*Grd_dy.eq.0) then
             if (Lun_out.gt.0) write(Lun_out,*)  &
                              'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
-            goto 9988
+            goto 9999
          endif
          Grd_maxcfl    = max(1,Grd_maxcfl)
          Grd_bsc_adw   = Grd_maxcfl  + Grd_bsc_base
@@ -138,7 +173,7 @@
              Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
             if (Lun_out.gt.0) write(Lun_out,1002) &
                               Grd_ni,Grd_nj,Grd_iref,Grd_jref
-            goto 9988
+            goto 9999
          endif
          Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
          Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
@@ -150,16 +185,17 @@
               (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
             if (Lun_out.gt.0) write (Lun_out,1001)  &
                               Grd_x0,Grd_y0,Grd_xl,Grd_yl
-            goto 9988
+            goto 9999
          endif
-      endif
-!     
+
+      end select
+!
       if (nint( 360./Grd_dxmax ) .gt. Grd_ni+1 .or. &
           nint( 180./Grd_dymax ) .gt. Grd_nj+1 ) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
                     ' INCONSISTENT Grd_NI, Grd_NJ, ', &
                     ' Grd_DXMAX & Grd_DYMAX values in namelist grid'
-         goto 9988
+         goto 9999
       endif
 !
 !     compute RPN/FST grid descriptors
@@ -221,26 +257,18 @@
       endif
 !
       grid_nml = 1
-      goto 9999
-!
- 9110 if (Lun_out.ge.0) write (Lun_out, 9050) trim( F_namelistf_S )
-      goto 9988
-!
- 9120 call fclos (unf)
-      if (Lun_out.ge.0) write (Lun_out, 9150) trim( F_namelistf_S )
-      goto 9988
-!
+
  5000 format(' HORIZONTAL GRID ROTATION MATRIX:'/3(3d20.12/))
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
  1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
- 8000 format (/,'========= ABORT IN S/R grid_nml.f ============='/)
- 9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
- 9150 format (/,' NAMELIST grid INVALID IN FILE: ',A/)
+ 7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
+ 7060 format (/,' Namelist &grid NOT AVAILABLE in FILE: ',a/)
+ 7070 format (/,' NAMELIST &grid IS INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
 !
- 9988 if (Lun_out.gt.0) write (Lun_out, 8000)
- 9999 return
+ 9999 call fclos (unf)
+      return
       end

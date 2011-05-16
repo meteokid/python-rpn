@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r sol_main - Envelope for the memory management of the 
 !                 Linear Helmholtz solver
 !
@@ -33,6 +32,7 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_03 - Tanguay M.        - Williamson's cases
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_40 - Qaddouri A.       - initialize wk1,wk2 to 0.0 for LAM/Yin-Yang
 !
 !object
 !	
@@ -83,6 +83,10 @@
 !
 ! Computing elliptic problem solution (sol)
       call tmg_start0 (40, 'SOL_0    ' )
+! Initialize work vectors because LAM does not use full range
+! lazy code ===> should be fixed
+      wk1(:)=0.0
+      wk2(:)=0.0
       call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,iln, &
                       ldnh_minx,ldnh_maxx, &
                       ldnh_miny,ldnh_maxy,ldnh_ni,ldnh_nj,l_nk)

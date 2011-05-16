@@ -79,6 +79,7 @@
 !object
 !	Transfer data from p_runlgt space
 !
+#include "gmm.hf"
 #include "itf_phy_buses.cdk"
 !
       integer i,k,ijp,imod,jmod,indx,cnt,nphy
@@ -122,6 +123,7 @@
 !object
 !	Transfer surface data from (l_ni,l_nj) space to p_runlgt space
 !
+#include "gmm.hf"
 #include "itf_phy_buses.cdk"
 !
       integer i,j,cnt
@@ -159,6 +161,7 @@
 !object
 !	Transfer surface data from p_runlgt space to (l_ni,l_nj) space 
 !
+#include "gmm.hf"
 #include "itf_phy_buses.cdk"
 !
       integer i,j,cnt,maxcnt
@@ -226,10 +229,12 @@
 !
 !revision
 ! v4_14 - Desgagne M.       - initial version
+! v4_40 - Lee V             - Add mosaic structure
 !
 !object
 !     Transfer physic slices output into F_obusval
 !	
+#include "gmm.hf"
 #include "itf_phy_buses.cdk"
 #include "obus.cdk"
 !
@@ -238,7 +243,7 @@
 !     ---------------------------------------------------------------
 !
       nphy = (F_j-1) * p_ni
-      do mult= 1, obus_mult(F_indn)
+      do mult= 1, obus_mult(F_indn)*(obus_mosaic(F_indn)+1)
       do    k= 1, obus_shp (F_indn)
       do    i= 1, p_ni
          ijp = min (nphy+i,p_doni*p_donj)

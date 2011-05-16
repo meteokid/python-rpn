@@ -17,15 +17,15 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine nest_bcs (done_intt_L)
+      subroutine nest_bcs
       implicit none
 !
-      logical done_intt_L
 !author 
 !     Michel Desgagne   - Summer 2010
 !
 !revision
 ! v4_14 - Desgagne M.          - initial version
+! v4_40 - Lee V.               - call nest_bcs_yy for Yin-Yang run
 !
 !object
 !
@@ -34,13 +34,17 @@
 !
 #include "glb_ld.cdk"
 #include "lam.cdk"
+#include "grd.cdk"
 #include "schm.cdk"
 #include "theo.cdk"
 !
 !----------------------------------------------------------------------
 !
-      if ( G_lam ) then
-         if (.not. Lam_ctebcs_L) call nest_intt (done_intt_L)
+      call tmg_start0 (50, 'NEST_BCS ' )
+      if ( Grd_yinyang_L ) then
+           call nest_bcs_yy ()
+      else if ( G_lam ) then
+         if (.not. Lam_ctebcs_L) call nest_intt
          if (Schm_theoc_L) then
              if (north+south+west+east.ge.1) then
                 if ( Theo_case_S .eq. 'BUBBLE'   .or.    &
@@ -56,8 +60,10 @@
              call nest_bcs_t0 ()
           endif
       endif
+
 !
 !----------------------------------------------------------------------
 !
+      call tmg_stop0(50)
       return
       end

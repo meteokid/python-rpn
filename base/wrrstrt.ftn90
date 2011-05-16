@@ -52,15 +52,11 @@
 #include "rstr.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 #include "ifd.cdk"
-#include "glb_ld.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
-!
-!modules
       integer  fnom,fclos,close_db_file
       external fnom,fclos,close_db_file
 !
@@ -70,15 +66,15 @@
 !
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step
 !
-      if (Rstri_glbcol_L) then
+!      if (Rstri_glbcol_L) then
 !        Write one global binary file for the physics
 !        and chemistry restarts for the whole domain
-         call wr1rstrt()
+!         call wr1rstrt()
 !
 !        Write one global binary file for the dynamics 
 !        restart for the whole domain
-         call glb_restart('W')
-      else
+!         call glb_restart('W')
+!      else
 !        Write one wa-file per tile
          Lun_rstrt = 0
          ier = fnom (Lun_rstrt,'restart','RND',0)
@@ -110,7 +106,7 @@
          call waclos(Lun_rstrt)
          ier = fclos(Lun_rstrt)  
 !
-      endif
+!      endif
 !
       call wrrstrt_phy (.false.)
 !

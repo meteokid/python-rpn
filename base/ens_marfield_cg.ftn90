@@ -107,6 +107,9 @@
       nmdim=Ens_mc3d_dim ; mzt = Ens_mc3d_mzt   ; ar     = 6.37122e6
                                               mtrunc = Ens_mc3d_trnl
 !
+! Pas d'accord!!!
+      print*, 'ABORT in ens_marfield_cfg'
+      stop
 
       dt=real(Cstv_dt_8)
       pi=real(Dcst_pi_8)
@@ -338,7 +341,7 @@
 
          do j=1,p_nj
             jj=j+p_offj
-            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do k=1,E_nk
                do i=1,p_ni
                   ii=i+p_offi
@@ -352,7 +355,7 @@
 !
          do j=1,p_nj
             jj=j+p_offj
-            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do k=1,E_nk
                do i=1,p_ni
                   ii=i+p_offi
@@ -421,7 +424,7 @@
 !
          do j=1,p_nj
             jj=j+p_offj
-            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
                do i=1,p_ni
                   ii=i+p_offi
                   indx = (mz-1)*p_ni+i-1
@@ -431,7 +434,7 @@
         else
           do j=1,p_nj
             jj=j+p_offj
-            busper = Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
+!            busper = Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do i=1,p_ni
               ii=i+p_offi
               indx = (mz-1)*p_ni+i-1

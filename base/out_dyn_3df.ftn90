@@ -68,7 +68,6 @@
          if (Ptopo_myproc.eq.0) then
             filen=trim(Out_dirname_S)//'/3df_filemap.txt'
             open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
-            Out_diruse_L = .true.
             do i=1,Ptopo_numproc
               if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
                ofi=Grdc_gid+outindx_g(1,i)-1

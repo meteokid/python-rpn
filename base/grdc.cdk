@@ -1,22 +1,20 @@
 
       integer max_trnm
       parameter (max_trnm=1000)
-      character*4 Grdc_proj_S
       character*4 Grdc_trnm_S(max_trnm)
-      character*12 Grdc_nfe
-      character*16 Grdc_runstrt_S,Grdc_runend_S
+      character*12 Grdc_nfe, Grdc_start_S, Grdc_end_S
       logical Grdc_initphy_L
       integer Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       integer Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi
       integer Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,Grdc_extension
       integer Grdc_Hblen,Grdc_pil,Grdc_end,Grdc_maxcfl
       integer Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits,Grdc_ntr
-      real Grdc_latr,Grdc_lonr,Grdc_dx
-      real Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
-      real*8 Grdc_xp1,Grdc_yp1
+      real    Grdc_latr,Grdc_lonr,Grdc_dx
+      real    Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
+      real*8  Grdc_xp1,Grdc_yp1
 !
-      common / Grdc_c / Grdc_proj_S,Grdc_trnm_S,Grdc_nfe
-      common / Grdc_c / Grdc_runstrt_S,Grdc_runend_S
+      common / Grdc_c / Grdc_trnm_S,Grdc_nfe
+      common / Grdc_c / Grdc_start_S, Grdc_end_S
       common / Grdc_l / Grdc_initphy_L
       common / Grdc_i / Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       common / Grdc_i / Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt
@@ -27,4 +25,4 @@
       common / Grdc_i / Grdc_ntr
       common / Grdc_r / Grdc_latr,Grdc_lonr,Grdc_dx
       common / Grdc_r / Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
-      common / Grdc_r8 / Grdc_xp1,Grdc_yp1
+      common / Grdc_r8/ Grdc_xp1,Grdc_yp1

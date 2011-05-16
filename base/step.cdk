@@ -1,5 +1,3 @@
-
-#if defined (DOC)
 !
 !revisions
 ! v3_02 - Winger K.         - add variable Step_cleanup
@@ -13,19 +11,26 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
+! Step_runstrt_S     | Starting date for model run  (yyyymmdd.hhmmss)  |
 ! Step_total         | Total number of timesteps for model run         |
 ! Step_rsti          | Number of timesteps to save a restart file      |
 ! Step_bkup          | Number of timesteps to save a restart file for  |
 !                    |  backup if "restart" is not true.               |
+! Step_leapyears_L   | account for leap years                          |
 ! Step_gstat         | Number of timesteps for a global stat (glbstat) |
-! Step_cleanup       | Number of steps to transfer file and do cleanup  |
+! Step_dt_8          | Length of model timestep (sec)                  !
 !----------------------------------------------------------------------
 !
 !
-#endif
+      character*16 Step_runstrt_S
+      logical Step_leapyears_L
       integer Step_total  , Step_rsti, Step_bkup, Step_gstat
-      integer Step_cleanup, Step_spinphy
+      integer Step_spinphy, Step_nesdt
+      real*8 Step_dt
 !
-      common / Stepi / Step_total  , Step_rsti, Step_bkup, Step_gstat
-      common / Stepi / Step_cleanup, Step_spinphy
+      common / Step_S / Step_runstrt_S
+      common / Step_I / Step_leapyears_L
+      common / Step_I / Step_total  , Step_rsti, Step_bkup, Step_gstat
+      common / Step_I / Step_spinphy, Step_nesdt
+      common / Step_R / Step_dt
 !

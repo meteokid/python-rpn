@@ -58,6 +58,7 @@
 !     re-initialised.
 !
 !implicits
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "p_serg.cdk"
@@ -69,11 +70,10 @@
 !
       character (len=SERG_STRING_LENGTH) ptgeonm(CNSRGEO), ptbidon
       character(len=256) :: msg
-      integer pnsurf, i, j, m, pnerr, soit,lght
+      integer pnsurf, i, j, m, pnerr, soit,lght,gmmstat
       integer dlat,dlon,z0,mg,lhtg,alvis,snodp,twater,tsoil,glsea,wsoil
-      real prcon
-      real w1(p_ni),w2(p_ni),w3(p_ni),busper,busper2(max(1,p_bper_siz))
-      pointer (pabusper,busper(*))
+      real prcon,w1(p_ni),w2(p_ni),w3(p_ni)
+      type(gmm_metadata) :: meta_busper
 !*
 !     ---------------------------------------------------------------
 !
@@ -138,28 +138,29 @@
       call getindx ('GLSEA'  ,  'P', glsea , lght, soit)
       call getindx ('WSOIL'  ,  'P', wsoil , lght, soit)
 !
+      gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
+
+      w1 = 1.
       do 35 j= 1, p_nj
 !
-         pabusper = loc (Phy_busper3D((j-1)*p_bper_siz+1))
+         w2(1:p_ni) = BUSPER_3d (dlat:dlat+p_ni-1,j) * prcon
          do i= 1, p_ni
-            w1(i) = 1.0
-            w2(i) = busper(dlat+i-1) * prcon
-            w3(i) = busper(dlon+i-1) * prcon
+            w3(i) = BUSPER_3d (dlon+i-1,j) * prcon
             if (w3(i).lt.0) w3(i)=360.+w3(i)
          end do
 !
-         call serxst(        w1(1), 'MA',j, p_ni, 0.0, 1.0, -1)
-         call serxst(        w2(1), 'LA',j, p_ni, 0.0, 1.0, -1)
-         call serxst(        w3(1), 'LO',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper   (z0), 'ZP',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper   (mg), 'MG',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper (lhtg), 'LH',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(alvis), 'AL',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(snodp), 'SD',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(twater),'TM',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(tsoil), 'TP',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(glsea), 'GL',j, p_ni, 0.0, 1.0, -1)
-         call serxst(busper(wsoil), 'HS',j, p_ni, 0.0, 1.0, -1)
+         call serxst(             w1(1), 'MA',j, p_ni, 0.0, 1.0, -1)
+         call serxst(             w2(1), 'LA',j, p_ni, 0.0, 1.0, -1)
+         call serxst(             w3(1), 'LO',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d   (z0,j), 'ZP',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d   (mg,j), 'MG',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d (lhtg,j), 'LH',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(alvis,j), 'AL',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(snodp,j), 'SD',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(twater,j),'TM',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(tsoil,j), 'TP',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(glsea,j), 'GL',j, p_ni, 0.0, 1.0, -1)
+         call serxst(BUSPER_3d(wsoil,j), 'HS',j, p_ni, 0.0, 1.0, -1)
  35   continue
 
       call sergout(.true.)

@@ -8,7 +8,6 @@
 #include "nest.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
-#include "step.cdk"
 #include "path.cdk"
 #include "init.cdk"
 #include "schm.cdk"
@@ -86,8 +85,6 @@
       namelist /gem_cfgs/ Lam_0ptend_L
       namelist /gem_cfgs/ Lam_ctebcs_L
       namelist /gem_cfgs/ Lam_hint_S
-      namelist /gem_cfgs/ Lam_nesdt
-      namelist /gem_cfgs/ Lam_runstrt_S
       namelist /gem_cfgs/ Lam_toptt_L
       namelist /gem_cfgs/ Lam_blendoro_L
       namelist /gem_cfgs/ Lam_acidtest_L
@@ -147,22 +144,17 @@
       namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_zdotMid_L
       namelist /gem_cfgs/ Schm_pior_L
+      namelist /gem_cfgs/ Schm_Topo_L
 !Sol
-      namelist /gem_cfgs/ Sol_eps
+      namelist /gem_cfgs/ Sol_fgm_eps
+      namelist /gem_cfgs/ Sol_yyg_eps
       namelist /gem_cfgs/ Sol_fft_L
       namelist /gem_cfgs/ Sol_im
-      namelist /gem_cfgs/ Sol_maxits
+      namelist /gem_cfgs/ Sol_fgm_maxits
+      namelist /gem_cfgs/ Sol_yyg_maxits
       namelist /gem_cfgs/ Sol_precond_S
       namelist /gem_cfgs/ Sol_type_S
-!Step
-      namelist /gem_cfgs/ Step_bkup
-      namelist /gem_cfgs/ Step_cleanup
-      namelist /gem_cfgs/ Step_gstat
-      namelist /gem_cfgs/ Step_rsti
-      namelist /gem_cfgs/ Step_total
-      namelist /gem_cfgs/ Step_spinphy
 
-      namelist /gem_cfgs/ Schm_Topo_L
 !Vspng
       namelist /gem_cfgs/ Vspng_coef
       namelist /gem_cfgs/ Vspng_mf
@@ -227,8 +219,6 @@
       namelist /gem_cfgs_p/ Lam_0ptend_L
       namelist /gem_cfgs_p/ Lam_ctebcs_L
       namelist /gem_cfgs_p/ Lam_hint_S
-      namelist /gem_cfgs_p/ Lam_nesdt
-      namelist /gem_cfgs_p/ Lam_runstrt_S
       namelist /gem_cfgs_p/ Lam_toptt_L
       namelist /gem_cfgs_p/ Lam_blendoro_L
 !Lctl
@@ -285,19 +275,14 @@
       namelist /gem_cfgs_p/ Schm_zdotMid_L
       namelist /gem_cfgs_p/ Schm_pior_L
 !Sol
-      namelist /gem_cfgs_p/ Sol_eps
+      namelist /gem_cfgs_p/ Sol_fgm_eps
+      namelist /gem_cfgs_p/ Sol_yyg_eps
       namelist /gem_cfgs_p/ Sol_fft_L
       namelist /gem_cfgs_p/ Sol_im
-      namelist /gem_cfgs_p/ Sol_maxits
+      namelist /gem_cfgs_p/ Sol_fgm_maxits
+      namelist /gem_cfgs_p/ Sol_yyg_maxits
       namelist /gem_cfgs_p/ Sol_precond_S
       namelist /gem_cfgs_p/ Sol_type_S
-!Step
-      namelist /gem_cfgs_p/ Step_bkup
-      namelist /gem_cfgs_p/ Step_cleanup
-      namelist /gem_cfgs_p/ Step_gstat
-      namelist /gem_cfgs_p/ Step_rsti
-      namelist /gem_cfgs_p/ Step_total
-      namelist /gem_cfgs_p/ Step_spinphy
 !Vspng
       namelist /gem_cfgs_p/ Vspng_coef
       namelist /gem_cfgs_p/ Vspng_njpole
@@ -327,9 +312,10 @@
       namelist /grdc/ Grdc_nfe
       namelist /grdc/ Grdc_ni
       namelist /grdc/ Grdc_nj
-      namelist /grdc/ Grdc_proj_S
-      namelist /grdc/ Grdc_runend_S
-      namelist /grdc/ Grdc_runstrt_S
+      namelist /grdc/ Grdc_start_S
+      namelist /grdc/ Grdc_end_S
+!      namelist /grdc/ Grdc_runend_S
+!      namelist /grdc/ Grdc_runstrt_S
       namelist /grdc/ Grdc_trnm_S
 !
 !End gem_grdc
@@ -346,9 +332,10 @@
       namelist /grdc_p/ Grdc_nfe
       namelist /grdc_p/ Grdc_ni
       namelist /grdc_p/ Grdc_nj
-      namelist /grdc_p/ Grdc_proj_S
-      namelist /grdc_p/ Grdc_runend_S
-      namelist /grdc_p/ Grdc_runstrt_S
+      namelist /grdc_p/ Grdc_start_S
+      namelist /grdc_p/ Grdc_end_S
+!      namelist /grdc_p/ Grdc_runend_S
+!      namelist /grdc_p/ Grdc_runstrt_S
 !
 !End gem_grdc_p
 !

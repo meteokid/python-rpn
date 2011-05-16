@@ -31,6 +31,7 @@
 ! v3_30 - Dugas B.           - correction to P_out_moyhr, add Out3_satues_L
 ! v4_05 - Plante A.          - add iceline option (ICELAC)
 ! v4_14 - Dugas B.           - define ININCR (via call to phy_optl)
+! v4_40 - Lee V.             - add VSTAG flag to inform vertical coordinate
 !
 !object
 !	See above ID.
@@ -46,7 +47,6 @@
 #include "out3.cdk"
 #include "xst.cdk"
 #include "cstv.cdk"
-#include "pres.cdk"
 #include "clim.cdk"
 #include "p_serg.cdk"
        include "v4dg.inc"
@@ -56,13 +56,14 @@
 #include "itf_phy_config.cdk"
 #include "itf_phy.cdk"
 !
-!*
+      integer, parameter :: COMPATIBILITY_LVL = 1
+!
       logical  set_dcst
-      integer  fnom
-      external set_dcst,itf_phy_rdfile,fnom
+      integer  fnom, phy_debu2
+      external set_dcst,itf_phy_rdfile,fnom,phy_debu2
 !
       logical prout
-      integer DIM_ERR,nrec,n_phytend
+      integer DIM_ERR,nrec,n_phytend, phycompa
       parameter (DIM_ERR = 14) 
       integer err(DIM_ERR),idate(14),bidon,i
       real dt_4
@@ -82,25 +83,34 @@
       if (Lun_out.gt.0) write(Lun_out,1000)
 !
       call newdate (Out3_date,idate,bidon,-4)
-      dt_4 = Cstv_dt_8 
+      dt_4 = Cstv_dt_8
+!
+      call phy_opti('COMPATIBILITY',phycompa , 1, 'GET',prout,err(1))
+      if ( phycompa .ne. COMPATIBILITY_LVL ) then
+         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL,phycompa
+         call handle_error(-1,'itf_phy_init','Wrong physics compatibility level')
+      else
+         if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
+      endif
 !
       err=0
 ! Start physics initialization with mandatory parameters
       call phy_opti ('DATE'    , idate ,  14, 'SET', prout, err(1))
       call phy_optr ('DELT'    , dt_4  ,   1, 'SET', prout, err(2))
+      call phy_optl ('VSTAG'   , .true.,   1, 'SET', prout, err(3))
 
 ! Continue physics initialization with optional parameters
-      call phy_optl('CLIMAT'     , Clim_climat_L ,1,'SET',prout,err(3))
-      call phy_optl('COUPLING'   , C_coupling_L  ,1,'SET',prout,err(4))
-      call phy_opti('LIN_V4D'    , V4dg_conf     ,1,'SET',prout,err(5))
-      call phy_optl('ININCR'     , Clim_inincr_L ,1,'SET',prout,err(6))
+      call phy_optl('CLIMAT'   , Clim_climat_L ,1,'SET',prout,err(4))
+      call phy_optl('COUPLING' , C_coupling_L  ,1,'SET',prout,err(5))
+      call phy_opti('LIN_V4D'  , V4dg_conf     ,1,'SET',prout,err(6))
+      call phy_optl('ININCR'   , Clim_inincr_L ,1,'SET',prout,err(7))
 !
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 !
-      err(7) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      err(8) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
 !
-      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
+      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7),err(8))
       call handle_error(err,'itf_phy_init','itf_phy_init')
 !
       if ( Schm_theoc_L .and. Schm_phyms_L ) then
@@ -149,10 +159,10 @@
       p_nj = p_doni*p_donj/p_ni
       if (p_ni*p_nj.lt.p_doni*p_donj) p_nj = p_nj + 1
 !
-! Complete physics initialization (bus descriptions become available)
+! Complete physics initialization (bus descriptions become available after phy_debu)
 !
-      err = phy_debu ( p_ni, p_nk, p_bent_top ,p_bdyn_top, p_bper_top, &
-                       p_bvol_top, prout, itf_phy_rdfile )
+      err = phy_debu2 ( p_ni, p_nj, p_nk, p_bent_top ,p_bdyn_top, p_bper_top, &
+                        p_bvol_top, prout, itf_phy_rdfile )
       call handle_error(err,'itf_phy_init','itf_phy_init (debu)')
 !
 ! Fetch a few physics configuration parameters needed for dynamics
@@ -211,38 +221,28 @@
          write(Lun_out,*) 'p_bent_top=',p_bent_top
       endif
 !
-! Allocate 3D heap memory for history carrying physics quantities in BUSPER
-!
-      if ( .not. associated ( Phy_busper3D ) ) then
-         allocate ( Phy_busper3D (p_bper_siz*p_nj) )
-         Phy_busper3D = 0.
-      endif
-!
       n_phytend=0
       do i=1,p_bvol_top
          if (volnm(i)(1:5) .eq. 'PHYTD') n_phytend = n_phytend +1
       end do
 !
+! Allocate 3D heap memory for physics tendencies
 !
-! Allocate 3D heap memory for physics quantities in BUSDYN and BUSVOL
+      allocate ( phy_tend(LDIST_SHAPE,p_nk,n_phytend) )
 !
-      allocate ( Phy_busdyn3D (p_bdyn_siz*p_nj           ) )
-      allocate ( Phy_busvol3D (p_bvol_siz*p_nj           ) )
-      allocate ( phy_tend     (LDIST_SHAPE,p_nk,n_phytend) )
-!
-! TO DO: Verify why the following line is necessary
-!
-      Phy_busvol3D = 0.
-!
+!     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
              /,'====================================================')
  1001 format(/,'NO PHYSICS PACKAGE INITIALIZATION (S/R itf_phy_init)', &
              /,'====================================================')
- 9000 format (/'==> STOP IN P_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/ &
-               '==> REQUIRED: ',i10/)
+ 1002 format(/,'PHYSICS COMPATIBILITY LEVEL IS OK: (level='i2,')')
+ 9000 format(/'==> STOP IN ITF_PHY_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/ &
+              '==> REQUIRED: ',i10/)
+ 9001 format(/'==> STOP IN ITF_PHY_INIT: INCOMPATIBLE PHYSICS INTERFACE'/ &
+              '    physics interface compatibility level= ',i2/&
+              '    physics package compatibility level= ',i2/)
  9500 format(/,' PHYSICS NOT SUPPORTED FOR NOW IN THEORETICAL CASE')
  9600 format(/ 'Out3_satues_L reset to .false. as SATUCO eq false')
-!
 !     ---------------------------------------------------------------
 !
       return

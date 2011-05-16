@@ -71,6 +71,7 @@
 !
 !--------------------------------------------------------------------
 !
+      F_ens_conf_L = .false.
       ens_nml = -1; err_read = 0
 !
       if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
@@ -136,7 +137,6 @@
          endif
  1000    call fclos (unf)
       endif
-
 !
       if(found_namelist_ok)then
          ens_nml = 1
@@ -206,7 +206,6 @@
       else
           ens_nml = 0
       endif
-
 !
 !--------------------------------------------------------------------
 !

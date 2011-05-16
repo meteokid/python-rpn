@@ -32,10 +32,9 @@
       REAL           LNA(LVMAX), RNA(LVMAX),RCOEFA(2),PTOPA,PREFA
       REAL           RNA_T(LVMAX)
       real           pia(LVMAX),pibb(LVMAX),pib(LVMAX)
-      REAL*8         xg_8,yg_8,ygv_8
       REAL*8         za_8(LVMAX),zb_8(LVMAX)
       REAL*8         zat_8(LVMAX),zbt_8(LVMAX)
-      pointer (paxg_8, xg_8(*)),(payg_8, yg_8(*)),(paygv_8, ygv_8(*))
+      real*8, dimension(:), pointer :: xg_8,yg_8,ygv_8
       CHARACTER*2    VH,VT
       CHARACTER*1    GRDA, TVA
       CHARACTER*12   LABANL
@@ -44,7 +43,7 @@
       COMMON/anali/  ip1a, ip2a, ip3a
       COMMON/anali/  ig1a, ig2a, ig3a, ig4a
       COMMON/analr/  LNA, RNA, RNA_T,RCOEFA,PTOPA,PREFA,pia,pibb,pib
-      COMMON/analpos/ paxg_8,payg_8,paygv_8
+      COMMON/analpos/ xg_8,yg_8,ygv_8
       COMMON/analr8/  za_8,zb_8,zat_8,zbt_8
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
       logical anal_sigma_L, anal_eta_L, anal_hyb_L, anal_pres_L

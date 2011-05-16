@@ -55,15 +55,12 @@
 !
 ! Defaults values for gement namelist variables
 !
-      Mod_runstrt_S ='@#$%'
-      Pil_jobstrt_S ='@#$%'
-      Pil_jobend_S  ='@#$%'
-      Pil_3df_L        = .true.
-      Pil_bmf_L        = .false.
-      Pil_dx           = 0.0
-      Pil_lancemodel   = 10000
-      Pil_nesdt        = 0
-      Pil_hblen        = 10
+      Pil_jobstrt_S   = 'NIL'
+      Pil_jobend_S    = 'NIL'
+      Pil_bmf_L       = .false.
+      Pil_dx          = 0.0
+      Pil_lancemodel  = 10000
+      Pil_hblen       = 10
 !
       Topo_filmx_L    = .true.
       Topo_dgfmx_L    = .false.
@@ -77,8 +74,6 @@
 !
       E_tr3d_list_S = ''
 !
-      Leap_years_L    = .true.
-!
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)
@@ -87,14 +82,13 @@
          e_gement_nml = 1
          goto 7777
       else
-         goto 9220
+         write (6, 8155) trim( F_namelistf_S )
+         goto 7777
       endif
 !
  9110 write (6, 8150) trim( F_namelistf_S )
       call fclos (unf)
       goto 7777
-!
- 9220 write (6, 8155) trim( F_namelistf_S )
 !
  8150 format (/,' NAMELIST gement    INVALID IN FILE: ',a)
  8155 format (/,' FILE: ',a,' NOT AVAILABLE')

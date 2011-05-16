@@ -31,6 +31,8 @@
 ! v4_13 -  Desgagne M.           - initial version
 !
 #include "hgc.cdk"
+#include "lun.cdk"
+#include <clib_interface.cdk>
 !
       integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
                ezgdef_fmem,ezdefset,ezsetopt,ezsint
@@ -53,13 +55,30 @@
 !
       F_status = -1
       unf = 0
-      if (fnom  (unf,trim(F_filename_S),'RND+OLD+R/O',0).lt.0) goto 999
-      if (fstouv(unf,'RND').lt.0) goto 999
+
+      err = clib_isfile(trim(F_filename_S))
+      if ( err.lt.0 ) then
+         if (Lun_out.gt.0) write (Lun_out, 9001) trim(F_filename_S)
+         goto 999
+      endif
+
+      err = fnom  (unf,trim(F_filename_S),'RND+OLD+R/O',0)
+      if ( err.lt.0 ) then
+         if (Lun_out.gt.0) write (Lun_out, 9002) trim(F_filename_S),'RND+OLD+R/O'
+         goto 999
+      endif
+
+      err = fstouv(unf,'RND')
+      if ( err.lt.0 ) then
+         if (Lun_out.gt.0) write (Lun_out, 9003) trim(F_filename_S),'RND'
+         goto 999
+      endif
+
       write (6,1000) trim(F_filename_S),unf
       
       key = fstinf (unf, nis,njs,nk1,-1," ",-1,-1,-1," ",F_nomvar_S)
       if (key.lt.0) then
-         write (6,6000) F_nomvar_S
+         if (Lun_out.gt.0) write (Lun_out,9004) F_nomvar_S
          goto 999
       endif
 
@@ -79,13 +98,13 @@
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ",">>")
          if (key.lt.0) then
-            write (6,6000) ">>"
+            write (6,9004)
             goto 999
          endif
          err = fstluk (ax, key, ni1,nj1,nk1)
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ","^^")
          if (key.lt.0) then
-            write (6,6000) "^^"
+            write (6,9004)
             goto 999
          endif
          err = fstluk (ay, key, ni1,nj1,nk1)
@@ -112,7 +131,7 @@
       err = ezsetopt ('INTERP_DEGREE', trim(F_inttyp_S))
       err = ezsint   (F_dest, source)
       if (err.lt.0) then
-         write (6,6001)
+         write (6,9005)
          goto 999
       endif
 
@@ -120,8 +139,11 @@
 
  1000 format (/' GET_FIELD:  file ',a,' open on unit: ',i7)
  1001 format ( ' GET_FIELD: Interpolating ',a,' with scheme: ',a/)
- 6000 format ( ' GET_FIELD: Variable ',a' NOT AVAILABLE')
- 6001 format ( ' GET_FIELD: PROBLEM WITH ezsint'/)
+ 9001 format ( ' GET_FIELD: FILE ',a,' NOT AVAILABLE'/)
+ 9002 format ( ' GET_FIELD: PROBLEM WITH fnom on file: ',a,' with attributes: ',a/)
+ 9003 format ( ' GET_FIELD: PROBLEM WITH fstouv on file: ',a,' with attributes: ',a/)
+ 9004 format ( ' GET_FIELD: Variable ',a' NOT AVAILABLE')
+ 9005 format ( ' GET_FIELD: PROBLEM WITH ezsint'/)
 !
 !-----------------------------------------------------------------------
 !

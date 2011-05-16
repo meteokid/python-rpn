@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r nlip_2 - compute non-linear terms:  Nu, Nv, Nt, Nc, Nw, Nf,
 !             - compute full right-hand side of Helmholtz eqn: Rp=Rc-Nc
 !
@@ -52,6 +51,7 @@
 ! v3_21 - Desgagne M.       - Revision OpenMP
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.         - Open top
+! v4_40 - Lee/Qaddouri      - Adjust range of calculation for Yin-Yang
 !
 !object
 !
@@ -61,6 +61,7 @@
 !implicits
 #include "glb_ld.cdk"
 #include "lam.cdk"
+#include "grd.cdk"
 #include "ptopo.cdk"
 
 !
@@ -107,6 +108,7 @@
               F_BsPq (DIST_SHAPE,0:Nk+1),F_mu   (DIST_SHAPE,Nk+1)
 !
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
@@ -123,7 +125,7 @@
 !      common/xiln/iln
 !      integer iln
 !
-      integer i, j, k, i0, in, inu, j0, jn, jnv, nij  
+      integer i, j, k, i0, i0u, in, inu, j0, j0v, jn, jnv, nij  
       real    ndiv             ,w_nt
       real*8  b1,b2,b3,b4, c1,c2,c3, qbar, pr0_8, &
               one, w1,w2,w3, barz, barzp, wk2(DIST_SHAPE)
@@ -175,12 +177,20 @@
 !
 !     Indices
       i0  = 1+pil_w
+      i0u = 1+pil_w 
       in  = l_ni -pil_e
       inu = l_niu-pil_e
       j0  = 1+pil_s
+      j0v = 1+pil_s
       jn  = l_nj -pil_n
       jnv = l_njv-pil_n
       nij = (in - i0 +1)*(jn - j0 +1)
+      if (Grd_yinyang_L) then
+          if (l_west)  i0u = i0u-1 
+          if (l_east)  inu = inu+1
+          if (l_south) j0v = j0v-1
+          if (l_north) jnv = jnv+1
+      endif
 !
 !$omp do
       do 100 k=k0,l_nk
@@ -191,7 +201,7 @@
 !     Pressure gradient term: RT' barXZ * dBsPq/dX
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       do j= j0, jn
-      do i= i0, inu
+      do i= i0u, inu
          barz  = Ver_wp_8%m(k)*F_t(i  ,j,k+1) &
                 +Ver_wm_8%m(k)*F_t(i  ,j,k)
          barzp = Ver_wp_8%m(k)*F_t(i+1,j,k+1) &
@@ -210,7 +220,7 @@
 !        V barY stored in wk2
 !        ~~~~~~~~~~~~~~~~~~~~
          do j = j0, jn
-         do i = i0-1, inu+2
+         do i = i0u-1, inu+2
             wk2(i,j)  = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k)  &
                       + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k)  &
                       + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k)  &
@@ -221,7 +231,7 @@
 !        Coriolis term: - f * V barXY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
-         do i= i0, inu
+         do i= i0u, inu
             F_nu(i,j,k) = F_nu(i,j,k) - Cori_fcoru_8(i,j) * &
            (inuvl_wxxu3_8(i,1)*wk2(i-1,j)+inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
           + inuvl_wxxu3_8(i,3)*wk2(i+1,j)+inuvl_wxxu3_8(i,4)*wk2(i+2,j))
@@ -236,7 +246,7 @@
 
 !     Pressure gradient term: RT' barYZ * dBsPq/dY
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      do j= j0, jnv
+      do j= j0v, jnv
       do i= i0, in
          barz  = Ver_wp_8%m(k)*F_t(i,j  ,k+1) &
                 +Ver_wm_8%m(k)*F_t(i,j  ,k)
@@ -253,7 +263,7 @@
 
 !        U barX stored in wk2
 !        ~~~~~~~~~~~~~~~~~~~~
-         do j = j0-1, jnv+2
+         do j = j0v-1, jnv+2
          do i = i0, in
             wk2(i,j)  = inuvl_wxux3_8(i,1)*F_u(i-2,j,k)  &
                       + inuvl_wxux3_8(i,2)*F_u(i-1,j,k)  &
@@ -264,7 +274,7 @@
 
 !        Coriolis term: + f * U barXY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j = j0, jnv
+         do j = j0v, jnv
          do i = i0, in
             F_nv(i,j,k) =   F_nv(i,j,k) + Cori_fcorv_8(i,j) * &
            (inuvl_wyyv3_8(j,1)*wk2(i,j-1)+inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
@@ -282,7 +292,7 @@
 !        Mu term: mu barXZ * dfi'/dX
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
-         do i= i0, inu
+         do i= i0u, inu
             barz  = Ver_wp_8%m(k)*F_mu(i  ,j,k+1) &
                    +Ver_wm_8%m(k)*F_mu(i  ,j,k)
             barzp = Ver_wp_8%m(k)*F_mu(i+1,j,k+1) &
@@ -301,7 +311,7 @@
 
 !        Mu term: mu barYZ * dfi'/dY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= j0, jnv
+         do j= j0v, jnv
          do i= i0, in            
             barz  = Ver_wp_8%m(k)*F_mu(i,j  ,k+1) &
                    +Ver_wm_8%m(k)*F_mu(i,j  ,k)
@@ -322,6 +332,7 @@
 !     Set  Nu=0  on the east and west boundaries of the LAM grid
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
+    if (.not.Grd_yinyang_L) then
       if (G_lam) then
          if (l_west) then
 !$omp do
@@ -366,6 +377,7 @@
 !$omp enddo
       endif
 !
+    endif
       if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,4)
 !
 !

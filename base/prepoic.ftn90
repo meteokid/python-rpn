@@ -30,6 +30,7 @@
 !revision
 ! v2_00 - Desgagne/Lee      - initial MPI version (from prepoic v1_03)
 ! v3_00 - Desgagne & Lee    - Lam configuration
+! v4_40 - Qaddouri A.       - Check for Dirichlet case
 !
 !object
 !     Prepare projection matrix in East-West direction for Poisson problem
@@ -67,7 +68,7 @@
          F_i0 = 1
       endif
 
-      if ( F_xnor_8 .gt. 0.0 ) then
+      if ( F_xnor_8 .gt. 0.0 .and. F_case .ne. 'D' ) then
 
          F_eval_8(F_i0) = 0.0d0
          do i = 1, F_ni

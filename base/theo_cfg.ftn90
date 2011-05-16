@@ -58,12 +58,12 @@
 !
       err = gem_nml   ('')
       err = adw_nml   (Path_nml_S)
-      Theo_case_S='xxx'
 
-      Lam_runstrt_S="19980101.000000"
-      Out3_etik_S='THEOC'
-      Out3_ip3 = -1
-      Lctl_debug_L=.false.
+      Theo_case_S    = 'xxx'
+      Step_runstrt_S = '19980101.000000'
+      Out3_etik_S    = 'THEOC'
+      Out3_ip3       = -1
+      Lctl_debug_L   = .false.
 !
       unf = 0
       if (fnom (unf, 'model_settings', 'SEQ+OLD' , nrec) .ne. 0) goto 9110

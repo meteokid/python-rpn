@@ -11,23 +11,21 @@
 ! Lam_hint_S         | Type of horizontal interpolation 'CUB_LAG'      |
 !                    | for LAM config (yyyymmdd.hhmmss)                |
 ! Lam_ctebcs_L       | Logical switch to force constant BCs            |
-! Lam_nesdt          | Number of seconds between 2 consecutive BCs     |
-!                    | time frame                                      |
 ! Lam_toptt_L        | Top temperature completely specified from pilot |
 ! Lam_0ptend_L       | Zero physics tendency in blending area          |
 !--------------------|-------------------------------------------------|
 !
-      character*16 Lam_runstrt_S,Lam_current_S,Lam_hint_S,Lam_previous_S,Lam_blend_H_func_S
+      character*16 Lam_current_S,Lam_hint_S,Lam_previous_S,Lam_blend_H_func_S
       logical Lam_ctebcs_L, Lam_toptt_L      , Lam_acidtest_L
       logical Lam_0ptend_L, Lam_blendoro_L   , Lam_wgt0
       integer Lam_blend_H , Lam_gbpil_T      , Lam_blend_T 
-      integer Lam_blend_Hx, Lam_blend_Hy     , Lam_nesdt
+      integer Lam_blend_Hx, Lam_blend_Hy
       real*8  Lam_tdeb    , Lam_tfin
 !
-      common /lam_s/  Lam_runstrt_S, Lam_current_S, Lam_hint_S, Lam_previous_S,Lam_blend_H_func_S
+      common /lam_s/  Lam_current_S, Lam_hint_S, Lam_previous_S,Lam_blend_H_func_S
       common /lam_l/  Lam_ctebcs_L , Lam_toptt_L    , Lam_acidtest_L
       common /lam_l/  Lam_0ptend_L , Lam_blendoro_L , Lam_wgt0
       common /lam_i/  Lam_blend_H  , Lam_gbpil_T    , Lam_blend_T 
-      common /lam_i/  Lam_blend_Hx , Lam_blend_Hy   , Lam_nesdt
+      common /lam_i/  Lam_blend_Hx , Lam_blend_Hy
       common /lam_r8/ Lam_tdeb     , Lam_tfin
 !

@@ -30,8 +30,11 @@
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
+! v4_40 - Qaddouri A.       - call prepoic indicating "Dirichlet" for Yin-Yang 
+!                             instead of "Neumann" (boundary conditions)
 !
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
 !
@@ -64,7 +67,11 @@
 !
       fdg1=a_8 ; fdg2=b_8
 !         
-      call prepoic (r_8, a_8, b_8, d_8, pdfaz, -ONE, 'N', fni0, Ni, Ni )
+      if (Grd_yinyang_L) then
+          call prepoic (r_8, a_8, b_8, d_8, pdfaz, -ONE, 'D', fni0, Ni, Ni )
+      else
+          call prepoic (r_8, a_8, b_8, d_8, pdfaz, -ONE, 'N', fni0, Ni, Ni )
+      endif
 !
       evec_local = a_8
       eval_local = r_8

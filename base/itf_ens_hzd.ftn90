@@ -28,12 +28,12 @@
 !                                Ens_skeb_conf and Ens_ptp_conf) to not impact 
 !                                non-ensemble users.
 !	
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "itf_phy_buses.cdk"
-#include "gmm.hf"
 #include "var_gmm.cdk"
 #include "ens_gmm_var.cdk"
 !

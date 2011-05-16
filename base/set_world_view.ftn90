@@ -44,6 +44,7 @@
 ! v4_04 - Tanguay M.        - Williamson's cases
 ! v4_05 - Plante A.         - Open top
 ! v4_10 - Lepine M.         - VMM replacement with GMM
+! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
 !
 !object
 !
@@ -61,38 +62,61 @@
 #include "vmmlist.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_cpl.cdk"
-#include "acid.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
 #include <clib_interface.cdk>
-#include "glb_pil.cdk"
 !
       logical  set_dcst_8
-      integer  gem_nml,v4d_nml,v4d_config,gemdm_config,grid_nml, &
-               itf_cpl_nml,series_nml,adw_nml,adw_config,rpn_comm_init_multigrid
-      external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml, &
+      integer  gem_nml,v4d_nml,v4d_config,gemdm_config,grid_nml,  &
+               itf_cpl_nml,series_nml,adw_nml,adw_config,step_nml,&
+               rpn_comm_init_multigrid, rpn_comm_init_yinyang,    &
+               bin2com
+      external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml,       &
                v4d_config, gemdm_config, grid_nml, itf_cpl_nml,  &
-               series_nml,adw_nml,adw_config,rpn_comm_init_multigrid,init_ndoms
+               series_nml,adw_nml,adw_config,init_ndoms,step_nml,&
+               rpn_comm_init_multigrid, rpn_comm_init_yinyang,   &
+               bin2com
 !*
-      integer ierr,cte_ok,f1,f2,f3,f4,f5,f6,mydomain,ndomains
-      character(len=256) :: msg_S,my_dir
+      integer ierr,err(8),cte_ok,mydomain,f1,f2,f3,f4
+      character(len=256) :: my_dir
 !
 !-------------------------------------------------------------------
 !
 ! Initializing domain and working directory
 !
-      call rpn_comm_mydomain (init_ndoms, mydomain, ndomains)
+      call rpn_comm_mydomain (init_ndoms, mydomain)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 
-      call base_dir_env (trim(my_dir))
-!
-! Initializing MPI and processor topology (pe_zero_topo on PE #0 only)
-!
-      f1 = rpn_comm_init_multigrid ( pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
-                                             Ptopo_npex, Ptopo_npey, ndomains )
+      ierr = clib_getenv ('TASK_INPUT' ,Path_input_S )
+      ierr = clib_getenv ('TASK_OUTPUT',Path_output_S)
+      ierr = clib_getenv ('TASK_WORK'  ,Path_work_S  )
 
-      call msg_set_can_write(Ptopo_myproc == 0)
+      Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
+      Path_output_S = trim(Path_output_S) // '/' // trim(my_dir)
+      Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)
+ 
+      ierr = clib_chdir (trim(Path_work_S))
+!
+! Initializing MPI and processor topology (pe_zero_topo called on PE #0 only)
+!
+      Grd_yinyang_L = Grd_yinyang_L ! remove this line later...
+      if (Grd_yinyang_L) then
+         ierr = rpn_comm_init_yinyang (pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
+                          Ptopo_npex,Ptopo_npey,Ptopo_intracomm,Ptopo_intercomm,&
+                          Ptopo_couleur,Ptopo_world_myproc,Ptopo_world_numproc ,&
+                                                                  Grd_ndomains  )
+         if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
+         if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
+         ierr= clib_mkdir(trim(Grd_yinyang_S))
+         ierr= clib_chdir(trim(Grd_yinyang_S))
+      else
+         ierr = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc,Ptopo_numproc,&
+                                            Ptopo_npex, Ptopo_npey, Grd_ndomains )
+         Ptopo_couleur = 0
+      endif
+
+      call msg_set_can_write (Ptopo_myproc == 0)
 
       call handle_error (clib_isdir(Path_input_S),'set_world_view','task_input')
 !
@@ -111,31 +135,31 @@
 !
       else
 !
-! Initializes physical constants
-!
-!
 ! Read namelist gem_cfgs, var4d, coupling and series from file Path_nml_S
 !
-         f1 = grid_nml    (Path_nml_S)
-         G_lam = Grd_typ_S(1:1).eq.'L'
-         f2 = gem_nml     (Path_nml_S)
-         f3 = itf_cpl_nml (Path_nml_S)
-         f4 = v4d_nml     (Path_nml_S)
-         f5 = series_nml  (Path_nml_S)
-         f6 = adw_nml     (Path_nml_S)
-         write(msg_S,'(a,6I4)') 'Error Reading nml - ',f1,f2,f3,f4,f5,f6
-         call handle_error(min(f1,f2,f3,f4,f5,f6),'set_world_view',msg_S)
+         err(1) = bin2com ()
+         err(1) = grid_nml    (Path_nml_S)
+         G_lam = Grd_typ_S(1:1).eq.'L' .or. Grd_typ_S(2:2).eq.'Y'
+         err(2) = step_nml    (Path_nml_S)
+         err(3) = gem_nml     (Path_nml_S)
+         err(4) = itf_cpl_nml (Path_nml_S)
+         err(5) = v4d_nml     (Path_nml_S)
+         err(6) = series_nml  (Path_nml_S)
+         err(7) = adw_nml     (Path_nml_S)
+         ierr = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
+         call handle_error(ierr,'set_world_view','Error reading nml')
 
       endif
 !
 ! Establish final configuration
 !
-      f1 = gemdm_config ( )
-      f2 = adw_config   ( )
-      f3 = v4d_config   ( )
-      call handle_error(min(f1,f2,f3),'set_world_view','')
+      err(1) = gemdm_config ( )
+      err(2) = adw_config   ( )
+      err(3) = v4d_config   ( )
+      call handle_error(min(err(1),err(2),err(3)),'set_world_view','')
 !
       ierr = grid_nml    ('print')
+      ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
       ierr = itf_cpl_nml ('print') 
       ierr = v4d_nml     ('print')
@@ -145,13 +169,19 @@
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
 
-      if(Acid_test_L)call acid_check()
-!
       call gemtim3 ( Lun_out )
 !
 ! Establish domain decomposition (mapping subdomains and processors)
 !
       call domain_decomp
+!
+      if (lun_out.gt.0) then
+         f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))
+         f2 = G_ni-f1*(Ptopo_npex-1)
+         f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
+         f4 = G_nj-f3*(Ptopo_npey-1)
+         write (lun_out,1001) Grd_typ_S,G_ni,G_nj,G_nk,f1,f3,f2,f4
+      endif
 !
 ! Initializes schemes control comdeck
 !
@@ -160,6 +190,8 @@
 ! Initializes GMM
 !
       call set_gmm
+!
+ 1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
 !
 !-------------------------------------------------------------------
 !

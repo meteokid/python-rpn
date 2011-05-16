@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !** s/p itf_phy_slb
-Subroutine itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D ,&
-                     esiz,dsiz,fsiz,vsiz,dt,kount,phy_timing,ni,nj,nk,pslic )
+Subroutine itf_phy_slb ( geofld ,busdyn3D ,busper3D, busvol3D ,&
+                         esiz,dsiz,fsiz,vsiz,dt,kount,phy_timing,ni,nj,nk,pslic )
   Implicit None
 
   Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-  Real, Dimension(:), Pointer ::  geofld, Phy_busdyn3D, Phy_busper3D, &
-                                  Phy_busvol3D
+  Real, Dimension(:,:), Pointer ::  busdyn3D, busper3D, busvol3D
+  Real, Dimension(:  ), Pointer ::  geofld
   Real dt, phy_timing(ni,nj) 
 
   !Author
@@ -59,11 +59,8 @@ Subroutine itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D ,&
   external  time_base
 
   Integer jdo, ithread, ione
-  real busent, busdyn, busper, busvol, sltime
+  real busent, sltime
   pointer (pabusent,busent(*))
-  pointer (pabusdyn,busdyn(*))
-  pointer (pabusper,busper(*))
-  pointer (pabusvol,busvol(*))
 
   !
 
@@ -77,14 +74,11 @@ Subroutine itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D ,&
 
   If(jdo>nj)Return
 
-  if(kount==0) pabusent = loc (      geofld((jdo-1)*esiz+1))
-               pabusdyn = loc (Phy_busdyn3D((jdo-1)*dsiz+1))
-               pabusper = loc (Phy_busper3D((jdo-1)*fsiz+1))
-               pabusvol = loc (Phy_busvol3D((jdo-1)*vsiz+1))
+  if(kount==0) pabusent = loc (geofld((jdo-1)*esiz+1))
 
   ticks_deb = time_base()
 
-  call phy_exe ( busent ,busdyn ,busper ,busvol , &
+  call phy_exe ( busent ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
                  esiz   ,dsiz   ,fsiz   ,vsiz   , &
                  dt, jdo, kount, ithread, ni, nk)
 

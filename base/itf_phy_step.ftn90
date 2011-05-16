@@ -25,12 +25,12 @@
 !
       integer, INTENT(IN) :: F_stepno
 Interface
-Subroutine itf_phy_slb (geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &
-                    esiz, dsiz, fsiz, vsiz,   &
-                    dt, kount, phy_timing, ni, nj, nk, pslic) 
+Subroutine itf_phy_slb (geofld, busdyn3D, busper3D, busvol3D, &
+                        esiz, dsiz, fsiz, vsiz,   &
+                        dt, kount, phy_timing, ni, nj, nk, pslic) 
 
-         Real, Dimension(:), Pointer :: geofld, Phy_busdyn3D, Phy_busper3D, &
-                                        Phy_busvol3D
+         Real, Dimension(:,:), Pointer :: busdyn3D, busper3D, busvol3D
+         Real, Dimension(:  ), Pointer :: geofld
          Integer :: esiz, dsiz, fsiz, vsiz, kount, ni,nj,nk, pslic
          Real    :: dt, phy_timing(ni,nj)
 End Subroutine itf_phy_slb
@@ -73,6 +73,7 @@ End Interface
 !----------------------------------------------------------------
 !
 !implicits
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
@@ -85,23 +86,23 @@ End Interface
 #include "clim.cdk"
 !
       integer*8 time_base
-      external  time_base
+      external  time_base, itf_phy_geom, fst_rdhint
 !
       integer PG_ni,PG_nj
       logical P_timing_L
       integer, save :: pslic
-      integer j, obussiz, err
+      integer j, obussiz, err, gmmstat
       integer*8 ticks_deb, ticks_fin
       character*512 fn
       real, dimension(:,:), allocatable :: obusval
       real dt,Lphy_timing(l_ni,l_nj),Gphy_timing(G_ni,G_nj),phy_timing(p_ni,p_nj)
       logical dumpbus_L, dyndump_L, entdump_L
 !
-      real busent, busdyn, busper, busvol, hold(2)
+      real busent, hold(2)
       pointer (pabusent,busent(*))
-      pointer (pabusdyn,busdyn(*))
-      pointer (pabusper,busper(*))
-      pointer (pabusvol,busvol(*))
+      real, pointer, dimension (:,:) :: BUSDYN_3d  => null()
+      real, pointer, dimension (:,:) :: BUSVOL_3d  => null()
+      type(gmm_metadata) :: meta
 !
 !     ---------------------------------------------------------------
 !
@@ -120,16 +121,18 @@ End Interface
       call itf_phy_prep ()
       call tmg_stop0(94)
 !
-!C    Load data into Phy_busper3D
-!               ------------------------------------------------
+! phy_dataload should replace the 2 calls to phy_acquire_data
+
+      call phy_dataload (itf_phy_geom,fst_rdhint,F_stepno,err)
+
       err = 0
       if (F_stepno == 0) then
-         call phy_acquire_data (itf_phy_geti,Phy_busper3D,p_ni,p_nj,p_nk, &
+         call phy_acquire_data (itf_phy_geti,p_ni,p_nj,p_nk, &
                                 p_bper_siz,F_stepno, Rstri_sdon,Lun_out.gt.0,err)
-      else
-         if (Clim_inincr_L) &
-            call phy_acquire_data (itf_phy_inincr,Phy_busper3D,p_ni,p_nj,p_nk, &
-                                   p_bper_siz,F_stepno, Rstri_sdon,Lun_out.gt.0,err)
+!      else
+!         if (Clim_inincr_L) &
+!            call phy_acquire_data (itf_phy_inincr,Phy_busper3D,p_ni,p_nj,p_nk, &
+!                                   p_bper_siz,F_stepno, Rstri_sdon,Lun_out.gt.0,err)
       endif
       call handle_error(err,'itf_phy_step','itf_phy_step')      
 !
@@ -160,36 +163,39 @@ End Interface
                          Ptopo_numproc,p_ni,p_nj, PG_ni,PG_nj, P_dumpbus_S )
       endif
 !
-      if (dyndump_L) then
-!$omp parallel do
-         do j = 1, p_nj
-            pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
-            call dumpbusd( busdyn, j )
-         end do
-!$omp end parallel do
-         call dumpwritd( Lun_out, F_stepno, Ptopo_myproc )
-      endif
+! TODO
+!      if (dyndump_L) then
+!!$omp parallel do
+!         do j = 1, p_nj
+!            pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
+!            call dumpbusd( busdyn, j )
+!         end do
+!!$omp end parallel do
+!         call dumpwritd( Lun_out, F_stepno, Ptopo_myproc )
+!      endif
 !
       ticks_deb = time_base()
 !
+      gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
+      gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
+      gmmstat = gmm_get ('BUSVOL_3d',BUSVOL_3d,meta)
+
       pslic= 0
       dt   = Cstv_dt_8
       call tmg_start0(91,'PHYSICS')
 !$omp parallel
-      call itf_phy_slb ( geofld ,Phy_busdyn3D ,Phy_busper3D ,Phy_busvol3D , &
-                             p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz   , &
-                             dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
+      call itf_phy_slb ( geofld ,BUSDYN_3d, BUSPER_3d ,BUSVOL_3d , &
+                         p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz   , &
+                         dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
 !$omp end parallel
       call tmg_stop0(91)
       call tmg_start0(92,'PHYSEXT')
 !$omp parallel do
       do j = 1, p_nj
-         pabusvol = loc (Phy_busvol3D((j-1)*p_bvol_siz+1))
-         pabusper = loc (Phy_busper3D((j-1)*p_bper_siz+1))
-         pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
          if (F_stepno == 0) pabusent = loc( geofld((j-1)*p_bent_siz+1) )
-         if (dumpbus_L) call dumpbus3( busent,busdyn,busper,busvol, j, entdump_L )
-         call itf_phy_extract( busent, busper, busvol, obusval, F_stepno, j, p_nk )
+! TODO
+!!!         if (dumpbus_L) call dumpbus3( busent,busdyn,busper,busvol, j, entdump_L )
+         call itf_phy_extract( busent, BUSPER_3d(1,j) ,BUSVOL_3d(1,j) , obusval, F_stepno, j, p_nk )
          if (P_timing_L) call itf_phy_unfold (Lphy_timing, phy_timing(1,j), j, 1, 1, 1, l_ni, 1, l_nj)
       end do
 !$omp end parallel do

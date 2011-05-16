@@ -44,24 +44,16 @@
 !       none
 !
 !implicits
-#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "orh.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
-#include "lam.cdk"
-#include "step.cdk"
-#include "type.cdk"
 #include "vtopo.cdk"
 !
       integer itraj
       logical first_L, secon_L
-!
-      logical done_intt_L
-      data done_intt_L /.false./
-      save done_intt_L
 !*
 !     ---------------------------------------------------------------
       if (Lun_debug_L) write(Lun_out,1000)
@@ -94,7 +86,7 @@
 !
       call frstgss ()
 !
-      call nest_bcs (done_intt_L)
+      call nest_bcs ()
 !
       if ( Orh_crank_L ) then
 !     
@@ -143,7 +135,6 @@
 !     ===================
 !
       if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
-      if ( G_lam.and.(Lctl_step.eq.Step_total) ) done_intt_L = .true.
 !
  1000 format( &
       /,'CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP)', &

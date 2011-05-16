@@ -42,7 +42,7 @@
 !implicits
 #include "gmm.hf"
 #include "var_gmm.cdk"
-#include "glb_ld.cdk"
+#include "grd.cdk"
 #include "lun.cdk"
 #include "nest.cdk" 
 #include "tr3d.cdk"
@@ -122,9 +122,11 @@
          endif
       end do
 !
-      call nest_init_weight('M')
-      call nest_init_weight('U')
-      call nest_init_weight('V')
+      if (.not.Grd_yinyang_L) then
+         call nest_init_weight('M')
+         call nest_init_weight('U')
+         call nest_init_weight('V')
+      endif
 !
  1000 format( &
       /,'INITIALIZATION OF NESTING VARIABLE COMDECKS (S/R nest_set_gmmvar)', &

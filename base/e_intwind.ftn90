@@ -72,6 +72,7 @@
       real, dimension (:), allocatable :: uu,vw,vv,uw
       real uvw(niu*nju),c1
       real, dimension (:), allocatable :: w1,w2
+      real*8, dimension(:), pointer :: ygg_8, yggv_8
       real, dimension (:,:,:), allocatable :: uun,vvn
       real deg2rad
       integer i1,i2,j1,j2
@@ -190,21 +191,16 @@
                      err = ezsint   ( uu,w1 )
                      err = ezdefset ( dstv_gid, dstf_gid )
                      err = ezsint   ( vv,w2 )
-                     !
-                     call hpalloc(payg_8,   njsu*2, err,1)
-                     call hpalloc(paygv_8,  njsv*2, err,1)
-!
+
+                     allocate (ygg_8(njsu), yggv_8(njsv))
                      do j = 1,njsu
-                        yg_8(j)  = yfi(j) * deg2rad
+                        ygg_8(j)  = yfi(j) * deg2rad
                      end do
                      do j = 1,njsv
-                        ygv_8(j) = yv(j) * deg2rad
+                        yggv_8(j) = yv(j) * deg2rad
                      end do
-!
-                     call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,yg_8,ygv_8)
-!
-                     call hpdeallc(payg_8,  err)
-                     call hpdeallc(paygv_8, err)
+                     call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,ygg_8,yggv_8)
+                     deallocate (ygg_8, yggv_8)
 !
                      do i=1,nisu*njsu
                         uu(i) = uu(i) * dcst_knams_8
@@ -312,11 +308,10 @@
                 call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                 call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
             else
-                call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1, &
+                call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
                                   yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
                 call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
                 call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
-!               print *,'intwind: uu(10,10,k)=',uun(10,10,k),vvn(10,10,k)
             endif
 !
          end do

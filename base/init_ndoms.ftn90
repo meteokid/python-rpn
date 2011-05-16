@@ -19,7 +19,8 @@
       integer ndomains,dom_deb,err
 !
 #include <clib_interface.cdk>
-
+#include "grd.cdk"
+!
       character*16 ndomains_S
       integer indx1, dom_fin
 !
@@ -46,14 +47,20 @@
   33  write (6,1002) ndomains_S
       return
 
- 101  ndomains = dom_fin - dom_deb + 1
+ 101  Grd_ndomains = dom_fin - dom_deb + 1
 
-      if (ndomains.lt.1) then
+      if (Grd_ndomains.lt.1) then
          write (6,1003) ndomains,ndomains_S
          return
       endif
 !
-      err = 0
+      Grd_yinyang_L = .false.
+      Grd_yinyang_S = ''
+      if (clib_getenv ('UM_EXEC_YINYANG',ndomains_S).ge.0) &
+      Grd_yinyang_L = .true.
+!
+      ndomains = Grd_ndomains
+      err      = 0
 !
  1001 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS is undefined'/)
  1002 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS incorrectly defined ',a/)

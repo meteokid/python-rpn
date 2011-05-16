@@ -1,0 +1,192 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r nest_bcs_yy - for interpolating and nesting Yin-Yang boundary conditions
+!
+#include "model_macros_f.h"
+!
+      subroutine nest_bcs_yy ()
+      implicit none
+!
+!author 
+!     Michel Desgagne   - Spring 2006
+!
+!revision
+! v4_40 - Lee/Qaddouri  - adapt (nest_bcs) for Yin-yang (called every timestep)
+!
+!object
+!
+!arguments
+!       none
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+!
+      character*16 tr_name
+      integer err,i,j,k,nvar,n
+      real, pointer, dimension(:,:,:) :: tr,tr0
+
+!----------------------------------------------------------------------
+!
+      if (Lun_debug_L) write (Lun_out,1001)
+      gmmstat = gmm_get(gmmk_nest_u_s ,nest_u ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_u)'
+      gmmstat = gmm_get(gmmk_nest_v_s ,nest_v ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_v)'
+      gmmstat = gmm_get(gmmk_nest_w_s ,nest_w ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_w)'
+      gmmstat = gmm_get(gmmk_nest_t_s ,nest_t ,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_t)'
+      gmmstat = gmm_get(gmmk_nest_zd_s,nest_zd,meta3d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_zd)'
+      gmmstat = gmm_get(gmmk_nest_s_s ,nest_s ,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nest_bcs ERROR at gmm_get(nest_s)'
+!
+      gmmstat = gmm_get(gmmk_ut0_s , ut0 ,meta3d)
+      gmmstat = gmm_get(gmmk_vt0_s , vt0 ,meta3d)
+      gmmstat = gmm_get(gmmk_wt0_s , wt0 ,meta3d)
+      gmmstat = gmm_get(gmmk_tt0_s , tt0 ,meta3d)
+      gmmstat = gmm_get(gmmk_zdt0_s,zdt0 ,meta3d)
+      gmmstat = gmm_get(gmmk_st0_s , st0 ,meta2d)
+      if (.not.Schm_hydro_L) then
+         gmmstat = gmm_get(gmmk_nest_q_s,nest_q,meta3d)
+         gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
+      endif
+!
+
+      do k= 1, G_nk+1
+      do j= 1, l_nj
+      do i= 1, l_ni
+         nest_t (i,j,k) = tt0(i,j,k)
+         nest_w(i,j,k)  =  wt0(i,j,k)
+         nest_zd(i,j,k) =zdt0(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+      do j= 1, l_nj
+      do i= 1, l_ni
+        nest_t (i,j,G_nk+2) = tt0(i,j,G_nk+2)
+        nest_s (i,j)=st0(i,j)
+      enddo
+      enddo
+!
+      call rpn_comm_xch_halo(nest_s, LDIST_DIM,l_ni,l_nj,1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(st0,nest_s,LDIST_DIM,1)
+      call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(tt0,nest_t,LDIST_DIM,G_nk+2)
+
+      call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(wt0,nest_w,LDIST_DIM,G_nk+1)
+
+      call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk+1,&
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(zdt0,nest_zd,LDIST_DIM,G_nk+1)
+!
+      if (.not. Schm_hydro_L) then
+
+        do k=0,G_nk+1
+        do j=1,l_nj
+        do i=1,l_ni
+           nest_q(i,j,k)=qt0(i,j,k)
+        end do
+        end do
+        end do
+        call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+        call yyg_scalbc(qt0,nest_q,LDIST_DIM,G_nk+2)
+      endif
+
+!$omp parallel
+!$omp do
+       do k= 1, G_nk+1
+        do j= 1, l_nj
+          do i= 1, l_niu
+         ut0 (i,j,k)=ut0 (i,j,k)*Geomg_invcy_8(j)
+         nest_u(i,j,k)=ut0(i,j,k)
+
+        enddo
+       enddo
+        do j= 1, l_njv
+          do i= 1, l_ni
+          vt0(i,j,k)=vt0 (i,j,k)*Geomg_invcyv_8(j)
+          nest_v(i,j,k)=vt0(i,j,k)
+          enddo
+        enddo
+       enddo
+!$omp enddo
+!$omp end parallel
+
+      call rpn_comm_xch_halo(nest_u,LDIST_DIM,l_niu,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call  yyg_vecbc1(ut0,nest_u,nest_v,LDIST_DIM,G_nk+1)
+      call  yyg_vecbc2(vt0,nest_v,nest_u,LDIST_DIM,G_nk+1)
+
+!$omp parallel
+!$omp do
+      do k= 1, G_nk+1
+         do j= 1, l_nj
+         do i= 1, l_niu
+
+            ut0   (i,j,k) =  ut0(i,j,k)*Geomg_cy_8(j)
+            nest_u(i,j,k) = ut0(i,j,k)
+         enddo
+         enddo
+         do j= 1, l_njv
+         do i= 1, l_ni
+            vt0(i,j,k)   =  vt0 (i,j,k)*Geomg_cyv_8(j)
+            nest_v (i,j,k)= vt0(i,j,k)
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+
+!
+      do n=1,Tr3d_ntr
+         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
+      	 gmmstat = gmm_get(tr_name,tr,meta3d)
+         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
+      	 gmmstat = gmm_get(tr_name,tr0,meta3d)
+
+         do k= 1, G_nk+2
+         do j= 1, l_nj
+         do i= 1, l_ni
+            tr (i,j,k) = tr0(i,j,k)
+         enddo
+         enddo
+         enddo
+         call rpn_comm_xch_halo(tr, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(tr0,tr,LDIST_DIM,G_nk+2)
+      enddo
+!
+!----------------------------------------------------------------------
+ 1001 format(3X,'NEST YY Boundary ConditionS: (S/R NEST_BCS_YY)')
+!
+      return
+      end

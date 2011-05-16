@@ -1,0 +1,301 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!*s/r yyg_rhs_scalbc - to interpolate and exchange RHS data
+!
+#include "model_macros_f.h"
+
+      Subroutine yyg_rhs_scalbc(rhs_dst1,sol_src1,minx,maxx,miny,maxy, &
+                                NK,iter,Linfini)
+      implicit none
+
+!
+!author
+!     Abdessamad Qaddouri/V.Lee  - October 2009
+!
+      include 'mpif.h'
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "glb_pil.cdk"
+#include "sol.cdk"
+#include "lctl.cdk"
+#include "yyg_rhs.cdk"
+
+      integer minx,maxx,miny,maxy,Ni,Nj,NK,numproc
+      real*8  sol_src1(minx:maxx,miny:maxy,Nk)
+      real*8  rhs_dst1(minx:maxx,miny:maxy,Nk)
+      real*8  tab_src_8(LDIST_SHAPE,Nk)
+      real    tab_src(LDIST_SHAPE,Nk)
+      real    linfini,L1,L2,L3(2),L4(2),infini(Nk)
+      integer ierr,i,j,k,kk,kk_proc,m,mm,iter
+      integer Rhsx_recvlen(Ptopo_numproc),Rhsx_sendlen(Ptopo_numproc)
+      real, dimension (:,:), allocatable :: recv_pil,send_pil
+      real sent,recv
+      integer status(MPI_STATUS_SIZE)
+      integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+      integer request(Ptopo_numproc*2)
+      real*8  send_Rhsx_8
+      integer tag1,tag2,recvlen,sendlen,ireq
+      tag2=14
+      tag1=13
+      
+
+      linfini=0.0
+      do k=1,NK
+         infini(k)=0.0
+      do j=1,l_nj
+      do i=1,l_ni
+         tab_src(i,j,k)=real(sol_src1(i,j,k))
+      enddo
+      enddo
+      enddo
+
+      sendlen=0
+      recvlen=0
+      ireq=0
+      do kk=1,Ptopo_numproc
+         Rhsx_sendlen(kk)= Rhsx_sendw_len(kk)+Rhsx_sende_len(kk) &
+                          +Rhsx_sends_len(kk)+Rhsx_sendn_len(kk)
+         sendlen=max(sendlen,Rhsx_sendlen(kk))
+         Rhsx_recvlen(kk)= Rhsx_recvw_len(kk)+Rhsx_recve_len(kk) &
+                         +Rhsx_recvs_len(kk)+Rhsx_recvn_len(kk)
+         recvlen=max(recvlen,Rhsx_recvlen(kk))
+      enddo
+      
+
+      call rpn_comm_xch_halo(tab_src, LDIST_DIM,l_ni,l_nj,NK, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
+          tab_src_8(:,:,:)=dble(tab_src(:,:,:))
+
+      if (sendlen.gt.0) then
+          allocate(send_pil(sendlen*NK,Ptopo_numproc))
+
+      endif
+      if (recvlen.gt.0) then
+          allocate(recv_pil(recvlen*NK,Ptopo_numproc))
+      endif
+      if (iter .eq. 1.and.Lctl_step.eq.1) then
+          allocate(Sol_rhs(sendlen*NK,1,Ptopo_numproc))
+          Sol_rhs = 0.0
+      endif
+ 
+!
+      do 100 kk=1,Ptopo_numproc
+!
+!        For each processor (in other colour)
+         if (Ptopo_couleur.eq.0) then
+             kk_proc = kk+Ptopo_numproc-1
+         else
+             kk_proc = kk-1
+         endif
+
+!        prepare to send to other colour processor
+         if (Rhsx_sendlen(kk).gt.0) then
+!            prepare something to send
+
+!            mm=0
+
+! make for west
+             do m=1,Rhsx_sendw_len(kk)
+!$omp parallel private (mm,send_Rhsx_8) &
+!$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
+!$omp do
+                do k=1,NK
+!                  mm=mm+1
+                   mm=(m-1)*NK+k
+                   i= Rhsx_sendw_imx(m,kk)
+                   j= Rhsx_sendw_imy(m,kk)
+                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                             Rhsx_sendw_imx(m,kk),Rhsx_sendw_imy(m,kk), &
+                             LDIST_DIM, &
+                             Rhsx_sendw_xxr(m,kk),Rhsx_sendw_yyr(m,kk))
+                   infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
+                   Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil2_8(Rhsx_sendw_sten(m,kk)))
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+! make for east
+             do m=1,Rhsx_sende_len(kk)
+!$omp parallel private (mm,send_Rhsx_8) &
+!$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Rhsx_sendw_len(kk)+m-1)*NK+k
+                   i=Rhsx_sende_imx(m,kk)
+                   j=Rhsx_sende_imy(m,kk)
+                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                             Rhsx_sende_imx(m,kk),Rhsx_sende_imy(m,kk), &
+                             LDIST_DIM, &
+                             Rhsx_sende_xxr(m,kk),Rhsx_sende_yyr(m,kk))
+                   infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
+                   Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil3_8(Rhsx_sende_sten(m,kk)))
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+! make for south
+             do m=1,Rhsx_sends_len(kk)
+!$omp parallel private (mm,send_Rhsx_8) &
+!$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+m-1)*NK+k
+                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                             Rhsx_sends_imx(m,kk),Rhsx_sends_imy(m,kk), &
+                             LDIST_DIM, &
+                             Rhsx_sends_xxr(m,kk),Rhsx_sends_yyr(m,kk))
+                   infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
+                   Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil4_8(Rhsx_sends_sten(m,kk)))
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+! make for north
+             do m=1,Rhsx_sendn_len(kk)
+!$omp parallel private (mm,send_Rhsx_8) &
+!$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+Rhsx_sends_len(kk)+m-1)*NK+k
+                   i=Rhsx_sendn_imx(m,kk)
+                   j=Rhsx_sendn_imy(m,kk)
+                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                             Rhsx_sendn_imx(m,kk),Rhsx_sendn_imy(m,kk), &
+                             LDIST_DIM,  &
+                             Rhsx_sendn_xxr(m,kk),Rhsx_sendn_yyr(m,kk))
+                   infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
+                   Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil5_8(Rhsx_sendn_sten(m,kk)))
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+             linfini=infini(1)
+             do k=2,NK
+                linfini=max(linfini,infini(k))
+             enddo
+
+             ireq = ireq+1
+!            print *,'RHS_scalbc','sending',Rhsx_sendlen(kk)*NK,' to ',kk_proc
+             call MPI_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,MPI_REAL, &
+                                         kk_proc,tag2+Ptopo_world_myproc, &
+                                         MPI_COMM_WORLD,request(ireq),ierr)
+
+         endif
+!
+!
+!        check to receive from other colour processor
+!
+         if (Rhsx_recvlen(kk).gt.0) then
+!            detect something to receive
+
+             ireq = ireq+1
+!            print *,'RHS_scalbc','receiving ',Rhsx_recvlen(kk)*NK,' from ',kk_proc
+             call MPI_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,MPI_REAL, &
+                    kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+         endif
+
+ 100  continue
+
+      call mpi_waitall(ireq,request,stat,ierr)
+
+      l2=0
+      do kk=1,Ptopo_numproc
+         do i=1,sendlen*NK
+            l2 =max(l2,abs(Sol_rhs(i,1,kk)))
+         enddo
+      enddo
+      call mpi_allreduce(L2,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+      L3(2)=L1
+      L2   =L1
+
+!Wait for all done sending and receiving
+
+
+      if (sendlen.gt.0) deallocate(send_pil)
+
+      call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+      L3(1)=L1
+      Linfini=L1
+
+      if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.0) then
+          call MPI_Send(L3,2,MPI_REAL,0,tag1,Ptopo_intercomm,ierr)
+          call MPI_Recv(L4,2,MPI_REAL,0,tag2,Ptopo_intercomm,status,ierr)
+      endif
+      if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.1) then
+          call MPI_Recv(L4,2,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
+          call MPI_Send(L3,2,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+      endif
+      Linfini=max(Linfini,L4(1))
+      L2=max(L2,L4(2))
+      if (iter.gt.1) linfini=linfini/L2
+      call mpi_bcast(linfini,1,mpi_real,0,Ptopo_intracomm,ierr)
+!      print *,'YYG_rhs:iter=',iter,linfini
+
+! Now fill my results if I have received something
+
+      if (recvlen.gt.0) then
+
+          do 200 kk=1,Ptopo_numproc
+! fill my west
+             mm=0
+             do m=1,Rhsx_recvw_len(kk)
+             do k=1,NK
+                mm=mm+1
+                rhs_dst1(Rhsx_recvw_i(m,kk),Rhsx_recvw_j(m,kk),k)= &
+                rhs_dst1(Rhsx_recvw_i(m,kk),Rhsx_recvw_j(m,kk),k)-recv_pil(mm,KK)
+          
+             enddo
+             enddo
+! fill my east
+             do m=1,Rhsx_recve_len(kk)
+             do k=1,NK
+                mm=mm+1
+                rhs_dst1(Rhsx_recve_i(m,kk),Rhsx_recve_j(m,kk),k)= &
+                rhs_dst1(Rhsx_recve_i(m,kk),Rhsx_recve_j(m,kk),k)-recv_pil(mm,KK)
+             enddo
+             enddo
+! fill my south
+             do m=1,Rhsx_recvs_len(kk)
+             do k=1,NK
+                mm=mm+1
+                rhs_dst1(Rhsx_recvs_i(m,kk),Rhsx_recvs_j(m,kk),k)= &
+                rhs_dst1(Rhsx_recvs_i(m,kk),Rhsx_recvs_j(m,kk),k)-recv_pil(mm,KK)
+             enddo
+             enddo
+! fill my north
+             do m=1,Rhsx_recvn_len(kk)
+             do k=1,NK
+                mm=mm+1
+                rhs_dst1(Rhsx_recvn_i(m,kk),Rhsx_recvn_j(m,kk),k)= &
+                rhs_dst1(Rhsx_recvn_i(m,kk),Rhsx_recvn_j(m,kk),k)-recv_pil(mm,KK)
+             enddo
+             enddo
+
+ 200  continue
+      deallocate(recv_pil)
+
+      endif
+!
+!
+      return
+      end
+

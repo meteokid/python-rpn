@@ -32,6 +32,7 @@ Integer Function itf_phy_geti (vd, opt)
 !Revision
 ! v4_10 - Spacek, L.     - First revision
 ! v4_1x - Dugas, B.      - Remove explicit physics dependencies
+! v4_40 - Lee, V.        - Add Yin-Yang interpolation for geophysical fields
 !
 !Object
 !     This function provides I/O and horizontal interpolation
@@ -63,6 +64,7 @@ Integer Function itf_phy_geti (vd, opt)
 #include "lctl.cdk"
 #include "p_geof.cdk"
 #include "lam.cdk"
+#include "grd.cdk"
 
       Integer, External :: fnom, fstouv, fstinf, fstprm, fstfrm, fclos, fstopc
       Integer, External :: fstluk, fstinl, wkoffit, ezgdef_fmem, ezdefset
@@ -89,14 +91,15 @@ Integer Function itf_phy_geti (vd, opt)
       Character(LEN=lenmax+15):: command
       Real, Allocatable, Dimension(:,:) :: field,field2,global
       Real, Allocatable, Dimension(:)   :: ax,ay
+      Real(kind=8)  :: xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
 !
       real localf(l_ni,l_nj), xfi(G_ni+1), yfi(G_nj)
+      real yinyangf(G_ni,G_nj)
 !
       Real :: zp1,poa,poam,sum,sumt
-      Real :: busent, busper
       Real(kind=8)  :: rad2deg_8
-      Pointer (pabusper,busper(*))
-      Pointer (pabusent,busent(*))
+!
+      type(gmm_metadata) :: meta
 !
 !     ---------------------------------------------------------------
 temp=>vd
@@ -108,6 +111,20 @@ If(Lun_debug_L)ier = fstopc('TOLRNC','INFORM',0)
 goff=0 ; If(G_lam) goff=2
 
 call prsdate (dum0,month,day,dum1,dum2,dum3,dum4,Mod_runstrt_S)
+
+if (Grd_yinyang_L) then
+!   Prepare for YY_scal interp
+          do j=1,G_nj
+          do i=1,G_ni
+             xx_8(i,j)=G_xg_8(i)
+          enddo
+          enddo
+          do j=1,G_nj
+          do i=1,G_ni
+             yy_8(i,j)=G_yg_8(j)
+          enddo
+          enddo
+endif
 
 call itf_phy_gdef (lgid, dstf_gid, xfi, yfi)
 
@@ -194,13 +211,18 @@ Main1 : Do
                      ier = ezdefset ( dstf_gid, sgid )
                      ier = ezsint (vd%globalf(1,1,tip), field)
                   Endif
+                  If (Grd_yinyang_L) then
+                      yinyangf(1:G_ni,1:G_nj)=vd%globalf(1:G_ni,1:G_nj,tip)
+                      Call yyg_scalgeo(yinyangf,xx_8,yy_8, &
+                        G_Xg_8(1),G_Yg_8(1),G_ni,G_nj,1,vd%interp,vd%nomvar)
+                      vd%globalf(1:G_ni,1:G_nj,tip)=yinyangf(1:G_ni,1:G_nj)
+                  endif
 !
                   ier = Phy_simple_transforms( vd%phyvar,vd%globalf(1:G_ni,1:G_nj,tip),vd%glbfld_L )
 !
                Endif
 !
             Else
-!
                If(NoInterp_L) Then
                   If(G_lam) Then
                      Call glbdist( field,G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
@@ -216,6 +238,15 @@ Main1 : Do
                   ier = ezdefset ( lgid, sgid )
                   ier = ezsint ( localf, field )
                Endif
+               If(Grd_yinyang_L) then
+                  call glbcolc( yinyangf,G_ni,G_nj, localf,1,l_ni,1,l_nj,1 )
+                  If(Ptopo_myproc==0) then
+                     Call yyg_scalgeo(yinyangf,xx_8,yy_8, &
+                           G_Xg_8(1),G_Yg_8(1),G_ni,G_nj,1,vd%interp,vd%nomvar)
+                  Endif
+                  Call glbdist( yinyangf,G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
+               Endif
+               call glbstat2 (localf,vd%nomvar,"scalge",1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
 !
                ier = Phy_simple_transforms( vd%phyvar, localf, vd%glbfld_L )
                Call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )
@@ -288,6 +319,12 @@ If(opt%global_fields_L) then
       If(vd%glbfld_L) Then
 !
          Do tip=1,vd%p_nu
+            If (Grd_yinyang_L .and. Ptopo_myproc==0) then
+               yinyangf(1:G_ni,1:G_nj)= vd%globalf(1:G_ni,1:G_nj,tip)
+               Call yyg_scalgeo(yinyangf,xx_8,yy_8, &
+                   G_Xg_8(1),G_Yg_8(1),G_ni,G_nj,1,vd%interp,vd%nomvar)
+               vd%globalf(1:G_ni,1:G_nj,tip)=yinyangf(1:G_ni,1:G_nj)
+            endif
             Call glbdist( vd%globalf(1:G_ni,1:G_nj,tip),G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
             call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )
          Enddo
@@ -321,6 +358,8 @@ Stats : Do
    vd => vd%next_value
 Enddo Stats
 
+gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
+
 vd=>temp
 main3 : Do
 !
@@ -329,11 +368,12 @@ main3 : Do
          Do j=1,p_nj
             ij=vd%findx+(j-1)*p_bper_siz
             Do k=1,vd%p_nu
-               ik=ij+(k-1)*p_ni
-               Phy_busper3D(ik:ik+p_ni-1) = vd%values(1:p_ni,j,k)
+               ik=vd%findx+(k-1)*p_ni
+! When completed, next line becomes useless and all of itf_phy_geti
+               BUSPER_3d (ik:ik+p_ni-1,j) = vd%values(1:p_ni,j,k)
             Enddo
          Enddo
-      Else                ! Put into the new busent
+      Else                ! Put into geofld
          Do j=1,p_nj
             ij=vd%findx+(j-1)*p_bent_siz
             Do k=1,vd%p_nu
@@ -502,6 +542,7 @@ Integer Function Count_files()
 !
 !     ---------------------------------------------------------------
 !
+logical flaggeophy
 Count_files=0
 nf=0;nft=1;nr=0;
 If (Ptopo_myproc==0) Then
@@ -510,7 +551,15 @@ If (Ptopo_myproc==0) Then
    Do i=1,nfiles
       If (Len_trim(vd%file(i))/=0) Then
          nf=nf+1
-         vd%file(nf)=Trim(Path_phy_S)//Trim(vd%file(i))
+         flaggeophy = trim(vd%file(i))=='GEOPHY'
+         vd%file(nf)= trim(Path_phy_S)//trim(vd%file(i))
+         if (flaggeophy) then
+            if (Grd_yinyang_L) then
+               vd%file(nf)=trim(vd%file(nf))//'/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+            else
+               vd%file(nf)=trim(vd%file(nf))//'/Gem_geophy.fst'
+            endif
+         endif
       Endif
    Enddo
    Do i=1,nreps

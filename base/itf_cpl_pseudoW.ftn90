@@ -41,7 +41,6 @@
 
          call cpl_regrid_L2H (atm_busou , cpl_ni, cpl_nj, n_fldou, 2, &
                             datev,kstep,step,date0,trim(filename))
-         Out_diruse_L = .true.
 
       endif
 

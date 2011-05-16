@@ -32,12 +32,12 @@
 ! v2_10                    outputted when a "-1" is indicated
 ! v2_21 - Dugas B.       - use convip
 ! v2_30 - Lee V.         - reduced dimension of Level_typ to 1
-! v2_31 - Lee V.         - output on Geomg_hyb coordinates
 ! v2_32 - Lee V.         - levset is now an ID defined by user, not the 
 ! v2_32                    actual "set" number forced to be in sequence
 ! v3_01 - Lee V.         - new ip1 encoding (kind=5 -- unnormalized)
 ! v3_02 - Lee V.         - eliminate levels repeated in one level set
-! v3_21 - Lee V.         - bug correction when kindip1=1
+! v3_21 - Lee V.         - bug correction when levdesc=1
+! v4_40 - Lee V.         - modification in order to select the "bot" levels
 !
 !
 !object
@@ -84,7 +84,7 @@
 !
 !implicits
 #include "glb_ld.cdk"
-#include "geomg.cdk"
+#include "schm.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
 #include "lun.cdk"
@@ -92,13 +92,19 @@
 !*
       logical press_L,eta_L,found_L
       character*5 stuff_S,blank_S
-      integer i,j,k,ii,idx,levset,num,kindip1,ilevel
+      integer i,j,k,ii,idx,levset,num,levdesc,ilevel,LEV
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) then
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
+      endif
+      Level_momentum = G_nk+1
+      Level_thermo = G_nk+2
+      if (.not.Schm_phyms_L) then
+          Level_momentum = G_nk
+          Level_thermo = G_nk+1
       endif
       set_level = 0
       read( F_argv_S(1), * ) levset
@@ -114,8 +120,6 @@
 
       endif
 
-      Level_types = (/'M','P'/)
-
       j=Level_sets
 
       i=0
@@ -125,7 +129,7 @@
 
       press_L = .false.
       eta_L   = .false.
-      kindip1 = -1
+      levdesc = -1
 
       do 100 ii=2,F_argc
 
@@ -137,27 +141,37 @@
          else if (F_argv_S(ii).eq.'eta') then
             if (press_L) then
                 if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING: Only one level type can be defined'
+                    'SET_LEVEL WARNING:  Pressure levels are already defined'
                 Level_sets = Level_sets -1
                 set_level=1
                 return
             endif
-            kindip1 = 1
+            levdesc = 1
             eta_L = .true.
 
          else if (F_argv_S(ii).eq.'pres') then
             if (eta_L) then
                 if (Lun_out.gt.0) write(Lun_out,*) &
-                    'SET_LEVEL WARNING: Only one level type can be defined'
+                    'SET_LEVEL WARNING: Model levels are already defined'
                 Level_sets = Level_sets -1
                 set_level=1
                 return
             endif
 
-            kindip1 = 2
+            levdesc = 2
             press_L = .true.
 
-         else if (kindip1.ge.1) then
+         else if (F_argv_S(ii).eq.'bot') then
+            if (press_L) then
+                if (Lun_out.gt.0) write(Lun_out,*) &
+                    'SET_LEVEL WARNING: Pressure levels are already defined'
+                Level_sets = Level_sets -1
+                set_level=1
+                return
+            endif
+            levdesc = 3
+            eta_L = .true.
+         else if (levdesc.eq.1) then
 
             i = i+1
             read( F_argv_S(ii), * ) Level(i,j)
@@ -165,48 +179,47 @@
             if (Level(i,j).eq.-1) then
 
 !              request for all model eta levels
+!              will put in the max levels which is the number of thermo
 
-                  Level_typ_indx(j)=1
+                  Level_typ_S(j)='M'
 
                   i = i-1
-                  do idx=1,G_nk
+                  do idx=1,Level_thermo
                      i = i+1
                      Level(i,j) = float( idx )
                   end do
+            endif
 
-            else if (Level(i,j).eq.0) then
-!
-!              request ground level (equivalent to G_nk)
-
-                 Level_typ_indx(j)=1
-                 Level(i,j) = G_nk
-
-            else 
-               if (kindip1.eq.1) then
-                  Level_typ_indx(j)=1
-                  if (Level(i,j) .gt. 0) then
-                     Level(i,j) = min(nint(Level(i,j)),G_nk)
-                     idx = Level(i,j)
+         else if (levdesc.eq.3) then
+                  Level_typ_S(j)='M'
+                  i = i+1
+                  read( F_argv_S(ii), * ) Level(i,j)
+                  k=nint(Level(i,j))
+!              request for model levels close and include the surface 
+                  if (k .gt. 0.and. k .lt. Level_thermo) then
+                     i=i-1
+                     do idx=k,1,-1
+                        i = i+1
+                        Level(i,j) = -1.0*idx + 1.0
+                     enddo
                   else
                      if (Lun_out.gt.0) write(Lun_out,*) &
                          'SET_LEVEL WARNING: Level index out of range'
                          i = i - 1
                   endif
-               else if (kindip1.eq.2) then
+         else if (levdesc.eq.2) then
 
-                  Level_typ_indx(j)=2
+                  Level_typ_S(j)='P'
+                  i = i+1
+                  read( F_argv_S(ii), * ) Level(i,j)
 
-               else
+         else
 
                   if (Lun_out.gt.0) write(Lun_out,*) &
                     'SET_LEVEL WARNING: Level type not recognizable'
                   Level_sets = Level_sets -1
                   set_level=1
                   return
-
-               endif
-
-            endif
 
          endif
 
@@ -250,7 +263,7 @@
       if (Lun_out.gt.0) then
 
       write(Lun_out,*) ' Level_set(',j,') : Level_id=',Level_id(j)
-      write(Lun_out,*) ' Level_type=',Level_types(Level_typ_indx(j))
+      write(Lun_out,*) ' Level_type=',Level_typ_S(j)
       write(Lun_out,*) ' Level=',(Level(i,j),i=1,Level_max(j))
 
       endif

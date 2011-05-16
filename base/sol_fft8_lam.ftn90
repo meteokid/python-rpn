@@ -2,17 +2,16 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !**s/r sol_fft8_lam - parallel direct solution of horizontal Helmholtz
 !                   problem. With ffft8  for LAM
 !
@@ -29,6 +28,7 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+#include "grd.cdk"
 !
 !
 !
@@ -36,6 +36,7 @@
 !
 !revision
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v4_40 - Qaddouri A.              - Add modification for Yin-Yang
 !
 !arguments
 !  Name        I/O                 Description
@@ -101,7 +102,6 @@
 !
 !  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
 !  represent the pilot region along I
-!     call tmg_start(89,'sol_fft_lam')
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
@@ -137,6 +137,15 @@
          enddo
 !$omp enddo
 !
+      if (Grd_yinyang_L) then
+!$omp do
+      do k=1,Nkl
+      call sfft8(fdwfft(1+pil_s,k,1+Lam_pil_w), &
+                        (Maxy-Miny+1)*(Maxz-Minz+1),1, &
+                        (Maxy-Miny+1-pil_s-pil_n) )
+      enddo
+!$omp enddo
+      else
 !$omp do
       do k=1,Nkl
       call qcfft8(fdwfft(1+pil_s,k,1+Lam_pil_w), &
@@ -144,6 +153,8 @@
                         (Maxy-Miny+1-pil_s-pil_n), -1 )
       enddo
 !$omp enddo
+      endif
+
 !     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
 !    %                     (Maxy-Miny+1) * Nkl, -1 )
 
@@ -217,6 +228,15 @@
 
 !     inverse projection ( r = x * w )
 
+      if (Grd_yinyang_L) then
+!$omp do
+      do k=1, Nkl
+      call sfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w), &
+                          (Maxy-Miny+1)*(Maxz-Minz+1),1, &
+                          (Maxy-Miny+1-pil_s-pil_n) )
+      enddo
+!$omp enddo
+      else
 !$omp do
       do k=1, Nkl
       call qcfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w), &
@@ -224,12 +244,13 @@
                           (Maxy-Miny+1-pil_s-pil_n), +1 )
       enddo
 !$omp enddo
+      endif
+
 !$omp end parallel
 !     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
 !    %                     (Maxy-Miny+1) * Nkl, +1 )
 !
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                     Minz, Maxz, Nk, fdwfft, -1, 2 )
-!     call tmg_stop(89)
       return
       end

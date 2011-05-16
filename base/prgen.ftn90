@@ -12,20 +12,23 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+!
 !**s/r prgen - interpolation (general) on a given pressure level
 !
 #include "model_macros_f.h"
 !
-      subroutine prgen (F_out  , F_in   , F_deriv , F_wlnph, &
-                        F_pres, Nkout, F_cubic_L, DIST_DIM, F_Nk)
+      subroutine prgen (F_outp , F_inp  , F_deriv , F_wlnph, &
+                        F_pres, Nkout, F_cubic_L, DIST_DIM, &
+                        F_Nk,F_i0,F_in,F_j0,F_jn)
 !
       implicit none
 !
       integer DIST_DIM,F_Nk,Nkout
       logical F_cubic_L
-      real    F_pres(Nkout), F_out(DIST_SHAPE,Nkout), F_in(DIST_SHAPE,F_Nk), &
+      real    F_pres(Nkout), F_outp(DIST_SHAPE,Nkout), F_inp(DIST_SHAPE,F_Nk), &
               F_deriv(DIST_SHAPE,F_Nk), F_wlnph(DIST_SHAPE,F_Nk)
+!implicits
+#include "glb_ld.cdk"
 !
 !author
 !     alain patoine - after intfev (efr)
@@ -34,6 +37,8 @@
 ! v2_00 - Lee V.            - initial MPI version (from prgen v1_03)
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_21 - Lee V.            - Output Optimization
+! v4_40 - Lee V. & B. Dugas - change in argument call to adapt for
+!                             variable shape for the physics pressure output
 !
 !object
 !     see id section
@@ -41,8 +46,8 @@
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-! F_out        O    - output field on the requested pressure level
-! F_in         I    - input field on eta levels
+! F_outp       O    - output field on the requested pressure level
+! F_inp        I    - input field on eta levels
 ! F_deriv      I    - vertical derivative of input field with respect
 !                     to log of hydrostatic pressure
 ! F_wlnph      I    - log of hydrostatic pressure on the eta levels of
@@ -50,17 +55,18 @@
 ! F_pres       I    - pressure level requested
 ! F_cubic_L    I    - .true.  for cubic interpolation
 !                   - .false. for linear interpolation
-!
-!implicits
-#include "glb_ld.cdk"
+! F_i0         I    - starting index on I
+! F_in         I    - ending index on I
+! F_j0         I    - starting index on J
+! F_jn         I    - ending index on J
+
 !
 !*
-      integer i, j, k, kk,pnk, pnkm, pnindex(l_ni)
+      integer i, j, k, kk,pnk, pnkm, pnindex(l_ni),F_in,F_i0,F_jn,F_j0
       real    logpres(Nkout)
       real    prlprso, prd, pre, prr, prfm0, prfm1, prfm2, prfm3, prfl2
       real*8  invprd
-!
-!     ---------------------------------------------------------------
+
       do kk=1,Nkout
       logpres(kk) = log(F_pres(kk))
       enddo
@@ -69,21 +75,21 @@
 !$omp   prd,pre,prr,prfm0,prfm1,prfm2,prfm3,prfl2,invprd) &
 !$omp shared(logpres)
 !$omp do
-      do 600 j= 1, l_nj
+      do 600 j= F_j0, F_jn
       do 500 kk=1, Nkout
       prlprso = logpres(kk)
 !
-      do i= 1, l_ni
+      do i= F_i0, F_in
          pnindex(i) = 0
       enddo
 !
       do k=1,F_nk
-      do i= 1, l_ni
+      do i= F_i0, F_in
          if ( prlprso .gt. F_wlnph(i,j,k) ) pnindex(i) = k
       enddo
       enddo
 !
-      do i= 1, l_ni
+      do i= F_i0, F_in
 !********************************************************************
 !                                                                   *
 ! If:    output pressure   <   hydrostatic pressure on the          *
@@ -96,7 +102,7 @@
 !
             prd = prlprso - F_wlnph(i,j,1)
 !
-            F_out(i,j,kk) = F_in(i,j,1) + prd * F_deriv(i,j,1)
+            F_outp(i,j,kk) = F_inp(i,j,1) + prd * F_deriv(i,j,1)
 !
 !********************************************************************
 !                                                                   *
@@ -105,12 +111,12 @@
 !                                                                   *
 ! Then:  downward extrapolation                                     *
 !                                                                   *
-! We put in F_out the value of F_in on the lowest level of the model*
+! We put in F_outp the value of F_inp 1on the lowest level of the model*
 !                                                                   *
 !********************************************************************
          else if (pnindex(i) .eq. F_nk ) then
 !
-            F_out(i,j,kk)= F_in(i,j,F_nk)
+            F_outp(i,j,kk)= F_inp(i,j,F_nk)
 !********************************************************************
 !                                                                   *
 ! Else, interpolate between appropriate levels.                     *
@@ -127,9 +133,9 @@
 !     
             pre = prlprso - 0.5 * (F_wlnph(i,j,pnk) + F_wlnph(i,j,pnkm))
 !     
-            prfm0 = 0.5 * ( F_in(i,j,pnk) + F_in(i,j,pnkm) )
+            prfm0 = 0.5 * ( F_inp(i,j,pnk) + F_inp(i,j,pnkm) )
 !     
-            prfm1 = ( F_in(i,j,pnk) - F_in(i,j,pnkm) ) * invprd
+            prfm1 = ( F_inp(i,j,pnk) - F_inp(i,j,pnkm) ) * invprd
 !     
             if ( F_cubic_L ) then
 !     
@@ -142,11 +148,11 @@
 !     
                prfl2 = prfm2 + 2.0 * pre * prfm3
 !     
-               F_out(i,j,kk)= prfm0 + pre * prfm1 - prr * prfl2
+               F_outp(i,j,kk)= prfm0 + pre * prfm1 - prr * prfl2
 !     
             else
 !     
-               F_out(i,j,kk)= prfm0 + pre * prfm1
+               F_outp(i,j,kk)= prfm0 + pre * prfm1
 !
             endif
 !

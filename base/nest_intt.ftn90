@@ -41,6 +41,7 @@
 #include "lctl.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
+#include "step.cdk"
 !
       integer  newdate
       external newdate
@@ -54,7 +55,7 @@
 !     ---------------------------------------------------------------
 !
       dayfrac = dble (Lctl_step)*Cstv_dt_8*rsid
-      call incdatsd  (datev, Lam_runstrt_S, dayfrac)
+      call incdatsd  (datev, Step_runstrt_S, dayfrac)
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,datev)
       call pdfjdate2 (tx, yy,mo,dd,hh,mm,ss)
 !
@@ -85,20 +86,20 @@
          gmmstat = gmm_get(gmmk_nest_q_fin_s,nest_q_fin,meta3d)
       endif
 
-      dayfrac = dble(Lam_nesdt)*rsid
+      dayfrac = dble(Step_nesdt)*rsid
 
       if (tx .lt. Lam_tdeb) then
 
-         Lam_current_S  = Lam_runstrt_S
+         Lam_current_S  = Step_runstrt_S
          Lam_previous_S = Lam_current_S
-         call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_runstrt_S)
+         call prsdate   (yy,mo,dd,hh,mm,ss,dum,Step_runstrt_S)
          call pdfjdate2 (Lam_tdeb,yy,mo,dd,hh,mm,ss)
          do
             call incdatsd (datev, Lam_current_S,dayfrac)
             Lam_current_S = datev
             call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
             call pdfjdate2 (Lam_tfin, yy,mo,dd,hh,mm,ss)
-            if (Lam_tfin.gt.tx) exit
+            if (Lam_tfin.ge.tx) exit
             Lam_previous_S = Lam_current_S
             Lam_tdeb       = Lam_tfin
          end do

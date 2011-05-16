@@ -61,10 +61,9 @@
       Grdc_gjf = 0
       Grdc_gjdi= 0
 !
-      if ((Grdc_proj_S.eq.'@').or.(Grdc_ndt.lt.0).or. &
-           Grdc_ni.eq.0.or.Grdc_nj.eq.0) then
-         Grdc_proj_S = '@'
-         Grdc_ndt    = -1
+      if ( (Grdc_ndt.lt.0) .or. (Grd_yinyang_S .eq. 'YAN') .or. &
+           (Grdc_ni .eq.0) .or. (Grdc_nj.eq.0) ) then
+         Grdc_ndt = -1
          return
       endif
 !
@@ -115,28 +114,17 @@
          Grdc_gjd = 0
       endif
 !
-      Grdc_hbwe = -1
-      Grdc_hbsn = -1
-      Grdc_hbwe = max (gidi-Grdc_gid+1,Grdc_gif-gifi+1)
-      Grdc_hbsn = max (Grdc_gjdi-Grdc_gjd+1,Grdc_gjf-gjfi+1)
-
-      if (prout) write (6,1006) Grdc_hbwe, Grdc_hbsn
- 999  if ((Grdc_gid.gt.Glb_pil_w).and.(Grdc_gjd.gt.Glb_pil_s)) then
-         n1 = Grdc_gif-Grdc_gid+1
-         n2 = Grdc_gjf-Grdc_gjd+1
-         b1 = Grdc_hbwe + 1
-         b2 = Grdc_hbsn + 1
-         if (4.*b1*(n1-b1)/n1/n1.gt.0.95) Grdc_hbwe = -1
-         if (4.*b2*(n2-b2)/n2/n2.gt.0.95) Grdc_hbsn = -1
-         if (prout) write (6,1003) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf
+      if ((Grdc_gid.gt.Glb_pil_w).and.(Grdc_gjd.gt.Glb_pil_s)) then
+         if (prout) then
+            write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
+         endif
       else
          if (prout) write (6,1004)
-         Grdc_proj_S = '@'
          Grdc_ndt    = -1
          return
       endif
 !
-      if ((Grdc_proj_S.ne.'@').and.(.not.Rstri_rstn_L))  then
+      if ( (Grdc_ndt.gt.0) .and. (.not.Rstri_rstn_L) )  then
 !
          call out_sgrid (Grdc_gid, Grdc_gif, Grdc_gjd, Grdc_gjf, &
                                        0, 0, .false., 1, '', '')
@@ -167,17 +155,19 @@
          Grdc_trnm_s(1) = 'HU  '
          Grdc_ntr = cnt
       endif
+
       if (prout) then
           write (6,1001)
-          do i=1,Grdc_ntr
-             write(6,*) Grdc_trnm_S(i)
-          enddo
+          write (6,'(5(x,a))') Grdc_trnm_S(1:Grdc_ntr)
+          write (6,1010)
       endif
 !
- 1001 format (' Tracers to be written for cascade run are ')
- 1003 format (' Cascade grid: ',4i6)
- 1004 format (' Cascade grid: Is too large, NO 3DF/BCS files will be produced')
- 1006 format (' Cascade grid: Width of W/E band=',I6, ' N/S band=',I6)
+ 1001 format ( ' Cascade grid: Tracers to be written for cascade run are: ')
+ 1004 format (/' Cascade grid: Is too large, NO SELF CASCADE DATA will be produced')
+ 1006 format (/'################ SELF CASCADE DATA WILL BE PRODUCED ################'/&
+               ' Cascade grid: Grdc_gid,Grdc_gif=',2I5, ';    Grdc_gjd,Grdc_gjf=',2I5/&
+               ' Cascade grid: Grdc_ndt,Grdc_start,Grdc_end=',3i5)
+ 1010 format ( '####################################################################')
 !--------------------------------------------------------------------
       return
       end

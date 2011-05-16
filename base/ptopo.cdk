@@ -1,4 +1,3 @@
-
 #if defined (DOC)
 !
 !**comdeck ptopo.cdk
@@ -48,21 +47,30 @@
 !                    | (4,*)-the maximum J indices on each local PE    |
 !                    | (5,*)-the minimum K indices on each local PE    |
 !                    | (6,*)-the maximum K indices on each local PE    |
+! Ptopo_couleur      | 0 for Yin, 1 for Yan (Yang) domain              |
+! Ptopo_tag          | tag number within the inter-communicator        |
+! Ptopo_intracomm    | intra communicator number for Yin, Yan          |
+! Ptopo_intercomm    | inter-communicator number between Yin and Yan   |
 !----------------------------------------------------------------------
+      integer Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
+      integer Ptopo_tag
 !
 !
 #endif
-      integer Ptopo_myproc    , Ptopo_myrow  , Ptopo_mycol
-      integer Ptopo_numproc   , Ptopo_npex   , Ptopo_npey
+      integer Ptopo_myproc    , Ptopo_myrow    , Ptopo_mycol
+      integer Ptopo_numproc   , Ptopo_npex     , Ptopo_npey
       integer Ptopo_npeOpenMP , Ptopo_npeOpenMP_resv
-      integer Ptopo_nblocx    , Ptopo_nblocy , Ptopo_mybloc
-      integer Ptopo_myblocx   , Ptopo_myblocy, Ptopo_blocme
-      integer Ptopo_numpe_perb, Ptopo_smtphy , Ptopo_smtdyn
+      integer Ptopo_nblocx    , Ptopo_nblocy   , Ptopo_mybloc
+      integer Ptopo_myblocx   , Ptopo_myblocy  , Ptopo_blocme
+      integer Ptopo_numpe_perb, Ptopo_smtphy   , Ptopo_smtdyn
+      integer Ptopo_intracomm , Ptopo_intercomm, Ptopo_couleur
+      integer Ptopo_world_myproc, Ptopo_world_numproc
+      integer Ptopo_tag 
       logical Ptopo_bind_L
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
 !
-      common  / Ptopo_b / Ptopo_npex     , Ptopo_npey 
+      common  / Ptopo_b / Ptopo_npex     , Ptopo_npey
       common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
       common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
       common  / Ptopo_b / Ptopo_smtphy   , Ptopo_smtdyn
@@ -71,6 +79,9 @@
       common  / Ptopo_b / Ptopo_numproc 
       common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
       common  / Ptopo_b / Ptopo_blocme   , Ptopo_numpe_perb
+      common  / Ptopo_b / Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
+      common  / Ptopo_b / Ptopo_world_myproc, Ptopo_world_numproc
+      common  / Ptopo_b / Ptopo_tag
 !
       common  / Ptopo_l / Ptopo_bind_L
 !

@@ -2,17 +2,17 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
+!
 !**s/r prep_2 - Add metric corrections to r.h.s. of momentum equations.
 !               Compute advective contributions on geopotential grid.
 !               Interpolate advection contribution from geopotential 
@@ -53,6 +53,7 @@
 ! v3_11 - Gravel S.         - modify for theoretical cases
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.         - Open top
+! v4_40 - Qaddouri/Lee      - expand range of calculation for Yin-Yang only
 !
 !object
 !
@@ -76,7 +77,7 @@
 #include "ptopo.cdk"
 !
 !modules
-      integer i, j, k, i0, j0, k0, in, inu, jn, jnv
+      integer i, j, k, i0, j0, k0, in, inu, jn, jnv, onept
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, tot, &
               a1,a2,a3,a4,b1,b2,b3,b4,zero,one,four,xxx,yyy,zzz
       real    rdiv            , Ttop(DIST_SHAPE), w_rt
@@ -91,6 +92,8 @@
 !     Coriolis term is zero for theoretical cases
       if( Schm_theoc_L ) tot = zero
  
+      onept=0
+      if (Grd_yinyang_L) onept=1
       i0 = 1
       in = l_ni
       j0 = 1
@@ -103,10 +106,10 @@
 !
 !     Temporary Indices to compute metric corrections
       if (G_lam) then
-         if (l_west)  i0= pil_w
-         if (l_east)  in= l_niu - pil_e + 2
-         if (l_south) j0= pil_s
-         if (l_north) jn= l_njv - pil_n + 2
+         if (l_west)  i0= pil_w - onept
+         if (l_east)  in= l_niu - pil_e + 2 + onept
+         if (l_south) j0= pil_s - onept
+         if (l_north) jn= l_njv - pil_n + 2 + onept
       endif
 
 !$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,&
@@ -187,6 +190,14 @@
       j0  = 1+pil_s
       jn  = l_nj -pil_n
       jnv = l_njv-pil_n
+      if (Grd_yinyang_L) then
+         if (l_west)  i0= i0 - onept
+         if (l_east)  inu= inu + onept
+         if (l_east)  in= in + onept
+         if (l_south) j0= j0 - onept
+         if (l_north) jn= jn + onept
+         if (l_north) jnv= jnv + onept
+      endif
 
 !$omp end single
 !

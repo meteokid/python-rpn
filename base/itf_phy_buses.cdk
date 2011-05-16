@@ -69,9 +69,8 @@
       common /busdync/ entdc, dyndc, perdc, voldc
       common /busdync/ enton, dynon, peron, volon,p_outbus_s
 !
-      real, dimension(:), pointer :: Phy_busper3D, Phy_busper3D_digf
-      real, dimension(:), pointer :: Phy_busdyn3D, Phy_busvol3D
-      common/ Phy_busper /   Phy_busper3D, Phy_busper3D_digf, Phy_busdyn3D, Phy_busvol3D
+      real, pointer, dimension (:,:) :: BUSPER_3d       => null()
+      real, pointer, dimension (:,:) :: BUSPER_3d_digf  => null()
 !
       integer MAXGEO
       parameter (MAXGEO=1000)

@@ -39,6 +39,8 @@
 ! v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
 ! v4_04 - Tanguay M.        - Staggered version TL/AD
 ! v4_05 - Lepine/Lee        - VMM replacement with GMM
+! v4_40 - Lee V.            - change in argument call for this routine, prgen
+!                             in order to select the "bot" levels
 !
 !object
 !     Subroutine to control the production of
@@ -85,11 +87,8 @@
               pnlkey(20),i,j,k
       character*4 ext_S
       character*6 etikadd_S
-      integer jj,kk,levset,n,ip3,nk_o,nk_ot,gridset
-!     nk_o - number of momentum levels for output
-!     nk_ot - number of thermo levels for output
+      integer jj,kk,levset,n,ip3,gridset
       character*15 datev,pdate
-      integer,   dimension(:), allocatable :: ind_o
       integer is,nis,js,jn,njs,iw,ie,niw,jw,njw
       real deg2rad
       real wlnpi_m(LDIST_SHAPE,0:G_nk+1), wlnpi_t(LDIST_SHAPE,G_nk+2)
@@ -187,48 +186,37 @@
                          Grid_ig1(gridset),Grid_ig2(gridset)    , &
                          periodx_L, Grid_stride(gridset)        , &
                          Grid_etikext_s(gridset),etikadd_S      )
-                nk_o   = Level_max(levset)
-                allocate (ind_o(nk_o+2))
-                call out_slev(Level_types(Level_typ_indx(levset)),Level(1,levset), &
-                             ind_o,nk_o,nk_ot,G_nk,Level_kind_ip1,'d')
+                Out_prefix_S(1:1) = 'd'
+                Out_prefix_S(2:2) = Level_typ_S(levset)
 
                 call out_sfile (Out3_closestep,Lctl_step,ip3,ext_S)
 
                 call out_href( Geomn_longs,Geomn_latgs)
-                if (Out_levtyp_S.eq.'M') then
+                if (Level_typ_S(levset).eq.'M') then
                    call out_vref(p0,LDIST_DIM)
-                elseif (Out_levtyp_S.eq.'P') then
-                   call out_vref(Level(1:Level_max(levset),levset),Level_typ_indx(levset))
+                elseif (Level_typ_S(levset).eq.'P') then
+                   call out_vref(Level(1:Level_max(levset),levset))
                 endif
 !
 !     output of 3-D tracers
 !
-                call out_tracer (wlnpi_t,LDIST_DIM,G_nk, &
-                            Out_levtyp_S,Level(1,levset),ind_o,nk_ot,kk)
+                call out_tracer (wlnpi_t,LDIST_DIM,G_nk,levset,kk)
 !
 !     output of temperature, humidity and mass fields,omega
 !     
-                call out_thm( wlnpi_m,wlnpi_t,st1, &
-                            LDIST_DIM,G_nk,Out_levtyp_S, Level(1,levset), &
-                            ind_o,nk_o,nk_ot,kk)
+                call out_thm( wlnpi_m,wlnpi_t,st1,LDIST_DIM,G_nk,levset,kk)
 !
 !     output of winds
 !
-                call out_uv(wlnpi_m(l_minx,l_miny,1), &
-                    LDIST_DIM,G_nk,Out_levtyp_S,Level(1,levset), &
-                    ind_o,nk_o,kk)
+                call out_uv(wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
 !
 !     output of divergence and vorticity
 !
-                call out_dq (wlnpi_m(l_minx,l_miny,1), &
-                   LDIST_DIM,G_nk, Out_levtyp_S,Level(1,levset), &
-                   ind_o,nk_o,kk)
+                call out_dq (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
 !
 !     output of gmm
 !
-                call out_gmm (p0, LDIST_DIM, ip3, etikadd_S,ext_S, &
-                    Level(1,levset),ind_o,nk_o,nk_ot,kk)
-                deallocate (ind_o)
+                call out_gmm (p0, LDIST_DIM, etikadd_S,levset,kk)
             endif
 
       call out_cfile
@@ -256,16 +244,11 @@
 !
 !########## SPECIAL OUTPUT FOR CASCADE ###########################
 !
-      if (F_casc_L) then
-      if ((Grdc_proj_S.ne.'@').and.(Grdc_ndt.ge.0)) then
+      if ((F_casc_L) .and. (Grdc_ndt.gt.0)) then
 !
       ontimec = .false.
       if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) then
-      if ( Grdc_ndt.eq.0 ) then
-         ontimec = Lctl_step.eq.0
-      else
          ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
-      endif
       endif
 !
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
@@ -285,7 +268,6 @@
 !
       ontimec = .false.
 !
-      endif
       endif
 !
  998  doneonce = .true.

@@ -60,10 +60,8 @@
       logical G_lam, G_periodx, G_periody
       integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       integer G_halox, G_haloy
-      real*8 G_xg_8, G_yg_8
-      pointer (paxg_8, G_xg_8(1-G_ni:2*G_ni))
-      pointer (payg_8, G_yg_8(1-G_nj:2*G_nj))
-      common / G_p / paxg_8,payg_8
+      real*8, dimension(:), pointer :: G_xg_8, G_yg_8
+      common / G_p / G_xg_8, G_yg_8
 !
       common / G / G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       common / G / G_halox, G_haloy

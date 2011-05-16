@@ -38,16 +38,16 @@
 !
 #include "dcst.cdk"
 #include "nml.cdk"
+#include "step.cdk"
 #include "ver.cdk"
 #include "out.cdk"
 #include "modconst.cdk"
        include "v4dg.inc"
 !
-      integer  bin2com,newdate
-      external bin2com,newdate
+      integer  bin2com,newdate,parse_grdc
+      external bin2com,newdate,parse_grdc
 !
-      character nfe
-      integer   nfe_nsec, len, time1, time2, istat
+      integer   time1, time2, istat
 !
       character*16 dumc_S
       character*256 fln_S
@@ -55,12 +55,14 @@
       integer i, k, nrec, err, ipcode, ipkind
       real pcode,deg_2_rad
 !
-      real*8 dayfrac,sec_in_day
-      parameter ( sec_in_day=86400.0d0 )
-!
 !-------------------------------------------------------------------
 !
       gemdm_config = -1
+!
+      if (.not.Step_leapyears_L) then
+         call Ignore_LeapYear ()
+         if (Lun_out.gt.0) write(Lun_out,6010)
+      endif
 !
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
 !        
@@ -85,10 +87,15 @@
       if (G_lam) then
          Glb_pil_n = Grd_extension
          Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
-         Lam_blend_H = max(0,Lam_blend_H)
+         if (Grd_yinyang_L) then
+            Lam_blend_H  = 0
+            Lam_ctebcs_L = .true.
+         else
+            Lam_blend_H = max(0,Lam_blend_H)
+         endif
          Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
          if (Schm_theoc_L) Lam_blend_Hy = 0
-         Lam_tdeb = 999999.0
+        Lam_tdeb = 999999.0
       endif
       Lam_gbpil_T = max(0,Lam_gbpil_T)
       Lam_blend_T = max(0,Lam_blend_T)
@@ -119,14 +126,14 @@
  80   continue
 !
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
-!      
-!     if not theoretical case, read data from file labfl.bin 
 !
-      if ( Schm_theoc_L ) then
-           Mod_runstrt_S=Lam_runstrt_S
+      if (Step_runstrt_S == 'NIL') then
+         Step_runstrt_S = Mod_runstrt_S
       else
-          if ( bin2com ().lt.0) return
+         Mod_runstrt_S = Step_runstrt_S
       endif
+!
+      Cstv_dt_8     = dble(Step_dt)
 !
 !     Counting # of vertical levels specified by user
       G_nk = 0
@@ -142,22 +149,9 @@
           return
       endif
 !
-!     Options used for the Off-line mode (MEC)
-!
-      if (Mod_runstrt_S.eq."@#$%") Mod_runstrt_S = Lam_runstrt_S
-      if (Lam_runstrt_S.eq."@#$%") Lam_runstrt_S = Mod_runstrt_S
-!
-      if (Mod_runstrt_S.eq."@#$%") then
+      if (Step_runstrt_S.eq."NIL") then
          if (lun_out.gt.0) then
             write (Lun_out, 6005)
-            write (Lun_out, 8000)
-         endif
-         return
-      endif
-!
-      if (G_lam .and. .not.Lam_ctebcs_L .and. (Lam_nesdt.le.0) ) then
-         if (lun_out.gt.0) then
-            write (Lun_out, 6006)
             write (Lun_out, 8000)
          endif
          return
@@ -171,45 +165,24 @@
          return
       endif
 !
-      call datp2f ( Out3_date, Mod_runstrt_S )
+      call datp2f ( Out3_date, Step_runstrt_S )
       err = newdate ( Out3_date, time1, time2, -3 )
-      if (lun_out.gt.0) write (Lun_out,6007) Mod_runstrt_S,time1,time2
+      if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S,time1,time2
 !
-      Grdc_ndt   = -1
-      Grdc_start = -1
-      len=len_trim( Grdc_nfe )
-      Acid_npas=0
-      if (len.gt.0) then
-         call low2up (Grdc_nfe(len:len),nfe)
-         nfe_nsec = 3600
-         if (nfe.eq.'D') nfe_nsec = 86400
-         if (nfe.eq.'M') nfe_nsec = 60
-         if (nfe.eq.'S') nfe_nsec = 1
-         if ((nfe.eq.'D').or.(nfe.eq.'H').or. &
-             (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
-         read ( Grdc_nfe(1:len), * ) Grdc_ndt
-         Grdc_ndt = max( 1, Grdc_ndt * nfe_nsec / nint(Cstv_dt_8) )
+      Grdc_ndt   = parse_grdc (Grdc_nfe    , nint(Cstv_dt_8))
+      Grdc_start = parse_grdc (Grdc_start_S, nint(Cstv_dt_8))
+      Grdc_end   = parse_grdc (Grdc_end_S  , nint(Cstv_dt_8))
+      if (Grdc_ndt.gt.-1) Grdc_ndt = max( 1, Grdc_ndt)
+      Grdc_start = max(0,Grdc_start)
+      if (Grdc_end.lt. 0) Grdc_end = Step_total
+      Grdc_maxcfl = max(1,Grdc_maxcfl)
+      Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+      Grdc_ni     = Grdc_ni   + 2*Grdc_pil
+      Grdc_nj     = Grdc_nj   + 2*Grdc_pil
+      Grdc_iref   = Grdc_iref +   Grdc_pil
+      Grdc_jref   = Grdc_jref +   Grdc_pil     
 
-         Grdc_start = 0
-         if (Grdc_runstrt_S.ne."@#$%") then 
-            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runstrt_S)
-            Grdc_start = nint (dayfrac*sec_in_day/Cstv_dt_8)
-         endif
-         Grdc_end   = Step_total
-         if (Grdc_runend_S.ne."@#$%") then 
-            call difdatsd (dayfrac,Mod_runstrt_S,Grdc_runend_S)
-            Grdc_end   = nint (dayfrac*sec_in_day/Cstv_dt_8)
-         endif
-         Grdc_start = min(max(0,Grdc_start),Step_total)
-         Grdc_end   = min(max(0,Grdc_end  ),Step_total)
-         Grdc_maxcfl = max(1,Grdc_maxcfl)
-         Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
-         Grdc_ni     = Grdc_ni   + 2*Grdc_pil
-         Grdc_nj     = Grdc_nj   + 2*Grdc_pil
-         Grdc_iref   = Grdc_iref +   Grdc_pil
-         Grdc_jref   = Grdc_jref +   Grdc_pil
-         if (Acid_pilot_L) acid_npas = Grdc_start
-      endif
+      Acid_npas=0
 !
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
@@ -249,10 +222,12 @@
 
       gemdm_config = 1
 !
- 6005 format (/' Starting time Mod_runstrt_S not specified'/)
- 6006 format (/' In LAM configuration: Lam_nesdt must be specified'/)
+ 6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,63('#'),/,2X,'STARTING DATE for RUN is: ',a16,'= ', &
               i8.8,'.',i8.8,/X,63('#')/)
+ 6010 format (//'  =============================='/&
+                '  = Leap Years will be ignored ='/&
+                '  =============================='//)
  6200 format (/' VARIABLE TOPOGRAPHY NOT AVAILABLE IN THIS VERSION'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
@@ -266,10 +241,34 @@
  9300 format (/,'ABORT: ADJOINT not done for Sol_type_S = ITERATIF',/)
  9400 format (/,'ABORT: Cstv_ptop_8 must be > 0',/)
  9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
- 9560 format (/'ABORT: Top piloting must have topology 2x* or *x2'/)
+ 9560 format (/,'ABORT: Top piloting must have topology 2x* or *x2'/)
 
 !
 !-------------------------------------------------------------------
 !
+      return
+      end
+!
+      integer function parse_grdc (F_string_s,F_timestep)
+      implicit none
+      character*(*) F_string_s
+      integer F_timestep
+
+      character*1 nfe
+      integer len, nfe_nsec
+
+      parse_grdc = -1
+      len = len_trim( F_string_s )
+      if (len.gt.0) then
+         call low2up (F_string_s(len:len),nfe)
+         nfe_nsec = 3600
+         if (nfe.eq.'D') nfe_nsec = 86400
+         if (nfe.eq.'M') nfe_nsec = 60
+         if (nfe.eq.'S') nfe_nsec = 1
+         if ((nfe.eq.'D').or.(nfe.eq.'H').or. &
+             (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
+         read ( F_string_s(1:len), * ) parse_grdc
+         parse_grdc = parse_grdc * nfe_nsec / F_timestep
+      endif
       return
       end

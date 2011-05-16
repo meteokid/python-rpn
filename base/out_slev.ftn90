@@ -16,78 +16,48 @@
 !opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r out_slev
 !
-      subroutine out_slev (F_levtyp_S,F_level,F_indo,F_nko,F_nko_t,F_nk,F_kind,F_st_S)
+      subroutine out_slev (F_level,F_levmax,F_nk,F_indo,F_nko)
 
       implicit none
 !
-      character*1 F_st_S, F_levtyp_S
-      integer F_nk,F_kind,F_indo(*),F_nko, F_nko_t
+      integer F_nk,F_indo(*),F_nko, F_levmax
       real F_level(*)
 !
 !AUTHOR   Michel Desgagne     July 2004 (MC2)
 !
 !REVISION
 ! v3_20 - Lee V.            - Adapted for GEMDM
+! v4_40 - Lee V.            - change in argument call for this routine
+!                             in order to select the "bot" levels
 !
 !ARGUMENTS
 !    NAMES       I/O  TYPE  DESCRIPTION
 !
-#include "out.cdk"
-!
-      integer k
-      logical ajoutek_L
+      integer k,kk
 !*
 !----------------------------------------------------------------------
 !
-      Out_prefix_S(1:1) = F_st_S
-      Out_levtyp_S = F_levtyp_S
-      F_nko_t = F_nko
-!
 !     initialize output level array to 0
-      if ((F_levtyp_S.eq.'P').or.(F_levtyp_S.eq.'H')) then
-         do k=1,F_nko
-            F_indo(k) = k
-         end do
-      else if (F_st_S.eq.'d') then
 !     output in model levels for dynamic variables
-         ajoutek_L = .false.
-         do k=1,F_nko
-            F_indo(k) = int(F_level(k))
-            if (F_indo(k).eq.F_nk) ajoutek_L=.true.
-         end do
-!     depending on the vertical definition, certain variables can have gnk+1
-         if (ajoutek_L) then
-             F_indo(F_nko+1) = F_nk+1
-             F_indo(F_nko+2) = F_nk+2
-             F_nko   = F_nko+1 
-             F_nko_t = F_nko+1
+      kk=0
+      do k=1,F_levmax
+         if (F_level(k).eq.0.0) then
+!     ground zero (surface or lowest possible level in model)
+             kk=kk+1
+             F_indo(kk)=F_nk
+         else if (F_level(k).lt.0.0) then
+             kk=kk+1
+!     ground zero with surfaces above it
+             F_indo(kk)=F_nk + nint(F_level(k))
+         else
+!     model level as defined by user. Discard levels that do not exist
+             if (F_level(k).le.F_nk)then
+                 kk=kk+1
+                 F_indo(kk)=nint(F_level(k))
+             endif
          endif
-      else if (F_st_S.eq.'p') then
-!     output in model levels for physics variables
-         ajoutek_L = .false.
-         do k=1,F_nko
-            F_indo(k) = int(F_level(k))
-            if (F_indo(k).eq.F_nk) ajoutek_L=.true.
-         end do
-!     depending on the vertical definition, certain variables can have gnk+1
-         if (ajoutek_L) then
-             F_indo(F_nko+1) = F_nk+1
-             F_indo(F_nko+2) = F_nk+2
-             F_nko_t = F_nko+2
-         endif
-      endif
-      if (F_levtyp_S.eq.'P') then
-         Out_kind=2
-         Out_prefix_S(2:2) = 'p'
-      endif         
-      if (F_levtyp_S.eq.'H') then
-         Out_kind=0
-         Out_prefix_S(2:2) = 'h'
-      endif         
-      if (F_levtyp_S.eq.'M') then
-         Out_kind=F_kind
-         Out_prefix_S(2:2) = 'm'
-      endif
+      enddo
+      F_nko=kk
 !
 !----------------------------------------------------------------------
       return

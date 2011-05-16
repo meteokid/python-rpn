@@ -28,6 +28,7 @@
 !
 !revision
 ! v3_30 - Desgagne M. - new physics interface
+! v4_40 - Lee V.      - add mosaic tiles structure
 !
 !object
 !	See above
@@ -83,6 +84,9 @@
             endif
          enddo
       enddo
+!     do k=1,cnt
+!        print *,'iniobus:udolist_S',k,udolist_S(k)
+!     enddo
 
 !   Determine the number of variables to be outputted from each bus 
 !   bigk counts the number of ni rows in the output bus.
@@ -103,14 +107,12 @@
                   obus_addr(k)=entpar(idx,1)
                   obus_stag(k)=entpar(idx,4)
                   obus_mult(k)=entpar(idx,6)
+                  obus_shp(k)=entpar(idx,7)
+                  obus_mosaic(k)=entpar(idx,8)
                   obus_mul(k)=1.0
                   obus_add(k)=0.0
-                  if (entpar(idx,5).gt.p_ni) then
-                     obus_shp(k)= G_nk+2
-                  else
-                     obus_shp(k)= 1
-                  endif
-                  bigk = bigk + obus_shp(k)*obus_mult(k)
+! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
+                  bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
                endif
             enddo
          enddo
@@ -128,20 +130,18 @@
                 obus_addr(k)=perpar(idx,1)
                 obus_stag(k)=perpar(idx,4)
                 obus_mult(k)=perpar(idx,6)
+                obus_shp(k)=perpar(idx,7)
+                obus_mosaic(k)=perpar(idx,8)
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
-                if (perpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= G_nk+2
-                else
-                    obus_shp(k)= 1
-                endif
+! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
                 if (peron(idx)(1:4).eq.'LA') obus_mul(k)=180./Dcst_pi_8
                 if (peron(idx)(1:4).eq.'SD') obus_mul(k)=100.
 !               Should use flag from Dynamics to determine obus_add(long)
                 if (peron(idx)(1:4).eq.'LO') then
                     obus_mul(k)=180./Dcst_pi_8
                 endif
-                bigk = bigk + obus_shp(k)*obus_mult(k)
+                bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
             endif
          enddo
       enddo
@@ -158,14 +158,12 @@
                 obus_addr(k)=volpar(idx,1)
                 obus_stag(k)=volpar(idx,4)
                 obus_mult(k)=volpar(idx,6)
+                obus_shp(k)=volpar(idx,7)
+                obus_mosaic(k)=volpar(idx,8)
                 obus_mul(k)=1.0
                 obus_add(k)=0.0
-                if (volpar(idx,5).gt.p_ni) then
-                    obus_shp(k)= G_nk+2
-                else
-                    obus_shp(k)= 1
-                endif
-                bigk = bigk + obus_shp(k)*obus_mult(k)
+! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
+                bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
             endif
          enddo
       enddo

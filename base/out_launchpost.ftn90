@@ -38,7 +38,7 @@
 !
 !----------------------------------------------------------------------
 !
-      if (Ptopo_myproc.eq.0)           then
+      if ((Ptopo_myproc.eq.0).and.(Ptopo_couleur.eq.0)) then
 
       if (Out_post_L .or. F_forceit_L) then
       

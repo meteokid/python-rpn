@@ -51,18 +51,11 @@
 !
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          gem_nml = 0
-         if (Lun_out.ge.0) write (Lun_out,nml=gem_cfgs_p)
-         if (Lun_out.ge.0 .and. &
-             Grdc_ni.gt.0) write (lun_out,nml=grdc_p)
+         if ( Lun_out.ge.0) write (Lun_out,nml=gem_cfgs_p)
+         if ( Lun_out.ge.0 .and. &
+             Grdc_ndt.gt.0) write (lun_out,nml=grdc_p)
          return
       endif
-!
-      Step_total  = -1
-      Step_rsti   = 9999999
-      Step_bkup   = 9999999
-      Step_gstat  = 9999999
-      Step_spinphy= 9999999
-      Step_cleanup = 0
 !
       Rstri_glbcol_L = .false.
 !
@@ -100,8 +93,6 @@
       Schm_chems_L    = .false.
 !
       Lam_hint_S    = 'CUB_LAG'
-      Lam_runstrt_S = '@#$%'
-      Lam_nesdt     = -1
       Lam_ctebcs_L  = .false.
       Lam_toptt_L   = .false.
       Lam_0ptend_L  = .true.
@@ -140,7 +131,6 @@
       Grd_rcoef(1) = 1.0
       Grd_rcoef(2) = 1.0
 !
-      Grd_proj_S = 'E'
       do k = 1, maxhlev
          hyb(k) = -1.
       end do
@@ -148,9 +138,11 @@
       sol_fft_L     = .true.
       sol_type_S    = 'DIRECT'
       sol_precond_S = 'JACOBI'
-      sol_eps       = 1.d-09 
       sol_im        = 15
-      sol_maxits    = 200
+      sol_fgm_maxits= 200
+      sol_fgm_eps   = 1.d-07
+      sol_yyg_maxits= 40
+      sol_yyg_eps   = 1.d-07
 !
       Eigv_parity_L = .false.
       Hzd_type_S = "HO_IMP"
@@ -233,7 +225,6 @@
       Williamson_case     = 0 
       Williamson_alpha    = 0.0
 !
-      Grdc_proj_S = 'L'
       Grdc_xlat1  = Grd_xlat1
       Grdc_xlon1  = Grd_xlon1
       Grdc_xlat2  = Grd_xlat2
@@ -243,9 +234,9 @@
       Grdc_Hblen  = 10
       Grdc_maxcfl = 1
       Grdc_nfe    = ''
+      Grdc_start_S= '' 
+      Grdc_end_S  = ''
       Grdc_initphy_L = .false.
-      Grdc_runstrt_S = Lam_runstrt_S
-      Grdc_runend_S  = Lam_runstrt_S
       Grdc_nbits = 32
       do k=1,max_trnm
          Grdc_trnm_S(k) = '@#$%'

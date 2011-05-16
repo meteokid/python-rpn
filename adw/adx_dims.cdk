@@ -23,6 +23,7 @@
 
       !- Global grid
       logical :: adx_lam_L        !true if model is LAM
+      logical :: adx_yinyang_L    !true if model is Yin-Yang
       logical :: adx_is_period_x  !true if model is periodic in X
       logical :: adx_is_period_y  !true if model is periodic in Y
 
@@ -63,7 +64,7 @@
       integer :: adx_int_i_off,adx_int_j_off,adx_trj_i_off
       integer :: adx_iimax,adx_jjmax
 
-      common /adx_dims_l/ adx_lam_L 
+      common /adx_dims_l/ adx_lam_L, adx_yinyang_L
       common /adx_dims_l/ adx_is_period_x
       common /adx_dims_l/ adx_is_period_y
 

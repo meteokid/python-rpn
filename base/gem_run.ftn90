@@ -229,10 +229,6 @@
 !
          call gemtim3 ( Lun_out )
 !
-!     * Treating output on the fly
-!
-         if (Lctl_step.ne.last_step) call trans_clean
-!
 !     * Must we write a restart file?
 !
          bkup_L = mod( Lctl_step ,Step_bkup ).eq.0

@@ -1,0 +1,117 @@
+#if defined (DOC)
+!
+!**comdeck yyg_pil.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+!  VARIABLES ASSOCIATED WITH BCS communication for Yin-Yang            |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! Pil_recvw_len(M)   | Number of values to receive from each PE for    |
+!                    | its West Pilot area  (M=Ptopo_numproc)          |
+! Pil_recvw_i(*,M)   | local gridpoint I to receive value from PE(*)   |
+! Pil_recvw_j(*,M)   | local gridpoint J to receive value from PE(*)   |
+! Pil_sendw_len(*)   | Number of values to send to  PE (*) for West    |
+! Pil_sendw_imx(*,M) | closest I gridpoint on the other panel to find  |
+!                    | the value for Pil_sendw_xxr,Pil_sendw_yyr       |
+! Pil_sendw_imy(*,M) | closest J gridpoint on the other panel to find  |
+!                    | the value for  Pil_sendw_xxr,Pil_sendw_yyr      |
+! Pil_sendw_xxr(*,M) | longitude in the other panel to find the value  |
+!                    | for receiving panel                             |
+! Pil_sendw_yyr(*,M) | latitude in the other panel to find the value   |
+!                    | for receiving panel                             |
+! Pil_sendw_s1(*,M)  | element (s(1,1)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil_sendw_s3(*,M)  | element (s(2,1)) in matrix for polar vectors    |
+!                    | transformation                                  |
+! Pil_sendw_s4(*,M)  | element (s(2,2)) in matrix for polar vectors    |
+!                    | transformation                                  |
+!______________________________________________________________________|
+#endif
+!
+!Declarations for Scalar variables (on Phi grid)
+      integer, dimension (:  ), pointer :: Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
+                                           Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len
+      integer, dimension (:,:), pointer :: Pil_recvw_i  , Pil_recvw_j  , Pil_recve_i  , Pil_recve_j  , &
+                                           Pil_recvs_i  , Pil_recvs_j  , Pil_recvn_i  , Pil_recvn_j  , &
+                                           Pil_sendw_imx, Pil_sendw_imy, Pil_sende_imx, Pil_sende_imy, &
+                                           Pil_sends_imx, Pil_sends_imy, Pil_sendn_imx, Pil_sendn_imy
+!
+      real*8,  dimension (:,:), pointer :: Pil_sendw_xxr, Pil_sendw_yyr, Pil_sendw_s1, Pil_sendw_s2, Pil_sendw_s3, Pil_sendw_s4, &
+                                           Pil_sende_xxr, Pil_sende_yyr, Pil_sende_s1, Pil_sende_s2, Pil_sende_s3, Pil_sende_s4, &
+                                           Pil_sends_xxr, Pil_sends_yyr, Pil_sends_s1, Pil_sends_s2, Pil_sends_s3, Pil_sends_s4, &
+                                           Pil_sendn_xxr, Pil_sendn_yyr, Pil_sendn_s1, Pil_sendn_s2, Pil_sendn_s3, Pil_sendn_s4
+!
+      common/Pil_i/ Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
+                    Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len, &
+                    Pil_recvw_i  , Pil_recvw_j  , Pil_recve_i  , Pil_recve_j  , &
+                    Pil_recvs_i  , Pil_recvs_j  , Pil_recvn_i  , Pil_recvn_j  , &
+                    Pil_sendw_imx, Pil_sendw_imy, Pil_sende_imx, Pil_sende_imy, &
+                    Pil_sends_imx, Pil_sends_imy, Pil_sendn_imx, Pil_sendn_imy
+
+      common/Pil_r8/ Pil_sendw_xxr, Pil_sendw_yyr, Pil_sendw_s1, Pil_sendw_s2, Pil_sendw_s3, Pil_sendw_s4, &
+                     Pil_sende_xxr, Pil_sende_yyr, Pil_sende_s1, Pil_sende_s2, Pil_sende_s3, Pil_sende_s4, &
+                     Pil_sends_xxr, Pil_sends_yyr, Pil_sends_s1, Pil_sends_s2, Pil_sends_s3, Pil_sends_s4, &
+                     Pil_sendn_xxr, Pil_sendn_yyr, Pil_sendn_s1, Pil_sendn_s2, Pil_sendn_s3, Pil_sendn_s4
+!
+!Declarations for U variables (on U grid)
+      integer, dimension (:  ), pointer :: Pil_urecvw_len , Pil_urecve_len , Pil_urecvs_len , Pil_urecvn_len , &
+                                           Pil_usendw_len , Pil_usende_len , Pil_usends_len , Pil_usendn_len
+      integer, dimension (:,:), pointer :: Pil_urecvw_i   , Pil_urecvw_j   , Pil_urecve_i   , Pil_urecve_j   , &
+                                           Pil_urecvs_i   , Pil_urecvs_j   , Pil_urecvn_i   , Pil_urecvn_j   , &
+                                           Pil_usendw_imx1, Pil_usendw_imy1, Pil_usende_imx1, Pil_usende_imy1, &
+                                           Pil_usends_imx1, Pil_usends_imy1, Pil_usendn_imx1, Pil_usendn_imy1, &
+                                           Pil_usendw_imx2, Pil_usendw_imy2, Pil_usende_imx2, Pil_usende_imy2, &
+                                           Pil_usends_imx2, Pil_usends_imy2, Pil_usendn_imx2, Pil_usendn_imy2
+!
+      real*8,  dimension (:,:), pointer :: Pil_usendw_xxr, Pil_usendw_yyr, Pil_usendw_s1, Pil_usendw_s2, Pil_usendw_s3, Pil_usendw_s4, &
+                                           Pil_usende_xxr, Pil_usende_yyr, Pil_usende_s1, Pil_usende_s2, Pil_usende_s3, Pil_usende_s4, &
+                                           Pil_usends_xxr, Pil_usends_yyr, Pil_usends_s1, Pil_usends_s2, Pil_usends_s3, Pil_usends_s4, &
+                                           Pil_usendn_xxr, Pil_usendn_yyr, Pil_usendn_s1, Pil_usendn_s2, Pil_usendn_s3, Pil_usendn_s4
+!
+      common/Pil_ui/ Pil_urecvw_len , Pil_urecve_len , Pil_urecvs_len , Pil_urecvn_len , &
+                     Pil_usendw_len , Pil_usende_len , Pil_usends_len , Pil_usendn_len , &
+                     Pil_urecvw_i   , Pil_urecvw_j   , Pil_urecve_i   , Pil_urecve_j   , &
+                     Pil_urecvs_i   , Pil_urecvs_j   , Pil_urecvn_i   , Pil_urecvn_j   , &
+                     Pil_usendw_imx1, Pil_usendw_imy1, Pil_usende_imx1, Pil_usende_imy1, &
+                     Pil_usends_imx1, Pil_usends_imy1, Pil_usendn_imx1, Pil_usendn_imy1, &
+                     Pil_usendw_imx2, Pil_usendw_imy2, Pil_usende_imx2, Pil_usende_imy2, &
+                     Pil_usends_imx2, Pil_usends_imy2, Pil_usendn_imx2, Pil_usendn_imy2
+
+      common/Pil_ur8/ Pil_usendw_xxr, Pil_usendw_yyr, Pil_usendw_s1, Pil_usendw_s2, Pil_usendw_s3, Pil_usendw_s4, &
+                      Pil_usende_xxr, Pil_usende_yyr, Pil_usende_s1, Pil_usende_s2, Pil_usende_s3, Pil_usende_s4, &
+                      Pil_usends_xxr, Pil_usends_yyr, Pil_usends_s1, Pil_usends_s2, Pil_usends_s3, Pil_usends_s4, &
+                      Pil_usendn_xxr, Pil_usendn_yyr, Pil_usendn_s1, Pil_usendn_s2, Pil_usendn_s3, Pil_usendn_s4
+
+!Declarations for V variables (on V grid)
+      integer, dimension (:  ), pointer :: Pil_vrecvw_len , Pil_vrecve_len , Pil_vrecvs_len , Pil_vrecvn_len , &
+                                           Pil_vsendw_len , Pil_vsende_len , Pil_vsends_len , Pil_vsendn_len
+      integer, dimension (:,:), pointer :: Pil_vrecvw_i   , Pil_vrecvw_j   , Pil_vrecve_i   , Pil_vrecve_j   , &
+                                           Pil_vrecvs_i   , Pil_vrecvs_j   , Pil_vrecvn_i   , Pil_vrecvn_j   , &
+                                           Pil_vsendw_imx1, Pil_vsendw_imy1, Pil_vsende_imx1, Pil_vsende_imy1, &
+                                           Pil_vsends_imx1, Pil_vsends_imy1, Pil_vsendn_imx1, Pil_vsendn_imy1, &
+                                           Pil_vsendw_imx2, Pil_vsendw_imy2, Pil_vsende_imx2, Pil_vsende_imy2, &
+                                           Pil_vsends_imx2, Pil_vsends_imy2, Pil_vsendn_imx2, Pil_vsendn_imy2
+!
+      real*8,  dimension (:,:), pointer :: Pil_vsendw_xxr, Pil_vsendw_yyr, Pil_vsendw_s1, Pil_vsendw_s2, Pil_vsendw_s3, Pil_vsendw_s4, &
+                                           Pil_vsende_xxr, Pil_vsende_yyr, Pil_vsende_s1, Pil_vsende_s2, Pil_vsende_s3, Pil_vsende_s4, &
+                                           Pil_vsends_xxr, Pil_vsends_yyr, Pil_vsends_s1, Pil_vsends_s2, Pil_vsends_s3, Pil_vsends_s4, &
+                                           Pil_vsendn_xxr, Pil_vsendn_yyr, Pil_vsendn_s1, Pil_vsendn_s2, Pil_vsendn_s3, Pil_vsendn_s4
+!
+      common/Pil_vi/ Pil_vrecvw_len , Pil_vrecve_len , Pil_vrecvs_len , Pil_vrecvn_len , &
+                     Pil_vsendw_len , Pil_vsende_len , Pil_vsends_len , Pil_vsendn_len , &
+                     Pil_vrecvw_i   , Pil_vrecvw_j   , Pil_vrecve_i   , Pil_vrecve_j   , &
+                     Pil_vrecvs_i   , Pil_vrecvs_j   , Pil_vrecvn_i   , Pil_vrecvn_j   , &
+                     Pil_vsendw_imx1, Pil_vsendw_imy1, Pil_vsende_imx1, Pil_vsende_imy1, &
+                     Pil_vsends_imx1, Pil_vsends_imy1, Pil_vsendn_imx1, Pil_vsendn_imy1, &
+                     Pil_vsendw_imx2, Pil_vsendw_imy2, Pil_vsende_imx2, Pil_vsende_imy2, &
+                     Pil_vsends_imx2, Pil_vsends_imy2, Pil_vsendn_imx2, Pil_vsendn_imy2
+
+      common/Pil_vr8/ Pil_vsendw_xxr, Pil_vsendw_yyr, Pil_vsendw_s1, Pil_vsendw_s2, Pil_vsendw_s3, Pil_vsendw_s4, &
+                      Pil_vsende_xxr, Pil_vsende_yyr, Pil_vsende_s1, Pil_vsende_s2, Pil_vsende_s3, Pil_vsende_s4, &
+                      Pil_vsends_xxr, Pil_vsends_yyr, Pil_vsends_s1, Pil_vsends_s2, Pil_vsends_s3, Pil_vsends_s4, &
+                      Pil_vsendn_xxr, Pil_vsendn_yyr, Pil_vsendn_s1, Pil_vsendn_s2, Pil_vsendn_s3, Pil_vsendn_s4

@@ -1,0 +1,8 @@
+      integer MAX_tracers
+      parameter ( MAX_tracers = 10 )
+      integer tracers_ntr
+      character*4 tracers_name (MAX_tracers)
+      real        tracers_sval (MAX_tracers)
+
+      namelist /modipc_cfgs/ Mod_runstrt_S, &
+                             tracers_ntr, tracers_name, tracers_sval

@@ -26,6 +26,7 @@
 !REVISION
 ! v4_14 - Desgagne M.      - Initial version
 !
+#include "grd.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "ptopo.cdk"
@@ -35,13 +36,13 @@
 !
       character*10 postjob_S
       character*7  blocxy_S
+      logical flag
       integer err,last_step_post,flag_step_post,stepno
 !
 !----------------------------------------------------------------------
 !
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
-      Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
-!
+
       stepno = max(current_step,1)
       if (Out3_postfreq .gt. 0) then
          last_step_post = stepno / Out3_postfreq
@@ -49,7 +50,7 @@
       else
          last_step_post = upperlimit
       endif
-!
+
       stepno = stepno + 1
       if (Out3_postfreq .gt. 0) then
          flag_step_post = stepno / Out3_postfreq
@@ -57,23 +58,46 @@
       else
          flag_step_post = upperlimit
       endif
-!
+
       Out_post_L     = (flag_step_post.gt.last_step_post)
-!
+
       last_step_post = min(last_step_post,upperlimit)
       write (postjob_S,'(i10.10)') last_step_post
-!
+
       Out_laststep_S = 'laststep_'//postjob_S
-      Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S//'/'//blocxy_S
-!
+      Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S
+
+      flag= .false.
       if (Ptopo_blocme.eq.0) then
-      if (clib_isdir(trim(Out_dirname_S)) .le. 0) then
-         err= clib_mkdir ( trim(Path_output_S)//'/'//Out_laststep_S )
-         err= clib_mkdir ( trim(Out_dirname_S) )
-         if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
+         if (clib_isdir(trim(Out_dirname_S)) .le. 0) then
+            if (Grd_yinyang_L) then 
+               if ( trim(Grd_yinyang_S) .eq. 'YIN' ) then
+                  err= clib_mkdir (trim(Out_dirname_S))
+                  if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
+               endif
+            else
+               err= clib_mkdir ( trim(Out_dirname_S) )
+               if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
+            endif
+            flag= .true.
+         endif
       endif
+
+      call rpn_comm_Barrier("world", err)
+
+      if (Ptopo_blocme.eq.0) then
+         if (flag) then
+            if (Grd_yinyang_L) then 
+               Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
+               err= clib_mkdir ( trim(Out_dirname_S) )
+            endif
+            Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
+            err= clib_mkdir ( trim(Out_dirname_S) )
+         else
+            Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)//'/'//blocxy_S
+         endif
       endif
-!
+
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !
 !----------------------------------------------------------------------

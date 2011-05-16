@@ -17,10 +17,9 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine e_open_files (init_cond)
+      subroutine e_open_files
       implicit none
 !
-      logical init_cond
 !author 
 !    Michel Desgagne - Summer 2008
 !
@@ -37,22 +36,29 @@
 #include "e_schm.cdk"
 #include "pilot.cdk"
 #include "e_grdc.cdk"
+#include "grd.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
 !
       character*16 pdate
       character*1024 rootfn,filen
       integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,err
+!
 ! ---------------------------------------------------------------------
 !
       call datf2p (pdate,datev)
 
-      rootfn=trim(Path_output_S)//'/BCDS_3D/'
-      if (init_cond) rootfn=trim(Path_output_S)//'/INIT_3D/'
-
+      rootfn=trim(Path_output_S)//'/GEMDM_input/'
+      
       err = clib_mkdir (trim(rootfn))
 
+      if (Grd_yinyang_L) then
+         rootfn=trim(rootfn)//'/'//trim(Grd_yinyang_S)
+         err = clib_mkdir (trim(rootfn))
+      endif
+
       if (Pil_bmf_L) then
+
          call bmf_splitstart (Ptopo_npex,Ptopo_npey,trim(rootfn),'BM', &
                                       Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
          call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
@@ -67,6 +73,7 @@
          call bmf_splitwrall ('ZBT ',LV_T,1,1,Bmf_time1,Bmf_time2, &
                                           0,0,81,0,ZBT_8)
       else
+
 !        Write out the 3df_filemap.txt
 !
          filen=trim(rootfn)//'/3df_filemap.txt'
@@ -78,6 +85,7 @@
          close (9)
          call e_sfile_3df (pdate,'DYNAMICS', &
               e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,rootfn)
+
       endif
 !
 ! ---------------------------------------------------------------------

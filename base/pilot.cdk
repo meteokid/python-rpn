@@ -9,8 +9,6 @@
 ! Pil_jobend_S       | End date for LAM run         (yyyymmdd.hhmmss)  |
 ! Pil_jobstrt_S      | Starting date of validity of BCs                |
 !                    | for LAM config (yyyymmdd.hhmmss)                |
-! Pil_nesdt          | Number of seconds between 2 consecutive BCs     |
-!                    | time frame                                      |
 ! Pil_3df_L          | True to generate boundary conditions for LAM    |
 ! Pil_bmf_L          | True to generate BMF files only, default isFalse|
 ! Pil_dx             | resolution of output for feeding model in radians
@@ -21,14 +19,13 @@
 !
       character*16 Pil_jobstrt_S,Pil_jobend_S
 !
-      logical Pil_3df_L,Pil_bmf_L
+      logical Pil_bmf_L
 !
-      integer Pil_nesdt,Pil_hblen,Pil_pil,Pil_lancemodel
+      integer Pil_hblen,Pil_pil,Pil_lancemodel
       real    Pil_dx
 !
       common /pilr/ Pil_dx
       common /pils/ Pil_jobstrt_S,Pil_jobend_S
-      common /pill/ Pil_3df_L,Pil_bmf_L
-      common /pili/ Pil_nesdt,Pil_hblen,Pil_pil
-      common /pili/ Pil_lancemodel
+      common /pill/ Pil_bmf_L
+      common /pili/ Pil_hblen,Pil_pil,Pil_lancemodel
 !

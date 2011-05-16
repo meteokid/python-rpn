@@ -1,11 +1,8 @@
-
 #if defined (DOC)
 !
 !**comdeck level.cdk
 !
 !revision
-! v2_30 - V. Lee     - reduced dimension of Level_typ to 1
-! v2_30                and added Level_stag_ip1 for staggered levels
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES FOR DEFINITION OF THE OUTPUT LEVELS (set_level)           |
@@ -20,10 +17,12 @@
 !                    | in mb and/or eta, ie: Level(i,j)=1000           |
 ! Level_max          | Level_max(i) contains the number of output      |
 !                    | levels defined in each set                      |
-! Level_typ          | level type: "P" for pressure in mb, "E" for eta |
+! Level_typ_S        | level type: "P" for pressure in mb, "M" for eta |
 !                    | which corresponds to each defined Level set     |
-! Level_ntyp         | number of supported vertical coordinates        |
 ! Level_kind_ip1     | value of KIND to be used in CONVIP function     |
+! Level_mode_ip1     | '3' for oldstyle, '1' for newstyle              |
+! Level_momentum     | # of levels in momentum including the surface   |
+! Level_thermo       | # of levels in momentum including the surface   |
 ! Level_version      | Level version 2 is Staggered CP Girard V4       |
 !----------------------------------------------------------------------
 !
@@ -32,17 +31,15 @@
 
       integer MAXLEV
       PARAMETER (MAXLEV = 201)
-      integer LEVEL_NTYP
-      parameter (LEVEL_NTYP=2)
       real Level(MAXLEV,MAXSET)
-      integer Level_id(MAXSET),Level_sets,Level_typ_indx(MAXSET)
+      integer Level_id(MAXSET),Level_sets,Level_thermo,Level_momentum
       integer Level_max(MAXSET),Level_kind_ip1,Level_mode_ip1
       integer Level_version
-      character(len=1) Level_types(LEVEL_NTYP)
+      character(len=1) Level_typ_S(MAXSET)
 
       COMMON /Level_r/ Level
 
-      COMMON /Level_i/ Level_id,Level_max,Level_typ_indx,Level_version
-      COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1
+      COMMON /Level_i/ Level_id,Level_max,Level_version,Level_thermo
+      COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1,Level_momentum
 
-      COMMON /Level_c/ Level_types
+      COMMON /Level_c/ Level_typ_S

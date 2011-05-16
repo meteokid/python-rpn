@@ -46,25 +46,18 @@
 !	none
 !
 !implicits
-#include "gmm.hf"
-#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
-#include "glb_ld.cdk"
-#include "ifd.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
-!*
-      integer adr,ier,dim,current_nest,errft(3),unf
+      integer adr,dim,ier,current_nest
       integer  fclos,ouvrstrt,wkoffit
       external fclos,ouvrstrt,wkoffit
-      logical nav_L
 !
 !     ---------------------------------------------------------------
 !
@@ -74,14 +67,14 @@
 !
       if (Rstri_rstn_L) then
 !
-         if (wkoffit('../restart_glbphy.bin').eq.10 .or. &
-             wkoffit('../restart_glbcpl.bin').eq.10) then
+!         if (wkoffit('../restart_glbphy.bin').eq.10 .or. &
+!             wkoffit('../restart_glbcpl.bin').eq.10) then
 !
 !           Read one set of binary files for the whole domain
 !
-            call rd1rstrt ()
+!            call rd1rstrt ()
 !
-         else
+!         else
 !
 !           Read one wa-file per tile
 !
@@ -111,7 +104,7 @@
 !
             call waclos(Lun_rstrt)
             ier = fclos(Lun_rstrt)  
-         endif
+!         endif
 !
       endif
 !

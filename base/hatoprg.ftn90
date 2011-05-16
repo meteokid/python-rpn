@@ -33,6 +33,7 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_21 - Desgagne M.       - Revision OpenMP
 ! v3_30 - Tanguay M.        - Revision Openmp LAM 
+! v4_40 - Snelgrove, Ken    - bug found by MAC Linux
 !
 !object  DOWNWARD vertical integration 
 !
@@ -58,7 +59,8 @@
 !*
 !     __________________________________________________________________
 !
-      wk(:  ) = .5*F_con*F_hz_8(:)
+!     size of F_hz_8 could be longer than wk
+      wk(:  ) = .5*F_con*F_hz_8(1:(G_nk-1))
 !
 !$omp parallel private(r,k)
 !$omp do

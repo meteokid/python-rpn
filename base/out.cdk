@@ -1,4 +1,3 @@
-
 #if defined (DOC)
 !
 !**comdeck out.cdk
@@ -65,7 +64,7 @@
       character*19   Out_laststep_S
       character*15   Out_runstrt_S
       character*12   Out_etik_S, Out_etiket_S
-      character*1    Out_gridtyp_S,Out_levtyp_S, Out_proj_S,Out_unit_S
+      character*1    Out_gridtyp_S, Out_proj_S,Out_unit_S
       character*2    Out_typvar_S,Out_prefix_S
       character*3    Out_ext_S
       logical        Out_flipit_L, Out_debug_L, Out_rewrit_L
@@ -75,7 +74,7 @@
 
       integer Out_date,Out_hour,Out_dateo
       integer Out_deet,Out_npas,Out_endstepno
-      integer Out_kind, Out_unf, Out_nisl
+      integer  Out_unf, Out_nisl
       integer Out_njsl,Out_nisg, Out_njsg
       integer Out_nblocx,Out_nblocy
       integer Out_blocme,Out_numpe_perb
@@ -99,7 +98,7 @@
 
       common /out_i/ Out_date,Out_hour,Out_dateo
       common /out_i/ Out_deet,Out_npas,Out_endstepno
-      common /out_i/ Out_kind, Out_unf, Out_nisl
+      common /out_i/  Out_unf, Out_nisl
       common /out_i/ Out_njsl,Out_nisg, Out_njsg
       common /out_i/ Out_nblocx,Out_nblocy
       common /out_i/ Out_blocme,Out_numpe_perb
@@ -124,7 +123,7 @@
       common /out_c/ Out_dirname_S
       common /out_c/ Out_runstrt_S, Out_laststep_S
       common /out_c/ Out_etik_S, Out_etiket_S
-      common /out_c/ Out_gridtyp_S,Out_levtyp_S
+      common /out_c/ Out_gridtyp_S
       common /out_c/ Out_proj_S,Out_unit_S
       common /out_c/ Out_typvar_S,Out_prefix_S, Out_ext_s
 

@@ -22,6 +22,7 @@ subroutine adx_get_params()
    !@author Stephane Chamberland, 2010-01
    !@revisions
    ! v4_14 PLante A.    - add 'model/gbpil_t',adx_gbpil_t
+   ! v4_40 - Qaddouri/Lee - add Adx_yinyang_L key
    !**/
 #include <WhiteBoard.hf>
 #include "adx_dims.cdk"
@@ -37,6 +38,7 @@ subroutine adx_get_params()
    istat = WB_OK
    istat = min(wb_get('model/maxcfl',adx_maxcfl),istat)
    istat = min(wb_get('model/is_lam',adx_lam_L),istat)
+   istat = min(wb_get('model/is_yinyang',adx_yinyang_L),istat)
    istat = min(wb_get('model/is_period_x',adx_is_period_x),istat)
    istat = min(wb_get('model/is_period_y',adx_is_period_y),istat)
    istat = min(wb_get('model/G_ni',adx_gni),istat)

@@ -1,7 +1,6 @@
 #if defined (DOC)
 !revisions (e_nml)
 ! v3.30 - Desgagne             - remove references to namelist /ptopo/
-! v4.14 - Dugas B.             - Add Leap_years_L
 #endif
 !
 #include "e_topo.cdk"
@@ -12,25 +11,16 @@
 #include "modconst.cdk"
 #include "pilot.cdk"
 #include "schm.cdk"
-#include "leap.cdk"
 !
-      namelist /gement/ Anal_cond_L   , Anal_perturb_L, E_schm_adcub
-      namelist /gement/ E_schm_stlag 
-      namelist /gement/ E_tr3d_list_S , Leap_years_L  , Mod_runstrt_S
-      namelist /gement/ Pil_bmf_L   
-      namelist /gement/ Pil_dx        , Pil_hblen     , Pil_jobend_S
-      namelist /gement/ Pil_jobstrt_S , Pil_lancemodel
-      namelist /gement/ Pil_nesdt
-      namelist /gement/ Topo_dgfmx_L  ,Topo_dgfms_L, Topo_filmx_L, Topo_clip_oro_L
-!
-      namelist /gement_p/ Anal_cond_L   , Anal_perturb_L, E_schm_adcub
-      namelist /gement_p/ E_schm_stlag
-      namelist /gement_p/ Leap_years_L  , Mod_runstrt_S 
-      namelist /gement_p/ Pil_bmf_L
-      namelist /gement_p/ Pil_dx
-      namelist /gement_p/ Pil_hblen     , Pil_jobend_S  , Pil_jobstrt_S
-      namelist /gement_p/ Pil_lancemodel
-      namelist /gement_p/ Pil_nesdt
-      namelist /gement_p/ Topo_dgfmx_L  , Topo_dgfms_L
-      namelist /gement_p/ Topo_filmx_L  , Topo_clip_oro_L
-!
+      namelist /gement/   Anal_cond_L  , Anal_perturb_L, E_schm_adcub
+      namelist /gement/   E_schm_stlag , E_tr3d_list_S 
+      namelist /gement/   Pil_bmf_L    , Pil_dx        , Pil_hblen
+      namelist /gement/   Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel
+      namelist /gement/   Topo_dgfmx_L , Topo_dgfms_L  , Topo_filmx_L, Topo_clip_oro_L
+! 
+      namelist /gement_p/ Anal_cond_L  , Anal_perturb_L, E_schm_adcub
+      namelist /gement_p/ E_schm_stlag                 
+      namelist /gement_p/ Pil_bmf_L    , Pil_dx        , Pil_hblen
+      namelist /gement_p/ Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel
+      namelist /gement_p/ Topo_dgfmx_L , Topo_dgfms_L  , Topo_filmx_L, Topo_clip_oro_L
+! 

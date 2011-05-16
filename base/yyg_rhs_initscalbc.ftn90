@@ -1,0 +1,407 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!*** s/r yyg_rhs_initscalbc - to initialize communication pattern for RHS data
+!
+#include "model_macros_f.h"
+
+      Subroutine yyg_rhs_initscalbc()
+      implicit none
+!
+!author
+!           Abdessamad Qaddouri/V.Lee - October 2009
+!
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "glb_pil.cdk"
+#include "yyg_rhs.cdk"
+
+      integer err,Ndim,i,j,k,imx,imy,kk,ii,jj,stencil
+      integer kkproc
+      real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
+      real*8  t,p,s(2,2),h1,h2
+      real*8  x_d,y_d,x_a,y_a   
+      
+!
+!     Get global spacing
+      do j=1,G_nj
+      do i=1,G_ni
+         xx_8(i,j)=G_xg_8(i)
+      enddo
+      enddo
+      do j=1,G_nj
+      do i=1,G_ni
+         yy_8(i,j)=G_yg_8(j)
+      enddo
+      enddo
+      h1=G_xg_8(2)-G_xg_8(1)
+      h2=G_yg_8(2)-G_yg_8(1)
+!
+!
+
+      allocate(Rhsx_recvw_len(Ptopo_numproc))
+      allocate(Rhsx_recvw_i(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_recvw_j(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+
+      allocate(Rhsx_recve_len(Ptopo_numproc))
+      allocate(Rhsx_recve_i(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_recve_j(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+
+      allocate(Rhsx_recvs_len(Ptopo_numproc))
+      allocate(Rhsx_recvs_i(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_recvs_j(Glb_pil_s*G_lnimax,Ptopo_numproc))
+
+      allocate(Rhsx_recvn_len(Ptopo_numproc))
+      allocate(Rhsx_recvn_i(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_recvn_j(Glb_pil_n*G_lnimax,Ptopo_numproc))
+
+      allocate(Rhsx_sendw_len(Ptopo_numproc))
+      allocate(Rhsx_sendw_xxr(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sendw_yyr(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sendw_imx(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sendw_imy(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sendw_sten(Glb_pil_w*G_lnjmax,Ptopo_numproc))
+
+      allocate(Rhsx_sende_len(Ptopo_numproc))
+      allocate(Rhsx_sende_xxr(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sende_yyr(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sende_imx(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sende_imy(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+      allocate(Rhsx_sende_sten(Glb_pil_e*G_lnjmax,Ptopo_numproc))
+
+      allocate(Rhsx_sends_len(Ptopo_numproc))
+      allocate(Rhsx_sends_xxr(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sends_yyr(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sends_imx(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sends_imy(Glb_pil_s*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sends_sten(Glb_pil_s*G_lnimax,Ptopo_numproc))
+
+      allocate(Rhsx_sendn_len(Ptopo_numproc))
+      allocate(Rhsx_sendn_xxr(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sendn_yyr(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sendn_imx(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sendn_imy(Glb_pil_n*G_lnimax,Ptopo_numproc))
+      allocate(Rhsx_sendn_sten(Glb_pil_n*G_lnimax,Ptopo_numproc))
+
+      Rhsx_recvw_len(:) = 0
+      Rhsx_recvw_i(:,:) = 0
+      Rhsx_recvw_j(:,:) = 0
+      Rhsx_sendw_len(:) = 0
+      Rhsx_sendw_imx(:,:) = 0
+      Rhsx_sendw_imy(:,:) = 0
+      Rhsx_sendw_xxr(:,:) = 0.0
+      Rhsx_sendw_yyr(:,:) = 0.0
+      Rhsx_sendw_sten(:,:) = 0
+
+      Rhsx_recve_len(:) = 0
+      Rhsx_recve_i(:,:) = 0
+      Rhsx_recve_j(:,:) = 0
+      Rhsx_sende_len(:) = 0
+      Rhsx_sende_imx(:,:) = 0
+      Rhsx_sende_imy(:,:) = 0
+      Rhsx_sende_xxr(:,:) = 0.0
+      Rhsx_sende_yyr(:,:) = 0.0
+      Rhsx_sende_sten(:,:) = 0
+
+      Rhsx_recvs_len(:) = 0
+      Rhsx_recvs_i(:,:) = 0
+      Rhsx_recvs_j(:,:) = 0
+      Rhsx_sends_len(:) = 0
+      Rhsx_sends_imx(:,:) = 0
+      Rhsx_sends_imy(:,:) = 0
+      Rhsx_sends_xxr(:,:) = 0.0
+      Rhsx_sends_yyr(:,:) = 0.0
+      Rhsx_sends_sten(:,:) = 0
+
+      Rhsx_recvn_len(:) = 0
+      Rhsx_recvn_i(:,:) = 0
+      Rhsx_recvn_j(:,:) = 0
+      Rhsx_sendn_len(:) = 0
+      Rhsx_sendn_imx(:,:) = 0
+      Rhsx_sendn_imy(:,:) = 0
+      Rhsx_sendn_xxr(:,:) = 0.0
+      Rhsx_sendn_yyr(:,:) = 0.0
+      Rhsx_sendn_sten(:,:) = 0
+!
+! WEST section
+
+      do j=1+glb_pil_s,G_nj-glb_pil_n
+         stencil=j-glb_pil_s
+         i=glb_pil_w
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a= y_a
+         call localise(imx,imy,x_a,y_a, &
+                       G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         imx = min(max(imx-1,1),G_ni-3)
+         imy = min(max(imy-1,1),G_nj-3)
+! check to collect from who
+         if (i+1.ge.l_i0.and.i+1.le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
+                    imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
+                    Rhsx_recvw_len(kk)=Rhsx_recvw_len(kk)+1
+                    ii=i-l_i0+2
+                    jj=j-l_j0+1
+                    Rhsx_recvw_i(Rhsx_recvw_len(kk),kk)=ii
+                    Rhsx_recvw_j(Rhsx_recvw_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (imx.ge.l_i0.and.imx.le.l_i0+l_ni-1 .and. &
+             imy.ge.l_j0.and.imy.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (i+1.ge.Ptopo_gindx(1,kk).and.i+1.le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Rhsx_sendw_len(kk)=Rhsx_sendw_len(kk)+1
+                    Rhsx_sendw_imx(Rhsx_sendw_len(kk),kk)=imx-l_i0+1
+                    Rhsx_sendw_imy(Rhsx_sendw_len(kk),kk)=imy-l_j0+1
+                    Rhsx_sendw_xxr(Rhsx_sendw_len(kk),kk)=x_a
+                    Rhsx_sendw_yyr(Rhsx_sendw_len(kk),kk)=y_a
+                    Rhsx_sendw_sten(Rhsx_sendw_len(kk),kk)=stencil
+                endif
+             enddo       
+         endif
+      enddo   
+!
+!
+! East section
+      do j=1+glb_pil_s,G_nj-glb_pil_n
+         i=G_ni-glb_pil_e+1
+         stencil=j-glb_pil_s
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a= y_a
+         call localise(imx,imy,x_a,y_a, &
+                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         imx = min(max(imx-1,1),G_ni-3)
+         imy = min(max(imy-1,1),G_nj-3)
+! check to collect from who
+         if (i-1.ge.l_i0.and.i-1.le.l_i0+l_ni-1 .and. &
+             j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
+                    imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
+                    Rhsx_recve_len(kk)=Rhsx_recve_len(kk)+1
+                    ii=i-l_i0
+                    jj=j-l_j0+1
+                    Rhsx_recve_i(Rhsx_recve_len(kk),kk)=ii
+                    Rhsx_recve_j(Rhsx_recve_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (imx.ge.l_i0.and.imx.le.l_i0+l_ni-1 .and. &
+             imy.ge.l_j0.and.imy.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (i-1.ge.Ptopo_gindx(1,kk).and.i-1.le.Ptopo_gindx(2,kk).and. &
+                    j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
+                    Rhsx_sende_len(kk)=Rhsx_sende_len(kk)+1
+                    Rhsx_sende_imx(Rhsx_sende_len(kk),kk)=imx-l_i0+1
+                    Rhsx_sende_imy(Rhsx_sende_len(kk),kk)=imy-l_j0+1
+                    Rhsx_sende_xxr(Rhsx_sende_len(kk),kk)=x_a
+                    Rhsx_sende_yyr(Rhsx_sende_len(kk),kk)=y_a
+                    Rhsx_sende_sten(Rhsx_sende_len(kk),kk)=stencil
+                endif
+             enddo       
+         endif
+      enddo   
+!
+! South section
+      j=glb_pil_s
+      do i=1+glb_pil_w,G_ni-glb_pil_e
+         stencil=i-glb_pil_w
+
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a= y_a
+         call localise(imx,imy,x_a,y_a, &
+                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         imx = min(max(imx-1,1),G_ni-3)
+         imy = min(max(imy-1,1),G_nj-3)
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j+1.ge.l_j0.and.j+1.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
+                    imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
+                    Rhsx_recvs_len(kk)=Rhsx_recvs_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0+2
+                    Rhsx_recvs_i(Rhsx_recvs_len(kk),kk)=ii
+                    Rhsx_recvs_j(Rhsx_recvs_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (imx.ge.l_i0.and.imx.le.l_i0+l_ni-1 .and. &
+             imy.ge.l_j0.and.imy.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j+1.ge.Ptopo_gindx(3,kk).and.j+1.le.Ptopo_gindx(4,kk))then
+                    Rhsx_sends_len(kk)=Rhsx_sends_len(kk)+1
+                    Rhsx_sends_imx(Rhsx_sends_len(kk),kk)=imx-l_i0+1
+                    Rhsx_sends_imy(Rhsx_sends_len(kk),kk)=imy-l_j0+1
+                    Rhsx_sends_xxr(Rhsx_sends_len(kk),kk)=x_a
+                    Rhsx_sends_yyr(Rhsx_sends_len(kk),kk)=y_a
+                    Rhsx_sends_sten(Rhsx_sends_len(kk),kk)=stencil
+                endif
+             enddo       
+         endif
+      enddo   
+!
+! North section
+      j=G_nj-glb_pil_n+1
+      do i=1+glb_pil_w,G_ni-glb_pil_e
+         stencil = i-glb_pil_w
+
+         x_d=xx_8(i,j)-acos(-1.D0)
+         y_d=yy_8(i,j)
+         call smat(s,x_a,y_a,x_d,y_d)
+         x_a=x_a+(acos(-1.D0))
+         y_a= y_a
+         call localise(imx,imy,x_a,y_a, &
+                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         imx = min(max(imx-1,1),G_ni-3)
+         imy = min(max(imy-1,1),G_nj-3)
+
+! check to collect from who
+         if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
+             j-1.ge.l_j0.and.j-1.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
+                    imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
+                    Rhsx_recvn_len(kk)=Rhsx_recvn_len(kk)+1
+                    ii=i-l_i0+1
+                    jj=j-l_j0
+                    Rhsx_recvn_i(Rhsx_recvn_len(kk),kk)=ii
+                    Rhsx_recvn_j(Rhsx_recvn_len(kk),kk)=jj
+                endif
+             enddo       
+         endif
+
+! check to send to who
+         if (imx.ge.l_i0.and.imx.le.l_i0+l_ni-1 .and. &
+             imy.ge.l_j0.and.imy.le.l_j0+l_nj-1      ) then
+             do kk=1,Ptopo_numproc
+                if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
+                    j-1.ge.Ptopo_gindx(3,kk).and.j-1.le.Ptopo_gindx(4,kk))then
+                    Rhsx_sendn_len(kk)=Rhsx_sendn_len(kk)+1
+                    Rhsx_sendn_imx(Rhsx_sendn_len(kk),kk)=imx-l_i0+1
+                    Rhsx_sendn_imy(Rhsx_sendn_len(kk),kk)=imy-l_j0+1
+                    Rhsx_sendn_xxr(Rhsx_sendn_len(kk),kk)=x_a
+                    Rhsx_sendn_yyr(Rhsx_sendn_len(kk),kk)=y_a
+                    Rhsx_sendn_sten(Rhsx_sendn_len(kk),kk)=stencil
+                endif
+             enddo       
+         endif
+      enddo   
+
+!Check receive lengths from each processor against actual allocation
+      do kk=1,Ptopo_numproc
+         if (Ptopo_couleur.eq.0) then
+             kkproc = kk+Ptopo_numproc-1
+         else
+             kkproc = kk -1
+         endif
+         if (Rhsx_recvw_len(kk).gt.Glb_pil_w*G_lnjmax) then
+             write(6,1000) 'Rhsx_recvw_len',kkproc,Rhsx_recvw_len(kk),&
+                            Glb_pil_w*G_lnjmax
+           ! write(6,1001) 'Rhsx_recvw_len',kkproc,Rhsx_recvw_len(kk),&
+           !                Rhsx_recvw_i(1,kk),Rhsx_recvw_j(1,kk)
+            stop
+         endif
+         if (Rhsx_recve_len(kk).gt.Glb_pil_e*G_lnjmax) then
+             write(6,1000) 'Rhsx_recve_len',kkproc,Rhsx_recve_len(kk),&
+                            Glb_pil_e*G_lnjmax
+           ! write(6,1001) 'Rhsx_recve_len',kkproc,Rhsx_recve_len(kk),&
+           !                Rhsx_recve_i(1,kk),Rhsx_recve_j(1,kk)
+            stop
+         endif
+         if (Rhsx_recvs_len(kk).gt.Glb_pil_s*G_lnimax) then
+             write(6,1000) 'Rhsx_recvs_len',kkproc,Rhsx_recvs_len(kk),&
+                            Glb_pil_s*G_lnimax
+           ! write(6,1001) 'Rhsx_recvs_len',kkproc,Rhsx_recvs_len(kk),&
+           !                Rhsx_recvs_i(1,kk),Rhsx_recvs_j(1,kk)
+            stop
+         endif
+         if (Rhsx_recvn_len(kk).gt.Glb_pil_n*G_lnimax) then
+             write(6,1000) 'Rhsx_recvn_len',kkproc,Rhsx_recvn_len(kk),&
+                            Glb_pil_n*G_lnimax
+           ! write(6,1001) 'Rhsx_recvn_len',kkproc,Rhsx_recvn_len(kk),&
+           !                Rhsx_recvn_i(1,kk),Rhsx_recvn_j(1,kk)
+            stop
+         endif
+      enddo
+
+!Check send lengths to each processor against actual allocation
+      do kk=1,Ptopo_numproc
+         if (Ptopo_couleur.eq.0) then
+             kkproc = kk+Ptopo_numproc-1
+         else
+             kkproc = kk -1
+         endif
+         if (Rhsx_sendw_len(kk).gt.Glb_pil_w*G_lnjmax) then
+             write(6,1000) 'Rhsx_sendw_len',kkproc,Rhsx_sendw_len(kk),&
+                            Glb_pil_w*G_lnjmax
+           ! write(6,1002) 'Rhsx_sendw_len',kkproc,Rhsx_sendw_len(kk),&
+           !                Rhsx_sendw_imx(1,kk),Rhsx_sendw_imy(1,kk),&
+           !                Rhsx_sendw_sten(1,kk)
+             stop
+         endif
+         if (Rhsx_sende_len(kk).gt.Glb_pil_e*G_lnjmax) then
+             write(6,1000) 'Rhsx_sende_len',kkproc,Rhsx_sende_len(kk),&
+                            Glb_pil_e*G_lnjmax
+           ! write(6,1002) 'Rhsx_sende_len',kkproc,Rhsx_sende_len(kk),&
+           !                Rhsx_sende_imx(1,kk),Rhsx_sende_imy(1,kk),&
+           !                Rhsx_sende_sten(1,kk)
+             stop
+         endif
+         if (Rhsx_sends_len(kk).gt.Glb_pil_s*G_lnimax) then
+             write(6,1000) 'Rhsx_sends_len',kkproc,Rhsx_sends_len(kk),&
+                            Glb_pil_s*G_lnimax
+           ! write(6,1002) 'Rhsx_sends_len',kkproc,Rhsx_sends_len(kk),&
+           !                Rhsx_sends_imx(1,kk),Rhsx_sends_imy(1,kk),&
+           !                Rhsx_sends_sten(1,kk)
+             stop
+         endif
+         if (Rhsx_sendn_len(kk).gt.Glb_pil_n*G_lnimax) then
+             write(6,1000) 'Rhsx_sendn_len',kkproc,Rhsx_sendn_len(kk),&
+                            Glb_pil_n*G_lnimax
+           ! write(6,1002) 'Rhsx_sendn_len',kkproc,Rhsx_sendn_len(kk),&
+           !                Rhsx_sendn_imx(1,kk),Rhsx_sendn_imy(1,kk),&
+           !                Rhsx_sendn_sten(1,kk)
+             stop
+         endif
+      enddo
+
+ 1000 format(a15,i3,'=',i4,'bytes, max allowed=',i4)
+ 1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
+ 1002 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3,'sten=',i3)
+       
+      return
+      end
+

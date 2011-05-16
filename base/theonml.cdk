@@ -31,11 +31,11 @@
 #include "that.cdk"
 !
       namelist /theo_cfgs/ Theo_case_S
-      namelist /theo_cfgs/ Out3_etik_S, Lctl_debug_L, Lam_runstrt_S
+      namelist /theo_cfgs/ Out3_etik_S, Lctl_debug_L
 
       namelist /bubble_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
       namelist /bubble_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
-      namelist /bubble_cfgs/ Tr3d_userntr, Lam_ctebcs_L,Lam_nesdt
+      namelist /bubble_cfgs/ Tr3d_userntr, Lam_ctebcs_L
       namelist /bubble_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
       namelist /bubble_cfgs/ Step_total, Step_rsti, Step_gstat
       namelist /bubble_cfgs/ Hyb, Grd_rcoef, Pres_ptop

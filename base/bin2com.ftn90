@@ -49,68 +49,54 @@
 !arguments - none
 !
 #include "glb_ld.cdk"
-#include "anal.cdk"
-#include "schm.cdk"
+#include "grd.cdk"
 #include "tr3d.cdk"
 #include "path.cdk"
-#include "modconst.cdk"
 #include "out3.cdk"
+#include "modconst.cdk"
 #include "lun.cdk"
+#include "modipc.cdk"
 !
       integer  fnom,wkoffit
       external fnom,wkoffit
+!
       character*512 fn
-      integer  k, unf, ierr
-      logical  Leap_years_L
-!*
+      integer  unf, ierr
+!
 !     ---------------------------------------------------------------
 !
       bin2com = -1
-!
-      unf = 0
-      fn  = trim(Path_input_S)//'/INIT_SFC/labfl.bin'
-      ierr = wkoffit(fn)
-!
-      if (ierr.ge.-1) then
-      if ( fnom (unf, fn, 'SEQ+FTN+UNF+OLD',ierr ) .eq. 0 ) then
 
-         read(unf)   Mod_runstrt_S
-!
-         read(unf)  Tr3d_userntr, &
-                   (Tr3d_username_S(k),k=1,Tr3d_userntr), &
-                   (Tr3d_usersval  (k),k=1,Tr3d_userntr)
-!
-         read(unf)  Anal_cond_L, Leap_years_L
-!
+      unf  = 0
+      fn   = trim(Path_input_S)//'/MODEL_INPUT/Modntr_ipc.nml'
+      ierr = wkoffit(fn)
+
+      if (ierr.ge.-1) then
+      if ( fnom (unf, fn, 'SEQ+OLD',ierr ) .eq. 0 ) then
+         read (unf  ,nml=modipc_cfgs)
+         Tr3d_userntr = tracers_ntr
+         Tr3d_username_S(1:Tr3d_userntr) = tracers_name(1:Tr3d_userntr)
+         Tr3d_usersval(1:Tr3d_userntr)   = tracers_sval(1:Tr3d_userntr)
          call fclos (unf)
-!
          bin2com = 0
-!
-         if (.not.Leap_years_L) then
-            call Ignore_LeapYear()
-            if (Lun_out.gt.0) write(Lun_out,1000)
-         endif
-!
       endif
       endif
-!
+
       if (bin2com .lt. 0) then
-         if (G_lam) then
-            Mod_runstrt_S='@#$%'
-            Out3_date    = 0
-            Tr3d_userntr = 0
+         Mod_runstrt_S  = 'NIL'
+         Out3_date       = 0
+         Tr3d_userntr    = 0
+         if (Grd_typ_S(1:1).eq.'L') then
             bin2com      = 0
          else
             if (Lun_out.gt.0) write (6,1001) trim(fn)
          endif
       endif
-!
- 1000 format (//'  =============================='/&
-                '  = Leap Years will be ignored ='/&
-                '  =============================='//)
+
  1001 format (/' File ',a,' not available - ABORT -'/)
+!
 !     ---------------------------------------------------------------
 !
       return
       end
-!
+
