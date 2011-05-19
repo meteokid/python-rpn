@@ -34,3 +34,8 @@
       common / Step_I / Step_spinphy, Step_nesdt
       common / Step_R / Step_dt
 !
+      namelist /step/ Step_runstrt_S
+      namelist /step/ Step_leapyears_L
+      namelist /step/ Step_total  , Step_rsti, Step_bkup, Step_gstat
+      namelist /step/ Step_spinphy, Step_nesdt
+      namelist /step/ Step_dt

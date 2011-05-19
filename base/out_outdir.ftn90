@@ -67,36 +67,28 @@
       Out_laststep_S = 'laststep_'//postjob_S
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S
 
-      flag= .false.
-      if (Ptopo_blocme.eq.0) then
-         if (clib_isdir(trim(Out_dirname_S)) .le. 0) then
-            if (Grd_yinyang_L) then 
-               if ( trim(Grd_yinyang_S) .eq. 'YIN' ) then
-                  err= clib_mkdir (trim(Out_dirname_S))
-                  if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
-               endif
-            else
-               err= clib_mkdir ( trim(Out_dirname_S) )
-               if (Lun_out.gt.0) write (6,1001) trim(Out_laststep_S),current_step
-            endif
-            flag= .true.
-         endif
+      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0 .and. &
+           (.not.Grd_yinyang_L .or. trim(Grd_yinyang_S) == 'YIN')) then
+         err = clib_mkdir(trim(Out_dirname_S))
+         if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),current_step
       endif
 
       call rpn_comm_Barrier("world", err)
 
-      if (Ptopo_blocme.eq.0) then
-         if (flag) then
-            if (Grd_yinyang_L) then 
-               Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
-               err= clib_mkdir ( trim(Out_dirname_S) )
-            endif
-            Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
-            err= clib_mkdir ( trim(Out_dirname_S) )
-         else
-            Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)//'/'//blocxy_S
-         endif
-      endif
+      if (Grd_yinyang_L) &
+           Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
+
+      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0) &
+           err = clib_mkdir(trim(Out_dirname_S))
+
+      call rpn_comm_Barrier("world", err)
+
+      Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
+      
+      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0) &
+           err= clib_mkdir ( trim(Out_dirname_S) )
+
+      call rpn_comm_Barrier("world", err)
 
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !

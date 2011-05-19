@@ -101,13 +101,12 @@
 !
       integer i,j,k,ii,num,istep
       logical month_flag,day_flag,hour_flag,step_flag,found_L
-      real frarg,month,day,hour,step
+      real frarg,month,day,hour,rstep
       integer transtep,transtep2,stepset,argc_out
       transtep(frarg) = nint(3600.0 * frarg / Cstv_dt_8)
       transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
 !
-      integer  transtep3
-      external transtep3
+      integer,external ::  transtep3
 !
       argc_out=min(F_argc,6)
       if (Lun_out.gt.0) then
@@ -166,15 +165,15 @@
              Timestep_init_L(j)=.true.
          else if (step_flag) then
              i = i+1
-             read(F_argv_S(ii),*)step
-             if (step.eq.-1) then
+             read(F_argv_S(ii),*)rstep
+             if (rstep.eq.-1) then
              i = i-1
              do 70 istep=0,Step_total
              i = i+1
              Timestep(i,j)=istep
  70          continue
              else
-             Timestep(i,j)=int(step)
+             Timestep(i,j)=int(rstep)
              endif
          else if (hour_flag) then
              i = i+1

@@ -33,12 +33,7 @@
 #include "grd.cdk"
 #include "step.cdk"
 !
-      namelist /step/ Step_runstrt_S, Step_total, Step_rsti, &
-                      Step_bkup, Step_gstat, Step_spinphy,   &
-                      Step_dt, Step_nesdt, Step_leapyears_L
-!
-      integer  fnom,wkoffit
-      external fnom,wkoffit
+      integer,external ::  fnom,wkoffit
 !
       integer nrec,unf,err
 !
