@@ -246,7 +246,7 @@ Main1 : Do
                   Endif
                   Call glbdist( yinyangf,G_ni,G_nj, localf,1,l_ni,1,l_nj,1,0,0)
                Endif
-               call glbstat2 (localf,vd%nomvar,"scalge",1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
+               If(Lun_debug_L) call glbstat2 (localf,vd%nomvar,"scalge",1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
 !
                ier = Phy_simple_transforms( vd%phyvar, localf, vd%glbfld_L )
                Call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )

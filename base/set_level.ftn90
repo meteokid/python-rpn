@@ -171,8 +171,10 @@
             endif
             levdesc = 3
             eta_L = .true.
+
          else if (levdesc.eq.1) then
 
+            Level_typ_S(j)='M'
             i = i+1
             read( F_argv_S(ii), * ) Level(i,j)
 
@@ -180,8 +182,6 @@
 
 !              request for all model eta levels
 !              will put in the max levels which is the number of thermo
-
-                  Level_typ_S(j)='M'
 
                   i = i-1
                   do idx=1,Level_thermo
