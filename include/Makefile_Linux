@@ -1,7 +1,0 @@
-OPTIL  = 2
-OMP    = -openmp
-MPI    = -mpi
-
-CODEBETA = 
-UTIL     = massvp4 lapack blas hpcstools
-
