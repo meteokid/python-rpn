@@ -1,0 +1,100 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
+#include "constants.h"
+#include "stop_mpi.h"
+
+!/**
+subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, & 
+                             F_zcto, F_dt, i0,in,j0,jn,k0)
+   implicit none
+!
+   !@objective compute positions at origin (o) by extrapolation using positions at mid-trajectory (m)
+!
+   !@arguments
+   real, dimension(*) :: &
+        F_xto, F_yto, &      !O, upstream positions at origin
+        F_xcto, F_ycto, F_zcto,& !O, upstream cartesian positions at origin
+        F_u, F_v             !I, real wind components at upwind pos(trilin)
+   real    :: F_dt           !I, timestep length
+   integer :: i0,in,j0,jn,k0     !I, scope of operator
+!
+   !@author  Abdessamad Qaddouri
+   !@revisions
+   ! v4_40 - Qaddouri & Lee - Initial version
+!**/
+
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+
+   integer :: i,j,k, n, vnij
+   real*8 :: Two_ov_Three_8,term_8
+   real*8 :: xto_8(i0:in,j0:jn)
+   real*8 :: yto_8(i0:in,j0:jn)
+   real*8 :: cos_yto_8(i0:in,j0:jn)
+   real*8 :: sin_yto_8(i0:in,j0:jn)
+   real*8 :: cos_xto_8(i0:in,j0:jn)
+   real*8 :: sin_xto_8(i0:in,j0:jn)
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_trajex_gccsa')
+   vnij = (in-i0+1)*(jn-j0+1)
+   call tmg_start0(55, 'ADPOS_EX1' )
+   Two_ov_Three_8 = 2.0D0/3.0D0
+
+!$omp parallel private(term_8,n,xto_8,yto_8, &
+!$omp             cos_xto_8,sin_xto_8,cos_yto_8,sin_yto_8)
+!$omp do
+   do k=k0,adx_lnkm
+      do j=j0,jn
+         do i=i0,in
+            n = (k-1)*adx_mlnij+((j-1)*adx_mlni) + i
+            term_8 = ( F_v(n)**2 * ((Adx_vsec_8(j)**2)- Two_ov_Three_8) &
+                     - F_u(n)**2 *Adx_vtan_8(j) ) *(F_dt**3)*2.0D0
+
+            xto_8(i,j) = Adx_xx_8(i)-2.0D0*F_u(n)*F_dt*Adx_vsec_8(j)* &
+                       (1.0D0 + F_v(n)*Adx_vtan_8(j)*F_dt) + &
+                       F_u(n)*Adx_vsec_8(j)*term_8 
+
+            yto_8(i,j) = Adx_yy_8(j)-2.0D0*F_dt*F_v(n)-F_u(n)**2 * F_v(n)*&
+                       (Adx_vsec_8(j)**2 - Two_ov_Three_8)* F_dt**3
+
+            if (xto_8(i,j) < 0.) xto_8(i,j) = xto_8(i,j) + CONST_2PI_8
+            F_xto(n)=xto_8(i,j)
+            F_yto(n)=yto_8(i,j)
+         enddo
+      enddo
+      call vcos(cos_xto_8,xto_8,vnij)
+      call vcos(cos_yto_8,yto_8,vnij)
+      call vsin(sin_xto_8,xto_8,vnij)
+      call vsin(sin_yto_8,yto_8,vnij)
+      do j=j0,jn
+         do i=i0,in
+            n = (k-1)*adx_mlnij+((j-1)*adx_mlni) + i
+            F_xcto(n) = cos_xto_8(i,j)*cos_yto_8(i,j)
+            F_ycto(n) = cos_yto_8(i,j)*sin_xto_8(i,j)
+            F_zcto(n) = sin_yto_8(i,j)
+         enddo
+      enddo
+   enddo
+!$omp enddo
+!$omp end parallel
+
+   call tmg_stop0 (55)
+   call msg(MSG_DEBUG,'adx_trajex_gccsa [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trajex_gccsa

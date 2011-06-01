@@ -31,6 +31,7 @@
       real*8, pointer :: adx_xg_8(:), adx_yg_8(:) !glb grid x,y coor
       real*8, pointer :: adx_wx_8(:)      !glb x weights proportional grid dist
       real*8, pointer :: adx_xx_8(:),adx_yy_8(:)  !local grid x,y coor
+      real*8, pointer :: adx_vsec_8(:),adx_vtan_8(:)!local grid,sec,tan on lat
       real*8, pointer :: adx_cx_8(:),adx_sx_8(:)  !local grid cos/sin x
       real*8, pointer :: adx_cy_8(:),adx_sy_8(:)  !local grid cos/sin y
 
@@ -38,6 +39,7 @@
 
       common /adx_grid_r8p/ adx_xg_8,adx_yg_8,adx_wx_8
       common /adx_grid_r8p/ adx_xx_8,adx_yy_8
+      common /adx_grid_r8p/ adx_vsec_8,adx_vtan_8
       common /adx_grid_r8p/ adx_cx_8,adx_sx_8
       common /adx_grid_r8p/ adx_cy_8,adx_sy_8
 

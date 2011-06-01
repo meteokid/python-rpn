@@ -60,6 +60,7 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    ! v4_05 - Lepine M.       - VMM replacement with GMM
    ! V4_10 - Plante A.       - Support to thermodynamic positions.
    ! V4_14 - Plante A.       - Do not compute position in top pilot zone
+   ! v4_40 - Lee/Qaddouri    - add Adw_gccsa_L option for trajsp,trajex
 !**/
 
 #include "adx_nml.cdk"
@@ -82,7 +83,7 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    integer :: i, j, k, iter, ioff
    integer :: i0,in,j0,jn
    real    :: dth
-   real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1
+   real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1,wrkx2
    real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
 
    real,   dimension(:,:,:), pointer :: dummy3d
@@ -121,7 +122,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    DO_ITER: do iter = 1, F_nb_iter
 
       !- 3d interpol of u and v winds and new upstream pos along x and y
-
       ygrid(:,:,:) = F_yth(:,:,:)
       if (adx_lam_L) then
          call adx_pos_lam4 (wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
@@ -133,9 +133,15 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
       endif
 
-      call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, &
+      if (Adw_gccsa_L) then
+          call adx_trajsp_gccsa (F_xth,F_yth, wrkx1,wrky1, &
+                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
+          wrkx2=wrkx1
+      else
+          call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, &
                                    adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
                                        dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
+      endif
 
       !- 3D interpol of zeta dot and new upstream pos along zeta
 
@@ -168,11 +174,15 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
 !$omp enddo
 !$omp end parallel
       call tmg_stop0 (54)
-
    enddo DO_ITER
 
-   call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
+   if (Adw_gccsa_L) then
+       call adx_trajex_gccsa (F_px, F_py, wrkx2,wrky1,&
+                  F_xct1,F_yct1,F_zct1,dth, i0,in,j0,jn,k0)
+   else
+       call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
                      F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
+   endif
 
    call tmg_start0(56, 'ADPOS_FPZ' )
 !$omp parallel
@@ -192,6 +202,7 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    enddo
 !$omp enddo
 !$omp end parallel
+
    call tmg_stop0 (56)
 
    if (driver) then

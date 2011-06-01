@@ -1,0 +1,75 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
+#include "constants.h"
+#include "stop_mpi.h"
+!/**
+subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
+                         F_dt,i0,in,j0,jn,k0,F_ni,F_nj )
+   implicit none
+!
+   !@objective improves estimates of upwind positions using the
+!    Great Circle Constant speed approximation method.
+!
+   !@arguments
+   real, dimension(*) :: &
+        F_lon,         &     !O, upwind longitudes at central time 
+        F_lat,         &     !I/O, upwind lat at central time 
+        F_u, F_v             !I, real wind components at upwind pos(trilin)
+   real    :: F_dt           !I, timestep length
+   integer :: i0,in,j0,jn,k0 !I, scope of operator
+   integer :: F_ni,F_nj
+!
+   !@author  Abdessamad Qaddouri
+   !@revisions
+   ! v4_40 - Qaddouri & Lee - Initial version
+!**/
+
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+
+   integer :: vnij, i,j,k, n
+   real*8  :: term_8,one_ov6_8,third_8
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_trajsp_gccsa')
+   vnij = (in-i0+1)*(jn-j0+1)
+   call tmg_start0(53, 'ADPOS_CGC' )
+   third_8=1.0D0/3.0D0
+   one_ov6_8=1.0D0/6.0D0
+
+!$omp parallel do private(term_8,n)
+   do k=k0,adx_lnkm
+   do j=j0,jn
+      do i=i0,in
+         n = (k-1)*adx_mlnij + ((j-1)*adx_mlni) + i
+         if (abs(F_u(n))+abs(F_v(n)) < 1.e-10) cycle
+         term_8 = (F_u(n)**2*Adx_vtan_8(j)**2 - F_v(n)**2)*F_dt**2*one_ov6_8
+         F_lon(n) = Adx_xx_8(i)-F_u(n)*F_dt*Adx_vsec_8(j)*(1.0D0+term_8)
+         F_lat(n) = Adx_yy_8(j)-F_v(n)*F_dt  &
+                      + F_u(n)**2 * Adx_vtan_8(j)*F_dt**2*0.50D0 &
+                      - F_u(n)**2 * F_v(n)*F_dt**3*third_8
+         if (F_lon(n) < 0.) F_lon(n) = F_lon(n) + CONST_2PI_8
+      end do
+   enddo
+   enddo
+!$omp end parallel do
+
+   call tmg_stop0   (53)
+   call msg(MSG_DEBUG,'adx_trajsp_gccsa [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trajsp_gccsa

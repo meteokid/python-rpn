@@ -21,11 +21,15 @@ subroutine adx_set_grid()
    !@objective Compute derived grid parameters
    !@author Stephane Chamberland, 2010-01
    !@revisions
+   !@ v4_40 Lee/Qaddouri - add precalculation of vsec, vtan variables for GCCSA
    !**/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
    integer :: istat, i, j
    real*8 :: prhxmn, prhymn
+
+
+
    !---------------------------------------------------------------------
    allocate( &
         adx_xx_8(adx_lminx:adx_lmaxx), &
@@ -33,6 +37,8 @@ subroutine adx_set_grid()
         adx_sx_8(adx_lni), &
         adx_wx_8(adx_lni), &
         adx_yy_8(adx_lminy:adx_lmaxy), &
+        adx_vsec_8(adx_lminy:adx_lmaxy), &
+        adx_vtan_8(adx_lminy:adx_lmaxy), &
         adx_cy_8(adx_lnj), &
         adx_sy_8(adx_lnj), &
         stat = istat)
@@ -88,6 +94,12 @@ subroutine adx_set_grid()
    enddo
    do j = adx_lminy,adx_lmaxy
       adx_yy_8(j) = adx_yg_8(adx_lj0-1+j)
+   enddo
+
+   do j = adx_lminy,adx_lmaxy
+   !- precalculation vsec, vtan for grand circle computation
+      adx_vsec_8(j) = 1.0D0/(cos(adx_yy_8(j)))
+      adx_vtan_8(j) = tan(adx_yy_8(j))
    enddo
 
    if (.not.adx_lam_L) then

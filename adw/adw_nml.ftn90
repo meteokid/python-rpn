@@ -31,6 +31,7 @@ function adw_nml(F_nmlFileName_S) result(F_stat)
    adw_exdg_L = .false.
    adw_ckbd_L = .false.
    adw_mono_L = .true.
+   adw_gccsa_L = .false.
    adw_nosetint_L   = .false.
    adw_trunc_traj_L = .false.
    adw_halox  = -1
