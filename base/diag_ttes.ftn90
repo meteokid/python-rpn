@@ -54,7 +54,7 @@
 !
       ninj = ni*nj
       px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
-      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+      call mhuaes (es, hu,tt,px,.true.,ninj,1,ninj)
 !
       es(:,:) = max(0.,es(:,:))
 !

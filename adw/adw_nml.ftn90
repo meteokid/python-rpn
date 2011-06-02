@@ -91,6 +91,10 @@ function adw_config() result(F_stat)
    if (.not.G_lam) then
       adw_halox = max(3,adw_halox)
       adw_haloy = max(2,adw_haloy)
+      if (adw_gccsa_L) then
+         call msg(MSG_ERROR,'adw_nml: adw_gccsa_L cannot be .true. if .not. G_lam')
+         F_stat = -1
+      endif
    endif
    !---------------------------------------------------------------------
    return
