@@ -17,8 +17,10 @@ PHY         = rpnphy
 VGRID         = descrip
 
 MODULOPT      = modulopt_stubs
-#PROF          = prof_003
-PROF          = prof_stubs
+PROF          = prof_003
+#PROFLIBPATH   = $(ARMNLIB)/lib/$(BASE_ARCH)
+PROFLIBPATH   =
+#PROF          = prof_stubs
 
 CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
 CHM         = chm_stubs
@@ -30,7 +32,8 @@ CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 
 OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 #LIBPATH  = $(PWD) $(MODLIBPATH)/lib/$(EC_ARCH) $(PHYLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
-LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
+LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
+
 LIBS     = gemdyn $(V4D) $(PHY) $(PATCH) $(CPL) modelutils $(OTHERS)
 
 mainntr = maingemntr_$(BASE_ARCH).Abs
@@ -42,4 +45,5 @@ out_vref_mod.o: out_vref_mod.cdk90      cstv.cdk     dimout.cdk   glb_ld.cdk \
                 grd.cdk                 grid.cdk     level.cdk    lun.cdk    \
                                          out.cdk     type.cdk     ver.cdk
 
-nest_blending.o: nest_blending.cdk90   glb_ld.cdk var_gmm.cdk nest.cdk
+nest_blending.o: nest_blending.cdk90   glb_ld.cdk nest.cdk
+nest_blending_ad.o: nest_blending_ad.cdk90   glb_ld.cdk nest.cdk
