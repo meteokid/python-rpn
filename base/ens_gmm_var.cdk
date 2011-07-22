@@ -31,11 +31,17 @@
       complex, pointer, dimension (:,:)       :: znm     => null()
 ! special shape for random number generator
       integer, pointer, dimension (:,:)       :: dumdum  => null()
-      character(len=8) :: gmmk_mcsph1_s
-      character(len=8) :: gmmk_difut1_s,gmmk_difvt1_s
-      character(len=8) :: gmmk_ugwdt1_s,gmmk_vgwdt1_s
-      character(len=8) :: gmmk_anm_s,gmmk_znm_s
-      character(len=8) :: gmmk_dumdum_s
+
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_mcsph1_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_difut1_s,gmmk_difvt1_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ugwdt1_s,gmmk_vgwdt1_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_anm_s,gmmk_znm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_dumdum_s
       common /ens_n_gmm/ gmmk_mcsph1_s
       common /ens_n_gmm/ gmmk_difut1_s,gmmk_difvt1_s
       common /ens_n_gmm/ gmmk_ugwdt1_s,gmmk_vgwdt1_s

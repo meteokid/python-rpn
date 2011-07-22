@@ -51,9 +51,14 @@
       common /rhsc_m_gmm/ rhsu_m,rhsv_m,rhst_m,rhsc_m,rhsw_m,rhsf_m,rhsp_m,rhsb_m
       common /rhsc_m_gmm/ ruw1_m,rvw1_m,ruw2_m,rvw2_m
 !
-      character(len=8) :: gmmk_rhsu_m_s,gmmk_rhsv_m_s,gmmk_rhst_m_s,gmmk_rhsc_m_s
-      character(len=8) :: gmmk_rhsw_m_s,gmmk_rhsf_m_s,gmmk_rhsp_m_s,gmmk_rhsb_m_s
-      character(len=8) :: gmmk_ruw1_m_s,gmmk_rvw1_m_s,gmmk_ruw2_m_s,gmmk_rvw2_m_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsu_m_s,gmmk_rhsv_m_s,gmmk_rhst_m_s,gmmk_rhsc_m_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsw_m_s,gmmk_rhsf_m_s,gmmk_rhsp_m_s,gmmk_rhsb_m_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ruw1_m_s,gmmk_rvw1_m_s,gmmk_ruw2_m_s,gmmk_rvw2_m_s
 !
       common /rhsc_m_n_gmm/ gmmk_rhsu_m_s,gmmk_rhsv_m_s,gmmk_rhst_m_s,gmmk_rhsc_m_s
       common /rhsc_m_n_gmm/ gmmk_rhsw_m_s,gmmk_rhsf_m_s,gmmk_rhsp_m_s,gmmk_rhsb_m_s

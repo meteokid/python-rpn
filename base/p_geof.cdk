@@ -27,5 +27,10 @@
       real, pointer, dimension (:,:) :: fis1 => null() ! effective dimensions are (LDIST_SHAPE)
       real, pointer, dimension (:,:) :: dfis => null() ! effective dimensions are (LDIST_SHAPE)
  
-      character(len=8) :: gmmk_fis0_s, gmmk_fis1_s, gmmk_dfis_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_fis1_s, gmmk_dfis_s
       common /geof_n_gmm/ gmmk_fis0_s, gmmk_fis1_s, gmmk_dfis_s

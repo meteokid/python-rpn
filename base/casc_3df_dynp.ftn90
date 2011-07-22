@@ -47,7 +47,6 @@
 ! v4_06 - Lee V.         - Predat is called outside of this routine
 !*
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "bcsgrds.cdk"
 #include "dcst.cdk"
@@ -83,10 +82,11 @@
 !
       integer,external :: sid3df2
 
+      type(gmm_metadata) :: mymeta
       character*2  md
       character*4  nomvar
       character*8  dynophy,vn,hint
-      character*8, dimension (:), pointer :: trname_a
+      character(len=GMM_MAXNAMELENGTH), dimension (:), pointer :: trname_a
       character*4, dimension (:), pointer :: phynm
       character*15 datev
       character*256 fn
@@ -94,9 +94,9 @@
       logical dyn_init,phy_init,initial_data
       integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_m,nka_t,ntra,ntra_tmp, &
               ni1,nj1,nk1,n,err,presstype,nbits, &
-              errop,ofi,ofj,l_in,l_jn,nvar, vmmnvar, &
+              errop,ofi,ofj,l_in,l_jn,nvar, &
               cnt,nkphy,errdyn,errphy,cumerr,pid,gid,nfphy, &
-              wowp,nij,ijk
+              wowp,nij,ijk,istat
 
       integer i0,in,j0,jn,ni2,nj2
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
@@ -368,9 +368,9 @@
       do n=1,Tr3d_ntr
          nullify (trp)
          if (initial_data) then
-            gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,meta3d)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,mymeta)
          else
-            gmmstat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,meta3d)
+            istat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,mymeta)
          endif
          trp(1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2,n)
       end do

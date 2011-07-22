@@ -61,7 +61,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "geomg.cdk"
@@ -69,10 +68,10 @@
 #include "vtx.cdk"
 #include "ver.cdk"
 !
-      integer  get_px
-      external get_px
+      integer, external :: get_px
 !*
-      integer :: k,len_x,len_y,err
+      type(gmm_metadata) :: meta2d
+      integer :: k,len_x,len_y,err,gmmstat
       real, allocatable, dimension(:,:,:) :: psrc_3d,lnpsrc_3d,lnpdst_3d,temp_nest_t
       real, allocatable, dimension(:,:) :: ps,temp_ps
 !

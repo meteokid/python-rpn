@@ -51,24 +51,25 @@
 !
 !modules
 !*
+      integer :: istat
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
 !
-      gmmk_fis0_s  = 'FIS0'
+      gmmk_fis0_s = 'FIS0'
       gmmk_fis1_s = 'FIS1'
       gmmk_dfis_s = 'DFIS'
 !
       nullify(fis0, fis1,dfis)
-      gmmstat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_geof ERROR at gmm_create(fis0)'
+      istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(fis0)'
 
       if ( Vtopo_start .ge. 0 ) then
-         gmmstat = gmm_create(gmmk_fis1_s,fis1,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         if (GMM_IS_ERROR(gmmstat)) print *,'set_geof ERROR at gmm_create(fis1)'
-         gmmstat = gmm_create(gmmk_dfis_s,dfis,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         if (GMM_IS_ERROR(gmmstat)) print *,'set_geof ERROR at gmm_create(dfis)'
+         istat = gmm_create(gmmk_fis1_s,fis1,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(fis1)'
+         istat = gmm_create(gmmk_dfis_s,dfis,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(dfis)'
       endif
 !
  1000 format( &

@@ -32,18 +32,19 @@
 !	
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 !
       real, pointer, dimension(:,:,:) :: hu
+      type(gmm_metadata) :: mymeta
+      integer :: istat
 !
 !     ---------------------------------------------------------------
 !
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      gmmstat = gmm_get('TR/HU:P' ,hu ,meta3d)
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      istat = gmm_get('TR/HU:P' ,hu ,mymeta)
 !
       ut1(1:l_niu,1:l_nj ,l_nk+1) = ut1(1:l_niu,1:l_nj ,l_nk  )
       vt1(1:l_ni ,1:l_njv,l_nk+1) = vt1(1:l_ni ,1:l_njv,l_nk  )

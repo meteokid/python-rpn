@@ -37,7 +37,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vt0.cdk"
@@ -45,24 +44,25 @@
 #include "orh.cdk"
 #include "rhsc.cdk"
 !
-      integer i,k
+      type(gmm_metadata) :: mymeta
+      integer i,k,istat
 !*
 !     __________________________________________________________________
 !
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(ut0)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init ERROR at gmm_get(vt0)'
-      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsv)'
-      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'pre ERROR at gmm_get(rvw2)'
-      gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'pre  ERROR at gmm_get(rhsv)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(ut0)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(vt0)'
+      istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      istat = gmm_get(gmmk_rvw2_s,rvw2,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rvw2)'
+      istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pre  ERROR at gmm_get(rhsv)'
 
       do k=1,G_nk
          if(l_south) then

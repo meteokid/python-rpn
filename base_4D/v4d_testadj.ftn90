@@ -49,7 +49,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "v4dc.cdk"
@@ -59,6 +58,8 @@
 #include "vt1.cdk"
       include "v4dg.inc"
 !
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       real*8 ps01_8,ps02_8
 !
       real pj
@@ -215,7 +216,7 @@
             write(unit=Lun_out, fmt='(  ''--------------------------'')')
          endif
 !
-      call v4d_zero
+         call v4d_zero
 !
 !        Define TLM control var. with controlled size perturbations
 !        ----------------------------------------------------------

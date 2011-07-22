@@ -27,7 +27,6 @@
 ! v4_20 _ Spacek, L.       - Initial revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "pw.cdk"
 #include "glb_ld.cdk"
 !
@@ -41,6 +40,7 @@
 !
       character(len=8) , dimension(2), parameter :: tr_tlist  = (/ 'TTRAJP' , 'TTRAJM'  /)
       character(len=8) , dimension(2), parameter :: tr_hulist = (/ 'HUTRAJP', 'HUTRAJM' /)
+      integer :: gmmstat
 !     ________________________________________________________________
 !
 !     Only ttraj and hutraj are needed in the 3D interface

@@ -48,14 +48,14 @@
 !     none
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 #include "vt1.cdk"
 #include "vspng.cdk"
 
+      type(gmm_metadata) :: mymeta
       logical no_hzd,no_vspng
-      integer i
+      integer i,istat
       real, pointer, dimension(:,:,:) :: tr
 !
 !     _________________________________________________________________
@@ -65,16 +65,16 @@
 
       if (no_hzd .and. no_vspng) return
 
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(zdt1)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'hzd_main ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(zdt1)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(wt1)'
 
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1)
 
@@ -95,8 +95,8 @@
 
          do i=1, Hzd_tr3d_ntr
             nullify (tr)
-            gmmstat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr,meta3d)
-            if (gmmstat.eq.0) call hzd_ctrl ( tr, 'S_TR', G_nk+1 )
+            istat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr,mymeta)
+            if (istat.eq.0) call hzd_ctrl ( tr, 'S_TR', G_nk+1 )
          end do
 
          call tmg_stop0(10)

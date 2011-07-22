@@ -27,7 +27,6 @@ subroutine pw_update_GPW_ad
   ! v4_20 - Spacek, L.       - Initial revision
   !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
@@ -39,13 +38,14 @@ subroutine pw_update_GPW_ad
 #include "pw.cdk"
 #include "pw_m.cdk"
   !
-  integer i, j
+  integer :: i, j,gmmstat
+  type(gmm_metadata) :: mymeta
   !     ________________________________________________________________
   !
-  gmmstat = gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d)
+  gmmstat = gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,mymeta)
   !
-  gmmstat = gmm_get(gmmk_st1_s,   st1  , meta2d)
-  gmmstat = gmm_get(gmmk_strajp_s,strajp,meta2d)
+  gmmstat = gmm_get(gmmk_st1_s,   st1  , mymeta)
+  gmmstat = gmm_get(gmmk_strajp_s,strajp,mymeta)
   !
       call v4d_rwtraj(21)
 !

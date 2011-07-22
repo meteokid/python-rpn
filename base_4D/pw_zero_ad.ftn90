@@ -27,8 +27,9 @@
 ! v4_20 - Spacek L.     - First revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "pw.cdk"
+      integer :: gmmstat
+      type(gmm_metadata) :: meta3d
 !
       gmmstat = gmm_get(gmmk_pw_uu_plus_s   ,pw_uu_plus   ,meta3d)
       gmmstat = gmm_get(gmmk_pw_vv_plus_s   ,pw_vv_plus   ,meta3d)

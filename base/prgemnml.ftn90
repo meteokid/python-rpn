@@ -81,6 +81,7 @@
       subroutine nml_theo()
       implicit none
 #undef TYPE_CDK
+#undef GMM_IS_OK
 #include "theonml.cdk"
       write (6  ,nml=theo_cfgs)
       write (6  ,nml=mtn_cfgs)

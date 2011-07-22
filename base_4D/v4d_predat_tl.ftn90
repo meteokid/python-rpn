@@ -57,7 +57,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
@@ -67,6 +66,8 @@
 #include "hzd.cdk"
       include "v4dg.inc"
 !
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer i,j,k
 !     __________________________________________________________________
 !

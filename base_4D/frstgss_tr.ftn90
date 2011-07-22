@@ -41,7 +41,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -49,8 +48,9 @@
 #include "vt0_m.cdk"
 #include "vt1_m.cdk"
 !
+      type(gmm_metadata) :: mymeta
       character*16 tr_name
-      integer i, j, k, kk
+      integer i, j, k, kk,istat
       real, pointer, dimension(:,:,:) :: tr0_m,tr1_m
 !*
 !     ---------------------------------------------------------------
@@ -60,31 +60,31 @@
 
 ! For humidity
       tr_name = 'TRM/HU:M'
-      gmmstat = gmm_get(tr_name,tr0_m,meta3d)
+      istat = gmm_get(tr_name,tr0_m,mymeta)
       tr_name = 'TRM/HU:P'
-      gmmstat = gmm_get(tr_name,tr1_m,meta3d)
+      istat = gmm_get(tr_name,tr1_m,mymeta)
       do j= 1 , l_nj
       do i= 1 , l_ni
          tr0_m (i,j,l_nk+2) = tr1_m (i,j,l_nk+2)
       enddo
       enddo
 
-      gmmstat = gmm_get(gmmk_tt0_m_s,tt0_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(tt0_m)'
-      gmmstat = gmm_get(gmmk_st0_m_s,st0_m,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(st0_m)'
-      gmmstat = gmm_get(gmmk_zdt0_m_s,zdt0_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(zdt0_m)'
-      gmmstat = gmm_get(gmmk_tt1_m_s,tt1_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(tt1_m)'
-      gmmstat = gmm_get(gmmk_st1_m_s,st1_m,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(st1_m)'
-      gmmstat = gmm_get(gmmk_zdt1_m_s,zdt1_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(zdt1_m)'
-      gmmstat = gmm_get(gmmk_wt0_m_s,wt0_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(wt0_m)'
-      gmmstat = gmm_get(gmmk_wt1_m_s,wt1_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(wt1_m)'
+      istat = gmm_get(gmmk_tt0_m_s,tt0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(tt0_m)'
+      istat = gmm_get(gmmk_st0_m_s,st0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(st0_m)'
+      istat = gmm_get(gmmk_zdt0_m_s,zdt0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(zdt0_m)'
+      istat = gmm_get(gmmk_tt1_m_s,tt1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(tt1_m)'
+      istat = gmm_get(gmmk_st1_m_s,st1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(st1_m)'
+      istat = gmm_get(gmmk_zdt1_m_s,zdt1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(zdt1_m)'
+      istat = gmm_get(gmmk_wt0_m_s,wt0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(wt0_m)'
+      istat = gmm_get(gmmk_wt1_m_s,wt1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(wt1_m)'
 
 !$omp parallel
 !
@@ -112,14 +112,14 @@
 !$omp end parallel
 !
       if ( Cori_cornl_L ) then
-         gmmstat = gmm_get(gmmk_ut0_m_s,ut0_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(ut0_m)'
-         gmmstat = gmm_get(gmmk_ut1_m_s,ut1_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(ut1_m)'
-         gmmstat = gmm_get(gmmk_vt0_m_s,vt0_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(vt0_m)'
-         gmmstat = gmm_get(gmmk_vt1_m_s,vt1_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(vt1_m)'
+         istat = gmm_get(gmmk_ut0_m_s,ut0_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(ut0_m)'
+         istat = gmm_get(gmmk_ut1_m_s,ut1_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(ut1_m)'
+         istat = gmm_get(gmmk_vt0_m_s,vt0_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(vt0_m)'
+         istat = gmm_get(gmmk_vt1_m_s,vt1_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(vt1_m)'
 !$omp parallel do
          do k=1,l_nk+1
          do j= 1 , l_nj
@@ -133,10 +133,10 @@
       endif
 !
       if ( .not. Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_qt0_m_s,qt0_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(qt0_m)'
-         gmmstat = gmm_get(gmmk_qt1_m_s,qt1_m,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'frstgss_tr ERROR at gmm_get(qt1_m)'
+         istat = gmm_get(gmmk_qt0_m_s,qt0_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(qt0_m)'
+         istat = gmm_get(gmmk_qt1_m_s,qt1_m,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'frstgss_tr ERROR at gmm_get(qt1_m)'
 !$omp parallel do
          do k=0,l_nk+1
          do j= 1 , l_nj

@@ -54,7 +54,6 @@
 !
 !IMPLICIT
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "dcst.cdk"
@@ -79,13 +78,14 @@
 #include "schm.cdk"
 !
 !*
+      type(gmm_metadata) :: mymeta
       character*4 ext_S
       character*6 etikadd_S
       character*15 datev,pdate
       character*1024 filen
       integer i,j,k,mult,mosaic,cnt,nko,nko_t,levset,ii,jj,kk,ip3,ig1,gridset
       integer, dimension (:), allocatable :: indo,indo_t,irff
-      integer key,err,bcs_ext,unf,cobussiz,offbo,kind
+      integer key,err,bcs_ext,unf,cobussiz,offbo,kind,istat
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L
       real wlnpi_m(l_ni,l_nj,0:G_nk+1), wlnpi_t(l_ni,l_nj,G_nk+2)
@@ -94,8 +94,8 @@
       real, dimension(:), allocatable::prprlvl,rff 
       real, dimension(:,:), allocatable :: cobusval
       real, dimension(:,:,:), allocatable :: buso_pres
-      real*8 dayfrac, sec_in_day
-      parameter (sec_in_day=86400.0d0)
+      real*8 dayfrac
+      real*8, parameter :: sec_in_day = 86400.0d0
 !----------------------------------------------------------------------
 !
       if (Obus_top.le.0) then
@@ -122,8 +122,8 @@
              ext_S = '_dgf'
 
 !     get st1 for reference field output
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_phy ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_phy ERROR at gmm_get(st1)'
       p0(1:l_ni,1:l_nj) = exp(st1(1:l_ni,1:l_nj))*Cstv_pref_8
 !        Log-pressure on momentum and thermo levels,
 !        with extra momentum levels at top (k=0) and surface (k=G_nk+1)

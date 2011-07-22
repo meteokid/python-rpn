@@ -43,7 +43,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "lctl.cdk"
@@ -56,6 +55,8 @@
       include "v4dg.inc"
 !
 !     --------------------------------------------------
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer istep, iadd 
 !
       logical plpr_L,time0_L,time_L

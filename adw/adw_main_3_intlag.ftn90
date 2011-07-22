@@ -63,7 +63,6 @@
 !
 !implicits
 #include "gmm.hf"
-!#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 !      logical G_lam
 !      logical l_north, l_south, l_east, l_west
@@ -232,7 +231,7 @@
       deallocate (pos_x,pos_y,pos_z)
       !---------------------------------------------------------------------
       return
-      end
+      end subroutine adw_main_3_intlag
 
 
 !/**
@@ -245,6 +244,7 @@
       character(len=*) :: F_type_S
       integer :: i0, in, j0, jn, F_nijk, F_nk
       real, dimension(F_nijk) :: pos_x, pos_y, pos_z
+#undef GMM_IS_OK
 #include "glb_ld.cdk"
 !      logical G_lam
 #include "orh.cdk"
@@ -345,7 +345,7 @@
       endif
       !---------------------------------------------------------------------
       return
-      end
+      end subroutine adw_main_3_prep
 
 
 !/**
@@ -374,4 +374,4 @@
       endif
       !---------------------------------------------------------------------
       return
-      end
+      end subroutine adw_main_3_post

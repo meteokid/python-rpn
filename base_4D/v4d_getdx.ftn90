@@ -64,7 +64,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "vt1.cdk"
@@ -77,6 +76,8 @@
 !
 !     Local variables
 !     ---------------
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer idim(2),istat,ihdlin,icount,nvar,jlon,jlat,jlev,i,j,k, &
               ierr,nigauss,njgauss,nkgauss,status,ininj,nsim3d,nstag,inn
 !

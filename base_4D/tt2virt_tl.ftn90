@@ -30,7 +30,6 @@
 ! v4_12 - Spacek, L.     - First revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
@@ -38,7 +37,8 @@
 #include "vt1.cdk"
 #include "pw.cdk"
 !
-      integer i, j, k, n
+      type(gmm_metadata) :: meta3d
+      integer i, j, k, n,gmmstat
       real, pointer, dimension(:,:,:)     :: hu, tt, tvirt
       real, pointer, dimension(:,:,:)     :: hutrajm, ttrajm
 !     ________________________________________________________________

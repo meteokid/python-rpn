@@ -71,7 +71,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "bmf.cdk"
@@ -94,12 +93,12 @@
 #include "bcsgrds.cdk"
 !
 !modules
-      integer  bmf_get,get_px
-      logical  samelevel
-      external bmf_get,samelevel,get_px
+      integer,external :: bmf_get,get_px
+      logical,external :: samelevel
 !
-      character*16 tr_name
-      integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,errprdf,prdfsum
+      type(gmm_metadata) :: mymeta
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,errprdf,prdfsum,istat
       real, allocatable, dimension(:    ) :: rna
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
@@ -293,8 +292,8 @@
                                         -1.,1,l_ni,1,l_nj,1,nkmax)
             nullify(tr)
             tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
-      	    gmmstat = gmm_get(tr_name,tr,meta3d)
-            if (GMM_IS_ERROR(gmmstat)) print *,'readdyn2 ERROR at gmm_get',tr_name
+      	    istat = gmm_get(tr_name,tr,mymeta)
+            if (GMM_IS_ERROR(istat)) print *,'readdyn2 ERROR at gmm_get',tr_name
             if ( err.eq.0 ) then
                if (Acql_vertint) then
                   call vte_intvertx(work,hu_temp,srclev,dstlev,nbpts, &

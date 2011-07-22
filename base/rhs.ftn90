@@ -43,7 +43,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "ptopo.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
@@ -59,63 +58,64 @@
 !
 !modules
 !
-      integer  i,j,k
+      type(gmm_metadata) :: mymeta
+      integer  i,j,k,istat
 !*
 !     __________________________________________________________________
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      gmmstat = gmm_get(gmmk_ruw1_s,ruw1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(ruw1)'
-      gmmstat = gmm_get(gmmk_rvw1_s,rvw1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rvw1)'
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_bspqtx_s,bspqtx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(bspqtx)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(st1)'
-      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(zdt1)'
-      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(fiptx)'
-      gmmstat = gmm_get(gmmk_orhsu_s,orhsu,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsu)'
-      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsv)'
-      gmmstat = gmm_get(gmmk_orhsc_s,orhsc,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsc)'
-      gmmstat = gmm_get(gmmk_orhst_s,orhst,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhst)'
-      gmmstat = gmm_get(gmmk_orhsf_s,orhsf,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsf)'
+      istat = gmm_get(gmmk_ruw1_s,ruw1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(ruw1)'
+      istat = gmm_get(gmmk_rvw1_s,rvw1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rvw1)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_bspqtx_s,bspqtx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(bspqtx)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(zdt1)'
+      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(fiptx)'
+      istat = gmm_get(gmmk_orhsu_s,orhsu,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsu)'
+      istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      istat = gmm_get(gmmk_orhsc_s,orhsc,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsc)'
+      istat = gmm_get(gmmk_orhst_s,orhst,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhst)'
+      istat = gmm_get(gmmk_orhsf_s,orhsf,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsf)'
       if (G_lam) then
-         gmmstat = gmm_get(gmmk_rhsu_s,rhsu,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rhsu)'
-         gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(rhsv)'
-         gmmstat = gmm_get(gmmk_nest_u_s,nest_u,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(nest_u)'
-         gmmstat = gmm_get(gmmk_nest_v_s,nest_v,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(nest_v)'
+         istat = gmm_get(gmmk_rhsu_s,rhsu,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rhsu)'
+         istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rhsv)'
+         istat = gmm_get(gmmk_nest_u_s,nest_u,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(nest_u)'
+         istat = gmm_get(gmmk_nest_v_s,nest_v,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(nest_v)'
       endif
       if (.not. Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_mutx_s,mutx,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(mutx)'
-         gmmstat = gmm_get(gmmk_orhsw_s,orhsw,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(orhsw)'
-         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(qt1)'
+         istat = gmm_get(gmmk_mutx_s,mutx,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(mutx)'
+         istat = gmm_get(gmmk_orhsw_s,orhsw,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsw)'
+         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(qt1)'
       endif
 
-      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'rhs ERROR at gmm_get(fis0)'
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(fis0)'
 !
 !     Perform the computation in the first 
 !     cycle of Crank-Nicholson procedure only

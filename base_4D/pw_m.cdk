@@ -17,14 +17,19 @@
       real, pointer, dimension (:,:)   :: bmm       => null() 
       real, pointer, dimension (:,:)   :: btm       => null() 
 
-      character(len=16) :: gmmk_utrajp_s ,gmmk_vtrajp_s
-      character(len=16) :: gmmk_ttrajp_s ,gmmk_hutrajp_s
-      character(len=16) :: gmmk_ptrajp_s ,gmmk_strajp_s
-      character(len=16) :: gmmk_utrajm_s ,gmmk_vtrajm_s
-      character(len=16) :: gmmk_ttrajm_s ,gmmk_hutrajm_s
-      character(len=16) :: gmmk_ptrajm_s ,gmmk_strajm_s
-      character(len=16) :: gmmk_kmm_s    ,gmmk_ktm_s
-      character(len=16) :: gmmk_bmm_s    ,gmmk_btm_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_utrajp_s ,gmmk_vtrajp_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ttrajp_s ,gmmk_hutrajp_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ptrajp_s ,gmmk_strajp_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_utrajm_s ,gmmk_vtrajm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ttrajm_s ,gmmk_hutrajm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ptrajm_s ,gmmk_strajm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_kmm_s    ,gmmk_ktm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_bmm_s    ,gmmk_btm_s
 
       common /physical_m_n_gmm/ gmmk_utrajp_s ,gmmk_vtrajp_s
       common /physical_m_n_gmm/ gmmk_ttrajp_s ,gmmk_hutrajp_s

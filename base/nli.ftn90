@@ -42,7 +42,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -60,44 +59,46 @@
 !modules
 !    
 !*
+      type(gmm_metadata) :: mymeta
+      integer :: istat
 !     __________________________________________________________________
 !
 !
       if (Lun_debug_L)  write(Lun_out,1000)
 !
-      gmmstat = gmm_get(gmmk_rhsp_s,rhsp,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(rhsp)'
-      gmmstat = gmm_get(gmmk_rhsc_s,rhsc,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(rhsc)'
-      gmmstat = gmm_get(gmmk_tt0_s,tt0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(tt0)'
-      gmmstat = gmm_get(gmmk_st0_s,st0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(st0)'
-      gmmstat = gmm_get(gmmk_bspqtx_s,bspqtx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(bspqtx)'
-      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(fiptx)'
-      gmmstat = gmm_get(gmmk_zdt0_s,zdt0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(zdt0)'      
+      istat = gmm_get(gmmk_rhsp_s,rhsp,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(rhsp)'
+      istat = gmm_get(gmmk_rhsc_s,rhsc,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(rhsc)'
+      istat = gmm_get(gmmk_tt0_s,tt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(tt0)'
+      istat = gmm_get(gmmk_st0_s,st0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(st0)'
+      istat = gmm_get(gmmk_bspqtx_s,bspqtx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(bspqtx)'
+      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fiptx)'
+      istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(zdt0)'      
       if (.not. Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_mutx_s,mutx,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(mutx)'
+         istat = gmm_get(gmmk_mutx_s,mutx,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(mutx)'
       endif
 
 !     - - - - - - - - - - - - - - -
-      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(fis0)'
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fis0)'
       if (.not. Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(qt0)'
+         istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(qt0)'
       else
          nullify(qt0)
       endif
       if (Cori_cornl_L) then
-         gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(ut0)'
-         gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(vt0)'
+         istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(ut0)'
+         istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(vt0)'
       else
          nullify(ut0,vt0)
       endif

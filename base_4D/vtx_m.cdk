@@ -29,5 +29,10 @@
       real, pointer, dimension (:,:,:) :: fiptx_m             ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
       common /vtx_m_gmm/ bspqtx_m, mutx_m, fiptx_m
 
-      character(len=8) ::  gmmk_bspqtx_m_s, gmmk_mutx_m_s, gmmk_fiptx_m_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) ::  gmmk_bspqtx_m_s, gmmk_mutx_m_s, gmmk_fiptx_m_s
       common /vtx_m_n_gmm/ gmmk_bspqtx_m_s, gmmk_mutx_m_s, gmmk_fiptx_m_s

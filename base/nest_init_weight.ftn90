@@ -39,7 +39,8 @@ subroutine nest_init_weight(F_grid)
 #include "ptopo.cdk"
 
   ! Local variables
-  integer w1,w2,e1,e2,s1,s2,n1,n2,t1,t2
+  type(gmm_metadata) :: mymeta
+  integer w1,w2,e1,e2,s1,s2,n1,n2,t1,t2,istat
   integer l_wdeb,l_wfin,l_edeb,l_efin
   integer l_sdeb,l_sfin,l_ndeb,l_nfin,l_tdeb,l_tfin
   integer i, j, k ,ig, jg, nit, njt, shifti, shiftj
@@ -74,10 +75,10 @@ subroutine nest_init_weight(F_grid)
      weight => nest_weightm
   end select
 
-  gmmstat = gmm_create(gmm_name,weight,meta3d_nk2)
-  if (GMM_IS_ERROR(gmmstat)) print *,'nest_init_weight ERROR at gmm_create(weight)'
-  gmmstat = gmm_get(gmm_name,weight,meta3d_nk2)
-  if (GMM_IS_ERROR(gmmstat)) print *,'nest_init_weight ERROR at gmm_get(weight)'
+  istat = gmm_create(gmm_name,weight,meta3d_nk2)
+  if (GMM_IS_ERROR(istat)) print *,'nest_init_weight ERROR at gmm_create(weight)'
+  istat = gmm_get(gmm_name,weight,mymeta)
+  if (GMM_IS_ERROR(istat)) print *,'nest_init_weight ERROR at gmm_get(weight)'
 
   pis2 = acos(zero)
 

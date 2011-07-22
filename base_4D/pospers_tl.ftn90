@@ -36,7 +36,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vth.cdk"
@@ -44,7 +43,8 @@
 #include "ver.cdk"
 !
 !     --------------------------------
-      integer i, j, k, ijk, nij
+      type(gmm_metadata) :: meta3d
+      integer i, j, k, ijk, nij,gmmstat
       real pr1
 !     --------------------------------
 !

@@ -27,7 +27,6 @@
 ! v4_20 _ Spacek, L.       - Initial revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "pw.cdk"
 #include "pw_m.cdk"
 #include "glb_ld.cdk"
@@ -43,6 +42,8 @@
 !
       character(len=8) , dimension(2), parameter :: tr_tlist  = (/ 'TTRAJM' , 'TTRAJP'  /)
       character(len=8) , dimension(2), parameter :: tr_hulist = (/ 'HUTRAJM', 'HUTRAJP' /)
+      integer :: gmmstat
+      type(gmm_metadata) :: meta3d
 !     ________________________________________________________________
 !
       if(istep==0)then

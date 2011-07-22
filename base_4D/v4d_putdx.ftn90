@@ -62,7 +62,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "vt1.cdk"
@@ -75,6 +74,8 @@
 !
 !     Local variables
 !     ---------------
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer istat,ihdlout,icount,jlev,jlat,jlon,ierr, &
               pnerr,pnlkey1(8),nigauss,njgauss,inn
 !
@@ -85,8 +86,7 @@
 !
       character*256 pathdwga_S,pathdwgf_S
 !
-      integer  prof_wrrec
-      external prof_wrrec
+      integer, external :: prof_wrrec
 !
       character*16 tr_name
       real, pointer, dimension(:,:,:) :: hut1,hut1_m

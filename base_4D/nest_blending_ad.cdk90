@@ -19,6 +19,8 @@ module nest_blending_ad
      module procedure blend_array2d_ad
   end interface
 
+#include "gmm.hf"
+
 contains
 
   subroutine blend_gmm_ad ( F_fld_S, F_nest_fld_S, F_grid_S )
@@ -27,7 +29,6 @@ contains
     ! ADJ of
     ! Apply blending to a GMM field.
 
-#include "gmm.hf"
 #include "glb_ld.cdk"
 
     ! Arguments
@@ -125,7 +126,6 @@ contains
     ! Apply blending mask to a 2D array.
 
 #include "gmm.hf"
-#include "var_gmm.cdk"
 
     character(len=*),intent(in) :: F_grid_S                            !Arakawa C grid ('U':u-grid,'V':v-grid,'M':mass-grid)
     real, dimension(Minx:Maxx,Miny:Maxy), intent(inout) :: F_fld       !model field
@@ -135,10 +135,11 @@ contains
     integer, intent(in), optional :: level                             !level index to use for weights [use all levels]
 
     ! Local variables
-    integer :: i,j,nii,njj
+    integer :: i,j,nii,njj,gmmstat
     real, dimension(:,:), pointer :: alpha=>null()
     real, dimension(:,:,:), pointer :: my_weight=>null()
     character(len=GMM_MAXNAMELENGTH) :: name
+    type(gmm_metadata) :: meta3d
 
     ! Get information about weights for the requested grid
     call PRIV_get_weight_info(F_grid_S,name,nii,njj)
@@ -147,7 +148,7 @@ contains
     if (present(weight)) then
        my_weight => weight
     else
-       gmmstat = gmm_get(name,my_weight,meta3d_nk2)
+       gmmstat = gmm_get(name,my_weight,meta3d)
     endif
     if (present(level)) then
        alpha => my_weight(1:nii,1:njj,level)

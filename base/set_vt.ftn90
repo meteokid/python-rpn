@@ -13,20 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_vt -	initialization of the commons for time-dependent
-!		variable. Virtual Memory manager initialization
-!
-#define SPY_VMM_CREATE spy_vmm_create
-#include "model_macros_f.h"
+#include <model_macros_f.h>
 
-      subroutine set_vt
-!
+!/**
+      subroutine set_vt()
       implicit none
-!
-!author
-!    sylvie gravel - rpn - august 1993
-!
-!revision
+!@objective Initialization of the commons for time-dependent variable. 
+!           Virtual Memory manager initialization
+!@author sylvie gravel - rpn - august 1993
+!@ revision
 ! v2_00 - Desgagne/Lee   - initial MPI version (from set_vt v1_03)
 ! v2_21 - J. P. Toviessi - rename some model output variables
 ! v2_30 - Edouard S.     - remove pi' at the top
@@ -35,32 +30,8 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! V4_10 - Plante A.         - Thermo upstream positions
-!
-!object
-!	See above id.
-!	
-!arguments
-!	none
-!
-!implicits
-#include "gmm.hf"
-#include "var_gmm.cdk"
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
-#include "vt0.cdk"
-#include "vth.cdk"
-#include "vt1.cdk"
-#include "vtx.cdk"
-#include "tr3d.cdk"
-#include "pw.cdk"
-!
-!modules
-!
-      integer i
-      real, pointer, dimension (:,:,:) :: tr
-!
-!Notes:
+!@description
+!  Notes:
 !	The level at time t0 is not created explicitly in the
 !	VMM manager tables.
 !	It exists in the timestep by renaming the variables
@@ -79,19 +50,56 @@
 !       vth (VMM variables at time th [t0-dt/2])
 !       vtx (VMM variables at no specific time: we do not carry from
 !            t0 to t1 and from t1 to t2.)
-!
-!*
-!
+!**/
+#include <msg.h>
+#include <gmm.hf>
+#include "var_gmm.cdk"
+#include "gmm_gem_flags.hf"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "vt0.cdk"
+#include "vth.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "tr3d.cdk"
+#include "pw.cdk"
+
+#define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
+
+      type(gmm_metadata) :: mymeta,mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk_t,mymeta3d_nk1_u,mymeta3d_nk1_v,mymeta3d_nk1_t,mymeta3d_nk2_t,mymeta3d_0nk1_m,mymeta2d_s
+      integer :: i,istat
+      integer :: flag_n, flag_r_n,flag_r_z
+      integer*8 :: flag_m_u,flag_m_v,flag_m_f,flag_t_f,flag_s_f
+      real, pointer, dimension(:,:,:) :: tr
 !     ---------------------------------------------------------------
-!
-      if (Lun_out.gt.0) write(Lun_out,1000)
-!
-!
-!C       2.    Initialize comdeck for variables at time t0
-!              -------------------------------------------
-!	Assign the names of the variables
-!
-!
+      call msg(MSG_INFO,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)\n=========================================================')
+
+      !- Note: gmm_create does NOT keep flags other than GMM_FLAG_IZER+GMM_FLAG_INAN+GMM_FLAG_RSTR
+      !  GMM_FLAG_STAG_* need to be added w/ gmm_updatemeta() or in uuid1/2
+      flag_n   = GMM_FLAG_INAN
+      flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_INAN
+      flag_r_z = GMM_FLAG_RSTR+GMM_FLAG_IZER
+
+      flag_t_f = FLAG_LVL_T                  !thermo lvl,   phi-pt
+      flag_m_f = FLAG_LVL_M                  !momentum lvl, phi-pt
+      flag_m_u = FLAG_LVL_M+GMM_FLAG_STAG_X  !momentum lvl, u-pt
+      flag_m_v = FLAG_LVL_M+GMM_FLAG_STAG_Y  !momentum lvl, v-pt
+      flag_s_f = 0                           !2d-surf lvl,  phi-pt
+
+      mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_u)
+      mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_v)
+      mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk,flag_t_f)
+      mymeta3d_nk1_u = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_u)
+      mymeta3d_nk1_v = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_v)
+      mymeta3d_nk1_t = SET_GMMUSR_FLAG(meta3d_nk1,flag_t_f)
+      mymeta3d_nk2_t = SET_GMMUSR_FLAG(meta3d_nk2,flag_t_f)
+      mymeta3d_0nk1_m= SET_GMMUSR_FLAG(meta3d_0nk1,flag_m_f)
+      mymeta2d_s     = SET_GMMUSR_FLAG(meta2d,flag_s_f)
+
+!     2. Initialize comdeck for variables at time t0
+!        -------------------------------------------
+
       gmmk_wt0_s    = 'WT0'
       gmmk_tt0_s    = 'TT0'
       gmmk_zdt0_s   = 'ZDT0'
@@ -100,84 +108,70 @@
       gmmk_ut0_s    = 'UT0'
       gmmk_vt0_s    = 'VT0'
 
-      nullify(ut0,vt0,wt0,tt0,qt0,zdt0,st0)
-      gmmstat = gmm_create(gmmk_ut0_s,ut0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ut0)'
-      gmmstat = gmm_create(gmmk_vt0_s,vt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vt0)'
-      gmmstat = gmm_create(gmmk_wt0_s,wt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt0)'
-      gmmstat = gmm_create(gmmk_tt0_s,tt0,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt0)'
-      gmmstat = gmm_create(gmmk_qt0_s,qt0,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(qt0)'
-      gmmstat = gmm_create(gmmk_zdt0_s,zdt0,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdt0)'
-      gmmstat = gmm_create(gmmk_st0_s,st0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(st0)'
-!
-!
-!C       3.    Create variables at time t0-dt/2 (th)
-!              -------------------------------------
-!	Assign the name of the variables
-!
+      istat = GMM_OK
+      istat = min(gmm_create(gmmk_ut0_s,ut0,mymeta3d_nk1_u,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_vt0_s,vt0,mymeta3d_nk1_v,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_wt0_s,wt0,mymeta3d_nk1_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdt0_s,zdt0,mymeta3d_nk1_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_tt0_s,tt0,mymeta3d_nk2_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_st0_s,st0,mymeta2d_s,flag_r_n),istat)
+
+      !TODO: ? should qt0 be defined only if (.not. Schm_hydro_L) ?
+      istat = min(gmm_create(gmmk_qt0_s,qt0,mymeta3d_0nk1_m,flag_r_n),istat)
+
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')
+
+!     3. Create variables at time t0-dt/2 (th)
+!        -------------------------------------
+
       gmmk_uth_s = 'UTH'
       gmmk_vth_s = 'VTH'
       gmmk_zdth_s= 'ZDTH'
-!
+
       gmmk_xth_s = 'XTH'
       gmmk_yth_s = 'YTH'
       gmmk_zth_s = 'ZTH'
       gmmk_xcth_s= 'XCTH'
       gmmk_ycth_s= 'YCTH'
       gmmk_zcth_s= 'ZCTH'
-!
+
       gmmk_xth_thermo_s = 'XTHT'
       gmmk_yth_thermo_s = 'YTHT'
       gmmk_zth_thermo_s = 'ZTHT'
       gmmk_xcth_thermo_s= 'XCHT'
       gmmk_ycth_thermo_s= 'YCHT'
       gmmk_zcth_thermo_s= 'ZCHT'
-!
-      gmmstat = gmm_create(gmmk_uth_s ,uth ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(uth)'
-      gmmstat = gmm_create(gmmk_vth_s ,vth ,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vth)'
-      gmmstat = gmm_create(gmmk_zdth_s,zdth,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdth)'
-!
-      gmmstat = gmm_create(gmmk_xth_s ,xth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xth)'
-      gmmstat = gmm_create(gmmk_yth_s ,yth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(yth)'
-      gmmstat = gmm_create(gmmk_zth_s ,zth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zth)'
-      gmmstat = gmm_create(gmmk_xcth_s,xcth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xcth)'
-      gmmstat = gmm_create(gmmk_ycth_s,ycth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ycth)'
-      gmmstat = gmm_create(gmmk_zcth_s,zcth,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zcth)'
-!
-      gmmstat = gmm_create(gmmk_xth_thermo_s ,xth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xth_thermo)'
-      gmmstat = gmm_create(gmmk_yth_thermo_s ,yth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(yth_thermo)'
-      gmmstat = gmm_create(gmmk_zth_thermo_s ,zth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zth_thermo)'
-      gmmstat = gmm_create(gmmk_xcth_thermo_s,xcth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xcth_thermo)'
-      gmmstat = gmm_create(gmmk_ycth_thermo_s,ycth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ycth_thermo)'
-      gmmstat = gmm_create(gmmk_zcth_thermo_s,zcth_thermo,meta1dt,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zcth_thermo)'
 
-!
-!C       4.    Create variables at time t0-dt (t1)
-!              -----------------------------------
-!	Assign the names of the variables
-!
-!
+      nullify(uth,vth,zdth,xth,yth,zth,xcth,ycth,zcth,xth_thermo,yth_thermo,zth_thermo,xcth_thermo,ycth_thermo,zcth_thermo)
+      istat = GMM_OK
+      istat = min(gmm_create(gmmk_uth_s,uth, mymeta3d_nk_u,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_vth_s,vth, mymeta3d_nk_v,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdth_s,zdth,mymeta3d_nk1_t,flag_r_n),istat)
+
+      mymeta  = SET_GMMUSR_FLAG(meta1d, flag_m_f)
+      istat = min(gmm_create(gmmk_xth_s ,xth,  mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_yth_s ,yth,  mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zth_s ,zth,  mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_xcth_s,xcth, mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_ycth_s,ycth, mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zcth_s,zcth, mymeta,flag_r_n),istat)
+
+      mymeta  = SET_GMMUSR_FLAG(meta1dt, flag_t_f)
+      istat = min(gmm_create(gmmk_xth_thermo_s, xth_thermo, mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_yth_thermo_s, yth_thermo, mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zth_thermo_s, zth_thermo, mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_xcth_thermo_s,xcth_thermo,mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_ycth_thermo_s,ycth_thermo,mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zcth_thermo_s,zcth_thermo,mymeta,flag_r_n),istat)
+
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
+
+
+!     4. Create variables at time t0-dt (t1)
+!        -----------------------------------
+
       gmmk_wt1_s   = 'WT1'
       gmmk_tt1_s   = 'TT1'
       gmmk_zdt1_s  = 'ZDT1'
@@ -195,49 +189,59 @@
       gmmk_fiptx_s = 'FIPTX'
 
       nullify(ut1,vt1,wt1,tt1)
-      gmmstat = gmm_create(gmmk_ut1_s,ut1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(ut1)'
-      gmmstat = gmm_create(gmmk_vt1_s,vt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(vt1)'
-      gmmstat = gmm_create(gmmk_wt1_s,wt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wt1)'
-      gmmstat = gmm_create(gmmk_tt1_s,tt1,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(tt1)'
+      istat = GMM_OK
+      mymeta  = SET_GMMUSR_FLAG(mymeta3d_nk1_u,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_ut1_s,ut1, mymeta,flag_r_n),istat)
+      mymeta  = SET_GMMUSR_FLAG(mymeta3d_nk1_v,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_vt1_s,vt1, mymeta,flag_r_n),istat)
+      mymeta  = SET_GMMUSR_FLAG(mymeta3d_nk1_t,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_wt1_s,wt1, mymeta,flag_r_n),istat)
+      mymeta  = SET_GMMUSR_FLAG(mymeta3d_nk2_t,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_tt1_s,tt1, mymeta,flag_r_n),istat)
 
       nullify(wup,zdup,qt1,zdt1,st1)
-      gmmstat = gmm_create(gmmk_wup_s,wup,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(wup)'
-      gmmstat = gmm_create(gmmk_zdup_s,zdup,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdup)'
-      gmmstat = gmm_create(gmmk_qt1_s,qt1,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(qt1)'
-      gmmstat = gmm_create(gmmk_zdt1_s,zdt1,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zdt1)'
-      gmmstat = gmm_create(gmmk_st1_s,st1,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(st1)'
-!
-      nullify(xct1,yct1,zct1,bspqtx,mutx,fiptx)
-      gmmstat = gmm_create(gmmk_xct1_s,xct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(xct1)'
-      gmmstat = gmm_create(gmmk_yct1_s,yct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(yct1)'
-      gmmstat = gmm_create(gmmk_zct1_s,zct1,meta1d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(zct1)'
-      gmmstat = gmm_create(gmmk_bspqtx_s,bspqtx,meta3d_0nk1,GMM_NULL_FLAGS)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(bspqtx)'
-      gmmstat = gmm_create(gmmk_mutx_s,mutx,meta3d_nk1,GMM_NULL_FLAGS)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(mutx)'
-      gmmstat = gmm_create(gmmk_fiptx_s,fiptx,meta3d_0nk1,GMM_NULL_FLAGS)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_vt ERROR at gmm_create(fiptx)'
+      istat = min(gmm_create(gmmk_wup_s,wup,mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdup_s,zdup,mymeta3d_nk1_t,flag_r_n),istat)
 
+      !TODO: should qt1 be defined only if (.not. Schm_hydro_L) 
+      mymeta = mymeta3d_0nk1_m
+      if (.not.Schm_hydro_L) &
+           mymeta = SET_GMMUSR_FLAG(mymeta,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_qt1_s,qt1,  mymeta,flag_r_z),istat)
+
+      mymeta = SET_GMMUSR_FLAG(mymeta3d_nk1_t,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_zdt1_s,zdt1,mymeta,flag_r_z),istat)
+
+      mymeta = SET_GMMUSR_FLAG(mymeta2d_s,FLAG_NEST + FLAG_DIGF)
+      istat = min(gmm_create(gmmk_st1_s, st1, mymeta,flag_r_z),istat)
+
+      nullify(xct1,yct1,zct1,bspqtx,mutx,fiptx)
+      mymeta = SET_GMMUSR_FLAG(meta1d,flag_m_f)
+      istat = min(gmm_create(gmmk_xct1_s,  xct1,  mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_yct1_s,  yct1,  mymeta,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zct1_s,  zct1,  mymeta,flag_r_n),istat)
+
+      istat = min(gmm_create(gmmk_bspqtx_s,bspqtx,mymeta3d_0nk1_m,flag_n),istat)
+      istat = min(gmm_create(gmmk_fiptx_s, fiptx, mymeta3d_0nk1_m,flag_n),istat)
+      istat = min(gmm_create(gmmk_mutx_s,mutx,mymeta3d_nk1_t,flag_n),istat)
+
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t1)')
+
+      istat = GMM_OK
       do i=1,Tr3d_ntr
          nullify(tr)
-         gmmstat = gmm_create('TR/'//trim(Tr3d_name_S(i))//':M',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         istat = min(gmm_create('TR/'//trim(Tr3d_name_S(i))//':M',tr,mymeta3d_nk2_t,flag_r_z),istat)
          nullify(tr)
-         gmmstat = gmm_create('TR/'//trim(Tr3d_name_S(i))//':P',tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         mymeta = SET_GMMUSR_FLAG(mymeta3d_nk2_t,FLAG_NEST + FLAG_DIGF)
+         istat = min(gmm_create('TR/'//trim(Tr3d_name_S(i))//':P',tr,mymeta,flag_r_z),istat)
+         !TODO: move this with creation of other digf fields
          nullify(tr)
-         gmmstat = gmm_create('DIGF_'//trim(Tr3d_name_S(i))    ,tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         istat = min(gmm_create('DIGF_'//trim(Tr3d_name_S(i))    ,tr,meta3d_nk2,flag_r_z),istat)
       end do
+
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
 
       gmmk_pw_uu_plus_s  = 'PW_UU:P'
       gmmk_pw_vv_plus_s  = 'PW_VV:P'
@@ -253,28 +257,27 @@
       gmmk_pw_pm_moins_s = 'PW_PM:M'
       gmmk_pw_gz_moins_s = 'PW_GZ:M'
 
-      nullify (pw_uu_plus ,pw_vv_plus ,pw_ww_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
-      nullify (pw_uu_moins,pw_vv_moins,pw_tt_moins,pw_pm_moins,pw_gz_moins)
+      nullify(pw_uu_plus ,pw_vv_plus ,pw_ww_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
+      nullify(pw_uu_moins,pw_vv_moins,pw_tt_moins,pw_pm_moins,pw_gz_moins)
 
-      gmmstat = gmm_create(gmmk_pw_uu_plus_s ,pw_uu_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_vv_plus_s ,pw_vv_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_tt_plus_s ,pw_tt_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      !TODO: specify on what level (m/t) are the following PW_ vars
+      istat = GMM_OK
+      istat = min(gmm_create(gmmk_pw_uu_plus_s ,pw_uu_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_vv_plus_s ,pw_vv_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_tt_plus_s ,pw_tt_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
 
-      gmmstat = gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk2)
+      istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk2),istat)
 !
- 1000 format( &
-      /,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)', &
-      /,'=========================================================')
-!
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
 !     ---------------------------------------------------------------
-!
       return
-      end
+      end subroutine set_vt

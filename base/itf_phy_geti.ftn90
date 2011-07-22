@@ -49,7 +49,6 @@ Integer Function itf_phy_geti (vd, opt)
 !
 !Implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 
 #include "hgc.cdk"
 #include "modconst.cdk"
@@ -74,7 +73,7 @@ Integer Function itf_phy_geti (vd, opt)
       Type(variable), Pointer                  :: temp
       Type(input_dimensions), Dimension(nip1)  :: idim
 
-      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun, iok, ier,jer, rx
+      Integer :: i,j,k,ii,ij,ik,nf, nft, nr, iun, iok, ier,jer, rx,gmmstat
       Integer :: target_file, tip, global_ni, goff, ifold
       Integer :: dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit
       Integer :: dty, swa, lng, dlf, ubc, ex1, ex2, ex3
@@ -99,7 +98,7 @@ Integer Function itf_phy_geti (vd, opt)
       Real :: zp1,poa,poam,sum,sumt
       Real(kind=8)  :: rad2deg_8
 !
-      type(gmm_metadata) :: meta
+      type(gmm_metadata) :: mymeta
       real, pointer, dimension (:,:) :: BUSENT_3d
 !
 !     ---------------------------------------------------------------
@@ -279,7 +278,7 @@ Main1 : Do
       If (vd%phyvar=='DLAT') localf=Geomn_latrx
       If (vd%phyvar=='DLON') localf=Geomn_lonrx
       If (vd%phyvar=='MF') Then
-         gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+         gmmstat = gmm_get(gmmk_fis0_s,fis0,mymeta)
          if (GMM_IS_ERROR(gmmstat)) then
             write(*,*)'itf_phy_geti: ERROR at gmm_get(fis0)'
             ier = -1
@@ -370,8 +369,8 @@ Stats : Do
    vd => vd%next_value
 Enddo Stats
 
-ier = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
-ier = gmm_get ('BUSENT_3d',BUSENT_3d,meta)
+gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,mymeta)
+gmmstat = gmm_get ('BUSENT_3d',BUSENT_3d,mymeta)
 
 vd=>temp
 main3 : Do

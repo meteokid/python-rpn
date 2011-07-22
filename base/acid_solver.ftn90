@@ -28,11 +28,12 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "nl.cdk"
 #include "vtx.cdk"
 !
+      type(gmm_metadata) :: meta3d
+      integer :: gmmstat
 !     ---------------------------------------------------------------
 !
       gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)

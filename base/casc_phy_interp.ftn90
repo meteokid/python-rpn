@@ -32,16 +32,15 @@
 ! v4_13 - Spacek, L.     - First revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 !
-      character(len=16) :: var
-      integer i,ivar,nkphy
+      character(len=GMM_MAXNAMELENGTH) :: var
+      integer i,ivar,nkphy,istat
       integer, dimension (:  ), pointer :: idx,idy
       real, pointer, dimension (:,:,:) :: dst
       real*8, dimension (:  ), pointer ::  &
                     cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd
-      type(gmm_metadata) :: meta3d_phy
+      type(gmm_metadata) :: meta3d_phy,mymeta
 !
 !-----------------------------------------------------------------------
 !
@@ -61,13 +60,13 @@
                                0,GMM_NULL_FLAGS) 
          write(var,'(2a)')'CASC_',trim(phynm(ivar))
          nullify (dst)
-         gmmstat = gmm_create(var,dst,meta3d_phy,GMM_FLAG_INAN)
-         if (GMM_IS_ERROR(gmmstat)) then
+         istat = gmm_create(var,dst,meta3d_phy,GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(istat)) then
             write(6000,var)
             cycle
          endif
-         gmmstat = gmm_get(var,dst,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) then
+         istat = gmm_get(var,dst,mymeta)
+         if (GMM_IS_ERROR(istat)) then
             write(6010,var)
             cycle
          endif

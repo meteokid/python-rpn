@@ -27,7 +27,6 @@
 ! v4_14 - Desgagne, M.     - Initial revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
@@ -39,25 +38,26 @@
 #include "pw.cdk"
 #include "dcst.cdk"
 !
-      integer i, j, k
+      type(gmm_metadata) :: mymeta
+      integer i, j, k, istat
       real wk1(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
       call tmg_start0 ( 21, 'PW_GPW   ' )
 
-      gmmstat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d)
+      istat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,mymeta)
+      istat = gmm_get(gmmk_pw_gz_plus_s ,pw_gz_plus ,mymeta)
+      istat = gmm_get(gmmk_pw_gz_moins_s ,pw_gz_moins ,mymeta)
+      istat = gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,mymeta)
+      istat = gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
 !
-      gmmstat = gmm_get(gmmk_tt1_s,   tt1  , meta3d)
-      gmmstat = gmm_get(gmmk_wt1_s,   wt1  , meta3d)
-      gmmstat = gmm_get(gmmk_st1_s,   st1  , meta2d)
-      gmmstat = gmm_get(gmmk_fiptx_s, fiptx, meta3d)
-      gmmstat = gmm_get(gmmk_fis0_s,  fis0 , meta2d)
+      istat = gmm_get(gmmk_tt1_s,   tt1  , mymeta)
+      istat = gmm_get(gmmk_wt1_s,   wt1  , mymeta)
+      istat = gmm_get(gmmk_st1_s,   st1  , mymeta)
+      istat = gmm_get(gmmk_fiptx_s, fiptx, mymeta)
+      istat = gmm_get(gmmk_fis0_s,  fis0 , mymeta)
       if (.not. Schm_hydro_L ) then
-         gmmstat = gmm_get(gmmk_qt1_s, qt1, meta3d)
+         istat = gmm_get(gmmk_qt1_s, qt1, mymeta)
       endif
 !
 !$omp parallel private(wk1)

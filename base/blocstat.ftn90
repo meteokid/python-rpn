@@ -35,7 +35,6 @@
 ! v4_11 - Tanguay M.        - Use blocstat when (TL/AD) 
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
@@ -44,13 +43,13 @@
 #include "schm.cdk"
 #include "stat.cdk"
 !
-      logical done, flag
-      type(gmm_metadata) :: tmp_meta
-      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx
+      logical,save :: done = .false.
+      logical :: flag
+      type(gmm_metadata) :: tmp_meta,mymeta
+      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat
       real, pointer, dimension(:,:  ) :: wk2d
       real, pointer, dimension(:,:,:) :: wk3d
-      data done/.false./
-      save done
+      character(len=GMM_MAXNAMELENGTH) :: stat_varname
 !
 !     ---------------------------------------------------------------
 !
@@ -69,8 +68,8 @@
          jn = G_nj-acid_jn
 
          do n=1,stat_nombre
-            gmmstat = gmm_getmeta(stat_liste(n),tmp_meta)
-            if (gmmstat.eq.0) then
+            istat = gmm_getmeta(stat_liste(n),tmp_meta)
+            if (istat.eq.0) then
                indx = index(stat_liste(n),"TR/")*3 + 1
                stat_varname = stat_liste(n)(indx:)
                inn= 0
@@ -79,14 +78,14 @@
                if ( stat_liste(n)(1:2)=='VT'             ) jnn=1
                nullify (wk2d,wk3d)
                if (tmp_meta%l(3)%high.eq.tmp_meta%l(3)%low) then
-                  gmmstat = gmm_get(stat_liste(n), wk2d, meta3d)
+                  istat = gmm_get(stat_liste(n), wk2d, mymeta)
                   call glbstat2 (wk2d,stat_varname,'', &
                                  tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
                                  tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
                                  1,1, &
                                  i0,in-inn,j0,jn-jnn, 1,1)
                else
-                  gmmstat = gmm_get(stat_liste(n), wk3d, meta3d)
+                  istat = gmm_get(stat_liste(n), wk3d, mymeta)
                   call glbstat2 (wk3d,stat_varname,'', &
                                 tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
@@ -135,10 +134,11 @@
 !revision
 ! v4_10 - Desgagne M.       - initial version
 !
+#include "gmm.hf"
 #include "stat.cdk"
 #include "tr3d.cdk"
 
-      character*32 tmp_liste (1000), dumc_S
+      character(len=GMM_MAXNAMELENGTH) :: tmp_liste (1000), dumc_S
       integer k,n,cnt
 !     ---------------------------------------------------------------
 !

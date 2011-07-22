@@ -44,7 +44,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -65,8 +64,9 @@
 #include "schm.cdk"
 #include "that.cdk"
 !
-      character*16 tr_name
-      integer i,j,k,l,i00,err
+      type(gmm_metadata) :: mymeta
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      integer i,j,k,l,i00,err,istat
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf
       real hauteur, tempo
@@ -240,7 +240,7 @@
          if (Tr3d_name_S(k)(1:2).eq.'HU') then
             nullify(tr)
             tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
-            gmmstat = gmm_get(tr_name,tr,meta3d)
+            istat = gmm_get(tr_name,tr,mymeta)
             tr = 0.
          endif
       end do

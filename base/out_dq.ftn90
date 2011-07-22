@@ -54,7 +54,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
@@ -71,7 +70,8 @@
 !
 !
 !*
-      integer i,j,k, ii,j00
+      type(gmm_metadata) :: mymeta
+      integer i,j,k, ii,j00, istat
       integer i0,in,j0,jn
       real deg2rad
 ! ___________________________________________________________________
@@ -156,8 +156,8 @@
 
       if (lastdt .ne. Lctl_step) then
 
-          gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-          gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+          istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
 
           uu = ut1
           vv = vt1

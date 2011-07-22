@@ -41,8 +41,13 @@
       common /orh_m_gmm/ orhsu_m,orhsv_m,orhst_m,orhsc_m,orhsw_m,orhsf_m
       common /orh_m_gmm/ oruw2_m,orvw2_m
 !
-      character(len=8) :: gmmk_orhsu_m_s,gmmk_orhsv_m_s,gmmk_orhst_m_s,gmmk_orhsc_m_s,gmmk_orhsw_m_s,gmmk_orhsf_m_s
-      character(len=8) :: gmmk_oruw2_m_s,gmmk_orvw2_m_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_orhsu_m_s,gmmk_orhsv_m_s,gmmk_orhst_m_s,gmmk_orhsc_m_s,gmmk_orhsw_m_s,gmmk_orhsf_m_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_oruw2_m_s,gmmk_orvw2_m_s
 !
       common /orh_m_n_gmm/ gmmk_orhsu_m_s,gmmk_orhsv_m_s,gmmk_orhst_m_s,gmmk_orhsc_m_s,gmmk_orhsw_m_s,gmmk_orhsf_m_s
       common /orh_m_n_gmm/ gmmk_oruw2_m_s,gmmk_orvw2_m_s

@@ -41,6 +41,7 @@
 #include "ens_gmm_var.cdk"
 #include "ens_param.cdk"
 !
+      integer :: istat
 !-------------------------------------------------------------------
 !
       if(.not.Ens_conf)return
@@ -72,22 +73,22 @@
       gmmk_znm_s   = 'ZNMENS'
       gmmk_dumdum_s= 'DUMDUM'
 
-      gmmstat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'mcsph1'
-      gmmstat = gmm_create(gmmk_difut1_s,difut1,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'difut1'
-      gmmstat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'difvt1'
-      gmmstat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'ugwdt1'
-      gmmstat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'vgwdt1'
-      gmmstat = gmm_create(gmmk_anm_s   ,anm   ,meta2d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'anm'
-      gmmstat = gmm_create(gmmk_znm_s   ,znm   ,meta2d_znm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'znm'
-      gmmstat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'dum'
+      istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcsph1'
+      istat = gmm_create(gmmk_difut1_s,difut1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
+      istat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
+      istat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
+      istat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
+      istat = gmm_create(gmmk_anm_s   ,anm   ,meta2d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'anm'
+      istat = gmm_create(gmmk_znm_s   ,znm   ,meta2d_znm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'znm'
+      istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 !
  6000 format('ens_set_mem at gmm_create(',A,')')
  6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SET_MEM)' &

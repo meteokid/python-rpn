@@ -50,8 +50,8 @@
 #include "lam.cdk"
 #include "init.cdk"
 !
-      character*16 tr_name
-      integer i
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      integer i,istat
       real, pointer, dimension (:,:,:) :: tr
 !*
 !     ---------------------------------------------------------------
@@ -82,43 +82,43 @@
       gmmk_nest_s_fin_s  = 'NEST_SF'
       gmmk_nest_q_fin_s  = 'NEST_QF'
 !
-      gmmstat = gmm_create(gmmk_nest_u_s, nest_u, meta3d_nk1)
-      gmmstat = gmm_create(gmmk_nest_v_s, nest_v, meta3d_nk1)
-      gmmstat = gmm_create(gmmk_nest_w_s, nest_w, meta3d_nk1)
-      gmmstat = gmm_create(gmmk_nest_t_s, nest_t, meta3d_nk2)
-      gmmstat = gmm_create(gmmk_nest_zd_s,nest_zd,meta3d_nk1)
-      gmmstat = gmm_create(gmmk_nest_s_s, nest_s, meta2d    )
-      if (.not. Schm_hydro_L) gmmstat = gmm_create(gmmk_nest_q_s,nest_q,meta3d_0nk1)
+      istat = gmm_create(gmmk_nest_u_s, nest_u, meta3d_nk1)
+      istat = gmm_create(gmmk_nest_v_s, nest_v, meta3d_nk1)
+      istat = gmm_create(gmmk_nest_w_s, nest_w, meta3d_nk1)
+      istat = gmm_create(gmmk_nest_t_s, nest_t, meta3d_nk2)
+      istat = gmm_create(gmmk_nest_zd_s,nest_zd,meta3d_nk1)
+      istat = gmm_create(gmmk_nest_s_s, nest_s, meta2d    )
+      if (.not. Schm_hydro_L) istat = gmm_create(gmmk_nest_q_s,nest_q,meta3d_0nk1)
 !
       if (.not. Lam_ctebcs_L) then
-         gmmstat = gmm_create(gmmk_nest_u_deb_s, nest_u_deb, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_v_deb_s, nest_v_deb, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_w_deb_s, nest_w_deb, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_t_deb_s, nest_t_deb, meta3d_nk2)
-         gmmstat = gmm_create(gmmk_nest_zd_deb_s,nest_zd_deb,meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_s_deb_s, nest_s_deb, meta2d    )
+         istat = gmm_create(gmmk_nest_u_deb_s, nest_u_deb, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_v_deb_s, nest_v_deb, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_w_deb_s, nest_w_deb, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_t_deb_s, nest_t_deb, meta3d_nk2)
+         istat = gmm_create(gmmk_nest_zd_deb_s,nest_zd_deb,meta3d_nk1)
+         istat = gmm_create(gmmk_nest_s_deb_s, nest_s_deb, meta2d    )
 !
-         gmmstat = gmm_create(gmmk_nest_u_fin_s, nest_u_fin, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_v_fin_s, nest_v_fin, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_w_fin_s, nest_w_fin, meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_t_fin_s, nest_t_fin, meta3d_nk2)
-         gmmstat = gmm_create(gmmk_nest_zd_fin_s,nest_zd_fin,meta3d_nk1)
-         gmmstat = gmm_create(gmmk_nest_s_fin_s, nest_s_fin, meta2d    )
+         istat = gmm_create(gmmk_nest_u_fin_s, nest_u_fin, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_v_fin_s, nest_v_fin, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_w_fin_s, nest_w_fin, meta3d_nk1)
+         istat = gmm_create(gmmk_nest_t_fin_s, nest_t_fin, meta3d_nk2)
+         istat = gmm_create(gmmk_nest_zd_fin_s,nest_zd_fin,meta3d_nk1)
+         istat = gmm_create(gmmk_nest_s_fin_s, nest_s_fin, meta2d    )
          if (.not. Schm_hydro_L) then
-            gmmstat = gmm_create(gmmk_nest_q_deb_s,nest_q_deb,meta3d_0nk1)
-            gmmstat = gmm_create(gmmk_nest_q_fin_s,nest_q_fin,meta3d_0nk1)
+            istat = gmm_create(gmmk_nest_q_deb_s,nest_q_deb,meta3d_0nk1)
+            istat = gmm_create(gmmk_nest_q_fin_s,nest_q_fin,meta3d_0nk1)
          endif
       endif
 !
       do i=1,Tr3d_ntr
          tr_name = Tr3d_name_S(i)
          nullify(tr)
-         gmmstat = gmm_create('NEST/'//trim(tr_name)//':C',tr,meta3d_nk2)
+         istat = gmm_create('NEST/'//trim(tr_name)//':C',tr,meta3d_nk2)
          if (.not. Lam_ctebcs_L) then
             nullify(tr)
-            gmmstat = gmm_create('NEST/'//trim(tr_name)//':A',tr,meta3d_nk2)
+            istat = gmm_create('NEST/'//trim(tr_name)//':A',tr,meta3d_nk2)
             nullify(tr)
-            gmmstat = gmm_create('NEST/'//trim(tr_name)//':F',tr,meta3d_nk2)
+            istat = gmm_create('NEST/'//trim(tr_name)//':F',tr,meta3d_nk2)
          endif
       end do
 !

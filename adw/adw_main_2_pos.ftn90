@@ -75,9 +75,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
-!      type(gmm_metadata) :: meta3d, tmp_meta1d
-!      integer :: gmmstat
 #include "glb_ld.cdk"
 !      logical G_lam
 !      integer G_nk

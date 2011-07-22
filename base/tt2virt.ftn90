@@ -31,7 +31,6 @@
 ! v4_11 - Desgagne, M.     - First revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
@@ -39,7 +38,8 @@
 #include "vt1.cdk"
 #include "pw.cdk"
 !
-      integer i, j, k, n
+      type(gmm_metadata) :: mymeta
+      integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tvirt,tt,hu,tr
       real, dimension(LDIST_SHAPE,l_nk+2) :: sumpqj 
 !     ________________________________________________________________
@@ -51,20 +51,20 @@
       nullify (tvirt,tt,hu)
 
       if (.not.F_tt2tv) then
-         if (F_timelevel_S .eq. 'M') gmmstat = gmm_get(gmmk_tt0_s, tvirt, meta3d)
-         if (F_timelevel_S .eq. 'P') gmmstat = gmm_get(gmmk_tt1_s, tvirt, meta3d)
+         if (F_timelevel_S .eq. 'M') istat = gmm_get(gmmk_tt0_s, tvirt, mymeta)
+         if (F_timelevel_S .eq. 'P') istat = gmm_get(gmmk_tt1_s, tvirt, mymeta)
       else
-         gmmstat = gmm_get(gmmk_pw_tt_plus_s,  tt, meta3d)
+         istat = gmm_get(gmmk_pw_tt_plus_s,  tt, mymeta)
       endif
 
-      gmmstat = gmm_get('TR/HU:'//F_timelevel_S, hu, meta3d)
+      istat = gmm_get('TR/HU:'//F_timelevel_S, hu, mymeta)
       
       sumpqj = 0.
       if(Schm_wload_L)then
 !        Sum over Hydrometeors
          do n = 1, Tr3d_ntr
             nullify (tr)
-            gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,meta3d)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
             if (Tr3d_wload (n)) then
 !$omp parallel
 !$omp do

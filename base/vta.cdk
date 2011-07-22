@@ -33,6 +33,11 @@
       real, pointer, dimension (:,:)     :: sta  => null() ! effective dimensions are (LDIST_SHAPE)
       real, pointer, dimension (:,:,:,:) :: trta => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2,Trt3d_ntr)
 
-      character(len=8) :: gmmk_vta_s, gmmk_tta_s, gmmk_qta_s, gmmk_zdta_s, gmmk_sta_s, gmmk_wta_s, gmmk_uta_s, gmmk_trta_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_vta_s, gmmk_tta_s, gmmk_qta_s, gmmk_zdta_s, gmmk_sta_s, gmmk_wta_s, gmmk_uta_s, gmmk_trta_s
       common /vta_n_gmm/ gmmk_vta_s, gmmk_tta_s, gmmk_qta_s, gmmk_zdta_s, gmmk_sta_s, gmmk_wta_s, gmmk_uta_s, gmmk_trta_s
 

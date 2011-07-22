@@ -34,12 +34,12 @@
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "itf_phy_buses.cdk"
-#include "var_gmm.cdk"
 #include "ens_gmm_var.cdk"
 !
+      type(gmm_metadata) :: mymeta
       character*4 mode
       logical done,ens_skeb_conf,ens_ptp_conf,ens_conf
-      integer n,cnt,i,j,k
+      integer n,cnt,i,j,k,istat
       real dummy
       real con(YDIST_SHAPE)
       data mode,done /"SAVE",.false./
@@ -58,14 +58,14 @@
 !
       if (ens_skeb_conf) then
 
-         gmmstat = gmm_get(gmmk_difut1_s,difut1,meta3d)
-         if (GMM_IS_ERROR(gmmstat))write(*,6000)'difut1'
-         gmmstat = gmm_get(gmmk_difvt1_s,difvt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat))write(*,6000)'difvt1'
-         gmmstat = gmm_get(gmmk_ugwdt1_s,ugwdt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat))write(*,6000)'ugwdt1'
-         gmmstat = gmm_get(gmmk_vgwdt1_s,vgwdt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat))write(*,6000)'vgwdt1'
+         istat = gmm_get(gmmk_difut1_s,difut1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
+         istat = gmm_get(gmmk_difvt1_s,difvt1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
+         istat = gmm_get(gmmk_ugwdt1_s,ugwdt1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
+         istat = gmm_get(gmmk_vgwdt1_s,vgwdt1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
 
          if (mode == "SAVE") then
             difut1 = F_ut1

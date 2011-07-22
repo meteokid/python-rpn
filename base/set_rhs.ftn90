@@ -44,6 +44,7 @@
 #include "rhsc.cdk"
 #include "orh.cdk"
 !
+      integer :: istat
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
@@ -75,44 +76,44 @@
       nullify (ruw1,rvw1,ruw2,rvw2)
       nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf)
 !
-      gmmstat = gmm_create(gmmk_rhsu_s,rhsu,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
-      gmmstat = gmm_create(gmmk_rhsv_s,rhsv,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsv)'
-      gmmstat = gmm_create(gmmk_rhst_s,rhst,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhst)'
-      gmmstat = gmm_create(gmmk_rhsc_s,rhsc,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsc)'
-      gmmstat = gmm_create(gmmk_rhsw_s,rhsw,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsw)'
-      gmmstat = gmm_create(gmmk_rhsf_s,rhsf,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsf)'
-      gmmstat = gmm_create(gmmk_rhsp_s,rhsp,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
-      gmmstat = gmm_create(gmmk_rhsb_s,rhsb,meta2d   , GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rhsb)'
+      istat = gmm_create(gmmk_rhsu_s,rhsu,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
+      istat = gmm_create(gmmk_rhsv_s,rhsv,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsv)'
+      istat = gmm_create(gmmk_rhst_s,rhst,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhst)'
+      istat = gmm_create(gmmk_rhsc_s,rhsc,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsc)'
+      istat = gmm_create(gmmk_rhsw_s,rhsw,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsw)'
+      istat = gmm_create(gmmk_rhsf_s,rhsf,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsf)'
+      istat = gmm_create(gmmk_rhsp_s,rhsp,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
+      istat = gmm_create(gmmk_rhsb_s,rhsb,meta2d   , GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsb)'
 !
-      gmmstat = gmm_create(gmmk_ruw1_s,ruw1,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(ruw1)'
-      gmmstat = gmm_create(gmmk_rvw1_s,rvw1,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rvw1)'
-      gmmstat = gmm_create(gmmk_ruw2_s,ruw2,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(ruw2)'
-      gmmstat = gmm_create(gmmk_rvw2_s,rvw2,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(rvw2)'
+      istat = gmm_create(gmmk_ruw1_s,ruw1,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(ruw1)'
+      istat = gmm_create(gmmk_rvw1_s,rvw1,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rvw1)'
+      istat = gmm_create(gmmk_ruw2_s,ruw2,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(ruw2)'
+      istat = gmm_create(gmmk_rvw2_s,rvw2,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rvw2)'
 !
-      gmmstat = gmm_create(gmmk_orhsu_s,orhsu,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsu)'
-      gmmstat = gmm_create(gmmk_orhsv_s,orhsv,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsv)'
-      gmmstat = gmm_create(gmmk_orhst_s,orhst,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhst)'
-      gmmstat = gmm_create(gmmk_orhsc_s,orhsc,meta3d_nk, GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsc)'
-      gmmstat = gmm_create(gmmk_orhsw_s,orhsw,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
-      gmmstat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk1,GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(gmmstat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
+      istat = gmm_create(gmmk_orhsu_s,orhsu,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsu)'
+      istat = gmm_create(gmmk_orhsv_s,orhsv,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsv)'
+      istat = gmm_create(gmmk_orhst_s,orhst,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhst)'
+      istat = gmm_create(gmmk_orhsc_s,orhsc,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsc)'
+      istat = gmm_create(gmmk_orhsw_s,orhsw,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
+      istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk1,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
 !
  1000 format( &
       /,'INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)', &

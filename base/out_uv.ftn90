@@ -59,7 +59,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "out3.cdk"
@@ -74,9 +73,9 @@
 #include "schm.cdk"
        include "v4dg.inc"
 !
-      integer i,j,k,ii,jj,jjj,kk
+      type(gmm_metadata) :: mymeta
+      integer i,j,k,ii,jj,jjj,kk,istat
       integer pnerr, psum, kind,nko
-      integer :: lastdt = -1
       real find
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,gridi,grido
       logical fla,flb
@@ -88,13 +87,14 @@
       real uv(minx:maxx,miny:maxy,nk+1)
       real t3(minx:maxx,miny:maxy,G_nk+1), t4(minx:maxx,miny:maxy,G_nk+1)
       real, dimension(:,:,:), pointer :: uu,vv
-      save lastdt,uu,vv
 !     variables to point to gmm variables:
       real uu_temp,vv_temp
       pointer (pauutmp, uu_temp(minx:maxx,miny:maxy,G_nk+1) )
       pointer (pavvtmp, vv_temp(minx:maxx,miny:maxy,G_nk+1) ) 
       real uu_temp1(minx:maxx,miny:maxy),vv_temp1(minx:maxx,miny:maxy)
 
+      integer,save :: lastdt = -1
+      save uu,vv
 ! ___________________________________________________________________
 !
 !     1.0     initialization of data
@@ -154,10 +154,10 @@
 !     Transfer u,v in t3,t4 if not specific 4D-Var case   
 !     -------------------------------------------------
       if (lastdt .ne. Lctl_step) then
-          gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-          if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(ut1)'
-          gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-          if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(vt1)'
+          istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
+          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
           fla = V4dg_ad_L.and.V4dg_imguv_L
 
           if (V4dg_ad_L.and..not.V4dg_imguv_L) call handle_error(-1,'out_uv','STOP IN OUT_UV: ADJOINT not certified')

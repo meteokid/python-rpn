@@ -46,7 +46,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -57,10 +56,9 @@
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
-      integer  fnom,fclos,close_db_file
-      external fnom,fclos,close_db_file
+      integer,external :: fnom,fclos,close_db_file
 !
-      integer i,ier,adr,dim,n,current_nest
+      integer i,ier,adr,dim,n,current_nest,gmmstat
 !
 !     ---------------------------------------------------------------
 !

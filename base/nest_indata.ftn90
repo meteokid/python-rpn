@@ -41,7 +41,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "vtx.cdk"
@@ -61,43 +60,43 @@
 #include "glb_pil.cdk"
 #include "vtopo.cdk"
 !
-      integer  bcs_ftype,casc_bcs,casc_bcsh,newdate
-      external bcs_ftype,casc_bcs,casc_bcsh,newdate
+      integer,external ::  bcs_ftype,casc_bcs,casc_bcsh,newdate
 !
-      integer err,errbcs1,errbcs2,n,id,k,unf,dat
+      type(gmm_metadata) :: mymeta
+      integer err,errbcs1,errbcs2,n,id,k,unf,dat,istat
       real, pointer, dimension(:,:,:) :: tr1
 !*
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      gmmstat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_u_fin)'
-      gmmstat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_v_fin)'
-      gmmstat = gmm_get(gmmk_nest_w_fin_s,nest_w_fin,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_w_fin)'
-      gmmstat = gmm_get(gmmk_nest_t_fin_s,nest_t_fin,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_t_fin)'
-      gmmstat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_zd_fin)'
-      gmmstat = gmm_get(gmmk_nest_s_fin_s,nest_s_fin,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_s_fin)'
-      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(fiptx)'
+      istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_u_fin)'
+      istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_v_fin)'
+      istat = gmm_get(gmmk_nest_w_fin_s,nest_w_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_w_fin)'
+      istat = gmm_get(gmmk_nest_t_fin_s,nest_t_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_t_fin)'
+      istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_zd_fin)'
+      istat = gmm_get(gmmk_nest_s_fin_s,nest_s_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_s_fin)'
+      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(fiptx)'
       if (.not. Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(nest_q_fin)'
+         istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(nest_q_fin)'
       else
          nullify (nest_q_fin)
       endif
 
-      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(fis0)'
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(fis0)'
 !
       if ( Vtopo_L) then
-         gmmstat = gmm_get(gmmk_dfis_s,dfis,meta2d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'nest_indata ERROR at gmm_get(dfis)'
+         istat = gmm_get(gmmk_dfis_s,dfis,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'nest_indata ERROR at gmm_get(dfis)'
       else
          nullify (dfis)
       endif

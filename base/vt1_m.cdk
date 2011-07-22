@@ -52,7 +52,12 @@
       real, pointer, dimension (:)     :: zct1_m => null()  ! effective dimensions are (l_ni * l_nj * l_nk)
       real, pointer, dimension (:,:,:) :: qt1_m  => null()  ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
 
-      character(len=8) :: gmmk_xct1_m_s, gmmk_yct1_m_s, gmmk_zct1_m_s, gmmk_wt1_m_s
-      character(len=8) :: gmmk_tt1_m_s,  gmmk_zdt1_m_s, gmmk_st1_m_s,  gmmk_qt1_m_s,   gmmk_ut1_m_s, gmmk_vt1_m_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_xct1_m_s, gmmk_yct1_m_s, gmmk_zct1_m_s, gmmk_wt1_m_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_tt1_m_s,  gmmk_zdt1_m_s, gmmk_st1_m_s,  gmmk_qt1_m_s,   gmmk_ut1_m_s, gmmk_vt1_m_s
       common /vt1_m_n_gmm/ gmmk_xct1_m_s, gmmk_yct1_m_s, gmmk_zct1_m_s, gmmk_wt1_m_s 
       common /vt1_m_n_gmm/ gmmk_tt1_m_s,  gmmk_zdt1_m_s, gmmk_st1_m_s,  gmmk_qt1_m_s,   gmmk_ut1_m_s,  gmmk_vt1_m_s

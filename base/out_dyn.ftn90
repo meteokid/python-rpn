@@ -52,7 +52,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "out3.cdk"
@@ -82,10 +81,10 @@
 #include "out.cdk"
    include "v4dg.inc"
 !
-      integer  doout
-      external doout
+      integer,external ::  doout
 !
-      integer dostep(MAXSET), dostep_max, step, &
+      type(gmm_metadata) :: mymeta
+      integer dostep(MAXSET), dostep_max, step, istat, &
               pnlkey(20),i,j,k
       character*4 ext_S
       character*6 etikadd_S
@@ -131,8 +130,8 @@
 !    ---------------------------
 !
       ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(st1)'
       call out_padbuf(st1,l_minx,l_maxx,l_miny,l_maxy,1)
       p0(l_minx:l_maxx,l_miny:l_maxy) = exp(st1(l_minx:l_maxx,l_miny:l_maxy))*Cstv_pref_8     
 !

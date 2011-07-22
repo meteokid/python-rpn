@@ -35,36 +35,36 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 !
+      type(gmm_metadata) :: mymeta
       integer err,i,j,k,n
       integer jin, jj
       real, pointer, dimension(:,:,:) :: tr
 !
 !----------------------------------------------------------------------
 !
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(zdt1)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(st1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(wt1)'
+      err = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(ut1)'
+      err = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(vt1)'
+      err = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(wt1)'
+      err = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(tt1)'
+      err = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(zdt1)'
+      err = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(st1)'
+      err = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(wt1)'
       if (.not.Schm_hydro_L) then
-      gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'slabsym ERROR at gmm_get(qt1)'
+      err = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(qt1)'
       endif
 !
       if (l_north) then
@@ -148,8 +148,8 @@
 !
       do n=1,Tr3d_ntr
          nullify(tr)
-         gmmstat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,meta3d)
-         if (gmmstat.eq.0) then
+         err = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,mymeta)
+         if (err.eq.0) then
          if (l_north)      then
             do k=1,G_nk+1
                jin = l_nj-pil_n

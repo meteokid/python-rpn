@@ -36,8 +36,13 @@
 
       common /nest_m_gmm/ nest_u_m, nest_v_m, nest_t_m, nest_zd_m, nest_s_m, nest_w_m, nest_q_m
 !
-      character(len=8) :: gmmk_nest_u_m_s  , gmmk_nest_v_m_s , gmmk_nest_t_m_s
-      character(len=8) :: gmmk_nest_zd_m_s , gmmk_nest_s_m_s , gmmk_nest_w_m_s , gmmk_nest_q_m_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_nest_u_m_s  , gmmk_nest_v_m_s , gmmk_nest_t_m_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_nest_zd_m_s , gmmk_nest_s_m_s , gmmk_nest_w_m_s , gmmk_nest_q_m_s
 !
       common /nest_m_n_gmm/ gmmk_nest_u_m_s  , gmmk_nest_v_m_s , gmmk_nest_t_m_s
       common /nest_m_n_gmm/ gmmk_nest_zd_m_s , gmmk_nest_s_m_s , gmmk_nest_w_m_s , gmmk_nest_q_m_s

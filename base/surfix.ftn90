@@ -33,23 +33,23 @@
 !	
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 !
 !*
 
-      integer i,j
+      type(gmm_metadata) :: mymeta
+      integer i,j,istat
 !
 !     ---------------------------------------------------------------
 !
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'surfix ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'surfix ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'surfix ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'surfix ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'surfix ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'surfix ERROR at gmm_get(tt1)'
 
       do j=1,l_nj
       do i=1,l_ni

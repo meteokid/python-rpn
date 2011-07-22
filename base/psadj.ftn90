@@ -34,7 +34,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
@@ -42,20 +41,21 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 !
-      integer err, nlod, key1(2), i, j
+      type(gmm_metadata) :: mymeta
+      integer err, nlod, key1(2), i, j,istat
       real wk0(LDIST_SHAPE), wk1(LDIST_SHAPE)
-      real*8  ONE_8, bbb_8
-      parameter( ONE_8 = 1. )
+      real*8  bbb_8
+      real*8, parameter :: ONE_8 = 1.d0
 !*
 !     _________________________________________________________________
 !
 
       if(.not.Schm_psadj_L)return
 
-      gmmstat = gmm_get(gmmk_st0_s,st0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'psadj ERROR at gmm_get(st0)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'psadj ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_st0_s,st0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(st0)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(st1)'
 !
       if (Lun_debug_L) write(Lun_out,1001)
 !

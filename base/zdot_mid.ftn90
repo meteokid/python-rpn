@@ -37,7 +37,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -46,9 +45,9 @@
 #include "vth.cdk"
 #include "cstv.cdk"
 !
-      integer i,j,k,i0,in,j0,jn
-      real*8  one
-      parameter( one = 1.d0 )
+      type(gmm_metadata) :: meta3d
+      integer i,j,k,i0,in,j0,jn, gmmstat
+      real*8, parameter :: one = 1.d0
 !
 !     __________________________________________________________________
 !

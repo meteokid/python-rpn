@@ -52,7 +52,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -70,7 +69,8 @@
 #include "lctl.cdk"
       include "v4dg.inc"
 
-      integer iln, dim, dimt, dimb, ilntrj, err
+      type(gmm_metadata) :: meta2d,meta3d
+      integer iln, dim, dimt, dimb, ilntrj, err, gmmstat
 !
       real w_st0_m(LDIST_SHAPE),w_fiptx_m(LDIST_SHAPE,0:l_nk+1)
       real w_tt0_m(LDIST_SHAPE,l_nk+2)

@@ -36,7 +36,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vt0.cdk"
@@ -48,39 +47,40 @@
 #include "orh_m.cdk"
 #include "rhsc_m.cdk"
 !
-      integer i,k
+      type(gmm_metadata) :: mymeta
+      integer i,k,istat
 !*
 !     __________________________________________________________________
 !
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_ut0_s,ut0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut0)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_vt0_s,vt0,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt0)'
-      gmmstat = gmm_get(gmmk_orhsv_s,orhsv,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(orhsv)'
-      gmmstat = gmm_get(gmmk_rvw2_s,rvw2,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(rvw2)'
-      gmmstat = gmm_get(gmmk_rhsv_s,rhsv,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(rhsv)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut0)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt0)'
+      istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(orhsv)'
+      istat = gmm_get(gmmk_rvw2_s,rvw2,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(rvw2)'
+      istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(rhsv)'
 !
-      gmmstat = gmm_get(gmmk_ut1_m_s,ut1_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut1_m)'
-      gmmstat = gmm_get(gmmk_ut0_m_s,ut0_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut0_m)'
-      gmmstat = gmm_get(gmmk_vt1_m_s,vt1_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt1_m)'
-      gmmstat = gmm_get(gmmk_vt0_m_s,vt0_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt0_m)'
-      gmmstat = gmm_get(gmmk_orhsv_m_s,orhsv_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(orhsv_m)'
-      gmmstat = gmm_get(gmmk_rvw2_m_s,rvw2_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(rvw2_m)'
-      gmmstat = gmm_get(gmmk_rhsv_m_s,rhsv_m,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'glb_halo_init_tl ERROR at gmm_get(rhsv_m)'
+      istat = gmm_get(gmmk_ut1_m_s,ut1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut1_m)'
+      istat = gmm_get(gmmk_ut0_m_s,ut0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(ut0_m)'
+      istat = gmm_get(gmmk_vt1_m_s,vt1_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt1_m)'
+      istat = gmm_get(gmmk_vt0_m_s,vt0_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(vt0_m)'
+      istat = gmm_get(gmmk_orhsv_m_s,orhsv_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(orhsv_m)'
+      istat = gmm_get(gmmk_rvw2_m_s,rvw2_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(rvw2_m)'
+      istat = gmm_get(gmmk_rhsv_m_s,rhsv_m,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init_tl ERROR at gmm_get(rhsv_m)'
 !
 !$omp parallel do
       do k=1,G_nk

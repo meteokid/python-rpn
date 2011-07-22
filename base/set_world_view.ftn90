@@ -47,7 +47,6 @@
 ! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "lun.cdk"
 #include "cst_lis.cdk"
 #include "dcst.cdk"

@@ -33,7 +33,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
@@ -47,27 +46,28 @@
 #include "theo.cdk"
 !
 !
+      type(gmm_metadata) :: mymeta
       integer err,i,j,k, longueur
-      integer n
+      integer n,istat
 
       real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk+1),ubar
       real fi_t(LDIST_SHAPE,l_nk+1)
 
 !----------------------------------------------------------------------
  
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(st1)'
       if (.not.Schm_hydro_L) then
-         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'height_sponge ERROR at gmm_get(qt1)'
+         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
       else
          nullify(qt1)
       endif

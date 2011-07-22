@@ -33,6 +33,7 @@
 #include "glb_ld.cdk"
 #include "rstr.cdk"
 !
+      integer :: istat
 !-------------------------------------------------------------------
 !
 ! Establish meta_data template variables for gmm_create purpose
@@ -70,7 +71,7 @@
                             0,l_nk+1,0,0,l_nk+2, &
                             0,GMM_NULL_FLAGS)
 !
-      if (Rstri_rstn_L) gmmstat = gmm_checkpoint_all(GMM_READ_CKPT)
+      if (Rstri_rstn_L) istat = gmm_checkpoint_all(GMM_READ_CKPT)
 !
 !-------------------------------------------------------------------
 !

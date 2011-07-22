@@ -43,7 +43,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
@@ -55,39 +54,39 @@
 #include "tr3d.cdk"
 #include "itf_phy_buses.cdk"
 !
-      integer i, j, k, n, err
+      integer i, j, k, n, err,istat
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra
-      type(gmm_metadata) :: meta_busper
+      type(gmm_metadata) :: meta_busper,mymeta
 !
 !     __________________________________________________________________
 !
       dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
 !
-      gmmstat = gmm_get(gmmk_uta_s,uta,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(uta)'
-      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(ut1)'
-      gmmstat = gmm_get(gmmk_vta_s,vta,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(vta)'
-      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(vt1)'
-      gmmstat = gmm_get(gmmk_tta_s,tta,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(tta)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_zdta_s,zdta,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(zdta)'
-      gmmstat = gmm_get(gmmk_zdt1_s,zdt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(zdt1)'
-      gmmstat = gmm_get(gmmk_sta_s,sta,tmp_meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(sta)'
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(st1)'
-      gmmstat = gmm_get(gmmk_wta_s,wta,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wta)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_uta_s,uta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(uta)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vta_s,vta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vta)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_tta_s,tta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tta)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_zdta_s,zdta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdta)'
+      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdt1)'
+      istat = gmm_get(gmmk_sta_s,sta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(sta)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_wta_s,wta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wta)'
+      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wt1)'
 !
       do k=1,l_nk+1
       do j= 1, l_nj 
@@ -115,10 +114,10 @@
       if ( .not. Schm_hydro_L )then
 !
 
-         gmmstat = gmm_get(gmmk_qt1_s,qt1,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qt1)'
-         gmmstat = gmm_get(gmmk_qta_s,qta,meta3d)
-         if (GMM_IS_ERROR(gmmstat)) print *,'digflt ERROR at gmm_get(qta)'
+         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qt1)'
+         istat = gmm_get(gmmk_qta_s,qta,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
 !
          do k=0,l_nk+1
          do j= 1, l_nj
@@ -136,8 +135,8 @@
 
       do n=1,Tr3d_ntr
 
-         gmmstat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, meta3d_nk2)
-         gmmstat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , meta3d_nk2)
+         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
+         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
 
          if ( Init_dftr_L ) then
             do k=1,G_nk+2
@@ -158,10 +157,10 @@
 !**********************************************************************
 
       if ( Lctl_step .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
-         gmmstat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
-         gmmstat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&
+         istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
+         istat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&
                                 GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         gmmstat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
+         istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
          BUSPER_3d_digf = BUSPER_3d
       endif
 !

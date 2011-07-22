@@ -29,7 +29,6 @@
 ! v4_20 - Spacek, L.       - Initial revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"
@@ -38,7 +37,7 @@
 #include "pw.cdk"
 #include "geomn.cdk"
 !
-      integer i, j, k, km1
+      integer i, j, k, km1, gmmstat
       real con(YDIST_SHAPE)
       real*8 r0,ONE_8,CLXXX_8,deg2rad_8
       parameter( ONE_8   = 1.0, CLXXX_8 = 180.0 )
@@ -48,6 +47,7 @@
       real, pointer, dimension (:,:,:) :: uu     => null()
       real, pointer, dimension (:,:,:) :: vv     => null()
       real, pointer, dimension (:,:,:) :: tt     => null()           ! delete
+      type(gmm_metadata) :: meta3d
 !     ________________________________________________________________
 !
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8

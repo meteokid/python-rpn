@@ -46,7 +46,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "ptopo.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
@@ -60,7 +59,8 @@
 #include "nest_m.cdk"
 #include "orh.cdk"
 !
-      integer i,j,k
+      integer i,j,k, gmmstat
+      type(gmm_metadata) :: meta2d,meta3d
 !
 !     __________________________________________________________________
 !

@@ -67,7 +67,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
@@ -82,9 +81,10 @@
 !
 !     Local variables
 !     ---------------
-      integer  prof_wrrec
-      external prof_wrrec
+      integer, external :: prof_wrrec
 !
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer kstatus, istat, i, j, &
               k, n, i1, i2, j1, j2, nbin, npr
 !

@@ -40,40 +40,39 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 !
-      character(len=8) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
-      character(len=8) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
-      character(len=8) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
-      character(len=8) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
-      character(len=8) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
-      character(len=8) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
-      character(len=8) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
-      character(len=8) , dimension(2) :: tr_list
-      integer i
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2) :: tr_list
+      integer i,istat
 !*
 !     ---------------------------------------------------------------
 !      
-      gmmstat = gmm_shuffle( ut_list)
-      gmmstat = gmm_shuffle( vt_list)
-      gmmstat = gmm_shuffle( wt_list)
-      gmmstat = gmm_shuffle( tt_list)
-      gmmstat = gmm_shuffle(zdt_list)
-      gmmstat = gmm_shuffle( st_list)
+      istat = gmm_shuffle( ut_list)
+      istat = gmm_shuffle( vt_list)
+      istat = gmm_shuffle( wt_list)
+      istat = gmm_shuffle( tt_list)
+      istat = gmm_shuffle(zdt_list)
+      istat = gmm_shuffle( st_list)
 !
       if (.not. Schm_hydro_L) then
-         gmmstat = gmm_shuffle(qt_list)
+         istat = gmm_shuffle(qt_list)
       endif
 !
       do i=1,Tr3d_ntr
          tr_list(1) = 'TR/'//trim(Tr3d_name_S(i))//':M'
          tr_list(2) = 'TR/'//trim(Tr3d_name_S(i))//':P'
-         gmmstat = gmm_shuffle(tr_list)
+         istat = gmm_shuffle(tr_list)
       end do
 !
       return

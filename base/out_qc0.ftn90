@@ -45,7 +45,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
@@ -69,11 +68,11 @@
 #include "ver.cdk"
 !
 !*
-      integer doout, longueur
-      external doout, longueur
+      integer,external :: doout, longueur
 !
+      type(gmm_metadata) :: mymeta
       integer err,nrec,dostep(MAXSET),dostep_max,step,key0,key1, &
-              i,j,k,trkey1(Tr3d_ntr),qcset(MAXSET),qcset_max
+              i,j,k,trkey1(Tr3d_ntr),qcset(MAXSET),qcset_max,istat
       character*4 ext_S
       integer i0,in,j0,jn,ii,jj,kk,levset,n,ip3,pnerr,nko,gridset
       integer qcnbit,qcfilt,kind
@@ -122,16 +121,16 @@
       enddo
 
       nullify(qct1)
-      gmmstat = gmm_get('TR/'//'QC'//':P',qct1,meta3d)
+      istat = gmm_get('TR/'//'QC'//':P',qct1,mymeta)
  
 !     if QC is not available, forget it
-      if (GMM_IS_ERROR(gmmstat).or.qcset_max.le.0) return 
+      if (GMM_IS_ERROR(istat).or.qcset_max.le.0) return 
 
 !     PREPARATION of wlnpi_t for out_qc0 
 !    ---------------------------
 
-      gmmstat = gmm_get(gmmk_st1_s,st1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_qc0 ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_qc0 ERROR at gmm_get(st1)'
 !
 !        Log-pressure on momentum and thermo levels,
 !        with extra momentum levels at top (k=0) and surface (k=G_nk+1)

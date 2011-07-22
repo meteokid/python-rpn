@@ -38,7 +38,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 
 #include "glb_ld.cdk"
 #include "geomg.cdk"
@@ -49,7 +48,8 @@
 
 !
 !variables
-      integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
+      type(gmm_metadata) :: mymeta
+      integer ix,iy,iz,iz_local,kx,ky,kz, E_nk, istat
       integer np, rank, ierr, keys(8), npartiel
       integer i, j, k, i0, j0, in, jn, nij, inn, trx
       real    pi, err, deltax, cpdi
@@ -69,8 +69,8 @@
 !
 !     Get needed fields in memory
 !
-      gmmstat = gmm_get(gmmk_mcsph1_s ,mcsph1,meta3d)
-      if (GMM_IS_ERROR(gmmstat))write(*,6000)'mcsph11'
+      istat = gmm_get(gmmk_mcsph1_s ,mcsph1,mymeta)
+      if (GMM_IS_ERROR(istat))write(*,6000)'mcsph11'
 !
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !

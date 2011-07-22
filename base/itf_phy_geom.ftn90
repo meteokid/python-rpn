@@ -29,7 +29,6 @@ subroutine itf_phy_geom(F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
    !**/
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"

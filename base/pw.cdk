@@ -13,11 +13,17 @@
       real, pointer, dimension (:,:,:) :: pw_pm_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_gz_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
 
-      character(len=16) :: gmmk_pw_uu_plus_s , gmmk_pw_vv_plus_s , gmmk_pw_ww_plus_s, gmmk_pw_tt_plus_s
-      character(len=16) :: gmmk_pw_pm_plus_s , gmmk_pw_pt_plus_s , gmmk_pw_gz_plus_s
 
-      character(len=16) :: gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_tt_moins_s
-      character(len=16) :: gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_plus_s , gmmk_pw_vv_plus_s , gmmk_pw_ww_plus_s, gmmk_pw_tt_plus_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_pm_plus_s , gmmk_pw_pt_plus_s , gmmk_pw_gz_plus_s
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_tt_moins_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s
 
       common /physical_n_gmm/ gmmk_pw_uu_plus_s , gmmk_pw_vv_plus_s , gmmk_pw_ww_plus_s, gmmk_pw_tt_plus_s
       common /physical_n_gmm/ gmmk_pw_pm_plus_s , gmmk_pw_pt_plus_s , gmmk_pw_gz_plus_s

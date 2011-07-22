@@ -52,7 +52,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
@@ -68,9 +67,10 @@
 !
 !     Local variables
 !     ---------------
-      integer  prof_rdrec, prof_bitptrn
-      external prof_rdrec, prof_bitptrn
+      integer, external :: prof_rdrec, prof_bitptrn
 !
+      type(gmm_metadata) :: meta2d,meta3d
+      integer :: gmmstat
       integer pnerr, ier, ip, i, j, k, irec, inmvar8, nobproc, &
               kkk, ibid1, ibid2, ind, nsim3d, nbin, npr, i1, i2, j1, j2, &
               kstatus, jobs, n ,nnk, idim(2)

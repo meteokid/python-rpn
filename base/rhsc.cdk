@@ -43,9 +43,14 @@
       real, pointer, dimension (:,:,:) :: ruw2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
       real, pointer, dimension (:,:,:) :: rvw2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
 
-      character(len=8) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
-      character(len=8) :: gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
-      character(len=8) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
       common /rhsc_n_gmm/ gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
       common /rhsc_n_gmm/ gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
       common /rhsc_n_gmm/ gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s

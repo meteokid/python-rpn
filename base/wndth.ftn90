@@ -38,7 +38,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "vt0.cdk"
@@ -50,7 +49,8 @@
 #include "ver.cdk"
 #include "lam.cdk"
 !
-      integer i, j, k
+      type(gmm_metadata) :: meta3d
+      integer i, j, k,gmmstat
 !
 !     ---------------------------------------------------------------
 !

@@ -31,7 +31,6 @@
   !
   !Object
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "nest.cdk"
@@ -49,10 +48,11 @@
 
       logical nest_it, flag_u, flag_v
       integer i, j, k, n, err, cnt, UU_indx, VV_indx, km1
-      integer HU_indx, TT_indx
+      integer HU_indx, TT_indx, gmmstat
       real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE), &
            tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
       real, pointer, dimension(:,:,:) :: hu
+      type(gmm_metadata) :: meta3d
 !     __________________________________________________________________
 !
       flag_u  = .False. ; flag_v = .false.

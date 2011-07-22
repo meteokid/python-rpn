@@ -102,7 +102,6 @@
 !implicits
 
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "geomn.cdk"
@@ -129,11 +128,11 @@
          integer :: t,m,p
       end type stg_i
 
-      real theta_p0,deg2rad
+      real, parameter :: theta_p0 = 100000.
 
-      parameter (theta_p0=100000.)
-
-      integer i,j,k,kl,ii,l_ninj,nko,nko_t,nko_m
+      type(gmm_metadata) :: mymeta
+      real deg2rad
+      integer i,j,k,kl,ii,l_ninj,nko,nko_t,nko_m,istat
       integer, dimension(:), allocatable::indo,indo_t
       real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
       real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
@@ -154,10 +153,11 @@
       character*2 h2o_liste_S(7)
       data h2o_liste_S / 'QC','QB','QL','QI','QN','QJ','QH'/
       integer n,kind
-      integer :: lastdt = -1
       real, dimension(:,:,:), pointer :: gz_m_plus,gz_ta,ttx,htx
       real, dimension(:,:), pointer :: wlao
-      save lastdt,gz_m_plus,gz_ta,htx,ttx,wlao
+
+      integer,save :: lastdt = -1
+      save gz_m_plus,gz_ta,htx,ttx,wlao
 ! ___________________________________________________________________
 !
 !     1.0     initialization of data
@@ -261,22 +261,22 @@
 
 !     Obtain humidity HUT1 and other GMM variables
       nullify(hut1)
-      gmmstat = gmm_get('TR/'//'HU'//':P',hut1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_thm ERROR at gmm_get(hut1)'
+      istat = gmm_get('TR/'//'HU'//':P',hut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_thm ERROR at gmm_get(hut1)'
       if (pnqc.ne.0) then
           nullify(qct1)
-          gmmstat = gmm_get('TR/'//'QC'//':P',qct1,meta3d)
+          istat = gmm_get('TR/'//'QC'//':P',qct1,mymeta)
 !     if QC is not available, forget it
-          if (GMM_IS_ERROR(gmmstat)) pnqc=0
+          if (GMM_IS_ERROR(istat)) pnqc=0
       endif 
-      gmmstat = gmm_get(gmmk_fiptx_s,fiptx,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(fiptx)'
-      gmmstat = gmm_get(gmmk_tt1_s,tt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(tt1)'
-      gmmstat = gmm_get(gmmk_wt1_s,wt1,meta3d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(wt1)'
-      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'out_dyn ERROR at gmm_get(fis0)'
+      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(fiptx)'
+      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(tt1)'
+      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(fis0)'
 !_______________________________________________________________________
 !
 !     Compute Virtual temperature
@@ -284,8 +284,8 @@
          qh =0.
          do n=1,7
             nullify (tr1)
-            gmmstat = gmm_get('TR/'//h2o_liste_S(n)//':P',tr1,meta3d)
-            if (.not.GMM_IS_ERROR(gmmstat)) then
+            istat = gmm_get('TR/'//h2o_liste_S(n)//':P',tr1,mymeta)
+            if (.not.GMM_IS_ERROR(istat)) then
                 do k=1,l_nk+2
                 do j=1,l_nj
                 do i=1,l_ni

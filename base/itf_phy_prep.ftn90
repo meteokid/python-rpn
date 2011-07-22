@@ -27,23 +27,22 @@
 ! v4_06 - Desgagne, M.     - First revision
 !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 !
-      integer i,j,k0
+      integer i,j,k0,istat
       real, pointer, dimension (:,:,:) :: tr         => null()
       real, pointer, dimension (:,:  ) :: BUSDYN_3d  => null()
-      type(gmm_metadata) :: meta
+      type(gmm_metadata) :: mymeta
 !     ________________________________________________________________
 !
-      gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
+      istat = gmm_get ('BUSDYN_3d',BUSDYN_3d,mymeta)
 
       do i=1,p_bdyn_top
          nullify (tr)
-         gmmstat = gmm_get(dynnm(i),tr,meta3d)
-         if (gmmstat.eq.0) then
+         istat = gmm_get(dynnm(i),tr,mymeta)
+         if (istat.eq.0) then
             if (phy_idxdyn(i,3).eq.1) then 
                k0 = 1
                if (phy_idxdyn(i,2).eq.p_ni) k0 = p_nk

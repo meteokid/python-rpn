@@ -37,7 +37,12 @@
       real, pointer, dimension (:,:,:) :: orhsw => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:,:) :: orhsf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
 
-      character(len=8) :: gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+#endif
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
       common /orh_n_gmm/ gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
 
 !======================================================================

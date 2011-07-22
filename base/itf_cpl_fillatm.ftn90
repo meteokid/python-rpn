@@ -29,7 +29,6 @@
 !*
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "itf_cpl.cdk"
 #include "dcst.cdk"
@@ -43,10 +42,11 @@
 #include "rstr.cdk"
 #include "pw.cdk"
 !
+      type(gmm_metadata) :: mymeta
       character*4 nomvar
       character*16 datev,datem
       logical flag,first
-      integer err,i,j,send,recv,ii,jj,n
+      integer err,i,j,send,recv,ii,jj,n,istat
       real uug(l_ni,l_nj), vvg(l_ni,l_nj), tt(l_ni,l_nj), es(l_ni,l_nj)
       real, dimension (:,:,:), allocatable :: glbbus
       real*8  dayfrac,one,sid,rsid
@@ -70,8 +70,8 @@
                   (mod(Lctl_step-cpl_debut,cpl_freq).eq.0) )) return
 !
       nullify (pw_uu_plus,pw_vv_plus)
-      gmmstat = gmm_get(gmmk_pw_uu_plus_s ,pw_uu_plus,meta3d)
-      gmmstat = gmm_get(gmmk_pw_vv_plus_s ,pw_vv_plus,meta3d)
+      istat = gmm_get(gmmk_pw_uu_plus_s ,pw_uu_plus,mymeta)
+      istat = gmm_get(gmmk_pw_vv_plus_s ,pw_vv_plus,mymeta)
 
       uug(:,:) = pw_uu_plus(1:l_ni,1:l_nj,G_nk+2)
       vvg(:,:) = pw_vv_plus(1:l_ni,1:l_nj,G_nk+2)

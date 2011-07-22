@@ -33,11 +33,10 @@
   !	Fill the slice workspace variable for the physics.
   !
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
 !
-      integer i,ij,j,k,ik,cnt,lght,indx_n,soit
+      integer i,ij,j,k,ik,cnt,lght,indx_n,soit, gmmstat
       real, pointer, dimension (:,:,:) :: tr         => null()
       real, pointer, dimension (:,:  ) :: BUSVOL_3d  => null()
       real, pointer, dimension (:,:  ) :: BUSDYN_3d  => null()
@@ -53,7 +52,7 @@
 
   do i=1,p_bdyn_top
  nullify (tr)
- gmmstat = gmm_get(dynnm(i),tr,meta3d)
+ gmmstat = gmm_get(dynnm(i),tr,meta)
  if (gmmstat.eq.0) then
 !!! call getindx (dynnm(i),  'D', indx_n, lght, soit)
 !!! if (dynpar(i,3).eq.1) then

@@ -32,22 +32,22 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "ver.cdk"
 #include "pw.cdk"
 !
-      integer ninj
+      type(gmm_metadata) :: mymeta
+      integer ninj,istat
       real, pointer, dimension(:,:,:)     :: humod
       real  hu(l_ni,l_nj),px(l_ni,l_nj)
 !
 !     ________________________________________________________________
 !
       nullify (pw_tt_plus,st1,humod)
-      gmmstat = gmm_get(gmmk_pw_tt_plus_s ,pw_tt_plus,meta3d)
-      gmmstat = gmm_get(gmmk_qt1_s        ,st1       ,meta2d)
-      gmmstat = gmm_get('TR/HU:P'         ,humod     ,meta3d)
+      istat = gmm_get(gmmk_pw_tt_plus_s ,pw_tt_plus,mymeta)
+      istat = gmm_get(gmmk_qt1_s        ,st1       ,mymeta)
+      istat = gmm_get('TR/HU:P'         ,humod     ,mymeta)
 !
       tt(:,:) = pw_tt_plus (1:l_ni,1:l_nj,ki)
       hu(:,:) = humod      (1:l_ni,1:l_nj,ki)

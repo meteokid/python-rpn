@@ -43,7 +43,6 @@
 !
 !implicits
 #include "gmm.hf"
-#include "var_gmm.cdk"
 #include "pw.cdk"
 #include "pw_m.cdk"
 #include "glb_ld.cdk"
@@ -54,9 +53,9 @@
       include "v4dg.inc"
 !
 !modules
-      integer err,istep,i,j,k,n,iadd
-!
-      logical plpr_L
+      type(gmm_metadata) :: meta3d,meta2d
+      integer :: err,istep,i,j,k,n,iadd,gmmstat
+      logical :: plpr_L
 !
 !     ______________________________________________________
 !
