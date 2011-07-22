@@ -13,15 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r getindx
+!**s/r getindx2
 !
 #include "model_macros_f.h"
 !
-      subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
+      subroutine getindx2 ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
       implicit none
 !
       character*(*) F_vn_S
-      character*1 F_bus_S
+      character*(*) F_bus_S
       integer F_deb,F_nm,F_init
 !
 !author   
@@ -52,67 +52,82 @@
       integer i,init
 !-------------------------------------------------------------------
 !
-      F_deb = -1
-      F_nm  = 0
-      if (F_bus_S.eq.'E') then
-         do 5 i=1,p_bent_top
+      F_deb  = -1
+      F_nm   =  0
+      F_init = -1
+
+      if ((F_bus_S.eq.'ENT').or.(F_bus_S.eq.'ANY')) then
+         do i=1,p_bent_top
             if (F_vn_S.eq.entnm(i)) then
-               F_deb = entpar(i,1)
-               F_nm  = entpar(i,2)
-               init= entpar(i,3)
-               goto 601
+               F_deb   = entpar(i,1)
+               F_nm    = entpar(i,2)
+               F_init  = entpar(i,3)
+               F_bus_S = 'ENT'
+               goto 701
             endif
- 5       continue 
-         if (F_init.lt.0) goto 601
+         end do
+         if ((F_deb .le. 0).and.(F_bus_S.ne.'ANY')) &
          write (6,910) F_vn_S,'BUSENT'
       endif
-!
-      if (F_bus_S.eq.'D') then
-         do 10 i=1,p_bdyn_top
+
+      if ((F_bus_S.eq.'DYN').or.(F_bus_S .eq. 'ANY')) then
+         do i=1,p_bdyn_top
             if (F_vn_S.eq.dynnm(i)) then
-               F_deb = dynpar(i,1)
-               F_nm  = dynpar(i,2)
-               init= dynpar(i,3)
-               goto 601
+               F_deb   = dynpar(i,1)
+               F_nm    = dynpar(i,2)
+               F_init  = dynpar(i,3)
+               F_bus_S = 'DYN'
+               goto 701
             endif
- 10      continue 
-         if (F_init.lt.0) goto 601
+         end do
+         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
          write (6,910) F_vn_S,'BUSDYN'
       endif
-!
-      if (F_bus_S.eq.'P') then
-         do 20 i=1,p_bper_top
+
+      if ((F_bus_S.eq.'PER').or.(F_bus_S .eq. 'ANY')) then
+         do i=1,p_bper_top
             if (F_vn_S.eq.pernm(i)) then
-               F_deb = perpar(i,1)
-               F_nm  = perpar(i,2)
-               init= perpar(i,3)
-               goto 601
+               F_deb   = perpar(i,1)
+               F_nm    = perpar(i,2)
+               F_init  = perpar(i,3)
+               F_bus_S = 'PER'
+               goto 701
             endif
- 20      continue 
-         if (F_init.lt.0) goto 601
+         end do
+         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
          write (6,910) F_vn_S,'BUSPER'
       endif
-!
-      if (F_bus_S.eq.'V') then
-         do 30 i=1,p_bvol_top
+
+      if ((F_bus_S.eq.'VOL').or.(F_bus_S .eq. 'ANY')) then
+         do i=1,p_bvol_top
             if (F_vn_S.eq.volnm(i)) then
-               F_deb = volpar(i,1)
-               F_nm  = volpar(i,2)
-               init= volpar(i,3)
-               goto 601
+               F_deb   = volpar(i,1)
+               F_nm    = volpar(i,2)
+               F_init  = volpar(i,3)
+               F_bus_S = 'VOL'
+               goto 701
             endif
- 30      continue 
-         if (F_init.lt.0) goto 601
+         end do
+         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
          write (6,910) F_vn_S,'BUSVOL'
       endif
-!
-      call stop_mpi(-1,'getindx','')
-!
- 601  if (F_init.ge.0) F_init = init
 !
  910  format (/1x,'===> ABORT IN GETINDX: COULD NOT FIND'/ &
                1x,"     VARIABLE '",a8,"' ON '",a6,"'."/)
 !
 !-------------------------------------------------------------------
+!
+ 701  return
+      end
+  
+      subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
+      implicit none
+!
+      character*(*) F_vn_S
+      character*(*) F_bus_S
+      integer F_deb,F_nm,F_init
+!
+      call stop_mpi(-1,'getindx','getindx has been replaced by getindx2')
+!
       return
       end

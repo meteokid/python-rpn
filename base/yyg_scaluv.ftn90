@@ -22,7 +22,7 @@
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
-      include 'mpif.h'
+!     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -41,8 +41,9 @@
       integer pil_recvlen(Ptopo_numproc),pil_sendlen(Ptopo_numproc)
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
-      integer status(MPI_STATUS_SIZE)
-      integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+!     integer status(MPI_STATUS_SIZE)
+!     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+      integer status
       integer request(Ptopo_numproc*2)
       real*8  sendu_pil_8,sendv_pil_8
       integer tag2,recvlen,sendlen,tag1,ireq
@@ -187,9 +188,12 @@
 
              ireq = ireq+1
 !            print *,'scaluv: sending',Pil_sendlen(kk)*NK*2,' to ',kk_proc
-             call MPI_ISend (send_pil(1,KK),Pil_sendlen(kk)*NK*2,MPI_REAL, &
-                                          kk_proc,tag2+Ptopo_world_myproc, &
-                                          MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_ISend (send_pil(1,KK),Pil_sendlen(kk)*NK*2,MPI_REAL, &
+!                                         kk_proc,tag2+Ptopo_world_myproc, &
+!                                         MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_ISend (send_pil(1,KK),Pil_sendlen(kk)*NK*2, &
+                                  'MPI_REAL',kk_proc,tag2+Ptopo_world_myproc, &
+                                          'MULTIGRID',request(ireq),ierr)
          endif
 !
 !        check to receive from other colour processor
@@ -199,15 +203,19 @@
 
              ireq = ireq+1
 !            print *,'scaluv: receiving',Pil_sendlen(kk)*NK*2,' from ',kk_proc
-             call MPI_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK*2,MPI_REAL, &
-                    kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK*2,MPI_REAL, &
+!                   kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK*2, &
+                                 'MPI_REAL', kk_proc,tag2+kk_proc, &
+                                 'MULTIGRID',request(ireq),ierr)
          endif
 
  100  continue
 
 !Wait for all done sending and receiving
 
-      call mpi_waitall(ireq,request,stat,ierr)
+!     call mpi_waitall(ireq,request,stat,ierr)
+      call RPN_COMM_waitall_nostat(ireq,request,ierr)
 
 ! Now fill my results if I have received something
 

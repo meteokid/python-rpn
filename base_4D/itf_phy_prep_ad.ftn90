@@ -1,0 +1,87 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r itf_phy_prep -
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_prep_ad(F_step)
+      implicit none
+!
+      integer, INTENT(IN) :: F_step
+  !
+  !author
+  !     Lubos Spacek    - Nov 2010 
+  !
+  !revision
+  ! v4_20 - Spacek, L.       - Initial revision
+  ! v4_40 - Tanguay,M.       - BUSDYN_3d
+  !
+  !Object
+  !	Fill the slice workspace variable for the physics.
+  !
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "itf_phy_buses.cdk"
+!
+      integer i,ij,j,k,ik,cnt,lght,indx_n,soit
+      real, pointer, dimension (:,:,:) :: tr         => null()
+      real, pointer, dimension (:,:  ) :: BUSDYN_3d  => null()
+      type(gmm_metadata) :: meta
+!     ________________________________________________________________
+!
+      gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
+!
+ do i=1,p_bdyn_top
+ nullify (tr)
+ gmmstat = gmm_get(dynnm(i),tr,meta3d)
+ if (gmmstat.eq.0) then
+!!! call getindx (dynnm(i),  'D', indx_n, lght, soit)
+!!! if (dynpar(i,3).eq.1) then
+!!!    if (dynpar(i,7).eq.1) then
+    if (phy_idxdyn(i,3).eq.1) then
+       if (phy_idxdyn(i,2).eq.p_ni) then
+       Do j=1,p_nj
+!!!         ik=indx_n !!+(j-1)*p_bdyn_siz
+            ik=phy_idxdyn(i,1)
+            tr(1+p_offi:p_ni+p_offi,j,p_nk) = tr(1+p_offi:p_ni+p_offi,j,p_nk) &
+!!!                                         + Phy_busdyn3D(ik:ik+p_ni-1)
+!!!         Phy_busdyn3D(ik:ik+p_ni-1)      = 0.0
+                                            + BUSDYN_3d   (ik:ik+p_ni-1,j)
+            BUSDYN_3d   (ik:ik+p_ni-1,j)    = 0.0
+         Enddo
+       else
+         Do j=1,p_nj
+!!!         ij=indx_n !!+(j-1)*p_bdyn_siz
+            ij=phy_idxdyn(i,1)
+            Do k=1,p_nk
+               ik=ij+(k-1)*p_ni
+               tr(1+p_offi:p_ni+p_offi,j,k) = tr(1+p_offi:p_ni+p_offi,j,k) &
+!!!                                         + Phy_busdyn3D(ik:ik+p_ni-1)
+!!!            Phy_busdyn3D(ik:ik+p_ni-1)   = 0.0
+                                            + BUSDYN_3d   (ik:ik+p_ni-1,j)
+               BUSDYN_3d   (ik:ik+p_ni-1,j) = 0.0
+            Enddo
+         Enddo
+       endif
+    endif
+ endif
+ end do
+!
+!     ________________________________________________________________
+!
+      return
+      end

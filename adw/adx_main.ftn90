@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "stop_mpi.h"
 #include "msg.h"
+#include <model_macros_f.h>
 
 !/**
 subroutine adx_main7 (F_su, F_sv, F_sw, &
@@ -44,6 +45,8 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    ! v4_04 - Tanguay M.        - Staggered version TL/AD 
    ! V4_10 - Plante A.         - Thermo upstream positions
    ! V4_14 - Plante A.         - No advection in top pilote zone
+   ! V4_30 - Plante A.         - Added Adw_thermopos_S
+   ! v4_40 - Tanguay M.        - Revision TL/AD
    !@description
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
@@ -53,6 +56,8 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 #include "adx_gmm.cdk"
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
+#include "glb_ld.cdk"
+#include "v4d_cfl.cdk"
    include "v4dg.inc"
 
    logical, parameter :: IS_MOM_LEVEL = .true.
@@ -119,18 +124,22 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    istat = min(gmm_get(adx_zct1_s,zct1,my_meta2),istat)
    if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
 
-   istat = min(gmm_get(adx_xth_t_s,xth_t,my_meta_t),istat)
-   istat = min(gmm_get(adx_yth_t_s,yth_t,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_zth_t_s,zth_t,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+   if(trim(Adw_thermopos_S).eq.'TRAJ')then
+      istat = min(gmm_get(adx_xth_t_s,xth_t,my_meta_t),istat)
+      istat = min(gmm_get(adx_yth_t_s,yth_t,my_meta2),istat)
+      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+      istat = min(gmm_get(adx_zth_t_s,zth_t,my_meta2),istat)
+      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+      
+      istat = min(gmm_get(adx_xcth_t_s,xcth_t,my_meta2),istat)
+      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+      istat = min(gmm_get(adx_ycth_t_s,ycth_t,my_meta2),istat)
+      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+      istat = min(gmm_get(adx_zcth_t_s,zcth_t,my_meta2),istat)
+      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
 
-   istat = min(gmm_get(adx_xcth_t_s,xcth_t,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_ycth_t_s,ycth_t,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_zcth_t_s,zcth_t,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
+
+   endif
 
    !TODO: check my_meta and my_meta_t compared to adx_mlnijk
 
@@ -138,6 +147,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    call tmg_start0 (50, 'ADW_TRAJE')
 
+   V4d_cfl_kind_S = 'm'
    call adx_main_2_pos4( F_nb_iter, 'm'  , &
                          pxm , pym , pzm , &
                          a_su, a_sv, a_sw, &
@@ -147,16 +157,26 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
         adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
         adx_mlni , adx_mlnj , k0 , adx_lnkm , F_nks)
 
-   call adx_main_2_pos4( F_nb_iter, 't'        , &
-                         pxt   , pyt   , pzt   , &
-                         a_su  , a_sv  , a_sw  , &
-                         xth_t , yth_t , zth_t , &
-                         xcth_t, ycth_t, zcth_t, &
-                         l_xct1, l_yct1, l_zct1, &
-        adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni , adx_mlnj , k0 , adx_lnkt , F_nks)
-
    call adx_get_ij0n (i0,in,j0,jn)
+
+   if(trim(Adw_thermopos_S).eq."TRAJ")then
+      V4d_cfl_kind_S = 't'
+      call adx_main_2_pos4(&
+           F_nb_iter, 't'        , &
+           pxt   , pyt   , pzt   , &
+           a_su  , a_sv  , a_sw  , &
+           xth_t , yth_t , zth_t , &
+           xcth_t, ycth_t, zcth_t, &
+           l_xct1, l_yct1, l_zct1, &
+           adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
+           adx_mlni , adx_mlnj , k0 , adx_lnkt , F_nks)
+   else if(trim(Adw_thermopos_S).eq."INT_Z")then
+      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.false.)         
+   else if(trim(Adw_thermopos_S).eq."INT_XYZ")then
+      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
+   else
+      call handle_error(-1,'adx_main','Error specifying Adw_thermopos_S (TRAJ,INT_Z,INT_XYZ)')
+   endif
 
 !$omp parallel
 !$omp do
@@ -183,16 +203,17 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
            xct1, yct1, zct1, &
            adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
            adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
-
-      call adx_main_2_pos_stats(  &
-           't', &
-           a_su  ,a_sv  ,a_sw  , &
-           pxt,    pyt,    pzt, &
-           xth_t,  yth_t,  zth_t, &
-           xcth_t, ycth_t, zcth_t, &
-           l_xct1, l_yct1, l_zct1, &
-           adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
-           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0,adx_lnkt)
+      if(trim(Adw_thermopos_S).eq."TRAJ")then         
+         call adx_main_2_pos_stats(  &
+              't', &
+              a_su  ,a_sv  ,a_sw  , &
+              pxt,    pyt,    pzt, &
+              xth_t,  yth_t,  zth_t, &
+              xcth_t, ycth_t, zcth_t, &
+              l_xct1, l_yct1, l_zct1, &
+              adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
+              adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0,adx_lnkt)
+      endif
    endif
 
 !  Store TRAJ upstream positions

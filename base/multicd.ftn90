@@ -14,8 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine multicD (nproc,proc,myproc,type,mycol,iwk)
+      implicit none
       integer nproc,proc(nproc),myproc,type,mycol,iwk(*)
-      include 'mpif.h'
+!     include 'mpif.h'
 !-----------------------------------------------------------------------
 !     P-SPARSLIB ROUTINE MULTICD
 !     parallel node multicoloring. This code assigns a color to
@@ -55,7 +56,7 @@
 !-----------------------------------------------------------------------
 !****Feb 1996
 !     modified the  code to allow nproc = 0
-      integer kol,ii,k,j,low,len,ncol,imsg
+      integer kol,ii,k,j,low,len,ncol,imsg,status,ierr
 !
 !
 !     if one processor is used or no adajacent processors at all
@@ -86,7 +87,7 @@
 !      call MPI_BARRIER(MPI_COMM_WORLD,imsg)
 
        call RPN_COMM_recv ( kol, 1, 'MPI_INTEGER', &
-        proc(ii)-1,type,'grid',staus,ierr)
+        proc(ii)-1,type,'grid',status,ierr)
             
 !
 !     sorted insertion -- first find where to insert

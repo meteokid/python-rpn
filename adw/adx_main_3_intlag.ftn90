@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 #include "stop_mpi.h"
+#include "model_macros_f.h"
 
 !/**
 subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
@@ -51,11 +52,19 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    ! v4_04 - Tanguay M.          - Staggered version TL/AD
    ! v4_05 - Lepine M.           - VMM replacement with GMM
    ! v1_10 - Plante A.           - Thermo upstream positions
+   ! v4_40 - Tanguay M.          - Revision TL/AD
 !**/
 
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
+#include "ptopo.cdk"
+#include "lun.cdk"
+#include "lctl.cdk"
+#include "orh.cdk"
+#include "schm.cdk"
+#include "step.cdk"
+   include "v4dg.inc"
 
    integer, parameter :: FIELD_IN  = 1
    integer, parameter :: FIELD_OUT = 2
@@ -72,6 +81,11 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    real   , dimension(3)              :: minv,maxv
 
    integer, external :: adx_ckbd3
+
+   integer outside,sum_outside,ier
+   logical done_once_L
+   save done_once_L
+   data done_once_L /.false./
 
    !---------------------------------------------------------------------
 
@@ -94,6 +108,24 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 
       call adx_exch_1b ( exch_n1, exch_xgg1, exch_xdd1, exch_c1, &
                               F_px, F_py, F_pz, F_ni,F_nj,F_nk )
+!
+      if ( V4dg_conf.ne.0.0 ) then
+!
+            outside = 0
+            if ( Adx_fro_a .gt. 0 ) outside = 1
+!
+            sum_outside = 0
+            call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER", &
+                                                   "MPI_SUM","grid",ier)
+!
+            if ( sum_outside.ne.0.and..not.done_once_L.and.Ptopo_myproc.eq.0 ) then
+                 write(Lun_out,*) 'NUMBER OF PE WITH OUTSIDERS IN ADW_MAIN_3_LAG AT current TIME-CN = ',sum_outside
+                 call flush(Lun_out)
+            endif
+
+!
+      endif
+!
       allocate ( capx2(max(1,adx_fro_a)), &
                  capy2(max(1,adx_fro_a)), &
                  capz2(max(1,adx_fro_a)) )
@@ -118,6 +150,8 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    end do
 
    if (.not.adx_lam_L) deallocate ( capx2, capy2, capz2 )
+
+   if (V4dg_conf.ne.0.and.Lctl_step.eq.Step_total.and.Orh_icn.eq.Schm_itcn) done_once_L = .true.
 
    call msg(MSG_DEBUG, 'adx_main_3_intlag [end]')
 

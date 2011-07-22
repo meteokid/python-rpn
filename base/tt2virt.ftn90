@@ -54,7 +54,7 @@
          if (F_timelevel_S .eq. 'M') gmmstat = gmm_get(gmmk_tt0_s, tvirt, meta3d)
          if (F_timelevel_S .eq. 'P') gmmstat = gmm_get(gmmk_tt1_s, tvirt, meta3d)
       else
-         gmmstat = gmm_get(gmmk_pw_tplus_s,  tt, meta3d)
+         gmmstat = gmm_get(gmmk_pw_tt_plus_s,  tt, meta3d)
       endif
 
       gmmstat = gmm_get('TR/HU:'//F_timelevel_S, hu, meta3d)

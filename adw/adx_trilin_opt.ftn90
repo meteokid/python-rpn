@@ -34,12 +34,19 @@ subroutine adx_trilin_opt4(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
    real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
         F_u1, F_u2  !I, field to interpol
    real,dimension(F_ni,F_nj,F_nk) :: F_xo,F_yo !O, F_dt * result of interp
+
+   !@author Stephane Chamberland 
+!
+   !@revisions
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+
 !**/
 
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
+   include "v4dg.inc"
 
    integer :: num,iimax
    logical,parameter :: DO_HORIZ_L = .true.
@@ -68,6 +75,10 @@ subroutine adx_trilin_opt4(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
 
    else
 
+      !-----------------------    
+      if (V4dg_conf.eq.0) then
+      !-----------------------    
+
       p_z00_8 = adx_verZ_8%t(1)
       iimax   = adx_iimax+1
       call tmg_start0(51, 'ADPOS_IJK' )
@@ -91,6 +102,25 @@ subroutine adx_trilin_opt4(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
           num, F_i0, F_in, F_j0, F_jn, F_k0, F_nk)
       endif
       call tmg_stop0(52)
+
+      !---    
+      else
+      !---    
+
+      call adx_setint_lin_hor_ver3(n1, capx1,capy1,capz1, F_xth,F_yth,F_zth,&
+                                   F_i0,F_in,F_j0,F_jn,F_k0,F_nk, num)
+
+      call adx_trilin4(F_xo,F_u1,F_dth,n1,capx1,capy1,capz1, &
+                       F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+
+      if (F_has_u2_L) then
+         call adx_trilin4(F_yo,F_u2,F_dth,n1,capx1,capy1,capz1, &
+                          F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+      endif
+
+      !----    
+      endif
+      !----    
 
    endif
 

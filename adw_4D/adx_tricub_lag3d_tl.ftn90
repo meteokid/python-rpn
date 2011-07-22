@@ -1,0 +1,102 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+#include "msg.h"
+
+!/**
+subroutine adx_tricub_lag3d5_tl (F_out  ,F_in  ,F_x  ,F_y  ,F_z  ,&
+                                 F_out_m,F_in_m,F_x_m,F_y_m,F_z_m,&
+                                 F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, F_lev_S)
+!
+   implicit none
+!
+   !@objective TLM of adx_tricub_lag3d 
+!
+   !@arguments
+   character(len=*) :: F_lev_S !I, m/t : Momemtum/thermo level
+   integer :: F_num            !I, number points
+   integer :: F_nk             !I, number of vertical levels
+   integer :: i0,in,j0,jn,k0   !I, scope of operator
+   logical :: F_mono_L         !I, .true. monotonic interpolation
+   real,dimension(F_num) ::  &
+        F_x  , F_y  , F_z  , & !I, interpolation target x,y,z coordinates
+        F_x_m, F_y_m, F_z_m    !I, interpolation target x,y,z coordinates TRAJ
+   real,dimension(*) :: &
+        F_in, F_in_m           !I, field to interpolate (and TRAJ)
+   real,dimension(F_num) :: &
+        F_out, F_out_m         !O, result of interpolation (and TRAJ)
+!
+   !@author Monique Tanguay
+!
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+!
+!**/
+
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+
+   integer :: kkmax
+   real*8  :: p_z00_8
+
+   integer,dimension(:),pointer :: p_lcz
+   real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
+   real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
+
+   !---------------------------------------------------------------------
+
+   call tmg_start0 (59, 'INT0_TL  ')
+
+!$omp parallel 
+   if (F_lev_S == 'm') then
+      kkmax   = adx_lnkm - 1
+      p_z00_8 = adx_verZ_8%m(1)
+      p_lcz     => adx_lcz%m
+      p_bsz_8   => adx_bsz_8%m
+      p_zabcd_8 => adx_zabcd_8%m
+      p_zbacd_8 => adx_zbacd_8%m
+      p_zcabd_8 => adx_zcabd_8%m
+      p_zdabc_8 => adx_zdabc_8%m
+      p_zbc_8   => adx_zbc_8%m
+   else
+      kkmax   = adx_lnkm
+      p_z00_8 = adx_verZ_8%t(1)
+      p_lcz     => adx_lcz%t
+      p_bsz_8   => adx_bsz_8%t
+      p_zabcd_8 => adx_zabcd_8%t
+      p_zbacd_8 => adx_zbacd_8%t
+      p_zcabd_8 => adx_zcabd_8%t
+      p_zdabc_8 => adx_zdabc_8%t
+      p_zbc_8   => adx_zbc_8%t
+   endif
+
+   call adx_lag3d_tricub_tl (F_out  , F_in  , F_x  , F_y  , F_z  , &
+                             F_out_m, F_in_m, F_x_m, F_y_m, F_z_m, &
+        adx_y00_8,adx_x00_8,p_z00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8, &
+        adx_lcx,adx_lcy,p_lcz, adx_bsx_8,adx_bsy_8,p_bsz_8, &
+        adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, &
+        adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8, &
+        p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8,&
+        F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax)
+
+!$omp end parallel
+
+   call tmg_stop0 (59)
+
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_tricub_lag3d5_tl

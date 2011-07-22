@@ -1,0 +1,68 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r v4d_get_params
+!
+#include "model_macros_f.h"
+      subroutine v4d_get_params
+      implicit none
+!
+!author 
+!     Michel Desgagne - Spring 2010
+!
+!revision
+! v4_13 - Desgagne,Tanguay       - initial version
+!
+#include <WhiteBoard.hf>
+#include "adx_gmm_tr.cdk"
+#include "vth_m.cdk"
+#include "vt1_m.cdk"
+!
+   character(len=40) :: label
+   integer :: istat
+!
+!  ---------------------------------------------------------------
+
+!  TRAJECTORY
+!  ---------- 
+!
+   istat = WB_OK
+
+   istat = min(wb_get('model/gmm/xth_m_tr',adx_xth_tr_s),istat)
+   istat = min(wb_get('model/gmm/yth_m_tr',adx_yth_tr_s),istat)
+   istat = min(wb_get('model/gmm/zth_m_tr',adx_zth_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xcth_m_tr',adx_xcth_tr_s),istat)
+   istat = min(wb_get('model/gmm/ycth_m_tr',adx_ycth_tr_s),istat)
+   istat = min(wb_get('model/gmm/zcth_m_tr',adx_zcth_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xct1_m_tr',adx_xct1_tr_s),istat)
+   istat = min(wb_get('model/gmm/yct1_m_tr',adx_yct1_tr_s),istat)
+   istat = min(wb_get('model/gmm/zct1_m_tr',adx_zct1_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xth_t_tr',adx_xth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/yth_t_tr',adx_yth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/zth_t_tr',adx_zth_t_tr_s),istat)
+
+   istat = min(wb_get('model/gmm/xcth_t_tr',adx_xcth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/ycth_t_tr',adx_ycth_t_tr_s),istat)
+   istat = min(wb_get('model/gmm/zcth_t_tr',adx_zcth_t_tr_s),istat)
+!
+   call handle_error_l (WB_IS_OK(istat),'v4d_get_params','problem getting values from whiteboard')
+!
+!  ---------------------------------------------------------------
+!
+   return
+   end

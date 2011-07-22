@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_readinit - read lat-lon observations positions from init PROF file and
 !                     evaluate associated px,py grid positioning needed in EZSCINT package
 !
@@ -40,7 +40,7 @@
 ! v3_20 - Zadra A.       - Introduce V4dg_sgvc_dt0
 ! v3_20 - M. Tanguay     - Modifications to allow different cutoff 
 ! v4_12 - M. Tanguay     - Reset Communication 3D_Var-(TL/AD)
-! v4_30 - Tanguay M.     - Revision
+! v4_40 - Bin He         - Revision for MPI 3dvar
 !
 !object
 !	
@@ -66,8 +66,8 @@
 #include <prof_f.h>
       include "v4dg.inc"
 !
-      integer  ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
-      external ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,incdat,incdatr
+      integer  ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,prof_wrrec,incdat,incdatr
+      external ezqkdef,newdate,ezgdef_fmem,gdxyfll,gdrls,prof_rdrec,prof_wrrec,incdat,incdatr
 !
       logical ropr_L,rdvar_L
 !
@@ -76,6 +76,7 @@
               isize,mytag,nrectot,testmaxprof,sumzero,ifact,middle,nbin,middle_3dvar
 !
       character*256 pathob_S
+      character*4  cljx,cljy  
 !
       real*8 hrperiod_8,hrdiff_8,hour_8 
 !
@@ -105,6 +106,13 @@
       type (lalo8prof), dimension(nrecmax):: g_pf  ! NB the type !!!
 !
       integer dat1,dat2
+
+      type locObsTag
+        integer ,pointer ,dimension(:) :: obstag 
+      end type locObsTag  
+
+      TYPE (locObsTag),ALLOCATABLE,DIMENSION(:) :: pr_obsTag   
+      integer,ALLOCATABLE,DIMENSION(:) :: obsTagproc  
 !     ____________________________________________________________
 !
 !     Nullify pointers for prof_gvar
@@ -113,6 +121,8 @@
          nullify( g_pf(nrec) % lat, g_pf(nrec) % lon, g_pf(nrec) % obstag) 
       end do
 !
+      write(cljx,'(I2.2)')Ptopo_mycol
+      write(cljy,'(I2.2)')Ptopo_myrow
 !     Switch for debugging output
 !     ---------------------------
       ropr_L = .false.
@@ -130,14 +140,14 @@
          call handle_error(-1,'v4d_readinit','ERROR WHILE OPENING init PROF file')
       endif
 !
-!     CAUTION for Saroja: 
 !     ------------------
-!     We have to transmit through PROF file the number of vertical levels used in 3D-Var. 
-!     It is needed to allocate the vertical levels of the profiles. We assume here it is 1 more than GEM_nk  
+!     We transmit through PROF file the appropriate number of vertical levels used in GEM for each variable
+!     and let 3D-Var deal with interpolation. We set here V4dzgauss_nk as GEM_nk+2 for memory allocation.
 !     ------------------
-      V4dzgauss_nk = l_nk + 1
+      V4dzgauss_nk = l_nk + 2
       write(Lun_out,*) 'CAUTION: V4D_READINIT: We have GEM_nk                 = ',l_nk
-      write(Lun_out,*) 'CAUTION: V4D_READINIT: We set V4dzgauss_nk = GEM_nk+1 = ',V4dzgauss_nk
+      write(Lun_out,*) 'CAUTION: V4D_READINIT: We set V4dzgauss_nk = GEM_nk+2  = ' &
+                       ,V4dzgauss_nk
 !
 ! *****************************************************************************
 !     Read Initialization file for SGVC job
@@ -366,6 +376,8 @@
 !
 !     Loop over all bins 
 !     ------------------
+      allocate(Pr_obsTag(Pr_maxbin),STAT=pnerr)
+
       do nbin = 1,Pr_maxbin
 !
         ntime  = (Pr_ibin0 + (nbin-1) * V4dg_stepob)
@@ -599,6 +611,19 @@
 !     ------------------------------------------------------------
       if(Pr_nob(nbin).ne.0) then
 !
+      allocate(Pr_obsTag(nbin)%obstag(Pr_nob(nbin)),STAT=pnerr)
+      nnn=0
+      DO irec=1,nrec
+         DO j=1,g_pf(irec)%nprof
+           IF(g_pf(irec)%locproc(j) == 1) THEN 
+              nnn=nnn+1
+              IF(nnn>pr_nob(nbin)) THEN
+                 CALL handle_error(-1,'v4d_readinit','Error:Memory fault for Pr_obsTag')
+              ENDIF
+              Pr_obsTag(nbin)%obstag(nnn)=g_pf(irec)%obstag(j) 
+           ENDIF 
+         ENDDO 
+      ENDDO 
       do i = 1,Pr_nvars 
 !
         if(Pr_varindx(i).ne.V3D_VTRU) then    ! skip V; U is sufficient
@@ -727,7 +752,6 @@
           if(Pr_varindx(i).eq.V2D_PSUR) then
              allocate (Pr_l_mv(Pr_varindx(i),nbin)%fprof(   1,isize), STAT=pnerr )
           else
-!CCC         allocate (Pr_l_mv(Pr_varindx(i),nbin)%fprof(l_nk        ,isize), STAT=pnerr )
              allocate (Pr_l_mv(Pr_varindx(i),nbin)%fprof(V4dzgauss_nk,isize), STAT=pnerr )
           endif
 !
@@ -852,6 +876,28 @@
         ihdlin0 = prof_open(pathob_S,'READ','FILE' )
         ier = prof_close(ihdlin0,Pr_llfrm_L)
       endif
+      allocate(obsTagproc(Pr_nobproc),STAT=pnerr)
+      nnn=0
+      DO nbin=1,Pr_maxbin
+        DO i=1,Pr_nob(nbin) 
+          nnn=nnn+1
+          IF(nnn>Pr_nobproc) CALL handle_error(-1,'v4d_readinit','ERROR: Memory Fault in Pr_nob') 
+          obsTagProc(nnn)=Pr_obsTag(nbin)%obstag(i) 
+        ENDDO 
+      ENDDO 
+      DO i=1,Pr_maxbin
+        if (Pr_nob(i).gt.0) DEALLOCATE(Pr_obsTag(i)%obstag) 
+      ENDDO 
+      
+      DEALLOCATE(Pr_obsTag)
+      pathob_S=trim(path_xchg_S)//'/obstag_'//trim(cljx)//'_'//trim(cljy)//'.prof' 
+      WRITE(*,*) 'Open file:',pathob_S
+      ihdlin0=prof_open(pathob_S,'WRITE','FILE')
+      ier = prof_pvar(ihdlin0,obstagproc,V2D_OTAG)
+      ier = prof_wrrec(ihdlin0)
+      ier = prof_close(ihdlin0) 
+
+      DEALLOCATE(obstagproc) 
 !
  1001 format(2I4, 2F10.3, 2Z12)
            

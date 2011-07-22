@@ -1,0 +1,117 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!/**
+subroutine adx_trilin_opt4_tl (F_xo  ,F_yo  ,F_u1  ,F_u2  ,F_xth  ,F_yth  ,F_zth  ,       &
+                               F_xo_m,F_yo_m,F_u1_m,F_u2_m,F_xth_m,F_yth_m,F_zth_m,       &
+                               F_n1_m,F_capx1_m,F_capy1_m,F_capz1_m,F_ii_m,F_jj_m,F_kk_m, &
+                               F_dth,F_has_u2_L, F_i0,F_in,F_j0,F_jn,                     &
+                               F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
+!
+   implicit none
+!
+   !@objective TLM of adx_trilin_opt 
+!
+   !@arguments
+   logical :: F_has_u2_L           !I, .T. if F_u2 needs to be treated
+   real    :: F_dth                !I, multiplicative constant (1. or timestep)
+   integer :: F_nk, F_nk_super     !I, number of vertical levels
+   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
+   integer :: F_ni, F_nj           !I, dims of position fields
+   integer :: F_i0,F_in,F_j0,F_jn,F_k0 !I, operator scope
+   real,dimension(F_ni,F_nj,F_nk) :: F_xth  ,F_yth  ,F_zth,  & !I, x,y,z positions
+                                     F_xth_m,F_yth_m,F_zth_m   !I, x,y,z positions TRAJ
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
+        F_u1  , F_u2  , &  !I, field to interpol
+        F_u1_m, F_u2_m     !I, field to interpol TRAJ
+   real,dimension(F_ni,F_nj,F_nk) :: F_xo  ,F_yo  , & !O, F_dt * result of interp
+                                     F_xo_m,F_yo_m    !O, F_dt * result of interp TRAJ
+   integer, dimension(F_ni,F_nj,F_nk) :: F_n1_m,F_ii_m,F_jj_m,F_kk_m
+   real,    dimension(F_ni,F_nj,F_nk) :: F_capx1_m,F_capy1_m,F_capz1_m
+!
+   !@author Monique Tanguay
+!
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+!
+!**/
+#include "adx_nml.cdk"
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_interp.cdk"
+!
+   integer :: num
+   logical,parameter :: DO_HORIZ_L = .true.
+   logical,parameter :: DO_VERTI_L = .true.
+   integer, dimension(F_ni,F_nj,F_nk) :: n1_m
+   real,    dimension(F_ni,F_nj,F_nk) :: capx1_m,capy1_m,capz1_m
+   real,    dimension(F_ni,F_nj,F_nk) :: capx1  ,capy1  ,capz1
+   !
+   real*8 p_z00_8
+
+   !---------------------------------------------------------------------
+
+   num = F_ni*F_nj*F_nk
+
+   if (.not.adw_nosetint_L) then
+
+      call adx_setint_lin_hor_ver3_tl (      capx1  ,capy1  ,capz1  ,F_xth  ,F_yth  ,F_zth  ,&
+                                       n1_m, capx1_m,capy1_m,capz1_m,F_xth_m,F_yth_m,F_zth_m,&
+                                       F_i0,F_in,F_j0,F_jn,F_k0,F_nk, num)
+
+      call adx_trilin4_tl (F_xo  ,F_u1  ,           capx1  ,capy1  ,capz1  , &
+                           F_xo_m,F_u1_m,F_dth,n1_m,capx1_m,capy1_m,capz1_m, &
+                           F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+
+      if (F_has_u2_L) then
+         call adx_trilin4_tl (F_yo  ,F_u2             ,capx1  ,capy1  ,capz1  , &
+                              F_yo_m,F_u2_m,F_dth,n1_m,capx1_m,capy1_m,capz1_m, &
+                              F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk)
+      endif
+
+   else
+
+      call adx_trilin_turbo4_tl (F_xo     ,F_u1     ,                                &           
+                                           capx1    ,capy1    ,capz1    ,            &
+                                 F_xth    ,F_yth    ,F_zth,                          &
+                                 F_xo_m   ,F_u1_m   ,F_dth,                          &
+                                 F_n1_m   ,F_capx1_m,F_capy1_m,F_capz1_m,            &
+                                 F_xth_m  ,F_yth_m  ,F_zth_m,                        &
+                                 F_ii_m   ,F_jj_m   ,F_kk_m   ,                      &
+                                 adx_lcx,adx_bsx_8, adx_dix_8,                       &
+                                 adx_lcy,adx_bsy_8, adx_diy_8,                       &
+                                 adx_lcz%s,adx_bsz_8%s,adx_diz_8,                    &
+                                 F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk,adx_lnkm)
+
+      if (F_has_u2_L) then
+         call adx_trilin_turbo4_tl (F_yo   ,F_u2    ,                                 &            
+                                            capx1   ,capy1  ,  capz1  ,               &
+                                    F_xth  ,F_yth   ,F_zth  ,                         &
+                                    F_yo_m ,F_u2_m  ,F_dth,                           &
+                                    F_n1_m ,F_capx1_m,F_capy1_m,F_capz1_m,            &
+                                    F_xth_m,F_yth_m ,F_zth_m,                         &
+                                    F_ii_m ,F_jj_m,F_kk_m,                            &
+                                    adx_lcx, adx_bsx_8, adx_dix_8,                    &
+                                    adx_lcy, adx_bsy_8, adx_diy_8,                    &
+                                    adx_lcz%s, adx_bsz_8%s, adx_diz_8,                &
+                                    F_ni*F_nj*F_nk,F_i0,F_in,F_j0,F_jn,F_k0,F_nk,adx_lnkm)
+      endif
+
+   endif
+
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_trilin_opt4_tl

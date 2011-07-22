@@ -32,39 +32,31 @@
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 !
-      integer i,j,lght,indx_n,soit,k0, &
-              cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8
+      integer i,j,k0
       real, pointer, dimension (:,:,:) :: tr         => null()
       real, pointer, dimension (:,:  ) :: BUSDYN_3d  => null()
       type(gmm_metadata) :: meta
 !     ________________________________________________________________
 !
       gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
-!
+
       do i=1,p_bdyn_top
          nullify (tr)
          gmmstat = gmm_get(dynnm(i),tr,meta3d)
          if (gmmstat.eq.0) then
-            call getindx (dynnm(i),  'D', indx_n, lght, soit)
-            do j= 1,p_nj
-               if (dynpar(i,3).eq.1) then
-                  k0 = 1
-                  if (dynpar(i,7).eq.1) k0 = p_nk
-                  call itf_phy_fold (BUSDYN_3d(indx_n,j), tr(l_minx,l_miny,1),j, &
-                                            k0,p_nk,l_minx,l_maxx,l_miny,l_maxy)
-               endif
-            enddo
+            if (phy_idxdyn(i,3).eq.1) then 
+               k0 = 1
+               if (phy_idxdyn(i,2).eq.p_ni) k0 = p_nk
+               do j= 1,p_nj
+                  call itf_phy_fold (BUSDYN_3d(phy_idxdyn(i,1),j), &
+                                           tr(l_minx,l_miny,1),j , &
+                                k0,p_nk,l_minx,l_maxx,l_miny,l_maxy)
+               enddo
+            endif
          endif
       enddo
 
       if (C_coupling_L) then
-
-         call getindx ('MCCPL'     ,  'D', cpl_mcp, lght, soit)
-         call getindx ('TMICECPL'  ,  'D', cpl_i7 , lght, soit)
-         call getindx ('TWATERCPL' ,  'D', cpl_tm , lght, soit)
-         call getindx ('GLCPL'     ,  'D', cpl_gl , lght, soit)
-         call getindx ('ICEDPCPL'  ,  'D', cpl_i8 , lght, soit)
-
          do j= 1,p_nj
             call itf_phy_fold ( BUSDYN_3d(cpl_mcp,j), atm_local_busin(1,1,1), &
                                 j, 1,1, 1,l_ni,1,l_nj )
@@ -77,7 +69,6 @@
             call itf_phy_fold ( BUSDYN_3d(cpl_i8,j) , atm_local_busin(1,1,5), &
                                 j, 1,1, 1,l_ni,1,l_nj )
          enddo
-
       endif
 !     ________________________________________________________________
 !

@@ -167,8 +167,6 @@
       c2 = one / Dcst_rayt_8**2
       c3 = Dcst_rayt_8**2 * Ver_epsilon_8
 !
-!$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
-!$omp w1,w2,w3,qbar)
 
 !
 !***********************************************************
@@ -192,6 +190,8 @@
           if (l_north) jnv = jnv+1
       endif
 !
+!$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
+!$omp w1,w2,w3,qbar)
 !$omp do
       do 100 k=k0,l_nk
 !
@@ -461,19 +461,20 @@
 !
       end do
 !$omp enddo
+!$omp end parallel
 !
 !*******************************************************************
 ! The nonlinear deviation of the continuity equation               *
 ! Horizontal Divergence of (Nu,Nv) combined with Nc (stored in Nc) *
 !*******************************************************************
 !
-!$omp single
       call rpn_comm_xch_halo( F_nu, LDIST_DIM,l_niu,l_nj,G_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_nv, LDIST_DIM,l_ni,l_njv,G_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-!$omp end single
 !
+!$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
+!$omp w1,w2,w3,qbar)
 !$omp do
       do k=k0,l_nk
 !

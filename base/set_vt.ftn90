@@ -239,40 +239,36 @@
          gmmstat = gmm_create('DIGF_'//trim(Tr3d_name_S(i))    ,tr,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       end do
 
-      gmmk_pw_uplus_s  = 'PW_UU:P'
-      gmmk_pw_vplus_s  = 'PW_VV:P'
-      gmmk_pw_wplus_s  = 'PW_WW:P'
-      gmmk_pw_tplus_s  = 'PW_TT:P'
-      gmmk_pw_pmplus_s = 'PW_PM:P'
-      gmmk_pw_ptplus_s = 'PW_PT:P'
-      gmmk_pw_gzplus_s = 'PW_GZ:P'
+      gmmk_pw_uu_plus_s  = 'PW_UU:P'
+      gmmk_pw_vv_plus_s  = 'PW_VV:P'
+      gmmk_pw_ww_plus_s  = 'PW_WW:P'
+      gmmk_pw_tt_plus_s  = 'PW_TT:P'
+      gmmk_pw_pm_plus_s  = 'PW_PM:P'
+      gmmk_pw_pt_plus_s  = 'PW_PT:P'
+      gmmk_pw_gz_plus_s  = 'PW_GZ:P'
 
-      gmmk_pw_umoins_s = 'PW_UU:M'
-      gmmk_pw_vmoins_s = 'PW_VV:M'
-      gmmk_pw_tmoins_s = 'PW_TT:M'
-      gmmk_pw_pmmoins_s= 'PW_PM:M'
+      gmmk_pw_uu_moins_s = 'PW_UU:M'
+      gmmk_pw_vv_moins_s = 'PW_VV:M'
+      gmmk_pw_tt_moins_s = 'PW_TT:M'
+      gmmk_pw_pm_moins_s = 'PW_PM:M'
+      gmmk_pw_gz_moins_s = 'PW_GZ:M'
 
-!      gmmk_pw_lat_s    = 'PW_LAT'
-!      gmmk_pw_lon_s    = 'PW_LON'
-!      gmmk_pw_dxdy_s   = 'PW_DXDY'
-!      gmmk_pw_eponmod_s= 'PW_EPONMOD'
+      nullify (pw_uu_plus ,pw_vv_plus ,pw_ww_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
+      nullify (pw_uu_moins,pw_vv_moins,pw_tt_moins,pw_pm_moins,pw_gz_moins)
 
-      nullify (pw_uplus,pw_vplus,pw_wplus,pw_tplus,pw_pm_plus,pw_pt_plus,pw_gzplus)
-      nullify (pw_umoins,pw_vmoins,pw_tmoins,pw_pm_moins)
+      gmmstat = gmm_create(gmmk_pw_uu_plus_s ,pw_uu_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_vv_plus_s ,pw_vv_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_tt_plus_s ,pw_tt_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d_nk2,GMM_FLAG_RSTR)
+      gmmstat = gmm_create(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d_nk2,GMM_FLAG_RSTR)
 
-      gmmstat = gmm_create(gmmk_pw_uplus_s  ,pw_uplus  ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_vplus_s  ,pw_vplus  ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_wplus_s  ,pw_wplus  ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_tplus_s  ,pw_tplus  ,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_pmplus_s ,pw_pm_plus,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_ptplus_s ,pw_pt_plus,meta3d_nk2,GMM_FLAG_RSTR)
-      gmmstat = gmm_create(gmmk_pw_gzplus_s ,pw_gzplus ,meta3d_nk2,GMM_FLAG_RSTR)
-
-      gmmstat = gmm_create(gmmk_pw_umoins_s ,pw_umoins  ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_vmoins_s ,pw_vmoins  ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_tmoins_s ,pw_tmoins  ,meta3d_nk2)
-      gmmstat = gmm_create(gmmk_pw_pmmoins_s,pw_pm_moins,meta3d_nk2)
-
+      gmmstat = gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk2)
+      gmmstat = gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk2)
 !
  1000 format( &
       /,'INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)', &

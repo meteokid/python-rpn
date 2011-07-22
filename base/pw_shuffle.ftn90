@@ -32,12 +32,14 @@
       character(len=8) , dimension(2), parameter :: pw_vlist  = (/ 'PW_VV:M', 'PW_VV:P' /)
       character(len=8) , dimension(2), parameter :: pw_tlist  = (/ 'PW_TT:M', 'PW_TT:P' /)
       character(len=8) , dimension(2), parameter :: pw_plist  = (/ 'PW_PM:M', 'PW_PM:P' /)
+      character(len=8) , dimension(2), parameter :: pw_glist  = (/ 'PW_GZ:M', 'PW_GZ:P' /)
 !     ________________________________________________________________
 !
       gmmstat = gmm_shuffle (pw_ulist)
       gmmstat = gmm_shuffle (pw_vlist)
       gmmstat = gmm_shuffle (pw_tlist)
       gmmstat = gmm_shuffle (pw_plist)
+      gmmstat = gmm_shuffle (pw_glist)
 !     ________________________________________________________________
 !
       return

@@ -46,9 +46,6 @@
 ! v4_10 - Lepine M.         - VMM replacement with GMM
 ! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
 !
-!object
-!
-!implicits
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "lun.cdk"
@@ -76,7 +73,7 @@
                series_nml,adw_nml,adw_config,init_ndoms,step_nml,&
                rpn_comm_init_multigrid, rpn_comm_init_yinyang,   &
                bin2com
-!*
+
       integer ierr,err(8),cte_ok,mydomain,f1,f2,f3,f4
       character(len=256) :: my_dir
 !
@@ -100,12 +97,12 @@
 !
 ! Initializing MPI and processor topology (pe_zero_topo called on PE #0 only)
 !
-      Grd_yinyang_L = Grd_yinyang_L ! remove this line later...
       if (Grd_yinyang_L) then
-         ierr = rpn_comm_init_yinyang (pe_zero_topo,Ptopo_myproc, Ptopo_numproc,&
-                          Ptopo_npex,Ptopo_npey,Ptopo_intracomm,Ptopo_intercomm,&
-                          Ptopo_couleur,Ptopo_world_myproc,Ptopo_world_numproc ,&
-                                                                  Grd_ndomains  )
+         call yy_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc,       &
+                        Ptopo_npex, Ptopo_npey,                          &
+                        Ptopo_intracomm, Ptopo_intercomm, Ptopo_couleur, &
+                        Ptopo_world_myproc, Ptopo_world_numproc, Grd_ndomains )
+
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
          ierr= clib_mkdir(trim(Grd_yinyang_S))

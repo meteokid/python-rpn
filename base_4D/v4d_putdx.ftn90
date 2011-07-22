@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_putdx - Prepare and Write increments or adjoint increments
 !                  to be read by 3D-Var
 !
@@ -37,7 +37,7 @@
 ! v3_02 - Tanguay M.         - locate HU in tracers 
 ! v3_30 - Fillion/Tanguay    - Adapt diagnostics for LAM 
 ! v4_12 - Tanguay M.         - Reset Communication 3D_Var-(TL/AD)
-! v4_30 - Tanguay M.         - Revision
+! v4_40 - Tanguay/Morneau    - Adapt to vertical stag grid 
 !
 !object
 !     -------------------------
@@ -78,8 +78,8 @@
       integer istat,ihdlout,icount,jlev,jlat,jlon,ierr, &
               pnerr,pnlkey1(8),nigauss,njgauss,inn
 !
-      real*8,allocatable:: dlbuff_8(:,:), dlbuff2d_8(:)
-      real,  allocatable::  zbuff(:,:,:),zbuff2d(:,:), &
+      real*8,allocatable:: dlbufm_8(:,:), dlbuft_8(:,:), dlbuff2d_8(:)
+      real,  allocatable::  zbufm(:,:,:), zbuft(:,:,:) , zbuff2d(:,:), &
                             gut1 (:,:,:),gvt1(:,:,:),gtt1(:,:,:), &
                             ghut1(:,:,:),gst1(:,:)
 !
@@ -99,16 +99,11 @@
       if (V4dg_di_L) call handle_error(-1,'V4D_PUTDX','V4dg_di_L')
 !     ______________________________________________________
 !
-!     Caution for Saroja
-!     ------------------
-!     In V4D_GETDX/V4D_PUTDX, we transfer 3D-Var increments (V4dzgauss_nk) to GEM increments (G_nk) (or vis-versa).
-!
       write(Lun_out,2000) 
 
 !     Flag for diagnostics
 !     --------------------
       plpr_L=.false.
-      if (plpr_L) call handle_error(-1,'v4d_putdx','verify GLBSTAT2')
 !
 !     Recall dimensions of 3D-Var Gaussian grid 
 !     -----------------------------------------
@@ -116,10 +111,10 @@
       njgauss = V4dzgauss_nj
 !
       if (Ptopo_myproc.eq.0) then
-         if (.not.allocated(gut1 )) allocate(gut1 (nigauss,njgauss,G_nk))
-         if (.not.allocated(gvt1 )) allocate(gvt1 (nigauss,njgauss,G_nk))
-         if (.not.allocated(gtt1 )) allocate(gtt1 (nigauss,njgauss,G_nk))
-         if (.not.allocated(ghut1)) allocate(ghut1(nigauss,njgauss,G_nk))
+         if (.not.allocated(gut1 )) allocate(gut1 (nigauss,njgauss,G_nk+1))
+         if (.not.allocated(gvt1 )) allocate(gvt1 (nigauss,njgauss,G_nk+1))
+         if (.not.allocated(gtt1 )) allocate(gtt1 (nigauss,njgauss,G_nk+2))
+         if (.not.allocated(ghut1)) allocate(ghut1(nigauss,njgauss,G_nk+2))
          if (.not.allocated(gst1 )) allocate(gst1 (nigauss,njgauss)     )
 !
 !        Zero adjoint variables
@@ -167,11 +162,11 @@
              inn=1
          end if
          write(Lun_out,*) 'BEFORE VARCONV OR VARCONV_AD'
-         call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni-inn,1,G_nj,  1,G_nk)
-         call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj-1,1,G_nk)
-         call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
-         call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,   1,1,G_ni,    1,G_nj,  1,   1)
-         call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni,    1,G_nj,  1,G_nk)
+         call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk+1,1,G_ni-inn,1,G_nj,  1,G_nk+1)
+         call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk+1,1,G_ni,    1,G_nj-1,1,G_nk+1)
+         call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk+2,1,G_ni,    1,G_nj,  1,G_nk+2)
+         call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,     1,1,G_ni,    1,G_nj,  1,     1)
+         call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk+2,1,G_ni,    1,G_nj,  1,G_nk+2)
          write(Lun_out,*) '-----------------------'
       end if
 !
@@ -254,15 +249,18 @@
 !        -----------------------------------------------------------------
          if (Ptopo_myproc.eq.0) then
 !
-            allocate(   zbuff(nigauss,njgauss,G_nk        ))
-            allocate(dlbuff_8(nigauss*njgauss,V4dzgauss_nk))
+            allocate(   zbufm(nigauss,njgauss,G_nk+1))
+            allocate(   zbuft(nigauss,njgauss,G_nk+2))
+            allocate(dlbufm_8(nigauss*njgauss,G_nk+1))
+            allocate(dlbuft_8(nigauss*njgauss,G_nk+2))
 !
             allocate(   zbuff2d(nigauss,njgauss))
             allocate(dlbuff2d_8(nigauss*njgauss))
 !
 !           Zero adjoint variables
 !           ----------------------
-            zbuff(:,:,:) = ZERO_8
+            zbufm(:,:,:) = ZERO_8
+            zbuft(:,:,:) = ZERO_8
             zbuff2d(:,:) = ZERO_8 
 !
          end if
@@ -270,14 +268,14 @@
          if (plpr_L) then
             write(Lun_out,*) 'BEFORE GAUSS2GEM_AD OR GEM2GAUSS'
             if (G_lam) then
-            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni-1,1,G_nj  ,1,G_nk)
+            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk+1,1,G_ni-1,1,G_nj  ,1,G_nk+1)
             else
-            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
+            call glbstat2(ut1 ,'UU','PUTDX',LDIST_DIM,1,G_nk+1,1,G_ni  ,1,G_nj  ,1,G_nk+1)
             end if
-            call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj-1,1,G_nk)
-            call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
-            call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,   1,1,G_ni  ,1,G_nj  ,1,   1)
-            call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk,1,G_ni  ,1,G_nj  ,1,G_nk)
+            call glbstat2(vt1 ,'VV','PUTDX',LDIST_DIM,1,G_nk+1,1,G_ni  ,1,G_nj-1,1,G_nk+1)
+            call glbstat2(tt1 ,'TT','PUTDX',LDIST_DIM,1,G_nk+2,1,G_ni  ,1,G_nj  ,1,G_nk+2)
+            call glbstat2(st1 ,'4S','PUTDX',LDIST_DIM,1,     1,1,G_ni  ,1,G_nj  ,1,     1)
+            call glbstat2(hut1,'HU','PUTDX',LDIST_DIM,1,G_nk+2,1,G_ni  ,1,G_nj  ,1,G_nk+2)
             write(Lun_out,*) '-----------------------'
          end if
 !
@@ -305,32 +303,43 @@
 !     Write all 3D dynamical fields 
 !     -----------------------------
 !
-         zbuff(:,:,:) = gut1 (:,:,:) 
+         zbufm(:,:,:) = gut1 (:,:,:) 
          call v4d_putfld('UU',kstatus)
 !
          if (kstatus.ne.0) goto 1002
 !
-         zbuff(:,:,:) = gvt1 (:,:,:) 
+         zbufm(:,:,:) = gvt1 (:,:,:) 
          call v4d_putfld('VV',kstatus)
 !
          if (kstatus.ne.0) goto 1002
 !
-         zbuff(:,:,:) = gtt1(:,:,:) 
-         call v4d_putfld('TT',kstatus)
-!
-         if (kstatus.ne.0) goto 1002
-!
-         zbuff(:,:,:) = ghut1(:,:,:) 
-         call v4d_putfld('HU',kstatus)
-!
-         if (kstatus.ne.0) goto 1002
-!
          write(Lun_out,*) 'Write first record with 3D fields...'
+         call flush(Lun_out)
 !
          istat = prof_wrrec(ihdlout)
 !
          if (istat.ne.0) then
              write(Lun_out,*) 'Problem writing first record with 3D fields'
+             kstatus = -99
+             goto 1002
+         end if
+!
+         zbuft(:,:,:) = gtt1(:,:,:) 
+         call v4d_putfld('TT',kstatus)
+!
+         if (kstatus.ne.0) goto 1002
+!
+         zbuft(:,:,:) = ghut1(:,:,:) 
+         call v4d_putfld('HU',kstatus)
+!
+         if (kstatus.ne.0) goto 1002
+!
+         write(Lun_out,*) 'Write second record with 3D fields...'
+!
+         istat = prof_wrrec(ihdlout)
+!
+         if (istat.ne.0) then
+             write(Lun_out,*) 'Problem writing second record with 3D fields'
              kstatus = -99
              goto 1002
          end if
@@ -344,12 +353,12 @@
 !
          if (kstatus.ne.0) goto 1002
 !
-         write(Lun_out,*) 'Write second record with 2D fields...'
+         write(Lun_out,*) 'Write third record with 2D fields...'
 !
          istat = prof_wrrec(ihdlout)
 !
          if (istat.ne.0) then
-             write(Lun_out,*) 'Problem writing second record with 2D fields'
+             write(Lun_out,*) 'Problem writing third record with 2D fields'
              kstatus = -99
              goto 1002
          end if
@@ -366,7 +375,7 @@
 !     Deallocations
 !     -------------
 !
-         deallocate(zbuff,  dlbuff_8  )
+         deallocate(zbufm  ,zbuft, dlbufm_8 , dlbuft_8 )
          deallocate(zbuff2D,dlbuff2d_8)
 !
          if (allocated (gut1      )) deallocate(gut1    )
@@ -447,7 +456,8 @@
 ! v3_01 - M. Tanguay         - introduce gem2gauss for singular vectors
 ! v3_11 - P. Gauthier        - Adjust latitude reversing when V4dg_vstag_L
 ! v3_30 - Fillion/Tanguay    - Allow Limited-Area option
-! v4_30 - Tanguay M.         - Revision
+! v4_30 - Tanguay/Morneau    - Revision
+!                            - adapt to vertical stag grid
 !
 !object
 !
@@ -465,34 +475,61 @@
 !
       write(Lun_out,*)'     ... collecting variable ',cdvar
 !
+      select case (cdvar)
+!
 !     Adjoint of
 !     Change accuracy and reverse latitude if 3D field
 !     ------------------------------------------------
-      select case (cdvar)
-      case('UU','VV','TT','HU')
-         dlbuff_8(:,:) = 0.
+      case('UU','VV')
+         dlbufm_8(:,:) = 0.
 !
          if(.not.G_lam) then
            njx = njgauss
            if(cdvar.eq.'VV'.and.V4dg_vstag_L) njx = njgauss -1
-           do jlev = 1, G_nk
+           do jlev = 1, G_nk+1
               icount = 0
               do jlat = 1,njx
                  do jlon = 1,nigauss
                     icount = icount+1
-                    dlbuff_8(icount,jlev) = zbuff(jlon,njx -jlat+1,jlev)
+                    dlbufm_8(icount,jlev) = zbufm(jlon,njx -jlat+1,jlev)
                  end do
               end do
            end do
          else
            njx = njgauss
            if(cdvar.eq.'VV'.and.V4dg_vstag_L) njx = njgauss -1
-           do jlev = 1, G_nk
+           do jlev = 1, G_nk+1
               icount = 0
               do jlat = 1,njx
                  do jlon = 1,nigauss
                     icount = icount+1
-                    dlbuff_8(icount,jlev) = zbuff(jlon,jlat,jlev)
+                    dlbufm_8(icount,jlev) = zbufm(jlon,jlat,jlev)
+                 end do
+              end do
+           end do
+         endif
+      case('TT','HU')
+         dlbuft_8(:,:) = 0.
+!
+         if(.not.G_lam) then
+           njx = njgauss
+           do jlev = 1, G_nk+2
+              icount = 0
+              do jlat = 1,njx
+                 do jlon = 1,nigauss
+                    icount = icount+1
+                    dlbuft_8(icount,jlev) = zbuft(jlon,njx -jlat+1,jlev)
+                 end do
+              end do
+           end do
+         else
+           njx = njgauss
+           do jlev = 1, G_nk+2
+              icount = 0
+              do jlat = 1,njx
+                 do jlon = 1,nigauss
+                    icount = icount+1
+                    dlbuft_8(icount,jlev) = zbuft(jlon,jlat,jlev)
                  end do
               end do
            end do
@@ -530,13 +567,13 @@
 !     -----------------------
       select case (cdvar)
       case('UU')
-         istat = prof_pvar(ihdlout,dlbuff_8,v3d_utru)   + istat 
+         istat = prof_pvar(ihdlout,dlbufm_8,v3d_utru)   + istat 
       case('VV')
-         istat = prof_pvar(ihdlout,dlbuff_8,v3d_vtru)   + istat
+         istat = prof_pvar(ihdlout,dlbufm_8,v3d_vtru)   + istat
       case('TT')
-         istat = prof_pvar(ihdlout,dlbuff_8,v3d_temp)   + istat
+         istat = prof_pvar(ihdlout,dlbuft_8,v3d_temp)   + istat
       case('HU')
-         istat = prof_pvar(ihdlout,dlbuff_8,v3d_sphu)   + istat
+         istat = prof_pvar(ihdlout,dlbuft_8,v3d_sphu)   + istat
       case('PS')
          istat = prof_pvar(ihdlout,dlbuff2d_8,v2d_psur) + istat
       end select

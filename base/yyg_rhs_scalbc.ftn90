@@ -24,7 +24,7 @@
 !author
 !     Abdessamad Qaddouri/V.Lee  - October 2009
 !
-      include 'mpif.h'
+!     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -44,8 +44,9 @@
       integer Rhsx_recvlen(Ptopo_numproc),Rhsx_sendlen(Ptopo_numproc)
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
-      integer status(MPI_STATUS_SIZE)
-      integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+!     integer status(MPI_STATUS_SIZE)
+!     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+      integer status
       integer request(Ptopo_numproc*2)
       real*8  send_Rhsx_8
       integer tag1,tag2,recvlen,sendlen,ireq
@@ -195,9 +196,12 @@
 
              ireq = ireq+1
 !            print *,'RHS_scalbc','sending',Rhsx_sendlen(kk)*NK,' to ',kk_proc
-             call MPI_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,MPI_REAL, &
-                                         kk_proc,tag2+Ptopo_world_myproc, &
-                                         MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,MPI_REAL, &
+!                                        kk_proc,tag2+Ptopo_world_myproc, &
+!                                        MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,&
+                                  'MPI_REAL', kk_proc,tag2+Ptopo_world_myproc, &
+                                  'MULTIGRID',request(ireq),ierr)
 
          endif
 !
@@ -209,13 +213,16 @@
 
              ireq = ireq+1
 !            print *,'RHS_scalbc','receiving ',Rhsx_recvlen(kk)*NK,' from ',kk_proc
-             call MPI_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,MPI_REAL, &
-                    kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,MPI_REAL, &
+!                   kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,'MPI_REAL',&
+                    kk_proc,tag2+kk_proc,'MULTIGRID',request(ireq),ierr)
          endif
 
  100  continue
 
-      call mpi_waitall(ireq,request,stat,ierr)
+!     call mpi_waitall(ireq,request,stat,ierr)
+      call RPN_COMM_waitall_nostat(ireq,request,ierr)
 
       l2=0
       do kk=1,Ptopo_numproc
@@ -223,7 +230,8 @@
             l2 =max(l2,abs(Sol_rhs(i,1,kk)))
          enddo
       enddo
-      call mpi_allreduce(L2,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+!     call mpi_allreduce(L2,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+      call RPN_COMM_allreduce(L2,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(2)=L1
       L2   =L1
 
@@ -232,22 +240,28 @@
 
       if (sendlen.gt.0) deallocate(send_pil)
 
-      call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+!     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr) 
+      call RPN_COMM_allreduce(Linfini,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(1)=L1
       Linfini=L1
 
       if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.0) then
-          call MPI_Send(L3,2,MPI_REAL,0,tag1,Ptopo_intercomm,ierr)
-          call MPI_Recv(L4,2,MPI_REAL,0,tag2,Ptopo_intercomm,status,ierr)
+!         call MPI_Send(L3,2,MPI_REAL,1,tag1,Ptopo_intercomm,ierr)
+!         call MPI_Recv(L4,2,MPI_REAL,1,tag2,Ptopo_intercomm,status,ierr)
+          call RPN_COMM_Send(L3,2,'MPI_REAL',1,tag1,'GRIDPEERS',ierr)
+          call RPN_COMM_Recv(L4,2,'MPI_REAL',1,tag2,'GRIDPEERS',status,ierr)
       endif
       if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.1) then
-          call MPI_Recv(L4,2,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
-          call MPI_Send(L3,2,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+!         call MPI_Recv(L4,2,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
+!         call MPI_Send(L3,2,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+          call RPN_COMM_Recv(L4,2,'MPI_REAL',0,tag1,'GRIDPEERS',status,ierr)
+          call RPN_COMM_Send(L3,2,'MPI_REAL',0,tag2,'GRIDPEERS',ierr)
       endif
       Linfini=max(Linfini,L4(1))
       L2=max(L2,L4(2))
       if (iter.gt.1) linfini=linfini/L2
-      call mpi_bcast(linfini,1,mpi_real,0,Ptopo_intracomm,ierr)
+!     call mpi_bcast(linfini,1,mpi_real,0,Ptopo_intracomm,ierr)
+      call RPN_COMM_bcast(linfini,1,'MPI_REAL',0,'GRID',ierr)
 !      print *,'YYG_rhs:iter=',iter,linfini
 
 ! Now fill my results if I have received something

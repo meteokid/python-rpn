@@ -61,6 +61,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD
 ! v4_05 - Lee V.            - adaptation to GMM
 ! v4_40 - Lee V.            - change in argument call for this routine & prgen
+! v4_40 - Lee V.            - correction to call to mfottvh2 for calc of VT
 !
 !object
 !     See above id.
@@ -294,8 +295,8 @@
                 enddo
             endif
          enddo
-         call mfottvh2 (tt1,w3,hut1,qh,l_minx,l_maxx, &
-                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.true.)
+         call mfottvh2 (w3,tt1,hut1,qh,l_minx,l_maxx, &
+                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
          do k=1,l_nk+2
             do j=1,l_nj
             do i=1,l_ni

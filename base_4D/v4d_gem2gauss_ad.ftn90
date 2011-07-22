@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/p v4d_gem2gauss_ad - Adjoint of v4d_gem2gauss   
 !
 #include "model_macros_f.h"
@@ -26,12 +26,12 @@
       implicit none
 !
       integer nigauss,njgauss,DIST_DIM,Nk
-      real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk), &
-           gtpt1(nigauss,njgauss,Nk), ghut1(nigauss,njgauss,Nk), &
+      real gut1 (nigauss,njgauss,Nk+1), gvt1 (nigauss,njgauss,Nk+1), &
+           gtpt1(nigauss,njgauss,Nk+2), ghut1(nigauss,njgauss,Nk+2), &
            gst1 (nigauss,njgauss)
 !
-      real ut1  (DIST_SHAPE,Nk), vt1 (DIST_SHAPE,Nk), &
-           tpt1 (DIST_SHAPE,Nk), hut1(DIST_SHAPE,Nk), &
+      real ut1  (DIST_SHAPE,Nk+1), vt1 (DIST_SHAPE,Nk+1), &
+           tpt1 (DIST_SHAPE,Nk+2), hut1(DIST_SHAPE,Nk+2), &
            st1  (DIST_SHAPE)
 !
 !author M.Tanguay
@@ -43,7 +43,7 @@
 ! v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 !                           - Remove V4dg_ga_eq_ge_L
 ! v3_30 - Fillion L.        - Same grid when LAM 
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay/Morneau   - Adapt to vertical stag grid 
 !
 !object
 !  see id section
@@ -252,32 +252,33 @@
 !       Allocate fields on output grid in reverse format
 !       with V4dzge_npts = nigauss*njgauss
 !       ------------------------------------------------
-        allocate ( fldscint(Nk,V4dzge_npts), STAT=status )
-        allocate ( flduint (Nk,V4dzge_npts), STAT=status )
-        allocate ( fldvint (Nk,V4dzge_npts), STAT=status )
-        allocate ( fld2d   ( 1,V4dzge_npts), STAT=status )
+        allocate ( fldscint(Nk+2,V4dzge_npts), STAT=status )
+        allocate ( flduint (Nk+1,V4dzge_npts), STAT=status )
+        allocate ( fldvint (Nk+1,V4dzge_npts), STAT=status )
+        allocate ( fld2d   (   1,V4dzge_npts), STAT=status )
 !
 !       -----------------------------
 !       Allocate fields on input grid
 !       -----------------------------
-        allocate ( zo      (G_ni*G_nj,G_nk), STAT=status )
-        allocate ( wo      (G_ni*G_nj,G_nk), STAT=status )
+        allocate ( zo      (G_ni*G_nj,G_nk+2), STAT=status )
+        allocate ( wo      (G_ni*G_nj,G_nk+2), STAT=status )
       endif
 !
-!     Zero adjoint work fields
-!     ------------------------
+!     Zero adjoint fields
+!     -------------------
       if(Ptopo_myproc.eq.0) then
         do n = 1,V4dzge_npts
-        do k = 1,Nk
+        do k = 1,Nk+1
            fldscint(k,n) = ZERO_8
            flduint (k,n) = ZERO_8
            fldvint (k,n) = ZERO_8
         enddo
+           fldscint(Nk+2,n) = ZERO_8
         enddo
         do n = 1,V4dzge_npts
            fld2d(1,n) = ZERO_8
         enddo
-        do k = 1,G_nk
+        do k = 1,G_nk+2
         do n = 1,G_ni*G_nj
            zo(n,k) = ZERO_8
            wo(n,k) = ZERO_8
@@ -296,7 +297,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k =1,Nk
+        do k =1,Nk+1
         do n =1,V4dzge_npts
            fldvint(k,n) = gvt1(n,1,k) + fldvint(k,n)
            gvt1 (n,1,k) = ZERO_8
@@ -313,11 +314,11 @@
         call v4d_uvint0_ad (flduint,fldvint,V4dzge_px,V4dzge_py,V4dzge_npts, &
                             zo,wo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy, &
                             V4dzge_wx_8,V4dzge_cox_8,V4dzge_six_8,V4dzge_siy_8, &
-                            i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'UV')
+                            i1,i2,j1,j2,Nk+1,V4dzge_grtypi,V4dzge_degree,'UV')
 !
       else
 !
-        do k = 1,Nk
+        do k = 1,Nk+1
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i
@@ -336,15 +337,15 @@
 !     Adjoint of
 !     Global collect
 !     --------------
-      call glbdist(wo,G_ni,G_nj,vt1,LDIST_DIM,G_nk,G_halox,G_haloy)
+      call glbdist(wo,G_ni,G_nj,vt1,LDIST_DIM,G_nk+1,G_halox,G_haloy)
 !
-      call glbdist(zo,G_ni,G_nj,ut1,LDIST_DIM,G_nk,G_halox,G_haloy)
+      call glbdist(zo,G_ni,G_nj,ut1,LDIST_DIM,G_nk+1,G_halox,G_haloy)
 !
       if(Ptopo_myproc.eq.0) then
 !
 !       Zero adjoint variables
 !       ----------------------
-        do k = 1,G_nk
+        do k = 1,G_nk+1
         do n = 1,G_ni*G_nj
            zo(n,k) = ZERO_8
            wo(n,k) = ZERO_8
@@ -418,7 +419,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k = 1,Nk
+        do k = 1,Nk+2
         do n = 1,V4dzge_npts
            fldscint(k,n) = ghut1(n,1,k) + fldscint(k,n)
            ghut1 (n,1,k) = ZERO_8
@@ -432,11 +433,11 @@
 !       -----------------------------------------------------
         call v4d_scint0_ad (fldscint,V4dzge_px,V4dzge_py,V4dzge_npts, &
                             zo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,V4dzge_wx_8, &
-                            i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'HU')
+                            i1,i2,j1,j2,Nk+2,V4dzge_grtypi,V4dzge_degree,'HU')
 !
       else
 !
-        do k = 1,Nk
+        do k = 1,Nk+2
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i
@@ -453,13 +454,13 @@
 !     Adjoint of
 !     Global collect 
 !     --------------
-      call glbdist(zo,G_ni,G_nj,hut1,LDIST_DIM,G_nk,G_halox,G_haloy)
+      call glbdist(zo,G_ni,G_nj,hut1,LDIST_DIM,G_nk+2,G_halox,G_haloy)
 !
       if(Ptopo_myproc.eq.0) then
 !
 !       Zero adjoint variables
 !       ----------------------
-        do k = 1,G_nk
+        do k = 1,G_nk+2
         do n = 1,G_ni*G_nj
            zo(n,k) = ZERO_8
         enddo
@@ -478,7 +479,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k = 1,Nk
+        do k = 1,Nk+2
         do n = 1,V4dzge_npts
            fldscint(k,n) = gtpt1(n,1,k) + fldscint(k,n)
            gtpt1 (n,1,k) = ZERO_8
@@ -492,13 +493,13 @@
 !       -----------------------------------------------------
         call v4d_scint0_ad (fldscint,V4dzge_px,V4dzge_py,V4dzge_npts, &
                             zo,V4dzge_ax,V4dzge_ay,V4dzge_cx,V4dzge_cy,V4dzge_wx_8, &
-                            i1,i2,j1,j2,Nk,V4dzge_grtypi,V4dzge_degree,'4T')
+                            i1,i2,j1,j2,Nk+2,V4dzge_grtypi,V4dzge_degree,'4T')
 !
       else
 !
 !       Reserve order of indices
 !       ------------------------
-        do k = 1,Nk
+        do k = 1,Nk+2
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i
@@ -515,13 +516,13 @@
 !     Adjoint of
 !     Global collect 
 !     --------------
-      call glbdist(zo,G_ni,G_nj,tpt1,LDIST_DIM,G_nk,G_halox,G_haloy)
+      call glbdist(zo,G_ni,G_nj,tpt1,LDIST_DIM,G_nk+2,G_halox,G_haloy)
 !
       if(Ptopo_myproc.eq.0) then
 !
 !       Zero adjoint variables
 !       ----------------------
-        do k = 1,G_nk
+        do k = 1,G_nk+2
         do n = 1,G_ni*G_nj
            zo(n,k) = ZERO_8
         enddo
@@ -531,35 +532,57 @@
 !
 !     Zero halo of fields on scalar grid
 !     ----------------------------------
-      do k=1,Nk
+!     Momentum variables
+!     ------------------
+      do k=1,Nk+1
         do j=l_miny,0
         do i=l_minx,l_maxx
            ut1 (i,j,k) = ZERO_8
            vt1 (i,j,k) = ZERO_8
-           tpt1(i,j,k) = ZERO_8
-           hut1(i,j,k) = ZERO_8
         end do
         end do
         do j=l_nj+1,l_maxy
         do i=l_minx,l_maxx
            ut1 (i,j,k) = ZERO_8
            vt1 (i,j,k) = ZERO_8
-           tpt1(i,j,k) = ZERO_8
-           hut1(i,j,k) = ZERO_8
         end do
         end do
         do i=l_minx,0
         do j=l_miny,l_maxy
            ut1 (i,j,k) = ZERO_8
            vt1 (i,j,k) = ZERO_8
-           tpt1(i,j,k) = ZERO_8
-           hut1(i,j,k) = ZERO_8
         end do
         end do
         do i=l_ni+1,l_maxx
         do j=l_miny,l_maxy
            ut1 (i,j,k) = ZERO_8
            vt1 (i,j,k) = ZERO_8
+        end do
+        end do
+      end do
+!     Thermodynamic variables
+!     -----------------------
+      do k=1,Nk+2
+        do j=l_miny,0
+        do i=l_minx,l_maxx
+           tpt1(i,j,k) = ZERO_8
+           hut1(i,j,k) = ZERO_8
+        end do
+        end do
+        do j=l_nj+1,l_maxy
+        do i=l_minx,l_maxx
+           tpt1(i,j,k) = ZERO_8
+           hut1(i,j,k) = ZERO_8
+        end do
+        end do
+        do i=l_minx,0
+        do j=l_miny,l_maxy
+           tpt1(i,j,k) = ZERO_8
+           hut1(i,j,k) = ZERO_8
+        end do
+        end do
+        do i=l_ni+1,l_maxx
+        do j=l_miny,l_maxy
            tpt1(i,j,k) = ZERO_8
            hut1(i,j,k) = ZERO_8
         end do

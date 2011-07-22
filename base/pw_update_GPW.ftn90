@@ -37,19 +37,19 @@
 #include "p_geof.cdk"
 #include "ver.cdk"
 #include "pw.cdk"
+#include "dcst.cdk"
 !
-      integer i, j, k, nik
-      real*8 r0
-      real xtmp(l_ni,l_nk+2), wtmp(l_ni,l_nk+1), wtmp2(l_ni,l_nk+1)
-      real wk1(l_ni,l_nj), wk2(l_ni,l_nj)
+      integer i, j, k
+      real wk1(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
       call tmg_start0 ( 21, 'PW_GPW   ' )
 
-      gmmstat = gmm_get(gmmk_pw_wplus_s  ,pw_wplus   ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_gzplus_s ,pw_gzplus  ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_pmplus_s ,pw_pm_plus ,meta3d)
-      gmmstat = gmm_get(gmmk_pw_ptplus_s ,pw_pt_plus ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d)
+      gmmstat = gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d)
 !
       gmmstat = gmm_get(gmmk_tt1_s,   tt1  , meta3d)
       gmmstat = gmm_get(gmmk_wt1_s,   wt1  , meta3d)
@@ -66,79 +66,37 @@
          if (k.eq.1) pw_pm_plus(:,:,1) = Cstv_ptop_8
          do j=1,l_nj
          do i=1,l_ni
-            wk1(i,j) = Ver_a_8%m(k) + Ver_b_8%m(k) * st1(i,j)
+            wk1(i,j,1) = Ver_a_8%m(k) + Ver_b_8%m(k) * st1(i,j)
+            wk1(i,j,2) = Ver_a_8%t(k) + Ver_b_8%t(k) * st1(i,j)
+            pw_gz_plus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)&
+                                              -fis0(i,j)
          enddo
          enddo
-         call vsexp(wk1, wk1, l_ni*l_nj)
-         pw_pm_plus(1:l_ni,1:l_nj,k+1) = wk1(1:l_ni,1:l_nj)
+         call vsexp(wk1, wk1, 2*l_ni*l_nj)
+         pw_pm_plus(1:l_ni,1:l_nj,k+1) = wk1(1:l_ni,1:l_nj,1)
+         pw_pt_plus(1:l_ni,1:l_nj,k  ) = wk1(1:l_ni,1:l_nj,2)
       end do
 !$omp enddo
 
 !$omp do
-      do k=1,l_nk+1
-         do j=1,l_nj
-         do i=1,l_ni
-            wk1(i,j) = pw_pm_plus(i,j,k+1) * pw_pm_plus(i,j,k)
-         enddo
-         enddo
-         call vssqrt (wk1, wk1, l_ni*l_nj)
-         pw_pt_plus(1:l_ni,1:l_nj,k) = wk1(1:l_ni,1:l_nj)
-         if (k.eq.l_nk+1) pw_pt_plus(:,:,l_nk+2) = pw_pm_plus(:,:,l_nk+2)
-         if (k.eq.1) call vslog (wk2, wk1, l_ni*l_nj)
-      enddo         
+      do j= 1, l_nj
+      do i= 1, l_ni
+         pw_pt_plus(i,j,l_nk+2) = pw_pm_plus(i,j,l_nk+2)
+         pw_gz_plus(i,j,l_nk+2) = fiptx(i,j,l_nk+1)-fis0(i,j)
+      end do
+      end do
+
 !$omp enddo
 !$omp end parallel
 !
 !     compute omega
 !     -----------------------
 !
-      call calomeg_w (pw_wplus,st1,wt1,tt1,LDIST_DIM,l_nk) 
+      call calomeg_w (pw_ww_plus,st1,wt1,tt1,LDIST_DIM,l_nk)
+      pw_ww_plus (:,:,l_nk+2) = pw_ww_plus (:,:,l_nk+1)
 !
-      nik  = l_ni*(l_nk+1)
-!$omp parallel private(xtmp,wtmp,wtmp2,r0)
-!$omp do
-      do j=1,l_nj
-
-         do i= 1, l_ni
-            xtmp (i,1)           = wk2(i,j)
-            wtmp2(i,1)           = pw_pt_plus(i,j,1)
-            xtmp (i,l_nk+2)      = st1(i,j)+Cstv_Zsrf_8
-            pw_gzplus(i,j,1)     = fiptx(i,j,0)+Ver_fistr_8%m(0)
-            pw_gzplus(i,j,l_nk+2)= fis0(i,j)
-         enddo
-         do k= 2, l_nk+1
-         do i= 1, l_ni
-            xtmp (i,k) = Ver_a_8%m(k-1) + Ver_b_8%m(k-1)*st1(i,j)
-            wtmp2(i,k) = pw_pt_plus(i,j,k)
-            pw_gzplus(i,j,k) = fiptx(i,j,k-1)+Ver_fistr_8%m(k-1)
-         enddo
-         enddo
-!
-         call vslog(wtmp,wtmp2,nik)
-         do k= 1, l_nk+1
-         do i= 1, l_ni
-            wtmp2(i,k) = xtmp(i,k+1)-xtmp(i,k)
-            xtmp(i,k)  = xtmp(i,k+1)-wtmp(i,k)
-         enddo
-         enddo
-         call vsrec(wtmp,wtmp2,nik)
-!
-         do k= 1, l_nk+1
-         do i= 1, l_ni
-            r0 = wtmp(i,k)*xtmp(i,k)
-            pw_gzplus(i,j,k) =  &
-            r0*pw_gzplus(i,j,k) + (1.D0-r0)*pw_gzplus(i,j,k+1)-fis0(i,j)
-         end do
-         end do
-!
-         do i= 1, l_ni
-            pw_wplus (i,j,l_nk+2) = pw_wplus (i,j,l_nk+1) 
-            pw_gzplus(i,j,l_nk+2) = 0.
-         end do
-
-      end do
-!$omp enddo
-!$omp end parallel
+      call v4d_rwtraj(20)
+      call v4d_rwtraj(21)
 !
       call tmg_stop0  (21)
 !     ________________________________________________________________

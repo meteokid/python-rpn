@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r rhsp_2_ad - ADJ of rhsp_2_tl 
 !
 #include "model_macros_f.h"
@@ -62,7 +62,7 @@
 ! v4_12 - Tanguay M.        - OPENMP TL/AD
 ! v4_12 - Tanguay M.        - Adapt to revised rhsp
 ! v4_13 - Tanguay M.        - Adjustments GEM413
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     see id section 
@@ -86,8 +86,8 @@
       integer i, j, k, i0, j0, in, jn, nij
       real    tdiv
       real*8  c1_8,c2_8,c3_8,BsPqbarz_8,fipbarz_8, & 
-              wk1_8(DIST_SHAPE),wk2_8(DIST_SHAPE),barz_8,barzp_8,ww1_8, &
-              yyy_8,xtmp_8(l_ni,l_nj),ytmp_8(l_ni,l_nj)
+              wk1_8(DIST_SHAPE),barz_8,barzp_8,ww1_8, &
+              xtmp_8(l_ni,l_nj),ytmp_8(l_ni,l_nj),wk2k_8(DIST_SHAPE,l_nk)
 !
       real*8  wk1_m_8 (DIST_SHAPE),barz_m_8,barzp_m_8,xtmp_m_8(l_ni,l_nj)
 !
@@ -126,8 +126,8 @@
 !
 !     Zero adjoint variables
 !     ----------------------
-      wk1_8     = ZERO_8
-      wk2_8     = ZERO_8
+!NO-H wk1_8     = ZERO_8
+      wk2k_8    = ZERO_8
       xtmp_8    = ZERO_8
       ytmp_8    = ZERO_8
       barz_8    = ZERO_8
@@ -137,6 +137,10 @@
       BsPqbarz_8= ZERO_8
       fipbarz_8 = ZERO_8
 !
+!$omp parallel private(i,j,i0,j0,jn,in,tdiv,BsPqbarz_8,fipbarz_8,     &
+!$omp                  barz_8,barzp_8,ww1_8,barz_m_8,barzp_m_8,       &
+!$omp                  xtmp_8,ytmp_8,xtmp_m_8) shared(wk1_m_8,wk2k_8) 
+!
 ! ADJ of
 !**********************************************
 ! Apply HORIZONTAL BOUNDARY CONDITIONS if LAM *
@@ -145,6 +149,7 @@
       if (G_lam) then
           if (l_north) then
 !
+!$omp do
              do k=1,l_nk
              do i= l_ni-pil_e,1+pil_w,-1
 !
@@ -153,10 +158,12 @@
 !
              enddo
              enddo
+!$omp enddo
 !
           endif
           if (l_south) then
 !
+!$omp do
              do k=1,l_nk
              do i= l_ni-pil_e,1+pil_w,-1
 !
@@ -165,10 +172,12 @@
 !
              enddo
              enddo
+!$omp enddo
 !
           endif
           if (l_east) then
 !
+!$omp do
              do k=1,l_nk
              do j= l_nj-pil_n,1+pil_s,-1
 !
@@ -177,10 +186,12 @@
 !
              enddo
              enddo
+!$omp enddo
 !
           endif
           if (l_west) then
 !
+!$omp do
              do k=1,l_nk
              do j= l_nj-pil_n,1+pil_s,-1
 !
@@ -189,6 +200,7 @@
 !
              enddo
              enddo
+!$omp enddo
 !
           endif
       endif
@@ -211,6 +223,7 @@
          if (l_north) jn = l_njv-2
       endif
 !
+!$omp do
       do k=1,l_nk
          do j = jn, j0, -1
          do i = in, i0, -1 
@@ -230,7 +243,9 @@
          end do
          end do
       end do
+!$omp enddo 
 !
+!$omp single 
       call rpn_comm_adj_halo ( F_orv,LDIST_DIM,l_ni,l_njv,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !
@@ -244,24 +259,27 @@
 !     Zero F_ru halo
 !     --------------
       call v4d_zerohalo ( F_oru,l_niu,l_nj,LDIST_DIM, G_nk)
+
+!$omp end single 
 !
 ! ADJ of                                   
 !*****************************************
 ! Compute Rc: RHS of Continuity equation *
 !*****************************************
 !
-      do 3000 k = l_nk,1,-1
+!$omp do 
+      do j= jn,j0,-1
 
                          ww1_8=ONE_8
       if(Schm_autobar_L) ww1_8=0.d0
 !
-         do j= jn,j0,-1
+         do k = l_nk,1,-1
          do i= in,i0,-1
 !
          barz_8        =   Cstv_invT_8 * ( ww1_8 * F_orc (i,j,k) )  
-         ytmp_8(i,j)   =   Cstv_invT_8 * (         F_orc (i,j,k) ) 
+!!!      ytmp_8(i,j)   =   Cstv_invT_8 * (         F_orc (i,j,k) ) 
          tdiv          = - Cstv_Beta_8 *           F_orc (i,j,k)
-         F_orc (i,j,k) = ZERO_8
+!!!      F_orc (i,j,k) = ZERO_8
 !
          F_BsPq(i,j,k+1) = Ver_wp_8%m(k)*(Ver_wp_8%t(k+1)*barz_8) + F_BsPq(i,j,k+1) 
          F_BsPq(i,j,k)   = Ver_wp_8%m(k)*(Ver_wm_8%t(k+1)*barz_8) + F_BsPq(i,j,k)
@@ -272,6 +290,20 @@
          F_zd(i,j,k)   = ( - tdiv )    * Ver_idz_8%m(k) + F_zd(i,j,k)
          F_zd(i,j,k+1) =  Ver_wp_8%m(k)* tdiv           + F_zd(i,j,k+1)
          F_zd(i,j,k)   =  Ver_wm_8%m(k)* tdiv           + F_zd(i,j,k)
+
+         end do
+         end do
+
+      end do
+!$omp end do 
+!
+!$omp do 
+      do k = l_nk,1,-1
+
+         do j= jn,j0,-1
+         do i= in,i0,-1
+!
+         tdiv          = - Cstv_Beta_8 *           F_orc (i,j,k)
 !
          F_u(i,  j,  k) = Geomg_invcy2_8(j) * (   tdiv * Geomg_invDX_8(i) ) &
                           + F_u(i,  j,  k)
@@ -284,9 +316,18 @@
 !
          end do
          end do
-!
-         do j= j0, jn
+
+      end do
+!$omp end do 
+
+!$omp do 
+      do j= j0, jn
+
+         do k = l_nk,1,-1
          do i= i0, in
+
+         ytmp_8(i,j)   =   Cstv_invT_8 * (         F_orc (i,j,k) ) 
+         F_orc (i,j,k) = ZERO_8
 !
 !        TRAJECTORY
 !        ----------
@@ -298,10 +339,9 @@
 !
          end do
          end do
-!
- 3000 continue
-!
-      do 2000 k = l_nk+1,1,-1 
+
+      end do
+!$omp end do 
 !
 ! ADJ of                           
 !*********************************
@@ -309,6 +349,8 @@
 !*********************************
 !
       if (.not. Schm_hydro_L) then
+!$omp do 
+      do k = l_nk+1,1,-1 
          do j= j0, jn
          do i= i0, in
 !
@@ -318,6 +360,8 @@
 !
          end do
          end do
+      end do
+!$omp end do 
       endif
 !
 ! ADJ of
@@ -325,35 +369,68 @@
 ! Compute Rt: RHS of thermodynamic equation *
 ! Compute Rf: RHS of FI equation            *
 !********************************************
+
+!$omp do 
+      do k = l_nk+1,1,-1 
 !
                          ww1_8=Dcst_cappa_8
       if(Schm_autobar_L) ww1_8=0.d0
 !
-      do j= j0, jn
-      do i= i0, in
+         do j= j0, jn
+         do i= i0, in
+
+!!!      fipbarz_8     = Cstv_invT_8                * F_orf (i,j,k) 
+         F_zd  (i,j,k) = Cstv_Beta_8 * Cstv_RTstr_8 * F_orf (i,j,k) + F_zd (i,j,k)
+         F_w   (i,j,k) = Cstv_Beta_8 * Dcst_grav_8  * F_orf (i,j,k) + F_w  (i,j,k)
+!!!      F_orf (i,j,k) = ZERO_8
 !
-         fipbarz_8    = Cstv_invT_8                * F_orf (i,j,k) 
-         F_zd (i,j,k) = Cstv_Beta_8 * Cstv_RTstr_8 * F_orf (i,j,k) + F_zd (i,j,k)
-         F_w  (i,j,k) = Cstv_Beta_8 * Dcst_grav_8  * F_orf (i,j,k) + F_w  (i,j,k)
-         F_orf(i,j,k) = ZERO_8
-!
-         ytmp_8(i,j)   = Cstv_invT_8 * (            F_ort (i,j,k) )
-         BsPqbarz_8    = Cstv_invT_8 * (  - ww1_8 * F_ort (i,j,k) )
+!!!      ytmp_8(i,j)   = Cstv_invT_8 * (            F_ort (i,j,k) )
+!!!      BsPqbarz_8    = Cstv_invT_8 * (  - ww1_8 * F_ort (i,j,k) )
          F_zd  (i,j,k) = Cstv_Beta_8 * (Dcst_cappa_8-dln_that%t(k)) * F_ort (i,j,k) + F_zd(i,j,k)  
-         F_ort (i,j,k) = ZERO_8
+!!!      F_ort (i,j,k) = ZERO_8
+
+         end do
+         end do
+
+      end do
+!$omp end do 
+
+!$omp do 
+      do j= j0, jn
+
+                         ww1_8=Dcst_cappa_8
+      if(Schm_autobar_L) ww1_8=0.d0
+
+         do k = l_nk+1,1,-1 
+         do i= i0, in
+
+         fipbarz_8    = Cstv_invT_8              * F_orf (i,j,k)
+         F_orf(i,j,k) = ZERO_8
+
+         BsPqbarz_8   = Cstv_invT_8 * (  - ww1_8 * F_ort (i,j,k) )
+!!!      F_ort(i,j,k) = ZERO_8
 
          F_fip (i,j,k)   = Ver_wp_8%t(k)* fipbarz_8  + F_fip (i,j,k)
          F_fip (i,j,k-1) = Ver_wm_8%t(k)* fipbarz_8  + F_fip (i,j,k-1)
          F_BsPq(i,j,k)   = Ver_wp_8%t(k)* BsPqbarz_8 + F_BsPq(i,j,k)
          F_BsPq(i,j,k-1) = Ver_wm_8%t(k)* BsPqbarz_8 + F_BsPq(i,j,k-1)
-!
+
+         end do
+         end do
+
       end do
-      end do
+!$omp end do 
 !
+!$omp do 
+      do k = l_nk+1,1,-1 
+
       ww1_8 = ONE_8 / Cstv_tstr_8
 !
-      do j= j0, jn
-      do i= i0, in
+         do j= j0, jn
+         do i= i0, in
+
+         ytmp_8(i,j)   = Cstv_invT_8 * (            F_ort (i,j,k) )
+         F_ort (i,j,k) = ZERO_8
 !
 !        TRAJECTORY
 !        ----------
@@ -363,26 +440,26 @@
 !
          F_t     (i,j,k) = xtmp_8(i,j) * ww1_8 + F_t(i,j,k)
 !
-      end do
-      end do
+         end do
+         end do
 !
- 2000 continue
+      end do
+!$omp end do 
 !
 !     Zero adjoint variables
 !     ----------------------
-      wk1_8 = 0.
-      wk2_8 = 0.
-!
-      do 1000 k = l_nk,1,-1
+!NO-H wk1_8 = 0. 
 !
 ! ADJ of                               
 !*************************************
 ! Compute TRAJ Ru: RHS of U equation *
 !*************************************
-!            
+!
 !     TRAJECTORY
 !     ----------
       if (Schm_hydro_L) then
+!$omp do 
+!!!   do k = l_nk,1,-1
          do j = 1, l_nj
          do i = 1, l_ni
 !
@@ -390,6 +467,8 @@
 !
          end do
          end do
+!!!   end do
+!$omp end do 
       endif
 !
 ! ADJ of                          
@@ -403,10 +482,12 @@
       in = l_ni
       j0 = 1
       jn = l_njv
-!
+
 !     TRAJECTORY
-!     ----------
+!     -----------
       if (.not.Schm_hydro_L) then
+!$omp do 
+      do k = l_nk,1,-1
 !
          do j = j0, jn
          do i = i0, in
@@ -420,7 +501,8 @@
 !
          end do
          end do
-!
+      end do
+!$omp end do 
       endif
 !
       if ( abs(c3_8) .lt. 1.0e-6 ) then
@@ -447,8 +529,11 @@
 !        Rv with the Coriolis factor
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+!$omp do 
+      do i = i0,in
+
+         do k = l_nk,1,-1
          do j = jn,j0,-1
-         do i = i0,in
 !
 !           TRAJECTORY
 !           ----------
@@ -457,18 +542,18 @@
             barzp_m_8 = Ver_wp_8%m(k)*F_t_m(i,j+1,k+1) &
                        +Ver_wm_8%m(k)*F_t_m(i,j+1,k)
 !
-            wk2_8(i,j-1) = - c3_8 * Cori_fcorv_8(i,j) & 
-                             * ( inuvl_wyyv3_8(j,1)* F_orv(i,j,k) ) + wk2_8(i,j-1)
-            wk2_8(i,j  ) = - c3_8 * Cori_fcorv_8(i,j) & 
-                             * ( inuvl_wyyv3_8(j,2)* F_orv(i,j,k) ) + wk2_8(i,j  )
-            wk2_8(i,j+1) = - c3_8 * Cori_fcorv_8(i,j) &
-                             * ( inuvl_wyyv3_8(j,3)* F_orv(i,j,k) ) + wk2_8(i,j+1)
-            wk2_8(i,j+2) = - c3_8 * Cori_fcorv_8(i,j) &
-                             * ( inuvl_wyyv3_8(j,4)* F_orv(i,j,k) ) + wk2_8(i,j+2)
+            wk2k_8(i,j-1,k) = - c3_8 * Cori_fcorv_8(i,j) & 
+                              * ( inuvl_wyyv3_8(j,1)* F_orv(i,j,k) ) + wk2k_8(i,j-1,k)
+            wk2k_8(i,j  ,k) = - c3_8 * Cori_fcorv_8(i,j) & 
+                              * ( inuvl_wyyv3_8(j,2)* F_orv(i,j,k) ) + wk2k_8(i,j  ,k)
+            wk2k_8(i,j+1,k) = - c3_8 * Cori_fcorv_8(i,j) &
+                              * ( inuvl_wyyv3_8(j,3)* F_orv(i,j,k) ) + wk2k_8(i,j+1,k)
+            wk2k_8(i,j+2,k) = - c3_8 * Cori_fcorv_8(i,j) &
+                              * ( inuvl_wyyv3_8(j,4)* F_orv(i,j,k) ) + wk2k_8(i,j+2,k)
 !
-            wk1_8(i,j)   = - c2_8 * F_orv(i,j,k) &
-                             * ( F_fip_m(i,j+1,k) - F_fip_m(i,j,k) ) &
-                             * Geomg_invDYv_8(j) + wk1_8(i,j)
+!NO-H       wk1_8(i,j)   = - c2_8 * F_orv(i,j,k) &
+!NO-H                      * ( F_fip_m(i,j+1,k) - F_fip_m(i,j,k) ) &
+!NO-H                      * Geomg_invDYv_8(j) + wk1_8(i,j)
 !
             F_fip(i,j+1,k)  = - c2_8 * wk1_m_8(i,j) &
                               * (   F_orv(i,j,k) ) &  
@@ -504,26 +589,38 @@
 !
          end do
          end do
+
+      end do
+!$omp end do 
+
+!$omp do 
+      do k = l_nk,1,-1
 !
 !        ADJ of
 !        Compute U barY in wk2
 !        ~~~~~~~~~~~~~~~~~~~~~
          do j = jn+2,j0-1,-1
          do i = in,i0,-1
-            F_u   (i-2,j,k) = inuvl_wxux3_8(i,1)* wk2_8(i,j) + F_u(i-2,j,k) 
-            F_u   (i-1,j,k) = inuvl_wxux3_8(i,2)* wk2_8(i,j) + F_u(i-1,j,k)
-            F_u   (i  ,j,k) = inuvl_wxux3_8(i,3)* wk2_8(i,j) + F_u(i  ,j,k)
-            F_u   (i+1,j,k) = inuvl_wxux3_8(i,4)* wk2_8(i,j) + F_u(i+1,j,k) 
-            wk2_8 (i,  j)   = ZERO_8 
+            F_u   (i-2,j,k) = inuvl_wxux3_8(i,1)* wk2k_8(i,j,k) + F_u(i-2,j,k) 
+            F_u   (i-1,j,k) = inuvl_wxux3_8(i,2)* wk2k_8(i,j,k) + F_u(i-1,j,k)
+            F_u   (i  ,j,k) = inuvl_wxux3_8(i,3)* wk2k_8(i,j,k) + F_u(i  ,j,k)
+            F_u   (i+1,j,k) = inuvl_wxux3_8(i,4)* wk2k_8(i,j,k) + F_u(i+1,j,k) 
+            wk2k_8(i,  j,k) = ZERO_8 
          end do
          end do
+
+      end do
+!$omp end do 
 !
       endif
+
 !
 !     ADJ of
 !     Compute (1 + mu) bary barz in wk1
 !     ---------------------------------
       if (.not. Schm_hydro_L) then
+!$omp do 
+      do k = l_nk,1,-1
          do j = jn,j0,-1
          do i = in,i0,-1
 !
@@ -541,6 +638,8 @@
 !
          end do
          end do
+      end do
+!$omp end do 
       endif
 !
 ! ADJ of                          
@@ -554,10 +653,12 @@
       in = l_niu
       j0 = 1
       jn = l_nj
-!
+
 !     Compute (1 + mu) barx barz in wk1
 !     ---------------------------------
       if (.not.Schm_hydro_L) then
+!$omp do 
+      do k = l_nk,1,-1
          do j = j0, jn
          do i = i0, in
 !
@@ -572,6 +673,8 @@
 !
          end do
          end do
+      end do
+!$omp end do 
       endif
 !
       if ( abs(c3_8) .lt. 1.0e-6 ) then
@@ -594,11 +697,14 @@
 !        ADJ of
 !        Compute Ru with the Coriolis factor
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!$omp do 
+      do j= j0,jn
 !
 !        ADJ of
 !        Ru with the Coriolis factor
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= j0,jn
+         do k = l_nk,1,-1
          do i= in,i0,-1
 !
 !           TRAJECTORY
@@ -608,18 +714,18 @@
             barzp_m_8= Ver_wp_8%m(k)*F_t_m(i+1,j,k+1) &
                       +Ver_wm_8%m(k)*F_t_m(i+1,j,k)
 !
-            wk2_8(i-1,j)  = c3_8 * Cori_fcoru_8(i,j) &
-                               * ( inuvl_wxxu3_8(i,1)*F_oru(i,j,k)) + wk2_8(i-1,j)
-            wk2_8(i  ,j)  = c3_8 * Cori_fcoru_8(i,j) &
-                               * ( inuvl_wxxu3_8(i,2)*F_oru(i,j,k)) + wk2_8(i  ,j)
-            wk2_8(i+1,j)  = c3_8 * Cori_fcoru_8(i,j) &
-                               * ( inuvl_wxxu3_8(i,3)*F_oru(i,j,k)) + wk2_8(i+1,j)
-            wk2_8(i+2,j)  = c3_8 * Cori_fcoru_8(i,j) &
-                               * ( inuvl_wxxu3_8(i,4)*F_oru(i,j,k)) + wk2_8(i+2,j) 
+            wk2k_8(i-1,j,k)  = c3_8 * Cori_fcoru_8(i,j) &
+                               * ( inuvl_wxxu3_8(i,1)*F_oru(i,j,k)) + wk2k_8(i-1,j,k)
+            wk2k_8(i  ,j,k)  = c3_8 * Cori_fcoru_8(i,j) &
+                               * ( inuvl_wxxu3_8(i,2)*F_oru(i,j,k)) + wk2k_8(i  ,j,k)
+            wk2k_8(i+1,j,k)  = c3_8 * Cori_fcoru_8(i,j) &
+                               * ( inuvl_wxxu3_8(i,3)*F_oru(i,j,k)) + wk2k_8(i+1,j,k)
+            wk2k_8(i+2,j,k)  = c3_8 * Cori_fcoru_8(i,j) &
+                               * ( inuvl_wxxu3_8(i,4)*F_oru(i,j,k)) + wk2k_8(i+2,j,k) 
 !
-            wk1_8(i  ,j)     = - c2_8 * F_oru(i,j,k) &
-                              * ( F_fip_m(i+1,j,k) - F_fip_m(i,j,k) ) &
-                              * Geomg_invDXu_8(i) + wk1_8(i,j)
+!NO-H       wk1_8(i  ,j)     = - c2_8 * F_oru(i,j,k) &
+!NO-H                          * ( F_fip_m(i+1,j,k) - F_fip_m(i,j,k) ) &
+!NO-H                          * Geomg_invDXu_8(i) + wk1_8(i,j)
 !
             F_fip  (i+1,j,k) = - c2_8 * wk1_m_8(i,j) &
                               * (  F_oru(i,j,k) ) & 
@@ -655,6 +761,12 @@
 !
          end do
          end do
+
+      end do
+!$omp end do 
+
+!$omp do 
+      do k = l_nk,1,-1
 !
 !        ADJ of
 !        Compute V barX in wk2
@@ -662,21 +774,27 @@
          do j = jn,j0,-1
          do i = i0-1,in+2
 !
-            F_v  (i,j-2,k) = inuvl_wyvy3_8(j,1) * wk2_8(i,j) + F_v(i,j-2,k)
-            F_v  (i,j-1,k) = inuvl_wyvy3_8(j,2) * wk2_8(i,j) + F_v(i,j-1,k) 
-            F_v  (i,j  ,k) = inuvl_wyvy3_8(j,3) * wk2_8(i,j) + F_v(i,j  ,k)
-            F_v  (i,j+1,k) = inuvl_wyvy3_8(j,4) * wk2_8(i,j) + F_v(i,j+1,k)
-            wk2_8(i,j)     = ZERO_8
+            F_v   (i,j-2,k) = inuvl_wyvy3_8(j,1) * wk2k_8(i,j,k) + F_v(i,j-2,k)
+            F_v   (i,j-1,k) = inuvl_wyvy3_8(j,2) * wk2k_8(i,j,k) + F_v(i,j-1,k) 
+            F_v   (i,j  ,k) = inuvl_wyvy3_8(j,3) * wk2k_8(i,j,k) + F_v(i,j  ,k)
+            F_v   (i,j+1,k) = inuvl_wyvy3_8(j,4) * wk2k_8(i,j,k) + F_v(i,j+1,k)
+            wk2k_8(i,j  ,k) = ZERO_8
 !
          end do
          end do
-!
+
+      end do
+!$omp end do 
+
       endif
-!
+
 !     ADJ of
 !     Compute (1 + mu) barx barz in wk1
 !     ---------------------------------
       if (.not.Schm_hydro_L) then
+!$omp do 
+      do k = l_nk,1,-1
+!
          do j = jn,j0,-1
          do i = in,i0,-1
 !
@@ -694,20 +812,26 @@
 !
          end do
          end do
+      end do
+!$omp end do 
       endif
+!
+!     do k = l_nk,1,-1
 !
 !     ADJ of 
 !     Set wk1 to 1 in the hydrostatic case as mu=0
 !     --------------------------------------------
-      if (Schm_hydro_L) then
-         do j = 1, l_nj
-         do i = 1, l_ni
-            wk1_8(i,j) = ZERO_8
-         end do
-         end do
-      endif
+!!!      if (Schm_hydro_L) then
+!!!         do j = 1, l_nj
+!!!         do i = 1, l_ni
+!!!         wk1_8(i,j) = ZERO_8
+!!!         end do
+!!!         end do
+!!!      endif
 !
- 1000 continue
+!     enddo
+ 
+!$omp end parallel 
 !
 !     ADJ of
 !     Exchange haloes for derivatives & interpolation

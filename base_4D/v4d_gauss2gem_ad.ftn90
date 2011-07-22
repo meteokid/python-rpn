@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/p v4d_gauss2gem_ad - Adjoint of v4d_gauss2gem  
 !
 #include "model_macros_f.h"
@@ -26,12 +26,12 @@
       implicit none
 !
       integer nigauss,njgauss,DIST_DIM,Nk
-      real gut1 (nigauss,njgauss,Nk), gvt1 (nigauss,njgauss,Nk), &
-           gtpt1(nigauss,njgauss,Nk), ghut1(nigauss,njgauss,Nk), &
+      real gut1 (nigauss,njgauss,Nk+1), gvt1 (nigauss,njgauss,Nk+1), &
+           gtpt1(nigauss,njgauss,Nk+2), ghut1(nigauss,njgauss,Nk+2), &
            gst1 (nigauss,njgauss)
 !
-      real ut1  (DIST_SHAPE,Nk), vt1 (DIST_SHAPE,Nk), &
-           tpt1 (DIST_SHAPE,Nk), hut1(DIST_SHAPE,Nk), &
+      real ut1  (DIST_SHAPE,Nk+1), vt1 (DIST_SHAPE,Nk+1), &
+           tpt1 (DIST_SHAPE,Nk+2), hut1(DIST_SHAPE,Nk+2), &
            st1  (DIST_SHAPE)
 !
 !author M.Tanguay
@@ -44,7 +44,7 @@
 ! v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 !                           - Remove V4dg_ga_eq_ge_L
 ! v3_30 - Fillion L.        - Same grid when LAM 
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay/Morneau   - Adapt to vertical stag grid 
 !
 !object
 !  see id section
@@ -258,32 +258,33 @@
 !        ------------------------------------------------
 !        Allocate fields on output grid in reverse format
 !        ------------------------------------------------
-         allocate ( fldscint(Nk,V4dzga_npts), STAT=status )
-         allocate ( flduint (Nk,V4dzga_npts), STAT=status )
-         allocate ( fldvint (Nk,V4dzga_npts), STAT=status )
+         allocate ( fldscint(Nk+2,V4dzga_npts), STAT=status )
+         allocate ( flduint (Nk+1,V4dzga_npts), STAT=status )
+         allocate ( fldvint (Nk+1,V4dzga_npts), STAT=status )
          allocate ( fld2d   ( 1,V4dzga_npts), STAT=status )
 !
 !        -----------------------------------------------------------
 !        Allocate fields on output grid with V4dzga_npts = G_ni*G_nj
 !        -----------------------------------------------------------
-         allocate ( zo      (G_ni*G_nj,G_nk), STAT=status )
-         allocate ( wo      (G_ni*G_nj,G_nk), STAT=status )
+         allocate ( zo      (G_ni*G_nj,G_nk+2), STAT=status )
+         allocate ( wo      (G_ni*G_nj,G_nk+2), STAT=status )
       endif
 !
-!     Zero adjoint work fields
-!     ------------------------
+!     Zero adjoint fields
+!     -------------------
       if(Ptopo_myproc.eq.0) then
          do n = 1,V4dzga_npts
-         do k = 1,Nk
+         do k = 1,Nk+1
             fldscint(k,n) = ZERO_8
             flduint (k,n) = ZERO_8
             fldvint (k,n) = ZERO_8
          enddo
+         fldscint(Nk+2,n) = ZERO_8
          enddo
          do n = 1,V4dzga_npts
             fld2d(1,n) = ZERO_8
          enddo
-         do k = 1,G_nk
+         do k = 1,G_nk+2
          do n = 1,G_ni*G_nj
             zo(n,k) = ZERO_8 
             wo(n,k) = ZERO_8 
@@ -299,14 +300,14 @@
 !     Adjoint of 
 !     Global distribution
 !     -------------------
-      call rpn_comm_coll(wo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1, &
+      call rpn_comm_coll(wo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk+1,0,0,1, &
                          vt1,LDIST_DIM,G_halox,G_haloy,ier)
-      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1, &
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk+1,0,0,1, &
                          ut1,LDIST_DIM,G_halox,G_haloy,ier)
 !
 !     Zero adjoint variables
 !     ----------------------
-      do k =1,Nk
+      do k =1,Nk+1
       do j =l_miny,l_maxy
       do i =l_minx,l_maxx
          ut1(i,j,k) = ZERO_8
@@ -322,7 +323,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k =1,Nk
+        do k =1,Nk+1
         do n =1,V4dzga_npts
            fldvint(k,n) = wo(n,k) + fldvint(k,n)
            wo     (n,k) = ZERO_8 
@@ -339,11 +340,11 @@
         call v4d_uvint0_ad (flduint,fldvint,V4dzga_px,V4dzga_py,V4dzga_npts, &
                             gut1,gvt1,V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy, &
                             V4dzga_wx_8,V4dzga_cox_8,V4dzga_six_8,V4dzga_siy_8, &
-                            i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'UV')
+                            i1,i2,j1,j2,Nk+1,V4dzga_grtypi,V4dzga_degree,'UV')
 !
       else
 !
-        do k = 1,Nk
+        do k = 1,Nk+1
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i
@@ -420,12 +421,12 @@
 !     Adjoint of
 !     Global distribution
 !     -------------------
-      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1, &
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk+2,0,0,1, &
                          hut1,LDIST_DIM,G_halox,G_haloy,ier)
 !
 !     Zero adjoint variables
 !     ----------------------
-      do k =1,Nk
+      do k =1,Nk+2
       do j =l_miny,l_maxy
       do i =l_minx,l_maxx
          hut1(i,j,k) = ZERO_8
@@ -440,7 +441,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k = 1,Nk
+        do k = 1,Nk+2
         do n = 1,V4dzga_npts
            fldscint(k,n) = zo(n,k) + fldscint(k,n)
            zo      (n,k) = ZERO_8
@@ -453,11 +454,11 @@
 !       -----------------------------------------------------
         call v4d_scint0_ad ( fldscint,V4dzga_px,V4dzga_py,V4dzga_npts,ghut1, &
                             V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,V4dzga_wx_8, &
-                            i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'HU')
+                            i1,i2,j1,j2,Nk+2,V4dzga_grtypi,V4dzga_degree,'HU')
 !
       else  
 !
-        do k = 1,Nk
+        do k = 1,Nk+2
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i
@@ -479,12 +480,12 @@
 !     Adjoint of
 !     Global distribution
 !     -------------------
-      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk,0,0,1, &
+      call rpn_comm_coll(zo,1,G_ni,1,G_nj,G_ni,G_nj,G_nk+2,0,0,1, &
                          tpt1,LDIST_DIM,G_halox,G_haloy,ier)
 !
 !     Zero adjoint variables
 !     ----------------------
-      do k =1,Nk
+      do k =1,Nk+2
       do j =l_miny,l_maxy
       do i =l_minx,l_maxx
          tpt1(i,j,k) = ZERO_8
@@ -499,7 +500,7 @@
 !       Adjoint of
 !       Reserve order of indices
 !       ------------------------
-        do k = 1,Nk
+        do k = 1,Nk+2
         do n = 1,V4dzga_npts
            fldscint(k,n) = zo(n,k) + fldscint(k,n)
            zo      (n,k) = ZERO_8 
@@ -512,11 +513,11 @@
 !       -----------------------------------------------------
         call v4d_scint0_ad ( fldscint,V4dzga_px,V4dzga_py,V4dzga_npts,gtpt1, &
                             V4dzga_ax,V4dzga_ay,V4dzga_cx,V4dzga_cy,V4dzga_wx_8, &
-                            i1,i2,j1,j2,Nk,V4dzga_grtypi,V4dzga_degree,'4T')
+                            i1,i2,j1,j2,Nk+2,V4dzga_grtypi,V4dzga_degree,'4T')
 !
       else
 !
-        do k = 1,Nk
+        do k = 1,Nk+2
         do j = 1,njgauss
         do i = 1,nigauss
            n = nigauss*(j-1) + i

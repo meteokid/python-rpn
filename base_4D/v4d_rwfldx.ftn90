@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_rwfldx - Read (Write) a specific field from (on) WA file 
 !                   when the field has no HALO
 !
@@ -36,7 +36,7 @@
 ! v2_31 - Tanguay M.        - initial MPI version
 ! v3_21 - Tanguay M.        - Revision Openmp
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     see id section
@@ -67,9 +67,11 @@
 !         --------------------
           if(V4dg_trsize.lt.F_addr + Ni*Nj*Nk -1) call handle_error(-1,'v4d_rwfldx','V4dg_trsize.lt.F_addr + Ni*Nj*Nk -1') 
 !
+!$omp parallel do
           do ind = 1,Ni*Nj*Nk
              V4dg_trincore(F_addr + ind - 1) = F_field(ind)
           enddo
+!$omp end parallel do
 !
 !         Diagnostics
 !         -----------
@@ -84,9 +86,11 @@
 !
 !         Read F_field INCORE 
 !         -------------------
+!$omp parallel do
           do ind = 1,Ni*Nj*Nk
              F_field(ind) = V4dg_trincore(F_addr + ind - 1)
           enddo
+!$omp end parallel do
 !
 !         Diagnostics
 !         -----------

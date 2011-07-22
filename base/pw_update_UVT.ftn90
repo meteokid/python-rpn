@@ -55,15 +55,15 @@
       con(:)    = 1.0/cos(geomg_y_8(:)) * Dcst_rayt_8
 !
       if (pom.eq."P") then
-         gmmstat = gmm_get (gmmk_pw_uplus_s, pw_uu, meta3d)
-         gmmstat = gmm_get (gmmk_pw_vplus_s, pw_vv, meta3d)
-         gmmstat = gmm_get (gmmk_pw_tplus_s, pw_tt, meta3d)
+         gmmstat = gmm_get (gmmk_pw_uu_plus_s, pw_uu, meta3d)
+         gmmstat = gmm_get (gmmk_pw_vv_plus_s, pw_vv, meta3d)
+         gmmstat = gmm_get (gmmk_pw_tt_plus_s, pw_tt, meta3d)
          gmmstat = gmm_get (gmmk_ut1_s, uu, meta3d)
          gmmstat = gmm_get (gmmk_vt1_s, vv, meta3d)
       else
-         gmmstat = gmm_get (gmmk_pw_umoins_s, pw_uu, meta3d)
-         gmmstat = gmm_get (gmmk_pw_vmoins_s, pw_vv, meta3d)
-         gmmstat = gmm_get (gmmk_pw_tmoins_s, pw_tt, meta3d)
+         gmmstat = gmm_get (gmmk_pw_uu_moins_s,pw_uu, meta3d)
+         gmmstat = gmm_get (gmmk_pw_vv_moins_s,pw_vv, meta3d)
+         gmmstat = gmm_get (gmmk_pw_tt_moins_s,pw_tt, meta3d)
          gmmstat = gmm_get (gmmk_ut0_s, uu, meta3d)
          gmmstat = gmm_get (gmmk_vt0_s, vv, meta3d)
       endif

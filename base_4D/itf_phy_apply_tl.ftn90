@@ -1,0 +1,145 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r itf_phy_apply - apply tendencies to dynamical variables
+!
+#include "model_macros_f.h"
+!
+      subroutine itf_phy_apply_tl ( F_apply_L )
+      use nest_blending, only: nest_blend
+      implicit none
+!
+      logical,intent(IN) :: F_apply_L
+  !
+  !author
+  !     Lubos Spacek    - Nov 2010 
+  !
+  !revision
+  ! v4_20 - Spacek, L.       - Initial revision
+  !
+  !Object
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "cstv.cdk"
+#include "nest.cdk"
+#include "dcst.cdk"
+#include "schm.cdk"
+#include "geomg.cdk"
+#include "lam.cdk"
+#include "vt1.cdk"
+#include "vtx.cdk"
+#include "p_geof.cdk"
+#include "pw.cdk"
+#include "itf_phy_buses.cdk"
+#include "lctl.cdk"
+#include "out3.cdk"
+
+      logical nest_it, flag_u, flag_v
+      integer i, j, k, n, err, cnt, UU_indx, VV_indx, km1
+      integer HU_indx, TT_indx
+      real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE), &
+           tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
+      real, pointer, dimension(:,:,:) :: hu
+!     __________________________________________________________________
+!
+      flag_u  = .False. ; flag_v = .false.
+      wk2     = 0.
+!
+      nest_it = ( Lam_0ptend_L .and. G_lam .and. &
+                ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
+!
+      con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
+!
+      cnt     = 0
+      UU_indx = 0; VV_indx = 0; HU_indx = 0; TT_indx = 0
+
+      do n = 1, p_bvol_top
+
+         if (volnm(n)(1:5) .eq. 'PHYTD') then
+            cnt = cnt + 1
+            if  (volnm(n)(7:)  .eq. 'UU') UU_indx=cnt
+            if  (volnm(n)(7:)  .eq. 'VV') VV_indx=cnt
+            if  (volnm(n)(7:)  .eq. 'HU') HU_indx=cnt
+            if  (volnm(n)(7:)  .eq. 'TT') TT_indx=cnt
+         endif
+      enddo
+
+      cnt = HU_indx
+      if(nest_it) call nest_blend(phy_tend(:,:,:,cnt),wk2,LDIST_DIM,1,p_nk,'M')
+      nullify(hu)
+      gmmstat = gmm_get('TR/HU:P',hu,meta3d)
+         do k=1,p_nk
+            hu (:,:,k) = hu(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+         end do
+
+      cnt = TT_indx
+      if(nest_it) call nest_blend(phy_tend(:,:,:,cnt),wk2,LDIST_DIM,1,p_nk,'M')
+      gmmstat = gmm_get('PW_TT:P',pw_tt_plus,meta3d)
+
+      do k= 1, p_nk
+         pw_tt_plus (:,:,k) = pw_tt_plus(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+      end do
+
+
+!
+      gmmstat = gmm_get(gmmk_ut1_s,ut1,meta3d)
+      gmmstat = gmm_get(gmmk_vt1_s,vt1,meta3d)
+      gmmstat = gmm_get('PW_UU:P',pw_uu_plus,meta3d)
+      gmmstat = gmm_get('PW_VV:P',pw_vv_plus,meta3d)
+
+	 tdu = 0. ; tdv = 0.
+
+      do k= 1, p_nk
+      do j= 1, l_nj
+         tdu(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,UU_indx)*con(j)
+         tdv(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,VV_indx)*con(j)
+      end do
+      end do
+
+      if ( nest_it ) then
+         call blend_pntr &
+            (phy_tend(l_minx,l_miny,1,UU_indx),wk2,LDIST_DIM,1,p_nk,'M')
+         call blend_pntr &
+            (phy_tend(l_minx,l_miny,1,VV_indx),wk2,LDIST_DIM,1,p_nk,'M')
+      endif
+
+      do k= 1, p_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         pw_uu_plus(i,j,k) = pw_uu_plus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
+         pw_vv_plus(i,j,k) = pw_vv_plus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
+      end do
+      end do
+      end do
+
+      call itf_phy_uvgridscal (tdu, tdv, LDIST_DIM, p_nk, .false. )
+
+      if ( nest_it ) then
+         call nest_blend (tdu,wk2,LDIST_DIM,1,p_nk,'U')
+         call nest_blend (tdv,wk2,LDIST_DIM,1,p_nk,'V')
+      endif
+
+      do k=1,l_nk+1
+         ut1 (1:l_niu,:,k) =  ut1(1:l_niu,:,k) + Cstv_dt_8*tdu(1:l_niu,:,k+1)
+         vt1 (:,1:l_njv,k) =  vt1(:,1:l_njv,k) + Cstv_dt_8*tdv(:,1:l_njv,k+1)
+      end do
+
+      gmmstat = gmm_get(gmmk_tt1_s,tt1     ,meta3d)
+      call tt2virt_tl (tt1, .true., 'P')
+!     __________________________________________________________________
+!
+      return
+    end subroutine itf_phy_apply_tl

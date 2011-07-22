@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_grdjok - At first call, read time-variable adjoint profiles from 3D-Var
 !                   and fill the adjoint model profiles structure. At the current
 !                   bin, do adjoint of interpolation at obs. locations.
@@ -39,7 +39,7 @@
 ! v3_30 - Fillion/Tanguay   - Adapt diagnostics for LAM
 ! v3_31 - Tanguay M.        - Add OPENMP directives 
 ! v4_12 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay/Morneau   - Adapt to vertical stag grid 
 !
 !object
 !     -----------------------------------------------------------------------
@@ -73,7 +73,7 @@
 !
       integer pnerr, ier, ip, i, j, k, irec, inmvar8, nobproc, &
               kkk, ibid1, ibid2, ind, nsim3d, nbin, npr, i1, i2, j1, j2, &
-              kstatus, jobs, n 
+              kstatus, jobs, n ,nnk, idim(2)
 !
       character*16 tr_name
       real, pointer, dimension(:,:,:) :: hut1,hut1_m
@@ -86,8 +86,8 @@
       integer, pointer, dimension(:)   :: done 
       integer, pointer, dimension(:)   :: nob 
 !
-      real wijk1(LDIST_SHAPE,l_nk),wijk2(LDIST_SHAPE,l_nk),wbid(LDIST_SHAPE,l_nk), &
-           wijk3(LDIST_SHAPE,l_nk),wijk4(LDIST_SHAPE,l_nk),wij5(LDIST_SHAPE)
+      real wijk1(LDIST_SHAPE,l_nk+1),wijk2(LDIST_SHAPE,l_nk+1),wbid(LDIST_SHAPE,l_nk+1), &
+           wijk3(LDIST_SHAPE,l_nk+2),wijk4(LDIST_SHAPE,l_nk+2),wij5(LDIST_SHAPE)
 !
       logical plpr_L, rdvar_L
 !
@@ -110,7 +110,6 @@
 !     --------------------
       plpr_L = .false.
       plpr_L = plpr_L.and.Lun_out.gt.0
-      if (plpr_L) call handle_error(-1,'v4d_grdjok','verify GLBSTAT2')
 !
 !     Recall the dimensions of the fields presented to the interpolation
 !     ------------------------------------------------------------------
@@ -232,7 +231,8 @@
             end if
             write(Lun_out,*) 'Total number of adjoint profiles in this record = ',npr
 !
-            nobproc = nobproc + npr
+!            nobproc = nobproc + npr
+            nobproc = npr
             if (nobproc.gt.Pr_nobproc) then
                 write(Lun_out,*) 'Error: NOBPROC GT PR_NOBPROC'
                 call handle_error(-1,'v4d_grdjok','Error: NOBPROC GT PR_NOBPROC')
@@ -265,6 +265,7 @@
                    else
                        pnerr = prof_gvar( Pr_ihdlin,fprof_8,Pr_varindx(kkk) )
                        npr = size ( fprof_8,   2 )
+                       nnk = size ( fprof_8,   1 )
                    end if
 !
 !                  Use Model-profile-tags to insert the adjoint profiles
@@ -278,7 +279,7 @@
 !
                       else  
 !$omp parallel do
-                          do k = 1, V4dzgauss_nk 
+                          do k = 1, nnk 
                              Pr_mlprof(k,mdltag(ip),kkk)% ptr = fprof_8(k,ip)
                           end do
 !$omp end parallel do
@@ -343,11 +344,16 @@
           if (npr.ne.0) then
              jobs=1
              write(Lun_out,fmt='(//,6x,"Printing one profile of GOMOBS ADJOINT...",/,2x,a,4(4x,A))') &
-                               'Level','UU','VV','TT','HU'
-             do k = 1,V4dzgauss_nk
+                               'Level','UU','VV'
+             do k = 1,G_nk+1
                 write(Lun_out,fmt='(2x,i3,4(4x,e12.5))')k, &
                               Pr_l_mv(V3D_UTRU,nbin) % fprof(k,jobs), &
-                              Pr_l_mv(V3D_VTRU,nbin) % fprof(k,jobs), &
+                              Pr_l_mv(V3D_VTRU,nbin) % fprof(k,jobs)
+             end do
+             write(Lun_out,fmt='(//,6x,"Printing one profile of GOMOBS ADJOINT...",/,2x,a,4(4x,A))') &
+                               'Level','TT','HU'
+             do k = 1,G_nk+2
+                write(Lun_out,fmt='(2x,i3,4(4x,e12.5))')k, &
                               Pr_l_mv(V3D_TEMP,nbin) % fprof(k,jobs), &
                               Pr_l_mv(V3D_SPHU,nbin) % fprof(k,jobs)
              end do
@@ -429,10 +435,10 @@
 !
             if (npr.ne.0) then
 !
-            allocate ( profx (l_nk,npr), STAT=ier )
+            allocate ( profx (l_nk+2,npr), STAT=ier )
 !
 !$omp parallel do
-            do k = 1,l_nk
+            do k = 1,l_nk+2
                do j=1,npr
                   profx(k,j)= Pr_l_mv(V3D_SPHU,nbin) % fprof(k,j)
                end do
@@ -446,7 +452,7 @@
 !           ----------------------------------------------------
             call v4d_scint0_ad(profx,Pr_l_mv(V3D_SPHU,nbin)%px,Pr_l_mv(V3D_SPHU,nbin)%py,npr, &
                                wijk4,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy, &
-                               V4dz_wx_8,i1,i2,j1,j2,l_nk, &
+                               V4dz_wx_8,i1,i2,j1,j2,l_nk+2, &
                                V4dz_grtypi,V4dz_degree,'HU')
 !
             if (npr.ne.0) deallocate( profx ) 
@@ -461,10 +467,10 @@
 !
             if (npr.ne.0) then
 !
-            allocate ( profx (l_nk,npr), STAT=ier )
+            allocate ( profx (l_nk+2,npr), STAT=ier )
 !
 !$omp parallel do
-            do k = 1,l_nk
+            do k = 1,l_nk+2
                do j=1,npr
                   profx(k,j)= Pr_l_mv(V3D_TEMP,nbin) % fprof(k,j)
                end do
@@ -478,7 +484,7 @@
 !           ----------------------------------------------------
             call v4d_scint0_ad(profx,Pr_l_mv(V3D_TEMP,nbin)%px,Pr_l_mv(V3D_TEMP,nbin)%py,npr, &
                                wijk3,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy, &
-                               V4dz_wx_8,i1,i2,j1,j2,l_nk, &
+                               V4dz_wx_8,i1,i2,j1,j2,l_nk+2, &
                                V4dz_grtypi,V4dz_degree,'TT')
 !
             if (npr.ne.0) deallocate( profx ) 
@@ -493,12 +499,12 @@
 !
             if (npr.ne.0) then
 !
-            allocate ( profx (l_nk,npr), STAT=ier )
-            allocate ( profy (l_nk,npr), STAT=ier )
-            if (V4dg_pruv_L) allocate ( prbid (l_nk,npr), STAT=ier )
+            allocate ( profx (l_nk+1,npr), STAT=ier )
+            allocate ( profy (l_nk+1,npr), STAT=ier )
+            if (V4dg_pruv_L) allocate ( prbid (l_nk+1,npr), STAT=ier )
 !
 !$omp parallel do
-            do k=1,l_nk
+            do k=1,l_nk+1
                do j=1,npr
                   profx(k,j)= Pr_l_mv(V3D_UTRU,nbin) % fprof(k,j)
                   profy(k,j)= Pr_l_mv(V3D_VTRU,nbin) % fprof(k,j)
@@ -516,7 +522,7 @@
                call v4d_uvint0_ad(profx,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%py,npr, &
                                   wijk1,wijk2,V4dz_ax,V4dz_ay,V4dz_cx,V4dz_cy, &
                                   V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siy_8, &
-                                  i1,i2,j1,j2,l_nk,V4dz_grtypi,V4dz_degree,'UV')
+                                  i1,i2,j1,j2,l_nk+1,V4dz_grtypi,V4dz_degree,'UV')
 !
             else
 !
@@ -525,7 +531,7 @@
                wbid = ZERO_8
 !
 !$omp parallel do
-               do k=1,l_nk
+               do k=1,l_nk+1
                   do j=1,npr
                      prbid(k,j)= ZERO_8
                   end do
@@ -536,13 +542,13 @@
                call v4d_uvint0_ad(prbid,profy,Pr_l_mv(V3D_UTRU,nbin)%px,Pr_l_mv(V3D_UTRU,nbin)%pyv,npr, & 
                                   wbid,wijk2,V4dz_ax,V4dz_ayv,V4dz_cx,V4dz_cyv, &
                                   V4dz_wx_8,V4dz_cox_8,V4dz_six_8,V4dz_siyv_8, &
-                                  i1,i2,j1,j2,l_nk,'V',V4dz_degree,'UV')
+                                  i1,i2,j1,j2,l_nk+1,'V',V4dz_degree,'UV')
 !
                wbid = ZERO_8
 !
                if (npr.ne.0) then
 !$omp parallel do
-               do k=1,l_nk
+               do k=1,l_nk+1
                   do j=1,npr
                      prbid(k,j)= ZERO_8
                   end do
@@ -553,7 +559,7 @@
                call v4d_uvint0_ad (profx,prbid,Pr_l_mv(V3D_UTRU,nbin)%pxu,Pr_l_mv(V3D_UTRU,nbin)%py,npr, &
                                    wijk1,wbid,V4dz_axu,V4dz_ay,V4dz_cxu,V4dz_cy, &
                                    V4dz_wxu_8,V4dz_coxu_8,V4dz_sixu_8,V4dz_siy_8, &
-                                   i1,i2,j1,j2,l_nk,'U',V4dz_degree,'UV')
+                                   i1,i2,j1,j2,l_nk+1,'U',V4dz_degree,'UV')
 !
                wbid = ZERO_8
 !
@@ -564,11 +570,11 @@
 !
       if (plpr_L) then
          if (Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER EZSCINT_AD'
-            call glbstat2(wijk1,'UU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wijk2,'VV','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wijk3,'TP','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-            call glbstat2(wij5 ,'4S','GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
-            call glbstat2(wijk4,'HU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+            call glbstat2(wijk1,'UT1' ,' GRDJOK',LDIST_DIM,1,G_nk+1,1,G_ni,1,G_nj,1,G_nk+1)
+            call glbstat2(wijk2,'VT1' ,' GRDJOK',LDIST_DIM,1,G_nk+1,1,G_ni,1,G_nj,1,G_nk+1)
+            call glbstat2(wijk3,'TT1' ,' GRDJOK',LDIST_DIM,1,G_nk+2,1,G_ni,1,G_nj,1,G_nk+2)
+            call glbstat2(wij5 ,'ST1' ,' GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
+            call glbstat2(wijk4,'HUT1',' GRDJOK',LDIST_DIM,1,G_nk+2,1,G_ni,1,G_nj,1,G_nk+2)
          if (Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
       end if
 !
@@ -581,11 +587,11 @@
 !
       if (plpr_L) then
          if (Ptopo_myproc.eq.0) write(Lun_out,*) 'AFTER VARCONV_AD'
-         call glbstat2(wijk1,'UU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wijk2,'VV','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wijk3,'TP','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
-         call glbstat2(wij5 ,'4S','GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
-         call glbstat2(wijk4,'HU','GRDJOK',LDIST_DIM,1,G_nk,1,G_ni,1,G_nj,1,G_nk)
+         call glbstat2(wijk1,'UT1' ,' GRDJOK',LDIST_DIM,1,G_nk+1,1,G_ni,1,G_nj,1,G_nk+1)
+         call glbstat2(wijk2,'VT1' ,' GRDJOK',LDIST_DIM,1,G_nk+1,1,G_ni,1,G_nj,1,G_nk+1)
+         call glbstat2(wijk3,'TT1' ,' GRDJOK',LDIST_DIM,1,G_nk+2,1,G_ni,1,G_nj,1,G_nk+2)
+         call glbstat2(wij5 ,'ST1' ,' GRDJOK',LDIST_DIM,1,   1,1,G_ni,1,G_nj,1,1)
+         call glbstat2(wijk4,'HUT1',' GRDJOK',LDIST_DIM,1,G_nk+2,1,G_ni,1,G_nj,1,G_nk+2)
          if (Ptopo_myproc.eq.0) write(Lun_out,*) '-----------------------'
       end if
 !
@@ -602,14 +608,9 @@
       end do
 !$omp end parallel do
 !
-!$omp parallel do
-      do k=1,l_nk
-         do j=1,l_njv
-            do i=1,l_ni
-               vt1  (i,j,k) = wijk2(i,j,k) + vt1 (i,j,k)
-               wijk2(i,j,k) = ZERO_8
-            end do
-         end do
+!$omp parallel
+!$omp do
+      do k=1,l_nk+2
          do j=1,l_nj
             do i=1,l_ni
                hut1 (i,j,k) = wijk4(i,j,k) + hut1(i,j,k)
@@ -617,13 +618,27 @@
                tt1  (i,j,k) = wijk3(i,j,k) + tt1 (i,j,k)
                wijk3(i,j,k) = ZERO_8
             end do
+         end do
+      end do
+!$omp end do
+!
+!$omp do
+      do k=1,l_nk+1
+         do j=1,l_njv
+            do i=1,l_ni
+               vt1  (i,j,k) = wijk2(i,j,k) + vt1 (i,j,k)
+               wijk2(i,j,k) = ZERO_8
+            end do
+         end do
+         do j=1,l_nj
             do i=1,l_niu
                ut1  (i,j,k) = wijk1(i,j,k) + ut1 (i,j,k)
                wijk1(i,j,k) = ZERO_8
             end do
          end do
       end do
-!$omp end parallel do
+!$omp end do
+!$omp end parallel
 !
       write(Lun_out,1001) Lctl_step
 !

@@ -42,23 +42,21 @@
 !
 !notes
 !
-      integer soit,lght,n,cnt,indx_n,offbo,offbb
+      integer n,cnt,offbo,offbb
 !
 !     ---------------------------------------------------------------
-!
 !
 !     Extract physic tendencies
 !
       cnt = 0
-      do n=1,p_bvol_top
+      do n= 1, p_bvol_top
          if (volnm(n)(1:5) .eq. 'PHYTD') then
             cnt = cnt + 1
-            call getindx (volnm(n),  'V', indx_n, lght, soit)
-            call itf_phy_unfold (phy_tend(l_minx,l_miny,1,cnt), &
-                                 F_busvol(indx_n),F_jdo       , &
+            call itf_phy_unfold (phy_tend(l_minx,l_miny,1,cnt)  , &
+                                 F_busvol(phy_idxtdy(cnt)),F_jdo, &
                                  1,nk,l_minx,l_maxx,l_miny,l_maxy)
          endif
-       end do
+      end do
 !
 !     Extract physic output
 !

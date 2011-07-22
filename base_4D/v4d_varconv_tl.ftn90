@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_varconv_tl - TLM of conversion control variables GEM <--> 3D-Var
 !
 #include "model_macros_f.h"
@@ -23,10 +23,10 @@
       implicit none
 !
       integer DIST_DIM,Nk
-      real C_ut1 (DIST_SHAPE,Nk), C_vt1  (DIST_SHAPE,Nk), &
-           C_tt1 (DIST_SHAPE,Nk), C_hut1 (DIST_SHAPE,Nk), &
+      real C_ut1 (DIST_SHAPE,Nk+1), C_vt1  (DIST_SHAPE,Nk+1), &
+           C_tt1 (DIST_SHAPE,Nk+2), C_hut1 (DIST_SHAPE,Nk+2), &
            C_st1 (DIST_SHAPE), &
-           C_tt1m(DIST_SHAPE,Nk), C_hut1m(DIST_SHAPE,Nk), &
+           C_tt1m(DIST_SHAPE,Nk+2), C_hut1m(DIST_SHAPE,Nk+2), &
            C_st1m(DIST_SHAPE)
       logical inverse_L
 !
@@ -43,7 +43,7 @@
 ! v3_20 - Buehner & Zadra  - add option for using HU as humidity variable 
 ! v3_30 - Fillion/Tanguay  - Extend the scaling to all the grid in LAM mode 
 ! v3_31 - Tanguay M.       - Add OPENMP directives 
-! v4_30 - Tanguay M.       - Revision
+! v4_40 - Tanguay/Morneau  - Adapt to vertical stag grid 
 !
 !object
 !
@@ -69,7 +69,7 @@
 !
       integer i, j, k
       real*8 pri2c_8
-      real wu(LDIST_SHAPE,l_nk),wv(LDIST_SHAPE,l_nk)
+      real wu(LDIST_SHAPE,l_nk+1),wv(LDIST_SHAPE,l_nk+1)
 
       if(.not.inverse_L) then
 !C
@@ -83,10 +83,10 @@
 !C
       if (.not.V4dg_pruv_L) then 
 !
-      call itf_phy_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk, .true. )
+      call itf_phy_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk+1, .true. )
 
 !$omp parallel do
-      do k=1,Nk
+      do k=1,Nk+1
         do j= 1, l_nj 
          pri2c_8 = Dcst_rayt_8/Geomg_cy_8(j)
          do i= 1, l_ni 
@@ -100,7 +100,7 @@
       else
 !
 !$omp parallel do
-      do k=1,Nk
+      do k=1,Nk+1
         do j= 1, l_nj
          pri2c_8 = Dcst_rayt_8/Geomg_cy_8(j)
          do i= 1, l_niu
@@ -111,7 +111,7 @@
 !$omp end parallel do
 !
 !$omp parallel do
-      do k=1,Nk
+      do k=1,Nk+1
         do j= 1, l_njv
          pri2c_8 = Dcst_rayt_8/Geomg_cyv_8(j)
          do i= 1, l_ni
@@ -127,7 +127,7 @@
 !C    -----------
 !C     
 !$omp parallel do
-      do k=1,Nk
+      do k=1,Nk+2
          do j= 1, l_nj 
             do i= 1, l_ni 
 
@@ -149,9 +149,6 @@
       do j= 1, l_nj 
          do i= 1, l_ni 
 
-!           Caution for Saroja: Verify st1
-!           ------------------------------
-!CCC        C_st1(i,j) =  Geomg_z_8(Nk) * exp(C_st1m(i,j)) * C_st1(i,j)
             C_st1(i,j) =  Cstv_pref_8 * exp(C_st1m(i,j)) * C_st1(i,j)
 
          end do
@@ -163,7 +160,7 @@
 !C
          if (V4dg_chum_s.eq.'LQ') then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+2
             do j= 1, l_nj 
                do i= 1, l_ni 
                   if(C_hut1m(i,j,k).eq.0.0) then
@@ -188,7 +185,7 @@
 !C
          if (V4dg_chum_s.eq.'LQ') then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+2
             do j= 1, l_nj 
                do i= 1, l_ni 
                   C_hut1(i,j,k) = C_hut1(i,j,k)*C_hut1m(i,j,k)
@@ -201,7 +198,7 @@
 !C    Winds
 !C    -----
 !$omp parallel do
-       do k=1,Nk
+       do k=1,Nk+1
        do j=l_miny,l_maxy
        do i=l_minx,l_maxx
           wu(i,j,k) = 0.0 
@@ -213,7 +210,7 @@
 !
        if(.not.V4dg_ustag_L) then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+1
             do j= 1, l_nj
             pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
                do i= 1, l_ni
@@ -226,7 +223,7 @@
 !
        if(.not.V4dg_vstag_L) then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+1
            do j= 1, l_nj
            pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
              do i= 1, l_ni
@@ -238,18 +235,18 @@
        endif
 !
        if(.not.V4dg_ustag_L.and..not.V4dg_vstag_L) then
-          call itf_phy_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk, .false. )
+          call itf_phy_uvgridscal ( C_ut1, C_vt1, LDIST_DIM, Nk+1, .false. )
 !
        elseif(V4dg_ustag_L.and..not.V4dg_vstag_L) then
-          call itf_phy_uvgridscal (    wu, C_vt1, LDIST_DIM, Nk, .false. )
+          call itf_phy_uvgridscal (    wu, C_vt1, LDIST_DIM, Nk+1, .false. )
 !
        elseif(.not.V4dg_ustag_L.and.V4dg_vstag_L) then
-          call itf_phy_uvgridscal ( C_ut1,    wv, LDIST_DIM, Nk, .false. )
+          call itf_phy_uvgridscal ( C_ut1,    wv, LDIST_DIM, Nk+1, .false. )
        endif
 !
        if(V4dg_ustag_L) then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+1
            do j= 1, l_nj
            pri2c_8 = (1.0/Geomg_cy_8(j))*Dcst_rayt_8
              do i= 1, l_niu
@@ -262,7 +259,7 @@
 !
        if(V4dg_vstag_L) then
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+1
            do j= 1, l_njv
            pri2c_8 = (1.0/Geomg_cyv_8(j))*Dcst_rayt_8
              do i= 1, l_ni
@@ -277,7 +274,7 @@
 !C    -----------
 !C     
 !$omp parallel do
-         do k=1,Nk
+         do k=1,Nk+2
             do j= 1, l_nj 
                do i= 1, l_ni 
 
@@ -298,9 +295,6 @@
          do j= 1, l_nj 
             do i= 1, l_ni 
 
-!              Caution for Saroja: Verify st1
-!              ------------------------------
-!CCC           C_st1(i,j) = C_st1(i,j)/(Geomg_z_8(Nk) * exp(C_st1m(i,j)))
                C_st1(i,j) = C_st1(i,j)/(Cstv_pref_8 * exp(C_st1m(i,j)))
 
             end do

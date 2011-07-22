@@ -1,0 +1,60 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r v4d_rwtraj_phy - For PHYSICS: Read (Write) from (on) TRAJ WA file at each time step 
+!
+#include "model_macros_f.h"
+!
+      subroutine v4d_rtrnch (bus,nvar,numtr,istep,ind,jdo,offi,niphy,nkphy)
+
+!
+      implicit none
+!
+      integer nvar,numtr,istep,ind,jdo,offi,niphy,nkphy
+!
+      real bus(*)
+!
+!author 
+!     Lubos Spacek (Apr 2008)
+!
+!revision
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_busdyn      O    - dynamic bus
+! F_jdo         I    - slice number being processed
+! F_step        I    - sigma levels
+!----------------------------------------------------------------
+!
+!implicits
+#include "glb_ld.cdk"
+       include "v4dg.inc"
+!modules
+!
+      integer i,j,k,indd,inds,iadd
+!
+      iadd = V4dg_addtab_tl(numtr,istep,1,1)
+      iadd = iadd+l_ni*l_nj*ind
+      do k= 1, nkphy
+      do i= 1, niphy
+         indd = (k-1)*niphy+i-1
+         inds = l_ni*l_nj*(k-1) + l_ni*(jdo-1) + offi + i
+         bus(nvar +indd)  =   V4dg_trincore(iadd + inds - 1)
+      enddo
+      enddo
+!
+      return
+    end subroutine v4d_rtrnch

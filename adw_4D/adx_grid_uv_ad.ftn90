@@ -1,0 +1,114 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+#include "stop_mpi.h"
+#include "msg.h"
+
+!/**
+subroutine adx_grid_uv_ad ( F_u_adw, F_v_adw, F_u_model,F_v_model, &
+                            F_aminx,F_amaxx,F_aminy,F_amaxy,       &
+                            F_minx,F_maxx,F_miny,F_maxy,F_nk)
+   implicit none
+
+   !@objective ADJ of adx_grid_uv 
+!
+   !@arguments
+   integer :: F_aminx,F_amaxx,F_aminy,F_amaxy !I, adw local array bounds
+   integer :: F_minx,F_maxx,F_miny,F_maxy     !I, model's local array bounds
+   integer :: F_nk             !I, number of levels
+   real,dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: &
+        F_u_model, F_v_model   !I, winds on model-grid
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: &
+        F_u_adw ,F_v_adw       !O, winds on adw-grid
+!
+   !@author Monique Tanguay
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+   !**/
+
+#include "adx_dims.cdk"
+   !
+   integer :: nrow, j1, i, j, k
+   !
+   real, dimension(:,:,:)  ,allocatable :: in0_u,in0_v
+   !---------------------------------------------------------------------
+   call msg(MSG_DEBUG,'adx_grid_uv_ad')
+
+   if (adx_lam_L) call handle_error(-1,'adx_grid_uv_ad','G_lam TO BE UPDATED')
+
+   if (adx_lam_L) allocate ( in0_u(F_minx:F_maxx,F_miny:F_maxy,F_nk) )
+   if (adx_lam_L) allocate ( in0_v(F_minx:F_maxx,F_miny:F_maxy,F_nk) )
+   !
+   !Zero adjoint variables
+   !----------------------
+   if (adx_lam_L) then 
+      in0_u = 0. 
+      in0_v = 0. 
+   endif
+
+!$omp parallel
+
+   IF_LAM: if (.not.adx_lam_L) then
+      if (adx_is_north) then
+         j1 = adx_lnj+1
+         call adx_polw3_ad(F_u_adw, F_v_adw, &
+              j1, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni,adx_lnj, adx_halox,adx_haloy, F_nk)
+      endif
+
+      if (adx_is_south) then
+         j1 = 0
+         call adx_polw3_ad(F_u_adw, F_v_adw, &
+              j1, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni,adx_lnj, adx_haloy,adx_halox, F_nk)
+      endif
+   endif IF_LAM
+
+!$omp end parallel
+
+   nrow = 999
+   if (adx_lam_L) nrow = 0
+
+   if (adx_lam_L) then
+      in0_u = F_u_model 
+      in0_v = F_v_model 
+   endif
+   call rpn_comm_adj_halox( &
+        F_v_model, F_minx,F_maxx,F_miny,F_maxy, &
+        adx_mlni, adx_mlnj, F_nk, adx_halox, adx_haloy, &
+        adx_is_period_x, adx_is_period_y, &
+        F_v_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni, nrow)
+   call rpn_comm_adj_halox( &
+        F_u_model, F_minx,F_maxx,F_miny,F_maxy, &
+        adx_mlni, adx_mlnj, F_nk, adx_halox, adx_haloy, &
+        adx_is_period_x, adx_is_period_y, &
+        F_u_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni, nrow)
+   !
+   if (adx_lam_L) then 
+!$omp parallel do
+      do k=1,F_nk
+         do j=F_miny,F_maxy
+            do i=F_minx,F_maxx
+               F_v_model(i,j,k) = in0_v(i,j,k) + F_v_model(i,j,k)
+               F_u_model(i,j,k) = in0_u(i,j,k) + F_u_model(i,j,k)
+            end do
+         end do
+      end do
+!$omp end parallel do
+   endif
+   !
+   call msg(MSG_DEBUG,'adx_grid_uv_ad [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_grid_uv_ad

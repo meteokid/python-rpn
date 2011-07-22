@@ -1,0 +1,279 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+#include "constants.h"
+#include "msg.h"
+#include "stop_mpi.h"
+
+#include "model_macros_f.h"
+
+!/**
+subroutine adx_main_2_pos4_tl( F_nb_iter  ,F_l_S, & 
+!
+                               F_px  ,F_py  ,F_pz  , &
+                               F_u   ,F_v   ,F_w   , &
+                               F_xth ,F_yth ,F_zth , &
+                               F_xcth,F_ycth,F_zcth, &
+                               F_xct1,F_yct1,F_zct1, &
+!
+                               F_px_m  ,F_py_m  ,F_pz_m  , &
+                               F_u_m   ,F_v_m   ,F_w_m   , &
+                               F_xth_m ,F_yth_m ,F_zth_m , &
+                               F_xcth_m,F_ycth_m,F_zcth_m, &
+                               F_xct1_m,F_yct1_m,F_zct1_m, &
+!
+                               F_aminx, F_amaxx, F_aminy, F_amaxy, &
+                               F_ni, F_nj, k0, F_nk, F_nk_super)
+!
+   implicit none
+!
+   !@objective TLM of adx_main_2_pos4
+!
+   !@arguments
+   integer :: F_nb_iter          !I, total number of iterations for traj
+   character(len=1) :: F_l_S     !I, m/t for momentum or thermo level
+   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
+   integer :: F_ni, F_nj         !I, dims of position fields
+   integer :: F_nk, F_nk_super   !I, nb levels
+   integer :: k0                 !I, scope of the operation k0 to F_nk
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_px  , F_py  , F_pz,&   !O, upstream positions valid at t1
+        F_px_m, F_py_m, F_pz_m   !O, upstream positions valid at t1 TRAJ
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super),target::&
+        F_u   ,F_v   ,F_w,&      !I, real destag winds, super-set (mom+thermo)
+        F_u_m ,F_v_m ,F_w_m      !I, real destag winds, super-set (mom+thermo) TRAJ
+   real, dimension(F_ni,F_nj,F_nk) :: &
+        F_xth   , F_yth   , F_zth,&    !I/O, upwind longitudes at central time 
+        F_xcth  , F_ycth  , F_zcth,&   !O, upwind cartesian positions at central time
+        F_xct1  , F_yct1  , F_zct1,&   !O, upstream cartesian positions at t1
+        F_xth_m , F_yth_m , F_zth_m,&  !I/O, upwind longitudes at central time TRAJ 
+        F_xcth_m, F_ycth_m, F_zcth_m,& !O, upwind cartesian positions at central time TRAJ
+        F_xct1_m, F_yct1_m, F_zct1_m   !O, upstream cartesian positions at t1 TRAJ
+!
+   !@author Monique Tanguay
+!
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+!**/
+#include "adx_nml.cdk"
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+#include "adx_dyn.cdk"
+#include "adx_poles.cdk"
+#include "adx_interp.cdk"
+#include "adx_nosetint.cdk"
+
+   real*8, parameter :: PDP_8 = 1.D0 + 1.D-6
+   real*8, parameter :: PDM_8 = 1.D0 - 1.D-6
+   logical,parameter :: CLIP_TRAJ = .true.
+   logical,parameter :: DO_W      = .false.
+   logical,parameter :: DO_UV     = .true.
+   real, parameter   :: DTH_1     = 1.
+
+   integer :: i, j, k, iter, ioff
+   integer :: i0,in,j0,jn
+   real    :: dth
+   real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1
+   real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
+   !
+   real, dimension(F_ni,F_nj,F_nk) :: wrkx1_m,wrky1_m
+   real, dimension(F_ni,F_nj,F_nk) :: xgrid_m,ygrid_m,zgrid_m
+   logical :: doh_L
+
+   real, dimension(:,:,:), pointer :: dummy3d
+   real*8, dimension(:), pointer :: p_z
+
+   integer, dimension(F_ni,F_nj,F_nk) :: n1_m,ii_m,jj_m,kk_m
+   real,    dimension(F_ni,F_nj,F_nk) :: capx1_m,capy1_m,capz1_m
+   real,    dimension(F_ni,F_nj,F_nk) :: capx1  ,capy1  ,capz1
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_main_2_pos_tl ('//trim(F_l_S)//')')
+
+   if (adx_zdotMid_L) call handle_error(-1,'adx_main_2_pos_tl','adx_zdotMid_L not done')
+   if (adx_lam_L    ) call handle_error(-1,'adx_main_2_pos_tl','adx_lam_L     not done')
+
+   dummy3d => F_w
+
+   dth  = adx_dt_8/2.
+
+   p_z => adx_verZ_8%t
+   if (F_l_S == 'm') p_z => adx_verZ_8%m
+
+   call adx_get_ij0n(i0,in,j0,jn)
+
+   DO_ITER: do iter = 1, F_nb_iter
+
+                       doh_L = .false.
+      if (iter .eq. 1) doh_L = .true.
+
+      !- 3d interpol of u and v winds and new upstream pos along x and y
+
+      ygrid  (:,:,:) = F_yth  (:,:,:)
+      ygrid_m(:,:,:) = F_yth_m(:,:,:)
+      if (adx_lam_L) then
+
+!!!       NOT DONE
+
+      else
+
+         Adx_hor_L = doh_L
+         Adx_ver_L = .true.
+
+         call adx_trilin_turbo4_tl (wrkx1  ,F_u    ,                            &
+                                            capx1  ,capy1  ,capz1  ,            &
+                                    F_xth  ,ygrid  ,F_zth  ,                    &                        
+                                    wrkx1_m,F_u_m  ,DTH_1  ,                    &
+                                    n1_m   ,capx1_m,capy1_m,capz1_m,            &
+                                    F_xth_m,ygrid_m,F_zth_m,                    &
+                                    ii_m    ,jj_m  ,kk_m,                       &
+                                    adx_lcx,adx_bsx_8, adx_dix_8,               &
+                                    adx_lcy,adx_bsy_8, adx_diy_8,               &
+                                    adx_lcz%s,adx_bsz_8%s,adx_diz_8,            &
+                                    F_ni*F_nj*F_nk,i0,in,j0,jn,k0,F_nk,adx_lnkm)
+
+         call adx_trilin_turbo4_tl (wrky1  ,F_v    ,                            &
+                                            capx1  ,capy1  ,capz1  ,            &
+                                    F_xth  ,ygrid  ,F_zth  ,                    &
+                                    wrky1_m,F_v_m  ,DTH_1  ,                    &
+                                    n1_m   ,capx1_m,capy1_m,capz1_m,            &
+                                    F_xth_m,ygrid_m,F_zth_m,                    &
+                                    ii_m    ,jj_m  ,kk_m,                       &
+                                    adx_lcx,adx_bsx_8, adx_dix_8,               &
+                                    adx_lcy,adx_bsy_8, adx_diy_8,               &
+                                    adx_lcz%s,adx_bsz_8%s,adx_diz_8,            &
+                                    F_ni*F_nj*F_nk,i0,in,j0,jn,k0,F_nk,adx_lnkm)
+
+      endif
+
+      call adx_trajsp2_tl (F_xth  ,F_yth  , F_xcth  ,F_ycth  ,F_zcth  , wrkx1  ,wrky1  , &
+                           F_xth_m,F_yth_m, F_xcth_m,F_ycth_m,F_zcth_m, wrkx1_m,wrky1_m, &
+                           adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
+                           dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
+
+      !- 3D interpol of zeta dot and new upstream pos along zeta
+
+      ygrid  (:,:,:) = F_yth  (:,:,:)
+      ygrid_m(:,:,:) = F_yth_m(:,:,:)
+
+
+      if (adx_lam_L) then
+
+!!!       NOT DONE
+
+      else
+
+          Adx_hor_L = .true.
+          Adx_ver_L = .false.
+
+          call adx_trilin_turbo4_tl (wrkx1  ,F_w    ,                            &
+                                             capx1  ,capy1  ,capz1  ,            &
+                                     F_xth  ,ygrid  ,F_zth  ,                    &
+                                     wrkx1_m,F_w_m  ,-dth   ,                    &
+                                     n1_m   ,capx1_m,capy1_m,capz1_m,            &
+                                     F_xth_m,ygrid_m,F_zth_m,                    &
+                                     ii_m    ,jj_m  ,kk_m,                       &
+                                     adx_lcx,adx_bsx_8, adx_dix_8,               &
+                                     adx_lcy,adx_bsy_8, adx_diy_8,               &
+                                     adx_lcz%s,adx_bsz_8%s,adx_diz_8,            &
+                                     F_ni*F_nj*F_nk,i0,in,j0,jn,k0,F_nk,adx_lnkm)
+
+      endif
+
+!$omp parallel do
+      do k = max(2,k0),F_nk-1
+         do j = j0,jn
+            do i = i0,in
+               ! 
+               !TRAJECTORY
+               !----------
+               F_zth_m(i,j,k) = p_z(k) + 2.D0*wrkx1_m(i,j,k)
+               ! 
+               !TLM
+               !---
+               F_zth(i,j,k) = 2.D0*wrkx1(i,j,k)
+               ! 
+               !Make sure F_zth is below p_z(1) and above p_z(F_nk)
+               !---------------------------------------------------
+!!!            F_zth_m(i,j,k) = min(PDM_8*p_z(F_nk),  &
+!!!                             max(1.0d0*F_zth_m(i,j,k), PDP_8*p_z(1)) )
+               if (1.0d0*F_zth_m(i,j,k).lt.PDP_8*p_z(1)) then
+                   F_zth_m(i,j,k) = PDP_8*p_z(1)
+                   F_zth  (i,j,k) = 0.0
+               elseif (1.0d0*F_zth_m(i,j,k).gt.PDM_8*p_z(F_nk)) then
+                   F_zth_m(i,j,k) = pdm_8*p_z(F_nk)
+                   F_zth  (i,j,k) = 0.0
+               endif
+               ! 
+               !TRAJECTORY
+               !----------
+               F_zth_m(i,j,k) = 0.5D0*(F_zth_m(i,j,k) + p_z(k))
+               ! 
+               !TLM
+               !---
+               F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k))
+               ! 
+            enddo
+         enddo
+      enddo
+!$omp end parallel do
+
+   enddo DO_ITER
+
+   call adx_trajex2_tl(F_px  ,F_py  ,F_xct1  ,F_yct1  ,F_zct1  ,F_xcth  ,F_ycth  ,F_zcth  ,&
+                       F_px_m,F_py_m,F_xct1_m,F_yct1_m,F_zct1_m,F_xcth_m,F_ycth_m,F_zcth_m,&
+                       i0,in,j0,jn,k0)
+
+!$omp parallel do
+   do k = k0,F_nk
+      if ((k.eq.1).or.(k.eq.F_nk)) then
+         !
+         !TRAJECTORY
+         !----------
+         F_pz_m(i0:in,j0:jn, k) = p_z(k)
+         F_pz_m(i0:in,j0:jn, k) = p_z(k)
+         !
+         !TLM
+         !---
+         F_pz(i0:in,j0:jn, k) = 0. 
+         F_pz(i0:in,j0:jn, k) = 0. 
+         !
+      else
+         do j = j0,jn
+         do i = i0,in
+         !
+         !TRAJECTORY
+         !----------
+            F_pz_m(i,j,k) = F_zth_m(i,j,k) - p_z(k)
+            F_pz_m(i,j,k) = p_z(k) + 2.0 * F_pz_m(i,j,k)
+         !
+         !TLM
+         !---
+            F_pz(i,j,k) = F_zth(i,j,k) 
+            F_pz(i,j,k) = 2.0 * F_pz(i,j,k)
+         !
+         enddo
+         enddo
+      endif
+   enddo
+!$omp end parallel do
+
+   call msg(MSG_DEBUG,'adx_main_2_pos_tl ('//trim(F_l_S)//') [end]')
+
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_main_2_pos4_tl

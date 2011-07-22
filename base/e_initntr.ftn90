@@ -31,25 +31,37 @@
 #include "version.cdk"
 #include <clib_interface.cdk>
 !
-      integer  exdb, rpn_comm_init_multigrid, fnom
-      external exdb, rpn_comm_init_multigrid, fnom, init_ndoms
+      integer  rpn_comm_init_multigrid, fnom, exdb
+      integer  rpn_comm_init_multi_level
+      external rpn_comm_init_multigrid, fnom, exdb, init_ndoms
+      external rpn_comm_init_multi_level
 !
       character*50 DSTP,dummy
       character(len=256) :: my_dir
-      integer err,f1,npex,mydomain
+      integer err,f1,npex,mydomain,npey,ngrids
 !
 !--------------------------------------------------------------------
 !
       call rpn_comm_mydomain (init_ndoms, mydomain)
 
+      ngrids=1
+      if (Grd_yinyang_L) ngrids=2
+
       npex=1
-      if (Grd_yinyang_L) npex=2
-      f1 = rpn_comm_init_multigrid (dummy,Ptopo_myproc,Ptopo_numproc,npex,1,Grd_ndomains)
+      npey=1
+      Ptopo_couleur = rpn_comm_init_multi_level (dummy, Ptopo_myproc,Ptopo_numproc, &
+                                                    npex,npey, Grd_ndomains,ngrids  )
 
       if (Grd_yinyang_L) then
-         if (Ptopo_myproc.eq.0) Grd_yinyang_S = 'YIN'
-         if (Ptopo_myproc.eq.1) Grd_yinyang_S = 'YAN'
+         if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
+         if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
+      else
+         Ptopo_couleur = 0
       endif
+
+!	print*, 'okokokok: ',Grd_yinyang_L,Ptopo_couleur,mydomain,Grd_ndomains,ngrids
+!        call rpn_comm_FINALIZE (err)
+!	stop
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 
@@ -63,10 +75,10 @@
 
 ! Directory Path_work_S has been created by Um_runent.ksh
 
-      if (Ptopo_myproc.eq.0) err = clib_mkdir (trim(Path_output_S))
+      if (Ptopo_couleur.eq.0) err = clib_mkdir (trim(Path_output_S))
       err = clib_chdir (trim(Path_work_S))
 
-      if (Ptopo_myproc.eq.1) then
+      if (Ptopo_couleur.eq.1) then
          err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
          err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
       endif
@@ -75,7 +87,7 @@
       err = clib_getenv ('GEMBNDL_VERSION',Version_number_S)
       Version_title_S = 'GEMNTR --- Release of: '//trim(DSTP)
 
-      if (Ptopo_myproc.eq.0) then
+      if (Ptopo_couleur.eq.0) then
          call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
          call write_status_file2 ('_status=ABORT' )
          err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')

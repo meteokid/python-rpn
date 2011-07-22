@@ -1,0 +1,296 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+#include "stop_mpi.h"
+#include "msg.h"
+
+!/**
+subroutine adx_main7_ad(F_su  , F_sv  , F_sw  , F_fields_list  , &
+                        F_su_m, F_sv_m, F_sw_m, F_fields_list_m, &
+                        F_fields_type_L, F_nfields, &
+                        F_minx,F_maxx,F_miny,F_maxy,F_nks, F_nb_iter, F_doAdwStat_L)
+   implicit none
+!
+   !@objective ADJ of Perform advection
+!
+   !@arguments
+   logical :: F_doAdwStat_L   !I, will compute stats if .true.
+   integer :: F_nb_iter       !I, total number of iterations for trajectories
+   integer :: F_minx,F_maxx,F_miny,F_maxy !I, bounds of model's wind arrays
+   integer :: F_nks           !I, nb levels - super-set of m+l levels
+   integer :: F_nfields       !I, nb of fields to advect
+   logical, dimension(2, F_nfields) :: &
+        F_fields_type_L       !I, fields type
+   character(len=8),dimension(2, F_nfields) :: &
+        F_fields_list, &      !I, list of gmm labels of fields to advect
+        F_fields_list_m       !I, list of gmm labels of fields to advect TRAJ
+   real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nks) :: &
+        F_su  ,F_sv  ,F_sw, & !I, real destag winds, super-set (mom+thermo)
+        F_su_m,F_sv_m,F_sw_m  !I, real destag winds, super-set (mom+thermo) TRAJ
+!
+   !@author  Monique Tanguay 
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+!
+   !@description
+   !  adx_main_2_pos_ad: ADJ of Calculate upstream positions at th and t1
+   !  adx_main_3_int_ad: ADJ of Interpolation of rhs
+!**/
+
+#include "gmm.hf"
+#include "adx_gmm.cdk"
+#include "adx_gmm_tr.cdk"
+#include "adx_dims.cdk"
+#include "adx_nml.cdk"
+
+   logical, parameter :: IS_MOM_LEVEL = .true.
+   logical, parameter :: POLE0_L = .false.
+   logical, parameter :: EXTEND_L = .false.
+
+   type(gmm_metadata) :: my_meta,my_meta_t,my_meta2
+   integer :: i,j,istat,i0,in,j0,jn,k0
+   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
+        pxm,pym,pzm,pxm_m,pym_m,pzm_m
+   real, dimension(adx_mlni,adx_mlnj,adx_lnkt) :: &
+        pxt  ,pyt  ,pzt  ,l_xct1   ,l_yct1   ,l_zct1, &
+        pxt_m,pyt_m,pzt_m,l_xct1_tr,l_yct1_tr,l_zct1_tr
+   real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nks) :: &
+        a_su,a_sv,a_sw,a_su_m,a_sv_m,a_sw_m
+   real :: dummy
+
+   real, pointer, dimension(:) :: &
+        xth, yth, zth, xcth, ycth, zcth, &
+        xth_t, yth_t, zth_t, &
+        xcth_t, ycth_t, zcth_t, &
+        xct1, yct1, zct1
+   real, pointer, dimension(:) :: &
+        xth_tr, yth_tr, zth_tr, xcth_tr, ycth_tr, zcth_tr, &
+        xth_t_tr, yth_t_tr, zth_t_tr, &
+        xcth_t_tr, ycth_t_tr, zcth_t_tr, &
+        xct1_tr, yct1_tr, zct1_tr
+   real*8, parameter :: ZERO_8 = 0.0
+
+#define IS_SAME_BOUNDS(M1,M2) (M1%l(1)%low == M2%l(1)%low .and. M1%l(1)%high == M2%l(1)%high .and. M1%l(2)%low == M2%l(2)%low .and. M1%l(2)%high == M2%l(2)%high)
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_main_ad')
+
+   k0=adx_gbpil_t+1
+
+!  Zero adjoint work variables
+!  ---------------------------
+   pxm    = 0.
+   pym    = 0.
+   pzm    = 0.
+   pxt    = 0.
+   pyt    = 0.
+   pzt    = 0.
+   a_su   = 0.
+   a_sv   = 0.
+   a_sw   = 0.
+   l_xct1 = 0. 
+   l_yct1 = 0. 
+   l_zct1 = 0. 
+ 
+!  TRAJECTORY
+!  ----------
+   call tmg_start0 ( 89, 'WND_AD   ' )
+
+   call adx_grid_uv (a_su_m,a_sv_m, F_su_m,F_sv_m,            &
+                     adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                     F_minx,F_maxx,F_miny,F_maxy, F_nks)
+
+   call adx_grid_scalar (a_sw_m, F_sw_m,                          &
+                         adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                         F_minx,F_maxx,F_miny,F_maxy, F_nks, POLE0_L, EXTEND_L)
+   call tmg_stop0 ( 89 )
+
+ 
+!  Recover TRAJ upstream positions
+!  -------------------------------
+   call v4d_rwtraj (5,pxm_m,pym_m,pzm_m,pxt_m,pyt_m,pzt_m, &
+                    adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
+ 
+!  Recover TRAJ RHS before interpolation
+!  -------------------------------------
+   call v4d_rwtraj (11)
+
+   call tmg_start0 (68, 'INT_AD   ')
+   call adx_main_3_intlag7_ad (pxm  , pym  , pzm  , pxt  , pyt  , pzt  ,F_fields_list  ,&
+                               pxm_m, pym_m, pzm_m, pxt_m, pyt_m, pzt_m,F_fields_list_m,&
+                               F_fields_type_L, F_nfields, &
+                               F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm,adx_lnkt)
+   call tmg_stop0 (68)
+ 
+   call adx_get_ij0n (i0,in,j0,jn)
+ 
+   call tmg_start0 (77, 'POS_AD   ')
+
+!$omp parallel do
+   do j = j0,jn
+      do i = i0,in
+         pym(i,j,adx_lnkm) = pyt(i,j,adx_lnkt) + pym(i,j,adx_lnkm)
+         pyt(i,j,adx_lnkt) = ZERO_8
+         pxm(i,j,adx_lnkm) = pxt(i,j,adx_lnkt) + pxm(i,j,adx_lnkm)
+         pxt(i,j,adx_lnkt) = ZERO_8
+         pym(i,j,1)        = pyt(i,j,1)        + pym(i,j,1)
+         pyt(i,j,1)        = ZERO_8
+         pxm(i,j,1)        = pxt(i,j,1)        + pxm(i,j,1)
+         pxt(i,j,1)        = ZERO_8
+      enddo
+   enddo
+!$omp end parallel do
+ 
+!  Get from memory
+!  ---------------
+   istat = GMM_OK
+   istat = min(gmm_get(adx_xth_s,xth,my_meta),istat)
+   istat = min(gmm_get(adx_yth_s,yth,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zth_s,zth,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xcth_s,xcth,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_ycth_s,ycth,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zcth_s,zcth,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xct1_s,xct1,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_yct1_s,yct1,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zct1_s,zct1,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   if(trim(Adw_thermopos_S).eq.'TRAJ')then
+   istat = min(gmm_get(adx_xth_t_s,xth_t,my_meta_t),istat)
+   istat = min(gmm_get(adx_yth_t_s,yth_t,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zth_t_s,zth_t,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xcth_t_s,xcth_t,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_ycth_t_s,ycth_t,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zcth_t_s,zcth_t,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   endif 
+
+!  Get from memory TRAJ
+!  --------------------
+   istat = min(gmm_get(adx_xth_tr_s,xth_tr,my_meta),istat)
+   istat = min(gmm_get(adx_yth_tr_s,yth_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zth_tr_s,zth_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xcth_tr_s,xcth_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_ycth_tr_s,ycth_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zcth_tr_s,zcth_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xct1_tr_s,xct1_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_yct1_tr_s,yct1_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zct1_tr_s,zct1_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1
+
+   if(trim(Adw_thermopos_S).eq.'TRAJ')then
+   istat = min(gmm_get(adx_xth_t_tr_s,xth_t_tr,my_meta_t),istat)
+   istat = min(gmm_get(adx_yth_t_tr_s,yth_t_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zth_t_tr_s,zth_t_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+
+   istat = min(gmm_get(adx_xcth_t_tr_s,xcth_t_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_ycth_t_tr_s,ycth_t_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   istat = min(gmm_get(adx_zcth_t_tr_s,zcth_t_tr,my_meta2),istat)
+   if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1
+   endif
+
+   call handle_error(istat,'adx_main_ad','gmm_get')
+
+   if(trim(Adw_thermopos_S).eq."TRAJ")then
+   call adx_main_2_pos4_ad ( F_nb_iter, 't', & 
+!
+                             pxt   , pyt   , pzt   , &
+                             a_su  , a_sv  , a_sw  , &
+                             xth_t , yth_t , zth_t , &
+                             xcth_t, ycth_t, zcth_t, &
+                             l_xct1, l_yct1, l_zct1, &
+!
+                             pxt_m    , pyt_m    , pzt_m    , &
+                             a_su_m   , a_sv_m   , a_sw_m   , &
+                             xth_t_tr , yth_t_tr , zth_t_tr , &
+                             xcth_t_tr, ycth_t_tr, zcth_t_tr, &
+                             l_xct1_tr, l_yct1_tr, l_zct1_tr, &
+!
+                             adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
+                             adx_mlni , adx_mlnj , k0 , adx_lnkt , F_nks)
+   else if(trim(Adw_thermopos_S).eq."INT_Z")then
+      call adx_cubicpos_ad(pxt  ,pyt  ,pzt  ,pxm  ,pym  ,pzm  , &
+                           pxt_m,pyt_m,pzt_m,pxm_m,pym_m,pzm_m, &
+                           adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.false.)
+   else if(trim(Adw_thermopos_S).eq."INT_XYZ")then
+      call adx_cubicpos_ad(pxt  ,pyt  ,pzt  ,pxm  ,pym  ,pzm  , &
+                        pxt_m,pyt_m,pzt_m,pxm_m,pym_m,pzm_m, &
+                        adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)
+   else
+      call handle_error(-1,'adx_main_AD','Error specifying Adw_thermopos_S (TRAJ,INT_Z,INT_XYZ)')
+   endif
+
+   call adx_main_2_pos4_ad ( F_nb_iter, 'm', & 
+!
+                             pxm , pym , pzm , &
+                             a_su, a_sv, a_sw, &
+                             xth , yth , zth , &
+                             xcth, ycth, zcth, &
+                             xct1, yct1, zct1, &
+!
+                             pxm_m  , pym_m  , pzm_m  , &
+                             a_su_m , a_sv_m , a_sw_m , &
+                             xth_tr , yth_tr , zth_tr , &
+                             xcth_tr, ycth_tr, zcth_tr, &
+                             xct1_tr, yct1_tr, zct1_tr, &
+!
+                             adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
+                             adx_mlni , adx_mlnj , k0 , adx_lnkm, F_nks)
+   call tmg_stop0 (77)
+
+   call tmg_start0 ( 89, 'WND_AD   ' )
+   call adx_grid_scalar_ad (a_sw, F_sw,                              &
+                            adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                            F_minx,F_maxx,F_miny,F_maxy, F_nks, POLE0_L, EXTEND_L)
+
+   call adx_grid_uv_ad (a_su,a_sv, F_su,F_sv,                    &
+                        adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                        F_minx,F_maxx,F_miny,F_maxy, F_nks)
+   call tmg_stop0 ( 89 )
+
+   call msg(MSG_DEBUG,'adx_main_ad [end]')
+   !---------------------------------------------------------------------
+
+   return
+end subroutine adx_main7_ad

@@ -37,6 +37,7 @@
 ! v3_21 - Desgagne M.       - introduce new timing routines
 ! v4_04 - Tanguay M.        - Staggered version TL/AD
 ! v4_05 - Girard C.         - Added boundary condition for top piloting
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !    
@@ -98,15 +99,18 @@
 
       endif
 !
-!     Store TRAJ Positions TH/TRAJ Winds TH
-!     -------------------------------------
+!     Store TRAJ Positions TH
+!     -----------------------
       call v4d_rwtraj (3) 
-      call v4d_rwtraj (4) 
-!     
+!
 !     Compute the average of the t1 and t0 winds (uth,vth,zdth)
 !     
       call tmg_start0(4, 'ADW      ')
       call wndth ()
+!
+!     Store TRAJ Winds TH
+!     -------------------
+      call v4d_rwtraj (4) 
 !     
 !     SL Advection
 !     

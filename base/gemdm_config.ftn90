@@ -90,6 +90,7 @@
          if (Grd_yinyang_L) then
             Lam_blend_H  = 0
             Lam_ctebcs_L = .true.
+            Lam_blendoro_L = .false.
          else
             Lam_blend_H = max(0,Lam_blend_H)
          endif

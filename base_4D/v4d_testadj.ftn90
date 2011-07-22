@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r v4d_testadj - Verification of adjoint transposition
 !
 #include "model_macros_f.h"
@@ -31,7 +31,7 @@
 ! v3_11 - Tanguay M.        - Add V4dg_anincr_L as in v4d_testadj    
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     see id section
@@ -178,14 +178,14 @@
 !        ----------------------------------------------
          V4dg_output_L = .true.
 !
-         call tmg_start0(50,'NLM')
+         call tmg_start0(70,'NLM')
 !
 !        Call 4D-Var simulator with NLM integration without gradient
 !        -----------------------------------------------------------
          indic = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_ycv,pj,V4dc_gcv)
 !
-         call tmg_stop0(50)
+         call tmg_stop0(70)
 !
 !        Initialize V4dc_ycv (Image winds) from NLM final model var.
 !        -----------------------------------------------------------
@@ -215,7 +215,7 @@
             write(unit=Lun_out, fmt='(  ''--------------------------'')')
          endif
 !
-         call v4d_zero
+      call v4d_zero
 !
 !        Define TLM control var. with controlled size perturbations
 !        ----------------------------------------------------------
@@ -240,7 +240,7 @@
 !        ----------------------------------------------
          V4dg_output_L = .true.
 !
-         call tmg_start0(51,'TLM')
+         call tmg_start0(71,'TLM')
 !
 !        Call 4D-Var simulator with TLM integration without gradient
 !        -----------------------------------------------------------
@@ -248,7 +248,7 @@
          indic      = 99
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
 !
-         call tmg_stop0(51)
+         call tmg_stop0(71)
 !
 !        Reset 4D-Var simulator with NLM integration 
 !        ------------------------------------------- 
@@ -317,14 +317,14 @@
 !        ----------------------------------------------
          V4dg_output_L = .true.
 !
-         call tmg_start0(52,'ADJ')
+         call tmg_start0(72,'ADJ')
 !
 !        Call 4D-Var simulator for gradient only
 !        ---------------------------------------
          indic = 98 
          call v4d_simul (indic,V4dc_ncv,V4dc_xcv,pj,V4dc_gcv)
 !
-         call tmg_stop0(52)
+         call tmg_stop0(72)
 !
 !     ----------------------------------------------
 !     Evaluate < V4dc_xcv , ADJ V4dc_gcv > in ps02_8 

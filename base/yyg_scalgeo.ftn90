@@ -24,7 +24,7 @@
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
-      include 'mpif.h'
+!     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -37,7 +37,8 @@
       real*8  tabf_src_8(Ni-2*Glb_pil_w,Nj-2*Glb_pil_s,Nk)
       integer ierr,Ndim,i,j,k
       integer imx(Ni,Nj),imy(Ni,Nj),imxx,imyy
-      integer status(MPI_STATUS_SIZE)
+!     integer status(MPI_STATUS_SIZE)
+      integer status
       real*8 xx(Ni,Nj),yy(Ni,Nj),xx_r(Ni,Nj),yy_r(Ni,Nj)
       real*8  t,p,s(2,2),h1,h2,x(*),y(*)
       real*8  x_d,y_d,x_a,y_a   
@@ -82,17 +83,22 @@
        tag2=13
 
 
+!Only ptopo_myproc 0 of yin and yang are talking
       if (Ptopo_couleur.eq.0) then
         do k=1,NK
-         call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,0,tag1,Ptopo_intercomm,ierr)
-         call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,0,tag2,Ptopo_intercomm,status,ierr)
+!        call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,1,tag1,Ptopo_intercomm,ierr)
+!        call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,1,tag2,Ptopo_intercomm,status,ierr)
+         call RPN_COMM_Send(tab_src(1,1,k),Ndim,'MPI_REAL',1,tag1,'GRIDPEERS',ierr)
+         call RPN_COMM_Recv(tabf_src(1,1,k),Ndim,'MPI_REAL',1,tag2,'GRIDPEERS',status,ierr)
         enddo
 
       endif
       if (Ptopo_couleur.eq.1) then
        do k=1,NK
-         call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
-         call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+!        call MPI_Recv(tabf_src(1,1,k),Ndim,MPI_REAL,0,tag1,Ptopo_intercomm,status,ierr)
+!        call MPI_Send(tab_src(1,1,k),Ndim,MPI_REAL,0,tag2,Ptopo_intercomm,ierr)
+         call RPN_COMM_Recv(tabf_src(1,1,k),Ndim,'MPI_REAL',0,tag1,'GRIDPEERS',status,ierr)
+         call RPN_COMM_Send(tab_src(1,1,k),Ndim,'MPI_REAL',0,tag2,'GRIDPEERS',ierr)
        enddo
 
       endif

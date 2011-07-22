@@ -74,6 +74,7 @@
       real*8  :: rad2deg_8
 !
 ! placer les chaines de Markov dans perbus
+      character*3 bus
       integer, save :: mrkv,mrk2
 !
 ! pabusper pointer vers le bus permanent busper (busper2)
@@ -129,11 +130,9 @@
 !     Assure that busper is to 1 at the begining in inichamp1
 !
       if ( Lctl_step .eq. 1 .or. Rstri_sdon.eq.1) then
-         
-         do n=1,p_bper_top
-         if(pernm(n)(1:4).eq.'MRKV')call getindx(pernm(n),'P',mrkv,lght,soit)
-         if(pernm(n)(1:4).eq.'MRK2')call getindx(pernm(n),'P',mrk2,lght,soit)
-         end do
+         bus = 'PER'
+         call getindx2 ('MRKV', bus, mrkv, lght, soit)
+         call getindx2 ('MRK2', bus, mrk2, lght, soit)
          if (Lun_out.gt.0) then
             write( Lun_out,1000)
             write( Lun_out,1009)xmn,xmx,xme,std,tau,ntrunc,nlon,nlat,2*mzt+1

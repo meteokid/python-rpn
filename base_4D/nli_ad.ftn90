@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r nli_ad - ADJ of nli_tl
 !
 #include "model_macros_f.h"
@@ -33,7 +33,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
 ! v4_12 - Tanguay M.        - TL/AD Open top
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     see id section
@@ -44,6 +44,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include "p_geof.cdk"
 #include "rhsc.cdk"
 #include "nl.cdk"
 #include "cori.cdk"
@@ -81,6 +82,8 @@
       endif
 
 !     - - - - - - - - - - - - - - -
+      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+      if (GMM_IS_ERROR(gmmstat)) print *,'nli ERROR at gmm_get(fis0)'
       if (.not. Schm_hydro_L) then
          gmmstat = gmm_get(gmmk_qt0_s,qt0,meta3d)
          if (GMM_IS_ERROR(gmmstat)) print *,'nli_ad ERROR at gmm_get(qt0)'
@@ -112,6 +115,12 @@
          gmmstat = gmm_get(gmmk_mutx_m_s,mutx_m,meta3d)
          if (GMM_IS_ERROR(gmmstat)) print *,'nli_ad ERROR at gmm_get(mutx_m)'
       endif
+
+!     TRAJECTORY
+!     ----------
+      call diag_var( bspqtx_m, mutx_m, st0_m, qt0_m, 1,l_ni,1,l_nj,Lam_gbpil_t+1,l_nk)
+!
+      call diag_fip( fiptx_m, st0_m, tt0_m, qt0_m, fis0, LDIST_DIM, l_nk)
 !
       call nlip_2_ad ( &
                        nl_u, nl_v, nl_t  , nl_c, nl_w, nl_f , nl_b , & 

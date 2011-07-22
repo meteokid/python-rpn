@@ -1,0 +1,274 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+#include "msg.h"
+
+!/**
+subroutine adx_exch_2_tl (F_a_fro  , F_b_fro  , F_c_fro  , &
+                          F_a_for  , F_b_for  , F_c_for  , &
+                          F_a_fro_M, F_b_fro_M, F_c_fro_M, &
+                          F_a_for_M, F_b_for_M, F_c_for_M, &
+                          F_n_fro_n, F_n_fro_s, F_n_fro_a, &
+                          F_n_for_n, F_n_for_s, F_n_for_a, &
+                          F_n_treat)
+   implicit none
+
+   !@objective TLM of adx_exch_2 
+
+   !@arguments
+   integer :: F_n_fro_n, F_n_fro_s, F_n_fro_a
+   integer :: F_n_for_n, F_n_for_s, F_n_for_a
+   integer :: F_n_treat
+
+   real :: F_a_fro  (F_n_fro_a), F_b_fro  (F_n_fro_a), F_c_fro  (F_n_fro_a)
+   real :: F_a_for  (F_n_for_a), F_b_for  (F_n_for_a), F_c_for  (F_n_for_a)
+   real :: F_a_fro_M(F_n_fro_a), F_b_fro_M(F_n_fro_a), F_c_fro_M(F_n_fro_a)
+   real :: F_a_for_M(F_n_for_a), F_b_for_M(F_n_for_a), F_c_for_M(F_n_for_a)
+
+   !@author Monique Tanguay 
+
+   !@revisions
+   ! v4_XX - Tanguay M.        - Revision
+!**/
+#include "adx_dims.cdk"
+   integer :: nwrn,nwrs,status,n 
+   real :: abc_for_n  (F_n_for_n,F_n_treat), abc_for_s  (F_n_for_s,F_n_treat)
+   real :: abc_fro_n  (F_n_fro_n,F_n_treat), abc_fro_s  (F_n_fro_s,F_n_treat)
+   real :: abc_for_n_M(F_n_for_n,F_n_treat), abc_for_s_M(F_n_for_s,F_n_treat)
+   real :: abc_fro_n_M(F_n_fro_n,F_n_treat), abc_fro_s_M(F_n_fro_s,F_n_treat)
+
+   integer F_n_fro_n_R, F_n_fro_s_R, F_n_fro_a_R, &
+           F_n_for_n_R, F_n_for_s_R, F_n_for_a_R
+
+   !---------------------------------------------------------------------
+
+   call msg(MSG_DEBUG,'adx_exch_2_tl')
+
+   if (F_n_for_n > 0) then
+
+      if (F_n_treat == 1) then
+         do n = 1, F_n_for_n
+
+!           TRAJECTORY
+!           ----------
+            abc_for_n_M(n,1) = F_a_for_M(n)
+
+!           TLM 
+!           ---
+            abc_for_n(n,1) = F_a_for(n)
+
+         enddo
+      else if (F_n_treat == 2) then
+
+         do n = 1, F_n_for_n
+
+!           TRAJECTORY
+!           ----------
+            abc_for_n_M(n,1) = F_a_for_M(n)
+            abc_for_n_M(n,2) = F_b_for_M(n)
+
+!           TLM 
+!           ---
+            abc_for_n(n,1) = F_a_for(n)
+            abc_for_n(n,2) = F_b_for(n)
+
+         enddo
+      else if (F_n_treat == 3) then
+         do n = 1, F_n_for_n
+
+!           TRAJECTORY
+!           ----------
+            abc_for_n_M(n,1) = F_a_for_M(n)
+            abc_for_n_M(n,2) = F_b_for_M(n)
+            abc_for_n_M(n,3) = F_c_for_M(n)
+
+!           TLM 
+!           ---
+            abc_for_n(n,1) = F_a_for(n)
+            abc_for_n(n,2) = F_b_for(n)
+            abc_for_n(n,3) = F_c_for(n)
+
+         enddo
+      endif
+
+   endif
+
+   if (F_n_for_s > 0) then
+
+      if (F_n_treat == 1) then
+         do n = 1, F_n_for_s
+
+!           TRAJECTORY
+!           ----------
+            abc_for_s_M(n,1) = F_a_for_M(F_n_for_n+n)
+
+!           TLM 
+!           ---
+            abc_for_s(n,1) = F_a_for(F_n_for_n+n)
+
+         enddo
+      else if (F_n_treat == 2) then
+         do n = 1, F_n_for_s
+
+!           TRAJECTORY
+!           ----------
+            abc_for_s_M(n,1) = F_a_for_M(F_n_for_n+n)
+            abc_for_s_M(n,2) = F_b_for_M(F_n_for_n+n)
+
+!           TLM 
+!           ---
+            abc_for_s(n,1) = F_a_for(F_n_for_n+n)
+            abc_for_s(n,2) = F_b_for(F_n_for_n+n)
+
+         enddo
+      else if (F_n_treat == 3) then
+         do n = 1, F_n_for_s
+
+!           TRAJECTORY
+!           ----------
+            abc_for_s_M(n,1) = F_a_for_M(F_n_for_n+n)
+            abc_for_s_M(n,2) = F_b_for_M(F_n_for_n+n)
+            abc_for_s_M(n,3) = F_c_for_M(F_n_for_n+n)
+
+!           TLM 
+!           ---
+            abc_for_s(n,1) = F_a_for(F_n_for_n+n)
+            abc_for_s(n,2) = F_b_for(F_n_for_n+n)
+            abc_for_s(n,3) = F_c_for(F_n_for_n+n)
+
+         enddo
+      endif
+
+   endif
+
+   F_n_for_n_R = F_n_for_n
+   F_n_for_s_R = F_n_for_s
+   F_n_fro_n_R = F_n_fro_n
+   F_n_fro_s_R = F_n_fro_s
+
+!  TRAJECTORY
+!  ----------
+   call RPN_COMM_swapns(F_n_treat*F_n_for_n,abc_for_n_M, &
+        F_n_treat*F_n_for_s,abc_for_s_M, &
+        F_n_treat*F_n_fro_n,nwrn,abc_fro_n_M, &
+        F_n_treat*F_n_fro_s,nwrs,abc_fro_s_M, &
+        adx_is_period_y,status)
+
+!  TLM
+!  ---
+   call RPN_COMM_swapns(F_n_treat*F_n_for_n,abc_for_n, &
+        F_n_treat*F_n_for_s,abc_for_s, &
+        F_n_treat*F_n_fro_n,nwrn,abc_fro_n, &
+        F_n_treat*F_n_fro_s,nwrs,abc_fro_s, &
+        adx_is_period_y,status)
+
+   if (F_n_fro_n > 0) then
+
+      if (F_n_treat == 1) then
+         do n = 1, F_n_fro_n
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(n) = abc_fro_n_M(n,1)
+
+!           TLM 
+!           ---
+            F_a_fro(n) = abc_fro_n(n,1)
+
+         enddo
+      else if (F_n_treat == 2) then
+         do n = 1, F_n_fro_n
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(n) = abc_fro_n_M(n,1)
+            F_b_fro_M(n) = abc_fro_n_M(n,2)
+
+!           TLM 
+!           ---
+            F_a_fro(n) = abc_fro_n(n,1)
+            F_b_fro(n) = abc_fro_n(n,2)
+
+         enddo
+      else if (F_n_treat == 3) then
+         do n = 1, F_n_fro_n
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(n) = abc_fro_n_M(n,1)
+            F_b_fro_M(n) = abc_fro_n_M(n,2)
+            F_c_fro_M(n) = abc_fro_n_M(n,3)
+
+!           TLM 
+!           ---
+            F_a_fro(n) = abc_fro_n(n,1)
+            F_b_fro(n) = abc_fro_n(n,2)
+            F_c_fro(n) = abc_fro_n(n,3)
+
+         enddo
+      endif
+
+   endif
+
+   if (F_n_fro_s > 0) then
+
+      if (F_n_treat == 1) then
+         do n = 1, F_n_fro_s
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,1)
+
+!           TLM 
+!           ---
+            F_a_fro(F_n_fro_n+n) = abc_fro_s(n,1)
+
+         enddo
+      else if (F_n_treat == 2) then
+         do n = 1, F_n_fro_s
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,1)
+            F_b_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,2)
+
+!           TLM 
+!           ---
+            F_a_fro(F_n_fro_n+n) = abc_fro_s(n,1)
+            F_b_fro(F_n_fro_n+n) = abc_fro_s(n,2)
+
+         enddo
+      else if (F_n_treat == 3) then
+         do n = 1, F_n_fro_s
+
+!           TRAJECTORY
+!           ----------
+            F_a_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,1)
+            F_b_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,2)
+            F_c_fro_M(F_n_fro_n+n) = abc_fro_s_M(n,3)
+
+!           TLM 
+!           ---
+            F_a_fro(F_n_fro_n+n) = abc_fro_s(n,1)
+            F_b_fro(F_n_fro_n+n) = abc_fro_s(n,2)
+            F_c_fro(F_n_fro_n+n) = abc_fro_s(n,3)
+
+         enddo
+      endif
+
+   endif
+   call msg(MSG_DEBUG,'adx_exch_2_tl [end]')
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_exch_2_tl

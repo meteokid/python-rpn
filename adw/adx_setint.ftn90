@@ -40,6 +40,7 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
    ! v3_20 - Tanguay M.        - Correction for haloy.gt.2
    ! v4_10 - Plante A.         - Use super winds for thermo
    ! V4_14 - Plante A.         - Scope on vertical and cleanup
+   ! v4_40 - Tanguay M.        - Revision TL/AD
    !@description
    !Notes on computations of positions in the 3D volume of interpolation 
    !                   boxes for adx_trilin or adx_tricub
@@ -54,7 +55,10 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
+   include "v4dg.inc"
+
    !---------------------------------------------------------------------
+   if ( V4dg_conf.eq.0.0 ) then
    call adx_setint_lin_noptr1(F_n, &
         F_capx, F_capy, F_capz, &
         F_x,    F_y,   F_z,&
@@ -62,6 +66,15 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
         adx_lcy, adx_bsy_8, adx_diy_8,&
         adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
         i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
+   else
+   call adx_setint_lin_noptr2(F_n, &
+        F_capx, F_capy, F_capz, &
+        F_x,    F_y,   F_z,&
+        adx_lcx, adx_bsx_8, adx_dix_8, &
+        adx_lcy, adx_bsy_8, adx_diy_8,&
+        adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
+        i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
+   endif
    !---------------------------------------------------------------------
    return
 end subroutine adx_setint_lin_hor_ver3

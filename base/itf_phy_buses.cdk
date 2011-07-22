@@ -72,17 +72,12 @@
       real, pointer, dimension (:,:) :: BUSPER_3d       => null()
       real, pointer, dimension (:,:) :: BUSPER_3d_digf  => null()
 !
-      integer MAXGEO
-      parameter (MAXGEO=1000)
-!
-      character*16 geonm(MAXGEO,6)
-      common /busgeoc/ geonm
-!
-      integer p_bgeo_top,p_bgeo_siz,geopar(MAXGEO,3)
-      common /busgeoi/ p_bgeo_top,p_bgeo_siz,geopar
-!
-!!$      real, dimension(:), pointer ::  geobus, geofld
-!!$      common /busgeor/ geobus, geofld
+      integer maxntdy
+      parameter (maxntdy=1000)
+      integer phy_ndyn, phy_idxdyn(maxntdy,3), phy_ntdy, phy_idxtdy(maxntdy)
+      integer cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8,cpl_flusolis,cpl_fdsi,cpl_rt
+      common /busindx_i/ phy_ndyn, phy_idxdyn, phy_ntdy, phy_idxtdy
+      common /busindx_i/ cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8,cpl_flusolis,cpl_fdsi,cpl_rt
 !
       real, dimension (:,:,:,:), pointer :: phy_tend
       common /phybuf/  phy_tend

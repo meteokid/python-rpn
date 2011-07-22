@@ -44,17 +44,17 @@
 !
 !     ________________________________________________________________
 !
-      nullify (pw_tplus,st1,humod)
-      gmmstat = gmm_get(gmmk_pw_tplus_s ,pw_tplus,meta3d)
-      gmmstat = gmm_get(gmmk_qt1_s      ,st1     ,meta2d)
-      gmmstat = gmm_get('TR/HU:P'       ,humod   ,meta3d)
+      nullify (pw_tt_plus,st1,humod)
+      gmmstat = gmm_get(gmmk_pw_tt_plus_s ,pw_tt_plus,meta3d)
+      gmmstat = gmm_get(gmmk_qt1_s        ,st1       ,meta2d)
+      gmmstat = gmm_get('TR/HU:P'         ,humod     ,meta3d)
 !
-      tt(:,:) = pw_tplus (1:l_ni,1:l_nj,ki)
-      hu(:,:) = humod    (1:l_ni,1:l_nj,ki)
+      tt(:,:) = pw_tt_plus (1:l_ni,1:l_nj,ki)
+      hu(:,:) = humod      (1:l_ni,1:l_nj,ki)
 !
       ninj = ni*nj
       px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
-      call mhuaes (es, hu,tt,px,.true.,ninj,1,ninj)
+      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
 !
       es(:,:) = max(0.,es(:,:))
 !

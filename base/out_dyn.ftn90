@@ -41,6 +41,7 @@
 ! v4_05 - Lepine/Lee        - VMM replacement with GMM
 ! v4_40 - Lee V.            - change in argument call for this routine, prgen
 !                             in order to select the "bot" levels
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     Subroutine to control the production of
@@ -79,6 +80,7 @@
 #include "ver.cdk"
 #include "vinterpo.cdk"
 #include "out.cdk"
+   include "v4dg.inc"
 !
       integer  doout
       external doout
@@ -123,6 +125,8 @@
 !
       call tmg_start0 ( 66, 'OUT_DYN')
 !
+      if (.NOT.V4dg_ad_L) then 
+
 !     PREPARATION for OUT_THM
 !    ---------------------------
 !
@@ -150,6 +154,8 @@
       if (Schm_autobar_L)  wlnpi_t(:,:,1) = Cstv_ztop_8
 !
       wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
+
+      endif
 !
 !     Allocate work space and initialize
 

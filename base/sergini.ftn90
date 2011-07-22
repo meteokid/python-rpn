@@ -69,7 +69,8 @@
 #include "clim.cdk"
 !
       character (len=SERG_STRING_LENGTH) ptgeonm(CNSRGEO), ptbidon
-      character(len=256) :: msg
+      character (len=256) :: msg
+      character (len=3  ) :: bus
       integer pnsurf, i, j, m, pnerr, soit,lght,gmmstat
       integer dlat,dlon,z0,mg,lhtg,alvis,snodp,twater,tsoil,glsea,wsoil
       real prcon,w1(p_ni),w2(p_ni),w3(p_ni)
@@ -126,17 +127,18 @@
 !
       prcon = 180./Dcst_pi_8
 !
-      call getindx ('DLAT'   ,  'P', dlat  , lght, soit)
-      call getindx ('DLON'   ,  'P', dlon  , lght, soit)
-      call getindx ('Z0'     ,  'P', z0    , lght, soit)
-      call getindx ('MG'     ,  'P', mg    , lght, soit)
-      call getindx ('LHTG'   ,  'P', lhtg  , lght, soit)
-      call getindx ('ALVIS'  ,  'P', alvis , lght, soit)
-      call getindx ('SNODP'  ,  'P', snodp , lght, soit)
-      call getindx ('TWATER' ,  'P', twater, lght, soit)
-      call getindx ('TSOIL'  ,  'P', tsoil , lght, soit)
-      call getindx ('GLSEA'  ,  'P', glsea , lght, soit)
-      call getindx ('WSOIL'  ,  'P', wsoil , lght, soit)
+      bus = 'PER'
+      call getindx2 ('DLAT'   ,  bus, dlat  , lght, soit)
+      call getindx2 ('DLON'   ,  bus, dlon  , lght, soit)
+      call getindx2 ('Z0'     ,  bus, z0    , lght, soit)
+      call getindx2 ('MG'     ,  bus, mg    , lght, soit)
+      call getindx2 ('LHTG'   ,  bus, lhtg  , lght, soit)
+      call getindx2 ('ALVIS'  ,  bus, alvis , lght, soit)
+      call getindx2 ('SNODP'  ,  bus, snodp , lght, soit)
+      call getindx2 ('TWATER' ,  bus, twater, lght, soit)
+      call getindx2 ('TSOIL'  ,  bus, tsoil , lght, soit)
+      call getindx2 ('GLSEA'  ,  bus, glsea , lght, soit)
+      call getindx2 ('WSOIL'  ,  bus, wsoil , lght, soit)
 !
       gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
 

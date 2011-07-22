@@ -1,0 +1,386 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r adx_cubicpos_tl - TLM of adx_cubicpos
+!
+#include "constants.h"
+!
+subroutine adx_cubicpos_tl ( F_xt  , F_yt  , F_zt  , F_xm  , F_ym  , F_zm  , &
+                             F_xt_m, F_yt_m, F_zt_m, F_xm_m, F_ym_m, F_zm_m, &
+                             F_ni,F_nj,F_k0,F_nk,i0,in,j0,jn,F_cubic_xy_L)
+!
+   implicit none
+!
+   real, dimension(F_ni,F_nj,F_nk+1) :: F_xt,F_yt,F_zt
+   real, dimension(F_ni,F_nj,F_nk)   :: F_xm,F_ym,F_zm
+
+   real, dimension(F_ni,F_nj,F_nk+1) :: F_xt_m,F_yt_m,F_zt_m
+   real, dimension(F_ni,F_nj,F_nk)   :: F_xm_m,F_ym_m,F_zm_m
+   integer :: F_ni,F_nj,F_k0,F_nk
+   integer i0,in,j0,jn
+   logical :: F_cubic_xy_L   
+!
+!author M.Tanguay
+!
+!revision
+!  v4_40 - Tanguay M.        - Revision TL/AD
+!     
+!object
+!     see id section
+!
+!arguments
+!______________________________________________________________________
+!              |                                                 |     |
+! NAME         | DESCRIPTION                                     | I/O |
+!--------------|-------------------------------------------------|-----|
+!              |                                                 |     |
+! F_xt         | upwind longitudes for themodynamic level        |  o  |
+! F_yt         | upwind latitudes for themodynamic level         |  o  |
+! F_zt         | upwind height for themodynamic level            |  o  |
+! F_xm         | upwind longitudes for momentum level            |  i  |
+! F_ym         | upwind latitudes for momentum level             |  i  |
+! F_zm         | upwind height for momentum level                |  i  |
+!______________|_________________________________________________|_____|
+!
+!implicits
+#include "adx_dims.cdk"
+#include "adx_grid.cdk"
+!***********************************************************************
+   integer vnik, vnikm, i,j,k
+!
+   real*8  r2pi_8, two, half, alpha, alpha_m
+   real*8, dimension(i0:in,adx_lnkm)   :: xcos,ycos,xsin,ysin,cx,cy,cz
+   real*8, dimension(i0:in,2:adx_lnkm) :: yasin,zatan,cxp,cyp,czp
+   real*8, dimension(i0:in,adx_lnkm)   :: xcos_m,ycos_m,xsin_m,ysin_m,cx_m,cy_m,cz_m
+   real*8, dimension(i0:in,2:adx_lnkm) :: yasin_m,zatan_m,cxp_m,cyp_m,czp_m
+   real*8, dimension(3:adx_lnkm-1) :: w1, w2, w3, w4
+   real*8 :: lag3, hh, x, x1, x2, x3, x4
+   parameter (two = 2.0, half=0.5)
+
+   !***********************************************************************
+   !
+   lag3( x, x1, x2, x3, x4 ) = &
+        ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
+        ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
+   !
+   !***********************************************************************
+   if(F_k0.ne.1)call handle_error(-1,'adx_cubicpos_tl','Add vertical scope')        
+   !
+   vnik = (in-i0+1)*adx_lnkm
+   vnikm= (in-i0+1)*(adx_lnkm-1)
+   !
+   r2pi_8 = two * CONST_PI_8
+   !
+   do k=3,adx_lnkm-1
+      hh = adx_verZ_8%t(k)
+      x1 = adx_verZ_8%m(k-2)
+      x2 = adx_verZ_8%m(k-1)
+      x3 = adx_verZ_8%m(k)
+      x4 = adx_verZ_8%m(k+1)
+      w1(k) = lag3( hh, x1, x2, x3, x4 )
+      w2(k) = lag3( hh, x2, x1, x3, x4 )
+      w3(k) = lag3( hh, x3, x1, x2, x4 )
+      w4(k) = lag3( hh, x4, x1, x2, x3 )         
+   enddo
+!***********************************************************************
+
+!$omp parallel private(i,j,k,ysin,ycos,ysin_m,ycos_m, &
+!$omp zatan,yasin,xsin,xcos,alpha, &
+!$omp zatan_m,yasin_m,xsin_m,xcos_m,alpha_m, &
+!$omp cx, cy, cz, cxp, cyp, czp, &
+!$omp cx_m, cy_m, cz_m, cxp_m, cyp_m, czp_m)
+!$omp do 
+   do j=j0,jn
+      do k=1,adx_lnkm
+      do i=i0,in
+
+!        TLM
+!        ---            
+         xcos(i,k) = F_xm(i,j,k)
+         ycos(i,k) = F_ym(i,j,k)
+!
+!        TRAJ 
+!        ----            
+         xcos_m(i,k) = F_xm_m(i,j,k)
+         ycos_m(i,k) = F_ym_m(i,j,k)
+
+!        TLM
+!        ---            
+!!!      xsin_m(i,k) = sin(xcos_m(i,k))         
+         xsin  (i,k) = cos(xcos_m(i,k))*xcos(i,k)         
+
+!!!      ysin_m(i,k) = sin(ycos_m(i,k))
+         ysin  (i,k) = cos(ycos_m(i,k))*ycos(i,k)
+
+!!!      xcos_m(i,k) = cos(xcos_m(i,k))
+         xcos  (i,k) =-sin(xcos_m(i,k))*xcos(i,k)
+
+!!!      ycos_m(i,k) = cos(ycos_m(i,k))
+         ycos  (i,k) =-sin(ycos_m(i,k))*ycos(i,k)
+
+      end do
+      end do
+!
+      call vsin(xsin_m, xcos_m, vnik)
+      call vsin(ysin_m, ycos_m, vnik)
+      call vcos(xcos_m, xcos_m, vnik)
+      call vcos(ycos_m, ycos_m, vnik)
+!
+!***********************************************************************
+! For 1st and last thermodynamic levels positions in the horizontal are*
+! those of the momentum levels; no displacement allowed in the vertical*
+!***********************************************************************
+      do i=i0,in
+
+!        TLM
+!        ---
+         F_xt(i,j,1) = F_xm(i,j,1)
+         F_yt(i,j,1) = F_ym(i,j,1)
+         F_zt(i,j,1) = 0.0 
+
+         F_xt(i,j,adx_lnkm+1) = F_xm(i,j,adx_lnkm)
+         F_yt(i,j,adx_lnkm+1) = F_ym(i,j,adx_lnkm)
+         F_zt(i,j,adx_lnkm+1) = 0.0 
+
+!        TRAJ 
+!        ----
+         F_xt_m(i,j,1) = F_xm_m(i,j,1)
+         F_yt_m(i,j,1) = F_ym_m(i,j,1)
+         F_zt_m(i,j,1) = adx_verZ_8%t(1)
+
+         F_xt_m(i,j,adx_lnkm+1) = F_xm_m(i,j,adx_lnkm)
+         F_yt_m(i,j,adx_lnkm+1) = F_ym_m(i,j,adx_lnkm)
+         F_zt_m(i,j,adx_lnkm+1) = adx_verZ_8%t(adx_lnkm+1)
+
+      enddo
+!
+!***********************************************************************
+! cartesian coordinates of each momemtum levels                        *
+!***********************************************************************
+      do k=1,adx_lnkm
+      do i=i0,in
+!        TLM
+!        ---
+         cx(i,k) = xcos_m(i,k)*ycos(i,k) + xcos(i,k)*ycos_m(i,k)
+         cy(i,k) = xsin_m(i,k)*ycos(i,k) + xsin(i,k)*ycos_m(i,k)
+         cz(i,k) = ysin(i,k)
+
+!        TRAJ 
+!        ----
+         cx_m(i,k) = xcos_m(i,k)*ycos_m(i,k)
+         cy_m(i,k) = xsin_m(i,k)*ycos_m(i,k)
+         cz_m(i,k) = ysin_m(i,k)
+      enddo
+      enddo
+!
+!***********************************************************************
+! cartesian coordinates of intermediate thermodynamic levels
+!***********************************************************************
+
+      do k=2,adx_lnkm
+         if(F_cubic_xy_L.and.k.gt.2.and.k.lt.adx_lnkm)then
+            ! Cubic
+            do i=i0,in
+
+!              TLM
+!              ---
+               cxp(i,k) = w1(k)*cx(i,k-2)+ &
+                          w2(k)*cx(i,k-1)+ &
+                          w3(k)*cx(i,k  )+ &
+                          w4(k)*cx(i,k+1)
+               cyp(i,k) = w1(k)*cy(i,k-2)+ &
+                          w2(k)*cy(i,k-1)+ &
+                          w3(k)*cy(i,k  )+ &
+                          w4(k)*cy(i,k+1)
+               czp(i,k) = w1(k)*cz(i,k-2)+ &
+                          w2(k)*cz(i,k-1)+ &
+                          w3(k)*cz(i,k  )+ &
+                          w4(k)*cz(i,k+1)
+!              TRAJ
+!              ----
+               cxp_m(i,k) = w1(k)*cx_m(i,k-2)+ &
+                            w2(k)*cx_m(i,k-1)+ &
+                            w3(k)*cx_m(i,k  )+ &
+                            w4(k)*cx_m(i,k+1)
+               cyp_m(i,k) = w1(k)*cy_m(i,k-2)+ &
+                            w2(k)*cy_m(i,k-1)+ &
+                            w3(k)*cy_m(i,k  )+ &
+                            w4(k)*cy_m(i,k+1)
+               czp_m(i,k) = w1(k)*cz_m(i,k-2)+ &
+                            w2(k)*cz_m(i,k-1)+ &
+                            w3(k)*cz_m(i,k  )+ &
+                            w4(k)*cz_m(i,k+1)
+
+               alpha     = -(cxp  (i,k)*cxp_m(i,k) + & 
+                             cyp  (i,k)*cyp_m(i,k) + &
+                             czp  (i,k)*czp_m(i,k))    / &
+                            (cxp_m(i,k)*cxp_m(i,k) + &
+                             cyp_m(i,k)*cyp_m(i,k) + &
+                             czp_m(i,k)*czp_m(i,k))**(1.5)
+
+               alpha_m=1./sqrt(cxp_m(i,k)*cxp_m(i,k)+ &
+                               cyp_m(i,k)*cyp_m(i,k)+ &
+                               czp_m(i,k)*czp_m(i,k))
+
+!              TLM
+!              ---
+               cxp(i,k)=alpha_m*cxp(i,k) + alpha*cxp_m(i,k)
+               cyp(i,k)=alpha_m*cyp(i,k) + alpha*cyp_m(i,k)
+               czp(i,k)=alpha_m*czp(i,k) + alpha*czp_m(i,k)            
+
+!              TRAJ
+!              ----
+               cxp_m(i,k)=alpha_m*cxp_m(i,k)
+               cyp_m(i,k)=alpha_m*cyp_m(i,k)
+               czp_m(i,k)=alpha_m*czp_m(i,k)            
+
+            enddo
+         else
+            ! Linear
+            do i=i0,in
+
+               alpha    =      (    cx_m(i,k-1)*cx  (i,k) &
+                                   +cy_m(i,k-1)*cy  (i,k) &
+                                   +cz_m(i,k-1)*cz  (i,k) )
+
+               alpha_m  = half*( 1.+cx_m(i,k-1)*cx_m(i,k) &
+                                   +cy_m(i,k-1)*cy_m(i,k) &
+                                   +cz_m(i,k-1)*cz_m(i,k) )
+
+               alpha    =-alpha/(two*two*(alpha_m)**(1.5))
+
+               alpha_m  = 1./(two*sqrt(alpha_m))
+
+!              TLM
+!              ---
+               cxp(i,k) = (cx_m(i,k-1)+cx_m(i,k))*alpha + (cx(i,k-1)+cx(i,k))*alpha_m
+               cyp(i,k) = (cy_m(i,k-1)+cy_m(i,k))*alpha + (cy(i,k-1)+cy(i,k))*alpha_m
+               czp(i,k) = (cz_m(i,k-1)+cz_m(i,k))*alpha + (cz(i,k-1)+cz(i,k))*alpha_m
+
+!              TRAJ
+!              ----
+               cxp_m(i,k) = (cx_m(i,k-1)+cx_m(i,k))*alpha_m
+               cyp_m(i,k) = (cy_m(i,k-1)+cy_m(i,k))*alpha_m
+               czp_m(i,k) = (cz_m(i,k-1)+cz_m(i,k))*alpha_m
+
+            enddo
+         endif
+         do i=i0,in
+
+!           TLM and TRAJ
+!           ------------
+            if (czp_m(i,k).gt.1.d0) then
+                czp  (i,k)=0.d0
+                czp_m(i,k)=1.d0
+            elseif (czp_m(i,k).lt.-1.d0) then
+                czp  (i,k)= 0.d0
+                czp_m(i,k)=-1.d0
+            endif
+
+         enddo
+      enddo
+
+      call vatan2(zatan_m,cyp_m,cxp_m,vnikm)
+      call vasin (yasin_m,czp_m,vnikm)
+   
+!***********************************************************************
+! polar coordinates of upstream position for intermediate thermo levels*
+!***********************************************************************
+
+      do k=2,adx_lnkm
+         do i=i0,in
+
+!           TRAJ 
+!           ----
+            F_yt_m(i,j,k) = yasin_m(i,k)
+            F_xt_m(i,j,k) = zatan_m(i,k)
+
+!           TLM
+!           ---
+!!!         F_xt(i,j,k) = zatan(i,k)
+            F_xt(i,j,k) = (cyp  (i,k)*cxp_m(i,k)-cyp_m(i,k)*cxp  (i,k)) / &
+                          (cxp_m(i,k)*cxp_m(i,k)+cyp_m(i,k)*cyp_m(i,k)) 
+
+!!!         F_yt(i,j,k) = yasin(i,k)
+
+            if ( abs(czp_m(i,k)) .ne. 1.D0 ) then
+               F_yt(i,j,k) = czp(i,k) / sqrt (1.0-czp_m(i,k)**2) 
+            else
+               F_yt(i,j,k) = 0.0 
+            endif
+
+            if ( F_xt_m(i,j,k) .lt. 0.0 ) F_xt_m(i,j,k) = F_xt_m(i,j,k) + r2pi_8
+
+            if(k.gt.2.and.k.lt.adx_lnkm)then
+               !Cubic
+
+!              TLM
+!              ---
+               F_zt(i,j,k)= &
+                    w1(k)*F_zm(i,j,k-2)+ &
+                    w2(k)*F_zm(i,j,k-1)+ &
+                    w3(k)*F_zm(i,j,k  )+ &
+                    w4(k)*F_zm(i,j,k+1)
+
+!              TRAJ 
+!              ----
+               F_zt_m(i,j,k)= &
+                    w1(k)*F_zm_m(i,j,k-2)+ &
+                    w2(k)*F_zm_m(i,j,k-1)+ &
+                    w3(k)*F_zm_m(i,j,k  )+ &
+                    w4(k)*F_zm_m(i,j,k+1)
+
+               ! Must stay in domain
+
+!!!            F_zt(i,j,k)=min(F_zt(i,j,k)*1d0,adx_verZ_8%t(adx_lnkm+1))
+
+!              TLM and TRAJ
+!              ------------
+               if (F_zt_m(i,j,k)*1d0.GT.adx_verZ_8%t(adx_lnkm+1)) then 
+                   F_zt  (i,j,k) = 0.0
+                   F_zt_m(i,j,k) = adx_verZ_8%t(adx_lnkm+1)
+               endif
+
+!!!            F_zt(i,j,k)=max(F_zt(i,j,k)*1d0,adx_verZ_8%t(1)) 
+ 
+
+!              TLM and TRAJ
+!              ------------
+               if (F_zt_m(i,j,k)*1d0.LT.adx_verZ_8%t(1)) then
+                   F_zt  (i,j,k) = 0.0
+                   F_zt_m(i,j,k) = adx_verZ_8%t(1) 
+               endif
+
+            else
+               !Linear
+
+!              TLM
+!              ---
+               F_zt(i,j,k) = (F_zm(i,j,k-1)+F_zm(i,j,k))*half
+
+!              TRAJ 
+!              ----
+               F_zt_m(i,j,k) = (F_zm_m(i,j,k-1)+F_zm_m(i,j,k))*half
+
+            endif
+         end do
+      end do
+
+   enddo
+!$omp enddo
+!$omp end parallel
+!
+return
+end subroutine adx_cubicpos_tl

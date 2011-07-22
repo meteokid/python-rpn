@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !**s/r nlip_2_ad - ADJ of nlip_2_tl 
 !
 #include "model_macros_f.h"
@@ -56,7 +56,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_12 - Tanguay M.        - OPENMP TL/AD
 ! v4_13 - Tanguay M.        - Adjustments GEM413
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object 
 !     see id section
@@ -132,7 +132,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_12 - Tanguay M.        - OPENMP TL/AD
 ! v4_13 - Tanguay M.        - Adjustments GEM413
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object 
 !     see id section
@@ -165,16 +165,17 @@
 !
       parameter ( ONE_8=1.d0, HALF_8=.5d0, ZERO_8=0.0 )
 !
-      real*8, dimension(i02:in2,j02:jn2)      :: xtmp_8,ytmp_8
-      real*8, dimension(i02:in2,j02:jn2)      :: xtmp_m_8,inv2_m_8
+      real*8, dimension(i02:in2,j02:jn2)        :: xtmp_8,ytmp_8
+      real*8, dimension(i02:in2,j02:jn2)        :: xtmp_m_8,inv2_m_8
+      real*8, dimension(i02:in2,j02:jn2,l_nk+1) :: inv2k_m_8
 !
 ! --------------------------------------------------------------------
 !
       if (   Schm_opentop_L) call handle_error(-1,'nlip_2_ad','  Schm_opentop_L not done')
       if (.not.Schm_hydro_L) call handle_error(-1,'nlip_2_ad','NOT Schm_hydro_L not done')
 !
-!     ZERO adjoint work variables
-!     ---------------------------
+!     ZERO adjoint variables
+!     ----------------------
       w1_8   = ZERO_8
       w2_8   = ZERO_8
       w3_8   = ZERO_8
@@ -219,12 +220,19 @@
       jnv = l_njv-pil_n
 !
       nij = (in - i0 + 1)*(jn - j0 + 1)
-!
+ 
+!$omp parallel private(xtmp_8,ytmp_8,w_nt,xtmp_m_8,          &
+!$omp          barz_8,barzp_8,barz_m_8,barzp_m_8,ndiv,wk2_8, &
+!$omp          w1_8,w2_8,w3_8,w1_m_8,w2_m_8,w3_m_8)          &
+!$omp          shared(inv2k_m_8)
+
+
 ! ADJ of                                                  
 !**********************************************************
 ! The full contributions to the RHS of Helmholtz equation *
 !**********************************************************
 !
+!$omp do 
       do j= j0, jn
       do i= i0, in
          F_nt(i,j,l_nk+1) = - Dcst_rayt_8**2 * Ver_cssp_8 * F_rp(i,j,l_nk) + F_nt(i,j,l_nk+1)
@@ -232,11 +240,13 @@
          F_nb(i,j) =   Dcst_rayt_8**2 * Ver_cstp_8 * F_rp(i,j,k0) + F_nb(i,j)
       end do
       end do
+!$omp end do 
 !
 !     ADJ of
 !     Applying boundary conditions
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       if(Schm_opentop_L) then
+!$omp do 
          do j= j0, jn
          do i= i0, in
              F_nt(i,j,k0) =       F_nb(i,j) + F_nt(i,j,k0)
@@ -244,21 +254,26 @@
              F_nb(i,j)    = -b3_8*F_nb(i,j)
          end do
          end do
+!$omp end do 
 ! 
-         do k=1,k0-1
+!$omp do 
          do j= j0, jn
+         do k=1,k0-1
          do i= i0, in
             F_rp(i,j,k) = 0.0
          end do
          end do
          end do
+!$omp end do 
       else
+!$omp do 
          do j= j0, jn
          do i= i0, in
              F_nt(i,j,k0) = F_nb(i,j) + F_nt(i,j,k0)
              F_nb(i,j)    = ZERO_8
          end do
          end do
+!$omp end do 
       endif
 !
 !     ADJ of
@@ -266,21 +281,26 @@
 !     Substract NP from RP(Rc") and store result(RP-NP) in RP
 !     -------------------------------------------------------
 !
-      do k=k0,l_nk
-!
          if (.not. Schm_hydro_L) then
+!$omp do 
+         do j= j0, jn
+            do k=k0,l_nk
             w3_8=c3_8*Ver_dz_8%m(k)
-            do j= j0, jn
             do i= i0, in
                F_nf(i,j,k+1) = w3_8 * ( Ver_wp_8%m(k) * F_rp(i,j,k) ) + F_nf(i,j,k+1)
                F_nf(i,j,k  ) = w3_8 * ( Ver_wm_8%m(k) * F_rp(i,j,k) ) + F_nf(i,j,k  )
             end do
             end do
+         end do
+!$omp end do 
          endif
+
+!$omp do 
+      do j= j0, jn
 !
+         do k=k0,l_nk
          w1_8=ONE_8 + Ver_dz_8%m(k) * Ver_wp_8%m(k)
          w2_8=ONE_8 - Ver_dz_8%m(k) * Ver_wm_8%m(k)
-         do j= j0, jn
          do i= i0, in
 !
             F_rc(i,j,k)  = Dcst_rayt_8**2 * (                   F_rp(i,j,k) ) + F_rc(i,j,k)
@@ -292,14 +312,16 @@
          end do
          end do
 !
-      enddo
-!
+      end do
+!$omp end do 
+
 ! ADJ of
 !*******************************************************************
 ! The nonlinear deviation of the continuity equation               *
 ! Horizontal Divergence of (Nu,Nv) combined with Nc (stored in Nc) *
 !*******************************************************************
 !
+!$omp do  
       do k=l_nk,k0,-1
 !
 !        ADJ of
@@ -318,6 +340,12 @@
 !
          end do
          end do
+
+      end do
+!$omp end do  
+
+!$omp do  
+      do k=l_nk,k0,-1
 !
 !        TRAJECTORY
 !        ----------
@@ -329,22 +357,32 @@
          end do
          end do
 !
-         call vrec(inv2_m_8, xtmp_m_8, nij)
-!
+         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8, nij)
+
+      end do
+!$omp end do  
+
 !        ADJ of
 !        Compute Nc
 !        ~~~~~~~~~~
 !
          if(.not.Schm_hydro_L) then
+!$omp do  
+         do k=l_nk,k0,-1
              do j= j0,jn
              do i= i0,in
                 F_nw(i,j,k+1) = - b1_8 * ( Ver_wp_8%m(k) * F_nc(i,j,k) ) + F_nw(i,j,k+1)
                 F_nw(i,j,k  ) = - b1_8 * ( Ver_wm_8%m(k) * F_nc(i,j,k) ) + F_nw(i,j,k  )
              end do
              end do
+         end do
+!$omp end do  
          endif
-!
-         do j = j0, jn
+
+!$omp do  
+      do j = j0, jn
+
+         do k = l_nk,k0,-1
          do i = i0, in
 !
             w1_8        = Cstv_invT_8 * F_nc(i,j,k) 
@@ -353,19 +391,7 @@
             ytmp_8(i,j) =                       w1_8 
             F_s   (i,j) =  - Ver_dbdz_8%m(k) *  w1_8 + F_s   (i,j)
 !
-         end do
-         end do
-!
-         do j = j0, jn
-         do i = i0, in
-!
-            xtmp_8(i,j) = ytmp_8(i,j) * inv2_m_8(i,j) 
-!
-         end do
-         end do
-!
-         do j = j0, jn
-         do i = i0, in
+            xtmp_8(i,j) = ytmp_8(i,j) * inv2k_m_8(i,j,k) 
 !
             F_s(i,j) = Ver_dbdz_8%m(k) * xtmp_8(i,j) + F_s(i,j)
 !
@@ -373,7 +399,10 @@
          end do
 !
       end do
-!
+!$omp end do  
+
+!$omp single  
+
 !     ADJ
 !     ---
       call rpn_comm_adj_halo( F_nv, LDIST_DIM,l_ni,l_njv,G_nk, &
@@ -382,17 +411,15 @@
       call rpn_comm_adj_halo( F_nu, LDIST_DIM,l_niu,l_nj,G_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !
-      do k= 1,l_nk
+!     Zero F_nv halo
+!     --------------
+      call v4d_zerohalo (F_nv,l_ni, l_njv,LDIST_DIM, l_nk)
 !
-!        Zero F_nv halo
-!        --------------
-         call v4d_zerohalo ( F_nv(l_minx,l_miny,k),l_ni, l_njv,LDIST_DIM, 1)
-!
-!        Zero F_nu halo
-!        --------------
-         call v4d_zerohalo ( F_nu(l_minx,l_miny,k),l_niu,l_nj, LDIST_DIM, 1)
-!
-      enddo
+!     Zero F_nu halo
+!     --------------
+      call v4d_zerohalo (F_nu,l_niu,l_nj, LDIST_DIM, l_nk)
+
+!$omp end single  
 !
 ! ADJ of
 !************************************
@@ -400,6 +427,7 @@
 ! and calculation of Nt" and Nf"    *
 !************************************
 !
+!$omp do  
       do k=l_nk+1,k0,-1
 !
          do j= j0, jn
@@ -447,7 +475,8 @@
          endif
 !
       end do
-!
+!$omp end do  
+
 ! ADJ of
 !********************************************************
 ! The nonlinear deviation of the thermodynamic equation *
@@ -459,6 +488,7 @@
 !
 !     TRAJECTORY
 !     ----------
+!$omp do  
       do k=l_nk+1,k0,-1
 !
          w11_8 = ONE_8 / Cstv_tstr_8
@@ -470,11 +500,18 @@
          end do
          end do
 !
-         call vrec(inv2_m_8, xtmp_m_8, nij)
+         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8, nij)
+
+      end do
+!$omp end do  
+
+!$omp do  
+      do j= j0, jn
+
+         do k=l_nk+1,k0,-1
 
          w1_8 = Ver_idz_8%t(k) / Cstv_RTstr_8
 !
-         do j= j0, jn
          do i= i0, in
 !
             w2_8        = Cstv_invT_8 * F_nt(i,j,k) 
@@ -486,28 +523,21 @@
             F_fip (i,j,k-1)= w1_8            * ( - w2_8 ) + F_fip (i,j,k-1)
             F_s   (i,j)    = Ver_dbdz_8%t(k) *     w2_8   + F_s   (i,j)
 !
-         end do
-         end do
-!
          if(Schm_opentop_L.and.k.eq.k0) then
-            do j= j0, jn
-            do i= i0, in
-               ytmp_8(i,j) = F_nb(i,j)  + ytmp_8(i,j)
-               F_nb  (i,j) = ZERO_8
-            end do
-            end do
+            ytmp_8(i,j) = F_nb(i,j)  + ytmp_8(i,j)
+            F_nb  (i,j) = ZERO_8
          endif
 !
-         do j= j0, jn
-         do i= i0, in
-            xtmp_8(i,j) = ytmp_8(i,j) * inv2_m_8(i,j) 
+            xtmp_8(i,j) = ytmp_8(i,j) * inv2k_m_8(i,j,k) 
 !
             F_t   (i,j,k) = xtmp_8(i,j) * w11_8 + F_t(i,j,k)
+
          end do
          end do
 !
       end do
-!
+!$omp end do  
+
 !***********************************************************
 ! ADJ of                                                   *
 ! The nonlinear deviation of horizontal momentum equations *
@@ -520,24 +550,28 @@
 !
       if (l_north) then
 !
+!$omp do  
             do k=1,l_nk
             do i=1+pil_w,l_ni-pil_e
 !
                F_nv(i,l_nj-pil_n,k) = 0.
 !
             end do
-            enddo
+            end do
+!$omp end do  
 !
       endif
       if (l_south) then
 !
+!$omp do  
             do k=1,l_nk
             do i=1+pil_w,l_ni-pil_e
 !
                F_nv(i,pil_s,k) = 0.
 !
             end do
-            enddo
+            end do
+!$omp end do  
 !
       endif
 !
@@ -547,17 +581,20 @@
       if (G_lam) then
          if (l_east) then
 !
+!$omp do  
             do k=1,l_nk
             do j=1+pil_s,l_nj-pil_n
 !
                 F_nu(l_ni-pil_e,j,k) = 0.
 !
             end do
-            enddo
+            end do
+!$omp end do  
 !
          endif
          if (l_west) then
 !
+!$omp do  
              do k=1,l_nk
              do j=1+pil_s,l_nj-pil_n
 !
@@ -565,12 +602,13 @@
 !
              end do
              enddo
+!$omp end do  
          endif
       endif
-!
-      do 100 k=l_nk,1,-1
-!
+
       if (.not. Schm_hydro_L) then
+!$omp do  
+      do k=l_nk,1,-1
 !
 !        Add nonhydrostatic contributions to Nv
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -648,8 +686,17 @@
          end do
          end do
 !
+      end do
+!$omp end do  
       endif
-!
+
+!     ZERO adjoint variables
+!     ----------------------
+      wk2_8 = 0.
+
+!$omp do  
+      do k=l_nk,1,-1
+
 !     ADJ of
 !     Compute Nv for hydrostatic version
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -686,12 +733,18 @@
          end do
 !
       endif
-!
+
+      end do
+!$omp end do  
+
 !     ADJ of
 !     Pressure gradient term: RT' barYZ * dBsPq/dY
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      do j= jnv,j0,-1
+!$omp do  
       do i= in,i0,-1
+!
+         do k=l_nk,1,-1
+         do j= jnv,j0,-1
 !
 !        TRAJECTORY
 !        ----------
@@ -721,8 +774,17 @@
          F_t(i,j,k+1)   = Ver_wp_8%m(k) * ( barz_8  ) + F_t(i,j,k+1) 
          F_t(i,j,k)     = Ver_wm_8%m(k) * ( barz_8  ) + F_t(i,j,k)
 !
+         end do
+         end do
       end do
-      end do
+!$omp end do  
+
+!     ZERO adjoint variables
+!     ----------------------
+      wk2_8 = 0.
+
+!$omp do  
+      do k=l_nk,1,-1
 !
 !     ADJ of
 !     Compute Nu for hydrostatic version
@@ -760,12 +822,18 @@
          end do
 !
       endif
-!
+
+      end do
+!$omp end do  
+
 !     ADJ of
 !     Pressure gradient term: RT' barXZ * dBsPq/dX
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do  
       do j= jn,j0,-1
-      do i= inu,i0,-1
+!
+         do k=l_nk,1,-1
+         do i= inu,i0,-1
 !
 !        TRAJECTORY
 !        ----------
@@ -795,10 +863,13 @@
          F_t(i,j,k+1)   = Ver_wp_8%m(k) * ( barz_8  ) + F_t(i,j,k+1) 
          F_t(i,j,k)     = Ver_wm_8%m(k) * ( barz_8  ) + F_t(i,j,k)
 !
-      end do
-      end do
+         end do
+         end do
 !
- 100  continue
+      end do
+!$omp end do  
+
+!$omp end parallel  
 !
       if (Cori_cornl_L) then
 !
@@ -809,10 +880,8 @@
 !
 !       Zero F_u-F_v halo
 !       -----------------
-        do k= 1,G_nk
-           call v4d_zerohalo ( F_v(l_minx,l_miny,k),l_ni,l_njv,LDIST_DIM, 1)
-           call v4d_zerohalo ( F_u(l_minx,l_miny,k),l_niu,l_nj,LDIST_DIM, 1)
-        enddo
+        call v4d_zerohalo (F_v,l_ni,l_njv,LDIST_DIM, G_nk)
+        call v4d_zerohalo (F_u,l_niu,l_nj,LDIST_DIM, G_nk)
 !
       endif
 !
@@ -825,15 +894,11 @@
 !
 !     Zero F_fip halo
 !     ---------------
-      do k= 0,G_nk+1
-         call v4d_zerohalo ( F_fip(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
-      enddo
+      call v4d_zerohalo (F_fip,l_ni,l_nj,LDIST_DIM, G_nk+2)
 !
 !     Zero F_mu halo
 !     --------------
-      do k= 1,G_nk+1
-         call v4d_zerohalo ( F_mu(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
-      enddo
+      call v4d_zerohalo (F_mu,l_ni,l_nj,LDIST_DIM, G_nk+1)
 !
       endif
 !
@@ -842,12 +907,8 @@
       call rpn_comm_adj_halo( F_t,LDIST_DIM,l_ni,l_nj,G_nk+1, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !
-      do k= 0,G_nk+1
-         call v4d_zerohalo ( F_BsPq(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
-      enddo
-      do k= 1,G_nk+1
-         call v4d_zerohalo ( F_t(l_minx,l_miny,k),l_ni,l_nj,LDIST_DIM, 1)
-      enddo
+      call v4d_zerohalo (F_BsPq,l_ni,l_nj,LDIST_DIM, G_nk+2)
+      call v4d_zerohalo (F_t   ,l_ni,l_nj,LDIST_DIM, G_nk+1)
 !
 !     __________________________________________________________________
 !

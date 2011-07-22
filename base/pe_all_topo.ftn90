@@ -26,6 +26,7 @@
 !revision
 ! v3_30 - Desgagne M.       - initial version
 ! v4_03 - Desgagne/Lee      - adaptation to new scripts
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !implicits
 #include "ptopo.cdk"
@@ -41,6 +42,9 @@
       character*12 dumc1_S
       character*500 fn, basearch
       integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(10000),bufcte(10000),unf,default_smtfact
+!
+      integer Ptopo_npeOpenMP_orig
+      common/check_4dvar/Ptopo_npeOpenMP_orig
 !
 !-------------------------------------------------------------------
 !
@@ -72,6 +76,8 @@
       err = clib_getenv('BASE_ARCH',basearch)
       default_smtfact = 1
       if (trim(basearch).eq."AIX") default_smtfact = 2
+
+      Ptopo_npeOpenMP_orig = Ptopo_npeOpenMP
 
       if (Ptopo_smtdyn.lt.1) Ptopo_smtdyn=Ptopo_npeOpenMP*default_smtfact
       if (Ptopo_smtphy.lt.1) Ptopo_smtphy=Ptopo_npeOpenMP*default_smtfact

@@ -1,0 +1,125 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!/**
+subroutine adx_interp5_tl ( F_out    , F_in     , F_c1     , &
+                            F_capx1  , F_capy1  , F_capz1  , &
+                            F_capx2  , F_capy2  , F_capz2  , &
+                            F_out_m  , F_in_m   , F_c1_m   , &
+                            F_capx1_m, F_capy1_m, F_capz1_m, &
+                            F_capx2_m, F_capy2_m, F_capz2_m, &
+                            Minx,Maxx,Miny,Maxy,F_nk,  &
+                            F_wind_L,F_mono_L, i0,in,j0,jn,k0, F_lev_S)
+   implicit none
+!
+   !@objective TLM of adx_interp 
+!
+   !@arguments
+   character (len=*) :: F_lev_S !I, m/t : Momemtum/thermo level
+   integer :: Minx,Maxx,Miny,Maxy
+   integer :: i0,in,j0,jn,k0    !I, scope of operator
+   integer :: F_nk              !I, number of vertical levels
+   integer :: F_c1  (*)
+   integer :: F_c1_m(*)
+   logical :: F_mono_L          !I, .true. monotonic interpolation
+   logical :: F_wind_L          !I, .true. if field is wind like
+   real    :: F_capx1  (*), F_capy1  (*), F_capz1  (*)
+   real    :: F_capx1_m(*), F_capy1_m(*), F_capz1_m(*)
+   real    :: F_capx2  (*), F_capy2  (*), F_capz2  (*)
+   real    :: F_capx2_m(*), F_capy2_m(*), F_capz2_m(*)
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk) :: F_in,F_out,F_in_m,F_out_m
+!
+   !@author Monique Tanguay
+!
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+
+!**/
+#include "adx_dims.cdk"
+#include "adx_poles.cdk"
+
+   logical, parameter :: EXTEND_L = .true.
+   integer :: i, j, k, istat, nbpts
+   real    :: dummy
+   real    :: fld_adw  (adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), & 
+              fld_adw_m(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk)
+   real, dimension(:), pointer             :: wrka,wrka_m
+   real, dimension(adx_mlni,adx_mlnj,F_nk) :: wrkb, wrkc, wrkb_m, wrkc_m
+
+   !---------------------------------------------------------------------
+
+   if (.not.adx_lam_L) allocate (wrka  (max(1,adx_fro_a)))
+   if (.not.adx_lam_L) allocate (wrka_m(max(1,adx_fro_a)))
+
+   !TRAJECTORY
+   !----------
+   call adx_grid_scalar (fld_adw_m, F_in_m, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
+                         Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
+
+   !TLM
+   !---
+   call adx_grid_scalar (fld_adw, F_in, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
+                         Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
+
+   nbpts = adx_mlni*adx_mlnj*F_nk
+
+   call adx_tricub_lag3d5_tl (wrkc  , fld_adw  , F_capx1  , F_capy1  , F_capz1  , & 
+                              wrkc_m, fld_adw_m, F_capx1_m, F_capy1_m, F_capz1_m, & 
+                              nbpts, F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)   
+
+   if (.not.adx_lam_L) then
+
+      if (adx_fro_a > 0 ) then
+         call adx_tricub_lag3d5_tl (wrka  , fld_adw  , F_capx2  , F_capy2  , F_capz2  ,  &
+                                    wrka_m, fld_adw_m, F_capx2_m, F_capy2_m, F_capz2_m,  &
+                                    adx_fro_a, F_mono_L, 1,adx_fro_a,1,1,1,1, F_lev_S) 
+      endif
+
+      call adx_exch_2_tl ( wrkb  , dummy, dummy, &
+                           wrka  , dummy, dummy, &
+                           wrkb_m, dummy, dummy, &
+                           wrka_m, dummy, dummy, &
+                           adx_for_n, adx_for_s, adx_for_a, &
+                           adx_fro_n, adx_fro_s, adx_fro_a, 1)
+
+      if (adx_for_a > 0) then 
+           call adx_exch_3b_tl (wrkc  , dummy, wrkb  , dummy, F_c1  , & 
+                                wrkc_m, dummy, wrkb_m, dummy, F_c1_m, &
+                                1,adx_mlni,adx_mlnj,F_nk)
+      endif
+                                
+   endif
+
+!$omp parallel do 
+   do k = k0, F_nk
+
+      !TRAJECTORY
+      !----------
+      F_out_m(i0:in,j0:jn,k) = wrkc_m(i0:in,j0:jn,k)
+
+      !TLM
+      !---
+      F_out(i0:in,j0:jn,k) = wrkc(i0:in,j0:jn,k)
+
+   enddo
+!$omp end parallel do
+
+   if (.not.adx_lam_L) deallocate(wrka)
+
+   !---------------------------------------------------------------------
+
+   return
+end subroutine adx_interp5_tl

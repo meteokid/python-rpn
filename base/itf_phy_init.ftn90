@@ -62,8 +62,9 @@
       integer  fnom, phy_debu2
       external set_dcst,itf_phy_rdfile,fnom,phy_debu2
 !
+      character*3 bus
       logical prout
-      integer DIM_ERR,nrec,n_phytend, phycompa
+      integer DIM_ERR,nrec,n_phytend, phycompa, n, lght, soit
       parameter (DIM_ERR = 14) 
       integer err(DIM_ERR),idate(14),bidon,i
       real dt_4
@@ -230,12 +231,61 @@
 !
       allocate ( phy_tend(LDIST_SHAPE,p_nk,n_phytend) )
 !
+! Pre-establish BUSDYN index (2bused in itf_phy_prep)
+!
+      bus = 'DYN'
+      phy_ndyn = 0
+      do n=1,p_bdyn_top
+         phy_ndyn=phy_ndyn+1
+         if (phy_ndyn.gt.maxntdy) then
+            call stop_mpi(-1,'itf_phy_init','NOT ENOUGH SPACE IN phy_idxdyn TO STORE BUSDYN INDEX')
+         endif
+         call getindx2 (dynnm(n),  bus, phy_idxdyn(phy_ndyn,1), phy_idxdyn(phy_ndyn,2),&
+                                                                phy_idxdyn(phy_ndyn,3) )
+         if (phy_idxdyn(phy_ndyn,1).le.0) then
+            call stop_mpi(-1,'itf_phy_init','INDEX NOT AVAILABLE for '//dynnm(n))
+         endif
+      end do
+!
+! Pre-establish BUSVOL index for physics tendencies (2bused in itf_phy_extract)
+!
+      bus = 'VOL'
+      phy_ntdy = 0
+      do n=1,p_bvol_top
+         if (volnm(n)(1:5) .eq. 'PHYTD') then
+            phy_ntdy=phy_ntdy+1
+            if (phy_ntdy.gt.maxntdy) then
+               call stop_mpi(-1,'itf_phy_init','NOT ENOUGH SPACE IN phy_idxtdy TO STORE PHYSICS TENDENCIES INDEX')
+            endif
+            call getindx2 (volnm(n),  bus, phy_idxtdy(phy_ntdy), lght, soit)
+            if (phy_idxtdy(phy_ntdy).le.0) then
+               call stop_mpi(-1,'itf_phy_init','INDEX NOT AVAILABLE for '//volnm(n))
+            endif
+         endif
+      end do
+!
+! Pre-establish BUS index for coupling
+!
+      if (C_coupling_L) then
+         bus = 'DYN'
+         call getindx2 ('MCCPL'     ,  bus, cpl_mcp     , lght, soit)
+         call getindx2 ('TMICECPL'  ,  bus, cpl_i7      , lght, soit)
+         call getindx2 ('TWATERCPL' ,  bus, cpl_tm      , lght, soit)
+         call getindx2 ('GLCPL'     ,  bus, cpl_gl      , lght, soit)
+         call getindx2 ('ICEDPCPL'  ,  bus, cpl_i8      , lght, soit)
+         bus = 'PER'
+         call getindx2 ('FLUSOLIS'  ,  bus, cpl_flusolis, lght, soit)
+         call getindx2 ('FDSI'      ,  bus, cpl_fdsi    , lght, soit)
+         bus = 'VOL'
+         call getindx2 ('RT'        ,  bus, cpl_rt      , lght, soit)
+      endif
+!
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
              /,'====================================================')
  1001 format(/,'NO PHYSICS PACKAGE INITIALIZATION (S/R itf_phy_init)', &
              /,'====================================================')
- 1002 format(/,'PHYSICS COMPATIBILITY LEVEL IS OK: (level='i2,')')
+ 1002 format(/,'PHYSICS COMPATIBILITY LEVEL IS OK: (level=',i2,')')
  9000 format(/'==> STOP IN ITF_PHY_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/ &
               '==> REQUIRED: ',i10/)
  9001 format(/'==> STOP IN ITF_PHY_INIT: INCOMPATIBLE PHYSICS INTERFACE'/ &

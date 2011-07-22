@@ -1,0 +1,125 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!/**
+subroutine adx_main_3_intlag7_tl (F_px  ,F_py  ,F_pz  ,F_fields_list  , &
+                                  F_px_m,F_py_m,F_pz_m,F_fields_list_m, &
+                                  F_fields_type_L, F_nfields, &
+                                  F_is_mom_L, F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk)
+!
+   implicit none
+!
+   !@objective TLM of adx_main_3_intlag 
+!
+   !@arguments
+   logical :: F_is_mom_L     !I, momentum level if .true. (thermo if not)
+   logical :: F_doAdwStat_L  !I, compute stats if .true.
+   integer :: F_ni,F_nj,F_nk !I, pos array dims
+   integer :: F_k0           !I, vertical scope F_k0 to F_nk
+   integer :: F_nfields      !I, nb of fields to advect
+   logical, dimension(2,F_nfields)         :: F_fields_type_L !I, fields type
+   character(len=8), dimension(2,F_nfields):: F_fields_list   !I, gmm flds lbls
+   real, dimension(F_ni,F_nj,F_nk) :: F_px, F_py, F_pz !I, upstream positions at t1
+   real, dimension(F_ni,F_nj,F_nk) :: F_px_m, F_py_m, F_pz_m !I, upstream positions at t1 TRAJ
+   character(len=8), dimension(2,F_nfields):: F_fields_list_m !I, gmm flds lbls TRAJ
+!
+   !@author Monique Tanguay
+!
+   !@revisions
+   ! v4_13 - Tanguay M.        - Adjustments GEM413
+   ! v4_40 - Tanguay M.        - Revision TL/AD
+   !**/
+#include "adx_nml.cdk"
+#include "adx_dims.cdk"
+#include "adx_poles.cdk"
+
+   integer, parameter :: FIELD_IN  = 1
+   integer, parameter :: FIELD_OUT = 2
+   integer, parameter :: IS_MOM    = 1
+   integer, parameter :: IS_WIND   = 2
+
+   character(len=1) :: level_type_S
+
+   integer :: n,i,j,k
+   integer :: i0,j0,in,jn, istat
+
+   integer, dimension(F_ni,F_nj,F_nk) :: exch_c1
+   real   , dimension(F_ni,F_nj,F_nk) :: exch_n1, exch_xgg1, exch_xdd1
+   real   , dimension(:), allocatable :: capx2,capy2,capz2
+
+   integer, dimension(F_ni,F_nj,F_nk) :: exch_c1_m
+   real   , dimension(F_ni,F_nj,F_nk) :: exch_n1_m, exch_xgg1_m, exch_xdd1_m
+   real   , dimension(:), allocatable :: capx2_m,capy2_m,capz2_m
+
+   integer, external :: adx_ckbd3
+
+   !---------------------------------------------------------------------
+
+   if (adx_lam_L) call handle_error(-1,'adx_main_3_intlag_tl','G_lam not done')
+
+   call adx_get_ij0n (i0,in,j0,jn)
+
+   level_type_S = 't'
+   if (F_is_mom_L) level_type_S = 'm'
+
+   if (adx_lam_L) then
+
+        !NOT DONE
+
+   else
+
+      call adx_exch_1b_tl ( exch_n1  , exch_xgg1  , exch_xdd1  , exch_c1  , &
+                            F_px     , F_py       , F_pz       ,            & 
+                            exch_n1_m, exch_xgg1_m, exch_xdd1_m, exch_c1_m, &
+                            F_px_m   , F_py_m     , F_pz_m     ,            & 
+                            F_ni,F_nj,F_nk )
+ 
+      allocate ( capx2  (max(1,adx_fro_a)), &
+                 capy2  (max(1,adx_fro_a)), &
+                 capz2  (max(1,adx_fro_a)) )
+
+      allocate ( capx2_m(max(1,adx_fro_a)), &
+                 capy2_m(max(1,adx_fro_a)), &
+                 capz2_m(max(1,adx_fro_a)) )
+
+      call adx_exch_2_tl ( capx2    , capy2      , capz2      , &
+                           exch_n1  , exch_xgg1  , exch_xdd1  , &
+                           capx2_m  , capy2_m    , capz2_m    , &
+                           exch_n1_m, exch_xgg1_m, exch_xdd1_m, &
+                           adx_fro_n, adx_fro_s, adx_fro_a,     &
+                           adx_for_n, adx_for_s, adx_for_a, 3)
+
+      istat = 1
+      if (adx_fro_a>0 .and. adw_ckbd_L) &
+      istat = adx_ckbd3 (capy2_m,adx_fro_n,adx_fro_s)
+
+   endif
+
+   do n = 1, F_nfields
+      if (F_fields_type_L(IS_MOM,n) .neqv. F_is_mom_L) cycle
+      call adx_interp_gmm5_tl (F_fields_list  (FIELD_OUT,n),F_fields_list  (FIELD_IN,n)    , & 
+                               F_px  , F_py  , F_pz  , capx2  , capy2  , capz2  , exch_c1  , &
+                               F_fields_list_m(FIELD_OUT,n),F_fields_list_m(FIELD_IN,n)    , & 
+                               F_px_m, F_py_m, F_pz_m, capx2_m, capy2_m, capz2_m, exch_c1_m, &
+                               F_fields_type_L(IS_WIND,n),                                   & 
+                               F_nk, i0, in, j0, jn, F_k0, level_type_S )
+   end do
+
+   if (.not.adx_lam_L) deallocate ( capx2  , capy2  , capz2   )
+   if (.not.adx_lam_L) deallocate ( capx2_m, capy2_m, capz2_m )
+
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_main_3_intlag7_tl

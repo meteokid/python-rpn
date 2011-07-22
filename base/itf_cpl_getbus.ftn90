@@ -34,13 +34,7 @@
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 !
-      integer soit,lght,cpl_flusolis,cpl_fdsi,cpl_rt
-!*
 !     ---------------------------------------------------------------
-!
-      call getindx ('FLUSOLIS',  'P', cpl_flusolis, lght, soit)
-      call getindx ('FDSI'    ,  'P', cpl_fdsi,     lght, soit)
-      call getindx ('RT'      ,  'V', cpl_rt,       lght, soit)
 !
       call itf_phy_unfold ( atm_local_busou(1,1,5), &
                             f_busper(cpl_flusolis), &

@@ -1,18 +1,18 @@
-!-------------------------------------- LICENCE BEGIN ------------------------------------
-!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
-!                     version 3; Last Modified: May 7, 2008.
-!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
-!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
-!version 3 or (at your option) any later version that should be found at: 
-!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
-!
-!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
-!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
-!See the above mentioned License/Disclaimer for more details.
-!You should have received a copy of the License/Disclaimer along with this software; 
-!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
-!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
-!-------------------------------------- LICENCE END --------------------------------------
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
 !*s/r sol_hcr_ad - ADJ of sol_hcr 
 !
 #include "model_macros_f.h"
@@ -42,7 +42,7 @@
 ! v3_30 - Tanguay M.        - adjust OPENMP
 ! v3_30 - Tanguay M.        - add parameter iln in sol_main
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
-! v4_30 - Tanguay M.        - Revision
+! v4_40 - Tanguay M.        - Revision TL/AD
 !
 !object
 !     see id section
@@ -81,16 +81,16 @@
 !     ADJ of
 !     inverse projection
 !
-!!$omp parallel shared( G_nk )
-!!$omp do
+!$omp parallel shared( G_nk )
+!$omp do
       do j=1+pil_s,Nj-pil_n
          call dgemm('N','N', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0, &
                     F_sol_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1), &
                     Opr_zevec_8,g_nk,0.0d0, &
                     F_w2_8 (1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
       enddo
-!!$omp enddo
-!!$omp end parallel
+!$omp enddo
+!$omp end parallel
 !
       if (Fft_fast_L) then
          if (G_lam) then
@@ -117,12 +117,12 @@
 !     NOT DONE
       endif
 !
-!!$omp parallel shared( offi,offj,G_nk )
+!$omp parallel shared( offi,offj,G_nk )
 !
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 !
-!!$omp do
+!$omp do
       do j=1+pil_s,Nj-pil_n
          do k=1,Schm_nith
             do i = 1+pil_w, Ni-pil_e
@@ -135,9 +135,9 @@
                     Opr_lzevec_8,g_nk,0.0d0, &
                     F_rhs_8(1+pil_w,j,1), (Maxy-Miny+1)*(Maxx-Minx+1))
       end do
-!!$omp enddo
+!$omp enddo
 !
-!!$omp end parallel
+!$omp end parallel
 !
 !     ---------------------------------------------------------------
 ! 

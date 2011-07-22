@@ -26,10 +26,12 @@
 ! adw_maxcfl   |                                                       !
 ! adw_halox    | advection specific halo in x                          |
 ! adw_haloy    | advection specific halo in y                          |
+! adw_thermopos_S| Thermo pos calculation 'traj', 'int_z' or 'int_xyz' |
 !______________________________________________________________________|
 !
 #endif
 
+      character(len=16) :: adw_thermopos_S
       logical :: adw_stats_L
       logical :: adw_useadx_L
       logical :: adw_gccsa_L
@@ -50,10 +52,9 @@
       namelist /adw_cfgs/ adw_exdg_L
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_nosetint_L
-!!$      namelist /adw_cfgs/ adw_nkbz_L
-!!$      namelist /adw_cfgs/ adw_trunc_traj_L
-!!$      namelist /adw_cfgs/ adw_halox
-!!$      namelist /adw_cfgs/ adw_haloy
+      namelist /adw_cfgs/ adw_thermopos_S
+
+      common /adw_nml_s/ adw_thermopos_S
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_useadx_L
