@@ -81,8 +81,8 @@
       integer p_bgeo_top,p_bgeo_siz,geopar(MAXGEO,3)
       common /busgeoi/ p_bgeo_top,p_bgeo_siz,geopar
 !
-      real, dimension(:), pointer ::  geobus, geofld
-      common /busgeor/ geobus, geofld
+!!$      real, dimension(:), pointer ::  geobus, geofld
+!!$      common /busgeor/ geobus, geofld
 !
       real, dimension (:,:,:,:), pointer :: phy_tend
       common /phybuf/  phy_tend

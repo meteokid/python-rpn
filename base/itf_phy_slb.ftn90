@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+\!---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !** s/p itf_phy_slb
-Subroutine itf_phy_slb ( geofld ,busdyn3D ,busper3D, busvol3D ,&
+Subroutine itf_phy_slb ( busent3D, busdyn3D ,busper3D, busvol3D ,&
                          esiz,dsiz,fsiz,vsiz,dt,kount,phy_timing,ni,nj,nk,pslic )
   Implicit None
 
   Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
-  Real, Dimension(:,:), Pointer ::  busdyn3D, busper3D, busvol3D
-  Real, Dimension(:  ), Pointer ::  geofld
+  Real, Dimension(:,:), Pointer ::  busent3D, busdyn3D, busper3D, busvol3D
+!!$  Real, Dimension(:  ), Pointer ::  geofld
   Real dt, phy_timing(ni,nj) 
 
   !Author
@@ -59,8 +59,9 @@ Subroutine itf_phy_slb ( geofld ,busdyn3D ,busper3D, busvol3D ,&
   external  time_base
 
   Integer jdo, ithread, ione
-  real busent, sltime
-  pointer (pabusent,busent(*))
+  real sltime
+!!$  real busent, sltime
+!!$  pointer (pabusent,busent(*))
 
   !
 
@@ -74,11 +75,12 @@ Subroutine itf_phy_slb ( geofld ,busdyn3D ,busper3D, busvol3D ,&
 
   If(jdo>nj)Return
 
-  if(kount==0) pabusent = loc (geofld((jdo-1)*esiz+1))
+!!$  if(kount==0) pabusent = loc (geofld((jdo-1)*esiz+1))
 
   ticks_deb = time_base()
 
-  call phy_exe ( busent ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
+!!$  call phy_exe ( busent ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
+  call phy_exe ( busent3D(1,jdo) ,busdyn3D(1,jdo) , busper3D(1,jdo), busvol3D(1,jdo) , &
                  esiz   ,dsiz   ,fsiz   ,vsiz   , &
                  dt, jdo, kount, ithread, ni, nk)
 

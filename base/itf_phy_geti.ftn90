@@ -100,6 +100,7 @@ Integer Function itf_phy_geti (vd, opt)
       Real(kind=8)  :: rad2deg_8
 !
       type(gmm_metadata) :: meta
+      real, pointer, dimension (:,:) :: BUSENT_3d
 !
 !     ---------------------------------------------------------------
 temp=>vd
@@ -197,6 +198,7 @@ Main1 : Do
                   ier = ezsetopt ('INTERP_DEGREE', 'VOISIN')
                Else
                   ier = ezsetopt ('INTERP_DEGREE', vd%interp)
+!!$                  print *,'(itf_phy_geti) interp_degree=',trim(vd%interp) ; call flush(6)
                Endif
             Endif
 !
@@ -218,6 +220,7 @@ Main1 : Do
                       vd%globalf(1:G_ni,1:G_nj,tip)=yinyangf(1:G_ni,1:G_nj)
                   endif
 !
+!!$                  print *,'(itf_phy_geti) G:',tip,trim(vd%nomvar),vd%findx,minval(vd%globalf(1:G_ni,1:G_nj,tip)),maxval(vd%globalf(1:G_ni,1:G_nj,tip));call flush(6)
                   ier = Phy_simple_transforms( vd%phyvar,vd%globalf(1:G_ni,1:G_nj,tip),vd%glbfld_L )
 !
                Endif
@@ -235,6 +238,7 @@ Main1 : Do
                      If(Ptopo_myproc==0) deallocate( global )
                   Endif
                Else
+!!$                  print *,'(geti) ezsint',lgid, sgid
                   ier = ezdefset ( lgid, sgid )
                   ier = ezsint ( localf, field )
                Endif
@@ -248,14 +252,19 @@ Main1 : Do
                Endif
                If(Lun_debug_L) call glbstat2 (localf,vd%nomvar,"scalge",1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
 !
+!!$               print *,'(itf_phy_geti) L:',tip,trim(vd%nomvar),vd%findx,minval(localf),maxval(localf);call flush(6)
                ier = Phy_simple_transforms( vd%phyvar, localf, vd%glbfld_L )
+!!$               call statfld3(localf,vd%nomvar,tip,'geti', &
+!!$                    1,size(localf,1),1,size(localf,2),1,1, &
+!!$                    1,1,1,size(localf,1),size(localf,2),1,8)
+
                Call itf_phy_fold_sfc( vd%values(1:p_ni,1:p_nj,tip), localf, l_ni, l_nj )
 !
             Endif
 !
             Deallocate(field,ax,ay,Stat=ier); Call handle_error(ier,'phy_acquire_data','1')
 !
-         Enddo
+         Enddo !tip
 !
          If (Ptopo_myproc==0) then
             ier= fstfrm(iun) ; ier= fclos(iun) ; iun= 0
@@ -295,7 +304,10 @@ Main1 : Do
          call glbcolc( vd%globalf(1,1,1),G_ni,G_nj, localf,1,l_ni,1,l_nj,1 )
          If(Ptopo_myproc==0) &
          ier = Phy_simple_transforms( vd%phyvar,vd%globalf(1:G_ni,1:G_nj,1),vd%glbfld_L )
+!!$         If(Ptopo_myproc==0) &
+!!$              print *,'(itf_phy_geti) G:',trim(vd%nomvar),vd%findx,minval(vd%globalf(1:G_ni,1:G_nj,1)),maxval(vd%globalf(1:G_ni,1:G_nj,1));call flush(6)
       Else
+!!$         print *,'(itf_phy_geti) L:',trim(vd%phyvar),vd%findx,minval(localf),maxval(localf);call flush(6)
          ier = Phy_simple_transforms( vd%phyvar,localf,vd%glbfld_L )
          call itf_phy_fold_sfc (vd%values(1:p_ni,1:p_nj,1), localf, l_ni, l_nj)
       Endif
@@ -358,7 +370,8 @@ Stats : Do
    vd => vd%next_value
 Enddo Stats
 
-gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
+ier = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
+ier = gmm_get ('BUSENT_3d',BUSENT_3d,meta)
 
 vd=>temp
 main3 : Do
@@ -366,7 +379,7 @@ main3 : Do
    If (vd%inbus_L) Then     ! Do we put the variable in a bus?
       If (vd%bper_L) Then    ! Put into busper
          Do j=1,p_nj
-            ij=vd%findx+(j-1)*p_bper_siz
+!!$            ij=vd%findx+(j-1)*p_bper_siz
             Do k=1,vd%p_nu
                ik=vd%findx+(k-1)*p_ni
 ! When completed, next line becomes useless and all of itf_phy_geti
@@ -375,10 +388,12 @@ main3 : Do
          Enddo
       Else                ! Put into geofld
          Do j=1,p_nj
-            ij=vd%findx+(j-1)*p_bent_siz
+!!$            ij=vd%findx+(j-1)*p_bent_siz
             Do k=1,vd%p_nu
-               ik=ij+(k-1)*p_ni
-               geofld(ik:ik+p_ni-1) = vd%values(1:p_ni,j,k)
+!!$               ik=ij+(k-1)*p_ni
+!!$               geofld(ik:ik+p_ni-1) = vd%values(1:p_ni,j,k)
+               ik=vd%findx+(k-1)*p_ni
+               BUSENT_3d(ik:ik+p_ni-1,j) = vd%values(1:p_ni,j,k)
             Enddo
          Enddo
       Endif
@@ -428,7 +443,7 @@ If (Ptopo_myproc==0) Then
       poam = 1. - poa
 
       vd%datev=-1
-      Write(*,*)'    Interpolate ',vd%nomvar,' between months',moa,month
+      Write(*,'(a,2i3,a,f)')'    Interpolate '//vd%nomvar//' between months',moa,month,' w=',poa
 
       vd%ip2=moa
       key2 = Locate_ip1()
@@ -518,10 +533,20 @@ If (Ptopo_myproc==0) Then
    ier = fstopc('MSGLVL','INFORM',0)
    ier = fstopc('TOLRNC','INFORM',0)
    ier = fstluk( field, keys(tip,1), idim(tip)%ni,idim(tip)%nj,idim(tip)%nk)
+!!$   call statfld3(field,vd%nomvar,0,'geti', &
+!!$        1,size(field,1),1,size(field,2),1,1, &
+!!$        1,1,1,size(field,1),size(field,2),1,8)
+
    If ( keys(tip,2)>0) Then
       Allocate(field2(idim(tip)%ni,idim(tip)%nj))
       ier = fstluk( field2, keys(tip,2), idim(tip)%ni,idim(tip)%nj,idim(tip)%nk)
+!!$      call statfld3(field2,trim(vd%nomvar)//'2',0,'geti', &
+!!$           1,size(field2,1),1,size(field2,2),1,1, &
+!!$           1,1,1,size(field2,1),size(field2,2),1,8)
       field = poa*field + poam*field2
+!!$      call statfld3(field,trim(vd%nomvar)//'3',0,'geti', &
+!!$           1,size(field,1),1,size(field,2),1,1, &
+!!$           1,1,1,size(field,1),size(field,2),1,8)
       Deallocate(field2,Stat=ier)
    Endif
    If(.Not.Lun_debug_L)ier = fstopc('MSGLVL','SYSTEM',0)

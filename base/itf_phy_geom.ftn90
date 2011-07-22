@@ -13,31 +13,22 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r itf_phy_geom - 
-!
 #include "model_macros_f.h"
-!
-      subroutine itf_phy_geom (F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
-      implicit none
-!
-      character*(*) F_nomvar_S
-      integer n1,n2,F_indx, F_err
-      real F_dest(n1,n2)
-!
-!author
-!     Michel Desgagne    -   Spring 2011
-!
-!revision
-! v4_40 - Desgagne M.        - Initial version
-!
-!object
-!	See above ID.
-!	
-!arguments
-! F_dest
-!
-!implicits
-#include "gmm.hf"
+#include "msg.h"
+
+!/**
+subroutine itf_phy_geom(F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
+   implicit none
+   !@objective
+   !@arguments
+   character(len=*),intent(in) :: F_nomvar_S
+   integer,intent(in) :: n1,n2,F_indx
+   real,intent(inout) :: F_dest(n1,n2)
+   integer,intent(out) :: F_err
+   !@author Michel Desgagne    -   Spring 2011
+   !**/
+#include <rmnlib_basics.hf>
+#include <gmm.hf>
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
@@ -45,74 +36,81 @@
 #include "p_geof.cdk"
 #include "dcst.cdk"
 #include "itf_phy_buses.cdk"
-!
-      integer i,j
-      real, dimension(:,:), allocatable :: wrk1
-      real*8 one_8,clxxx_8,deg2rad_8
-      parameter( one_8   = 1.0, clxxx_8 = 180.0 )
-!
-!     ---------------------------------------------------------------
-!
-  F_err=-1
-  if (n2.ne.p_nj) return
 
-  allocate (wrk1(l_ni,l_nj))
-  deg2rad_8 = acos( -one_8 )/clxxx_8
+   real*8,parameter :: one_8 = 1.D0
+   real*8,parameter :: clxxx_8 = 180.D0
 
-  select case (trim(F_nomvar_S))
-
-  case ('DLAT')
-     wrk1=deg2rad_8*Geomn_latrx
-     do j= 1,p_nj
-        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
-     end do
-     F_err=0
-
-  case ('DLON')
-        Where(Geomn_lonrx>=0)
-           wrk1=deg2rad_8*Geomn_lonrx
-        Elsewhere
-           wrk1=deg2rad_8*(Geomn_lonrx+360.)
-        endwhere     
-     do j= 1,p_nj
-        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
-     end do
-     F_err=0
-
-  case ('MF')
-     gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-     if (gmmstat.eq.0) then
-     wrk1(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj) / Dcst_grav_8
-     do j= 1,p_nj
-        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
-     end do
-     F_err=0
-     endif
-
-  case ('DXDY')
-     do j=1,l_nj
-     do i=1,l_ni
-        wrk1(i,j)= geomg_hxu_8(i-1)*geomg_hyv_8(j-1)*     &
-                   Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(j)
-     end do
-     end do
-     do j= 1,p_nj
-        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
-     end do
-     F_err=0
-
-  case ('EPONMOD')
-     call itf_phy_vlsp (wrk1, l_ni, l_nj)
-     do j= 1,p_nj
-        call itf_phy_fold ( F_dest(F_indx,j) , wrk1, j, 1,1, 1,l_ni,1,l_nj )
-     end do
-     F_err=0
-
-  end select
-
-  deallocate (wrk1)
-!
-!     ---------------------------------------------------------------
-!
+   integer :: i,j,istat
+   real, allocatable :: wrk1(:,:)
+   real*8 :: deg2rad_8
+   type(gmm_metadata) :: mymeta
+   !---------------------------------------------------------------
+   F_err = RMN_ERR
+   if (n2 /= p_nj)  then
+      call msg(MSG_ERROR,'itf_phy_geom - inconsistent dimensions')
       return
-      end
+   endif
+
+   allocate(wrk1(l_ni,l_nj),stat=istat)
+   if (istat /= 0) return
+   deg2rad_8 = acos(-one_8)/clxxx_8
+
+   select case(trim(F_nomvar_S))
+
+   case('DLAT')
+      wrk1 = deg2rad_8*Geomn_latrx
+      do j = 1,p_nj
+         call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
+      end do
+      F_err = RMN_OK
+
+   case('DLON')
+      where(Geomn_lonrx >= 0)
+         wrk1 = deg2rad_8*Geomn_lonrx
+      elsewhere
+         wrk1 = deg2rad_8*(Geomn_lonrx+360.)
+      endwhere
+      do j = 1,p_nj
+         call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
+      end do
+      F_err = RMN_OK
+
+   case('MF')
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (RMN_IS_OK(istat)) then
+         wrk1(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj) / Dcst_grav_8
+         do j = 1,p_nj
+            call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
+         end do
+         F_err = RMN_OK
+      endif
+
+   case('DXDY')
+      do j = 1,l_nj
+         do i = 1,l_ni
+            wrk1(i,j) = geomg_hxu_8(i-1)*geomg_hyv_8(j-1)*     &
+                 Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(j)
+         end do
+      end do
+      do j = 1,p_nj
+         call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
+      end do
+      F_err = RMN_OK
+
+   case('EPONMOD')
+      call itf_phy_vlsp(wrk1, l_ni, l_nj)
+      do j = 1,p_nj
+         call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
+      end do
+      F_err = RMN_OK
+
+   end select
+
+   if (RMN_IS_OK(F_err)) then
+      print '(a,i3,x,a4,a,a10,a,i6,a,1pe14.6,1pe14.6)','(itf_phy_geom)',1,' ',' => ',trim(F_nomvar_S),' : ',F_indx,'P',minval(wrk1),maxval(wrk1)
+   endif
+
+   deallocate(wrk1,stat=istat)
+   !---------------------------------------------------------------
+   return
+end subroutine itf_phy_geom
