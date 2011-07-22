@@ -393,6 +393,9 @@
  
 !$omp single 
 
+      F_rv(:,0   ,:) = 0.
+      F_rv(:,l_nj,:) = 0.
+
 !     ADJ 
 !     ---
       call rpn_comm_adj_halo( F_rvw2, LDIST_DIM, l_ni,l_nj,G_nk, &

@@ -174,25 +174,19 @@
          call out_outdir (istep, upperlimit)
 !
          if ( .not.identity_4dvar_L ) then
-!
-!C    Diffusion, Dynamics and Physics
-!     -------------------------------
-!        Dynamics timestep
-!        -----------------
-         call dynstep
-!
-         call pw_shuffle
-         call pw_update_UVT ('P')
-         call pw_update_GPW
-!
-         call out_dyn (.false., .true.)
-!
-!        Physics timestep & Horizontal diffusion & Vertical sponge
-!        ---------------------------------------------------------
-         call itf_phy_main (Lctl_step)
 
-         call hzd_main ()
-!
+            call dynstep
+
+            call pw_shuffle
+            call pw_update_UVT ('P')
+            call pw_update_GPW
+
+            call out_dyn (.false., .true.)
+
+            if ( Schm_phyms_L ) call itf_phy_main (Lctl_step)
+
+            call hzd_main
+
          endif
 !
 !C    Digital filter

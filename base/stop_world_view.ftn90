@@ -52,6 +52,7 @@
 #include "path.cdk"
 #include "lctl.cdk"
 #include "version.cdk"
+#include <clib_interface.cdk>
 !
 !modules
       integer exfin, longueur
@@ -80,6 +81,8 @@
       call itf_cpl_terminate (Lun_out.gt.0)
 !
       call out_launchpost (.true.)
+!
+      if (.not. F_continue_L) err = clib_remove('restart')
 !
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')

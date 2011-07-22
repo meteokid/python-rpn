@@ -39,7 +39,6 @@
 !
 !implicits
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
 #include "dimout.cdk"
@@ -59,11 +58,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( .not. Schm_phyms_L ) then
-         call dummy_diag ()
-         return
-      endif
-
       call tmg_start0( 9, 'PHY      ' )
 
       if (F_stepno.eq.1) then

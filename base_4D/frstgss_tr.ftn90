@@ -63,9 +63,11 @@
       istat = gmm_get(tr_name,tr0_m,mymeta)
       tr_name = 'TRM/HU:P'
       istat = gmm_get(tr_name,tr1_m,mymeta)
+      do k= 1 , l_nk+2
       do j= 1 , l_nj
       do i= 1 , l_ni
-         tr0_m (i,j,l_nk+2) = tr1_m (i,j,l_nk+2)
+         tr0_m (i,j,k) = tr1_m (i,j,k)
+      enddo
       enddo
       enddo
 

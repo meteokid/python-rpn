@@ -36,6 +36,7 @@
 #include "grd.cdk"
 #include "cstv.cdk"
 #include "init.cdk"
+#include "schm.cdk"
 #include "rstr.cdk"
 #include "modconst.cdk"
 #include "clim.cdk"
@@ -53,6 +54,8 @@
       type(gmm_metadata) :: meta_busper
 !
 !     ---------------------------------------------------------------
+!
+      if ( .not. Schm_phyms_L ) return
 !
       unf = 0
 !
