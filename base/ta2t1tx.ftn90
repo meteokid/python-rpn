@@ -19,6 +19,7 @@
 !
       subroutine ta2t1tx
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Alain Patoine - april 94

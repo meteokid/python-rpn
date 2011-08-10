@@ -20,6 +20,7 @@
       subroutine acid_stat_adw_main_2_pos (F_xth,F_xcth,F_wrkx1, &
            F_i0,F_in,F_j0,F_jn,F_nk,F_flag)
       implicit none
+#include <arch_specific.hf>
       real F_xth(LDIST_SHAPE,F_nk),F_xcth(LDIST_SHAPE,F_nk), &
            F_wrkx1(G_ni*G_nj*F_nk)
       integer F_i0,F_in,F_j0,F_jn,F_flag,F_nk

@@ -18,6 +18,7 @@
                                             Yi,x,y,h1,h2) 
 
        implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri - October 2009

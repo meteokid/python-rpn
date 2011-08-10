@@ -20,6 +20,7 @@
       subroutine zongoff()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author - andre methot - aug 94 - v0_14
 !

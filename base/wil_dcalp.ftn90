@@ -21,6 +21,7 @@
                            ALP,DALP,MAXH,NALPH)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER MMH,NNH,KKH,MAXH,NALPH
       INTEGER LROW(0:MAXH,2), LDIAG(0:MAXH,2)

@@ -21,6 +21,7 @@ subroutine adx_exch_1b_ad (F_x_out  ,F_y_out ,F_z_out,          &
                            F_c_out_m,F_y_in_m,                  &
                            F_ni,F_nj,F_nk,adx_for_n,adx_for_s,adx_fro_n,adx_fro_s)
    implicit none
+#include <arch_specific.hf>
 
    !@objective ADJ of adx_exch_1b_tl 
 

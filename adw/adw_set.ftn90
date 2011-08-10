@@ -20,6 +20,7 @@
 !
       subroutine adw_set
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     alain patoine

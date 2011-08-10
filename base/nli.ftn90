@@ -20,6 +20,7 @@
       subroutine nli()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !authors
 !      Alain Patoine & Gabriel Lemay

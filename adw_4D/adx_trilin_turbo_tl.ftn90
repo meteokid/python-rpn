@@ -29,6 +29,7 @@ subroutine adx_trilin_turbo4_tl (F_out   , F_in    ,                      &
                                  F_num,i0,in,j0,jn,k0,kn,F_nkm)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of adx_trilin_turbo 
 !

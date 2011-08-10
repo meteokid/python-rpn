@@ -21,6 +21,7 @@
       subroutine adw_main_3_intlag(F_pxm, F_pym, F_pzm, &
            F_pxt, F_pyt,  F_pzt, F_isStatStep_L)
       implicit none
+#include <arch_specific.hf>
       real F_pxm(*), F_pym(*), F_pzm(*)
       real F_pxt(*), F_pyt(*), F_pzt(*)
       logical F_isStatStep_L
@@ -238,6 +239,7 @@
       subroutine adw_main_3_prep(pos_x, pos_y, pos_z,  &
            i0, in, j0, jn, F_nijk, F_nk, F_type_S, F_isStatStep_L)
       implicit none
+#include <arch_specific.hf>
       !@objective
       !@arguments
       logical :: F_isStatStep_L
@@ -351,6 +353,7 @@
 !/**
       subroutine adw_main_3_post()
       implicit none
+#include <arch_specific.hf>
       !@objective
 #include "glb_ld.cdk"
 !      logical G_lam

@@ -18,6 +18,8 @@
 #include "model_macros_f.h"
 !
       subroutine wil_gem_init
+      implicit none
+#include <arch_specific.hf>      
       stop 'wil_gem_init'
       return
       end

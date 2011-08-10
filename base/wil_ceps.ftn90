@@ -20,6 +20,7 @@
       SUBROUTINE WIL_CEPS(CMN,DMN,EMN,EPSIL,LROW,LDIAG)
 !
       implicit none
+#include <arch_specific.hf>
 !
 !implicits
 #include "wil_glb_ld.cdk"

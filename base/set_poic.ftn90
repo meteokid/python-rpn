@@ -21,6 +21,7 @@
                                                       F_npts, NSTOR )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_npts, NSTOR
       real*8  F_eval_8(NSTOR), F_evec_8(NSTOR,NSTOR)

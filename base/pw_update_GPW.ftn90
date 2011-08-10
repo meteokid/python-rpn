@@ -19,6 +19,7 @@
 !
       subroutine pw_update_GPW
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne - May 2010

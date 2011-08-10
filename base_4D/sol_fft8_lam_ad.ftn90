@@ -26,6 +26,7 @@
                              fdg2,fdwfft)
 !
       implicit none
+#include <arch_specific.hf>
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"

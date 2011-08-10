@@ -17,6 +17,7 @@
 #include <model_macros_f.h>
       subroutine gemgrid
       implicit none
+#include <arch_specific.hf>
 !
 !author V.Lee - Nov. 24, 2008
 !

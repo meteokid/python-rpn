@@ -21,6 +21,7 @@
       subroutine write_3df ( fa,lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
                              nomvar,gid, gif, gjd, gjf,con,ind_o,unf )
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar
       integer lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &

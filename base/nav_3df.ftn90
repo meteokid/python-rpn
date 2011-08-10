@@ -19,6 +19,7 @@
 !
       integer function nav_3df (unf,ext,mf)
       implicit none
+#include <arch_specific.hf>
 !
       integer unf
       real ext

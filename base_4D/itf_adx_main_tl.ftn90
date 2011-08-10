@@ -18,6 +18,7 @@
 !/**
 subroutine itf_adx_main_tl (F_nb_iter)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of itf_adx_main
 !

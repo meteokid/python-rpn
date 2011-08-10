@@ -18,6 +18,7 @@
       logical function check_parti (F_si,F_n,F_npe)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_si,F_n,F_npe
 !

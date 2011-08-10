@@ -21,6 +21,7 @@
       subroutine set_oprz
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - initial MPI version (from setoprz v1_03)

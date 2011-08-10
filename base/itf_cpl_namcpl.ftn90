@@ -16,6 +16,7 @@
       subroutine itf_cpl_namcpl (F_ocename_S,F_filename,F_write_S, &
                                  F_read_S,F_nw,F_nr,n,errc)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_nw,F_nr,n,errc
       character*(*) F_ocename_S,F_filename,F_write_S(n),F_read_S(n)

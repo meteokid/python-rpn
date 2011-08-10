@@ -20,6 +20,7 @@
 !
       subroutine uvs2psd2 (F_psd, F_uu, F_vv, F_tt, F_s, DIST_DIM, Nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real    F_psd(DIST_SHAPE,Nk+1), F_s (DIST_SHAPE), &

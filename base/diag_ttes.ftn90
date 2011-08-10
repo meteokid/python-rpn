@@ -19,6 +19,7 @@
 !
       subroutine diag_ttes (tt,es,ni,nj,ki)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj,ki
       real tt(ni,nj),es(ni,nj)

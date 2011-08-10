@@ -20,6 +20,7 @@
       subroutine bac_tr( Itr, Itnlh )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Itr, Itnlh
 !

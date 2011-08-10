@@ -20,6 +20,7 @@
 !
       integer function gemdm_config ( )
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne    - Summer 2006
@@ -252,6 +253,7 @@
 !
       integer function parse_grdc (F_string_s,F_timestep)
       implicit none
+#include <arch_specific.hf>
       character*(*) F_string_s
       integer F_timestep
 

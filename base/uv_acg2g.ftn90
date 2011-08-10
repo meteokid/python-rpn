@@ -21,6 +21,7 @@
       subroutine uv_acg2g (F_dst,F_src,F_gridi,F_grido,DIST_DIM,  &
                                         Nk, F_i0,F_in,F_j0,F_jn)
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,Nk,F_i0,F_in,F_j0,F_jn
       integer F_gridi, F_grido

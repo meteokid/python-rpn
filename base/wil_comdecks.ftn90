@@ -20,6 +20,7 @@
       subroutine wil_comdecks (G_ni,G_nj,Lun_out,Dcst_grav_8,Dcst_rayt_8,Dcst_pi_8,Dcst_omega_8)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer G_ni,G_nj,Lun_out
 !

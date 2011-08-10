@@ -20,6 +20,7 @@
       subroutine pospers_ad
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

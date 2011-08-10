@@ -19,6 +19,7 @@
 !
       subroutine acid_stat_adw_main_3_intlag (F_ruw1,F_ruw2,F_rvw2,F_flag)
       implicit none
+#include <arch_specific.hf>
       real    F_ruw1(LDIST_SHAPE,G_nk),F_ruw2(LDIST_SHAPE,G_nk), &
            F_rvw2(LDIST_SHAPE,G_nk)     
       integer F_flag

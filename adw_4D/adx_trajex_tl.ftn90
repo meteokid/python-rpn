@@ -23,6 +23,7 @@ subroutine adx_trajex2_tl (F_xto   ,F_yto   ,F_xcto  , F_ycto  , &
                            i0,in,j0,jn,k0)
 
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of adx_trajex 
 !

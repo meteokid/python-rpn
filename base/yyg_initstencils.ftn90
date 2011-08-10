@@ -19,6 +19,7 @@
       subroutine yyg_initstencils
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     A. Qaddouri - initial MPI Yin-Yang version

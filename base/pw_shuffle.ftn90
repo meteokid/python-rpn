@@ -18,6 +18,7 @@
 !
       subroutine pw_shuffle
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne - May 2010

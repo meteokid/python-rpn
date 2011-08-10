@@ -19,6 +19,7 @@
 !
       subroutine acid_3df_dynp (dimgx,dimgy,unf)
       implicit none
+#include <arch_specific.hf>
 !
       integer dimgx,dimgy,unf
 !

@@ -20,6 +20,7 @@
       subroutine out_dyn ( F_reg_out, F_casc_L )
       use out_vref_mod, only: out_vref
       implicit none
+#include <arch_specific.hf>
 !
       logical F_reg_out, F_casc_L
 !

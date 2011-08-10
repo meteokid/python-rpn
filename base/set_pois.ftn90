@@ -23,6 +23,7 @@
       subroutine set_pois ( F_eval_8,F_levec_8,F_evec_8,F_npts,F_dim )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_npts, F_dim
       real*8  F_eval_8(*), F_evec_8(*),F_levec_8(*)

@@ -20,6 +20,7 @@
       subroutine v4d_cainin_ad (Ndim,F_px)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Ndim
       real F_px(Ndim)

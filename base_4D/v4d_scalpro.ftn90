@@ -20,6 +20,7 @@
       subroutine v4d_scalpro (Ndim,F_px,F_py,F_psc_8)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Ndim
       real F_px(Ndim), F_py(Ndim)

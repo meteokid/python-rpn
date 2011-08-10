@@ -19,6 +19,7 @@
 !
       integer function bin2com ()
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     michel desgagne -  Jan 2000

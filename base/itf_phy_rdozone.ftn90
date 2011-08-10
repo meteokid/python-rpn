@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_rdozone (F_fichier_S, F_chemin_S)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_fichier_S, F_chemin_S
 !

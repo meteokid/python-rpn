@@ -19,6 +19,7 @@
 !
       subroutine e_specanal
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !    Michel Desgagne - RPN - May 2002 - new entry program  v3_00

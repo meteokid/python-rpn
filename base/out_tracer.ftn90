@@ -20,6 +20,7 @@
       subroutine out_tracer (F_wlnph_ta,DIST_DIM,F_nk,levset,set)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_nk,DIST_DIM,levset,set
       real F_wlnph_ta(DIST_SHAPE,F_nk+2)

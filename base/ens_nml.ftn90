@@ -21,6 +21,7 @@
       (F_namelist_S,F_Grdtyp_S,F_ens_conf_L,F_stochphy_L,F_imrkv2,&
        F_ens_ptp_env_u, F_ens_ptp_env_b,F_ens_ptp_env_hor_f, F_unout) 
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_namelist_S,F_Grdtyp_S
       logical F_ens_conf_L,F_stochphy_L

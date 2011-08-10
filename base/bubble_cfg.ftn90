@@ -19,6 +19,7 @@
 !
       subroutine bubble_cfg ( pass_L )
       implicit none
+#include <arch_specific.hf>
 !
       logical pass_L
 !

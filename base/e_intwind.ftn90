@@ -19,6 +19,7 @@
 !
       subroutine e_intwind 
       implicit none
+#include <arch_specific.hf>
 !
 !author       M ROCH     - july 95 - from intvent
 !

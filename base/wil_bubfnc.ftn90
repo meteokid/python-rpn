@@ -17,7 +17,8 @@
 !
       REAL FUNCTION WIL_BUBFNC(RLAT) 
 !
-      implicit none 
+      implicit none
+#include <arch_specific.hf> 
 !
       REAL RLAT
 !

@@ -19,6 +19,7 @@
 !
       subroutine blocstat (F_forceit_L)
       implicit none
+#include <arch_specific.hf>
 !
       logical F_forceit_L
 !
@@ -127,6 +128,7 @@
 !
       subroutine set_statliste
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne  	- fall 2009

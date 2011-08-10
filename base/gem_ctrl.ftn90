@@ -20,6 +20,7 @@
       subroutine gem_ctrl
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Roch - rpn - june 1993

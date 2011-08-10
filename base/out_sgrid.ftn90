@@ -22,6 +22,7 @@
                              F_etikadd_S)
 
       implicit none
+#include <arch_specific.hf>
 !
       integer F_x0, F_x1,F_y0,F_y1,F_stride,NI,NJ,F_ig1,F_ig2
       logical F_periodx_L

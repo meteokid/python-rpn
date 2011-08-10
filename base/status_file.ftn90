@@ -18,6 +18,7 @@
 !
       subroutine open_status_file2 (fn)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) fn
 !
@@ -33,6 +34,7 @@
 !
       subroutine write_status_file2 (mesg)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) mesg
 !
@@ -51,6 +53,7 @@
 !
       subroutine close_status_file2 ()
       implicit none
+#include <arch_specific.hf>
 !
       integer iun
       common /stfile/ iun

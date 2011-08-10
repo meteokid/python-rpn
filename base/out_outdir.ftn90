@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine out_outdir (current_step, upperlimit)
       implicit none
+#include <arch_specific.hf>
 !
       integer current_step,upperlimit
 !

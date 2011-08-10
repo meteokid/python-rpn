@@ -23,6 +23,7 @@
 !
 subroutine nest_init_weight(F_grid)
   implicit none
+#include <arch_specific.hf>
 
   ! Arguments
   character(len=*), intent(in) :: F_grid        !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)

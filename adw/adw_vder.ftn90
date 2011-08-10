@@ -20,6 +20,7 @@
 !
       subroutine adw_vder (F_inzz, F_in, F_nit, F_njt, F_nk, F_lev_S)
       implicit none
+#include <arch_specific.hf>
 !
       character*1 F_lev_S
 !

@@ -18,6 +18,7 @@
       FUNCTION WIL_D01AHE (A,B,EPSIL,NPTS,RELERR,F,NLIMIT,IER)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real WIL_D01AHE,A,B,EPSIL,RELERR
       integer NPTS,NLIMIT,IER

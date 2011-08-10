@@ -23,6 +23,7 @@
                               F_capy, F_ygg, F_ydd, &
                               F_capz, F_cz, F_num, F_mono_L,i0,in,j0,jn,kn )
       implicit none
+#include <arch_specific.hf>
 !
       logical F_mono_L
 !

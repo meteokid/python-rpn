@@ -17,7 +17,8 @@
 !
       subroutine fgmres (n,im,rhs,sol,i,vv,w,wk1, wk2,eps,maxits, &
                                                       iout,icode) 
-      implicit none 
+      implicit none
+#include <arch_specific.hf> 
 
       integer n, im, i, maxits, iout, icode 
       real*8 rhs(*), sol(*), vv(n,im+1),w(n,im), wk1(n), wk2(n), eps

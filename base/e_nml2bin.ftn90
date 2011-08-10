@@ -20,6 +20,7 @@
       subroutine e_nml2bin
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer l_ni, l_nj
       parameter (l_ni=1, l_nj=1)

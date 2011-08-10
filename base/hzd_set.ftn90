@@ -19,6 +19,7 @@
 !
       subroutine hzd_set
       implicit none
+#include <arch_specific.hf>
 !
 !author    
 !     J.P. Toviessi - CMC - Jan 1999

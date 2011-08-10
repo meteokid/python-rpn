@@ -20,6 +20,7 @@
       function wil_galewski_wind_8 (evaluated_at_lat_8,kind)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer kind
       real*8 wil_galewski_wind_8,evaluated_at_lat_8

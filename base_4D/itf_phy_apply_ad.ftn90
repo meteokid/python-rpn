@@ -20,6 +20,7 @@
       subroutine itf_phy_apply_ad ( F_apply_L )
       use nest_blending_ad, only: nest_blend_ad
       implicit none
+#include <arch_specific.hf>
 !
       logical,intent(IN) :: F_apply_L
   !

@@ -20,6 +20,7 @@
 !
       subroutine set_prec
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Abdessamad Qaddouri  - initial version _ Decembre 2006 

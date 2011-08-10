@@ -17,6 +17,7 @@
 !/**
 subroutine itf_adw_set()
    implicit none
+#include <arch_specific.hf>
    !@objective Sets different advection parameters
    !@author Stephane Chamberland, Apr 2010
 !**/

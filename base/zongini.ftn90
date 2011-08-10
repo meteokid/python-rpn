@@ -19,6 +19,7 @@
 !
       subroutine zongini
       implicit none
+#include <arch_specific.hf>
 !
 !author andre methot - cmc - aug 1994 - v0_14
 !

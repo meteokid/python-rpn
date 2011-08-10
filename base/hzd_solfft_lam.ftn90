@@ -24,6 +24,7 @@
                    F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  minx1, maxx1, minx2, maxx2 , nx1, nx2, nx3, F_pwr, &
                minx , maxx , miny , maxy  , gnk, Gni, &

@@ -22,6 +22,7 @@
       use v4d_prof, only: Pr_doobs, Pr_nevent 
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

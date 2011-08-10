@@ -20,6 +20,7 @@
       subroutine set_sor()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     J. Caveen - rpn - august 1994 - v0_16

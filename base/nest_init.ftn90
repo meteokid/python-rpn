@@ -18,6 +18,7 @@
 !
       subroutine nest_init ()
       implicit none
+#include <arch_specific.hf>
 !
 !author   M. Desgagne - April 2002
 !

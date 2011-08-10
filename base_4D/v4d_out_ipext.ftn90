@@ -18,6 +18,7 @@
       subroutine v4d_out_ipext (F_ip3, F_ext_S, F_etikadd_S)
       use v4d_prof, only: Pr_nsim4d
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_ext_S, F_etikadd_S
       integer F_ip3

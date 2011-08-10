@@ -19,6 +19,7 @@
 !
       integer function ptopo_nml (F_namelistf_S)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_namelistf_S
 !

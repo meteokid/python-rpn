@@ -21,6 +21,7 @@
       subroutine ecris_fst2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul, &
                                  add,kind,nkfa,ind_o,nk_o,nbit)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,ind_o(*),nk_o,kind

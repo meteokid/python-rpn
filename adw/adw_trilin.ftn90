@@ -21,6 +21,7 @@
                               F_capx, F_capy, F_capz, F_num,i0,in,j0,jn,kn)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_num, F_n(F_num),i0,in,j0,jn,kn
 !

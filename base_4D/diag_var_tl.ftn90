@@ -22,6 +22,7 @@
                               i0,in,j0,jn,k0,nk)
 !     
       implicit none
+#include <arch_specific.hf>
 !     
       integer k0,nk
       real F_BsPq(LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)

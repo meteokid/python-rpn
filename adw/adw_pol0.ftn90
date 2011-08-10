@@ -19,6 +19,7 @@
       subroutine adw_pol0 ( F_field, F_j, F_nic, F_halox, &
                             F_njc, F_haloy, F_nk )
       implicit none
+#include <arch_specific.hf>
 !
       integer  F_j, F_nic, F_halox, F_njc, F_haloy, F_nk
 !

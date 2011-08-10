@@ -22,6 +22,7 @@
       Use itf_phy_iface  , Only : itf_phy_geti, itf_phy_inincr
       Use phy_input_iface, Only : phy_acquire_data
       implicit none
+#include <arch_specific.hf>
 !
       integer, INTENT(IN) :: F_stepno
 Interface

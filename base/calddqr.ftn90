@@ -22,6 +22,7 @@
                           F_dpdy , F_dudp, F_dvdp, F_wrk, DIST_DIM, Nk)
 
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real F_diver(DIST_SHAPE, Nk), F_relv(DIST_SHAPE, Nk)

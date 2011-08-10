@@ -21,6 +21,7 @@
       subroutine itf_phy_uvgridscal_ad (F_put,F_pvt,DIST_DIM,nkphy,vers)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,nkphy
       real F_put (DIST_SHAPE,nkphy), F_pvt (DIST_SHAPE,nkphy)

@@ -18,6 +18,7 @@
 !     
       subroutine acid_rewritepos (xpx,dimgx,ac_xp,ni,ypx,dimgy,ac_yp,nj)
       implicit none
+#include <arch_specific.hf>
 !     
       logical prout
       integer dimgx,dimgy,ni,nj

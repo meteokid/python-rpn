@@ -19,6 +19,7 @@
 
 subroutine itf_adx_get_winds_tr()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'itf_adx_get_winds_tr','called a stub')
    !---------------------------------------------------------------------
@@ -28,6 +29,7 @@ end subroutine itf_adx_get_winds_tr
 !/**
 subroutine itf_adx_get_winds2_tr(F_su,F_sv,F_sw,F_minx,F_maxx,F_miny,F_maxy,F_nk)
    implicit none
+#include <arch_specific.hf>
    !@objective Equivalent to itf_adx_get_winds for TRAJECTORY 
    !@arguments
    integer :: F_minx,F_maxx,F_miny,F_maxy,F_nk

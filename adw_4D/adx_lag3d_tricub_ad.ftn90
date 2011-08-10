@@ -25,6 +25,7 @@ subroutine adx_lag3d_tricub_ad (F_out  , F_in  , F_x  , F_y  , F_z  , &
                                 F_num, F_num_in, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective ADJ of adx_lag3d_tricub_tl
 !

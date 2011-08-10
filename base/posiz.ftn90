@@ -18,6 +18,7 @@
 !
       subroutine posiz3 (p,h,href,hint,ktop,kbot,ng,nk,nkref)
       implicit none
+#include <arch_specific.hf>
 !
       integer ng,nk,nkref
       real p(ng,nk,2),href(ng,nkref),hint(ng,nk), &

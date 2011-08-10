@@ -17,6 +17,7 @@
 !
       subroutine vterp1 (F_x, F_fx, F_f, F_g, F_y, F_acc, np, nn)
       implicit none
+#include <arch_specific.hf>
 !
       integer nn,np
       real    F_x(np), F_fx(np), F_f(np,nn), F_g(np,nn), F_y(nn), F_acc

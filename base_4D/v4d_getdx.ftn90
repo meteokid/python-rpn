@@ -24,6 +24,7 @@
       use v4dz,     only: V4dzgauss_ni,V4dzgauss_nj,V4dzgauss_nk
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer, intent(inout):: kstatus
 !
@@ -505,6 +506,7 @@
       subroutine v4d_getfld(cdvar,kstatus)
 !
       implicit none
+#include <arch_specific.hf>
 !
       character*2, intent(in):: cdvar
       integer, intent(inout) :: kstatus

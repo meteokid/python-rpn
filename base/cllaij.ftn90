@@ -20,6 +20,7 @@
       subroutine cllaij (F_x,F_y,F_nstat,ni,nj)
 !
       implicit none
+#include <arch_specific.hf>
       integer ni,nj,F_nstat
       real F_x(ni,nj),F_y(ni,nj)
 !

@@ -19,6 +19,7 @@
                   F_xnor_8, F_ordr_8, F_case, F_i0, F_ni, NIS )
 !
       implicit none
+#include <arch_specific.hf>
 !
       character*1 F_case
       integer F_ni, F_i0, NIS

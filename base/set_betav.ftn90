@@ -18,6 +18,7 @@
       subroutine set_betav(betav_m,betav_t,F_s, DIST_DIM, Nk)
 
       implicit none
+#include <arch_specific.hf>
 
       integer  DIST_DIM, Nk
 

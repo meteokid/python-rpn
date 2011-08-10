@@ -34,6 +34,8 @@ Module harmonsphere
   ! Lubos Spacek <Lubos.Spacek@ec.gc.ca>
 
   Implicit None
+#include <arch_specific.hf>
+
 
   ! everything private to module, unless otherwise specified.
 

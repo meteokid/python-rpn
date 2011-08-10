@@ -21,6 +21,7 @@
 !
       subroutine adw_ckbd ( F_y )
       implicit none
+#include <arch_specific.hf>
 !
       real    F_y ( * )
 !

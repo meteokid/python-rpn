@@ -20,6 +20,7 @@
       subroutine v4d_zeropilot (Ndim,F)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Ndim
       real F(Ndim)

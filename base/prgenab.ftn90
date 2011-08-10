@@ -20,6 +20,7 @@
 !
       subroutine prgenab ()
       implicit none
+#include <arch_specific.hf>
 !
 ! author 
 !     Lee V - December 2007

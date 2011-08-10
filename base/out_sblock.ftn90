@@ -24,6 +24,7 @@
                  F_endstepno, F_flipit_L, F_debug_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       character*12 F_etik_S
       character*16 F_runstrt_S

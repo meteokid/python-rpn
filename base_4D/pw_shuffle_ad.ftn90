@@ -18,6 +18,7 @@
 !
       subroutine pw_shuffle_ad(istep)
       implicit none
+#include <arch_specific.hf>
       integer istep
 !
 !author

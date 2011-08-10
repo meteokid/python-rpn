@@ -19,6 +19,7 @@
       subroutine adj_ss2uv(F_ssq0,NI,NJ,F_ssu0,NIU,NJU,F_ssv0,NIV,NJV, &
                            vcoord)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj,niu,nju,niv,njv,vcoord
       real F_ssq0(ni,nj),F_ssu0(niu,nju),F_ssv0(niv,njv)

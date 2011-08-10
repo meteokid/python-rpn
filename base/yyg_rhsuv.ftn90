@@ -19,6 +19,7 @@
 !
       subroutine yyg_rhsuv ( F_oru, F_orv, DIST_DIM, Nk )
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real F_oru (DIST_SHAPE,  Nk), F_orv (DIST_SHAPE,  Nk)

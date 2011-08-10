@@ -19,6 +19,7 @@
       Subroutine yyg_rhs_scalbc(rhs_dst1,sol_src1,minx,maxx,miny,maxy, &
                                 NK,iter,Linfini)
       implicit none
+#include <arch_specific.hf>
 
 !
 !author

@@ -18,6 +18,7 @@
       REAL FUNCTION WIL_EPSLON (X)
 !
       implicit none
+#include <arch_specific.hf>
 !
       REAL X                      
 !

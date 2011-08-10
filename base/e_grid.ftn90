@@ -18,6 +18,7 @@
 !
       subroutine e_grid 
       implicit none
+#include <arch_specific.hf>
 !
 !author  unknown
 !

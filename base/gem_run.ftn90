@@ -20,6 +20,7 @@
       subroutine gem_run (F_dgtflt_L, F_rstrt_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical F_dgtflt_L, F_rstrt_L
 !

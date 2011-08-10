@@ -19,6 +19,7 @@
       subroutine casc_phy_interp ( src,xpxext,ypxext,xpaq,ypaq,phynm,&
                                               nis,njs,nks,nfphy,hint )
       implicit none
+#include <arch_specific.hf>
 !
       character(len=*):: hint, phynm(nfphy)
       integer nis,njs,nfphy,nks(nfphy)

@@ -19,6 +19,7 @@
                              F_fielde, F_maske, F_max, F_ni, F_nj)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ni, F_nj
       real    F_max

@@ -18,6 +18,7 @@
 !TODO: remove from RCS
 subroutine adx_pols()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_pols','called a stub')
    !---------------------------------------------------------------------
@@ -26,6 +27,7 @@ end subroutine adx_pols
 
 subroutine adx_pols2()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_pols','called a stub')
    !---------------------------------------------------------------------

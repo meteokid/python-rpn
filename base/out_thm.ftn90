@@ -20,6 +20,7 @@
       subroutine out_thm( wlnph_m,wlnph_ta, F_st1, DIST_DIM,nk,levset,set)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer nk,DIST_DIM,levset,set
 

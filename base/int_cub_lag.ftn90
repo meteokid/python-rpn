@@ -18,6 +18,7 @@
        Subroutine int_cub_lag(FF,F,Imx,Imy,DIST_DIM,Xi,Yi) 
 
        implicit none
+#include <arch_specific.hf>
 !
 !author   
 !           Abdessamad Qaddouri - October 2009

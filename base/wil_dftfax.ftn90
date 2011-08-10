@@ -18,6 +18,7 @@
       SUBROUTINE WIL_DFTFAX(MAXH,NFC,LAMBDA,TRIGS)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER MAXH, NFC
       REAL LAMBDA

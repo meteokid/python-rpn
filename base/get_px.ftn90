@@ -20,6 +20,7 @@
 !
       integer function get_px(F_px, F_p0, NN, F_a_8, F_b_8, NK, F_vcode,F_logpx_L)
       implicit none
+#include <arch_specific.hf>
 !
       integer NN, NK, F_vcode
       logical F_logpx_L

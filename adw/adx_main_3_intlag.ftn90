@@ -21,6 +21,7 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
                                 F_fields_type_L, F_nfields, F_is_mom_L, &
                                 F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective Interpolation of rhs
 !

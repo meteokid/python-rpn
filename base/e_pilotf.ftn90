@@ -18,6 +18,7 @@
 !
       integer function e_pilotf (datev,nomvar,etk,typvar,ip1,ip2,ip3)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar,etk,typvar
       integer datev,ip1,ip2,ip3

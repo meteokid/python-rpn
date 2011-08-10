@@ -24,6 +24,7 @@
                                         NN, NMAX, NWORK )
 
       implicit none
+#include <arch_specific.hf>
 !author  Abdessamad Qaddouri - 2007
 !
 !revision

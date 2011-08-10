@@ -16,6 +16,7 @@
 
 subroutine adx_polw()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_polw','called a stub')
    !---------------------------------------------------------------------
@@ -24,6 +25,7 @@ end subroutine adx_polw
 
 subroutine adx_polw2()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_polw2','called a stub')
    !---------------------------------------------------------------------
@@ -33,6 +35,7 @@ end subroutine adx_polw2
 !/**
 subroutine adx_polw3(F_u, F_v, F_j, F_aminx,F_amaxx,F_aminy,F_amaxy, F_lni,F_lnj, F_halox,F_haloy, F_nk )
    implicit none
+#include <arch_specific.hf>
    !@objective calculate pole values for wind components
    !@arguments
    integer :: F_aminx,F_amaxx,F_aminy,F_amaxy !I, adw local array bounds

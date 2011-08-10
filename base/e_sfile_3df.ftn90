@@ -21,6 +21,7 @@
       subroutine e_sfile_3df (datev,msg,gid, gif, gjd, gjf, &
                                                    rootfn)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) datev, msg,rootfn
       integer  gid, gif, gjd, gjf

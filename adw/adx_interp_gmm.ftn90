@@ -20,6 +20,7 @@ subroutine adx_interp_gmm5 ( F_out_S, F_in_S, F_wind_L, &
                              F_capx2, F_capy2, F_capz2, &
                              F_c1, F_nk, i0,in,j0,jn,k0, F_lev_S)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective
 !

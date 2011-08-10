@@ -18,6 +18,7 @@
 module nest_blending
 
   implicit none
+#include <arch_specific.hf>
   private
   public :: nest_blend
 

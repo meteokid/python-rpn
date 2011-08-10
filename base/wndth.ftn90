@@ -20,6 +20,7 @@
       subroutine wndth
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Roch - rpn - oct 1993

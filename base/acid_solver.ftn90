@@ -19,6 +19,7 @@
 !
       subroutine acid_solver
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Desgagne  -  Fevrier 2010

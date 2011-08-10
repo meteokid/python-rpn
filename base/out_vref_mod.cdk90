@@ -16,7 +16,7 @@
 !*module out_vref_mod - output vertical coordinate tags
 !
 module out_vref_mod
-
+  implicit none
   private
 
   public :: out_vref
@@ -27,6 +27,7 @@ module out_vref_mod
   end interface
 
 #include "model_macros_f.h"
+#include <arch_specific.hf>
 
 contains
 

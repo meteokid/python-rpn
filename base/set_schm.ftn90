@@ -20,6 +20,7 @@
 !
       subroutine set_schm
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - V. Lee ( after version v1_03 of setschm )

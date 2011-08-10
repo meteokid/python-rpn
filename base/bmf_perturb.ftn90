@@ -17,6 +17,7 @@
 !
       subroutine bmf_perturb (varname,f,fni,fnj,fnk)
       implicit none
+#include <arch_specific.hf>
 !
       character*4 varname
       integer fni,fnj,fnk

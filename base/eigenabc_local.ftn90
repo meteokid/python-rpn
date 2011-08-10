@@ -21,6 +21,7 @@
       subroutine eigenabc_local ( eval_local, evec_local, ai_local, &
                        bi_local,ci_local,nil,njl,Ni,Nj,Nk,i0,j0,wk)
       implicit none
+#include <arch_specific.hf>
 !
       integer nil,njl,Ni,Nj,Nk,i0,j0
       real*8  eval_local(Ni),evec_local(Ni,Ni),ai_local(Ni,Nj,Nk), &

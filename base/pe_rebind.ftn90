@@ -17,6 +17,7 @@
 !
       subroutine pe_rebind (F_nthreads,F_prout)
       implicit none
+#include <arch_specific.hf>
 !
       logical F_prout
       integer F_nthreads

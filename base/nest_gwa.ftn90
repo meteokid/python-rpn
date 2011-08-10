@@ -20,6 +20,7 @@
       subroutine nest_gwa
       use nest_blending, only: nest_blend
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Desgagne   - Spring 2006

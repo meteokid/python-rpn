@@ -19,6 +19,7 @@
 !
       subroutine itf_cpl_getbus ( F_busper, F_busvol, F_jdo)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_jdo
       real F_busper(*), F_busvol(*)

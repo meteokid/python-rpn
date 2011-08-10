@@ -19,7 +19,8 @@
 !
       REAL FUNCTION WIL_US(RLATD) 
 !
-      implicit none 
+      implicit none
+#include <arch_specific.hf> 
 !
       REAL RLATD
 !

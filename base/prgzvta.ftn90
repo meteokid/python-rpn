@@ -25,6 +25,7 @@
                          DIST_DIM, F_Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical F_cubzt_L
       integer F_nundr, F_linbot

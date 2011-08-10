@@ -16,6 +16,7 @@
 !/**
 function adx_ckbd3(F_y,F_nfrom_n,F_nfrom_s) result(ier)
    implicit none
+#include <arch_specific.hf>
    !@objective check if upstream points from north and south 
    !                 pe's for which an interpolation is requested are 
    !                 inside own advection source grid

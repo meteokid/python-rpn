@@ -20,6 +20,7 @@
       subroutine theo_3D ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
                            F_q, F_dtopo, pref_tr, suff_tr)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) pref_tr,suff_tr
       real F_u(*), F_v(*), F_w (*), F_t(*), F_zd(*), &

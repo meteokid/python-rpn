@@ -20,6 +20,7 @@
       subroutine vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, DIST_DIM, Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk), &

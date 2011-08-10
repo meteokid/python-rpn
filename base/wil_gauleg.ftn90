@@ -18,6 +18,7 @@
       SUBROUTINE wil_gauleg (x1,x2,x,w,n)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER n
       REAL x1,x2,x(n),w(n)

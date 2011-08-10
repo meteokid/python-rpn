@@ -20,6 +20,7 @@
       subroutine zongopr(F_opr, F_val)
 !
       implicit none
+#include <arch_specific.hf>
 !
         integer F_opr, F_val
 !

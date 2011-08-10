@@ -19,7 +19,8 @@
 !
       SUBROUTINE WIL_GLATS(NLAT, EPS, F, WT)                                    
 !
-      implicit none 
+      implicit none
+#include <arch_specific.hf> 
 !
       INTEGER NLAT
       REAL EPS

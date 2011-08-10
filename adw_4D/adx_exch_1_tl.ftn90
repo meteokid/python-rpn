@@ -20,6 +20,7 @@ subroutine adx_exch_1b_tl (F_x_out  ,F_y_out  ,F_z_out  ,F_c_out  ,F_x_in  ,F_y_
                            F_x_out_m,F_y_out_m,F_z_out_m,F_c_out_m,F_x_in_m,F_y_in_m,F_z_in_m, &
                            F_ni,F_nj,F_nk)
    implicit none
+#include <arch_specific.hf>
 
    !@objective TLM of adx_exch_1b 
 

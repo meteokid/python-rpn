@@ -20,6 +20,7 @@
       subroutine wil_settings()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

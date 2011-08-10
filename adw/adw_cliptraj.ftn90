@@ -22,6 +22,7 @@
 !
       subroutine adw_cliptraj ( F_x_in,  F_y_in, i0, in, j0, jn, F_nk, mesg )
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) mesg
       integer i0, in, j0, jn, F_nk

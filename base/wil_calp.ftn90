@@ -20,6 +20,7 @@
       SUBROUTINE WIL_CALP(CMN,DMN,EMN,EPSIL,LROW,LDIAG,ALP,DALP)
 !
       implicit none
+#include <arch_specific.hf>
 !
 !implicits
 #include "wil_glb_ld.cdk"

@@ -21,6 +21,7 @@
       use v4dz, only: V4dz_degree,V4dzge_degree,V4dzga_degree 
 !
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_namelistf_S
 !

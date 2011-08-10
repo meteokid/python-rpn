@@ -22,6 +22,7 @@
                   typvar_S, anyip_L, fhint_L, interp_S, un1, stdo )
 !
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar_S,interp_S,etik_S,typvar_S
       logical anyip_L,fhint_L
@@ -200,6 +201,7 @@
       end
       subroutine e_rdhint_out(stdo,string_S,nomvar_S,ip1,ip2,ip3)
       implicit none
+#include <arch_specific.hf>
       character* (*) nomvar_S,string_S
       character*12 dumc_S
       character*256 pformat_S

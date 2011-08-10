@@ -20,6 +20,7 @@
       subroutine hzd_hoffld_ad (F, DIST_DIM, Nk, grid) 
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk, grid 
 !

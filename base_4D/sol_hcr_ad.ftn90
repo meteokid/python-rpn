@@ -21,6 +21,7 @@
                              iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk
       real*8 F_sol_8 (Minx:Maxx,Miny:Maxy,Nk), &

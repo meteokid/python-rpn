@@ -20,6 +20,7 @@
       REAL FUNCTION WIL_FU(RLATD) 
 !
       implicit none
+#include <arch_specific.hf>
 !
       REAL RLATD
 !

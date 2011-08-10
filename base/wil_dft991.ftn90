@@ -18,6 +18,7 @@
       SUBROUTINE WIL_DFT991(X,TRIGS,MAXH,NFC,SUM)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER MAXH, NFC
       COMPLEX X(MAXH+1)

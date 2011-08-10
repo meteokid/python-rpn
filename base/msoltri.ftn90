@@ -22,6 +22,7 @@
                             NIDIST, NJDIST, NI, NJ )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer NIDIST, NJDIST, NI, NJ
       real    F_r(NIDIST,NI), F_rhs(NIDIST,NI)

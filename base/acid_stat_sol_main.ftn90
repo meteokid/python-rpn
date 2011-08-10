@@ -20,6 +20,7 @@
       subroutine acid_stat_sol_main(F_rhsp,F_fiptx,F_flag)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_rhsp(LDIST_SHAPE,G_nk),F_fiptx(LDIST_SHAPE,0:G_nk+1)
 !

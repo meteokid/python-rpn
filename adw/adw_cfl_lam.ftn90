@@ -21,6 +21,7 @@
       subroutine adw_cfl_lam ( F_x_in, F_y_in, F_z_in,  &
                                i0, in, j0, jn, F_nk, F_lev_S )
       implicit none
+#include <arch_specific.hf>
 !
       character*1 F_lev_S
       integer i0, in, j0, jn, F_nk

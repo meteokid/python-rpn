@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine multicl_dom (ncol,mycol)         
       implicit none
+#include <arch_specific.hf>
 !
       integer ncol,mycol
 !

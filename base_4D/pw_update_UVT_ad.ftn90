@@ -19,6 +19,7 @@
 !
 subroutine pw_update_UVT_ad (pom)
   implicit none
+#include <arch_specific.hf>
   !
   character*1 pom
   !

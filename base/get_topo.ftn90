@@ -19,6 +19,7 @@
 !
       subroutine get_topo ( F_topo, ni, nj )
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj
       real F_topo (ni,nj)

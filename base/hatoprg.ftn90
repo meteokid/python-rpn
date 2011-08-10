@@ -20,6 +20,7 @@
       subroutine hatoprg ( F_gg, F_ff, F_con, F_hz_8, ng, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer ng, Nk
       real F_gg(ng,Nk),F_ff(ng,Nk),F_con

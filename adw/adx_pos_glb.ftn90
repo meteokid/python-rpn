@@ -22,6 +22,7 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
      F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
      F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
    implicit none
+#include <arch_specific.hf>
    !@objective
    !@arguments
    logical :: F_has_u2_L           !I, .T. if F_u2 needs to be treated

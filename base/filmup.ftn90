@@ -19,6 +19,7 @@
 !
       subroutine filmup (nomvar,f,n1,n2,n3,n4,nk,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
       implicit none
+#include <arch_specific.hf>
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "ptopo.cdk"

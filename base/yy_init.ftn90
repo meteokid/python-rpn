@@ -19,6 +19,7 @@
                            Pintracomm, Pintercomm, Pecolor,      &
                            Glb_myproc, Glb_numproc, Nmultigrids )
       implicit none
+#include <arch_specific.hf>
 !
       external UserInit
       integer  Pelocal,Petotal,Pex,Pey,Pintracomm, Pintercomm, Pecolor, &

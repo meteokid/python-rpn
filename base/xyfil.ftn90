@@ -21,6 +21,7 @@
                          F_pole_L, DIST_DIM,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       logical F_pole_L

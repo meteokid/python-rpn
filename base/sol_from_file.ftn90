@@ -17,6 +17,7 @@
 !
       subroutine sol_from_file (fiptx,DIST_DIM,min_k,max_k)
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,min_k,max_k
       real    fiptx(DIST_SHAPE,min_k:max_k)

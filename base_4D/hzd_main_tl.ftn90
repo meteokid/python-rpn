@@ -19,6 +19,7 @@
 !
       subroutine hzd_main_tl 
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

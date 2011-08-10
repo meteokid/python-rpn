@@ -20,6 +20,7 @@
       subroutine sol_hcr (F_sol_8,F_rhs_8,F_w1_8,F_w2_8,F_dg1_8,F_dg2_8, &
                           F_dwfft_8,iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer iln,Minx,Maxx,Miny,Maxy,Ni,Nj,Nk
       real*8 F_sol_8 (Minx:Maxx,Miny:Maxy,Nk), &

@@ -19,6 +19,7 @@
 !
       subroutine wrrstrt_phy (F_spin_L)
       implicit none
+#include <arch_specific.hf>
 !
       logical F_spin_L
 !author

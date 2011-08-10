@@ -22,6 +22,7 @@
       use v4d_prof, only: Pr_doobs
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer numtr
 !

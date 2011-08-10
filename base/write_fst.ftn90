@@ -19,7 +19,8 @@
 !
       SUBROUTINE write_fst (buf,nx,ny,nz,varname,maxrange, &
                               ig1,ig2,ig3,grdtype,filename)
-      IMPLICIT NONE
+      implicit none
+#include <arch_specific.hf>
 !
       character* (*) varname, filename, grdtype
       integer nx,ny,nz,ig1,ig2,ig3

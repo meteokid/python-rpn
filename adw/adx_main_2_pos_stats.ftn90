@@ -24,6 +24,7 @@ subroutine adx_main_2_pos_stats( &
      minx,maxx,miny,maxy,F_nks, &
      F_ni, F_nj, F_nkm, F_nk, i0,in,j0,jn,k0,kn)
    implicit none
+#include <arch_specific.hf>
    !@objective Print stats fo computed pos
    !@arguments
    integer :: F_nb_iter          !I, total number of iterations for traj

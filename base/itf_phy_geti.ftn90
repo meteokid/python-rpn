@@ -21,7 +21,8 @@ Integer Function itf_phy_geti (vd, opt)
      Use phy_input_types
      Use phy_input_iface, Only : phy_simple_transforms,phy_cor_twater,phy_global_fields
      Use itf_phy_iface  , Only : itf_phy_gdef,itf_phy_fold_sfc,itf_phy_unfold_sfc
-     Implicit None
+     implicit none
+#include <arch_specific.hf>
 
      Type(variable), Pointer      :: vd
      Type(input_options)          :: opt
@@ -415,7 +416,7 @@ Contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 Integer Function Locate_key (key1,key2,key3,key4)
-Implicit None
+implicit none
 Integer key1,key2,key3,key4
 !
 !     ---------------------------------------------------------------

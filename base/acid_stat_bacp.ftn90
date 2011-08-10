@@ -20,6 +20,7 @@
       subroutine acid_stat_bacp_2(F_u,F_flag)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_u(LDIST_SHAPE,G_nk+1)
 !     

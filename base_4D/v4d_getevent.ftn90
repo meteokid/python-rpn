@@ -33,6 +33,7 @@ subroutine v4d_getevent(kulout,kevent,kstatus,mype)
   use v4d_prof, only: Pr_mode_S, Pr_llfrm_L, Pr_dsnooze_8
   !
   implicit none
+#include <arch_specific.hf>
 #include "path.cdk"
 #include <clib_interface.cdk>
 #include <prof_f.h>

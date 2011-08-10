@@ -20,6 +20,7 @@
 !
       subroutine out_sfile (clostep_int,stepno,F_ip3,F_ext_S)
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_ext_S
       integer clostep_int,stepno,F_ip3
@@ -121,6 +122,7 @@
 !
       subroutine out_cfile
       implicit none
+#include <arch_specific.hf>
 !
 #include "out.cdk"
 !

@@ -25,6 +25,7 @@
       use v4dzone
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer npts,i1,i2,j1,j2,nk,jmin,jmax,ni,nimax,gni,degree,kind
 !

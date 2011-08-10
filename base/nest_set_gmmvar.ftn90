@@ -21,6 +21,7 @@
 !
       subroutine nest_set_gmmvar
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Desgagne/Lee -        spring 2002

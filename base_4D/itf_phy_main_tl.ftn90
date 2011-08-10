@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_main_tl (F_stepno)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_stepno
 !

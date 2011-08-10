@@ -20,6 +20,7 @@
       subroutine rdrstrt_phy ()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - Mars 2008

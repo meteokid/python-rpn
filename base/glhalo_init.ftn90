@@ -20,6 +20,7 @@
       subroutine glhalo_init()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !      Claude Girard

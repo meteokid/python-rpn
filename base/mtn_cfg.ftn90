@@ -19,6 +19,7 @@
 !
       integer function mtn_cfg (unf)
       implicit none
+#include <arch_specific.hf>
       integer unf
 !
 !author 

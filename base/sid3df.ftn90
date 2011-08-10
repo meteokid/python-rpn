@@ -20,6 +20,7 @@
       integer function sid3df2(xpaq,ypaq,xpau,ypav,unf,done, &
                                nia,nja,nka_m,nka_t,presstype) result(F_istat)
       implicit none
+#include <arch_specific.hf>
 !author
 !     Michel Desgagne - rpn - MC2 2001
 !

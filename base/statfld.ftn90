@@ -23,6 +23,7 @@
                            F_i0,F_j0,F_k0,F_in,F_jn,F_kn,F_rx)
 !
       implicit none
+#include <arch_specific.hf>
 ! 
       character*(*) F_nv_S , F_from_S
       integer minx,maxx,miny,maxy,mink,maxk, &

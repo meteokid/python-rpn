@@ -22,6 +22,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK
 !     
       implicit none
+#include <arch_specific.hf>
 !
       real, dimension(G_nk) :: F_hybuser        !user-specified hybrid coordinate values
 !

@@ -20,6 +20,7 @@
       subroutine tstpdyn_ad ( F_fnitraj )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_fnitraj
 !

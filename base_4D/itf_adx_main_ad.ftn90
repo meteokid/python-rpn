@@ -18,6 +18,7 @@
 !/**
 subroutine itf_adx_main_ad (F_nb_iter)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective ADJ of itf_adx_main  
 !

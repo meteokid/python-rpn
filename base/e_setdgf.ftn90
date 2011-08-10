@@ -17,6 +17,7 @@
 !
       subroutine e_setdgf (frchmp,fnis,fnjs, fni,fnj, F_HX,F_HY,map_fact)
       implicit none
+#include <arch_specific.hf>
 !
        integer fni, fnj, fnis, fnjs
        real*8 F_HX(*), F_HY(*), map_fact(*)

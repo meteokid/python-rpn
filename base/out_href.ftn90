@@ -20,6 +20,7 @@
       subroutine out_href(F_xpos,F_ypos)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_xpos(*),F_ypos(*)
 !

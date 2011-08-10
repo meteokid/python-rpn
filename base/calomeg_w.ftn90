@@ -22,6 +22,7 @@
       subroutine calomeg_w (F_ww,F_st1,F_wt1,F_tt1,DIST_DIM,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real F_ww(DIST_SHAPE,Nk+2),F_st1(DIST_SHAPE)

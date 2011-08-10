@@ -20,6 +20,7 @@
 !
       subroutine nest_indata (F_datev_S)
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_datev_S
 !author 

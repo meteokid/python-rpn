@@ -20,6 +20,7 @@
       subroutine acid_writepos(xgi_8,ygi_8)
 !
       implicit none
+#include <arch_specific.hf>
       real*8 xgi_8(*), ygi_8(*)
 !
 !object

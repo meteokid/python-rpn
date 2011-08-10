@@ -20,6 +20,7 @@
       subroutine rhs()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Alain Patoine - Gabriel Lemay

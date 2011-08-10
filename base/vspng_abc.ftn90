@@ -23,6 +23,7 @@
                            F_yp2_8, Gni, Gnj,F_gnjv)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Gni,Gnj,F_gnjv
       real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*),  &

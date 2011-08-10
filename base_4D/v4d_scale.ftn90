@@ -23,6 +23,7 @@
       subroutine v4d_scale (Ndim,F_px,F_py)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer Ndim
       real F_px(Ndim), F_py(Ndim)

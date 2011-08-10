@@ -18,6 +18,7 @@
                                  hdepartx,hdeparty,Ndx,Ndy)
 
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri - October 2009

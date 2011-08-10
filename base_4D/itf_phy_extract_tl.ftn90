@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_extract_tl (F_busvol, F_jdo, nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_jdo, nk
       real F_busvol(*)

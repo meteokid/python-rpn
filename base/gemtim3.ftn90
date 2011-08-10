@@ -19,6 +19,7 @@
 !
       subroutine gemtim3 ( unf )
       implicit none
+#include <arch_specific.hf>
 !
       integer unf
 !author

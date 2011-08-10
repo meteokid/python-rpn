@@ -21,6 +21,7 @@
            F_nl_t,F_nl_c,F_nl_f,F_flag)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_qt0(LDIST_SHAPE,0:G_nk+1),F_st0(LDIST_SHAPE), &
            F_bspqtx(LDIST_SHAPE,0:G_nk+1), &

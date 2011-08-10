@@ -1,4 +1,0 @@
-      subroutine mgsdict
-      print*, 'stop in mgsdict'
-      return
-      end

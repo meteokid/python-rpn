@@ -21,6 +21,7 @@ subroutine adx_grid_uv_ad ( F_u_adw, F_v_adw, F_u_model,F_v_model, &
                             F_aminx,F_amaxx,F_aminy,F_amaxy,       &
                             F_minx,F_maxx,F_miny,F_maxy,F_nk)
    implicit none
+#include <arch_specific.hf>
 
    !@objective ADJ of adx_grid_uv 
 !

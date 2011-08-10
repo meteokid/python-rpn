@@ -24,6 +24,7 @@
                               F_n_for_n, F_n_for_s, F_n_for_a, &
                               F_n_treat)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_n_fro_n, F_n_fro_s, F_n_fro_a, &
               F_n_for_n, F_n_for_s, F_n_for_a, F_n_treat

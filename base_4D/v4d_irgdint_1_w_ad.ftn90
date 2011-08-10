@@ -18,6 +18,7 @@
       subroutine v4d_irgdint_1_w_ad (zo,px,py,npts,ax,ay,zi,ni,j1,j2,nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer npts,ni,j1,j2,nk
       real zo(nk,npts),zi(ni,j1:j2,nk), &

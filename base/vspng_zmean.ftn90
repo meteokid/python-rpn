@@ -19,6 +19,7 @@
 !
       subroutine vspng_zmean( F_pert,F_field,tsum_8,DIST_DIM, Nk, lmean )
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real F_field(DIST_SHAPE,Nk),F_pert(DIST_SHAPE,Nk)

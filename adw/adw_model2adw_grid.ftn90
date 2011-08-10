@@ -17,6 +17,7 @@
 !/**
 subroutine adw_model2adw_grid_uv(F_u_adw, F_v_adw, F_u_model,F_v_model, F_nk)
    implicit none
+#include <arch_specific.hf>
 #include "adw_dims.cdk"
    !@objective Extend the grid from model to adw with filled halos
    !@arguments
@@ -67,6 +68,7 @@ end subroutine adw_model2adw_grid_uv
 subroutine adw_model2adw_grid_scalar(F_fld_adw, F_fld_model, &
      F_nk, F_pol0_L, F_extend_L)
    implicit none
+#include <arch_specific.hf>
 #undef __ADW_DIMS__
 #include "adw_dims.cdk"
    !@objective Extend the grid from model to adw with filled halos

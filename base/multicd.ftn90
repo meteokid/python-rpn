@@ -15,6 +15,7 @@
 
       subroutine multicD (nproc,proc,myproc,type,mycol,iwk)
       implicit none
+#include <arch_specific.hf>
       integer nproc,proc(nproc),myproc,type,mycol,iwk(*)
 !     include 'mpif.h'
 !-----------------------------------------------------------------------

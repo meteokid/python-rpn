@@ -16,7 +16,8 @@
 !** s/p itf_phy_slb
 Subroutine itf_phy_slb ( busent3D, busdyn3D ,busper3D, busvol3D ,&
                          esiz,dsiz,fsiz,vsiz,dt,kount,phy_timing,ni,nj,nk,pslic )
-  Implicit None
+  implicit none
+#include <arch_specific.hf>
 
   Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic
   Real, Dimension(:,:), Pointer ::  busent3D, busdyn3D, busper3D, busvol3D

@@ -21,6 +21,7 @@
 subroutine itf_adx_get_winds2_ad(F_su,F_sv,F_sw,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective ADJ of itf_adx_get_winds 
 !

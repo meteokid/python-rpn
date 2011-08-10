@@ -17,6 +17,7 @@
                              am,bm,at,bt, &
                              nkm,nkt,presstype,unf )
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj,nkm,nkt,presstype,unf
       real xlon1,xlat1,xlon2,xlat2

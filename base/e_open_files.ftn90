@@ -19,6 +19,7 @@
 !
       subroutine e_open_files
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !    Michel Desgagne - Summer 2008

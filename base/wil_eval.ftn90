@@ -20,6 +20,7 @@
                           LDIAG,LROW,TRIGS,CMN,DMN,EMN,EPSIL,ALP,DALP,ANNP1,MAXH,NALPH)
 !
       implicit none
+#include <arch_specific.hf>
 !
       COMPLEX ZETASC(*),DIVSC(*),PHISC(*)
       INTEGER MMH,NNH,KKH

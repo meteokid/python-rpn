@@ -20,6 +20,7 @@
       subroutine rdrstrt ()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - Mars 2000

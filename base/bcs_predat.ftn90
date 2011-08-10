@@ -20,6 +20,7 @@
       subroutine bcs_predat(F_s,F_ps,NI1,NJ1,Nk)
 !
       implicit none
+#include <arch_specific.hf>
       integer ni1,nj1,DIST_DIM,Nk
       real F_s  (NI1,NJ1), F_ps(NI1,NJ1)
 !

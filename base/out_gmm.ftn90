@@ -21,6 +21,7 @@
       use out_vref_mod, only: out_vref
 !
       implicit none
+#include <arch_specific.hf>
 !
       character*6 F_etikadd_S
       integer levset,set,F_ip3

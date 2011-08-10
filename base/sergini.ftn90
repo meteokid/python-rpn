@@ -20,6 +20,7 @@
       subroutine sergini
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Andre Methot - cmc - june 1994 v0_14

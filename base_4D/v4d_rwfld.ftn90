@@ -21,6 +21,7 @@
                             F_addr,F_diag_L,F_name_S,F_adjoint_L,F_diff,F_icode)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,Nk,F_icode
       real F_field(DIST_SHAPE,Nk)

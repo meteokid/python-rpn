@@ -19,6 +19,7 @@
 !
 subroutine set_igs ()
   implicit none
+#include <arch_specific.hf>
   !
   !author
   !     Ron McTaggart-Cowan - Aug 2009

@@ -21,6 +21,7 @@
       subroutine indata
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Roch - rpn - apr 1994

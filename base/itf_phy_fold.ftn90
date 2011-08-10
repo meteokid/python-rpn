@@ -17,6 +17,7 @@
 !
       subroutine itf_phy_fold (d, s, F_jdo, k0, nk, minx, maxx, miny, maxy)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_jdo, k0, nk, minx, maxx, miny, maxy
       real d(*), s(minx:maxx, miny:maxy, nk)
@@ -66,6 +67,7 @@
 !
       subroutine itf_phy_unfold (d, s, F_jdo, k0, nk, minx, maxx, miny, maxy)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_jdo, k0, nk, minx, maxx, miny, maxy
       real s(*), d(minx:maxx, miny:maxy, nk)
@@ -110,6 +112,7 @@
 !
       subroutine itf_phy_fold_sfc (d, s, l_ni, l_nj)
       implicit none
+#include <arch_specific.hf>
 !
       integer l_ni,l_nj
       real d(*), s(l_ni,l_nj)
@@ -148,6 +151,7 @@
 !
       subroutine itf_phy_unfold_sfc (d, s, l_ni,l_nj)
       implicit none
+#include <arch_specific.hf>
 !
       integer l_ni,l_nj
       real d(*), s(l_ni,l_nj)
@@ -220,6 +224,7 @@
 !
       subroutine itf_phy_unfold_td ( F_obusval, F_bus, F_indn, F_j, Ni, Nj )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_indn, F_j, Ni, Nj
       real F_bus(*), F_obusval(Ni, Nj, *)

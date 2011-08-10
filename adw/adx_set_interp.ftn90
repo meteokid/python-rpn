@@ -18,6 +18,7 @@
 !/**
 subroutine adx_set_interp()
    implicit none
+#include <arch_specific.hf>
    !@objective set 1-D interpolation of grid reflexion across the pole 
    !@author  alain patoine
    !@revisions

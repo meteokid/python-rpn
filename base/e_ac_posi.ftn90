@@ -19,6 +19,7 @@
 !     
       integer function e_ac_posi (xpx,ypx,dimgx,dimgy,F_width)
       implicit none
+#include <arch_specific.hf>
 !     
       integer dimgx,dimgy,F_width
       real xpx(dimgx), ypx(dimgy)

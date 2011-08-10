@@ -19,6 +19,7 @@
 !
       subroutine theo_cfg
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     sylvie gravel   -  Apr 2003

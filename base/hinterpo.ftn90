@@ -20,6 +20,7 @@
       subroutine hinterpo ( dst,nid,njd, src,nis,njs, nk, indxx,indxy, &
                                  cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
       implicit none
+#include <arch_specific.hf>
 !
 !author M. Desgagne (MC2 2001)
 !

@@ -16,6 +16,7 @@
 !opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
       subroutine out_padbuf (f,minx,maxx,miny,maxy,lnk)
       implicit none
+#include <arch_specific.hf>
 !
 #include "out.cdk"
 !

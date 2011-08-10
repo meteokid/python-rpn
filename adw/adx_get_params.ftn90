@@ -18,6 +18,7 @@
 !/**
 subroutine adx_get_params()
    implicit none
+#include <arch_specific.hf>
    !@objective Get model/dyn parameters from whiteboard
    !@author Stephane Chamberland, 2010-01
    !@revisions

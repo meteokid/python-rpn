@@ -20,6 +20,7 @@
 !
       subroutine height_sponge ()
       implicit none
+#include <arch_specific.hf>
 !author 
 !     Plante A.           - May 2004 
 !
@@ -98,6 +99,7 @@
       subroutine apply(ff,value,betav, DIST_DIM, Nk)
 
       implicit none
+#include <arch_specific.hf>
 
       integer  DIST_DIM, Nk 
 
@@ -134,6 +136,7 @@
       subroutine apply_tt(tt,betav_t, F_s,DIST_DIM, Nk)
 
       implicit none
+#include <arch_specific.hf>
 
       integer  DIST_DIM, Nk 
 

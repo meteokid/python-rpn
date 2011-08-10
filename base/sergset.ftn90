@@ -21,6 +21,7 @@
       subroutine sergset
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Andre Methot - cmc - mai 1994 - v0_14

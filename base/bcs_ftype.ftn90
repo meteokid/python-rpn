@@ -18,6 +18,7 @@
 !
       integer function bcs_ftype ( ft, datev, unf )
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) ft
       character*15 datev

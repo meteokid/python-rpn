@@ -22,6 +22,7 @@
 !
       subroutine preverln(F_eval_8,F_levec_8,F_evec_8,F_wk1_8,F_nk,KDIM)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_nk, KDIM
       real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*)

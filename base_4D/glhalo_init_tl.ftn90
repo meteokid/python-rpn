@@ -20,6 +20,7 @@
       subroutine glhalo_init_tl()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

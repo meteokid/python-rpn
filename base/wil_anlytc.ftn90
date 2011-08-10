@@ -23,6 +23,7 @@
                         CASE,ANGLE,NLON,NLAT,MAXH,NALPH)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER CASE,NLON,NLAT,MAXH,NALPH
 !

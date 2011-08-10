@@ -21,6 +21,7 @@
                                                            DIST_DIM, ni, nj )
       use nest_blending, only: nest_blend
       implicit none
+#include <arch_specific.hf>
 !
       logical F_blend_L
       integer DIST_DIM, ni, nj

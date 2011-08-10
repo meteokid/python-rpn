@@ -19,6 +19,7 @@
       subroutine e_arak ( fru, frv, frvw, fruvw, fni, fnjfi, fnju, fnjv, &
                         fnk)
       implicit none
+#include <arch_specific.hf>
       integer  fni, fnjfi, fnju, fnjv, fnk
       real     fru(fni,fnjfi,fnk)  ,  frv(fni,fnjv,fnk), &
                frvw(fni,fnjfi,fnk) ,fruvw(fni,fnjfi,fnk)

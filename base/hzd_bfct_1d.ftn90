@@ -21,6 +21,7 @@
       subroutine hzd_bfct_1d (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,gni,nx3)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_pwr,gni,nx3
       real*8    F_a_8(1:F_pwr,1:F_pwr,1:gni,nx3), &

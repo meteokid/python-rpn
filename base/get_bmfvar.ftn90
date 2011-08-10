@@ -19,6 +19,7 @@
 !
       subroutine get_bmfvar (F_niu, F_nju, F_niv, F_njv, F_nka_m, F_nka_t)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_niu, F_nju, F_niv, F_njv, F_nka_m, F_nka_t
 !author 

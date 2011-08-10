@@ -20,6 +20,7 @@
 !
       subroutine itf_phy_vlsp (pw_eponmod,ni,nj)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj
       real pw_eponmod (ni,nj)

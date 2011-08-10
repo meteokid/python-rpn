@@ -20,6 +20,7 @@
       subroutine set_intuv
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !       jean cote/andre methot - rpn/cmc - sept 96

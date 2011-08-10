@@ -25,6 +25,7 @@
       use v4dz
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

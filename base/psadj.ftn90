@@ -20,6 +20,7 @@
       subroutine psadj
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Andre Plante from hzd_main

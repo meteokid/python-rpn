@@ -20,6 +20,7 @@
       subroutine vspng_drv_tl (F_u,F_v,F_zd,F_w,F_t,F_u_m,F_v_m,F_zd_m,F_w_m,F_t_m,DIST_DIM,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real F_u   (DIST_SHAPE,Nk)  , F_v   (DIST_SHAPE,Nk)  , &

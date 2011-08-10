@@ -26,6 +26,7 @@
       use v4d_interint0
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author N.Ek
 !

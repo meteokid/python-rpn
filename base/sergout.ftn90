@@ -20,6 +20,7 @@
       subroutine sergout (F_headr_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical F_headr_L
 !

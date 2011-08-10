@@ -19,6 +19,7 @@
 !
       subroutine vspng_lam ( F_champ, DIST_DIM, pni, pnj )
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,pni,pnj
       real F_champ(DIST_SHAPE,*)

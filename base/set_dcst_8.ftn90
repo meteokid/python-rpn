@@ -18,6 +18,7 @@
 !
       logical function set_dcst_8 ( val, liste, nbre, unout, numproc )
       implicit none
+#include <arch_specific.hf>
 !
       integer nbre,unout,numproc
       character * (*) liste(nbre)

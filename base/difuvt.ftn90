@@ -17,7 +17,8 @@
 !
       subroutine difuvt(tu, u, ku, s, tau, a, b, c, d, n, nu, nk)
 !
-      implicit none   
+      implicit none
+#include <arch_specific.hf>   
       integer n, nu, nk
       real tu(nu, nk), u(nu, nk), ku(nu, nk)
       real s(nu,nk), tau

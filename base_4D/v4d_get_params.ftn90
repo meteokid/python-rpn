@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine v4d_get_params
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Desgagne - Spring 2010

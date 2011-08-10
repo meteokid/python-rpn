@@ -20,6 +20,7 @@
       logical function ens_get(string)
 
       implicit none
+#include <arch_specific.hf>
 !
       character(len=*) string
       logical option

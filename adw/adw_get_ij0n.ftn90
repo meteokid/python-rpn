@@ -15,6 +15,7 @@
 !/**
 subroutine adw_get_ij0n(i0,j0,in,jn)
    implicit none
+#include <arch_specific.hf>
    !@objective
    !@arguments
    integer :: i0,j0,in,jn

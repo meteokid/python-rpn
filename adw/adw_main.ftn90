@@ -23,6 +23,7 @@
       subroutine adw_main (F_it,F_isStatStep_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_it
       logical F_isStatStep_L

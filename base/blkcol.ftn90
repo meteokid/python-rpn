@@ -17,6 +17,7 @@
       subroutine blkcol (f2rc,nis,njs,g_id,g_if,g_jd,g_jf,con,conadd, &
                          f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
       implicit none
+#include <arch_specific.hf>
 !
       integer g_id,g_if,g_jd,g_jf,lminx,lmaxx,lminy,lmaxy,lnk,nk_out, &
               nis,njs,z_out(nk_out)

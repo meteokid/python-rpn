@@ -22,6 +22,7 @@
            F_pres, Nkout, F_cubic_L, DIST_DIM, Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,Nk,Nkout
       logical F_cubic_L

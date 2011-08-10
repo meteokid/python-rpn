@@ -20,6 +20,7 @@
       subroutine wil_prepare_case 
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay 
 !

@@ -20,6 +20,7 @@
       subroutine gemtim2( unf, ModStep_L, Step_Done,Step_rsti )
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical ModStep_L
       integer unf, Step_Done,Step_rsti

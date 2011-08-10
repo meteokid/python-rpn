@@ -19,6 +19,7 @@
 !
       subroutine hzd_ctrl_ad (F_f2hzd, F_grd_S, NK)
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_grd_S
       integer DIST_DIM, Nk

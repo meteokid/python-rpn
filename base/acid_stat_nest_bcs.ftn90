@@ -20,6 +20,7 @@
       subroutine acid_stat_nest_bcs(F_tr0,F_tr,F_n,F_flag)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_tr0(LDIST_SHAPE,G_nk+2),F_tr(LDIST_SHAPE,G_nk+2)
 !     

@@ -19,6 +19,7 @@
 !
       subroutine tracers ()
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne  -  Sept 2001

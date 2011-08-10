@@ -18,6 +18,7 @@
       SUBROUTINE WIL_ORDLEG_W(COA, IR, SX)
 !
       implicit none
+#include <arch_specific.hf>
 !
       REAL COA
       INTEGER IR

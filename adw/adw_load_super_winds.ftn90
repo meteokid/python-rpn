@@ -20,6 +20,7 @@
            F_sv,F_sw)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real F_u(*),F_v(*),F_w(*),F_ut(*),F_vt(*),F_wm(*),F_su(*), &
            F_sv(*),F_sw(*)

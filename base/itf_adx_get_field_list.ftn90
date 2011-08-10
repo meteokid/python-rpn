@@ -17,6 +17,7 @@
 !/**
 subroutine itf_adx_get_field_list (F_fields_lbl,F_fields_type_L,F_nfields,F_nb_fields_max)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective
 !

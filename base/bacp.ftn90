@@ -28,6 +28,7 @@
                           DIST_DIM, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  F_itr, F_itnlh, DIST_DIM, Nk 
 ! 
@@ -98,6 +99,7 @@
                             DIST_DIM, Nk, i0, j0, k0, in, jn )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, k0, in, jn
       real     F_p     (DIST_SHAPE,0:Nk+1),  F_fis  (DIST_SHAPE)       , &

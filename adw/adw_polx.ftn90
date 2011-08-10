@@ -22,6 +22,7 @@
       subroutine adw_polx ( F_field, F_xg, F_sud, &
                             F_nic, F_halox, F_njc, F_haloy, F_nk )
       implicit none
+#include <arch_specific.hf>
 !
       logical F_sud
 !

@@ -20,6 +20,7 @@
       SUBROUTINE WIL_SHTRNS (L3D,LV,ITYPE,X,SCOEF)                
 !
       implicit none
+#include <arch_specific.hf>
 !
 #include "wil_glb_ld.cdk"
 !

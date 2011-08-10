@@ -22,6 +22,7 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
                              p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8,&
                              F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1)
 !

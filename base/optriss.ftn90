@@ -19,6 +19,7 @@
                             F_axis, F_a_8, F_b_8,  F_c_8, F_period_L, &
                             NIS,   NJS,  NKS, SKIP )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ideb,F_jdeb,F_ifin,F_jfin, F_nk, NIS, NJS, NKS, SKIP
       real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)
@@ -117,6 +118,7 @@
                             NIS,   NJS,  NKS, SKIP )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ni, F_nj, F_nk, NIS, NJS, NKS, SKIP
       real  F_r(SKIP,NIS,NJS,NKS), F_rhs(SKIP,NIS,NJS,NKS)

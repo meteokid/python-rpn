@@ -20,6 +20,7 @@
       SUBROUTINE WIL_ZD(UIC,VIC,DIVSC,ZETASC,NLON,NLAT,NN,MM,NLATB2,NALP,NFC)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER NLON,NLAT,NN,MM,NLATB2,NALP,NFC
       REAL UIC(NLON+2,NLAT),VIC(NLON+2,NLAT)

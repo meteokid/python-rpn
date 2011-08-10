@@ -19,6 +19,7 @@
       subroutine out_slev (F_level,F_levmax,F_nk,F_indo,F_nko)
 
       implicit none
+#include <arch_specific.hf>
 !
       integer F_nk,F_indo(*),F_nko, F_levmax
       real F_level(*)

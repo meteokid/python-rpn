@@ -23,6 +23,7 @@ subroutine adx_exch_1b_tr (F_x_out,F_y_out,F_z_out,F_c_out,  &
                            adx_for_n, adx_for_s, adx_for_a)                      
 
    implicit none
+#include <arch_specific.hf>
 
    !@objective Equivalent to adw_exch_1 for TRAJECTORY 
 

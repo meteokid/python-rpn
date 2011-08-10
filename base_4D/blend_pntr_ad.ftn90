@@ -19,6 +19,7 @@
                                                                    F_grid_s, level)
       use nest_blending_ad, only: nest_blend_ad
       implicit none
+#include <arch_specific.hf>
 !
       character*1 F_grid_s
       integer, intent(in) :: Minx,Maxx,Miny,Maxy, Minz,Maxz

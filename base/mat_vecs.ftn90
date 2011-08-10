@@ -20,6 +20,7 @@
       subroutine  mat_vecs ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil,  &
                              njl,minx1, maxx1, minx2, maxx2,Nk,fdg1 )   
       implicit none
+#include <arch_specific.hf>
 !
       integer Minx, Maxx, Miny, Maxy,nil, njl, &
               minx1, maxx1, minx2, maxx2,Nk

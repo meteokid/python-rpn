@@ -24,6 +24,7 @@
       use v4d_interint0
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer nigauss,njgauss,DIST_DIM,Nk
       real gut1 (nigauss,njgauss,Nk+1), gvt1 (nigauss,njgauss,Nk+1), &

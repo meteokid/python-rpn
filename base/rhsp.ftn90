@@ -25,6 +25,7 @@
                           DIST_DIM, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
 !

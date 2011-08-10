@@ -21,6 +21,7 @@
 !
       subroutine set_rhs
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Gravel/Roch   - rpn - august 1993

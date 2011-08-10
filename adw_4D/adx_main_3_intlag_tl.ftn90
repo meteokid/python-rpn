@@ -20,6 +20,7 @@ subroutine adx_main_3_intlag7_tl (F_px  ,F_py  ,F_pz  ,F_fields_list  , &
                                   F_is_mom_L, F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of adx_main_3_intlag 
 !

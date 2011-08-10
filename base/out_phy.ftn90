@@ -20,6 +20,7 @@
       use out_vref_mod, only: out_vref
 
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ni,F_nj,ni,nj,stepno
       real bus_o(F_ni*F_nj,*)

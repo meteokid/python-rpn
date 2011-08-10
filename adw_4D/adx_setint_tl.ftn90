@@ -23,6 +23,7 @@ subroutine adx_setint_lin_hor_ver3_tl (&
                                        i0,in,j0,jn,k0,F_nk, F_num)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of adx_setint_lin_hor_ver 
 !

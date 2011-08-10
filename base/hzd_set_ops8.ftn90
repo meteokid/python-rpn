@@ -21,6 +21,7 @@
                                           NN, MXDM, F_case,F_h2org2)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer NN, MXDM, F_case
       real*8  F_oper_8(MXDM,3), F_delt_8(NN), F_wt_8

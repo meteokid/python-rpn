@@ -18,7 +18,8 @@
 !!!Subroutine itf_phy_slb_tl ( geofld ,    busdyn3D ,    busper3D ,    busvol3D ,&
    Subroutine itf_phy_slb_tl ( busent3D,   busdyn3D ,    busper3D ,    busvol3D ,&
                      esiz,dsiz,fsiz,vsiz,dt,kount,ni,nj,nk,pslic )
-  Implicit None
+  implicit none
+#include <arch_specific.hf>
 
   Integer esiz,dsiz,fsiz,vsiz,kount,ni,nj,nk,pslic,nthreads
 !!Real, Dimension(:), Pointer ::  geofld, Phy_busdyn3D, Phy_busper3D, &

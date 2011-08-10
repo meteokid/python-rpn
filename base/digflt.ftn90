@@ -20,6 +20,7 @@
       subroutine digflt
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Alain Patoine - march 94

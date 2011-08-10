@@ -20,6 +20,7 @@ module nest_blending_ad
   end interface
 
 #include "gmm.hf"
+#include <arch_specific.hf>
 
 contains
 

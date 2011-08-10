@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_prep_ad(F_step)
       implicit none
+#include <arch_specific.hf>
 !
       integer, INTENT(IN) :: F_step
   !

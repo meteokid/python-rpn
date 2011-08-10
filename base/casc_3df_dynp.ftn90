@@ -24,6 +24,7 @@
                                   Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf,F_datev)
       use nest_blending, only: nest_blend
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_datev
       integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf

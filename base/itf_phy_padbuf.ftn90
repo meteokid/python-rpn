@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_padbuf (f,minx,maxx,miny,maxy,lnk)
       implicit none
+#include <arch_specific.hf>
 !
 !
 !author

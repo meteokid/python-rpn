@@ -19,6 +19,7 @@
 !
       subroutine tt2virt_tl (F_t, F_tt2tv, F_timelevel_s)
       implicit none
+#include <arch_specific.hf>
 !
       character(1) F_timelevel_S
       logical F_tt2tv

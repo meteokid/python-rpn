@@ -22,6 +22,7 @@
       subroutine v4d_set_phy_trajectory()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Lubos Spacek - September 2009

@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine e_initntr
       implicit none
+#include <arch_specific.hf>
 !
 !author   Michel Desgagne -- Fal 2008 --
 !

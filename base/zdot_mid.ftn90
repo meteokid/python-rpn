@@ -20,6 +20,7 @@
       subroutine zdot_mid()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Andre Plante, Claude Girard August 2007.

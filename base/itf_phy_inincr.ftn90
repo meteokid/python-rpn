@@ -20,6 +20,7 @@ Integer function itf_phy_inincr( vd,opt )
 
     Use phy_input_types
     implicit none
+#include <arch_specific.hf>
 
     Type(variable),  Pointer  :: vd
     Type(input_options)       :: opt

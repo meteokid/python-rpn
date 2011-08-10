@@ -19,7 +19,8 @@
 !**s/r wind_rot2ll - transform (rotate) U/V from grid winds to E-W/N-S
 
       SUBROUTINE  wind_rot2ll(uu,vv,lon,lat,nbpts)
-      IMPLICIT NONE
+      implicit none
+#include <arch_specific.hf>
 !
       INTEGER, INTENT(IN) :: nbpts
       REAL,DIMENSION(nbpts) :: uu,vv,lon,lat
@@ -66,7 +67,8 @@
 
 !**s/r wind_ll2rot - transform (rotate) U/V from E-W/N-S to grid winds
       SUBROUTINE  wind_ll2rot(uurot,vvrot,uull,vvll,lon,lat,nbpts)
-      IMPLICIT NONE
+      implicit none
+#include <arch_specific.hf>
 !
       INTEGER, INTENT(IN) :: nbpts
       REAL,DIMENSION(nbpts), INTENT(OUT) :: uurot,vvrot

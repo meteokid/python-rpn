@@ -19,6 +19,7 @@
 !
       subroutine pe_zero_topo (F_npx, F_npy )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_npx, F_npy
 !

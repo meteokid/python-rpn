@@ -21,6 +21,7 @@ subroutine adx_trilin_turbo1_noptr(F_out, F_in, F_dt, &
      F_xbc_8, F_ybc_8, F_diz_8, &
      F_num, i0, in, j0, jn, F_nk, F_nkm, F_hor_L,F_ver_L)
    implicit none
+#include <arch_specific.hf>
    !@objective Optimized tri-linear interpolation with SETINT inside (Based on adx_trilin v_3.1.1)
    !@arguments
    logical :: F_hor_L     !I, .true. re-compute horiz interp indexes and coef

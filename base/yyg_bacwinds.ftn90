@@ -19,6 +19,7 @@
 !
       subroutine yyg_bacwinds ( F_u, F_v, F_zd, DIST_DIM, Nk )
       implicit none
+#include <arch_specific.hf>
 !
       integer  DIST_DIM, Nk 
 ! 

@@ -20,6 +20,7 @@
       subroutine gemdm
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. desgagne( after version v1_03 of gefcn0 )

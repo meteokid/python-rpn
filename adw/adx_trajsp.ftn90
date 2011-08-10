@@ -20,6 +20,7 @@ subroutine adx_trajsp2 ( F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
                          F_cx_8,F_cy_8,F_sx_8,F_sy_8, &
                          F_dt,i0,in,j0,jn,k0,F_ni,F_nj )
    implicit none
+#include <arch_specific.hf>
 !
    !@objective improves estimates of upwind positions
 !

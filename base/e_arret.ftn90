@@ -17,6 +17,7 @@
 !
       SUBROUTINE E_ARRET( FTNAME )
       implicit none
+#include <arch_specific.hf>
 !
       character FTNAME(8)
 !

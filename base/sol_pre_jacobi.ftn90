@@ -19,6 +19,7 @@
 !
       subroutine  sol_pre_jacobi ( wk22, wk11, niloc, njloc )
       implicit none
+#include <arch_specific.hf>
 !
       integer niloc, njloc
       real*8  wk11(*), wk22(*)

@@ -20,6 +20,7 @@
 !
 !implicits
       implicit none
+#include <arch_specific.hf>
 !
       integer fnis, fnjs, fnks, fni, fnj, fnk
       real frout(fnis,fnjs,fnks), frin(fnis,fnjs,fnks), &

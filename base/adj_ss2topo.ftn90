@@ -20,6 +20,7 @@
       subroutine adj_ss2topo(F_ssq0,F_newtopo, F_pres,F_oldtopo, &
                               F_svt,n,nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer n,  nk
       real F_ssq0(n), F_newtopo(n),  &

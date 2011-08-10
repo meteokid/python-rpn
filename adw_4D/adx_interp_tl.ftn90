@@ -23,6 +23,7 @@ subroutine adx_interp5_tl ( F_out    , F_in     , F_c1     , &
                             Minx,Maxx,Miny,Maxy,F_nk,  &
                             F_wind_L,F_mono_L, i0,in,j0,jn,k0, F_lev_S)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective TLM of adx_interp 
 !

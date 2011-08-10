@@ -20,6 +20,7 @@ subroutine adx_exch_3b_ad (F_1_out, F_2_out, F_1_in, F_2_in, F_c_in_m, &
                            F_n_treat,F_ni,F_nj,F_nk,adx_for_a)                  
 
    implicit none
+#include <arch_specific.hf>
 
 !!!#include "adx_dims.cdk"
 !!!#include "adx_poles.cdk"

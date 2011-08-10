@@ -20,6 +20,7 @@
       subroutine v4d_rwtraj_phy (numtr)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer numtr, Nk
 !

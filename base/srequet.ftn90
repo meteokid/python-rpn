@@ -21,6 +21,7 @@
       integer function srequet()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     J. Caveen - rpn - decembre 1994

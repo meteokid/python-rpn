@@ -20,6 +20,7 @@
       subroutine set_xst 
 !
       implicit none
+#include <arch_specific.hf>
 !
 !
 !author     V. Lee - May 2000 - (from e_gridgef,M.Roch)

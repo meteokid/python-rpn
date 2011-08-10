@@ -17,6 +17,7 @@
 !
       subroutine itf_cpl_pseudoR (datev, kstep, recv)
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) datev
       INTEGER kstep, recv
@@ -65,6 +66,7 @@
 
       subroutine r_rawfstlis (datev,rs,nx,ny,in_FILE,ikey,errcode)
       implicit none
+#include <arch_specific.hf>
 !
       CHARACTER*(*) datev,in_file
       integer nx,ny,ikey,errcode

@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_fillbus_tr(F_busdyn,F_busper,F_jdo,F_step,nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_step, F_jdo, nk
       real F_busdyn(*),F_busper(*)

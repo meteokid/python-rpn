@@ -16,6 +16,7 @@
 #include "model_macros_f.h"
       subroutine e_trinit ()
       implicit none
+#include <arch_specific.hf>
 !
 !revision
 ! v3_22 - Lee V.            - removed Trvs tracers

@@ -18,6 +18,7 @@
       SUBROUTINE WIL_INFLD_X(CDFID,VARID,STEP,MAXH,LDIAG,MM,NN,KK,VAR) 
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER CDFID,VARID
       INTEGER STEP,MM,NN,KK

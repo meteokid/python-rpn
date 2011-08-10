@@ -19,6 +19,7 @@
 !
       subroutine iw2rwnd ( F_u,  F_v, DIST_DIM, Nk, mode )
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk, mode
       real F_u(DIST_SHAPE,Nk), F_v (DIST_SHAPE,Nk)

@@ -19,6 +19,7 @@
 subroutine adx_trilin4(F_out, F_in, F_dt, F_n, &
      F_capx, F_capy, F_capz, F_num,i0,in,j0,jn,k0,kn)
    implicit none
+#include <arch_specific.hf>
    !@objective tri-linear interpolation
    !@arguments
    integer :: F_num, F_n(F_num),i0,in,j0,jn,kn,k0
@@ -106,6 +107,7 @@ subroutine adx_trilin3(F_out, F_in, F_dt, F_n, &
      F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_nk, F_nk_super)
    !@objective tri-linear interpolation
    implicit none
+#include <arch_specific.hf>
    !@arguments
    integer :: F_nk, F_nk_super  !I, number of vertical levels
    integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, input field array bounds

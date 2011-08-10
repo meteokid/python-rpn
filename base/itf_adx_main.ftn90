@@ -17,6 +17,7 @@
 !/**
 subroutine itf_adx_main (F_nb_iter)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective Initialisation before Performing advection
 !

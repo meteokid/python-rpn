@@ -21,6 +21,7 @@
 !
       subroutine e_gemnml
       implicit none
+#include <arch_specific.hf>
 !
 !revision
 ! v3_11 - Tanguay M.        - Introduce Grd_gauss_L 

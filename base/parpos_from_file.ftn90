@@ -16,6 +16,7 @@
 !
       subroutine parpos_from_file (x_8, y_8, ni, nj)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj
       real*8  x_8(ni), y_8(nj)

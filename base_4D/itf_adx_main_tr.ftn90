@@ -20,6 +20,7 @@
       subroutine itf_adx_main_tr (F_it)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_it
 !

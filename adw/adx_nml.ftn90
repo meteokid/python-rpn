@@ -15,6 +15,7 @@
 !/**
 function adx_nml(F_nmlFileName_S) result(F_stat)
    implicit none
+#include <arch_specific.hf>
 #include "msg.h"
 #include "adx_nml.cdk"
    !@objective Advection default configuration and reading namelists adx_cfgs
@@ -54,6 +55,7 @@ end function adx_nml
 !/**
 subroutine adx_nml_print()
    implicit none
+#include <arch_specific.hf>
 #include "msg.h"
 #undef __ADX_NML__
 #include "adx_nml.cdk"
@@ -71,6 +73,7 @@ end subroutine adx_nml_print
 !/**
 function adx_config() result(F_stat)
    implicit none
+#include <arch_specific.hf>
    !@objective Establish final Advection configuration
    !@arguments
    !@returns

@@ -21,6 +21,7 @@
       subroutine vspng_main
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne  - October 2000

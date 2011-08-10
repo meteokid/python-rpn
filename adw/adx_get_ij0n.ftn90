@@ -15,6 +15,7 @@
 !/**
 subroutine adx_get_ij0n(i0,in,j0,jn)
    implicit none
+#include <arch_specific.hf>
    !@objective Return advection computational i,j domain
    !@arguments
    integer :: i0,j0,in,jn     !O, scope of advection operations

@@ -20,6 +20,7 @@
       subroutine caldiv_2 ( F_div, F_uu, F_vv, DIST_DIM, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  DIST_DIM, Nk
       real     F_div(DIST_SHAPE,Nk), F_uu  (DIST_SHAPE,Nk), &

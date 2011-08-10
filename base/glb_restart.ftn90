@@ -19,6 +19,7 @@
 !
       subroutine glb_restart (mode)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) mode
 !

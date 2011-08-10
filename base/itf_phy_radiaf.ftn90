@@ -21,6 +21,7 @@
       subroutine itf_phy_radiaf (F_fichier_S, F_chemin_S, F_value,  &
                                                      NX, F_flag_L)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_fichier_S, F_chemin_S
       logical F_flag_L

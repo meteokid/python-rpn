@@ -20,6 +20,7 @@
       logical function samelevel ( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
                                    analtopo,ni,nj, F_topo,Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj,lvm,lvt,Mminx,Mmaxx,Mminy,Mmaxy
       real analtopo(ni,nj),F_topo (Mminx:Mmaxx,Mminy:Mmaxy)

@@ -17,6 +17,7 @@
 !
       subroutine itf_cpl_terminate (F_pcomm_L)
       implicit none
+#include <arch_specific.hf>
 !
       logical F_pcomm_L
 #include "itf_cpl.cdk"

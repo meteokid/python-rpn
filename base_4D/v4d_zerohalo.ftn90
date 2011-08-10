@@ -20,6 +20,7 @@
       subroutine v4d_zerohalo ( F, in, jn, DIST_DIM, Nk) 
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,Nk,in,jn
       real    F(DIST_SHAPE,Nk)

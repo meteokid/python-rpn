@@ -22,6 +22,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
      F_ni,F_nj,F_k0,F_nk,i0,in,j0,jn,F_cubic_xy_L)
 !
    implicit none
+#include <arch_specific.hf>
 !
    real, dimension(F_ni,F_nj,F_nk+1) :: F_xt,F_yt,F_zt
    real, dimension(F_ni,F_nj,F_nk)   :: F_xm,F_ym,F_zm

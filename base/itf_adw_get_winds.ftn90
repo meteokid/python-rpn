@@ -18,6 +18,7 @@
 !/**
 subroutine itf_adw_get_winds(F_su,F_sv,F_sw,F_nk)
    implicit none
+#include <arch_specific.hf>
 #include "glb_ld.cdk"
    !@objective process winds in preparation for advection
    !@arguments

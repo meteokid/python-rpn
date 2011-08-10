@@ -21,6 +21,7 @@
 !
       use harmonsphere, only : harmon, harmon_init, harmon_destroy, harmons
       implicit none
+#include <arch_specific.hf>
 
       real,    dimension(l_ni,l_nj,E_nk)    :: fgem
       integer                               :: E_nk

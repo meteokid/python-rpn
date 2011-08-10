@@ -19,6 +19,7 @@
       subroutine get_field ( F_dest, ni, nj, F_nomvar_S, F_filename_S,&
                                    F_inttyp_S, F_xfi, F_yfi, F_status )
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_nomvar_S, F_filename_S, F_inttyp_S
       integer ni,nj,F_status

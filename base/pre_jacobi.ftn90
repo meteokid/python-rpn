@@ -17,6 +17,7 @@
 !
       subroutine pre_jacobi ( Sol,Rhs,evec_local,Fdg,Ni,Nj,Nk,ai,bi,ci )
       implicit none
+#include <arch_specific.hf>
 !
       integer Ni,Nj,Nk
       real*8 Rhs(Ni,Nj,Nk),Sol(Ni,Nj,Nk),Fdg(Ni,Nj,Nk)

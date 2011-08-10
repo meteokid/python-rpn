@@ -23,6 +23,7 @@
                                                           F_ni, NSTOR )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ni, NSTOR
       real*8  F_eival_8(F_ni), F_evvec_8(NSTOR,NSTOR)

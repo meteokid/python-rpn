@@ -19,6 +19,7 @@
 !
       subroutine itf_phy_rdfile (F_fichier_S,F_read_cb,F_messg_s,mode)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) F_fichier_S, F_messg_s
       integer mode

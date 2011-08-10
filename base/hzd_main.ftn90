@@ -19,6 +19,7 @@
 !
       subroutine hzd_main 
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Joseph-Pierre Toviessi ( after version v1_03 of dif )

@@ -24,6 +24,7 @@ subroutine adx_main_3_intlag7_ad (F_capxm   ,F_capym   ,F_capzm   ,             
                                   F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk_m,F_nk_t)
 !
    implicit none
+#include <arch_specific.hf>
 !
    !@objective ADJ of adx_main_3_intlag_tl 
 !

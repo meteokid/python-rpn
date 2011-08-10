@@ -19,6 +19,7 @@
 !/**
 subroutine itf_phy_geom(F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
    implicit none
+#include <arch_specific.hf>
    !@objective
    !@arguments
    character(len=*),intent(in) :: F_nomvar_S

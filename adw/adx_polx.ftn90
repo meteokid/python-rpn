@@ -16,6 +16,7 @@
 
 subroutine adx_polx()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_polx','called a stub')
    !---------------------------------------------------------------------
@@ -24,6 +25,7 @@ end subroutine adx_polx
 
 subroutine adx_polx2()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_polx2','called a stub')
    !---------------------------------------------------------------------
@@ -34,6 +36,7 @@ end subroutine adx_polx2
 subroutine adx_polx3(F_field, F_sud, F_aminx,F_amaxx,F_aminy,F_amaxy, &
      F_lni,F_lnj, F_halox,F_haloy, F_nk )
    implicit none
+#include <arch_specific.hf>
    !@objective extension of a scalar field beyond the poles in view of cubic lagrange interpolation along the north-south direction
    !@arguments
    integer :: F_lni, F_lnj, F_nk !I, Field computational area dims

@@ -19,6 +19,7 @@
 !
       subroutine v4d_phy_extract_pbl (F_busvol, F_jdo, F_step, nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer F_jdo, F_step, nk
       real F_busvol(*) 

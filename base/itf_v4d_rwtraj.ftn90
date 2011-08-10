@@ -16,6 +16,7 @@
 !/**
 subroutine itf_v4d_rwtraj(numtr,u,v,w,x,y,a,b,c,d)
    implicit none
+#include <arch_specific.hf>
    !@objective Interface to v4d_rwtraj
    !@arguments
       integer :: numtr

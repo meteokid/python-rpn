@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine e_dynfld 
       implicit none
+#include <arch_specific.hf>
 !
 !AUTHOR  M. Desgagne    April 2002
 !

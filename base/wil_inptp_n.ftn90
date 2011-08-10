@@ -19,6 +19,7 @@
                              MM,NN,KK,MY_CASE,MY_ANGLE)
 !
       implicit none
+#include <arch_specific.hf>
 !
       CHARACTER*80 FNAME
       REAL TIME

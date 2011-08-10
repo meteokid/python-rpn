@@ -19,6 +19,7 @@
       subroutine vertint3 (fup,f,zd,href,ng,nk,nkref)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer ng,nk,nkref
       real    fup(ng,nk),f(ng,nkref),zd(ng,nk,2),href(ng,0:nkref+2)

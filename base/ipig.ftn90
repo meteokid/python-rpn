@@ -20,6 +20,7 @@
                        F_rot_8, F_tourn_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
        integer F_ig1, F_ig2, F_ig3
        real    F_dxla, F_dyla

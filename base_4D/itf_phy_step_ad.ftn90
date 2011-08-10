@@ -21,6 +21,7 @@
 
 !!!   Use itf_phy_iface  , Only : physics_wrapper
       implicit none
+#include <arch_specific.hf>
 !
       integer, INTENT(IN) :: F_stepno
 !!!Subroutine itf_phy_slb_ad (geofld, Phy_busdyn3D, Phy_busper3D, Phy_busvol3D, &

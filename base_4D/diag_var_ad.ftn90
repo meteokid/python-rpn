@@ -20,6 +20,7 @@
       subroutine diag_var_ad (F_BsPq,F_mu,F_s,F_q,F_s_m,F_q_m,i0,in,j0,jn,k0,nk)
 !     
       implicit none
+#include <arch_specific.hf>
 !     
       integer k0,nk
       real F_BsPq(LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)

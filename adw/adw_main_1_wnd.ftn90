@@ -21,6 +21,7 @@
       subroutine adw_main_1_wnd2(F_su,F_sv,F_sw,um,vm,wm,ut,vt,wt,F_nit,F_njt,F_nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_nit, F_njt, F_nk
 !

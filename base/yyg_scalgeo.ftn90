@@ -20,6 +20,7 @@
       Subroutine yyg_scalgeo(tab_dst,xx,yy,x,y, &
                             Ni,Nj,NK,Interp_S,nomvar_S)
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009

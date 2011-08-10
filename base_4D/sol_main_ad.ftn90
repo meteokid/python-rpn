@@ -20,6 +20,7 @@
       subroutine sol_main_ad (iln)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer iln
 !

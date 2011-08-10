@@ -27,6 +27,7 @@
                                 fdg1,fdg2,fdwfft,fdg12,NSTOR,nev)
 !
       implicit none
+#include <arch_specific.hf>
 #include "ptopo.cdk"
 !
 !author    Abdessamad Qaddouri

@@ -22,6 +22,7 @@
                           hu_temp,tt_temp,gz_temp,ps,topo_temp, &
                           zd_temp,w_temp,q_temp,lni,lnj,nktmp)
       implicit none
+#include <arch_specific.hf>
       integer lni,lnj,lniu,lnju,lniv,lnjv,lvm,lvt,nktmp
       real*8  za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
       real,   dimension(lni,lnj      ) :: ps,topo_temp

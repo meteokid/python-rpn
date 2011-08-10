@@ -21,6 +21,7 @@
                               DIST_DIM, Nk, inverse_L )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,Nk
       real C_ut1 (DIST_SHAPE,Nk+1), C_vt1 (DIST_SHAPE,Nk+1), &

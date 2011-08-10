@@ -17,6 +17,7 @@
 !
       integer function yyg_yangrid ()
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     V. Lee/A. Qaddouri - April 2011

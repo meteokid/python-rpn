@@ -24,6 +24,7 @@ end subroutine adx_exch_1
 subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
      F_ni,F_nj,F_nk)
    implicit none
+#include <arch_specific.hf>
    !@objective 
    !@arguments
    integer :: F_ni,F_nj,F_nk        !I, dims

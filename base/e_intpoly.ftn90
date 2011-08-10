@@ -19,6 +19,7 @@
                             frdel, frhh, frhm, frhp, fllag )
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical fllag
       real*8   frc0, frc1, frc2, frdel, frhh, frhm, frhp

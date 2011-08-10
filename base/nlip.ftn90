@@ -25,6 +25,7 @@
                           DIST_DIM, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &
@@ -95,6 +96,7 @@
                           i02,j02,in2,jn2,k0 )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk,i02,j02,in2,jn2,k0
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &

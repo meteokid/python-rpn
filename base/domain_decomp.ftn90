@@ -19,6 +19,7 @@
 !
       subroutine domain_decomp
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne     Summer 2006

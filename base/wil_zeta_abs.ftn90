@@ -20,6 +20,7 @@
       SUBROUTINE WIL_ZETA_ABS (ZETASC,LDIAG,MAXH_Read,NALP_Read,NN_Read,CORSC1,CORSC2) 
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer MAXH_Read,NALP_Read,NN_Read
       COMPLEX ZETASC(NALP_Read)

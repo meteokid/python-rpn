@@ -20,6 +20,7 @@
 subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, & 
                              F_zcto, F_dt, i0,in,j0,jn,k0)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective compute positions at origin (o) by extrapolation using positions at mid-trajectory (m)
 !

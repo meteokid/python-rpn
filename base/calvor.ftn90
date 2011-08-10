@@ -20,6 +20,7 @@
       subroutine calvor (F_vor,F_u,F_v,F_wrk,DIST_DIM,nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  DIST_DIM, nk
       real   F_vor(DIST_SHAPE,nk), F_u  (DIST_SHAPE,nk)

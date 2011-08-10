@@ -33,6 +33,7 @@
       use v4d_prof
 !
       implicit none
+#include <arch_specific.hf>
 !
       character*2,INTENT(IN)   :: cdvar
       integer,    INTENT(INOUT):: kstatus

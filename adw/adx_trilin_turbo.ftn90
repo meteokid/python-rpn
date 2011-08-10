@@ -27,6 +27,7 @@ subroutine adx_trilin_turbo4 (F_out   , F_in    , F_dt    ,            &
                               F_num,i0,in,j0,jn,k0,kn,F_nkm)
 
    implicit none
+#include <arch_specific.hf>
 
    !@objective tri-linear interpolation
 
@@ -209,6 +210,7 @@ subroutine adx_trilin_turbo3 (F_out, F_in, F_dt, &
                               F_bsx_8, F_bsy_8, F_xbc_8, F_ybc_8, &
                               F_num, i0, in, j0, jn, k0, F_nk)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective Optimized tri-linear interpolation with SETINT inside
 !

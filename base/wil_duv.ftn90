@@ -19,6 +19,7 @@
                          CORSC1,CORSC2,RLAT,U,V,MAXH,NALPH)  
 !
       implicit none
+#include <arch_specific.hf>
 !
       COMPLEX DIVSC(NALPH),ZETASC(NALPH)
       INTEGER MAXH,NALPH,NNH,LDIAG(0:MAXH,2)

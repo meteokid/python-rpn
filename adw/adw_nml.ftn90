@@ -15,6 +15,7 @@
 !/**
 function adw_nml(F_nmlFileName_S) result(F_stat)
    implicit none
+#include <arch_specific.hf>
 #include "msg.h"
 #include "adw_nml.cdk"
    !@objective Advection default configuration and reading namelists adw_cfgs
@@ -58,6 +59,7 @@ end function adw_nml
 !/**
 subroutine adw_nml_print()
    implicit none
+#include <arch_specific.hf>
 #include "msg.h"
 #include "adw_nml.cdk"
 !**/
@@ -74,6 +76,7 @@ end subroutine adw_nml_print
 !/**
 function adw_config() result(F_stat)
    implicit none
+#include <arch_specific.hf>
    !@objective Establish final Advection configuration
    !@returns
    integer :: F_stat
@@ -105,6 +108,7 @@ end function adw_config
 !/**
 function adw_get_useadx() result(F_useadx_L)
    implicit none
+#include <arch_specific.hf>
    !@objective Establish final Advection configuration
    !@returns
    logical :: F_useadx_L

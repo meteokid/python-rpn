@@ -21,6 +21,7 @@
                           F_ai_8, F_bi_8, F_ci_8, F_di_8, &
                           F_prep_L,  F_case, NIS, NJS,  NKS, SKIP )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ideb, F_jdeb,F_ifin,F_jfin,F_nk, NIS, NJS, NKS, SKIP
       real    F_r(SKIP,NIS,NJS,NKS)

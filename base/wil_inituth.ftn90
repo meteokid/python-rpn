@@ -20,6 +20,7 @@
       subroutine wil_inituth (uini,vorini,thini,nlat)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer nlat
 !

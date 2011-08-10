@@ -19,6 +19,7 @@
 !     
       subroutine ac_posi (xp,yp,dimgx,dimgy,prout)
       implicit none
+#include <arch_specific.hf>
 !     
       logical prout
       integer dimgx,dimgy

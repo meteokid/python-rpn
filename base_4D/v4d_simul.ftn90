@@ -20,6 +20,7 @@
       subroutine v4d_simul (F_indic,Ndim,F_px,F_pj,F_pgraj)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_indic,Ndim
       real F_pj,F_px(Ndim),F_pgraj(Ndim)

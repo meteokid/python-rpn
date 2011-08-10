@@ -29,6 +29,7 @@
 !     SPECIFIES FUNCTIONAL FORM OF 1ST DERIVATIVE OF BIG U BAR (BUBFNC)
 !
 !implicits
+#include <arch_specific.hf>
 #include "wil_init1.cdk"
 !------------------------------------------------------------------
       REAL RMU,COSLAT

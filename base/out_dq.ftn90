@@ -20,6 +20,7 @@
       subroutine out_dq (F_wlnph_m,DIST_DIM, nk,levset,set)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer nk,DIST_DIM,levset,set
 

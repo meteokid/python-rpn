@@ -18,6 +18,7 @@
       subroutine vte_uv2img ( F_u, F_v, niu, nju, niv, njv, nk, &
                                             F_xdy_8, F_xdyv_8)
       implicit none
+#include <arch_specific.hf>
       integer  niu, niv, nju, njv, nk
       real     F_u(niu,nju,nk),  F_v(niv,njv,nk)
       real*8   F_xdy_8(*),F_xdyv_8(*)

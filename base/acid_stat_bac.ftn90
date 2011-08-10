@@ -21,6 +21,7 @@
            F_flag)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real    F_fiptx(LDIST_SHAPE,0:G_nk+1),F_nl_t(LDIST_SHAPE,G_nk+1), &
            F_topo(LDIST_SHAPE),F_st0(LDIST_SHAPE), &

@@ -22,6 +22,7 @@
                            Minx,Maxx,Miny,Maxy,Mink,Maxk, &
                            F_i0,F_in,F_j0,F_jn,F_k0,F_kn)
       implicit none
+#include <arch_specific.hf>
 !
       character * (*) F_var_S,F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk
@@ -84,6 +85,7 @@
 !
       subroutine glbstat
       implicit none
+#include <arch_specific.hf>
       call handle_error (-1,'glbstat','ABORT - glbstat has been replace by glbstat2')
       return
       end

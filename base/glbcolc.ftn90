@@ -20,6 +20,7 @@
       subroutine glbcolc (F_2rc,bni,bnj,F_2cc,DIST_DIM,nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer bni,bnj,DIST_DIM,nk
       real F_2rc(bni,bnj,nk), F_2cc(DIST_SHAPE,nk)

@@ -20,6 +20,7 @@
       subroutine  sol_matvecs ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
                                   nil,njl, minx1,maxx1,minx2,maxx2 )
       implicit none
+#include <arch_specific.hf>
 !
       integer Minx,Maxx,Miny,Maxy, njl,nil, minx1,maxx1,minx2,maxx2
       real*8  wk11(*),wk22(*)

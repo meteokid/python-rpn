@@ -16,6 +16,7 @@
       subroutine r_rawfstw2 (rs,minx,maxx,miny,maxy,mink,maxk,varname,i0,in,j0,jn,k0,kn, &
                                                       stepno,dt,date0,ig1,ig2,out_file)
       implicit none
+#include <arch_specific.hf>
 !
       integer minx,maxx,miny,maxy,mink,maxk,stepno,dt,date0,i0,in,j0,jn,k0,kn,ig1,ig2
       real rs(minx:maxx,miny:maxy,mink:maxk)
@@ -55,6 +56,7 @@
 
       subroutine r_rawfst_pos (xp,yp,ni,nj,ip1,ip2,ig1,ig2,ig3,ig4,out_file)
       implicit none
+#include <arch_specific.hf>
 !
       integer ni,nj,ip1,ip2,ig1,ig2,ig3,ig4
       real xp(ni),yp(nj)

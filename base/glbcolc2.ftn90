@@ -18,6 +18,7 @@
       subroutine glbcolc2(f2rc,g_id,g_if,g_jd,g_jf, &
                           f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
       implicit none
+#include <arch_specific.hf>
 !
       integer g_id,g_if,g_jd,g_jf,lminx,lmaxx,lminy,lmaxy,lnk,nk_out
       integer z_out(nk_out)

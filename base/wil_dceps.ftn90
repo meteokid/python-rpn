@@ -18,6 +18,7 @@
       SUBROUTINE WIL_DCEPS(MAXH,MM,NN,KK,CMN,DMN,EMN,EPSIL,LROW,LDIAG)
 !
       implicit none
+#include <arch_specific.hf>
 !
       INTEGER MM,NN,KK
       REAL CMN(*), DMN(*), EMN(*), EPSIL(*)

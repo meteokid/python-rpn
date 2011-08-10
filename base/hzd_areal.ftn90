@@ -21,6 +21,7 @@
                                                 Maxy,Gni,Gnj,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
 !
       integer  Minx,Maxx,Miny,Maxy

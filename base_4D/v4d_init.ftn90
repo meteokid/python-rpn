@@ -21,6 +21,7 @@
       subroutine v4d_init 
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author M.Tanguay
 !

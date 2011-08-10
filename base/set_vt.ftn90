@@ -18,6 +18,7 @@
 !/**
       subroutine set_vt()
       implicit none
+#include <arch_specific.hf>
 !@objective Initialization of the commons for time-dependent variable. 
 !           Virtual Memory manager initialization
 !@author sylvie gravel - rpn - august 1993

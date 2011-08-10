@@ -20,6 +20,7 @@
 !
       subroutine bubble
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Sylvie Gravel  - rpn - Apr 2003

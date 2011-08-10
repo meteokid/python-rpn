@@ -21,6 +21,7 @@
       subroutine set_dia
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - V. Lee ( after version v1_03 of setserg )

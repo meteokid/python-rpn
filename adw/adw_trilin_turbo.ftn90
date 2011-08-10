@@ -25,6 +25,7 @@
                                     F_hor_L,F_ver_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_num, i0, in, j0, jn, kn,F_ii(F_num),F_jj(F_num),F_kk(F_num) 
 !

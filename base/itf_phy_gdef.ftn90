@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine itf_phy_gdef (local_id, global_id, gxfi, gyfi)
       implicit none
+#include <arch_specific.hf>
 !
       integer local_id, global_id
       real gxfi(*), gyfi(*)

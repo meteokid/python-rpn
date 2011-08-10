@@ -15,6 +15,7 @@
 
       subroutine init_ndoms (ndomains,dom_deb,err)
       implicit none
+#include <arch_specific.hf>
 !
       integer ndomains,dom_deb,err
 !

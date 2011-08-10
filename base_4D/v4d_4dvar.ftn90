@@ -61,6 +61,7 @@
       use v4dz
 !
       implicit none
+#include <arch_specific.hf>
 !
 #include "lun.cdk"
 #include "glb_ld.cdk"

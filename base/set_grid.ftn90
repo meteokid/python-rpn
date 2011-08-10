@@ -19,6 +19,7 @@
 !
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
       implicit none
+#include <arch_specific.hf>
         integer F_argc,F_v1,F_v2
         character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
         character*5 stuff_S

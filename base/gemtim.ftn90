@@ -20,6 +20,7 @@
       subroutine gemtim (unf)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer unf
 !

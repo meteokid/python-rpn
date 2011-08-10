@@ -20,6 +20,7 @@
 !
       subroutine out_sfile_3df ( datev, unf, msg, gid, gif, gjd, gjf, nvar, ntr )
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) datev, msg
       integer unf, gid, gif, gjd, gjf, nvar, ntr

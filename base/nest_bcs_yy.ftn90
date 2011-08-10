@@ -18,6 +18,7 @@
 !
       subroutine nest_bcs_yy ()
       implicit none
+#include <arch_specific.hf>
 !
 !author 
 !     Michel Desgagne   - Spring 2006

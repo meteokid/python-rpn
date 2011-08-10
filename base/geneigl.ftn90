@@ -19,6 +19,7 @@
                           F_ifaz, NN, NMAX, NWORK )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_ifaz, NN, NMAX, NWORK
       real*8 F_eval_8(NMAX), F_evec_8(NMAX,NN), F_b_8(NMAX,NN)

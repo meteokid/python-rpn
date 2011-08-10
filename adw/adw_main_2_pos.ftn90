@@ -29,6 +29,7 @@
            F_pxc ,F_pyc)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_it,F_nk
       character(len=1) :: F_l_S

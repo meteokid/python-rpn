@@ -26,6 +26,7 @@
                              F_npex1, F_npey1, ai, bi, ci, &
                              fdg2,fdwfft)
       implicit none
+#include <arch_specific.hf>
 #include "ptopo.cdk"
 !
 !

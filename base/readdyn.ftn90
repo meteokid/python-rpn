@@ -20,6 +20,7 @@
       subroutine readdyn2 (F_u, F_v, F_w, F_t, F_zd, F_s, F_fiptx, F_topo, &
                            F_q, F_dtopo, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) pref_tr,suff_tr
       integer Mminx,Mmaxx,Mminy,Mmaxy

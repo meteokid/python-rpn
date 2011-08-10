@@ -17,6 +17,7 @@
 !
       subroutine ecmwf_ab(frpia, frpib,  fnk)
       implicit none
+#include <arch_specific.hf>
 !
 !author s gravel  - rpn - apr 2004
 !

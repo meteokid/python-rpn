@@ -21,6 +21,7 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
      F_n_for_n, F_n_for_s, F_n_for_a, &
      F_n_treat)
    implicit none
+#include <arch_specific.hf>
    !@objective exchange 1 to 3 fields among processors (upstream positions or interpolated values)
    !@arguments
    integer :: F_n_fro_n, F_n_fro_s, F_n_fro_a

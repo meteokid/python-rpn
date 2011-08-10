@@ -20,6 +20,7 @@
       subroutine out_phy_3df (bus_o, F_ni,F_nj, datev, gid,gif,gjd,gjf)
 
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) datev
       integer F_ni,F_nj,gid,gif,gjd,gjf

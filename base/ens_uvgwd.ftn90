@@ -20,6 +20,7 @@
       subroutine ens_uvgwd ( F_duv, F_uu, F_vv, DIST_DIM, Nk )
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer  DIST_DIM, Nk
       real     F_duv(DIST_SHAPE,Nk), F_uu  (DIST_SHAPE,Nk), &

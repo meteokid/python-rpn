@@ -21,6 +21,7 @@
       SUBROUTINE WIL_CASE_INIT (UIC12,VIC12,PIC12,DIC12,EIC12,MOUNT)
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author Jacob et al. 1992 
 !

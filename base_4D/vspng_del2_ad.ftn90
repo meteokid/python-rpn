@@ -23,6 +23,7 @@
                                  DIST_DIM, nke, ntrp12, ntrp22, fnjb)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, nke, ntrp12, ntrp22, fnjb
 !

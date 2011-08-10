@@ -19,6 +19,7 @@
 !
       subroutine vt2gz (F_gz, F_pr, F_vt, n, Nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer n, Nk
       real   F_gz(n,Nk), F_vt(n,Nk), F_pr(n,Nk)

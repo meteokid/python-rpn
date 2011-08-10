@@ -17,6 +17,7 @@
 !
       subroutine e_infiles ()
       implicit none
+#include <arch_specific.hf>
 !
 !author   Michel Desgagne (MC2) 2006
 !

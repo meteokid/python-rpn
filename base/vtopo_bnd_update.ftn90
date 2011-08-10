@@ -21,6 +21,7 @@
            DIST_DIM,nk,F_ndavx,F_ndavy)
 !
       implicit none
+#include <arch_specific.hf>
       integer :: DIST_DIM,nk,F_ndavx,F_ndavy
       real, dimension(DIST_SHAPE) :: nest_s
       real, dimension(DIST_SHAPE,nk+1) :: nest_t

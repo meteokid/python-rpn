@@ -24,6 +24,7 @@
                                 i0,in,j0,jn, F_lev_S, F_fact_8)
 !TODO: F_posy not used - remove
       implicit none
+#include <arch_specific.hf>
       !@objective
       !@arguments
       character(len=*) :: F_out_S, F_in_S
@@ -78,6 +79,7 @@
                               F_wind_L, F_mono_L, DIST_DIM, F_nk, &
                               i0,in,j0,jn, F_lev_S )
       implicit none
+#include <arch_specific.hf>
       character*1 F_lev_S
       logical F_wind_L, F_mono_L
       integer DIST_DIM, F_nk, i0,in,j0,jn

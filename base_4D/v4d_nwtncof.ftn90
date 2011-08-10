@@ -20,6 +20,7 @@
       subroutine v4d_nwtncof (cx,cy,ax,ay,i1,i2,j1,j2,ni,grtypi)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer i1,i2,j1,j2,ni
       real ax(i1:i1),ay(j1:j2),cx(i1:i2,6),cy(j1:j2,6)

@@ -19,6 +19,7 @@
       subroutine pre_diago( Sol, Rhs, Minx, Maxx, Miny, Maxy, &
                             nil,njl, minx1, maxx1, minx2, maxx2, Nk )
       implicit none
+#include <arch_specific.hf>
 !
       integer Minx, Maxx, Miny, Maxy, nil, njl, &
               minx1, maxx1, minx2, maxx2,Nk

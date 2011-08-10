@@ -19,6 +19,7 @@
 !
       subroutine nest_intt
       implicit none
+#include <arch_specific.hf>
 !
 !author   M. Desgagne - April 2002
 !

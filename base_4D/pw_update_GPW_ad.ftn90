@@ -19,6 +19,7 @@
 !
 subroutine pw_update_GPW_ad
   implicit none
+#include <arch_specific.hf>
   !
   !author
   !     Lubos Spacek    - Nov 2010

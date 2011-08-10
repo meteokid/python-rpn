@@ -25,6 +25,7 @@
 !-------------------------------------------------------------------------
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer numtr,mlni,mlnj,lnkm,lnkt
 !

@@ -23,6 +23,7 @@
                            uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,                &
                            F_ni,F_nj,lnk,nia,nja,nka_m,nka_t,presstype,ntra)
       implicit none
+#include <arch_specific.hf>
 !
       character*8 trname_a(ntra)
       integer F_ni,F_nj,lnk,nia,nja,nka_m,nka_t,presstype,ntra

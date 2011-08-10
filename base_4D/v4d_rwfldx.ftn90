@@ -22,6 +22,7 @@
                              F_addr,F_diag_L,F_name_S,F_adjoint_L,F_diff,F_icode)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer NI,Nj,Nk,F_icode
       real F_field(*)

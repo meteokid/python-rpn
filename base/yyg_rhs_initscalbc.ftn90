@@ -18,6 +18,7 @@
 
       Subroutine yyg_rhs_initscalbc()
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009

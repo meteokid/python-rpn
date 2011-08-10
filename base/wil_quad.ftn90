@@ -18,6 +18,7 @@
       SUBROUTINE WIL_QUAD(A,B,F,RESULT,EPSIL,NPTS,K,IER)
 !
       implicit none
+#include <arch_specific.hf>
 !
       real A,B,F,RESULT(8),EPSIL
       integer NPTS,K,IER

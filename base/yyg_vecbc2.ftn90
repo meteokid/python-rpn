@@ -18,6 +18,7 @@
 
       Subroutine yyg_vecbc2(tab_dst,tabv_src,tabu_src,DIST_DIM,NK)
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009

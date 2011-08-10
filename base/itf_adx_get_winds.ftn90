@@ -18,6 +18,7 @@
 
 subroutine itf_adx_get_winds()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'itf_adx_get_winds','called a stub')
    !---------------------------------------------------------------------
@@ -27,6 +28,7 @@ end subroutine itf_adx_get_winds
 !/**
 subroutine itf_adx_get_winds2(F_su,F_sv,F_sw,F_minx,F_maxx,F_miny,F_maxy,F_nk)
    implicit none
+#include <arch_specific.hf>
    !@objective process winds in preparation for advection
    !@arguments
    integer :: F_minx,F_maxx,F_miny,F_maxy,F_nk
@@ -123,6 +125,7 @@ end subroutine itf_adx_get_winds2
 
    subroutine itf_adx_combine_levels(F_su,F_um,F_ut,F_nk)
       implicit none
+#include <arch_specific.hf>
 #include "glb_ld.cdk"
       !@objective Combine momentum and themro level into super vector
       !@arguments
@@ -185,6 +188,7 @@ end subroutine itf_adx_get_winds2
    end subroutine itf_adx_combine_levels
    subroutine itf_adx_destag_winds(F_u,F_v,F_uth,F_vth)
       implicit none
+#include <arch_specific.hf>
       !@objective unstagger wind components (Interpolate to geopotential grid)
       !@arguments
       real, dimension(:,:,:), pointer :: F_uth,F_vth !I, staggered winds
@@ -306,6 +310,7 @@ End Interface
 
    subroutine itf_adx_yywinds (F_u,F_v,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv)
       implicit none
+#include <arch_specific.hf>
       !@objective convert wind from image to real values
       !@arguments
       integer :: i0u,j0u,inu,jnu,i0v,j0v,inv,jnv
@@ -397,6 +402,7 @@ End Interface
 
    subroutine itf_adx_img2real_winds(F_ur,F_vr,F_ui,F_vi)
       implicit none
+#include <arch_specific.hf>
       !@objective convert wind from image to real values
       !@arguments
       real, dimension(:,:,:), pointer :: F_ui,F_vi !I=image winds
@@ -458,6 +464,7 @@ End Interface
 
    subroutine itf_adx_interp_thermo2mom(F_fld_m,F_fld_t)
       implicit none
+#include <arch_specific.hf>
       !@objective interpolate from thermodynamic to momentum levels
       !@arguments
       real, dimension(:,:,:), pointer :: F_fld_t !intent(in)
@@ -535,6 +542,7 @@ End Interface
 
    subroutine itf_adx_interp_mom2thermo(F_fld_t,F_fld_m)
       implicit none
+#include <arch_specific.hf>
       !@objective interpolate from momentum to thermodynamic levels
       !@arguments
       real, dimension(:,:,:), pointer :: F_fld_m !intent(in)

@@ -21,6 +21,7 @@
       subroutine itf_phy_fcpfw (F_lunout)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer F_lunout
 !author

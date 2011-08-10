@@ -22,6 +22,7 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
      F_x,    F_y,   F_z,&
      i0,in,j0,jn,k0,F_nk, F_num)
    implicit none
+#include <arch_specific.hf>
    !@objective sets localization and interpolation parameters
    !@arguments
    integer :: F_num           !I, nb points of computations
@@ -85,6 +86,7 @@ end subroutine adx_setint_lin_hor_ver3
 
 subroutine adx_setint()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint','called a stub')
    !---------------------------------------------------------------------
@@ -92,6 +94,7 @@ subroutine adx_setint()
 end subroutine adx_setint
 subroutine adx_setint2()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint2','called a stub')
    !---------------------------------------------------------------------
@@ -99,6 +102,7 @@ subroutine adx_setint2()
 end subroutine adx_setint2
 subroutine adx_setint_lin_hor_ver()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver','called a stub')
    !---------------------------------------------------------------------
@@ -106,6 +110,7 @@ subroutine adx_setint_lin_hor_ver()
 end subroutine adx_setint_lin_hor_ver
 subroutine adx_setint_lin_hor_ver1()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver1','called a stub')
    !---------------------------------------------------------------------
@@ -113,6 +118,7 @@ subroutine adx_setint_lin_hor_ver1()
 end subroutine adx_setint_lin_hor_ver1
 subroutine adx_setint_lin_hor_ver2()
    implicit none
+#include <arch_specific.hf>
    !---------------------------------------------------------------------
    call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver2','called a stub')
    !---------------------------------------------------------------------

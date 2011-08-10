@@ -21,6 +21,7 @@
                                    F_s_m,F_t_m,DIST_DIM,nk)
 !     
       implicit none
+#include <arch_specific.hf>
 !     
       integer DIST_DIM,nk
       real F_fip(DIST_SHAPE,0:Nk+1),F_q(DIST_SHAPE,0:Nk+1)

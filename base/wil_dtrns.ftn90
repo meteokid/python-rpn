@@ -20,6 +20,7 @@
       SUBROUTINE WIL_DTRNS (NNH,SCOEF,LDIAG,TRIGS,ALP,RLAT,PHI)                
 !
       implicit none
+#include <arch_specific.hf>
 !
 !implicits
 #include "wil_williamson.cdk"

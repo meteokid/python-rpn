@@ -18,6 +18,7 @@
 !
       subroutine e_dateo
       implicit none
+#include <arch_specific.hf>
 !
 !
 !author Desgagne M. - MC2
@@ -96,6 +97,7 @@
 !
       logical function get_date (datpdf,filename)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) datpdf,filename
 !

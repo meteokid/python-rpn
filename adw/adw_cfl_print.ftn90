@@ -17,6 +17,7 @@
 !/**
 subroutine adw_cfl_print()
    implicit none
+#include <arch_specific.hf>
    !@objective Print precomputed CFL and reset stats
    !@author  Stephane Chamberland, 2010-01
    !@revisions

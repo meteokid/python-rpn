@@ -21,6 +21,7 @@
       subroutine var_topo()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Sylvie Gravel

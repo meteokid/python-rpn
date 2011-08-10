@@ -20,6 +20,7 @@
       subroutine wlog (F_code_S)
 !
       implicit none
+#include <arch_specific.hf>
 !
        character*4 F_code_S
 !

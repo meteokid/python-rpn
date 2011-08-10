@@ -19,6 +19,7 @@
 !
       subroutine acid_stat_adw_main_1_wnd (F_uth,F_flag)
       implicit none
+#include <arch_specific.hf>
       real    F_uth(LDIST_SHAPE,G_nk)
       integer F_flag
       character(len=80) :: flag_S

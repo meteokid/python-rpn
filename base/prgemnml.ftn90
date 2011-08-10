@@ -17,6 +17,7 @@
 #include <model_macros_f.h>
       subroutine prgemnml()
       implicit none
+#include <arch_specific.hf>
 !
 !author V.Lee - October 20,2008
 !
@@ -43,6 +44,7 @@
 !
       subroutine nml_grid()
       implicit none
+#include <arch_specific.hf>
 #include "grd.cdk"
       write (6  ,nml=grid)
       return
@@ -50,6 +52,7 @@
 
       subroutine nml_step()
       implicit none
+#include <arch_specific.hf>
 #include "step.cdk"
       write (6  ,nml=step)
       return
@@ -57,12 +60,14 @@
 !
       subroutine nml_adw()
       implicit none
+#include <arch_specific.hf>
       call adw_nml_print()
       return
       end
 !
       subroutine nml_gem()
       implicit none
+#include <arch_specific.hf>
 #include "nml.cdk"
       write (6  ,nml=gem_cfgs)
       write (6  ,nml=grdc)
@@ -73,6 +78,7 @@
 !
       subroutine nml_gement()
       implicit none
+#include <arch_specific.hf>
 #include "e_nml.cdk"
       write (6  ,nml=gement)
       return
@@ -80,6 +86,7 @@
 !
       subroutine nml_theo()
       implicit none
+#include <arch_specific.hf>
 #undef TYPE_CDK
 #undef GMM_IS_OK
 #include "theonml.cdk"
@@ -90,6 +97,7 @@
 !
       subroutine nml_cpl()
       implicit none
+#include <arch_specific.hf>
 #include "itf_cpl.cdk"
       namelist /coupling/ CPL_NAME
       write(6  ,nml=coupling)

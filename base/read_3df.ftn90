@@ -21,6 +21,7 @@
                            trname_a,nvar,ntra,nga,nka_m,nka_t, &
                            ofi,ofj,cumerr)
       implicit none
+#include <arch_specific.hf>
 !
       integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,cumerr
       character*8 trname_a(ntra)

@@ -17,6 +17,7 @@
 !/**
 subroutine itf_adw_cfl_print()
    implicit none
+#include <arch_specific.hf>
    !@objective Print CFL
    !@arguments
    !@author  Stephane Chamberland, Apr 2010

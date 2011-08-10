@@ -20,6 +20,7 @@
       subroutine predat3 (F_u, F_v, F_t, F_zd, F_s, F_q, F_topo,  &
                           F_fiptx, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
+#include <arch_specific.hf>
 !
       integer Mminx,Mmaxx,Mminy,Mmaxy
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &

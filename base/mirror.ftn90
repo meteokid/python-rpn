@@ -20,6 +20,7 @@
 !
       subroutine mirror ()
       implicit none
+#include <arch_specific.hf>
 !author 
 !     Gravel              - spring 2003 (after MC2 v_4.9.3)
 !

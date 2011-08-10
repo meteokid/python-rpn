@@ -20,6 +20,7 @@
 !
       subroutine itf_cpl_fillatm
       implicit none
+#include <arch_specific.hf>
 !
 !authors    Michel Desgagne - Spring 2008
 ! 

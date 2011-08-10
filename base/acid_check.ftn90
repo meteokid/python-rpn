@@ -20,6 +20,7 @@
       subroutine acid_check()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Andre Plante

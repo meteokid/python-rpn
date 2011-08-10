@@ -19,6 +19,7 @@
 !
       subroutine e_write_3df ( tr1,nis,njs,nks, nomvar,unf )
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar
       integer nis,njs,nks, unf
@@ -64,6 +65,7 @@
       subroutine e_write_bcs (fa,ni,nj,is,nis,js,jn,njs, &
                               iw,ie,niw,jw,njw,nks,nomvar,unf)
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) nomvar
       integer ni,nj,nks,unf

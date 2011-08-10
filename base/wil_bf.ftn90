@@ -18,6 +18,7 @@
       REAL FUNCTION WIL_BF2(X)
 !
       implicit none
+#include <arch_specific.hf>
 !
       REAL X
 !

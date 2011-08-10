@@ -20,6 +20,7 @@
       subroutine hzd_nudeln (rfd,sfd,lminx,lmaxx,lminy,lmaxy,lnk,nu, &
                                                           is,js,m,n)
       implicit none
+#include <arch_specific.hf>
 !
       integer lminx,lmaxx,lminy,lmaxy,lnk,is,js,m,n
       real rfd (lminx:lmaxx,lminy:lmaxy,lnk), &

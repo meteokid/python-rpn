@@ -20,6 +20,7 @@
       SUBROUTINE WIL_ROTATE(RLON,RLAT,ALPHA,ROTLON,ROTLAT)
 !
       implicit none
+#include <arch_specific.hf>
 !
       REAL RLON, RLAT, ALPHA, ROTLON, ROTLAT
 !

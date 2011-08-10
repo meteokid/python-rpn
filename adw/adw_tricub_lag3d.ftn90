@@ -20,6 +20,7 @@
       subroutine adw_tricub_lag3d ( F_out, F_in, F_x, F_y, F_z, F_num, &
                                     F_mono_L, i0, in, j0, jn, F_nk, F_lev_S )
       implicit none
+#include <arch_specific.hf>
 !
       character*1 F_lev_S
       logical F_mono_L

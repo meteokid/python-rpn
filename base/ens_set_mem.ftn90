@@ -18,6 +18,7 @@
       subroutine ens_set_mem(l_minx,l_maxx,G_halox,l_ni,     &
                              l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
       implicit none
+#include <arch_specific.hf>
 !
       integer l_minx,l_maxx,G_halox,l_ni
       integer l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out

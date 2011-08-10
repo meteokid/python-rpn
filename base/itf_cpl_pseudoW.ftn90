@@ -17,6 +17,7 @@
 !
       subroutine itf_cpl_pseudoW (datev, kstep, step, date0, send)
       implicit none
+#include <arch_specific.hf>
 !
       CHARACTER*(*) datev
       INTEGER kstep, step, date0, send

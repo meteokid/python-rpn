@@ -21,6 +21,7 @@
                          F_flag_L,DIST_DIM,Nk)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM,F_lx,Nk
       real F_fd(DIST_SHAPE,Nk),  F_coef

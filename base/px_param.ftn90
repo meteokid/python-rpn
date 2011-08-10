@@ -22,6 +22,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer iun,fstkeys_max,ip1_max,presvar_max,vcode
       integer ip1(fstkeys_max),fstkeys(fstkeys_max)

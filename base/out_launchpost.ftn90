@@ -19,6 +19,7 @@
 !
       subroutine out_launchpost (F_forceit_L)
       implicit none
+#include <arch_specific.hf>
 !
       logical F_forceit_L
 !

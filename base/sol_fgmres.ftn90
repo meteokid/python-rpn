@@ -18,6 +18,7 @@
       subroutine sol_fgmres( F_w2_8, F_w1_8, iln, nil, njl, &
                                 Minx, Maxx, Miny, Maxy, Nk )
       implicit none
+#include <arch_specific.hf>
 !
       integer iln, nil, njl, Minx, Maxx, Miny, Maxy, Nk
       real*8 F_w1_8 (Minx:Maxx,Miny:Maxy,Nk), &

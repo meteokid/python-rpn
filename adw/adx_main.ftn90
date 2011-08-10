@@ -21,6 +21,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
                       F_fields_list, F_fields_type_L, F_nfields, &
                       F_minx,F_maxx,F_miny,F_maxy,F_nks, F_nb_iter, F_doAdwStat_L)
    implicit none
+#include <arch_specific.hf>
 !
    !@objective Perform advection
 !

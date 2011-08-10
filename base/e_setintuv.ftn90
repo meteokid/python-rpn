@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine e_setintuv
       implicit none
+#include <arch_specific.hf>
 !
 !author jean cote - rpn - sept 95
 !

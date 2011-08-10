@@ -18,6 +18,7 @@
 
       Subroutine yyg_scalbc(tab_dst,tab_src,DIST_DIM,NK)
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009

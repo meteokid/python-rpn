@@ -19,6 +19,7 @@
 !
       subroutine set_cori
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     michel roch - rpn - aug 95

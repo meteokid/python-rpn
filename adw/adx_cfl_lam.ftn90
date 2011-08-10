@@ -17,6 +17,7 @@
 !/**
 subroutine adx_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F_nk, F_lev_S)
    implicit none
+#include <arch_specific.hf>
    !@objective Compute the courrant numbers for this time step
    !@arguments
    character(len=1) :: F_lev_S         !I, m/t: momentum/thermo level

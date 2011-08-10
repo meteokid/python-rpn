@@ -22,6 +22,7 @@ subroutine adx_grid_scalar_ad ( F_fld_adw, F_fld_model,          &
                                 F_minx,F_maxx,F_miny,F_maxy,F_nk,F_pol0_L, F_extend_L)
 
    implicit none
+#include <arch_specific.hf>
 !
    !@objective ADJ of adx_grid_scalar 
 !

@@ -20,6 +20,7 @@
       subroutine sergoff()
 !
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Andre Methot - aug 94 - v0_14

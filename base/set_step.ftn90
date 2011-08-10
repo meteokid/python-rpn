@@ -20,6 +20,7 @@
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
 !
       implicit none
+#include <arch_specific.hf>
 !
         integer F_argc,F_v1,F_v2
         character *(*) F_argv_S(0:F_argc),F_cmdtyp
@@ -237,6 +238,7 @@
 !author Bernard Dugas - RPN - Sep 2008
 !
       implicit none
+#include <arch_specific.hf>
       real     month
 !
 !revision

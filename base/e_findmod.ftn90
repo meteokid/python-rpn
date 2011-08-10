@@ -23,6 +23,7 @@
                           fnis, fnjs, fni, fnj, F_trouv_L)
 !
       implicit none
+#include <arch_specific.hf>
 !
       logical F_mdmg_L, F_h2o_L, F_dbg_L, F_trouv_L
       integer F_pass, F_nii, F_njj, fnis,fnjs,fni,fnj

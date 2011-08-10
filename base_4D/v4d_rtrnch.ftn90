@@ -21,6 +21,7 @@
 
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer nvar,numtr,istep,ind,jdo,offi,niphy,nkphy
 !

@@ -17,6 +17,7 @@
 !
       subroutine vte_intvertx (F_dch,F_sch,F_srclev,F_dstlev,n,nks,nkd,F_var)
       implicit none
+#include <arch_specific.hf>
 !
        integer n, nkd, nks
        real F_dch(n,nkd), F_sch(n,nks), F_srclev(n,nks),F_dstlev(n,nkd)

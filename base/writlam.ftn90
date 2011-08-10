@@ -18,6 +18,7 @@
 !
       subroutine writlam(f,DIST_DIM,nk,i0,in,j0,jn,k0,kn,unit)
       implicit none
+#include <arch_specific.hf>
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
       integer DIST_DIM,nk,unit

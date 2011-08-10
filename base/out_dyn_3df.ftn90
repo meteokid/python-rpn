@@ -20,6 +20,7 @@
 !
       subroutine out_dyn_3df ( datev, gid, gif, gjd, gjf )
       implicit none
+#include <arch_specific.hf>
 !
       character* (*) datev
       integer gid, gif, gjd, gjf

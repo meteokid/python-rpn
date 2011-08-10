@@ -24,6 +24,7 @@
                             nk12s, nk12, ni22s, ni22, fnjb)
 !
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk, Gni, Gnj, lnjs_nh, &
               nk12s, nk12, ni22s, ni22, fnjb
