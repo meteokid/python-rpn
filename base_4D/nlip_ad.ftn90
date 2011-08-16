@@ -359,7 +359,7 @@
          end do
          end do
 !
-         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8, nij)
+         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8(i02,j02), nij)
 
       end do
 !$omp end do  
@@ -502,7 +502,7 @@
          end do
          end do
 !
-         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8, nij)
+         call vrec(inv2k_m_8(i02,j02,k), xtmp_m_8(i02,j02), nij)
 
       end do
 !$omp end do  

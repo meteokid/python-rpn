@@ -105,7 +105,7 @@
 !      call glbstat (ps,'psn',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
 !      call glbstat (psrc_3d(xi:xa,yi:ya,nk+1),'pso',1,len_x,1,len_y,1,1,len_x,1,len_y,1,1)
       
-      call vslog(lnpsrc_3d,psrc_3d,len_x*len_y*(nk+1))
+      call vslog(lnpsrc_3d(xi,yi,1),psrc_3d(xi,yi,1),len_x*len_y*(nk+1))
       call vslog(temp_ps,ps,len_x*len_y)
       temp_ps=temp_ps-Cstv_Zsrf_8
       err = get_px(lnpdst_3d,temp_ps,len_x*len_y,Ver_a_8%t,Ver_b_8%t,nk+1,Ver_code,.true.)

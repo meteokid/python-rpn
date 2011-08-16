@@ -45,7 +45,7 @@
       COMPLEX UCOSFC(MAXH+1),VCOSFC(MAXH+1)
 !
       INTEGER M,N,JM,JN,IS,INDEX
-      REAL UCOS,VCOS,DIV
+      REAL UCOS,VCOSR,DIV
 !------------------------------------------------------------------
 !
 !     COMPUTE U AND V MOMENTUM COMPONENTS FROM VORTICITY AND DIVERGENCE         
@@ -149,14 +149,14 @@
 !     CALL DFT ROUTINE FOR INVERSE TRANSFORM OF UCOS AND VCOS                   
 !     -------------------------------------------------------
       CALL WIL_DFT991(UCOSFC,TRIGS,MAXH,LDIAG(0,1),UCOS)
-      CALL WIL_DFT991(VCOSFC,TRIGS,MAXH,LDIAG(0,1),VCOS)
+      CALL WIL_DFT991(VCOSFC,TRIGS,MAXH,LDIAG(0,1),VCOSR)
 !
 !     RENORMALIZE WIND FIELD
 !     ----------------------
       DIV = COS(RLAT)
       IF (DIV .NE. 0.0) THEN
          U = UCOS/DIV
-         V = VCOS/DIV
+         V = VCOSR/DIV
       ELSE
          WRITE (0,350) 
   350    FORMAT(/,' STSWM: FATAL ERROR IN ROUTINE DUV', &

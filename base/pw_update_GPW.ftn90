@@ -73,7 +73,7 @@
                                               -fis0(i,j)
          enddo
          enddo
-         call vsexp(wk1, wk1, 2*l_ni*l_nj)
+         call vsexp(wk1(1,1,1), wk1(1,1,1), 2*l_ni*l_nj)
          pw_pm_plus(1:l_ni,1:l_nj,k+1) = wk1(1:l_ni,1:l_nj,1)
          pw_pt_plus(1:l_ni,1:l_nj,k  ) = wk1(1:l_ni,1:l_nj,2)
       end do

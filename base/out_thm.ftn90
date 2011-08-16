@@ -626,11 +626,11 @@
 
 !            Calculate PX (in px), thermo levels.
 !            And output all the levels!
-             call vsexp(px_ta,wlnph_ta,l_ninj*(nk+2))
+             call vsexp(px_ta(l_minx,l_miny,1),wlnph_ta(Minx,Miny,1),l_ninj*(nk+2))
              px_ta(:,:,nk+2) = p0(:,:)
 
 !            Calculate PX (in px), momentum levels.
-             call vsexp(px_m,wlnph_m(l_minx,l_miny,1),l_ninj*(nk+1))
+             call vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*(nk+1))
              px_m(:,:,nk+1) = p0(:,:)
 
 !            Prepare VT,HU for physics functions
