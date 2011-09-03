@@ -89,9 +89,9 @@
          cnt = cnt + 1
          if (cnt .eq. Pil_lancemodel) &
             call system ( &
-           'tailjob=../../RUNENT_upload/input/tailjob_E ; '            //&
-           'if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob} ; ' //&
-           'soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob} ; fi'      )
+           'tailjob=../../../UPLOAD/cfg_all/BATCH_launch_NTR_tailjob_01;' //&
+           'if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob}     ;' //&
+           'soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob}            ; fi')
 
          call gemtim3 (6)
 !

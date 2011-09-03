@@ -71,10 +71,8 @@
       integer Ptopo_tag 
       logical Ptopo_bind_L
       
-      integer Ptopo_gindx(6,*)
-      pointer(Ptopo_gindx_,Ptopo_gindx)
-      common/Ptopo/Ptopo_gindx_
-
+      DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
+!
       common  / Ptopo_b / Ptopo_npex     , Ptopo_npey
       common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
       common  / Ptopo_b / Ptopo_ninblocx , Ptopo_ninblocy
