@@ -15,8 +15,6 @@
 
 !**s/r getindx2
 !
-#include "model_macros_f.h"
-!
       subroutine getindx2 ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
       implicit none
 #include <arch_specific.hf>
@@ -46,73 +44,46 @@
 !  init         O            Initialysation requirement (1=yes)
 !----------------------------------------------------------------
 !
-!implicites
-#include "itf_phy_buses.cdk"
-!
 !*
-      integer i,init
+#include <clib_interface.cdk>
+
+      integer,external :: phy_getindx3
+      integer,parameter :: MAX_PARAMS = 8
+      integer,parameter :: BUSPAR_I0=1
+      integer,parameter :: BUSPAR_NIK=2
+      integer,parameter :: BUSPAR_INIT=3
+
+      character(len=32) :: varname_S
+      character(len=4) :: outname_S,bus_S,bus0_S,inname_S
+      integer :: busidx,params(MAX_PARAMS),istat
 !-------------------------------------------------------------------
 !
       F_deb  = -1
       F_nm   =  0
       F_init = -1
 
-      if ((F_bus_S.eq.'ENT').or.(F_bus_S.eq.'ANY')) then
-         do i=1,p_bent_top
-            if (F_vn_S.eq.entnm(i)) then
-               F_deb   = entpar(i,1)
-               F_nm    = entpar(i,2)
-               F_init  = entpar(i,3)
-               F_bus_S = 'ENT'
-               goto 701
-            endif
-         end do
-         if ((F_deb .le. 0).and.(F_bus_S.ne.'ANY')) &
-         write (6,910) F_vn_S,'BUSENT'
+      bus0_S = adjustl(F_bus_S)
+      istat = clib_tolower(bus0_S)
+
+      varname_S = F_vn_S
+      outname_S = ' '
+      inname_S = ' '
+      istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,busidx,params,MAX_PARAMS)
+
+      if (istat >= 0) then
+         istat = clib_tolower(bus_S)
+         if (bus0_S(1:1)==bus_S(1:1) .or. bus0_S=='any') then
+            F_deb   = params(BUSPAR_I0)
+            F_nm    = params(BUSPAR_NIK)
+            F_init  = params(BUSPAR_INIT)
+         endif
       endif
 
-      if ((F_bus_S.eq.'DYN').or.(F_bus_S .eq. 'ANY')) then
-         do i=1,p_bdyn_top
-            if (F_vn_S.eq.dynnm(i)) then
-               F_deb   = dynpar(i,1)
-               F_nm    = dynpar(i,2)
-               F_init  = dynpar(i,3)
-               F_bus_S = 'DYN'
-               goto 701
-            endif
-         end do
-         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
-         write (6,910) F_vn_S,'BUSDYN'
+      if ((F_deb <= 0).and.(bus0_S.ne.'any')) then
+         write (6,910) F_vn_S,'BUS'//trim(F_bus_S)
+         call flush(6)
       endif
 
-      if ((F_bus_S.eq.'PER').or.(F_bus_S .eq. 'ANY')) then
-         do i=1,p_bper_top
-            if (F_vn_S.eq.pernm(i)) then
-               F_deb   = perpar(i,1)
-               F_nm    = perpar(i,2)
-               F_init  = perpar(i,3)
-               F_bus_S = 'PER'
-               goto 701
-            endif
-         end do
-         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
-         write (6,910) F_vn_S,'BUSPER'
-      endif
-
-      if ((F_bus_S.eq.'VOL').or.(F_bus_S .eq. 'ANY')) then
-         do i=1,p_bvol_top
-            if (F_vn_S.eq.volnm(i)) then
-               F_deb   = volpar(i,1)
-               F_nm    = volpar(i,2)
-               F_init  = volpar(i,3)
-               F_bus_S = 'VOL'
-               goto 701
-            endif
-         end do
-         if ((F_deb .le. 0).and.(F_bus_S .ne. 'ANY')) &
-         write (6,910) F_vn_S,'BUSVOL'
-      endif
-!
  910  format (/1x,'===> ABORT IN GETINDX: COULD NOT FIND'/ &
                1x,"     VARIABLE '",a8,"' ON '",a6,"'."/)
 !
@@ -123,7 +94,6 @@
   
       subroutine getindx ( F_vn_S, F_bus_S, F_deb, F_nm, F_init )
       implicit none
-#include <arch_specific.hf>
 !
       character*(*) F_vn_S
       character*(*) F_bus_S
