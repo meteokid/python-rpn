@@ -15,28 +15,24 @@
 
 !**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
 !
-#include "model_macros_f.h"
-!
       subroutine itf_phy_step (F_stepno)
-
-      Use itf_phy_iface  , Only : itf_phy_geti, itf_phy_inincr
-      Use phy_input_iface, Only : phy_acquire_data
+      use itf_phy_iface  , only : itf_phy_geti, itf_phy_inincr
+      use phy_input_iface, only : phy_acquire_data !TODO: rm w/ itf_phy_geti
       implicit none
 #include <arch_specific.hf>
 !
-      integer, INTENT(IN) :: F_stepno
-Interface
-!!$Subroutine itf_phy_slb (geofld, busdyn3D, busper3D, busvol3D, &
-Subroutine itf_phy_slb (busent3D, busdyn3D, busper3D, busvol3D, &
+      integer, intent(IN) :: F_stepno
+
+!TODO: this interface should be updated automatically
+interface
+   subroutine itf_phy_slb (busent3D, busdyn3D, busper3D, busvol3D, &
                         esiz, dsiz, fsiz, vsiz,   &
                         dt, kount, phy_timing, ni, nj, nk, pslic) 
-
-         Real, Dimension(:,:), Pointer :: busent3D,busdyn3D, busper3D, busvol3D
-!!$         Real, Dimension(:  ), Pointer :: geofld
-         Integer :: esiz, dsiz, fsiz, vsiz, kount, ni,nj,nk, pslic
-         Real    :: dt, phy_timing(ni,nj)
-End Subroutine itf_phy_slb
-End Interface
+      real, dimension(:,:), pointer :: busent3D,busdyn3D, busper3D, busvol3D
+      integer :: esiz, dsiz, fsiz, vsiz, kount, ni,nj,nk, pslic
+      real    :: dt, phy_timing(ni,nj)
+   end subroutine itf_phy_slb
+end interface
 !
 !author 
 !     Michel roch - rpn - april 1994
@@ -92,9 +88,9 @@ End Interface
 #include "path.cdk"
 #include "grd.cdk"
 
-      integer,external :: phy_dataload2
+      integer,external :: phy_dataload3
       integer*8,external :: time_base
-      external :: itf_phy_geom,itf_phy_fold
+      external :: itf_phy_geom,itf_phy_xhfold_3d
 
       integer, save :: l_phy_gid = -1
       integer, save :: dateo = -1
@@ -131,27 +127,28 @@ End Interface
       call tmg_stop0(94)
 !
 ! phy_dataload should replace the 2 calls to phy_acquire_data
-!
-      if (l_phy_gid < 0) call itf_phy_gdef (l_phy_gid, g_phy_gid, gxfi, gyfi)
-      if (dateo     < 0) call datp2f (dateo, Mod_runstrt_S)
 
+      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
+
+      if (l_phy_gid < 0) call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
+      if (dateo < 0) call datp2f(dateo,Mod_runstrt_S)
       geofilename_S = 'GEOPHY/Gem_geophy.fst'
-      if (Grd_yinyang_L) geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
-
-      !TODO: remove this conditional when phy_dataload support yinyang and FCREST
-      if (.not.(Grd_yinyang_L .or. P_pbl_schsl_s=='FCREST')) then
-         err = phy_dataload2(itf_phy_geom,itf_phy_fold,dateo,nint(cstv_dt_8),F_stepno,l_phy_gid,Path_phy_S,geofilename_S)
+      if (Grd_yinyang_L) &
+           geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+      !TODO: remove this conditional when phy_dataload support FCREST
+      if (P_pbl_schsl_s /= 'FCREST') then
+         err = phy_dataload3(itf_phy_geom,itf_phy_xhfold_3d,dateo,nint(cstv_dt_8),F_stepno,l_phy_gid,Path_phy_S,geofilename_S)
       else 
          err = 0
          if (F_stepno == 0) then
             call phy_acquire_data(itf_phy_geti,p_ni,p_nj,p_nk, &
                  p_bper_siz,F_stepno, Rstri_sdon,Lun_out>0,err)
-!!$         else if (Clim_inincr_L) then
-!!$            call phy_acquire_data(itf_phy_inincr,Phy_busper3D,p_ni,p_nj,p_nk, &
-!!$                 p_bper_siz,F_stepno, Rstri_sdon,Lun_out>0,err)
          endif
       endif
-      call handle_error(err,'itf_phy_step','Problem getting input data')      
+      call handle_error(err,'itf_phy_step','Problem getting input data') 
+
+      call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
+     
 !
 !C       4.	compute physics tendencies
 !		--------------------------
@@ -162,11 +159,11 @@ End Interface
       if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
 !
       if (G_lam) then
-         PG_ni  = G_ni - 4
-         PG_nj  = G_nj - 4
+        PG_ni  = G_ni - 4
+        PG_nj  = G_nj - 4
       else
-         PG_ni  = G_ni
-         PG_nj  = G_nj
+        PG_ni  = G_ni
+        PG_nj  = G_nj
       endif
 !
       dumpbus_L = .false.
@@ -199,7 +196,6 @@ End Interface
 
       pslic= 0
       dt   = Cstv_dt_8
-
       call tmg_start0(91,'PHYSICS')
 !$omp parallel
       call itf_phy_slb ( BUSENT_3d ,BUSDYN_3d, BUSPER_3d ,BUSVOL_3d , &
@@ -207,7 +203,6 @@ End Interface
                          dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
 !$omp end parallel
       call tmg_stop0(91)
-
       call tmg_start0(92,'PHYSEXT')
 !$omp parallel do
       do j = 1, p_nj

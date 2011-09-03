@@ -13,6 +13,30 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+!/**
+subroutine itf_phy_xhfold_3d(F_name_S,F_bus,F_data,F_busidx,F_busnik,F_busnj,F_minx,F_maxx,F_miny,F_maxy,F_k0,F_nk)
+   implicit none
+   !@Objective  Pre-Proc then Transfer data to p_runlgt space
+   !@Arguments
+   character(len=*),intent(in) :: F_name_S !- Provisional to do conditional 3d preproc
+   integer,intent(in) :: F_busidx,F_busnik,F_busnj,F_minx,F_maxx,F_miny,F_maxy,F_k0,F_nk
+   real,intent(inout) :: F_bus(F_busnik,F_busnj)
+   real,intent(in) :: F_data(F_minx:F_maxx,F_miny:F_maxy,F_k0:F_nk)
+   !**/
+#include "grd.cdk"
+   integer :: j
+   ! ---------------------------------------------------------------------
+!!$   if (Grd_yinyang_L) then
+!!$      !TODO: call yin yang halo xch sub
+!!$   endif
+   do j=1,F_busnj
+      call itf_phy_fold(F_bus(F_busidx,j),F_data,j,F_k0,F_nk,F_minx,F_maxx,F_miny,F_maxy)
+   enddo
+   ! ---------------------------------------------------------------------
+   return
+end subroutine itf_phy_xhfold_3d
+
+
 !**s/r itf_phy_fold
 !
       subroutine itf_phy_fold (d, s, F_jdo, k0, nk, minx, maxx, miny, maxy)
