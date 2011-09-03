@@ -10,8 +10,12 @@ COMM     = rpn_comm$(COMM_VERSION) $(COMM_stubs)
 V4D         = v4d_stubs
 #V4D         = "gemdyn_v4d modulopt prof_003"
 
-#PHYLIBPATH  = $(ARMNLIB)/modeles/PHY/v_$(PHY_VERSION)
-#PHY         = phy_stubs
+CHMLIBPATH  = 
+CHM         = $(CHM_VERSION)
+#CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
+#CHM         = chm
+
+#PHY         = rpnphy_stubs
 PHY         = rpnphy
 
 VGRID         = descrip
@@ -22,19 +26,15 @@ PROF          = prof_003
 PROFLIBPATH   =
 #PROF          = prof_stubs
 
-CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
-CHM         = chm_stubs
-#CHM         = chm
 
 CPL = cpl_$(CPL_VERSION)
 CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 #CPL         = cpl_stubs
 
 OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
-#LIBPATH  = $(PWD) $(MODLIBPATH)/lib/$(EC_ARCH) $(PHYLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH)
 LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
 
-LIBS     = gemdyn $(V4D) $(PHY) $(PATCH) $(CPL) modelutils $(OTHERS)
+LIBS     = gemdyn $(V4D) $(PHY) $(CHM) $(PATCH) $(CPL) modelutils $(OTHERS)
 
 mainntr = maingemntr_$(BASE_ARCH).Abs
 maindm  = maingemdm_$(BASE_ARCH).Abs
