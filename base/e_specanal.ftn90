@@ -42,6 +42,7 @@
 ! v4_14 - McTaggart-Cowan R.- Read ww if wt1 not found
 ! V4_30 - Plante A.         - Correct UT1 and VT1 grid size in call to ezgdef_fmem
 ! v4_40 - Qaddouri/Lee      - Yin-Yang modifications
+! v4_4  - Plante A.         - Correct test on zdt1/wt1/ZZ vertical structure
 !
 #include "e_anal.cdk"
 #include "e_fu.cdk"
@@ -328,8 +329,8 @@
                       ip2a, ip3a, tva,'ZDT1', list, nk_zdt1, lvmax)
 !
       if (nk_zdt1.gt.0) then
-         if (nk_zdt1.ne.lv_t) then
-            print*, 'Incorrect vertical structure for ZDT1'
+         if (nk_zdt1.ne.lv) then            
+            print*, 'Incorrect vertical structure for ZDT1, nk(zdt1),nk(thermo without diag)=',nk_zdt1,lv
             call handle_error(-1,'e_specanal','')           
          else
             nvar=nvar+1
@@ -359,8 +360,8 @@
                         ip2a, ip3a, tva, var, list, nk_wt1, lvmax)
       endif
       if (nk_wt1.gt.0) then
-         if (nk_wt1.ne.lv_t) then
-            print*, 'Incorrect vertical structure for WT1/ZZ'
+         if (nk_wt1.ne.lv) then
+            print*, 'Incorrect vertical structure for WT1/ZZ, nk(wt1/zz),nk(thermo without diag)=',nk_wt1,lv
             call handle_error(-1,'e_specanal','')           
          else
             nvar=nvar+1

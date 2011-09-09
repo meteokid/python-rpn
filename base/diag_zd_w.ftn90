@@ -1,0 +1,402 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!** s/r diag_zd_w - Computes model vertical velocities zd and w diagnostically.
+!
+#include "model_macros_f.h"
+!
+      subroutine diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_fip, F_s, DIST_DIM, Nk, F_zd_L, F_w_L,F_w_flv)
+      implicit none
+#include <arch_specific.hf>
+!
+      integer DIST_DIM, Nk,F_w_flv
+      real    F_zd (DIST_SHAPE,  Nk+1), F_w(DIST_SHAPE,Nk+1), &
+              F_u  (DIST_SHAPE,  Nk)  , F_v(DIST_SHAPE,Nk)  , &
+              F_fip(DIST_SHAPE,0:Nk+1), F_t(DIST_SHAPE,Nk+1), F_s(DIST_SHAPE)
+      logical ::  F_zd_L,F_w_L
+!
+!authors
+!      C.Girard & A.Plante, August 2011, based on routine uv2psd
+!
+!revision
+!
+!arguments
+!______________________________________________________________________
+!        |                                             |           |   |
+! NAME   |             DESCRIPTION                     | DIMENSION |I/O|
+!--------|---------------------------------------------|-----------|---|
+! F_zd   | coordinat vertical motion ( 1/s )           | 3D (Nk+1) | o |
+! F_w    | true vertical motion      ( m/s )           | 3D (Nk+1) | o |
+!--------|---------------------------------------------|-----------|---|
+! F_u    | x component of velocity                     | 3D (Nk)   | i |
+! F_v    | y component of velocity                     | 3D (Nk)   | i |
+! F_fip  | perturbation of geopotential                | 3D (Nk+2) | i |
+! F_t    | temperature                                 | 3D (Nk+1) | i |
+! F_s    | s log of surface pressure over constant     | 2D (1)    | i |
+! F_zd_L | true to compute zdot                        | scal      | i |
+! F_w_L  | true to compute w                           | scal      | i |
+! F_w_flv| flavor 1 or 2                               | scal      | i |
+!________|_____________________________________________|___________|___|
+!
+!implicits
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "inuvl.cdk"
+#include "ver.cdk"
+#include "dcst.cdk"
+#include "zdot.cdk"
+#include "cstv.cdk"
+#include "intuv.cdk"
+#include "lun.cdk"
+!
+!modules
+!
+      integer i, j, k, kk, km, i0, in, j0, jn, j00, jnn
+      real term_div,roverg
+      real div (DIST_SHAPE,Nk+1),adv(DIST_SHAPE,0:Nk+1),div_i(DIST_SHAPE,Nk+1)
+      real pi_t(DIST_SHAPE,Nk+1),lnpi_t(DIST_SHAPE,Nk+1),pidot(DIST_SHAPE,Nk+1)
+      real lnpi(DIST_SHAPE),pbX(DIST_SHAPE),pbY (DIST_SHAPE)
+      real sbX (DIST_SHAPE),sbY(DIST_SHAPE),pi_s(DIST_SHAPE)
+      real UdpX(DIST_SHAPE,Nk),    VdpY(DIST_SHAPE,Nk)
+      real fipX(DIST_SHAPE,0:Nk+1),fipY(DIST_SHAPE,0:Nk+1)
+      real lapse(DIST_SHAPE,Nk+1)
+!     ________________________________________________________________
+!
+      if(.not.(F_zd_L.or.F_w_L)) return
+!
+      if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
+      if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
+!
+      ! enlever calcul si F_zd_L=.false.
+!
+! Halo exchange needed because scope below goes one point in halo
+!
+      call rpn_comm_xch_halo( F_s,  LDIST_DIM, l_ni, l_nj , 1,   &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_u,  LDIST_DIM, l_niu,l_nj, Nk,   &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_v,  LDIST_DIM, l_ni,l_njv, Nk,   &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      if(F_w_L)&
+      call rpn_comm_xch_halo (F_fip,LDIST_DIM, l_ni,l_nj,  Nk+2, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!
+!     Initializations
+
+!     local grid setup for final results
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+      if (G_lam) then ! peripheral points will be zeroed
+         if(l_west)  i0 = 2
+         if(l_east)  in = l_niu
+         if(l_south) j0 = 2
+         if(l_north) jn = l_njv
+      endif
+!
+      j00=j0-1
+      jnn=jn
+      if (.not.G_lam) then         
+         if(l_south) then
+             sbY(i0:in,j0-1)=0.
+             F_v(i0:in,j0-1,1:Nk)=0.
+            fipY(i0:in,j0-1,0:Nk+1)=0.
+            j00=j0
+         endif
+         if(l_north) then
+             sbY(i0:in,jn)=0.
+             F_v(i0:in,jn,1:Nk)=0.
+            fipY(i0:in,jn,0:Nk+1)=0.
+            jnn=jn-1
+         endif
+      endif
+!
+!     CALCULATION of sbX, sbY, i.e. F_s on U and V points
+!
+      do j=j0,jn
+      do i=i0-1,in
+         sbX(i,j)=F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*intuv_c0xxu_8(i)
+      end do
+      end do
+!
+      do j=j00,jnn
+      do i=i0,in
+         sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*intuv_c0yyv_8(j)
+      end do
+      end do
+!
+!     CALCULATION of pi_s
+!
+      do j=j0,jn
+      do i=i0,in
+         pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+F_s(i,j))
+      end do
+      end do
+!
+!     CALCULATION of U*dpi/dz and V*dpi/dz
+!
+      do k = 1, Nk
+         do j=j0,jn
+         do i=i0-1,in
+            lnpi(i,j  )=Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)
+             pbX(i,j  )=exp(lnpi(i,j))
+            UdpX(i,j,k)=F_u(i,j,k)*pbX(i,j)*(1.d0+Ver_dbdz_8%m(k)*sbX(i,j))
+         end do
+         end do
+         do j=j0-1,jn
+         do i=i0,in
+            lnpi(i,j  )=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)
+             pbY(i,j  )=exp(lnpi(i,j))
+            VdpY(i,j,k)=F_v(i,j,k)*pbY(i,j)*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j))
+         end do
+         end do
+      end do
+!
+!      CALCULATION of lnpi_t and pi_t
+!
+      do k = 1, Nk+1
+         do j=j0,jn
+         do i=i0,in
+             lnpi_t(i,j,k) = Ver_z_8%t(k) + Ver_b_8%t(k) * F_s(i,j)
+               pi_t(i,j,k) = exp(lnpi_t(i,j,k))
+         end do
+         end do
+      end do
+
+!     CALCULATION of DIV(V*dpi/dz)
+!
+      do k=1,Nk
+         do j=j0,jn
+         do i=i0,in
+            div(i,j,k) = geomg_invcy2_8(j) * ( &
+                        (UdpX(i,j,k)-UdpX(i-1,j,k))*geomg_invDX_8(i) &
+                      + (VdpY(i,j,k)-VdpY(i,j-1,k))*geomg_invDY_8(j) )
+         enddo
+         enddo
+      enddo
+!
+      if (Zdot_divHLM_L) then
+!     Compute lapse rate
+         call verder (lapse,F_t,lnpi_t,2.0,2.0,LDIST_DIM, &
+                                          Nk+1,i0,in,j0,jn)
+!
+!     Scale divergence by the lapse rate
+         do k=1,Nk
+            do j=j0,jn
+            do i=i0,in
+               div(i,j,k) = div(i,j,k) * (tanh(2.*lapse(i,j,k)/Dcst_pi_8)+1.)/2.
+            enddo 
+            enddo
+         enddo
+      endif
+!
+!     INTEGRATION OF THE DIVERGENCE IN THE VERTICAL
+!
+      div_i(i0:in,j0:jn,1)=0.
+      do k=2,Nk+1
+         kk=max(1,k-1)
+         do j=j0,jn
+         do i=i0,in
+            div_i(i,j,k)=div_i(i,j,k-1)+div(i,j,k-1)*Ver_dz_8%m(k-1)
+         enddo
+         enddo
+      enddo
+!
+!     CALCULATION of ZDOT
+!
+      if(F_zd_L)then
+!
+         if(G_lam) F_zd=0.0 ! ensure 0's in contours
+!
+         F_zd(1:l_ni,1:l_nj,1) = 0.
+         do k=2,Nk
+            do j=j0,jn
+            do i=i0,in
+               F_zd(i,j,k) = ( Ver_b_8%t(k)*div_i(i,j,Nk+1)/pi_s(i,j) &
+                    - div_i(i,j,k)/pi_t(i,j,k) ) / &
+                    (1.+Ver_dbdz_8%t(k)*F_s(i,j))
+            end do
+            end do
+         end do
+         F_zd(1:l_ni,1:l_nj,Nk+1) = 0.
+!
+      endif
+!
+!     CALCULATION of W
+!
+      if(F_w_L)then
+!
+!        Compute the advection of s : ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
+!
+         do k=1,Nk+1
+            km=max(k-1,1)
+            kk=min(k,Nk)
+            do j=j0,jn
+            do i=i0,in
+               adv(i,j,k)=geomg_invcy2_8(j) * 0.5 * ( geomg_invDX_8(i) *  &
+                  ( (F_u(i  ,j,kk)+F_u(i  ,j,km))*(sbX(i  ,j)-F_s(i,j))   &
+                   -(F_u(i-1,j,kk)+F_u(i-1,j,km))*(sbX(i-1,j)-F_s(i,j)) ) &
+                                                    + geomg_invDY_8(j) *  &
+                  ( (F_v(i,j  ,kk)+F_v(i,j  ,km))*(sbY(i,j  )-F_s(i,j))   &
+                   -(F_v(i,j-1,kk)+F_v(i,j-1,km))*(sbY(i,j-1)-F_s(i,j)) ) )
+            end do
+            end do
+         end do
+!
+!        Compute pidot=omega
+!
+         do k=1,Nk+1
+            do j=j0,jn
+            do i=i0,in
+               pidot(i,j,k)=pi_t(i,j,k)*Ver_b_8%t(k)*adv(i,j,k) - div_i(i,j,k)
+            end do
+            end do
+         end do
+!
+         if(F_w_flv.eq.1)then
+
+!           FLAVOR 1
+!
+!           Compute W=-omega/(g*ro)      ro=p/RT
+!
+            if(G_lam) F_w=0.0 ! ensure 0's in contours
+!
+            RoverG=Dcst_rgasd_8/Dcst_grav_8
+            do k=1,Nk+1
+               do j=j0,jn
+               do i=i0,in
+                  F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot(i,j,k)
+               end do
+               end do
+            end do
+
+         else
+!
+!           FLAVOR 2
+!
+!           Compute fipX and fipY
+!
+            do k=0,NK+1
+               do j=j0,jn
+               do i=i0-1,in
+                  fipX(i,j,k)=F_fip(i,j,k)+(F_fip(i+1,j,k)-F_fip(i,j,k))*intuv_c0xxu_8(i)
+               end do
+               end do
+               do j=j00,jnn
+               do i=i0 ,in
+                  fipY(i,j,k)=F_fip(i,j,k)+(F_fip(i,j+1,k)-F_fip(i,j,k))*intuv_c0yyv_8(j)
+               end do
+               end do
+            end do
+!
+!           Compute (1-cappa)*pidot/pi_t*(dfi/dz)+DIV(V*dfi/dz)
+!
+            do k=1,Nk+1
+               km=max(k-1,1)
+               kk=min(k,Nk)
+               do j=j0,jn
+               do i=i0,in
+                  div(i,j,k)=geomg_invcy2_8(j) * 0.5 * ( geomg_invDX_8(i) *  &
+                     ( (F_u(i  ,j,kk)+F_u(i  ,j,km))*(fipX(i  ,j,k)-fipX(i  ,j,k-1) - Cstv_RTstr_8*Ver_dz_8%t(k) )   &
+                      -(F_u(i-1,j,kk)+F_u(i-1,j,km))*(fipX(i-1,j,k)-fipX(i-1,j,k-1) - Cstv_RTstr_8*Ver_dz_8%t(k) ) ) &
+                                                    + geomg_invDY_8(j) *  &
+                     ( (F_v(i,j  ,kk)+F_v(i,j  ,km))*(fipY(i,j  ,k)-fipY(i,j  ,k-1) - Cstv_RTstr_8*Ver_dz_8%t(k) )   &
+                      -(F_v(i,j-1,kk)+F_v(i,j-1,km))*(fipY(i,j-1,k)-fipY(i,j-1,k-1) - Cstv_RTstr_8*Ver_dz_8%t(k) ) ) )
+                  div(i,j,k)=div(i,j,k)+(1.-Dcst_cappa_8)*pidot(i,j,k)/pi_t(i,j,k)*                  &
+                       (F_fip(i,j,k)-F_fip(i,j,k-1)-Cstv_RTstr_8*Ver_dz_8%t(k))
+               end do
+               end do
+            end do
+!
+!           Integrate divergence
+!
+            do j=j0,jn
+            do i=i0,in
+               div_i(i,j,Nk+1)=0
+            end do
+            end do
+            do k=Nk,1,-1
+               do j=j0,jn
+               do i=i0,in
+                  div_i(i,j,k)=div_i(i,j,k+1)+div(i,j,k+1)
+               end do
+               end do
+            end do
+!
+!           Compute advection of fip : V*GRAD(fip)= DIV(fip*Vbarz)-fip*DIV(Vbarz)
+!
+            do k=0,Nk+1
+               kk=max(k ,1)
+               kk=min(kk,Nk)
+               do j=j0,jn
+               do i=i0,in
+                  adv(i,j,k)=geomg_invcy2_8(j) * ( geomg_invDX_8(i) *  &
+                        ( F_u(i  ,j,kk)*(fipX(i  ,j,k)-F_fip(i,j,k))   &
+                         -F_u(i-1,j,kk)*(fipX(i-1,j,k)-F_fip(i,j,k)) ) &
+                                                 + geomg_invDY_8(j) *  &
+                       ( F_v(i,j  ,kk)*(fipY(i,j  ,k)-F_fip(i,j,k))   &
+                         -F_v(i,j-1,kk)*(fipY(i,j-1,k)-F_fip(i,j,k)) ) )
+               end do
+               end do
+            end do
+!
+!           Compute W
+!
+            if(G_lam) F_w=0.0 ! ensure 0's in contours
+!
+            do k=1,Nk
+               do j=j0,jn
+               do i=i0,in
+                  F_w(i,j,k)=(adv(i,j,k)+div_i(i,j,k))/Dcst_grav_8
+               end do
+               end do
+            end do
+!
+            do k=Nk+1,1,-1
+               if(k.eq.Nk+1) then
+                  do j=j0,jn
+                  do i=i0,in
+                     F_w(i,j,k)=adv(i,j,k)/Dcst_grav_8
+                  end do
+                  end do
+               else if(k.ne.1) then
+                  do j=j0,jn
+                  do i=i0,in
+                     F_w(i,j,k)=0.5*(F_w(i,j,k)+F_w(i,j,k-1))
+                  end do
+                  end do
+               else
+                  ! k=1
+                  do j=j0,jn
+                  do i=i0,in
+                     F_w(i,j,k)=(adv(i,j,k-1)+div_i(i,j,1)+div(i,j,1))/Dcst_grav_8
+                  end do
+                  end do
+               endif
+            end do
+!
+         endif
+!
+      endif
+!
+!
+1000  format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W)')
+1001  format(3X,'COMPUTE DIAGNOSTIC WT1:  (S/R DIAG_ZD_W)')
+!
+!     ________________________________________________________________
+!
+      return
+      end

@@ -49,6 +49,7 @@
 ! v4_12 - Tanguay M.        - Adapt to revised predat
 ! v4_13 - Spacek L.         - Delete call to readgeo, add Path_phy_S
 ! v4_13 - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
+! v4_21 - Plante A.         - Call predat4     
 !
 !object
 !	
@@ -166,7 +167,7 @@
 !
       if (.not. v4d_predat ( ut1, vt1, tt1, zdt1, st1, fis0, fiptx, wt1, qt1, &
                                        l_minx,l_maxx,l_miny,l_maxy) )  &
-           call    predat3 ( ut1, vt1, tt1, zdt1, st1, qt1, fis0, fiptx,    &
+           call    predat4 ( ut1, vt1, tt1, zdt1, wt1, st1, qt1, fis0, fiptx,    &
                                        l_minx,l_maxx,l_miny,l_maxy)
 !
       call glbstat2(fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy,1,1, 1,G_ni,1,G_nj,1,1)

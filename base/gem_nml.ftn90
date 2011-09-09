@@ -34,6 +34,7 @@
 ! v4_05 - McTaggart-Cowan R.- Remove time series settings
 ! v4_05 - Girard C.         - Open top option
 ! v4_05 - Plante A.         - Vertical blending option
+! v4_4  - Plante A.         - Equatorial sponge
 !
 !object
 !  Default configuration and reading namelists gem_cfgs and grdc
@@ -198,6 +199,7 @@
 !
       P_runlgt       = -1
 !
+      Eq_sponge=0.
       do i = 1,MAXELEM
          Out3_zund(i)     = 0
       enddo

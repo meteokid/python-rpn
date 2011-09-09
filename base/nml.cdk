@@ -35,6 +35,7 @@
 #include "p_zong.cdk"
 #include "wil_williamson.cdk"
 #include "stat.cdk"
+#include "eq.cdk"
 
       namelist /gem_cfgs/ stat_liste
 !Acid
@@ -53,6 +54,8 @@
       namelist /gem_cfgs/ G_halox
       namelist /gem_cfgs/ G_haloy
       namelist /gem_cfgs/ Grd_rcoef
+!E
+      namelist /gem_cfgs/ Eq_sponge
 !Glb
       namelist /gem_cfgs/ Lam_gbpil_T
 !H

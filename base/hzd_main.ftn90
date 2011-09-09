@@ -42,6 +42,7 @@
 ! v4_05 - Plante A.         - Diffusion of w all the time
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_15 - Desgagne M.       - refonte majeure
+! v4_4  - Plante A.         - Equatorial_sponge
 !
 !object
 !	
@@ -116,7 +117,13 @@
          endif
          call tmg_stop0  (11)
       endif
-
+!     
+!*************************
+!  3. Equatorial sponge  *
+!*************************
+!
+      call equatorial_sponge(ut1,vt1,LDIST_DIM,G_nk)
+!
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 !
       call psadj ()

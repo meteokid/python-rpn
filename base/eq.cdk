@@ -1,0 +1,3 @@
+      real, dimension(1000) :: Eq_sponge
+      common / Eq / Eq_sponge
+

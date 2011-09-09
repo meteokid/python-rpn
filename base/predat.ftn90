@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!*s/r predat2 - Performs preprocessing of the data: part1
+!*s/r predat4 - Performs preprocessing of the data: part1
 !
 #include "model_macros_f.h"
 !
-      subroutine predat3 (F_u, F_v, F_t, F_zd, F_s, F_q, F_topo,  &
+      subroutine predat4 (F_u, F_v, F_t, F_zd, F_w, F_s, F_q, F_topo,  &
                           F_fiptx, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
 #include <arch_specific.hf>
@@ -25,6 +25,7 @@
       integer Mminx,Mmaxx,Mminy,Mmaxy
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,*), F_v (Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,*), &
+           F_w(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), F_fiptx(Mminx:Mmaxx,Mminy:Mmaxy,0:*), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy),F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
 !
@@ -50,6 +51,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD 
 ! v4_05 - Plante A.         - Remove zeroing of w,zd and q (initialized 
 !                             in the entrance)
+! v4_41 - Plante A.         - call diag_zd_w
 !
 !object
 !
@@ -74,8 +76,8 @@
       if (Hzd_t1_0_L) call hzd_hoffld (F_u ,  LDIST_DIM, G_nk  , 1)
       if (Hzd_t1_0_L) call hzd_hoffld (F_v ,  LDIST_DIM, G_nk  , 2)
 !
-      if (.not.Ana_zd_L)  &
-      call uvs2psd2 (F_zd,F_u,F_v,F_t,F_s,LDIST_DIM,l_nk)
+      call diag_zd_w (F_zd,F_w,F_u,F_v,F_t,F_fiptx,F_s,LDIST_DIM,l_nk,.not.Ana_zd_L,.not.Ana_w_L,1)
+
 !
       if (Hzd_t1_0_L) call hzd_hoffld (F_zd,  LDIST_DIM, G_nk+1, 3)
 !
