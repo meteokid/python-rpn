@@ -79,7 +79,7 @@ subroutine equatorial_sponge(F_u,F_v,DIST_DIM,Nk)
    !
    ! Local variables
    !
-   real, parameter :: Href2=(16000./log(10.))**2 ! (~6950 m)**2   
+   real :: Href2 !=(16000./log(10.))**2 ! (~6950 m)**2   
    real, dimension(:,:,:), pointer :: uu,vv
    real,save, dimension(:,:), pointer :: eponmod
    real,save, dimension(:), pointer :: coef,cm,cp
@@ -87,6 +87,7 @@ subroutine equatorial_sponge(F_u,F_v,DIST_DIM,Nk)
    integer :: i,j,k,km,kp
    logical, save :: done_L = .false.
    !
+   Href2 = (16000./log(10.))**2 ! (~6950 m)**2   
    if(all(Eq_sponge<epsilon(Eq_sponge(1))))return
    !
    if (Lun_debug_L) write (Lun_out,1000)
