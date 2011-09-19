@@ -116,6 +116,13 @@
       call msg_set_can_write (Ptopo_myproc == 0)
 
       call handle_error (clib_isdir(Path_input_S),'set_world_view','task_input')
+
+      if (Grd_yinyang_L) then         
+         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)
+      else
+         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
+      endif
+      Path_phy_S=trim(Path_input_S)//'/'
 !
 ! Continue initialization steps
 !

@@ -120,13 +120,6 @@
       if ( v4d_indata2 (ut1,vt1,tt1,zdt1,st1,fis0,fiptx,wt1,qt1, &
                            l_minx,l_maxx,l_miny,l_maxy) ) goto 9999
 !
-      if (Grd_yinyang_L) then         
-         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)
-      else
-         Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
-      endif
-      Path_phy_S=trim(Path_input_S)//'/'
-!
       errop = -1
       if (G_lam) then
          unf = 76
