@@ -73,7 +73,7 @@
          endif
          if (Ptopo_ninblocx <= 0 .or. Ptopo_ninblocy <= 0) then
             Ptopo_ninblocx = Ptopo_nblocx
-            Ptopo_ninblocy = Ptopo_nblocx
+            Ptopo_ninblocy = Ptopo_nblocy
          endif
          call fclos (unf)
          ptopo_nml = 1

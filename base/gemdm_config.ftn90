@@ -37,6 +37,8 @@
 !
 !object
 !
+#include <gmm.hf>
+#include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
 #include "step.cdk"
@@ -220,7 +222,11 @@
          Vspng_nk       = 0
       endif
 !
-      if (Lctl_debug_L) call msg_set_minMessageLevel(MSG_DEBUG)
+      if (Lctl_debug_L) then
+         call msg_set_minMessageLevel(MSG_DEBUG)
+         err = gmm_verbosity(GMM_MSG_DEBUG)
+         err = wb_verbosity(WB_MSG_DEBUG)
+      endif
 
       gemdm_config = 1
 !

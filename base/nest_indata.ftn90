@@ -122,7 +122,7 @@
          nullify (dfis)
       endif
 !
-      call handle_error(.not.GMM_IS_ERROR(istatg),'nest_indata',' ERROR with gmm_get see above')
+      call handle_error(istatg,'nest_indata',' ERROR with gmm_get see above')
 !
       Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
 !
