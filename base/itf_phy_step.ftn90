@@ -130,7 +130,8 @@ end interface
       call itf_phy_prep ()
       call tmg_stop0(94)
 !
-      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
+      !TODO: find other solution for inbloc - rpn_comm_bloc creates new communicator every call - we hit a limit after about 500 on AIX
+!!$      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
       if (l_phy_gid < 0) call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
       if (dateo < 0) call datp2f(dateo,Mod_runstrt_S)
@@ -150,7 +151,7 @@ end interface
       endif
       call handle_error(err,'itf_phy_step','Problem getting input data') 
 
-      call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
+!!$      call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
      
 !
 !C       4.	compute physics tendencies
