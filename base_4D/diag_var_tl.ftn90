@@ -166,7 +166,7 @@
 !
             enddo
             enddo
-            if(Schm_pior_L) then
+!            if(Schm_pior_L) then
                do j= j0, jn
                do i= i0, in
                   qbar_8 = Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1)
@@ -179,7 +179,7 @@
                   F_mu(i,j,k) = ytmp_8(i,j)*(F_mu(i,j,k)+ONE_8)-ONE_8
                enddo
                enddo
-            endif
+!            endif
          endif
       enddo
 !$omp enddo

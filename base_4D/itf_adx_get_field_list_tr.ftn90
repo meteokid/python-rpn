@@ -46,7 +46,7 @@ subroutine itf_adx_get_field_list_tr (F_fields_lbl,F_fields_type_L,F_nfields,F_n
 
       !---------------------------------------------------------------------
 
-      if(Schm_zdotmid_L) call handle_error(-1,'itf_adx_get_field_list_tr','Schm_zdotmid_L NOT DONE')
+!      if(Schm_zdotmid_L) call handle_error(-1,'itf_adx_get_field_list_tr','Schm_zdotmid_L NOT DONE')
 
       !TODO: these quantities should be placed in gmm metadata...
       F_fields_type_L(IS_MOM,:)    = .true.
@@ -82,11 +82,11 @@ subroutine itf_adx_get_field_list_tr (F_fields_lbl,F_fields_type_L,F_nfields,F_n
          F_fields_lbl(FIELD_OUT,F_nfields)= gmmk_rhsw_m_s
       endif
 
-      if (Schm_zdotmid_L) then
-         F_nfields = F_nfields + 1
-         F_fields_lbl(FIELD_IN ,F_nfields)= gmmk_zdt1_s
-         F_fields_lbl(FIELD_OUT,F_nfields)= gmmk_zdup_s
-      endif
+!      if (Schm_zdotmid_L) then
+!         F_nfields = F_nfields + 1
+!         F_fields_lbl(FIELD_IN ,F_nfields)= gmmk_zdt1_s
+!         F_fields_lbl(FIELD_OUT,F_nfields)= gmmk_zdup_s
+!      endif
 
       if (Orh_icn == Schm_itcn) then
          do n=1,Tr3d_ntr

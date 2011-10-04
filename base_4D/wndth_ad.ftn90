@@ -77,7 +77,7 @@
 !
 !$omp parallel
 !
-      if(.not.Schm_zdotMid_L) then
+!      if(.not.Schm_zdotMid_L) then
 !$omp do
       do k=l_nk+1,1,-1
          do j= 1, l_nj
@@ -89,7 +89,7 @@
          end do
       end do
 !$omp enddo
-      endif
+!      endif
 !
 !$omp do
       do k=1,l_nk
