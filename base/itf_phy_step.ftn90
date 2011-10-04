@@ -92,9 +92,9 @@ end interface
 #include "path.cdk"
 #include "grd.cdk"
 
-      integer,external :: phy_dataload3
+      integer,external :: phy_dataload4
       integer*8,external :: time_base
-      external :: itf_phy_geom,itf_phy_xhfold_3d
+      external :: itf_phy_geom,itf_phy_xhfold_3d2
 
       integer, save :: l_phy_gid = -1
       integer, save :: dateo = -1
@@ -140,8 +140,9 @@ end interface
            geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
       !TODO: remove this next conditional when FCREST is removed
       if (P_pbl_schsl_s /= 'FCREST') then
-         err = phy_dataload3 ( itf_phy_geom,itf_phy_xhfold_3d,dateo,nint(cstv_dt_8),&
-                               F_stepno,l_phy_gid,Path_phy_S,geofilename_S )
+         err = phy_dataload4(itf_phy_geom,itf_phy_xhfold_3d2,dateo, &
+                             nint(cstv_dt_8),F_stepno,l_phy_gid, &
+                             Path_phy_S,geofilename_S)
       else 
          err = 0
          if (F_stepno == 0) then

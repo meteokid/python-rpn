@@ -14,11 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !/**
-subroutine itf_phy_xhfold_3d(F_name_S,F_bus,F_data,F_busidx,F_busnik,F_busnj,F_minx,F_maxx,F_miny,F_maxy,F_k0,F_nk)
+subroutine itf_phy_xhfold_3d2(F_name_S,F_horiz_interp_S,F_bus,F_data,F_busidx,F_busnik,F_busnj,F_minx,F_maxx,F_miny,F_maxy,F_k0,F_nk)
    implicit none
    !@Objective  Pre-Proc then Transfer data to p_runlgt space
    !@Arguments
    character(len=*),intent(in) :: F_name_S !- Provisional to do conditional 3d preproc
+   character(len=*),intent(in) :: F_horiz_interp_S !- Provisional to do conditional 3d preproc
    integer,intent(in) :: F_busidx,F_busnik,F_busnj,F_minx,F_maxx,F_miny,F_maxy,F_k0,F_nk
    real,intent(inout) :: F_bus(F_busnik,F_busnj)
    real,intent(in) :: F_data(F_minx:F_maxx,F_miny:F_maxy,F_k0:F_nk)
@@ -34,7 +35,7 @@ subroutine itf_phy_xhfold_3d(F_name_S,F_bus,F_data,F_busidx,F_busnik,F_busnj,F_m
    enddo
    ! ---------------------------------------------------------------------
    return
-end subroutine itf_phy_xhfold_3d
+end subroutine itf_phy_xhfold_3d2
 
 
 !**s/r itf_phy_fold

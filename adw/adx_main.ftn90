@@ -12,8 +12,8 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "stop_mpi.h"
-#include "msg.h"
+#include <stop_mpi.h>
+#include <msg.h>
 #include <model_macros_f.h>
 
 !/**
@@ -33,7 +33,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    integer :: F_nfields       !I, nb of fields to advect
    logical, dimension(2, F_nfields) :: &
         F_fields_type_L       !I, fields type
-   character(len=8),dimension(2, F_nfields) :: &
+   character(len=*),dimension(2, F_nfields) :: &
         F_fields_list         !I, list of gmm labels of fields to advect
    real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nks) :: &
         F_su, F_sv, F_sw      !I, real destag winds, super-set (mom+thermo)
@@ -53,12 +53,12 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    !  adx_main_3_int: Interpolation of rhs
 !**/
 
-#include "gmm.hf"
+#include <gmm.hf>
 #include "adx_gmm.cdk"
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 #include "glb_ld.cdk"
-#include "v4d_cfl.cdk"
+!!$#include "v4d_cfl.cdk"
    include "v4dg.inc"
 
    logical, parameter :: IS_MOM_LEVEL = .true.
@@ -148,7 +148,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    call tmg_start0 (50, 'ADW_TRAJE')
 
-   V4d_cfl_kind_S = 'm'
+!!$   V4d_cfl_kind_S = 'm'
    call adx_main_2_pos4( F_nb_iter, 'm'  , &
                          pxm , pym , pzm , &
                          a_su, a_sv, a_sw, &
@@ -161,7 +161,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    call adx_get_ij0n (i0,in,j0,jn)
 
    if(trim(Adw_thermopos_S).eq."TRAJ")then
-      V4d_cfl_kind_S = 't'
+!!$      V4d_cfl_kind_S = 't'
       call adx_main_2_pos4(&
            F_nb_iter, 't'        , &
            pxt   , pyt   , pzt   , &

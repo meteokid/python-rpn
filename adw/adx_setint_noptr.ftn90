@@ -61,7 +61,7 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
 #include "glb_ld.cdk"
-#include "v4d_cfl.cdk"
+!!$#include "v4d_cfl.cdk"
    !
    integer :: ii, jj, kk, ij, i, j, k, n
    real*8  :: prd_8, prdt_8, p_z00_8
@@ -75,15 +75,15 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
 
 !  Initialize min-max vertical CFL as function of k
 !  ------------------------------------------------
-   if (.not.done_L) then
-       call hpalloc(V4d_cfl_p_   ,G_nk+1, err,1)
-       call hpalloc(V4d_cfl_n_   ,G_nk+1, err,1)
-       do k = 1,G_nk+1
-          V4d_cfl_p(k) = 0
-          V4d_cfl_n(k) = 0
-       enddo
-       done_L = .true.
-   endif
+!!$   if (.not.done_L) then
+!!$       call hpalloc(V4d_cfl_p_   ,G_nk+1, err,1)
+!!$       call hpalloc(V4d_cfl_n_   ,G_nk+1, err,1)
+!!$       do k = 1,G_nk+1
+!!$          V4d_cfl_p(k) = 0
+!!$          V4d_cfl_n(k) = 0
+!!$       enddo
+!!$       done_L = .true.
+!!$   endif
 
    p_z00_8 = adx_verZ_8%t(1)
 
@@ -135,10 +135,10 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
 
 !           Evaluate min-max vertical CFL as function of k
 !           ----------------------------------------------
-            if (V4d_cfl_kind_S.eq.'m') cfl = (kk+1) - (2*k  )
-            if (V4d_cfl_kind_S.eq.'t') cfl = (kk+1) - (2*k-1)
-            if (cfl.gt.V4d_cfl_p(k)  ) V4d_cfl_p(k) = cfl 
-            if (cfl.lt.V4d_cfl_n(k)  ) V4d_cfl_n(k) = cfl
+!!$            if (V4d_cfl_kind_S.eq.'m') cfl = (kk+1) - (2*k  )
+!!$            if (V4d_cfl_kind_S.eq.'t') cfl = (kk+1) - (2*k-1)
+!!$            if (cfl.gt.V4d_cfl_p(k)  ) V4d_cfl_p(k) = cfl 
+!!$            if (cfl.lt.V4d_cfl_n(k)  ) V4d_cfl_n(k) = cfl
 
          enddo
       enddo

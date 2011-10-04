@@ -28,6 +28,7 @@ subroutine itf_adx_main (F_nb_iter)
    !@revisions
 !**/
 
+#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "orh.cdk"
@@ -36,9 +37,8 @@ subroutine itf_adx_main (F_nb_iter)
 
    integer, parameter :: NB_FIELDS_MAX = 999
 
-   character(len=8), dimension(2,NB_FIELDS_MAX) :: fields_lbl
+   character(len=GMM_MAXNAMELENGTH), dimension(2,NB_FIELDS_MAX) :: fields_lbl
    logical, dimension(2,NB_FIELDS_MAX) :: fields_type_L
-   character(len=8), dimension(3,2,2,2) :: pos_fields_lbl
 
    logical :: doAdwStat_L
    integer :: istat, nfields, nk_super

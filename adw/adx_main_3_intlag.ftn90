@@ -32,7 +32,7 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    integer :: F_k0           !I, vertical scope F_k0 to F_nk
    integer :: F_nfields      !I, nb of fields to advect
    logical, dimension(2,F_nfields)         :: F_fields_type_L !I, fields type
-   character(len=8), dimension(2,F_nfields):: F_fields_list   !I, gmm flds lbls
+   character(len=*), dimension(2,F_nfields):: F_fields_list   !I, gmm flds lbls
    real, dimension(F_ni,F_nj,F_nk) :: F_px, F_py, F_pz !I, upstream positions at t1
 !
    !@author alain patoine
