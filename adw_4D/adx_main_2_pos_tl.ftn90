@@ -105,7 +105,7 @@ subroutine adx_main_2_pos4_tl( F_nb_iter  ,F_l_S, &
 
    call msg(MSG_DEBUG,'adx_main_2_pos_tl ('//trim(F_l_S)//')')
 
-   if (adx_zdotMid_L) call handle_error(-1,'adx_main_2_pos_tl','adx_zdotMid_L not done')
+!!$   if (adx_zdotMid_L) call handle_error(-1,'adx_main_2_pos_tl','adx_zdotMid_L not done')
    if (adx_lam_L    ) call handle_error(-1,'adx_main_2_pos_tl','adx_lam_L     not done')
 
    dummy3d => F_w

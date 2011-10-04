@@ -119,7 +119,7 @@ subroutine adx_main_2_pos4_ad( F_nb_iter  ,F_l_S, &
 
    call msg(MSG_DEBUG,'adx_main_2_pos_ad ('//trim(F_l_S)//')')
 
-   if (adx_zdotMid_L) call handle_error(-1,'adx_main_2_pos_ad','adx_zdotMid_L not done')
+!!$   if (adx_zdotMid_L) call handle_error(-1,'adx_main_2_pos_ad','adx_zdotMid_L not done')
    if (adx_lam_L    ) call handle_error(-1,'adx_main_2_pos_ad','adx_lam_L     not done')
 
    !CAUTION
