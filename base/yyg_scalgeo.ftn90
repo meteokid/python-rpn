@@ -25,7 +25,7 @@ subroutine yyg_scalgeo()
 end subroutine yyg_scalgeo
 
 
-      Subroutine yyg_scalge2(tab_dst,F_minx,F_maxx,F_miny,F_maxy,NK,Interp_S,nomvar_S)
+      Subroutine yyg_scalgeo2(tab_dst,F_minx,F_maxx,F_miny,F_maxy,NK,Interp_S,nomvar_S)
       implicit none
 !
 !author
