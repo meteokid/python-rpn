@@ -31,6 +31,7 @@ end subroutine yyg_scalgeo
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
+#include <arch_specific.hf>
 #include "glb_ld.cdk"
 
       integer F_minx,F_maxx,F_miny,F_maxy,NK

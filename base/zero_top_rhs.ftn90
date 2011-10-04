@@ -15,7 +15,7 @@
 !-------------------------------------- LICENCE END --------------------------------------
 !**s/r zero_top_rhs - put zero in top rhs for Schm_NoTopThL_L=.true.
 
-#include "model_macros_f.h"
+#include <model_macros_f.h>
 !
       subroutine zero_top_rhs()
 !
@@ -31,7 +31,8 @@
 !        None
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <gmm.hf>
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "schm.cdk"

@@ -1,3 +1,0 @@
-      subroutine zdot_mid()
-      return
-      end
