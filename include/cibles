@@ -5,7 +5,7 @@
 gem: gemntr gemdm
 
 gem4d:
-	make gem V4D="gemdyn_v4d modulopt $(PROF)" PROFLIBPATH=$(ARMNLIB)/lib/$(BASE_ARCH)
+	make gem V4D="gemdyn_v4d $(PROF)" PROFLIBPATH=$(ARMNLIB)/lib/$(BASE_ARCH)
 
 gem_nompi: gemntr_nompi gemdm_nompi
 
@@ -20,6 +20,7 @@ gemntr:
 	cd $(LCLPO); /bin/rm -f $(mainntr)* ;\
 	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI);\
 	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o;\
+	chmod u+x $(PWD)/$(mainntr) ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\
@@ -33,6 +34,7 @@ gemdm:
 	cd $(LCLPO) ; /bin/rm -f $(maindm)* ;\
 	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI) ;\
 	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o;\
+	chmod u+x $(PWD)/$(maindm) ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\

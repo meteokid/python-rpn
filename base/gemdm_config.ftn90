@@ -15,8 +15,10 @@
 
 !**s/r gemdm_config - Establish final model configuration
 !
-#include "model_macros_f.h"
-#include "msg.h"
+#include <model_macros_f.h>
+#include <gmm.hf>
+#include <WhiteBoard.hf>
+#include <msg.h>
 !
       integer function gemdm_config ( )
       implicit none
@@ -243,7 +245,11 @@
 
           Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
-      if (Lctl_debug_L) call msg_set_minMessageLevel(MSG_DEBUG)
+      if (Lctl_debug_L) then
+         istat = gmm_verbosity(GMM_MSG_DEBUG)
+         istat = wb_verbosity(WB_MSG_DEBUG)
+         call msg_set_minMessageLevel(MSG_DEBUG)
+      endif
 
       gemdm_config = 1
 !

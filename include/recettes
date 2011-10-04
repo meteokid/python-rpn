@@ -8,7 +8,7 @@ include       $(gemdyn)/include/build_components
 COMM     = rpn_comm$(COMM_VERSION) $(COMM_stubs)
 
 V4D         = v4d_stubs
-#V4D         = "gemdyn_v4d modulopt prof_003"
+#V4D         = "gemdyn_v4d prof_003"
 
 CHMLIBPATH  = 
 CHM         = $(CHM_VERSION)
@@ -20,7 +20,6 @@ PHY         = rpnphy
 
 VGRID         = descrip
 
-MODULOPT      = modulopt_stubs
 PROF          = prof_003
 #PROFLIBPATH   = $(ARMNLIB)/lib/$(BASE_ARCH)
 PROFLIBPATH   =
