@@ -60,7 +60,7 @@
 !modules
 !
       type(gmm_metadata) :: mymeta
-      integer  i,j,k,istat
+      integer  i,j,k,istat,istatg
 !*
 !     __________________________________________________________________
 !
@@ -68,55 +68,101 @@
 
       istat = gmm_get(gmmk_ruw1_s,ruw1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(ruw1)'
+      istatg=istat
+!
       istat = gmm_get(gmmk_rvw1_s,rvw1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rvw1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(ut1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(vt1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(wt1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(tt1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_bspqtx_s,bspqtx,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(bspqtx)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(st1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(zdt1)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(fiptx)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_orhsu_s,orhsu,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsu)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_orhsc_s,orhsc,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsc)'
+!
       istat = gmm_get(gmmk_orhst_s,orhst,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhst)'
+      istatg=min(istat,istatg)
+!
       istat = gmm_get(gmmk_orhsf_s,orhsf,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsf)'
+      istatg=min(istat,istatg)
+!
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(fis0)'
+      istatg=min(istat,istatg)
+!
+!
       if (G_lam) then
          istat = gmm_get(gmmk_rhsu_s,rhsu,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rhsu)'
+         istatg=min(istat,istatg)
+!
          istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(rhsv)'
+         istatg=min(istat,istatg)
+!
          istat = gmm_get(gmmk_nest_u_s,nest_u,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(nest_u)'
+         istatg=min(istat,istatg)
+!
          istat = gmm_get(gmmk_nest_v_s,nest_v,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(nest_v)'
+         istatg=min(istat,istatg)
       endif
+!
       if (.not. Schm_hydro_L) then
          istat = gmm_get(gmmk_mutx_s,mutx,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(mutx)'
+         istatg=min(istat,istatg)
+!
          istat = gmm_get(gmmk_orhsw_s,orhsw,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsw)'
+         istatg=min(istat,istatg)
+!
          istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(qt1)'
+         istatg=min(istat,istatg)
       endif
-
-      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(fis0)'
+!
+      call handle_error_l(.not.GMM_IS_ERROR(istatg),'rhs','gmm_get error, see above')
 !
 !     Perform the computation in the first 
 !     cycle of Crank-Nicholson procedure only
@@ -126,10 +172,10 @@
 !
       call diag_fip(fiptx, st1, tt1, qt1, fis0, LDIST_DIM, l_nk)
 !
-      call rhsp_2  ( orhsu, orhsv, orhsc,  orhst, orhsw,  orhsf, &
+      call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, orhsw,  orhsf, &
                       ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
                        ut1,   vt1,   wt1,    tt1,   st1,   zdt1, &
-                    bspqtx, fiptx,  mutx, &
+                    bspqtx, fiptx,  mutx, fis0, &
                      LDIST_DIM,l_nk  )
 !     
       if (Acid_test_L)call acid_stat_rhs(fiptx,orhsu,ruw1,orhst,orhsc,2)

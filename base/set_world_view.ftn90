@@ -61,6 +61,7 @@
 #include "itf_cpl.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
+#include "adw_nml.cdk"
 #include <clib_interface.cdk>
 !
       logical  set_dcst_8
@@ -194,6 +195,15 @@
 ! Initializes GMM
 !
       call set_gmm
+!
+      Schm_notop=0
+      if(Schm_NoTopThL_L)then
+         if(Schm_opentop_L)&
+              call handle_error(-1,'set_world_view','Schm_NoTopThL_L cannot be use with Schm_opentop_L')
+         if(.not.Adw_useadx_L)&
+              call handle_error(-1,'set_world_view','Schm_NoTopThL_L cannot be use with Adw_useadx_L=.false.')
+         Schm_notop=1
+      endif
 !
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
 !

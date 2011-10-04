@@ -112,20 +112,18 @@
                F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k)-F_q(i,j,k-1))*ytmp_8(i,j)
             enddo
             enddo
-            if(Schm_pior_L) then
-               do j= j0, jn
-               do i= i0, in
-                  qbar = Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1)
-                  xtmp_8(i,j) = qbar
-               enddo
-               enddo
-               call vexp ( ytmp_8, xtmp_8, nij )
-               do j= j0, jn
-               do i= i0, in
-                  F_mu(i,j,k) = ytmp_8(i,j)*(F_mu(i,j,k)+one)-one
-               enddo
-               enddo
-            endif
+            do j= j0, jn
+            do i= i0, in
+               qbar = Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1)
+               xtmp_8(i,j) = qbar
+            enddo
+            enddo
+            call vexp ( ytmp_8, xtmp_8, nij )
+            do j= j0, jn
+            do i= i0, in
+               F_mu(i,j,k) = ytmp_8(i,j)*(F_mu(i,j,k)+one)-one
+            enddo
+            enddo
          endif
       enddo
 !$omp enddo

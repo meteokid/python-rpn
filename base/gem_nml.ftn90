@@ -87,9 +87,9 @@
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
-      Schm_zdotMid_L  = .false.
       Schm_autobar_L  = .false.
-      Schm_pior_L     = .true.
+      Schm_mteul_L    = .false.
+      Schm_NoTopThL_L = .false.
 !
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.

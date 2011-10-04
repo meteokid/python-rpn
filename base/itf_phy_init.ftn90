@@ -33,6 +33,7 @@
 ! v4_05 - Plante A.          - add iceline option (ICELAC)
 ! v4_14 - Dugas B.           - define ININCR (via call to phy_optl)
 ! v4_40 - Lee V.             - add VSTAG flag to inform vertical coordinate
+! v4_4  - Plante A.          - Add standard pressure profil std_p_prof for non orographic gwd
 !
 !object
 !	See above ID.
@@ -56,6 +57,7 @@
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
 #include "itf_phy.cdk"
+#include "ver.cdk"
 !
       integer, parameter :: COMPATIBILITY_LVL = 1
 !
@@ -69,6 +71,7 @@
       parameter (DIM_ERR = 14) 
       integer err(DIM_ERR),idate(14),bidon,i
       real dt_4
+      real, dimension(:), pointer :: std_p_prof
 !
 !     ---------------------------------------------------------------
 !
@@ -145,7 +148,7 @@
 !
       p_doni = l_ni
       p_donj = l_nj
-      p_nk   = G_nk + 2
+      p_nk   = G_nk + 2 - Schm_notop
       p_offi = 0
       p_offj = 0
       if (G_lam) then
@@ -180,6 +183,20 @@
       call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(8))
 !     Re-define P_out_moyhr in units of hours, rather than in timesteps
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
+!
+!     Pass standard pressure profil to physics.
+      allocate(std_p_prof(p_nk))
+      if(Schm_NotopThL_L)then
+         std_p_prof=Ver_std_p_prof%m
+      else
+         ! Note : we put Cstv_ptop_8 at level 1 since there is an additional UU
+         !        put at top for the physics. If this levels if ever removed, 
+         !        Cstv_ptop_8 at level 1 will also have to be removed from std_p_prof
+         std_p_prof(2:p_nk)=Ver_std_p_prof%m
+         std_p_prof(1)=Cstv_ptop_8
+      endif
+      call phycom_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
+      deallocate(std_p_prof)
 !
 !     Consistency check for output saturation calculations
       if (Out3_satues_L .and. .not.P_cond_satu_L) then

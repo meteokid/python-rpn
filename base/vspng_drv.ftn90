@@ -169,6 +169,8 @@
            aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8, &
            LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 !     
+      if(.not.Schm_notopthl_L) then
+!
 !     Temperature, first level only
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       nkspng   = Vspng_nk
@@ -188,7 +190,8 @@
            LDIST_DIM,Vspng_nk,trp_12emax,trp_22emax,G_nj)
 !     
       Vspng_nk = nkspng
-!     
+!      
+      endif
 !     __________________________________________________________________
 !
  1000 format(/,3X, &

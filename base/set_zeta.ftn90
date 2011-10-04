@@ -19,7 +19,7 @@
 #include "model_macros_f.h"
 !
       subroutine set_zeta ( F_hybuser )
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels,VGD_OK
 !     
       implicit none
 #include <arch_specific.hf>
@@ -32,6 +32,7 @@
 ! revision
 !
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_4  - Plante - add standard pressure profils for physics.
 !
 ! object
 !    To return A, B parameters for momentum and thermodynamic levels
@@ -83,7 +84,7 @@
       type(vgrid_descriptor) :: vcoord
       integer k,istat,err,glb_err
       integer, dimension(:), pointer :: ip1m,ip1t
-      real, dimension(:), pointer :: hybm_free,hybt_free
+      real, dimension(:), pointer :: hybm_free,hybt_free,std_p_prof
       real :: hybm(0:G_nk+1),hybt(0:G_nk+2)
       real*8 zero, half, one, two
       parameter(zero=0.d0,half=0.5d0,one=1.d0,two=2.d0)
@@ -91,6 +92,7 @@
 !     __________________________________________________________________
 !
       allocate(   Ver_hyb%m  (G_nk+1),     Ver_hyb%t(G_nk+2), &
+           Ver_std_p_prof%m(  G_nk+1),Ver_std_p_prof%t(G_nk+2), &  
                   Ver_ip1%m(  G_nk+1),     Ver_ip1%t(G_nk+2), &
                   Ver_a_8%m(  G_nk+1),     Ver_a_8%t(G_nk+2), &
                   Ver_b_8%m(  G_nk+1),     Ver_b_8%t(G_nk+2), &
@@ -137,6 +139,17 @@
       if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,ip1t     ) /= VGD_OK) glb_err = -1
       
       call handle_error (glb_err,'set_zeta','retrieving coordinate info')
+
+      err = vgd_levels(vcoord,ip1m,std_p_prof,100000.,in_log=.false.) 
+      if (err /= VGD_OK) glb_err = -1
+      call handle_error (glb_err,'set_zeta','problem getting standard pressure profile for m levels')
+      Ver_std_p_prof%m=std_p_prof
+
+      deallocate(std_p_prof)
+      err = vgd_levels(vcoord,ip1t,std_p_prof,100000.,in_log=.false.)                                                                     
+      if (err /= VGD_OK) glb_err = -1                                                                                                  
+      call handle_error (glb_err,'set_zeta','problem getting standard pressure profile for t levels')
+      Ver_std_p_prof%t=std_p_prof
 
       ! Add outside level at top boundary and fill hybrid coordinate values
       hybm(1:size(hybm_free)) = hybm_free
@@ -218,6 +231,7 @@
 !
       Ver_wp_8%t(1) = 0.d0
       Ver_wm_8%t(1) = 1.d0
+      if(Schm_NoTopThL_L)Ver_wm_8%t(1) = 0.d0
       do k=2,G_nk
          Ver_wp_8%t(k) = half
          Ver_wm_8%t(k) = half

@@ -34,7 +34,7 @@
 !     Initialize geopotential in balanced state of Galewski's case (Tellus,2004)
 !
 !implicits
-#include "wil_dcst.cdk"
+#include "dcst.cdk"
 !
 !     ---------------------------------------------------------
       real*8   wil_galewski_wind_8,intr_8,wind_8,fonc_8,snlat_8,cslat_8,lat_8
@@ -55,7 +55,7 @@
 !
       j_partial = J_MAX
 !
-      bound1 = -Wil_Dcst_pi_8/2. 
+      bound1 = -Dcst_pi_8/2. 
       bound2 = evaluated_at_lat_8 
 !
 !     Evaluate parameters for Gaussian integral 
@@ -76,7 +76,7 @@
           wind_8 = wil_galewski_wind_8 (lat_8,1)
           fonc_8 = 0.
          if (cslat_8.ne.0.)  &
-          fonc_8 = - ( 2.*Wil_Dcst_omega_8*snlat_8*Wil_Dcst_rayt_8 +  &
+          fonc_8 = - ( 2.*Dcst_omega_8*snlat_8*Dcst_rayt_8 +  &
                        wind_8*snlat_8/cslat_8 ) * wind_8
 !
           intr_8 = intr_8 + gauss_weight(jj) * fonc_8 

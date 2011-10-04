@@ -27,9 +27,11 @@ subroutine itf_phy_xhfold_3d2(F_name_S,F_horiz_interp_S,F_bus,F_data,F_busidx,F_
 #include "grd.cdk"
    integer :: j
    ! ---------------------------------------------------------------------
-!!$   if (Grd_yinyang_L) then
-!!$      !TODO: call yin yang halo xch sub
-!!$   endif
+   if (Grd_yinyang_L) then
+       call yyg_scalgeo2(F_data,F_minx,F_maxx,F_miny,F_maxy,&
+                         F_nk-F_k0+1,F_horiz_interp_S,F_name_S)
+   endif
+
    do j=1,F_busnj
       call itf_phy_fold(F_bus(F_busidx,j),F_data,j,F_k0,F_nk,F_minx,F_maxx,F_miny,F_maxy)
    enddo

@@ -59,7 +59,6 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard            - Open top
 ! v4_14 - Plante & Desgagne - Lam acid test with top piloting (lid nesting)
-!       - Girard & Plante   - PIOR
 !
 !object
 !     see documentation in s/r bac.
@@ -132,14 +131,12 @@
 #include "lam.cdk"
 !
       integer i, j, k, nij, kminzd
-      real*8  zero, one, xxx, yyy, zzz, p1, p2, p3, p4, pr0_8, qbar
+      real*8  zero, one, xxx, yyy, zzz, p1, p2, p3, p4, qbar
       parameter( zero=0.d0, one=1.d0 )
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real*8 Pbar(DIST_SHAPE,Nk+1)
       logical finbac
 !*
-      pr0_8=zero
-      if(Schm_pior_L) pr0_8=one
       finbac=.false.
       if ( .not. (F_itr .lt. F_itnlh) )finbac=.true.
 !     __________________________________________________________________
@@ -155,7 +152,7 @@
       p3 = one/Dcst_grav_8
       p4 = one/Dcst_rayt_8**2  
 !
-!$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8,kminzd)
+!$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -214,7 +211,7 @@
 !     ~~~~~~~~~
 !
 !$omp do
-      do k=k0,l_nk+1
+      do k=k0+Schm_notop,l_nk+1
          do j= j0, jn
          do i= i0, in
             Pbar(i,j,k) = Ver_wp_8%t(k)*F_p(i,j,k)+Ver_wm_8%t(k)*F_p(i,j,k-1)
@@ -245,9 +242,9 @@
 !
 !        Note : we cannot use omp on loop k 
 !               due to vertical dependency F_q(i,j,k-1)
-         do k=k0,l_nk+1
-            zzz = one/(one+pr0_8*Ver_wp_8%t(k)*Ver_dz_8%t(k))
-            yyy = (one-pr0_8*Ver_wm_8%t(k)*Ver_dz_8%t(k))*zzz
+         do k=k0+Schm_notop,l_nk+1
+            zzz = one/(one+Ver_wp_8%t(k)*Ver_dz_8%t(k))
+            yyy = (one-Ver_wm_8%t(k)*Ver_dz_8%t(k))*zzz
             xxx = p3*Ver_dz_8%t(k)*zzz
 !$omp do
             do j= j0, jn
@@ -371,8 +368,8 @@
 !
       if(.not.Schm_autobar_L) then            ! safer for autobar
 !$omp do
-      do k=k0,l_nk+1
-         if(.not.Schm_hydro_L.and.Schm_pior_L) then
+      do k=k0+Schm_notop,l_nk+1
+         if(.not.Schm_hydro_L) then
             do j= j0, jn
             do i= i0, in
                qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
@@ -402,6 +399,19 @@
          enddo
       enddo
 !$omp enddo
+      if(Schm_NoTopThL_L)then
+!$omp do
+         do j= j0, jn 
+         do i= i0, in
+            !F_t(i,j,1)=F_t(i,j,2)
+            ! Linear extrapolation
+            F_t(i,j,1)=( (Ver_z_8%t(3)-Ver_z_8%t(1))*F_t(i,j,2) &
+                        -(Ver_z_8%t(2)-Ver_z_8%t(1))*F_t(i,j,3) )/ &
+                         (Ver_z_8%t(3)-Ver_z_8%t(2))             
+         enddo
+         enddo
+!$omp enddo
+      endif
       endif
 !
       if(Schm_opentop_L) then

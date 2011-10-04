@@ -58,8 +58,8 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 #include "glb_ld.cdk"
-!!$#include "v4d_cfl.cdk"
-   include "v4dg.inc"
+!#include "v4d_cfl.cdk"
+!   include "v4dg.inc"
 
    logical, parameter :: IS_MOM_LEVEL = .true.
    logical, parameter :: POLE0_L = .false.
@@ -92,7 +92,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    k0=adx_gbpil_t+1
 
-   v4dstore_L   = V4dg_conf.ne.0 .and. V4dg_oktr_L
+   !v4dstore_L   = V4dg_conf.ne.0 .and. V4dg_oktr_L
    save_stats_L = adw_stats_L
    adw_stats_L  = (F_doAdwStat_L .and. adw_stats_L)
 
@@ -125,7 +125,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    istat = min(gmm_get(adx_zct1_s,zct1,my_meta2),istat)
    if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
 
-   if(trim(Adw_thermopos_S).eq.'TRAJ')then
+   if(Adw_thermopos_L)then
       istat = min(gmm_get(adx_xth_t_s,xth_t,my_meta_t),istat)
       istat = min(gmm_get(adx_yth_t_s,yth_t,my_meta2),istat)
       if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
@@ -138,8 +138,6 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
       if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
       istat = min(gmm_get(adx_zcth_t_s,zcth_t,my_meta2),istat)
       if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-
-
    endif
 
    !TODO: check my_meta and my_meta_t compared to adx_mlnijk
@@ -148,7 +146,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    call tmg_start0 (50, 'ADW_TRAJE')
 
-!!$   V4d_cfl_kind_S = 'm'
+   !V4d_cfl_kind_S = 'm'
    call adx_main_2_pos4( F_nb_iter, 'm'  , &
                          pxm , pym , pzm , &
                          a_su, a_sv, a_sw, &
@@ -160,8 +158,8 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   if(trim(Adw_thermopos_S).eq."TRAJ")then
-!!$      V4d_cfl_kind_S = 't'
+   if(Adw_thermopos_L)then
+      !V4d_cfl_kind_S = 't'
       call adx_main_2_pos4(&
            F_nb_iter, 't'        , &
            pxt   , pyt   , pzt   , &
@@ -170,15 +168,11 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
            xcth_t, ycth_t, zcth_t, &
            l_xct1, l_yct1, l_zct1, &
            adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-           adx_mlni , adx_mlnj , k0 , adx_lnkt , F_nks)
-   else if(trim(Adw_thermopos_S).eq."INT_Z")then
-      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.false.)         
-   else if(trim(Adw_thermopos_S).eq."INT_XYZ")then
-      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
+           adx_mlni , adx_mlnj , k0+Adx_notop , adx_lnkt , F_nks)
    else
-      call handle_error(-1,'adx_main','Error specifying Adw_thermopos_S (TRAJ,INT_Z,INT_XYZ)')
+      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
    endif
-
+ 
 !$omp parallel
 !$omp do
    do j = j0,jn
@@ -204,7 +198,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
            xct1, yct1, zct1, &
            adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
            adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
-      if(trim(Adw_thermopos_S).eq."TRAJ")then         
+      if(Adw_thermopos_L)then         
          call adx_main_2_pos_stats(  &
               't', &
               a_su  ,a_sv  ,a_sw  , &
@@ -213,31 +207,31 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
               xcth_t, ycth_t, zcth_t, &
               l_xct1, l_yct1, l_zct1, &
               adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
-              adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0,adx_lnkt)
+              adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0+Adx_notop,adx_lnkt)
       endif
    endif
 
 !  Store TRAJ upstream positions
 !  -----------------------------
-   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt, &
-                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
+!   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt, &
+!                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
 !
 !  Store TRAJ RHS before interpolation
 !  -----------------------------------
-   if ( v4dstore_L ) call v4d_rwtraj (11)
+!   if ( v4dstore_L ) call v4d_rwtraj (11)
 
    call tmg_start0 (60, 'ADW_INLAG')
 
    call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
                              IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
    call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
-                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkt )
+                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0+Adx_notop,adx_lnkt )
 
    call tmg_stop0 (60)
 
 !  Store TRAJ RHS interpolated
 !  ---------------------------
-   if ( v4dstore_L ) call v4d_rwtraj (6)
+!   if ( v4dstore_L ) call v4d_rwtraj (6)
 
    adw_stats_L = save_stats_L
    call msg(MSG_DEBUG,'adx_main [end]')

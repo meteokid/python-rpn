@@ -179,8 +179,6 @@
 !
  100  continue
 !
-      if(Schm_zdotMid_L) call zdot_mid()
-!
       call hpdeallc(nl_u_, err,1)
       call hpdeallc(nl_v_, err,1)
       call hpdeallc(nl_t_, err,1)

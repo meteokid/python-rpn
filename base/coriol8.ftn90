@@ -79,7 +79,8 @@
 !     Set rotation parameters (standard mode)
 !     ---------------------------------------
       if ( .not.Schm_autobar_L .or. &
-           Schm_autobar_L .and. .not.(Williamson_case.eq.2.or.Williamson_case.eq.3)) then
+
+       (Schm_autobar_L .and. Williamson_alpha.eq.0.0)) then
 !
          s0 = F_rot_8(3,3)
 
@@ -117,12 +118,16 @@
                F_u_8(i,j) = ca * cos(F_xu_8(i) - ang) + sa
             enddo
          enddo
-!
-!     -----------------------------------------------------------------------------
-!     Use Coriolis based on alpha when AUTOBAROTROPE and Williamson's cases 2 and 3
-!     -----------------------------------------------------------------------------
 
+!
       else
+!
+!     ------------------------------------------------------------------------
+!     Use Coriolis based on alpha when 
+!     AUTOBAROTROPE and Williamson's cases 2 and 3
+!     ------------------------------------------------------------------------
+
+         coef_8 = TWO * Dcst_omega_8 * F_ct_8
 !
          if (trim(Grd_yinyang_S) .eq. 'YAN') then
 !
@@ -132,7 +137,8 @@
             do j=1-G_haloy,l_nj+G_haloy
             do i=1-G_halox,l_ni+G_halox
                call smat (S,Y_lon,Y_lat,F_x_8(i),F_yv_8(j))
-               F_v_8(i,j) = coef_8 * (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
+               F_v_8(i,j) = coef_8 *   &
+                    (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
                             sin(Y_lat)* cos(Williamson_alpha))
             enddo
             enddo
@@ -143,25 +149,24 @@
             do j=1-G_haloy,l_nj+G_haloy
             do i=1-G_halox,l_ni+G_halox
                call smat (S,Y_lon,Y_lat,F_xu_8(i),F_y_8(j))
-               F_u_8(i,j) = coef_8 * (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
+               F_u_8(i,j) = coef_8 *   &
+                    (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
                             sin(Y_lat)* cos(Williamson_alpha))
             enddo
             enddo
 
          else
-
             write(Lun_out,*) ''
             write(Lun_out,*) 'Coriolis evaluation using alpha when Williamson cases 2 and 3 '
             write(Lun_out,*) ''
-!
-            coef_8 = TWO * Dcst_omega_8 * F_ct_8
 !
 !       processing coriolis FACTOR on V grid
 !       ____________________________________
 !
             do j=1-G_haloy,l_nj+G_haloy
             do i=1-G_halox,l_ni+G_halox
-               F_v_8(i,j) = coef_8*(-cos( F_x_8(i))* cos(F_yv_8(j))*sin(Williamson_alpha)+ &
+               F_v_8(i,j) = coef_8*   &
+                    (-cos( F_x_8(i))* cos(F_yv_8(j))*sin(Williamson_alpha)+ &
                             sin(F_yv_8(j))* cos(Williamson_alpha))
             enddo
             enddo
@@ -171,7 +176,8 @@
 !
             do j=1-G_haloy,l_nj+G_haloy
             do i=1-G_halox,l_ni+G_halox
-               F_u_8(i,j) = coef_8*(-cos( F_xu_8(i))* cos(F_y_8(j))*sin(Williamson_alpha)+ &
+               F_u_8(i,j) = coef_8*   &
+                    (-cos( F_xu_8(i))* cos(F_y_8(j))*sin(Williamson_alpha)+ &
                             sin(F_y_8(j))* cos(Williamson_alpha))
             enddo
             enddo

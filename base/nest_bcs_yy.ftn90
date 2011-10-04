@@ -34,7 +34,7 @@
 !implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt0.cdk"
+#include "vt1.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
@@ -44,7 +44,7 @@
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer err,i,j,k,nvar,n,istat
-      real, pointer, dimension(:,:,:) :: tr,tr0
+      real, pointer, dimension(:,:,:) :: tr,tr1
 
 !----------------------------------------------------------------------
 !
@@ -62,62 +62,63 @@
       istat = gmm_get(gmmk_nest_s_s ,nest_s ,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_s)'
 !
-      istat = gmm_get(gmmk_ut0_s , ut0 ,mymeta)
-      istat = gmm_get(gmmk_vt0_s , vt0 ,mymeta)
-      istat = gmm_get(gmmk_wt0_s , wt0 ,mymeta)
-      istat = gmm_get(gmmk_tt0_s , tt0 ,mymeta)
-      istat = gmm_get(gmmk_zdt0_s,zdt0 ,mymeta)
-      istat = gmm_get(gmmk_st0_s , st0 ,mymeta)
+!also update the last timestep info
+      istat = gmm_get(gmmk_ut1_s , ut1 ,mymeta)
+      istat = gmm_get(gmmk_vt1_s , vt1 ,mymeta)
+      istat = gmm_get(gmmk_wt1_s , wt1 ,mymeta)
+      istat = gmm_get(gmmk_tt1_s , tt1 ,mymeta)
+      istat = gmm_get(gmmk_zdt1_s,zdt1 ,mymeta)
+      istat = gmm_get(gmmk_st1_s , st1 ,mymeta)
       if (.not.Schm_hydro_L) then
          istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
-         istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
+         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
       endif
 !
 
       do k= 1, G_nk+1
       do j= 1, l_nj
       do i= 1, l_ni
-         nest_t (i,j,k) = tt0(i,j,k)
-         nest_w(i,j,k)  =  wt0(i,j,k)
-         nest_zd(i,j,k) =zdt0(i,j,k)
+         nest_t (i,j,k) = tt1(i,j,k)
+         nest_w(i,j,k)  =  wt1(i,j,k)
+         nest_zd(i,j,k) =zdt1(i,j,k)
       enddo
       enddo
       enddo
 !
       do j= 1, l_nj
       do i= 1, l_ni
-        nest_t (i,j,G_nk+2) = tt0(i,j,G_nk+2)
-        nest_s (i,j)=st0(i,j)
+        nest_t (i,j,G_nk+2) = tt1(i,j,G_nk+2)
+        nest_s (i,j)=st1(i,j)
       enddo
       enddo
 !
       call rpn_comm_xch_halo(nest_s, LDIST_DIM,l_ni,l_nj,1,      &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(st0,nest_s,LDIST_DIM,1)
+      call yyg_scalbc(st1,nest_s,LDIST_DIM,1)
       call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(tt0,nest_t,LDIST_DIM,G_nk+2)
+      call yyg_scalbc(tt1,nest_t,LDIST_DIM,G_nk+2)
 
       call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk+1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(wt0,nest_w,LDIST_DIM,G_nk+1)
+      call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk+1)
 
       call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk+1,&
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(zdt0,nest_zd,LDIST_DIM,G_nk+1)
+      call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk+1)
 !
       if (.not. Schm_hydro_L) then
 
         do k=0,G_nk+1
         do j=1,l_nj
         do i=1,l_ni
-           nest_q(i,j,k)=qt0(i,j,k)
+           nest_q(i,j,k)=qt1(i,j,k)
         end do
         end do
         end do
         call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-        call yyg_scalbc(qt0,nest_q,LDIST_DIM,G_nk+2)
+        call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
       endif
 
 !$omp parallel
@@ -125,15 +126,15 @@
        do k= 1, G_nk+1
         do j= 1, l_nj
           do i= 1, l_niu
-         ut0 (i,j,k)=ut0 (i,j,k)*Geomg_invcy_8(j)
-         nest_u(i,j,k)=ut0(i,j,k)
+         ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
+         nest_u(i,j,k)=ut1(i,j,k)
 
         enddo
        enddo
         do j= 1, l_njv
           do i= 1, l_ni
-          vt0(i,j,k)=vt0 (i,j,k)*Geomg_invcyv_8(j)
-          nest_v(i,j,k)=vt0(i,j,k)
+          vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
+          nest_v(i,j,k)=vt1(i,j,k)
           enddo
         enddo
        enddo
@@ -144,8 +145,8 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk+1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call  yyg_vecbc1(ut0,nest_u,nest_v,LDIST_DIM,G_nk+1)
-      call  yyg_vecbc2(vt0,nest_v,nest_u,LDIST_DIM,G_nk+1)
+      call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk+1)
+      call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
 
 !$omp parallel
 !$omp do
@@ -153,14 +154,12 @@
          do j= 1, l_nj
          do i= 1, l_niu
 
-            ut0   (i,j,k) =  ut0(i,j,k)*Geomg_cy_8(j)
-            nest_u(i,j,k) = ut0(i,j,k)
+            ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
          enddo
          enddo
          do j= 1, l_njv
          do i= 1, l_ni
-            vt0(i,j,k)   =  vt0 (i,j,k)*Geomg_cyv_8(j)
-            nest_v (i,j,k)= vt0(i,j,k)
+            vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
          enddo
          enddo
       enddo
@@ -171,19 +170,19 @@
       do n=1,Tr3d_ntr
          tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
          istat = gmm_get(tr_name,tr,mymeta)
-         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
-         istat = gmm_get(tr_name,tr0,mymeta)
+         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
+         istat = gmm_get(tr_name,tr1,mymeta)
 
          do k= 1, G_nk+2
          do j= 1, l_nj
          do i= 1, l_ni
-            tr (i,j,k) = tr0(i,j,k)
+            tr (i,j,k) = tr1(i,j,k)
          enddo
          enddo
          enddo
          call rpn_comm_xch_halo(tr, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc(tr0,tr,LDIST_DIM,G_nk+2)
+         call yyg_scalbc(tr1,tr,LDIST_DIM,G_nk+2)
       enddo
 !
 !----------------------------------------------------------------------

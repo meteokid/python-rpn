@@ -111,9 +111,9 @@
 !
       call diag_fip( fiptx, st0, tt0, qt0, fis0, LDIST_DIM, l_nk)
 !
-      call nlip_2 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
+      call nlip_3 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , nl_b, &
                     ut0  , vt0  , tt0  , st0  , qt0  , zdt0 , fiptx, &
-                    rhsp , rhsc ,bspqtx, mutx , &
+                    rhsp , rhsc ,bspqtx, mutx , fis0 , &
                     LDIST_DIM, l_nk )
 !
       if (Acid_test_L) &

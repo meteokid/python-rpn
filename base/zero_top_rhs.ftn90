@@ -1,0 +1,84 @@
+!-------------------------------------- LICENCE BEGIN ------------------------------------
+!Environment Canada - Atmospheric Science and Technology License/Disclaimer, 
+!                     version 3; Last Modified: May 7, 2008.
+!This is free but copyrighted software; you can use/redistribute/modify it under the terms 
+!of the Environment Canada - Atmospheric Science and Technology License/Disclaimer 
+!version 3 or (at your option) any later version that should be found at: 
+!http://collaboration.cmc.ec.gc.ca/science/rpn.comm/license.html 
+!
+!This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+!without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+!See the above mentioned License/Disclaimer for more details.
+!You should have received a copy of the License/Disclaimer along with this software; 
+!if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
+!CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
+!-------------------------------------- LICENCE END --------------------------------------
+!**s/r zero_top_rhs - put zero in top rhs for Schm_NoTopThL_L=.true.
+
+#include "model_macros_f.h"
+!
+      subroutine zero_top_rhs()
+!
+      implicit none
+!
+!author A. Plante sept 2010
+!
+!revision
+!
+!object
+!
+!arguments
+!        None
+!
+!implicits
+#include "gmm.hf"
+#include "var_gmm.cdk"
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "rhsc.cdk"
+#include "nl.cdk"
+!
+! Local variables
+!
+      type(gmm_metadata) :: mymeta
+      integer :: i,j,istat,istatg
+!     ---------------------------------------------------------------
+!
+      istat = gmm_get(gmmk_rhst_s,rhst,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pre  ERROR at gmm_get(rhst)'
+      istatg = istat
+!
+      istat = gmm_get(gmmk_rhsf_s,rhsf,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pre  ERROR at gmm_get(rhsf)'
+      istatg = min(istat,istatg)
+!
+      if (.not. Schm_hydro_L) then
+         istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rhsw)'
+      istatg = min(istat,istatg)
+      endif
+!
+      call handle_error_l(.not.GMM_IS_ERROR(istatg),'zero_top_rhs','gmm_get error, see above')
+!
+!$omp parallel
+!$omp do
+         do j=1,l_nj
+         do i=1,l_ni
+            rhst(i,j,1)=.0
+            rhsf(i,j,1)=.0
+         end do
+         end do
+!$omp enddo
+         if (.not.Schm_hydro_L) then
+!$omp do 
+            do j=1,l_nj
+            do i=1,l_ni
+               rhsw(i,j,1)=.0
+            end do
+            end do
+!$omp enddo        
+         endif
+!$omp end parallel      
+!
+      return
+      end

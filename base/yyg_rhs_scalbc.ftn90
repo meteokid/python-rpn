@@ -121,9 +121,9 @@
                    mm=(m-1)*NK+k
                    i= Rhsx_sendw_imx(m,kk)
                    j= Rhsx_sendw_imy(m,kk)
-                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_sendw_imx(m,kk),Rhsx_sendw_imy(m,kk), &
-                             LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
                              Rhsx_sendw_xxr(m,kk),Rhsx_sendw_yyr(m,kk))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -141,9 +141,9 @@
                    mm=(Rhsx_sendw_len(kk)+m-1)*NK+k
                    i=Rhsx_sende_imx(m,kk)
                    j=Rhsx_sende_imy(m,kk)
-                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_sende_imx(m,kk),Rhsx_sende_imy(m,kk), &
-                             LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
                              Rhsx_sende_xxr(m,kk),Rhsx_sende_yyr(m,kk))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -159,9 +159,9 @@
 !$omp do
                 do k=1,NK
                    mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+m-1)*NK+k
-                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_sends_imx(m,kk),Rhsx_sends_imy(m,kk), &
-                             LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
                              Rhsx_sends_xxr(m,kk),Rhsx_sends_yyr(m,kk))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -179,9 +179,9 @@
                    mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+Rhsx_sends_len(kk)+m-1)*NK+k
                    i=Rhsx_sendn_imx(m,kk)
                    j=Rhsx_sendn_imy(m,kk)
-                   call int_cub_lag(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_sendn_imx(m,kk),Rhsx_sendn_imy(m,kk), &
-                             LDIST_DIM,  &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,  &
                              Rhsx_sendn_xxr(m,kk),Rhsx_sendn_yyr(m,kk))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)

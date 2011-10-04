@@ -26,7 +26,6 @@
 !
 !revision
 ! v4_14 - Desgagne M.          - initial version
-! v4_40 - Lee V.               - call nest_bcs_yy for Yin-Yang run
 !
 !object
 !
@@ -42,9 +41,7 @@
 !----------------------------------------------------------------------
 !
       call tmg_start0 (50, 'NEST_BCS ' )
-      if ( Grd_yinyang_L ) then
-           call nest_bcs_yy ()
-      else if ( G_lam ) then
+      if ( G_lam .and. .not. Grd_yinyang_L) then
          if (.not. Lam_ctebcs_L) call nest_intt
          if (Schm_theoc_L) then
              if (north+south+west+east.ge.1) then
@@ -57,9 +54,9 @@
                 endif
                 call slabsym ()
              endif
-          else
+         else
              call nest_bcs_t0 ()
-          endif
+         endif
       endif
 
 !

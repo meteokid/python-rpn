@@ -50,29 +50,29 @@
 ! Schm_itraj         | number of iterations to compute trjectories     |
 ! Schm_nith          | number of vertical modes treated implicitely    |
 ! Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
-! Schm_zdotMid_L     | Zdot computed in the middle of the trajectory   |
-! Schm_pior_L        | Original definition of hydrostatic pressure: pi |
+! Schm_mteul_L       | EULERIAN treatment of topography                |
+! Schm_NoTopThL_L    | No Top Thermo Level (level 3/4)                 |
+! Schm_notop         | = 1 if Schm_NoTopThL_L, 0 otherwise             |
 !----------------------------------------------------------------------
 !
 #endif
       logical Schm_hydro_L ,Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
-      logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L
-      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_pior_L
-      logical Schm_zdotMid_L
+      logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L, Schm_mteul_L
+      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_NoTopThL_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3
-      integer Schm_itnlh, Schm_itraj, Schm_nith
+      integer Schm_itnlh, Schm_itraj, Schm_nith, Schm_notop
 !
       common / schm_l / Schm_hydro_L  , Schm_moist_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L 
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_psadj_L  , Schm_opentop_L
-      common / schm_l / Schm_wload_L
+      common / schm_l / Schm_wload_L  , Schm_mteul_L
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
-      common / schm_l / Schm_zdotMid_L, Schm_Topo_L
-      common / schm_l / Schm_pior_L
+      common / schm_l / Schm_Topo_L   , Schm_NoTopThL_L
       common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
+      common / schm_i / Schm_notop
 !

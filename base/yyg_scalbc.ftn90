@@ -23,7 +23,7 @@
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
-      include 'mpif.h'
+!     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -39,8 +39,9 @@
       integer pil_recvlen(Ptopo_numproc),pil_sendlen(Ptopo_numproc)
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
-      integer status(MPI_STATUS_SIZE)
-      integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+!     integer status(MPI_STATUS_SIZE)
+!     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+      integer status
       integer request(Ptopo_numproc*2)
       real*8  send_pil_8
       integer tag2,recvlen,sendlen,tag1,ireq
@@ -94,9 +95,9 @@
                 do k=1,NK
 !                  mm=mm+1
                    mm=(m-1)*NK+k
-                   call int_cub_lag(send_pil_8,tab_src_8(l_minx,l_miny,k), &
-                             Pil_sendw_imx(m,kk),Pil_sendw_imy(m,kk),      &
-                             LDIST_DIM,                                    &
+                   call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_sendw_imx(m,kk),Pil_sendw_imy(m,kk),       &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                 &
                              Pil_sendw_xxr(m,kk),Pil_sendw_yyr(m,kk))
                    send_pil(mm,KK)=real(send_pil_8)
                 enddo
@@ -110,9 +111,9 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_sendw_len(kk)+m-1)*NK+k
-                   call int_cub_lag(send_pil_8,tab_src_8(l_minx,l_miny,k), &
-                             Pil_sende_imx(m,kk),Pil_sende_imy(m,kk),      &
-                             LDIST_DIM,                                    &
+                   call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_sende_imx(m,kk),Pil_sende_imy(m,kk),       &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                 &
                              Pil_sende_xxr(m,kk),Pil_sende_yyr(m,kk))
                    send_pil(mm,KK)=real(send_pil_8)
                 enddo
@@ -126,9 +127,9 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+m-1)*NK+k
-                   call int_cub_lag(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
                              Pil_sends_imx(m,kk),Pil_sends_imy(m,kk),       &
-                             LDIST_DIM,                                     &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                 &
                              Pil_sends_xxr(m,kk),Pil_sends_yyr(m,kk))
                    send_pil(mm,KK)=real(send_pil_8)
                 enddo
@@ -143,9 +144,9 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+Pil_sends_len(kk)+m-1)*NK+k
-                   call int_cub_lag(send_pil_8,tab_src_8(l_minx,l_miny,k), &
-                             Pil_sendn_imx(m,kk),Pil_sendn_imy(m,kk),      &
-                             LDIST_DIM,                                    &
+                   call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_sendn_imx(m,kk),Pil_sendn_imy(m,kk),       &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                 &
                              Pil_sendn_xxr(m,kk),Pil_sendn_yyr(m,kk))
                    send_pil(mm,KK)=real(send_pil_8)
                 enddo
@@ -155,9 +156,12 @@
 
              ireq = ireq+1
 !            print *,'scalbc: sending',Pil_sendlen(kk)*NK,' to ',kk_proc
-             call MPI_ISend(send_pil (1,KK),Pil_sendlen(kk)*NK,MPI_REAL, &
-                                        kk_proc,tag2+Ptopo_world_myproc, &
-                                        MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_ISend(send_pil (1,KK),Pil_sendlen(kk)*NK,MPI_REAL, &
+!                                       kk_proc,tag2+Ptopo_world_myproc, &
+!                                       MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_ISend(send_pil (1,KK),Pil_sendlen(kk)*NK, &
+                                 'MPI_REAL',kk_proc,tag2+Ptopo_world_myproc, &
+                                 'MULTIGRID',request(ireq),ierr)
          endif
 !
 !        check to receive from other colour processor
@@ -167,15 +171,18 @@
 
              ireq = ireq+1
 !            print *,'scalbc: receiving',Pil_recvlen(kk)*NK,' from ',kk_proc
-             call MPI_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK,MPI_REAL, &
-                    kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+!            call MPI_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK,MPI_REAL, &
+!                   kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_IRecv(recv_pil(1,KK),Pil_recvlen(kk)*NK,'MPI_REAL', &
+                    kk_proc,tag2+kk_proc,'MULTIGRID',request(ireq),ierr)
          endif
 
  100  continue
 
 ! Wait for all done sending and receiving
 
-      call mpi_waitall(ireq,request,stat,ierr)
+!     call mpi_waitall(ireq,request,stat,ierr)
+      call RPN_COMM_waitall_nostat(ireq,request,ierr)
 
 ! Now fill my results if I have received something
 

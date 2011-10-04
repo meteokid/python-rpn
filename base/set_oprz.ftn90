@@ -143,7 +143,8 @@
       Opr_opszpl_8(AA+k0) = 0.d0
       Opr_opszpl_8(BB+k0) =+(one-Ver_alfat_8) &
                            *Ver_dz_8%m(k0)*Ver_wm_8%m(k0)*Ver_idz_8%t(k0) &
-                           -Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0+1)
+                           -Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0+1) &
+                           -Ver_epsilon_8*Schm_notop
       Opr_opszpl_8(CC+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0+1)
       do k = k0+1, G_nk-1
          Opr_opszpl_8(AA+k) =-Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_idz_8%t(k)

@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !/**
-subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
+subroutine adx_lag3d_tricub2(F_out, F_in, F_x, F_y, F_z, &
                              adx_y00_8,adx_x00_8,p_z00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8, &
                              adx_lcx,adx_lcy,p_lcz, adx_bsx_8,adx_bsy_8,p_bsz_8, &
                              adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, &
                              adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8, &
                              p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8,&
-                             F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax)
+                             F_num, F_mono_L, i0, in, j0, jn, k0, F_nk, kkmax, notop)
    implicit none
 #include <arch_specific.hf>
 !
@@ -38,7 +38,7 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
    real,dimension(F_num) :: &
         F_out                  !O, result of interpolation
 
-   integer :: kkmax
+   integer :: kkmax, notop
    real*8  :: p_z00_8
 
    !TODO: specify min:max if not starting from zero
@@ -104,7 +104,7 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
             if (rrk < p_bsz_8(kk)) kk = kk - 1
             kk = min(kkmax-1,max(0,kk))
 
-            zcubic_L = (kk > 0) .and. (kk < kkmax-1)
+            zcubic_L = (kk > 0+notop) .and. (kk < kkmax-1)
 
             !- x interpolation
             ra = adx_bsx_8(ii-1)
@@ -213,5 +213,5 @@ subroutine adx_lag3d_tricub (F_out, F_in, F_x, F_y, F_z, &
    !---------------------------------------------------------------------
 
    return
-end subroutine adx_lag3d_tricub
+end subroutine adx_lag3d_tricub2
 

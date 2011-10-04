@@ -8,21 +8,19 @@
 !
 !
 #endif
-      integer  Acqi_datasp(2), Acqi_vterplv(2), Acqi_vcode
-      integer  Acqi_niu, Acqi_nju  , Acqi_niv, Acqi_njv, Acqi_nim
-      integer  Acqi_njm, Acqi_nktmp, Acqi_nbpts
-      real     Acqr_prefa, Acqr_ptopa, Acqr_rcoefa(2)
+      integer  Acqi_datasp(2)
+      integer  Acqi_niu, Acqi_nju, Acqi_niv,Acqi_njv
+      real     Acqr_ptopa
 !      
-      logical  Acql_etaanl , Acql_siganl , Acql_hybanl, Acql_prsanl
-      logical  Acql_vertint, Acql_horzint, Acql_nesd, Acql_ecmanl
-      logical  Acql_staganl
+      logical  Acql_etaanl, Acql_siganl, Acql_hybanl
+      logical  Acql_vertint, Acql_horzint
+      logical  Acql_prsanl, Acql_staganl, Acql_ecmanl
 !
-      common / acqi / Acqi_datasp,Acqi_vterplv, Acqi_vcode
-      common / acqi / Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv,Acqi_nim
-      common / acqi / Acqi_njm,Acqi_nktmp,Acqi_nbpts
+      common / acqi / Acqi_datasp
+      common / acqi / Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv
 !
-      common / acqr / Acqr_prefa, Acqr_ptopa, Acqr_rcoefa
+      common / acqr / Acqr_ptopa 
 !
       common / acql / Acql_etaanl, Acql_siganl , Acql_hybanl
-      common / acql / Acql_prsanl, Acql_vertint, Acql_horzint
-      common / acql / Acql_ecmanl, Acql_staganl
+      common / acql / Acql_vertint, Acql_horzint
+      common / acql / Acql_prsanl,  Acql_staganl, Acql_ecmanl

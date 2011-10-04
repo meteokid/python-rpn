@@ -44,6 +44,7 @@
 #include "vt1.cdk"
 #include "orh.cdk"
 #include "rhsc.cdk"
+#include "p_geof.cdk"
 !
       type(gmm_metadata) :: mymeta
       integer i,k,istat
@@ -51,20 +52,32 @@
 !     __________________________________________________________________
 !
       istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(ut1)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(ut1)'
       istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(ut0)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(ut0)'
       istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(vt1)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(vt1)'
       istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'glb_halo_init ERROR at gmm_get(vt0)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(vt0)'
       istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsv)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(orhsv)'
       istat = gmm_get(gmmk_rvw2_s,rvw2,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rvw2)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(rvw2)'
       istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pre  ERROR at gmm_get(rhsv)'
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(rhsv)'
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'glhalo_init ERROR at gmm_get(fis0)'
 
+      if(l_south) then
+         do i = l_minx, l_maxx
+            fis0(i,0) = 0.0
+         end do
+      endif
+      if(l_north) then
+         do i = l_minx, l_maxx
+            fis0(i,l_nj+1) = 0.0
+         end do
+      endif
       do k=1,G_nk
          if(l_south) then
             do i = l_minx, l_maxx

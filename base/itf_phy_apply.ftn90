@@ -64,7 +64,7 @@
 
       type(gmm_metadata) :: mymeta
       logical nest_it, flag_u, flag_v
-      integer i, j, k, n, err, cnt, UU_indx, VV_indx, km1,istat
+      integer i, j, k, n, err, cnt, UU_indx, VV_indx, TT_indx, km1,istat
       real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE), &
            tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
       real, pointer, dimension(:,:,:) :: tr,trm
@@ -98,8 +98,8 @@
                   istat = gmm_get('TR/'//trim(volnm(n)(7:))//':M',trm,mymeta)
 !$omp parallel do
                   do k=1,p_nk-1
-                     tr (:,:,k) = tr(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
-                     trm(:,:,k) = tr(:,:,k)
+                     tr (:,:,k+Schm_notop) = tr(:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+                     trm(:,:,k+Schm_notop) = tr(:,:,k+Schm_notop)
                   end do
 !$omp end parallel do
                endif
@@ -115,6 +115,7 @@
       cnt     = 0
       UU_indx = 0
       VV_indx = 0
+      TT_indx = 0
 
       do n = 1, p_bvol_top
 
@@ -131,35 +132,40 @@
 	    if (istat.eq.0) then
 !$omp parallel do
                do k=1,p_nk
-                  tr (:,:,k) = tr(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+                  tr (:,:,k+Schm_notop) = &
+                  tr (:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
                end do
 !$omp end parallel do
             endif
 
             if (volnm(n)(7:)  .eq. 'TT'   ) then
+               TT_indx = cnt
                istat = gmm_get('PW_TT:P',pw_tt_plus,mymeta)
 !$omp parallel do
                do k= 1, p_nk
-                  pw_tt_plus (:,:,k) = pw_tt_plus(:,:,k) + Cstv_dt_8*phy_tend(:,:,k,cnt)
+                  pw_tt_plus (:,:,k+Schm_notop) = &
+                  pw_tt_plus (:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
                end do
 !$omp end parallel do
-               if (Schm_pheat_L) then
-                  istat = gmm_get(gmmk_tt1_s  ,tt1  ,mymeta)
-                  istat = gmm_get(gmmk_st1_s  ,st1  ,mymeta)
-                  istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-                  istat = gmm_get(gmmk_fis0_s ,fis0 ,mymeta)
-                  if(.not.Schm_hydro_L)&
-                       istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-                  call diag_fip (fiptx,st1,tt1,qt1,fis0,LDIST_DIM,l_nk)
-               endif
             endif
 
          endif
 
       end do
 
-      istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
-      call tt2virt (tt1, .true., 'P')
+      if (TT_indx.gt.0) then
+         istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
+         call tt2virt (tt1, .true., 'P')
+         if (Schm_pheat_L) then
+            istat = gmm_get(gmmk_tt1_s  ,tt1  ,mymeta)
+            istat = gmm_get(gmmk_st1_s  ,st1  ,mymeta)
+            istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
+            istat = gmm_get(gmmk_fis0_s ,fis0 ,mymeta)
+            if(.not.Schm_hydro_L)&
+               istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+            call diag_fip (fiptx,st1,tt1,qt1,fis0,LDIST_DIM,l_nk)
+         endif
+      endif
 
       if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then
          istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
@@ -206,8 +212,10 @@
 
 !$omp parallel do
          do k=1,l_nk+1
-            ut1 (1:l_niu,:,k) =  ut1(1:l_niu,:,k) + Cstv_dt_8*tdu(1:l_niu,:,k+1)
-            vt1 (:,1:l_njv,k) =  vt1(:,1:l_njv,k) + Cstv_dt_8*tdv(:,1:l_njv,k+1)
+            ut1 (1:l_niu,:,k) = &
+            ut1 (1:l_niu,:,k) + Cstv_dt_8*tdu(1:l_niu,:,k+1-Schm_notop)
+            vt1 (:,1:l_njv,k) = &
+            vt1 (:,1:l_njv,k) + Cstv_dt_8*tdv(:,1:l_njv,k+1-Schm_notop)
          end do
 !$omp end parallel do
 

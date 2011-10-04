@@ -79,12 +79,6 @@ subroutine itf_adx_get_field_list (F_fields_lbl,F_fields_type_L,F_nfields,F_nb_f
          F_fields_lbl(FIELD_OUT,F_nfields)= gmmk_rhsw_s
       endif
 
-      if (Schm_zdotmid_L) then
-         F_nfields = F_nfields + 1
-         F_fields_lbl(FIELD_IN, F_nfields)= gmmk_zdt1_s
-         F_fields_lbl(FIELD_OUT,F_nfields)= gmmk_zdup_s
-      endif
-
       if (Orh_icn == Schm_itcn) then
          do n=1,Tr3d_ntr
             F_nfields = F_nfields + 1

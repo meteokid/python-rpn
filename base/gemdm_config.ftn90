@@ -37,8 +37,6 @@
 !
 !object
 !
-#include <gmm.hf>
-#include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
 #include "step.cdk"
@@ -161,7 +159,7 @@
          return
       endif
 !
-      if (Vtopo_start .ge. 0) then
+      if (Vtopo_start .ge. 0.and.(.not.Schm_theoc_L)) then
          if (lun_out.gt.0) then
             write (Lun_out, 6200)
             write (Lun_out, 8000)
@@ -222,11 +220,30 @@
          Vspng_nk       = 0
       endif
 !
-      if (Lctl_debug_L) then
-         call msg_set_minMessageLevel(MSG_DEBUG)
-         err = gmm_verbosity(GMM_MSG_DEBUG)
-         err = wb_verbosity(WB_MSG_DEBUG)
+!     Some common setups for AUTOBAROTROPIC runs
+      if (Schm_autobar_L) then
+          if (lun_out.gt.0) write (Lun_out, 6100)
+          Schm_topo_L=.false.
+          Out3_nundr = 0
       endif
+      if (Williamson_case.gt.0) then
+          if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
+             if (lun_out.gt.0) write (Lun_out, 6300)
+             return
+          endif
+          if (Williamson_case.gt.2.and.Williamson_alpha.ne.0.) then
+             if (lun_out.gt.0) write (Lun_out, 6400)
+             return
+          endif
+          if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
+              Williamson_alpha.ne.0.0 .and. Williamson_alpha.ne.90.0 ) then
+             if (lun_out.gt.0) write (Lun_out, 6500)
+             return
+          endif
+
+          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
+      endif
+      if (Lctl_debug_L) call msg_set_minMessageLevel(MSG_DEBUG)
 
       gemdm_config = 1
 !
@@ -236,7 +253,14 @@
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
+ 6100 format (//'  =============================='/&
+                '  AUTO-BAROTROPIC RUN:          '/&
+                '  Schm_topo_L set to .false.,Out3_nundr=0 '/&
+                '  =============================='//)
  6200 format (/' VARIABLE TOPOGRAPHY NOT AVAILABLE IN THIS VERSION'/)
+ 6300 format (/' Williamson case 3 and 4 are not available'/)
+ 6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
+ 6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)

@@ -38,6 +38,7 @@
 ! v3_30 - Lee V.            - new Lam I/O with acid test
 !                             without the dynamical kernel
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
+! v4_40 - Lee V.            - call nest_bcs_yy for Yin-Yang run
 !
 !object
 !
@@ -52,6 +53,7 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "vtopo.cdk"
+#include "grd.cdk"
 !
       integer itraj
       logical first_L, secon_L
@@ -84,6 +86,8 @@
       endif
 !
 ! Perform time interpolation of Lateral BCs for LAM configurations
+!
+      if (Grd_yinyang_L) call nest_bcs_yy()
 !
       call frstgss ()
 !

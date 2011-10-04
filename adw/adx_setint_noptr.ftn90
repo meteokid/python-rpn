@@ -61,7 +61,7 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
 #include "glb_ld.cdk"
-!!$#include "v4d_cfl.cdk"
+!#include "v4d_cfl.cdk"
    !
    integer :: ii, jj, kk, ij, i, j, k, n
    real*8  :: prd_8, prdt_8, p_z00_8

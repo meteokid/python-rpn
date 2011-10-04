@@ -50,6 +50,7 @@
 ! v4_13 - Spacek L.         - Delete call to readgeo, add Path_phy_S
 ! v4_13 - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
 ! v4_21 - Plante A.         - Call predat4     
+! v4_40 - Lee/Qaddouri      - Add exchange of ME for Yin-Yang seam
 !
 !object
 !	
@@ -73,6 +74,7 @@
 #include "wil_williamson.cdk"
 #include "path.cdk"
 !
+      real fistmp(LDIST_SHAPE)
       logical  v4d_indata2,v4d_predat
       integer  nav_3df,newdate
       external nav_3df,newdate,v4d_indata2,v4d_predat
@@ -150,13 +152,16 @@
                            l_minx,l_maxx,l_miny,l_maxy)
          endif	  
       endif
+      if (Grd_yinyang_L) then
+         fistmp(:,:)=fis0(:,:)
+         call rpn_comm_xch_halo(fistmp, LDIST_DIM,l_ni,l_nj,1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(fis0,fistmp,LDIST_DIM,1)
+      endif
 !
       call v4d_indata3 (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy) 
 !
       call set_dync ()
-!
-      if (Schm_autobar_L.and.Williamson_case.ne.0)  &
-                             call wil_prepare_case 
 !
       if (.not. v4d_predat ( ut1, vt1, tt1, zdt1, st1, fis0, fiptx, wt1, qt1, &
                                        l_minx,l_maxx,l_miny,l_maxy) )  &

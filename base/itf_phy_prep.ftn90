@@ -31,6 +31,7 @@
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
+#include "schm.cdk"
 !
       integer i,j,k0,istat
       real, pointer, dimension (:,:,:) :: tr         => null()
@@ -49,7 +50,7 @@
                if (phy_idxdyn(i,2).eq.p_ni) k0 = p_nk
                do j= 1,p_nj
                   call itf_phy_fold (BUSDYN_3d(phy_idxdyn(i,1),j), &
-                                           tr(l_minx,l_miny,1),j , &
+                                tr(l_minx,l_miny,1+Schm_notop),j , &
                                 k0,p_nk,l_minx,l_maxx,l_miny,l_maxy)
                enddo
             endif

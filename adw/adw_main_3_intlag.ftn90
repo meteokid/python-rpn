@@ -76,7 +76,7 @@
 !      real, pointer, dimension (:,:,:) :: orhst,orhsc,orhsw,orhsf
 !      character(len=8) :: gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
 #include "schm.cdk"
-!      logical Schm_zdotlag_L,Schm_zdotMid_L,Schm_hydro_L
+!      logical Schm_hydro_L
 !      integer Schm_itcn
 #include "cstv.cdk"
 !      real*8    Cstv_tau_8
@@ -197,11 +197,6 @@
               .false., .false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',1.d0)
       endif
      
-      if (Schm_zdotmid_L) then
-         call adw_interp_gmm(gmmk_zdup_s,gmmk_zdt1_s, pos_x, pos_y, &
-              .false.,.false., LDIST_DIM, l_nk+1,i0,in,j0,jn,'t',1.d0)
-      endif
-
 
       if (Orh_icn == Schm_itcn) then
          do n=1,Tr3d_ntr
@@ -253,7 +248,7 @@
 !      logical Orh_crank_L
 !      integer Orh_icn
 #include "schm.cdk"
-!      logical Schm_zdotlag_L,Schm_zdotMid_L,Schm_hydro_L
+!      logical Schm_hydro_L
 !      integer Schm_itcn
 #undef TYPE_CDK
 #include "type.cdk"

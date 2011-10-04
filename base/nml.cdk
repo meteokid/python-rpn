@@ -144,8 +144,8 @@
       namelist /gem_cfgs/ Schm_psadj_L
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
-      namelist /gem_cfgs/ Schm_zdotMid_L
-      namelist /gem_cfgs/ Schm_pior_L
+      namelist /gem_cfgs/ Schm_mteul_L
+      namelist /gem_cfgs/ Schm_NoTopThL_L
       namelist /gem_cfgs/ Schm_Topo_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
@@ -273,8 +273,8 @@
       namelist /gem_cfgs_p/ Schm_psadj_L
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_xwvt3
-      namelist /gem_cfgs_p/ Schm_zdotMid_L
-      namelist /gem_cfgs_p/ Schm_pior_L
+      namelist /gem_cfgs_p/ Schm_mteul_L
+      namelist /gem_cfgs_p/ Schm_NoTopThL_L
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps

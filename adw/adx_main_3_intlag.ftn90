@@ -74,7 +74,7 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 
    character(len=1) :: level_type_S
 
-   integer :: n,i,j,k
+   integer :: n
    integer :: i0,j0,in,jn, istat
    integer, dimension(F_ni,F_nj,F_nk) :: exch_c1
    real   , dimension(F_ni,F_nj,F_nk) :: exch_n1, exch_xgg1, exch_xdd1
@@ -107,8 +107,8 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 
    else
 
-      call adx_exch_1b ( exch_n1, exch_xgg1, exch_xdd1, exch_c1, &
-                              F_px, F_py, F_pz, F_ni,F_nj,F_nk )
+      call adx_exch_1c ( exch_n1, exch_xgg1, exch_xdd1, exch_c1, &
+                              F_px, F_py, F_pz, F_ni,F_nj,F_k0,F_nk )
 !
       if ( V4dg_conf.ne.0.0 ) then
 !

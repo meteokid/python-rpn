@@ -107,8 +107,6 @@
 #include "geomg.cdk"
 !      real*8 geomg_x_8(XDIST_SHAPE)
 !      real*8 geomg_y_8(YDIST_SHAPE)
-#include "schm.cdk"
-!      logical schm_zdotmid_l
 !$$$#include "acid.cdk"
 !      logical acid_test_l
       integer i, j, k, n, nm, ij, ijk, nij, nijk, it
@@ -269,30 +267,13 @@
 !$$$      if (Acid_test_L)
 !$$$     $        call acid_stat_adw_main_2_pos(F_xth,F_xcth,wrkx1,i0,in,j0,jn,F_nk,3)
 !     
-      if(Schm_zdotMid_L)then
-         do k = 1, F_nk
-         do j = 1, l_nj 
-         do i = 1, l_ni
-            ijk=(k-1)*nij+(j-1)*l_ni+i
-            xgrid(ijk)  = Geomg_x_8(i)
-            ygrid(ijk)  = Geomg_y_8(j)
-            zgrid(ijk)  = p_z(k)
-         enddo         
-         enddo         
-         enddo 
-      endif
-
          if (G_lam) then
 !     
-            if(.not.Schm_zdotMid_L)call adw_cliptraj ( F_xth, wrk_yth, i0, in, j0, jn, F_nk, '')
+            call adw_cliptraj ( F_xth, wrk_yth, i0, in, j0, jn, F_nk, '')
 !     
          else
 !     
-            if(Schm_zdotMid_L)then
-               call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,xgrid,ygrid,zgrid,F_nk )
-            else
-               call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,F_xth,wrk_yth,F_zth,F_nk )
-            endif
+            call adw_exch_1 ( wrkx1, wrky1, wrkz1, wrkc1,F_xth,wrk_yth,F_zth,F_nk )
 !     
             allocate(capx2(max(1,Adw_fro_a)), &
                  capy2(max(1,Adw_fro_a)), &
@@ -311,15 +292,9 @@
 !     
          if( .not. Adw_nosetint_L ) then
 !     
-            if(Schm_zdotMid_L)then
-               call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy, &
-                    dummy, capz1, dummy, xgrid, ygrid, zgrid, &
-                    .true., .true., .true., nijk,i0,in,j0,jn,F_nk)
-            else
-               call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy, &
+            call adw_setint ( n1, capx1, dummy, dummy, capy1, dummy, &
                     dummy, capz1, dummy, F_xth, wrk_yth, F_zth, &
                     .true., .true., .true., nijk,i0,in,j0,jn,F_nk)
-            endif
 !     
             call adw_trilin (wrkx1,F_w,-dth,n1,capx1,capy1,capz1,nijk,i0,in,j0,jn,F_nk)
 !     
@@ -328,23 +303,12 @@
             
          else
 !     
-            if(Schm_zdotMid_L)then
-               call adw_trilin_turbo (wrkx1,F_w,-dth,xgrid,ygrid,zgrid,capz1, &
+            call adw_trilin_turbo (wrkx1,F_w,-dth,F_xth,wrk_yth,F_zth,capz1, &
                     loci,locj,lock,nijk,i0,in,j0,jn,F_nk,.true.,.true.)
-!     
-            else      
-               call adw_trilin_turbo (wrkx1,F_w,-dth,F_xth,wrk_yth,F_zth,capz1, &
-                    loci,locj,lock,nijk,i0,in,j0,jn,F_nk,.true.,.true.)
-!     
-            endif
 !     
          endif
 !     
          if (.not.G_lam) then
-
-         if (Adw_fro_a > 0 .and. Schm_zdotMid_L) then
-            call handle_error(-1,'adw_main_2_pos','The code should not pass in this branch.\n Please report the problem to the developer (zdotMid_L)')
-         endif
 
             if ( Adw_fro_a .gt. 0 ) then
 !     

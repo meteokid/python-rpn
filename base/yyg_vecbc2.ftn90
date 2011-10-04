@@ -97,13 +97,13 @@
                 do k=1,NK
 !                  mm=mm+1
                    mm=(m-1)*NK+k
-                   call int_cub_lagv(tabv_8,tabv_src_8(l_minx,l_miny,k),  &
+                   call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k),  &
                              Pil_vsendw_imx1(m,kk),Pil_vsendw_imy1(m,kk), &
-                             LDIST_DIM,                                   & 
+                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,              & 
                              Pil_vsendw_xxr(m,kk),Pil_vsendw_yyr(m,kk))
-                   call int_cub_lagu(tabu_8,tabu_src_8(l_minx,l_miny,k),  &
+                   call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k),  &
                              Pil_vsendw_imx2(m,kk),Pil_vsendw_imy2(m,kk), &
-                             LDIST_DIM,                                   &
+                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,              &
                              Pil_vsendw_xxr(m,kk),Pil_vsendw_yyr(m,kk))
                    send_pil(mm,KK)=                                       &
                    real(Pil_vsendw_s1(m,kk)*tabv_8 + Pil_vsendw_s2(m,kk)*tabu_8)
@@ -118,13 +118,13 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_vsendw_len(kk)+m-1)*NK+k
-                   call int_cub_lagv(tabv_8,tabv_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsende_imx1(m,kk),Pil_vsende_imy1(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
                              Pil_vsende_xxr(m,kk),Pil_vsende_yyr(m,kk))
-                   call int_cub_lagu(tabu_8,tabu_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsende_imx2(m,kk),Pil_vsende_imy2(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
                              Pil_vsende_xxr(m,kk),Pil_vsende_yyr(m,kk))
                    send_pil(mm,KK)=                                      &
                    real(Pil_vsende_s1(m,kk)*tabv_8 + Pil_vsende_s2(m,kk)*tabu_8)
@@ -139,13 +139,13 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_vsendw_len(kk)+Pil_vsende_len(kk)+m-1)*NK+k
-                   call int_cub_lagv(tabv_8,tabv_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsends_imx1(m,kk),Pil_vsends_imy1(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
                              Pil_vsends_xxr(m,kk),Pil_vsends_yyr(m,kk))
-                   call int_cub_lagu(tabu_8,tabu_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsends_imx2(m,kk),Pil_vsends_imy2(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
                              Pil_vsends_xxr(m,kk),Pil_vsends_yyr(m,kk))
                    send_pil(mm,KK)=                                      & 
                    real(Pil_vsends_s1(m,kk)*tabv_8 + Pil_vsends_s2(m,kk)*tabu_8)
@@ -160,13 +160,13 @@
 !$omp do
                 do k=1,NK
                    mm=(Pil_vsendw_len(kk)+Pil_vsende_len(kk)+Pil_vsends_len(kk)+m-1)*NK+k
-                   call int_cub_lagv(tabv_8,tabv_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsendn_imx1(m,kk),Pil_vsendn_imy1(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
                              Pil_vsendn_xxr(m,kk),Pil_vsendn_yyr(m,kk))
-                   call int_cub_lagu(tabu_8,tabu_src_8(l_minx,l_miny,k), &
+                   call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsendn_imx2(m,kk),Pil_vsendn_imy2(m,kk),&
-                             LDIST_DIM,                                  &
+                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
                              Pil_vsendn_xxr(m,kk),Pil_vsendn_yyr(m,kk))
                    send_pil(mm,KK)=                                      &
                    real(Pil_vsendn_s1(m,kk)*tabv_8 + Pil_vsendn_s2(m,kk)*tabu_8)

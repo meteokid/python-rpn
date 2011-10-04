@@ -51,7 +51,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    ! v2_31 - Desgagne M.    - removed stkmemw
    ! v2_31 - Tanguay M.     - gem stop if adx_fro_a.gt.0.and.V4dg_conf.ne.0
    ! v3_00 - Desgagne & Lee - Lam configuration
-   ! v3_02 - Lee V.         - revert adx_exch_1 for GLB only, added adx_ckbd_lam
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
    ! v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN 
    ! v3_20 - Gravel S.       - Change test a lower and upper boundaries
@@ -165,9 +164,9 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
          do j = j0,jn
             do i = i0,in
                F_zth(i,j,k) = p_z(k) + 2.D0*wrkx1(i,j,k)
-               !Make sure F_zth is below p_z(1) and above p_z(F_nk)
+               !Make sure F_zth is below p_z(1+Adx_notp) and above p_z(F_nk)
                F_zth(i,j,k) = min(PDM_8*p_z(F_nk),  &
-                    max(1.0d0*F_zth(i,j,k), PDP_8*p_z(1)) )
+                    max(1.0d0*F_zth(i,j,k), PDP_8*p_z(1+Adx_notop)) )
                F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + p_z(k))
             enddo
          enddo
@@ -189,6 +188,12 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
 !$omp parallel
 !$omp do
    do k = k0,F_nk
+      ! A reviser
+      ! Possibilites :
+      !    1) si thermo : F_pz(i0:in,j0:jn,2) = p_z(2)
+      !       si mt     : status quo
+      !    2) Laisser le movement a partir de l'interieur du domaine. pour thermo et mt
+      !       Tester en bas car en haut avec les eponges et le niveau a 0.1 hPa ce sera peu semsible.
       if ((k.eq.1).or.(k.eq.F_nk)) then
          F_pz(i0:in,j0:jn, k) = p_z(k)
          F_pz(i0:in,j0:jn, k) = p_z(k)

@@ -35,7 +35,7 @@
 !     of Galewski's case (Tellus,2004)
 !
 !implicits
-#include "wil_dcst.cdk"
+#include "dcst.cdk"
 !
 !     ---------------------------------------------------------
       real*8   wil_galewski_geo_8,int_8,geo_8,cslat_8,fct_8,lat_8
@@ -52,7 +52,7 @@
 !
       j_partial = J_MAX
 !
-      bound1 = -Wil_Dcst_pi_8/2. 
+      bound1 = -Dcst_pi_8/2. 
       bound2 = evaluated_at_lat_8 
 !
 !     Evaluate parameters for Gaussian integral 

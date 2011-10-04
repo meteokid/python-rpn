@@ -70,7 +70,7 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    !---------------------------------------------------------------------
    call msg(MSG_DEBUG,'adx_pos_glb')
 
-   call adx_exch_1b(F_wrkx1,F_wrky1,wrkz1,wrkc1,F_xth,F_yth,F_zth,F_ni,F_nj,F_nk)
+   call adx_exch_1c(F_wrkx1,F_wrky1,wrkz1,wrkc1,F_xth,F_yth,F_zth,F_ni,F_nj,F_k0,F_nk)
 
    if ( V4dg_conf.ne.0.0 ) then
 !

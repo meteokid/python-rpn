@@ -31,7 +31,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
    logical :: F_cubic_xy_L   
 !
 !authors
-!     A. Plante & C. Girard based on adx_meanpos from sylvie gravel.
+!     A. Plante & C. Girard based on adx_meanpos from sylvie gravel
 !
 !revision
 !     

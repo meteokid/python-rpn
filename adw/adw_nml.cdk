@@ -1,33 +1,34 @@
 #if defined(DOC)
 !
 !**comdeck adw.cdk
-!______________________________________________________________________
-!                                                                      |
-! VARIABLES FOR ADVECTION                                              |
-!______________________________________________________________________|
-!              |                                                       |
-! NAME         | DESCRIPTION                                           |
-!--------------|-------------------------------------------------------|
-! adw_stats_L  | switch: .true. : prints stats of traj and interp-var  |
-! adw_useadx_L | switch: .true. : use adx instead of adw               |
+!________________________________________________________________________
+!                                                                        |
+! VARIABLES FOR ADVECTION                                                |
+!________________________________________________________________________|
+!                |                                                       |
+! NAME           | DESCRIPTION                                           |
+!----------------|-------------------------------------------------------|
+! adw_stats_L    | switch: .true. : prints stats of traj and interp-var  |
+! adw_useadx_L   | switch: .true. : use adx instead of adw               |
 ! adw_gccsa_L  | switch: .false.: true to use the great circle constant|
 !              | speed approximation  to calculate upstream positions  |
-! adw_ckbd_L   | switch: .true. : check if upstream points from north  |
-!              |                  and south pe's for which an interpo- |
-!              |                  lation is requested are inside own   |
-!              |                  advection source grid                |
-! adw_exdg_L   | switch: .true. : print diagnostics on the number of   |
-!              |                  upstream positions exchanged among   |
-!              |                  processors                           |
-! adw_mono_L   | switch: .true. : advection of tracers is monotonic    |
-! adw_nosetint_L switch: .true. : no setint for TRILIN (done inside)   |
-! adw_nkbz_L   | switch: .true. : no knot boundary condition for       |
-!              |                  vertical interpolation               |
-! adw_maxcfl   |                                                       !
-! adw_halox    | advection specific halo in x                          |
-! adw_haloy    | advection specific halo in y                          |
-! adw_thermopos_S| Thermo pos calculation 'traj', 'int_z' or 'int_xyz' |
-!______________________________________________________________________|
+! adw_ckbd_L     | switch: .true. : check if upstream points from north  |
+!                |                  and south pe's for which an interpo- |
+!                |                  lation is requested are inside own   |
+!                |                  advection source grid                |
+! adw_exdg_L     | switch: .true. : print diagnostics on the number of   |
+!                |                  upstream positions exchanged among   |
+!                |                  processors                           |
+! adw_mono_L     | switch: .true. : advection of tracers is monotonic    |
+! adw_nosetint_L ! switch: .true. : no setint for TRILIN (done inside)   |
+! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
+!                |                  vertical interpolation               |
+! adw_maxcfl     |                                                       !
+! adw_halox      | advection specific halo in x                          |
+! adw_haloy      | advection specific halo in y                          |
+! adw_thermopos_L| switch: .true. : use traj. method to get thermo. pos. |
+!                |         .false.: use cubic interpolation of mom. pos. |
+!________________________________________________________________________|
 !
 #endif
 
@@ -41,6 +42,7 @@
       logical :: adw_nosetint_L
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
+      logical :: adw_thermopos_L
       integer :: adw_maxcfl
       integer :: adw_halox
       integer :: adw_haloy
@@ -52,7 +54,7 @@
       namelist /adw_cfgs/ adw_exdg_L
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_nosetint_L
-      namelist /adw_cfgs/ adw_thermopos_S
+      namelist /adw_cfgs/ adw_thermopos_L
 
       common /adw_nml_s/ adw_thermopos_S
 
@@ -65,7 +67,9 @@
       common /adw_nml_l/  adw_nosetint_L
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L
+      common /adw_nml_l/  adw_thermopos_L
 
       common /adw_nml_i/  adw_halox
       common /adw_nml_i/  adw_haloy
       common /adw_nml_i/  adw_maxcfl
+

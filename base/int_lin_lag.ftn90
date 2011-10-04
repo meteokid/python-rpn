@@ -14,11 +14,36 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r int_lin_lag - to do YY linear interpolation for scalar 
 
+       subroutine int_lin_lag2(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Xi,Yi)
+
+       implicit none
+#include <arch_specific.hf>
+!
+!author
+!           Abdessamad Qaddouri - October 2009
+!
+       integer Imx,Imy,minx,miny,maxx,maxy
+       integer Im, Jm
+       real*8 F(minx:maxx,miny:maxy),geomgx(Minx:Maxx),geomgy(Miny:Maxy)
+       real*8 FF,Xi,Yi,h1,h2
+       real*8 betax,betax1,betay,betay1
+
+       h1=Geomgx(2)-Geomgx(1)
+       h2=Geomgy(2)-Geomgy(1)
+       Im = Imx
+       Jm = Imy
+	   betax= (Xi-Geomgx(Im))/h1
+           betax1= (1.0-betax)
+           betay=(Yi-Geomgy(Jm))/h2
+           betay1=1.0-betay
+           FF= betay1*(betax1*F(Im,Jm)+betax*F(Im+1,Jm))+ &
+                    betay*(betax1*F(Im,Jm+1)+betax*F(Im+1,Jm+1))
+      return
+      end 
        subroutine int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi, &
                                             Yi,x,y,h1,h2) 
 
        implicit none
-#include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri - October 2009

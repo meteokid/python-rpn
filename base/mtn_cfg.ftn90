@@ -99,7 +99,6 @@
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
          Out3_etik_s  = 'SCHAR'
-         Schm_pior_L  = .true.
          Schm_hydro_L = .false.
 
          Height_top_8 = 19500.d0
@@ -130,14 +129,6 @@
         !GROWING MOUNTAIN
          Vtopo_start = 0
          Vtopo_ndt   = 45          !Vtopo_ndt   = 180
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!        extreme values requiring 3 C.-N. steps!
-!        Cstv_dt_8 = 50.                       !
-!        Schm_zdotmid_L=.true.                 !
-!        Schm_itcn=3                           !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
@@ -285,7 +276,6 @@
          Grd_dx = 250.                                 !  in meters
 
          Schm_hydro_L = .false.
-         Schm_pior_L  = .true.
 
          mtn_nstar= -1
          mtn_hwx  = 5

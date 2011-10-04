@@ -64,6 +64,7 @@
 ! v4_04 - Plante A.        - Remove offline mode
 ! v4_04 - Tanguay M.       - modif when autobar on IBM 
 ! v4_05 - Plante A.        - Add reads and interpolation for w, zd, q
+! v4_40 - Lee V.           - Add setup for Yin-yang barotropic (Williamson)
 !
 !object
 !	
@@ -92,6 +93,7 @@
 #include "tr3d.cdk"
 #include "vt1.cdk"
 #include "bcsgrds.cdk"
+#include "wil_williamson.cdk"
 !
 !modules
       integer,external :: bmf_get,get_px
@@ -107,7 +109,7 @@
                                                u_temp2,v_temp2,work,srclev,dstlev
       real, pointer    , dimension(:,:,:) :: tr
       real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
-      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp
+      real, dimension(l_ni,l_nj) :: pps, ps , topo_temp, topo_abdes
       real*8 lnpref_8,fistr_top_8
       real psmin, psmax, psmin_glob, psmax_glob, fact
 !
@@ -145,7 +147,37 @@
                       hu_temp,tt_temp,gz_temp,ps,topo_temp, &
                       zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
 !
-      if ( Schm_autobar_L ) Acql_vertint = .false.
+      if ( Schm_autobar_L ) then
+           Acql_vertint = .false.
+           Ana_zd_L=.true.
+           Ana_w_L=.true.
+           Ana_q_L = .true.
+           if (Williamson_case.eq.1) then
+               call wil_case1(gz_temp,l_ni,l_nj,nkmax)
+               call wil_uvcase1(u_temp,Acqi_niu,Acqi_nju, &
+                             v_temp,Acqi_niv,Acqi_njv,nkmax)
+           endif
+           if (Williamson_case.eq.2) then
+               call wil_case2(gz_temp,l_ni,l_nj,nkmax)
+               call wil_uvcase2(u_temp,Acqi_niu,Acqi_nju, &
+                             v_temp,Acqi_niv,Acqi_njv,nkmax)
+           endif
+           if (Williamson_case.eq.5) then
+               call wil_case5(gz_temp,topo_abdes,l_ni,l_nj,nkmax)
+               call wil_uvcase5(u_temp,Acqi_niu,Acqi_nju, &
+                             v_temp,Acqi_niv,Acqi_njv,nkmax)
+           endif
+           if (Williamson_case.eq.6) then
+               call wil_case6(gz_temp,l_ni,l_nj,nkmax)
+               call wil_uvcase6(u_temp,Acqi_niu,Acqi_nju, &
+                             v_temp,Acqi_niv,Acqi_njv,nkmax)
+           endif
+           if (Williamson_case.eq.8) then
+               call wil_case8(gz_temp,l_ni,l_nj,nkmax)
+               call wil_uvcase8(u_temp,Acqi_niu,Acqi_nju, &
+                             v_temp,Acqi_niv,Acqi_njv,nkmax)
+           endif
+      endif
 
       if ( Acql_staganl.and.Vtopo_L ) then
           Acql_vertint = .false.
@@ -158,7 +190,8 @@
 !
 ! Check if levels are the same
 !
-      if (.not.Acql_vertint) &
+!     if (.not.Acql_vertint.and..not.(Grd_yinyang_L.and.Schm_autobar_L)) &
+      if (.not.Acql_vertint.and..not.(Schm_autobar_L)) &
          Acql_vertint=.not.samelevel ( za_8,zb_8,nka_m, zat_8,zbt_8,nka_t, &
                                        gz_temp(1,1,nka_t),l_ni,l_nj,       &
                                        F_topo,l_minx,l_maxx,l_miny,l_maxy )
@@ -196,7 +229,12 @@
           do i=1,l_ni
 !            Reduce size of the mountains when Shallow water
 !            -----------------------------------------------
-             F_topo(i,j)=F_topo(i,j)/10.
+!            if (Williamson_case.eq.5.and.Grd_yinyang_L) then
+             if (Williamson_case.eq.5) then
+                 F_topo(i,j)=topo_abdes(i,j)*Dcst_grav_8
+             else
+                 F_topo(i,j)=F_topo(i,j)/10.
+             endif
              F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-fistr_top_8-F_topo(i,j)) &
                         /Cstv_rtstr_8
           enddo
@@ -208,7 +246,19 @@
          end do
          end do
          end do
-
+!        Insert the value of gz_temp into the HU tracer for WIll case 1
+!        --------------------------------------------------------------
+         do  102 k=1,Tr3d_ntr
+            err= bmf_get (Tr3d_name_S(k),bmf_time1,bmf_time2,-1,hu_temp, &
+                                        -1.,1,l_ni,1,l_nj,1,nkmax)
+            nullify(tr)
+            tr_name = trim(pref_tr)//trim(Tr3d_name_S(k))//trim(suff_tr)
+      	    istat = gmm_get(tr_name,tr,mymeta)
+            if (GMM_IS_ERROR(istat)) print *,'readdyn2 ERROR at gmm_get',tr_name
+            if ( err.eq.0 ) then
+                 tr (1:l_ni,1:l_nj,1:g_nk+2) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
+            endif
+ 102     continue
       else
 
          if (Acql_prsanl) then
@@ -302,6 +352,7 @@
                   tr (1:l_ni,1:l_nj,1:g_nk+2) = max(work   (1:l_ni,1:l_nj,1:g_nk+2), 0.)
                else
                   tr (1:l_ni,1:l_nj,1:g_nk+2) = max(hu_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
+!                 tr (1:l_ni,1:l_nj,1:g_nk+2) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
                endif 
             else
                tr (1:l_ni,1:l_nj,1:g_nk+2) = Tr3d_sval(k)
@@ -340,6 +391,15 @@
          F_zd (i,j,g_nk+1) = 0.0
       end do
       end do
+      if (Schm_autobar_L) then
+      do k=1,G_nk+1
+      do j=1,l_nj
+      do i=1,l_ni
+         F_zd (i,j,k) = 0.0
+      end do
+      end do
+      end do
+      endif
 !---------------------------------------------------------------------
 !     OBTAIN W, thermo levels, mass grid
 !               no value on diag level
@@ -363,6 +423,15 @@
          end do
          end do
          end do
+      endif
+      if (Schm_autobar_L) then
+      do k=1,G_nk+1
+      do j=1,l_nj
+      do i=1,l_ni
+         F_w (i,j,k) = 0.0
+      end do
+      end do
+      end do
       endif
 !---------------------------------------------------------------------
 !     OBTAIN Q, on momentum levels + surface, mass grid

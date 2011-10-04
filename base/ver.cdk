@@ -29,6 +29,8 @@
 ! Ver_fistr_8%(t,m)  | fistar: geopotential basic state                |
 ! Ver_wp_8%(t,m)     | weights for averaging                           |
 ! Ver_wm_8%(t,m)     | weights for averaging                           |
+!----------------------------------------------------------------------|
+! Ver_std_p_prof%(t,m)| STanDard Pressure PROFile for physics          |
 !-----------------------------------------------------------------------
 !
 #endif
@@ -45,6 +47,7 @@
       type (vertical_8) Ver_wm_8
 !
       type (vertical)   Ver_hyb
+      type (vertical)   Ver_std_p_prof
 !
       real :: Ver_hyb_top
 !
@@ -52,7 +55,7 @@
       common /ver_v8/ Ver_a_8,Ver_b_8,Ver_z_8,Ver_dz_8,Ver_idz_8
       common /ver_v8/ Ver_dbdz_8,Ver_fistr_8,Ver_wp_8,Ver_wm_8
 !
-      common /ver_v/ Ver_hyb,Ver_hyb_top
+      common /ver_v/ Ver_hyb,Ver_std_p_prof,Ver_hyb_top
 !
       real*8 Ver_alfas_8,Ver_css_8,Ver_cssp_8
       real*8 Ver_alfat_8,Ver_cst_8,Ver_cstp_8

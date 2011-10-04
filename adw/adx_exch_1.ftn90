@@ -16,18 +16,24 @@
 #include "stop_mpi.h"
 
 subroutine adx_exch_1()
-   call stop_mpi(STOP_ERROR,'adx_exch_1','called a stub')
+   call stop_mpi(STOP_ERROR,'adx_exch_1','called a deprecated sub')
    return
 end subroutine adx_exch_1
 
+subroutine adx_exch_1b()
+   call stop_mpi(STOP_ERROR,'adx_exch_1b','called a deprecated sub')
+   return
+end subroutine adx_exch_1b
+
 !/**
-subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
-     F_ni,F_nj,F_nk)
+subroutine adx_exch_1c(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
+     F_ni,F_nj,F_k0,F_nk)
    implicit none
 #include <arch_specific.hf>
    !@objective 
    !@arguments
    integer :: F_ni,F_nj,F_nk        !I, dims
+   integer :: F_k0                  !I, vertical scope F_k0 to F_nk
    integer,dimension(F_ni*F_nj*F_nk) :: &
         F_c_out                    !O, 3D points coor with outside upstream pos
    real,dimension(F_ni*F_nj*F_nk) :: &
@@ -38,6 +44,7 @@ subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
    !@revisions
    ! v2_31 - Corbeil L.        - replaced MPI calls by rpn_comm
    ! v3_00 - Desgagne & Lee    - Lam configuration
+   ! V4.4  - Plante A.         - Added vertical scope parameter F_k0
    !@description
    !  Establish list and number of points for 
    !  which upstream positions are outside 
@@ -72,7 +79,7 @@ subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
    adx_fro_s = 0
 
    if (.not.adx_is_north) then
-      do k = 1, F_nk
+      do k = F_k0, F_nk
          do j = 1, adx_mlnj
             do i = 1, adx_mlni
                if (F_y_in(i,j,k) >= adx_yy_8(adx_lmaxy-1)) then
@@ -89,7 +96,7 @@ subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
    endif
 
    if (.not.adx_is_south) then
-      do k = 1, F_nk
+      do k = F_k0, F_nk
          do j = 1, adx_mlnj
             do i = 1, adx_mlni
                if (F_y_in(i,j,k) <= adx_yy_8(adx_lminy+1)) then
@@ -123,4 +130,4 @@ subroutine adx_exch_1b(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
    call msg(MSG_DEBUG,'adx_exch_1 [end]')
    !---------------------------------------------------------------------
    return
-end subroutine adx_exch_1b
+end subroutine adx_exch_1c

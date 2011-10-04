@@ -50,8 +50,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( .not. Schm_phyms_L ) return
-!
       if (G_lam) then
          pw_eponmod = 1.
          return
