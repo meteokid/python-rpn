@@ -16,13 +16,10 @@
 !**s/r gemdm_config - Establish final model configuration
 !
 #include <model_macros_f.h>
-#include <gmm.hf>
-#include <WhiteBoard.hf>
 #include <msg.h>
 !
       integer function gemdm_config ( )
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne    - Summer 2006
@@ -39,6 +36,9 @@
 !
 !object
 !
+#include <arch_specific.hf>
+#include <gmm.hf>
+#include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
 #include "step.cdk"
