@@ -314,7 +314,7 @@
             if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
             if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
-            call vte_intvertx(work,tt_temp,srclev,dstlev,nbpts, &
+            call vte_intvertx2(work,tt_temp,srclev,dstlev,nbpts, &
                               nka_t,G_nk+2,'VT')
 !
             do k=1,g_nk+2
@@ -347,7 +347,7 @@
             if (GMM_IS_ERROR(istat)) print *,'readdyn2 ERROR at gmm_get',tr_name
             if ( err.eq.0 ) then
                if (Acql_vertint) then
-                  call vte_intvertx(work,hu_temp,srclev,dstlev,nbpts, &
+                  call vte_intvertx2(work,hu_temp,srclev,dstlev,nbpts, &
                                              nka_t,G_nk+2,'HU')
                   tr (1:l_ni,1:l_nj,1:g_nk+2) = max(work   (1:l_ni,1:l_nj,1:g_nk+2), 0.)
                else
@@ -365,7 +365,7 @@
 !     OBTAIN ZD, thermo levels, mass grid
 !---------------------------------------------------------------------
       if (Acql_vertint) then
-         call vte_intvertx(work,zd_temp,srclev,dstlev,nbpts, &
+         call vte_intvertx2(work,zd_temp,srclev,dstlev,nbpts, &
                            nka_t,G_nk+1,'ZD')
 !
          do k=2,g_nk
@@ -405,7 +405,7 @@
 !               no value on diag level
 !---------------------------------------------------------------------
       if (Acql_vertint) then
-         call vte_intvertx(work,w_temp,srclev,dstlev,nbpts, &
+         call vte_intvertx2(work,w_temp,srclev,dstlev,nbpts, &
                            nka_t,G_nk+1,'WT')
 !
          do k=1,g_nk+1
@@ -445,7 +445,7 @@
             if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
             if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')                  
-            call vte_intvertx(work,q_temp,srclev,dstlev,nbpts, &
+            call vte_intvertx2(work,q_temp,srclev,dstlev,nbpts, &
                  nka_m,G_nk+1,'QT')        
 !
             do k=1,g_nk+1
@@ -497,7 +497,7 @@
         if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
         err = get_px(dstlev,psu_temp,Acqi_niu*Acqi_nju,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
         if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
-        call vte_intvertx(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju, &
+        call vte_intvertx2(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju, &
                     nka_m,G_nk+1,'UU')
         deallocate (srclev,dstlev)
 !
@@ -507,7 +507,7 @@
         if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
         err = get_px(dstlev,psv_temp,Acqi_niv*Acqi_njv,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
         if (err.lt.0) call handle_error(-1,'readdyn2','readdyn:get_px')
-        call vte_intvertx(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv, &
+        call vte_intvertx2(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv, &
                     nka_m,G_nk+1,'VV')
         do k=1,g_nk+1
             do j=1,Acqi_nju

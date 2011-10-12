@@ -116,7 +116,7 @@
 !
 ! Compute temperature profiles for modified orography
 !     
-      call vte_intvertx(temp_nest_t(xi:xa,yi:ya,:),nest_t(xi:xa,yi:ya,:), &
+      call vte_intvertx2(temp_nest_t(xi:xa,yi:ya,:),nest_t(xi:xa,yi:ya,:), &
            lnpsrc_3d,lnpdst_3d,len_x*len_y,nk+1,nk+1,'VT')
 !      call glbstat (temp_nest_t(xi:xa,yi:ya,:),'ttn',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)
 !      call glbstat (     nest_t(xi:xa,yi:ya,:),'tto',1,len_x,1,len_y,nk+1,1,len_x,1,len_y,1,nk+1)

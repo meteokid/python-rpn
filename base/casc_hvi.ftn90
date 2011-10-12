@@ -284,7 +284,7 @@
 !
       if (ana_zd_L) then
          if (Vertint_L) then
-             call vte_intvertx(zd1,zdr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'ZD') 
+             call vte_intvertx2(zd1,zdr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'ZD') 
          else
              zd1(:,:,1:G_nk+1) = zdr(:,:,1:G_nk+1)
          endif
@@ -296,7 +296,7 @@
 !
       if (ana_w_L) then
          if (Vertint_L) then
-             call vte_intvertx(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW') 
+             call vte_intvertx2(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW') 
          else
              ww1(:,:,1:G_nk+1) = wwr(:,:,1:G_nk+1)
          endif
@@ -307,7 +307,7 @@
 ! Interpolate TT
 !
       if (Vertint_L) then
-         call vte_intvertx(tt1,ttr,srclev,dstlev, ngd, nka_t,G_nk+2,'VT') 
+         call vte_intvertx2(tt1,ttr,srclev,dstlev, ngd, nka_t,G_nk+2,'VT') 
       else 
          tt1(:,:,1:G_nk+2) = ttr(:,:,1:G_nk+2)
       endif
@@ -322,7 +322,7 @@
          end do
          if (jj.gt.0) then
             if (Vertint_L) then
-                call vte_intvertx(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU')
+                call vte_intvertx2(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU')
                 tr1(:,:,1:G_nk+2,n) = max(tr1(:,:,1:G_nk+2,n),0.0)
             else
                 tr1(:,:,1:G_nk+2,n) = trr(:,:,1:G_nk+2,jj)
@@ -357,7 +357,7 @@
                    srclev(i,j,nka_m+1) = lnpis_8
                 enddo
                 enddo
-                call vte_intvertx(qq1(1,1,2),qqr,srclev,dstlev, ngd, nka_m+1,G_nk+1,'QQ') 
+                call vte_intvertx2(qq1(1,1,2),qqr,srclev,dstlev, ngd, nka_m+1,G_nk+1,'QQ') 
                 qq1(:,:,1) = 0.
              else
                 qq1(:,:,1:G_nk+2) = qqr(:,:,1:G_nk+2)
@@ -375,14 +375,14 @@
          err = get_px(dstlev,ssu0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
          if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk+1,'UU') 
+         call vte_intvertx2(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk+1,'UU') 
 
          err = get_px(srclev,ssvr,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
          if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
          err = get_px(dstlev,ssv0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
          if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk+1,'VV') 
+         call vte_intvertx2(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk+1,'VV') 
 
          deallocate (dstlev,srclev)
 

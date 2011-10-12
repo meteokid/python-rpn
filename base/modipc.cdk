@@ -1,5 +1,5 @@
       integer MAX_tracers
-      parameter ( MAX_tracers = 10 )
+      parameter ( MAX_tracers = 250 )
       integer tracers_ntr
       character*4 tracers_name (MAX_tracers)
       real        tracers_sval (MAX_tracers)
