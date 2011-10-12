@@ -21,6 +21,7 @@ gemntr:
 	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI);\
 	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o;\
 	chmod u+x $(PWD)/$(mainntr) ;\
+	ls -lL $(PWD)/$(mainntr) ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\
@@ -35,6 +36,7 @@ gemdm:
 	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI) ;\
 	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o;\
 	chmod u+x $(PWD)/$(maindm) ;\
+	ls -lL $(PWD)/$(maindm) ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\

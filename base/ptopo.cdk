@@ -72,13 +72,18 @@
       logical Ptopo_bind_L
       
       DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
+
 !
-      common  / Ptopo_b / Ptopo_npex     , Ptopo_npey
-      common  / Ptopo_b / Ptopo_nblocx   , Ptopo_nblocy
-      common  / Ptopo_b / Ptopo_ninblocx , Ptopo_ninblocy
+!     ---------- WARNING WARNING WARNING ----------
+!     This next common is broadcasted in pe_all_topo
+!     using the first element Ptopo_npex. HANDLE WITH CARE !!!
+
+      common  / Ptopo_bcast / Ptopo_npex     , Ptopo_npey
+      common  / Ptopo_bcast / Ptopo_nblocx   , Ptopo_nblocy
+      common  / Ptopo_bcast / Ptopo_ninblocx , Ptopo_ninblocy
+      common  / Ptopo_bcast / Ptopo_smtphy   , Ptopo_smtdyn
+!
       common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
-      common  / Ptopo_b / Ptopo_smtphy   , Ptopo_smtdyn
-!
       common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
       common  / Ptopo_b / Ptopo_numproc 
       common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy

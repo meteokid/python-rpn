@@ -90,6 +90,8 @@
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(fiptx)'
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(fis0)'     
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
 !
       do k=1,l_nk+1
       do j= 1, l_nj
@@ -110,18 +112,10 @@
       enddo
       enddo
 !
-      call diag_fip(fiptx, st1, tt1, fis0, 1,l_ni,1,l_nj,l_nk)
-!
-!*******************************************************************
-!     Non-hydrostatic model fields
-!*******************************************************************
-!
       if ( .not. Schm_hydro_L ) then
 !
          istat = gmm_get(gmmk_qta_s,qta,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qta)'
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
 !
          do k=0,l_nk+1
          do j= 1, l_nj 
@@ -133,6 +127,8 @@
 !
       endif
 !
+      call diag_fip(fiptx, st1, tt1, qt1, fis0, LDIST_DIM,l_nk)
+
       do n=1,Tr3d_ntr
          istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
          istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
