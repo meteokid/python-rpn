@@ -277,8 +277,8 @@
                              Obus_mul(j),Obus_add(j),kind,G_nk+2,indo_t,nko_t, &
                              Outp_nbit(ii,kk) )
                        else  ! momentum
-                        call ecris_fst2(bus_o(1+(l_ni*l_nj),obus_offset(j)), &
-                            1,l_ni,1,l_nj,Ver_hyb%m,obus_var_s(j), &
+                        call ecris_fst2(bus_o(1+(l_ni*l_nj)-Schm_notop*(l_ni*l_nj), &
+                             obus_offset(j)),1,l_ni,1,l_nj,Ver_hyb%m,obus_var_s(j), &
                             Obus_mul(j),Obus_add(j),kind,G_nk+1,indo,nko, &
                             Outp_nbit(ii,kk) )
                        endif

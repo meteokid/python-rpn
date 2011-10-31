@@ -92,18 +92,12 @@
       do ii=1,Outd_var_max(set)
          outvar_L=.false.
          do n=1,Tr3d_ntr
-           if (Outd_var_S(ii,set)(1:2).eq.Tr3d_name_S(n)(1:2)) then
-               if (Outd_var_S(ii,set)(3:4).eq.'T0') then
-                   nullify (tr1)
-                   istat=gmm_get('TR/'//Tr3d_name_S(n)(1:2)//':M',tr1,mymeta3d)
-                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
-                elseif (Outd_var_S(ii,set)(3:4).eq.'T1') then
-                   nullify (tr1)
-                   istat=gmm_get('TR/'//Tr3d_name_S(n)(1:2)//':P',tr1,mymeta3d)
-                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
-                endif
-                cycle
-           endif
+            if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
+               nullify (tr1)
+               istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr1,mymeta3d)
+               if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
+               cycle
+            endif
          enddo
          if (outvar_L) then
              if (Out3_cliph_L) then

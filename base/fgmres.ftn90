@@ -15,13 +15,13 @@
 
 !** fgmres - flexible GMRES routine to allow a variable preconditioner
 !
-      subroutine fgmres (n,im,rhs,sol,i,vv,w,wk1, wk2,eps,maxits, &
-                                                      iout,icode) 
+      subroutine fgmres2(n,im,rhs,sol,i,vv,w,wk1, wk2,eps,maxits, &
+                                                  its,conv,icode) 
       implicit none
 #include <arch_specific.hf> 
 
-      integer n, im, i, maxits, iout, icode 
-      real*8 rhs(*), sol(*), vv(n,im+1),w(n,im), wk1(n), wk2(n), eps
+      integer n, im, i, maxits, its, icode 
+      real*8 rhs(*), sol(*), vv(n,im+1),w(n,im), wk1(n), wk2(n), eps,conv
 !
 !author Y. Saad (modified by A. Malevsky Feb1, 1995)
 !
@@ -54,7 +54,7 @@
 !
 !      icode = 0
 ! 1    continue
-!      call fgmres (n,im,rhs,sol,i,vv,w,wk1, wk2,eps,maxits,iout,icode)
+!      call fgmres2(n,im,rhs,sol,i,vv,w,wk1, wk2,eps,maxits,its,conv,icode)
 !
 !      if (icode .eq. 1) then
 !         call  precon(n, wk1, wk2)    <--- user's variable preconditioning
@@ -114,9 +114,9 @@
 !         a value .ne. 0. 
 !-----------------------------------------------------------------------
 !     local variables --
-      real*8 hh(101,100),hhloc(101,100),c(100),s(100),conv, &
+      real*8 hh(101,100),hhloc(101,100),c(100),s(100), &
            rs(101),t,tloc,ro,MSG_ddot,dsqrt,epsmac, ddot, eps1, gam ,r0
-      integer n1, its, j, i1, k, k1, ii, jj, ierr,kk 
+      integer n1, j, i1, k, k1, ii, jj, ierr,kk 
 !      integer mproc, myproc ! use when printing out ..
 !-------------------------------------------------------------
 !     arnoldi size should not exceed 100 in this version..
@@ -164,7 +164,6 @@
       if (its .eq. 0) r0 = ro
 
       conv = ro/r0
-      if (iout.gt.0) write(iout, 199) its, conv
 !     
 !     initialize 1-st term  of rhs of hessenberg system..
 !     
@@ -252,7 +251,6 @@
 !      if (mproc .eq. 0) write (19,*) ro
 !
       conv = ro/r0
-      if (iout .gt. 0 ) write(iout, 199) its, conv
 
       if ((i .lt. im) .and. (ro .gt. eps1)) then 
        
@@ -299,11 +297,8 @@
 !     
 !     restart outer loop.
 !     
-!       print*,'stop goto 20'
-       goto 20
+      goto 20
  999  icode = 0
-!
- 199  format('   -- fmgres its =', i4, ' res. norm =', d20.6)
 !
       return 
 !-----end-of-fgmres----------------------------------------------------- 

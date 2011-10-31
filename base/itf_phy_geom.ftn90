@@ -97,13 +97,6 @@ subroutine itf_phy_geom(F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
       end do
       F_err = RMN_OK
 
-   case('EPONMOD')
-      call itf_phy_vlsp(wrk1, l_ni, l_nj)
-      do j = 1,p_nj
-         call itf_phy_fold(F_dest(F_indx,j), wrk1, j, 1,1, 1,l_ni,1,l_nj)
-      end do
-      F_err = RMN_OK
-
    end select
 
    if (RMN_IS_OK(F_err)) then

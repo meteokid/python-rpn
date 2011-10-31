@@ -258,8 +258,13 @@
       gmmk_pw_pm_moins_s = 'PW_PM:M'
       gmmk_pw_gz_moins_s = 'PW_GZ:M'
 
+      gmmk_pw_uu_dyn_s = 'UTND'
+      gmmk_pw_vv_dyn_s = 'VTND'
+      gmmk_pw_tt_dyn_s = 'TTND'
+
       nullify(pw_uu_plus ,pw_vv_plus ,pw_ww_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
       nullify(pw_uu_moins,pw_vv_moins,pw_tt_moins,pw_pm_moins,pw_gz_moins)
+      nullify(pw_uu_dyn  ,pw_vv_dyn  ,pw_tt_dyn)
 
       !TODO: specify on what level (m/t) are the following PW_ vars
       istat = GMM_OK
@@ -276,6 +281,11 @@
       istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk2),istat)
       istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk2),istat)
       istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk2),istat)
+
+      istat = min(gmm_create(gmmk_pw_uu_dyn_s ,pw_uu_dyn ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_vv_dyn_s ,pw_vv_dyn ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_tt_dyn_s ,pw_tt_dyn ,meta3d_nk2),istat)
+
 !
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')

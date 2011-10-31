@@ -62,14 +62,21 @@
 #include "schm.cdk"
 #include "trp.cdk"
 #include "lctl.cdk"
+#include "orh.cdk"
 #include "lun.cdk"
 !
-      integer i, j, k, k0, offi, offj, Gni, Gnj, NSTOR,nev, Niter,iter,err
-      real*8  abpt((maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni)
+      integer i, j, k, k0, offi, offj, Gni, Gnj, NSTOR, nev, &
+              Niter, iter, its, err
+      logical print_conv
+      real*8  abpt((maxy-miny+1)*(trp_12smax-trp_12smin+1)*G_ni),conv
       real*8, dimension(:),allocatable :: wk_evec_8
       real linfini
 !
 !     ---------------------------------------------------------------
+      print_conv = (iln.eq.Schm_itnlh   ) .and. &
+                   (Orh_icn.eq.Schm_itcn) .and. &
+                   (Ptopo_couleur.eq.0  ) .and. &
+                   (Lun_out.gt.0)
 !
 ! Compute length of working vector without pilot region
 !
@@ -120,10 +127,11 @@
 
       do 100 iter=1,Niter
 
-         if ( sol_type_S.eq.'ITERATIF' ) then
+         if ( sol_type_S.eq.'ITERATIVE' ) then
 
-            call  sol_fgmres ( F_w2_8, Ft_w1_8, iln, l_ni, l_nj, &
-                                    Minx, Maxx, Miny, Maxy, Nk )
+            call  sol_fgmres2( F_w2_8, Ft_w1_8, iln, l_ni, l_nj, &
+                                     Minx, Maxx, Miny, Maxy, Nk, &
+                                          print_conv, conv, its )
          else
 
             if (Fft_fast_L) then
@@ -176,19 +184,18 @@
             Ft_w1_8(:,:,:) = F_w1_8(:,:,:)
             call yyg_rhs_scalbc(Ft_w1_8,F_w2_8,minx,maxx,miny,maxy,NK,iter,linfini)
             call tmg_stop0(44)
-            if ((Lun_out.gt.0) .and. (Ptopo_couleur.eq.0) .and. (Lun_debug_L)) &
-            write(Lun_out,1001) linfini,iter
+            if (Lun_debug_L.and.print_conv) write(Lun_out,1001) linfini,iter
             if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps))  goto 999
          endif
 
   100 continue
 
-999   if ((Grd_yinyang_L).and.(Lun_out.gt.0).and.(Ptopo_couleur.eq.0)) then
-         if (linfini.gt.Sol_yyg_eps) then
-            write(Lun_out,1001) linfini,Niter
-            write(Lun_out,1002) Sol_yyg_eps
-         else
-            write(Lun_out,1001) linfini,iter
+ 999  if ( sol_type_S.eq.'ITERATIVE' .and. print_conv ) write(Lun_out,1003) conv, its
+
+      if (Grd_yinyang_L) then
+         if (print_conv) then
+            write(Lun_out,1002) linfini,iter
+            if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
          endif
       endif
 
@@ -207,8 +214,10 @@
 !
       if (.not. Fft_fast_L) deallocate (wk_evec_8)
 !
- 1001 format (3x,'Iterative YYG solver convergence criteria: ',1pe14.7,' at iteration', i3)
- 1002 format (3x,'WARNING: iterative YYG solver DID NOT converge to requested criteria:: ',1pe14.7)
+ 1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 1003 format (3x,'Final FGMRES solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 9001 format (3x,'WARNING: iterative YYG solver DID NOT converge to requested criteria:: ',1pe14.7)
 !
 !     ---------------------------------------------------------------
 ! 

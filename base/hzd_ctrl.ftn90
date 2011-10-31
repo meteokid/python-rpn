@@ -31,7 +31,7 @@
 !revision
 ! v4_15 - Desgagne M.       - initial version 
 !
-#include "glb_ld.cdk"
+!#include "glb_ld.cdk"
 #include "hzd.cdk"
 !
 !     _________________________________________________________________
@@ -41,11 +41,8 @@
       if (Hzd_type_S.eq.'HO_IMP') &
          call hzd_ho (F_f2hzd, F_grd_S, NK)
 
-      if (Hzd_type_S.eq.'HO_EXP') then
-         if (.not.G_lam) &
-         call handle_error(-1,'hzd_ctrl','HO_EXP NOT avalaible for global config')
+      if (Hzd_type_S.eq.'HO_EXP') &
          call hzd_exhrdif (F_f2hzd, F_grd_S, NK)
-      endif
 !
 !     _________________________________________________________________
 !

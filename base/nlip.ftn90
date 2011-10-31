@@ -197,7 +197,7 @@
           if (l_north) jnv = jnv+1
       endif
 !
-!$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
+!$omp parallel private(kk,xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
 !$omp w1,w2,w3,qbar)
 !$omp do
       do 100 k=k0,l_nk

@@ -17,9 +17,8 @@
 #include <model_macros_f.h>
       subroutine gemgrid
       implicit none
-#include <arch_specific.hf>
 !
-!author V.Lee - Nov. 24, 2008
+!author V.Lee - Jun. 14, 2011
 !
 !object
 !     to create a file containing all 3 pairs of tic tacs for the
@@ -46,10 +45,16 @@
       external wkoffit ,grid_nml
       character*120 outfile,gfile,dumc,fn
       logical debug
-      integer ni,nila,oun,uout,err,npack,i,j
+      integer ni,nila,oun,uout,err,npack,i,j,k
+      integer pilot,nklemax,npos
+      parameter(nklemax=3)
+      character*256 defaut(nklemax),liste(0:nklemax-1),val(nklemax)
       integer itile,jtile,i0,j0,i1,j1,overlap
       integer Grd_ip1,Grd_ip2,Grd_ip3
       character*10 gni_s,gnj_s,string
+      DATA LISTE /'core.','liste','help'/
+      DATA defaut/'0','','AIDE'/
+      DATA val /'1','','OK'/
 !
 #include "lun.cdk"
 #include "grid.cdk"
@@ -62,6 +67,7 @@
 !
       data oun,uout /51, 21/
       data npack /-32/
+      integer core
 !
 !
 !----------------------------------------------------------------------
@@ -71,21 +77,31 @@
       print *,'------------------------------------------'
       print *,'------------------------------------------'
       print *
-      print *,'GEMGRID - version v_3.3.1  June 17, 2008 '
+      print *,'GEMGRID - version v_4.4.0  October 12, 2011 '
       print *,'        - to write out ^^ >> for Phi,U,V grids in tape1'
       print *,'        - to write out ^^ >> endpoints in gfilemap.txt '
       print *
       print *,'------------------------------------------'
       print *,'------------------------------------------'
+      core=0
+      call ccard(liste,defaut,val,nklemax,npos)
+      read(val(1),*) core
 !
 !     Setup of constants (PI) are required by stretch_axis2
       if (.not.set_dcst_8 (Dcst_cpd_8,liste_S,cnbre,6,1)) then
            print *,'STOP: problem with SET_DCST_8'
            stop
       endif
+      pilot=0
 
-      outfile     = 'tape1'
-      gfile       = 'gfilemap.txt' 
+      do 900 k=0,1
+
+      if (k.eq.0) outfile     = 'tape1'
+      if (k.eq.1) outfile     = 'tape2'
+      if (k.eq.0) gfile       = 'gfilemap.txt'
+      if (k.eq.1) gfile       = 'gfilemap2.txt'
+      if (k.eq.0) Grd_yinyang_S = 'YIN'
+      if (k.eq.1) Grd_yinyang_S = 'YAN'
 !
 
       if (wkoffit(outfile).ne.-3.or.wkoffit(gfile).ne.-3) then
@@ -106,7 +122,9 @@
       err = grid_nml('print')
 
 !     Setup before calling e_grid
-      LAM = Grd_typ_S(1:1).eq.'L'
+      Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
+      LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
+      if (LAM.and.core.gt.0) pilot=Grd_extension
       ni   = Grd_ni
       nila = Grd_nila
       if (LAM) then
@@ -145,9 +163,9 @@
 !     enddo
 !     Grid_ip3 is not used, must set to 0
       Grd_ip3 = 0
-      call ipig(Grd_ip1, Grd_ip2, Grd_ip3, &
+      call ipig123(Grd_ip1, Grd_ip2, Grd_ip3, &
               Grd_dx, Grd_dy, Grd_nila, Grd_njla, Grd_ni, Grd_nj, &
-              Grd_rot_8, Grd_roule)
+              Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
 
       uout=0
       if (fnom(uout,outfile,'RND',0).ge.0) then
@@ -180,24 +198,30 @@
 !**   Write positional parameters in FST file
 !
 !  For PHI grid
-      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1, &
+      err= fstecr ( xfi(1+pilot),xfi(1+pilot), npack, uout, 0, 0, 0, &
+                    niv-(pilot*2), 1, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','>>','GRDZ',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1, &
+      err= fstecr ( yfi(1+pilot),yfi(1+pilot), npack, uout, 0, 0, 0, &
+                    1, nju-(pilot*2), 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','^^','GRDZ',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !  For U grid
-      err= fstecr ( xu,xu, npack, uout, 0, 0, 0, niu, 1, 1, &
+      err= fstecr ( xu(1+pilot),xu(1+pilot), npack, uout, 0, 0, 0, &
+                    niu-(pilot*2), 1, 1, &
                     Grd_ip1,Grd_ip2+1,Grd_ip3,'X','>>','GRDU',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1, &
+      err= fstecr ( yfi(1+pilot),yfi(1+pilot), npack, uout, 0, 0, 0, 1, &
+                    nju-(pilot*2), 1, &
                     Grd_ip1,Grd_ip2+1,Grd_ip3,'X','^^','GRDU',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !  For V grid
-      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1, &
+      err= fstecr ( xfi(1+pilot),xfi(1+pilot), npack, uout, 0, 0, 0, &
+                    niv-(pilot*2), 1, 1, &
                     Grd_ip1,Grd_ip2+2,Grd_ip3,'X','>>','GRDV',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yv ,yv , npack, uout, 0, 0, 0, 1, njv, 1, &
+      err= fstecr ( yv(1+pilot) ,yv(1+pilot) , npack, uout, 0, 0, 0, &
+                    1, njv-(pilot*2), 1, &
                     Grd_ip1,Grd_ip2+2,Grd_ip3,'X','^^','GRDV',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !     
@@ -205,9 +229,85 @@
       err= fclos (uout)
       print *,'tictacs are in file: ',trim(outfile)
       print *,trim(gfile),' is created'
+      if (Grd_typ_S(2:2).ne.'Y') exit
+  900 continue
 !
       return
 !      
 !-------------------------------------------------------------------
       end
 !
+!**s/p ipig123 - initialize unique grid descriptors(ig1,ig2,ig3)
+!**              based on the rotation as well.
+!
+      subroutine ipig123( F_ig1, F_ig2, F_ig3,  &
+                       F_dxla, F_dyla, F_nila, F_njla, F_ni, F_nj, &
+                       F_xlat1,F_xlon1,F_xlat2,F_xlon2)
+!
+      implicit none
+!
+       integer F_ig1, F_ig2, F_ig3
+       real    F_dxla, F_dyla
+!      real*8  F_rot_8(3,3)
+       real    F_xlat1,F_xlon1,F_xlat2,F_xlon2
+       integer F_nila, F_njla, F_ni, F_nj
+       integer ig1ro,ig2ro,ig3ro,ig4ro
+
+!author A. Methot  - cmc  - dec 1995 - v0_17
+!
+!revision
+! v2_00 - Lee V.            - initial MPI version (from ipig v1_03)
+! v2_21 - J. P. Toviessi    - new grid descriptors algorithm to free
+! v2_21                       third grid descriptor.
+! v2_30 - Dugas B.          - use real*8 rotation matrix
+! v4_40 - Lee V.            - unused ipig , will rename here to ipig123
+!
+!object
+!       Initialize the basic grid descriptors.
+!       These grid descriptors are constructed from the 
+!       grid specifications.
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_ig1        O    - first grid descriptor
+! F_ig2        O    - second grid descriptor
+! F_ig3        O    - third grid descriptor
+! F_dxla       I    - distance in x between grid points in the uniform
+!                                             resolution part of the grid
+! F_dyla       I    - distance in y between grid points in the uniform
+!                                             resolution part of the grid
+! F_nila       I    - number of points on x for the uniform part of the grid
+! F_njla       I    - number of points on y for the uniform part of the grid
+! F_ni         I    - total number of points along x for the whole grid
+! F_nj         I    - total number of points along y for the whole grid
+! F_xlat1      I    - latitude of centre point grid equator
+! F_xlon1      I    - latitude of centre point grid equator
+! F_xlat2      I    - latitude of the other point on the grid equator
+! F_xlon2      I    - latitude of the other point on the grid equator
+!
+!     
+      real prcoeur, prtotal
+
+!notes
+!     F_ig1 is the heart resolution in tenth of kilometers
+!     F_ig2 stands from 0 to 1000 if the grid is variable
+!                  from 1000 to ..., if the grid is uniform
+
+      F_ig1 = nint( ( F_dxla + F_dyla) * 0.5 * 1112. )
+      if ( F_ig1 .ge. 2000 ) then
+           F_ig1 = 2000 + nint( ( F_dxla + F_dyla) * 0.5 )
+      endif
+
+      call cxgaig ( 'E',ig1ro,ig2ro,ig3ro,ig4ro, &
+                              F_xlat1,F_xlon1,F_xlat2,F_xlon2 )
+      F_ig2 =  ig1ro + ig2ro + ig3ro + ig4ro
+      if (F_ig2.gt.30000) F_ig2 = F_ig2/10
+      F_ig2=iabs(F_ig2)
+ 
+!     print *,'ig1ro=',ig1ro,ig2ro,ig3ro,ig4ro
+!     print *,'F_ig2=',F_ig2
+      if ((F_ni.eq.F_nila).and.(F_nj.eq.F_njla)) F_ig2 = F_ig2 + 1000
+
+      return
+      end

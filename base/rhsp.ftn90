@@ -124,7 +124,7 @@
       nij = l_ni*l_nj
 !
 !
-!$omp parallel private(i,j,i0,j0,jn,in, &
+!$omp parallel private(i,j,kk,i0,j0,jn,in, &
 !$omp      BsPqbarz,fipbarz,tdiv, &
 !$omp      xtmp_8,ytmp_8,wk1,wk2,ww1,barz,barzp)
 !

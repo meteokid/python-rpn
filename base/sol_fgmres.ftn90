@@ -15,14 +15,16 @@
 !**s/r  sol_fgmres -  call iterative elliptic solver 
 !
 #include "model_macros_f.h"
-      subroutine sol_fgmres( F_w2_8, F_w1_8, iln, nil, njl, &
-                                Minx, Maxx, Miny, Maxy, Nk )
+      subroutine sol_fgmres2(F_w2_8, F_w1_8, iln, nil, njl, &
+                                Minx, Maxx, Miny, Maxy, Nk, &
+                                   print_conv_L, conv, its )
       implicit none
 #include <arch_specific.hf>
 !
-      integer iln, nil, njl, Minx, Maxx, Miny, Maxy, Nk
+      logical print_conv_L, lastyy_L
+      integer iln, nil, njl, Minx, Maxx, Miny, Maxy, Nk, its
       real*8 F_w1_8 (Minx:Maxx,Miny:Maxy,Nk), &
-             F_w2_8 (Minx:Maxx,Miny:Maxy,Nk)
+             F_w2_8 (Minx:Maxx,Miny:Maxy,Nk), conv
 !
 !author
 !       Abdessamad Qaddouri - December  2006
@@ -37,13 +39,14 @@
 #include "sol.cdk"
 #include "schm.cdk"
 #include "orh.cdk"
+#include "ptopo.cdk"
 !
       integer niloc,njloc,nloc
       integer halox, haloy, minx1, maxx1, minx2, maxx2
       real*8, dimension(:  ), allocatable :: wk11,wk22,rhs1,sol1
       real*8, dimension(:,:), allocatable :: vv_8,ww_8
       real*8, dimension(:), pointer :: sol2
-      integer icode,iout,ischmi
+      integer icode,ischmi
       integer :: lastdt = -1
       save sol2,lastdt
 !
@@ -80,18 +83,18 @@
 !
 !     Initialize sol1 to last solution
       sol1  = sol2
-      iout  = 0
       icode = 0
-!
-      if ((iln.eq.Schm_itnlh).and.(Orh_icn.eq.Schm_itcn)) iout=lun_out
+      conv  = 1.d0
+      its   = 0
 !
 !-----------------------------------------------------------------------
 !     F G M R E S   L O O P
 !-----------------------------------------------------------------------
    1    continue
 !-----------------------------------------------------------------------
-      call fgmres (nloc,sol_im,rhs1,sol1,ischmi,vv_8,ww_8,wk11,wk22, &
-                              sol_fgm_eps,sol_fgm_maxits,iout,icode)
+      call fgmres2(nloc,sol_im,rhs1,sol1,ischmi,vv_8,ww_8,wk11,wk22, &
+                          sol_fgm_eps,sol_fgm_maxits,its,conv,icode)
+
 !     Save solution into sol2
       sol2=sol1
       if (icode .eq. 1) then
@@ -120,6 +123,8 @@
 !
          if (icode.ge.2) then
 !
+            if (Lun_debug_L.and.print_conv_L) write(lun_out, 199) conv,its
+
             call  sol_matvecs ( wk22, wk11, Minx, Maxx, Miny, Maxy, &
                                   nil,njl, minx1,maxx1,minx2,maxx2 )
             goto 1
@@ -130,6 +135,8 @@
       call tab_vec ( F_w2_8 , Minx,Maxx,Miny,Maxy, Schm_nith, &
                      sol1   , sol_i0,sol_in,sol_j0,sol_jn, -1 )
 !
+ 199  format (3x,'Iterative FGMRES solver convergence criteria: ',1pe14.7,' at iteration', i3)
+
       deallocate (wk11,wk22,rhs1,sol1,vv_8,ww_8)
 !
 !     ---------------------------------------------------------------

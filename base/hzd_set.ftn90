@@ -57,7 +57,8 @@
 #include "vspng.cdk"
 #include "ptopo.cdk"
 !      
-      character*11 mess
+      character*11  mess
+      character*256 dumc_S
       integer i,j,k,istat,dim,dim1,dim2,dpwr1,dpwr2,Gni,Gnj,NSTOR,dimx,dimy
       real*8, dimension(:) , allocatable :: wk1_8,wk2_8, &
                                             h0_8,h0t_8,h2_8,h2t_8
@@ -72,24 +73,35 @@
 !
       Gni = G_ni-Lam_pil_w-Lam_pil_e
       Gnj = G_nj-Lam_pil_s-Lam_pil_n
-!
-      Hzd_ho_L   = .false.
-      mess = 'NIL'
-!
-      if (Hzd_type_S.eq."FACT") call handle_error(-1,'hzd_set', &
-           'hzd_set : Hzd_type_S="FACT" not suported anymore')
-!
-      if(.not.( &
-                (Hzd_type_S.eq."HO_IMP").or. &
-                (Hzd_type_S.eq."HO_EXP").or. &
-                (Hzd_type_S.eq."NIL") &
-              ) &
-           )then
+
+      Hzd_ho_L = .false.
+      mess     = 'NIL'
+
+      call low2up  (Hzd_type_S,dumc_S)
+      Hzd_type_S = dumc_S
+
+      if(.not.( (Hzd_type_S.eq."HO_IMP") .or. &
+                (Hzd_type_S.eq."HO_EXP") .or. &
+                (Hzd_type_S.eq."NIL") )) then
          call handle_error(-1,'hzd_set', &
-              'hzd_set : Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL')
+           'hzd_set : Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL')
       endif
-      if ((Hzd_lnr.gt.0.).and.  &
-          ((Hzd_type_S.eq."HO_IMP").or.(Hzd_type_S.eq."HO_EXP"))) then
+
+      if ( (Hzd_type_S.eq.'HO_EXP').and.(.not.G_lam) ) &
+      call handle_error (-1,'hzd_set', &
+                'HO_EXP diffusion NOT avalaible for GU configurations')
+
+      Hzd_lnr    = min(max(0.,Hzd_lnr   ),0.9999999)
+      Hzd_pwr    = Hzd_pwr    / 2
+      Hzd_pwr    = min(max(2,Hzd_pwr   *2),8)
+      if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
+      if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
+      Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
+      Hzd_pwr_tr = Hzd_pwr_tr / 2
+      Hzd_pwr_tr = min(max(2,Hzd_pwr_tr*2),8)
+
+      if (  (Hzd_lnr.gt.0.).and.  &
+           ((Hzd_type_S.eq."HO_IMP").or.(Hzd_type_S.eq."HO_EXP"))) then
          Hzd_ho_L   = .true.
          mess       = 'HIGH ORDER'
       endif

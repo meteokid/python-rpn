@@ -44,6 +44,7 @@
 #include "schm.cdk"
 #include "trp.cdk"
 #include "vspng.cdk"
+#include "sol.cdk"
 #include "ptopo.cdk"
 ! 
 !modules
@@ -75,6 +76,8 @@
       istat = rpn_comm_topo( G_nj, ldnh_miny, ldnh_maxy, ldnh_nj,  &
                                npartiel, 0, n1, .false., .true. )
       if (.not.check_parti (n1,G_nj,Ptopo_npey)) ierr=-1
+
+      if (Sol_type_S.eq.'DIRECT') then
 !
 ! Transpose 1===>2:G_nk distributed on Ptopo_npex PEs (no halo)
 !                  G_nj distributed on Ptopo_npey PEs (original layout)
@@ -130,6 +133,7 @@
       trp_12smax = maxx
       trp_12sn   = n
       trp_12sn0  = n0
+
 !
       if ((.not.G_lam).and.(Vspng_nk.gt.0)) then
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for VSPNG (no halo):', &
@@ -180,6 +184,8 @@
          trp_22emax = maxx
          trp_22en   = n
          trp_22en0  = n0
+      endif
+
       endif
 !
       call handle_error(ierr,'SET_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')

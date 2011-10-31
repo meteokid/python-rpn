@@ -159,6 +159,7 @@
       bkup_L = .false.
 !
       call gemtim3 ( Lun_out )
+      call tmg_start0 ( 2, 'STEPS    ' )
 !
       do istep = step0, stepf
 !
@@ -236,6 +237,7 @@
 !
       end do
 !
+      call tmg_stop0 (2)
       call max_rss (' GEMDM',Lun_out.gt.0)
 !
       F_rstrt_L = .false.

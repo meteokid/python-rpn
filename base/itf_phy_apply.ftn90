@@ -196,8 +196,8 @@
          do k= 1, p_nk
          do j= 1, l_nj
          do i= 1, l_ni
-            pw_uu_plus(i,j,k) = pw_uu_plus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
-            pw_vv_plus(i,j,k) = pw_vv_plus(i,j,k) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
+            pw_uu_plus(i,j,k+Schm_notop) = pw_uu_plus(i,j,k+Schm_notop) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
+            pw_vv_plus(i,j,k+Schm_notop) = pw_vv_plus(i,j,k+Schm_notop) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
          end do
          end do
          end do

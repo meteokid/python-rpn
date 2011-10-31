@@ -91,11 +91,10 @@
 !              --------------------------------------------------------
       if (G_lam) then
          if (Grd_yinyang_L) then
-             call setscqr(i, 'SIN' )
+             call setscqr(i-onept, 'SIN' )
          else
              call setscqr(i, 'QCOS' )
          endif
-         i=G_ni-Lam_pil_w-Lam_pil_e
          Fft_pri_8 = dble(i)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w-onept))
       else
          call setfft8 ( Grd_ni )

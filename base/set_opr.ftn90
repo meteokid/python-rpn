@@ -248,7 +248,7 @@
       call set_oprz ()
       if (Grd_yinyang_L) call yyg_initstencils ()
 !
-      if ( sol_type_S.eq.'ITERATIF' ) then
+      if ( sol_type_S.eq.'ITERATIVE' ) then
          if (Lun_out.gt.0) write (Lun_out,1001) trim(sol_precond_S)
          if ( (sol_precond_S.eq.'JACOBI') .or.  &
               (sol_precond_S.eq.'MULTICOL') ) call set_prec

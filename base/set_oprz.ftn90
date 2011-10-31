@@ -171,11 +171,13 @@
          wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
       enddo
 !     
+      if (Sol_type_s.eq.'DIRECT') then
       call sol_abc ( wk,G_yg_8(1),Opr_opsyp0_8, &
                      Opr_opsyp2_8,Opr_xeval_8, &
                      trp_12sn0, trp_22n0 , trp_12smin, trp_12smax  , &
                      trp_22min, trp_22max, trp_12sn  , trp_22n,G_nj, &
                      Sol_ai_8, Sol_bi_8, Sol_ci_8 , a, b, c)
+      endif
 !
 !     ---------------------------------------------------------------
 !
