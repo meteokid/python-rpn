@@ -1,11 +1,11 @@
 prgemnml: prgemnml.o
 	makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj $(LCLPO)/prgemnml.o $(LCLPO)/bidon.o -o gemprnml_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn modelutils" -librmn $(RMN_VERSION)
+	$(RBUILD) -obj $(LCLPO)/*.o -o gemprnml_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn modelutils" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/prgemnml.o $(LCLPO)/bidon.o
 
 gemgrid:
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj $(LCLPO)/bidon.o -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn modelutils $(COMM)" -librmn $(RMN_VERSION)
+	$(RBUILD) -obj $(LCLPO)/*.o -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn modelutils $(COMM) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/bidon.o
 
 MONBINDIR=.
@@ -14,12 +14,7 @@ monitor:
 	$(MAKE) gem_monitor_output
 	mv gem_monitor_end gem_monitor_output $(MONBINDIR)
 
-sometools: prgemnml
-	$(MAKE) gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
-#	$(MAKE) gemgrid COMM_stubs=rpn_commstubs301
+sometools: prgemnml gemgrid
 
-allbin: prgemnml gem
-	$(MAKE) gemgrid COMM_stubs=rpn_commstubs$(COMM_VERSION)
-#	$(MAKE) gemgrid COMM_stubs=rpn_commstubs301
-#	$(MAKE) gem
+allbin: prgemnml gemgrid gem
 #	$(MAKE) gem V4D="v4d modulopt prof_003"
