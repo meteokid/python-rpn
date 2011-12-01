@@ -74,6 +74,8 @@ subroutine adx_get_params()
 
    istat = min(wb_get('model/cstv_dt',adx_dt_8),istat)
 
+   istat = min(wb_get('model/Tlift',adx_Tlift),istat)
+
    istat = min(wb_get('model/gmm/xth_m',adx_xth_s),istat)
    istat = min(wb_get('model/gmm/yth_m',adx_yth_s),istat)
    istat = min(wb_get('model/gmm/zth_m',adx_zth_s),istat)

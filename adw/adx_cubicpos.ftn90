@@ -13,7 +13,7 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r adx_meanpos - vertical average of upstream position of momentum
+!**s/r adx_cubicpos - vertical interpolation of upstream position of momentum
 !                    level to obtain those of the thermodynamic levels
 !
 #include "constants.h"
@@ -27,13 +27,14 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
    real, dimension(F_ni,F_nj,F_nk+1) :: F_xt,F_yt,F_zt
    real, dimension(F_ni,F_nj,F_nk)   :: F_xm,F_ym,F_zm
    integer :: F_ni,F_nj,F_k0,F_nk
-   integer i0,in,j0,jn
-   logical :: F_cubic_xy_L   
+   integer i0,in,j0,jn,k00
+   logical :: F_cubic_xy_L
 !
 !authors
 !     A. Plante & C. Girard based on adx_meanpos from sylvie gravel
 !
 !revision
+!     A. Plante - nov 2011 - add vertial scope for top piloting
 !     
 !object
 !     see id section
@@ -51,6 +52,33 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 ! F_ym         | upwind latitudes for momentum level             |  i  |
 ! F_zm         | upwind height for momentum level                |  i  |
 !______________|_________________________________________________|_____|
+!                      |
+!                      |
+!    No top nesting    |       With top nesting
+!                      |
+!                      | NOTES: F_k0 = adx_gbpil_t+1
+!                      | For this example adx_gbpil_t=3 -> F_k0=4
+!                      |
+!  ======== Model Top  |   ==========
+!  Constant %t 1       |   Not needed
+!  -------- %m 1       |   ---------- uptream pos. not available (F_k0-3)
+!  Linear   %t 2       |   Not needed
+!  -------- %m 2       |   ----------
+!  Cubic    %t 3       |   Not needed
+!  -------- %m 3       |   ----------
+!  Cubic    %t 4       |   Cubic      %t F_k0
+!  -------- %m 4       |   ---------- %m F_k0
+!                      |
+!     ...              |       ...     
+!                      |       
+!  Cubic    %t N-1     |   Cubic
+!  -------- %m N-1     |   ----------
+!  Linear   %t N       |   Linear
+!  -------- %m N       |   ----------
+!  Constant %t N+1     |   Constant
+!  ======== Model Sfc  |   ===========
+!                      |
+!----------------------------------------------------------------------
 !
 !implicits
 #include "adx_dims.cdk"
@@ -71,7 +99,9 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
         ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
    !
    !***********************************************************************
-   if(F_k0.ne.1)call handle_error(-1,'adx_meanpos','Add vertical scope')        
+   ! Note : extra computation are done in the pilot zone if
+   !        (adx_gbpil_t != 0) for coding simplicity
+   !***********************************************************************
    !
    vnik = (in-i0+1)*adx_lnkm
    vnikm= (in-i0+1)*(adx_lnkm-1)
@@ -89,6 +119,9 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
       w3(k) = lag3( hh, x3, x1, x2, x4 )
       w4(k) = lag3( hh, x4, x1, x2, x3 )         
    enddo
+
+   k00=max(F_k0,2)
+
 !***********************************************************************
 !     call tmg_start ( 33, 'adx_meanpos' )
 !$omp parallel private(i,j,k,ysin,ycos, &
@@ -102,6 +135,15 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
          ycos(i,k) = F_ym(i,j,k)
       end do
       end do
+!
+!     Fill non computed upstream positions with zero to avoid math exceptions
+!     in the case of top piloting
+      do k=1,F_k0-3
+         do i=i0,in
+            xcos(i,k)=0.0
+            ycos(i,k)=0.0
+         end do
+      enddo
 !
       call vsin(xsin, xcos, vnik)
       call vsin(ysin, ycos, vnik)
@@ -134,8 +176,17 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !
 !***********************************************************************
 ! cartesian coordinates of intermediate thermodynamic levels
-!***********************************************************************
-      do k=2,adx_lnkm
+!***********************************************************************            
+!     Fill missing values with zero to avoid math exception in case of
+!     top piloting
+      do k=2,k00-1
+         do i=i0,in
+            cxp(i,k)=0.0
+            cyp(i,k)=0.0
+            czp(i,k)=0.0
+         enddo
+      enddo
+      do k=k00,adx_lnkm
          if(F_cubic_xy_L.and.k.gt.2.and.k.lt.adx_lnkm)then
             ! Cubic
             do i=i0,in
@@ -185,7 +236,8 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !***********************************************************************
 ! polar coordinates of upstream position for intermediate thermo levels*
 !***********************************************************************
-      do k=2,adx_lnkm
+
+      do k=k00,adx_lnkm
          do i=i0,in
             F_yt(i,j,k) = yasin(i,k)
             F_xt(i,j,k) = zatan(i,k)

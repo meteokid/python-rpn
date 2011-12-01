@@ -147,6 +147,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    call tmg_start0 (50, 'ADW_TRAJE')
 
    !V4d_cfl_kind_S = 'm'
+
    call adx_main_2_pos4( F_nb_iter, 'm'  , &
                          pxm , pym , pzm , &
                          a_su, a_sv, a_sw, &
@@ -154,7 +155,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
                          xcth, ycth, zcth, &
                          xct1, yct1, zct1, &
         adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni , adx_mlnj , k0 , adx_lnkm , F_nks)
+        adx_mlni , adx_mlnj , max(k0-2,1) , adx_lnkm , F_nks)
 
    call adx_get_ij0n (i0,in,j0,jn)
 

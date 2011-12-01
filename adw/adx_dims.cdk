@@ -38,6 +38,7 @@
       integer :: adx_pil_w, adx_pil_e !w/e piloting zone size 
       integer :: adx_gbpil_t          !top piloting zone size 
       integer :: adx_notop            !1 if no thermo level 1/2. 0 otherwise
+      integer :: adx_Tlift            !1 to put last Thermo level at last Momentum level
 
       !- Local grid
       logical :: adx_is_west      !true if MPI tile is on domain W border
@@ -78,7 +79,7 @@
 
       common /adx_dims_i/ adx_pil_n, adx_pil_s 
       common /adx_dims_i/ adx_pil_w, adx_pil_e 
-      common /adx_dims_i/ adx_gbpil_t, adx_notop 
+      common /adx_dims_i/ adx_gbpil_t, adx_notop, adx_Tlift
 
       common /adx_dims_l/ adx_is_west
       common /adx_dims_l/ adx_is_east

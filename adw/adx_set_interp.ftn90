@@ -138,6 +138,11 @@ subroutine adx_set_interp()
          Super_z_8(k) = adx_verZ_8%t(ind)            
       endif
    enddo
+   ! Note:
+   !  The last zdot levels is at surface not at adx_verZ_8%t(adx_lnkt).
+   !  This is true for all config, however we just adjust it for Adx_tlift.eq.1
+   !  to inforce validation if Adx_tlift.eq.0
+   if(Adx_tlift.eq.1)Super_z_8(2*adx_lnkm+1)=adx_verZ_8%m(adx_lnkm+1)
 
    whzt(0     ) = 1.0
    whzt(adx_lnkm+1) = 1.0
