@@ -8,13 +8,18 @@ gemgrid:
 	$(RBUILD) -obj $(LCLPO)/*.o -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn modelutils $(COMM) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION)
 	/bin/rm -f $(LCLPO)/bidon.o
 
+toc2nml: toc2nml.o
+	makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	$(RBUILD) -obj $(LCLPO)/*.o -o toc2nml -libpath $(LIBPATH) -libappl "descrip" -librmn $(RMN_VERSION)
+	/bin/rm -f $(LCLPO)/bidon.o
+
 MONBINDIR=.
 monitor:
 	$(MAKE) gem_monitor_end
 	$(MAKE) gem_monitor_output
 	mv gem_monitor_end gem_monitor_output $(MONBINDIR)
 
-sometools: prgemnml gemgrid
+sometools: prgemnml gemgrid toc2nm
 
-allbin: prgemnml gemgrid gem
+allbin: prgemnml gemgrid toc2nml gem
 #	$(MAKE) gem V4D="v4d modulopt prof_003"
