@@ -151,6 +151,9 @@
       p2 = one/Cstv_RTstr_8
       p3 = one/Dcst_grav_8
       p4 = one/Dcst_rayt_8**2  
+
+                         kminzd=2
+      if(Schm_opentop_L) kminzd=k0
 !
 !$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8)
 !
@@ -178,9 +181,6 @@
 !     Compute U & V
 !     ~~~~~~~~~~~~~
 !
-      if(Acid_test_L) &
-           print *,'bacp_2:Cori_cornl,finbac=',Cori_cornl_L,finbac
-!
       if (Cori_cornl_L .or. (finbac.and..not.Cori_cornl_L)) then
 !$omp do
          do k=k0,l_nk
@@ -203,7 +203,6 @@
 
          enddo
 !$omp enddo
-         if(Acid_test_L)call acid_stat_bacp_2(F_u,1)
 !
       endif
 !     
@@ -292,9 +291,6 @@
 !        N.B.  Top Boundary condition:
 !                 Closed Top:  F_zd(i,j,1) = 0
 !                   Open Top:  F_zd(i,j,k0) is computed
-!
-         kminzd=2
-         if(Schm_opentop_L) kminzd=k0
 !
 !$omp do
          do k=kminzd,l_nk

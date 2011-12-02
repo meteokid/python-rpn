@@ -120,10 +120,9 @@
       Cstv_Ztop_8 = log(Cstv_ptop_8)
 !
       ! Construct vertical coordinate
-      err = vgd_new (vcoord, kind=5, version=2, hyb=F_hybuser, &
+      err = vgd_new (vcoord, kind=5, version=Level_version, hyb=F_hybuser, &
                      rcoef1=Grd_rcoef(1),rcoef2=Grd_rcoef(2) , &
-                     ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8, stdout_unit=Lun_out)
-
+                     ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8,stdout_unit=Lun_out)
       if (err /= VGD_OK) glb_err = -1
       call handle_error (glb_err,'set_zeta','coordinate construction failed')
 
@@ -137,7 +136,7 @@
       if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,hybt_free) /= VGD_OK) glb_err = -1
       if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,ip1m     ) /= VGD_OK) glb_err = -1
       if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,ip1t     ) /= VGD_OK) glb_err = -1
-      
+
       call handle_error (glb_err,'set_zeta','retrieving coordinate info')
 
       err = vgd_levels(vcoord,ip1m,std_p_prof,100000.,in_log=.false.) 

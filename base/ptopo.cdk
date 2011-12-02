@@ -71,7 +71,7 @@
       integer Ptopo_tag 
       logical Ptopo_bind_L
       
-      DCL_DYNVAR(Ptopo, gindx, integer, (6,*))
+      integer, dimension(:,:), pointer :: Ptopo_gindx
 
 !
 !     ---------- WARNING WARNING WARNING ----------
@@ -93,6 +93,7 @@
       common  / Ptopo_b / Ptopo_tag
 !
       common  / Ptopo_l / Ptopo_bind_L
+      common  / Ptopo_p / Ptopo_gindx
 !
       namelist /resources/ Ptopo_npex  , Ptopo_npey
       namelist /resources/ Ptopo_nblocx, Ptopo_nblocy

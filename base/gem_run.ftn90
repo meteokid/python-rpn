@@ -158,7 +158,7 @@
 !
       bkup_L = .false.
 !
-      call gemtim3 ( Lun_out )
+      call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
       call tmg_start0 ( 2, 'STEPS    ' )
 !
       do istep = step0, stepf
@@ -223,8 +223,6 @@
 !
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 !
-         call gemtim3 ( Lun_out )
-!
 !     * Must we write a restart file?
 !
          bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
@@ -234,6 +232,8 @@
          flag= F_dgtflt_L .and. Lctl_step.ge.(Init_dfnp-1)/2
          if ( (istep.ne.stepf) .and. (.not.flag) ) &
          call out_launchpost (.false.)
+!
+         call gemtim4 ( Lun_out, 'CURRENT TIMESTEP', .false. )
 !
       end do
 !

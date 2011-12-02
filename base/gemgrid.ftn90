@@ -46,10 +46,10 @@
       character*120 outfile,gfile,dumc,fn
       logical debug
       integer ni,nila,oun,uout,err,npack,i,j,k
-      integer pilot,nklemax,npos
+      integer nklemax,npos
       parameter(nklemax=3)
       character*256 defaut(nklemax),liste(0:nklemax-1),val(nklemax)
-      integer itile,jtile,i0,j0,i1,j1,overlap
+      integer itile,jtile,i0,j0,i1,j1
       integer Grd_ip1,Grd_ip2,Grd_ip3
       character*10 gni_s,gnj_s,string
       DATA LISTE /'core.','liste','help'/
@@ -92,7 +92,6 @@
            print *,'STOP: problem with SET_DCST_8'
            stop
       endif
-      pilot=0
 
       do 900 k=0,1
 
@@ -124,7 +123,6 @@
 !     Setup before calling e_grid
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
       LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
-      if (LAM.and.core.gt.0) pilot=Grd_extension
       ni   = Grd_ni
       nila = Grd_nila
       if (LAM) then
@@ -178,50 +176,43 @@
       open(oun,file=gfile,access='SEQUENTIAL',form='FORMATTED',iostat=err)
       i0=1
       j0=1
-      overlap=0
       i1=grd_ni
       j1=grd_nj
       itile=1
       jtile=1
 
-      write(oun,777) i0,j0,xfi(i0),xfi(i1),yfi(j0),yfi(j1),i1,j1,overlap, &
+      write(oun,777) i0,j0,xfi(i0),xfi(i1),yfi(j0),yfi(j1),i1,j1, &
                     itile,jtile
       write(6,*) 'LONGITUDE'
       write(6,778)(i,xfi(i),i=1,grd_ni)
       write(6,*) 'LATITUDE'
       write(6,778)(i,yfi(i),i=1,grd_nj)
 
- 777  format(2i8,4e15.7,2i10,x,3I5)
+ 777  format(2i8,4e15.7,2i10,x,2I5)
  778  format(4(i5,e15.7))
 !
      
 !**   Write positional parameters in FST file
 !
 !  For PHI grid
-      err= fstecr ( xfi(1+pilot),xfi(1+pilot), npack, uout, 0, 0, 0, &
-                    niv-(pilot*2), 1, 1, &
+      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','>>','GRDZ',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yfi(1+pilot),yfi(1+pilot), npack, uout, 0, 0, 0, &
-                    1, nju-(pilot*2), 1, &
+      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','^^','GRDZ',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !  For U grid
-      err= fstecr ( xu(1+pilot),xu(1+pilot), npack, uout, 0, 0, 0, &
-                    niu-(pilot*2), 1, 1, &
+      err= fstecr ( xu,xu, npack, uout, 0, 0, 0, niu, 1, 1, &
                     Grd_ip1,Grd_ip2+1,Grd_ip3,'X','>>','GRDU',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yfi(1+pilot),yfi(1+pilot), npack, uout, 0, 0, 0, 1, &
-                    nju-(pilot*2), 1, &
+      err= fstecr ( yfi,yfi, npack, uout, 0, 0, 0, 1, nju, 1, &
                     Grd_ip1,Grd_ip2+1,Grd_ip3,'X','^^','GRDU',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !  For V grid
-      err= fstecr ( xfi(1+pilot),xfi(1+pilot), npack, uout, 0, 0, 0, &
-                    niv-(pilot*2), 1, 1, &
+      err= fstecr ( xfi,xfi, npack, uout, 0, 0, 0, niv, 1, 1, &
                     Grd_ip1,Grd_ip2+2,Grd_ip3,'X','>>','GRDV',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( yv(1+pilot) ,yv(1+pilot) , npack, uout, 0, 0, 0, &
-                    1, njv-(pilot*2), 1, &
+      err= fstecr ( yv ,yv , npack, uout, 0, 0, 0, 1, njv, 1, &
                     Grd_ip1,Grd_ip2+2,Grd_ip3,'X','^^','GRDV',Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 !     

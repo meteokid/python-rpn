@@ -118,6 +118,8 @@
 
       call handle_error (clib_isdir(Path_input_S),'set_world_view','task_input')
 
+      call gemtim4 ( 6, '', .false. )
+
       if (Grd_yinyang_L) then         
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)
       else
@@ -142,16 +144,18 @@
 !
 ! Read namelist gem_cfgs, var4d, coupling and series from file Path_nml_S
 !
-         err(1) = bin2com ()
          err(1) = grid_nml    (Path_nml_S)
-         G_lam = Grd_typ_S(1:1).eq.'L' .or. Grd_typ_S(2:2).eq.'Y'
-         err(2) = step_nml    (Path_nml_S)
-         err(3) = gem_nml     (Path_nml_S)
-         err(4) = itf_cpl_nml (Path_nml_S)
-         err(5) = v4d_nml     (Path_nml_S)
-         err(6) = series_nml  (Path_nml_S)
-         err(7) = adw_nml     (Path_nml_S)
-         ierr = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7))
+         err(2) = bin2com ()
+         G_lam  = Grd_typ_S(1:1).eq.'L' .or. Grd_typ_S(2:2).eq.'Y'
+         err(3) = step_nml    (Path_nml_S)
+         err(4) = gem_nml     (Path_nml_S)
+         err(5) = itf_cpl_nml (Path_nml_S)
+         err(6) = v4d_nml     (Path_nml_S)
+         err(7) = series_nml  (Path_nml_S)
+         err(8) = adw_nml     (Path_nml_S)
+
+         ierr = min(err(1),err(2),err(3),err(4), &
+                    err(5),err(6),err(7),err(8))
          call handle_error(ierr,'set_world_view','Error reading nml')
 
       endif
@@ -174,7 +178,6 @@
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
 
-      call gemtim3 ( Lun_out )
 !
 ! Establish domain decomposition (mapping subdomains and processors)
 !

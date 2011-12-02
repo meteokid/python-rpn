@@ -69,7 +69,7 @@ end subroutine itf_phy_xhfold_3d2
       nphy = (F_jdo-1) * p_ni
       cnt  = 0
 !
-!$omp parallel private(i,ijp,imod,jmod,indx)shared(s,d)
+!$omp parallel private(i,ijp,imod,jmod,indx,cnt)shared(s,d)
 !$omp do
       do k= k0, Nk
          cnt = cntarr(k-k0+1)

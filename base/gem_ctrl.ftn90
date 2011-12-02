@@ -60,6 +60,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      call gemtim4 ( Lun_out, 'BEGIN GEM_CTRL', .false. )
 !
 !C       2.    If this is the beginning of the integration:
 !              ----------------------------------------------
@@ -89,6 +90,8 @@
         endif
 !
       endif
+!
+      call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
 !
       Rstri_sdon = 0
 !

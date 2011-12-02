@@ -85,6 +85,7 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/pil_e',pil_e,options),istat)
    istat = min(wb_put('model/gbpil_t',Lam_gbpil_t,options),istat)
    istat = min(wb_put('model/notop',Schm_notop,options),istat)
+   istat = min(wb_put('model/Tlift',Schm_Tlift,options),istat)
 
    istat = min(wb_put('model/cstv_dt',Cstv_dt_8,options),istat)
 

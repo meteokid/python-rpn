@@ -45,23 +45,17 @@
 !  (1) del-2 horizontal diffusion used for non-LAM
 !  (2) 9 point explicit filter used for LAM
 !	
-!arguments
-!     none
-!
-!implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "vspng.cdk"
 #include "vt1.cdk"
-!
-!modules
 !
 !*
       type(gmm_metadata) :: meta3d
       integer :: gmmstat
-!     _________________________________________________________________
-
+!
+!     ---------------------------------------------------------------
+!
       if (Vspng_nk.lt.1) return
 
 !     - - - - - - - - - - - - - - -
@@ -78,12 +72,16 @@
       if (GMM_IS_ERROR(gmmstat)) print *,'vspng_main ERROR at gmm_get(wt1)'
 !
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+
       if (G_lam) then
-         call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
+         call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
       else
-         call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
+         call vspng_drv     (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
       endif
+
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
+!
+!     ---------------------------------------------------------------
 !
       return
       end

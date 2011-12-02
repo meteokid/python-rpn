@@ -49,8 +49,8 @@
       namelist /bubble_cfgs/ Cstv_dt_8, Cstv_ptop_8, Cstv_tstr_8
       namelist /bubble_cfgs/ Cstv_bA_8
       namelist /bubble_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
-      namelist /bubble_cfgs/ Eigv_parity_L, Vspng_coef
-      namelist /bubble_cfgs/ Vspng_nk,Vspng_mf,Vspng_nutop
+      namelist /bubble_cfgs/ Eigv_parity_L, Vspng_coeftop
+      namelist /bubble_cfgs/ Vspng_nk
       namelist /bubble_cfgs/ bb_dpth,  bb_radius,  bb_xcntr,  bb_zcntr
       namelist /bubble_cfgs/ bb_dpth2, bb_radius2, bb_zcntr2
       namelist /bubble_cfgs/ bb_isoth, Zblen_L, Zblen_spngthick
@@ -79,8 +79,8 @@
       namelist /mtn_cfgs/ Cstv_ptop_8, Cstv_tstr_8
       namelist /mtn_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
       namelist /mtn_cfgs/ Eigv_parity_L
-      namelist /mtn_cfgs/ Vspng_coef
-      namelist /mtn_cfgs/ Vspng_nk,Vspng_mf,Vspng_nutop
+      namelist /mtn_cfgs/ Vspng_coeftop
+      namelist /mtn_cfgs/ Vspng_nk
       namelist /mtn_cfgs/ mtn_tzero,mtn_nstar,mtn_flo,mtn_hwx
       namelist /mtn_cfgs/ mtn_hwx1, mtn_hght, Zblen_L, Zblen_spngthick
       namelist /mtn_cfgs/ Zblen_spngtt_L, Vtopo_start

@@ -38,8 +38,10 @@
 #include "lam.cdk"
 !
       logical  check_parti
-!*
-      integer ierr
+      integer  partition
+      external partition,check_parti
+
+      integer err,ierr(2)
 !
 !-------------------------------------------------------------------
 !
@@ -85,12 +87,19 @@
          Lam_pil_e = Glb_pil_e
          Lam_pil_s = Glb_pil_s
       endif
-!
+
+!      ierr(1) = partition ( G_ni, 'NPEX', G_halox, l_minx,l_maxx,l_ni,l_i0 )
+!      ierr(2) = partition ( G_nj, 'NPEY', G_haloy, l_miny,l_maxy,l_nj,l_j0 )
+!      err     = min(ierr(1),ierr(2))
+!      call handle_error(err,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
+!      call rpn_comm_ALLREDUCE (l_ni,G_lnimax,1,"MPI_INTEGER","MPI_MAX","grid",err)
+!      call rpn_comm_ALLREDUCE (l_nj,G_lnjmax,1,"MPI_INTEGER","MPI_MAX","grid",err)
+
       call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax, &
                                   G_halox,l_i0,.true.,.true.) 
       call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
                                  G_haloy,l_j0,.false.,.true.)
-!
+
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,Ptopo_npex,G_nj,Ptopo_npey
       ierr=0
 !

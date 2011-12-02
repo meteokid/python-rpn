@@ -113,7 +113,11 @@
       namelist /gem_cfgs/ Out3_satues_L
       namelist /gem_cfgs/ Out3_unit_S
       namelist /gem_cfgs/ Out3_zund
+      namelist /gem_cfgs/ Out3_lieb_levels
+      namelist /gem_cfgs/ Out3_lieb_maxite
+      namelist /gem_cfgs/ Out3_lieb_conv
       namelist /gem_cfgs/ Out3_postfreq
+
 !P
       namelist /gem_cfgs/ P_runlgt
       namelist /gem_cfgs/ P_lmvd_weigh_high_lat
@@ -146,6 +150,7 @@
       namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_mteul_L
       namelist /gem_cfgs/ Schm_NoTopThL_L
+      namelist /gem_cfgs/ Schm_Tlift
       namelist /gem_cfgs/ Schm_Topo_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
@@ -158,11 +163,9 @@
       namelist /gem_cfgs/ Sol_type_S
 
 !Vspng
-      namelist /gem_cfgs/ Vspng_coef
-      namelist /gem_cfgs/ Vspng_mf
+      namelist /gem_cfgs/ Vspng_coeftop
       namelist /gem_cfgs/ Vspng_njpole
       namelist /gem_cfgs/ Vspng_nk
-      namelist /gem_cfgs/ Vspng_nutop
       namelist /gem_cfgs/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs/ Vtopo_ndt
@@ -244,6 +247,8 @@
       namelist /gem_cfgs_p/ Out3_ndigits
       namelist /gem_cfgs_p/ Out3_satues_L
       namelist /gem_cfgs_p/ Out3_unit_S
+      namelist /gem_cfgs_p/ Out3_lieb_maxite
+      namelist /gem_cfgs_p/ Out3_lieb_conv
       namelist /gem_cfgs_p/ Out3_postfreq
 !P
       namelist /gem_cfgs_p/ P_runlgt
@@ -275,6 +280,7 @@
       namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_mteul_L
       namelist /gem_cfgs_p/ Schm_NoTopThL_L
+      namelist /gem_cfgs_p/ Schm_Tlift
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps
@@ -285,10 +291,9 @@
       namelist /gem_cfgs_p/ Sol_precond_S
       namelist /gem_cfgs_p/ Sol_type_S
 !Vspng
-      namelist /gem_cfgs_p/ Vspng_coef
+      namelist /gem_cfgs_p/ Vspng_coeftop
       namelist /gem_cfgs_p/ Vspng_njpole
       namelist /gem_cfgs_p/ Vspng_nk
-      namelist /gem_cfgs_p/ Vspng_nutop
       namelist /gem_cfgs_p/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs_p/ Vtopo_ndt
@@ -315,8 +320,6 @@
       namelist /grdc/ Grdc_nj
       namelist /grdc/ Grdc_start_S
       namelist /grdc/ Grdc_end_S
-!      namelist /grdc/ Grdc_runend_S
-!      namelist /grdc/ Grdc_runstrt_S
       namelist /grdc/ Grdc_trnm_S
 !
 !End gem_grdc
@@ -335,8 +338,6 @@
       namelist /grdc_p/ Grdc_nj
       namelist /grdc_p/ Grdc_start_S
       namelist /grdc_p/ Grdc_end_S
-!      namelist /grdc_p/ Grdc_runend_S
-!      namelist /grdc_p/ Grdc_runstrt_S
 !
 !End gem_grdc_p
 !

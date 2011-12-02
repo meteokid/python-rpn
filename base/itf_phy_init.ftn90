@@ -100,24 +100,25 @@
 !
       err=0
 ! Start physics initialization with mandatory parameters
-      call phy_opti ('DATE'    , idate ,  14, 'SET', prout, err(1))
-      call phy_optr ('DELT'    , dt_4  ,   1, 'SET', prout, err(2))
-      call phy_optl ('VSTAG'   , .true.,   1, 'SET', prout, err(3))
+      call phy_opti ('DATE'    , idate     ,    14,'SET',prout,err(1))
+      call phy_optr ('DELT'    , dt_4      ,     1,'SET',prout,err(2))
+      call phy_optl ('VSTAG'   , .true.    ,     1,'SET',prout,err(3))
+      call phy_opti ('TLIFT'   , Schm_Tlift,     1,'SET',prout,err(4))
 
 ! Continue physics initialization with optional parameters
-      call phy_optl('CLIMAT'   , Clim_climat_L  ,1,'SET',prout,err(4))
-      call phy_optl('COUPLING' , C_coupling_L   ,1,'SET',prout,err(5))
-      call phy_opti('LIN_V4D'  , V4dg_conf      ,1,'SET',prout,err(6))
-      call phy_optl('ININCR'   , Clim_inincr_L  ,1,'SET',prout,err(7))
-      call phy_optl('NOTOP'    , Schm_NotopThL_L,1,'SET',prout,err(8))
-      
+      call phy_optl('CLIMAT'   , Clim_climat_L  ,1,'SET',prout,err(5))
+      call phy_optl('COUPLING' , C_coupling_L   ,1,'SET',prout,err(6))
+      call phy_opti('LIN_V4D'  , V4dg_conf      ,1,'SET',prout,err(7))
+      call phy_optl('ININCR'   , Clim_inincr_L  ,1,'SET',prout,err(8))
+      call phy_optl('NOTOP'    , Schm_NotopThL_L,1,'SET',prout,err(9))
 !
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 !
-      err(9) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      err(10) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
 !
-      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7),err(8),err(9))
+      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7),err(8),err(9),err(10))
+
       call handle_error(err,'itf_phy_init','itf_phy_init')
 !
       if ( Schm_theoc_L .and. Schm_phyms_L ) then

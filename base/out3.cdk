@@ -81,3 +81,7 @@
       common / Out3_i / Out3_nbitg,Out3_linbot,Out3_nundr,Out3_zund
       common / Out3_i / Out3_ndigits, Out3_closestep,Out3_ip3
 !
+      integer Out3_lieb_nk, Out3_lieb_maxite
+      real    Out3_lieb_conv, Out3_lieb_levels(MAXELEM)
+      common / Out3_i / Out3_lieb_nk  , Out3_lieb_maxite
+      common / outr   / Out3_lieb_conv, Out3_lieb_levels

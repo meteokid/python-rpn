@@ -39,13 +39,7 @@
 !object
 !     vertical sponge is applied:
 !              on Vspng_nk   levels      for momentum only
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-!  F_u
-!----------------------------------------------------------------
 ! 
-!implicits
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "vspng.cdk"
@@ -53,33 +47,25 @@
 !
       integer i, j, k, nkspng
 !
-!     __________________________________________________________________
-!
-      if (Vspng_nk.lt.1) return
-!     
-      if (Lun_debug_L) write (Lun_out,1000) Vspng_nk
+!     ---------------------------------------------------------------
 !
 !     Momentum
 !     ~~~~~~~~
-      call vspng_lam ( F_u, LDIST_DIM, l_niu, l_nj )
-      call vspng_lam ( F_v, LDIST_DIM, l_ni , l_njv)
+      call vspng_lam (F_u, LDIST_DIM, l_niu, l_nj )
+      call vspng_lam (F_v, LDIST_DIM, l_ni , l_njv)
+
 !     Vertical motion
 !     ~~~~~~~~~~~~~~~
 !********not physical, done nevertheless*******
-      call vspng_lam ( F_zd,LDIST_DIM, l_ni , l_nj )
+      call vspng_lam (F_zd,LDIST_DIM, l_ni , l_nj )
 !     Vertical wind
 !     ~~~~~~~~~~~~~
-      call vspng_lam ( F_w, LDIST_DIM, l_ni , l_nj)
+      call vspng_lam (F_w, LDIST_DIM, l_ni , l_nj )
       
-!     Temperature, first level only
-      nkspng   = Vspng_nk
-      Vspng_nk = 1
-      call vspng_lam ( F_t, LDIST_DIM, l_ni , l_nj)
-      Vspng_nk = nkspng
-!     __________________________________________________________________
+!     Temperature
+      call vspng_lam (F_t, LDIST_DIM, l_ni , l_nj )
 !
- 1000 format(/,3X, &
-       '9PT FILT SPONGE LAYER ON TOP ',I3,' LAYERS: (S/R VSPNG_DRV_LAM)')
+!     ---------------------------------------------------------------
 !
       return
       end

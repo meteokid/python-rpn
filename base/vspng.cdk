@@ -6,10 +6,11 @@
 !
 !
       logical Vspng_zmean_L
-      integer Vspng_nk, Vspng_niter, Vspng_maxn, Vspng_njpole
-      parameter (Vspng_maxn = 1000)
-      real Vspng_mf, Vspng_nu, Vspng_nutop, Vspng_coef
+      integer Vspng_nk, Vspng_niter, Vspng_njpole
+      real    Vspng_coeftop
+      real*8, dimension(:), pointer :: Vspng_nu_8,Vspng_coef_8
+
       common /vspngl/ Vspng_zmean_L
       common /vspngi/ Vspng_nk, Vspng_niter, Vspng_njpole
-      common /vspngr/ Vspng_mf(Vspng_maxn), Vspng_nu(Vspng_maxn)
-      common /vspngr/ Vspng_nutop, Vspng_coef
+      common /vspngr/ Vspng_coeftop
+      common /vspngp/ Vspng_nu_8, Vspng_coef_8

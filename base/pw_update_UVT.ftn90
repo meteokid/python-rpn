@@ -89,7 +89,7 @@
          istat = gmm_get (gmmk_vt0_s, vv, mymeta)
       endif
 !
-!$omp parallel
+!$omp parallel private(km1)
 !$omp do
       do k=1,l_nk+2
          km1=max(k-1,1)

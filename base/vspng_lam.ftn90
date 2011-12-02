@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine vspng_lam ( F_champ, DIST_DIM, pni, pnj )
+
       implicit none
 #include <arch_specific.hf>
 !
@@ -41,7 +42,7 @@
       real*8 c1,c2,c3,one,two,four
       parameter(one=1.d0,two=2.d0,four=4.d0)
       real wk(l_ni,l_nj,G_nk)
- 
+! 
 !---------------------------------------------------------------------
 !
       i0=1
@@ -58,9 +59,9 @@
                        G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
          do k=1,Vspng_nk
-            c1= (one-two*Vspng_nu(k))*Vspng_nu(k)
-            c2= Vspng_nu(k)**two
-            c3= four*(Vspng_nu(k)-one)*Vspng_nu(k)
+            c1= (one-two*Vspng_nu_8(k))*Vspng_nu_8(k)
+            c2= Vspng_nu_8(k)**two
+            c3= four*(Vspng_nu_8(k)-one)*Vspng_nu_8(k)
             do j=j0,jn
             do i=i0,in
                wk(i,j,k)= c1*(F_champ(i  ,j+1,k)+F_champ(i+1,j  ,k) + &

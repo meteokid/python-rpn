@@ -82,6 +82,7 @@
       Schm_xwvt3    = 0
       Schm_itnlh    = 2
       Schm_itraj    = 2
+      Schm_Tlift    = 0
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_wload_L    = .false.
@@ -154,15 +155,10 @@
       Hzd_pwr_tr = -1
       Hzd_lnr_tr = -1.
       Hzd_tr3d_name_S = ''
-      Vspng_nk = 0
-      Vspng_coef    =20000.
-      do i = 1, Vspng_maxn
-         Vspng_mf(i) = -1.
-         Vspng_nu(i) = -1.
-      end do
-      Vspng_nutop = -1.
-      Vspng_njpole   = 3
-      Vspng_zmean_L  = .false.
+      Vspng_nk      = 0
+      Vspng_coeftop = -1.
+      Vspng_njpole  = 3
+      Vspng_zmean_L = .false.
 !
       Hzd_t1_0_L = .false.
       Hzd_t1_1_L = .false.
@@ -200,9 +196,12 @@
       P_runlgt       = -1
 !
       Eq_sponge=0.
-      do i = 1,MAXELEM
-         Out3_zund(i)     = 0
-      enddo
+
+      Out3_zund        = 0.
+      Out3_lieb_levels = 0.
+      Out3_lieb_conv   = 0.1
+      Out3_lieb_maxite = 100
+
       Out3_etik_S    = 'GEMDM'
       Out3_unit_S    = ' '
       Out3_closestep = -1

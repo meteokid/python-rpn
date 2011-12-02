@@ -23,8 +23,8 @@
       character* (*) varname,out_file
 !
       integer fnom,fclos
-      integer id_unit,err,ip1,ip2,i,j,nx,ny
-      real wk(in-i0+1,jn-j0+1)
+      integer id_unit,err,ip1,ip2,i,j,nx,ny,cnt
+      real wk ((in-i0+1)*(jn-j0+1))
 !
       id_unit=0
       err = fnom (id_unit, out_file, 'rnd', 0)
@@ -34,9 +34,11 @@
       ny = jn-j0+1
       ip2 =(stepno*dt)/3600
       do ip1=k0,kn
+         cnt=0
          do j=j0,jn
          do i=i0,in
-            wk(i,j) = rs(i,j,ip1)
+            cnt=cnt+1
+            wk(cnt) = rs(i,j,ip1)
          end do
          end do
          if ((ig1.gt.-1) .and. (ig2.gt.-1) ) then

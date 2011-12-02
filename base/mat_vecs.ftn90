@@ -37,14 +37,19 @@
 #include "glb_ld.cdk"
 #include "opr.cdk"
 #include "cstv.cdk"
+#include "geomg.cdk"
 #include "sol.cdk"
 !
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
-      real*8, dimension (Nk+1) :: wwk
 !
 !     ---------------------------------------------------------------
 !
+      halox=1
+      haloy=halox
+!$omp parallel private (i,j,jj,ii,di_8,stencil1,&
+!$omp        stencil2,stencil3,stencil4,stencil5,cst)
+!$omp do
       do k = 1, nk
          fdg1(:,:,k) = .0d0
          do j=1+sol_pil_s, njl-sol_pil_n
@@ -53,26 +58,22 @@
          enddo
          enddo
       enddo
+!$omp enddo
 !
-      halox=1
-      haloy=halox
 !
 !$omp single
       call rpn_comm_xch_halon (fdg1,minx1,maxx1,minx2,maxx2,nil,njl, &
                          Nk,halox,haloy,G_periodx,G_periody,nil,0,2)
 !$omp end single
 !
+!$omp do
       do k=1, NK
-         wwk(k)= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
-      enddo                                                 
-!
-      do k = 1,Nk 
+         cst= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
          do j=1+sol_pil_s, njl-sol_pil_n
             jj=j+l_j0-1
-            di_8= Opr_opsyp0_8(G_nj+jj) / cos( G_yg_8 (jj) )**2
+            di_8= Opr_opsyp0_8(G_nj+jj) * Geomg_invcy2_8(j)
             do i=1+sol_pil_w, nil-sol_pil_e
                ii=i+l_i0-1
-               cst= wwk(k)
                stencil1=cst*Opr_opsxp0_8(G_ni+ii)* &
                  Opr_opsyp0_8(G_nj+jj) +Opr_opsxp2_8(G_ni+ii)*di_8+ &
                  Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(G_nj+jj)
@@ -89,6 +90,8 @@
             enddo
          enddo
       enddo
+!$omp enddo
+!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

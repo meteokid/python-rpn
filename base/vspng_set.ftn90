@@ -42,6 +42,7 @@
 !
 !implicits
 #include "glb_ld.cdk"
+#include "cstv.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
@@ -49,82 +50,96 @@
 #include "type.cdk"
 #include "ver.cdk"
 !      
-      integer k
-      real*8 pis2_8,wh_8,delp_8,TWO_8
+      integer i,j,k
+      real*8, dimension(:), allocatable :: weigh
+      real*8 pis2_8,pbot_8,wh_8,delp_8,TWO_8,c_8,nutop
       parameter (TWO_8 = 2.0)
-      logical ok_L
 !*
 !     ---------------------------------------------------------------
-!     
-      Vspng_nk = max(0,min(G_nk,Vspng_nk))
 !
+      if (Lun_out.gt.0) write (Lun_out,1001)
+
       if (Vspng_nk.le.0) return
 
-      if (G_lam) then
-         if (Vspng_nutop.lt.0.) then
-             if (Lun_out.gt.0) write (Lun_out,2008)Vspng_nutop,Vspng_nk
-             call handle_error(-1,'vspng_set','vspng_set')
+      if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
+         if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
+            if (Lun_out.gt.0) write (Lun_out,9001)
+            call handle_error(-1,'vspng_set','vspng_set')
          endif
-!
-         Vspng_niter = int(4.*Vspng_nutop+0.99)
-         if (Lun_out.gt.0) write (Lun_out,2003)  &
-              Vspng_nutop,Vspng_nk,Vspng_niter
-         wh_8  = Vspng_nutop/max(1.,float(Vspng_niter))
-         pis2_8= Dcst_pi_8/TWO_8
-         
-         delp_8= exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(1))
-         do k=1,Vspng_nk
-            Vspng_nu(k) =  &
-                 wh_8*( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk+1))-exp(Ver_z_8%m(k))) &
-                 /(delp_8)))**TWO_8
-            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_nu(k),k
-         end do
-!
-      else
-!     
-         if (Vspng_coef.le.0.0) Vspng_nk=0
-         if (Vspng_mf(1).lt.0.) Vspng_nk=0
-         if (Vspng_nk.le.0) return
-!
-         if (Vspng_mf(2).gt.1.) then
-            if (Lun_out.gt.0) write (Lun_out,2000)
-         else
-            if (Lun_out.gt.0) write (Lun_out,2002) Vspng_mf(1),Vspng_nk
-            pis2_8= Dcst_pi_8/2.d0
-
-            delp_8= exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(1))
-            do k=2,Vspng_nk
-               wh_8= ( sin(pis2_8*(exp(Ver_z_8%m(Vspng_nk))-exp(Ver_z_8%m(k))) &
-                    /(delp_8)))**2
-               Vspng_mf(k) = 1.+(Vspng_mf(1)-1.)*wh_8
-            end do
-         endif               
-         
-         do k=1, Vspng_nk
-            Vspng_mf(k) = max(1.,Vspng_mf(k))
-            if (Lun_out.gt.0) write (Lun_out,2005) Vspng_mf(k),k
-         end do
-!
-         if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
-            if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
-                if (Lun_out.gt.0) write (Lun_out,2006)
-                call handle_error(-1,'vspng_set','vspng_set')
-            endif
-         endif
-         if (Lun_out.gt.0) write (Lun_out,2007)Vspng_zmean_L
-!
       endif
-!
- 2000 format('USER DEFINED SPONGE LAYER PROFILE')
- 2002 format('SPONGE LAYER PROFILE BASED ON: Vspng_mf(1)= ',f8.4, &
-             '  AND Vspng_nk= ',i4)
- 2003 format('SPONGE LAYER PROFILE BASED ON: Vspng_nutop= ',f8.4, &
-             '  AND Vspng_nk= ',i4, ' AND iterations= ',i4)
- 2005 format(f10.5,i5)
- 2006 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
- 2007 format('SPONGE LAYER Vspng_zmean_L =',l2)
- 2008 format(/,'Vspng_nutop=',f8.4,/,'FOR LAM, Must set Vspng_nutop > 0.0 if Vspng_nk=',i4)
+
+      if (Vspng_coeftop.lt.0.) then
+         if (Lun_out.gt.0) write (Lun_out,9002) Vspng_coeftop, Vspng_nk
+         call handle_error(-1,'vspng_set','vspng_set')
+      endif
+
+      Vspng_nk = min(G_nk,Vspng_nk)
+      pis2_8   = Dcst_pi_8/TWO_8
+
+      pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
+      delp_8 = pbot_8 - exp(Ver_z_8%m(1))
+      allocate (weigh(Vspng_nk))
+
+      do k=1,Vspng_nk
+         weigh(k) = (sin(pis2_8*(pbot_8-exp(Ver_z_8%m(k)))/(delp_8)))**2
+      end do
+
+      i=G_ni/2
+      j=G_nj/2
+      c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
+
+      nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
+      Vspng_niter = int(4.*nutop+0.99)
+      if (.not.G_lam) Vspng_niter = -1
+
+      if (Lun_out.gt.0) then
+         write (Lun_out,2002) Vspng_coeftop,Vspng_nk,nutop,Vspng_niter
+         write (Lun_out,3001) 
+      endif
+
+      if (G_lam) then
+
+         wh_8  = nutop/max(1.,float(Vspng_niter))
+         allocate (Vspng_nu_8(Vspng_nk))
+         do k=1,Vspng_nk
+            Vspng_nu_8(k) = weigh(k) * wh_8
+            if (Lun_out.gt.0) &
+            write (Lun_out,2005) &
+               weigh(k)*Vspng_coeftop/max(1.,float(Vspng_niter)),&
+               Vspng_nu_8(k),exp(Ver_z_8%m(k)),k
+         end do
+
+      else
+
+         allocate (Vspng_coef_8(Vspng_nk))
+         do k=1,Vspng_nk
+            Vspng_coef_8(k) = weigh(k) * Vspng_coeftop
+            if (Lun_out.gt.0) &
+            write (Lun_out,2005) Vspng_coef_8(k),&
+               Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
+               exp(Ver_z_8%m(k)),k
+
+            Vspng_coef_8(k) = Vspng_coef_8(k) &
+                             *Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         end do
+
+         if (Lun_out.gt.0) write (Lun_out,2007) Vspng_zmean_L
+
+      endif
+
+      if (Lun_out.gt.0) print*
+
+ 1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &
+               '(S/R VSPNG_SET)',/,51('='))
+ 2002 format('  SPONGE LAYER PROFILE BASED ON: Vspng_coeftop=',1pe10.2, &
+             '  m**2 AND Vspng_nk=',i3/'  Nu_top=',1pe14.6, &
+             '  Vspng_niter=',i4)
+ 2005 format(1pe14.6,1pe14.6,f11.2,i8)
+ 2007 format('  SPONGE LAYER Vspng_zmean_L =',l2)
+ 3001 format('     Coef           Nu            Pres      Level')
+ 9001 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
+ 9002 format('  Vspng_coeftop=',f10.2,/,'  Must set Vspng_coeftop > 0.0 when Vspng_nk>=1')
 !
 !     ---------------------------------------------------------------
- 999  return
+      return
       end
