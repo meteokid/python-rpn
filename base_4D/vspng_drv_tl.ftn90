@@ -114,7 +114,7 @@
       do j = 1, l_nj+1
          cy_8(j) = G_yg_8(l_j0+j-1)
       end do
-      c_8 = Vspng_coef*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+      c_8 = Vspng_coef_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
       if (Hzd_difva_L) then
           call vspng_abc ( aix_8,bix_8,cix_8,dix_8,aiy_8,biy_8,ciy_8,c_8, &
                cy_8,Hzd_xp0_8,Hzd_xp2_8,Opr_opsyp0_8,Hzd_yp2su_8, &

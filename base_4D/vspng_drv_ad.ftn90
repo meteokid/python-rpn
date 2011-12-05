@@ -104,7 +104,7 @@
       do j = 1, l_nj+1
          cy_8(j) = G_yg_8(l_j0+j-1)
       end do
-      c_8 = Vspng_coef*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+      c_8 = Vspng_coef_8*Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
 !
       nkspng   = Vspng_nk
       Vspng_nk = 1
