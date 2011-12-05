@@ -99,9 +99,11 @@ subroutine itf_phy_geom(F_dest, n1,n2, F_nomvar_S, F_indx, F_err)
 
    end select
 
-   if (RMN_IS_OK(F_err)) then
-      print '(a,i3,x,a4,a,a10,a,i6,a,1pe14.6,1pe14.6)','(itf_phy_geom)',1,' ',' => ',trim(F_nomvar_S),' : ',F_indx,'P',minval(wrk1),maxval(wrk1)
-   endif
+   !TODO: glbstats
+!!$   if (RMN_IS_OK(F_err)) then
+!!$      write(msg_S,'(a,i3,x,a4,a,a10,a,i6,a,1pe14.6,1pe14.6)') '(itf_phy_geom)',1,' ',' => ',trim(F_nomvar_S),' : ',F_indx,'P',minval(wrk1),maxval(wrk1)
+!!$      call msg(MSG_INFO,msg_S)
+!!$   endif
 
    deallocate(wrk1,stat=istat)
    !---------------------------------------------------------------
