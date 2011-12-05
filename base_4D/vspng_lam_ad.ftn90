@@ -49,64 +49,64 @@
       real*8, parameter :: ZERO_8 = 0.0
 !---------------------------------------------------------------------
 !
-      i0=1
-      in=l_niu
-      j0=1
-      jn=l_njv
-      if (l_south) j0=2
-      if (l_north) jn=l_njv-1
-      if (l_west)  i0=2
-      if (l_east)  in=l_niu-1
-!
-!     Zero adjoint variables
-!     ----------------------
-      do k=1,G_nk
-      do j=1,l_nj
-      do i=1,l_ni
-      wk(i,j,k) = ZERO_8
-      enddo
-      enddo
-      enddo
-!
-      do iter = Vspng_niter,1,-1
-!
-         do k=Vspng_nk,1,-1
-!
-            do j=1+pil_s, l_nj-pil_n
-            do i=1+pil_w, l_ni-pil_e
-               wk(i,j,k) = F_champ(i,j,k) + wk(i,j,k) 
-            end do
-            end do
-!
-            c1_8= (ONE_8-TWO_8*Vspng_nu(k))*Vspng_nu(k)
-            c2_8= Vspng_nu(k)**TWO_8
-            c3_8= FOUR_8*(Vspng_nu(k)-ONE_8)*Vspng_nu(k)
-            do j=jn,j0,-1
-            do i=in,i0,-1
-               F_champ(i  ,j+1,k) = c1_8*(wk(i,j,k)) + F_champ(i  ,j+1,k)
-               F_champ(i+1,j  ,k) = c1_8*(wk(i,j,k)) + F_champ(i+1,j  ,k)
-               F_champ(i  ,j-1,k) = c1_8*(wk(i,j,k)) + F_champ(i  ,j-1,k)
-               F_champ(i-1,j  ,k) = c1_8*(wk(i,j,k)) + F_champ(i-1,j  ,k)
-!
-               F_champ(i-1,j+1,k) = c2_8*(wk(i,j,k)) + F_champ(i-1,j+1,k)
-               F_champ(i+1,j+1,k) = c2_8*(wk(i,j,k)) + F_champ(i+1,j+1,k) 
-               F_champ(i-1,j-1,k) = c2_8*(wk(i,j,k)) + F_champ(i-1,j-1,k) 
-               F_champ(i+1,j-1,k) = c2_8*(wk(i,j,k)) + F_champ(i+1,j-1,k)
-!
-               F_champ(i  ,j  ,k) = c3_8*(wk(i,j,k)) + F_champ(i  ,j  ,k) 
-!
-               wk(i,j,k) = ZERO_8
-            end do
-            end do
-!
-         end do
-!
-         call rpn_comm_adj_halo (F_champ,LDIST_DIM,pni,pnj, &
-                       G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!
-         call v4d_zerohalo (F_champ,pni,pnj,LDIST_DIM, l_nk)
-!
-      end do
+!!$      i0=1
+!!$      in=l_niu
+!!$      j0=1
+!!$      jn=l_njv
+!!$      if (l_south) j0=2
+!!$      if (l_north) jn=l_njv-1
+!!$      if (l_west)  i0=2
+!!$      if (l_east)  in=l_niu-1
+!!$!
+!!$!     Zero adjoint variables
+!!$!     ----------------------
+!!$      do k=1,G_nk
+!!$      do j=1,l_nj
+!!$      do i=1,l_ni
+!!$      wk(i,j,k) = ZERO_8
+!!$      enddo
+!!$      enddo
+!!$      enddo
+!!$!
+!!$      do iter = Vspng_niter,1,-1
+!!$!
+!!$         do k=Vspng_nk,1,-1
+!!$!
+!!$            do j=1+pil_s, l_nj-pil_n
+!!$            do i=1+pil_w, l_ni-pil_e
+!!$               wk(i,j,k) = F_champ(i,j,k) + wk(i,j,k) 
+!!$            end do
+!!$            end do
+!!$!
+!!$            c1_8= (ONE_8-TWO_8*Vspng_nu(k))*Vspng_nu(k)
+!!$            c2_8= Vspng_nu(k)**TWO_8
+!!$            c3_8= FOUR_8*(Vspng_nu(k)-ONE_8)*Vspng_nu(k)
+!!$            do j=jn,j0,-1
+!!$            do i=in,i0,-1
+!!$               F_champ(i  ,j+1,k) = c1_8*(wk(i,j,k)) + F_champ(i  ,j+1,k)
+!!$               F_champ(i+1,j  ,k) = c1_8*(wk(i,j,k)) + F_champ(i+1,j  ,k)
+!!$               F_champ(i  ,j-1,k) = c1_8*(wk(i,j,k)) + F_champ(i  ,j-1,k)
+!!$               F_champ(i-1,j  ,k) = c1_8*(wk(i,j,k)) + F_champ(i-1,j  ,k)
+!!$!
+!!$               F_champ(i-1,j+1,k) = c2_8*(wk(i,j,k)) + F_champ(i-1,j+1,k)
+!!$               F_champ(i+1,j+1,k) = c2_8*(wk(i,j,k)) + F_champ(i+1,j+1,k) 
+!!$               F_champ(i-1,j-1,k) = c2_8*(wk(i,j,k)) + F_champ(i-1,j-1,k) 
+!!$               F_champ(i+1,j-1,k) = c2_8*(wk(i,j,k)) + F_champ(i+1,j-1,k)
+!!$!
+!!$               F_champ(i  ,j  ,k) = c3_8*(wk(i,j,k)) + F_champ(i  ,j  ,k) 
+!!$!
+!!$               wk(i,j,k) = ZERO_8
+!!$            end do
+!!$            end do
+!!$!
+!!$         end do
+!!$!
+!!$         call rpn_comm_adj_halo (F_champ,LDIST_DIM,pni,pnj, &
+!!$                       G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+!!$!
+!!$         call v4d_zerohalo (F_champ,pni,pnj,LDIST_DIM, l_nk)
+!!$!
+!!$      end do
 !
 !----------------------------------------------------------------------
       return
