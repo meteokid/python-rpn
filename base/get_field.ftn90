@@ -30,15 +30,16 @@
 !
 !revision
 ! v4_13 -  Desgagne M.           - initial version
+! v4_40 -  Lee V.                - get non Z source grid as well
 !
 #include "hgc.cdk"
 #include "lun.cdk"
 #include <clib_interface.cdk>
 !
       integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef
       external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef
 !
       character*1   typ, grd, grd_me, grd_pos
       character*2   var
@@ -121,6 +122,8 @@
          call samegrid2 ( nis,njs, g1,g2,g3,g4, ax,ay, &
                           ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
                           Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
+      else
+         sgid = ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf )
       endif
 
       err = fstfrm (unf)
@@ -143,7 +146,7 @@
  9001 format ( ' GET_FIELD: FILE ',a,' NOT AVAILABLE'/)
  9002 format ( ' GET_FIELD: PROBLEM WITH fnom on file: ',a,' with attributes: ',a/)
  9003 format ( ' GET_FIELD: PROBLEM WITH fstouv on file: ',a,' with attributes: ',a/)
- 9004 format ( ' GET_FIELD: Variable ',a' NOT AVAILABLE')
+ 9004 format ( ' GET_FIELD: Variable ',a,' NOT AVAILABLE')
  9005 format ( ' GET_FIELD: PROBLEM WITH ezsint'/)
 !
 !-----------------------------------------------------------------------

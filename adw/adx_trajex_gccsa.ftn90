@@ -64,13 +64,13 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
          do i=i0,in
             n = (k-1)*adx_mlnij+((j-1)*adx_mlni) + i
             term_8 = ( F_v(n)**2 * ((Adx_vsec_8(j)**2)- Two_ov_Three_8) &
-                     - F_u(n)**2 *Adx_vtan_8(j) ) *(F_dt**3)*2.0D0
+                     - (F_u(n) *Adx_vtan_8(j))**2 ) *(F_dt**3)*2.0D0
 
             xto_8(i,j) = Adx_xx_8(i)-2.0D0*F_u(n)*F_dt*Adx_vsec_8(j)* &
                        (1.0D0 - F_v(n)*Adx_vtan_8(j)*F_dt) + &
                        F_u(n)*Adx_vsec_8(j)*term_8 
 
-            yto_8(i,j) = Adx_yy_8(j)-2.0D0*F_dt*F_v(n)-F_u(n)**2 * F_v(n)*&
+            yto_8(i,j) = Adx_yy_8(j)-2.0D0*F_dt*F_v(n)+F_u(n)**2 * F_v(n)*&
                        (Adx_vsec_8(j)**2 - Two_ov_Three_8)* F_dt**3
 
             if (xto_8(i,j) < 0.) xto_8(i,j) = xto_8(i,j) + CONST_2PI_8

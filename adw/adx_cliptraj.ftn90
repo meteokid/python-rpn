@@ -74,7 +74,7 @@ subroutine adx_cliptraj3(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,k0,F_nk, mesg)
    n = max(1,adx_maxcfl)
    totaln = (F_ni*n*2 + (F_nj-2*n)*n*2) * (F_nk-k0+1)
 
-   call rpn_comm_Allreduce(cnt,sum_cnt,2,"MPI_INTEGER", "MPI_SUM","grid",err)
+   call rpn_comm_Allreduce(cnt,sum_cnt,1,"MPI_INTEGER", "MPI_SUM","grid",err)
 
    if (trim(mesg).ne."" .and. sum_cnt>0) then
       write(msg_S,'(a,i5,a,f6.2,2x,a)')  &

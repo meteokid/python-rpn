@@ -35,18 +35,13 @@
 ! v4_05 - Desgagne M.       - use work path directory than input
 ! v4_13 - Lee V.            - define pil_pil with Grd_maxcfl
 ! v4_30 - Dugas B.          - add leap year control option
+! v4_40 - Lee, V.           - allow 3df files for Yin-Yang
 !
-      integer ni, nila
-      integer l_ni,l_nj
-      parameter (l_ni=1,l_nj=1)
-
-#include "e_schm.cdk"
 #include "e_grids.cdk"
 !
 #include "cst_lis.cdk"
 #include "dcst.cdk"
 #include "grd.cdk"
-#include "itf_phy_config.cdk"
 #include "itf_cpl.cdk"
 #include "ptopo.cdk"
 #include "pilot.cdk"
@@ -59,16 +54,11 @@
 !
       logical  set_dcst, set_dcst_8
       external set_dcst, set_dcst_8
-      integer  grid_nml, ptopo_nml, e_gement_nml, phy_nml, itf_cpl_nml, step_nml
-      external grid_nml, ptopo_nml, e_gement_nml, phy_nml, itf_cpl_nml, step_nml
+      integer  grid_nml, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
+      external grid_nml, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
 !
-      integer  fnom,fclos
-      external fnom,fclos
-!
-      logical phy_L
-      character*120  dumc
       character*1024 fn
-      integer ierr,err(5),unf,bufcte(10000)
+      integer ierr,err(5)
 !
 !--------------------------------------------------------------------
 !
@@ -78,8 +68,12 @@
       Lun_out = 0
       if (Ptopo_myproc.eq.0) Lun_out = 6
 
+      if (Lun_out.gt.0) write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
+                                       trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
+
       fn = trim(Path_work_S)//'/model_settings.nml'
-      err(1) = grid_nml     (fn)
+
+      err(1) = grid_nml     (fn,lam)
       err(2) = ptopo_nml    (fn)
       err(3) = step_nml     (fn)
       err(4) = e_gement_nml (fn)
@@ -89,19 +83,17 @@
 
       if (.not.Step_leapyears_L) call Ignore_leapYear ()
 
-      LAM = (Grd_typ_S(1:1).eq.'L') .or. (Grd_yinyang_L)
-
-      if (Grd_typ_S(1:1).eq.'G') then
+      if (Grd_yinyang_L) then
+         Step_nesdt=1000
+         if (.not.Pil_bmf_L) Pil_pil = max(1,Grd_maxcfl) + 5
+      else if (Grd_typ_S(1:1).eq.'G') then
          Pil_bmf_L  = .true.
          Step_nesdt = 1000
       else
          Pil_pil = max(1,Grd_maxcfl) + 5
       endif
 
-      if (Lun_out.gt.0) write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
-                                       trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
-
-      ierr = grid_nml     ('print')
+      ierr = grid_nml     ('print',lam)
       ierr = ptopo_nml    ('print')
       ierr = step_nml     ('print')
       ierr = e_gement_nml ('print')
@@ -116,57 +108,11 @@
 
       call e_trinit
 !
-      ni   = Grd_ni
-      nila = Grd_nila
-!
-      if (lam) then
-          niu = ni-1
-      else
-          ni=ni+1
-          if ( ni .eq. nila+1) nila=nila+1
-          niu=ni
-      endif
-!
-      nifi = ni
-      niv  = ni
-      njfi = Grd_nj
-      nju  = Grd_nj
-      njv  = Grd_nj-1
-      npfi = nifi*njfi
-      npu  = niu *nju
-      npv  = niv *njv
-!     
-      if (LAM) then
-         pni   = nifi
-         pniu  = niu
-      else
-         pni   = nifi-1
-         pniu  = pni
-      endif
-      pnj   = njfi
-      pnjv  = njv
-!
-      if (phy_nml  (trim(Path_work_S)//'/model_settings.nml',set_dcst, &
-               phy_L,Lun_out) .ne. 1) stop   'In e_gemnml: After phy_nml'
-!
-      call phy_optc ('SCHMSOL'   , P_pbl_schsl_s ,1, 'GET',.True.,err)
-      call phy_optc ('SCHMURB'   , P_pbl_schurb_s,1, 'GET',.True.,err)
-      call phy_optl ('SNOALB_ANL', P_pbl_snoalb_L,1, 'GET',.True.,err)
-      call phy_optl ('ICELAC'    , P_pbl_icelac_L,1, 'GET',.True.,err)
-      call phy_optl ('CHAUF'     , P_pbl_ocean_L ,1, 'GET',.True.,err)
-      call phy_optl ('RADSLOPE'  , P_radslope_L ,1,  'GET',.True.,err)
-!
-      call low2up (P_pbl_schsl_S,dumc)
-      P_pbl_schsl_S = dumc
-      call low2up (P_pbl_schurb_S,dumc)
-      P_pbl_schurb_S = dumc
-
-      return
-!
 !--------------------------------------------------------------------
+!
  1001 format (/3x,60('*')/3x,'Package: ',a,5x,'version: ',a/ &
                3x,'Release of: ',a,5x,'COMPILER: ',a/3x,60('*')/)
-!
+
       return
       end
 

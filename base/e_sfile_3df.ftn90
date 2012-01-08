@@ -34,6 +34,7 @@
 ! v4_03 - Lee/Desgagne - ISST
 ! v4_05 - Plante A.    - removed nvar from interface
 !                        and put nvar into common block e_anal
+! v4_40 - Lee, V.      - make path for 3df files for Yin-Yang
 !
 #include "e_anal.cdk"
 #include "e_grids.cdk"
@@ -65,7 +66,12 @@
       write (md,'(i2.2)') mode
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
       filen= '3df'//'_'//trim(datev)//'_'//startindx
+      if (Grd_yinyang_L) then
+      filen= trim(rootfn)//'/'//trim(filen)
+      else
       filen= trim(rootfn)//trim(filen)
+      endif
+
       open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
                                                 position='APPEND')
 !

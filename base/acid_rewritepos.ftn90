@@ -22,8 +22,6 @@
 !     
       logical prout
       integer dimgx,dimgy,ni,nj
-      real*8  ac_xp(max(1,ni)), ac_yp(max(1,nj)), &
-             xpx(dimgx), ypx(dimgy), rad2deg_8,xgi_8(G_ni),ygi_8(G_ni)
 !*
 #include "dcst.cdk"
 #include "grd.cdk"
@@ -38,6 +36,8 @@
 #include "acid.cdk"
 #include "lun.cdk"
 !
+      real*8  ac_xp(max(1,ni)), ac_yp(max(1,nj)), &
+             xpx(dimgx), ypx(dimgy), rad2deg_8,xgi_8(G_ni),ygi_8(G_ni)
       integer  stretch_axis2
       external stretch_axis2
       character* 512 filen

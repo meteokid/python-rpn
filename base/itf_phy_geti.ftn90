@@ -511,8 +511,8 @@ Read_axes=-1
 !
 If (Ptopo_myproc==0) Then
    If ( keys(tip,3)>0) Then
-      ier = fstluk( ax, keys(tip,3), idim(tip)%ni,1,      1)
-      jer = fstluk( ay, keys(tip,4), 1,      idim(tip)%nj,1)
+      ier = fstluk( ax, keys(tip,3), idim(tip)%ni,dum2,      dum3)
+      jer = fstluk( ay, keys(tip,4), dum1,      idim(tip)%nj,dum3)
       Read_axes = ier*jer
    Endif
 Endif

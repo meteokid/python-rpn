@@ -62,15 +62,13 @@
 #include "type.cdk"
 #include "ver.cdk"
 !
-!modules
-      integer stretch_axis2
-      external stretch_axis2
-!
+      integer  ezgdef_fmem,gdll
+      external ezgdef_fmem,gdll
       character*12 gem_debug
       character*8 dumc
-      integer offi,offj,indx,err,dgid,ezgdef_fmem,gdll
-      integer i,j,k,nila,ierx,iery,nimax,njmax,dimy,istat,pnip1
-      real s1,r1,xfi(l_ni),yfi(l_nj),height,heightp1
+      integer offi,offj,indx,err,ierx,iery,dgid
+      integer i,j,k,dimy,istat,pnip1
+      real   xfi(l_ni),yfi(l_nj),height,heightp1
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -79,6 +77,7 @@
       parameter( ONE_8   = 1.0 )
       parameter( TWO_8   = 2.0 )
       parameter( CLXXX_8 = 180.0 )
+
       namelist / dyngrid /  &
            Grd_left, Grd_belo, Grd_x0, Grd_xl, Grd_y0, Grd_yl
 !
@@ -92,23 +91,21 @@
       allocate (Geomn_latgs(G_nj),Geomn_longs(G_ni+1), &
                 Geomn_latgv(G_nj),Geomn_longu(G_ni+1))
 
-      if (G_lam) then
-         ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left, &
-           Grd_ni, Grd_nila, r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
-         iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo, &
-           Grd_nj, Grd_njla, s1, .false., Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
-      else
-         nila = Grd_nila
-         if (Grd_ni.eq.Grd_nila)  nila = Grd_nila+1
-         ierx= stretch_axis2( xgi_8, Grd_dx, Grd_x0, Grd_xl, Grd_left, &
-           Grd_ni+1, nila  , r1, .false., Lun_debug_L, Grd_dxmax, nimax, Grd_gauss_L)
-         iery= stretch_axis2( ygi_8, Grd_dy, Grd_y0, Grd_yl, Grd_belo, &
-           Grd_nj, Grd_njla, s1, .true. , Lun_debug_L, Grd_dymax, njmax, Grd_gauss_L)
-      endif
+      call set_gemHgrid ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
+                          Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
+                          Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
+                          Grd_gauss_L, G_lam, ierx, iery, Lun_out.gt.0 )
+
+      if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
+             write (Lun_out,*)'ERROR in generating XGI_8 values!'
+      if ( (iery.ne.0) .and. (Lun_out.gt.0) ) &
+             write (Lun_out,*)'ERROR in generating YGI_8 values!'
+      call handle_error(ierx,'set_geom','set_geom')
+      call handle_error(iery,'set_geom','set_geom')
 !
       if (Lun_out.gt.0) then
-         write(Lun_out,1000)
-         write(Lun_out, nml=dyngrid)
+         write (Lun_out,1000)
+         write (Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
             height  =-16000./alog(10.)*alog(Ver_hyb%m(k))
@@ -120,13 +117,6 @@
                                  height-heightp1,pnip1
          end do
       endif
-!
-      if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
-             write (Lun_out,*)'ERROR in generating XGI_8 values!'
-      if ( (iery.ne.0) .and. (Lun_out.gt.0) ) &
-             write (Lun_out,*)'ERROR in generating YGI_8 values!'
-      call handle_error(ierx,'set_geom','set_geom')
-      call handle_error(iery,'set_geom','set_geom')
 !
 ! call parpos_from_file (xgi_8,ygi_8,Grd_ni,Grd_nj)
 !

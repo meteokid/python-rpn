@@ -18,13 +18,14 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine set_zeta ( F_hybuser )
+      subroutine set_zeta ( F_hybuser, Nk )
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels,VGD_OK
 !     
       implicit none
 #include <arch_specific.hf>
 !
-      real, dimension(G_nk) :: F_hybuser        !user-specified hybrid coordinate values
+      integer Nk
+      real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
 !
 ! authors
 !      A. Plante & C. Girard - CMC - janvier 2008

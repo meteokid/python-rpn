@@ -16,8 +16,11 @@
 !**s/r e_initntr
 !
 #include "model_macros_f.h"
-      subroutine e_initntr
+      subroutine e_initntr (my_color)
       implicit none
+!
+      integer my_color
+!
 #include <arch_specific.hf>
 !
 !author   Michel Desgagne -- Fal 2008 --
@@ -39,19 +42,23 @@
 !
       character*50 DSTP,dummy
       character(len=256) :: my_dir
-      integer err,f1,npex,mydomain,npey,ngrids
+      integer err,f1,npex,mydomain,npey,ngrids,pe_tot,pe_me
+      include 'mpif.h'
 !
 !--------------------------------------------------------------------
 !
       call rpn_comm_mydomain (init_ndoms, mydomain)
+      call MPI_COMM_SIZE (MPI_COMM_WORLD,pe_tot,err)
+      call MPI_COMM_RANK (MPI_COMM_WORLD,pe_me ,err)
 
       ngrids=1
       if (Grd_yinyang_L) ngrids=2
 
       npex=1
       npey=1
+
       Ptopo_couleur = rpn_comm_init_multi_level (dummy, Ptopo_myproc,Ptopo_numproc, &
-                                                    npex,npey, Grd_ndomains,ngrids  )
+                                                  npex,npey, pe_tot/ngrids, ngrids  )
 
       if (Grd_yinyang_L) then
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
@@ -59,10 +66,8 @@
       else
          Ptopo_couleur = 0
       endif
-
-!	print*, 'okokokok: ',Grd_yinyang_L,Ptopo_couleur,mydomain,Grd_ndomains,ngrids
-!        call rpn_comm_FINALIZE (err)
-!	stop
+      if (pe_me.gt.(Grd_ndomains*ngrids-1)) Ptopo_couleur = -1
+      my_color = Ptopo_couleur
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 

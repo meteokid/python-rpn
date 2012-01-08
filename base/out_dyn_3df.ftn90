@@ -107,8 +107,8 @@
       endif
 !
       if (Out_blocme.eq.0)  &
-           call out_sfile_3df ( datev, unf, 'DYNAMICS', &
-                                gid, gif, gjd, gjf, nvar, Grdc_ntr )
+           call out_sfile_3df ( datev, unf, gid, gif, gjd, gjf,&
+                                         nvar, Grdc_ntr, filen )
 !
 ! tt1,st1,topo are usually written from e_intthm
       call write_3df (  tt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+2, &

@@ -113,6 +113,9 @@
          if (Lun_out.gt.0) write (Lun_out,1001) 'Y','l_nj',Grd_extension+1
          ierr=-1
       endif
+      call flush(6)
+	
+      call flush(6)
       call handle_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
 !
       l_nk = G_nk

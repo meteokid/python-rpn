@@ -41,7 +41,7 @@
 ! v4_10 - Lee V.            - Adapt LAM I/O(BCS and 3DF) for reading GAUSS grid
 ! v4_14 - McTaggart-Cowan R.- Read ww if wt1 not found
 ! V4_30 - Plante A.         - Correct UT1 and VT1 grid size in call to ezgdef_fmem
-! v4_40 - Qaddouri/Lee      - Yin-Yang modifications
+! v4_40 - Qaddouri/Lee      - Yin-Yang modifications + allow 3df files input
 ! v4_4  - Plante A.         - Correct test on zdt1/wt1/ZZ vertical structure
 !
 #include "e_anal.cdk"
@@ -134,6 +134,7 @@
          if (err.ge.0) err = fstouv(e_fu_anal ,'RND')
          call handle_error(err,'e_specanal','')
          write (6,2003) trim(Path_input_S)//'/ANALYSIS',e_fu_anal
+         if (Grd_yinyang_L) nvar=5
       endif
 
       ip1mode = +1

@@ -17,11 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      integer function grid_nml (F_namelistf_S)
+      integer function grid_nml (F_namelistf_S, F_lam)
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) F_namelistf_S
+      logical F_lam
 !
 !author
 !     M. Desgagne    - Summer  2006
@@ -54,10 +55,7 @@
 !
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          grid_nml = 0
-         if (Lun_out.gt.0) then 
-            write (Lun_out  ,nml=grid) 
-            write (Lun_out, 5000) Grd_rot_8
-         endif
+         if (Lun_out.gt.0) write (Lun_out  ,nml=grid) 
          return
       endif
 !
@@ -257,9 +255,10 @@
 !
       endif
 !
+      F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_yinyang_L)
+
       grid_nml = 1
 
- 5000 format(' HORIZONTAL GRID ROTATION MATRIX:'/3(3d20.12/))
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
  1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &

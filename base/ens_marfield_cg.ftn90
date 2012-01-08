@@ -23,8 +23,8 @@
       implicit none
 #include <arch_specific.hf>
 
-      real,    dimension(l_ni,l_nj,E_nk)    :: fgem
       integer                               :: E_nk
+      real,    dimension(l_ni,l_nj,E_nk)    :: fgem
 !     
 !author   
 !     Lubos Spacek - February 2005

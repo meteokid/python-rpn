@@ -61,7 +61,7 @@
 !     __________________________________________________________________
 !
 !     size of F_hz_8 could be longer than wk
-      wk(:  ) = .5*F_con*F_hz_8(1:(G_nk-1))
+      wk(1:G_nk-1) = .5*F_con*F_hz_8(1:(G_nk-1))
 !
 !$omp parallel private(r,k)
 !$omp do

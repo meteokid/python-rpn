@@ -32,7 +32,7 @@ subroutine adx_cfl_print()
    adx_cfl_8 (:  ) = 0.d0
    adx_cfl_i (:,:) = 0
 
-99 format(' MAX COURANT NUMBER:  ', a3,': [(',i3,',',i3,',',i3,') ',f12.5,']')
+99 format(' MAX COURANT NUMBER:  ', a3,': [(',i4,',',i4,',',i4,') ',f12.5,']')
 
    !---------------------------------------------------------------------
    return

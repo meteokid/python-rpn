@@ -20,7 +20,12 @@
       subroutine acid_stat_nest_bcs(F_tr0,F_tr,F_n,F_flag)
 !
       implicit none
+!implicits
 #include <arch_specific.hf>
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "tr3d.cdk"
+#include "acid.cdk"
 !
       real F_tr0(LDIST_SHAPE,G_nk+2),F_tr(LDIST_SHAPE,G_nk+2)
 !     
@@ -38,11 +43,6 @@
 !     glbstat for LAM acid test
 !     Note : the acid test is conducted with one CPU.
 !
-!implicits
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "tr3d.cdk"
-#include "acid.cdk"
 !     
       if(F_flag.eq.1)then
          if (acid_i0.gt.0) then

@@ -52,8 +52,8 @@
       real wkf2(lminx:lmaxx,lminy:lmaxy,nkfa)
       real, dimension (:,:  ), allocatable :: wk1,wk2
       real, dimension (:,:,:), allocatable :: tr1
-      real tr2
-      pointer (patr2, tr2(Out_nisl,Out_njsl,*))
+      real tr2(Out_nisl,Out_njsl,nk_o)
+      pointer (patr2, tr2)
 !
 !----------------------------------------------------------------------
 !

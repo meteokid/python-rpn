@@ -18,11 +18,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_sfile_3df ( datev, unf, msg, gid, gif, gjd, gjf, nvar, ntr )
+      subroutine out_sfile_3df ( datev, unf, gid, gif, gjd, gjf, nvar, ntr, filen )
       implicit none
 #include <arch_specific.hf>
 !
-      character* (*) datev, msg
+      character* (*) datev, filen
       integer unf, gid, gif, gjd, gjf, nvar, ntr
 !
 !author Michel Desgagne (MC2 2001)
@@ -39,7 +39,6 @@
 !
       integer i
       character*15   startindx
-      character*1024 filen
       real*8, dimension (:), allocatable:: xu_8,yv_8
 !
 !------------------------------------------------------------------
@@ -69,7 +68,7 @@
                                             G_nk+1,G_nk+2,Ver_code,unf)
       deallocate(xu_8,yv_8)
 
-      write (unf) msg,nvar,ntr
+      write (unf) 'DYNAMICS',nvar,ntr
 !
 !------------------------------------------------------------------
       return

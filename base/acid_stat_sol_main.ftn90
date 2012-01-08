@@ -20,7 +20,14 @@
       subroutine acid_stat_sol_main(F_rhsp,F_fiptx,F_flag)
 !
       implicit none
+!implicits
 #include <arch_specific.hf>
+#include "lun.cdk"
+#include "schm.cdk"
+#include "glb_ld.cdk"
+#include "lctl.cdk"
+#include "grdc.cdk"
+#include "acid.cdk"
 !
       real F_rhsp(LDIST_SHAPE,G_nk),F_fiptx(LDIST_SHAPE,0:G_nk+1)
 !
@@ -38,13 +45,6 @@
 !     glbstat for LAM acid test
 !     Note : the acid test is conducted with one CPU.
 !
-!implicits
-#include "lun.cdk"
-#include "schm.cdk"
-#include "glb_ld.cdk"
-#include "lctl.cdk"
-#include "grdc.cdk"
-#include "acid.cdk"
 !     
       if(F_flag.eq.1)then
 !        RHSP should be identical to the the piloting run

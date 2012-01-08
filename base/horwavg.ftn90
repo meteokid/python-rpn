@@ -59,8 +59,8 @@
 !
 !     ---------------------------------------------------------------
 !
-      call glbcolc (wk1,G_ni,G_nj,F_in1,LDIST_DIM,1)
-      call glbcolc (wk2,G_ni,G_nj,F_in2,LDIST_DIM,1)
+      call glbcolc (wk1,G_ni,G_nj,F_in1,DIST_DIM,1)
+      call glbcolc (wk2,G_ni,G_nj,F_in2,DIST_DIM,1)
 !
       if (Ptopo_myproc.eq.0) then
          avg_8(1) = ZERO_8

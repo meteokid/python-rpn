@@ -21,7 +21,11 @@
            F_flag)
 !
       implicit none
+!implicits
 #include <arch_specific.hf>
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "acid.cdk"
 !
       real    F_fiptx(LDIST_SHAPE,0:G_nk+1),F_nl_t(LDIST_SHAPE,G_nk+1), &
            F_topo(LDIST_SHAPE),F_st0(LDIST_SHAPE), &
@@ -41,10 +45,6 @@
 !     glbstat for LAM acid test
 !     Note : the acid test is conducted with one CPU.
 !
-!implicits
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "acid.cdk"
 !     
       if(F_flag.eq.1)then
          if (Lun_out.gt.0) write(Lun_out,*) 'before bacp_2'

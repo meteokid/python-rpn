@@ -22,10 +22,10 @@ subroutine itf_adx_get_field_list (F_fields_lbl,F_fields_type_L,F_nfields,F_nb_f
    !@objective
 !
    !@arguments
-   character(len=*), dimension(2,F_nb_fields_max), intent(out) :: F_fields_lbl
-   logical         , dimension(2,F_nb_fields_max), intent(out) :: F_fields_type_L
    integer, intent(in)  :: F_nb_fields_max
    integer, intent(out) :: F_nfields
+   character(len=*), dimension(2,F_nb_fields_max), intent(out) :: F_fields_lbl
+   logical         , dimension(2,F_nb_fields_max), intent(out) :: F_fields_type_L
 !**/
 
 #include "glb_ld.cdk"

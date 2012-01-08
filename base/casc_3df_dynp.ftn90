@@ -136,6 +136,13 @@
       ofi     = l_i0 - 1
       ofj     = l_j0 - 1
       err     = 0
+
+      nullify(trname_a,phynm,idx,idy,nks,phybr)
+      nullify(xpaq,ypaq,xpau,ypav,xpuu,ypvv)
+      nullify(cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd)
+      nullify(uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn)
+      nullify(meqr,topo_temp1,phybn,ss1)
+      nullify(uu1,vv1,zd1,ttt1,qq1,ww1,trn,trp,tr1)
 !
 ! Positional parameters on extended global mass point grid
 !

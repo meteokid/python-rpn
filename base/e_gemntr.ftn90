@@ -32,13 +32,16 @@
 ! v4_03 - M. Desgagne       - ISST
 ! v4_05 - M. Desgagne       - Add timing information (gemtim3)
 !
+      integer my_color
+!
 ! ---------------------------------------------------------------------
 !
 !     ================
       entry gemclimntr
 !     ================
 !
-      call e_initntr
+      call e_initntr (my_color)
+      if (my_color.lt.0) goto 999
 !
       call e_gemnml
 !
@@ -50,7 +53,7 @@
 !
       call e_nml2bin 
 !
-      call e_stopntr
+ 999  call e_stopntr (my_color)
 !
 ! ---------------------------------------------------------------------
 !

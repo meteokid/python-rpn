@@ -16,11 +16,11 @@
 #endif
 
       logical lam
-      integer nifi, niu, niv, njfi, nju, njv, npfi, npu, npv
+      integer nifi, niu, niv, njfi, nju, njv
       integer pni, pnj, pniu, pnjv, unf_casc
       real, dimension(:), pointer :: xfi, yfi, xu, yv
 !
       common /e_grid_l  /  lam
-      common /e_grid_i  /  npfi, npu, npv, nifi, niu, niv, njfi
-      common /e_grid_i  /  nju, njv, pni, pnj, pniu, pnjv,unf_casc
+      common /e_grid_i  /  nifi, niu, niv, njfi
+      common /e_grid_i  /  nju, njv, pni, pnj, pniu, pnjv, unf_casc
       common /e_grid_p  /  xfi, yfi, xu, yv

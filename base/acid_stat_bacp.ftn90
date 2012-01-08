@@ -20,7 +20,11 @@
       subroutine acid_stat_bacp_2(F_u,F_flag)
 !
       implicit none
+!implicits
 #include <arch_specific.hf>
+#include "lun.cdk"
+#include "glb_ld.cdk"
+#include "acid.cdk"
 !
       real F_u(LDIST_SHAPE,G_nk+1)
 !     
@@ -38,10 +42,6 @@
 !     glbstat for LAM acid test
 !     Note : the acid test is conducted with one CPU.
 !
-!implicits
-#include "lun.cdk"
-#include "glb_ld.cdk"
-#include "acid.cdk"
 !     
       if(F_flag.eq.1)then
          call glbstat(F_u,'F_u',LDIST_DIM,G_nk+1, &

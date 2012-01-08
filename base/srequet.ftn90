@@ -75,10 +75,14 @@
 !    functions declared in "rpn_fortran_callback" calls previously.
 !
 !implicits
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
+#include "geomn.cdk"
+#include "grd.cdk"
 #include "grid.cdk"
 #include "timestep.cdk"
+#include "hgc.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
@@ -87,7 +91,7 @@
 !modules
       integer process_f_callback,longueur
       external process_f_callback,longueur
-      integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var
+      integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,j
       external set_level,set_step,set_grid,set_filt,set_xnbit,set_var
 
       integer p1a,p1b,istat,nada
@@ -104,6 +108,7 @@
       Out3_xnbits_max = 0
       p1a =  10
       p1b = -10
+
       call rpn_fortran_callback('filtre'  ,set_filt ,' ',p1a,p1b)
       call rpn_fortran_callback('xnbit'   ,set_xnbit,' ',p1a,p1b)
       call rpn_fortran_callback('levels'  ,set_level,' ',p1a,p1b)
@@ -112,10 +117,20 @@
       call rpn_fortran_callback('sortie'  ,set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_p',set_var  ,' ',p1a,p1b)
       call rpn_fortran_callback('sortie_c',set_var  ,' ',p1a,p1b)
+
       istat= process_f_callback(trim(Path_outcfg_S))
-      call set_igs()
+
+      do j=1,Grid_sets
+         call set_igs2 ( Grid_ig1(j),Grid_ig2(j)                  , &
+                         Geomn_longs,Geomn_latgs,G_ni,G_nj        , &
+                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                         Grid_x0(j),Grid_x1(j),Grid_stride(j)     , &
+                         Grid_y0(j),Grid_y1(j),Grid_stride(j) ) 
+      end do
+
       if (Lun_out.gt.0) &
            write(Lun_out,*)'SREQUET:Number of warnings =',istat
       srequet=istat
+
       return
       end
