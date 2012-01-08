@@ -75,14 +75,14 @@ subroutine itf_adx_interp_mom2thermo(F_fld_t,F_fld_m)
       real, dimension(:,:,:), pointer :: F_fld_m !intent(in)
       real, dimension(:,:,:), pointer :: F_fld_t !intent(out)
 End Subroutine itf_adx_interp_mom2thermo
-subroutine itf_adx_combine_levels(F_su,F_um,F_ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+subroutine itf_adx_combine_level2(F_su,F_um,F_ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
       integer :: F_minx,F_maxx,F_miny,F_maxy,F_nk
       real,dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: &
            F_su !O - combined field on both level types
       real,dimension(:,:,:),pointer :: &
            F_um, & !I - field on momentum levels
            F_ut    !I - field on thermo levels
-End Subroutine itf_adx_combine_levels
+End Subroutine itf_adx_combine_level2
 End Interface
 
    !---------------------------------------------------------------------
@@ -111,9 +111,9 @@ End Interface
    call itf_adx_interp_mom2thermo(vt,vth)
    call itf_adx_interp_thermo2mom(wm,zdth)
 
-   call itf_adx_combine_levels(F_su,uth,ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-   call itf_adx_combine_levels(F_sv,vth,vt,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-   call itf_adx_combine_levels(F_sw,wm,zdth,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+   call itf_adx_combine_level2(F_su,uth,ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+   call itf_adx_combine_level2(F_sv,vth,vt,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+   call itf_adx_combine_level2(F_sw,wm,zdth,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
    deallocate(ut,vt,wm)
 
@@ -123,7 +123,7 @@ End Interface
 
 end subroutine itf_adx_get_winds2
 
-   subroutine itf_adx_combine_levels(F_su,F_um,F_ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+   subroutine itf_adx_combine_level2(F_su,F_um,F_ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
       implicit none
 #include <arch_specific.hf>
 #include "glb_ld.cdk"
@@ -185,7 +185,7 @@ end subroutine itf_adx_get_winds2
       enddo
       !---------------------------------------------------------------------
       return
-   end subroutine itf_adx_combine_levels
+   end subroutine itf_adx_combine_level2
    subroutine itf_adx_destag_winds(F_u,F_v,F_uth,F_vth)
       implicit none
 #include <arch_specific.hf>

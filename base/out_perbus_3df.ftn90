@@ -1,6 +1,0 @@
-      subroutine out_perbus_3df
-      print*, 'out_perbus_3df no longer supported - ABORT -'
-      return
-      end
-
-

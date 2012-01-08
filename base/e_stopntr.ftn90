@@ -16,7 +16,7 @@
 #include "model_macros_f.h"
 !**s/r e_stopntr
 !
-      subroutine e_stopntr (my_color)
+      subroutine e_stopntr2(my_color)
       implicit none
 !
       integer my_color

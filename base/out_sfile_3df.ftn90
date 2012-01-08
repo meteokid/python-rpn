@@ -18,7 +18,7 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_sfile_3df ( datev, unf, gid, gif, gjd, gjf, nvar, ntr, filen )
+      subroutine out_sfile_3df2( datev, unf, gid, gif, gjd, gjf, nvar, ntr, filen )
       implicit none
 #include <arch_specific.hf>
 !

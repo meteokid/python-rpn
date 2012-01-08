@@ -107,7 +107,7 @@
       endif
 !
       if (Out_blocme.eq.0)  &
-           call out_sfile_3df ( datev, unf, gid, gif, gjd, gjf,&
+           call out_sfile_3df2( datev, unf, gid, gif, gjd, gjf,&
                                          nvar, Grdc_ntr, filen )
 !
 ! tt1,st1,topo are usually written from e_intthm

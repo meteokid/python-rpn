@@ -40,7 +40,7 @@
       entry gemclimntr
 !     ================
 !
-      call e_initntr (my_color)
+      call e_initntr2(my_color)
       if (my_color.lt.0) goto 999
 !
       call e_gemnml
@@ -53,7 +53,7 @@
 !
       call e_nml2bin 
 !
- 999  call e_stopntr (my_color)
+ 999  call e_stopntr2(my_color)
 !
 ! ---------------------------------------------------------------------
 !

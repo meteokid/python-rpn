@@ -16,7 +16,7 @@
 !**s/r e_initntr
 !
 #include "model_macros_f.h"
-      subroutine e_initntr (my_color)
+      subroutine e_initntr2(my_color)
       implicit none
 !
       integer my_color

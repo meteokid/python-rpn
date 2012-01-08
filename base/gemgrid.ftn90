@@ -35,8 +35,8 @@
 !
 !     Computes positional parameters (>>=lat ^^=lon)
 !
-      integer  fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml
-      external fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml
+      integer  fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
+      external fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
 
 #include "grd.cdk"
 #include "hgc.cdk"
@@ -90,14 +90,14 @@
 !     Read grid namelist using grid_nml
 
       fn  = 'gem_settings.nml'
-      if (grid_nml(fn,lam).lt.0) then
+      if (grid_nml2(fn,lam).lt.0) then
            print *,'STOP: problem with NAMELIST GRID'
            print *,"Use checknml to verify: \'checknml grid\'"
            stop
       endif
 
       print*, 'Requested grid configuration'
-      err = grid_nml('print',lam)
+      err = grid_nml2('print',lam)
 
 !     Setup before calling e_grid
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
