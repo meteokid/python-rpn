@@ -100,7 +100,7 @@
       pnerror = 0
       multxmosaic=0
 
-      if (Ptopo_myproc.eq.0) then
+!!$      if (Ptopo_myproc.eq.0) then
           fn = trim(Path_outcfg_S)
           inquire (FILE=fn,EXIST=iela)
           if (iela) then
@@ -110,7 +110,7 @@
           endif
 
           if  (pnerror .gt. 0) then
-               write(Lun_out,5000) pnerror
+               if (Lun_out.gt.0) write(Lun_out,5000) pnerror
           endif
 
           if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
@@ -130,7 +130,7 @@
               unit_S = 'TIMESTEPS'
               Out3_ndigits = 6
           endif
-          write(Lun_out,3000)unit_S
+          if (Lun_out.gt.0) write(Lun_out,3000)unit_S
 ! Transfer filter and xnbit info to requested variables
           do k=1, Outd_sets
              do j=1,Outd_var_max(k)
@@ -177,100 +177,100 @@
              enddo
              enddo
           enddo
-      endif
+!!$      endif
           
-      call RPN_COMM_bcast (Timestep,MAXSTEP*MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Timestep_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Timestep_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Timestep_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Timestep_init_L,MAXSET,"MPI_LOGICAL",0,"grid",ierr)
-
-      call RPN_COMM_bcast (Grid_ig1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ig2,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ig3,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ig4,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ip2,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_xmin,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_xmax,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ymin,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ymax,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_reduc,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_ixg,4,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_niout,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_njout,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_x0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_x1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_y0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_y1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_id,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Grid_stride,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-
-      call RPN_COMM_bcastc(Grid_gxtyp_s,4,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Grid_etikext_s,12*MAXGRID1,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level,MAXLEV*MAXSET,"MPI_REAL",0,"grid",ierr)
-      call RPN_COMM_bcast (Level_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_version,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_momentum,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_thermo,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_kind_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Level_mode_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Level_typ_S,MAXSET,"MPI_CHARACTER" ,0,"grid",ierr)
-
-      call RPN_COMM_bcast (Outd_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Outd_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outd_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Outp_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Outp_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outp_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-
-      call RPN_COMM_bcast (Outc_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Outc_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcastc(Outc_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Outc_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-
-      call RPN_COMM_bcast (Out3_cliph_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubzt_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubuv_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubds_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubqs_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubdd_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubqq_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_cubww_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_flipit_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_debug_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_satues_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-
-      call RPN_COMM_bcastc(Out3_unit_S,4,"MPI_CHARACTER" ,0,"grid",ierr)
-
-      call RPN_COMM_bcast (Out3_nbitg,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_linbot,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_nundr,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_zund,MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_ndigits,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_closestep,1,"MPI_INTEGER" ,0,"grid",ierr)
-      call RPN_COMM_bcast (Out3_ip3,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Timestep,MAXSTEP*MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Timestep_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Timestep_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Timestep_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Timestep_init_L,MAXSET,"MPI_LOGICAL",0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcast (Grid_ig1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ig2,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ig3,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ig4,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ip2,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_xmin,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_xmax,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ymin,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ymax,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_reduc,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_ixg,4,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_niout,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_njout,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_x0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_x1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_y0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_y1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_id,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Grid_stride,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcastc(Grid_gxtyp_s,4,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Grid_etikext_s,12*MAXGRID1,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level,MAXLEV*MAXSET,"MPI_REAL",0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_version,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_momentum,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_thermo,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_kind_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Level_mode_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Level_typ_S,MAXSET,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcast (Outd_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Outd_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outd_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Outp_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Outp_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outp_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcast (Outc_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Outc_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcastc(Outc_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Outc_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcast (Out3_cliph_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubzt_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubuv_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubds_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubqs_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubdd_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubqq_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_cubww_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_flipit_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_debug_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_satues_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcastc(Out3_unit_S,4,"MPI_CHARACTER" ,0,"grid",ierr)
+!!$
+!!$      call RPN_COMM_bcast (Out3_nbitg,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_linbot,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_nundr,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_zund,MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_ndigits,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_closestep,1,"MPI_INTEGER" ,0,"grid",ierr)
+!!$      call RPN_COMM_bcast (Out3_ip3,1,"MPI_INTEGER" ,0,"grid",ierr)
 
 ! Print table of dynamic variables demanded for output
 

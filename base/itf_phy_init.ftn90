@@ -58,6 +58,7 @@
 #include "itf_phy_config.cdk"
 #include "itf_phy.cdk"
 #include "ver.cdk"
+#include "path.cdk"
 !
       integer, parameter :: COMPATIBILITY_LVL = 1
 !
@@ -115,7 +116,7 @@
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 !
-      err(10) = phy_nml ('model_settings',set_dcst,Schm_phyms_L,Lun_out)
+      err(10) = phy_nml (trim(Path_nml_S),set_dcst,Schm_phyms_L,Lun_out)
 !
       err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7),err(8),err(9),err(10))
 

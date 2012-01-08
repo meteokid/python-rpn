@@ -67,7 +67,7 @@
       Lctl_debug_L   = .false.
 !
       unf = 0
-      if (fnom (unf, 'model_settings', 'SEQ+OLD' , nrec) .ne. 0) goto 9110
+      if (fnom (unf, trim(Path_nml_S), 'SEQ+OLD' , nrec) .ne. 0) goto 9110
 
       rewind(unf)
       read (unf, nml=theo_cfgs, end = 9000, err=9000)

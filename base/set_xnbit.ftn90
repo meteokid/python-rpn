@@ -74,12 +74,12 @@
 !
 !----------------------------------------------------------------
 !
-      write(Lun_out,*)
-      write(Lun_out,*) F_argv_S
+      if (Lun_out.gt.0) write(Lun_out,*)
+      if (Lun_out.gt.0) write(Lun_out,*) F_argv_S
       set_xnbit=0
       Out3_xnbits_max = Out3_xnbits_max + 1
       if (Out3_xnbits_max.gt.MAXELEM) then
-          write(Lun_out,*)'set_xnbit WARNING: Too many definitions XNBITS'
+          if (Lun_out.gt.0) write(Lun_out,*)'set_xnbit WARNING: Too many definitions XNBITS'
           Out3_xnbits_max = Out3_xnbits_max - 1
           set_xnbit = 1
           return
@@ -89,7 +89,7 @@
           stuff_S=F_argv_S(1)
           read(stuff_S(2:4),*) varmax
       else
-          write(Lun_out,*) &
+          if (Lun_out.gt.0) write(Lun_out,*) &
                           'set_xnbit WARNING: syntax incorrect'
         set_xnbit=1
           Out3_xnbits_max = Out3_xnbits_max - 1
@@ -104,7 +104,7 @@
       enddo
 
       if (bits.le.0) then
-          write(Lun_out,*) 'set_xnbit WARNING: Number of bits not chosen'
+          if (Lun_out.gt.0) write(Lun_out,*) 'set_xnbit WARNING: Number of bits not chosen'
          set_xnbit=1
           Out3_xnbits_max = Out3_xnbits_max - 1
          return
@@ -114,7 +114,7 @@
 !
       j = Out3_xnbits_max + varmax
       if (j.gt.MAXELEM) then
-          write(Lun_out,*) 'set_xnbit WARNING: too many variables for xnbits'
+          if (Lun_out.gt.0) write(Lun_out,*) 'set_xnbit WARNING: too many variables for xnbits'
           set_xnbit=1
           return
       endif

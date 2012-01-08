@@ -91,8 +91,9 @@ end interface
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
+      integer,parameter :: MAX_COMMBLOC_SWAP = 10
 
-      integer,external :: phy_dataload4
+      integer,external :: phy_dataload5
       integer*8,external :: time_base
       external :: itf_phy_geom,itf_phy_xhfold_3d2
 
@@ -131,7 +132,8 @@ end interface
       call tmg_stop0(94)
 !
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new communicator every call - we hit a limit after about 500 on AIX
-!!$      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
+      if (F_stepno < MAX_COMMBLOC_SWAP) &
+           call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
       if (l_phy_gid < 0) call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
       if (dateo < 0) call datp2f(dateo,Mod_runstrt_S)
@@ -140,9 +142,9 @@ end interface
            geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
       !TODO: remove this next conditional when FCREST is removed
       if (P_pbl_schsl_s /= 'FCREST') then
-         err = phy_dataload4(itf_phy_geom,itf_phy_xhfold_3d2,dateo, &
+         err = phy_dataload5(itf_phy_geom,itf_phy_xhfold_3d2,dateo, &
                              nint(cstv_dt_8),F_stepno,l_phy_gid, &
-                             Path_phy_S,geofilename_S)
+                             Path_phyincfg_S,Path_phy_S,geofilename_S)
       else 
          err = 0
          if (F_stepno == 0) then
@@ -152,8 +154,9 @@ end interface
       endif
       call handle_error(err,'itf_phy_step','Problem getting input data') 
 
-!!$      call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
-     
+      if (F_stepno < MAX_COMMBLOC_SWAP) &
+           call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
+      
 !
 !C       4.	compute physics tendencies
 !		--------------------------

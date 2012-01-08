@@ -93,6 +93,7 @@
       integer p1a,p1b,istat,nada
 !*
 !
+      call rpn_f_callback_setverbose(Lun_out)
       Grid_sets = 0
       Level_sets = 0
       Timestep_sets = 0
