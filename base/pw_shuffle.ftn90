@@ -51,7 +51,9 @@
       pw_vv_dyn = 0.
       pw_tt_dyn = 0.
 !     ________________________________________________________________
-!     Assign time-plus values to time-minus
+!     Assign time-plus values to time-minus.  Do not gmm_shuffle() because
+!     time-plus value also need to be valid at the start of the step for
+!     computing the dynamics-component tendencies.
       do fld=1,size(pw_list,dim=1)
          nullify(plus,minus)
          istat = gmm_get(pw_list(fld,1),minus,mymeta)
