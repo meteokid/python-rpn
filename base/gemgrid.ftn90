@@ -38,6 +38,7 @@
       integer  fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
       external fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
 
+#include <arch_specific.hf>
 #include "grd.cdk"
 #include "hgc.cdk"
 
