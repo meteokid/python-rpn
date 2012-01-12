@@ -366,6 +366,9 @@
 !
       mtn_cfg = 1
 !
+      step_dt=cstv_dt_8
+      Step_rsti=9999999
+      Step_bkup=9999999
       return   
 !
  9000 write (Lun_out, 9100)
