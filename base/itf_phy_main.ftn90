@@ -59,6 +59,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      call timing_start ( 10, 'PHY      ' )
       call tmg_start0( 9, 'PHY      ' )
 
       if (F_stepno.eq.1) then
@@ -100,6 +101,7 @@
       if (Xst_nstat.gt.0) call sergout( F_stepno.eq.1 )
 !
       call tmg_stop0(9)
+      call timing_stop ( 10, 'PHY      ' )
 !
 !     ---------------------------------------------------------------
 !

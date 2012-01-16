@@ -86,6 +86,7 @@
       if (.not. F_continue_L) err = clib_remove('restart')
 !
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )
+      call timing_terminate
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
 !

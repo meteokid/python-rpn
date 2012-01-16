@@ -99,6 +99,8 @@
       real*8, parameter :: sec_in_day = 86400.0d0
 !----------------------------------------------------------------------
 !
+      call timing_start ( 21, 'OUT_PHY  ')
+
       if (Obus_top.le.0) then
          if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
          goto 887
@@ -367,6 +369,8 @@
       call tmg_stop0(67)
 
  887  continue
+
+      call timing_stop ( 21 )
 !
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
  8001 format(/,' OUT_PHY- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)

@@ -93,7 +93,7 @@
          nis = Out_ifg - Out_idg + 1
          njs = Out_jfg - Out_jdg + 1
          allocate (tr1(nis,njs,nk_o))
-         patr2 = loc(tr1(1,1,1))
+         patr2 = loc(tr1)
          if (stride_L) then
             call hpalloc (patr2,Out_nisl*Out_njsl*nk_o,ier,1)
             if (Out_nblocx*Out_nblocy.gt.1) then

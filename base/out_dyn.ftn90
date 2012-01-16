@@ -106,6 +106,8 @@
 !     check if output is required and initialize control tables
 !     ---------------------------------------------------------------
 !
+      call timing_start ( 20, 'OUT_DYN')
+
       if (Rstri_rstn_L.and..not.doneonce) goto 998
 !
 !
@@ -277,6 +279,8 @@
       endif
 !
  998  doneonce = .true.
+
+      call timing_stop ( 20 )
 !
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
  8001 format(/,' OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)

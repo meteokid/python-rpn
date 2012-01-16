@@ -72,12 +72,12 @@
                           Grd_gauss_L, lam, ierx, iery, .true. )
 
       if (lam) then
-         x_8(    0   ) = Grd_x0 - Grd_dx
-         x_8(Grd_ni+1) = Grd_xl + Grd_dx
-         y_8(    0   ) = Grd_y0 - Grd_dy
-         y_8(Grd_nj+1) = Grd_yl + Grd_dy
+         x_8(    0   ) = x_8(1)      - Grd_dx
+         x_8(Grd_ni+1) = x_8(Grd_ni) + Grd_dx
+         y_8(    0   ) = y_8(1)      - Grd_dy
+         y_8(Grd_nj+1) = y_8(Grd_nj) + Grd_dy
       else
-         x_8(    0   ) =  x_8(Grd_ni) - 360.
+         x_8(    0   ) =   x_8(Grd_ni) - 360.
          y_8(    0   ) = - 90.
          y_8(Grd_nj+1) =   90.
       endif

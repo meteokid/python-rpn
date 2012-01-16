@@ -49,8 +49,9 @@
 !
 !-------------------------------------------------------------------
 !
-      call tmg_init0  ( Ptopo_myproc, 'GEMDM' )
-      call tmg_start0 ( 1, 'GEMDM' ) 
+      call timing_init ( Ptopo_myproc )
+      call tmg_init0   ( Ptopo_myproc, 'GEMDM' )
+      call tmg_start0  ( 1, 'GEMDM' ) 
 !
 ! Initializes I/O Fortran units
 !
