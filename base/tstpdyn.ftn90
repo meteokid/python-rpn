@@ -50,6 +50,7 @@
 !----------------------------------------------------------------
 !
 !implicits
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -59,12 +60,14 @@
 #include "nl.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
+#include "p_geof.cdk" 
 #include "vtopo.cdk"
        include "v4dg.inc"
 !
 !      common/xiln/iln
 !
-      integer iln, dim, dimt, dimb, err
+      type(gmm_metadata) :: meta2d
+      integer iln, dim, dimt, dimb, err, gmmstat
       real dth
 !
 !*
@@ -122,15 +125,11 @@
       call tmg_start0(5, 'PRE      ')
 !
       if ( Orh_crank_L .and. Orh_icn.eq.1 ) then
-!         ------------------------------------------------------------
-!        If necessary vary topogragphy according to Vtopo_start and
-!        Vtopo_ndt
-!         ------------------------------------------------------------
          if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
-            call var_topo( )
-            if ( Schm_phyms_L ) call phycom ('varmtn' ,1 ,1,'set')
-         else
-            if ( Schm_phyms_L ) call phycom ('varmtn' ,0 ,1,'set')
+            gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
+            call var_topo2 (fis0, real(Lctl_step), LDIST_DIM)
+            call rpn_comm_xch_halo (fis0,LDIST_DIM,l_ni,l_nj,1,&
+                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          endif
       endif
 !

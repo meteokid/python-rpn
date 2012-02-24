@@ -152,15 +152,7 @@
          endif
          return
       endif
-!
-      if (Vtopo_start .ge. 0.and.(.not.Schm_theoc_L)) then
-         if (lun_out.gt.0) then
-            write (Lun_out, 6200)
-            write (Lun_out, 8000)
-         endif
-         return
-      endif
-!
+
       call datp2f ( Out3_date, Step_runstrt_S )
       err = newdate ( Out3_date, time1, time2, -3 )
       if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S,time1,time2
@@ -274,7 +266,6 @@
                 '  AUTO-BAROTROPIC RUN:          '/&
                 '  Schm_topo_L set to .false.,Out3_nundr=0 '/&
                 '  =============================='//)
- 6200 format (/' VARIABLE TOPOGRAPHY NOT AVAILABLE IN THIS VERSION'/)
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)

@@ -17,66 +17,51 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine adjust_topo (F_topo, F_dtopo, F_target, F_lowres, F_blend_L, &
-                                                           DIST_DIM, ni, nj )
+      subroutine adjust_topo2(F_topo, F_target, F_lowres, F_blend_L,&
+                                                   DIST_DIM, ni, nj )
       use nest_blending, only: nest_blend
       implicit none
 #include <arch_specific.hf>
 !
       logical F_blend_L
       integer DIST_DIM, ni, nj
-      real    F_topo(DIST_SHAPE), F_dtopo (DIST_SHAPE)
-      real    F_target(ni,nj), F_lowres(ni,nj)
+      real    F_topo(DIST_SHAPE), F_target(ni,nj), F_lowres(ni,nj)
 !
 !authors
 !      M.Desgagne   -  Spring 2010
 !
 !revision
-! v4_13 - Plante A.         - initial version 
+! v4_13 - Plante A.   - initial version 
+! v4_40 - Plante A.   - clean up
 
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
+#include "p_geof.cdk"
 #include "vtopo.cdk"
-!
-      integer i,j
 
+      type(gmm_metadata) :: mymeta
+      integer istat
+!
 !     ________________________________________________________________
 !
       if (.not. Schm_topo_L) F_target = 0.
 !
-      if (G_lam .and. F_blend_L) then
-         do j=1,pil_s
-         do i=1,l_ni
-            F_target(i,j) = F_lowres(i,j)
-         end do
-         end do
-         do j=l_nj-pil_n+1,l_nj
-         do i=1,l_ni
-            F_target(i,j) = F_lowres(i,j)
-         end do
-         end do
-         do i=1,pil_w
-         do j=pil_s+1,l_nj-pil_n
-            F_target(i,j) = F_lowres(i,j)
-         end do
-         end do
-         do i=l_ni-pil_e+1,l_ni
-         do j=pil_s+1,l_nj-pil_n
-            F_target(i,j) = F_lowres(i,j)
-         end do
-         end do
-!
-         call nest_blend (F_target, F_lowres, 1,l_ni,1,l_nj,'M',level=G_nk+1)
-!
-      endif
+      if (G_lam .and. F_blend_L) &
+        call nest_blend (F_target,F_lowres,1,l_ni,1,l_nj,'M',level=G_nk+1)
 !
       F_topo (1:l_ni,1:l_nj) = F_target(1:l_ni,1:l_nj)
 
       if (Vtopo_L) then
-         F_target (1:l_ni,1:l_nj) = F_lowres (1:l_ni,1:l_nj)
-         F_dtopo  (1:l_ni,1:l_nj) = F_topo  (1:l_ni,1:l_nj) - F_target(1:l_ni,1:l_nj)
-         F_topo   (1:l_ni,1:l_nj) = F_target(1:l_ni,1:l_nj)
+         istat = gmm_get(gmmk_topo_low_s , topo_low , mymeta)
+         istat = gmm_get(gmmk_topo_high_s, topo_high, mymeta)
+         topo_low (1:l_ni,1:l_nj) = F_lowres (1:l_ni,1:l_nj)
+         topo_high(1:l_ni,1:l_nj) = F_target (1:l_ni,1:l_nj)
+         F_topo   (1:l_ni,1:l_nj) = F_lowres (1:l_ni,1:l_nj)
       endif
+
+      call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
+                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !     ________________________________________________________________
 !
       return

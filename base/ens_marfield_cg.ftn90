@@ -23,8 +23,8 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer                               :: E_nk
       real,    dimension(l_ni,l_nj,E_nk)    :: fgem
+      integer                               :: E_nk
 !     
 !author   
 !     Lubos Spacek - February 2005
@@ -80,7 +80,7 @@
 !
 ! pabusper pointer vers le bus permanent busper (busper2)
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
-      real, pointer, dimension(:) :: busper => null()
+      type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
 !
 !      variables et champs auxiliaires reels
@@ -108,10 +108,6 @@
       nlon= Ens_mc3d_nlon; nlat= Ens_mc3d_nlat  ; ntrunc = Ens_mc3d_trnh
       nmdim=Ens_mc3d_dim ; mzt = Ens_mc3d_mzt   ; ar     = 6.37122e6
                                               mtrunc = Ens_mc3d_trnl
-!
-! Pas d'accord!!!
-      print*, 'ABORT in ens_marfield_cfg'
-      stop
 
       dt=real(Cstv_dt_8)
       pi=real(Dcst_pi_8)
@@ -131,9 +127,11 @@
 !     Assure that busper is to 1 at the begining in inichamp1
 !
       if ( Lctl_step .eq. 1 .or. Rstri_sdon.eq.1) then
-         bus = 'PER'
-         call getindx2 ('MRKV', bus, mrkv, lght, soit)
-         call getindx2 ('MRK2', bus, mrk2, lght, soit)
+         if(Ens_ptp_conf)then
+            bus = 'PER'
+            call getindx2 ('MRKV', bus, mrkv, lght, soit)
+            call getindx2 ('MRK2', bus, mrk2, lght, soit)
+         endif
          if (Lun_out.gt.0) then
             write( Lun_out,1000)
             write( Lun_out,1009)xmn,xmx,xme,std,tau,ntrunc,nlon,nlat,2*mzt+1
@@ -320,6 +318,7 @@
 !    Check the limits, stretch, and add mean if stretching asked
 !    for the physics perturbation
 !
+      gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
       if(aa/=0.and.aa/=1)then
          where (abs(fgau) > 1.)
             fgau=sign(1.,fgau)
@@ -341,12 +340,11 @@
 
          do j=1,p_nj
             jj=j+p_offj
-!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do k=1,E_nk
                do i=1,p_ni
                   ii=i+p_offi
                   indx = (k-1)*p_ni+i-1
-                  busper(mrkv+indx)=fgem_str(ii,jj,k)
+                  busper_3d(mrkv+indx,j)=fgem_str(ii,jj,k)
                enddo
             enddo
          enddo
@@ -355,12 +353,11 @@
 !
          do j=1,p_nj
             jj=j+p_offj
-!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do k=1,E_nk
                do i=1,p_ni
                   ii=i+p_offi
                   indx = (k-1)*p_ni+i-1
-                  busper(mrkv+indx)=1.0
+                  busper_3d(mrkv+indx,j)=1.0
                enddo
             enddo
          enddo
@@ -424,21 +421,19 @@
 !
          do j=1,p_nj
             jj=j+p_offj
-!            busper => Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
                do i=1,p_ni
                   ii=i+p_offi
                   indx = (mz-1)*p_ni+i-1
-                  busper(mrk2+indx)=fgem2_str(ii,jj)
+                  busper_3d(mrk2+indx,j)=fgem2_str(ii,jj)
                enddo
           enddo
         else
           do j=1,p_nj
             jj=j+p_offj
-!            busper = Phy_busper3D((j-1)*p_bper_siz+1:j*p_bper_siz)
             do i=1,p_ni
               ii=i+p_offi
               indx = (mz-1)*p_ni+i-1
-              busper(mrk2+indx)=1.0
+              busper_3d(mrk2+indx,j)=1.0
             enddo
           enddo
         endif

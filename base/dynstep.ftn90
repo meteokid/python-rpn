@@ -85,11 +85,11 @@
          itraj = max( 5, Schm_itraj )
       endif
 !
-! Perform time interpolation of Lateral BCs for LAM configurations
-!
       if (Grd_yinyang_L) call nest_bcs_yy()
 !
       call frstgss ()
+!
+! Perform time interpolation of Lateral BCs for LAM configurations
 !
       call nest_bcs ()
 !

@@ -59,18 +59,18 @@
       if (Lun_out.gt.0) write(Lun_out,1000)
 !
       gmmk_fis0_s = 'FIS0'
-      gmmk_fis1_s = 'FIS1'
-      gmmk_dfis_s = 'DFIS'
+      gmmk_topo_low_s  = 'TOPOLOW'
+      gmmk_topo_high_s = 'TOPOHIGH'
 !
-      nullify(fis0, fis1,dfis)
+      nullify (fis0, topo_low, topo_high)
       istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(fis0)'
 
       if ( Vtopo_start .ge. 0 ) then
-         istat = gmm_create(gmmk_fis1_s,fis1,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(fis1)'
-         istat = gmm_create(gmmk_dfis_s,dfis,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(dfis)'
+         istat = gmm_create(gmmk_topo_low_s,topo_low,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(topo_low)'
+         istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         if (GMM_IS_ERROR(istat)) print *,'set_geof ERROR at gmm_create(topo_high)'
       endif
 !
  1000 format( &

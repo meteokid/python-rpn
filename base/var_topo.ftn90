@@ -16,12 +16,12 @@
 !**s/r var_topo - varies topography incrementally from analysis
 !                 topography to target topography
 !
-#include "model_macros_f.h"
-!
-      subroutine var_topo()
-!
+      subroutine var_topo2 (F_topo, F_step, Minx,Maxx,Miny,Maxy)
       implicit none
 #include <arch_specific.hf>
+!
+      integer Minx,Maxx,Miny,Maxy
+      real F_topo (Minx:Maxx,Miny:Maxy), F_step
 !
 !author
 !     Sylvie Gravel
@@ -29,58 +29,47 @@
 !revision
 ! v3_11 - Gravel S.         - initial version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_40 - Desgagne M.       - Major interface changes
 !
-!object
-! (see above)
-!
-!arguments
-!        None
-!
-!implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "p_geof.cdk" 
-#include "lctl.cdk"
 #include "dcst.cdk"
 #include "vtopo.cdk"
-#include "vt1.cdk"
 !
-!modules
-!
-!*
-      real*8, parameter :: two = 2.0d0
-
       type(gmm_metadata) :: meta2d
       integer i,j, gmmstat
-      real*8 lt, pio2, f, atime
+      real*8, parameter :: one = 1.0d0
+      real*8, parameter :: two = 2.0d0
+      real*8  lt, pio2, f, a, b
 !     __________________________________________________________________
-!
-      gmmstat = gmm_get(gmmk_fis0_s,fis0,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(fis0)'
-      gmmstat = gmm_get(gmmk_fis1_s,fis1,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(fis1)'
-      gmmstat = gmm_get(gmmk_dfis_s,dfis,meta2d)
-      if (GMM_IS_ERROR(gmmstat)) print *,'var_topo ERROR at gmm_get(dfis)'
 !
       if(Vtopo_ndt.eq.0)then
          call handle_error(-1,'var_topo','var_topo : Vtopo_ndt must be > 0')
       endif
-      lt = Vtopo_ndt
+
+      gmmstat = gmm_get(gmmk_topo_low_s , topo_low , meta2d)
+      gmmstat = gmm_get(gmmk_topo_high_s, topo_high, meta2d)
+
+      lt   = Vtopo_ndt
       pio2 = Dcst_pi_8 / two
 
-      f = min(Lctl_step-Vtopo_start+1,Vtopo_ndt)
-      atime  = (cos(pio2 * (f-1.)/ lt))**2 &
-             - (cos(pio2 *  f    / lt))**2
+      f = max(0.,min(F_step-Vtopo_start,real(Vtopo_ndt)))
+      b = f / lt
+      b = (cos(pio2 * (one-b) ))**2
+      a = one - b
 
       do j= 1, l_nj 
       do i= 1, l_ni
-         fis1 (i,j)  = fis0(i,j)
-         fis0 (i,j)  = fis0(i,j)  + atime * dfis(i,j)
+         F_topo (i,j) = a*topo_low(i,j) + b*topo_high(i,j)
       end do
       end do
-!
-!
 !     __________________________________________________________________
 !
+      return
+      end
+
+      subroutine var_topo()
+      call handle_error(-1,'var_topo','var_topo2 is replacing var_topo')
       return
       end

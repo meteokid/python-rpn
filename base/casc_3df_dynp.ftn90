@@ -13,14 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r casc_3df_dynp2 - Reads 3DF pilot files where
+!**s/r casc_3df_dynp  - Reads 3DF pilot files where
 !                       3DF01 files were written after advection and
 !                       3DF02 files were written after physics by
 !                       the previous driving model.
 !
 #include "model_macros_f.h"
 !
-      subroutine casc_3df_dynp2 ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, F_dtopo,  &
+      subroutine casc_3df_dynp3 ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
                                   Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,unf,F_datev)
       use nest_blending, only: nest_blend
       implicit none
@@ -32,7 +32,7 @@
            F_w (Mminx:Mmaxx,Mminy:Mmaxy,  *), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  *), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
            F_q (Mminx:Mmaxx,Mminy:Mmaxy,0:*),                                 &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy) , F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
 !
 !author
 !     M. Desgagne  April 2006 (MC2 casc_3df_dynp)
@@ -62,13 +62,13 @@
 #include "itf_phy_buses.cdk"
 #include "lctl.cdk"
 #include "itf_phy_config.cdk"
-#include "vtopo.cdk"
 #include "path.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "step.cdk"
 #include "nest.cdk"
+#include "vtopo.cdk"
 #include "p_geof.cdk"
 #include "filename.cdk"
 !
@@ -89,7 +89,6 @@
       character*8  dynophy,vn,hint
       character(len=GMM_MAXNAMELENGTH), dimension (:), pointer :: trname_a
       character*4, dimension (:), pointer :: phynm
-      character*15 datev
       character*256 fn
       logical done,dyn_done,phy_done,same_topo_L,temp_same_L,flag
       logical dyn_init,phy_init,initial_data
@@ -118,8 +117,8 @@
       real, dimension (:,:,:,:), pointer :: tr1
 
 !
-      real ssq_temp(LDIST_SHAPE)
-      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1),lnpis_8
+      real ssq_temp(LDIST_SHAPE),topo_nest(LDIST_SHAPE),step_current
+      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1), lnpis_8, diffd
       data nfphy,nkphy /0,0/
 !
 !-----------------------------------------------------------------------
@@ -168,8 +167,7 @@
          ypvv(j) = 0.5d0 * (ypxext(ofj+j+1)+ypxext(ofj+j))
       end do
 !
-      datev = F_datev
-      initial_data = trim(datev).eq.trim(Step_runstrt_S)
+      initial_data = trim(F_datev).eq.trim(Step_runstrt_S)
 !
 ! Read all needed files and construct the source domain for
 ! the horizontal interpolation
@@ -205,7 +203,7 @@
             dyn_done = .false.
             phy_done = .false.
 !
-            fn = trim(Path_ind_S)//'/3df'//'_'//datev//'_'//ifd_fnext(n)
+            fn = trim(Path_ind_S)//'/3df'//'_'//trim(F_datev)//'_'//ifd_fnext(n)
             open (unf,file=trim(fn),access='SEQUENTIAL', &
                       form='UNFORMATTED',status='OLD',iostat=errop)
 !
@@ -334,22 +332,30 @@
          call hinterpo ( meqr,l_ni,l_nj, meqn,nia,nja,    1,idx,idy, &
                          cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
 
-         call get_topo    (topo_temp,l_ni,l_nj)
+         call get_topo (topo_temp,l_ni,l_nj)
 
-         call adjust_topo ( F_topo, F_dtopo, topo_temp, meqr    , &
+         call adjust_topo2( F_topo, topo_temp, meqr             , &
                            ((presstype.ne.0).and.Lam_blendoro_L), &
                             l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
 
          deallocate (idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,meqr)
       endif
+
+      if (Vtopo_L) then
+         call difdatsd (diffd,Step_runstrt_S,F_datev)
+         step_current = diffd*86400.d0/dble(step_dt)
+         call var_topo2 (topo_nest, step_current, LDIST_DIM)
+      else
+         topo_nest = F_topo
+      endif
 !
 ! topo is inflated!
-      call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
-                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( topo_nest, LDIST_DIM,l_ni,l_nj,1, &
+                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !
       do j=1,l_nj+1-(north*1)
       do i=1,l_ni+1-(east*1)
-         topo_temp1(i,j) = F_topo(i,j)
+         topo_temp1(i,j) = topo_nest(i,j)
       enddo
       enddo
 !

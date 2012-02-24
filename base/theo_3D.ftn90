@@ -17,14 +17,14 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine theo_3D ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                           F_q, F_dtopo, pref_tr, suff_tr)
+      subroutine theo_3D_2( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
+                           pref_tr, suff_tr )
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) pref_tr,suff_tr
       real F_u(*), F_v(*), F_w (*), F_t(*), F_zd(*), &
-           F_s(*), F_topo(*), F_q(*), F_dtopo(*)
+           F_s(*), F_topo(*), F_q(*)
 !
 #include "theo.cdk"
 #include "glb_ld.cdk"
@@ -42,8 +42,8 @@
            .or. Theo_case_S.eq.'MTN_PINTY2' &
            .or. Theo_case_S.eq.'MTN_PINTYNL' &
            .or. Theo_case_S.eq.'NOFLOW' ) then
-         call mtn_case ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                         F_q, F_dtopo, pref_tr, suff_tr, &
+         call mtn_case2( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
+                         F_q, pref_tr, suff_tr, &
                          l_minx, l_maxx, l_miny, l_maxy )
       else
          call abort

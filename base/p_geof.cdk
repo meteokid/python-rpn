@@ -15,22 +15,21 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
-! fis0               | Phi srf at tine t0 with halos on it             |
-! fis1               | Phi srf at time t1 with halos on it             |
-! dfis               | difference between analysis and model fis       |
+! fis0               | Phi srf at current timestep                     |
+! topo_low           | Low resolution analysis orography before growth |
+! topo_high          | High resolution target orography after growth   |
 !-----------------------------------------------------------------------
-!
 !
 #endif
 !
-      real, pointer, dimension (:,:) :: fis0 => null() ! effective dimensions are (LDIST_SHAPE)
-      real, pointer, dimension (:,:) :: fis1 => null() ! effective dimensions are (LDIST_SHAPE)
-      real, pointer, dimension (:,:) :: dfis => null() ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:) :: fis0      => null() ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:) :: topo_low  => null() ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:) :: topo_high => null() ! effective dimensions are (LDIST_SHAPE)
  
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
       integer, parameter :: GMM_MAXNAMELENGTH    =  32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_fis1_s, gmmk_dfis_s
-      common /geof_n_gmm/ gmmk_fis0_s, gmmk_fis1_s, gmmk_dfis_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s
+      common /geof_n_gmm/ gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s

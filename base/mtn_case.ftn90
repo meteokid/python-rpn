@@ -18,8 +18,8 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine mtn_case (F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                           F_q, F_dtopo, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
+      subroutine mtn_case2(F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
+                           F_q, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
       implicit none
 #include <arch_specific.hf>
 !
@@ -28,8 +28,7 @@
       real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_w    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)  , F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*),  &
-           F_dtopo(Mminx:Mmaxx,Mminy:Mmaxy)
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)  , F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
 !
 !author 
 !     Sylvie Gravel  - rpn - Aug 2003
@@ -64,6 +63,7 @@
 #include "ver.cdk"
 #include "schm.cdk"
 #include "that.cdk"
+#include "p_geof.cdk"
 !
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
@@ -102,12 +102,11 @@
 !     If time-dependant topography
 !---------------------------------------------------------------------
       if(Vtopo_L) then
-         do j=1,l_nj
-         do i=1,l_ni
-            F_dtopo(i,j) = Dcst_grav_8*F_topo(i,j)
-            F_topo(i,j)  = 0.
-         enddo
-         enddo
+         istat = gmm_get(gmmk_topo_low_s , topo_low , mymeta)
+         istat = gmm_get(gmmk_topo_high_s, topo_high, mymeta)
+         topo_low (1:l_ni,1:l_nj) = 0.
+         topo_high(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj) * Dcst_grav_8
+         F_topo   (1:l_ni,1:l_nj) = 0.
        endif
 
       if (      Theo_case_S .eq. 'MTN_SCHAR'  &

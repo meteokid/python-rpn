@@ -61,12 +61,11 @@
 #include "path.cdk"
 #include "step.cdk"
 #include "glb_pil.cdk"
-#include "vtopo.cdk"
 !
-      integer,external ::  bcs_ftype,casc_bcs,casc_bcsh,newdate
+      integer,external ::  bcs_ftype,casc_bcs,casc_bcsh
 !
       type(gmm_metadata) :: mymeta
-      integer err,errbcs1,errbcs2,n,id,k,unf,dat,istat,istatg
+      integer err,errbcs1,errbcs2,n,id,k,unf,istat,istatg
       real, pointer, dimension(:,:,:) :: tr1
 !*
 !     ---------------------------------------------------------------
@@ -101,26 +100,10 @@
       else
          nullify (nest_q_fin)
       endif
-      if (.not.Ana_w_L)then
-         ! TO DO: Replace gmmk_fis0_s by gmmk_fis1_s when var_topo will be fixed.
-         istat = gmm_get(gmmk_fis0_s,fis1,mymeta)
-         if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(fis1)'
-         istatg=min(istat,istatg)
-      else
-         nullify (fis1)
-      endif
 
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(fis0)'
       istatg=min(istat,istatg)
-
-      if ( Vtopo_L) then
-         istat = gmm_get(gmmk_dfis_s,dfis,mymeta)
-         if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(dfis)'
-         istatg=min(istat,istatg)
-      else
-         nullify (dfis)
-      endif
 !
       call handle_error(istatg,'nest_indata',' ERROR with gmm_get see above')
 !
@@ -130,22 +113,21 @@
       err   = bcs_ftype (ifd_ftype, F_datev_S, unf)
 
       if (ifd_ftype.eq.'3DF') then
-!
-         call casc_3df_dynp2 (nest_u_fin,nest_v_fin,nest_w_fin,nest_t_fin,nest_zd_fin, &
-                              nest_s_fin,nest_q_fin,fis0,dfis, l_minx,l_maxx,         &
-                              l_miny,l_maxy,G_ni,G_nj,unf,F_datev_S)
-         if (.not.Ana_w_L) call diag_fip (fiptx,nest_s_fin,nest_t_fin,nest_q_fin,fis1,LDIST_DIM,l_nk)
+
+         call casc_3df_dynp3 (nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin, &
+                              nest_zd_fin, nest_s_fin, nest_q_fin, fis0,       &
+                              l_minx,l_maxx,l_miny,l_maxy,G_ni,G_nj,unf, F_datev_S)
+
       else
-!
-         call datp2f   ( dat, F_datev_S )
-         err = newdate ( dat, bmf_time1,bmf_time2,-3 )
-         call readdyn2 (nest_u_fin,nest_v_fin,nest_w_fin,nest_t_fin,nest_zd_fin, &
-                        nest_s_fin,fiptx,fis0,nest_q_fin,dfis, &
-                        'NEST/',':F',l_minx,l_maxx,l_miny,l_maxy)
+
+         call readdyn3 (nest_u_fin,  nest_v_fin, nest_w_fin, nest_t_fin, &
+                        nest_zd_fin, nest_s_fin, nest_q_fin, fis0,       &
+                        'NEST/',':F',l_minx,l_maxx,l_miny,l_maxy,F_datev_S)
       endif
 !
-      call diag_zd_w (nest_zd_fin,nest_w_fin,nest_u_fin,nest_v_fin,nest_t_fin, &
-           fiptx,nest_s_fin,LDIST_DIM,l_nk,.not.Ana_zd_L,.not.Ana_w_L,1)
+      call predat4 ( nest_u_fin, nest_v_fin, nest_t_fin, nest_zd_fin, &
+                     nest_w_fin, nest_s_fin, nest_q_fin, fis0, fiptx, &
+                                      l_minx, l_maxx, l_miny, l_maxy)
 !
 !     ---------------------------------------------------------------
 !

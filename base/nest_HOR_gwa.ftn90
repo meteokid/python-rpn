@@ -42,23 +42,12 @@
 #include "nest.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
-#include "vtopo.cdk"
 !
       integer n
 !
 !----------------------------------------------------------------------
 !
       if ( (Lam_blend_Hx <= 0).and.(Lam_blend_Hy <= 0) ) return
-!
-! Update the nesting values in the blending zone before blending
-! if the orography is growing
-! TODO
-! new interface to vtopo_bnd_update=    call vtopo_bnd_update () !nothing
-
-!      if (Vtopo_L.and.(.not.Schm_theoc_L)) then
-!         call vtopo_bnd_update(nest_t,nest_s,
-!     $        LDIST_DIM,G_nk,Lam_blend_Hx,Lam_blend_Hy)
-!      endif
 !
 ! Blending main dynamics variables + tracers
 !
@@ -71,7 +60,7 @@
 
       if (.not. Schm_hydro_L)  &
        call nest_blend (gmmk_qt1_s, gmmk_nest_q_s, 'M')
-!
+
       do n=1,Tr3d_ntr
          call nest_blend ('TR/'//trim(Tr3d_name_S(n))//':P', &
                         'NEST/'//trim(Tr3d_name_S(n))//':C','M')

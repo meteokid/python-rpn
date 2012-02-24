@@ -64,7 +64,7 @@
       print *,'------------------------------------------'
       print *,'------------------------------------------'
       print *
-      print *,'GEMGRID - version v_4.4.0  January 10, 2012 '
+      print *,'GEMGRID - version v_4.4.0  February 24, 2012 '
       print *,'        - to write out ^^ >> for Phi grids in tape1'
       print *,'        - to write out ^^ >> endpoints in gfilemap.txt '
       print *
@@ -104,12 +104,14 @@
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
       LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
 
-      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni), ypos(Grd_nj))
+      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
       call set_gemHgrid ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
                           Grd_gauss_L, lam, ierx, iery, .true. )
+
+      if (.not.LAM) Grd_ni = Grd_ni + 1
 
       xpos(1:Grd_ni) = x_8(1:Grd_ni)
       ypos(1:Grd_nj) = y_8(1:Grd_nj)
@@ -159,6 +161,8 @@
 
       print *,'tictacs are in file: ',trim(outfile)
       print *,trim(gfile),' is created'
+
+      deallocate (x_8, y_8, xpos, ypos)
 
       if (Grd_typ_S(2:2).ne.'Y') exit
 
