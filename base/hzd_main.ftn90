@@ -87,7 +87,7 @@
 !***************************
 !
       if ( .not. no_hzd ) then
-         call tmg_start0(10,'HZD      ')
+         call timing_start ( 60, 'HORDIFF' )
 
          call hzd_ctrl ( ut1, 'U', G_nk  )
          call hzd_ctrl ( vt1, 'V', G_nk  )
@@ -101,7 +101,7 @@
             if (istat.eq.0) call hzd_ctrl ( tr, 'S_TR', G_nk+1 )
          end do
 
-         call tmg_stop0(10)
+         call timing_stop ( 60 )
       endif
 !     
 !***********************
@@ -109,20 +109,22 @@
 !***********************
 !
       if ( .not. no_vspng ) then
-         call tmg_start0 (11,'VSPNG    ')
+         call timing_start ( 65, 'V_SPNG' )
          if (G_lam) then
             call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
          else
             call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
          endif
-         call tmg_stop0  (11)
+         call timing_stop ( 65 )
       endif
 !     
 !*************************
 !  3. Equatorial sponge  *
 !*************************
 !
-      call equatorial_sponge(ut1,vt1,LDIST_DIM,G_nk)
+      call timing_start ( 68, 'EQUA_SPNG')
+      call equatorial_sponge (ut1,vt1,LDIST_DIM,G_nk)
+      call timing_stop ( 68 )
 !
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 !

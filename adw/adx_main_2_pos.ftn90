@@ -157,7 +157,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
       endif
 
-      call tmg_start0(54, 'ADPOS_CZH' )
 !$omp parallel
 !$omp do
       do k = max(2,k0),F_nk-1
@@ -173,7 +172,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
       enddo
 !$omp enddo
 !$omp end parallel
-      call tmg_stop0 (54)
    enddo DO_ITER
 
    if (Adw_gccsa_L) then
@@ -184,7 +182,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
                      F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
    endif
 
-   call tmg_start0(56, 'ADPOS_FPZ' )
 !$omp parallel
 !$omp do
    do k = k0,F_nk
@@ -209,7 +206,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
 !$omp enddo
 !$omp end parallel
 
-   call tmg_stop0 (56)
 
    if (driver) then
    call glbstat2 ( F_xth, 'XTH', '', 1,F_ni,1,F_nj,1,F_nk, &

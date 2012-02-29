@@ -96,13 +96,13 @@
 !              -------------------------------------
       call set_sor( )
 !
-!C             Run GEM or 4D-Var
-!              -----------------
+!C             Run GEM
+!              -------
       v4d_flag = v4d_options()
 !
-      if ( .not. v4d_flag) call gem_ctrl ( ) 
+      call gem_ctrl ( ) 
 !
-      call set_term()
+      call set_term ( )
 !
       call stop_world_view (Lctl_step.lt.Step_total)
 !

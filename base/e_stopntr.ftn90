@@ -38,6 +38,8 @@
 !
 !--------------------------------------------------------------------
 !
+      call gemtim4 ( 6, 'END OF GEMNTR', .true. )
+
       if ((Ptopo_myproc.eq.0).and.(my_color.ge.0)) then
          err= exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
          call write_status_file2 ('_status=ED' )

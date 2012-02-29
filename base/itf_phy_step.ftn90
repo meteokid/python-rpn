@@ -127,9 +127,7 @@ end interface
       err = gmm_get('BUSENT_3d',BUSENT_3d,meta)
       if (F_stepno.eq.0) BUSENT_3d = 0.
 
-      call tmg_start0(94,'PHYSPRE')
       call itf_phy_prep ()
-      call tmg_stop0(94)
 !
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new communicator every call - we hit a limit after about 500 on AIX
       if (F_stepno < MAX_COMMBLOC_SWAP) &
@@ -205,15 +203,12 @@ end interface
       pslic= 0
       dt   = Cstv_dt_8
 
-      call tmg_start0(91,'PHYSICS')
 !$omp parallel
       call itf_phy_slb ( BUSENT_3d ,BUSDYN_3d, BUSPER_3d ,BUSVOL_3d , &
                          p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz   , &
                          dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
 !$omp end parallel
-      call tmg_stop0(91)
 
-      call tmg_start0(92,'PHYSEXT')
 !$omp parallel do
       do j = 1, p_nj
 ! TODO
@@ -222,7 +217,6 @@ end interface
          if (P_timing_L) call itf_phy_unfold (Lphy_timing, phy_timing(1,j), j, 1, 1, 1, l_ni, 1, l_nj)
       end do
 !$omp end parallel do
-      call tmg_stop0(92)
 !
       ticks_fin = time_base()
 !
@@ -256,9 +250,7 @@ end interface
 !C      and insure consistency with other dynamic variables
 !       ----------------------------------------------------------
 !
-      call tmg_start0(93,'PHYSAPP')
       call itf_phy_apply ( F_stepno.gt.0 )
-      call tmg_stop0(93)
 !
  1000 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
               ' (S/R itf_phy_step)'/57('='))

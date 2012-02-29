@@ -53,7 +53,6 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
 
    call msg(MSG_DEBUG,'adx_trajex_gccsa')
    vnij = (in-i0+1)*(jn-j0+1)
-   call tmg_start0(55, 'ADPOS_EX1' )
    Two_ov_Three_8 = 2.0D0/3.0D0
 
 !$omp parallel private(term_8,n,xto_8,yto_8, &
@@ -94,7 +93,6 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
 !$omp enddo
 !$omp end parallel
 
-   call tmg_stop0 (55)
    call msg(MSG_DEBUG,'adx_trajex_gccsa [end]')
    !---------------------------------------------------------------------
    return

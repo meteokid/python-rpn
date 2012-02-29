@@ -54,7 +54,6 @@ subroutine adx_trajsp2 ( F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
 
    call msg(MSG_DEBUG,'adx_trajsp')
    vnij = (in-i0+1)*(jn-j0+1)
-   call tmg_start0(53, 'ADPOS_CGC' )
 
 !$omp parallel do private(ysin,ycos,yrec,xasin,xatan,yatan, &
 !$omp zatan,yasin,xsin,xcos, n,pdx,pdy,pdz,pdsa,pdca, &
@@ -136,7 +135,6 @@ subroutine adx_trajsp2 ( F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
    enddo
 !$omp end parallel do
 
-   call tmg_stop0   (53)
    call msg(MSG_DEBUG,'adx_trajsp [end]')
    !---------------------------------------------------------------------
    return

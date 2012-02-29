@@ -92,6 +92,7 @@
       endif
 !
       call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
+      call timing_stop ( 2 )
 !
       Rstri_sdon = 0
 !

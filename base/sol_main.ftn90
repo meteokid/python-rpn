@@ -83,7 +83,7 @@
                                                     LDIST_DIM,l_nk, 1)
 !
 ! Computing elliptic problem solution (sol)
-      call tmg_start0 (40, 'SOL_0    ' )
+
 ! Initialize work vectors because LAM does not use full range
 ! lazy code ===> should be fixed
       wk1(:)=0.0
@@ -91,8 +91,6 @@
       call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,iln, &
                       ldnh_minx,ldnh_maxx, &
                       ldnh_miny,ldnh_maxy,ldnh_ni,ldnh_nj,l_nk)
-
-      call tmg_stop0(40)
 !
 ! Transfering sol (real*8 without halo) into fiptx (real*4 with halo)
       call sol_trsf (sol,fiptx(l_minx,l_miny,1), &

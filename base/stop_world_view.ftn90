@@ -76,9 +76,6 @@
          call close_status_file2 ()
       endif
 !
-      call tmg_stop0      ( 1 )
-      call tmg_terminate0 ( Ptopo_myproc, 'GEMDM' ) 
-!
       call itf_cpl_terminate (Lun_out.gt.0)
 !
       call out_launchpost (.true.)
@@ -86,7 +83,10 @@
       if (.not. F_continue_L) err = clib_remove('restart')
 !
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )
-      call timing_terminate
+
+      call timing_stop ( 1 )
+      call timing_terminate2( Ptopo_myproc, 'GEMDM' ) 
+
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
 !

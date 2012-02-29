@@ -99,7 +99,7 @@
          err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 
-      call gemtim3 (6)
+      call gemtim4 ( 6, 'END OF e_initntr', .false. )
 !
 !--------------------------------------------------------------------
 !

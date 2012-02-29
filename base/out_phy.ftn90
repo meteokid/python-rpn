@@ -99,7 +99,7 @@
       real*8, parameter :: sec_in_day = 86400.0d0
 !----------------------------------------------------------------------
 !
-      call timing_start ( 21, 'OUT_PHY  ')
+      call timing_start ( 90, 'OUT_PHY  ')
 
       if (Obus_top.le.0) then
          if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
@@ -110,7 +110,6 @@
 !
 !     setup of ip3 and modifs to label
 !
-      call tmg_start0(67, 'OUT_PHY  ')
       ip3=0
       etikadd_S = ' '
       ext_S=""
@@ -366,11 +365,10 @@
   120 continue
       deallocate(rff,irff)
 
-      call tmg_stop0(67)
 
  887  continue
 
-      call timing_stop ( 21 )
+      call timing_stop ( 90 )
 !
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
  8001 format(/,' OUT_PHY- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)

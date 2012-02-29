@@ -97,11 +97,9 @@
 !
 !     Filtering
 !     ---------
-      call tmg_start0 ( 12, 'HZD1D    ' )
       if (Hzd_t0_0_L) call hzd_hoffld (ut0,   LDIST_DIM, G_nk, 1)
       if (Hzd_t0_0_L) call hzd_hoffld (vt0,   LDIST_DIM, G_nk, 2)
       if (Hzd_t0_0_L) call hzd_hoffld (zdt0, LDIST_DIM, G_nk+1, 3)
-      call tmg_stop0 (12)
 !
 !C       1.    Perform the averaging
 !              ---------------------

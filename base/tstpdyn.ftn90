@@ -83,7 +83,6 @@
 !C    bac:	Backsubtitution
 !     ---------------------------------------------------------------
 !
-      call timing_start ( 4, 'TSTPDYN  ')
       dth =  Cstv_dt_8/2.
 !
       if (Lun_debug_L) write(Lun_out,1000)
@@ -92,37 +91,37 @@
 !
 !     Store TRAJ predictive variables
 !     -------------------------------
-      call v4d_rwtraj (2) 
+!      call v4d_rwtraj (2) 
 !
       if ( Orh_icn .eq. 1 ) then
 !     
 !     Compute RHS
 !     
-         call tmg_start0 ( 3, 'RHS      ' )
+         call timing_start ( 20, 'RHS      ' )
          call rhs ()
-         call tmg_stop0 (3)
+         call timing_stop (20)
 
       endif
 !
 !     Store TRAJ Positions TH
 !     -----------------------
-      call v4d_rwtraj (3) 
+!      call v4d_rwtraj (3) 
 !
 !     Compute the average of the t1 and t0 winds (uth,vth,zdth)
 !     
-      call tmg_start0(4, 'ADW      ')
+      call timing_start(21, 'ADW      ')
       call wndth ()
 !
 !     Store TRAJ Winds TH
 !     -------------------
-      call v4d_rwtraj (4) 
+!      call v4d_rwtraj (4) 
 !     
 !     SL Advection
 !     
       call itf_adx_main (F_fnitraj)
-      call tmg_stop0(4)
+      call timing_stop(21)
 !
-      call tmg_start0(5, 'PRE      ')
+      call timing_start(22, 'PRE      ')
 !
       if ( Orh_crank_L .and. Orh_icn.eq.1 ) then
          if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
@@ -134,7 +133,7 @@
       endif
 !
       call pre ()
-      call tmg_stop0 (5)
+      call timing_stop (22)
 !
       if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
 !
@@ -154,28 +153,28 @@
 !
 !        Store TRAJ modified by BAC at previous Orh_icn
 !        ----------------------------------------------
-         if ( Orh_icn.ne.1.and.iln.eq.1 ) call v4d_rwtraj (7) 
+!         if ( Orh_icn.ne.1.and.iln.eq.1 ) call v4d_rwtraj (7) 
 !
-         call tmg_start0 ( 6, 'NLI      ' )
+         call timing_start ( 23, 'NLI      ' )
          call nli ()
-         call tmg_stop0 (6)
+         call timing_stop (23)
 !         
-         call tmg_start0 ( 7, 'SOL      ' )
+         call timing_start ( 24, 'SOL      ' )
          call sol_main (iln)
-         call tmg_stop0 (7)
+         call timing_stop (24)
 !
 !        Store TRAJ requested to build BAC_TR 
 !        ------------------------------------
-         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) V4dg_iln = iln
-         call v4d_rwtraj (8) 
+!         if ( V4dg_conf.ne.0 .and. V4dg_oktr_L ) V4dg_iln = iln
+!         call v4d_rwtraj (8) 
 !
-         call tmg_start0 ( 8, 'BAC      ' )
+         call timing_start ( 25, 'BAC      ' )
          call bac ( iln, Schm_itnlh )
-         call tmg_stop0 (8)
+         call timing_stop (25)
 !
 !        Store TRAJ requested during BAC_AD 
 !        ----------------------------------
-         call v4d_rwtraj (9) 
+!         call v4d_rwtraj (9) 
 !
  100  continue
 !
@@ -186,8 +185,6 @@
       call hpdeallc(nl_f_, err,1)
       call hpdeallc(nl_b_, err,1)
       if (.not.Schm_hydro_L) call hpdeallc(nl_w_, err,1)
-!
-      call timing_stop ( 4 )
 !
 !     ---------------------------------------------------------------
 !

@@ -185,20 +185,16 @@
 ! Interpolate
 !***********************************************************************
 
-      call tmg_start0(63, 'ADW_TRICU' )
       call ADW_TRICUB_LAG3D(Adw_wrkc, F_posx, &
            Adw_capx1, Adw_capy1, Adw_capz1, &
            nijk, F_mono_L,i0,in,j0,jn,F_nk,F_lev_S)
-      call tmg_stop0(63)
 
       if (.not.G_lam) then
 
          if (Adw_fro_a > 0) then
-      call tmg_start0(63, 'ADW_TRICU' )
             call ADW_TRICUB_LAG3D(Adw_wrka, F_posx, &
                  Adw_capx2, Adw_capy2, Adw_capz2,  &
                  Adw_fro_a, F_mono_L,1,Adw_fro_a,1,1,1,F_lev_S)
-      call tmg_stop0(63)
          endif
 
 !$omp single

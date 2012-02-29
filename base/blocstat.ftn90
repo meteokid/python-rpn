@@ -54,7 +54,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call timing_start ( 30, 'BLOCSTAT ' )
+      call timing_start ( 99, 'BLOCSTAT ' )
 
       if (.not.done) call set_statliste
 !
@@ -115,7 +115,7 @@
       endif
 !
       done = .true.
-      call timing_stop ( 30 )
+      call timing_stop ( 99 )
 !
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')

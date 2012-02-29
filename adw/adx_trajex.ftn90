@@ -48,7 +48,6 @@ subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
 
    call msg(MSG_DEBUG,'adx_trajex')
    vnij = (in-i0+1)*(jn-j0+1)
-   call tmg_start0(55, 'ADPOS_EX1' )
 
 !$omp parallel private(xasin,yasin,xatan,yatan,zatan,n,prx,pry,prz,prdot2)
 !$omp do
@@ -92,7 +91,6 @@ subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
 !$omp enddo
 !$omp end parallel
 
-   call tmg_stop0 (55)
    call msg(MSG_DEBUG,'adx_trajex [end]')
    !---------------------------------------------------------------------
    return

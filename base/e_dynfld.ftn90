@@ -93,7 +93,7 @@
            'if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob}     ;' //&
            'soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob}            ; fi')
 
-         call gemtim3 (6)
+         call gemtim4 ( 6, 'END OF e_dynfld', .false. )
 !
          if (date1 .gt. Pil_jobend_S) return
 

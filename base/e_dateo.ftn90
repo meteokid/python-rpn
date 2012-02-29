@@ -81,7 +81,7 @@
 !
       endif
 !
-      call gemtim3 (6)
+      call gemtim4 ( 6, 'END OF e_date0', .false. )
 !
  1001 format (/' Incorrect VALIDITY time in ',a,/' VALIDITY=',a,' INTENDED=',&
                  a,' -----ABORT-----'/)

@@ -48,7 +48,6 @@ subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
 
    call msg(MSG_DEBUG,'adx_trajsp_gccsa')
    vnij = (in-i0+1)*(jn-j0+1)
-   call tmg_start0(53, 'ADPOS_CGC' )
    third_8=1.0D0/3.0D0
    one_ov6_8=1.0D0/6.0D0
 
@@ -69,7 +68,6 @@ subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
    enddo
 !$omp end parallel do
 
-   call tmg_stop0   (53)
    call msg(MSG_DEBUG,'adx_trajsp_gccsa [end]')
    !---------------------------------------------------------------------
    return

@@ -144,7 +144,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    call handle_error(istat,'adx_main','gmm_get')
 
-   call tmg_start0 (50, 'ADW_TRAJE')
+   call timing_start (30, 'ADW_TRAJE')
 
    !V4d_cfl_kind_S = 'm'
 
@@ -187,7 +187,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 !$omp enddo
 !$omp end parallel
 
-   call tmg_stop0 (50)
+   call timing_stop (30)
 
    if (adw_stats_L) then
       call adx_main_2_pos_stats( &
@@ -221,14 +221,14 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 !  -----------------------------------
 !   if ( v4dstore_L ) call v4d_rwtraj (11)
 
-   call tmg_start0 (60, 'ADW_INLAG')
+   call timing_start (31, 'ADW_INLAG')
 
    call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
                              IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
    call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
                         .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0+Adx_notop,adx_lnkt )
 
-   call tmg_stop0 (60)
+   call timing_stop (31)
 
 !  Store TRAJ RHS interpolated
 !  ---------------------------

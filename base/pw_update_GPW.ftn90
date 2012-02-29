@@ -44,7 +44,6 @@
       real wk1(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
-      call tmg_start0 ( 21, 'PW_GPW   ' )
 
       istat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,mymeta)
       istat = gmm_get(gmmk_pw_gz_plus_s ,pw_gz_plus ,mymeta)
@@ -98,8 +97,6 @@
 !
       call v4d_rwtraj(20)
       call v4d_rwtraj(21)
-!
-      call tmg_stop0  (21)
 !     ________________________________________________________________
 !
       return
