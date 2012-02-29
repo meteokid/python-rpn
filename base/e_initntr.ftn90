@@ -35,14 +35,15 @@
 #include "version.cdk"
 #include <clib_interface.cdk>
 !
-      integer  rpn_comm_init_multigrid, fnom, exdb
-      integer  rpn_comm_init_multi_level
-      external rpn_comm_init_multigrid, fnom, exdb, init_ndoms
-      external rpn_comm_init_multi_level
+      integer,external :: rpn_comm_init_multigrid, fnom, exdb
+      integer,external :: rpn_comm_init_multi_level
+      external init_ndoms
 !
-      character*50 DSTP,dummy
+      character(len=50) :: DSTP,dummy,name_S,arch_S,compil_S
+      logical :: is_official_L
       character(len=256) :: my_dir
-      integer err,f1,npex,mydomain,npey,ngrids,pe_tot,pe_me
+      integer :: err,f1,npex,mydomain,npey,ngrids,pe_tot,pe_me
+      !TODO: replace MPI by rpn_comm to avoid mpi version mismatch
       include 'mpif.h'
 !
 !--------------------------------------------------------------------
@@ -89,9 +90,12 @@
          err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
       endif
 
-      err = clib_getenv ('ATM_MODEL_DSTP',DSTP)
-      err = clib_getenv ('GEMBNDL_VERSION',Version_number_S)
-      Version_title_S = 'GEMNTR --- Release of: '//trim(DSTP)
+      call atm_model_getversion(name_S,Version_number_S,DSTP,arch_S,compil_S,is_official_L)
+      if (is_official_L) then
+         Version_title_S = trim(name_S)//' --- Release of: '//trim(DSTP)
+      else
+         Version_title_S = trim(name_S)//' --- User Build: '//trim(DSTP)
+      endif
 
       if (Ptopo_couleur.eq.0) then
          call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
