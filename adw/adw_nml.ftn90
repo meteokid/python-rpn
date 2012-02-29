@@ -51,6 +51,11 @@ function adw_nml(F_nmlFileName_S) result(F_stat)
          call msg(MSG_ERROR,'adw_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
       endif
    endif
+   !TODO: fix adw_stat_L then remove the following warning/override
+   if (adw_stats_L) then
+      adw_stats_L = .false.
+      call msg(MSG_WARNING,'adw_nml - adw_stats_L not supported -- ignored')
+   endif
    !---------------------------------------------------------------------
    return
 end function adw_nml
