@@ -1,7 +1,8 @@
 #!/bin/ksh
 modinstaller_file_version=5
 
-export FORCE_RMN_VERSION=rmn_013_rc1
+export FORCE_RMN_VERSION_RC=_rc1
+export FORCE_RMN_VERSION=rmn_013${FORCE_RMN_VERSION_RC}
 
 ssm_model_name=GEMDM
 ssm_bndl_basename=GEM
