@@ -29,50 +29,50 @@ if [[ -r ${GitDepots}/$packageName ]] ; then
     git clone ${GitDepots}/$packageName src
     cd src
     git checkout -b ${packageNameVersion}-ssm $packageNameVersion
-	 rm -rf .git/
-	 #git init-db
-	 #git add .
-	 #git commit -a -m "Initial commit for $packageNameVersion"
-	 #git tag $packageNameVersion
+    rm -rf .git/
+    #git init-db
+    #git add .
+    #git commit -a -m "Initial commit for $packageNameVersion"
+    #git tag $packageNameVersion
 
     for item in * ; do
 #        if [[ $item != include && $item != stubs ]] ; then
-	ishidden=$(echo $item | cut -c1-2 | grep __)
+        ishidden=$(echo $item | cut -c1-2 | grep __)
         if [[ $item != include && x$ishidden == x ]] ; then
-				RCSNAME=RCS_`echo $item | tr 'a-z' 'A-Z'`		
-				cd $item
+            RCSNAME=RCS_`echo $item | tr 'a-z' 'A-Z'`      
+            cd $item
             rm -rf ../../$RCSNAME
-				rm -rf RCS
-				mkdir ../../$RCSNAME
-				ln -s ../../$RCSNAME/. RCS
-				for item2 in *.[chf]* ; do
-					 ci $item2 << EOF
+            rm -rf RCS
+            mkdir ../../$RCSNAME
+            ln -s ../../$RCSNAME/. RCS
+            for item2 in *.[chf]* ; do
+                ci $item2 << EOF
 .
 EOF
-					 co $item2
-				done
-				rm -f RCS
-				cd ..
-		  fi
+                co $item2
+            done
+            rm -f RCS
+            cd ..
+        fi
     done
-	 
-	mkdir ../include
-	mv ./include/* ./include/.[a-zA-Z0-9_]* ../include
-	rm -rf ./include
-	ln -s ../include/. ./include
+    
+   mkdir ../include
+   mv ./include/* ./include/.[a-zA-Z0-9_]* ../include
+   rm -rf ./include
+   ln -s ../include/. ./include
 
     cd ..
     #rm -rf include
     #ln -s src/include include
     mkdir RCS
-	 mylist="$(ls include/.[rc]* 2>/dev/null)"
-	 for item in $mylist ; do
-		  cp $item RCS/${item#*/} 2>/dev/null
-	 done
-	 mylist="$(ls include/recettes* include/cible* 2>/dev/null)"
-	 for item in $mylist ; do
-		  cp $item RCS/.${item#*/}
-	 done
+    mylist="$(ls include/.[rc]* 2>/dev/null)"
+    for item in $mylist ; do
+        cp $item RCS/${item#*/} 2>/dev/null
+    done
+    mylist="$(ls include/recettes* include/cible* 2>/dev/null)"
+    for item in $mylist ; do
+        cp $item RCS/.${item#*/}
+    done
 fi
 
 
@@ -92,19 +92,19 @@ my_ssm_compiler_list=${ssm_compiler_list}
 
 pwdbefore=$(pwd)
 for item in $ssm_compiler_list ; do
-	 cd ${packageHome}/include
-	 MYARCH=${item%:*}
-	 MYCOMP="$(echo ${item#*:} | sed 's/-old//' | tr 'A-Z' 'a-z')"
-	 mkdir -p ${packageHome}/include/$MYARCH/$MYCOMP 2>/dev/null
-	 chmod u+w ${packageHome}/include/$MYARCH/$MYCOMP
-	 cat > ${packageHome}/include/$MYARCH/$MYCOMP/${packageName}_version.inc << EOF
+    cd ${packageHome}/include
+    MYARCH=${item%:*}
+    MYCOMP="$(echo ${item#*:} | sed 's/-old//' | tr 'A-Z' 'a-z')"
+    mkdir -p ${packageHome}/include/$MYARCH/$MYCOMP 2>/dev/null
+    chmod u+w ${packageHome}/include/$MYARCH/$MYCOMP
+    cat > ${packageHome}/include/$MYARCH/$MYCOMP/${packageName}_version.inc << EOF
        character(len=50),parameter :: GEMDYN_NAME_S = 'GEMDYN'
        character(len=50),parameter :: GEMDYN_VERSION_S = '${packageVersion}'
        character(len=50),parameter :: GEMDYN_DSTP_S = '${production_date}'
        character(len=50),parameter :: GEMDYN_EC_ARCH_S = '$MYARCH/$MYCOMP'
 EOF
-	ln -s ./$MYARCH/$MYCOMP/. ./${MYARCH}_$MYCOMP  2>/dev/null
-	cd $MYARCH/$MYCOMP
-	ln -s ./${packageName}_version.inc ./${packageName}_version.cdk
+   ln -s ./$MYARCH/$MYCOMP/. ./${MYARCH}_$MYCOMP  2>/dev/null
+   cd $MYARCH/$MYCOMP
+   ln -s ./${packageName}_version.inc ./${packageName}_version.cdk
 done
 cd $pwdbefore
