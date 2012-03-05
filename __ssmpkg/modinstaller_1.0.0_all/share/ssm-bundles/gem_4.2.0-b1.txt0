@@ -1,0 +1,32 @@
+modinstaller_file_version=4
+ssm_bndl_subdir=GEM
+ssm_bndl_name=4.2.0-b1
+ssm_bndl_isexperimental=1
+
+ssm_bndl_externals='Linux_x86-64:pgi9xx-old  Linux_x86-64:mpich2 Linux:pgi9xx-old  Linux:mpich2 AIX:Xlf12 rmnlib-dev GEM/vgriddescriptors/1.0.8'
+ssm_bndl_externals_post=''
+
+ssm_pkg_rename_list="\
+"
+
+ssm_bndl_install_list="\
+ gem-data_4.0.1_all@gem-data_4.0.1\
+ \
+ Linux_x86-64:modulopt_2.1c_linux26-x86-64@modulopt_2.1c\
+ Linux:modulopt_2.1c_linux26-i686@modulopt_2.1c\
+   AIX:modulopt_2.1c_aix53-ppc-64@modulopt_2.1c\
+ \
+ gem-scripts_V999V_all|gem-scripts_4.2.0-b1_all@x/gem-scripts_4.2.0-b1\
+ \
+ gemdyn_V999V_all|gemdyn_4.2.0-b1_all@x/gemdyn_4.2.0-b1\
+ \
+ rpnphy_V999V_all|rpnphy_5.1.3_all@x/rpnphy_5.2.0-b1\
+ \
+ Linux_x86-64:rpnphy_V999V_ARCH|rpnphy_5.1.3_linux26-x86-64@x/rpnphy_5.2.0-b1\
+ Linux:rpnphy_V999V_ARCH|rpnphy_5.1.3_linux26-i686@x/rpnphy_5.2.0-b1\
+ AIX:rpnphy_V999V_ARCH|rpnphy_5.1.3_aix53-ppc-64@x/rpnphy_5.2.0-b1\
+ \
+ Linux_x86-64:gemdyn_V999V_ARCH|gemdyn_4.2.0-b1_linux26-x86-64@x/gemdyn_4.2.0-b1\
+ Linux:gemdyn_V999V_ARCH|gemdyn_4.2.0-b1_linux26-i686@x/gemdyn_4.2.0-b1\
+ AIX:gemdyn_V999V_ARCH|gemdyn_4.2.0-b1_aix53-ppc-64@x/gemdyn_4.2.0-b1\
+"

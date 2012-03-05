@@ -1,0 +1,27 @@
+#!/bin/ksh
+domainHome=$1
+packageHome=$2
+profileDirPath=${packageHome}/etc/profile.d
+packageFullName=${packageHome##*/}
+packageNameVersion=${packageFullName%_*}
+packageName=${packageNameVersion%%_*}
+packageVersion=${packageNameVersion##*_}
+profilePath=${profileDirPath}/${packageFullName}.sh
+cd ${packageHome}
+
+#==== Check dependencies
+if [[ x$EC_ARCH = x ]] ; then
+    echo "ERROR: EC_ARCH not defined, must provide an ARCH/Compiler"
+    exit 1
+fi
+
+#version=$(r.${packageName}_all-config --version 2>/dev/null)
+#if [[ x"$version" != x"${packageVersion}" ]] then
+#    echo "ERROR: cannot install, missing package all or wrong version: $version"
+#    exit 1
+#fi
+
+#TODO: check for armnlib...
+#TODO: check for dependencies (listed in pre-install-dep.txt and $EC_ARCH/pre-install-dep.txt)
+
+exit 0

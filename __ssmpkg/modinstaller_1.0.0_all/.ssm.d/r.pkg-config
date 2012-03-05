@@ -1,0 +1,106 @@
+#!/bin/ksh
+
+myname=${0##*/}         #r.pkg-config
+mypath=`true_path ${0}` #/path/to/domain/pkg/bin/r.pkg-config
+mypath=${mypath%/*}     #/path/to/domain/pkg/bin
+mypath=${mypath%/*}     #/path/to/domain/pkg
+mypkg=${mypath##*/} #pkg
+
+mypkg_name=${mypkg%%_*}
+mypkg_ver=`echo $mypkg | cut -d_ -f2`
+mypkg_platform=`echo $mypkg | cut -d_ -f3`
+
+DESC='Provide configuration details for an SsmPackage'
+USAGE="USAGE: ${0##*/} [--version] [--bin] [--lib] [--inc] [--src] [--rcspath] [--arch]  [--all]"
+
+one=0
+dover=0
+dobin=0
+dolib=0
+doinc=0
+dosrc=0
+dorcspath=0
+doarch=0
+doall=0
+posargs=""
+posargsnum=0
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        (-h|--help) echo $DESC ; echo -e $USAGE; exit 0;;
+		  (--version) dover=1; one=1;;
+		  (--bin) dobin=1; one=1;;
+		  (--lib) dolib=1; one=1;;
+		  (--inc) doinc=1; one=1;;
+		  (--src) dosrc=1; one=1;;
+		  (--rcspath) dorcspath=1; one=1;;
+		  (--arch) doarch=1; one=1;;
+		  (--all) doall=1; one=1;;
+        -*) echo "ERROR: Unrecognized option $1"
+            echo -e $USAGE
+            echo "---- ABORT ----"
+            exit 1;;
+        *) posargs="$posargs $1" ; ((posargsnum=posargsnum+1));;
+    esac
+    shift
+done
+
+[[ $one -eq 0 ]] && doall=1
+
+rcspath=""
+for item in `/bin/ls -d ${mypath}/RCS* 2>/dev/null` ; do
+	 rcspath="${item}:${rcspath}"
+done
+rcspath=${rcspath%:*}
+
+mylist=""
+if [[ -d ${mypath}/lib ]] ; then
+	 cd ${mypath}/lib
+	 mylist=`find . -type d -d 2>/dev/null`
+fi
+if [[ -d ${mypath}/include ]] ; then
+	 cd ${mypath}/include
+	 mylist2=`find . -type d -d 2>/dev/null`
+fi
+
+archlist=""
+for item in $mylist $mylist2; do
+	 myarch=${item#./}
+	 if [[ x"$myarch" != x"." && -d $myarch \
+		  && x$(echo $archlist | grep $myarch 2>/dev/null) == x ]] ; then
+		  archlist="${myarch}:${archlist}"
+	 fi
+done
+archlist=${archlist%:*}
+
+binpath=""
+libpath=""
+incpath=""
+srcpath=""
+[[ -d ${mypath}/bin ]] && binpath=${mypath}/bin
+[[ -d ${mypath}/lib ]] && libpath=${mypath}/lib
+[[ -d ${mypath}/include ]] && incpath=${mypath}/include
+[[ -d ${mypath}/src ]] && srcpath=${mypath}/src
+
+
+if [[ $doall -eq 1 ]] ; then
+	 cat <<EOF
+version=$mypkg_ver
+binpath=$binpath
+libpath=$libpath
+incpath=$incpath
+srcpath=$srcpath
+rcspath=${rcspath}
+archlist=${archlist}
+EOF
+else
+	 [[ $dover -eq 1 ]] && echo $mypkg_ver
+	 [[ $dobin -eq 1 ]] && echo $binpath
+	 [[ $dolib -eq 1 ]] && echo $libpath
+	 [[ $doinc -eq 1 ]] && echo $incpath
+	 [[ $dosrc -eq 1 ]] && echo $srcpath
+	 [[ $dorcspath -eq 1 ]] && echo ${rcspath}
+	 [[ $doarch -eq 1 ]] && echo ${archlist}
+fi
+
+set -x
+

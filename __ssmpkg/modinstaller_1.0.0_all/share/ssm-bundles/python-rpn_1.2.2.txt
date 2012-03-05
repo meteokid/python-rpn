@@ -1,0 +1,25 @@
+#!/bin/ksh
+modinstaller_file_version=5
+
+py_version="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
+ssm_bndl_basename=ENV
+ssm_bndl_reldir=py/${py_version}
+ssm_bndl_name=${ssm_bndl_reldir}/rpnstd/1.2.2
+ssm_model_name=PythonRPN
+
+ssm_bndl_elements="\
+ every:python-rpn@${ssm_bndl_reldir}/python-rpn:GENERIC@${ssm_bndl_name##*/}\
+ MSG_REL\
+"
+
+export ssm_compiler_list="\
+ Linux_x86-64:pgi9xxshared\
+ Linux:pgi9xxshared\
+ AIX:xlf12\
+"
+
+ssm_bndl_externals="\
+ ${ssm_compiler_list}\
+ rmnlib-dev\
+"
+ssm_bndl_externals_post=""

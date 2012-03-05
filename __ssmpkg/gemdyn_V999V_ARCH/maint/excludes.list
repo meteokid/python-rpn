@@ -1,0 +1,9 @@
+do_not_tar
+.nfs*
+*.o
+*.a
+.fo/
+profile.d/*_*_*.sh
+bin/*
+lib/*
+
