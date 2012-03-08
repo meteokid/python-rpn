@@ -66,7 +66,7 @@ end subroutine yyg_scalgeo
          print*,'Cannot find interpolator'
          stop
       endif
-!     call glbstat2 (tab_dstf,trim(nomvar_S),"scalg",LDIST_DIM,1,NK,1,G_ni,1,G_nj,1,NK)
+     call glbstat2 (tab_dstf,trim(nomvar_S),"scalg",LDIST_DIM,1,NK,1,G_ni,1,G_nj,1,NK)
       do k=1,NK
       do j=1,l_nj
       do i=1,l_ni

@@ -37,7 +37,7 @@
 #include <clib_interface.cdk>
 !
       integer,parameter :: BUFSIZE=10000
-      integer,external::  rpn_comm_bloc,ouvrstrt,wkoffit,gnthread
+      integer,external::  rpn_comm_bloc,ouvrstrt,wkoffit,gnthread,fnom
 ! 
       character*3 mycol_S,myrow_S
       character*12 dumc1_S
@@ -118,6 +118,10 @@
          call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
          lun_out  =  6
+         if (Ptopo_couleur.eq.1) then
+            err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
+            err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
+         endif
       endif
 ! 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 

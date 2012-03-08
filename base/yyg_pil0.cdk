@@ -9,52 +9,61 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
+! Pil_recv_len(M)    | Sum of all elements from W,E,S,N for each PE    |
+! Pil_recv_all       | Sum of all elements to receive from all   PEs   |
+! Pil_recvw_adr(M)   | address of data stored for PE (M),west pilot    |
 ! Pil_recvw_len(M)   | Number of values to receive from each PE for    |
 !                    | its West Pilot area  (M=Ptopo_numproc)          |
-! Pil_recvw_i(*,M)   | local gridpoint I to receive value from PE(*)   |
-! Pil_recvw_j(*,M)   | local gridpoint J to receive value from PE(*)   |
-! Pil_sendw_len(*)   | Number of values to send to  PE (*) for West    |
-! Pil_sendw_imx(*,M) | closest I gridpoint on the other panel to find  |
+! Pil_recv_i(*)      | local gridpoint I to receive value from PE(*)   |
+! Pil_recv_j(*)      | local gridpoint J to receive value from PE(*)   |
+! Pil_send_len(M)    | Sum of all elements to send W,E,S,N for each PE |
+! Pil_send_all       | Sum of all elements to send  to     all   PEs   |
+! Pil_sendw_adr(M)   | address of data stored for PE (M),west pilot    |
+! Pil_sendw_len(M)   | Number of values to send to  PE (*) for West    |
+! Pil_send_imx(*)    | closest I gridpoint on the other panel to find  |
 !                    | the value for Pil_sendw_xxr,Pil_sendw_yyr       |
-! Pil_sendw_imy(*,M) | closest J gridpoint on the other panel to find  |
+! Pil_send_imy(*)    | closest J gridpoint on the other panel to find  |
 !                    | the value for  Pil_sendw_xxr,Pil_sendw_yyr      |
-! Pil_sendw_xxr(*,M) | longitude in the other panel to find the value  |
+! Pil_send_xxr(*)    | longitude in the other panel to find the value  |
 !                    | for receiving panel                             |
-! Pil_sendw_yyr(*,M) | latitude in the other panel to find the value   |
+! Pil_send_yyr(*)    | latitude in the other panel to find the value   |
 !                    | for receiving panel                             |
-! Pil_sendw_s1(*,M)  | element (s(1,1)) in matrix for polar vectors    |
+! Pil_send_s1(*)     | element (s(1,1)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
+! Pil_send_s2(*)     | element (s(1,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s3(*,M)  | element (s(2,1)) in matrix for polar vectors    |
+! Pil_send_s3(*)     | element (s(2,1)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s4(*,M)  | element (s(2,2)) in matrix for polar vectors    |
+! Pil_send_s4(*)     | element (s(2,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
 #endif
 !
 !Declarations for Scalar variables (on Phi grid for nearest int)
-      integer, dimension (:  ), pointer :: Pil0_recvw_len, Pil0_recve_len, Pil0_recvs_len, Pil0_recvn_len, &
-                                           Pil0_sendw_len, Pil0_sende_len, Pil0_sends_len, Pil0_sendn_len
-      integer, dimension (:,:), pointer :: Pil0_recvw_i  , Pil0_recvw_j  , Pil0_recve_i  , Pil0_recve_j  , &
-                                           Pil0_recvs_i  , Pil0_recvs_j  , Pil0_recvn_i  , Pil0_recvn_j  , &
-                                           Pil0_sendw_imx, Pil0_sendw_imy, Pil0_sende_imx, Pil0_sende_imy, &
-                                           Pil0_sends_imx, Pil0_sends_imy, Pil0_sendn_imx, Pil0_sendn_imy
+      integer  Pil0_send_all,Pil0_recv_all,Pil0_sendmaxproc,Pil0_recvmaxproc
+      integer, dimension (:), pointer :: &
+               Pil0_sendproc,  Pil0_recvproc, &
+               Pil0_recv_len, Pil0_send_len, &
+               Pil0_recvw_len, Pil0_recve_len, Pil0_recvs_len, Pil0_recvn_len, &
+               Pil0_sendw_len, Pil0_sende_len, Pil0_sends_len, Pil0_sendn_len, &
+               Pil0_recvw_adr, Pil0_recve_adr, Pil0_recvs_adr, Pil0_recvn_adr, &
+               Pil0_sendw_adr, Pil0_sende_adr, Pil0_sends_adr, Pil0_sendn_adr, &
+               Pil0_recv_i  , Pil0_recv_j, Pil0_send_imx, Pil0_send_imy 
 !
-      real*8,  dimension (:,:), pointer :: &
-               Pil0_sendw_xxr, Pil0_sendw_yyr, Pil0_sendw_s1, Pil0_sendw_s2, Pil0_sendw_s3, Pil0_sendw_s4, &
-               Pil0_sende_xxr, Pil0_sende_yyr, Pil0_sende_s1, Pil0_sende_s2, Pil0_sende_s3, Pil0_sende_s4, &
-               Pil0_sends_xxr, Pil0_sends_yyr, Pil0_sends_s1, Pil0_sends_s2, Pil0_sends_s3, Pil0_sends_s4, &
-               Pil0_sendn_xxr, Pil0_sendn_yyr, Pil0_sendn_s1, Pil0_sendn_s2, Pil0_sendn_s3, Pil0_sendn_s4
+      real*8,  dimension (:), pointer :: &
+               Pil0_send_xxr, Pil0_send_yyr, &
+               Pil0_send_s1, Pil0_send_s2, Pil0_send_s3, Pil0_send_s4
 !
-      common/Pil0_i/Pil0_recvw_len, Pil0_recve_len, Pil0_recvs_len, Pil0_recvn_len, &
-                    Pil0_sendw_len, Pil0_sende_len, Pil0_sends_len, Pil0_sendn_len, &
-                    Pil0_recvw_i  , Pil0_recvw_j  , Pil0_recve_i  , Pil0_recve_j  , &
-                    Pil0_recvs_i  , Pil0_recvs_j  , Pil0_recvn_i  , Pil0_recvn_j  , &
-                    Pil0_sendw_imx, Pil0_sendw_imy, Pil0_sende_imx, Pil0_sende_imy, &
-                    Pil0_sends_imx, Pil0_sends_imy, Pil0_sendn_imx, Pil0_sendn_imy
+      common/Pil0_i/ Pil0_send_all,Pil0_recv_all, &
+               Pil0_sendmaxproc, Pil0_recvmaxproc, &
+               Pil0_sendproc,  Pil0_recvproc, &
+               Pil0_recv_len, Pil0_send_len, &
+               Pil0_recvw_len, Pil0_recve_len, Pil0_recvs_len, Pil0_recvn_len, &
+               Pil0_sendw_len, Pil0_sende_len, Pil0_sends_len, Pil0_sendn_len, &
+               Pil0_recvw_adr, Pil0_recve_adr, Pil0_recvs_adr, Pil0_recvn_adr, &
+               Pil0_sendw_adr, Pil0_sende_adr, Pil0_sends_adr, Pil0_sendn_adr, &
+               Pil0_recv_i  , Pil0_recv_j, Pil0_send_imx, Pil0_send_imy 
 
-      common/Pil0_r8/Pil0_sendw_xxr, Pil0_sendw_yyr, Pil0_sendw_s1, Pil0_sendw_s2, Pil0_sendw_s3, Pil0_sendw_s4, &
-                     Pil0_sende_xxr, Pil0_sende_yyr, Pil0_sende_s1, Pil0_sende_s2, Pil0_sende_s3, Pil0_sende_s4, &
-                     Pil0_sends_xxr, Pil0_sends_yyr, Pil0_sends_s1, Pil0_sends_s2, Pil0_sends_s3, Pil0_sends_s4, &
-                     Pil0_sendn_xxr, Pil0_sendn_yyr, Pil0_sendn_s1, Pil0_sendn_s2, Pil0_sendn_s3, Pil0_sendn_s4
+      common/Pil0_r8/&
+               Pil0_send_xxr, Pil0_send_yyr, &
+               Pil0_send_s1, Pil0_send_s2, Pil0_send_s3, Pil0_send_s4

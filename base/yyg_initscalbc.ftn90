@@ -23,10 +23,8 @@
 !author
 !           Abdessamad Qaddouri/ V.lee - October 2009
 !
-!     setup nearest interpolation communication pattern
+!     setup nearest and linear interpolation communication pattern
       call yyg_initscalbc0()
-!     setup linear interpolation communication pattern
-      call yyg_initscalbc1()
 !     setup cubic interpolation communication pattern
       call yyg_initscalbc2()
 

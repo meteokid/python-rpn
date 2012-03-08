@@ -26,24 +26,29 @@
 !
 #endif
 !Declarations for Ru,Rv variables (on Phi grid)
-      integer, dimension (:  ), pointer :: Rhsx_recvw_len, Rhsx_recve_len, Rhsx_recvs_len , Rhsx_recvn_len, &
-                                           Rhsx_sendw_len, Rhsx_sende_len, Rhsx_sends_len , Rhsx_sendn_len
-      integer, dimension (:,:), pointer :: Rhsx_recvw_i  , Rhsx_recvw_j  , Rhsx_recve_i   , Rhsx_recve_j  , &
-                                           Rhsx_recvs_i  , Rhsx_recvs_j  , Rhsx_recvn_i   , Rhsx_recvn_j  , &
-                                           Rhsx_sendw_imx, Rhsx_sendw_imy, Rhsx_sendw_sten,                 &
-                                           Rhsx_sende_imx, Rhsx_sende_imy, Rhsx_sende_sten,                 &
-                                           Rhsx_sends_imx, Rhsx_sends_imy, Rhsx_sends_sten,                 &
-                                           Rhsx_sendn_imx, Rhsx_sendn_imy, Rhsx_sendn_sten
-      real*8,  dimension (:,:), pointer :: Rhsx_sendw_xxr, Rhsx_sendw_yyr, Rhsx_sende_xxr , Rhsx_sende_yyr, &
-                                           Rhsx_sends_xxr, Rhsx_sends_yyr, Rhsx_sendn_xxr , Rhsx_sendn_yyr
+      integer  Rhsx_send_all,Rhsx_recv_all,Rhsx_sendmaxproc,Rhsx_recvmaxproc
+      integer, dimension (:), pointer :: &
+               Rhsx_sendproc,  Rhsx_recvproc, &
+               Rhsx_recv_len, Rhsx_send_len, &
+               Rhsx_recvw_len,Rhsx_recve_len,Rhsx_recvs_len,Rhsx_recvn_len, &
+               Rhsx_sendw_len,Rhsx_sende_len,Rhsx_sends_len,Rhsx_sendn_len, &
+               Rhsx_recvw_adr,Rhsx_recve_adr,Rhsx_recvs_adr,Rhsx_recvn_adr, &
+               Rhsx_sendw_adr,Rhsx_sende_adr,Rhsx_sends_adr,Rhsx_sendn_adr, &
+               Rhsx_recv_i   ,Rhsx_recv_j   ,Rhsx_send_imx,Rhsx_send_imy  , &
+               Rhsx_send_sten
+      real*8,  dimension (:), pointer :: &
+               Rhsx_send_xxr, Rhsx_send_yyr
 
-      common/Rhsx_i/ Rhsx_recvw_len, Rhsx_recve_len, Rhsx_recvs_len , Rhsx_recvn_len, &
-                     Rhsx_sendw_len, Rhsx_sende_len, Rhsx_sends_len , Rhsx_sendn_len, &
-                     Rhsx_recvw_i  , Rhsx_recvw_j  , Rhsx_recve_i   , Rhsx_recve_j  , &
-                     Rhsx_recvs_i  , Rhsx_recvs_j  , Rhsx_recvn_i   , Rhsx_recvn_j  , &
-                     Rhsx_sendw_imx, Rhsx_sendw_imy, Rhsx_sendw_sten,                 &
-                     Rhsx_sende_imx, Rhsx_sende_imy, Rhsx_sende_sten,                 &
-                     Rhsx_sends_imx, Rhsx_sends_imy, Rhsx_sends_sten,                 &
-                     Rhsx_sendn_imx, Rhsx_sendn_imy, Rhsx_sendn_sten
-      common/Rhsx_r8/Rhsx_sendw_xxr, Rhsx_sendw_yyr, Rhsx_sende_xxr , Rhsx_sende_yyr, &
-                     Rhsx_sends_xxr, Rhsx_sends_yyr, Rhsx_sendn_xxr , Rhsx_sendn_yyr
+      common/Rhsx_i/ &
+               Rhsx_send_all,Rhsx_recv_all,Rhsx_sendmaxproc,Rhsx_recvmaxproc,&
+               Rhsx_sendproc,  Rhsx_recvproc, &
+               Rhsx_recv_len, Rhsx_send_len, &
+               Rhsx_recvw_len,Rhsx_recve_len,Rhsx_recvs_len,Rhsx_recvn_len, &
+               Rhsx_sendw_len,Rhsx_sende_len,Rhsx_sends_len,Rhsx_sendn_len, &
+               Rhsx_recvw_adr,Rhsx_recve_adr,Rhsx_recvs_adr,Rhsx_recvn_adr, &
+               Rhsx_sendw_adr,Rhsx_sende_adr,Rhsx_sends_adr,Rhsx_sendn_adr, &
+               Rhsx_recv_i   ,Rhsx_recv_j   ,Rhsx_send_imx,Rhsx_send_imy  , &
+               Rhsx_send_sten
+      common/Rhsx_r8/&
+               Rhsx_send_xxr, Rhsx_send_yyr
+

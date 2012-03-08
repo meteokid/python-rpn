@@ -26,39 +26,38 @@
 !                    | transformation                                  |
 ! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s3(*,M)  | element (s(2,1)) in matrix for polar vectors    |
-!                    | transformation                                  |
-! Pil_sendw_s4(*,M)  | element (s(2,2)) in matrix for polar vectors    |
-!                    | transformation                                  |
 !______________________________________________________________________|
 #endif
 !
-!Declarations for Scalar variables (on Phi grid)
-      integer  Pil_send_all, Pil_recv_all,Pil_sendmaxproc,Pil_recvmaxproc
-      integer, dimension (:  ), pointer :: &
-               Pil_sendproc, Pil_recvproc, &
-               Pil_recv_len, Pil_send_len, &
-               Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
-               Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len, &
-               Pil_recvw_adr, Pil_recve_adr, Pil_recvs_adr, Pil_recvn_adr, &
-               Pil_sendw_adr, Pil_sende_adr, Pil_sends_adr, Pil_sendn_adr, &
-               Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
 !
-      real*8,  dimension (: ), pointer :: &
-               Pil_send_xxr, Pil_send_yyr, & 
-               Pil_send_s1,  Pil_send_s2, Pil_send_s3, Pil_send_s4
+!Declarations for V variables (on V grid)
+      integer  Pil_vsend_all, Pil_vrecv_all,Pil_vsendmaxproc,Pil_vrecvmaxproc
+      integer, dimension (: ), pointer :: &
+               Pil_vsendproc, Pil_vrecvproc, &
+               Pil_vrecv_len, Pil_vsend_len, &
+               Pil_vrecvw_len,Pil_vrecve_len,Pil_vrecvs_len,Pil_vrecvn_len , &
+               Pil_vsendw_len,Pil_vsende_len,Pil_vsends_len,Pil_vsendn_len , &
+               Pil_vrecvw_adr,Pil_vrecve_adr,Pil_vrecvs_adr,Pil_vrecvn_adr , &
+               Pil_vsendw_adr,Pil_vsende_adr,Pil_vsends_adr,Pil_vsendn_adr , &
+               Pil_vrecv_i   ,Pil_vrecv_j   ,Pil_vsend_imx1, Pil_vsend_imy1, &
+               Pil_vsend_imx2,Pil_vsend_imy2
 !
-      common/Pil_i/ Pil_send_all, Pil_recv_all, &
-               Pil_sendmaxproc,Pil_recvmaxproc, &
-               Pil_sendproc, Pil_recvproc, &
-               Pil_recv_len, Pil_send_len, &
-               Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
-               Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len, &
-               Pil_recvw_adr, Pil_recve_adr, Pil_recvs_adr, Pil_recvn_adr, &
-               Pil_sendw_adr, Pil_sende_adr, Pil_sends_adr, Pil_sendn_adr, &
-               Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
+      real*8,  dimension (: ), pointer ::  &
+               Pil_vsend_xxr,Pil_vsend_yyr, & 
+               Pil_vsend_s1, Pil_vsend_s2
+!
+      common/Pil_vi/ &
+               Pil_vsend_all, Pil_vrecv_all,Pil_vsendmaxproc,Pil_vrecvmaxproc,&
+               Pil_vsendproc, Pil_vrecvproc, &
+               Pil_vrecv_len, Pil_vsend_len, &
+               Pil_vrecvw_len,Pil_vrecve_len,Pil_vrecvs_len,Pil_vrecvn_len , &
+               Pil_vsendw_len,Pil_vsende_len,Pil_vsends_len,Pil_vsendn_len,  &
+               Pil_vrecvw_adr,Pil_vrecve_adr,Pil_vrecvs_adr,Pil_vrecvn_adr , &
+               Pil_vsendw_adr,Pil_vsende_adr,Pil_vsends_adr,Pil_vsendn_adr , &
+               Pil_vrecv_i   ,Pil_vrecv_j   ,Pil_vsend_imx1, Pil_vsend_imy1, &
+               Pil_vsend_imx2,Pil_vsend_imy2
 
-      common/Pil_r8/ &
-               Pil_send_xxr, Pil_send_yyr, &
-               Pil_send_s1,  Pil_send_s2, Pil_send_s3, Pil_send_s4
-!
+      common/Pil_vr8/ &
+               Pil_vsend_xxr,Pil_vsend_yyr, & 
+               Pil_vsend_s1, Pil_vsend_s2
+

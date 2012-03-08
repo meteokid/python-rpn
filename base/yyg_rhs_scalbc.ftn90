@@ -25,7 +25,6 @@
 !author
 !     Abdessamad Qaddouri/V.Lee  - October 2009
 !
-!     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -41,8 +40,7 @@
       real*8  tab_src_8(LDIST_SHAPE,Nk)
       real    tab_src(LDIST_SHAPE,Nk)
       real    linfini,L1,L2,L3(2),L4(2),infini(Nk)
-      integer ierr,i,j,k,kk,kk_proc,m,mm,iter
-      integer Rhsx_recvlen(Ptopo_numproc),Rhsx_sendlen(Ptopo_numproc)
+      integer ierr,i,j,k,kk,kk_proc,m,mm,iter,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
 !     integer status(MPI_STATUS_SIZE)
@@ -68,124 +66,122 @@
       sendlen=0
       recvlen=0
       ireq=0
-      do kk=1,Ptopo_numproc
-         Rhsx_sendlen(kk)= Rhsx_sendw_len(kk)+Rhsx_sende_len(kk) &
-                          +Rhsx_sends_len(kk)+Rhsx_sendn_len(kk)
-         sendlen=max(sendlen,Rhsx_sendlen(kk))
-         Rhsx_recvlen(kk)= Rhsx_recvw_len(kk)+Rhsx_recve_len(kk) &
-                         +Rhsx_recvs_len(kk)+Rhsx_recvn_len(kk)
-         recvlen=max(recvlen,Rhsx_recvlen(kk))
+      do kk=1,Rhsx_sendmaxproc
+         sendlen=max(sendlen,Rhsx_send_len(kk))
+      enddo
+      do kk=1,Rhsx_recvmaxproc
+         recvlen=max(recvlen,Rhsx_recv_len(kk))
       enddo
       
-
       call rpn_comm_xch_halo(tab_src, LDIST_DIM,l_ni,l_nj,NK, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-          tab_src_8(:,:,:)=dble(tab_src(:,:,:))
+      tab_src_8(:,:,:)=dble(tab_src(:,:,:))
 
+!     print *,'sendlen=',sendlen,' recvlen=',recvle
       if (sendlen.gt.0) then
-          allocate(send_pil(sendlen*NK,Ptopo_numproc))
+          allocate(send_pil(sendlen*NK,Rhsx_sendmaxproc))
 
       endif
       if (recvlen.gt.0) then
-          allocate(recv_pil(recvlen*NK,Ptopo_numproc))
-      endif
-      if (iter .eq. 1.and.Lctl_step.eq.1) then
-          allocate(Sol_rhs(sendlen*NK,1,Ptopo_numproc))
-          Sol_rhs = 0.0
+          allocate(recv_pil(recvlen*NK,Rhsx_recvmaxproc))
       endif
  
 !
-      do 100 kk=1,Ptopo_numproc
+      do 100 kk=1,Rhsx_sendmaxproc
 !
 !        For each processor (in other colour)
          if (Ptopo_couleur.eq.0) then
-             kk_proc = kk+Ptopo_numproc-1
+             kk_proc = Rhsx_sendproc(kk)+Ptopo_numproc-1
          else
-             kk_proc = kk-1
+             kk_proc = Rhsx_sendproc(kk)-1
          endif
 
 !        prepare to send to other colour processor
-         if (Rhsx_sendlen(kk).gt.0) then
+         if (Rhsx_send_len(kk).gt.0) then
 !            prepare something to send
 
 !            mm=0
 
 ! make for west
              do m=1,Rhsx_sendw_len(kk)
+                adr=Rhsx_sendw_adr(kk)+m
 !$omp parallel private (mm,send_Rhsx_8) &
 !$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
 !$omp do
                 do k=1,NK
 !                  mm=mm+1
                    mm=(m-1)*NK+k
-                   i= Rhsx_sendw_imx(m,kk)
-                   j= Rhsx_sendw_imy(m,kk)
+                   i= Rhsx_send_imx(adr)
+                   j= Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
-                             Rhsx_sendw_imx(m,kk),Rhsx_sendw_imy(m,kk), &
+                             Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
                              Geomg_x_8,Geomg_y_8,LDIST_DIM, &
-                             Rhsx_sendw_xxr(m,kk),Rhsx_sendw_yyr(m,kk))
+                             Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
-                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil2_8(Rhsx_sendw_sten(m,kk)))
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil2_8(Rhsx_send_sten(adr)))
                 enddo
 !$omp enddo
 !$omp end parallel
              enddo
 ! make for east
              do m=1,Rhsx_sende_len(kk)
+                adr=Rhsx_sende_adr(kk)+m
 !$omp parallel private (mm,send_Rhsx_8) &
 !$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
 !$omp do
                 do k=1,NK
                    mm=(Rhsx_sendw_len(kk)+m-1)*NK+k
-                   i=Rhsx_sende_imx(m,kk)
-                   j=Rhsx_sende_imy(m,kk)
+                   i=Rhsx_send_imx(adr)
+                   j=Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
-                             Rhsx_sende_imx(m,kk),Rhsx_sende_imy(m,kk), &
+                             Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
                              Geomg_x_8,Geomg_y_8,LDIST_DIM, &
-                             Rhsx_sende_xxr(m,kk),Rhsx_sende_yyr(m,kk))
+                             Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
-                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil3_8(Rhsx_sende_sten(m,kk)))
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil3_8(Rhsx_send_sten(adr)))
                 enddo
 !$omp enddo
 !$omp end parallel
              enddo
 ! make for south
              do m=1,Rhsx_sends_len(kk)
+                adr=Rhsx_sends_adr(kk)+m
 !$omp parallel private (mm,send_Rhsx_8) &
 !$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
 !$omp do
                 do k=1,NK
                    mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+m-1)*NK+k
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
-                             Rhsx_sends_imx(m,kk),Rhsx_sends_imy(m,kk), &
+                             Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
                              Geomg_x_8,Geomg_y_8,LDIST_DIM, &
-                             Rhsx_sends_xxr(m,kk),Rhsx_sends_yyr(m,kk))
+                             Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
-                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil4_8(Rhsx_sends_sten(m,kk)))
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil4_8(Rhsx_send_sten(adr)))
                 enddo
 !$omp enddo
 !$omp end parallel
              enddo
 ! make for north
              do m=1,Rhsx_sendn_len(kk)
+                adr=Rhsx_sendn_adr(kk)+m
 !$omp parallel private (mm,send_Rhsx_8) &
 !$omp          shared (infini,tab_src_8,sol_rhs,send_pil)
 !$omp do
                 do k=1,NK
                    mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+Rhsx_sends_len(kk)+m-1)*NK+k
-                   i=Rhsx_sendn_imx(m,kk)
-                   j=Rhsx_sendn_imy(m,kk)
+                   i=Rhsx_send_imx(adr)
+                   j=Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
-                             Rhsx_sendn_imx(m,kk),Rhsx_sendn_imy(m,kk), &
+                             Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
                              Geomg_x_8,Geomg_y_8,LDIST_DIM,  &
-                             Rhsx_sendn_xxr(m,kk),Rhsx_sendn_yyr(m,kk))
+                             Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
-                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil5_8(Rhsx_sendn_sten(m,kk)))
+                   send_pil(mm,KK)=real(send_Rhsx_8*Sol_stencil5_8(Rhsx_send_sten(adr)))
                 enddo
 !$omp enddo
 !$omp end parallel
@@ -196,37 +192,47 @@
              enddo
 
              ireq = ireq+1
-!            print *,'RHS_scalbc','sending',Rhsx_sendlen(kk)*NK,' to ',kk_proc
-!            call MPI_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,MPI_REAL, &
+!            print *,'RHS_scalbc','sending',Rhsx_send_len(kk)*NK,' to ',kk_proc
+!            call MPI_ISend (send_pil(1,KK),Rhsx_send_len(kk)*NK,MPI_REAL, &
 !                                        kk_proc,tag2+Ptopo_world_myproc, &
 !                                        MPI_COMM_WORLD,request(ireq),ierr)
-             call RPN_COMM_ISend (send_pil(1,KK),Rhsx_sendlen(kk)*NK,&
+             call RPN_COMM_ISend (send_pil(1,KK),Rhsx_send_len(kk)*NK,&
                                   'MPI_REAL', kk_proc,tag2+Ptopo_world_myproc, &
                                   'MULTIGRID',request(ireq),ierr)
 
          endif
+ 100 continue
 !
 !
 !        check to receive from other colour processor
 !
-         if (Rhsx_recvlen(kk).gt.0) then
+      do 101 kk=1,Rhsx_recvmaxproc
+!        For each processor (in other colour)
+
+         if (Ptopo_couleur.eq.0) then
+             kk_proc = Rhsx_recvproc(kk)+Ptopo_numproc-1
+         else
+             kk_proc = Rhsx_recvproc(kk)-1
+         endif
+         if (Rhsx_recv_len(kk).gt.0) then
 !            detect something to receive
 
              ireq = ireq+1
-!            print *,'RHS_scalbc','receiving ',Rhsx_recvlen(kk)*NK,' from ',kk_proc
-!            call MPI_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,MPI_REAL, &
+!            print *,'RHS_scalbc','receiving ',Rhsx_recv_len(kk)*NK,' from ',kk_proc
+!            call MPI_IRecv(recv_pil(1,KK),Rhsx_recv_len(kk)*NK,MPI_REAL, &
 !                   kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
-             call RPN_COMM_IRecv(recv_pil(1,KK),Rhsx_recvlen(kk)*NK,'MPI_REAL',&
+             call RPN_COMM_IRecv(recv_pil(1,KK),Rhsx_recv_len(kk)*NK,'MPI_REAL',&
                     kk_proc,tag2+kk_proc,'MULTIGRID',request(ireq),ierr)
          endif
 
- 100  continue
+ 101  continue
 
+!Wait for all done sending and receiving
 !     call mpi_waitall(ireq,request,stat,ierr)
       call RPN_COMM_waitall_nostat(ireq,request,ierr)
 
       l2=0
-      do kk=1,Ptopo_numproc
+      do kk=1,Rhsx_sendmaxproc
          do i=1,sendlen*NK
             l2 =max(l2,abs(Sol_rhs(i,1,kk)))
          enddo
@@ -236,11 +242,11 @@
       L3(2)=L1
       L2   =L1
 
-!Wait for all done sending and receiving
 
 
       if (sendlen.gt.0) deallocate(send_pil)
 
+!     Check the precision
 !     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr) 
       call RPN_COMM_allreduce(Linfini,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(1)=L1
@@ -269,39 +275,42 @@
 
       if (recvlen.gt.0) then
 
-          do 200 kk=1,Ptopo_numproc
+          do 200 kk=1,Rhsx_recvmaxproc
 ! fill my west
              mm=0
              do m=1,Rhsx_recvw_len(kk)
+             adr=Rhsx_recvw_adr(kk)+m
              do k=1,NK
                 mm=mm+1
-                rhs_dst1(Rhsx_recvw_i(m,kk),Rhsx_recvw_j(m,kk),k)= &
-                rhs_dst1(Rhsx_recvw_i(m,kk),Rhsx_recvw_j(m,kk),k)-recv_pil(mm,KK)
-          
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)= &
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)-recv_pil(mm,KK)
              enddo
              enddo
 ! fill my east
              do m=1,Rhsx_recve_len(kk)
+             adr=Rhsx_recve_adr(kk)+m
              do k=1,NK
                 mm=mm+1
-                rhs_dst1(Rhsx_recve_i(m,kk),Rhsx_recve_j(m,kk),k)= &
-                rhs_dst1(Rhsx_recve_i(m,kk),Rhsx_recve_j(m,kk),k)-recv_pil(mm,KK)
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)= &
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)-recv_pil(mm,KK)
              enddo
              enddo
 ! fill my south
              do m=1,Rhsx_recvs_len(kk)
+             adr=Rhsx_recvs_adr(kk)+m
              do k=1,NK
                 mm=mm+1
-                rhs_dst1(Rhsx_recvs_i(m,kk),Rhsx_recvs_j(m,kk),k)= &
-                rhs_dst1(Rhsx_recvs_i(m,kk),Rhsx_recvs_j(m,kk),k)-recv_pil(mm,KK)
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)= &
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)-recv_pil(mm,KK)
              enddo
              enddo
 ! fill my north
              do m=1,Rhsx_recvn_len(kk)
+             adr=Rhsx_recvn_adr(kk)+m
              do k=1,NK
                 mm=mm+1
-                rhs_dst1(Rhsx_recvn_i(m,kk),Rhsx_recvn_j(m,kk),k)= &
-                rhs_dst1(Rhsx_recvn_i(m,kk),Rhsx_recvn_j(m,kk),k)-recv_pil(mm,KK)
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)= &
+                rhs_dst1(Rhsx_recv_i(adr),Rhsx_recv_j(adr),k)-recv_pil(mm,KK)
              enddo
              enddo
 
