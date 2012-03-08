@@ -42,7 +42,7 @@
 #include "grd.cdk"
 #include "hgc.cdk"
 
-      character*120 outfile,gfile,dumc,fn
+      character*120 outfile,gfile,dumc,fn,etk,etk_ext
       logical lam
       integer ni,nila,oun,uout,err,npack,i,j,k
       integer nklemax,npos,core
@@ -64,7 +64,7 @@
       print *,'------------------------------------------'
       print *,'------------------------------------------'
       print *
-      print *,'GEMGRID - version v_4.4.0  February 24, 2012 '
+      print *,'GEMGRID - version v_4.4.0  February 14, 2012 '
       print *,'        - to write out ^^ >> for Phi grids in tape1'
       print *,'        - to write out ^^ >> endpoints in gfilemap.txt '
       print *
@@ -73,6 +73,8 @@
       core=0
       call ccard(liste,defaut,val,nklemax,npos)
       read(val(1),*) core
+
+      etk='PARPOS'
 
       do 900 k=0,1
 
@@ -104,14 +106,12 @@
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
       LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
 
-      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
+      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni), ypos(Grd_nj))
 
       call set_gemHgrid ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
                           Grd_gauss_L, lam, ierx, iery, .true. )
-
-      if (.not.LAM) Grd_ni = Grd_ni + 1
 
       xpos(1:Grd_ni) = x_8(1:Grd_ni)
       ypos(1:Grd_nj) = y_8(1:Grd_nj)
@@ -148,22 +148,24 @@
 
  777  format(2i8,4e15.7,2i10,x,2I5)
  778  format(4(i5,e15.7))
-!     
+  
+      if (Grd_yinyang_L) then
+         etk_ext=trim(etk)//'_'//trim(Grd_yinyang_S)
+      else
+         etk_ext=trim(etk)
+      endif
+
       err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, grd_ni, 1, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>','GRDZ',Hgc_gxtyp_s, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
       err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, grd_nj, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^','GRDZ',Hgc_gxtyp_s, &
+                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-!     
+   
       err= fstfrm(uout)
       err= fclos (uout)
 
-      print *,'tictacs are in file: ',trim(outfile)
-      print *,trim(gfile),' is created'
-
       deallocate (x_8, y_8, xpos, ypos)
-
       if (Grd_typ_S(2:2).ne.'Y') exit
 
   900 continue
