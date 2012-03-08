@@ -1,6 +1,0 @@
-&mtn_cfgs
-  Out3_etik_s='SCHAR',
-/
-&Theo_cfgs
-   Theo_case_s = 'MTN_SCHAR',
-/

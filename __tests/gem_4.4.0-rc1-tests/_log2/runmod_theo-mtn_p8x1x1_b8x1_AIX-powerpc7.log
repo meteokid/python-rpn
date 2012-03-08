@@ -1,0 +1,82 @@
+/home/ordenv/ssm-domains9/release/x/gem_4.4.0-rc1-s/all/bin/Um_runmod.ksh -cfg 1:1 -dircfg cfg_theo-mtn -ptopo 8x1x1 -out_block 8x1 -theoc
+Changing multi-value argument delimiter from : to  
+
+=====>  Um_runmod.ksh starts: cfg_1:1 Tue Mar  6 20:31:34 GMT 2012 ###########
+
+/home/ordenv/ssm-domains9/release/x/gem_4.4.0-rc1-s/all/bin/Um_setmod.ksh -cfg 1:1 -dircfg cfg_theo-mtn -tsk_cfgfile /users/dor/armn/sch/storage_model/spica/mod64553568.cfg
+Changing multi-value argument delimiter from : to  
+Changing multi-value argument delimiter from : to  
+
+### Content of config file to TASK_SETUP ####
+
+#############################################
+# <input>
+# cfg_0001/configexp.cfg cfg_theo-mtn/cfg_0001/configexp.cfg
+# cfg_0001/ANALYSIS   /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_000
+# cfg_0001/CLIMATO    /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/climato
+#
+# cfg_0001/GEOPHY     /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy
+# cfg_0001/MODEL_INPUT /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-b11-tests/RUNMOD_output/input
+# cfg_0001/output_settings   cfg_theo-mtn/cfg_0001/outcfg.out
+#
+#
+#
+# cfg_0001/model_settings.nml cfg_theo-mtn/cfg_0001/gem_settings.nml
+# cfg_0001/constantes /home/binops/afsi/sio/env_ibm/afsisio/datafiles/constants/thermoconsts
+# cfg_0001/ozone_clim.fst /home/binops/afsi/sio/env_ibm/afsisio/datafiles/constants/ozoclim_phy45
+# cfg_0001/rad_table.fst /home/binops/afsi/sio/env_ibm/afsisio/datafiles/constants/irtab5_std
+# cfg_0001/physics_input_table /home/ordenv/ssm-domains9/release/rpnphy/rpnphy_5.4.0/rpnphy_5.4.0_all/include/physics_input_table_GENERIC
+# </input>
+# <executables>
+# ATM_MOD.Abs      maingemdm_AIX-powerpc7.Abs
+# Um_cmclog.ksh    Um_cmclog.ksh
+# UM_MODEL         Um_model.ksh 
+# r.mpirun         r.mpirun2
+# launch_sortie.ksh Um_output_wrapper.ksh
+# </executables>
+# <output>
+#
+# </output>
+#############################################
+
+##### EXECUTING TASK_SETUP ##### task_setup-0.9.0.ksh
+** TASK_SETUP begins **
+  <executables>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/RUNMOD/bin
+Info: linked file bin/ATM_MOD.Abs => /fs/dev/mrb/armnsch/gem_4.4.0-rc1-tests/maingemdm_AIX-powerpc7.Abs
+Info: linked file bin/Um_cmclog.ksh => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.0/gem-scripts_4.3.0_all/bin/Um_cmclog.ksh
+Info: linked file bin/UM_MODEL => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.0/gem-scripts_4.3.0_all/bin/Um_model.ksh
+Info: linked file bin/r.mpirun => /home/dormrb01/zephyr4/armn/sch/ovbin/AIX-powerpc7/r.mpirun2
+Info: linked file bin/launch_sortie.ksh => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.0/gem-scripts_4.3.0_all/bin/Um_output_wrapper.ksh
+  </executables>
+  <input>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/RUNMOD/input
+Info: linked file input/configexp.cfg => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/cfg_theo-mtn/cfg_0001/configexp.cfg
+Info: linked file input/ANALYSIS => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_000
+Info: linked file input/CLIMATO => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/clim_gemdm320_1080x540_v2_de_francois_withiceline
+Warning: file link cfg_0001/GEOPHY refers to a directory target ['/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy']
+Info: linked directory input/GEOPHY => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy
+Error: unable to link input/MODEL_INPUT => /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-b11-tests/RUNMOD_output/input ... source file is unavailable
+Info: linked file input/output_settings => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/cfg_theo-mtn/cfg_0001/outcfg.out
+Info: linked file input/model_settings.nml => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/cfg_theo-mtn/cfg_0001/gem_settings.nml
+Info: linked file input/constantes => /home/binops/afsi/sio/datafiles/constants/thermoconsts
+Info: linked file input/ozone_clim.fst => /home/binops/afsi/sio/datafiles/constants/ozoclim_phy45
+Info: linked file input/rad_table.fst => /home/binops/afsi/sio/datafiles/constants/irtab5_std
+Info: linked file input/physics_input_table => /home/ordenv/ssm-domains9/release/rpnphy/rpnphy_5.4.0/rpnphy_5.4.0_all/include/physics_input_table_GENERIC
+  </input>
+  <setup>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/RUNMOD/.setup
+Info: linked file .setup/task_setup => /home/dormrb02/ssm/env-utils_1.0_all/bin/task_setup-0.9.0.py
+Info: copied file .setup/task_setup.cfg => /fs/dev/mrb/armnsch/mod64553568.cfg
+Info: copied file .setup/task_setup_call.txt => /fs/dev/mrb/armnsch/tmp9XiHTN
+Info: copied file .setup/task_setup_env.txt => /fs/dev/mrb/armnsch/tmpmKZmoC
+Info: moved file .setup/task_setup_set.txt => /fs/dev/mrb/armnsch/task_setup_env64553568
+Info: linked file .setup/task_setup_truepath => /home/ordenv/ssm-domains/ssm-setup-1.0/dot-profile-setup_1.0_multi/hostbin/AIX/true_path
+  </setup>
+  <work>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/RUNMOD/work
+  </work>
+  <output>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc1-tests/RUNMOD/output
+  </output>
+ *** Error: problematic completion from task_setup.py *** 
