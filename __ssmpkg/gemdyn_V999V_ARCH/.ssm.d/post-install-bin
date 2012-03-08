@@ -66,6 +66,9 @@ for item in gemprnml gemgrid ;do
 	 isok=$(ls $BINDIR/${item}*.Abs 2>/dev/null)
 	 [[ x$isok == x ]] && exitstatus=1
 done
+mv toc2nml $BINDIR
+isok=$(ls $BINDIR/toc2nml 2>/dev/null)
+[[ x$isok == x ]] && exitstatus=1
 
 cd ${TMPDIR:-/tmp}
 chmod -R u+w tmpwkdir$$
