@@ -104,6 +104,8 @@
 !     
             call tstpdyn (itraj)
             itraj = Schm_itraj
+!
+            if (Schm_hzdzdt_L) call hzd_zdt
 !     
          end do
          if (Lun_debug_L) write(Lun_out,1006)
