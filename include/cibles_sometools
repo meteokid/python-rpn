@@ -19,7 +19,7 @@ monitor:
 	$(MAKE) gem_monitor_output
 	mv gem_monitor_end gem_monitor_output $(MONBINDIR)
 
-sometools: prgemnml gemgrid toc2nm
+sometools: prgemnml gemgrid toc2nml
 
 allbin: prgemnml gemgrid toc2nml gem
 #	$(MAKE) gem V4D="v4d modulopt prof_003"
