@@ -64,13 +64,13 @@ else
    make gem RMN_VERSION=${FORCE_RMN_VERSION}
 fi
 
-isokgemntr=$(ls maingemntr*.Abs 2>/dev/null)
-isokgemdm=$(ls maingemdm*.Abs 2>/dev/null)
-[[ x$isokgemntr == x ]] && exitstatus=1
-[[ x$isokgemdm == x ]] && exitstatus=1
 mv maingemntr_${BASE_ARCH}.Abs maingemntr_REL_${BASE_ARCH}.Abs
 mv maingemdm_${BASE_ARCH}.Abs maingemdm_REL_${BASE_ARCH}.Abs
 mv *.Abs $BINDIR
+isokgemntr=$(ls $BINDIR/maingemntr*.Abs 2>/dev/null)
+isokgemdm=$(ls $BINDIR/maingemdm*.Abs 2>/dev/null)
+[[ x$isokgemntr == x ]] && exitstatus=1
+[[ x$isokgemdm == x ]] && exitstatus=1
 
 #cd ${TMPDIR:-/tmp}
 #/bin/rm -rf tmpwkdir$$
