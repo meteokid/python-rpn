@@ -59,6 +59,7 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+#include "grd.cdk"
 !*
 
       real*8   fdg1_8(miny :maxy ,minx1:maxx1,Gni+F_npex  )
@@ -155,6 +156,15 @@
 !
 !     projection ( wfft = x transposed * g )
 !
+      if (Grd_yinyang_L) then
+!$omp do
+      do k=1,Nkl
+      call sfft8 (fwft_8(1+pil_s,k,1+Lam_pil_w), &
+                  (Maxy-Miny+1)*(maxx1-minx1+1),1, &
+                  (Maxy-Miny+1-pil_s-pil_n))
+      enddo
+!$omp enddo
+      else
 !$omp do
       do k=1,Nkl
       call qcfft8(fwft_8(1+pil_s,k,1+Lam_pil_w), &
@@ -162,9 +172,8 @@
                   (Maxy-Miny+1-pil_s-pil_n), -1 )
       enddo
 !$omp enddo
-!     call ffft8 (fwft_8,(Maxy-Miny+1)*(maxx1-minx1+1),
-!    %                     1, (Maxy-Miny+1) * Nkl, -1 )
-!
+      endif
+
 !$omp do
       do i = 0+Lam_pil_w, Gni-1-Lam_pil_e
          do k = 1, Nkl
@@ -351,6 +360,15 @@
 !$omp end single
 !
 !
+      if (Grd_yinyang_L) then
+!$omp do
+      do k=1,Nkl
+      call sfft8 ( fwft_8(1+pil_s,k,1+Lam_pil_w), &
+                          (Maxy-Miny+1) * (maxx1-minx1+1), 1, &
+                          (Maxy-Miny+1-pil_s-pil_n))
+      enddo
+!$omp enddo
+      else
 !$omp do
       do k=1,Nkl
       call qcfft8 ( fwft_8(1+pil_s,k,1+Lam_pil_w), &
@@ -358,9 +376,8 @@
                           (Maxy-Miny+1-pil_s-pil_n) , +1 )
       enddo
 !$omp enddo
-!     call ffft8 ( fwft_8, (Maxy-Miny+1) * (maxx1-minx1+1), 1,
-!    %                               (Maxy-Miny+1) * Nkl, +1 )
-!
+      endif
+
 !$omp single
       call rpn_comm_transpose( F_Rhs_8,Minx, Maxx, Gni, (Maxy-Miny+1), &
                                     Minx1, Maxx1, gnk, fwft_8, -1, 2 )

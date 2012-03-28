@@ -40,6 +40,8 @@
 ! v4_13 - Lee V.            - ptrs to GMM variables must have the right shape
 ! v4_40 - Lee V.            - change in argument call for this routine
 !                             in order to select the "bot" levels
+! v4_40 - Lee V.            - bug correction for when number of pressure levels
+!                             is greater than number of model levels
 !
 !object
 !     output all the GMM fields
@@ -125,6 +127,7 @@
 !
 !_______________________________________________________________________
 !
+      if ( Level_typ_S(levset).eq.'P') return
       nkeys = gmm_keys(keylist)
       periodx_L = .false.
       uvgrid_L=.false.
