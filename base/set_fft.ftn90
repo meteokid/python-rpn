@@ -12,13 +12,11 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r set_fft - determine if fast fourier transforms is needed and
-!                if so, initialize and prepare the FFT projector
+!**s/r set_fft - determine if fast fourier transforms is needed
 !
 #include "model_macros_f.h"
 !
       subroutine set_fft
-!
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,27 +30,14 @@
 ! v3_30 - Tanguay M.        - Abort if LAM adjoint not FFT 
 ! v4_40 - Qaddouri A.       _ Adjust for Yin-Yang FFT (sine, not cosine)
 !
-!object
-!     See above id.
-!	
-!arguments
-!	none
-!
-!implicits
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "dcst.cdk"
 #include "fft.cdk"
 #include "sol.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-       include "v4dg.inc"
 !
-!*
-      real*8 two
-      parameter ( two  = 2.0 )
-!
-      integer i,onept
+      integer npts,onept
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
@@ -75,38 +60,19 @@
 !        2.    test grid factorization
 !              -----------------------
       onept = 0
-      if (Grd_yinyang_L) onept=1
-      i = G_ni-Lam_pil_w-Lam_pil_e+onept
-      call ngfft ( i )
-      if ( i.ne.G_ni-Lam_pil_w-Lam_pil_e+onept ) then
+      if (Grd_yinyang_L) onept = 1
+      npts = G_ni-Lam_pil_w-Lam_pil_e+onept
+
+      call itf_fft_nextfactor ( npts )
+
+      if ( npts.ne.G_ni-Lam_pil_w-Lam_pil_e+onept ) then
          if (Lun_out.gt.0)  &
-         write(Lun_out,3001) G_ni-Lam_pil_w-Lam_pil_e+onept,i
+         write(Lun_out,3001) G_ni-Lam_pil_w-Lam_pil_e+onept,npts
          goto 999
       endif
 !
       Fft_fast_L = .true.
       if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
-!
-!C       3.    calculate inverse projector in Fourier space 'Fft_pri_8'
-!              --------------------------------------------------------
-      if (G_lam) then
-         if (Grd_yinyang_L) then
-             call setscqr(i-onept, 'SIN' )
-         else
-             call setscqr(i, 'QCOS' )
-         endif
-         Fft_pri_8 = dble(i)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w-onept))
-      else
-         call setfft8 ( Grd_ni )
-         Fft_pri_8 = dble(Grd_ni) / (  two * Dcst_pi_8 )
-      endif
-!
-      if (Lun_out.gt.0) write(Lun_out,*) 'Fft_pri_8 = ',Fft_pri_8
-!
- 999  if (V4dg_conf.ne.0.and.G_lam.and..not.Fft_fast_L) then
-         if (Lun_out.gt.0) write(Lun_out,*) 'ABORT: LAM adjoint not FFT'
-         call handle_error(-1,'set_fft','LAM adjoint non FFT')
-      endif
 !
  1000 format( &
       /,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)', &
@@ -116,5 +82,5 @@
 !
 !     ---------------------------------------------------------------
 !
-      return
+ 999  return
       end

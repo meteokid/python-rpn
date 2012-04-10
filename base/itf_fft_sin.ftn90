@@ -12,23 +12,33 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!     subroutine 'sfft8' - multiple fast real sine transform
 
+!**s/r itf_fft_sin - multiple fast real sine transform
+!
+      subroutine itf_fft_sin ( F_a, F_inc, F_jump, F_lot )
+      implicit none
+#include <arch_specific.hf>
+
+      integer F_inc, F_jump, F_lot
+      real*8  F_a(*)
+!
+!author
+!      Jean Cote      Sept 1999
+!
+!revision
+! v4_50 - Desgagne M.   - update standards
+!
+!object
 !     real sine transform of length n-1
 !     the transform is its own inverse
 !     self inverting implementation of Numerical Recipes pp. 508-512
-
-!     created: Sept 99 by j.cote, rpn
-
 !     a     is the array containing input and output data
 !     inc   is the increment within each data 'vector'
 !          (e.g. inc=1 for consecutively stored data)
 !     jump  is the increment between the start of each data vector
 !     lot   is the number of data vectors
-
 !     definition of transform:
 !     -------------------------
-
 !     r(k) = sqrt(2/n)*sum(i=1,...,n-1)(a(i)*sin(i*k*pi/n))
 !
 !     Note for 'a' stored as a(n1,n2) then
@@ -43,39 +53,13 @@
 !           inc   = n1
 !           jump  = 1
 !
-!     The subroutine SETSCQR must have been called to set-up
-!     the commons COMFFT8 and COMFFT8X
-!
-!-----------------------------------------------------------------------
-      subroutine sfft8( a, inc, jump, lot )
+!     The subroutine itf_fft_set must have been called to set-up
+!     the commons in fft.cdk
 
-      implicit none
-#include <arch_specific.hf>
+#include "fft.cdk"
 
-      integer inc, jump, lot
-      real*8  a(*)
-
-      real*8  ai, as, ya, ys, xnor
-      integer i, j, k, is
-
-      integer n, m, nstore
-      real*8  ssin, ccos, qsin
-      pointer ( ptss,ssin(n-m-1) ), ( ptcc,ccos(n-m-1) )
-      pointer ( ptqs,qsin(0:m-1) )
-
-      common    / comfft8x / ptss, ptcc, ptqs, n, m, nstore
-
-      integer iwrd
-
-      external stkmemw, unstakw
-
-      integer j0, jlot
-
-      real*8         w(511*nstore)
-!      pointer  ( pw, w(511*nstore) )
-
-      real*8 pdwrd(2)
-      real   prwrd(2)
+      integer i, j, k, is, j0, jlot
+      real*8  ai, as, ya, ys, xnor, w(511*Fft_nstore)
 
       real*8 zero, half, one, two, four
       parameter( zero = 0.0d0 )
@@ -85,66 +69,58 @@
       parameter( four = 4.0d0 )
 
       integer ija, ijw
-      ija(i,j) = 1 + (j0+j-1)*jump + (i-1)*inc
+      ija(i,j) = 1 + (j0+j-1)*F_jump + (i-1)*F_inc
       ijw(i,j) = j + i*511
+!     __________________________________________________________________
 !
-!     allocate w work array
 !
-      iwrd = ( loc( pdwrd(2) ) - loc( pdwrd(1) ) )/ &
-             ( loc( prwrd(2) ) - loc( prwrd(1) ) )
-!      call stkmemw( iwrd*511*nstore , pw )
+      xnor = sqrt( half * Fft_n )
 
-      xnor = sqrt( half * n )
-
-      do 100 j0=0,lot-1,511
-      jlot  = min( 511, lot - j0 )
-
-      do j=1,jlot
-         w( ijw(0,j) ) = zero
-      enddo
-
-        do i=1,n-m-1
-
-         is = n - i
+      do 100 j0=0,F_lot-1,511
+         jlot  = min( 511, F_lot - j0 )
          do j=1,jlot
-            ai= a( ija(i ,j) )
-            as= a( ija(is,j) )
-            ya=  ( as - ai ) * xnor
-            ys=  two * ssin( i ) * ( as + ai ) * xnor
-            w( ijw(i ,j) ) = ys + ya
-            w( ijw(is,j) ) = ys - ya
+            w( ijw(0,j) ) = zero
          enddo
 
-      enddo
-
-      if ( n .eq. 2 * m ) then
-         do j=1,jlot
-            w( ijw(m,j) ) = four * a( ija(m,j) ) * xnor
+         do i=1,Fft_n-Fft_m-1
+            is = Fft_n - i
+            do j=1,jlot
+               ai= F_a( ija(i ,j) )
+               as= F_a( ija(is,j) )
+               ya=  ( as - ai ) * xnor
+               ys=  two * Fft_ssin( i ) * ( as + ai ) * xnor
+               w( ijw(i ,j) ) = ys + ya
+               w( ijw(is,j) ) = ys - ya
+            enddo
          enddo
-      endif
 
-      call ffft8( w, 511, 1, jlot, -1 )
+         if ( Fft_n .eq. 2 * Fft_m ) then
+            do j=1,jlot
+               w( ijw(Fft_m,j) ) = four * F_a( ija(Fft_m,j) ) * xnor
+            enddo
+         endif
 
-      do j=1,jlot
-         a( ija(1,j) ) = half * w( ijw(0,j) )
-      enddo
-
-         do k = 2,n-2,2
+         call ffft8( w, 511, 1, jlot, -1 )
 
          do j=1,jlot
-            a( ija(k+1,j) ) = w( ijw(k,j)   ) + a( ija(k-1,j) )
-           a( ija(k,  j) ) = w( ijw(k+1,j) )
-
+            F_a( ija(1,j) ) = half * w( ijw(0,j) )
          enddo
-      enddo
 
-      if ( n .ne. 2 * m ) then
-         do j=1,jlot
-            a( ija(n-1,j) ) = w( ijw(n,j) )
+         do k = 2,Fft_n-2,2
+            do j=1,jlot
+               F_a( ija(k+1,j) ) = w( ijw(k,j)   ) + F_a( ija(k-1,j) )
+               F_a( ija(k,  j) ) = w( ijw(k+1,j) )
+            enddo
          enddo
-      endif
+
+         if ( Fft_n .ne. 2 * Fft_m ) then
+            do j=1,jlot
+               F_a( ija(Fft_n-1,j) ) = w( ijw(Fft_n,j) )
+            enddo
+         endif
 
   100 continue
-
+!     __________________________________________________________________
+!
       return
       end

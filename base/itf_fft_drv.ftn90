@@ -13,42 +13,28 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_ctrl 
+!**s/r itf_fft_drv
 !
-#include "model_macros_f.h"
-!
-      subroutine hzd_ctrl2 (F_f2hzd, F_grd_S, NK, F_switch_on_L)
+      subroutine itf_fft_drv ( F_vec, F_n1 ,F_n2 ,F_n3, F_dir )
       implicit none
-#include <arch_specific.hf>
 !
-      character*(*) F_grd_S
-      logical F_switch_on_L
-      integer DIST_DIM, Nk
-      real    F_f2hzd (*)
+      integer F_n1 ,F_n2 ,F_n3, F_dir
+      real*8  F_vec(*)
 !
 !author
-!     Michel Desgagne -- Fall 2010
+!     Michel Desgagne - spring 2012
 !
 !revision
-! v4_15 - Desgagne M.       - initial version 
-! v4_50 - Desgagne M.       - Add F_switch_on_L to interface
-!
-!#include "glb_ld.cdk"
-#include "hzd.cdk"
-!
-!     _________________________________________________________________
-!
-      if ( (.not.Hzd_ho_L) .or. (Hzd_cdiff .le. 0.0) )then
-         F_switch_on_L = .false.
-         return
-      endif
+! v4_50 - Desgagne M.       - initial version
 
-      if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_ho (F_f2hzd, F_grd_S, NK)
+#include "fft.cdk"
 
-      if (Hzd_type_S.eq.'HO_EXP') &
-         call hzd_exhrdif (F_f2hzd, F_grd_S, NK)
-!     _________________________________________________________________
+!     __________________________________________________________________
+!
+      if (Fft_type_S.eq."PERIODIC" ) call ffft8        (F_vec, F_n1, F_n2, F_n3, F_dir)
+      if (Fft_type_S.eq."SIN"      ) call itf_fft_sin  (F_vec, F_n1, F_n2, F_n3      )
+      if (Fft_type_S.eq."QCOS"     ) call itf_fft_qcos (F_vec, F_n1, F_n2, F_n3, F_dir)
+!     __________________________________________________________________
 !
       return
       end

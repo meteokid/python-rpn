@@ -1,22 +1,9 @@
 
-#if defined (DOC)
-!
-!**comdeck fft.cdk
-!
-!______________________________________________________________________
-!                                                                      |
-!  VARIABLES ASSOCIATED WITH FFT                                       |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Fft_fast_L         | .true.   when the FFT is to be used             |
-! Fft_pri_8          | inverse projector in Fourier space              |
-!----------------------------------------------------------------------
-!
-!
-#endif
+      character*12 Fft_type_S
       logical Fft_fast_L
-      real*8  Fft_pri_8
+      integer Fft_n, Fft_m, Fft_nstore
+      real*8, dimension(:), pointer ::  Fft_ssin, Fft_ccos, Fft_qsin
 !
-      common / fft / Fft_pri_8, Fft_fast_L
+      common / fft_s / Fft_type_S
+      common / fft_i / Fft_fast_L, Fft_n, Fft_m, Fft_nstore
+      common / fft_8 / Fft_ssin, Fft_ccos, Fft_qsin

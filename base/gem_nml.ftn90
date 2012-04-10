@@ -161,18 +161,16 @@
       Vspng_njpole  = 3
       Vspng_zmean_L = .false.
 !
+! The following switches are NOT used anymore
+! TODO: complete removal hzd.cdk, nml.cdk, gem_nml.ftn90
       Hzd_t1_0_L = .false.
-      Hzd_t1_1_L = .false.
       Hzd_t0_0_L = .false.
-      Hzd_t0_1_L = .false.
       Hzd_1d_L   = .false.
-      Hzd_hzdmain_0_L = .true.
-      Hzd_hzdmain_1_L = .true.
 !
       Zdot_divHLM_L  = .false.
 !
       Vtopo_start = -1
-      Vtopo_ndt = 0
+      Vtopo_ndt   = 0
 !
       Tr3d_ntr = 0
 !

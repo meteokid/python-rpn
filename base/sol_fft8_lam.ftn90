@@ -13,25 +13,35 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r sol_fft8_lam - parallel direct solution of horizontal Helmholtz
-!                   problem. With ffft8  for LAM
+!                     problem with ffft8  for LAM configurations
 !
 #include "model_macros_f.h"
 !
-      subroutine sol_fft8_lam( sol, Rhs, pri, &
-                             Minx, Maxx, Miny, Maxy, njl, &
-                             Minz, Maxz, Nk, Nkl, Gni, Gnj, &
-                                       Minij, Maxij, L_nij, &
-                             minx1, maxx1, minx2, maxx2,nx3, &
-                             F_npex1, F_npey1, ai, bi, ci, &
-                             fdg2,fdwfft)
+      subroutine sol_fft8_lam2(sol, Rhs                      , &
+                               Minx, Maxx, Miny, Maxy, njl   , &
+                               Minz, Maxz, Nk, Nkl, Gni, Gnj , &
+                                       Minij, Maxij, L_nij   , &
+                               minx1, maxx1, minx2, maxx2,nx3, &
+                               F_npex1, F_npey1, ai, bi, ci  , &
+                               fdg2,fdwfft )
       implicit none
 #include <arch_specific.hf>
-#include "ptopo.cdk"
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "grd.cdk"
 !
-!
+      integer F_npex1, F_npey1
+      integer Minx, Maxx, Miny, Maxy, njl
+      integer Minz, Maxz, Nk, Nkl
+      integer Gni, Gnj
+      integer Minij, Maxij, L_nij
+      integer minx1, maxx1, minx2, maxx2,nx3
+
+      Real*8  ai(minx1:maxx1,minx2:maxx2,nx3), &
+              bi(minx1:maxx1,minx2:maxx2,nx3), &
+              ci(minx1:maxx1,minx2:maxx2,nx3)
+
+      real*8  Sol   (Minx:Maxx, Miny:Maxy, Nk), &
+              Rhs   (Minx:Maxx, Miny:Maxy, Nk)
+      real*8  fdwfft(Miny:Maxy, Minz:Maxz ,Gni+2+F_npex1)
+      real*8  fdg2  (Minz:Maxz,Minij:Maxij,Gnj  +F_npey1)
 !
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -71,93 +81,53 @@
 ! ci           I    - super diagonal of LU factorization
 ! fdg2         I    - work field
 ! fdwfft       I    - work field
-!
-!modules
-      external ffft8, rpn_comm_transpose
 
-      integer  F_npex1, F_npey1
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "grd.cdk"
 
-      integer  minx1, maxx1, minx2, maxx2,nx3
-
-      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3), &
-               bi(minx1:maxx1,minx2:maxx2,nx3), &
-               ci(minx1:maxx1,minx2:maxx2,nx3)
-
-
-      integer Minx, Maxx, Miny, Maxy, njl
-      integer Minz, Maxz, Nk, Nkl
-      integer Gni, Gnj
-      integer Minij, Maxij, L_nij
-      real*8  Sol(Minx:Maxx,Miny:Maxy,Nk), Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      character*4 type_fft
+      integer i, j, k, jr, l_pil_w, l_pil_e
+      integer piece, p0, pn, plon, ptotal
       real*8  pri
-
-!*
-      real*8 fdwfft(Miny:Maxy,Minz:Maxz,Gni+2+F_npex1)
-      real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
+      real*8, parameter :: zero=0.0
+!     __________________________________________________________________
 !
-      integer i,  j, k, ki, jr, err,l_pil_w,l_pil_e
-      integer piece,p0,pn,plon,ptotal
-      real*8 zero, one
-      parameter( zero = 0.0 )
-      parameter( one  = 1.0 )
+      type_fft = 'QCOS'
+      if (Grd_yinyang_L) type_fft = 'SIN'
+
+      call itf_fft_set ( G_ni-Lam_pil_w-Lam_pil_e, type_fft, pri )
 !
 !  The I vector lies on the Y processor so, l_pil_w and l_pil_e will
 !  represent the pilot region along I
+
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
+
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                Minz, Maxz, Nk, fdwfft, 1, 2 )
 
 !     projection ( wfft = x transposed * g )
 !$omp parallel private(jr,p0,pn,piece) shared(plon,ptotal)
 !$omp do
-         do i= 1,Gni
-            do k= Minz, nkl
-               do j= njl+1-pil_n,Maxy
-                  fdwfft(j,k,i)=zero
-               enddo
-            enddo
-            do k= Minz, nkl
-               do j= Miny, pil_s
-                  fdwfft(j,k,i)=zero
-               enddo
-            enddo
-            do k= Nkl+1,Maxz
-               do j= Miny,Maxy
-                  fdwfft(j,k,i)=zero
-               enddo
-            enddo
-         
-            do k= Minz, 0
-               do j= Miny,Maxy
-                  fdwfft(j,k,i)=zero
-               enddo
-            enddo
-         enddo
+      do i= 1,Gni
+         fdwfft(njl+1-pil_n:Maxy , Minz :nkl ,i)= zero
+         fdwfft(       Miny:pil_s, Minz :nkl ,i)= zero
+         fdwfft(       Miny:Maxy , Nkl+1:Maxz,i)= zero
+         fdwfft(       Miny:Maxy , Minz :0   ,i)= zero
+      enddo
 !$omp enddo
 !
-      if (Grd_yinyang_L) then
 !$omp do
       do k=1,Nkl
-      call sfft8(fdwfft(1+pil_s,k,1+Lam_pil_w), &
-                        (Maxy-Miny+1)*(Maxz-Minz+1),1, &
-                        (Maxy-Miny+1-pil_s-pil_n) )
+         call itf_fft_drv (fdwfft(1+pil_s,k,1+Lam_pil_w), &
+                          (Maxy-Miny+1)*(Maxz-Minz+1),1 , &
+                          (Maxy-Miny+1-pil_s-pil_n), -1 )
       enddo
 !$omp enddo
-      else
-!$omp do
-      do k=1,Nkl
-      call qcfft8(fdwfft(1+pil_s,k,1+Lam_pil_w), &
-                        (Maxy-Miny+1)*(Maxz-Minz+1),1, &
-                        (Maxy-Miny+1-pil_s-pil_n), -1 )
-      enddo
-!$omp enddo
-      endif
-
-!     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
-!    %                     (Maxy-Miny+1) * Nkl, -1 )
 
 !$omp do
       do i = 0+Lam_pil_w, Gni-1-Lam_pil_e
@@ -170,88 +140,63 @@
 !$omp enddo
 !
 !$omp single
-      call rpn_comm_transpose &
-           ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
+      call rpn_comm_transpose( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
                                Minij, Maxij, Gni, fdg2, 2, 2 )
 !$omp end single
 !
-       ptotal = L_nij-l_pil_e-l_pil_w-1
-       plon = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
+      ptotal = L_nij-l_pil_e-l_pil_w-1
+      plon   = (ptotal+Ptopo_npeOpenMP)/ Ptopo_npeOpenMP
+
 !$omp do
-       do piece=1,Ptopo_npeOpenMP
-          p0 = 1+l_pil_w + plon*(piece-1)
-          pn = min(L_nij-l_pil_e,plon*piece+l_pil_w)
-          j =1+Lam_pil_s
-
-!     do ki= 1, (Maxz-Minz+1) *L_nij
-!        fdg2(ki,1,j) = bi(ki,1,j)*fdg2(ki,1,j)
-!     enddo
-
-!       do i=1+l_pil_w,L_nij-l_pil_e
-          do i=p0,pn
-             do k=1,Nkl
-                fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
-             enddo
-          enddo
-          do j =2+Lam_pil_s, Gnj-Lam_pil_n
-             jr =  j - 1
-!       do i=1+l_pil_w,L_nij-l_pil_e
-             do i=p0,pn
-                do k=1,Nkl
-                   fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j) &
-                        * fdg2(k,i,jr)
-                enddo
-             enddo
-          enddo
-!        do j = Gnj-1, 1, -1
-!           jr =  j + 1
-!           do ki= 1, (Maxz-Minz+1)*L_nij
-!             fdg2(ki,1,j) = fdg2(ki,1,j) - ci(ki,1,j) * fdg2(ki,1,jr)
-!           enddo
-!        enddo
-          do j = Gnj-1-Lam_pil_n, 1+Lam_pil_s, -1
-             jr =  j + 1
-!             do i=1+l_pil_w,L_nij-l_pil_e
-             do i=p0,pn
-                do k=1,Nkl
-                   fdg2(k,i,j) = fdg2(k,i,j) - ci(k,i,j) * fdg2(k,i,jr)
-                enddo
-             enddo
-          enddo
-       enddo
+      do piece=1,Ptopo_npeOpenMP
+         p0 = 1+l_pil_w + plon*(piece-1)
+         pn = min(L_nij-l_pil_e,plon*piece+l_pil_w)
+         j =1+Lam_pil_s
+         do i=p0,pn
+            do k=1,Nkl
+               fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j)
+            enddo
+         enddo
+         do j =2+Lam_pil_s, Gnj-Lam_pil_n
+            jr =  j - 1
+            do i=p0,pn
+               do k=1,Nkl
+                  fdg2(k,i,j) = bi(k,i,j)*fdg2(k,i,j) - ai(k,i,j) &
+                                * fdg2(k,i,jr)
+               enddo
+            enddo
+         enddo
+         do j = Gnj-1-Lam_pil_n, 1+Lam_pil_s, -1
+            jr =  j + 1
+            do i=p0,pn
+               do k=1,Nkl
+                  fdg2(k,i,j) = fdg2(k,i,j) - ci(k,i,j) * fdg2(k,i,jr)
+               enddo
+            enddo
+         enddo
+      enddo
 !$omp enddo
 !
 !$omp single
-      call rpn_comm_transpose &
-           ( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
-                              Minij, Maxij, Gni, fdg2,- 2, 2 )
+      call rpn_comm_transpose( fdwfft, Miny, Maxy, Gnj, (Maxz-Minz+1), &
+                               Minij, Maxij, Gni, fdg2,- 2, 2 )
 !$omp end single
 
 !     inverse projection ( r = x * w )
 
-      if (Grd_yinyang_L) then
 !$omp do
       do k=1, Nkl
-      call sfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w), &
-                          (Maxy-Miny+1)*(Maxz-Minz+1),1, &
-                          (Maxy-Miny+1-pil_s-pil_n) )
+         call itf_fft_drv (fdwfft(1+pil_s,k,1+Lam_pil_w), &
+                          (Maxy-Miny+1)*(Maxz-Minz+1),1 , &
+                          (Maxy-Miny+1-pil_s-pil_n),  1 )
       enddo
 !$omp enddo
-      else
-!$omp do
-      do k=1, Nkl
-      call qcfft8 ( fdwfft(1+pil_s,k,1+Lam_pil_w), &
-                          (Maxy-Miny+1)*(Maxz-Minz+1),1, &
-                          (Maxy-Miny+1-pil_s-pil_n), +1 )
-      enddo
-!$omp enddo
-      endif
 
 !$omp end parallel
-!     call qcfft8 ( fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1), 1,
-!    %                     (Maxy-Miny+1) * Nkl, +1 )
-!
+
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                     Minz, Maxz, Nk, fdwfft, -1, 2 )
+!     __________________________________________________________________
+!
       return
       end

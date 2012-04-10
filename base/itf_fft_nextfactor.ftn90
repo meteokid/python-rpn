@@ -13,10 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r ngfft - calcul du prochain entier > 8 qui se factorise en 2, 3, et 5
+!**s/r itf_fft_nextfactor - calcul du prochain entier > 8 qui se factorise en 2, 3, et 5
 !
-      subroutine ngfft( F_n )
-!
+      subroutine itf_fft_nextfactor ( F_n )
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,22 +35,27 @@
 !
       integer n
       parameter ( n = 3 )
-      integer k( n ) , m
+      integer k( n ) , m, i, j
       data m / 8 /
       data k / 2 , 3 , 5 /
 !
-!*
-      integer i,j
+!     ---------------------------------------------------------------
 !
       if ( F_n.le.m ) F_n = m + 1
       F_n = F_n - 1
   10  F_n = F_n + 1
       i = F_n
+
   20  do 30 j=1,n
          if( mod(i,k(j)) .eq. 0 ) go to 40
   30  continue
+
       go to 10
   40  i = i/k(j)
+
       if( i .ne. 1 ) go to 20
+!
+!     ---------------------------------------------------------------
+!
       return
       end

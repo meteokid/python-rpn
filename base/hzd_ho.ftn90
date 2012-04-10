@@ -116,21 +116,11 @@
 
       if (Fft_fast_L) then
 
-         if (G_lam) then
-
-            call hzd_solfft_lam ( F_f2hzd, wk1_8, Fft_pri_8, a,c,d, &
-                 trpmin,trpmax,trp_22min,trp_22max,                 &
-                 trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni,      &
-                 l_ni,l_nj, trpn, xp, yp, Hzd_cdiff, Ptopo_npex,Ptopo_npey)
-
-         else
-
-            call hzd_solfft     ( F_f2hzd, wk1_8, Fft_pri_8, a,c,d, &
-                 trpmin,trpmax,trp_22min,trp_22max,                 &
-                 trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni,      &
-                 l_ni,l_nj, trpn, xp, yp, Hzd_cdiff, Ptopo_npex,Ptopo_npey )
-
-         endif
+         call hzd_solfft2( F_f2hzd, wk1_8, a,c,d                       , &
+                           trpmin,trpmax,trp_22min,trp_22max           , &
+                           trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni, &
+                           l_ni,l_nj, trpn, xp, yp, Hzd_cdiff          , &
+                           Ptopo_npex,Ptopo_npey,G_lam )
 
       else
 

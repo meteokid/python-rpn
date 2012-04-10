@@ -13,23 +13,34 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r sol_fft8_2 - parallel direct solution of horizontal Helmholtz
-!                   problem. With ffft8
+!**s/r sol_fft8_3 - parallel direct solution of horizontal Helmholtz
+!                   problem with ffft8
 !
 #include "model_macros_f.h"
 !
-      subroutine sol_fft8_2( sol, Rhs, pri, &
-                             Minx, Maxx, Miny, Maxy, njl, &
-                             Minz, Maxz, Nk, Nkl, Gni, Gnj, &
-                                       Minij, Maxij, L_nij, &
+      subroutine sol_fft8_3( sol, Rhs                      , &
+                             Minx, Maxx, Miny, Maxy, njl   , &
+                             Minz, Maxz, Nk, Nkl, Gni, Gnj , &
+                                       Minij, Maxij, L_nij , &
                              minx1, maxx1, minx2, maxx2,nx3, &
-                             F_npex1, F_npey1, ai, bi, ci, &
-                             fdg2,fdwfft)
+                             F_npex1, F_npey1, ai, bi, ci  , &
+                             fdg2,fdwfft,F_lam_L )
       implicit none
 #include <arch_specific.hf>
-#include "ptopo.cdk"
 !
-!
+      logical F_lam_L
+      integer Minx, Maxx, Miny, Maxy, njl
+      integer Minz, Maxz, Nk, Nkl, Gni, Gnj
+      integer Minij, Maxij, L_nij
+      integer minx1, maxx1, minx2, maxx2,nx3
+      integer F_npex1, F_npey1
+
+      real*8  Sol(Minx:Maxx,Miny:Maxy,Nk), Rhs(Minx:Maxx,Miny:Maxy,Nk)
+      Real*8  ai(minx1:maxx1,minx2:maxx2,nx3), &
+              bi(minx1:maxx1,minx2:maxx2,nx3), &
+              ci(minx1:maxx1,minx2:maxx2,nx3)
+      real*8  fdwfft(Miny:Maxy,Minz :Maxz ,Gni+2+F_npex1)
+      real*8  fdg2  (Minz:Maxz,Minij:Maxij,Gnj  +F_npey1)
 !
 !author    Abdessamad Qaddouri- JULY 1999
 !
@@ -43,67 +54,47 @@
 !   i      - Gni     - number of points in x-direction
 !   i      - Gnj     - number of points in y-direction
 !
-!modules
-      external ffft8, rpn_comm_transpose
+#include "ptopo.cdk"
 
-      integer  F_npex1, F_npey1
-
-      integer  minx1, maxx1, minx2, maxx2,nx3
-
-      Real*8   ai(minx1:maxx1,minx2:maxx2,nx3), &
-               bi(minx1:maxx1,minx2:maxx2,nx3), &
-               ci(minx1:maxx1,minx2:maxx2,nx3)
-
-
-      integer Minx, Maxx, Miny, Maxy, njl
-      integer Minz, Maxz, Nk, Nkl
-      integer Gni, Gnj
-      integer Minij, Maxij, L_nij
-      real*8  Sol(Minx:Maxx,Miny:Maxy,Nk), Rhs(Minx:Maxx,Miny:Maxy,Nk)
-      real*8  pri
-
-!*
-      real*8 fdwfft(Miny:Maxy,Minz:Maxz,Gni+2+F_npex1)
-      real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
-!
-      integer i,  j, k, ki, jw, jr, err
+      integer i, j, k, ki, jw, jr
       integer kkii, ki0, kin, kitotal, kilon
-      real*8 zero, one
-      parameter( zero = 0.0 )
-      parameter( one  = 1.0 )
+      real*8 pri
+      real*8, parameter :: zero=0.0
+!     __________________________________________________________________
 !
-!     call tmg_start0 (45, 'TRP_1    ' )
+      if (F_lam_L) then
+         call sol_fft8_lam2( sol, Rhs                      , &
+                             Minx, Maxx, Miny, Maxy, njl   , &
+                             Minz, Maxz, Nk, Nkl, Gni, Gnj , &
+                                       Minij, Maxij, L_nij , &
+                             minx1, maxx1, minx2, maxx2,nx3, &
+                             F_npex1, F_npey1, ai, bi, ci  , &
+                             fdg2, fdwfft, F_lam_L )
+         return
+      endif
+
+      call itf_fft_set ( Gni, 'PERIODIC', pri )
+
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                Minz, Maxz, Nk, fdwfft, 1, 2 )
-!     call tmg_stop0(45)
 
 !     projection ( wfft = x transposed * g )
-!     call tmg_start0 (46, 'SOL_4    ' )
+
 !$omp parallel private(ki0,kin,kkii,jr) shared(kitotal,kilon,ai,bi,ci)
+
 !$omp do
       do i= 1,Gni
-         do k= Minz, nkl
-            do j= njl+1,Maxy
-                  fdwfft(j,k,i)=zero
-            enddo
-         enddo
-
-         do k= Nkl+1,Maxz
-            do j= Miny,Maxy
-                  fdwfft(j,k,i)=zero
-            enddo
-         enddo
+         fdwfft(njl+1:Maxy,  Minz:nkl ,i)= zero
+         fdwfft( Miny:Maxy, Nkl+1:Maxz,i)= zero
       enddo
 !$omp enddo
 !
 !$omp do
       do k=1,Nkl
-      call ffft8(fdwfft(Miny,k,1),(Maxy-Miny+1)*(Maxz-Minz+1), &
-                                           1, (Maxy-Miny+1), -1 )
+         call itf_fft_drv (fdwfft(Miny,k,1),(Maxy-Miny+1)*(Maxz-Minz+1), &
+                                          1,(Maxy-Miny+1), -1 )
       enddo
 !$omp enddo
-!     call ffft8(fdwfft,(Maxy-Miny+1)*(Maxz-Minz+1),
-!    %                                     1, (Maxy-Miny+1) * Nkl, -1 )
 
 !$omp do
       do k = 1, Nkl
@@ -113,21 +104,16 @@
                fdwfft(jw,k,2*i+2) = pri * fdwfft(jw,k,2*i+2)
             enddo
          enddo
-
-         do j = 1, (Maxy-Miny+1)
-            fdwfft(j,k,Gni+2) = zero
-            fdwfft(j,k,2)     = fdwfft(j,k,1)
-         enddo
+         fdwfft(1:Maxy-Miny+1,k,Gni+2) = zero
+         fdwfft(1:Maxy-Miny+1,k,    2) = fdwfft(1:Maxy-Miny+1,k,1)
       enddo
 !$omp enddo
 
 !
 !$omp single
-!     call tmg_start0 (47, 'TRP_2    ' )
       call rpn_comm_transpose &
            ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1), &
-                               Minij, Maxij, Gni, fdg2, 2, 2 )
-!     call tmg_stop0(47)
+                           Minij, Maxij, Gni, fdg2, 2, 2 )
 !$omp end single
 !
       kitotal = (Maxz-Minz+1)*L_nij
@@ -161,20 +147,16 @@
 !$omp enddo
 !
 !$omp single
-!     call tmg_start0 (48, 'TRP_3    ' )
       call rpn_comm_transpose &
            ( fdwfft(1,1,2), Miny, Maxy, Gnj, (Maxz-Minz+1), &
-                              Minij, Maxij, Gni, fdg2,- 2, 2 )
-!     call tmg_stop0(48)
+                           Minij, Maxij, Gni, fdg2,- 2, 2 )
 !$omp end single
 
 !$omp do
       do k = 1, Nkl
-        do j = 1, (Maxy-Miny+1)
-            fdwfft(j,k,1)     = fdwfft(j,k,2)
-            fdwfft(j,k,2)     = zero
-            fdwfft(j,k,Gni+2) = zero
-         enddo
+         fdwfft(1:Maxy-Miny+1,k,1)     = fdwfft(1:Maxy-Miny+1,k,2)
+         fdwfft(1:Maxy-Miny+1,k,2)     = zero
+         fdwfft(1:Maxy-Miny+1,k,Gni+2) = zero
       enddo
 !$omp enddo
 
@@ -182,19 +164,16 @@
 
 !$omp do
       do k=1, Nkl
-      call ffft8( fdwfft(Miny,k,1), (Maxy-Miny+1) * (Maxz-Minz+1), 1, &
-                                          (Maxy-Miny+1), +1 )
+         call itf_fft_drv (fdwfft(Miny,k,1),(Maxy-Miny+1)*(Maxz-Minz+1), &
+                                          1,(Maxy-Miny+1), +1 )
       enddo
 !$omp enddo
+
 !$omp end parallel
-!     call tmg_stop0(46)
-!     call ffft8( fdwfft, (Maxy-Miny+1) * (Maxz-Minz+1), 1,
-!    %                                    (Maxy-Miny+1) * Nkl, +1 )
 !
-!     call tmg_start0 (49, 'TRP_4    ' )
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                     Minz, Maxz, Nk, fdwfft, -1, 2 )
-!     call tmg_stop0(49)
+!     __________________________________________________________________
 !
       return
       end

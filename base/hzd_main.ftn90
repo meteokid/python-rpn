@@ -42,7 +42,8 @@
 ! v4_05 - Plante A.         - Diffusion of w all the time
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_15 - Desgagne M.       - refonte majeure
-! v4_4  - Plante A.         - Equatorial_sponge
+! v4_40 - Plante A.         - Equatorial_sponge
+! v4_50 - Desgagne M.       - New control switches
 !
 !object
 !	
@@ -53,19 +54,16 @@
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 #include "vt1.cdk"
-#include "vspng.cdk"
 
       type(gmm_metadata) :: mymeta
-      logical no_hzd,no_vspng
+      logical, save :: switch_on_hzd= .true., switch_on_vrtspng= .true., &
+                       switch_on_eqspng= .true.
       integer i,istat
       real, pointer, dimension(:,:,:) :: tr
-!
 !     _________________________________________________________________
 !
-      no_hzd   = (.not.Hzd_ho_L) .or.  (.not.Hzd_hzdmain_0_L)
-      no_vspng = (Vspng_nk.lt.1)
-
-      if (no_hzd .and. no_vspng) return
+      if (.not.(switch_on_hzd.or.switch_on_vrtspng.or.switch_on_eqspng)) &
+           return
 
       istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(ut1)'
@@ -78,7 +76,7 @@
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(wt1)'
 
-      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1)
+      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
 !
@@ -86,19 +84,20 @@
 !  1. Horizontal diffusion *
 !***************************
 !
-      if ( .not. no_hzd ) then
+      if ( switch_on_hzd ) then
          call timing_start ( 60, 'HORDIFF' )
 
-         call hzd_ctrl ( ut1, 'U', G_nk  )
-         call hzd_ctrl ( vt1, 'V', G_nk  )
+         call hzd_ctrl2 ( ut1, 'U', G_nk, switch_on_hzd  )
+         call hzd_ctrl2 ( vt1, 'V', G_nk, switch_on_hzd  )
          
-         call hzd_ctrl (zdt1, 'S', G_nk+1)
-         call hzd_ctrl ( wt1, 'S', G_nk+1)
+         call hzd_ctrl2 (zdt1, 'S', G_nk+1, switch_on_hzd)
+         call hzd_ctrl2 ( wt1, 'S', G_nk+1, switch_on_hzd)
 
          do i=1, Hzd_tr3d_ntr
             nullify (tr)
             istat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr,mymeta)
-            if (istat.eq.0) call hzd_ctrl ( tr, 'S_TR', G_nk+1 )
+            if (istat.eq.0) &
+                 call hzd_ctrl2 (tr, 'S_TR', G_nk+1, switch_on_hzd)
          end do
 
          call timing_stop ( 60 )
@@ -108,13 +107,9 @@
 !  2. Vertical sponge  *
 !***********************
 !
-      if ( .not. no_vspng ) then
+      if ( switch_on_vrtspng ) then
          call timing_start ( 65, 'V_SPNG' )
-         if (G_lam) then
-            call vspng_drv_lam (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk )
-         else
-            call vspng_drv (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
-         endif
+         call vspng_drv2 (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk,switch_on_vrtspng)
          call timing_stop ( 65 )
       endif
 !     
@@ -122,9 +117,11 @@
 !  3. Equatorial sponge  *
 !*************************
 !
-      call timing_start ( 68, 'EQUA_SPNG')
-      call equatorial_sponge (ut1,vt1,LDIST_DIM,G_nk)
-      call timing_stop ( 68 )
+      if ( switch_on_eqspng ) then
+         call timing_start ( 68, 'EQUA_SPNG')
+         call equatorial_sponge2 (ut1,vt1,LDIST_DIM,G_nk,switch_on_eqspng)
+         call timing_stop ( 68 )
+      endif
 !
       call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 !

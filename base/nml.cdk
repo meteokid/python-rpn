@@ -65,16 +65,12 @@
 !Hzd
       namelist /gem_cfgs/ Hzd_1d_L
       namelist /gem_cfgs/ Hzd_difva_L
-      namelist /gem_cfgs/ Hzd_hzdmain_0_L
-      namelist /gem_cfgs/ Hzd_hzdmain_1_L
       namelist /gem_cfgs/ Hzd_lnr
       namelist /gem_cfgs/ Hzd_lnr_tr
       namelist /gem_cfgs/ Hzd_pwr
       namelist /gem_cfgs/ Hzd_pwr_tr
-      namelist /gem_cfgs/ Hzd_t0_1_L
       namelist /gem_cfgs/ Hzd_t0_0_L
       namelist /gem_cfgs/ Hzd_t1_0_L
-      namelist /gem_cfgs/ Hzd_t1_1_L
       namelist /gem_cfgs/ Hzd_tr3d_name_S
       namelist /gem_cfgs/ Hzd_type_S
 !Init
@@ -203,16 +199,12 @@
 !Hzd
       namelist /gem_cfgs_p/ Hzd_1d_L
       namelist /gem_cfgs_p/ Hzd_difva_L
-      namelist /gem_cfgs_p/ Hzd_hzdmain_0_L
-      namelist /gem_cfgs_p/ Hzd_hzdmain_1_L
       namelist /gem_cfgs_p/ Hzd_lnr
       namelist /gem_cfgs_p/ Hzd_lnr_tr
       namelist /gem_cfgs_p/ Hzd_pwr
       namelist /gem_cfgs_p/ Hzd_pwr_tr
       namelist /gem_cfgs_p/ Hzd_t0_0_L
-      namelist /gem_cfgs_p/ Hzd_t0_1_L
       namelist /gem_cfgs_p/ Hzd_t1_0_L
-      namelist /gem_cfgs_p/ Hzd_t1_1_L
       namelist /gem_cfgs_p/ Hzd_type_S
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
