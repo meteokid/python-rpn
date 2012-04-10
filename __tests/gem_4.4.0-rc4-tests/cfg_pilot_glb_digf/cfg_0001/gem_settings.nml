@@ -1,0 +1,109 @@
+# Model Settings file written by Python Module: model
+
+ &__deleted__
+ eponge = 450.,449.6292,362.0958,106.7958 ,
+ Schm_zdotMid_L = .false. ,
+ Vspng_coef = 50000. ,
+ Vspng_mf = 10. ,
+/
+
+ &gem_cfgs
+ Cstv_bA_8 = 0.6 ,
+ Cstv_ptop_8 = 650. ,
+ Cstv_tstr_8 = 200.0 ,
+ Grd_rcoef = 1.,1. ,
+ hyb = 0.0104740,0.0174285,0.0333245,0.0571685,0.0810125,0.1068435,0.1326745,
+       0.1604925,0.1902975,0.2240765,0.2628230,0.3065370,0.3552185,
+       0.4088675,0.4635100,0.5191460,0.5767690,0.6333985,0.6900280,0.7456640,
+       0.7973260,0.8430270,0.8847540,0.9225070,0.9552925,0.9801300,
+       0.9930454 ,
+ Hzd_lnr = 0.04 ,
+ Hzd_pwr = 6 ,
+ Hzd_type_S = 'NIL' ,
+ Init_balgm_L = .true. ,
+ Init_dfnp = 5 ,
+ Init_dfpl_8 = 3600. ,
+ Init_dftr_L = .true. ,
+ Init_dfwin_L = .true. ,
+ Lam_acidtest_L = .false. ,
+ Lctl_debug_L = .false. ,
+ Out3_cliph_L = .true. ,
+ Out3_cubdd_L = .false. ,
+ Out3_cubds_L = .false. ,
+ Out3_cubqq_L = .false. ,
+ Out3_cubqs_L = .false. ,
+ Out3_cubuv_L = .false. ,
+ Out3_cubww_L = .false. ,
+ Out3_cubzt_L = .false. ,
+ Out3_debug_L = .false. ,
+ Out3_etik_s = 'DBG1' ,
+ Out3_linbot = 3 ,
+ Out3_nbitg = 32 ,
+ Out3_zund = 2500,2000,1500 ,
+ Schm_adcub_L = .true. ,
+ Schm_hydro_L = .true. ,
+ Schm_itcn = 2 ,
+ Schm_itnlh = 2 ,
+ Schm_itraj = 2 ,
+ Schm_modcn = 1 ,
+ Schm_moist_L = .true. ,
+ SCHM_PHEAT_L = .true. ,
+ Schm_psadj_L = .false. ,
+ Schm_topo_L = .true. ,
+ Schm_wload_L = .true. ,
+ Schm_xwvt3 = 0 ,
+ Vspng_nk = 0 ,
+/
+
+ &gement
+ e_schm_adcub = .true. ,
+ e_schm_stlag = .true. ,
+ Topo_clip_oro_L = .false. ,
+ Topo_dgfms_L = .false. ,
+ Topo_dgfmx_L = .false. ,
+ Topo_filmx_L = .false. ,
+/
+
+ &grdc
+ Grdc_dx = 0.20 ,
+ Grdc_iref = 25 ,
+ Grdc_jref = 25 ,
+ Grdc_latr = 45. ,
+ Grdc_lonr = 290. ,
+ Grdc_nbits = 32 ,
+ Grdc_nfe = '3600S' ,
+ Grdc_ni = 50 ,
+ Grdc_nj = 50 ,
+ Grdc_start_S = "20090427.000000" ,
+/
+
+ &grid
+ Grd_ni = 120 ,
+ Grd_nj = 60 ,
+ Grd_typ_S = 'GU' ,
+/
+
+ &physics_cfgs
+ CONVEC = 'oldkuo' ,
+ FLUVERT = 'clef' ,
+ GWDRAG = 'gwd86' ,
+ HC2 = 0.8 ,
+ HF2 = 0.8 ,
+ HM2 = 0.8 ,
+ INILWC = .true. ,
+ KNTRAD = 4 ,
+ PARSOL = 2.3E+06,.8E+06,2.0E+06,0.5E-06,0.1E-06,1.1E-06 ,
+ phy_pck_version = 'RPNPHY_5.4.1' ,
+ RADIA = 'newrad' ,
+ SCHMSOL = 'isba' ,
+ SHLCVT = 'conres','nil' ,
+ STCOND = 'newsund' ,
+/
+
+ &step
+ Step_dt = 900. ,
+ Step_gstat = 1 ,
+ Step_rsti = 999 ,
+ Step_total = 8 ,
+/
+

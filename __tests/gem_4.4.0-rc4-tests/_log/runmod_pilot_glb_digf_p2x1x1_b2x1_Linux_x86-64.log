@@ -1,0 +1,1874 @@
+/home/ordenv/ssm-domains9/release/x/gem_4.4.0-rc4-s/all/bin/Um_runmod.ksh -cfg 1:1 -dircfg cfg_pilot_glb_digf -ptopo 2x1x1 -out_block 2x1
+Changing multi-value argument delimiter from : to  
+
+=====>  Um_runmod.ksh starts: cfg_1:1 jeudi 29 mars 2012, 01:26:34 (UTC+0000) ###########
+
+/home/ordenv/ssm-domains9/release/x/gem_4.4.0-rc4-s/all/bin/Um_setmod.ksh -cfg 1:1 -dircfg cfg_pilot_glb_digf -tsk_cfgfile /tmp/armnsch/4852/mod14326.cfg
+Changing multi-value argument delimiter from : to  
+Changing multi-value argument delimiter from : to  
+
+### Content of config file to TASK_SETUP ####
+
+#############################################
+# <input>
+# cfg_0001/configexp.cfg cfg_pilot_glb_digf/cfg_0001/configexp.cfg
+# cfg_0001/ANALYSIS   /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_000
+# cfg_0001/CLIMATO    /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/climato
+#
+# cfg_0001/GEOPHY     /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy
+# cfg_0001/MODEL_INPUT RUNENT_output/cfg_0001/GEMDM_input
+# cfg_0001/output_settings   cfg_pilot_glb_digf/cfg_0001/outcfg.out
+#
+#
+#
+# cfg_0001/model_settings.nml cfg_pilot_glb_digf/cfg_0001/gem_settings.nml
+# cfg_0001/constantes /usr/local/env/afsisio/datafiles/constants/thermoconsts
+# cfg_0001/ozone_clim.fst /usr/local/env/afsisio/datafiles/constants/ozoclim_phy45
+# cfg_0001/rad_table.fst /usr/local/env/afsisio/datafiles/constants/irtab5_std
+# cfg_0001/physics_input_table /home/ordenv/ssm-domains9/release/rpnphy/rpnphy_5.4.1/rpnphy_5.4.1_all/include/physics_input_table_GENERIC
+# </input>
+# <executables>
+# ATM_MOD.Abs      maingemdm_Linux_x86-64.Abs
+# Um_cmclog.ksh    Um_cmclog.ksh
+# UM_MODEL         Um_model.ksh 
+# r.mpirun         r.mpirun2
+# launch_sortie.ksh Um_output_wrapper.ksh
+# </executables>
+# <output>
+#
+# </output>
+#############################################
+
+##### EXECUTING TASK_SETUP ##### task_setup-0.9.0.ksh
+** TASK_SETUP begins **
+  <executables>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/RUNMOD/bin
+Info: linked file bin/ATM_MOD.Abs => /tmp/armnsch/gem_4.4.0-rc4-tests/maingemdm_Linux_x86-64.Abs
+Info: linked file bin/Um_cmclog.ksh => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_cmclog.ksh
+Info: linked file bin/UM_MODEL => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_model.ksh
+Info: linked file bin/r.mpirun => /home/dormrb02/ssm/rmnlib-tbin_1.0_linux24-i386/bin/r.mpirun2
+Info: linked file bin/launch_sortie.ksh => /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_output_wrapper.ksh
+  </executables>
+  <input>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/RUNMOD/input
+Info: linked file input/configexp.cfg => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/configexp.cfg
+Info: linked file input/ANALYSIS => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_000
+Info: linked file input/CLIMATO => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/clim_gemdm320_1080x540_v2_de_francois_withiceline
+Warning: file link cfg_0001/GEOPHY refers to a directory target ['/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy']
+Info: linked directory input/GEOPHY => /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy
+Warning: file link cfg_0001/MODEL_INPUT refers to a directory target ['RUNENT_output/cfg_0001/GEMDM_input']
+Info: linked directory input/MODEL_INPUT => /tmp/armnsch/gem_4.4.0-rc4-tests/RUNENT_output/cfg_0001/GEMDM_input
+Info: linked file input/output_settings => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/outcfg.out
+Info: linked file input/model_settings.nml => /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/gem_settings.nml
+Info: linked file input/constantes => /home/binops/afsi/sio/datafiles/constants/thermoconsts
+Info: linked file input/ozone_clim.fst => /home/binops/afsi/sio/datafiles/constants/ozoclim_phy45
+Info: linked file input/rad_table.fst => /home/binops/afsi/sio/datafiles/constants/irtab5_std
+Info: linked file input/physics_input_table => /home/ordenv/ssm-domains9/release/rpnphy/rpnphy_5.4.1/rpnphy_5.4.1_all/include/physics_input_table_GENERIC
+  </input>
+  <setup>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/RUNMOD/.setup
+Info: linked file .setup/task_setup => /home/dormrb02/ssm/env-utils_1.0_all/bin/task_setup-0.9.0.py
+Info: copied file .setup/task_setup.cfg => /tmp/armnsch/4852/mod14326.cfg
+Info: copied file .setup/task_setup_call.txt => /tmp/armnsch/4852/tmp_HdrHA
+Info: copied file .setup/task_setup_env.txt => /tmp/armnsch/4852/tmpHCn1sR
+Info: moved file .setup/task_setup_set.txt => /tmp/armnsch/4852/task_setup_env14326
+Info: linked file .setup/task_setup_truepath => /home/ordenv/ssm-domains/ssm-setup-1.0/dot-profile-setup_1.0_multi/hostbin/Linux-x86_64/true_path
+  </setup>
+  <work>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/RUNMOD/work
+  </work>
+  <output>
+Info: creating subdirectory /users/dor/armn/sch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/RUNMOD/output
+  </output>
+** TASK_SETUP ends **
+##### EXECUTING TASK_SETUP DONE...#####
+
+##### RESULT OF TASK_SETUP #####
+/tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/bin:
+total 16
+lrwxrwxrwx 1 armnsch armn  59 2012-03-29 01:26 ATM_MOD.Abs -> /tmp/armnsch/gem_4.4.0-rc4-tests/maingemdm_Linux_x86-64.Abs
+lrwxrwxrwx 1 armnsch armn 102 2012-03-29 01:26 UM_MODEL -> /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_model.ksh
+lrwxrwxrwx 1 armnsch armn 103 2012-03-29 01:26 Um_cmclog.ksh -> /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_cmclog.ksh
+lrwxrwxrwx 1 armnsch armn 111 2012-03-29 01:26 launch_sortie.ksh -> /home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.3.2/gem-scripts_4.3.2_all/bin/Um_output_wrapper.ksh
+lrwxrwxrwx 1 armnsch armn  61 2012-03-29 01:26 r.mpirun -> /home/dormrb02/ssm/rmnlib-tbin_1.0_linux24-i386/bin/r.mpirun2
+
+/tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/input/cfg_0001:
+total 32
+lrwxrwxrwx 1 armnsch armn 105 2012-03-29 01:26 ANALYSIS -> /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_000
+lrwxrwxrwx 1 armnsch armn 140 2012-03-29 01:26 CLIMATO -> /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/clim_gemdm320_1080x540_v2_de_francois_withiceline
+lrwxrwxrwx 1 armnsch armn  97 2012-03-29 01:26 GEOPHY -> /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy
+lrwxrwxrwx 1 armnsch armn  67 2012-03-29 01:26 MODEL_INPUT -> /tmp/armnsch/gem_4.4.0-rc4-tests/RUNENT_output/cfg_0001/GEMDM_input
+lrwxrwxrwx 1 armnsch armn 108 2012-03-29 01:26 configexp.cfg -> /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/configexp.cfg
+lrwxrwxrwx 1 armnsch armn  54 2012-03-29 01:26 constantes -> /home/binops/afsi/sio/datafiles/constants/thermoconsts
+lrwxrwxrwx 1 armnsch armn 111 2012-03-29 01:26 model_settings.nml -> /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/gem_settings.nml
+lrwxrwxrwx 1 armnsch armn 105 2012-03-29 01:26 output_settings -> /home/dormrb01/armn/armnsch/_Code_Depot_/tests/gem_4.4.0-rc4-tests/cfg_pilot_glb_digf/cfg_0001/outcfg.out
+lrwxrwxrwx 1 armnsch armn  55 2012-03-29 01:26 ozone_clim.fst -> /home/binops/afsi/sio/datafiles/constants/ozoclim_phy45
+lrwxrwxrwx 1 armnsch armn 106 2012-03-29 01:26 physics_input_table -> /home/ordenv/ssm-domains9/release/rpnphy/rpnphy_5.4.1/rpnphy_5.4.1_all/include/physics_input_table_GENERIC
+lrwxrwxrwx 1 armnsch armn  52 2012-03-29 01:26 rad_table.fst -> /home/binops/afsi/sio/datafiles/constants/irtab5_std
+setting CallReturns=/tmp/armnsch_Call_14326
+setting CallReturns=/tmp/armnsch_Call_14486
+restoring CallReturns=/tmp/armnsch_Call_14326
+Running /tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/bin/ATM_MOD.Abs on 2 (2 x 1) PEs:
+/tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/bin/r.mpirun -pgm /tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/bin/ATM_MOD.Abs -npex 2 -npey 1
+OMP_NUM_THREADS=1
+
+r.mpirun -pgm /tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/bin/ATM_MOD.Abs -npex 2
+
+version avec /bin/ksh
+RPN_COMM_DOM=
+RPN_COMM_DIRS=
+KILLING OLD INITIATORS IF ANY ARE FOUND
+STARTING ONE LOCAL INITIATOR DAEMON
+gauss_48617 (142.135.4.109)
+0: domain=0   2 PEs,  1 SuperGrids with  1 Grids each
+0: 1
+0:    ********************************************************************************************
+0:    *                                                                                          *
+0:    *          GEMDM --- Release of: 2012-03-28 19:57 GMT                   4.4.0-rc4          *
+0:    *                                                                                          *
+0:    *          RMNLIB  -  Release: 013_rc2 (Rev 758) Linux_x86-64/pgi9xx Tue 13 Mar 2012 01:5  *
+0:    *                                                                                          *
+0:    *                                                                                          *
+0:    *          Thu Mar 29 01:26:36 2012                                                        *
+0:    *                                                                                          *
+0:    *          BEGIN  EXECUTION                                                                *
+0:    *                                                                                          *
+0:    ********************************************************************************************
+0:  &RESOURCES
+0:  PTOPO_NPEX =            2,
+0:  PTOPO_NPEY =            1,
+0:  PTOPO_NBLOCX =            2,
+0:  PTOPO_NBLOCY =            1,
+0:  PTOPO_NINBLOCX =            1,
+0:  PTOPO_NINBLOCY =            1,
+0:  PTOPO_SMTPHY =            0,
+0:  PTOPO_SMTDYN =            0,
+0:  PTOPO_BIND_L =  F
+0:  /
+0: 
+0:    ************************************************************
+0:    Package: GEMDYN     version: 4.4.2
+0:    Release of: 2012-03-28 19:53 GMT     COMPILER: Linux_x86-64/pgi9xx
+0:    ************************************************************
+0: 
+0:  Requested topology =             2  by             1
+0:  Grid will use             2  processes
+0: Timers are now initialized
+1: Timers are now initialized
+0: 
+0:  MPI CONFIG (npex x npey):    2 x   1
+0:  OMP CONFIG (npeOpenMP x smtdyn x smtphy):    1 x   1 x   1
+0: 
+0: INITIALIZATION OF PHYSICAL CONSTANTS: (S/R SET_DCST_8)
+0: ======================================================
+0:  ****************************************************
+0:  *    THE VALUE OF THE CONSTANT KARMAN HAS BEEN     *
+0:  *                              ------              *
+0:  *    CHANGED TO 0.40   IN S/R set_dcst_8           *
+0:  ****************************************************
+0:  THE VALUE OF CPD         =    0.100546000000E+04
+0:  THE VALUE OF CPV         =    0.186946000000E+04
+0:  THE VALUE OF RGASD       =    0.287050000000E+03
+0:  THE VALUE OF RGASV       =    0.461510000000E+03
+0:  THE VALUE OF TRPL        =    0.273160000000E+03
+0:  THE VALUE OF TCDK        =    0.273150000000E+03
+0:  THE VALUE OF RAUW        =    0.100000000000E+04
+0:  THE VALUE OF EPS1        =    0.621980022101E+00
+0:  THE VALUE OF EPS2        =    0.378019977899E+00
+0:  THE VALUE OF DELTA       =    0.607768681414E+00
+0:  THE VALUE OF CAPPA       =    0.285491217950E+00
+0:  THE VALUE OF TGL         =    0.273160000000E+03
+0:  THE VALUE OF CONSOL      =    0.136700000000E+04
+0:  THE VALUE OF GRAV        =    0.980616000000E+01
+0:  THE VALUE OF RAYT        =    0.637122000000E+07
+0:  THE VALUE OF STEFAN      =    0.566980000000E-07
+0:  THE VALUE OF PI          =    0.314159265359E+01
+0:  THE VALUE OF OMEGA       =    0.729200000000E-04
+0:  THE VALUE OF KNAMS       =    0.514791000000E+00
+0:  THE VALUE OF STLO        =    0.662848658394E-03
+0:  THE VALUE OF KARMAN      =    0.400000000000E+00
+0:  THE VALUE OF RIC         =    0.200000000000E+00
+0:  THE VALUE OF CHLC        =    0.250100000000E+07
+0:  THE VALUE OF CHLF        =    0.334000000000E+06
+0:  THE VALUE OF T1S         =    0.273160000000E+03
+0:  THE VALUE OF T2S         =    0.258160000000E+03
+0:  THE VALUE OF AW          =    0.313501282995E+04
+0:  THE VALUE OF BW          =    0.236707576632E+01
+0:  THE VALUE OF AI          =    0.286488771309E+04
+0:  THE VALUE OF BI          =    0.166093131502E+00
+0:  THE VALUE OF SLP         =    0.666666666667E-01
+0: 
+0:  ###############################################################
+0:   STARTING DATE for RUN is: 20090427.000000 = 20090427.00000000
+0:  ###############################################################
+0: 
+0:  &GRID
+0:  GRD_TYP_S = GU,
+0:  GRD_NI =          120,
+0:  GRD_NJ =           60,
+0:  GRD_MAXCFL =            1,
+0:  GRD_NILA =          120,
+0:  GRD_NJLA =           60,
+0:  GRD_IREF =            1,
+0:  GRD_JREF =            1,
+0:  GRD_DX =    0.000000    ,
+0:  GRD_DY =    0.000000    ,
+0:  GRD_DXMAX =    360.0000    ,
+0:  GRD_DYMAX =    180.0000    ,
+0:  GRD_LATR =    0.000000    ,
+0:  GRD_LONR =    180.0000    ,
+0:  GRD_OVERLAP =    0.000000    ,
+0:  GRD_XLON1 =    180.0000    ,
+0:  GRD_XLAT1 =    0.000000    ,
+0:  GRD_XLON2 =    270.0000    ,
+0:  GRD_XLAT2 =    0.000000    ,
+0:  GRD_GAUSS_L =  F
+0:  /
+0:  &STEP
+0:  STEP_RUNSTRT_S = 20090427.000000 ,
+0:  STEP_LEAPYEARS_L =  T,
+0:  STEP_TOTAL =            8,
+0:  STEP_RSTI =          999,
+0:  STEP_BKUP =      9999999,
+0:  STEP_GSTAT =            1,
+0:  STEP_SPINPHY =      9999999,
+0:  STEP_NESDT =            0,
+0:  STEP_DT =    900.0000000000000     
+0:  /
+0:  &GEM_CFGS_P
+0:  ACID_PILOT_L =  F,
+0:  ACID_READPOSI_L =  F,
+0:  ACID_READSOL_L =  F,
+0:  ACID_TEST_L =  F,
+0:  CLIM_CLIMAT_L =  F,
+0:  CLIM_ININCR_L =  F,
+0:  CORI_CORNL_L =  T,
+0:  CSTV_BA_8 =   0.6000000000000000     ,
+0:  CSTV_PTOP_8 =    650.0000000000000     ,
+0:  CSTV_TSTR_8 =    200.0000000000000     ,
+0:  EIGV_PARITY_L =  F,
+0:  G_HALOX =            4,
+0:  G_HALOY =            4,
+0:  GRD_RCOEF =    1.000000    ,
+0:                 1.000000    ,
+0:  LAM_GBPIL_T =            0,
+0:  LAM_BLEND_H =           10,
+0:  LAM_BLEND_T =            0,
+0:  HZD_1D_L =  F,
+0:  HZD_DIFVA_L =  F,
+0:  HZD_HZDMAIN_0_L =  T,
+0:  HZD_HZDMAIN_1_L =  T,
+0:  HZD_LNR =   3.9999999E-02,
+0:  HZD_LNR_TR =   -1.000000    ,
+0:  HZD_PWR =            6,
+0:  HZD_PWR_TR =           -1,
+0:  HZD_T0_0_L =  F,
+0:  HZD_T0_1_L =  F,
+0:  HZD_T1_0_L =  F,
+0:  HZD_T1_1_L =  F,
+0:  HZD_TYPE_S = NIL         ,
+0:  INIT_BALGM_L =  T,
+0:  INIT_DFWIN_L =  T,
+0:  INIT_DFNP =            5,
+0:  INIT_DFPL_8 =    3600.000000000000     ,
+0:  INIT_DFTR_L =  T,
+0:  LAM_0PTEND_L =  T,
+0:  LAM_CTEBCS_L =  F,
+0:  LAM_HINT_S = CUB_LAG         ,
+0:  LAM_TOPTT_L =  F,
+0:  LAM_BLENDORO_L =  T,
+0:  LCTL_DEBUG_L =  F,
+0:  LCTL_RXSTAT_S = LCL_4 ,
+0:  OUT3_CLIPH_L =  T,
+0:  OUT3_CLOSESTEP =           -1,
+0:  OUT3_CUBDD_L =  F,
+0:  OUT3_CUBDS_L =  F,
+0:  OUT3_CUBQQ_L =  F,
+0:  OUT3_CUBQS_L =  F,
+0:  OUT3_CUBUV_L =  F,
+0:  OUT3_CUBWW_L =  F,
+0:  OUT3_CUBZT_L =  F,
+0:  OUT3_DEBUG_L =  F,
+0:  OUT3_ETIK_S = DBG1        ,
+0:  OUT3_FLIPIT_L =  F,
+0:  OUT3_IP3 =            0,
+0:  OUT3_LINBOT =            3,
+0:  OUT3_NBITG =           32,
+0:  OUT3_NDIGITS =           -1,
+0:  OUT3_SATUES_L =  F,
+0:  OUT3_UNIT_S =     ,
+0:  OUT3_LIEB_MAXITE =          100,
+0:  OUT3_LIEB_CONV =   0.1000000    ,
+0:  OUT3_POSTFREQ =            0,
+0:  P_RUNLGT =           -1,
+0:  P_LMVD_WEIGH_HIGH_LAT =    1.000000    ,
+0:  P_LMVD_WEIGH_LOW_LAT =    1.000000    ,
+0:  P_LMVD_HIGH_LAT =    30.00000    ,
+0:  P_LMVD_LOW_LAT =    5.000000    ,
+0:  P_DUMPBUS =            0,
+0:  P_DUMPBUS_S = ALL             ,
+0:  P_ZONG_NBIN =           60,
+0:  P_ZONG_ZNLI =            0,
+0:  P_ZONG_ZNMOD =            1,
+0:  P_ZONG_ZNSUS_L =  F,
+0:  RSTRI_GLBCOL_L =  F,
+0:  SCHM_ADCUB_L =  T,
+0:  SCHM_AUTOBAR_L =  F,
+0:  SCHM_HYDRO_L =  T,
+0:  SCHM_ITCN =            2,
+0:  SCHM_ITNLH =            2,
+0:  SCHM_ITRAJ =            2,
+0:  SCHM_MODCN =            1,
+0:  SCHM_MOIST_L =  T,
+0:  SCHM_PCSTY_L =  T,
+0:  SCHM_PHEAT_L =  T,
+0:  SCHM_PSADJ_L =  F,
+0:  SCHM_WLOAD_L =  T,
+0:  SCHM_XWVT3 =            0,
+0:  SCHM_MTEUL_L =  F,
+0:  SCHM_NOTOPTHL_L =  F,
+0:  SCHM_TLIFT =            0,
+0:  SOL_FGM_EPS =   9.9999999999999995E-008,
+0:  SOL_YYG_EPS =   9.9999999999999995E-008,
+0:  SOL_FFT_L =  T,
+0:  SOL_IM =           15,
+0:  SOL_FGM_MAXITS =          200,
+0:  SOL_YYG_MAXITS =           40,
+0:  SOL_PRECOND_S = JACOBI                    ,
+0:  SOL_TYPE_S = DIRECT                    ,
+0:  VSPNG_COEFTOP =   -1.000000    ,
+0:  VSPNG_NJPOLE =            3,
+0:  VSPNG_NK =            0,
+0:  VSPNG_ZMEAN_L =  F,
+0:  VTOPO_NDT =            0,
+0:  VTOPO_START =           -1,
+0:  ZBLEN_L =  F,
+0:  ZBLEN_SPNGTHICK =    0.000000    ,
+0:  ZBLEN_SPNGTT_L =  F,
+0:  ZDOT_DIVHLM_L =  F
+0:  /
+0:  &GRDC_P
+0:  GRDC_DX =   0.2000000    ,
+0:  GRDC_HBLEN =           10,
+0:  GRDC_INITPHY_L =  F,
+0:  GRDC_IREF =           34,
+0:  GRDC_JREF =           34,
+0:  GRDC_LATR =    45.00000    ,
+0:  GRDC_LONR =    290.0000    ,
+0:  GRDC_MAXCFL =            1,
+0:  GRDC_NBITS =           32,
+0:  GRDC_NFE = 3600S       ,
+0:  GRDC_NI =           68,
+0:  GRDC_NJ =           68,
+0:  GRDC_START_S = 20090427.000,
+0:  GRDC_END_S =             
+0:  /
+0:  &COUPLING
+0:  CPL_NAME = NIL                                             ,
+0:  CPL_DEBUT =        99999,
+0:  CPL_FIN =            8,
+0:  CPL_FREQ =            1,
+0:  C_CONTINUE_L =  F,
+0:  CPL_I0 =            1,
+0:  CPL_IN =          120,
+0:  CPL_J0 =            1,
+0:  CPL_JN =           60
+0:  /
+0:  No time series requested.
+0:  &ADW_CFGS
+0:  ADW_STATS_L =  F,
+0:  ADW_USEADX_L =  T,
+0:  ADW_GCCSA_L =  F,
+0:  ADW_CKBD_L =  F,
+0:  ADW_EXDG_L =  F,
+0:  ADW_MONO_L =  T,
+0:  ADW_NOSETINT_L =  F,
+0:  ADW_THERMOPOS_L =  F
+0:  /
+0:  BLOC TOPO: Ptopo_nblocx=            2 Ptopo_nblocy=            1
+0: 
+0:  DOMAIN_DECOMP: checking partitionning of G_ni and G_nj
+0:    120 in      2 subdomains         60 in      1 subdomains
+0: 
+0:  GRID CONFIG: GRTYP=GU     GLB=(  120,   60,   27)    maxLCL(  60,  60)    minLCL(  60,  60)
+0: 
+0: INITIALIZE SCHEMES CONTROL PARAMETERS (S/R SET_SCHM)
+0: ===================================================
+0: 
+0:  FINAL HORIZONTAL GRID CONFIGURATION:
+0:   NI= 121 FROM x0=    0.000 TO xl=  360.000 DEGREES
+0:   NJ=  60 FROM y0=  -88.500 TO yl=   88.500 DEGREES
+0: 
+0:   THE CONSTANT RESOLUTION AREA HAS:
+0:   NILA= 121 OF GRID-LENGTH=   3.0000 DEGREES (   1, 121 )
+0:   NJLA=  60 OF GRID-LENGTH=   3.0000 DEGREES (   1,  60 )
+0: 
+0:   THE VARIABLE RESOLUTION AREA HAS:
+0:    0 POINTS TO THE WEST  AND   0 POINTS TO THE EAST
+0:     WITH STRETCHING FACTOR=  1.0000 AND MINIMUM RESOLUTION=  3.0000
+0:    0 POINTS ON THE SOUTH AND   0 POINTS ON THE NORTH
+0:     WITH STRETCHING FACTOR=  1.0000 AND MINIMUM RESOLUTION=  3.0000
+0:  ==================================================================
+0: 
+0: INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)
+0: ===============================================
+0:  &DYNGRID
+0:  GRD_LEFT =            0,
+0:  GRD_BELO =            0,
+0:  GRD_X0 =    0.000000    ,
+0:  GRD_XL =    360.0000    ,
+0:  GRD_Y0 =   -90.00000    ,
+0:  GRD_YL =    90.00000    
+0:  /
+0: 
+0: STAGGERED VERTICAL LAYERING ON  27 MOMENTUM HYBRID LEVELS WITH Grd_rcoef=    1.00   1.00:
+0:   level          HYB        ~HEIGHTS     ~DELTA_Z       IP1
+0:     1         1.0474E-02      31678.       3538.      95525156
+0:     2         1.7429E-02      28140.       4504.      95594701
+0:     3         3.3324E-02      23636.       3750.      95753661
+0:     4         5.7168E-02      19885.       2422.      95992101
+0:     5         8.1013E-02      17463.       1923.      96230541
+0:     6         1.0684E-01      15540.       1505.      94478684
+0:     7         1.3268E-01      14035.       1323.      94504515
+0:     8         1.6049E-01      12713.       1184.      94532332
+0:     9         1.9030E-01      11529.       1135.      94562137
+0:    10         2.2408E-01      10394.       1108.      94595916
+0:    11         2.6282E-01       9285.       1069.      94634663
+0:    12         3.0654E-01       8216.       1024.      94678377
+0:    13         3.5522E-01       7192.        977.      94727058
+0:    14         4.0887E-01       6215.        872.      94780708
+0:    15         4.6351E-01       5343.        788.      94835350
+0:    16         5.1915E-01       4555.        731.      94890986
+0:    17         5.7677E-01       3824.        651.      94948609
+0:    18         6.3340E-01       3173.        595.      95005238
+0:    19         6.9003E-01       2578.        539.      95061868
+0:    20         7.4566E-01       2039.        465.      95117504
+0:    21         7.9733E-01       1574.        387.      95169166
+0:    22         8.4303E-01       1187.        336.      95214867
+0:    23         8.8475E-01        851.        290.      95256594
+0:    24         9.2251E-01        560.        243.      95294347
+0:    25         9.5529E-01        318.        178.      95327133
+0:    26         9.8013E-01        139.         91.      95351970
+0:    27         9.9304E-01         48.         48.      95364885
+0: 
+0: ALLOCATE AND COMPUTE CORIOLIS FACTOR (S/R SET_CORI)
+0: ==================================================
+0: NO rotation OF CORIOLIS FACTOR
+0: 
+0: COMPUTE (U,V) INTERPOLATION COEFFICIENTS (S/R SET_INTUV)
+0: ========================================================
+0: 
+0: INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)
+0: ==============================================
+0: 
+0: INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)
+0: ====================================================
+0: 
+0: PHYSICS COMPATIBILITY LEVEL IS OK: (level= 1)
+0: 
+0: PHYSICS OPTION DATE =          2         4        27      2009         0
+0: 
+0: PHYSICS OPTION DELT =   900.0
+0: 
+0: PHYSICS OPTION VSTAG   =  T
+0: 
+0: PHYSICS OPTION TLIFT =    0
+0: 
+0: PHYSICS OPTION CLIMAT =  F
+0: 
+0: PHYSICS OPTION COUPLING =  F
+0: 
+0: PHYSICS OPTION LIN_V4D =    0
+0: 
+0: PHYSICS OPTION ININCR =  F
+0: 
+0: PHYSICS OPTION NOTOP =  F
+0: 
+0:    ************************************************************
+0:    Package: RPNPHY     version: 5.4.1
+0:    Release of: 2012-03-28 19:47 GMT     COMPILER: Linux_x86-64/pgi9xx
+0:    ************************************************************
+0: 
+0:                                                      
+0:  ****************************************************
+0:  ****************************************************
+0:                                                      
+0:     PHYSICS_CFGS NAMELIST :                          
+0:     ---------------------                            
+0:                                                      
+0:  &PHYSICS_CFGS_P
+0:  ADVECTKE =  F,
+0:  AGREGAT =  F,
+0:  AS2 =    12.00000    ,
+0:  BETA2 =    1.000000    ,
+0:  BKGALB =  T,
+0:  CHAUF =  T,
+0:  CONVEC = OLDKUO          ,
+0:  CORTM =  T,
+0:  DBGMEM =  F,
+0:  DIAG_TWIND =  F,
+0:  DIFFUW =  F,
+0:  DRAG =  T,
+0:  DRYLAPS =  T,
+0:  DZSEDI =    60.00000    ,
+0:  ETRMIN2 =   9.9999997E-05,
+0:  EVAP =  T,
+0:  FACDIFV =    1.000000    ,
+0:  FACTDT =    1.000000    ,
+0:  FLUVERT = CLEF            ,
+0:  FOMIC =  F,
+0:  GDPS_AGGRESSIVE =  F,
+0:  GWDRAG = GWD86           ,
+0:  HC2 =   0.8000000    ,
+0:  HF2 =   0.8000000    ,
+0:  HINES_FLUX_FILTER =            0,
+0:  HM2 =   0.8000000    ,
+0:  ICELAC =  F,
+0:  ICEMELT =  F,
+0:  IHEATCAL =            0,
+0:  IMPFLX =  F,
+0:  INILWC =  T,
+0:  INTOZOT =  F,
+0:  KFCDEPTH =    4000.000    ,
+0:  KFCDET =    0.000000    ,
+0:  KFCDLEV =   0.5000000    ,
+0:  KFCMOM =  F,
+0:  KFCPCP = ORI             ,
+0:  KFCRAD =    1500.000    ,
+0:  KFCTIMEA =    3600.000    ,
+0:  KFCTIMEC =    3600.000    ,
+0:  KFCTRIG4 =    0.000000    ,
+0:                0.000000    ,
+0:               5.0000001E-02,
+0:               5.0000001E-02,
+0:  KFCTRIGA =   -1.000000    ,
+0:  KFCTRIGL =   5.0000001E-02,
+0:  KFCTRIGLAT =  F,
+0:  KKL2 =   0.1000000    ,
+0:  KNTRAD =            4,
+0:  KTICEFRAC =  T,
+0:  LIMSNODP =  F,
+0:  LMETOX =  F,
+0:  LONGMEL = BLAC62          ,
+0:  MOYHR =            0,
+0:  MY_CCNTYPE =            1,
+0:  MY_DBLMOM_C =  T,
+0:  MY_DBLMOM_G =  T,
+0:  MY_DBLMOM_H =  T,
+0:  MY_DBLMOM_I =  T,
+0:  MY_DBLMOM_R =  T,
+0:  MY_DBLMOM_S =  T,
+0:  MY_DIAGON =  T,
+0:  MY_DZSEDI =    50.00000    ,
+0:  MY_FULL_VERSION =            4,
+0:  MY_ICEON =  T,
+0:  MY_INITN =  T,
+0:  MY_RAINON =  T,
+0:  MY_SEDION =  T,
+0:  MY_SNOWON =  T,
+0:  MY_WARMON =  T,
+0:  NON_ORO =  F,
+0:  NON_ORO_PBOT =    61000.00    ,
+0:  NSLOFLUX =            0,
+0:  OWFLUX =  F,
+0:  PARSOL =    2300000.    ,
+0:              800000.0    ,
+0:              2000000.    ,
+0:             5.0000000E-07,
+0:             1.0000000E-07,
+0:             1.1000000E-06,
+0:  PBL_COUPLED =  F,
+0:  PBL_KTOP =            1,
+0:  PBL_RICRIT =    1.000000    ,
+0:                  1.000000    ,
+0:  PBL_TSPLIT =            1,
+0:  PBL_ZSPLIT =            1,
+0:  PCPTYPE = NIL             ,
+0:  PHY_PCK_VERSION = RPNPHY_5.4.1            ,
+0:  QCFC11 =   0.2800000    ,
+0:  QCFC12 =   0.5300000    ,
+0:  QCH4 =    1.783000    ,
+0:  QCO2 =    380.0000    ,
+0:  QN2O =   0.3186000    ,
+0:  RADFILES = STD             ,
+0:  RADFIX =  T,
+0:  RADFLTR =  T,
+0:  RADIA = NEWRAD          ,
+0:  RADSLOPE =  F,
+0:  RMSCON =    1.000000    ,
+0:  SALTY_QSAT =  F,
+0:  SATUCO =  T,
+0:  SCHMSOL = ISBA            ,
+0:  SCHMURB = NIL             ,
+0:  SHLCVT = CONRES          ,
+0:           NIL             ,
+0:  SIMISCCP =  F,
+0:  SNOALB_ANL =  T,
+0:  SNOWMELT =  F,
+0:  STCOND = NEWSUND         ,
+0:  STOMATE =  F,
+0:  STRATOS =  F,
+0:  TAUFAC =   8.0000000E-06,
+0:  TDIAGLIM =  F,
+0:  TRIGLAT =    0.000000    ,
+0:               0.000000    ,
+0:  TS_FLXIR =  F,
+0:  TSCONFC =  F,
+0:  TYPSOL =  F,
+0:  Z0DIR =  F,
+0:  Z0MIN2 =   1.5000000E-05,
+0:  Z0TLAT =    0.000000    ,
+0:              0.000000    ,
+0:  ZTA =   -1.000000    ,
+0:  ZUA =   -1.000000    
+0:  /
+0:                                                      
+0:  ****************************************************
+0:  ****************************************************
+0:                                                      
+0: 
+0:    ************************************************
+0:    Requested Physics Package: RPNPHY_5.4.1 is OK
+0:    ************************************************
+0: 
+0: INITIALIZATION OF PHYSICAL CONSTANTS: (S/R SET_DCST)
+0: ======================================================
+0:  THE VALUE OF CPD         =    0.100546E+04
+0:  THE VALUE OF CPV         =    0.186946E+04
+0:  THE VALUE OF RGASD       =    0.287050E+03
+0:  THE VALUE OF RGASV       =    0.461510E+03
+0:  THE VALUE OF TRPL        =    0.273160E+03
+0:  THE VALUE OF TCDK        =    0.273150E+03
+0:  THE VALUE OF RAUW        =    0.100000E+04
+0:  THE VALUE OF EPS1        =    0.621980E+00
+0:  THE VALUE OF EPS2        =    0.378020E+00
+0:  THE VALUE OF DELTA       =    0.607769E+00
+0:  THE VALUE OF CAPPA       =    0.285491E+00
+0:  THE VALUE OF TGL         =    0.273160E+03
+0:  THE VALUE OF CONSOL      =    0.136700E+04
+0:  THE VALUE OF GRAV        =    0.980616E+01
+0:  THE VALUE OF RAYT        =    0.637122E+07
+0:  THE VALUE OF STEFAN      =    0.566980E-07
+0:  THE VALUE OF PI          =    0.314159E+01
+0:  THE VALUE OF OMEGA       =    0.729200E-04
+0:  THE VALUE OF KNAMS       =    0.514791E+00
+0:  THE VALUE OF STLO        =    0.662849E-03
+0:  THE VALUE OF KARMAN      =    0.400000E+00
+0:  THE VALUE OF RIC         =    0.200000E+00
+0:  THE VALUE OF CHLC        =    0.250100E+07
+0:  THE VALUE OF CHLF        =    0.334000E+06
+0:  THE VALUE OF T1S         =    0.273160E+03
+0:  THE VALUE OF T2S         =    0.258160E+03
+0:  THE VALUE OF AW          =    0.313501E+04
+0:  THE VALUE OF BW          =    0.236708E+01
+0:  THE VALUE OF AI          =    0.286489E+04
+0:  THE VALUE OF BI          =    0.166093E+00
+0:  THE VALUE OF SLP         =    0.666667E-01
+0: 
+0: READING OZONE FILE in MODE 3 from:
+0: /tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/input/cfg_0001/ozone_clim.fst
+0: Read(998) ZLAT C  CLIMATO3        19     1     1  000000000           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) PREF C  CLIMATO3         1    37     1  000000000           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     1        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     2        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     3        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     4        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     5        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     6        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     7        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     8        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0     9        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0    10        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0    11        0        0  R32  X     0     0     0     0
+0: Read(998) O3   C  CLIMATO3        19    37     1  010187001           0      0    12        0        0  R32  X     0     0     0     0
+0: 
+0: READING IRTAB FILE in MODE 3 from:
+0: /tmp/armnsch/gem_4.4.0-rc4-tests/RUNMOD/input/cfg_0001/rad_table.fst
+0: Read(998) G1   C  RADTABLE       501   141     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) G2   C  RADTABLE       501   141     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) G3   C  RADTABLE       501   141     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) 2O   C  RADTABLE         2   501     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) T3   C  RADTABLE       501     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) Y3   C  RADTABLE         2   501   451  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) BN   C  RADTABLE         2   141     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) DN   C  RADTABLE         2   141     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) B3   C  RADTABLE       141     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) D3   C  RADTABLE       141     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) 3O   C  RADTABLE       451     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) 2U   C  RADTABLE       501     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0: Read(998) 2T   C  RADTABLE       141     1     1  011219700           0      0     0        0        0  E32  X     0     0     0     0
+0:   
+0:  ************************************************************
+0:  ************************************************************
+0:  *                                                          *
+0:  *   TYPES OF SURFACE :                                     *
+0:  *   ----------------                                       *
+0:  *                                                          *
+0:  *                        SOIL                 1            *
+0:  *                                                          *
+0:  *                        GLACIERS             2            *
+0:  *                                                          *
+0:  *                        WATER                3            *
+0:  *                                                          *
+0:  *                        MARINE ICE           4            *
+0:  *                                                          *
+0:  *                        COMPOSITE  VALUE     5            *
+0:  *                                                          *
+0:  *           --> NO AGGREGATION IS PERFORMED <--            *
+0:  *                                                          *
+0:  ************************************************************
+0:  ************************************************************
+0: 
+0: 
+0: 
+0: CALCULATE THE NUMBER OF DIAGNOSTIC/SERIES VARIABLES (S/R SET_DIA)
+0: ================================================================
+0: 
+0:                                                 +--------------+
+0:                                                 |  **ENTBUS**  |
+0: +-----------------+------------+----------------+--------------+---------+--------+--------+-----+-----+---+----+
+0: |      Name       |   Output   |           Description                   |  Start | Length | Mul | Mos |Ini|Stag|
+0: |                 |    name    |                                         |        |        |     | aic |   |ger |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0: | ALEN            |   "1A  "   | VISIBLE ALBEDO (E)                      |      1 |     60 |   1 |   0 | 1 | 0  |
+0: | CLAYEN          |   "2H  "   | PERC. OF CLAY IN SOIL (E)               |     61 |    180 |   3 |   0 | 1 | 0  |
+0: | DHDXDYEN        |   "OW  "   | UNRESOLVED TOPO CORR TENSOR(XY) (E)     |    241 |     60 |   1 |   0 | 1 | 0  |
+0: | DHDXEN          |   "OX  "   | UNRESOLVED TOPO CORR TENSOR(X)(E)       |    301 |     60 |   1 |   0 | 1 | 0  |
+0: | DHDYEN          |   "OY  "   | UNRESOLVED TOPO CORR TENSOR(Y)(E)       |    361 |     60 |   1 |   0 | 1 | 0  |
+0: | GLACEN          |   "1F  "   | CONTINENTAL ICE COVER (E)               |    421 |     60 |   1 |   0 | 1 | 0  |
+0: | GLSEAEN         |   "4A  "   | OCEANIC ICE COVER (E)                   |    481 |     60 |   1 |   0 | 1 | 0  |
+0: | ICEDPEN         |   "2I  "   | SEA ICE THICKNESS (E)                   |    541 |     60 |   1 |   0 | 1 | 0  |
+0: | ISOILEN         |   "2Q  "   | FROZEN WATER IN SOIL (E)                |    601 |     60 |   1 |   0 | 0 | 0  |
+0: | LHTGEN          |   "LE  "   | UNRESOLVED OROGRAPHY VARIANCE2          |    661 |     60 |   1 |   0 | 1 | 0  |
+0: | MGEN            |   "6A  "   | LAND-SEA MASK (E)                       |    721 |     60 |   1 |   0 | 1 | 0  |
+0: | SANDEN          |   "2G  "   | PERC. OF SAND IN SOIL (E)               |    781 |    180 |   3 |   0 | 1 | 0  |
+0: | SNOALEN         |   "5H  "   | SNOW ALBEDO (E)                         |    961 |     60 |   1 |   0 | 1 | 0  |
+0: | SNODPEN         |   "7A  "   | SNOW DEPTH (E)                          |   1021 |    300 |   5 |   0 | 1 | 0  |
+0: | SNOROEN         |   "4H  "   |  REL. DENSITY OF SNOW (E)               |   1321 |     60 |   1 |   0 | 1 | 0  |
+0: | TGLACEN         |   "2W  "   | SFC AND DP GLACIER TP.(E)               |   1381 |    120 |   2 |   0 | 1 | 0  |
+0: | TMICEN          |   "2S  "   | SEA ICE TEMPERATURE (E)                 |   1501 |    180 |   3 |   0 | 1 | 0  |
+0: | TSOILEN         |   "9A  "   | SURFACE TEMPERATURE (E)                 |   1681 |    120 |   2 |   0 | 1 | 0  |
+0: | TWATEREN        |   "8A  "   | SST TEMPERATURE (E)                     |   1801 |     60 |   1 |   0 | 1 | 0  |
+0: | VEGFEN          |   "2U  "   | VEGETATION FRACTIONS (E)                |   1861 |   1560 |  26 |   0 | 1 | 0  |
+0: | WSNOWEN         |   "2R  "   | WATER IN THE SNOW PACK (E)              |   3421 |     60 |   1 |   0 | 1 | 0  |
+0: | WSOILEN         |   "5A  "   | SOIL VOL. WATER CONTENT (E)             |   3481 |    120 |   2 |   0 | 1 | 0  |
+0: | WVEGEN          |   "2L  "   | WATER RETAINED ON THE VEGETATION (E)    |   3601 |     60 |   1 |   0 | 1 | 0  |
+0: | Z0EN            |   "2B  "   | ROUGHNESS LENGTH (E)                    |   3661 |     60 |   1 |   0 | 1 | 0  |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0:   
+0: 
+0:                                                 +--------------+
+0:                                                 |  **DYNBUS**  |
+0: +-----------------+------------+----------------+--------------+---------+--------+--------+-----+-----+---+----+
+0: |      Name       |   Output   |           Description                   |  Start | Length | Mul | Mos |Ini|Stag|
+0: |                 |    name    |                                         |        |        |     | aic |   |ger |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0: | PW_GZ:P         |   "GZT "   | GEOPOTENTIAL AT T+DT ON MOMENTUM LEVELS |      1 |   1740 |   1 |   0 | 1 | 0  |
+0: | PW_GZ:M         |   "GZM "   | GEOPOTENTIAL AT T-DT ON MOMENTUM LEVELS |   1741 |   1740 |   1 |   0 | 1 | 0  |
+0: | TR/HU:M,W       |   "H8  "   | SPECIFIC HUMIDITY AT T-DT               |   3481 |   1740 |   1 |   0 | 1 | 1  |
+0: | TR/HU:P,W       |   "UH  "   | SPECIFIC HUMIDITY AT T+DT               |   5221 |   1740 |   1 |   0 | 1 | 1  |
+0: | PW_WW:P         |   "OM  "   | DP/DT (VERTICAL VELOCITY)               |   6961 |   1740 |   1 |   0 | 1 | 1  |
+0: | PHIS            |   "PHIS"   | SURFACE GEOPOTENTIAL                    |   8701 |     60 |   1 |   0 | 1 | 0  |
+0: | PW_PM:M         |   "P8  "   | SURFACE PRESSURE AT T-DT                |   8761 |     60 |   1 |   0 | 1 | 0  |
+0: | PPLUS           |   "2P  "   | SURFACE PRESSURE AT T+DT                |   8821 |     60 |   1 |   0 | 0 | 0  |
+0: | TR/QC:M,W       |   "Q9  "   | TOTAL CONDENSATE MIXING RATIO AT T-DT   |   8881 |   1740 |   1 |   0 | 1 | 1  |
+0: | TR/QC:P,W       |   "CQ  "   | TOTAL CONDENSATE MIXING RATIO AT T+DT   |  10621 |   1740 |   1 |   0 | 1 | 1  |
+0: | QRPLUS          |   "RQ  "   | RAIN MIXING RATIO (MICROPHY) AT T+DT    |  12361 |   1740 |   1 |   0 | 1 | 1  |
+0: | PW_PM:P         |   "SL  "   | LOCAL SIGMA VALUES                      |  14101 |   1740 |   1 |   0 | 1 | 0  |
+0: | PW_PT:P         |   "SIGT"   | SIGMA THERMO VALUES                     |  15841 |   1740 |   1 |   0 | 1 | 1  |
+0: | STPLUS          |   "STP "   | SURFACE LOG(PRESSURE) AT D+DT           |  17581 |     60 |   1 |   0 | 1 | 0  |
+0: | PW_TT:M         |   "T8  "   | TEMPERATURE AT T-DT                     |  17641 |   1740 |   1 |   0 | 1 | 1  |
+0: | PW_TT:P         |   "2T  "   | TEMPERATURE AT T+DT                     |  19381 |   1740 |   1 |   0 | 1 | 1  |
+0: | PW_UU:M         |   "U8  "   | WIND SPEED ALONG-X AT T-DT              |  21121 |   1740 |   1 |   0 | 1 | 0  |
+0: | PW_UU:P         |   "UP  "   | WIND SPEED ALONG-X AT T+DT              |  22861 |   1740 |   1 |   0 | 1 | 0  |
+0: | PW_VV:M         |   "V8  "   | WIND SPEED ALONG-Y AT T-DT              |  24601 |   1740 |   1 |   0 | 1 | 0  |
+0: | PW_VV:P         |   "VP  "   | WIND SPEED ALONG-Y AT T+DT              |  26341 |   1740 |   1 |   0 | 1 | 0  |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0:   
+0: 
+0:                                                 +--------------+
+0:                                                 |  **PERBUS**  |
+0: +-----------------+------------+----------------+--------------+---------+--------+--------+-----+-----+---+----+
+0: |      Name       |   Output   |           Description                   |  Start | Length | Mul | Mos |Ini|Stag|
+0: |                 |    name    |                                         |        |        |     | aic |   |ger |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0: | ACOEF           |   "1I  "   | A COEF. IN WGEQ                         |      1 |     60 |   1 |   0 | 0 | 0  |
+0: | AIP             |   "PE  "   | ACCUM. OF REFROZEN PRECIP.              |     61 |     60 |   1 |   0 | 0 | 0  |
+0: | ALC             |   "A1  "   | ACCUM. OF LIQUID CONVECT. PRECIP.       |    121 |     60 |   1 |   0 | 0 | 0  |
+0: | ALCS            |   "A8  "   | ACCUM. OF LIQUID SHALL. CONVECT. PRECIP.|    181 |     60 |   1 |   0 | 0 | 0  |
+0: | ALNOSNO         |   "IA  "   | INITIAL BACKGROUND ALBEDO               |    241 |     60 |   1 |   0 | 0 | 0  |
+0: | ALS             |   "A2  "   | ACCUM. OF LIQUID PRECIP, GRID-SCALE COND|    301 |     60 |   1 |   0 | 0 | 0  |
+0: | ALVEG           |   "AX  "   | VISIBLE CANOPY ALBEDO                   |    361 |     60 |   1 |   0 | 0 | 0  |
+0: | ALVIS           |   "AL  "   | VISIBLE SURFACE ALBEDO                  |    421 |    300 |   5 |   0 | 0 | 0  |
+0: | ASC             |   "A3  "   | ACCUM. OF SOLID  CONVECT. PRECIP.       |    721 |     60 |   1 |   0 | 0 | 0  |
+0: | ASCS            |   "A9  "   | ACCUM. OF SOLID  SHALL. CONVECT. PRECIP.|    781 |     60 |   1 |   0 | 0 | 0  |
+0: | ASS             |   "A4  "   | ACCUM. OF TOTAL SOLID PRECIP, GRID-SCALE|    841 |     60 |   1 |   0 | 0 | 0  |
+0: | AZR             |   "FR  "   | ACCUM. OF FREEZG PRECIP.                |    901 |     60 |   1 |   0 | 0 | 0  |
+0: | BCOEF           |   "1G  "   | SLOPE OF RETENTION CURVE                |    961 |     60 |   1 |   0 | 0 | 0  |
+0: | C1SAT           |   "3I  "   | C1 COEF. AT SATURATION                  |   1021 |     60 |   1 |   0 | 0 | 0  |
+0: | C2REF           |   "4I  "   | REFERENCE VALUE OF C2                   |   1081 |     60 |   1 |   0 | 0 | 0  |
+0: | C3REF           |   "5I  "   | DRAINAGE COEF. TO DEEPER SOIL           |   1141 |     60 |   1 |   0 | 0 | 0  |
+0: | CGSAT           |   "6I  "   | THERMAL COEF. AT SATURATION             |   1201 |     60 |   1 |   0 | 0 | 0  |
+0: | CLAY            |   "J2  "   | PERCENTAGE OF CLAY IN SOIL              |   1261 |    180 |   3 |   0 | 0 | 0  |
+0: | CLB             |   "CLB "   | NET CLEAR SKY LW FLUX AT SFC            |   1441 |     60 |   1 |   0 | 0 | 0  |
+0: | CLBAF           |   "ACLB"   | ACCUMULATION OF CLB                     |   1501 |     60 |   1 |   0 | 0 | 0  |
+0: | CLT             |   "CLT "   | NET CLEAR SKY LW FLUX AT TOP            |   1561 |     60 |   1 |   0 | 0 | 0  |
+0: | CLTAF           |   "ACLT"   | ACCUMULATION OF CLT                     |   1621 |     60 |   1 |   0 | 0 | 0  |
+0: | COSAS           |   "CO  "   | COSINE OF THE SOLAR ANGLE FOR AVERAGING |   1681 |     60 |   1 |   0 | 0 | 0  |
+0: | COSZ            |   "M4  "   | COSINE OF THE SOLAR ANGLE               |   1741 |     60 |   1 |   0 | 0 | 0  |
+0: | COVF            |   "6F  "   | COVER FRACTIONS                         |   1801 |   2280 |  38 |   0 | 0 | 0  |
+0: | CSB             |   "CSB "   | NET CLEAR SKY SOLAR FLUX AT SFC         |   4081 |     60 |   1 |   0 | 0 | 0  |
+0: | CSBAF           |   "ACSB"   | ACCUMULATION OF CSB                     |   4141 |     60 |   1 |   0 | 0 | 0  |
+0: | CSTAF           |   "ACST"   | ACCUMULATION OF CSTT                    |   4201 |     60 |   1 |   0 | 0 | 0  |
+0: | CSTT            |   "CSTT"   | NET CLEAR SKY SOLAR FLUX AT TOP         |   4261 |     60 |   1 |   0 | 0 | 0  |
+0: | CVEG            |   "CV  "   | THERMAL COEFFICIENT FOR CANOPY          |   4321 |     60 |   1 |   0 | 0 | 0  |
+0: | DHDX            |   "Y7  "   | UNRESOLVED TOPO CORR TENSOR(X)          |   4381 |     60 |   1 |   0 | 0 | 0  |
+0: | DHDXDY          |   "Y9  "   | UNRESOLV TOPO CORR TENSOR(XY)           |   4441 |     60 |   1 |   0 | 0 | 0  |
+0: | DHDY            |   "Y8  "   | UNRESOLVED TOPO CORR TENSOR(Y)          |   4501 |     60 |   1 |   0 | 0 | 0  |
+0: | DLAT            |   "LA  "   | LATITUDE                                |   4561 |     60 |   1 |   0 | 0 | 0  |
+0: | DLON            |   "LO  "   | LONGITUDE                               |   4621 |     60 |   1 |   0 | 0 | 0  |
+0: | DRAIN           |   "DR  "   | WATER DRAINAGE AT BOTTOM OF SOIL LAYER  |   4681 |     60 |   1 |   0 | 0 | 0  |
+0: | DRAINAF         |   "O1  "   | ACCUM. OF BASE DRAINAGE                 |   4741 |     60 |   1 |   0 | 0 | 0  |
+0: | DRAINTOTAF      |   "TDRA"   | ACCUM. ACCUM. OF BASE DRAINAGE          |   4801 |    300 |   5 |   0 | 0 | 0  |
+0: | DTDIAG          |   "DLIM"   | DELTAT AT SCREEN LEVEL OF TDIAGLIM      |   5101 |     60 |   1 |   0 | 0 | 0  |
+0: | DXDY            |   "DX  "   | AREA OF EACH MODEL GRID TILE            |   5161 |     60 |   1 |   0 | 0 | 0  |
+0: | ECC             |   "ECC "   | 2-D TOTAL EFFECTIVE CLOUD COVER(CCCMARAD|   5221 |     60 |   1 |   0 | 0 | 0  |
+0: | ECCH            |   "ECCH"   | 2-D EFFECTIVE HIGH CLOUD COVER(CCCMARAD)|   5281 |     60 |   1 |   0 | 0 | 0  |
+0: | ECCL            |   "ECCL"   | 2-D EFFECTIVE LOW CLOUD COVER(CCCMARAD) |   5341 |     60 |   1 |   0 | 0 | 0  |
+0: | ECCM            |   "ECCM"   | 2-D EFFECTIVE MID CLOUD COVER(CCCMARAD) |   5401 |     60 |   1 |   0 | 0 | 0  |
+0: | EI              |   "EI  "   | OUTGOING IR ENERGY FLUX AT MODEL LID    |   5461 |     60 |   1 |   0 | 0 | 0  |
+0: | EIAF            |   "AR  "   | ACCUMULATION OF EI                      |   5521 |     60 |   1 |   0 | 0 | 0  |
+0: | EN              |   "EN  "   | TURBULENT KINETIC ENERGY                |   5581 |   1740 |   1 |   0 | 0 | 1  |
+0: | EPSTFN          |   "EP  "   | STEPHAN-BOLTZMAN CONSTANT               |   7321 |     60 |   1 |   0 | 0 | 0  |
+0: | EV              |   "EV  "   | OUTGOING VIS ENERGY FLUX AT MODEL LID   |   7381 |     60 |   1 |   0 | 0 | 0  |
+0: | EV0             |   "E0  "   | EV AT MID TIME INTERVAL                 |   7441 |     60 |   1 |   0 | 0 | 0  |
+0: | EVAF            |   "AU  "   | ACCUMULATION OF EV                      |   7501 |     60 |   1 |   0 | 0 | 0  |
+0: | FBL             |   "NC  "   | BOUNDARY LAYER CLOUD FRACTION           |   7561 |   1740 |   1 |   0 | 0 | 1  |
+0: | FCAF            |   "AH  "   | ACCUMULATION OF FC                      |   9301 |     60 |   1 |   0 | 0 | 0  |
+0: | FCPFLG          |   "FF  "   | FRITSCH-CHAPPELL SCHEME FLAG            |   9361 |     60 |   1 |   0 | 0 | 0  |
+0: | FDC             |   "CK  "   | DEEP CONVECTIVE CLOUDS                  |   9421 |   1740 |   1 |   0 | 0 | 1  |
+0: | FDSI            |   "FI  "   | IR ENERGY FLUX TOWARDS GROUND           |  11161 |     60 |   1 |   0 | 0 | 0  |
+0: | FDSS            |   "FS  "   | VIS FLUX ABSORBED BY GROUND             |  11221 |     60 |   1 |   0 | 0 | 0  |
+0: | FDSS0           |   "F0  "   | FDSS AT MID TIME INTERVAL               |  11281 |     60 |   1 |   0 | 0 | 0  |
+0: | FIAF            |   "AD  "   | ACCUMULATION OF FDSI                    |  11341 |     60 |   1 |   0 | 0 | 0  |
+0: | FICE            |   "F8  "   | ICE FRACTION FROM CONDENS.              |  11401 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLAF            |   "AG  "   | ACCUMULATION OF HEAT FLUX IN THE GROUND |  13141 |     60 |   1 |   0 | 0 | 0  |
+0: | FLUSLAF         |   "N4SL"   | ACCUM. OF FLUSLOP                       |  13201 |     60 |   1 |   0 | 0 | 0  |
+0: | FLUSLOP         |   "FBSL"   | VIS FLUX TWRDS SLP GROUND               |  13261 |     60 |   1 |   0 | 0 | 0  |
+0: | FLUSOLAF        |   "N4  "   | ACCUM. OF SOLAR RADATION                |  13321 |     60 |   1 |   0 | 0 | 0  |
+0: | FLUSOLIS        |   "FB  "   | VIS FLUX TOWARDS GROUND                 |  13381 |     60 |   1 |   0 | 0 | 0  |
+0: | FLUXDL          |   "FLDL"   | FLUX DOWN LW                            |  13441 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLUXDS0         |   "F0DS"   | FLUX DOWN SW AT MID T                   |  15181 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLUXUL          |   "FLUL"   | FLUX UP LW                              |  16921 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLUXUS0         |   "F0US"   | FLUX UP SW AT MID T                     |  18661 |   1740 |   1 |   0 | 0 | 1  |
+0: | FNN             |   "FE  "   | FLUX ENHANCEMENT FACTOR                 |  20401 |   1740 |   1 |   0 | 0 | 1  |
+0: | FQ              |   "FQ  "   | SURF. MOMENTUM FLUX                     |  22141 |     60 |   1 |   0 | 0 | 0  |
+0: | FQAF            |   "AW  "   | ACCUMULATION OF FQ                      |  22201 |     60 |   1 |   0 | 0 | 0  |
+0: | FRV             |   "B5  "   | FRICTION VELOCITY                       |  22261 |    300 |   5 |   0 | 0 | 0  |
+0: | FSAF            |   "AS  "   | ACCUMULATION OF FDSS                    |  22561 |     60 |   1 |   0 | 0 | 0  |
+0: | FSAMOON         |   "FSAM"   | ENERGY ABSBD BTN TOA AND MDL TOP        |  22621 |     60 |   1 |   0 | 0 | 0  |
+0: | FSC             |   "FSC "   | SHALLOW CONVECTION CLOUDS               |  22681 |   1740 |   1 |   0 | 0 | 1  |
+0: | FSD0            |   "FSD0"   | DIRECT SW DOWNWARD FLX AT SFC AT MID T  |  24421 |     60 |   1 |   0 | 0 | 0  |
+0: | FSDAF           |   "AFSD"   | ACCUMULATION OF FSD                     |  24481 |     60 |   1 |   0 | 0 | 0  |
+0: | FSF0            |   "FSF0"   | DIFFUSE SW DOWNWARD FLX AT SFC AT MID T |  24541 |     60 |   1 |   0 | 0 | 0  |
+0: | FSFAF           |   "AFSF"   | ACCUMULATION OF FSF                     |  24601 |     60 |   1 |   0 | 0 | 0  |
+0: | FSG             |   "FSG "   | DOWNWARD FLX ABSORBD BY SFC             |  24661 |     60 |   1 |   0 | 0 | 0  |
+0: | FSI0            |   "FSI0"   | NEAR IR DOWNWARD FLX AT SFC AT MID T    |  24721 |     60 |   1 |   0 | 0 | 0  |
+0: | FSIAF           |   "AFSI"   | ACCUMULATION OF FSI                     |  24781 |     60 |   1 |   0 | 0 | 0  |
+0: | FSV0            |   "FSV0"   | VIS DOWNWARD FLX AT SFC AT MID T        |  24841 |     60 |   1 |   0 | 0 | 0  |
+0: | FSVAF           |   "AFSV"   | ACCUMULATION OF FSV                     |  24901 |     60 |   1 |   0 | 0 | 0  |
+0: | FTEMP           |   "FT  "   | SFC. TEMPERATURE FLUX (T-DT)            |  24961 |    300 |   5 |   0 | 0 | 0  |
+0: | FTOT            |   "FN  "   | TOTAL CLOUDS                            |  25261 |   1740 |   1 |   0 | 0 | 1  |
+0: | FVAF            |   "AV  "   | ACCUMULATION OF FV                      |  27001 |     60 |   1 |   0 | 0 | 0  |
+0: | FVAP            |   "HF  "   | SURF. VAPOUR FLUX (T-DT)                |  27061 |    300 |   5 |   0 | 0 | 0  |
+0: | FXP             |   "NS  "   | STRATIFORM CLOUDS                       |  27361 |   1740 |   1 |   0 | 0 | 1  |
+0: | GAMVEG          |   "GG  "   | STOMATAL RESISTANCE PARAMETER           |  29101 |     60 |   1 |   0 | 0 | 0  |
+0: | GC              |   "GC  "   | GROUND COVER (-1,0,1)                   |  29161 |     60 |   1 |   0 | 0 | 0  |
+0: | GLACIER         |   "2F  "   | CONTINENTAL ICE FRACTION                |  29221 |     60 |   1 |   0 | 0 | 0  |
+0: | GLSEA           |   "GL  "   | SEA ICE FRACTION                        |  29281 |     60 |   1 |   0 | 0 | 0  |
+0: | GLSEA0          |   "GY  "   | SEA ICE FRACTION (UNMODIFIED)           |  29341 |     60 |   1 |   0 | 0 | 0  |
+0: | H               |   "H   "   | HEIGHT OF BOUNDARY LAYER                |  29401 |     60 |   1 |   0 | 0 | 0  |
+0: | HST             |   "H1  "   | PBL HEIGHT FOR STABLE CASE              |  29461 |    300 |   5 |   0 | 0 | 0  |
+0: | ICEDP           |   "I8  "   | SEA ICE THICKNESS                       |  29761 |     60 |   1 |   0 | 0 | 0  |
+0: | ICELINE         |   "ICEL"   | ICE LINE                                |  29821 |     60 |   1 |   0 | 0 | 0  |
+0: | ICEP            |   "ICEP"   | ISCCP CLOUD VARIABILITY (EPILSON)       |  29881 |     60 |   1 |   0 | 0 | 0  |
+0: | ICTP            |   "ICTP"   | ISCCP CLOUD TOP PRESSURE                |  29941 |     60 |   1 |   0 | 0 | 0  |
+0: | ILMO            |   "IO  "   | (LENGTH OF MONIN-OBUKHOV)**-1           |  30001 |    300 |   5 |   0 | 0 | 0  |
+0: | INCRGL          |   "IG  "   | SEA AND LAKE ICE INCREMENT              |  30301 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRHS          |   "IQ  "   | SOIL MOISTURE INCREMENT                 |  30361 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRICD         |   "IX  "   | ICE THICKNESS INCREMENT                 |  30421 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRNE          |   "IN  "   | SNOW DEPTH INCREMENT                    |  30481 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRTG          |   "IT  "   | DEEP GLACIER TEMP. INCREMENT            |  30541 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRTP          |   "IP  "   | DEEP SOIL TEMP. INCREMENT               |  30601 |     60 |   1 |   0 | 0 | 0  |
+0: | INCRTS          |   "IS  "   | SURFACE TEMP. INCREMENT                 |  30661 |     60 |   1 |   0 | 0 | 0  |
+0: | ISOIL           |   "I2  "   | SOIL VOLUMETRIC ICE CONTENTS            |  30721 |     60 |   1 |   0 | 0 | 0  |
+0: | ISUN            |   "ISUN"   | ISCCP SUNLIT PARAMETER (MU >= 0.2)      |  30781 |     60 |   1 |   0 | 0 | 0  |
+0: | ITAU            |   "ITAU"   | ISCCP CLOUD OPTICAL THICKNESS           |  30841 |     60 |   1 |   0 | 0 | 0  |
+0: | ITCF            |   "ITCF"   | ISCCP TOTAL CLOUD FRACTION              |  30901 |     60 |   1 |   0 | 0 | 0  |
+0: | ITP             |   "ITP "   | ISCCP CLOUD TOP PRESSURE/TAU HOSTOGRAMS |  30961 |   2940 |  49 |   0 | 0 | 0  |
+0: | IVAF            |   "AB  "   | ACCUMULATION OF IV                      |  33901 |     60 |   1 |   0 | 0 | 0  |
+0: | IWC             |   "QE  "   | CLOUD ICE CONTENT AT TIME T             |  33961 |   1740 |   1 |   0 | 0 | 1  |
+0: | LAI             |   "J4  "   | LEAF AREA INDEX                         |  35701 |     60 |   1 |   0 | 0 | 0  |
+0: | LEGAF           |   "O5  "   | ACCUM. OF BARE GROUND LE FLUX           |  35761 |     60 |   1 |   0 | 0 | 0  |
+0: | LERAF           |   "O6  "   | ACCUM. OF DIRECT VEG LE FLUX            |  35821 |     60 |   1 |   0 | 0 | 0  |
+0: | LESAF           |   "O7  "   | ACCUM. OF SUBLIMATION FROM SNOW         |  35881 |     60 |   1 |   0 | 0 | 0  |
+0: | LETRAF          |   "O8  "   | ACCUM. OF VEG. TRANSPIRATION            |  35941 |     60 |   1 |   0 | 0 | 0  |
+0: | LEVAF           |   "O9  "   | ACCUM. OF EVAPORATION FROM VEG.         |  36001 |     60 |   1 |   0 | 0 | 0  |
+0: | LHTG            |   "LH  "   | UNRESOLVED OROGRAPHY VARIANCE           |  36061 |     60 |   1 |   0 | 0 | 0  |
+0: | LWC             |   "QD  "   | CLOUD/WATER CONTENT AT TIME T           |  36121 |   1740 |   1 |   0 | 0 | 1  |
+0: | MELTS           |   "MLTS"   | ACCUM. SNOW MELTING (KG/M2)             |  37861 |     60 |   1 |   0 | 0 | 0  |
+0: | MELTSR          |   "MLTR"   | ACCUM. SNOW MELTING DUE TO RAIN (KG/M2) |  37921 |     60 |   1 |   0 | 0 | 0  |
+0: | MF              |   "MF  "   | FILTERED TOPOGRAPHY                     |  37981 |     60 |   1 |   0 | 0 | 0  |
+0: | MG              |   "MG  "   | LAND-SEA MASK                           |  38041 |     60 |   1 |   0 | 0 | 0  |
+0: | ML              |   "ML  "   | FRACTION OF LAKES (MASK)                |  38101 |     60 |   1 |   0 | 0 | 0  |
+0: | MT              |   "MT  "   | NOT FILTERED TOPOGRAPHY                 |  38161 |     60 |   1 |   0 | 0 | 0  |
+0: | MTDIR           |   "Y6  "   | UNRESOLVED TOPO DIRECTION               |  38221 |     60 |   1 |   0 | 0 | 0  |
+0: | NBAS            |   "NB  "   | LOW CLOUD AMOUNT                        |  38281 |     60 |   1 |   0 | 0 | 0  |
+0: | NHAUT           |   "NH  "   | HIGH CLOUD AMOUNT                       |  38341 |     60 |   1 |   0 | 0 | 0  |
+0: | NMOY            |   "NM  "   | MIDDLE CLOUD AMOUNT                     |  38401 |     60 |   1 |   0 | 0 | 0  |
+0: | NT              |   "NT  "   | 2-D TOTAL EFFECTIVE CLOUD COVER(NEWRAD S|  38461 |     60 |   1 |   0 | 0 | 0  |
+0: | NTAF            |   "NF  "   | ACCUMULATION OF NT                      |  38521 |     60 |   1 |   0 | 0 | 0  |
+0: | O3S             |   "O3S "   | OZONE                                   |  38581 |   1740 |   1 |   0 | 0 | 1  |
+0: | OVERFLAF        |   "N0  "   | ACCUM. OF SURFACE RUNOFF                |  40321 |     60 |   1 |   0 | 0 | 0  |
+0: | OZTOIT          |   "OZTO"   | AVG MIXING RATIO O3 ABV ROOF            |  40381 |     60 |   1 |   0 | 0 | 0  |
+0: | PARR0           |   "PAR0"   | PHOTOSYNTHETIC ACTIVE RADIATION AT MID T|  40441 |     60 |   1 |   0 | 0 | 0  |
+0: | PARRAF          |   "APAR"   | ACCUMULATION OF PAR                     |  40501 |     60 |   1 |   0 | 0 | 0  |
+0: | PCOEF           |   "7I  "   | P COEF. IN WGEQ                         |  40561 |     60 |   1 |   0 | 0 | 0  |
+0: | QDIAG           |   "DQ  "   | SCREEN LEVEL SPECIFIC HUMIDITY          |  40621 |     60 |   1 |   0 | 0 | 0  |
+0: | QSURF           |   "J9  "   | AREA-AVERAGED SURF. SPEC. HUMIDITY      |  40681 |    300 |   5 |   0 | 0 | 0  |
+0: | QTBL            |   "QTBL"   | BOUND. LAYER SGS CLOUD WC               |  40981 |   1740 |   1 |   0 | 0 | 1  |
+0: | RAINAF          |   "RNAC"   | ACCUM. OF LIQUID PRECIP.(ISBA)          |  42721 |     60 |   1 |   0 | 0 | 0  |
+0: | RCKFC           |   "KF  "   | KFC/FCP CONVECTIVE PRECIP. RATE         |  42781 |     60 |   1 |   0 | 0 | 0  |
+0: | RESA            |   "RD  "   | AERODYNAMIC RESISTANCE                  |  42841 |     60 |   1 |   0 | 0 | 0  |
+0: | RGL             |   "RG  "   | PARAMETER STOMATAL RESISTANCE           |  42901 |     60 |   1 |   0 | 0 | 0  |
+0: | RN              |   "RN  "   | ACCUM. OF LIQUID PRECIP.                |  42961 |     60 |   1 |   0 | 0 | 0  |
+0: | ROOTDP          |   "D2  "   | ROOTING SOIL DEPTH                      |  43021 |     60 |   1 |   0 | 0 | 0  |
+0: | RUNOFFTOTAF     |   "TRAF"   | ACCUM. OF TOTAL SURFACE RUNOFF          |  43081 |    300 |   5 |   0 | 0 | 0  |
+0: | SALB6Z          |   "SALB"   | ALBEDO (SOLAR)                          |  43381 |     60 |   1 |   0 | 0 | 0  |
+0: | SAND            |   "J1  "   | PERCENTAGE OF SAND IN SOIL              |  43441 |    180 |   3 |   0 | 0 | 0  |
+0: | SCL             |   "SB  "   | HEIGHT OF BOUNDARY LAYER IN SIGMA       |  43621 |     60 |   1 |   0 | 0 | 0  |
+0: | SIAF            |   "AI  "   | ACCUMULATION OF FNSI                    |  43681 |     60 |   1 |   0 | 0 | 0  |
+0: | SLOPE           |   "Y4  "   | UNRESOLVED TOPO SLOPE                   |  43741 |     60 |   1 |   0 | 0 | 0  |
+0: | SN              |   "SN  "   | ACCUM. OF SNOW PRECIP.                  |  43801 |     60 |   1 |   0 | 0 | 0  |
+0: | SNOAL           |   "I6  "   | ALBEDO OF SNOW                          |  43861 |     60 |   1 |   0 | 0 | 0  |
+0: | SNODEN          |   "DN  "   | SNOW DENSITY IN KG/M3                   |  43921 |     60 |   1 |   0 | 0 | 0  |
+0: | SNODP           |   "SD  "   | SNOW DEPTH                              |  43981 |    300 |   5 |   0 | 0 | 0  |
+0: | SNOMA           |   "I5  "   | SNOW MASS                               |  44281 |     60 |   1 |   0 | 0 | 0  |
+0: | SNORO           |   "7S  "   | RELATIVE SNOW DENSITY                   |  44341 |     60 |   1 |   0 | 0 | 0  |
+0: | SNOWAF          |   "N3  "   | ACCUM. OF SOLID PRECIP.                 |  44401 |     60 |   1 |   0 | 0 | 0  |
+0: | STOMR           |   "RS  "   | MINIMUM STOMATAL RESISTANCE             |  44461 |     60 |   1 |   0 | 0 | 0  |
+0: | SUAF            |   "S7  "   | ACCUMULATION OF USTRESS                 |  44521 |     60 |   1 |   0 | 0 | 0  |
+0: | SVAF            |   "S8  "   | ACCUMULATION OF VSTRESS                 |  44581 |     60 |   1 |   0 | 0 | 0  |
+0: | T2              |   "T2  "   | VIS HEATING RATE INTERPO. FROM T20      |  44641 |   1740 |   1 |   0 | 0 | 1  |
+0: | T20             |   "T0  "   | VIS HEATING RATE AT MID TIME INTERVAL   |  46381 |   1740 |   1 |   0 | 0 | 1  |
+0: | TCC             |   "TCC "   | 2-D TOTAL TRUE CLOUD COVER(CCCMARAD)    |  48121 |     60 |   1 |   0 | 0 | 0  |
+0: | TDIAG           |   "TJ  "   | SCREEN LEVEL TEMPERATURE                |  48181 |     60 |   1 |   0 | 0 | 0  |
+0: | TDIAGAVG        |   "TSAV"   | SCREEN LEVEL TEMPERATURE AVERAGE        |  48241 |     60 |   1 |   0 | 0 | 0  |
+0: | TGLACIER        |   "I9  "   | GLACIERS TEMPERATURE                    |  48301 |    120 |   2 |   0 | 0 | 0  |
+0: | TI              |   "TI  "   | IR HEATING RATE                         |  48421 |   1740 |   1 |   0 | 0 | 1  |
+0: | TIWP            |   "IIR "   | TOTAL ICE WATER PATH FOR RADIATION      |  50161 |     60 |   1 |   0 | 0 | 0  |
+0: | TIWPIN          |   "W2  "   | TOTAL IN-CLOUD ICE WATER PATH (ROCKEL)  |  50221 |     60 |   1 |   0 | 0 | 0  |
+0: | TLC             |   "P1  "   | LIQUID CONVECT. PRECIP. RATE            |  50281 |     60 |   1 |   0 | 0 | 0  |
+0: | TLCS            |   "A5  "   | LIQUID SHALL. CONVECT. PRECIP. RATE     |  50341 |     60 |   1 |   0 | 0 | 0  |
+0: | TLS             |   "P2  "   | RAIN PRECIP. RATE, GRID-SCALE COND.     |  50401 |     60 |   1 |   0 | 0 | 0  |
+0: | TLWP            |   "ICR "   | TOTAL LIQUID WATER PATH FOR RADIATION   |  50461 |     60 |   1 |   0 | 0 | 0  |
+0: | TLWPIN          |   "W1  "   | TOTAL IN-CLOUD LIQUID WATER PATH (ROCKEL|  50521 |     60 |   1 |   0 | 0 | 0  |
+0: | TMICE           |   "I7  "   | SEA ICE TEMPERATURE                     |  50581 |    180 |   3 |   0 | 0 | 0  |
+0: | TNOLIM          |   "TNOL"   | SCREEN LEVEL TEMP WITHOUT MAX ON GRADIEN|  50761 |     60 |   1 |   0 | 0 | 0  |
+0: | TOPTHI          |   "W4  "   | TOTAL OPTICAL THICKNESS OF ICE          |  50821 |     60 |   1 |   0 | 0 | 0  |
+0: | TOPTHW          |   "W3  "   | TOTAL OPTICAL THICKNESS OF WATER        |  50881 |     60 |   1 |   0 | 0 | 0  |
+0: | TSC             |   "P3  "   | SOLID CONVECT. PRECIP. RATE             |  50941 |     60 |   1 |   0 | 0 | 0  |
+0: | TSCS            |   "A6  "   | SOLID SHALL. CONVECT. PRECIP. RATE      |  51001 |     60 |   1 |   0 | 0 | 0  |
+0: | TSM1            |   "T1  "   | TS AT TIME T - DELTA(T)                 |  51061 |     60 |   1 |   0 | 0 | 0  |
+0: | TSOIL           |   "I0  "   | SURFACE AND SOIL TEMPERATURES           |  51121 |    120 |   2 |   0 | 0 | 0  |
+0: | TSRAD           |   "TG  "   | RADIATIVE SURFACE TEMPERATURE           |  51241 |     60 |   1 |   0 | 0 | 0  |
+0: | TSS             |   "P4  "   | SOLID PRECIP. RATE, GRID-SCALE COND     |  51301 |     60 |   1 |   0 | 0 | 0  |
+0: | TSURF           |   "J8  "   | AREA-AVERAGED SURF. TEMPERATURE         |  51361 |     60 |   1 |   0 | 0 | 0  |
+0: | TURBREG         |   "TURB"   | TURBULENCE REGIME FOR PBL SCHEME        |  51421 |   1740 |   1 |   0 | 0 | 1  |
+0: | TWATER          |   "TM  "   | SEA SURFACE TEMPERATURE                 |  53161 |     60 |   1 |   0 | 0 | 0  |
+0: | UDIAG           |   "UD  "   | SCREEN LEVEL X-COMPONENT OF WIND        |  53221 |     60 |   1 |   0 | 0 | 0  |
+0: | UFCP            |   "U6  "   | U TENDENCY DUE TO FCP                   |  53281 |   1740 |   1 |   0 | 1 | 0  |
+0: | UPHYTDM         |   "UPHM"   | TOTAL U PHYSICS TDCY AVG OVER THE MOYHR |  55021 |   1740 |   1 |   0 | 0 | 0  |
+0: | URBAN           |   "UR  "   | URBAN MASK                              |  56761 |     60 |   1 |   0 | 0 | 0  |
+0: | VDIAG           |   "VD  "   | SCREEN LEVEL Y-COMPONENT OF WIND        |  56821 |     60 |   1 |   0 | 0 | 0  |
+0: | VEGF            |   "2V  "   | VEGETATION FRACTIONS                    |  56881 |   1560 |  26 |   0 | 0 | 0  |
+0: | VEGFRAC         |   "K1  "   | VEGETATION FRACTION                     |  58441 |    300 |   5 |   0 | 0 | 0  |
+0: | VFCP            |   "V7  "   | V TENDENCY DUE TO FCP                   |  58741 |   1740 |   1 |   0 | 1 | 0  |
+0: | VOZO            |   "VO  "   | TRANS. OF OZONE LAYER ABOVE MODEL LID   |  60481 |     60 |   1 |   0 | 0 | 0  |
+0: | VPHYTDM         |   "VPHM"   | TOTAL V PHYSICS TDCY AVG OVER THE MOYHR |  60541 |   1740 |   1 |   0 | 0 | 0  |
+0: | VV1             |   "VV1 "   | SOLAR RENORMALIZATION FACTOR            |  62281 |     60 |   1 |   0 | 0 | 0  |
+0: | WFC             |   "J5  "   | VOL. WATER CONTENT AT FIELD CAP.        |  62341 |     60 |   1 |   0 | 0 | 0  |
+0: | WFLUXAF         |   "N7  "   | ACC. OF SOIL SURFACE UPWARD WATER FLUX  |  62401 |     60 |   1 |   0 | 0 | 0  |
+0: | WSAT            |   "J6  "   | VOL. WATER CONTENT AT SATURATION        |  62461 |     60 |   1 |   0 | 0 | 0  |
+0: | WSNOW           |   "I4  "   | WATER IN THE SNOW PACK                  |  62521 |     60 |   1 |   0 | 0 | 0  |
+0: | WSOIL           |   "I1  "   | SOIL VOLUMETRIC WATER CONTENTS          |  62581 |    120 |   2 |   0 | 0 | 0  |
+0: | WVEG            |   "I3  "   | WATER RETAINED ON THE VEGETATION        |  62701 |     60 |   1 |   0 | 0 | 0  |
+0: | WWILT           |   "J7  "   | VOL. WATER CONT. AT WILTING PT.         |  62761 |     60 |   1 |   0 | 0 | 0  |
+0: | XCENT           |   "Y5  "   | UNRESOLV TOPO ECCENTRICITY              |  62821 |     60 |   1 |   0 | 0 | 0  |
+0: | Z0              |   "Z0  "   | MOMENTUM ROUGHNESS LENGTH               |  62881 |    300 |   5 |   0 | 0 | 0  |
+0: | Z0T             |   "ZT  "   | THERMAL ROUGHNESS LENGTH                |  63181 |    300 |   5 |   0 | 0 | 0  |
+0: | Z1              |   "Z1  "   | DIR. ROUGHNESS LENGTH (+X)              |  63481 |     60 |   1 |   0 | 0 | 0  |
+0: | Z2              |   "Z2  "   | DIR. ROUGHNESS LENGTH (-X)              |  63541 |     60 |   1 |   0 | 0 | 0  |
+0: | Z3              |   "Z3  "   | DIR. ROUGHNESS LENGTH (+Y)              |  63601 |     60 |   1 |   0 | 0 | 0  |
+0: | Z4              |   "Z4  "   | DIR. ROUGHNESS LENGTH (-Y)              |  63661 |     60 |   1 |   0 | 0 | 0  |
+0: | ZD              |   "ZD  "   | LENGTH SCALE OF DISSIPATION             |  63721 |   1740 |   1 |   0 | 0 | 1  |
+0: | ZN              |   "ZN  "   | MIXING LENGTH OF TURBULENCE             |  65461 |   1740 |   1 |   0 | 0 | 1  |
+0: | ZNM1            |   "ZM  "   | ZN AT TIME T - DELTA(T)                 |  67201 |   1740 |   1 |   0 | 0 | 1  |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0:   
+0: 
+0:                                                 +--------------+
+0:                                                 |  **VOLBUS**  |
+0: +-----------------+------------+----------------+--------------+---------+--------+--------+-----+-----+---+----+
+0: |      Name       |   Output   |           Description                   |  Start | Length | Mul | Mos |Ini|Stag|
+0: |                 |    name    |                                         |        |        |     | aic |   |ger |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0: | AE              |   "AE  "   | ACCUM. OF STRATIFORM PRECIP.            |      1 |     60 |   1 |   0 | 0 | 0  |
+0: | ALFAQ           |   "AQ  "   | INHOMOG. TERM FOR Q DIFF.               |     61 |     60 |   1 |   0 | 0 | 0  |
+0: | ALFAT           |   "AT  "   | INHOMOG. TERM FOR T DIFFU.              |    121 |     60 |   1 |   0 | 0 | 0  |
+0: | AP              |   "AP  "   | PLANETARY ALBEDO                        |    181 |     60 |   1 |   0 | 0 | 0  |
+0: | AT2E            |   "AT2E"   | WEIGHTS T,Q TO ENRG                     |    241 |   1740 |   1 |   0 | 0 | 0  |
+0: | AT2M            |   "AT2M"   | WEIGHTS T,Q TO MOM                      |   1981 |   1740 |   1 |   0 | 0 | 0  |
+0: | AT2T            |   "AT2T"   | WEIGHTS T,Q TO THERMO                   |   3721 |   1740 |   1 |   0 | 0 | 0  |
+0: | AU2T            |   "AU2T"   | WEIGHTS PHI,U,V TO THERMO               |   5461 |   1740 |   1 |   0 | 0 | 0  |
+0: | BASC            |   "BS  "   | BASE SIGMA OF CONDENSATION LEVEL        |   7201 |     60 |   1 |   0 | 0 | 0  |
+0: | BM              |   "BM  "   | HOMOG. TERM FOR U,V DIFFU.              |   7261 |     60 |   1 |   0 | 0 | 0  |
+0: | BT              |   "BT  "   | HOMOG. TERM FOR T,Q DIFFU.              |   7321 |    300 |   5 |   0 | 0 | 0  |
+0: | CANG            |   "CX  "   | COSINE OF THE SOLAR ANGLE               |   7621 |     60 |   1 |   0 | 0 | 0  |
+0: | CLDRAD          |   "CLDR"   | CLOUD FOR RADIATION                     |   7681 |   1740 |   1 |   0 | 0 | 1  |
+0: | CLR             |   "13  "   | CLOUD RAIN KG/M3 (CONSUN)               |   9421 |   1740 |   1 |   0 | 0 | 1  |
+0: | CLS             |   "NN  "   | CLOUD SNOW KG/M3 (CONSUN)               |  11161 |   1740 |   1 |   0 | 0 | 1  |
+0: | CQE             |   "CQE "   | CONV. Q TENDENCY                        |  12901 |   1740 |   1 |   0 | 0 | 1  |
+0: | CTE             |   "CTE "   | CONV. T TENDENCY                        |  14641 |   1740 |   1 |   0 | 0 | 1  |
+0: | CTP             |   "BP  "   | CLOUD TOP PRESSURE                      |  16381 |     60 |   1 |   0 | 0 | 0  |
+0: | CTT             |   "BE  "   | CLOUD TOP TEMPERATURE                   |  16441 |     60 |   1 |   0 | 0 | 0  |
+0: | CTUE            |   "CH  "   | TRANSFERT COEFF. FOR THERMO.(M/S)       |  16501 |     60 |   1 |   0 | 0 | 0  |
+0: | DRAINTOT        |   "TDR "   | TOTAL BASE DRAINAGE                     |  16561 |    300 |   5 |   0 | 0 | 0  |
+0: | EFLUX           |   "4F  "   | SPECIFIC HUM. FLUX (=-ALFAQ)            |  16861 |     60 |   1 |   0 | 0 | 0  |
+0: | ESDIAG          |   "ED  "   | SCREEN LEVEL DEWPOINT DEPRESSION        |  16921 |     60 |   1 |   0 | 0 | 0  |
+0: | F12             |   "12  "   | CLOUD TO RAIN COLL TEND (CONSUN)        |  16981 |   1740 |   1 |   0 | 0 | 1  |
+0: | FC              |   "FC  "   | SURFACE SENSIBLE HEAT FLUX              |  18721 |    300 |   5 |   0 | 0 | 0  |
+0: | FCOR            |   "WC  "   | CORIOLOS FACTOR                         |  19021 |     60 |   1 |   0 | 0 | 0  |
+0: | FEVP            |   "PV  "   |  EVAP. OF STRAT. PRECIP (CONSUN)        |  19081 |   1740 |   1 |   0 | 0 | 1  |
+0: | FIP             |   "P5  "   | % OF LIQ. PRECIP. RATE IP               |  20821 |     60 |   1 |   0 | 0 | 0  |
+0: | FL              |   "FL  "   | HEAT FLUX IN THE GROUND                 |  20881 |     60 |   1 |   0 | 0 | 0  |
+0: | FLAGMXP         |   "FG  "   | FLAG FOR MIXPHASE)                      |  20941 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLUXDS          |   "FLDS"   | FLUX DOWN SW                            |  22681 |   1740 |   1 |   0 | 0 | 1  |
+0: | FLUXUS          |   "FLUS"   | FLUX UP SW                              |  24421 |   1740 |   1 |   0 | 0 | 1  |
+0: | FNEIGE          |   "WO  "   | % OF SNOW RATE                          |  26161 |     60 |   1 |   0 | 0 | 0  |
+0: | FNSI            |   "SI  "   | IR ENERGY FLUX AT THE SURFACE           |  26221 |     60 |   1 |   0 | 0 | 0  |
+0: | FSD             |   "FSD "   | DIRECT SW DOWNWARD FLX AT SFC           |  26281 |     60 |   1 |   0 | 0 | 0  |
+0: | FSF             |   "FSF "   | DIFFUSE SW DOWNWARD FLX AT SFC          |  26341 |     60 |   1 |   0 | 0 | 0  |
+0: | FSI             |   "FSI "   | NEAR IR DOWNWARD FLX AT SFC             |  26401 |     60 |   1 |   0 | 0 | 0  |
+0: | FSV             |   "FSV "   | VIS DOWNWARD FLX AT SFC                 |  26461 |     60 |   1 |   0 | 0 | 0  |
+0: | FV              |   "FV  "   | SURFACE LATENT FLUX                     |  26521 |    300 |   5 |   0 | 0 | 0  |
+0: | GQ              |   "GQ  "   | COUNTERGRAD. FOR Q DIFFU.               |  26821 |   1740 |   1 |   0 | 0 | 1  |
+0: | GQL             |   "G1  "   | COUNTERGRAD. FOR QL DIFFU.              |  28561 |   1740 |   1 |   0 | 0 | 1  |
+0: | GTE             |   "GT  "   | COUNTERGRAD. FOR T DIFFU.               |  30301 |   1740 |   1 |   0 | 0 | 1  |
+0: | GZMOM           |   "GZMO"   | GEOP. HEIGHTS                           |  32041 |   1740 |   1 |   0 | 0 | 1  |
+0: | HUCOND          |   "QA  "   | HU TENDENCY DUE TO CONV./COND.          |  33781 |   1740 |   1 |   0 | 1 | 1  |
+0: | PHYTD_HU        |   "QPHY"   | TOTAL Q TENDENCY DUE TO PHYSICS         |  35521 |   1740 |   1 |   0 | 1 | 1  |
+0: | HUSHAL          |   "SQ  "   | HU TENDENCY DUE TO SHALLOW CONV.        |  37261 |   1740 |   1 |   0 | 0 | 1  |
+0: | HUSURF          |   "FH  "   | SPEC. HUMID. OF THE SURFACE             |  39001 |     60 |   1 |   0 | 0 | 0  |
+0: | HV              |   "HV  "   | RELATIVE HUMIDITY OF VEG. CANOPY        |  39061 |     60 |   1 |   0 | 0 | 0  |
+0: | ICW             |   "IE  "   | INTEGRATED CLOUD WATER/ICE              |  39121 |     60 |   1 |   0 | 0 | 0  |
+0: | IV              |   "IV  "   | INCOMING SOLAR FLUX AT MODEL LID        |  39181 |     60 |   1 |   0 | 0 | 0  |
+0: | IWCRAD          |   "IWCR"   | ICE W.CONT. FOR RADIATION               |  39241 |   1740 |   1 |   0 | 0 | 1  |
+0: | IWP             |   "II  "   | INTEGRATED ICE WATER                    |  40981 |     60 |   1 |   0 | 0 | 0  |
+0: | IWV             |   "IH  "   | INTEGRATED WATER VAPOR                  |  41041 |     60 |   1 |   0 | 0 | 0  |
+0: | IWV700          |   "IY  "   | INT. WATER VAPOR (0-700 MB)             |  41101 |     60 |   1 |   0 | 0 | 0  |
+0: | KCL             |   "KC  "   | 1ST LEVEL IN THE PBL                    |  41161 |     60 |   1 |   0 | 0 | 0  |
+0: | KKFC            |   "K3  "   | COUNTER FOR KFC                         |  41221 |     60 |   1 |   0 | 0 | 0  |
+0: | KM              |   "KM  "   | MOMENTUM VERTICAL DIFF. COEFF.(M2/S)    |  41281 |   1740 |   1 |   0 | 0 | 1  |
+0: | KSHAL           |   "K9  "   | COUNTER FOR KTRSNT                      |  43021 |     60 |   1 |   0 | 0 | 0  |
+0: | KT              |   "KT  "   | T/HU VERTICAL DIFF. COEFF.(M2/S)        |  43081 |   1740 |   1 |   0 | 0 | 1  |
+0: | LEG             |   "L2  "   | LATENT HEAT FLUX OVER BARE GRND         |  44821 |     60 |   1 |   0 | 0 | 0  |
+0: | LER             |   "LR  "   | LATENT HEAT FLUX FROM LEAVES            |  44881 |     60 |   1 |   0 | 0 | 0  |
+0: | LES             |   "LS  "   | LATENT HEAT FLUX OVER SNOW              |  44941 |     60 |   1 |   0 | 0 | 0  |
+0: | LETR            |   "LT  "   | LATENT HEAT OF EVAPOTRANSP.             |  45001 |     60 |   1 |   0 | 0 | 0  |
+0: | LEV             |   "LV  "   | LATENT HEAT FLUX OVER VEGETATION        |  45061 |     60 |   1 |   0 | 0 | 0  |
+0: | LWCRAD          |   "LWCR"   | LIQUID WC FOR RADIATION                 |  45121 |   1740 |   1 |   0 | 0 | 1  |
+0: | LWP2            |   "IC  "   | LIQUID WATER PATH (SUNDQVIST)           |  46861 |     60 |   1 |   0 | 0 | 0  |
+0: | MOL             |   "OL  "   | MONIN-OBUKHOV LENGTH [-1000,1000]       |  46921 |     60 |   1 |   0 | 0 | 0  |
+0: | OVERFL          |   "RO  "   | OVERLAND RUNOFF                         |  46981 |     60 |   1 |   0 | 0 | 0  |
+0: | PARR            |   "PARR"   | PHOTOSYNTHETIC ACTIVE RADIATION         |  47041 |     60 |   1 |   0 | 0 | 0  |
+0: | PC              |   "PC  "   | ACCUM. OF IMPLICIT PRECIP.              |  47101 |     60 |   1 |   0 | 0 | 0  |
+0: | PHIT0           |   "X0  "   | STABILITY FUNCTION VALUE(Z=0)           |  47161 |     60 |   1 |   0 | 0 | 0  |
+0: | PR              |   "PR  "   | ACCUM. OF TOTAL PRECIP.                 |  47221 |     60 |   1 |   0 | 0 | 0  |
+0: | PSN             |   "5P  "   | FRACTION OF THE GRID COVERED BY SNOW    |  47281 |     60 |   1 |   0 | 0 | 0  |
+0: | PSNG            |   "3P  "   | FRACTION OF BARE GROUND COVERED BY SNOW |  47341 |     60 |   1 |   0 | 0 | 0  |
+0: | PSNV            |   "4P  "   | FRACTION OF VEGETATION COVERED BY SNOW  |  47401 |     60 |   1 |   0 | 0 | 0  |
+0: | PY              |   "PY  "   | ACCUM. OF DEEP CONV. PRECIP.            |  47461 |     60 |   1 |   0 | 0 | 0  |
+0: | PZ              |   "PZ  "   | ACCUM. OF SHAL. CONV. PRECIP.           |  47521 |     60 |   1 |   0 | 0 | 0  |
+0: | QADV            |   "QADV"   | Q ADVECTION TENDENCY                    |  47581 |   1740 |   1 |   0 | 1 | 1  |
+0: | PHYTD_QC        |   "QT  "   | QC TENDENCY DUE TO CONV./COND.          |  49321 |   1740 |   1 |   0 | 1 | 1  |
+0: | QCZ             |   "QZ  "   | CLOUD WATER DETRAINED BY KTRSNT         |  51061 |   1740 |   1 |   0 | 0 | 1  |
+0: | QDIFV           |   "Q8  "   | Q TENDENCY DUE TO VERT. DIFFUSION       |  52801 |   1740 |   1 |   0 | 1 | 1  |
+0: | QLSC            |   "QLSC"   | LIQ. CLOUD WATER CONTENT FOR KTRSNT     |  54541 |   1740 |   1 |   0 | 0 | 1  |
+0: | QMETOX          |   "QX  "   | HUM. TEND. DUE TO METHANE OXIDATION     |  56281 |   1740 |   1 |   0 | 1 | 1  |
+0: | RAIN_TD         |   "Q5  "   | QL TENDENCY DUE TO CONV./COND.          |  58021 |   1740 |   1 |   0 | 0 | 1  |
+0: | QSSC            |   "QSSC"   | SOL. CLOUD WATER CONTENT FOR KTRSNT     |  59761 |   1740 |   1 |   0 | 0 | 1  |
+0: | QTDE            |   "QTDE"   | TOTAL DEEP CONVECTION DETRAINED CONDENSA|  61501 |   1740 |   1 |   0 | 0 | 1  |
+0: | RAINRATE        |   "U1  "   | LIQUID PRECIP. RATE                     |  63241 |     60 |   1 |   0 | 0 | 0  |
+0: | RC              |   "RC  "   | IMPLICIT PRECIP. RATE                   |  63301 |     60 |   1 |   0 | 0 | 0  |
+0: | RHDIAG          |   "RH  "   | SCREEN LEVEL RELATIVE HUMIDITY          |  63361 |     60 |   1 |   0 | 0 | 0  |
+0: | RHOD            |   "M3  "   | AIR DENSITY                             |  63421 |   1740 |   1 |   0 | 0 | 1  |
+0: | RIB             |   "RB  "   | BULK RICHARDSON NUMBER [-10,5]          |  65161 |     60 |   1 |   0 | 0 | 0  |
+0: | RIF             |   "RIF "   | FLUX RICHARDSON NUMBER                  |  65221 |   1740 |   1 |   0 | 0 | 1  |
+0: | RIG             |   "RIG "   | GRADIENT RICHARDSON NUMBER              |  66961 |   1740 |   1 |   0 | 0 | 1  |
+0: | RNET_S          |   "NR  "   | NET RADIATION (SOIL ONLY)               |  68701 |     60 |   1 |   0 | 0 | 0  |
+0: | RNFLX           |   "RF  "   | LIQUID PRECIPITATION FLUX               |  68761 |   1740 |   1 |   0 | 0 | 1  |
+0: | RR              |   "RR  "   | STRATIFORM PRECIP. RATE                 |  70501 |     60 |   1 |   0 | 0 | 0  |
+0: | RST             |   "R1  "   | STOMATAL RESISTANCE                     |  70561 |     60 |   1 |   0 | 0 | 0  |
+0: | RT              |   "RT  "   | TOTAL PRECIPITATION RATE                |  70621 |     60 |   1 |   0 | 0 | 0  |
+0: | RUNOFFTOT       |   "TRUN"   | TOTAL SURFACE RUNOFF                    |  70681 |    300 |   5 |   0 | 0 | 0  |
+0: | RY              |   "RY  "   | DEEP CONVECTIVE PRECIP. RATE            |  70981 |     60 |   1 |   0 | 0 | 0  |
+0: | RZ              |   "RZ  "   | SHALL. CONVECTIVE PRECIP. RATE          |  71041 |     60 |   1 |   0 | 0 | 0  |
+0: | SDTSWD          |   "SDWD"   | STD DEV TURB SURF WIND DIR              |  71101 |     60 |   1 |   0 | 0 | 0  |
+0: | SDTSWS          |   "SDWS"   | STD DEV TURB SURF WIND SPEED            |  71161 |     60 |   1 |   0 | 0 | 0  |
+0: | SFCWGT          |   "WT  "   | WGT OF SFC TYPE OVER A TILE             |  71221 |    300 |   5 |   0 | 0 | 0  |
+0: | SHEAR2          |   "SHR2"   | SQUARE OF VERTICAL SHEAR OF THE HORIZONT|  71521 |   1740 |   1 |   0 | 0 | 1  |
+0: | SLWP            |   "IB  "   | INTEGRATED SLW                          |  73261 |     60 |   1 |   0 | 0 | 0  |
+0: | SLWP2           |   "B2  "   | INTEGRATED SLW (BOTTOM TO S2)           |  73321 |     60 |   1 |   0 | 0 | 0  |
+0: | SLWP3           |   "B3  "   | INTEGRATED SLW (S2 TO S3)               |  73381 |     60 |   1 |   0 | 0 | 0  |
+0: | SLWP4           |   "B4  "   | INTEGRATED SLW (S3 TO S4)               |  73441 |     60 |   1 |   0 | 0 | 0  |
+0: | SNOFLX          |   "SF  "   | SOLID PRECIPITATION FLUX                |  73501 |   1740 |   1 |   0 | 0 | 1  |
+0: | SNOWRATE        |   "U3  "   | SOLID PRECIP. RATE                      |  75241 |     60 |   1 |   0 | 0 | 0  |
+0: | SQE             |   "SQE "   | COND. Q TENDENCY                        |  75301 |   1740 |   1 |   0 | 0 | 1  |
+0: | STE             |   "STE "   | COND. T TENDENCY                        |  77041 |   1740 |   1 |   0 | 0 | 1  |
+0: | TADV            |   "TADV"   | T ADVECTION TENDENCY                    |  78781 |   1740 |   1 |   0 | 1 | 1  |
+0: | TCOND           |   "TA  "   | T TENDENCY DUE TO CONV./COND.           |  80521 |   1740 |   1 |   0 | 1 | 1  |
+0: | TDEW            |   "TDK "   | DEW POINT TEMPERATURE AT DIAGNOSTIC LEVE|  82261 |     60 |   1 |   0 | 0 | 0  |
+0: | TDIFV           |   "TF  "   | T TENDENCY DUE TO VERT. DIFFUSION       |  82321 |   1740 |   1 |   0 | 1 | 1  |
+0: | TGNO            |   "TW  "   | T TEND. DUE TO NON-ORO. GWD             |  84061 |   1740 |   1 |   0 | 1 | 1  |
+0: | THETAA          |   "N1  "   | FIRST-LEVEL POT. TEMP.                  |  85801 |     60 |   1 |   0 | 0 | 0  |
+0: | PHYTD_TT        |   "TPHY"   | TOTAL T TENDENCY DUE TO PHYSICS         |  85861 |   1740 |   1 |   0 | 1 | 1  |
+0: | TQCX            |   "TQCX"   | QC TENDENCY DUE TO STRAT COND           |  87601 |   1740 |   1 |   0 | 0 | 1  |
+0: | TRAD            |   "T3  "   | T TENDENCY DUE TO RADIATION             |  89341 |   1740 |   1 |   0 | 1 | 1  |
+0: | TSHAL           |   "ST  "   | T TENDENCY DUE TO SHALLOW CONV.         |  91081 |   1740 |   1 |   0 | 0 | 1  |
+0: | TVE             |   "1J  "   | VIRTUAL TEMP. (STAGG. LEVELS)           |  92821 |   1740 |   1 |   0 | 0 | 1  |
+0: | UADV            |   "UADV"   | U ADVECTION TENDENCY                    |  94561 |   1740 |   1 |   0 | 1 | 0  |
+0: | UDIFV           |   "TU  "   | U TENDENCY DUE TO VERT. DIFFUSION       |  96301 |   1740 |   1 |   0 | 1 | 0  |
+0: | UE              |   "UE  "   | FRICTION VELOCITY (FROM FQ)             |  98041 |     60 |   1 |   0 | 0 | 0  |
+0: | UGNO            |   "M1  "   | U TEND. DUE TO NON-ORO. GWD             |  98101 |   1740 |   1 |   0 | 1 | 0  |
+0: | PHYTD_UGWD      |   "GU  "   | U TENDENCY DUE TO GWD                   |  99841 |   1740 |   1 |   0 | 1 | 0  |
+0: | PHYTD_UU        |   "UPHY"   | TOTAL U TENDENCY DUE TO PHYSICS         | 101581 |   1740 |   1 |   0 | 1 | 0  |
+0: | USTRESS         |   "F3  "   | ZONAL SURF. MOMENTUM FLUX               | 103321 |     60 |   1 |   0 | 0 | 0  |
+0: | VADV            |   "VADV"   | V ADVECTION TENDENCY                    | 103381 |   1740 |   1 |   0 | 1 | 0  |
+0: | VDIFV           |   "TV  "   | V TENDENCY DUE TO VERT. DIFFUSION       | 105121 |   1740 |   1 |   0 | 1 | 0  |
+0: | VGNO            |   "M2  "   | V TEND. DUE TO NON-ORO. GWD             | 106861 |   1740 |   1 |   0 | 1 | 0  |
+0: | PHYTD_VGWD      |   "GV  "   | V TENDENCY DUE TO GWD                   | 108601 |   1740 |   1 |   0 | 1 | 0  |
+0: | VINAT           |   "TTHM"   | TEMPERATURE VERTICAL AVERAGE            | 110341 |     60 |   1 |   0 | 0 | 0  |
+0: | VINAUQ          |   "UQVA"   | U X SPHUM VERTICAL AVERAGE              | 110401 |     60 |   1 |   0 | 0 | 0  |
+0: | VINAUT          |   "UTVA"   | U X TEMPERATURE VERTICAL AVERAGE        | 110461 |     60 |   1 |   0 | 0 | 0  |
+0: | VINAVQ          |   "VQVA"   | V X SHUM VERTICAL AVERAGE               | 110521 |     60 |   1 |   0 | 0 | 0  |
+0: | VINAVT          |   "VTVA"   | V X TEMPERATURE VERTICAL AVERAGE        | 110581 |     60 |   1 |   0 | 0 | 0  |
+0: | VINIKE          |   "KEHM"   | KINETIC ENERGY VERTICAL INTEGRAL        | 110641 |     60 |   1 |   0 | 0 | 0  |
+0: | VINIUM          |   "AMHM"   | U X COS LATITUDE VERTICAL INTEGRAL      | 110701 |     60 |   1 |   0 | 0 | 0  |
+0: | VINIVM          |   "VMVA"   | V X COS LATITUDE VERTICAL INTEGRAL      | 110761 |     60 |   1 |   0 | 0 | 0  |
+0: | PHYTD_VV        |   "VPHY"   | TOTAL V TENDENCY DUE TO PHYSICS         | 110821 |   1740 |   1 |   0 | 1 | 0  |
+0: | VSTRESS         |   "F2  "   | MERIDIONAL SURF. MOMENTUM FLUX          | 112561 |     60 |   1 |   0 | 0 | 0  |
+0: | WFLUX           |   "M8  "   | WATER FLUX FROM SURFACE TO ATM.         | 112621 |     60 |   1 |   0 | 0 | 0  |
+0: | WGE             |   "WGE "   | WIND GUST ESTIMATE                      | 112681 |     60 |   1 |   0 | 0 | 0  |
+0: | WGMAX           |   "WGX "   | WIND GUST MAXIMUM                       | 112741 |     60 |   1 |   0 | 0 | 0  |
+0: | WGMIN           |   "WGN "   | WIND GUST MINIMUM                       | 112801 |     60 |   1 |   0 | 0 | 0  |
+0: | WSTAR           |   "WSTA"   | CONVECTIVE VELOCITY SCALE               | 112861 |     60 |   1 |   0 | 0 | 0  |
+0: | ZA              |   "ZA  "   | THICKNESS OF THE SURFACE LAYER          | 112921 |     60 |   1 |   0 | 0 | 0  |
+0: | ZE              |   "2J  "   | GEOP. HEIGHTS (STAGG. LEVELS)           | 112981 |   1740 |   1 |   0 | 0 | 1  |
+0: | ZRFLAG          |   "ZF  "   | PRESENCE OF FREESING RAIN 0 OR 1        | 114721 |     60 |   1 |   0 | 0 | 0  |
+0: | ZTSL            |   "ZH  "   | TEMPERATURE LEVEL AT TOP OF SURFACE LAYE| 114781 |     60 |   1 |   0 | 0 | 0  |
+0: | ZUSL            |   "ZU  "   | WIND LEVEL AT TOP OF SURFACE LAYER      | 114841 |     60 |   1 |   0 | 0 | 0  |
+0: +-----------------+------------+-----------------------------------------+--------+--------+-----+-----+---+----+
+0:   
+0:  p_bper_top=          222
+0:  p_bdyn_top=           20
+0:  p_bvol_top=          155
+0:  p_bent_top=           24
+0: 
+0: TRACERS (3D storage):
+0:                 HU     1
+0:                 QC     2
+0: 
+0: INITIALIZATION OF COUPLING INTERFACE S/R ITF_CPL_INIT
+0: =====================================================
+0: 
+0: INITIALIZATION OF VIRTUAL MEMORY MANAGER S/R SET_CN1
+0: ====================================================
+0: INITIALIZATION OF TIME-DEP. VARIABLE COMDECKS (S/R SET_VT)
+0: =========================================================
+0: 
+0: INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)
+0: =======================================================
+0: 
+0: INITIALIZATION OF GEOPHYSICAL FIELD COMDECKS (S/R SET_GEOF)
+0: ===========================================================
+0: 
+0: INITIALIZATION OF DIGITAL FILTER COMDECKS (S/R SET_VTA)
+0: =======================================================
+0: 
+0: INITIALIZATION OF OUTPUT PRODUCTS (S/R SET_SOR)
+0: ===============================================
+0:  grid=1,model;
+0: 
+0:  grid =1    ,model,
+0:   Grid_set(            1 ) : Grid_id=            1
+0: 
+0:  levels=1     ,eta   ,-1    
+0:   Level_set(            1 ) : Level_id=            1
+0:   Level_type=M
+0:   Level=    1.000000        2.000000        3.000000    0:  levels=1,eta,-1;
+    4.000000     
+0:     5.000000        6.000000        7.000000        8.000000     
+0:     9.000000        10.00000        11.00000        12.00000     
+0:     13.00000        14.00000        15.00000        16.00000     
+0:     17.00000        18.00000        19.00000        20.00000     
+0:     21.00000        22.00000        23.00000        24.00000     
+0:     25.00000        26.00000        27.00000        28.00000     
+0:     29.00000    
+0: 
+0:  levels=2     ,eta   ,0     
+0:   Level_set(            2 ) : Level_id=            2
+0:   Level_type=M
+0:   Level=0:  levels=2,eta,0;
+0:  steps=1,step ,-1;
+    0.000000    
+0: 
+0:  steps=1    ,step ,-1   
+0:   Timestep_set(            1 ) : Timestep_id=            1
+0:   Timestep_init_L=  F
+0:   Timestep=            0            1            2            3            4 
+0:             5            6            7            8
+0: 
+0:  steps    =4        ,hour     ,0.000000 6.000000 12.000000
+0:   Timestep_set(            2 ) : Timestep_id=            4
+0:   Timestep_init_L=0:  steps=4,hour ,<0. ,12.,6. >;
+0:  sortie([ME,P0,VT,UT1,VT1,GZ],   grid, 1, levels, 1, steps, 1)
+0: END of directives
+  F
+0:   Timestep=            0           24           48
+0: 
+0:  sortie[  6] ME    P0    VT    UT1   VT1   GZ    grid  1     levels1     steps 
+0:  1     
+0:  SREQUET:Number of warnings =            0
+0: 
+0: SET_SOR - OUTPUT FILES will be in HOURS   
+0: 
+0: +-----------------------------------+-----------------+-----+
+0: | DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |     |
+0: +--------+----------------+---------+--------+--------+-----
+0: | OUTPUT |     OUTCFG     |   BITS  |FILTPASS|FILTCOEF| LEV |
+0: |  ME    |ME              |   32    |       0|   0.000|   M |
+0: |  P0    |P0              |   32    |       0|   0.000|   M |
+0: |  VT    |VT              |   32    |       0|   0.000|   M |
+0: |  UT1   |UT1             |   32    |       0|   0.000|   M |
+0: |  VT1   |VT1             |   32    |       0|   0.000|   M |
+0: |  GZ    |GZ              |   32    |       0|   0.000|   M |
+0: +--------+----------------+---------+--------+--------+-----
+0: * Note: NO filter is applied to 3D fields on M levels
+0: 
+0: +-----------------------------------+-----------------+-----+
+0: | PHYSICS VARIABLES REQUESTED FOR OUTPUT              |     |
+0: +--------+----------------+---------+--------+--------+-----
+0: |     Entry     Bus                                         |
+0: +--------+----------------+---------+--------+--------+-----
+0: | OUTPUT |  PHYSIC NAME   |   BITS  |FILTPASS|FILTCOEF| LEV |
+0: +--------+----------------+---------+--------+--------+-----
+0: |     Permanent Bus                                         |
+0: +--------+----------------+---------+--------+--------+-----
+0: | OUTPUT |  PHYSIC NAME   |   BITS  |FILTPASS|FILTCOEF| LEV |
+0: +--------+----------------+---------+--------+--------+-----
+0: |     Dynamic   Bus                                         |
+0: +--------+----------------+---------+--------+--------+-----
+0: | OUTPUT |  PHYSIC NAME   |   BITS  |FILTPASS|FILTCOEF| LEV |
+0: +--------+----------------+---------+--------+--------+-----
+0: |     Volatile  Bus                                         |
+0: +--------+----------------+---------+--------+--------+-----
+0: | OUTPUT |  PHYSIC NAME   |   BITS  |FILTPASS|FILTCOEF| LEV |
+0: +--------+----------------+---------+--------+--------+-----
+0: 
+0: ################ SELF CASCADE DATA WILL BE PRODUCED ################
+0:  Cascade grid: Grdc_gid,Grdc_gif=   93  102;    Grdc_gjd,Grdc_gjf=   41   50
+0:  Cascade grid: Grdc_ndt,Grdc_start,Grdc_end=    4    0    8
+0:  Cascade grid: Tracers to be written for cascade run are: 
+0:  HU   QC  
+0: ####################################################################
+0: 
+0: TREATING INITIAL CONDITIONS  (S/R INDATA)
+0: =========================================
+0: 
+0:  TREATING INPUT DATA VALID AT: 20090427.00000000
+0:  ===============================================
+0:  WARNING BMF_GET: Variable ZD   non trouvee
+0:  WARNING BMF_GET: Variable W    non trouvee
+1:  WARNING BMF_GET: Variable ZD   non trouvee
+1:  WARNING BMF_GET: Variable W    non trouvee
+0:   Acql_horzint=  T  Acql_vertint=  T  Acql_etaanl=  F  Vtopo_L=  F
+0:   Acql_siganl =  F  Acql_hybanl =  T  Acql_prsanl=  F  Acql_ecmanl=  F
+0:   Acql_staganl =  F
+1:  WARNING BMF_GET: Variable QC   non trouvee
+0:  WARNING BMF_GET: Variable QC   non trouvee
+0:  PSMIN =     53693.11      PSMAX =     103948.5      PSMINMAX =  
+0:     78820.80      (PASCAL)
+0:  SETTING up OPR,ADW,...(S/R SET_DYNC)
+0:  ====================================
+0: 
+0:  SET_TRANSPOSE: checking various dimension partitionning:
+0:  Transpose 1===>2 for SOLVER (no halo):
+0:            G_ni distributed on Ptopo_npex PEs   120 /    2
+0:  Transpose 1===>2 for SOLVER (no halo):
+0:            G_nj distributed on Ptopo_npey PEs    60 /    1
+0:  Transpose 1===>2 for HZD (no halo):
+0:          G_nk   distributed on Ptopo_npex PEs    27 /    2
+0:  Transpose 1===>2 for HZD (no halo):
+0:          G_nk+1 distributed on Ptopo_npex PEs    28 /    2
+0:  Transpose 1===>2 for SOLVER (no halo):
+0:       Schm_nith distributed on Ptopo_npex PEs    27 /    2
+0:  Transpose 2===>2 for HZD&SOL (no halo):
+0:            G_ni distributed on Ptopo_npey PEs   120 /    1
+0: 
+0: COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)
+0: ===========================================================
+0:  Fft_fast_L =   T
+0:  Fft_pri_8 =     19.09859317102618     
+0: 
+0: INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)
+0: =============================================
+0: 
+0: INITIALIZATING NIL         HORIZONTAL DIFFUSION (S/R HZD_SET)
+0: ============================================================
+0: 
+0: NO HORIZONTAL DIFFUSION REQUIRED
+0: ================================
+0: 
+0: INITIALIZATING SPONGE LAYER PROFILE (S/R VSPNG_SET)
+0: ===================================================
+0:    0  ME Mean:  3.701114E+03 Var:  8.082656E+03 Min:[(  18,  44,  1) -2.323801E+02] Max:[(  28,  42,  1)  5.112745E+04]indata
+0: 
+0: PREPARATION OF DIGITAL FILTER PARAMETERS
+0: AND COEFFICIENTS (S/R INITIAL)          
+0: ========================================
+0: Init_dfnp  =    5
+0: 
+0: Digital filter coefficients and sum
+0: before normalization               
+0:    0.5000000       0.2632402       1.6015483E-09    1.026480    
+0: 
+0: Digital filter coefficients and sum
+0: after normalization                
+0:    0.4871014       0.2564493       1.5602328E-09    1.000000    
+0: 
+0:  =====> DIGITAL FILTER INITIALIZATION SCHEME: TIMESTEP   0 to TIMESTEP   4
+0:  =========================================================================
+0: 
+0: STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID 20090427.000000 
+0: 
+0: ################### BLOC STAT      0 ###################
+0:    0UT1  Mean:  6.749898E-07 Var:  1.576932E-06 Min:[(  87,  30,  1) -8.007793E-06] Max:[(   1,  41, 11)  9.919969E-06]      
+0:    0VT1  Mean: -1.854354E-09 Var:  8.881461E-07 Min:[(  63,  43, 10) -6.680008E-06] Max:[(  88,  45, 10)  6.728324E-06]      
+0:    0WT1  Mean: -5.301115E-05 Var:  1.967099E-02 Min:[(  97,  15, 18) -1.669447E-01] Max:[(  89,  44, 15)  2.926375E-01]      
+0:    0TT1  Mean:  2.448061E+02 Var:  3.022311E+01 Min:[(   9,  30,  6)  1.858892E+02] Max:[(  25,  40, 27)  3.139435E+02]      
+0:    0FIPT Mean:  1.817791E+04 Var:  1.193662E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 16)  5.429839E+04]      
+0:    0ST1  Mean: -4.081052E-02 Var:  1.118328E-01 Min:[(  28,  42,  1) -6.218856E-01] Max:[(  74,  47,  1)  3.872554E-02]      
+0:    0HU:P Mean:  2.091534E-03 Var:  4.094327E-03 Min:[(  14,  22,  9)  0.000000E+00] Max:[(  28,  35, 29)  2.434891E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0:  OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (       0) in directory: laststep_0000000008
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       0) in directory: laststep_0000000008
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       1 OUT OF        4
+0: ================================================
+0: (input) looking for mg in file geop (interolation space/time: nearest/none)
+0: (input) Read:  MG (climatic) [ip123=        0        0        0]  1 [Mean:  3.4066105E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_simple_transforms3d) MGEN
+0: (phy_dataload) mg => mgen  1 [Mean:  3.4155381E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) looking for tm in file anal (interolation space/time: linear/none)
+0: (input) Read:  TM (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  2.8504376E+02 ; Min:  2.6838547E+02 ; Max:  3.0426047E+02]
+0: (phy_simple_transforms3d) TWATEREN
+0: (phy_dataload) tm => twateren  1 [Mean:  2.8497681E+02 ; Min:  2.6953070E+02 ; Max:  3.0408847E+02]
+0: (input) looking for lh in file geop (interolation space/time: linear/none)
+0: (input) Read:  LH (climatic) [ip123=        0        0        0]  1 [Mean:  1.2392535E+02 ; Min:  0.0000000E+00 ; Max:  3.7474219E+03]
+0: (phy_dataload) lh => lhtgen  1 [Mean:  1.2554285E+02 ; Min:  0.0000000E+00 ; Max:  2.6791648E+03]
+0: (input) looking for y7 in file geop (interolation space/time: linear/none)
+0: (input) Read:  Y7 (climatic) [ip123=        0        0        0]  1 [Mean:  9.7745156E-05 ; Min:  0.0000000E+00 ; Max:  9.8637976E-03]
+0: (phy_dataload) y7 => dhdxen  1 [Mean:  9.8435565E-05 ; Min:  0.0000000E+00 ; Max:  6.6655013E-03]
+0: (input) looking for y8 in file geop (interolation space/time: linear/none)
+0: (input) Read:  Y8 (climatic) [ip123=        0        0        0]  1 [Mean:  6.7753943E-05 ; Min:  0.0000000E+00 ; Max:  6.2809167E-03]
+0: (phy_dataload) y8 => dhdyen  1 [Mean:  6.8451496E-05 ; Min:  0.0000000E+00 ; Max:  5.8280025E-03]
+0: (input) looking for y9 in file geop (interolation space/time: linear/none)
+0: (input) Read:  Y9 (climatic) [ip123=        0        0        0]  1 [Mean:  2.6864482E-06 ; Min: -1.5108552E-03 ; Max:  2.0085659E-03]
+0: (phy_dataload) y9 => dhdxdyen  1 [Mean:  2.8660613E-06 ; Min: -1.5070470E-03 ; Max:  1.2472812E-03]
+0: (input) looking for ga in file geop (interolation space/time: nearest/none)
+0: (input) Read:  GA (climatic) [ip123=        0        0        0]  1 [Mean:  1.1727523E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_simple_transforms3d) GLACEN
+0: (phy_dataload) ga => glacen  1 [Mean:  1.1756068E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) looking for i8 in file anal (interolation space/time: nearest/line)
+0: (input) Read:  I8 (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  3.4151587E-01 ; Min: -3.1630695E-01 ; Max:  4.1563492E+00]
+0: (phy_dataload) i8 => icedpen  1 [Mean:  3.5688373E-01 ; Min: -1.6201007E-01 ; Max:  4.1563492E+00]
+0: (input) looking for i9 in file anal (interolation space/time: linear/none)
+0: (input) Read:  I9 (datev=20090427.000000; nhours=     0.0) [ip123= 59868832        0        0]  1 [Mean:  2.6591174E+02 ; Min:  1.9750110E+02 ; Max:  2.7346985E+02]
+0: (input) Read:  I9 (datev=20090427.000000; nhours=     0.0) [ip123= 59968832        0        0]  1 [Mean:  2.5493488E+02 ; Min:  1.9492209E+02 ; Max:  2.7573459E+02]
+0: (phy_simple_transforms3d) TGLACEN
+0: (phy_dataload) i9 => tglacen  1 [Mean:  2.6568127E+02 ; Min:  1.9829495E+02 ; Max:  2.7330255E+02]
+0: (phy_dataload) i9 => tglacen  2 [Mean:  2.5483344E+02 ; Min:  1.9584137E+02 ; Max:  2.7295081E+02]
+0: (input) looking for i7 in file anal (interolation space/time: linear/none)
+0: (input) Read:  I7 (datev=20090427.000000; nhours=     0.0) [ip123= 59868832        0        0]  1 [Mean:  2.6576569E+02 ; Min:  1.9711986E+02 ; Max:  2.7380737E+02]
+0: (input) Read:  I7 (datev=20090427.000000; nhours=     0.0) [ip123= 59968832        0        0]  1 [Mean:  2.6739243E+02 ; Min:  2.1658961E+02 ; Max:  2.7360526E+02]
+0: (input) Read:  I7 (datev=20090427.000000; nhours=     0.0) [ip123= 60068832        0        0]  1 [Mean:  2.6957516E+02 ; Min:  2.4395050E+02 ; Max:  2.7314581E+02]
+0: (phy_simple_transforms3d) TMICEN
+0: (phy_dataload) i7 => tmicen  1 [Mean:  2.6563614E+02 ; Min:  1.9847528E+02 ; Max:  2.7327676E+02]
+0: (phy_dataload) i7 => tmicen  2 [Mean:  2.6728085E+02 ; Min:  2.1834543E+02 ; Max:  2.7321130E+02]
+0: (phy_dataload) i7 => tmicen  3 [Mean:  2.6950043E+02 ; Min:  2.4482848E+02 ; Max:  2.7312735E+02]
+0: (input) looking for zp in file geop (interolation space/time: linear/none)
+0: (input) Read:  ZP (climatic) [ip123=        0        0        0]  1 [Mean: -4.7897301E+00 ; Min: -8.4664917E+00 ; Max:  3.6968694E+00]
+0: (phy_simple_transforms3d) Z0EN
+0: (phy_dataload) zp => z0en  1 [Mean:  6.1302614E-01 ; Min:  2.1445460E-04 ; Max:  3.4737015E+01]
+0: (input) looking for sd in file anal (interolation space/time: nearest/line)
+0: (input) Read:  SD (datev=20090427.000000; nhours=     0.0) [ip123= 59868832        0        0]  1 [Mean:  3.1872650E+01 ; Min: -3.7270527E+01 ; Max:  6.4697949E+02]
+0: (input) Read:  SD (datev=20090427.000000; nhours=     0.0) [ip123= 59968832        0        0]  1 [Mean:  3.1874012E+01 ; Min: -3.7270527E+01 ; Max:  6.4697949E+02]
+0: (input) Read:  SD (datev=20090427.000000; nhours=     0.0) [ip123= 60068832        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  SD (datev=20090427.000000; nhours=     0.0) [ip123= 60168832        0        0]  1 [Mean:  2.2833565E+01 ; Min: -3.9345589E+01 ; Max:  6.3990442E+02]
+0: (input) Read:  SD (datev=20090427.000000; nhours=     0.0) [ip123= 60268832        0        0]  1 [Mean:  4.9634773E+01 ; Min: -3.7270527E+01 ; Max:  6.3797949E+02]
+0: (phy_simple_transforms3d) SNODPEN
+0: (phy_dataload) sd => snodpen  1 [Mean:  3.1610757E-01 ; Min: -3.2270527E-01 ; Max:  6.3797946E+00]
+0: (phy_dataload) sd => snodpen  2 [Mean:  3.1612009E-01 ; Min: -3.2270527E-01 ; Max:  6.3797946E+00]
+0: (phy_dataload) sd => snodpen  3 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) sd => snodpen  4 [Mean:  2.3781393E-01 ; Min: -3.8345587E-01 ; Max:  6.2315440E+00]
+0: (phy_dataload) sd => snodpen  5 [Mean:  5.0092787E-01 ; Min: -1.2770526E-01 ; Max:  6.3797946E+00]
+0: (input) looking for i0 in file anal (interolation space/time: linear/line)
+0: (input) Read:  I0 (datev=20090427.000000; nhours=     0.0) [ip123= 59868832        0        0]  1 [Mean:  2.6914697E+02 ; Min:  2.1433424E+02 ; Max:  3.1695926E+02]
+0: (input) Read:  I0 (datev=20090427.000000; nhours=     0.0) [ip123= 59968832        0        0]  1 [Mean:  2.7036639E+02 ; Min:  2.2155742E+02 ; Max:  3.1046368E+02]
+0: (phy_simple_transforms3d) TSOILEN
+0: (phy_dataload) i0 => tsoilen  1 [Mean:  2.6901602E+02 ; Min:  2.1930284E+02 ; Max:  3.0893262E+02]
+0: (phy_dataload) i0 => tsoilen  2 [Mean:  2.7023959E+02 ; Min:  2.2210406E+02 ; Max:  3.0937695E+02]
+0: (input) looking for vf in file geop (interolation space/time: nearest/none)
+0: (input) Read:  VF (climatic) [ip123=     1199        0        0]  1 [Mean:  6.5241379E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1198        0        0]  1 [Mean:  1.1727523E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1197        0        0]  1 [Mean:  6.9252886E-03 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1196        0        0]  1 [Mean:  1.0443005E-02 ; Min:  0.0000000E+00 ; Max:  9.5199585E-01]
+0: (input) Read:  VF (climatic) [ip123=     1195        0        0]  1 [Mean:  1.6114021E-02 ; Min:  0.0000000E+00 ; Max:  9.9673462E-01]
+0: (input) Read:  VF (climatic) [ip123=     1194        0        0]  1 [Mean:  8.1432322E-03 ; Min:  0.0000000E+00 ; Max:  9.9031067E-01]
+0: (input) Read:  VF (climatic) [ip123=     1193        0        0]  1 [Mean:  1.0964268E-02 ; Min:  0.0000000E+00 ; Max:  9.6247864E-01]
+0: (input) Read:  VF (climatic) [ip123=     1192        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1191        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1190        0        0]  1 [Mean:  5.4019969E-03 ; Min:  0.0000000E+00 ; Max:  9.9459839E-01]
+0: (input) Read:  VF (climatic) [ip123=     1189        0        0]  1 [Mean:  3.9453064E-03 ; Min:  0.0000000E+00 ; Max:  8.1326294E-01]
+0: (input) Read:  VF (climatic) [ip123=     1188        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1187        0        0]  1 [Mean:  1.7330728E-02 ; Min:  0.0000000E+00 ; Max:  9.9641418E-01]
+0: (input) Read:  VF (climatic) [ip123=     1186        0        0]  1 [Mean:  1.0312910E-02 ; Min:  0.0000000E+00 ; Max:  9.5524597E-01]
+0: (input) Read:  VF (climatic) [ip123=     1185        0        0]  1 [Mean:  2.5760747E-02 ; Min:  0.0000000E+00 ; Max:  9.9276733E-01]
+0: (input) Read:  VF (climatic) [ip123=     1184        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1183        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1182        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1181        0        0]  1 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1180        0        0]  1 [Mean:  4.8449496E-03 ; Min:  0.0000000E+00 ; Max:  9.9160767E-01]
+0: (input) Read:  VF (climatic) [ip123=     1179        0        0]  1 [Mean:  4.7359098E-04 ; Min:  0.0000000E+00 ; Max:  1.6790390E-01]
+0: (input) Read:  VF (climatic) [ip123=     1178        0        0]  1 [Mean:  2.7470663E-02 ; Min:  0.0000000E+00 ; Max:  9.9986267E-01]
+0: (input) Read:  VF (climatic) [ip123=     1177        0        0]  1 [Mean:  2.5868851E-03 ; Min:  0.0000000E+00 ; Max:  8.3824158E-01]
+0: (input) Read:  VF (climatic) [ip123=     1176        0        0]  1 [Mean:  4.2769101E-02 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) Read:  VF (climatic) [ip123=     1175        0        0]  1 [Mean:  8.5090399E-03 ; Min:  0.0000000E+00 ; Max:  8.6915588E-01]
+0: (input) Read:  VF (climatic) [ip123=     1174        0        0]  1 [Mean:  2.8311817E-02 ; Min:  0.0000000E+00 ; Max:  9.8570251E-01]
+0: (phy_dataload) vf => vegfen  1 [Mean:  6.5132880E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_dataload) vf => vegfen  2 [Mean:  1.1756068E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_dataload) vf => vegfen  3 [Mean:  7.1144328E-03 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_dataload) vf => vegfen  4 [Mean:  1.0499530E-02 ; Min:  0.0000000E+00 ; Max:  8.8037109E-01]
+0: (phy_dataload) vf => vegfen  5 [Mean:  1.6201617E-02 ; Min:  0.0000000E+00 ; Max:  9.9673462E-01]
+0: (phy_dataload) vf => vegfen  6 [Mean:  8.1750294E-03 ; Min:  0.0000000E+00 ; Max:  9.9031067E-01]
+0: (phy_dataload) vf => vegfen  7 [Mean:  1.1076899E-02 ; Min:  0.0000000E+00 ; Max:  9.0864563E-01]
+0: (phy_dataload) vf => vegfen  8 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen  9 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 10 [Mean:  5.3038206E-03 ; Min:  0.0000000E+00 ; Max:  9.1172791E-01]
+0: (phy_dataload) vf => vegfen 11 [Mean:  3.9494280E-03 ; Min:  0.0000000E+00 ; Max:  8.1326294E-01]
+0: (phy_dataload) vf => vegfen 12 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 13 [Mean:  1.6338788E-02 ; Min:  0.0000000E+00 ; Max:  9.8864746E-01]
+0: (phy_dataload) vf => vegfen 14 [Mean:  1.0313001E-02 ; Min:  0.0000000E+00 ; Max:  8.6457825E-01]
+0: (phy_dataload) vf => vegfen 15 [Mean:  2.5913589E-02 ; Min:  0.0000000E+00 ; Max:  9.7604370E-01]
+0: (phy_dataload) vf => vegfen 16 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 17 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 18 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 19 [Mean:  0.0000000E+00 ; Min:  0.0000000E+00 ; Max:  0.0000000E+00]
+0: (phy_dataload) vf => vegfen 20 [Mean:  4.8551126E-03 ; Min:  0.0000000E+00 ; Max:  8.1973267E-01]
+0: (phy_dataload) vf => vegfen 21 [Mean:  4.2778405E-04 ; Min:  0.0000000E+00 ; Max:  7.7953339E-02]
+0: (phy_dataload) vf => vegfen 22 [Mean:  2.7694698E-02 ; Min:  0.0000000E+00 ; Max:  9.9905396E-01]
+0: (phy_dataload) vf => vegfen 23 [Mean:  3.0434523E-03 ; Min:  0.0000000E+00 ; Max:  6.8557739E-01]
+0: (phy_dataload) vf => vegfen 24 [Mean:  4.3348528E-02 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_dataload) vf => vegfen 25 [Mean:  8.5796686E-03 ; Min:  0.0000000E+00 ; Max:  7.9251099E-01]
+0: (phy_dataload) vf => vegfen 26 [Mean:  2.8271429E-02 ; Min:  0.0000000E+00 ; Max:  9.6025085E-01]
+0: (input) looking for lg in file anal (interolation space/time: nearest/line)
+0: WARNING: (input) Could not find:   lg (datev=20090427.000000) [ip123=        0       -1       -1] [datefuzz=********* -1]
+0: (input) lg not found in anal looking in clim
+0: (input) Read:  LG (climatic) [ip123=        0        4        0]  1 [Mean:  2.7779078E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (input) Read:  LG (climatic) [ip123=        0        5        0]  1 [Mean:  2.7737597E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_simple_transforms3d) GLSEAEN
+0: (phy_dataload) lg => glseaen  1 [Mean:  2.7697614E-01 ; Min:  0.0000000E+00 ; Max:  1.0000000E+00]
+0: (phy_dataload) ignoring var, not declared in bus: hs :
+0: (phy_dataload) ignoring var, not declared in bus: vg :
+0: (input) looking for me in file geop (interolation space/time: cubic/none)
+0: (input) Read:  ME (climatic) [ip123=     1200        0        0]  1 [Mean:  3.7809351E+02 ; Min: -2.8000000E+01 ; Max:  5.3452388E+03]
+0: (phy_simple_transforms3d) MT
+0: (phy_dataload) me => mt  1 [Mean:  3.7823236E+02 ; Min:  0.0000000E+00 ; Max:  5.4251206E+03]
+0: (input) looking for al in file geop (interolation space/time: nearest/any)
+0: WARNING: (input) Could not find:   al (datev=-1) [ip123=        0       -1       -1] [datefuzz=        0  0]
+0: (input) al not found in geop looking in clim
+0: (input) Read:  AL (climatic) [ip123=        0        0        0]  1 [Mean:  1.8538956E-01 ; Min:  5.9999999E-02 ; Max:  7.9999024E-01]
+0: (phy_dataload) al => alen  1 [Mean:  1.8621558E-01 ; Min:  5.9999999E-02 ; Max:  7.9999024E-01]
+0: (input) looking for i1 in file anal (interolation space/time: nearest/none)
+0: (input) Read:  I1 (datev=20090427.000000; nhours=     0.0) [ip123= 59868832        0        0]  1 [Mean:  7.8783947E-01 ; Min: -5.0577158E-03 ; Max:  1.1067587E+00]
+0: (input) Read:  I1 (datev=20090427.000000; nhours=     0.0) [ip123= 59968832        0        0]  1 [Mean:  7.7851367E-01 ; Min: -1.2353389E-01 ; Max:  1.1220716E+00]
+0: (phy_dataload) i1 => wsoilen  1 [Mean:  7.8994358E-01 ; Min: -3.1045908E-03 ; Max:  1.0989462E+00]
+0: (phy_dataload) i1 => wsoilen  2 [Mean:  7.8013963E-01 ; Min: -1.1962764E-01 ; Max:  1.1132826E+00]
+0: (input) looking for i2 in file anal (interolation space/time: nearest/none)
+0: (input) Read:  I2 (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  1.2070257E-02 ; Min: -2.9372761E-02 ; Max:  4.8088115E-01]
+0: (phy_dataload) i2 => isoilen  1 [Mean:  1.1950360E-02 ; Min: -2.9372761E-02 ; Max:  4.7038311E-01]
+0: (input) looking for i3 in file anal (interolation space/time: nearest/none)
+0: (input) Read:  I3 (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  1.6515436E-02 ; Min: -7.2913036E-02 ; Max:  1.2591182E+00]
+0: (phy_dataload) i3 => wvegen  1 [Mean:  1.7067734E-02 ; Min: -6.5588817E-02 ; Max:  1.2591182E+00]
+0: (input) looking for i4 in file anal (interolation space/time: nearest/none)
+0: (input) Read:  I4 (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  1.9360373E-02 ; Min: -2.1531630E+00 ; Max:  1.2269059E+02]
+0: (phy_dataload) i4 => wsnowen  1 [Mean: -1.7724355E-04 ; Min: -1.1531630E+00 ; Max:  5.8253086E+01]
+0: (input) looking for i6 in file anal (interolation space/time: nearest/none)
+0: (input) Read:  I6 (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  7.6736313E-01 ; Min:  3.5915732E-01 ; Max:  8.3120322E-01]
+0: (phy_dataload) i6 => snoalen  1 [Mean:  7.6742852E-01 ; Min:  4.2422080E-01 ; Max:  8.2790732E-01]
+0: (phy_dataload) ignoring var, not declared in bus: xa :
+0: (input) looking for j1 in file geop (interolation space/time: nearest/none)
+0: (input) Read:  J1 (climatic) [ip123=     1199        0        0]  1 [Mean:  1.8928476E+01 ; Min:  0.0000000E+00 ; Max:  9.2000000E+01]
+0: (input) Read:  J1 (climatic) [ip123=     1198        0        0]  1 [Mean:  1.8894859E+01 ; Min:  0.0000000E+00 ; Max:  9.2000000E+01]
+0: (input) Read:  J1 (climatic) [ip123=     1197        0        0]  1 [Mean:  1.8800087E+01 ; Min:  0.0000000E+00 ; Max:  9.2000000E+01]
+0: (phy_dataload) j1 => sanden  1 [Mean:  1.8878191E+01 ; Min:  0.0000000E+00 ; Max:  8.7000000E+01]
+0: (phy_dataload) j1 => sanden  2 [Mean:  1.8845749E+01 ; Min:  0.0000000E+00 ; Max:  8.7000000E+01]
+0: (phy_dataload) j1 => sanden  3 [Mean:  1.8745600E+01 ; Min:  0.0000000E+00 ; Max:  8.7000000E+01]
+0: (input) looking for j2 in file geop (interolation space/time: nearest/none)
+0: (input) Read:  J2 (climatic) [ip123=     1199        0        0]  1 [Mean:  8.6336594E+00 ; Min:  0.0000000E+00 ; Max:  5.9985352E+01]
+0: (input) Read:  J2 (climatic) [ip123=     1198        0        0]  1 [Mean:  8.6758156E+00 ; Min:  0.0000000E+00 ; Max:  5.8000977E+01]
+0: (input) Read:  J2 (climatic) [ip123=     1197        0        0]  1 [Mean:  8.7638273E+00 ; Min:  0.0000000E+00 ; Max:  5.8000977E+01]
+0: (phy_dataload) j2 => clayen  1 [Mean:  8.6939945E+00 ; Min:  0.0000000E+00 ; Max:  5.4000000E+01]
+0: (phy_dataload) j2 => clayen  2 [Mean:  8.7409792E+00 ; Min:  0.0000000E+00 ; Max:  5.4000000E+01]
+0: (phy_dataload) j2 => clayen  3 [Mean:  8.8326130E+00 ; Min:  0.0000000E+00 ; Max:  5.4000000E+01]
+0: (input) looking for dn in file anal (interolation space/time: nearest/none)
+0: (input) Read:  DN (datev=20090427.000000; nhours=     0.0) [ip123=        0        0        0]  1 [Mean:  1.1735178E+02 ; Min:  6.6742287E+01 ; Max:  7.5649231E+02]
+0: (phy_dataload) dn => snoroen  1 [Mean:  1.1729219E+02 ; Min:  7.1242287E+01 ; Max:  7.5649231E+02]
+0: (phy_dataload) ignoring var, not declared in bus: icel :
+0: (phy_dataload) ignoring var, not declared in bus: fsa :
+0: (phy_dataload) ignoring var, not declared in bus: sla :
+0: (phy_cor_twater) Performing twater correction.
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      0 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       0)
+0: 
+0: NO ZONAL DIAGNOSTICS REQUESTED (S/R ZONGINI)
+0: ============================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      1 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       1)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       1) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      1 ###################
+0:    1UT1  Mean:  6.750886E-07 Var:  1.575202E-06 Min:[(  88,  30,  1) -8.029563E-06] Max:[(   1,  41, 11)  9.886468E-06]      
+0:    1VT1  Mean: -2.321302E-09 Var:  8.860936E-07 Min:[(  64,  42, 10) -6.666289E-06] Max:[(  88,  45, 10)  6.762703E-06]      
+0:    1WT1  Mean: -1.420639E-04 Var:  2.331795E-02 Min:[(  78,   2, 28) -3.633145E-01] Max:[(  66,   2, 21)  3.617822E-01]      
+0:    1TT1  Mean:  2.447760E+02 Var:  3.020444E+01 Min:[(  14,  32,  6)  1.861196E+02] Max:[(  25,  40, 27)  3.139257E+02]      
+0:    1FIPT Mean:  1.817922E+04 Var:  1.193720E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.440401E+04]      
+0:    1ST1  Mean: -4.081989E-02 Var:  1.117818E-01 Min:[(  28,  42,  1) -6.167466E-01] Max:[(  74,  47,  1)  3.868762E-02]      
+0:    1HU:P Mean:  2.075919E-03 Var:  4.040018E-03 Min:[(  69,   2, 28) -2.464809E-05] Max:[(  28,  35, 29)  2.428614E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        1 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       2 OUT OF        4
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      2 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       2)
+0: 
+0:  OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (       2)
+0: 
+0: ################### BLOC STAT      2 ###################
+0:    2UT1  Mean:  6.750700E-07 Var:  1.573953E-06 Min:[(  88,  30,  1) -8.120756E-06] Max:[(   1,  41, 11)  9.835143E-06]      
+0:    2VT1  Mean: -2.495940E-09 Var:  8.847917E-07 Min:[(  64,  42, 10) -6.662696E-06] Max:[(  88,  45, 10)  6.774666E-06]      
+0:    2WT1  Mean:  9.068203E-06 Var:  2.116047E-02 Min:[(  65,   2, 15) -2.772084E-01] Max:[(  89,  44, 15)  2.534951E-01]      
+0:    2TT1  Mean:  2.447689E+02 Var:  3.020155E+01 Min:[(  14,  32,  6)  1.861203E+02] Max:[(  25,  40, 27)  3.138274E+02]      
+0:    2FIPT Mean:  1.817802E+04 Var:  1.193606E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.450336E+04]      
+0:    2ST1  Mean: -4.082662E-02 Var:  1.117646E-01 Min:[(  28,  42,  1) -6.123435E-01] Max:[(  74,  47,  1)  3.851975E-02]      
+0:    2HU:P Mean:  2.068022E-03 Var:  4.010285E-03 Min:[( 101,  46, 20)  1.079877E-17] Max:[(  28,  35, 29)  2.316344E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        2 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       3 OUT OF        4
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      3 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       3)
+0: 
+0:  OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (       3)
+0: 
+0: ################### BLOC STAT      3 ###################
+0:    3UT1  Mean:  6.751206E-07 Var:  1.572903E-06 Min:[(  88,  31,  1) -8.162066E-06] Max:[(   1,  41, 11)  9.812042E-06]      
+0:    3VT1  Mean: -2.559066E-09 Var:  8.834327E-07 Min:[(  64,  42, 10) -6.674462E-06] Max:[(  88,  45, 10)  6.737537E-06]      
+0:    3WT1  Mean: -1.444725E-04 Var:  1.787156E-02 Min:[(  78,   2, 28) -1.979936E-01] Max:[(  29,  40,  1)  2.894000E-01]      
+0:    3TT1  Mean:  2.447665E+02 Var:  3.020365E+01 Min:[(  17,  32,  6)  1.861458E+02] Max:[(  25,  40, 27)  3.137791E+02]      
+0:    3FIPT Mean:  1.817720E+04 Var:  1.193498E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.446983E+04]      
+0:    3ST1  Mean: -4.083661E-02 Var:  1.117956E-01 Min:[(  28,  42,  1) -6.135609E-01] Max:[(  74,  47,  1)  3.822566E-02]      
+0:    3HU:P Mean:  2.069110E-03 Var:  4.009370E-03 Min:[( 101,  46, 20)  2.715604E-17] Max:[(  28,  35, 29)  2.317401E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        3 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       4 OUT OF        4
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      4 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       4)
+0: 
+0:  OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (       4)
+0: 
+0: ################### BLOC STAT      4 ###################
+0:    4UT1  Mean:  6.752600E-07 Var:  1.572108E-06 Min:[(  88,  31,  1) -8.168231E-06] Max:[(   1,  41, 11)  9.811812E-06]      
+0:    4VT1  Mean: -2.576857E-09 Var:  8.821311E-07 Min:[(  64,  42, 10) -6.681726E-06] Max:[(  88,  45, 10)  6.676791E-06]      
+0:    4WT1  Mean: -4.383612E-05 Var:  1.753618E-02 Min:[(  65,   2, 19) -1.621364E-01] Max:[(   4,  31, 11)  2.821615E-01]      
+0:    4TT1  Mean:  2.447635E+02 Var:  3.020449E+01 Min:[(  17,  32,  6)  1.861342E+02] Max:[(  25,  40, 27)  3.137878E+02]      
+0:    4FIPT Mean:  1.817651E+04 Var:  1.193421E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 16)  5.436654E+04]      
+0:    4ST1  Mean: -4.084551E-02 Var:  1.118290E-01 Min:[(  28,  42,  1) -6.181287E-01] Max:[(  74,  47,  1)  3.813719E-02]      
+0:    4HU:P Mean:  2.070911E-03 Var:  4.011588E-03 Min:[( 101,  46, 20)  5.491068E-17] Max:[(  29,  36, 29)  2.299457E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        4 IS COMPLETED
+0: 
+0: END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP       4
+0: ===================================================
+0: 
+0:  =====> DIGITAL FILTER INITIALIZATION SCHEME: COMPLETED
+0:         LAST TIMESTEP COMPLETED RESET TO:    2
+0:  =======================================================
+0: 
+0: STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID 20090427.003000 
+0: 
+0: ################### BLOC STAT      2 ###################
+0:    2UT1  Mean:  6.750877E-07 Var:  1.573874E-06 Min:[(  88,  30,  1) -8.099289E-06] Max:[(   1,  41, 11)  9.842381E-06]      
+0:    2VT1  Mean: -2.467343E-09 Var:  8.845289E-07 Min:[(  64,  42, 10) -6.666635E-06] Max:[(  88,  45, 10)  6.762077E-06]      
+0:    2WT1  Mean: -6.906495E-05 Var:  1.700347E-02 Min:[(  33,  40, 11) -1.336262E-01] Max:[(   4,  31, 11)  2.574282E-01]      
+0:    2TT1  Mean:  2.447701E+02 Var:  3.020261E+01 Min:[(  14,  32,  6)  1.861693E+02] Max:[(  25,  40, 27)  3.138402E+02]      
+0:    2FIPT Mean:  1.817812E+04 Var:  1.193604E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.446927E+04]      
+0:    2ST1  Mean: -4.082746E-02 Var:  1.117761E-01 Min:[(  28,  42,  1) -6.137849E-01] Max:[(  74,  47,  1)  3.848738E-02]      
+0:    2HU:P Mean:  2.070326E-03 Var:  4.017161E-03 Min:[( 101,  46, 20)  1.291530E-17] Max:[(  28,  35, 29)  2.345407E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       2) in directory: laststep_0000000008
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       3 OUT OF        8
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      3 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       3)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       3) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      3 ###################
+0:    3UT1  Mean:  6.751864E-07 Var:  1.572764E-06 Min:[(  88,  31,  1) -8.147530E-06] Max:[(   1,  41, 11)  9.817913E-06]      
+0:    3VT1  Mean: -2.575242E-09 Var:  8.831486E-07 Min:[(  64,  42, 10) -6.673381E-06] Max:[(  88,  45, 10)  6.731836E-06]      
+0:    3WT1  Mean: -7.332724E-05 Var:  1.669620E-02 Min:[(  97,  14,  5) -1.287172E-01] Max:[(   4,  31, 11)  2.705426E-01]      
+0:    3TT1  Mean:  2.447668E+02 Var:  3.020567E+01 Min:[(  17,  32,  6)  1.861732E+02] Max:[(  25,  40, 27)  3.137908E+02]      
+0:    3FIPT Mean:  1.817730E+04 Var:  1.193502E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.445130E+04]      
+0:    3ST1  Mean: -4.083615E-02 Var:  1.117953E-01 Min:[(  28,  42,  1) -6.144204E-01] Max:[(  74,  47,  1)  3.827838E-02]      
+0:    3HU:P Mean:  2.068558E-03 Var:  4.008501E-03 Min:[( 101,  46, 20)  3.015595E-17] Max:[(  28,  35, 29)  2.313373E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        3 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       4 OUT OF        8
+0: ================================================
+0: 
+0:  OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (       4) in directory: laststep_0000000008
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      4 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       4)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       4) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      4 ###################
+0:    4UT1  Mean:  6.752876E-07 Var:  1.572106E-06 Min:[(  88,  31,  1) -8.160726E-06] Max:[(   1,  41, 11)  9.808607E-06]      
+0:    4VT1  Mean: -2.559865E-09 Var:  8.820023E-07 Min:[(  64,  42, 10) -6.678999E-06] Max:[(  88,  45, 10)  6.676549E-06]      
+0:    4WT1  Mean: -8.439472E-05 Var:  1.649936E-02 Min:[(  46,  24, 10) -1.178331E-01] Max:[(   4,  31, 11)  2.821453E-01]      
+0:    4TT1  Mean:  2.447637E+02 Var:  3.020445E+01 Min:[(  17,  32,  6)  1.861472E+02] Max:[(  25,  40, 27)  3.137765E+02]      
+0:    4FIPT Mean:  1.817669E+04 Var:  1.193427E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 16)  5.438563E+04]      
+0:    4ST1  Mean: -4.084360E-02 Var:  1.118252E-01 Min:[(  28,  42,  1) -6.172403E-01] Max:[(  74,  47,  1)  3.819428E-02]      
+0:    4HU:P Mean:  2.070341E-03 Var:  4.009799E-03 Min:[( 101,  46, 20)  5.888657E-17] Max:[(  29,  36, 29)  2.301516E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        4 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       5 OUT OF        8
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      5 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       5)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       5) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      5 ###################
+0:    5UT1  Mean:  6.754608E-07 Var:  1.571436E-06 Min:[(  88,  31,  1) -8.142100E-06] Max:[(   1,  41, 10)  9.804753E-06]      
+0:    5VT1  Mean: -2.574071E-09 Var:  8.808420E-07 Min:[(  64,  42, 10) -6.675455E-06] Max:[(  88,  45, 10)  6.612292E-06]      
+0:    5WT1  Mean: -8.021246E-05 Var:  1.647962E-02 Min:[( 113,  56, 28) -1.379674E-01] Max:[(   4,  31, 11)  2.874193E-01]      
+0:    5TT1  Mean:  2.447644E+02 Var:  3.020632E+01 Min:[(  17,  32,  6)  1.862285E+02] Max:[(  25,  40, 27)  3.137547E+02]      
+0:    5FIPT Mean:  1.817635E+04 Var:  1.193379E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 16)  5.437191E+04]      
+0:    5ST1  Mean: -4.084659E-02 Var:  1.118518E-01 Min:[(  28,  42,  1) -6.181571E-01] Max:[(  74,  47,  1)  3.822624E-02]      
+0:    5HU:P Mean:  2.071484E-03 Var:  4.010589E-03 Min:[( 101,  46, 20)  1.027589E-16] Max:[(  29,  36, 29)  2.310476E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        5 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       6 OUT OF        8
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      6 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       6)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       6) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      6 ###################
+0:    6UT1  Mean:  6.756741E-07 Var:  1.570853E-06 Min:[(  89,  31,  1) -8.170071E-06] Max:[(   1,  41, 10)  9.804697E-06]      
+0:    6VT1  Mean: -2.564883E-09 Var:  8.797893E-07 Min:[(  64,  42, 10) -6.666061E-06] Max:[(  88,  45, 10)  6.543575E-06]      
+0:    6WT1  Mean: -7.472250E-05 Var:  1.644012E-02 Min:[(  55,   5, 28) -1.316469E-01] Max:[(   4,  31, 11)  2.904282E-01]      
+0:    6TT1  Mean:  2.447624E+02 Var:  3.020663E+01 Min:[(  17,  32,  6)  1.863376E+02] Max:[(  25,  40, 27)  3.137059E+02]      
+0:    6FIPT Mean:  1.817635E+04 Var:  1.193339E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.441042E+04]      
+0:    6ST1  Mean: -4.084389E-02 Var:  1.118749E-01 Min:[(  28,  42,  1) -6.165351E-01] Max:[(  74,  47,  1)  3.815965E-02]      
+0:    6HU:P Mean:  2.072522E-03 Var:  4.011003E-03 Min:[( 101,  46, 20)  1.659667E-16] Max:[(  29,  36, 29)  2.312252E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        6 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       7 OUT OF        8
+0: ================================================
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      7 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       7)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       7) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      7 ###################
+0:    7UT1  Mean:  6.759192E-07 Var:  1.570296E-06 Min:[(  89,  31,  1) -8.260055E-06] Max:[(   1,  41, 10)  9.806559E-06]      
+0:    7VT1  Mean: -2.566330E-09 Var:  8.788224E-07 Min:[(  64,  42, 10) -6.655154E-06] Max:[(  88,  45, 10)  6.468938E-06]      
+0:    7WT1  Mean: -6.601265E-05 Var:  1.642993E-02 Min:[(  55,   5, 28) -1.466890E-01] Max:[(   4,  31, 11)  2.915996E-01]      
+0:    7TT1  Mean:  2.447618E+02 Var:  3.020743E+01 Min:[(   3,  31,  6)  1.864117E+02] Max:[(  25,  40, 27)  3.136383E+02]      
+0:    7FIPT Mean:  1.817656E+04 Var:  1.193300E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.444243E+04]      
+0:    7ST1  Mean: -4.083707E-02 Var:  1.118932E-01 Min:[(  28,  42,  1) -6.153286E-01] Max:[(  74,  47,  1)  3.791887E-02]      
+0:    7HU:P Mean:  2.073043E-03 Var:  4.010031E-03 Min:[( 101,  46, 20)  2.534121E-16] Max:[(  29,  36, 29)  2.307111E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        7 IS COMPLETED
+0: 
+0: GEM_RUN: PERFORMING TIMESTEP #       8 OUT OF        8
+0: ================================================
+0: 
+0:  OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (       8) in directory: laststep_0000000008
+0: (phy_dataload) All needed var were found
+0: 
+0: PERFORM A PHYSICS STEP: stepno=      8 (S/R itf_phy_step)
+0: =========================================================
+0: 
+0:  OUT_PHY- NO PHYSICS OUTPUT FOR STEP (       8)
+0: 
+0:  OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (       8) in directory: laststep_0000000008
+0: 
+0: ################### BLOC STAT      8 ###################
+0:    8UT1  Mean:  6.761805E-07 Var:  1.569756E-06 Min:[(  89,  31,  1) -8.312442E-06] Max:[(   1,  41, 10)  9.804033E-06]      
+0:    8VT1  Mean: -2.559552E-09 Var:  8.779292E-07 Min:[(  64,  42, 10) -6.643964E-06] Max:[(  88,  45, 10)  6.387840E-06]      
+0:    8WT1  Mean: -5.787687E-05 Var:  1.640134E-02 Min:[(  55,   5, 28) -1.452197E-01] Max:[(   4,  31, 11)  2.895601E-01]      
+0:    8TT1  Mean:  2.447615E+02 Var:  3.020826E+01 Min:[(   3,  31,  6)  1.862239E+02] Max:[(  25,  40, 27)  3.135566E+02]      
+0:    8FIPT Mean:  1.817687E+04 Var:  1.193265E+04 Min:[(  18,  44, 28) -2.323801E+02] Max:[(  28,  42, 15)  5.443364E+04]      
+0:    8ST1  Mean: -4.082821E-02 Var:  1.119033E-01 Min:[(  28,  42,  1) -6.158836E-01] Max:[(  74,  47,  1)  3.765837E-02]      
+0:    8HU:P Mean:  2.073459E-03 Var:  4.008932E-03 Min:[( 101,  46, 20)  3.708214E-16] Max:[(  29,  36, 29)  2.295895E-02]      
+0: ################### BLOC STAT ...done
+0: 
+0: THE TIME STEP        8 IS COMPLETED
+0: 
+0: END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP       8
+0: ===================================================
+0: 
+0: 
+0: END OF CURRENT TIME SLICE (S/R GEM_CTRL) AT TIMESTEP       8
+0: =================================================
+0: 
+0: 
+0: TERMINATION OF THE RUN... CLOSING ALL FILES S/R SETTERM
+0: ========================================================
+0: 
+0:  ___________________________________________________________
+0:  __________________TIMINGS ON PE #0_________________________
+0:        GEMDM   Wall clock= 9.205501E+00
+0:     INIT_GEM   Wall clock= 2.606270E-01
+0:      DYNSTEP   Wall clock= 4.627723E+00
+0:          RHS   Wall clock= 1.315608E-01
+0:          ADW   Wall clock= 3.395833E+00
+0:          PRE   Wall clock= 1.100261E-01
+0:          NLI   Wall clock= 4.492888E-01
+0:          SOL   Wall clock= 3.446820E-01
+0:          BAC   Wall clock= 1.680918E-01
+0:    ADW_TRAJE   Wall clock= 1.731253E+00
+0:    ADW_INLAG   Wall clock= 1.485675E+00
+0:      PHYSTEP   Wall clock= 3.918969E+00
+0:      OUT_DYN   Wall clock= 1.936605E-01
+0:      OUT_PHY   Wall clock= 2.300739E-04
+0:     BLOCSTAT   Wall clock= 2.232575E-02
+0:  ___________________________________________________________
+0: 
+0:    ********************************************************************************************
+0:    *                                                                                          *
+0:    *          GEMDM --- Release of: 2012-03-28 19:57 GMT                   4.4.0-rc4          *
+0:    *                                                                                          *
+0:    *          Thu Mar 29 01:26:46 2012                                                        *
+0:    *                                                                                          *
+0:    *          END EXECUTION                                                                   *
+0:    *                                                                                          *
+0:    *          CP SECS =  91700.000                                                            *
+0:    *                                                                                          *
+0:    ********************************************************************************************
+##### UM_TIMING Um_model -MAINDM-: jeudi 29 mars 2012, 01:26:46 (UTC+0000)
+setting CallReturns=/tmp/armnsch_Call_14486
+restoring CallReturns=/tmp/armnsch_Call_14326
+STATUS_FROM_DOMAIN: cfg_0001 ED
+
+ ===> Um_output_wrapper-output_ready_MASTER cfg_0001 on liste: laststep_0000000008
+ ===> Um_output_wrapper-output_ready_MASTER cfg_0001 Um_process_output.ksh laststep_0000000008
+ ===> Um_output_wrapper-output_ready_MASTER cfg_0001 DONE...:
+
+
+=====>  Um_runmod.ksh ends: jeudi 29 mars 2012, 01:26:46 (UTC+0000) ###########
+
+WARNING: r.return.dot executed without previous r.call.dot
+NO variable values can be returned
+the following values would have been returned
+_status='ED';
+_endstep='0000000008';
+_npe='2';
