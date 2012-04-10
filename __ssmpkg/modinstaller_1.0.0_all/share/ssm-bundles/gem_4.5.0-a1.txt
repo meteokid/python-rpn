@@ -9,8 +9,8 @@ ssm_bndl_basename=GEM
 ssm_bndl_name=x/4.5.0-a1
 
 ssm_s=gem-scripts/4.3.2
-ssm_d=gemdyn/4.5.0-a1
-ssm_p=rpnphy/5.5.0-a1
+ssm_d=gemdyn/x/4.5.0-a1
+ssm_p=rpnphy/x/5.5.0-a1
 ssm_u=modelutils/1.0.1
 ssm_gemdataver=4.2.0
 

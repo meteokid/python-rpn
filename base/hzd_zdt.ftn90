@@ -39,13 +39,14 @@
 #include "vt0.cdk"
 
       type(gmm_metadata) :: mymeta
-      integer istat
+      integer :: istat
+      logical :: dummy_L
 !     _________________________________________________________________
 !
       istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'hzd_zdt ERROR at gmm_get(zdt0)'
 
-      call hzd_ctrl (zdt0, 'S', G_nk+1)
+      call hzd_ctrl2(zdt0, 'S', G_nk+1,dummy_L)
 !     _________________________________________________________________
 !
       return
