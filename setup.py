@@ -2,13 +2,13 @@ from numpy.distutils.core import setup, Extension
 import os, distutils, string
 import rpn_version
 
-#TODO: need rmnlib-dev
+#TODO: need legacy pgi9xxshared rmnlib-dev
 
 #myecarch = 'Linux_pgi611'
-#myrmnlib = 'rmn_shared_beta10'
+#myrmnlib = 'rmnshared_013'
 #myecarch = 'Linux_pgi9xx'
 myecarch = 'Linux_x86-64/pgi9xx'
-myrmnlib = ['PyFTN_helpers','rmnbetashared_011']
+myrmnlib = ['PyFTN_helpers','rmnshared_013']
 
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
 ecincpath = os.getenv('EC_INCLUDE_PATH')
@@ -30,7 +30,7 @@ if not eclibsharedpath:
     print("WARNING: Could not find LIB PATH for "+str(myrmnlib))
     #TODO: stop
 
-#TODO: FIND inc path (Not in EC_INCLUDE_PATH yet), using old $ARMNLIB/includefor now
+#TODO: FIND inc path (Not in EC_INCLUDE_PATH yet), using old $ARMNLIB/include for now
 
 runtime_libs=['-Wl,-rpath,'+eclibsharedpath]
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
@@ -39,6 +39,8 @@ SharedLd=string.split(SharedLd[0])
 print 'Debug architecture=',architecture
 print 'Debug runtime_libs=',runtime_libs
 print 'Shared Objects loaded with',SharedLd
+
+#TODO: use EC_INCLUDE_PATH for include dirs
 
 Fstd_module = Extension('Fstdc',
             include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
