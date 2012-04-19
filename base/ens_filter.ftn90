@@ -84,7 +84,7 @@
            
 
       if (.not.Ens_skeb_conf) then
-         call setfft8(G_ni)
+         call set_fft()
          return
       endif
 !
