@@ -78,6 +78,8 @@
                                                    G_ni+2+Ptopo_npex))
       allocate( ffx_local(Trp_12dmin:Trp_12dmax,Trp_22min:Trp_22max, &
                                                    G_nj+2+Ptopo_npey))
+      work_local=0.0d0
+      ffx_local=0.0d0
 !
 !     Determine sigma
 !

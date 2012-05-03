@@ -23,7 +23,7 @@
       integer DIST_DIM, Nk
       real    F_ugwdt1(DIST_SHAPE,Nk), F_vgwdt1(DIST_SHAPE,Nk)
       real    F_difut1(DIST_SHAPE,Nk), F_difvt1(DIST_SHAPE,Nk)
-      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk)
+      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk+1)
 !
 !author 
 !     Lubos Spacek - rpn - apr 2005
