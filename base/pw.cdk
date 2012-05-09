@@ -9,13 +9,18 @@
 
       real, pointer, dimension (:,:,:) :: pw_uu_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_vv_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_ww_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_tt_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_pm_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_gz_moins => null() ! effective dimensions are (LDIST_SHAPE, pnk)
 
       real, pointer, dimension (:,:,:) :: pw_uu_dyn   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_vv_dyn   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_ww_dyn   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
       real, pointer, dimension (:,:,:) :: pw_tt_dyn   => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+
+      real, pointer, dimension (:,:,:) :: pw_uu_copy  => null() ! effective dimensions are (LDIST_SHAPE, pnk)
+      real, pointer, dimension (:,:,:) :: pw_vv_copy  => null() ! effective dimensions are (LDIST_SHAPE, pnk)
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
@@ -25,14 +30,16 @@
       character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_plus_s , gmmk_pw_vv_plus_s , gmmk_pw_ww_plus_s, gmmk_pw_tt_plus_s
       character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_pm_plus_s , gmmk_pw_pt_plus_s , gmmk_pw_gz_plus_s
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_tt_moins_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_ww_moins_s, gmmk_pw_tt_moins_s
       character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_dyn_s  , gmmk_pw_vv_dyn_s  , gmmk_pw_tt_dyn_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_dyn_s  , gmmk_pw_vv_dyn_s  ,  gmmk_pw_ww_dyn_s, gmmk_pw_tt_dyn_s
+
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_copy_s , gmmk_pw_vv_copy_s
 
       common /physical_n_gmm/ gmmk_pw_uu_plus_s , gmmk_pw_vv_plus_s , gmmk_pw_ww_plus_s, gmmk_pw_tt_plus_s
       common /physical_n_gmm/ gmmk_pw_pm_plus_s , gmmk_pw_pt_plus_s , gmmk_pw_gz_plus_s
-      common /physical_n_gmm/ gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_tt_moins_s
+      common /physical_n_gmm/ gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_ww_moins_s, gmmk_pw_tt_moins_s
       common /physical_n_gmm/ gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s, gmmk_pw_uu_dyn_s
-      common /physical_n_gmm/ gmmk_pw_vv_dyn_s  , gmmk_pw_tt_dyn_s
+      common /physical_n_gmm/ gmmk_pw_vv_dyn_s  , gmmk_pw_ww_dyn_s  , gmmk_pw_tt_dyn_s, gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s
 

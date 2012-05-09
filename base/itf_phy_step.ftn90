@@ -209,6 +209,10 @@ end interface
                          dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
 !$omp end parallel
 
+      do j = 1, p_nj
+         call itf_phy_update ( BUSDYN_3d(1,j), j, p_nk, F_stepno.gt.0 )
+      end do
+
 !$omp parallel do
       do j = 1, p_nj
 ! TODO

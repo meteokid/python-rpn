@@ -44,7 +44,6 @@
       real wk1(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
-
       istat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,mymeta)
       istat = gmm_get(gmmk_pw_gz_plus_s ,pw_gz_plus ,mymeta)
       istat = gmm_get(gmmk_pw_gz_moins_s ,pw_gz_moins ,mymeta)
@@ -92,7 +91,7 @@
 !     compute omega
 !     -----------------------
 !
-      call calomeg_w (pw_ww_plus,st1,wt1,tt1,LDIST_DIM,l_nk)
+      pw_ww_plus (:,:,1:l_nk+1) = wt1
       pw_ww_plus (:,:,l_nk+2) = pw_ww_plus (:,:,l_nk+1)
 !
       call v4d_rwtraj(20)

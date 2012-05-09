@@ -34,8 +34,8 @@
 #include "schm.cdk"
 !
       integer i,j,k0,istat
-      real, pointer, dimension (:,:,:) :: tr         => null()
-      real, pointer, dimension (:,:  ) :: BUSDYN_3d  => null()
+      real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
+      real, pointer, dimension (:,:  ) :: BUSDYN_3d   => null()
       type(gmm_metadata) :: mymeta
 !     ________________________________________________________________
 !
@@ -53,6 +53,14 @@
                                 tr(l_minx,l_miny,1+Schm_notop),j , &
                                 k0,p_nk,l_minx,l_maxx,l_miny,l_maxy)
                enddo
+               if (trim(dynnm(i)) .eq. 'PW_UU:P') then
+                  istat  = gmm_get('PW_UU_COPY',trcopy,mymeta)
+                  trcopy = tr
+               endif
+               if (trim(dynnm(i)) .eq. 'PW_VV:P') then
+                  istat  = gmm_get('PW_VV_COPY',trcopy,mymeta)
+                  trcopy = tr
+               endif
             endif
          endif
       enddo

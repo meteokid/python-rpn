@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine itf_phy_apply ( F_apply_L )
-      use nest_blending, only: nest_blend
       implicit none
 #include <arch_specific.hf>
 !
@@ -48,26 +47,18 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "cstv.cdk"
-#include "nest.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "geomg.cdk"
-#include "lam.cdk"
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "p_geof.cdk"
 #include "pw.cdk"
 #include "itf_phy_buses.cdk"
-#include "lctl.cdk"
-#include "out3.cdk"
 
       type(gmm_metadata) :: mymeta
-      logical nest_it, flag_u, flag_v
-      integer i, j, k, n, err, cnt, UU_indx, VV_indx, TT_indx, km1,istat
-      real wk2(LDIST_SHAPE,p_nk),con(YDIST_SHAPE), &
-           tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
-      real, pointer, dimension(:,:,:) :: tr,trm
+      integer i, j, k, n, cnt, UU_indx, VV_indx, TT_indx, km1,istat
+      real con(YDIST_SHAPE), tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
 !     __________________________________________________________________
 !
 ! In LAM config: physics tendencies are valid on the global scope 
@@ -76,42 +67,10 @@
 ! on U are therefore valid with the scope (4,G_ni-4) (3,G_nj-2) and 
 ! physics tendencies on V  with the scope (3,G_ni-2) (4,G_nj-4).
 !
-      flag_u  = .False. ; flag_v = .false.
-      wk2     = 0.
-!
-      nest_it = ( Lam_0ptend_L .and. G_lam .and. &
-                ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
+      if (.not. F_apply_L) return
 !
       con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
 !
-      if (.not. F_apply_L) then
-      
-         cnt = 0
-         do n=1,p_bvol_top
-
-         if (volnm(n)(1:5) .eq. 'PHYTD') then
-            cnt = cnt + 1
-            nullify(tr,trm)
-            istat = gmm_get('TR/'//trim(volnm(n)(7:))//':P',tr,mymeta)
-	    if (istat.eq.0) then
-               if (trim(volnm(n)(7:)).ne.'HU') then
-                  istat = gmm_get('TR/'//trim(volnm(n)(7:))//':M',trm,mymeta)
-!$omp parallel do
-                  do k=1,p_nk-1
-                     tr (:,:,k+Schm_notop) = tr(:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
-                     trm(:,:,k+Schm_notop) = tr(:,:,k+Schm_notop)
-                  end do
-!$omp end parallel do
-               endif
-            endif
-         endif
-
-         end do
-
-         return
-
-      endif
-
       cnt     = 0
       UU_indx = 0
       VV_indx = 0
@@ -123,32 +82,7 @@
             cnt = cnt + 1
             if  (volnm(n)(7:)  .eq. 'UU') UU_indx=cnt
             if  (volnm(n)(7:)  .eq. 'VV') VV_indx=cnt
-            if ((volnm(n)(7:)  .eq. 'UU') .or. (volnm(n)(7:)  .eq. 'VV') ) cycle
-
-            if ( nest_it ) call nest_blend (phy_tend(:,:,:,cnt),wk2,LDIST_DIM,1,p_nk,'M')
-
-            nullify(tr)
-            istat = gmm_get('TR/'//trim(volnm(n)(7:))//':P',tr,mymeta)
-	    if (istat.eq.0) then
-!$omp parallel do
-               do k=1,p_nk
-                  tr (:,:,k+Schm_notop) = &
-                  tr (:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
-               end do
-!$omp end parallel do
-            endif
-
-            if (volnm(n)(7:)  .eq. 'TT'   ) then
-               TT_indx = cnt
-               istat = gmm_get('PW_TT:P',pw_tt_plus,mymeta)
-!$omp parallel do
-               do k= 1, p_nk
-                  pw_tt_plus (:,:,k+Schm_notop) = &
-                  pw_tt_plus (:,:,k+Schm_notop) + Cstv_dt_8*phy_tend(:,:,k,cnt)
-               end do
-!$omp end parallel do
-            endif
-
+            if  (volnm(n)(7:)  .eq. 'TT') TT_indx=cnt
          endif
 
       end do
@@ -170,10 +104,11 @@
       if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then
          istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-         istat = gmm_get('PW_UU:P',pw_uu_plus,mymeta)
-         istat = gmm_get('PW_VV:P',pw_vv_plus,mymeta)
+         istat = gmm_get('PW_UU:P'   ,pw_uu_plus,mymeta)
+         istat = gmm_get('PW_VV:P'   ,pw_vv_plus,mymeta)
+         istat = gmm_get('PW_UU_COPY',pw_uu_copy,mymeta)
+         istat = gmm_get('PW_VV_COPY',pw_vv_copy,mymeta)
 
-!	 tdu = 0. ; tdv = 0.
 !$omp parallel do
          do k= 1, p_nk
             tdu(l_minx:l_maxx,l_miny:0,k) = 0. ; tdu(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
@@ -181,41 +116,20 @@
             tdu(l_minx:0,l_miny:l_maxy,k) = 0. ; tdu(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             tdv(l_minx:0,l_miny:l_maxy,k) = 0. ; tdv(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             do j= 1, l_nj
-               tdu(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,UU_indx)*con(j)
-               tdv(1:l_ni,j,k) = phy_tend(1:l_ni,j,k,VV_indx)*con(j)
+               tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k+Schm_notop)- &
+                                  pw_uu_copy(1:l_ni,j,k+Schm_notop)) *con(j)
+               tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k+Schm_notop)- &
+                                  pw_VV_copy(1:l_ni,j,k+Schm_notop)) *con(j)
             end do
-         end do
-!$omp end parallel do
-
-         if ( nest_it ) then
-            call blend_pntr (phy_tend(l_minx,l_miny,1,UU_indx),wk2,LDIST_DIM,1,p_nk,'M')
-            call blend_pntr (phy_tend(l_minx,l_miny,1,VV_indx),wk2,LDIST_DIM,1,p_nk,'M')
-         endif
-
-!$omp parallel do
-         do k= 1, p_nk
-         do j= 1, l_nj
-         do i= 1, l_ni
-            pw_uu_plus(i,j,k+Schm_notop) = pw_uu_plus(i,j,k+Schm_notop) + Cstv_dt_8*phy_tend(i,j,k,UU_indx)
-            pw_vv_plus(i,j,k+Schm_notop) = pw_vv_plus(i,j,k+Schm_notop) + Cstv_dt_8*phy_tend(i,j,k,VV_indx)
-         end do
-         end do
          end do
 !$omp end parallel do
 
          call itf_phy_uvgridscal (tdu, tdv, LDIST_DIM, p_nk, .false. )
 
-         if ( nest_it ) then
-            call nest_blend (tdu,wk2,LDIST_DIM,1,p_nk,'U')
-            call nest_blend (tdv,wk2,LDIST_DIM,1,p_nk,'V')
-         endif
-
 !$omp parallel do
          do k=1,l_nk+1
-            ut1 (1:l_niu,:,k) = &
-            ut1 (1:l_niu,:,k) + Cstv_dt_8*tdu(1:l_niu,:,k+1-Schm_notop)
-            vt1 (:,1:l_njv,k) = &
-            vt1 (:,1:l_njv,k) + Cstv_dt_8*tdv(:,1:l_njv,k+1-Schm_notop)
+            ut1(1:l_niu,:,k) = ut1(1:l_niu,:,k) + tdu(1:l_niu,:,k+1-Schm_notop)
+            vt1(:,1:l_njv,k) = vt1(:,1:l_njv,k) + tdv(:,1:l_njv,k+1-Schm_notop)
          end do
 !$omp end parallel do
 

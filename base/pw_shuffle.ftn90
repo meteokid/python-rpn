@@ -31,27 +31,30 @@
 !
       integer istat,fld
       real, dimension(:,:,:), pointer :: plus,minus
-      character(len=GMM_MAXNAMELENGTH), dimension(5,2) :: pw_list
+      character(len=GMM_MAXNAMELENGTH), dimension(6,2) :: pw_list
       type(gmm_metadata) :: mymeta
 !
 !     Set list of fields to shuffle
       pw_list = transpose(reshape( (/ &
            gmmk_pw_uu_moins_s,gmmk_pw_uu_plus_s, &
            gmmk_pw_vv_moins_s,gmmk_pw_vv_plus_s, &
+           gmmk_pw_ww_moins_s,gmmk_pw_ww_plus_s, &
            gmmk_pw_tt_moins_s,gmmk_pw_tt_plus_s, &
            gmmk_pw_pm_moins_s,gmmk_pw_pm_plus_s, &
            gmmk_pw_gz_moins_s,gmmk_pw_gz_plus_s/), (/size(pw_list,dim=2),size(pw_list,dim=1)/)))
 !
 !     Reset physical world dynamics tendencies for the new timestep
-      nullify(pw_uu_dyn,pw_vv_dyn,pw_tt_dyn)
+      nullify(pw_uu_dyn,pw_vv_dyn,pw_ww_dyn,pw_tt_dyn)
       istat = gmm_get (gmmk_pw_uu_dyn_s, pw_uu_dyn, mymeta)
       istat = gmm_get (gmmk_pw_vv_dyn_s, pw_vv_dyn, mymeta)
+      istat = gmm_get (gmmk_pw_ww_dyn_s, pw_ww_dyn, mymeta)
       istat = gmm_get (gmmk_pw_tt_dyn_s, pw_tt_dyn, mymeta)
       pw_uu_dyn = 0.
       pw_vv_dyn = 0.
+      pw_ww_dyn = 0.
       pw_tt_dyn = 0.
 !     ________________________________________________________________
-!     Assign time-plus values to time-minus.  Do not gmm_shuffle() because
+!     Assign time-plus values to time-minus  Do not gmm_shuffle() because
 !     time-plus value also need to be valid at the start of the step for
 !     computing the dynamics-component tendencies.
       do fld=1,size(pw_list,dim=1)

@@ -48,33 +48,39 @@
       real*8 r0,deg2rad_8,idt
       real, pointer, dimension (:,:,:) :: pw_uu  => null()
       real, pointer, dimension (:,:,:) :: pw_vv  => null()
+      real, pointer, dimension (:,:,:) :: pw_ww  => null()
       real, pointer, dimension (:,:,:) :: pw_tt  => null()
       real, pointer, dimension (:,:,:) :: uu     => null()
       real, pointer, dimension (:,:,:) :: vv     => null()
-      real, dimension(l_ni,l_nj,l_nk+2) :: uprev,vprev,tprev
+      real, pointer, dimension (:,:,:) :: ww     => null()
+      real, dimension(l_ni,l_nj,l_nk+2) :: uprev,vprev,wprev,tprev
       logical, save :: initialized=.false.
 !     ________________________________________________________________
-!
 !
       deg2rad_8   = acos( -ONE_8 )/CLXXX_8
       con(1:l_nj) = 1.0/cos(geomg_y_8(1:l_nj)) * Dcst_rayt_8
 !
       if (pom == "P") then
-         nullify(pw_uu_dyn,pw_vv_dyn,pw_tt_dyn)
+         nullify(pw_uu_dyn,pw_vv_dyn,pw_ww_dyn,pw_tt_dyn)
          istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu, mymeta)
          istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv, mymeta)
+         istat = gmm_get (gmmk_pw_ww_plus_s, pw_ww, mymeta)
          istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt, mymeta)
          istat = gmm_get (gmmk_ut1_s, uu, mymeta)
          istat = gmm_get (gmmk_vt1_s, vv, mymeta)
+         istat = gmm_get (gmmk_wt1_s, ww, mymeta)
          istat = gmm_get (gmmk_pw_uu_dyn_s, pw_uu_dyn, mymeta)
          istat = gmm_get (gmmk_pw_vv_dyn_s, pw_vv_dyn, mymeta)
+         istat = gmm_get (gmmk_pw_ww_dyn_s, pw_ww_dyn, mymeta)
          istat = gmm_get (gmmk_pw_tt_dyn_s, pw_tt_dyn, mymeta)
+
 !$omp parallel
 !$omp do
          do k= 1, l_nk+2
          do j= 1, l_nj
             uprev (1:l_ni,j,k) = pw_uu (1:l_ni,j,k)
             vprev (1:l_ni,j,k) = pw_vv (1:l_ni,j,k)
+            wprev (1:l_ni,j,k) = pw_ww (1:l_ni,j,k)
             tprev (1:l_ni,j,k) = pw_tt (1:l_ni,j,k)
          enddo
          enddo
@@ -83,9 +89,11 @@
       else
          istat = gmm_get (gmmk_pw_uu_moins_s,pw_uu, mymeta)
          istat = gmm_get (gmmk_pw_vv_moins_s,pw_vv, mymeta)
+         istat = gmm_get (gmmk_pw_ww_moins_s,pw_ww, mymeta)
          istat = gmm_get (gmmk_pw_tt_moins_s,pw_tt, mymeta)
          istat = gmm_get (gmmk_ut0_s, uu, mymeta)
          istat = gmm_get (gmmk_vt0_s, vv, mymeta)
+         istat = gmm_get (gmmk_wt0_s, ww, mymeta)
       endif
 !
 !$omp parallel private(km1)
@@ -94,6 +102,7 @@
          km1=max(k-1,1)
          pw_uu (1:l_ni,1:l_nj,k) = uu (1:l_ni,1:l_nj,km1)
          pw_vv (1:l_ni,1:l_nj,k) = vv (1:l_ni,1:l_nj,km1)
+         pw_ww (1:l_ni,1:l_nj,k) = ww (1:l_ni,1:l_nj,k  )
       end do
 !$omp enddo
 !$omp end parallel
@@ -126,6 +135,7 @@
          do j= 1, l_nj
             pw_uu_dyn (1:l_ni,j,k) = pw_uu_dyn (1:l_ni,j,k) + idt * ( pw_uu (1:l_ni,j,k) - uprev (1:l_ni,j,k) )
             pw_vv_dyn (1:l_ni,j,k) = pw_vv_dyn (1:l_ni,j,k) + idt * ( pw_vv (1:l_ni,j,k) - vprev (1:l_ni,j,k) )
+            pw_ww_dyn (1:l_ni,j,k) = pw_ww_dyn (1:l_ni,j,k) + idt * ( pw_ww (1:l_ni,j,k) - wprev (1:l_ni,j,k) )
             pw_tt_dyn (1:l_ni,j,k) = pw_tt_dyn (1:l_ni,j,k) + idt * ( pw_tt (1:l_ni,j,k) - tprev (1:l_ni,j,k) )
          enddo
          enddo
