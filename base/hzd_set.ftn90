@@ -35,6 +35,7 @@
 ! v3_20 - Qaddouri/Toviessi - variable higher order diffusion operator
 ! v3_20 - Tanguay M.        - 1d higher order diffusion operator
 ! v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
+! v4_40 - Lee V.            - allow matrix setup only when Hzd_type_S="HO_IMP"
 !
 !object
 !     see id section
@@ -349,70 +350,73 @@
                wk2_8 (2*G_nj+j) = ZERO_8
             end do
 
-            call hzd_delpwr (Hzd_av_8,Hzd_cv_8,Hzd_deltav_8,dpwr1, &
+            if (Hzd_type_S.eq.'HO_IMP') then
+
+                call hzd_delpwr (Hzd_av_8,Hzd_cv_8,Hzd_deltav_8,dpwr1, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Hzd_yp0_8,Hzd_yp2_8,wk2_8, &
                              Opr_xeval_8, Hzd_cdiff)
 
-            if (Hzd_difva_L) then
-               call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr1, &
+               if (Hzd_difva_L) then
+                   call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr1, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Hzd_yp2su_8,wk1_8, &
                              Hzd_xeval_8, Hzd_cdiff)
 
-               call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr1, &
+                   call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr1, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Hzd_yp2su_8,wk1_8, &
                              Opr_xeval_8, Hzd_cdiff)
 
-               call hzd_delpwr (Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,dpwr2, &
+                   call hzd_delpwr (Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,dpwr2, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Hzd_yp2su_8,wk1_8, &
                              Opr_xeval_8, Hzd_cdiff_tr)
-            else
-               call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr1, &
+               else
+                   call hzd_delpwr (Hzd_au_8,Hzd_cu_8,Hzd_deltau_8,dpwr1, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Opr_opsyp2_8,wk1_8, &
                              Hzd_xeval_8, Hzd_cdiff)
 
-               call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr1, &
+                   call hzd_delpwr (Hzd_as_8,Hzd_cs_8,Hzd_deltas_8,dpwr1, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Opr_opsyp2_8,wk1_8, &
                              Opr_xeval_8, Hzd_cdiff)
 
-               call hzd_delpwr (Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,dpwr2, &
+                   call hzd_delpwr (Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,dpwr2, &
                              trp_22min,trp_22max,G_nj,trp_22n,trp_22n0, &
                              Opr_opsyp0_8,Opr_opsyp2_8,wk1_8, &
                              Opr_xeval_8, Hzd_cdiff_tr)
-            endif
+               endif
 
-            if (Hzd_1d_L) then
+               if (Hzd_1d_L) then
 
-               if (Lun_debug_L) print *,'HZD_DELPWR 1D on V'
-               call hzd_delpwr_1d (Hz1d_deltav_8,dpwr1,G_ni,G_nj, &
+                   if (Lun_debug_L) print *,'HZD_DELPWR 1D on V'
+                   call hzd_delpwr_1d (Hz1d_deltav_8,dpwr1,G_ni,G_nj, &
                                 Hzd_yp0_8,Hz1d_yp2_8,wk2_8, &
                                 Opr_xeval_8, Hzd_cdiff)
 
-               if (Hzd_difva_L) then
-                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
-                  call hzd_delpwr_1d (Hz1d_deltau_8,dpwr1,G_ni,G_nj, &
+                   if (Hzd_difva_L) then
+                   if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
+                       call hzd_delpwr_1d (Hz1d_deltau_8,dpwr1,G_ni,G_nj, &
                                 Opr_opsyp0_8,Hz1d_yp2su_8,wk1_8, &
                                 Hzd_xeval_8, Hzd_cdiff)
 
-                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
-                  call hzd_delpwr_1d (Hz1d_deltas_8,dpwr1,G_ni,G_nj, &
+                   if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
+                       call hzd_delpwr_1d (Hz1d_deltas_8,dpwr1,G_ni,G_nj, &
                                 Opr_opsyp0_8,Hz1d_yp2su_8,wk1_8, &
                                 Opr_xeval_8, Hzd_cdiff)
-               else
-                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
-                  call hzd_delpwr_1d (Hz1d_deltau_8,dpwr1,G_ni,G_nj, &
+                   else
+                   if (Lun_debug_L) print *,'HZD_DELPWR 1D on U'
+                       call hzd_delpwr_1d (Hz1d_deltau_8,dpwr1,G_ni,G_nj, &
                                 Opr_opsyp0_8,Opr_opsyp2_8,wk1_8, &
                                 Hzd_xeval_8, Hzd_cdiff)
 
-                  if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
-                  call hzd_delpwr_1d (Hz1d_deltas_8,dpwr1,G_ni,G_nj, &
+                   if (Lun_debug_L) print *,'HZD_DELPWR 1D on scalar'
+                       call hzd_delpwr_1d (Hz1d_deltas_8,dpwr1,G_ni,G_nj, &
                                 Opr_opsyp0_8,Opr_opsyp2_8,wk1_8, &
                                 Opr_xeval_8, Hzd_cdiff)
+                   endif
                endif
 
             endif

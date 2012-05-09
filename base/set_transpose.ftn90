@@ -43,6 +43,7 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "trp.cdk"
+#include "hzd.cdk"
 #include "vspng.cdk"
 #include "sol.cdk"
 #include "ptopo.cdk"
@@ -77,7 +78,49 @@
                                npartiel, 0, n1, .false., .true. )
       if (.not.check_parti (n1,G_nj,Ptopo_npey)) ierr=-1
 
+      trp_22n = -1
+
       if (Sol_type_S.eq.'DIRECT') then
+
+! Transpose 1===>2:Schm_nith distributed on Ptopo_npex PEs (no halo)
+!                  G_nj distributed on Ptopo_npey PEs (original layout)
+!                  G_ni NOT distributed
+!         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
+!         transpose layout: (l_miny:l_maxy,trp_12smin:trp_12smax,G_ni)
+!
+         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
+                  ' Schm_nith distributed on Ptopo_npex PEs', Schm_nith,Ptopo_npex
+
+         istat = rpn_comm_topo ( Schm_nith, minx, maxx, n, npartiel , &
+                                         0, n0, .true. , .true. )
+         if (.not.check_parti (n0,Schm_nith,Ptopo_npex)) ierr=-1
+!
+         trp_12smin = minx ! most likely = 1 since no halo
+         trp_12smax = maxx
+         trp_12sn   = n
+         trp_12sn0  = n0
+
+! Transpose 2===>2:G_nk distributed on Ptopo_npex PEs (no halo)
+!                  G_nj NOT distributed
+!                  G_ni distributed on Ptopo_npey PEs (no Halo)
+!  initial layout  : (    l_miny:l_maxy    ,trp_12smin:trp_12smax,G_ni)
+!  transpose layout: (trp_12smin:trp_12smax,trp_22min :trp_22max ,G_nj)
+!
+         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
+                  ' G_ni distributed on Ptopo_npey PEs', G_ni,Ptopo_npey
+
+         istat = rpn_comm_topo ( G_ni, minx, maxx, n, npartiel , &
+                                     0, n0, .false. , .true. )
+         if (.not.check_parti (n0,G_ni,Ptopo_npey)) ierr=-1
+!
+         trp_22min = minx ! most likely = 1 since no halo
+         trp_22max = maxx
+         trp_22n   = n
+         trp_22n0  = n0
+!
+      endif
+
+      if (Hzd_type_S.eq.'HO_IMP') then
 !
 ! Transpose 1===>2:G_nk distributed on Ptopo_npex PEs (no halo)
 !                  G_nj distributed on Ptopo_npey PEs (original layout)
@@ -85,17 +128,17 @@
 !         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
 !         transpose layout: (l_miny:l_maxy,trp_12dmin:trp_12dmax,G_ni)
 !
-      if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
-      ' G_nk   distributed on Ptopo_npex PEs', G_nk,Ptopo_npex
+         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
+                  ' G_nk   distributed on Ptopo_npex PEs', G_nk,Ptopo_npex
 
-      istat = rpn_comm_topo ( G_nk, minx, maxx, n, npartiel , &
-                                     0, n0, .true. , .true. )
-      if (.not.check_parti (n0,G_nk  ,Ptopo_npex)) ierr=-1
+         istat = rpn_comm_topo ( G_nk, minx, maxx, n, npartiel , &
+                                        0, n0, .true. , .true. )
+         if (.not.check_parti (n0,G_nk  ,Ptopo_npex)) ierr=-1
 !
-      trp_12dmin = minx ! most likely = 1 since no halo
-      trp_12dmax = maxx
-      trp_12dn   = n
-      trp_12dn0  = n0
+         trp_12dmin = minx ! most likely = 1 since no halo
+         trp_12dmax = maxx
+         trp_12dn   = n
+         trp_12dn0  = n0
 !
 ! Transpose 1===>2:G_nk+1 distributed on Ptopo_npex PEs (no halo)
 !                  G_nj distributed on Ptopo_npey PEs (original layout)
@@ -103,89 +146,77 @@
 !         initial layout  : (l_minx:l_maxx,     l_miny:l_maxy     ,G_nk+1)
 !         transpose layout: (l_miny:l_maxy,trp_p12dmin:trp_p12dmax,G_ni  )
 !
-      if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
-      ' G_nk+1 distributed on Ptopo_npex PEs', G_nk+1,Ptopo_npex
+         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
+                  ' G_nk+1 distributed on Ptopo_npex PEs', G_nk+1,Ptopo_npex
 
-      istat = rpn_comm_topo ( G_nk+1, minx, maxx, n, npartiel , &
-                                     0, n0, .true. , .true. )
-      if (.not.check_parti (n0,G_nk+1,Ptopo_npex)) ierr=-1
+         istat = rpn_comm_topo ( G_nk+1, minx, maxx, n, npartiel , &
+                                        0, n0, .true. , .true. )
+         if (.not.check_parti (n0,G_nk+1,Ptopo_npex)) ierr=-1
 !
-      trp_p12dmin = minx ! most likely = 1 since no halo
-      trp_p12dmax = maxx
-      trp_p12dn   = n
-      trp_p12dn0  = n0
+         trp_p12dmin = minx ! most likely = 1 since no halo
+         trp_p12dmax = maxx
+         trp_p12dn   = n
+         trp_p12dn0  = n0
 !
-!    The elliptic solver distributes only Schm_nith vertical levels
+! Transpose 2===>2:G_nk distributed on Ptopo_npex PEs (no halo)
+!                  G_nj NOT distributed
+!                  G_ni distributed on Ptopo_npey PEs (no Halo)
+!  initial layout  : (    l_miny:l_maxy    ,trp_12smin:trp_12smax,G_ni)
+!  transpose layout: (trp_12smin:trp_12smax,trp_22min :trp_22max ,G_nj)
 !
-!    Vertical sponge near model lid:
+         if (trp_22n.lt.0) then
+
+            if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
+                     ' G_ni distributed on Ptopo_npey PEs', G_ni,Ptopo_npey
+
+            istat = rpn_comm_topo ( G_ni, minx, maxx, n, npartiel , &
+                                     0, n0, .false. , .true. )
+            if (.not.check_parti (n0,G_ni,Ptopo_npey)) ierr=-1
+!
+            trp_22min = minx ! most likely = 1 since no halo
+            trp_22max = maxx
+            trp_22n   = n
+            trp_22n0  = n0
+         endif
+
+     endif
+!
+!    Vertical sponge near model lid
+!
+     if ( (.not.G_lam) .and. (Vspng_nk.gt.0) ) then
+
 !                  Vspng_n_spng top layers NOT distributed
 !                  ldnh_maxy distributed on Ptopo_npex PEs
 !                  G_ni NOT distributed
 
-      if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
-      ' Schm_nith distributed on Ptopo_npex PEs', Schm_nith,Ptopo_npex
-
-      istat = rpn_comm_topo ( Schm_nith, minx, maxx, n, npartiel , &
-                                         0, n0, .true. , .true. )
-      if (.not.check_parti (n0,Schm_nith,Ptopo_npex)) ierr=-1
-!
-      trp_12smin = minx ! most likely = 1 since no halo
-      trp_12smax = maxx
-      trp_12sn   = n
-      trp_12sn0  = n0
-
-!
-      if ((.not.G_lam).and.(Vspng_nk.gt.0)) then
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for VSPNG (no halo):', &
-         ' ldnh_maxy distributed on Ptopo_npex PEs', ldnh_maxy,Ptopo_npex
+                ' ldnh_maxy distributed on Ptopo_npex PEs', ldnh_maxy,Ptopo_npex
 
          istat = rpn_comm_topo ( ldnh_maxy, minx, maxx, n, npartiel , &
-                                           0, n0, .true. , .true. )
+                                              0, n0, .true. , .true. )
          if (.not.check_parti (n0,ldnh_maxy,Ptopo_npex)) ierr=-1
 
          trp_12emin = 1
          trp_12emax = maxx
          trp_12en   = n
          trp_12en0  = n0
-      endif
 !
-! Transpose 2===>2:G_nk distributed on Ptopo_npex PEs (no halo)
-!                  G_nj NOT distributed
-!                  G_ni distributed on Ptopo_npey PEs (no Halo)
-!  initial layout  : (    l_miny:l_maxy    ,trp_12dmin:trp_12dmax,G_ni)
-!  transpose layout: (trp_12dmin:trp_12dmax,trp_22min:trp_22max,G_nj)
-!
-      if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for HZD&SOL (no halo):', &
-      ' G_ni distributed on Ptopo_npey PEs', G_ni,Ptopo_npey
-
-      istat = rpn_comm_topo ( G_ni, minx, maxx, n, npartiel , &
-                                     0, n0, .false. , .true. )
-      if (.not.check_parti (n0,G_ni,Ptopo_npey)) ierr=-1
-!
-      trp_22min = minx ! most likely = 1 since no halo
-      trp_22max = maxx
-      trp_22n   = n
-      trp_22n0  = n0
-!
-!    Vertical sponge near model lid:
 !                  Vspng_n_spng top layers NOT distributed
 !                  ldnh_maxx distributed on Ptopo_npey PEs
 !                  G_nj NOT distributed
 !
-      if ((.not.G_lam).and.(Vspng_nk.gt.0)) then
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for VSPNG (no halo):', &
-         ' ldnh_maxx distributed on Ptopo_npey', ldnh_maxx,Ptopo_npey
+                  ' ldnh_maxx distributed on Ptopo_npey', ldnh_maxx,Ptopo_npey
 
          istat = rpn_comm_topo ( ldnh_maxx, minx, maxx, n, npartiel , &
-                                          0, n0, .false. , .true. )
+                                             0, n0, .false. , .true. )
          if (.not.check_parti (n0,ldnh_maxx,Ptopo_npey)) ierr=-1
 !
          trp_22emin = 1
          trp_22emax = maxx
          trp_22en   = n
          trp_22en0  = n0
-      endif
-
+!
       endif
 !
       call handle_error(ierr,'SET_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')

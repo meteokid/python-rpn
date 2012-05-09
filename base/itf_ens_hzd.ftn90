@@ -19,7 +19,7 @@
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk)
+      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk+1)
 !
 !author  Lubos Spacek - February 2010
 !     
