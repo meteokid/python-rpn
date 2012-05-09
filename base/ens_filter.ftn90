@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
       subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
       implicit none
-#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real    F_ugwdt1(DIST_SHAPE,Nk), F_vgwdt1(DIST_SHAPE,Nk)
@@ -44,10 +43,10 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"
+#include "grd.cdk"
 
 #include "ens_gmm_var.cdk"
 #include "ens_param.cdk"
-
 !
 !variables
       integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
@@ -79,12 +78,8 @@
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
       call ens_marfield_cg (mcsph1,E_nk+1)
-!
-
-           
 
       if (.not.Ens_skeb_conf) then
-         call set_fft()
          return
       endif
 !
@@ -178,7 +173,11 @@
            LDIST_DIM,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
       endif
 
-      call ens_filter_gauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
+      if(Grd_yinyang_L) then
+         call ens_filter_ggauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
+      else
+         call ens_filter_gauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
+      endif
 
       if(Ens_stat)then 
          call glbstat2 (dsp_local,'DSP','FLTTOT', &
@@ -186,26 +185,14 @@
       endif
 
       if(Ens_skeb_alpt/=0.0)then
-         do k=1,E_nk
-            do j=1,l_nj
-               do i=1,l_ni
-                  F_tt1(i,j,k+1)=F_tt1(i,j,k+1)+Ens_skeb_alpt*cpdi*dsp_local(i,j,k)*mcsph1(i,j,k)
-               enddo
-            enddo
-         enddo
+         F_tt1(1:l_ni,1:l_nj,2:E_nk+1)=F_tt1(1:l_ni,1:l_nj,2:E_nk+1)+&
+         Ens_skeb_alpt*cpdi* &
+         dsp_local(1:l_ni,1:l_nj,:)*mcsph1(1:l_ni,1:l_nj,1:E_nk)
       endif
 !
-      do k=1,E_nk
-         do j=1,l_nj
-            do i=1,l_ni
-! avant on a filtre le champ radical D chapeau
-!               dsp_local(i,j,k)=dsp_local(i,j,k)*mcsph1(i,j,k)
-! maintenant on a filtre le champ D chapeau
-               dsp_local(i,j,k)=sqrt(dsp_local(i,j,k))*mcsph1(i,j,k)
-            enddo
-         enddo
-      enddo
-!
+       dsp_local(1:l_ni,1:l_nj,:)=sqrt(dsp_local(1:l_ni,1:l_nj,:))* &
+                                 mcsph1(1:l_ni,1:l_nj,1:E_nk)
+
       if(Ens_stat)then 
          call glbstat2 (dsp_local,'DSP','FLTTO2', &
            LDIST_DIM,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
@@ -218,6 +205,7 @@
 
 !     Compute gradient of filtered field
 !     ==================================
+
       i0 = 1
       in = l_niu
       j0 = 1
@@ -236,7 +224,7 @@
             enddo
          enddo
 !
-         do j= j0, l_njv-pil_n
+         do j= j0, l_njv !-pil_n
             do i= i0, in 
                F_difvt1(i,j,k)= aaa2*(dsp_local(i,j+1,k) - dsp_local(i,j,k))*geomg_invDY_8(j)
                F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
@@ -272,12 +260,26 @@
       endif
 
       if(Ens_skeb_div)then
-         call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_ni,l_nj,E_nk, &
+         call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-         call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+         call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
         call caldiv_2 ( dvrg, F_difut1, F_difvt1, DIST_DIM, E_nk )
+          if (G_lam) then
+             if (l_west) then
+                dvrg(1,j0:l_njv,:) = dvrg(2,j0:l_njv,:)
+             endif
+             if (l_east) then
+                dvrg(l_ni,j0:l_njv,:) = dvrg(l_niu,j0:l_njv,:)
+             endif
+             if (l_south) then
+                dvrg(:,1,:) = dvrg(:,2,:)
+             endif
+             if (l_north) then
+                dvrg(:,l_nj,:) = dvrg(:,l_njv,:)
+             endif
+          endif
         if(Ens_stat)then
            call glbstat2 (dvrg,'DVRG','FRCING', &
              LDIST_DIM,1,E_nk,1,G_ni,1,G_nj,1,E_nk)

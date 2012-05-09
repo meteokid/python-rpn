@@ -142,8 +142,8 @@
       if(found_namelist_ok)then
          ens_nml = 1
 !
-         if (F_Grdtyp_S.ne.'GU'.and.Ens_skeb_conf) then
-            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU'
+         if ((F_Grdtyp_S.ne.'GU'.and.F_Grdtyp_S.ne.'GY').and.Ens_skeb_conf) then
+            if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
             ens_nml = -1
          endif
 !

@@ -64,7 +64,7 @@
       integer ierr
       integer i, j, k, i0, j0, in, jn, nij, inn
       real    pi, err, deltax, min_local, min_global
-      real*8  dpi, aaa2, bfact, lambda, sigma, trx, try
+      real*8  dpi, aaa2, bfact, lambda, sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
       real  , dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1)  :: dsp_local
@@ -78,8 +78,9 @@
                                                    G_ni+2+Ptopo_npex))
       allocate( ffx_local(Trp_12dmin:Trp_12dmax,Trp_22min:Trp_22max, &
                                                    G_nj+2+Ptopo_npey))
-      work_local=0.0d0
-      ffx_local=0.0d0
+      work_local= 0.0d0
+      ffx_local = 0.0d0
+
 !
 !     Determine sigma
 !
@@ -100,7 +101,7 @@
 !
 !     x-direction
 !     ============
-      call setfft8(G_ni)
+      call itf_fft_set(G_ni,'PERIODIC',pri8)
       do kz=1,Trp_12dn
         call ffft8(work_local(l_miny,kz,1),(l_maxy-l_miny+1) &
              *(Trp_12dmax-Trp_12dmin+1),1, (l_maxy-l_miny+1), -1 )
@@ -130,7 +131,7 @@
 !
 !     y-direction
 !     ============
-      call setfft8(G_nj)
+      call itf_fft_set(G_nj,'PERIODIC',pri8)
       do kx=1,Trp_22n
       call ffft8(ffx_local(Trp_12dmin,kx,1),(Trp_12dmax-Trp_12dmin+1) &
            *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), -1 )

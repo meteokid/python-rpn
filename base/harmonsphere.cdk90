@@ -310,6 +310,7 @@ Contains
        real(dp), dimension(ni,nj), intent(inout) :: gpdata
        complex(dp), dimension(ni,nj), intent(inout) :: coeff
 
+       real(dp)                       :: pri8
        real(dp), dimension((ni+2)*nj) :: wrk
        integer ::  nlons,nlats,i,j,m,n
 
@@ -339,7 +340,7 @@ Contains
              enddo
           enddo
 
-          call setfft8(nlons) 
+          call itf_fft_set(nlons,'PERIODIC',pri8)
           call ffft8(wrk,1,nlons+2,nlats,-1)
 
           n = -1
@@ -367,8 +368,7 @@ Contains
              enddo
           enddo
 
-          call setfft8(ni)
-
+          call itf_fft_set(ni,'PERIODIC',pri8)
           call ffft8(wrk,1,ni+2,nj,1)
 
           n = 0
@@ -396,6 +396,7 @@ Contains
        real,        dimension(ni,nj),       intent(inout) :: gpdata
        complex(dp), dimension(ntrunc+1,nj), intent(inout) :: coeff
 
+       real(dp)                       :: pri8
        real(dp), dimension((ni+2)*nj) :: wrk
        integer ::  nlons,nlats,i,j,m,n
 
@@ -426,7 +427,7 @@ Contains
              enddo
           enddo
 
-          call setfft8(nlons) 
+          call itf_fft_set(nlons,'PERIODIC',pri8)
           call ffft8(wrk,1,nlons+2,nlats,-1)
 
           n = -1
@@ -455,8 +456,7 @@ Contains
              n=n+ni-2*ntrunc
           enddo
 
-          call setfft8(ni)
-
+          call itf_fft_set(ni,'PERIODIC',pri8)
           call ffft8(wrk,1,ni+2,nj,1)
 
           n = 0
