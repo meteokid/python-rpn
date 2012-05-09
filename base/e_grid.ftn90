@@ -66,10 +66,11 @@
       allocate (              xdcy(Grd_nj),               xdcyv(Grd_nj-1))
       allocate (xdhx(Grd_ni) ,xdhy(Grd_nj), xdhxu(0:Grd_ni), xdhyv(0:Grd_nj))
 
-      call set_gemHgrid ( x_8(1), y_8(1), Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
-                          Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
-                          Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
-                          Grd_gauss_L, lam, ierx, iery, .true. )
+      call set_gemHgrid2 ( x_8(1), y_8(1), Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
+                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
+                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
+                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L,     &
+                           ierx, iery, .true. )
 
       if (lam) then
          x_8(    0   ) = x_8(1)      - Grd_dx

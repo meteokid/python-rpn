@@ -91,10 +91,11 @@
       allocate (Geomn_latgs(G_nj),Geomn_longs(G_ni+1), &
                 Geomn_latgv(G_nj),Geomn_longu(G_ni+1))
 
-      call set_gemHgrid ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
-                          Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
-                          Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
-                          Grd_gauss_L, G_lam, ierx, iery, Lun_out.gt.0 )
+      call set_gemHgrid2 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
+                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
+                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
+                           Grd_yinyang_L, Grd_gauss_L, G_lam, Grd_uniform_L,   &
+                           ierx, iery, Lun_out.gt.0 )
 
       if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
              write (Lun_out,*)'ERROR in generating XGI_8 values!'
@@ -120,7 +121,7 @@
 !
 ! call parpos_from_file (xgi_8,ygi_8,Grd_ni,Grd_nj)
 !
-      Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
+!      Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
 !
       do i=1,G_ni
          G_xg_8(i) = xgi_8(i)*deg2rad_8
