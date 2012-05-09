@@ -36,7 +36,9 @@
 !
 !-------------------------------------------------------------------
 !
-#if defined (AIX) && ! defined (AIX_POWERPC7)
+#ifdef AIX_POWERPC7
+      Ptopo_bind_L = .false.
+#endif
       if (F_nthreads .eq. Ptopo_npeOpenMP) return
 
       call omp_set_num_threads (F_nthreads)
@@ -47,14 +49,13 @@
          if ( (mod(F_nthreads,Ptopo_npeOpenMP_resv).eq.0 ) .or. &
                (F_nthreads.lt.Ptopo_npeOpenMP_resv) ) then
             call rebind()
-	    flag = .true.
+            flag = .true.
          endif
       endif
 
       if (F_prout) write (6,9000) Ptopo_npeOpenMP,flag
 
  9000 format (/' Ptopo_npeOpenMP reset to: ',I7,' Rebind: ',L)
-#endif
 !
 !-------------------------------------------------------------------
 !
