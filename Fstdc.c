@@ -30,12 +30,14 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 
 static const int withFortranOrder = 1;
 
+//TODO: add more Error distinctions to catch more specific things
 static PyObject *FstdcError;
 static PyObject *FstdcTooManyRecError;
 
 static PyObject *Fstdc_version(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args);
+static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args);
 static PyObject *c2py_fstprm(int handle);
 static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args);
@@ -117,6 +119,29 @@ static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
     c_fstvoi(iun,options);
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+
+static char Fstdc_fstrwd__doc__[] =
+        "Interface to fstrwd to rewind a RPN 2000 Standard File\n\
+        Fstdc.fstrwd(iunit)\n\
+        @param iunit unit number of the file handle, 0 for a new one (int)\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+
+static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args) {
+    int iun=0,errorCode;
+    if (!PyArg_ParseTuple(args, "i",&iun)) {
+        return NULL;
+    }
+	 errorCode = c_fstrwd(iun);
+    if (errorCode >= 0) {
+		  Py_INCREF(Py_None);
+		  return Py_None;
+    } else {
+        PyErr_SetString(FstdcError,"Failed to rewind file");
+        return NULL;
+    }
 }
 
 
@@ -420,7 +445,7 @@ static char Fstdc_fstfrm__doc__[] =
         @exception Fstdc.error";
 
 static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
-    int iun,istat1,istat2;
+    int iun=0,istat1,istat2;
     if (!PyArg_ParseTuple(args, "i",&iun)) {
         return NULL;
     }
@@ -1015,6 +1040,7 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
 static struct PyMethodDef Fstdc_methods[] = {
     {"version", (PyCFunction)Fstdc_version, METH_VARARGS, Fstdc_version__doc__},
     {"fstouv",	(PyCFunction)Fstdc_fstouv,	METH_VARARGS,	Fstdc_fstouv__doc__},
+    {"fstrwd",	(PyCFunction)Fstdc_fstrwd,	METH_VARARGS,	Fstdc_fstrwd__doc__},
     {"fstvoi",	(PyCFunction)Fstdc_fstvoi,	METH_VARARGS,	Fstdc_fstvoi__doc__},
     {"fstfrm",	(PyCFunction)Fstdc_fstfrm,	METH_VARARGS,	Fstdc_fstfrm__doc__},
     {"fstsui",	(PyCFunction)Fstdc_fstsui,	METH_VARARGS,	Fstdc_fstsui__doc__},

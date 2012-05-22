@@ -7,6 +7,7 @@
 int c_fnom(int *iun,char *filename,char *options,int i);
 int c_fstouv(int iun,char *filename,char *options);
 void c_fstvoi(int iun,char *options);
+int c_fstrwd(int iun);
 int c_fstinf(int iun,int *ni, int *nj,int *nk,int datev,char *etiket,
     int ip1,int ip2,int ip3,char *typvar,char *nomvar);
 int c_fstsui(int iun,int *ni, int *nj,int *nk);

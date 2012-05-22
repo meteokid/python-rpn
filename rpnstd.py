@@ -81,6 +81,8 @@ class RPNFile:
         #TODO: catch stdout/stderr - not catching c stderr/stdout!
         #stderrout = (sys.stderr,sys.stdout)
         #sys.stdout = sys.stderr = StringIO()
+        #TODO: if FILE_MODE_RO or FILE_MODE_RW_OLD: check is file exist and is readable
+        #TODO: if FILE_MODE_RW_OLD or FILE_MODE_RW_OLD: if file exist, check if can write, if not check if dir can write
         self.iun = Fstdc.fstouv(0,self.filename,self.options)
         #(sys.stderr,sys.stdout) = stderrout
         if (self.iun == None):
@@ -97,6 +99,10 @@ class RPNFile:
           Fstdc.fstfrm(self.iun)
           #print 'file ',self.iun,' is closed, filename=',self.filename
           self.iun = None
+
+    def rewind(self):
+        if (self.iun != None):
+          Fstdc.fstrwd(self.iun)
 
     def __del__(self):
         """Close File"""
@@ -244,13 +250,13 @@ class RPNFile:
               Fstdc.fstecr(value,
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
-                         index.ig4,index.deet,index.npas,index.nbits)
+                         index.ig4,index.deet,index.npas,index.nbits,index.datyp)
             else:
               #print 'fstecr C style array'
               Fstdc.fstecr(numpy.reshape(numpy.transpose(value),value.shape),
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
-                         index.ig4,index.deet,index.npas,index.nbits)
+                         index.ig4,index.deet,index.npas,index.nbits,index.datyp)
         else:
            raise TypeError,'RPNFile write: value must be an array and index must be RPNMeta or RPNRec'
 
@@ -333,7 +339,7 @@ class RPNKeys(RPNParm):
 class RPNDesc(RPNParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
     Descriptors are:
-    {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':0,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+    {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':-1,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
     TODO: give examples of instanciation
     """
     def __init__(self,model=None,**args):
@@ -349,7 +355,7 @@ class RPNDesc(RPNParm):
 
     def defaultKeysVals(self):
         """Return a dict of sensible default Keys/Vals"""
-        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':4,'nbits':16,'ni':1,'nj':1,'nk':1}
+        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':-1,'nbits':16,'ni':1,'nj':1,'nk':1}
 
 
 class RPNMeta(RPNKeys,RPNDesc):
@@ -375,7 +381,7 @@ class RPNMeta(RPNKeys,RPNDesc):
         'npas':0,
         'grtyp':'X',
         'ig1':0,'ig2':0,'ig3':0,'ig4':0,
-        'datyp':0,
+        'datyp':-1,
         'nbits':0,
         'handle':-2,
         'nxt':0,

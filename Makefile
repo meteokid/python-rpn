@@ -16,8 +16,8 @@ DOCTESTPYMODULES = rpn_helpers.py rpnstd.py
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
-VERSION   = 1.2.2
-LASTUPDATE= 2010-10
+VERSION   = 1.3.0
+LASTUPDATE= 2012-05
 
 versionfile:
 	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)

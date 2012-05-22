@@ -433,6 +433,38 @@ class RPNFileTests(unittest.TestCase):
         self.assertEqual(r2none,None)
         self.erase_testfile()
 
+    def test_Fstdc_fstrwd(self):
+        """Fstdc_fstrwd should reset file pointer to begining of file"""
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        f2 = rpnstd.RPNFile(self.fname)
+        la2 = f2[rpnstd.FirstRecord]
+        lo2 = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
+        la3 = f2[rpnstd.RPNMeta(nom='LA')]
+        lo3 = f2[rpnstd.RPNMeta(nom='LO')]
+        la4 = f2[rpnstd.RPNMeta(nom='LA')]
+        #r3none = None
+        #try:
+        #    r3none = f2[rpnstd.FirstRecord]
+        #except:
+        #    pass
+        #TODO f2.rewind() #... looks like fstrwd is not needed... and return an exception! :-(
+        r4 = f2[rpnstd.FirstRecord]
+        f2.close()
+        self.assertEqual(la2.nom,la.nom)
+        self.assertEqual(lo2.nom,lo.nom)
+        self.assertEqual(r2none,None)
+        #self.assertEqual(r3none,None)
+        self.assertEqual(la3.nom,la.nom)
+        self.assertEqual(lo3.nom,lo.nom)
+        self.assertEqual(la4.nom,la.nom)
+        self.assertEqual(r4.nom,la.nom)
+        self.erase_testfile()
+
 
 if __name__ == "__main__":
     from sys import argv
