@@ -309,7 +309,7 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
         type_num=NPY_INT;
     else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134 || datyp == 133)
         type_num=NPY_FLOAT;
-    else if (datyp == 3 )
+    else if (datyp == 3)
         type_num=NPY_CHAR;
     else {
         PyErr_SetString(FstdcError,"Unrecognized data type");
@@ -382,14 +382,14 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
     int iun, ip1=0, ip2=0, ip3=0, istat;
     char *typvar, *nomvar, *etiket, *grtyp;
     int dateo=0, deet=0, npas=0, nbits=0, ig1=0, ig2=0, ig3=0, ig4=0;
-    int ni=0,nj=0,nk=0,datyp=0,rewrit=0;
+    int ni=0,nj=0,nk=0,datyp=-1,rewrit=0;
     int dtl=4;
     int dims[4];
     PyArrayObject *array;
     extern int c_fst_data_length(int);
 
-    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiii",
-        &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits)) {
+    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiiii",
+                          &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits,&datyp)) {
         return NULL;
     }
     if (isPyFtnArrayValid(array,RPN_DT_ANY)<0 || nbits<8 || nbits>64) {
