@@ -91,8 +91,7 @@
 !     Transfer to a double precision array to apply 2D Fourier filter
 !     ===================================================================
 !
-      call sol_trsf (psi_local,dsp_local,l_minx,l_maxx, &
-                         l_miny,l_maxy,l_minx,l_maxx,l_miny,l_maxy,l_nk, 1)
+      psi_local=dble(dsp_local(:,:,1:l_nk))
 
       call rpn_comm_transpose( psi_local, l_minx, l_maxx, G_ni, &
                                (l_maxy-l_miny+1), &
@@ -170,9 +169,10 @@
       call rpn_comm_transpose( psi_local, l_minx, l_maxx, G_ni, &
                                (l_maxy-l_miny+1), &
                       Trp_12dmin, Trp_12dmax, G_nk, work_local, -1, 2 )
+!     Transfer back
 !
-      call sol_trsf (psi_local,dsp_local,l_minx,l_maxx, &
-                         l_miny,l_maxy,l_minx,l_maxx,l_miny,l_maxy,l_nk, -1)
+      dsp_local(:,:,1:l_nk)=real(psi_local)
+
       min_local=minval(dsp_local)
       call rpn_comm_reduce (min_local,min_global, 1, &
                        "MPI_REAL","MPI_MIN",0,"grid",err )
