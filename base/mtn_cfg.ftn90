@@ -345,17 +345,18 @@
       enddo
 !
       Grd_dy = Grd_dx
-      Grd_x0=0.
-      Grd_xl=Grd_x0 + (Grd_ni -1) * Grd_dx
-      Grd_y0= - (Grd_jref-1) * Grd_dy
-      Grd_yl=Grd_y0 + (Grd_nj -1) * Grd_dy
-      if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or. &
-           (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
-          if (Ptopo_myproc.eq.0) write (Lun_out,9600) Grd_x0,Grd_y0,Grd_xl,Grd_yl
+      Grd_x0_8=0.
+      Grd_xl_8=Grd_x0_8 + (Grd_ni -1) * Grd_dx
+      Grd_y0_8= - (Grd_jref-1) * Grd_dy
+      Grd_yl_8=Grd_y0_8 + (Grd_nj -1) * Grd_dy
+      if ( (Grd_x0_8.lt.  0.).or.(Grd_y0_8.lt.-90.).or. &
+           (Grd_xl_8.gt.360.).or.(Grd_yl_8.gt. 90.) ) then
+          if (Ptopo_myproc.eq.0) write (Lun_out,9600) &
+              Grd_x0_8,Grd_y0_8,Grd_xl_8,Grd_yl_8
           return
        endif
-      Grd_dxmax=Grd_xl
-      Grd_dymax=Grd_yl
+      Grd_dxmax=Grd_xl_8
+      Grd_dymax=Grd_yl_8
       call datp2f( idatx, Step_runstrt_S)
       Out3_date= idatx
 	  

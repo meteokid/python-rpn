@@ -53,8 +53,8 @@
 
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 
-      global_extend = (abs(1.0d0-abs(Grd_xl-Grd_x0)/360.d0).lt.epsilon) &
-                 .or. (abs(1.0d0-abs(Grd_yl-Grd_y0)/180.d0).lt.epsilon)
+      global_extend = (abs(1.0d0-abs(Grd_xl_8-Grd_x0_8)/360.d0).lt.epsilon) &
+                 .or. (abs(1.0d0-abs(Grd_yl_8-Grd_y0_8)/180.d0).lt.epsilon)
 
       if (lam .and. global_extend) then
          write (6,9000) 
@@ -66,10 +66,11 @@
       allocate (              xdcy(Grd_nj),               xdcyv(Grd_nj-1))
       allocate (xdhx(Grd_ni) ,xdhy(Grd_nj), xdhxu(0:Grd_ni), xdhyv(0:Grd_nj))
 
-      call set_gemHgrid2 ( x_8(1), y_8(1), Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
-                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
-                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
-                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L,     &
+      call set_gemHgrid3 ( x_8(1), y_8(1), Grd_ni, Grd_nj, Grd_dx, Grd_dy, & 
+                           Grd_x0_8, Grd_xl_8, Grd_left,                   &
+                           Grd_y0_8, Grd_yl_8, Grd_belo,                   &
+                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,       &
+                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
                            ierx, iery, .true. )
 
       if (lam) then

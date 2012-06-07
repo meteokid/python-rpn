@@ -41,12 +41,13 @@
 #include "lun.cdk"
 #include "schm.cdk"
 !
-      integer  fnom, yyg_yangrid
-      external fnom, yyg_yangrid
+      integer  fnom, yyg_checkrot
+      external fnom, yyg_checkrot
 !
       character*120 dumc
-      integer unf,nrec
-      real*8 epsilon,a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3)
+      integer unf,nrec,err
+      real*8 epsilon,a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3), delta_8
+      real*8 yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
       parameter (epsilon = 1.0d-5)
 !
 !-------------------------------------------------------------------
@@ -104,6 +105,8 @@
       Grd_typ_S    = dumc
       Grd_bsc_base = 5
       Grd_bsc_ext1 = 3
+      Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
+      Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
 !
       if (Grd_ni*Grd_nj.eq.0) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
@@ -111,10 +114,10 @@
          goto 9999
       endif
 !
-      Grd_x0=  0.0 
-      Grd_xl=360.0
-      Grd_y0=-90.0
-      Grd_yl= 90.0
+      Grd_x0_8=  0.0 
+      Grd_xl_8=360.0
+      Grd_y0_8=-90.0
+      Grd_yl_8= 90.0
 !
       select case (Grd_typ_S(1:1))
 
@@ -127,20 +130,41 @@
             Grd_njla = Grd_nj
 
          case ('Y')             ! Yin-Yang
-            if (yyg_yangrid().lt.0) goto 9999
-            Grd_dxmax=370.0
-            Grd_dymax=370.0
+            if (yyg_checkrot().lt.0) goto 9999
+
+            if (trim(Grd_yinyang_S) .eq. 'YAN') then
+               call yyg_yangrot ( Grd_xlat1_8, Grd_xlon1_8, Grd_xlat2_8, Grd_xlon2_8,&
+                                  yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8 )
+               Grd_xlat1_8= yan_xlat1_8 ; Grd_xlon1_8= yan_xlon1_8
+               Grd_xlat2_8= yan_xlat2_8 ; Grd_xlon2_8= yan_xlon2_8
+               Grd_xlat1  = yan_xlat1_8 ; Grd_xlon1  = yan_xlon1_8
+               Grd_xlat2  = yan_xlat2_8 ; Grd_xlon2  = yan_xlon2_8
+            endif
+
             Grd_nila = Grd_ni
             Grd_njla = Grd_nj
             Grd_maxcfl    = max(1,Grd_maxcfl)
             Grd_bsc_adw   = Grd_maxcfl  + Grd_bsc_base
             Grd_extension = Grd_bsc_adw + Grd_bsc_ext1
-            Grd_ni   = Grd_ni   + 2*Grd_extension
-            Grd_nj   = Grd_nj   + 2*Grd_extension
-            Grd_x0   =  45.0 - 3.0*(Grd_overlap)
-            Grd_xl   =  315.0 + 3.0*(Grd_overlap)
-            Grd_y0   = -45.0-Grd_overlap
-            Grd_yl   =  45.0+Grd_overlap
+            Grd_ni   = Grd_ni + 2  *Grd_extension
+            Grd_nj   = Grd_nj + 2  *Grd_extension
+            Grd_x0_8 =   45.0 - 3.0*Grd_overlap
+            Grd_xl_8 =  315.0 + 3.0*Grd_overlap
+            Grd_y0_8 = -45.0  -     Grd_overlap
+            Grd_yl_8 =  45.0  +     Grd_overlap
+
+            delta_8  = (Grd_xl_8-Grd_x0_8)/(Grd_nila-1)
+            Grd_x0_8 = Grd_x0_8 - Grd_extension*delta_8
+            Grd_xl_8 = Grd_xl_8 + Grd_extension*delta_8
+
+            delta_8  = (Grd_yl_8-Grd_y0_8)/(Grd_njla-1)
+            Grd_y0_8 = Grd_y0_8 - Grd_extension*delta_8
+            Grd_yl_8 = Grd_yl_8 + Grd_extension*delta_8
+
+!            Grd_x0   = Grd_x0_8
+!            Grd_xl   = Grd_xl_8
+!            Grd_y0   = Grd_y0_8
+!            Grd_yl   = Grd_yl_8
 
          case ('V')             ! Variable resolution
             if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
@@ -174,16 +198,16 @@
                               Grd_ni,Grd_nj,Grd_iref,Grd_jref
             goto 9999
          endif
-         Grd_x0   = Grd_lonr - (Grd_iref-1) * Grd_dx
-         Grd_y0   = Grd_latr - (Grd_jref-1) * Grd_dy
-         Grd_xl   = Grd_x0   + (Grd_ni  -1) * Grd_dx
-         Grd_yl   = Grd_y0   + (Grd_nj  -1) * Grd_dy
-         if (Grd_x0.lt.0.) Grd_x0=Grd_x0+360.
-         if (Grd_xl.lt.0.) Grd_xl=Grd_xl+360.
-         if ( (Grd_x0.lt.  0.).or.(Grd_y0.lt.-90.).or. &
-              (Grd_xl.gt.360.).or.(Grd_yl.gt. 90.) ) then
+         Grd_x0_8   = Grd_lonr - (Grd_iref-1) * Grd_dx
+         Grd_y0_8   = Grd_latr - (Grd_jref-1) * Grd_dy
+         Grd_xl_8   = Grd_x0_8 + (Grd_ni  -1) * Grd_dx
+         Grd_yl_8   = Grd_y0_8 + (Grd_nj  -1) * Grd_dy
+         if (Grd_x0_8.lt.0.) Grd_x0_8=Grd_x0_8+360.
+         if (Grd_xl_8.lt.0.) Grd_xl_8=Grd_xl_8+360.
+         if ( (Grd_x0_8.lt.  0.).or.(Grd_y0_8.lt.-90.).or. &
+              (Grd_xl_8.gt.360.).or.(Grd_yl_8.gt. 90.) ) then
             if (Lun_out.gt.0) write (Lun_out,1001)  &
-                              Grd_x0,Grd_y0,Grd_xl,Grd_yl
+                              Grd_x0_8,Grd_y0_8,Grd_xl_8,Grd_yl_8
             goto 9999
          endif
 
@@ -210,7 +234,7 @@
                         (  abs(Grd_xlat1       ).lt.epsilon) .and. &
                         (  abs(Grd_xlat2       ).lt.epsilon) )
 !
-      Grd_rot_8 = 0.
+      Grd_rot_8      = 0.
       Grd_rot_8(1,1) = 1.
       Grd_rot_8(2,2) = 1.
       Grd_rot_8(3,3) = 1.

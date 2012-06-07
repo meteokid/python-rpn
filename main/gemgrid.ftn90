@@ -108,10 +108,11 @@
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni), ypos(Grd_nj))
 
-      call set_gemHgrid2 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,           & 
-                           Grd_x0, Grd_xl, Grd_left, Grd_y0, Grd_yl, Grd_belo, &
-                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,           &
-                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L,     &
+      call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
+                           Grd_x0_8, Grd_xl_8, Grd_left,                   &
+                           Grd_y0_8, Grd_yl_8, Grd_belo,                   &
+                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,       &
+                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
                            ierx, iery, .true. )
 
       xpos(1:Grd_ni) = x_8(1:Grd_ni)

@@ -40,10 +40,11 @@
       integer Grd_iref, Grd_jref, Grd_maxcfl
       integer Grd_ndomains, Grd_mydomain
       real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
-      real Grd_latr, Grd_lonr, Grd_x0, Grd_xl, Grd_y0, Grd_yl
+      real Grd_latr, Grd_lonr
       real Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot
       real Grd_rcoef,Grd_overlap
-      real*8 Grd_rot_8
+      real*8 Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
+      real*8 Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
 !   
       common / Grd_c / Grd_typ_S, Grd_yinyang_S
       common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L,Grd_yinyang_L
@@ -53,14 +54,14 @@
       common / Grd_i / Grd_ndomains, Grd_mydomain
       common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       common / Grd_r / Grd_latr, Grd_lonr
-      common / Grd_r / Grd_x0, Grd_xl, Grd_y0, Grd_yl
       common / Grd_r / Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
       common / Grd_r / Grd_rot(3,3),Grd_rcoef(2),Grd_overlap
-      common / Grd_r8 / Grd_rot_8(3,3)
+      common / Grd_r8/ Grd_rot_8, Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
+      common / Grd_r8/ Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
 !
       namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj, Grd_maxcfl
       namelist /grid/ Grd_nila, Grd_njla, Grd_iref, Grd_jref
       namelist /grid/ Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
-      namelist /grid/ Grd_latr, Grd_lonr,Grd_overlap
+      namelist /grid/ Grd_latr, Grd_lonr, Grd_overlap
       namelist /grid/ Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
       namelist /grid/ Grd_gauss_L
