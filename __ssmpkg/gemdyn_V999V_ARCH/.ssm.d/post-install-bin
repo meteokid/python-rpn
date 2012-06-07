@@ -7,6 +7,7 @@ packageFullName=${packageHome##*/}
 packageNameVersion=${packageFullName%_*}
 packageName=${packageNameVersion%%_*}
 packageVersion=${packageNameVersion##*_}
+packageArch=${packageFullName##*_}
 
 cd ${packageHome}
 
@@ -57,43 +58,43 @@ mkdir -p ${MALIB}
 
 #make allbin LIBPATHEXTRA=${packageHome}/lib/${EC_ARCH}
 if [[ x${FORCE_RMN_VERSION} == x ]] ; then
-   make sometools LIBPATHEXTRA=${packageHome}/lib/${EC_ARCH} DYNBINDIR=$BINDIR DYNVERSION=$packageVersion
+   make sometools LIBPATHEXTRA="${packageHome}/lib/${EC_ARCH} ${LIBPATHEXTRA}" DYNBINDIR=$BINDIR DYNVERSION=$packageVersion BINDIR=$BINDIR
 else
-   make sometools LIBPATHEXTRA=${packageHome}/lib/${EC_ARCH} DYNBINDIR=$BINDIR DYNVERSION=$packageVersion RMN_VERSION=${FORCE_RMN_VERSION}
+   make sometools LIBPATHEXTRA="${packageHome}/lib/${EC_ARCH} ${LIBPATHEXTRA}" DYNBINDIR=$BINDIR DYNVERSION=$packageVersion RMN_VERSION=${FORCE_RMN_VERSION} BINDIR=$BINDIR
 fi
 mv *.Abs $BINDIR
 for item in gemprnml gemgrid ;do
 	 isok=$(ls $BINDIR/${item}*.Abs 2>/dev/null)
 	 [[ x$isok == x ]] && exitstatus=1
 done
-mv toc2nml $BINDIR
-isok=$(ls $BINDIR/toc2nml 2>/dev/null)
-[[ x$isok == x ]] && exitstatus=1
+#toc2nml is made optional for older version of gem not having it
+if [[ -x toc2nml ]] ; then
+   mv toc2nml $BINDIR
+   isok=$(ls $BINDIR/toc2nml 2>/dev/null)
+   [[ x$isok == x ]] && exitstatus=1
+else
+   echo "WARNING: toc2nml was not produced"
+fi
 
 cd ${TMPDIR:-/tmp}
 chmod -R u+w tmpwkdir$$
 /bin/rm -rf tmpwkdir$$
 mkdir tmpwkdir$$
 cd tmpwkdir$$
-cp ${packageAllHome}/src/monitor/* .
+[[ -d ${packageAllHome}/src/monitor ]] && cp ${packageAllHome}/src/monitor/* .
+[[ -d ${packageAllHome}/src/main ]] && cp ${packageAllHome}/src/main/* .
 if [[ x${FORCE_RMN_VERSION} == x ]] ; then
-   make -f ${packageAllHome}/include/cibles_sometools monitor MONBINDIR=$BINDIR
+   make -f ${packageAllHome}/include/cibles_sometools monitor MONBINDIR=$BINDIR BINDIR=$BINDIR
 else
-   make -f ${packageAllHome}/include/cibles_sometools monitor MONBINDIR=$BINDIR RMN_VERSION=${FORCE_RMN_VERSION}
+   make -f ${packageAllHome}/include/cibles_sometools monitor MONBINDIR=$BINDIR BINDIR=$BINDIR RMN_VERSION=${FORCE_RMN_VERSION}
 fi
 for item in gem_monitor_end gem_monitor_output ;do
-	 isok=$(ls $BINDIR/${item} 2>/dev/null)
-	 [[ x$isok == x ]] && exitstatus=1
+    isok=$(ls $BINDIR/${item} 2>/dev/null)
+    [[ x$isok == x ]] && exitstatus=1
 done
 
-exit $exitstatus
+#TODO:
+#make allbincheck BINDIR=$BINDIR
+#exitstatus=$?
 
-#r.build -o geophy_2000.Abs -bidon -main geophy\
-#	     -arch ${EC_ARCH} \
-#	     -librmn rmn -obj ${MALIB}/geophy.o
-#if [[ ! -r geophy_2000.Abs ]] ; then
-#	 echo "ERROR Problem building: geophy_2000.Abs"
-#	 exit 1
-#fi
-#/bin/rm -f ${BINDIR}/geophy_2000.Abs
-#mv geophy_2000.Abs ${BINDIR}
+exit $exitstatus

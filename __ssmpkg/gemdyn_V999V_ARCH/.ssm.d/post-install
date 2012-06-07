@@ -7,12 +7,13 @@ packageFullName=${packageHome##*/}
 packageNameVersion=${packageFullName%_*}
 packageName=${packageNameVersion%%_*}
 packageVersion=${packageNameVersion##*_}
+packageArch=${packageFullName##*_}
 profilePath=${profileDirPath}/${packageFullName}.sh
 mkdir -p ${profileDirPath}
 cd ${packageHome}
 
 mkdir bin 2>/dev/null
-cp .ssm.d/r.pkg-config bin/r.${packageName}_${packageFullName##*_}-config
+cp .ssm.d/r.pkg-config bin/r.${packageName}_${packageArch}-config
 
 $packageHome/.ssm.d/post-install-lib $domainHome $packageHome
 exitstatus=$?

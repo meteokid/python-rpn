@@ -7,11 +7,13 @@ packageFullName=${packageHome##*/}
 packageNameVersion=${packageFullName%_*}
 packageName=${packageNameVersion%%_*}
 packageVersion=${packageNameVersion##*_}
+packageArch=${packageFullName##*_}
 
 cd ${packageHome}
 
 mkdir bin 2>/dev/null
-cp .ssm.d/r.pkg-config bin/r.${packageName}_${packageFullName##*_}-config
+cp .ssm.d/r.pkg-config bin/r.${packageName}_${packageArch}-config
+cp .ssm.d/r.pkg-config bin/r.config_${packageName}_${packageArch}
 
 #==== Check dependencies [Should be done in pre-install... not an ssm feature]
 if [[ x$EC_ARCH = x ]] ; then
@@ -25,10 +27,6 @@ if [[ x"$version" != x"${packageVersion}" ]] then
     exit 1
 fi
 
-#TODO: check for armnlib...
-#TODO: check for dependencies (listed in pre-install-dep.txt and $EC_ARCH/pre-install-dep.txt)
-
-
 #packageAllName=${packageName}_${packageVersion}_all
 #packageAllHome=${domainHome}/$packageAllName
 #if [[ ! -d ${packageAllHome} ]] ; then
@@ -40,30 +38,28 @@ fi
 #==== Compile libs
 
 checkobj(){
-	 _malib=$1
-	 _name=$2
-	 cnt=0
-	 errorlist=""
-	 for i in `ls *.ftn* *.cdk90 *.c *.cpp 2> /dev/null` ; do
-		  f=`echo $i | sed 's/\.ftn.*//' | sed 's/\.cdk90//' | sed 's/\.cpp//' | sed 's/\.c//' `
-		  if [ ! -s ${_malib}/$f.o ] ; then
-				errorlist="$errorlist $i"
-				echo "MISSING ${_malib}/$f.o: $(ls $i) : $(ls ${_malib}/$f.o 2>/dev/null)"
-				let cnt=cnt+1
-		  fi
-	 done
-	 if [[ cnt -gt 0 ]] ; then
-		  echo "ERROR: Problem with $errorlist"
-		  echo "---- ABORT ----"
-		  exit 1
-	 else
-		  echo "Obj for ${_name}: $(ls -1 ${_malib}/*.o 2>/dev/null|wc -l) [src: $(ls -1 *.ftn* *.cdk90 *.c *.cpp 2>/dev/null|wc -l) ]"
-	 fi
+    _malib=$1
+    _name=$2
+    cnt=0
+    errorlist=""
+    for i in `ls *.ftn* *.cdk90 *.c *.cpp 2> /dev/null` ; do
+        f=`echo $i | sed 's/\.ftn.*//' | sed 's/\.cdk90//' | sed 's/\.cpp//' | sed 's/\.c//' `
+        if [ ! -s ${_malib}/$f.o ] ; then
+            errorlist="$errorlist $i"
+            echo "MISSING ${_malib}/$f.o: $(ls $i) : $(ls ${_malib}/$f.o 2>/dev/null)"
+            let cnt=cnt+1
+        fi
+    done
+    if [[ cnt -gt 0 ]] ; then
+        echo "ERROR: Problem with $errorlist"
+        echo "---- ABORT ----"
+        exit 1
+    else
+        echo "Obj for ${_name}: $(ls -1 ${_malib}/*.o 2>/dev/null|wc -l) [src: $(ls -1 *.ftn* *.cdk90 *.c *.cpp 2>/dev/null|wc -l) ]"
+    fi
 
 }
 
-#. r.ssmuse.dot ${domainHome} -p $packageAllName
-#. r.ssmuse.dot $domainHome
 #rcspath="`${packageAllHome}/bin/r.${packageName}_all-config --rcspath`"
 rcspath="$(r.${packageName}_all-config --rcspath 2>/dev/null)"
 packageAllHome=$(echo ${rcspath%%:*})
@@ -72,34 +68,35 @@ packageAllHome=$(echo ${packageAllHome%/*})
 #TODO: add support for many EC_ARCH (compiler version)
 #BASE_ARCH=${BASE_ARCH:-`uname -s`}
 #for mycomppkg in `ls ${domainHome}/compiler_${BASE_ARCH}-*` ; do
-#	 mycomp=`echo ${mycomppkg} | cut -d_ -f2`
-#	 mycomp=${mycomp##*-}
+#    mycomp=`echo ${mycomppkg} | cut -d_ -f2`
+#    mycomp=${mycomp##*-}
 #
-#	 . r.ssmuse.dot $mycomp
+#    . r.ssmuse.dot $mycomp
 
-	 LIBDIR=${packageHome}/lib/$EC_ARCH
-	 mkdir -p ${LIBDIR} 2>/dev/null
-	 MODDIR=${packageHome}/include/$EC_ARCH
-	 mkdir -p ${MODDIR} 2>/dev/null
+   LIBDIR=${packageHome}/lib/$EC_ARCH
+   mkdir -p ${LIBDIR} 2>/dev/null
+   MODDIR=${packageHome}/include/$EC_ARCH
+   mkdir -p ${MODDIR} 2>/dev/null
 
-	 production_date="$(date '+%Y-%m-%d %H:%M %Z')"
-	 chmod u+w $MODDIR
-	 cat > ${MODDIR}/${packageName}_version.inc << EOF
+   production_date="$(date '+%Y-%m-%d %H:%M %Z')"
+   chmod u+w $MODDIR
+   cat > ${MODDIR}/${packageName}_version.inc << EOF
        character(len=50),parameter :: GEMDYN_NAME_S = 'GEMDYN'
        character(len=50),parameter :: GEMDYN_VERSION_S = '${packageVersion}'
        character(len=50),parameter :: GEMDYN_DSTP_S = '${production_date}'
        character(len=50),parameter :: GEMDYN_EC_ARCH_S = '${EC_ARCH}'
 EOF
 
-	 MALIB=malib${EC_ARCH}
 
-	 liblist=$(ls -d ${packageAllHome}/RCS_*)
+    MALIB=malib${EC_ARCH}
+
+    liblist=$(ls -d ${packageAllHome}/RCS_*)
 	 /bin/rm -f ${LIBDIR}/lib${packageName}_v4d.a
 
-	 for item in $liblist ; do
-		  rcsname=${item##*/}
-		  partname=$(echo ${rcsname#*_} | tr 'A-Z' 'a-z')
-		  libname=${packageName}_$partname
+    for item in $liblist ; do
+        rcsname=${item##*/}
+        partname=$(echo ${rcsname#*_} | tr 'A-Z' 'a-z')
+        libname=${packageName}_$partname
 		  if [[ x$partname == xbase_4d ]] ; then
 				partname=base_4D
 				libname=${packageName}_v4d
@@ -109,44 +106,44 @@ EOF
 		  fi
 		  if [[ x$partname != xstubs && x$partname != xmonitor ]] ; then
 
-				cd ${TMPDIR:-/tmp}
-				chmod -R u+w tmpwkdir$$
-				/bin/rm -rf tmpwkdir$$
-				mkdir tmpwkdir$$
-				cd tmpwkdir$$
-				ouv_exp base -RCSPATH $rcspath #${packageAllHome}/RCS ${packageAllHome}/$rcsname
-				r.make_exp
-				mkdir -p ${MALIB}
-		      #make genlib
-				cd ${packageAllHome}/src/$partname
-				cp * ${TMPDIR:-/tmp}/tmpwkdir$$
-				cd ${TMPDIR:-/tmp}/tmpwkdir$$
-				cp ${MODDIR}/${packageName}_version.inc .
-				make objloc
-				
-				set +x
-				checkobj ${MALIB} $libname
-				set -x
-				
-		      #TODO: check that needed .mod are present
-				
-				if [[ x${libname} != x${packageName}_v4d ]] ; then
-					 /bin/rm -f ${LIBDIR}/lib${libname}.a
-				fi
-				r.ar rv ${LIBDIR}/lib${libname}.a ${MALIB}/*.o
-				if [[ ! -r ${LIBDIR}/lib${libname}.a ]] ; then
-					 echo "ERROR lib not Found: ${LIBDIR}/lib${libname}.a"
-					 exit 1
-				fi
-				
-				cp ${MALIB}/*.[mM][oO][dD] ./*.[mM][oO][dD]  $MODDIR 2>/dev/null
+            cd ${TMPDIR:-/tmp}
+            chmod -R u+w tmpwkdir$$
+            /bin/rm -rf tmpwkdir$$
+            mkdir tmpwkdir$$
+            cd tmpwkdir$$
+            ouv_exp base -RCSPATH $rcspath #${packageAllHome}/RCS ${packageAllHome}/$rcsname
+            r.make_exp
+            mkdir -p ${MALIB}
+            #make genlib
+            cd ${packageAllHome}/src/$partname
+            cp * ${TMPDIR:-/tmp}/tmpwkdir$$
+            cd ${TMPDIR:-/tmp}/tmpwkdir$$
+            cp ${MODDIR}/${packageName}_version.inc .
+            make objloc
+            
+            set +x
+            checkobj ${MALIB} $libname
+            set -x
+            
+            #TODO: check that needed .mod are present
+            
+            if [[ x${libname} != x${packageName}_v4d ]] ; then
+                /bin/rm -f ${LIBDIR}/lib${libname}.a
+            fi
+            r.ar rv ${LIBDIR}/lib${libname}.a ${MALIB}/*.o
+            if [[ ! -r ${LIBDIR}/lib${libname}.a ]] ; then
+                echo "ERROR lib not Found: ${LIBDIR}/lib${libname}.a"
+                exit 1
+            fi
+            
+            cp ${MALIB}/*.[mM][oO][dD] ./*.[mM][oO][dD]  $MODDIR 2>/dev/null
 
-				chmod -R u+w tmpwkdir$$
-				/bin/rm -rf tmpwkdir$$
+            chmod -R u+w tmpwkdir$$
+            /bin/rm -rf tmpwkdir$$
 
-		  fi
-	 done
-
+        fi
+    done
+    
 	 #compile stubs
 	 cd ${TMPDIR:-/tmp}
 	 chmod -R u+w tmpwkdir$$
@@ -170,51 +167,54 @@ EOF
 	 checkobj ${MALIB} stubs
 	 set -x
 	 
-	 #support older ARCH names
-	 here=`pwd`
-	 #EC_ARCH_OLD=$(echo $EC_ARCH | tr '/' '_')
-	 #EC_ARCH_NEW=$(echo $EC_ARCH | tr '_' '/')
-         COMP_ARCH=${COMP_ARCH:-${EC_ARCH##*/}}
-	 EC_ARCH_OLD=${BASE_ARCH}_${COMP_ARCH}
-	 EC_ARCH_NEW=${BASE_ARCH}/${COMP_ARCH}
-	 for mydir in ${packageHome}/lib ${packageHome}/include ; do
-	        cd $mydir
-		mkdir -p $EC_ARCH_NEW 2>/dev/null
-		rmdir $EC_ARCH_NEW 2>/dev/null
-		mv -f $EC_ARCH_OLD $EC_ARCH_NEW 2>/dev/null || mkdir -p $EC_ARCH_NEW 2>/dev/null
-		/bin/rm -f $EC_ARCH_OLD 2>/dev/null
-	        ln -s ./$EC_ARCH_NEW/. $EC_ARCH_OLD
-	 done
-	 cd $here
+    #support older ARCH names
+    here=`pwd`
+    #EC_ARCH_OLD=$(echo $EC_ARCH | tr '/' '_')
+    #EC_ARCH_NEW=$(echo $EC_ARCH | tr '_' '/')
+    COMP_ARCH=${COMP_ARCH:-${EC_ARCH##*/}}
+    EC_ARCH_OLD=${BASE_ARCH}_${COMP_ARCH}
+    EC_ARCH_NEW=${BASE_ARCH}/${COMP_ARCH}
+    for mydir in ${packageHome}/lib ${packageHome}/include ; do
+       cd $mydir
+       mkdir -p $EC_ARCH_NEW 2>/dev/null
+       rmdir $EC_ARCH_NEW 2>/dev/null
+       mv -f $EC_ARCH_OLD $EC_ARCH_NEW 2>/dev/null || mkdir -p $EC_ARCH_NEW 2>/dev/null
+       /bin/rm -f $EC_ARCH_OLD 2>/dev/null
+       ln -s ./$EC_ARCH_NEW/. $EC_ARCH_OLD
+    done
+    cd $here
 
-	 #merge libs
-	 here=`pwd`
-	 cd $LIBDIR
-	 liblist=$(ls -1 *.a)
+    #merge libs
+    here=`pwd`
+    cd $LIBDIR
+    liblist=$(ls -1 *.a)
 
-	 OBJDIR=${TMPDIR:-/tmp}/tmpwkdir$$
-	 /bin/rm -rf $OBJDIR 2>/dev/null
-	 mkdir -p $OBJDIR
-	 cd $OBJDIR
-	 for item in $liblist ; do
-		  isstub=$(echo $item | grep _stubs.a)
-		  isutils=$(echo $item | grep ${packageName}_utils.a)
-		  isv4d=$(echo $item | grep ${packageName}_v4d.a)
-		  isadw4d=$(echo $item | grep ${packageName}_adw_4d.a)
-		  if [[ x$isstub == x && x$isutils == x && x$isv4d == x ]] ; then
-				r.ar xv $LIBDIR/$item
-				/bin/rm -f $LIBDIR/$item
-		  fi
-	 done
+    OBJDIR=${TMPDIR:-/tmp}/tmpwkdir$$
+    /bin/rm -rf $OBJDIR 2>/dev/null
+    mkdir -p $OBJDIR
+    cd $OBJDIR
+    for item in $liblist ; do
+       domerge=1
+       [[ x$(echo $item | grep ${packageName}_main.a) != x ]] && domerge=0
+       [[ x$(echo $item | grep _stubs.a) != x ]] && domerge=0
+       [[ x$(echo $item | grep _tests.a) != x ]] && domerge=0
+       [[ x$(echo $item | grep ${packageName}_utils.a) != x ]] && domerge=0
+       [[ x$(echo $item | grep ${packageName}_v4d.a) != x ]] && domerge=0
+       [[ x$(echo $item | grep ${packageName}_adw_4d.a) != x ]] && domerge=0
+        if [[ x$domerge == x1 ]] ; then
+            r.ar xv $LIBDIR/$item
+            /bin/rm -f $LIBDIR/$item
+        fi
+    done
 
-	 libname=${packageName}
-	 /bin/rm -f ${LIBDIR}/lib${libname}.a
-	 #for item in $(ls *.o) ; do
-		#  r.ar rv ${LIBDIR}/lib${libname}.a $item	
-	 #done
-	 r.ar rv ${LIBDIR}/lib${libname}.a *.o
-	 cd $here
-	 /bin/rm -rf $OBJDIR 2>/dev/null
+    libname=${packageName}
+    /bin/rm -f ${LIBDIR}/lib${libname}.a
+    #for item in $(ls *.o) ; do
+      #  r.ar rv ${LIBDIR}/lib${libname}.a $item   
+    #done
+    r.ar rv ${LIBDIR}/lib${libname}.a *.o
+    cd $here
+    /bin/rm -rf $OBJDIR 2>/dev/null
 
 #done
 

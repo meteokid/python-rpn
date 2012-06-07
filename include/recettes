@@ -33,7 +33,9 @@ CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
 
-LIBS     = gemdyn $(V4D) $(PHY) $(CHM) $(PATCH) $(CPL) modelutils $(OTHERS)
+LIBSGEM  = gemdyn_main gemdyn
+LIBS     = $(LIBSGEM) $(V4D) $(PHY) $(CHM) $(PATCH) $(CPL) modelutils $(OTHERS)
+LIBSYS   = $(LIBSYSEXTRA)
 
 mainntr = maingemntr_$(BASE_ARCH).Abs
 maindm  = maingemdm_$(BASE_ARCH).Abs

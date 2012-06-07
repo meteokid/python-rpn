@@ -18,7 +18,7 @@ gemdm_nompi:
 gemntr:
 	makemodelbidon gemntr > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO); /bin/rm -f $(mainntr)* ;\
-	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI);\
+	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(mainntr) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) -codebeta $(CODEBETA) $(MPI);\
 	/bin/cp $(mainntr) $(PWD)/$(mainntr) ; /bin/rm -f $(mainntr)* bidon.o;\
 	chmod u+x $(PWD)/$(mainntr) ;\
 	ls -lL $(PWD)/$(mainntr) ;\
@@ -33,7 +33,7 @@ gemntr:
 gemdm:
 	makemodelbidon gemdm > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ; /bin/rm -f $(maindm)* ;\
-	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -codebeta $(CODEBETA) $(MPI) ;\
+	$(RBUILD) -obj *.o -libpath $(LIBPATH) -optf "=$(LFLAGS)" -o $(maindm) $(OMP) -libappl "$(LIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) -codebeta $(CODEBETA) $(MPI) ;\
 	/bin/cp $(maindm) $(PWD)/$(maindm) ; /bin/rm -f $(maindm)* bidon.o;\
 	chmod u+x $(PWD)/$(maindm) ;\
 	ls -lL $(PWD)/$(maindm) ;\
