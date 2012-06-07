@@ -249,10 +249,6 @@
          if (volnm(i)(1:5) .eq. 'PHYTD') n_phytend = n_phytend +1
       end do
 !
-! Allocate 3D heap memory for physics tendencies
-!
-      allocate ( phy_tend(LDIST_SHAPE,p_nk,n_phytend) )
-!
 ! Pre-establish BUSDYN index (2bused in itf_phy_prep)
 !
       bus = 'DYN'

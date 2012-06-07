@@ -75,6 +75,8 @@
          endif
 
          if (mode == "CENS") then
+            print*, 'MUST FIX phy_tend - ABORT in itf_ens_hzd'
+            stop
             con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
             cnt=0
             do n=1,p_bvol_top
@@ -84,7 +86,7 @@
                      do k= 1, l_nk
                      do j= 1, l_nj
                      do i= 1, l_ni
-                        ugwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
+!                        ugwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
                      end do
                      end do
                      end do
@@ -93,7 +95,7 @@
                      do k= 1, l_nk
                      do j= 1, l_nj
                      do i= 1, l_ni
-                        vgwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
+!                        vgwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
                      end do
                      end do
                      end do

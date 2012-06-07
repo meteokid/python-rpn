@@ -32,32 +32,16 @@
 ! v4_14 - Desgagne M.       - initial version
 !
 !object
-!	Extract physics tendencies from the folded space 
-!       F_busvol into model space phy_tend. Extract also
-!       physics output from F_busper and F_busvol.
+!	Extract physics output from buses
 !
 #include "glb_ld.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 #include "obus.cdk"
 !
-!notes
-!
-      integer n,cnt,offbo,offbb
+      integer n,offbo,offbb
 !
 !     ---------------------------------------------------------------
-!
-!     Extract physic tendencies
-!
-      cnt = 0
-      do n= 1, p_bvol_top
-         if (volnm(n)(1:5) .eq. 'PHYTD') then
-            cnt = cnt + 1
-            call itf_phy_unfold (phy_tend(l_minx,l_miny,1,cnt)  , &
-                                 F_busvol(phy_idxtdy(cnt)),F_jdo, &
-                                 1,nk,l_minx,l_maxx,l_miny,l_maxy)
-         endif
-      end do
 !
 !     Extract physic output
 !
@@ -78,8 +62,6 @@
 !C  Prepare surface variables for the coupling
 !
       if (C_coupling_L) call itf_cpl_getbus (F_busper, F_busvol, F_jdo)
-!
-      call v4d_phy_extract_pbl ( F_busvol, F_jdo, F_step, p_nk )
 !
 !     ---------------------------------------------------------------
 !

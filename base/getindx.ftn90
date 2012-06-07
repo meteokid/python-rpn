@@ -54,7 +54,8 @@
       integer,parameter :: BUSPAR_INIT=3
 
       character(len=32) :: varname_S
-      character(len=4) :: outname_S,bus_S,bus0_S,inname_S
+      character(len=4)  :: outname_S,bus_S,bus0_S,inname_S
+      character(len=2)  :: ext
       integer :: busidx,params(MAX_PARAMS),istat
 !-------------------------------------------------------------------
 !
@@ -62,13 +63,15 @@
       F_nm   =  0
       F_init = -1
 
-      bus0_S = adjustl(F_bus_S)
-      istat = clib_tolower(bus0_S)
+      bus0_S = adjustl (F_bus_S)
+      istat  = clib_tolower(bus0_S)
+      ext    = ''
 
-      varname_S = F_vn_S
+ 500  varname_S = trim(F_vn_S)//ext
       outname_S = ' '
-      inname_S = ' '
-      istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,busidx,params,MAX_PARAMS)
+      inname_S  = ' '
+
+      istat = phy_getindx3 (varname_S,outname_S,inname_S,bus_S,busidx,params,MAX_PARAMS)
 
       if (istat >= 0) then
          istat = clib_tolower(bus_S)
@@ -77,6 +80,11 @@
             F_nm    = params(BUSPAR_NIK)
             F_init  = params(BUSPAR_INIT)
          endif
+      else
+         if ( ext .ne. ',W' ) then
+            ext=',W'
+            goto 500
+         endif
       endif
 
       if ((F_deb <= 0).and.(bus0_S.ne.'any')) then
@@ -84,7 +92,7 @@
          call flush(6)
       endif
 
- 910  format (/1x,'===> ABORT IN GETINDX: COULD NOT FIND'/ &
+ 910  format (/1x,'===> ERROR IN GETINDX: COULD NOT FIND'/ &
                1x,"     VARIABLE '",a8,"' ON '",a6,"'."/)
 !
 !-------------------------------------------------------------------

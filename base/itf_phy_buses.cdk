@@ -79,5 +79,3 @@
       common /busindx_i/ phy_ndyn, phy_idxdyn, phy_ntdy, phy_idxtdy
       common /busindx_i/ cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8,cpl_flusolis,cpl_fdsi,cpl_rt
 !
-      real, dimension (:,:,:,:), pointer :: phy_tend
-      common /phybuf/  phy_tend

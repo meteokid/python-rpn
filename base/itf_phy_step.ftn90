@@ -16,7 +16,7 @@
 !**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
 !
 #include "model_macros_f.h"
-!
+
       subroutine itf_phy_step (F_stepno)
 
       use itf_phy_iface  , only : itf_phy_geti, itf_phy_inincr
@@ -26,17 +26,6 @@
 #include <arch_specific.hf>
 !
       integer, intent(IN) :: F_stepno
-
-!TODO: this interface should be updated automatically
-interface
-   subroutine itf_phy_slb (busent3D, busdyn3D, busper3D, busvol3D, &
-                           esiz, dsiz, fsiz, vsiz,   &
-                           dt, kount, phy_timing, ni, nj, nk, pslic) 
-      real, dimension(:,:), pointer :: busent3D,busdyn3D, busper3D, busvol3D
-      integer :: esiz, dsiz, fsiz, vsiz, kount, ni,nj,nk, pslic
-      real    :: dt, phy_timing(ni,nj)
-   end subroutine itf_phy_slb
-end interface
 !
 !author 
 !     Michel roch - rpn - april 1994
@@ -60,21 +49,15 @@ end interface
 ! v4_04 - Plante A.         - Remove offline mode
 ! v4_05 - Desgagne M.       - Update AIX binding rules
 ! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
-! v4_1x - Dugas B.          - Account for increment forcings
+! v4_14 - Dugas B.          - Account for increment forcings
 !                           - dumpbus3 is now all done here
 !   
-!object
-!	Computes the physical processes and apply the resulting
-!	tendencies to the dynamic variables of the model:
-!	CMC/RPN package
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_stepno      O           step number
 !----------------------------------------------------------------
 !
-!implicits
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <msg.h>
@@ -91,24 +74,20 @@ end interface
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
+
       integer,parameter :: MAX_COMMBLOC_SWAP = 10
 
       integer,external :: phy_dataload5
-      integer*8,external :: time_base
-      external :: itf_phy_geom,itf_phy_xhfold_3d2
+      external :: itf_phy_geom, itf_phy_xhfold_3d2
 
       integer, save :: l_phy_gid = -1
       integer, save :: dateo = -1
       integer, save :: pslic
 
       integer PG_ni,PG_nj
-      logical P_timing_L
       integer j, obussiz, err, gmmstat,g_phy_gid
-      integer*8 ticks_deb, ticks_fin
       character*512 fn,geofilename_S
       real, dimension(:,:), allocatable :: obusval
-      real dt,Lphy_timing(l_ni,l_nj),Gphy_timing(G_ni,G_nj),phy_timing(p_ni,p_nj)
-      logical dumpbus_L, dyndump_L, entdump_L
 !
       real, pointer, dimension (:,:) :: BUSENT_3d  => null()
       real, pointer, dimension (:,:) :: BUSDYN_3d  => null()
@@ -117,8 +96,6 @@ end interface
       real :: gxfi(G_ni+1), gyfi(G_nj)
 !
 !     ---------------------------------------------------------------
-!
-      P_timing_L = .false.
 !
       call iniobus(obussiz)
       allocate (obusval(l_ni*l_nj,obussiz))
@@ -154,16 +131,9 @@ end interface
 
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
-      
-!
-!C       4.	compute physics tendencies
-!		--------------------------
-!
-      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
-                                   (F_stepno    .eq.0)  )
 
       if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
-!
+
       if (G_lam) then
          PG_ni  = G_ni - 4
          PG_nj  = G_nj - 4
@@ -171,43 +141,18 @@ end interface
          PG_ni  = G_ni
          PG_nj  = G_nj
       endif
-!
-      dumpbus_L = .false.
-      entdump_L = .false.
-      dyndump_L = .false.
-      if (P_dumpbus > 0) then
-          dumpbus_L = (mod( F_stepno,P_dumpbus ) == 0)
-          entdump_L = ((P_dumpbus_S == 'ALL') .and. (F_stepno == 0 ))
-          dyndump_L = ((P_dumpbus_S == 'ALL') .or. (index(P_dumpbus_S,'D') > 0))
-          call dumpini3( p_bent_siz,p_bdyn_siz,p_bper_siz,p_bvol_siz, &
-                         Ptopo_numproc,p_ni,p_nj, PG_ni,PG_nj, P_dumpbus_S )
-      endif
-!
-! TODO
-!      if (dyndump_L) then
-!!$omp parallel do
-!         do j = 1, p_nj
-!            pabusdyn = loc (Phy_busdyn3D((j-1)*p_bdyn_siz+1))
-!            call dumpbusd( busdyn, j )
-!         end do
-!!$omp end parallel do
-!         call dumpwritd( Lun_out, F_stepno, Ptopo_myproc )
-!      endif
-!
-      ticks_deb = time_base()
-!
+
+      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
+                                   (F_stepno    .eq.0)  )
+
+      call phy_step (F_stepno)
+
+      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
+                                   (F_stepno    .eq.0) )
+
       gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
       gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
       gmmstat = gmm_get ('BUSVOL_3d',BUSVOL_3d,meta)
-
-      pslic= 0
-      dt   = Cstv_dt_8
-
-!$omp parallel
-      call itf_phy_slb ( BUSENT_3d ,BUSDYN_3d, BUSPER_3d ,BUSVOL_3d , &
-                         p_bent_siz, p_bdyn_siz, p_bper_siz, p_bvol_siz   , &
-                         dt, F_stepno, phy_timing, p_ni, p_nj, p_nk, pslic )
-!$omp end parallel
 
       do j = 1, p_nj
          call itf_phy_update ( BUSDYN_3d(1,j), j, p_nk, F_stepno.gt.0 )
@@ -215,44 +160,15 @@ end interface
 
 !$omp parallel do
       do j = 1, p_nj
-! TODO
-!!!         if (dumpbus_L) call dumpbus3( busent,busdyn,busper,busvol, j, entdump_L )
-         call itf_phy_extract( BUSENT_3d(1,j), BUSPER_3d(1,j) ,BUSVOL_3d(1,j) , obusval, F_stepno, j, p_nk )
-         if (P_timing_L) call itf_phy_unfold (Lphy_timing, phy_timing(1,j), j, 1, 1, 1, l_ni, 1, l_nj)
+         call itf_phy_extract ( BUSENT_3d(1,j), BUSPER_3d(1,j), BUSVOL_3d(1,j), &
+                                                   obusval, F_stepno, j, p_nk )
       end do
 !$omp end parallel do
 !
-      ticks_fin = time_base()
-!
-      if (P_timing_L) then
-         write(6,'("TIME_BASE:PHY_SLB: STEP=",i4," WCTIME=",g16.10)') F_stepno, &
-                                             (ticks_fin-ticks_deb)*8.0d0/1.9d9
-         call glbcolc (Gphy_timing,G_ni,G_nj,Lphy_timing,1,l_ni,1,l_nj,1)
-         fn = '..//phy_timing.fst'
-         if ((F_stepno.eq.0).or.(mod(F_stepno-1,4).eq.0)) fn = '..//phyR_timing.fst'
-         if (Lun_out.gt.0) &
-         call r_rawfstw2 (Gphy_timing,1,g_ni,1,g_nj,1,1,'TIMI',1,g_ni,1,g_nj,1,1,&
-                          F_stepno,int(Cstv_dt_8),Out3_date,-1,-1,fn)
-         fn = 'TIM1'
-         if ((F_stepno.eq.0).or.(mod(F_stepno-1,4).eq.0)) fn = 'TIM2'
-         call glbstat2 (Lphy_timing,trim(fn),'', 1,l_ni,1,l_nj,1,1, &
-                                                 1,g_ni,1,g_nj,1,1)
-      endif
-!
-      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
-                                   (F_stepno    .eq.0) )
-!
-      call v4d_rwtraj(22)
 !
       call out_phy (obusval,l_ni,l_nj,F_stepno)
 !
       deallocate (obusval)
-!
-      if (dumpbus_L) call dumpwrit3( Lun_out, F_stepno, Ptopo_myproc, entdump_L )
-!
-!C   6.	Apply physics tendencies to the appropriate dynamic fields
-!C      and insure consistency with other dynamic variables
-!       ----------------------------------------------------------
 !
       call itf_phy_apply ( F_stepno.gt.0 )
 !
