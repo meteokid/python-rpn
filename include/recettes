@@ -31,7 +31,7 @@ CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
 #CPL         = cpl_stubs
 
 OTHERS   = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
-LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
+LIBPATH  = $(PWD) $(LIBPATHEXTRA) $(LIBSYSPATHEXTRA) $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
 
 LIBSGEM  = gemdyn_main gemdyn
 LIBS     = $(LIBSGEM) $(V4D) $(PHY) $(CHM) $(PATCH) $(CPL) modelutils $(OTHERS)
