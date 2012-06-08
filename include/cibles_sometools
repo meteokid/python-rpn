@@ -1,16 +1,16 @@
-prgemnml: prgemnml.o
+prgemnml: 
 	makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	$(RBUILD) -obj $(LCLPO)/*.o -o gemprnml_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn modelutils" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/prgemnml.o $(LCLPO)/bidon.o
 
-gemgrid: gemgrid.o
+gemgrid: 
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	$(RBUILD) -obj $(LCLPO)/*.o -o gemgrid_$(BASE_ARCH).Abs -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn modelutils $(COMM) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o
 
-toc2nml: toc2nml.o
+toc2nml: 
 	makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj $(LCLPO)/*.o -o toc2nml -libpath $(LIBPATH) -libappl "descrip" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj $(LCLPO)/*.o -o toc2nml -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn descrip" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o
 
 MONBINDIR=.
