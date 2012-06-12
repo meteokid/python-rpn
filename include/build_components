@@ -1,8 +1,11 @@
+##VERSIONS in this file are used only for echo/information
 PHY_VERSION   = $(ATM_PHY_VERSION)
 CHM_VERSION   = rpnphy_chm_stubs
 CPL_VERSION   = 107
 VGRID_VERSION = $(VGRIDDESCRIPTORS_VERSION)
-RMN_VERSION   = rmn_013$(FORCE_RMN_VERSION_RC)
-COMM_VERSION  = _40007
-#MODELUTILS_VERSION = 
+#MODELUTILS_VERSION = TODO: define version 
+
+#TODO: rm RMN_VERSION COMM_VERSION,they are defined in $modelutils
+#RMN_VERSION   = rmn_013$(FORCE_RMN_VERSION_RC)
+#COMM_VERSION  = _40007
 

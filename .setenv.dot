@@ -1,0 +1,2 @@
+. s.ssmuse.dot $(cat ssmuse_dependencies.bndl)
+. s.ssmuse.dot $(cat $modelutils/src/ssmuse_dependencies.bndl)
