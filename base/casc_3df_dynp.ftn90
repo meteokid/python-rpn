@@ -101,8 +101,7 @@
       integer i0,in,j0,jn,ni2,nj2
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
       integer, dimension (:  ), pointer :: idx,idy,nks
-      real topo_temp(l_ni,l_nj), xi,xf,yi,yf,htopa, &
-           psmin, psmax, psmin_glob, psmax_glob, pr1,pr2
+      real topo_temp(l_ni,l_nj)
       real  , dimension (:  ), pointer :: phybr
       real*8, dimension (:  ), pointer ::  &
                     xpaq,ypaq,xpau,ypav,xpuu,ypvv, &
@@ -318,7 +317,7 @@
 !
  999  call handle_error(err,'casc_3df_dynp','casc_3df_dynp')
 !
-      if (initial_data) then
+      if ( initial_data .and. (Lctl_step.eq.0) ) then
          allocate ( meqr(l_ni,l_nj))
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
@@ -381,7 +380,7 @@
 !
       do n=1,Tr3d_ntr
          nullify (trp)
-         if (initial_data) then
+         if ( initial_data .and. (Lctl_step.eq.0) ) then
             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,mymeta)
          else
             istat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,mymeta)
@@ -392,41 +391,10 @@
       deallocate (xpuu,ypvv,xpaq,ypaq,xpau,ypav)
       deallocate (uun,vvn,zdn,ttn,qqn,wwn,ssqn,meqn)
       deallocate (trn,topo_temp1,trname_a)
-      deallocate (uu1,vv1,ttt1,zd1,qq1,ww1,tr1)
+      deallocate (uu1,vv1,ttt1,zd1,ss1,qq1,ww1,tr1)
       if (associated(phybn)) deallocate(phybn)
       if (associated(phynm)) deallocate(phynm)
       if (associated(nks  )) deallocate(nks  )
-!
-      do j=1,l_nj
-      do i=1,l_ni
-         ss1(i,j) = Cstv_pref_8*exp(ss1(i,j))
-      enddo
-      enddo
-!
-      if (initial_data) then
-         psmin = ss1(1,1)
-         psmax = ss1(1,1)
-         do j=1,l_nj
-         do i=1,l_ni
-            psmin = min( psmin, ss1(i,j) )
-            psmax = max( psmax, ss1(i,j) )
-         enddo
-         enddo
-!
-         call rpn_comm_allreduce(psmin,psmin_glob,1,"MPI_REAL","MPI_MIN", &
-                                                              "grid",err)
-         call rpn_comm_allreduce(psmax,psmax_glob,1,"MPI_REAL","MPI_MAX", &
-                                                              "grid",err)
-         psmin=psmin_glob
-         psmax=psmax_glob
-!     
-         if ( Ptopo_myproc.eq.0 ) then
-            write(6,*)'PSMIN = ',PSMIN,' PSMAX = ',PSMAX, &
-                           ' PSMINMAX = ',0.5*(PSMIN+PSMAX),' (PASCAL)'
-         endif
-      endif
-!
-      deallocate (ss1)
 !
  100  format (' ',65('*'))
  101  format (' (CASC_3DF_DYNP) JUST READ INIT DATA FOR DATE: ',a15,1x,i3)

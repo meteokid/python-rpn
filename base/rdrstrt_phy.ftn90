@@ -54,8 +54,7 @@
       character*512 fn
       character*16 datev,datev_infile,startindx
       logical spin_L
-      integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),adr,gmmstat
-!      real, pointer, dimension (:,:) :: BUSPER_3d  => null()
+      integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),gmmstat
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -95,21 +94,14 @@
          endif
       endif
 !
-      ier = fnom( unf,fn,'RND+OLD',0 )
+      ier = fnom ( unf,fn,'SEQ+UNF+OLD',0 )
 
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
 
-      call waopen (unf)
-
-      call waread (unf,spin_L       , 1, 1)
-      call waread (unf,Clim_inincr_L, 2, 1)
-      adr = 3
+      read (unf) spin_L
 
       if (spin_L) then
-         call waread (unf, ibuf, adr, 4)
-         adr = adr + 4
-         call waread (unf, rbuf, adr, 6)
-         adr = adr + 6
+         read (unf) ibuf,rbuf
 
          call datf2p (datev_infile,ibuf(1))
          dim_infile = ibuf(2)
@@ -129,29 +121,27 @@
               (rbuf(5)      .ne.  Grd_xlon2  )   .or. &
               (rbuf(6)      .ne.  Grd_xlat2  )  ) then
             if (Lun_out.gt.0) write(Lun_out,2006) 'BUSPER4spinphy_'//trim(datev)
-            goto 999
+!            goto 999
          endif
 
-         call waread (unf, BUSPER_3d, adr, dim)
-         adr =adr + dim
+         read (unf) BUSPER_3d
       endif
 !
-      if (Clim_inincr_L) then
-         call waread (unf, Cfld_nbr, adr, 1)
-         adr = adr + 1
-         if (Cfld_nbr > 0) then
-            Allocate ( Cfld_date(Cfld_nbr), Cfld_levs(Cfld_nbr), &
-                       Cfld_list(Cfld_nbr), stat=ier )
-            call waread (unf, Cfld_date, adr,            Cfld_nbr )
-            call waread (unf, Cfld_levs, adr+  Cfld_nbr, Cfld_nbr )
-            call waread (unf, Cfld_list, adr+2*Cfld_nbr, Cfld_nbr )
-         endif
-         adr = adr+3*Cfld_nbr
-      endif
+!      if (Clim_inincr_L) then
+!         call waread (unf, Cfld_nbr, adr, 1)
+!         adr = adr + 1
+!         if (Cfld_nbr > 0) then
+!            Allocate ( Cfld_date(Cfld_nbr), Cfld_levs(Cfld_nbr), &
+!                       Cfld_list(Cfld_nbr), stat=ier )
+!            call waread (unf, Cfld_date, adr,            Cfld_nbr )
+!            call waread (unf, Cfld_levs, adr+  Cfld_nbr, Cfld_nbr )
+!            call waread (unf, Cfld_list, adr+2*Cfld_nbr, Cfld_nbr )
+!         endif
+!         adr = adr+3*Cfld_nbr
+!      endif
 !
       itf_phy_busper_init_L = .true.
 !
- 999  call waclos(unf)
       ier = fclos(unf)  
 !
  2000 format(/,'READING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &

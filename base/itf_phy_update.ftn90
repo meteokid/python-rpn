@@ -60,10 +60,10 @@
                istat = gmm_get('TR/'//dynnm(n)(4:6)//'M', trm, mymeta )
                call itf_phy_unfold (pw(l_minx,l_miny,1+Schm_notop), &
                                     F_busdyn(indx), F_jdo, &
-                                    1,nk,l_minx,l_maxx,l_miny,l_maxy)
+                                    1,nk-1,l_minx,l_maxx,l_miny,l_maxy)
                call itf_phy_unfold (trm(l_minx,l_miny,1+Schm_notop), &
                                     F_busdyn(indx), F_jdo, &
-                                    1,nk,l_minx,l_maxx,l_miny,l_maxy)
+                                    1,nk-1,l_minx,l_maxx,l_miny,l_maxy)
             endif
          end do
          return

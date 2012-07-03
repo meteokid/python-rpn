@@ -48,7 +48,7 @@
 !
       character*512  fn
       character*16   datev
-      integer dim,unf,ier,ibuf(4),datstp,adr,gmmstat
+      integer dim,unf,ier,ibuf(4),datstp,gmmstat
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -66,14 +66,11 @@
       fn='restart_BUSPER'
       if (F_spin_L) fn= 'BUSPER4spinphy_'//trim(datev)
 !
-      ier = fnom  (unf,fn,'RND',0)
-      call waopen (unf)
+      ier = fnom (unf,fn,'SEQ+UNF',0)
 !
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
 !
-      call wawrit (unf,F_spin_L     , 1, 1)
-      call wawrit (unf,Clim_inincr_L, 2, 1)
-      adr = 3
+      write(unf) F_spin_L 
 !
       if (F_spin_L) then
          call datp2f (datstp,datev)
@@ -93,26 +90,21 @@
          rbuf(5) = Grd_xlon2
          rbuf(6) = Grd_xlat2
 !
-         call wawrit (unf, ibuf, adr, 4)
-         adr = adr + 4
-         call wawrit (unf, rbuf, adr, 6)
-         adr = adr + 6
-         call wawrit (unf, BUSPER_3d, adr, dim)
-         adr = adr + dim
+         write(unf) ibuf, rbuf
+         write(unf) BUSPER_3d
       endif
 !
-      if (Clim_inincr_L) then
-         call wawrit (unf, Cfld_nbr, adr, 1)
-         adr = adr + 1
-         if (Cfld_nbr > 0) then
-            call wawrit( unf,Cfld_date, adr,           Cfld_nbr )
-            call wawrit( unf,Cfld_levs, adr+  Cfld_nbr,Cfld_nbr )
-            call wawrit( unf,Cfld_list, adr+2*Cfld_nbr,Cfld_nbr )
-            adr = adr+3*Cfld_nbr
-         endif
-      endif
-
-      call waclos(unf)
+!      if (Clim_inincr_L) then
+!         call wawrit (unf, Cfld_nbr, adr, 1)
+!         adr = adr + 1
+!         if (Cfld_nbr > 0) then
+!            call wawrit( unf,Cfld_date, adr,           Cfld_nbr )
+!            call wawrit( unf,Cfld_levs, adr+  Cfld_nbr,Cfld_nbr )
+!            call wawrit( unf,Cfld_list, adr+2*Cfld_nbr,Cfld_nbr )
+!            adr = adr+3*Cfld_nbr
+!         endif
+!      endif
+!
       ier = fclos(unf) 
 !
  2000 format(/,'WRITING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &

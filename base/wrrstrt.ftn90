@@ -57,9 +57,9 @@
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
-      integer,external :: fnom,fclos,close_db_file
+      integer,external :: fnom,fclos
 !
-      integer i,ier,adr,dim,n,current_nest,gmmstat
+      integer ier,dim,gmmstat
 !
 !     ---------------------------------------------------------------
 !
@@ -74,36 +74,22 @@
 !        restart for the whole domain
 !         call glb_restart('W')
 !      else
-!        Write one wa-file per tile
+
          Lun_rstrt = 0
-         ier = fnom (Lun_rstrt,'restart','RND',0)
-         call waopen (Lun_rstrt)
-!
-         call wawrit (Lun_rstrt,Lctl_step      ,1,1)
-         call wawrit (Lun_rstrt,Rstri_idon_L   ,2,1)
-         adr = 3
-!
-         call wawrit (Lun_rstrt, Cstv_ptop_8,adr, 2)
-         adr = adr + 2
-!
-         if(Schm_theoc_L)then
-            adr = adr + 1
-            call wawrit (Lun_rstrt,Zblen_hmin,adr, 1)
-         endif
+         ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
+
+         write(Lun_rstrt) Lctl_step,Rstri_idon_L,Cstv_ptop_8
+         if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 !
          dim = cpl_ni*cpl_nj*n_fldin
-         call wawrit (Lun_rstrt, dim, adr, 1)
-         adr = adr + 1
-         if (dim>0) then
-            call wawrit (Lun_rstrt, atm_busin ,adr, dim)
-            adr = adr + dim
-         endif
-!
+         write(Lun_rstrt) dim
+         if (dim>0) write(Lun_rstrt) atm_busin
+
+         ier = fclos(Lun_rstrt)  
+
 !        Write Gmm-files
 
          gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
-         call waclos(Lun_rstrt)
-         ier = fclos(Lun_rstrt)  
 !
 !      endif
 !

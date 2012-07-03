@@ -59,8 +59,8 @@
          if (ier.ge.-1) then
             ier = fnom( Lun_rstrt,'../restart_glbphy.bin','SEQ+UNF+OLD',0)
          else
-            ier = wkoffit('restart') 
-            if (ier.ge.-1) ier = fnom( Lun_rstrt,'restart','RND+OLD',0 )
+            ier = wkoffit('restart')
+            if (ier.ge.-1) ier = fnom( Lun_rstrt,'restart','SEQ+UNF+OLD',0 )
          endif
 !
          if (ier.lt.0) then
