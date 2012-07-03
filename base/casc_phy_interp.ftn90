@@ -1,6 +1,0 @@
-      subroutine casc_phy_interp
-         print *,'Called stub casc_phy_interp'
-         !TODO: remove/delete files
-         stop
-      end
-

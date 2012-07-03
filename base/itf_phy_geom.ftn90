@@ -15,13 +15,6 @@
 
 #include <model_macros_f.h>
 
-subroutine itf_phy_geom
-   !TODO: remove sub
-   print *,'stub itf_phy_geom'
-   stop
-end subroutine itf_phy_geom
-
-
 !/**
 subroutine itf_phy_geom2(F_istat)
    use nest_blending, only: nest_blend

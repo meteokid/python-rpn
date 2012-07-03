@@ -1,7 +1,0 @@
-Integer Function itf_phy_geti()
-   itf_phy_geti = -1
-   print *,'called stub itf_phy_geti'
-   !TODO: remove file
-   stop
-   return
-end Function itf_phy_geti

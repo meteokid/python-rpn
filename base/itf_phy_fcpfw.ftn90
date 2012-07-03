@@ -1,5 +1,0 @@
-      subroutine itf_phy_fcpfw
-         print *,'Called stub itf_phy_fcpfw'
-         !TODO: remove/delete files
-         stop
-      end

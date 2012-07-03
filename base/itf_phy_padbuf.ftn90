@@ -1,5 +1,0 @@
-      subroutine itf_phy_padbuf
-         print *,'Called stub itf_phy_padbuf'
-         !TODO: remove/delete files
-         stop
-      end

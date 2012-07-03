@@ -13,37 +13,6 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine itf_phy_xhfold_3d2
-   !TODO: remove
-   print *,'stub itf_phy_xhfold_3d2'
-   stop
-end subroutine itf_phy_xhfold_3d2
-
-subroutine itf_phy_fold
-   !TODO: remove
-   print *,'stub itf_phy_fold'
-   stop
-end subroutine itf_phy_fold
-
-subroutine itf_phy_fold_sfc
-   !TODO: remove
-   print *,'stub itf_phy_fold_sfc'
-   stop
-end subroutine itf_phy_fold_sfc
-
-subroutine itf_phy_unfold_sfc
-   !TODO: remove
-   print *,'stub itf_phy_unfold_sfc'
-   stop
-end subroutine itf_phy_unfold_sfc
-
-subroutine itf_phy_unfold
-   !TODO: remove
-   print *,'stub itf_phy_unfold'
-   stop
-end subroutine itf_phy_unfold
-
-
 !**s/r itf_phy_unfold_td
 !
       subroutine itf_phy_unfold_td ( F_obusval, F_bus, F_indn, F_j, Ni, Nj )

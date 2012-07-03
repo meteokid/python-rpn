@@ -1,5 +1,0 @@
-      subroutine itf_phy_rdozone
-         print *,'Called stub itf_phy_rdozone'
-         !TODO: remove/delete files
-         stop
-      end

@@ -1,5 +1,0 @@
-Integer function itf_phy_inincr()
-   print *,'called stub itf_phy_inincr'
-   !TODO: remove file
-   stop
-end function itf_phy_inincr

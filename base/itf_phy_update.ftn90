@@ -13,11 +13,6 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine itf_phy_update
-   print *,'stub itf_phy_update'
-   stop
-end subroutine itf_phy_update
-
 !/**
 function itf_phy_update2(F_apply_L) result(F_istat)
    implicit none

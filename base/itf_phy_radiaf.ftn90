@@ -1,5 +1,0 @@
-      subroutine itf_phy_radiaf
-         print *,'Called stub itf_phy_radiaf'
-         !TODO: remove/delete files
-         stop
-      end
