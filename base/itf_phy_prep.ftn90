@@ -14,12 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r itf_phy_prep -
-!
-#include "model_macros_f.h"
-!
       subroutine itf_phy_prep
+      use bus_fold_mod
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne - June 2009
@@ -27,57 +24,45 @@
 !revision
 ! v4_06 - Desgagne, M.     - First revision
 !
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "itf_phy_buses.cdk"
+#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+#include <gmm.hf>
+#include <msg.h>
 #include "itf_cpl.cdk"
-#include "schm.cdk"
-!
-      integer i,j,k0,istat
+      integer,parameter :: NCOPY = 2
+      character(len=*),parameter :: FOLD_BUS_S = 'Dd' !Dynamic field into dyn bus
+      character(len=*),parameter :: COPY_LIST_S(2,NCOPY) = reshape((/ &
+           'PW_UU:P   ','PW_UU_COPY', &
+           'PW_VV:P   ','PW_VV_COPY' &
+           /),(/2,NCOPY/))
+      integer i,istat
       real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
-      real, pointer, dimension (:,:  ) :: BUSDYN_3d   => null()
-      type(gmm_metadata) :: mymeta
+      real, pointer, dimension (:,:  ) :: tr2d  => null()
 !     ________________________________________________________________
 !
-      istat = gmm_get ('BUSDYN_3d',BUSDYN_3d,mymeta)
-
-      do i=1,p_bdyn_top
-         nullify (tr)
-         istat = gmm_get(dynnm(i),tr,mymeta)
-         if (istat.eq.0) then
-            if (phy_idxdyn(i,3).eq.1) then 
-               k0 = 1
-               if (phy_idxdyn(i,2).eq.p_ni) k0 = p_nk
-               do j= 1,p_nj
-                  call itf_phy_fold (BUSDYN_3d(phy_idxdyn(i,1),j), &
-                                tr(l_minx,l_miny,1+Schm_notop),j , &
-                                k0,p_nk,l_minx,l_maxx,l_miny,l_maxy)
-               enddo
-               if (trim(dynnm(i)) .eq. 'PW_UU:P') then
-                  istat  = gmm_get('PW_UU_COPY',trcopy,mymeta)
-                  trcopy = tr
-               endif
-               if (trim(dynnm(i)) .eq. 'PW_VV:P') then
-                  istat  = gmm_get('PW_VV_COPY',trcopy,mymeta)
-                  trcopy = tr
-               endif
-            endif
+      do i=1,NCOPY
+         nullify(tr,trcopy)
+         istat = gmm_get(COPY_LIST_S(1,i),tr)
+         istat  = min(gmm_get(COPY_LIST_S(2,i),trcopy),istat)
+         if (RMN_IS_OK(istat)) then
+            trcopy = tr
+         else
+            call msg(MSG_ERROR,'(itf_phy_prep) Probleme making copy of '//trim(COPY_LIST_S(1,i)))
+            !TODO: abort?
          endif
       enddo
 
       if (C_coupling_L) then
-         do j= 1,p_nj
-            call itf_phy_fold ( BUSDYN_3d(cpl_mcp,j), atm_local_busin(1,1,1), &
-                                j, 1,1, 1,l_ni,1,l_nj )
-            call itf_phy_fold ( BUSDYN_3d(cpl_i7,j) , atm_local_busin(1,1,2), &
-                                j, 1,1, 1,l_ni,1,l_nj )
-            call itf_phy_fold ( BUSDYN_3d(cpl_tm,j) , atm_local_busin(1,1,3), &
-                                j, 1,1, 1,l_ni,1,l_nj )
-            call itf_phy_fold ( BUSDYN_3d(cpl_gl,j) , atm_local_busin(1,1,4), &
-                                j, 1,1, 1,l_ni,1,l_nj )
-            call itf_phy_fold ( BUSDYN_3d(cpl_i8,j) , atm_local_busin(1,1,5), &
-                                j, 1,1, 1,l_ni,1,l_nj )
-         enddo
+         tr2d => atm_local_busin(:,:,1)
+         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_mcp)
+         tr2d => atm_local_busin(:,:,2)
+         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i7)
+         tr2d => atm_local_busin(:,:,3)
+         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_tm)
+         tr2d => atm_local_busin(:,:,4)
+         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_gl)
+         tr2d => atm_local_busin(:,:,5)
+         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i8)
       endif
 !     ________________________________________________________________
 !

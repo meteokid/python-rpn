@@ -9,6 +9,7 @@
       integer rap_dt,n_fldou,n_fldin,maxnvar,W_chan,R_chan
       integer cpl_debut,cpl_fin,cpl_freq
       integer cpl_i0,cpl_in,cpl_j0,cpl_jn,cpl_ni,cpl_nj
+      integer cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8,cpl_flusolis,cpl_fdsi,cpl_rt
       parameter (maxnvar=1000)
       character*8 nv_writ(maxnvar), nv_read(maxnvar)
 
@@ -16,8 +17,9 @@
       common/cplg_i/ rap_dt,n_fldou,n_fldin
       common/cplg_i/ cpl_debut,cpl_fin,cpl_freq
       common/cplg_i/ cpl_i0,cpl_in,cpl_j0,cpl_jn,cpl_ni,cpl_nj
+      common/cplg_i/ cpl_mcp,cpl_i7,cpl_tm,cpl_gl,cpl_i8,cpl_flusolis,cpl_fdsi,cpl_rt
       common/cplg_i/ W_chan,R_chan,cpl_exchg_L
- 
+
       real, dimension (:,:,:  ), pointer :: atm_local_busin,atm_local_busou,atm_busin
       real, dimension (:,:,:,:), pointer :: atm_busou
       common/atmd_r/ atm_busin,atm_busou,atm_local_busin,atm_local_busou

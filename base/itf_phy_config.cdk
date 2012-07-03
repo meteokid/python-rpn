@@ -1,19 +1,14 @@
-      character*16  P_pbl_schsl_S,P_pbl_schurb_S,P_cond_stcon_s,P_dumpbus_S
+      character*16  P_dumpbus_S
 !
-      logical P_cond_satu_L , P_pbl_snoalb_L, P_pbl_iceme_L
-      logical P_pbl_icelac_L, P_anal_cond_L , P_pbl_ocean_L
-      logical P_radslope_L
+      logical P_cond_satu_L
 !
       integer P_out_moyhr, P_dumpbus, P_runlgt
 
       real P_lmvd_weigh_high_lat, P_lmvd_weigh_low_lat
       real P_lmvd_high_lat      , P_lmvd_low_lat
 !
-      common /phy_s/ P_pbl_schsl_S,P_pbl_schurb_S
-      common /phy_s/ P_cond_stcon_s,P_dumpbus_S
-      common /phy_l/ P_cond_satu_L,  P_pbl_snoalb_L, P_pbl_iceme_L
-      common /phy_l/ P_pbl_icelac_L, P_anal_cond_L , P_pbl_ocean_L
-      common /phy_l/ P_radslope_L
+      common /phy_s/ P_dumpbus_S
+      common /phy_l/ P_cond_satu_L
       common /phy_i/ P_out_moyhr, P_dumpbus, P_runlgt
       common /phy_r/ P_lmvd_weigh_high_lat, P_lmvd_weigh_low_lat
       common /phy_r/ P_lmvd_high_lat      , P_lmvd_low_lat

@@ -20,7 +20,6 @@
       subroutine digflt
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     Alain Patoine - march 94
@@ -43,7 +42,8 @@
 !	none
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
@@ -53,11 +53,11 @@
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
-#include "itf_phy_buses.cdk"
 !
       integer i, j, k, n, err,istat
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra
+      real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
       type(gmm_metadata) :: meta_busper,mymeta
 !
 !     __________________________________________________________________
@@ -158,6 +158,7 @@
 !**********************************************************************
 
       if ( Lctl_step .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
+         nullify(BUSPER_3d,BUSPER_3d_digf)
          istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
          istat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&
                                 GMM_FLAG_RSTR+GMM_FLAG_INAN)

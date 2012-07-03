@@ -60,7 +60,6 @@
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "clim.cdk"
-      include 'phy_interface.inc'
 !
       logical wr_L
       integer i, j, k, pnidate(14), pnigrot(4), err

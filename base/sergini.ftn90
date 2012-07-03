@@ -20,7 +20,6 @@
       subroutine sergini
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author 
 !     Andre Methot - cmc - june 1994 v0_14
@@ -59,7 +58,8 @@
 !     re-initialised.
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "p_serg.cdk"
@@ -76,6 +76,7 @@
       integer dlat,dlon,z0,mg,lhtg,alvis,snodp,twater,tsoil,glsea,wsoil
       real prcon,w1(p_ni),w2(p_ni),w3(p_ni)
       type(gmm_metadata) :: meta_busper
+      real,pointer :: BUSPER_3d(:,:)
 !*
 !     ---------------------------------------------------------------
 !

@@ -220,6 +220,7 @@
       Out3_cubww_L   = .true.
       Out3_debug_L   = .false.
       Out3_flipit_L  = .false.
+      Out3_newout_L = .false.
 !
 !     Williamson's cases section
 !     --------------------------

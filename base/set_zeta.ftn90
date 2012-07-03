@@ -20,7 +20,8 @@
 !
       subroutine set_zeta2( F_hybuser, Nk )
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels,VGD_OK
-!     
+      use vgrid_wb, only: vgrid_wb_put
+   !     
       implicit none
 #include <arch_specific.hf>
 !
@@ -254,6 +255,11 @@
       Ver_ip1%t(1:G_nk+1) = ip1t(1:G_nk+1)
       Ver_ip1%t(G_nk+2)   = Ver_ip1%m(G_nk+1)
 !
+!     ----------------------------------------------------------
+!     Save vcoord and ip1m/t for output
+!     ----------------------------------------------------------
+      err = vgrid_wb_put('ref-m',vcoord,ip1m)
+      err = vgrid_wb_put('ref-t',vcoord,ip1t)
 !     __________________________________________________________________
 !
       return

@@ -19,7 +19,6 @@
 !
       subroutine ta2t1tx
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     Alain Patoine - april 94
@@ -42,7 +41,8 @@
 !	none
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -50,11 +50,11 @@
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "tr3d.cdk"
-#include "itf_phy_buses.cdk"
 #include "p_geof.cdk"
 !
       integer i,j,k,n,istat
       real, pointer, dimension(:,:,:) :: tr,tra
+      real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
       type(gmm_metadata) :: mymeta
 !*
 !     ---------------------------------------------------------------
@@ -146,6 +146,7 @@
 !******************************************************************
 !
       if ( Schm_phyms_L ) then
+         nullify(BUSPER_3d,BUSPER_3d_digf)
          istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,mymeta)
          istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,mymeta)
          BUSPER_3d = BUSPER_3d_digf

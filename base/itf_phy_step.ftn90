@@ -18,10 +18,6 @@
 #include "model_macros_f.h"
 
       subroutine itf_phy_step (F_stepno)
-
-      use itf_phy_iface  , only : itf_phy_geti, itf_phy_inincr
-      use phy_input_iface, only : phy_acquire_data !TODO: rm w/ itf_phy_geti
-
       implicit none
 #include <arch_specific.hf>
 !
@@ -45,7 +41,6 @@
 ! v3_30 - Tanguay M.        - adapt TL/AD to pvptr
 ! v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
 ! v4_03 - Spacek L.         - Staggered version
-! v4    - Chamberland-Spacek - Staggered version
 ! v4_04 - Plante A.         - Remove offline mode
 ! v4_05 - Desgagne M.       - Update AIX binding rules
 ! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
@@ -63,119 +58,104 @@
 #include <msg.h>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "lun.cdk"
 #include "ptopo.cdk"
-#include "itf_phy_buses.cdk"
-#include "itf_phy_config.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
 #include "rstr.cdk"
-#include "clim.cdk"
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
+      include "phy_itf.inc"
+
+      integer,external :: itf_phy_prefold_opr,itf_phy_update2
 
       integer,parameter :: MAX_COMMBLOC_SWAP = 10
 
-      integer,external :: phy_dataload5
-      external :: itf_phy_geom, itf_phy_xhfold_3d2
+      character(len=512),save :: geofilename_S = ' '
+      logical,save :: init_L = .false.
+      integer,save :: l_phy_gid = -1, g_phy_gid = -1
+      integer,save :: dateo = -1
+      integer,save :: phydim_nj=0, phydim_nk=0
+      integer,save :: reduc_core(4), reduc_free(4)
+      real,pointer,save :: BUSENT3d(:,:) => null()
+      real,pointer,save :: BUSPER3d(:,:) => null()
+      real,pointer,save :: BUSVOL3d(:,:) => null()
 
-      integer, save :: l_phy_gid = -1
-      integer, save :: dateo = -1
-      integer, save :: pslic
-
-      integer PG_ni,PG_nj
-      integer j, obussiz, err, gmmstat,g_phy_gid
-      character*512 fn,geofilename_S
-      real, dimension(:,:), allocatable :: obusval
-!
-      real, pointer, dimension (:,:) :: BUSENT_3d  => null()
-      real, pointer, dimension (:,:) :: BUSDYN_3d  => null()
-      real, pointer, dimension (:,:) :: BUSVOL_3d  => null()
-      type(gmm_metadata) :: meta
+      integer :: j, obussiz, err
+      character(len=512) :: msg_S
       real :: gxfi(G_ni+1), gyfi(G_nj)
-!
+      real, dimension(:,:), allocatable :: obusval
 !     ---------------------------------------------------------------
-!
-      call iniobus(obussiz)
-      allocate (obusval(l_ni*l_nj,obussiz))
-      obusval = 999999.
-!
-      err = gmm_get('BUSENT_3d',BUSENT_3d,meta)
-      if (F_stepno.eq.0) BUSENT_3d = 0.
+      if (.not.init_L) then
+         call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
+         call datp2f(dateo,Mod_runstrt_S)
+         geofilename_S = 'GEOPHY/Gem_geophy.fst'
+         if (Grd_yinyang_L) &
+              geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+         init_L = .true.
+         call phy_opti('NJ',phydim_nj,1,'GET',.false.,err)
+         call phy_opti('NK',phydim_nk,1,'GET',.false.,err)
+         err = gmm_get ('BUSPER_3d',BUSPER3d)
+         err = min(gmm_get ('BUSENT_3d',BUSENT3d),err)
+         err = min(gmm_get ('BUSVOL_3d',BUSVOL3d),err)
+         call handle_error(err,'itf_phy_step','Probleme getting buses') 
+         reduc_core = (/ &
+              Grd_left+ 1 + Lam_pil_w, &
+              Grd_left + Grd_nila  - Lam_pil_e, &
+              Grd_belo + 1         + Lam_pil_s, &
+              Grd_belo + Grd_njla  - Lam_pil_n /)
+!!$         reduc_free = (/ &
+!!$              Grd_left + 1         + Lam_pil_w + Lam_blend_Hx, &
+!!$              Grd_left + Grd_nila  - Lam_pil_e - Lam_blend_Hx, &
+!!$              Grd_belo + 1         + Lam_pil_s + Lam_blend_Hy, &
+!!$              Grd_belo + Grd_njla  - Lam_pil_n - Lam_blend_Hy /)
+      endif
 
-      call itf_phy_prep ()
-!
+      call itf_phy_geom2(err)
+!!$      call handle_error(err,'itf_phy_step','Problemes in itf_phy_geom') 
+      call itf_phy_prep()
+
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new communicator every call - we hit a limit after about 500 on AIX
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
-
-      if (l_phy_gid < 0) call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
-      if (dateo < 0) call datp2f(dateo,Mod_runstrt_S)
-      geofilename_S = 'GEOPHY/Gem_geophy.fst'
-      if (Grd_yinyang_L) &
-           geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
-      !TODO: remove this next conditional when FCREST is removed
-      if (P_pbl_schsl_s /= 'FCREST') then
-         err = phy_dataload5(itf_phy_geom,itf_phy_xhfold_3d2,dateo, &
-                             nint(cstv_dt_8),F_stepno,l_phy_gid, &
-                             Path_phyincfg_S,Path_phy_S,geofilename_S)
-      else 
-         err = 0
-         if (F_stepno == 0) then
-            call phy_acquire_data ( itf_phy_geti,p_ni,p_nj,p_nk, p_bper_siz,&
-                                    F_stepno, Rstri_sdon,Lun_out>0,err )
-         endif
-      endif
+      err = phy_input(itf_phy_prefold_opr,dateo, &
+           nint(cstv_dt_8),F_stepno,l_phy_gid, &
+           Path_phyincfg_S,Path_phy_S,geofilename_S)
       call handle_error(err,'itf_phy_step','Problem getting input data') 
-
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
 
-      if (Lun_out.gt.0) write(Lun_out,1000) F_stepno
-
-      if (G_lam) then
-         PG_ni  = G_ni - 4
-         PG_nj  = G_nj - 4
-      else
-         PG_ni  = G_ni
-         PG_nj  = G_nj
-      endif
-
+      write(msg_S,'(a,i6,a)') &
+           'PERFORM A PHYSICS STEP: stepno= ',F_stepno,' (S/R itf_phy_step)'//&
+           '\n========================================================='
+      call msg(MSG_INFO,msg_S)
+ 
       call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
                                    (F_stepno    .eq.0)  )
-
       call phy_step (F_stepno)
-
       call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
                                    (F_stepno    .eq.0) )
 
-      gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
-      gmmstat = gmm_get ('BUSDYN_3d',BUSDYN_3d,meta)
-      gmmstat = gmm_get ('BUSVOL_3d',BUSVOL_3d,meta)
-
-      do j = 1, p_nj
-         call itf_phy_update ( BUSDYN_3d(1,j), j, p_nk, F_stepno.gt.0 )
-      end do
-
-!$omp parallel do
-      do j = 1, p_nj
-         call itf_phy_extract ( BUSENT_3d(1,j), BUSPER_3d(1,j), BUSVOL_3d(1,j), &
-                                                   obusval, F_stepno, j, p_nk )
-      end do
-!$omp end parallel do
-!
-!
-      call out_phy (obusval,l_ni,l_nj,F_stepno)
-!
-      deallocate (obusval)
-!
+      err = itf_phy_update2(F_stepno > 0)
+      call handle_error(err,'itf_phy_step','Problemes in itf_phy_update') 
       call itf_phy_apply ( F_stepno.gt.0 )
-!
- 1000 format(/'PERFORM A PHYSICS STEP: stepno= ',i6, &
-              ' (S/R itf_phy_step)'/57('='))
-!
+
+      if (out3_newout_L) then
+         err = phy_output(dateo,nint(cstv_dt_8),F_stepno,l_phy_gid,g_phy_gid,reduc_core,trim(Path_outcfg_S),Path_output_S)
+
+      else
+         call iniobus(obussiz)
+         allocate (obusval(l_ni*l_nj,obussiz))
+         obusval = 999999.
+!$omp parallel do
+         do j = 1, phydim_nj
+            call itf_phy_extract(BUSENT3d(1,j), BUSPER3d(1,j), BUSVOL3d(1,j), &
+                 obusval, F_stepno, j, phydim_nk )
+         end do
+!$omp end parallel do
+         call out_phy (obusval,l_ni,l_nj,F_stepno)
+         deallocate (obusval)
+      endif
 !     ---------------------------------------------------------------
-!
       return
-      end
+      end subroutine itf_phy_step

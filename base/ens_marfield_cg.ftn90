@@ -60,6 +60,7 @@
        integer, external :: fnom,fstouv,fstfrm,fclos
        integer, external :: ezgdef_fmem,ezqkdef,ezsint,ezdefset,ezsetopt
 
+      real, pointer, dimension(:,:) :: BUSPER_3d
 !
 ! nlat, nlon                 dimension of the Gaussian grid
 ! mzt                        Nombre d'onde vertical
@@ -318,6 +319,9 @@
 !    Check the limits, stretch, and add mean if stretching asked
 !    for the physics perturbation
 !
+
+      !TODO: should not work on perbus directly, replace by bus_unfold + opr + bus_fold?
+
       gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
       if(aa/=0.and.aa/=1)then
          where (abs(fgau) > 1.)

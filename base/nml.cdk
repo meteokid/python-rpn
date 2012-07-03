@@ -113,6 +113,7 @@
       namelist /gem_cfgs/ Out3_lieb_maxite
       namelist /gem_cfgs/ Out3_lieb_conv
       namelist /gem_cfgs/ Out3_postfreq
+      namelist /gem_cfgs/ Out3_newout_L
 
 !P
       namelist /gem_cfgs/ P_runlgt
@@ -243,6 +244,8 @@
       namelist /gem_cfgs_p/ Out3_lieb_maxite
       namelist /gem_cfgs_p/ Out3_lieb_conv
       namelist /gem_cfgs_p/ Out3_postfreq
+      namelist /gem_cfgs_p/ Out3_newout_L
+
 !P
       namelist /gem_cfgs_p/ P_runlgt
       namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat

@@ -22,7 +22,6 @@
 !implicits
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author 
 !     Desgagne/Lee
@@ -38,24 +37,37 @@
 !       None
 !
 !implicits
+#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+#include <clib_interface.cdk>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "dimout.cdk"
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "dcst.cdk"
-#include "itf_phy_buses.cdk"
 #include "obus.cdk"
 #include "outp.cdk"
 !
 !modules
-      integer  doout
-      external doout
-!*
+      integer,external :: doout,phy_getindx3
+
+      integer,parameter :: MAXBUS = 1000
+      integer,parameter :: BUSPAR_I0=1
+      integer,parameter :: BUSPAR_NIK=2
+      integer,parameter :: BUSPAR_INIT=3
+      integer,parameter :: BUSPAR_STAG=4
+      integer,parameter :: BUSPAR_ESP=5
+      integer,parameter :: BUSPAR_FMUL=6
+      integer,parameter :: BUSPAR_NK=7
+      integer,parameter :: BUSPAR_MOSAIC=8
+      integer,parameter :: BUSPAR_MAXPAR=8
+
       integer dostep(MAXSET),dostep_max,siz
       integer i,j,k,m,cnt,bigk,idx
-      character*4 udolist_S(maxbus)
-      integer udolist_max
+      character(len=4) :: udolist_S(MAXBUS)
+      character(len=32) :: varname_S,outname_S,inname_S,bus_S
+      integer :: istat,index,param(BUSPAR_MAXPAR)
 !
 !------------------------------------------------------------------
 !
@@ -85,9 +97,6 @@
             endif
          enddo
       enddo
-!     do k=1,cnt
-!        print *,'iniobus:udolist_S',k,udolist_S(k)
-!     enddo
 
 !   Determine the number of variables to be outputted from each bus 
 !   bigk counts the number of ni rows in the output bus.
@@ -95,78 +104,31 @@
       k=0
       bigk = 1
 
-      if (Lctl_step.eq.0) then
-         do i = 1, P_bent_out
-            idx=p_bent_idx(i)
-            do j=1,cnt
-               if (udolist_S(j).eq.enton(idx)(1:4)) then
-                  k=k+1
-                  obus_var_S(k)=enton(idx)(1:4)
-                  obus_bus_S(k)='E'
-                  obus_offset(k)=bigk
-                  obus_idx(k)=idx
-                  obus_addr(k)=entpar(idx,1)
-                  obus_stag(k)=entpar(idx,4)
-                  obus_mult(k)=entpar(idx,6)
-                  obus_shp(k)=entpar(idx,7)
-                  obus_mosaic(k)=entpar(idx,8)
-                  obus_mul(k)=1.0
-                  obus_add(k)=0.0
-! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
-                  bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
-               endif
-            enddo
-         enddo
-      endif
-
-      do i = 1, P_bper_out
-         idx=p_bper_idx(i)
-         do j=1,cnt
-            if (udolist_S(j).eq.peron(idx)(1:4)) then
-                k=k+1
-                obus_var_S(k)=peron(idx)(1:4)
-                obus_bus_S(k)='P'
-                obus_offset(k)=bigk
-                obus_idx(k)=idx
-                obus_addr(k)=perpar(idx,1)
-                obus_stag(k)=perpar(idx,4)
-                obus_mult(k)=perpar(idx,6)
-                obus_shp(k)=perpar(idx,7)
-                obus_mosaic(k)=perpar(idx,8)
-                obus_mul(k)=1.0
-                obus_add(k)=0.0
-! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
-                if (peron(idx)(1:4).eq.'LA') obus_mul(k)=180./Dcst_pi_8
-                if (peron(idx)(1:4).eq.'SD') obus_mul(k)=100.
-!               Should use flag from Dynamics to determine obus_add(long)
-                if (peron(idx)(1:4).eq.'LO') then
-                    obus_mul(k)=180./Dcst_pi_8
-                endif
-                bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
-            endif
-         enddo
-      enddo
-
-      do i = 1, P_bvol_out
-         idx=p_bvol_idx(i)
-         do j=1,cnt
-            if (udolist_S(j).eq.volon(idx)(1:4)) then
-                k=k+1
-                obus_var_S(k)=volon(idx)(1:4)
-                obus_bus_S(k)='V'
-                obus_offset(k)=bigk
-                obus_idx(k)=idx
-                obus_addr(k)=volpar(idx,1)
-                obus_stag(k)=volpar(idx,4)
-                obus_mult(k)=volpar(idx,6)
-                obus_shp(k)=volpar(idx,7)
-                obus_mosaic(k)=volpar(idx,8)
-                obus_mul(k)=1.0
-                obus_add(k)=0.0
-! print *,'obus:',k,obus_var_S(k),obus_shp(k),obus_mult(k),obus_mosaic(k)
-                bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
-            endif
-         enddo
+      do j=1,cnt
+         varname_S = ' '
+         outname_S = udolist_S(j)
+         inname_S = ' '
+         bus_S = ' '
+         istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+         if (.not.RMN_IS_OK(istat)) cycle
+         istat = clib_toupper(bus_S)
+         if (Lctl_step.ne.0 .and. bus_S=='E') cycle
+         k=k+1
+         obus_var_S(k) = udolist_S(j)(1:4)
+         obus_bus_S(k) = bus_S(1:1)
+         obus_offset(k) = bigk
+         obus_idx(k) = index
+         obus_addr(k) = param(BUSPAR_I0)
+         obus_stag(k) = param(BUSPAR_STAG)
+         obus_mult(k) = param(BUSPAR_FMUL)
+         obus_shp(k) = param(BUSPAR_NK)
+         obus_mosaic(k) = param(BUSPAR_MOSAIC)
+         obus_mul(k) = 1.0
+         obus_add(k) = 0.0
+         if (udolist_S(j)(1:4).eq.'LA  ') obus_mul(k)=180./Dcst_pi_8
+         if (udolist_S(j)(1:4).eq.'LO  ') obus_mul(k)=180./Dcst_pi_8
+         if (udolist_S(j)(1:4).eq.'SD  ') obus_mul(k)=100.
+         bigk = bigk + obus_shp(k)*obus_mult(k)*(obus_mosaic(k)+1)
       enddo
 
       Obus_top=k

@@ -56,7 +56,7 @@
       save first
 !     ________________________________________________________________
 !
-      call phycom ('COUPLING',.false.,1,'set')
+      call phy_com ('COUPLING',.false.,1,'set')
 
       if (.not.C_coupling_L) return
 
@@ -185,7 +185,7 @@
 ! and to force (one-way coupled) the ROM model
 
 !      IF (Lctl_step.eq.0) then
-         call phycom ('COUPLING',.true.,1,'set')
+         call phy_com ('COUPLING',.true.,1,'set')
 !      endif
 
        deallocate (glbbus)

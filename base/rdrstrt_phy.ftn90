@@ -20,7 +20,6 @@
       subroutine rdrstrt_phy ()
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     M. Desgagne - Mars 2008
@@ -30,7 +29,9 @@
 ! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <clib_interface.cdk>
+#include <gmm.hf>
 #include "lun.cdk"
 #include "lctl.cdk"
 #include "itf_phy_buses.cdk"
@@ -45,7 +46,6 @@
 #include "ptopo.cdk"
 #include "clim.cdk"
 #include "cfld.cdk"
-#include <clib_interface.cdk>
 !
 !modules
       integer  fnom,fclos
@@ -55,6 +55,7 @@
       character*16 datev,datev_infile,startindx
       logical spin_L
       integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),gmmstat
+      real, pointer, dimension (:,:) :: BUSPER_3d  => null()
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)

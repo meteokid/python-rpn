@@ -47,15 +47,11 @@
 #include "rstr.cdk"
 #include "init.cdk"
 #include "itf_phy_buses.cdk"
-       include "v4dg.inc"
-!
-      logical boot_L
+
+      integer,external :: doout
+      logical,save :: boot_L = .true.
       integer ier,dostep(MAXSET),dostep_max
-      integer   doout
-      external  doout
       real prip2
-      save boot_L
-      data boot_L /.true./
 !
 !     ---------------------------------------------------------------
 !
@@ -66,7 +62,7 @@
          if (.not. itf_phy_busper_init_L) then
             Lctl_step = 0
             call itf_phy_step (0)
-            if (V4dg_conf.eq.0) call out_qc0()
+            call out_qc0()
             if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
                call wlog('IOUT')
             else

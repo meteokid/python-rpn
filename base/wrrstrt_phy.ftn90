@@ -19,7 +19,6 @@
 !
       subroutine wrrstrt_phy (F_spin_L)
       implicit none
-#include <arch_specific.hf>
 !
       logical F_spin_L
 !author
@@ -30,10 +29,10 @@
 ! v4_14 - Dugas B.          - account for increment forcing data
 !
 !implicits
-#include "gmm.hf"
+#include <arch_specific.hf>
+#include <gmm.hf>
 #include "lun.cdk"
 #include "lctl.cdk"
-#include "itf_phy_buses.cdk"
 #include "grd.cdk"
 #include "cstv.cdk"
 #include "init.cdk"
@@ -43,8 +42,7 @@
 #include "clim.cdk"
 #include "cfld.cdk"
 !
-      integer  fnom,fclos
-      external fnom,fclos
+      integer,external :: fnom,fclos
 !
       character*512  fn
       character*16   datev
@@ -53,6 +51,7 @@
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
       type(gmm_metadata) :: meta_busper
+      real, pointer, dimension(:,:) :: BUSPER_3d
 !
 !     ---------------------------------------------------------------
 !

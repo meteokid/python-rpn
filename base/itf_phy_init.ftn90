@@ -20,7 +20,6 @@
       subroutine itf_phy_init
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne    -   Summer 2006
@@ -42,6 +41,8 @@
 !	none
 !
 !implicits
+#include <arch_specific.hf>
+#include <msg.h>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
@@ -49,29 +50,25 @@
 #include "out3.cdk"
 #include "xst.cdk"
 #include "cstv.cdk"
-#include "clim.cdk"
 #include "p_serg.cdk"
-       include "v4dg.inc"
-!
 #include "itf_cpl.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
-#include "itf_phy.cdk"
 #include "ver.cdk"
 #include "path.cdk"
-!
-      integer, parameter :: COMPATIBILITY_LVL = 1
-!
-      logical  set_dcst
-      integer  fnom, phy_debu2
-      external set_dcst,itf_phy_rdfile,fnom,phy_debu2
-!
+      include "phy_itf.inc"
+
+      integer, parameter :: COMPATIBILITY_LVL = 2
+      integer, parameter :: DIM_ERR = 14
+
+      logical,external :: set_dcst
+      integer,external :: fnom
+      external :: itf_phy_rdfile
+
       character*3 bus
-      logical prout
-      integer DIM_ERR,nrec,n_phytend, phycompa, n, lght, soit
-      parameter (DIM_ERR = 14) 
-      integer err(DIM_ERR),idate(14),bidon,i
-      real dt_4
+      logical prout,cond_satu_L
+      integer nrec, phycompa, n, lght, soit
+      integer err(DIM_ERR),i,offi2,offj2
       real, dimension(:), pointer :: std_p_prof
 !
 !     ---------------------------------------------------------------
@@ -79,53 +76,97 @@
 !   General rules:
 !    1) .ftn.cdk with prefix itf_phy_ in their name belong to GEMDM 
 !    2) Those with prefix phy_ belong to the physics package
-!    3) The init part of the package consists of 4 entry points:
-!            phy_nml, phy_opt, phy_debu and phy_getbus
-!
-      p_nj       = 0
-      p_bper_siz = 0
-      prout  = Lun_out.gt.0
-!
+
       if (Lun_out.gt.0) write(Lun_out,1000)
-!
-      call newdate (Out3_date,idate,bidon,-4)
-      dt_4 = Cstv_dt_8
-!
+
+      p_nj       = 0
+      prout  = Lun_out.gt.0
+
+      Schm_phyms_L=.false.
+      if ( Schm_theoc_L) then
+         if (Lun_out.gt.0) write(Lun_out,9500)
+         return
+      endif
+
+      phycompa = -1
       call phy_opti('COMPATIBILITY',phycompa , 1, 'GET',prout,err(1))
       if ( phycompa .ne. COMPATIBILITY_LVL ) then
          if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL,phycompa
-         call handle_error(-1,'itf_phy_init','Wrong physics compatibility level')
+         phycompa = -1
       else
          if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
       endif
-!
+      call handle_error(phycompa,'itf_phy_init','Wrong physics compatibility level')
+
+!#>>>> To phy_init... once out_phy is diconnected and seri/song are transfered
       err=0
-! Start physics initialization with mandatory parameters
-      call phy_opti ('DATE'    , idate     ,    14,'SET',prout,err(1))
-      call phy_optr ('DELT'    , dt_4      ,     1,'SET',prout,err(2))
-      call phy_optl ('VSTAG'   , .true.    ,     1,'SET',prout,err(3))
-      call phy_opti ('TLIFT'   , Schm_Tlift,     1,'SET',prout,err(4))
 
-! Continue physics initialization with optional parameters
-      call phy_optl('CLIMAT'   , Clim_climat_L  ,1,'SET',prout,err(5))
-      call phy_optl('COUPLING' , C_coupling_L   ,1,'SET',prout,err(6))
-      call phy_opti('LIN_V4D'  , V4dg_conf      ,1,'SET',prout,err(7))
-      call phy_optl('ININCR'   , Clim_inincr_L  ,1,'SET',prout,err(8))
-      call phy_optl('NOTOP'    , Schm_NotopThL_L,1,'SET',prout,err(9))
-!
-! Initialize physics configuration with default values and read 
-! user configuration in namelist from file 'model_settings'
-!
-      err(10) = phy_nml (trim(Path_nml_S),set_dcst,Schm_phyms_L,Lun_out)
-!
-      err(1) = min(err(1),err(2),err(3),err(4),err(5),err(6),err(7),err(8),err(9),err(10))
+      ! Initialize physics configuration with default values and read 
+      ! user configuration in namelist from file 'model_settings'
+      err(1) = phy_nml (trim(Path_nml_S),set_dcst,Schm_phyms_L,Lun_out)
+      call handle_error(err(1),'itf_phy_init','phy_nml')
+      if (.not.Schm_phyms_L) return
 
-      call handle_error(err,'itf_phy_init','itf_phy_init')
-!
-      if ( Schm_theoc_L .and. Schm_phyms_L ) then
-         if (Lun_out.gt.0) write(Lun_out,9500)
-         Schm_phyms_L=.false.
+      call phy_optl('VSTAG'   , .true.    ,     1,'SET',prout,err(4))
+      call phy_opti('TLIFT'   , Schm_Tlift,     1,'SET',prout,err(5))
+      call phy_optl('COUPLING', C_coupling_L   ,1,'SET',prout,err(6))
+      call phy_optl('NOTOP'   , Schm_NotopThL_L,1,'SET',prout,err(7))
+      call handle_error(minval(err(4:7)),'itf_phy_init','phy_opt set')
+
+      ! The current physics interface operate on an arbitrary number of
+      ! columns p_ni containing p_nk levels. Here p_ni is defined as a
+      ! whole row of points 'j' and there will be p_nj rows to compute.
+      !
+      ! Because of horizontal de-staggering of the wind components
+      ! we will lose 2 points around the global domain of a LAM config.
+      ! In LAM config, data will therefore be available to the physics
+      ! with the global scope (3,G_ni-2) (3,G_nj-2)
+
+      p_offi = 0 ; offi2 = 0
+      p_offj = 0 ; offj2 = 0
+      if (G_lam) then
+         p_offi = 2*west  ; offi2 = 2*east
+         p_offj = 2*south ; offj2 = 2*north
       endif
+      p_nk   = G_nk + 2 - Schm_notop
+
+      ! Complete physics initialization (bus descriptions become available after phy_debu)
+      err(1) = phy_init(Out3_date,real(Cstv_dt_8),1+p_offi,l_ni-offi2,1+p_offj,l_nj-offj2,p_runlgt,p_nk,itf_phy_rdfile)
+      call handle_error(err(1),'itf_phy_init','phy_init')
+
+      call phy_opti('NI',p_ni,1,'GET',.false.,err(1))
+      call phy_opti('NJ',p_nj,1,'GET',.false.,err(2))
+      p_doni = l_ni - p_offi - offi2
+      p_donj = l_nj - p_offj - offj2
+
+      ! Pass standard pressure profil to physics.
+      allocate(std_p_prof(p_nk))
+      if(Schm_NotopThL_L)then
+         std_p_prof=Ver_std_p_prof%m
+      else
+         ! Note : we put Cstv_ptop_8 at level 1 since there is an additional UU
+         !        put at top for the physics. If this levels if ever removed, 
+         !        Cstv_ptop_8 at level 1 will also have to be removed from std_p_prof
+         std_p_prof(2:p_nk)=Ver_std_p_prof%m
+         std_p_prof(1)=Cstv_ptop_8
+      endif
+      call phy_com_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
+      deallocate(std_p_prof)
+
+!#<<<<
+
+      ! Consistency check for output saturation calculations
+      err = 0
+      call phy_optl('SATUCO'    ,cond_satu_L  , 1, 'GET',prout,err(1))
+      if (Out3_satues_L .and. .not.cond_satu_L) then
+          Out3_satues_L = .false.
+          if (Lun_out.gt.0) write(Lun_out,9600)
+      endif
+
+      ! Time series and zonal diag init
+      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(2))
+      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(3))
+      P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
       if (P_serg_srsus_L) then
          if (Lun_out.gt.0) then
             err = fnom (lun_tsrs, '../time_series.bin', &
@@ -138,149 +179,10 @@
       else
          Xst_nstat = 0
       endif
-!
-      if (.not.Schm_phyms_L) return
-!
-! The current physics interface operate on an arbitrary number of
-! columns p_ni containing p_nk levels. Here p_ni is defined as a
-! whole row of points 'j' and there will be p_nj rows to compute.
-!
-! Because of horizontal de-staggering of the wind components
-! we will lose 2 points around the global domain of a LAM config.
-! In LAM config, data will therefore be available to the physics
-! with the global scope (3,G_ni-2) (3,G_nj-2)
-!
-      p_doni = l_ni
-      p_donj = l_nj
-      p_nk   = G_nk + 2 - Schm_notop
-      p_offi = 0
-      p_offj = 0
-      if (G_lam) then
-         p_doni = p_doni - 2*west  - 2*east
-         p_donj = p_donj - 2*south - 2*north
-         p_offi = 2*west
-         p_offj = 2*south
-      endif
-    
-      if (p_runlgt .le. 0) p_runlgt = p_doni
-      p_runlgt = min(p_doni*p_donj,max(1,p_runlgt))
-      p_ni = p_runlgt
-      p_nj = p_doni*p_donj/p_ni
-      if (p_ni*p_nj.lt.p_doni*p_donj) p_nj = p_nj + 1
-!
-! Complete physics initialization (bus descriptions become available after phy_debu)
-!
-      err = phy_debu2 ( p_ni, p_nj, p_nk, p_bent_top ,p_bdyn_top, p_bper_top, &
-                        p_bvol_top, prout, itf_phy_rdfile )
-      call handle_error(err,'itf_phy_init','itf_phy_init (debu)')
-!
-! Fetch a few physics configuration parameters needed for dynamics
-!
-      err = 0
-      call phy_optl('ICEMELT'   ,P_pbl_iceme_L  , 1, 'GET',prout,err(1))
-      call phy_optl('CHAUF'     ,P_pbl_ocean_L  , 1, 'GET',prout,err(2))
-      call phy_optc('SCHMSOL'   ,P_pbl_schsl_S  , 1, 'GET',prout,err(3))
-      call phy_optl('SNOALB_ANL',P_pbl_snoalb_L , 1, 'GET',prout,err(4))
-      call phy_optc('STCOND'    ,P_cond_stcon_S , 1, 'GET',prout,err(5))
-      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(6))
-      call phy_optl('ICELAC'    ,P_pbl_icelac_L , 1, 'GET',prout,err(7))
-      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(8))
-!     Re-define P_out_moyhr in units of hours, rather than in timesteps
-      P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-!
-!     Pass standard pressure profil to physics.
-      allocate(std_p_prof(p_nk))
-      if(Schm_NotopThL_L)then
-         std_p_prof=Ver_std_p_prof%m
-      else
-         ! Note : we put Cstv_ptop_8 at level 1 since there is an additional UU
-         !        put at top for the physics. If this levels if ever removed, 
-         !        Cstv_ptop_8 at level 1 will also have to be removed from std_p_prof
-         std_p_prof(2:p_nk)=Ver_std_p_prof%m
-         std_p_prof(1)=Cstv_ptop_8
-      endif
-      call phycom_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
-      deallocate(std_p_prof)
-!
-!     Consistency check for output saturation calculations
-      if (Out3_satues_L .and. .not.P_cond_satu_L) then
-          Out3_satues_L = .false.
-          if (Lun_out.gt.0) write(Lun_out,9600)
-      endif
-!
-      do i=1,DIM_ERR
-         err(1) = err(1) + err(i)
-      end do
-      call handle_error(err,'itf_phy_init','itf_phy_init (get)')
-!
-!C      Initialize zonal, grid points and dynamic diagnostics
-!       -----------------------------------------------------
       call set_dia()
-! 
-! Obtain buses description from the physics package
-!
-      if ( (p_bent_top.le.maxbus).and.(p_bdyn_top.le.maxbus).and. &
-           (p_bper_top.le.maxbus).and.(p_bvol_top.le.maxbus)) then
-         call phy_getbus (entnm,enton,entdc,entpar,p_bent_siz,maxbus, &
-                                                           'E',prout)
-         call phy_getbus (dynnm,dynon,dyndc,dynpar,p_bdyn_siz,maxbus, &
-                                                           'D',prout)
-         call phy_getbus (pernm,peron,perdc,perpar,p_bper_siz,maxbus, &
-                                                           'P',prout)
-         call phy_getbus (volnm,volon,voldc,volpar,p_bvol_siz,maxbus, &
-                                                           'V',prout)
-      else
-         if (Lun_out.gt.0) write (Lun_out,9000)  &
-              max(p_bent_top,p_bdyn_top,p_bper_top,p_bvol_top)
-         call handle_error(-1,'itf_phy_init','itf_phy_init')
-      endif
-!
-      P_bphy_top  = p_bper_top+p_bdyn_top+p_bvol_top+p_bent_top
-!
-      if (Lun_out.gt.0) then
-         write(Lun_out,*) 'p_bper_top=',p_bper_top
-         write(Lun_out,*) 'p_bdyn_top=',p_bdyn_top
-         write(Lun_out,*) 'p_bvol_top=',p_bvol_top
-         write(Lun_out,*) 'p_bent_top=',p_bent_top
-      endif
-!
-      n_phytend=0
-      do i=1,p_bvol_top
-         if (volnm(i)(1:5) .eq. 'PHYTD') n_phytend = n_phytend +1
-      end do
-!
-! Pre-establish BUSDYN index (2bused in itf_phy_prep)
-!
-      bus = 'DYN'
-      phy_ndyn = 0
-      do n=1,p_bdyn_top
-         phy_ndyn=phy_ndyn+1
-         if (phy_ndyn.gt.maxntdy) then
-            call stop_mpi(-1,'itf_phy_init','NOT ENOUGH SPACE IN phy_idxdyn TO STORE BUSDYN INDEX')
-         endif
-         call getindx2 (dynnm(n),  bus, phy_idxdyn(phy_ndyn,1), phy_idxdyn(phy_ndyn,2),&
-                                                                phy_idxdyn(phy_ndyn,3) )
-         if (phy_idxdyn(phy_ndyn,1).le.0) then
-            call stop_mpi(-1,'itf_phy_init','INDEX NOT AVAILABLE for '//dynnm(n))
-         endif
-      end do
-!
-! Pre-establish BUSVOL index for physics tendencies (2bused in itf_phy_extract)
-!
-      bus = 'VOL'
-      phy_ntdy = 0
-      do n=1,p_bvol_top
-         if (volnm(n)(1:5) .eq. 'PHYTD') then
-            phy_ntdy=phy_ntdy+1
-            if (phy_ntdy.gt.maxntdy) then
-               call stop_mpi(-1,'itf_phy_init','NOT ENOUGH SPACE IN phy_idxtdy TO STORE PHYSICS TENDENCIES INDEX')
-            endif
-            call getindx2 (volnm(n),  bus, phy_idxtdy(phy_ntdy), lght, soit)
-            if (phy_idxtdy(phy_ntdy).le.0) then
-               call stop_mpi(-1,'itf_phy_init','INDEX NOT AVAILABLE for '//volnm(n))
-            endif
-         endif
-      end do
+
+      call handle_error(minval(err),'itf_phy_init','phy_opt get')
+
 !
 ! Pre-establish BUS index for coupling
 !
@@ -300,8 +202,6 @@
 !
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
-             /,'====================================================')
- 1001 format(/,'NO PHYSICS PACKAGE INITIALIZATION (S/R itf_phy_init)', &
              /,'====================================================')
  1002 format(/,'PHYSICS COMPATIBILITY LEVEL IS OK: (level=',i2,')')
  9000 format(/'==> STOP IN ITF_PHY_INIT: MAXBUS TOO SMALL IN BUSESD.CDK'/ &

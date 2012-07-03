@@ -63,15 +63,15 @@
       F_nm   =  0
       F_init = -1
 
-      bus0_S = adjustl (F_bus_S)
+      bus0_S = adjustl(F_bus_S)
       istat  = clib_tolower(bus0_S)
       ext    = ''
 
  500  varname_S = trim(F_vn_S)//ext
       outname_S = ' '
       inname_S  = ' '
-
-      istat = phy_getindx3 (varname_S,outname_S,inname_S,bus_S,busidx,params,MAX_PARAMS)
+      bus_S = ' ' !# bus0_S(1:1)
+      istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,busidx,params,MAX_PARAMS)
 
       if (istat >= 0) then
          istat = clib_tolower(bus_S)
@@ -81,7 +81,7 @@
             F_init  = params(BUSPAR_INIT)
          endif
       else
-         if ( ext .ne. ',W' ) then
+         if (ext /= ',W') then
             ext=',W'
             goto 500
          endif

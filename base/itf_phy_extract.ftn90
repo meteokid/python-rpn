@@ -35,7 +35,6 @@
 !	Extract physics output from buses
 !
 #include "glb_ld.cdk"
-#include "itf_phy_buses.cdk"
 #include "itf_cpl.cdk"
 #include "obus.cdk"
 !
@@ -45,6 +44,7 @@
 !
 !     Extract physic output
 !
+      !TODO: use bus_unfold
       do n=1,Obus_top
          offbo = (obus_offset(n)-1)*l_ni*l_nj + 1
          offbb =  obus_addr(n)

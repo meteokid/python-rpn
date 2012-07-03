@@ -20,7 +20,6 @@
       subroutine set_sor()
 !
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     J. Caveen - rpn - august 1994 - v0_16
@@ -57,6 +56,9 @@
 !       none
 !
 !implicits
+#include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+#include <clib_interface.cdk>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
@@ -73,21 +75,34 @@
 #include "outp.cdk"
 #include "outc.cdk"
 #include "hgc.cdk"
-#include "itf_phy_buses.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "path.cdk"
 !
-      integer srequet,fnom,longueur
-      external srequet,fnom,longueur
-!
+      integer,external :: srequet,phy_getindx3
+
+      integer,parameter :: BUSPAR_I0=1
+      integer,parameter :: BUSPAR_NIK=2
+      integer,parameter :: BUSPAR_INIT=3
+      integer,parameter :: BUSPAR_STAG=4
+      integer,parameter :: BUSPAR_ESP=5
+      integer,parameter :: BUSPAR_FMUL=6
+      integer,parameter :: BUSPAR_NK=7
+      integer,parameter :: BUSPAR_MOSAIC=8
+      integer,parameter :: BUSPAR_MAXPAR=8
+      integer,parameter :: NBUS = 4
+      character(len=9) :: BUS_LIST_S(NBUS) = (/'Entry    ','Permanent','Dynamic  ','Volatile '/)
+
       character*5 blank_S
       character*8 unit_S
       character*256 fn
       logical iela
-      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr
+      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus
       integer ixg(4)
       integer multxmosaic
+      character(len=1) :: bus_S
+      character(len=32) :: varname_S,outname_S,inname_S,bus0_S
+      integer :: istat,index,param(BUSPAR_MAXPAR)
 !
       if (Lun_out.gt.0) write(Lun_out,5200)
 !    Fill in the positional records for scalar grid
@@ -178,99 +193,6 @@
              enddo
           enddo
 !!$      endif
-          
-!!$      call RPN_COMM_bcast (Timestep,MAXSTEP*MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Timestep_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Timestep_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Timestep_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Timestep_init_L,MAXSET,"MPI_LOGICAL",0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcast (Grid_ig1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ig2,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ig3,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ig4,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ip2,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_xmin,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_xmax,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ymin,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ymax,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_reduc,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_ixg,4,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_niout,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_njout,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_x0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_x1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_y0,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_y1,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_id,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Grid_stride,MAXGRID1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcastc(Grid_gxtyp_s,4,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Grid_etikext_s,12*MAXGRID1,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level,MAXLEV*MAXSET,"MPI_REAL",0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_id,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_version,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_momentum,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_thermo,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_kind_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Level_mode_ip1,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Level_typ_S,MAXSET,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcast (Outd_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Outd_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outd_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Outp_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Outp_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outp_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcast (Outc_lev,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_grid,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_step,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_var_max,MAXSET,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_sets,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_nbit,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_filtpass,MAXSET*MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Outc_varnm_S,16*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcastc(Outc_var_S,4*MAXSET*MAXELEM,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Outc_filtcoef,MAXSET*MAXELEM,"MPI_REAL" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcast (Out3_cliph_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubzt_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubuv_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubds_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubqs_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubdd_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubqq_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_cubww_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_flipit_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_debug_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_satues_L,1,"MPI_LOGICAL" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcastc(Out3_unit_S,4,"MPI_CHARACTER" ,0,"grid",ierr)
-!!$
-!!$      call RPN_COMM_bcast (Out3_nbitg,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_linbot,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_nundr,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_zund,MAXELEM,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_ndigits,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_closestep,1,"MPI_INTEGER" ,0,"grid",ierr)
-!!$      call RPN_COMM_bcast (Out3_ip3,1,"MPI_INTEGER" ,0,"grid",ierr)
 
 ! Print table of dynamic variables demanded for output
 
@@ -292,133 +214,161 @@
 ! =========================
 ! Save only the short name of the requested physics variables
 ! and print table of variables demanded for output
-!     p_bent_out=total number of output variables found in busent
-!     p_bper_out=total number of output variables found in busper
-!     p_bdyn_out=total number of output variables found in busdyn
-!     p_bvol_out=total number of output variables found in busvol
-!     print *,'P_bent_top=',P_bent_top
-!     print *,'P_bper_top=',P_bper_top
-!     print *,'P_bdyn_top=',P_bdyn_top
-!     print *,'P_bvol_top=',P_bvol_top
-!
+
       if (Schm_phyms_L) then
       cnt = 0
+
+      if (Lun_out.gt.0) write(Lun_out,1000)
+
+      DO_BUS: do ibus = 1,NBUS
+      bus0_S = BUS_LIST_S(ibus)
       if (Lun_out.gt.0)  then
-          write(Lun_out,1000)
           write(Lun_out,1006)
-          write(Lun_out,1005)
+          write(Lun_out,1002) bus0_S
           write(Lun_out,1006)
           write(Lun_out,902)
       endif
       do k=1, Outp_sets
          do j=1,Outp_var_max(k)
-            do i = 1, P_bent_top
-            if (Outp_varnm_S(j,k).eq.entnm(i)(1:16) .or. &
-                Outp_varnm_S(j,k).eq.enton(i)(1:4)) then
-                Outp_var_S(j,k)= enton(i)(1:4)
-                multxmosaic=max(multxmosaic,entpar(i,6)*(entpar(i,8)+1))
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   enton(i)(1:4),entnm(i)(1:16),Outp_nbit(j,k), &
-                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                   Level_typ_S(Outp_lev(k))
-                   cnt=cnt+1
-                   p_bent_idx(cnt) = i
-                   do kk=1,cnt-1
-                      if (p_bent_idx(kk).eq.i) exit
-                   enddo
-                   if (kk.le.cnt-1) cnt=cnt-1
+            varname_S = Outp_varnm_S(j,k)
+            outname_S = ' '
+            inname_S = ' '
+            bus_S = bus0_S(1:1)
+            istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+!!$            print *,1,outname_S(1:4),varname_S(1:16),bus0_S(1:1),bus_S,istat
+            if (.not.RMN_IS_OK(istat)) then
+               varname_S = ' '
+               outname_S = Outp_varnm_S(j,k)
+               inname_S = ' '
+               bus_S = bus0_S(1:1)
+               istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+!!$               print *,2,outname_S(1:4),varname_S(1:16),bus0_S(1:1),bus_S,istat
             endif
-            enddo
+            if (.not.RMN_IS_OK(istat)) then
+               cycle
+            endif
+            istat = clib_toupper(varname_S)
+            istat = clib_toupper(outname_S)
+            Outp_var_S(j,k) = outname_S
+            multxmosaic = max(multxmosaic,param(BUSPAR_FMUL)*(param(BUSPAR_MOSAIC)+1))
+            cnt = cnt+1
+            if (Lun_out.gt.0) write(Lun_out,1007) &
+                 outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &
+                 Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+                 Level_typ_S(Outp_lev(k))
          enddo
       enddo
-      p_bent_out = cnt
-      cnt = 0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1002)
-          write(Lun_out,1006)
-          write(Lun_out,902)
-      endif
-      do k=1, Outp_sets
-         do j=1,Outp_var_max(k)
-            do i = 1, P_bper_top
-            if (Outp_varnm_S(j,k).eq.pernm(i)(1:16) .or. &
-                Outp_varnm_S(j,k).eq.peron(i)(1:4)) then
-                Outp_var_S(j,k)= peron(i)(1:4)
-                multxmosaic=max(multxmosaic,(perpar(i,6)*(perpar(i,8)+1)) )
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   peron(i)(1:4),pernm(i)(1:16),Outp_nbit(j,k), &
-                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                   Level_typ_S(Outp_lev(k))
-                cnt=cnt+1
-                p_bper_idx(cnt)=i
-                do kk=1,cnt-1
-                   if (p_bper_idx(kk).eq.i) exit
-                enddo
-                if (kk.le.cnt-1) cnt=cnt-1
-            endif
-            enddo
-         enddo
-      enddo
-      p_bper_out = cnt
-      cnt = 0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1003)
-          write(Lun_out,1006)
-          write(Lun_out,902)
-      endif
-      do k=1, Outp_sets
-         do j=1,Outp_var_max(k)
-            do i = 1, P_bdyn_top
-            if (Outp_varnm_S(j,k).eq.dynnm(i)(1:16) .or. &
-                Outp_varnm_S(j,k).eq.dynon(i)(1:4)) then
-                Outp_var_S(j,k)= dynon(i)(1:4)
-                multxmosaic=max(multxmosaic,(dynpar(i,6)*(dynpar(i,8)+1)) )
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   dynon(i)(1:4),dynnm(i)(1:16),Outp_nbit(j,k), &
-                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                   Level_typ_S(Outp_lev(k))
-                cnt=cnt+1
-                p_bdyn_idx(cnt)=i
-                do kk=1,cnt-1
-                   if (p_bdyn_idx(kk).eq.i) exit
-                enddo
-                if (kk.le.cnt-1) cnt=cnt-1
-            endif
-            enddo
-         enddo
-      enddo
-      p_bdyn_out = cnt
-      cnt=0
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1004)
-          write(Lun_out,1006)
-          write(Lun_out,902)
-      endif
-      do i = 1, P_bvol_top
-         do k=1, Outp_sets
-            do j=1,Outp_var_max(k)
-            if (Outp_varnm_S(j,k).eq.volnm(i)(1:16) .or. &
-                Outp_varnm_S(j,k).eq.volon(i)(1:4)) then
-                Outp_var_S(j,k)= volon(i)(1:4)
-                multxmosaic=max(multxmosaic,(volpar(i,6)*(volpar(i,8)+1)) )
-                if (Lun_out.gt.0) write(Lun_out,1007) &
-                   volon(i)(1:4),volnm(i)(1:16),Outp_nbit(j,k), &
-                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                   Level_typ_S(Outp_lev(k))
-                cnt=cnt+1
-                p_bvol_idx(cnt)=i
-                do kk=1,cnt-1
-                   if (p_bvol_idx(kk).eq.i) exit
-                enddo
-                if (kk.le.cnt-1) cnt=cnt-1
-            endif
-            enddo
-         enddo
-      enddo
-      p_bvol_out = cnt
+      enddo DO_BUS
+
+!!$      do k=1, Outp_sets
+!!$         do j=1,Outp_var_max(k)
+!!$            do i = 1, P_bent_top
+!!$            if (Outp_varnm_S(j,k).eq.entnm(i)(1:16) .or. &
+!!$                Outp_varnm_S(j,k).eq.enton(i)(1:4)) then
+!!$                Outp_var_S(j,k)= enton(i)(1:4)
+!!$                multxmosaic=max(multxmosaic,entpar(i,6)*(entpar(i,8)+1))
+!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
+!!$                   enton(i)(1:4),entnm(i)(1:16),Outp_nbit(j,k), &
+!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+!!$                   Level_typ_S(Outp_lev(k))
+!!$                   cnt=cnt+1
+!!$                   p_bent_idx(cnt) = i
+!!$                   do kk=1,cnt-1
+!!$                      if (p_bent_idx(kk).eq.i) exit
+!!$                   enddo
+!!$                   if (kk.le.cnt-1) cnt=cnt-1
+!!$            endif
+!!$            enddo
+!!$         enddo
+!!$      enddo
+!!$      p_bent_out = cnt
+!!$      cnt = 0
+!!$      if (Lun_out.gt.0)  then
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,1002)
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,902)
+!!$      endif
+!!$      do k=1, Outp_sets
+!!$         do j=1,Outp_var_max(k)
+!!$            do i = 1, P_bper_top
+!!$            if (Outp_varnm_S(j,k).eq.pernm(i)(1:16) .or. &
+!!$                Outp_varnm_S(j,k).eq.peron(i)(1:4)) then
+!!$                Outp_var_S(j,k)= peron(i)(1:4)
+!!$                multxmosaic=max(multxmosaic,(perpar(i,6)*(perpar(i,8)+1)) )
+!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
+!!$                   peron(i)(1:4),pernm(i)(1:16),Outp_nbit(j,k), &
+!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+!!$                   Level_typ_S(Outp_lev(k))
+!!$                cnt=cnt+1
+!!$                p_bper_idx(cnt)=i
+!!$                do kk=1,cnt-1
+!!$                   if (p_bper_idx(kk).eq.i) exit
+!!$                enddo
+!!$                if (kk.le.cnt-1) cnt=cnt-1
+!!$            endif
+!!$            enddo
+!!$         enddo
+!!$      enddo
+!!$      p_bper_out = cnt
+!!$      cnt = 0
+!!$      if (Lun_out.gt.0)  then
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,1003)
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,902)
+!!$      endif
+!!$      do k=1, Outp_sets
+!!$         do j=1,Outp_var_max(k)
+!!$            do i = 1, P_bdyn_top
+!!$            if (Outp_varnm_S(j,k).eq.dynnm(i)(1:16) .or. &
+!!$                Outp_varnm_S(j,k).eq.dynon(i)(1:4)) then
+!!$                Outp_var_S(j,k)= dynon(i)(1:4)
+!!$                multxmosaic=max(multxmosaic,(dynpar(i,6)*(dynpar(i,8)+1)) )
+!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
+!!$                   dynon(i)(1:4),dynnm(i)(1:16),Outp_nbit(j,k), &
+!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+!!$                   Level_typ_S(Outp_lev(k))
+!!$                cnt=cnt+1
+!!$                p_bdyn_idx(cnt)=i
+!!$                do kk=1,cnt-1
+!!$                   if (p_bdyn_idx(kk).eq.i) exit
+!!$                enddo
+!!$                if (kk.le.cnt-1) cnt=cnt-1
+!!$            endif
+!!$            enddo
+!!$         enddo
+!!$      enddo
+!!$      p_bdyn_out = cnt
+!!$      cnt=0
+!!$      if (Lun_out.gt.0)  then
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,1004)
+!!$          write(Lun_out,1006)
+!!$          write(Lun_out,902)
+!!$      endif
+!!$      do i = 1, P_bvol_top
+!!$         do k=1, Outp_sets
+!!$            do j=1,Outp_var_max(k)
+!!$            if (Outp_varnm_S(j,k).eq.volnm(i)(1:16) .or. &
+!!$                Outp_varnm_S(j,k).eq.volon(i)(1:4)) then
+!!$                Outp_var_S(j,k)= volon(i)(1:4)
+!!$                multxmosaic=max(multxmosaic,(volpar(i,6)*(volpar(i,8)+1)) )
+!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
+!!$                   volon(i)(1:4),volnm(i)(1:16),Outp_nbit(j,k), &
+!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+!!$                   Level_typ_S(Outp_lev(k))
+!!$                cnt=cnt+1
+!!$                p_bvol_idx(cnt)=i
+!!$                do kk=1,cnt-1
+!!$                   if (p_bvol_idx(kk).eq.i) exit
+!!$                enddo
+!!$                if (kk.le.cnt-1) cnt=cnt-1
+!!$            endif
+!!$            enddo
+!!$         enddo
+!!$      enddo
+!!$      p_bvol_out = cnt
 
       if (Lun_out.gt.0)  write(Lun_out,1006)
 !     maximum size of slices with one given field that is multiple+mosaic
@@ -447,10 +397,11 @@
   903 format('|',1x,'OUTPUT',1x,'|',2x,'CHEMCL NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
  1000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1001 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'|CHEMICAL VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
- 1002 format('|',5X,'Permanent Bus ',40x, '|')
- 1003 format('|',5X,'Dynamic   Bus ',40x, '|')
- 1004 format('|',5X,'Volatile  Bus ',40x, '|')
- 1005 format('|',5X,'Entry     Bus ',40x, '|')
+ 1002 format('|',5X,a9,' Bus ',40x, '|')
+!!$ 1002 format('|',5X,'Permanent Bus ',40x, '|')
+!!$ 1003 format('|',5X,'Dynamic   Bus ',40x, '|')
+!!$ 1004 format('|',5X,'Volatile  Bus ',40x, '|')
+!!$ 1005 format('|',5X,'Entry     Bus ',40x, '|')
  1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
