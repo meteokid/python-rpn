@@ -2,7 +2,7 @@
 ## File: $gemdyn/include/Makefile.local.mk
 ##
 
-include $(modelutils)/include/recettes
+#include $(modelutils)/include/recettes
 include $(gemdyn)/include/build_components
 
 ## GEM model and GemDyn definitions
@@ -27,15 +27,16 @@ CHM         = $(CHM_VERSION)
 
 #PHY         = rpnphy_stubs
 PHY         = rpnphy
+CLASSLIBS   = rpnphy_class
 
 #PROF          = prof_stubs
 PROF          = prof_003
 #PROFLIBPATH   = $(ARMNLIB)/lib/$(BASE_ARCH)
 PROFLIBPATH   =
 
-#CPL         = cpl_stubs
-CPL        = cpl_$(CPL_VERSION)
-CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)
+CPL         = cpl_stubs
+#CPL        = cpl_$(CPL_VERSION)
+CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)/lib/$(EC_ARCH)
 
 
 ## GEM model Libpath and libs
@@ -45,7 +46,7 @@ LIBPATHPOST  = $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFL
 #OTHERS  = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 #LIBAPPL = $(LIBS_PRE) $(MODELUTILSLIBS) $(OTHERS) $(LIBS_POST)
 #LIBSYS  = $(LIBSYS_PRE) $(LIBSYSEXTRA) $(LIBSYS_POST)
-LIBS_PRE = $(LIBSGEM) $(V4D) $(PHY) $(CHM) $(PATCH) $(CPL)
+LIBS_PRE = $(GEMLIBS) $(V4D) $(PHY) $(CLASSLIBS) $(CHM) $(PATCH) $(CPL)
 
 #LIBS     = $(LIBAPPL)
 
@@ -58,7 +59,7 @@ allbin_gem: $(BINDIR)/$(mainntr) $(BINDIR)/$(maindm)
 	ls -l $(BINDIR)/$(mainntr) $(BINDIR)/$(maindm)
 allbincheck_gem:
 	if [[ \
-		&& -f $(BINDIR)/$(mainntr) \
+		   -f $(BINDIR)/$(mainntr) \
 		&& -f $(BINDIR)/$(maindm) \
 		]] ; then \
 		exit 0 ;\
@@ -77,12 +78,18 @@ gemdm_nompi:
 	$(MAKE) gemdm COMM_stubs=rpn_commstubs$(COMM_VERSION) MPI=
 
 $(BINDIR)/$(mainntr): gemntr
-	cp $(mainntr) $@
+	if [[ -r $(mainntr) ]] ; then cp $(mainntr) $@ 2>/dev/null ; fi
 gemntr:
-	$(RBUILD2O) ;\
-	mv $@ $(PWD)/$(mainntr) 2>/dev/null || true ;\
-	chmod u+x $(PWD)/$(mainntr) ;\
-	ls -lL $(PWD)/$(mainntr) ;\
+	$(RBUILD2Oa) ;\
+	if [[ x$(BINDIR) == x ]] ; then \
+		cp $@.Abs $(PWD)/$(mainntr) 2>/dev/null || true ;\
+		chmod u+x $(PWD)/$(mainntr) ;\
+		ls -lL $(PWD)/$(mainntr) ;\
+	else \
+		cp $@.Abs $(BINDIR)/$(mainntr) 2>/dev/null || true ;\
+		chmod u+x $(BINDIR)/$(mainntr) ;\
+		ls -lL $(BINDIR)/$(mainntr) ;\
+	fi ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\
@@ -92,12 +99,18 @@ gemntr:
 	echo COMM_VERSION  = $(COMM_VERSION)
 
 $(BINDIR)/$(maindm): gemdm
-	cp $(maindm) $@
+	if [[ -r $(maindm) ]] ; then cp $(maindm) $@ 2>/dev/null ; fi
 gemdm:
-	$(RBUILD2O) ;\
-	mv $@ $(PWD)/$(maindm) 2>/dev/null || true ;\
-	chmod u+x $(PWD)/$(maindm) ;\
-	ls -lL $(PWD)/$(maindm) ;\
+	set -x ; $(RBUILD2Oa) ;\
+	if [[ x$(BINDIR) == x ]] ; then \
+		cp $@.Abs $(PWD)/$(maindm) || true ;\
+		chmod u+x $(PWD)/$(maindm) ;\
+		ls -lL $(PWD)/$(maindm) ;\
+	else \
+		cp $@.Abs $(BINDIR)/$(maindm) 2>/dev/null || true ;\
+		chmod u+x $(BINDIR)/$(maindm) ;\
+		ls -lL $(BINDIR)/$(maindm) ;\
+	fi ; set +x ;\
 	echo DYN_VERSION   = $(ATM_DYN_VERSION);\
 	echo PHY_VERSION   = $(ATM_PHY_VERSION);\
 	echo CHM_VERSION   = $(CHM_VERSION);\
@@ -174,7 +187,7 @@ allbin_gemdyn: monitor toc2nml gemgrid prgemnml #gemabs
 
 allbincheck_gemdyn:
 	if [[ \
-		&& -f $(BINDIR)/gemprnml_$(BASE_ARCH).Abs \
+		   -f $(BINDIR)/gemprnml_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/gemgrid_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/toc2nml \
 		&& -f $(BINDIR)/gem_monitor_end \

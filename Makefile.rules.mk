@@ -1,8 +1,8 @@
 
 .SUFFIXES :
-.SUFFIXES : .c .o .f90 .f .ftn .ftn90 .cdk90 .tmpl90 .F .FOR .F90
+.SUFFIXES : .c .o .f90 .f .ftn .ftn90 .cdk90 .tmpl90 .F .FOR .F90 .itf90 .inc
 
-RCOMPIL = s.compile
+RCOMPIL = s.compile $(MPI) $(OMP) -includes ./ $(INCLUDE_PATH) $(INCLUDE_MOD)
 RBUILD  = s.compile
 FCOMPF = 
 CCOMPF =
@@ -41,6 +41,11 @@ CC   = $(RCOMPIL) -defines "=$(DEFINE)" -O $(OPTIL) -optc="$(CFLAGS)" $(COMPF) $
 .tmpl90.ftn90:
 	s.tmpl90.ftn90 < $<  > $@
 
+# .ftn90.itf90:
+# 	$(FTNC) $< -defines =-DAPI_ONLY ; mv -f $*.f90 $*.itf90
+# 	#mu.ftn2f -f90 -defines "=$(DEFINE)" -optf="$(FFLAGS) $(CPPFLAGS)" -P $(COMPF) $(FCOMPF) -src $<  > $@
+# 	#r.gppf -lang-f90+ -chop_bang -gpp -F -D__FILE__=\"#file\" -D__LINE__=#line $
+#{vincludes[@]} -DAPI_ONLY $< > $@
 
 # .c.o:
 # 	s.cc -c -o $@ -src $< $(COMPILE_FLAGS) $(CFLAGS) 

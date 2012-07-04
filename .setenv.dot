@@ -1,2 +1,6 @@
 . s.ssmuse.dot $(cat ssmuse_dependencies.bndl)
 . s.ssmuse.dot $(cat $modelutils/src/ssmuse_dependencies.bndl)
+if [[ x$BASE_ARCH == xAIX-powerpc7 ]] ; then
+   s.use gmake as make
+fi
+

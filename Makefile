@@ -10,9 +10,11 @@ export modelutils := $(shell echo $${modelutils:-$(PWD)})
 
 ifeq ($(PWD),$(BUILDDIRROOT))
    $(error FATAL ERROR, BUILDDIRROOT cannot be PWD)
+	$(MAKE) -f Makefile.base.mk error
 endif
 ifeq ($(PWD),$(DISTDIR))
    $(error FATAL ERROR, DISTDIR cannot be PWD)
+	$(MAKE) -f Makefile.base.mk error
 endif
 
 #MAKEFILES = Makefile.base.mk

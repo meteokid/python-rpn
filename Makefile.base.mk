@@ -3,38 +3,50 @@ SHELL = /bin/bash
 #----
 ifeq (,$(modelutils))
    $(error FATAL ERROR, modelutils is not defined)
+	$(MAKE) error
 endif
 ifeq (,$(PKGNAME))
    $(error FATAL ERROR, PKGNAME is not defined)
+	$(MAKE) error
 endif
 ifeq (,$(VERSION))
    $(error FATAL ERROR, VERSION is not defined)
+	$(MAKE) error
 endif
 ifeq (,$(EC_ARCH))
    $(error FATAL ERROR, EC_ARCH is not defined)
 endif
 ifeq ($(BASE_ARCH),$(EC_ARCH))
    $(error FATAL ERROR, EC_ARCH is not fully defined)
+	$(MAKE) error
 endif
 
 ifneq (,$(wildcard $(modelutils)/include/recettes))
+   $(info include $(modelutils)/include/recettes)
    include $(modelutils)/include/recettes
 endif
 ifneq (,$(wildcard $(PWD)/Makefile.rules.mk))
+   $(info include $(PWD)/Makefile.rules.mk)
    include $(PWD)/Makefile.rules.mk
 endif
 ifneq (,$(wildcard $(PWD)/include/recettes))
 ifneq ($(modelutils)/include/recettes,$(PWD)/include/recettes)
+   $(info include $(PWD)/include/recettes)
    include $(PWD)/include/recettes
 endif
 endif
 
+.PHONY: error
+error:
+	exit 1
+
 #----
 .DEFAULT: all
-.PHONY: buildall distall all
-buildall: libs allabs
+.PHONY: buildall distall all force_all
+buildall: libs allabs allabscheck
 distall: distdir 
 all: allssmpkgs
+force_all: distclean force_allssmpkgs
 
 VPATH = $(SRCDIR)
 
@@ -142,6 +154,10 @@ allabs: libs | $(BUILDDIRARCH)/bin $(BUILDDIRARCH)/binwrk/Makefile
 		EC_LD_LIBRARY_PATH="$(BUILDDIRARCH) $(addprefix $(BUILDDIRARCH)/,$(SUBDIRS_LIB)) $(EC_LD_LIBRARY_PATH)" \
 		EC_INCLUDE_PATH="$(INCPATH) $(BUILDDIRARCH)/include $(MODPATH) $(EC_INCLUDE_PATH)" ;\
 	if [[ $${?} != 0 ]] ; then exit 1 ; fi
+allabscheck: allabs
+	$(MAKE) $(NOPRINTDIR) $(MFLAGS) allbincheck_$(PKGNAME) \
+		TOPDIR=$(TOPDIR) \
+		BINDIR=$(BUILDDIRARCH)/bin
 $(BUILDDIRARCH)/binwrk/Makefile: | $(BUILDDIRARCH)/binwrk
 	cd $(BUILDDIRARCH)/binwrk ;\
 	$(MAKE) -f $(TOPDIR)/Makefile.subdir.mk $(NOPRINTDIR) $(MFLAGS) Makefile \
@@ -192,7 +208,7 @@ $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/RCS: $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/s
 	mkdir -p $@ 2>/dev/null || true ;\
 	(cd $(INCDIR0) ;\
 	cp .[rc]* $@/ 2>/dev/null || true ; \
-	for item in $(shell ls -1 recettes* cibles* 2>/dev/null); do \
+	for item in `ls -1 recettes* cibles* 2>/dev/null`; do \
 		cp $${item} $@/.$${item}  2>/dev/null || true ;\
 	done) ;\
 	cd $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/src ;\
@@ -238,7 +254,7 @@ $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/lib/$(EC_ARCH): libs
 	cp $(BUILDDIRARCH)/lib*.a $(BUILDDIRARCH)/lib*.a.fl $(BUILDDIRARCH)/*/lib*.a $(BUILDDIRARCH)/*/lib*.a.fl $@/ 2>/dev/null || true ;\
 	cp $(BUILDDIRARCH)/.VERSION $@/ 2>/dev/null || true
 #TODO: link to oldarch
-$(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/bin/$(BASE_ARCH): allabs
+$(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/bin/$(BASE_ARCH): allabs allabscheck
 	mkdir -p $@ 2>/dev/null || true ;\
 	cp $(BUILDDIRARCH)/bin/* $@/ 2>/dev/null || true ;\
 	rm -f $@/Makefile* $@/cibles* $@/recettes* 2>/dev/null || true 
@@ -295,12 +311,12 @@ install_pkgs: | install_domain
 	for mytype in $(SSM_PKG); do \
 		$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) \
 			install_pkgs_$${mytype} ;\
-		if [[ $${?} != 0 ]] ; then echo $${?} exit 1 ; fi ;\
+		if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
 	done
-install_pkgs_all: ssmpkgall install_domain
+install_pkgs_all: install_domain
 	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_all SSMARCH=all ;\
 	if [[ $${?} != 0 ]] ; then exit 1 ; fi
-install_pkgs_arch: ssmpkgarch install_domain
+install_pkgs_arch: install_domain
 	for myfile in $(wildcard $(SSMDEPOTDIR)/$(PKGNAME)_$(VERSION)_*.ssm); do \
 		mytype=`echo $${myfile##*_}` ; mytype=`echo $${mytype%.*}` ;\
 		if [[ x$${mytype} != xall ]] ; then \
@@ -309,7 +325,7 @@ install_pkgs_arch: ssmpkgarch install_domain
 			if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
 		fi ;\
 	done
-install_pkgs_multi: ssmpkgmulti install_domain 
+install_pkgs_multi: install_domain 
 	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_multi SSMARCH=multi ;\
 	if [[ $${?} != 0 ]] ; then exit 1 ; fi
 install_bndl: install_domain $(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl
@@ -326,14 +342,19 @@ $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_$(SSMARCH): | $(
 	cd $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION) ;\
 	mydomain=`true_path .` ;\
 	mu.chmod_ssm_dom u+w $${mydomain} ;\
-	ssm install -d $${mydomain} -p $(PKGNAME)_$(VERSION)_$(SSMARCH) --yes --skipOnInstalled ;\
-	ssm publish -d $${mydomain} -p $(PKGNAME)_$(VERSION)_$(SSMARCH) --yes --skipOnPublished ;\
-	mu.chmod_ssm_dom $(SSMPOSTCHMOD) $${mydomain}
+	ssm install -d $${mydomain} -p $(PKGNAME)_$(VERSION)_$(SSMARCH) --yes --skipOnInstalled && \
+	ssm publish -d $${mydomain} -p $(PKGNAME)_$(VERSION)_$(SSMARCH) --yes --skipOnPublished && \
+	mu.chmod_ssm_dom $(SSMPOSTCHMOD) $${mydomain} ;\
+	ls -ld $@ ;\
+	ls -ld $${mydomain}/etc/ssm.d/published/$(PKGNAME)_$(VERSION)_$(SSMARCH)
+	#if [[ x"`ssm listd -d $${mydomain} | grep $(PKGNAME)_$(VERSION)_$(SSMARCH) | cut -d' ' -f1`" != x"published" ]] ; then exit 1 ; fi
+	#Note: Cannot use ssm listd since long names are truncated
 $(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl: | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)
 	mu.mkdir_tree $(DESTDIR) $(SSM_RELDIRBNDL)/$(PKGNAME) $(SSMPOSTCHMOD) ;\
 	chmod u+w $(SSMINSTALLDIRBNDL)/$(PKGNAME) ;\
 	cat $(SSMDEPENDENCIES) > $@ ;\
 	echo $(SSM_RELDIRDOM)$(PKGNAME)/$(VERSION) >> $@ ;\
+	if [[ x$(SSMDEPENDENCIESPOST) != x && -r $(SSMDEPENDENCIESPOST) ]] ; then cat $(SSMDEPENDENCIESPOST) >> $@ ;fi ;\
 	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRBNDL)/$(PKGNAME) $@ ;\
 	ls -l $@
 
