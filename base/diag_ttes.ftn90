@@ -38,8 +38,9 @@
 #include "ver.cdk"
 #include "pw.cdk"
 !
+      logical,parameter :: WATERONLY = .false.
       type(gmm_metadata) :: mymeta
-      integer ninj,istat
+      integer ninj,istat,mynk
       real, pointer, dimension(:,:,:)     :: humod
       real  hu(l_ni,l_nj),px(l_ni,l_nj)
 !
@@ -54,8 +55,10 @@
       hu(:,:) = humod      (1:l_ni,1:l_nj,ki)
 !
       ninj = ni*nj
+      mynk = 1
       px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
-      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+!!$      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+      call mhuaes3(es,hu,tt,px,WATERONLY,ninj,mynk,ninj)
 !
       es(:,:) = max(0.,es(:,:))
 !

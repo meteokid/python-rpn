@@ -36,7 +36,7 @@
 ! v2_00 - Lee V.            - initial MPI version (from blocthm v1_03)
 ! v2_11 - Desgagne M.       - ptop producubility
 ! v2_21 - Desgagne M.       - new calling sequence for glbdist + correct
-! v2_21                       calling sequence mfohra
+! v2_21                       calling sequence mfohra3
 ! v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename
 ! v2_21                       truncate model output names to 4 characters
 ! v2_30 - Lee V.            - reorganize slab output to be more efficient
@@ -538,7 +538,7 @@
 !        Calculate THETAW TW (t8=TW) (px=PX)
              call mfottv2 (w3,vt,hu,l_minx,l_maxx, &
                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-             call mthtaw2 (t8,hu,w3, px_ta,Out3_satues_L, &
+             call mthtaw4 (t8,hu,w3, px_ta,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,nk+2,l_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'TW  ',1.0,0.0, kind,nk+2, indo_t, nko_t, nbit(pntw) )
@@ -548,7 +548,7 @@
 !        Calculate ES (t8=ES) (px=PX)
              call mfottv2 (w3,vt,hu,l_minx,l_maxx, &
                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-             call mhuaes(t8,hu,w3,px_ta,Out3_satues_L, &
+             call mhuaes3(t8,hu,w3,px_ta,Out3_satues_L, &
                             l_ninj,nk+2,l_ninj)
 
              if (Out3_cliph_L) then
@@ -583,9 +583,9 @@
          if (pnhr.ne.0) then
 !            Calculate HR (t8=HR,tt=TT,px=PX)
              if (Out3_satues_L) then
-                 call mfohr(t8,hu,tt,px_ta,l_ninj,G_nk+2,l_ninj)
+                 call mfohr3(t8,hu,tt,px_ta,l_ninj,G_nk+2,l_ninj)
              else
-                 call mfohra(t8,hu,tt,px_ta,l_ninj,G_nk+2,l_ninj)
+                 call mfohra3(t8,hu,tt,px_ta,l_ninj,G_nk+2,l_ninj)
              endif
              if ( Out3_cliph_L ) then
                 do k= 1,nk+2
@@ -709,7 +709,7 @@
 !           Calculate THETAW TW (w5=TW_pres) (px_pres=PX)
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
                         l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
-            call mthtaw2 (w5,hu_pres,w6, &
+            call mthtaw4 (w5,hu_pres,w6, &
                            px_pres,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
             if (filt(pntw).gt.0) &
@@ -723,7 +723,7 @@
 !           Calculate ES (w5=ES_pres,hu_pres=HU,w2=VT,px_pres=PX)
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
                         l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
-            call mhuaes (w5, hu_pres,w6, &
+            call mhuaes3 (w5, hu_pres,w6, &
                           px_pres,Out3_satues_L, &
                           l_ninj, nko, l_ninj)
             if ( Out3_cliph_L ) then
@@ -764,9 +764,9 @@
         if (pnhr.ne.0) then
 !           Calculate HR (w5=HR_pres:hu_pres=HU,tt_pres=TT,px_pres=PX)
             if (Out3_satues_L) then
-                call mfohr (w5,hu_pres,tt_pres,px_pres,l_ninj,nko,l_ninj)
+                call mfohr3 (w5,hu_pres,tt_pres,px_pres,l_ninj,nko,l_ninj)
             else
-                call mfohra (w5,hu_pres,tt_pres,px_pres,l_ninj,nko,l_ninj)
+                call mfohra3 (w5,hu_pres,tt_pres,px_pres,l_ninj,nko,l_ninj)
             endif
             if ( Out3_cliph_L ) then
                do k=1,nko
