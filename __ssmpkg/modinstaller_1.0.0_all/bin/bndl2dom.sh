@@ -1,11 +1,45 @@
 #!/bin/ksh
 
-#myecho=echo
+basedir=$(true_path ~/SsmBundles)
 
-gemversion=4.4.0-b14
+DESC='Create a GEM bundle with all GEM ssm pkg published in a single ssm domain'
+USAGE="USAGE: ${0##*/} [-v] FROM_BNDL TO_BNDL"
 
-bndlname=GEM/x/${gemversion}
-bndlname2=${bndlname}-s
+usage_long() {
+    toto=$(echo -e $USAGE)
+    more <<EOF
+$toto
+EOF
+}
+
+myecho=""
+[[ x"$1" == x"-v" ]] && myecho=echo && shift
+
+gemversion=${1##*/}
+
+bndlname=${1}
+bndlname2=${2}
+
+from_bndl="${1}.bndl"
+to_bndl="${2}.bndl"
+
+if [[ x$1 == x || x$2 == x ]] ; then
+    echo "ERROR: Wrong number of args" 1>&2
+    echo -e $USAGE 1>&2
+    echo "---- ABORT ----"  1>&2
+    exit 1
+fi
+
+if [[ ! -r $(true_path $from_bndl 2>/dev/null) ]] ; then
+    from_bndl="$basedir/$from_bndl"
+fi
+
+if [[ ! -r $(true_path $from_bndl) ]] ; then
+    echo "ERROR: FROM_BNDL ($from_bndl) not existing or readable" 1>&2
+    echo -e $USAGE 1>&2
+    echo "---- ABORT ----"  1>&2
+    exit 1
+fi
 
 LocalData="$(r.unified_setup-cfg -local || echo $ARMNLIB)/data"     # get path to "system" data
 Prefixes="${LocalData}/ssm_domains"
@@ -94,13 +128,16 @@ done
 $myecho chmod -R a-w ${domdestdir}
 
 
-bndlpath2=$Prefixes/${bndlname2}.bndl0
+bndlpath2=$Prefixes/${bndlname2}.bndl
 $myecho chmod u+w ${bndlpath2%/*}
 if [[ x$myecho == x ]] ; then
-   echo "$prelist $domreldir $postlist GEM/others/rename2s" > $bndlpath2
+   #echo "$prelist $domreldir $postlist GEM/others/rename2s" > $bndlpath2
+   echo "$prelist $domreldir $postlist" > $bndlpath2
 else
-   echo "$prelist $domreldir GEM/others/rename2s $postlist"
+   #echo "$prelist $domreldir GEM/others/rename2s $postlist"
+   echo "$prelist $domreldir $postlist"
 fi
 $myecho chmod u-w ${bndlpath2%/*} $bndlpath2
+$myecho chmod go-r $bndlpath2
 
 exit

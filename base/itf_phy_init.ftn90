@@ -139,6 +139,7 @@
       p_doni = l_ni - p_offi - offi2
       p_donj = l_nj - p_offj - offj2
 
+      !TODO: pass std_p_prof as phy_init arg
       ! Pass standard pressure profil to physics.
       allocate(std_p_prof(p_nk))
       if(Schm_NotopThL_L)then
