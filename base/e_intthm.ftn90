@@ -309,7 +309,8 @@
             hu(i) = tt(i) - hu(i)  ! dew point depression
             tt(i) = tt(i) + c1
          enddo
-         call mesahu(hu, hu, tt, 1, p0, 3, .true., Anal_cond_L, ng, 1, ng)
+!!$         call mesahu(hu, hu, tt, 1, p0, 3, .true., Anal_cond_L, ng, 1, ng)
+         call mesahu3(hu, hu, tt, p0, Anal_cond_L, ng, 1, ng)
          call mfotvt(tt, tt, hu, ng, 1, ng)
          call e_bmfsplitxy2 (hu,nis,njs,'HE  ',1,1,pni,0,0,0)
          call e_bmfsplitxy2 (tt,nis,njs,'TE  ',1,1,pni,0,0,0)
@@ -353,17 +354,23 @@
 !
 !              RNA_T is in millibars!
                if (vh.eq.'HR') then
-                  call mhrahu( hu, hr, tt, rna_t(k)*100., dummy, 0, &
-                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+!!$                  call mhrahu( hu, hr, tt, rna_t(k)*100., dummy, 0, &
+!!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+                  call mhrahu3( hu, hr, tt, rna_t(k)*100., &
+                               Anal_cond_L, ng, 1, ng )
                elseif (vh.eq.'ES') then
-                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
-                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+!!$                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
+!!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+                  call mesahu3( hu, es, tt, rna_t(k)*100., &
+                               Anal_cond_L, ng, 1, ng )
                elseif (vh.eq.'TD') then
                   do i=1,ng
                      es(i) = max( tt(i)-td(i),0.0 )
                   enddo
-                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
-                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+!!$                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
+!!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
+                  call mesahu3( hu, es, tt, rna_t(k)*100., &
+                               Anal_cond_L, ng, 1, ng )
                endif
 !
                if (Pil_bmf_L) then
