@@ -148,7 +148,7 @@
 !
          call out_dyn (.true., .false.)
          if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
-         call out_launchpost (.false.)
+         call out_launchpost2 (.false.,.false.)
       endif
 
       step0 = Lctl_step+1
@@ -230,7 +230,7 @@
 !
          flag= F_dgtflt_L .and. Lctl_step.ge.(Init_dfnp-1)/2
          if ( (istep.ne.stepf) .and. (.not.flag) ) &
-         call out_launchpost (.false.)
+         call out_launchpost2 (.false.,.false.)
 !
          call gemtim4 ( Lun_out, 'CURRENT TIMESTEP', .false. )
 !

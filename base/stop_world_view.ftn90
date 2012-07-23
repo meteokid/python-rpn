@@ -78,7 +78,7 @@
 !
       call itf_cpl_terminate (Lun_out.gt.0)
 !
-      call out_launchpost (.true.)
+      call out_launchpost2 (.true.,.not.F_continue_L)
 !
       if (.not. F_continue_L) err = clib_remove('restart')
 !
