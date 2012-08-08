@@ -17,11 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_launchpost (F_forceit_L)
+      subroutine out_launchpost2 (F_forceit_L,F_last_L)
       implicit none
 #include <arch_specific.hf>
 !
-      logical F_forceit_L
+      logical F_forceit_L,F_last_L
 !
 !AUTHOR   Michel Desgagne  - Summer 2010
 !
@@ -34,12 +34,15 @@
 #include "lctl.cdk"
 #include <clib_interface.cdk>
 !
-      character*1024 filen,filen_link
+      character*1024 filen,filen_link,append
       integer i, err, unf
 !
 !----------------------------------------------------------------------
 !
       if ((Ptopo_myproc.eq.0).and.(Ptopo_couleur.eq.0)) then
+
+      append=''
+      if (F_last_L) append='^last'
 
       if (Out_post_L .or. F_forceit_L) then
       
@@ -47,7 +50,7 @@
          filen_link = trim(Path_output_S)//'/output_ready'
          unf   = 474
          open  (unf,file=filen,access='SEQUENTIAL',form='FORMATTED',position='APPEND')
-         write (unf,'(a,x,a)') trim(Out_laststep_S)
+         write (unf,'(2(a))') trim(Out_laststep_S),trim(append)
          close (unf)
          if (.not.F_forceit_L) then
             err = clib_symlink ( trim(filen), trim(filen_link) )

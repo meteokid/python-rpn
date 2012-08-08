@@ -76,6 +76,7 @@
 !
       Schm_hydro_L    = .false.
       Schm_hzdzdt_L   = .false.
+      Schm_hzduav_L   = .false.
       Schm_moist_L    = .true.
       Schm_topo_L     = .true.
       Schm_itcn     = 2
