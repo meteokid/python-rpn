@@ -32,14 +32,16 @@ end subroutine yyg_scalgeo
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
 #include <arch_specific.hf>
+#include <msg.h>
 #include "glb_ld.cdk"
 
       integer F_minx,F_maxx,F_miny,F_maxy,NK
       real  tab_dst (F_minx:F_maxx,F_miny:F_maxy,NK)
       real  tab_srcf(LDIST_SHAPE,NK)
       real  tab_dstf(LDIST_SHAPE,NK)
-      integer ierr,i,j,k
-      character*32 interp_S,nomvar_S,UPinterp_S
+      integer ierr,i,j,k,msgLevelMin,msgUnit
+      character*32 interp_S,nomvar_S,UPinterp_S,msgFormat_S
+      logical :: canWrite_L
       
       call low2up  (interp_S,UPinterp_S)
 
@@ -66,7 +68,10 @@ end subroutine yyg_scalgeo
          print*,'Cannot find interpolator'
          stop
       endif
-     call glbstat2 (tab_dstf,trim(nomvar_S),"scalg",LDIST_DIM,1,NK,1,G_ni,1,G_nj,1,NK)
+      call msg_getInfo(canWrite_L,msgLevelMin,msgUnit,msgFormat_S)
+      if (MSG_INFOPLUS >= msgLevelMin) then
+         call glbstat2 (tab_dstf,trim(nomvar_S),"scalg",LDIST_DIM,1,NK,1,G_ni,1,G_nj,1,NK)
+      endif
       do k=1,NK
       do j=1,l_nj
       do i=1,l_ni

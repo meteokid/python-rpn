@@ -34,11 +34,13 @@
 #include "lun.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
+      include "rpn_comm.inc"
 !
+      character(len=1024),save :: dirstep_S=' ',diryy_S=' ',dirbloc_S=' '
       character*10 postjob_S
       character*7  blocxy_S
       logical flag
-      integer err,last_step_post,flag_step_post,stepno
+      integer err,last_step_post,flag_step_post,stepno,timing
 !
 !----------------------------------------------------------------------
 !
@@ -68,28 +70,41 @@
       Out_laststep_S = 'laststep_'//postjob_S
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S
 
-      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0 .and. &
-           (.not.Grd_yinyang_L .or. trim(Grd_yinyang_S) == 'YIN')) then
-         err = clib_mkdir(trim(Out_dirname_S))
-         if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),current_step
+      ! PE0 is responsible for creating shared subdir structure
+      if (dirstep_S /= Out_dirname_S) then
+         dirstep_S = Out_dirname_S        
+         if (Ptopo_myproc == 0 .and. Ptopo_couleur == 0) then
+            err = clib_mkdir(trim(Out_dirname_S))
+            if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),current_step
+         endif
       endif
 
-      call rpn_comm_Barrier("world", err)
+      if (Grd_yinyang_L) then
+         ! Wait for multigrid PE0 to be finished subdir creation
+         call rpn_comm_barrier(RPN_COMM_MULTIGRID, err)
 
-      if (Grd_yinyang_L) &
-           Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
-
-      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0) &
-           err = clib_mkdir(trim(Out_dirname_S))
-
-      call rpn_comm_Barrier("world", err)
-
-      Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
+         Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
+         if (diryy_S /= Out_dirname_S) then
+            diryy_S = Out_dirname_S
+            if (Ptopo_myproc == 0) then
+               err = clib_mkdir(trim(Out_dirname_S))
+            endif
+         endif
+      endif
       
-      if (Ptopo_blocme == 0 .and. clib_isdir(trim(Out_dirname_S)) < 0) &
-           err= clib_mkdir ( trim(Out_dirname_S) )
+      ! Wait for Grid PE0 to be finished subdir creation
+      call rpn_comm_barrier(RPN_COMM_BLOCMASTER, err)
 
-      call rpn_comm_Barrier("world", err)
+      ! Each block master now creates an independent subdir for outputs
+      Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
+      err = CLIB_OK
+      if (Ptopo_blocme == 0 .and. dirbloc_S /= Out_dirname_S) then
+         dirbloc_S = Out_dirname_S
+         err = clib_mkdir ( trim(Out_dirname_S) )
+         err = clib_isdir ( trim(Out_dirname_S) )
+      endif
+
+      call handle_error(err,'out_outdir','unable to create output directory structure')
 
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !

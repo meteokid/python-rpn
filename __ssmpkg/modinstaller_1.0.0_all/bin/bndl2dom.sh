@@ -23,6 +23,21 @@ bndlname2=${2}
 from_bndl="${1}.bndl"
 to_bndl="${2}.bndl"
 
+name0=$(echo ${bndlname%%/*} | tr 'A-Z' 'a-z')
+remains=${bndlname#*/}
+namex=${remains%%/*}
+remains=${remains#*/}
+namev=${remains%%/*}
+
+[[ xy$namex == xy$namev ]] && namex=$name0
+
+LocalData="$(r.unified_setup-cfg -local || echo $ARMNLIB)/data"     # get path to "system" data
+Prefixes="${LocalData}/ssm_domains"
+
+dombasedir=${Prefixes}
+domreldir=${bndlname%%/*}/d/$namex/${name0}_${namev}-s
+domdestdir=${dombasedir}/$domreldir
+
 if [[ x$1 == x || x$2 == x ]] ; then
     echo "ERROR: Wrong number of args" 1>&2
     echo -e $USAGE 1>&2
@@ -41,12 +56,6 @@ if [[ ! -r $(true_path $from_bndl) ]] ; then
     exit 1
 fi
 
-LocalData="$(r.unified_setup-cfg -local || echo $ARMNLIB)/data"     # get path to "system" data
-Prefixes="${LocalData}/ssm_domains"
-
-dombasedir=${Prefixes}
-domreldir=GEM/d/x/gem_${gemversion}-s
-domdestdir=${dombasedir}/$domreldir
 depotdir=~/SsmDepot
 if [[ ! -d $depotdir ]] ; then
    depotdir=$TMPDIR/SsmDepot
