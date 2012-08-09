@@ -169,17 +169,15 @@
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
       ierr = itf_cpl_nml ('print') 
-      ierr = v4d_nml     ('print')
       ierr = series_nml  ('print')
 
       call adw_nml_print ()
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
-
 !
 ! Establish domain decomposition (mapping subdomains and processors)
 !
-      call domain_decomp
+      call domain_decomp2 (Ptopo_npex, Ptopo_npey, .false.)
 !
       if (lun_out.gt.0) then
          f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))

@@ -43,8 +43,6 @@
 #include "lctl.cdk"
 #include "ptopo.cdk"
 !
-      logical,save :: done = .false.
-
       type(gmm_metadata) :: mymeta
       character* 512 filen
       integer i,j,k,nis,njs,ind_o(G_nk+2),cnt,unf,key(21), &
@@ -54,35 +52,32 @@
 !
 !------------------------------------------------------------------
 !
-      if (.not.done) then
-         outindx = 0
-         if (Ptopo_blocme.eq.0) then
-            outindx(1) = out_idg
-            outindx(2) = out_jdg
-            outindx(3) = out_nisl
-            outindx(4) = out_njsl
-         endif
-         call RPN_COMM_gather (outindx  , 4,"MPI_INTEGER"  ,outindx_g, &
-                                    4, "MPI_INTEGER"  ,0,"GRID", err)
+      outindx = 0
+      if (Ptopo_blocme.eq.0) then
+         outindx(1) = out_idg
+         outindx(2) = out_jdg
+         outindx(3) = out_nisl
+         outindx(4) = out_njsl
+      endif
+      call RPN_COMM_gather (outindx  , 4,"MPI_INTEGER"  ,outindx_g, &
+                                  4, "MPI_INTEGER"  ,0,"GRID", err)
 
-         if (Ptopo_myproc.eq.0) then
-            filen=trim(Out_dirname_S)//'/3df_filemap.txt'
-            open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
-            do i=1,Ptopo_numproc
-              if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
+      if (Ptopo_myproc.eq.0) then
+         filen=trim(Out_dirname_S)//'/3df_'//trim(datev)//'_filemap.txt'
+         open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
+         do i=1,Ptopo_numproc
+            if ( (outindx_g(3,i).gt.0).and.(outindx_g(4,i).gt.0) ) then
                ofi=Grdc_gid+outindx_g(1,i)-1
                ofj=Grdc_gjd+outindx_g(2,i)-1
-               write (9,'(2i8,4e15.7,2i10)')  &
-                     outindx_g(1,i),outindx_g(2,i), &
-                     G_xg_8(ofi),G_xg_8(ofi+outindx_g(3,i)-1), &
-                     G_yg_8(ofj),G_yg_8(ofj+outindx_g(4,i)-1), &
-                     outindx_g(3,i),outindx_g(4,i)
-              endif
-            end do
-            close (9)
-         endif
+               write (9,'(2i8,4e15.7,2i10,l4)') &
+                    outindx_g(1,i),outindx_g(2,i)           , &
+                    G_xg_8(ofi),G_xg_8(ofi+outindx_g(3,i)-1), &
+                    G_yg_8(ofj),G_yg_8(ofj+outindx_g(4,i)-1), &
+                    outindx_g(3,i),outindx_g(4,i), .false.
+            endif
+         end do
+         close (9)
       endif
-      done = .true.
 !
       if ((out_nisl.le.0).or.(out_njsl.le.0)) return
 !

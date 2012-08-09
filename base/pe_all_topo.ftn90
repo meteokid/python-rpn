@@ -118,10 +118,11 @@
          call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
          lun_out  =  6
-         if (Ptopo_couleur.eq.1) then
-            err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
-            err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
-         endif
+      endif
+
+      if (Ptopo_couleur.eq.1) then
+         err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
+         err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
       endif
 ! 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 
@@ -129,6 +130,7 @@
       write(mycol_S,10) Ptopo_mycol
       write(myrow_S,10) Ptopo_myrow
 10    format(i3.3)
+
       err= clib_mkdir(mycol_S//'-'//myrow_S)
       err= clib_chdir(mycol_S//'-'//myrow_S)
 !

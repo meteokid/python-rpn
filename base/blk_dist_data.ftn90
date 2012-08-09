@@ -1,0 +1,233 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+      subroutine blk_dist_data ( uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn     , &
+                                 trname_a, F_datev, F_nga, F_nka_m, F_nka_t, &
+                                 F_nkgz, F_nvar, F_ntra, F_unf, F_err )
+      implicit none
+#include <arch_specific.hf>
+
+      character* (*) F_datev, trname_a(F_ntra)
+      integer F_nga, F_nka_m, F_nka_t, F_nkgz, F_nvar, F_ntra, F_unf,F_err
+      real  uun (F_nga,F_nka_m), vvn(F_nga,F_nka_m  ), zdn(F_nga,F_nka_t-1), &
+            ttn (F_nga,F_nka_t), qqn(F_nga,F_nka_m+1), wwn(F_nga,F_nka_t-1), &
+            meqn(F_nga,F_nkgz ), trn(F_nga,F_nka_t,F_ntra), ssqn(F_nga)
+
+#include "blk_input.cdk"
+#include "bcsgrds.cdk"
+#include "ifd.cdk"
+#include "path.cdk"
+#include "ptopo.cdk"
+
+      character*1024 fn,basename
+      integer cnt,iproc,err,n,ofi,ofj,nia,nja,nga,tag,status
+      real, dimension (:      ), pointer :: buf
+      real, dimension (:,:    ), pointer :: ssq
+      real, dimension (:,:,:  ), pointer :: uu,vv,zd,tt,meq,qq,ww
+      real, dimension (:,:,:,:), pointer :: tr    
+!
+!----------------------------------------------------------------------
+!
+      F_err= 0
+
+      if (Ptopo_blocme.eq.0) then
+
+         nia= ifd_niaf - ifd_niad + 1
+         nja= ifd_njaf - ifd_njad + 1
+         nga= nia*nja
+
+         allocate ( uu (nia,nja,F_nka_m),vv (nia,nja,F_nka_m  ),zd(nia,nja,F_nka_t-1), &
+                    tt (nia,nja,F_nka_t),qq (nia,nja,F_nka_m+1),ww(nia,nja,F_nka_t-1), &
+                    meq(nia,nja,F_nka_m),ssq(nia,nja),                                 &
+                    tr (nia,nja,F_nka_t,F_ntra) )
+                  uu=0.; vv=0.; zd=0.; tt=0.; ssq=0.; tr=0.;
+                  ww=0.; qq=0.; meq=0.;
+
+         do n=1,ifd_nf
+
+            ofi= ifd_minx(n)-1
+            ofj= ifd_miny(n)-1
+
+            if (ifd_needit(n)) then
+
+               basename = '3df'//'_'//trim(F_datev)//'_'//ifd_fnext(n)
+               fn = trim(Path_ind_S)//'/'//trim(basename)
+               open (F_unf,file=trim(fn),access='SEQUENTIAL', &
+                     form='UNFORMATTED',status='OLD',iostat=err)
+
+               if (err  .ne.0) F_err= -1
+               if (F_err.lt.0) goto 999
+
+               read (F_unf); read (F_unf); read (F_unf); read (F_unf); read (F_unf)
+               write (6,1001) Ptopo_myproc,trim(basename)
+               call read_3df2 (F_unf,uu,vv,zd,tt,ssq,meq,qq,ww,tr         , &
+                               trname_a, ana_zd_L,ana_w_L,ana_q_L, F_nvar , &
+                               F_ntra,nga,F_nka_m,F_nka_t,ofi,ofj,err)
+
+               close (F_unf)
+
+               if (err.lt.0) then
+                  F_err= -1
+                  write (6,203) trim(fn),Ptopo_myproc
+                  goto 999
+               endif
+            endif
+
+         end do
+
+      endif
+
+ 999  call handle_error(F_err,'blk_dist_data ','Problem reading file '//trim(fn))
+
+      cnt= len(trname_a(1)) * F_ntra
+      call RPN_COMM_bcast (trname_a, cnt, "MPI_CHARACTER",0,"BLOC",err)
+      call RPN_COMM_bcast (ana_zd_L,   3, "MPI_LOGICAL"  ,0,"BLOC",err)
+
+      if (Ptopo_blocme.eq.0) then
+
+         call local_data (uun ,F_nga, uu ,nia,nja,F_nka_m,0)
+         call local_data (vvn ,F_nga, vv ,nia,nja,F_nka_m,0)
+         call local_data (ttn ,F_nga, tt ,nia,nja,F_nka_t,0)
+         call local_data (meqn,F_nga, meq,nia,nja,F_nkgz ,0)
+         call local_data (ssqn,F_nga, ssq,nia,nja,1      ,0)
+         if (ana_zd_L) &
+         call local_data (zdn ,F_nga, zd ,nia,nja,F_nka_t-1,0)
+         if (ana_w_L ) &
+         call local_data (wwn ,F_nga, ww ,nia,nja,F_nka_t-1,0)
+         if (ana_q_L ) &
+         call local_data (qqn ,F_nga, qq ,nia,nja,F_nka_m+1,0)
+         do n=1,F_ntra
+            if (trname_a(n).ne.'!@@NOT@@') &
+            call local_data (trn(1,1,n) ,F_nga, tr(1,1,1,n) ,nia,nja,F_nka_t,0)
+         end do
+
+         allocate (buf(nga*max(F_nka_m,F_nka_t)))
+         do iproc = 1, Ptopo_numpe_perb-1
+
+            tag= 210+iproc
+
+            call local_data (buf ,blk_indx(iproc,5), uu ,nia,nja,F_nka_m,iproc)
+            call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_m, 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            call local_data (buf ,blk_indx(iproc,5), vv ,nia,nja,F_nka_m,iproc)
+            call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_m, 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            call local_data (buf ,blk_indx(iproc,5), tt ,nia,nja,F_nka_t,iproc)
+            call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_t, 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            call local_data (buf ,blk_indx(iproc,5),meq ,nia,nja,F_nkgz ,iproc)
+            call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nkgz , 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            call local_data (buf ,blk_indx(iproc,5),ssq ,nia,nja,1      ,iproc)
+            call RPN_COMM_send (buf, blk_indx(iproc,5)*1      , 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            if (ana_zd_L) then
+               call local_data (buf ,blk_indx(iproc,5), zd ,nia,nja,F_nka_t-1,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t-1), 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            endif
+            if (ana_w_L ) then
+               call local_data (buf ,blk_indx(iproc,5), ww ,nia,nja,F_nka_t-1,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t-1), 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            endif
+            if (ana_q_L ) then
+               call local_data (buf ,blk_indx(iproc,5), qq ,nia,nja,F_nka_m+1,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_m+1), 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+            endif
+            do n=1,F_ntra
+               if (trname_a(n).ne.'!@@NOT@@') then
+                  call local_data (buf ,blk_indx(iproc,5), tr(1,1,1,n) ,nia,nja,F_nka_t,iproc)
+                  call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_t, 'MPI_REAL', &
+                                                  iproc, tag, 'BLOC', err )
+               endif
+            end do
+
+         end do
+         deallocate (buf)
+
+      else
+
+         tag= 210+Ptopo_blocme
+
+         cnt= F_nga*F_nka_m
+         call RPN_COMM_recv ( uun, cnt, 'MPI_REAL', 0, &
+                              tag, 'BLOC', status, err )
+         call RPN_COMM_recv ( vvn, cnt, 'MPI_REAL', 0, &
+                              tag, 'BLOC', status, err )
+         cnt= F_nga*F_nka_t
+         call RPN_COMM_recv ( ttn, cnt, 'MPI_REAL', 0, &
+                              tag, 'BLOC', status, err )
+         cnt= F_nga*F_nkgz
+         call RPN_COMM_recv ( meqn, cnt, 'MPI_REAL',0, &
+                              tag, 'BLOC', status, err )
+         cnt= F_nga
+         call RPN_COMM_recv ( ssqn, cnt, 'MPI_REAL',0, &
+                              tag, 'BLOC', status, err )
+         if (ana_zd_L) then
+            cnt= F_nga*(F_nka_t-1)
+            call RPN_COMM_recv ( zdn, cnt, 'MPI_REAL',0, &
+                                 tag, 'BLOC', status, err )
+         endif
+         if (ana_w_L ) then
+            cnt= F_nga*(F_nka_t-1)
+            call RPN_COMM_recv ( wwn, cnt, 'MPI_REAL',0, &
+                                 tag, 'BLOC', status, err )
+         endif
+         if (ana_q_L ) then
+            cnt= F_nga*(F_nka_m+1)
+            call RPN_COMM_recv ( qqn, cnt, 'MPI_REAL',0, &
+                                 tag, 'BLOC', status, err )
+         endif
+         do n=1,F_ntra
+            if (trname_a(n).ne.'!@@NOT@@') then
+               cnt= F_nga*F_nka_t
+               call RPN_COMM_recv ( trn(1,1,n), cnt, 'MPI_REAL',0, &
+                                          tag, 'BLOC', status, err )
+            endif
+         end do
+      endif
+
+      if (Ptopo_blocme.eq.0) deallocate (uu,vv,zd,tt,qq,ww,meq,ssq,tr)
+
+ 203  format (/' PROBLEM WITH FILE: ',a,', PROC#:',i4,' --ABORT--'/)
+ 1001 format ( ' Processor: ',i5,'  READING FILE: ',a)
+!
+!----------------------------------------------------------------------
+!
+      return
+      end
+!
+      subroutine local_data (F_out,F_ng,F_in,F_ni,F_nj,F_nk,F_iproc)
+      implicit none
+      integer F_ng,F_ni,F_nj,F_nk,F_iproc,F_cnt
+      real F_out(F_ng,F_nk), F_in(F_ni,F_nj,F_nk)
+#include "blk_input.cdk"
+
+      integer i,j,k,cnt
+
+      do k= 1, F_nk
+         cnt=0
+         do j= blk_indx(F_iproc,3), blk_indx(F_iproc,4)
+         do i= blk_indx(F_iproc,1), blk_indx(F_iproc,2)
+            cnt= cnt+1
+            F_out(cnt,k) = F_in(i,j,k)
+         end do
+         end do
+      end do
+      
+      return
+      end

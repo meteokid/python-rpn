@@ -5,9 +5,9 @@
       character*3  ifd_ftype
       character*15 ifd_fnext(ifd_maxf)
 
-      logical ifd_needit(ifd_maxf)
+      logical ifd_needit(ifd_maxf), ifd_overlap
 
-      integer ifd_niad, ifd_njad, ifd_niaf, ifd_njaf, ifd_nf
+      integer ifd_niad, ifd_njad, ifd_niaf, ifd_njaf, ifd_nf, ifd_cnt
       integer ifd_minx(ifd_maxf), ifd_maxx(ifd_maxf)
       integer ifd_miny(ifd_maxf), ifd_maxy(ifd_maxf)
 
@@ -15,7 +15,7 @@
       real ifd_yia(ifd_maxf),ifd_yfa(ifd_maxf)
 
       common /ifd_c/ ifd_ftype,ifd_fnext
-      common /ifd_l/ ifd_needit
+      common /ifd_l/ ifd_needit,ifd_overlap
       common /ifd_i/ ifd_niad, ifd_njad, ifd_niaf, ifd_njaf, ifd_nf
-      common /ifd_i/ ifd_minx, ifd_maxx, ifd_miny, ifd_maxy
+      common /ifd_i/ ifd_minx, ifd_maxx, ifd_miny, ifd_maxy, ifd_cnt
       common /ifd_r/ ifd_xia,ifd_xfa,ifd_yia,ifd_yfa

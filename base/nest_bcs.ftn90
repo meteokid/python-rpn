@@ -41,7 +41,6 @@
 !----------------------------------------------------------------------
 !
       if ( G_lam .and. .not. Grd_yinyang_L) then
-         call timing_start ( 70, 'NEST_BCS')
          if (.not. Lam_ctebcs_L) call nest_intt
          if (Schm_theoc_L) then
              if (north+south+west+east.ge.1) then
@@ -57,7 +56,6 @@
          else
              call nest_bcs_t0 ()
          endif
-         call timing_stop ( 70 )
       endif
 
 !

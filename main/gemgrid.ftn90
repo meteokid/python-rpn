@@ -17,6 +17,7 @@
 #include <model_macros_f.h>
       subroutine gemgrid
       implicit none
+#include <arch_specific.hf>
 !
 !author V.Lee - Jun. 14, 2011
 !
@@ -35,72 +36,60 @@
 !
 !     Computes positional parameters (>>=lat ^^=lon)
 !
-      integer  fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
-      external fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,grid_nml2
-
-#include <arch_specific.hf>
+      integer, external :: fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,&
+                           grid_nml2,exdb
 #include "grd.cdk"
 #include "hgc.cdk"
+#include <clib_interface.cdk>
 
       character*120 outfile,gfile,dumc,fn,etk,etk_ext
       logical lam
-      integer ni,nila,oun,uout,err,npack,i,j,k
-      integer nklemax,npos,core
-      parameter(nklemax=3)
-      character*256 defaut(nklemax),liste(0:nklemax-1),val(nklemax)
-      integer itile,jtile,i0,j0,i1,j1,ierx, iery
-      integer Grd_ip1,Grd_ip2,Grd_ip3
+      integer ni,nila,uout,err,npack,i,j,k
+
+      integer narguments,npos
+      parameter(narguments=5)
+      character*256 defaut(narguments),liste(narguments),val(narguments)
+      DATA LISTE /'splitnml','npex','npey','blocx','blocy'/
+      DATA defaut/       '1',   '1',   '1',    '1',    '1'/
+      DATA val   /       '0',   '1',   '1',    '1',    '1'/
+
+      integer Ptopo_npex,Ptopo_npey,Ptopo_nblocx,Ptopo_nblocy
+      integer itile,jtile,i0,j0,i1,j1,ierx, iery, spil3df
+      integer Grd_ip1,Grd_ip2,Grd_ip3,G_ni,G_nj
+      real    xlim_1,xlim_n,ylim_1,ylim_n
       real  , dimension(:), allocatable :: xpos, ypos
       real*8, dimension(:), allocatable :: x_8, y_8
-      DATA LISTE /'core.','liste','help'/
-      DATA defaut/'0','','AIDE'/
-      DATA val /'1','','OK'/
-      data oun,uout /51, 21/
-      data npack /-32/
+
+      namelist /split3df_out/ G_ni,G_nj,Ptopo_npex,Ptopo_npey,Ptopo_nblocx,&
+                              Ptopo_nblocy,xlim_1,xlim_n,ylim_1,ylim_n
 !
 !----------------------------------------------------------------------
 !
-      print *
-      print *,'------------------------------------------'
-      print *,'------------------------------------------'
-      print *
-      print *,'GEMGRID - version v_4.4.0  February 14, 2012 '
-      print *,'        - to write out ^^ >> for Phi grids in tape1'
-      print *,'        - to write out ^^ >> endpoints in gfilemap.txt '
-      print *
-      print *,'------------------------------------------'
-      print *,'------------------------------------------'
-      core=0
-      call ccard(liste,defaut,val,nklemax,npos)
-      read(val(1),*) core
+      err = exdb ('GEMGRID','4.5.0','NON')
 
-      etk='PARPOS'
+      call ccard(liste,defaut,val,narguments,npos)
 
-      do 900 k=0,1
+      read(val(1),*) spil3df
+      read(val(2),*) Ptopo_npex
+      read(val(3),*) Ptopo_npey
+      read(val(4),*) Ptopo_nblocx
+      read(val(5),*) Ptopo_nblocy
 
-      if (k.eq.0) outfile     = 'tape1'
-      if (k.eq.1) outfile     = 'tape2'
-      if (k.eq.0) gfile       = 'gfilemap.txt'
-      if (k.eq.1) gfile       = 'gfilemap2.txt'
-      if (k.eq.0) Grd_yinyang_S = 'YIN'
-      if (k.eq.1) Grd_yinyang_S = 'YAN'
-!
-      if (wkoffit(outfile).ne.-3.or.wkoffit(gfile).ne.-3) then
-          print *,trim(outfile), ' and/or ', trim(gfile),' already exist'
-          stop
-      endif
+      etk = 'PARPOS'
+      fn  = 'gem_settings.nml'
+
+      outfile       = 'tape1'
+      gfile         = 'gfilemap.txt'
+      Grd_yinyang_S = 'YIN'
 
 !     Read grid namelist using grid_nml
 
-      fn  = 'gem_settings.nml'
-      if (grid_nml2(fn,lam).lt.0) then
-           print *,'STOP: problem with NAMELIST GRID'
-           print *,"Use checknml to verify: \'checknml grid\'"
-           stop
+ 88   if (grid_nml2(fn,lam).lt.0) then
+         print *,'STOP: problem with NAMELIST GRID'
+         print *,"Use checknml to verify: \'checknml grid\'"
+         stop
       endif
-
-      print*, 'Requested grid configuration'
-      err = grid_nml2('print',lam)
+      err= grid_nml2('print',lam)
 
 !     Setup before calling e_grid
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
@@ -123,7 +112,21 @@
                       Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                       1,Grd_ni,1,1,Grd_nj,1)
 
-      Grd_ip3 = 0
+      Grd_ip3= 0
+
+      xlim_1= xpos(1) ; xlim_n= xpos(Grd_ni)
+      ylim_1= ypos(1) ; ylim_n= ypos(Grd_nj)
+      G_ni= Grd_ni
+      G_nj= Grd_nj
+
+      if (spil3df.gt.0) then
+         open  (51,file='split3df.nml',access='SEQUENTIAL',form='FORMATTED',iostat=err)
+         write (51,nml=split3df_out)
+         close (51)
+      else
+
+      err = clib_remove(gfile)
+      err = clib_remove(outfile)
 
       uout=0
       if (fnom(uout,outfile,'RND',0).ge.0) then
@@ -133,7 +136,8 @@
           stop
       endif  
 
-      open(oun,file=gfile,access='SEQUENTIAL',form='FORMATTED',iostat=err)
+      open(51,file=gfile,access='SEQUENTIAL',form='FORMATTED',iostat=err)
+
       i0=1
       j0=1
       i1=grd_ni
@@ -141,8 +145,10 @@
       itile=1
       jtile=1
 
-      write(oun,777) i0,j0,xpos(i0),xpos(i1),ypos(j0),ypos(j1),i1,j1, &
-                    itile,jtile
+      write(51,777) i0,j0,xpos(i0),xpos(i1),ypos(j0),ypos(j1),i1,j1, &
+                                                        itile,jtile
+      close (51)
+
       write(6,*) 'LONGITUDE'
       write(6,778)(i,xpos(i),i=1,grd_ni)
       write(6,*) 'LATITUDE'
@@ -157,6 +163,8 @@
          etk_ext=trim(etk)
       endif
 
+      npack = -32
+
       err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, grd_ni, 1, 1, &
                     Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
@@ -167,10 +175,16 @@
       err= fstfrm(uout)
       err= fclos (uout)
 
-      deallocate (x_8, y_8, xpos, ypos)
-      if (Grd_typ_S(2:2).ne.'Y') exit
+      endif
 
-  900 continue
+      deallocate (x_8, y_8, xpos, ypos)
+
+      if ((Grd_yinyang_L) .and. (trim(Grd_yinyang_S).eq.'YIN')) then
+         outfile       = 'tape2'
+         gfile         = 'gfilemap2.txt'
+         Grd_yinyang_S = 'YAN'
+         goto 88
+      endif
 !      
 !-------------------------------------------------------------------
 !

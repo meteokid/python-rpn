@@ -1,0 +1,36 @@
+      subroutine checkdmpart
+      implicit none
+
+      integer  grid_nml2 , gem_nml , gemdm_config
+      external grid_nml2 , gem_nml , gemdm_config
+
+#include "lun.cdk"
+#include "step.cdk"
+
+      logical LAM
+      integer err,Pelocal,Petotal,npex,npey
+
+      call RPN_COMM_init('',Pelocal,Petotal,1,1)
+
+      Step_runstrt_S='2011020300'
+
+      err = grid_nml2 ('./gem_settings.nml',LAM)
+      err = gem_nml   ('./gem_settings.nml')
+
+      err = gemdm_config ( )
+      call set_schm
+
+      Lun_out=6
+
+      read(5,*) npex, npey
+
+      call domain_decomp2 ( npex, npey, .true. )
+
+      call set_transpose2 ( npex, npey, .true. )
+
+      call rpn_comm_FINALIZE(err)
+
+      return
+      end
+
+! ex: echo "4 5" | r.mpirun -pgm ./checkdmpart_Linux_x86-64.Abs

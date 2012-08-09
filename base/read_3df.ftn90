@@ -15,131 +15,147 @@
 
 !**s/r read_3df - Reads self-nested 3DF pilot files where
 !
-#include "model_macros_f.h"
-!
-      subroutine read_3df (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
-                           trname_a,nvar,ntra,nga,nka_m,nka_t, &
-                           ofi,ofj,cumerr)
+      subroutine read_3df2 (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
+                            trname_a,F_zd_L, F_w_L, F_q_L, nvar, ntra, &
+                            nga,nka_m,nka_t, ofi,ofj,err)
       implicit none
 #include <arch_specific.hf>
 !
-      integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,cumerr
-      character*8 trname_a(ntra)
-      
-      real  uun(nga,nka_m), vvn (nga,nka_m), &
-            zdn(nga,nka_t-1), ttn (nga,nka_t), &
-            ssqn(nga,1  )  , meqn(nga,*  ), &
-            qqn(nga,nka_m+1), wwn(nga,nka_t-1), &
+      logical F_zd_L, F_w_L, F_q_L
+      integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,err
+      character* (*) trname_a(ntra)
+      real  uun(nga,nka_m), vvn (nga,nka_m), zdn(nga,nka_t-1), ttn(nga,nka_t  ), &
+            ssqn(nga,1   ), meqn(nga,nka_m), qqn(nga,nka_m+1), wwn(nga,nka_t-1), &
             trn (nga,nka_t,ntra)
 !
 !author
 !     M. Desgagne  April 2006 (MC2 read_3df)
 !
 !revision
-! v3_30 - Lee V.         - initial version for GEMDM
+! v3_30 - Lee V.             - initial version for GEMDM
 ! v3_30 - McTaggart-Cowan R. - implement variable orography
 ! v4_05 - Plante/McTaggart   - read all available tracers
 ! v4_05 - McTaggart-Cowan R. - initialize trname_a @@NOT@@
 !
-#include "glb_ld.cdk"
 #include "ifd.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
-#include "bcsgrds.cdk"
 !
-      character*4  nomvar
-      integer i,j,k,ntr,n,err,ni1,nj1,nk1,nbits
-      real, dimension(nga,nka_t) :: tracer_not_needed
+      character*4 nomvar
       logical s_L,gz_L,tt_L,uu_L,vv_L,found
+      integer i,j,k,ntr,n,cumerr,ni1,nj1,nk1,nbits
+      real, dimension(nga,nka_t) :: tracer_not_needed
 !
 !-----------------------------------------------------------------------
 !
       if (ntra.le.0) then
+          err= -1
           if (Lun_out.gt.0) write(Lun_out,*)'No tracers are available including HU'
-          call handle_error(-1,'read_3df','read_3df')
+          return
       endif
-      cumerr=0
-      ntr=0
-      s_L=.false.
-      gz_L=.false.
-      tt_L=.false.
-      uu_L=.false.
-      vv_L=.false.
-      ana_zd_L=.false.
-      ana_w_L=.false.
-      ana_q_L=.false.
+
+      ntr   = 0
+      s_L   = .false.
+      gz_L  = .false.
+      tt_L  = .false.
+      uu_L  = .false.
+      vv_L  = .false.
+      F_zd_L= .false.
+      F_w_L = .false.
+      F_q_L = .false.
+
 !     Initialize tracer names
-      trname_a='!@@NOT@@'
-!     Read tt1,st1, ME
+      trname_a= '!@@NOT@@'
+
       read_vars: do k=1,nvar+ntra
+
+          cumerr= 0
           read (unf,end=44,err=44) nomvar,ni1,nj1,nk1,nbits
           if (nomvar.eq.'S   ') then
               s_L=.true.
               call filmup (nomvar,ssqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                       1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'GZ  ') then
               gz_L=.true.
               call filmup (nomvar,meqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nk1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                     nk1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'TT  ') then
               tt_L=.true.
               call filmup (nomvar,ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                  nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'UU  ') then
               uu_L=.true.
               call filmup (nomvar,uun,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_m,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                  nka_m,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'VV  ') then
               vv_L=.true.
               call filmup (nomvar,vvn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_m,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                  nka_m,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'W   ') then
-              ana_w_L=.true.
+              F_w_L=.true.
               call filmup (nomvar,wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_t-1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'ZD  ') then
-              ana_zd_L=.true.
+              F_zd_L=.true.
               call filmup (nomvar,zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_t-1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'Q   ') then
-              ana_q_L=.true.
+              F_q_L=.true.
               call filmup (nomvar,qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_m+1,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+                                nka_m+1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
               cycle
           endif
 !         check for required tracer
           found = .false.
           do n=1,Tr3d_ntr
              if (trim(nomvar).eq.trim(Tr3d_name_S(n)))then
-                ntr=ntr+1
-                call filmup (nomvar,trn(1,1,ntr), &
+                ntr= ntr+1
+                call filmup (nomvar,trn(1,1,ntr)        , &
                      ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                     nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
-                trname_a(ntr)=nomvar
+                     nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                cumerr= cumerr + err
+                trname_a(ntr)= nomvar
                 found = .true.
              endif
           enddo
 !         read unnecessary tracer (required to advance correctly in data file)
           if (.not.found) then
-             call filmup (nomvar,tracer_not_needed, &
-                  ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                  nka_t,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+             call filmup (nomvar,tracer_not_needed           , &
+                          ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
+                          nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
           endif
+
       enddo read_vars
+
+      if (cumerr.gt.0) then
+         err= -1
+         if (Lun_out.gt.0) &
+         write(Lun_out,*) 'Problem reading data from 3df file in subroutine filmup'
+         return
+      endif
+
       if (.not.(s_L.and.tt_L.and.uu_L.and.vv_L.and.gz_L)) then
           if (Lun_out.gt.0) then
               write(Lun_out,*) 'ESSENTIAL variables are missing in 3df file:'
@@ -149,11 +165,20 @@
               write(Lun_out,*) 'VV=',vv_L
               write(Lun_out,*) 'GZ=',GZ_L
           endif
-          call handle_error(-1,'read_3df','read_3df')
+          err= -1
+          return
       endif
+
+      err= 0
+
       return
- 44   call handle_error(-1,'read_3df','read_3df')
- 1000 format( &
-      3X,'READING DATA IN (S/R READ_3DF)')
-      end
+
+ 44   cumerr= -1
+      if (Lun_out.gt.0) &
+      write(Lun_out,*) 'Problem reading unit: ',unf,' in subroutine read_3df'
 !
+!-----------------------------------------------------------------------
+!
+      return
+      end
+

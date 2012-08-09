@@ -142,6 +142,8 @@
          if (hyb(k) .lt. 0.) exit
          G_nk = k
       enddo
+      if (lun_out.gt.0) &
+      write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 !
       call set_zeta2( hyb, G_nk )
 !

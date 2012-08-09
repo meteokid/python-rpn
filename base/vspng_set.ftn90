@@ -89,7 +89,7 @@
       c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
       nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
-      Vspng_niter = int(4.*nutop+0.99)
+      Vspng_niter = int(4.d0*nutop+0.9999999)
       if (.not.G_lam) Vspng_niter = -1
 
       if (Lun_out.gt.0) then

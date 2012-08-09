@@ -144,6 +144,8 @@
 !
 !     Temporal linear interpolation
 !      
+      call timing_start ( 70, 'NESTINTT')
+
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
 !     b = nint( b * 10000000000.0_8 ) / 10000000000.0_8 ! Keep first 10 decimals
       a = one - b
@@ -168,6 +170,8 @@
          istat = gmm_get(tr_name,tr_deb,mymeta)
          tr (1:l_ni,1:l_nj,1:G_nk+2) = a*tr_deb(1:l_ni,1:l_nj,1:G_nk+2) + b*tr_fin(1:l_ni,1:l_nj,1:G_nk+2)
       end do
+
+      call timing_stop ( 70 )
 !
 !     ---------------------------------------------------------------
 !

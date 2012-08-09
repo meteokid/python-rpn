@@ -77,12 +77,13 @@
 
 !        Write out the 3df_filemap.txt
 !
-         filen=trim(rootfn)//'/3df_filemap.txt'
+         filen=trim(rootfn)//'/3df_'//trim(pdate)//'_filemap.txt'
          open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
-         write (9,'(2i8,4e15.7,2i10)')1,1, &
+         write (9,'(2i8,4e15.7,2i10,l4)')1,1, &
                      xg_8(e_grdc_gid),xg_8(e_grdc_gif), &
                      yg_8(e_grdc_gjd),yg_8(e_grdc_gjf), &
-                     e_grdc_gif-e_grdc_gid+1,e_grdc_gjf-e_grdc_gjd+1
+                     e_grdc_gif-e_grdc_gid+1,           &
+                     e_grdc_gjf-e_grdc_gjd+1,.false.
          close (9)
          call e_sfile_3df (pdate,'DYNAMICS', &
               e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,rootfn)

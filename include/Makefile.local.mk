@@ -21,7 +21,7 @@ V4D         = v4d_stubs
 #V4D         = "gemdyn_v4d prof_003"
 
 CHMLIBPATH  = 
-CHM         = $(CHM_VERSION)
+CHM         = $(CHM_VERSION) $(CHMLIBS)
 #CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
 #CHM         = chm
 
@@ -41,7 +41,7 @@ CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)/lib/$(EC_ARCH)
 
 ## GEM model Libpath and libs
 #LIBPATH = $(PWD) $(LIBPATH_PRE) $(LIBPATHEXTRA) $(LIBSYSPATHEXTRA) $(LIBPATHOTHER) $(LIBPATH_POST)
-LIBPATHPOST  = $(CHMLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(PROFLIBPATH)
+LIBPATHPOST  = $(CHMLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/$(EC_ARCH) $(CHMLIBPATH) $(CPLLIBPATH)/lib/$(EC_ARCH) $(CPLLIBPATH) $(PROFLIBPATH)
 
 #OTHERS  = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 #LIBAPPL = $(LIBS_PRE) $(MODELUTILSLIBS) $(OTHERS) $(LIBS_POST)
@@ -124,7 +124,7 @@ gemdm:
 .PHONY: libdyn
 libdyn: rmpo $(OBJECTS)
 
-.PHONY: prgemnml gemgrid toc2nml monitor sometools allbin allbincheck
+.PHONY: prgemnml gemgrid checkdmpart toc2nml monitor sometools allbin allbincheck
 prgemnml: $(BINDIR)/gemprnml_$(BASE_ARCH).Abs
 	ls -lL $(BINDIR)/gemprnml_$(BASE_ARCH).Abs
 prgemnml.ftn90: 
@@ -134,7 +134,7 @@ $(LCLPO)/prgemnml.o: prgemnml.ftn90
 $(BINDIR)/gemprnml_$(BASE_ARCH).Abs: $(LCLPO)/prgemnml.o
 	cd $(LCLPO) ;\
 	makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn modelutils" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true
 
 gemgrid: $(BINDIR)/gemgrid_$(BASE_ARCH).Abs
@@ -146,7 +146,19 @@ $(LCLPO)/gemgrid.o: gemgrid.ftn90
 $(BINDIR)/gemgrid_$(BASE_ARCH).Abs: $(LCLPO)/gemgrid.o
 	cd $(LCLPO) ;\
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn modelutils $(COMM) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
+
+checkdmpart: $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs
+	ls -lL $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs
+checkdmpart.ftn90: 
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ 2>/dev/null || true ; fi ;\
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
+$(LCLPO)/checkdmpart.o: checkdmpart.ftn90
+$(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
+	cd $(LCLPO) ;\
+	makemodelbidon checkdmpart > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	$(RBUILD) -obj checkdmpart.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) -mpi
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
 
 toc2nml: $(BINDIR)/toc2nml
@@ -183,11 +195,12 @@ $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 
 sometools: prgemnml gemgrid toc2nml
 
-allbin_gemdyn: monitor toc2nml gemgrid prgemnml #gemabs
+allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml #gemabs
 
 allbincheck_gemdyn:
 	if [[ \
 		   -f $(BINDIR)/gemprnml_$(BASE_ARCH).Abs \
+		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/gemgrid_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/toc2nml \
 		&& -f $(BINDIR)/gem_monitor_end \

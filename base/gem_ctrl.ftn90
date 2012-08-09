@@ -60,7 +60,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call gemtim4 ( Lun_out, 'BEGIN GEM_CTRL', .false. )
+      call gemtim4 ( Lun_out, 'GEM_CTRL: START', .false. )
 !
 !C       2.    If this is the beginning of the integration:
 !              ----------------------------------------------
@@ -91,7 +91,7 @@
 !
       endif
 !
-      call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
+      call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
 !
       Rstri_sdon = 0

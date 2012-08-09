@@ -13,32 +13,34 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
 !**   fillup field from data in 3DF files
 #include "model_macros_f.h"
 !
-      subroutine filmup (nomvar,f,n1,n2,n3,n4,nk,unf,ofi,ofj,cumerr,ni1,nj1,nk1,nbits )
+      subroutine filmup ( nomvar,f,n1,n2,n3,n4,nk,unf,ofi,ofj, &
+                                        err,ni1,nj1,nk1,nbits )
       implicit none
 #include <arch_specific.hf>
-#include "lun.cdk"
-#include "lctl.cdk"
-#include "ptopo.cdk"
 !
-      integer n1,n2,n3,n4,nk,unf,ofi,ofj,cumerr
+      character*(*) nomvar
+      integer n1,n2,n3,n4,nk,unf,ofi,ofj,err
+      integer ni1,nj1,nk1,nbits
       real f(n1:n2,n3:n4,nk)
+      
+#include "lun.cdk"
 !
-      character*4 nomvar
-      integer i,j,k,ni1,nj1,nk1,err,n,nbits,nb
+      integer i,j,k,n,nb
       real tr1(ni1,nj1,nk1)
       real, dimension (:), allocatable :: wkc
 !
 !-----------------------------------------------------------------------
+!
       nb = 0
-      err = 1
-
+      err= 1
 
       if (nbits.ge.32) then
-         read (unf,end=45,err=45) tr1
+         do k=1,nk1
+            read (unf,end=45,err=45) tr1(:,:,k)
+         end do
       else
          n = (ni1*nj1*nbits+120+32-1)/32
          allocate (wkc(n))
@@ -48,12 +50,13 @@
          end do
          deallocate (wkc)
       endif
+
       if (nk.ne.nk1) then
           if(Lun_out.gt.0)  &
              write(Lun_out,*) 'Error, filmup ',nomvar(1:4),  &
                      'levels required=',nk,'levels to read=',nk1
-          call handle_error(-1,'filmup','filmup')
       endif
+
       do k=1,nk
       do j=1,nj1
       do i=1,ni1
@@ -64,7 +67,8 @@
 
       err = 0
  45   continue
- 44   cumerr = cumerr + err
+!
 !-----------------------------------------------------------------------
+!
       return
       end

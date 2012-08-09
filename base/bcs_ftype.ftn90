@@ -16,13 +16,11 @@
 !opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r bcs_ftype - to determine whether pilot file is BMF,BCS or 3DF
 !
-      integer function bcs_ftype ( ft, datev, unf )
+      subroutine bcs_ftype2 ( ft, datev )
       implicit none
 #include <arch_specific.hf>
 !
-      character* (*) ft
-      character*15 datev
-      integer unf
+      character* (*) ft, datev
 !author
 !        Michel Desgagne - 2001 (from MC2 bcs_ftype)
 !revision
@@ -31,51 +29,60 @@
 !
 !ARGUMENTS
 !    NAMES     I/O  TYPE  A/S        DESCRIPTION
-!     ft       I/O   C    S       Input file type
+!     ft        O   C     S       Input file type
 !
 !IMPLICIT
-#include "bcsgrds.cdk"
 #include "ifd.cdk"
 #include "path.cdk"
+#include "ptopo.cdk"
 !
-      integer  nav_3df
-      external nav_3df
-      character*3 ft_pref
-      character*256 fn
-      logical mustnav
-      integer err
-!
-!-----------------------------------------------------------------------
-!
-      ft_pref = 'NON'
-!
-      fn  = trim(Path_ind_S)//'/3df_filemap.txt'
-      open (unf,file=fn,access='SEQUENTIAL',status='OLD', &
-                             iostat=err,form='FORMATTED')
-      ft_pref = 'BMF'
-      if ( err.eq.0 ) ft_pref = '3DF'
-!
-      bcs_ftype = -2
-!
-      mustnav = .false.
-      if (ft.ne.ft_pref) mustnav = .true.
+      integer  nav_3df2
+      external nav_3df2
 
-      ft = ft_pref
-!
-      if (ft.eq.'BMF') mustnav = .false.
-!
-      if (mustnav) then
-         bcs_ftype = nav_3df (unf,1.2,1.0d0)
-         bcs_nia = ifd_niaf - ifd_niad + 1
-         bcs_nja = ifd_njaf - ifd_njad + 1
-         close (unf)
-      else
-         bcs_ftype = 0
-      endif
-!
-      call handle_error (bcs_ftype,'bcs_ftype','bcs_ftype ')
+      character*1024 fn
+      logical done
+      integer unf,err
+      save done
+      data done /.false./
 !
 !-----------------------------------------------------------------------
+!
+      if (.not.done) call blk_coverage
+
+      err= 0
+
+      if (Ptopo_blocme.eq.0) then
+
+         unf = 76
+         fn= trim(Path_ind_S)//'/3df_'//trim(datev)//'_filemap.txt'
+         open (unf,file=fn,access='SEQUENTIAL',status='OLD', &
+                                iostat=err,form='FORMATTED')
+         if ( err.eq.0 ) then
+            ft = '3DF'
+         else
+            ft = 'BMF'
+            err= 0
+         endif
+
+         if (ft.eq.'3DF') then
+            err= nav_3df2 (unf)
+            close (unf)
+         endif
+
+         fn(1:len(ft))= ft
+
+      endif
+
+      call handle_error (err,'bcs_ftype','Problem with nav_3df')
+
+      call RPN_COMM_bcast (fn, len(ft), "MPI_CHARACTER",0,"BLOC",err)
+
+      ft= fn(1:len(ft))
+         
+      done= .true.
+!
+!-----------------------------------------------------------------------
+!
       return
       end
 

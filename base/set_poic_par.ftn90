@@ -53,7 +53,7 @@
 !
       integer i, j, nev, nod
       real*8  x0e_8 (NSTOR,NSTOR), x0o_8 (NSTOR,NSTOR), &
-              d_8 (3*F_ni-1) , r_8 (NSTOR)
+              r_8 (NSTOR)
 !
       real*8 ZERO, HALF, ONE, TWO, FOUR
       parameter( ZERO = 0.0 , HALF = 0.5, ONE = 1.0,  &
@@ -116,16 +116,12 @@
 !
 !     even modes and eigeivalues
 !
-      call geneigl ( r_8, F_evvec_8, x0e_8, d_8, -ONE, &
-                             1, nev, NSTOR, 3*F_ni-1 )
-      do i=1,nev
-         F_eival_8(i) = r_8(i)
-      end do
+      call geneigl3 ( r_8, F_evvec_8, x0e_8, nev, NSTOR, 3*F_ni-1 )
+      F_eival_8(1:nev) = r_8(1:nev)
 !
 !     odd modes and eigeivalues
 !
-      call geneigl ( r_8, F_odvec_8, x0o_8, d_8, -ONE, &
-                             1, nod, NSTOR, 3*F_ni-1 )
+      call geneigl3 ( r_8, F_odvec_8, x0o_8, nod, NSTOR, 3*F_ni-1 )
       do i=1,nod
          F_eival_8(nev+i) = r_8(i)
       end do

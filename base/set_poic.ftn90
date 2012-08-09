@@ -18,14 +18,13 @@
 #include "model_macros_f.h"
 !
       subroutine set_poic ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8, &
-                                                      F_npts, NSTOR )
-!
+                                                   F_npts, NSTOR )
       implicit none
 #include <arch_specific.hf>
 !
       integer F_npts, NSTOR
-      real*8  F_eval_8(NSTOR), F_evec_8(NSTOR,NSTOR)
-      real*8  F_xp0_8(NSTOR,3), F_xp2_8(NSTOR,3)
+      real*8  F_eval_8(NSTOR)  , F_evec_8(NSTOR,NSTOR)
+      real*8  F_xp0_8 (NSTOR,3), F_xp2_8 (NSTOR,3)
 !
 !author
 !     jean cote - sept 1995 - from setpois
@@ -53,30 +52,18 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "grd.cdk"
-#include "lun.cdk"
 !
-      integer i, j, fni0
-      real*8 a_8(F_npts,F_npts),b_8(F_npts,F_npts)
-      real*8 d_8(3*F_npts-1), r_8(F_npts)
-
+      integer i, j
+      real*8 a_8(F_npts,F_npts), b_8(F_npts,F_npts), r_8(F_npts)
       real*8 zero,one,two,pdfaz
       parameter( zero = 0.0 , one = 1.0, two = 2.0 )
+!
 ! --------------------------------------------------------------------
 !
 !     put input arguments in real*8 arrays
 !
-      do j=1,NSTOR
-      do i=1,NSTOR
-         F_evec_8(i,j)=zero
-      enddo
-         F_eval_8(j)=zero
-      enddo
-      do i=1,F_npts
-      do j=1,F_npts
-         a_8(i,j) = zero
-         b_8(i,j) = zero
-      end do
-      end do
+      F_evec_8= zero ; F_eval_8= zero ; a_8= zero ; b_8= zero
+
       do i = 1, F_npts-1
          a_8(i,i+1) = F_xp2_8(i+Lam_pil_w,3)
          a_8(i,i  ) = F_xp2_8(i+Lam_pil_w,2)
@@ -85,40 +72,26 @@
          b_8(i,i  ) = F_xp0_8(i+Lam_pil_w,2)
          b_8(i+1,i) = b_8(i,i+1)
       end do
-      a_8(F_npts,F_npts) = F_xp2_8(NSTOR-Lam_pil_e,2)
-      b_8(F_npts,F_npts) = F_xp0_8(NSTOR-Lam_pil_e,2)
-      if (.not. G_lam) then
+
+      a_8(F_npts,F_npts)= F_xp2_8(NSTOR-Lam_pil_e,2)
+      b_8(F_npts,F_npts)= F_xp0_8(NSTOR-Lam_pil_e,2)
+
+      if (G_lam) then
+          call geneigl3 (r_8, a_8, b_8, F_npts, F_npts, 3*F_npts-1)
+          if (.not.Grd_yinyang_L) then
+             pdfaz= ONE/sqrt((G_xg_8(G_ni-glb_pil_e)-G_xg_8(glb_pil_w)))
+             r_8(1)          = 0.0d0
+             a_8(1:F_npts,1) = pdfaz
+          endif
+      else
           a_8(F_npts,1  ) = F_xp2_8(F_npts,3)
           a_8(1,F_npts  ) =  a_8(F_npts,1)
           b_8(F_npts,1  ) = F_xp0_8(F_npts,3)
           b_8(1,F_npts  ) =  b_8(F_npts,1)
-      endif
-!
-      if (Lun_debug_L) then
-      print *,'F_npts=',F_npts,' G_ni=',G_ni,'NSTOR=',NSTOR
-      print *,'set_poic: G_xg_8(G_ni-5)=',G_xg_8(G_ni-5),'G_xg_8(6)=',G_xg_8(6)
-      print *,'set_poic: G_yg_8(G_nj-5)=',G_yg_8(G_nj-5),'G_yg_8(6)=',G_yg_8(6)
-      endif
-      if (G_lam) then
-
-          pdfaz = ONE / sqrt( (G_xg_8(G_ni-glb_pil_e)-G_xg_8(glb_pil_w) ) )
-      if (Lun_debug_L) then
-      print *,'pdfaz=ONE / sqrt( (G_xg_8(G_ni-glb_pil_e)-G_xg_8(glb_pil_w) ) )'
-      endif
-          if (Grd_yinyang_L) then
-              call prepoic ( r_8, a_8, b_8, d_8, pdfaz, -ONE, &
-                          'D', fni0, F_npts, F_npts )
-          else
-              call prepoic ( r_8, a_8, b_8, d_8, pdfaz, -ONE, &
-                          'N', fni0, F_npts, F_npts )
-          endif
-      else
+          call geneigl3 (r_8, a_8, b_8, F_npts, F_npts, 3*F_npts-1)
           pdfaz = ONE / sqrt( TWO*Dcst_pi_8 )
-          call prepoic ( r_8, a_8, b_8, d_8, pdfaz, -ONE, &
-                          'P', fni0, F_npts, NSTOR )
-      endif
-      if (Lun_debug_L) then
-      print *,'set_poic: pdfaz=',pdfaz
+          r_8(1)          = 0.0d0
+          a_8(1:F_npts,1) = pdfaz
       endif
 !
 !     put real*8 results in output arguments arrays
@@ -129,10 +102,12 @@
          F_evec_8(i+Lam_pil_w,j+Lam_pil_s) = a_8(i,j)
       enddo
       enddo
-!     
+
       do i = 1, F_npts
          F_eval_8(i+Lam_pil_w) = r_8(i)
       end do
+!
+! --------------------------------------------------------------------
 !
       return
       end

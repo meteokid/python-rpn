@@ -17,9 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine domain_decomp
+      subroutine domain_decomp2 ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
+!
+      logical F_checkparti_L
+      integer F_npex, F_npey
 !
 !author
 !     Michel Desgagne     Summer 2006
@@ -37,11 +40,10 @@
 #include "ptopo.cdk"
 #include "lam.cdk"
 !
-      logical  check_parti
-      integer  partition
-      external partition,check_parti
+      integer  decomp
+      external decomp
 
-      integer err,ierr(2)
+      integer err,ierr,ierrx,ierry
 !
 !-------------------------------------------------------------------
 !
@@ -88,23 +90,15 @@
          Lam_pil_s = Glb_pil_s
       endif
 
-!      ierr(1) = partition ( G_ni, 'NPEX', G_halox, l_minx,l_maxx,l_ni,l_i0 )
-!      ierr(2) = partition ( G_nj, 'NPEY', G_haloy, l_miny,l_maxy,l_nj,l_j0 )
-!      err     = min(ierr(1),ierr(2))
-!      call handle_error(err,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
-!      call rpn_comm_ALLREDUCE (l_ni,G_lnimax,1,"MPI_INTEGER","MPI_MAX","grid",err)
-!      call rpn_comm_ALLREDUCE (l_nj,G_lnjmax,1,"MPI_INTEGER","MPI_MAX","grid",err)
-
-      call rpn_comm_topo ( G_ni,l_minx,l_maxx,l_ni,G_lnimax, &
-                                  G_halox,l_i0,.true.,.true.) 
-      call rpn_comm_topo ( G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
-                                 G_haloy,l_j0,.false.,.true.)
-
-      if (Lun_out.gt.0) write (Lun_out,1000) G_ni,Ptopo_npex,G_nj,Ptopo_npey
-      ierr=0
+      if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
 !
-      if ( (.not.check_parti (l_i0,G_ni,Ptopo_npex)) .or. &
-           (.not.check_parti (l_j0,G_nj,Ptopo_npey)) ) ierr=-1
+      ierrx= decomp (G_ni,l_minx,l_maxx,l_ni,G_lnimax, &
+                  G_halox,l_i0,.true. ,.true., F_npex, F_checkparti_L )
+      ierry= decomp (G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
+                  G_haloy,l_j0,.false.,.true., F_npey, F_checkparti_L )
+      ierr=0
+      if ((ierrx.lt.0).or.(ierry.lt.0)) ierr=-1
+
       if ( l_ni.lt.(Grd_extension+1) ) then
          if (Lun_out.gt.0) write (Lun_out,1001) 'X','l_ni',Grd_extension+1
          ierr=-1
@@ -113,10 +107,14 @@
          if (Lun_out.gt.0) write (Lun_out,1001) 'Y','l_nj',Grd_extension+1
          ierr=-1
       endif
-      call flush(6)
-	
-      call flush(6)
-      call handle_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
+
+      if  (Lun_out.gt.0) then
+         if (ierr.lt.0)  then
+            print*, 'ILLEGAL DOMAIN PARTITIONING'
+         else
+            print*, 'PARTITIONING is OK'
+         endif
+      endif
 !
       l_nk = G_nk
       l_njv= l_nj
@@ -124,7 +122,10 @@
       if (l_north) l_njv= l_nj - 1
       if ((l_east).and.(G_lam)) l_niu = l_ni - 1
 !
-      call glbpos  
+      if (.not.F_checkparti_L) then
+         call handle_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
+         call glbpos   
+      endif
 !
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
                2(i6,' in ',i6,' subdomains',5x)/)
@@ -134,4 +135,9 @@
 !
       return
       end
+      subroutine domain_decomp
+      print*, 'SUBROUTINE domain_decomp has been replaced by domain_decomp2'
+      stop
+      end
+
 

@@ -1,0 +1,5 @@
+      integer, dimension (:,:), pointer :: blk_indx
+      real*8 , dimension (:,:), pointer :: blk_xg_8, blk_yg_8
+
+      common /blk_pnt/ blk_indx, blk_xg_8, blk_yg_8
+

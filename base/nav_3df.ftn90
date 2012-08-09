@@ -17,13 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      integer function nav_3df (unf,ext,mf)
+      integer function nav_3df2 (unf)
       implicit none
 #include <arch_specific.hf>
 !
       integer unf
-      real ext
-      real*8 mf
 !
 !author 
 !     Michel Desgagne   - Summer 2006
@@ -31,7 +29,7 @@
 !revision
 ! v3_30 - Desgagne M.     - initial version
 !
-!
+#include "blk_input.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "grd.cdk"
@@ -39,26 +37,34 @@
 #include "ifd.cdk"
 !
       logical needitx,needity,wb,eb,sb,nb
-      integer i,j,nia,nja,i0,j0,npx,npy
+      integer i,j,nia,nja,i0,j0,npx,npy,m,n
       real xpos_debut,ypos_debut,xpos_fin,ypos_fin
       real xda,xfa,yda,yfa
+      real*8 xd_8, xf_8, yd_8, yf_8
       real*8 xi,xf,yi,yf,xri,xrf,yri,yrf,deg2rad_8,resax,resay
+!
 !-----------------------------------------------------------------------
+!
+      nav_3df2= 0
+
+      xd_8= blk_xg_8(0,1)
+      xf_8= blk_xg_8(Ptopo_numpe_perb-1,2)
+      yd_8= blk_yg_8(0,1)
+      yf_8= blk_yg_8(Ptopo_numpe_perb-1,2)
 !
 ! Considering data coverage of individual input files, determine
 ! which files are needed for local target data coverage of Ptopo_myproc 
 ! and verify that input data coverage is sufficient.
 !
       ifd_nf     =  1
+      ifd_cnt    =  0
       ifd_niad   =  200000 
       ifd_njad   =  200000
       ifd_niaf   = -200000  
       ifd_njaf   = -200000
       ifd_needit = .false.
-      wb = .false.
-      eb = .false.
-      sb = .false.
-      nb = .false.
+
+      wb= .false. ; eb= .false. ; sb= .false. ; nb= .false.
 !
 ! Determine input data resolution resax, resay
 ! (Best if this comes directly from the driving model)
@@ -70,7 +76,8 @@
       ypos_debut =  1.e20
       xpos_fin   = -1.e20
       ypos_fin   = -1.e20
- 10   read (unf,304,end=20) i0, j0, xda, xfa, yda, yfa, nia, nja
+! 10   read (unf,304,end=20) i0, j0, xda, xfa, yda, yfa, nia, nja, ifd_overlap
+ 10   read (unf,*,end=20) i0, j0, xda, xfa, yda, yfa, nia, nja, ifd_overlap
       npx = max (npx, i0 + nia - 1)
       npy = max (npy, j0 + nja - 1)
       xpos_debut = min(xpos_debut,xda)
@@ -84,35 +91,24 @@
 !
 ! Limits of data coverage that must be satisfied for local grid
 !
-      xi  = G_xg_8(l_i0)            - resax
-      yi  = G_yg_8(l_j0)            - resay
-      xf  = G_xg_8(l_i0 + l_ni - 1) + resax
-      yf  = G_yg_8(l_j0 + l_nj - 1) + resay
+      xi  = xd_8 - resax
+      yi  = yd_8 - resay
+      xf  = xf_8 + resax
+      yf  = yf_8 + resay
 
       resax = Grd_dx*deg2rad_8/1000.
       resay = Grd_dy*deg2rad_8/1000.
-      xri   = G_xg_8(l_i0) + resax
-      yri   = G_yg_8(l_j0) + resay
-      xrf   = G_xg_8(l_i0 + l_ni - 1) - resax
-      yrf   = G_yg_8(l_j0 + l_nj - 1) - resax
 
-!      write (6,33) G_xg_8(l_i0),G_xg_8(l_i0 + l_ni - 1),G_yg_8(l_j0),G_yg_8(l_j0 + l_nj - 1),l_ni,l_nj
-! 33   format ('MyCov    : ',4f15.8,2i5)
-!      write (6,34) xi,xf,yi,yf
-! 34   format ('MyCov_EXT: ',4f15.8)
+      xri = xd_8 + resax
+      yri = yd_8 + resay
+      xrf = xf_8 - resax
+      yrf = yf_8 - resax
 !
 ! Read the file again and compare data coverage
 !
       rewind (unf)
- 1    read (unf,304,end=2) i0, j0, xda, xfa, yda, yfa, nia, nja
-
-      xda=xda*mf
-      xfa=xfa*mf
-      yda=yda*mf
-      yfa=yfa*mf
-
-!      write (6,44) ifd_nf, i0,j0, nia,nja, xda, xfa, yda, yfa
-! 44   format ('FiCov: ',5i5,4f15.8)
+! 1    read (unf,304,end=2) i0, j0, xda, xfa, yda, yfa, nia, nja, ifd_overlap
+ 1    read (unf,*,end=2) i0, j0, xda, xfa, yda, yfa, nia, nja, ifd_overlap
 
       needitx = .false.
       needity = .false.
@@ -126,10 +122,11 @@
       else
          if (yda.le.yf) needity=.true.
       endif
-!
+
       ifd_needit(ifd_nf) = .false.
       if (needitx.and.needity) then
          ifd_needit(ifd_nf) = .true.
+         ifd_cnt          = ifd_cnt + 1
 	 ifd_minx(ifd_nf) = i0
          ifd_miny(ifd_nf) = j0
          ifd_maxx(ifd_nf) = i0 + nia - 1
@@ -149,28 +146,31 @@
          nb = nb .or. (ifd_yfa(ifd_nf).ge.yrf)
       endif
 
+      if (ifd_overlap .and. ifd_needit(ifd_nf)) then
+         if ((wb).and.(eb).and.(sb).and.(nb)) then
+            goto 66
+         else
+            ifd_needit(ifd_nf) = .false.
+            ifd_cnt            = 0
+            wb= .false. ; eb= .false. ; sb= .false. ; nb= .false.
+         endif
+      endif
+
       ifd_nf = ifd_nf + 1
       goto 1
  2    ifd_nf = ifd_nf - 1
-      close (unf)
-!
-!	do i=1,ifd_nf
-!        if (ifd_needit(i)) then
-! 	write (6,55) ifd_minx(i),ifd_maxx(i),ifd_miny(i),
-!     $               ifd_maxy(i),ifd_niad,ifd_njad,ifd_niaf,ifd_njaf,i
-!        endif
-!	end do
-! 55   format ('h1n2: ',9i6)
 
-      nav_3df = 0
       if (.not.((wb).and.(eb).and.(sb).and.(nb))) then
-         write (6,202) wb,eb,sb,nb,Ptopo_myproc
-         nav_3df = -1
+         write (6,202) wb,eb,sb,nb,Ptopo_mybloc
+         nav_3df2 = -1
       endif
-!
+
  202  format (/' INSUFFICIENT INPUT DATA COVERAGE - wb,eb,sb,nb:',4L4, &
-               ', PROC#:',i4,' --ABORT--'/)
- 304  format (2i8,4e15.7,2i10)
+               ', BLOCK#:',i4,' --ABORT--'/)
+ 304  format (2i8,4e15.7,2i10,l4)
+!
 !-----------------------------------------------------------------------
+!
+ 66   close (unf)
       return
       end

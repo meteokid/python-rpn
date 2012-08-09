@@ -59,7 +59,9 @@
       if (Ptopo_blocme.eq.0) then
          write (unf) nomvar(1:4),nis,njs,nks,nbits
          if (nbits.ge.32) then
-            write (unf) tr1
+            do k=1,nks
+               write (unf) tr1(:,:,k)
+            end do
          else
             n = (nis*njs*nbits+120+32-1)/32
             allocate (wkc(n))

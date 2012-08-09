@@ -67,12 +67,14 @@
       pdfaz=-One
 !
       fdg1=a_8 ; fdg2=b_8
-!         
-      if (Grd_yinyang_L) then
-          call prepoic (r_8, a_8, b_8, d_8, pdfaz, -ONE, 'D', fni0, Ni, Ni )
-      else
-          call prepoic (r_8, a_8, b_8, d_8, pdfaz, -ONE, 'N', fni0, Ni, Ni )
-      endif
+!
+      call geneigl3 ( r_8, a_8, b_8, Ni, Ni, 3*Ni-1 )
+
+!      if (Grd_yinyang_L) then
+!          call prepoic2 (r_8, a_8, b_8, d_8, pdfaz, 'D', Ni, Ni )
+!      else
+!          call prepoic2 (r_8, a_8, b_8, d_8, pdfaz, 'N', Ni, Ni )
+!      endif
 !
       evec_local = a_8
       eval_local = r_8
