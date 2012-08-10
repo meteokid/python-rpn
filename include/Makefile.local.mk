@@ -137,6 +137,7 @@ $(BINDIR)/gemprnml_$(BASE_ARCH).Abs: $(LCLPO)/prgemnml.o
 	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true
 
+
 gemgrid: $(BINDIR)/gemgrid_$(BASE_ARCH).Abs
 	ls -lL $(BINDIR)/gemgrid_$(BASE_ARCH).Abs
 gemgrid.ftn90: 
@@ -147,7 +148,8 @@ $(BINDIR)/gemgrid_$(BASE_ARCH).Abs: $(LCLPO)/gemgrid.o
 	cd $(LCLPO) ;\
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
-	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
+	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/gemgrid.o 2>/dev/null || true 
+
 
 checkdmpart: $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs
 	ls -lL $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs
@@ -158,8 +160,15 @@ $(LCLPO)/checkdmpart.o: checkdmpart.ftn90
 $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
 	cd $(LCLPO) ;\
 	makemodelbidon checkdmpart > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj checkdmpart.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) -mpi
-	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
+	$(RBUILD) -obj checkdmpart.o bidon.o -o $@ $(OMP) $(MPI) \
+		-libpath $(LIBPATH) \
+		-libappl $(LIBAPPL) \
+		-librmn $(RMN_VERSION) \
+		-libsys $(LIBSYS) \
+		-codebeta $(CODEBETA) \
+		-optf "=$(LFLAGS)" ;\
+	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/checkdmpart.o 2>/dev/null || true 
+
 
 toc2nml: $(BINDIR)/toc2nml
 	ls -lL $(BINDIR)/toc2nml

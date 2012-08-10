@@ -251,12 +251,12 @@ $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/include/$(EC_ARCH): objects
 #TODO: link to oldarch
 $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/lib/$(EC_ARCH): libs
 	mkdir -p $@ 2>/dev/null || true ;\
-	cp $(BUILDDIRARCH)/lib*.a $(BUILDDIRARCH)/lib*.a.fl $(BUILDDIRARCH)/*/lib*.a $(BUILDDIRARCH)/*/lib*.a.fl $@/ 2>/dev/null || true ;\
+	rsync -a $(BUILDDIRARCH)/lib*.a $(BUILDDIRARCH)/lib*.a.fl $(BUILDDIRARCH)/*/lib*.a $(BUILDDIRARCH)/*/lib*.a.fl $@/ 2>/dev/null || true ;\
 	cp $(BUILDDIRARCH)/.VERSION $@/ 2>/dev/null || true
 #TODO: link to oldarch
 $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/bin/$(BASE_ARCH): allabs allabscheck
 	mkdir -p $@ 2>/dev/null || true ;\
-	cp $(BUILDDIRARCH)/bin/* $@/ 2>/dev/null || true ;\
+	rsync -a $(BUILDDIRARCH)/bin/* $@/ 2>/dev/null || true ;\
 	rm -f $@/Makefile* $@/cibles* $@/recettes* 2>/dev/null || true 
 
 #TODO: $(DISTDIR)/$(PKGNAME)_$(VERSION)_multi
@@ -354,7 +354,7 @@ $(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl: | $(SSMINSTALLDIRDOM)/$(PKGNAME
 	chmod u+w $(SSMINSTALLDIRBNDL)/$(PKGNAME) ;\
 	cat $(SSMDEPENDENCIES) > $@ ;\
 	echo $(SSM_RELDIRDOM)$(PKGNAME)/$(VERSION) >> $@ ;\
-	if [[ x$(SSMDEPENDENCIESPOST) != x && -r $(SSMDEPENDENCIESPOST) ]] ; then cat $(SSMDEPENDENCIESPOST) >> $@ ;fi ;\
+	if [[ x$(SSMDEPENDENCIESPOST) != x ]] ; then [[ -r `ls $(SSMDEPENDENCIESPOST)` ]] && cat $(SSMDEPENDENCIESPOST) >> $@ ;fi ;\
 	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRBNDL)/$(PKGNAME) $@ ;\
 	ls -l $@
 
