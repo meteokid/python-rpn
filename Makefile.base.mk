@@ -202,6 +202,7 @@ $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/src: | $(DISTDIR)/$(PKGNAME)_$(VERSION)_all
 	for mydir in $(SUBDIRS_SRC) ; do \
 		rsync -a --delete $(SRCDIR)/$${mydir} $@ ;\
 	done ;\
+	cp $(SRCDIR)/Makefile* $(SRCDIR)/DESCRIPTION $(SRCDIR)/.setenv.dot $(SRCDIR)/ssmuse_dependencies.bndl $@ 2>/dev/null || true ;\
 	find $@ -type f -exec chmod a-wx+r {} \; ;\
 	cd $@ && ln -s ../include include
 $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/RCS: $(DISTDIR)/$(PKGNAME)_$(VERSION)_all/src
