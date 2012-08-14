@@ -15,32 +15,27 @@
 #include "msg.h"
 
 !/**
-subroutine adx_interp6 ( F_out, F_in, F_c1,         &
+subroutine adx_interp5 ( F_out, F_in, F_c1,         &
                          F_capx1, F_capy1, F_capz1, &
                          F_capx2, F_capy2, F_capz2, &
                          Minx,Maxx,Miny,Maxy,F_nk,  &
-                         F_wind_L,F_mono_L, i0,in,j0,jn,k0, F_lev_S,&
-                         nearest_i, nearest_j, nearest_k, nbpts)
+                         F_wind_L,F_mono_L, i0,in,j0,jn,k0, F_lev_S)
    implicit none
 #include <arch_specific.hf>
 !
    !@objective 
 !
    !@arguments
-   character (len=*), intent(in) :: F_lev_S !I, m/t : Momemtum/thermo level
-   integer, intent(in) :: Minx,Maxx,Miny,Maxy
-   integer, intent(in) :: i0,in,j0,jn,k0    !I, scope of operator
-   integer, intent(in) :: F_nk              !I, number of vertical levels
-   integer, intent(in) :: F_c1(*)
-   logical, intent(in) :: F_mono_L          !I, .true. monotonic interpolation
-   logical, intent(in) :: F_wind_L          !I, .true. if field is wind like
-   real, intent(in)    :: F_capx1(*), F_capy1(*), F_capz1(*)
-   real, intent(in)    :: F_capx2(*), F_capy2(*), F_capz2(*)
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in) :: F_in
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_out
-   integer, dimension(nbpts), intent(in) :: nearest_i, nearest_j, nearest_k
-   integer, intent(in) :: nbpts            !I, number of grid points
-
+   character (len=*) :: F_lev_S !I, m/t : Momemtum/thermo level
+   integer :: Minx,Maxx,Miny,Maxy
+   integer :: i0,in,j0,jn,k0    !I, scope of operator
+   integer :: F_nk              !I, number of vertical levels
+   integer :: F_c1(*)
+   logical :: F_mono_L          !I, .true. monotonic interpolation
+   logical :: F_wind_L          !I, .true. if field is wind like
+   real    :: F_capx1(*), F_capy1(*), F_capz1(*)
+   real    :: F_capx2(*), F_capy2(*), F_capz2(*)
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk) :: F_in,F_out
 !
    !@author alain patoine
    !@revisions
@@ -52,14 +47,13 @@ subroutine adx_interp6 ( F_out, F_in, F_c1,         &
    ! v3_30 - McTaggart-Cowan   - Add truncated lag3d interpolator
    ! v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
    ! v3_30 - Tanguay M.        - adjust OPENMP for LAM 
-   ! v4_05 - Gaudreault S.     - Code optimization
 !**/
 
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
 
    logical, parameter :: EXTEND_L = .true.
-   integer :: i, j, k, istat
+   integer :: i, j, k, istat, nbpts
    real    :: dummy
    real    :: fld_adw(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk)
    real, dimension(:), pointer             :: wrka
@@ -73,15 +67,14 @@ subroutine adx_interp6 ( F_out, F_in, F_c1,         &
    call adx_grid_scalar (fld_adw, F_in, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
                                    Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
 
-   call adx_tricub_lag3d6 (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
-                           F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S,&
-                           nearest_i, nearest_j, nearest_k, nbpts)   
+   nbpts = adx_mlni*adx_mlnj*F_nk
 
+   call adx_tricub_lag3d5 (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
+                                      F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)   
    if (.not.adx_lam_L) then
       if (adx_fro_a > 0 ) then
-         call adx_tricub_lag3d6 (wrka, fld_adw, F_capx2, F_capy2, F_capz2, adx_fro_a, &
-                                                F_mono_L, 1,adx_fro_a,1,1,1,1, F_lev_S,&
-                                                nearest_i, nearest_j, nearest_k, nbpts)
+         call adx_tricub_lag3d5 (wrka, fld_adw, F_capx2, F_capy2, F_capz2, adx_fro_a, &
+                                                F_mono_L, 1,adx_fro_a,1,1,1,1, F_lev_S)
       endif
 
       call adx_exch_2 ( wrkb, dummy, dummy, &
@@ -108,5 +101,5 @@ subroutine adx_interp6 ( F_out, F_in, F_c1,         &
    !---------------------------------------------------------------------
 
    return
-end subroutine adx_interp6
+end subroutine adx_interp5
 

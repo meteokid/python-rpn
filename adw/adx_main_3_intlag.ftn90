@@ -26,14 +26,14 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    !@objective Interpolation of rhs
 !
    !@arguments
-   logical, intent(in) :: F_is_mom_L     !I, momentum level if .true. (thermo if not)
-   logical, intent(in) :: F_doAdwStat_L  !I, compute stats if .true.
-   integer, intent(in) :: F_ni,F_nj,F_nk !I, pos array dims
-   integer, intent(in) :: F_k0           !I, vertical scope F_k0 to F_nk
-   integer, intent(in) :: F_nfields      !I, nb of fields to advect
-   logical, dimension(2,F_nfields), intent(in) :: F_fields_type_L !I, fields type
-   character(len=*), dimension(2,F_nfields), intent(in) :: F_fields_list   !I, gmm flds lbls
-   real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_px, F_py, F_pz !I, upstream positions at t1
+   logical :: F_is_mom_L     !I, momentum level if .true. (thermo if not)
+   logical :: F_doAdwStat_L  !I, compute stats if .true.
+   integer :: F_ni,F_nj,F_nk !I, pos array dims
+   integer :: F_k0           !I, vertical scope F_k0 to F_nk
+   integer :: F_nfields      !I, nb of fields to advect
+   logical, dimension(2,F_nfields)         :: F_fields_type_L !I, fields type
+   character(len=*), dimension(2,F_nfields):: F_fields_list   !I, gmm flds lbls
+   real, dimension(F_ni,F_nj,F_nk) :: F_px, F_py, F_pz !I, upstream positions at t1
 !
    !@author alain patoine
    !@revisions
@@ -54,7 +54,6 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    ! v4_05 - Lepine M.           - VMM replacement with GMM
    ! v1_10 - Plante A.           - Thermo upstream positions
    ! v4_40 - Tanguay M.          - Revision TL/AD
-   ! v4_05 - Gaudreault S.       - Code optimization
 !**/
 
 #include "adx_nml.cdk"
@@ -88,9 +87,6 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    logical done_once_L
    save done_once_L
    data done_once_L /.false./
-
-   integer nbpts
-   integer, dimension(:), allocatable :: nearest_i, nearest_j, nearest_k
 
    !---------------------------------------------------------------------
 
@@ -146,26 +142,17 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 
    endif
 
-   nbpts = adx_mlni*adx_mlnj*F_nk
-   allocate(nearest_i(nbpts), nearest_j(nbpts), nearest_k(nbpts))
-
-
-   call adx_interp_idx (nearest_i, nearest_j, nearest_k, F_px, F_py, F_pz, &
-                        i0, in, j0, jn, F_k0, F_nk, nbpts, level_type_S)
-
    do n = 1, F_nfields
       if (F_fields_type_L(IS_MOM,n) .neqv. F_is_mom_L) cycle
-      call adx_interp_gmm6 ( F_fields_list(FIELD_OUT,n), F_fields_list(FIELD_IN,n), & 
+      call adx_interp_gmm5 ( F_fields_list(FIELD_OUT,n), F_fields_list(FIELD_IN,n), & 
                              F_fields_type_L(IS_WIND,n),                            &
                              F_px, F_py, F_pz, capx2, capy2, capz2, exch_c1,        &
-                             F_nk, i0, in, j0, jn, F_k0, level_type_S, nearest_i, nearest_j, nearest_k, nbpts)
+                             F_nk, i0, in, j0, jn, F_k0, level_type_S )
    end do
 
    if (.not.adx_lam_L) deallocate ( capx2, capy2, capz2 )
 
    if (V4dg_conf.ne.0.and.Lctl_step.eq.Step_total.and.Orh_icn.eq.Schm_itcn) done_once_L = .true.
-
-   deallocate(nearest_i, nearest_j, nearest_k)
 
    call msg(MSG_DEBUG, 'adx_main_3_intlag [end]')
 

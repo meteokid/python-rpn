@@ -4,17 +4,17 @@
       integer  grid_nml2 , gem_nml , gemdm_config
       external grid_nml2 , gem_nml , gemdm_config
 
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "step.cdk"
 
-      logical LAM
       integer err,Pelocal,Petotal,npex,npey
 
       call RPN_COMM_init('',Pelocal,Petotal,1,1)
 
       Step_runstrt_S='2011020300'
 
-      err = grid_nml2 ('./gem_settings.nml',LAM)
+      err = grid_nml2 ('./gem_settings.nml',G_lam)
       err = gem_nml   ('./gem_settings.nml')
 
       err = gemdm_config ( )

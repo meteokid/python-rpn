@@ -116,6 +116,7 @@
 !
       done = .true.
       call timing_stop ( 99 )
+      call flush(6)
 !
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')

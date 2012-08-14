@@ -179,7 +179,7 @@ $(LCLPO)/toc2nml.o: toc2nml.ftn90
 $(BINDIR)/toc2nml: $(LCLPO)/toc2nml.o
 	cd $(LCLPO) ;\
 	makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj toc2nml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main descrip" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj toc2nml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main $(VGRID)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
 
 monitor: $(BINDIR)/gem_monitor_end $(BINDIR)/gem_monitor_output

@@ -306,6 +306,7 @@
 !End gem_cfgs_p_p
 !
       namelist /grdc/ Grdc_dx
+      namelist /grdc/ Grdc_dy
       namelist /grdc/ Grdc_Hblen
       namelist /grdc/ Grdc_initphy_L
       namelist /grdc/ Grdc_iref
@@ -324,6 +325,7 @@
 !End gem_grdc
 !
       namelist /grdc_p/ Grdc_dx
+      namelist /grdc_p/ Grdc_dy
       namelist /grdc_p/ Grdc_Hblen
       namelist /grdc_p/ Grdc_initphy_L
       namelist /grdc_p/ Grdc_iref

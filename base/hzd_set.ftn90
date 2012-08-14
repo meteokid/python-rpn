@@ -113,7 +113,7 @@
 
          dimx = 3*G_ni*2
          dimy = 3*G_nj*2
-         allocate ( Hzd_xp0_8(dimx), Hzd_yp0_8  (dimx), Hzd_xp2_8(dimx), &
+         allocate ( Hzd_xp0_8(dimx), Hzd_yp0_8  (dimy), Hzd_xp2_8(dimx), &
                     Hzd_yp2_8(dimy), Hzd_yp2su_8(dimy), h0_8(G_nj*2)   , &
                     h0t_8(G_nj*2), h2_8(G_nj*2), h2t_8(G_nj*2) )
 
@@ -247,6 +247,7 @@
          endif
 !______________________________________________________________________
 !
+
 !     Compute eigenvalues and eigenvector for high-order diffusion.
 !              Eigenvalue problem in East-West direction
 !        -------------------------------------------------------

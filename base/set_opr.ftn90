@@ -71,7 +71,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call set_transpose2 ( Ptopo_npex, Ptopo_npex, .false. )
+      call set_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
 !
 !C    Initialize commons for fast fourier transforms
 !

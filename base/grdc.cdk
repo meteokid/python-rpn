@@ -9,7 +9,7 @@
       integer Grd_ig1c,Grd_ig2c,Grd_ig3c,Grd_ig4c,Grdc_extension
       integer Grdc_Hblen,Grdc_pil,Grdc_end,Grdc_maxcfl
       integer Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits,Grdc_ntr
-      real    Grdc_latr,Grdc_lonr,Grdc_dx
+      real    Grdc_latr,Grdc_lonr,Grdc_dx,Grdc_dy
       real    Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
       real*8  Grdc_xp1,Grdc_yp1
 !
@@ -23,6 +23,6 @@
       common / Grdc_i / Grdc_Hblen,Grdc_pil,Grdc_end,Grdc_maxcfl
       common / Grdc_i / Grdc_hbwe,Grdc_hbsn,Grdc_start,Grdc_nbits
       common / Grdc_i / Grdc_ntr
-      common / Grdc_r / Grdc_latr,Grdc_lonr,Grdc_dx
+      common / Grdc_r / Grdc_latr,Grdc_lonr,Grdc_dx,Grdc_dy
       common / Grdc_r / Grdc_xlat1,Grdc_xlon1,Grdc_xlat2,Grdc_xlon2
       common / Grdc_r8/ Grdc_xp1,Grdc_yp1

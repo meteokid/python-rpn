@@ -80,7 +80,7 @@
          init_L = .true.
       endif
 
-      con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
+      con(1:l_nj)= cos(geomg_y_8(1:l_nj)) / Dcst_rayt_8
 
       if (TT_indx.gt.0) then
          istat = gmm_get(gmmk_tt1_s, tt1, mymeta)

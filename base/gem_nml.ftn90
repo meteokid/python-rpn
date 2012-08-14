@@ -234,6 +234,8 @@
       Grdc_xlon2  = Grd_xlon2 
       Grdc_ni     = 0
       Grdc_nj     = 0
+      grdc_dx     = -1.
+      grdc_dy     = -1.
       Grdc_Hblen  = 10
       Grdc_maxcfl = 1
       Grdc_nfe    = ''
