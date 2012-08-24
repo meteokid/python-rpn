@@ -5,6 +5,7 @@
       external grid_nml2 , gem_nml , gemdm_config
 
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "lun.cdk"
 #include "step.cdk"
 
@@ -15,6 +16,8 @@
       Step_runstrt_S='2011020300'
 
       err = grid_nml2 ('./gem_settings.nml',G_lam)
+      if (Grd_typ_S(1:2).eq.'GY') G_lam=.true.
+
       err = gem_nml   ('./gem_settings.nml')
 
       err = gemdm_config ( )

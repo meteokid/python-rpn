@@ -95,7 +95,7 @@
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
       LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
 
-      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni), ypos(Grd_nj))
+      allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
       call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
                            Grd_x0_8, Grd_xl_8, Grd_left,                   &
@@ -103,6 +103,8 @@
                            Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,       &
                            Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
                            ierx, iery, .true. )
+
+      if (.not.LAM) Grd_ni= Grd_ni + 1
 
       xpos(1:Grd_ni) = x_8(1:Grd_ni)
       ypos(1:Grd_nj) = y_8(1:Grd_nj)
