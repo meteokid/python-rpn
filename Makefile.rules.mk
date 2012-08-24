@@ -2,8 +2,8 @@
 .SUFFIXES :
 .SUFFIXES : .c .o .f90 .f .ftn .ftn90 .cdk90 .tmpl90 .F .FOR .F90 .itf90 .inc
 
-RCOMPIL = s.compile $(MPI) $(OMP) -includes ./ $(INCLUDE_PATH) $(INCLUDE_MOD)
-RBUILD  = s.compile
+RCOMPIL = s.compile $(MPI) $(OMP) -includes ./ $(INCLUDE_PATH) $(INCLUDE_MOD)  $(DEBUGCOMPFLAGS)
+RBUILD  = s.compile $(DEBUGLINKFLAGS)
 FCOMPF = 
 CCOMPF =
 COMPF = 

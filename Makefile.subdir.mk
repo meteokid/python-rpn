@@ -12,6 +12,12 @@ ifneq (,$(wildcard $(modelutils)/include/recettes))
    $(info include $(modelutils)/include/recettes)
    include $(modelutils)/include/recettes
 endif
+ifneq (,$(DEBUG))
+ifneq (,$(wildcard $(modelutils)/include/Makefile.debug.mk))
+   $(info include $(modelutils)/include/Makefile.debug.mk)
+   include $(modelutils)/include/Makefile.debug.mk
+endif
+endif
 ifneq (,$(wildcard $(PWD)/Makefile.rules.mk))
    $(info include $(PWD)/Makefile.rules.mk)
    include $(PWD)/Makefile.rules.mk
@@ -44,9 +50,15 @@ Makefile.dep.mk:
 	cd $(SRCDIR) ;\
 	find . -type f | grep -v '/.*/' | s.dependencies.pl > $${here}/$@
 
+.PHONY: clean_objects objects
+clean_objects:
+	rm -f *.o
 
-.PHONY: objects
+ifneq (,$(DEBUG))
 objects: $(OBJECTS)
+else
+objects: | clean_objects $(OBJECTS)
+endif
 
 .PHONY: libs
 libs: lib$(LIBNAME).a

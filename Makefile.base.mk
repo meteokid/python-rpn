@@ -25,6 +25,12 @@ ifneq (,$(wildcard $(modelutils)/include/recettes))
    $(info include $(modelutils)/include/recettes)
    include $(modelutils)/include/recettes
 endif
+ifneq (,$(DEBUG))
+ifneq (,$(wildcard $(modelutils)/include/Makefile.debug.mk))
+   $(info include $(modelutils)/include/Makefile.debug.mk)
+   include $(modelutils)/include/Makefile.debug.mk
+endif
+endif
 ifneq (,$(wildcard $(PWD)/Makefile.rules.mk))
    $(info include $(PWD)/Makefile.rules.mk)
    include $(PWD)/Makefile.rules.mk
@@ -115,32 +121,33 @@ objects: | builddir versionfiles
 
 ## Target: libs (creat all libs after compiling)
 .PHONY: libs
-libs: objects | $(BUILDDIRARCH)/lib$(PKGNAME).a
+libs: objects | $(BUILDDIRARCH)/lib$(PKGNAME)$(DEBUG).a
 	for mysubdir in $(SUBDIRS_LIB_PRE) $(SUBDIRS_LIB_POST) ; do \
 		cd $(BUILDDIRARCH)/$${mysubdir} ;\
 		$(MAKE) $(NOPRINTDIR) $(MFLAGS) $@ \
 			TOPDIR=$(TOPDIR) \
-			LIBNAME=$(PKGNAME)_$${mysubdir} ;\
+			LIBNAME=$(PKGNAME)_$${mysubdir}$(DEBUG) ;\
 		if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
-		ls -l $(BUILDDIRARCH)/$${mysubdir}/lib$(PKGNAME)_$${mysubdir}.a ;\
+		ls -l $(BUILDDIRARCH)/$${mysubdir}/lib$(PKGNAME)_$${mysubdir}$(DEBUG).a ;\
 	done ;\
 	for mysubdir in $(SUBDIRS_LIB_SPLIT) ; do \
 		cd $(BUILDDIRARCH)/$${mysubdir} ;\
 		for myfile in `ls *.o` ; do \
-			$(MAKE) $(NOPRINTDIR) $(MFLAGS) lib$${myfile%.*}.a \
+			$(MAKE) $(NOPRINTDIR) $(MFLAGS) lib$${myfile%.*}$(DEBUG).a \
 				TOPDIR=$(TOPDIR) \
-				MYFILENAME=$${myfile%.*} ;\
+				MYFILENAME=$${myfile%.*} \
+				MYPOSTFIX=$(DEBUG);\
 			if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
-			ls -l $(BUILDDIRARCH)/$${mysubdir}/lib$${myfile%.*}.a ;\
+			ls -l $(BUILDDIRARCH)/$${mysubdir}/lib$${myfile%.*}$(DEBUG).a ;\
 		done ;\
 	done ;\
-	ls -l $(BUILDDIRARCH)/lib$(PKGNAME).a
-$(BUILDDIRARCH)/lib$(PKGNAME).a:
+	ls -l $(BUILDDIRARCH)/lib$(PKGNAME)$(DEBUG).a
+$(BUILDDIRARCH)/lib$(PKGNAME)$(DEBUG).a:
 	for mysubdir in $(SUBDIRS_LIB_MERGE) ; do \
 		$(AR) rv $@ $(BUILDDIRARCH)/$${mysubdir}/*.o ;\
 	done ;\
 	cd $(BUILDDIRARCH) ;\
-	ln -s lib$(PKGNAME).a lib$(PKGNAME)_$(VERSION).a
+	ln -s lib$(PKGNAME)$(DEBUG).a lib$(PKGNAME)$(DEBUG)_$(VERSION).a
 
 
 ## Target: allabs (Build all executable)
@@ -307,7 +314,7 @@ BUILDINFO:
 .PHONY: install install_domain install_pkgs install_pkgs_all install_pkgs_arch install_pkgs_multi install_bndl
 #TODO: domain name should be: $(PKGNAME)_$(VERSION) or $(PKGNAME)/$(PKGNAME)_$(VERSION)
 install: install_domain install_pkgs install_bndl
-install_domain: $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)
+install_domain: $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
 install_pkgs: | install_domain
 	for mytype in $(SSM_PKG); do \
 		$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) \
@@ -315,32 +322,32 @@ install_pkgs: | install_domain
 		if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
 	done
 install_pkgs_all: install_domain
-	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_all SSMARCH=all ;\
+	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_all SSMARCH=all ;\
 	if [[ $${?} != 0 ]] ; then exit 1 ; fi
 install_pkgs_arch: install_domain
 	for myfile in $(wildcard $(SSMDEPOTDIR)/$(PKGNAME)_$(VERSION)_*.ssm); do \
 		mytype=`echo $${myfile##*_}` ; mytype=`echo $${mytype%.*}` ;\
 		if [[ x$${mytype} != xall ]] ; then \
 			$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) \
-				$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_$${mytype} SSMARCH=$${mytype} ;\
+				$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_$${mytype} SSMARCH=$${mytype} ;\
 			if [[ $${?} != 0 ]] ; then exit 1 ; fi ;\
 		fi ;\
 	done
 install_pkgs_multi: install_domain 
-	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_multi SSMARCH=multi ;\
+	$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_multi SSMARCH=multi ;\
 	if [[ $${?} != 0 ]] ; then exit 1 ; fi
 install_bndl: install_domain $(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl
 
-$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION):
-	mu.mkdir_tree $(DESTDIR) $(SSM_RELDIRDOM)/$(PKGNAME)/$(VERSION) $(SSMPOSTCHMOD) ;\
+$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION):
+	mu.mkdir_tree $(DESTDIR) $(SSM_RELDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION) $(SSMPOSTCHMOD) ;\
 	chmod u+w $@ ;\
 	cd $@ ;\
 	mydomain=`true_path .` ;\
 	ssm created -d $${mydomain} --defaultRepositorySource $(SSMDEPOTDIR) --yes ;\
 	if [[ ! -e $${mydomain}/.SsmDepot ]] ; then echo $(SSMDEPOTDIR) > $@/.SsmDepot ; fi ;\
 	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)
-$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_$(SSMARCH): | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)
-	cd $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION) ;\
+$(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_$(SSMARCH): | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	cd $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION) ;\
 	mydomain=`true_path .` ;\
 	mu.chmod_ssm_dom u+w $${mydomain} ;\
 	ssm install -d $${mydomain} -p $(PKGNAME)_$(VERSION)_$(SSMARCH) --yes --skipOnInstalled && \
@@ -350,11 +357,11 @@ $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)/$(PKGNAME)_$(VERSION)_$(SSMARCH): | $(
 	ls -ld $${mydomain}/etc/ssm.d/published/$(PKGNAME)_$(VERSION)_$(SSMARCH)
 	#if [[ x"`ssm listd -d $${mydomain} | grep $(PKGNAME)_$(VERSION)_$(SSMARCH) | cut -d' ' -f1`" != x"published" ]] ; then exit 1 ; fi
 	#Note: Cannot use ssm listd since long names are truncated
-$(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl: | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(VERSION)
+$(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl: | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
 	mu.mkdir_tree $(DESTDIR) $(SSM_RELDIRBNDL)/$(PKGNAME) $(SSMPOSTCHMOD) ;\
 	chmod u+w $(SSMINSTALLDIRBNDL)/$(PKGNAME) ;\
 	cat $(SSMDEPENDENCIES) > $@ ;\
-	echo $(SSM_RELDIRDOM)$(PKGNAME)/$(VERSION) >> $@ ;\
+	echo $(SSM_RELDIRDOM)$(PKGNAME)/$(PKGNAME)_$(VERSION) >> $@ ;\
 	if [[ x$(SSMDEPENDENCIESPOST) != x ]] ; then [[ -r `ls $(SSMDEPENDENCIESPOST)` ]] && cat $(SSMDEPENDENCIESPOST) >> $@ ;fi ;\
 	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRBNDL)/$(PKGNAME) $@ ;\
 	ls -l $@
