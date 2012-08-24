@@ -98,8 +98,8 @@
       endif
 
       if (Ptopo_couleur.eq.0) then
-         call  open_status_file2 (trim(Path_output_S)//'/status_ent.dot')
-         call write_status_file2 ('_status=ABORT' )
+         call  open_status_file3 (trim(Path_output_S)//'/status_ent.dot')
+         call write_status_file3 ('_status=ABORT' )
          err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 

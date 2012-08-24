@@ -164,14 +164,16 @@
 !revision
 ! v4.50 - M. Desgagne       - initial version
 !
-      integer stride
+      integer stride,i
 ! ---------------------------------------------------------------------
 !
       if (nbits .lt. 1) return
       stride = min(max(1,npts),n)
-      u(1:n:stride) = xor(u(1:n:stride),nbits)
-      v(1:n:stride) = xor(v(1:n:stride),nbits)
-      t(1:n:stride) = xor(t(1:n:stride),nbits)
+      do i=1,n,stride
+         u(i) = xor(u(i),nbits)
+         v(i) = xor(v(i),nbits)
+         t(i) = xor(t(i),nbits)
+      end do
 ! or
 !      ut1 = reshape(transfer(xor(transfer(ut1,(/0/)),perturb_nbits),(/0./)),(/shape(ut1)/)) 
 !
