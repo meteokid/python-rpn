@@ -67,11 +67,12 @@
 #include "vt1.cdk"
 #include "vtx.cdk"
 #include "lun.cdk"
+#include "perturb.cdk"
 #include "step.cdk"
 !
       type(gmm_metadata) :: mymeta
       character*256 fn
-      integer err,errop,k,skipcode,istat
+      integer err,errop,k,skipcode,istat,dim
       real fistmp(LDIST_SHAPE)
 !
 !     ---------------------------------------------------------------
@@ -120,6 +121,9 @@
       endif
       call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
 
+      dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+      call bitflip (ut1, vt1, tt1, perturb_nbits, perturb_npts, dim)
+
       if (Grd_yinyang_L) then
          fistmp(:,:)=fis0(:,:)
          call rpn_comm_xch_halo(fistmp, LDIST_DIM,l_ni,l_nj,1,      &
@@ -146,5 +150,32 @@
  1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))
  1002 format(/,' FILE ',A,'_gfilemap.txt IS NOT AVAILABLE --CONTINUE--',/,/)
 
+      return
+      end
+
+      subroutine bitflip (u,v,t,nbits,npts,n)
+      implicit none
+!
+      integer n,nbits,npts
+      integer u(n),v(n),t(n)
+!
+!author   Michel Desgagne -- summer 2012
+!
+!revision
+! v4.50 - M. Desgagne       - initial version
+!
+      integer stride
+! ---------------------------------------------------------------------
+!
+      if (nbits .lt. 1) return
+      stride = min(max(1,npts),n)
+      u(1:n:stride) = xor(u(1:n:stride),nbits)
+      v(1:n:stride) = xor(v(1:n:stride),nbits)
+      t(1:n:stride) = xor(t(1:n:stride),nbits)
+! or
+!      ut1 = reshape(transfer(xor(transfer(ut1,(/0/)),perturb_nbits),(/0./)),(/shape(ut1)/)) 
+!
+! ---------------------------------------------------------------------
+!
       return
       end

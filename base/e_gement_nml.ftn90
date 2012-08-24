@@ -69,7 +69,6 @@
       Topo_clip_oro_L = .true.
 !
       Anal_cond_L     = .false.
-      anal_perturb_L  = .false.
       E_schm_stlag    = .true.
       E_schm_adcub    = .true.
 !

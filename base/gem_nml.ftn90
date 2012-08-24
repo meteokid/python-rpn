@@ -92,7 +92,7 @@
       Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
       Schm_mteul_L    = .false.
-      Schm_NoTopThL_L = .false.
+      Schm_NoTopThL_L = .true.
 !
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -192,9 +192,12 @@
       P_zong_znsus_L = .false.
       P_zong_znsrf_s = ' '
       P_zong_znprf_s = ' '
-!
+
       P_runlgt       = -1
-!
+
+      perturb_nbits=0
+      perturb_npts=10
+
       Eq_sponge=0.
 
       Out3_zund        = 0.

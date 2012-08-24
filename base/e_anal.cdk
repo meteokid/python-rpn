@@ -47,10 +47,9 @@
       COMMON/analr8/  za_8,zb_8,zat_8,zbt_8
       COMMON/anals/  VH,VT,GRDA,TVA,LABANL
       logical anal_sigma_L, anal_eta_L, anal_hyb_L, anal_pres_L
-      logical anal_perturb_L
       logical anal_ecmwf_L, anal_cond_L
       integer anal_hav
       common /e_anal_l/ anal_sigma_L, anal_eta_L, anal_hyb_L
-      common /e_anal_l/ anal_pres_L,anal_perturb_L
+      common /e_anal_l/ anal_pres_L
       common /e_anal_l/ anal_ecmwf_L, anal_cond_L
       common /e_anal_i/ anal_hav(2)

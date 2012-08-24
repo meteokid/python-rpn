@@ -35,6 +35,7 @@
 #include "p_zong.cdk"
 #include "wil_williamson.cdk"
 #include "stat.cdk"
+#include "perturb.cdk"
 #include "eq.cdk"
 
       namelist /gem_cfgs/ stat_liste
@@ -129,6 +130,8 @@
       namelist /gem_cfgs/ P_zong_znprf_s
       namelist /gem_cfgs/ P_zong_znsrf_s
       namelist /gem_cfgs/ P_zong_znsus_L
+      namelist /gem_cfgs/ perturb_nbits
+      namelist /gem_cfgs/ perturb_npts
 !R
       namelist /gem_cfgs/ Rstri_glbcol_L
 !Schm
@@ -259,6 +262,8 @@
       namelist /gem_cfgs_p/ P_zong_znli
       namelist /gem_cfgs_p/ P_zong_znmod
       namelist /gem_cfgs_p/ P_zong_znsus_L
+      namelist /gem_cfgs_p/ perturb_nbits
+      namelist /gem_cfgs_p/ perturb_npts
 !R
       namelist /gem_cfgs_p/ Rstri_glbcol_L
 !Schm

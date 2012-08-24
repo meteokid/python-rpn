@@ -12,13 +12,13 @@
 #include "pilot.cdk"
 #include "schm.cdk"
 !
-      namelist /gement/   Anal_cond_L  , Anal_perturb_L, E_schm_adcub
+      namelist /gement/   Anal_cond_L  , E_schm_adcub
       namelist /gement/   E_schm_stlag , E_tr3d_list_S 
       namelist /gement/   Pil_bmf_L    , Pil_dx        , Pil_hblen
       namelist /gement/   Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel
       namelist /gement/   Topo_dgfmx_L , Topo_dgfms_L  , Topo_filmx_L, Topo_clip_oro_L
 ! 
-      namelist /gement_p/ Anal_cond_L  , Anal_perturb_L, E_schm_adcub
+      namelist /gement_p/ Anal_cond_L  , E_schm_adcub
       namelist /gement_p/ E_schm_stlag                 
       namelist /gement_p/ Pil_bmf_L    , Pil_dx        , Pil_hblen
       namelist /gement_p/ Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel

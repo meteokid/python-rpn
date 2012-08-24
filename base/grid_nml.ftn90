@@ -118,6 +118,7 @@
       Grd_xl_8=360.0
       Grd_y0_8=-90.0
       Grd_yl_8= 90.0
+      Grd_extension = 0
 !
       select case (Grd_typ_S(1:1))
 
@@ -160,11 +161,6 @@
             delta_8  = (Grd_yl_8-Grd_y0_8)/(Grd_njla-1)
             Grd_y0_8 = Grd_y0_8 - Grd_extension*delta_8
             Grd_yl_8 = Grd_yl_8 + Grd_extension*delta_8
-
-!            Grd_x0   = Grd_x0_8
-!            Grd_xl   = Grd_xl_8
-!            Grd_y0   = Grd_y0_8
-!            Grd_yl   = Grd_yl_8
 
          case ('V')             ! Variable resolution
             if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
