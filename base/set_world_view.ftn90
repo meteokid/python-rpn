@@ -105,7 +105,6 @@
 
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
-         ierr= clib_mkdir(trim(Grd_yinyang_S))
          ierr= clib_chdir(trim(Grd_yinyang_S))
       else
          ierr = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc,Ptopo_numproc,&
@@ -114,10 +113,6 @@
       endif
 
       call msg_set_can_write (Ptopo_myproc == 0)
-
-      call handle_error (clib_isdir(Path_input_S),'set_world_view','task_input')
-
-      call gemtim4 ( 6, '', .false. )
 
       if (Grd_yinyang_L) then         
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)

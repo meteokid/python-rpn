@@ -44,6 +44,8 @@
 !
 !-------------------------------------------------------------------
 !
+      call gemtim4 ( 6, '', .false. )
+
       err= clib_mkdir (Path_output_S)
       err= clib_mkdir (Path_work_S  )
 
