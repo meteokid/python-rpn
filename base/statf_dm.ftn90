@@ -62,6 +62,7 @@
 !
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,no, &
               nijk(7,Ptopo_numproc),tnijk(7,Ptopo_numproc),nw,i0,in,j0,jn
+      integer*8 dim_L,dim_T
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8, &
              minmax(3,max(3,Ptopo_numproc)),tminmax(3,max(3,Ptopo_numproc))
 !
@@ -126,6 +127,7 @@
          minmax(3,1) = sum
          minmax(3,2) = sumd2
          minmax(3,3) = (in-i0+1)*(jn-j0+1)*(F_kn-F_k0+1)
+         dim_L       = (in-i0+1)*(jn-j0+1)*(F_kn-F_k0+1)
 !
          nijk  (1,Ptopo_myproc+1)= imax+ Ptopo_gindx(1,Ptopo_myproc+1)- 1
          nijk  (2,Ptopo_myproc+1)= jmax+ Ptopo_gindx(3,Ptopo_myproc+1)- 1
@@ -137,6 +139,8 @@
       endif
 !
       nw = 3*max(3,Ptopo_numproc)
+!      call rpn_comm_REDUCE ( dim_L, dim_T, 1, &
+!                       "MPI_INTEGER8","MPI_SUM",0,"grid",err )
       call rpn_comm_REDUCE ( nijk, tnijk, 7*Ptopo_numproc, &
                        "MPI_INTEGER","MPI_SUM",0,"grid",err )
       call rpn_comm_REDUCE ( minmax, tminmax, nw, &
@@ -210,11 +214,11 @@
 !
       endif
 !
- 98   format (i4,a4,' Mean:',1pe14.6,' Var:',1pe14.6, &
+ 98   format (i4,a4,' Mean:',1pe14.6,' Std:',1pe14.6, &
               ' Min:[(',i4,',',i4,',',i3,')', &
               1pe14.6,']',' Max:[(',i4,',',i4,',',i3,')', &
               1pe14.6,']',a6)
- 99   format (i4,a4,' Mean:',1pe22.12,' Var:',1pe22.12,/ &
+ 99   format (i4,a4,' Mean:',1pe22.12,' Std:',1pe22.12,/ &
               ' Min:[(',i4,',',i4,',',i3,')', &
               1pe22.12,']',' Max:[(',i4,',',i4,',',i3,')', &
               1pe22.12,']',a6)
@@ -403,7 +407,7 @@
 !
       endif
 !
- 98   format (i4,a4,' Mean:',1pe14.7,' Var:',1pe23.16, &
+ 98   format (i4,a4,' Mean:',1pe14.7,' Std:',1pe23.16, &
               ' Min:[(',i4,',',i4,',',i3,')', &
               1pe14.7,']',' Max:[(',i4,',',i4,',',i3,')', &
               1pe14.7,']',a6)
