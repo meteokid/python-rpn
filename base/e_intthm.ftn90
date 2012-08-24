@@ -88,7 +88,7 @@
       real, parameter :: pref=100000.
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
                dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
-      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr,zdwq
+      real, dimension (:), allocatable:: tt,td,es,hu,p0,wk2,hr,zdwq,rna_tlev
       real, dimension (:,:), allocatable :: ttn,hun,gzn,zdn,wn,qn
       integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
       logical zd_L,w_L,q_L
@@ -319,6 +319,7 @@
 !
          write(6,*)'ANALYSIS IS IN PRESSURE COORDINATES' 
          anal_hav(1)=1
+         allocate(rna_tlev(ng))
          do 100 k=1,lv_t
 !              Read and interpolate surface GZ.
 !              Surface GZ is written below.
@@ -353,15 +354,16 @@
                enddo
 !
 !              RNA_T is in millibars!
+               rna_tlev = rna_t(k)
                if (vh.eq.'HR') then
 !!$                  call mhrahu( hu, hr, tt, rna_t(k)*100., dummy, 0, &
 !!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
-                  call mhrahu3( hu, hr, tt, rna_t(k)*100., &
+                  call mhrahu3( hu, hr, tt, rna_tlev*100., &
                                Anal_cond_L, ng, 1, ng )
                elseif (vh.eq.'ES') then
 !!$                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
 !!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
-                  call mesahu3( hu, es, tt, rna_t(k)*100., &
+                  call mesahu3( hu, es, tt, rna_tlev*100., &
                                Anal_cond_L, ng, 1, ng )
                elseif (vh.eq.'TD') then
                   do i=1,ng
@@ -369,7 +371,7 @@
                   enddo
 !!$                  call mesahu( hu, es, tt, rna_t(k)*100., dummy, 0, &
 !!$                               vt.eq.'TT' , Anal_cond_L, ng, 1, ng )
-                  call mesahu3( hu, es, tt, rna_t(k)*100., &
+                  call mesahu3( hu, es, tt, rna_tlev*100., &
                                Anal_cond_L, ng, 1, ng )
                endif
 !
@@ -384,6 +386,7 @@
                    call e_fill_3df ( hu,hun,nis,njs,lv_t,k,1.0,0.0) 
                endif
   100    continue
+         deallocate(rna_tlev)
          if (.not.Pil_bmf_L) then
                 call e_write_3df ( ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
                 call e_write_3df ( gzn,nis,njs,lv_t  ,'GZ  ',unf_casc)
