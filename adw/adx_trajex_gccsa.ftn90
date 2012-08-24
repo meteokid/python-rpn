@@ -25,54 +25,57 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
    !@objective compute positions at origin (o) by extrapolation using positions at mid-trajectory (m)
 !
    !@arguments
-   real, dimension(*) :: &
-        F_xto, F_yto, &      !O, upstream positions at origin
-        F_xcto, F_ycto, F_zcto,& !O, upstream cartesian positions at origin
-        F_u, F_v             !I, real wind components at upwind pos(trilin)
-   real    :: F_dt           !I, timestep length
-   integer :: i0,in,j0,jn,k0     !I, scope of operator
+   real, dimension(*), intent(out) :: F_xto, F_yto           ! upstream positions at origin
+   real, dimension(*), intent(out) :: F_xcto, F_ycto, F_zcto ! upstream cartesian positions at origin
+   real, dimension(*), intent(in)  :: F_u, F_v               ! real wind components at upwind pos(trilin)
+   real, intent(in) :: F_dt                                  ! timestep length
+   integer, intent(in) :: i0,in,j0,jn,k0                     ! scope of operator
 !
    !@author  Abdessamad Qaddouri
    !@revisions
    ! v4_40 - Qaddouri & Lee - Initial version
+   ! v4_05 - Gaudreault S.  - Code optimization
 !**/
 
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 
-   integer :: i,j,k, n, vnij
-   real*8 :: Two_ov_Three_8,term_8
+   integer :: i,j,k, n, vnij, idx_k, idx_kj
+   real*8 :: Two_ov_Three_8,term_8,One_ov_Six_8,Seven_ov_Six_8
    real*8 :: xto_8(i0:in,j0:jn)
    real*8 :: yto_8(i0:in,j0:jn)
    real*8 :: cos_yto_8(i0:in,j0:jn)
    real*8 :: sin_yto_8(i0:in,j0:jn)
    real*8 :: cos_xto_8(i0:in,j0:jn)
    real*8 :: sin_xto_8(i0:in,j0:jn)
+   real*8  :: F_v_dt, F_u_dt
 
    !---------------------------------------------------------------------
 
    call msg(MSG_DEBUG,'adx_trajex_gccsa')
    vnij = (in-i0+1)*(jn-j0+1)
    Two_ov_Three_8 = 2.0D0/3.0D0
+   One_ov_Six_8   = 1.0D0/6.0D0
+   Seven_ov_Six_8 = 7.0D0/6.0D0
 
-!$omp parallel private(term_8,n,xto_8,yto_8, &
-!$omp             cos_xto_8,sin_xto_8,cos_yto_8,sin_yto_8)
+!$omp parallel private(term_8,n,idx_k,idx_kj,xto_8,yto_8,F_v_dt, F_u_dt, &
+!$omp                  cos_xto_8,sin_xto_8,cos_yto_8,sin_yto_8)
 !$omp do
    do k=k0,adx_lnkm
+      idx_k = (k-1)*adx_mlnij
       do j=j0,jn
+         idx_kj = idx_k + ((j-1)*adx_mlni)
          do i=i0,in
-            n = (k-1)*adx_mlnij+((j-1)*adx_mlni) + i
-            term_8 = ( F_v(n)**2 * ((Adx_vsec_8(j)**2)- Two_ov_Three_8) &
-                     - (F_u(n) *Adx_vtan_8(j))**2 ) *(F_dt**3)*2.0D0
+            n = idx_kj + i
+            F_v_dt = F_v(n)*F_dt
+            F_u_dt = F_u(n)*F_dt
+            term_8 = F_u_dt**2 * Adx_vtan_8(j)**2 * One_ov_Six_8 + F_v_dt**2 * (2.0D0 * Adx_vsec_8(j)**2 - Seven_ov_Six_8)
 
-            xto_8(i,j) = Adx_xx_8(i)-2.0D0*F_u(n)*F_dt*Adx_vsec_8(j)* &
-                       (1.0D0 - F_v(n)*Adx_vtan_8(j)*F_dt) + &
-                       F_u(n)*Adx_vsec_8(j)*term_8 
+            yto_8(i,j) = Adx_yy_8(j) - 2.0D0 * F_v_dt + F_u_dt**2 * F_v_dt *(Adx_vsec_8(j)**2 - Two_ov_Three_8)
 
-            yto_8(i,j) = Adx_yy_8(j)-2.0D0*F_dt*F_v(n)+F_u(n)**2 * F_v(n)*&
-                       (Adx_vsec_8(j)**2 - Two_ov_Three_8)* F_dt**3
-
+            xto_8(i,j) = Adx_xx_8(i) - 2.0D0 * F_u_dt * Adx_vsec_8(j) * (1.0D0 - F_v_dt * Adx_vtan_8(j) + term_8) 
             if (xto_8(i,j) < 0.) xto_8(i,j) = xto_8(i,j) + CONST_2PI_8
+
             F_xto(n)=xto_8(i,j)
             F_yto(n)=yto_8(i,j)
          enddo
@@ -82,8 +85,9 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
       call vsin(sin_xto_8,xto_8,vnij)
       call vsin(sin_yto_8,yto_8,vnij)
       do j=j0,jn
+         idx_kj = idx_k + ((j-1)*adx_mlni)
          do i=i0,in
-            n = (k-1)*adx_mlnij+((j-1)*adx_mlni) + i
+            n = idx_kj + i
             F_xcto(n) = cos_xto_8(i,j)*cos_yto_8(i,j)
             F_ycto(n) = cos_yto_8(i,j)*sin_xto_8(i,j)
             F_zcto(n) = sin_yto_8(i,j)

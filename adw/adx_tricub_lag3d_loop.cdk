@@ -6,12 +6,22 @@
             n = idxjk + i
 
             rri= F_x(n)
-            rrj= F_y(n)
-            rrk= F_z(n)
+            ii = (rri - adx_x00_8) * adx_ovdx_8
+            ii = adx_lcx(ii+1) + 1
+            if (rri < adx_bsx_8(ii)) ii = ii - 1
+            ii = max(2,min(ii,Adx_iimax))
 
-            ii = nearest_i(n)
-            jj = nearest_j(n)
-            kk = nearest_k(n)
+            rrj= F_y(n)
+            jj = (rrj - adx_y00_8) * adx_ovdy_8
+            jj = adx_lcy(jj+1) + 1
+            if (rrj < adx_bsy_8(jj)) jj = jj - 1
+            jj = max(adx_haloy,min(jj,Adx_jjmax))
+
+            rrk= F_z(n)
+            kk = (rrk - p_z00_8) * adx_ovdz_8
+            kk = p_lcz(kk+1)
+            if (rrk < p_bsz_8(kk)) kk = kk - 1
+            kk = min(kkmax-1,max(0,kk))
 
             zcubic_L = (kk > 0+notop) .and. (kk < kkmax-1)
 
@@ -43,8 +53,8 @@
             o4 = o4 + Adx_nijag
 
 #ifdef ADX_MONO
-            prmax = max(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
-            prmin = min(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmax = max(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
 #endif
             b1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
             b2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
@@ -57,8 +67,8 @@
             o4 = o4 + Adx_nijag
 
 #ifdef ADX_MONO
-            prmax = max(prmax,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
-            prmin = min(prmin,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmax = max(prmax,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
+               prmin = min(prmin,F_in(o2),F_in(o2+1),F_in(o3),F_in(o3+1))
 #endif
             c1 = p1 * F_in(o1-1) + p2 * F_in(o1) + p3 * F_in(o1+1) + p4 * F_in(o1+2)
             c2 = p1 * F_in(o2-1) + p2 * F_in(o2) + p3 * F_in(o2+1) + p4 * F_in(o2+2)
@@ -112,7 +122,7 @@
             endif
 
 #ifdef ADX_MONO
-            F_out(n) = max(prmin , min(prmax,F_out(n)))
+               F_out(n) = max(prmin , min(prmax,F_out(n)))
 #endif
          enddo 
       enddo 

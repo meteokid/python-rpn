@@ -10,8 +10,8 @@
 !----------------|-------------------------------------------------------|
 ! adw_stats_L    | switch: .true. : prints stats of traj and interp-var  |
 ! adw_useadx_L   | switch: .true. : use adx instead of adw               |
-! adw_gccsa_L  | switch: .false.: true to use the great circle constant|
-!              | speed approximation  to calculate upstream positions  |
+! adw_gccsa_L    | switch: .false.: true to use the great circle constant|
+!                | speed approximation  to calculate upstream positions  |
 ! adw_ckbd_L     | switch: .true. : check if upstream points from north  |
 !                |                  and south pe's for which an interpo- |
 !                |                  lation is requested are inside own   |
@@ -20,6 +20,7 @@
 !                |                  upstream positions exchanged among   |
 !                |                  processors                           |
 ! adw_mono_L     | switch: .true. : advection of tracers is monotonic    |
+! adw_positive_L | switch: .false.: positivity-preserving advection      |
 ! adw_nosetint_L ! switch: .true. : no setint for TRILIN (done inside)   |
 ! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
 !                |                  vertical interpolation               |
@@ -39,6 +40,7 @@
       logical :: adw_ckbd_L
       logical :: adw_exdg_L
       logical :: adw_mono_L
+      logical :: adw_positive_L
       logical :: adw_nosetint_L
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
@@ -53,6 +55,7 @@
       namelist /adw_cfgs/ adw_ckbd_L
       namelist /adw_cfgs/ adw_exdg_L
       namelist /adw_cfgs/ adw_mono_L
+      namelist /adw_cfgs/ adw_positive_L
       namelist /adw_cfgs/ adw_nosetint_L
       namelist /adw_cfgs/ adw_thermopos_L
 
@@ -64,6 +67,7 @@
       common /adw_nml_l/  adw_ckbd_L
       common /adw_nml_l/  adw_exdg_L
       common /adw_nml_l/  adw_mono_L
+      common /adw_nml_l/  adw_positive_L
       common /adw_nml_l/  adw_nosetint_L
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L

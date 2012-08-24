@@ -32,6 +32,7 @@ function adw_nml(F_nmlFileName_S) result(F_stat)
    adw_exdg_L = .false.
    adw_ckbd_L = .false.
    adw_mono_L = .true.
+   adw_positive_L = .false.
    adw_gccsa_L = .false.
    adw_nosetint_L   = .false.
    adw_trunc_traj_L = .false.
@@ -104,6 +105,11 @@ function adw_config() result(F_stat)
          call msg(MSG_ERROR,'adw_nml: adw_gccsa_L cannot be .true. if .not. G_lam')
          F_stat = -1
       endif
+   endif
+
+   if (adw_positive_L .and. adw_mono_L) then
+      call msg(MSG_ERROR,'adw_nml: adw_positive_L and adw_mono_L cannot be both .true.')
+      F_stat = -1
    endif
    !---------------------------------------------------------------------
    return

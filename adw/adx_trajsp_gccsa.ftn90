@@ -25,24 +25,25 @@ subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
 !    Great Circle Constant speed approximation method.
 !
    !@arguments
-   real, dimension(*) :: &
-        F_lon,         &     !O, upwind longitudes at central time 
-        F_lat,         &     !I/O, upwind lat at central time 
-        F_u, F_v             !I, real wind components at upwind pos(trilin)
-   real    :: F_dt           !I, timestep length
-   integer :: i0,in,j0,jn,k0 !I, scope of operator
-   integer :: F_ni,F_nj
+   real, dimension(*), intent(out)   :: F_lon    ! upwind longitudes at central time 
+   real, dimension(*), intent(inout) :: F_lat    ! upwind lat at central time 
+   real, dimension(*), intent(in)    :: F_u, F_v ! real wind components at upwind pos(trilin)
+   real, intent(in) :: F_dt                      ! timestep length
+   integer, intent(in) :: i0,in,j0,jn,k0         ! scope of operator
+   integer, intent(in) :: F_ni,F_nj
 !
    !@author  Abdessamad Qaddouri
    !@revisions
    ! v4_40 - Qaddouri & Lee - Initial version
+   ! v4_05 - Gaudreault S.  - Code optimization
 !**/
 
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 
-   integer :: vnij, i,j,k, n
+   integer :: vnij, i,j,k, n, idx_k, idx_kj
    real*8  :: term_8,one_ov6_8,third_8
+   real*8  :: F_v_dt, F_u_dt
 
    !---------------------------------------------------------------------
 
@@ -51,20 +52,22 @@ subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
    third_8=1.0D0/3.0D0
    one_ov6_8=1.0D0/6.0D0
 
-!$omp parallel do private(term_8,n)
+!$omp parallel do private(term_8,idx_k,idx_kj,n,F_v_dt,F_u_dt)
    do k=k0,adx_lnkm
-   do j=j0,jn
-      do i=i0,in
-         n = (k-1)*adx_mlnij + ((j-1)*adx_mlni) + i
-         if (abs(F_u(n))+abs(F_v(n)) < 1.e-10) cycle
-         term_8 = (F_u(n)**2*Adx_vtan_8(j)**2 - F_v(n)**2)*F_dt**2*one_ov6_8
-         F_lon(n) = Adx_xx_8(i)-F_u(n)*F_dt*Adx_vsec_8(j)*(1.0D0+term_8)
-         F_lat(n) = Adx_yy_8(j)-F_v(n)*F_dt  &
-                      + F_u(n)**2 * Adx_vtan_8(j)*F_dt**2*0.50D0 &
-                      - F_u(n)**2 * F_v(n)*F_dt**3*third_8
-         if (F_lon(n) < 0.) F_lon(n) = F_lon(n) + CONST_2PI_8
-      end do
-   enddo
+      idx_k = (k-1)*adx_mlnij
+      do j=j0,jn
+         idx_kj = idx_k + ((j-1)*adx_mlni)
+         do i=i0,in
+            n = idx_kj + i
+            F_v_dt = F_v(n)*F_dt
+            F_u_dt = F_u(n)*F_dt
+            term_8 = ((F_u_dt * Adx_vtan_8(j))**2 - F_v_dt**2) * one_ov6_8
+            F_lat(n) = Adx_yy_8(j)- F_v_dt + 0.50D0* F_u_dt**2 * Adx_vtan_8(j) &
+                       - third_8 * F_u_dt**2 * F_v_dt
+            F_lon(n) = Adx_xx_8(i) - F_u_dt * Adx_vsec_8(j) * (1.0D0+term_8)
+            if (F_lon(n) < 0.) F_lon(n) = F_lon(n) + CONST_2PI_8
+         end do
+      enddo
    enddo
 !$omp end parallel do
 
