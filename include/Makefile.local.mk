@@ -124,7 +124,7 @@ gemdm:
 .PHONY: libdyn
 libdyn: rmpo $(OBJECTS)
 
-.PHONY: prgemnml gemgrid checkdmpart toc2nml monitor sometools allbin allbincheck
+.PHONY: prgemnml gemgrid checkdmpart split3df toc2nml monitor sometools allbin allbincheck
 prgemnml: $(BINDIR)/gemprnml_$(BASE_ARCH).Abs
 	ls -lL $(BINDIR)/gemprnml_$(BASE_ARCH).Abs
 prgemnml.ftn90: 
@@ -166,8 +166,27 @@ $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
 		-librmn $(RMN_VERSION) \
 		-libsys $(LIBSYS) \
 		-codebeta $(CODEBETA) \
-		-optf "=$(LFLAGS)" ;\
+		-optf "=$(LFLAGS)"
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/checkdmpart.o 2>/dev/null || true 
+
+
+split3df: $(BINDIR)/split3df_$(BASE_ARCH).Abs
+	ls -lL $(BINDIR)/split3df_$(BASE_ARCH).Abs
+split3df.f90: 
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ 2>/dev/null || true ; fi ;\
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
+$(LCLPO)/split3df.o: split3df.f90
+$(BINDIR)/split3df_$(BASE_ARCH).Abs: $(LCLPO)/split3df.o
+	cd $(LCLPO) ;\
+	makemodelbidon split3df > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	$(RBUILD) -obj split3df.o bidon.o -o $@ $(OMP) -mpi \
+		-libpath $(LIBPATH) \
+		-libappl $(LIBAPPL) \
+		-librmn $(RMN_VERSION) \
+		-libsys $(LIBSYS) \
+		-codebeta $(CODEBETA) \
+		-optf "=$(LFLAGS)"
+	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/split3df.o 2>/dev/null || true 
 
 
 toc2nml: $(BINDIR)/toc2nml
@@ -204,13 +223,14 @@ $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 
 sometools: prgemnml gemgrid toc2nml
 
-allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml #gemabs
+allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
 
 allbincheck_gemdyn:
 	if [[ \
 		   -f $(BINDIR)/gemprnml_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/gemgrid_$(BASE_ARCH).Abs \
+		&& -f $(BINDIR)/split3df_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/toc2nml \
 		&& -f $(BINDIR)/gem_monitor_end \
 		&& -f $(BINDIR)/gem_monitor_output \
