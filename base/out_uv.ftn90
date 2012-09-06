@@ -161,7 +161,9 @@
           if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
           fla = V4dg_ad_L.and.V4dg_imguv_L
 
-          if (V4dg_ad_L.and..not.V4dg_imguv_L) call handle_error(-1,'out_uv','STOP IN OUT_UV: ADJOINT not certified')
+          istat = 0
+          if (V4dg_ad_L.and..not.V4dg_imguv_L) istat = -1
+          call handle_error(istat,'out_uv','STOP IN OUT_UV: ADJOINT not certified')
           flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L )  &
                   .or. V4dg_ad_L
           if ( (V4dg_conf.eq.0) .or. (.not.fla.and..not.flb) ) then

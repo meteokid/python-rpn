@@ -50,7 +50,7 @@
 #include "type.cdk"
 #include "ver.cdk"
 !      
-      integer i,j,k
+      integer i,j,k,istat
       real*8, dimension(:), allocatable :: weigh
       real*8 pis2_8,pbot_8,wh_8,delp_8,TWO_8,c_8,nutop
       parameter (TWO_8 = 2.0)
@@ -61,17 +61,19 @@
 
       if (Vspng_nk.le.0) return
 
+      istat = 0
       if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
          if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
             if (Lun_out.gt.0) write (Lun_out,9001)
-            call handle_error(-1,'vspng_set','vspng_set')
+            istat = -1
          endif
       endif
 
       if (Vspng_coeftop.lt.0.) then
          if (Lun_out.gt.0) write (Lun_out,9002) Vspng_coeftop, Vspng_nk
-         call handle_error(-1,'vspng_set','vspng_set')
+         istat = -1
       endif
+      call handle_error(istat,'vspng_set','')
 
       Vspng_nk = min(G_nk,Vspng_nk)
       pis2_8   = Dcst_pi_8/TWO_8

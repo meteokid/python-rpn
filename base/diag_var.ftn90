@@ -55,21 +55,23 @@
 #include "schm.cdk"
 !     
 !*
-      integer i,j,k,i0,in,j0,jn,nij
+      integer i,j,k,i0,in,j0,jn,nij,istat
       real*8 one, xxx, qbar
       parameter(one=1.d0)
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
 !
 !     ---------------------------------------------------------------
 !
+      istat = 0
       if( &
            i0.lt.1-G_halox   .or. &
            in.gt.l_ni+G_halox.or. &
            j0.lt.1-G_haloy   .or. &
            jn.gt.l_nj+G_haloy &
            )then
-         call handle_error(-1,'diag_var','diag_var : dimension error')
+         istat = -1
       endif
+      call handle_error(istat,'diag_var','dimension error')
 !
       nij = (in - i0 + 1)*(jn - j0 + 1)
 !

@@ -86,7 +86,7 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
    real,save, dimension(:,:), pointer :: eponmod
    real,save, dimension(:), pointer :: coef,cm,cp
    integer, save :: nlev
-   integer :: i,j,k,km,kp
+   integer :: i,j,k,km,kp,istat
    logical, save :: done_L = .false., nothing2do = .false.
    !
    if (nothing2do) then
@@ -103,17 +103,19 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
       !
       ! Check stability criteria and count level to diffuse.
       !
+      istat = 0
       do k=1,size(Eq_sponge)
          if(Eq_sponge(k)>epsilon(Eq_sponge(k)))then         
             if(Step_dt*Eq_sponge(k)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%m(k))>.25)then
-               call handle_error(-1,'equatorial_sponge', &
-                    'Selected diffusion coeficients is making the scheme unsatable, aborting')
+               istat = -1
+               exit
             endif
             nlev=nlev+1
          else
             exit
          endif
       enddo
+      call handle_error(istat,'equatorial_sponge', 'Selected diffusion coeficients is making the scheme unsatable, aborting')
       if (nlev.lt.1) then
          F_switch_on_L = .false.
          nothing2do    = .true.

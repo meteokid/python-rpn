@@ -54,26 +54,28 @@
 #include "e_grdc.cdk"
 #include "grd.cdk"
 #include "path.cdk"
-!
-      integer   fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
-      external  fstinf, fstinl, fstprm, fstlir, fstluk, fnom, fstouv, &
-                e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
-!
+
+      integer,external :: fstinf, fstinl, fstprm, fstlir, fstluk, fnom, &
+                fstouv, e_pilotf, px_param, e_ac_posi, ezgdef_fmem, gdll
+      integer,parameter :: PRESVAR_MAX = 6
+      real*8,parameter :: ONE_8 = 1.0d0
+      real*8,parameter :: CLXXX_8 = 180.0d0
+      logical,save :: done = .false.
+
       integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
                dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
       integer  ip1x,ip2x,ip3x
-      integer  vcode,vcode_t,presvar_max
-      parameter (presvar_max=6)
+      integer  vcode,vcode_t
       character*8 vcode_S,vcode_t_S
-      character*6 presvar_S(presvar_max),presvar_t_S(presvar_max)
-      real*8   presvar_8(presvar_max),presvar_t_8(presvar_max)
+      character*6 presvar_S(PRESVAR_MAX),presvar_t_S(PRESVAR_MAX)
+      character(len=512) :: msg_S
+      real*8   presvar_8(PRESVAR_MAX),presvar_t_8(PRESVAR_MAX)
       real*8, dimension(:), allocatable:: hyb_8,hyb_t_8
       character*1   typ, grd, blk_S
       character*4   var
       character*12  lab
       character*15  pdate
-      real      x1,lev,difsig,dx,dy
+      real      x1,lev,dx,dy
       real coin_lat(4),coin_lon(4),difmin,c
       integer, dimension(:), allocatable :: lookup_ip1
       real, dimension(:,:), allocatable :: latd,lond,lats,lons
@@ -82,18 +84,11 @@
       real*8, dimension(:), allocatable :: lookup_a_8,lookup_b_8
       real*8, dimension(:,:), allocatable :: work_8
       real*8    xyz1(3),xyz2(3)
-      parameter (difsig = 1.e-5)
-      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid
+      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid,istat
       integer lookup_max
       integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,dimgx,dimgy
-      logical done
-      data done/.false./
-      save done
-!
-      real*8 ONE_8, CLXXX_8
+
       real*8 orr, deg2rad_8
-      parameter( ONE_8   = 1.0 )
-      parameter( CLXXX_8 = 180.0 )
       integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
       integer nk_zdt1,nk_wt1,nk_qt1
 !
@@ -143,6 +138,7 @@
 !                     given by 'HU' (for sigma/eta/hybrid levels) or
 !                     'ES', 'HR', 'HU' or 'TD' for pressure levels
 !
+      ier = 0
       vh  = 'HU'
       key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vh)
       if ( key .lt. 0 ) then
@@ -157,14 +153,17 @@
                if ( key .lt. 0 ) then
                   write(6,*) 'No moisture variables are found in analysis'
                   write(6,*) 'Either ES, HR, HU or TD must be in the analysis file.'
-                  call handle_error(-1,'e_specanal','')
+                  ier = -1
                endif
             endif
          endif
       endif
+      call handle_error(ier,'e_specanal','')
+
 !
 !                      Check wind variable and find
 !                      out if it is given by 'UU' or 'UT1'
+      ier = 0
       var = 'UU  '
       key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',var)
       if ( key .lt. 0 ) then
@@ -173,9 +172,11 @@
          if ( key .lt. 0 ) then
             write(6,*) 'No U variables are found in analysis'
             write(6,*) 'Either UU or UT1 must be in the analysis file.'
-            call handle_error(-1,'e_specanal','')
+            ier = -1
          endif
       endif
+      call handle_error(ier,'e_specanal','')
+
 !
 !     Get the information on the U field from the analysis
 !     ig1a,ig2a,ig3a,ig4a are the grid descriptors for the UU/UT1 field
@@ -188,6 +189,8 @@
 !
 ! (Check consistency for UU)
 
+
+      istat = 0
       do k = 1, nka
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
@@ -195,13 +198,17 @@
          if (nia.ne.ni1 .or. nja.ne.nj1) then
             write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH', &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                 ig3a .ne.g3  .or. ig4a .ne.g4) then
             write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH'
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          endif
       enddo
+      call handle_error(istat,'e_specanal','')
+
 !
 ! Allocate argument parameters for px_param
 !
@@ -209,7 +216,7 @@
 
 !     Sort and Get info on vertical coordinate
       err = px_param ( e_fu_anal,list,na,nka,lv,hyb_8,  &
-                       presvar_8,presvar_S,presvar_max, &
+                       presvar_8,presvar_S,PRESVAR_MAX, &
                        za_8,zb_8,vcode_S,vcode )
       call handle_error(err,'e_specanal','px_param on UU')
 !
@@ -233,12 +240,14 @@
 !
       print *,'===> Analysis on ',vcode_S,' vertical coordinates'
 !
+      istat = 0
       if (( Anal_sigma_L.or.Anal_eta_L.or.Anal_hyb_L.or.Anal_ecmwf_L).and.  &
            ( VH .ne. 'HU' )) then
          write(6,*) 'ERROR: Moisture variable(VH) must be HU '
          write(6,*) 'when analysis is on sigma/eta/hybrid.'
-         call handle_error(-1,'e_specanal','')
+         istat = -1
       endif
+      call handle_error(istat,'e_specanal','')
 !
 !
 !                      Check temperature variable and find
@@ -246,15 +255,18 @@
       vt  = 'VT'
       key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
 !
+      istat = 0
       if ( key .lt. 0 ) then
          vt  = 'TT'
          key = fstinf (e_fu_anal,ni1,nj1,nk1,datev,' ',-1,-1,-1,' ',vt)
          if ( key .lt. 0 ) then
             write(6,*) 'No temperature variables are found in analysis'
             write(6,*) 'Either TT or VT must be in the analysis file.'
-            call handle_error(-1,'e_specanal','')
+            istat = -1
          endif
       endif
+      call handle_error(istat,'e_specanal','')
+
 !
 !     Get the information on the temperature field from the analysis
 !     ig1a,ig2a,ig3a,ig4a are the grid descriptors for the TT/VT field
@@ -268,6 +280,7 @@
 
       allocate ( hyb_t_8(nka) )
 
+      istat = 0
       do k = 1, nka
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
@@ -276,17 +289,20 @@
          if (nia.ne.ni1 .or. nja.ne.nj1) then
             write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH', &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                 ig3a .ne.g3  .or. ig4a.ne.g4) then
             write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH'
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          endif
       enddo
+      call handle_error(istat,'e_specanal','')
 
 !     Sort and Get info on vertical coordinate
       err = px_param(e_fu_anal,list,na_t,nka,lv_t,hyb_t_8, &
-                      presvar_t_8,presvar_t_S,presvar_max, &
+                      presvar_t_8,presvar_t_S,PRESVAR_MAX, &
                       zat_8,zbt_8,vcode_t_S,vcode_t)
       call handle_error(err,'e_specanal','px_param on TT')
 !
@@ -311,32 +327,39 @@
       end do 
 
 !     Check for vertical consistency
+      istat = 0
       if (vcode.ne.6) then 
          if (lv.ne.lv_t) then
             print *,'Levels found for TT/VT is',LV_t,': should be ',LV
-            call handle_error(-1,'e_specanal','')
+            istat = -1
          endif
          do k=1,lv
             if (rna(k).ne.rna_t(k)) then
                print *,'Level',k,'for UU is',rna(k),' which is not the same for TT/VT ',rna_t(k)
-               call handle_error(-1,'e_specanal','')
+               istat = -1
             endif
          enddo
       endif
+      call handle_error(istat,'e_specanal','')
+
 
 !     Check presence of ZDT1, WT1 and QT1
 
       key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
                       ip2a, ip3a, tva,'ZDT1', list, nk_zdt1, lvmax)
 !
+      istat = 0
       if (nk_zdt1.gt.0) then
          if (nk_zdt1.ne.lv) then            
             print*, 'Incorrect vertical structure for ZDT1, nk(zdt1),nk(thermo without diag)=',nk_zdt1,lv
-            call handle_error(-1,'e_specanal','')           
+            istat = -1
          else
             nvar=nvar+1
          endif
       endif
+      call handle_error(istat,'e_specanal','')
+
+      istat = 0
       do k = 1, nk_zdt1
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
@@ -344,13 +367,17 @@
          if (nia.ne.ni1 .or. nja.ne.nj1) then
             write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH ZDT1', &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                 ig3a .ne.g3  .or. ig4a .ne.g4) then
             write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH ZDT1'
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          endif
       enddo
+      call handle_error(istat,'e_specanal','')
+
 !    
       var = 'WT1 '
       key = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
@@ -360,14 +387,18 @@
          key = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
                         ip2a, ip3a, tva, var, list, nk_wt1, lvmax)
       endif
+      istat = 0
       if (nk_wt1.gt.0) then
          if (nk_wt1.ne.lv) then
             print*, 'Incorrect vertical structure for WT1/ZZ, nk(wt1/zz),nk(thermo without diag)=',nk_wt1,lv
-            call handle_error(-1,'e_specanal','')           
+            istat = -1
          else
             nvar=nvar+1
          endif
       endif
+      call handle_error(istat,'e_specanal','')
+
+      istat = 0
       do k = 1, nk_wt1
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
@@ -375,24 +406,32 @@
          if (nia.ne.ni1 .or. nja.ne.nj1) then
             write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH '//trim(var), &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                ig3a .ne.g3  .or. ig4a .ne.g4) then
             write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH '//trim(var)
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          endif
       enddo
+      call handle_error(istat,'e_specanal','')
+
 !   
+      istat = 0
       key  = fstinl ( e_fu_anal, ni1, nj1, nk1, datev, labanl, -1, &
                       ip2a, ip3a, tva,'QT1', list, nk_qt1, lvmax)
       if (nk_qt1.gt.0) then
          if (nk_qt1.ne.lv_t) then
             print*, 'Incorrect vertical structure for QT1'
-            call handle_error(-1,'e_specanal','')           
+            istat = -1
          else
             nvar=nvar+1
          endif
       endif
+      call handle_error(istat,'e_specanal','')
+
+      istat = 0
       do k = 1, nk_qt1
          ier = fstprm (list(k), dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                     ip1a, ip2a, ip3a, tva, var, labanl, grd, g1, g2, g3, &
@@ -400,20 +439,24 @@
          if (nia.ne.ni1 .or. nja.ne.nj1) then
             write(6,*)':  LEVEL ',ip1a,' DIMENSION MISMATCH QT1', &
                       'nia,nja=',nia,nja,' ni1,nj1=', ni1,nj1
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          elseif (grda.ne.grd .or. ig1a.ne.g1 .or. ig2a.ne.g2 .or. &
                ig3a .ne.g3  .or. ig4a .ne.g4) then
             write(6,*)':  LEVEL ',ip1a,' GRID MISMATCH QT1'
-            call handle_error(-1,'e_specanal','')
+            istat = -1
+            exit
          endif
       enddo
+      call handle_error(istat,'e_specanal','')
 
 !     Find the A,B values corresponding to the IP1s
 
+      istat = 0
       if (Anal_pres_L.and.lv.gt.1.and.lv.lt.16) then           !     Pressure Analysis
          write(6,*) ': NEED 16 OR MORE PRESSURE LEVELS. ', &
                     lv, ' levels found'
-         call handle_error(-1,'e_specanal','')
+         istat = -1
       else if (vcode.gt.0.and.vcode.le.5) then                 !     Eta/HYB/SIG/ECMWF
          if (rna(lv).ne.1.0) then
             write(6,*)'**************************************'
@@ -422,6 +465,7 @@
             write(6,*)'**************************************'
          endif
       endif
+      call handle_error(istat,'e_specanal','')
 !
       if (LAM .and. (.not.Pil_bmf_L) .and. .not.done) then
 
@@ -463,11 +507,9 @@
             p2=ig2a
             p3=ig3a
             key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','>>')
-            if (key.lt.0) then
-               write(6,4000) '>>'
-               call handle_error(-1,'e_specanal','')
-            endif
-            if (nia.ne.ni1) call handle_error(-1,'e_specanal','')
+            write(msg_S,4000) '>>'
+            call handle_error(key,'e_specanal',msg_S)
+            call handle_error_l(nia==ni1,'e_specanal','nia/=ni1')
 
             allocate(xpx(nia))
             ier = fstprm (key, dte, det, ipas, ni1, nj1, nk1, bit, dty, &
@@ -476,11 +518,9 @@
 !           g1,g2,g3,g4 are the grid descriptors from the analysis file
             err = fstluk( xpx, key, ni1,nj1,nk1)
             key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^^')
-            if (key.lt.0) then
-               write(6,4000) '^^'
-               call handle_error(-1,'e_specanal','')
-            endif
-            if (nja.ne.nj1) call handle_error(-1,'e_specanal','')
+            write(msg_S,4000) '^^'
+            call handle_error(key,'e_specanal',msg_S)
+            call handle_error_l(nja==nj1,'e_specanal','nja/=nj1')
             allocate(ypx(nja))
             err = fstluk( ypx, key, ni1,nj1,nk1)
 
@@ -560,6 +600,7 @@
                coin_lon(3)=lond(nia,nja)
                coin_lat(4)=latd(1,nja)
                coin_lon(4)=lond(1,nja)
+               ier = 0 
                do k=1,4
                   coin_lon(k)=amod(coin_lon(k) + 360.,360.0)
                   call llacar(xyz1,coin_lon(k),coin_lat(k),1,1)
@@ -580,13 +621,13 @@
                      endif
                   enddo
                   enddo
-                  if (numi.eq.1.or.numj.eq.1) then
-                     write(6,*)'Abort: Insufficient coverage from LAM Analysis'
-                     call handle_error(-1,'e_specanal','')
-                  else 
-                     print *,'numi=',numi,' numj=',numj
+                  if (numi==1.or.numj==1) then
+                     ier = -1
+                     exit
                   endif
+                  print *,'numi=',numi,' numj=',numj
                enddo
+               call handle_error(ier,'e_specanal','Insufficient coverage from LAM Analysis')
             endif
          endif
 
@@ -602,28 +643,25 @@
          enddo
          ypxv(nja-1) = 0.5 * ( ypx(nja-1) + ypx(nja) )
 
-         if (e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil).eq.0) then
-            allocate (xg_8(nia), yg_8(nja), ygv_8(nja-1))
-            do i=1,nia
-               xg_8(i) = xpx(i) * deg2rad_8
-            enddo
-            do i=1,nja
-               yg_8(i) = ypx(i) * deg2rad_8
-            enddo
-            do j=1,nja-1
-               ygv_8(j)  = ypxv(j) * deg2rad_8
-            enddo
-            dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
-            dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
-            dstv_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj-1, 'Z', 'E', Hgc_ig1ro, &
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
-         else
-            write(6,*)' Abort: Insufficient coverage in Analysis'
-            call handle_error(-1,'e_specanal','')
-         endif
-
+         ier = e_ac_posi(xpx,ypx,nia,nja,Pil_hblen+Pil_pil)
+         call handle_error_l(ier==0,'e_specanal','Insufficient coverage in Analysis')
+         
+         allocate (xg_8(nia), yg_8(nja), ygv_8(nja-1))
+         do i=1,nia
+            xg_8(i) = xpx(i) * deg2rad_8
+         enddo
+         do i=1,nja
+            yg_8(i) = ypx(i) * deg2rad_8
+         enddo
+         do j=1,nja-1
+            ygv_8(j)  = ypxv(j) * deg2rad_8
+         enddo
+         dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
+              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
+         dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
+              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
+         dstv_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj-1, 'Z', 'E', Hgc_ig1ro, &
+              Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
          deallocate(xpx,ypx,xpxu,ypxv)
          done = .true.
 

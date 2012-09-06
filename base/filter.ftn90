@@ -83,6 +83,9 @@
 
       if ( abs(F_coef) .lt. 0.0001 ) return
 !
+
+      call handle_error_l(F_coef>0..and.F_coef<=0.5,'filter','THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED')
+
       if ( ( F_coef .gt. 0. ) .and. ( F_coef .le. 0.5 ) ) then
          pawhx = 0
          pawhy = 0 
@@ -113,9 +116,7 @@
          call xyfil(F_fd,w2,w1,-F_coef,whx,why,.false.,LDIST_DIM,Nk)
          endif
          end do
-      else
-         call handle_error(-1,'filter','THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED')
-      endif
+       endif
 !
 !-------------------------------------------------------------
 !-------------------------------------------------------------

@@ -34,11 +34,12 @@
 #include "glb_pil.cdk"
 
       integer, save :: same = -1
-      integer i, npts
+      integer i, npts, istat
       real*8  del, angle
       real*8, parameter :: half=0.5, one=1.0, two=2.0
 !     __________________________________________________________________
 !
+      istat = 0
       select case (trim(F_type_S))
          case ('PERIODIC')
             npts    = F_dim
@@ -52,9 +53,10 @@
             npts    = F_dim
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w))
          case DEFAULT
-            call handle_error(-1,'itf_fft_set', &
-                 'received invalid F_type_S'//trim(F_type_S))
+            istat = -1
       end select
+      call handle_error(istat,'itf_fft_set', &
+           'received invalid F_type_S'//trim(F_type_S))
 
       if ((npts==same) .and. (trim(F_type_S)==trim(Fft_type_S))) return
 

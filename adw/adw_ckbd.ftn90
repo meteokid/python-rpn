@@ -62,8 +62,9 @@
 !      integer            Adw_fro_n, Adw_fro_a
 !      real*8             adw_yy_8(*)
 !***********************************************************************
-      integer n
+      integer n,istat
 !***********************************************************************
+      istat = 0
 !$omp parallel
 !$omp do
       do n = 1,Adw_fro_n
@@ -78,7 +79,7 @@
          print *,'*           Upstream point:',F_y(n)
          print *,'*************************************************'
          call flush(6)
-         call handle_error(-1,'adw_ckbd','')
+         istat = -1
       endif
       enddo
 !$omp enddo
@@ -96,12 +97,12 @@
          print *,'*           Upstream point:',F_y(n)
          print *,'*************************************************'
          call flush(6)
-         call handle_error(-1,'adw_ckbd','')
+         istat = -1
       endif
       enddo
 !$omp enddo
 !$omp end parallel
-!
+      call handle_error(istat,'adw_ckbd','Upstream point out of source grid')
       return
       end
 

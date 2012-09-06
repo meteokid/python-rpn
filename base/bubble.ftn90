@@ -42,8 +42,8 @@
 !     END INTERFACE
 !
 !implicits
-
-      call handle_error(-1,'bubble','bubble')
+#include "stop_mpi.h"
+      call stop_mpi(STOP_ERROR,'bubble','theo case no longer avail.')
 
       return
       end

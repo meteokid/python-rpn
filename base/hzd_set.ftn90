@@ -16,6 +16,7 @@
 !**s/r hzd_set - Compute diffusion operator matrix on G, U and V grids
 !
 #include "model_macros_f.h"
+#include "msg.h"
 !
       subroutine hzd_set
       implicit none
@@ -81,16 +82,20 @@
       call low2up  (Hzd_type_S,dumc_S)
       Hzd_type_S = dumc_S
 
+      istat = 0
       if(.not.( (Hzd_type_S.eq."HO_IMP") .or. &
                 (Hzd_type_S.eq."HO_EXP") .or. &
                 (Hzd_type_S.eq."NIL") )) then
-         call handle_error(-1,'hzd_set', &
-           'hzd_set : Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL')
+         call msg(MSG_ERROR,'hzd_set: Hzd_type_S not valid, choices: HO_IMP,HO_EXP,NIL')
+         istat = -1
       endif
 
-      if ( (Hzd_type_S.eq.'HO_EXP').and.(.not.G_lam) ) &
-      call handle_error (-1,'hzd_set', &
-                'HO_EXP diffusion NOT avalaible for GU configurations')
+      if ( (Hzd_type_S.eq.'HO_EXP').and.(.not.G_lam) ) then
+         call msg(MSG_ERROR,'hzd_set: HO_EXP diffusion NOT avalaible for GU configurations')
+         istat = -1
+      endif
+
+      call handle_error(istat,'hzd_set','')
 
       Hzd_lnr    = min(max(0.,Hzd_lnr   ),0.9999999)
       Hzd_pwr    = Hzd_pwr    / 2

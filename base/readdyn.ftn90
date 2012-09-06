@@ -292,7 +292,7 @@
 !
           allocate(pres(nbpts,nka_t))
             err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
-            if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+            call handle_error(err,'readdyn','readdyn:get_px')
             call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,nka_t), &
                              tt_temp,nbpts,nka_t)
 !           ps is p0 for non stag
@@ -319,9 +319,9 @@
             allocate (srclev(l_ni,l_nj,nka_t), &
                       dstlev(l_ni,l_nj,G_nk+2) )
             err = get_px(srclev,ps,l_ni*l_nj,zat_8,zbt_8,nka_t,Acqi_datasp(2),.true.)
-            if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+            call handle_error(err,'readdyn','readdyn:get_px')
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
-            if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+            call handle_error(err,'readdyn','readdyn:get_px')
             call vte_intvertx3(work,tt_temp,srclev,dstlev,nbpts, &
                               nka_t,G_nk+2,'VT','cubic')
 !
@@ -450,9 +450,9 @@
             allocate (srclev(l_ni,l_nj,nka_m), &
                  dstlev(l_ni,l_nj,G_nk+1) )
             err = get_px(srclev,ps,l_ni*l_nj,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
-            if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+           call handle_error(err,'readdyn','readdyn:get_px')
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
-            if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')                  
+            call handle_error(err,'readdyn','readdyn:get_px')                  
             call vte_intvertx3(work,q_temp,srclev,dstlev,nbpts, &
                  nka_m,G_nk+1,'QT','cubic')        
 !
@@ -502,9 +502,9 @@
         allocate ( srclev (Acqi_niu,Acqi_nju,nka_m), &
                     dstlev (Acqi_niu,Acqi_nju,G_nk+1) )
         err = get_px(srclev,apsu_temp,Acqi_niu*Acqi_nju,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
-        if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+        call handle_error(err,'readdyn','readdyn:get_px')
         err = get_px(dstlev,psu_temp,Acqi_niu*Acqi_nju,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
-        if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+        call handle_error(err,'readdyn','readdyn:get_px')
         call vte_intvertx3(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju, &
                     nka_m,G_nk+1,'UU','cubic')
         deallocate (srclev,dstlev)
@@ -512,9 +512,9 @@
         allocate ( srclev (Acqi_niv,Acqi_njv,nka_m), &
                     dstlev (Acqi_niv,Acqi_njv,G_nk+1) )
         err = get_px(srclev,apsv_temp,Acqi_niv*Acqi_njv,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
-        if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+        call handle_error(err,'readdyn','readdyn:get_px')
         err = get_px(dstlev,psv_temp,Acqi_niv*Acqi_njv,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
-        if (err.lt.0) call handle_error(-1,'readdyn','readdyn:get_px')
+        call handle_error(err,'readdyn','readdyn:get_px')
         call vte_intvertx3(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv, &
                     nka_m,G_nk+1,'VV','cubic')
         do k=1,g_nk+1

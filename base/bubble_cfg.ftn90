@@ -34,8 +34,8 @@
 !	
 !arguments - none
 !
-
-      call handle_error(-1,'bubble_cfg','bubble_cfg')
+#include "stop_mpi.h"
+      call stop_mpi(STOP_ERROR,'bubble_cfg','theocase no longuer avail')
 
       return
       end

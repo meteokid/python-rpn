@@ -56,9 +56,8 @@ subroutine nest_init_weight(F_grid)
   !      
   !----------------------------------------------------------------------
   !
+  call handle_error_l(any(supported_grids == trim(F_grid)),'nest_init_weight','Unsupported grid requested: '//trim(F_grid))
 
-  if (.not.any(supported_grids == trim(F_grid))) &
-       call handle_error(-1,'nest_init_weight','Unsupported grid requested: '//trim(F_grid))
 
   gmm_name = trim(prefix)//trim(F_grid)
   shifti = 0; shiftj = 0

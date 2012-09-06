@@ -53,7 +53,7 @@
 #include "xst.cdk"
 !
 !*
-      integer ni,nj,nstat,ij,oldij,i,j,k,m,n,numi,numj,ierr
+      integer ni,nj,nstat,ij,oldij,i,j,k,m,n,numi,numj,ierr,istat
       integer, dimension(1) :: pos
       integer wk(MAXSTAT)
       real lat((G_ni+1)*G_nj),lon((G_ni+1)*G_nj), &
@@ -159,25 +159,26 @@
 !
 !     4- Put the stations in increasing order of index in a list
 !
+      ierr = 0
       if (nstat > 1) then
          do k=1,nstat
             Xst_stn(k)%index = Xst_stn(k)%i+(Xst_stn(k)%j-1)*ni
          enddo
          allocate(stn_tmp(nstat),stat=ierr)
-         if (ierr /= 0) then
-            write(Lun_out,1000) 'stn_tmp'
-            call handle_error(-1,'set_xst','set_xst')
+         if (ierr == 0) then
+            i = 1
+            do k=1,nstat
+               pos = minloc(Xst_stn(1:nstat)%index)
+               stn_tmp(i) = Xst_stn(pos(1))
+               Xst_stn(pos(1))%index = ni*nj+1
+               i = i+1
+            enddo
+            Xst_stn(1:nstat) = stn_tmp(1:nstat)
+            deallocate(stn_tmp,stat=istat)
          endif
-         i = 1
-         do k=1,nstat
-            pos = minloc(Xst_stn(1:nstat)%index)
-            stn_tmp(i) = Xst_stn(pos(1))
-            Xst_stn(pos(1))%index = ni*nj+1
-            i = i+1
-         enddo
-         Xst_stn(1:nstat) = stn_tmp(1:nstat)
-         deallocate(stn_tmp)
       endif
+      call handle_error_l(ierr == 0,'set_xst','Unable to allocate mem for stn_tmp')
+
 !
 ! 4-  Re-index the stations after the sorting
 !
@@ -218,7 +219,6 @@
  950  format('Redundancy NOTED FOR Station: I,J= ',I5,',',I5)
  970  format(/'WARNING (non-LAM GRID): Station I index is G_ni+1 so',  &
            /,' index is then reset to 1.')
- 1000 format('Unable to allocate space for ',a)
  1001 format(//,'PROCESSING TIME-SERIES GRID POINTS (S/R SET_XST)', &
               /,'================================================')
 !     ---------------------------------------------------------------

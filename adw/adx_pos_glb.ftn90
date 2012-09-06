@@ -89,7 +89,9 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
              call flush(Lun_out)
         endif
 
-        if ( sum_outside.ne.0 ) call handle_error(-1,'adx_main_2_pos','sum_outside.ne.0')
+        istat = 0
+        if ( sum_outside.ne.0 ) istat = -1
+        call handle_error(istat,'adx_main_2_pos','sum_outside.ne.0')
 !
    endif
 
@@ -110,7 +112,7 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
 
    istat = 1
    if (adx_fro_a > 0 .and. adw_ckbd_L) istat = adx_ckbd3(ypos2,adx_fro_n,adx_fro_s)
-   !TODO: uncomment this: call handle_error(istat,'adx_pos_glb','Error raised in adx_ckbd')
+   call handle_error(istat,'adx_pos_glb','Error raised in adx_ckbd')
 
    if (adx_fro_a > 0) then
       save_nosetint_L = adw_nosetint_L

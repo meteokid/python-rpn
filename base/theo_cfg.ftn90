@@ -116,7 +116,7 @@
       endif
 !
  9999 continue
-      call handle_error(-1,'theo_cfg','')
+      call handle_error(-1,'theo_cfg','') !TODO: fix me
 !
 !     ---------------------------------------------------------------
  7050 format (/' THEORETICAL CASE IS: ',a/)

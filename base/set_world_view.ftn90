@@ -16,6 +16,7 @@
 !**s/r set_world_view
 !
 #include "model_macros_f.h"
+#include "msg.h"
 !
       subroutine set_world_view
 !
@@ -190,14 +191,20 @@
 !
       call set_gmm
 !
+      ierr = 0
       Schm_notop=0
       if(Schm_NoTopThL_L)then
-         if(Schm_opentop_L)&
-              call handle_error(-1,'set_world_view','Schm_NoTopThL_L cannot be use with Schm_opentop_L')
-         if(.not.Adw_useadx_L)&
-              call handle_error(-1,'set_world_view','Schm_NoTopThL_L cannot be use with Adw_useadx_L=.false.')
+         if(Schm_opentop_L) then
+            call msg(MSG_ERROR,'set_world_view: Schm_NoTopThL_L cannot be use with Schm_opentop_L')
+            ierr = -1
+         endif
+         if(.not.Adw_useadx_L) then
+            call msg(MSG_ERROR,'set_world_view: Schm_NoTopThL_L cannot be use with Adw_useadx_L=.false.')
+            ierr = -1
+         endif
          Schm_notop=1
       endif
+      call handle_error(ierr,'set_world_view','')
 !
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
 !

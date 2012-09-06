@@ -197,7 +197,7 @@
 
          allocate (pres(ngd1,nka_t))
          err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t,presstype,.false.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
          call adj_ss2topo(ssq0x, topo1,pres,meqx,ttx,ngd1,nka_t)
          deallocate (pres)
 
@@ -266,9 +266,9 @@
          allocate (dstlev(F_ni,F_nj,G_nk+2),srclev(F_ni,F_nj,max(nka_t,nka_m+1)))
 
          err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t,presstype,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
          err = get_px(dstlev,ssq1,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
       else
 
@@ -338,7 +338,7 @@
           if(ana_q_L) then
              if (Vertint_L) then
                 err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk,Ver_code,.true.)
-                if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+                call handle_error(err,'casc_hvi','casc_hvi:get_px')
                 do j=1,F_nj
                 do i=1,F_ni
                    lnpis_8 = ssq1(i,j) + Cstv_Zsrf_8
@@ -347,7 +347,7 @@
                 enddo
 !find pressure levels for qqr(2:nka_m) = qt1(1:G_nk)
                 err = get_px(srclev(1,1,2),ssqr,ngd,ana_am_8,ana_bm_8,nka_m-1,presstype,.true.)
-                if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+                call handle_error(err,'casc_hvi','casc_hvi:get_px')
 !set pressure level for qqr(1) = qt1(0)= 0
 !set pressure level for qqr(nka_m+1) = qt1(G_nk+1)= psurf
                 do j=1,F_nj
@@ -371,16 +371,16 @@
 !
       if (Vertint_L) then
          err = get_px(srclev,ssur,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
          err = get_px(dstlev,ssu0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
          call vte_intvertx3(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk+1,'UU','cubic') 
 
          err = get_px(srclev,ssvr,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
          err = get_px(dstlev,ssv0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
-         if (err.lt.0) call handle_error(-1,'casc_hvi','casc_hvi:get_px')
+         call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
          call vte_intvertx3(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk+1,'VV','cubic') 
 

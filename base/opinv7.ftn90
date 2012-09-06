@@ -83,9 +83,7 @@
 !                                                                             *
 !     call tmg_start0(76,'opinv')
       plalonz = F_axis.eq.'Z'
-      if ( .not.plalonz ) then
-         call handle_error(-1,'opinv7','OPINV7 is only correct for Z axis')
-      endif
+      call handle_error_l(plalonz,'opinv7','OPINV7 is only correct for Z axis')
       pnm = F_nk
       if ( F_case.eq.'D' ) then
          plbnd = .true.

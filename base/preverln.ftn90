@@ -57,7 +57,7 @@
       real*8 pdordr, zero, one, xxx, yyy
       parameter(zero=.0d0, one=1.d0)
 !
-      if(F_nk.ne.G_nk)call handle_error(-1,'preverln','preverln')
+      call handle_error_l(F_nk == G_nk,'preverln','F_nk /= G_nk')
 !     
       pdordr = -1.0
 !

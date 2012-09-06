@@ -107,10 +107,12 @@
       ptgeonm(11) = 'GL'
       ptgeonm(12) = 'HS'
       pnsurf =  12
+      msg = ''
       if (pnsurf.gt.CNSRGEO) then
          write(msg,'(a,i7,a,i7)') 'Dimension for ptgeonm TOO SMALL (change it in p_serg.cdk), CNSRGEO= ',CNSRGEO,' should be > ',pnsurf
-         call handle_error(-1,'sergini',msg)
       endif
+      call handle_error_l(pnsurf <= CNSRGEO,'sergini',msg)
+
 !
 !        ---------------------------------------------------------------
 !C    4- Temporarily over-writing the user time serie's variable list

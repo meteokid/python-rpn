@@ -56,10 +56,7 @@
       global_extend = (abs(1.0d0-abs(Grd_xl_8-Grd_x0_8)/360.d0).lt.epsilon) &
                  .or. (abs(1.0d0-abs(Grd_yl_8-Grd_y0_8)/180.d0).lt.epsilon)
 
-      if (lam .and. global_extend) then
-         write (6,9000) 
-         call handle_error(-1,'e_grid','')
-      endif
+      call handle_error_l(.not.(lam .and. global_extend),'e_grid','LAM grid extends to global coverage on at least one axis')
 
       allocate (xfi(Grd_ni+1),yfi (Grd_nj),xu  (Grd_ni+1),yv   (Grd_nj-1))
       allocate (xdx(Grd_ni+1),xdy (Grd_nj),xdxu(Grd_ni+1),xdyv (Grd_nj-1))
@@ -151,9 +148,7 @@
 
  1001 format (/1x,'COMPUTE MODEL GRID (S/R E_GRID)', &
               /1x,34('='))
- 9000 format (/' LAM grid extends to global coverage on at least ', &
-              /' one axis ---- ABORT -----'/)
-!
+ !
 !----------------------------------------------------------------------
 !
       return

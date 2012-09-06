@@ -30,7 +30,7 @@ subroutine adx_set_interp()
    real*8, parameter :: LARGE_8 = 1.D20
    real*8, parameter :: FRAC1OV6_8 = 1.D0/6.D0
 
-   integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, ind
+   integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, istat2, ind
    integer :: i0, j0, k0, pnx, pny, pnzt, pnzm, pnzs
 
    real*8 :: ra,rb,rc,rd
@@ -55,8 +55,6 @@ subroutine adx_set_interp()
         whzt(0:adx_lnkt+1), &
         whzm(0:adx_lnkm+1), &
         stat = istat)
-   call handle_error_l(istat==0,'adx_set','problem allocating mem')
-
 
    allocate( &
         adx_xbc_8(adx_gni+2*adx_halox), &   ! (xc-xb)     along x
@@ -69,8 +67,9 @@ subroutine adx_set_interp()
         adx_ybacd_8(adx_gnj+2*adx_haloy), &
         adx_ycabd_8(adx_gnj+2*adx_haloy), &
         adx_ydabc_8(adx_gnj+2*adx_haloy), &
-        stat = istat)
-   call handle_error_l(istat==0,'adx_set_lag3d_horiz','problem allocating mem')
+        stat = istat2)
+
+   call handle_error_l(istat==0.and.istat2==0,'adx_set_interp','problem allocating mem')
 
    do i = adx_gminx+1,adx_gmaxx-2
       ra = adx_xg_8(i-1)
@@ -199,7 +198,7 @@ subroutine adx_set_interp()
         adx_diz_8(-1:2*adx_lnkm+2), &
         adx_dbz_8(0:2*adx_lnkm+1), &
         stat=istat)
-   call handle_error_l(istat==0,'adx_set_loc_interp','problem allocating mem')
+   call handle_error_l(istat==0,'adx_set_interp','problem allocating mem')
 
    i0 = 1
    do i=1,pnx
@@ -277,7 +276,7 @@ subroutine adx_set_interp()
         adx_zcabd_8%t(adx_lnkm+1), adx_zcabd_8%m(adx_lnkm), &
         adx_zdabc_8%t(adx_lnkm+1), adx_zdabc_8%m(adx_lnkm), &
         stat=istat)
-   call handle_error_l(istat==0,'adx_set_lag3d_z','problem allocating mem')
+   call handle_error_l(istat==0,'adx_set_interp','problem allocating mem')
 
    do k = 2,adx_lnkm-2
       ra = adx_verZ_8%m(k-1)

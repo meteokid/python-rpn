@@ -86,6 +86,7 @@
       subroutine glbstat
       implicit none
 #include <arch_specific.hf>
-      call handle_error (-1,'glbstat','ABORT - glbstat has been replace by glbstat2')
+#include "stop_mpi.h"
+      call stop_mpi(STOP_ERROR,'glbstat','ABORT - glbstat has been replace by glbstat2')
       return
       end

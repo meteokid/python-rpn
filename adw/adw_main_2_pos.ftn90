@@ -110,7 +110,7 @@
 !$$$#include "acid.cdk"
 !      logical acid_test_l
       integer i, j, k, n, nm, ij, ijk, nij, nijk, it
-      integer i1,j1,k1,ier,i0,in,j0,jn,k0,kn
+      integer i1,j1,k1,ier,i0,in,j0,jn,k0,kn,istat
 !
       integer, dimension(l_ni*l_nj*F_nk) :: n1,loci,locj,lock
       real,    dimension(l_ni*l_nj*F_nk) :: capx1,capy1,capz1
@@ -135,6 +135,7 @@
       dth    = Cstv_dt_8/2.
       pdp    = 1.d0 + 1.d-6
       pdm    = 1.d0 - 1.d-6
+      istat = 0
       if(F_l_S.eq.'m')then
          p_z =>Ver_z_8%m
          call msg(MSG_DEBUG,'CALC UPSTREAM MOMENTUM POSITIONS: (S/R ADW_MAIN_2_POS)')
@@ -142,8 +143,9 @@
          p_z =>Ver_z_8%t
          call msg(MSG_DEBUG,'CALC UPSTREAM THERMO   POSITIONS: (S/R ADW_MAIN_2_POS)')
       else
-         call handle_error(-1,'adw_main_2_pos','wrong level descriptor')
+         istat = -1
       endif         
+      call handle_error(istat,'adw_main_2_pos','wrong level descriptor')
 
       i0=1
       in=l_ni

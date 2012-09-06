@@ -16,6 +16,7 @@
 !**s/r e_intwind - Wind components horizontal interpolation
 !
 #include "model_macros_f.h"
+#include "msg.h"
 !
       subroutine e_intwind 
       implicit none
@@ -60,7 +61,7 @@
                fstinf,fstlir,fstprm,e_rdhint3
 !
       integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1,  &
-              nk1,nkc,err,iu,ju,iv,jv,nu,nv
+              nk1,nkc,err,iu,ju,iv,jv,nu,nv, istat
       integer nisu,nisv,njsu,njsv
       integer nis,njs,niw,njw,iw,ie,jw,is,js,jn
       integer ip2, ip3
@@ -154,6 +155,7 @@
 !
             if (LAM) allocate (w1(iu*ju),w2(iv*jv))
 !
+            istat = 0
             do k=1,lv
                if (.not.LAM) then
                key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl,  &
@@ -224,7 +226,11 @@
 !
                else
 !
-                  if (LAM) call handle_error(-1,'e_intwind','NO INTERPOLATION LAM when UT1-VT1: TO BE TESTED')
+                  if (LAM) then
+                     call msg(MSG_ERROR,'e_intwind: NO INTERPOLATION LAM when UT1-VT1: TO BE TESTED')
+                     istat = -1
+                     exit
+                  endif
 !
                   do i=1,nisu*njsu
                      uu(i) = uu(i)
@@ -241,6 +247,7 @@
                call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
                endif
             end do
+            call handle_error(istat,'e_intwind','')
 !
             if (LAM.and..not.Pil_bmf_L) then
                call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)

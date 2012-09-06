@@ -37,7 +37,7 @@
 #include "theonml.cdk"
 #include "stat.cdk"
 !
-      integer i, j, k, idatx, longueur
+      integer i, j, k, idatx, longueur,istat
       real*8 delta_8, zmt_8(maxhlev)
       real*8 c1_8,Exner_8,height_8,pres_8,height_top_8
       real aa
@@ -96,6 +96,7 @@
       Out3_flipit_L  = .true.
       Out3_closestep = 28800
 
+      istat = 0
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
          Out3_etik_s  = 'SCHAR'
@@ -289,9 +290,10 @@
          Vtopo_ndt   = 0
 
       else
-         call handle_error(-1,'mtn_cfg','not a valid mtn_case')
+         istat = -1
       endif
-      
+      call handle_error(istat,'mtn_cfg','not a valid mtn_case')
+
       Hgc_gxtyp_s='E'
       call cxgaig ( Hgc_gxtyp_S,Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, &
                               Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )

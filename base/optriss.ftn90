@@ -72,6 +72,8 @@
 !   ONLY for solving along z direction                                        *
 !                                                                             *
 !******************************************************************************
+      call handle_error_l(F_axis=='Z','optriss7','OPTRISS7 is only correct for Z axis')
+
       if ( F_axis .eq. 'Z' ) then
 !
 !$omp parallel do
@@ -103,8 +105,6 @@
          call ftridi7 ( F_r, F_rhs, F_a_8, F_b_8, F_c_8, &
                       NIS*NJS*SKIP, SKIP, F_nk, NIS*NJS, .false. )
 ! 
-      else
-         call handle_error(-1,'optriss7','OPTRISS7 is only correct for Z axis')
       endif 
 !
       return

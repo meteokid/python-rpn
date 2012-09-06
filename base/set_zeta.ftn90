@@ -73,7 +73,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "pres.cdk"
 #include "cstv.cdk"
 #include "grd.cdk"
 #include "type.cdk"
@@ -115,8 +114,9 @@
       Ver_code = 6
       glb_err  = 0
 !
-      if(Cstv_pref_8.ne.100000.d0) &
-      call handle_error (-1, 'set_zeta','set_zeta : Cstv_pref_8 must equal 100000.d0')
+      istat = 0
+      if (Cstv_pref_8.ne.100000.d0) istat = -1
+      call handle_error(istat, 'set_zeta','Cstv_pref_8 must equal 100000.d0')
 !
       Cstv_Zsrf_8 = log(Cstv_pref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)

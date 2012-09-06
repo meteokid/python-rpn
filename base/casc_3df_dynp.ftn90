@@ -282,10 +282,5 @@ End Interface
 !
 !-----------------------------------------------------------------------
       return
-
- 1010 write (6,203) trim(fn),Ptopo_myproc
-
-      call handle_error(-1,'casc_3df_dynp','casc_3df_dynp')
-      return
       end
 !
