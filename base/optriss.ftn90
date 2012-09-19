@@ -76,7 +76,7 @@
 
       if ( F_axis .eq. 'Z' ) then
 !
-!$omp parallel do
+!$omp parallel do private(i,j,k)
          do k=1,F_nk
             do j=1,NJS
                do i=F_ifin+1,NIS

@@ -54,7 +54,7 @@
 !
       if (Lun_debug_L) write(Lun_out,1000)
 
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k= 1,l_nk
          do j= 1, l_nj
@@ -90,7 +90,7 @@
       call  yyg_vecbc1(tempu0,tempu,tempv,LDIST_DIM,l_nk)
       call  yyg_vecbc2(tempv0,tempv,tempu,LDIST_DIM,l_nk)
 
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k= 1,l_nk
          do j= 1, l_nj

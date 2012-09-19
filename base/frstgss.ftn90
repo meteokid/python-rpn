@@ -87,7 +87,7 @@
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(wt1)'
 
-!$omp parallel
+!$omp parallel private(i,j)
 !
 !$omp do
       do k=1,l_nk+1
@@ -121,7 +121,9 @@
          if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt0)'
          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt1)'
-!$omp parallel do
+!$omp parallel private(i,j)
+!
+!$omp do
          do k=1,l_nk+1
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -130,7 +132,9 @@
          end do
          end do
          end do
-!$omp end parallel do
+!$omp end do
+!
+!$omp end parallel
       endif
 !
       if ( .not. Schm_hydro_L) then
@@ -138,7 +142,8 @@
          if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(qt0)'
          istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(qt1)'
-!$omp parallel do
+!$omp parallel private(i,j)
+!$omp do
          do k=0,l_nk+1
          do j= 1 , l_nj
          do i= 1 , l_ni
@@ -146,7 +151,9 @@
          end do
          end do
          end do
-!$omp end parallel do
+!$omp end do
+!
+!$omp end parallel
       endif
 !
 !     if (Acid_test_L) tplt0

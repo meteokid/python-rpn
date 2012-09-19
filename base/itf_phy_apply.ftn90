@@ -104,7 +104,8 @@
          istat = gmm_get('PW_UU_COPY',pw_uu_copy,mymeta)
          istat = gmm_get('PW_VV_COPY',pw_vv_copy,mymeta)
 
-!$omp parallel do
+!$omp parallel private(j)
+!$omp do
          do k= 1, p_nk
             tdu(l_minx:l_maxx,l_miny:0,k) = 0. ; tdu(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
             tdv(l_minx:l_maxx,l_miny:0,k) = 0. ; tdv(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
@@ -117,7 +118,8 @@
                                   pw_VV_copy(1:l_ni,j,k+Schm_notop)) *con(j)
             end do
          end do
-!$omp end parallel do
+!$omp enddo
+!$omp end parallel
 
          call itf_phy_uvgridscal (tdu, tdv, LDIST_DIM, p_nk, .false. )
 

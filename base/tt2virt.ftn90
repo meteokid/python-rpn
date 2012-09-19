@@ -67,7 +67,7 @@
             nullify (tr)
             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
             if (Tr3d_wload (n)) then
-!$omp parallel
+!$omp parallel private(j,i)
 !$omp do
                do k = 1, l_nk+2
                do j = 1, l_nj

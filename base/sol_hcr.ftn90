@@ -96,7 +96,7 @@
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 
-!$omp parallel shared ( offi, offj )
+!$omp parallel shared ( offi, offj,k,i,j )
 !$omp do
       do j=1+pil_s,Nj-pil_n
          call dgemm ('N','N', (ni-pil_w-pil_e), G_nk, G_nk, 1.0D0,      &

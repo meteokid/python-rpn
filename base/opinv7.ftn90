@@ -147,7 +147,7 @@
 !        call tmg_stop0(97)
 !
          if ( plper ) then
-!$omp parallel
+!$omp parallel private(i,j,k)
 !$omp do
             do j=1,NJS
                do i=1,NIS

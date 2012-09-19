@@ -82,7 +82,8 @@
 !
       call uv_acg2g (wk_v,F_pvt,nsv,ndv,LDIST_DIM,nkphy,i0v,inv,j0v,jnv)
 !
-!$omp parallel do
+!$omp parallel private(i,j)
+!$omp do
       do k=1,nkphy
          do j= j0u, jnu
          do i= i0u, inu
@@ -95,7 +96,8 @@
          end do
          end do
       end do
-!$omp end parallel do 
+!$omp end do
+!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

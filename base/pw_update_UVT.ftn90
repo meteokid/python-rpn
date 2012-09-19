@@ -74,7 +74,7 @@
          istat = gmm_get (gmmk_pw_ww_dyn_s, pw_ww_dyn, mymeta)
          istat = gmm_get (gmmk_pw_tt_dyn_s, pw_tt_dyn, mymeta)
 
-!$omp parallel
+!$omp parallel private(j)
 !$omp do
          do k= 1, l_nk+2
          do j= 1, l_nj
@@ -109,7 +109,7 @@
 
       call itf_phy_uvgridscal (pw_uu , pw_vv , LDIST_DIM, l_nk+2, .true.)
 
-!$omp parallel
+!$omp parallel private(j)
 !$omp do
       do k= 1, l_nk+2
       do j= 1, l_nj
@@ -129,7 +129,7 @@
 !     ----------------------------------------------------
       if (pom == 'P' .and. initialized) then
          idt = 1d0/Cstv_dt_8
-!$omp parallel
+!$omp parallel private(j)
 !$omp do  
          do k= 1, l_nk+2
          do j= 1, l_nj

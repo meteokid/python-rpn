@@ -125,7 +125,7 @@
          endif
 
 !        Convert wind to real orientation
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
          do k= 1, G_nk+1
          do j= 1, l_nj
@@ -153,7 +153,7 @@
          call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
 
 !        Convert the wind back
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k= 1, G_nk+1
          do j= 1, l_nj

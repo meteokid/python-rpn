@@ -94,7 +94,7 @@
 !     in case JN is negative
       jn = max(0,jn)
 
-!$omp parallel private(jj,j2)
+!$omp parallel private(jj,j2,j,k)
 !$omp do
       do i = 1, G_ni
          do j = 1, jn
@@ -143,7 +143,7 @@
 !     in case IN is negative
       in = max(0,in)
 
-!$omp parallel
+!$omp parallel private(i,k)
 !$omp do
       do j= 1, F_gnjv
          do i= 1, in

@@ -58,8 +58,9 @@
       njk= l_nj*Nk
 !
       if(lmean) then
+      sum_8(:,:)=0.
 !
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
          do k=k0,kn
             do j=j0,jn
@@ -77,7 +78,7 @@
 !
          tsum_8=gsum_8/real(G_ni)
 !
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
          do k=k0,kn
             do j=j0,jn
@@ -90,7 +91,7 @@
 !$omp end parallel
 !
       else
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
          do k=k0,kn
             do j=j0,jn

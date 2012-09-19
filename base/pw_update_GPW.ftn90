@@ -59,7 +59,7 @@
          istat = gmm_get(gmmk_qt1_s, qt1, mymeta)
       endif
 !
-!$omp parallel private(wk1)
+!$omp parallel private(wk1,i,j)
 !$omp do
       do k=1,l_nk+1
          if (k.eq.1) pw_pm_plus(:,:,1) = Cstv_ptop_8

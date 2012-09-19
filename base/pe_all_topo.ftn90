@@ -187,7 +187,7 @@ integer, intent(IN) :: npex,npey
 integer :: i,j,status
 integer :: mk_gem_dir
 
-!$OMP PARALLEL DO
+!$OMP PARALLEL DO private(i,j,status)
 do j=0,npey-1
 do i=0,npex-1
   status = mk_gem_dir(i,j)

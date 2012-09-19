@@ -100,7 +100,7 @@
 !C       1.    Perform the averaging
 !              ---------------------
 !
-!$omp parallel
+!$omp parallel private(i,j)
 !
 !$omp do
       do k=1,l_nk

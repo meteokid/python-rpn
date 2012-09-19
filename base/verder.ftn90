@@ -61,7 +61,7 @@
       integer i, j, k
 !
 
-!$omp parallel
+!$omp parallel private(k,i)
 !$omp do
       do j=F_j0,F_jn
       do k=2,F_nk
@@ -81,7 +81,7 @@
       end do
 
 !
-!$omp parallel
+!$omp parallel private(k,i)
 !$omp do
       do j=F_j0,F_jn
       do k=2,F_nk-1
@@ -95,7 +95,7 @@
 !$omp enddo
 !$omp end parallel
 !
-!$omp parallel
+!$omp parallel private(i)
 !$omp do
       do j=F_j0,F_jn
       do i=F_i0,F_in

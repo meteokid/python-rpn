@@ -37,7 +37,7 @@
 
       integer i,j,k,ite,i0,in,ic,j0,jn,jc,ier,count
       real    prfact,prmax(Nk),prmaxall(Nk),prmod,mask(2,Nk),maskall(2,Nk)
-      real*8  sum(2,Nk),sumall(2,Nk)
+      real*8  sum0(2,Nk),sumall(2,Nk)
 !     __________________________________________________________________
 !
       call rpn_comm_xch_halo(F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
@@ -47,12 +47,12 @@
       prmaxall = 1000.
 
 !$omp parallel shared (i0,in,ic,j0,jn,jc,prmax,prmaxall,prfact, &
-!$omp                  count,sum,sumall,mask,maskall) private (ite,prmod)
+!$omp                  count,sum0,sumall,mask,maskall) private (i,j,k,ite,prmod)
 
       if (.not.G_lam) then
 !$omp do
          do k=1,Nk
-            sum (:,k) = 0.0
+            sum0 (:,k) = 0.0
             mask(:,k) = 0.0
          end do
 !$omp enddo
@@ -60,7 +60,7 @@
 !$omp do
             do k=1,Nk
             do i=1,L_ni
-               sum (1,k) = sum(1,k) + F_field(i,1,k)
+               sum0 (1,k) = sum0(1,k) + F_field(i,1,k)
                mask(1,k) = max( mask(1,k), F_mask(i,1,k) )
             end do
             end do
@@ -70,14 +70,14 @@
 !$omp do
             do k=1,Nk
             do i=1,L_ni
-               sum (2,k) = sum(2,k) + F_field(i,l_nj,k)
+               sum0 (2,k) = sum0(2,k) + F_field(i,l_nj,k)
                mask(2,k) = max( mask(2,k), F_mask(i,l_nj,k) )
             end do
             end do
 !$omp enddo
          endif
 !$omp single
-         call rpn_comm_ALLREDUCE (sum,sumall  ,2*Nk,"MPI_double_precision","MPI_SUM","grid",ier)
+         call rpn_comm_ALLREDUCE (sum0,sumall  ,2*Nk,"MPI_double_precision","MPI_SUM","grid",ier)
          call rpn_comm_ALLREDUCE (mask,maskall,2*nk,"MPI_REAL"            ,"MPI_MAX","grid",ier)
 !$omp end single
 
@@ -191,7 +191,7 @@
          if (.not.G_lam) then
 !$omp do
             do k=1,Nk
-               sum(:,k) = 0.0
+               sum0(:,k) = 0.0
             end do
 !$omp enddo
             if (Ptopo_myrow.eq.0) then
@@ -199,7 +199,7 @@
                do k=1,Nk
                   if ( prmaxall(k) .gt. F_conv ) then
                      do i=1,L_ni
-                        sum (1,k) = sum(1,k) + F_field(i,   1,k)
+                        sum0 (1,k) = sum0(1,k) + F_field(i,   1,k)
                      end do
                   endif
                end do
@@ -210,14 +210,14 @@
                do k=1,Nk
                   if ( prmaxall(k) .gt. F_conv ) then
                      do i=1,L_ni
-                        sum (2,k) = sum(2,k) + F_field(i,l_nj,k)
+                        sum0 (2,k) = sum0(2,k) + F_field(i,l_nj,k)
                      end do
                   endif
                end do
 !$omp enddo
             endif
 !$omp single
-            call rpn_comm_ALLREDUCE (sum,sumall,2*nk,"MPI_double_precision","MPI_SUM","grid",ier)
+            call rpn_comm_ALLREDUCE (sum0,sumall,2*nk,"MPI_double_precision","MPI_SUM","grid",ier)
 !$omp end single
          endif
 

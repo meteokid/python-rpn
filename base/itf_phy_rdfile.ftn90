@@ -46,6 +46,7 @@
       parameter (max_ndim=1000)
       integer dim(max_ndim)
       integer fnom,fstouv,fstopc,fstfrm,fclos,wkoffit,bufnml(1000000)
+      real, dimension(1) :: dummy
       real, dimension (:), allocatable :: rbuf
 !-----------------------------------------------------------------
 !
@@ -88,7 +89,7 @@
             ilir   = fnom    (iun,filename,'STD+RND+OLD+R/O',0)
             ilir   = fstouv  (iun,'RND')
             status = 200
-            call F_read_cb (iun,rbuf,dim,status)
+            call F_read_cb (iun,dummy,dim,status)
             if (status.lt.0) goto 9988
             allocate (rbuf(dim(2)))
             status = 300
@@ -114,7 +115,7 @@
             ilir = fstouv (iun,'RND')
 
             status = 200
-            call F_read_cb (iun,rbuf,dim,status)
+            call F_read_cb (iun,dummy,dim,status)
             if (status.lt.0) goto 9988
             allocate (rbuf(dim(2)))
             status = 300
@@ -133,7 +134,7 @@
                ilir = fstouv  (iun,'RND')
 
                status = 200
-               call F_read_cb (iun,rbuf,dim,status)
+               call F_read_cb (iun,dummy,dim,status)
                if (status.lt.0) goto 9977
                allocate (rbuf(dim(2)))
                status = 250

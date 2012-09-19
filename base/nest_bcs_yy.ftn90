@@ -121,7 +121,7 @@
         call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
       endif
 
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
        do k= 1, G_nk+1
         do j= 1, l_nj
@@ -148,7 +148,7 @@
       call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk+1)
       call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
 
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k= 1, G_nk+1
          do j= 1, l_nj

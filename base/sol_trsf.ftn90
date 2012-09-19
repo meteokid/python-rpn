@@ -57,7 +57,7 @@
 !     ---------------------------------------------------------------
 !
       if (F_code.gt.0) then
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
@@ -69,7 +69,7 @@
 !$omp enddo
 !$omp end parallel
       else
-!$omp parallel
+!$omp parallel private(i,j)
 !$omp do
       do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 

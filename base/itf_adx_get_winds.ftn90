@@ -237,7 +237,7 @@ End Interface
       if (l_north) jnv = l_njv - 1
 
        !- Interpolate advection winds to geopotential grid
-!$omp parallel
+!$omp parallel private(i,j,k)
 !$omp do
       DO_K: do k=1,l_nk
 
@@ -417,7 +417,7 @@ End Interface
       integer :: i,j,k, i0,j0,in,jn
       real*8  :: sc_8
       !---------------------------------------------------------------------
-!$omp parallel private(i0,in,j0,jn,sc_8)
+!$omp parallel private(i,j,k,i0,in,j0,jn,sc_8)
       i0=1
       in=l_ni
       j0=1
@@ -487,7 +487,8 @@ End Interface
       !  to validate with previous version if Adx_tlift.eq.0 and Schm_thermopos_L=.true.
       if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
 
-!$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,w1,w2,w3,w4,den)
+!$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
+!$omp                  i,j,k,w1,w2,w3,w4,den)
       i0 = 1
       in = l_ni
       j0 = 1
@@ -576,7 +577,8 @@ End Interface
       !  to validate with previous version if Adx_tlift.eq.0 and Schm_thermopos_L=.true.
       if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
 
-!$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,w1,w2,w3,w4,den)
+!$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
+!$omp                  i,j,k,w1,w2,w3,w4,den)
       i0 = 1
       in = l_ni
       j0 = 1

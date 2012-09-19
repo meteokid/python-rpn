@@ -61,7 +61,7 @@
 !
       call handle_error_l(.not.GMM_IS_ERROR(istatg),'zero_top_rhs','gmm_get error, see above')
 !
-!$omp parallel
+!$omp parallel private(j,i)
 !$omp do
          do j=1,l_nj
          do i=1,l_ni
