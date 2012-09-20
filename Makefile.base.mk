@@ -264,7 +264,7 @@ $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/lib/$(EC_ARCH): libs
 #TODO: link to oldarch
 $(DISTDIR)/$(PKGNAME)_$(VERSION)_$(SSMARCH)/bin/$(BASE_ARCH): allabs allabscheck
 	mkdir -p $@ 2>/dev/null || true ;\
-	rsync -a $(BUILDDIRARCH)/bin/* $@/ 2>/dev/null || true ;\
+	rsync -a $(BUILDDIRARCH)/bin/ $@/ 2>/dev/null || true ;\
 	rm -f $@/Makefile* $@/cibles* $@/recettes* 2>/dev/null || true 
 
 #TODO: $(DISTDIR)/$(PKGNAME)_$(VERSION)_multi
