@@ -507,20 +507,18 @@
             p2=ig2a
             p3=ig3a
             key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','>>')
-            write(msg_S,4000) '>>'
-            call handle_error(key,'e_specanal',msg_S)
-            call handle_error_l(nia==ni1,'e_specanal','nia/=ni1')
-
+            msg_S = 'Problem with positional parameter >>'
+            call handle_error_l ( (key.ge.0).and.(nia==ni1), 'e_specanal',msg_S)
             allocate(xpx(nia))
+            err = fstluk( xpx, key, ni1,nj1,nk1)
+
             ier = fstprm (key, dte, det, ipas, ni1, nj1, nk1, bit, dty, &
                    ip1x, ip2x, ip3x, typ, var, labanl, grd, g1, g2, g3, &
                                  g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
-!           g1,g2,g3,g4 are the grid descriptors from the analysis file
-            err = fstluk( xpx, key, ni1,nj1,nk1)
+
             key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^^')
-            write(msg_S,4000) '^^'
-            call handle_error(key,'e_specanal',msg_S)
-            call handle_error_l(nja==nj1,'e_specanal','nja/=nj1')
+            msg_S = 'Problem with positional parameter ^^'
+            call handle_error_l ( (key.ge.0).and.(nja==nj1), 'e_specanal',msg_S)
             allocate(ypx(nja))
             err = fstluk( ypx, key, ni1,nj1,nk1)
 
@@ -676,7 +674,6 @@
  1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
  1002 format(' DATE = ', 6i5 , 7a4 , i10 )
  2003 format (/' E_SPECANAL:  file ',a,' open on unit: ',i4)
- 4000 format(/,'CANNOT FIND TIC TACS in ANALYSIS (S/R E_SPECANAL)',/40('-'))
 !
 ! ---------------------------------------------------------------------
 !

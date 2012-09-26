@@ -35,7 +35,6 @@
 !
       character*4    nomvar
       character*8    dynophy
-      character*15   filext
       character*1024 fn
       integer i,j,ni1,nj1,ideb,ifin,jdeb,jfin
       real    xlon1,xlat1,xlon2,xlat2
@@ -44,9 +43,9 @@
       integer nia,nja,nkam,nkat,nvar,ntra,vtyp
       common /blkcom_i/ nia,nja,nkam,nkat,nvar,ntra,vtyp
 
-      integer iproc, tag, err, status, dim, extra
+      integer n, iproc, tag, err, status, dim, extra
       real*8  xri,xrf,yri,yrf,deg2rad_8,resax,resay,rapres
-      real*8, dimension (:), allocatable :: xp1,yp1,xu1,yv1,buf
+      real*8, dimension (:), pointer :: xp1,yp1,xu1,yv1,buf
       data tag /210/
 !
 !----------------------------------------------------------------------
@@ -67,11 +66,20 @@
 
       if (Ptopo_blocme.eq.0) then
 
-         write (filext,'((i7.7),a1,(i7.7))') 1,'-',1
-         fn = trim(Path_ind_S)//'/3df'//'_'//trim(F_datev_S)//'_'//filext
+         do n=1,ifd_nf
+            if (ifd_needit(n)) then
+               fn = trim(Path_ind_S)//'/3df'//'_'//trim(F_datev_S)//'_'//ifd_fnext(n)
+               exit
+            endif
+         end do
+
          open (F_unf,file=trim(fn),access='SEQUENTIAL', &
                       form='UNFORMATTED',status='OLD',iostat=err)
-         if (err.ne.0) goto 33
+
+         if (err.ne.0) then
+            write (6,998) trim(fn)
+            goto 33
+         endif
 
          read (F_unf,end=33,err=33) nomvar,ni1,nj1,F_nka_m,F_nka_t,F_vtype
          read (F_unf,end=33,err=33) xlon1,xlat1,xlon2,xlat2
@@ -185,7 +193,10 @@
             endif
          end do
 
-         deallocate (xp1,yp1,xu1,yv1)
+         if (associated(xp1)) deallocate(xp1)
+         if (associated(yp1)) deallocate(yp1)
+         if (associated(xu1)) deallocate(xu1)
+         if (associated(yv1)) deallocate(yv1)
 
       else
 !
@@ -215,14 +226,12 @@
 
       endif
 
-      if (F_err .eq. 0) then
-         call RPN_COMM_bcast (F_ana_am_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-         call RPN_COMM_bcast (F_ana_bm_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-         call RPN_COMM_bcast (F_ana_at_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-         call RPN_COMM_bcast (F_ana_bt_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-      else
-         call handle_error ( F_err,'blk_dist_georef','Problem reading 3DF file '//trim(fn) )
-      endif
+      call handle_error ( F_err,'blk_dist_georef','Problem reading 3DF file '//trim(fn) )
+
+      call RPN_COMM_bcast (F_ana_am_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_bm_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_at_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_bt_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
 
       if (Ptopo_blocme.eq.0) then
          do iproc = 0, Ptopo_numpe_perb-1
@@ -232,6 +241,8 @@
             blk_indx(iproc,4) = blk_indx(iproc,4) - ifd_njad + 1
          end do
       endif
+
+ 998  format (/' PROBLEM OPENING FILE: ',a/)
 !
 !----------------------------------------------------------------------
 !
