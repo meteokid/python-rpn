@@ -132,8 +132,8 @@ prgemnml.ftn90:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
 $(LCLPO)/prgemnml.o: prgemnml.ftn90
 $(BINDIR)/gemprnml_$(BASE_ARCH).Abs: $(LCLPO)/prgemnml.o
-	cd $(LCLPO) ;\
 	makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	cd $(LCLPO) ;\
 	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true
 
@@ -145,9 +145,9 @@ gemgrid.ftn90:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
 $(LCLPO)/gemgrid.o: gemgrid.ftn90
 $(BINDIR)/gemgrid_$(BASE_ARCH).Abs: $(LCLPO)/gemgrid.o
-	cd $(LCLPO) ;\
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
-	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	cd $(LCLPO) ;\
+ 	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/gemgrid.o 2>/dev/null || true 
 
 
@@ -158,8 +158,8 @@ checkdmpart.ftn90:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
 $(LCLPO)/checkdmpart.o: checkdmpart.ftn90
 $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
-	cd $(LCLPO) ;\
 	makemodelbidon checkdmpart > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	cd $(LCLPO) ;\
 	$(RBUILD) -obj checkdmpart.o bidon.o -o $@ $(OMP) $(MPI) \
 		-libpath $(LIBPATH) \
 		-libappl $(LIBAPPL) \
@@ -177,14 +177,9 @@ split3df.f90:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
 $(LCLPO)/split3df.o: split3df.f90
 $(BINDIR)/split3df_$(BASE_ARCH).Abs: $(LCLPO)/split3df.o
-	cd $(LCLPO) ;\
 	makemodelbidon split3df > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	cd $(LCLPO) ;\
 	$(RBUILD) -obj split3df.o bidon.o -o $@ $(OMP) -mpi \
-		-libpath $(LIBPATH) \
-		-libappl $(LIBAPPL) \
-		-librmn $(RMN_VERSION) \
-		-libsys $(LIBSYS) \
-		-codebeta $(CODEBETA) \
 		-optf "=$(LFLAGS)"
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/split3df.o 2>/dev/null || true 
 
@@ -196,8 +191,8 @@ toc2nml.ftn90:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
 $(LCLPO)/toc2nml.o: toc2nml.ftn90
 $(BINDIR)/toc2nml: $(LCLPO)/toc2nml.o
-	cd $(LCLPO) ;\
 	makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
+	cd $(LCLPO) ;\
 	$(RBUILD) -obj toc2nml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main $(VGRID)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
 

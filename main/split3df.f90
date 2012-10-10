@@ -178,24 +178,28 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
       ni0g0 = 1    ! apply halo and find the bounds of the useful domain in INPUT grid
       do while( xp1(ni0g0+1) < xlim_1-epsi_x )  ! adjust lower longitude to area of interest
         ni0g0 = ni0g0 + 1
+        if(ni0g0 > ni1g-1) exit
       enddo
       ni0g1 = max(ni0g0-left,1)
 
       nilg0 = ni1g
       do while( xp1(nilg0-1) > xlim_n+epsi_x )  ! adjust upper longitude to area of interest
         nilg0 = nilg0 - 1
+        if(nilg0 < 2) exit
       enddo
       nilg1 = min(nilg0+right,ni1g)
 
       nj0g0 = 1
       do while( yp1(nj0g0+1) < ylim_1-epsi_y)  ! adjust lower latitude to area of interest
         nj0g0 = nj0g0 + 1
+        if(nj0g0 > nj1g-1) exit
       enddo
       nj0g1 = max(nj0g0-below,1)
 
       njlg0 = nj1g
       do while( yp1(njlg0-1) > ylim_n+epsi_y )  ! adjust upper latitude to area of interest
         njlg0 = njlg0 - 1
+        if(njlg0 < 2) exit
       enddo
       njlg1 = min(njlg0+above,nj1g)
       if(debug.and.worldrank==0)then
@@ -217,6 +221,7 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
         tempi = nilg1                ! right edge of OUTPUT area in INPUT grid
         do while(tempx < xp1(tempi))
           tempi = tempi - 1          ! move left
+          if(tempi < 1) exit
         enddo
         start_bloc_x(i) = max(1,tempi - left)  ! apply left halo, clamp at 1 (left)
       enddo
@@ -225,6 +230,7 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
         tempi = 1                        ! left edge of OUTPUT area in INPUT grid
         do while(tempx > xp1(tempi))
           tempi = tempi + 1          ! move right
+          if(tempi > ni1g) exit
         enddo
         end_bloc_x(i) = min(nilg1,tempi + right)  ! apply right halo, clamp at nilg1 (right)
       enddo
@@ -238,6 +244,7 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
         tempj = njlg1                ! top edge of OUTPUT area in INPUT grid
         do while(tempy < yp1(tempj))
           tempj = tempj - 1          ! move down
+          if(tempj < 1) exit
         enddo
         start_bloc_y(j) = max(1,tempj - below)  ! apply bottom halo, clamp at 1 (bottom)
       enddo
@@ -246,6 +253,7 @@ if(debug.and.worldrank==0)print *,'DEBUG: tile_y=',tile_y
         tempj = 1                        ! bottom edge of OUTPUT area in INPUT grid
         do while(tempy > yp1(tempj))
           tempj = tempj + 1          ! move up
+          if(tempj > nj1g) exit
         enddo
         end_bloc_y(j) = min(njlg1,tempj + above)  ! apply top halo, clamp at njlg1 (top)
       enddo
