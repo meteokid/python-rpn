@@ -23,7 +23,6 @@ subroutine itf_adx_set()
    !@author Stephane Chamberland, Jan 2010
    !@revisions
    !@ v4_14 Plante A.    - add 'model/gbpil_t',Lam_gbpil_t
-   !@ v4_15 Plante A.    - add 'model/notop',Schm_notop
    !@ v4_40 Qaddouri/Lee - add Adx_yinyang_L key
 !**/
 #include <WhiteBoard.hf>
@@ -84,8 +83,9 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/pil_w',pil_w,options),istat)
    istat = min(wb_put('model/pil_e',pil_e,options),istat)
    istat = min(wb_put('model/gbpil_t',Lam_gbpil_t,options),istat)
-   istat = min(wb_put('model/notop',Schm_notop,options),istat)
    istat = min(wb_put('model/Tlift',Schm_Tlift,options),istat)
+   istat = min(wb_put('model/trapeze',Schm_trapeze_L,options),istat)
+   istat = min(wb_put('model/superwinds',Schm_superwinds_L,options),istat)
 
    istat = min(wb_put('model/cstv_dt',Cstv_dt_8,options),istat)
 
@@ -102,10 +102,10 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/G_yg_8/max',2*G_nj,options),istat)
    istat = min(wb_put('model/G_yg_8',yg_8,options),istat)
 
-   v_zm_8(0) = Ver_z_8%m(0)
+   v_zm_8(0) = Cstv_Ztop_8
    do k=1,l_nk+1
-      v_zm_8(k) = Ver_z_8%m(k)
-      v_zt_8(k) = Ver_z_8%t(k)
+      v_zm_8(k) = Ver_a_8%m(k)
+      v_zt_8(k) = Ver_a_8%t(k)
    enddo
    istat = min(wb_put('model/v_zm_8/min',0,options),istat)
    istat = min(wb_put('model/v_zm_8/max',l_nk+1,options),istat)
@@ -135,20 +135,6 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/gmm/yct1_m',label,options),istat)
    label = gmmk_zct1_s
    istat = min(wb_put('model/gmm/zct1_m',label,options),istat)
-
-   label = gmmk_xth_thermo_s
-   istat = min(wb_put('model/gmm/xth_t',label,options),istat)
-   label = gmmk_yth_thermo_s
-   istat = min(wb_put('model/gmm/yth_t',label,options),istat)
-   label = gmmk_zth_thermo_s
-   istat = min(wb_put('model/gmm/zth_t',label,options),istat)
-
-   label = gmmk_xcth_thermo_s
-   istat = min(wb_put('model/gmm/xcth_t',label,options),istat)
-   label = gmmk_ycth_thermo_s
-   istat = min(wb_put('model/gmm/ycth_t',label,options),istat)
-   label = gmmk_zcth_thermo_s
-   istat = min(wb_put('model/gmm/zcth_t',label,options),istat)
 
    call handle_error_l(WB_IS_OK(istat),'itf_adx_set','problem putting values in whiteboard')
 

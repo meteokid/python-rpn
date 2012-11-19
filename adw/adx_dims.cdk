@@ -26,6 +26,8 @@
       logical :: adx_yinyang_L    !true if model is Yin-Yang
       logical :: adx_is_period_x  !true if model is periodic in X
       logical :: adx_is_period_y  !true if model is periodic in Y
+      logical :: adx_trapeze_L    !true to get trapezoidal wind average 
+      logical :: adx_superwinds_L !true to get super winds
 
       integer :: adx_mhalox, adx_mhaloy !Model x/y halo size
       integer :: adx_maxcfl             !Max CFL defined by user
@@ -37,7 +39,6 @@
       integer :: adx_pil_n, adx_pil_s !n/s piloting zone size 
       integer :: adx_pil_w, adx_pil_e !w/e piloting zone size 
       integer :: adx_gbpil_t          !top piloting zone size 
-      integer :: adx_notop            !1 if no thermo level 1/2. 0 otherwise
       integer :: adx_Tlift            !1 to put last Thermo level at last Momentum level
 
       !- Local grid
@@ -69,6 +70,8 @@
       common /adx_dims_l/ adx_lam_L, adx_yinyang_L
       common /adx_dims_l/ adx_is_period_x
       common /adx_dims_l/ adx_is_period_y
+      common /adx_dims_l/ adx_trapeze_L
+      common /adx_dims_l/ adx_superwinds_L
 
       common /adx_dims_i/ adx_mhalox, adx_mhaloy
       common /adx_dims_i/ adx_maxcfl            
@@ -79,7 +82,7 @@
 
       common /adx_dims_i/ adx_pil_n, adx_pil_s 
       common /adx_dims_i/ adx_pil_w, adx_pil_e 
-      common /adx_dims_i/ adx_gbpil_t, adx_notop, adx_Tlift
+      common /adx_dims_i/ adx_gbpil_t, adx_Tlift
 
       common /adx_dims_l/ adx_is_west
       common /adx_dims_l/ adx_is_east

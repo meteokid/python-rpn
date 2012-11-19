@@ -85,14 +85,14 @@
       Schm_itnlh    = 2
       Schm_itraj    = 2
       Schm_Tlift    = 0
+      Schm_trapeze_L  = .false.
+      Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_wload_L    = .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
-      Schm_mteul_L    = .false.
-      Schm_NoTopThL_L = .true.
 !
       Schm_phyms_L    = .false.
       Schm_chems_L    = .false.
@@ -111,8 +111,6 @@
 !
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
-!
-      Cori_cornl_L = .true.
 !
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6

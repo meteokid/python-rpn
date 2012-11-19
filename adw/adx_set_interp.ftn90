@@ -162,10 +162,9 @@ subroutine adx_set_interp()
    whzs(0       ) = 1.0
    whzs(2*adx_lnkm+1) = 1.0
    whzs(2*adx_lnkm+2) = 1.0
-   ! Note : the super layer will be the thinest, so do not do the min test for m and t above...
    do k=1,2*adx_lnkm
       whzs(k) = Super_z_8(k+1) - Super_z_8(k)
-      prhzmn = min(whzs(k), prhzmn)
+      if(adx_superwinds_L)prhzmn = min(whzs(k), prhzmn)
    enddo
 
    adx_ovdx_8 = 1.0d0/prhxmn
@@ -178,6 +177,8 @@ subroutine adx_set_interp()
    pnzm= int(1.0+(adx_verZ_8%m(adx_lnkm)-adx_verZ_8%m(1))*adx_ovdz_8)
    pnzs= int(1.0+(adx_verZ_8%t(adx_lnkt)-adx_verZ_8%t(1))*adx_ovdz_8)
 
+   ! Note : adx_diz_8 and adx_dbz_8 are allocated to the largest size
+   !        which is for the adx_superwinds_L=.true.
    allocate( &
         adx_lcx(pnx), &
         adx_lcy(pny), &
@@ -260,14 +261,25 @@ subroutine adx_set_interp()
       if (pdfi > Super_z_8(k0+1)) k0 = min(2*adx_lnkm-1, k0+1)
       adx_lcz%s(k) = k0
    enddo
-   do k = 0,2*adx_lnkm+2                   !! warning note the shift in k !!
-      adx_diz_8(k-1) = 1.0d0/whzs(k)
-   enddo
    do k = 1,2*adx_lnkm+1
       adx_bsz_8%s(k-1) = Super_z_8(k)
-      adx_dbz_8(k-1) = ( whzs(k) * whzs(k) ) * FRAC1OV6_8
    enddo
 
+   if(adx_superwinds_L)then
+      do k = 0,2*adx_lnkm+2                   !! warning note the shift in k !!
+         adx_diz_8(k-1) = 1.0d0/whzs(k)
+      enddo
+      do k = 1,2*adx_lnkm+1
+         adx_dbz_8(k-1) = ( whzs(k) * whzs(k) ) * FRAC1OV6_8
+      enddo
+   else
+      do k = 0,adx_lnkm+1                     !! warning note the shift in k !!
+         adx_diz_8(k-1) = 1.0d0/whzm(k)
+      enddo
+      do k = 1,adx_lnkm
+         adx_dbz_8(k-1) = ( whzm(k) * whzm(k) ) * FRAC1OV6_8
+      enddo      
+   endif
 
    allocate( &
         adx_zbc_8%t(adx_lnkm+1),   adx_zbc_8%m(adx_lnkm),  &

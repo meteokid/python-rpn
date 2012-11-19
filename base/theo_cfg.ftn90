@@ -39,8 +39,8 @@
       integer cte_ok,istat
       logical set_dcst_8
       external set_dcst_8
-      integer  fnom,gem_nml,bubble_cfg,mtn_cfg,adw_nml
-      external fnom,gem_nml,bubble_cfg,mtn_cfg,adw_nml
+      integer  fnom,gem_nml,bubble_cfg,mtn_cfg,adx_nml
+      external fnom,gem_nml,bubble_cfg,mtn_cfg,adx_nml
 !
       integer k, unf, status, err, nrec
       character*16  dumc_S
@@ -58,7 +58,7 @@
       endif
 !
       err = gem_nml   ('')
-      err = adw_nml   (Path_nml_S)
+      err = adx_nml   (Path_nml_S)
 
       Theo_case_S    = 'xxx'
       Step_runstrt_S = '19980101.000000'

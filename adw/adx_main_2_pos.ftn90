@@ -17,14 +17,15 @@
 #include "msg.h"
 #include "stop_mpi.h"
 !/**
-subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
+subroutine adx_main_2_pos5( F_nb_iter    ,F_l_S , &
                             F_px  ,F_py  ,F_pz  , &
                             F_u   ,F_v   ,F_w   , &
+                            F_ua  ,F_va  ,F_wa  , &
                             F_xth ,F_yth ,F_zth , &
                             F_xcth,F_ycth,F_zcth, &
                             F_xct1,F_yct1,F_zct1, &
                             F_aminx, F_amaxx, F_aminy, F_amaxy, &
-                            F_ni, F_nj, k0, F_nk, F_nk_super)
+                            F_ni, F_nj, k0, F_nk, F_nk_winds)
    implicit none
 #include <arch_specific.hf>
 !
@@ -35,12 +36,14 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    character(len=1) :: F_l_S     !I, m/t for momentum or thermo level
    integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
    integer :: F_ni, F_nj         !I, dims of position fields
-   integer :: F_nk, F_nk_super   !I, nb levels
+   integer :: F_nk, F_nk_winds   !I, nb levels, nb of winds levels
    integer :: k0                 !I, scope of the operation k0 to F_nk
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_px  , F_py  , F_pz     !O, upstream positions valid at t1
-   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super),target::&
-        F_u   , F_v   , F_w      !I, real destag winds, super-set (mom+thermo)
+   real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_winds),target::&
+        F_u   , F_v   , F_w      !I, real destag winds, may be on super grid
+   real,dimension(F_ni,F_nj,F_nk),target::&
+        F_ua,   F_va,   F_wa     !O, Arival winds
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time 
         F_xcth, F_ycth, F_zcth,& !O, upwind cartesian positions at central time
@@ -78,12 +81,12 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    logical,parameter :: CLIP_TRAJ = .true.
    logical,parameter :: DO_W      = .false.
    logical,parameter :: DO_UV     = .true.
-   real, parameter   :: DTH_1     = 1.
+   real,   parameter :: DTH_1     = 1.
 
    integer :: i, j, k, iter, ioff
-   integer :: i0,in,j0,jn
+   integer :: i0,in,j0,jn, lim_top
    real    :: dth
-   real, dimension(F_ni,F_nj,F_nk) :: wrkx1,wrky1,wrkx2
+   real, dimension(F_ni,F_nj,F_nk) :: u_d,v_d,w_d
    real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
 
    real,   dimension(:,:,:), pointer :: dummy3d
@@ -98,13 +101,17 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    dth  = adx_dt_8/2.
 
    p_z => adx_verZ_8%t
-   if (F_l_S == 'm') p_z => adx_verZ_8%m
+   lim_top=1
+   if (F_l_S == 'm')then
+      p_z => adx_verZ_8%m
+      if(adw_trajdebug_L)lim_top=0
+   endif
 
    call adx_get_ij0n (i0,in,j0,jn)
 
    if (driver) then
    open  (741, file='/users/dor/armn/mid/home/gem/v_4.1.3/adx_driver_trilin.bin',form='unformatted')
-   write (741) F_aminx,F_amaxx,F_aminy,F_amaxy,F_nk_super,F_ni,F_nj,F_nk,F_nk_super,l_nk
+   write (741) F_aminx,F_amaxx,F_aminy,F_amaxy,F_ni,F_nj,F_nk,F_nk_winds,l_nk
    write (741) adx_lnkt,adx_lnkm,adx_iimax,adx_jjmax,adx_mlni,adx_mlnj,adx_mlnij,adx_nit
    write (741) adx_nijag,adx_int_j_off,adx_int_i_off,adx_dt_8,i0,in,j0,jn
    write (741) adx_gni,adx_gnj,adx_halox,adx_haloy,adx_lni,adx_lnj
@@ -124,23 +131,29 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
       !- 3d interpol of u and v winds and new upstream pos along x and y
       ygrid(:,:,:) = F_yth(:,:,:)
       if (adx_lam_L) then
-         call adx_pos_lam4 (wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
-                            DTH_1, CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
-                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+         call adx_pos_lam4 (u_d,v_d, F_u,F_v, F_xth,ygrid,F_zth, &
+                            DTH_1,CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (wrkx1,wrky1, F_u,F_v, F_xth,ygrid,F_zth, &
-                            DTH_1, DO_UV, i0,in,j0,jn, &
-                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+         call adx_pos_glb4 (u_d,v_d, F_u,F_v, F_xth,ygrid,F_zth, &
+                            DTH_1,DO_UV, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
 
       if (Adw_gccsa_L) then
-          call adx_trajsp_gccsa (F_xth,F_yth, wrkx1,wrky1, &
+          call adx_trajsp_gccsa (F_xth,F_yth, u_d,v_d, &
                                        dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
-          wrkx2=wrkx1
       else
-          call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, wrkx1,wrky1, &
+         if(adx_trapeze_L) then
+            call adx_traj_trapeze (F_xth,F_yth, F_xct1,F_yct1,F_zct1, &
+                                   u_d,v_d,F_ua,F_va,dth,i0,in,j0,jn,k0)
+         else
+!            call adx_trajsp_rot (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
+!                                                        dth,i0,in,j0,jn,k0)
+            call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
                                    adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
-                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
+                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)           
+         endif
       endif
 
       !- 3D interpol of zeta dot and new upstream pos along zeta
@@ -148,34 +161,53 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
       ygrid(:,:,:) = F_yth(:,:,:)
 
       if (adx_lam_L) then
-         call adx_pos_lam4 (wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
-                            -dth, CLIP_TRAJ, DO_W, i0,in,j0,jn, &
-                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+         call adx_pos_lam4 (w_d,v_d, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                            DTH_1,CLIP_TRAJ, DO_W, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (wrkx1,wrky1, F_w,dummy3d, F_xth,ygrid,F_zth, &
-                            -dth, DO_W, i0,in,j0,jn, &
-                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_super)
+         call adx_pos_glb4 (w_d,v_d, F_w,dummy3d, F_xth,ygrid,F_zth, &
+                            DTH_1,DO_W, i0,in,j0,jn, &
+                            F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
 
 !$omp parallel
+      if(adx_trapeze_L) then
 !$omp do
-      do k = max(2,k0),F_nk-1
-         do j = j0,jn
-            do i = i0,in
-               F_zth(i,j,k) = p_z(k) + 2.D0*wrkx1(i,j,k)
-               !Make sure F_zth is below p_z(1+Adx_notp) and above p_z(F_nk)
-               F_zth(i,j,k) = min(PDM_8*p_z(F_nk),  &
-                    max(1.0d0*F_zth(i,j,k), PDP_8*p_z(1+Adx_notop)) )
-               F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + p_z(k))
+         do k = max(2,k0),F_nk-1
+            do j = j0,jn
+               do i = i0,in
+                  F_zth(i,j,k) = p_z(k) - (w_d(i,j,k)+F_wa(i,j,k))*dth
+                  F_zth(i,j,k) = min(PDM_8*p_z(F_nk),  &
+                       max(1.0d0*F_zth(i,j,k), PDP_8*p_z(2)) )
+               enddo
             enddo
          enddo
-      enddo
 !$omp enddo
+      else ! mid-point rule !
+!$omp do
+         do k = max(2,k0),F_nk-1
+            do j = j0,jn
+               do i = i0,in
+                  F_zth(i,j,k) = p_z(k) - 2.D0*dth*w_d(i,j,k)
+                  F_zth(i,j,k) = min(PDM_8*p_z(F_nk),  &
+                       max(1.0d0*F_zth(i,j,k), PDP_8*p_z(1+lim_top)) )
+                  F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + p_z(k))
+               enddo
+            enddo
+         enddo
+!$omp enddo
+      endif
 !$omp end parallel
    enddo DO_ITER
 
+   if(adx_trapeze_L)then
+      F_px=F_xth
+      F_py=F_yth
+      F_pz=F_zth
+   else
+
    if (Adw_gccsa_L) then
-       call adx_trajex_gccsa (F_px, F_py, wrkx2,wrky1,&
+       call adx_trajex_gccsa (F_px, F_py, u_d,v_d,&
                   F_xct1,F_yct1,F_zct1,dth, i0,in,j0,jn,k0)
    else
        call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
@@ -185,12 +217,6 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
 !$omp parallel
 !$omp do
    do k = k0,F_nk
-      ! A reviser
-      ! Possibilites :
-      !    1) si thermo : F_pz(i0:in,j0:jn,2) = p_z(2)
-      !       si mt     : status quo
-      !    2) Laisser le movement a partir de l'interieur du domaine. pour thermo et mt
-      !       Tester en bas car en haut avec les eponges et le niveau a 0.1 hPa ce sera peu semsible.
       if ((k.eq.1).or.(k.eq.F_nk)) then
          F_pz(i0:in,j0:jn, k) = p_z(k)
          F_pz(i0:in,j0:jn, k) = p_z(k)
@@ -205,6 +231,7 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    enddo
 !$omp enddo
 !$omp end parallel
+   endif
 
 
    if (driver) then
@@ -241,4 +268,4 @@ subroutine adx_main_2_pos4( F_nb_iter    ,F_l_S , &
    !---------------------------------------------------------------------
 
    return
-end subroutine adx_main_2_pos4
+end subroutine adx_main_2_pos5

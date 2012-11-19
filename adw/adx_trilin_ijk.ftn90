@@ -34,9 +34,9 @@ subroutine adx_trilin_ijk1 ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,       &
         F_x, F_y, F_z                           !I, x,y,z positions 
    integer,dimension(*)  :: F_lcx,F_lcy,F_lcz
    real*8  F_z00_8
-   real*8, dimension(*)            :: F_bsx_8,F_bsy_8
-   real*8, dimension( 0:2*F_nkm  ) :: F_bsz_8
-   real*8, dimension(-1:2*F_nkm+2) :: F_diz_8
+   real*8, dimension(*)        :: F_bsx_8,F_bsy_8
+   real*8, dimension( 0:*) :: F_bsz_8
+   real*8, dimension(-1:*) :: F_diz_8
 !
    !@author Valin, Tanguay  
    !@revisions

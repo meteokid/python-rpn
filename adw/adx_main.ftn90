@@ -17,9 +17,9 @@
 #include <model_macros_f.h>
 
 !/**
-subroutine adx_main7 (F_su, F_sv, F_sw, &
+subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
                       F_fields_list, F_fields_type_L, F_nfields, &
-                      F_minx,F_maxx,F_miny,F_maxy,F_nks, F_nb_iter, F_doAdwStat_L)
+                      F_minx,F_maxx,F_miny,F_maxy,F_nk_winds, F_nb_iter, F_doAdwStat_L)
    implicit none
 #include <arch_specific.hf>
 !
@@ -29,14 +29,15 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    logical :: F_doAdwStat_L   !I, will compute stats if .true.
    integer :: F_nb_iter       !I, total number of iterations for trajectories
    integer :: F_minx,F_maxx,F_miny,F_maxy !I, bounds of model's wind arrays
-   integer :: F_nks           !I, nb levels - super-set of m+l levels
+   integer :: F_nk_winds      !I, nb of wind levels (momentum or super winds)
    integer :: F_nfields       !I, nb of fields to advect
    logical, dimension(2, F_nfields) :: &
         F_fields_type_L       !I, fields type
    character(len=*),dimension(2, F_nfields) :: &
         F_fields_list         !I, list of gmm labels of fields to advect
-   real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nks) :: &
-        F_su, F_sv, F_sw      !I, real destag winds, super-set (mom+thermo)
+   real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nk_winds) :: &
+        F_ud, F_vd, F_wd      !I, real destag winds
+   real, dimension(*) :: F_ua, F_va, F_wa
 !
    !@author  alain patoine
    !@revisions
@@ -66,20 +67,18 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    logical, parameter :: EXTEND_L = .false.
 
    logical :: save_stats_L
-   type(gmm_metadata) :: my_meta,my_meta_t,my_meta2
-   integer :: i,j,istat,i0,in,j0,jn,k0
+   type(gmm_metadata) :: my_meta,my_meta2
+   integer :: i,j,istat,i0,in,j0,jn,k0,k00
    real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
         pxm,pym,pzm
    real, dimension(adx_mlni,adx_mlnj,adx_lnkt) :: &
-        pxt,pyt,pzt,l_xct1, l_yct1, l_zct1
-   real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nks) :: &
-        a_su,a_sv,a_sw
+        pxt,pyt,pzt
+   real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk_winds) :: &
+        a_ud,a_vd,a_wd
    real :: dummy
 
    real, pointer, dimension(:) :: &
         xth, yth, zth, xcth, ycth, zcth, &
-        xth_t, yth_t, zth_t, &
-        xcth_t, ycth_t, zcth_t, &
         xct1, yct1, zct1
    !
    logical v4dstore_L
@@ -89,20 +88,22 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    !---------------------------------------------------------------------
 
    call msg(MSG_DEBUG,'adx_main')
-
+   
+   k00=1
+   if(adx_gbpil_t.gt.0)k00=0
    k0=adx_gbpil_t+1
 
    !v4dstore_L   = V4dg_conf.ne.0 .and. V4dg_oktr_L
    save_stats_L = adw_stats_L
    adw_stats_L  = (F_doAdwStat_L .and. adw_stats_L)
 
-   call adx_grid_uv (a_su,a_sv, F_su,F_sv,                    &
+   call adx_grid_uv (a_ud,a_vd, F_ud,F_vd,                    &
                      adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
-                     F_minx,F_maxx,F_miny,F_maxy, F_nks)
+                     F_minx,F_maxx,F_miny,F_maxy, F_nk_winds)
 
-   call adx_grid_scalar (a_sw, F_sw,                          &
+   call adx_grid_scalar (a_wd, F_wd,                          &
                          adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
-                         F_minx,F_maxx,F_miny,F_maxy, F_nks, POLE0_L, EXTEND_L)
+                         F_minx,F_maxx,F_miny,F_maxy, F_nk_winds, POLE0_L, EXTEND_L)
 
    istat = GMM_OK
    istat = min(gmm_get(adx_xth_s,xth,my_meta),istat)
@@ -125,22 +126,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    istat = min(gmm_get(adx_zct1_s,zct1,my_meta2),istat)
    if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
 
-   if(Adw_thermopos_L)then
-      istat = min(gmm_get(adx_xth_t_s,xth_t,my_meta_t),istat)
-      istat = min(gmm_get(adx_yth_t_s,yth_t,my_meta2),istat)
-      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-      istat = min(gmm_get(adx_zth_t_s,zth_t,my_meta2),istat)
-      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-      
-      istat = min(gmm_get(adx_xcth_t_s,xcth_t,my_meta2),istat)
-      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-      istat = min(gmm_get(adx_ycth_t_s,ycth_t,my_meta2),istat)
-      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-      istat = min(gmm_get(adx_zcth_t_s,zcth_t,my_meta2),istat)
-      if (.not.(IS_SAME_BOUNDS(my_meta_t,my_meta2))) istat = -1 
-   endif
-
-   !TODO: check my_meta and my_meta_t compared to adx_mlnijk
+   !TODO: check my_meta compared to adx_mlnijk
 
    call handle_error(istat,'adx_main','gmm_get')
 
@@ -148,31 +134,19 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
 
    !V4d_cfl_kind_S = 'm'
 
-   call adx_main_2_pos4( F_nb_iter, 'm'  , &
+   call adx_main_2_pos5( F_nb_iter, 'm'  , &
                          pxm , pym , pzm , &
-                         a_su, a_sv, a_sw, &
+                         a_ud, a_vd, a_wd, &
+                         F_ua, F_va, F_wa, &
                          xth , yth , zth , &
                          xcth, ycth, zcth, &
                          xct1, yct1, zct1, &
         adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni , adx_mlnj , max(k0-2,1) , adx_lnkm , F_nks)
+        adx_mlni , adx_mlnj , max(k0-2,1) , adx_lnkm, F_nk_winds)
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   if(Adw_thermopos_L)then
-      !V4d_cfl_kind_S = 't'
-      call adx_main_2_pos4(&
-           F_nb_iter, 't'        , &
-           pxt   , pyt   , pzt   , &
-           a_su  , a_sv  , a_sw  , &
-           xth_t , yth_t , zth_t , &
-           xcth_t, ycth_t, zcth_t, &
-           l_xct1, l_yct1, l_zct1, &
-           adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-           adx_mlni , adx_mlnj , k0+Adx_notop , adx_lnkt , F_nks)
-   else
-      call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
-   endif
+   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
  
 !$omp parallel
 !$omp do
@@ -192,24 +166,13 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    if (adw_stats_L) then
       call adx_main_2_pos_stats( &
            'm', &
-           a_su  ,a_sv  ,a_sw  , &
+           a_ud  ,a_vd  ,a_wd  , &
            pxm,  pym,  pzm , &
            xth , yth , zth , &
            xcth, ycth, zcth, &
            xct1, yct1, zct1, &
-           adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
+           adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nk_winds,&
            adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
-      if(Adw_thermopos_L)then         
-         call adx_main_2_pos_stats(  &
-              't', &
-              a_su  ,a_sv  ,a_sw  , &
-              pxt,    pyt,    pzt, &
-              xth_t,  yth_t,  zth_t, &
-              xcth_t, ycth_t, zcth_t, &
-              l_xct1, l_yct1, l_zct1, &
-              adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nks,&
-              adx_mlni, adx_mlnj, adx_lnkm,adx_lnkt,i0,in,j0,jn,k0+Adx_notop,adx_lnkt)
-      endif
    endif
 
 !  Store TRAJ upstream positions
@@ -226,7 +189,7 @@ subroutine adx_main7 (F_su, F_sv, F_sw, &
    call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
                              IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
    call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
-                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0+Adx_notop,adx_lnkt )
+                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0+k00,adx_lnkt )
 
    call timing_stop (31)
 

@@ -47,7 +47,7 @@
       logical,save :: done = .false.
       logical :: flag
       type(gmm_metadata) :: tmp_meta,mymeta
-      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat
+      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat,k0
       real, pointer, dimension(:,:  ) :: wk2d
       real, pointer, dimension(:,:,:) :: wk3d
       character(len=GMM_MAXNAMELENGTH) :: stat_varname
@@ -89,12 +89,20 @@
                                  i0,in-inn,j0,jn-jnn, 1,1)
                else
                   istat = gmm_get(stat_liste(n), wk3d, mymeta)
+                  k0=tmp_meta%l(3)%low
+                  if(&
+                  stat_liste(n)(1:2)=='WT'.or.&
+                  stat_liste(n)(1:2)=='TT'.or.&
+                  stat_liste(n)(1:2)=='FI'.or.&
+                  stat_liste(n)(1:2)=='QT'.or.&
+                  stat_liste(n)(1:2)=='TR')k0=tmp_meta%l(3)%low+1
+                  !if (Ptopo_myproc.eq.0)print*,'stat_liste(n),k0=',stat_liste(n),k0
                   call glbstat2 (wk3d,stat_varname,'', &
                                 tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
                                 tmp_meta%l(3)%low,tmp_meta%l(3)%high, &
                                 i0,in-inn,j0,jn-jnn, &
-                                tmp_meta%l(3)%low,tmp_meta%l(3)%high)
+                                k0,tmp_meta%l(3)%high)
                endif
             endif
          end do
@@ -106,7 +114,7 @@
 !     Print max courrant numbers if LAM configuration
          if (G_lam) then
          if (Ptopo_myproc==0 .and. Lctl_step>0) then
-            call itf_adw_cfl_print()
+            call adx_cfl_print()
          endif
          endif
 !
@@ -140,6 +148,7 @@
 #include "gmm.hf"
 #include "stat.cdk"
 #include "tr3d.cdk"
+#include "schm.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tmp_liste (1000), dumc_S
       integer k,n,cnt
@@ -165,6 +174,10 @@
             tmp_liste(cnt+4) = 'FIPTX'
             tmp_liste(cnt+5) = 'ST1'
             cnt = cnt + 5
+            if(.not.Schm_hydro_L)then
+               tmp_liste(cnt+1) = 'QT1'
+               cnt = cnt + 1
+            endif
             if (stat_liste(k) .ne. 'ALL') cycle
          endif
          if (stat_liste(k) == 'ALL_DYN_T0') then
@@ -175,6 +188,10 @@
             tmp_liste(cnt+3) = 'TT0'
             tmp_liste(cnt+4) = 'ST0'
             cnt = cnt + 4
+            if(.not.Schm_hydro_L)then
+               tmp_liste(cnt+1) = 'QT0'
+               cnt = cnt + 1
+            endif
             cycle
          endif
          if ((stat_liste(k) == 'ALL_TR_T1') .or. (stat_liste(k) == 'ALL')) then

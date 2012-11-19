@@ -80,7 +80,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
       p_zdabc_8 => adx_zdabc_8%m
       p_zbc_8   => adx_zbc_8%m
    else
-      notop   = Adx_notop
+      notop   = 1
       kkmax   = adx_lnkm
       p_z00_8 = adx_verZ_8%t(1)
       p_lcz     => adx_lcz%t

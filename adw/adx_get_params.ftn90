@@ -23,7 +23,6 @@ subroutine adx_get_params()
    !@author Stephane Chamberland, 2010-01
    !@revisions
    ! v4_14 PLante A.    - add 'model/gbpil_t',adx_gbpil_t
-   ! V4_15 PLante A.    - add 'model/notop'  ,adx_notop
    ! v4_40 - Qaddouri/Lee - add Adx_yinyang_L key
    !**/
 #include <WhiteBoard.hf>
@@ -70,7 +69,8 @@ subroutine adx_get_params()
    istat = min(wb_get('model/pil_w',adx_pil_w),istat)
    istat = min(wb_get('model/pil_e',adx_pil_e),istat)
    istat = min(wb_get('model/gbpil_t',adx_gbpil_t),istat)
-   istat = min(wb_get('model/notop',adx_notop),istat)
+   istat = min(wb_get('model/trapeze',adx_trapeze_L),istat)
+   istat = min(wb_get('model/superwinds',adx_superwinds_L),istat)
 
    istat = min(wb_get('model/cstv_dt',adx_dt_8),istat)
 
@@ -87,14 +87,6 @@ subroutine adx_get_params()
    istat = min(wb_get('model/gmm/xct1_m',adx_xct1_s),istat)
    istat = min(wb_get('model/gmm/yct1_m',adx_yct1_s),istat)
    istat = min(wb_get('model/gmm/zct1_m',adx_zct1_s),istat)
-
-   istat = min(wb_get('model/gmm/xth_t',adx_xth_t_s),istat)
-   istat = min(wb_get('model/gmm/yth_t',adx_yth_t_s),istat)
-   istat = min(wb_get('model/gmm/zth_t',adx_zth_t_s),istat)
-
-   istat = min(wb_get('model/gmm/xcth_t',adx_xcth_t_s),istat)
-   istat = min(wb_get('model/gmm/ycth_t',adx_ycth_t_s),istat)
-   istat = min(wb_get('model/gmm/zcth_t',adx_zcth_t_s),istat)
 
    call handle_error_l(WB_IS_OK(istat),'adx_get_params','problem getting values from whiteboard, bloc 1')
 

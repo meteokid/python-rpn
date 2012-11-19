@@ -57,6 +57,16 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
    include "v4dg.inc"
+   !
+   real*8,  dimension(:), pointer :: p_bsz_8
+   integer, dimension(:), pointer :: p_lcz
+   !
+   p_lcz   => adx_lcz%m
+   p_bsz_8 => adx_bsz_8%m
+   if(adx_superwinds_L)then
+      p_lcz   => adx_lcz%s
+      p_bsz_8 => adx_bsz_8%s
+   endif
 
    !---------------------------------------------------------------------
    if ( V4dg_conf.eq.0.0 ) then
@@ -65,7 +75,7 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
         F_x,    F_y,   F_z,&
         adx_lcx, adx_bsx_8, adx_dix_8, &
         adx_lcy, adx_bsy_8, adx_diy_8,&
-        adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
+        p_lcz, p_bsz_8, adx_diz_8,&
         i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
    else
    call adx_setint_lin_noptr2(F_n, &
@@ -73,7 +83,7 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
         F_x,    F_y,   F_z,&
         adx_lcx, adx_bsx_8, adx_dix_8, &
         adx_lcy, adx_bsy_8, adx_diy_8,&
-        adx_lcz%s, adx_bsz_8%s, adx_diz_8,&
+        p_lcz, p_bsz_8, adx_diz_8,&
         i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
    endif
    !---------------------------------------------------------------------

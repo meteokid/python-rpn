@@ -20,22 +20,27 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
 #include "adx_nml.cdk"
    !@objective Advection default configuration and reading namelists adx_cfgs
    !@arguments
-   character(len=*) :: F_nmlFileName_S !I, Namelist file name
+   character(len=*) :: F_nmlFileName_S
    !@returns
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
-   !@revisions
-   !  YYYY-MM, MY_AUTHOR: original code
 !**/
    integer :: fileUnit
    integer, external :: file_open_existing
    !---------------------------------------------------------------------
+   adw_nkbz_L = .true.
    adw_exdg_L = .false.
    adw_ckbd_L = .false.
    adw_mono_L = .true.
+   adw_positive_L = .false.
+   adw_gccsa_L = .false.
    adw_nosetint_L   = .false.
-   adw_useadx_L = .true.
+   adw_trunc_traj_L = .false.
+   adw_halox  = -1
+   adw_haloy  = -1
    adw_stats_L = .false.
+   adw_cub_traj_L=.false.
+   adw_trajdebug_L=.true.
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
@@ -44,8 +49,13 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
       call fclos(fileUnit)
       F_stat = -1 * F_stat
       if (F_stat<0) then
-         call msg(MSG_ERROR,'adx_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
+         call msg(MSG_ERROR,'adw_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
       endif
+   endif
+   !TODO: fix adw_stat_L then remove the following warning/override
+   if (adw_stats_L) then
+      adw_stats_L = .false.
+      call msg(MSG_WARNING,'adw_nml - adw_stats_L not supported -- ignored')
    endif
    !---------------------------------------------------------------------
    return
@@ -57,7 +67,6 @@ subroutine adx_nml_print()
    implicit none
 #include <arch_specific.hf>
 #include "msg.h"
-#undef __ADX_NML__
 #include "adx_nml.cdk"
 !**/
    integer :: msgUnit
@@ -75,15 +84,33 @@ function adx_config() result(F_stat)
    implicit none
 #include <arch_specific.hf>
    !@objective Establish final Advection configuration
-   !@arguments
    !@returns
-   integer :: F_stat !O, return -1 on error, 0 on sucess
+   integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
-   !@revisions
-   !  YYYY-MM, MY_AUTHOR: original code
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "adx_nml.cdk"
 !**/
    !---------------------------------------------------------------------
    F_stat = 0
+
+   adw_maxcfl= max(1,Grd_maxcfl)
+   adw_halox = max(1,adw_maxcfl + 1)
+   adw_haloy = adw_halox
+
+   if (.not.G_lam) then
+      adw_halox = max(3,adw_halox)
+      adw_haloy = max(2,adw_haloy)
+      if (adw_gccsa_L) then
+         call msg(MSG_ERROR,'adw_nml: adw_gccsa_L cannot be .true. if .not. G_lam')
+         F_stat = -1
+      endif
+   endif
+
+   if (adw_positive_L .and. adw_mono_L) then
+      call msg(MSG_ERROR,'adw_nml: adw_positive_L and adw_mono_L cannot be both .true.')
+      F_stat = -1
+   endif
    !---------------------------------------------------------------------
    return
 end function adx_config

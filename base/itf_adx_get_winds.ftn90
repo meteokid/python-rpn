@@ -26,14 +26,17 @@ subroutine itf_adx_get_winds()
 end subroutine itf_adx_get_winds
 
 !/**
-subroutine itf_adx_get_winds2(F_su,F_sv,F_sw,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+subroutine itf_adx_get_winds2(F_ud,F_vd,F_wd,F_ua,F_va,F_wa, &	
+	F_minx,F_maxx,F_miny,F_maxy,F_nk,F_lni,F_lnj,F_nk_winds)
+ 	
    implicit none
 #include <arch_specific.hf>
    !@objective process winds in preparation for advection
    !@arguments
-   integer :: F_minx,F_maxx,F_miny,F_maxy,F_nk
-   real,dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: &
-        F_su,F_sv,F_sw !O, model de-stag winds on m-t levels super set
+   integer :: F_minx,F_maxx,F_miny,F_maxy,F_nk,F_lni,F_lnj,F_nk_winds
+   real,dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk_winds) :: &
+        F_ud,F_vd,F_wd !O, model de-stag winds
+   real,dimension(F_lni,F_lnj,F_nk_winds) :: F_ua,F_va,F_wa
    !@author alain patoine
    !@revisions
    ! v2_31 - Desgagne M.       - removed stkmemw
@@ -50,13 +53,16 @@ subroutine itf_adx_get_winds2(F_su,F_sv,F_sw,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 #include "glb_ld.cdk"
 #include "gmm.hf"
 #include "vth.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "schm.cdk"
    !      real, pointer, dimension (:,:,:) :: uth,vth,zdth
    !      character(len=8) :: gmmk_uth_s, gmmk_vth_s, gmmk_zdth_s
 !!$#include "acid.cdk"
    !      logical acid_test_l
    type(gmm_metadata) :: dummy_gmm_meta
-   integer :: istat
-   real, dimension(:,:,:), pointer :: um,vm,wm,ut,vt
+   integer :: istat,i,j,k
+   real, dimension(:,:,:), pointer :: um,ut,vm,vt,wm
 
 Interface
 Subroutine itf_adx_destag_winds (F_u,F_v,F_uth,F_vth)
@@ -92,30 +98,54 @@ End Interface
    istat = min(gmm_get(gmmk_uth_s,uth,dummy_gmm_meta),istat)
    istat = min(gmm_get(gmmk_vth_s,vth,dummy_gmm_meta),istat)
    istat = min(gmm_get(gmmk_zdth_s,zdth,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_ut0_s,  ut0,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_vt0_s,  vt0,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_zdt0_s,zdt0,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_ut1_s,  ut1,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_vt1_s,  vt1,dummy_gmm_meta),istat)
+   istat = min(gmm_get(gmmk_zdt1_s,zdt1,dummy_gmm_meta),istat)
    call handle_error(istat,'adx_main_1_wnd','Problem in gmm_get')
 
+! QUESTION AP : pourquoi um et vm ont nk+1 niveau, cela devrait etre nk non?
+
    allocate( &
+        um(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
         ut(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
+        vm(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
         vt(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
         wm(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
         stat=istat)
    call handle_error_l(istat==0,'itf_adx_get_winds','Problem allocating mem')
 
-   um => ut
-   vm => vt
+   if(Schm_trapeze_L) then
+      call itf_adx_destag_winds(um,vm,ut0,vt0)
+      call itf_adx_img2real_winds(um,vm,um,vm)
+      call itf_adx_interp_thermo2mom(wm,zdt0)
+      F_ua=um(1:l_ni,1:l_nj,1:l_nk)
+      F_va=vm(1:l_ni,1:l_nj,1:l_nk)
+      F_wa=wm(1:l_ni,1:l_nj,1:l_nk)
+      uth=ut1; vth=vt1; zdth=zdt1
+   else
+      uth =.5*(ut1 +ut0 )
+      vth =.5*(vt1 +vt0 )
+      zdth=.5*(zdt1+zdt0)
+   endif
+
    call itf_adx_destag_winds(um,vm,uth,vth)
    call itf_adx_img2real_winds(uth,vth,um,vm)
-   nullify(um,vm)
+   if(Schm_superwinds_L)then
+      call itf_adx_interp_mom2thermo(ut,uth)
+      call itf_adx_interp_mom2thermo(vt,vth)
+      call itf_adx_interp_thermo2mom(wm,zdth)
+      call itf_adx_combine_level2(F_ud,uth,ut,F_minx,F_maxx,F_miny,F_maxy,F_nk_winds)
+      call itf_adx_combine_level2(F_vd,vth,vt,F_minx,F_maxx,F_miny,F_maxy,F_nk_winds)
+      call itf_adx_combine_level2(F_wd,wm,zdth,F_minx,F_maxx,F_miny,F_maxy,F_nk_winds)
+   else
+      call itf_adx_interp_thermo2mom(wm,zdth)
+      F_ud=uth; F_vd=vth; F_wd=wm
+   endif
 
-   call itf_adx_interp_mom2thermo(ut,uth)
-   call itf_adx_interp_mom2thermo(vt,vth)
-   call itf_adx_interp_thermo2mom(wm,zdth)
-
-   call itf_adx_combine_level2(F_su,uth,ut,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-   call itf_adx_combine_level2(F_sv,vth,vt,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-   call itf_adx_combine_level2(F_sw,wm,zdth,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-
-   deallocate(ut,vt,wm)
+   deallocate(um,ut,vm,vt,wm)
 
    call msg(MSG_DEBUG,'itf_adx_get_winds [end]')
    !---------------------------------------------------------------------
@@ -481,8 +511,8 @@ End Interface
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
       !---------------------------------------------------------------------
       allocate(zd_z_8(l_nk+1))
-      zd_z_8(1:l_nk+1)=Ver_z_8%t(1:l_nk+1)
-      ! Last zdot level is at surface not at Ver_z_8%t(l_nk+1)
+      zd_z_8(1:l_nk+1)=Ver_a_8%t(1:l_nk+1)
+      ! Last zdot level is at surface not at Ver_a_8%t(l_nk+1)
       !  This is true for all config, however we just adjust it for Schm_tlift.eq.1
       !  to validate with previous version if Adx_tlift.eq.0 and Schm_thermopos_L=.true.
       if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
@@ -571,8 +601,8 @@ End Interface
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
       !---------------------------------------------------------------------
       allocate(zd_z_8(l_nk+1))
-      zd_z_8(1:l_nk+1)=Ver_z_8%t(1:l_nk+1)
-      ! Last zdot level is at surface not at Ver_z_8%t(l_nk+1)
+      zd_z_8(1:l_nk+1)=Ver_a_8%t(1:l_nk+1)
+      ! Last zdot level is at surface not at Ver_a_8%t(l_nk+1)
       !  This is true for all config, however we just adjust it for Schm_tlift.eq.1
       !  to validate with previous version if Adx_tlift.eq.0 and Schm_thermopos_L=.true.
       if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
