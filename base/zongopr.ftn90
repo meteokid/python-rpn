@@ -72,7 +72,6 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lctl.cdk"
-#include "ptopo.cdk"
 !
 !
 !modules
@@ -99,9 +98,7 @@
 !
          if (Lun_out.lt.0) call mzonopr(9,dummy)
 !
-         call pe_rebind (Ptopo_smtphy,.false.)
          max_threads = omp_get_max_threads()
-         call pe_rebind (Ptopo_smtdyn,.false.)
 !
          call mzonopr( 5, max_threads )
 !

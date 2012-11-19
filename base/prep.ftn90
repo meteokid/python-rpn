@@ -37,10 +37,10 @@
            F_rvw1  (DIST_SHAPE,Nk)  ,F_rvw2  (DIST_SHAPE,Nk)  , &
            F_xct1  (ni,nj,Nk)       ,F_yct1  (ni,nj,Nk)       , &
            F_zct1  (ni,nj,Nk)       ,F_fis   (DIST_SHAPE)     , &
-           F_rc    (DIST_SHAPE,Nk)  ,F_rt    (DIST_SHAPE,Nk+1), &
-           F_rw    (DIST_SHAPE,Nk+1),F_rf    (DIST_SHAPE,Nk+1), &
+           F_rc    (DIST_SHAPE,Nk)  ,F_rt    (DIST_SHAPE,Nk), &
+           F_rw    (DIST_SHAPE,Nk)  ,F_rf    (DIST_SHAPE,Nk), &
            F_oru   (DIST_SHAPE,Nk)  ,F_orv   (DIST_SHAPE,Nk)  , &
-           F_rb    (DIST_SHAPE)     ,F_nest_t(DIST_SHAPE,*)
+           F_rb    (DIST_SHAPE)     ,F_nest_t(DIST_SHAPE,Nk)
 !
 !author
 !     Alain Patoine 
@@ -73,39 +73,46 @@
 #include "intuv.cdk"
 #include "inuvl.cdk"
 #include "type.cdk"
-#include "cori.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
 !
 !modules
-      integer i, j, k, i0, j0, k0, in, inu, jn, jnv, onept
-      real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, tot, &
-              a1,a2,a3,a4,b1,b2,b3,b4,zero,one,four,xxx,yyy,zzz
-      real    rdiv            , Ttop(DIST_SHAPE), w_rt
+      integer i, j, k, i0, i0u, j0, j0v, k0, k0t, in, inu, jn, jnv, onept
+      real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, rdiv, &
+              a1,a2,a3,a4,b1,b2,b3,b4,xxx,yyy,zzz
+      real    w_rt
 !
-      parameter( zero=0.d0, one=1.d0, four=4.d0 )
+      real*8, parameter :: zero=0.d0, one=1.d0
 !*
 !     __________________________________________________________________
 !
 !
-      tot = - four*Dcst_omega_8/Cstv_dt_8
+      a1 = Dcst_cappa_8 / Cstv_RTstr_8
+      a2 = Ver_epsilon_8 / Cstv_RTstr_8
+      a3 = one / ( Cstv_tau_8*Cstv_tau_8 * Cstv_RTstr_8 )
+                         a4 = 0.d0
+      if(Schm_autobar_L) a4 = a3/(Cstv_Zsrf_8-Cstv_Ztop_8)
 !
-!     Coriolis term is zero for theoretical cases
-      if( Schm_theoc_L ) tot = zero
- 
+      b1 = a2 * Dcst_grav_8 * Cstv_tau_8
+      b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
+      b3 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
+      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tau_8*Cstv_Tstr_8 )
+
+      k0 = 1+Lam_gbpil_T
+      k0t= k0
+      if(Schm_opentop_L)k0t=k0-1
       onept=0
       if (Grd_yinyang_L) onept=1
-      i0 = 1
-      in = l_ni
-      j0 = 1
-      jn = l_nj
-      k0 = 1+Lam_gbpil_T
 
 !*****************************************************************
 ! Metric corrections to the RHS of horizontal momentum equations *
 !*****************************************************************
 !
-!     Temporary Indices to compute metric corrections
+!     Indices to compute metric corrections
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
       if (G_lam) then
          if (l_west)  i0= pil_w - onept
          if (l_east)  in= l_niu - pil_e + 2 + onept
@@ -139,22 +146,6 @@
          rx = -mumu * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
                        F_xct1(i,j,k)*F_zct1(i,j,k)*rz)
 
-!     Compute components of (r - r~) and put in cx, cy, cz
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         cx = x - F_xct1(i,j,k)
-         cy = y - F_yct1(i,j,k)
-         cz = z - F_zct1(i,j,k)
-
-!     Find components of Coriolis vector  2 * omg/tau * [k' ^ (r - r~)]
-!     where geographic unit north vector  k' = r_13 I + r_23 J + r_33 K
-!     Then substract them from (rx, ry, rz)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         if (.not.Cori_cornl_L) then
-         rx = rx + ( Grd_rot_8(2,3)*cz - Grd_rot_8(3,3)*cy )*tot
-         ry = ry + ( Grd_rot_8(3,3)*cx - Grd_rot_8(1,3)*cz )*tot
-         rz = rz + ( Grd_rot_8(1,3)*cy - Grd_rot_8(2,3)*cx )*tot
-         endif
-
 !     Compute components of c and put in cx, cy, cz 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          cx = x + Cstv_Beta_8*F_xct1(i,j,k)
@@ -172,32 +163,38 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          F_ruw2(i,j,k) = x*ry - y*rx - F_ruw1(i,j,k)
          F_rvw2(i,j,k) = rz - F_rvw1(i,j,k)
+
+  !!!!!!! CARTESIAN DISPLACEMENTS:replace above 2 by !!!!!
+  !!!    F_ruw2(i,j,k) = F_ruw2(i,j,k) - F_ruw1(i,j,k) !!!
+  !!!    F_rvw2(i,j,k) = F_rvw2(i,j,k) - F_rvw1(i,j,k) !!!
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
          
 100   continue 
 !$omp enddo
 !
 !$omp single
-      call rpn_comm_xch_halo( F_fis , LDIST_DIM, l_ni,l_nj,  1 , &
-                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_ruw2, LDIST_DIM, l_ni,l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo( F_rvw2, LDIST_DIM, l_ni, l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
 !     Indices to compute Right-Hand Sides 
-      i0  = 1+pil_w
+      i0  = 1    +pil_w
+      j0  = 1    +pil_s
       in  = l_ni -pil_e
-      inu = l_niu-pil_e
-      j0  = 1+pil_s
       jn  = l_nj -pil_n
+!
+      i0u = i0-1
+      j0v = j0-1
+      if(.not.Grd_yinyang_L) then
+         if (l_west .and. G_lam) i0u=i0
+         if (l_south)            j0v=j0
+      endif
+      inu = l_niu-pil_e
       jnv = l_njv-pil_n
       if (Grd_yinyang_L) then
-         if (l_west)  i0= i0 - onept
-         if (l_east)  inu= inu + onept
-         if (l_east)  in= in + onept
-         if (l_south) j0= j0 - onept
-         if (l_north) jn= jn + onept
-         if (l_north) jnv= jnv + onept
+         if (l_east)  inu=inu + 1
+         if (l_north) jnv=jnv + 1
       endif
 
       F_rv(:,0   ,:) = 0.
@@ -213,7 +210,7 @@
 !     Add advective contributions to Ru & Rv
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
-         do i= i0, inu
+         do i= i0u, inu
             F_ru(i,j,k) =  F_oru(i,j,k) + &
                          inuvl_wxxu3_8(i,1)*F_ruw2(i-1,j,k) &
                        + inuvl_wxxu3_8(i,2)*F_ruw2(i  ,j,k) &
@@ -222,7 +219,7 @@
          end do
          end do
 !
-         do j= j0, jnv
+         do j= j0v, jnv
          do i= i0, in
             F_rv(i,j,k) =  F_orv(i,j,k) + &
                          inuvl_wyyv3_8(j,1)*F_rvw2(i,j-1,k) &
@@ -231,55 +228,10 @@
                        + inuvl_wyyv3_8(j,4)*F_rvw2(i,j+2,k)
          end do
          end do
-      end do
-
-!$omp enddo
-!
-!******************************************
-! N.B. OPENTOP BOUNDARY CONDITION:        *
-! Top temperature is externally specified *
-!******************************************
-!
-      if (Schm_opentop_L) then
-         do j= j0, jn
-         do i= i0, in
-            F_rb(i,j) = F_rt(i,j,k0)
-            Ttop(i,j) = F_nest_t(i,j,k0)
-         end do
-         end do
-      else
-         do j= j0, jn
-         do i= i0, in
-            F_rb(i,j) = 0.0
-            Ttop(i,j) = 0.0
-         end do 
-         end do
-      endif
 !
 !*************************************
 ! Combination of governing equations * 
 !*************************************
-!
-!$omp single
-      a1 = Dcst_cappa_8 / Cstv_RTstr_8
-      a2 = Ver_epsilon_8 / Cstv_RTstr_8
-      a3 = one / ( Cstv_tau_8*Cstv_tau_8 * Cstv_RTstr_8 )
-                         a4 = 0.d0
-      if(Schm_autobar_L) a4 = a3/(Cstv_Zsrf_8-Cstv_Ztop_8)
-!
-      b1 = one / ( Dcst_grav_8 * Cstv_tau_8 )
-      b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
-      b3 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
-      b4 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tau_8*Cstv_Tstr_8 )
-!
-      call rpn_comm_xch_halo( F_ru, LDIST_DIM,l_niu,l_nj,G_nk, &
-                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 ) 
-      call rpn_comm_xch_halo( F_rv, LDIST_DIM,l_ni,l_njv,G_nk, &
-                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-!$omp end single
-!
-!$omp do
-      do k=k0,l_nk
 !
          if(.not.Schm_hydro_L) then
 !           Combine continuity & w equations
@@ -287,8 +239,8 @@
             do j= j0, jn
             do i= i0, in
                F_rc(i,j,k) = F_rc(i,j,k) - b1 *  &
-                                ( Ver_wp_8%m(k) * F_rw(i,j,k+1) &
-                                + Ver_wm_8%m(k) * F_rw(i,j,k  ) )
+                                ( Ver_wp_8%m(k) * F_rw(i,j,k  ) &
+                                + Ver_wm_8%m(k) * F_rw(i,j,k-1) )
             end do
             end do
          endif
@@ -310,8 +262,18 @@
       end do
 !$omp enddo
 !
+      if (Schm_opentop_L) then
 !$omp do
-      do k=k0,l_nk+1
+         do j= j0, jn
+         do i= i0, in
+            F_rb(i,j) = F_rt(i,j,k0-1)
+         end do
+         end do
+!$omp enddo
+      endif
+!
+!$omp do
+      do k=k0t,l_nk
 !
 !        Compute Rt" & Rf"
 !        ~~~~~~~~~~~~~~~~~
@@ -346,7 +308,7 @@
 !************************************************************
 !
 !     Finish computations of RP(Rc"), combining Rc', Rt", Rf" 
-!
+! 
 !$omp do
       do k=k0,l_nk
          xxx=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
@@ -354,7 +316,7 @@
          do j= j0, jn
          do i= i0, in
             F_rc(i,j,k) = Ver_dz_8%m(k) * ( F_rc(i,j,k) - a4 * F_fis(i,j) ) &
-                           - xxx * F_rt(i,j,k+1) + yyy * F_rt(i,j,k)
+                           - xxx * F_rt(i,j,k) + yyy * F_rt(i,j,k-1)
          end do
          end do
          if (.not. Schm_hydro_L) then    
@@ -362,8 +324,8 @@
             do j= j0, jn
             do i= i0, in
                F_rc(i,j,k) = F_rc(i,j,k) - zzz * &
-                                ( Ver_wp_8%m(k) * F_rf(i,j,k+1) &
-                                + Ver_wm_8%m(k) * F_rf(i,j,k  ) )
+                                ( Ver_wp_8%m(k) * F_rf(i,j,k) &
+                                + Ver_wm_8%m(k) * F_rf(i,j,k-1) )
             end do
             end do
          endif
@@ -372,13 +334,20 @@
 !
 !     Apply lower and upper boundary conditions
 !
+      if (Schm_opentop_L) then
+         do j= j0, jn
+         do i= i0, in
+            F_rb(i,j) = F_rt(i,j,k0-1) - b3*F_rb(i,j) + b4*F_nest_t(i,j,k0-1)
+            F_rc(i,j,k0  ) = F_rc(i,j,k0  ) - Ver_cstp_8 * F_rb(i,j)
+         end do
+         end do
+      endif
+!
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_rb(i,j       ) = F_rt(i,j,k0    ) - b3*F_rb(i,j) + b4*Ttop(i,j)
-         F_rc(i,j,k0    ) = F_rc(i,j,k0    ) - Ver_cstp_8 * F_rb(i,j)
-         F_rt(i,j,l_nk+1) = F_rt(i,j,l_nk+1) - a3 * F_fis(i,j)
-         F_rc(i,j,l_nk  ) = F_rc(i,j,l_nk  ) + Ver_cssp_8 * F_rt(i,j,l_nk+1)
+         F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - a3 * F_fis(i,j)
+         F_rc(i,j,l_nk) = F_rc(i,j,l_nk) + Ver_cssp_8 * F_rt(i,j,l_nk)
       end do
       end do
 !$omp enddo      

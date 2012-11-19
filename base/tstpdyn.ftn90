@@ -64,10 +64,8 @@
 #include "vtopo.cdk"
        include "v4dg.inc"
 !
-!      common/xiln/iln
-!
       type(gmm_metadata) :: meta2d
-      integer iln, dim, dimt, dimb, err, gmmstat
+      integer iln, dim, dimb, err, gmmstat
       real dth
 !
 !*
@@ -107,10 +105,7 @@
 !     -----------------------
 !      call v4d_rwtraj (3) 
 !
-!     Compute the average of the t1 and t0 winds (uth,vth,zdth)
-!     
       call timing_start(21, 'ADW      ')
-      call wndth ()
 !
 !     Store TRAJ Winds TH
 !     -------------------
@@ -139,15 +134,14 @@
 !
       dim = (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*l_nk
       dimb= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-      dimt= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(l_nk+1)
       call hpalloc (nl_u_, dim, err,1)
       call hpalloc (nl_v_, dim, err,1)
-      call hpalloc (nl_t_, dimt,err,1) 
+      call hpalloc (nl_t_, dim, err,1) 
       call hpalloc (nl_c_, dim, err,1)
-      call hpalloc (nl_f_, dimt,err,1)
+      call hpalloc (nl_f_, dim, err,1)
       call hpalloc (nl_b_, dimb,err,1)
       nl_w_ = 0
-      if (.not.Schm_hydro_L) call hpalloc (nl_w_, dimt, err,1)
+      if (.not.Schm_hydro_L) call hpalloc (nl_w_, dim, err,1)
 !
       do 100 iln=1,Schm_itnlh
 !

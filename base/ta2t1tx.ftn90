@@ -127,7 +127,7 @@
 !
       endif
 !
-      call diag_fip(fiptx, st1, tt1, qt1, fis0, LDIST_DIM,l_nk)
+      call diag_fip(fiptx(l_minx,l_miny,1), st1, tt1(l_minx,l_miny,2), qt1(l_minx,l_miny,1), fis0, LDIST_DIM,l_nk)
 
       do n=1,Tr3d_ntr
          istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)

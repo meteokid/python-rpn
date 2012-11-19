@@ -374,7 +374,7 @@
       if ( lastdt .ne. Lctl_step ) then
 
          gz_m_plus(:,:,1:l_nk) = gz(:,:,1:l_nk)
-         gz_m_plus(:,:,0     ) = fiptx(:,:,0)+Ver_fistr_8%m(0)
+         gz_m_plus(:,:,0     ) = fiptx(:,:,0)-Cstv_RTstr_8*(Cstv_Ztop_8-Cstv_Zsrf_8)
          gz_m_plus(:,:,l_nk+1) = fis0 (:,:  )
          call out_padbuf(gz_m_plus,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
          gz_ta(:,:,l_nk+2)=gz_m_plus(:,:,l_nk+1)
@@ -424,15 +424,10 @@
       endif
 
       if (pnww.ne.0) then
-!ccparallel
-            call calomeg_w (omega,F_st1,wt1,tt1,LDIST_DIM,nk)            
-!vl      calomeg  gives values to nk+1 ! 
-!ccend parallel
-         do j= 1, l_nj
-         do i= 1, l_ni
-            omega(i,j,nk+2)=omega(i,j,nk+1)
-         enddo         
-         enddo         
+         call calomeg_w (omega(l_minx,l_miny,2),F_st1,wt1(l_minx,l_miny,2), &
+                           tt1(l_minx,l_miny,2),LDIST_DIM,nk)         
+         omega(:,:,   1) = 0.
+         omega(:,:,nk+2) = omega(:,:,nk+1)
       endif
 
       if (pnth.ne.0) then

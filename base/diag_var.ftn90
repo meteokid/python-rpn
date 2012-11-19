@@ -23,8 +23,8 @@
 #include <arch_specific.hf>
 !     
       integer k0,nk
-      real F_BsPq(LDIST_SHAPE,0:Nk+1), F_mu(LDIST_SHAPE,Nk+1)
-      real F_s(LDIST_SHAPE),           F_q(LDIST_SHAPE,0:Nk+1)
+      real F_BsPq(LDIST_SHAPE,Nk+1), F_mu(LDIST_SHAPE,Nk)
+      real F_s(LDIST_SHAPE),         F_q(LDIST_SHAPE,Nk+1)
 !
 !author
 !
@@ -56,7 +56,7 @@
 !     
 !*
       integer i,j,k,i0,in,j0,jn,nij,istat
-      real*8 one, xxx, qbar
+      real*8 one, qbar
       parameter(one=1.d0)
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
 !
@@ -76,18 +76,13 @@
       nij = (in - i0 + 1)*(jn - j0 + 1)
 !
 !
-!$omp parallel private (xxx,qbar,xtmp_8,ytmp_8)
+!$omp parallel private (qbar,xtmp_8,ytmp_8)
 !
 !$omp do
-       do k=k0-1,l_nk+1
-         if(k.eq.0) then
-            xxx=0.d0
-         else
-            xxx=Ver_b_8%m(k)
-         endif
+       do k=k0,l_nk+1
          do j= j0, jn
          do i= i0, in
-            F_BsPq(i,j,k)=xxx*F_s(i,j)
+            F_BsPq(i,j,k)=Ver_b_8%m(k)*F_s(i,j)
          enddo
          enddo
       enddo
@@ -96,13 +91,13 @@
 
       if (.not. Schm_hydro_L) then
 !$omp do
-      do k=k0-1,l_nk+1
+      do k=k0,l_nk+1
          do j= j0, jn
          do i= i0, in
             F_BsPq(i,j,k) = F_BsPq(i,j,k) +  F_q(i,j,k)
          enddo
          enddo
-         if(k.gt.k0-1) then
+         if(k.lt.l_nk+1) then
             do j= j0, jn
             do i= i0, in
                xtmp_8(i,j) = one + ver_dbdz_8%t(k)*F_s(i,j)
@@ -111,12 +106,12 @@
             call vrec ( ytmp_8, xtmp_8, nij )
             do j= j0, jn
             do i= i0, in
-               F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k)-F_q(i,j,k-1))*ytmp_8(i,j)
+               F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,k))*ytmp_8(i,j)
             enddo
             enddo
             do j= j0, jn
             do i= i0, in
-               qbar = Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1)
+               qbar = Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k)
                xtmp_8(i,j) = qbar
             enddo
             enddo

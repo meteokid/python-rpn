@@ -38,14 +38,16 @@
 !
       integer,parameter :: BUFSIZE=10000
       integer,external::  rpn_comm_bloc,ouvrstrt,wkoffit,gnthread,fnom
+      integer, external :: OMP_get_num_threads, OMP_get_max_threads, &
+                           OMP_get_thread_num
 ! 
       character*3 mycol_S,myrow_S
       character*12 dumc1_S
-      character*500 fn, basearch,pwd_S
-      integer err,n1,n2,n3,n4,n5,n6,n7,bufnml(BUFSIZE),bufoutcfg(BUFSIZE),bufcte(BUFSIZE),bufinphycfg(BUFSIZE),unf,default_smtfact
+      character*500 fn, pwd_S
+      integer err,n1,n2,n3,n4,n5,n6,n7,unf
+      integer bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
+              bufcte(BUFSIZE),bufinphycfg(BUFSIZE)
 !
-      integer Ptopo_npeOpenMP_orig
-      common/check_4dvar/Ptopo_npeOpenMP_orig
 !
 !-------------------------------------------------------------------
 !
@@ -72,22 +74,13 @@
       call RPN_COMM_bcast (Ptopo_npex  , 8, "MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
 !
-      Ptopo_npeOpenMP_resv = max(1,gnthread())
-      Ptopo_npeOpenMP      = Ptopo_npeOpenMP_resv
+      Ptopo_npeOpenMP = OMP_get_max_threads()
 
-      err = clib_getenv('BASE_ARCH',basearch)
-      default_smtfact = 1
-      if (trim(basearch).eq."AIX") default_smtfact = 2
-
-      Ptopo_npeOpenMP_orig = Ptopo_npeOpenMP
-
-      if (Ptopo_smtdyn.lt.1) Ptopo_smtdyn=Ptopo_npeOpenMP*default_smtfact
-      if (Ptopo_smtphy.lt.1) Ptopo_smtphy=Ptopo_npeOpenMP*default_smtfact
-      Ptopo_smtdyn=min(Ptopo_smtdyn,Ptopo_npeOpenMP*2)
-      Ptopo_smtphy=min(Ptopo_smtphy,Ptopo_npeOpenMP*2)
+      if (Ptopo_nthreads_dyn.lt.1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
+      if (Ptopo_nthreads_phy.lt.1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
 
       if (Ptopo_myproc.eq.0) write (6, 8255) Ptopo_npex, Ptopo_npey, &
-                             Ptopo_npeOpenMP,Ptopo_smtdyn,Ptopo_smtphy
+             Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
 !
 ! Initializes Path_nml_S and Path_outcfg_S
 !
@@ -108,7 +101,7 @@
 !
 ! Initializes OpenMP
 !
-      call pe_rebind (Ptopo_smtdyn,Ptopo_myproc.eq.0)
+      call pe_rebind (Ptopo_nthreads_dyn,Ptopo_myproc.eq.0)
 !
 ! Reading namelist file Path_nml_S (blind read)
 !
@@ -173,7 +166,8 @@
       endif
 !
  8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
-                " OMP CONFIG (npeOpenMP x smtdyn x smtphy): ",i4,' x ',i3,' x ',i3)
+          " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
+            i4,' x ',i3,' x ',i3)
 !
 !-------------------------------------------------------------------
 !      

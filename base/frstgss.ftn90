@@ -42,7 +42,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
-#include "cori.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
 !
@@ -112,30 +111,28 @@
 !
 !$omp end parallel
 !
-      if ( Cori_cornl_L ) then
-         istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(ut0)'
-         istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(ut1)'
-         istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt0)'
-         istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt1)'
+      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(ut0)'
+      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(ut1)'
+      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt0)'
+      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(vt1)'
 !$omp parallel private(i,j)
 !
 !$omp do
-         do k=1,l_nk+1
-         do j= 1 , l_nj
-         do i= 1 , l_ni
-            ut0(i,j,k)  =  ut1(i,j,k)
-            vt0(i,j,k)  =  vt1(i,j,k)
-         end do
-         end do
-         end do
+      do k=1,l_nk+1
+      do j= 1 , l_nj
+      do i= 1 , l_ni
+         ut0(i,j,k)  =  ut1(i,j,k)
+         vt0(i,j,k)  =  vt1(i,j,k)
+      end do
+      end do
+      end do
 !$omp end do
 !
 !$omp end parallel
-      endif
 !
       if ( .not. Schm_hydro_L) then
          istat = gmm_get(gmmk_qt0_s,qt0,mymeta)

@@ -32,18 +32,18 @@
 !
       integer  F_itr, F_itnlh, DIST_DIM, Nk 
 ! 
-      real     F_p     (DIST_SHAPE,0:Nk+1),  F_fis  (DIST_SHAPE)       , &
+      real     F_p     (DIST_SHAPE,  Nk+1),  F_fis  (DIST_SHAPE)       , &
                F_u     (DIST_SHAPE,  Nk)  ,  F_v    (DIST_SHAPE,  Nk)  , &
-               F_w     (DIST_SHAPE,  Nk+1),  F_t    (DIST_SHAPE,  Nk+1), &
-               F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,  Nk+1), &
-               F_q     (DIST_SHAPE,0:Nk+1),  F_fip  (DIST_SHAPE,0:Nk+1), &
-               F_nest_q(DIST_SHAPE,0:Nk+1), &
+               F_w     (DIST_SHAPE,  Nk)  ,  F_t    (DIST_SHAPE,  Nk)  , &
+               F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,0:Nk)  , &
+               F_q     (DIST_SHAPE,  Nk+1),  F_fip  (DIST_SHAPE,  Nk+1), &
+               F_nest_q(DIST_SHAPE,  Nk+1), &
                F_ru    (DIST_SHAPE,  Nk)  ,  F_rv   (DIST_SHAPE,  Nk)  , &
-               F_rt    (DIST_SHAPE,  Nk+1),  F_rw   (DIST_SHAPE,Nk+1)  , &
-               F_rf    (DIST_SHAPE,  Nk+1),  F_rb   (DIST_SHAPE), &
+               F_rt    (DIST_SHAPE,  Nk)  ,  F_rw   (DIST_SHAPE,  Nk)  , &
+               F_rf    (DIST_SHAPE,  Nk)  ,  F_rb   (DIST_SHAPE)       , &
                F_nu    (DIST_SHAPE,  Nk)  ,  F_nv   (DIST_SHAPE,  Nk)  , &
-               F_nt    (DIST_SHAPE,  Nk+1),  F_nw   (DIST_SHAPE,  Nk+1), &
-               F_nf    (DIST_SHAPE,  Nk+1),  F_nb   (DIST_SHAPE)
+               F_nt    (DIST_SHAPE,  Nk)  ,  F_nw   (DIST_SHAPE,  Nk)  , &
+               F_nf    (DIST_SHAPE,  Nk)  ,  F_nb   (DIST_SHAPE)
 !
 !author
 !     Alain Patoine - split from bac.ftn
@@ -77,7 +77,6 @@
       jn = l_nj-pil_n
       k0 = 1+Lam_gbpil_T
 
-
       call  bacp_2_2 ( F_itr , F_itnlh , F_p   , F_fis , &
                        F_u   , F_v     , F_w   , F_t   , &
                        F_s   , F_zd    , F_q   , F_fip , F_nest_q, &
@@ -101,24 +100,23 @@
 #include <arch_specific.hf>
 !
       integer  F_itr, F_itnlh, DIST_DIM, Nk , i0, j0, k0, in, jn
-      real     F_p     (DIST_SHAPE,0:Nk+1),  F_fis  (DIST_SHAPE)       , &
+      real     F_p     (DIST_SHAPE,  Nk+1),  F_fis  (DIST_SHAPE)       , &
                F_u     (DIST_SHAPE,  Nk)  ,  F_v    (DIST_SHAPE,  Nk)  , &
-               F_w     (DIST_SHAPE,  Nk+1),  F_t    (DIST_SHAPE,  Nk+1), &
-               F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,  Nk+1), &
-               F_q     (DIST_SHAPE,0:Nk+1),  F_fip  (DIST_SHAPE,0:Nk+1), &
-               F_nest_q(DIST_SHAPE,0:Nk+1), &
+               F_w     (DIST_SHAPE,  Nk)  ,  F_t    (DIST_SHAPE,  Nk)  , &
+               F_s     (DIST_SHAPE)       ,  F_zd   (DIST_SHAPE,0:Nk)  , &
+               F_q     (DIST_SHAPE,  Nk+1),  F_fip  (DIST_SHAPE,  Nk+1), &
+               F_nest_q(DIST_SHAPE,  Nk+1), &
                F_ru    (DIST_SHAPE,  Nk)  ,  F_rv   (DIST_SHAPE,  Nk)  , &
-               F_rt    (DIST_SHAPE,  Nk+1),  F_rw   (DIST_SHAPE,Nk+1)  , &
-               F_rf    (DIST_SHAPE,  Nk+1),  F_rb   (DIST_SHAPE), &
+               F_rt    (DIST_SHAPE,  Nk)  ,  F_rw   (DIST_SHAPE,  Nk)  , &
+               F_rf    (DIST_SHAPE,  Nk)  ,  F_rb   (DIST_SHAPE)       , &
                F_nu    (DIST_SHAPE,  Nk)  ,  F_nv   (DIST_SHAPE,  Nk)  , &
-               F_nt    (DIST_SHAPE,  Nk+1),  F_nw   (DIST_SHAPE,  Nk+1), &
-               F_nf    (DIST_SHAPE,  Nk+1),  F_nb   (DIST_SHAPE)
+               F_nt    (DIST_SHAPE,  Nk)  ,  F_nw   (DIST_SHAPE,  Nk)  , &
+               F_nf    (DIST_SHAPE,  Nk)  ,  F_nb   (DIST_SHAPE)
 !
 !
 !implicits
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
-#include "cori.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
@@ -130,92 +128,90 @@
 #include "acid.cdk"
 #include "lam.cdk"
 !
-      integer i, j, k, nij, kminzd
-      real*8  zero, one, xxx, yyy, zzz, p1, p2, p3, p4, qbar
-      parameter( zero=0.d0, one=1.d0 )
+      integer i, j, k, nij, k0t, istat
+      real*8  xxx, yyy, zzz, p1, p2, p3, p4, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
-      real*8 Pbar(DIST_SHAPE,Nk+1)
-      logical finbac
-!*
-      finbac=.false.
-      if ( .not. (F_itr .lt. F_itnlh) )finbac=.true.
+!      real*8 Pbar(DIST_SHAPE,Nk+1)
+      real*8, dimension(:,:,:), allocatable :: Pbar
+!
+      real*8, parameter :: zero=0.d0, one=1.d0
 !     __________________________________________________________________
+!
+      allocate(Pbar(DIST_SHAPE,Nk+1))
 !
       nij = (in - i0 + 1)*(jn - j0 + 1)
 
-      if ( (Cori_cornl_L) .or. (F_itr .lt. F_itnlh) ) &
-         call rpn_comm_xch_halo( F_p  , LDIST_DIM,l_ni,l_nj,G_nk+2, &
-                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
       p1 = Cstv_tau_8*Cstv_RTstr_8/Dcst_grav_8
       p2 = one/Cstv_RTstr_8
-      p3 = one/Dcst_grav_8
+      p3 = Dcst_grav_8*Ver_epsilon_8*Cstv_tau_8*Cstv_tau_8/Cstv_RTstr_8
       p4 = one/Dcst_rayt_8**2  
 
-                         kminzd=2
-      if(Schm_opentop_L) kminzd=k0
+      k0t=k0
+      if(Schm_opentop_L) k0t=k0-1
+
 !
 !$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
+      if ( Schm_opentop_L .and. .not.Lam_acidtest_L ) then
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_p(i,j,k0-1) = Ver_alfat_8 * F_p(i,j,k0) &
+                          + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
+         end do
+         end do
+!$omp enddo
+      endif
 !$omp do
       do j= j0, jn
       do i= i0, in
-         if ( .not.(Lam_acidtest_L.and.Schm_opentop_L) ) then
-            F_p(i,j,k0-1) = Ver_alfat_8 * F_p(i,j,k0) &
-                          + Ver_cst_8*(F_rb(i,j)-F_nb(i,j))
-         endif
          F_p(i,j,l_nk+1)  = Ver_alfas_8 * F_p(i,j,l_nk)  &
-                          - Ver_css_8*(F_rt(i,j,l_nk+1)-F_nt(i,j,l_nk+1)) 
+                          - Ver_css_8*(F_rt(i,j,l_nk)-F_nt(i,j,l_nk)) 
       end do
       end do
 !$omp enddo
 !
 !$omp single
-      call rpn_comm_xch_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+2, &
+      call rpn_comm_xch_halo(F_p,LDIST_DIM,l_ni,l_nj,G_nk+1, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single
 !
 !     Compute U & V
 !     ~~~~~~~~~~~~~
 !
-      if (Cori_cornl_L .or. (finbac.and..not.Cori_cornl_L)) then
 !$omp do
-         do k=k0,l_nk
-            do j= j0, jn
-            do i= i0, l_niu-pil_e
+      do k=k0,l_nk
+         do j= j0, jn
+         do i= i0, l_niu-pil_e
 
-               F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - &
-                           p4*(F_p(i+1,j,k)-F_p(i,j,k)) &
-                             *geomg_invDXu_8(i) )
-            end do
-            end do
-!
-            do j= j0, l_njv-pil_n
-            do i= i0, in
-               F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - &
-                           p4*(F_p(i,j+1,k) - F_p(i,j,k)) &
-                             *geomg_invDYv_8(j) )
-            end do
-            end do
-
-         enddo
+            F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - &
+                        p4*(F_p(i+1,j,k)-F_p(i,j,k)) &
+                          *geomg_invDXu_8(i) )
+         end do
+         end do
+         do j= j0, l_njv-pil_n
+         do i= i0, in
+            F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - &
+                        p4*(F_p(i,j+1,k) - F_p(i,j,k)) &
+                          *geomg_invDYv_8(j) )
+         end do
+         end do
+      enddo
 !$omp enddo
-!
-      endif
 !     
 !     Compute w
 !     ~~~~~~~~~
 !
 !$omp do
-      do k=k0+Schm_notop,l_nk+1
+      do k=k0t,l_nk
          do j= j0, jn
          do i= i0, in
-            Pbar(i,j,k) = Ver_wp_8%t(k)*F_p(i,j,k)+Ver_wm_8%t(k)*F_p(i,j,k-1)
+            Pbar(i,j,k) = Ver_wp_8%t(k)*F_p(i,j,k+1)+Ver_wm_8%t(k)*F_p(i,j,k)
             F_w(i,j,k)  = p1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
-             + Ver_gokt2RT_8 * ( (F_p(i,j,k)-F_p(i,j,k-1))*Ver_idz_8%t(k) &
+             + Ver_gokt2RT_8 * ( (F_p(i,j,k+1)-F_p(i,j,k))*Ver_idz_8%t(k) &
                                      + Dcst_cappa_8 * Pbar(i,j,k) ) )
          end do
          end do
@@ -228,8 +224,8 @@
 !        ~~~~~~~~~
 !
 !        N.B.  Top Boundary condition:
-!                 Closed Top:  F_q(i,j,0) = 0
-!                   Open Top:  F_q(i,j,k0-1) is externally specified
+!                 Closed Top(k0.eq.1):  F_q(i,j,k0) = 0
+!                   Open Top(k0.ne.1):  F_q(i,j,k0-1) is externally specified
 !
          if (Schm_opentop_L) then
             do j= j0, jn
@@ -240,15 +236,15 @@
          endif
 !
 !        Note : we cannot use omp on loop k 
-!               due to vertical dependency F_q(i,j,k-1)
-         do k=k0+Schm_notop,l_nk+1
+!               due to vertical dependency F_q(i,j,k)
+         do k=k0t,l_nk
             zzz = one/(one+Ver_wp_8%t(k)*Ver_dz_8%t(k))
             yyy = (one-Ver_wm_8%t(k)*Ver_dz_8%t(k))*zzz
             xxx = p3*Ver_dz_8%t(k)*zzz
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k) = yyy * F_q(i,j,k-1) &
+               F_q(i,j,k+1) = yyy * F_q(i,j,k) &
                           - xxx * ( F_rw(i,j,k) - F_nw(i,j,k) &
                                   - Cstv_invT_8 *F_w(i,j,k)  )
             end do
@@ -266,8 +262,8 @@
 !$omp do
       do j= j0, jn 
       do i= i0, in 
-         F_s(i,j) = p2*(Ver_wp_8%t(l_nk+1)*F_p(i,j,l_nk+1) &
-                       +Ver_wm_8%t(l_nk+1)*F_p(i,j,l_nk)-F_fis(i,j))
+         F_s(i,j) = p2*(Ver_wp_8%t(l_nk)*F_p(i,j,l_nk+1) &
+                       +Ver_wm_8%t(l_nk)*F_p(i,j,l_nk)-F_fis(i,j))
       end do
       end do
 !$omp enddo
@@ -276,8 +272,8 @@
 !$omp do
          do j= j0, jn 
          do i= i0, in 
-            F_s(i,j) = F_s(i,j) - Ver_wp_8%t(l_nk+1)*F_q(i,j,l_nk+1) &
-                                - Ver_wm_8%t(l_nk+1)*F_q(i,j,l_nk)
+            F_s(i,j) = F_s(i,j) - Ver_wp_8%t(l_nk)*F_q(i,j,l_nk+1) &
+                                - Ver_wm_8%t(l_nk)*F_q(i,j,l_nk)
          end do
          end do
 !$omp enddo
@@ -289,19 +285,19 @@
       if(.not.Schm_autobar_L) then  ! safer for autobar
 !
 !        N.B.  Top Boundary condition:
-!                 Closed Top:  F_zd(i,j,1) = 0
-!                   Open Top:  F_zd(i,j,k0) is computed
+!                 Closed Top(k0.eq.1):  F_zd(i,j,k0-1) = 0
+!                   Open Top(k0.ne.1):  F_zd(i,j,k0-1) is computed
 !
 !$omp do
-         do k=kminzd,l_nk
+         do k=k0t,l_nk-1
             xxx=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy=Ver_gokt2RT_8*Ver_epsilon_8
-            zzz=Ver_b_8%t(k)*Cstv_invT_8
+            zzz=Ver_b_8%t(k+1)*Cstv_invT_8
             if(Schm_autobar_L) zzz=0.d0
             do j= j0, jn 
             do i= i0, in 
                F_zd(i,j,k)=-Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
-                          + xxx * ( F_p(i,j,k)-F_p(i,j,k-1) ) &
+                          + xxx * ( F_p(i,j,k+1)-F_p(i,j,k) ) &
                           - yyy * Pbar(i,j,k) ) &
                           - zzz * F_s(i,j)
             enddo
@@ -311,10 +307,10 @@
 !
          if (.not. Schm_hydro_L) then
 !$omp do
-            do k=kminzd,l_nk
+            do k=k0t,l_nk-1
                do j= j0, jn 
                do i= i0, in 
-                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
                   F_zd(i,j,k)=F_zd(i,j,k)-Cstv_invT_8*qbar
                enddo
                enddo
@@ -328,30 +324,22 @@
 !     ~~~~~~~~~~~
 
 !$omp do
-      do k=k0-1,l_nk
-         if(k.eq.0) then
-            xxx=0.d0
-         else
-            xxx=Cstv_RTstr_8*Ver_b_8%m(k)
-         endif
+      do k=k0t,l_nk
+         xxx=Cstv_RTstr_8*Ver_b_8%m(k)
          do j= j0, jn 
          do i= i0, in          
             F_fip(i,j,k)=F_p(i,j,k)-xxx*F_s(i,j)
          enddo
          enddo
-      enddo
-!$omp enddo
-      if (.not. Schm_hydro_L) then
-!$omp do
-         do k=k0-1,l_nk
+         if (.not. Schm_hydro_L) then
             do j= j0, jn 
             do i= i0, in          
                F_fip(i,j,k)=F_fip(i,j,k)-Cstv_RTstr_8*F_q(i,j,k)       
             enddo
             enddo
+         endif
          enddo
 !$omp enddo
-      endif    
 !
       do j= j0, jn 
       do i= i0, in          
@@ -364,11 +352,11 @@
 !
       if(.not.Schm_autobar_L) then            ! safer for autobar
 !$omp do
-      do k=k0+Schm_notop,l_nk+1
+      do k=k0t,l_nk
          if(.not.Schm_hydro_L) then
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
                ytmp_8(i,j)=-qbar
             enddo
             enddo
@@ -390,37 +378,33 @@
          do j= j0, jn 
          do i= i0, in          
             F_t(i,j,k)=Cstv_Tstr_8*ytmp_8(i,j) &
-                 *(one-xxx*(F_fip(i,j,k)-F_fip(i,j,k-1)))
+                 *(one-xxx*(F_fip(i,j,k+1)-F_fip(i,j,k)))
          enddo
          enddo
       enddo
 !$omp enddo
-      if(Schm_NoTopThL_L)then
 !$omp do
-         do j= j0, jn 
-         do i= i0, in
-            !F_t(i,j,1)=F_t(i,j,2)
-            ! Linear extrapolation
-            F_t(i,j,1)=( (Ver_z_8%t(3)-Ver_z_8%t(1))*F_t(i,j,2) &
-                        -(Ver_z_8%t(2)-Ver_z_8%t(1))*F_t(i,j,3) )/ &
-                         (Ver_z_8%t(3)-Ver_z_8%t(2))             
-         enddo
-         enddo
+      do j= j0, jn 
+      do i= i0, in
+         ! Note : on ecrit dans k = 0 ce qui parait incompatible
+         !        avec la declaration mais cet existe
+         !        Ce code disparaitra quand TT au sera enleve des sorties.
+         F_t(i,j,0)=( (Ver_z_8%t(3)-Ver_z_8%t(1))*F_t(i,j,1) &
+              -(Ver_z_8%t(2)-Ver_z_8%t(1))*F_t(i,j,2) )/ &
+              (Ver_z_8%t(3)-Ver_z_8%t(2))             
+      enddo
+      enddo
 !$omp enddo
-      endif
       endif
 !
       if(Schm_opentop_L) then
-!     Note for Lam_acidtest_L: F_fip will not validate for levels k0-1 to 1 if
-!                              physics is not called but rest of model will validate
-!                              
 !$omp do 
          do j=j0,jn
-            do k= k0-1,1,-1
+            do k= k0-2,1,-1
             yyy=Cstv_RTstr_8*Ver_dz_8%t(k)/Cstv_Tstr_8
             do i=i0,in
                xxx=one+Ver_dbdz_8%t(k)*F_s(i,j)
-               F_fip(i,j,k-1)=F_fip(i,j,k)+yyy*(F_t(i,j,k)*xxx-Cstv_Tstr_8)
+               F_fip(i,j,k)=F_fip(i,j,k+1)+yyy*(F_t(i,j,k)*xxx-Cstv_Tstr_8)
             end do
             end do
          end do
@@ -428,7 +412,8 @@
       endif
 !
 !$omp end parallel
-
+!
+      deallocate(Pbar)
 !     __________________________________________________________________
 !
       return

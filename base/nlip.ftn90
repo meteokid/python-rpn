@@ -19,9 +19,9 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine nlip_3 ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb, &
-                          F_u  , F_v  , F_t    , F_s  , F_q  , F_zd  ,F_fip, &
-                          F_rp , F_rc , F_BsPq , F_mu , F_fis, &
+      subroutine nlip_4 ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf , &
+                          F_u  , F_v  , F_t    , F_s  , F_q  ,        &
+                          F_rp , F_rc , F_fis  , F_nb , &
                           DIST_DIM, Nk )
 !
       implicit none
@@ -29,15 +29,13 @@
 !
       integer DIST_DIM, Nk
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &
-              F_nt   (DIST_SHAPE,Nk+1)  ,F_nc   (DIST_SHAPE,Nk)    , &
-              F_nw   (DIST_SHAPE,Nk+1)  ,F_nf   (DIST_SHAPE,Nk+1)  , &
-              F_nb   (DIST_SHAPE)       ,F_zd   (DIST_SHAPE,Nk+1)  , &
+              F_nt   (DIST_SHAPE,Nk)    ,F_nc   (DIST_SHAPE,Nk)    , &
+              F_nw   (DIST_SHAPE,Nk)    ,F_nf   (DIST_SHAPE,Nk)    , &
               F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    , &
-              F_t    (DIST_SHAPE,Nk+1)  ,F_s    (DIST_SHAPE)       , &
-              F_q    (DIST_SHAPE,0:Nk+1),F_fip  (DIST_SHAPE,0:Nk+1), &
+              F_t    (DIST_SHAPE,Nk)    ,F_s    (DIST_SHAPE)       , &
+              F_q    (DIST_SHAPE,Nk+1)  ,                            &
               F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
-              F_BsPq (DIST_SHAPE,0:Nk+1),F_mu   (DIST_SHAPE,Nk+1)  , &
-              F_fis  (DIST_SHAPE)
+              F_fis  (DIST_SHAPE)       ,F_nb   (DIST_SHAPE)
 !
 !author
 !     Alain Patoine - split from nli.ftn
@@ -67,49 +65,47 @@
 #include "ptopo.cdk"
 
 !
-      integer i02, in2, j02, jn2, k0
+      integer i0, in, j0, jn, k0
 
 !*
 !     __________________________________________________________________
 !
 
-      i02=1+pil_w
-      in2=l_ni-pil_e
-      j02=1+pil_s 
-      jn2=l_nj-pil_n 
+      i0=1+pil_w
+      in=l_ni-pil_e
+      j0=1+pil_s 
+      jn=l_nj-pil_n 
 
       k0=1+Lam_gbpil_T
  
-      call nlip_2_2     ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb, &
-                          F_u  , F_v  , F_t    , F_s  , F_q  , F_zd  ,F_fip, &
-                          F_rp , F_rc , F_BsPq , F_mu , F_fis,&
+      call nlip_4_2     ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
+                          F_u  , F_v  , F_t    , F_s  , F_q  ,         &
+                          F_rp , F_rc , F_fis, F_nb  , &
                           DIST_DIM, Nk, &
-                          i02,j02,in2,jn2,k0 )
+                          i0,j0,in,jn,k0 )
       return
       end
 !
 ! 2nd stage added for OpenMP
 !
-      subroutine nlip_2_2(F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nb, &
-                          F_u  , F_v  , F_t    , F_s  , F_q  , F_zd  ,F_fip, &
-                          F_rp , F_rc , F_BsPq , F_mu , F_fis,&
+      subroutine nlip_4_2(F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
+                          F_u  , F_v  , F_t    , F_s  , F_q  ,         &
+                          F_rp , F_rc , F_fis, F_nb  , &
                           DIST_DIM, Nk, &
-                          i02,j02,in2,jn2,k0 )
+                          i0,j0,in,jn,k0 )
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk,i02,j02,in2,jn2,k0
+      integer DIST_DIM, Nk,i0,j0,in,jn,k0
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &
-              F_nt   (DIST_SHAPE,Nk+1)  ,F_nc   (DIST_SHAPE,Nk)    , &
-              F_nw   (DIST_SHAPE,Nk+1)  ,F_nf   (DIST_SHAPE,Nk+1)  , &
-              F_nb   (DIST_SHAPE)       ,F_zd   (DIST_SHAPE,Nk+1)  , &
+              F_nt   (DIST_SHAPE,Nk)    ,F_nc   (DIST_SHAPE,Nk)    , &
+              F_nw   (DIST_SHAPE,Nk)    ,F_nf   (DIST_SHAPE,Nk)    , &
               F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    , &
-              F_t    (DIST_SHAPE,Nk+1)  ,F_s    (DIST_SHAPE)       , &
-              F_q    (DIST_SHAPE,0:Nk+1),F_fip  (DIST_SHAPE,0:Nk+1), &
+              F_t    (DIST_SHAPE,Nk)    ,F_s    (DIST_SHAPE)       , &
+              F_q    (DIST_SHAPE,Nk+1)  ,                            &
               F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
-              F_BsPq (DIST_SHAPE,0:Nk+1),F_mu   (DIST_SHAPE,Nk+1)  , &
-              F_fis  (DIST_SHAPE)
+              F_fis  (DIST_SHAPE)       ,F_nb   (DIST_SHAPE)
 !
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -123,40 +119,33 @@
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "that.cdk"
 #include "acid.cdk"
-!      common/xiln/iln
-!      integer iln
 !
-      integer i, j, k, kk, i0, i0u, in, inu, j0, j0v, jn, jnv, nij  
-      real    ndiv             ,w_nt
-      real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,c4,c5,qbar, &
-              afis(l_ni,l_nj,l_nk), &
-              one, w1,w2,w3, barz, barzp, wk2(DIST_SHAPE)
+      integer i, j, k, km, i0u, inu, j0v, jnv, nij, k0t
+      real    w_nt
+      real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,c4,c5,qbar,ndiv, &
+              w1,w2,w3,w4,barz, barzp, wk2(DIST_SHAPE)
 !
-      parameter ( one=1.d0 )
+      real*8, parameter :: zero=0.d0, one=1.d0
 !
-      real*8, dimension(i02:in2,j02:jn2) :: xtmp_8, ytmp_8
-      real qtop(DIST_SHAPE)
+      real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
+      real, dimension(:,:,:), allocatable :: BsPq, FI, MU
+      
 !
 ! --------------------------------------------------------------------
 !
-      call rpn_comm_xch_halo( F_t   , LDIST_DIM,l_ni,l_nj,G_nk+1, &
+      allocate(BsPq(DIST_SHAPE,l_nk+1), FI(DIST_SHAPE,l_nk+1), MU(DIST_SHAPE,l_nk))
+!
+      call rpn_comm_xch_halo( F_u   ,LDIST_DIM,l_niu,l_nj,G_nk, &
+           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_v   ,LDIST_DIM,l_ni,l_njv,G_nk, &
+           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_t   , LDIST_DIM,l_ni,l_nj,G_nk, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_BsPq, LDIST_DIM,l_ni,l_nj,G_nk+2, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_zd  , LDIST_DIM,l_ni,l_nj,G_nk+1, &
+      call rpn_comm_xch_halo( F_s   , LDIST_DIM,l_ni,l_nj,1, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not. Schm_hydro_L) then
-        call rpn_comm_xch_halo( F_mu,LDIST_DIM,l_ni,l_nj,G_nk+1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-        call rpn_comm_xch_halo( F_fip,LDIST_DIM,l_ni,l_nj,G_nk+2, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      endif
-      if (Cori_cornl_L) then
-        call rpn_comm_xch_halo( F_u ,LDIST_DIM,l_niu,l_nj,G_nk, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-        call rpn_comm_xch_halo( F_v ,LDIST_DIM,l_ni,l_njv,G_nk, &
+        call rpn_comm_xch_halo( F_q,LDIST_DIM,l_ni,l_nj,G_nk+1, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 !
@@ -173,35 +162,40 @@
       c3 = Dcst_rayt_8**2 * Ver_epsilon_8
       c4 = one / Cstv_RTstr_8
       c5 = Dcst_cappa_8 / Cstv_RTstr_8
-!
 
+      k0t=k0
+      if(Schm_opentop_L) k0t=k0-1
+      nij = (in - i0 +1)*(jn - j0 +1)
+!
 !
 !***********************************************************
 ! The nonlinear deviation of horizontal momentum equations *
 !***********************************************************
 !
 !     Indices
-      i0  = 1+pil_w
-      i0u = 1+pil_w 
-      in  = l_ni -pil_e
+      i0u = i0-1
+      j0v = j0-1
+      if(.not.Grd_yinyang_L) then
+         if (l_west .and. G_lam) i0u=i0
+         if (l_south)            j0v=j0
+      endif
       inu = l_niu-pil_e
-      j0  = 1+pil_s
-      j0v = 1+pil_s
-      jn  = l_nj -pil_n
       jnv = l_njv-pil_n
-      nij = (in - i0 +1)*(jn - j0 +1)
       if (Grd_yinyang_L) then
-          if (l_west)  i0u = i0u-1 
           if (l_east)  inu = inu+1
-          if (l_south) j0v = j0v-1
           if (l_north) jnv = jnv+1
       endif
 !
-!$omp parallel private(kk,xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
-!$omp w1,w2,w3,qbar)
+      call diag_var(BsPq,MU,F_s,F_q,     i0u,inu+1,j0v,jnv+1,k0t,l_nk)
+!
+      call diag_fip(FI,F_s,F_t,F_q,F_fis,i0u,inu+1,j0v,jnv+1,    l_nk)
+
+!$omp parallel private(km,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
+!$omp w1,w2,w3,w4,qbar)
+!
 !$omp do
       do 100 k=k0,l_nk
-      kk=max(k,1+Schm_notop)
+      km=max(k-1,1)
 !
 !     Compute Nu for hydrostatic version 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,44 +204,41 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       do j= j0, jn
       do i= i0u, inu
-         barz  = Ver_wp_8%m(k)*F_t(i  ,j,k+1) &
-                +Ver_wm_8%m(k)*F_t(i  ,j,kk)
-         barzp = Ver_wp_8%m(k)*F_t(i+1,j,k+1) &
-                +Ver_wm_8%m(k)*F_t(i+1,j,kk)
+         barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
+                +Ver_wm_8%m(k)*F_t(i  ,j,km)
+         barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
+                +Ver_wm_8%m(k)*F_t(i+1,j,km)
          w2 = ( one - intuv_c0xxu_8(i) ) * barz &
                     + intuv_c0xxu_8(i)   * barzp - Cstv_tstr_8
-         w3 = ( F_BsPq(i+1,j,k) - F_BsPq(i,j,k) ) * Geomg_invDXu_8(i)
+         w3 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXu_8(i)
          F_nu(i,j,k) = c1 * ( w2 * w3 )
       end do
       end do
 !
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,1)
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,1)
 !
-      if (Cori_cornl_L) then
+!     V barY stored in wk2
+!     ~~~~~~~~~~~~~~~~~~~~
+      do j = j0, jn
+      do i = i0u-1, inu+2
+         wk2(i,j)  = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k)  &
+                   + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k)  &
+                   + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k)  &
+                   + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)          
+      end do
+      end do
 
-!        V barY stored in wk2
-!        ~~~~~~~~~~~~~~~~~~~~
-         do j = j0, jn
-         do i = i0u-1, inu+2
-            wk2(i,j)  = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k)  &
-                      + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k)  &
-                      + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k)  &
-                      + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)          
-         end do
-         end do
-
-!        Coriolis term: - f * V barXY
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= j0, jn
-         do i= i0u, inu
-            F_nu(i,j,k) = F_nu(i,j,k) - Cori_fcoru_8(i,j) * &
-           (inuvl_wxxu3_8(i,1)*wk2(i-1,j)+inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-          + inuvl_wxxu3_8(i,3)*wk2(i+1,j)+inuvl_wxxu3_8(i,4)*wk2(i+2,j))
-         end do
-         end do
-      endif
+!     Coriolis term: - f * V barXY
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      do j= j0, jn
+      do i= i0u, inu
+         F_nu(i,j,k) = F_nu(i,j,k) - Cori_fcoru_8(i,j) * &
+               (inuvl_wxxu3_8(i,1)*wk2(i-1,j)+inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
+              + inuvl_wxxu3_8(i,3)*wk2(i+1,j)+inuvl_wxxu3_8(i,4)*wk2(i+2,j))
+      end do
+      end do
 !
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,2)
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,2)
 !
 !     Compute Nv for hydrostatic version 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,41 +247,37 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       do j= j0v, jnv
       do i= i0, in
-         barz  = Ver_wp_8%m(k)*F_t(i,j  ,k+1) &
-                +Ver_wm_8%m(k)*F_t(i,j  ,kk)
-         barzp = Ver_wp_8%m(k)*F_t(i,j+1,k+1) &
-                +Ver_wm_8%m(k)*F_t(i,j+1,kk)
+         barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
+                +Ver_wm_8%m(k)*F_t(i,j  ,km)
+         barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
+                +Ver_wm_8%m(k)*F_t(i,j+1,km)
          w2 = ( one - intuv_c0yyv_8(j) ) * barz &
                     + intuv_c0yyv_8(j)   * barzp - Cstv_tstr_8
-         w3 = ( F_BsPq(i,j+1,k) - F_BsPq(i,j,k) ) * Geomg_invDYv_8(j)
+         w3 = ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * Geomg_invDYv_8(j)
          F_nv(i,j,k) = c1 * ( w2 * w3 )
       end do
       end do
 !
-      if (Cori_cornl_L) then
+!     U barX stored in wk2
+!     ~~~~~~~~~~~~~~~~~~~~
+      do j = j0v-1, jnv+2
+      do i = i0, in
+         wk2(i,j)  = inuvl_wxux3_8(i,1)*F_u(i-2,j,k)  &
+                   + inuvl_wxux3_8(i,2)*F_u(i-1,j,k)  &
+                   + inuvl_wxux3_8(i,3)*F_u(i  ,j,k)  &
+                   + inuvl_wxux3_8(i,4)*F_u(i+1,j,k) 
+      end do
+      end do
 
-!        U barX stored in wk2
-!        ~~~~~~~~~~~~~~~~~~~~
-         do j = j0v-1, jnv+2
-         do i = i0, in
-            wk2(i,j)  = inuvl_wxux3_8(i,1)*F_u(i-2,j,k)  &
-                      + inuvl_wxux3_8(i,2)*F_u(i-1,j,k)  &
-                      + inuvl_wxux3_8(i,3)*F_u(i  ,j,k)  &
-                      + inuvl_wxux3_8(i,4)*F_u(i+1,j,k) 
-         end do
-         end do
-
-!        Coriolis term: + f * U barXY
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j = j0v, jnv
-         do i = i0, in
-            F_nv(i,j,k) =   F_nv(i,j,k) + Cori_fcorv_8(i,j) * &
-           (inuvl_wyyv3_8(j,1)*wk2(i,j-1)+inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
-          + inuvl_wyyv3_8(j,3)*wk2(i,j+1)+inuvl_wyyv3_8(j,4)*wk2(i,j+2))
-         end do
-         end do
-!
-      endif
+!     Coriolis term: + f * U barXY
+!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      do j = j0v, jnv
+      do i = i0, in
+         F_nv(i,j,k) =   F_nv(i,j,k) + Cori_fcorv_8(i,j) * &
+               (inuvl_wyyv3_8(j,1)*wk2(i,j-1)+inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
+              + inuvl_wyyv3_8(j,3)*wk2(i,j+1)+inuvl_wyyv3_8(j,4)*wk2(i,j+2))
+      end do
+      end do
 !
       if (.not. Schm_hydro_L) then
 !
@@ -301,18 +288,18 @@
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0, jn
          do i= i0u, inu
-            barz  = Ver_wp_8%m(k)*F_mu(i  ,j,k+1) &
-                   +Ver_wm_8%m(k)*F_mu(i  ,j,kk)
-            barzp = Ver_wp_8%m(k)*F_mu(i+1,j,k+1) &
-                   +Ver_wm_8%m(k)*F_mu(i+1,j,kk)
+            barz  = Ver_wp_8%m(k)*MU(i  ,j,k) &
+                   +Ver_wm_8%m(k)*MU(i  ,j,km)
+            barzp = Ver_wp_8%m(k)*MU(i+1,j,k) &
+                   +Ver_wm_8%m(k)*MU(i+1,j,km)
             w1 = ( one - intuv_c0xxu_8(i) ) * barz &
                        + intuv_c0xxu_8(i)   * barzp
-            w2 = ( F_fip(i+1,j,k)-F_fip(i,j,k) ) * Geomg_invDXu_8(i)
+            w2 = ( FI(i+1,j,k)-FI(i,j,k) ) * Geomg_invDXu_8(i)
             F_nu(i,j,k) = F_nu(i,j,k) + c2 * w1 * w2
          end do
          end do
 !
-         if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,3)
+         if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,3)
 !
 !        Add nonhydrostatic contributions to Nv 
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,13 +308,13 @@
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
          do j= j0v, jnv
          do i= i0, in            
-            barz  = Ver_wp_8%m(k)*F_mu(i,j  ,k+1) &
-                   +Ver_wm_8%m(k)*F_mu(i,j  ,kk)
-            barzp = Ver_wp_8%m(k)*F_mu(i,j+1,k+1) &
-                   +Ver_wm_8%m(k)*F_mu(i,j+1,kk)
+            barz  = Ver_wp_8%m(k)*MU(i,j  ,k) &
+                   +Ver_wm_8%m(k)*MU(i,j  ,km)
+            barzp = Ver_wp_8%m(k)*MU(i,j+1,k) &
+                   +Ver_wm_8%m(k)*MU(i,j+1,km)
             w1 = ( one - intuv_c0yyv_8(j) ) * barz &
                        + intuv_c0yyv_8(j)   * barzp
-            w2 = ( F_fip(i,j+1,k) - F_fip(i,j,k) ) * Geomg_invDYv_8(j)
+            w2 = ( FI(i,j+1,k) - FI(i,j,k) ) * Geomg_invDYv_8(j)
             F_nv(i,j,k) = F_nv(i,j,k) + c2 * w1 * w2
          end do
          end do
@@ -345,7 +332,7 @@
          if (l_west) then
 !$omp do
              do k=1,l_nk
-             do j=1+pil_s,l_nj-pil_n
+             do j=j0,jn
                 F_nu(pil_w,j,k) = 0.
              end do
              enddo
@@ -354,7 +341,7 @@
          if (l_east) then
 !$omp do
             do k=1,l_nk
-            do j=1+pil_s,l_nj-pil_n
+            do j=j0,jn
                F_nu(l_ni-pil_e,j,k) = 0.
             end do
             enddo
@@ -369,7 +356,7 @@
       if (l_south) then
 !$omp do
          do k=1,l_nk
-         do i=1+pil_w,l_ni-pil_e
+         do i=i0,in
             F_nv(i,pil_s,k) = 0.
          end do
          enddo
@@ -378,7 +365,7 @@
       if (l_north) then
 !$omp do
          do k=1,l_nk
-         do i=1+pil_w,l_ni-pil_e
+         do i=i0,in
             F_nv(i,l_nj-pil_n,k) = 0.
          end do
          enddo
@@ -386,34 +373,15 @@
       endif
 !
     endif
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,F_BsPq,F_nu,k,4)
+      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,4)
 !
-!
-!********************************************************
-! The nonlinear deviation of the thermodynamic equation *
-!********************************************************
-!
-      if(Schm_MTeul_L) then
 !$omp do
-      do k=k0,l_nk
-         do j = j0, jn
-         do i = i0, in
-            afis(i,j,k) = &
-             (F_u(i  ,j,k)*(F_fis(i+1,j)-F_fis(i,j))*geomg_invDXu_8(i) &
-            + F_u(i-1,j,k)*(F_fis(i,j)-F_fis(i-1,j))*geomg_invDXu_8(i-1) &
-            + F_v(i,j  ,k)*(F_fis(i,j+1)-F_fis(i,j))*geomg_invDYv_8(j) &
-            + F_v(i,j-1,k)*(F_fis(i,j)-F_fis(i,j-1))*geomg_invDYv_8(j-1)) &
-            * 0.5d0 * geomg_invcy2_8(j)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-      endif
+      do k=k0t,l_nk
 !
-!     Compute Nt'
-!     ~~~~~~~~~~
-!$omp do
-      do k=k0+Schm_notop,l_nk+1
+!**********************************
+!   The nonlinear deviation of    *
+! the thermodynamic equation: Nt' *
+!**********************************
 !
          w1 = one / Cstv_tstr_8
          do j= j0, jn
@@ -423,7 +391,7 @@
          end do
          call vlog ( ytmp_8, xtmp_8, nij )
 !
-         if(Schm_opentop_L.and.k.eq.k0) then
+         if(Schm_opentop_L.and.k.eq.k0t) then
             do j= j0, jn
             do i= i0, in
                F_nb(i,j) = Cstv_invT_8*ytmp_8(i,j)
@@ -434,35 +402,20 @@
          w1 = Ver_idz_8%t(k) / Cstv_RTstr_8
          do j= j0, jn
          do i= i0, in
-            w2 = ytmp_8(i,j) + w1 * ( F_fip(i,j,k) - F_fip(i,j,k-1) ) &
+            w2 = ytmp_8(i,j) + w1 * ( FI(i,j,k+1) - FI(i,j,k) ) &
                                    + Ver_dbdz_8%t(k) * F_s(i,j)
-            F_nt(i,j,k) = Cstv_invT_8 * ( w2 - ln_that%t(k) ) + F_zd(i,j,k)*dln_that%t(k)
+!           Compute Nt'
+!           ~~~~~~~~~~
+            F_nt(i,j,k) = Cstv_invT_8 * w2
             F_nf(i,j,k) = 0.0
          end do
          end do
 !
-         if(Schm_MTeul_L) then
-            do j= j0, jn
-            do i= i0, in
-               barz = Cstv_invT_8*F_fis(i,j) - &
-                      (Ver_wp_8%t(k)*afis(i,j,min(k,l_nk)) &
-                      +Ver_wm_8%t(k)*afis(i,j,max(k-1,1)))
-               F_nf(i,j,k) = F_nf(i,j,k) - barz
-               F_nt(i,j,k) = F_nt(i,j,k) - barz*c5
-            end do
-            end do
-         endif
-!
-      end do
-!$omp enddo
-!
-!************************************
-! The nonlinear deviations of the w *
-! and calculation of Nt" and Nf"    *
-!************************************
-!
-!$omp do
-      do k=k0+Schm_notop,l_nk+1
+!**************************************
+!     The nonlinear deviation of      *
+! the vertical momentum equation: Nw' *
+!   and calculation of Nt" and Nf"    *
+!**************************************
 !
          if (.not.Schm_hydro_L) then
 !           ~~~~~~~~~~~~~~~
@@ -470,11 +423,11 @@
 !           ~~~~~~~~~~~~~~~
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k)+Ver_wm_8%t(k)*F_q(i,j,k-1))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
 !              Compute Nw'
 !              ~~~~~~~~~~~
-               F_nw(i,j,k) = - Dcst_grav_8 * ( F_mu  (i,j,k) &
-                      - Ver_idz_8%t(k) * ( F_q(i,j,k) - F_q(i,j,k-1) ) - qbar )
+               F_nw(i,j,k) = - Dcst_grav_8 * ( MU  (i,j,k) &
+                      - Ver_idz_8%t(k) * ( F_q(i,j,k+1) - F_q(i,j,k) ) - qbar )
               !Finish computing Nt'
                ~~~~~~~~~~~~~~~~~~~~
                F_nt(i,j,k) = F_nt(i,j,k) - Cstv_invT_8 * qbar
@@ -499,40 +452,14 @@
 !
       end do
 !$omp enddo
-      if(Schm_NoTopThL_L)then
-!$omp do  
-         do j= j0, jn
-         do i= i0, in
-            F_nt(i,j,1) = 0.0
-            F_nf(i,j,1) = 0.0
-         end do
-         end do
-!$omp enddo
-         if (.not.Schm_hydro_L) then
-!$omp do  
-            do j= j0, jn
-            do i= i0, in
-               F_nw(i,j,1) = 0.0
-            end do
-            end do
-!$omp enddo
-         endif
-      endif
-!$omp end parallel
 !
+!***************************************
+!     The nonlinear deviation of       *
+!   the continuity equation: Nc and    *
+! the horizontal Divergence of (Nu,Nv) *
+!   combined with Nc (stored in Nc)    *
+!***************************************
 !
-!*******************************************************************
-! The nonlinear deviation of the continuity equation               *
-! Horizontal Divergence of (Nu,Nv) combined with Nc (stored in Nc) *
-!*******************************************************************
-!
-      call rpn_comm_xch_halo( F_nu, LDIST_DIM,l_niu,l_nj,G_nk, &
-                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_nv, LDIST_DIM,l_ni,l_njv,G_nk, &
-                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-!
-!$omp parallel private(xtmp_8, ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
-!$omp w1,w2,w3,qbar)
 !$omp do
       do k=k0,l_nk
 !
@@ -548,27 +475,22 @@
 !
          do j = j0, jn
          do i = i0, in
-            w1 = ytmp_8(i,j) - Ver_dbdz_8%m(k) * F_s(i,j)
-            F_nc(i,j,k) = Cstv_invT_8 * w1
+            F_nc(i,j,k) = Cstv_invT_8 * &
+                          ( ytmp_8(i,j) - Ver_dbdz_8%m(k) * F_s(i,j) )
          enddo
          enddo
-!
-         if(Schm_MTeul_L) then
-            do j = j0, jn
-            do i = i0, in
-               F_nc(i,j,k) = F_nc(i,j,k) + c4*(Cstv_invT_8*F_fis(i,j)- afis(i,j,k))
-            enddo
-            enddo
-         endif
 !
          if(.not.Schm_hydro_L) then
-             do j= j0,jn
-             do i= i0,in
-                F_nc(i,j,k) = F_nc(i,j,k) - b1 * &
-                            ( Ver_wp_8%m(k) * F_nw(i,j,k+1) &
-                            + Ver_wm_8%m(k) * F_nw(i,j,k  ) )
-             end do
-             end do
+         km=max(k-1,1)
+         w4=Ver_wm_8%m(k)
+         if(k.eq.1) w4=zero
+            do j= j0,jn
+            do i= i0,in
+               F_nc(i,j,k) = F_nc(i,j,k) - b1 * &
+                             ( Ver_wp_8%m(k) * F_nw(i,j,k ) &
+                             +      w4       * F_nw(i,j,km) )
+            end do
+            end do
          endif
 !
 !        Compute Nc'
@@ -582,9 +504,9 @@
             F_nc(i,j,k) = ndiv      - Cstv_invT_8 * F_nc(i,j,k)
          end do
          end do
-!
       end do
 !$omp enddo
+!
 !
 !**********************************************************
 ! The full contributions to the RHS of Helmholtz equation * 
@@ -597,23 +519,24 @@
       do k=k0,l_nk
          w1=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
          w2=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
-         do j= j0, jn 
+         w3=c3*Ver_dz_8%m(k)
+         w4=Ver_wm_8%m(k)
+         km=max(k-1,1)
+         if(k.eq.1)then
+            w2=zero
+            w4=zero
+         endif
+         do j= j0, jn
          do i= i0, in
             F_rp(i,j,k) = Dcst_rayt_8**2 * ( F_rc(i,j,k) &
-                             - Ver_dz_8%m(k) * F_nc(i,j,k) &
-                             + w1 * F_nt(i,j,k+1) - w2 * F_nt(i,j,k) )
-         end do
-         end do
-         if (.not. Schm_hydro_L) then    
-            w3=c3*Ver_dz_8%m(k)
-            do j= j0, jn 
-            do i= i0, in
-               F_rp(i,j,k) = F_rp(i,j,k) + w3 * &
-                                ( Ver_wp_8%m(k) * F_nf(i,j,k+1) &
-                                + Ver_wm_8%m(k) * F_nf(i,j,k  ) )
-            end do
-            end do
-         endif
+                 - Ver_dz_8%m(k) * F_nc(i,j,k) &
+                 + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km) )
+            
+            F_rp(i,j,k) = F_rp(i,j,k) &
+                 + w3 * ( Ver_wp_8%m(k) * F_nf(i,j,k  ) &
+                         +    w4        * F_nf(i,j,km ) )
+         enddo
+         enddo
       enddo
 !$omp enddo
 !
@@ -621,27 +544,13 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
       if(Schm_opentop_L) then
-!$omp do
-         do k=1,k0-1
-         do j= j0, jn
-         do i= i0, in
-            F_rp(i,j,k) = 0.0
-         end do
-         end do
-         end do
-!$omp enddo
+         F_rp(:,:,1:(k0-1)) = 0.0
 !$omp do
          do j= j0, jn
          do i= i0, in
-             F_nb(i,j) = F_nt(i,j,k0)-b3*F_nb(i,j)+b4*F_t(i,j,k0)
-         end do
-         end do
-!$omp enddo
-      else
-!$omp do
-         do j= j0, jn
-         do i= i0, in
-             F_nb(i,j) = F_nt(i,j,k0)
+            F_nb(i,j)    = F_nt(i,j,k0-1)-b3*F_nb(i,j)+b4*F_t(i,j,k0-1)
+            F_rp(i,j,k0) = F_rp(i,j,k0) &
+                         + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
          end do
          end do
 !$omp enddo
@@ -650,16 +559,16 @@
 !$omp do
       do j= j0, jn 
       do i= i0, in
-         F_rp(i,j,k0)   = F_rp(i,j,k0) &
-                        + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
          F_rp(i,j,l_nk) = F_rp(i,j,l_nk) &
-                        - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk+1)
+                        - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk)
       end do
       end do
 !$omp enddo
 !$omp end parallel
 !
 !     __________________________________________________________________
+!
+      deallocate(BsPq,FI,MU)
 !
       return
       end

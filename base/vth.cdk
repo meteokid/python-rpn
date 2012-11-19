@@ -35,13 +35,6 @@
       real, pointer, dimension (:    ) :: ycth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
       real, pointer, dimension (:    ) :: zcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
 !
-      real, pointer, dimension (:    ) :: xth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-      real, pointer, dimension (:    ) :: yth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-      real, pointer, dimension (:    ) :: zth_thermo  => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-      real, pointer, dimension (:    ) :: xcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-      real, pointer, dimension (:    ) :: ycth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-      real, pointer, dimension (:    ) :: zcth_thermo => null() ! effective dimensions are (l_ni * l_nj * (l_nk+1))
-!
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
       integer, parameter :: GMM_MAXNAMELENGTH    =  32
@@ -51,12 +44,7 @@
       character(len=GMM_MAXNAMELENGTH) :: gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
       character(len=GMM_MAXNAMELENGTH) :: gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
 !
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s
-!
       common /vth_n_gmm / gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
       common /vth_n_gmm / gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
       common /vth_n_gmm / gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
 !
-      common /vth_n_gmm/ gmmk_xth_thermo_s , gmmk_yth_thermo_s , gmmk_zth_thermo_s
-      common /vth_n_gmm/ gmmk_xcth_thermo_s, gmmk_ycth_thermo_s, gmmk_zcth_thermo_s

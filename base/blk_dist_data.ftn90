@@ -19,8 +19,8 @@
       implicit none
 #include <arch_specific.hf>
 
-      character* (*) F_datev, trname_a(F_ntra)
       integer F_nga, F_nka_m, F_nka_t, F_nkgz, F_nvar, F_ntra, F_unf,F_err
+      character* (*) F_datev, trname_a(F_ntra)
       real  uun (F_nga,F_nka_m), vvn(F_nga,F_nka_m  ), zdn(F_nga,F_nka_t-1), &
             ttn (F_nga,F_nka_t), qqn(F_nga,F_nka_m+1), wwn(F_nga,F_nka_t-1), &
             meqn(F_nga,F_nkgz ), trn(F_nga,F_nka_t,F_ntra), ssqn(F_nga)

@@ -232,7 +232,7 @@
           enddo
           enddo
 !
-          fistr_top_8=Ver_fistr_8%m(0)
+          fistr_top_8=-Cstv_RTstr_8*(Cstv_Ztop_8-Cstv_Zsrf_8)
           do j=1,l_nj
           do i=1,l_ni
 !            Reduce size of the mountains when Shallow water

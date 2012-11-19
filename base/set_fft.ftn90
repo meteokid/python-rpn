@@ -33,6 +33,7 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "fft.cdk"
+#include "hzd.cdk"
 #include "sol.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
@@ -42,6 +43,7 @@
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
       Fft_fast_L = .false.
+      if ((Sol_type_S.ne.'DIRECT').and.(Hzd_type_S.ne.'HO_IMP')) goto 999
 !
 !C       1.    test if grid is uniform in x
 !              ----------------------------

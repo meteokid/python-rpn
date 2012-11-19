@@ -40,10 +40,10 @@
 #include "ptopo.cdk"
 #include "lam.cdk"
 !
-      integer  decomp
-      external decomp
+      logical  decomp2
+      external decomp2
 
-      integer err,ierr,ierrx,ierry
+      integer err,ierr
 !
 !-------------------------------------------------------------------
 !
@@ -92,27 +92,16 @@
 
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
 !
-      ierrx= decomp (G_ni,l_minx,l_maxx,l_ni,G_lnimax, &
-                  G_halox,l_i0,.true. ,.true., F_npex, F_checkparti_L )
-      ierry= decomp (G_nj,l_miny,l_maxy,l_nj,G_lnjmax, &
-                  G_haloy,l_j0,.false.,.true., F_npey, F_checkparti_L )
-      ierr=0
-      if ((ierrx.lt.0).or.(ierry.lt.0)) ierr=-1
-
-      if ( l_ni.lt.(Grd_extension+1) ) then
-         if (Lun_out.gt.0) write (Lun_out,1001) 'X','l_ni',Grd_extension+1
-         ierr=-1
-      endif
-      if ( l_nj.lt.(Grd_extension+1) ) then
-         if (Lun_out.gt.0) write (Lun_out,1001) 'Y','l_nj',Grd_extension+1
-         ierr=-1
-      endif
-
+      ierr = -1
+      if (decomp2 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true., &
+                   F_npex, (Grd_extension+1), F_checkparti_L ) .and.             &
+          decomp2 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true., &
+                   F_npey, (Grd_extension+1), F_checkparti_L )) ierr = 0
       if  (Lun_out.gt.0) then
          if (ierr.lt.0)  then
-            print*, 'ILLEGAL DOMAIN PARTITIONING'
+            write(lun_out,*) 'DOMAIN_DECOMP: ILLEGAL DOMAIN PARTITIONING'
          else
-            print*, 'PARTITIONING is OK'
+            write(lun_out,*) 'DOMAIN_DECOMP: PARTITIONING is OK'
          endif
       endif
 !
@@ -129,7 +118,6 @@
 !
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
                2(i6,' in ',i6,' subdomains',5x)/)
- 1001 format (/' PARTITIONNING in ',a, ' is illegal: ',a,' lesser than ',i4/)
 !
 !-------------------------------------------------------------------
 !

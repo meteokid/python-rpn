@@ -40,6 +40,8 @@
 #include "glb_ld.cdk"
 #include "bcsgrds.cdk"
 #include "vt0.cdk"
+#include "vtx.cdk"
+#include "p_geof.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"
 #include "lam.cdk"
@@ -76,6 +78,8 @@
          istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
          istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
       endif
+      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
+      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
 !
       if (l_north) then
          do k=1,G_nk+1
@@ -310,6 +314,8 @@
          endif
       enddo
 !
+      call diag_fip(fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2), &
+           qt0(l_minx,l_miny,1), fis0, LDIST_DIM, G_nk)
 !----------------------------------------------------------------------
  1000 format (/,19('#'),' NEST_BCS STAT ',i6,1X,19('#'))
  1001 format(3X,'NEST Boundary ConditionS: (S/R NEST_BCS)')

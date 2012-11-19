@@ -226,7 +226,7 @@
               elseif (keylist(i)(1:4)=='UTND'.or.keylist(i)(1:4)=='VTND') then
 ! UTND,VTND are on momentum levels
                  istat = gmm_get(keylist(i),tr3,tmp_meta)
-                 call ecris_fst2(tr3(:,:,1+Schm_notop:), l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+                 call ecris_fst2(tr3(l_minx,l_miny,2), l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                       keylist(i),1.0,0.0,Level_kind_ip1,tmp_meta%l(3)%high, &
                       indo,nko,Outd_nbit(ii,set) )
 !

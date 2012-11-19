@@ -62,13 +62,11 @@
       Grdc_gjf = 0
 !
       if ( (Grdc_ndt.lt.0) .or. (Grd_yinyang_S .eq. 'YAN') .or. &
-           (Grdc_ni .eq.0) .or. (Grdc_nj.eq.0) ) then
+           (Grdc_ni .eq.0) .or. (Grdc_nj.eq.0) .or. (Grdc_dx.lt.0.) ) then
          Grdc_ndt = -1
          return
       endif
-      ierx = 0
-      if (Grdc_dx.lt.0) ierx = -1
-      call handle_error(ierx,'ac_posi','GRDC_DX IS UNDEFINED')
+
       if (Grdc_dy.lt.0) Grdc_dy = Grdc_dx
 !
 !     *** Positional parameters for f and q points

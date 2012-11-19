@@ -25,8 +25,8 @@
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      real F_ww(DIST_SHAPE,Nk+2),F_st1(DIST_SHAPE)
-      real F_wt1(DIST_SHAPE,Nk+1),F_tt1(DIST_SHAPE,Nk+2)
+      real F_ww(DIST_SHAPE,Nk),F_st1(DIST_SHAPE)
+      real F_wt1(DIST_SHAPE,Nk),F_tt1(DIST_SHAPE,Nk)
 !
 !author
 !     Claude Girard et Andre Plante avril 2008.
@@ -67,10 +67,10 @@
 
 !$omp parallel private(work)
 !$omp do
-      do k=1,l_nk+1
+      do k=1,l_nk
          do j=1,l_nj
             do i=1,l_ni
-               work(i,j)=Ver_z_8%t(k) + Ver_b_8%t(k)*F_st1(i,j)
+               work(i,j)=Ver_a_8%t(k+1) + Ver_b_8%t(k+1)*F_st1(i,j)
             end do
          end do
          call vsexp(work,work,l_ni*l_nj)

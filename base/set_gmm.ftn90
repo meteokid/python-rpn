@@ -43,10 +43,6 @@
                             1,l_ni*l_nj*l_nk,0,0,l_ni*l_nj*l_nk, &
                             0,0,0,0,0, &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta1dt, &
-                            1,l_ni*l_nj*(l_nk+1),0,0,l_ni*l_nj*(l_nk+1), &
-                            0,0,0,0,0, &
-                            0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d, &
                             LXDIST_DIM,G_halox,G_halox,l_ni, &
                             LYDIST_DIM,G_haloy,G_haloy,l_nj, &

@@ -90,9 +90,8 @@
             istat = gmm_get(gmmk_st1_s  ,st1  ,mymeta)
             istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
             istat = gmm_get(gmmk_fis0_s ,fis0 ,mymeta)
-            if(.not.Schm_hydro_L)&
-               istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-            call diag_fip (fiptx,st1,tt1,qt1,fis0,LDIST_DIM,l_nk)
+            if(.not.Schm_hydro_L) istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+            call diag_fip (fiptx(l_minx,l_miny,1),st1,tt1(l_minx,l_miny,2),qt1(l_minx,l_miny,1),fis0,LDIST_DIM,l_nk)
          endif
       endif
 
@@ -112,10 +111,10 @@
             tdu(l_minx:0,l_miny:l_maxy,k) = 0. ; tdu(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             tdv(l_minx:0,l_miny:l_maxy,k) = 0. ; tdv(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             do j= 1, l_nj
-               tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k+Schm_notop)- &
-                                  pw_uu_copy(1:l_ni,j,k+Schm_notop)) *con(j)
-               tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k+Schm_notop)- &
-                                  pw_VV_copy(1:l_ni,j,k+Schm_notop)) *con(j)
+               tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k+1)- &
+                                  pw_uu_copy(1:l_ni,j,k+1)) *con(j)
+               tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k+1)- &
+                                  pw_VV_copy(1:l_ni,j,k+1)) *con(j)
             end do
          end do
 !$omp enddo
@@ -125,8 +124,8 @@
 
 !$omp parallel do
          do k=1,l_nk+1
-            ut1(1:l_niu,:,k) = ut1(1:l_niu,:,k) + tdu(1:l_niu,:,k+1-Schm_notop)
-            vt1(:,1:l_njv,k) = vt1(:,1:l_njv,k) + tdv(:,1:l_njv,k+1-Schm_notop)
+            ut1(1:l_niu,:,k) = ut1(1:l_niu,:,k) + tdu(1:l_niu,:,k+1-1)
+            vt1(:,1:l_njv,k) = vt1(:,1:l_njv,k) + tdv(:,1:l_njv,k+1-1)
          end do
 !$omp end parallel do
 

@@ -68,7 +68,7 @@
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
-      type(gmm_metadata) :: mymeta,mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk_t,mymeta3d_nk1_u,mymeta3d_nk1_v,mymeta3d_nk1_t,mymeta3d_nk2_t,mymeta3d_0nk1_m,mymeta2d_s
+      type(gmm_metadata) :: mymeta,mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk1_u,mymeta3d_nk1_v,mymeta3d_nk1_t,mymeta3d_nk2_t,mymeta3d_0nk1_m,mymeta2d_s
       integer :: i,istat
       integer :: flag_n, flag_r_n,flag_r_z
       integer*8 :: flag_m_u,flag_m_v,flag_m_f,flag_t_f,flag_s_f
@@ -82,7 +82,6 @@
       flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_INAN
       flag_r_z = GMM_FLAG_RSTR+GMM_FLAG_IZER
 
-      flag_t_f = FLAG_LVL_T                  !thermo lvl,   phi-pt
       flag_m_f = FLAG_LVL_M                  !momentum lvl, phi-pt
       flag_m_u = FLAG_LVL_M+GMM_FLAG_STAG_X  !momentum lvl, u-pt
       flag_m_v = FLAG_LVL_M+GMM_FLAG_STAG_Y  !momentum lvl, v-pt
@@ -90,7 +89,6 @@
 
       mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_u)
       mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_v)
-      mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk,flag_t_f)
       mymeta3d_nk1_u = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_u)
       mymeta3d_nk1_v = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_v)
       mymeta3d_nk1_t = SET_GMMUSR_FLAG(meta3d_nk1,flag_t_f)
@@ -137,14 +135,7 @@
       gmmk_ycth_s= 'YCTH'
       gmmk_zcth_s= 'ZCTH'
 
-      gmmk_xth_thermo_s = 'XTHT'
-      gmmk_yth_thermo_s = 'YTHT'
-      gmmk_zth_thermo_s = 'ZTHT'
-      gmmk_xcth_thermo_s= 'XCHT'
-      gmmk_ycth_thermo_s= 'YCHT'
-      gmmk_zcth_thermo_s= 'ZCHT'
-
-      nullify(uth,vth,zdth,xth,yth,zth,xcth,ycth,zcth,xth_thermo,yth_thermo,zth_thermo,xcth_thermo,ycth_thermo,zcth_thermo)
+      nullify(uth,vth,zdth,xth,yth,zth,xcth,ycth,zcth)
       istat = GMM_OK
       istat = min(gmm_create(gmmk_uth_s,uth, mymeta3d_nk_u,flag_r_n),istat)
       istat = min(gmm_create(gmmk_vth_s,vth, mymeta3d_nk_v,flag_r_n),istat)
@@ -158,14 +149,6 @@
       istat = min(gmm_create(gmmk_ycth_s,ycth, mymeta,flag_r_n),istat)
       istat = min(gmm_create(gmmk_zcth_s,zcth, mymeta,flag_r_n),istat)
 
-      mymeta  = SET_GMMUSR_FLAG(meta1dt, flag_t_f)
-      istat = min(gmm_create(gmmk_xth_thermo_s, xth_thermo, mymeta,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_yth_thermo_s, yth_thermo, mymeta,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zth_thermo_s, zth_thermo, mymeta,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_xcth_thermo_s,xcth_thermo,mymeta,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_ycth_thermo_s,ycth_thermo,mymeta,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zcth_thermo_s,zcth_thermo,mymeta,flag_r_n),istat)
-
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
 
@@ -176,8 +159,6 @@
       gmmk_wt1_s   = 'WT1'
       gmmk_tt1_s   = 'TT1'
       gmmk_zdt1_s  = 'ZDT1'
-      gmmk_wup_s   = 'WUP'
-      gmmk_zdup_s  = 'ZDUP'
       gmmk_xct1_s  = 'XCT1'
       gmmk_yct1_s  = 'YCT1'
       gmmk_zct1_s  = 'ZCT1'
@@ -200,9 +181,7 @@
       mymeta  = SET_GMMUSR_FLAG(mymeta3d_nk2_t,FLAG_NEST + FLAG_DIGF)
       istat = min(gmm_create(gmmk_tt1_s,tt1, mymeta,flag_r_n),istat)
 
-      nullify(wup,zdup,qt1,zdt1,st1)
-      istat = min(gmm_create(gmmk_wup_s,wup,mymeta3d_nk_t,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zdup_s,zdup,mymeta3d_nk1_t,flag_r_n),istat)
+      nullify(qt1,zdt1,st1)
 
       !TODO: should qt1 be defined only if (.not. Schm_hydro_L) 
       mymeta = mymeta3d_0nk1_m

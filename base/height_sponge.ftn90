@@ -51,8 +51,7 @@
       integer err,i,j,k, longueur
       integer n,istat
 
-      real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk+1),ubar
-      real fi_t(LDIST_SHAPE,l_nk+1)
+      real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk),ubar
 
 !----------------------------------------------------------------------
  
@@ -81,13 +80,13 @@
          call apply(ut1  ,ubar,betav_m,LDIST_DIM, l_nk)
          call apply(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
          if(.not.Schm_hydro_L) then
-            call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM, l_nk)
+            call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM,l_nk)
          endif
          if(Zblen_spngtt_L)then
-            call apply_tt(tt1,betav_t,st1,LDIST_DIM, l_nk)
+            call apply_tt(tt1(l_minx,l_miny,2),betav_t,st1,LDIST_DIM,l_nk)
          endif
       endif
-      call apply(wt1  ,0.  ,betav_t,LDIST_DIM, l_nk+1)
+      call apply(wt1(l_minx,l_miny,2),0.,betav_t,LDIST_DIM,l_nk)
  
 !----------------------------------------------------------------------
       return
@@ -148,8 +147,8 @@
 #include "type.cdk"
 #include "ver.cdk"
 
-      real tt(DIST_SHAPE,Nk+1),F_s(DIST_SHAPE)
-      real betav_t(DIST_SHAPE,Nk+1)
+      real tt(DIST_SHAPE,Nk),F_s(DIST_SHAPE)
+      real betav_t(DIST_SHAPE,Nk)
 
       real capc1,my_tt,a00,a02,tempo,hauteur
 
@@ -170,7 +169,7 @@
       do k=1,Nk
          do j=j0,jn
             do i=i0,in
-               tempo = exp(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               tempo = exp(Ver_a_8%t(k+1)+Ver_b_8%t(k+1)*F_s(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)

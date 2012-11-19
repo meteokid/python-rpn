@@ -129,8 +129,9 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
       coef(2:nlev)=Eq_sponge(1:nlev-1)
       !
       do k=1,nlev
-         cp(k)=Step_dt*coef(k+1)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k+1))
-         cm(k)=Step_dt*coef(k  )/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k  ))
+         km=max(1,k-1)
+         cp(k)=Step_dt*coef(k+1)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k ))
+         cm(k)=Step_dt*coef(k  )/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(km))
       enddo
       !
       allocate(eponmod(l_ni,l_nj))

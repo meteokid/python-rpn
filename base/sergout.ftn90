@@ -64,6 +64,7 @@
       logical wr_L
       integer i, j, k, pnidate(14), pnigrot(4), err
       character*12 ptetik_S
+      real dgrw
 !
 !!
 !
@@ -98,9 +99,12 @@
          end do
          wr_L=(.not.P_serg_sroff_L.and.(Lctl_step.le.P_serg_serstp))
       endif
-      call phy_serwrit4(pnidate,ptetik_S,p_nk,pnigrot,0.,Ver_hyb%m,Ver_hyb%t, &
-               Ver_a_8%m,Ver_b_8%m,Ver_a_8%t,Ver_b_8%t,Grd_rcoef,Cstv_ptop_8, &
-               Cstv_pref_8,Ver_code,Dcst_rgasd_8,Dcst_grav_8,.false.,         &
+
+      dgrw=0.
+      call phy_serwrit4(pnidate,ptetik_S,p_nk,pnigrot,dgrw,Ver_hyb%m,Ver_hyb%t, &
+               size(Ver_hyb%m),size(Ver_hyb%t),&
+               Ver_a_8%m,Ver_b_8%m,Ver_a_8%t,Ver_b_8%t,Grd_rcoef,Cstv_ptop_8  , &
+               Cstv_pref_8,Ver_code,Dcst_rgasd_8,Dcst_grav_8,.false.          , &
                P_cond_satu_L,F_headr_L,wr_L,Clim_climat_L)
       if (Ptopo_myproc.eq.0) then
          do i=1,Xst_dimsers

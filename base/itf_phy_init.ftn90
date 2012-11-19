@@ -110,7 +110,7 @@
       call phy_optl('VSTAG'   , .true.    ,     1,'SET',prout,err(4))
       call phy_opti('TLIFT'   , Schm_Tlift,     1,'SET',prout,err(5))
       call phy_optl('COUPLING', C_coupling_L   ,1,'SET',prout,err(6))
-      call phy_optl('NOTOP'   , Schm_NotopThL_L,1,'SET',prout,err(7))
+      call phy_optl('NOTOP'   , .true.,1,'SET',prout,err(7))
       call handle_error(minval(err(4:7)),'itf_phy_init','phy_opt set')
 
       ! The current physics interface operate on an arbitrary number of
@@ -128,7 +128,7 @@
          p_offi = 2*west  ; offi2 = 2*east
          p_offj = 2*south ; offj2 = 2*north
       endif
-      p_nk   = G_nk + 2 - Schm_notop
+      p_nk   = G_nk + 1
 
       ! Complete physics initialization (bus descriptions become available after phy_debu)
       err(1) = phy_init(Out3_date,real(Cstv_dt_8),1+p_offi,l_ni-offi2,1+p_offj,l_nj-offj2,p_runlgt,p_nk,itf_phy_rdfile)
@@ -142,15 +142,7 @@
       !TODO: pass std_p_prof as phy_init arg
       ! Pass standard pressure profil to physics.
       allocate(std_p_prof(p_nk))
-      if(Schm_NotopThL_L)then
-         std_p_prof=Ver_std_p_prof%m
-      else
-         ! Note : we put Cstv_ptop_8 at level 1 since there is an additional UU
-         !        put at top for the physics. If this levels if ever removed, 
-         !        Cstv_ptop_8 at level 1 will also have to be removed from std_p_prof
-         std_p_prof(2:p_nk)=Ver_std_p_prof%m
-         std_p_prof(1)=Cstv_ptop_8
-      endif
+      std_p_prof=Ver_std_p_prof%m
       call phy_com_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
       deallocate(std_p_prof)
 

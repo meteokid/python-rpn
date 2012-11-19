@@ -62,7 +62,6 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
-#include "that.cdk"
 #include "p_geof.cdk"
 !
       type(gmm_metadata) :: mymeta
@@ -158,18 +157,7 @@
                F_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
          enddo
-         if(that_L) ln_that%t(k)=log(F_t(1,1,k)/Cstv_tstr_8)
       enddo        
-!
-      dln_that%t(1)=0.0          ! no matter
-      do k=2,g_nk
-         dln_that%t(k) = ( Ver_wp_8%m(k  )*ln_that%t(k+1) &
-                         + Ver_wm_8%m(k  )*ln_that%t(k) &
-                         - Ver_wp_8%m(k-1)*ln_that%t(k) &
-                         - Ver_wm_8%m(k-1)*ln_that%t(k-1) ) &
-                         * Ver_idz_8%t(k)
-      enddo
-      dln_that%t(g_nk+1)=0.0     ! no matter
 !
       do j=1,l_nj
       do i=1,l_ni

@@ -130,11 +130,13 @@
            '\n========================================================='
       call msg(MSG_INFO,msg_S)
  
-      call pe_rebind (Ptopo_smtphy,(Ptopo_myproc.eq.0).and. &
-                                   (F_stepno    .eq.0)  )
+      call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
+                                         (F_stepno    .eq.0)  )
+
       call phy_step (F_stepno)
-      call pe_rebind (Ptopo_smtdyn,(Ptopo_myproc.eq.0).and. &
-                                   (F_stepno    .eq.0) )
+
+      call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
+                                         (F_stepno    .eq.0) )
 
       err = itf_phy_update2(F_stepno > 0)
       call handle_error(err,'itf_phy_step','Problemes in itf_phy_update') 

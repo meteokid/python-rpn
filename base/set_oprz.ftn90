@@ -56,7 +56,7 @@
       real*8 one
       parameter( one  = 1.d0 )
 !
-      integer k, k0,k1, AA, BB, CC
+      integer k, k0,k0m,k1, AA, BB, CC
       real*8  pdsc, xxt,xxs,wk(G_nk)
       real*8, dimension  &
       ((trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj) :: a,b,c
@@ -76,6 +76,7 @@
       BB=G_nk
       CC=G_nk*2
       k0=1+Lam_gbpil_T
+      k0m=max(k0-1,1)
 !
 !     ~~~~~~~~~~~~~~~~~
 !     Diagonal Operator
@@ -102,17 +103,17 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
       Opr_opszp2_8(AA+k0)    = 0.d0
-      Opr_opszp2_8(BB+k0)    =-Ver_idz_8%t(k0)*(one-Ver_alfat_8) &
-                              -Ver_idz_8%t(k0+1)
-      Opr_opszp2_8(CC+k0)    = Ver_idz_8%t(k0+1)
+      Opr_opszp2_8(BB+k0)    =-Ver_idz_8%t(k0m)*(one-Ver_alfat_8) &
+                              -Ver_idz_8%t(k0)
+      Opr_opszp2_8(CC+k0)    = Ver_idz_8%t(k0)
       do k = k0+1, G_nk-1
-         Opr_opszp2_8(AA+k) =+Ver_idz_8%t(k)
-         Opr_opszp2_8(BB+k) =-Ver_idz_8%t(k)-Ver_idz_8%t(k+1)
-         Opr_opszp2_8(CC+k) =+Ver_idz_8%t(k+1)
+         Opr_opszp2_8(AA+k) =+Ver_idz_8%t(k-1)
+         Opr_opszp2_8(BB+k) =-Ver_idz_8%t(k-1)-Ver_idz_8%t(k)
+         Opr_opszp2_8(CC+k) =+Ver_idz_8%t(k)
       end do
-      Opr_opszp2_8(AA+G_nk) = Ver_idz_8%t(G_nk)
-      Opr_opszp2_8(BB+G_nk) =-Ver_idz_8%t(G_nk) &
-                             -Ver_idz_8%t(G_nk+1)*(one-ver_alfas_8)
+      Opr_opszp2_8(AA+G_nk) = Ver_idz_8%t(G_nk-1)
+      Opr_opszp2_8(BB+G_nk) =-Ver_idz_8%t(G_nk-1) &
+                             -Ver_idz_8%t(G_nk)*(one-ver_alfas_8)
       Opr_opszp2_8(CC+G_nk) = 0.d0
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -120,20 +121,25 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~
 !
       Opr_opszpm_8(AA+k0) = 0.d0
-      Opr_opszpm_8(BB+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_wm_8%t(k0+1) &
+      Opr_opszpm_8(BB+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_wm_8%t(k0)
+      Opr_opszpm_8(CC+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_wp_8%t(k0)
+
+      if(Schm_opentop_L) then
+         Opr_opszpm_8(BB+k0) = Opr_opszpm_8(BB+k0) &
                           + Ver_dz_8%m(k0)*Ver_wm_8%m(k0) &
-                          *(Ver_wp_8%t(k0)+Ver_wm_8%t(k0)*Ver_alfat_8)
-      Opr_opszpm_8(CC+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_wp_8%t(k0+1)
+                          *(Ver_wp_8%t(k0-1)+Ver_wm_8%t(k0-1)*Ver_alfat_8)
+      endif
+
       do k = k0+1, G_nk-1
-         Opr_opszpm_8(AA+k) = Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_wm_8%t(k)
-         Opr_opszpm_8(BB+k) = Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_wp_8%t(k) &
-                            + Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_wm_8%t(k+1)
-         Opr_opszpm_8(CC+k) = Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_wp_8%t(k+1)
+         Opr_opszpm_8(AA+k) = Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_wm_8%t(k-1)
+         Opr_opszpm_8(BB+k) = Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_wp_8%t(k-1) &
+                            + Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_wm_8%t(k)
+         Opr_opszpm_8(CC+k) = Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_wp_8%t(k)
       end do
-      Opr_opszpm_8(AA+G_nk) = Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_wm_8%t(G_nk)
-      Opr_opszpm_8(BB+G_nk) = Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_wp_8%t(G_nk) &
+      Opr_opszpm_8(AA+G_nk) = Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_wm_8%t(G_nk-1)
+      Opr_opszpm_8(BB+G_nk) = Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_wp_8%t(G_nk-1) &
                             + Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk) &
-                            *(Ver_wp_8%t(G_nk+1)*Ver_alfas_8+Ver_wm_8%t(G_nk+1))
+                            *(Ver_wp_8%t(G_nk)*Ver_alfas_8+Ver_wm_8%t(G_nk))
       Opr_opszpm_8(CC+G_nk) = 0.d0
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,19 +148,19 @@
 !
       Opr_opszpl_8(AA+k0) = 0.d0
       Opr_opszpl_8(BB+k0) =+(one-Ver_alfat_8) &
-                           *Ver_dz_8%m(k0)*Ver_wm_8%m(k0)*Ver_idz_8%t(k0) &
-                           -Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0+1) &
-                           -Ver_epsilon_8*Schm_notop
-      Opr_opszpl_8(CC+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0+1)
+                           *Ver_dz_8%m(k0)*Ver_wm_8%m(k0)*Ver_idz_8%t(k0m) &
+                           -Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0) &
+                           -Ver_epsilon_8
+      Opr_opszpl_8(CC+k0) = Ver_dz_8%m(k0)*Ver_wp_8%m(k0)*Ver_idz_8%t(k0)
       do k = k0+1, G_nk-1
-         Opr_opszpl_8(AA+k) =-Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_idz_8%t(k)
-         Opr_opszpl_8(BB+k) =+Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_idz_8%t(k) &
-                             -Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_idz_8%t(k+1)
-         Opr_opszpl_8(CC+k) =+Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_idz_8%t(k+1)
+         Opr_opszpl_8(AA+k) =-Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_idz_8%t(k-1)
+         Opr_opszpl_8(BB+k) =+Ver_dz_8%m(k)*Ver_wm_8%m(k)*Ver_idz_8%t(k-1) &
+                             -Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_idz_8%t(k)
+         Opr_opszpl_8(CC+k) =+Ver_dz_8%m(k)*Ver_wp_8%m(k)*Ver_idz_8%t(k)
       end do
-      Opr_opszpl_8(AA+G_nk) =-Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk)
-      Opr_opszpl_8(BB+G_nk) =+Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk) &
-                             -Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk+1) &
+      Opr_opszpl_8(AA+G_nk) =-Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1)
+      Opr_opszpl_8(BB+G_nk) =+Ver_dz_8%m(G_nk)*Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1) &
+                             -Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk) &
                              *(one-Ver_alfas_8)
       Opr_opszpl_8(CC+G_nk) = 0.d0
 !

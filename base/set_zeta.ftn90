@@ -38,34 +38,73 @@
 !
 ! object
 !    To return A, B parameters for momentum and thermodynamic levels
-!    These levels are used for DYNAMICAL CALCULATIONS in the models
-!    Some are VIRTUAL levels
+!    These levels are used for DYNAMICAL CALCULATIONS in the models !    Some are VIRTUAL levels
 !
 !    Also to return other parameters related to the vertical discretization
 !
 !         Z, dZ, 1/dZ, dBdZ, etc
 !
-! Virtual level vvvvvvvvvvvvvvvvv Ver_z_8%m(0)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LEVELS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!         Ztop  ================= Ver_z_8%t(1)
+!               ttttttttttttttttt Cstv_ztop_8
 !
 !               - - - - - - - - - Ver_z_8%m(1)
 !
-!               ================= Ver_z_8%t(2) = ( Ver_z_8%m(2) + Ver_z_8%m(1) ) / 2
+!               ================= Ver_z_8%t(1) = ( Ver_z_8%m(2) + Ver_z_8%m(1) ) / 2
 !
 !               - - - - - - - - - Ver_z_8%m(2)
 !
 !                      ...
 !
-!               - - - - - - - - - Ver_z_8%m(G_nk-1)
+!               - - - - - - - - - Ver_z_8%m(k)
 !
-!               ================= Ver_z_8%t(G_nk) = ( Ver_z_8%m(nk) + Ver_z_8%m(nk-1) ) / 2
+!               ================= Ver_z_8%t(k) = ( Ver_z_8%m(k+1) + Ver_z_8%m(k) ) / 2
 !
-!               - - - - - - - - - Ver_z_8%m(G_nk)
+!               - - - - - - - - - Ver_z_8%m(k+1)
 !
-!         Zsrf  ================= Ver_z_8%t(G_nk+1)
+!                      ...
 !
-! Virtual level vvvvvvvvvvvvvvvvv Ver_z_8%m(G_nk+1)
+!               - - - - - - - - - Ver_z_8%m(n)
+!
+!               ================= Ver_z_8%t(n) = ( Cstv_zsrf_8 + Ver_z_8%m(n) ) / 2
+!
+!               sssssssssssssssss Cstv_zsrf_8
+!
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LAYERS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!
+!               Cstv_ztop_8 ttttttttttttttttttttttttttttttttttttttttttt Cstv_ztop_8
+!                                                     \
+!               Ver_z_8%m(1)- - - - - - - - - - - - - - Ver_dz_8%m(1)=Ver_z_8%t(1)-Cstv_ztop_8
+!                                          /          /
+!   Ver_z_8%m(2)-Ver_z_8%m(1)=Ver_dz_8%t(1)    ======================== Ver_z_8%t(1)
+!                                          \          \
+!               Ver_z_8%m(2)- - - - - - - - - - - - - - Ver_dz_8%m(2)=Ver_z_8%t(2)-Ver_z_8%t(1)
+!                                                     /
+!                           =========================================== Ver_z_8%t(2)
+!
+!                                                     ...
+!
+!                           =========================================== Ver_z_8%t(k-1)
+!                                                     \
+!               Ver_z_8%m(k)- - - - - - - - - - - - - - Ver_dz_8%m(k)=Ver_z_8%t(k)-Ver_z_8%t(k-1)
+!                                          /          /
+! Ver_z_8%m(k+1)-Ver_z_8%m(k)=Ver_dz_8%t(k)    ======================== Ver_z_8%t(k)
+!                                          \
+!             Ver_z_8%m(k+1)- - - - - - - - - - - - - - - - - - - - - -
+!
+!                                                     ...
+!
+!                           =========================================== Ver_z_8%t(n-1)
+!                                                   \  
+!                                                    \ 
+!                                                     \
+!                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Cstv_zsrf_8-Ver_z_8%t(n-1)
+!                                          /          /
+!    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /             ==== Ver_z_8%t(n-1)
+!                                          \        / 
+!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Cstv_zsrf_8
 !
 ! arguments
 ! none
@@ -80,7 +119,6 @@
 #include "schm.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
-#include "that.cdk"
 !
       type(vgrid_descriptor) :: vcoord
       integer k,istat,err,glb_err
@@ -92,19 +130,18 @@
       character*8 dumc
 !     __________________________________________________________________
 !
-      allocate(   Ver_hyb%m  (G_nk+1),     Ver_hyb%t(G_nk+2), &
-           Ver_std_p_prof%m(  G_nk+1),Ver_std_p_prof%t(G_nk+2), &  
-                  Ver_ip1%m(  G_nk+1),     Ver_ip1%t(G_nk+2), &
-                  Ver_a_8%m(  G_nk+1),     Ver_a_8%t(G_nk+2), &
-                  Ver_b_8%m(  G_nk+1),     Ver_b_8%t(G_nk+2), &
-                  Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(G_nk+1), &
-                 Ver_dz_8%m(  G_nk  ),    Ver_dz_8%t(G_nk+1), &
-                Ver_idz_8%m(  G_nk  ),   Ver_idz_8%t(G_nk+1), &
-               Ver_dbdz_8%m(  G_nk  ),  Ver_dbdz_8%t(G_nk+1), &
-              Ver_fistr_8%m(0:G_nk  ), Ver_fistr_8%t(G_nk+1), &
-                 Ver_wp_8%m ( G_nk  ),    Ver_wm_8%m(G_nk  ), &
-                 Ver_wp_8%t ( G_nk+1),    Ver_wm_8%t(G_nk+1), &
-                    ln_that%t(G_nk+1),    dln_that%t(G_nk+1), &
+      allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+2), &
+           Ver_std_p_prof%m(G_nk+1),Ver_std_p_prof%t(G_nk+2), &
+                  Ver_ip1%m(G_nk+1),       Ver_ip1%t(G_nk+2), &
+                  Ver_a_8%m(G_nk+1),       Ver_a_8%t(G_nk+2), &
+                  Ver_b_8%m(G_nk+1),       Ver_b_8%t(G_nk+2), &
+                  Ver_z_8%m(G_nk+1),       Ver_z_8%t(G_nk  ), &
+                 Ver_dz_8%m(G_nk  ),      Ver_dz_8%t(G_nk  ), &
+                Ver_idz_8%m(G_nk  ),     Ver_idz_8%t(G_nk  ), &
+               Ver_dbdz_8%m(G_nk  ),    Ver_dbdz_8%t(G_nk  ), &
+              Ver_fistr_8%m(G_nk  ),   Ver_fistr_8%t(G_nk  ), &
+                 Ver_wp_8%m(G_nk  ),      Ver_wp_8%t(G_nk  ), &
+                 Ver_wm_8%m(G_nk  ),      Ver_wm_8%t(G_nk  ), &
                                                   stat=istat)
       call check_alloc(istat,'set_zeta',1)
 !
@@ -166,47 +203,38 @@
 !     Now define Z:
 !     -------------
 !
-      Ver_z_8%m(0) = Cstv_Ztop_8
       do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)
       enddo
 !
-      do k = 1, G_nk+1
-         Ver_z_8%t(k) = Ver_a_8%t(k)
+      do k = 1, G_nk
+         Ver_z_8%t(k) = Ver_a_8%t(k+1)
       enddo
 !
 !     --------------
 !     Compute fistar
 !     --------------
 !     
-      do k = 1, G_nk+1
-         Ver_fistr_8%m(k-1)=-Cstv_RTstr_8*(Ver_z_8%m(k-1)-Cstv_Zsrf_8)
-         Ver_fistr_8%t(k  )=-Cstv_RTstr_8*(Ver_z_8%t(k  )-Cstv_Zsrf_8)
+      do k = 1, G_nk
+         Ver_fistr_8%m(k)=-Cstv_RTstr_8*(Ver_z_8%m(k)-Cstv_Zsrf_8)
+         Ver_fistr_8%t(k)=-Cstv_RTstr_8*(Ver_z_8%t(k)-Cstv_Zsrf_8)
       enddo
 !
 !     ----------------------
 !     Compute dZ, 1/dZ, dBdZ
 !     ----------------------
 !
-      Ver_dz_8%m(1)      = Ver_z_8%t(2)     - Ver_z_8%m(0)
+      Ver_dz_8%m(1)      = Ver_z_8%t(1)   - Cstv_Ztop_8
       do k=2,G_nk-1
-         Ver_dz_8%m(k)   = Ver_z_8%t(k+1)   - Ver_z_8%t(k)
+         Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
       enddo      
-      Ver_dz_8%m(G_nk)   = Ver_z_8%m(G_nk+1)- Ver_z_8%t(G_nk)
+      Ver_dz_8%m(G_nk)   = Cstv_Zsrf_8    - Ver_z_8%t(G_nk-1)
 !
       do k=1,G_nk
-         Ver_idz_8%m(k)  =  one/Ver_dz_8%m(k)
-      enddo      
-!     
-      do k=1,G_nk+1
-           Ver_dz_8%t(k) = Ver_z_8%m(k) - Ver_z_8%m(k-1)
+          Ver_idz_8%m(k) = one/Ver_dz_8%m(k)
+           Ver_dz_8%t(k) = Ver_z_8%m(k+1) - Ver_z_8%m(k)
           Ver_idz_8%t(k) = one/Ver_dz_8%t(k)
-      enddo
-!
-
-         Ver_dbdz_8%t(1) = (Ver_b_8%m(1)-0.d0)*Ver_idz_8%t(1)
-      do k=2,G_nk+1
-         Ver_dbdz_8%t(k) = (Ver_b_8%m(k)-Ver_b_8%m(k-1))*Ver_idz_8%t(k)
+         Ver_dbdz_8%t(k) = (Ver_b_8%m(k+1)-Ver_b_8%m(k))*Ver_idz_8%t(k)
       enddo
 !
 !     -------------------------------------------------------
@@ -215,39 +243,30 @@
 !
       do k=1,G_nk
          if(k.eq.G_nk) then
-            Ver_wp_8%m(k) = Ver_dz_8%t(k+1)*Ver_idz_8%m(k)
+            Ver_wp_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
          else
-            Ver_wp_8%m(k) = Ver_dz_8%t(k+1)*half*Ver_idz_8%m(k)
+            Ver_wp_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
          endif
-
             Ver_wm_8%m(k) = one-Ver_wp_8%m(k)
+      enddo
 !
-          Ver_dbdz_8%m(k) = Ver_wp_8%m(k) * Ver_dbdz_8%t(k+1)  &
-                          + Ver_wm_8%m(k) * Ver_dbdz_8%t(k)
+          Ver_dbdz_8%m(1) = Ver_wp_8%m(1) * Ver_dbdz_8%t(1)  &
+                          + Ver_wm_8%m(1) * (Ver_b_8%m(1)-0.d0)/(Ver_z_8%m(1)-Cstv_Ztop_8)
+      do k=2,G_nk
+          Ver_dbdz_8%m(k) = Ver_wp_8%m(k) * Ver_dbdz_8%t(k)  &
+                          + Ver_wm_8%m(k) * Ver_dbdz_8%t(k-1)
       enddo
 !
 !     -------------------------------------------------------
 !     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS 
 !     -------------------------------------------------------
 !
-      Ver_wp_8%t(1) = 0.d0
-      Ver_wm_8%t(1) = 1.d0
-      if(Schm_NoTopThL_L)Ver_wm_8%t(1) = 0.d0
-      do k=2,G_nk
+      do k=1,G_nk-1
          Ver_wp_8%t(k) = half
          Ver_wm_8%t(k) = half
       enddo
-      Ver_wp_8%t(G_nk+1) = 1.d0
-      Ver_wm_8%t(G_nk+1) = 0.d0
-!
-!     ----------------------------------------------------------
-!     Initialize to ZERO the log of That/Tstr and its derivative
-!     ----------------------------------------------------------
-!
-      do k=1,G_nk+1
-          ln_that%t(k) = 0.0
-         dln_that%t(k) = 0.0
-      enddo
+      Ver_wp_8%t(G_nk) = 1.d0
+      Ver_wm_8%t(G_nk) = 0.d0
 !
 !     Encode Ver_ip1 for OUTPUT
 !

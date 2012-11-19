@@ -129,6 +129,8 @@
          call rpn_comm_xch_halo(fistmp, LDIST_DIM,l_ni,l_nj,1,      &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call yyg_scalbc(fis0,fistmp,LDIST_DIM,1)
+         call rpn_comm_xch_halo(fis0, LDIST_DIM,l_ni,l_nj,1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
       call set_dync ()

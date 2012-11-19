@@ -13,13 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      integer function decomp ( F_npts, F_min, F_max, F_lni, F_npartiel, F_halo, F_start, &
-                                F_alongx_L, F_fill_L, F_npe, F_checkparti_L )
+      logical function decomp2 ( F_npts, F_min, F_max, F_lni, F_npartiel, F_halo, F_start, &
+                                 F_alongx_L, F_fill_L, F_npe, F_lowestsize, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
 
       logical F_alongx_L, F_fill_L, F_checkparti_L
       integer F_npts, F_min, F_max, F_lni, F_npartiel, F_halo, F_start, F_npe
+      integer F_lowestsize
 
       logical  check_parti
       integer  RPN_COMM_limit,rpn_comm_topo
@@ -27,31 +28,36 @@
 
       integer istat,my_id 
       integer count(F_npe),depl(F_npe)
-      
+!
+!-------------------------------------------------------------------
+!
+      decomp2 = .false.
+
       if (F_checkparti_L ) then
 
          istat= -1
          do my_id=0,F_npe-1
            istat= RPN_COMM_limit (my_id, F_npe, 1, F_npts, F_min, F_max, count, depl)
+           if (istat.lt.0) exit
            F_lni= F_max-F_min+1
+           if (F_lni.lt.F_lowestsize) istat= -1
            if (istat.lt.0) exit
          end do
-         decomp= 0
-         if (istat.lt.0) decomp= -1
-
+         decomp2 = .not.(istat.lt.0) 
+         
       else
 
-         decomp= 0
          istat= rpn_comm_topo( F_npts, F_min, F_max, F_lni, F_npartiel, &
                                F_halo, F_start, F_alongx_L, F_fill_L )
-         if (istat.ge.0) then
-           if (.not. check_parti (F_start,F_npts,F_npe) ) decomp= -1
-         else
-           decomp=-1
-         endif
+         decomp2 = (.not.(istat.lt.0)) .and. (F_lni.ge.F_lowestsize)
 
       endif
 
+      if (.not.decomp2) write (6,1001) F_npts,F_npe
+ 1001 format(/' DECOMP: illegal partitionning ====> ',i7,' / ',i7)
+!
+!-------------------------------------------------------------------
+!
       return
       end
 

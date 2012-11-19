@@ -65,20 +65,6 @@
       istat = gmm_get(gmmk_zcth_s,zcth,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(zcth)'
 !
-      istat = gmm_get(gmmk_xth_thermo_s,xth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(xth_thermo)'
-      istat = gmm_get(gmmk_yth_thermo_s,yth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(yth_thermo)'
-      istat = gmm_get(gmmk_zth_thermo_s,zth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(zth_thermo)'
-!
-      istat = gmm_get(gmmk_xcth_thermo_s,xcth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(xcth_thermo)'
-      istat = gmm_get(gmmk_ycth_thermo_s,ycth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(ycth_thermo)'
-      istat = gmm_get(gmmk_zcth_thermo_s,zcth_thermo,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(zcth_thermo)'
-!
       do k = 1, l_nk
       do j = 1, l_nj 
       do i = 1, l_ni
@@ -92,25 +78,6 @@
          zcth(ijk) = sin(yth(ijk))
          xcth(ijk) = cos(xth(ijk)) * pr1
          ycth(ijk) = sin(xth(ijk)) * pr1
-      enddo
-      enddo
-      enddo
-!
-      do k = 1, l_nk+1
-      do j = 1, l_nj 
-      do i = 1, l_ni
-         ijk=(k-1)*nij+(j-1)*l_ni+i
-         xth_thermo(ijk)  = Geomg_x_8(i)
-         yth_thermo(ijk)  = Geomg_y_8(j)
-         zth_thermo(ijk)  = Ver_z_8%t(k)
-         if(k.eq.1)zth_thermo(ijk)  = Ver_z_8%m(1)
-         if(k.eq.l_nk+1)zth_thermo(ijk)  = Ver_z_8%m(l_nk)
-!
-         pr1         = cos(yth_thermo(ijk))
-!
-         zcth_thermo(ijk) = sin(yth_thermo(ijk))
-         xcth_thermo(ijk) = cos(xth_thermo(ijk)) * pr1
-         ycth_thermo(ijk) = sin(xth_thermo(ijk)) * pr1
       enddo
       enddo
       enddo

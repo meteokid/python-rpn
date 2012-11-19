@@ -59,8 +59,8 @@
       Ptopo_nblocy = -1
       Ptopo_ninblocx = -1
       Ptopo_ninblocy = -1
-      Ptopo_smtphy = 0
-      Ptopo_smtdyn = 0
+      Ptopo_nthreads_dyn = 0
+      Ptopo_nthreads_phy = 0
       Ptopo_bind_L = .false.
 !
       unf=0

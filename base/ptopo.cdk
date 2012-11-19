@@ -61,43 +61,42 @@
 #endif
       integer Ptopo_myproc    , Ptopo_myrow    , Ptopo_mycol
       integer Ptopo_numproc   , Ptopo_npex     , Ptopo_npey
-      integer Ptopo_npeOpenMP , Ptopo_npeOpenMP_resv
+      integer Ptopo_npeOpenMP
+      integer Ptopo_nthreads_dyn   , Ptopo_nthreads_phy
       integer Ptopo_nblocx    , Ptopo_nblocy   , Ptopo_mybloc
       integer Ptopo_ninblocx  , Ptopo_ninblocy
       integer Ptopo_myblocx   , Ptopo_myblocy  , Ptopo_blocme
-      integer Ptopo_numpe_perb, Ptopo_smtphy   , Ptopo_smtdyn
+      integer Ptopo_numpe_perb
       integer Ptopo_intracomm , Ptopo_intercomm, Ptopo_couleur
       integer Ptopo_world_myproc, Ptopo_world_numproc
       integer Ptopo_tag 
       logical Ptopo_bind_L
       
       integer, dimension(:,:), pointer :: Ptopo_gindx
-
 !
 !     ---------- WARNING WARNING WARNING ----------
 !     This next common is broadcasted in pe_all_topo
 !     using the first element Ptopo_npex. HANDLE WITH CARE !!!
 
-      common  / Ptopo_bcast / Ptopo_npex     , Ptopo_npey
-      common  / Ptopo_bcast / Ptopo_nblocx   , Ptopo_nblocy
-      common  / Ptopo_bcast / Ptopo_ninblocx , Ptopo_ninblocy
-      common  / Ptopo_bcast / Ptopo_smtphy   , Ptopo_smtdyn
+      common /Ptopo_bcast/ Ptopo_npex        , Ptopo_npey
+      common /Ptopo_bcast/ Ptopo_nblocx      , Ptopo_nblocy
+      common /Ptopo_bcast/ Ptopo_ninblocx    , Ptopo_ninblocy
+      common /Ptopo_bcast/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy
 !
-      common  / Ptopo_b / Ptopo_npeOpenMP, Ptopo_npeOpenMP_resv
-      common  / Ptopo_b / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
-      common  / Ptopo_b / Ptopo_numproc 
-      common  / Ptopo_b / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
-      common  / Ptopo_b / Ptopo_blocme   , Ptopo_numpe_perb
-      common  / Ptopo_b / Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
-      common  / Ptopo_b / Ptopo_world_myproc, Ptopo_world_numproc
-      common  / Ptopo_b / Ptopo_tag
-!
+      common  / Ptopo_i / Ptopo_npeOpenMP
+      common  / Ptopo_i / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
+      common  / Ptopo_i / Ptopo_numproc 
+      common  / Ptopo_i / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
+      common  / Ptopo_i / Ptopo_blocme   , Ptopo_numpe_perb
+      common  / Ptopo_i / Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
+      common  / Ptopo_i / Ptopo_world_myproc, Ptopo_world_numproc
+      common  / Ptopo_i / Ptopo_tag
+
       common  / Ptopo_l / Ptopo_bind_L
+!
       common  / Ptopo_p / Ptopo_gindx
 !
-      namelist /resources/ Ptopo_npex  , Ptopo_npey
+      namelist /resources/ Ptopo_npex  , Ptopo_npey, Ptopo_bind_L
       namelist /resources/ Ptopo_nblocx, Ptopo_nblocy
-      namelist /resources/ Ptopo_ninblocx, Ptopo_ninblocy
-      namelist /resources/ Ptopo_smtphy, Ptopo_smtdyn, Ptopo_bind_L
-
-
+      namelist /resources/ Ptopo_ninblocx    , Ptopo_ninblocy
+      namelist /resources/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy

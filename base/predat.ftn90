@@ -70,12 +70,12 @@
 !
       if (Lun_debug_L) write (Lun_out,1000)
 !
-      call diag_fip (F_fiptx,F_s,F_t,F_q,F_topo,LDIST_DIM,l_nk)
+      call diag_fip (F_fiptx(:,:,1),F_s,F_t(:,:,2),F_q(:,:,1),F_topo,LDIST_DIM,l_nk)
 !
 !      if (Hzd_t1_0_L) call hzd_hoffld (F_u ,  LDIST_DIM, G_nk  , 1)
 !      if (Hzd_t1_0_L) call hzd_hoffld (F_v ,  LDIST_DIM, G_nk  , 2)
 !
-      call diag_zd_w (F_zd,F_w,F_u,F_v,F_t,F_fiptx,F_s,LDIST_DIM,l_nk,.not.Ana_zd_L,.not.Ana_w_L,1)
+      call diag_zd_w (F_zd,F_w(:,:,2),F_u,F_v,F_t(:,:,2),F_s,LDIST_DIM,l_nk,.not.Ana_zd_L,.not.Ana_w_L)
 
 !
 !      if (Hzd_t1_0_L) call hzd_hoffld (F_zd,  LDIST_DIM, G_nk+1, 3)

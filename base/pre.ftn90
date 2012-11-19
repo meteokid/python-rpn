@@ -62,7 +62,7 @@
 !modules
 !
       type(gmm_metadata) :: mymeta
-      integer i, j, istat
+      integer istat
 !*
 !     __________________________________________________________________
 !
@@ -127,8 +127,9 @@
 !     endif
 !
       call prep_2 ( rhsu ,rhsv ,ruw1  ,ruw2 ,rvw1 ,rvw2 , &
-                    xct1 ,yct1 ,zct1  ,fis0 ,rhsc ,rhst , &
-                    rhsw ,rhsf ,orhsu ,orhsv,rhsb ,nest_t, &
+                    xct1 ,yct1 ,zct1  ,fis0 ,rhsc ,rhst(l_minx,l_miny,2) , &
+                    rhsw(l_minx,l_miny,2) ,rhsf(l_minx,l_miny,2) ,orhsu , &
+                    orhsv,rhsb ,nest_t(l_minx,l_miny,2), &
                     LDIST_DIM, l_ni, l_nj, l_nk )
 
 !
