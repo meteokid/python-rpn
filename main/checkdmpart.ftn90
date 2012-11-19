@@ -7,6 +7,7 @@
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
+#include "cstv.cdk"
 #include "step.cdk"
 
       integer err,Pelocal,Petotal,npex,npey
@@ -15,16 +16,20 @@
 
       Step_runstrt_S='2011020300'
 
+      Step_dt=5
       err = grid_nml2 ('./gem_settings.nml',G_lam)
+      if (err .lt. 0) return
+
       if (Grd_typ_S(1:2).eq.'GY') G_lam=.true.
 
       err = gem_nml   ('./gem_settings.nml')
-
       err = gemdm_config ( )
+
       call set_schm
 
       Lun_out=6
 
+      write (6,'(/a)') '  ====> READING npex, npey from STDIN:'
       read(5,*) npex, npey
 
       call domain_decomp2 ( npex, npey, .true. )
