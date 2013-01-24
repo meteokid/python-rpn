@@ -168,7 +168,17 @@ contains
     ! Decide whether or not to write descriptor based on local tile
     implicit none
 #include "out.cdk"
-    writeDescriptor = (Out_blocme == 0).and.(Out_nisl > 0).and.(Out_njsl > 0)
+#include "out3.cdk"
+#include "ptopo.cdk"
+
+    writeDescriptor = (Out_blocme == 0)
+
+    if (Out3_fullplane_L) then
+       if (Out3_uendode_L) writeDescriptor= writeDescriptor .and. (Ptopo_couleur.eq.0)
+    else
+       writeDescriptor= writeDescriptor .and. (Out_nisl > 0) .and. (Out_njsl > 0)
+    endif
+
     return
   end function writeDescriptor
 

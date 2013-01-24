@@ -1,0 +1,57 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r e_whichvar -
+!
+      subroutine e_whichvar (F_names,F_n,F_unit,F_datev,F_var_S)
+      implicit none
+#include <arch_specific.hf>
+!
+      integer F_n
+      character* (*) F_names(F_n),F_var_S
+      integer F_unit,F_datev
+!author 
+!    Michel Desgagne - Fall 2012
+!revision
+! v4_50 - Desgagne M.     - Initial version
+!
+      character*1024 msg
+      integer,external :: fstinf
+      integer i,key,ni1,nj1,nk1,err
+!
+! ---------------------------------------------------------------------
+!
+      err = -1
+      do i=1, F_n
+         key = fstinf (F_unit,ni1,nj1,nk1,F_datev,' ', &
+                              -1,-1,-1,' ',F_names(i))
+         if ( key .ge. 0 ) then
+            err = 0
+            F_var_S = F_names(i)
+            exit
+         endif
+      end do
+
+      msg='No variables are found in analysis: '
+      do i=1, F_n
+         msg=trim(msg)//' '//F_names(i)
+      end do
+ 
+      call handle_error(err,'e_whichvar', msg)
+!
+! ---------------------------------------------------------------------
+!
+      return
+      end

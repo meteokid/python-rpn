@@ -31,6 +31,7 @@
       real, pointer, dimension (:,:,:) :: zdt0 => null()  ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:)   :: st0  => null()  ! effective dimensions are (LDIST_SHAPE)
       real, pointer, dimension (:,:,:) :: qt0  => null()  ! effective dimensions are (LDIST_SHAPE, 0:lnk+1)
+      real*8,pointer,dimension (:)     :: p00  => null()  ! effective dimension is (1) (scalar)
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
@@ -38,6 +39,6 @@
 #endif
 
       character(len=GMM_MAXNAMELENGTH) :: gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_vt0_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_vt0_s, gmmk_p00_s
       common /vt0_n_gmm/ gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s
-      common /vt0_n_gmm/ gmmk_vt0_s
+      common /vt0_n_gmm/ gmmk_vt0_s, gmmk_p00_s

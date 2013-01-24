@@ -13,21 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r diag_fip - Builds model (non-) hydrostatic perturbation and 
-!     total geopotential from temperature and "surface pressure" for
-!     vertically staggered variables as in Girard formulation 1.
+!**s/r diag_fi - Computes geopotential by vertically integrating the temperature
 !
 #include "model_macros_f.h"
 !
-      subroutine diag_fip(F_fip,F_s,F_t,F_q,F_fis,i0,in,j0,jn,nk)
-!     
+      subroutine diag_fi ( F_fip, F_s, F_t, F_q, F_fis, &
+                           Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       implicit none
 #include <arch_specific.hf>
 !     
-      integer i0,in,j0,jn,nk
-      real F_fip(LDIST_SHAPE,Nk+1),F_q(LDIST_SHAPE,Nk+1)
-      real F_s  (LDIST_SHAPE)       ,F_t(LDIST_SHAPE,Nk)
-      real F_fis(LDIST_SHAPE)
+      integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
+      real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,Nk+1)
+      real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
+      real F_fis(Minx:Maxx,Miny:Maxy)
 !
 !author
 !
@@ -36,37 +34,32 @@
 !revision
 !
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-!
-!object
-!       see id section
+! v4_50 - Desgagne M 	    - re-visit interface
 !
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-! F_fip        O    - perturbation hydrostatic geopotential height
-!                     Note the virtual levels!
+! F_fip        O    - geopotential
 ! F_s          I    - log(pis/pistars)
 ! F_t          I    - temperature
-! F_fis        I    - surface geopotential height
+! F_fis        I    - surface geopotential
 !
-!implicits
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
 !     
-!*
       integer i,j,k,nij
-      real*8  one,yyy,qbar
+      real*8, parameter :: one = 1.d0
+      real*8  yyy,qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
 !
-      parameter( one = 1.d0 )
 !     ---------------------------------------------------------------
 !
       nij = (in - i0 + 1)*(jn - j0 + 1)
-!
+
 !$omp parallel private (qbar,yyy,xtmp_8,ytmp_8)
-!
+
 !$omp do 
       do j=j0,jn
       do i=i0,in
@@ -74,7 +67,7 @@
       end do
       end do
 !$omp enddo
-!
+
       do k= G_nk,1,-1
          if(.not.Schm_hydro_L) then
 !$omp do
@@ -111,8 +104,9 @@
          end do
 !$omp enddo
       end do
-!
+
 !$omp end parallel
+
 !
 !     ---------------------------------------------------------------
 !

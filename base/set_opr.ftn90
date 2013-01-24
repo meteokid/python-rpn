@@ -225,15 +225,19 @@
          if ( (sol_precond_S.eq.'JACOBI') .or.  &
               (sol_precond_S.eq.'MULTICOL') ) call set_prec
       endif
-!   
-!C    Initialize common block for diffusion
-!
+
+!C    Initialize common block for horizontal diffusion
+
       call hzd_set ()
-!   
+  
 !C    Initialize common block for vertical sponge
-!
+
       call vspng_set ()
-!
+
+!C    Initialize common block for equatorial sponge
+
+      call eqspng_set ()
+
  1000 format(/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)', &
              /,'=============================================')
  1001 format(/,'WILL USE FGMRES ITERATIVE SOLVER WITH ',a, &

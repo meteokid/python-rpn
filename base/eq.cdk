@@ -1,3 +1,10 @@
+      integer eq_nlev
+
       real, dimension(1000) :: Eq_sponge
-      common / Eq / Eq_sponge
+      real, dimension(:,:), pointer :: eponmod
+      real, dimension(:  ), pointer :: coef,cm,cp
+
+      common / Eq_i / eq_nlev
+      common / Eq_r / Eq_sponge,eponmod,coef,cm,cp
+
 

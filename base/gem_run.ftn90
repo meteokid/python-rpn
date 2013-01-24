@@ -79,8 +79,6 @@
 ! F_rstrt_L     O         Is a restart required
 !----------------------------------------------------------------
 !
-!implicits
-#include "glb_ld.cdk"
 #include "init.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -89,12 +87,10 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "clim.cdk"
-#include "hzd.cdk"
 #include "modconst.cdk"
-      include "v4dg.inc"
 !
-      character*16   datev
-      logical bkup_L,flag,identity_4dvar_L
+      character*16 datev
+      logical bkup_L,flag
       integer last_step,fstep,istep,step0,stepf,upperlimit
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -105,21 +101,7 @@
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
 
       if (Lun_out.gt.0) write (6,900) datev
-!
-      identity_4dvar_L = V4dg_conf.ne.0 .and. V4dg_identity_L
-!
-!C    4D-Var: Control Cost function at INITIAL time
-!     ---------------------------------------------
-      if ( V4dg_conf.ne.0 ) then
-!
-!          Store TRAJ variables for conversion from 3D-Var to GEM
-!          ------------------------------------------------------
-           call v4d_rwtraj (41)
-!
-           call v4d_ctrlcst ()
-!
-      endif
-!
+
       call blocstat (.true.)
 
                       fstep = Step_total
@@ -133,119 +115,91 @@
          last_step = min(Step_total,last_step)
       endif
 
-      if ( .not. Rstri_rstn_L ) then
-         call out_outdir (Lctl_step, upperlimit)
-
-         if (Lctl_step.eq.0) then
-            call out_dyn (.false., .true.)
-            call pw_update_UVT ('P')
-            call pw_update_GPW
-         endif
-!
-!        Store TRAJ variables for Output on STD file 
-!        -------------------------------------------
-         if ( V4dg_conf.ne.0 ) call v4d_rwtraj (46) 
-!
-         call out_dyn (.true., .false.)
-         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
-         call out_launchpost2 (.false.,.false.)
-      endif
-
       step0 = Lctl_step+1
       stepf = last_step
-!
+
+      if ( .not. Rstri_rstn_L ) then
+         call out_outdir (Lctl_step, upperlimit)
+         if (Lctl_step.eq.0) then
+            call out_dyn (.false., .true.) ! casc output
+            call out_steps (0,0)
+            if ( Schm_phyms_L ) call itf_phy_step (0)
+         endif
+         call out_steps (Lctl_step, stepf)
+         call out_dyn (.true., .false.) ! regular output
+         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
+              call out_launchpost2 (.false.,.false.)
+      else
+         call out_steps (step0, stepf)
+      endif
+
       call itf_cpl_fillatm
-!
+
       bkup_L = .false.
-!
+
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
-!
+
       do istep = step0, stepf
-!
+
          Lctl_step = istep
-!
+
          if ( bkup_L ) call wrrstrt
 !
 !C    Incrementing timestep
 !
          Rstri_sdon = Rstri_sdon + 1
-!
+
          if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,fstep
-!
+
          call out_outdir (istep, upperlimit)
-!
-         if ( .not.identity_4dvar_L ) then
 
-            call dynstep
+         call dynstep
 
-            call pw_shuffle
-            call pw_update_UVT ('P')
-            call pw_update_GPW
+         call out_dyn (.false., .true.) ! casc output
 
-            call out_dyn (.false., .true.)
+         if ( Schm_phyms_L ) call itf_phy_main (Lctl_step)
 
-            if ( Schm_phyms_L ) call itf_phy_main (Lctl_step)
-
-            call hzd_main
-
-         endif
+         call hzd_main
 !
 !C    Digital filter
 !     --------------
          if ( F_dgtflt_L ) call digflt
 !
-!
-!C    4D-Var: Control Cost function at .NOT.INITIAL time
-!     --------------------------------------------------
-         if ( V4dg_conf.ne.0 ) then
-!
-!            Store TRAJ variables for conversion from 3D-Var to GEM variables
-!            ----------------------------------------------------------------
-             call v4d_rwtraj (41)
-!
-             call v4d_ctrlcst
-!
-         endif
-!
 !C    Perform output if required
 !     --------------------------
 !
-!        Store TRAJ variables for Output on STD file
-!        -------------------------------------------
-         if ( V4dg_conf.ne.0 ) call v4d_rwtraj (46)
-!
-         call out_dyn (.true., .false.)
-!
+         call out_dyn (.true., .false.) ! regular output
+
          call blocstat (.false.)
-!
+
          call itf_cpl_fillatm
-!
+
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 !
 !     * Must we write a restart file?
 !
          bkup_L = mod( Lctl_step ,Step_bkup ).eq.0
-!
+
          if ( Lctl_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
-!
+
          flag= F_dgtflt_L .and. Lctl_step.ge.(Init_dfnp-1)/2
          if ( (istep.ne.stepf) .and. (.not.flag) ) &
          call out_launchpost2 (.false.,.false.)
-!
+
          call gemtim4 ( Lun_out, 'CURRENT TIMESTEP', .false. )
-!
+
       end do
-!
+
       call max_rss (' GEMDM',Lun_out.gt.0)
-!
+
       F_rstrt_L = .false.
       if ((Lctl_step.lt.fstep).or.(Clim_climat_L)) F_rstrt_L = .true.
-!
+
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
-!
+
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
  1001 format(/,'GEM_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8, &
-             /,'================================================')
+             /,'======================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP',I8, &
       /,'===================================================')

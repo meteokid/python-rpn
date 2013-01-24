@@ -18,24 +18,23 @@
 !**********************************************************************
 !
 #include "model_macros_f.h"
-!
-      subroutine nlip_4 ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf , &
-                          F_u  , F_v  , F_t    , F_s  , F_q  ,        &
-                          F_rp , F_rc , F_fis  , F_nb , &
-                          DIST_DIM, Nk )
-!
+      subroutine nlip (F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
+                       F_u  , F_v  , F_t    , F_s  , F_q  ,         &
+                       F_rhs, F_rc , F_fis, F_nb   , DIST_DIM, Nk , &
+                       ni,nj, i0,j0,in,jn,k0 )
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk
+      integer DIST_DIM, Nk,ni,nj,i0,j0,in,jn,k0
       real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &
               F_nt   (DIST_SHAPE,Nk)    ,F_nc   (DIST_SHAPE,Nk)    , &
               F_nw   (DIST_SHAPE,Nk)    ,F_nf   (DIST_SHAPE,Nk)    , &
               F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    , &
               F_t    (DIST_SHAPE,Nk)    ,F_s    (DIST_SHAPE)       , &
-              F_q    (DIST_SHAPE,Nk+1)  ,                            &
-              F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
+              F_q    (DIST_SHAPE,Nk+1)  ,F_rc   (DIST_SHAPE,Nk)    , &
+!              F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
               F_fis  (DIST_SHAPE)       ,F_nb   (DIST_SHAPE)
+      real*8  F_rhs  (ni,nj,Nk)
 !
 !author
 !     Alain Patoine - split from nli.ftn
@@ -52,60 +51,6 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.         - Open top
 ! v4_40 - Lee/Qaddouri      - Adjust range of calculation for Yin-Yang
-!
-!object
-!
-!arguments
-!     see documentation of appropriate comdecks
-!
-!implicits
-#include "glb_ld.cdk"
-#include "lam.cdk"
-#include "grd.cdk"
-#include "ptopo.cdk"
-
-!
-      integer i0, in, j0, jn, k0
-
-!*
-!     __________________________________________________________________
-!
-
-      i0=1+pil_w
-      in=l_ni-pil_e
-      j0=1+pil_s 
-      jn=l_nj-pil_n 
-
-      k0=1+Lam_gbpil_T
- 
-      call nlip_4_2     ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
-                          F_u  , F_v  , F_t    , F_s  , F_q  ,         &
-                          F_rp , F_rc , F_fis, F_nb  , &
-                          DIST_DIM, Nk, &
-                          i0,j0,in,jn,k0 )
-      return
-      end
-!
-! 2nd stage added for OpenMP
-!
-      subroutine nlip_4_2(F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
-                          F_u  , F_v  , F_t    , F_s  , F_q  ,         &
-                          F_rp , F_rc , F_fis, F_nb  , &
-                          DIST_DIM, Nk, &
-                          i0,j0,in,jn,k0 )
-!
-      implicit none
-#include <arch_specific.hf>
-!
-      integer DIST_DIM, Nk,i0,j0,in,jn,k0
-      real    F_nu   (DIST_SHAPE,Nk)    ,F_nv   (DIST_SHAPE,Nk)    , &
-              F_nt   (DIST_SHAPE,Nk)    ,F_nc   (DIST_SHAPE,Nk)    , &
-              F_nw   (DIST_SHAPE,Nk)    ,F_nf   (DIST_SHAPE,Nk)    , &
-              F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    , &
-              F_t    (DIST_SHAPE,Nk)    ,F_s    (DIST_SHAPE)       , &
-              F_q    (DIST_SHAPE,Nk+1)  ,                            &
-              F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
-              F_fis  (DIST_SHAPE)       ,F_nb   (DIST_SHAPE)
 !
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -124,13 +69,12 @@
       integer i, j, k, km, i0u, inu, j0v, jnv, nij, k0t
       real    w_nt
       real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,c4,c5,qbar,ndiv, &
-              w1,w2,w3,w4,barz, barzp, wk2(DIST_SHAPE)
+              w1,w2,w3,w4,w5,barz, barzp, wk2(DIST_SHAPE)
 !
       real*8, parameter :: zero=0.d0, one=1.d0
 !
       real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real, dimension(:,:,:), allocatable :: BsPq, FI, MU
-      
 !
 ! --------------------------------------------------------------------
 !
@@ -188,10 +132,11 @@
 !
       call diag_var(BsPq,MU,F_s,F_q,     i0u,inu+1,j0v,jnv+1,k0t,l_nk)
 !
-      call diag_fip(FI,F_s,F_t,F_q,F_fis,i0u,inu+1,j0v,jnv+1,    l_nk)
+      call diag_fi (FI, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
+                    i0u,inu+1,j0v,jnv+1)
 
 !$omp parallel private(km,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
-!$omp w1,w2,w3,w4,qbar)
+!$omp w1,w2,w3,w4,w5,qbar)
 !
 !$omp do
       do 100 k=k0,l_nk
@@ -528,13 +473,11 @@
          endif
          do j= j0, jn
          do i= i0, in
-            F_rp(i,j,k) = Dcst_rayt_8**2 * ( F_rc(i,j,k) &
-                 - Ver_dz_8%m(k) * F_nc(i,j,k) &
+            w5 =  Dcst_rayt_8**2 * ( F_rc(i,j,k) &
+                 - Ver_dz_8%m(k) *   F_nc(i,j,k) &
                  + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km) )
-            
-            F_rp(i,j,k) = F_rp(i,j,k) &
-                 + w3 * ( Ver_wp_8%m(k) * F_nf(i,j,k  ) &
-                         +    w4        * F_nf(i,j,km ) )
+            F_rhs(i,j,k) = w5 + w3 * ( Ver_wp_8%m(k) * F_nf(i,j,k  ) &
+                              + w4 * F_nf(i,j,km ) )
          enddo
          enddo
       enddo
@@ -544,13 +487,13 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
       if(Schm_opentop_L) then
-         F_rp(:,:,1:(k0-1)) = 0.0
+         F_rhs(:,:,1:(k0-1)) = 0.0
 !$omp do
          do j= j0, jn
          do i= i0, in
             F_nb(i,j)    = F_nt(i,j,k0-1)-b3*F_nb(i,j)+b4*F_t(i,j,k0-1)
-            F_rp(i,j,k0) = F_rp(i,j,k0) &
-                         + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
+            F_rhs(i,j,k0)= F_rhs(i,j,k0) &
+                           + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
          end do
          end do
 !$omp enddo
@@ -559,8 +502,8 @@
 !$omp do
       do j= j0, jn 
       do i= i0, in
-         F_rp(i,j,l_nk) = F_rp(i,j,l_nk) &
-                        - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk)
+         F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) &
+                           - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk)
       end do
       end do
 !$omp enddo

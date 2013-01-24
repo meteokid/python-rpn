@@ -1,3 +1,0 @@
-
-      logical mon_acid_test_L
-      common /monacid_l/ mon_acid_test_L

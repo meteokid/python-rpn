@@ -91,8 +91,6 @@
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(zdt1)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(fiptx)'
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(fis0)'
 
@@ -135,18 +133,18 @@
 
       call set_dync ()
 
-      call predat4 ( ut1, vt1, tt1, zdt1, wt1, st1, qt1, fis0, fiptx, &
-                                         l_minx,l_maxx,l_miny,l_maxy)
+      call predat6 ( ut1, vt1, tt1, zdt1, wt1, st1, &
+                     l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
+
+      call pw_update_UVT ('P')
+      call pw_update_GPW
+      call frstgss ()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 
-      if (G_lam) then
-         call nest_init ()
-      else
-         call glhalo_init()
-      endif
-!
+      if (G_lam) call nest_init ()
+
 !     ---------------------------------------------------------------
 !
  1000 format(/,'TREATING INITIAL CONDITIONS  (S/R INDATA)',/,41('='))

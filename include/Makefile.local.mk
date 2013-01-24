@@ -172,10 +172,10 @@ $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
 
 split3df: $(BINDIR)/split3df_$(BASE_ARCH).Abs
 	ls -lL $(BINDIR)/split3df_$(BASE_ARCH).Abs
-split3df.f90: 
+split3df.cdk90: 
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ 2>/dev/null || true ; fi ;\
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
-$(LCLPO)/split3df.o: split3df.f90
+$(LCLPO)/split3df.o: split3df.cdk90
 $(BINDIR)/split3df_$(BASE_ARCH).Abs: $(LCLPO)/split3df.o
 	makemodelbidon split3df > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
@@ -186,10 +186,10 @@ $(BINDIR)/split3df_$(BASE_ARCH).Abs: $(LCLPO)/split3df.o
 
 toc2nml: $(BINDIR)/toc2nml
 	ls -lL $(BINDIR)/toc2nml
-toc2nml.ftn90: 
+toc2nml.cdk90: 
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ 2>/dev/null || true ; fi ;\
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ 2>/dev/null || true ; fi
-$(LCLPO)/toc2nml.o: toc2nml.ftn90
+$(LCLPO)/toc2nml.o: toc2nml.cdk90
 $(BINDIR)/toc2nml: $(LCLPO)/toc2nml.o
 	makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\

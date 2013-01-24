@@ -85,14 +85,7 @@
       if (TT_indx.gt.0) then
          istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
          call tt2virt (tt1, .true., 'P')
-         if (Schm_pheat_L) then
-            istat = gmm_get(gmmk_tt1_s  ,tt1  ,mymeta)
-            istat = gmm_get(gmmk_st1_s  ,st1  ,mymeta)
-            istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-            istat = gmm_get(gmmk_fis0_s ,fis0 ,mymeta)
-            if(.not.Schm_hydro_L) istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-            call diag_fip (fiptx(l_minx,l_miny,1),st1,tt1(l_minx,l_miny,2),qt1(l_minx,l_miny,1),fis0,LDIST_DIM,l_nk)
-         endif
+         call pw_update_GPW
       endif
 
       if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then

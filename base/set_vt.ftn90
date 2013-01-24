@@ -68,7 +68,7 @@
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
-      type(gmm_metadata) :: mymeta,mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk1_u,mymeta3d_nk1_v,mymeta3d_nk1_t,mymeta3d_nk2_t,mymeta3d_0nk1_m,mymeta2d_s
+      type(gmm_metadata) :: mymeta,mymeta3d_nk_u,mymeta3d_nk_v,mymeta3d_nk1_u,mymeta3d_nk1_v,mymeta3d_nk1_t,mymeta3d_nk2_t,mymeta3d_0nk1_m,mymeta2d_s,mymetasc_p00
       integer :: i,istat
       integer :: flag_n, flag_r_n,flag_r_z
       integer*8 :: flag_m_u,flag_m_v,flag_m_f,flag_t_f,flag_s_f
@@ -95,6 +95,7 @@
       mymeta3d_nk2_t = SET_GMMUSR_FLAG(meta3d_nk2,flag_t_f)
       mymeta3d_0nk1_m= SET_GMMUSR_FLAG(meta3d_0nk1,flag_m_f)
       mymeta2d_s     = SET_GMMUSR_FLAG(meta2d,flag_s_f)
+      mymetasc_p00   = SET_GMMUSR_FLAG(metasc,flag_s_f)
 
 !     2. Initialize comdeck for variables at time t0
 !        -------------------------------------------
@@ -106,6 +107,7 @@
       gmmk_qt0_s    = 'QT0'
       gmmk_ut0_s    = 'UT0'
       gmmk_vt0_s    = 'VT0'
+      gmmk_p00_s    = 'P00'
 
       istat = GMM_OK
       istat = min(gmm_create(gmmk_ut0_s,ut0,mymeta3d_nk1_u,flag_r_n),istat)
@@ -114,6 +116,7 @@
       istat = min(gmm_create(gmmk_zdt0_s,zdt0,mymeta3d_nk1_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_tt0_s,tt0,mymeta3d_nk2_t,flag_r_n),istat)
       istat = min(gmm_create(gmmk_st0_s,st0,mymeta2d_s,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_p00_s,p00,mymetasc_p00,flag_r_n),istat)
 
       !TODO: ? should qt0 be defined only if (.not. Schm_hydro_L) ?
       istat = min(gmm_create(gmmk_qt0_s,qt0,mymeta3d_0nk1_m,flag_r_n),istat)

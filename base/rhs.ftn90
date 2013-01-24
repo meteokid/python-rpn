@@ -140,6 +140,7 @@
          istatg=min(istat,istatg)
       endif
 !
+      nullify(orhsw,qt1)
       if (.not. Schm_hydro_L) then
 !
          istat = gmm_get(gmmk_orhsw_s,orhsw,mymeta)
@@ -157,13 +158,24 @@
 !     cycle of Crank-Nicholson procedure only
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-      call rhsp_3  ( orhsu, orhsv, orhsc,  orhst(l_minx,l_miny,2), &
-           orhsw(l_minx,l_miny,2),  orhsf(l_minx,l_miny,2), &
-           ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
-           ut1,   vt1,   wt1(l_minx,l_miny,2),    tt1(l_minx,l_miny,2),&
-           st1,   zdt1, &
-           qt1(l_minx,l_miny,1), fis0, &
-           LDIST_DIM,l_nk  )
+      if (associated(qt1)) then
+         call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, &
+              orhsw,  orhsf, &
+              ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
+              ut1,   vt1,   wt1(LDIST_SHAPE,2:),    tt1(LDIST_SHAPE,2:),&
+              st1,   zdt1, &
+              qt1(LDIST_SHAPE,1:), fis0, &
+              LDIST_DIM,l_nk  )
+      else
+         call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, &
+              orhsw,  orhsf, &
+              ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
+              ut1,   vt1,   wt1(LDIST_SHAPE,2:),    tt1(LDIST_SHAPE,2:),&
+              st1,   zdt1, &
+              qt1,   fis0, &
+              LDIST_DIM,l_nk  )
+      endif
+
 !     
 !     Pour debug
 !      if (Acid_test_L) then

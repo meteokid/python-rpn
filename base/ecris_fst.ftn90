@@ -34,9 +34,9 @@
 ! v3_30 - Desgagne/Lee - Out_datyp is defined for data compression by default
 ! v3_30 - Girard C.    - inverse output levels for option in Out_Flipit
 !
-!*
-#include "dimout.cdk"
+!#include "dimout.cdk"
 #include "out.cdk"
+#include "out3.cdk"
 #include "level.cdk"
 !
       integer  fstecr
@@ -59,6 +59,12 @@
 !
 !     Writing field 'nomvar' to a FST file
 !
+      if (Out3_fullplane_L) then
+         call out_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul, &
+                               add,kind,nkfa,ind_o,nk_o,nbit,.false. )
+         return
+      endif
+
       modeip1=level_mode_ip1
       if ((Out_nisl.le.0).or.(Out_njsl.le.0)) return
 !     Force oldip1style for output on pressure levels
@@ -104,9 +110,25 @@
 !
       endif
 !
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_start ( 82, 'OUT_D#COL')
+      else
+         call timing_start ( 91, 'OUT_P#COL')
+      endif
       call blkcol ( tr1,nis,njs,Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,mul, &
                     add,fa,lminx,lmaxx,lminy,lmaxy,nkfa,ind_o,nk_o)
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_stop (82)
+      else
+         call timing_stop (91)
+      endif
 !
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_start ( 84, 'OUT_D#ECR')
+      else
+         call timing_start ( 92, 'OUT_P#ECR')
+      endif
+
       if (Out_blocme.eq.0) then
 !
       if (stride_L) then
@@ -182,6 +204,12 @@
       deallocate (tr1)
       if (stride_L) call hpdeallc (patr2 , ier, 1)
 !
+      endif
+
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_stop (84)
+      else
+         call timing_stop (92)
       endif
 !
 !--------------------------------------------------------------------

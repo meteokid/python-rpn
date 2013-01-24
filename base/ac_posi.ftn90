@@ -105,8 +105,8 @@
       if (Grdc_ndt.gt.0) then
          if ((prout).and.(.not.Rstri_rstn_L)) &
          write (6,1006) Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_start,Grdc_end
-         call out_sgrid (Grdc_gid, Grdc_gif, Grdc_gjd, Grdc_gjf, &
-                                       0, 0, .false., 1, '', '')
+         call out_sgrid2 (Grdc_gid, Grdc_gif, Grdc_gjd, Grdc_gjf, &
+                                            0, 0, .false., 1, '')
       else
          if (prout) write (6,1004)
          return

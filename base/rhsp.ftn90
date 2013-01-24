@@ -125,7 +125,8 @@
 !
       call diag_var(BsPq, MU, F_s, F_q, 1,l_ni+1,1,l_nj+1,1,l_nk)
 !
-      call diag_fip(FIp, F_s, F_t, F_q, F_fis, 1,l_ni+1,1,l_nj+1, l_nk)
+      call diag_fi (FIp, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
+                    1,l_ni+1,1,l_nj+1)
 !
 
 !$omp parallel private(i,j,i0,j0,jn,in,km,barz,barzp, &

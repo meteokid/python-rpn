@@ -91,22 +91,21 @@
        DCL_DYNVAR(Hz1d,deltau_8, real*8, (*))
        DCL_DYNVAR(Hz1d,deltav_8, real*8, (*))
        DCL_DYNVAR(Hz1d,deltas_8, real*8, (*))
-!
-       integer HZD_MAXTR
-       parameter ( HZD_MAXTR = 500 )
 
-       integer Hzd_tr3d_ntr,Hzd_pwr,Hzd_pwr_tr
+       integer, parameter :: HZD_MAXTR = 500
+
        character*8  Hzd_tr3d_name_S(HZD_MAXTR)
        character*12 Hzd_type_S
-       logical Hzd_ho_L,Hzd_difva_L
-       logical Hzd_t1_0_L,Hzd_t0_0_L
-       logical Hzd_1d_L
-       real Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_cdiff_tr
+       logical      Hzd_ho_L  , Hzd_difva_L
+       logical      Hzd_t1_0_L, Hzd_t0_0_L
+       logical      Hzd_1d_L  , Hzd_theta_L
+       integer      Hzd_tr3d_ntr, Hzd_pwr, Hzd_pwr_tr
+       real         Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_cdiff_tr
 
-       common /hzdi/ Hzd_tr3d_ntr,Hzd_pwr,Hzd_pwr_tr
+       common /hzdc/ Hzd_type_S, Hzd_tr3d_name_S
+       common /hzdl/ Hzd_ho_L  , Hzd_difva_L
+       common /hzdl/ Hzd_t1_0_L, Hzd_t0_0_L
+       common /hzdl/ Hzd_1d_L  , Hzd_theta_L
+       common /hzdi/ Hzd_tr3d_ntr, Hzd_pwr, Hzd_pwr_tr
        common /hzdr/ Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_cdiff_tr
-       common /hzdc/ Hzd_type_S,Hzd_tr3d_name_S
-       common /hzdl/ Hzd_ho_L,Hzd_difva_L
-       common /hzdl/ Hzd_t1_0_L,Hzd_t0_0_L
-       common /hzdl/ Hzd_1d_L
-!
+

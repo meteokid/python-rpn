@@ -80,6 +80,8 @@
 !
       call out_launchpost2 (.true.,.not.F_continue_L)
 !
+      if (Lun_out.gt.0) call out_stat ()
+!
       if (.not. F_continue_L) err = clib_remove('restart')
 !
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )

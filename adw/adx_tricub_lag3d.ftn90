@@ -30,6 +30,8 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
    real,dimension(F_num), intent(in) :: F_x, F_y, F_z ! interpolation target x,y,z coordinates
    real,dimension(*), intent(in) :: F_in              ! field to interpolate 
    real,dimension(F_num), intent(out) :: F_out        ! result of interpolation   
+   
+   logical :: andre_print_L
 !
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
@@ -39,7 +41,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
 
-   integer :: kkmax,notop
+   integer :: kkmax
    real*8  :: p_z00_8
 
    integer,dimension(:),pointer :: p_lcz
@@ -67,8 +69,6 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
    
    call timing_start (95, 'ADW_INTERP')
 
-   notop=0
-
    if (F_lev_S == 'm') then
       kkmax   = adx_lnkm - 1
       p_z00_8 = adx_verZ_8%m(1)
@@ -80,9 +80,8 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
       p_zdabc_8 => adx_zdabc_8%m
       p_zbc_8   => adx_zbc_8%m
    else
-      notop   = 1
-      kkmax   = adx_lnkm
-      p_z00_8 = adx_verZ_8%t(1)
+      kkmax   = adx_lnkm-1
+      p_z00_8 = adx_verZ_8%t(2)
       p_lcz     => adx_lcz%t
       p_bsz_8   => adx_bsz_8%t
       p_zabcd_8 => adx_zabcd_8%t
@@ -101,7 +100,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
 !$omp                  adx_ovdz_8, adx_lcx,adx_lcy, adx_bsx_8,adx_bsy_8,p_bsz_8, adx_xabcd_8,   &
 !$omp                  adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,&
 !$omp                  adx_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
-!$omp                  F_num, i0, in, j0, jn, k0, F_nk, notop)
+!$omp                  F_num, i0, in, j0, jn, k0, F_nk)
 !$omp do private(prmin, prmax)
 
 #define ADX_MONO
@@ -119,7 +118,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
 !$omp                  adx_ovdz_8, adx_lcx,adx_lcy,adx_bsx_8,adx_bsy_8,p_bsz_8, adx_xabcd_8,    &
 !$omp                  adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,&
 !$omp                  adx_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
-!$omp                  F_num, i0, in, j0, jn, k0, F_nk, notop)
+!$omp                  F_num, i0, in, j0, jn, k0, F_nk)
 !$omp do
 
 #undef ADX_MONO
@@ -130,7 +129,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
 
    endif
 
-   call tmg_stop (95)
+   !call tmg_stop (95)
 
    !---------------------------------------------------------------------
 

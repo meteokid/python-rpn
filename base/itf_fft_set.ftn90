@@ -68,9 +68,9 @@
          Fft_m      = Fft_n/2
          Fft_nstore = Fft_n + 2
 
-         if (associated(Fft_ssin)) deallocate(Fft_ssin)
-         if (associated(Fft_ccos)) deallocate(Fft_ccos)
-         if (associated(Fft_qsin)) deallocate(Fft_qsin)
+         if (associated(Fft_ssin)) deallocate(Fft_ssin,stat=istat)
+         if (associated(Fft_ccos)) deallocate(Fft_ccos,stat=istat)
+         if (associated(Fft_qsin)) deallocate(Fft_qsin,stat=istat)
 
          allocate (Fft_ssin(Fft_n-Fft_m-1), &
                    Fft_ccos(Fft_n-Fft_m-1), Fft_qsin(0:Fft_m-1))

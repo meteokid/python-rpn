@@ -17,9 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine e_open_files
+      subroutine e_open_files (current_date)
       implicit none
 #include <arch_specific.hf>
+!
+      integer current_date
 !
 !author 
 !    Michel Desgagne - Summer 2008
@@ -41,13 +43,15 @@
 #include "path.cdk"
 #include <clib_interface.cdk>
 !
+      integer, external :: newdate
       character*16 pdate
       character*1024 rootfn,filen
+      integer yy,mm,dd,dum
       integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,err
 !
 ! ---------------------------------------------------------------------
 !
-      call datf2p (pdate,datev)
+      call datf2p (pdate,current_date)
 
       rootfn=trim(Path_output_S)//'/GEMDM_input/'
       
@@ -59,6 +63,9 @@
       endif
 
       if (Pil_bmf_L) then
+
+         err = newdate ( current_date, bmf_time1, bmf_time2, -3 )
+         call prsdate  ( yy,mm,dd,Bmf_hh,Bmf_mm,Bmf_ss,dum,pdate)
 
          call bmf_splitstart (Ptopo_npex,Ptopo_npey,trim(rootfn),'BM', &
                                       Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)

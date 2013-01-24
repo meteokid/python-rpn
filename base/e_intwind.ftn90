@@ -56,9 +56,9 @@
 #include "hgc.cdk"
 !
       integer  ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
-               fstinf,fstlir,fstprm,e_rdhint3
+               fstinf,fstlir,fstprm,e_rdhint3,ezgetopt
       external ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
-               fstinf,fstlir,fstprm,e_rdhint3
+               fstinf,fstlir,fstprm,e_rdhint3,ezgetopt
 !
       integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1,  &
               nk1,nkc,err,iu,ju,iv,jv,nu,nv, istat
@@ -70,6 +70,7 @@
       character*1 typ,grd
       character*4 var,var_uu,var_vv
       character*12 lab
+      character*32 logic_S
       logical flag_ut1
       real, dimension (:), allocatable :: uu,vw,vv,uw
       real uvw(niu*nju),c1
@@ -266,6 +267,12 @@
 !
       else
       print *,'Interpolation required for winds'
+      err = ezgetopt('subgrid_mask',logic_S)
+      if (logic_S.eq.'yes') then
+         print *,'EZGETOPT on Subgrid_mask gives yes'
+      else
+         print *,'EZGETOPT on Subgrid_mask gives no'
+      endif
 !
       ip2 = ip2a
       ip3 = ip3a

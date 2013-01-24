@@ -17,11 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine nli()
-!
+      subroutine nli (F_rhs_sol,Ni,Nj,Nk)
       implicit none
 #include <arch_specific.hf>
 !
+      integer Ni,Nj,Nk
+      real*8  F_rhs_sol (Ni,Nj,Nk)
 !authors
 !      Alain Patoine & Gabriel Lemay
 !
@@ -54,21 +55,14 @@
 #include "vtx.cdk" 
 #include "ptopo.cdk"
 #include "lctl.cdk"
-#include "acid.cdk"
 #include "lam.cdk"
 
-!modules
-!    
-!*
       type(gmm_metadata) :: mymeta
-      integer :: istat
+      integer :: istat, i0, in, j0, jn, k0
 !     __________________________________________________________________
 !
-!
       if (Lun_debug_L)  write(Lun_out,1000)
-!
-      istat = gmm_get(gmmk_rhsp_s,rhsp,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(rhsp)'
+
       istat = gmm_get(gmmk_rhsc_s,rhsc,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(rhsc)'
       istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
@@ -90,24 +84,34 @@
       else
          nullify(qt0)
       endif
-!
-   !  if (Acid_test_L) &
-   !       call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,1)
-!
-      if (Grd_yinyang_L) & ! THIS CALL MUST BE ELIMINATED
-           call diag_fip( fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2),&
-           qt0(l_minx,l_miny,1), fis0, LDIST_DIM, l_nk)
-!
-      call nlip_4 ( nl_u , nl_v , nl_t , nl_c , nl_w , nl_f , &
-                    ut0  , vt0  , tt0(l_minx,l_miny,2)  , st0  , &
-                    qt0(l_minx,l_miny,1)  ,  &
-                    rhsp , rhsc , fis0, nl_b, &
-                    LDIST_DIM, l_nk )
-!
-   !  if (Acid_test_L) &
-   !       call acid_stat_nli(qt0,st0,bspqtx,nl_u,nl_v,nl_t,nl_c,nl_f,2)
-!
-!
+
+      i0=1   +pil_w
+      in=l_ni-pil_e
+      j0=1   +pil_s 
+      jn=l_nj-pil_n 
+
+      k0=1+Lam_gbpil_T
+
+      if (associated(qt0)) then
+         if (Grd_yinyang_L) & ! THIS CALL MUST BE ELIMINATED
+              call diag_fi ( fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2),&
+                               qt0(l_minx,l_miny,1),fis0, LDIST_DIM, l_nk, LDIST_DIM)
+
+         call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f    , &
+                     ut0 , vt0 , tt0(l_minx,l_miny,2), st0  , &
+                     qt0(l_minx,l_miny,1), F_rhs_sol, rhsc  , &
+                     fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
+      else
+         if (Grd_yinyang_L) & ! THIS CALL MUST ALSO BE ELIMINATED
+              call diag_fi ( fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2),&
+                             qt0, fis0, LDIST_DIM, l_nk, LDIST_DIM)
+
+         call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f   , &
+                     ut0 , vt0 , tt0(l_minx,l_miny,2), st0 , &
+                     qt0 , F_rhs_sol, rhsc                 , &
+                     fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
+      endif
+
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')
 !
 !     __________________________________________________________________

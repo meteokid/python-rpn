@@ -1,0 +1,8 @@
+      type :: meta_fstecr
+        sequence
+        character*4 nv
+        integer :: ip1,ig3,nbits,dtyp,ni,nj
+      end type meta_fstecr
+
+      integer out_stk_full,out_stk_cnt,out_stk_part(10000)
+      common / out_stk_i / out_stk_full,out_stk_cnt,out_stk_part

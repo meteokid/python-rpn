@@ -75,7 +75,7 @@
 
       call handle_error (err,'bcs_ftype','Problem with nav_3df')
 
-      call RPN_COMM_bcast (fn, len(ft), "MPI_CHARACTER",0,"BLOC",err)
+      call RPN_COMM_bcastc (fn, len(ft), "MPI_CHARACTER",0,"BLOC",err)
 
       ft= fn(1:len(ft))
          

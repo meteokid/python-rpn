@@ -203,6 +203,8 @@
       if (.not.Acql_vertint.and..not.(Schm_autobar_L)) &
          Acql_vertint=.not.samelevel2( za_8,zb_8,nka_m, zat_8,zbt_8,nka_t, &
                                        gz_temp(1,1,nka_t),topo_temp,l_ni,l_nj)
+! vl force no interpolation (for run with analysis on samegrid)
+!     Acql_vertint = .false.
 !
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*) &

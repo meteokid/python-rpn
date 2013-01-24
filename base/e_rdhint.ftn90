@@ -45,6 +45,7 @@
 #include "e_cdate.cdk"
 #include "hgc.cdk"
 #include "e_anal.cdk"
+#include "grd.cdk"
 !
 ! NOTES: will return e_rdhint3= -1 if nomvar_S is not found or if
 !                                 a problem occurs
@@ -57,29 +58,28 @@
 !                                 ip123 and no horizontal interpolation 
 !                                 is required
 !*                  
-      integer fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
-      logical samegrid
-      external fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint, &
-               samegrid
-      integer  ip1_all
-      external ip1_all
+      integer, external :: samesubgrid
+      integer,external :: fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
+      logical,external :: samegrid
+      integer,external :: ip1_all
 !
       character*1  grd
       character*2  typ
       character*4  var
       character*12  lab,cdum
+      character*32  interp2_S
       real    zp1
       logical tr_ip_L,must_interpo_L
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
-      integer i,key,nic,njc,nkc,err,src_gid,iunit
+      integer i,key,nic,njc,nkc,err,src_gid,iunit,kind,ni1,nj1,subid
       real xlon,ylat,conv_ip1
       pointer (paxlon, xlon(*)), (paylat, ylat(*))
       real,   dimension(:), allocatable  :: w1
-      logical must_interpo_s
-      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,kind,id_s
-      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s /-1,-1,-1,-1,-1,-1,-1/
-      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s,must_interpo_s
+!!$      logical,save :: must_interpo_s = .true.
+!!$      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s
+!!$      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s /-1,-1,-1,-1,-1,-1,-1/
+!!$      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s
 !
 !--------------------------------------------------------------------
 !
@@ -97,13 +97,13 @@
       tr_ip_L = key.ge.0
 !
       if ( (.not.tr_ip_L) .and. (anyip_L) ) then
-         call e_rdhint_out(stdo, "Warning field not found: ",nomvar_S,ip1,ip2,ip3)
+         call e_rdhint_out2(stdo, "Warning field not found: ",nomvar_S,ip1,ip2,ip3,' ')
          write(stdo,*) "Will try to locate it with with no specific ip123"
          key = fstinf (un1,nic,njc,nkc,datev,etik_S,-1,-1,-1,typvar_S, &
                                                              nomvar_S)
       endif
       if (key .lt. 0) then
-         call e_rdhint_out(stdo, "Missing field: ",nomvar_S,ip1,ip2,ip3)
+         call e_rdhint_out2(stdo, "Missing field: ",nomvar_S,ip1,ip2,ip3,' ')
          return
       endif
 !
@@ -115,72 +115,100 @@
 !
       if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'E' .and. &
            grd .ne. 'G' .and. grd .ne. 'L' .and. grd .ne. 'N' .and. &
-           grd .ne. 'S' .and. grd .ne. 'Y' .and. grd .ne. 'Z') then
-           call e_rdhint_out(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3)
+           grd .ne. 'S' .and. grd .ne. 'Y' .and. grd .ne. 'Z' .and. &
+           grd .ne. 'U' ) then
+           call e_rdhint_out2(stdo, "UNKNOWN grid for field: ",nomvar_S,ip1,p2,ip3,' ')
            goto 999
-        endif
+       endif
       if (.not.LAM) then
         if ( grd .ne. 'A' .and. grd .ne. 'B' .and. grd .ne. 'L' .and. &
-             grd .ne. 'G' .and. grd .ne. 'Z' ) then
-           call e_rdhint_out(stdo, "WRONG grid for field: ",nomvar_S,ip1,p2,ip3)
+             grd .ne. 'G' .and. grd .ne. 'Z' .and. grd .ne. 'U') then
+           call e_rdhint_out2(stdo, "WRONG grid for field: ",nomvar_S,ip1,p2,ip3,' ')
            goto 999
         endif
       endif
 !
+      subid=-1
       must_interpo_L = .false.
+      interp2_S = interp_S
       iunit = 0
-      if ((fhint_L).or.(grd.ne.'Z')) then
-         must_interpo_L = .true.
-         if (grd.eq.'Z') iunit=un1
-      else
-         if ((nic.ne.ni).or.(njc.ne.nj)) then
-            must_interpo_L = .true.
-         else
-            if (     (un_s.eq.un1).and.(nic_s.eq.nic).and.(njc_s.eq.njc) &
-                .and.(g1_s.eq.g1 ).and.(g2_s .eq.g2 ).and.(g3_s .eq.g3 ) &
-                .and.(id_s.eq.dgid) &
-               ) then
-               must_interpo_L = must_interpo_s
-            else
-               if (dgid.eq.dstf_gid) then
-                  paxlon = loc(xfi(1))
-                  paylat = loc(yfi(1))
-               else if (dgid.eq.dstu_gid) then
-                  paxlon = loc(xu(1))
-                  paylat = loc(yfi(1))
-               else
-                  paxlon = loc(xfi(1))
-                  paylat = loc(yv(1))
-               endif
-               must_interpo_L =  &
-                    .not. samegrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro, &
-                          Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
-               un_s = un1
-               nic_s= nic
-               njc_s= njc
-               g1_s = g1
-               g2_s = g2
-               g3_s = g3
-               id_s = dgid
-               must_interpo_s = must_interpo_L
-            endif
-         endif
-         iunit = un1
+      if (grd.eq.'Z' .or. grd.eq.'U') iunit=un1
+      ni1 = nic ; nj1 = njc
+      if (any(grd ==(/'u','U'/))) then
+          ni1 = -1 ; nj1 = -1
       endif
+      src_gid = ezqkdef (ni1, nj1, GRD, g1, g2, g3, g4, iunit)
+      if ((fhint_L).or.(grd.ne.'Z' .and. grd.ne.'U')) then
+         must_interpo_L = .true.
+      else
+          if (grd.eq.'Z') then
+             if (dgid.eq.dstf_gid) then
+                paxlon = loc(xfi(1))
+                paylat = loc(yfi(1))
+             else if (dgid.eq.dstu_gid) then
+                paxlon = loc(xu(1))
+                paylat = loc(yfi(1))
+             else
+                paxlon = loc(xfi(1))
+                paylat = loc(yv(1))
+             endif
+             if ((nic.ne.ni).or.(njc.ne.nj)) then
+                must_interpo_L = .true.
+             else
+                must_interpo_L =  &
+                     .not. samegrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro, &
+                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
+             endif
+          endif
+    !
+          if (grd.eq.'U') then
+    !multiple grids - limit the check to the core grid points
+             if (dgid.eq.dstf_gid) then
+                paxlon = loc(xfi(1))
+                paylat = loc(yfi(1))
+             else if (dgid.eq.dstu_gid) then
+                paxlon = loc(xu(1))
+                paylat = loc(yfi(1))
+             else
+                paxlon = loc(xfi(1))
+                paylat = loc(yv(1))
+             endif
+             must_interpo_L=.true.
+             print *,'ni,nj,nic,njc',ni,nj,nic,njc,Grd_extension,nj/2-Grd_extension*2
+             if (ni.eq.nic.and.nj.eq.njc/2) then
+                subid=samesubgrid(src_gid, ni,nj, Hgc_ig1ro, &
+                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
+                if (subid.ge.0) print *,'U grid contains sub grid match to ',ni,nj
+             
 !
+!            else if ( (ni-Grd_extension*2)  .eq.nic.and.       &
+!                      (nj-Grd_extension*2).eq.njc/2 ) then
+!               subid=samesubgrid(src_gid, ni-Grd_extension*2, &
+!               nj-Grd_extension*2, Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+!               xlon(Grd_extension+1), ylat(Grd_extension+1))
+!               if (subid.ge.0)print *,'U grid contains sub grid match to ',&
+!                       ni-Grd_extension*2,nj-Grd_extension*2
+             endif
+             if (subid.ge.0) then
+                 print *,'e_rdhint3: ezsetopt SUBGRID_MASK to NO'
+                 interp2_S='NEAREST'
+                 err = ezsetopt ('SUBGRID_MASK', 'NO')
+             endif
+          endif
+      endif
+
       if ( must_interpo_L ) then
-!
-         call e_rdhint_out(stdo, "Horizontal interpolation: ",nomvar_S,ip1,p2,ip3)
-         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, iunit)
+         call e_rdhint_out2(stdo, "Horizontal interpolation: ",nomvar_S,ip1,p2,ip3,interp2_S)
          err = ezdefset ( dgid, src_gid )
-         err = ezsetopt ('INTERP_DEGREE', interp_S)
+         err = ezsetopt ('INTERP_DEGREE', interp2_S)
          err = ezsint(f, w1)
          e_rdhint3 = 1
-!
+!  WILL NOT reset to default because in GEMNTR, we need this mask for e_intwind
+!        if (subid.ge.0) err=ezsetopt('SUBGRID_MASK','YES')
       else
-!
+!  ONLY possible to copy if analysis is on a Z grid
          e_rdhint3 = 0
-         call e_rdhint_out(stdo, "NO horizontal interpolation on ",nomvar_S,ip1,p2,ip3)
+         call e_rdhint_out2(stdo, "NO horizontal interpolation on ",nomvar_S,ip1,p2,ip3,' ')
 !
          do i=1,ni*nj
             f(i) = w1(i)
@@ -199,10 +227,10 @@
 !
       return
       end
-      subroutine e_rdhint_out(stdo,string_S,nomvar_S,ip1,ip2,ip3)
+      subroutine e_rdhint_out2(stdo,string_S,nomvar_S,ip1,ip2,ip3,msg_S)
       implicit none
 #include <arch_specific.hf>
-      character* (*) nomvar_S,string_S
+      character* (*) nomvar_S,string_S,msg_S
       character*12 dumc_S
       character*256 pformat_S
       integer  ip1, ip2, ip3, kind,stdo
@@ -212,13 +240,13 @@
 
       if (ip1.eq.-1) then
           pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))// &
-                  "',A4,' for ip123=',3i5)"
-          write(stdo,fmt=pformat_S) nomvar_S,ip1,ip2,ip3
+                  "',A4,' for ip123=',3i5,x,a)"
+          write(stdo,fmt=pformat_S) nomvar_S,ip1,ip2,ip3,trim(msg_S)
       else
           call convip ( ip1 , conv_ip1, kind, -1, dumc_S, .false. )
           pformat_S = "(/,'(S/R e_rdhint3) "//string_S(1:longueur(string_S))// &
-                  "',A4,' for ip123=',F12.5,2i5)"
-          write(stdo,fmt=pformat_S) nomvar_S,conv_ip1,ip2,ip3
+                  "',A4,' for ip123=',F12.5,2i5,x,a)"
+          write(stdo,fmt=pformat_S) nomvar_S,conv_ip1,ip2,ip3,trim(msg_S)
       endif
 
       return

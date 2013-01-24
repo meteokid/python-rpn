@@ -40,7 +40,6 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_haloy  = -1
    adw_stats_L = .false.
    adw_cub_traj_L=.false.
-   adw_trajdebug_L=.true.
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')

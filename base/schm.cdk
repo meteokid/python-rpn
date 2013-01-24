@@ -60,7 +60,7 @@
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
       logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
-      logical Schm_hzdzdt_L,Schm_hzduav_L
+      logical Schm_hzdadw_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith
@@ -73,7 +73,7 @@
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
-      common / schm_l / Schm_hzdzdt_L , Schm_hzduav_L
+      common / schm_l / Schm_hzdadw_L
 
       common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith

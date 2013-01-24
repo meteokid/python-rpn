@@ -44,7 +44,6 @@
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
       logical :: adw_cub_traj_L
-      logical :: adw_trajdebug_L
       integer :: adw_maxcfl
       integer :: adw_halox
       integer :: adw_haloy      
@@ -57,7 +56,6 @@
       namelist /adw_cfgs/ adw_positive_L
       namelist /adw_cfgs/ adw_nosetint_L
       namelist /adw_cfgs/ adw_cub_traj_L
-      namelist /adw_cfgs/ adw_trajdebug_L
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_gccsa_L
@@ -69,7 +67,6 @@
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L
       common /adw_nml_l/  adw_cub_traj_L
-      common /adw_nml_l/  adw_trajdebug_L
 
       common /adw_nml_i/  adw_halox
       common /adw_nml_i/  adw_haloy

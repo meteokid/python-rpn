@@ -85,51 +85,57 @@
       character(len=512) :: msg_S
       real :: gxfi(G_ni+1), gyfi(G_nj)
       real, dimension(:,:), allocatable :: obusval
+!
 !     ---------------------------------------------------------------
+!
+      call timing_start ( 40, 'PHYSTEP')
+
+      write (msg_S,'(a,i8,a)') &
+           '\nPHYSICS: PERFORMING TIMESTEP #',F_stepno,&
+           '\n===================================='
+      call msg(MSG_INFO,msg_S)
+
+      call pw_shuffle
+      call pw_update_UVT ('P')
+      call pw_update_GPW
+
       if (.not.init_L) then
          call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
          call datp2f(dateo,Mod_runstrt_S)
          geofilename_S = 'GEOPHY/Gem_geophy.fst'
-         if (Grd_yinyang_L) &
-              geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+!!$         if (Grd_yinyang_L) &
+!!$              geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
          init_L = .true.
          call phy_opti('NJ',phydim_nj,1,'GET',.false.,err)
          call phy_opti('NK',phydim_nk,1,'GET',.false.,err)
-         err = gmm_get ('BUSPER_3d',BUSPER3d)
+         err =     gmm_get ('BUSPER_3d',BUSPER3d)
          err = min(gmm_get ('BUSENT_3d',BUSENT3d),err)
          err = min(gmm_get ('BUSVOL_3d',BUSVOL3d),err)
          call handle_error(err,'itf_phy_step','Probleme getting buses') 
-         reduc_core = (/ &
-              Grd_left+ 1 + Lam_pil_w, &
-              Grd_left + Grd_nila  - Lam_pil_e, &
-              Grd_belo + 1         + Lam_pil_s, &
-              Grd_belo + Grd_njla  - Lam_pil_n /)
-!!$         reduc_free = (/ &
-!!$              Grd_left + 1         + Lam_pil_w + Lam_blend_Hx, &
-!!$              Grd_left + Grd_nila  - Lam_pil_e - Lam_blend_Hx, &
-!!$              Grd_belo + 1         + Lam_pil_s + Lam_blend_Hy, &
-!!$              Grd_belo + Grd_njla  - Lam_pil_n - Lam_blend_Hy /)
+         reduc_core = (/ Grd_left+ 1 + Lam_pil_w         , &
+                         Grd_left + Grd_nila  - Lam_pil_e, &
+                         Grd_belo + 1         + Lam_pil_s, &
+                         Grd_belo + Grd_njla  - Lam_pil_n /)
       endif
 
       call itf_phy_geom2(err)
-!!$      call handle_error(err,'itf_phy_step','Problemes in itf_phy_geom') 
+
       call itf_phy_prep()
 
-      !TODO: find other solution for inbloc - rpn_comm_bloc creates new communicator every call - we hit a limit after about 500 on AIX
+      !TODO: find other solution for inbloc - rpn_comm_bloc creates new 
+      ! communicator every call - we hit a limit after about 500 on AIX
+
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
-      err = phy_input(itf_phy_prefold_opr,dateo, &
-           nint(cstv_dt_8),F_stepno,l_phy_gid, &
-           Path_phyincfg_S,Path_phy_S,geofilename_S)
+
+      err = phy_input ( itf_phy_prefold_opr,dateo, nint(cstv_dt_8), &
+                        F_stepno,l_phy_gid,Path_phyincfg_S        , &
+                        Path_phy_S,geofilename_S )
+
       call handle_error(err,'itf_phy_step','Problem getting input data') 
       if (F_stepno < MAX_COMMBLOC_SWAP) &
-           call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
+           call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
 
-      write(msg_S,'(a,i6,a)') &
-           'PERFORM A PHYSICS STEP: stepno= ',F_stepno,' (S/R itf_phy_step)'//&
-           '\n========================================================='
-      call msg(MSG_INFO,msg_S)
- 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
 
@@ -140,6 +146,7 @@
 
       err = itf_phy_update2(F_stepno > 0)
       call handle_error(err,'itf_phy_step','Problemes in itf_phy_update') 
+
       call itf_phy_apply ( F_stepno.gt.0 )
 
       if (out3_newout_L) then
@@ -155,9 +162,13 @@
                  obusval, F_stepno, j, phydim_nk )
          end do
 !$omp end parallel do
-         call out_phy (obusval,l_ni,l_nj,F_stepno)
+         call itf_phy_output (obusval,l_ni,l_nj,F_stepno)
          deallocate (obusval)
       endif
+
+      call timing_stop ( 40, 'PHY      ' )
+!
 !     ---------------------------------------------------------------
+!
       return
       end subroutine itf_phy_step

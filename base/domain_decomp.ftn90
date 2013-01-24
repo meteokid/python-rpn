@@ -47,11 +47,9 @@
 !
 !-------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) then
+      if (Lun_out.gt.0) &
          write(Lun_out,*) 'BLOC TOPO: Ptopo_nblocx=', &
                       Ptopo_nblocx, 'Ptopo_nblocy=',Ptopo_nblocy
-         call write_status_file3 ('communications_established=YES' )
-      endif
 !
 !     Establishing data topology
 !

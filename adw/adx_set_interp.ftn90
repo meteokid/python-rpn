@@ -43,17 +43,17 @@ subroutine adx_set_interp()
 
    real*8 :: qzz_m_8(3*adx_lnkm), qzi_m_8(4*adx_lnkm)
    real*8 :: qzz_t_8(3*adx_lnkt), qzi_t_8(4*adx_lnkt)
-   real*8, dimension(adx_lnkt,6) :: w2
 
-   real*8,dimension(:),pointer :: whzt,whzm
+   real*8,dimension(:),pointer :: whzt,whzm,my_verZ_t_8
 
 #if !defined(TRIPROD)
 #define TRIPROD(za,zb,zc,zd) ((za-zb)*(za-zc)*(za-zd))
 #endif
    !---------------------------------------------------------------------
    allocate( &
-        whzt(0:adx_lnkt+1), &
+        whzt(0:adx_lnkm+1), &
         whzm(0:adx_lnkm+1), &
+        my_verZ_t_8(adx_lnkm), &
         stat = istat)
 
    allocate( &
@@ -126,7 +126,7 @@ subroutine adx_set_interp()
    enddo
 
    ! Prepare zeta on super vertical grid
-   do k = 1,2*adx_lnkm+1
+   do k = 1,2*adx_lnkm
       if (mod(k,2) == 0)then
          ! momentum level
          ind = k/2
@@ -137,17 +137,18 @@ subroutine adx_set_interp()
          Super_z_8(k) = adx_verZ_8%t(ind)            
       endif
    enddo
-   ! Note:
-   !  The last zdot levels is at surface not at adx_verZ_8%t(adx_lnkt).
-   !  This is true for all config, however we just adjust it for Adx_tlift.eq.1
-   !  to inforce validation if Adx_tlift.eq.0
-   if(Adx_tlift.eq.1)Super_z_8(2*adx_lnkm+1)=adx_verZ_8%m(adx_lnkm+1)
+   ! The last zdot levels is surface not at and adx_verZ_8%t(adx_lnkt).
+   ! AFSGAPM NOTE : At the top it is similar but we will fix this later
+   !                once we look at removing the superwinds
+   Super_z_8(2*adx_lnkm+1)=adx_verZ_8%m(adx_lnkm+1)
+
+   my_verZ_t_8=adx_verZ_8%t(2:adx_lnkt)
 
    whzt(0     ) = 1.0
+   whzt(adx_lnkm  ) = 1.0
    whzt(adx_lnkm+1) = 1.0
-   whzt(adx_lnkm+2) = 1.0
-   do k = 1,adx_lnkm
-      whzt(k) = adx_verZ_8%t(k+1) - adx_verZ_8%t(k)
+   do k = 1,adx_lnkm-1
+      whzt(k) = my_verZ_t_8(k+1) - my_verZ_t_8(k)
       prhzmn = min(whzt(k), prhzmn)
    enddo
 
@@ -173,9 +174,9 @@ subroutine adx_set_interp()
 
    pnx = int(1.0+(adx_xg_8(adx_gmaxx)-adx_x00_8)   *adx_ovdx_8)
    pny = int(1.0+(adx_yg_8(adx_gmaxy)-adx_y00_8)   *adx_ovdy_8)
-   pnzt= int(1.0+(adx_verZ_8%t(adx_lnkt)-adx_verZ_8%t(1))*adx_ovdz_8)
+   pnzt= int(1.0+( my_verZ_t_8(adx_lnkm)- my_verZ_t_8(1))*adx_ovdz_8)
    pnzm= int(1.0+(adx_verZ_8%m(adx_lnkm)-adx_verZ_8%m(1))*adx_ovdz_8)
-   pnzs= int(1.0+(adx_verZ_8%t(adx_lnkt)-adx_verZ_8%t(1))*adx_ovdz_8)
+   pnzs= int(1.0+(Super_z_8(2*adx_lnkm+1)-Super_z_8(1))*adx_ovdz_8)
 
    ! Note : adx_diz_8 and adx_dbz_8 are allocated to the largest size
    !        which is for the adx_superwinds_L=.true.
@@ -188,13 +189,13 @@ subroutine adx_set_interp()
         adx_bsy_8(adx_gnj+2*adx_haloy), &
         adx_dly_8(adx_gnj+2*adx_haloy), &
         adx_diy_8(adx_gnj+2*adx_haloy), &
-        adx_lcz%t(pnzt), &
+        adx_lcz%t(pnzm), &
         adx_lcz%m(pnzm),  &
         adx_lcz%s(pnzs), &
-        adx_bsz_8%t(0:adx_lnkm)  , &
+        adx_bsz_8%t(0:adx_lnkm-1)  , &
         adx_bsz_8%m(0:adx_lnkm-1), &
         adx_bsz_8%s(0:2*adx_lnkm), &
-        adx_dlz_8%t(-1:adx_lnkm+1) , &
+        adx_dlz_8%t(-1:adx_lnkm) , &
         adx_dlz_8%m(-1:adx_lnkm), &
         adx_diz_8(-1:2*adx_lnkm+2), &
         adx_dbz_8(0:2*adx_lnkm+1), &
@@ -230,16 +231,17 @@ subroutine adx_set_interp()
    enddo
 
    k0 = 1
-   do k = 1,pnzt
-      pdfi = adx_verZ_8%t(1) + (k-1) * prhzmn
-      if (pdfi > adx_verZ_8%t(k0+1)) k0 = min(adx_lnkm-1, k0+1)
+
+   do k = 1,pnzm
+      pdfi = my_verZ_t_8(1) + (k-1) * prhzmn
+      if (pdfi > my_verZ_t_8(k0+1)) k0 = min(adx_lnkm-2, k0+1)
       adx_lcz%t(k) = k0
    enddo
-   do k = 0,adx_lnkm+2                    !! warning note the shift in k !!
+   do k = 0,adx_lnkm+1                    !! warning note the shift in k !!
       adx_dlz_8%t(k-1) =       whzt(k)
    enddo
-   do k = 1,adx_lnkm+1
-      adx_bsz_8%t(k-1) = adx_verZ_8%t(k)
+   do k = 1,adx_lnkm
+      adx_bsz_8%t(k-1) = my_verZ_t_8(k)
    enddo
 
    k0 = 1
@@ -257,7 +259,7 @@ subroutine adx_set_interp()
 
    k0 = 1
    do k = 1,pnzs
-      pdfi = adx_verZ_8%t(1) + (k-1) * prhzmn
+      pdfi = Super_z_8(1) + (k-1) * prhzmn
       if (pdfi > Super_z_8(k0+1)) k0 = min(2*adx_lnkm-1, k0+1)
       adx_lcz%s(k) = k0
    enddo
@@ -282,11 +284,11 @@ subroutine adx_set_interp()
    endif
 
    allocate( &
-        adx_zbc_8%t(adx_lnkm+1),   adx_zbc_8%m(adx_lnkm),  &
-        adx_zabcd_8%t(adx_lnkm+1), adx_zabcd_8%m(adx_lnkm), &
-        adx_zbacd_8%t(adx_lnkm+1), adx_zbacd_8%m(adx_lnkm), &
-        adx_zcabd_8%t(adx_lnkm+1), adx_zcabd_8%m(adx_lnkm), &
-        adx_zdabc_8%t(adx_lnkm+1), adx_zdabc_8%m(adx_lnkm), &
+        adx_zbc_8%t(adx_lnkm),   adx_zbc_8%m(adx_lnkm),  &
+        adx_zabcd_8%t(adx_lnkm), adx_zabcd_8%m(adx_lnkm), &
+        adx_zbacd_8%t(adx_lnkm), adx_zbacd_8%m(adx_lnkm), &
+        adx_zcabd_8%t(adx_lnkm), adx_zcabd_8%m(adx_lnkm), &
+        adx_zdabc_8%t(adx_lnkm), adx_zdabc_8%m(adx_lnkm), &
         stat=istat)
    call handle_error_l(istat==0,'adx_set_interp','problem allocating mem')
 
@@ -301,10 +303,10 @@ subroutine adx_set_interp()
       adx_zcabd_8%m(k) = 1.0/TRIPROD(rc,ra,rb,rd)
       adx_zdabc_8%m(k) = 1.0/TRIPROD(rd,ra,rb,rc)
 
-      ra = adx_verZ_8%t(k-1)
-      rb = adx_verZ_8%t(k)
-      rc = adx_verZ_8%t(k+1)
-      rd = adx_verZ_8%t(k+2)
+      ra = my_verZ_t_8(k-1)
+      rb = my_verZ_t_8(k)
+      rc = my_verZ_t_8(k+1)
+      rd = my_verZ_t_8(k+2)
 
       adx_zabcd_8%t(k) = 1.0/TRIPROD(ra,rb,rc,rd)
       adx_zbacd_8%t(k) = 1.0/TRIPROD(rb,ra,rc,rd)
@@ -312,32 +314,17 @@ subroutine adx_set_interp()
       adx_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
    enddo
 
-   k = adx_lnkm-1
-   ra = adx_verZ_8%t(k-1)
-   rb = adx_verZ_8%t(k)
-   rc = adx_verZ_8%t(k+1)
-   rd = adx_verZ_8%t(k+2)
-
-   adx_zabcd_8%t(k) = 1.0/TRIPROD(ra,rb,rc,rd)
-   adx_zbacd_8%t(k) = 1.0/TRIPROD(rb,ra,rc,rd)
-   adx_zcabd_8%t(k) = 1.0/TRIPROD(rc,ra,rb,rd)
-   adx_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
-
    do k = 1,adx_lnkm-1
       rb = adx_verZ_8%m(k)
       rc = adx_verZ_8%m(k+1)
       adx_zbc_8%m(k) = 1.0/(rc-rb)
 
-      rb = adx_verZ_8%t(k)
-      rc = adx_verZ_8%t(k+1)
+      rb = my_verZ_t_8(k)
+      rc = my_verZ_t_8(k+1)
       adx_zbc_8%t(k) = 1.0/(rc-rb)
    enddo
-   k = adx_lnkm
-   rb = adx_verZ_8%t(k)
-   rc = adx_verZ_8%t(k+1)
-   adx_zbc_8%t(k) = 1.0/(rc-rb)
 
-   deallocate(whzt, whzm)
+   deallocate(whzt, whzm, my_verZ_t_8)
    !---------------------------------------------------------------------
    return
 end subroutine adx_set_interp

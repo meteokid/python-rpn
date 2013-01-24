@@ -40,9 +40,7 @@
       integer Outc_nbit(MAXELEM,MAXSET)
       integer Outc_filtpass(MAXELEM,MAXSET)
       real    Outc_filtcoef(MAXELEM,MAXSET)
-      integer Outc_lev(MAXSET)
-      integer Outc_grid(MAXSET)
-      integer Outc_step(MAXSET)
+      integer, dimension(MAXSET), target :: Outc_lev,Outc_grid,Outc_step
       integer Outc_var_max(MAXSET)
       integer Outc_sets
 

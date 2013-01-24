@@ -53,6 +53,7 @@
       tag1=13
       
 
+      tab_src=0.
       linfini=0.0
       do k=1,NK
          infini(k)=0.0
@@ -250,6 +251,7 @@
 !     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr) 
       call RPN_COMM_allreduce(Linfini,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(1)=L1
+      L4=0.
       Linfini=L1
 
       if (Ptopo_myproc.eq.0.and.Ptopo_couleur.eq.0) then

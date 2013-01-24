@@ -40,30 +40,18 @@
 ! v4_05 - Girard C.         - Open top
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 !
-!object
-!
-!arguments
-!        None
-!
-!implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 #include "rhsc.cdk"
 #include "orh.cdk"
 #include "vt1.cdk"
 #include "p_geof.cdk"
 #include "schm.cdk"
-#include "lctl.cdk"
 #include "nest.cdk"
-
-!
-!modules
 !
       type(gmm_metadata) :: mymeta
       integer istat
-!*
 !     __________________________________________________________________
 !
       if (Lun_debug_L) write (Lun_out,1000)
@@ -98,10 +86,12 @@
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(orhsu)'
       istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(orhsv)'
+      nullify(rhsw)
       if (.not. Schm_hydro_L) then
          istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rhsw)'
       endif
+      nullify(nest_t)
       if (Schm_opentop_L) then
          istat = gmm_get(gmmk_nest_t_s,nest_t,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(nest_t)'
@@ -109,42 +99,19 @@
 
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(fis0)'
-!
-!     if (Acid_test_L)then
-!     if (Lun_out.gt.0) write(Lun_out,*) 'Before prep_2'
-!     call glbstat (xct1,'Xct1',1,l_ni,1,l_nj,G_nk,6+acid_i0,G_ni-5-acid_in,
-!    %                                             6+acid_j0,G_nj-5-acid_jn,1,1)
-!     call glbstat (fis0,'FIS',LDIST_DIM,1,1+acid_i0,G_ni-acid_in,
-!    %                                     1+acid_j0,G_nj-acid_jn,1,1)
-!     call glbstat (rhsu,'RU0',LDIST_DIM,G_nk,7+acid_i0,G_ni-7-acid_in,
-!    %                                      7+acid_j0,G_nj-7-acid_jn,1,G_nk)
-!     call glbstat (ruw1,'RUW1',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
-!    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-!     call glbstat (ruw2,'RUW2',LDIST_DIM,G_nk,6+acid_i0,G_ni-5-acid_in,
-!    %                                         5+acid_j0,G_nj-4-acid_jn,1,G_nk)
-!     call glbstat (rhsc,'RC',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
-!    %                                       8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-!     endif
-!
-      call prep_2 ( rhsu ,rhsv ,ruw1  ,ruw2 ,rvw1 ,rvw2 , &
-                    xct1 ,yct1 ,zct1  ,fis0 ,rhsc ,rhst(l_minx,l_miny,2) , &
-                    rhsw(l_minx,l_miny,2) ,rhsf(l_minx,l_miny,2) ,orhsu , &
-                    orhsv,rhsb ,nest_t(l_minx,l_miny,2), &
-                    LDIST_DIM, l_ni, l_nj, l_nk )
 
-!
-! The following 5 glbstats will not match piloting run because they
-! contain the future Ru,Rv inserted in RHS, Ru,Rv
-! But glbstats should match for Rc,Rt
-!     if (Acid_test_L)then
-!     if (Lun_out.gt.0) then
-!         write(Lun_out,*) 'After prep_2'
-!         write(Lun_out,*) 'STATS will not match, contains future RU,RV'
-!     endif
-!     call glbstat (rhsu,'RU',LDIST_DIM,G_nk,8+acid_i0,G_ni-7-acid_in,
-!    %                                     8+acid_j0,G_nj-7-acid_jn,1,G_nk)
-!
-!
+      if (associated(nest_t)) then
+         call prep_2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
+                       xct1, yct1, zct1 , fis0 , rhsc, rhst , &
+                       rhsw, rhsf, orhsu, orhsv, rhsb,        &
+                       nest_t(l_minx,l_miny,2), LDIST_DIM, l_ni, l_nj, l_nk )
+      else
+         call prep_2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
+                       xct1, yct1, zct1 , fis0 , rhsc, rhst , &
+                       rhsw, rhsf, orhsu, orhsv, rhsb,        &
+                       nest_t,                  LDIST_DIM, l_ni, l_nj, l_nk )
+      endif
+
 1000  format(3X,'PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE)')
 !     __________________________________________________________________
 !

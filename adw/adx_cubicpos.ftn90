@@ -26,8 +26,8 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !
    integer :: F_ni,F_nj,F_k0,F_nk
    integer i0,in,j0,jn,k00
-   real, dimension(F_ni,F_nj,F_nk+1) :: F_xt,F_yt,F_zt
-   real, dimension(F_ni,F_nj,F_nk)   :: F_xm,F_ym,F_zm
+   real, dimension(F_ni,F_nj,F_nk) :: F_xt,F_yt,F_zt
+   real, dimension(F_ni,F_nj,F_nk) :: F_xm,F_ym,F_zm
    logical :: F_cubic_xy_L
 !
 !authors
@@ -60,22 +60,21 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !                      | For this example adx_gbpil_t=3 -> F_k0=4
 !                      |
 !  ======== Model Top  |   ==========
-!  Constant %t 1       |   Not needed
 !  -------- %m 1       |   ---------- uptream pos. not available (F_k0-3)
-!  Linear   %t 2       |   Not needed
+!  Linear   %t 1       |   Not needed
 !  -------- %m 2       |   ----------
-!  Cubic    %t 3       |   Not needed
+!  Cubic    %t 2       |   Not needed
 !  -------- %m 3       |   ----------
-!  Cubic    %t 4       |   Cubic      %t F_k0
+!  Cubic    %t 3       |   Cubic      %t F_k0-1
 !  -------- %m 4       |   ---------- %m F_k0
 !                      |
 !     ...              |       ...     
 !                      |       
-!  Cubic    %t N-1     |   Cubic
+!  Cubic    %t N-2     |   Cubic
 !  -------- %m N-1     |   ----------
-!  Linear   %t N       |   Linear
+!  Linear   %t N-1     |   Linear
 !  -------- %m N       |   ----------
-!  Constant %t N+1     |   Constant
+!  Constant %t N       |   Constant
 !  ======== Model Sfc  |   ===========
 !                      |
 !----------------------------------------------------------------------
@@ -88,9 +87,10 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !
    real*8  r2pi_8, two, half, alpha
    real*8, dimension(i0:in,adx_lnkm) :: xcos,ycos,xsin,ysin,cx,cy,cz
-   real*8, dimension(i0:in,2:adx_lnkm) :: yasin,zatan,cxp,cyp,czp
-   real*8, dimension(3:adx_lnkm-1) :: w1, w2, w3, w4
+   real*8, dimension(i0:in,1:adx_lnkm-1) :: yasin,zatan,cxp,cyp,czp
+   real*8, dimension(2:adx_lnkm-2) :: w1, w2, w3, w4
    real*8 :: lag3, hh, x, x1, x2, x3, x4
+   real :: ztop_bound, zbot_bound
    parameter (two = 2.0, half=0.5)
    !***********************************************************************
    !
@@ -103,24 +103,30 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
    !        (adx_gbpil_t != 0) for coding simplicity
    !***********************************************************************
    !
+   ztop_bound=adx_verZ_8%t(2)
+   zbot_bound=adx_verZ_8%t(adx_lnkm+1)
+   !
    vnik = (in-i0+1)*adx_lnkm
    vnikm= (in-i0+1)*(adx_lnkm-1)
    !
    r2pi_8 = two * CONST_PI_8
    !
-   do k=3,adx_lnkm-1
-      hh = adx_verZ_8%t(k)
-      x1 = adx_verZ_8%m(k-2)
-      x2 = adx_verZ_8%m(k-1)
-      x3 = adx_verZ_8%m(k)
-      x4 = adx_verZ_8%m(k+1)
+   ! Prepare parameters for cubic intepolation
+   do k=2,adx_lnkm-2
+      ! Note : adx_verZ_8%t still has top, once it is removed
+      !        code will be hh = adx_verZ_8%t(k)
+      hh = adx_verZ_8%t(k+1)
+      x1 = adx_verZ_8%m(k-1)
+      x2 = adx_verZ_8%m(k  )
+      x3 = adx_verZ_8%m(k+1)
+      x4 = adx_verZ_8%m(k+2)
       w1(k) = lag3( hh, x1, x2, x3, x4 )
       w2(k) = lag3( hh, x2, x1, x3, x4 )
       w3(k) = lag3( hh, x3, x1, x2, x4 )
       w4(k) = lag3( hh, x4, x1, x2, x3 )         
    enddo
 
-   k00=max(F_k0,2)
+   k00=max(F_k0-1,1)
 
 !***********************************************************************
 !     call tmg_start ( 33, 'adx_meanpos' )
@@ -138,7 +144,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !
 !     Fill non computed upstream positions with zero to avoid math exceptions
 !     in the case of top piloting
-      do k=1,F_k0-3
+      do k=1,F_k0-2
          do i=i0,in
             xcos(i,k)=0.0
             ycos(i,k)=0.0
@@ -153,14 +159,13 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !***********************************************************************
 ! For 1st and last thermodynamic levels positions in the horizontal are*
 ! those of the momentum levels; no displacement allowed in the vertical*
+! at bottum. At top vertical displacement is obtian from linear inter. *
+! and is bound to first thermo level.                                  *
 !***********************************************************************
       do i=i0,in
-         F_xt(i,j,1) = F_xm(i,j,1)
-         F_yt(i,j,1) = F_ym(i,j,1)
-         F_zt(i,j,1) = adx_verZ_8%t(1)
-         F_xt(i,j,adx_lnkm+1) = F_xm(i,j,adx_lnkm)
-         F_yt(i,j,adx_lnkm+1) = F_ym(i,j,adx_lnkm)
-         F_zt(i,j,adx_lnkm+1) = adx_verZ_8%t(adx_lnkm+1)
+         F_xt(i,j,adx_lnkm) = F_xm(i,j,adx_lnkm)
+         F_yt(i,j,adx_lnkm) = F_ym(i,j,adx_lnkm)
+         F_zt(i,j,adx_lnkm) = zbot_bound
       enddo
 !
 !***********************************************************************
@@ -179,29 +184,29 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !***********************************************************************            
 !     Fill missing values with zero to avoid math exception in case of
 !     top piloting
-      do k=2,k00-1
+      do k=1,k00-1
          do i=i0,in
             cxp(i,k)=0.0
             cyp(i,k)=0.0
             czp(i,k)=0.0
          enddo
       enddo
-      do k=k00,adx_lnkm
-         if(F_cubic_xy_L.and.k.gt.2.and.k.lt.adx_lnkm)then
+      do k=k00,adx_lnkm-1
+         if(F_cubic_xy_L.and.k.ge.2.and.k.le.adx_lnkm-2)then
             ! Cubic
             do i=i0,in
-               cxp(i,k) = w1(k)*cx(i,k-2)+ &
-                          w2(k)*cx(i,k-1)+ &
-                          w3(k)*cx(i,k  )+ &
-                          w4(k)*cx(i,k+1)
-               cyp(i,k) = w1(k)*cy(i,k-2)+ &
-                          w2(k)*cy(i,k-1)+ &
-                          w3(k)*cy(i,k  )+ &
-                          w4(k)*cy(i,k+1)
-               czp(i,k) = w1(k)*cz(i,k-2)+ &
-                          w2(k)*cz(i,k-1)+ &
-                          w3(k)*cz(i,k  )+ &
-                          w4(k)*cz(i,k+1)
+               cxp(i,k) = w1(k)*cx(i,k-1)+ &
+                          w2(k)*cx(i,k  )+ &
+                          w3(k)*cx(i,k+1)+ &
+                          w4(k)*cx(i,k+2)
+               cyp(i,k) = w1(k)*cy(i,k-1)+ &
+                          w2(k)*cy(i,k  )+ &
+                          w3(k)*cy(i,k+1)+ &
+                          w4(k)*cy(i,k+2)
+               czp(i,k) = w1(k)*cz(i,k-1)+ &
+                          w2(k)*cz(i,k  )+ &
+                          w3(k)*cz(i,k+1)+ &
+                          w4(k)*cz(i,k+2)
                alpha=1./sqrt(cxp(i,k)*cxp(i,k)+ &
                              cyp(i,k)*cyp(i,k)+ &
                              czp(i,k)*czp(i,k))
@@ -212,13 +217,13 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
          else
             ! Linear
             do i=i0,in
-               alpha    = half*( 1.+cx(i,k-1)*cx(i,k) &
-                                   +cy(i,k-1)*cy(i,k) &
-                                   +cz(i,k-1)*cz(i,k) )
+               alpha    = half*( 1.+cx(i,k)*cx(i,k+1) &
+                                   +cy(i,k)*cy(i,k+1) &
+                                   +cz(i,k)*cz(i,k+1) )
                alpha    = 1./(two*sqrt(alpha))
-               cxp(i,k) = (cx(i,k-1)+cx(i,k))*alpha
-               cyp(i,k) = (cy(i,k-1)+cy(i,k))*alpha
-               czp(i,k) = (cz(i,k-1)+cz(i,k))*alpha
+               cxp(i,k) = (cx(i,k)+cx(i,k+1))*alpha
+               cyp(i,k) = (cy(i,k)+cy(i,k+1))*alpha
+               czp(i,k) = (cz(i,k)+cz(i,k+1))*alpha
             enddo
          endif
          do i=i0,in
@@ -237,25 +242,25 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 ! polar coordinates of upstream position for intermediate thermo levels*
 !***********************************************************************
 
-      do k=k00,adx_lnkm
+      do k=k00,adx_lnkm-1
          do i=i0,in
             F_yt(i,j,k) = yasin(i,k)
             F_xt(i,j,k) = zatan(i,k)
             if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
-            if(k.gt.2.and.k.lt.adx_lnkm)then
+            if(k.ge.2.and.k.le.adx_lnkm-2)then
                !Cubic
                F_zt(i,j,k)= &
-                    w1(k)*F_zm(i,j,k-2)+ &
-                    w2(k)*F_zm(i,j,k-1)+ &
-                    w3(k)*F_zm(i,j,k  )+ &
-                    w4(k)*F_zm(i,j,k+1)
-               ! Must stay in domain
-               F_zt(i,j,k)=min(F_zt(i,j,k)*1d0,adx_verZ_8%t(adx_lnkm+1))
-               F_zt(i,j,k)=max(F_zt(i,j,k)*1d0,adx_verZ_8%t(1))
+                    w1(k)*F_zm(i,j,k-1)+ &
+                    w2(k)*F_zm(i,j,k  )+ &
+                    w3(k)*F_zm(i,j,k+1)+ &
+                    w4(k)*F_zm(i,j,k+2)
             else
                !Linear
-               F_zt(i,j,k) = (F_zm(i,j,k-1)+F_zm(i,j,k))*half
+               F_zt(i,j,k) = (F_zm(i,j,k)+F_zm(i,j,k+1))*half               
             endif
+            ! Must stay in domain
+            F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)            
+            F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
          end do
       end do
    enddo

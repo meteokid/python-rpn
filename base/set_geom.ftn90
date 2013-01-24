@@ -77,12 +77,11 @@
       parameter( ONE_8   = 1.0 )
       parameter( TWO_8   = 2.0 )
       parameter( CLXXX_8 = 180.0 )
-
-      namelist / dyngrid /  &
-           Grd_left, Grd_belo, Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
 !
 !     ---------------------------------------------------------------
 !
+      if (Lun_out.gt.0) write (Lun_out,1000)
+
       rad2deg_8 = CLXXX_8/Dcst_pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 
@@ -106,8 +105,6 @@
       call handle_error(iery,'set_geom','set_geom')
 !
       if (Lun_out.gt.0) then
-         write (Lun_out,1000)
-         write (Lun_out, nml=dyngrid)
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
             height  =-16000./alog(10.)*alog(Ver_hyb%m(k))

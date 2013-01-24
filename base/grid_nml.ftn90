@@ -103,8 +103,14 @@
 !
  9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S    = dumc
+      F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_yinyang_L)
+
       Grd_bsc_base = 5
       Grd_bsc_ext1 = 3
+      Grd_maxcfl   = max(1,Grd_maxcfl)
+      Grd_extension= 0
+      if (F_lam) Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
 !
@@ -114,11 +120,8 @@
          goto 9999
       endif
 !
-      Grd_x0_8=  0.0 
-      Grd_xl_8=360.0
-      Grd_y0_8=-90.0
-      Grd_yl_8= 90.0
-      Grd_extension = 0
+      Grd_x0_8=  0.0 ; Grd_xl_8=360.0
+      Grd_y0_8=-90.0 ; Grd_yl_8= 90.0
 !
       select case (Grd_typ_S(1:1))
 
@@ -129,6 +132,8 @@
          case ('U')             ! Uniform
             Grd_nila = Grd_ni
             Grd_njla = Grd_nj
+            Grd_dx   = 360./Grd_ni
+            Grd_dy   = 180./Grd_nj
 
          case ('Y')             ! Yin-Yang
             if (yyg_checkrot().lt.0) goto 9999
@@ -144,23 +149,23 @@
 
             Grd_nila = Grd_ni
             Grd_njla = Grd_nj
-            Grd_maxcfl    = max(1,Grd_maxcfl)
-            Grd_bsc_adw   = Grd_maxcfl  + Grd_bsc_base
-            Grd_extension = Grd_bsc_adw + Grd_bsc_ext1
-            Grd_ni   = Grd_ni + 2  *Grd_extension
-            Grd_nj   = Grd_nj + 2  *Grd_extension
             Grd_x0_8 =   45.0 - 3.0*Grd_overlap
             Grd_xl_8 =  315.0 + 3.0*Grd_overlap
             Grd_y0_8 = -45.0  -     Grd_overlap
             Grd_yl_8 =  45.0  +     Grd_overlap
 
             delta_8  = (Grd_xl_8-Grd_x0_8)/(Grd_nila-1)
+            Grd_dx   = delta_8
             Grd_x0_8 = Grd_x0_8 - Grd_extension*delta_8
             Grd_xl_8 = Grd_xl_8 + Grd_extension*delta_8
 
             delta_8  = (Grd_yl_8-Grd_y0_8)/(Grd_njla-1)
+            Grd_dy   = delta_8
             Grd_y0_8 = Grd_y0_8 - Grd_extension*delta_8
             Grd_yl_8 = Grd_yl_8 + Grd_extension*delta_8
+
+            Grd_ni   = Grd_ni + 2  *Grd_extension
+            Grd_nj   = Grd_nj + 2  *Grd_extension
 
          case ('V')             ! Variable resolution
             if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
@@ -179,9 +184,6 @@
                              'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             goto 9999
          endif
-         Grd_maxcfl    = max(1,Grd_maxcfl)
-         Grd_bsc_adw   = Grd_maxcfl  + Grd_bsc_base
-         Grd_extension = Grd_bsc_adw + Grd_bsc_ext1
          Grd_ni   = Grd_ni   + 2*Grd_extension
          Grd_nj   = Grd_nj   + 2*Grd_extension
          Grd_iref = Grd_iref +   Grd_extension
@@ -224,7 +226,14 @@
                               Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2 )
       call cigaxg ( Hgc_gxtyp_S,Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2, &
                               Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro )
-!
+
+      if (Lun_out.gt.0) write(6,1100) Grd_ni, Grd_x0_8, Grd_xl_8, &
+                                      Grd_nj, Grd_y0_8, Grd_yl_8, &
+                                      Grd_typ_S, Grd_dx ,Grd_dx
+
+      if (Lun_out.gt.0) write (Lun_out,1004) Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,&
+                                             Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro
+
       Grd_roule = .not. ( (abs(Grd_xlon1-180.d0).lt.epsilon) .and. &
                         (  abs(Grd_xlon2-270.d0).lt.epsilon) .and. &
                         (  abs(Grd_xlat1       ).lt.epsilon) .and. &
@@ -275,14 +284,18 @@
 !
       endif
 !
-      F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_yinyang_L)
-
       grid_nml2 = 1
 
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
  1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
+ 1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
+                21x,'IG1-4: '4i8)
+ 1100 FORMAT (1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION' &
+        /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
+        /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES' &
+        /1X,' GRIDTYPE= ',a,'     DX= ',F11.5,'   DY= ',F11.5/)
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &grid NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &grid IS INVALID IN FILE: ',A/)

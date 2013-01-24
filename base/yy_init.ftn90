@@ -13,17 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r yy_init
+!**s/r yy_init2
 !
-      subroutine yy_init ( UserInit, Pelocal, Petotal, Pex, Pey, &
-                           Pintracomm, Pintercomm, Pecolor,      &
-                           Glb_myproc, Glb_numproc, Nmultigrids )
+      subroutine yy_init2 ( UserInit, Pelocal, Petotal, Pex, Pey,    &
+                            Pintracomm, Pintercomm, ncolors, Pecolor,&
+                            Glb_myproc, Glb_numproc, Nmultigrids )
       implicit none
 #include <arch_specific.hf>
 !
       external UserInit
-      integer  Pelocal,Petotal,Pex,Pey,Pintracomm, Pintercomm, Pecolor, &
-               Glb_myproc, Glb_numproc, Nmultigrids
+      integer  Pelocal,Petotal,Pex,Pey,Pintracomm, Pintercomm, ncolors, &
+               Pecolor,Glb_myproc, Glb_numproc, Nmultigrids
 !author
 !     Michel Desgagne      Sprint 2011
 !
@@ -43,7 +43,9 @@
       Pex=0
       Pey=0
 
-      Pecolor    = RPN_COMM_init_multi_level (Userinit,Pelocal,Petotal,Pex,Pey,Nmultigrids,2)
+      ncolors= 2
+      Pecolor    = RPN_COMM_init_multi_level (Userinit,Pelocal,Petotal,Pex,Pey,&
+                                                            Nmultigrids,ncolors)
       Pintracomm = RPN_COMM_comm ('GRID')
       Pmultigrid = RPN_COMM_comm ('MULTIGRID')
       Pintercomm = RPN_COMM_comm ('GRIDPEERS')

@@ -47,6 +47,7 @@
 !                    | (4,*)-the maximum J indices on each local PE    |
 !                    | (5,*)-the minimum K indices on each local PE    |
 !                    | (6,*)-the maximum K indices on each local PE    |
+! Ptopo_ncolors      | Number of colors (or sub grids)                 |
 ! Ptopo_couleur      | 0 for Yin, 1 for Yan (Yang) domain              |
 ! Ptopo_tag          | tag number within the inter-communicator        |
 ! Ptopo_intracomm    | intra communicator number for Yin, Yan          |
@@ -54,9 +55,6 @@
 ! Ptopo_ninblocx     | number of input blocks along X                  |
 ! Ptopo_ninblocy     | number of input blocks along Y                  |
 !----------------------------------------------------------------------
-      integer Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
-      integer Ptopo_tag
-!
 !
 #endif
       integer Ptopo_myproc    , Ptopo_myrow    , Ptopo_mycol
@@ -67,7 +65,8 @@
       integer Ptopo_ninblocx  , Ptopo_ninblocy
       integer Ptopo_myblocx   , Ptopo_myblocy  , Ptopo_blocme
       integer Ptopo_numpe_perb
-      integer Ptopo_intracomm , Ptopo_intercomm, Ptopo_couleur
+      integer Ptopo_ncolors   , Ptopo_couleur
+      integer Ptopo_intracomm , Ptopo_intercomm
       integer Ptopo_world_myproc, Ptopo_world_numproc
       integer Ptopo_tag 
       logical Ptopo_bind_L
@@ -88,7 +87,8 @@
       common  / Ptopo_i / Ptopo_numproc 
       common  / Ptopo_i / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
       common  / Ptopo_i / Ptopo_blocme   , Ptopo_numpe_perb
-      common  / Ptopo_i / Ptopo_intracomm,Ptopo_intercomm,Ptopo_couleur
+      common  / Ptopo_i / Ptopo_ncolors  , Ptopo_couleur
+      common  / Ptopo_i / Ptopo_intracomm,Ptopo_intercomm
       common  / Ptopo_i / Ptopo_world_myproc, Ptopo_world_numproc
       common  / Ptopo_i / Ptopo_tag
 

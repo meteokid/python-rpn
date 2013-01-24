@@ -171,9 +171,8 @@
             tmp_liste(cnt+1) = 'VT1'
             tmp_liste(cnt+2) = 'WT1'
             tmp_liste(cnt+3) = 'TT1'
-            tmp_liste(cnt+4) = 'FIPTX'
-            tmp_liste(cnt+5) = 'ST1'
-            cnt = cnt + 5
+            tmp_liste(cnt+4) = 'ST1'
+            cnt = cnt + 4
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
                cnt = cnt + 1

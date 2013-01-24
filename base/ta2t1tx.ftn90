@@ -86,10 +86,6 @@
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(sta)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(fiptx)'
-      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(fis0)'     
       istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
 !
@@ -127,8 +123,6 @@
 !
       endif
 !
-      call diag_fip(fiptx(l_minx,l_miny,1), st1, tt1(l_minx,l_miny,2), qt1(l_minx,l_miny,1), fis0, LDIST_DIM,l_nk)
-
       do n=1,Tr3d_ntr
          istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
          istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)

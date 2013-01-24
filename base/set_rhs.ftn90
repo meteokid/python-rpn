@@ -81,13 +81,13 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
       istat = gmm_create(gmmk_rhsv_s,rhsv,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsv)'
-      istat = gmm_create(gmmk_rhst_s,rhst,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_rhst_s,rhst,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhst)'
       istat = gmm_create(gmmk_rhsc_s,rhsc,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsc)'
-      istat = gmm_create(gmmk_rhsw_s,rhsw,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_rhsw_s,rhsw,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsw)'
-      istat = gmm_create(gmmk_rhsf_s,rhsf,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_rhsf_s,rhsf,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsf)'
       istat = gmm_create(gmmk_rhsp_s,rhsp,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
@@ -107,13 +107,13 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsu)'
       istat = gmm_create(gmmk_orhsv_s,orhsv,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsv)'
-      istat = gmm_create(gmmk_orhst_s,orhst,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_orhst_s,orhst,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhst)'
       istat = gmm_create(gmmk_orhsc_s,orhsc,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsc)'
-      istat = gmm_create(gmmk_orhsw_s,orhsw,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_orhsw_s,orhsw,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
-      istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk1,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
 !
  1000 format( &

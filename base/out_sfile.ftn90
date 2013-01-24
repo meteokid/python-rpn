@@ -18,12 +18,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_sfile (clostep_int,stepno,F_ip3,F_ext_S)
+      subroutine out_sfile2 (clostep_int,stepno)
       implicit none
 #include <arch_specific.hf>
 !
-      character*(*) F_ext_S
-      integer clostep_int,stepno,F_ip3
+      integer clostep_int,stepno
 !
 !AUTHOR   Michel Desgagne     September   2003 (MC2)
 !
@@ -41,15 +40,15 @@
 !
 #include "clim.cdk"
 #include "out.cdk"
+#include "out3.cdk"
 #include "path.cdk"
-!
-      integer  prog_filename,fnom,fstouv,fstopc
-      external prog_filename,fnom,fstouv,fstopc
-!
+#include "ptopo.cdk"
+
+      integer, external :: prog_filename,fnom,fstouv,fstopc
+
       character*1024 out_filename_s
       character*15   datev,startindx
-      character*3    ros 
-      logical flag_post
+      logical flag
       integer prognum,err,i,indx
       integer clostep,date,hour
       real, parameter :: eps=1.e-12
@@ -57,26 +56,24 @@
       parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
                   OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0, &
                   sec_in_day=86400.0d0 )
-      data ros /'RND'/
-!*
+!
 !----------------------------------------------------------------------
 !
-!     Note that fstopc will set the warning level for FST calls. The
-!     false value means to set the Message Level to the type indicated
-!     whereas the true value means to obtain the message level - ask Mario.
-!     MSGLVL INFORM will inform the write and read messages
-!     MSGLVL SYSTEM will indicate if there are errors only.
-
-      if (Out_debug_L) then
-          err = fstopc('MSGLVL','INFORM',.false.)
-      else
-          err = fstopc('MSGLVL','SYSTEM',.false.)
-      endif
+!      err = fstopc('MSGLVL','INFORM',.false.)
+      err = fstopc('MSGLVL','SYSTEM',.false.)
 
       Out_npas = stepno
-!
-      if ((Out_blocme.eq.0).and.(Out_nisl.gt.0).and.(Out_njsl.gt.0)) then
-!
+
+      flag= (Out_blocme.eq.0)
+
+      if (Out3_fullplane_L) then
+         if (Out3_uendode_L) flag= flag .and. (Ptopo_couleur.eq.0)
+      else
+         flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)
+      endif
+
+      if (flag) then
+
          if (clostep_int.le.0) then
             clostep = stepno
          else
@@ -90,7 +87,6 @@
          if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
          sec_clostep  = dble(clostep)*dble(Out_deet)
          Out_ip2 = int (dble(stepno) * Out_deet / 3600. + eps)
-         Out_ip3 = F_ip3
          call newdate (Out_dateo, date, hour,-3)
          hour=hour/1000000
 !        Out_unit_S=H or blank:
@@ -103,24 +99,22 @@
          err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
                               Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
                               Out_unit_S)
-!
-         Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)//trim(F_ext_S)
-!
+
+         Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)
+
          if (Out_unf.eq.0) then
-             err = fnom (Out_unf, trim(Out_filename_S),'STD+'//ros,0)
-             err = fstouv(Out_unf ,ros)
-             if (Out_debug_L) &
-             write (6,101) Out_unf,trim(Out_filename_S)
+             err = fnom  (Out_unf, trim(Out_filename_S),'STD+RND',0)
+             err = fstouv(Out_unf ,'RND')
          endif
-!
+
       endif
-!
+
  101  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS OPENED')
 !----------------------------------------------------------------------
       return
       end
 !
-      subroutine out_cfile
+      subroutine out_cfile2
       implicit none
 #include <arch_specific.hf>
 !
@@ -128,16 +122,18 @@
 !
       integer  fstfrm
       external fstfrm
-!
+
       integer err
 !----------------------------------------------------------------------
 !
-      if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
+      call out_flush_stk ()
+
+      if (Out_blocme.eq.0) then
          err = fstfrm(Out_unf)
          call fclos(Out_unf)
          Out_unf = 0
       endif
-!
+
  102  format (' FST FILE UNIT=',i3,' FILE = ',a,' IS CLOSED')
 !----------------------------------------------------------------------
       return

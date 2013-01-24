@@ -13,15 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r equatorial_sponge2 - apply vertical diffusion at and near the model top on u and v
+!**s/r eqspng_drv - apply vertical diffusion at and near the model top on u and v
 !
 #include "model_macros_f.h"
-subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
+subroutine eqspng_drv (F_u,F_v,DIST_DIM,Nk)
    !
    implicit none
 #include <arch_specific.hf>
    !
-   logical F_switch_on_L
    integer DIST_DIM, Nk
    real F_u(DIST_SHAPE,Nk), F_v(DIST_SHAPE,Nk)
    !
@@ -72,84 +71,27 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
    !
    !_____________________________________________________________________
    !
-   !implicits
+
 #include "lun.cdk"
 #include "glb_ld.cdk"
 #include "eq.cdk"
-#include "step.cdk"
-#include "ver.cdk"
-   !
+
    ! Local variables
-   !
-   real :: Href2 !=(16000./log(10.))**2 ! (~6950 m)**2   
+
    real, dimension(:,:,:), pointer :: uu,vv
-   real,save, dimension(:,:), pointer :: eponmod
-   real,save, dimension(:), pointer :: coef,cm,cp
-   integer, save :: nlev
    integer :: i,j,k,km,kp,istat
-   logical, save :: done_L = .false., nothing2do = .false.
-   !
-   if (nothing2do) then
-      F_switch_on_L = .false.
-      return
-   endif
-   !
-   if(.not.done_L)then
-      !
-      done_L=.true.
-      !
-      nlev=0
-      Href2 = (16000./log(10.))**2 ! (~6950 m)**2   
-      !
-      ! Check stability criteria and count level to diffuse.
-      !
-      istat = 0
-      do k=1,size(Eq_sponge)
-         if(Eq_sponge(k)>epsilon(Eq_sponge(k)))then         
-            if(Step_dt*Eq_sponge(k)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%m(k))>.25)then
-               istat = -1
-               exit
-            endif
-            nlev=nlev+1
-         else
-            exit
-         endif
-      enddo
-      call handle_error(istat,'equatorial_sponge', 'Selected diffusion coeficients is making the scheme unsatable, aborting')
-      if (nlev.lt.1) then
-         F_switch_on_L = .false.
-         nothing2do    = .true.
-         return
-      endif
-      nlev=nlev+1
-      !
-      allocate(coef(1:nlev+1),cm(nlev),cp(nlev))
-      coef(1)=0.
-      coef(nlev+1)=0.
-      coef(2:nlev)=Eq_sponge(1:nlev-1)
-      !
-      do k=1,nlev
-         km=max(1,k-1)
-         cp(k)=Step_dt*coef(k+1)/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(k ))
-         cm(k)=Step_dt*coef(k  )/(Href2*Ver_dz_8%m(k)*Ver_dz_8%t(km))
-      enddo
-      !
-      allocate(eponmod(l_ni,l_nj))
-      call itf_phy_vlsp (eponmod,l_ni,l_nj)
-      !
-   endif
 
    if (Lun_debug_L) write (Lun_out,1000)
 
-   allocate(uu(l_ni,l_nj,nlev),vv(l_ni,l_nj,nlev))
-   !
-   ! nlev is generally small (about 10) so we do the parallel section on j.
-   !
+   allocate(uu(l_ni,l_nj,eq_nlev),vv(l_ni,l_nj,eq_nlev))
+
+   ! eq_nlev is generally small (about 10) so we do the parallel section on j.
+
    !$omp parallel private(kp,km)
    !$omp do
    do j=1,l_nj  
-      do k=1,nlev
-         kp=min(nlev,k+1)
+      do k=1,eq_nlev
+         kp=min(eq_nlev,k+1)
          km=max(1,k-1)
          do i=1,l_ni
             uu(i,j,k)=F_u(i,j,k)+eponmod(i,j)*(cp(k)*(F_u(i,j,kp)-F_u(i,j,k )) &
@@ -158,13 +100,14 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
                                               -cm(k)*(F_v(i,j,k )-F_v(i,j,km)))
          enddo
       enddo
-      F_u(1:l_ni,j,1:nlev)=uu(1:l_ni,j,1:nlev)
-      F_v(1:l_ni,j,1:nlev)=vv(1:l_ni,j,1:nlev)
+      F_u(1:l_ni,j,1:eq_nlev)=uu(1:l_ni,j,1:eq_nlev)
+      F_v(1:l_ni,j,1:eq_nlev)=vv(1:l_ni,j,1:eq_nlev)
    enddo
    !$omp enddo
    !$omp end parallel
-   !
+
    deallocate(uu,vv)
+
    !     __________________________________________________________________
    !
    if (Lun_debug_L) write (Lun_out,1000)
@@ -174,4 +117,4 @@ subroutine equatorial_sponge2(F_u,F_v,DIST_DIM,Nk,F_switch_on_L)
    !     __________________________________________________________________
    !
    return
-end subroutine equatorial_sponge2
+end subroutine eqspng_drv

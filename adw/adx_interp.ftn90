@@ -64,7 +64,7 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
    real, dimension(adx_mlni,adx_mlnj,F_nk) :: wrkb, wrkc
 
    !---------------------------------------------------------------------
-
+   nullify(wrka)
    call msg(MSG_DEBUG,'adx_interp')
    if (.not.adx_lam_L) allocate (wrka(max(1,adx_fro_a)))
 

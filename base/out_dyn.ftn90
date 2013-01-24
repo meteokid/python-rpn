@@ -48,199 +48,117 @@
 !     Subroutine to control the production of
 !     the output of the dynamic variables
 !
-!arguments
-!  NONE
-!
-!implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "out3.cdk"
 #include "lun.cdk"
-#include "geomn.cdk"
 #include "schm.cdk"
-#include "pres.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
-#include "vt0.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
-#include "vth.cdk"
-#include "p_geof.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "tr3d.cdk"
-#include "grd.cdk"
 #include "grdc.cdk"
 #include "lctl.cdk"
-#include "vt1_m.cdk"
 #include "cstv.cdk"
-#include "type.cdk"
-#include "ver.cdk"
-#include "vinterpo.cdk"
 #include "out.cdk"
-   include "v4dg.inc"
-!
-      integer,external ::  doout
+#include "pw.cdk"
+#include "out_listes.cdk"
+#include "ver.cdk"
 !
       type(gmm_metadata) :: mymeta
-      integer dostep(MAXSET), dostep_max, step, istat, &
-              pnlkey(20),i,j,k
-      character*4 ext_S
-      character*6 etikadd_S
-      integer jj,kk,levset,n,ip3,gridset
       character*15 datev,pdate
-      integer is,nis,js,jn,njs,iw,ie,niw,jw,njw
-      real deg2rad
-      real wlnpi_m(LDIST_SHAPE,0:G_nk+1), wlnpi_t(LDIST_SHAPE,G_nk+2)
-      real p0(LDIST_SHAPE)
-      integer key_m(Tr3d_ntr),ninj
-      logical periodx_L,doneonce,ontimec
+      logical periodx_L,ontimec,flag_clos
+      integer i,j,k,istat,jj,kk,levset,gridset
+      real wlnpi_m(LDIST_SHAPE,0:G_nk+1), &
+           wlnpi_t(LDIST_SHAPE,  G_nk+2),  p0(LDIST_SHAPE)
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
-      data doneonce/.false./
-      save doneonce
-!*
 !
-!     check if output is required and initialize control tables
-!     ---------------------------------------------------------------
+!----------------------------------------------------------------------
 !
       call timing_start ( 80, 'OUT_DYN')
-
-      if (Rstri_rstn_L.and..not.doneonce) goto 998
-!
 !
 !########## REGULAR OUTPUT #######################################
 !
       if (F_reg_out) then
-!
-      dostep_max = doout(dostep,1)
-      deg2rad    = acos( -1.0)/180.
-!
-      if ( dostep_max.gt.0 ) then
+
+         if (outd_sorties(0,Lctl_step).lt.1) then
+            if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
+            goto 887
+         endif
+
          if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
-      else
-         if (Lun_out.gt.0) write(Lun_out,7002) Lctl_step
-         goto 887
-      endif
-!
-!
-      if (.NOT.V4dg_ad_L) then 
 
-!     PREPARATION for OUT_THM
-!    ---------------------------
-!
-      ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-      istat = gmm_get(gmmk_st1_s,st1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(st1)'
-      call out_padbuf(st1,l_minx,l_maxx,l_miny,l_maxy,1)
-      p0(l_minx:l_maxx,l_miny:l_maxy) = exp(st1(l_minx:l_maxx,l_miny:l_maxy))*Cstv_pref_8     
-!
-!
-!        Log-pressure on momentum and thermo levels, 
-!        with extra momentum levels at top (k=0) and surface (k=G_nk+1)
-!        and with an extra thermo level at surface (k=G_nk+2)
-!
-      wlnpi_m(:,:,0)= Cstv_Ztop_8
-      do k=1,G_nk+1
-         do j=l_miny,l_maxy
-         do i=l_minx,l_maxx
-            wlnpi_m(i,j,k) = Ver_a_8%m(k) + Ver_b_8%m(k)*st1(i,j)
-            wlnpi_t(i,j,k)=.5d0*(wlnpi_m(i,j,k)+wlnpi_m(i,j,k-1))
-          enddo
+         out3_type_S= 'REGDYN'
+
+         istat= gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,mymeta)
+         istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
+         istat= gmm_get(gmmk_st1_s        ,st1        ,mymeta)
+
+         wlnpi_m(:,:,0)= Cstv_Ztop_8
+         do k=1,G_nk+1
+            wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k+1))
+            wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k  ))
          enddo
-      enddo
-!
-      if (Schm_autobar_L)  wlnpi_t(:,:,1) = Cstv_ztop_8
-!
-      wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
+         if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
+         wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
 
-      endif
-!
-!     Allocate work space and initialize
+         call out_padbuf (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+         call out_padbuf (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
 
-!
-!     setup of ip3 and modifs to label
-!
-      ip3 = 0
-      etikadd_S = ' '
-      ext_S=""
-      if (Out3_ip3.eq.-1) ip3 = Lctl_step
-      if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
-!
-      call v4d_out_ipext (ip3, ext_S, etikadd_S)
-!
-!     setup of filename extension if needed
-      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
-           ((Lctl_step.ge.(Init_dfnp-1)/2)) ) &
-           ext_S = '_dgf'
+         do jj=1, outd_sorties(0,Lctl_step)
 
-!     output loop on the number of "sortie" sets
-      do 100 jj=1,dostep_max
+            kk       = outd_sorties(jj,Lctl_step)
+            gridset  = Outd_grid(kk)
+            levset   = Outd_lev(kk)
+            periodx_L= .not.G_lam .and. ((Grid_x1(gridset)-Grid_x0(gridset)+1).eq.G_ni)
 
-         do 50 kk=1, Outd_sets
+            call out_sgrid2 ( Grid_x0 (gridset),Grid_x1 (gridset), &
+                              Grid_y0 (gridset),Grid_y1 (gridset), &
+                              Grid_ig1(gridset),Grid_ig2(gridset), &
+                              periodx_L, Grid_stride(gridset)    , &
+                              Grid_etikext_s(gridset) )
 
-            if ( Outd_step(kk).eq.dostep(jj) ) then
-!              (if the timestep set of this sortie set is to output now)
-                periodx_L=.false.
-                gridset = Outd_grid(kk)
-                levset = Outd_lev(kk)
-                if (.not.G_lam .and. (Grid_x1(gridset) &
-                    -Grid_x0(gridset)+1).eq. G_ni ) periodx_L=.true.
-                call out_sgrid(Grid_x0(gridset),Grid_x1(gridset), &
-                         Grid_y0(gridset),Grid_y1(gridset)      , &
-                         Grid_ig1(gridset),Grid_ig2(gridset)    , &
-                         periodx_L, Grid_stride(gridset)        , &
-                         Grid_etikext_s(gridset),etikadd_S      )
-                Out_prefix_S(1:1) = 'd'
-                Out_prefix_S(2:2) = Level_typ_S(levset)
+            Out_prefix_S(1:1) = 'd'
+            Out_prefix_S(2:2) = Level_typ_S(levset)
+         
+            call out_sfile2 ( Out3_closestep,Lctl_step )
+            
+            call out_href2  ( 'Mass_point' )
 
-                call out_sfile (Out3_closestep,Lctl_step,ip3,ext_S)
-
-                call out_href( Geomn_longs,Geomn_latgs)
-                if (Level_typ_S(levset).eq.'M') then
-                   call out_vref(p0,LDIST_DIM)
-                elseif (Level_typ_S(levset).eq.'P') then
-                   call out_vref(Level(1:Level_max(levset),levset))
-                endif
-!
-!     output of 3-D tracers
-!
-                call out_tracer (wlnpi_t,LDIST_DIM,G_nk,levset,kk)
-!
-!     output of temperature, humidity and mass fields,omega
-!     
-                call out_thm( wlnpi_m,wlnpi_t,st1,LDIST_DIM,G_nk,levset,kk)
-!
-!     output of winds
-!
-                call out_uv(wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
-!
-!     output of divergence and vorticity
-!
-                call out_dq (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
-!
-!     output of gmm
-!
-                call out_gmm (p0, LDIST_DIM, etikadd_S,levset,kk)
+            if (Level_typ_S(levset).eq.'M') then
+               call out_vref (p0, LDIST_DIM)
+            elseif (Level_typ_S(levset).eq.'P') then
+               call out_vref (Level(1:Level_max(levset), levset))
             endif
 
-      call out_cfile
+            !     output of 3-D tracers
+            call out_tracer (wlnpi_t,LDIST_DIM,G_nk,levset,kk)
 
-  50  continue
- 100  continue
-!
-!     Delay closure of files, de-allocation, wlog write out if...
-      if ( .not. (Lctl_step .eq. 0 .and. Schm_phyms_L)) then
-         if((Init_balgm_L) .and. (.not. Rstri_idon_L) ) then
-             call wlog('IOUT')
-         else
-             call wlog('FOUT')
-         endif
-      endif
-!
-!     end of regular output
+            !     output of temperature, humidity and mass fields,omega
+            call out_thm (wlnpi_m,wlnpi_t,st1,LDIST_DIM,G_nk,levset,kk)
+
+            !     output of winds
+            call out_uv (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
+
+            !     output of divergence and vorticity
+            call out_dq (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
+
+            !     output of gmm
+            call out_gmm2 (levset,kk)
+
+            flag_clos= .true.
+            if (jj .lt. outd_sorties(0,Lctl_step)) then
+              flag_clos= .not.( (gridset.eq.Outd_grid(outd_sorties(jj+1,Lctl_step))).and. &
+              (Level_typ_S(levset).eq.Level_typ_S(Outd_lev(outd_sorties(jj+1,Lctl_step)))))
+            endif
+
+            if (flag_clos) call out_cfile2
+
+         end do
 
       endif
 !
@@ -251,38 +169,39 @@
 !########## SPECIAL OUTPUT FOR CASCADE ###########################
 !
       if ((F_casc_L) .and. (Grdc_ndt.gt.0)) then
-!
-      ontimec = .false.
-      if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) then
-         ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
-      endif
-!
-      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
-           ((Lctl_step.gt.(Init_dfnp-1)/2)) ) ontimec = .false.
 
-      if ( ontimec ) then
-!
-         if (Lun_out.gt.0) write(Lun_out,8001) Lctl_step,trim(Out_laststep_S)
-         call out_sgrid (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
-                                        0,0,.false.,1,'','')
-         call datf2p (pdate,Out3_date)
-         dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
-         call incdatsd (datev,pdate,dayfrac)
-         call out_dyn_3df (datev, Grdc_gid, Grdc_gif, &
-                                  Grdc_gjd, Grdc_gjf)
+         ontimec = .false.
+         if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) &
+              ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
+
+         if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
+              ((Lctl_step.gt.(Init_dfnp-1)/2)) ) ontimec = .false.
+
+         if ( ontimec ) then
+
+            out3_type_S= 'CASDYN'
+
+            if (Lun_out.gt.0) write(Lun_out,8001) Lctl_step,trim(Out_laststep_S)
+            call out_sgrid2 (Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf, &
+                                                0,0,.false.,1,'')
+            call datf2p (pdate,Out3_date)
+            dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+            call incdatsd (datev,pdate,dayfrac)
+            call out_dyn_3df (datev, Grdc_gid, Grdc_gif,&
+                                     Grdc_gjd, Grdc_gjf )
+         endif
+
+         ontimec = .false.
+
       endif
-!
-      ontimec = .false.
-!
-      endif
-!
- 998  doneonce = .true.
 
       call timing_stop ( 80 )
-!
+
  7001 format(/,' OUT_DYN- WRITING DYNAMIC OUTPUT FOR STEP (',I8,') in directory: ',a)
- 8001 format(/,' OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)
  7002 format(/,' OUT_DYN- NO DYNAMIC OUTPUT FOR STEP (',I8,')')
+ 8001 format(/,' OUT_DYN- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)
+!
+!--------------------------------------------------------------------
 !
       return
       end

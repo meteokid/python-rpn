@@ -92,8 +92,8 @@
  999  call handle_error(F_err,'blk_dist_data ','Problem reading file '//trim(fn))
 
       cnt= len(trname_a(1)) * F_ntra
-      call RPN_COMM_bcast (trname_a, cnt, "MPI_CHARACTER",0,"BLOC",err)
-      call RPN_COMM_bcast (ana_zd_L,   3, "MPI_LOGICAL"  ,0,"BLOC",err)
+      call RPN_COMM_bcastc (trname_a, cnt, "MPI_CHARACTER",0,"BLOC",err)
+      call RPN_COMM_bcast  (ana_zd_L,   3, "MPI_LOGICAL"  ,0,"BLOC",err)
 
       if (Ptopo_blocme.eq.0) then
 

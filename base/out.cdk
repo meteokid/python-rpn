@@ -69,8 +69,7 @@
       character*3    Out_ext_S
       logical        Out_flipit_L, Out_debug_L, Out_rewrit_L
       logical        Out_post_L  , Out_diruse_L
-      real           Out_xpos(*), Out_ypos(*)
-      pointer       (Out_xpos_,Out_xpos), (Out_ypos_,Out_ypos)
+      real           Out_rot(8)
 
       integer Out_date,Out_hour,Out_dateo
       integer Out_deet,Out_npas,Out_endstepno
@@ -89,7 +88,7 @@
       integer Out_idg, Out_ifg, Out_jdg, Out_jfg
       integer Out_idl, Out_ifl, Out_jdl, Out_jfl
       integer Out_ig1, Out_ig2, Out_ig3, Out_ig4
-      integer Out_ixg(4), Out_ip2, Out_ip3
+      integer Out_ixg(8), Out_ip2, Out_ip3
       integer Out_myproc,Out_myrow,Out_mycol
       integer Out_myproci0, Out_myprocj0
       integer Out_myprocni, Out_myprocnj
@@ -127,7 +126,6 @@
       common /out_c/ Out_proj_S,Out_unit_S
       common /out_c/ Out_typvar_S,Out_prefix_S, Out_ext_s
 
-      common /out_l/  Out_flipit_L, Out_debug_L, Out_rewrit_L
-      common /out_l/  Out_post_L  , Out_diruse_L
-      common /out_p/  Out_xpos_, Out_ypos_
-
+      common /out_l/ Out_flipit_L, Out_debug_L, Out_rewrit_L
+      common /out_l/ Out_post_L  , Out_diruse_L
+      common /out_r/ Out_rot

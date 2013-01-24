@@ -52,8 +52,8 @@
       if (.not. Topo_clip_oro_L) interp_S = 'LINEAR'
 
       fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
-      if (Grd_yinyang_L) &
-      fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+!!$      if (Grd_yinyang_L) &
+!!$      fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
 
       call get_field ( wk, ni, nj, 'ME', trim(fn), interp_S, xfi, yfi, err)
       

@@ -23,7 +23,7 @@
             if (rrk < p_bsz_8(kk)) kk = kk - 1
             kk = min(kkmax-1,max(0,kk))
 
-            zcubic_L = (kk > 0+notop) .and. (kk < kkmax-1)
+            zcubic_L = (kk > 0) .and. (kk < kkmax-1)
 
             !- x interpolation
             ra = adx_bsx_8(ii-1)

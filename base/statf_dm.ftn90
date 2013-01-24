@@ -80,10 +80,10 @@
       nijk  (:,:) = 0
       minmax(:,:) = 0.0d0
 !
-      i0 = max(F_i0 - Ptopo_gindx(1,Ptopo_myproc+1) + 1, 1   )
-      in = min(F_in - Ptopo_gindx(1,Ptopo_myproc+1) + 1, l_ni)
-      j0 = max(F_j0 - Ptopo_gindx(3,Ptopo_myproc+1) + 1, 1   )
-      jn = min(F_jn - Ptopo_gindx(3,Ptopo_myproc+1) + 1, l_nj)
+      i0 = max(F_i0 - Ptopo_gindx(1,Ptopo_myproc+1) + 1, 1   -west *G_halox)
+      in = min(F_in - Ptopo_gindx(1,Ptopo_myproc+1) + 1, l_ni+east *G_halox)
+      j0 = max(F_j0 - Ptopo_gindx(3,Ptopo_myproc+1) + 1, 1   -south*G_haloy)
+      jn = min(F_jn - Ptopo_gindx(3,Ptopo_myproc+1) + 1, l_nj+north*G_haloy)
 
       if ((i0.le.l_ni).and.(in.ge.1).and. &
           (j0.le.l_nj).and.(jn.ge.1) ) nijk(7,Ptopo_myproc+1) = 1

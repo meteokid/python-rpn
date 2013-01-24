@@ -46,6 +46,7 @@ end subroutine yyg_scalgeo
       call low2up  (interp_S,UPinterp_S)
 
 !     Copy original fields to a source and destination tables with halo
+      tab_srcf = 0.
       do k=1,NK
       do j=1,l_nj
       do i=1,l_ni

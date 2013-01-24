@@ -2,5 +2,18 @@
 . s.ssmuse.dot $(cat $modelutils/src/ssmuse_dependencies.bndl)
 if [[ x$BASE_ARCH == xAIX-powerpc7 ]] ; then
    s.use gmake as make
-fi
 
+   if [[ x$COMP_ARCH == xxlf14 ]] ; then
+		#eval `s.path_cleanup +${BASE_ARCH}/xlf13 EC_INCLUDE_PATH +${BASE_ARCH}/xlf13 EC_LD_LIBRARY_PATH`
+	   tmp=''
+	   for item in $EC_LD_LIBRARY_PATH ; do
+		   if [[ -d $item/${BASE_ARCH}/xlf13 ]] ; then tmp="$tmp $item/${BASE_ARCH}/xlf13" ; fi
+	   done
+	   set -x
+	   export EC_LD_LIBRARY_PATH="$EC_LD_LIBRARY_PATH $tmp"
+	   export EC_LD_LIBRARY_PATH="$(true_path ~armnsch/SsmBundles/ENV/x/vgrid/3.6.2/AIX-powerpc7/xlf14) $EC_LD_LIBRARY_PATH"
+	   export EC_INCLUDE_PATH="$(true_path ~armnsch/SsmBundles/ENV/x/vgrid/3.6.2/AIX-powerpc7/xlf14) $EC_INCLUDE_PATH"
+	   set +x
+   fi
+
+fi

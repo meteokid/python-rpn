@@ -1,0 +1,121 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r out_stkecr
+!
+      subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  , &
+                              l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf, &
+                              ip2,ip3,ig1,ig2,ig4 )
+      implicit none
+#include <arch_specific.hf>
+!
+      include "out_meta.inc"
+
+      integer lminx,lmaxx,lminy,lmaxy,nplans
+      integer l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf
+      integer ip2,ip3,ig1,ig2,ig4
+      real fa(lminx:lmaxx,lminy:lmaxy,nplans)
+      type (meta_fstecr), dimension(:), pointer :: meta
+!
+!author
+!    Michel Desgagne - Fall 2012
+!
+!revision
+! v4_50 - Desgagne M. - Initial version
+
+#include "glb_ld.cdk"
+#include "out3.cdk"
+#include "out.cdk"
+#include "ptopo.cdk"
+
+      integer, external :: fstecr, RPN_COMM_grid_redist
+
+      integer, parameter :: ltok = 1
+      integer  nz, err, nblock, nis, njs, k, kk
+      integer, dimension (:)    , allocatable :: zlist
+      real   , dimension (:,:,:), pointer     :: wk
+!
+!----------------------------------------------------------------------
+!
+      nis= g_if - g_id + 1
+      njs= g_jf - g_jd + 1
+
+      nblock= Ptopo_nblocx*Ptopo_nblocy
+      nz    = (nplans + nblock -1) / nblock
+      allocate ( wk(nis,njs,nz+1), zlist(nz) ) ; zlist= -1 
+
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_start ( 82, 'OUT_DUCOL')
+      else
+         call timing_start ( 91, 'OUT_PUCOL')
+      endif
+
+      err= RPN_COMM_grid_redist (fa, l_minx,l_maxx, l_id,l_if         ,&
+                                     l_miny,l_maxy, l_jd,l_jf, nplans ,& 
+                                 wk, g_id, g_if, g_jd, g_jf           ,&
+                                 nz, zlist, G_ni, G_nj                ,&
+                                 Out3_outpe_x,Ptopo_nblocx            ,&
+                                 Out3_outpe_y,Ptopo_nblocy, ltok)
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_stop (82)
+      else
+         call timing_stop (91)
+      endif
+
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_start ( 84, 'OUT_DUECR')
+      else
+         call timing_start ( 92, 'OUT_PUECR')
+      endif
+
+      if (Out_blocme.eq.0) then
+
+         do k= nz, 1, -1
+
+            if (zlist(k).gt.0) then
+               kk= zlist(k)
+
+               if (Out3_uendode_L) then
+
+                  call out_mergeyy (wk(1,1,k), nis*njs)
+                  if (Ptopo_couleur.eq.0) &
+                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo,int(Out_deet), &
+                             Out_npas,nis,2*njs,1,meta(kk)%ip1,ip2,ip3,&
+                             Out_typvar_S,meta(kk)%nv,Out_etik_S,'U'                        , &
+                             ig1,ig2,meta(kk)%ig3,ig4,meta(kk)%dtyp,Out_rewrit_L)
+              else
+
+                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo,int(Out_deet), &
+                             Out_npas,nis,njs,1,meta(kk)%ip1,ip2,ip3               , &
+                             Out_typvar_S,meta(kk)%nv,Out_etik_S,'Z'                   , &
+                             ig1,ig2,meta(kk)%ig3,ig4,meta(kk)%dtyp,Out_rewrit_L)
+               endif
+
+            endif
+
+         end do
+
+      endif
+
+      deallocate (wk,zlist)
+      if (out3_type_S .eq. 'REGDYN') then
+         call timing_stop (84)
+      else
+         call timing_stop (92)
+      endif
+
+!--------------------------------------------------------------------
+      return
+      end

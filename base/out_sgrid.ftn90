@@ -17,16 +17,15 @@
 !**s/r out_sgrid - to setup output grid
 #include  "model_macros_f.h"
 !
-      subroutine out_sgrid ( F_x0,F_x1,F_y0,F_y1,F_ig1,F_ig2, &
-                             F_periodx_L,F_stride,F_etikext_s, &
-                             F_etikadd_S)
+      subroutine out_sgrid2 ( F_x0,F_x1,F_y0,F_y1,F_ig1,F_ig2 ,&
+                              F_periodx_L,F_stride,F_etikext_s )
 
       implicit none
 #include <arch_specific.hf>
 !
       integer F_x0, F_x1,F_y0,F_y1,F_stride,NI,NJ,F_ig1,F_ig2
       logical F_periodx_L
-      character*(*) F_etikext_s, F_etikadd_S
+      character*(*) F_etikext_s
 !
 !AUTHOR   Michel Desgagne     July 2004
 !
@@ -50,17 +49,15 @@
 #include "out.cdk"
 #include "ptopo.cdk"
 !
-      integer i
-      integer  longueur
-      external longueur
-!*
+!      integer i
+!
 !----------------------------------------------------------------------
 !
       Out_stride= F_stride
-      Out_gridi0=F_x0
-      Out_gridin=F_x1
-      Out_gridj0=F_y0
-      Out_gridjn=F_y1
+      Out_gridi0= F_x0
+      Out_gridin= F_x1
+      Out_gridj0= F_y0
+      Out_gridjn= F_y1
       out_idl = max(F_x0 - out_bloci0 + 1, 1)
       out_ifl = min(F_x1 - out_bloci0 + 1, Out_blocni)
       out_jdl = max(F_y0 - out_blocj0 + 1, 1)
@@ -95,8 +92,6 @@
 !
       Out_etik_S = Out_etiket_S(1:min(len_trim(Out_etiket_S), &
          len(Out_etiket_S)-len_trim(F_etikext_s))) //trim(F_etikext_s)
-      if (F_etikadd_S.ne.' ') Out_etik_S = &
-              Out_etik_S(1: min(longueur(Out_etik_S),12-longueur(F_etikadd_S)))//F_etikadd_S
 !
 !----------------------------------------------------------------------
       return

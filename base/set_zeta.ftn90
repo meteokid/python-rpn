@@ -19,7 +19,8 @@
 #include "model_macros_f.h"
 !
       subroutine set_zeta2( F_hybuser, Nk )
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels,VGD_OK
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels, &
+           VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_put
    !     
       implicit none
@@ -121,9 +122,9 @@
 #include "level.cdk"
 !
       type(vgrid_descriptor) :: vcoord
-      integer k,istat,err,glb_err
-      integer, dimension(:), pointer :: ip1m,ip1t
-      real, dimension(:), pointer :: hybm_free,hybt_free,std_p_prof
+      integer k,istat
+      integer, dimension(:), pointer :: ip1m=>null(),ip1t=>null()
+      real, dimension(:), pointer :: hybm_free=>null(),hybt_free=>null(),std_p_prof=>null()
       real :: hybm(0:G_nk+1),hybt(0:G_nk+2)
       real*8 zero, half, one, two
       parameter(zero=0.d0,half=0.5d0,one=1.d0,two=2.d0)
@@ -149,44 +150,37 @@
       Cstv_pref_8 = 100000.d0
 !
       Ver_code = 6
-      glb_err  = 0
 !
-      istat = 0
-      if (Cstv_pref_8.ne.100000.d0) istat = -1
-      call handle_error(istat, 'set_zeta','Cstv_pref_8 must equal 100000.d0')
+      call handle_error_l(Cstv_pref_8.eq.100000.d0, 'set_zeta','Cstv_pref_8 must equal 100000.d0')
 !
       Cstv_Zsrf_8 = log(Cstv_pref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
 !
       ! Construct vertical coordinate
-      err = vgd_new (vcoord, kind=5, version=Level_version, hyb=F_hybuser, &
+      istat = vgd_new (vcoord, kind=5, version=Level_version, hyb=F_hybuser, &
                      rcoef1=Grd_rcoef(1),rcoef2=Grd_rcoef(2) , &
                      ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8,stdout_unit=Lun_out)
-      if (err /= VGD_OK) glb_err = -1
-      call handle_error (glb_err,'set_zeta','coordinate construction failed')
+      call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
 
       ! Retrieve information required to fill model arrays
+      Ver_a_8%m=>null();Ver_b_8%m=>null();Ver_a_8%t=>null();Ver_b_8%t=>null()
+      if (vgd_get(vcoord,'CA_M - vertical A coefficient (m)',Ver_a_8%m  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'CB_M - vertical B coefficient (m)',Ver_b_8%m  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'CA_T - vertical A coefficient (t)',Ver_a_8%t  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'CB_T - vertical B coefficient (t)',Ver_b_8%t  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,hybm_free  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,hybt_free  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,ip1m       )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,ip1t       )/= VGD_OK) istat = VGD_ERROR
+      call handle_error_l(istat==VGD_OK,'set_zeta','retrieving coordinate info')
 
-      if (vgd_get(vcoord,'CA_M - vertical A coefficient (m)',Ver_a_8%m) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'CB_M - vertical B coefficient (m)',Ver_b_8%m) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'CA_T - vertical A coefficient (t)',Ver_a_8%t) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'CB_T - vertical B coefficient (t)',Ver_b_8%t) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,hybm_free) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,hybt_free) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,ip1m     ) /= VGD_OK) glb_err = -1
-      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,ip1t     ) /= VGD_OK) glb_err = -1
-
-      call handle_error (glb_err,'set_zeta','retrieving coordinate info')
-
-      err = vgd_levels(vcoord,ip1m,std_p_prof,100000.,in_log=.false.) 
-      if (err /= VGD_OK) glb_err = -1
-      call handle_error (glb_err,'set_zeta','problem getting standard pressure profile for m levels')
+      istat = vgd_levels(vcoord,ip1m,std_p_prof,100000.,in_log=.false.) 
+      call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
       Ver_std_p_prof%m=std_p_prof
 
       deallocate(std_p_prof)
-      err = vgd_levels(vcoord,ip1t,std_p_prof,100000.,in_log=.false.)                                                                     
-      if (err /= VGD_OK) glb_err = -1                                                                                                  
-      call handle_error (glb_err,'set_zeta','problem getting standard pressure profile for t levels')
+      istat = vgd_levels(vcoord,ip1t,std_p_prof,100000.,in_log=.false.)
+      call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
       Ver_std_p_prof%t=std_p_prof
 
       ! Add outside level at top boundary and fill hybrid coordinate values
@@ -277,8 +271,8 @@
 !     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------
-      err = vgrid_wb_put('ref-m',vcoord,ip1m)
-      err = vgrid_wb_put('ref-t',vcoord,ip1t)
+      istat = vgrid_wb_put('ref-m',vcoord,ip1m)
+      istat = vgrid_wb_put('ref-t',vcoord,ip1t)
 !     __________________________________________________________________
 !
       return

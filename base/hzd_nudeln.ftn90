@@ -57,10 +57,8 @@
 !    *                                                                 *
 !    *******************************************************************
 !
-!EXTERNALS
 #include "glb_ld.cdk"
 !
-!*
       integer i,j,k,id,jd,iff,jf
       real wk(l_minx:l_maxx,l_miny:l_maxy)
       real*8 c1,c2,c3,one,two,four
@@ -76,6 +74,7 @@
       c2 = nu**2
       c3 = nu*four*(nu-one)
 !
+!$omp parallel private (wk)
 !$omp do
       do k=1,lnk
          if (m.eq.1) then
@@ -126,6 +125,7 @@
          endif
       end do
 !$omp enddo
+!$omp end parallel
 !     
 !----------------------------------------------------------------------
       return

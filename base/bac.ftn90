@@ -17,12 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine bac( Itr, Itnlh )
-!
+      subroutine bac ( F_lhs_sol, Ni,Nj,Nk, Itr, Itnlh )
       implicit none
 #include <arch_specific.hf>
 !
-      integer Itr, Itnlh
+      integer Ni,Nj,Nk, Itr, Itnlh
+      real*8 F_lhs_sol (Ni,Nj,Nk)
 !
 !author
 !     Alain Patoine - Gabriel Lemay
@@ -59,13 +59,14 @@
 #include "nl.cdk"
 #include "vt0.cdk" 
 #include "vtx.cdk" 
+#include "lam.cdk"
 #include "lctl.cdk"
 #include "nest.cdk"
 #include "wil_williamson.cdk"
 #include "grd.cdk"
 !*
       type(gmm_metadata) :: mymeta
-      integer :: istat
+      integer :: istat, i0, j0, k0, in, jn
 !     __________________________________________________________________
 !
       if (Schm_autobar_L.and.Williamson_case.eq.1) return
@@ -90,8 +91,7 @@
       if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(st0)'
       istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(zdt0)'
-      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(fiptx)'
+
       if (.not. Schm_hydro_L) then
          istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsw)'
@@ -105,23 +105,38 @@
       if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(vt0)'
       istat = gmm_get(gmmk_wt0_s,wt0,mymeta)
 
+      i0 = 1   +pil_w
+      in = l_ni-pil_e
+      j0 = 1   +pil_s
+      jn = l_nj-pil_n
+
+      k0 = 1+Lam_gbpil_T
+
       nullify(qt0,nest_q)
       if (.not. Schm_hydro_L) then
          istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(qt0)'
          if (Schm_opentop_L) then
-           istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
-           if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(nest_q)'
+            istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
+            call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
+                       ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
+                       st0 , zdt0, qt0(l_minx,l_miny,1), nest_q(l_minx,l_miny,1), &
+                       rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
+                       nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
+         else
+            call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
+                       ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
+                       st0 , zdt0, qt0(l_minx,l_miny,1), nest_q                 , &
+                       rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
+                       nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
          endif
+      else
+         call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
+                    ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
+                    st0 , zdt0, qt0                 , nest_q                 , &
+                    rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
+                    nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
       endif
-!
-      call  bacp_2 (   Itr  , Itnlh , fiptx(l_minx,l_miny,1) ,  fis0 , &
-                       ut0  ,   vt0 ,   wt0(l_minx,l_miny,2) ,   tt0(l_minx,l_miny,2), &
-                       st0  ,  zdt0 ,   qt0(l_minx,l_miny,1) , fiptx(l_minx,l_miny,1) ,nest_q(l_minx,l_miny,1) , &
-                       rhsu ,  rhsv ,  rhst(l_minx,l_miny,2) ,  rhsw(l_minx,l_miny,2) ,  rhsf(l_minx,l_miny,2) , rhsb , &
-                       nl_u ,  nl_v ,  nl_t ,  nl_w ,  nl_f , nl_b , &
-                       LDIST_DIM, l_nk )
-!
+
       if (Grd_yinyang_L) call yyg_bacwinds (ut0,vt0,zdt0,LDIST_DIM,l_nk)
 !
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')

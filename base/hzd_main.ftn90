@@ -53,15 +53,24 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "hzd.cdk"
+#include "vspng.cdk"
+#include "eq.cdk"
 #include "vt1.cdk"
+#include "dcst.cdk"
+#include "pw.cdk"
 
+      real, parameter :: p_naught=100000.
       type(gmm_metadata) :: mymeta
-      logical, save :: switch_on_hzd= .true., switch_on_vrtspng= .true., &
-                       switch_on_eqspng= .true.
-      integer i,istat
+      logical switch_on_hzd, switch_on_vrtspng, switch_on_eqspng
+      integer i,j,k,istat
+      real :: pres_t(l_ni,l_nj,G_nk+1),th(LDIST_SHAPE,G_nk+1)
       real, pointer, dimension(:,:,:) :: tr
 !     _________________________________________________________________
 !
+      switch_on_hzd     = ( Hzd_ho_L .and. (Hzd_cdiff .gt. 0.0) )
+      switch_on_vrtspng = (Vspng_nk.ge.1)
+      switch_on_eqspng  = (Eq_nlev .gt.1)
+
       if (.not.(switch_on_hzd.or.switch_on_vrtspng.or.switch_on_eqspng)) &
            return
 
@@ -75,6 +84,7 @@
       if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(tt1)'
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
 
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 
@@ -92,6 +102,28 @@
          
          call hzd_ctrl2 (zdt1, 'S', G_nk+1, switch_on_hzd)
          call hzd_ctrl2 ( wt1, 'S', G_nk+1, switch_on_hzd)
+
+         if (Hzd_theta_L) then     ! Diffuse potential temperature
+!$omp parallel shared (pres_t,th)
+!$omp do
+            do k=1,G_nk+1
+               pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
+               call vspown1 (pres_t(1,1,k),pres_t(1,1,k),real(Dcst_cappa_8),l_ni*l_nj)
+               th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
+            end do
+!$omp enddo
+!$omp end parallel
+
+            call hzd_ctrl2 ( th, 'S', G_nk+1, switch_on_hzd)
+
+!$omp parallel shared (pres_t,th)
+!$omp do
+            do k=1,G_nk+1
+               tt1(1:l_ni,1:l_nj,k) = th(1:l_ni,1:l_nj,k) / pres_t(1:l_ni,1:l_nj,k)
+            enddo
+!$omp enddo
+!$omp end parallel
+         endif
 
          do i=1, Hzd_tr3d_ntr
             nullify (tr)
@@ -119,7 +151,7 @@
 !
       if ( switch_on_eqspng ) then
          call timing_start ( 68, 'EQUA_SPNG')
-         call equatorial_sponge2 (ut1,vt1,LDIST_DIM,G_nk,switch_on_eqspng)
+         call eqspng_drv (ut1,vt1,LDIST_DIM,G_nk)
          call timing_stop ( 68 )
       endif
 !
@@ -129,6 +161,7 @@
 !
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 !
+      call pw_update_GPW
       call pw_update_UVT ('P')
 !
 !     _________________________________________________________________

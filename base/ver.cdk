@@ -31,6 +31,8 @@
 ! Ver_wm_8%(t,m)     | weights for averaging                           |
 !----------------------------------------------------------------------|
 ! Ver_std_p_prof%(t,m)| STanDard Pressure PROFile for physics          |
+!----------------------------------------------------------------------|
+! Ver_table_8         | real*8 table containing vgrid descriptors      |
 !-----------------------------------------------------------------------
 !
 #endif
@@ -67,3 +69,6 @@
       integer Ver_code
       common /ver_i/ Ver_code
       common /ver_vi/ Ver_ip1
+!
+      real*8, dimension(:,:,:), pointer :: ver_table_8
+      common /ver_p8/ ver_table_8

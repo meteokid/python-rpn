@@ -42,79 +42,54 @@
 !     reads the data and performs initialization if required.
 !     It then initiates the forward intergration of the model.
 !	
-!arguments
-!	none
-!
-!implicits
+#include "glb_ld.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
 #include "step.cdk"
 #include "rstr.cdk"
 #include "vtopo.cdk"
-       include "v4dg.inc"
 !
-      integer pnerr
       logical rstrt_L
       data rstrt_L /.false./
 !
 !     ---------------------------------------------------------------
 !
       call gemtim4 ( Lun_out, 'GEM_CTRL: START', .false. )
-!
-!C       2.    If this is the beginning of the integration:
-!              ----------------------------------------------
-!
-!C             a) Read input data, performs preprocessing,
-!C             b) Initializes physics package with zero timestep call,
-!C             c) output field at initial time on the model grid.
-!C             d) perform dynamic diagnostics if required.
-!C             e) write message on cmclog file for analysis cycle.
-!
-!
+
 !     Evaluate logical key for Variable Topography
-!
       Vtopo_L = ((Vtopo_start .ge. 0) &
                  .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
 
-      if ( V4dg_conf.eq.0 ) then
-!
-        if ( .not. Rstri_rstn_L ) then
-!
-           call indata()
-!
-        else
-!
-           call set_dync()
-!
-        endif
-!
+      if ( .not. Rstri_rstn_L ) then
+
+         call indata()
+
+      else
+
+         call set_dync()
+
       endif
-!
+
+      if (.not.G_lam) call glhalo_init()
+
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
-!
+
       Rstri_sdon = 0
-!
+
       if ( Init_balgm_L .and. .not.Rstri_idon_L ) call initial (rstrt_L)
-!
+
       if (.not.rstrt_L) call gem_run (.false., rstrt_L)
-!
+
       if (rstrt_L) call wrrstrt ()
-!
+
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
-!
-      if ( V4dg_conf.eq.0 ) then
-         if (Lctl_step.eq.Step_total) then
-            call wlog('FEND')
-            call wlog('CEND')
-         endif
-      endif
-!
+
  3000 format( &
       //,'END OF CURRENT TIME SLICE (S/R GEM_CTRL) AT TIMESTEP',I8, &
        /,'=================================================')
-!
+
 !     ---------------------------------------------------------------
 !
       return

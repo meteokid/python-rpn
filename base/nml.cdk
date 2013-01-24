@@ -72,6 +72,7 @@
       namelist /gem_cfgs/ Hzd_pwr_tr
       namelist /gem_cfgs/ Hzd_t0_0_L
       namelist /gem_cfgs/ Hzd_t1_0_L
+      namelist /gem_cfgs/ Hzd_theta_L
       namelist /gem_cfgs/ Hzd_tr3d_name_S
       namelist /gem_cfgs/ Hzd_type_S
 !Init
@@ -115,6 +116,8 @@
       namelist /gem_cfgs/ Out3_lieb_conv
       namelist /gem_cfgs/ Out3_postfreq
       namelist /gem_cfgs/ Out3_newout_L
+      namelist /gem_cfgs/ Out3_fullplane_L
+      namelist /gem_cfgs/ Out3_uendode_L
 
 !P
       namelist /gem_cfgs/ P_runlgt
@@ -138,8 +141,7 @@
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_hydro_L
-      namelist /gem_cfgs/ Schm_hzdzdt_L
-      namelist /gem_cfgs/ Schm_hzduav_L
+      namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
       namelist /gem_cfgs/ Schm_itnlh
       namelist /gem_cfgs/ Schm_itraj
@@ -210,6 +212,7 @@
       namelist /gem_cfgs_p/ Hzd_pwr_tr
       namelist /gem_cfgs_p/ Hzd_t0_0_L
       namelist /gem_cfgs_p/ Hzd_t1_0_L
+      namelist /gem_cfgs_p/ Hzd_theta_L
       namelist /gem_cfgs_p/ Hzd_type_S
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
@@ -249,6 +252,8 @@
       namelist /gem_cfgs_p/ Out3_lieb_conv
       namelist /gem_cfgs_p/ Out3_postfreq
       namelist /gem_cfgs_p/ Out3_newout_L
+      namelist /gem_cfgs_p/ Out3_fullplane_L
+      namelist /gem_cfgs_p/ Out3_uendode_L
 
 !P
       namelist /gem_cfgs_p/ P_runlgt
@@ -270,8 +275,7 @@
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_hydro_L
-      namelist /gem_cfgs_p/ Schm_hzdzdt_L
-      namelist /gem_cfgs_p/ Schm_hzduav_L
+      namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn
       namelist /gem_cfgs_p/ Schm_itnlh
       namelist /gem_cfgs_p/ Schm_itraj

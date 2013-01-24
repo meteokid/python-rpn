@@ -23,10 +23,11 @@
 #include <arch_specific.hf>
 !
 !author
-!     Andre Plante from hzd_main
+!     Andre Plante from hzd_main      
 !
 !revision
 ! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4.5  - Qaddouri-PLante   - YY version
 !
 !object
 !	
@@ -41,12 +42,23 @@
 #include "lun.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
+#include "ptopo.cdk"
+#include "opr.cdk"
+#include "glb_pil.cdk"
+#include "grd.cdk"
+#include "lctl.cdk"
 !
       type(gmm_metadata) :: mymeta
-      integer err, nlod, key1(2), i, j,istat
+      integer err, nlod, key1(2), i, j,istat,isize
       real wk0(LDIST_SHAPE), wk1(LDIST_SHAPE)
-      real*8  bbb_8
-      real*8, parameter :: ONE_8 = 1.d0
+      real*8 :: bbb_8,avg_8(3)
+      real*8, save :: savg_8(3)
+      integer offi, offj,ierr,status 
+      real*8 ONE_8,ZERO_8,TWO,s_8(2,2),x_a_8,y_a_8,RLON_8,RLAT_8,my_8
+      real*8, save, pointer, dimension(:,:) :: area_8=>null()
+      logical, save :: done_L=.false.
+      parameter(ZERO_8 = 0.0, ONE_8 = 1.d0, TWO= 2.d0)
+
 !*
 !     _________________________________________________________________
 !
@@ -57,31 +69,117 @@
       if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(st0)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(st1)'
+      istat = gmm_get(gmmk_p00_s,p00,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(p00)'
 !
       if (Lun_debug_L) write(Lun_out,1001)
 !
+!     Note : Lctl_step.eq.1 and .not.done_L are true for the first time step
+!            In addition .not.done_L will be true for first step in restart
+!         
 !$omp parallel private(i)
+      if(Lctl_step.eq.1)then
+!$omp do
+         do j= 1+pil_s, l_nj-pil_n 
+            do i= 1+pil_w, l_ni-pil_e 
+               wk0(i,j) = st0(i,j)
+            end do
+            call vsexp (wk0(1+pil_w,j),wk0(1+pil_w,j),(l_ni-pil_e-pil_w))
+            do i= 1+pil_w, l_ni-pil_e 
+               wk0(i,j) = (wk0(i,j)-1.)*Cstv_pref_8
+            end do
+         end do
+!$omp enddo
+      endif
 !$omp do
       do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
-            wk0(i,j) = st0(i,j)
             wk1(i,j) = st1(i,j)
          end do
-         call vsexp (wk0(1+pil_w,j),wk0(1+pil_w,j),(l_ni-pil_e-pil_w))
          call vsexp (wk1(1+pil_w,j),wk1(1+pil_w,j),(l_ni-pil_e-pil_w))
          do i= 1+pil_w, l_ni-pil_e 
-            wk0(i,j) = (wk0(i,j)-1.)*Cstv_pref_8
             wk1(i,j) = (wk1(i,j)-1.)*Cstv_pref_8
          end do
       end do
 !$omp enddo
+!$omp end parallel
 !
-!$omp single
-      call horwavg ( bbb_8, wk0, wk1, LDIST_DIM )
-!$omp end single
+      if (Grd_yinyang_L) then
+
+         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+         offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+         
+         if(.not.done_L)then
+            ! 1) Find out where YIN lat lon points are in (YAN) grid with call to smat.
+            ! 2) If they are not outside of Yin grid, put area_8 to zero for those points.
+            !
+            allocate(area_8(l_ni,l_nj))
+            !
+            do j=1+pil_s,l_nj-pil_n
+            do i = 1+pil_w, l_ni-pil_e
+               area_8(i,j)=Opr_opsxp0_8(G_ni+offi+i) * &
+                    Opr_opsyp0_8(G_nj+offj+j)
+            enddo
+            enddo
+            if (Ptopo_couleur.eq.1)then ! YAN
+               do j = 1+pil_s, l_nj-pil_n           
+                  y_a_8 = G_yg_8(offj+j)
+                  do i = 1+pil_w, l_ni-pil_e
+                     x_a_8 = G_xg_8(offi+i)-acos(-1.D0)
+                     call smat(s_8,RLON_8,RLAT_8,x_a_8,y_a_8)
+                     RLON_8 = RLON_8+acos(-1.D0)
+                     if(.not.( &
+                          RLON_8.gt.G_xg_8(G_ni-Lam_pil_e).or. &
+                          RLON_8.lt.G_xg_8(1   +Lam_pil_w).or. &
+                          RLAT_8.gt.G_yg_8(G_nj-Lam_pil_n).or. &
+                          RLAT_8.lt.G_yg_8(1   +Lam_pil_s)) &
+                          ) area_8(i,j)=0.
+                  enddo
+               enddo
+            endif
+         endif
+         !
+         avg_8 = ZERO_8
+         do j=1+pil_s,l_nj-pil_n
+         do i = 1+pil_w, l_ni-pil_e
+            avg_8(1)= avg_8(1) + area_8(i,j)*wk1(i,j)
+         enddo
+         enddo
+         isize=1
+         if(.not.done_L)then
+            isize=2
+            do j=1+pil_s,l_nj-pil_n
+            do i = 1+pil_w, l_ni-pil_e
+               avg_8(2)= avg_8(2) + area_8(i,j)
+            enddo
+            enddo
+         endif
+         if(Lctl_step.eq.1)then
+            isize=3
+            do j=1+pil_s,l_nj-pil_n
+            do i = 1+pil_w, l_ni-pil_e
+               avg_8(3)= avg_8(3) + area_8(i,j)*wk0(i,j)
+            enddo
+            enddo
+         endif
+         call RPN_COMM_allreduce(avg_8,savg_8,isize,&
+              "MPI_DOUBLE_PRECISION","MPI_SUM","MULTIGRID",ierr)
+         if(Lctl_step.eq.1)then
+            p00(1)=savg_8(3)/savg_8(2)
+         endif
+         avg_8(1)=savg_8(1)/savg_8(2)
+         bbb_8 = p00(1) - avg_8(1)
+         call RPN_COMM_bcast(bbb_8,1,'MPI_DOUBLE_PRECISION',0,'GRID',ierr)
+         !
+         done_L=.true.
+         !
+      else
+         call horwavg ( bbb_8, wk0, wk1, LDIST_DIM )
+      endif
 !
 !     Redistribute the average mass loss at the surface, ...
 !
+!$omp parallel private(i)
 !$omp do
       do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -92,7 +190,6 @@
          end do
       end do
 !$omp enddo
-!
 !$omp end parallel
 !     
  1001 format(/,3X,'ADJUST SURFACE PRESSURE TO FORCE MASS CONSERVATION')

@@ -81,10 +81,10 @@
          end do
          deallocate (xp1,yp1,xu1,yv1)
 !
-         if (associated(ana_am_8)) deallocate(ana_am_8)
-         if (associated(ana_bm_8)) deallocate(ana_bm_8)
-         if (associated(ana_at_8)) deallocate(ana_at_8)
-         if (associated(ana_bt_8)) deallocate(ana_bt_8)
+         if (associated(ana_am_8)) deallocate(ana_am_8,stat=err)
+         if (associated(ana_bm_8)) deallocate(ana_bm_8,stat=err)
+         if (associated(ana_at_8)) deallocate(ana_at_8,stat=err)
+         if (associated(ana_bt_8)) deallocate(ana_bt_8,stat=err)
 !
          allocate(ana_am_8(nka_m), ana_bm_8(nka_m), &
                   ana_at_8(nka_t), ana_bt_8(nka_t) )

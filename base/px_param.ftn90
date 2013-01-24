@@ -16,8 +16,8 @@
 !**s/r px_param - to return A,B values given a list of keys tagged to records
 !                 in a RPN standard file
 !
-      integer function px_param(iun,fstkeys,ip1,fstkeys_max,ip1_max,hyb_8, &
-                                 presvar_8,presvar_S, presvar_max, &
+      integer function px_param(iun,fstkeys,ip1,fstkeys_max,ip1_max,hyb_8 , &
+                                 staglevs,presvar_8,presvar_S, presvar_max, &
                                  a_8,b_8,vcode_S,vcode)
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK
 !
@@ -29,6 +29,7 @@
       real*8  presvar_8(presvar_max)
       real*8  hyb_8(fstkeys_max),hybm_8(fstkeys_max)
       real*8  a_8(fstkeys_max),b_8(fstkeys_max)
+      character*1 staglevs
       character*6 presvar_S(presvar_max)
       character*8 vcode_S
 !
@@ -81,10 +82,9 @@
                swa, lng, dlf, ubc, ex1, ex2, ex3, kind, ip1mode, status
       real     rcoef(2),lev,ptop,pref,pr1
       real*8   x1_8,etatop_8,eta1_8,ptop_8,pref_8,pr1_8,pr2_8,rcoef_8(2)
-      character*1   tva, grda, blk_S
-      character*1, dimension(2) :: staglevs=(/'M','T'/)
-      character*4   var
-      character*12  etik_S
+      character*1  tva, grda, blk_S
+      character*4  var
+      character*12 etik_S
       logical found
       type(vgrid_descriptor) :: vgd
 
@@ -238,32 +238,31 @@
 !         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
          xx_key=fstinf (iun,ni, nj, nk, -1,' ',-1,-1,-1 ,' ','!!  ')
          if (xx_key.ge.0) then
-             p0_key=fstinf (iun,ni,nj,nk,datev,etik_S,-1,ip2a,ip3a,' ','P0')
              status = vgd_new(vgd,unit=iun,format='fst',ip1=-1,ip2=-1)
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot build coordinate descriptor'
                 return
              endif
-             do k=1,size(stagLevs)
-                status = vgd_get(vgd,key='CA_'//stagLevs(k),value=lookup_a_8)
-                status = status + vgd_get(vgd,key='CB_'//stagLevs(k),value=lookup_b_8)
-                status = status + vgd_get(vgd,key='VIP'//stagLevs(k),value=lookup_ip1)
-                if (status /= VGD_OK) then
-                   print*, 'px_param error: cannot retrieve info from !!'
-                   return
-                endif
-                do i=1,size(ip1)
-                   j = 1; found = .false.
-                   do while (.not.found .and. j<=minval((/size(lookup_a_8),size(lookup_b_8),size(lookup_ip1)/)))
-                      if (ip1(i).eq.lookup_ip1(j)) then                         
-                         a_8(i)=lookup_a_8(j)
-                         b_8(i)=lookup_b_8(j)
-                         found = .true.
-                      endif
-                      j = j+1
-                   enddo
+
+             status = vgd_get(vgd,key='CA_'//stagLevs,value=lookup_a_8)
+             status = status + vgd_get(vgd,key='CB_'//stagLevs,value=lookup_b_8)
+             status = status + vgd_get(vgd,key='VIP'//stagLevs,value=lookup_ip1)
+             if (status /= VGD_OK) then
+                print*, 'px_param error: cannot retrieve info from !!'
+                return
+             endif
+             do i=1,size(ip1)
+                j = 1; found = .false.
+                do while (.not.found .and. j<=minval((/size(lookup_a_8),size(lookup_b_8),size(lookup_ip1)/)))
+                   if (ip1(i).eq.lookup_ip1(j)) then                         
+                      a_8(i)=lookup_a_8(j)
+                      b_8(i)=lookup_b_8(j)
+                      found = .true.
+                   endif
+                   j = j+1
                 enddo
              enddo
+
              if (.not.found) then
                 print*, 'px_param error: cannot match ip1 to a/b coefs: ',ip1(i)
                 return

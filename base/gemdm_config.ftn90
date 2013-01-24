@@ -108,6 +108,8 @@
       Out_rewrit_L   = .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
 !
+      if (.not.Grd_yinyang_L) Out3_uendode_L  = .false.
+      if (Out3_uendode_L)     Out3_fullplane_L= .true.
       if(Out3_nbitg .lt. 0) then
          if (lun_out.gt.0) write (Lun_out, 9154)
          Out3_nbitg=16
@@ -210,7 +212,7 @@
             Eigv_parity_L = .false.
             if (lun_out.gt.0) write (Lun_out, 7005)
          endif
-         if (Schm_psadj_L) then
+         if (Schm_psadj_L.and..not.Grd_yinyang_L) then
             if (lun_out.gt.0) then
                write (Lun_out, 7020)
                write (Lun_out, 8000)

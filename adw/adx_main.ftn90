@@ -71,7 +71,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    integer :: i,j,istat,i0,in,j0,jn,k0,k00
    real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
         pxm,pym,pzm
-   real, dimension(adx_mlni,adx_mlnj,adx_lnkt) :: &
+   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
         pxt,pyt,pzt
    real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk_winds) :: &
         a_ud,a_vd,a_wd
@@ -86,6 +86,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 #define IS_SAME_BOUNDS(M1,M2) (M1%l(1)%low == M2%l(1)%low .and. M1%l(1)%high == M2%l(1)%high .and. M1%l(2)%low == M2%l(2)%low .and. M1%l(2)%high == M2%l(2)%high)
 
    !---------------------------------------------------------------------
+   nullify(xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
 
    call msg(MSG_DEBUG,'adx_main')
    
@@ -134,7 +135,9 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    !V4d_cfl_kind_S = 'm'
 
-   call adx_main_2_pos5( F_nb_iter, 'm'  , &
+   ! Note : with lid nesting, we compute momentum pos from k0-2 to allow for
+   !        cubic interpolation in adx_cubicpos
+   call adx_main_2_pos6( F_nb_iter, &
                          pxm , pym , pzm , &
                          a_ud, a_vd, a_wd, &
                          F_ua, F_va, F_wa, &
@@ -146,21 +149,8 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)         
+   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0,adx_lnkm,i0,in,j0,jn,.true.)
  
-!$omp parallel
-!$omp do
-   do j = j0,jn
-      do i = i0,in
-         pxt(i,j,       1) = pxm(i,j,       1)
-         pyt(i,j,       1) = pym(i,j,       1)
-         pxt(i,j,adx_lnkt) = pxm(i,j,adx_lnkm)
-         pyt(i,j,adx_lnkt) = pym(i,j,adx_lnkm)
-      enddo
-   enddo
-!$omp enddo
-!$omp end parallel
-
    call timing_stop (30)
 
    if (adw_stats_L) then
@@ -178,7 +168,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 !  Store TRAJ upstream positions
 !  -----------------------------
 !   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt, &
-!                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkt)
+!                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkm)
 !
 !  Store TRAJ RHS before interpolation
 !  -----------------------------------
@@ -188,8 +178,9 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
                              IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
+   
    call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
-                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0+k00,adx_lnkt )
+                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
 
    call timing_stop (31)
 

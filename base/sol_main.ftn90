@@ -15,13 +15,12 @@
 !**s/r sol_main - Envelope for the memory management of the 
 !                 Linear Helmholtz solver
 !
-#include "model_macros_f.h"
-!
-      subroutine sol_main (iln)
+      subroutine sol_main ( F_rhs_sol, F_lhs_sol, Ni,Nj,Nk, iln )
       implicit none
 #include <arch_specific.hf>
 !
-      integer iln
+      integer Ni,Nj,Nk,iln
+      real*8 F_rhs_sol (Ni,Nj,Nk), F_lhs_sol (Ni,Nj,Nk)
 !
 !author 
 !     Michel Roch - rpn - nov 1993
@@ -35,31 +34,18 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_40 - Qaddouri A.       - initialize wk1,wk2 to 0.0 for LAM/Yin-Yang
 !
-!object
-!	
-!arguments
-!	none
-!
-!implicits
-#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lam.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
-#include "vtx.cdk"
-#include "rhsc.cdk"
 #include "trp.cdk"
 #include "ptopo.cdk"
-#include "lctl.cdk"
 #include "schm.cdk"
 #include "wil_williamson.cdk"
 !
-      type(gmm_metadata) :: mymeta
-      integer i,j,k,dim,longueur,istat
       real*8 pdwrd(2)
-      real   prwrd(2)
-!      
-      real*8, dimension ((ldnh_maxx-ldnh_minx+1)*(ldnh_maxy-ldnh_miny+1)*l_nk) :: rhs,sol,wk1,wk2
+      real   prwrd(2)    
+      real*8, dimension ((ldnh_maxx-ldnh_minx+1),(ldnh_maxy-ldnh_miny+1),l_nk) :: wk1,wk2
       real*8 fdg1((ldnh_maxy -ldnh_miny +1)*(trp_12smax-trp_12smin+1)*(G_ni+Ptopo_npex))
       real*8 fdg2((trp_12smax-trp_12smin+1)*(trp_22max -trp_22min +1)*(G_nj+Ptopo_npey))
       real*8 fdwfft((ldnh_maxy -ldnh_miny +1)*(trp_12smax-trp_12smin+1)*(G_ni+2+Ptopo_npex))
@@ -67,40 +53,21 @@
 !     ---------------------------------------------------------------
 !
       if (Schm_autobar_L.and.Williamson_case.eq.1) return
-!*
-      if (Lun_debug_L) write(Lun_out,1000)
-!
-!     Get needed fields in memory
-!
-      istat = gmm_get(gmmk_rhsp_s,rhsp,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'sol_main ERROR at gmm_get(rhsp)'
-      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'sol_main ERROR at gmm_get(fiptx)'
-!
-! Transfering rhsp (real*4 with halo) into rhs (real*8 without halo)
 
-      call sol_trsf (rhs,rhsp,ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
-                                                    LDIST_DIM,l_nk, 1)
-!
-! Computing elliptic problem solution (sol)
+      if (Lun_debug_L) write(Lun_out,1000)
 
 ! Initialize work vectors because LAM does not use full range
 ! lazy code ===> should be fixed
-      wk1(:)=0.0
-      wk2(:)=0.0
-      call sol_hcr  (sol,rhs,wk1,wk2,fdg1,fdg2,fdwfft,iln, &
-                      ldnh_minx,ldnh_maxx, &
-                      ldnh_miny,ldnh_maxy,ldnh_ni,ldnh_nj,l_nk)
-!
-! Transfering sol (real*8 without halo) into fiptx (real*4 with halo)
-      call sol_trsf (sol,fiptx(l_minx,l_miny,1), &
-                     ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
-                     LDIST_DIM,l_nk,-1)
-!
+
+      wk1=0.0 ; wk2=0.0
+
+      call sol_hcr ( F_lhs_sol,F_rhs_sol,wk1,wk2,fdg1,fdg2,fdwfft,iln, &
+                     ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy         , &
+                     ldnh_ni,ldnh_nj,l_nk )
+
       if (Lam_acidtest_L) call acid_solver
-!
- 1000 format( &
-      5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')
+
+ 1000 format( 5X,'SOLVING LINEAR HELMHOLTZ PROBLEM: (S/R SOL_MAIN)')
 !
 !     ---------------------------------------------------------------
 !

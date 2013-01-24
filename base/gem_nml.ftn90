@@ -75,8 +75,7 @@
       Init_dftr_L  = .false.
 !
       Schm_hydro_L    = .false.
-      Schm_hzdzdt_L   = .false.
-      Schm_hzduav_L   = .false.
+      Schm_hzdadw_L   = .false.
       Schm_moist_L    = .true.
       Schm_topo_L     = .true.
       Schm_itcn     = 2
@@ -150,6 +149,7 @@
       Eigv_parity_L = .false.
       Hzd_type_S = "HO_IMP"
       Hzd_difva_L= .false.
+      Hzd_theta_L= .true.
       Hzd_pwr    = 6
       Hzd_lnr    = 0.2
       Hzd_pwr_tr = -1
@@ -222,7 +222,9 @@
       Out3_cubww_L   = .true.
       Out3_debug_L   = .false.
       Out3_flipit_L  = .false.
-      Out3_newout_L = .false.
+      Out3_newout_L  = .false.
+      Out3_fullplane_L = .false.
+      Out3_uendode_L   = .false.
 !
 !     Williamson's cases section
 !     --------------------------

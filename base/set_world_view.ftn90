@@ -55,6 +55,7 @@
 #include "grd.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
+#include "out3.cdk"
 #include "path.cdk"
 #include "vmmlist.cdk"
 #include "itf_cpl.cdk"
@@ -98,10 +99,11 @@
 ! Initializing MPI and processor topology (pe_zero_topo called on PE #0 only)
 !
       if (Grd_yinyang_L) then
-         call yy_init ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc,       &
-                        Ptopo_npex, Ptopo_npey,                          &
-                        Ptopo_intracomm, Ptopo_intercomm, Ptopo_couleur, &
-                        Ptopo_world_myproc, Ptopo_world_numproc, Grd_ndomains )
+         call yy_init2 ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc, &
+                         Ptopo_npex, Ptopo_npey,                    &
+                         Ptopo_intracomm, Ptopo_intercomm,          &
+                         Ptopo_ncolors, Ptopo_couleur,              &
+                         Ptopo_world_myproc, Ptopo_world_numproc, Grd_ndomains )
 
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
@@ -110,6 +112,7 @@
          ierr = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc,Ptopo_numproc,&
                                             Ptopo_npex, Ptopo_npey, Grd_ndomains )
          Ptopo_couleur = 0
+         Ptopo_ncolors = 1
       endif
 
       call msg_set_can_write (Ptopo_myproc == 0)
@@ -180,6 +183,13 @@
          f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
          f4 = G_nj-f3*(Ptopo_npey-1)
          write (lun_out,1001) Grd_typ_S,G_ni,G_nj,G_nk,f1,f3,f2,f4
+         call write_status_file3 ('communications_established=YES' )
+         if (Grd_yinyang_L)    &
+         call write_status_file3 ('UM_EXEC_YINYANG=1')
+         if (Out3_fullplane_L) &
+         call write_status_file3 ('Out3_fullplane_L=1')
+         if (Out3_uendode_L)   &
+         call write_status_file3 ('Out3_uendode_L=1')
       endif
 !
 ! Initializes schemes control comdeck

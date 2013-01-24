@@ -1,0 +1,57 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r out_steps -
+!
+!
+      subroutine out_steps ( F_step0, F_stepf )
+      implicit none
+!
+      integer F_step0, F_stepf
+!
+!author
+!     Michel Desgagne  -  WInter 2013
+!
+!revision
+! v4_50 - Desgagne M.       - Initial version
+!
+#include "dimout.cdk"
+#include "out_listes.cdk"
+
+      integer istep
+      logical, save :: done = .false.
+!
+!     ---------------------------------------------------------------
+!
+      if (.not. done) nullify(outd_sorties,outp_sorties,outc_sorties)
+
+      if (associated(outd_sorties)) deallocate (outd_sorties)
+      if (associated(outp_sorties)) deallocate (outp_sorties)
+      if (associated(outc_sorties)) deallocate (outc_sorties)
+      allocate (outd_sorties(0:MAXSET,F_step0:F_stepf))
+      allocate (outp_sorties(0:MAXSET,F_step0:F_stepf))
+      allocate (outc_sorties(0:MAXSET,F_step0:F_stepf))
+
+      do istep = F_step0, F_stepf
+         call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
+         call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
+         call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
+      end do
+
+      done = .true.
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

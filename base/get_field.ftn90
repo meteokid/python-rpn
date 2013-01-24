@@ -95,7 +95,7 @@
       dgid = ezgdef_fmem (ni, nj , 'Z', 'E', Hgc_ig1ro, &
                  Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, F_xfi , F_yfi )
 
-      if (grd_ME.eq.'Z') then
+      if (any(grd_ME==(/'Z','z'/))) then
          allocate (ax(nis),ay(njs))
 
          key = fstinf (unf, ni1,nj1,nk1,-1," ",g1,g2,-1," ",">>")
@@ -123,7 +123,11 @@
                           ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
                           Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
       else
-         sgid = ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf )
+         sgid = ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf)
+         if (any(grd_ME==(/'U','u'/))) then
+            call samegrid_sid(sgid, ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
+                 Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
+         endif
       endif
 
       err = fstfrm (unf)

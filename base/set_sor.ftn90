@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine set_sor()
-!
       implicit none
 !
 !author
@@ -55,7 +54,6 @@
 !arguments
 !       none
 !
-!implicits
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <clib_interface.cdk>
@@ -64,6 +62,7 @@
 #include "ptopo.cdk"
 #include "out.cdk"
 #include "out3.cdk"
+#include "grd.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "modconst.cdk"
@@ -78,319 +77,248 @@
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "path.cdk"
+      include "rpn_comm.inc"
 !
       integer,external :: srequet,phy_getindx3
 
-      integer,parameter :: BUSPAR_I0=1
-      integer,parameter :: BUSPAR_NIK=2
-      integer,parameter :: BUSPAR_INIT=3
-      integer,parameter :: BUSPAR_STAG=4
-      integer,parameter :: BUSPAR_ESP=5
-      integer,parameter :: BUSPAR_FMUL=6
-      integer,parameter :: BUSPAR_NK=7
-      integer,parameter :: BUSPAR_MOSAIC=8
-      integer,parameter :: BUSPAR_MAXPAR=8
-      integer,parameter :: NBUS = 4
-      character(len=9) :: BUS_LIST_S(NBUS) = (/'Entry    ','Permanent','Dynamic  ','Volatile '/)
+      integer,parameter :: BUSPAR_I0=1  , BUSPAR_NIK=2   , BUSPAR_INIT=3,&
+                           BUSPAR_STAG=4, BUSPAR_ESP=5   , BUSPAR_FMUL=6,&
+                           BUSPAR_NK=7  , BUSPAR_MOSAIC=8,               &
+                           BUSPAR_MAXPAR=8, NBUS = 4
+      character(len=9) :: BUS_LIST_S(NBUS) = &
+                  (/'Entry    ','Permanent','Dynamic  ','Volatile '/)
 
       character*5 blank_S
       character*8 unit_S
       character*256 fn
+      character(len= 1) :: bus_S
+      character(len=32) :: varname_S,outname_S,inname_S,bus0_S
       logical iela
       integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus
-      integer ixg(4)
-      integer multxmosaic
-      character(len=1) :: bus_S
-      character(len=32) :: varname_S,outname_S,inname_S,bus0_S
-      integer :: istat,index,param(BUSPAR_MAXPAR)
+      integer ixg(4,Ptopo_ncolors), ixgall(4,Ptopo_ncolors), multxmosaic, noutpe
+      integer istat,index,param(BUSPAR_MAXPAR)
+      integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
+      integer, dimension (:,:), allocatable :: comyy
+      real    rot(4,Ptopo_ncolors), rotall(4,Ptopo_ncolors)
+!
+!-------------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,5200)
-!    Fill in the positional records for scalar grid
-      ixg(1) = Hgc_ig1ro
-      ixg(2) = Hgc_ig2ro
-      ixg(3) = Hgc_ig3ro
-      ixg(4) = Hgc_ig4ro
 
+      pnerror    = 0
+      multxmosaic= 0
 
-      pnerror = 0
-      multxmosaic=0
-
-!!$      if (Ptopo_myproc.eq.0) then
-          fn = trim(Path_outcfg_S)
-          inquire (FILE=fn,EXIST=iela)
-          if (iela) then
-              pnerror = pnerror +  srequet()
-          else
-              pnerror = pnerror + 1
-          endif
-
-          if  (pnerror .gt. 0) then
-               if (Lun_out.gt.0) write(Lun_out,5000) pnerror
-          endif
-
-          if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
-              unit_S = 'HOURS'
-          endif
-          if (Out3_unit_s .eq. 'D') then
-              unit_S = 'DAYS'
-          endif
-          if (Out3_unit_s .eq. 'M') then
-              unit_S = 'MINUTES'
-          endif
-          if (Out3_unit_s .eq. 'S') then
-              unit_S = 'SECONDS'
-              Out3_ndigits = 6
-          endif
-          if (Out3_unit_s .eq. 'P') then
-              unit_S = 'TIMESTEPS'
-              Out3_ndigits = 6
-          endif
-          if (Lun_out.gt.0) write(Lun_out,3000)unit_S
-! Transfer filter and xnbit info to requested variables
-          do k=1, Outd_sets
-             do j=1,Outd_var_max(k)
-             do i=1,Out3_filtpass_max
-                if (Outd_var_S(j,k) .eq. Out3_filt_S(i)) then
-                    Outd_filtpass(j,k) = Out3_filtpass(i)
-                    Outd_filtcoef(j,k) = Out3_filtcoef(i)
-                endif
-             enddo
-             do i=1,Out3_xnbits_max
-                if (Outd_var_S(j,k) .eq. Out3_xnbits_S(i)) then
-                    Outd_nbit(j,k) = Out3_xnbits(i)
-                endif
-             enddo
-             enddo
-          enddo
-          do k=1, Outp_sets
-             do j=1,Outp_var_max(k)
-             do i=1,Out3_filtpass_max
-                if (Outp_varnm_S(j,k) .eq. Out3_filt_S(i)) then
-                    Outp_filtpass(j,k) = Out3_filtpass(i)
-                    Outp_filtcoef(j,k) = Out3_filtcoef(i)
-                endif
-             enddo
-             do i=1,Out3_xnbits_max
-                if (Outp_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
-                    Outp_nbit(j,k) = Out3_xnbits(i)
-                endif
-             enddo
-             enddo
-          enddo
-          do k=1, Outc_sets
-             do j=1,Outc_var_max(k)
-             do i=1,Out3_filtpass_max
-                if (Outc_varnm_S(j,k) .eq. Out3_filt_S(i)) then
-                    Outc_filtpass(j,k) = Out3_filtpass(i)
-                    Outc_filtcoef(j,k) = Out3_filtcoef(i)
-                endif
-             enddo
-             do i=1,Out3_xnbits_max
-                if (Outc_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
-                    Outc_nbit(j,k) = Out3_xnbits(i)
-                endif
-             enddo
-             enddo
-          enddo
-!!$      endif
+      fn = trim(Path_outcfg_S)
+      inquire (FILE=fn,EXIST=iela)
+      if (iela) then
+         pnerror = pnerror +  srequet()
+      else
+         pnerror = pnerror + 1
+      endif
+      
+      if  (pnerror .gt. 0) then
+         if (Lun_out.gt.0) write(Lun_out,5000) pnerror
+      endif
+      
+      if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
+         unit_S = 'HOURS'
+      endif
+      if (Out3_unit_s .eq. 'D') then
+         unit_S = 'DAYS'
+      endif
+      if (Out3_unit_s .eq. 'M') then
+         unit_S = 'MINUTES'
+      endif
+      if (Out3_unit_s .eq. 'S') then
+         unit_S = 'SECONDS'
+         Out3_ndigits = 6
+      endif
+      if (Out3_unit_s .eq. 'P') then
+         unit_S = 'TIMESTEPS'
+         Out3_ndigits = 6
+      endif
+      if (Lun_out.gt.0) write(Lun_out,3000)unit_S
+      ! Transfer filter and xnbit info to requested variables
+      do k=1, Outd_sets
+         do j=1,Outd_var_max(k)
+            do i=1,Out3_filtpass_max
+               if (Outd_var_S(j,k) .eq. Out3_filt_S(i)) then
+                  Outd_filtpass(j,k) = Out3_filtpass(i)
+                  Outd_filtcoef(j,k) = Out3_filtcoef(i)
+               endif
+            enddo
+            do i=1,Out3_xnbits_max
+               if (Outd_var_S(j,k) .eq. Out3_xnbits_S(i)) then
+                  Outd_nbit(j,k) = Out3_xnbits(i)
+               endif
+            enddo
+         enddo
+      enddo
+      do k=1, Outp_sets
+         do j=1,Outp_var_max(k)
+            do i=1,Out3_filtpass_max
+               if (Outp_varnm_S(j,k) .eq. Out3_filt_S(i)) then
+                  Outp_filtpass(j,k) = Out3_filtpass(i)
+                  Outp_filtcoef(j,k) = Out3_filtcoef(i)
+               endif
+            enddo
+            do i=1,Out3_xnbits_max
+               if (Outp_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
+                  Outp_nbit(j,k) = Out3_xnbits(i)
+               endif
+            enddo
+         enddo
+      enddo
+      do k=1, Outc_sets
+         do j=1,Outc_var_max(k)
+            do i=1,Out3_filtpass_max
+               if (Outc_varnm_S(j,k) .eq. Out3_filt_S(i)) then
+                  Outc_filtpass(j,k) = Out3_filtpass(i)
+                  Outc_filtcoef(j,k) = Out3_filtcoef(i)
+               endif
+            enddo
+            do i=1,Out3_xnbits_max
+               if (Outc_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
+                  Outc_nbit(j,k) = Out3_xnbits(i)
+               endif
+            enddo
+         enddo
+      enddo
 
 ! Print table of dynamic variables demanded for output
 
       if (Lun_out.gt.0) then
-          write(Lun_out,900)
-          write(Lun_out,1006)
-          write(Lun_out,901)
-          do j=1,Outd_sets
-          do i=1,Outd_var_max(j)
-             write(Lun_out,1008) Outd_var_S(i,j),Outd_var_S(i,j),Outd_nbit(i,j), &
-             Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ_s(Outd_lev(j))
-          enddo
-          enddo
-          write(Lun_out,1006)
-          write(Lun_out,2001)
+         write(Lun_out,900)
+         write(Lun_out,1006)
+         write(Lun_out,901)
+         do j=1,Outd_sets
+            do i=1,Outd_var_max(j)
+               write(Lun_out,1008) Outd_var_S(i,j),Outd_var_S(i,j),Outd_nbit(i,j), &
+                    Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ_s(Outd_lev(j))
+            enddo
+         enddo
+         write(Lun_out,1006)
+         write(Lun_out,2001)
       endif
-!
+
 ! PHYSICS PACKAGE VARIABLES
 ! =========================
 ! Save only the short name of the requested physics variables
 ! and print table of variables demanded for output
 
       if (Schm_phyms_L) then
-      cnt = 0
+         cnt = 0
+         
+         if (Lun_out.gt.0) write(Lun_out,1000)
 
-      if (Lun_out.gt.0) write(Lun_out,1000)
-
-      DO_BUS: do ibus = 1,NBUS
-      bus0_S = BUS_LIST_S(ibus)
-      if (Lun_out.gt.0)  then
-          write(Lun_out,1006)
-          write(Lun_out,1002) bus0_S
-          write(Lun_out,1006)
-          write(Lun_out,902)
-      endif
-      do k=1, Outp_sets
-         do j=1,Outp_var_max(k)
-            varname_S = Outp_varnm_S(j,k)
-            outname_S = ' '
-            inname_S = ' '
-            bus_S = bus0_S(1:1)
-            istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
-!!$            print *,1,outname_S(1:4),varname_S(1:16),bus0_S(1:1),bus_S,istat
-            if (.not.RMN_IS_OK(istat)) then
-               varname_S = ' '
-               outname_S = Outp_varnm_S(j,k)
-               inname_S = ' '
-               bus_S = bus0_S(1:1)
-               istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
-!!$               print *,2,outname_S(1:4),varname_S(1:16),bus0_S(1:1),bus_S,istat
+         DO_BUS: do ibus = 1,NBUS
+            bus0_S = BUS_LIST_S(ibus)
+            if (Lun_out.gt.0)  then
+               write(Lun_out,1006)
+               write(Lun_out,1002) bus0_S
+               write(Lun_out,1006)
+               write(Lun_out,902)
             endif
-            if (.not.RMN_IS_OK(istat)) then
-               cycle
-            endif
-            istat = clib_toupper(varname_S)
-            istat = clib_toupper(outname_S)
-            Outp_var_S(j,k) = outname_S
-            multxmosaic = max(multxmosaic,param(BUSPAR_FMUL)*(param(BUSPAR_MOSAIC)+1))
-            cnt = cnt+1
-            if (Lun_out.gt.0) write(Lun_out,1007) &
-                 outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &
-                 Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                 Level_typ_S(Outp_lev(k))
-         enddo
-      enddo
-      enddo DO_BUS
+            do k=1, Outp_sets
+               do j=1,Outp_var_max(k)
+                  varname_S = Outp_varnm_S(j,k)
+                  outname_S = ' '
+                  inname_S = ' '
+                  bus_S = bus0_S(1:1)
+                  istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+                  if (.not.RMN_IS_OK(istat)) then
+                     varname_S = ' '
+                     outname_S = Outp_varnm_S(j,k)
+                     inname_S = ' '
+                     bus_S = bus0_S(1:1)
+                     istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+                  endif
+                  if (.not.RMN_IS_OK(istat)) then
+                     cycle
+                  endif
+                  istat = clib_toupper(varname_S)
+                  istat = clib_toupper(outname_S)
+                  Outp_var_S(j,k) = outname_S
+                  multxmosaic = max(multxmosaic,param(BUSPAR_FMUL)*(param(BUSPAR_MOSAIC)+1))
+                  cnt = cnt+1
+                  if (Lun_out.gt.0) write(Lun_out,1007) &
+                       outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &
+                       Outp_filtpass(j,k),Outp_filtcoef(j,k), &
+                       Level_typ_S(Outp_lev(k))
+               enddo
+            enddo
+         enddo DO_BUS
 
-!!$      do k=1, Outp_sets
-!!$         do j=1,Outp_var_max(k)
-!!$            do i = 1, P_bent_top
-!!$            if (Outp_varnm_S(j,k).eq.entnm(i)(1:16) .or. &
-!!$                Outp_varnm_S(j,k).eq.enton(i)(1:4)) then
-!!$                Outp_var_S(j,k)= enton(i)(1:4)
-!!$                multxmosaic=max(multxmosaic,entpar(i,6)*(entpar(i,8)+1))
-!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
-!!$                   enton(i)(1:4),entnm(i)(1:16),Outp_nbit(j,k), &
-!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-!!$                   Level_typ_S(Outp_lev(k))
-!!$                   cnt=cnt+1
-!!$                   p_bent_idx(cnt) = i
-!!$                   do kk=1,cnt-1
-!!$                      if (p_bent_idx(kk).eq.i) exit
-!!$                   enddo
-!!$                   if (kk.le.cnt-1) cnt=cnt-1
-!!$            endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$      p_bent_out = cnt
-!!$      cnt = 0
-!!$      if (Lun_out.gt.0)  then
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,1002)
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,902)
-!!$      endif
-!!$      do k=1, Outp_sets
-!!$         do j=1,Outp_var_max(k)
-!!$            do i = 1, P_bper_top
-!!$            if (Outp_varnm_S(j,k).eq.pernm(i)(1:16) .or. &
-!!$                Outp_varnm_S(j,k).eq.peron(i)(1:4)) then
-!!$                Outp_var_S(j,k)= peron(i)(1:4)
-!!$                multxmosaic=max(multxmosaic,(perpar(i,6)*(perpar(i,8)+1)) )
-!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
-!!$                   peron(i)(1:4),pernm(i)(1:16),Outp_nbit(j,k), &
-!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-!!$                   Level_typ_S(Outp_lev(k))
-!!$                cnt=cnt+1
-!!$                p_bper_idx(cnt)=i
-!!$                do kk=1,cnt-1
-!!$                   if (p_bper_idx(kk).eq.i) exit
-!!$                enddo
-!!$                if (kk.le.cnt-1) cnt=cnt-1
-!!$            endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$      p_bper_out = cnt
-!!$      cnt = 0
-!!$      if (Lun_out.gt.0)  then
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,1003)
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,902)
-!!$      endif
-!!$      do k=1, Outp_sets
-!!$         do j=1,Outp_var_max(k)
-!!$            do i = 1, P_bdyn_top
-!!$            if (Outp_varnm_S(j,k).eq.dynnm(i)(1:16) .or. &
-!!$                Outp_varnm_S(j,k).eq.dynon(i)(1:4)) then
-!!$                Outp_var_S(j,k)= dynon(i)(1:4)
-!!$                multxmosaic=max(multxmosaic,(dynpar(i,6)*(dynpar(i,8)+1)) )
-!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
-!!$                   dynon(i)(1:4),dynnm(i)(1:16),Outp_nbit(j,k), &
-!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-!!$                   Level_typ_S(Outp_lev(k))
-!!$                cnt=cnt+1
-!!$                p_bdyn_idx(cnt)=i
-!!$                do kk=1,cnt-1
-!!$                   if (p_bdyn_idx(kk).eq.i) exit
-!!$                enddo
-!!$                if (kk.le.cnt-1) cnt=cnt-1
-!!$            endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$      p_bdyn_out = cnt
-!!$      cnt=0
-!!$      if (Lun_out.gt.0)  then
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,1004)
-!!$          write(Lun_out,1006)
-!!$          write(Lun_out,902)
-!!$      endif
-!!$      do i = 1, P_bvol_top
-!!$         do k=1, Outp_sets
-!!$            do j=1,Outp_var_max(k)
-!!$            if (Outp_varnm_S(j,k).eq.volnm(i)(1:16) .or. &
-!!$                Outp_varnm_S(j,k).eq.volon(i)(1:4)) then
-!!$                Outp_var_S(j,k)= volon(i)(1:4)
-!!$                multxmosaic=max(multxmosaic,(volpar(i,6)*(volpar(i,8)+1)) )
-!!$                if (Lun_out.gt.0) write(Lun_out,1007) &
-!!$                   volon(i)(1:4),volnm(i)(1:16),Outp_nbit(j,k), &
-!!$                   Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-!!$                   Level_typ_S(Outp_lev(k))
-!!$                cnt=cnt+1
-!!$                p_bvol_idx(cnt)=i
-!!$                do kk=1,cnt-1
-!!$                   if (p_bvol_idx(kk).eq.i) exit
-!!$                enddo
-!!$                if (kk.le.cnt-1) cnt=cnt-1
-!!$            endif
-!!$            enddo
-!!$         enddo
-!!$      enddo
-!!$      p_bvol_out = cnt
-
-      if (Lun_out.gt.0)  write(Lun_out,1006)
+         if (Lun_out.gt.0)  write(Lun_out,1006)
 !     maximum size of slices with one given field that is multiple+mosaic
-      Outp_multxmosaic = multxmosaic+10
+         Outp_multxmosaic = multxmosaic+10
       endif
-!
 
-      call out_sblock(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
+      ixg = 0 ; ixgall = 0 ; rot = 0. ; rotall = 0.
+      if (Ptopo_myproc.eq.0) then
+         ixg(1,Ptopo_couleur+1)= Hgc_ig1ro
+         ixg(2,Ptopo_couleur+1)= Hgc_ig2ro
+         ixg(3,Ptopo_couleur+1)= Hgc_ig3ro
+         ixg(4,Ptopo_couleur+1)= Hgc_ig4ro
+         rot(1,Ptopo_couleur+1)= Grd_xlat1
+         rot(2,Ptopo_couleur+1)= Grd_xlon1
+         rot(3,Ptopo_couleur+1)= Grd_xlat2
+         rot(4,Ptopo_couleur+1)= Grd_xlon2
+      endif
+
+      if (Ptopo_ncolors .gt. 1) then
+         call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
+              RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
+         call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
+              RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
+      else
+         ixgall = ixg
+         rotall = rot
+      endif
+
+      call out_sblock2(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
            Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &
-           l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc, &
-           Ptopo_gindx,Ptopo_numproc,Ptopo_myproc,ixg,Hgc_gxtyp_s,Out3_unit_S, &
-           int(Cstv_dt_8),Out3_date,Out3_etik_S, Out3_ndigits, &
-           Mod_runstrt_S, &
+           l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,Ptopo_gindx,Ptopo_numproc,&
+           Ptopo_myproc,ixgall,rotall,Hgc_gxtyp_s,Out3_unit_S,int(Cstv_dt_8),&
+           Out3_date,Out3_etik_S, Out3_ndigits, Mod_runstrt_S, &
            min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
-!
+
       Out_laststep_S = ' '
       if (Out3_postfreq .gt. 0) Out3_postfreq = Out3_postfreq*60 / nint(Cstv_dt_8)
-!
+
       call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
-!
-      return
-!
+
+      Out3_nblock= Ptopo_nblocx*Ptopo_nblocy
+      allocate ( Out3_comyy(Ptopo_ncolors,Out3_nblock),&
+                      comyy(Ptopo_ncolors,Out3_nblock),&
+                 Out3_outpe_x(Ptopo_nblocx)           ,&
+                 Out3_outpe_y(Ptopo_nblocy) )
+
+      noutpe= Ptopo_ncolors*Out3_nblock
+      outpe_x= 0 ; outpe_y= 0 ; comyy= 0
+
+      if ((Ptopo_myrow.eq.0).and.(Out_blocme.eq.0)) then
+         outpe_x(Ptopo_myblocx+1)= Ptopo_mycol
+      endif
+      if ((Ptopo_mycol.eq.0).and.(Out_blocme.eq.0)) then
+         outpe_y(Ptopo_myblocy+1)= Ptopo_myrow
+      endif
+
+      if (Out_blocme.eq.0) then
+         comyy(Ptopo_couleur+1,Ptopo_mybloc+1)= Ptopo_world_myproc
+      endif
+
+      call RPN_COMM_allreduce ( outpe_x, Out3_outpe_x, Ptopo_nblocx,&
+                      RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_GRID,ierr )
+      call RPN_COMM_allreduce ( outpe_y, Out3_outpe_y, Ptopo_nblocy,&
+                      RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_GRID,ierr )
+      if (Ptopo_ncolors .gt. 1) then
+         call RPN_COMM_allreduce ( comyy  , Out3_comyy  ,       noutpe,&
+                    RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
+      else
+         Out3_comyy = comyy
+      endif
+
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
   902 format('|',1x,'OUTPUT',1x,'|',2x,'PHYSIC NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
@@ -398,10 +326,6 @@
  1000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1001 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'|CHEMICAL VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1002 format('|',5X,a9,' Bus ',40x, '|')
-!!$ 1002 format('|',5X,'Permanent Bus ',40x, '|')
-!!$ 1003 format('|',5X,'Dynamic   Bus ',40x, '|')
-!!$ 1004 format('|',5X,'Volatile  Bus ',40x, '|')
-!!$ 1005 format('|',5X,'Entry     Bus ',40x, '|')
  1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
@@ -412,4 +336,8 @@
            ' DIRECTIVE SETS: ', I5)
  5200 format(/,'INITIALIZATION OF OUTPUT PRODUCTS (S/R SET_SOR)', &
              /,'===============================================')
+!
+!-------------------------------------------------------------------
+!
+      return
       end

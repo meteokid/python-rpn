@@ -44,11 +44,10 @@
 !  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
 !  Pil_bmf_L= TRUE forces BMF files to be written
 !*
-      integer  fstfrm,newdate,fclos
-      external fstfrm,newdate,fclos
+      integer, external ::  fstfrm,fclos
 !
       character*16 date1,date2
-      integer err,yy,dd,dum,cnt
+      integer err,cnt
       real*8 dayfrac,sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -69,16 +68,15 @@
       do
 !
          call datp2f   ( datev, date1 )
-         err = newdate ( datev, bmf_time1, bmf_time2, -3 )
          write (6,105) date1
-         call prsdate  (yy,month,day,Bmf_hh,Bmf_mm,Bmf_ss,dum,date1)
-         call e_specanal
+
+         call e_specanal2  (datev)
 !
-         call e_open_files
+         call e_open_files (datev)
 !
          call e_intthm
 !
-         call e_intwind 
+         call e_intwind
 !     
          err = fstfrm ( e_fu_anal )
          err = fclos  ( e_fu_anal )

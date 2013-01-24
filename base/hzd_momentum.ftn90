@@ -44,21 +44,16 @@
       integer istat
 !     _________________________________________________________________
 !
-      if ((.not.Schm_hzdzdt_L).and.(.not.Schm_hzduav_L)) return
+      if (Schm_hzdadw_L .and. switch_on_hzd) then
 
-      istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_momentum ERROR at gmm_get(zdt0)'
-      
-      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_momentum ERROR at gmm_get(ut0)'
-      
-      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_momentum ERROR at gmm_get(vt0)'
+         istat= gmm_get(gmmk_zdt0_s,zdt0,mymeta)
+         istat= gmm_get(gmmk_ut0_s ,ut0 ,mymeta)
+         istat= gmm_get(gmmk_vt0_s ,vt0 ,mymeta)
 
-      if (Schm_hzdzdt_L) call hzd_ctrl2(zdt0, 'S', G_nk+1, switch_on_hzd)
-      if (Schm_hzduav_L) then
-         call hzd_ctrl2(ut0, 'U', G_nk, switch_on_hzd)
-         call hzd_ctrl2(vt0, 'V', G_nk, switch_on_hzd)
+         call hzd_ctrl2(ut0 , 'U', G_nk  , switch_on_hzd)
+         call hzd_ctrl2(vt0 , 'V', G_nk  , switch_on_hzd)
+         call hzd_ctrl2(zdt0, 'S', G_nk+1, switch_on_hzd)
+
       endif
 !     _________________________________________________________________
 !

@@ -20,10 +20,7 @@
 !
 !
 #endif
-      DCL_DYNVAR(nl,   u ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   v ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   t ,  real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(nl,   c ,  real, (LDIST_SHAPE,l_nk))
-      DCL_DYNVAR(nl,   w ,  real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(nl,   f ,  real, (LDIST_SHAPE,l_nk+1))
-      DCL_DYNVAR(nl,   b ,  real, (LDIST_SHAPE))
+      real  , dimension (:,:,:), pointer :: nl_u, nl_v, nl_t, &
+                                              nl_c,nl_w,nl_f
+      real  , dimension (:,:  ), pointer :: nl_b
+      common /nl_ptr/ nl_u, nl_v, nl_t, nl_c, nl_w, nl_f, nl_b
