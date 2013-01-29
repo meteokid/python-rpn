@@ -103,8 +103,8 @@
          call itf_phy_gdef(l_phy_gid, g_phy_gid, gxfi, gyfi)
          call datp2f(dateo,Mod_runstrt_S)
          geofilename_S = 'GEOPHY/Gem_geophy.fst'
-!!$         if (Grd_yinyang_L) &
-!!$              geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
+         if (Grd_yinyang_L) &
+              geofilename_S = 'GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
          init_L = .true.
          call phy_opti('NJ',phydim_nj,1,'GET',.false.,err)
          call phy_opti('NK',phydim_nk,1,'GET',.false.,err)

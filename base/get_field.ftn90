@@ -38,12 +38,13 @@
 !
       integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
                ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef
+      logical is_samegrid_sid
       external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,is_samegrid_sid
 !
       character*1   typ, grd, grd_me, grd_pos
       character*2   var
-      character*8   lab, inttyp
+      character*8   lab, inttyp, mask_S
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
               g1o,g2o,g3o,g4o,nvar
@@ -124,10 +125,15 @@
                           Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
       else
          sgid = ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf)
+         mask_S = 'YES'
          if (any(grd_ME==(/'U','u'/))) then
-            call samegrid_sid(sgid, ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
-                 Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
+            if (is_samegrid_sid(sgid, ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
+                 Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi)) then
+               F_inttyp_S = 'NEAREST'
+               mask_S = 'NO'
+            endif
          endif
+         err = ezsetopt ('SUBGRID_MASK',trim(mask_S))
       endif
 
       err = fstfrm (unf)
@@ -142,6 +148,7 @@
          write (6,9005)
          goto 999
       endif
+      err = ezsetopt('SUBGRID_MASK','YES')
 
       F_status = 0
 

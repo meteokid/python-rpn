@@ -113,10 +113,10 @@
          lun_out  =  6
       endif
 
-!!$      if (Ptopo_couleur.eq.1) then
-!!$         err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
-!!$         err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
-!!$      endif
+      if (Ptopo_couleur.eq.1) then
+         err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
+         err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
+      endif
 ! 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 
 !
