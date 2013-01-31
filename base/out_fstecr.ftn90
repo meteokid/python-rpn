@@ -39,13 +39,13 @@
 #include "out.cdk"
 #include "level.cdk"
 #include "ptopo.cdk"
-      include "out_meta.inc"
+      include "out_meta.cdk"
 !
 Interface
 subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  , &
                               l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf, &
                               ip2,ip3,ig1,ig2,ig4 )
-      include "out_meta.inc"
+      include "out_meta.cdk"
       integer lminx,lmaxx,lminy,lmaxy,nplans
       integer l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf
       integer ip2,ip3,ig1,ig2,ig4
@@ -169,7 +169,7 @@ End Interface
 !revision
 ! v4_50 - Desgagne M. - Initial version
 
-      include "out_meta.inc"
+      include "out_meta.cdk"
 !
 !--------------------------------------------------------------------
 !
@@ -185,6 +185,6 @@ End Interface
       end      
 
       BLOCK DATA out_stat_start
-      include "out_meta.inc"
+      include "out_meta.cdk"
       data out_stk_full,out_stk_cnt /0,0/
       END BLOCK DATA out_stat_start
