@@ -307,9 +307,16 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
 
     if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130 || datyp == 132)
         type_num=NPY_INT;
-    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134 || datyp == 133)
-        type_num=NPY_FLOAT;
-    else if (datyp == 3)
+    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134 || datyp == 133) {
+        /* csubich -- if nbits > 32, then we're dealing with double-precision
+         *            data; treating it as a float will cause a segfault. */
+        if (nbits > 32) {
+            type_num=NPY_DOUBLE;
+        } else {
+            type_num=NPY_FLOAT;
+        }
+    }
+    else if (datyp == 3 )
         type_num=NPY_CHAR;
     else {
         PyErr_SetString(FstdcError,"Unrecognized data type");
@@ -386,7 +393,9 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
     int dtl=4;
     int dims[4];
     PyArrayObject *array;
-    extern int c_fst_data_length(int);
+    /* See http://web-mrb.cmc.ec.gc.ca/mrb/si/eng/si/index.html --
+       fst_data_length is documented to always return 0. */
+    /*extern int c_fst_data_length(int);*/
 
     if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiiii",
                           &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits,&datyp)) {
@@ -396,14 +405,14 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
         PyErr_SetString(FstdcError,"Invalid input data/meta");
         return NULL;
     }
-    getPyFtnArrayDataTypeAndLen(&datyp,&dtl,array);
+    getPyFtnArrayDataTypeAndLen(&datyp,&dtl,array,&nbits);
     getPyFtnArrayDims(dims,array);
     ni = dims[0];
     nj = dims[1];
     nk = dims[2];
     istat = c_fstecr((void*)(array->data),(void*)(array->data),-nbits,iun,dateo,deet,npas,
         ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,
-        datyp+c_fst_data_length(dtl),rewrit);
+        datyp,rewrit);
     if (istat >= 0 ) {
         Py_INCREF(Py_None);
         return Py_None;
