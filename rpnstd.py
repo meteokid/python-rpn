@@ -160,7 +160,7 @@ class RPNFile:
 
         The myRPNfile.lastread parameter is set with values of all latest found rec params
         """
-        if isinstance(key,RPNMeta):
+        if isinstance(key,RPNKeys):# RPNMeta is derived from RPNKeys
             if list:
                 mylist = Fstdc.fstinl(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
@@ -474,7 +474,7 @@ class RPNMeta(RPNKeys,RPNDesc):
         xaxisrec = self.fileref[searchkeys]
         searchkeys.nom = '^^'
         yaxisrec = self.fileref[searchkeys]
-        if (xaxiskeys == None or yaxiskeys == None):
+        if (xaxisrec == None or yaxisrec == None): # csubich -- variable name typo
             raise ValueError,'RPNMeta.getaxis: ERROR - axis grid descriptors (>>,^^) not found'
         if type(axis) == type(' '):
             if axis.upper() == 'X':
@@ -833,7 +833,7 @@ class RPNGridRef(RPNGridHelper):
         #   only need to get xyaxis and g_ref from keys
         #   TODO: may not want to do this if they were provided in args or keys.grid
         if keys and isinstance(keys,RPNMeta):
-            kv['xyaxis'] = keys.getAxis()
+            kv['xyaxis'] = keys.getaxis() # csubich -- proper spelling is without capital
             kv['g_ref']  = RPNGrid(kv['xyaxis'][0])
         for k in self.addAllowedKeysVals:
             if k in args.keys():
