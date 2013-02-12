@@ -990,7 +990,7 @@ class RPNRec(RPNMeta):
         @exception ValueError if myRPNRec does not contain a valid grid desc
         @exception TypeError if togrid is not an instance of RPNGrid
         """
-        if isinstance(value,RPNGrid):
+        if isinstance(togrid,RPNGrid):
             if not isinstance(self.grid,RPNGrid):
                 self.setGrid()
             if self.grid:
