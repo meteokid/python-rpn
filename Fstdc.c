@@ -821,6 +821,7 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
 static int getGridHandle(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,int ig3,int ig4,int i0, int j0,PyArrayObject *xs,PyArrayObject *ys) {
     int gdid = -1,i0b=0,j0b=0;
     char *grtypZ = "Z";
+    char *grtypY = "Y";
     float *xsd,*ysd;
     if (isGridValid(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys)>=0) {
         switch (grtyp[0]) {
@@ -833,7 +834,9 @@ static int getGridHandle(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,i
                 gdid = c_ezgdef_fmem(ni,nj,grtypZ,grref,ig1,ig2,ig3,ig4,&xsd[i0b],&ysd[j0b]);
                 break;
             case 'Y': //TODO: support for Y grids
-                fprintf(stderr,"ERROR: Fstdc - grtyp=Y not Yet Supported\n");
+                xsd = (float *)xs->data;
+                ysd = (float *)ys->data;
+                gdid = c_ezgdef_fmem(ni,nj,grtypY,grref,ig1,ig2,ig3,ig4,&xsd[i0b],&ysd[j0b]);
                 break;
             default:
                 gdid = c_ezqkdef(ni,nj,grtyp,ig1,ig2,ig3,ig4,0);
