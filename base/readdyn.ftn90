@@ -145,12 +145,14 @@
                  hu_temp(l_ni,l_nj,nkmax), tt_temp(l_ni,l_nj,nkmax),               &
                  gz_temp(l_ni,l_nj,nkmax), zd_temp(l_ni,l_nj,nkmax),               &
                   w_temp(l_ni,l_nj,nkmax),  q_temp(l_ni,l_nj,nkmax)                )
-!
+
       call read_bmf ( za_8,zb_8,nka_m, zat_8,zbt_8,nka_t, &
                       u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv, &
                       hu_temp,tt_temp,gz_temp,ps,topo_temp, &
                       zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
-!
+
+      Acql_vertint = .true.
+
       if ( Schm_autobar_L ) then
            Acql_vertint = .false.
            Ana_zd_L=.true.
@@ -196,23 +198,13 @@
       else
          topo_temp(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj)
       endif
-!
-!
-! Check if levels are the same
-!
-      if (.not.Acql_vertint.and..not.(Schm_autobar_L)) &
-         Acql_vertint=.not.samelevel2( za_8,zb_8,nka_m, zat_8,zbt_8,nka_t, &
-                                       gz_temp(1,1,nka_t),topo_temp,l_ni,l_nj)
-! vl force no interpolation (for run with analysis on samegrid)
-!     Acql_vertint = .false.
-!
+
       if (Ptopo_myproc.eq.0) then
          write(lun_out,*) &
-            ' Acql_horzint=',Acql_horzint,' Acql_vertint=',Acql_vertint, &
             ' Acql_etaanl=',Acql_etaanl,' Vtopo_L=',Vtopo_L
          write(lun_out,*) &
             ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl, &
-            ' Acql_prsanl=',Acql_prsanl, ' Acql_ecmanl=',Acql_ecmanl
+            ' Acql_prsanl=',Acql_prsanl
          write(lun_out,*) &
             ' Acql_staganl =',Acql_staganl
       endif
@@ -534,13 +526,11 @@
         deallocate (srclev,dstlev)
         deallocate ( apsu_temp,apsv_temp,psu_temp,psv_temp,u_temp2,v_temp2)
       endif
-!
-      if (Acql_horzint) &
-           call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju, &
-                  Acqi_niv, Acqi_njv, g_nk+1, geomg_y_8(1), geomg_yv_8(1))
-!     Convert wind from KNOTS TO M/S
-      if ( nka_m.eq.1 ) then
 
+      call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju, &
+           Acqi_niv, Acqi_njv, g_nk+1, geomg_y_8(1), geomg_yv_8(1))
+
+      if ( nka_m.eq.1 ) then
            do k=1,g_nk+1
            do j=1,Acqi_nju
            do i=1,Acqi_niu

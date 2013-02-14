@@ -235,9 +235,8 @@ allbincheck_gemdyn:
 	exit 1
 
 ## Dependencies not handled properly by r.make_exp
-out_vref_mod.o: out_vref_mod.cdk90      cstv.cdk     dimout.cdk   glb_ld.cdk \
-                grd.cdk                 grid.cdk     level.cdk    lun.cdk    \
-                                         out.cdk     type.cdk     ver.cdk
+out_vref_mod.f90: out_vref_mod.cdk90 glb_ld.cdk type.cdk ver.cdk cstv.cdk dimout.cdk grd.cdk level.cdk grid.cdk lun.cdk out.cdk out3.cdk ptopo.cdk
+out_vref_mod.o: out_vref_mod.cdk90 glb_ld.cdk type.cdk ver.cdk cstv.cdk dimout.cdk grd.cdk level.cdk grid.cdk lun.cdk out.cdk out3.cdk ptopo.cdk
 
 nest_blending.o: nest_blending.cdk90   glb_ld.cdk nest.cdk
 nest_blending_ad.o: nest_blending_ad.cdk90   glb_ld.cdk nest.cdk

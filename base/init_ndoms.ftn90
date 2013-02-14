@@ -29,7 +29,7 @@
 !
       err  = -1
 
-      if (clib_getenv ('UM_EXEC_NDOMAINS',ndomains_S).lt.0) then
+      if (clib_getenv ('GEM_NDOMAINS',ndomains_S).lt.0) then
          write (6,1001) 
          return
       endif
@@ -57,15 +57,15 @@
 !
       Grd_yinyang_L = .false.
       Grd_yinyang_S = ''
-      if (clib_getenv ('UM_EXEC_YINYANG',ndomains_S).ge.0) &
+      if (clib_getenv ('GEM_YINYANG',ndomains_S).ge.0) &
       Grd_yinyang_L = .true.
 !
       ndomains = Grd_ndomains
       err      = 0
 !
- 1001 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS is undefined'/)
- 1002 format (/' =====> Error in init_ndoms: Env variable UM_EXEC_NDOMAINS incorrectly defined ',a/)
- 1003 format (/' =====> Error in init_ndoms: ndomains_S= 'i4,' Check Env variable UM_EXEC_NDOMAINS ',a/)
+ 1001 format (/' =====> Error in init_ndoms: Env variable GEM_NDOMAINS is undefined'/)
+ 1002 format (/' =====> Error in init_ndoms: Env variable GEM_NDOMAINS incorrectly defined ',a/)
+ 1003 format (/' =====> Error in init_ndoms: ndomains_S= 'i4,' Check Env variable GEM_NDOMAINS ',a/)
 !
 !-------------------------------------------------------------------
 !

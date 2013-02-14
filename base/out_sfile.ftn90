@@ -67,7 +67,7 @@
       flag= (Out_blocme.eq.0)
 
       if (Out3_fullplane_L) then
-         if (Out3_uendode_L) flag= flag .and. (Ptopo_couleur.eq.0)
+         if (Out3_uencode_L) flag= flag .and. (Ptopo_couleur.eq.0)
       else
          flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)
       endif

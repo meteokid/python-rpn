@@ -144,7 +144,7 @@
           if (.not.found) then
              call filmup (nomvar,tracer_not_needed           , &
                           ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                          nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                          nk1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits)
           endif
 
       enddo read_vars

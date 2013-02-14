@@ -185,11 +185,11 @@
          write (lun_out,1001) Grd_typ_S,G_ni,G_nj,G_nk,f1,f3,f2,f4
          call write_status_file3 ('communications_established=YES' )
          if (Grd_yinyang_L)    &
-         call write_status_file3 ('UM_EXEC_YINYANG=1')
+         call write_status_file3 ('GEM_YINYANG=1')
          if (Out3_fullplane_L) &
          call write_status_file3 ('Out3_fullplane_L=1')
-         if (Out3_uendode_L)   &
-         call write_status_file3 ('Out3_uendode_L=1')
+         if (Out3_uencode_L)   &
+         call write_status_file3 ('Out3_uencode_L=1')
       endif
 !
 ! Initializes schemes control comdeck

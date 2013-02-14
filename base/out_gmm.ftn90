@@ -180,7 +180,7 @@
                 istat = gmm_get(keylist(i),tr3,tmp_meta)
                 uvgrid_L = .true.
                 ig2 = Grid_ig2(gridset)+1
-                if (Out3_uendode_L) ig2 = Grid_ig2(gridset)
+                if (Out3_uencode_L) ig2 = Grid_ig2(gridset)
                 call out_sgrid2( Grid_x0 (gridset),min(Grid_x1(gridset),G_niu), &
                                  Grid_y0 (gridset),Grid_y1(gridset)           , &
                                  Grid_ig1(gridset),ig2                        , &
@@ -196,7 +196,7 @@
                 istat = gmm_get(keylist(i),tr3,tmp_meta)
                 uvgrid_L = .true.
                 ig2 = Grid_ig2(gridset)+2
-                if (Out3_uendode_L) ig2 = Grid_ig2(gridset)
+                if (Out3_uencode_L) ig2 = Grid_ig2(gridset)
                 call out_sgrid2 ( Grid_x0(gridset),Grid_x1(gridset)           , &
                                   Grid_y0(gridset),min(Grid_y1(gridset),G_njv), &
                                   Grid_ig1(gridset),ig2                       , &

@@ -60,12 +60,9 @@
          yfi(1:G_nj) = G_yg_8(1:G_nj)*rad2deg_8
 
          fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
-         if (Grd_yinyang_L) &
-         fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
 
          call get_field ( topo_destination, G_ni, G_nj, 'ME', trim(fn), &
                           inttyp, xfi, yfi, status)
-
       endif
 
       call handle_error (status,'GET_TOPO','Topography NOT specified')

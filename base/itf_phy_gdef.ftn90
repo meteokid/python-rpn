@@ -13,15 +13,25 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
+subroutine itf_phy_gdef(local_id, global_id, gxfi, gyfi)
+   implicit none
+   integer,intent(out) :: local_id, global_id
+   real,intent(out) :: gxfi(*), gyfi(*)
+   integer :: local_core_id
+   call itf_phy_gdef2(local_core_id, local_id, global_id, gxfi, gyfi)
+   return
+end subroutine itf_phy_gdef
+
+
 !**s/r itf_phy_gdef
 !
 #include "model_macros_f.h"
-      subroutine itf_phy_gdef (local_id, global_id, gxfi, gyfi)
+      subroutine itf_phy_gdef2(local_core_id, local_id, global_id, gxfi, gyfi)
       implicit none
 #include <arch_specific.hf>
 !
-      integer local_id, global_id
-      real gxfi(*), gyfi(*)
+      integer,intent(out) :: local_core_id, local_id, global_id
+      real,intent(out) :: gxfi(*), gyfi(*)
 !
 !author 
 !     Michel Ddesgagne  -  Spring 2010
@@ -33,9 +43,8 @@
 #include "hgc.cdk"
 #include "ptopo.cdk"
 !
-      integer  ezgdef_fmem
-      external ezgdef_fmem
-      integer i,offi,offj,indx
+      integer,external ::  ezgdef_fmem
+      integer i,offi,offj,indx,lc_ni,lc_nj,lc_i0,lc_j0
       real lxfi(l_ni),lyfi(l_nj)
       real*8 rad2deg_8 
 !
@@ -56,6 +65,13 @@ Do i=1,l_nj
 End Do
 local_id  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,&
                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi , lyfi )
+
+lc_i0 = 1 + pil_w
+lc_j0 = 1 + pil_s
+lc_ni = l_ni - pil_w - pil_e
+lc_nj = l_nj - pil_s - pil_n
+local_core_id  = ezgdef_fmem (lc_ni , lc_nj , 'Z', 'E', Hgc_ig1ro,&
+                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi(lc_i0) , lyfi(lc_j0) )
 !
 ! Global grid
 !

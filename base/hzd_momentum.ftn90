@@ -50,9 +50,9 @@
          istat= gmm_get(gmmk_ut0_s ,ut0 ,mymeta)
          istat= gmm_get(gmmk_vt0_s ,vt0 ,mymeta)
 
-         call hzd_ctrl2(ut0 , 'U', G_nk  , switch_on_hzd)
-         call hzd_ctrl2(vt0 , 'V', G_nk  , switch_on_hzd)
-         call hzd_ctrl2(zdt0, 'S', G_nk+1, switch_on_hzd)
+         call hzd_ctrl3(ut0 , 'U', G_nk  )
+         call hzd_ctrl3(vt0 , 'V', G_nk  )
+         call hzd_ctrl3(zdt0, 'S', G_nk+1)
 
       endif
 !     _________________________________________________________________

@@ -39,45 +39,29 @@
 !object
 !        see above ID
 !
-!ARGUMENTS
-!
-!IMPLICITS
 #include "e_fu.cdk"
 #include "e_anal.cdk"
 #include "e_grids.cdk"
 #include "e_cdate.cdk"
-#include "e_topo.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
 #include "bmf.cdk"
-#include "e_schm.cdk"
 #include "pilot.cdk"
 #include "e_grdc.cdk"
 #include "hgc.cdk"
-!
-      integer  ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
-               fstinf,fstlir,fstprm,e_rdhint3
-      external ezqkdef,ezdefset,ezsetopt,ezuvint,ezsint, &
-               fstinf,fstlir,fstprm,e_rdhint3
-!
+
+      integer, external :: fstinf,fstlir,fstprm,ezqkdef,ezsetopt,ezdefset,ezuvint
+
       integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1,  &
               nk1,nkc,err,iu,ju,iv,jv,nu,nv, istat
       integer nisu,nisv,njsu,njsv
-      integer nis,njs,niw,njw,iw,ie,jw,is,js,jn
-      integer ip2, ip3
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-              dty, swa, lng, dlf, ubc, ex1, ex2, ex3
-      character*1 typ,grd
-      character*4 var,var_uu,var_vv
+              dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip2, ip3
+      character*1  typ,grd
+      character*4  var,var_uu,var_vv
       character*12 lab
-      logical flag_ut1
-      real, dimension (:), allocatable :: uu,vw,vv,uw
-      real uvw(niu*nju),c1
-      real, dimension (:), allocatable :: w1,w2
-      real*8, dimension(:), pointer :: ygg_8, yggv_8
+
+      real, dimension (:)    , allocatable :: uu,vv,uv,w1,w2
       real, dimension (:,:,:), allocatable :: uun,vvn
-      real deg2rad
-      integer i1,i2,j1,j2
 !
 ! ---------------------------------------------------------------------
 !
@@ -93,313 +77,88 @@
          nisv = niv
          njsv = njv
       endif
-      allocate (uu(nisu*njsu))
-      allocate (vw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
-      allocate (vv(nisv*njsv))
-      allocate (uw( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
-!
+
+      allocate ( uu(nisu*njsu), vv(nisv*njsv) )
+      allocate ( uv( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
+
       nu = nisu*njsu
       nv = nisv*njsv
-!
-      deg2rad  = acos(-1.0)/180.
-!
-      if (anal_hav(1).eq.0) then
-         print *,'-----------------------------------------------------------------------'
-         print *,'NO interpolation required for winds'
-         print *,'-----------------------------------------------------------------------'
-         if (LAM) print *,'Build IMAGE winds on staggered grids in m/s (BCS)             '
-         print *,'-----------------------------------------------------------------------'
-!
-! ---------------------------------------------------------------------
-!        NO INTERPOLATION REQUIRED
-!        ANALYSIS and MODEL HAVE SAME GRID,SAME LEVELS,
-!                                SAME TOPOGRAPHY, TOP PRESSURE
-!---------------------------------------------------------------------
-!        
-            flag_ut1 = .false.
-            var_uu = 'UU  '
-            var_vv = 'VV  '
-            iu = nifi
-            ju = njfi
-            iv = iu
-            jv = ju
-            key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1), &
-                                            ip2a,ip3a,' ',var_uu)
-            key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1), &
-                                            ip2a,ip3a,' ',var_vv)
-            if ((key1.lt.0).or.(key2.lt.0)) then
-               flag_ut1 = .true.
-               var_uu = 'UT1 '
-               var_vv = 'VT1 '
-               iu = nisu
-               ju = njsu
-               iv = nisv
-               jv = njsv
-               key1 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1), &
-                                               ip2a,ip3a,' ',var_uu)
-               key2 = fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1), &
-                                               ip2a,ip3a,' ',var_vv)
-            endif
-!
-            if (key1.lt.0) then
-               write (6,*) 'UU  and/or UT1 NOT AVAILABLE'
-               call e_arret( 'e_intwind' )
-            endif
-            if (key2.lt.0) then
-               write (6,*) 'VV  and/or VT1 NOT AVAILABLE'
-               call e_arret( 'e_intwind' )
-            endif
-            err = fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, &
-                    P1, P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, &
-                    LNG, DLF, UBC, EX1, EX2, EX3)
-!
-            if (LAM) allocate (w1(iu*ju),w2(iv*jv))
-!
-            istat = 0
-            do k=1,lv
-               if (.not.LAM) then
-               key1 = fstlir (uu, e_fu_anal, i, j, nkc, datev, labanl,  &
-                                        na(k), ip2a,ip3a, tva, var_uu)
-               else
-               key1 = fstlir (w1, e_fu_anal, i, j, nkc,datev,  ' ', &
-                                        na(k), ip2a,ip3a, tva, var_uu)
-               endif
-!
-               if (key1.lt.0 .or. i.ne.iu  .or. j.ne.ju) then
-                  write(6,*)'ERROR: UU NOT AVAILABLE,'
-                  call e_arret( 'e_intwind' )
-               endif
-!
-               if (.not.LAM) then
-               key1 = fstlir (vw, e_fu_anal, i, j, nkc, datev, labanl,  &
-                                        na(k), ip2a,ip3a, tva, var_vv)
-               else
-               key1 = fstlir (w2, e_fu_anal, i, j, nkc, datev, ' ', &
-                                        na(k), ip2a,ip3a, tva, var_vv)
-               endif 
-!
-               if (key1.lt.0 .or. i.ne.iv  .or. j.ne.jv) then
-                  write(6,*)'ERROR: VV NOT AVAILABLE,'
-                  call e_arret( 'e_intwind' )
-               endif
-!
-               if (.not. flag_ut1) then
-!
-                  if (LAM) then
-!
-!                    When LAM we don't use e_arak since it uses global properties to interpolate
-!                    ---------------------------------------------------------------------------  
-                     err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
-                     err = ezdefset ( dstu_gid, dstf_gid )
-                     err = ezsint   ( uu,w1 )
-                     err = ezdefset ( dstv_gid, dstf_gid )
-                     err = ezsint   ( vv,w2 )
 
-                     allocate (ygg_8(njsu), yggv_8(njsv))
-                     do j = 1,njsu
-                        ygg_8(j)  = yfi(j) * deg2rad
-                     end do
-                     do j = 1,njsv
-                        yggv_8(j) = yv(j) * deg2rad
-                     end do
-                     call vte_uv2img(uu,vv,nisu,njsu,nisv,njsv,1,ygg_8,yggv_8)
-                     deallocate (ygg_8, yggv_8)
-!
-                     do i=1,nisu*njsu
-                        uu(i) = uu(i) * dcst_knams_8
-                     end do
-                     do i=1,nisv*njsv
-                        vv(i) = vv(i) * dcst_knams_8
-                     end do
-!
-                  else
-!
-                     call e_arak (uu, vv, vw, uvw, nisu, njfi, njsu, njsv, 1)
-                     do i=1,nisu*njsu
-                        uu(i) = uu(i) * dcst_knams_8
-                     end do
-                     do i=1,nisv*njsv
-                        vv(i) = vv(i) * dcst_knams_8
-                     end do
-!
-                  endif
-!
-               else
-!
-                  if (LAM) then
-                     call msg(MSG_ERROR,'e_intwind: NO INTERPOLATION LAM when UT1-VT1: TO BE TESTED')
-                     istat = -1
-                     exit
-                  endif
-!
-                  do i=1,nisu*njsu
-                     uu(i) = uu(i)
-                  end do
-                  do i=1,nisv*njsv
-                     vv(i) = vw(i)
-                  end do
-               endif
-               if (Pil_bmf_L) then
-               call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
-               call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
-               else
-               call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
-               call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
-               endif
-            end do
-            call handle_error(istat,'e_intwind','')
-!
-            if (LAM.and..not.Pil_bmf_L) then
-               call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
-               call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
-               deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
-!
-               return
-!
-            endif
-!
-!---------------------------------------------------------------------
-!
-!     INTERPOLATION REQUIRED
-!
-!---------------------------------------------------------------------
-!
-      else
-      print *,'Interpolation required for winds'
-!
       ip2 = ip2a
       ip3 = ip3a
-      if (Anal_ecmwf_L) ip2 = -1
-      if (Anal_ecmwf_L) ip3 = int(rna(1))
-!
-         key1=fstinf(e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3, &
-                                                           ' ','UU')
-         err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1, &
-                      P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA, &
-                      LNG, DLF, UBC, EX1, EX2, EX3)
-         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
-         err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
-         allocate (w1(nic*njc),w2(nic*njc))
-         do k=1,lv
-!
-            ip2 = ip2a
-            ip3 = ip3a
-            if (Anal_ecmwf_L) ip2 = -1
-            if (Anal_ecmwf_L) ip3 = int(rna(k))
-            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',  &
-                                     na(k), ip2, ip3, ' ', 'UU')
-            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',  &
-                                     na(k), ip2, ip3, ' ', 'VV')
-            if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
-               write(6,*)'ERROR: UU NOT AVAILABLE,'
-               goto 55
-            endif
-            if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
-               write(6,*)'ERROR: VV NOT AVAILABLE,'
-               goto 55
-            endif
-!
-!         Horizontal Interpolation on U grid and V grids
-!
-            err = ezdefset ( dstu_gid, src_gid )
-            err = ezuvint  ( uu,vw,w1,w2 )
-            err = ezdefset ( dstv_gid, src_gid )
-            err = ezuvint  ( uw,vv,w1,w2 )
-!
-            do i=1,nisu*njsu
-               uu(i) = uu(i) * dcst_knams_8
-            end do
-            do i=1,nisv*njsv
-               vv(i) = vv(i) * dcst_knams_8
-            end do
-            if (Pil_bmf_L) then
-                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
-                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
-            else
-                call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
-                                  yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
-                call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
-                call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
-            endif
-!
-         end do
-!
-! Non BMF output
-         if (.not.Pil_bmf_L) then
-            call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
-            call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
-         deallocate (uun,vvn,uu,vv,vw,uw,w1,w2)
-         return
-         endif
-!
-        if (Anal_ecmwf_L) then
-!
-!       also treat 2m winds (to be used as surface values)
-!       store as US and VS
-!
-            key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',  &
-                                     -1, -1, -1, ' ', 'US')
-            key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',  &
-                                     -1, -1, -1, ' ', 'VS')
-            if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
-               write(6,*)'ERROR: US NOT AVAILABLE,'
-               goto 55
-            endif
-            if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
-               write(6,*)'ERROR: VS NOT AVAILABLE,'
-               goto 55
-            endif
-!
-!         Horizontal Interpolation on U grid and V grids
-!
-            err = ezdefset ( dstu_gid, src_gid )
-            err = ezuvint  ( uu,vw,w1,w2 )
-            err = ezdefset ( dstv_gid, src_gid )
-            err = ezuvint  ( uw,vv,w1,w2 )
-!
-            call e_bmfsplitxy2 (uu,nisu,njsu,'US  ',1,1,pniu,0,0,0)
-            call e_bmfsplitxy2 (vv,nisv,njsv,'VS  ',1,1,pni ,0,0,0)
-!
-         endif
-         deallocate (w1,w2)
-!
-!---------------------------------------------------------------------
-      endif
-!---------------------------------------------------------------------
-!
-      if ( Anal_eta_L .or. Anal_sigma_L .or. Anal_hyb_L ) then
-         write(6,*)'PREPARATION FOR SIGMA/ETA/HYB to HYBRID'
-         c1 = 10. * Dcst_grav_8
-!
-      elseif ( Anal_ecmwf_L ) then
 
-         write(6,*)'PREPARATION FOR ECMWF to HYBRID'
-         c1 = 10. * Dcst_grav_8
-!
-!        for ECMWF analyses, the log of pressure (pa) is stored in 2P
-!
-!     add treatment at the surface, read temperature and dew point,
-!     transform to virtual temperature and humidity, write VT as STU 
-!     and STV
-      else
-!
-         write(6,*)'PREPARATION FOR PRESSURE to HYBRID'
-         c1 = 10.
-!
+      key1= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                         ' ','UU')
+      err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1, &
+                   P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA  , &
+                   LNG, DLF, UBC, EX1, EX2, EX3)
+
+      src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
+      err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+
+      allocate (w1(nic*njc),w2(nic*njc))
+
+      do k=1,lv
+
+         ip2 = ip2a
+         ip3 = ip3a
+         key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',  &
+                        na(k), ip2, ip3, ' ', 'UU')
+         key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',  &
+                        na(k), ip2, ip3, ' ', 'VV')
+         if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
+            write(6,*)'ERROR: UU NOT AVAILABLE,'
+            goto 55
+         endif
+         if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
+            write(6,*)'ERROR: VV NOT AVAILABLE,'
+            goto 55
+         endif
+
+         err = ezdefset ( dstu_gid, src_gid )
+         err = ezuvint  ( uu,uv,w1,w2 )
+         err = ezdefset ( dstv_gid, src_gid )
+         err = ezuvint  ( uv,vv,w1,w2 )
+
+         do i=1,nisu*njsu
+            uu(i) = uu(i) * dcst_knams_8
+         end do
+         do i=1,nisv*njsv
+            vv(i) = vv(i) * dcst_knams_8
+         end do
+ 
+         if (Pil_bmf_L) then
+            call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+            call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+         else
+            call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
+                              yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
+            call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+            call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+         endif
+
+      end do
+
+      if (.not.Pil_bmf_L) then
+         call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+         call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
+         deallocate (uun,vvn)
+         return
       endif
-!
+      
+      deallocate (w1,w2,uu,vv,uv)
+
       goto 99
  55   call e_arret( 'e_intwind' )
-!
-!
- 99   continue
-      call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, &
-                                             0,0,40,0,anal_hav)
-      call bmf_splitend
-      return
 
- 120  format ('|',1x,a8,'|',1x,a2,'  |',2(i7,' |'),i3,'  |',1x,a3, &
-              ' |',1x,a7,'  |',1x,a16,'|')
- 199  format ('|',2x,'   NO INTERPOLATION REQUIRED        ',1x,16x,1x,'|')
+ 99   continue
+
+      if (Pil_bmf_L) then
+         call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, &
+                                             0,0,40,0,anal_hav)
+         call bmf_splitend
+      endif
+!
 ! ---------------------------------------------------------------------
+      return
       end

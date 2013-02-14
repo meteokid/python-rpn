@@ -15,7 +15,7 @@
 
 !**s/r e_fstouv -
 !
-      subroutine e_fstouv (F_nomvar_S, F_date, F_grd_S, F_pilot_S, F_unit)
+      integer function e_fstouv (F_nomvar_S, F_date, F_grd_S, F_pilot_S, F_unit)
       implicit none
 #include <arch_specific.hf>
 !
@@ -48,14 +48,16 @@
          if (err.ge.0) write (6,2003) trim(Path_input_S)//'/ANALYSIS',F_unit
       endif
 
-      call handle_error(err,'e_fstouv','CANNOT OPEN FST FILE')
+      e_fstouv = min(0,err)
 
-      key = fstinf (F_unit,ni1,nj1,nk1,F_date,' ',-1,-1,-1,' ',F_nomvar_S)
-
-      err = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, p1,ip2a,ip3a, &
-                     typ, var, lab, grd, g1, g2, g3, g4, &
-                     swa,lng, dlf, ubc, ex1, ex2, ex3 )
+      if (e_fstouv .eq. 0) then
+         key = fstinf (F_unit,ni1,nj1,nk1,F_date,' ',-1,-1,-1,' ',F_nomvar_S)
          
+         err = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, p1,ip2a,ip3a, &
+                        typ, var, lab, grd, g1, g2, g3, g4, &
+                        swa,lng, dlf, ubc, ex1, ex2, ex3 )
+      endif
+
  2003 format (/' E_FSTOUV:  file ',a,' open on unit: ',i4)
 
 !

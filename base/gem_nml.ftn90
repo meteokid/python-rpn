@@ -147,11 +147,12 @@
       sol_yyg_eps   = 1.d-07
 !
       Eigv_parity_L = .false.
-      Hzd_type_S = "HO_IMP"
+      Hzd_type_S = "NIL"
       Hzd_difva_L= .false.
-      Hzd_theta_L= .true.
-      Hzd_pwr    = 6
-      Hzd_lnr    = 0.2
+      Hzd_pwr        = -1
+      Hzd_lnr        = -1.
+      Hzd_pwr_theta  = -1
+      Hzd_lnr_theta  = -1.
       Hzd_pwr_tr = -1
       Hzd_lnr_tr = -1.
       Hzd_tr3d_name_S = ''
@@ -224,7 +225,7 @@
       Out3_flipit_L  = .false.
       Out3_newout_L  = .false.
       Out3_fullplane_L = .false.
-      Out3_uendode_L   = .false.
+      Out3_uencode_L   = .false.
 !
 !     Williamson's cases section
 !     --------------------------

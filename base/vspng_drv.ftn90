@@ -13,18 +13,16 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r vspng_drv2 - Main driver for top sponge layer
+!**s/r vspng_drv - Main driver for top sponge layer
 !
 #include "model_macros_f.h"
 !
-      subroutine vspng_drv2 ( F_u, F_v, F_zd, F_w, F_t, &
-                              DIST_DIM, Nk, F_switch_on_L)
+      subroutine vspng_drv3 ( F_u, F_v, F_zd, F_w, F_t, DIST_DIM, Nk)
 !
       implicit none
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      logical F_switch_on_L
       real F_u  (DIST_SHAPE,Nk)  , F_v (DIST_SHAPE,Nk)  , &
            F_zd (DIST_SHAPE,Nk+1), F_w (DIST_SHAPE,Nk+1), &
            F_t  (DIST_SHAPE,Nk+1)
@@ -51,7 +49,6 @@
 ! v4_04 - Plante A.         - Diffuse zdot like in hzd, w only if non hydro
 ! v4_05 - Plante A.         - Diffuse w.
 ! v4_10 - Tanguay M.        - Replace tmean by tmean_8 as in GEM333
-! v4_50 - Desgagne M.       - Add F_switch_on_L to interface
 !
 !object
 !     The diffusion coefficients are (Vspng_coef*Cstv_dt_8) for the
@@ -83,11 +80,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Vspng_nk.lt.1) then
-         F_switch_on_L = .false.
-         return
-      endif
-
       if (G_lam) then
          call vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
                               DIST_DIM, Nk )

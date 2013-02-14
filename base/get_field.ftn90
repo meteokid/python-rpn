@@ -36,28 +36,34 @@
 #include "lun.cdk"
 #include <clib_interface.cdk>
 !
-      integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef
-      logical is_samegrid_sid
+      integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos
+      integer  ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
+               ezsetival,ezgetival,ezgetval
+      integer samesubgrid
       external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,is_samegrid_sid
+               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
+               ezsetival,ezgetival,ezgetval,samesubgrid
 !
       character*1   typ, grd, grd_me, grd_pos
       character*2   var
-      character*8   lab, inttyp, mask_S
+      character*8   lab, inttyp
+      character*32  onesubgrid_S, oldsubgrid_S
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
               g1o,g2o,g3o,g4o,nvar
-      integer unf,key,ni1,nj1,nk1,i,j,err
+      integer unf,key,ni1,nj1,nk1,i,j,err,subid,oldsubid
       integer sgid,dgid,nis,njs
       real, dimension(:  ), allocatable :: ax,ay
       real, dimension(:,:), allocatable :: source
       real*8 rad2deg_8 
+      real extrap_value
 
 !-----------------------------------------------------------------------
 !
       F_status = -1
       unf = 0
+      subid=-1
+      oldsubid=-1
 
       err = clib_isfile(trim(F_filename_S))
       if ( err.lt.0 ) then
@@ -125,15 +131,18 @@
                           Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi, F_inttyp_S)
       else
          sgid = ezqkdef(nis, njs, grd_ME, g1,g2,g3,g4,unf)
-         mask_S = 'YES'
+         err = ezgetopt ('USE_1SUBGRID',oldsubgrid_S)
+         err = ezgetival('SUBGRIDID',oldsubid)
          if (any(grd_ME==(/'U','u'/))) then
-            if (is_samegrid_sid(sgid, ni,nj, Hgc_ig1ro, Hgc_ig2ro, &
-                 Hgc_ig3ro, Hgc_ig4ro, F_xfi, F_yfi)) then
+             subid=samesubgrid(sgid, ni,nj, Hgc_ig1ro, &
+                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,F_xfi, F_yfi)
+             if (subid.ge.0) then
                F_inttyp_S = 'NEAREST'
-               mask_S = 'NO'
-            endif
+               onesubgrid_S = 'YES'
+               err = ezsetival ('SUBGRIDID',subid)
+               err = ezsetopt ('USE_1SUBGRID',trim(onesubgrid_S))
+             endif
          endif
-         err = ezsetopt ('SUBGRID_MASK',trim(mask_S))
       endif
 
       err = fstfrm (unf)
@@ -144,11 +153,15 @@
       err = ezdefset ( dgid, sgid )
       err = ezsetopt ('INTERP_DEGREE', trim(F_inttyp_S))
       err = ezsint   (F_dest, source)
+      if (subid.ge.0) then
+!     Reset to original values
+          err = ezsetival ('SUBGRIDID',oldsubid)
+          err = ezsetopt ('USE_1SUBGRID',trim(oldsubgrid_S))
+      endif
       if (err.lt.0) then
          write (6,9005)
          goto 999
       endif
-      err = ezsetopt('SUBGRID_MASK','YES')
 
       F_status = 0
 

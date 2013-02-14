@@ -98,7 +98,7 @@ End Interface
       if (nbit.eq.32) datyp = 5
 
       ig3 = 0
-      if (Out3_uendode_L) then
+      if (Out3_uencode_L) then
          ig3 = 1                             ! points de masse
          if (trim(nomvar) == 'UT1')  ig3 = 2 ! points U
          if (trim(nomvar) == 'VT1')  ig3 = 3 ! points V

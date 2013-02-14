@@ -43,6 +43,10 @@
 !
       rnr = Hzd_lnr
       pwr = Hzd_pwr
+      if (F_grd_S.eq.'S_THETA') then
+         rnr = Hzd_lnr_theta
+         pwr = Hzd_pwr_theta
+      endif
       if (F_grd_S.eq.'S_TR') then
          rnr = Hzd_lnr_tr
          pwr = Hzd_pwr_tr

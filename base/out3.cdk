@@ -62,7 +62,7 @@
       logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L,Out3_newout_L
       logical Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L
       logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L, Out3_satues_L
-      logical Out3_fullplane_L, Out3_uendode_L
+      logical Out3_fullplane_L, Out3_uencode_L
       integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM)
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
@@ -77,7 +77,7 @@
       common / out3_c / Out3_type_S, Out3_unit_S
       common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
-      common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uendode_L
+      common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uencode_L
       common / Out3_l / Out3_cubww_L, Out3_flipit_L,Out3_debug_L
       common / Out3_l / Out3_satues_L,Out3_newout_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass

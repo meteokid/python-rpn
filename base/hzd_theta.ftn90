@@ -1,0 +1,82 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r hzd_theta - applies horizontal diffusion on theta
+!
+#include "model_macros_f.h"
+!
+      subroutine hzd_theta
+      implicit none
+#include <arch_specific.hf>
+!
+!author
+!     Michel Desgagne  -- winter 2013
+!
+!revision
+! v4_45 - Desgagne M.       - initial version 
+!
+#include "gmm.hf"
+#include "glb_ld.cdk"
+#include "lun.cdk"
+#include "hzd.cdk"
+#include "vt1.cdk"
+#include "dcst.cdk"
+#include "pw.cdk"
+
+      type(gmm_metadata) :: mymeta
+      integer istat,k
+      real, parameter :: p_naught=100000., eps=1.0e-5
+      real :: pres_t(l_ni,l_nj,G_nk+1),th(LDIST_SHAPE,G_nk+1)
+!
+!     _________________________________________________________________
+!
+      if ( (Hzd_type_S.eq.'HO_IMP') .and. &
+          ((Hzd_pwr_theta.ne.Hzd_pwr).or.(abs((Hzd_lnr_theta-Hzd_lnr)/Hzd_lnr).gt.eps)) ) then
+         if (Lun_out.gt.0) write (Lun_out,1001)
+         return
+      endif
+
+      istat = gmm_get(gmmk_tt1_s       ,        tt1, mymeta)
+      istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus, mymeta)
+
+!$omp parallel shared (pres_t,th)
+!$omp do
+      do k=1,G_nk+1
+         pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
+         call vspown1 (pres_t(1,1,k),pres_t(1,1,k),real(Dcst_cappa_8),l_ni*l_nj)
+         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
+      end do
+!$omp enddo
+!$omp end parallel
+
+      if (Hzd_type_S.eq.'HO_IMP') then
+         call hzd_ctrl3 ( th, 'S'      , G_nk+1 )
+      else
+         call hzd_ctrl3 ( th, 'S_THETA', G_nk+1 )
+      endif
+
+!$omp parallel shared (pres_t,th)
+!$omp do
+      do k=1,G_nk+1
+         tt1(1:l_ni,1:l_nj,k) = th(1:l_ni,1:l_nj,k) / pres_t(1:l_ni,1:l_nj,k)
+      enddo
+!$omp enddo
+!$omp end parallel
+
+ 1001 format(/,'Horizontal Diffusion of THETA with HO_IMP only available if (Hzd_pwr_theta=Hzd_pwr).and.(Hzd_lnr_theta=Hzd_lnr)')
+!     _________________________________________________________________
+!
+      return
+      end

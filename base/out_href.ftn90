@@ -73,14 +73,14 @@
          nis= Out_gridin - Out_gridi0 + 1
          njs= Out_gridjn - Out_gridj0 + 1
 !         if (nis.eq.G_ni)  nis= nis   + 1
-         if (Out3_uendode_L) flag= flag .and. (Ptopo_couleur.eq.0)
+         if (Out3_uencode_L) flag= flag .and. (Ptopo_couleur.eq.0)
       else
          flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)
       endif
 
       if (flag) then
 
-         if (Out3_uendode_L) then
+         if (Out3_uencode_L) then
 
             vesion_uencode    = 1
             familly_uencode_S = 'F'

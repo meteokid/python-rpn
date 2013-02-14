@@ -60,6 +60,7 @@
 !*                  
       integer, external :: samesubgrid
       integer,external :: fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
+      integer,external :: ezgetopt,ezsetival,ezgetival
       logical,external :: samegrid
       integer,external :: ip1_all
 !
@@ -190,9 +191,9 @@
 !                       ni-Grd_extension*2,nj-Grd_extension*2
              endif
              if (subid.ge.0) then
-                 print *,'e_rdhint3: ezsetopt SUBGRID_MASK to NO'
                  interp2_S='NEAREST'
-                 err = ezsetopt ('SUBGRID_MASK', 'NO')
+                 err = ezsetopt ('USE_1SUBGRID', 'YES')
+                 err = ezsetival('SUBGRIDID', subid)
              endif
           endif
       endif
@@ -203,8 +204,8 @@
          err = ezsetopt ('INTERP_DEGREE', interp2_S)
          err = ezsint(f, w1)
          e_rdhint3 = 1
-!  WILL NOT reset to default because in GEMNTR, we need this mask for e_intwind
-!        if (subid.ge.0) err=ezsetopt('SUBGRID_MASK','YES')
+!  WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind
+!        if (subid.ge.0) err=ezsetopt('USE_1SUBGRID','NO')
       else
 !  ONLY possible to copy if analysis is on a Z grid
          e_rdhint3 = 0

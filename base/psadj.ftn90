@@ -38,7 +38,7 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
-#include "schm.cdk"
+!#include "schm.cdk"
 #include "lun.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
@@ -59,12 +59,8 @@
       logical, save :: done_L=.false.
       parameter(ZERO_8 = 0.0, ONE_8 = 1.d0, TWO= 2.d0)
 
-!*
 !     _________________________________________________________________
 !
-
-      if(.not.Schm_psadj_L)return
-
       istat = gmm_get(gmmk_st0_s,st0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'psadj ERROR at gmm_get(st0)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)

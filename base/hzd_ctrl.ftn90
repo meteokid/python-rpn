@@ -17,12 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine hzd_ctrl2 (F_f2hzd, F_grd_S, NK, F_switch_on_L)
+      subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, NK)
       implicit none
 #include <arch_specific.hf>
 !
       character*(*) F_grd_S
-      logical F_switch_on_L
       integer DIST_DIM, Nk
       real    F_f2hzd (*)
 !
@@ -31,18 +30,11 @@
 !
 !revision
 ! v4_15 - Desgagne M.       - initial version 
-! v4_50 - Desgagne M.       - Add F_switch_on_L to interface
 !
-!#include "glb_ld.cdk"
 #include "hzd.cdk"
 !
 !     _________________________________________________________________
 !
-      if ( (.not.Hzd_ho_L) .or. (Hzd_cdiff .le. 0.0) )then
-         F_switch_on_L = .false.
-         return
-      endif
-
       if (Hzd_type_S.eq.'HO_IMP') &
          call hzd_ho (F_f2hzd, F_grd_S, NK)
 

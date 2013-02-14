@@ -97,19 +97,24 @@
 
       call handle_error(istat,'hzd_set','')
 
-      Hzd_lnr    = min(max(0.,Hzd_lnr   ),0.9999999)
-      Hzd_pwr    = Hzd_pwr    / 2
-      Hzd_pwr    = min(max(2,Hzd_pwr   *2),8)
+      Hzd_lnr      = min(max(0.,Hzd_lnr   ),0.9999999)
+      Hzd_pwr      = Hzd_pwr    / 2
+      Hzd_pwr      = min(max(2,Hzd_pwr   *2),8)
+
+      Hzd_lnr_theta= min(max(0.,Hzd_lnr_theta   ),0.9999999)
+      Hzd_pwr_theta= Hzd_pwr_theta    / 2
+      Hzd_pwr_theta= min(max(2,Hzd_pwr_theta   *2),8)
+
       if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
       if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
       Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
       Hzd_pwr_tr = Hzd_pwr_tr / 2
       Hzd_pwr_tr = min(max(2,Hzd_pwr_tr*2),8)
 
-      if (  (Hzd_lnr.gt.0.).and.  &
+      if ( ((Hzd_lnr.gt.0.).or.(Hzd_lnr_theta.gt.0.).or.(Hzd_lnr_tr.gt.0.)) .and.  &
            ((Hzd_type_S.eq."HO_IMP").or.(Hzd_type_S.eq."HO_EXP"))) then
-         Hzd_ho_L   = .true.
-         mess       = 'HIGH ORDER'
+         Hzd_ho_L = .true.
+         mess     = 'HIGH ORDER'
       endif
 
       if (Lun_out.gt.0) write(Lun_out,1001) mess
@@ -330,10 +335,13 @@
             j=G_nj/2
             c_8= min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
-            hzd_lnR   = log(1.- Hzd_lnR)
-            Hzd_cdiff = (2./c_8)**Hzd_pwr / (-Hzd_lnR)
+            hzd_lnR      = log(1.- Hzd_lnR)
+            hzd_lnR_theta= log(1.- Hzd_lnR_theta)
             hzd_lnR_tr   = log(1.- Hzd_lnR_tr)
+
+            Hzd_cdiff    = (2./c_8)**Hzd_pwr    / (-Hzd_lnR)
             Hzd_cdiff_tr = (2./c_8)**Hzd_pwr_tr / (-Hzd_lnR_tr)
+
             if (Lun_out.gt.0) then
                write(Lun_out,1010)  &
                (Dcst_rayt_8**2.)/(Cstv_dt_8*Hzd_cdiff),Hzd_pwr/2,'U,V,W,ZD'
@@ -438,8 +446,6 @@
  1001 format(/,'INITIALIZATING ',a,' HORIZONTAL DIFFUSION ',  &
                '(S/R HZD_SET)',/,60('='))
  1003 format(/,'NO HORIZONTAL DIFFUSION REQUIRED',/,32('='))
- 1004 format(/,'INITIALIZATING FACTORIZED HORIZONTAL SPONGE',  &
-               '(S/R HZD_SET)',/,60('='))
  1010 format (3X,'Diffusion Coefficient = (',e22.14,' m**2)**',i1,'/sec ',a )
 !
 !     ---------------------------------------------------------------
