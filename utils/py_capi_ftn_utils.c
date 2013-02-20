@@ -58,6 +58,14 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
             dataLen[0]=2;
             break;
         case NPY_FLOAT:
+            if (dataType[0] == 5 && nbits && *nbits < 32) {
+               // A data type of 5 with < 32 bits is technically valid, but
+               // it is a truly, truly bad idea.  Since the nbits value
+               // is more likely to be deliberately-set than datyp, we'll
+               // believe that and let the code below pick the appropriate
+               // datyp value
+               dataType[0] = -1; // fall through to if-block below
+            }
             if (!(dataType[0] == 1 || dataType[0] == 5 || 
                   dataType[0] == 6 || dataType[0] == 134 || 
                   dataType[0] == 133)) {
@@ -120,7 +128,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
             dataType[0]=-1;
             break;
     }
-  fprintf(stderr,"INFO: datyp out=%d\n",dataType[0]);
+  //fprintf(stderr,"INFO: datyp out=%d\n",dataType[0]);
 
 }
 
