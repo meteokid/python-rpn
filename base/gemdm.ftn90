@@ -39,22 +39,10 @@
 ! v4_13 - Tanguay M.        - correction to allow set_sor when 4D-Var
 ! v4_30 - Tanguay M.        - Revision
 !
-!object
-!	
-!arguments
-!	none
-!
 #include "lctl.cdk"
 #include "step.cdk"
 !
-      logical  v4d_options,v4d_flag
-      external v4d_options
-!
 !     ---------------------------------------------------------------
-!
-!     ===============
-      entry gemclimdm
-!     ===============
 !
 !C              Establish processor topology and model configuration
 !               ----------------------------------------------------
@@ -88,18 +76,12 @@
 !              ---------------------------------
       call set_cn1 ( )
 !
-!C              Additional settings for 4D-Var 
-!               ------------------------------
-      call v4d_setting ( )
-!
 !C             Initialize commons for output control
 !              -------------------------------------
       call set_sor( )
 !
 !C             Run GEM
 !              -------
-      v4d_flag = v4d_options()
-!
       call gem_ctrl ( ) 
 !
       call set_term ( )

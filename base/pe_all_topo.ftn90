@@ -79,8 +79,11 @@
       if (Ptopo_nthreads_dyn.lt.1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
       if (Ptopo_nthreads_phy.lt.1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
 
-      if (Ptopo_myproc.eq.0) write (6, 8255) Ptopo_npex, Ptopo_npey, &
+      if (Ptopo_myproc.eq.0) then
+         write (6, 8255) Ptopo_npex, Ptopo_npey, &
              Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
+         write (6, 8256) trim(Path_work_S)
+      endif
 !
 ! Initializes Path_nml_S and Path_outcfg_S
 !
@@ -117,9 +120,9 @@
          err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
          err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
       endif
-! 
+
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 
-!
+
       write(mycol_S,10) Ptopo_mycol
       write(myrow_S,10) Ptopo_myrow
 10    format(i3.3)
@@ -168,6 +171,7 @@
  8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
           " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
             i4,' x ',i3,' x ',i3)
+ 8256 format (/," WORKING DIRECTORY:"/a/)
 !
 !-------------------------------------------------------------------
 !      

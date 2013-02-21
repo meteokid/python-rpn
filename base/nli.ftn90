@@ -46,7 +46,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "grd.cdk"
 #include "schm.cdk"
 #include "p_geof.cdk"
 #include "rhsc.cdk"
@@ -93,18 +92,12 @@
       k0=1+Lam_gbpil_T
 
       if (associated(qt0)) then
-         if (Grd_yinyang_L) & ! THIS CALL MUST BE ELIMINATED
-              call diag_fi ( fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2),&
-                               qt0(l_minx,l_miny,1),fis0, LDIST_DIM, l_nk, LDIST_DIM)
 
          call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f    , &
                      ut0 , vt0 , tt0(l_minx,l_miny,2), st0  , &
                      qt0(l_minx,l_miny,1), F_rhs_sol, rhsc  , &
                      fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
       else
-         if (Grd_yinyang_L) & ! THIS CALL MUST ALSO BE ELIMINATED
-              call diag_fi ( fiptx(l_minx,l_miny,1),st0,tt0(l_minx,l_miny,2),&
-                             qt0, fis0, LDIST_DIM, l_nk, LDIST_DIM)
 
          call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f   , &
                      ut0 , vt0 , tt0(l_minx,l_miny,2), st0 , &

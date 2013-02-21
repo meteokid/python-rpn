@@ -36,23 +36,19 @@
 !
 ! ---------------------------------------------------------------------
 !
-!     ================
-      entry gemclimntr
-!     ================
-!
       call e_initntr2(my_color)
       if (my_color.lt.0) goto 999
-!
+
       call e_gemnml
-!
+
       call e_grid
-!
+
       call e_dateo
-!
+
       call e_dynfld
-!
+
       call e_nml2bin 
-!
+
  999  call e_stopntr2(my_color)
 !
 ! ---------------------------------------------------------------------

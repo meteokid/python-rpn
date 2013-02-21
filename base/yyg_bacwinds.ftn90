@@ -13,11 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r yyg_bacwinds - YY exchange for variables u,v,zd
+!**s/r yyg_bacwindst - YY exchange for variables u,v,zd,t,s,q
 !
 #include "model_macros_f.h"
 !
-      subroutine yyg_bacwinds ( F_u, F_v, F_zd, DIST_DIM, Nk )
+      subroutine yyg_bacwindst ( F_u, F_v, F_zd, F_t, F_s, F_q, DIST_DIM, Nk )
       implicit none
 #include <arch_specific.hf>
 !
@@ -25,21 +25,25 @@
 ! 
       real     F_u  (DIST_SHAPE,  Nk)  ,  F_v (DIST_SHAPE,  Nk), &
                F_zd (DIST_SHAPE,  Nk+1)
+      real     F_t  (DIST_SHAPE,  Nk)  ,F_s (DIST_SHAPE), &
+               F_q (DIST_SHAPE,  Nk+1)
 !
 !author
 !     Lee/Qaddouri  - Nov 2009
 !
 !revision
 ! v4_40 - Lee/Qaddouri      - initial MPI version 
+! v4_50 - Lee/Qaddouri      - add exchange of T,S,Q as well
 !
 !object
-!     Exchange the Yin-Yang boundary conditions for U,V,Zd after bacp_2
+! Exchange the Yin-Yang boundary conditions for U,V,Zd,T,S,Q after bacp
 !
-!arguments: F_u (ut0), F_v (vt0), F_zd (zdt0)
+!arguments: F_u (ut0), F_v (vt0), F_zd (zdt0), F_t (tt0), F_s (st0), F_q (qt0)
 !
 !implicits
 #include "glb_ld.cdk"
 #include "geomg.cdk"
+#include "schm.cdk"
 #include "lun.cdk"
 !
       integer i, j, k
@@ -49,20 +53,32 @@
       real tempv   (DIST_SHAPE,  l_nk)
       real tempv0  (DIST_SHAPE,  l_nk)
       real tempzd  (DIST_SHAPE,  l_nk)
+      real temps   (DIST_SHAPE )
+      real tempt  (DIST_SHAPE,  l_nk)
+      real tempq  (DIST_SHAPE,  l_nk+1)
 !
 !     __________________________________________________________________
 !
       if (Lun_debug_L) write(Lun_out,1000)
 
+      tempt = 0.
+      temps = F_s(1:l_ni,1:l_nj);
+      tempq = 0.
+      tempzd = 0.
       tempu = 0.
       tempv = 0.
-      tempzd = 0.
 !$omp parallel private(i,j)
 !$omp do
       do k= 1,l_nk
          do j= 1, l_nj
          do i= 1, l_ni
             tempzd(i,j,k)=F_zd (i,j,k)
+         enddo
+         enddo
+
+         do j= 1, l_nj
+         do i= 1, l_ni
+            tempt(i,j,k)=F_t (i,j,k)
          enddo
          enddo
          
@@ -81,6 +97,14 @@
       enddo
 !$omp enddo
 !$omp end parallel
+
+      call rpn_comm_xch_halo(temps,LDIST_DIM,l_ni,l_nj,1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(F_s,temps,LDIST_DIM,1)
+
+      call rpn_comm_xch_halo(tempt,LDIST_DIM,l_ni,l_nj,l_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(F_t,tempt,LDIST_DIM,l_nk)
 
       call rpn_comm_xch_halo(tempzd,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -110,9 +134,27 @@
       enddo
 !$omp enddo
 !$omp end parallel
+
+      if (.not. Schm_hydro_L) then
+!$omp parallel private(i,j)
+!$omp do
+      do k= 1,l_nk+1
+         do j= 1, l_nj
+         do i= 1, l_ni
+            tempq(i,j,k)=F_q (i,j,k)
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!$omp end parallel
+      call rpn_comm_xch_halo(tempq,LDIST_DIM,l_ni,l_nj,l_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(F_q,tempq,LDIST_DIM,l_nk+1)
+
+      endif
 !     __________________________________________________________________
 !
-1000  format (5X,'BACK SUBSTITUTION: (S/R BAC_YYWINDZD)')
+1000  format (5X,'BACK SUBSTITUTION: (S/R YYG_BACWINDST)')
 !
       return
       end
