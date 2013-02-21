@@ -94,6 +94,7 @@
       logical press_L,eta_L,found_L
       character*5 stuff_S,blank_S
       integer i,j,k,ii,idx,levset,num,levdesc,ilevel,LEV
+      integer, dimension(size(Level_allpres)) :: ip1_stub
 !
 !     ---------------------------------------------------------------
 !
@@ -132,7 +133,7 @@
       eta_L   = .false.
       levdesc = -1
 
-      do 100 ii=2,F_argc
+      each_lev: do ii=2,F_argc
 
          if (index(F_argv_S(ii),'[').gt.0) then
 
@@ -213,6 +214,7 @@
                   Level_typ_S(j)='P'
                   i = i+1
                   read( F_argv_S(ii), * ) Level(i,j)
+                  Level_allpres(Level_npres+i) = Level(i,j)
 
          else
 
@@ -224,7 +226,7 @@
 
          endif
 
- 100  continue
+      enddo each_lev
 
       if (i.gt.MAXLEV) then
 
@@ -247,19 +249,14 @@
       endif
 
 !     Eliminate repeated levels in one Level set
-      ilevel = 1
-      do ii = 2, i
-         found_L = .false.
-         do k = 1, ii-1
-            if ( Level(ii,j).eq.Level(k,j) ) found_L = .true.
-         enddo
-         if (.not. found_L) then
-             ilevel = ilevel + 1
-             Level(ilevel,j)     = Level(ii,j)
-         endif
-      enddo
+      ip1_stub = 0
+      call sortlev(Level(:,j),ip1_stub(1:i),i,Level_max(Level_sets))
 
-      Level_max(Level_sets)=ilevel
+!     Eliminate repeated levels in the full pressure list
+      if (Level_typ_S(j) == 'P') then
+         call sortlev(Level_allpres(1:Level_npres+i),ip1_stub(1:Level_npres+i), &
+              Level_npres+i,Level_npres)
+      endif
 
       if (Lun_out.gt.0) then
 
@@ -274,5 +271,7 @@
 !     ---------------------------------------------------------------
 !
       return
-      end
+
+    end function set_level
+
 
