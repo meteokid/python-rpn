@@ -34,16 +34,13 @@
 !
 #include "hgc.cdk"
 #include "lun.cdk"
+#include "glb_ld.cdk"
 #include <clib_interface.cdk>
 !
-      integer  fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos
-      integer  ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
-               ezsetival,ezgetival,ezgetval
-      integer samesubgrid
-      external fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos, &
-               ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
-               ezsetival,ezgetival,ezgetval,samesubgrid
-!
+      integer,external :: fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos,&
+           ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&
+           ezsetival,ezgetival,ezgetval,samesubgrid
+
       character*1   typ, grd, grd_me, grd_pos
       character*2   var
       character*8   lab, inttyp
@@ -52,7 +49,7 @@
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3,          &
               g1o,g2o,g3o,g4o,nvar
       integer unf,key,ni1,nj1,nk1,i,j,err,subid,oldsubid
-      integer sgid,dgid,nis,njs
+      integer sgid,dgid,nis,njs,nic,njc
       real, dimension(:  ), allocatable :: ax,ay
       real, dimension(:,:), allocatable :: source
       real*8 rad2deg_8 
@@ -117,7 +114,7 @@
             goto 999
          endif
          err = fstluk (ay, key, ni1,nj1,nk1)
-            
+
          err = fstprm (key, dte,det,ipas,ni1,nj1,nk1,bit,dty,&
                        p1, p2, p3, typ, var, lab, grd_POS,   &
                        g1,g2,g3,g4, swa,                     &
@@ -134,8 +131,12 @@
          err = ezgetopt ('USE_1SUBGRID',oldsubgrid_S)
          err = ezgetival('SUBGRIDID',oldsubid)
          if (any(grd_ME==(/'U','u'/))) then
-             subid=samesubgrid(sgid, ni,nj, Hgc_ig1ro, &
-                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,F_xfi, F_yfi)
+             nic = ni - pil_w - pil_e ; njc = nj - pil_s - pil_n
+             if (nis >= nic .and. njs/2 >= njc) then
+                subid = samesubgrid(sgid, nic,njc, Hgc_ig1ro,Hgc_ig2ro, &
+                     Hgc_ig3ro,Hgc_ig4ro,F_xfi(1+pil_w),F_yfi(1+pil_s))
+                if (subid >= 0) print *,'U grid contains sub grid match to ',ni,nj
+             endif
              if (subid.ge.0) then
                F_inttyp_S = 'NEAREST'
                onesubgrid_S = 'YES'

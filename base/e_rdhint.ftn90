@@ -46,6 +46,7 @@
 #include "hgc.cdk"
 #include "e_anal.cdk"
 #include "grd.cdk"
+#include "glb_ld.cdk"
 !
 ! NOTES: will return e_rdhint3= -1 if nomvar_S is not found or if
 !                                 a problem occurs
@@ -58,12 +59,10 @@
 !                                 ip123 and no horizontal interpolation 
 !                                 is required
 !*                  
-      integer, external :: samesubgrid
       integer,external :: fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
-      integer,external :: ezgetopt,ezsetival,ezgetival
+      integer,external :: ezgetopt,ezsetival,ezgetival,ip1_all,samesubgrid
       logical,external :: samegrid
-      integer,external :: ip1_all
-!
+
       character*1  grd
       character*2  typ
       character*4  var
@@ -73,25 +72,21 @@
       logical tr_ip_L,must_interpo_L
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
-      integer i,key,nic,njc,nkc,err,src_gid,iunit,kind,ni1,nj1,subid
+      integer i,key,nisrc,njsrc,nksrc,err,src_gid,iunit,kind,ni1,nj1,subid,nicore,njcore
       real xlon,ylat,conv_ip1
       pointer (paxlon, xlon(*)), (paylat, ylat(*))
       real,   dimension(:), allocatable  :: w1
-!!$      logical,save :: must_interpo_s = .true.
-!!$      integer un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s
-!!$      data un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s /-1,-1,-1,-1,-1,-1,-1/
-!!$      save un_s,nic_s,njc_s,g1_s,g2_s,g3_s,id_s
 !
 !--------------------------------------------------------------------
 !
       e_rdhint3 = -1      
       if (ip1 .eq. -1 .or. ip1 .eq. 0 ) then
-        key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1,ip2,ip3,typvar_S, &
+        key = fstinf (un1,nisrc,njsrc,nksrc,datev,etik_S,ip1,ip2,ip3,typvar_S, &
                                                              nomvar_S)
       else
         call convip ( ip1, zp1, kind, -1, cdum, .false. )
         write(6,*)'e_rdhint3: ip1,zp1,kind= ',ip1,zp1,kind
-        key = fstinf (un1,nic,njc,nkc,datev,etik_S,ip1_all(zp1,kind),ip2 &
+        key = fstinf (un1,nisrc,njsrc,nksrc,datev,etik_S,ip1_all(zp1,kind),ip2 &
            ,ip3,typvar_S,nomvar_S)
       endif
 
@@ -100,7 +95,7 @@
       if ( (.not.tr_ip_L) .and. (anyip_L) ) then
          call e_rdhint_out2(stdo, "Warning field not found: ",nomvar_S,ip1,ip2,ip3,' ')
          write(stdo,*) "Will try to locate it with with no specific ip123"
-         key = fstinf (un1,nic,njc,nkc,datev,etik_S,-1,-1,-1,typvar_S, &
+         key = fstinf (un1,nisrc,njsrc,nksrc,datev,etik_S,-1,-1,-1,typvar_S, &
                                                              nomvar_S)
       endif
       if (key .lt. 0) then
@@ -108,9 +103,9 @@
          return
       endif
 !
-      allocate (w1(nic*njc*nkc))
-      err = fstluk( w1, key, nic,njc,nkc)
-      err = fstprm (key, DTE, DET, IPAS, nic, njc, nkc, BIT, DTY, P1,  &
+      allocate (w1(nisrc*njsrc*nksrc))
+      err = fstluk( w1, key, nisrc,njsrc,nksrc)
+      err = fstprm (key, DTE, DET, IPAS, nisrc, njsrc, nksrc, BIT, DTY, P1, &
                     P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA,  &
                     LNG, DLF, UBC, EX1, EX2, EX3)
 !
@@ -134,7 +129,7 @@
       interp2_S = interp_S
       iunit = 0
       if (grd.eq.'Z' .or. grd.eq.'U') iunit=un1
-      ni1 = nic ; nj1 = njc
+      ni1 = nisrc ; nj1 = njsrc
       if (any(grd ==(/'u','U'/))) then
           ni1 = -1 ; nj1 = -1
       endif
@@ -153,17 +148,17 @@
                 paxlon = loc(xfi(1))
                 paylat = loc(yv(1))
              endif
-             if ((nic.ne.ni).or.(njc.ne.nj)) then
+             if ((nisrc.ne.ni).or.(njsrc.ne.nj)) then
                 must_interpo_L = .true.
              else
                 must_interpo_L =  &
-                     .not. samegrid (un1, nic,njc, g1,g2,g3, Hgc_ig1ro, &
+                     .not. samegrid (un1, nisrc,njsrc, g1,g2,g3, Hgc_ig1ro, &
                      Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
              endif
           endif
-    !
+
           if (grd.eq.'U') then
-    !multiple grids - limit the check to the core grid points
+             !multiple grids - limit the check to the core grid points
              if (dgid.eq.dstf_gid) then
                 paxlon = loc(xfi(1))
                 paylat = loc(yfi(1))
@@ -174,24 +169,24 @@
                 paxlon = loc(xfi(1))
                 paylat = loc(yv(1))
              endif
-             must_interpo_L=.true.
-             print *,'ni,nj,nic,njc',ni,nj,nic,njc,Grd_extension,nj/2-Grd_extension*2
-             if (ni.eq.nic.and.nj.eq.njc/2) then
-                subid=samesubgrid(src_gid, ni,nj, Hgc_ig1ro, &
-                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xlon, ylat)
-                if (subid.ge.0) print *,'U grid contains sub grid match to ',ni,nj
-             
-!
-!            else if ( (ni-Grd_extension*2)  .eq.nic.and.       &
-!                      (nj-Grd_extension*2).eq.njc/2 ) then
-!               subid=samesubgrid(src_gid, ni-Grd_extension*2, &
-!               nj-Grd_extension*2, Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
-!               xlon(Grd_extension+1), ylat(Grd_extension+1))
-!               if (subid.ge.0)print *,'U grid contains sub grid match to ',&
-!                       ni-Grd_extension*2,nj-Grd_extension*2
+             must_interpo_L = .true.
+!!$             nicore = G_ni-pil_w-pil_e ; njcore = G_nj-pil_s-pil_n
+             nicore = ni ; njcore = nj
+             if (nisrc >= nicore .and. njsrc/2 >= njcore) then
+!!$                subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
+!!$                     Hgc_ig3ro,Hgc_ig4ro,xlon(1+pil_w),ylat(1+pil_s))
+                subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
+                     Hgc_ig3ro,Hgc_ig4ro,xlon(1),ylat(1))
+                if (subid >= 0) then
+                   print *,'U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid
+!!$                else
+!!$                   print *,'U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid
+                endif
+!!$             else
+!!$                print *,'No U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid,';',Grd_ni,Grd_nila,G_ni,l_ni,ni,Grd_extension,pil_w,pil_e
              endif
-             if (subid.ge.0) then
-                 interp2_S='NEAREST'
+             if (subid >= 0) then
+                 interp2_S = 'NEAREST'
                  err = ezsetopt ('USE_1SUBGRID', 'YES')
                  err = ezsetival('SUBGRIDID', subid)
              endif
@@ -204,8 +199,8 @@
          err = ezsetopt ('INTERP_DEGREE', interp2_S)
          err = ezsint(f, w1)
          e_rdhint3 = 1
-!  WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind
-!        if (subid.ge.0) err=ezsetopt('USE_1SUBGRID','NO')
+         !# WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind... winds being staggered they can never be interpoled with nearest/onegrid... reset needed
+         if (subid >= 0) err = ezsetopt('USE_1SUBGRID','NO')
       else
 !  ONLY possible to copy if analysis is on a Z grid
          e_rdhint3 = 0
