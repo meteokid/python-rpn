@@ -132,7 +132,7 @@
       real, parameter :: theta_p0 = 100000.
 
       type(gmm_metadata) :: mymeta
-      real deg2rad
+      real deg2rad,zd2etad
       integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,istat,nk_under
       integer, dimension(:), allocatable::indo,indo_t
       real w1(LDIST_SHAPE), w2(LDIST_SHAPE)
@@ -143,7 +143,7 @@
       real kbot(LDIST_SHAPE,G_nk+1),ktop(LDIST_SHAPE,G_nk+1)
       real ,dimension(:,:,:), allocatable::px_pres,hu_pres,td_pres,w5,w6
       real ,dimension(:,:,:), allocatable::tt_pres,vt_pres
-      real ,dimension(:), allocatable::prprlvl,rf
+      real ,dimension(:), allocatable::prprlvl,rf,hyb_we
       real ptop(LDIST_SHAPE),p0(LDIST_SHAPE)
       real px_ta(LDIST_SHAPE,G_nk+2),px_m(LDIST_SHAPE,G_nk+1), th(LDIST_SHAPE,G_nk+2)
       real tt(LDIST_SHAPE,G_nk+2),hu(LDIST_SHAPE,G_nk+2),t8(LDIST_SHAPE,G_nk+2), &
@@ -152,7 +152,7 @@
       character*2 h2o_liste_S(7)
       data h2o_liste_S / 'QC','QB','QL','QI','QN','QJ','QH'/
       integer n,kind
-      real, dimension(:,:,:), pointer :: gzm,gzt,ttx,htx
+      real, dimension(:,:,:), pointer :: gzm,gzt,ttx,htx,ffwe
       real, dimension(:,:), pointer :: wlao
 
       integer,save :: lastdt = -1
@@ -163,7 +163,7 @@
 !_______________________________________________________________________
 !
       integer pngz,pnvt,pntt,pnes,pntd, &
-              pnhr,pnpx,pntw,pnww,pnzz,pnth
+              pnhr,pnpx,pntw,pnwe,pnww,pnzz,pnth
       integer pnpn,pnp0,psum,pnpt,pnla,pnlo,pnme,pnmx
 
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
@@ -200,6 +200,7 @@
       pnhr=0
       pnpx=0
       pntw=0
+      pnwe=0
       pnww=0
       pnzz=0
       pnth=0
@@ -232,6 +233,7 @@
          if (Outd_var_S(ii,set).eq.'HR') pnhr=ii
          if (Outd_var_S(ii,set).eq.'PX') pnpx=ii
          if (Outd_var_S(ii,set).eq.'TW') pntw=ii
+         if (Outd_var_S(ii,set).eq.'WE') pnwe=ii
          if (Outd_var_S(ii,set).eq.'WW') pnww=ii
          if (Outd_var_S(ii,set).eq.'ZZ') pnzz=ii
          if (Outd_var_S(ii,set).eq.'TH') pnth=ii
@@ -246,7 +248,7 @@
 
       psum=psum +  &
            pngz+pnvt+pntt+pnes+pntd+pnhr+pnpx+ &
-           pntw+pnww+pnzz+pnth
+           pntw+pnwe+pnww+pnzz+pnth
 
       if (psum.eq.0) return
 
@@ -306,6 +308,45 @@
          p0(i,j) = w2(i,j)*Cstv_pref_8
       end do
       end do
+!
+      if(pnwe.ne.0)then
+         !
+         ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
+         !
+         ! ZETA = ZETAs + ln(hyb)
+         ! 
+         ! Taking the total time derivative
+         !  .      .
+         ! ZETA = hyb/hyb
+         !  .     .
+         ! hyb = ZETA*hyb
+         ! 
+         ! Normalizing by domain height
+         !       .
+         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )        
+         !
+         istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(zdt1)'
+         allocate(ffwe(LDIST_SHAPE,nk+1),hyb_we(nk+1))
+         ! zdt1(1) is at eta(top) = Cstv_ptop_8/Cstv_pref_8
+         ! but there is no pressure info at that level in !!
+         ! therefore we put it at Ver_hyb%t(1)
+         ! 
+         !hyb_we(1)=Cstv_ptop_8/Cstv_pref_8
+         hyb_we(1)=Ver_hyb%t(1)
+         hyb_we(nk+1)=1.0         
+         ffwe(:,:,1   )=0.
+         ffwe(:,:,nk+1)=0.
+         do k=2,nk
+            hyb_we(k)=Ver_hyb%t(k)
+            zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
+            do j=l_miny,l_maxy
+            do i=l_minx,l_maxx
+               ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
+            end do
+            end do
+         end do
+      endif
 !
 !_________________________________________________________________
 !
@@ -605,6 +646,12 @@
          if (pnww.ne.0) then
              call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'WW  ',1.0,0.0, kind,G_nk+2, indo_t, nko_t, nbit(pnww) )
+         endif
+
+         if (pnwe.ne.0) then
+             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hyb_we, &
+                 'WE  ',1.0,0.0, kind,nk+1, indo_t, min(nko_t,nk+1), nbit(pnwe) )
+             deallocate(ffwe,hyb_we)
          endif
 
          if (pnzz.ne.0) then

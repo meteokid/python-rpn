@@ -46,6 +46,7 @@
 ! v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step 
 ! v4_05 - Lee V.            - adaptation to GMM
 ! v4_40 - Lee V.            - change in argument call for this routine & prgen
+! v4_50 - Lee V.            - Exchange winds between Yin and Yang in pilot area
 !
 !object
 !     output the wind images or wind components or wind module.
@@ -71,6 +72,7 @@
 #include "lctl.cdk"
 #include "type.cdk"
 #include "ver.cdk"
+#include "grd.cdk"
 #include "schm.cdk"
        include "v4dg.inc"
 !
@@ -92,7 +94,8 @@
       real uu_temp,vv_temp
       pointer (pauutmp, uu_temp(minx:maxx,miny:maxy,G_nk+1) )
       pointer (pavvtmp, vv_temp(minx:maxx,miny:maxy,G_nk+1) ) 
-      real uu_temp1(minx:maxx,miny:maxy),vv_temp1(minx:maxx,miny:maxy)
+      real tempu (DIST_SHAPE,  G_nk+1)
+      real tempv (DIST_SHAPE,  G_nk+1)
 
       integer,save :: lastdt = -1
       save uu,vv
@@ -159,6 +162,53 @@
           if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
           istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
           if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
+          if (Grd_yinyang_L) then
+   !         Exchange info on pilot zones for Yin and Yang since cubic interp
+   !         requires a few extra points to bring winds to the PHI grid
+!$omp parallel private(i,j)
+!$omp do
+             do k= 1, G_nk+1
+             do j= 1, l_nj
+             do i= 1, l_niu
+                ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
+                tempu(i,j,k)=ut1(i,j,k)
+   
+             enddo
+             enddo
+             do j= 1, l_njv
+             do i= 1, l_ni
+                vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
+                tempv(i,j,k)=vt1(i,j,k)
+             enddo
+             enddo
+             enddo
+!$omp enddo
+!$omp end parallel
+   
+             call rpn_comm_xch_halo(tempu,LDIST_DIM,l_niu,l_nj,G_nk+1, &
+                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+             call rpn_comm_xch_halo(tempv,LDIST_DIM,l_ni,l_njv,G_nk+1, &
+                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+             call  yyg_vecbc1(ut1,tempu,tempv,LDIST_DIM,G_nk+1)
+             call  yyg_vecbc2(vt1,tempv,tempu,LDIST_DIM,G_nk+1)
+   
+!$omp parallel private(i,j)
+!$omp do
+             do k= 1, G_nk+1
+             do j= 1, l_nj
+             do i= 1, l_niu
+                ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
+             enddo
+             enddo
+             do j= 1, l_njv
+             do i= 1, l_ni
+                vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
+             enddo
+             enddo
+             enddo
+!$omp enddo
+!$omp end parallel
+          endif
           fla = V4dg_ad_L.and.V4dg_imguv_L
 
           istat = 0

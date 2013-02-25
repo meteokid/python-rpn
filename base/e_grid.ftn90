@@ -36,16 +36,17 @@
 #include "dcst.cdk"
 #include "hgc.cdk"
 #include "grd.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
 !
-      integer  ezgdef_fmem
-      external ezgdef_fmem
+      integer,external :: ezgdef_fmem
 !
       logical global_extend
       integer i, j, ierx, iery
       real*8 x_8(0:Grd_ni+1), y_8(0:Grd_nj+1)
-      real*8 pt5,epsilon,deg2rad_8,ONE_8,CLXXX_8
-      parameter ( pt5    = 0.5d0, epsilon = 1.0d-5)
-      parameter ( ONE_8  = 1.0  , CLXXX_8 = 180.0 )
+      real*8 deg2rad_8
+      real*8, parameter :: pt5    = 0.5d0, epsilon = 1.0d-5
+      real*8, parameter :: ONE_8  = 1.0  , CLXXX_8 = 180.0
 !
 !----------------------------------------------------------------------
 !
@@ -138,7 +139,33 @@
       njv  = Grd_nj-1
       pnj  = njfi
       pnjv = njv
-!
+
+      G_lam = lam
+      G_periodx = (.not.G_lam) ; G_periody = .false.
+      G_ni = nifi ; G_nj = njfi ; G_nk = 1 ; G_niu = niu ; G_njv = njv
+      G_lnimax = G_ni ; G_lnjmax  = G_nj ; G_halox = 0 ; G_haloy = 0
+      G_xg_8 => xdx ; G_xg_8 => xdy
+      l_north = .true. ; l_south = .true. ; l_east = .true. ; l_west = .true.
+      l_ni = nifi ; l_nj = njfi ; l_nk = 1 ; l_niu = niu ; l_njv = niv
+      l_i0 = 1 ; l_j0 = 1 ; p_nk = 1
+      l_minx = 1 ; l_maxx = l_ni ; l_miny = 1 ; l_maxy = l_nj
+      pil_w = 0 ; pil_n = 0 ; pil_e = 0 ; pil_s = 0
+      north = 1 ; south = 1 ; east = 1 ; west = 1
+      Glb_pil_w = Glb_pil_n ; Glb_pil_e = Glb_pil_n
+      Glb_pil_w = 0 ; Glb_pil_n = 0 ; Glb_pil_e = 0 ; Glb_pil_s = 0
+      Lam_pil_w = 0 ; Lam_pil_n = 0 ; Lam_pil_e = 0 ; Lam_pil_s = 0
+      if (G_lam) then
+         Glb_pil_n = Grd_extension ; Glb_pil_s = Glb_pil_n
+         Glb_pil_w = Glb_pil_n ; Glb_pil_e = Glb_pil_n
+         Lam_pil_w = Glb_pil_w ; Lam_pil_n = Glb_pil_n
+         Lam_pil_e = Glb_pil_e ; Lam_pil_s = Glb_pil_s
+         if (l_west ) pil_w = Glb_pil_w
+         if (l_north) pil_n = Glb_pil_n
+         if (l_east ) pil_e = Glb_pil_e
+         if (l_south) pil_s = Glb_pil_s
+      endif
+      
+
       dstf_gid = ezgdef_fmem (nifi , Grd_nj , 'Z', 'E', Hgc_ig1ro, &
                      Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
       dstu_gid = ezgdef_fmem (niu  , Grd_nj , 'Z', 'E', Hgc_ig1ro, &
