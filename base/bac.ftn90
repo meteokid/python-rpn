@@ -36,6 +36,7 @@
 ! v4_05 - Girard            - Open top
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_40 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds
+! v4_50 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds,T,S,Q
 !
 !object
 !******************************************************************************
@@ -136,8 +137,8 @@
                     rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
                     nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
       endif
+      if (Grd_yinyang_L) call yyg_bacwindst (ut0,vt0,zdt0,tt0,st0,qt0,LDIST_DIM,l_nk)
 
-      if (Grd_yinyang_L) call yyg_bacwinds (ut0,vt0,zdt0,LDIST_DIM,l_nk)
 !
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
 !     __________________________________________________________________

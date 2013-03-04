@@ -132,7 +132,7 @@
             if (Level_typ_S(levset).eq.'M') then
                call out_vref (p0, LDIST_DIM)
             elseif (Level_typ_S(levset).eq.'P') then
-               call out_vref (Level(1:Level_max(levset), levset))
+               call out_vref (Level_allpres(1:Level_npres))
             endif
 
             !     output of 3-D tracers

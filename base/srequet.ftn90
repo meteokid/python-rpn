@@ -100,6 +100,7 @@
       call rpn_f_callback_setverbose(Lun_out)
       Grid_sets = 0
       Level_sets = 0
+      Level_npres = 0
       Timestep_sets = 0
       Outd_sets = 0
       Outp_sets = 0
@@ -128,8 +129,10 @@
                          Grid_y0(j),Grid_y1(j),Grid_stride(j) ) 
       end do
 
-      if (Lun_out.gt.0) &
-           write(Lun_out,*)'SREQUET:Number of warnings =',istat
+      if (Lun_out.gt.0) then
+         write(Lun_out,*)' Level_allpres=',(Level_allpres(j),j=1,Level_npres)
+         write(Lun_out,*)'SREQUET:Number of warnings =',istat
+      endif
       srequet=istat
 
       return

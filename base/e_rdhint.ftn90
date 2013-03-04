@@ -173,8 +173,10 @@
 !!$             nicore = G_ni-pil_w-pil_e ; njcore = G_nj-pil_s-pil_n
              nicore = ni ; njcore = nj
              if (nisrc >= nicore .and. njsrc/2 >= njcore) then
+!!$                subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
+!!$                     Hgc_ig3ro,Hgc_ig4ro,xlon(1+pil_w),ylat(1+pil_s))
                 subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
-                     Hgc_ig3ro,Hgc_ig4ro,xlon(1+pil_w),ylat(1+pil_s))
+                     Hgc_ig3ro,Hgc_ig4ro,xlon(1),ylat(1))
                 if (subid >= 0) then
                    print *,'U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid
 !!$                else

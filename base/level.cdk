@@ -23,6 +23,8 @@
 ! Level_mode_ip1     | '3' for oldstyle, '1' for newstyle              |
 ! Level_momentum     | # of levels in momentum including the surface   |
 ! Level_thermo       | # of levels in momentum including the surface   |
+! Level_allpres      | all pressure levels requested across all sets   |
+! Level_npres        | number of Level_allpres levels                  |
 ! Level_version      | Level version 2 is Staggered CP Girard V4       |
 !----------------------------------------------------------------------
 !
@@ -31,15 +33,15 @@
 
       integer MAXLEV
       PARAMETER (MAXLEV = 201)
-      real Level(MAXLEV,MAXSET)
+      real Level(MAXLEV,MAXSET),Level_allpres(MAXSET*MAXLEV)
       integer Level_id(MAXSET),Level_sets,Level_thermo,Level_momentum
       integer Level_max(MAXSET),Level_kind_ip1,Level_mode_ip1
-      integer Level_version
+      integer :: Level_version,Level_npres
       character(len=1) Level_typ_S(MAXSET)
 
-      COMMON /Level_r/ Level
+      COMMON /Level_r/ Level,Level_allpres
 
-      COMMON /Level_i/ Level_id,Level_max,Level_version,Level_thermo
+      COMMON /Level_i/ Level_id,Level_max,Level_version,Level_thermo,Level_npres
       COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1,Level_momentum
 
       COMMON /Level_c/ Level_typ_S
