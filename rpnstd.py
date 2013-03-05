@@ -83,6 +83,11 @@ class RPNFile:
         #sys.stdout = sys.stderr = StringIO()
         #TODO: if FILE_MODE_RO or FILE_MODE_RW_OLD: check is file exist and is readable
         #TODO: if FILE_MODE_RW_OLD or FILE_MODE_RW_OLD: if file exist, check if can write, if not check if dir can write
+
+        # Set self.iun to None before the call to fstouv, so that the member exists for
+        # the __del__ if fstouv raises an exception
+        self.iun = None
+
         self.iun = Fstdc.fstouv(0,self.filename,self.options)
         #(sys.stderr,sys.stdout) = stderrout
         if (self.iun == None):
