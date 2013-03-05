@@ -134,6 +134,22 @@ class RPNFile:
         #TODO: update self.grid?
         return RPNRec(array,params)
 
+    def __contains__(self,key):
+        """Returns True if 'key' is contained in this RPNFile, 'False' otherwise
+
+        is_here = mykey in myRPNfile
+        @param mykey Search key passed to RPNFile.info() (instance of RPNMeta)
+        @return True if the key is present, False otherwise
+        """
+        try:
+            self.info(key)
+            # self.info raises an exception if the key isn't found, so
+            # reaching this point means that the record is in the file.
+            return True
+        except Fstdc.error:
+            # An exception means that the key was not found
+            return False
+
     def edit_dir_entry(self,key):
       """Edit (zap) directory entry referenced by handle
 
