@@ -35,24 +35,18 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
     //fprintf(stderr,"INFO: datyp in=%d\n",dataType[0]);
     dataLen[0]  = -1;
     switch (array->descr->type_num) {
-        case NPY_INT:
-            if (!(dataType[0] == 0 || dataType[0] == 2 || 
-                  dataType[0] == 4 || dataType[0] == 130 || 
-                  dataType[0] == 132)) {
-                dataType[0]=4;
-            }
-            dataLen[0]=4;
-            break;
         case NPY_LONG:
+            // Aside from this check, LONG and INT have identical logic
             if (sizeof(long)!=4)
                 fprintf(stderr,"WARNING: Sizeof(long)=%d\n",(int)sizeof(long));
+            // Fall through to INT case
+        case NPY_INT:
             if (!(dataType[0] == 0 || dataType[0] == 2 || 
-                  dataType[0] == 4 || dataType[0] == 130 || 
-                  dataType[0] == 132)) {
+                  dataType[0] == 4 || dataType[0] == 130)) { 
+               //|| dataType[0] == 132)) { According to rmnlib devs, type 132 breaks things
                 dataType[0]=4;
             }
             dataLen[0]=4;
-            break;
         case NPY_SHORT:
             dataType[0]=4;
             dataLen[0]=2;
