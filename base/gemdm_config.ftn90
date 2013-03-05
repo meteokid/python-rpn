@@ -45,12 +45,11 @@
 #include "ver.cdk"
 #include "out.cdk"
 #include "modconst.cdk"
-       include "v4dg.inc"
 !
       integer  bin2com,newdate,parse_grdc
       external bin2com,newdate,parse_grdc
 !
-      integer   time1, time2, istat
+      integer time1, time2, istat
 !
       character*16 dumc_S
       character*256 fln_S
@@ -192,10 +191,6 @@
               (Sol_precond_S .ne.'MULTICOL') .and. &
               (Sol_precond_S .ne.'JACOBI'  ) ) then
             if (lun_out.gt.0) write (Lun_out, 9201) Sol_precond_S
-            return
-         endif
-         if (V4dg_conf.ne.0.) then
-            if (Lun_out.gt.0)  write (Lun_out, 9300) 
             return
          endif
       endif

@@ -63,18 +63,13 @@
 #include "wil_nml.cdk"
 #include "adx_nml.cdk"
 #include <clib_interface.cdk>
-!
-      logical  set_dcst_8
-      integer  gem_nml,v4d_nml,v4d_config,gemdm_config,grid_nml2,  &
-               itf_cpl_nml,series_nml,adx_nml,adx_config,step_nml,&
-               rpn_comm_init_multigrid,    &
-               bin2com
-      external pe_zero_topo, set_dcst_8, gem_nml, v4d_nml,       &
-               v4d_config, gemdm_config, grid_nml2, itf_cpl_nml,  &
-               series_nml,adx_nml,adx_config,init_ndoms,step_nml,&
-               rpn_comm_init_multigrid,   &
-               bin2com
 
+      integer, external :: gem_nml,gemdm_config,grid_nml2,            &
+                           itf_cpl_nml,series_nml,adx_nml,adx_config, &
+                           step_nml,rpn_comm_init_multigrid,bin2com
+      external pe_zero_topo,init_ndoms
+
+      logical  set_dcst_8
       integer ierr,err(8),cte_ok,mydomain,f1,f2,f3,f4
       character(len=256) :: my_dir
 !
@@ -146,12 +141,11 @@
          err(3) = step_nml    (Path_nml_S)
          err(4) = gem_nml     (Path_nml_S)
          err(5) = itf_cpl_nml (Path_nml_S)
-         err(6) = v4d_nml     (Path_nml_S)
-         err(7) = series_nml  (Path_nml_S)
-         err(8) = adx_nml     (Path_nml_S)
+         err(6) = series_nml  (Path_nml_S)
+         err(7) = adx_nml     (Path_nml_S)
 
          ierr = min(err(1),err(2),err(3),err(4), &
-                    err(5),err(6),err(7),err(8))
+                    err(5),err(6),err(7))
          call handle_error(ierr,'set_world_view','Error reading nml')
 
       endif
@@ -160,8 +154,7 @@
 !
       err(1) = gemdm_config ( )
       err(2) = adx_config   ( )
-      err(3) = v4d_config   ( )
-      call handle_error(min(err(1),err(2),err(3)),'set_world_view','')
+      call handle_error(min(err(1),err(2)),'set_world_view','')
 !
       ierr = grid_nml2   ('print',G_lam)
       ierr = step_nml    ('print')

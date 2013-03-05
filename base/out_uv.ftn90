@@ -88,12 +88,10 @@
       real ,dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres
       real ,dimension(:), allocatable::prprlvl,rf
       real uv(minx:maxx,miny:maxy,nk+1)
-      real t3(minx:maxx,miny:maxy,G_nk+1), t4(minx:maxx,miny:maxy,G_nk+1)
+      real uu_temp(minx:maxx,miny:maxy,G_nk+1)
+      real vv_temp(minx:maxx,miny:maxy,G_nk+1)
       real, dimension(:,:,:), pointer :: uu,vv
 !     variables to point to gmm variables:
-      real uu_temp,vv_temp
-      pointer (pauutmp, uu_temp(minx:maxx,miny:maxy,G_nk+1) )
-      pointer (pavvtmp, vv_temp(minx:maxx,miny:maxy,G_nk+1) ) 
       real tempu (DIST_SHAPE,  G_nk+1)
       real tempv (DIST_SHAPE,  G_nk+1)
 
@@ -155,7 +153,7 @@
 !_______________________________________________________________________
 !
 !
-!     Transfer u,v in t3,t4 if not specific 4D-Var case   
+!     Exchange u,v into uu_temp,vv_temp for Grd_yinyang case
 !     -------------------------------------------------
       if (lastdt .ne. Lctl_step) then
           istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
@@ -170,15 +168,14 @@
              do k= 1, G_nk+1
              do j= 1, l_nj
              do i= 1, l_niu
-                ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
-                tempu(i,j,k)=ut1(i,j,k)
-   
+                tempu(i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
+                uu_temp(i,j,k)=tempu(i,j,k)
              enddo
              enddo
              do j= 1, l_njv
              do i= 1, l_ni
-                vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
-                tempv(i,j,k)=vt1(i,j,k)
+                tempv(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
+                vv_temp(i,j,k)=tempv(i,j,k)
              enddo
              enddo
              enddo
@@ -189,61 +186,25 @@
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
              call rpn_comm_xch_halo(tempv,LDIST_DIM,l_ni,l_njv,G_nk+1, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-             call  yyg_vecbc1(ut1,tempu,tempv,LDIST_DIM,G_nk+1)
-             call  yyg_vecbc2(vt1,tempv,tempu,LDIST_DIM,G_nk+1)
+             call  yyg_vecbc1(uu_temp,tempu,tempv,LDIST_DIM,G_nk+1)
+             call  yyg_vecbc2(vv_temp,tempv,tempu,LDIST_DIM,G_nk+1)
    
 !$omp parallel private(i,j)
 !$omp do
              do k= 1, G_nk+1
              do j= 1, l_nj
              do i= 1, l_niu
-                ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
+                uu_temp(i,j,k) =  uu_temp(i,j,k)*Geomg_cy_8(j)
              enddo
              enddo
              do j= 1, l_njv
              do i= 1, l_ni
-                vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
+                vv_temp(i,j,k) =  vv_temp(i,j,k)*Geomg_cyv_8(j)
              enddo
              enddo
              enddo
 !$omp enddo
 !$omp end parallel
-          endif
-          fla = V4dg_ad_L.and.V4dg_imguv_L
-
-          istat = 0
-          if (V4dg_ad_L.and..not.V4dg_imguv_L) istat = -1
-          call handle_error(istat,'out_uv','STOP IN OUT_UV: ADJOINT not certified')
-          flb = ( (V4dg_di_L.or.V4dg_tl_L) .and. .not.V4dg_imguv_L )  &
-                  .or. V4dg_ad_L
-          if ( (V4dg_conf.eq.0) .or. (.not.fla.and..not.flb) ) then
-              pauutmp = loc(ut1)
-              pavvtmp = loc(vt1)
-          else
-!        -----------------------------------------------------------------
-!        When NL-TL: First cu_8 used for conversion from true wind to image wind
-!        When AD   : First cu_8 used for conversion from adjoint image wind to adjoint true wind
-!        When AD   :Second cu_8 used to  compensate for scaling done later on in OUT_UV
-!        -----------------------------------------------------------------
-              pauutmp = loc(t3)
-              pavvtmp = loc(t4)
-              inv_rayt_8 =  1.0 / Dcst_rayt_8
-              do j= 1, l_nj
-                 cu_8(j) = Geomg_cy_8 (j) * inv_rayt_8
-                 cv_8(j) = Geomg_cyv_8(j) * inv_rayt_8
-              end do
-              if (fla.and.flb) then
-                  cu_8 = cu_8 * cu_8
-                  cv_8 = cv_8 * cv_8
-              endif
-              do k =1, G_nk+1
-              do j= 1, l_nj
-              do i= 1, l_ni
-                 uu_temp(i,j,k) = cu_8(j) * ut1(i,j,k)
-                 vv_temp(i,j,k) = cv_8(j) * vt1(i,j,k)
-              end do
-              end do
-              end do
           endif
       
 !_______________________________________________________________________
@@ -388,17 +349,17 @@
 
 !        Compute vertical derivative of UU,VV with respect to wlnph
 
-         call verder (t3, uu, F_wlnph_m,2.0,2.0, &
+         call verder (uu_temp, uu, F_wlnph_m,2.0,2.0, &
                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
-         call verder (t4, vv, F_wlnph_m,2.0,2.0, &
+         call verder (vv_temp, vv, F_wlnph_m,2.0,2.0, &
                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
 !
 !        Compute UU
-         call prgen( uu_pres,uu, t3,F_wlnph_m,prprlvl,nko, &
+         call prgen( uu_pres,uu, uu_temp,F_wlnph_m,prprlvl,nko, &
                      Out3_cubuv_L, LDIST_DIM,G_nk+1,&
                      1,l_ni,1,l_nj)
 !        Compute VV
-         call prgen( vv_pres,vv, t4, F_wlnph_m,prprlvl,nko, &
+         call prgen( vv_pres,vv, vv_temp, F_wlnph_m,prprlvl,nko, &
                      Out3_cubuv_L, LDIST_DIM,G_nk+1,&
                      1,l_ni,1,l_nj)
          if(pnuv.ne.0) then

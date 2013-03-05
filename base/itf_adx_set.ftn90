@@ -138,8 +138,6 @@ subroutine itf_adx_set()
 
    call handle_error_l(WB_IS_OK(istat),'itf_adx_set','problem putting values in whiteboard')
 
-   call v4d_set_params
-
    call adx_set    ()
 
    call msg(MSG_DEBUG,'itf_adx_set [end]')

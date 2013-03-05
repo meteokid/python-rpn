@@ -43,14 +43,12 @@
       logical :: is_official_L
       character(len=256) :: my_dir
       integer :: err,f1,npex,mydomain,npey,ngrids,pe_tot,pe_me
-      !TODO: replace MPI by rpn_comm to avoid mpi version mismatch
-      include 'mpif.h'
 !
 !--------------------------------------------------------------------
 !
       call rpn_comm_mydomain (init_ndoms, mydomain)
-      call MPI_COMM_SIZE (MPI_COMM_WORLD,pe_tot,err)
-      call MPI_COMM_RANK (MPI_COMM_WORLD,pe_me ,err)
+      call RPN_COMM_SIZE ('WORLD',pe_tot,err)
+      call RPN_COMM_RANK ('WORLD',pe_me ,err)
 
       ngrids=1
       if (Grd_yinyang_L) ngrids=2
@@ -84,11 +82,6 @@
 
       if (Ptopo_couleur.eq.0) err = clib_mkdir (trim(Path_output_S))
       err = clib_chdir (trim(Path_work_S))
-
-      if (Ptopo_couleur.eq.1) then
-         err = fnom( 6, trim(Path_work_S)//'/yan.lis','SEQ+FMT',0)
-         err = fnom(-2, trim(Path_work_S)//'/yan.err','SEQ+FMT',0)
-      endif
 
       call atm_model_getversion(name_S,Version_number_S,DSTP,arch_S,compil_S,is_official_L)
       if (is_official_L) then

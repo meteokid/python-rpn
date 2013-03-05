@@ -51,7 +51,6 @@
 !----------------------------------------------------------------
 !
 #include "ens_param.cdk"
-    include "v4dg.inc"
 !
       integer, external :: fnom,wkoffit
       logical found_namelist_ok
@@ -144,11 +143,6 @@
 !
          if ((F_Grdtyp_S.ne.'GU'.and.F_Grdtyp_S.ne.'GY').and.Ens_skeb_conf) then
             if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
-            ens_nml = -1
-         endif
-!
-         if (V4dg_conf.ne.0)then
-            if(V4dg_conf.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ensemble cannot be run with 4dvar'
             ens_nml = -1
          endif
 !
