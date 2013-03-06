@@ -188,6 +188,27 @@ class RPNFile:
                               key.datev)
                 mylist2 = []
                 for item in mylist:
+                    # The parameters read via rmnlib don't include datev,
+                    # but that's useful for searching later on (it's
+                    # part of RPNKeys).  We can calculate datev, however,
+                    # from dateo, npas, and deet
+                    if (item['dateo'] != -1):
+                        dateo = item['dateo']
+                        npas = item['npas']
+                        deet = item['deet']
+                        try:
+                            datev = RPNDate(
+                                      RPNDate(dateo).toDateTime() +
+                                      npas* datetime.timedelta(seconds=deet)
+                                    ).stamp
+                            item['datev']=datev
+                        except ValueError:
+                            # A ValueError here indicates that dateo wasn't
+                            # a valid date to begin with.  This will happen
+                            # if dateo is a made-up value like '0'.  In this
+                            # case, it doesn't make sense to try to compute
+                            # a datev
+                            pass
                     result=RPNMeta()
                     result.update_by_dict(item)
                     result.fileref=self
@@ -211,6 +232,24 @@ class RPNFile:
         result=RPNMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
+            if (self.lastread['dateo'] != -1):
+                dateo = self.lastread['dateo']
+                npas = self.lastread['npas']
+                deet = self.lastread['deet']
+                try:
+                    datev = RPNDate(
+                              RPNDate(dateo).toDateTime() +
+                              npas* datetime.timedelta(seconds=deet)
+                            ).stamp
+                    self.lastread['datev']=datev
+                except ValueError:
+                    # A ValueError here indicates that dateo wasn't
+                    # a valid date to begin with.  This will happen
+                    # if dateo is a made-up value like '0'.  In this
+                    # case, it doesn't make sense to try to compute
+                    # a datev
+                    pass
+
             result.update_by_dict(self.lastread)
             result.fileref=self
 #            print 'DEBUG result=',result
