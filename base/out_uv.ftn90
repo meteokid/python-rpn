@@ -17,11 +17,10 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine out_uv (F_wlnph_m,DIST_DIM, nk,levset,set)
-!
+      subroutine out_uv (F_wlnph_m, DIST_DIM, nk, levset, set)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer nk,DIST_DIM,levset,set
 
 !     NOTE that F_wlnph_m does not have level "0" here
@@ -47,19 +46,7 @@
 ! v4_05 - Lee V.            - adaptation to GMM
 ! v4_40 - Lee V.            - change in argument call for this routine & prgen
 ! v4_50 - Lee V.            - Exchange winds between Yin and Yang in pilot area
-!
-!object
-!     output the wind images or wind components or wind module.
-!	
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_dostep     I    - array containing indices corresponding to the
-!                     timestep sets that requires output at this time step.
-! F_dostep_max I    - size of F_dostep array
-!
-!
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -70,99 +57,66 @@
 #include "level.cdk"
 #include "outd.cdk"
 #include "lctl.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "grd.cdk"
-#include "schm.cdk"
-       include "v4dg.inc"
-!
-      type(gmm_metadata) :: mymeta
-      integer i,j,k,ii,jj,jjj,kk,istat
-      integer pnerr, psum, kind,nko
-      real find
-      integer i0,in,j0,jn,i0v,inv,j0v,jnv,gridi,grido
-      logical fla,flb
-      real*8 cu_8(l_nj),cv_8(l_nj),c1_8(l_nj)
-      real*8 inv_rayt_8
-      integer, dimension(:), allocatable::indo
-      real ,dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres
-      real ,dimension(:), allocatable::prprlvl,rf
-      real uv(minx:maxx,miny:maxy,nk+1)
-      real uu_temp(minx:maxx,miny:maxy,G_nk+1)
-      real vv_temp(minx:maxx,miny:maxy,G_nk+1)
-      real, dimension(:,:,:), pointer :: uu,vv
-!     variables to point to gmm variables:
-      real tempu (DIST_SHAPE,  G_nk+1)
-      real tempv (DIST_SHAPE,  G_nk+1)
 
-      integer,save :: lastdt = -1
-      save uu,vv
-! ___________________________________________________________________
-!
-!     1.0     initialization of data
-!_______________________________________________________________________
-!
-      integer pnuu,pnvv,pnuv
+      type(gmm_metadata) :: mymeta
+
+      integer i,j,k,ii,istat,psum, kind,nko
+      integer i0,in,j0,jn,i0v,inv,j0v,jnv,pnuu,pnvv,pnuv
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
-      real    coef(0:Outd_var_max(set)+1)
+      integer, dimension(:), allocatable::indo
+      integer, save :: lastdt = -1
+
+      real coef(0:Outd_var_max(set)+1),prmult
+      real uv(minx:maxx,miny:maxy,nk+1), uu_temp(minx:maxx,miny:maxy,G_nk+1), &
+                                         vv_temp(minx:maxx,miny:maxy,G_nk+1)
+      real tempu (DIST_SHAPE,  G_nk+1), tempv (DIST_SHAPE,  G_nk+1)
+      real, dimension(:    ), allocatable::prprlvl,rf
+      real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres
+      real, dimension(:,:,:), pointer, save :: uu,vv
+      real*8 c1_8(l_nj)
 !
-!     initialize conversion of units
-!
-      real prmult
+!-------------------------------------------------------------------
 !
       prmult =  1.0 / Dcst_knams_8
-      if (V4dg_ad_L) prmult = 1.0
-!_______________________________________________________________________
-!
-      pnuu=0
-      pnvv=0
-      pnuv=0
+      pnuu=0 ; pnvv=0 ; pnuv=0
 
-      do ii=0,Outd_var_max(set)
-         coef(ii)=0.0
-         filt(ii)=0
-         nbit(ii)=0
-      enddo
+      coef(0:Outd_var_max(set)) = 0.
+      filt(0:Outd_var_max(set)) = 0 ; nbit(0:Outd_var_max(set)) = 0
 
       do ii=1,Outd_var_max(set)
-        if (Outd_var_S(ii,set).eq.'UU')then
-           pnuu=ii
-        endif
-        if (Outd_var_S(ii,set).eq.'VV')then
-           pnvv=ii
-        endif
-        if (Outd_var_S(ii,set).eq.'UV')then
-           pnuv=ii
-        endif
-        nbit(ii)=Outd_nbit(ii,set)
-        filt(ii)=Outd_filtpass(ii,set)
-        coef(ii)=Outd_filtcoef(ii,set)
+         if (Outd_var_S(ii,set).eq.'UU')then
+            pnuu=ii
+         endif
+         if (Outd_var_S(ii,set).eq.'VV')then
+            pnvv=ii
+         endif
+         if (Outd_var_S(ii,set).eq.'UV')then
+            pnuv=ii
+         endif
+         nbit(ii)=Outd_nbit(ii,set)
+         filt(ii)=Outd_filtpass(ii,set)
+         coef(ii)=Outd_filtcoef(ii,set)
       enddo
+
       psum=pnuu+pnuv+pnvv
       if (psum.eq.0)return
+
       If (lastdt .eq. -1) then
-          allocate ( uu(minx:maxx,miny:maxy,G_nk+1) )
-          allocate ( vv(minx:maxx,miny:maxy,G_nk+1) )
+         allocate ( uu(minx:maxx,miny:maxy,G_nk+1) )
+         allocate ( vv(minx:maxx,miny:maxy,G_nk+1) )
       endif
-!_______________________________________________________________________
-!
-!     Output of derived winds on Phi grid
-!_______________________________________________________________________
-!
-!     4.0    Load and Get required fields
-!_______________________________________________________________________
-!
-!
-!     Exchange u,v into uu_temp,vv_temp for Grd_yinyang case
-!     -------------------------------------------------
+
       if (lastdt .ne. Lctl_step) then
-          istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
-          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
-          if (Grd_yinyang_L) then
-   !         Exchange info on pilot zones for Yin and Yang since cubic interp
-   !         requires a few extra points to bring winds to the PHI grid
+
+         istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
+         istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
+         if (Grd_yinyang_L) then
+            !  Exchange info on pilot zones for Yin and Yang since cubic interp
+            !  requires a few extra points to bring winds to the PHI grid
 !$omp parallel private(i,j)
 !$omp do
              do k= 1, G_nk+1
@@ -205,34 +159,32 @@
              enddo
 !$omp enddo
 !$omp end parallel
+
+          else
+             uu_temp=ut1
+             vv_temp=vt1
           endif
-      
-!_______________________________________________________________________
-!
-!     5.0     Compute real wind from image wind
-!_______________________________________________________________________
-!         Horizontal interpolation of image winds into PHI output grid.
-!
+
           do j= 1, l_nj
              c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
           end do
-!
+
           call uv_acg2g (uu ,uu_temp ,1,0,LDIST_DIM,G_nk+1 ,i0 ,in ,j0 ,jn )
           call uv_acg2g (vv ,vv_temp ,2,0,LDIST_DIM,G_nk+1 ,i0v,inv,j0v,jnv)
-!
+
           if (.not.G_lam) then
 !         Compute real wind components from wind images.
-              do k=1,G_nk+1
-              do j= 1, l_nj
-              do i= 1, l_ni
-                 uu(i,j,k) = c1_8(j) * uu(i,j,k)
-                 vv(i,j,k) = c1_8(j) * vv(i,j,k)
-              end do
-              end do
-              end do
+             do k=1,G_nk+1
+             do j= 1, l_nj
+             do i= 1, l_ni
+                uu(i,j,k) = c1_8(j) * uu(i,j,k)
+                vv(i,j,k) = c1_8(j) * vv(i,j,k)
+             end do
+             end do
+             end do
           else
 !         Borders need to be filled for LAM configuration
-              do k=1,G_nk+1
+             do k=1,G_nk+1
                 do i=1,i0-1
                 do j=1,l_nj
                    uu(i,j,k)=uu(i0,j,k)
@@ -273,130 +225,129 @@
                    vv(i,j,k)=vv(i,jnv,k)
                 enddo
                 enddo
-              enddo
+             enddo
 ! NOW     Compute real wind components from wind images.
-              do k=1,G_nk+1
-              do j= 1, l_nj
-              do i= 1, l_ni
-                 uu(i,j,k) = c1_8(j) * uu(i,j,k)
-                 vv(i,j,k) = c1_8(j) * vv(i,j,k)
-              end do
-              end do
-              end do
+             do k=1,G_nk+1
+             do j= 1, l_nj
+             do i= 1, l_ni
+                uu(i,j,k) = c1_8(j) * uu(i,j,k)
+                vv(i,j,k) = c1_8(j) * vv(i,j,k)
+             end do
+             end do
+             end do
           endif
-!
-      endif
-! IF LASTDT end
-      lastdt = Lctl_step
-!
-      i0 = 1
-      in = l_ni
-      j0 = 1
-      jn = l_nj
-!
-      if (Level_typ_S(levset) .eq. 'M') then
+
+       endif
+
+       lastdt = Lctl_step
+
+       i0 = 1
+       in = l_ni
+       j0 = 1
+       jn = l_nj
+
+       if (Level_typ_S(levset) .eq. 'M') then
 !_______________________________________________________________________
 !
 !     6.0a    Output of (UU,VV,UV) Variables on ETA levels
 !_______________________________________________________________________
 !
-        kind=Level_kind_ip1
+          kind=Level_kind_ip1
 !       Setup the indexing for output
-        allocate (indo( min(Level_max(levset),Level_momentum) ))
-        call out_slev(Level(1,levset), Level_max(levset), &
-                      Level_momentum,indo,nko)
+          allocate (indo( min(Level_max(levset),Level_momentum) ))
+          call out_slev(Level(1,levset), Level_max(levset), &
+                       Level_momentum,indo,nko)
 
-        if (pnuu.ne.0) &
-            call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+          if (pnuu.ne.0) &
+               call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'UU  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnuu) )
             
-        if (pnvv.ne.0) &
-            call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+          if (pnvv.ne.0) &
+               call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'VV  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnvv) )
-        if (pnuv.ne.0) then
-            do k = 1,G_nk+1
-            do j = j0, jn 
-            do i = i0, in
-               uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
-                          vv(i,j,k)*vv(i,j,k))
-            enddo
-            enddo
-            enddo
-            call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
+          if (pnuv.ne.0) then
+             do k = 1,G_nk+1
+             do j = j0, jn 
+             do i = i0, in
+                uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
+                                 vv(i,j,k)*vv(i,j,k))
+             enddo
+             enddo
+             enddo
+             call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'UV  ',prmult,0.0,kind,nk+1, indo, nko, nbit(pnuv) )
-        endif
-        deallocate(indo)
+          endif
+          deallocate(indo)
 
-      else
-!_______________________________________________________________________
-!
-!     7.0B   Output UU,VV,UV on PRESSURE levels
-!_______________________________________________________________________
-!
+       else
+
 !       Set kind to 2 for pressure output
-        kind=2
+          kind=2
 !       Setup the indexing for output
-        nko=Level_max(levset)
-        allocate ( indo(nko), rf(nko) , prprlvl(nko) )
-        do i = 1, nko
-           indo(i)=i
-           rf(i)= Level(i,levset)
-           prprlvl(i) = rf(i) * 100.0
-        enddo
-        allocate(uu_pres(LDIST_SHAPE,nko))
-        allocate(vv_pres(LDIST_SHAPE,nko))
-        allocate(uv_pres(LDIST_SHAPE,nko))
-
+          nko=Level_max(levset)
+          allocate ( indo(nko), rf(nko) , prprlvl(nko) )
+          do i = 1, nko
+             indo(i)=i
+             rf(i)= Level(i,levset)
+             prprlvl(i) = rf(i) * 100.0
+          enddo
+          allocate(uu_pres(LDIST_SHAPE,nko))
+          allocate(vv_pres(LDIST_SHAPE,nko))
+          allocate(uv_pres(LDIST_SHAPE,nko))
+          
 !        Compute vertical derivative of UU,VV with respect to wlnph
 
-         call verder (uu_temp, uu, F_wlnph_m,2.0,2.0, &
-                      LDIST_DIM, G_nk+1,i0,in,j0,jn)
-         call verder (vv_temp, vv, F_wlnph_m,2.0,2.0, &
-                      LDIST_DIM, G_nk+1,i0,in,j0,jn)
-!
+          call verder (uu_temp, uu, F_wlnph_m,2.0,2.0, &
+                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
+          call verder (vv_temp, vv, F_wlnph_m,2.0,2.0, &
+                       LDIST_DIM, G_nk+1,i0,in,j0,jn)
+
 !        Compute UU
-         call prgen( uu_pres,uu, uu_temp,F_wlnph_m,prprlvl,nko, &
-                     Out3_cubuv_L, LDIST_DIM,G_nk+1,&
-                     1,l_ni,1,l_nj)
+          call prgen( uu_pres,uu, uu_temp,F_wlnph_m,prprlvl,nko, &
+                      Out3_cubuv_L, LDIST_DIM,G_nk+1,&
+                      1,l_ni,1,l_nj)
 !        Compute VV
-         call prgen( vv_pres,vv, vv_temp, F_wlnph_m,prprlvl,nko, &
-                     Out3_cubuv_L, LDIST_DIM,G_nk+1,&
-                     1,l_ni,1,l_nj)
-         if(pnuv.ne.0) then
+          call prgen( vv_pres,vv, vv_temp, F_wlnph_m,prprlvl,nko, &
+                      Out3_cubuv_L, LDIST_DIM,G_nk+1,&
+                      1,l_ni,1,l_nj)
+        if(pnuv.ne.0) then
 !        Compute UV
-             do k =  1, nko
-             do j = j0, jn
-             do i = i0, in
-                uv_pres(i,j,k) = sqrt(uu_pres(i,j,k)*uu_pres(i,j,k)+ &
-                vv_pres(i,j,k)*vv_pres(i,j,k))
-             enddo
-             enddo
-             enddo
-             if (filt(pnuv).gt.0) &
+           do k =  1, nko
+           do j = j0, jn
+           do i = i0, in
+              uv_pres(i,j,k) = sqrt(uu_pres(i,j,k)*uu_pres(i,j,k)+ &
+                                    vv_pres(i,j,k)*vv_pres(i,j,k))
+           enddo
+           enddo
+           enddo
+           if (filt(pnuv).gt.0) &
                call filter(uv_pres,filt(pnuv),coef(pnuv),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
-             call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+           call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'UV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuv) )
-         endif
-!
-         if (pnuu.ne.0) then
-             if (filt(pnuu).gt.0) &
-               call filter(uu_pres,filt(pnuu),coef(pnuu),'G', .false., &
+        endif
+
+        if (pnuu.ne.0) then
+           if (filt(pnuu).gt.0) &
+                call filter(uu_pres,filt(pnuu),coef(pnuu),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
-             call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+           call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'UU  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuu) )
-         endif
-!
-         if (pnvv.ne.0) then
-             if (filt(pnvv).gt.0) &
-               call filter(vv_pres,filt(pnvv),coef(pnvv),'G', .false., &
+        endif
+
+        if (pnvv.ne.0) then
+           if (filt(pnvv).gt.0) &
+                call filter(vv_pres,filt(pnvv),coef(pnvv),'G', .false., &
                         l_minx,l_maxx,l_miny,l_maxy, nko)
-             call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+           call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'VV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnvv) )
-         endif
+        endif
                      
-         deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres)
-      endif
-!     
-      return
-      end
+        deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres)
+
+     endif
+!
+!-------------------------------------------------------------------
+!
+     return
+     end subroutine out_uv

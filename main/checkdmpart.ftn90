@@ -1,8 +1,7 @@
       subroutine checkdmpart
       implicit none
 
-      integer  grid_nml2 , gem_nml , gemdm_config
-      external grid_nml2 , gem_nml , gemdm_config
+      integer, external ::  grid_nml2 , gem_nml , gemdm_config
 
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -20,7 +19,7 @@
       err = grid_nml2 ('./gem_settings.nml',G_lam)
       if (err .lt. 0) return
 
-      if (Grd_typ_S(1:2).eq.'GY') G_lam=.true.
+      if (Grd_typ_S(1:2).eq.'GY') Grd_yinyang_L=.true.
 
       err = gem_nml   ('./gem_settings.nml')
       err = gemdm_config ( )
