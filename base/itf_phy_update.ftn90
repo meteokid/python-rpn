@@ -42,7 +42,7 @@ function itf_phy_update2(F_apply_L) result(F_istat)
    character(len=GMM_MAXNAMELENGTH),save :: trlist_S(MAXNTR)
 
    character(len=GMM_MAXNAMELENGTH) :: prefix_S,basename_S,time_S,ext_S,trname_S
-   integer :: ivar
+   integer :: ivar, ignore
    !---------------------------------------------------------------
    F_istat = RMN_OK
    if (.not.init_L) then
@@ -51,32 +51,33 @@ function itf_phy_update2(F_apply_L) result(F_istat)
       init_L = .true.
    endif
 
-   if (.not.F_apply_L) then
+   APPLY: if (F_apply_L) then
+      ! Update tracers
+      do ivar = 1,ntr
+         call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
+         if (time_S /= ':P') cycle
+         call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trlist_S(ivar)))
+         ignore = phy_bus2gmm(trlist_S(ivar),trlist_S(ivar),FOLD_BUS_S)
+      enddo
+      ! Update state vars
+      do ivar = 1,NVARS
+         call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(VARLIST_S(ivar)))
+         F_istat = min(phy_bus2gmm(VARLIST_S(ivar),VARLIST_S(ivar),FOLD_BUS_S),F_istat)
+      enddo
+   else
       !# Note: Secial case at step=0, tracers are not updated at surface
       do ivar = 1,ntr
          call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
          if (basename_S == 'HU' .or. time_S /= ':P') cycle
          trname_S = trim(prefix_S)//trim(basename_S)//':P'//ext_S
          call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trname_S))
-         F_istat = min(phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S),F_istat)
+         ignore = phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S)
          !TODO: would it be best/faster to do a gmm 3d copy?
          trname_S = trim(prefix_S)//trim(basename_S)//':M'//ext_S
-         F_istat = min(phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S),F_istat)
+         ignore = phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S)
       enddo
-      return
-   endif
+   endif APPLY
 
-   do ivar = 1,ntr
-      call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
-      if (time_S /= ':P') cycle
-      call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trlist_S(ivar)))
-      F_istat = min(phy_bus2gmm(trlist_S(ivar),trlist_S(ivar),FOLD_BUS_S),F_istat)
-   enddo
-
-   do ivar = 1,NVARS
-      call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(VARLIST_S(ivar)))
-      F_istat = min(phy_bus2gmm(VARLIST_S(ivar),VARLIST_S(ivar),FOLD_BUS_S),F_istat)
-   enddo
    !---------------------------------------------------------------
    return
 end function itf_phy_update2
