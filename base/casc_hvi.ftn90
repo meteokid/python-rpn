@@ -25,8 +25,8 @@
       implicit none
 #include <arch_specific.hf>
 !
-      character*8 trname_a(ntra)
-      integer F_ni,F_nj,lnk,nia,nja,nka_m,nka_t,presstype,ntra
+      integer :: F_ni,F_nj,lnk,nia,nja,nka_m,nka_t,presstype,ntra
+      character(len=*) :: trname_a(ntra)
       real*8 xpq1 (*),ypq1 (*),xpu1 (*),ypv1 (*)
       real*8 xpaq1(*),ypaq1(*),xpau1(*),ypav1(*)
       real uun(*),vvn(*),ttn(*),zdn(*),meqn(*),ssqn(*), &
@@ -71,10 +71,9 @@
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "acid.cdk"
-!
-      integer  get_px
-      external get_px
-!
+
+      integer,external ::  get_px
+
       logical Vertint_L
       integer i,j,k,n,nga,err,jj,mustvinterp,mustvinterp_g
       integer nid1,njd1,ngd,ngd1,nidu,njdv
