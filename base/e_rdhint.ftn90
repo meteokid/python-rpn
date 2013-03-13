@@ -47,6 +47,7 @@
 #include "e_anal.cdk"
 #include "grd.cdk"
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 !
 ! NOTES: will return e_rdhint3= -1 if nomvar_S is not found or if
 !                                 a problem occurs
@@ -170,20 +171,14 @@
                 paylat = loc(yv(1))
              endif
              must_interpo_L = .true.
-!!$             nicore = G_ni-pil_w-pil_e ; njcore = G_nj-pil_s-pil_n
-             nicore = ni ; njcore = nj
+!Each entry (Yin or Yang) program has only one processor treating the model grid
+             nicore = G_ni-Glb_pil_w-Glb_pil_e ; njcore = G_nj-Glb_pil_s-Glb_pil_n
              if (nisrc >= nicore .and. njsrc/2 >= njcore) then
-!!$                subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
-!!$                     Hgc_ig3ro,Hgc_ig4ro,xlon(1+pil_w),ylat(1+pil_s))
                 subid = samesubgrid(src_gid,nicore,njcore,Hgc_ig1ro,Hgc_ig2ro, &
-                     Hgc_ig3ro,Hgc_ig4ro,xlon(1),ylat(1))
+                     Hgc_ig3ro,Hgc_ig4ro,xlon(1+Glb_pil_w),ylat(1+Glb_pil_s))
                 if (subid >= 0) then
                    print *,'U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid
-!!$                else
-!!$                   print *,'U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid
                 endif
-!!$             else
-!!$                print *,'No U grid contains sub grid match to ',nisrc,'>=',nicore,';',njsrc/2,'>=',njcore,';',subid,';',Grd_ni,Grd_nila,G_ni,l_ni,ni,Grd_extension,pil_w,pil_e
              endif
              if (subid >= 0) then
                  interp2_S = 'NEAREST'

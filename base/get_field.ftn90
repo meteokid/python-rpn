@@ -35,6 +35,7 @@
 #include "hgc.cdk"
 #include "lun.cdk"
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include <clib_interface.cdk>
 !
       integer,external :: fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos,&
@@ -131,10 +132,13 @@
          err = ezgetopt ('USE_1SUBGRID',oldsubgrid_S)
          err = ezgetival('SUBGRIDID',oldsubid)
          if (any(grd_ME==(/'U','u'/))) then
-             nic = ni - pil_w - pil_e ; njc = nj - pil_s - pil_n
+! The source grid is expected to be global range compared to the global grid
+! This routine is called with global dimensions:get_topo and e_getttopo
+! nic and njc is the size of the CORE grid in Yin-Yang.
+             nic = G_ni - Glb_pil_w - Glb_pil_e ; njc = G_nj - Glb_pil_s - Glb_pil_n
              if (nis >= nic .and. njs/2 >= njc) then
                 subid = samesubgrid(sgid, nic,njc, Hgc_ig1ro,Hgc_ig2ro, &
-                     Hgc_ig3ro,Hgc_ig4ro,F_xfi(1+pil_w),F_yfi(1+pil_s))
+                     Hgc_ig3ro,Hgc_ig4ro,F_xfi(1+Glb_pil_w),F_yfi(1+Glb_pil_s))
                 if (subid >= 0) print *,'U grid contains sub grid match to ',ni,nj
              endif
              if (subid.ge.0) then
