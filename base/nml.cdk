@@ -172,6 +172,7 @@
       namelist /gem_cfgs/ Vspng_coeftop
       namelist /gem_cfgs/ Vspng_njpole
       namelist /gem_cfgs/ Vspng_nk
+      namelist /gem_cfgs/ Vspng_vec_L
       namelist /gem_cfgs/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs/ Vtopo_ndt
@@ -304,6 +305,7 @@
       namelist /gem_cfgs_p/ Vspng_coeftop
       namelist /gem_cfgs_p/ Vspng_njpole
       namelist /gem_cfgs_p/ Vspng_nk
+      namelist /gem_cfgs_p/ Vspng_vec_L
       namelist /gem_cfgs_p/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs_p/ Vtopo_ndt

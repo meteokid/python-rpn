@@ -49,7 +49,8 @@
 ! v4_04 - Plante A.         - Diffuse zdot like in hzd, w only if non hydro
 ! v4_05 - Plante A.         - Diffuse w.
 ! v4_10 - Tanguay M.        - Replace tmean by tmean_8 as in GEM333
-!
+! v4_50 - Qaddouri A.       - Call Sponge for Yin-Yang   
+!  
 !object
 !     The diffusion coefficients are (Vspng_coef*Cstv_dt_8) for the
 !     momentum only.
@@ -80,9 +81,14 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (G_lam) then
-         call vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
-                              DIST_DIM, Nk )
+      if(G_lam)then
+         if(Grd_yinyang_L.and.Vspng_vec_L)then
+            call vspng_drv_YY( F_u, F_v, F_zd, F_w, F_t, &
+                 DIST_DIM, Nk )
+         else
+            call vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
+                 DIST_DIM, Nk )
+         endif
          return
       endif
 

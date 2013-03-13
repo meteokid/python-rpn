@@ -159,7 +159,8 @@
       Vspng_nk      = 0
       Vspng_coeftop = -1.
       Vspng_njpole  = 3
-      Vspng_zmean_L = .false.
+      Vspng_vec_L   = .false.
+      Vspng_zmean_L = .false.      
 !
 ! The following switches are NOT used anymore
 ! TODO: complete removal hzd.cdk, nml.cdk, gem_nml.ftn90

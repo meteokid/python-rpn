@@ -1,0 +1,95 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r vspng_drv_lam - Top sponge layer driver for Yin-Yang 
+!
+#include "model_macros_f.h"
+!
+      subroutine vspng_drv_YY ( F_u, F_v, F_zd, F_w, F_t, DIST_DIM, Nk)
+!
+      implicit none
+#include <arch_specific.hf>
+!
+      integer DIST_DIM, Nk
+      real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk), &
+               F_zd(DIST_SHAPE,Nk+1),F_w(DIST_SHAPE,Nk+1), &
+               F_t(DIST_SHAPE,Nk+1)
+      real     T_champ(DIST_SHAPE,Nk  ) 
+!
+!author
+!     Abdessamad Qaddouri  -  2012
+!
+!revision
+! v4_50   Qaddouri A.    - initial version for Yin-Yang from vspng_drv
+!
+!object
+!     vertical sponge is applied:
+!              on Vspng_nk   levels    
+! 
+#include "glb_ld.cdk"
+#include "schm.cdk"
+#include "vspng.cdk"
+#include "lun.cdk"
+!
+      integer i, j, k, nkspng
+      integer iter
+!
+!     ---------------------------------------------------------------
+      do iter = 1, Vspng_niter
+
+!     NOTE : This code need to be optimized for exchanges. In its current
+!            state it represent a 20% increse of a 15 km YY integration 
+!            with physics!
+!            1) Vertical motion, Vertical wind and Temperature could be
+!               diffuse with the scalair code, this would reduce by 3/5*20%=12%
+!               the increase in time.
+!            2) Using the halows would cut the exchange by a factor equal to
+!               the hallow size.
+!
+!     Momentum
+!     ~~~~~~~~
+       call yyg_rhsuv  (F_u,F_v,LDIST_DIM, NK )
+       T_champ(:,:,:)=F_u(:,:,:)   
+       call  vspngu_YY(F_u, F_v, LDIST_DIM, l_niu, l_nj)
+       call  vspngv_YY(F_v, T_champ, LDIST_DIM, l_ni , l_njv)
+
+!     Vertical motion
+!     ~~~~~~~~~~~~~~~
+!********not physical, done nevertheless*******
+
+      call rpn_comm_xch_halo(F_zd, LDIST_DIM,l_ni,l_nj,Nk+1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+       call yyg_scalbc(F_zd,F_zd,LDIST_DIM,Nk+1)
+       call  vspng_YY(F_zd,LDIST_DIM, l_ni , l_nj )
+
+!     Vertical wind
+!     ~~~~~~~~~~~~~
+      call rpn_comm_xch_halo(F_w , LDIST_DIM,l_ni,l_nj,Nk+1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+       call yyg_scalbc(F_w,F_w,LDIST_DIM,Nk+1)
+       call  vspng_YY(F_w,LDIST_DIM, l_ni , l_nj )
+      
+!     Temperature
+      call rpn_comm_xch_halo(F_t , LDIST_DIM,l_ni,l_nj,Nk+1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(F_t,F_t,LDIST_DIM,Nk+1)
+      call  vspng_YY(F_t, LDIST_DIM, l_ni , l_nj )
+
+!
+!     ---------------------------------------------------------------
+!
+      enddo
+      return
+      end
