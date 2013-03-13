@@ -1,0 +1,89 @@
+#!/bin/ksh
+modinstaller_file_version=6
+
+export FORCE_RMN_VERSION_RC=
+export FORCE_RMN_VERSION=rmn_013${FORCE_RMN_VERSION_RC}
+
+ssm_model_name=GEMDM
+ssm_bndl_x=x/
+ssm_bndl_v=4.5.0-b3
+ssm_bndl=GEM/${ssm_bndl_x}${ssm_bndl_v}
+
+ssm_gem=GEM/d/${ssm_bndl_x}gem/gem_${ssm_bndl_v}
+ssm_scr=GEM/d/x/gem-scripts/gem-scripts_4.4.0-b2
+ssm_dyn=GEM/d/x/gemdyn/gemdyn_4.5.0-b3
+ssm_phy=ENV/d/x/rpnphy/rpnphy_5.5.0-b2
+ssm_uti=ENV/d/x/modelutils/modelutils_1.1.0-b3
+ssm_gemmod=GEM/d/${ssm_bndl_x}gem-mod/${ssm_bndl_v}
+
+ssm_compiler_list="\
+ Linux_x86-64:pgi9xx\
+ AIX-powerpc7:Xlf13.110\
+"
+
+ssm_bndl_externals="\
+ Prepend\
+ GEM/others/gem-prep-1\
+ ${ssm_compiler_list}\
+ Linux_x86-64:mpich2\
+ Linux_x86-64:git\
+ legacy\
+ rmnlib-dev\
+ devtools\
+ CMDN/vgrid/3.6.2\
+ ENV/d/x/ezscint/ezscint_14-b8\
+ ENV/d/rpn_comm/4.4.0\
+ GEM/d/gem-data_4.2.0\
+"
+
+#ssm_bndl_externals_post="\
+# ${ssm_gemmod}\
+# GEM/others/gem-post-1\
+# GEM/others/gem-msg-dev-version2\
+#"
+
+ssm_bndl_externals_post="\
+ GEM/others/gem-post-1\
+ GEM/others/gem-msg-dev-version2\
+"
+
+#---- below needs to be changed only if list of components changes
+
+export ATM_MODEL_ISOFFICIAL=true
+
+ssm_arch_list="\
+ Linux_x86-64:linux26-x86-64\
+ AIX-powerpc7:aix61-ppc-64\
+"
+
+#BEGIN automation part
+ssm_scr_v=${ssm_scr##*_}
+ssm_uti_v=${ssm_uti##*_}
+ssm_phy_v=${ssm_phy##*_}
+ssm_dyn_v=${ssm_dyn##*_}
+ssm_gem_v=${ssm_gem##*_}
+
+# ssm_scr_x=${ssm_scr%/*}
+# ssm_uti_x=${ssm_uti%/*}
+# ssm_phy_x=${ssm_phy%/*}
+# ssm_dyn_x=${ssm_dyn%/*}
+# ssm_gem_x=${ssm_gem%/*}
+
+#END automation part
+
+ssm_bndl_elements="\
+ CONFIG@${ssm_scr}\
+ gem-scripts_${ssm_scr_v}_all@${ssm_scr}\
+ CONFIG@${ssm_uti}\
+ modelutils_${ssm_uti_v}_all@${ssm_uti}\
+ modelutils_${ssm_uti_v}_ARCH@${ssm_uti}\
+ CONFIG@${ssm_phy}\
+ rpnphy_${ssm_phy_v}_all@${ssm_phy}\
+ rpnphy_${ssm_phy_v}_ARCH@${ssm_phy}\
+ CONFIG@${ssm_dyn}\
+ gemdyn_${ssm_dyn_v}_all@${ssm_dyn}\
+ gemdyn_${ssm_dyn_v}_ARCH@${ssm_dyn}\
+ CONFIG@${ssm_gem}\
+ gem_${ssm_gem_v}_all@${ssm_gem}\
+ gem_${ssm_gem_v}_ARCH@${ssm_gem}\
+"

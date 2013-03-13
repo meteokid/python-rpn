@@ -94,12 +94,12 @@
       character(len= 1) :: bus_S
       character(len=32) :: varname_S,outname_S,inname_S,bus0_S
       logical iela
-      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus
-      integer ixg(4,Ptopo_ncolors), ixgall(4,Ptopo_ncolors), multxmosaic, noutpe
+      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic, noutpe
+      integer, dimension (4,2) :: ixg, ixgall
       integer istat,index,param(BUSPAR_MAXPAR)
       integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
       integer, dimension (:,:), allocatable :: comyy
-      real    rot(4,Ptopo_ncolors), rotall(4,Ptopo_ncolors)
+      real, dimension (4,2) :: rot, rotall
 !
 !-------------------------------------------------------------------
 !
@@ -266,15 +266,10 @@
          rot(4,Ptopo_couleur+1)= Grd_xlon2
       endif
 
-      if (Ptopo_ncolors .gt. 1) then
-         call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
-              RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
-         call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
-              RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
-      else
-         ixgall = ixg
-         rotall = rot
-      endif
+      call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
+           RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
+      call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
+           RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
 
       call out_sblock2(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
            Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &

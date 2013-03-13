@@ -35,29 +35,35 @@
 #include "version.cdk"
 #include <clib_interface.cdk>
 !
-      integer,external :: rpn_comm_init_multigrid, fnom, exdb
-      integer,external :: rpn_comm_init_multi_level
+      integer,external :: rpn_comm_init_multi_level, fnom, exdb
       external init_ndoms
 !
-      character(len=50) :: DSTP,dummy,name_S,arch_S,compil_S
-      logical :: is_official_L
+      character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
       character(len=256) :: my_dir
-      integer :: err,f1,npex,mydomain,npey,ngrids,pe_tot,pe_me
+      logical :: is_official_L
+      integer :: ierr,mydomain,ngrids
 !
 !--------------------------------------------------------------------
 !
       call rpn_comm_mydomain (init_ndoms, mydomain)
-      call RPN_COMM_SIZE ('WORLD',pe_tot,err)
-      call RPN_COMM_RANK ('WORLD',pe_me ,err)
+
+      write(my_dir,'(a,i4.4)') 'cfg_',mydomain
+
+      ierr = clib_getenv ('TASK_WORK'  ,Path_work_S  )
+      ierr = clib_getenv ('TASK_INPUT' ,Path_input_S )
+      ierr = clib_getenv ('TASK_OUTPUT',Path_output_S)
+
+      Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
+      Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)
+      Path_output_S = trim(Path_output_S) // '/' // trim(my_dir)
+
+      ierr = clib_chdir (trim(Path_work_S))
 
       ngrids=1
       if (Grd_yinyang_L) ngrids=2
 
-      npex=1
-      npey=1
-
-      Ptopo_couleur = rpn_comm_init_multi_level (dummy, Ptopo_myproc,Ptopo_numproc, &
-                                                  npex,npey, pe_tot/ngrids, ngrids  )
+      Ptopo_couleur = RPN_COMM_init_multi_level (dummy, Ptopo_myproc,Ptopo_numproc, &
+                                                  1,1, Grd_ndomains, ngrids  )
 
       if (Grd_yinyang_L) then
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
@@ -65,23 +71,11 @@
       else
          Ptopo_couleur = 0
       endif
-      if (pe_me.gt.(Grd_ndomains*ngrids-1)) Ptopo_couleur = -1
+
+      if (Ptopo_myproc.gt.(Grd_ndomains*ngrids-1)) Ptopo_couleur = -1
       my_color = Ptopo_couleur
 
-      write(my_dir,'(a,i4.4)') 'cfg_',mydomain
-
-      err = clib_getenv ('TASK_WORK'  ,Path_work_S  )
-      err = clib_getenv ('TASK_INPUT' ,Path_input_S )
-      err = clib_getenv ('TASK_OUTPUT',Path_output_S)
-
-      Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
-      Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)
-      Path_output_S = trim(Path_output_S) // '/' // trim(my_dir)
-
-! Directory Path_work_S has been created by Um_runent.ksh
-
-      if (Ptopo_couleur.eq.0) err = clib_mkdir (trim(Path_output_S))
-      err = clib_chdir (trim(Path_work_S))
+      if (Ptopo_couleur.eq.0) ierr = clib_mkdir (trim(Path_output_S))
 
       call atm_model_getversion(name_S,Version_number_S,DSTP,arch_S,compil_S,is_official_L)
       if (is_official_L) then
@@ -93,7 +87,7 @@
       if (Ptopo_couleur.eq.0) then
          call  open_status_file3 (trim(Path_output_S)//'/status_ent.dot')
          call write_status_file3 ('_status=ABORT' )
-         err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
+         ierr = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
       endif
 
       call gemtim4 ( 6, 'END OF e_initntr', .false. )
