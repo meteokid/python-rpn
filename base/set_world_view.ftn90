@@ -128,13 +128,14 @@
                               Lun_out,Ptopo_numproc ) ) cte_ok=-1
       call handle_error(cte_ok,'set_world_view','set_dcst_8')
 !
+      err(:) = 0
       if ( Schm_theoc_L ) then
 !
          call theo_cfg
 !
       else
 !
-! Read namelist gem_cfgs, var4d, coupling and series from file Path_nml_S
+! Read namelists from file Path_nml_S
 !
          err(1) = grid_nml2   (Path_nml_S,G_lam)
          err(2) = bin2com ()
@@ -144,17 +145,15 @@
          err(6) = series_nml  (Path_nml_S)
          err(7) = adx_nml     (Path_nml_S)
 
-         ierr = min(err(1),err(2),err(3),err(4), &
-                    err(5),err(6),err(7))
-         call handle_error(ierr,'set_world_view','Error reading nml')
-
       endif
+      call handle_error(minval(err(:)),'set_world_view','Error reading nml')
+
 !
 ! Establish final configuration
 !
       err(1) = gemdm_config ( )
       err(2) = adx_config   ( )
-      call handle_error(min(err(1),err(2)),'set_world_view','')
+      call handle_error(min(err(1),err(2)),'set_world_view','config')
 !
       ierr = grid_nml2   ('print',G_lam)
       ierr = step_nml    ('print')

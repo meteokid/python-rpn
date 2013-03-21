@@ -12,10 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "msg.h"
-#include "stop_mpi.h"
-
-
 !/**
 subroutine adx_setint_lin_hor_ver3(F_n, &
      F_capx, F_capy, F_capz, &
@@ -56,11 +52,10 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
-   include "v4dg.inc"
-   !
+
    real*8,  dimension(:), pointer :: p_bsz_8
    integer, dimension(:), pointer :: p_lcz
-   !
+   !---------------------------------------------------------------------
    p_lcz   => adx_lcz%m
    p_bsz_8 => adx_bsz_8%m
    if(adx_superwinds_L)then
@@ -68,8 +63,6 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
       p_bsz_8 => adx_bsz_8%s
    endif
 
-   !---------------------------------------------------------------------
-   if ( V4dg_conf.eq.0.0 ) then
    call adx_setint_lin_noptr1(F_n, &
         F_capx, F_capy, F_capz, &
         F_x,    F_y,   F_z,&
@@ -77,60 +70,6 @@ subroutine adx_setint_lin_hor_ver3(F_n, &
         adx_lcy, adx_bsy_8, adx_diy_8,&
         p_lcz, p_bsz_8, adx_diz_8,&
         i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
-   else
-   call adx_setint_lin_noptr2(F_n, &
-        F_capx, F_capy, F_capz, &
-        F_x,    F_y,   F_z,&
-        adx_lcx, adx_bsx_8, adx_dix_8, &
-        adx_lcy, adx_bsy_8, adx_diy_8,&
-        p_lcz, p_bsz_8, adx_diz_8,&
-        i0,in,j0,jn,k0,F_nk, F_num,adx_lnkm)
-   endif
    !---------------------------------------------------------------------
    return
 end subroutine adx_setint_lin_hor_ver3
-
-!========================================================================
-!== stubs ===============================================================
-!========================================================================
-
-subroutine adx_setint()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint
-subroutine adx_setint2()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint2','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint2
-subroutine adx_setint_lin_hor_ver()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint_lin_hor_ver
-subroutine adx_setint_lin_hor_ver1()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver1','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint_lin_hor_ver1
-subroutine adx_setint_lin_hor_ver2()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint_lin_hor_ver2','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint_lin_hor_ver2

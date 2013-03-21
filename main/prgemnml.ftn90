@@ -33,7 +33,6 @@
       call nml_gem()
       call nml_gement()
       call nml_theo()
-!     call nml_var4d()
       call nml_cpl()
       close(6)
      

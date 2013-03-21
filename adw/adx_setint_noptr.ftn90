@@ -13,9 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include "stop_mpi.h"
 #include "model_macros_f.h"
 
+!/**
 subroutine adx_setint_lin_noptr2 (F_n,                     &
                                   F_capx, F_capy, F_capz,  &
                                   F_x,    F_y,   F_z,      &
@@ -23,13 +23,10 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
                                   F_lcy, F_bsy_8, F_diy_8, &
                                   F_lcz, F_bsz_8, F_diz_8, &
                                   i0,in,j0,jn,k0,F_nk, F_num,F_nkm)
-
    implicit none
 #include <arch_specific.hf>
-
    !@objective sets localization and interpolation parameters
    !                (From adx_setint_lin_noptr2) 
-
    !@arguments
    integer :: F_num           !I, nb points of computations
    integer :: F_nk,F_nkm      !I, nb levels
@@ -39,13 +36,11 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
         F_capz, F_capy, F_capx !O, x precomputed displacements and interp terms
    integer,dimension(F_num) :: &
         F_n                    !O, pos in the 3D volume of interpolation boxes
-
    integer,dimension(*) :: F_lcx,F_lcy,F_lcz
    real*8, dimension(*) :: F_bsx_8,F_bsy_8
    real*8, dimension(*) :: F_dix_8,F_diy_8
    real*8, dimension(0:*) :: F_bsz_8
    real*8, dimension(-1:*) :: F_diz_8
-
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -55,36 +50,15 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
    ! v4_10 - Plante A.         - Use super winds for thermo
    ! v4_14 - Plante A.         - Scope on vertical loop
    ! v4_40 - Tanguay M.        - Revision TL/AD
-
 !**/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
 #include "glb_ld.cdk"
-!#include "v4d_cfl.cdk"
-   !
-   integer :: ii, jj, kk, ij, i, j, k, n
+
+   integer :: ii, jj, kk, ij, i, j, k, n, cfl, err
    real*8  :: prd_8, prdt_8, p_z00_8
-
-   integer cfl,err
-   logical done_L
-   data done_L /.false./
-   save done_L
-
    !---------------------------------------------------------------------
-
-!  Initialize min-max vertical CFL as function of k
-!  ------------------------------------------------
-!!$   if (.not.done_L) then
-!!$       call hpalloc(V4d_cfl_p_   ,G_nk+1, err,1)
-!!$       call hpalloc(V4d_cfl_n_   ,G_nk+1, err,1)
-!!$       do k = 1,G_nk+1
-!!$          V4d_cfl_p(k) = 0
-!!$          V4d_cfl_n(k) = 0
-!!$       enddo
-!!$       done_L = .true.
-!!$   endif
-
    p_z00_8 = adx_verZ_8%m(1)
    if(adx_superwinds_L)p_z00_8 = adx_verZ_8%t(1)
 
@@ -133,33 +107,15 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
 
             ij = (jj-adx_int_j_off-1)*adx_nit + (ii-adx_int_i_off)
             F_n(n) = kk*adx_nijag + ij
-
-!           Evaluate min-max vertical CFL as function of k
-!           ----------------------------------------------
-!!$            if (V4d_cfl_kind_S.eq.'m') cfl = (kk+1) - (2*k  )
-!!$            if (V4d_cfl_kind_S.eq.'t') cfl = (kk+1) - (2*k-1)
-!!$            if (cfl.gt.V4d_cfl_p(k)  ) V4d_cfl_p(k) = cfl 
-!!$            if (cfl.lt.V4d_cfl_n(k)  ) V4d_cfl_n(k) = cfl
-
          enddo
       enddo
    enddo
 !$omp enddo
 !$omp end parallel
-
    !---------------------------------------------------------------------
    return
 end subroutine adx_setint_lin_noptr2
 
-!/**
-subroutine adx_setint_lin_noptr()
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_setint_lin_noptr','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_setint_lin_noptr
 
 !/**
 subroutine adx_setint_lin_noptr1(F_n, &
@@ -187,8 +143,6 @@ subroutine adx_setint_lin_noptr1(F_n, &
    real*8, dimension(*) :: F_dix_8,F_diy_8
    real*8, dimension(0:*) :: F_bsz_8
    real*8, dimension(-1:*) :: F_diz_8
-
-
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -217,7 +171,6 @@ subroutine adx_setint_lin_noptr1(F_n, &
    integer :: ii, jj, kk, ij, i, j, k, n
    real*8  :: prd_8, prdt_8, p_z00_8
    !---------------------------------------------------------------------
-
    p_z00_8 = adx_verZ_8%m(1)
    if(adx_superwinds_L)p_z00_8 = adx_verZ_8%t(1)
 

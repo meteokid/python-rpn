@@ -12,7 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include <stop_mpi.h>
 #include <msg.h>
 #include <model_macros_f.h>
 
@@ -22,9 +21,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
                       F_minx,F_maxx,F_miny,F_maxy,F_nk_winds, F_nb_iter, F_doAdwStat_L)
    implicit none
 #include <arch_specific.hf>
-!
    !@objective Perform advection
-!
    !@arguments
    logical :: F_doAdwStat_L   !I, will compute stats if .true.
    integer :: F_nb_iter       !I, total number of iterations for trajectories
@@ -38,7 +35,6 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nk_winds) :: &
         F_ud, F_vd, F_wd      !I, real destag winds
    real, dimension(*) :: F_ua, F_va, F_wa
-!
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -53,14 +49,11 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
 !**/
-
 #include <gmm.hf>
 #include "adx_gmm.cdk"
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 #include "glb_ld.cdk"
-!#include "v4d_cfl.cdk"
-!   include "v4dg.inc"
 
    logical, parameter :: IS_MOM_LEVEL = .true.
    logical, parameter :: POLE0_L = .false.
@@ -80,21 +73,17 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    real, pointer, dimension(:) :: &
         xth, yth, zth, xcth, ycth, zcth, &
         xct1, yct1, zct1
-   !
-   logical v4dstore_L
 
 #define IS_SAME_BOUNDS(M1,M2) (M1%l(1)%low == M2%l(1)%low .and. M1%l(1)%high == M2%l(1)%high .and. M1%l(2)%low == M2%l(2)%low .and. M1%l(2)%high == M2%l(2)%high)
-
    !---------------------------------------------------------------------
-   nullify(xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
+   call msg(MSG_DEBUG,'adx_main [begin]')
 
-   call msg(MSG_DEBUG,'adx_main')
+   nullify(xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
    
    k00=1
    if(adx_gbpil_t.gt.0)k00=0
    k0=adx_gbpil_t+1
 
-   !v4dstore_L   = V4dg_conf.ne.0 .and. V4dg_oktr_L
    save_stats_L = adw_stats_L
    adw_stats_L  = (F_doAdwStat_L .and. adw_stats_L)
 
@@ -133,8 +122,6 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    call timing_start (30, 'ADW_TRAJE')
 
-   !V4d_cfl_kind_S = 'm'
-
    ! Note : with lid nesting, we compute momentum pos from k0-2 to allow for
    !        cubic interpolation in adx_cubicpos
    call adx_main_2_pos6( F_nb_iter, &
@@ -165,15 +152,6 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
            adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
    endif
 
-!  Store TRAJ upstream positions
-!  -----------------------------
-!   if ( v4dstore_L ) call v4d_rwtraj (5,pxm,pym,pzm,pxt,pyt,pzt, &
-!                                      adx_mlni,adx_mlnj,adx_lnkm,adx_lnkm)
-!
-!  Store TRAJ RHS before interpolation
-!  -----------------------------------
-!   if ( v4dstore_L ) call v4d_rwtraj (11)
-
    call timing_start (31, 'ADW_INLAG')
 
    call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
@@ -184,15 +162,9 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    call timing_stop (31)
 
-!  Store TRAJ RHS interpolated
-!  ---------------------------
-!   if ( v4dstore_L ) call v4d_rwtraj (6)
-
    adw_stats_L = save_stats_L
    call msg(MSG_DEBUG,'adx_main [end]')
-
    !---------------------------------------------------------------------
-
    return
 end subroutine adx_main7
 

@@ -17,9 +17,6 @@ BINDIR    = $(MONBINDIR)
 ## Some Shortcut/Alias to Lib Names
 GEMLIBS     = gemdyn
 
-V4D         = v4d_stubs
-#V4D         = "gemdyn_v4d prof_003"
-
 CHMLIBPATH  = 
 CHM         = $(CHM_VERSION) $(CHMLIBS)
 #CHMLIBPATH  = $(ARMNLIB)/modeles/CHM/v_$(CHM_VERSION)
@@ -46,13 +43,13 @@ LIBPATHPOST  = $(CHMLIBPATH)/lib/$(EC_ARCH) $(CHMLIBPATH)/$(EC_ARCH) $(CHMLIBPAT
 #OTHERS  = $(COMM) $(VGRID) $(UTIL) $(LLAPI) $(IBM_LD)
 #LIBAPPL = $(LIBS_PRE) $(MODELUTILSLIBS) $(OTHERS) $(LIBS_POST)
 #LIBSYS  = $(LIBSYS_PRE) $(LIBSYSEXTRA) $(LIBSYS_POST)
-LIBS_PRE = $(GEMLIBS) $(V4D) $(PHY) $(CLASSLIBS) $(CHM) $(PATCH) $(CPL)
+LIBS_PRE = $(GEMLIBS) $(PHY) $(CLASSLIBS) $(CHM) $(PATCH) $(CPL)
 
 #LIBS     = $(LIBAPPL)
 
 
 ## GEM model targets (modelutils/gemdyn/rpnphy)
-.PHONY: gem gemntr gemdm gem4d gem_nompi gemntr_nompi gemdm_nompi allbin_gem allbincheck_gem
+.PHONY: gem gemntr gemdm gem_nompi gemntr_nompi gemdm_nompi allbin_gem allbincheck_gem
 gem: gemntr gemdm
 
 allbin_gem: $(BINDIR)/$(mainntr) $(BINDIR)/$(maindm)
@@ -65,9 +62,6 @@ allbincheck_gem:
 		exit 0 ;\
 	fi ;\
 	exit 1
-
-gem4d:
-	$(MAKE) gem V4D="gemdyn_v4d $(PROF)" PROFLIBPATH=$(ARMNLIB)/lib/$(BASE_ARCH)
 
 gem_nompi: gemntr_nompi gemdm_nompi
 

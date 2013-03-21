@@ -51,7 +51,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    !@author alain patoine
    !@revisions
    ! v2_31 - Desgagne M.    - removed stkmemw
-   ! v2_31 - Tanguay M.     - gem stop if adx_fro_a.gt.0.and.V4dg_conf.ne.0
+   ! v2_31 - Tanguay M.     - gem stop if adx_fro_a.gt.0 in anal mode
    ! v3_00 - Desgagne & Lee - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
    ! v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN 

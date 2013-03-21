@@ -1,3 +1,0 @@
-subroutine itf_v4d_rwtraj
-   return
-end subroutine itf_v4d_rwtraj

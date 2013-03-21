@@ -14,7 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "constants.h"
 #include "msg.h"
-#include "stop_mpi.h"
 #include "model_macros_f.h"
 
 !/**
@@ -36,13 +35,10 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
         F_u1,F_u2   !I, field to interpol
    real, dimension(F_ni,F_nj,F_nk) :: F_wrkx1,F_wrky1  !O, F_dt * result of interp
-   !**/
-
    !@author Stephane Chamberland
- 
    !@revisions
    ! v4_40 - Tanguay M.        - Revision TL/AD
-
+   !**/
 #include "adx_nml.cdk"
 #include "adx_poles.cdk"
 #include "ptopo.cdk"
@@ -51,49 +47,19 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
 #include "orh.cdk"
 #include "schm.cdk"
 #include "step.cdk"
-   include "v4dg.inc"
+
+   integer, external :: adx_ckbd3
 
    logical :: save_nosetint_L
-   integer :: nb_flds, istat
+   integer :: nb_flds, istat,outside,sum_outside,ier
    real    :: dummy
    integer, dimension(F_ni,F_nj,F_nk) :: wrkc1
    real,    dimension(F_ni,F_nj,F_nk) :: wrkz1, wrky
    real,    dimension(:,:,:), allocatable :: xpos2,ypos2,zpos2
-
-   integer, external :: adx_ckbd3
-
-   integer outside,sum_outside,ier
-   logical done_once_L
-   save done_once_L
-   data done_once_L /.false./
-
    !---------------------------------------------------------------------
-   call msg(MSG_DEBUG,'adx_pos_glb')
+   call msg(MSG_DEBUG,'adx_pos_glb [begin]')
 
    call adx_exch_1c(F_wrkx1,F_wrky1,wrkz1,wrkc1,F_xth,F_yth,F_zth,F_ni,F_nj,F_k0,F_nk)
-
-   if ( V4dg_conf.ne.0.0 ) then
-!
-        outside = 0
-!
-        if ( Adx_fro_a .gt. 0 ) outside = 1
-!
-             sum_outside = 0
-             call rpn_comm_Allreduce(outside,sum_outside,1,"MPI_INTEGER", &
-                                       "MPI_SUM","grid",ier)
-!
-        if ( sum_outside.ne.0.and..not.done_once_L.and.Ptopo_myproc.eq.0 ) then
-!!!          write(Lun_out,*) 'NUMBER OF PE WITH OUTSIDERS IN ADW_MAIN_2_POS AT current TIME-CN-IT = ',sum_outside
-!!!          call flush(Lun_out)
-             write(Lun_out,*) 'ARRET adx_main_2_pos SUM_OUTSIDE = ',sum_outside
-             call flush(Lun_out)
-        endif
-
-        istat = 0
-        if ( sum_outside.ne.0 ) istat = -1
-        call handle_error(istat,'adx_main_2_pos','sum_outside.ne.0')
-!
-   endif
 
    allocate( &
         xpos2(max(1,adx_fro_a),1,1), &
@@ -133,24 +99,10 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    if (adx_for_a > 0) &
         call adx_exch_3b(F_wrkx1, F_wrky1, wrkz1, wrky, wrkc1, nb_flds,F_ni,F_nj,F_nk)
 
-   deallocate(xpos2,ypos2,zpos2)
-
-   if (V4dg_conf.ne.0.and.Lctl_step.eq.Step_total.and.Orh_icn.eq.Schm_itcn) done_once_L = .true.
+   deallocate(xpos2,ypos2,zpos2,stat=istat)
 
    call msg(MSG_DEBUG,'adx_pos_glb [end]')
    !---------------------------------------------------------------------
    return
 end subroutine adx_pos_glb4
 
-!========================================================================
-!== stubs ===============================================================
-!========================================================================
-
-subroutine adx_pos_glb2()
-   call stop_mpi(STOP_ERROR,'adx_pos_glb2','called a stub')
-   return
-end subroutine adx_pos_glb2
-subroutine adx_pos_glb3()
-   call stop_mpi(STOP_ERROR,'adx_pos_glb3','called a stub')
-   return
-end subroutine adx_pos_glb3

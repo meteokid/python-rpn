@@ -90,8 +90,6 @@ subroutine adx_get_params()
 
    call handle_error_l(WB_IS_OK(istat),'adx_get_params','problem getting values from whiteboard, bloc 1')
 
-   call v4d_get_params
-
    adx_maxcfl = max(1,adx_maxcfl)
    adx_halox = max(1,adx_maxcfl + 1)
    adx_haloy = adx_halox
