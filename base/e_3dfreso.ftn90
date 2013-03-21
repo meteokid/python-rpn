@@ -1,0 +1,103 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r e_3dfreso - Will return grid resolution (F_dx, F_dy) of the destination
+!                  3df files given grid resolution of the source grid
+!                  and the user defined Pil_dx parameter
+!
+      subroutine e_3dfreso ( F_grd_S, F_dx, F_dy, F_nia, F_nja, &
+                             F_ig1a , F_ig2a, F_ig3a, F_ig4a )
+      implicit none
+
+      character*1 F_grd_S
+      integer F_nia,F_nja,F_ig1a,F_ig2a,F_ig3a,F_ig4a
+      real*8 F_dx,F_dy
+
+#include "e_fu.cdk"
+#include "pilot.cdk"
+#include "grd.cdk"
+
+      integer, external :: fstinf,fstluk,ezqkdef,ezgxprm,ezget_nsubgrids, &
+                           ezget_subgridids,gdgaxes
+      character*1 grd,gref
+      integer key,sgid,ni1,nj1,nk1,err,nia,nja
+      integer g1,g2,g3,g4,g1ref,g2ref,g3ref,g4ref,nsousgrid
+      integer, dimension(:), allocatable :: subgrid
+      real   , dimension(:), allocatable :: xpx,ypx
+      real*8 dx,dy,factreso
+!
+! ---------------------------------------------------------------------
+!
+      dx= -1. ; dy= -1.
+
+      if (F_grd_S == 'G') then
+         dx=360.0/F_nia
+         dy=180.0/F_nja
+      endif
+
+      if (F_grd_S == 'Z') then
+         key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',F_ig1a,F_ig2a,F_ig3a,' ','>>')
+         if ((key.ge.0).and.(F_nia==ni1)) then
+            allocate(xpx(F_nia))
+            err = fstluk( xpx, key, ni1,nj1,nk1)
+            key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',F_ig1a,F_ig2a,F_ig3a,' ','^^')
+            if ((key.ge.0).and.(F_nja==nj1)) then
+               allocate(ypx(F_nja))
+               err = fstluk( ypx, key, ni1,nj1,nk1)
+               dx = xpx(F_nia/2)-xpx(F_nia/2-1)
+               dy = ypx(F_nja/2)-ypx(F_nja/2-1)
+               deallocate (xpx,ypx)
+            endif
+         endif
+      endif
+
+      if (F_grd_S == 'U') then
+         sgid = ezqkdef(F_nia,F_nja,'U',F_ig1a,F_ig2a,F_ig3a,F_ig4a,e_fu_anal)
+         nsousgrid = ezget_nsubgrids(sgid)
+         allocate (subgrid(nsousgrid))
+         err = ezget_subgridids(sgid,subgrid)
+         err = ezgxprm(subgrid(1),ni1,nj1,grd,g1,g2,g3,g4,gref,g1ref,g2ref,g3ref,g4ref)
+         allocate(xpx(ni1),ypx(nj1))
+         err = gdgaxes(subgrid(1),xpx,ypx)
+         dx = xpx(3)-xpx(2)
+         dy = ypx(3)-ypx(2)
+         deallocate (xpx,ypx)
+      endif
+
+      if (dx.le.0) then
+         F_dx= Grd_dx
+         F_dy= Grd_dy
+      else
+         if (Pil_dx .lt. 0.) then
+            factreso= 0.3
+            if (dx/Grd_dx .lt. 1.5) factreso= 1.
+         else
+            factreso= min(1.,Pil_dx)
+         endif
+         F_dx = dx - factreso*(dx-Grd_dx)
+         F_dy = dy - factreso*(dy-Grd_dy)
+      endif
+
+      write (6,1001) dx,dy,Grd_dx,Grd_dy,Pil_dx,factreso,F_dx,F_dy
+
+ 1001 format (/' e_3dfreso: analysis resolution: ',2f10.6,/ &
+               14x,'target resolution: '          ,2f10.6,/ &
+               16x,'Pil_dx,factreso: '            ,2f10.6,/ &
+               17x,'3df resolution: '             ,2f10.6 / )
+!
+! ---------------------------------------------------------------------
+!
+      return
+      end subroutine e_3dfreso

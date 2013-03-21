@@ -13,9 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r e_target3df - extraction of analysis levels
-!
-#include "model_macros_f.h"
+!**s/r e_target3df - defines destination grids for 3df files
 !
       subroutine e_target3df (F_grda_S,F_nia,F_nja,F_ig1a, F_ig2a, F_ig3a, F_ig4a)
       implicit none
@@ -24,376 +22,79 @@
       character*1 F_grda_S
       integer F_nia,F_nja,F_ig1a, F_ig2a, F_ig3a, F_ig4a
 !author 
-!    Michel Desgagne -   Fall 2012
+!    Michel Desgagne -   Winter 2012
 !
 !revision
 ! v4_50 - Desgagne M.      - initial version
 !
 #include "e_anal.cdk"
-#include "e_fu.cdk"
 #include "e_grids.cdk"
-#include "e_cdate.cdk"
-#include "e_schm.cdk"
 #include "pilot.cdk"
 #include "hgc.cdk"
 #include "e_grdc.cdk"
-#include "grd.cdk"
-#include "path.cdk"
 
-      integer,external :: fstinf, fstinl, fstprm, fstlir, fstluk, fnom, &
-                fstouv, e_ac_posi, ezgdef_fmem, gdll, samesubgrid,&
-                ezget_nsubgrids,ezget_subgridids,ezgxprm,gdgaxes,ezqkdef
-      integer,parameter :: PRESVAR_MAX = 6
-      real*8,parameter :: ONE_8 = 1.0d0
-      real*8,parameter :: CLXXX_8 = 180.0d0
+      integer, external :: cascindx, ezgdef_fmem
+
       logical,save :: done = .false.
-
-      integer  dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
-               dty, swa, lng, dlf, ubc, ex1, ex2, ex3, kind, err,ip1mode
-      integer  ip1x,ip2x,ip3x,nsousgrid,g1ref,g2ref,g3ref,g4ref
-      integer  vcode,vcode_t,subid
-      character*8 vcode_S,vcode_t_S
-      character*6 presvar_S(PRESVAR_MAX),presvar_t_S(PRESVAR_MAX)
-      character(len=512) :: msg_S
-      real*8   presvar_8(PRESVAR_MAX),presvar_t_8(PRESVAR_MAX)
-      real*8, dimension(:), allocatable:: hyb_8,hyb_t_8
-      character*1   typ, grd, blk_S, gref
-      character*4   var
-      character*12  lab
-      character*15  pdate
-      real      x1,lev,dx,dy
-      real coin_lat(4),coin_lon(4),difmin,c
-      integer, dimension(:), allocatable :: lookup_ip1,subgrid
-      real, dimension(:,:), allocatable :: latd,lond,lats,lons
-      real, dimension(:),   allocatable :: topp,xpx,xpxu,ypx,ypxv,levm
-      real, dimension (:), allocatable:: wk2
-      real*8, dimension(:), allocatable :: lookup_a_8,lookup_b_8
-      real*8, dimension(:,:), allocatable :: work_8
-      real*8    xyz1(3),xyz2(3)
-      integer list(2000), i, j, k, l, m, n, ier,numi,numj,sgid,dgid,istat
-      integer lookup_max
-      integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,dimgx,dimgy
-
-      real*8 orr, deg2rad_8
-      integer key,ni1,nj1,nk1,nka,yy,mo,dd,hh,mm,ss,dum
-      integer nk_zdt1,nk_wt1,nk_qt1
-
-      integer err_code
-!
-!Notes for coding bmf_dtyp
-! integer (i4) dtyp=40
-! real*4  (r4) dtyp=41
-! real*8  (r8) dtyp=81
-!Notes for coding anal_hav (from px_param)
-!                        0=pressure
-!                        1=SIGMA
-!                        2=ETASEF (eta for spectral)
-!                        3=SIGPT  (eta, rcoef=1.0)
-!                        4=HYBLG  (hybrid Laprise/Girard)
-!                        5=ECMWF  (data from ECMWF)
-!                        6=HYBSTAG(staggered hybrid Girard)
-! anal_hav(2)
-! 0 - pressure
-! 1 - sigma
-! 2 - etasef
-! 3 - eta (rcoef=1.0)
-! 4 - hybrid
-! 5 - ecmwf - not available
-! 6 - staggered hybrid
+      integer i,err
+      real,   dimension(:), allocatable :: xpx,xpxu,ypx,ypxv
+      real*8  dx_8, dy_8, debut_8, pos_8, deg2rad_8
 !
 ! ---------------------------------------------------------------------
 !
       if (done .or. Pil_bmf_L .or. (.not.LAM)) return
 
-      err_code = 0
+      call e_3dfreso ( F_grda_S, dx_8,dy_8, F_nia,F_nja, &
+                       F_ig1a,F_ig2a,F_ig3a,F_ig4a )
 
-      getpos: if (any(F_grda_S == (/'G','g','U','u'/))) then
-         if (any(F_grda_S == (/'U','u'/))) then
-            ! Find resolution of Yin-Yang Analysis
-            p1=F_ig1a
-            p2=F_ig2a
-            p3=F_ig3a
-            key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^>')
-            msg_S = 'Problem with positional parameter ^>'
-            call handle_error_l ( (key.ge.0), 'e_specanal',msg_S)
-            sgid = ezqkdef(nia,nja,grda,F_ig1a,F_ig2a,F_ig3a,F_ig4a,e_fu_anal)
-            err = ezgxprm(sgid,ni1,nj1,grd,g1,g2,g3,g4,gref,g1ref,g2ref,g3ref,g4ref)
-            subid=-1
-            if (ni1.eq.nifi.and.nj1/2.eq.njfi) then
-                subid=samesubgrid(sgid,nifi,njfi,Hgc_ig1ro, &
-                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,xfi,yfi)
-                if (subid.ge.0)then
-                   print *,'U grid contains sub grid match to ', nifi,njfi
-                   print *,'SETUP 3DF for same sub grid analysis'
-                   F_nia=nifi
-                   F_nja=njfi
-                   allocate(xpx(nifi),ypx(njfi))
-                   xpx(:)=xfi(:)
-                   ypx(:)=yfi(:)
-! create U,V target grid
-                   allocate(xpxu(F_nia-1))
-                   do i=1,F_nia-2
-                      xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
-                   enddo
-                   xpxu(F_nia-1) = 0.5 * ( xpx(F_nia-1) + xpx(F_nia) )
-                   allocate(ypxv(F_nja-1))
-                   do i=1,F_nja-2
-                      ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )
-                   enddo
-                   ypxv(F_nja-1) = 0.5 * ( ypx(F_nja-1) + ypx(F_nja) )
-             
-                   ier = e_ac_posi(xpx,ypx,F_nia,F_nja,Pil_hblen+Pil_pil)
-                   call handle_error_l(ier==0,'e_specanal','Insufficient coverage in Analysis')
-                   
-                   deg2rad_8 = acos( -ONE_8 )/CLXXX_8
-                   allocate (xg_8(F_nia), yg_8(F_nja), ygv_8(F_nja-1))
-                   do i=1,F_nia
-                      xg_8(i) = xpx(i) * deg2rad_8
-                   enddo
-                   do i=1,F_nja
-                      yg_8(i) = ypx(i) * deg2rad_8
-                   enddo
-                   do j=1,F_nja-1
-                      ygv_8(j)  = ypxv(j) * deg2rad_8
-                   enddo
-                   dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
-                   dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
-                   dstv_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj-1, 'Z', 'E', Hgc_ig1ro, &
-                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
-                   deallocate(xpx,ypx,xpxu,ypxv,stat=err)
-                   return
-                endif
-            endif
+      F_nia = (xfi(nifi) - xfi(1))/dx_8 + 13
+      F_nja = (yfi(njfi) - yfi(1))/dy_8 + 13
 
-!No match, continue to build the temp grid
-            nsousgrid = ezget_nsubgrids(sgid)
-            allocate(subgrid(nsousgrid))
-            err = ezget_subgridids(sgid,subgrid)
-            err = ezgxprm(subgrid(1),ni1,nj1,grd,g1,g2,g3,g4,gref,g1ref,g2ref,g3ref,g4ref)
-            allocate(xpx(ni1),ypx(nj1))
-            err = gdgaxes(subgrid(1),xpx,ypx)
-            dx = xpx(3)-xpx(2)
-            dy = ypx(3)-ypx(2)
-            print *,'Input Yin-Yang grid DX found:', dx,' DX target:', Grd_dx
-            print *,'Input Yin-Yang grid DY found:', dy,' DY target:', Grd_dy
-            deallocate(subgrid,xpx,ypx,stat=err)
-         else
-            ! Find resolution of Gauss Analysis
-            dx=360.0/F_nia
-            dy=180.0/F_nja
-            print *,'Input Gauss grid DX found:', dx,' DX target:', Grd_dx
-            print *,'Input Gauss grid DY found:', dy,' DY target:', Grd_dy
-         endif
-! Create new xpx,ypx parameters in the same resolution as the analysis
-! but on the target grid:
-         if (Pil_dx.gt.0.0) then
-            if (Pil_dx.le.dx)     dx=Pil_dx
-            if (Pil_dx.le.Grd_dx) dx=Grd_dx
-            if (Pil_dx.le.dy)     dy=Pil_dx
-            if (Pil_dx.le.Grd_dy) dy=Grd_dy
-            print *,'DX, DY modified by user with Pil_dx=',Pil_dx
-            print *,'New DX=',dx,' New DY=',dy
-         endif
-         F_nia = (xfi(nifi) - xfi(1))/dx + 13
-         F_nja = (yfi(njfi) - yfi(1))/dy + 13
-! Create new xpx
-         allocate(xpx(F_nia))
-         xpx(1)= xfi(1)- dx*5.0
-         do i=1,F_nia-1
-            xpx(i+1)= xpx(i) + dx
-         enddo
-! Create new ypx
-         allocate(ypx(F_nja))
-         ypx(1)= yfi(1)-dy*5.0
-         do i=1,F_nja-1
-            ypx(i+1)= ypx(i) + dy
-         enddo
-         print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
-         print *,'xpx(1),xpx(',nia,')=',xpx(1),xpx(F_nia)
-         print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
-         print *,'ypx(1),ypx(',F_nja,')=',ypx(1),ypx(F_nja)
+      deg2rad_8 = acos( -1.0d0 )/180.0d0
 
-      else
+      allocate (xpx(F_nia),ypx(F_nja),xpxu(F_nia-1),ypxv(F_nja-1))
+      allocate (xg_8(F_nia), yg_8(F_nja), ygv_8(F_nja-1))
 
-         p1=F_ig1a
-         p2=F_ig2a
-         p3=F_ig3a
-         key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','>>')
-         msg_S = 'Problem with positional parameter >>'
-         call handle_error_l ( (key.ge.0).and.(F_nia==ni1), 'e_specanal',msg_S)
-         allocate(xpx(F_nia))
-         err = fstluk( xpx, key, ni1,nj1,nk1)
-         
-         ier = fstprm (key, dte, det, ipas, ni1, nj1, nk1, bit, dty, &
-              ip1x, ip2x, ip3x, typ, var, labanl, grd, g1, g2, g3, &
-              g4, swa, lng, dlf, ubc, ex1, ex2, ex3 )
-         
-         key = fstinf(e_fu_anal,ni1,nj1,nk1,-1,' ',p1,p2,p3,' ','^^')
-         msg_S = 'Problem with positional parameter ^^'
-         call handle_error_l ( (key.ge.0).and.(F_nja==nj1), 'e_specanal',msg_S)
-         allocate(ypx(F_nja))
-         err = fstluk( ypx, key, ni1,nj1,nk1)
+      debut_8= xfi(1) - dx_8*5.0
+      do i=1,F_nia
+         pos_8  = debut_8 + (i-1)*dx_8
+         xpx (i)= pos_8
+         xg_8(i)= pos_8 * deg2rad_8
+      end do
 
-! For LAM using 3df/bcs mode:
-! Create LAM grid with same resolution as the finest resolution area
-! of the analysis grid using the same rotation as the target grid
-! TOO bad if the user chooses a grid that lands on a lower resolution area
-! of a variable grid! Use program grille to check
-!
-!    xpx,ypx are in degrees from tic tacs.
-         if (Hgc_ig1ro.ne.g1.or.Hgc_ig2ro.ne.g2.or. &
-             Hgc_ig3ro.ne.g3.or.Hgc_ig4ro.ne.g4) then
+      debut_8= yfi(1) - dy_8*5.0
+      do i=1,F_nja
+         pos_8  = debut_8 + (i-1)*dy_8
+         ypx (i)= pos_8
+         yg_8(i)= pos_8 * deg2rad_8
+      end do
 
-            sgid = ezgdef_fmem(F_nia,F_nja, 'Z','E',g1,g2,g3,g4,xpx,ypx)
-            allocate(lats(F_nia,F_nja),lons(F_nia,F_nja))
-            err = gdll (sgid,lats,lons)
-            print *,'Analysis has a rotation different to model grid'
-! Obtain grid rotation from analysis and calculate geographical lat lons
-            do j=1,F_nja
-               do i=1,F_nia
-                  lons(i,j)=amod(lons(i,j) + 360.,360.0)
-               enddo
-            enddo
-            dimgx=F_nia
-            dimgy=F_nja
-            dx = xpx(F_nia/2)-xpx(F_nia/2-1)
-            dy = ypx(F_nja/2)-ypx(F_nja/2-1)
-            print *,'Chosen Pil_dx=',Pil_dx
-            print *,'DX found:', dx,' DX target:', Grd_dx
-            print *,'DY found:', dy,' DY target:', Grd_dy
-            print *,'Now to create new low res grid'
-            print *,'Recalc new xpx,ypx:'
-            print *,'orig: xpx(1),xpx(',F_nia,')=',xpx(1),xpx(F_nia)
-            print *,'orig: ypx(1),ypx(',F_nja,')=',ypx(1),ypx(F_nja)
-            if (Pil_dx.gt.0.0) then
-               ! Create new xpx,ypx parameters in the same resolution as the analysis
-               ! but on the target grid:
-               if (Pil_dx.le.dx) dx=Pil_dx
-               if (Pil_dx.le.Grd_dx) dx=Grd_dx
-               if (Pil_dx.le.dy) dy=Pil_dx
-               if (Pil_dx.le.Grd_dy) dy=Grd_dy
-            endif
-            F_nia = (xfi(nifi) - xfi(1))/dx + 13
-            F_nja = (yfi(njfi) - yfi(1))/dy + 13
-! Create new xpx
-            deallocate (xpx,stat=err)
-            allocate(xpx(F_nia))
-            xpx(1)= xfi(1)- dx*5.0
-            do i=1,F_nia-1
-               xpx(i+1)= xpx(i) + dx
-            enddo
-! Create new ypx
-            deallocate (ypx,stat=err)
-            allocate(ypx(F_nja))
-            ypx(1)= yfi(1)-dy*5.0
-            do i=1,F_nja-1
-               ypx(i+1)= ypx(i) + dy
-            enddo
-            print *,'DX to be used:', dx
-            print *,'DY to be used:', dy
-            print *,'xfi(1),xfi(',nifi,')=',xfi(1),xfi(nifi)
-            print *,'xpx(1),xpx(',F_nia,')=',xpx(1),xpx(F_nia)
-            print *,'yfi(1),yfi(',njfi,')=',yfi(1),yfi(njfi)
-            print *,'ypx(1),ypx(',F_nja,')=',ypx(1),ypx(F_nja)
-! Now check to see if the target domain is within the source domain
-! by comparing geographical coordinates
-            dgid = ezgdef_fmem(F_nia,F_nja,'Z','E',Hgc_ig1ro,Hgc_ig2ro, &
-                 Hgc_ig3ro, Hgc_ig4ro,xpx,ypx)
-            allocate(latd(F_nia,F_nja),lond(F_nia,F_nja))
-            err  = gdll (dgid,latd,lond)
-
-! Verify if the four corners of the destination grid is in the source grid
-            coin_lat(1)=latd(1,1)
-            coin_lon(1)=lond(1,1)
-            coin_lat(2)=latd(F_nia,1)
-            coin_lon(2)=lond(F_nia,1)
-            coin_lat(3)=latd(F_nia,F_nja)
-            coin_lon(3)=lond(F_nia,F_nja)
-            coin_lat(4)=latd(1,F_nja)
-            coin_lon(4)=lond(1,F_nja)
-            ier = 0 
-            do k=1,4
-               coin_lon(k)=amod(coin_lon(k) + 360.,360.0)
-               call llacar(xyz1,coin_lon(k),coin_lat(k),1,1)
-               print*, 'hahahaha: ',k,coin_lon(k),coin_lat(k),xyz1
-               difmin=9999999.
-               numi=1
-               numj=1
-               do j=1,dimgy
-                  do i=1,dimgx
-                     call llacar (xyz2,lons(i,j),lats(i,j),1,1)
-                     xyz2(1) = xyz1(1)-xyz2(1)
-                     xyz2(2) = xyz1(2)-xyz2(2)
-                     xyz2(3) = xyz1(3)-xyz2(3)
-                     c = sqrt( xyz2(1)**2 + xyz2(2)**2 + xyz2(3)**2 )
-                     if ( c .lt. difmin ) then
-                        difmin= c
-                        numi  = i
-                        numj  = j
-                     endif
-                  enddo
-               enddo
-               if (numi==1.or.numj==1) then
-                  ier = -1
-                  exit
-               endif
-               print *,'numi=',numi,' numj=',numj
-            enddo
-            err_code = ier
-         endif
-      endif getpos
-
-      call handle_error(err_code,'e_specanal','Insufficient coverage from LAM Analysis')
-
-! create U,V target grid
-      allocate(xpxu(F_nia-1))
-      do i=1,F_nia-2
+      do i=1,F_nia-1
          xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
       enddo
-      xpxu(F_nia-1) = 0.5 * ( xpx(F_nia-1) + xpx(F_nia) )
-      allocate(ypxv(F_nja-1))
-      do i=1,F_nja-2
+      do i=1,F_nja-1
          ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )
+         ygv_8(i) = ypxv(i) * deg2rad_8
       enddo
-      ypxv(F_nja-1) = 0.5 * ( ypx(F_nja-1) + ypx(F_nja) )
 
-      ier = e_ac_posi(xpx,ypx,F_nia,F_nja,Pil_hblen+Pil_pil)
-      call handle_error_l(ier==0,'e_specanal','Insufficient coverage in Analysis')
-      
-      deg2rad_8 = acos( -ONE_8 )/CLXXX_8
-      allocate (xg_8(F_nia), yg_8(F_nja), ygv_8(F_nja-1))
-      do i=1,F_nia
-         xg_8(i) = xpx(i) * deg2rad_8
-      enddo
-      do i=1,F_nja
-         yg_8(i) = ypx(i) * deg2rad_8
-      enddo
-      do j=1,F_nja-1
-         ygv_8(j)  = ypxv(j) * deg2rad_8
-      enddo
+      err = cascindx ( e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,&
+                       xfi,yfi,nifi,njfi,xpx,ypx,F_nia,F_nja )
+
+      e_grdc_ni = e_grdc_gif-e_grdc_gid+1
+      e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
+
       dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypx(e_grdc_gjd) )
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx (e_grdc_gid), ypx (e_grdc_gjd))
       dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
-           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx(e_grdc_gjd) )
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpxu(e_grdc_gid), ypx (e_grdc_gjd))
       dstv_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj-1, 'Z', 'E', Hgc_ig1ro, &
-           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx(e_grdc_gid), ypxv(e_grdc_gjd) )
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xpx(e_grdc_gid), ypxv(e_grdc_gjd))
+
       deallocate(xpx,ypx,xpxu,ypxv,stat=err)
 
       done = .true.
-
- 101  format ('|',2x,'   Off-line Mode: Only One Level Used:',1x,I5,10x,'|')
- 130  format ('|',9('-'),'+',5('-'),'+',8('-'),'+',8('-'),'+',5('-'), &
-              '+',5('-'),'+',10('-'),'|')
- 201  format ('|',2x,'   Search First Infos on Variable:',1x,A3,16x,'|')
- 801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4,' IP1= ',I8)
- 900  format (a/a,i5,a,e14.7,a,e14.7,a/'   >>>>> ABORT <<<<<')
- 1001 format(/,'EXTRACTION OF ANALYSIS LEVELS (S/R E_SPECANAL)',/40('-'))
- 1002 format(' DATE = ', 6i5 , 7a4 , i10 )
- 2003 format (/' E_SPECANAL:  file ',a,' open on unit: ',i4)
 !
 ! ---------------------------------------------------------------------
 !
       return
-      end
+      end subroutine e_target3df

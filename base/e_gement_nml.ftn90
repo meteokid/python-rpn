@@ -59,7 +59,7 @@
       Pil_jobstrt_S   = 'NIL'
       Pil_jobend_S    = 'NIL'
       Pil_bmf_L       = .false.
-      Pil_dx          = 0.0
+      Pil_dx          = -1.
       Pil_lancemodel  = 10000
       Pil_hblen       = 10
 !

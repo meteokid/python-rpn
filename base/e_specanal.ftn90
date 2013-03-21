@@ -43,6 +43,14 @@
       integer err, vcode, list(nlist), istat, k, nka, ni1
       real*8  presvar_8(PRESVAR_MAX)
       real*8, dimension(:), allocatable:: hyb_8,hyb_t_8
+!Notes for coding anal_hav (from px_param)
+!                        0=pressure
+!                        1=SIGMA
+!                        2=ETASEF (eta for spectral)
+!                        3=SIGPT  (eta, rcoef=1.0)
+!                        4=HYBLG  (hybrid Laprise/Girard)
+!                        5=ECMWF  (data from ECMWF)
+!                        6=HYBSTAG(staggered hybrid Girard)
 !
 ! ---------------------------------------------------------------------
 !
