@@ -50,5 +50,12 @@ int c_ezgdef_fmem(int ni,int nj,char *grtypZ,char *grref,
 int c_ezqkdef(int ni,int nj,char *grtyp,int ig1,int ig2,int ig3,int ig4,int x);
 int c_ezuvint(void *newarray,void *newarray2,void *arrayin,void *arrayin2);
 int c_ezsint(void *newarray,void *arrayin);
+// Add get/setopt and val and ival
+int c_ezgetopt(char * option, char * value);
+int c_ezsetopt(char * option, char * value);
+int c_ezgetval(char * option, float * value);
+int c_ezsetval(char * option, float * value);
+int c_ezgetival(char * option, int * value);
+int c_ezsetival(char * option, int value); // This appears to pass a literal integer
 int c_fstopi(char *optname,int lvl,int setget);
 #endif

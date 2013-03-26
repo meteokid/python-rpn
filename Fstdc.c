@@ -12,6 +12,8 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #include <rpnmacros.h>
 #include "armnlib.h"
 
+#include <strings.h>
+
 #include "utils/py_capi_ftn_utils.h"
 #include "utils/get_corners_xy.h"
 #include "rpn_version.h"
@@ -56,6 +58,12 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args);
+// Add option-setting for ezscint
+static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezsetopt(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezsetval(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezgetval(PyObject *self, PyObject *args);
+
 static int getGridHandle(int ni,int nj,char *grtyp,char *grref,
     int ig1,int ig2,int ig3,int ig4,int i0, int j0,
     PyArrayObject *xs,PyArrayObject *ys);
@@ -1046,6 +1054,176 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
     // return Py_BuildValue("f",rot);
 }
 */
+static char Fstdc_ezgetopt__doc__[] =
+    "Get the string representation of one of the internal ezscint options\n\
+        opt_val = Fstrc.ezgetopt(option)\n\
+        @type option: A string\n\
+        @param option: The option to query \n\
+        @rtype: A string\n\
+        @return: The string result of the query";
+static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args) {
+
+    char upper_value[15]; // Returned option value
+    char *in_option=0; // User-input option to get
+    int ier = 0;
+
+    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+        // No valid arguments passed
+        return NULL;
+    }
+
+    ier = c_ezgetopt(in_option,upper_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezgetopt returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+
+    return Py_BuildValue("s",upper_value);
+}
+
+static char Fstdc_ezsetopt__doc__[] =
+    "Get the string representation of one of the internal ezscint options\n\
+        opt_val = Fstrc.ezsetopt(option,value)\n\
+        @type option, value: A string\n\
+        @param option: The ezscint option \n\
+        @param value: The value to set";
+static PyObject * Fstdc_ezsetopt(PyObject *self, PyObject *args) {
+
+    char *in_option=0; // User-input option to set
+    char *in_value=0; // User-input value
+    int ier = 0;
+
+    if (!PyArg_ParseTuple(args,"ss",&in_option,&in_value) || !in_option || !in_value) {
+        // No valid arguments passed
+        return NULL;
+    }
+
+    ier = c_ezsetopt(in_option,in_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezsetopt returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+}
+
+static char Fstdc_ezgetval__doc__[] =
+    "Get an internal ezscint float or integer value by keyword\n\
+        opt_val = Fstdc.ezgetval(option)\n\
+        @type option: A string\n\
+        @param option: The keyword of the option to retrieve\n\
+        @return: The value of the option as returned by ezget[i]val";
+
+static PyObject * Fstdc_ezgetval(PyObject *self, PyObject *args) {
+    char * in_option = 0; // User-input option
+    float float_value = 0; // The value of a floating-point option
+    int int_value = 0; // The value of an integer option
+
+    int ier = 0; // ezget[i]val error code
+
+    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+
+    // The C and Fortran APIs use different functions for integer
+    // and floating-point values; this is unnecessary in python.
+    // However, we need to call the proper function based on 
+    // option keyword.  Here, we'll check against a list of known-
+    // integer options and use the ival function for those; otherwise
+    // we'll pass the call to the floating-point function.
+
+    // Remember to use case-insensitive search
+    if (!strcasecmp("weight_number",in_option) ||
+        !strcasecmp("missing_points_tolerance",in_option)) {
+        ier = c_ezgetival(in_option,&int_value);
+        if (ier != 0) {
+            char error_string[100];
+            snprintf(error_string,99,"ezgetival returned with error code %d on input option %s",ier,in_option);
+            PyErr_SetString(FstdcError,error_string);
+            return NULL;
+        }
+        return Py_BuildValue("i",int_value);
+    }
+    // Otherwise we can assume we have a floating-point option
+    ier = c_ezgetval(in_option,&float_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezgetval returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+    return Py_BuildValue("f",float_value);
+}
+static char Fstdc_ezsetval__doc__[] =
+    "Set an internal ezscint float or integer value by keyword\n\
+        opt_val = Fstdc.ezgetval(option,value)\n\
+        @type option: A string\n\
+        @param option: The keyword of the option to retrieve\n\
+        @type value: Float or integer, as appropriate for the option\n\
+        @param value: The value to set";
+static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
+    char * in_option = 0; // User-input option
+    float float_value = 0; // The value of a floating-point option
+    int int_value = NAN; // The value of an integer option
+
+    int ier = 0; // ezget[i]val error code
+
+    if (!PyArg_ParseTuple(args,"s|f",&in_option,&float_value) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+
+    // The C and Fortran APIs use different functions for integer
+    // and floating-point values; this is unnecessary in python.
+    // However, we need to call the proper function based on 
+    // option keyword.  Here, we'll check against a list of known-
+    // integer options and use the ival function for those; otherwise
+    // we'll pass the call to the floating-point function.
+
+    // Remember to use case-insensitive search
+    if (!strcasecmp("weight_number",in_option) ||
+        !strcasecmp("missing_points_tolerance",in_option)) {
+        // Re-parse the options to get an integer value
+        if (!PyArg_ParseTuple(args,"si",&in_option,&int_value)) {
+            return NULL;
+        }
+        // c_ezsetival appears to int_value by value rather than reference,
+        // so do not include the address-of operator.
+        ier = c_ezsetival(in_option,int_value); 
+        if (ier != 0) {
+            char error_string[100];
+            snprintf(error_string,99,"ezsetival returned with error code %d on input option %s and value %d",ier,in_option,int_value);
+            PyErr_SetString(FstdcError,error_string);
+            return NULL;
+        }
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    // Otherwise we can assume we have a floating-point option
+    if (!PyArg_ParseTuple(args,"sf",&in_option,&float_value) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+    ier = c_ezsetval(in_option,&float_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezsetval returned with error code %d on input option %s and value %f",ier,in_option,float_value);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
+
 
 /* List of methods defined in the module */
 
@@ -1073,7 +1251,10 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
     {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
     {"ezgetlalo",	(PyCFunction)Fstdc_ezgetlalo,	METH_VARARGS,	Fstdc_ezgetlalo__doc__},
-
+    {"ezgetopt", (PyCFunction) Fstdc_ezgetopt, METH_VARARGS, Fstdc_ezgetopt__doc__},
+    {"ezsetopt", (PyCFunction) Fstdc_ezsetopt, METH_VARARGS, Fstdc_ezsetopt__doc__},
+    {"ezgetval", (PyCFunction) Fstdc_ezgetval, METH_VARARGS, Fstdc_ezgetval__doc__},
+    {"ezsetval", (PyCFunction) Fstdc_ezsetval, METH_VARARGS, Fstdc_ezsetval__doc__},
     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
