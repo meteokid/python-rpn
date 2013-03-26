@@ -23,8 +23,9 @@ def levels_to_ip1(levels,kind):
         kind = 0: levels are in height [m] (metres) with respect to sea level
         kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
         kind = 2: levels are in pressure [mb] (millibars)
-        Looks like the following are not suppored yet in the fortran func convip
-            kind = 3: levels are in arbitrary code
+        kind = 3: levels are in arbitrary code
+        Looks like the following are not suppored yet in the fortran func convip,
+        because they depend upon the local topography
             kind = 4: levels are in height [M] (metres) with respect to ground level
             kind = 5: levels are in hybrid coordinates [hy]
             kind = 6: levels are in theta [th]
@@ -44,9 +45,9 @@ def levels_to_ip1(levels,kind):
     if not type(levels) in (type(()),type([])):
         raise ValueError,'levels_to_ip1: levels should be a list or a tuple; '+repr(levels)
     if type(kind) <> type(0):
-        raise TypeError,'levels_to_ip1: kind should be an int in range [0,6]; '+repr(kind)
-    elif not kind in (0,1,2): #(0,1,2,3,4,5,6):
-        raise ValueError,'levels_to_ip1: kind should be an int in range [0,6]; '+repr(kind)
+        raise TypeError,'levels_to_ip1: kind should be an int in range [0,3]; '+repr(kind)
+    elif not kind in (0,1,2,3): #(0,1,2,3,4,5,6): 
+        raise ValueError,'levels_to_ip1: kind should be an int in range [0,3]; '+repr(kind)
     if type(levels) == type(()):
         ip1_list = Fstdc.level_to_ip1(list(levels),kind)
     else:
