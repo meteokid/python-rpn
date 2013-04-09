@@ -1170,8 +1170,8 @@ static char Fstdc_ezsetval__doc__[] =
         @param value: The value to set";
 static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
     char * in_option = 0; // User-input option
-    float float_value = 0; // The value of a floating-point option
-    int int_value = NAN; // The value of an integer option
+    float float_value = NAN; // The value of a floating-point option
+    int int_value = 0; // The value of an integer option
 
     int ier = 0; // ezget[i]val error code
 
