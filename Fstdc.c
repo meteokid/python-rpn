@@ -242,7 +242,7 @@ static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
         return NULL;
     }
     recParamList = PyList_New(0);
-    Py_INCREF(recParamList);
+    //Py_INCREF(recParamList);
     ier = c_fstinl(iun, &ni, &nj, &nk,datev,etiket,ip1,ip2,ip3,typvar,nomvar,recHandleMatchList,&nMatch,maxMatch);
     if (ier<0) {
         PyErr_SetString(FstdcError,"Problem getting record list");
@@ -255,6 +255,8 @@ static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
         if (recParam == NULL)
             return NULL;
         PyList_Append(recParamList,recParam);
+        // PyList_Append copies the reference (SetItem doesn't)
+        Py_XDECREF(recParam);
     }
     return recParamList;
 }
@@ -552,7 +554,7 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
     fkind = (F77_INTEGER)kind;
     nelm = PyList_Size(level_list);
     ip1_list = PyList_New(0);
-    Py_INCREF(ip1_list);
+    //Py_INCREF(ip1_list);
     for (i=0; i < nelm; i++) {
         item = PyList_GetItem(level_list,i);
         flevel = (F77_REAL)PyFloat_AsDouble(item);
@@ -562,6 +564,7 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
         f77name(convip)(&fipold,&flevel,&fkind,&fmode,strg,&flag,(F77_INTEGER)strglen);
         ipnewold_obj = Py_BuildValue("(l,l)",(long)fipnew,(long)fipold);
         PyList_Append(ip1_list,ipnewold_obj);
+        Py_XDECREF(ipnewold_obj);
     }
     return (ip1_list);
 }
@@ -596,6 +599,7 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
         f77name(convip)(&fip1,&flevel,&fkind,&fmode,strg,&flag,(F77_INTEGER)strglen);
         level_kind_obj = Py_BuildValue("(f,i)",(float)flevel,(int)fkind);
         PyList_Append(level_list,level_kind_obj);
+        Py_XDECREF(level_kind_obj);
     }
     return (level_list);
 }
@@ -955,6 +959,8 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     int ndims=3;
     int type_num=NPY_FLOAT;
     PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
+    
+    PyObject * retval = 0; // Object pointer for return value
 
     newarray2=NULL;                     // shut up the compiler
 
@@ -1010,12 +1016,19 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     if (isVect) {
         ier = c_ezuvint((void *)newarray->data,(void *)newarray2->data,
             (void *)arrayin->data,(void *)arrayin2->data);
-        if (ier>=0)
-            return Py_BuildValue("OO",newarray,newarray2);
+        if (ier>=0) {
+            retval = Py_BuildValue("OO",newarray,newarray2);
+            Py_XDECREF(newarray);
+            Py_XDECREF(newarray2);
+            return retval;
+        }
     } else {
         ier = c_ezsint((void *)newarray->data,(void *)arrayin->data);
-        if (ier>=0)
-            return Py_BuildValue("O",newarray);
+        if (ier>=0) {
+            retval = Py_BuildValue("O",newarray);
+            Py_XDECREF(newarray);
+            return retval;
+        }
     }
 
     Py_DECREF(newarray);

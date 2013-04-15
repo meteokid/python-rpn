@@ -788,6 +788,7 @@ class RPNGrid(RPNParm):
             a = RPNGridHelper.baseEzInterpArgs.copy()
             a.update(dg_a)
             dg_a = a
+            dataxy = None
             dataxy = Fstdc.ezinterp(recx.d,recyd,
                     sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],
                     dg_a['shape'],dg_a['grtyp'],dg_a['g_ig14'],dg_a['xy_ref'],dg_a['hasRef'],dg_a['ij0'],

@@ -58,4 +58,6 @@ int c_ezsetval(char * option, float * value);
 int c_ezgetival(char * option, int * value);
 int c_ezsetival(char * option, int value); // This appears to pass a literal integer
 int c_fstopi(char *optname,int lvl,int setget);
+// Add grid release function
+int c_gdrls(int gdid);
 #endif
