@@ -43,7 +43,7 @@
 #include <clib_interface.cdk>
 
       character*120 outfile,gfile,dumc,fn,etk,etk_ext
-      logical lam
+      logical lam,radians
       integer ni,nila,uout,err,npack,i,j,k
 
       integer narguments,npos
@@ -61,7 +61,7 @@
       real*8, dimension(:), allocatable :: x_8, y_8
 
       namelist /split3df_out/ G_ni,G_nj,Ptopo_npex,Ptopo_npey,Ptopo_nblocx,&
-                              Ptopo_nblocy,xlim_1,xlim_n,ylim_1,ylim_n
+                              Ptopo_nblocy,xlim_1,xlim_n,ylim_1,ylim_n,radians
 !
 !----------------------------------------------------------------------
 !
@@ -77,6 +77,7 @@
 
       etk = 'PARPOS'
       fn  = 'gem_settings.nml'
+      radians= .false.
 
       outfile       = 'tape1'
       gfile         = 'gfilemap.txt'
