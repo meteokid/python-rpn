@@ -55,9 +55,9 @@
 !
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
-#include <msg.h>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+#include "lun.cdk"
 #include "ptopo.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
@@ -67,7 +67,7 @@
 #include "grd.cdk"
       include "phy_itf.inc"
 
-      integer,external :: itf_phy_prefold_opr,itf_phy_update2 !#,phy_input2
+      integer,external :: itf_phy_prefold_opr,itf_phy_update2
 
       integer,parameter :: MAX_COMMBLOC_SWAP = 10
 
@@ -82,7 +82,6 @@
       real,pointer,save :: BUSVOL3d(:,:) => null()
 
       integer :: j, obussiz, err
-      character(len=512) :: msg_S
       real :: gxfi(G_ni+1), gyfi(G_nj)
       real, dimension(:,:), allocatable :: obusval
 !
@@ -90,10 +89,7 @@
 !
       call timing_start ( 40, 'PHYSTEP')
 
-      write (msg_S,'(a,i8,a)') &
-           '\nPHYSICS: PERFORMING TIMESTEP #',F_stepno,&
-           '\n===================================='
-      call msg(MSG_INFO,msg_S)
+      if (Lun_out.gt.0) write (Lun_out,1001) F_stepno
 
       call pw_shuffle
       call pw_update_UVT ('P')
@@ -165,6 +161,9 @@
       endif
 
       call timing_stop ( 40, 'PHY      ' )
+
+ 1001 format(/,'PHYSICS: PERFORMING TIMESTEP #',I8, &
+             /,'============================================')
 !
 !     ---------------------------------------------------------------
 !

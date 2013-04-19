@@ -62,7 +62,7 @@
 !     _________________________________________________________________
 !
       switch_on_hzd     = Hzd_ho_L 
-      switch_on_theta   = Hzd_lnr_theta.lt.0.
+      switch_on_theta   = Hzd_lnr_theta.gt.0.
       switch_on_vrtspng = Vspng_nk.ge.1
       switch_on_eqspng  = Eq_nlev .gt.1
       switch_on_psadj   = Schm_psadj_L

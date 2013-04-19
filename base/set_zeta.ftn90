@@ -67,9 +67,9 @@
 !
 !               - - - - - - - - - Ver_z_8%m(n)
 !
-!               ================= Ver_z_8%t(n) = ( Cstv_zsrf_8 + Ver_z_8%m(n) ) / 2
+!               ================= Ver_a_8%t(n+1)
 !
-!               sssssssssssssssss Cstv_zsrf_8
+!               sssssssssssssssss Cstv_zsrf_8,Ver_z_8%t(n)
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LAYERS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -101,11 +101,11 @@
 !                                                   \  
 !                                                    \ 
 !                                                     \
-!                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Cstv_zsrf_8-Ver_z_8%t(n-1)
+!                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Ver_z_8%t(n)-Ver_z_8%t(n-1)
 !                                          /          /
-!    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /             ==== Ver_z_8%t(n-1)
+!    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /  
 !                                          \        / 
-!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Cstv_zsrf_8
+!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Ver_z_8%t(n)
 !
 ! arguments
 ! none
@@ -214,15 +214,28 @@
          Ver_fistr_8%t(k)=-Cstv_RTstr_8*(Ver_z_8%t(k)-Cstv_Zsrf_8)
       enddo
 !
+      
+      if(Schm_adw_extrap_L)then
+         ! Once the Ver_a_8%t are shifted, replace the above Ver_z_8%t(k) with Ver_a_8%t(k)
+         ! and remove the following line
+         Ver_z_8%t(G_nk)=Cstv_Zsrf_8
+      endif
+
 !     ----------------------
 !     Compute dZ, 1/dZ, dBdZ
 !     ----------------------
 !
       Ver_dz_8%m(1)      = Ver_z_8%t(1)   - Cstv_Ztop_8
-      do k=2,G_nk-1
-         Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
-      enddo      
-      Ver_dz_8%m(G_nk)   = Cstv_Zsrf_8    - Ver_z_8%t(G_nk-1)
+      if(Schm_adw_extrap_L)then
+         do k=2,G_nk
+            Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
+         enddo
+      else
+         do k=2,G_nk-1
+            Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
+         enddo
+         Ver_dz_8%m(G_nk)   = Cstv_Zsrf_8    - Ver_z_8%t(G_nk-1)         
+      endif
 !
       do k=1,G_nk
           Ver_idz_8%m(k) = one/Ver_dz_8%m(k)

@@ -34,7 +34,11 @@ subroutine adx_set()
    call adx_get_params()
    call adx_set_grid()
 
-   call adx_set_interp()
+   if(adx_extrap_L)then
+      call adx_set_interp()
+   else
+      call adx_set_interp_no_extrap()
+   endif
 
    if (.not.adx_lam_L) then
       call adx_set_interp_pole()

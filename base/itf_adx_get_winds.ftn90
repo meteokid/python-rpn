@@ -513,10 +513,14 @@ End Interface
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
       !---------------------------------------------------------------------
       allocate(zd_z_8(l_nk+1))
-      zd_z_8(1:l_nk)=Ver_a_8%t(1:l_nk)
-      ! The last zdot levels surface not at adx_verZ_8%t(adx_lnkt).
-      ! AFSGAPM NOTE : At the top this is similar but we will fix this later
-      !                once we look at removing the superwinds
+      zd_z_8(2:l_nk)=Ver_a_8%t(2:l_nk)
+      if(Schm_Adw_extrap_L)then
+         zd_z_8(1)=Ver_z_8%m(0)
+      else
+         ! AFSGAPM NOTE : Zdot is at top Ver_z_8%m(0), however, it was put at first thermo
+         !                level, one keep this if Schm_Adx_extrap_L=.false. to validate.
+         zd_z_8(1)=Ver_a_8%t(1)
+      endif
       zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
 
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
@@ -604,10 +608,14 @@ End Interface
       !---------------------------------------------------------------------
       allocate(zd_z_8(l_nk+1))
       zd_z_8(1:l_nk+1)=Ver_a_8%t(1:l_nk+1)
-      ! Last zdot level is at surface not at Ver_a_8%t(l_nk+1)
-      !  This is true for all config, however we just adjust it for Schm_tlift.eq.1
-      !  to validate with previous version if Adx_tlift.eq.0 and Schm_thermopos_L=.true.
-      if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+      if(Schm_Adw_extrap_L)then
+         ! Last zdot limits are at top and surface not at Ver_a_8%t(1) and  Ver_a_8%t(l_nk+1)
+         zd_z_8(1)=Ver_z_8%m(0)
+         zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+      else
+         if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+      endif
+
 
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
 !$omp                  i,j,k,w1,w2,w3,w4,den)

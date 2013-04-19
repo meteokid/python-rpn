@@ -113,6 +113,7 @@
          if (.not.RMN_IS_OK(istat)) cycle
          istat = clib_toupper(bus_S)
          if (Lctl_step.ne.0 .and. bus_S=='E') cycle
+         if (bus_S=='D') cycle
          k=k+1
          obus_var_S(k) = udolist_S(j)(1:4)
          obus_bus_S(k) = bus_S(1:1)

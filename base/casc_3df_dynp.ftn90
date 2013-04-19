@@ -104,17 +104,20 @@ End Interface
       integer, dimension (:  ), pointer :: idx,idy,nks
       real topo_temp(l_ni,l_nj), xi,xf,yi,yf
       real*8, dimension (:  ), pointer ::  &
-                    xpaq,ypaq,xpau,ypav,xpuu,ypvv, &
-                    cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd
-!
-      real, dimension (:,:), pointer :: uun,vvn,zdn,ttn,   &
-                                        ssqn,meqn,qqn,wwn, &
-                                        meqr, topo_temp1, ss1
-!
-      real, dimension (:,:,:  ), pointer :: uu1,vv1,zd1,ttt1, &
-                                            qq1,ww1,trn,trp
-      real, dimension (:,:,:,:), pointer :: tr1
-!
+              xpaq=>null(),ypaq=>null(),xpau=>null(),ypav=>null()            , &
+              xpuu=>null(),ypvv=>null(),cxa =>null(),cxb =>null(),cxc=>null(), &
+              cxd =>null(),cya =>null(),cyb =>null(),cyc =>null(),cyd=>null()
+
+      real, dimension (:,:), pointer :: &
+              uun =>null(), vvn =>null(), zdn=>null(), ttn=>null(), &
+              ssqn=>null(), meqn=>null(), qqn=>null(), wwn=>null(), &
+              meqr=>null(), topo_temp1=>null(), ss1=>null()
+
+      real, dimension (:,:,:  ), pointer :: &
+              uu1=>null(), vv1=>null(), zd1=>null(), ttt1=>null(), &
+              qq1=>null(), ww1=>null(), trn=>null(), trp =>null()
+      real, dimension (:,:,:,:), pointer :: tr1=>null()
+
       real ssq_temp(LDIST_SHAPE),topo_nest(LDIST_SHAPE),step_current
       real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1), lnpis_8, diffd
 !
@@ -197,7 +200,7 @@ End Interface
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
                    cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
-         hint = 'LINEAR'
+         hint = Lam_hint_S
          call grid_to_grid_coef (xpxext(l_i0),l_ni, &
                                  xpaq,nia,idx,cxa,cxb,cxc,cxd,hint)
          call grid_to_grid_coef (ypxext(l_j0),l_nj, &

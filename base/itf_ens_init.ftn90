@@ -26,6 +26,8 @@
 !     
 !     revision
 ! v4_12 - Spacek L.        - Initial version
+! v4.4.0 - Gagnon N.       - Remove ptp_env_hor_f and add ptp_cape and ptp_tlc
+! v4.5.0 - Gagnon N.       - Add ptp_crit_w and ptp_fac_reduc
 !
 !object
 !	See above ID.
@@ -39,8 +41,8 @@
 #include "grd.cdk"
 !
       integer, external :: ens_nml
-      integer           :: ierr(6), imrkv2
-      real              :: ptp_env_u, ptp_env_b,ptp_env_hor_f
+      integer           :: ierr(9), imrkv2
+      real              :: ptp_env_u, ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc
       logical           :: ens_conf,stochphy, prout
 !
 !-------------------------------------------------------------------
@@ -51,16 +53,20 @@
 !
       ierr=0
 
-      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u,ptp_env_b,ptp_env_hor_f,Lun_out)
+      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u,ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc,Lun_out)
       call handle_error(ierr(1),'itf_ens_init','Problem with ens_nml')
       if (ens_conf) then
          prout = Lun_out.gt.0
-         call phy_opti('IMRKV2'   , imrkv2    ,1,'SET',prout,ierr(2))
-         call phy_optl('STOCHPHY' , stochphy  ,1,'SET',prout,ierr(3))
-         call phy_optr('PTPENVU'  , ptp_env_u ,1,'SET',prout,ierr(4))
-         call phy_optr('PTPENVB'  , ptp_env_b ,1,'SET',prout,ierr(5))
-         call phy_optr('PTPENVHORF' , ptp_env_hor_f ,1,'SET',prout,ierr(6))
-         ierr(2) = min(ierr(2),ierr(3), ierr(4), ierr(5))
+         call phy_opti('IMRKV2'     , imrkv2        ,1,'SET',prout,ierr(2))
+         call phy_optl('STOCHPHY'   , stochphy      ,1,'SET',prout,ierr(3))
+         call phy_optr('PTPENVU'    , ptp_env_u     ,1,'SET',prout,ierr(4))
+         call phy_optr('PTPENVB'    , ptp_env_b     ,1,'SET',prout,ierr(5))
+         call phy_optr('PTPCAPE'    , ptp_cape      ,1,'SET',prout,ierr(6))
+         call phy_optr('PTPTLC'     , ptp_tlc       ,1,'SET',prout,ierr(7))
+         call phy_optr('PTPCRITW'   , ptp_crit_w    ,1,'SET',prout,ierr(8))
+         call phy_optr('PTPFACREDUC', ptp_fac_reduc ,1,'SET',prout,ierr(9))
+         ierr(2) = min(ierr(2),ierr(3), ierr(4), ierr(5), ierr(6))
+         ierr(2) = min(ierr(2),ierr(7),ierr(8),ierr(9))
          call handle_error(ierr(2),'itf_ens_init','physics initialization')
          call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
                            LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)

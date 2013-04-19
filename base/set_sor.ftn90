@@ -84,9 +84,9 @@
       integer,parameter :: BUSPAR_I0=1  , BUSPAR_NIK=2   , BUSPAR_INIT=3,&
                            BUSPAR_STAG=4, BUSPAR_ESP=5   , BUSPAR_FMUL=6,&
                            BUSPAR_NK=7  , BUSPAR_MOSAIC=8,               &
-                           BUSPAR_MAXPAR=8, NBUS = 4
+                           BUSPAR_MAXPAR=8, NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
-                  (/'Entry    ','Permanent','Dynamic  ','Volatile '/)
+                  (/'Entry    ', 'Permanent', 'Volatile '/)
 
       character*5 blank_S
       character*8 unit_S
@@ -142,13 +142,13 @@
       do k=1, Outd_sets
          do j=1,Outd_var_max(k)
             do i=1,Out3_filtpass_max
-               if (Outd_var_S(j,k) .eq. Out3_filt_S(i)) then
+               if (Outd_varnm_S(j,k) .eq. Out3_filt_S(i)) then
                   Outd_filtpass(j,k) = Out3_filtpass(i)
                   Outd_filtcoef(j,k) = Out3_filtcoef(i)
                endif
             enddo
             do i=1,Out3_xnbits_max
-               if (Outd_var_S(j,k) .eq. Out3_xnbits_S(i)) then
+               if (Outd_varnm_S(j,k) .eq. Out3_xnbits_S(i)) then
                   Outd_nbit(j,k) = Out3_xnbits(i)
                endif
             enddo
@@ -193,8 +193,9 @@
          write(Lun_out,901)
          do j=1,Outd_sets
             do i=1,Outd_var_max(j)
-               write(Lun_out,1008) Outd_var_S(i,j),Outd_var_S(i,j),Outd_nbit(i,j), &
-                    Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ_s(Outd_lev(j))
+               write(Lun_out,1007) Outd_var_S(i,j)(1:4),&
+                 Outd_varnm_S(i,j)(1:16),Outd_nbit(i,j), &
+                 Outd_filtpass(i,j),Outd_filtcoef(i,j),Level_typ_s(Outd_lev(j))
             enddo
          enddo
          write(Lun_out,1006)

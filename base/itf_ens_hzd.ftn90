@@ -15,6 +15,7 @@
 
 #include "model_macros_f.h"
       subroutine itf_ens_hzd ( F_ut1, F_vt1, F_tt1, DIST_DIM, Nk )
+      use bus_fold_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,17 +35,24 @@
 #include "geomg.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
+#include "itf_phy_buses.cdk"
 #include "ens_gmm_var.cdk"
+include "phy_itf.inc"
 !
       type(gmm_metadata) :: mymeta
       character*4 mode
-      logical done,ens_skeb_conf,ens_ptp_conf,ens_conf
-      integer n,cnt,i,j,k,istat
+      logical done,ens_skeb_conf,ens_skeb_gwd,ens_ptp_conf,ens_conf
+      integer n,i,j,k,istat
+      integer lght, soit
+      integer,save :: iugwd,ivgwd
       real dummy
       real con(YDIST_SHAPE)
+      real gwd_tend(LDIST_SHAPE,p_nk)
       data mode,done /"SAVE",.false./
-      save mode,done,ens_skeb_conf,ens_ptp_conf,ens_conf
+      save mode,done,ens_skeb_conf,ens_skeb_gwd,ens_ptp_conf,ens_conf
       logical, external :: ens_get
+      real, pointer, dimension (:,:) :: busvol_3d  => null()
+      type(gmm_metadata) :: meta
 !     _________________________________________________________________
       ens_conf = ens_get('Ens_conf')
       if (.not.ens_conf) return
@@ -52,6 +60,7 @@
       if (.not.done) then
          ens_skeb_conf = ens_get('Ens_skeb_conf').And.ens_conf
          ens_ptp_conf  = ens_get('Ens_ptp_conf') .And.ens_conf
+         ens_skeb_gwd  = ens_get('Ens_skeb_gwd') .And.ens_conf
       endif
 !
 ! Case I: ens_skeb_conf = .true.
@@ -62,10 +71,6 @@
          if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
          istat = gmm_get(gmmk_difvt1_s,difvt1,mymeta)
          if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
-         istat = gmm_get(gmmk_ugwdt1_s,ugwdt1,mymeta)
-         if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
-         istat = gmm_get(gmmk_vgwdt1_s,vgwdt1,mymeta)
-         if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
 
          if (mode == "SAVE") then
             difut1 = F_ut1
@@ -73,39 +78,41 @@
             goto 999
          endif
 
-         !TODO: re-code to use getindx2 instead of p_bvol_top/volnm
          if (mode == "CENS") then
-            print*, 'MUST FIX phy_tend - ABORT in itf_ens_hzd'
-            stop
-!!$            con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
-!!$            cnt=0
-!!$            do n=1,p_bvol_top
-!!$               if (volnm(n)(1:5) .eq. 'PHYTD') then
-!!$                  cnt = cnt + 1
-!!$                  if (trim(volnm(n)(7:)).eq.'UGWD') then
-!!$                     do k= 1, l_nk
-!!$                     do j= 1, l_nj
-!!$                     do i= 1, l_ni
-!!$!                        ugwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
-!!$                     end do
-!!$                     end do
-!!$                     end do
-!!$                  endif
-!!$                  if (trim(volnm(n)(7:)).eq.'VGWD') then
-!!$                     do k= 1, l_nk
-!!$                     do j= 1, l_nj
-!!$                     do i= 1, l_ni
-!!$!                        vgwdt1(i,j,k) = Cstv_dt_8*phy_tend(i,j,k,cnt)*con(j)
-!!$                     end do
-!!$                     end do
-!!$                     end do
-!!$                  endif
-!!$               endif
-!!$            end do
-!!$            call itf_phy_uvgridscal (ugwdt1,vgwdt1,LDIST_DIM, l_nk, .false. )
-!!$            difut1 = F_ut1 - difut1
-!!$            difvt1 = F_vt1 - difvt1
-!!$            call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
+            if(Ens_skeb_gwd)then
+               con(:)  = cos(geomg_y_8(:)) / Dcst_rayt_8
+!
+               istat = phy_bus2gmm(gmmk_ugwdt1_s,'phytd_ugwd','Vd')
+               if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1-s'
+               istat = gmm_get(gmmk_ugwdt1_s,ugwdt1,mymeta)
+               if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
+               ugwdt1(:,:,l_nk+1)=0.
+               do k= 1, l_nk
+                  do j= 1, l_nj
+                     do i= 1, l_ni
+                        ugwdt1(i,j,k) = Cstv_dt_8*ugwdt1(i,j,k)*con(j)
+                     end do
+                  end do
+               end do
+!
+               istat = phy_bus2gmm(gmmk_vgwdt1_s,'phytd_vgwd','Vd')
+               if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1-s'
+               istat = gmm_get(gmmk_vgwdt1_s,vgwdt1,mymeta)
+               if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
+               vgwdt1(:,:,l_nk+1)=0.
+               do k= 1, l_nk
+                  do j= 1, l_nj
+                     do i= 1, l_ni
+                        vgwdt1(i,j,k) = Cstv_dt_8*vgwdt1(i,j,k)*con(j)
+                     end do
+                  end do
+                end do
+!
+                call itf_phy_uvgridscal (ugwdt1,vgwdt1,LDIST_DIM,l_nk,.false.)
+            endif
+            difut1 = F_ut1 - difut1
+            difvt1 = F_vt1 - difvt1
+            call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
          endif
 !
 ! Case II: ens_skeb_conf = .false. however, in the same time

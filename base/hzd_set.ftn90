@@ -335,12 +335,8 @@
             j=G_nj/2
             c_8= min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
-            hzd_lnR      = log(1.- Hzd_lnR)
-            hzd_lnR_theta= log(1.- Hzd_lnR_theta)
-            hzd_lnR_tr   = log(1.- Hzd_lnR_tr)
-
-            Hzd_cdiff    = (2./c_8)**Hzd_pwr    / (-Hzd_lnR)
-            Hzd_cdiff_tr = (2./c_8)**Hzd_pwr_tr / (-Hzd_lnR_tr)
+            Hzd_cdiff    = (2./c_8)**Hzd_pwr    / (-log(1.- Hzd_lnR   ))
+            Hzd_cdiff_tr = (2./c_8)**Hzd_pwr_tr / (-log(1.- Hzd_lnR_tr))
 
             if (Lun_out.gt.0) then
                write(Lun_out,1010)  &

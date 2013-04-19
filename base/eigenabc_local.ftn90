@@ -39,9 +39,9 @@
 #include "opr.cdk"
 #include "sol.cdk"
 !
-      integer i,j,k,iloc,jloc,fni0,ii,jj
+      integer i,j,k,iloc,jloc,fni0,ii,jj,pnn,info
       real*8  a_8(Ni,Ni), b_8(Ni,Ni), c_8(Ni,Ni), d_8(3*Ni-1),  &
-              r_8(Ni),di_8,zero,one,pdfaz,cst 
+              r_8(Ni),di_8,zero,one,cst,faz_8
       parameter(zero=0.d0,one=1.d0)
       real*8  fdg1(Ni,Ni),fdg2(Ni,Ni),fdg3(Ni,Ni), &
               a_81(Ni,Nj),b_81(Ni,Nj),c_81(Ni,Nj)
@@ -64,18 +64,18 @@
       a_8(Ni,Ni) = Opr_opsxp2_8(G_ni+(nil-sol_pil_e+i0-1))
       b_8(Ni,Ni) = Opr_opsxp0_8(G_ni+(nil-sol_pil_e+i0-1))
 !
-      pdfaz=-One
-!
       fdg1=a_8 ; fdg2=b_8
-!
-      call geneigl3 ( r_8, a_8, b_8, Ni, Ni, 3*Ni-1 )
 
-!      if (Grd_yinyang_L) then
-!          call prepoic2 (r_8, a_8, b_8, d_8, pdfaz, 'D', Ni, Ni )
-!      else
-!          call prepoic2 (r_8, a_8, b_8, d_8, pdfaz, 'N', Ni, Ni )
-!      endif
-!
+      pnn=ni
+      call DSYGV ( 1, 'V', 'U', pnn, a_8, ni, b_8, ni, r_8,&
+                                        d_8, 3*pnn-1, info )
+      do j= 1, ni
+         faz_8 = sign( one, a_8(1,j) )
+         do i= 1, ni
+            a_8(i,j) = faz_8 * a_8(i,j)
+         enddo
+      enddo
+
       evec_local = a_8
       eval_local = r_8
 !

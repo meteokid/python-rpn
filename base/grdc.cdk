@@ -2,7 +2,7 @@
       integer max_trnm
       parameter (max_trnm=1000)
       character*4 Grdc_trnm_S(max_trnm)
-      character*12 Grdc_nfe, Grdc_start_S, Grdc_end_S
+      character*15 Grdc_nfe, Grdc_start_S, Grdc_end_S
       logical Grdc_initphy_L
       integer Grdc_ni,Grdc_nj,Grdc_iref,Grdc_jref,Grdc_id
       integer Grdc_gid,Grdc_gif,Grdc_gjd,Grdc_gjf,Grdc_ndt,Grdc_gjdi

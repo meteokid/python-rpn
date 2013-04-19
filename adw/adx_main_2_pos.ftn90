@@ -82,7 +82,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    logical,parameter :: DO_UV     = .true.
    real,   parameter :: DTH_1     = 1.
 
-   integer :: i, j, k, iter, ioff
+   integer :: i, j, k, iter, ioff,kex
    integer :: i0,in,j0,jn
    real    :: dth
    real, dimension(F_ni,F_nj,F_nk) :: u_d,v_d,w_d
@@ -99,15 +99,15 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 
    dth  = adx_dt_8/2.
 
-   ! Note : These bounds may put the upstream points outside of the domain
-   !        du to machine precision, but the interpolator make sure that
-   !        the index of the interpolated field remains inside the domain. Trying
-   !        to add/substrac and epsilon to these bounds to force them
-   !        to be inside the domain causes problem for theoric cases (no flow
-   !        with a strong vertical temperature gradient).
-
-   ztop_bound=adx_verZ_8%m(1)
-   zbot_bound=adx_verZ_8%m(F_nk)
+   if(adx_extrap_L)then
+      kex=1
+      ztop_bound=adx_verZ_8%m(0)
+      zbot_bound=adx_verZ_8%m(F_nk+1)
+   else    
+      kex=0
+      ztop_bound=adx_verZ_8%m(1)
+      zbot_bound=adx_verZ_8%m(F_nk)
+   endif
 
    call adx_get_ij0n (i0,in,j0,jn)
 
@@ -175,7 +175,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 !$omp parallel
       if(adx_trapeze_L) then
 !$omp do
-         do k = max(2,k0),F_nk-1
+         do k = max(2-kex,k0),F_nk-1+kex
             do j = j0,jn
                do i = i0,in
                   F_zth(i,j,k) = adx_verZ_8%m(k) - (w_d(i,j,k)+F_wa(i,j,k))*dth
@@ -186,7 +186,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 !$omp enddo
       else ! mid-point rule !
 !$omp do
-         do k = max(2,k0),F_nk-1
+         do k = max(2-kex,k0),F_nk-1+kex
             do j = j0,jn
                do i = i0,in
                   F_zth(i,j,k) = adx_verZ_8%m(k) - 2.D0*dth*w_d(i,j,k)
@@ -215,13 +215,9 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    endif
 
 !$omp parallel
+   if(Adx_extrap_L)then
 !$omp do
-   do k = k0,F_nk
-      if     (k.eq.1) then
-         F_pz(i0:in,j0:jn, k) = ztop_bound
-      elseif (k.eq.F_nk) then
-         F_pz(i0:in,j0:jn, k) = zbot_bound
-      else
+      do k = k0,F_nk
          do j = j0,jn
          do i = i0,in
             F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
@@ -229,9 +225,27 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
             F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
          enddo
          enddo
-      endif
-   enddo
+      enddo
 !$omp enddo
+      else
+!$omp do
+         do k = k0,F_nk
+            if     (k.eq.1) then
+               F_pz(i0:in,j0:jn, k) = ztop_bound
+            elseif (k.eq.F_nk) then
+               F_pz(i0:in,j0:jn, k) = zbot_bound
+            else
+               do j = j0,jn
+               do i = i0,in
+                  F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
+                  F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
+                  F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
+               enddo
+               enddo
+            endif
+         enddo
+!$omp enddo
+      endif
 !$omp end parallel
    endif
 

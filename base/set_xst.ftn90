@@ -80,8 +80,8 @@
       j = 1
       do while ( (Xst_stn_ij(j)%i .ne. STN_MISSING) .and. &
                  (Xst_stn_ij(j)%j .ne. STN_MISSING) )
-         Xst_stn(nstat+1)%i = Xst_stn_ij(j)%i
-         Xst_stn(nstat+1)%j = Xst_stn_ij(j)%j
+         Xst_stn(nstat+1)%i = min(G_ni,max(1,Xst_stn_ij(j)%i))
+         Xst_stn(nstat+1)%j = min(G_nj,max(1,Xst_stn_ij(j)%j))
          Xst_stn(nstat+1)%lat = real(STN_MISSING)
          Xst_stn(nstat+1)%lon = real(STN_MISSING)
          Xst_stn(nstat+1)%name = Xst_stn_ij(j)%name
@@ -143,7 +143,7 @@
 !
 !     3a- Convert the stations from lat-lon to grid nearest points I-J
 !
-      call cllaij(lon,lat,nstat,ni,nj)
+      call cllaij (lon,lat,nstat,ni,nj)
 !
 !     3b- Compute the exact lat-lon for the stations corresponding
 !     to the given grid points of the time-series stations.
@@ -152,10 +152,11 @@
 !     but it will be the closest grid point of the model grid.
 !
       do n = 1,nstat
-         Xst_stn(n)%lat = lat((Xst_stn(n)%j-1)*ni+Xst_stn(n)%i)
+         Xst_stn(n)%lat = lat ( (Xst_stn(n)%j-1)*ni+Xst_stn(n)%i )
          Xst_stn(n)%lon = lon((Xst_stn(n)%j-1)*ni+Xst_stn(n)%i)
       enddo
       Xst_nstat = nstat
+
 !
 !     4- Put the stations in increasing order of index in a list
 !

@@ -42,7 +42,7 @@ subroutine itf_adx_set()
    character(len=40) :: label
    integer :: istat,options,ij,k
    real*8 :: xg_8(1-G_ni:2*G_ni), yg_8(1-G_nj:2*G_nj)
-   real*8 :: v_zm_8(0:l_nk+1), v_zt_8(l_nk+1)
+   real*8 :: v_zm_8(0:l_nk+1), v_zt_8(l_nk)
    !---------------------------------------------------------------------
    call msg(MSG_DEBUG,'itf_adx_set')
 
@@ -86,6 +86,7 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/Tlift',Schm_Tlift,options),istat)
    istat = min(wb_put('model/trapeze',Schm_trapeze_L,options),istat)
    istat = min(wb_put('model/superwinds',Schm_superwinds_L,options),istat)
+   istat = min(wb_put('model/extrap',Schm_adw_extrap_L,options),istat)
 
    istat = min(wb_put('model/cstv_dt',Cstv_dt_8,options),istat)
 
@@ -105,13 +106,15 @@ subroutine itf_adx_set()
    v_zm_8(0) = Cstv_Ztop_8
    do k=1,l_nk+1
       v_zm_8(k) = Ver_a_8%m(k)
-      v_zt_8(k) = Ver_a_8%t(k)
+   enddo
+   do k=1,l_nk
+      v_zt_8(k) = Ver_z_8%t(k)
    enddo
    istat = min(wb_put('model/v_zm_8/min',0,options),istat)
    istat = min(wb_put('model/v_zm_8/max',l_nk+1,options),istat)
    istat = min(wb_put('model/v_zm_8',v_zm_8,options),istat)
    istat = min(wb_put('model/v_zt_8/min',1,options),istat)
-   istat = min(wb_put('model/v_zt_8/max',l_nk+1,options),istat)
+   istat = min(wb_put('model/v_zt_8/max',l_nk,options),istat)
    istat = min(wb_put('model/v_zt_8',v_zt_8,options),istat)
 
    !- Note: a copy to label is needed to patch a whiteboard bug

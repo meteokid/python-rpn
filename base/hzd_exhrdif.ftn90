@@ -33,22 +33,35 @@
 !
 #include "glb_ld.cdk"
 #include "hzd.cdk"
+#include "lctl.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
 !
       integer i,j,k, nn, mm, ni, nj, nij, i0,in,j0,jn, stag_x,stag_y
+      integer lnr_deb,lnr_fin
       real wk1(LDIST_SHAPE,Nk),rnr,pwr
-      real*8 pt25,nu_dif,epsilon,lnr,visco
+      real*8 pt25,nu_dif,epsilon,lnr,visco,lnr_min,lnr_max,pente,b,hh
 
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !     __________________________________________________________________
 !
-      rnr = Hzd_lnr
+!      lnr_deb= 72
+!      lnr_fin= 120
+!      lnr_min= Hzd_lnr
+!      lnr_max= 5*Hzd_lnr
+!      pente= (lnr_max-lnr_min)/dble(lnr_fin-lnr_deb)
+!      b    = lnr_min - pente*dble(lnr_deb)
+!      hh   = Lctl_step*Cstv_dt_8/3600.00
+!      rnr  = log(1. - min(lnr_max,max(lnr_min,pente*hh + b)))
+
+      rnr = log(1.- Hzd_lnR)
       pwr = Hzd_pwr
       if (F_grd_S.eq.'S_THETA') then
-         rnr = Hzd_lnr_theta
+         rnr = log(1.- Hzd_lnR_theta)
          pwr = Hzd_pwr_theta
       endif
       if (F_grd_S.eq.'S_TR') then
-         rnr = Hzd_lnr_tr
+         rnr = log(1.- Hzd_lnR_tr)
          pwr = Hzd_pwr_tr
       endif
 

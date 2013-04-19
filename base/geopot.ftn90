@@ -54,7 +54,7 @@
       do j= 1, l_nj
       do i= 1, l_ni
          xxx=one+(Ver_b_8%m(1)-0.d0)/(Ver_z_8%m(1)-Cstv_ztop_8)*F_s(i,j)
-         F_geopot(i,j,0)=F_geopot(i,j,1)+yyy*(F_t(i,j,0)*xxx-Cstv_Tstr_8)
+         F_geopot(i,j,0)=F_geopot(i,j,1)+yyy*(F_t(i,j,1)*xxx-Cstv_Tstr_8)
       enddo
       enddo
 !$omp enddo

@@ -19,14 +19,16 @@
 !
       integer function ens_nml                                              &
       (F_namelist_S,F_Grdtyp_S,F_ens_conf_L,F_stochphy_L,F_imrkv2,&
-       F_ens_ptp_env_u, F_ens_ptp_env_b,F_ens_ptp_env_hor_f, F_unout) 
+       F_ens_ptp_env_u, F_ens_ptp_env_b, F_ens_ptp_cape, F_ens_ptp_tlc,&
+       F_ens_ptp_crit_w, F_ens_ptp_fac_reduc, F_unout) 
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) F_namelist_S,F_Grdtyp_S
       logical F_ens_conf_L,F_stochphy_L
       integer F_imrkv2,F_unout
-      real F_ens_ptp_env_u, F_ens_ptp_env_b,F_ens_ptp_env_hor_f
+      real F_ens_ptp_env_u, F_ens_ptp_env_b, F_ens_ptp_cape, F_ens_ptp_tlc
+      real F_ens_ptp_crit_w, F_ens_ptp_fac_reduc
 !
 !author Lubos Spacek - May 2005
 !
@@ -35,44 +37,57 @@
 ! v_4.1.3 - N. Gagnon      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
 ! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP, 
 !           L. Spacek      - remove limitation of use when in mode LAM (only SKEB is now unavailable)
+! v_4.4.0 - N. Gagnon      - remove Ens_ptp_env_hor_f not use anymore
+!                          - add ens_ptp_cape and ens_ptp_tlc keys
+! v_4.5.0 - N. Gagnon      - add F_ens_ptp_crit_w and F_ens_ptp_fac_reduc keys
 !
 !object
 !  To initialize the ensemble forecast system
 !  by reading the namelist ens_nml
 !
 !arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_namelistf_S I                  namelist path
-! F_Grdtyp_S    I                  grid configuration (GU required)
-! F_stochphy_L  O                  stochastic physics
-! F_imrkv2      O                  numbre of 2d markov chains
-! F_unout       I                  output unit
-!----------------------------------------------------------------
+!  Name           I/O                 Description
+!-----------------------------------------------------------------------------------------
+! F_namelistf_S       I                  namelist path
+! F_Grdtyp_S          I                  grid configuration (GU required)
+! F_stochphy_L        O                  stochastic physics
+! F_imrkv2            O                  number of 2d markov chains
+! F_ens_ptp_env_u     I                  upper sigma value for PTP vertical profile
+! F_ens_ptp_env_b     I                  lower sigma value for PTP vertical profile
+! F_ens_ptp_cape      I                  CAPE value for no PTP on a given point 
+! F_ens_ptp_tlc       I                  TLC (conv. pcp.) value for no PTP on a given point
+! F_ens_ptp_crit_w    I                  vertical velocity (m/s) above that we do not perturb with PTP 
+! F_ens_ptp_fac_reduc I                  reduction factor (0.0-1.0) of the PTP perturbations when convection occurs
+! F_unout             I                  output unit
+!-----------------------------------------------------------------------------------------
 !
 #include "ens_param.cdk"
+
 !
       integer, external :: fnom,wkoffit
       logical found_namelist_ok
       integer i, err,err_open,err_read,unf,nrec
 !
       namelist /ensembles/                                     &
-          Ens_conf,    Ens_skeb_conf,                            &
-          Ens_stat, Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd,   &
-          Ens_mc_seed,    Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz,  &
+          Ens_conf,      Ens_skeb_conf,                            &
+          Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd,   &
+          Ens_mc_seed,   Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz,  &
           Ens_mc3d_trnl, Ens_mc3d_trnh,                            &
-          Ens_mc3d_max,  Ens_mc3d_min, Ens_mc3d_std,   &
+          Ens_mc3d_max,  Ens_mc3d_min,  Ens_mc3d_std,   &
           Ens_mc3d_tau,  Ens_mc3d_str,  Ens_skeb_alph, Ens_skeb_alpt,  &
           Ens_skeb_bfc,  Ens_skeb_lam,                             &
-          Ens_mc2d_nlon,   Ens_mc2d_nlat,   Ens_mc2d_ncha,   Ens_mc2d_trnl,    &
-          Ens_mc2d_trnh,   Ens_dim2,    Ens_mc2d_min,    Ens_mc2d_max,     &
-          Ens_mc2d_std,    Ens_mc2d_tau,    Ens_mc2d_str,     &
-          Ens_ptp_conf,Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_env_hor_f
+          Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha, Ens_mc2d_trnl,    &
+          Ens_mc2d_trnh, Ens_dim2,      Ens_mc2d_min,  Ens_mc2d_max,     &
+          Ens_mc2d_std,  Ens_mc2d_tau,  Ens_mc2d_str,     &
+          Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
+          Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
+
 !
 !--------------------------------------------------------------------
 !
       F_ens_conf_L = .false.
       ens_nml = -1; err_read = 0
+ 
 !
       if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
          ens_nml = 0
@@ -116,13 +131,19 @@
       Ens_mc2d_str      = 0.0
       Ens_ptp_env_u = 1.0
       Ens_ptp_env_b = 1.0
-      Ens_ptp_env_hor_f = 1.0
+      Ens_ptp_cape = 0.0
+      Ens_ptp_tlc = 0.0
+      Ens_ptp_crit_w = 100.0
+      Ens_ptp_fac_reduc = 0.0
 !
       F_stochphy_L  = Ens_ptp_conf
       F_imrkv2      = Ens_mc2d_ncha
       F_ens_ptp_env_u = Ens_ptp_env_u
       F_ens_ptp_env_b = Ens_ptp_env_b
-      F_ens_ptp_env_hor_f = Ens_ptp_env_hor_f
+      F_ens_ptp_cape = Ens_ptp_cape
+      F_ens_ptp_tlc = Ens_ptp_tlc
+      F_ens_ptp_crit_w = Ens_ptp_crit_w
+      F_ens_ptp_fac_reduc = Ens_ptp_fac_reduc
 !
       unf = 0
       found_namelist_ok = .false.
@@ -181,10 +202,14 @@
          F_imrkv2      = Ens_mc2d_ncha
          F_ens_ptp_env_u = Ens_ptp_env_u
          F_ens_ptp_env_b = Ens_ptp_env_b
-         F_ens_ptp_env_hor_f = Ens_ptp_env_hor_f
+         F_ens_ptp_cape = Ens_ptp_cape
+         F_ens_ptp_tlc = Ens_ptp_tlc
+         F_ens_ptp_crit_w = Ens_ptp_crit_w
+         F_ens_ptp_fac_reduc = Ens_ptp_fac_reduc
+
 !
          if(F_unout.ge.0)then
-            write(F_unout,"(a,i5)" )'Ens_mc_seed   = ',Ens_mc_seed
+            write(F_unout,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
             write(F_unout,"(a,i5)" )'Ens_mc3d_dim   = ',Ens_mc3d_dim
             write(F_unout,'(a,i5)' )'Ens_mc3d_mzt   = ',Ens_mc3d_mzt
             write(F_unout,'(a,l5)' )'Ens_skeb_conf  = ',Ens_skeb_conf
@@ -196,7 +221,10 @@
             write(F_unout,'(a,i5)' )'F_imrkv2     = ',F_imrkv2
             write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_u = ',F_ens_ptp_env_u
             write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_b = ',F_ens_ptp_env_b
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_hor_f = ',F_ens_ptp_env_hor_f
+            write(F_unout,'(a,f8.5)' )'F_ens_ptp_cape = ',F_ens_ptp_cape
+            write(F_unout,'(a,f8.5)' )'F_ens_ptp_tlc = ',F_ens_ptp_tlc
+            write(F_unout,'(a,f12.5)' )'F_ens_ptp_crit_w = ',F_ens_ptp_crit_w
+            write(F_unout,'(a,f8.5)' )'F_ens_ptp_fac_reduc = ',F_ens_ptp_fac_reduc
          endif
       else
           ens_nml = 0

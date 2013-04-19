@@ -46,16 +46,14 @@
 #include "out.cdk"
 #include "modconst.cdk"
 !
-      integer  bin2com,newdate,parse_grdc
-      external bin2com,newdate,parse_grdc
-!
-      integer time1, time2, istat
-!
-      character*16 dumc_S
+      integer, external :: bin2com,newdate,freq_grdc
+
+      character*16  dumc_S
       character*256 fln_S
       logical wronghyb
-      integer i, k, nrec, err, ipcode, ipkind
+      integer i, k, nrec, err, ipcode, ipkind, time1, time2, istat
       real pcode,deg_2_rad
+      real*8 diffd
 !
 !-------------------------------------------------------------------
 !
@@ -159,13 +157,26 @@
       call datp2f ( Out3_date, Step_runstrt_S )
       err = newdate ( Out3_date, time1, time2, -3 )
       if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S,time1,time2
-!
-      Grdc_ndt   = parse_grdc (Grdc_nfe    , nint(Cstv_dt_8))
-      Grdc_start = parse_grdc (Grdc_start_S, nint(Cstv_dt_8))
-      Grdc_end   = parse_grdc (Grdc_end_S  , nint(Cstv_dt_8))
+
+      Grdc_ndt= freq_grdc (Grdc_nfe, nint(Cstv_dt_8))
       if (Grdc_ndt.gt.-1) Grdc_ndt = max( 1, Grdc_ndt)
-      Grdc_start = max(0,Grdc_start)
-      if (Grdc_end.lt. 0) Grdc_end = Step_total
+
+      if (Grdc_start_S == '') then
+         Grdc_start= 0
+      else
+         call difdatsd (diffd,Step_runstrt_S,Grdc_start_S)
+         Grdc_start = diffd*dble(86400) / Cstv_dt_8
+      endif
+
+      if (Grdc_end_S == '') then
+         Grdc_end= Step_total
+      else
+         call difdatsd (diffd,Step_runstrt_S,Grdc_end_S)
+         Grdc_end = diffd*dble(86400) / Cstv_dt_8
+      endif
+
+      Grdc_start  = min(max(0,Grdc_start),Step_total)
+      Grdc_end    = min(max(0,Grdc_end  ),Step_total)
       Grdc_maxcfl = max(1,Grdc_maxcfl)
       Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
       Grdc_ni     = Grdc_ni   + 2*Grdc_pil
@@ -174,7 +185,7 @@
       Grdc_jref   = Grdc_jref +   Grdc_pil     
 
       Acid_npas=0
-!
+
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
       call low2up  (sol_type_S ,dumc_S)
@@ -194,7 +205,6 @@
             return
          endif
       endif
-
 !
       G_ni  = Grd_ni
       G_nj  = Grd_nj
@@ -290,27 +300,29 @@
       return
       end
 !
-      integer function parse_grdc (F_string_s,F_timestep)
+      integer function freq_grdc (F_string_s,F_timestep)
       implicit none
 #include <arch_specific.hf>
       character*(*) F_string_s
       integer F_timestep
 
       character*1 nfe
-      integer len, nfe_nsec
+      integer len
+      real nunits,nfe_nsec
 
-      parse_grdc = -1
+      freq_grdc = -1
       len = len_trim( F_string_s )
       if (len.gt.0) then
          call low2up (F_string_s(len:len),nfe)
-         nfe_nsec = 3600
-         if (nfe.eq.'D') nfe_nsec = 86400
-         if (nfe.eq.'M') nfe_nsec = 60
-         if (nfe.eq.'S') nfe_nsec = 1
+         nfe_nsec = 3600.
+         if (nfe.eq.'D') nfe_nsec = 86400.
+         if (nfe.eq.'M') nfe_nsec = 60.
+         if (nfe.eq.'S') nfe_nsec = 1.
          if ((nfe.eq.'D').or.(nfe.eq.'H').or. &
              (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
-         read ( F_string_s(1:len), * ) parse_grdc
-         parse_grdc = parse_grdc * nfe_nsec / F_timestep
+         read ( F_string_s(1:len), * ) nunits
+         freq_grdc = nunits * nfe_nsec / real(F_timestep)
       endif
       return
       end
+

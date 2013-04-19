@@ -41,7 +41,7 @@
 !
       type(gmm_metadata) :: mymeta
       integer i, j, k, istat
-      real wk1(l_ni,l_nj,2)
+      real wk1(l_ni,l_nj,2),wk2(l_ni,l_nj,2)
 !     ________________________________________________________________
 !
       istat = gmm_get(gmmk_pw_ww_plus_s ,pw_ww_plus ,mymeta)
@@ -57,12 +57,14 @@
       istat = gmm_get(gmmk_fis0_s,  fis0 , mymeta)
       if (.not. Schm_hydro_L ) then
          istat = gmm_get(gmmk_qt1_s, qt1, mymeta)
+      else
+         nullify(qt1)
       endif
 
       call geopot ( fiptx, tt1, st1, qt1, fis0, &
                     l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
-!$omp parallel private(wk1,i,j)
+!$omp parallel private(wk1,wk2,i,j)
 
 !$omp do
       do k=1,l_nk+1
@@ -71,13 +73,14 @@
          do i=1,l_ni
             wk1(i,j,1) = Ver_a_8%m(k) + Ver_b_8%m(k) * st1(i,j)
             wk1(i,j,2) = Ver_a_8%t(k) + Ver_b_8%t(k) * st1(i,j)
-            pw_gz_plus(i,j,k) = fiptx(i,j,max(k-1,1))+Ver_fistr_8%m(max(k-1,1))-fis0(i,j)
          enddo
          enddo
-         call vsexp(wk1(1,1,1), wk1(1,1,1), 2*l_ni*l_nj)
-         pw_pm_plus(1:l_ni,1:l_nj,k+1) = wk1(1:l_ni,1:l_nj,1)
-         pw_pt_plus(1:l_ni,1:l_nj,k  ) = wk1(1:l_ni,1:l_nj,2)
+         call vsexp(wk2(1,1,1), wk1(1,1,1), 2*l_ni*l_nj)
+         pw_pm_plus(1:l_ni,1:l_nj,k+1) = wk2(1:l_ni,1:l_nj,1)
+         pw_pt_plus(1:l_ni,1:l_nj,k  ) = wk2(1:l_ni,1:l_nj,2)
          pw_ww_plus(:,:,k) = wt1(:,:,k)
+         if (k.gt.1) &
+         pw_gz_plus(1:l_ni,1:l_nj,k)=fiptx(1:l_ni,1:l_nj,k-1)+Ver_fistr_8%m(k-1)-fis0(1:l_ni,1:l_nj)
       end do
 !$omp enddo
 
@@ -85,8 +88,9 @@
       do j= 1, l_nj
       do i= 1, l_ni
          pw_pt_plus(i,j,l_nk+2) = pw_pm_plus(i,j,l_nk+2)
-         pw_gz_plus(i,j,l_nk+2) = fiptx     (i,j,l_nk+1)-fis0(i,j)
          pw_ww_plus(i,j,l_nk+2) = pw_ww_plus(i,j,l_nk+1)
+         pw_gz_plus(i,j,l_nk+2) = 0.
+         pw_gz_plus(i,j,1     ) = fiptx(i,j,0)-Cstv_RTstr_8*(Cstv_Ztop_8-Cstv_Zsrf_8)
       end do
       end do
 

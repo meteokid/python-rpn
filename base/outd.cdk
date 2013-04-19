@@ -14,6 +14,8 @@
 !                    | requested from the dynamics                     |
 ! Outd_var_S         | A table containing "Outd_sets" sets of output   |
 !                    | variables requested from the dynamics           |
+! Outd_varnm_S       | A table containing "Outd_sets" sets of output   |
+!                    | variables (longname) requested from the dynamics|
 ! Outd_nbit          | A table containing "Outd_sets" sets of compact  |
 !                    | bit corresponding to Outd_var_S                 |
 ! Outd_filtpass      | A table containing "Outd_sets" sets of filter   |
@@ -34,6 +36,7 @@
 #endif
 !
       character*4 Outd_var_S(MAXELEM,MAXSET)
+      character*16 Outd_varnm_S(MAXELEM,MAXSET)
       integer Outd_nbit(MAXELEM,MAXSET)
       integer Outd_filtpass(MAXELEM,MAXSET)
       real    Outd_filtcoef(MAXELEM,MAXSET)
@@ -43,6 +46,6 @@
 
       COMMON /Outd/ Outd_lev,Outd_grid,Outd_step
       COMMON /Outd/ Outd_var_max, Outd_sets, Outd_nbit,Outd_filtpass
-      COMMON /Outd_c/ Outd_var_S
+      COMMON /Outd_c/ Outd_var_S,Outd_varnm_S
       COMMON /Outd_r/ Outd_filtcoef
 

@@ -86,6 +86,7 @@
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
       Schm_superwinds_L  = .true.
+      Schm_Adw_extrap_L= .false.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_wload_L    = .false.

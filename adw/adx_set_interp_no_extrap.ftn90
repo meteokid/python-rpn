@@ -16,7 +16,7 @@
 #include "msg.h"
 
 !/**
-subroutine adx_set_interp()
+subroutine adx_set_interp_no_extrap()
    implicit none
 #include <arch_specific.hf>
    !@objective set 1-D interpolation of grid reflexion across the pole 
@@ -68,7 +68,7 @@ subroutine adx_set_interp()
         adx_ydabc_8(adx_gnj+2*adx_haloy), &
         stat = istat2)
 
-   call handle_error_l(istat==0.and.istat2==0,'adx_set_interp','problem allocating mem')
+   call handle_error_l(istat==0.and.istat2==0,'adx_set_interp_no_extrap','problem allocating mem')
 
    do i = adx_gminx+1,adx_gmaxx-2
       ra = adx_xg_8(i-1)
@@ -125,8 +125,8 @@ subroutine adx_set_interp()
    enddo
 
    ! Prepare zeta on super vertical grid
-   Super_z_8(1)=adx_verZ_8%m(0)
-   do k = 2,2*adx_lnkm+1
+   Super_z_8(1)=0.5d0*(adx_verZ_8%m(1)+adx_verZ_8%m(0))
+   do k = 2,2*adx_lnkm
       if (mod(k,2) == 0)then
          ! momentum level
          ind = k/2
@@ -137,8 +137,14 @@ subroutine adx_set_interp()
          Super_z_8(k) = adx_verZ_8%t(ind)            
       endif
    enddo
+   ! The last zdot levels is surface not at and adx_verZ_8%t(adx_lnkt).
+   ! AFSGAPM NOTE : At the top it is similar but we will fix this later
+   !                once we look at removing the superwinds
+   Super_z_8(2*adx_lnkm+1)=adx_verZ_8%m(adx_lnkm+1)
 
-   !print*,Super_z_8
+!print*,'Super_z_8',Super_z_8
+!print*,'adx_verZ_8%m(0),adx_verZ_8%m(1)',adx_verZ_8%m(0),adx_verZ_8%m(1)
+!call handle_error(-1,'adx_set_interp_no_extrap','andre')
 
    whzt(0     ) = 1.0
    whzt(adx_lnkm  ) = 1.0
@@ -170,11 +176,9 @@ subroutine adx_set_interp()
 
    pnx = int(1.0+(adx_xg_8(adx_gmaxx)-adx_x00_8)   *adx_ovdx_8)
    pny = int(1.0+(adx_yg_8(adx_gmaxy)-adx_y00_8)   *adx_ovdy_8)
-   !pnzt= int(1.0+( adx_verZ_8%t(adx_lnkm)- adx_verZ_8%t(1))*adx_ovdz_8)
-   pnzm= nint(1.0+(adx_verZ_8%m(adx_lnkm+1)-adx_verZ_8%m(0))*adx_ovdz_8)
-   pnzt=pnzm
-   !pnzs= int(1.0+(Super_z_8(2*adx_lnkm+1)-Super_z_8(1))*adx_ovdz_8)
-   pnzs=pnzm
+   pnzt= int(1.0+( adx_verZ_8%t(adx_lnkm)- adx_verZ_8%t(1))*adx_ovdz_8)
+   pnzm= int(1.0+(adx_verZ_8%m(adx_lnkm)-adx_verZ_8%m(1))*adx_ovdz_8)
+   pnzs= int(1.0+(Super_z_8(2*adx_lnkm+1)-Super_z_8(1))*adx_ovdz_8)
 
    ! Note : adx_diz_8 and adx_dbz_8 are allocated to the largest size
    !        which is for the adx_superwinds_L=.true.
@@ -198,7 +202,7 @@ subroutine adx_set_interp()
         adx_diz_8(-1:2*adx_lnkm+2), &
         adx_dbz_8(0:2*adx_lnkm+1), &
         stat=istat)
-   call handle_error_l(istat==0,'adx_set_interp','problem allocating mem')
+   call handle_error_l(istat==0,'adx_set_interp_no_extrap','problem allocating mem')
 
    i0 = 1
    do i=1,pnx
@@ -230,8 +234,8 @@ subroutine adx_set_interp()
 
    k0 = 1
 
-   do k = 1,pnzt
-      pdfi = adx_verZ_8%m(0) + (k-1) * prhzmn
+   do k = 1,pnzm
+      pdfi = adx_verZ_8%t(1) + (k-1) * prhzmn
       if (pdfi > adx_verZ_8%t(k0+1)) k0 = min(adx_lnkm-2, k0+1)
       adx_lcz%t(k) = k0
    enddo
@@ -244,7 +248,7 @@ subroutine adx_set_interp()
 
    k0 = 1
    do k = 1,pnzm
-      pdfi = adx_verZ_8%m(0) + (k-1) * prhzmn
+      pdfi = adx_verZ_8%m(1) + (k-1) * prhzmn
       if (pdfi > adx_verZ_8%m(k0+1)) k0 = min(adx_lnkm-2, k0+1)
       adx_lcz%m(k) = k0
    enddo
@@ -257,7 +261,7 @@ subroutine adx_set_interp()
 
    k0 = 1
    do k = 1,pnzs
-      pdfi = adx_verZ_8%m(0) + (k-1) * prhzmn
+      pdfi = Super_z_8(1) + (k-1) * prhzmn
       if (pdfi > Super_z_8(k0+1)) k0 = min(2*adx_lnkm-1, k0+1)
       adx_lcz%s(k) = k0
    enddo
@@ -288,7 +292,7 @@ subroutine adx_set_interp()
         adx_zcabd_8%t(adx_lnkm), adx_zcabd_8%m(adx_lnkm), &
         adx_zdabc_8%t(adx_lnkm), adx_zdabc_8%m(adx_lnkm), &
         stat=istat)
-   call handle_error_l(istat==0,'adx_set_interp','problem allocating mem')
+   call handle_error_l(istat==0,'adx_set_interp_no_extrap','problem allocating mem')
 
    do k = 2,adx_lnkm-2
       ra = adx_verZ_8%m(k-1)
@@ -325,4 +329,4 @@ subroutine adx_set_interp()
    deallocate(whzt, whzm)
    !---------------------------------------------------------------------
    return
-end subroutine adx_set_interp
+end subroutine adx_set_interp_no_extrap
