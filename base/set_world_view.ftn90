@@ -47,70 +47,31 @@
 ! v4_10 - Lepine M.         - VMM replacement with GMM
 ! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
 !
-#include "gmm.hf"
 #include "lun.cdk"
-#include "cst_lis.cdk"
-#include "dcst.cdk"
 #include "ptopo.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "out3.cdk"
+#include "step.cdk"
 #include "path.cdk"
-#include "vmmlist.cdk"
-#include "itf_cpl.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
-#include "adx_nml.cdk"
-#include <clib_interface.cdk>
 
       integer, external :: gem_nml,gemdm_config,grid_nml2,            &
                            itf_cpl_nml,series_nml,adx_nml,adx_config, &
-                           step_nml,rpn_comm_init_multigrid,bin2com
-      external pe_zero_topo,init_ndoms
-
-      logical  set_dcst_8
-      integer ierr,err(8),cte_ok,mydomain,f1,f2,f3,f4
-      character(len=256) :: my_dir
+                           RPN_COMM_bloc,step_nml,bin2com
+      character*50 LADATE,dumc1_S
+      integer ierr,err(8),f1,f2,f3,f4,n1,n2,n3,n4,n5,n6,n7
 !
 !-------------------------------------------------------------------
 !
-! Initializing domain and working directory
-!
-      call rpn_comm_mydomain (init_ndoms, mydomain)
+      err = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
+      call handle_error(err,'pe_all_topo','rpn_comm_bloc')
 
-      write(my_dir,'(a,i4.4)') 'cfg_',mydomain
-
-      ierr = clib_getenv ('TASK_INPUT' ,Path_input_S )
-      ierr = clib_getenv ('TASK_OUTPUT',Path_output_S)
-      ierr = clib_getenv ('TASK_WORK'  ,Path_work_S  )
-
-      Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
-      Path_output_S = trim(Path_output_S) // '/' // trim(my_dir)
-      Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)
- 
-      ierr = clib_chdir (trim(Path_work_S))
-!
-! Initializing MPI and processor topology (pe_zero_topo called on PE #0 only)
-!
-      if (Grd_yinyang_L) then
-         call yy_init2 ( pe_zero_topo, Ptopo_myproc, Ptopo_numproc, &
-                         Ptopo_npex, Ptopo_npey,                    &
-                         Ptopo_intracomm, Ptopo_intercomm,          &
-                         Ptopo_ncolors, Ptopo_couleur,              &
-                         Ptopo_world_myproc, Ptopo_world_numproc, Grd_ndomains )
-
-         if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
-         if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
-         ierr= clib_chdir(trim(Grd_yinyang_S))
-      else
-         ierr = rpn_comm_init_multigrid (pe_zero_topo,Ptopo_myproc,Ptopo_numproc,&
-                                            Ptopo_npex, Ptopo_npey, Grd_ndomains )
-         Ptopo_couleur = 0
-         Ptopo_ncolors = 1
-      endif
-
-      call msg_set_can_write (Ptopo_myproc == 0)
+      call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc, &
+                            n1,n2,n3,n4,n5,n6,n7 ,Ptopo_mybloc, &
+              Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
 
       if (Grd_yinyang_L) then         
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'//trim(Grd_yinyang_S)
@@ -118,21 +79,12 @@
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
       endif
       Path_phy_S=trim(Path_input_S)//'/'
-!
-! Continue initialization steps
-!
-      call pe_all_topo
 
-      cte_ok = 0
-      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
-                              Lun_out,Ptopo_numproc ) ) cte_ok=-1
-      call handle_error(cte_ok,'set_world_view','set_dcst_8')
-!
       err(:) = 0
       if ( Schm_theoc_L ) then
-!
+
          call theo_cfg
-!
+
       else
 !
 ! Read namelists from file Path_nml_S
@@ -154,7 +106,7 @@
       err(1) = gemdm_config ( )
       err(2) = adx_config   ( )
       call handle_error(min(err(1),err(2)),'set_world_view','config')
-!
+
       ierr = grid_nml2   ('print',G_lam)
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
@@ -168,13 +120,15 @@
 ! Establish domain decomposition (mapping subdomains and processors)
 !
       call domain_decomp2 (Ptopo_npex, Ptopo_npey, .false.)
-!
+
       if (lun_out.gt.0) then
          f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))
          f2 = G_ni-f1*(Ptopo_npex-1)
          f3 = G_nj/Ptopo_npey + min(1,mod(G_nj,Ptopo_npey))
          f4 = G_nj-f3*(Ptopo_npey-1)
          write (lun_out,1001) Grd_typ_S,G_ni,G_nj,G_nk,f1,f3,f2,f4
+         LADATE='RUNSTART='//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
+         call write_status_file3 (trim(LADATE))
          call write_status_file3 ('communications_established=YES' )
          if (Grd_yinyang_L)    &
          call write_status_file3 ('GEM_YINYANG=1')
@@ -191,7 +145,7 @@
 ! Initializes GMM
 !
       call set_gmm
-!
+
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
 !
 !-------------------------------------------------------------------

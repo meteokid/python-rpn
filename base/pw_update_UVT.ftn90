@@ -102,7 +102,11 @@
          km1=max(k-1,1)
          pw_uu (1:l_ni,1:l_nj,k) = uu (1:l_ni,1:l_nj,km1)
          pw_vv (1:l_ni,1:l_nj,k) = vv (1:l_ni,1:l_nj,km1)
-         pw_ww (1:l_ni,1:l_nj,k) = ww (1:l_ni,1:l_nj,k  )
+         if (k.eq.l_nk+2) then
+            pw_ww (1:l_ni,1:l_nj,k) = 0.
+         else
+            pw_ww (1:l_ni,1:l_nj,k) = ww (1:l_ni,1:l_nj,k  )
+         endif
       end do
 !$omp enddo
 !$omp end parallel

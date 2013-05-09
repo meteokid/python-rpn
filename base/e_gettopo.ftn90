@@ -15,11 +15,11 @@
 
 !**s/r e_gettopo
 !
-      subroutine e_gettopo (F_topoi, ni,nj)
+      subroutine e_gettopo (F_topoi, ni,nj, errcode)
       implicit none
 #include <arch_specific.hf>
 !
-      integer ni,nj
+      integer ni,nj,errcode
       real F_topoi(ni,nj)
 !
 !author M. Desgagne
@@ -39,7 +39,7 @@
 !
       character*12   interp_S
       character*1024 fn
-      integer codp1,err
+      integer codp1
       real    wk(ni,nj)
 !
 !----------------------------------------------------------------------
@@ -52,13 +52,11 @@
       if (.not. Topo_clip_oro_L) interp_S = 'LINEAR'
 
       fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
-!!$      if (Grd_yinyang_L) &
-!!$      fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy_'//trim(Grd_yinyang_S)//'.fst'
 
-      call get_field ( wk, ni, nj, 'ME', trim(fn), interp_S, xfi, yfi, err)
+      call get_field ( wk, ni, nj, 'ME', trim(fn), interp_S, xfi, yfi, errcode)
+
+      if (errcode.lt.0) return
       
-      call handle_error(err,'e_gettopo','get_field')
-
       if (Topo_clip_oro_L) wk(:,:) = max ( 0.0, wk(:,:) )
 
       call e_filtopx (F_topoi , wk , ni, nj, 'G')

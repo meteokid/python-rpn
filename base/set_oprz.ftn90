@@ -14,12 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r set_oprz - Computes vertical operators and matrices a,b,c
-!                  for the elliptic solver
+!                 for the elliptic solver
 !
 #include "model_macros_f.h"
 !
       subroutine set_oprz
-!
       implicit none
 #include <arch_specific.hf>
 !
@@ -32,13 +31,7 @@
 ! v4_02   Qaddouri A.       - Rewrite set_pois for vertical stag version
 ! v4_05 - Girard C.         - Open top
 !
-!object
-!     see ID section above
-!
-!arguments
-!     None
-!
-!implicits
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
@@ -50,19 +43,15 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-!
-!modules
-!*
-      real*8 one
-      parameter( one  = 1.d0 )
-!
-      integer k, k0,k0m,k1, AA, BB, CC
+
+      integer k, k0, k0m, k1, AA, BB, CC
+      real*8, parameter ::  one = 1.d0
       real*8  pdsc, xxt,xxs,wk(G_nk)
       real*8, dimension  &
       ((trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj) :: a,b,c
-
 !
-!     ---------------------------------------------------------------
+!     __________________________________________________________________
+!
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !     Compute the vertical operators: tri-diagnonal matrices
@@ -86,7 +75,7 @@
          Opr_opszp0_8(AA+k) = 0.d0
          Opr_opszp0_8(BB+k) = Ver_dz_8%m(k)
          Opr_opszp0_8(CC+k) = 0.d0
-!        Zero in the others to start
+         !        Zero in the others to start
          Opr_opszp2_8(AA+k) = 0.d0
          Opr_opszp2_8(BB+k) = 0.d0
          Opr_opszp2_8(CC+k) = 0.d0
@@ -168,21 +157,21 @@
 !     Compute eigenvalues and eigenvector in the vertical
 !     ---------------------------------------------------
 !
-       call set_pois (Opr_zeval_8, Opr_lzevec_8,Opr_zevec_8,G_nk, G_nk)
+      call set_pois (Opr_zeval_8, Opr_lzevec_8, Opr_zevec_8, G_nk, G_nk)
 !
-      do k=1,G_nk
+      do k =1, G_nk
          do k1=1,G_nk
             wk(k) = Opr_zevec_8 ((k-1)*G_nk+k1)
          enddo
          wk(k)= Cstv_hco0_8*Opr_zeval_8(k)
       enddo
-!     
+
       if (Sol_type_s.eq.'DIRECT') then
-      call sol_abc ( wk,G_yg_8(1),Opr_opsyp0_8, &
-                     Opr_opsyp2_8,Opr_xeval_8, &
-                     trp_12sn0, trp_22n0 , trp_12smin, trp_12smax  , &
-                     trp_22min, trp_22max, trp_12sn  , trp_22n,G_nj, &
-                     Sol_ai_8, Sol_bi_8, Sol_ci_8 , a, b, c)
+         call sol_abc ( wk,G_yg_8(1),Opr_opsyp0_8, &
+                        Opr_opsyp2_8,Opr_xeval_8 , &
+                        trp_12sn0, trp_22n0 , trp_12smin, trp_12smax  , &
+                        trp_22min, trp_22max, trp_12sn  , trp_22n,G_nj, &
+                        Sol_ai_8, Sol_bi_8, Sol_ci_8 , a, b, c)
       endif
 !
 !     ---------------------------------------------------------------

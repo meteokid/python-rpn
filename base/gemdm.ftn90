@@ -13,80 +13,60 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemdm - control of the job at the highest level
-!
-#include "model_macros_f.h"
+!**s/r gemdm - Main entry point for the GEMDM component
 !
       subroutine gemdm
-!
       implicit none
-#include <arch_specific.hf>
-!
-!author
-!     M. desgagne( after version v1_03 of gefcn0 )
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Tanguay M.        - introduce 4D-Var configurations 
-! v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
-! v3_00 - Gauthier P.       - introduce subr. v4d_4dvar 
-! v3_00 - Tanguay M.        - add V4dg_twin_L and V4dg_4dvar_L 
-! v3_01 - Tanguay M.        - add V4dg_sgvc_L 
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_21 - Valcke, S.        - add oasis coupling termination
-! v3_22 - Dugas, B.         - add gemclimdm entry point
-! v3_30 - Desgagne M.       - new physics, coupling interface
-! v4_13 - Tanguay M.        - correction to allow set_sor when 4D-Var
-! v4_30 - Tanguay M.        - Revision
-!
-#include "lctl.cdk"
-#include "step.cdk"
 !
 !     ---------------------------------------------------------------
 !
-!C              Establish processor topology and model configuration
-!               ----------------------------------------------------
-      call set_world_view ()
-!
-!C             Initialize geometry of the model
-!              --------------------------------
-      call set_geom( )
-!
-!C             Initialize the ensemble prevision system
-!              ----------------------------------
-      call itf_ens_init ()
-!
-!C             Initialize the physics parameterization package
-!              ----------------------------------
-      call itf_phy_init ( )
-!
-!C             Initialize tracers
-!              ---------------
-      call tracers ( )
-!
-!C             Read restart if present
-!              --------------------------------
-      call rdrstrt ( )
-!
-!C             Initialize coupling
-!              -------------------
-      call itf_cpl_init ( )
-!
-!C             Setup commons level 1: VMM tables
-!              ---------------------------------
-      call set_cn1 ( )
-!
-!C             Initialize commons for output control
-!              -------------------------------------
-      call set_sor( )
-!
-!C             Run GEM
-!              -------
-      call gem_ctrl ( ) 
-!
-      call set_term ( )
-!
-      call stop_world_view (Lctl_step.lt.Step_total)
+! Initialize: Domain, MPI, processor topology and the model component
+
+      call init_component ('MOD')
+
+! Establish model configuration, domain decomposition and main memory
+
+      call set_world_view
+
+! Initialize geometry of the model
+
+      call set_geom
+
+! Initialize the ensemble prevision system
+
+      call itf_ens_init
+
+! Initialize the physics parameterization package
+
+      call itf_phy_init
+
+! Initialize tracers
+
+      call tracers
+
+! Read restart if present
+
+      call rdrstrt
+
+! Initialize coupling
+
+      call itf_cpl_init
+
+! Setup commons
+
+      call set_cn1
+
+! Initialize commons for output control
+
+      call set_sor
+
+! Run GEM
+
+      call gem_ctrl
+
+! Terminate
+
+      call stop_world_view
 !
 !     ---------------------------------------------------------------
 !

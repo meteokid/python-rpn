@@ -18,9 +18,8 @@
 #include "model_macros_f.h"
 !
       subroutine itf_phy_init
-!
       implicit none
-!
+
 !author
 !     Michel Desgagne    -   Summer 2006
 !
@@ -32,15 +31,8 @@
 ! v4_05 - Plante A.          - add iceline option (ICELAC)
 ! v4_14 - Dugas B.           - define ININCR (via call to phy_optl)
 ! v4_40 - Lee V.             - add VSTAG flag to inform vertical coordinate
-! v4_4  - Plante A.          - Add standard pressure profil std_p_prof for non orographic gwd
-!
-!object
-!	See above ID.
-!	
-!arguments
-!	none
-!
-!implicits
+! v4_44 - Plante A.          - Add standard pressure profil std_p_prof for non orographic gwd
+
 #include <arch_specific.hf>
 #include <msg.h>
 #include "glb_ld.cdk"
@@ -74,13 +66,12 @@
 !     ---------------------------------------------------------------
 !
 !   General rules:
-!    1) .ftn.cdk with prefix itf_phy_ in their name belong to GEMDM 
+!    1) .ftn & .cdk with prefix itf_phy_ are the actual interface routines
 !    2) Those with prefix phy_ belong to the physics package
 
       if (Lun_out.gt.0) write(Lun_out,1000)
 
-      p_nj       = 0
-      prout  = Lun_out.gt.0
+      prout  = Lun_out.gt.0 ! for print/write statements in stdout
 
       Schm_phyms_L=.false.
       if ( Schm_theoc_L) then
@@ -88,39 +79,40 @@
          return
       endif
 
+! Initialize physics configuration with default values and read 
+! user configuration in namelist from file 'model_settings'
+
+      err(1) = phy_nml (trim(Path_nml_S), set_dcst, Schm_phyms_L, Lun_out)
+      call handle_error(err(1),'itf_phy_init','phy_nml')
+
+      if (.not.Schm_phyms_L) return ! NO PHYSICS REQUIRED
+
+! Important compatibility level check
+
       phycompa = -1
       call phy_opti('COMPATIBILITY',phycompa , 1, 'GET',prout,err(1))
       if ( phycompa .ne. COMPATIBILITY_LVL ) then
-         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL,phycompa
+         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL, phycompa
          phycompa = -1
       else
          if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
       endif
       call handle_error(phycompa,'itf_phy_init','Wrong physics compatibility level')
 
-!#>>>> To phy_init... once out_phy is diconnected and seri/song are transfered
       err=0
 
-      ! Initialize physics configuration with default values and read 
-      ! user configuration in namelist from file 'model_settings'
-      err(1) = phy_nml (trim(Path_nml_S),set_dcst,Schm_phyms_L,Lun_out)
-      call handle_error(err(1),'itf_phy_init','phy_nml')
-      if (.not.Schm_phyms_L) return
+! We set mandatory variables that cannot be set via the namelist
 
-      call phy_optl('VSTAG'   , .true.    ,     1,'SET',prout,err(4))
-      call phy_opti('TLIFT'   , Schm_Tlift,     1,'SET',prout,err(5))
-      call phy_optl('COUPLING', C_coupling_L   ,1,'SET',prout,err(6))
-      call phy_optl('NOTOP'   , .true.,1,'SET',prout,err(7))
-      call handle_error(minval(err(4:7)),'itf_phy_init','phy_opt set')
+      call phy_optl('VSTAG'   , .true.      , 1,'SET',prout,err(1))
+      call phy_opti('TLIFT'   , Schm_Tlift  , 1,'SET',prout,err(2))
+      call phy_optl('COUPLING', C_coupling_L, 1,'SET',prout,err(3))
+      call phy_optl('NOTOP'   , .true.      , 1,'SET',prout,err(4))
+      call handle_error(minval(err(1:4)),'itf_phy_init','phy_opt set')
 
-      ! The current physics interface operate on an arbitrary number of
-      ! columns p_ni containing p_nk levels. Here p_ni is defined as a
-      ! whole row of points 'j' and there will be p_nj rows to compute.
-      !
-      ! Because of horizontal de-staggering of the wind components
-      ! we will lose 2 points around the global domain of a LAM config.
-      ! In LAM config, data will therefore be available to the physics
-      ! with the global scope (3,G_ni-2) (3,G_nj-2)
+! Because of horizontal de-staggering of the wind components
+! we will lose 2 points around the global domain of a LAM config.
+! In LAM config, data will therefore be available to the physics
+! with the global scope (3,G_ni-2) (3,G_nj-2)
 
       p_offi = 0 ; offi2 = 0
       p_offj = 0 ; offj2 = 0
@@ -128,27 +120,34 @@
          p_offi = 2*west  ; offi2 = 2*east
          p_offj = 2*south ; offj2 = 2*north
       endif
-      p_nk   = G_nk + 1
 
-      ! Complete physics initialization (bus descriptions become available after phy_debu)
-      err(1) = phy_init(Out3_date,real(Cstv_dt_8),1+p_offi,l_ni-offi2,1+p_offj,l_nj-offj2,p_runlgt,p_nk,itf_phy_rdfile)
+! Complete physics initialization (see phy_init for interface content)
+
+      p_nk   = G_nk + 1
+      err(1) = phy_init2 ( Out3_date, real(Cstv_dt_8), 1+p_offi, l_ni-offi2, &
+                           1+p_offj, l_nj-offj2, p_nk, itf_phy_rdfile)
       call handle_error(err(1),'itf_phy_init','phy_init')
 
-      call phy_opti('NI',p_ni,1,'GET',.false.,err(1))
-      call phy_opti('NJ',p_nj,1,'GET',.false.,err(2))
+! The current physics interface operate on an arbitrary number of
+! columns p_ni containing p_nk levels. Here p_ni is defined as a
+! whole row of points 'j' and there will be p_nj rows to compute
+! P_ni & p_nj are a function of the running length p_runlgt
+
+      call phy_opti('NI'      ,p_ni    ,1,'GET',.false.,err(1))
+      call phy_opti('NJ'      ,p_nj    ,1,'GET',.false.,err(2))
+      call phy_opti('P_RUNLGT',p_runlgt,1,'GET',.false.,err(3))
+
       p_doni = l_ni - p_offi - offi2
       p_donj = l_nj - p_offj - offj2
 
       !TODO: pass std_p_prof as phy_init arg
       ! Pass standard pressure profil to physics.
       allocate(std_p_prof(p_nk))
-      std_p_prof=Ver_std_p_prof%m
+      std_p_prof= Ver_std_p_prof%m
       call phy_com_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
       deallocate(std_p_prof)
 
-!#<<<<
-
-      ! Consistency check for output saturation calculations
+      ! Consistency check for saturation calculations
       err = 0
       call phy_optl('SATUCO'    ,cond_satu_L  , 1, 'GET',prout,err(1))
       if (Out3_satues_L .and. .not.cond_satu_L) then
@@ -159,6 +158,7 @@
       ! Time series and zonal diag init
       call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(2))
       call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(3))
+
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
       if (P_serg_srsus_L) then
          if (Lun_out.gt.0) then
@@ -172,10 +172,10 @@
       else
          Xst_nstat = 0
       endif
+
       call set_dia()
 
       call handle_error(minval(err),'itf_phy_init','phy_opt get')
-
 !
 ! Pre-establish BUS index for coupling
 !

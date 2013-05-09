@@ -27,6 +27,7 @@
 !
 #include "filename.cdk"
 #include "path.cdk"
+#include "lun.cdk"
 !
       integer  fnom,longueur,wkoffit
       external fnom,longueur,wkoffit
@@ -55,8 +56,9 @@
               pilot_f(cnt)(1:longueur(pilot_f(cnt)))
          err = wkoffit(fn)
          if ((err.ne.1).and.(err.ne.33)) then
-            write(6,905) pilot_f(cnt)(1:longueur(pilot_f(cnt))), &
-                         pilot_dir(1:longueur(pilot_dir))
+            if (Lun_out.gt.0) &
+                 write(6,905) pilot_f(cnt)(1:longueur(pilot_f(cnt))), &
+                              pilot_dir(1:longueur(pilot_dir))
             pilot_f (cnt) = '@#$%^&'
          endif
       end do
@@ -72,9 +74,9 @@
 !
       ipilf  =  1
 !
-      write (6,900) pilot_dir(1:longueur(pilot_dir))
+      if (Lun_out.gt.0) write (6,900) pilot_dir(1:longueur(pilot_dir))
       do cnt=1,npilf
-         write(6,901) pilot_f(cnt)(1:longueur(pilot_f(cnt)))
+         if (Lun_out.gt.0) write(6,901) pilot_f(cnt)(1:longueur(pilot_f(cnt)))
       end do
 !
  900  format (/' Available files in directory: ',a)

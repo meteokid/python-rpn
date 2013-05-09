@@ -59,9 +59,9 @@
 !*
 !     ---------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write (Lun_out,1001)
-
       if (Vspng_nk.le.0) return
+
+      if (Lun_out.gt.0) write (Lun_out,1001)
 
       istat = 0
       if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then

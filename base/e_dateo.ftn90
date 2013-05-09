@@ -63,12 +63,12 @@
          endif
          if ( Pil_jobstrt_S.eq.'NIL' .or.  &
               Pil_jobend_S .eq.'NIL' ) then
-            write (6,1005) 
+            if (Lun_out.gt.0) write (6,1005) 
             stop
          endif
          if ( (Pil_jobstrt_S.ne.Pil_jobend_S).and. &
               (Step_nesdt.le.0) ) then
-            write (6,1006) 
+            if (Lun_out.gt.0) write (6,1006) 
             stop
          endif  
 !
@@ -81,7 +81,7 @@
 !
       endif
 !
-      call gemtim4 ( 6, 'END OF e_date0', .false. )
+      call gemtim4 ( Lun_out, 'END OF e_date0', .false. )
 !
  1001 format (/' Incorrect VALIDITY time in ',a,/' VALIDITY=',a,' INTENDED=',&
                  a,' -----ABORT-----'/)
@@ -99,6 +99,7 @@
       implicit none
 #include <arch_specific.hf>
 !
+#include "lun.cdk"
       character* (*) datpdf,filename
 !
       integer  fnom, fstouv, fstinf, fstprm, fstfrm, fclos, wkoffit
@@ -119,30 +120,30 @@
       get_date = .false.
 
       if (datpdf == 'NIL') then
-         write (6,1001) trim(filename)
+         if (Lun_out.gt.0) write (6,1001) trim(filename)
          datestp = -1
       else
-         write (6,1002) datpdf,trim(filename)
+         if (Lun_out.gt.0) write (6,1002) datpdf,trim(filename)
          call datp2f ( datestp, datpdf )
       endif
 !
       unf = 0
       if (wkoffit(filename) .gt. -1 ) then
          if (fnom  (unf,filename,'RND+OLD+R/O',0).lt.0) then
-            write (6,2001) trim(filename)
+            if (Lun_out.gt.0) write (6,2001) trim(filename)
             stop
          endif
          if (fstouv(unf ,'RND').lt.0) then
-            write (6,2002) trim(filename)
+            if (Lun_out.gt.0) write (6,2002) trim(filename)
             stop
          endif
-         write (6,2003) trim(filename),unf
+         if (Lun_out.gt.0) write (6,2003) trim(filename),unf
 !
          key = fstinf (unf, ni1,nj1,nk1,datestp,' ',-1,-1,-1,' ','UU' )
          if ( key .lt. 0 ) then
             key = fstinf (unf, ni1,nj1,nk1,datestp,' ',-1,-1,-1,' ','UT1')
             if ( key .lt. 0 ) then
-               write(6,1004) 
+               if (Lun_out.gt.0) write(6,1004) 
                stop
             endif
          endif
@@ -160,7 +161,7 @@
          err = fstfrm (unf)
          err = fclos  (unf)
 !
-         write (6,1003) trim(datpdf)
+         if (Lun_out.gt.0) write (6,1003) trim(datpdf)
          get_date = .true.
 !
       endif

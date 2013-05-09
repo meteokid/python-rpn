@@ -38,6 +38,7 @@
 #include "grd.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+#include "lun.cdk"
 !
       integer,external :: ezgdef_fmem
 !
@@ -50,7 +51,7 @@
 !
 !----------------------------------------------------------------------
 !
-      write(6,1001)
+      if (Lun_out.gt.0) write(6,1001)
 
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 

@@ -13,29 +13,32 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r e_initntr
+!**s/r init_component
 !
 #include "model_macros_f.h"
-      subroutine e_initntr2(my_color)
+      subroutine init_component (F_component_S)
       implicit none
 !
-      integer my_color
-!
+      character*(*) F_component_S
 #include <arch_specific.hf>
 !
-!author   Michel Desgagne -- Fal 2008 --
+!author   Michel Desgagne -- Spring 2013 --
 !
 !revision
-! v3_31 - M. Desgagne       - Initial version
-! v4_40 - Qaddouri/Desgagne - Yin-Yang setup
+! v4_50 - M. Desgagne       - Initial version
 !
+#include "component.cdk"
 #include "grd.cdk"
+#include "dcst.cdk"
+#include "cst_lis.cdk"
+#include "lun.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "version.cdk"
 #include <clib_interface.cdk>
 !
-      integer,external :: rpn_comm_init_multi_level, fnom, exdb
+      logical, external :: set_dcst_8
+      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, pe_zero_topo
       external init_ndoms
 !
       character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
@@ -59,38 +62,39 @@
 
       ierr = clib_chdir (trim(Path_work_S))
 
+      COMPONENT= F_component_S
+
       ngrids=1
       if (Grd_yinyang_L) ngrids=2
 
-      Ptopo_couleur = RPN_COMM_init_multi_level (dummy, Ptopo_myproc,Ptopo_numproc, &
-                                                  1,1, Grd_ndomains, ngrids  )
+      Ptopo_couleur= RPN_COMM_init_multi_level (pe_zero_topo, Ptopo_myproc,Ptopo_numproc, &
+                                                Ptopo_npex,Ptopo_npey,Grd_ndomains,ngrids )
 
       if (Grd_yinyang_L) then
+         Ptopo_intracomm = RPN_COMM_comm ('GRID')
+         Ptopo_intercomm = RPN_COMM_comm ('GRIDPEERS')
+         call RPN_COMM_size ('MULTIGRID',Ptopo_world_numproc,ierr)
+         call RPN_COMM_rank ('MULTIGRID',Ptopo_world_myproc ,ierr)
+
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
+         ierr= clib_chdir(trim(Grd_yinyang_S))
+	 Ptopo_ncolors = 2
       else
          Ptopo_couleur = 0
+         Ptopo_ncolors = 1
       endif
 
-      if (Ptopo_myproc.gt.(Grd_ndomains*ngrids-1)) Ptopo_couleur = -1
-      my_color = Ptopo_couleur
+      call msg_set_can_write (Ptopo_myproc == 0)
 
-      if (Ptopo_couleur.eq.0) ierr = clib_mkdir (trim(Path_output_S))
+      call pe_all_topo
 
-      call atm_model_getversion(name_S,Version_number_S,DSTP,arch_S,compil_S,is_official_L)
-      if (is_official_L) then
-         Version_title_S = trim(name_S)//' --- Release of: '//trim(DSTP)
-      else
-         Version_title_S = trim(name_S)//' --- User Build: '//trim(DSTP)
-      endif
+      ierr = 0
+      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
+                              Lun_out,Ptopo_numproc ) ) ierr=-1
+      call handle_error (ierr,'e_gemnml','set_dcst_8')
 
-      if (Ptopo_couleur.eq.0) then
-         call  open_status_file3 (trim(Path_output_S)//'/status_ent.dot')
-         call write_status_file3 ('_status=ABORT' )
-         ierr = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
-      endif
-
-      call gemtim4 ( 6, 'END OF e_initntr', .false. )
+      call gemtim4 ( Lun_out, 'END OF e_initntr', .false. )
 !
 !--------------------------------------------------------------------
 !

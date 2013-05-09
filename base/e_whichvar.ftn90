@@ -15,11 +15,11 @@
 
 !**s/r e_whichvar -
 !
-      subroutine e_whichvar (F_names,F_n,F_unit,F_datev,F_var_S)
+      subroutine e_whichvar (F_names,F_n,F_unit,F_datev,F_var_S,errcode)
       implicit none
 #include <arch_specific.hf>
 !
-      integer F_n
+      integer F_n,errcode
       character* (*) F_names(F_n),F_var_S
       integer F_unit,F_datev
 !author 
@@ -27,6 +27,7 @@
 !revision
 ! v4_50 - Desgagne M.     - Initial version
 !
+#include "lun.cdk"
       character*1024 msg
       integer,external :: fstinf
       integer i,key,ni1,nj1,nk1,err
@@ -48,8 +49,12 @@
       do i=1, F_n
          msg=trim(msg)//' '//F_names(i)
       end do
- 
-      call handle_error(err,'e_whichvar', msg)
+
+      if (err.lt.0) then
+         if (Lun_out.gt.0) write (6,*) 'E_WHICHVAR:',msg
+      endif
+      
+      errcode = err
 !
 ! ---------------------------------------------------------------------
 !

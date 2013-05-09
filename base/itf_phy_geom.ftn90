@@ -109,7 +109,7 @@ subroutine itf_phy_geom2(F_istat)
                 ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
       if ( nest_it ) then
          w2 = 0.
-         call nest_blend (w1,w2,LDIST_DIM,1,1,'M')
+         call nest_blend (w1(:,:,1),w2(:,:,1),LDIST_DIM,'M',level=G_nk+1)
       endif
       wrk1(1:l_ni,1:l_nj) = w1(1:l_ni,1:l_nj,1)
    else

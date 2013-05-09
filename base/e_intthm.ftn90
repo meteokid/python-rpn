@@ -17,10 +17,12 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine e_intthm
+      subroutine e_intthm (errcode)
       implicit none
 #include <arch_specific.hf>
 !
+      integer errcode
+
 !AUTHOR  M. ROCH - july 95 - from intscal
 !
 !revision
@@ -267,12 +269,12 @@
       end do
 
       deallocate (ttn,hun,gzn,zdn,wn,qn,p0,wk2)
+      errcode = 0
      
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 
-      return
+  999 return
 
- 999  call handle_error(-1,'e_intthm','PROBLEM WITH E_INTTHM')
 !------------------------------------------------------------------
 !
       end

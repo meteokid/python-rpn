@@ -38,21 +38,15 @@
 ! v4_40 - Lee, V.           - allow 3df files for Yin-Yang
 !
 #include "e_grids.cdk"
-#include "cst_lis.cdk"
-#include "dcst.cdk"
 #include "grd.cdk"
 #include "itf_cpl.cdk"
-#include "ptopo.cdk"
 #include "pilot.cdk"
 #include "path.cdk"
 #include "step.cdk"
-#include "lun.cdk"
 #include <clib_interface.cdk>
 
       include 'gemdyn_version.inc'
 
-      logical  set_dcst, set_dcst_8
-      external set_dcst, set_dcst_8
       integer  grid_nml2, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
       external grid_nml2, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
 
@@ -63,12 +57,6 @@
 !
       ierr = min(clib_isdir(Path_input_S),0)
       call handle_error(ierr,'e_gemnml',trim(Path_input_S)//' NOT AVAILABLE')
-
-      Lun_out = 0
-      if (Ptopo_myproc.eq.0) Lun_out = 6
-
-      if (Lun_out.gt.0) write (6,1001) trim(GEMDYN_NAME_S),trim(GEMDYN_VERSION_S), &
-                                       trim(GEMDYN_DSTP_S),trim(GEMDYN_EC_ARCH_S)
 
       fn = trim(Path_work_S)//'/model_settings.nml'
 
@@ -99,11 +87,6 @@
       if (C_coupling_L) ierr = itf_cpl_nml ('print')
 
       err = clib_symlink ( trim(Path_input_S)//'/constantes', 'constantes' )
-
-      err = 0
-      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
-                              Lun_out,Ptopo_numproc ) ) err=-1
-      call handle_error (err,'e_gemnml','set_dcst_8')
 
       call e_trinit
 !

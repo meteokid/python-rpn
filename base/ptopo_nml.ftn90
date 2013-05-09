@@ -36,6 +36,7 @@
 !
 !implicits
 #include "ptopo.cdk"
+#include "lun.cdk"
       integer,parameter :: MAX_INBLOC = 1 !- TODO: increase this limit when we know how many concurent file acces is supported; could be machine dependent.
       integer,external :: fnom
 
@@ -47,7 +48,7 @@
 !
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          ptopo_nml = 0
-         write (6  ,nml=resources)
+         if (Lun_out.gt.0) write (6  ,nml=resources)
          return
       endif
 !

@@ -15,19 +15,14 @@
 
 !*s/r prever - prepares projection matrix for the vertical
 !       exclusively for staggered model symmetric and  nonsymmetric_ln(Z) version.
-!       no special treatement for singularity. Matrices are
-!        non-singulars by construction.   
+!       no special treatement for singularity. Matrices are non-singulars by construction.   
 !
-#include "model_macros_f.h"
-!
-      subroutine preverln(F_eval_8,F_levec_8,F_evec_8,F_wk1_8,F_nk,KDIM)
+      subroutine preverln (F_eval_8, F_levec_8, F_evec_8, F_nk, KDIM)
       implicit none
 #include <arch_specific.hf>
 !
       integer F_nk, KDIM
-      real*8 F_eval_8(*), F_evec_8(KDIM,*), F_wk1_8(KDIM,*)
-      real*8 F_levec_8(KDIM,F_nk),work(8*F_nk),B1(KDIM,F_nk),F_index(F_nk)
-      integer index(F_nk)
+      real*8 F_eval_8(KDIM), F_levec_8(KDIM,KDIM), F_evec_8(KDIM,KDIM)
 !
 !author  Abdessamad Qaddouri - 2007
 !
@@ -44,32 +39,23 @@
 ! F_wk1_8           - work field
 ! F_nk         I    - number of vertical levels
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "opr.cdk"
 #include "schm.cdk"
 !
-      integer i, j,k
-      real*8 pdordr, zero, one, xxx, yyy
+      integer i, j
+      real*8 zero, one, xxx, yyy
       parameter(zero=.0d0, one=1.d0)
+      real*8 wk1(KDIM,KDIM), B1(KDIM,KDIM)
 !
-      call handle_error_l(F_nk == G_nk,'preverln','F_nk /= G_nk')
-!     
-      pdordr = -1.0
+! --------------------------------------------------------------------
 !
-      do i=1,F_nk
-         do j=1,F_nk
-            F_evec_8 (i,j)=zero
-            F_wk1_8  (i,j)=zero
-            B1       (i,j)=zero
-            F_levec_8(i,j)=zero
-         enddo
-      enddo
-!      
+      F_evec_8= 0. ; F_levec_8= 0. ; wk1= 0. ; B1= 0.
+
       xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
       yyy = - Cstv_hco1_8
 !
@@ -80,36 +66,40 @@
          i = j - 1
          if ( i.gt.0 ) then
 !           A wing
-          F_evec_8(i,j) =     Opr_opszp2_8(2*G_nk+i) &
-                        +     Opr_opszpl_8(2*G_nk+i) &
-                        + xxx*Opr_opszpm_8(2*G_nk+i)
+            F_evec_8(i,j) =     Opr_opszp2_8(2*G_nk+i) &
+                          +     Opr_opszpl_8(2*G_nk+i) &
+                          + xxx*Opr_opszpm_8(2*G_nk+i)
          endif
 !     
          i = j
 !        B: positive definit
-         F_wk1_8(i,j) = Opr_opszp0_8(G_nk+i)
+         wk1(i,j) = Opr_opszp0_8(G_nk+i)
 !        A diag
          F_evec_8(i,j) =     Opr_opszp2_8(G_nk+i) &
                        +     Opr_opszpl_8(G_nk+i) &
                        + xxx*Opr_opszpm_8(G_nk+i) &
                        + yyy*Opr_opszp0_8(G_nk+i)
-        i=j+1
-        if(i.lt.(F_nk+1)) then
-         F_evec_8(i,j) =     Opr_opszp2_8(i) &
-                       +     Opr_opszpl_8(i) &
-                       + xxx*Opr_opszpm_8(i)
-        endif
-       enddo
+         i=j+1
+         if(i.lt.(F_nk+1)) then
+            F_evec_8(i,j) =     Opr_opszp2_8(i) &
+                          +     Opr_opszpl_8(i) &
+                          + xxx*Opr_opszpm_8(i)
+         endif
+
+      enddo
+
 ! note:  B1 is modified by nsyeigl    
-       do j=1,F_nk
-        do  i=1,F_nk
-           F_levec_8(i,j)= F_evec_8(i,j)
-           B1(i,j)= F_wk1_8(i,j) 
-        enddo
-       enddo 
+      do j=1,F_nk
+      do i=1,F_nk
+         F_levec_8(i,j)= F_evec_8(i,j)
+         B1(i,j)= wk1(i,j) 
+      enddo
+      enddo
 !
-       call  nsyeigl( F_eval_8,F_levec_8,F_evec_8 ,B1, work, &
-                                         F_nk, KDIM, 8*F_nk )
-!     
+      call  nsyeigl( F_eval_8,F_levec_8,F_evec_8 ,B1,&
+                                  F_nk, KDIM, 8*F_nk )
+!
+! --------------------------------------------------------------------
+!
       return
       end

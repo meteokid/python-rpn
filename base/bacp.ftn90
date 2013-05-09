@@ -162,13 +162,15 @@
 !                   Open Top(k0.ne.1):  F_q(i,j,k0-1) is externally specified
 
          if (Schm_opentop_L) then
+!$omp do
             do j= j0, jn
             do i= i0, in               
                F_q(i,j,k0-1)=F_nest_q(i,j,k0-1)
             end do
             end do
+!$omp enddo
          endif
-
+!
 !        Note : we cannot use omp on loop k 
 !               due to vertical dependency F_q(i,j,k)
          do k=k0t,l_nk

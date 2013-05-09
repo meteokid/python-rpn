@@ -13,13 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r e_dynfld - to write out dynamic fields
+!**s/r e_dynfld - reads and interpolated dynamics 3d fields
+!                 for timeframe 'date1'
 !
-#include "model_macros_f.h"
-      subroutine e_dynfld 
+      subroutine e_dynfld (date1,errcode) 
       implicit none
-#include <arch_specific.hf>
-!
+
+      character*16 date1
+      integer errcode
+
 !AUTHOR  M. Desgagne    April 2002
 !
 !revision 
@@ -30,73 +32,36 @@
 ! v4_05 - Desgagne M. - implement tailjob launcher
 ! v4_05 - Lee V. - bugfix: save Pil_bcs_hollow_L after e_specanal/ac_posi
 !
-!IMPLICIT
 #include "e_fu.cdk"
 #include "e_cdate.cdk"
-#include "e_topo.cdk"
-#include "e_grids.cdk"
-#include "bmf.cdk"
-#include "step.cdk"
-#include "pilot.cdk"
-#include "filename.cdk"
-!
-!object
-!  Dynamic fields will be written from dates Pil_jobstrt to Pil_jobend
-!  Pil_bmf_L= TRUE forces BMF files to be written
-!*
-      integer, external ::  fstfrm,fclos
-!
-      character*16 date1,date2
-      integer err,cnt
-      real*8 dayfrac,sec_in_day
-      parameter (sec_in_day=86400.0d0)
+
+      integer, external :: fstfrm,fclos
+      integer err
 !
 !---------------------------------------------------------------------
 !
-      bmf_dtyp = 41
-      date1    = Pil_jobstrt_S
-      dayfrac  = dble(Step_nesdt) / sec_in_day
-!
-      if (Pil_bmf_L) then
-          allocate ( topo (nifi*njfi) )
-          call e_gettopo (topo, nifi, njfi)
+      errcode = -1
+      call datp2f ( datev, date1 )
+      write (6,105) date1
+
+      call e_specanal2  (datev, err)
+      if (err.lt.0) return
+
+      call e_open_files (datev)
+
+      call e_intthm (err)
+      if (err.lt.0) then
+         write(6,*) 'E_DYNFLD: PROBLEM WITH E_INTTHM'
+         goto 999
       endif
-!
-      cnt   = 0
-      ipilf = 1
-!
-      do
-!
-         call datp2f   ( datev, date1 )
-         write (6,105) date1
 
-         call e_specanal2  (datev)
-!
-         call e_open_files (datev)
-!
-         call e_intthm
-!
-         call e_intwind
-!     
-         err = fstfrm ( e_fu_anal )
-         err = fclos  ( e_fu_anal )
-!
-         call incdatsd (date2,date1,dayfrac)
-         date1 = date2
-!
-         cnt = cnt + 1
-         if (cnt .eq. Pil_lancemodel) &
-            call system ( &
-           'tailjob=../../../UPLOAD/cfg_all/BATCH_launch_NTR_tailjob_01;' //&
-           'if [ -s \${tailjob} ] ; then echo LAUNCHING ${tailjob}     ;' //&
-           'soumet_lajob ${tailjob} ; /bin/rm -f ${tailjob}            ; fi')
+      call e_intwind
 
-         call gemtim4 ( 6, 'END OF e_dynfld', .false. )
-!
-         if (date1 .gt. Pil_jobend_S) return
-
-      end do
-!     
+      errcode = 0
+     
+ 999  err = fstfrm ( e_fu_anal )
+      err = fclos  ( e_fu_anal )
+    
  105  format (/43('#'),/,1X,'PROCESSING DATASET VALID: ',a16,/43('#'))
 !
 !---------------------------------------------------------------------

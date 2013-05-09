@@ -17,16 +17,17 @@
 !
       subroutine e_hvgrid (F_var_S, F_datev, F_unit, F_ni,F_nj,F_nk,&
                                    F_grd_S, F_ig1,F_ig2,F_ig3,F_ig4,&
-                                                     F_list,F_nlist )
+                                             F_list,F_nlist,errcode )
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) F_var_S,F_grd_S
       integer F_datev,F_unit,F_ni,F_nj,F_nk, &
-              F_ig1,F_ig2,F_ig3,F_ig4,F_nlist
+              F_ig1,F_ig2,F_ig3,F_ig4,F_nlist,errcode
       integer F_list(F_nlist)
 !author 
 !    Michel Desgagne - Fall 2012
+#include "lun.cdk"
 
       integer,external :: fstinf,fstprm,fstinl
       character*1   tva,grda, grd
@@ -110,7 +111,11 @@
 
       F_list(1:nka) = list(1:nka)
 
-      call handle_error(istat,'e_hvgrid',trim(msg))
+      if (istat.lt.0) then
+         if (Lun_out.gt.0) write (6,*) 'E_HVGRID:',trim(msg)
+      endif
+
+      errcode = istat
 !
 ! ---------------------------------------------------------------------
 !

@@ -16,10 +16,8 @@
 #include "model_macros_f.h"
 !**s/r e_stopntr
 !
-      subroutine e_stopntr2(my_color)
+      subroutine e_stopntr2
       implicit none
-!
-      integer my_color
 !
 #include <arch_specific.hf>
 !
@@ -29,18 +27,17 @@
 ! v4_20 - M. Desgagne       - Initial version
 !
 #include "version.cdk"
+#include "lun.cdk"
 #include "ptopo.cdk"
 !
-      integer  exfin
-      external exfin
-
+      integer, external :: exfin
       integer err
 !
 !--------------------------------------------------------------------
 !
-      call gemtim4 ( 6, 'END OF GEMNTR', .true. )
+      call gemtim4 ( Lun_out, 'END OF GEMNTR', .true. )
 
-      if ((Ptopo_myproc.eq.0).and.(my_color.ge.0)) then
+      if (Ptopo_myproc.eq.0) then
          err= exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
          call write_status_file3 ('_status=ED' )
          call close_status_file3 ()

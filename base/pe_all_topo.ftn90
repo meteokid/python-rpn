@@ -15,8 +15,6 @@
 
 !**s/r pe_all_topo - First initialization steps
 !
-#include "model_macros_f.h"
-!
       subroutine pe_all_topo
       implicit none
 #include <arch_specific.hf>
@@ -29,7 +27,6 @@
 ! v4_03 - Desgagne/Lee      - adaptation to new scripts
 ! v4_40 - Tanguay M.        - Revision TL/AD
 !
-!implicits
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "lun.cdk"
@@ -37,17 +34,13 @@
 #include <clib_interface.cdk>
 !
       integer,parameter :: BUFSIZE=10000
-      integer,external::  rpn_comm_bloc,ouvrstrt,wkoffit,gnthread,fnom
-      integer, external :: OMP_get_num_threads, OMP_get_max_threads, &
-                           OMP_get_thread_num
-! 
+      integer, external :: ouvrstrt,wkoffit,OMP_get_max_threads
+
       character*3 mycol_S,myrow_S
-      character*12 dumc1_S
       character*500 fn, pwd_S
-      integer err,n1,n2,n3,n4,n5,n6,n7,unf
+      integer err,unf
       integer bufnml(BUFSIZE),bufoutcfg  (BUFSIZE), &
               bufcte(BUFSIZE),bufinphycfg(BUFSIZE)
-!
 !
 !-------------------------------------------------------------------
 !
@@ -73,7 +66,7 @@
 !
       call RPN_COMM_bcast (Ptopo_npex  , 8, "MPI_INTEGER",0,"grid",err )
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
-!
+
       Ptopo_npeOpenMP = OMP_get_max_threads()
 
       if (Ptopo_nthreads_dyn.lt.1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
@@ -95,12 +88,6 @@
 !
       Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx*Ptopo_npey/Ptopo_nblocy
       call rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
-      err = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
-      call handle_error(err,'pe_all_topo','rpn_comm_bloc')
-!
-      call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc, &
-                            n1,n2,n3,n4,n5,n6,n7 ,Ptopo_mybloc, &
-              Ptopo_myblocx,Ptopo_myblocy,Ptopo_blocme,dumc1_S )
 !
 ! Initializes OpenMP
 !
@@ -147,7 +134,7 @@
       call array_to_file (bufoutcfg,size(bufoutcfg),trim(Path_outcfg_S))
       call array_to_file (bufcte,size(bufcte),'constantes'    )
       call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
-!
+
       Lun_rstrt = ouvrstrt( )
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
@@ -162,7 +149,7 @@
       else
          call fclos (unf)
       endif
-!
+
  8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
           " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
             i4,' x ',i3,' x ',i3)

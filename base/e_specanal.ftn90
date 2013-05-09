@@ -17,11 +17,11 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine e_specanal2 (current_date)
+      subroutine e_specanal2 (current_date, errcode)
       implicit none
 #include <arch_specific.hf>
 !
-      integer current_date
+      integer current_date, errcode
 !author 
 !    Michel Desgagne - Fall 2012
 !
@@ -32,6 +32,7 @@
 #include "e_fu.cdk"
 #include "e_grids.cdk"
 #include "grd.cdk"
+#include "lun.cdk"
 #include "filename.cdk"
 #include "pilot.cdk"
 
@@ -40,7 +41,7 @@
       character*4 var_uu,names(10)
       character*6 presvar_S(PRESVAR_MAX)
       character*8 vcode_S
-      integer err, vcode, list(nlist), istat, k, nka, ni1
+      integer err, err_uu, err_vt, err_hu, vcode, list(nlist), istat, k, nka, ni1
       real*8  presvar_8(PRESVAR_MAX)
       real*8, dimension(:), allocatable:: hyb_8,hyb_t_8
 !Notes for coding anal_hav (from px_param)
@@ -54,6 +55,8 @@
 !
 ! ---------------------------------------------------------------------
 !
+      errcode = -1
+
       write (6, 1001)
 
       err= e_fstouv ('P0', current_date, Grd_typ_S(1:1), &
@@ -61,35 +64,51 @@
       if (err.lt.0) &
       err= e_fstouv ('TT', current_date, Grd_typ_S(1:1), &
                                   pilot_dir, e_fu_anal)
-      call handle_error(err,'e_specanal','Problem with e_fstouv')
+
+      if (err.lt.0) then
+         if (Lun_out.gt.0) write (6,*) 'E_SPECANAL: Problem with e_fstouv'
+         return
+      endif
 
       names(1)= 'UU' ; names(2)= 'UT1'
-      call e_whichvar (names,2,e_fu_anal,current_date,var_uu)
+      call e_whichvar (names,2,e_fu_anal,current_date,var_uu,err_uu)
       names(1)= 'VT' ; names(2)= 'TT'
-      call e_whichvar (names,2,e_fu_anal,current_date,vt)
+      call e_whichvar (names,2,e_fu_anal,current_date,vt,err_vt)
       names(1)= 'HU' ; names(2)= 'ES'; names(3)= 'TD' ; names(4)= 'HR'
-      call e_whichvar (names,4,e_fu_anal,current_date,vh)
+      call e_whichvar (names,4,e_fu_anal,current_date,vh,err_hu)
+
+      if ( (err_uu.lt.0).or.(err_vt.lt.0).or.(err_hu.lt.0) ) then
+         if (Lun_out.gt.0) write (6,*) 'E_SPECANAL: Problem with e_whichvar'
+         return
+      endif
 
       nia = -1 ; nka = -1
       call e_hvgrid (vt,     current_date, e_fu_anal, nia,nja,nka, &
-                             grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+                      grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err_vt)
 
-      allocate ( hyb_t_8(nka) ) ; hyb_t_8=-1.
-      err = px_param( e_fu_anal,list,na_t,nka,lv_t,hyb_t_8, 'T',&
-                      presvar_8,presvar_S,PRESVAR_MAX,          &
-                      zat_8,zbt_8,vcode_S,vcode )
-      call handle_error(err,'e_specanal','px_param on TT')
+      if (err_vt.ge.0) then
+         allocate ( hyb_t_8(nka) ) ; hyb_t_8=-1.
+         err = px_param( e_fu_anal,list,na_t,nka,lv_t,hyb_t_8, 'T',&
+                         presvar_8,presvar_S,PRESVAR_MAX,          &
+                         zat_8,zbt_8,vcode_S,vcode )
+      endif
 
       ni1 = nia ; nka = -1
       if (trim(var_uu)=='UT1') ni1=0
       call e_hvgrid (var_uu, current_date, e_fu_anal, ni1,nja,nka, &
-                             grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+                      grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err_uu)
 
-      allocate ( hyb_8(nka) ) ; hyb_8 = -1.
-      err = px_param( e_fu_anal,list,na,nka,lv,hyb_8,  'M',&
-                      presvar_8,presvar_S,PRESVAR_MAX,     &
-                      za_8,zb_8,vcode_S,vcode )
-      call handle_error(err,'e_specanal','px_param on UU')
+      if (err_uu.ge.0) then
+         allocate ( hyb_8(nka) ) ; hyb_8 = -1.
+         err = px_param( e_fu_anal,list,na,nka,lv,hyb_8,  'M',&
+                         presvar_8,presvar_S,PRESVAR_MAX,     &
+                         za_8,zb_8,vcode_S,vcode )
+      endif
+
+      if ( (err_uu.lt.0).or.(err_vt.lt.0) ) then
+         if (Lun_out.gt.0) write (6,*) 'E_SPECANAL: Problem with e_hvgrid'
+         return
+      endif      
 
       Anal_sigma_L   = .false.
       Anal_eta_L     = .false. 
@@ -111,14 +130,12 @@
 
       print *,'===> Analysis on ',vcode_S,' vertical coordinates'
 
-      istat = 0
       if ( (Anal_sigma_L.or.Anal_eta_L.or.Anal_hyb_L.or.Anal_hybstg_L) &
             .and. ( VH .ne. 'HU' ) ) then
-         write(6,*) 'ERROR: Moisture variable(VH) must be HU '
-         write(6,*) 'when analysis is on sigma/eta/hybrid.'
-         istat = -1
+         write(6,*) 'E_SPECANAL: Moisture variable(VH) must be HU '
+         write(6,*) 'E_SPECANAL: when analysis is on sigma/eta/hybrid.'
+         return
       endif
-      call handle_error(istat,'e_specanal','')
 
       if (LV.eq.1) then
          print*," A SHALLOW WATER model is now to be ASSUMED "
@@ -156,7 +173,8 @@
             endif
          enddo
       endif
-      call handle_error(istat,'e_specanal','')
+
+      if (istat.lt.0) return
 
 !     Check presence of ZDT1, WT1 and QT1 and initialyse nvar
 
@@ -166,7 +184,7 @@
       if ( .not. Anal_pres_L ) then
          nka = lv_t ; list(1) = -1
          call e_hvgrid ('ZDT1',current_date, e_fu_anal, nia,nja,nka, &
-              grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+              grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err)
          if (list(1).ge.0) then
             nvar=nvar+1
             VAR_ZD='ZDT1'
@@ -174,13 +192,13 @@
          
          list(1) = -1
          call e_hvgrid ('WT1',current_date, e_fu_anal, nia,nja,nka, &
-              grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+              grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err)
          if (list(1).ge.0) then
             nvar=nvar+1
             VAR_W='WT1'
          else
             call e_hvgrid ('ZZ' ,current_date, e_fu_anal, nia,nja,nka, &
-                 grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+                 grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err)
             if (list(1).ge.0) then
                nvar=nvar+1
                VAR_W='ZZ'
@@ -189,7 +207,7 @@
          
          nka = lv ; list(1) = -1
          call e_hvgrid ('QT1',current_date, e_fu_anal, nia,nja,nka, &
-              grda, ig1a,ig2a,ig3a,ig4a,list,nlist)
+              grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err)
          if (list(1).ge.0) then
             nvar=nvar+1
             VAR_Q='QT1'
@@ -209,9 +227,12 @@
             write(6,*)'**************************************'
          endif
       endif
-      call handle_error(istat,'e_specanal','')
+
+      if (istat .lt.0) return
 
       call e_target3df (grda, nia, nja, ig1a, ig2a, ig3a, ig4a)
+
+      errcode = 0
 
  801  format (' LEVEL anal = ',d15.8,2X,' k = ',i4,' IP1= ',I8)
  1001 format(/,'OBTAIN INPUT DATA LEVEL STRUCTURE (S/R E_SPECANAL)',/50('-'))

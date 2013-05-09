@@ -67,9 +67,9 @@
          err = newdate ( current_date, bmf_time1, bmf_time2, -3 )
          call prsdate  ( yy,mm,dd,Bmf_hh,Bmf_mm,Bmf_ss,dum,pdate)
 
-         call bmf_splitstart (Ptopo_npex,Ptopo_npey,trim(rootfn),'BM', &
-                                      Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
-         call e_bmfsplitxy2 (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
+         call bmf_splitstart (Ptopo_nblocx,Ptopo_nblocy,trim(rootfn), &
+                              'BM',Bmf_time1,Bmf_hh,Bmf_mm,Bmf_ss)
+         call e_bmfsplitxy2  (topo ,nifi,njfi,'ME  ',1,1,pni ,0,0,0)
          call bmf_splitwrall ('RNA ',LV,1,1,Bmf_time1,Bmf_time2,  &
                                           0,0,bmf_dtyp,0,RNA)
          call bmf_splitwrall ('ZA  ',LV,1,1,Bmf_time1,Bmf_time2, &

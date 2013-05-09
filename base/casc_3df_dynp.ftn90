@@ -201,6 +201,7 @@ End Interface
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
                    cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
          hint = Lam_hint_S
+!         hint = 'LINEAR'
          call grid_to_grid_coef (xpxext(l_i0),l_ni, &
                                  xpaq,nia,idx,cxa,cxb,cxc,cxd,hint)
          call grid_to_grid_coef (ypxext(l_j0),l_nj, &

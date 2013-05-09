@@ -37,6 +37,7 @@
 !
 !implicits
 #include "e_nml.cdk"
+#include "lun.cdk"
 !
       integer  fnom
       external fnom
@@ -50,7 +51,7 @@
 !
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          e_gement_nml = 0
-         write (6  ,nml=gement_p)
+         if (Lun_out.gt.0) write (6  ,nml=gement_p)
          return
       endif
 !

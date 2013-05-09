@@ -13,31 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemntr - gemdm entry program
-!
-#include "model_macros_f.h"
+!**s/r gemntr - Main entry point for the GEMNTR component
 !
       subroutine gemntr
       implicit none
-#include <arch_specific.hf>
-!
-!author   
-!
-!revision
-! v2_21 - M. Desgagne       - reshaped version
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_11 - M. Desgagne       - change to exdb and exfin
-! v3_21 - Lee V.            - Warning if geophy.bin not written
-! v3_30 - Desgagne/Lee      - modifications for new LAM I/O piloting
-! v4_03 - M. Desgagne       - ISST
-! v4_05 - M. Desgagne       - Add timing information (gemtim3)
-!
-      integer my_color
 !
 ! ---------------------------------------------------------------------
 !
-      call e_initntr2(my_color)
-      if (my_color.lt.0) goto 999
+      call init_component ('ent')
 
       call e_gemnml
 
@@ -45,13 +28,13 @@
 
       call e_dateo
 
-      call e_dynfld
+      call e_dynframe
 
       call e_nml2bin 
 
- 999  call e_stopntr2(my_color)
+      call e_stopntr2
 !
 ! ---------------------------------------------------------------------
 !
-      stop
+      return
       end

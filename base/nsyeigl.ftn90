@@ -15,19 +15,19 @@
 
 !*s/r nsyeigl - prepares projection matrix for the vertical modes
 !               NK-th mode = computational mode
-!              symmetric an nonsymmetric cases
-!              nonsymmetric case is for staggered (LN(Z)) model
+!               symmetric an nonsymmetric cases
+!               nonsymmetric case is for staggered (LN(Z)) model
 !
-      #include "model_macros_f.h"
-      
-      subroutine nsyeigl( F_eval_8, F_Levec_8,F_Revec_8,F_b_8, F_work_8, &
-                                        NN, NMAX, NWORK )
-
+      subroutine nsyeigl ( F_eval_8, F_Levec_8, F_Revec_8, F_b_8,&
+                                                 NN, NMAX, NWORK )
       implicit none
 #include <arch_specific.hf>
+
+      integer NN, NMAX, NWORK
+      real*8 F_eval_8(NMAX), F_Levec_8(NMAX,NMAX), F_b_8(NMAX,NMAX), &
+             F_Revec_8(NMAX,NMAX)
+      
 !author  Abdessamad Qaddouri - 2007
-!
-!revision
 !
 !arguments
 !  Name        I/O                 Description
@@ -37,91 +37,86 @@
 ! F_levec_8    O    - left eigenvector matrix
 !
 !------------------------------------------------------------------
-      integer  NN, NMAX, NWORK
-      real*8 F_eval_8(NMAX), F_Levec_8(NMAX,NN),F_b_8(NMAX,NN)
-      real*8 F_work_8(NWORK), F_ordr_8,alfr(NMAX),alfi(NMAX),beta(NMAX)
-      real*8 F_Revec_8(NMAX,NN),BVL(NMAX,NN),dotvl(NN),ddot 
+
+      real*8, external :: ddot
       integer  i,j,k,INFO
-      real*8 VL(NMAX,NN),b(NMAX,NN)
+      real*8 F_ordr_8,alfr(NMAX),alfi(NMAX),beta(NMAX),wk1(NWORK)
+      real*8 BVL(NMAX,NMAX),dotvl(NN),VL(NMAX,NMAX),b(NMAX,NMAX)
 !
-        INFO=-1 
-        b=F_b_8
-
-       call dggev('V','V',NN, F_Levec_8, NMAX, b, NMAX, &
+! --------------------------------------------------------------------
+!
+      INFO= -1 ; b= F_b_8
+      
+      call dggev('V','V',NN, F_Levec_8, NMAX, b, NMAX, &
                  alfr, alfi,beta,VL, NMAX, F_Revec_8, NMAX, &
-               F_work_8, NWORK, INFO )
-            F_Levec_8=VL
+                 wk1, NWORK, INFO )
+      F_Levec_8=VL
             
-!       print*,'info=',info           
-       if ( info.ne.0 ) then
-         print*,'ERROR IN dggev INFO =',info
-         STOP
-         endif
-!
-!       (ALPHAR(j) + ALPHAI(j)*i)/BETA(j) is the jeme eigenvalue
-       do j=1,NMAX
-         F_eval_8(j)=ALfR(j)/beta(j)
-       enddo
-
+! (ALPHAR(j) + ALPHAI(j)*i)/BETA(j) is the jeme eigenvalue
+      do j=1,NMAX
+         F_eval_8(j)= ALfR(j)/beta(j)
+      enddo
 
 ! normalize F_Revec_8
-       do j=1,NN
-        do i=1,NMAX
-          BVL(i,j)=0.0 
-        do k=1,NN
-          BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
-        enddo
-       enddo  
-        enddo
-        do j=1,NN
-        dotvl(j)=ddot(NMAX,F_Revec_8(NMAX*(j-1)+1,1) &
-        ,                      1,BVL(NMAX*(j-1)+1,1),1)
-        enddo
-                             
-        do j=1,NN
-          do i=1,NMAX
-            F_Revec_8(i,j)=F_Revec_8(i,j)/sqrt(dotvl(j))
-          enddo
-        enddo
-! 
+      do j=1,NN
+         do i=1,NMAX
+            BVL(i,j)=0.0 
+            do k=1,NN
+               BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
+            enddo
+         enddo
+      enddo
+      do j=1,NN
+         dotvl(j)= ddot(NMAX,F_Revec_8(1,j),1,BVL(1,j),1)
+      enddo
+      
+      do j=1,NN
+         do i=1,NMAX
+            F_Revec_8(i,j)= F_Revec_8(i,j)/sqrt(dotvl(j))
+         enddo
+      enddo
+
 ! normalize F_Levec_8
       do j=1,NN
-      do i=1,NMAX
-        BVL(i,j)=0.0
-      do k=1,NN
-        BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Levec_8(k,j)
+         do i=1,NMAX
+            BVL(i,j)=0.0
+            do k=1,NN
+               BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Levec_8(k,j)
+            enddo
+         enddo
       enddo
-      enddo
-      enddo
-       do j=1,NN
-          dotvl(j)=ddot(NMAX,F_Levec_8(NMAX*(j-1)+1,1) &
-        ,                      1,BVL(NMAX*(j-1)+1,1),1)
-       enddo
       do j=1,NN
-       do i=1,NMAX
-          F_Levec_8(i,j)=F_Levec_8(i,j)/sqrt(dotvl(j))
-       enddo
+         dotvl(j)= ddot(NMAX,F_Levec_8(1,j),1,BVL(1,j),1)
       enddo
+
+      do j=1,NN
+         do i=1,NMAX
+            F_Levec_8(i,j)= F_Levec_8(i,j)/sqrt(dotvl(j))
+         enddo
+      enddo
+
 ! normalize for non symmetric case
       do j=1,NN
-        do i=1,NMAX
-          BVL(i,j)=0.0
-          do k=1,NN
-           BVL(i,j)=BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
-          enddo
-        enddo
+         do i=1,NMAX
+            BVL(i,j)=0.0
+            do k=1,NN
+               BVL(i,j)= BVL(i,j)+F_b_8(i,k)*F_Revec_8(k,j)
+            enddo
+         enddo
       enddo
+
       do j=1,NN
-        dotvl(j)=ddot(NMAX,F_Levec_8(NMAX*(j-1)+1,1) &
-        ,                      1,BVL(NMAX*(j-1)+1,1),1)
-       enddo
-      do j=1,NN
-       do i=1,NMAX
-          F_Levec_8(i,j)=F_Levec_8(i,j)/dotvl(j)
-       enddo
+         dotvl(j)= ddot(NMAX,F_Levec_8(1,j),1,BVL(1,j),1)
       enddo
-!      
-!                         
-       return 
-       end
+
+      do j=1,NN
+         do i=1,NMAX
+            F_Levec_8(i,j)= F_Levec_8(i,j)/dotvl(j)
+         enddo
+      enddo
+!
+! --------------------------------------------------------------------
+!
+      return 
+      end
 
