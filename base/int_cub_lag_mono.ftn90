@@ -12,21 +12,19 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r int_cub_lag - to do YY cubic interpolation for V winds
+!**s/r int_cub_lag_mono - to do YY cubic interpolation for fields (local PE)
 #include "model_macros_f.h"
 
-       Subroutine int_cub_lagv(FF,F,Imx,Imy,DIST_DIM,Xi,Yi) 
+       Subroutine int_cub_lag_mono(FF,F,Imx,Imy,geomgx,geomgy,DIST_DIM,Xi,Yi) 
 
        implicit none
 #include <arch_specific.hf>
 !
-!author
+!author   
 !           Abdessamad Qaddouri - October 2009
+!revision   V.Lee - Aug 2011 (to replace int_cub_lag,int_cub_lagu,int_cub_lagv)
 !
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
-#include "ptopo.cdk"
 
        integer Imx,Imy,Nx,Ny,DIST_DIM
        integer k,i,j,Mx,My
@@ -34,36 +32,45 @@
        integer Im, Jm
        real*8 YY,y1,y2,y3,y4,FF,Fi
        real*8 F(DIST_SHAPE),fx1,fx2,fx3,fx4
-       real*8 Xi,Yi
+       real*8 Xi,Yi,geomgx(Minx:Maxx),geomgy(Miny:Maxy)
+       real*8 prmax,prmin
 
 !
-!	
         Im = iMx
         Jm = iMy
-	   X1  = Geomg_x_8(im)
-	   X2  = Geomg_x_8(im+1) - X1
-	   X3  = Geomg_x_8(im+2) - X1
-	   X4  = Geomg_x_8(im+3) - X1
+	   X1  = Geomgx(im)
+	   X2  = Geomgx(im+1) - X1
+	   X3  = Geomgx(im+2) - X1
+	   X4  = Geomgx(im+3) - X1
 	   XX  = Xi   - X1
 !
 	   W1  = (XX-X2)*(XX-X3)*(XX-X4)/(-X2*X3*X4)
 	   W2  =  XX    *(XX-X3)*(XX-X4)/(X2*(X2-X3)*(X2-X4))
 	   W3  =  XX    *(XX-X2)*(XX-X4)/(X3*(X3-X2)*(X3-X4))
 	   W4  =  XX    *(XX-X2)*(XX-X3)/(X4*(X4-X2)*(X4-X3))
+
+          prmax=max(F(Im,Jm),F(Im + 1,Jm ),F( Im + 2, Jm ),F( Im + 3, jm ),&
+           F(Im ,Jm +1),F(Im +1,jm +1),F(Im +2,Jm +1 ),F( Im + 3, Jm + 1 ),&
+           F(Im,Jm+2),F(Im+1,jm+2),F(Im+2,Jm+2),F( Im + 3, Jm + 2 ),&
+           F(Im,jm+3),F(Im+1,jm+3),F(Im +2,Jm+3),F( Im + 3, Jm + 3 ))
+          prmin=min(F(Im,Jm),F(Im + 1,Jm ),F( Im + 2, Jm ),F( Im + 3, jm ),&
+           F(Im ,Jm +1),F(Im +1,jm +1),F(Im +2,Jm +1 ),F( Im + 3, Jm + 1 ),&
+           F(Im,Jm+2),F(Im+1,jm+2),F(Im+2,Jm+2),F( Im + 3, Jm + 2 ),&
+           F(Im,jm+3),F(Im+1,jm+3),F(Im +2,Jm+3),F( Im + 3, Jm + 3 ))
 !           
-          Fx1 = W1*F(Im ,Jm)+W2*F(Im + 1,Jm )+ W3* F( Im + 2, Jm )+  &
+          Fx1 = W1*F(Im ,Jm)+W2*F(Im + 1,Jm )+ W3* F( Im + 2, Jm )+ &
             W4 * F( Im + 3, jm )
-	  Fx2 =W1*F(Im ,Jm +1)+W2*F(Im +1,jm +1)+W3*F(Im +2,Jm +1 )+ &
+	  Fx2 =W1*F(Im ,Jm +1)+W2*F(Im +1,jm +1)+W3*F(Im +2,Jm +1 )+&
             W4 * F( Im + 3, Jm + 1 )
-	  Fx3 =W1*F(Im,Jm+2)+W2*F(Im+1,jm+2)+W3*F(Im+2,Jm+2)+        &
+	  Fx3 =W1*F(Im,Jm+2)+W2*F(Im+1,jm+2)+W3*F(Im+2,Jm+2)+       &
             W4 * F( Im + 3, Jm + 2 )
-	  Fx4 =W1*F(Im,jm+3)+W2*F(Im+1,jm+3)+W3*F(Im +2,Jm+3)+       &
+	  Fx4 =W1*F(Im,jm+3)+W2*F(Im+1,jm+3)+W3*F(Im +2,Jm+3)+      &
             W4 * F( Im + 3, Jm + 3 )
 !           
-	   Y1  = Geomg_yv_8(Jm)
-	   Y2  = Geomg_yv_8(Jm+1) - Y1
-	   Y3  = Geomg_yv_8(Jm+2) - Y1
-	   Y4  = Geomg_yv_8(Jm+3) - Y1
+	   Y1  = Geomgy(Jm)
+	   Y2  = Geomgy(Jm+1) - Y1
+	   Y3  = Geomgy(Jm+2) - Y1
+	   Y4  = Geomgy(Jm+3) - Y1
 	   YY  = Yi   - Y1
 !
            W1  = (yy-y2)*(yy-y3)*(yy-y4)/(-y2*y3*y4)
@@ -72,6 +79,7 @@
            W4  =  yy    *(yy-y2)*(yy-y3)/(y4*(y4-y2)*(y4-y3))
 
            FF= W1*fx1+W2*fx2+W3*fx3+W4*fx4
+           FF= max(prmin,min(prmax,FF))
 
         return
         end 

@@ -23,11 +23,12 @@
 !author   M. Desgagne - April 2002
 !
 !revision
-! v3_00 - Desgagne M.          - initial version
-! v3_03 - Tanguay M.           - Adjoint Lam configuration
-! v3_30 - Tanguay M.           - adapt to bcs
-! v4_05 - Plante A.            - Top nesting
-! v4_05 - Lepine M.            - VMM replacement with GMM
+! v3_00 - Desgagne M.  - initial version
+! v3_03 - Tanguay M.   - Adjoint Lam configuration
+! v3_30 - Tanguay M.   - adapt to bcs
+! v4_05 - Plante A.    - Top nesting
+! v4_05 - Lepine M.    - VMM replacement with GMM
+! v4_50 - Lee V.       - Yin-Yang border exchange and cubic mono interp for TR
 !
 !implicits
 #include "gmm.hf"
@@ -179,7 +180,7 @@
             trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
             call rpn_comm_xch_halo(trf, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call yyg_scalbc(tr1,trf,LDIST_DIM,G_nk+2)
+            call yyg_scalbc_mono(tr1,trf,LDIST_DIM,G_nk+2)
 !     call glbstat2(tr1,'TR:P',"nestini",l_minx,l_maxx,l_miny,l_maxy,1,G_nk+2, 1,G_ni,1,G_nj,1,G_nk+2)
          end do
   

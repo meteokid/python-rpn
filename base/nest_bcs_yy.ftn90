@@ -25,6 +25,7 @@
 !
 !revision
 ! v4_40 - Lee/Qaddouri  - adapt (nest_bcs) for Yin-yang (called every timestep)
+! v4_50 - Lee V.        - use cubic mono interp for tracers
 !
 !object
 !
@@ -182,7 +183,7 @@
          enddo
          call rpn_comm_xch_halo(tr, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc(tr1,tr,LDIST_DIM,G_nk+2)
+         call yyg_scalbc_mono(tr1,tr,LDIST_DIM,G_nk+2)
       enddo
 !
 !----------------------------------------------------------------------

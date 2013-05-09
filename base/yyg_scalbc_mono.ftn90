@@ -1,0 +1,250 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r yyg_scalbc_mono- to interpolate (cubic) and exchange scalar data
+!
+#include "model_macros_f.h"
+
+      Subroutine yyg_scalbc_mono(tab_dst,tab_src,DIST_DIM,NK)
+      implicit none
+#include <arch_specific.hf>
+!
+!author
+!           Abdessamad Qaddouri/V.Lee - October 2009
+!
+!     include 'mpif.h'
+#include "ptopo.cdk"
+#include "glb_ld.cdk"
+#include "geomn.cdk"
+#include "geomg.cdk"
+#include "glb_pil.cdk"
+#include "yyg_pil.cdk"
+
+      integer DIST_DIM,Ni,Nj,NK,numproc
+      real  tab_src (DIST_SHAPE,Nk)
+      real  tab_dst (DIST_SHAPE,Nk)
+      real*8  tab_src_8(DIST_SHAPE,NK)
+      integer ierr,i,j,k,kk,kk_proc,m,mm,adr
+      real, dimension (:,:), allocatable :: recv_pil,send_pil
+      real sent,recv
+!     integer status(MPI_STATUS_SIZE)
+!     integer stat(MPI_STATUS_SIZE,Ptopo_numproc)
+      integer status
+      integer request(Ptopo_numproc*2)
+      real*8  send_pil_8
+      integer tag2,recvlen,sendlen,tag1,ireq
+      tag2=14
+      tag1=13
+      
+      sendlen=0
+      recvlen=0
+      ireq=0
+      do kk=1,Pil_sendmaxproc
+         sendlen=max(sendlen,Pil_send_len(kk))
+      enddo
+      do kk=1,Pil_recvmaxproc
+         recvlen=max(recvlen,Pil_recv_len(kk))
+      enddo
+      
+
+!     print *,'sendlen=',sendlen,' recvlen=',recvlen
+      if (sendlen.gt.0) then
+          allocate(send_pil(sendlen*NK,Pil_sendmaxproc))
+!         assume rpn_comm_xch_halo already done on tab_src
+          tab_src_8(:,:,:)=dble(tab_src(:,:,:))
+      endif
+      if (recvlen.gt.0) then
+          allocate(recv_pil(recvlen*NK,Pil_recvmaxproc))
+      endif
+ 
+!
+      do 100 kk=1,Pil_sendmaxproc
+!
+!        For each processor (in other colour)
+      
+         if (Ptopo_couleur.eq.0) then
+             kk_proc = Pil_sendproc(kk)+Ptopo_numproc-1
+         else
+             kk_proc = Pil_sendproc(kk)-1
+         endif
+
+!        prepare to send to other colour processor
+         if (Pil_send_len(kk).gt.0) then
+!            prepare something to send
+
+             mm=0
+
+! make for west
+             do m=1,Pil_sendw_len(kk)
+                adr=Pil_sendw_adr(kk)+m
+
+!$omp parallel private (mm,send_pil_8,i,j) &
+!$omp          shared (tab_src_8,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(m-1)*NK+k
+                   call int_cub_lag_mono(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_send_imx(adr),Pil_send_imy(adr), &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                  &
+                             Pil_send_xxr(adr),Pil_send_yyr(adr))
+                   send_pil(mm,KK)=real(send_pil_8)
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+! make for east
+             do m=1,Pil_sende_len(kk)
+                adr=Pil_sende_adr(kk)+m
+
+!$omp parallel private (mm,send_pil_8,i,j) &
+!$omp          shared (tab_src_8,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Pil_sendw_len(kk)+m-1)*NK+k
+                   call int_cub_lag_mono(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_send_imx(adr),Pil_send_imy(adr),      &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                  &
+                             Pil_send_xxr(adr),Pil_send_yyr(adr))
+                   send_pil(mm,KK)=real(send_pil_8)
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+! make for south
+             do m=1,Pil_sends_len(kk)
+                adr=Pil_sends_adr(kk)+m
+
+!$omp parallel private (mm,send_pil_8,i,j) &
+!$omp          shared (tab_src_8,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+m-1)*NK+k
+                   call int_cub_lag_mono(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_send_imx(adr),Pil_send_imy(adr),      &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                  &
+                             Pil_send_xxr(adr),Pil_send_yyr(adr))
+                   send_pil(mm,KK)=real(send_pil_8)
+                enddo
+!$omp enddo
+!$omp end parallel
+
+             enddo
+! make for north
+             do m=1,Pil_sendn_len(kk)
+                adr=Pil_sendn_adr(kk)+m
+
+!$omp parallel private (mm,send_pil_8,i,j) &
+!$omp          shared (tab_src_8,send_pil)
+!$omp do
+                do k=1,NK
+                   mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+Pil_sends_len(kk)+m-1)*NK+k
+                   call int_cub_lag_mono(send_pil_8,tab_src_8(l_minx,l_miny,k), &
+                             Pil_send_imx(adr),Pil_send_imy(adr),      &
+                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                  &
+                             Pil_send_xxr(adr),Pil_send_yyr(adr))
+                   send_pil(mm,KK)=real(send_pil_8)
+                enddo
+!$omp enddo
+!$omp end parallel
+             enddo
+
+             ireq = ireq+1
+!            print *,'scalbc: sending',Pil_send_len(kk)*NK,' to ',kk_proc
+!            call MPI_ISend(send_pil (1,KK),Pil_send_len(kk)*NK,MPI_REAL, &
+!                                       kk_proc,tag2+Ptopo_world_myproc, &
+!                                       MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_ISend(send_pil (1,KK),Pil_send_len(kk)*NK,&
+                                 'MPI_REAL',kk_proc,tag2+Ptopo_world_myproc, &
+                                 'MULTIGRID',request(ireq),ierr)
+         endif
+ 100  continue
+!
+!        check to receive from other colour processors
+!
+      do 200 kk=1,Pil_recvmaxproc
+!        For each processor (in other colour)
+      
+         if (Ptopo_couleur.eq.0) then
+             kk_proc = Pil_recvproc(kk)+Ptopo_numproc-1
+         else
+             kk_proc = Pil_recvproc(kk)-1
+         endif
+         if (Pil_recv_len(kk).gt.0) then
+!            detect something to receive
+
+             ireq = ireq+1
+!            print *,'scalbc: receiving',Pil_recv_len(kk)*NK,' from ',kk_proc
+!            call MPI_IRecv(recv_pil(1,KK),Pil_recv_len(kk)*NK,MPI_REAL, &
+!                   kk_proc,tag2+kk_proc,MPI_COMM_WORLD,request(ireq),ierr)
+             call RPN_COMM_IRecv(recv_pil(1,KK),Pil_recv_len(kk)*NK,'MPI_REAL',&
+                    kk_proc,tag2+kk_proc, 'MULTIGRID',request(ireq),ierr)
+         endif
+
+ 200  continue
+
+! Wait for all done sending and receiving
+
+!     call mpi_waitall(ireq,request,stat,ierr)
+      call RPN_COMM_waitall_nostat(ireq,request,ierr)
+
+! Now fill my results if I have received something
+
+      if (recvlen.gt.0) then
+
+          do 300 kk=1, Pil_recvmaxproc
+! fill my west
+
+             mm=0
+             do m=1,Pil_recvw_len(kk)
+             adr=Pil_recvw_adr(kk)+m
+             do k=1,NK
+                mm=mm+1
+                tab_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+             enddo
+             enddo
+! fill my east
+             do m=1,Pil_recve_len(kk)
+             adr=Pil_recve_adr(kk)+m
+             do k=1,NK
+                mm=mm+1
+                tab_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+             enddo
+             enddo
+! fill my south
+             do m=1,Pil_recvs_len(kk)
+             adr=Pil_recvs_adr(kk)+m
+             do k=1,NK
+                mm=mm+1
+                tab_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+             enddo
+             enddo
+! fill my north
+             do m=1,Pil_recvn_len(kk)
+             adr=Pil_recvn_adr(kk)+m
+             do k=1,NK
+                mm=mm+1
+                tab_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+             enddo
+             enddo
+
+ 300  continue
+
+       
+      endif
+      if (recvlen.gt.0)deallocate(recv_pil)
+      if (sendlen.gt.0) deallocate(send_pil)
+
+      return
+      end
+
