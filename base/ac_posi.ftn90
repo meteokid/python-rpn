@@ -76,6 +76,9 @@
       xl   = x0 + (Grdc_ni  -1) * Grdc_dx
       yl   = y0 + (Grdc_nj  -1) * Grdc_dy
 !
+      if (x0.lt.0.0)x0=x0+360.0
+      if (xl.lt.0.0)xl=xl+360.0
+!
       ierx = stretch_axis2 ( ac_xp, Grdc_dx, x0, xl, dum1, Grdc_ni, &
                  Grdc_ni, dum, .false.,Lun_debug_L,360., dum2, .false.)
       ierx = stretch_axis2 ( ac_yp, Grdc_dy, y0, yl, dum1, Grdc_nj, &

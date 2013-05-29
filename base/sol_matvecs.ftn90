@@ -17,12 +17,12 @@
 !                 
 #include "model_macros_f.h"
 !
-      subroutine  sol_matvecs ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
-                                  nil,njl, minx1,maxx1,minx2,maxx2 )
+      subroutine  sol_matvec2 ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
+                                nil,njl, nk, minx1,maxx1,minx2,maxx2 )
       implicit none
 #include <arch_specific.hf>
 !
-      integer Minx,Maxx,Miny,Maxy, njl,nil, minx1,maxx1,minx2,maxx2
+      integer Minx,Maxx,Miny,Maxy, njl,nil,nk, minx1,maxx1,minx2,maxx2
       real*8  wk11(*),wk22(*)
 !
 !author
@@ -31,13 +31,12 @@
 !revision
 ! v3_30 - Qaddouri A.        - initial version
 !
-#include "schm.cdk"
 #include "sol.cdk"
 !
       integer i0,in,j0,jn
-      real*8 fdg1   ( minx1:maxx1, minx2:maxx2,Schm_nith ), &
-             wint_8 (  Minx:Maxx ,  Miny:Maxy ,Schm_nith ), &
-             wint_81(  Minx:Maxx ,  Miny:Maxy ,Schm_nith )     
+      real*8 fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &
+             wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
+             wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )     
 !
 !     ---------------------------------------------------------------
 !
@@ -46,13 +45,13 @@
       j0 = 1   + sol_pil_s
       jn = njl - sol_pil_n
 !
-      call  tab_vec ( wint_81, Minx,Maxx,Miny,Maxy,Schm_nith, &
+      call  tab_vec ( wint_81, Minx,Maxx,Miny,Maxy,nk, &
                       wk11   , i0,in,j0,jn, -1 )
 
       call mat_vecs ( wint_81, wint_8, Minx, Maxx, Miny, Maxy,nil, &
-                      njl,minx1, maxx1, minx2, maxx2,Schm_nith,fdg1 )
+                      njl,minx1, maxx1, minx2, maxx2,nk,fdg1 )
 
-      call  tab_vec ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith, &
+      call  tab_vec ( wint_8 , Minx,Maxx,Miny,Maxy,nk, &
                       wk22   , i0,in,j0,jn, +1 )
 !
 !     ---------------------------------------------------------------

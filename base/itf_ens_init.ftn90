@@ -27,7 +27,8 @@
 !     revision
 ! v4_12 - Spacek L.        - Initial version
 ! v4.4.0 - Gagnon N.       - Remove ptp_env_hor_f and add ptp_cape and ptp_tlc
-! v4.5.0 - Gagnon N.       - Add ptp_crit_w and ptp_fac_reduc
+! v4.5.0 - Gagnon N.       - Add ptp_crit_w and ptp_fac_reduc 
+!                          - Add else for non-ensemble case
 !
 !object
 !	See above ID.
@@ -70,7 +71,16 @@
          call handle_error(ierr(2),'itf_ens_init','physics initialization')
          call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
                            LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)
-
+      else
+         prout = Lun_out.gt.0
+         call phy_opti('IMRKV2'     , imrkv2        ,1,'SET',prout,ierr(2))
+         call phy_optl('STOCHPHY'   , stochphy      ,1,'SET',prout,ierr(3))
+         call phy_optr('PTPENVU'    , ptp_env_u     ,1,'SET',prout,ierr(4))
+         call phy_optr('PTPENVB'    , ptp_env_b     ,1,'SET',prout,ierr(5))
+         call phy_optr('PTPCAPE'    , ptp_cape      ,1,'SET',prout,ierr(6))
+         call phy_optr('PTPTLC'     , ptp_tlc       ,1,'SET',prout,ierr(7))
+         call phy_optr('PTPCRITW'   , ptp_crit_w    ,1,'SET',prout,ierr(8))
+         call phy_optr('PTPFACREDUC', ptp_fac_reduc ,1,'SET',prout,ierr(9))
       endif
 !
  1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))

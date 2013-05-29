@@ -25,12 +25,12 @@
 !
       logical sol_fft_L
       integer sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
-      integer sol_niloc,sol_njloc,sol_nloc
+      integer sol_niloc,sol_njloc,sol_nloc,sol_nk
       integer sol_fgm_maxits, sol_yyg_maxits
       integer sol_im,sol_i0,sol_in,sol_j0,sol_jn
       common / sol_l / sol_fft_L 
       common / sol_i / sol_pil_w,sol_pil_e,sol_pil_n,sol_pil_s
-      common / sol_i / sol_niloc,sol_njloc,sol_nloc
+      common / sol_i / sol_niloc,sol_njloc,sol_nloc,sol_nk
       common / sol_i / sol_fgm_maxits, sol_yyg_maxits
       common / sol_i / sol_im,sol_i0,sol_in,sol_j0,sol_jn
 !

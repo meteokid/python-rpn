@@ -86,10 +86,15 @@
          endif
          Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
          if (Schm_theoc_L) Lam_blend_Hy = 0
-        Lam_tdeb = 999999.0
+         Lam_tdeb = 999999.0
       endif
-      Lam_gbpil_T = max(0,Lam_gbpil_T)
-      Lam_blend_T = max(0,Lam_blend_T)
+      if ((G_lam).and.(.not.Grd_yinyang_L)) then
+         Lam_gbpil_T = max(0,Lam_gbpil_T)
+         Lam_blend_T = max(0,Lam_blend_T)
+      else
+         Lam_gbpil_T = 0
+         Lam_blend_T = 0
+      endif
 !
       deg_2_rad = Dcst_pi_8/180.
 !
@@ -198,9 +203,10 @@
          return
       endif
       if (Sol_type_S.eq.'ITERATIVE') then
-         if ( (Sol_precond_S .ne.'DIAGO')    .and. &
-              (Sol_precond_S .ne.'MULTICOL') .and. &
-              (Sol_precond_S .ne.'JACOBI'  ) ) then
+!         if ( (Sol_precond_S .ne.'DIAGO')    .and. &
+!              (Sol_precond_S .ne.'MULTICOL') .and. &
+!              (Sol_precond_S .ne.'JACOBI'  ) ) then
+         if (Sol_precond_S .ne.'JACOBI') then
             if (lun_out.gt.0) write (Lun_out, 9201) Sol_precond_S
             return
          endif
