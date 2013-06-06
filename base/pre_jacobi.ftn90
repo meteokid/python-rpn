@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  pre_jacobi -      Jcobi additive-Schwarz preconditioning
+!**s/r  pre_jacobi -      Jacobi additive-Schwarz preconditioning
 !
       subroutine pre_jacobi2 ( Sol,Rhs,evec_local,Ni,Nj,Nk,ai,bi,ci )
       implicit none

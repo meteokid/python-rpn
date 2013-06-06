@@ -55,7 +55,7 @@
       do ii=1,Ptopo_numproc-1
       do icol=1,Prec_ncol
          if (Prec_mycol.eq.icol) then
-            call pre_jacobi( wk22,wk12,Prec_xevec_8,fdg,niloc,njloc, &
+            call pre_jacobi2(wk22,wk12,Prec_xevec_8,fdg,niloc,njloc, &
                              Schm_nith,Prec_ai_8,Prec_bi_8,Prec_ci_8)
             call tab_vec ( wint_8 , Minx,Maxx,Miny,Maxy,Schm_nith, &
                              wk22   , sol_i0,sol_in,sol_j0,sol_jn, -1 )
