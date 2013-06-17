@@ -74,7 +74,7 @@
 !
       pndfnph = (Init_dfnp - 1) / 2
 
-      call hpalloc(Init_dfco_, pndfnph+1, pnerr,1)
+      allocate (Init_dfco(0:pndfnph))
 
       promegc = (2.0 * Dcst_pi_8) / Init_dfpl_8
       prwin1  = Dcst_pi_8 / real(pndfnph + 1)

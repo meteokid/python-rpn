@@ -42,9 +42,9 @@
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "step.cdk"
-#include "p_serg.cdk"
 #include "version.cdk"
 #include <clib_interface.cdk>
+      include "phy_itf.inc"
 !
       integer, external :: exfin, longueur
 !
@@ -54,10 +54,7 @@
 !
 !-------------------------------------------------------------------
 !
-      call mzonopr(-1, Lun_zonl)
-
-      if ((Ptopo_myproc.eq.0).and.(Schm_phyms_L).and.(P_serg_srsus_L))  &
-           call fclos(  Lun_tsrs)
+      if (Schm_phyms_L) call phy_terminate
 
       continue_L= (Lctl_step.lt.Step_total)
 

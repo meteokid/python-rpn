@@ -26,10 +26,10 @@
 !
       logical  Init_balgm_L, Init_dfwin_L, Init_dftr_L
       integer  Init_dfnp
+      real, dimension(:), pointer :: Init_dfco
       real*8   Init_dfpl_8
 !
       common / initl / Init_balgm_L, Init_dfwin_L, Init_dftr_L
       common / initn / Init_dfnp
       common / initr / Init_dfpl_8
-
-      DCL_DYNVAR(Init, dfco, real, (0:*))
+      common / initp / Init_dfco

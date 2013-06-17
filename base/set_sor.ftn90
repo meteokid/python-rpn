@@ -19,6 +19,7 @@
 !
       subroutine set_sor()
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     J. Caveen - rpn - august 1994 - v0_16
@@ -48,13 +49,8 @@
 ! v4_40 - Lee V.            - correct physics idx list to adapt for pressure 
 ! v4_40                       output in physics, calulate Outp_multxmosaic
 !
-!object
-!     See above id
-!
-!arguments
-!       none
-!
-#include <arch_specific.hf>
+
+#include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
 #include <clib_interface.cdk>
 #include "glb_ld.cdk"
@@ -96,7 +92,7 @@
       logical iela
       integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic, noutpe
       integer, dimension (4,2) :: ixg, ixgall
-      integer istat,index,param(BUSPAR_MAXPAR)
+      integer istat,index,param(BUSPAR_MAXPAR),options
       integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
       integer, dimension (:,:), allocatable :: comyy
       real, dimension (4,2) :: rot, rotall
@@ -314,6 +310,9 @@
       else
          Out3_comyy = comyy
       endif
+
+      options = WB_REWRITE_NONE+WB_IS_LOCAL
+      istat= wb_put('model/Output/etik', Out3_etik_S, options)      
 
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')

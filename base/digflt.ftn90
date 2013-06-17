@@ -48,7 +48,6 @@
 #include "init.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
-#include "rstr.cdk"
 #include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
@@ -165,9 +164,6 @@
          istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
          BUSPER_3d_digf = BUSPER_3d
       endif
-!
-      Rstri_half_L = .false.
-      if (Lctl_step.ge.(Init_dfnp-1)/2) Rstri_half_L = .true.
 !
       return
       end

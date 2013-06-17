@@ -39,6 +39,7 @@
       integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       integer Grd_iref, Grd_jref, Grd_maxcfl
       integer Grd_ndomains, Grd_mydomain
+      integer Grd_local_gid,Grd_lclcore_gid,Grd_global_gid
       real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       real Grd_latr, Grd_lonr
       real Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot
@@ -52,6 +53,7 @@
       common / Grd_i / Grd_left, Grd_belo, Grd_iref, Grd_jref, Grd_maxcfl
       common / Grd_i / Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       common / Grd_i / Grd_ndomains, Grd_mydomain
+      common / Grd_i / Grd_local_gid,Grd_lclcore_gid,Grd_global_gid
       common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
       common / Grd_r / Grd_latr, Grd_lonr
       common / Grd_r / Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2

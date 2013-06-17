@@ -110,6 +110,7 @@
 ! arguments
 ! none
 !
+#include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
@@ -122,7 +123,7 @@
 #include "level.cdk"
 !
       type(vgrid_descriptor) :: vcoord
-      integer k,istat
+      integer k,istat,options
       integer, dimension(:), pointer :: ip1m=>null(),ip1t=>null()
       real, dimension(:), pointer :: hybm_free=>null(),hybt_free=>null(),std_p_prof=>null()
       real :: hybm(0:G_nk+1),hybt(0:G_nk+2)
@@ -286,6 +287,21 @@
 !     ----------------------------------------------------------
       istat = vgrid_wb_put('ref-m',vcoord,ip1m)
       istat = vgrid_wb_put('ref-t',vcoord,ip1t)
+
+      options = WB_REWRITE_NONE+WB_IS_LOCAL
+
+      istat= wb_put('model/Vgrid/size-hybm',size(Ver_hyb%m),options)
+      istat= wb_put('model/Vgrid/size-hybt',size(Ver_hyb%t),options)
+      istat= wb_put('model/Vgrid/hybm'     ,Ver_hyb%m      ,options)
+      istat= wb_put('model/Vgrid/hybt'     ,Ver_hyb%t      ,options)
+      istat= wb_put('model/Vgrid/am'       ,Ver_a_8%m      ,options)
+      istat= wb_put('model/Vgrid/bm'       ,Ver_b_8%m      ,options)
+      istat= wb_put('model/Vgrid/at'       ,Ver_a_8%t      ,options)
+      istat= wb_put('model/Vgrid/bt'       ,Ver_b_8%t      ,options)
+      istat= wb_put('model/Vgrid/rcoef'    ,Grd_rcoef      ,options)
+      istat= wb_put('model/Vgrid/ptop'     ,Cstv_ptop_8    ,options)
+      istat= wb_put('model/Vgrid/pref'     ,Cstv_pref_8    ,options)
+      istat= wb_put('model/Vgrid/vcode'    ,Ver_code       ,options)
 !     __________________________________________________________________
 !
       return

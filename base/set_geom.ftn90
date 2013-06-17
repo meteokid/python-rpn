@@ -39,13 +39,8 @@
 ! v3_30 - Desgagne M.      - Add calls to: set_cori, set_intuv 
 !                                          and itf_phy_vlsp
 ! v4_40 - Lee V.           - add reciprocal vectors for Geomg_invcy_8,invcyv_8
-!
-!object
-!	
-!arguments
-!	none
-!
-!implicits
+
+#include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
@@ -57,18 +52,17 @@
 #include "geomg.cdk"
 #include "p_geof.cdk"
 #include "hgc.cdk"
-#include "xst.cdk"
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-!
-      integer  ezgdef_fmem,gdll
-      external ezgdef_fmem,gdll
+
+      integer, external :: ezgdef_fmem,gdll
       character*12 gem_debug
       character*8 dumc
-      integer offi,offj,indx,err,ierx,iery,dgid
-      integer i,j,k,dimy,istat,pnip1
-      real   xfi(l_ni),yfi(l_nj),height,heightp1
+      integer offi,offj,indx,err,ierx,iery,dgid,hgc(4)
+      integer i,j,k,dimy,istat,pnip1,lam,ni,nj,options
+      real xfi(0:l_ni+1),yfi(0:l_nj+1),height,heightp1
+      real gxfi(g_ni),gyfi(g_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -85,10 +79,19 @@
       rad2deg_8 = CLXXX_8/Dcst_pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 
+      lam=0
+      if (G_lam) lam=1
+      Geomn_minx= west
+      Geomn_miny= south
+      Geomn_maxx= l_ni + (1-east *lam)
+      Geomn_maxy= l_nj + (1-north*lam)
+
       allocate (G_xg_8(1-G_ni:2*G_ni) , G_yg_8(1-G_nj:2*G_nj) )
       allocate (Geomn_latrx(l_ni,l_nj), Geomn_lonrx(l_ni,l_nj))
       allocate (Geomn_latgs(G_nj),Geomn_longs(G_ni+1), &
-                Geomn_latgv(G_nj),Geomn_longu(G_ni+1))
+                Geomn_latgv(G_nj),Geomn_longu(G_ni+1), &
+                Geomn_latij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy), &
+                Geomn_lonij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy))
 
       call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,     & 
                            Grd_x0_8, Grd_xl_8, Grd_left,                     &
@@ -103,7 +106,7 @@
              write (Lun_out,*)'ERROR in generating YGI_8 values!'
       call handle_error(ierx,'set_geom','set_geom')
       call handle_error(iery,'set_geom','set_geom')
-!
+
       if (Lun_out.gt.0) then
          write (Lun_out,1005) G_nk,Grd_rcoef
          do k=1,G_nk
@@ -116,25 +119,23 @@
                                  height-heightp1,pnip1
          end do
       endif
-!
-! call parpos_from_file (xgi_8,ygi_8,Grd_ni,Grd_nj)
-!
-!      Grd_uniform_L   = (G_ni.eq.Grd_nila).and.(G_nj.eq.Grd_njla).and..not.Grd_gauss_L
-!
+
       do i=1,G_ni
          G_xg_8(i) = xgi_8(i)*deg2rad_8
+         gxfi  (i) = xgi_8(i)
       end do
       do j=1,G_nj
          G_yg_8(j) = ygi_8(j)*deg2rad_8
+         gyfi  (j) = ygi_8(j)
       enddo
-!
+
       do i=-G_ni+1,0
          G_xg_8(i) = G_xg_8(i+G_ni) - TWO_8*Dcst_pi_8
       end do
       do i=G_ni+1,2*G_ni
          G_xg_8(i) = G_xg_8(i-G_ni) + TWO_8*Dcst_pi_8
       end do
-!
+
       G_yg_8( 0    ) = -(G_yg_8(1) + Dcst_pi_8)
       G_yg_8(-1    ) = -TWO_8*Dcst_pi_8 -  &
                        (G_yg_8(0)+G_yg_8(1)+G_yg_8(2))
@@ -185,10 +186,10 @@
       call hpalloc(Geomg_invcyv_8_   ,LARRAY1DY, err,8)
       call hpalloc(Geomg_invcy2_8_  ,LARRAY1DY*2, err,1)
       call hpalloc(Geomg_invcyv2_8_ ,LARRAY1DY*2, err,1)
-!
+
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-!
+
       do i=1-G_halox,l_ni+G_halox
          indx = offi + i
          Geomg_x_8  (i) =  G_xg_8(indx)
@@ -218,13 +219,13 @@
          Geomg_invDYv_8(j)=geomg_cyv2_8(j) / &
                         ( sin( G_yg_8(indx+1))-sin(G_yg_8(indx)) )
       end do
-!
+
       dimy = l_nj+2*G_haloy
       call vrec (geomg_invcy2_8  , geomg_cy2_8 , dimy )
       call vrec (geomg_invcyv2_8 , geomg_cyv2_8, dimy )
       call vrec (geomg_invcy_8   , geomg_cy_8, dimy )
       call vrec (geomg_invcyv_8  , geomg_cyv_8, dimy )
-!
+
       do i=1,l_ni
          indx = offi + i
          xfi(i) = xgi_8(indx)
@@ -233,7 +234,7 @@
          indx = offj + i
          yfi(i) = ygi_8(indx)
       end do
-!
+
       if (Lun_debug_L) then
          do i=1,l_ni
             print *,'PE_xpos:',Ptopo_myproc,i,xfi(i)
@@ -242,15 +243,46 @@
             print *,'PE_ypos:',Ptopo_myproc,i,yfi(i)
          enddo
       endif
-!
-      dgid = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
-                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
-      err = gdll (dgid,Geomn_latrx,Geomn_lonrx)
+      
+      hgc(1)= Hgc_ig1ro
+      hgc(2)= Hgc_ig2ro
+      hgc(3)= Hgc_ig3ro
+      hgc(4)= Hgc_ig4ro
+      
+      Grd_global_gid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro, &
+                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1) , gyfi(1) )
+      Grd_local_gid  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
+                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xfi(1) ,  yfi(1) )
+      Grd_lclcore_gid= ezgdef_fmem (l_ni-pil_w-pil_e, l_nj-pil_s-pil_n,&
+                  'Z', 'E', Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                  xfi(1+pil_w), yfi(1+pil_s) )
+
+      options = WB_REWRITE_NONE+WB_IS_LOCAL
+      istat= wb_put('model/Hgrid/global_gid' ,Grd_global_gid ,options)
+      istat= wb_put('model/Hgrid/local_gid'  ,Grd_local_gid  ,options)
+      istat= wb_put('model/Hgrid/lclcore_gid',Grd_lclcore_gid,options)
+      istat= wb_put('model/Hgrid/hgcrot     ',hgc            ,options)
+
+      err = gdll (Grd_local_gid, Geomn_latrx, Geomn_lonrx)
       do j=1,l_nj
       do i=1,l_ni
          if (Geomn_lonrx(i,j).ge.180.0) Geomn_lonrx(i,j)=Geomn_lonrx(i,j)-360.0
       enddo 
       enddo 
+
+      do i=Geomn_minx, Geomn_maxx
+         indx = offi + i
+         xfi(i) = G_xg_8(indx)*rad2deg_8
+      end do
+      do i=Geomn_miny, Geomn_maxy
+         indx = offj + i
+         yfi(i) = G_yg_8(indx)*rad2deg_8
+      end do
+      ni = Geomn_maxx-Geomn_minx+1
+      nj = Geomn_maxy-Geomn_miny+1
+      dgid = ezgdef_fmem (ni , nj , 'Z', 'E', Hgc_ig1ro, &
+                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi(Geomn_minx) , yfi(Geomn_miny) )
+      err = gdll (dgid,Geomn_latij,Geomn_lonij)
 !
 !C              Computes coriolis factor
 !		------------------------
@@ -260,7 +292,7 @@
 !		and right hand side computations
 !		------------------------------------------------------
       call set_intuv()
-!    
+   
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)', &
              /'===============================================')
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &

@@ -1,0 +1,54 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r step_update
+!
+!
+      subroutine step_update ( F_step, F_bkup_L, F_finalstep )
+      implicit none
+!
+      logical F_bkup_L
+      integer F_step,F_finalstep
+!
+!author
+!     Michel Desgagne  -  Spring 2013
+!
+!revision
+! v4_50 - Desgagne M.       - Initial version
+!
+#include <WhiteBoard.hf>
+#include "lctl.cdk"
+#include "lun.cdk"
+#include "rstr.cdk"
+
+      logical, external :: digflt_half
+      integer istat
+!
+!     ---------------------------------------------------------------
+!
+      Lctl_step = F_step
+      if ( F_bkup_L ) call wrrstrt
+      Rstri_sdon = Rstri_sdon + 1
+      Rstri_secondhalf_L= digflt_half(F_step)
+      istat= wb_put('model/Rstri/secondhalf', Rstri_secondhalf_L, &
+                     WB_REWRITE_MANY)
+      if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,F_finalstep
+
+ 1001 format(/,'GEM_RUN: PERFORMING TIMESTEP #',I8,' OUT OF ',I8, &
+             /,'======================================================')
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

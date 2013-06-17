@@ -21,11 +21,12 @@
 !
 !
 #endif
-      logical Rstri_rstn_L, Rstri_idon_L, Rstri_half_L, Rstri_glbcol_L
+      logical Rstri_rstn_L  , Rstri_idon_L, &
+              Rstri_glbcol_L, Rstri_secondhalf_L
 !
       integer Rstri_sdon
 !
       common / Rstri / Rstri_sdon
-      common / Rstrl / Rstri_rstn_L,  Rstri_idon_L, Rstri_half_L
-      common / Rstrl / Rstri_glbcol_L
+      common / Rstrl / Rstri_rstn_L  , Rstri_idon_L
+      common / Rstrl / Rstri_glbcol_L, Rstri_secondhalf_L
 !

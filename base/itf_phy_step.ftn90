@@ -65,6 +65,7 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
+#include "series.cdk"
       include "phy_itf.inc"
 
       integer,external :: itf_phy_prefold_opr,itf_phy_update2
@@ -82,7 +83,7 @@
       real,pointer,save :: BUSVOL3d(:,:) => null()
 
       integer :: j, obussiz, err
-      real :: gxfi(G_ni+1), gyfi(G_nj)
+      real :: gxfi(G_ni+1), gyfi(G_nj), prip2
       real, dimension(:,:), allocatable :: obusval
 !
 !     ---------------------------------------------------------------
@@ -134,7 +135,6 @@
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
-
       call phy_step (F_stepno)
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &

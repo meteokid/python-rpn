@@ -47,6 +47,7 @@
 ! v4_10 - Lepine M.         - VMM replacement with GMM
 ! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
 !
+#include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "grd.cdk"
@@ -58,8 +59,8 @@
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
 
-      integer, external :: gem_nml,gemdm_config,grid_nml2,            &
-                           itf_cpl_nml,series_nml,adx_nml,adx_config, &
+      integer, external :: gem_nml,gemdm_config,grid_nml2, &
+                           itf_cpl_nml,adx_nml,adx_config, &
                            RPN_COMM_bloc,step_nml,bin2com
       character*50 LADATE,dumc1_S
       integer ierr,err(8),f1,f2,f3,f4,n1,n2,n3,n4,n5,n6,n7
@@ -94,12 +95,10 @@
          err(3) = step_nml    (Path_nml_S)
          err(4) = gem_nml     (Path_nml_S)
          err(5) = itf_cpl_nml (Path_nml_S)
-         err(6) = series_nml  (Path_nml_S)
-         err(7) = adx_nml     (Path_nml_S)
+         err(6) = adx_nml     (Path_nml_S)
 
       endif
       call handle_error(minval(err(:)),'set_world_view','Error reading nml')
-
 !
 ! Establish final configuration
 !
@@ -111,7 +110,6 @@
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
       ierr = itf_cpl_nml ('print') 
-      ierr = series_nml  ('print')
 
       call adx_nml_print ()
 
@@ -137,6 +135,11 @@
          if (Out3_uencode_L)   &
          call write_status_file3 ('Out3_uencode_L=1')
       endif
+!
+! Master output PE for all none distributed components
+!
+      f1= 0
+      ierr= wb_put('model/outout/pe_master', f1)
 !
 ! Initializes schemes control comdeck
 !

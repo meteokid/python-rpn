@@ -34,13 +34,13 @@
 ! v4_44 - Plante A.          - Add standard pressure profil std_p_prof for non orographic gwd
 
 #include <arch_specific.hf>
+#include <WhiteBoard.hf>
 #include <msg.h>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 #include "out3.cdk"
-#include "xst.cdk"
 #include "cstv.cdk"
 #include "p_serg.cdk"
 #include "itf_cpl.cdk"
@@ -48,18 +48,17 @@
 #include "itf_phy_config.cdk"
 #include "ver.cdk"
 #include "path.cdk"
-      include "phy_itf.inc"
 
-      integer, parameter :: COMPATIBILITY_LVL = 2
+      integer, parameter :: COMPATIBILITY_LVL = 3
       integer, parameter :: DIM_ERR = 14
 
       logical,external :: set_dcst
-      integer,external :: fnom
-      external :: itf_phy_rdfile
+      integer,external :: fnom, phy_nml, phy_init3, phy_compatibility
+      external :: getijlalo, itf_phy_rdfile
 
       character*3 bus
       logical prout,cond_satu_L
-      integer nrec, phycompa, n, lght, soit
+      integer nrec, phycompa, n, lght, soit, phy_offset
       integer err(DIM_ERR),i,offi2,offj2
       real, dimension(:), pointer :: std_p_prof
 !
@@ -79,6 +78,18 @@
          return
       endif
 
+! Important compatibility level check
+
+      phycompa = phy_compatibility ()
+      if ( phycompa .ne. COMPATIBILITY_LVL ) then
+         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL, phycompa
+         phycompa = -1
+      else
+         if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
+      endif
+      call handle_error ( phycompa,'itf_phy_init', &
+                         'Wrong physics compatibility level')
+
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 
@@ -86,18 +97,6 @@
       call handle_error(err(1),'itf_phy_init','phy_nml')
 
       if (.not.Schm_phyms_L) return ! NO PHYSICS REQUIRED
-
-! Important compatibility level check
-
-      phycompa = -1
-      call phy_opti('COMPATIBILITY',phycompa , 1, 'GET',prout,err(1))
-      if ( phycompa .ne. COMPATIBILITY_LVL ) then
-         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL, phycompa
-         phycompa = -1
-      else
-         if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
-      endif
-      call handle_error(phycompa,'itf_phy_init','Wrong physics compatibility level')
 
       err=0
 
@@ -114,19 +113,19 @@
 ! In LAM config, data will therefore be available to the physics
 ! with the global scope (3,G_ni-2) (3,G_nj-2)
 
-      p_offi = 0 ; offi2 = 0
-      p_offj = 0 ; offj2 = 0
-      if (G_lam) then
-         p_offi = 2*west  ; offi2 = 2*east
-         p_offj = 2*south ; offj2 = 2*north
-      endif
-
+      phy_offset = 0
+      if (G_lam) phy_offset = 2
+      err(1) = wb_put('itf_phy/PHY_OFFSET', phy_offset)
+      p_offi = phy_offset*west  ; offi2 = phy_offset*east
+      p_offj = phy_offset*south ; offj2 = phy_offset*north
+      
 ! Complete physics initialization (see phy_init for interface content)
 
-      p_nk   = G_nk + 1
-      err(1) = phy_init2 ( Out3_date, real(Cstv_dt_8), 1+p_offi, l_ni-offi2, &
-                           1+p_offj, l_nj-offj2, p_nk, itf_phy_rdfile)
-      call handle_error(err(1),'itf_phy_init','phy_init')
+      p_nk  = G_nk + 1
+      err(1)= phy_init3 ( Out3_date,real(Cstv_dt_8),1+p_offi,l_ni-offi2, &
+                          1+p_offj, l_nj-offj2, p_nk, getijlalo        , &
+                          itf_phy_rdfile )
+      call handle_error(err(1),'itf_phy_init','phy_init3')
 
 ! The current physics interface operate on an arbitrary number of
 ! columns p_ni containing p_nk levels. Here p_ni is defined as a
@@ -147,35 +146,19 @@
       call phy_com_r('STD_P_PROF',std_p_prof,p_nk, 'SET')
       deallocate(std_p_prof)
 
-      ! Consistency check for saturation calculations
       err = 0
       call phy_optl('SATUCO'    ,cond_satu_L  , 1, 'GET',prout,err(1))
+      call phy_optl('SATUCO'    ,P_cond_satu_L, 1, 'GET',prout,err(2))
+      call phy_opti('MOYHR'     ,P_out_moyhr  , 1, 'GET',prout,err(3))
+      call handle_error(minval(err),'itf_phy_init','phy_opt get')
+
+      ! Consistency check for saturation calculations
       if (Out3_satues_L .and. .not.cond_satu_L) then
           Out3_satues_L = .false.
           if (Lun_out.gt.0) write(Lun_out,9600)
       endif
 
-      ! Time series and zonal diag init
-      call phy_optl('SATUCO'    ,P_cond_satu_L  , 1, 'GET',prout,err(2))
-      call phy_opti('MOYHR'     ,P_out_moyhr    , 1, 'GET',prout,err(3))
-
       P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-      if (P_serg_srsus_L) then
-         if (Lun_out.gt.0) then
-            err = fnom (lun_tsrs, '../time_series.bin', &
-                                  'SEQ+FTN+UNF', nrec)
- 600        read(lun_tsrs,end=700)
-            goto 600
- 700        backspace(lun_tsrs)
-         endif
-         call set_xst ()
-      else
-         Xst_nstat = 0
-      endif
-
-      call set_dia()
-
-      call handle_error(minval(err),'itf_phy_init','phy_opt get')
 !
 ! Pre-establish BUS index for coupling
 !

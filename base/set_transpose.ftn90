@@ -104,7 +104,7 @@
                   ' Schm_nith distributed on F_npex PEs', Schm_nith,F_npex
 
          if (.not. decomp2 (Schm_nith, minx, maxx, n, npartiel, 0, n0, &
-                     .true., .true., F_npex, lowest, F_checkparti_L )) ierr=-1
+                     .true., .true., F_npex, -1, F_checkparti_L )) ierr=-1
 
          trp_12smin = minx ! most likely = 1 since no halo
          trp_12smax = maxx

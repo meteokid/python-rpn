@@ -17,7 +17,6 @@
 #include "hzd.cdk"
 #include "eigv.cdk"
 #include "vspng.cdk"
-#include "xst.cdk"
 #include "geomg.cdk"
 #include "grd.cdk"
 #include "sol.cdk"
@@ -36,8 +35,6 @@
 #include "stat.cdk"
 #include "perturb.cdk"
 #include "eq.cdk"
-
-      logical Schm_NoTopThL_L ! to be removed soon
 
       namelist /gem_cfgs/ stat_liste
 !Acid
@@ -158,7 +155,6 @@
       namelist /gem_cfgs/ Schm_Adw_extrap_L
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
-      namelist /gem_cfgs/ Schm_NoTopThL_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
       namelist /gem_cfgs/ Sol_yyg_eps
@@ -354,16 +350,6 @@
       namelist /grdc_p/ Grdc_nj
       namelist /grdc_p/ Grdc_start_S
       namelist /grdc_p/ Grdc_end_S
-!
-!End gem_grdc_p
-!
-      namelist /series/ P_serg_serstp
-      namelist /series/ P_serg_srprf_s
-      namelist /series/ P_serg_srsrf_s
-      namelist /series/ P_serg_srsus_L
-      namelist /series/ P_serg_srwri
-      namelist /series/ Xst_stn_ij
-      namelist /series/ Xst_stn_latlon
 !
 !End series
 !
