@@ -70,7 +70,6 @@
 #include "nml.cdk"
       write (6  ,nml=gem_cfgs)
       write (6  ,nml=grdc)
-      write (6  ,nml=series)
       write (6  ,nml=williamson)
       return
       end

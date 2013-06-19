@@ -65,7 +65,6 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
-#include "series.cdk"
       include "phy_itf.inc"
 
       integer,external :: itf_phy_prefold_opr,itf_phy_update2
