@@ -157,8 +157,8 @@
               ( grille_x0.ne.Grid_x0(gridset).or. &
                 grille_x1.ne.Grid_x1(gridset).or. &
                 grille_y0.ne.Grid_y0(gridset).or. &
-                grille_y1.ne.Grid_y1(gridset) ) ) &
-                ig1=Grid_ig1(gridset)+100
+                grille_y1.ne.Grid_y1(gridset) ) ) ig1=Grid_ig1(gridset)+100
+
          call out_sgrid2 ( grille_x0,grille_x1,grille_y0,grille_y1, &
                            ig1,Grid_ig2(gridset)                  , &
                            periodx_L, Grid_stride(gridset)        , &
@@ -177,12 +177,10 @@
 ! Preparation for Pressure output
              call out_vref(Level(1:Level_max(levset),levset),ig1=ig1)
          endif
-
 !_________________________________________________________________
 !
-!     2.0    Output 2D variables
+!     2.0    Output 2D physics variables
 !_________________________________________________________________
-!     output solo 2D fields on 0mb (pressure)
 
 !     multiple 2D fields and mosaic tiles are stored in
 !     slices of NI where the order is as follows:
@@ -240,49 +238,55 @@
    20    continue
    30    continue
 
-! 3D output only
+!_________________________________________________________________
+!
+!     3.0    Output 3D physics variables
+!_________________________________________________________________
+
          if (Level_typ_S(levset).eq.'M') then
 !_______________________________________________________________________
 !
-!     3.0a    Output of 3D Physics Variables on Eta levels
+!     3.0a   Output of 3D physics Variables on model levels
 !_______________________________________________________________________
              allocate (indo_t( min(Level_max(levset),Level_thermo) ))
              allocate (indo( min(Level_max(levset),Level_momentum) ))
+
              call out_slev(Level(1,levset), Level_max(levset), &
                         Level_thermo-1,indo_t,nko_t)
              call out_slev(Level(1,levset), Level_max(levset), &
                         Level_momentum,indo,nko)
-! For 3D field 
+
              kind=Level_kind_ip1
-             do 50 ii=1, Outp_var_max(kk)
-             do 40  j=1, Obus_top
+             do ii=1, Outp_var_max(kk)
+             do  j=1, Obus_top
 
-               if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
+                if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
 
-                    if (obus_shp(j).gt.1) then
-!                   3D field
-                       if (obus_stag(j).eq.1) then ! thermo
-                           call ecris_fst2   (bus_o(1,obus_offset(j)), &
-                             1,l_ni,1,l_nj,Ver_hyb%t(2),obus_var_s(j), &
-                             Obus_mul(j),Obus_add(j),kind,G_nk+2,indo_t,nko_t, &
-                             Outp_nbit(ii,kk) )
-                       else  ! momentum
-                        call ecris_fst2(bus_o(1, &
-                             obus_offset(j)),1,l_ni,1,l_nj,Ver_hyb%m,obus_var_s(j), &
-                             Obus_mul(j),Obus_add(j),kind,G_nk+1,indo,nko, &
-                             Outp_nbit(ii,kk) )
-                       endif
-                    endif
-               endif
+                   if (obus_shp(j).gt.1) then
+                      if (obus_stag(j).eq.1) then ! thermo
+                         call ecris_fst2 (bus_o(1,obus_offset(j))     , &
+                              1,l_ni,1,l_nj,Ver_hyb%t(2),obus_var_s(j), &
+                              Obus_mul(j),Obus_add(j),kind            , &
+                              G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
+                      else  ! momentum
+                         call ecris_fst2  (bus_o(1,obus_offset(j))    , &
+                              1,l_ni,1,l_nj,Ver_hyb%m   ,obus_var_s(j), &
+                              Obus_mul(j),Obus_add(j),kind            , &
+                              G_nk+1,indo  ,nko  , Outp_nbit(ii,kk) )
+                      endif
+                   endif
+                   
+                endif
 
-   40        continue
-   50        continue
+             end do
+             end do
+
              deallocate(indo,indo_t)
 
          elseif (Level_typ_S(levset).eq.'P') then
 !_______________________________________________________________________
 !
-!     7.0B   Output UU,VV,UV on PRESSURE levels
+!     3.0a   Output of 3D physics Variables on pressure levels
 !_______________________________________________________________________
 !
 !            Set kind to 2 for pressure output
@@ -293,60 +297,53 @@
                 indo(i)=i
                 prprlvl(i) = level(i,levset) * 100.0
              enddo
-! pressure output
-             do 70 ii=1, Outp_var_max(kk)
-             do 60  j=1, Obus_top
+
+             do ii=1, Outp_var_max(kk)
+             do  j=1, Obus_top
 
                 if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
-
                    if (Obus_shp(j).gt.1) then
-!                          Found 3D field 
-                           offbo = Obus_offset(j)
-                        if (Obus_stag(j).eq.1 ) then
-!                          Found 3D field on thermo
-!                          Calculate vertical derivative of the
-!                          current array with respect to lnph
-!
-                           call verder( px_t,bus_o(1,offbo),                  &
-                                wlnpi_t(1,1,2),2.0,2.0, 1,l_ni,1,l_nj,G_nk+1, &
-                                p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                           call prgen( buso_pres,bus_o(1,offbo),              &
-                                px_t,wlnpi_t(1,1,2),prprlvl,nko,Out3_cubzt_L, &
-                                1,l_ni,1,l_nj,G_nk+1,                         &
-                                p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
 
-                           call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
-                               level(1,levset),Obus_var_s(j),       &
-                               Obus_mul(j),Obus_add(j),kind,        &
-                               nko,indo,nko,Outp_nbit(ii,kk) )
+                      offbo = Obus_offset(j)
 
-                        else
-!                          Found 3D field on momentum
-!                          Calculate vertical derivative of the
-!                          current array with respect to lnph
-!
-                           call verder( px_m,bus_o(1+(l_ni*l_nj),offbo),      &
-                                wlnpi_m(1,1,1),2.0,2.0, 1,l_ni,1,l_nj,G_nk+1, &
-                                p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                           call prgen( buso_pres,bus_o(1+(l_ni*l_nj),offbo),  &
-                                px_m,wlnpi_m(1,1,1),prprlvl,nko,Out3_cubzt_L, &
-                                1,l_ni,1,l_nj,G_nk+1,                         &
-                                p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
+                      if (Obus_stag(j).eq.1 ) then
 
-                           call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
-                                     level(1,levset),Obus_var_s(j), &
-                                     Obus_mul(j),Obus_add(j),kind , &
-                                     nko,indo,nko,Outp_nbit(ii,kk) )
+                         call verder( px_t,bus_o(1,offbo),                &
+                              wlnpi_t(1,1,2),2.0,2.0, 1,l_ni,1,l_nj,G_nk, &
+                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
+                         call prgen( buso_pres,bus_o(1,offbo), px_t,      &
+                              wlnpi_t(1,1,2),prprlvl,nko,Out3_cubzt_L,    &
+                              1,l_ni,1,l_nj,G_nk,                         &
+                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
+                         
+                         call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
+                              level(1,levset),Obus_var_s(j),      &
+                              Obus_mul(j),Obus_add(j),kind,       &
+                              nko,indo,nko,Outp_nbit(ii,kk) )
+                         
+                      else
 
-                        endif
+                         call verder( px_m,bus_o(1,offbo),                &
+                              wlnpi_m(1,1,1),2.0,2.0, 1,l_ni,1,l_nj,G_nk, &
+                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
+                         call prgen( buso_pres, bus_o(1,offbo), px_m,     &
+                              wlnpi_m(1,1,1),prprlvl,nko,Out3_cubzt_L,    &
+                              1,l_ni,1,l_nj,G_nk,                         &
+                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
+                         
+                         call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
+                              level(1,levset),Obus_var_s(j),      &
+                              Obus_mul(j),Obus_add(j),kind ,      &
+                              nko,indo,nko,Outp_nbit(ii,kk) )
+                         
+                      endif
                    endif
                 endif
 
- 60          continue
- 70          continue
+             end do
+             end do
 
-             deallocate(buso_pres)
-             deallocate(indo,prprlvl)
+             deallocate(buso_pres, indo,prprlvl)
 
          endif
 

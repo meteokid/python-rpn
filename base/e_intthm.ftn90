@@ -88,6 +88,8 @@
       nk= 1
       if (.not.Pil_bmf_L) nk= lv_t
 
+      errcode = -1
+
       allocate ( ttn(ng,nk), hun(ng,nk)  , gzn(ng,nk),  &
                  zdn(ng,nk),  wn(ng,nk),  qn(ng,lv+1),  &
                  p0(ng), wk2(ng) )
