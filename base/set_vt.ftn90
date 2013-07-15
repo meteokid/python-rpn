@@ -79,7 +79,7 @@
       !- Note: gmm_create does NOT keep flags other than GMM_FLAG_IZER+GMM_FLAG_INAN+GMM_FLAG_RSTR
       !  GMM_FLAG_STAG_* need to be added w/ gmm_updatemeta() or in uuid1/2
       flag_n   = GMM_FLAG_INAN
-      flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_INAN
+      flag_r_n = GMM_FLAG_RSTR+GMM_FLAG_IZER
       flag_r_z = GMM_FLAG_RSTR+GMM_FLAG_IZER
 
       flag_m_f = FLAG_LVL_M                  !momentum lvl, phi-pt

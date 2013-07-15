@@ -105,7 +105,7 @@
       integer i,j,k, ii, pnerr,nkeys,gridset,ig2,istat
       integer i0,in,j0,jn,kn
       integer, dimension(:), allocatable::indo,indo_t,indo_s,indo_s1
-      integer ierr,nko,nko_t,nko_s,nko_s1
+      integer ierr,nko,nko_t,nko_s,nko_s1,x1,y1
       logical next_L,periodx_L,uvgrid_L
 !
       real, pointer, dimension(:,:,:) :: tr3
@@ -182,10 +182,15 @@
                 uvgrid_L = .true.
                 ig2 = Grid_ig2(gridset)+1
                 if (Out3_uencode_L) ig2 = Grid_ig2(gridset)
-                call out_sgrid2( Grid_x0 (gridset),min(Grid_x1(gridset),G_niu), &
-                                 Grid_y0 (gridset),Grid_y1(gridset)           , &
-                                 Grid_ig1(gridset),ig2                        , &
-                                 periodx_L, Grid_stride(gridset)              , &
+                x1 = min(Grid_x1(gridset),G_niu)
+                if (Out3_fullplane_L) then
+                   x1 = Grid_x1(gridset)
+                   tr3(G_ni,:,:) = tr3(G_niu,:,:)
+                endif
+                call out_sgrid2( Grid_x0 (gridset),x1              , &
+                                 Grid_y0 (gridset),Grid_y1(gridset), &
+                                 Grid_ig1(gridset),ig2             , &
+                                 periodx_L, Grid_stride(gridset)   , &
                                  Grid_etikext_s(gridset) )
                 call out_href2 ( 'U_point' )
 
@@ -198,10 +203,15 @@
                 uvgrid_L = .true.
                 ig2 = Grid_ig2(gridset)+2
                 if (Out3_uencode_L) ig2 = Grid_ig2(gridset)
-                call out_sgrid2 ( Grid_x0(gridset),Grid_x1(gridset)           , &
-                                  Grid_y0(gridset),min(Grid_y1(gridset),G_njv), &
-                                  Grid_ig1(gridset),ig2                       , &
-                                  periodx_L, Grid_stride(gridset)             , &
+                y1 = min(Grid_y1(gridset),G_njv)
+                if (Out3_fullplane_L) then
+                   y1 = Grid_y1(gridset)
+                   tr3(:,G_nj,:) = tr3(:,G_njv,:)
+                endif
+                call out_sgrid2 ( Grid_x0(gridset),Grid_x1(gridset), &
+                                  Grid_y0(gridset),y1              , &
+                                  Grid_ig1(gridset),ig2            , &
+                                  periodx_L, Grid_stride(gridset)  , &
                                   Grid_etikext_s(gridset) )
                  call out_href2 ( 'V_point' )
 

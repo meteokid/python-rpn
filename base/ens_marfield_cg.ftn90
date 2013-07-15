@@ -130,8 +130,8 @@
       if ( Lctl_step .eq. 1 .or. Rstri_sdon.eq.1) then
          if(Ens_ptp_conf)then
             bus = 'PER'
-            call getindx2 ('MRKV', bus, mrkv, lght, soit)
-            call getindx2 ('MRK2', bus, mrk2, lght, soit)
+            call phy_busindx ('MRKV', bus, mrkv, lght, soit)
+            call phy_busindx ('MRK2', bus, mrk2, lght, soit)
          endif
          if (Lun_out.gt.0) then
             write( Lun_out,1000)

@@ -164,16 +164,16 @@
 !
       if (C_coupling_L) then
          bus = 'DYN'
-         call getindx2 ('MCCPL'     ,  bus, cpl_mcp     , lght, soit)
-         call getindx2 ('TMICECPL'  ,  bus, cpl_i7      , lght, soit)
-         call getindx2 ('TWATERCPL' ,  bus, cpl_tm      , lght, soit)
-         call getindx2 ('GLCPL'     ,  bus, cpl_gl      , lght, soit)
-         call getindx2 ('ICEDPCPL'  ,  bus, cpl_i8      , lght, soit)
+         call phy_busindx ('MCCPL'     ,  bus, cpl_mcp     , lght, soit)
+         call phy_busindx ('TMICECPL'  ,  bus, cpl_i7      , lght, soit)
+         call phy_busindx ('TWATERCPL' ,  bus, cpl_tm      , lght, soit)
+         call phy_busindx ('GLCPL'     ,  bus, cpl_gl      , lght, soit)
+         call phy_busindx ('ICEDPCPL'  ,  bus, cpl_i8      , lght, soit)
          bus = 'PER'
-         call getindx2 ('FLUSOLIS'  ,  bus, cpl_flusolis, lght, soit)
-         call getindx2 ('FDSI'      ,  bus, cpl_fdsi    , lght, soit)
+         call phy_busindx ('FLUSOLIS'  ,  bus, cpl_flusolis, lght, soit)
+         call phy_busindx ('FDSI'      ,  bus, cpl_fdsi    , lght, soit)
          bus = 'VOL'
-         call getindx2 ('RT'        ,  bus, cpl_rt      , lght, soit)
+         call phy_busindx ('RT'        ,  bus, cpl_rt      , lght, soit)
       endif
 !
 !     ---------------------------------------------------------------

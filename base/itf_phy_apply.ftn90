@@ -74,9 +74,9 @@
 
       if (.not.init_L) then
          bus_S = 'VOL'
-         call getindx2 ('PHYTD_UU', bus_S, UU_indx, lght, soit)
-         call getindx2 ('PHYTD_VV', bus_S, VV_indx, lght, soit)
-         call getindx2 ('PHYTD_TT', bus_S, TT_indx, lght, soit)
+         call phy_busindx ('PHYTD_UU', bus_S, UU_indx, lght, soit)
+         call phy_busindx ('PHYTD_VV', bus_S, VV_indx, lght, soit)
+         call phy_busindx ('PHYTD_TT', bus_S, TT_indx, lght, soit)
          init_L = .true.
       endif
 

@@ -73,7 +73,7 @@
          err = gdgaxes(subgrid(1),xpx,ypx)
          dx = xpx(3)-xpx(2)
          dy = ypx(3)-ypx(2)
-         deallocate (xpx,ypx)
+         deallocate (xpx,ypx,subgrid)
       endif
 
       if (dx.le.0) then

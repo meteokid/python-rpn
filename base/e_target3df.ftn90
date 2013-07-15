@@ -33,16 +33,15 @@
 #include "hgc.cdk"
 #include "e_grdc.cdk"
 
-      integer, external :: cascindx, ezgdef_fmem
+      integer, external :: cascindx, ezgdef_fmem, gdrls
 
-      logical,save :: done = .false.
       integer i,err
       real,   dimension(:), allocatable :: xpx,xpxu,ypx,ypxv
       real*8  dx_8, dy_8, debut_8, pos_8, deg2rad_8
 !
 ! ---------------------------------------------------------------------
 !
-      if (done .or. Pil_bmf_L .or. (.not.LAM)) return
+      if (Pil_bmf_L .or. (.not.LAM)) return
 
       call e_3dfreso ( F_grda_S, dx_8,dy_8, F_nia,F_nja, &
                        F_ig1a,F_ig2a,F_ig3a,F_ig4a )
@@ -53,6 +52,9 @@
       deg2rad_8 = acos( -1.0d0 )/180.0d0
 
       allocate (xpx(F_nia),ypx(F_nja),xpxu(F_nia-1),ypxv(F_nja-1))
+      if (associated( xg_8)) deallocate( xg_8)
+      if (associated( yg_8)) deallocate( yg_8)
+      if (associated(ygv_8)) deallocate(ygv_8)
       allocate (xg_8(F_nia), yg_8(F_nja), ygv_8(F_nja-1))
 
       debut_8= xfi(1) - dx_8*5.0
@@ -83,6 +85,9 @@
       e_grdc_ni = e_grdc_gif-e_grdc_gid+1
       e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
 
+      err = gdrls(dstf_gid)
+      err = gdrls(dstu_gid)
+      err = gdrls(dstv_gid)
       dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
            Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx (e_grdc_gid), ypx (e_grdc_gjd))
       dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
@@ -91,8 +96,6 @@
            Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xpx(e_grdc_gid), ypxv(e_grdc_gjd))
 
       deallocate(xpx,ypx,xpxu,ypxv,stat=err)
-
-      done = .true.
 !
 ! ---------------------------------------------------------------------
 !

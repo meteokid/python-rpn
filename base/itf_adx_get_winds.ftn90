@@ -507,6 +507,7 @@ End Interface
 #undef TYPE_CDK
 #include "ver.cdk"
 #include "schm.cdk"
+#include "cstv.cdk"
       integer :: i,j,k, i0,j0,in,jn
       real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
       real*8, dimension(:), pointer :: zd_z_8
@@ -515,7 +516,7 @@ End Interface
       allocate(zd_z_8(l_nk+1))
       zd_z_8(2:l_nk)=Ver_a_8%t(2:l_nk)
       if(Schm_Adw_extrap_L)then
-         zd_z_8(1)=Ver_z_8%m(0)
+         zd_z_8(1)=Cstv_Ztop_8
       else
          ! AFSGAPM NOTE : Zdot is at top Ver_z_8%m(0), however, it was put at first thermo
          !                level, one keep this if Schm_Adx_extrap_L=.false. to validate.
@@ -601,6 +602,7 @@ End Interface
 #undef TYPE_CDK
 #include "ver.cdk"
 #include "schm.cdk"
+#include "cstv.cdk"
       integer :: i,j,k, i0,j0,in,jn
       real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
       real*8, dimension(:), pointer :: zd_z_8
@@ -610,8 +612,8 @@ End Interface
       zd_z_8(1:l_nk+1)=Ver_a_8%t(1:l_nk+1)
       if(Schm_Adw_extrap_L)then
          ! Last zdot limits are at top and surface not at Ver_a_8%t(1) and  Ver_a_8%t(l_nk+1)
-         zd_z_8(1)=Ver_z_8%m(0)
-         zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+         zd_z_8(1)=Cstv_Ztop_8
+         zd_z_8(l_nk+1)=Cstv_Zsrf_8
       else
          if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
       endif
