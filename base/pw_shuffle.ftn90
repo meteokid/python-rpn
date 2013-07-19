@@ -28,8 +28,10 @@
 !
 #include "gmm.hf"
 #include "pw.cdk"
+#include "tr3d.cdk"
+#include "step.cdk"
 !
-      integer istat,fld
+      integer istat,fld,i
       real, dimension(:,:,:), pointer :: plus,minus
       character(len=GMM_MAXNAMELENGTH), dimension(6,2) :: pw_list
       type(gmm_metadata) :: mymeta
@@ -65,5 +67,16 @@
       enddo
 !     ________________________________________________________________
 !
+!     Copy initial tracer values from time-plus to time-minus
+
+      if (Step_kount == 0) then
+         do i=1,Tr3d_ntr
+            nullify(plus,minus)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',minus,mymeta)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',plus,mymeta)
+            minus = plus
+         enddo
+      endif
+
       return
       end

@@ -50,21 +50,18 @@
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
+#include "step.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_cpl.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
 !
-      integer  dim,ier,current_nest
+      integer  dim,ier
       integer  fclos,wkoffit
       external fclos,wkoffit
 !
 !     ---------------------------------------------------------------
-!
-      Rstri_sdon = 0
-      Lctl_step  = 0
-      current_nest = 0
 !
       if (Rstri_rstn_L) then
 !
@@ -79,7 +76,8 @@
 !
 !           Read one wa-file per tile
 !
-            read (Lun_rstrt) Lctl_step,Rstri_idon_L,Cstv_ptop_8
+            read (Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+
             if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
 !
             read (Lun_rstrt) dim

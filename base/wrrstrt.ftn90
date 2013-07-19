@@ -50,6 +50,7 @@
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
+#include "step.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
 #include "itf_cpl.cdk"
@@ -78,7 +79,8 @@
          Lun_rstrt = 0
          ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
 
-         write(Lun_rstrt) Lctl_step,Rstri_idon_L,Cstv_ptop_8
+         write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+
          if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 !
          dim = cpl_ni*cpl_nj*n_fldin

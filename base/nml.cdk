@@ -35,6 +35,7 @@
 #include "stat.cdk"
 #include "perturb.cdk"
 #include "eq.cdk"
+#include "iau.cdk"
 
       namelist /gem_cfgs/ stat_liste
 !Acid
@@ -73,6 +74,12 @@
       namelist /gem_cfgs/ Hzd_t1_0_L
       namelist /gem_cfgs/ Hzd_tr3d_name_S
       namelist /gem_cfgs/ Hzd_type_S
+!Iau
+      namelist /gem_cfgs/ Iau_coef
+      namelist /gem_cfgs/ Iau_interval
+      namelist /gem_cfgs/ Iau_period
+      namelist /gem_cfgs/ Iau_tracers_S
+      namelist /gem_cfgs/ Iau_weight_S
 !Init
       namelist /gem_cfgs/ Init_balgm_L
       namelist /gem_cfgs/ Init_dfwin_L
@@ -214,6 +221,12 @@
       namelist /gem_cfgs_p/ Hzd_t0_0_L
       namelist /gem_cfgs_p/ Hzd_t1_0_L
       namelist /gem_cfgs_p/ Hzd_type_S
+!Iau
+      namelist /gem_cfgs_p/ Iau_coef
+      namelist /gem_cfgs_p/ Iau_interval
+      namelist /gem_cfgs_p/ Iau_period
+      namelist /gem_cfgs_p/ Iau_tracers_S
+      namelist /gem_cfgs_p/ Iau_weight_S
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
       namelist /gem_cfgs_p/ Init_dfwin_L

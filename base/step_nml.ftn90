@@ -27,30 +27,34 @@
 ! v4_40 - Desgagne M.       - initial MPI version
 !
 !object
-!  Default configuration and reading namelist 'time'
+!  Default configuration and reading namelist 'step'
 !
-!implicits
+#include <rmnlib_basics.hf>
 #include "lun.cdk"
 #include "grd.cdk"
+#include "lctl.cdk"
 #include "step.cdk"
-!
-      integer,external ::  fnom,wkoffit
-!
+
+      integer,external ::  step_calc,time2sec
+
       integer nrec,unf,err
+      real :: sec
 !
 !-------------------------------------------------------------------
 !
       step_nml = -1
-!
+
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          step_nml = 0
          if (Lun_out.gt.0) write (6  ,nml=step)
          return
       endif
-!
+
 ! Defaults values for ptopo namelist variables
-!
-      Step_runstrt_S  = 'NIL'
+
+      Step_runstrt_S   = 'NIL'
+      Fcst_start_S    = '0H'
+      Fcst_end_S      = 'NIL'
       Step_total       = 0
       Step_nesdt       = 0
       Step_rsti        = 9999999
@@ -59,9 +63,8 @@
       Step_spinphy     = 9999999
       Step_dt          = -1.0
       Step_leapyears_L = .true.
-!
+
       if (F_namelistf_S .ne. '') then
-!
          unf = 0
          if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
             if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
@@ -76,7 +79,7 @@
       goto 9999
  9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
       goto 9999
-!
+
  9000 if (Step_dt .lt. 0.) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
                     ' Step_dt must be specified in namelist &step'
@@ -88,14 +91,20 @@
          goto 9999
       endif
 
+      Lctl_step = 0
+      if (time2sec(Fcst_start_S,sec)==RMN_OK) Lctl_step = sec / real(Step_dt)
+      Step_delay= Lctl_step
+      if (time2sec(Fcst_end_S,sec)==RMN_OK) Step_total = sec / real(Step_dt)
+
       step_nml = 1
-!
+
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
 !
- 9999 call fclos (unf)
+ 9999 err = fclos (unf)
       return
-      end
+
+    end function step_nml

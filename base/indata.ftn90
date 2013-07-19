@@ -69,11 +69,13 @@
 #include "lun.cdk"
 #include "perturb.cdk"
 #include "step.cdk"
+#include "tr3d.cdk"
 !
       type(gmm_metadata) :: mymeta
       character*256 fn
       integer err,errop,k,skipcode,istat,dim
       real fistmp(LDIST_SHAPE)
+      real, dimension(:,:,:), pointer :: plus,minus
 !
 !     ---------------------------------------------------------------
 !
@@ -128,6 +130,13 @@
          call rpn_comm_xch_halo(fis0, LDIST_DIM,l_ni,l_nj,1,      &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
+
+      do k=1, Tr3d_ntr
+         nullify (plus, minus)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':M',minus,mymeta)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':P',plus,mymeta)
+         minus = plus
+      enddo
 
       call set_dync ()
 

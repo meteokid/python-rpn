@@ -33,6 +33,7 @@
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "path.cdk"
+#include "step.cdk"
 #include <clib_interface.cdk>
       include "rpn_comm.inc"
 !
@@ -64,8 +65,12 @@
 
       Out_post_L     = (flag_step_post.gt.last_step_post)
 
-      last_step_post = min(last_step_post,upperlimit)
-      write (postjob_S,'(i10.10)') last_step_post
+      last_step_post = min(last_step_post+Step_delay,upperlimit)
+      if (last_step_post.ge.0) then
+         write (postjob_S,'(i10.10)') last_step_post
+      else
+         write (postjob_S,'(i10.9) ') last_step_post
+      endif
 
       Out_laststep_S = 'laststep_'//postjob_S
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S

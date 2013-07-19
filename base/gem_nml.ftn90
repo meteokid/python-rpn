@@ -68,6 +68,12 @@
       Lam_blend_H = 10
       Lam_blend_T =  0
 !
+      Iau_coef = 0.
+      Iau_interval = -1.
+      Iau_period = -1.
+      Iau_tracers_S = ''
+      Iau_weight_S = 'constant'
+!
       Init_balgm_L = .false.
       Init_dfwin_L = .true.
       Init_dfnp    = 5

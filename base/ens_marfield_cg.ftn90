@@ -49,8 +49,6 @@
 #include "cstv.cdk"
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
-#include "rstr.cdk"
-#include "step.cdk"
 #include "hgc.cdk"
 #include "ens_param.cdk"
 !
@@ -74,6 +72,7 @@
       real    :: xf,offi,offj
       real xfi(l_ni),yfi(l_nj)
       real*8  :: rad2deg_8
+      logical, save :: init_done=.false.
 !
 ! placer les chaines de Markov dans perbus
       character*3 bus
@@ -127,7 +126,7 @@
 !     
 !     Assure that busper is to 1 at the begining in inichamp1
 !
-      if ( Lctl_step .eq. 1 .or. Rstri_sdon.eq.1) then
+      INITIALIZE: if (.not.init_done) then
          if(Ens_ptp_conf)then
             bus = 'PER'
             call phy_busindx ('MRKV', bus, mrkv, lght, soit)
@@ -137,8 +136,9 @@
             write( Lun_out,1000)
             write( Lun_out,1009)xmn,xmx,xme,std,tau,ntrunc,nlon,nlat,2*mzt+1
          endif
+         init_done=.true.
 !c         return
-      endif
+      endif INITIALIZE
 
       paiv  => dumdum( 1,1)
       paiy  => dumdum(33,1)

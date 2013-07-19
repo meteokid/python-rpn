@@ -16,13 +16,13 @@
 #include <model_macros_f.h>
 
 !/**
-subroutine itf_phy_geom2(F_istat)
+subroutine itf_phy_geom3 (F_phy_gid, F_istat)
    use nest_blending, only: nest_blend
    implicit none
 #include <arch_specific.hf>
    !@objective
    !@argument
-   integer,intent(out) :: F_istat
+   integer,intent(out) :: F_istat, F_phy_gid
    !@author Michel Desgagne    -   Spring 2011
    !@revision
    !  2012-04, S.Chamberland - no more a callback, data in GMM (not in bus)
@@ -31,13 +31,15 @@ subroutine itf_phy_geom2(F_istat)
 #include <gmm.hf>
 #include <msg.h>
 #include "glb_ld.cdk"
+#include "cstv.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
 #include "p_geof.cdk"
 #include "dcst.cdk"
 #include "lam.cdk"
+      include "phy_itf.inc"
 
-   logical,save :: is_init_L = .false.
+   integer,external :: itf_phy_prefold_opr
 
    logical :: nest_it
    integer :: i,j,istat
@@ -47,8 +49,6 @@ subroutine itf_phy_geom2(F_istat)
    type(gmm_metadata) :: mymeta
    !---------------------------------------------------------------
    F_istat = RMN_OK
-   if (is_init_L) return
-   is_init_L = .true.
 
    mymeta = GMM_NULL_METADATA
    mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
@@ -112,11 +112,12 @@ subroutine itf_phy_geom2(F_istat)
          call nest_blend (w1(:,:,1),w2(:,:,1),LDIST_DIM,'M',level=G_nk+1)
       endif
       wrk1(1:l_ni,1:l_nj) = w1(1:l_ni,1:l_nj,1)
+      F_istat= phy_geom2phy (itf_phy_prefold_opr,nint(Cstv_dt_8),F_phy_gid)
    else
-      F_istat = RMN_ERR
+      F_istat= RMN_ERR
       call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating TDMASK')
    endif
 
    !---------------------------------------------------------------
    return
-end subroutine itf_phy_geom2
+end subroutine itf_phy_geom3

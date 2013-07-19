@@ -33,7 +33,7 @@
 ! v2_21 - Dugas B.          - activate climate mode
 ! v2_21 - Lee V.            - changed calling sequence in p_main
 ! v2_30 - Dugas B.          - add call to gemtim
-! v2_31 - Patoine A.        - logic of restart around Rstri_sdon
+! v2_31 - Patoine A.        - logic of restart around Step_kount
 ! v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
 ! v3_00 - Tanguay M.        - cancel parameter in v4d_ctrlcst 
 ! v3_00 - Laroche S.        - adapt for simplified physics
@@ -99,7 +99,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+      dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
 
       if (Lun_out.gt.0) write (6,900) datev
@@ -107,15 +107,17 @@
       call blocstat (.true.)
 
                       fstep = Step_total
-      if (F_dgtflt_L) fstep = Init_dfnp-1
+      if (F_dgtflt_L) fstep = Lctl_step+Init_dfnp-1
 
       Rstri_secondhalf_L= digflt_half(Lctl_step)
       istat= wb_put('model/Rstri/secondhalf', Rstri_secondhalf_L, &
                      WB_REWRITE_MANY)
-      last_step  = (Lctl_step/Step_rsti)*Step_rsti + Step_rsti
+
+      last_step  = (Step_kount/Step_rsti)*Step_rsti + Step_rsti + Step_delay
       upperlimit = min(Step_total,last_step)
+
       if (F_dgtflt_L) then
-         if (last_step.ge.(Init_dfnp-1)/2 ) last_step = fstep
+         if (last_step.ge.(Lctl_step+Init_dfnp-1)/2 ) last_step = fstep
       else
          last_step = min(Step_total,last_step)
       endif
@@ -124,15 +126,15 @@
       stepf = last_step
 
       if ( .not. Rstri_rstn_L ) then
-         call out_outdir (Lctl_step, upperlimit)
-         if (Lctl_step.eq.0) then
+         call out_outdir (Step_kount, upperlimit)
+         if (Step_kount.eq.0) then
             call out_dyn (.false., .true.) ! casc output
-            call out_steps (0,0)
-            if ( Schm_phyms_L ) call itf_phy_step (0)
+            call out_steps (Lctl_step,Lctl_step)
+            if ( Schm_phyms_L ) call itf_phy_step (0,Lctl_step)
          endif
          call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
-         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Init_dfnp-1)/2) ) &
+         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Lctl_step+Init_dfnp-1)/2) ) &
               call out_launchpost2 (.false.,.false.)
       else
          call out_steps (step0, stepf)
@@ -148,15 +150,17 @@
 
          call step_update (istep, bkup_L, fstep)
 
-         call out_outdir (istep, upperlimit)
+         call out_outdir (Step_kount, upperlimit)
 
          call dynstep
 
          call out_dyn (.false., .true.) ! casc output
 
-         if ( Schm_phyms_L ) call itf_phy_step (Lctl_step)
+         if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
 
          call hzd_main
+
+         call iau_apply
 !
 !C    Digital filter
 !     --------------
@@ -178,6 +182,7 @@
       call max_rss (' GEMDM',Lun_out.gt.0)
 
       F_rstrt_L = .false.
+
       if ((Lctl_step.lt.fstep).or.(Clim_climat_L)) F_rstrt_L = .true.
 
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step

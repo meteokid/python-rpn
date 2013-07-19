@@ -17,11 +17,11 @@
 !
 #include "model_macros_f.h"
 
-      subroutine itf_phy_step (F_stepno)
+      subroutine itf_phy_step (F_stepno, F_lctl_step)
       implicit none
 #include <arch_specific.hf>
 !
-      integer, intent(IN) :: F_stepno
+      integer, intent(IN) :: F_stepno, F_lctl_step
 !
 !author 
 !     Michel roch - rpn - april 1994
@@ -89,7 +89,7 @@
 !
       call timing_start ( 40, 'PHYSTEP')
 
-      if (Lun_out.gt.0) write (Lun_out,1001) F_stepno
+      if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
       call pw_shuffle
       call pw_update_UVT ('P')
@@ -110,9 +110,8 @@
                          Grd_left + Grd_nila  - Lam_pil_e, &
                          Grd_belo + 1         + Lam_pil_s, &
                          Grd_belo + Grd_njla  - Lam_pil_n /)
+         call itf_phy_geom3 (l_phy_gid, err)
       endif
-
-      call itf_phy_geom2(err)
 
       call itf_phy_prep()
 
@@ -122,11 +121,11 @@
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
-      err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8), &
+      err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
                        F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
                        Path_phy_S,geofilename_S)
-      err = min(phy_gmm2phy(itf_phy_prefold_opr,dateo, nint(cstv_dt_8), &
-                            F_stepno,l_phy_gid),err)
+
+      err = min(phy_gmm2phy(), err)
 
       call handle_error(err,'itf_phy_step','Problem getting input data') 
       if (F_stepno < MAX_COMMBLOC_SWAP) &
@@ -134,7 +133,7 @@
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
-      call phy_step (F_stepno)
+      call phy_step2 (F_stepno,F_lctl_step)
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0) )
@@ -157,14 +156,14 @@
                  obusval, F_stepno, j, phydim_nk )
          end do
 !$omp end parallel do
-         call itf_phy_output (obusval,l_ni,l_nj,F_stepno)
+         call itf_phy_output (obusval,l_ni,l_nj,F_lctl_step)
          deallocate (obusval)
       endif
 
       call timing_stop ( 40, 'PHY      ' )
 
- 1001 format(/,'PHYSICS: PERFORMING TIMESTEP #',I8, &
-             /,'============================================')
+ 1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
+             /,'========================================')
 !
 !     ---------------------------------------------------------------
 !

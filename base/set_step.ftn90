@@ -94,6 +94,7 @@
 #include "cstv.cdk"
 #include "dimout.cdk"
 #include "timestep.cdk"
+#include "lctl.cdk"
 #include "step.cdk"
 #include "lun.cdk"
 
@@ -169,7 +170,7 @@
              read(F_argv_S(ii),*)rstep
              if (rstep.eq.-1) then
              i = i-1
-             do 70 istep=0,Step_total
+             do 70 istep=lctl_step,Step_total
              i = i+1
              Timestep(i,j)=istep
  70          continue

@@ -39,7 +39,7 @@
 !
 !     * Must we write a restart file?
 !
-      F_bkup_L = mod( F_step, Step_bkup ).eq.0
+      F_bkup_L = mod( Step_kount, Step_bkup ).eq.0
 
       if ( F_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
 

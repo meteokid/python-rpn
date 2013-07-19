@@ -39,23 +39,30 @@
 !    NAMES       I/O  TYPE  DESCRIPTION
 !
 #include "clim.cdk"
+#include "cstv.cdk"
 #include "out.cdk"
 #include "out3.cdk"
+#include "modconst.cdk"
 #include "path.cdk"
+#include "step.cdk"
 #include "ptopo.cdk"
 
       integer, external :: prog_filename,fnom,fstouv,fstopc
 
       character*1024 out_filename_s
-      character*15   datev,startindx
+      character*16   datev,fdate
+      character*15   startindx
+      character*7    my_hour
+      character*6    my_block
+      character*4    unit_ext
+      character*2    my_prefix
       logical flag
-      integer prognum,err,i,indx
-      integer clostep,date,hour
+      integer clostep,prognum,err,i,indx
       real, parameter :: eps=1.e-12
-      real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac, sec_in_day
+      real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac
       parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
-                  OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0, &
-                  sec_in_day=86400.0d0 )
+                  OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0)
+!
 !
 !----------------------------------------------------------------------
 !
@@ -87,18 +94,48 @@
          if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
          sec_clostep  = dble(clostep)*dble(Out_deet)
          Out_ip2 = int (dble(stepno) * Out_deet / 3600. + eps)
-         call newdate (Out_dateo, date, hour,-3)
-         hour=hour/1000000
+
 !        Out_unit_S=H or blank:
          prognum = ceiling(sec_clostep *OV_hour - eps)
          if (Out_unit_S.eq.'P') prognum = clostep
          if (Out_unit_S.eq.'D') prognum = ceiling(sec_clostep * OV_day - eps)
          if (Out_unit_S.eq.'M') prognum = ceiling(sec_clostep * OV_min - eps)
          if (Out_unit_S.eq.'S') prognum = ceiling(sec_clostep - eps)
-!
-         err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
-                              Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
-                              Out_unit_S)
+
+         call up2low ( Out_prefix_S,my_prefix)
+         write(my_block,'(a,i2.2,a,i2.2)') '-',Out_myblocx,'-',Out_myblocy
+
+         if (prognum.lt.0) then
+            if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) then
+               write(my_hour,'(a,i7.6)') '_',prognum
+            else
+               write(my_hour,'(a,i4.3)') '_',prognum
+            endif
+         else
+            if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) then
+               write(my_hour,'(a,i6.6)') '_',prognum
+            else
+               write(my_hour,'(a,i3.3)') '_',prognum
+            endif
+         endif
+
+         Out_dateo = Out3_date
+         call datf2p(fdate,Out_dateo)
+         if (stepno.lt.0) then
+            dayfrac = dble(stepno-Step_delay) * Cstv_dt_8 * OV_day
+            call incdatsd (datev,Mod_runstrt_S,dayfrac)
+            call datp2f   (Out_dateo,datev)
+         endif
+         
+         call up2low(Out3_unit_S,unit_ext)
+
+!        Out_filename_S= ppYYYYMMDDhh[-XX-YY]_ddd[U]
+         Out_filename_S= trim(my_prefix)//fdate(1:8)//fdate(10:11)// &
+                         my_block//trim(my_hour)//trim(unit_ext)
+
+!         err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
+!                              Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
+!                              Out_unit_S)
 
          Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)
 

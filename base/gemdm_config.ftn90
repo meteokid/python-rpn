@@ -37,6 +37,7 @@
 !object
 !
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <WhiteBoard.hf>
 #include "dcst.cdk"
@@ -46,14 +47,15 @@
 #include "out.cdk"
 #include "modconst.cdk"
 !
-      integer, external :: bin2com,newdate,freq_grdc
+      integer, external :: bin2com,time2sec
 
-      character*16  dumc_S
+      character*16  dumc_S, datev
       character*256 fln_S
       logical wronghyb
-      integer i, k, nrec, err, ipcode, ipkind, time1, time2, istat
-      real pcode,deg_2_rad
-      real*8 diffd
+      integer i, k, nrec, ipcode, ipkind, istat
+      real pcode,deg_2_rad,sec
+      real*8 diffd, dayfrac, sec_in_day
+      parameter (sec_in_day=86400.0d0)
 !
 !-------------------------------------------------------------------
 !
@@ -158,12 +160,15 @@
          endif
          return
       endif
+      
+      dayfrac= - (Lctl_step * Step_dt / sec_in_day)
+      call incdatsd (datev, Step_runstrt_S, dayfrac)
+      call datp2f ( Out3_date, datev )
 
-      call datp2f ( Out3_date, Step_runstrt_S )
-      err = newdate ( Out3_date, time1, time2, -3 )
-      if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S,time1,time2
+      if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S, datev
 
-      Grdc_ndt= freq_grdc (Grdc_nfe, nint(Cstv_dt_8))
+      Grdc_ndt = -1
+      if (time2sec(Grdc_nfe,sec)==RMN_OK) Grdc_ndt = sec/real(Cstv_dt_8)
       if (Grdc_ndt.gt.-1) Grdc_ndt = max( 1, Grdc_ndt)
 
       if (Grdc_start_S == '') then
@@ -238,7 +243,16 @@
          Schm_opentop_L = .true.
          Vspng_nk       = 0
       endif
-!
+
+!     Check for incompatible use of IAU and DF
+      if (Iau_period > 0. .and. Init_balgm_L) then
+         if (Lun_out.gt.0) then
+            write (Lun_out, 7040)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
           if (lun_out.gt.0) write (Lun_out, 6100)
@@ -272,8 +286,9 @@
       gemdm_config = 1
 !
  6005 format (/' Starting time Step_runstrt_S not specified'/)
- 6007 format (/X,63('#'),/,2X,'STARTING DATE for RUN is: ',a16,'= ', &
-              i8.8,'.',i8.8,/X,63('#')/)
+ 6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
+                           2X,'00H FORECAST WILL BE VALID AT: ',a16,/ &
+              X,48('#')/)
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
@@ -286,6 +301,7 @@
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9100 format (/'ABORT: you must supply levels in namelist variable hyb'/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
@@ -303,32 +319,6 @@
 !
 !-------------------------------------------------------------------
 !
-      return
-      end
-!
-      integer function freq_grdc (F_string_s,F_timestep)
-      implicit none
-#include <arch_specific.hf>
-      character*(*) F_string_s
-      integer F_timestep
-
-      character*1 nfe
-      integer len
-      real nunits,nfe_nsec
-
-      freq_grdc = -1
-      len = len_trim( F_string_s )
-      if (len.gt.0) then
-         call low2up (F_string_s(len:len),nfe)
-         nfe_nsec = 3600.
-         if (nfe.eq.'D') nfe_nsec = 86400.
-         if (nfe.eq.'M') nfe_nsec = 60.
-         if (nfe.eq.'S') nfe_nsec = 1.
-         if ((nfe.eq.'D').or.(nfe.eq.'H').or. &
-             (nfe.eq.'M').or.(nfe.eq.'S')) len= len-1
-         read ( F_string_s(1:len), * ) nunits
-         freq_grdc = nunits * nfe_nsec / real(F_timestep)
-      endif
       return
       end
 

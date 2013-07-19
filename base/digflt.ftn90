@@ -46,7 +46,7 @@
 #include <gmm.hf>
 #include "glb_ld.cdk"
 #include "init.cdk"
-#include "lctl.cdk"
+#include "step.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "vta.cdk"
@@ -61,7 +61,7 @@
 !
 !     __________________________________________________________________
 !
-      dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Lctl_step ) )
+      dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Step_kount ) )
 !
       istat = gmm_get(gmmk_uta_s,uta,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(uta)'
@@ -146,7 +146,7 @@
             end do
             end do
             end do
-         elseif ( Lctl_step .eq. (Init_dfnp-1)/2 ) then
+         elseif ( Step_kount .eq. (Init_dfnp-1)/2 ) then
             tra(1:l_ni,1:l_nj,1:G_nk+2) = tr(1:l_ni,1:l_nj,1:G_nk+2)
          endif
 
@@ -156,7 +156,7 @@
 ! Physics fields at half span are saved to be used after initialisation
 !**********************************************************************
 
-      if ( Lctl_step .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
+      if ( Step_kount .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
          nullify(BUSPER_3d,BUSPER_3d_digf)
          istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
          istat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&

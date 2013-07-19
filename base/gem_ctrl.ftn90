@@ -65,6 +65,7 @@
       if ( .not. Rstri_rstn_L ) then
 
          call indata()
+         Step_kount = 0
 
       else
 
@@ -76,8 +77,6 @@
 
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
-
-      Rstri_sdon = 0
 
       if ( Init_balgm_L .and. .not.Rstri_idon_L ) call initial (rstrt_L)
 

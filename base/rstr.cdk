@@ -14,8 +14,6 @@
 !                    | .false. to start   the job                      |
 ! Rstri_idon_L       | .true. initialization is done                   |
 ! Rstri_half_L       | .true. if (Lctl_step.ge.(Init_dfnp-1)/2)?       |
-! Rstri_sdon         | number of time steps already performed during   |
-!                    | the current slice                               |
 ! Rstri_glbcol_L     | .true. to write one global binary restart file  |
 !----------------------------------------------------------------------
 !
@@ -24,9 +22,6 @@
       logical Rstri_rstn_L  , Rstri_idon_L, &
               Rstri_glbcol_L, Rstri_secondhalf_L
 !
-      integer Rstri_sdon
-!
-      common / Rstri / Rstri_sdon
       common / Rstrl / Rstri_rstn_L  , Rstri_idon_L
       common / Rstrl / Rstri_glbcol_L, Rstri_secondhalf_L
 !

@@ -1,0 +1,36 @@
+#if defined (DOC)
+!
+!**comdeck iau.cdk
+!
+!______________________________________________________________________
+!                                                                      |
+! INCREMENTAL ANALYSIS UPDATE CONFIGURATION (iau_apply)                |
+!______________________________________________________________________|
+!                    |                                                 |
+! NAME               | DESCRIPTION                                     |
+!--------------------|-------------------------------------------------|
+! IAU_MAX_TRACERS    | The maximum tracers that can be incremented.    |
+! IAU_NCOEF          | The number of coefficients for weight functions.|
+! Iau_coef           | List of coefficients for weighting functions.   |
+! Iau_interval       | The number of seconds between increment fields. |
+! Iau_period         | The number of seconds over which IAU will be    |
+!                    |          will be run (typically the length of   |
+!                    |          the assimilation window).  Default < 0 |
+!                    |          means that no IAUs are applied.        |
+! Iau_tracers_S      | An optional list of tracers to be incremented.  |
+! Iau_weight_S       | The type of weighting function to be applied to |
+!                    |          the analysis increments:               |
+!                    |     'constant' (default) uniform increments     |
+!                    |     'sin' DF-style weights (Fillion et al. 1995)|
+!--------------------|-------------------------------------------------|
+!
+#endif
+!
+      integer, parameter :: IAU_MAX_TRACERS=250,IAU_NCOEF=3
+      real :: Iau_interval,Iau_period
+      real, dimension(IAU_NCOEF) :: Iau_coef
+      character(len=64) :: Iau_weight_S
+      character(len=4), dimension(IAU_MAX_TRACERS) :: Iau_tracers_S
+!
+      common / iaur / Iau_interval,Iau_period,Iau_coef
+      common / iauc / Iau_tracers_S,Iau_weight_S

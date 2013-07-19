@@ -43,9 +43,10 @@
       external fstecr
 !
       character*1 gridtyp
+      character*2 typvar
       character*8 dumc
-      integer i,j,k,n,ier,pnip1,pnip3,cnt,nis,njs,nrd, &
-              ii,jj,im,jm,g3,g4,oi,oj,datyp,modeip1
+      integer i,j,k,n,ier,pnip1,pnip2,pnip3,cnt,nis,njs,nrd, &
+              ii,jj,im,jm,g3,g4,oi,oj,datyp,modeip1,npas
       logical stride_L
       real*8 sum_8
       real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
@@ -78,6 +79,14 @@
 !      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridin,Out_gridj0,out_gridjn    ,1,nkfa)
 !
       datyp = Out_datyp
+      pnip2 = max(0,Out_ip2)
+      npas  = max(0,Out_npas)
+
+      if (Out_npas.ge.0) then
+         typvar= Out_typvar_S
+      else
+         typvar= 'I'
+      endif
 
       if (Out_blocme.eq.0) then
 
@@ -94,7 +103,7 @@
          endif
          pnip1 = 0
          pnip3 = Out_ip3
-         if (pnip3.lt.0) pnip3 = Out_npas
+         if (pnip3.lt.0) pnip3 = npas
          stride_L = Out_stride .gt. 1
          nis = Out_ifg - Out_idg + 1
          njs = Out_jfg - Out_jdg + 1
@@ -163,8 +172,8 @@
                wk2(i,nk_o-k+1) = tr2(i,j,k)
             end do
             end do
-            ier= fstecr(wk2,wk2,-nbit,Out_unf,Out_dateo,int(Out_deet),Out_npas, &
-                         Out_nisl,nk_o,1,0,Out_ip2,pnip3,Out_typvar_S,nomvar, &
+            ier= fstecr(wk2,wk2,-nbit,Out_unf,Out_dateo,int(Out_deet),npas, &
+                         Out_nisl,nk_o,1,0,pnip2,pnip3,typvar,nomvar, &
                          Out_etik_S,'X',0,0,0,0,datyp,Out_rewrit_L)
          end do
          deallocate (wk2)
@@ -183,8 +192,8 @@
             enddo
 
             ier = fstecr (wk2,tr1,-nbit,Out_unf,Out_dateo,int(Out_deet), &
-                          Out_npas,Out_nisg,Out_njsl,1,pnip1,Out_ip2,pnip3, &
-                          Out_typvar_S,nomvar,Out_etik_S,gridtyp, &
+                          npas,Out_nisg,Out_njsl,1,pnip1,pnip2,pnip3, &
+                          typvar,nomvar,Out_etik_S,gridtyp, &
                           Out_ig1,Out_ig2,g3,g4,datyp,Out_rewrit_L)
          end do
          deallocate (wk2)
@@ -194,8 +203,8 @@
             n = ind_o(k)
             call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
             ier = fstecr (tr2(1,1,k),tr1,-nbit,Out_unf,Out_dateo,int(Out_deet), &
-                          Out_npas,Out_nisl,Out_njsl,1,pnip1,Out_ip2,pnip3, &
-                          Out_typvar_S,nomvar,Out_etik_S,gridtyp, &
+                          npas,Out_nisl,Out_njsl,1,pnip1,pnip2,pnip3, &
+                          typvar,nomvar,Out_etik_S,gridtyp, &
                           Out_ig1,Out_ig2,g3,g4,datyp,Out_rewrit_L)
          end do
 !     

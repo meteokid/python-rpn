@@ -29,6 +29,7 @@ function itf_phy_update2(F_apply_L) result(F_istat)
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <msg.h>
+#include "tr3d.cdk"
    include "phy_itf.inc"
    integer,parameter :: MAXNTR = 1024
    integer,parameter :: NVARS = 3
@@ -68,7 +69,8 @@ function itf_phy_update2(F_apply_L) result(F_istat)
       !# Note: Secial case at step=0, tracers are not updated at surface
       do ivar = 1,ntr
          call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
-         if (basename_S == 'HU' .or. time_S /= ':P') cycle
+         if (basename_S == 'HU' .or. any(Tr3d_username_S(1:Tr3d_userntr) == basename_S) &
+              .or. time_S /= ':P') cycle
          trname_S = trim(prefix_S)//trim(basename_S)//':P'//ext_S
          call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trname_S))
          ignore = phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S)

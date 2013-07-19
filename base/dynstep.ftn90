@@ -50,6 +50,7 @@
 #include "orh.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
+#include "step.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "vtopo.cdk"
@@ -65,14 +66,14 @@
 !     first_L is TRUE  for the first timestep
 !           or the first timestep after digital filter initialisation
 !
-      first_L = (Lctl_step.eq.1).or.(Rstri_idon_L .and.  &
-                 Lctl_step.eq.(Init_dfnp+1)/2)
+      first_L = (Step_kount.eq.1).or.(Rstri_idon_L .and.  &
+                 Step_kount.eq.(Init_dfnp+1)/2)
 !
 !     secon_L is TRUE  for the second timestep
 !            or the second timestep after digital filter initialisation
 !
-      secon_L = (Lctl_step.eq.2).or.(Rstri_idon_L .and.  &
-                 Lctl_step.eq.(Init_dfnp+1)/2 + 1)
+      secon_L = (Step_kount.eq.2).or.(Rstri_idon_L .and.  &
+                 Step_kount.eq.(Init_dfnp+1)/2 + 1)
 !
 !     Orh_crank_L is TRUE for a time step using C-N procedure
 !

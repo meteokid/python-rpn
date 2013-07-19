@@ -42,8 +42,9 @@
 
       integer, external :: fstecr, RPN_COMM_grid_redist
 
+      character*2 typvar      
       integer, parameter :: ltok = 1
-      integer  nz, err, nblock, nis, njs, k, kk, ig4
+      integer  nz, err, nblock, nis, njs, k, kk, pnip2, npas, ig4
       integer, dimension (:)    , allocatable :: zlist
       real   , dimension (:,:,:), pointer     :: wk
 !
@@ -51,7 +52,7 @@
 !
       nis= g_if - g_id + 1
       njs= g_jf - g_jd + 1
-      ig4= 0
+      ig4= 4
 
       nblock= Ptopo_nblocx*Ptopo_nblocy
       nz    = (nplans + nblock -1) / nblock
@@ -82,6 +83,14 @@
          call timing_start ( 92, 'OUT_PUECR')
       endif
 
+      pnip2 = max(0,ip2)
+      npas  = max(0,Out_npas)
+      if (Out_npas.ge.0) then
+         typvar= Out_typvar_S
+      else
+         typvar= 'I'
+      endif
+
       if (Out_blocme.eq.0) then
 
          do k= nz, 1, -1
@@ -93,16 +102,18 @@
 
                   call out_mergeyy (wk(1,1,k), nis*njs)
                   if (Ptopo_couleur.eq.0) &
-                  err= fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo,int(Out_deet),&
-                            Out_npas,nis,2*njs,1,meta(kk)%ip1,ip2,ip3                      ,&
-                            Out_typvar_S,meta(kk)%nv,Out_etik_S,'U'                        ,&
-                            meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4,meta(kk)%dtyp,Out_rewrit_L)
-               else
+                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo, &
+                                int(Out_deet),npas,nis,2*njs,1,meta(kk)%ip1   , &
+                                pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'U'   , &
+                                meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
+                                meta(kk)%dtyp,Out_rewrit_L)
+              else
 
-                  err= fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo,int(Out_deet),&
-                            Out_npas,nis,njs,1,meta(kk)%ip1,ip2,ip3                        ,&
-                            Out_typvar_S,meta(kk)%nv,Out_etik_S,'Z'                        ,&
-                            meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4,meta(kk)%dtyp,Out_rewrit_L)
+                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo, &
+                                int(Out_deet),npas,nis,njs,1,meta(kk)%ip1     , &
+                                pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'Z'   , &
+                                meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
+                                meta(kk)%dtyp,Out_rewrit_L)
                endif
 
             endif

@@ -46,8 +46,10 @@
 #include "itf_cpl.cdk"
 #include "itf_phy_buses.cdk"
 #include "itf_phy_config.cdk"
+#include "step.cdk"
 #include "ver.cdk"
 #include "path.cdk"
+#include "tr3d.cdk"
 
       integer, parameter :: COMPATIBILITY_LVL = 3
       integer, parameter :: DIM_ERR = 14
@@ -58,7 +60,7 @@
 
       character*3 bus
       logical prout,cond_satu_L
-      integer nrec, phycompa, n, lght, soit, phy_offset
+      integer nrec, phycompa, n, lght, soit, phy_offset, dateo
       integer err(DIM_ERR),i,offi2,offj2
       real, dimension(:), pointer :: std_p_prof
 !
@@ -108,6 +110,11 @@
       call phy_optl('NOTOP'   , .true.      , 1,'SET',prout,err(4))
       call handle_error(minval(err(1:4)),'itf_phy_init','phy_opt set')
 
+! Provide a list of tracer variables read by the entry
+
+      err(1) = wb_put('itf_phy/READ_TRACERS', Tr3d_username_S(1:Tr3d_userntr))
+      call handle_error(err(1),'itf_phy_init','adding tracer list to wb_put')
+
 ! Because of horizontal de-staggering of the wind components
 ! we will lose 2 points around the global domain of a LAM config.
 ! In LAM config, data will therefore be available to the physics
@@ -121,9 +128,10 @@
       
 ! Complete physics initialization (see phy_init for interface content)
 
+      call datp2f ( dateo, Step_runstrt_S)
       p_nk  = G_nk + 1
-      err(1)= phy_init3 ( Out3_date,real(Cstv_dt_8),1+p_offi,l_ni-offi2, &
-                          1+p_offj, l_nj-offj2, p_nk, getijlalo        , &
+      err(1)= phy_init3 ( dateo,real(Cstv_dt_8),1+p_offi,l_ni-offi2, &
+                          1+p_offj, l_nj-offj2, p_nk, getijlalo    , &
                           itf_phy_rdfile )
       call handle_error(err(1),'itf_phy_init','phy_init3')
 
