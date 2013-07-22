@@ -83,6 +83,11 @@ class RPNFile:
         #sys.stdout = sys.stderr = StringIO()
         #TODO: if FILE_MODE_RO or FILE_MODE_RW_OLD: check is file exist and is readable
         #TODO: if FILE_MODE_RW_OLD or FILE_MODE_RW_OLD: if file exist, check if can write, if not check if dir can write
+
+        # Set self.iun to None before the call to fstouv, so that the member exists for
+        # the __del__ if fstouv raises an exception
+        self.iun = None
+
         self.iun = Fstdc.fstouv(0,self.filename,self.options)
         #(sys.stderr,sys.stdout) = stderrout
         if (self.iun == None):
@@ -129,6 +134,22 @@ class RPNFile:
         #TODO: update self.grid?
         return RPNRec(array,params)
 
+    def __contains__(self,key):
+        """Returns True if 'key' is contained in this RPNFile, 'False' otherwise
+
+        is_here = mykey in myRPNfile
+        @param mykey Search key passed to RPNFile.info() (instance of RPNMeta)
+        @return True if the key is present, False otherwise
+        """
+        try:
+            self.info(key)
+            # self.info raises an exception if the key isn't found, so
+            # reaching this point means that the record is in the file.
+            return True
+        except Fstdc.error:
+            # An exception means that the key was not found
+            return False
+
     def edit_dir_entry(self,key):
       """Edit (zap) directory entry referenced by handle
 
@@ -160,13 +181,34 @@ class RPNFile:
 
         The myRPNfile.lastread parameter is set with values of all latest found rec params
         """
-        if isinstance(key,RPNMeta):
+        if isinstance(key,RPNKeys):# RPNMeta is derived from RPNKeys
             if list:
                 mylist = Fstdc.fstinl(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
                               key.datev)
                 mylist2 = []
                 for item in mylist:
+                    # The parameters read via rmnlib don't include datev,
+                    # but that's useful for searching later on (it's
+                    # part of RPNKeys).  We can calculate datev, however,
+                    # from dateo, npas, and deet
+                    if (item['dateo'] != -1):
+                        dateo = item['dateo']
+                        npas = item['npas']
+                        deet = item['deet']
+                        try:
+                            datev = RPNDate(
+                                      RPNDate(dateo).toDateTime() +
+                                      npas* datetime.timedelta(seconds=deet)
+                                    ).stamp
+                            item['datev']=datev
+                        except ValueError:
+                            # A ValueError here indicates that dateo wasn't
+                            # a valid date to begin with.  This will happen
+                            # if dateo is a made-up value like '0'.  In this
+                            # case, it doesn't make sense to try to compute
+                            # a datev
+                            pass
                     result=RPNMeta()
                     result.update_by_dict(item)
                     result.fileref=self
@@ -190,6 +232,24 @@ class RPNFile:
         result=RPNMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
+            if (self.lastread['dateo'] != -1):
+                dateo = self.lastread['dateo']
+                npas = self.lastread['npas']
+                deet = self.lastread['deet']
+                try:
+                    datev = RPNDate(
+                              RPNDate(dateo).toDateTime() +
+                              npas* datetime.timedelta(seconds=deet)
+                            ).stamp
+                    self.lastread['datev']=datev
+                except ValueError:
+                    # A ValueError here indicates that dateo wasn't
+                    # a valid date to begin with.  This will happen
+                    # if dateo is a made-up value like '0'.  In this
+                    # case, it doesn't make sense to try to compute
+                    # a datev
+                    pass
+
             result.update_by_dict(self.lastread)
             result.fileref=self
 #            print 'DEBUG result=',result
@@ -474,7 +534,7 @@ class RPNMeta(RPNKeys,RPNDesc):
         xaxisrec = self.fileref[searchkeys]
         searchkeys.nom = '^^'
         yaxisrec = self.fileref[searchkeys]
-        if (xaxiskeys == None or yaxiskeys == None):
+        if (xaxisrec == None or yaxisrec == None): # csubich -- variable name typo
             raise ValueError,'RPNMeta.getaxis: ERROR - axis grid descriptors (>>,^^) not found'
         if type(axis) == type(' '):
             if axis.upper() == 'X':
@@ -728,6 +788,7 @@ class RPNGrid(RPNParm):
             a = RPNGridHelper.baseEzInterpArgs.copy()
             a.update(dg_a)
             dg_a = a
+            dataxy = None
             dataxy = Fstdc.ezinterp(recx.d,recyd,
                     sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],
                     dg_a['shape'],dg_a['grtyp'],dg_a['g_ig14'],dg_a['xy_ref'],dg_a['hasRef'],dg_a['ij0'],
@@ -833,7 +894,7 @@ class RPNGridRef(RPNGridHelper):
         #   only need to get xyaxis and g_ref from keys
         #   TODO: may not want to do this if they were provided in args or keys.grid
         if keys and isinstance(keys,RPNMeta):
-            kv['xyaxis'] = keys.getAxis()
+            kv['xyaxis'] = keys.getaxis() # csubich -- proper spelling is without capital
             kv['g_ref']  = RPNGrid(kv['xyaxis'][0])
         for k in self.addAllowedKeysVals:
             if k in args.keys():
@@ -990,7 +1051,7 @@ class RPNRec(RPNMeta):
         @exception ValueError if myRPNRec does not contain a valid grid desc
         @exception TypeError if togrid is not an instance of RPNGrid
         """
-        if isinstance(value,RPNGrid):
+        if isinstance(togrid,RPNGrid):
             if not isinstance(self.grid,RPNGrid):
                 self.setGrid()
             if self.grid:
