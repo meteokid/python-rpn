@@ -2,17 +2,18 @@ from numpy.distutils.core import setup, Extension
 import os, distutils, string
 import rpn_version
 
-#TODO: need legacy pgi9xxshared rmnlib-dev
+#TODO: . s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
 
 #myecarch = 'Linux_pgi611'
 #myrmnlib = 'rmnshared_013'
 #myecarch = 'Linux_pgi9xx'
-myecarch = 'Linux_x86-64/pgi9xx'
+#myecarch = 'Linux_x86-64/pgi9xx'
+myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301']
 myrmnlib = ['PyFTN_helpers','rmnshared_013']
 
-eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
-ecincpath = os.getenv('EC_INCLUDE_PATH')
 architecture = os.getenv('EC_ARCH')
+eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
+ecincpath = os.getenv('EC_INCLUDE_PATH')+' '+'/usr/local/env/armnlib/include'+' '+'/usr/local/env/armnlib/include/'+architecture+' '+'./utils'
 
 eclibsharedpath = ''
 for mypath in eclibpath.split():
@@ -23,27 +24,25 @@ for mypath in eclibpath.split():
     if isok:
         eclibsharedpath = mypath
 
-if not architecture == myecarch:
+if not architecture in myecarch:
     print("WARNING: EC_ARCH should be "+myecarch+" and is: "+architecture)
     #TODO: stop
 if not eclibsharedpath:
     print("WARNING: Could not find LIB PATH for "+str(myrmnlib))
     #TODO: stop
 
-#TODO: FIND inc path (Not in EC_INCLUDE_PATH yet), using old $ARMNLIB/include for now
-
 runtime_libs=['-Wl,-rpath,'+eclibsharedpath]
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
 SharedLd=string.split(SharedLd[0])
 
-print 'Debug architecture=',architecture
-print 'Debug runtime_libs=',runtime_libs
-print 'Shared Objects loaded with',SharedLd
-
-#TODO: use EC_INCLUDE_PATH for include dirs
+print '#Debug architecture=',architecture
+print '#Debug runtime_libs=',runtime_libs
+print '#Debug Shared Objects loaded with',SharedLd
+print '#Debug eclibpath=',eclibpath
+print '#Debug ecincpath=',ecincpath
 
 Fstd_module = Extension('Fstdc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
+            include_dirs = ecincpath.split(' '),
             libraries = myrmnlib,
             extra_objects = ['utils/get_corners_xy.o'],
             extra_link_args = runtime_libs,

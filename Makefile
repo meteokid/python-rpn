@@ -1,7 +1,7 @@
 MAKE=make
 
-include Makefile_base
-include $(EC_ARCH)/Makefile.inc
+include Makefile_base.mk
+include $(EC_ARCH)/Makefile.inc.mk
 
 BASEDIR=$(PWD)
 
@@ -17,7 +17,7 @@ DOCTESTPYMODULES = rpn_helpers.py rpnstd.py
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
 VERSION   = 1.3.0
-LASTUPDATE= 2012-05
+LASTUPDATE= 2013-08
 
 versionfile:
 	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)
