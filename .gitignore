@@ -5,3 +5,7 @@
 *.o
 *.mod
 build/
+rpn_version.h
+rpn_version.py
+utils/get_corners_xy.f90
+utils/vect_mod.f90
