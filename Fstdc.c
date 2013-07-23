@@ -1,5 +1,6 @@
 /*
 Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
+@author: Michel Valin <michel.valin@ec.gc.ca>
 @author: Mario Lepine <mario.lepine@ec.gc.ca>
 @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 @date: 2009-09
@@ -11,8 +12,15 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #include <rpnmacros.h>
 #include "armnlib.h"
 
+#include <strings.h>
+
 #include "utils/py_capi_ftn_utils.h"
+#include "utils/get_corners_xy.h"
 #include "rpn_version.h"
+
+#define FSTDC_FILE_RW "RND+R/W"
+#define FSTDC_FILE_RW_OLD "RND+R/W+OLD"
+#define FSTDC_FILE_RO "RND+R/O"
 
 #define LEVEL_KIND_MSL 0
 #define LEVEL_KIND_SIG 1
@@ -24,12 +32,14 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 
 static const int withFortranOrder = 1;
 
+//TODO: add more Error distinctions to catch more specific things
 static PyObject *FstdcError;
 static PyObject *FstdcTooManyRecError;
 
 static PyObject *Fstdc_version(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args);
+static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args);
 static PyObject *c2py_fstprm(int handle);
 static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args);
@@ -48,6 +58,12 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args);
+// Add option-setting for ezscint
+static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezsetopt(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezsetval(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ezgetval(PyObject *self, PyObject *args);
+
 static int getGridHandle(int ni,int nj,char *grtyp,char *grref,
     int ig1,int ig2,int ig3,int ig4,int i0, int j0,
     PyArrayObject *xs,PyArrayObject *ys);
@@ -114,6 +130,29 @@ static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
 }
 
 
+static char Fstdc_fstrwd__doc__[] =
+        "Interface to fstrwd to rewind a RPN 2000 Standard File\n\
+        Fstdc.fstrwd(iunit)\n\
+        @param iunit unit number of the file handle, 0 for a new one (int)\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+
+static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args) {
+    int iun=0,errorCode;
+    if (!PyArg_ParseTuple(args, "i",&iun)) {
+        return NULL;
+    }
+	 errorCode = c_fstrwd(iun);
+    if (errorCode >= 0) {
+		  Py_INCREF(Py_None);
+		  return Py_None;
+    } else {
+        PyErr_SetString(FstdcError,"Failed to rewind file");
+        return NULL;
+    }
+}
+
+
 static char Fstdc_fstinf__doc__[] =
         "Find a record matching provided criterias (Interface to fstinf, dsfsui, fstinfx)\n\
         recParamDict = Fstdc.fstinf(iunit,nomvar,typvar,etiket,ip1,ip2,ip3,datev,inhandle)\n\
@@ -158,6 +197,7 @@ static PyObject *c2py_fstprm(int handle) {
     int swa=0, lng=0, dltf=0, ubc=0, extra1=0, extra2=0, extra3=0;
     int errorCode;
 
+    errorCode = 0;
     if (handle >= 0) {
         errorCode =  c_fstprm(handle,&dateo,&deet,&npas,&ni,&nj,&nk,&nbits,&datyp,
             &ip1,&ip2,&ip3,TYPVAR,NOMVAR,ETIKET,GRTYP,&ig1,&ig2,&ig3,&ig4,
@@ -171,7 +211,7 @@ static PyObject *c2py_fstprm(int handle) {
             "handle",handle,"ni",ni,"nj",nj,"nk",nk,"dateo",dateo,"ip1",ip1,"ip2",ip2,"ip3",ip3,
             "deet",deet,"npas",npas,"datyp",datyp,"nbits",nbits,
             "type",TYPVAR,"nom",NOMVAR,"etiket",ETIKET,"grtyp",GRTYP,
-            "ig1",ig1,"ig1",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
+            "ig1",ig1,"ig2",ig2,"ig3",ig3,"ig4",ig4,"datev",extra1);
 }
 
 
@@ -202,7 +242,7 @@ static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
         return NULL;
     }
     recParamList = PyList_New(0);
-    Py_INCREF(recParamList);
+    //Py_INCREF(recParamList);
     ier = c_fstinl(iun, &ni, &nj, &nk,datev,etiket,ip1,ip2,ip3,typvar,nomvar,recHandleMatchList,&nMatch,maxMatch);
     if (ier<0) {
         PyErr_SetString(FstdcError,"Problem getting record list");
@@ -215,6 +255,8 @@ static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
         if (recParam == NULL)
             return NULL;
         PyList_Append(recParamList,recParam);
+        // PyList_Append copies the reference (SetItem doesn't)
+        Py_XDECREF(recParam);
     }
     return recParamList;
 }
@@ -242,13 +284,14 @@ static char Fstdc_fstluk__doc__[] =
         "Read record data on file (Interface to fstluk)\n\
         myRecDataDict = Fstdc.fstluk(ihandle)\n\
         @param ihandle record handle (int) \n\
-        @return python dict with record params keys/values and data (numpy.ndarray)\n\
+        @return record data (numpy.ndarray)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
 
 static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     PyArrayObject *newarray;
-    int dims[3]={1,1,1}, ndims=3;
+    int ndims=3;
+    long dims[3]={1,1,1};
     int type_num=NPY_FLOAT;
     int ni=0, nj=0, nk=0, ip1=0, ip2=0, ip3=0;
     char TYPVAR[3]={' ',' ','\0'};
@@ -271,10 +314,18 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
         PyErr_SetString(FstdcError,"Problem getting record parameters");
         return NULL;
     }
-    if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130)
+
+    if (datyp == 0 || datyp == 2 || datyp == 4 || datyp == 130 || datyp == 132)
         type_num=NPY_INT;
-    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134)
-        type_num=NPY_FLOAT;
+    else if (datyp == 1 || datyp == 5 || datyp == 6 || datyp == 134 || datyp == 133) {
+        /* csubich -- if nbits > 32, then we're dealing with double-precision
+         *            data; treating it as a float will cause a segfault. */
+        if (nbits > 32) {
+            type_num=NPY_DOUBLE;
+        } else {
+            type_num=NPY_FLOAT;
+        }
+    }
     else if (datyp == 3 )
         type_num=NPY_CHAR;
     else {
@@ -287,14 +338,15 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     if (nk>1) ndims=3;
     else if (nj>1) ndims=2;
     else ndims=1;
-    newarray = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+    newarray = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
     if (newarray == NULL) {
         PyErr_SetString(FstdcError,"Problem allocating mem");
         return NULL;
     }
     errorCode = c_fstluk((void*)(newarray->data),handle,&ni,&nj,&nk);
     if (errorCode >= 0)
-        return Py_BuildValue("O",newarray);
+        return (PyObject *)newarray;
     else {
         Py_DECREF(newarray);
         PyErr_SetString(FstdcError,"Problem reading rec data");
@@ -347,27 +399,30 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
     int iun, ip1=0, ip2=0, ip3=0, istat;
     char *typvar, *nomvar, *etiket, *grtyp;
     int dateo=0, deet=0, npas=0, nbits=0, ig1=0, ig2=0, ig3=0, ig4=0;
-    int ni=0,nj=0,nk=0,datyp=0,rewrit=0;
+    int ni=0,nj=0,nk=0,datyp=-1,rewrit=0;
     int dtl=4;
     int dims[4];
     PyArrayObject *array;
+    /* See http://web-mrb.cmc.ec.gc.ca/mrb/si/eng/si/index.html --
+       fst_data_length is documented to always return 0. */
+    /*extern int c_fst_data_length(int);*/
 
-    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiii",
-        &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits)) {
+    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiiii",
+                          &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits,&datyp)) {
         return NULL;
     }
     if (isPyFtnArrayValid(array,RPN_DT_ANY)<0 || nbits<8 || nbits>64) {
         PyErr_SetString(FstdcError,"Invalid input data/meta");
         return NULL;
     }
-    getPyFtnArrayDataTypeAndLen(&datyp,&dtl,array);
+    getPyFtnArrayDataTypeAndLen(&datyp,&dtl,array,&nbits);
     getPyFtnArrayDims(dims,array);
     ni = dims[0];
     nj = dims[1];
     nk = dims[2];
     istat = c_fstecr((void*)(array->data),(void*)(array->data),-nbits,iun,dateo,deet,npas,
         ni,nj,nk,ip1,ip2,ip3,typvar,nomvar,etiket,grtyp,ig1,ig2,ig3,ig4,
-        datyp+c_fst_data_length(dtl),rewrit);
+        datyp,rewrit);
     if (istat >= 0 ) {
         Py_INCREF(Py_None);
         return Py_None;
@@ -409,7 +464,7 @@ static char Fstdc_fstfrm__doc__[] =
         @exception Fstdc.error";
 
 static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
-    int iun,istat1,istat2;
+    int iun=0,istat1,istat2;
     if (!PyArg_ParseTuple(args, "i",&iun)) {
         return NULL;
     }
@@ -427,7 +482,7 @@ static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
 
 static char Fstdc_cxgaig__doc__[] =
         "Encode grid descriptors (Interface to cxgaig)\n\
-        (ig1,ig2,ig3,ig4) = Fstdc_cxgaig(grtyp,xg1,xg2,xg3,xg4) \n\
+        (ig1,ig2,ig3,ig4) = Fstdc.cxgaig(grtyp,xg1,xg2,xg3,xg4) \n\
         @param ...TODO...\n\
         @return (ig1,ig2,ig3,ig4)\n\
         @exception TypeError\n\
@@ -452,7 +507,7 @@ static PyObject *Fstdc_cxgaig(PyObject *self, PyObject *args) {
 
 static char Fstdc_cigaxg__doc__[] =
         "Decode grid descriptors (Interface to cigaxg)\n\
-        (xg1,xg2,xg3,xg4) = Fstdc_cigaxg(grtyp,ig1,ig2,ig3,ig4)\n\
+        (xg1,xg2,xg3,xg4) = Fstdc.cigaxg(grtyp,ig1,ig2,ig3,ig4)\n\
         @param ...TODO...\n\
         @return (xg1,xg2,xg3,xg4)\n\
         @exception TypeError\n\
@@ -478,8 +533,8 @@ static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args) {
 
 static char Fstdc_level_to_ip1__doc__[] =
         "Encode level value to ip1 (Interface to convip)\n\
-        myip1List = Fstdc_level_to_ip1(level_list,kind) \n\
-        param level_list list of level values (list of float)\n\
+        myip1List = Fstdc.level_to_ip1(level_list,kind) \n\
+        @param level_list list of level values (list of float)\n\
         @param kind type of level (int)\n\
         @return [(ip1new,ip1old),...] (list of tuple of int)\n\
         @exception TypeError\n\
@@ -499,7 +554,7 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
     fkind = (F77_INTEGER)kind;
     nelm = PyList_Size(level_list);
     ip1_list = PyList_New(0);
-    Py_INCREF(ip1_list);
+    //Py_INCREF(ip1_list);
     for (i=0; i < nelm; i++) {
         item = PyList_GetItem(level_list,i);
         flevel = (F77_REAL)PyFloat_AsDouble(item);
@@ -509,6 +564,7 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
         f77name(convip)(&fipold,&flevel,&fkind,&fmode,strg,&flag,(F77_INTEGER)strglen);
         ipnewold_obj = Py_BuildValue("(l,l)",(long)fipnew,(long)fipold);
         PyList_Append(ip1_list,ipnewold_obj);
+        Py_XDECREF(ipnewold_obj);
     }
     return (ip1_list);
 }
@@ -516,8 +572,8 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
 
 static char Fstdc_ip1_to_level__doc__[] =
         "Decode ip1 to level type,value (Interface to convip)\n\
-        myLevelList = Fstdc_ip1_to_level(ip1_list)\n\
-        @parma tuple/list of ip1 values to decode\n\
+        myLevelList = Fstdc.ip1_to_level(ip1_list)\n\
+        @param tuple/list of ip1 values to decode\n\
         @return list of tuple (level,kind)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
@@ -543,6 +599,7 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
         f77name(convip)(&fip1,&flevel,&fkind,&fmode,strg,&flag,(F77_INTEGER)strglen);
         level_kind_obj = Py_BuildValue("(f,i)",(float)flevel,(int)fkind);
         PyList_Append(level_list,level_kind_obj);
+        Py_XDECREF(level_kind_obj);
     }
     return (level_list);
 }
@@ -550,7 +607,7 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
 
 static char Fstdc_newdate__doc__[] =
         "Convert data to/from printable format and CMC stamp (Interface to newdate)\n\
-        (fdat1,fdat2,fdat3) = Fstdc_newdate(date1,date2,date3,mode)\n\
+        (fdat1,fdat2,fdat3) = Fstdc.newdate(date1,date2,date3,mode)\n\
         @param ...see newdate doc... \n\
         @return tuple with converted date values ...see newdate doc...\n\
         @exception TypeError\n\
@@ -577,7 +634,7 @@ static PyObject *Fstdc_newdate(PyObject *self, PyObject *args) {
 
 static char Fstdc_difdatr__doc__[] =
         "Compute differenc between 2 CMC datatime stamps (Interface to difdatr)\n\
-        nhours = Fstdc_difdatr(date1,date2)\n\
+        nhours = Fstdc.difdatr(date1,date2)\n\
         @param date1 CMC datatime stamp (int)\n\
         @param date2 CMC datatime stamp (int)\n\
         @return number of hours = date2-date1 (float)\n\
@@ -599,7 +656,7 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args) {
 
 static char Fstdc_incdatr__doc__[] =
 "Increase CMC datetime stamp by a N hours (Interface to incdatr)\n\
-        date2 = Fstdc_incdatr(date1,nhours)\n\
+        date2 = Fstdc.incdatr(date1,nhours)\n\
         @param date1 original CMC datetime stamp(int)\n\
         @param nhours number of hours to increase the date (double)\n\
         @return Increase CMC datetime stamp (int)\n\
@@ -627,7 +684,7 @@ static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args) {
 
 static char Fstdc_datematch__doc__[] =
 "Determine if date stamp match search crieterias\n\
-        doesmatch = Fstdc_datematch(indate,dateRangeStart,dateRangeEnd,delta)\n\
+        doesmatch = Fstdc.datematch(indate,dateRangeStart,dateRangeEnd,delta)\n\
         @param indate Date to be check against, CMC datetime stamp (int)\n\
         @param dateRangeStart, CMC datetime stamp (int) \n\
         @param dateRangeEnd, CMC datetime stamp (int)\n\
@@ -636,9 +693,9 @@ static char Fstdc_datematch__doc__[] =
         @exception TypeError";
 
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
-    int datelu, debut, fin;
-    float delta;
-    double modulo,ddelta=(double)delta;
+    int datelu=0, debut=0, fin=0;
+    float delta=0.;
+    double modulo,ddelta;
     float toler=.00023; //tolerance d'erreur de 5 sec
     F77_REAL8 fnhours=0;
     F77_INTEGER fdat1,fdat2;
@@ -646,6 +703,7 @@ static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "iiif",&datelu,&debut,&fin,&delta)) {
         return NULL;
     }
+	 ddelta = (double)delta;
     if (fin != -1 && datelu > fin)
         return Py_BuildValue("i",0);
     if (debut != -1) {
@@ -671,7 +729,7 @@ static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
 
 static char Fstdc_ezgetlalo__doc__[] =
         "Get Lat-Lon of grid points centers and corners\n\
-        (lat,lon,clat,clon) = Fstdc_ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),doCorners)\n\
+        (lat,lon,clat,clon) = Fstdc.ezgetlalo((niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),doCorners)\n\
         @param ...TODO...\n\
         @return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)\n\
         @exception TypeError\n\
@@ -681,7 +739,8 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
     int hasSrcAxis,doCorners,ier,n,nbcorners=4;
     char *grtypS,*grrefS;
-    int dims[3]={1,1,1}, ndims=3;
+    long dims[3]={1,1,1};
+    int ndims=3;
     int type_num=NPY_FLOAT;
     PyArrayObject *lat,*lon,*clat,*clon,*xsS,*ysS,*x,*y,*xc,*yc;
     F77_INTEGER fni,fnj;
@@ -703,30 +762,41 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     dims[2] = 1 ;
     if (njS>1) ndims=2;
     else ndims=1;
-    lat = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-    lon = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+
+    lat = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                        withFortranOrder);
+    lon = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                        withFortranOrder);
 
     ier = c_gdll(gdid_src, (float *)lat->data, (float *)lon->data);
     if (ier<0) {
-        Py_DECREF(lat);
-        Py_DECREF(lon);
+        Py_XDECREF(lat);
+        Py_XDECREF(lon);
         PyErr_SetString(FstdcError,"Problem computing lat,lon in ezscint");
         return NULL;
     }
 
     //Compute corners Lat-Lon values
     if (doCorners) {
-        x = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        y = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+        x = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                          withFortranOrder);
+        y = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                          withFortranOrder);
         dims[0] = nbcorners;
         dims[1] = niS;
         dims[2] = njS;
         if (njS>1) ndims=3;
         else ndims=2;
-        clat = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        clon = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        xc = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
-        yc = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+
+        clat = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        clon = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        xc   = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+        yc   = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num,
+                                             withFortranOrder);
+
 
         n = niS*njS;
         ier = c_gdxyfll(gdid_src,(float *)x->data,(float *)y->data,(float *)lat->data,(float *)lon->data,n);
@@ -739,15 +809,15 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
             n = niS*njS*nbcorners;
             ier = c_gdllfxy(gdid_src,(float *)clat->data,(float *)clon->data,(float *)xc->data,(float *)yc->data,n);
         }
-        Py_DECREF(x);
-        Py_DECREF(y);
-        Py_DECREF(xc);
-        Py_DECREF(yc);
+        Py_XDECREF(x);
+        Py_XDECREF(y);
+        Py_XDECREF(xc);
+        Py_XDECREF(yc);
         if (ier<0) {
-            Py_DECREF(lat);
-            Py_DECREF(lon);
-            Py_DECREF(clat);
-            Py_DECREF(clon);
+            Py_XDECREF(lat);
+            Py_XDECREF(lon);
+            Py_XDECREF(clat);
+            Py_XDECREF(clon);
             PyErr_SetString(FstdcError,"Problem computing corners lat,lon");
             return NULL;
         }
@@ -763,6 +833,7 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
 static int getGridHandle(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,int ig3,int ig4,int i0, int j0,PyArrayObject *xs,PyArrayObject *ys) {
     int gdid = -1,i0b=0,j0b=0;
     char *grtypZ = "Z";
+    char *grtypY = "Y";
     float *xsd,*ysd;
     if (isGridValid(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys)>=0) {
         switch (grtyp[0]) {
@@ -775,7 +846,9 @@ static int getGridHandle(int ni,int nj,char *grtyp,char *grref,int ig1,int ig2,i
                 gdid = c_ezgdef_fmem(ni,nj,grtypZ,grref,ig1,ig2,ig3,ig4,&xsd[i0b],&ysd[j0b]);
                 break;
             case 'Y': //TODO: support for Y grids
-                fprintf(stderr,"ERROR: Fstdc - grtyp=Y not Yet Supported\n");
+                xsd = (float *)xs->data;
+                ysd = (float *)ys->data;
+                gdid = c_ezgdef_fmem(ni,nj,grtypY,grref,ig1,ig2,ig3,ig4,&xsd[i0b],&ysd[j0b]);
                 break;
             default:
                 gdid = c_ezqkdef(ni,nj,grtyp,ig1,ig2,ig3,ig4,0);
@@ -868,7 +941,7 @@ static int isGridTypeValid(char *grtyp) {
 
 static char Fstdc_ezinterp__doc__[] =
         "Interpolate from one grid to another\n\
-        newArray = Fstdc_ezinterp(arrayin,arrayin2,\n  \
+        newArray = Fstdc.ezinterp(arrayin,arrayin2,\n  \
         (niS,njS),grtypS,(grrefS,ig1S,ig2S,ig3S,ig4S),(xsS,ysS),hasSrcAxis,(i0S,j0S),\n  \
         (niD,njD),grtypD,(grrefD,ig1D,ig2D,ig3D,ig4D),(xsD,ysD),hasDstAxis,(i0D,j0D),\n  \
         isVect)\n\
@@ -882,9 +955,14 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     int ig1D, ig2D, ig3D, ig4D, niD, njD, i0D,j0D, gdid_dst;
     int hasSrcAxis,hasDstAxis,isVect,ier;
     char *grtypS,*grtypD,*grrefS,*grrefD;
-    int dims[3]={1,1,1}, ndims=3;
+    long dims[3]={1,1,1};
+    int ndims=3;
     int type_num=NPY_FLOAT;
     PyArrayObject *arrayin,*arrayin2,*newarray,*newarray2,*xsS,*ysS,*xsD,*ysD;
+    
+    PyObject * retval = 0; // Object pointer for return value
+
+    newarray2=NULL;                     // shut up the compiler
 
     if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)(OO)i(ii)(ii)s(siiii)(OO)i(ii)i",
         &arrayin,&arrayin2,
@@ -923,13 +1001,13 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     if (njD>1) ndims=2;
     else ndims=1;
 
-    newarray = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+    newarray = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
     if (isVect)
-        newarray2 = PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
+        newarray2 = (PyArrayObject*)PyArray_EMPTY(ndims, (npy_intp*)dims, type_num, withFortranOrder);
     if (newarray == NULL || (isVect && newarray2 == NULL)) {
-        Py_DECREF(newarray);
+        Py_XDECREF(newarray);
         if (isVect) {
-            Py_DECREF(newarray2);
+            Py_XDECREF(newarray2);
         }
         PyErr_SetString(FstdcError,"Problem allocating mem");
         return NULL;
@@ -938,12 +1016,19 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     if (isVect) {
         ier = c_ezuvint((void *)newarray->data,(void *)newarray2->data,
             (void *)arrayin->data,(void *)arrayin2->data);
-        if (ier>=0)
-            return Py_BuildValue("OO",newarray,newarray2);
+        if (ier>=0) {
+            retval = Py_BuildValue("OO",newarray,newarray2);
+            Py_XDECREF(newarray);
+            Py_XDECREF(newarray2);
+            return retval;
+        }
     } else {
         ier = c_ezsint((void *)newarray->data,(void *)arrayin->data);
-        if (ier>=0)
-            return Py_BuildValue("O",newarray);
+        if (ier>=0) {
+            retval = Py_BuildValue("O",newarray);
+            Py_XDECREF(newarray);
+            return retval;
+        }
     }
 
     Py_DECREF(newarray);
@@ -954,7 +1039,7 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     return NULL;
 }
 
-
+/*
 static char Fstdc_mapdscrpt__doc__[] =
 "Interface to get map descriptors for use with PyNGL\nmyMapDescDict = Fstdc_mapdscrpt(x1,y1,x2,y2,ni,nj,cgrtyp,ig1,ig2,ig3,ig4)\n@param ...TODO... \n@return python dict with keys/values";
 
@@ -973,14 +1058,184 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
     f77name(mapdesc_pyngl)(cgrtyp,&one,&ig1,&ig2,&ig3,&ig4,&x1,&y1,&x2,&y2,
         &ni,&nj,&proj,&polat,&polong,&rot,&lat1,&lon1,&lat2,&lon2,1);
 #if defined(DEBUG)
-    printf("Fstdc_mapdscrpt ig1=%d ig2=%d ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
-    printf("Fstdc_mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
+    printf("Fstdc.mapdscrpt ig1=%d ig2=%d ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
+    printf("Fstdc.mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
 #endif
     return Py_BuildValue("{s:f,s:f,s:f,s:f,s:f,s:f,s:f}",
         "polat",polat,"polong",polong,"rot",rot,
         "lat1",lat1,"lon1",lon1,"lat2",lat2,"lon2",lon2);
-/*        return Py_BuildValue("f",rot); */
+    // return Py_BuildValue("f",rot);
 }
+*/
+static char Fstdc_ezgetopt__doc__[] =
+    "Get the string representation of one of the internal ezscint options\n\
+        opt_val = Fstrc.ezgetopt(option)\n\
+        @type option: A string\n\
+        @param option: The option to query \n\
+        @rtype: A string\n\
+        @return: The string result of the query";
+static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args) {
+
+    char upper_value[15]; // Returned option value
+    char *in_option=0; // User-input option to get
+    int ier = 0;
+
+    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+        // No valid arguments passed
+        return NULL;
+    }
+
+    ier = c_ezgetopt(in_option,upper_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezgetopt returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+
+    return Py_BuildValue("s",upper_value);
+}
+
+static char Fstdc_ezsetopt__doc__[] =
+    "Get the string representation of one of the internal ezscint options\n\
+        opt_val = Fstrc.ezsetopt(option,value)\n\
+        @type option, value: A string\n\
+        @param option: The ezscint option \n\
+        @param value: The value to set";
+static PyObject * Fstdc_ezsetopt(PyObject *self, PyObject *args) {
+
+    char *in_option=0; // User-input option to set
+    char *in_value=0; // User-input value
+    int ier = 0;
+
+    if (!PyArg_ParseTuple(args,"ss",&in_option,&in_value) || !in_option || !in_value) {
+        // No valid arguments passed
+        return NULL;
+    }
+
+    ier = c_ezsetopt(in_option,in_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezsetopt returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+
+}
+
+static char Fstdc_ezgetval__doc__[] =
+    "Get an internal ezscint float or integer value by keyword\n\
+        opt_val = Fstdc.ezgetval(option)\n\
+        @type option: A string\n\
+        @param option: The keyword of the option to retrieve\n\
+        @return: The value of the option as returned by ezget[i]val";
+
+static PyObject * Fstdc_ezgetval(PyObject *self, PyObject *args) {
+    char * in_option = 0; // User-input option
+    float float_value = 0; // The value of a floating-point option
+    int int_value = 0; // The value of an integer option
+
+    int ier = 0; // ezget[i]val error code
+
+    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+
+    // The C and Fortran APIs use different functions for integer
+    // and floating-point values; this is unnecessary in python.
+    // However, we need to call the proper function based on 
+    // option keyword.  Here, we'll check against a list of known-
+    // integer options and use the ival function for those; otherwise
+    // we'll pass the call to the floating-point function.
+
+    // Remember to use case-insensitive search
+    if (!strcasecmp("weight_number",in_option) ||
+        !strcasecmp("missing_points_tolerance",in_option)) {
+        ier = c_ezgetival(in_option,&int_value);
+        if (ier != 0) {
+            char error_string[100];
+            snprintf(error_string,99,"ezgetival returned with error code %d on input option %s",ier,in_option);
+            PyErr_SetString(FstdcError,error_string);
+            return NULL;
+        }
+        return Py_BuildValue("i",int_value);
+    }
+    // Otherwise we can assume we have a floating-point option
+    ier = c_ezgetval(in_option,&float_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezgetval returned with error code %d on input option %s",ier,in_option);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+    return Py_BuildValue("f",float_value);
+}
+static char Fstdc_ezsetval__doc__[] =
+    "Set an internal ezscint float or integer value by keyword\n\
+        opt_val = Fstdc.ezgetval(option,value)\n\
+        @type option: A string\n\
+        @param option: The keyword of the option to retrieve\n\
+        @type value: Float or integer, as appropriate for the option\n\
+        @param value: The value to set";
+static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
+    char * in_option = 0; // User-input option
+    float float_value = NAN; // The value of a floating-point option
+    int int_value = 0; // The value of an integer option
+
+    int ier = 0; // ezget[i]val error code
+
+    if (!PyArg_ParseTuple(args,"s|f",&in_option,&float_value) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+
+    // The C and Fortran APIs use different functions for integer
+    // and floating-point values; this is unnecessary in python.
+    // However, we need to call the proper function based on 
+    // option keyword.  Here, we'll check against a list of known-
+    // integer options and use the ival function for those; otherwise
+    // we'll pass the call to the floating-point function.
+
+    // Remember to use case-insensitive search
+    if (!strcasecmp("weight_number",in_option) ||
+        !strcasecmp("missing_points_tolerance",in_option)) {
+        // Re-parse the options to get an integer value
+        if (!PyArg_ParseTuple(args,"si",&in_option,&int_value)) {
+            return NULL;
+        }
+        // c_ezsetival appears to int_value by value rather than reference,
+        // so do not include the address-of operator.
+        ier = c_ezsetival(in_option,int_value); 
+        if (ier != 0) {
+            char error_string[100];
+            snprintf(error_string,99,"ezsetival returned with error code %d on input option %s and value %d",ier,in_option,int_value);
+            PyErr_SetString(FstdcError,error_string);
+            return NULL;
+        }
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+    // Otherwise we can assume we have a floating-point option
+    if (!PyArg_ParseTuple(args,"sf",&in_option,&float_value) || !in_option) {
+        // No valid arguments
+        return NULL;
+    }
+    ier = c_ezsetval(in_option,&float_value);
+    if (ier != 0) {
+        char error_string[100];
+        snprintf(error_string,99,"ezsetval returned with error code %d on input option %s and value %f",ier,in_option,float_value);
+        PyErr_SetString(FstdcError,error_string);
+        return NULL;
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+
 
 
 /* List of methods defined in the module */
@@ -988,6 +1243,7 @@ static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
 static struct PyMethodDef Fstdc_methods[] = {
     {"version", (PyCFunction)Fstdc_version, METH_VARARGS, Fstdc_version__doc__},
     {"fstouv",	(PyCFunction)Fstdc_fstouv,	METH_VARARGS,	Fstdc_fstouv__doc__},
+    {"fstrwd",	(PyCFunction)Fstdc_fstrwd,	METH_VARARGS,	Fstdc_fstrwd__doc__},
     {"fstvoi",	(PyCFunction)Fstdc_fstvoi,	METH_VARARGS,	Fstdc_fstvoi__doc__},
     {"fstfrm",	(PyCFunction)Fstdc_fstfrm,	METH_VARARGS,	Fstdc_fstfrm__doc__},
     {"fstsui",	(PyCFunction)Fstdc_fstsui,	METH_VARARGS,	Fstdc_fstsui__doc__},
@@ -1003,12 +1259,15 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"datematch",	(PyCFunction)Fstdc_datematch,	METH_VARARGS,	Fstdc_datematch__doc__},
     {"level_to_ip1",(PyCFunction)Fstdc_level_to_ip1,METH_VARARGS,	Fstdc_level_to_ip1__doc__},
     {"ip1_to_level",(PyCFunction)Fstdc_ip1_to_level,METH_VARARGS,	Fstdc_ip1_to_level__doc__},
-    {"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
+    //{"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
     {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
     {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
     {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
     {"ezgetlalo",	(PyCFunction)Fstdc_ezgetlalo,	METH_VARARGS,	Fstdc_ezgetlalo__doc__},
-
+    {"ezgetopt", (PyCFunction) Fstdc_ezgetopt, METH_VARARGS, Fstdc_ezgetopt__doc__},
+    {"ezsetopt", (PyCFunction) Fstdc_ezsetopt, METH_VARARGS, Fstdc_ezsetopt__doc__},
+    {"ezgetval", (PyCFunction) Fstdc_ezgetval, METH_VARARGS, Fstdc_ezgetval__doc__},
+    {"ezsetval", (PyCFunction) Fstdc_ezsetval, METH_VARARGS, Fstdc_ezsetval__doc__},
     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
@@ -1018,7 +1277,7 @@ static struct PyMethodDef Fstdc_methods[] = {
 static char Fstdc_module_documentation[] =
 "Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
 
-void initFstdc() {
+void initFstdc(void) {
     PyObject *m, *d;
     int istat;
     char *msglvl="MSGLVL";
@@ -1045,6 +1304,10 @@ void initFstdc() {
     PyDict_SetItemString(d, "LEVEL_KIND_MGL", PyInt_FromLong((long)LEVEL_KIND_MGL));
     PyDict_SetItemString(d, "LEVEL_KIND_HYB", PyInt_FromLong((long)LEVEL_KIND_HYB));
     PyDict_SetItemString(d, "LEVEL_KIND_TH", PyInt_FromLong((long)LEVEL_KIND_TH));
+
+    PyDict_SetItemString(d, "FSTDC_FILE_RO", PyString_FromString((const char*)FSTDC_FILE_RO));
+    PyDict_SetItemString(d, "FSTDC_FILE_RW", PyString_FromString((const char*)FSTDC_FILE_RW));
+PyDict_SetItemString(d, "FSTDC_FILE_RW_OLD", PyString_FromString((const char*)FSTDC_FILE_RW_OLD));
 
 //#TODO: define named Cst for newdate kinds
 

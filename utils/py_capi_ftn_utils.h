@@ -19,7 +19,7 @@
 #define RPN_DT_DOUBLE 9
 
 void getPyFtnArrayDims(int dims[4],PyArrayObject *array);
-void getPyFtnArrayDataTypeAndLen(int *datyp, int *dtl,PyArrayObject *array);
+void getPyFtnArrayDataTypeAndLen(int *datyp, int *dtl,PyArrayObject *array,int * nbits);
 int isPyFtnArrayValid(PyArrayObject *array,int requestedDataType);
 
 #endif

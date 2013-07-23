@@ -23,8 +23,9 @@ def levels_to_ip1(levels,kind):
         kind = 0: levels are in height [m] (metres) with respect to sea level
         kind = 1: levels are in sigma [sg] (0.0 -> 1.0)
         kind = 2: levels are in pressure [mb] (millibars)
-        Looks like the following are not suppored yet in the fortran func convip
-            kind = 3: levels are in arbitrary code
+        kind = 3: levels are in arbitrary code
+        Looks like the following are not suppored yet in the fortran func convip,
+        because they depend upon the local topography
             kind = 4: levels are in height [M] (metres) with respect to ground level
             kind = 5: levels are in hybrid coordinates [hy]
             kind = 6: levels are in theta [th]
@@ -44,9 +45,9 @@ def levels_to_ip1(levels,kind):
     if not type(levels) in (type(()),type([])):
         raise ValueError,'levels_to_ip1: levels should be a list or a tuple; '+repr(levels)
     if type(kind) <> type(0):
-        raise TypeError,'levels_to_ip1: kind should be an int in range [0,6]; '+repr(kind)
-    elif not kind in (0,1,2): #(0,1,2,3,4,5,6):
-        raise ValueError,'levels_to_ip1: kind should be an int in range [0,6]; '+repr(kind)
+        raise TypeError,'levels_to_ip1: kind should be an int in range [0,3]; '+repr(kind)
+    elif not kind in (0,1,2,3): #(0,1,2,3,4,5,6): 
+        raise ValueError,'levels_to_ip1: kind should be an int in range [0,3]; '+repr(kind)
     if type(levels) == type(()):
         ip1_list = Fstdc.level_to_ip1(list(levels),kind)
     else:
@@ -167,7 +168,7 @@ def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
     >>> cigaxg('N',2005,  2005,  2100,   400)
     (200.5, 200.5, 40000.0, 21.0)
     >>> cigaxg('N',400,  1000, 29830, 57333)
-    (200.50123596191406, 220.49647521972656, 40000.0, 260.0)
+    (200.5013427734375, 220.49639892578125, 40000.0, 260.0)
     >>> cigaxg('S',2005,  2005,  2100,   400)
     (200.5, 200.5, 40000.0, 21.0)
     >>> cigaxg('L',50,    50,    50, 18000)
@@ -220,6 +221,8 @@ class RPNParm:
         if model != None:
             if isinstance(model,RPNParm):        # update with model attributes
                self.update(model)
+            elif type(model) == type({}):     # update with dict
+               self.update(model)
             else:
                 raise TypeError,'RPNParm.__init__: model must be an RPNParm class instances'
         for name in extra.keys():                # add extras using own setattr method
@@ -229,7 +232,7 @@ class RPNParm:
         """function must be defined in subclass, return dict of allowed keys/vals, vals are default/wildcard values"""
         return {}
 
-    def update(self,with,updateToWild=True):
+    def update(self,with1,updateToWild=True):
         """Replace RPN attributes of an instance with RPN attributes from another
         values not in list of allowed parm keys are ignored
         also update to wildcard (-1 or '') values
@@ -242,37 +245,37 @@ class RPNParm:
         @exception TypeError if otherRPNparm is of wrong type
         """
         allowedKeysVals = self.allowedKeysVals()
-        if isinstance(with,RPNParm):  # check if class=RPNParm
-            for name in with.__dict__.keys():
+        if isinstance(with1,RPNParm):  # check if class=RPNParm
+            for name in with1.__dict__.keys():
                 if (name in self.__dict__.keys()) and (name in allowedKeysVals.keys()):
                     if (updateToWild
-                        or with.__dict__[name] != allowedKeysVals[name]):
-                        self.__dict__[name]=with.__dict__[name]
+                        or with1.__dict__[name] != allowedKeysVals[name]):
+                        self.__dict__[name]=with1.__dict__[name]
                 #else:
                 #    print "cannot set:"+name+repr(allowedKeysVals.keys())
-        elif type(with) == type({}):
-            for name in with.keys():
+        elif type(with1) == type({}):
+            for name in with1.keys():
                 if name in self.__dict__.keys():
                    if (updateToWild
-                        or with[name] != allowedKeysVals[name]):
-                        setattr(self,name,with[name])
+                        or with1[name] != allowedKeysVals[name]):
+                        setattr(self,name,with1[name])
         else:
             raise TypeError,'RPNParm.update: can only operate on RPNParm class instances or dict'
 
-    def update_cond(self,with):
-        """Short form for RPNParm.update(with,False)
+    def update_cond(self,with1):
+        """Short form for RPNParm.update(with1,False)
         """
-        self.update(with,False)
+        self.update(with1,False)
 
-    def update_by_dict(self,with):
-        """[Deprecated] Equivalent to RPNParm.update(with)
+    def update_by_dict(self,with1):
+        """[Deprecated] Equivalent to RPNParm.update(with1)
         """
-        self.update(with)
+        self.update(with1)
 
-    def update_by_dict_from(self,frm,with):
+    def update_by_dict_from(self,frm,with1):
         """TODO: documentation
         """
-        for name in with.keys():
+        for name in with1.keys():
             if name in self.__dict__.keys():
                 setattr(self,name,frm.__dict__[name])
 

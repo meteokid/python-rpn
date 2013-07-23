@@ -7,6 +7,7 @@
 int c_fnom(int *iun,char *filename,char *options,int i);
 int c_fstouv(int iun,char *filename,char *options);
 void c_fstvoi(int iun,char *options);
+int c_fstrwd(int iun);
 int c_fstinf(int iun,int *ni, int *nj,int *nk,int datev,char *etiket,
     int ip1,int ip2,int ip3,char *typvar,char *nomvar);
 int c_fstsui(int iun,int *ni, int *nj,int *nk);
@@ -49,5 +50,14 @@ int c_ezgdef_fmem(int ni,int nj,char *grtypZ,char *grref,
 int c_ezqkdef(int ni,int nj,char *grtyp,int ig1,int ig2,int ig3,int ig4,int x);
 int c_ezuvint(void *newarray,void *newarray2,void *arrayin,void *arrayin2);
 int c_ezsint(void *newarray,void *arrayin);
+// Add get/setopt and val and ival
+int c_ezgetopt(char * option, char * value);
+int c_ezsetopt(char * option, char * value);
+int c_ezgetval(char * option, float * value);
+int c_ezsetval(char * option, float * value);
+int c_ezgetival(char * option, int * value);
+int c_ezsetival(char * option, int value); // This appears to pass a literal integer
 int c_fstopi(char *optname,int lvl,int setget);
+// Add grid release function
+int c_gdrls(int gdid);
 #endif

@@ -332,7 +332,7 @@ class RPNFileTests(unittest.TestCase):
 
     def test_RPNFile_Error(self):
         """RPNFile should raise exception on known error cases"""
-        self.assertRaises(IOError, rpnstd.RPNFile, '__do__not__exist__.fst','RND+R/O')
+        self.assertRaises(Fstdc.error, rpnstd.RPNFile, '__do__not__exist__.fst','RND+R/O')
 
 
     def erase_testfile(self):
@@ -367,7 +367,11 @@ class RPNFileTests(unittest.TestCase):
         f2 = rpnstd.RPNFile(self.fname)
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(la2.nom,la.nom)
         self.assertEqual(lo2.nom,lo.nom)
@@ -394,7 +398,11 @@ class RPNFileTests(unittest.TestCase):
         #print "============ Check Erase ==============="
         f2 = rpnstd.RPNFile(self.fname)
         lo2 = f2[rpnstd.FirstRecord]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(lo2.nom,lo.nom)
         self.assertEqual(r2none,None)
@@ -413,7 +421,11 @@ class RPNFileTests(unittest.TestCase):
         la2 = f2[rpnstd.FirstRecord]
         lo2 = f2[rpnstd.NextMatch]
         la2b= f2[rpnstd.NextMatch]
-        r2none = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
         f2.close()
         self.assertEqual(la2.nom,la.nom)
         self.assertEqual(lo2.nom,lo.nom)
@@ -421,8 +433,43 @@ class RPNFileTests(unittest.TestCase):
         self.assertEqual(r2none,None)
         self.erase_testfile()
 
+    def test_Fstdc_fstrwd(self):
+        """Fstdc_fstrwd should reset file pointer to begining of file"""
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        f2 = rpnstd.RPNFile(self.fname)
+        la2 = f2[rpnstd.FirstRecord]
+        lo2 = f2[rpnstd.NextMatch]
+        r2none = None
+        try:
+            r2none = f2[rpnstd.NextMatch]
+        except:
+            pass
+        la3 = f2[rpnstd.RPNMeta(nom='LA')]
+        lo3 = f2[rpnstd.RPNMeta(nom='LO')]
+        la4 = f2[rpnstd.RPNMeta(nom='LA')]
+        #r3none = None
+        #try:
+        #    r3none = f2[rpnstd.FirstRecord]
+        #except:
+        #    pass
+        #TODO f2.rewind() #... looks like fstrwd is not needed... and return an exception! :-(
+        r4 = f2[rpnstd.FirstRecord]
+        f2.close()
+        self.assertEqual(la2.nom,la.nom)
+        self.assertEqual(lo2.nom,lo.nom)
+        self.assertEqual(r2none,None)
+        #self.assertEqual(r3none,None)
+        self.assertEqual(la3.nom,la.nom)
+        self.assertEqual(lo3.nom,lo.nom)
+        self.assertEqual(la4.nom,la.nom)
+        self.assertEqual(r4.nom,la.nom)
+        self.erase_testfile()
+
 
 if __name__ == "__main__":
+    from sys import argv
+    argv.append('--verbose')
     unittest.main()
+#    unittest.main(module='rpnstdtest', defaultTest='RPNFileTests.test_RPNFile_Error')
 
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -1,11 +1,11 @@
 MAKE=make
 
-include Makefile_base
-include Makefile_$(ARCH)
+include Makefile_base.mk
+include $(EC_ARCH)/Makefile.inc.mk
 
 BASEDIR=$(PWD)
 
-COMPONENTS = utils scrip jim test
+COMPONENTS = utils
 
 COMM     =
 OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
@@ -13,13 +13,12 @@ OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 LIBS     = $(OTHERS)
 
 INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
-
-DOCTESTPYMODULES = jim.py rpn_helpers.py rpnstd.py scrip.py
+DOCTESTPYMODULES = rpn_helpers.py rpnstd.py 
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
-VERSION   = 1.2-dev
-LASTUPDATE= 2009-09
+VERSION   = 1.3.0
+LASTUPDATE= 2013-08
 
 versionfile:
 	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)
@@ -43,17 +42,16 @@ all: versionfile
 	python setup.py build
 
 install: all
-	cp build/lib.linux-i686-2.4/* $(INSTALLDIR)
+	cp -R build/lib.* $(INSTALLDIR)
 
 clean:
 	rm -f testfile.fst;\
-	rm -rf build/*; \
-	rm -rf run/*; \
+	rm -rf build; \
+	rm -rf run; \
 	for i in $(COMPONENTS); \
 	do \
 	cd $$i ; $(MAKE) clean0 ; make clean; cd .. ;\
 	done
-	/bin/rm -f mec_$(MYDYN)_$(EC_ARCH).Abs
 
 ctags: clean
 	rm -f tags TAGS
@@ -79,11 +77,15 @@ ctags: clean
 	done ; \
 	done
 
-alltests: all
-	for i in $(COMPONENTS); \
-	do echo -e "\n==== Make Test: " $$i "====\n"; cd $$i ; $(MAKE) test ; cd .. ;\
-	done
+alltests: #all
+	export PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH) ; \
+	echo -e "\n======= PY-DocTest List ========\n" ; \
 	for i in $(DOCTESTPYMODULES); \
 	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
 	done
-	cd test ; $(MAKE) test ; cd ..
+	echo -e "\n======= PY-UnitTest List ========\n" ; \
+	for i in $(COMPONENTS); \
+	do echo -e "\n==== Make Test: " $$i "====\n PYTHONPATH="$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH) "\n"; cd $$i ; $(MAKE) test PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH); cd .. ;\
+	done; \
+	echo -e "\n======= Other Tests ========\n" ; \
+	cd test ; $(MAKE) test PYTHONPATH=$(PWD)/build/lib.$(PYARCH):$(PYTHONPATH); cd ..

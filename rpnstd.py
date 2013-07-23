@@ -3,7 +3,6 @@
 #TODO: class RPNFields (a collection of related rec: levels,#...)
 #TODO: expand RPNGrid to accept multi-grids and work better with #-grids
 #TODO: convert to/from NetCDF
-#TODO: split scrip support out of here
 
 """Module RPN contains the classes used to access RPN Standard Files (rev 2000)
 
@@ -22,14 +21,22 @@
 """
 import rpn_version
 from rpn_helpers import *
-from jim import *
-import scrip
+#from jim import *
+#import scrip
 
 #import sys
 import types
+import datetime
+import pytz
 import numpy
 #from cStringIO import StringIO
 import Fstdc
+
+
+FILE_MODE_RO=Fstdc.FSTDC_FILE_RO
+FILE_MODE_RW=Fstdc.FSTDC_FILE_RW
+FILE_MODE_RW_OLD=Fstdc.FSTDC_FILE_RW_OLD
+
 
 class RPNFile:
     """Python Class implementation of the RPN standard file interface
@@ -38,7 +45,7 @@ class RPNFile:
 
     myRPNFile = RPNFile(name,mode)
     @param name file name (string)
-    @param mode Type of file (string,optional), 'RND', 'SEQ', 'SEQ+R/O' or 'RND+R/O'
+    @param mode Type of file (string,optional), FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
 
     @exception TypeError if name is not
     @exception IOError if unable to open file
@@ -64,7 +71,7 @@ class RPNFile:
     del myRPNFile                        #close the file
 
     """
-    def __init__(self,name=None,mode='RND+STD') :
+    def __init__(self,name=None,mode=FILE_MODE_RW) :
         if (not name) or type(name) <> type(''):
             raise TypeError,'RPNFile, need to provide a name for the file'
         self.filename=name
@@ -74,6 +81,13 @@ class RPNFile:
         #TODO: catch stdout/stderr - not catching c stderr/stdout!
         #stderrout = (sys.stderr,sys.stdout)
         #sys.stdout = sys.stderr = StringIO()
+        #TODO: if FILE_MODE_RO or FILE_MODE_RW_OLD: check is file exist and is readable
+        #TODO: if FILE_MODE_RW_OLD or FILE_MODE_RW_OLD: if file exist, check if can write, if not check if dir can write
+
+        # Set self.iun to None before the call to fstouv, so that the member exists for
+        # the __del__ if fstouv raises an exception
+        self.iun = None
+
         self.iun = Fstdc.fstouv(0,self.filename,self.options)
         #(sys.stderr,sys.stdout) = stderrout
         if (self.iun == None):
@@ -90,6 +104,10 @@ class RPNFile:
           Fstdc.fstfrm(self.iun)
           #print 'file ',self.iun,' is closed, filename=',self.filename
           self.iun = None
+
+    def rewind(self):
+        if (self.iun != None):
+          Fstdc.fstrwd(self.iun)
 
     def __del__(self):
         """Close File"""
@@ -115,6 +133,22 @@ class RPNFile:
         #TODO: make ni,nj,nk consistent?
         #TODO: update self.grid?
         return RPNRec(array,params)
+
+    def __contains__(self,key):
+        """Returns True if 'key' is contained in this RPNFile, 'False' otherwise
+
+        is_here = mykey in myRPNfile
+        @param mykey Search key passed to RPNFile.info() (instance of RPNMeta)
+        @return True if the key is present, False otherwise
+        """
+        try:
+            self.info(key)
+            # self.info raises an exception if the key isn't found, so
+            # reaching this point means that the record is in the file.
+            return True
+        except Fstdc.error:
+            # An exception means that the key was not found
+            return False
 
     def edit_dir_entry(self,key):
       """Edit (zap) directory entry referenced by handle
@@ -147,13 +181,34 @@ class RPNFile:
 
         The myRPNfile.lastread parameter is set with values of all latest found rec params
         """
-        if isinstance(key,RPNMeta):
+        if isinstance(key,RPNKeys):# RPNMeta is derived from RPNKeys
             if list:
                 mylist = Fstdc.fstinl(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
                               key.datev)
                 mylist2 = []
                 for item in mylist:
+                    # The parameters read via rmnlib don't include datev,
+                    # but that's useful for searching later on (it's
+                    # part of RPNKeys).  We can calculate datev, however,
+                    # from dateo, npas, and deet
+                    if (item['dateo'] != -1):
+                        dateo = item['dateo']
+                        npas = item['npas']
+                        deet = item['deet']
+                        try:
+                            datev = RPNDate(
+                                      RPNDate(dateo).toDateTime() +
+                                      npas* datetime.timedelta(seconds=deet)
+                                    ).stamp
+                            item['datev']=datev
+                        except ValueError:
+                            # A ValueError here indicates that dateo wasn't
+                            # a valid date to begin with.  This will happen
+                            # if dateo is a made-up value like '0'.  In this
+                            # case, it doesn't make sense to try to compute
+                            # a datev
+                            pass
                     result=RPNMeta()
                     result.update_by_dict(item)
                     result.fileref=self
@@ -177,6 +232,24 @@ class RPNFile:
         result=RPNMeta()
         if self.lastread != None:
 #            self.lastread.__dict__['fileref']=self
+            if (self.lastread['dateo'] != -1):
+                dateo = self.lastread['dateo']
+                npas = self.lastread['npas']
+                deet = self.lastread['deet']
+                try:
+                    datev = RPNDate(
+                              RPNDate(dateo).toDateTime() +
+                              npas* datetime.timedelta(seconds=deet)
+                            ).stamp
+                    self.lastread['datev']=datev
+                except ValueError:
+                    # A ValueError here indicates that dateo wasn't
+                    # a valid date to begin with.  This will happen
+                    # if dateo is a made-up value like '0'.  In this
+                    # case, it doesn't make sense to try to compute
+                    # a datev
+                    pass
+
             result.update_by_dict(self.lastread)
             result.fileref=self
 #            print 'DEBUG result=',result
@@ -237,13 +310,13 @@ class RPNFile:
               Fstdc.fstecr(value,
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
-                         index.ig4,index.deet,index.npas,index.nbits)
+                         index.ig4,index.deet,index.npas,index.nbits,index.datyp)
             else:
               #print 'fstecr C style array'
               Fstdc.fstecr(numpy.reshape(numpy.transpose(value),value.shape),
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
-                         index.ig4,index.deet,index.npas,index.nbits)
+                         index.ig4,index.deet,index.npas,index.nbits,index.datyp)
         else:
            raise TypeError,'RPNFile write: value must be an array and index must be RPNMeta or RPNRec'
 
@@ -302,6 +375,178 @@ class RPNFile:
         self.write(data,meta,rewrite=True)
 
 
+class RPNKeys(RPNParm):
+    """RPN standard file Primary descriptors class, used to search for a record.
+    Descriptors are:
+    {'nom':'    ','type':'  ','etiket':'            ','date':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+    TODO: give examples of instanciation
+    """
+    def __init__(self,model=None,**args):
+        RPNParm.__init__(self,model,self.allowedKeysVals(),args)
+
+    def allowedKeysVals(self):
+        """Return a dict of allowed Keys/Vals"""
+        return self.searchKeysVals().copy()
+
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
+        return {'nom':'    ','type':'  ','etiket':'            ','datev':-1,'ip1':-1,'ip2':-1,'ip3':-1,'handle':-2,'nxt':0,'fileref':None}
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        return {'nom':'    ','type':'  ','etiket':'            ','datev':0,'ip1':0,'ip2':0,'ip3':0,'handle':-2,'nxt':0,'fileref':None}
+
+class RPNDesc(RPNParm):
+    """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
+    Descriptors are:
+    {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':-1,'nbits':0,'xaxis':None,'yaxis':None,'xyref':(None,None,None,None,None),'griddim':(None,None)}
+    TODO: give examples of instanciation
+    """
+    def __init__(self,model=None,**args):
+        RPNParm.__init__(self,model,self.allowedKeysVals(),args)
+
+    def allowedKeysVals(self):
+       """Return a dict of allowed Keys/Vals"""
+       return  self.searchKeysVals().copy()
+
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
+        return {'grtyp':' ','dateo':-1,'deet':-1,'npas':-1,'ig1':-1,'ig2':-1,'ig3':-1,'ig4':-1,'datyp':-1,'nbits':-1,'ni':-1,'nj':-1,'nk':-1}
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        return {'grtyp':'X','dateo':0,'deet':0,'npas':0,'ig1':0,'ig2':0,'ig3':0,'ig4':0,'datyp':-1,'nbits':16,'ni':1,'nj':1,'nk':1}
+
+
+class RPNMeta(RPNKeys,RPNDesc):
+    """RPN standard file Full set (Primary + Auxiliary) of descriptors class, needed to write a record, can be used for search.
+
+    myRPNMeta = RPNMeta()
+    myRPNMeta = RPNMeta(anRPNMeta)
+    myRPNMeta = RPNMeta(anRPNMeta,nom='TT')
+    myRPNMeta = RPNMeta(nom='TT')
+
+    @param anRPNMeta another instance of RPNMeta to copy data from
+    @param nom [other descriptors can be used, see below] comma separated metadata key=value pairs
+    @exception TypeError if anRPNMeta is not an instance of RPNMeta
+
+    Descriptors are:
+        'nom':'    ',
+        'type':'  ',
+        'etiket':'            ',
+        'ip1':-1,'ip2':-1,'ip3':-1,
+        'ni':-1,'nj':-1,'nk':-1,
+        'dateo':0,
+        'deet':0,
+        'npas':0,
+        'grtyp':'X',
+        'ig1':0,'ig2':0,'ig3':0,'ig4':0,
+        'datyp':-1,
+        'nbits':0,
+        'handle':-2,
+        'nxt':0,
+        'fileref':None,
+        'datev':-1
+
+    Examples of use (also doctests):
+
+    >>> myRPNMeta = RPNMeta() #New RPNMeta with default/wildcard descriptors
+    >>> d = myRPNMeta.__dict__.items()
+    >>> d.sort()
+    >>> d
+    [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', -1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', '    '), ('npas', -1), ('nxt', 0), ('type', '  ')]
+    >>> myRPNMeta = RPNMeta(nom='GZ',ip2=1)  #New RPNMeta with all descriptors to wildcard but nom,ip2
+    >>> d = myRPNMeta.__dict__.items()
+    >>> d.sort()
+    >>> d
+    [('dateo', -1), ('datev', -1), ('datyp', -1), ('deet', -1), ('etiket', '            '), ('fileref', None), ('grtyp', ' '), ('handle', -2), ('ig1', -1), ('ig2', -1), ('ig3', -1), ('ig4', -1), ('ip1', -1), ('ip2', 1), ('ip3', -1), ('nbits', -1), ('ni', -1), ('nj', -1), ('nk', -1), ('nom', 'GZ  '), ('npas', -1), ('nxt', 0), ('type', '  ')]
+    >>> myRPNMeta.ip1
+    -1
+    >>> myRPNMeta2 = myRPNMeta #shallow copy (reference)
+    >>> myRPNMeta2.ip1 = 9 #this will also update myRPNMeta.ip1
+    >>> myRPNMeta.ip1
+    9
+    >>> myRPNMeta2 = RPNMeta(myRPNMeta)   #make a deep-copy
+    >>> myRPNMeta.ip3
+    -1
+    >>> myRPNMeta2.ip3 = 9 #this will not update myRPNMeta.ip3
+    >>> myRPNMeta.ip3
+    -1
+    >>> myRPNMeta.nom = 'TT'
+    >>> myRPNMeta2 = RPNMeta(myRPNMeta,nom='GZ',ip2=8)   #make a deep-copy and update nom,ip2 values
+    >>> (myRPNMeta.nom,myRPNMeta.ip1,myRPNMeta.ip2)
+    ('TT  ', 9, 1)
+    >>> (myRPNMeta2.nom,myRPNMeta2.ip1,myRPNMeta2.ip2)
+    ('GZ  ', 9, 8)
+
+    TODO: test update() and update_cond()
+    """
+    def __init__(self,model=None,**args):
+        RPNParm.__init__(self,model,self.allowedKeysVals(),args)
+        if model != None:
+            if isinstance(model,RPNParm):
+                self.update(model)
+            elif type(model) == type({}):
+                self.update(model)
+            else:
+                raise TypeError,'RPNMeta: cannot initialize from arg #1'
+        for name in args.keys(): # and update with specified attributes
+            setattr(self,name,args[name])
+
+    def allowedKeysVals(self):
+        """Return a dict of allowed Keys/Vals"""
+        a = RPNKeys.allowedKeysVals(self).copy()
+        a.update(RPNDesc.allowedKeysVals(self).copy())
+        return a
+
+    def searchKeysVals(self):
+        """Return a dict of search Keys/Vals"""
+        a = RPNKeys.searchKeysVals(self)
+        a.update(RPNDesc.searchKeysVals(self))
+        return a
+
+    def defaultKeysVals(self):
+        """Return a dict of sensible default Keys/Vals"""
+        a = RPNKeys.defaultKeysVals(self)
+        a.update(RPNDesc.defaultKeysVals(self))
+        return a
+
+    def getaxis(self,axis=None):
+        """Return the grid axis rec of grtyp ('Z','Y','#')
+
+        (myRPNRecX,myRPNRecY) = myRPNMeta.getaxis()
+        myRPNRecX = myRPNMeta.getaxis('X')
+        myRPNRecY = myRPNMeta.getaxis(axis='Y')
+
+        @param axis which axis to return (X, Y or None), default=None returns both axis
+        @exception TypeError if RPNMeta.grtyp is not in ('Z','Y','#')
+        @exception TypeError if RPNMeta.fileref is not an RPNFile
+        @exception ValueError if grid descriptors records (>>,^^) are not found in RPNMeta.fileref
+        """
+        if not (self.grtyp in ('Z','Y','#')):
+            raise ValueError,'getaxis error: can not get axis from grtyp='+self.grtyp
+        if not isinstance(self.fileref,RPNFile):
+            raise TypeError,'RPNMeta.getaxis: ERROR - cannot get axis, no fileRef'
+        searchkeys = RPNKeys(ip1=self.ig1,ip2=self.ig2)
+        if self.grtyp != '#':
+            searchkeys.update_by_dict({'ip3':self.ig3})
+        searchkeys.nom = '>>'
+        xaxisrec = self.fileref[searchkeys]
+        searchkeys.nom = '^^'
+        yaxisrec = self.fileref[searchkeys]
+        if (xaxisrec == None or yaxisrec == None): # csubich -- variable name typo
+            raise ValueError,'RPNMeta.getaxis: ERROR - axis grid descriptors (>>,^^) not found'
+        if type(axis) == type(' '):
+            if axis.upper() == 'X':
+                return xaxisrec
+            elif axis.upper() == 'Y':
+                return yaxisrec
+                #axisdata=self.yaxis.ravel()
+        return (xaxisrec,yaxisrec)
+
+    def __repr__(self):
+        return 'RPNMeta'+repr(self.__dict__)
+
 
 class RPNGrid(RPNParm):
     """RPNSTD-type grid description
@@ -358,7 +603,7 @@ class RPNGrid(RPNParm):
         }
         try:
             if self.helper:
-                a.update(self.helper.addAllowedKeysVals)
+                a.update(self.helper.addAllowedKeysVals.copy())
         except:
             pass
         return a
@@ -395,7 +640,7 @@ class RPNGrid(RPNParm):
             args = {}
         if type(args) != type({}):
             raise TypeError,'RPNGrid: args should be of type dict'
-        kv = self.allowedKeysVals()
+        kv = self.allowedKeysVals().copy()
         if keys:
             if 'grtyp' in args.keys():
                 raise ValueError, 'RPNGrid: cannot provide both keys and grtyp: '+repr(args)
@@ -443,7 +688,7 @@ class RPNGrid(RPNParm):
             pass
         if not self.helper:
             raise ValueError,'RPNGrid: unrecognize grtyp '+repr(grtyp)
-        RPNParm.__init__(self,None,self.allowedKeysVals(),{})
+        RPNParm.__init__(self,None,self.allowedKeysVals().copy(),{})
         self.update(self.parseArgs(keys,args))
 
     def interpol(self,fromData,fromGrid=None):
@@ -507,23 +752,23 @@ class RPNGrid(RPNParm):
         #TODO: may want to check helper, helper.getEzInterpArgs
         return self.helper.getEzInterpArgs(self.__dict__,isSrc)
 
-    def toScripGridPreComp(self,name=None):
-        """Return a Scrip grid instance for Precomputed addr&weights (use helper)"""
-        return self.helper.toScripGridPreComp(self.__dict__,name)
+##     def toScripGridPreComp(self,name=None):
+##         """Return a Scrip grid instance for Precomputed addr&weights (use helper)"""
+##         return self.helper.toScripGridPreComp(self.__dict__,name)
 
-    def toScripGrid(self,name=None):
-        """Return a Scrip grid instance (use helper)"""
-        if not('scripGrid' in self.__dict__.keys() and self.scripGrid):
-            self.__dict__['scripGrid'] = self.helper.toScripGrid(self.__dict__,name)
-        return self.scripGrid
+##     def toScripGrid(self,name=None):
+##         """Return a Scrip grid instance (use helper)"""
+##         if not('scripGrid' in self.__dict__.keys() and self.scripGrid):
+##             self.__dict__['scripGrid'] = self.helper.toScripGrid(self.__dict__,name)
+##         return self.scripGrid
 
-    def reshapeDataForScrip(self,data):
-        """Return reformated data suitable for SCRIP (use helper)"""
-        return self.helper.reshapeDataForScrip(self.__dict__,data)
+##     def reshapeDataForScrip(self,data):
+##         """Return reformated data suitable for SCRIP (use helper)"""
+##         return self.helper.reshapeDataForScrip(self.__dict__,data)
 
-    def reshapeDataFromScrip(self,data):
-        """Inverse operation of reshapeDataForScrip (use helper)"""
-        return self.helper.reshapeDataFromScrip(self.__dict__,data)
+##     def reshapeDataFromScrip(self,data):
+##         """Inverse operation of reshapeDataForScrip (use helper)"""
+##         return self.helper.reshapeDataFromScrip(self.__dict__,data)
 
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
@@ -543,6 +788,7 @@ class RPNGrid(RPNParm):
             a = RPNGridHelper.baseEzInterpArgs.copy()
             a.update(dg_a)
             dg_a = a
+            dataxy = None
             dataxy = Fstdc.ezinterp(recx.d,recyd,
                     sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],
                     dg_a['shape'],dg_a['grtyp'],dg_a['g_ig14'],dg_a['xy_ref'],dg_a['hasRef'],dg_a['ij0'],
@@ -550,26 +796,27 @@ class RPNGrid(RPNParm):
             if isVect==0:
                 dataxy = (dataxy,None)
         else:
-            #if verbose: print "using SCRIP"
-            if isVect!=1:
-                #TODO: remove this exception when SCRIP.interp() does vectorial interp
-                raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
-            #Try to interpolate with previously computed addr&weights (if any)
-            sg_a = sg.toScripGridPreComp()
-            dg_a = dg.toScripGridPreComp()
-            try:
-                scripObj = scrip.Scrip(sg_a,dg_a)
-            except:
-                #Try while computing lat/lon and addr&weights
-                sg_a = sg.toScripGrid()
-                dg_a = dg.toScripGrid()
-            if sg_a and dg_a:
-                scripObj = scrip.Scrip(sg_a,dg_a)
-                datax  = sg.reshapeDataForScrip(recx.d)
-                datax2 = scrip.scripObj.interp(datax)
-                dataxy = (dg.reshapeDataFromScrip(datax2),None)
-            else:
-                raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+            raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
+##             #if verbose: print "using SCRIP"
+##             if isVect!=1:
+##                 #TODO: remove this exception when SCRIP.interp() does vectorial interp
+##                 raise TypeError, 'RPNGrid.interpolVect: SCRIP.interp() Cannot perform vectorial interpolation yet!'
+##             #Try to interpolate with previously computed addr&weights (if any)
+##             sg_a = sg.toScripGridPreComp()
+##             dg_a = dg.toScripGridPreComp()
+##             try:
+##                 scripObj = scrip.Scrip(sg_a,dg_a)
+##             except:
+##                 #Try while computing lat/lon and addr&weights
+##                 sg_a = sg.toScripGrid()
+##                 dg_a = dg.toScripGrid()
+##             if sg_a and dg_a:
+##                 scripObj = scrip.Scrip(sg_a,dg_a)
+##                 datax  = sg.reshapeDataForScrip(recx.d)
+##                 datax2 = scrip.scripObj.interp(datax)
+##                 dataxy = (dg.reshapeDataFromScrip(datax2),None)
+##             else:
+##                 raise TypeError, 'RPNGrid.interpolVect: Cannot perform interpolation between specified grids type'
         if isRec:
             recx.d = dataxy[0]
             recx.setGrid(self)
@@ -611,18 +858,18 @@ class RPNGridBase(RPNGridHelper):
         a['g_ig14'].insert(0,keyVals['grtyp'])
         return a
 
-    def toScripGrid(self,keyVals,name=None):
-        """Return a Scrip grid instance for the specified grid type"""
-        sg_a = self.getEzInterpArgs(keyVals,False)
-        doCorners = 1
-        (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        la  *= (numpy.pi/180.)
-        lo  *= (numpy.pi/180.)
-        cla *= (numpy.pi/180.)
-        clo *= (numpy.pi/180.)
-        return scrip.ScripGrid(name,(la,lo,cla,clo))
+##     def toScripGrid(self,keyVals,name=None):
+##         """Return a Scrip grid instance for the specified grid type"""
+##         sg_a = self.getEzInterpArgs(keyVals,False)
+##         doCorners = 1
+##         (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
+##         if name is None:
+##             name = self.toScripGridName(keyVals)
+##         la  *= (numpy.pi/180.)
+##         lo  *= (numpy.pi/180.)
+##         cla *= (numpy.pi/180.)
+##         clo *= (numpy.pi/180.)
+##         return scrip.ScripGrid(name,(la,lo,cla,clo))
 
 
 class RPNGridRef(RPNGridHelper):
@@ -647,7 +894,7 @@ class RPNGridRef(RPNGridHelper):
         #   only need to get xyaxis and g_ref from keys
         #   TODO: may not want to do this if they were provided in args or keys.grid
         if keys and isinstance(keys,RPNMeta):
-            kv['xyaxis'] = keys.getAxis()
+            kv['xyaxis'] = keys.getaxis() # csubich -- proper spelling is without capital
             kv['g_ref']  = RPNGrid(kv['xyaxis'][0])
         for k in self.addAllowedKeysVals:
             if k in args.keys():
@@ -680,36 +927,36 @@ class RPNGridRef(RPNGridHelper):
             a['ij0'] = keyVals['ig14'][2:]
         return a
 
-    def toScripGridName(self,keyVals):
-        """Return a hopefully unique grid name for the provided params"""
-        ij0 = (1,1)
-        if keyVals['grtyp'] == '#':
-            ij0 = keyVals['ig14'][2:]
-        name = "grd%s%s-%i-%i-%i-%i-%i-%i-%i-%i" % (
-        keyVals['grtyp'],keyVals['g_ref'].grtyp,
-        keyVals['g_ref'].ig14[0],keyVals['g_ref'].ig14[1],
-        keyVals['g_ref'].ig14[2],keyVals['g_ref'].ig14[3],
-        keyVals['shape'][0],keyVals['shape'][1],
-        ij0[0],ij0[1])
-        return name
+##     def toScripGridName(self,keyVals):
+##         """Return a hopefully unique grid name for the provided params"""
+##         ij0 = (1,1)
+##         if keyVals['grtyp'] == '#':
+##             ij0 = keyVals['ig14'][2:]
+##         name = "grd%s%s-%i-%i-%i-%i-%i-%i-%i-%i" % (
+##         keyVals['grtyp'],keyVals['g_ref'].grtyp,
+##         keyVals['g_ref'].ig14[0],keyVals['g_ref'].ig14[1],
+##         keyVals['g_ref'].ig14[2],keyVals['g_ref'].ig14[3],
+##         keyVals['shape'][0],keyVals['shape'][1],
+##         ij0[0],ij0[1])
+##         return name
 
-    def toScripGrid(self,keyVals,name=None):
-        """Return a Scrip grid instance for the specified grid type"""
-        if name is None:
-            name = self.toScripGridName(keyVals)
-        sg_a = self.getEzInterpArgs(keyVals,False)
-        if sg_a is None:
-            #TODO: make this work for # grids and other not global JIM grids
-            scripGrid = keyVals['g_ref'].toScripGrid(keyVals['g_ref'].__dict__,name)
-        else:
-            doCorners = 1
-            (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
-            la  *= (numpy.pi/180.)
-            lo  *= (numpy.pi/180.)
-            cla *= (numpy.pi/180.)
-            clo *= (numpy.pi/180.)
-            scripGrid = scrip.ScripGrid(name,(la,lo,cla,clo))
-        return scripGrid
+##     def toScripGrid(self,keyVals,name=None):
+##         """Return a Scrip grid instance for the specified grid type"""
+##         if name is None:
+##             name = self.toScripGridName(keyVals)
+##         sg_a = self.getEzInterpArgs(keyVals,False)
+##         if sg_a is None:
+##             #TODO: make this work for # grids and other not global JIM grids
+##             scripGrid = keyVals['g_ref'].toScripGrid(keyVals['g_ref'].__dict__,name)
+##         else:
+##             doCorners = 1
+##             (la,lo,cla,clo) = Fstdc.ezgetlalo(sg_a['shape'],sg_a['grtyp'],sg_a['g_ig14'],sg_a['xy_ref'],sg_a['hasRef'],sg_a['ij0'],doCorners)
+##             la  *= (numpy.pi/180.)
+##             lo  *= (numpy.pi/180.)
+##             cla *= (numpy.pi/180.)
+##             clo *= (numpy.pi/180.)
+##             scripGrid = scrip.ScripGrid(name,(la,lo,cla,clo))
+##         return scripGrid
 
 
 class RPNRec(RPNMeta):
@@ -754,7 +1001,7 @@ class RPNRec(RPNMeta):
     """
     def allowedKeysVals(self):
         """Return a dict of allowed Keys/Vals"""
-        a = RPNMeta.allowedKeysVals(self)
+        a = RPNMeta.allowedKeysVals(self).copy()
         a['d'] = None
         a['grid'] = None
         return a
@@ -804,7 +1051,7 @@ class RPNRec(RPNMeta):
         @exception ValueError if myRPNRec does not contain a valid grid desc
         @exception TypeError if togrid is not an instance of RPNGrid
         """
-        if isinstance(value,RPNGrid):
+        if isinstance(togrid,RPNGrid):
             if not isinstance(self.grid,RPNGrid):
                 self.setGrid()
             if self.grid:
@@ -860,18 +1107,206 @@ class RPNRec(RPNMeta):
                 raise ValueError,'RPNRec.setGrid(): unable to determine actual grid of RPNRec'
 
     def __repr__(self):
-        kv = {}
-        kv.update(self.__dict__)
-        rd = repr(self.__dict__['d'])
-        rg = repr(self.__dict__['grid'])
+        kv = self.__dict__.copy()
+        rd = repr(kv['d'])
+        rg = repr(kv['grid'])
         del kv['d']
         del kv['grid']
-        return 'RPNRec{meta='+RPNMeta.__repr__(self)+', grid='+rg+', d='+rd+'}'
+        return 'RPNRec{meta='+repr(RPNMeta(kv))+', grid='+rg+', d='+rd+'}'
 
+class RPNDate:
+    """RPN STD Date representation
+
+    myRPNDate = RPNDate(DATESTAMP)
+    myRPNDate = RPNDate(YYYYMMDD,HHMMSShh)
+    myRPNDate = RPNDate(myDateTime)
+    myRPNDate = RPNDate(myRPNMeta)
+
+    @param DATESTAMP CMC date stamp or RPNDate object
+    @param YYYYMMDD  Int with Visual representation of YYYYMMDD
+    @param HHMMSShh  Int with Visual representation of HHMMSShh
+    @param myDateTime Instance of Python DateTime class
+    @param myRPNMeta Instance RPNMeta with dateo,deet,npas properly set
+    @exception TypeError if parameters are wrong type
+    @exception ValueError if myRPNMeta
+
+    >>> d1 = RPNDate(20030423,11453500)
+    >>> d1
+    RPNDate(20030423,11453500)
+    >>> d2 = RPNDate(d1)
+    >>> d2
+    RPNDate(20030423,11453500)
+    >>> d2.incr(48)
+    RPNDate(20030425,11453500)
+    >>> d1-d2
+    -48.0
+    >>> a = RPNMeta(dateo=d1.stamp,deet=1800,npas=3)
+    >>> d3 = RPNDate(a)
+    >>> d3
+    RPNDate(20030423,13153500)
+    >>> utc = pytz.timezone("UTC")
+    >>> d4 = datetime.datetime(2003,04,23,11,45,35,0,tzinfo=utc)
+    >>> d5 = RPNDate(d4)
+    >>> d5
+    RPNDate(20030423,11453500)
+    >>> d6 = d5.toDateTime()
+    >>> d6 == d4
+    True
+    """
+    stamp = 0
+
+    def __init__(self,word1,word2=-1):
+        if isinstance(word1,datetime.datetime):
+            (yyyy,mo,dd,hh,mn,ss,dummy,dummy2,dummy3) = word1.utctimetuple()
+            cs = int(word1.microsecond/10000)
+            word1 = yyyy*10000+mo*100+dd
+            word2 = hh*1000000+mn*10000+ss*100+cs
+        if isinstance(word1,RPNDate):
+            self.stamp = word1.stamp
+        elif isinstance(word1,RPNMeta):
+            if word1.deet<0 or word1.npas<0 or word1.dateo<=0 :
+                raise ValueError, 'RPNDate: Cannot compute date from RPNMeta'
+            nhours = (1.*word1.deet*word1.npas)/3600.
+            self.stamp=Fstdc.incdatr(word1.dateo,nhours)
+        elif type(word1) == type(0):
+            if (word2 == -1):
+                self.stamp = word1
+            else:
+                dummy=0
+#TODO: define named Cst for newdate in Fstdc
+                (self.stamp,dummy1,dummy2) = Fstdc.newdate(dummy,word1,word2,3)
+        else:
+            raise TypeError, 'RPNDate: arguments should be of type int'
+
+    def __sub__(self,other):
+        "Time difference between 2 dates"
+        return(Fstdc.difdatr(self.stamp,other.stamp))
+
+    def incr(self,temps):
+        """Increase Date by the specified number of hours
+
+        @param temps Number of hours for the RPNDate to be increased
+        @return self
+
+        @exception TypeError if temps is not of int or real type
+        """
+        if ((type(temps) == type(1)) or (type(temps) == type(1.0))):
+            nhours = 0.0
+            nhours = temps
+            self.stamp=Fstdc.incdatr(self.stamp,nhours)
+            return(self)
+        else:
+            raise TypeError,'RPNDate.incr: argument should be int or real'
+
+    def toDateTime(self):
+        """Return the DateTime obj representing the RPNDate
+
+        >>> myRPNDate = RPNDate(20030423,11453600)
+        >>> myDateTime = myRPNDate.toDateTime()
+        >>> myDateTime
+        datetime.datetime(2003, 4, 23, 11, 45, 35, tzinfo=<UTC>)
+
+        #TODO: oups 1 sec diff!!!
+        """
+        word1 = word2 = 0
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        d = "%8.8d.%8.8d" % (word1, word2)
+        yyyy = int(d[0:4])
+        mo = int(d[4:6])
+        dd = int(d[6:8])
+        hh = int(d[9:11])
+        mn = int(d[11:13])
+        ss = int(d[13:15])
+        cs = int(d[15:17])
+        utc = pytz.timezone("UTC")
+        return datetime.datetime(yyyy,mo,dd,hh,mn,ss,cs*10000,tzinfo=utc)
+
+    def __repr__(self):
+        word1 = word2 = 0
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        return "RPNDate(%8.8d,%8.8d)" % (word1, word2)
+
+
+#TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
+
+class RPNDateRange:
+    """RPN STD Date Range representation
+
+    RPNDateRange(DateStart,DateEnd,Delta)
+    @param DateStart RPNDate start of the range
+    @param DateEnd   RPNDate end of the range
+    @param Delta     Increment of the range iterator, hours, real
+
+    @exception TypeError if parameters are wrong type
+
+    >>> d1 = RPNDate(20030423,11453500)
+    >>> d2 = RPNDate(d1)
+    >>> d2.incr(48)
+    RPNDate(20030425,11453500)
+    >>> dr = RPNDateRange(d1,d2,6)
+    >>> dr
+    RPNDateRage(from:(20030423,11453500), to:(20030425,11453500), delta:6) at (20030423,11453500)
+    >>> dr.lenght()
+    48.0
+    >>> dr.next()
+    RPNDate(20030423,17453500)
+    >>> dr = RPNDateRange(d1,d2,36)
+    >>> dr
+    RPNDateRage(from:(20030423,17453500), to:(20030425,11453500), delta:36) at (20030423,17453500)
+    >>> dr.next()
+    RPNDate(20030425,05453500)
+    >>> dr.next() #returns None because it is past the end of DateRange
+    """
+    #TODO: make this an iterator
+    dateDebut=-1
+    dateFin=-1
+    delta=0.0
+    now=-1
+
+    def __init__(self,debut=-1,fin=-1,delta=0.0):
+        if isinstance(debut,RPNDate) and isinstance(fin,RPNDate) and ((type(delta) == type(1)) or (type(delta) == type(1.0))):
+            self.dateDebut=debut
+            self.now=debut
+            self.dateFin=fin
+            self.delta=delta
+        else:
+            raise TypeError,'RPNDateRange: arguments type error RPNDateRange(RPNDate,RPNDate,Real)'
+
+    def lenght(self):
+        """Provide the duration of the date range
+        @return Number of hours
+        """
+        return abs(self.dateFin-self.dateDebut)
+
+    def remains():
+        """Provide the number of hours left in the date range
+        @return Number of hours left in the range
+        """
+        return abs(self.dateFin-self.now)
+
+    def next(self):
+        """Return the next date/time in the range (step of delta hours)
+        @return next RPNDate, None if next date is beyond range
+        """
+        self.now.incr(self.delta)
+        if (self.dateFin-self.now)*self.delta < 0.:
+            return None
+        return RPNDate(self.now)
+
+    def reset(self):
+        """Reset the RPNDateRange iterator to the range start date"""
+        self.now=self.dateDebut
+
+    def __repr__(self):
+        d1 = repr(self.dateDebut)
+        d2 = repr(self.dateFin)
+        d0 = repr(self.now)
+        return "RPNDateRage(from:%s, to:%s, delta:%d) at %s" % (d1[7:27],d2[7:27],self.delta,d0[7:27])
 
 
 FirstRecord=RPNMeta()
 NextMatch=None
+
 
 if __name__ == "__main__":
     import doctest

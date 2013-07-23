@@ -1,5 +1,5 @@
-include ../Makefile_base
-include ../Makefile_$(ARCH)
+include ../Makefile_base.mk
+include ../$(EC_ARCH)/Makefile.inc.mk
 
 BASEDIR = $(PWD)/..
 

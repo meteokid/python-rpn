@@ -2,69 +2,66 @@ from numpy.distutils.core import setup, Extension
 import os, distutils, string
 import rpn_version
 
-# architecture='Linux_pgi611'
+#TODO: . s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
+
+#myecarch = 'Linux_pgi611'
+#myrmnlib = 'rmnshared_013'
+#myecarch = 'Linux_pgi9xx'
+#myecarch = 'Linux_x86-64/pgi9xx'
+myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301']
+myrmnlib = ['PyFTN_helpers','rmnshared_013']
+
 architecture = os.getenv('EC_ARCH')
-runtime_libs=['-Wl,-rpath,/usr/local/env/armnlib/lib/'+architecture]
+eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
+ecincpath = os.getenv('EC_INCLUDE_PATH')+' '+'/usr/local/env/armnlib/include'+' '+'/usr/local/env/armnlib/include/'+architecture+' '+'./utils'
+
+eclibsharedpath = ''
+for mypath in eclibpath.split():
+    isok = True
+    for item in myrmnlib:
+        if not os.path.exists(mypath+'/lib'+item+'.so'):
+            isok = False
+    if isok:
+        eclibsharedpath = mypath
+
+if not architecture in myecarch:
+    print("WARNING: EC_ARCH should be "+myecarch+" and is: "+architecture)
+    #TODO: stop
+if not eclibsharedpath:
+    print("WARNING: Could not find LIB PATH for "+str(myrmnlib))
+    #TODO: stop
+
+runtime_libs=['-Wl,-rpath,'+eclibsharedpath]
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
 SharedLd=string.split(SharedLd[0])
 
-print 'Debug architecture=',architecture
-print 'Debug runtime_libs=',runtime_libs
-print 'Shared Objects loaded with',SharedLd
+print '#Debug architecture=',architecture
+print '#Debug runtime_libs=',runtime_libs
+print '#Debug Shared Objects loaded with',SharedLd
+print '#Debug eclibpath=',eclibpath
+print '#Debug ecincpath=',ecincpath
 
 Fstd_module = Extension('Fstdc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils'],
-            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
+            include_dirs = ecincpath.split(' '),
+            libraries = myrmnlib,
             extra_objects = ['utils/get_corners_xy.o'],
-            extra_link_args=runtime_libs,
-            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
+            extra_link_args = runtime_libs,
+            library_dirs = [eclibsharedpath],
             sources = ['utils/py_capi_ftn_utils.c','Fstdc.c'])
-
-jimc_module = Extension('jimc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture],
-            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
-            extra_objects = [
-                'jim/jim_grid_mod.o',
-                'jim/jim_xch_halo_nompi.o',
-                'utils/vect_mod.o'],
-            extra_link_args=runtime_libs,
-            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
-            sources = ['jimc.c'])
-
-scripc_module = Extension('scripc',
-            include_dirs = ['/usr/local/env/armnlib/include','/usr/local/env/armnlib/include/'+architecture,'./utils','./scrip'],
-            libraries = ['PyFTN_helpers','rmn_shared_beta10'],
-            extra_objects = [
-                'scrip/kinds_mod.o',
-                'scrip/constants.o',
-                'scrip/grids.o',
-                'scrip/remap_vars.o',
-                'scrip/remap_distwgt.o',
-                'scrip/remap_conserv.o',
-                'scrip/remap_bilinear.o',
-                'scrip/remap_bicubic.o',
-                'scrip/remap_write.o',
-                'scrip/scrip.o',
-                'scrip/remap.o',
-                'scrip/scrip_interface.o'],
-            extra_link_args=runtime_libs,
-            library_dirs = ['/usr/local/env/armnlib/lib/'+architecture],
-            sources = ['utils/py_capi_ftn_utils.c','scripc.c'])
-
 
 setup(name = 'rpnstd',
     version = rpn_version.__VERSION__,
     description = 'Python Interface to some ARMNLIB RPN STD files function',
-    author = 'Mario Lepine',
-    author_email = 'mario.lepine@ec.gc.ca',
+    author = 'Stephane Chamberland, Mario Lepine, Michel Valin',
+    author_email = 'stephane.chamberland@ec.gc.ca',
     maintainer = 'Stephane Chamberland',
     maintainer_email = 'stephane.chamberland@ec.gc.ca',
-    url = 'http://arxt20/~armnsch/arxt20/wiki/howto/pyhton-rpn',
+    url = 'https://wiki.cmc.ec.gc.ca/wiki/User:Chamberlands/Projects/Python-RPN',
     long_description = '''
 Python Interface to some ARMNLIB RPN STD files function
 Base Interfaces are defined in the Fstdc sub-package.
-More python-esk clasess are defined in the rpnstd sub-package
+More python-esque classes are defined in the rpnstd sub-package
 ''',
-    py_modules=['rpn_version','rpn_helpers','rpnstd','jim','scrip'],
-    ext_modules = [Fstd_module,jimc_module,scripc_module])
+    py_modules=['rpn_version','rpn_helpers','rpnstd'],
+    ext_modules = [Fstd_module])
 
