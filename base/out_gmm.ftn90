@@ -224,27 +224,29 @@
                  call ecris_fst2(tr3(l_minx,l_miny,2), l_minx,l_maxx,l_miny,l_maxy, &
                                  Ver_hyb%m, keylist(i),1.0,0.0,Level_kind_ip1     , &
                                  tmp_meta%l(3)%high, indo,nko,Outd_nbit(ii,set) )
+
              elseif (keylist(i)(1:3).eq.'PW_') then
-                 if (keylist(i)(6:7).eq.':P') then
-                    istat = gmm_get(keylist(i),tr3,tmp_meta)
-                    if (keylist(i)(4:5).eq.'UU'.or.keylist(i)(4:5).eq.'VV'&
-                .or.keylist(i)(4:5).eq.'PM') then
-!momentum levels
-                      call ecris_fst2(tr3, l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-             'PW'//keylist(i)(4:5),1.0,0.0,Level_kind_ip1,G_nk+1, indo, nko , &
-                      Outd_nbit(ii,set) )
-                    else
-                      call ecris_fst2(tr3, l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-             'PW'//keylist(i)(4:5),1.0,0.0,Level_kind_ip1,G_nk+2, indo, nko , &
-                      Outd_nbit(ii,set) )
 
-                    endif
-
-                 endif
-
+                if (keylist(i)(6:7).eq.':P') then
+                   istat = gmm_get(keylist(i),tr3,tmp_meta)
+                   if (keylist(i)(4:5).eq.'UU'.or.keylist(i)(4:5).eq.'VV'&
+                                              .or.keylist(i)(4:5).eq.'PM') then
+                      !momentum levels
+                      call ecris_fst2(tr3(l_minx,l_miny,2),l_minx,l_maxx,l_miny,l_maxy, &
+                            Ver_hyb%m, 'PW'//keylist(i)(4:5), 1.0, 0.0, Level_kind_ip1, &
+                            G_nk+1, indo_s1, nko_s1 , Outd_nbit(ii,set) )
+                   else
+                      !thermodymics levels
+                      call ecris_fst2(tr3(l_minx,l_miny,2),l_minx,l_maxx,l_miny,l_maxy, &
+                            Ver_hyb%t(2),'PW'//keylist(i)(4:5),1.0,0.0, Level_kind_ip1, &
+                            G_nk+1, indo_s1, nko_s1 , Outd_nbit(ii,set) )
+                   endif
+                endif
+                
 ! tmp_meta%l(1) is on X
 ! tmp_meta%l(2) is on Y
 ! tmp_meta%l(3) is on Z
+
              elseif (tmp_meta%l(1)%low .eq. 1) then !3d no halo
                 kn=(tmp_meta%l(1)%high)/(l_ni*l_nj) !
                 istat = gmm_get(keylist(i),tr1,tmp_meta)

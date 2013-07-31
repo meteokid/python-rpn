@@ -48,15 +48,15 @@
          if (err.ge.0) write (6,2003) trim(Path_input_S)//'/ANALYSIS',F_unit
       endif
 
-      e_fstouv = min(0,err)
-
-      if (e_fstouv .eq. 0) then
+      key= -1
+      if (err .ge. 0) then
          key = fstinf (F_unit,ni1,nj1,nk1,F_date,' ',-1,-1,-1,' ',F_nomvar_S)
-         
-         err = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, p1,ip2a,ip3a, &
+         if (key.ge.0) &
+         key = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, p1,ip2a,ip3a, &
                         typ, var, lab, grd, g1, g2, g3, g4, &
                         swa,lng, dlf, ubc, ex1, ex2, ex3 )
       endif
+      e_fstouv = min(0,key)
 
  2003 format (/' E_FSTOUV:  file ',a,' open on unit: ',i4)
 

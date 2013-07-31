@@ -69,7 +69,8 @@ subroutine iau_apply()
 
   ! Local variables
   integer, save :: datei=-1
-  integer :: i,j,k,fd,istat,dateo,iau_vtime,this_datei,key,nflds,gidi,gset,sgid,first_tr,n,add
+  integer :: i,j,k,kk,fd,istat,dateo,iau_vtime,this_datei,key,nflds,gidi,gset,sgid,first_tr,n,add
+  integer, dimension(1), target :: any_level
   integer, dimension(:), pointer :: ip1s,ip1_gem
   real :: split
   real, dimension(YDIST_SHAPE) :: con
@@ -77,7 +78,7 @@ subroutine iau_apply()
   real, dimension(:,:,:), pointer :: data,tr,pw_tt
   character(len=16) :: ltype,vdate
   character(len=1024) :: iau_fname,fst_msg_level
-  logical :: error_raised
+  logical :: error_raised,found
   type(vgrid_descriptor) :: vgi
   type(iau_field), dimension(MAX_IAU_FIELDS) :: flds
   type(gmm_metadata) :: mymeta
@@ -167,6 +168,7 @@ subroutine iau_apply()
      fd = fstmpi_open(iau_fname,F_readonly_L=.true.,F_dir_ok_L=.true.)
      call handle_error_l(fd/=RMN_ERR,'iau_apply','Unable to open IAU input '//trim(iau_fname))
      if (.not.Lun_debug_L .and. Ptopo_myproc/=0) istat = fstopc('MSGLVL','SYSTEM',.false.)
+     any_level = -1
      nullify(ip1s,data)
      do i=1,nflds
         if (GMM_IS_ERROR(gmm_getmeta(flds(i)%gmmkey,mymeta))) then
@@ -182,19 +184,25 @@ subroutine iau_apply()
            ip1_gem => Ver_ip1%t
            if (ltype(1:1) == 'M') ip1_gem => Ver_ip1%m
            do k=1,size(ip1_gem)
-              if (ip1s(k) /= ip1_gem(k)) then
+              found = .false.
+              kk = 1
+              do while (.not.found .and. kk <= size(ip1s))
+                 if (ip1s(kk) == ip1_gem(k)) found = .true.
+                 kk = kk+1
+              enddo
+              if (.not.found) then 
                  call msg(MSG_ERROR,'(iau_apply) Level list in IAU input file does not match GEM config for '//trim(flds(i)%nomvar)); error_raised=.true.
+                 error_raised = .true.
               endif
            enddo
         else
            if (GMM_IS_ERROR(gmm_get(flds(i)%gmmkey,flds(i)%ptr2d,mymeta))) then
               call msg(MSG_ERROR,'(iau_apply) Cannot retrieve GMM space for 2D field '//trim(flds(i)%nomvar)); error_raised=.true.
            endif
-           allocate(ip1s(1))
-           ip1s = -1
+           ip1_gem => any_level
         endif DATA_3D
-        do k=1,size(ip1s)
-           key = fstmpi_find(fd,flds(i)%nomvar,this_datei,ip1s(k),-1,-1)
+        do k=1,size(ip1_gem)
+           key = fstmpi_find(fd,flds(i)%nomvar,this_datei,ip1_gem(k),-1,-1)
            if (.not.RMN_IS_OK(key)) then
               call msg(MSG_ERROR,'(iau_apply) Cannot find '//trim(flds(i)%nomvar)//' for all levels in IAU input'); error_raised=.true.
            endif
@@ -222,7 +230,8 @@ subroutine iau_apply()
            endif
            deallocate(data)
         enddo
-        deallocate(ip1s)
+        nullify(ip1_gem)
+        if (associated(ip1s)) deallocate(ip1s)
      enddo
      istat = fstmpi_close(fd)
      istat = fstopc('MSGLVL',fst_msg_level,.false.)

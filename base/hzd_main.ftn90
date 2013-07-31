@@ -141,7 +141,10 @@
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
 
       if (pwupdate .or. switch_on_psadj ) call pw_update_GPW
-      if (pwupdate .or. switch_on_eqspng) call pw_update_UVT ('P')
+      if (pwupdate .or. switch_on_eqspng) then
+         call pw_update_UV ('P')
+         call pw_update_T  ('P')
+      endif
 !
 !     _________________________________________________________________
 !

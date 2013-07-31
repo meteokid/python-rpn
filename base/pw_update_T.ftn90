@@ -1,0 +1,93 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r pw_update_T - Update physical quantities TT
+!
+#include "model_macros_f.h"
+!
+      subroutine pw_update_T (pom)
+      implicit none
+#include <arch_specific.hf>
+!
+      character*1 pom
+!
+!author
+!     Michel Desgagne - May 2010
+!
+!revision
+! v4_14 - Desgagne, M.     - Initial revision
+!
+#include "gmm.hf"
+#include "glb_ld.cdk"
+#include "vt0.cdk"
+#include "vt1.cdk"
+#include "pw.cdk"
+#include "geomn.cdk"
+#include "cstv.cdk"
+!
+      type(gmm_metadata) :: mymeta
+      integer i, j, k, istat
+      real*8 idt
+      real, pointer, dimension (:,:,:)  :: pw_tt  => null()
+      real, dimension(l_ni,l_nj,l_nk+2) :: tprev
+      logical, save :: initialized=.false.
+!     ________________________________________________________________
+!
+      if (pom == "P") then
+         nullify(pw_tt_dyn)
+         istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt, mymeta)
+         istat = gmm_get (gmmk_pw_tt_dyn_s, pw_tt_dyn, mymeta)
+
+!$omp parallel private(j)
+!$omp do
+         do k= 1, l_nk+2
+         do j= 1, l_nj
+            tprev (1:l_ni,j,k) = pw_tt (1:l_ni,j,k)
+         enddo
+         enddo
+!$omp enddo
+!$omp end parallel
+      else
+         istat = gmm_get (gmmk_pw_tt_moins_s,pw_tt, mymeta)
+      endif
+!
+!     Compute temperature from virtual temperature
+!     --------------------------------------------
+!
+      call tt2virt (pw_tt, .false., pom)
+
+      pw_tt(:,:,1) = 0.
+!
+!     Keep a running total of tendencies for this timestep
+!     ----------------------------------------------------
+      if (pom == 'P' .and. initialized) then
+         idt = 1d0/Cstv_dt_8
+!$omp parallel private(j)
+!$omp do  
+         do k= 1, l_nk+2
+         do j= 1, l_nj
+            pw_tt_dyn (1:l_ni,j,k) = pw_tt_dyn (1:l_ni,j,k) + idt * ( pw_tt (1:l_ni,j,k) - tprev (1:l_ni,j,k) )
+         enddo
+         enddo
+!$omp enddo
+!$omp end parallel
+      endif
+!
+!     Initial update has been completed
+      initialized = .true.
+!     ________________________________________________________________
+!
+      return
+      end

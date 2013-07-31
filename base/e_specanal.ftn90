@@ -61,6 +61,8 @@
 
       err= e_fstouv ('P0', current_date, Grd_typ_S(1:1), &
                                   pilot_dir, e_fu_anal)
+      err= e_fstouv ('ST1', current_date, Grd_typ_S(1:1), &
+                                  pilot_dir, e_fu_anal)
       if (err.lt.0) &
       err= e_fstouv ('TT', current_date, Grd_typ_S(1:1), &
                                   pilot_dir, e_fu_anal)
@@ -72,8 +74,8 @@
 
       names(1)= 'UU' ; names(2)= 'UT1'
       call e_whichvar (names,2,e_fu_anal,current_date,var_uu,err_uu)
-      names(1)= 'VT' ; names(2)= 'TT'
-      call e_whichvar (names,2,e_fu_anal,current_date,vt,err_vt)
+      names(1)= 'TT1' ; names(2)= 'VT' ; names(3)= 'TT'
+      call e_whichvar (names,3,e_fu_anal,current_date,vt,err_vt)
       names(1)= 'HU' ; names(2)= 'ES'; names(3)= 'TD' ; names(4)= 'HR'
       call e_whichvar (names,4,e_fu_anal,current_date,vh,err_hu)
 

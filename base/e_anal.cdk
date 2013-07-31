@@ -35,8 +35,8 @@
       REAL*8         za_8(LVMAX),zb_8(LVMAX)
       REAL*8         zat_8(LVMAX),zbt_8(LVMAX)
       real*8, dimension(:), pointer :: xg_8,yg_8,ygv_8
-      CHARACTER*4    VAR_ZD, VAR_W, VAR_Q
-      CHARACTER*2    VH,VT
+      CHARACTER*4    VAR_ZD, VAR_W, VAR_Q, VT
+      CHARACTER*2    VH
       CHARACTER*1    GRDA, TVA
       CHARACTER*12   LABANL
 

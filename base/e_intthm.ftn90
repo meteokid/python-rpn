@@ -57,11 +57,13 @@
 #include "pilot.cdk"
 #include "e_tr.cdk"
 #include "e_grdc.cdk"
+#include "e_cdate.cdk"
 #include "hgc.cdk"
 
-      integer, external :: e_rdhint3
-      character*4 vtt,vhh
-      integer i,k,kk,nis,njs,ng
+      integer, external :: e_rdhint3,fstinf
+      character*4 vhh
+      logical horinterp_L
+      integer i,k,kk,nis,njs,nks,ng,code_h,keyt,nic,njc,nkc,err
       real*8 c1, c2
       real, parameter :: pref=100000.
       real, dimension (:  ), allocatable :: p0,wk2,rna_tlev
@@ -73,8 +75,8 @@
 
       c1 = Dcst_tcdk_8
       c2 = 10.d0 * Dcst_grav_8
-      vtt=vt//'  '
-      vhh=vh//'  '
+      if (vt.eq.'TT1') c1 = 0.
+      vhh= vh//'  '
 
       if (Pil_bmf_L) then
          nis= nifi
@@ -88,7 +90,8 @@
       nk= 1
       if (.not.Pil_bmf_L) nk= lv_t
 
-      errcode = -1
+      errcode    = -1
+      horinterp_L= .false.
 
       allocate ( ttn(ng,nk), hun(ng,nk)  , gzn(ng,nk),  &
                  zdn(ng,nk),  wn(ng,nk),  qn(ng,lv+1),  &
@@ -97,14 +100,23 @@
 ! Surface pressure
 !
       if (.not.Anal_pres_L) then
-         if (e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1, &
-              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
-      endif
 
-      if (Anal_hybstg_L) then
-         p0(:) = log(wk2(:)*100./pref)
-      else
-         if (.not. Anal_pres_L) p0(:) = wk2(:) * 100.
+         code_h= e_rdhint3 (p0,dstf_gid,nis,njs,'ST1 ',-1, &
+              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+
+         if (code_h.lt.0) then
+            code_h= e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1, &
+              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            if (Anal_hybstg_L) then
+               p0(:) = log(wk2(:)*100./pref)
+            else
+               if (.not. Anal_pres_L) p0(:) = wk2(:) * 100.
+            endif
+         endif
+
+         horinterp_L= horinterp_L .or. (code_h.gt.0)
+
       endif
 
       if (Pil_bmf_L) then
@@ -122,11 +134,16 @@
          do k=1,lv_t
             kk=k
             if (Pil_bmf_L) kk=1
-            if (e_rdhint3 (hun(1,kk),dstf_gid,nis,njs,'HU  ',na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs,'HU  ',na_t(k),ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            horinterp_L= horinterp_L .or. (code_h.gt.0)
 
-            if (e_rdhint3(ttn(1,kk),dstf_gid,nis,njs,vtt,na_t(k), ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+            code_h= e_rdhint3(ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k), ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+
+            if (code_h.lt.0) goto 999
+            horinterp_L= horinterp_L .or. (code_h.gt.0)
 
             ttn(:,kk) = ttn(:,kk) + c1
             if (vt.eq.'TT') call mfotvt (ttn(1,kk),ttn(1,kk),hun(1,kk),ng,1,ng)
@@ -135,14 +152,16 @@
                call e_bmfsplitxy2 (hun,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
                call e_bmfsplitxy2 (ttn,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
             endif
-         end do
+         end do         
 
          if (VAR_ZD /= '') then
             do k=1,lv_t-1
                kk=k
-               if (Pil_bmf_L) kk=1     
-               if (e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),ip2a    , &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+               if (Pil_bmf_L) kk=1
+               code_h= e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),ip2a    , &
+                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               if (code_h.lt.0) goto 999
+               horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
                   call e_bmfsplitxy2 (zdn,nis,njs,'ZD  ',k,lv_t-1,pni,0,0,0)
                endif            
@@ -152,9 +171,11 @@
          if (VAR_W /= '') then
             do k=1,lv_t-1
                kk=k
-               if (Pil_bmf_L) kk=1     
-               if (e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),ip2a, &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+               if (Pil_bmf_L) kk=1 
+               code_h= e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),ip2a, &
+                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               if (code_h.lt.0) goto 999
+               horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
                   call e_bmfsplitxy2 (wn,nis,njs,'W   ',k,lv_t-1,pni,0,0,0)
                endif            
@@ -164,18 +185,29 @@
          if (VAR_Q /= '') then
             do k=1,lv
                kk=k
-               if (Pil_bmf_L) kk=1     
-               if (e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',na(k),ip2a, &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+               if (Pil_bmf_L) kk=1  
+               code_h= e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',na(k),ip2a, &
+                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               if (code_h.lt.0) goto 999
+               horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
                   call e_bmfsplitxy2 (qn,nis,njs,'Q   ',k,lv,pni,0,0,0)                
                endif
             enddo
          endif
 
-         if (e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),ip2a,ip3a,' ', &
-                        tva,.false.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
-         gzn(:,1)=gzn(:,1)*c2
+         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),ip2a,ip3a,' ', &
+                            tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+         if (code_h.lt.0) then
+            code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,ip2a,ip3a,' ', &
+                            tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            gzn(:,1)= gzn(:,1)*Dcst_grav_8
+         else
+            gzn(:,1)= gzn(:,1)*c2
+         endif
+
+         horinterp_L= horinterp_L .or. (code_h.gt.0)         
          
          if (Pil_bmf_L) then
             call e_bmfsplitxy2 (gzn,nis,njs,'GZ  ',1,1,pni,0,0,0)
@@ -198,13 +230,20 @@
             kk=k
             if (Pil_bmf_L) kk=1
 
-            if (e_rdhint3 (gzn(1,kk),dstf_gid,nis,njs,'GZ  ',na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+            code_h= e_rdhint3 (gzn(1,kk),dstf_gid,nis,njs,'GZ  ',na_t(k),ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            horinterp_L= horinterp_L .or. (code_h.gt.0)         
 
-            if (e_rdhint3 (ttn(1,kk),dstf_gid,nis,njs,vtt,na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
-            if (e_rdhint3 (wk2,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6).lt.0) goto 999
+            code_h= e_rdhint3 (ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k),ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            horinterp_L= horinterp_L .or. (code_h.gt.0)         
+
+            code_h= e_rdhint3 (wk2,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
+                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) goto 999
+            horinterp_L= horinterp_L .or. (code_h.gt.0)         
 
             gzn(:,kk)   = gzn(:,kk) * 10.0
             ttn(:,kk)   = ttn(:,kk) + c1
@@ -258,9 +297,12 @@
          do k=1,lv_t
             kk=k
             if (Pil_bmf_L) kk=1
-            if (e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, E_tr3d_name_S(i), &
+            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, E_tr3d_name_S(i), &
                            na_t(k),ip2a,ip3a,' ',tva, .true.,.false.   , &
-                           'CUBIC',e_fu_anal,6).lt.0) wk2(:)=E_tr3d_sval(i)
+                           'CUBIC',e_fu_anal,6)
+            if (code_h.lt.0) hun= E_tr3d_sval(i)
+            horinterp_L= horinterp_L .or. (code_h.gt.0)         
+            
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (hun,nis,njs,E_trname_S(i),k,lv_t,pni,0,0,0)
             endif
@@ -270,8 +312,30 @@
          endif 
       end do
 
+      keyt= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na_t(2), &
+                    ip2a,ip3a,' ','PWTT')
+      if (keyt.ge.0) then
+         err= 0
+         do k=2,lv_t
+            kk=k
+            if (Pil_bmf_L) kk=1
+            keyt = e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'PWTT',na_t(k),ip2a, &
+                           ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            if (keyt.ne.0) err= -1
+            if (Pil_bmf_L) then
+               call e_bmfsplitxy2 (qn,nis,njs,'PWTT',k-1,lv_t-1,pni,0,0,0)
+            endif
+         end do
+         call handle_error(err,'e_intthm','EXTRACTION OF PWTT FAILED')
+         if (.not.Pil_bmf_L) then
+            call e_write_3df ( qn,nis,njs,lv_t-1,'PWTT',unf_casc)
+         endif         
+      endif
+
       deallocate (ttn,hun,gzn,zdn,wn,qn,p0,wk2)
       errcode = 0
+
+      if (.not.horinterp_L) anal_hav(1) = 11
      
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 

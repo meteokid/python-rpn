@@ -80,7 +80,8 @@
          pw_pt_plus(1:l_ni,1:l_nj,k  ) = wk2(1:l_ni,1:l_nj,2)
          pw_ww_plus(:,:,k) = wt1(:,:,k)
          if (k.gt.1) &
-         pw_gz_plus(1:l_ni,1:l_nj,k)=fiptx(1:l_ni,1:l_nj,k-1)+Ver_fistr_8%m(k-1)-fis0(1:l_ni,1:l_nj)
+         pw_gz_plus(1:l_ni,1:l_nj,k)=fiptx(1:l_ni,1:l_nj,k-1) + &
+                       Ver_fistr_8%m(k-1)-fis0(1:l_ni,1:l_nj)
       end do
 !$omp enddo
 
@@ -88,9 +89,10 @@
       do j= 1, l_nj
       do i= 1, l_ni
          pw_pt_plus(i,j,l_nk+2) = pw_pm_plus(i,j,l_nk+2)
-         pw_ww_plus(i,j,l_nk+2) = pw_ww_plus(i,j,l_nk+1)
+         pw_ww_plus(i,j,l_nk+2) = 0.
+         pw_ww_plus(i,j,1     ) = 0.
          pw_gz_plus(i,j,l_nk+2) = 0.
-         pw_gz_plus(i,j,1     ) = fiptx(i,j,0)-Cstv_RTstr_8*(Cstv_Ztop_8-Cstv_Zsrf_8)
+         pw_gz_plus(i,j,1     ) = 0.
       end do
       end do
 

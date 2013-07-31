@@ -104,10 +104,6 @@
       endif
       Level_momentum = G_nk+1
       Level_thermo = G_nk+2
-      if (.not.Schm_phyms_L) then
-          Level_momentum = G_nk
-          Level_thermo = G_nk+1
-      endif
       set_level = 0
       read( F_argv_S(1), * ) levset
       Level_sets = Level_sets + 1

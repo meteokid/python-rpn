@@ -49,9 +49,10 @@
 #include "e_grdc.cdk"
 #include "hgc.cdk"
 
-      integer, external :: fstinf,fstlir,fstprm,ezqkdef,ezsetopt,ezdefset,ezuvint
+      integer, external :: fstinf,fstlir,fstprm,ezqkdef,ezsetopt,ezdefset,ezuvint,e_rdhint3
 
-      integer i, j, k, src_gid, key1, key2, nic, njc, ni1, nj1,  &
+      logical flag_uvt1
+      integer i, j, k, src_gid, key1, key2, keyu, keyv, nic, njc, ni1, nj1,  &
               nk1,nkc,err,iu,ju,iv,jv,nu,nv, istat
       integer nisu,nisv,njsu,njsv
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -78,7 +79,8 @@
          njsv = njv
       endif
 
-      allocate ( uu(nisu*njsu), vv(nisv*njsv) )
+!      allocate ( uu(nisu*njsu), vv(nisv*njsv) )
+      allocate ( uu(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)), vv(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)))
       allocate ( uv( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
 
       nu = nisu*njsu
@@ -87,76 +89,152 @@
       ip2 = ip2a
       ip3 = ip3a
 
-      key1= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
-                                                         ' ','UU')
-      err= fstprm (key1, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1, &
-                   P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA  , &
-                   LNG, DLF, UBC, EX1, EX2, EX3)
+      flag_uvt1= .true.
+      var_uu   = 'UT1 '
+      var_vv   = 'VT1 '
+      err      = 0
 
-      src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
-      err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+      keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                        ' ',var_uu)
+      keyv= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                        ' ',var_vv)
 
-      allocate (w1(nic*njc),w2(nic*njc))
+      if ((keyu.lt.0).or.(keyv.lt.0)) then
+         var_uu   = 'UU  '
+         var_vv   = 'VV  '
+         flag_uvt1= .false.
+         
+         keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                           ' ',var_uu)
+         keyv= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                           ' ',var_vv)
+      endif
 
-      do k=1,lv
+      if ((keyu.lt.0).or.(keyv.lt.0)) err= -1
+      call handle_error(err,'e_intwind','Horizontal winds NOT AVAILABLE')
 
-         ip2 = ip2a
-         ip3 = ip3a
-         key1 = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',  &
-                        na(k), ip2, ip3, ' ', 'UU')
-         key2 = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',  &
-                        na(k), ip2, ip3, ' ', 'VV')
-         if (key1.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) then
-            write(6,*)'ERROR: UU NOT AVAILABLE,'
-            goto 55
-         endif
-         if (key1.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) then
-            write(6,*)'ERROR: VV NOT AVAILABLE,'
-            goto 55
-         endif
+      if (flag_uvt1) then
 
-         err = ezdefset ( dstu_gid, src_gid )
-         err = ezuvint  ( uu,uv,w1,w2 )
-         err = ezdefset ( dstv_gid, src_gid )
-         err = ezuvint  ( uv,vv,w1,w2 )
-
-         do i=1,nisu*njsu
-            uu(i) = uu(i) * dcst_knams_8
+         err= 0
+         do k=1,lv
+            keyu = e_rdhint3 (uu,dstu_gid,nisu,njsu,var_uu,na(k),ip2a, &
+                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),ip2a, &
+                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            if ((keyu.ne.0).or.(keyv.ne.0)) err= -1
+            if (Pil_bmf_L) then
+               call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+               call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+            else
+               call e_fill_3df (uu,uun,nisu,njsu,lv,k,1.0,0.0)
+               call e_fill_3df (vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+            endif
          end do
-         do i=1,nisv*njsv
-            vv(i) = vv(i) * dcst_knams_8
+         call handle_error(err,'e_intwind','EXTRACTION OF UT1, VT1 FAILED')
+
+         if (.not.Pil_bmf_L) then
+            call e_write_3df ( uun,nisu,njsu,lv,'UT1 ',unf_casc)
+            call e_write_3df ( vvn,nisv,njsv,lv,'VT1 ',unf_casc)
+         endif         
+         
+      else
+
+         anal_hav(1) = 0
+
+         err= fstprm (keyu, DTE, DET, IPAS, ni1, nj1, nk1, BIT, DTY, P1, &
+                      P2, P3, TYP, VAR, LAB, GRD, G1, G2, G3, G4, SWA  , &
+                      LNG, DLF, UBC, EX1, EX2, EX3)
+
+         src_gid = ezqkdef (nic, njc, GRD, g1, g2, g3, g4, e_fu_anal)
+         err     = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+
+         allocate (w1(nic*njc),w2(nic*njc))
+
+         err= 0
+         do k=1,lv
+
+            ip2 = ip2a
+            ip3 = ip3a
+            keyu = fstlir (w1, e_fu_anal, iu, ju, nkc, datev, ' ',  &
+                           na(k), ip2, ip3, ' ', 'UU')
+            keyv = fstlir (w2, e_fu_anal, iv, jv, nkc, datev, ' ',  &
+                           na(k), ip2, ip3, ' ', 'VV')
+            if (keyu.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) err= -1
+            if (keyv.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) err= -1
+
+            if (err.lt.0) cycle
+
+            err = ezdefset ( dstu_gid, src_gid )
+            err = ezuvint  ( uu,uv,w1,w2 )
+            err = ezdefset ( dstv_gid, src_gid )
+            err = ezuvint  ( uv,vv,w1,w2 )
+
+            do i=1,nisu*njsu
+               uu(i) = uu(i) * dcst_knams_8
+            end do
+            do i=1,nisv*njsv
+               vv(i) = vv(i) * dcst_knams_8
+            end do
+            
+            if (Pil_bmf_L) then
+               call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
+               call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
+            else
+               call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
+                                 yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
+               call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
+               call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+            endif
+
          end do
- 
-         if (Pil_bmf_L) then
-            call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
-            call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
-         else
-            call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
-                              yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
-            call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
-            call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
+         
+         call handle_error(err,'e_intwind','PROBLEM WITH UU or VV')
+
+         if (.not.Pil_bmf_L) then
+            call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+            call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
          endif
 
-      end do
+         deallocate (w1,w2)
 
-      if (.not.Pil_bmf_L) then
-         call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
-         call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
-         deallocate (uun,vvn)
-         return
       endif
       
-      deallocate (w1,w2,uu,vv,uv)
+      keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                        ' ','PWUU')
+      keyv= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
+                                                        ' ','PWVV')
+      if ((keyu.ge.0).and.(keyv.ge.0)) then
+         err= 0
+         do k=1,lv
+            keyu = e_rdhint3 (uu,dstf_gid,nifi,njfi,'PWUU',na(k),ip2a, &
+                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),ip2a, &
+                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            if ((keyu.ne.0).or.(keyv.ne.0)) err= -1
+            if (Pil_bmf_L) then
+               call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv,pni,0,0,0)
+               call e_bmfsplitxy2 (vv,nifi,njfi,'PWVV',k,lv,pni,0,0,0)
+            else
+               call e_fill_3df (uu,uun,nifi,njfi,lv,k,1.0,0.0)
+               call e_fill_3df (vv,vvn,nifi,njfi,lv,k,1.0,0.0)
+            endif
+         end do
+         call handle_error(err,'e_intwind','EXTRACTION OF PWUU, PWVV FAILED')
 
-      goto 99
- 55   call e_arret( 'e_intwind' )
+         if (.not.Pil_bmf_L) then
+            call e_write_3df ( uun,nifi,njfi,lv,'PWUU',unf_casc)
+            call e_write_3df ( vvn,nifi,njfi,lv,'PWVV',unf_casc)
+         endif         
+      endif
 
- 99   continue
+      deallocate (uu,vv,uv)
 
       if (Pil_bmf_L) then
          call bmf_splitwrall ('AHAV',2,1,1,Bmf_time1,Bmf_time2, &
                                              0,0,40,0,anal_hav)
          call bmf_splitend
+      else
+         deallocate (uun,vvn)
       endif
 !
 ! ---------------------------------------------------------------------

@@ -15,6 +15,7 @@
       logical  Acql_etaanl, Acql_siganl, Acql_hybanl
       logical  Acql_vertint, Acql_horzint
       logical  Acql_prsanl, Acql_staganl, Acql_ecmanl
+      logical  Acql_pwuv, Acql_pwtt
 !
       common / acqi / Acqi_datasp
       common / acqi / Acqi_niu,Acqi_nju,Acqi_niv,Acqi_njv
@@ -24,3 +25,4 @@
       common / acql / Acql_etaanl, Acql_siganl , Acql_hybanl
       common / acql / Acql_vertint, Acql_horzint
       common / acql / Acql_prsanl,  Acql_staganl, Acql_ecmanl
+      common / acql / Acql_pwuv, Acql_pwtt

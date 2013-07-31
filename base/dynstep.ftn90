@@ -82,9 +82,13 @@
 !
       itraj = Schm_itraj
 !
-      if ( first_L) then
+      if (Schm_bitpattern_L) then
          call pospers ()
-         itraj = max( 5, Schm_itraj )
+      else
+         if ( first_L) then
+            call pospers ()
+            itraj = max( 5, Schm_itraj )
+         endif
       endif
 !
       if (Grd_yinyang_L) call nest_bcs_yy()

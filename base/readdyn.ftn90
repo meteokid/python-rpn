@@ -91,6 +91,7 @@
 #include "ver.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
+#include "pw.cdk"
 #include "step.cdk"
 #include "bcsgrds.cdk"
 #include "wil_williamson.cdk"
@@ -102,7 +103,9 @@
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical initial_data
-      integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,errprdf,prdfsum,istat,dat
+      integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,&
+              err_pwuu,err_pwvv,err_pwtt,prdfsum,istat,dat
+      integer G_nkt, G_nkm
       real, allocatable, dimension(:    ) :: rna
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
@@ -138,6 +141,13 @@
       call get_bmfvar ( Acqi_niu, Acqi_nju, Acqi_niv, Acqi_njv, nka_m, nka_t )
 
       nbpts = l_ni*l_nj
+      G_nkt = G_nk+2
+      G_nkm = G_nk+1
+      if (.not. Schm_phyms_L) then
+         G_nkt = G_nk+1
+         G_nkm = G_nk
+      endif
+
       nkmax = max ( nka_m, nka_t, G_nk+2 )
 
       allocate ( za_8 (nka_m), zb_8 (nka_m), zat_8(nka_t), zbt_8(nka_t),           &
@@ -152,6 +162,7 @@
                       zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
 
       Acql_vertint = .true.
+      if(Acqi_datasp(1)==11)Acql_vertint = .false.
 
       if ( Schm_autobar_L ) then
            Acql_vertint = .false.
@@ -186,8 +197,7 @@
       endif
 !
       initial_data = trim(F_datev).eq.trim(Step_runstrt_S)
-
-      if ( initial_data .and. (Step_kount.eq.0) ) &
+      if ( initial_data .and. (Lctl_step.eq.0) ) &
          call adjust_topo2( F_topo, topo_temp, gz_temp(1,1,nka_t)   , &
                            ( .not.Acql_prsanl .and. Lam_blendoro_L ), &
                            l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )
@@ -242,7 +252,7 @@
                         /Cstv_rtstr_8
           enddo
           enddo
-         do k=1,g_nk+2
+         do k=1,G_nkt
          do j=1,l_nj
          do i=1,l_ni
             F_t(i,j,k)  = Cstv_tstr_8
@@ -259,7 +269,7 @@
       	    istat = gmm_get(tr_name,tr,mymeta)
             if (GMM_IS_ERROR(istat)) print *,'readdyn ERROR at gmm_get',tr_name
             if ( err.eq.0 ) then
-                 tr (1:l_ni,1:l_nj,1:g_nk+2) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
+                 tr (1:l_ni,1:l_nj,1:G_nk+2) = max(gz_temp(1:l_ni,1:l_nj,1:G_nk+2), 0.)
             endif
  102     continue
       else
@@ -318,9 +328,9 @@
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
             call handle_error(err,'readdyn','readdyn:get_px')
             call vte_intvertx3(work,tt_temp,srclev,dstlev,nbpts, &
-                              nka_t,G_nk+2,'VT','cubic')
+                              nka_t,G_nkt,'VT','cubic')
 !
-            do k=1,g_nk+2
+            do k=1,G_nkt
             do j=1,l_nj
             do i=1,l_ni
                F_t(i,j,k)  = work(i,j,k) 
@@ -328,7 +338,7 @@
             end do
             end do
          else
-            do k=1,g_nk+2
+            do k=1,G_nkt
             do j=1,l_nj
             do i=1,l_ni
                F_t (i,j,k) = tt_temp(i,j,k)
@@ -351,127 +361,77 @@
             if ( err.eq.0 ) then
                if (Acql_vertint) then
                   call vte_intvertx3(work,hu_temp,srclev,dstlev,nbpts, &
-                                             nka_t,G_nk+2,'HU','cubic')
-                  tr (1:l_ni,1:l_nj,1:g_nk+2) = max(work   (1:l_ni,1:l_nj,1:g_nk+2), 0.)
+                                             nka_t,G_nkt,'HU','cubic')
+                  if (Schm_bitpattern_L) then 
+                     tr (1:l_ni,1:l_nj,1:G_nkt) = work   (1:l_ni,1:l_nj,1:G_nkt)
+                  else
+                     tr (1:l_ni,1:l_nj,1:G_nkt) = max(work   (1:l_ni,1:l_nj,1:G_nkt), 0.)
+                  endif
                else
-                  tr (1:l_ni,1:l_nj,1:g_nk+2) = max(hu_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
-!                 tr (1:l_ni,1:l_nj,1:g_nk+2) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk+2), 0.)
+                  if (Schm_bitpattern_L) then 
+                     tr (1:l_ni,1:l_nj,1:G_nkt) = hu_temp(1:l_ni,1:l_nj,1:G_nkt)
+                  else
+                     tr (1:l_ni,1:l_nj,1:G_nkt) = max(hu_temp(1:l_ni,1:l_nj,1:G_nkt), 0.)
+                  endif
                endif 
             else
-               tr (1:l_ni,1:l_nj,1:g_nk+2) = Tr3d_sval(k)
+               tr (1:l_ni,1:l_nj,1:G_nkt) = Tr3d_sval(k)
             endif
  100     continue
 
       endif
 
-!---------------------------------------------------------------------
-!     OBTAIN ZD, thermo levels, mass grid
-!---------------------------------------------------------------------
+      F_zd(:,:,1:G_nkm)=0. ; F_w(:,:,1:G_nkm)=0.
+
       if (Acql_vertint) then
          call vte_intvertx3(work,zd_temp,srclev,dstlev,nbpts, &
-                           nka_t,G_nk+1,'ZD','cubic')
-!
-         do k=2,g_nk
-         do j=1,l_nj
-         do i=1,l_ni
-            F_zd(i,j,k)  = work(i,j,k) 
-         end do
-         end do
+                            nka_t,G_nkm,'ZD','cubic')
+         F_zd(:,:,1) = 0. ; F_zd(:,:,g_nk+1) = 0.
+
+         do k=2,G_nkm
+            F_zd(1:l_ni,1:l_nj,k) = work(1:l_ni,1:l_nj,k)
          end do
       else
-         do k=2,g_nk
-         do j=1,l_nj
-         do i=1,l_ni
-            F_zd (i,j,k) = zd_temp(i,j,k)
-         end do
-         end do
+         do k=2,G_nkm
+            F_zd(1:l_ni,1:l_nj,k) = zd_temp(1:l_ni,1:l_nj,k)
          end do
       endif
-!     The following is not really needed bot just to make sure...
-      do j=1,l_nj
-      do i=1,l_ni
-         F_zd (i,j,1) = 0.0
-         F_zd (i,j,g_nk+1) = 0.0
-      end do
-      end do
-      if (Schm_autobar_L) then
-      do k=1,G_nk+1
-      do j=1,l_nj
-      do i=1,l_ni
-         F_zd (i,j,k) = 0.0
-      end do
-      end do
-      end do
-      endif
-!---------------------------------------------------------------------
-!     OBTAIN W, thermo levels, mass grid
-!               no value on diag level
-!---------------------------------------------------------------------
+
+      
       if (Acql_vertint) then
          call vte_intvertx3(work,w_temp,srclev,dstlev,nbpts, &
-                           nka_t,G_nk+1,'WT','cubic')
-!
-         do k=1,g_nk+1
-         do j=1,l_nj
-         do i=1,l_ni
-            F_w(i,j,k)  = work(i,j,k) 
-         end do
-         end do
+                            nka_t,G_nkm,'WT','cubic')
+         do k=1,G_nkm
+            F_w(1:l_ni,1:l_nj,k) = work(1:l_ni,1:l_nj,k)
          end do
       else
-         do k=1,g_nk+1
-         do j=1,l_nj
-         do i=1,l_ni
-            F_w (i,j,k) = w_temp(i,j,k)
-         end do
-         end do
+         do k=2,G_nkm+1
+            F_w(1:l_ni,1:l_nj,k) = w_temp(1:l_ni,1:l_nj,k)
          end do
       endif
-      if (Schm_autobar_L) then
-      do k=1,G_nk+1
-      do j=1,l_nj
-      do i=1,l_ni
-         F_w (i,j,k) = 0.0
-      end do
-      end do
-      end do
-      endif
-!---------------------------------------------------------------------
-!     OBTAIN Q, on momentum levels + surface, mass grid
-!---------------------------------------------------------------------
+      if (Schm_autobar_L) F_w(:,:,1:G_nkm)= 0.
+
       if(.not.Schm_hydro_L)then
          if (Acql_vertint) then
             deallocate(srclev,dstlev)
-            allocate (srclev(l_ni,l_nj,nka_m), &
-                 dstlev(l_ni,l_nj,G_nk+1) )
+            allocate ( srclev(l_ni,l_nj,nka_m   ), &
+                       dstlev(l_ni,l_nj,G_nk+1) )
             err = get_px(srclev,ps,l_ni*l_nj,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
-           call handle_error(err,'readdyn','readdyn:get_px')
+            call handle_error(err,'readdyn','readdyn:get_px')
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
             call handle_error(err,'readdyn','readdyn:get_px')                  
             call vte_intvertx3(work,q_temp,srclev,dstlev,nbpts, &
-                 nka_m,G_nk+1,'QT','cubic')        
+                               nka_m,G_nkm,'QT','cubic')        
 !
-            do k=1,g_nk+1
-            do j=1,l_nj
-            do i=1,l_ni
-               F_q(i,j,k)  = work(i,j,k) 
-            end do
-            end do
+            do k=1,g_nkm
+               F_q(:,:,k) = work(:,:,k)
             end do
          else
-            do k=1,g_nk+1
-            do j=1,l_nj
-            do i=1,l_ni
-               F_q (i,j,k) = q_temp(i,j,k)
-            end do
-            end do
+            do k=2,G_nkm
+               F_q(:,:,k) = q_temp(:,:,k)
             end do
          endif
-         do j=1,l_nj
-         do i=1,l_ni
-            F_q (i,j,0) = 0.
-         end do
-         end do
+         F_q(:,:,0) = 0.
       endif
 !---------------------------------------------------------------------
 !     OBTAIN WINDS, momentum levels + diag, on u/v grids
@@ -479,90 +439,94 @@
 
       if (Acql_vertint) then
         deallocate(srclev,dstlev)
-        allocate (psu_temp(Acqi_niu,Acqi_nju), &
+        allocate  ( psu_temp(Acqi_niu,Acqi_nju), &
                    apsu_temp(Acqi_niu,Acqi_nju), &
-                   psv_temp(Acqi_niv,Acqi_njv), &
-                   apsv_temp(Acqi_niv,Acqi_njv))
+                    psv_temp(Acqi_niv,Acqi_njv), &
+                   apsv_temp(Acqi_niv,Acqi_njv) )
         allocate ( u_temp2(Acqi_niu,Acqi_nju,nkmax), &
-                    v_temp2(Acqi_niv,Acqi_njv,nkmax))
+                   v_temp2(Acqi_niv,Acqi_njv,nkmax) )
 !
 !       Get pressure on the U,V analysis grid 
-          call adj_ss2uv(ps,l_ni,l_nj,apsu_temp,Acqi_niu,Acqi_nju, &
-                         apsv_temp,Acqi_niv,Acqi_njv,Acqi_datasp(2))
+        call adj_ss2uv(ps,l_ni,l_nj,apsu_temp,Acqi_niu,Acqi_nju, &
+                       apsv_temp,Acqi_niv,Acqi_njv,Acqi_datasp(2))
 !
 !       Get pressure on the U,V destination model grid
-          call adj_ss2uv(pps,l_ni,l_nj,psu_temp,Acqi_niu,Acqi_nju, &
-                         psv_temp,Acqi_niv,Acqi_njv,Ver_code)
+        call adj_ss2uv(pps,l_ni,l_nj,psu_temp,Acqi_niu,Acqi_nju, &
+                       psv_temp,Acqi_niv,Acqi_njv,Ver_code)
 !
         allocate ( srclev (Acqi_niu,Acqi_nju,nka_m), &
-                    dstlev (Acqi_niu,Acqi_nju,G_nk+1) )
+                   dstlev (Acqi_niu,Acqi_nju,G_nk+1) )
+
         err = get_px(srclev,apsu_temp,Acqi_niu*Acqi_nju,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
         call handle_error(err,'readdyn','readdyn:get_px')
         err = get_px(dstlev,psu_temp,Acqi_niu*Acqi_nju,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
         call handle_error(err,'readdyn','readdyn:get_px')
         call vte_intvertx3(u_temp2,u_temp,srclev,dstlev,Acqi_niu*Acqi_nju, &
-                    nka_m,G_nk+1,'UU','cubic')
+                           nka_m,G_nkm,'UU','cubic')
         deallocate (srclev,dstlev)
 !
         allocate ( srclev (Acqi_niv,Acqi_njv,nka_m), &
-                    dstlev (Acqi_niv,Acqi_njv,G_nk+1) )
+                   dstlev (Acqi_niv,Acqi_njv,G_nk+1) )
         err = get_px(srclev,apsv_temp,Acqi_niv*Acqi_njv,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
         call handle_error(err,'readdyn','readdyn:get_px')
         err = get_px(dstlev,psv_temp,Acqi_niv*Acqi_njv,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
         call handle_error(err,'readdyn','readdyn:get_px')
         call vte_intvertx3(v_temp2,v_temp,srclev,dstlev,Acqi_niv*Acqi_njv, &
-                    nka_m,G_nk+1,'VV','cubic')
-        do k=1,g_nk+1
-            do j=1,Acqi_nju
-            do i=1,Acqi_niu
-               u_temp(i,j,k) = u_temp2(i,j,k)
-            enddo
-            enddo
-            do j=1,Acqi_njv
-            do i=1,Acqi_niv
-               v_temp(i,j,k) = v_temp2(i,j,k)
-            enddo
-            enddo
+                           nka_m,G_nkm,'VV','cubic')
+        do k=1,g_nkm
+           u_temp(1:Acqi_niu,1:Acqi_nju,k) = u_temp2(1:Acqi_niu,1:Acqi_nju,k)
+           v_temp(1:Acqi_niv,1:Acqi_njv,k) = v_temp2(1:Acqi_niv,1:Acqi_njv,k)
         enddo
         deallocate (srclev,dstlev)
         deallocate ( apsu_temp,apsv_temp,psu_temp,psv_temp,u_temp2,v_temp2)
       endif
 
-      call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju, &
-           Acqi_niv, Acqi_njv, g_nk+1, geomg_y_8(1), geomg_yv_8(1))
+      if(Acqi_datasp(1)/=11) call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju, &
+                             Acqi_niv, Acqi_njv, g_nkm, geomg_y_8(1), geomg_yv_8(1))
 
-      if ( nka_m.eq.1 ) then
-           do k=1,g_nk+1
-           do j=1,Acqi_nju
-           do i=1,Acqi_niu
-              F_u(i,j,k) = u_temp(i,j,1)
-           enddo
-           enddo
-           do j=1,Acqi_njv
-           do i=1,Acqi_niv
-              F_v(i,j,k) = v_temp(i,j,1)
-           enddo
-           enddo
-           enddo
-      else
-           do k=1,g_nk+1
-           do j=1,Acqi_nju
-           do i=1,Acqi_niu
-              F_u(i,j,k) = u_temp(i,j,k)
-           enddo
-           enddo
-           do j=1,Acqi_njv
-           do i=1,Acqi_niv
-              F_v(i,j,k) = v_temp(i,j,k)
-           enddo
-           enddo
-           enddo
+      do k=1,g_nkm
+         F_u(1:Acqi_niu,1:Acqi_nju,k) = u_temp(1:Acqi_niu,1:Acqi_nju,k)
+         F_v(1:Acqi_niu,1:Acqi_nju,k) = v_temp(1:Acqi_niu,1:Acqi_nju,k)
+      end do
+
+      Acql_pwuv= .false. ;  Acql_pwtt= .false.
+
+      if (Schm_phyms_L) then
+
+         err_pwuu = bmf_get ('PWUU',bmf_time1,bmf_time2,-1,hu_temp,-1, &
+                                               1,l_ni,1, l_nj,1,nkmax)
+         err_pwvv = bmf_get ('PWVV',bmf_time1,bmf_time2,-1,tt_temp,-1, &
+                                               1,l_ni,1, l_nj,1,nkmax)
+
+         if ((err_pwuu.eq.0).and.(err_pwvv.eq.0)) then
+            err = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus, mymeta)
+            err = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus, mymeta)
+            do k=1,g_nkm
+               pw_uu_plus(1:l_ni,1:l_nj,k+1) = hu_temp(1:l_ni,1:l_nj,k)
+               pw_vv_plus(1:l_ni,1:l_nj,k+1) = tt_temp(1:l_ni,1:l_nj,k)
+            end do
+            pw_uu_plus(:,:,1) = 0.
+            pw_vv_plus(:,:,1) = 0.
+            Acql_pwuv= .true.
+         endif
+         
+         err_pwtt = bmf_get ('PWTT',bmf_time1,bmf_time2,-1,hu_temp,-1, &
+                                               1,l_ni,1, l_nj,1,nkmax)
+         if (err_pwtt.eq.0) then
+            err = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus, mymeta)
+            do k=1,g_nkm
+               pw_tt_plus(1:l_ni,1:l_nj,k+1) = hu_temp(1:l_ni,1:l_nj,k)
+            end do
+            pw_tt_plus(:,:,1) = 0.
+            Acql_pwtt= .true.
+         endif
+
       endif
-!
+      
       deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,zd_temp,w_temp, &
                                      q_temp,work,za_8,zb_8,zat_8,zbt_8)
       call bmf_clear
-!
+
  9000 format(/,' TREATING INPUT DATA VALID AT: ',i8.6,'.',i8.8, &
              /,' ===============================================')
 !

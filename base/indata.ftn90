@@ -52,14 +52,9 @@
 ! v4_21 - Plante A.         - Call predat4     
 ! v4_40 - Lee/Qaddouri      - Add exchange of ME for Yin-Yang seam
 !
-!object
-!	
-!arguments
-!	none
-!
-!implicits
 #include "gmm.hf"
 #include "grd.cdk"
+#include "acq.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "ifd.cdk"
@@ -126,8 +121,11 @@
 
       if (Grd_yinyang_L) then
          fistmp(:,:)=fis0(:,:)
+!Must exchange halos before calling yyg_scalbc
+         call rpn_comm_xch_halo(fistmp, LDIST_DIM,l_ni,l_nj,1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call yyg_scalbc(fis0,fistmp,LDIST_DIM,1)
-         call rpn_comm_xch_halo(fis0, LDIST_DIM,l_ni,l_nj,1,      &
+         call rpn_comm_xch_halo(fis0  , LDIST_DIM,l_ni,l_nj,1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
@@ -143,8 +141,10 @@
       call predat6 ( ut1, vt1, tt1, zdt1, wt1, st1, &
                      l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
-      call pw_update_UVT ('P')
+      if (.not.Acql_pwuv) call pw_update_UV ('P')
+      if (.not.Acql_pwtt) call pw_update_T  ('P')
       call pw_update_GPW
+
       call frstgss ()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
