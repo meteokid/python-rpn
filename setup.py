@@ -9,7 +9,9 @@ import rpn_version
 #myecarch = 'Linux_pgi9xx'
 #myecarch = 'Linux_x86-64/pgi9xx'
 myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301']
-myrmnlib = ['PyFTN_helpers','rmnshared_013']
+#myrmnlib = ['PyFTN_helpers','rmnshared_013']
+myrmnlib = ['PyFTN_helpers','rmnshared_014_pgi9xx_rc1']
+#myrmnlib = ['PyFTN_helpers','rmnshared_014_rc1']
 
 architecture = os.getenv('EC_ARCH')
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')

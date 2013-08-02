@@ -1,0 +1,12 @@
+#. s.ssmuse.dot legacy pgi9xx rmnlib-dev devtools
+. /data/ssm/hpcs/shortcuts/ssmuse_ssm_v10.sh
+. ssmuse-sh -d hpcs/13b/02/base -d hpcs/13b/02/pgi1301
+. ssmuse-sh -p hpcs/13b/master/code-tools_1.1
+. s.ssmuse.dot legacy rmnlib-dev devtools
+r.use /usr/local/env/armnlib/bin/r.gppf as r.gppf
+r.use s.compile as r.compile
+which r.gppf
+which s.compile
+export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
+py_version="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
+export PYTHONPATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${py_version}:$PYTHONPATH

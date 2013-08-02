@@ -18,8 +18,8 @@ RMNLIB  = rmnbeta
 #DEBUG = "-debug"
 DEBUG =
 
-RCOMPIL = r.compile $(DEBUG)
-RBUILD  = r.build $(DEBUG)
+RCOMPIL = s.compile $(DEBUG)
+RBUILD  = s.compile $(DEBUG)
 CCOMPF  =
 CCOMPF =
 CC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optc="$(CFLAGS)" $(COMPF) $(CCOMPF) -src

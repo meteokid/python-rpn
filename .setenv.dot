@@ -1,1 +1,4 @@
-. s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
+. s.ssmuse.dot legacy pgi9xxshared rmnlib-dev devtools
+export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
+py_version="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
+export PYTHONPATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${py_version}:$PYTHONPATH

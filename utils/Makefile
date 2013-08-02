@@ -18,5 +18,5 @@ get_corners_xy.o: get_corners_xy.ftn90 int_macros.hf
 #py_capi_ftn_utils.o: py_capi_ftn_utils.c py_capi_ftn_utils.h
 
 test: get_corners_xy.o
-	r.compile -src tests/test_get_corners_xy.ftn90 -obj get_corners_xy.o -o test_get_corners_xy.Abs
+	s.compile -src tests/test_get_corners_xy.ftn90 -obj get_corners_xy.o -o test_get_corners_xy.Abs
 	./test_get_corners_xy.Abs
