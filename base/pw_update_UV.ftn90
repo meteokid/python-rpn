@@ -118,9 +118,6 @@
       enddo
 !$omp enddo
 !$omp end parallel
-
-      pw_uu(:,:,1) = 0.
-      pw_vv(:,:,1) = 0.
 !
 !     Keep a running total of tendencies for this timestep
 !     ----------------------------------------------------

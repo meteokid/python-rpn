@@ -52,7 +52,7 @@
 !
       nis= g_if - g_id + 1
       njs= g_jf - g_jd + 1
-      ig4= 4
+      ig4= 0
 
       nblock= Ptopo_nblocx*Ptopo_nblocy
       nz    = (nplans + nblock -1) / nblock

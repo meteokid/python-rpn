@@ -59,13 +59,14 @@
 
       write (6, 1001)
 
-      err= e_fstouv ('P0', current_date, Grd_typ_S(1:1), &
-                                  pilot_dir, e_fu_anal)
-      err= e_fstouv ('ST1', current_date, Grd_typ_S(1:1), &
-                                  pilot_dir, e_fu_anal)
+      err= e_fstouv ('P0' , current_date, Grd_typ_S(1:1), &
+                                   pilot_dir, e_fu_anal)
       if (err.lt.0) &
-      err= e_fstouv ('TT', current_date, Grd_typ_S(1:1), &
-                                  pilot_dir, e_fu_anal)
+      err= e_fstouv ('ST1', current_date, Grd_typ_S(1:1), &
+                                   pilot_dir, e_fu_anal)
+      if (err.lt.0) &
+      err= e_fstouv ('TT' , current_date, Grd_typ_S(1:1), &
+                                   pilot_dir, e_fu_anal)
 
       if (err.lt.0) then
          if (Lun_out.gt.0) write (6,*) 'E_SPECANAL: Problem with e_fstouv'

@@ -41,6 +41,7 @@
 #include "modconst.cdk"
 #include "clim.cdk"
 #include "cfld.cdk"
+#include "step.cdk"
 !
       integer,external :: fnom,fclos
 !
@@ -59,7 +60,7 @@
 !
       unf = 0
 !
-      dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
+      dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
 !
       fn='restart_BUSPER'

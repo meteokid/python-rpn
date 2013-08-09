@@ -55,7 +55,11 @@
          goto 999
       endif
 
-      call e_intwind
+      call e_intwind (err)
+      if (err.lt.0) then
+         write(6,*) 'E_DYNFLD: PROBLEM WITH E_INWIND'
+         goto 999
+      endif
 
       errcode = 0
      

@@ -18,10 +18,12 @@
 #include "model_macros_f.h"
 #include "msg.h"
 !
-      subroutine e_intwind 
+      subroutine e_intwind (errcode)
       implicit none
 #include <arch_specific.hf>
 !
+      integer errcode
+
 !author       M ROCH     - july 95 - from intvent
 !
 !revision
@@ -79,8 +81,8 @@
          njsv = njv
       endif
 
-!      allocate ( uu(nisu*njsu), vv(nisv*njsv) )
-      allocate ( uu(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)), vv(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)))
+      allocate ( uu(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)), &
+	         vv(max(nifi,nisu,nisv)*max(njfi,njsu,njsv)) )
       allocate ( uv( max(nifi,nisu,nisv)*max(njfi,njsu,njsv) ))
 
       nu = nisu*njsu
@@ -93,6 +95,7 @@
       var_uu   = 'UT1 '
       var_vv   = 'VT1 '
       err      = 0
+      errcode  = -1
 
       keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
                                                         ' ',var_uu)
@@ -110,8 +113,7 @@
                                                            ' ',var_vv)
       endif
 
-      if ((keyu.lt.0).or.(keyv.lt.0)) err= -1
-      call handle_error(err,'e_intwind','Horizontal winds NOT AVAILABLE')
+      if ((keyu.lt.0).or.(keyv.lt.0)) goto 999
 
       if (flag_uvt1) then
 
@@ -121,7 +123,7 @@
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            if ((keyu.ne.0).or.(keyv.ne.0)) err= -1
+            if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
@@ -130,7 +132,6 @@
                call e_fill_3df (vv,vvn,nisv,njsv,lv,k,1.0,0.0)
             endif
          end do
-         call handle_error(err,'e_intwind','EXTRACTION OF UT1, VT1 FAILED')
 
          if (.not.Pil_bmf_L) then
             call e_write_3df ( uun,nisu,njsu,lv,'UT1 ',unf_casc)
@@ -162,7 +163,7 @@
             if (keyu.lt.0 .or. iu.ne.nic  .or. ju.ne.njc ) err= -1
             if (keyv.lt.0 .or. iv.ne.nic  .or. jv.ne.njc ) err= -1
 
-            if (err.lt.0) cycle
+            if (err.lt.0) goto 999
 
             err = ezdefset ( dstu_gid, src_gid )
             err = ezuvint  ( uu,uv,w1,w2 )
@@ -188,8 +189,6 @@
 
          end do
          
-         call handle_error(err,'e_intwind','PROBLEM WITH UU or VV')
-
          if (.not.Pil_bmf_L) then
             call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
             call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
@@ -210,7 +209,7 @@
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            if ((keyu.ne.0).or.(keyv.ne.0)) err= -1
+            if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv,pni,0,0,0)
                call e_bmfsplitxy2 (vv,nifi,njfi,'PWVV',k,lv,pni,0,0,0)
@@ -219,7 +218,6 @@
                call e_fill_3df (vv,vvn,nifi,njfi,lv,k,1.0,0.0)
             endif
          end do
-         call handle_error(err,'e_intwind','EXTRACTION OF PWUU, PWVV FAILED')
 
          if (.not.Pil_bmf_L) then
             call e_write_3df ( uun,nifi,njfi,lv,'PWUU',unf_casc)
@@ -236,7 +234,9 @@
       else
          deallocate (uun,vvn)
       endif
+
+      errcode = 0 
 !
 ! ---------------------------------------------------------------------
-      return
+ 999  return
       end

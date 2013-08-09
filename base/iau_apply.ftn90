@@ -289,7 +289,8 @@ subroutine iau_apply()
   istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
   call tt2virt(tt1, .true., 'P')
   call pw_update_GPW()
-  call pw_update_UVT('P')
+  call pw_update_UV('P')
+  call pw_update_T('P')
 
   !  Emit message to alert user to IAU application
   if (Lun_out > 0) write (Lun_out,2000) trim(vdate)

@@ -67,8 +67,6 @@
 !     --------------------------------------------
 !
       call tt2virt (pw_tt, .false., pom)
-
-      pw_tt(:,:,1) = 0.
 !
 !     Keep a running total of tendencies for this timestep
 !     ----------------------------------------------------

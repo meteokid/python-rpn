@@ -197,7 +197,7 @@
       endif
 !
       initial_data = trim(F_datev).eq.trim(Step_runstrt_S)
-      if ( initial_data .and. (Lctl_step.eq.0) ) &
+      if ( initial_data .and. (Step_kount.eq.0) ) &
          call adjust_topo2( F_topo, topo_temp, gz_temp(1,1,nka_t)   , &
                            ( .not.Acql_prsanl .and. Lam_blendoro_L ), &
                            l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj )

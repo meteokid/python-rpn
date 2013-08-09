@@ -219,6 +219,11 @@
          !# WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind... winds being staggered they can never be interpoled with nearest/onegrid... reset needed
             if (subid >= 0) err = ezsetopt('USE_1SUBGRID','NO')
          endif
+         if (interp2_S.ne.'NEAREST') then
+            do i=1,ni*nj
+               if ( abs( f(i) ) .lt. 1.0E-30 ) f(i) = 0.
+            end do
+         endif
       else
 !  ONLY possible to copy if analysis is on a Z grid
          e_rdhint3 = 0
@@ -228,10 +233,6 @@
          f(1:ni*nj) = w1(1:ni*nj)
 !
       endif
-!
-      do i=1,ni*nj
-         if ( abs( f(i) ) .lt. 1.0E-30 ) f(i) = 0.
-      end do
 !
  999  deallocate(w1)
 !
