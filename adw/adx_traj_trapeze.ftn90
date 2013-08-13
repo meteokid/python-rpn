@@ -27,8 +27,8 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
    !@arguments
    real, dimension(*) ::   &
         F_lon,             & !O,   upwind longitudes
-        F_lat,             & !I/O, upwind latitudes
-        F_x, F_y, F_z,     & !O,   upwind cartesian positions
+        F_lat,             & !O,   upwind latitudes
+        F_x, F_y, F_z,     & !I/O, upwind cartesian positions
         F_ud,F_vd,F_ua,F_va  !I,   wind components at departure and arrival
    real    :: F_dth          !I,   half-timestep lenght
    integer :: i0,in,j0,jn,k0 !I,   scope of operators
@@ -40,11 +40,14 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
 #include "adx_grid.cdk"
 
    integer :: vnij, i,j,k, n
-   real*8,dimension(i0:in,j0:jn) :: alfa, sinalfa, beta, sinbeta, cosD, secD
+
+   real*8,dimension(i0:in,j0:jn) :: alfa, sinalfa, beta, sinbeta
    real*8,dimension(i0:in,j0:jn) :: pdzD, pdxD, pdyD, latD, lonD
+   real*8,dimension(i0:in,j0:jn) :: pduxD, pduyD, pduzD
+
    real*8 :: pdsxA, pdcxA, pdsyA, pdcyA, pduxA, pduyA, pduzA
-   real*8 :: pdsxD, pdcxD, pdsyD, pdcyD, pduxD, pduyD, pduzD
-   real*8 :: pdxA, pdyA, pdzA, pdsinA, pdsinD, pdcosA, pdsecD
+   real*8 :: pdxA, pdyA, pdzA, pdsinA, pdcosA
+   real*8 :: pdsxD, pdcxD, pdsyD, pdcyD, pdcyDi, pdsinD, pdsecD
 
    !---------------------------------------------------------------------
 
@@ -52,29 +55,50 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
    vnij = (in-i0+1)*(jn-j0+1)
 
 !$omp parallel do private(n, &
-!$omp alfa,sinalfa,beta,sinbeta,cosD,secD, &
+!$omp alfa,sinalfa,beta,sinbeta, &
 !$omp pdzD,pdxD,pdyD,latD,lonD, &
+!$omp pduxD,pduyD,pduzD, &
 !$omp pdsxA,pdcxA,pdsyA,pdcyA,pduxA,pduyA,pduzA, &
-!$omp pdsxD,pdcxD,pdsyD,pdcyD,pduxD,pduyD,pduzD, &
-!$omp pdxA,pdyA,pdzA,pdsinA,pdsinD,pdcosA,pdsecD)
+!$omp pdxA,pdyA,pdzA,pdsinA,pdcosA, &
+!$omp pdsxD,pdcxD,pdsyD,pdcyD,pdcyDi,pdsinD,pdsecD)
 
    do k=k0,adx_lnkm
+
       do j=j0,jn
          do i=i0,in
             n = (k-1)*adx_mlnij + ((j-1)*adx_mlni) + i
+
+            ! sin and cosin of previous upwind positions
+
+            pdsyD = F_z(n)
+            pdcyD = sqrt((1.d0+pdsyD)*(1.d0-pdsyD))
+            pdcyDi= 1.d0 / pdcyD
+            pdsxD = F_y(n) * pdcyDi
+            pdcxD = F_x(n) * pdcyDi
+
+            ! wind in cartesian coordinates at previous Departure positions
+
+            pduxD(i,j) = - F_ud(n) * pdsxD - F_vd(n) * pdcxD * pdsyD
+            pduyD(i,j) =   F_ud(n) * pdcxD - F_vd(n) * pdsxD * pdsyD
+            pduzD(i,j) =   F_vd(n) * pdcyD
+
+            ! angular displacements
+
             alfa(i,j) = sqrt(F_ua(n)**2 + F_va(n)**2) * F_dth
-            beta(i,j) = sqrt(F_ud(n)**2 + F_vd(n)**2) * F_dth
-            latD(i,j) = F_lat(n)
+            beta(i,j) = sqrt( pduxD(i,j)*pduxD(i,j) + pduyD(i,j)*pduyD(i,j) & 
+                                                    + pduzD(i,j)*pduzD(i,j) ) * F_dth
          end do
       end do
+
       call vsin(sinalfa, alfa, vnij)
       call vsin(sinbeta, beta, vnij)
-      call vcos(cosD, latD, vnij)
-      call vrec(secD, cosD, vnij)
 
       do j=j0,jn
          do i=i0,in
             n = (k-1)*adx_mlnij + (j-1)*adx_mlni + i
+
+            ! if very small wind set upwind point to grid point
+            if (beta(i,j) < 1.e-10) go to 99
 
             ! cartesian coordinates of grid points
 
@@ -93,31 +117,18 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
             pduyA =   F_ua(n) * pdcxA - F_va(n) * pdsxA * pdsyA
             pduzA =   F_va(n) * pdcyA
 
-            ! sin and cosin of previous upwind positions
-
-            pdsyD = F_z(n)
-            pdcyD = cosD(i,j)
-            pdsxD = F_y(n) * secD(i,j)
-            pdcxD = F_x(n) * secD(i,j)
-
-            ! wind in cartesian coordinates at previous Departure positions
-
-            pduxD = - F_ud(n) * pdsxD - F_vd(n) * pdcxD * pdsyD
-            pduyD =   F_ud(n) * pdcxD - F_vd(n) * pdsxD * pdsyD
-            pduzD =   F_vd(n) * pdcyD
-
             ! calculation of new Departure positions
 
-            pdsinA = F_dth * sinalfa(i,j) / alfa(i,j)
+            pdsinA = F_dth * sinalfa(i,j) / max(alfa(i,j),1.d-10)
             pdsinD = F_dth * sinbeta(i,j) / beta(i,j)
 
             pdcosA =      sqrt((1.+sinalfa(i,j)) * (1.-sinalfa(i,j)))
             pdsecD = 1.d0/sqrt((1.+sinbeta(i,j)) * (1.-sinbeta(i,j)))
 
-            F_x(n) = ( pdxA * pdcosA - pdsinA * pduxA - pdsinD * pduxD ) * pdsecD
-            F_y(n) = ( pdyA * pdcosA - pdsinA * pduyA - pdsinD * pduyD ) * pdsecD
-            F_z(n) = ( pdzA * pdcosA - pdsinA * pduzA - pdsinD * pduzD ) * pdsecD
-            F_z(n) = min(1.D0,max(1.D0*F_z(n),-1.D0))
+            F_x(n) = ( pdxA * pdcosA - pdsinA * pduxA - pdsinD * pduxD(i,j) ) * pdsecD
+            F_y(n) = ( pdyA * pdcosA - pdsinA * pduyA - pdsinD * pduyD(i,j) ) * pdsecD
+            F_z(n) = ( pdzA * pdcosA - pdsinA * pduzA - pdsinD * pduzD(i,j) ) * pdsecD
+99          F_z(n) = min(1.D0,max(1.D0*F_z(n),-1.D0))
 
             pdxD(i,j) = F_x(n)
             pdyD(i,j) = F_y(n)
@@ -128,7 +139,7 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
 
       ! new Departure positions in spherical coordinates (lat,lon)
 
-      call vasin(latD, pdzD, vnij)
+      call vasin (latD, pdzD, vnij)
       call vatan2(lonD, pdyD, pdxD, vnij)
 
       do j=j0,jn

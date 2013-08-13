@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r ta2t1tx -  Fetch variables ta into t1 and tx
+!**s/r ta2t1tx -  Transfer variables ta into t1
 !
 #include "model_macros_f.h"
 !
@@ -24,8 +24,6 @@
 !     Alain Patoine - april 94
 !
 !revision
-!
-!object
 ! v2_00 - Desgagne M.       - initial MPI version
 ! v2_30 - Edouard  S.       - remove pi' at the top
 ! v2_31 - Desgagne M.       - remove treatment of HU and QC and 
@@ -35,12 +33,7 @@
 ! V4    - Girard-Plante     - Staggered version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! V4_11 - Plante A.         - Add diag var on vertical scope
-!                             recompute fip
-!	
-!arguments
-!	none
-!
-!implicits
+!                             recompute fip	
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "glb_ld.cdk"
@@ -56,11 +49,8 @@
       real, pointer, dimension(:,:,:) :: tr,tra
       real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
       type(gmm_metadata) :: mymeta
-!*
-!     ---------------------------------------------------------------
 !
-!C       1.    Fetch variables ta into t1 and tx
-!              ---------------------------------
+!     ---------------------------------------------------------------
 !
       istat = gmm_get(gmmk_uta_s,uta,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(uta)'
@@ -88,57 +78,23 @@
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
       istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
-!
-      do k=1,l_nk+1
-      do j= 1, l_nj
-      do i= 1, l_ni
-         ut1 (i,j,k) = uta (i,j,k)
-         vt1 (i,j,k) = vta (i,j,k)
-         wt1 (i,j,k) = wta (i,j,k)
-         tt1 (i,j,k) = tta (i,j,k)
-         zdt1(i,j,k) = zdta(i,j,k)
-      enddo
-      enddo
-      enddo
-!
-      do j= 1, l_nj 
-      do i= 1, l_ni
-         tt1 (i,j,l_nk+2) = tta (i,j,l_nk+2)
-         st1 (i,j)        = sta (i,j)
-      enddo
-      enddo
-!
-      if ( .not. Schm_hydro_L ) then
-!
-         istat = gmm_get(gmmk_qta_s,qta,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qta)'
-!
-         do k=0,l_nk+1
-         do j= 1, l_nj 
-         do i= 1, l_ni 
-            qt1(i,j,k) = qta(i,j,k)
-         enddo
-         enddo
-         enddo
-!
-      endif
-!
+      istat = gmm_get(gmmk_qta_s,qta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
+
+      ut1  = uta ; vt1  = vta ; wt1  = wta
+      tt1  = tta ; zdt1 = zdta; qt1  = qta
+      st1  = sta
+
       do n=1,Tr3d_ntr
          istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
          istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
-         do k=1,G_nk+2
-         do j=1,l_nj
-         do i=1,l_ni
-            tr(i,j,k) = tra(i,j,k)
-         end do
-         end do
-         end do
+         tr = tra
       end do
 
 !******************************************************************
-!     Physics fields
+!     Physics BUSPER
 !******************************************************************
-!
+
       if ( Schm_phyms_L ) then
          nullify(BUSPER_3d,BUSPER_3d_digf)
          istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,mymeta)

@@ -1,0 +1,68 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r itf_phy_fillbus
+      subroutine itf_phy_fillbus
+      implicit none
+!
+!author
+!     Michel Desgagne - SUmmer 2013
+!
+!revision
+! v4_70 - Desgagne, M.     - initial version
+!
+#include <gmm.hf>
+#include <msg.h>
+
+      integer istat_src, istat_dst
+      real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
+!     ________________________________________________________________
+!
+      call phy_fillbus
+
+      istat_src = gmm_get('PW_UU:P'   ,tr    )
+      istat_dst = gmm_get('PW_UU_COPY',trcopy)
+
+      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
+         trcopy = tr
+      else
+         call msg (MSG_ERROR,'(itf_phy_fillbus) Probleme making copy of PW_UU:P')
+      endif
+
+      istat_src = gmm_get('PW_VV:P'   ,tr    )
+      istat_dst = gmm_get('PW_VV_COPY',trcopy)
+
+      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
+         trcopy = tr
+      else
+         call msg (MSG_ERROR,'(itf_phy_fillbus) Probleme making copy of PW_VV:P')
+      endif
+
+!      if (C_coupling_L) then
+!         tr2d => atm_local_busin(:,:,1)
+!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_mcp)
+!         tr2d => atm_local_busin(:,:,2)
+!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i7)
+!         tr2d => atm_local_busin(:,:,3)
+!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_tm)
+!         tr2d => atm_local_busin(:,:,4)
+!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_gl)
+!         tr2d => atm_local_busin(:,:,5)
+!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i8)
+!      endif
+!     ________________________________________________________________
+!
+      return
+      end

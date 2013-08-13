@@ -232,14 +232,14 @@
                    if (keylist(i)(4:5).eq.'UU'.or.keylist(i)(4:5).eq.'VV'&
                                               .or.keylist(i)(4:5).eq.'PM') then
                       !momentum levels
-                      call ecris_fst2(tr3(l_minx,l_miny,2),l_minx,l_maxx,l_miny,l_maxy, &
+                      call ecris_fst2(tr3(l_minx,l_miny,1),l_minx,l_maxx,l_miny,l_maxy, &
                             Ver_hyb%m, 'PW'//keylist(i)(4:5), 1.0, 0.0, Level_kind_ip1, &
-                            G_nk+1, indo_s1, nko_s1 , Outd_nbit(ii,set) )
+                            G_nk, indo_s, nko_s , Outd_nbit(ii,set) )
                    else
                       !thermodymics levels
-                      call ecris_fst2(tr3(l_minx,l_miny,2),l_minx,l_maxx,l_miny,l_maxy, &
+                      call ecris_fst2(tr3(l_minx,l_miny,1),l_minx,l_maxx,l_miny,l_maxy, &
                             Ver_hyb%t(2),'PW'//keylist(i)(4:5),1.0,0.0, Level_kind_ip1, &
-                            G_nk+1, indo_s1, nko_s1 , Outd_nbit(ii,set) )
+                            G_nk, indo_s, nko_s , Outd_nbit(ii,set) )
                    endif
                 endif
                 

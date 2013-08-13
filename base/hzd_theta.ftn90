@@ -38,7 +38,7 @@
       type(gmm_metadata) :: mymeta
       integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5
-      real :: pres_t(l_ni,l_nj,G_nk+1),th(LDIST_SHAPE,G_nk+1)
+      real :: pres_t(l_ni,l_nj,G_nk),th(LDIST_SHAPE,G_nk)
 !
 !     _________________________________________________________________
 !
@@ -53,24 +53,24 @@
 
 !$omp parallel shared (pres_t,th)
 !$omp do
-      do k=1,G_nk+1
+      do k=1,G_nk
          pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
          call vspown1 (pres_t(1,1,k),pres_t(1,1,k),real(Dcst_cappa_8),l_ni*l_nj)
-         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
+         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k+1) * pres_t(1:l_ni,1:l_nj,k)
       end do
 !$omp enddo
 !$omp end parallel
 
       if (Hzd_type_S.eq.'HO_IMP') then
-         call hzd_ctrl3 ( th, 'S'      , G_nk+1 )
+         call hzd_ctrl3 ( th, 'S'      , G_nk )
       else
-         call hzd_ctrl3 ( th, 'S_THETA', G_nk+1 )
+         call hzd_ctrl3 ( th, 'S_THETA', G_nk )
       endif
 
 !$omp parallel shared (pres_t,th)
 !$omp do
-      do k=1,G_nk+1
-         tt1(1:l_ni,1:l_nj,k) = th(1:l_ni,1:l_nj,k) / pres_t(1:l_ni,1:l_nj,k)
+      do k=2,G_nk+1
+         tt1(1:l_ni,1:l_nj,k) = th(1:l_ni,1:l_nj,k-1) / pres_t(1:l_ni,1:l_nj,k-1)
       enddo
 !$omp enddo
 !$omp end parallel

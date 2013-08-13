@@ -102,7 +102,7 @@
                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
                                 tmp_meta%l(3)%low,tmp_meta%l(3)%high, &
                                 i0,in-inn,j0,jn-jnn, &
-                                k0,tmp_meta%l(3)%high)
+                                k0,tmp_meta%l(3)%high-1)
                endif
             endif
          end do

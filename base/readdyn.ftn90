@@ -501,12 +501,10 @@
          if ((err_pwuu.eq.0).and.(err_pwvv.eq.0)) then
             err = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus, mymeta)
             err = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus, mymeta)
-            do k=1,g_nkm
-               pw_uu_plus(1:l_ni,1:l_nj,k+1) = hu_temp(1:l_ni,1:l_nj,k)
-               pw_vv_plus(1:l_ni,1:l_nj,k+1) = tt_temp(1:l_ni,1:l_nj,k)
+            do k= 1, G_nk
+               pw_uu_plus(1:l_ni,1:l_nj,k) = hu_temp(1:l_ni,1:l_nj,k)
+               pw_vv_plus(1:l_ni,1:l_nj,k) = tt_temp(1:l_ni,1:l_nj,k)
             end do
-            pw_uu_plus(:,:,1) = 0.
-            pw_vv_plus(:,:,1) = 0.
             Acql_pwuv= .true.
          endif
          
@@ -514,10 +512,9 @@
                                                1,l_ni,1, l_nj,1,nkmax)
          if (err_pwtt.eq.0) then
             err = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus, mymeta)
-            do k=1,g_nkm
-               pw_tt_plus(1:l_ni,1:l_nj,k+1) = hu_temp(1:l_ni,1:l_nj,k)
+            do k= 1, G_nk
+               pw_tt_plus(1:l_ni,1:l_nj,k) = hu_temp(1:l_ni,1:l_nj,k)
             end do
-            pw_tt_plus(:,:,1) = 0.
             Acql_pwtt= .true.
          endif
 

@@ -142,8 +142,8 @@
 
       if (pwupdate .or. switch_on_psadj ) call pw_update_GPW
       if (pwupdate .or. switch_on_eqspng) then
-         call pw_update_UV ('P')
-         call pw_update_T  ('P')
+         call pw_update_UV
+         call pw_update_T
       endif
 !
 !     _________________________________________________________________

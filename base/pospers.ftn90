@@ -39,6 +39,7 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "vth.cdk"
+#include "vt1.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 !
@@ -52,18 +53,25 @@
       nij = l_ni * l_nj
 !
       istat = gmm_get(gmmk_xth_s,xth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(xth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(xth)'
       istat = gmm_get(gmmk_yth_s,yth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(yth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(yth)'
       istat = gmm_get(gmmk_zth_s,zth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(zth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zth)'
 !
       istat = gmm_get(gmmk_xcth_s,xcth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(xcth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(xcth)'
       istat = gmm_get(gmmk_ycth_s,ycth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(ycth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(ycth)'
       istat = gmm_get(gmmk_zcth_s,zcth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'adx_main_2_pos ERROR at gmm_get(zcth)'
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zcth)'
+!
+      istat = gmm_get(gmmk_xct1_s,xct1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(xct1)'
+      istat = gmm_get(gmmk_yct1_s,yct1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(yct1)'
+      istat = gmm_get(gmmk_zct1_s,zct1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zct1)'
 !
       do k = 1, l_nk
       do j = 1, l_nj 
@@ -78,6 +86,10 @@
          zcth(ijk) = sin(yth(ijk))
          xcth(ijk) = cos(xth(ijk)) * pr1
          ycth(ijk) = sin(xth(ijk)) * pr1
+
+         zct1(ijk) = sin(yth(ijk))
+         xct1(ijk) = cos(xth(ijk)) * pr1
+         yct1(ijk) = sin(xth(ijk)) * pr1
       enddo
       enddo
       enddo

@@ -17,13 +17,13 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine tt2virt (F_t, F_tt2tv, F_timelevel_S)
+      subroutine tt2virt2 (F_t, F_tt2tv, Minx,Maxx,Miny,Maxy,Nk)
       implicit none
 #include <arch_specific.hf>
 !
-      character(1) F_timelevel_S
       logical F_tt2tv
-      real F_t(*)
+      integer Minx,Maxx,Miny,Maxy,Nk
+      real F_t(Minx:Maxx,Miny:Maxy,Nk)
 !
 !author
 !     Michel Desgagne - Dec 2009
@@ -39,10 +39,9 @@
 #include "vt1.cdk"
 #include "pw.cdk"
 !
-      type(gmm_metadata) :: mymeta
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tvirt,tt,hu,tr
-      real, dimension(LDIST_SHAPE,l_nk+2) :: sumpqj 
+      real, dimension(LDIST_SHAPE,l_nk) :: sumpqj 
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
@@ -52,27 +51,26 @@
       nullify (tvirt,tt,hu)
 
       if (.not.F_tt2tv) then
-         if (F_timelevel_S .eq. 'M') istat = gmm_get(gmmk_tt0_s, tvirt, mymeta)
-         if (F_timelevel_S .eq. 'P') istat = gmm_get(gmmk_tt1_s, tvirt, mymeta)
+         istat= gmm_get(gmmk_tt1_s       , tvirt)
       else
-         istat = gmm_get(gmmk_pw_tt_plus_s,  tt, mymeta)
+         istat= gmm_get(gmmk_pw_tt_plus_s,    tt)
       endif
 
-      istat = gmm_get('TR/HU:'//F_timelevel_S, hu, mymeta)
+      istat= gmm_get('TR/HU:P', hu)
       
       sumpqj = 0.
       if(Schm_wload_L)then
 !        Sum over Hydrometeors
          do n = 1, Tr3d_ntr
             nullify (tr)
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr)
             if (Tr3d_wload (n)) then
 !$omp parallel private(j,i)
 !$omp do
-               do k = 1, l_nk+2
+               do k = 1, l_nk
                do j = 1, l_nj
                do i = 1, l_ni
-                  sumpqj(i,j,k)=sumpqj(i,j,k)+tr(i,j,k)
+                  sumpqj(i,j,k)=sumpqj(i,j,k)+tr(i,j,k+1)
                end do
                end do
                end do
@@ -83,11 +81,11 @@
       endif
 !
       if (.not.F_tt2tv) then
-         call mfottvh2 ( F_t, tvirt, hu, sumpqj, l_minx, l_maxx, &
-                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 ( F_t, tvirt(l_minx,l_miny,2), hu(l_minx,l_miny,2), sumpqj, &
+                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1,l_ni,1,l_nj, F_tt2tv)
       else
-         call mfottvh2 ( tt, F_t, hu, sumpqj, l_minx, l_maxx, &
-                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 ( tt ,   F_t(l_minx,l_miny,2), hu(l_minx,l_miny,2), sumpqj, &
+                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1,l_ni,1,l_nj, F_tt2tv)
       endif
 !
 !     ________________________________________________________________

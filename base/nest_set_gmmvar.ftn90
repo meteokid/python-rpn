@@ -37,18 +37,13 @@
 !	This subroutine initializes the commons containing the
 !	keys used by the Virtual Memory Manager to identify the
 !	nesting variables
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
 #include "nest.cdk" 
 #include "tr3d.cdk"
-#include "schm.cdk"
 #include "lam.cdk"
 #include "init.cdk"
 !
@@ -90,7 +85,7 @@
       istat = gmm_create(gmmk_nest_t_s, nest_t, meta3d_nk2)
       istat = gmm_create(gmmk_nest_zd_s,nest_zd,meta3d_nk1)
       istat = gmm_create(gmmk_nest_s_s, nest_s, meta2d    )
-      if (.not. Schm_hydro_L) istat = gmm_create(gmmk_nest_q_s,nest_q,meta3d_0nk1)
+      istat = gmm_create(gmmk_nest_q_s,nest_q,meta3d_0nk1 )
 !
       if (.not. Lam_ctebcs_L) then
          istat = gmm_create(gmmk_nest_u_deb_s, nest_u_deb, meta3d_nk1)
@@ -106,10 +101,8 @@
          istat = gmm_create(gmmk_nest_t_fin_s, nest_t_fin, meta3d_nk2)
          istat = gmm_create(gmmk_nest_zd_fin_s,nest_zd_fin,meta3d_nk1)
          istat = gmm_create(gmmk_nest_s_fin_s, nest_s_fin, meta2d    )
-         if (.not. Schm_hydro_L) then
-            istat = gmm_create(gmmk_nest_q_deb_s,nest_q_deb,meta3d_0nk1)
-            istat = gmm_create(gmmk_nest_q_fin_s,nest_q_fin,meta3d_0nk1)
-         endif
+         istat = gmm_create(gmmk_nest_q_deb_s,nest_q_deb,meta3d_0nk1 )
+         istat = gmm_create(gmmk_nest_q_fin_s,nest_q_fin,meta3d_0nk1 )
       endif
 !
       do i=1,Tr3d_ntr

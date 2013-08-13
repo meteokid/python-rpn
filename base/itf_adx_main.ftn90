@@ -43,7 +43,7 @@ subroutine itf_adx_main (F_nb_iter)
    logical :: doAdwStat_L
    integer :: istat, nfields, nk_winds
 
-   real, dimension(:,:,:), allocatable, save :: ud,vd,wd,ua,va,wa
+   real, dimension(:,:,:), allocatable, save :: ud,vd,wd,ua,va,wa,wat
    logical, save :: is_allocated_L = .false.
 
    !---------------------------------------------------------------------
@@ -64,14 +64,15 @@ subroutine itf_adx_main (F_nb_iter)
                 ua(l_ni,l_nj,G_nk), &
                 va(l_ni,l_nj,G_nk), &
                	wa(l_ni,l_nj,G_nk), &
+               wat(l_ni,l_nj,G_nk), &
 		stat=istat)
       call handle_error_l(istat==0,'itf_adx_main','Problem allocating mem')
    endif
 	
-   call itf_adx_get_winds2 (ud,vd,wd,ua,va,wa,l_minx,l_maxx,l_miny,l_maxy,l_nk,l_ni,l_nj,nk_winds)
+   call itf_adx_get_winds2 (ud,vd,wd,ua,va,wa,wat,l_minx,l_maxx,l_miny,l_maxy,l_nk,l_ni,l_nj,nk_winds)
    call itf_adx_get_field_list (fields_lbl,fields_type_L,nfields,NB_FIELDS_MAX)
 
-   call adx_main7 (ud,vd,wd,ua,va,wa, fields_lbl, fields_type_L, nfields, &
+   call adx_main7 (ud,vd,wd,ua,va,wa,wat, fields_lbl, fields_type_L, nfields, &
                    l_minx,l_maxx,l_miny,l_maxy, nk_winds, F_nb_iter, doAdwStat_L)
 
    !---------------------------------------------------------------------

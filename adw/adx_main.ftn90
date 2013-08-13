@@ -16,7 +16,7 @@
 #include <model_macros_f.h>
 
 !/**
-subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
+subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                       F_fields_list, F_fields_type_L, F_nfields, &
                       F_minx,F_maxx,F_miny,F_maxy,F_nk_winds, F_nb_iter, F_doAdwStat_L)
    implicit none
@@ -34,7 +34,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
         F_fields_list         !I, list of gmm labels of fields to advect
    real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nk_winds) :: &
         F_ud, F_vd, F_wd      !I, real destag winds
-   real, dimension(*) :: F_ua, F_va, F_wa
+   real, dimension(*) :: F_ua, F_va, F_wa, F_wat
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -65,7 +65,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
         pxm,pym,pzm
    real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
-        pxt,pyt,pzt
+        pxt,pyt,pzt,wdm
    real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk_winds) :: &
         a_ud,a_vd,a_wd
    real :: dummy
@@ -127,7 +127,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
    call adx_main_2_pos6( F_nb_iter, &
                          pxm , pym , pzm , &
                          a_ud, a_vd, a_wd, &
-                         F_ua, F_va, F_wa, &
+                         F_ua, F_va, F_wa, wdm, &
                          xth , yth , zth , &
                          xcth, ycth, zcth, &
                          xct1, yct1, zct1, &
@@ -136,7 +136,7 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, &
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,adx_mlni,adx_mlnj,k0t,adx_lnkm,i0,in,j0,jn,.true.)
+   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm,adx_mlni,adx_mlnj,k0t,adx_lnkm,i0,in,j0,jn,.true.)
  
    call timing_stop (30)
 

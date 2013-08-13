@@ -34,12 +34,6 @@
 ! v4_00 - Plante & Girard    - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.          - Open top
 !
-!object
-!
-!arguments
-!	none
-!
-!implicits
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "lam.cdk"
@@ -51,14 +45,10 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-!
-!modules
-!
+
       integer k,err,istat,k0
       real*8 one, aaa, xxx, yyy
       parameter( one = 1.d0 )
-      logical test_hydro_L
-      test_hydro_L=.false.
 !
 !     ---------------------------------------------------------------
 
@@ -75,7 +65,7 @@
 !
       if(Schm_autobar_L) Schm_hydro_L = .true.
 !
-      if(Schm_hydro_L.or.test_hydro_L)then
+      if(Schm_hydro_L) then
          Ver_epsilon_8=0.d0
       else
          Ver_epsilon_8=Cstv_RTstr_8/ &

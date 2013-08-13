@@ -18,7 +18,7 @@
 !
 #include "constants.h"
 !
-subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
+subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
      F_ni,F_nj,F_k0,F_nk,i0,in,j0,jn,F_cubic_xy_L)
 !
    implicit none
@@ -28,6 +28,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
    integer i0,in,j0,jn,k00
    real, dimension(F_ni,F_nj,F_nk) :: F_xt,F_yt,F_zt
    real, dimension(F_ni,F_nj,F_nk) :: F_xm,F_ym,F_zm
+   real, dimension(F_ni,F_nj,F_nk) :: F_wat,F_wdm
    logical :: F_cubic_xy_L
 !
 !authors
@@ -82,6 +83,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 !implicits
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
+#include "adx_dyn.cdk"
 !***********************************************************************
    integer vnik, vnikm, i,j,k
 !
@@ -89,6 +91,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
    real*8, dimension(i0:in,adx_lnkm) :: xcos,ycos,xsin,ysin,cx,cy,cz
    real*8, dimension(i0:in,1:adx_lnkm-1) :: yasin,zatan,cxp,cyp,czp
    real*8, dimension(2:adx_lnkm-2) :: w1, w2, w3, w4
+   real*8, dimension(i0:in,adx_lnkm) :: wdt
    real*8 :: lag3, hh, x, x1, x2, x3, x4
    real :: ztop_bound, zbot_bound
    parameter (two = 2.0, half=0.5)
@@ -245,27 +248,54 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
 ! polar coordinates of upstream position for intermediate thermo levels*
 !***********************************************************************
 
-      do k=k00,adx_lnkm-1
-         do i=i0,in
-            F_yt(i,j,k) = yasin(i,k)
-            F_xt(i,j,k) = zatan(i,k)
-            if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
-            if(k.ge.2.and.k.le.adx_lnkm-2)then
-               !Cubic
-               F_zt(i,j,k)= &
-                    w1(k)*F_zm(i,j,k-1)+ &
-                    w2(k)*F_zm(i,j,k  )+ &
-                    w3(k)*F_zm(i,j,k+1)+ &
-                    w4(k)*F_zm(i,j,k+2)
-            else
-               !Linear
-               F_zt(i,j,k) = (F_zm(i,j,k)+F_zm(i,j,k+1))*half               
-            endif
-            ! Must stay in domain
-            F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)            
-            F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
+      if(adx_trapeze_L) then
+   !  if(.false.) then
+         do k=k00,adx_lnkm-1
+            do i=i0,in
+               F_yt(i,j,k) = yasin(i,k)
+               F_xt(i,j,k) = zatan(i,k)
+               if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
+               if(k.ge.2.and.k.le.adx_lnkm-2)then
+                  !Cubic
+                  wdt(i,k)= &
+                       w1(k)*F_wdm(i,j,k-1)+ &
+                       w2(k)*F_wdm(i,j,k  )+ &
+                       w3(k)*F_wdm(i,j,k+1)+ &
+                       w4(k)*F_wdm(i,j,k+2)
+               else
+                  !Linear
+                  wdt(i,k) = (F_wdm(i,j,k)+F_wdm(i,j,k+1))*half
+               endif
+               F_zt(i,j,k)=adx_verZ_8%t(k)-(wdt(i,k)+F_wat(i,j,k))*adx_dt_8*0.5d0
+               ! Must stay in domain
+               F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)
+               F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
+            end do
          end do
-      end do
+      else
+         do k=k00,adx_lnkm-1
+            do i=i0,in
+               F_yt(i,j,k) = yasin(i,k)
+               F_xt(i,j,k) = zatan(i,k)
+               if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
+               if(k.ge.2.and.k.le.adx_lnkm-2)then
+                  !Cubic
+                  F_zt(i,j,k)= &
+                       w1(k)*F_zm(i,j,k-1)+ &
+                       w2(k)*F_zm(i,j,k  )+ &
+                       w3(k)*F_zm(i,j,k+1)+ &
+                       w4(k)*F_zm(i,j,k+2)
+               else
+                  !Linear
+                  F_zt(i,j,k) = (F_zm(i,j,k)+F_zm(i,j,k+1))*half               
+               endif
+               ! Must stay in domain
+               F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)            
+               F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
+            end do
+         end do
+      endif
+
    enddo
 !$omp enddo
 !$omp end parallel

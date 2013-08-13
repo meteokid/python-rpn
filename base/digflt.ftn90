@@ -17,7 +17,7 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine digflt
+     subroutine digflt
 !
       implicit none
 !
@@ -35,13 +35,7 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v1_11 - Plante A.         - Add diag var on vertical scope
 !                             Move w out of non-hydrostatic section
-!
-!object
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "glb_ld.cdk"
@@ -58,7 +52,6 @@
       real, pointer, dimension(:,:,:) :: tr,tra
       real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
       type(gmm_metadata) :: meta_busper,mymeta
-!
 !     __________________________________________________________________
 !
       dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Step_kount ) )
@@ -87,47 +80,31 @@
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wta)'
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qt1)'
+      istat = gmm_get(gmmk_qta_s,qta,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
 !
-      do k=1,l_nk+1
+      do k= 1, l_nk+1
       do j= 1, l_nj 
       do i= 1, l_ni 
-          tta (i,j,k) =  tta(i,j,k) + dfcoef *  tt1(i,j,k)
-          uta (i,j,k) =  uta(i,j,k) + dfcoef *  ut1(i,j,k)
-          vta (i,j,k) =  vta(i,j,k) + dfcoef *  vt1(i,j,k)
-          zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
-          wta (i,j,k) =  wta(i,j,k) + dfcoef *  wt1(i,j,k)
+         tta (i,j,k) =  tta(i,j,k) + dfcoef *  tt1(i,j,k)
+         uta (i,j,k) =  uta(i,j,k) + dfcoef *  ut1(i,j,k)
+         vta (i,j,k) =  vta(i,j,k) + dfcoef *  vt1(i,j,k)
+         zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
+         wta (i,j,k) =  wta(i,j,k) + dfcoef *  wt1(i,j,k)
+         qta (i,j,k) =  qta(i,j,k) + dfcoef *  qt1(i,j,k)
       end do
       end do
       end do
 !
       do j= 1, l_nj
       do i= 1, l_ni
-         tta(i,j,l_nk+2) = tta(i,j,l_nk+2) + dfcoef * tt1(i,j,l_nk+2)
-         sta(i,j)        = sta(i,j)        + dfcoef * st1(i,j)
+         qta (i,j,0)      = qta(i,j,0)      + dfcoef * qt1(i,j,0)
+         tta (i,j,l_nk+2) = tta(i,j,l_nk+2) + dfcoef * tt1(i,j,l_nk+2)
+         sta (i,j)        = sta(i,j)        + dfcoef * st1(i,j)
       end do
       end do
-!
-!**************************************************************
-!     Non-hydrostatic model fields                            
-!**************************************************************
-!
-      if ( .not. Schm_hydro_L )then
-!
-
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qt1)'
-         istat = gmm_get(gmmk_qta_s,qta,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
-!
-         do k=0,l_nk+1
-         do j= 1, l_nj
-         do i= 1, l_ni
-            qta(i,j,k) = qta(i,j,k) + dfcoef * qt1(i,j,k)
-         end do
-         end do
-         end do
-!
-      endif
 
 !***************************************************************
 !     Passive tracers (no passive tracers in linear model)
@@ -164,6 +141,7 @@
          istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
          BUSPER_3d_digf = BUSPER_3d
       endif
+!     __________________________________________________________________
 !
       return
       end

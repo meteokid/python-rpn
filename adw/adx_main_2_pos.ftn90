@@ -20,7 +20,7 @@
 subroutine adx_main_2_pos6( F_nb_iter    ,        &
                             F_px  ,F_py  ,F_pz  , &
                             F_u   ,F_v   ,F_w   , &
-                            F_ua  ,F_va  ,F_wa  , &
+                            F_ua  ,F_va  ,F_wa  , F_wdm, &
                             F_xth ,F_yth ,F_zth , &
                             F_xcth,F_ycth,F_zcth, &
                             F_xct1,F_yct1,F_zct1, &
@@ -42,7 +42,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    real,dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_winds),target::&
         F_u   , F_v   , F_w      !I, real destag winds, may be on super grid
    real,dimension(F_ni,F_nj,F_nk),target::&
-        F_ua,   F_va,   F_wa     !O, Arival winds
+        F_ua,   F_va,   F_wa, F_wdm     !O, Arival winds
    real, dimension(F_ni,F_nj,F_nk) :: &
         F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time 
         F_xcth, F_ycth, F_zcth,& !O, upwind cartesian positions at central time
@@ -86,7 +86,6 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    integer :: i0,in,j0,jn
    real    :: dth
    real, dimension(F_ni,F_nj,F_nk) :: u_d,v_d,w_d
-   real, dimension(F_ni,F_nj,F_nk) :: xgrid,ygrid,zgrid
 
    real,   dimension(:,:,:), pointer :: dummy3d
    real :: ztop_bound, zbot_bound
@@ -131,13 +130,12 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    DO_ITER: do iter = 1, F_nb_iter
 
       !- 3d interpol of u and v winds and new upstream pos along x and y
-      ygrid(:,:,:) = F_yth(:,:,:)
       if (adx_lam_L) then
-         call adx_pos_lam4 (u_d,v_d, F_u,F_v, F_xth,ygrid,F_zth, &
+         call adx_pos_lam4 (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
                             DTH_1,CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (u_d,v_d, F_u,F_v, F_xth,ygrid,F_zth, &
+         call adx_pos_glb4 (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
                             DTH_1,DO_UV, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
@@ -150,8 +148,10 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
             call adx_traj_trapeze (F_xth,F_yth, F_xct1,F_yct1,F_zct1, &
                                    u_d,v_d,F_ua,F_va,dth,i0,in,j0,jn,k0)
          else
-!            call adx_trajsp_rot (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
-!                                                        dth,i0,in,j0,jn,k0)
+!           should replace adx_trajsp2
+!           call adx_traj_midpt   (F_xth,F_yth, F_xcth,F_ycth,F_zcth, &
+!                                  u_d,v_d,          dth,i0,in,j0,jn,k0)
+
             call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
                                    adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
                                        dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)           
@@ -160,14 +160,12 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 
       !- 3D interpol of zeta dot and new upstream pos along zeta
 
-      ygrid(:,:,:) = F_yth(:,:,:)
-
       if (adx_lam_L) then
-         call adx_pos_lam4 (w_d,v_d, F_w,dummy3d, F_xth,ygrid,F_zth, &
+         call adx_pos_lam4 (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
                             DTH_1,CLIP_TRAJ, DO_W, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (w_d,v_d, F_w,dummy3d, F_xth,ygrid,F_zth, &
+         call adx_pos_glb4 (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
                             DTH_1,DO_W, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
@@ -204,28 +202,29 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
       F_px=F_xth
       F_py=F_yth
       F_pz=F_zth
+      F_wdm=w_d
    else
 
-   if (Adw_gccsa_L) then
-       call adx_trajex_gccsa (F_px, F_py, u_d,v_d,&
-                  F_xct1,F_yct1,F_zct1,dth, i0,in,j0,jn,k0)
-   else
-       call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
-                     F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
-   endif
+      if (Adw_gccsa_L) then
+          call adx_trajex_gccsa (F_px, F_py, u_d,v_d,&
+                     F_xct1,F_yct1,F_zct1,dth, i0,in,j0,jn,k0)
+      else
+          call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
+                        F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
+      endif
 
 !$omp parallel
-   if(Adx_extrap_L)then
+      if(Adx_extrap_L)then
 !$omp do
-      do k = k0,F_nk
-         do j = j0,jn
-         do i = i0,in
-            F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
-            F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
-            F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
+         do k = k0,F_nk
+            do j = j0,jn
+            do i = i0,in
+               F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
+               F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
+               F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
+            enddo
+            enddo
          enddo
-         enddo
-      enddo
 !$omp enddo
       else
 !$omp do

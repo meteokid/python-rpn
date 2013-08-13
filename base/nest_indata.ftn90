@@ -37,14 +37,7 @@
 ! v4_4  - Plante A.       - Add computation of wt1
 !                           Catch error on gmm
 !
-!object
-!	
-!arguments
-!	none
-!
-!implicits
 #include "gmm.hf"
-#include "schm.cdk"
 #include "glb_ld.cdk"
 #include "vtx.cdk"
 #include "nest.cdk"
@@ -56,7 +49,7 @@
       type(gmm_metadata) :: mymeta
       integer err,errbcs1,errbcs2,n,id,k,istat,istatg
       real, pointer, dimension(:,:,:) :: tr1
-!*
+!
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
@@ -79,15 +72,9 @@
       istat = gmm_get(gmmk_nest_s_fin_s,nest_s_fin,mymeta)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_s_fin)'
       istatg=min(istat,istatg)
+      istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_q_fin)'
       istatg=min(istat,istatg)
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,mymeta)
-         if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_q_fin)'
-         istatg=min(istat,istatg)
-      else
-         nullify (nest_q_fin)
-      endif
-
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(fis0)'
       istatg=min(istat,istatg)

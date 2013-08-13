@@ -12,74 +12,67 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !/**
-function itf_phy_update2(F_apply_L) result(F_istat)
-   implicit none
+      subroutine itf_phy_update3 (F_apply_L)
+      implicit none
+
    !@objective
    !@arguments
    logical,intent(in) :: F_apply_L
-   !@return
-   integer :: F_istat
-   !@author  Michel Desgagne  -  Spring 2012
-   !@revisions
-   !  2012-06, S.Chamberland: use bus_fold
+   !@author  Michel Desgagne  -  SUmmer 2013
    !**/
+
 #include <arch_specific.hf>
-#include <rmnlib_basics.hf>
 #include <gmm.hf>
-#include <msg.h>
+#include "glb_ld.cdk"
 #include "tr3d.cdk"
-   include "phy_itf.inc"
-   integer,parameter :: MAXNTR = 1024
-   integer,parameter :: NVARS = 3
-   character(len=*),parameter :: VARLIST_S(NVARS) = &
-        (/'PW_TT:P','PW_UU:P','PW_VV:P'/)
-   character(len=*),parameter :: FOLD_BUS_S = 'Dd'
-   character(len=*),parameter :: FOLD_BUS0_S = 'Dt'
 
-   logical,save :: init_L = .false.
-   integer,save :: ntr = 0
-   character(len=GMM_MAXNAMELENGTH),save :: trlist_S(MAXNTR)
-
-   character(len=GMM_MAXNAMELENGTH) :: prefix_S,basename_S,time_S,ext_S,trname_S
-   integer :: ivar, ignore
-   !---------------------------------------------------------------
-   F_istat = RMN_OK
-   if (.not.init_L) then
-      trlist_S = ' '
-      ntr = gmm_keys(trlist_S,'TR/')
-      init_L = .true.
-   endif
-
+      character(len=GMM_MAXNAMELENGTH) :: trname_S
+      integer nelements, init, busidx, istat,k
+      real, pointer :: data3d(:,:,:), minus(:,:,:)
+!
+!-----------------------------------------------------------------
+!
    APPLY: if (F_apply_L) then
-      ! Update tracers
-      do ivar = 1,ntr
-         call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
-         if (time_S /= ':P') cycle
-         call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trlist_S(ivar)))
-         ignore = phy_bus2gmm(trlist_S(ivar),trlist_S(ivar),FOLD_BUS_S)
-      enddo
-      ! Update state vars
-      do ivar = 1,NVARS
-         call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(VARLIST_S(ivar)))
-         F_istat = min(phy_bus2gmm(VARLIST_S(ivar),VARLIST_S(ivar),FOLD_BUS_S),F_istat)
-      enddo
-   else
-      !# Note: Secial case at step=0, tracers are not updated at surface
-      do ivar = 1,ntr
-         call gmmx_name_parts(trlist_S(ivar),prefix_S,basename_S,time_S,ext_S)
-         if (basename_S == 'HU' .or. any(Tr3d_username_S(1:Tr3d_userntr) == basename_S) &
-              .or. time_S /= ':P') cycle
-         trname_S = trim(prefix_S)//trim(basename_S)//':P'//ext_S
-         call msg(MSG_INFOPLUS,'(itf_phy_update2) '//trim(trname_S))
-         ignore = phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S)
-         !TODO: would it be best/faster to do a gmm 3d copy?
-         trname_S = trim(prefix_S)//trim(basename_S)//':M'//ext_S
-         ignore = phy_bus2gmm(trname_S,trlist_S(ivar),FOLD_BUS0_S)
-      enddo
-   endif APPLY
 
-   !---------------------------------------------------------------
-   return
-end function itf_phy_update2
+      do k=1, Tr3d_ntr
+         trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
+         istat = gmm_get(trim(trname_S),data3d)
+         call phy_unfold (data3d, trim(trname_S), 'D', 2, l_nk+1, &
+                          l_minx, l_maxx, l_miny, l_maxy, l_nk+2)
+      enddo
+
+      istat = gmm_get ('PW_UU:P',data3d)
+      call phy_unfold (data3d, 'PW_UU:P', 'D', 1, l_nk, &
+                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+
+      istat = gmm_get ('PW_VV:P',data3d)
+      call phy_unfold (data3d, 'PW_VV:P', 'D', 1, l_nk, &
+                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+
+      istat = gmm_get ('PW_TT:P',data3d)
+      call phy_unfold (data3d, 'PW_TT:P', 'D', 1, l_nk, &
+                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+
+      call itf_phy_apply2 ()
+
+   else
+
+      !# Note: Secial case at step=0, tracers are not updated at surface
+      do k=1, Tr3d_ntr
+         if (trim(Tr3d_name_S(k)) == 'HU') cycle
+         trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
+         istat = gmm_get(trim(trname_S),data3d)
+         call phy_unfold (data3d, trim(trname_S), 'D', 2, l_nk+1, &
+                          l_minx, l_maxx, l_miny, l_maxy, l_nk+2)
+         trname_S = 'TR/'//trim(Tr3d_name_S(k))//':M'
+         istat = gmm_get(trim(trname_S),minus)
+         minus = data3d
+      end do
+      
+   endif APPLY
+!
+!-----------------------------------------------------------------
+!
+      return
+      end subroutine itf_phy_update3

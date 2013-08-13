@@ -65,11 +65,12 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "grd.cdk"
+#include "obus.cdk"
 #include "itf_phy_buses.cdk"
 
       include "phy_itf.inc"
 
-      integer,external :: itf_phy_prefold_opr,itf_phy_update2
+      integer,external :: itf_phy_prefold_opr
 
       integer,parameter :: MAX_COMMBLOC_SWAP = 10
 
@@ -83,7 +84,7 @@
       real,pointer,save :: BUSPER3d(:,:) => null()
       real,pointer,save :: BUSVOL3d(:,:) => null()
 
-      integer :: j, obussiz, err
+      integer :: j, n, obussiz, err
       real :: gxfi(G_ni+1), gyfi(G_nj), prip2
       real, dimension(:,:), allocatable :: obusval
 !
@@ -96,9 +97,10 @@
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
       call pw_shuffle
-      call pw_update_UV ('P')
-      call pw_update_T  ('P')
+      call pw_update_UV
+      call pw_update_T
       call pw_update_GPW
+!      call pw_glbstat
 
       if (.not.init_L) then
          call itf_phy_gdef2(lcore_phy_gid, l_phy_gid, g_phy_gid, gxfi, gyfi)
@@ -118,8 +120,6 @@
          if (.not.itf_phy_busper_init_L) call itf_phy_geom3 (l_phy_gid, err)
       endif
 
-      call itf_phy_prep()
-
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new 
       ! communicator every call - we hit a limit after about 500 on AIX
 
@@ -130,11 +130,10 @@
                        F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
                        Path_phy_S,geofilename_S)
 
-      err = min(phy_gmm2phy(), err)
-
-      call handle_error(err,'itf_phy_step','Problem getting input data') 
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
+
+      call itf_phy_fillbus ()
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
@@ -143,24 +142,20 @@
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0) )
 
-      err = itf_phy_update2(F_stepno > 0)
-      call handle_error(err,'itf_phy_step','Problemes in itf_phy_update') 
-
-      call itf_phy_apply ( F_stepno.gt.0 )
+      call itf_phy_update3 ( F_stepno > 0 )
 
       if (out3_newout_L) then
          err = phy_output(dateo,nint(cstv_dt_8),F_stepno,l_phy_gid,g_phy_gid,reduc_core,trim(Path_outcfg_S),Path_output_S)
 
       else
-         call iniobus(obussiz)
+         call iniobus (obussiz)
          allocate (obusval(l_ni*l_nj,obussiz))
          obusval = 999999.
-!$omp parallel do
-         do j = 1, phydim_nj
-            call itf_phy_extract(BUSENT3d(1,j), BUSPER3d(1,j), BUSVOL3d(1,j), &
-                 obusval, F_stepno, j, phydim_nk )
+         do n=1,Obus_top
+            call phy_unfold (obusval(1,obus_offset(n)), obus_var_S(n), &
+                             obus_bus_S(n), 1, obus_shp(n),            &
+                             1,l_ni,1,l_nj,obus_shp(n) )
          end do
-!$omp end parallel do
          call itf_phy_output (obusval,l_ni,l_nj,F_lctl_step)
          deallocate (obusval)
       endif

@@ -25,32 +25,18 @@
 !     Plante A.           - May 2004 
 !
 !revision
-! v4_05 - Lepine M.         - VMM replacement with GMM
 !
-!object
-!
-!arguments
-!       none
-!
-!implicits
 #include "gmm.hf"
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
-#include "schm.cdk"
-#include "lun.cdk"
 #include "zblen.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"
-#include "p_geof.cdk"
-#include "geomg.cdk"
 #include "theo.cdk"
-!
-!
+
       type(gmm_metadata) :: mymeta
       integer err,i,j,k, longueur
       integer n,istat
-
       real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk),ubar
 
 !----------------------------------------------------------------------
@@ -65,27 +51,22 @@
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(tt1)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(st1)'
-      if (.not.Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
-      else
-         nullify(qt1)
-      endif
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
  
       call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
 
-      ubar=mtn_flo/Dcst_rayt_8
+      ubar= mtn_flo/Dcst_rayt_8
 
       if(Theo_case_S .ne. 'MTN_SCHAR' ) then
          call apply(ut1  ,ubar,betav_m,LDIST_DIM, l_nk)
          call apply(vt1  ,0.  ,betav_m,LDIST_DIM, l_nk)
-         if(.not.Schm_hydro_L) then
-            call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM,l_nk)
-         endif
+         call apply(qt1(l_minx,l_miny,1),0.,betav_m,LDIST_DIM,l_nk)
          if(Zblen_spngtt_L)then
             call apply_tt(tt1(l_minx,l_miny,2),betav_t,st1,LDIST_DIM,l_nk)
          endif
       endif
+
       call apply(wt1(l_minx,l_miny,2),0.,betav_t,LDIST_DIM,l_nk)
  
 !----------------------------------------------------------------------
@@ -102,7 +83,6 @@
 
       integer  DIST_DIM, Nk 
 
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 
       real ff(DIST_SHAPE,Nk),value,betav(DIST_SHAPE,Nk)
@@ -139,7 +119,6 @@
 
       integer  DIST_DIM, Nk 
 
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"

@@ -59,12 +59,9 @@
       istat = gmm_get(gmmk_tt1_s ,tt1 ,mymeta)
       istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
       istat = gmm_get(gmmk_st1_s ,st1 ,mymeta)
-!     call glbstat2 (st1,'st1',"nest_in",LDIST_DIM,1,1,1,G_ni,1,G_nj,1,1)
-
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         istat = gmm_get(gmmk_nest_q_fin_s,nest_q_fin,mymeta)
-      endif
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      istat = gmm_get(gmmk_nest_q_fin_s,nest_q_fin,mymeta)
+      istat = gmm_get(gmmk_nest_q_s    ,nest_q    ,mymeta)
 !
 !     copying values from UT1 to nest_u variables
 !
@@ -81,10 +78,8 @@
          nest_t_fin  = tt1
          nest_zd_fin = zdt1
          nest_s_fin  = st1
-         if (.not. Schm_hydro_L) then
-            istat = gmm_get(gmmk_nest_q_fin_s,nest_q_fin,mymeta)
-            nest_q_fin = qt1
-         endif
+         nest_q_fin  = qt1
+
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(tr_name,tr1,mymeta)
@@ -118,11 +113,10 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk+1)
          if (.not. Schm_hydro_L) then
-             istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
-             nest_q = qt1
-             call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2,&
+            nest_q = qt1
+            call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2,&
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-             call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
+            call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
          endif
 
 !        Convert wind to real orientation
@@ -156,7 +150,7 @@
 !        Convert the wind back
 !$omp parallel private(i,j)
 !$omp do
-      do k= 1, G_nk+1
+         do k= 1, G_nk+1
          do j= 1, l_nj
          do i= 1, l_niu
             ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
@@ -167,7 +161,7 @@
             vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
          enddo
          enddo
-      enddo
+         enddo
 !$omp enddo
 !$omp end parallel
 
@@ -181,10 +175,10 @@
             call rpn_comm_xch_halo(trf, LDIST_DIM,l_ni,l_nj,G_nk+2, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
             call yyg_scalbc_mono(tr1,trf,LDIST_DIM,G_nk+2)
-!     call glbstat2(tr1,'TR:P',"nestini",l_minx,l_maxx,l_miny,l_maxy,1,G_nk+2, 1,G_ni,1,G_nj,1,G_nk+2)
          end do
   
       else
+
 !     Ordinary LAM
          istat = gmm_get(gmmk_nest_u_s ,nest_u ,mymeta)
          istat = gmm_get(gmmk_nest_v_s ,nest_v ,mymeta)
@@ -198,10 +192,8 @@
          nest_t  = tt1
          nest_zd = zdt1
          nest_s  = st1
-         if (.not. Schm_hydro_L) then
-            istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
-            nest_q = qt1
-         endif
+         nest_q  = qt1
+
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(tr_name,tr1,mymeta)

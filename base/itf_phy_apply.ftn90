@@ -17,11 +17,9 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine itf_phy_apply ( F_apply_L )
+      subroutine itf_phy_apply2
       implicit none
 #include <arch_specific.hf>
-!
-      logical,intent(IN) :: F_apply_L
 !
 !author
 !     Michel Roch - rpn - april 1994
@@ -60,7 +58,7 @@
 
       type(gmm_metadata) :: mymeta
       integer i, j, k, km1,istat,lght, soit
-      real con(YDIST_SHAPE), tdu(LDIST_SHAPE,p_nk),tdv(LDIST_SHAPE,p_nk)
+      real con(YDIST_SHAPE), tdu(LDIST_SHAPE,G_nk),tdv(LDIST_SHAPE,G_nk)
       character(len=3) :: bus_S
 !     __________________________________________________________________
 !
@@ -70,8 +68,6 @@
 ! on U are therefore valid with the scope (4,G_ni-4) (3,G_nj-2) and 
 ! physics tendencies on V  with the scope (3,G_ni-2) (4,G_nj-4).
 !
-      if (.not. F_apply_L) return
-
       if (.not.init_L) then
          bus_S = 'VOL'
          call phy_busindx ('PHYTD_UU', bus_S, UU_indx, lght, soit)
@@ -84,7 +80,7 @@
 
       if (TT_indx.gt.0) then
          istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
-         call tt2virt (tt1, .true., 'P')
+         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
          call pw_update_GPW
       endif
 
@@ -98,25 +94,25 @@
 
 !$omp parallel private(j)
 !$omp do
-         do k= 1, p_nk
+         do k= 1, G_nk
             tdu(l_minx:l_maxx,l_miny:0,k) = 0. ; tdu(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
             tdv(l_minx:l_maxx,l_miny:0,k) = 0. ; tdv(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
             tdu(l_minx:0,l_miny:l_maxy,k) = 0. ; tdu(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             tdv(l_minx:0,l_miny:l_maxy,k) = 0. ; tdv(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             do j= 1, l_nj
-               tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k+1)- &
-                                  pw_uu_copy(1:l_ni,j,k+1)) *con(j)
-               tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k+1)- &
-                                  pw_VV_copy(1:l_ni,j,k+1)) *con(j)
+               tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k)- &
+                                  pw_uu_copy(1:l_ni,j,k)) *con(j)
+               tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k)- &
+                                  pw_VV_copy(1:l_ni,j,k)) *con(j)
             end do
          end do
 !$omp enddo
 !$omp end parallel
 
-         call itf_phy_uvgridscal (tdu, tdv, LDIST_DIM, p_nk, .false. )
+         call itf_phy_uvgridscal (tdu, tdv, LDIST_DIM, G_nk, .false. )
 
 !$omp parallel do
-         do k=1,l_nk+1
+         do k= 1, G_nk
             ut1(1:l_niu,:,k) = ut1(1:l_niu,:,k) + tdu(1:l_niu,:,k+1-1)
             vt1(:,1:l_njv,k) = vt1(:,1:l_njv,k) + tdv(:,1:l_njv,k+1-1)
          end do

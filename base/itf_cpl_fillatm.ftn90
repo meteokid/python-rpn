@@ -60,6 +60,18 @@
 
       if (.not.C_coupling_L) return
 
+      print*, 'STOP IN ITF_CPL_FILLATM'
+      stop
+! This routine does not work anymore because level G_nk+2
+! of pw_* variables doest not exist anymore
+! diag_ttes must also be adjusted because of G_nk+2 not available
+
+
+
+
+
+
+
       if (first) then
          if (Rstri_rstn_L.and.oce_hotstart) goto 1001
       endif

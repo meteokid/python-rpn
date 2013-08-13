@@ -100,14 +100,18 @@
 
          wlnpi_m(:,:,0)= Cstv_Ztop_8
          do k=1,G_nk+1
-            wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k+1))
-            wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k  ))
+            wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k  ))
+            wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k-1))
          enddo
          if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
          wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
 
          call out_padbuf (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
          call out_padbuf (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+
+         Out_ip3 = 0
+         if (Out3_ip3.eq.-1) Out_ip3 = Lctl_step
+         if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
 
          do jj=1, outd_sorties(0,Lctl_step)
 

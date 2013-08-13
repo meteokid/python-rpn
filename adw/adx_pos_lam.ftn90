@@ -36,15 +36,32 @@ subroutine adx_pos_lam4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
         F_u1,F_u2   !I, field to interpol
    real, dimension(F_ni,F_nj,F_nk) :: F_wrkx1,F_wrky1  !O, F_dt * result of interp
+   integer :: num
+   logical cubic_traj_L
+   cubic_traj_L=.false.
+!  need to implement cubic interpolation from superwinds !
+!  need to implement cubic interpolation from superwinds !
+!  need to implement cubic interpolation from superwinds !
    !**/
    !---------------------------------------------------------------------
+
    call msg(MSG_DEBUG,'adx_pos_lam')
    if (F_cliptraj_L) &
         call adx_cliptraj3(F_xth,F_yth,F_i0,F_in,F_j0,F_jn,F_ni,F_nj,F_k0,F_nk,'')  
 
-   call adx_trilin_opt4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
-        F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
-        F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
+   if(cubic_traj_L) then
+      num=F_ni*F_nj*F_nk
+      call adx_tricub_lag3d7(F_wrkx1, F_u1, F_xth,F_yth,F_zth,num, &
+                             .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+      if(F_has_u2_L) &
+      call adx_tricub_lag3d7(F_wrky1, F_u2, F_xth,F_yth,F_zth,num, &
+                             .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+   else
+      call adx_trilin_opt4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
+           F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
+           F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
+   endif
+
    call msg(MSG_DEBUG,'adx_pos_lam [end]')
    !---------------------------------------------------------------------
    return

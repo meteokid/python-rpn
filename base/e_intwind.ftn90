@@ -204,24 +204,24 @@
                                                         ' ','PWVV')
       if ((keyu.ge.0).and.(keyv.ge.0)) then
          err= 0
-         do k=1,lv
+         do k=1,lv-1
             keyu = e_rdhint3 (uu,dstf_gid,nifi,njfi,'PWUU',na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
-               call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv,pni,0,0,0)
-               call e_bmfsplitxy2 (vv,nifi,njfi,'PWVV',k,lv,pni,0,0,0)
+               call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv-1,pni,0,0,0)
+               call e_bmfsplitxy2 (vv,nifi,njfi,'PWVV',k,lv-1,pni,0,0,0)
             else
-               call e_fill_3df (uu,uun,nifi,njfi,lv,k,1.0,0.0)
-               call e_fill_3df (vv,vvn,nifi,njfi,lv,k,1.0,0.0)
+               call e_fill_3df (uu,uun,nifi,njfi,lv-1,k,1.0,0.0)
+               call e_fill_3df (vv,vvn,nifi,njfi,lv-1,k,1.0,0.0)
             endif
          end do
 
          if (.not.Pil_bmf_L) then
-            call e_write_3df ( uun,nifi,njfi,lv,'PWUU',unf_casc)
-            call e_write_3df ( vvn,nifi,njfi,lv,'PWVV',unf_casc)
+            call e_write_3df ( uun,nifi,njfi,lv-1,'PWUU',unf_casc)
+            call e_write_3df ( vvn,nifi,njfi,lv-1,'PWVV',unf_casc)
          endif         
       endif
 

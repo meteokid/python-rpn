@@ -85,7 +85,6 @@
       Hzd_lnr = 0.
 
       Schm_trapeze_L=.false.
-      Schm_superwinds_L=.false.
       Schm_Adw_extrap_L=.true.
       SCHM_MOIST_L=.false.
       Schm_phyms_L = .false.
@@ -265,25 +264,34 @@
 
       else if ( Theo_case_S.eq.'NOFLOW') then
 
-         Step_total   = 10800
-         Out3_etik_s  = 'NOFLOW'
-         Height_top_8 = 5000.d0
+         Out3_etik_s  ='4000m_hydro'
+         Schm_hydro_L =.true.
 
-         mtn_tzero   = 243.16
-         cstv_tstr_8 = 273.16
-         Cstv_dt_8   = 1.
-
-         Grd_ni = 21
+         Step_total  = 200
+         mtn_hwx=1
+         Cstv_dt_8=1.0
+         Grd_ni=101
          Grd_nj = 1
-         G_nk   = 20
          Grd_dx = 250.                                 !  in meters
+         cstv_tstr_8 = 273.16
+         Height_top_8 = 10000.d0
+         G_nk      = 80                    ! dz=125m
+         mtn_hght  = 4000.
+         mtn_tzero = 243.16
 
-         Schm_hydro_L = .false.
+         ! Stable for hydro with these values (max mtn slope .gt. 82 deg)
+         ! Isotherme tstar-tzero=30
+         !  mtn_hght  = 4000.
+         !  mtn_tzero = 243.16
+         ! Barely stable for nonhydro with these values (max mtn slope .lt. 55 deg)
+         ! Isotherme tstar-tzero=0
+         !  Out3_etik_s  = '800m_nh'
+         !  Schm_hydro_L   = .false.
+         !  Schm_trapeze_L = .true.
+         !  mtn_hght  = 800.
+         !  mtn_tzero = 273.16
 
          mtn_nstar= -1
-         mtn_hwx  = 5
-         mtn_flo  = 0.
-         mtn_hght = 0.
 
          zblen_L = .false.
          Lam_blend_H=0

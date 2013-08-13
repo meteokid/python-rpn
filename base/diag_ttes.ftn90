@@ -31,7 +31,6 @@
 ! v3_31 - Desgagne M.       - initial version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 !
-!implicits
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
@@ -48,18 +47,19 @@
 !
       nullify (pw_tt_plus,st1,humod)
       istat = gmm_get(gmmk_pw_tt_plus_s ,pw_tt_plus,mymeta)
-      istat = gmm_get(gmmk_qt1_s        ,st1       ,mymeta)
+      istat = gmm_get(gmmk_st1_s        ,st1       ,mymeta)
       istat = gmm_get('TR/HU:P'         ,humod     ,mymeta)
-!
+
       tt(:,:) = pw_tt_plus (1:l_ni,1:l_nj,ki)
       hu(:,:) = humod      (1:l_ni,1:l_nj,ki)
-!
+
       ninj = ni*nj
       mynk = 1
+
       px(:,:) = exp ( Ver_a_8%t(ki) + Ver_b_8%t(ki)*st1(1:l_ni,1:l_nj) )
-!!$      call mhuaes (es, hu,tt,px,px,0, .true., .false.,ninj,1,ninj)
+
       call mhuaes3(es,hu,tt,px,WATERONLY,ninj,mynk,ninj)
-!
+
       es(:,:) = max(0.,es(:,:))
 !
 !     ________________________________________________________________

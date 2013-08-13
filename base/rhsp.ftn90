@@ -13,22 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-!*s/r rhsp_2 - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
-!              save the results for next iteration in the o's
+!*s/r rhsp - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
+!            save the results for next iteration in the o's
 !
 #include "model_macros_f.h"
 !
-      subroutine rhsp_3 ( F_oru, F_orv, F_orc,F_ort,F_orw,   F_orf, &
+      subroutine rhsp_3 ( F_oru, F_orv, F_orc,F_ort,F_orw,   F_orf   , &
                           F_ruw1,F_rvw1,F_ru, F_rv, F_nest_u,F_nest_v, &
-                          F_u,   F_v,   F_w,  F_t,  F_s,     F_zd, &
-                          F_q,   F_fis, &
-                          DIST_DIM, Nk )
-!
+                          F_u,   F_v,   F_w,  F_t,  F_s,     F_zd    , &
+                          F_q,   F_fis, DIST_DIM, Nk )
       implicit none
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-!
       real F_oru   (DIST_SHAPE,  Nk)  ,F_orv   (DIST_SHAPE,  Nk)  , &
            F_orc   (DIST_SHAPE,  Nk)  ,F_ort   (DIST_SHAPE,  Nk)  , &
            F_orw   (DIST_SHAPE,  Nk)  ,F_orf   (DIST_SHAPE,  Nk)  , &
@@ -56,12 +53,6 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
 !
-!object
-!     see rhs
-!
-!arguments
-!
-!implicits
 #include "glb_ld.cdk"
 #include "cori.cdk"
 #include "cstv.cdk"

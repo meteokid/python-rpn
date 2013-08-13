@@ -87,15 +87,15 @@
       flag_m_v = FLAG_LVL_M+GMM_FLAG_STAG_Y  !momentum lvl, v-pt
       flag_s_f = 0                           !2d-surf lvl,  phi-pt
 
-      mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_u)
-      mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk,flag_m_v)
-      mymeta3d_nk1_u = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_u)
-      mymeta3d_nk1_v = SET_GMMUSR_FLAG(meta3d_nk1,flag_m_v)
-      mymeta3d_nk1_t = SET_GMMUSR_FLAG(meta3d_nk1,flag_t_f)
-      mymeta3d_nk2_t = SET_GMMUSR_FLAG(meta3d_nk2,flag_t_f)
+      mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_u)
+      mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_v)
+      mymeta3d_nk1_u = SET_GMMUSR_FLAG(meta3d_nk1 ,flag_m_u)
+      mymeta3d_nk1_v = SET_GMMUSR_FLAG(meta3d_nk1 ,flag_m_v)
+      mymeta3d_nk1_t = SET_GMMUSR_FLAG(meta3d_nk1 ,flag_t_f)
+      mymeta3d_nk2_t = SET_GMMUSR_FLAG(meta3d_nk2 ,flag_t_f)
       mymeta3d_0nk1_m= SET_GMMUSR_FLAG(meta3d_0nk1,flag_m_f)
-      mymeta2d_s     = SET_GMMUSR_FLAG(meta2d,flag_s_f)
-      mymetasc_p00   = SET_GMMUSR_FLAG(metasc,flag_s_f)
+      mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
+      mymetasc_p00   = SET_GMMUSR_FLAG(metasc     ,flag_s_f)
 
 !     2. Initialize comdeck for variables at time t0
 !        -------------------------------------------
@@ -118,7 +118,6 @@
       istat = min(gmm_create(gmmk_st0_s,st0,mymeta2d_s,flag_r_n),istat)
       istat = min(gmm_create(gmmk_p00_s,p00,mymetasc_p00,flag_r_n),istat)
 
-      !TODO: ? should qt0 be defined only if (.not. Schm_hydro_L) ?
       istat = min(gmm_create(gmmk_qt0_s,qt0,mymeta3d_0nk1_m,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
@@ -186,10 +185,7 @@
 
       nullify(qt1,zdt1,st1)
 
-      !TODO: should qt1 be defined only if (.not. Schm_hydro_L) 
-      mymeta = mymeta3d_0nk1_m
-      if (.not.Schm_hydro_L) &
-           mymeta = SET_GMMUSR_FLAG(mymeta,FLAG_NEST + FLAG_DIGF)
+      mymeta = SET_GMMUSR_FLAG(mymeta3d_0nk1_m,FLAG_NEST + FLAG_DIGF)
       istat = min(gmm_create(gmmk_qt1_s,qt1,  mymeta,flag_r_z),istat)
 
       mymeta = SET_GMMUSR_FLAG(mymeta3d_nk1_t,FLAG_NEST + FLAG_DIGF)
@@ -254,33 +250,33 @@
       nullify(pw_uu_dyn  ,pw_vv_dyn  ,pw_ww_dyn,  pw_tt_dyn)
       nullify(pw_uu_copy ,pw_vv_copy)
 
-      !TODO: specify on what level (m/t) are the following PW_ vars
       istat = GMM_OK
-      istat = min(gmm_create(gmmk_pw_uu_plus_s ,pw_uu_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_vv_plus_s ,pw_vv_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_ww_plus_s ,pw_ww_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_tt_plus_s ,pw_tt_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_pm_plus_s ,pw_pm_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_pt_plus_s ,pw_pt_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_gz_plus_s ,pw_gz_plus ,meta3d_nk2,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_uu_plus_s  ,pw_uu_plus  ,meta3d_nk,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_vv_plus_s  ,pw_vv_plus  ,meta3d_nk,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_ww_plus_s  ,pw_ww_plus  ,meta3d_nk,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_tt_plus_s  ,pw_tt_plus  ,meta3d_nk,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_pm_plus_s  ,pw_pm_plus  ,meta3d_0nk1,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_pt_plus_s  ,pw_pt_plus  ,meta3d_0nk1,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_gz_plus_s  ,pw_gz_plus  ,meta3d_nk,GMM_FLAG_RSTR),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_ww_moins_s ,pw_ww_moins ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_ww_moins_s ,pw_ww_moins ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_0nk1),istat)
+      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_dyn_s ,pw_uu_dyn ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_vv_dyn_s ,pw_vv_dyn ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_ww_dyn_s ,pw_ww_dyn ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_tt_dyn_s ,pw_tt_dyn ,meta3d_nk2),istat)
+      istat = min(gmm_create(gmmk_pw_uu_dyn_s   ,pw_uu_dyn   ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_vv_dyn_s   ,pw_vv_dyn   ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_ww_dyn_s   ,pw_ww_dyn   ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_tt_dyn_s   ,pw_tt_dyn   ,meta3d_nk),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_copy_s ,pw_uu_copy ,meta3d_nk2),istat)
-      istat = min(gmm_create(gmmk_pw_vv_copy_s ,pw_vv_copy ,meta3d_nk2),istat)
-!
+      istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk),istat)
+      istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk),istat)
+
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
+!
 !     ---------------------------------------------------------------
       return
       end subroutine set_vt

@@ -69,7 +69,7 @@
       integer i,j,k,l,i00,err,istat
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf
-      real hauteur, tempo
+      real hauteur, tempo, dx, slp, slpmax
       real*8 pdsc1
       real, pointer    , dimension(:,:,:) :: tr
 !*
@@ -196,10 +196,24 @@
          F_t (i,j,g_nk+2) = mtn_tzero
          psurf(i,j) = Cstv_pref_8 *  &
                       exp( -Dcst_grav_8 * F_topo(i,j)/ &
-                           (Dcst_cpd_8 * Cstv_tstr_8) )	
+                           (Dcst_Rgasd_8 * mtn_tzero ) )	
          F_s(i,j) = log(psurf(i,j)/Cstv_pref_8)
       enddo
       enddo         
+
+!     calculate maximum mountain slope
+
+      slpmax=0
+      dx=Dcst_rayt_8*Grd_dx*Dcst_pi_8/180.
+      do j=1,l_nj
+      do i=1,l_ni
+      slp=abs(F_topo(i,j)-F_topo(i-1,j))/dx
+      slpmax=max(slp,slpmax)
+      enddo
+      enddo
+      slpmax=(180.d0/Dcst_pi_8)*atan(slpmax)
+
+      print*,"SLPMAX=",slpmax," DEGREES"
 
       endif
 !
