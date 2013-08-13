@@ -23,7 +23,7 @@ CHM         = $(CHM_VERSION) $(CHMLIBS)
 #CHM         = chm
 
 #PHY         = rpnphy_stubs
-PHY         = rpnphy
+PHY         = rpnphy rpnphy_surface
 CLASSLIBS   = rpnphy_class
 
 #PROF          = prof_stubs
