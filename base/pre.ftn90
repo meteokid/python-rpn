@@ -52,6 +52,7 @@
 !
       type(gmm_metadata) :: mymeta
       integer istat
+      real, dimension(:,:,:), pointer :: nestt
 !     __________________________________________________________________
 !
       if (Lun_debug_L) write (Lun_out,1000)
@@ -86,31 +87,21 @@
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(orhsu)'
       istat = gmm_get(gmmk_orhsv_s,orhsv,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(orhsv)'
-      nullify(rhsw)
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rhsw)'
-      endif
-      nullify(nest_t)
-      if (Schm_opentop_L) then
-         istat = gmm_get(gmmk_nest_t_s,nest_t,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(nest_t)'
-      endif
-
+      istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(rhsw)'
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'pre ERROR at gmm_get(fis0)'
 
-      if (associated(nest_t)) then
-         call prep_2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
-                       xct1, yct1, zct1 , fis0 , rhsc, rhst , &
-                       rhsw, rhsf, orhsu, orhsv, rhsb,        &
-                       nest_t(l_minx,l_miny,2), LDIST_DIM, l_ni, l_nj, l_nk )
+      if (G_lam) then
+         istat = gmm_get(gmmk_nest_t_s,nestt)
       else
-         call prep_2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
-                       xct1, yct1, zct1 , fis0 , rhsc, rhst , &
-                       rhsw, rhsf, orhsu, orhsv, rhsb,        &
-                       nest_t,                  LDIST_DIM, l_ni, l_nj, l_nk )
+         allocate (nestt(l_minx:l_minx,l_miny:l_miny,2:2))
       endif
+
+      call prep_2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
+           xct1, yct1, zct1 , fis0 , rhsc, rhst , &
+           rhsw, rhsf, orhsu, orhsv, rhsb,        &
+           nestt(l_minx,l_miny,2), LDIST_DIM, l_ni, l_nj, l_nk )
 
 1000  format(3X,'PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE)')
 !     __________________________________________________________________

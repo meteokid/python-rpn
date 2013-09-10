@@ -271,11 +271,13 @@
 !     Compute Virtual temperature
 !     Always With water loading
 
-      qh = 0.
-      do n= 1,7 ! WARNING: this lopp control is wrong...
-         nullify (tr1)
-         istat = gmm_get('TR/'//h2o_liste_S(n)//':P',tr1,mymeta)
-         if (.not.GMM_IS_ERROR(istat)) then
+      if (Schm_wload_L) then
+         
+         qh = 0.
+         do n= 1,7 ! WARNING: this lopp control is wrong...
+            nullify (tr1)
+            istat = gmm_get('TR/'//h2o_liste_S(n)//':P',tr1,mymeta)
+            if (.not.GMM_IS_ERROR(istat)) then
             do k=1,G_nk+2
             do j=1,l_nj
             do i=1,l_ni
@@ -283,18 +285,24 @@
             enddo
             enddo
             enddo
-         endif
-      enddo
-      call mfottvh2 (w3,tt1,hut1,qh,l_minx,l_maxx, &
-                     l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-      do k=1,l_nk+2
-      do j=1,l_nj
-      do i=1,l_ni
-         vt (i,j,k) = tt1(i,j,k) + w3(i,j,k) * qh(i,j,k)
-      enddo
-      enddo
-      enddo
+            endif
+         enddo
+         call mfottvh2 (w3,tt1,hut1,qh,l_minx,l_maxx, &
+                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
+         do k=1,l_nk+2
+            do j=1,l_nj
+               do i=1,l_ni
+                  vt (i,j,k) = tt1(i,j,k) + w3(i,j,k) * qh(i,j,k)
+               enddo
+            enddo
+         enddo
 
+      else
+
+         vt= tt1
+
+      endif
+         
 !     Store PTOP (PT)
       ptop (:,:) = Cstv_ptop_8
       l_ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)

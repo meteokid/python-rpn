@@ -93,14 +93,9 @@
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(st1)'
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(fis0)'
-
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(qt1)'
-      else
-         nullify (qt1)
-      endif
-
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(qt1)'
+      
       call bcs_ftype2 (ifd_ftype, Step_runstrt_S)
 
       if (ifd_ftype.eq.'3DF') then

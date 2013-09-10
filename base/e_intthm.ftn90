@@ -260,7 +260,7 @@
             if (Pil_bmf_L) kk=1
             if (e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, E_tr3d_name_S(i), &
                            na_t(k),ip2a,ip3a,' ',tva, .true.,.false.   , &
-                           'CUBIC',e_fu_anal,6).lt.0) wk2(:)=E_tr3d_sval(i)
+                           'CUBIC',e_fu_anal,6).lt.0) hun(:,:)=E_tr3d_sval(i)
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (hun,nis,njs,E_trname_S(i),k,lv_t,pni,0,0,0)
             endif

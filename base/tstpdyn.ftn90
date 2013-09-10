@@ -114,7 +114,7 @@
       nj = l_maxy-l_miny+1
       allocate (nl_u(ni,nj,l_nk),nl_v(ni,nj,l_nk),nl_t(ni,nj,l_nk), &
                 nl_c(ni,nj,l_nk),nl_f(ni,nj,l_nk),nl_b(ni,nj))
-      if (.not.Schm_hydro_L) allocate (nl_w(ni,nj,l_nk))
+      allocate (nl_w(ni,nj,l_nk))
 
       ni = ldnh_maxx-ldnh_minx+1
       nj = ldnh_maxy-ldnh_miny+1
@@ -138,7 +138,7 @@
       end do
 
       deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,rhs_sol,lhs_sol)
-      if (.not.Schm_hydro_L) deallocate (nl_w)
+      deallocate (nl_w)
 !
 !     ---------------------------------------------------------------
 !

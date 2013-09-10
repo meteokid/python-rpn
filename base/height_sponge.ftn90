@@ -65,13 +65,9 @@
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(tt1)'
       istat = gmm_get(gmmk_st1_s,st1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(st1)'
-      if (.not.Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
-      else
-         nullify(qt1)
-      endif
- 
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
+      
       call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
 
       ubar=mtn_flo/Dcst_rayt_8
