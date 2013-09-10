@@ -48,7 +48,7 @@
       else
 
          istat= rpn_comm_topo_2( F_npts, F_min, F_max, F_lni, F_npartiel, &
-                        F_halo, F_start, F_alongx_L, F_fill_L, 3, .false. )
+                        F_halo, F_start, F_alongx_L, F_fill_L, 0, .false. )
 
          decomp2 = .not.(istat.lt.0)
          if (F_lowestsize.gt.0) decomp2= (decomp2) .and. (F_lni.ge.F_lowestsize)
