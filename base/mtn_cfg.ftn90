@@ -87,7 +87,6 @@
       Schm_trapeze_L=.false.
       Schm_superwinds_L=.false.
       Schm_Adw_extrap_L=.true.
-      SCHM_MOIST_L=.false.
       Schm_phyms_L = .false.
 
       G_halox=3
