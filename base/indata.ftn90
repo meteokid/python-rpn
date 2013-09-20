@@ -141,16 +141,19 @@
       call predat6 ( ut1, vt1, tt1, zdt1, wt1, st1, &
                      l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
+      if (G_lam) call nest_init ()
+
       if (.not.Acql_pwuv) call pw_update_UV ('P')
       if (.not.Acql_pwtt) call pw_update_T  ('P')
       call pw_update_GPW
+
+      call pw_glbstat()
 
       call frstgss ()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 
-      if (G_lam) call nest_init ()
 
 !     ---------------------------------------------------------------
 !

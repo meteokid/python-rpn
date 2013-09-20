@@ -195,7 +195,8 @@ End Interface
       call timing_stop ( 71 )
       call timing_start ( 72, '3DF_interp')
 
-      if ( initial_data .and. (Lctl_step.eq.0) ) then
+     
+      if ( initial_data .and. (Step_kount.eq.0) ) then
          allocate ( meqr(l_ni,l_nj))
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
@@ -259,7 +260,7 @@ End Interface
 
       do n=1,Tr3d_ntr
          nullify (trp)
-         if ( initial_data .and. (Lctl_step.eq.0) ) then
+         if ( initial_data .and. (Step_kount.eq.0) ) then
             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,mymeta)
          else
             istat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,mymeta)
