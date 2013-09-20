@@ -58,7 +58,10 @@
 !                                 interpolation is performed
 !                    e_rdhint3=  2 if nomvar_S is found with no specific 
 !                                 ip123 and no horizontal interpolation 
-!                                 is required
+!                                 is required (appears to be unused)
+!                    e_rdhint3=  3 if nomvar_S is found and horizontal
+!                                 interpolation is used only to map points
+!                                 onto the same grid as 'nearest'
 !*                  
       integer,external :: fstinf,fstprm,fstluk,ezqkdef,ezdefset,ezsetopt,ezsint
       integer,external :: ezgetopt,ezsetival,ezgetival,ip1_all,samesubgrid
@@ -193,6 +196,7 @@
                 if (subid >= 0) then
                    print *,'U grid contains sub grid match to ',nisrc,'>=', &
                             nicore,';',njsrc/2,'>=',njcore,';',subid
+                   same_grid_L = .true.
                 endif
              endif
 
@@ -205,7 +209,6 @@
           endif
 
       endif
-
       if ( must_interpo_L ) then
          if ((interp2_S.eq.'NEAREST').and.(.not.same_grid_L)) then
             print*, 'CANNOT PROCEED'
@@ -216,14 +219,13 @@
             err = ezsetopt ('INTERP_DEGREE', interp2_S)
             err = ezsint(f, w1)
             e_rdhint3 = 1
+            if (same_grid_L .and. interp2_S.eq.'NEAREST') e_rdhint3 = 3
          !# WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind... winds being staggered they can never be interpoled with nearest/onegrid... reset needed
             if (subid >= 0) err = ezsetopt('USE_1SUBGRID','NO')
          endif
-         if (interp2_S.ne.'NEAREST') then
-            do i=1,ni*nj
-               if ( abs( f(i) ) .lt. 1.0E-30 ) f(i) = 0.
-            end do
-         endif
+         do i=1,ni*nj
+            if ( abs( f(i) ) .lt. 1.0E-30 ) f(i) = 0.
+         end do
       else
 !  ONLY possible to copy if analysis is on a Z grid
          e_rdhint3 = 0
@@ -233,6 +235,7 @@
          f(1:ni*nj) = w1(1:ni*nj)
 !
       endif
+!
 !
  999  deallocate(w1)
 !
