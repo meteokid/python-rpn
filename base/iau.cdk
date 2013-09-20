@@ -10,8 +10,8 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! IAU_MAX_TRACERS    | The maximum tracers that can be incremented.    |
-! IAU_NCOEF          | The number of coefficients for weight functions.|
-! Iau_coef           | List of coefficients for weighting functions.   |
+! Iau_cutoff         | Filter cutoff period for Iau_weight_S='sin' in  |
+!                    |          hours (default=6).                     |
 ! Iau_interval       | The number of seconds between increment fields. |
 ! Iau_period         | The number of seconds over which IAU will be    |
 !                    |          will be run (typically the length of   |
@@ -26,11 +26,10 @@
 !
 #endif
 !
-      integer, parameter :: IAU_MAX_TRACERS=250,IAU_NCOEF=3
-      real :: Iau_interval,Iau_period
-      real, dimension(IAU_NCOEF) :: Iau_coef
+      integer, parameter :: IAU_MAX_TRACERS=250
+      real :: Iau_interval,Iau_period,Iau_cutoff
       character(len=64) :: Iau_weight_S
       character(len=4), dimension(IAU_MAX_TRACERS) :: Iau_tracers_S
 !
-      common / iaur / Iau_interval,Iau_period,Iau_coef
+      common / iaur / Iau_interval,Iau_period,Iau_cutoff
       common / iauc / Iau_tracers_S,Iau_weight_S

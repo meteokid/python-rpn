@@ -68,7 +68,7 @@
       Lam_blend_H = 10
       Lam_blend_T =  0
 !
-      Iau_coef = 0.
+      Iau_cutoff = 6.
       Iau_interval = -1.
       Iau_period = -1.
       Iau_tracers_S = ''
