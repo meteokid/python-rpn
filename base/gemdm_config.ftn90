@@ -131,7 +131,9 @@
       enddo
  81   continue
       if ((Out3_nundr.gt.0).and.(Out3_lieb_nk.gt.0)) Out3_lieb_nk=0
-!
+
+      call handle_error_L(.not.(Out3_fullplane_L.and..not.G_lam),'Out3_fullplane_L not yet implemented for GU grids')
+
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 !
       if (Step_runstrt_S == 'NIL') then
