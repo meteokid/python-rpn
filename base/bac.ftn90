@@ -68,6 +68,7 @@
 !*
       type(gmm_metadata) :: mymeta
       integer :: istat, i0, j0, k0, in, jn
+      real, dimension(:,:,:), pointer :: nestq
 !     __________________________________________________________________
 !
       if (Schm_autobar_L.and.Williamson_case.eq.1) return
@@ -93,9 +94,14 @@
       istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(zdt0)'
 
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsw)'
+      istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsw)'
+      istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
+
+      if (G_lam) then
+         istat = gmm_get(gmmk_nest_q_s,nestq)
+      else
+         allocate (nestq(l_minx:l_minx,l_miny:l_miny,1:1))
       endif
 
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
@@ -113,30 +119,12 @@
 
       k0 = 1+Lam_gbpil_T
 
-      nullify(qt0,nest_q)
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
-         if (Schm_opentop_L) then
-            istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
-            call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
-                       ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
-                       st0 , zdt0, qt0(l_minx,l_miny,1), nest_q(l_minx,l_miny,1), &
-                       rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
-                       nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
-         else
-            call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
-                       ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
-                       st0 , zdt0, qt0(l_minx,l_miny,1), nest_q                 , &
-                       rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
-                       nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
-         endif
-      else
-         call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
-                    ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
-                    st0 , zdt0, qt0                 , nest_q                 , &
-                    rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
-                    nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
-      endif
+      call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                    , &
+           ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
+           st0 , zdt0, qt0(l_minx,l_miny,1), nestq (l_minx,l_miny,1), &
+           rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
+           nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
+
       if (Grd_yinyang_L) call yyg_bacwindst (ut0,vt0,zdt0,tt0,st0,qt0,LDIST_DIM,l_nk)
 
 !

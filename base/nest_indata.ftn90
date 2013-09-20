@@ -80,14 +80,9 @@
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_s_fin)'
       istatg=min(istat,istatg)
       istatg=min(istat,istatg)
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,mymeta)
-         if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_q_fin)'
-         istatg=min(istat,istatg)
-      else
-         nullify (nest_q_fin)
-      endif
-
+      istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin,mymeta)
+      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_q_fin)'
+      istatg=min(istat,istatg)
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(fis0)'
       istatg=min(istat,istatg)

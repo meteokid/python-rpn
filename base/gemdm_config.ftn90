@@ -276,6 +276,23 @@
 
           Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
+!
+      if (Init_dfnp <= 0) then
+         if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602) 
+         Init_balgm_L = .false.
+      endif
+      Init_dfnp = max(0,Init_dfnp)
+      if (Init_balgm_L) then
+         if ( mod(Init_dfnp,2) .ne. 1 ) then
+            if (Lun_out.gt.0) write(Lun_out,6600) Init_dfnp
+            return
+         endif
+         if ( Init_dfnp .eq. 1 ) then
+            if (Lun_out.gt.0) write(Lun_out,6601)
+            return
+         endif
+      endif
+!
       if (Lctl_debug_L) then
          istat = gmm_verbosity(GMM_MSG_DEBUG)
          istat = wb_verbosity(WB_MSG_DEBUG)
@@ -299,6 +316,9 @@
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
+ 6600 format (/' PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN'/)
+ 6601 format (/' PROBLEM: THE VARIABLE Init_dfnp cannot be equal to 1'/)
+ 6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)

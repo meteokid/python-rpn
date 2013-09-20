@@ -140,17 +140,13 @@
          istatg=min(istat,istatg)
       endif
 !
-      nullify(orhsw,qt1)
-      if (.not. Schm_hydro_L) then
+      istat = gmm_get(gmmk_orhsw_s,orhsw,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsw)'
+      istatg=min(istat,istatg)
 !
-         istat = gmm_get(gmmk_orhsw_s,orhsw,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(orhsw)'
-         istatg=min(istat,istatg)
-!
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(qt1)'
-         istatg=min(istat,istatg)
-      endif
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'rhs ERROR at gmm_get(qt1)'
+      istatg=min(istat,istatg)
 !
       call handle_error_l(.not.GMM_IS_ERROR(istatg),'rhs','gmm_get error, see above')
 !
@@ -158,24 +154,13 @@
 !     cycle of Crank-Nicholson procedure only
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-      if (associated(qt1)) then
-         call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, &
-              orhsw,  orhsf, &
-              ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
-              ut1,   vt1,   wt1(LDIST_SHAPE,2:),    tt1(LDIST_SHAPE,2:),&
-              st1,   zdt1, &
-              qt1(LDIST_SHAPE,1:), fis0, &
-              LDIST_DIM,l_nk  )
-      else
-         call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, &
-              orhsw,  orhsf, &
-              ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
-              ut1,   vt1,   wt1(LDIST_SHAPE,2:),    tt1(LDIST_SHAPE,2:),&
-              st1,   zdt1, &
-              qt1,   fis0, &
-              LDIST_DIM,l_nk  )
-      endif
-
+      call rhsp_3  ( orhsu, orhsv, orhsc,  orhst, &
+           orhsw,  orhsf, &
+           ruw1,  rvw1,  rhsu,   rhsv,nest_u, nest_v, &
+           ut1,   vt1,   wt1(LDIST_SHAPE,2:),    tt1(LDIST_SHAPE,2:),&
+           st1,   zdt1, &
+           qt1(LDIST_SHAPE,1:), fis0, &
+           LDIST_DIM,l_nk  )
 !     
 !     Pour debug
 !      if (Acid_test_L) then

@@ -76,14 +76,9 @@
       if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fis0)'
       istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fiptx)'
-
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(qt0)'
-      else
-         nullify(qt0)
-      endif
-
+      istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(qt0)'
+      
       i0=1   +pil_w
       in=l_ni-pil_e
       j0=1   +pil_s 
@@ -91,19 +86,10 @@
 
       k0=1+Lam_gbpil_T
 
-      if (associated(qt0)) then
-
-         call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f    , &
-                     ut0 , vt0 , tt0(l_minx,l_miny,2), st0  , &
-                     qt0(l_minx,l_miny,1), F_rhs_sol, rhsc  , &
-                     fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
-      else
-
-         call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f   , &
-                     ut0 , vt0 , tt0(l_minx,l_miny,2), st0 , &
-                     qt0 , F_rhs_sol, rhsc                 , &
-                     fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
-      endif
+      call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f    , &
+           ut0 , vt0 , tt0(l_minx,l_miny,2), st0  , &
+           qt0(l_minx,l_miny,1), F_rhs_sol, rhsc  , &
+           fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
 
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')
 !
