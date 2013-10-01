@@ -405,7 +405,7 @@
             F_w(1:l_ni,1:l_nj,k) = work(1:l_ni,1:l_nj,k)
          end do
       else
-         do k=2,G_nkm+1
+         do k=2,G_nkm
             F_w(1:l_ni,1:l_nj,k) = w_temp(1:l_ni,1:l_nj,k)
          end do
       endif
