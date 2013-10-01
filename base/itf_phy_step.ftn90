@@ -71,8 +71,6 @@
 
       integer,external :: itf_phy_prefold_opr,itf_phy_update2
 
-      integer,parameter :: MAX_COMMBLOC_SWAP = 10
-
       character(len=512),save :: geofilename_S = ' '
       logical,save :: init_L = .false.
       integer,save :: lcore_phy_gid = -1, l_phy_gid = -1, g_phy_gid = -1
@@ -123,8 +121,7 @@
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new 
       ! communicator every call - we hit a limit after about 500 on AIX
 
-      if (F_stepno < MAX_COMMBLOC_SWAP) &
-           call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
+      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
       err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
                        F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
@@ -133,8 +130,7 @@
       err = min(phy_gmm2phy(), err)
 
       call handle_error(err,'itf_phy_step','Problem getting input data') 
-      if (F_stepno < MAX_COMMBLOC_SWAP) &
-           call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
+      call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
