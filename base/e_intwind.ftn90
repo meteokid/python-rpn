@@ -123,7 +123,7 @@
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            if ((keyu.ne.3).or.(keyv.ne.3)) goto 999
+            if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
@@ -209,7 +209,7 @@
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),ip2a, &
                      ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            if ((keyu.ne.3).or.(keyv.ne.3)) goto 999
+            if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv,pni,0,0,0)
                call e_bmfsplitxy2 (vv,nifi,njfi,'PWVV',k,lv,pni,0,0,0)

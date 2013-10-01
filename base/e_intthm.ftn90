@@ -321,7 +321,7 @@
             if (Pil_bmf_L) kk=1
             keyt = e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'PWTT',na_t(k),ip2a, &
                            ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            if (keyt.ne.3) err= -1
+            if (keyt.ne.0) err= -1
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (qn,nis,njs,'PWTT',k-1,lv_t-1,pni,0,0,0)
             endif
