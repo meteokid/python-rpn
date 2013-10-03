@@ -60,4 +60,11 @@ int c_ezsetival(char * option, int value); // This appears to pass a literal int
 int c_fstopi(char *optname,int lvl,int setget);
 // Add grid release function
 int c_gdrls(int gdid);
+
+// Add wind conversion routines
+int c_gdwdfuv(int gdid, float * spdllout, float * dirllout, float * uugdin,
+               float * vvgdin, float * lat, float * lon, int npts);
+int c_gduvfwd(int gdid, float * uugdout, float * vvgdout, float * spdllin,
+               float * dirllin, float * lat, float * lon, int npts);
+
 #endif
