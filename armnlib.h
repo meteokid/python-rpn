@@ -67,4 +67,17 @@ int c_gdwdfuv(int gdid, float * spdllout, float * dirllout, float * uugdin,
 int c_gduvfwd(int gdid, float * uugdout, float * vvgdout, float * spdllin,
                float * dirllin, float * lat, float * lon, int npts);
 
+// Scattered point interpolation
+
+// (lat,lon) scalar interpolation
+int c_gdllsval(int gdid, float * zvals, float * zin, float * lat, float * lon, int n);
+// (x,y) scalar interpolation
+int c_gdxysval(int gdid, float * zvals, float * zin, float * x, float * y, int n);
+// (lat,lon) vector interpolation
+int c_gdllvval(int gdid, float * uuvals, float * vvvals, float * uuin, float * vvin,
+               float * lat, float * lon, int n);
+// (x,y) vector interpolation
+int c_gdxyvval(int gdid, float * uuvals, float * vvvals, float * uuin, float * vvin,
+               float * x, float * y, int n);
+
 #endif
