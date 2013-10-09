@@ -1237,20 +1237,20 @@ static PyObject *Fstdc_gdwdfuv(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(uuin,RPN_DT_ANY) < 0 || uuin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter uuin is not a Fortran/Contiguous, float32 array");
+    if (uuin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter uuin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(vvin,RPN_DT_ANY) < 0 || vvin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter vvin is not a Fortran/Contiguous, float32 array");
+    if (vvin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter vvin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lat,RPN_DT_ANY) < 0 || lat->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lat is not a Fortran/Contiguous, float32 array");
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lon,RPN_DT_ANY) < 0 || lon->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lon is not a Fortran/Contiguous, float32 array");
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
         return NULL;
     }
 
@@ -1361,20 +1361,20 @@ static PyObject *Fstdc_gduvfwd(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(uvin,RPN_DT_ANY) < 0 || uvin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter uvin is not a Fortran/Contiguous, float32 array");
+    if (uvin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter uvin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(wdin,RPN_DT_ANY) < 0 || wdin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter wdin is not a Fortran/Contiguous, float32 array");
+    if (wdin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter wdin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lat,RPN_DT_ANY) < 0 || lat->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lat is not a Fortran/Contiguous, float32 array");
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lon,RPN_DT_ANY) < 0 || lon->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lon is not a Fortran/Contiguous, float32 array");
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
         return NULL;
     }
 
@@ -1484,12 +1484,12 @@ static PyObject * Fstdc_gdllfxy(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(xin,RPN_DT_ANY) < 0 || xin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter xin is not a Fortran/Contiguous, float32 array");
+    if (xin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter xin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(yin,RPN_DT_ANY) < 0 || yin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter yin is not a Fortran/Contiguous, float32 array");
+    if (yin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter yin is not a float32 array");
         return NULL;
     }
 
@@ -1593,12 +1593,12 @@ static PyObject * Fstdc_gdxyfll(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(latin,RPN_DT_ANY) < 0 || latin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter latin is not a Fortran/Contiguous, float32 array");
+    if (latin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter latin is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lonin,RPN_DT_ANY) < 0 || lonin->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lonin is not a Fortran/Contiguous, float32 array");
+    if (lonin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lonin is not a float32 array");
         return NULL;
     }
 
@@ -1735,12 +1735,12 @@ static PyObject *Fstdc_gdllval(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(lat,RPN_DT_ANY) < 0 || lat->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lat is not a Contiguous, float32 array");
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(lon,RPN_DT_ANY) < 0 || lon->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter lon is not a Contiguous, float32 array");
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
         return NULL;
     }
 
@@ -1892,12 +1892,12 @@ static PyObject *Fstdc_gdxyval(PyObject *self, PyObject *args) {
     }
 
     // Check input arrays for validity
-    if (isPyFtnArrayValid(x,RPN_DT_ANY) < 0 || x->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter x is not a Contiguous, float32 array");
+    if (x->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter x is not a float32 array");
         return NULL;
     }
-    if (isPyFtnArrayValid(y,RPN_DT_ANY) < 0 || y->descr->type_num != NPY_FLOAT) {
-        PyErr_SetString(FstdcError,"Parameter y is not a Contiguous, float32 array");
+    if ( y->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter y is not a float32 array");
         return NULL;
     }
 
