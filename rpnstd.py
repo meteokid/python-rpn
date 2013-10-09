@@ -774,6 +774,64 @@ class RPNGrid(RPNParm):
 ##         """Inverse operation of reshapeDataForScrip (use helper)"""
 ##         return self.helper.reshapeDataFromScrip(self.__dict__,data)
 
+    def getLatLon(self,xin=None,yin=None):
+        """ Get the latitude and longitude coordinates of the given (x,y) pairs;
+            If no pairs are specified, then return the latitude and longitude
+            coordinates for every grid point."""
+
+        # Step zero: if called with (None,None), build coordinate arrays
+        if (xin is None and yin is None):
+            xin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            yin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            xin[:,:] = numpy.array(range(1,self.shape[0]+1)).reshape((self.shape[0],-1))
+            yin[:,:] = numpy.array(range(1,self.shape[1]+1)).reshape((-1,self.shape[1]))
+        
+        # Step one: check to see if xin and yin are the right kind of arrays
+        # we need: numpy arrays of dtype float32 that have contiguous allocation.
+        # In order to be liberal about what we'll accept, we can do this as a
+        # try/catch block, with 'catch' making a numpy array from scratch.
+        try:
+            # An explicit check for numpy.ndarray is necessary, because the
+            # scalar types implement dtype and flags members that will
+            # fool the following lines; that causes a segfault in C-code that
+            # expects a legitimate array.
+            assert(isinstance(xin,numpy.ndarray))
+            assert(xin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous or xin.flags.f_contiguous)
+        except (AssertionError):
+            # One of those conditions was not true, so copy the input
+            # data to a numpy array.  Any further incompatibility,
+            # such as for the datatype, will raise an exception that
+            # propagates up.  For best compatibility with other routines,
+            # we'll also default to Fortran-ordering.  
+            xin = numpy.array(xin,dtype=numpy.float32,order='F')
+        
+        # Step two: check whether the ordering of xin and yin match:
+        try:
+            assert(isinstance(yin,numpy.ndarray))
+            assert(yin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous == yin.flags.c_contiguous)
+            assert(xin.flags.f_contiguous == yin.flags.f_contiguous)
+        except (AssertionError):
+            # Perform the same kind of allocation for yin as we might have
+            # to do for xin.  Since we want the ordering to match xin but
+            # don't care whether it's C or Fortran-ordering, we can use
+            # Python's equivalent of the ternary operator.
+            yin = numpy.array(yin,dtype=numpy.float32,
+                            order=(xin.flags.c_contiguous and 'C' or 'F'))
+
+        if (xin.shape != yin.shape):
+            raise ValueError('Input arays xin and yin must have the same shape')
+
+        # Get interpolation arguments
+        ezia = self.getEzInterpArgs(False)
+
+        # Call gdllfxy
+        return Fstdc.gdllfxy(xin,yin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0'])
+
+        pass
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
