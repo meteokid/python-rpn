@@ -831,7 +831,50 @@ class RPNGrid(RPNParm):
             ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
             ezia['xy_ref'],ezia['hasRef'],ezia['ij0'])
 
-        pass
+    def getXY(self,latin=None,lonin=None):
+        """ Get the (x,y) coordinates corresponding to every given (lat,lon)
+            input pair; this may be off the grid for coordinates that are
+            themselves not on the grid.  If no input is provided, return the
+            (x,y) arrays corresponding to every grid point.  This is probably
+            not useful."""
+        # Step zero: if called with (None,None), build coordinate arrays
+        if (latin is None and lonin is None):
+            xin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            yin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            xin[:,:] = numpy.array(range(1,self.shape[0]+1)).reshape((self.shape[0],-1))
+            yin[:,:] = numpy.array(range(1,self.shape[1]+1)).reshape((-1,self.shape[1]))
+            return(xin,yin)
+       
+        # Step one: Perform the same set of input checks as getLatLon
+        try:
+            assert(isinstance(latin,numpy.ndarray))
+            assert(latin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
+        except (AssertionError):
+            latin = numpy.array(latin,dtype=numpy.float32,order='F')
+        
+        # Step two: check whether the ordering of latin and lonin match:
+        try:
+            assert(isinstance(lonin,numpy.ndarray))
+            assert(lonin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous == lonin.flags.c_contiguous)
+            assert(latin.flags.f_contiguous == lonin.flags.f_contiguous)
+        except (AssertionError):
+            lonin = numpy.array(lonin,dtype=numpy.float32,
+                            order=(latin.flags.c_contiguous and 'C' or 'F'))
+
+        if (latin.shape != lonin.shape):
+            raise ValueError('Input arays latin and lonin must have the same shape')
+
+        # Get interpolation arguments
+        ezia = self.getEzInterpArgs(False)
+
+        # Call gdxyfll
+        print('calling gdxyfll')
+        return Fstdc.gdxyfll(latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0'])
+
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
