@@ -134,8 +134,8 @@
          end do
 
          if (.not.Pil_bmf_L) then
-            call e_write_3df ( uun,nisu,njsu,lv,'UT1 ',unf_casc)
-            call e_write_3df ( vvn,nisv,njsv,lv,'VT1 ',unf_casc)
+            call e_write_3df ( uun,nisu,njsu,lv,'UU  ',unf_casc)
+            call e_write_3df ( vvn,nisv,njsv,lv,'VV  ',unf_casc)
          endif         
          
       else

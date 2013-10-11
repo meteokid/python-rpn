@@ -45,10 +45,6 @@
 !
       integer i, j, k
 !     temp variables to manipulate winds for Yin-Yang
-      real tempu   (DIST_SHAPE,  l_nk)
-      real tempu0  (DIST_SHAPE,  l_nk)
-      real tempv   (DIST_SHAPE,  l_nk)
-      real tempv0  (DIST_SHAPE,  l_nk)
       real temps   (DIST_SHAPE       )
       real tempt   (DIST_SHAPE,  l_nk)
       real temphu  (DIST_SHAPE,  l_nk)
@@ -57,11 +53,13 @@
 !
       if (Lun_debug_L) write(Lun_out,1000)
 
-      temps = 0.; temps(1:l_ni,1:l_nj) = F_s(1:l_ni,1:l_nj)
+      call yyg_nestuv(F_u,F_v,DIST_DIM,l_nk)
+
+      temps = 0. 
+      temps(1:l_ni,1:l_nj) = F_s(1:l_ni,1:l_nj)
+
       tempt = 0.
       temphu = 0.
-      tempu = 0.
-      tempv = 0.
 !$omp parallel private(i,j)
 !$omp do
       do k= 1,l_nk
@@ -74,19 +72,6 @@
          do j= 1, l_nj
          do i= 1, l_ni
             temphu(i,j,k)=F_hu (i,j,k)
-         enddo
-         enddo
-
-         do j= 1, l_nj
-         do i= 1, l_niu
-            tempu(i,j,k)=F_u (i,j,k)*Geomg_invcy_8(j)
-            tempu0(i,j,k)=tempu (i,j,k)
-         enddo
-         enddo
-         do j= 1, l_njv
-         do i= 1, l_ni
-            tempv(i,j,k)=F_v (i,j,k)*Geomg_invcyv_8(j)
-            tempv0(i,j,k)=tempv (i,j,k)
          enddo
          enddo
       enddo
@@ -110,35 +95,6 @@
       call yyg_scalbc(F_hu,temphu,LDIST_DIM,l_nk)
       call rpn_comm_xch_halo(F_hu,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      call rpn_comm_xch_halo(tempu,LDIST_DIM,l_niu,l_nj,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(tempv,LDIST_DIM,l_ni,l_njv,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call  yyg_vecbc1(tempu0,tempu,tempv,LDIST_DIM,l_nk)
-      call  yyg_vecbc2(tempv0,tempv,tempu,LDIST_DIM,l_nk)
-      call rpn_comm_xch_halo(tempu0,LDIST_DIM,l_niu,l_nj,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(tempv0,LDIST_DIM,l_ni,l_njv,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-!$omp parallel private(i,j)
-!$omp do
-      do k= 1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_niu
-            F_u   (i,j,k) =  tempu0(i,j,k)*Geomg_cy_8(j)
-         enddo
-         enddo
-
-         do j= 1, l_njv
-         do i= 1, l_ni
-            F_v(i,j,k)   =  tempv0(i,j,k)*Geomg_cyv_8(j)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-!$omp end parallel
 
 !     __________________________________________________________________
 !

@@ -50,10 +50,6 @@
 !----------------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1001)
-      istat = gmm_get(gmmk_nest_u_s ,nest_u ,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_u)'
-      istat = gmm_get(gmmk_nest_v_s ,nest_v ,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_v)'
       istat = gmm_get(gmmk_nest_w_s ,nest_w ,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_w)'
       istat = gmm_get(gmmk_nest_t_s ,nest_t ,mymeta)
@@ -122,51 +118,7 @@
         call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
       endif
 
-!$omp parallel private(i,j)
-!$omp do
-       do k= 1, G_nk+1
-        do j= 1, l_nj
-          do i= 1, l_niu
-         ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
-         nest_u(i,j,k)=ut1(i,j,k)
-
-        enddo
-       enddo
-        do j= 1, l_njv
-          do i= 1, l_ni
-          vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
-          nest_v(i,j,k)=vt1(i,j,k)
-          enddo
-        enddo
-       enddo
-!$omp enddo
-!$omp end parallel
-
-      call rpn_comm_xch_halo(nest_u,LDIST_DIM,l_niu,l_nj,G_nk+1, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk+1, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk+1)
-      call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
-
-!$omp parallel private(i,j)
-!$omp do
-      do k= 1, G_nk+1
-         do j= 1, l_nj
-         do i= 1, l_niu
-
-            ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
-         enddo
-         enddo
-         do j= 1, l_njv
-         do i= 1, l_ni
-            vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-!$omp end parallel
-
+      call yyg_nestuv(ut1,vt1,LDIST_DIM,G_nk+1)
 !
       do n=1,Tr3d_ntr
          tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
@@ -185,6 +137,7 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call yyg_scalbc_mono(tr1,tr,LDIST_DIM,G_nk+2)
       enddo
+
 !
 !----------------------------------------------------------------------
  1001 format(3X,'NEST YY Boundary ConditionS: (S/R NEST_BCS_YY)')

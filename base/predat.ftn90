@@ -24,7 +24,7 @@
 !
       integer Mminx,Mmaxx,Mminy,Mmaxy,Gnk
       real F_u(Mminx:Mmaxx,Mminy:Mmaxy,Gnk), F_v (Mminx:Mmaxx,Mminy:Mmaxy,Gnk), &
-           F_t(Mminx:Mmaxx,Mminy:Mmaxy,Gnk), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,Gnk), &
+           F_t(Mminx:Mmaxx,Mminy:Mmaxy,Gnk+1), F_zd(Mminx:Mmaxx,Mminy:Mmaxy,Gnk), &
            F_w(Mminx:Mmaxx,Mminy:Mmaxy,Gnk), F_s (Mminx:Mmaxx,Mminy:Mmaxy    )
 !
 !author 
@@ -52,15 +52,48 @@
 ! v4_41 - Plante A.         - call diag_zd_w
 !
 !
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "bcsgrds.cdk"
+#include "grd.cdk"
+#include "nest.cdk"
       
 !
+      type(gmm_metadata) :: mymeta
+      integer i,j,k,istat
 !     __________________________________________________________________
 !
       call diag_zd_w ( F_zd,F_w(l_minx,l_miny,2), F_u,F_v  , &
                        F_t(l_minx,l_miny,2), F_s, LDIST_DIM, &
                             l_nk,.not.Ana_zd_L,.not.Ana_w_L)
+      if (Grd_yinyang_L) then
+          if (.not. Ana_zd_L) then
+              istat = gmm_get(gmmk_nest_zd_s ,nest_zd ,mymeta)
+              do k= 1, G_nk+1
+              do j= 1, l_nj
+              do i= 1, l_ni
+                 nest_zd(i,j,k) =F_zd(i,j,k)
+              enddo
+              enddo
+              enddo
+              call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+              call yyg_scalbc(F_zd,nest_zd,LDIST_DIM,G_nk+1)
+          endif
+          if (.not. Ana_w_L) then
+              istat = gmm_get(gmmk_nest_w_s ,nest_w ,mymeta)
+              do k= 1, G_nk+1
+              do j= 1, l_nj
+              do i= 1, l_ni
+                 nest_w(i,j,k) =F_w(i,j,k)
+              enddo
+              enddo
+              enddo
+              call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk+1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+              call yyg_scalbc(F_w,nest_w,LDIST_DIM,G_nk+1)
+          endif
+      endif
 !
 !     __________________________________________________________________
 !

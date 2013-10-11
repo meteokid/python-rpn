@@ -68,7 +68,7 @@
 !
       type(gmm_metadata) :: mymeta
       character*256 fn
-      integer err,errop,k,skipcode,istat,dim
+      integer err,errop,k,i,j,istat,dim
       real fistmp(LDIST_SHAPE)
       real, dimension(:,:,:), pointer :: plus,minus
 !
@@ -90,13 +90,8 @@
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(st1)'
       istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(fis0)'
-
-      if (.not. Schm_hydro_L) then
-         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-         if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(qt1)'
-      else
-         nullify (qt1)
-      endif
+      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(qt1)'
 
       call bcs_ftype2 (ifd_ftype, Step_runstrt_S)
 
@@ -142,27 +137,20 @@
       call predat6 ( ut1, vt1, tt1, zdt1, wt1, st1, &
                      l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
-      if (G_lam) call nest_init ()
-
-      call frstgss ()
-
       if (.not.Acql_pwuv) then
          call pw_update_UV ('P')
-         call pw_update_UV ('M')
       endif
       if (.not.Acql_pwtt) then
          call pw_update_T  ('P')
-         call pw_update_T  ('M')
       endif
-
       call pw_update_GPW
 
-      call pw_glbstat()
-
+      call frstgss ()
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 
+      if (G_lam.and..not.Grd_yinyang_L) call nest_init ()
 
 !     ---------------------------------------------------------------
 !

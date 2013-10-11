@@ -54,7 +54,6 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "vtopo.cdk"
-#include "grd.cdk"
 !
       integer itraj
       logical first_L, secon_L
@@ -90,8 +89,6 @@
             itraj = max( 5, Schm_itraj )
          endif
       endif
-!
-      if (Grd_yinyang_L) call nest_bcs_yy()
 !
       call frstgss ()
 !
@@ -135,6 +132,8 @@
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
 !     
+      call yyg_nest_tracers ()
+
       call t02t1 ()
 !
 !     --------------------------------------------------------------
