@@ -58,7 +58,7 @@ End Interface
       integer modeip1,ip3,ig3,ig4,datyp,l_id,l_if,l_jd,l_jf,i,j,k
       integer max_stack
       integer, save :: istk = 0
-      real, save, dimension (:,:,:), pointer :: f2c
+      real, save, dimension (:,:,:), pointer :: f2c => null()
       type (meta_fstecr), save, dimension(:), pointer :: meta => null()
 !
 !----------------------------------------------------------------------

@@ -23,8 +23,8 @@
 !
       integer DIST_DIM, Nk
       real    F_zd(DIST_SHAPE,0:Nk), F_w(DIST_SHAPE,Nk), &
-              F_u (DIST_SHAPE,  Nk), F_v(DIST_SHAPE,Nk), &
-              F_t (DIST_SHAPE,  Nk), F_s(DIST_SHAPE)
+              F_u (DIST_SHAPE,  Nk+1), F_v(DIST_SHAPE,Nk+1), &
+              F_t (DIST_SHAPE,  Nk+1), F_s(DIST_SHAPE)
       logical ::  F_zd_L,F_w_L
 !
 !authors
@@ -73,7 +73,7 @@
 !
       if(.not.(F_zd_L.or.F_w_L)) return
 !
-      if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
+!     if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
       if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
 !
       ! enlever calcul si F_zd_L=.false.

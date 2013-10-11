@@ -347,16 +347,17 @@
 ! Interpolate Ru, Rv from U-, V-grid to G-grid, resp. *
 !******************************************************
 
-!$omp single
+!$omp  end parallel
+
       if (Grd_yinyang_L) call yyg_rhsuv (F_oru,F_orv,DIST_DIM, G_nk)
 !
       call rpn_comm_xch_halo ( F_oru, LDIST_DIM,l_niu,l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call rpn_comm_xch_halo ( F_orv, LDIST_DIM,l_ni,l_njv,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-!$omp end single
 !
-
+!$omp parallel private(i,j,i0,j0,jn,in,km,barz,barzp, &
+!$omp     BsPqbarz,fipbarz,tdiv,wk1,wk2,xtmp_8,ytmp_8)
 !$omp do
       do k=1,l_nk
          do j = j0, jn
