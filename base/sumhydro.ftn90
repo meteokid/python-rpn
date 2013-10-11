@@ -13,63 +13,59 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r tt2virt - Update physical quantities
+!**s/r sumhydrom - Sum over Hydrometeors (GMM)
 !
 #include "model_macros_f.h"
 !
-      subroutine tt2virt (F_t, F_tt2tv, F_timelevel_S)
+      subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
       implicit none
 #include <arch_specific.hf>
 !
+      integer minx,maxx,miny,maxy,nk
+!     nk has to be l_nk+2
       character(1) F_timelevel_S
-      logical F_tt2tv
-      real F_t(*)
+      real F_qh(minx:maxx,miny:maxy,nk)
 !
 !author
 !     Michel Desgagne - Dec 2009
 !
 !revision
 ! v4_11 - Desgagne, M.     - First revision
+! v4_60 - Lee, V.          - extracted this out of tt2virt
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt0.cdk"
-#include "vt1.cdk"
-#include "pw.cdk"
+#include "schm.cdk"
+#include "tr3d.cdk"
 !
       type(gmm_metadata) :: mymeta
       integer i, j, k, n,istat
-      real, pointer, dimension(:,:,:)     :: tvirt,tt,hu
-      real, dimension(LDIST_SHAPE,l_nk+2) :: sumpqj 
+      real, pointer, dimension(:,:,:)     :: tr
 !     ________________________________________________________________
 !
-!     Compute temperature from virtual temperature when tt2tv = .false.
-!     Compute virtual temperature from temperature when tt2tv = .true.
-!     --------------------------------------------
 !
-      nullify (tvirt,tt,hu)
 
-      if (.not.F_tt2tv) then
-         if (F_timelevel_S .eq. 'M') istat = gmm_get(gmmk_tt0_s, tvirt, mymeta)
-         if (F_timelevel_S .eq. 'P') istat = gmm_get(gmmk_tt1_s, tvirt, mymeta)
-      else
-         istat = gmm_get(gmmk_pw_tt_plus_s,  tt, mymeta)
+      F_qh = 0.
+      if(Schm_wload_L)then
+!        Sum over Hydrometeors
+         do n = 1, Tr3d_ntr
+            nullify (tr)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
+            if (Tr3d_wload (n)) then
+!$omp parallel private(j,i)
+!$omp do
+               do k = 1, l_nk+2
+               do j = 1, l_nj
+               do i = 1, l_ni
+                  F_qh(i,j,k)=F_qh(i,j,k)+tr(i,j,k)
+               end do
+               end do
+               end do
+!$omp enddo
+!$omp end parallel
+            endif
+         end do
       endif
-
-      istat = gmm_get('TR/HU:'//F_timelevel_S, hu, mymeta)
-      
-      sumpqj = 0.
-
-      call sumhydro(sumpqj,l_minx,l_maxx,l_miny,l_maxy,l_nk+2,F_timelevel_S)
-!
-      if (.not.F_tt2tv) then
-         call mfottvh2 ( F_t, tvirt, hu, sumpqj, l_minx, l_maxx, &
-                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj, F_tt2tv)
-      else
-         call mfottvh2 ( tt, F_t, hu, sumpqj, l_minx, l_maxx, &
-                         l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj, F_tt2tv)
-      endif
-!
 !     ________________________________________________________________
 !
       return

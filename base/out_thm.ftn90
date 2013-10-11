@@ -142,15 +142,13 @@
       real huv((l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(G_nk+6)*2)
       real kbot(LDIST_SHAPE,G_nk+1),ktop(LDIST_SHAPE,G_nk+1)
       real ,dimension(:,:,:), allocatable::px_pres,hu_pres,td_pres,w5,w6
-      real ,dimension(:,:,:), allocatable::tt_pres,vt_pres
+      real ,dimension(:,:,:), allocatable::tt_pres,vt_pres,qh_pres
       real ,dimension(:), allocatable::prprlvl,rf,hyb_we
       real ptop(LDIST_SHAPE),p0(LDIST_SHAPE)
       real px_ta(LDIST_SHAPE,G_nk+2),px_m(LDIST_SHAPE,G_nk+1), th(LDIST_SHAPE,G_nk+2)
       real tt(LDIST_SHAPE,G_nk+2),hu(LDIST_SHAPE,G_nk+2),t8(LDIST_SHAPE,G_nk+2), &
            vt(LDIST_SHAPE,G_nk+2),omega(LDIST_SHAPE,G_nk+2)
       real, pointer    , dimension(:,:,:) :: tr1,hut1,qct1
-      character*2 h2o_liste_S(7)
-      data h2o_liste_S / 'QC','QB','QL','QI','QN','QJ','QH'/
       integer n,kind
       real, dimension(:,:,:), pointer :: gzm,gzt,ttx,htx,ffwe
       real, dimension(:,:), pointer :: wlao
@@ -268,47 +266,39 @@
       if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(fis0)'
 !_______________________________________________________________________
 !
-!     Compute Virtual temperature
-!     Always With water loading
+!     Obtain Virtual temperature from TT1
+      do k=1,l_nk+2
+      do j=1,l_nj
+      do i=1,l_ni
+         vt (i,j,k) = tt1(i,j,k)
+      enddo
+      enddo
+      enddo
+!     Obtain HU from HUT1
+      do k= 1,G_nk+2
+      do j= 1,l_nj
+      do i= 1,l_ni
+         hu(i,j,k) = hut1(i,j,k)
+      enddo
+      enddo
+      enddo
 
-      if (Schm_wload_L) then
-         
-         qh = 0.
-         do n= 1,7 ! WARNING: this lopp control is wrong...
-            nullify (tr1)
-            istat = gmm_get('TR/'//h2o_liste_S(n)//':P',tr1,mymeta)
-            if (.not.GMM_IS_ERROR(istat)) then
-            do k=1,G_nk+2
-            do j=1,l_nj
-            do i=1,l_ni
-               qh (i,j,k) = qh (i,j,k) + max(0.0,tr1(i,j,k))
-            enddo
-            enddo
-            enddo
-            endif
-         enddo
-         call mfottvh2 (w3,tt1,hut1,qh,l_minx,l_maxx, &
-                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-         do k=1,l_nk+2
-            do j=1,l_nj
-               do i=1,l_ni
-                  vt (i,j,k) = tt1(i,j,k) + w3(i,j,k) * qh(i,j,k)
-               enddo
-            enddo
-         enddo
+!     Prepare them for shapeless physics functions
+      call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+      call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
 
-      else
+!     wlnph_m and wlnph_t have been out_padbuffed in out_dyn thus, ok for vsexp
 
-         vt= tt1
-
-      endif
-         
 !     Store PTOP (PT)
       ptop (:,:) = Cstv_ptop_8
       l_ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
 
 !     Compute and store P0
+
       w1(:,:)=F_st1(:,:)
+
+      call out_padbuf(w1,l_minx,l_maxx,l_miny,l_maxy,1)
+ 
       call vsexp (w2,w1,l_ninj)
 
       do j=l_miny,l_maxy
@@ -536,21 +526,27 @@
                     'TH  ',1.0,0.0,kind,G_nk+2,indo_t,nko_t,nbit(pnvt) )               
          endif
 
-         if ( pntt.ne.0 .or. pntd.ne.0 .or. pnhr.ne.0 ) then
+!        
 
 !        Calculate TT (in tt)
 
-            call mfottv2(tt,vt,hut1, l_minx, l_maxx,l_miny,l_maxy, &
-                            l_nk+2,1,l_ni,1,l_nj,.false.)
-            call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+         qh = 0.
+         call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,l_nk+2,'P')
+        
+         call out_padbuf(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+         call mfottvh(tt,vt,hu, qh, l_ninj,G_nk+2,l_ninj)
+!        tt should have values in halo region
 
-         endif
+!        call mfottvh2(tt,vt,hut1, qh, l_minx, l_maxx,l_miny,l_maxy, &
+!                        l_nk+2,1,l_ni,1,l_nj,.false.)
 
          if (pntt.ne.0)then            
             call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'TT ' ,1.0,pradd_pntt, kind,G_nk+2,indo_t,nko_t, nbit(pntt) )
          endif
+
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
+
 
 !            Calculate PX (in px), thermo levels.
 !            And output all the levels!
@@ -561,16 +557,6 @@
              call vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*(G_nk+1))
              px_m(:,:,G_nk+1) = p0(:,:)
 
-!            Prepare VT,HU for physics functions
-             do k= 1,G_nk+2
-             do j= 1,l_nj
-             do i= 1,l_ni
-                hu(i,j,k) = hut1(i,j,k)
-             enddo
-             enddo
-             enddo
-             call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
-             call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
          endif
                      
          if (pnpx.ne.0)then
@@ -586,9 +572,7 @@
 
          if (pntw.ne.0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
-             call mfottv2 (w3,vt,hu,l_minx,l_maxx, &
-                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-             call mthtaw4 (t8,hu,w3, px_ta,Out3_satues_L, &
+             call mthtaw4 (t8,hu,tt, px_ta,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,G_nk+2,l_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'TW  ',1.0,0.0, kind,G_nk+2, indo_t, nko_t, nbit(pntw) )
@@ -596,9 +580,7 @@
 
          if (pnes.ne.0 .or. pntd.ne.0) then
 !        Calculate ES (t8=ES) (px=PX)
-             call mfottv2 (w3,vt,hu,l_minx,l_maxx, &
-                        l_miny,l_maxy,l_nk+2,1,l_ni,1,l_nj,.false.)
-             call mhuaes3(t8,hu,w3,px_ta,Out3_satues_L, &
+             call mhuaes3(t8,hu,tt,px_ta,Out3_satues_L, &
                             l_ninj,G_nk+2,l_ninj)
 
              if (Out3_cliph_L) then
@@ -699,6 +681,7 @@
 
         allocate(hu_pres(LDIST_SHAPE,nko))
         allocate(vt_pres(LDIST_SHAPE,nko))
+        allocate(qh_pres(LDIST_SHAPE,nko))
         allocate(tt_pres(LDIST_SHAPE,nko))
         allocate(td_pres(LDIST_SHAPE,nko))
         allocate(px_pres(LDIST_SHAPE,nko)) 
@@ -707,11 +690,11 @@
 
 !       Calculate vertical derivative of HUT1 with respect to wlnph_ta
 
-        call verder(px_ta,hut1,wlnph_ta,2.0,2.0,l_minx,l_maxx,l_miny,l_maxy, &
+        call verder(px_ta,hu,wlnph_ta,2.0,2.0,l_minx,l_maxx,l_miny,l_maxy, &
                                              G_nk+2, 1,l_ni,1,l_nj)
 
 !       Calculate HU (hu_pres=HU,px_ta=vert.der)
-        call prgen(hu_pres,hut1,px_ta,wlnph_ta,prprlvl,nko,  &
+        call prgen(hu_pres,hu,px_ta,wlnph_ta,prprlvl,nko,  &
                    Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy,G_nk+2,&
                    1,l_ni,1,l_nj)
         if ( Out3_cliph_L ) then
@@ -740,15 +723,30 @@
               'GZ  ',prmult_pngz,0.0, kind,nko,indo,nko,nbit(pngz) )
         endif
 
-        if (pntt.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
+        if (pntt.ne.0.or.pntw.ne.0.or.pnes.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
 
+            qh = 0.
+            call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,l_nk+2,'P')
+    !       Calculate QH (qh_pres=QH,px_ta=vert.der)
+            call prgen(qh_pres,qh,px_ta,wlnph_ta,prprlvl,nko,  &
+                   Out3_cubzt_L,l_minx,l_maxx,l_miny,l_maxy,G_nk+2,&
+                   1,l_ni,1,l_nj)
+            if ( Out3_cliph_L ) then
+               do k= 1, nko
+               do j= 1,l_nj
+               do i= 1,l_ni
+                  qh_pres(i,j,k) = amax1( qh_pres(i,j,k), 0. )
+               enddo
+               enddo
+               enddo
+            endif
 !           Calculate TT (tt_pres=TT,vt_pres=VT,hu_pres=HU)
-            call mfottv2(tt_pres,vt_pres,hu_pres, l_minx, l_maxx,l_miny,l_maxy, &
-                            nko,1,l_ni,1,l_nj,.false.)
+            call mfottvh2(tt_pres,vt_pres,hu_pres, qh_pres,        &
+                        l_minx, l_maxx,l_miny,l_maxy, nko,1,l_ni,1,l_nj,.false.)
         endif
 
         if ( pnes.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
-!           Calculate PX for ES,TD,HR
+!           Calculate PX for ES,TD,HR and prepare them for non-halo phy calls
             do k=1,nko
                do j= 1, l_nj
                do i= 1, l_ni
@@ -763,9 +761,7 @@
 
         if (pntw.ne.0) then
 !           Calculate THETAW TW (w5=TW_pres) (px_pres=PX)
-            call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
-                        l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
-            call mthtaw4 (w5,hu_pres,w6, &
+            call mthtaw4 (w5,hu_pres,tt_pres, &
                            px_pres,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
             if (filt(pntw).gt.0) &
@@ -777,9 +773,7 @@
 !
         if (pnes.ne.0.or.pntd.ne.0) then
 !           Calculate ES (w5=ES_pres,hu_pres=HU,w2=VT,px_pres=PX)
-            call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
-                        l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
-            call mhuaes3 (w5, hu_pres,w6, &
+            call mhuaes3 (w5, hu_pres,tt_pres, &
                           px_pres,Out3_satues_L, &
                           l_ninj, nko, l_ninj)
             if ( Out3_cliph_L ) then

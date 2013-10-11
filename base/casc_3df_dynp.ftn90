@@ -119,10 +119,13 @@ End Interface
       real, dimension (:,:,:,:), pointer :: tr1=>null()
 
       real ssq_temp(LDIST_SHAPE),topo_nest(LDIST_SHAPE),step_current
+      real qh(LDIST_SHAPE,G_nk+2),tt(LDIST_SHAPE,G_nk+2)
       real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1), lnpis_8, diffd
 !
 !-----------------------------------------------------------------------
 !
+!NOTE: This routine is not designed for no physics run!!!
+
       if (Lun_out.gt.0) write(lun_out,9000) trim(F_datev)
 
       ng = l_ni * l_nj
@@ -201,6 +204,7 @@ End Interface
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
                    cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
+!         Lam_hint_S = 'NEAREST'
          hint = Lam_hint_S
 !         hint = 'LINEAR'
          call grid_to_grid_coef (xpxext(l_i0),l_ni, &
@@ -250,7 +254,6 @@ End Interface
 
       F_u (1:l_ni,1:l_nj,1:G_nk+1) = uu1
       F_v (1:l_ni,1:l_nj,1:G_nk+1) = vv1
-      F_t (1:l_ni,1:l_nj,1:G_nk+2) = ttt1
       F_zd(1:l_ni,1:l_nj,1:G_nk+1) = zd1
       F_s (1:l_ni,1:l_nj         ) = ss1
       F_w (1:l_ni,1:l_nj,1:G_nk+1) = ww1
@@ -267,7 +270,23 @@ End Interface
          endif
          trp(1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2,n)
       end do
-
+      if (ana_vt_l) then
+          F_t (1:l_ni,1:l_nj,1:G_nk+2) = ttt1
+      else
+          do k=1,G_nk+2
+          do j=1,l_nj
+          do i=1,l_ni
+             tt (i,j,k) = ttt1(i,j,k)
+          end do
+          end do
+          end do
+          nullify(trp)
+          istat = gmm_get('TR/'//'HU'//':P',trp,mymeta)
+          if (GMM_IS_ERROR(istat)) print *,'casc_3df_dynp: ERROR at gmm_get','TR/'//'HU'//':P'
+          call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk+2,'P')
+          call mfottvh2(tt,F_t,trp,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk+2, &
+                           1,l_ni,1,l_nj,.true.)
+      endif
       deallocate (xpuu,ypvv,xpaq,ypaq,xpau,ypav)
       deallocate (ana_am_8,ana_bm_8,ana_at_8,ana_bt_8)
       deallocate (uun,vvn,zdn,ttn,qqn,wwn,ssqn,meqn)
