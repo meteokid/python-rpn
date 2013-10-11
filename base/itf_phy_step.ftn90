@@ -123,11 +123,11 @@
 
       call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
-      err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
-                       F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
-                       Path_phy_S,geofilename_S)
+      err = phy_gmm2phy()
 
-      err = min(phy_gmm2phy(), err)
+      err = min(phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
+                       F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
+                       Path_phy_S,geofilename_S), err)
 
       call handle_error(err,'itf_phy_step','Problem getting input data') 
       call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
