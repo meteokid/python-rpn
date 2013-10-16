@@ -342,12 +342,12 @@
 !
  1000 continue
 !$omp enddo
+
+!$omp  end parallel
 !
 !******************************************************
 ! Interpolate Ru, Rv from U-, V-grid to G-grid, resp. *
 !******************************************************
-
-!$omp  end parallel
 
       if (Grd_yinyang_L) call yyg_rhsuv (F_oru,F_orv,DIST_DIM, G_nk)
 !
@@ -356,8 +356,21 @@
       call rpn_comm_xch_halo ( F_orv, LDIST_DIM,l_ni,l_njv,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 !
-!$omp parallel private(i,j,i0,j0,jn,in,km,barz,barzp, &
-!$omp     BsPqbarz,fipbarz,tdiv,wk1,wk2,xtmp_8,ytmp_8)
+
+!$omp parallel private(i,j,i0,j0,jn,in)
+
+      i0 = 1
+      j0 = 1
+      in = l_ni
+      jn = l_nj
+      if (G_lam.and.(.not.Grd_yinyang_L)) then
+         xtmp_8(:,:)=1.0D0
+         if (l_west)  i0 = 4
+         if (l_east)  in = l_niu-2
+         if (l_south) j0 = 4
+         if (l_north) jn = l_njv-2
+      endif
+
 !$omp do
       do k=1,l_nk
          do j = j0, jn
