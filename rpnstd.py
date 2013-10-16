@@ -1076,6 +1076,59 @@ class RPNGrid(RPNParm):
             ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
             ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
 
+    def interpolXY(self,xin,yin,zz,vv=None):
+        """ Interpolate the given 'zz' field to scattered (x,y) coordinates;
+            if 'vv' is provided and not None, then vector interpolation (as
+            grid-directed winds) will be performed."""
+        # The structure of this method follows exactly from interpolLatLon,
+        # starting with input verification
+        
+        # zz and vv have the strictest conditions, so start with those
+        try:
+            assert(isinstance(zz,numpy.ndarray))
+            assert(zz.dtype == numpy.float32)
+            assert(zz.flags.f_contiguous == True)
+        except (AssertionError):
+            zz = numpy.array(zz,dtype=numpy.float32,order='F')
+
+        if (zz.shape != self.shape):
+            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        if (vv is not None):
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == True)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order='F')
+            if (vv.shape != self.shape):
+                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        try:
+            assert(isinstance(xin,numpy.ndarray))
+            assert(xin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous or xin.flags.f_contiguous)
+        except (AssertionError):
+            xin = numpy.array(xin,dtype=numpy.float32,order='F')
+        try:
+            assert(isinstance(yin,numpy.ndarray))
+            assert(yin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous == yin.flags.c_contiguous)
+            assert(xin.flags.f_contiguous == yin.flags.f_contiguous)
+        except (AssertionError):
+            yin = numpy.array(yin,dtype=numpy.float32,
+                            order=(xin.flags.c_contiguous and 'C' or 'F'))
+
+        # Now, call the interpolation routine.  That routine itself checks for scalar or vector
+        # interpolation, so we're free to pass vv=None if necessary.
+
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gdxyval(zz,vv,xin,yin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
+
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
