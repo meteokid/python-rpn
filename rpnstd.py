@@ -1021,6 +1021,61 @@ class RPNGrid(RPNParm):
             ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
             ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
 
+    def interpolLatLon(self,latin,lonin,zz,vv=None):
+        """ Interpolate the given 'zz' field to scattered (lat,lon) coordinates;
+            if 'vv' is provided and not None, then vector interpolation (as
+            grid-directed winds) will be performed."""
+        # As per the previous functions, we have some array-verification to
+        # perform.  This time, latin and lonin must be compatible with
+        # each other (and contiguous), and zz/vv (if present) must match
+        # the grid.
+
+        # zz and vv have the strictest conditions, so start with those
+        try:
+            assert(isinstance(zz,numpy.ndarray))
+            assert(zz.dtype == numpy.float32)
+            assert(zz.flags.f_contiguous == True)
+        except (AssertionError):
+            zz = numpy.array(zz,dtype=numpy.float32,order='F')
+
+        if (zz.shape != self.shape):
+            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        if (vv is not None):
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == True)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order='F')
+            if (vv.shape != self.shape):
+                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        # Now for latin and lonin -- these are the same checks as getXY
+        try:
+            assert(isinstance(latin,numpy.ndarray))
+            assert(latin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
+        except (AssertionError):
+            latin = numpy.array(latin,dtype=numpy.float32,order='F')
+        try:
+            assert(isinstance(lonin,numpy.ndarray))
+            assert(lonin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous == lonin.flags.c_contiguous)
+            assert(latin.flags.f_contiguous == lonin.flags.f_contiguous)
+        except (AssertionError):
+            lonin = numpy.array(lonin,dtype=numpy.float32,
+                            order=(latin.flags.c_contiguous and 'C' or 'F'))
+
+        # Now, call the interpolation routine.  That routine itself checks for scalar or vector
+        # interpolation, so we're free to pass vv=None if necessary.
+
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gdllval(zz,vv,latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid
         """
