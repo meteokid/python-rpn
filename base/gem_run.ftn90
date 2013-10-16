@@ -145,7 +145,7 @@
 
       bkup_L = .false.
 
-      if (Grd_yinyang_L) call nest_bcs_yy()
+      if (Grd_yinyang_L) call yyg_nest_all()
 
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
@@ -165,7 +165,7 @@
 
          call iau_apply
 
-         if (Grd_yinyang_L) call nest_bcs_yy()
+         if (Grd_yinyang_L) call yyg_nest_all()
 
          call pw_update_GPW()
          call pw_update_UV('P')

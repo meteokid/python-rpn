@@ -12,11 +12,11 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r nest_bcs_yy - for interpolating and nesting Yin-Yang boundary conditions
+!**s/r yyg_nest_all - for interpolating and nesting Yin-Yang boundary conditions
 !
 #include "model_macros_f.h"
 !
-      subroutine nest_bcs_yy ()
+      subroutine yyg_nest_all ()
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,6 +26,7 @@
 !revision
 ! v4_40 - Lee/Qaddouri  - adapt (nest_bcs) for Yin-yang (called every timestep)
 ! v4_50 - Lee V.        - use cubic mono interp for tracers
+! v4_60 - Lee V.        - change routine name : nest_bcs_yy to yyg_nest_all
 !
 !object
 !
@@ -120,27 +121,10 @@
 
       call yyg_nestuv(ut1,vt1,LDIST_DIM,G_nk+1)
 !
-      do n=1,Tr3d_ntr
-         tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-         istat = gmm_get(tr_name,tr,mymeta)
-         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-         istat = gmm_get(tr_name,tr1,mymeta)
-
-         do k= 1, G_nk+2
-         do j= 1, l_nj
-         do i= 1, l_ni
-            tr (i,j,k) = tr1(i,j,k)
-         enddo
-         enddo
-         enddo
-         call rpn_comm_xch_halo(tr, LDIST_DIM,l_ni,l_nj,G_nk+2, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc_mono(tr1,tr,LDIST_DIM,G_nk+2)
-      enddo
-
+      call yyg_nest_tracers2('P')
 !
 !----------------------------------------------------------------------
- 1001 format(3X,'NEST YY Boundary ConditionS: (S/R NEST_BCS_YY)')
+ 1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nest_all)')
 !
       return
       end

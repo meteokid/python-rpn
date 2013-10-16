@@ -16,9 +16,10 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine yyg_nest_tracers ()
+      subroutine yyg_nest_tracers2(pom)
       implicit none
 #include <arch_specific.hf>
+      character*1 pom
 !
 !author 
 !     Michel Desgagne   - Spring 2006
@@ -51,7 +52,8 @@
       do n=1,Tr3d_ntr
          tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
          istat = gmm_get(tr_name,tr,mymeta)
-         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
+         !tr_name = 'TR/'//trim(Tr3d_name_S(n))//':M'
+         tr_name = 'TR/'//trim(Tr3d_name_S(n))//':'//pom
          istat = gmm_get(tr_name,tr1,mymeta)
 
          do k= 1, G_nk+2

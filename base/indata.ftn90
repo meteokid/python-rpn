@@ -122,7 +122,7 @@
          call yyg_scalbc(fis0,fistmp,LDIST_DIM,1)
          call rpn_comm_xch_halo(fis0  , LDIST_DIM,l_ni,l_nj,1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call nest_bcs_yy()
+         call yyg_nest_all()
       endif
 
       do k=1, Tr3d_ntr
