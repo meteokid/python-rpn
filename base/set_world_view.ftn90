@@ -60,7 +60,7 @@
 #include "wil_nml.cdk"
 
       integer, external :: gem_nml,gemdm_config,grid_nml2, &
-                           itf_cpl_nml,adx_nml,adx_config, &
+                           adx_nml,adx_config            , &
                            RPN_COMM_bloc,step_nml,bin2com
       character*50 LADATE,dumc1_S
       integer ierr,err(8),f1,f2,f3,f4,n1,n2,n3,n4,n5,n6,n7
@@ -94,8 +94,7 @@
          err(2) = bin2com ()
          err(3) = step_nml    (Path_nml_S)
          err(4) = gem_nml     (Path_nml_S)
-         err(5) = itf_cpl_nml (Path_nml_S)
-         err(6) = adx_nml     (Path_nml_S)
+         err(5) = adx_nml     (Path_nml_S)
 
       endif
       call handle_error(minval(err(:)),'set_world_view','Error reading nml')
@@ -109,7 +108,6 @@
       ierr = grid_nml2   ('print',G_lam)
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
-      ierr = itf_cpl_nml ('print') 
 
       call adx_nml_print ()
 

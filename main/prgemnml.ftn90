@@ -33,7 +33,6 @@
       call nml_gem()
       call nml_gement()
       call nml_theo()
-      call nml_cpl()
       close(6)
      
       return
@@ -90,14 +89,5 @@
 #include "theonml.cdk"
       write (6  ,nml=theo_cfgs)
       write (6  ,nml=mtn_cfgs)
-      return
-      end
-!
-      subroutine nml_cpl()
-      implicit none
-#include <arch_specific.hf>
-#include "itf_cpl.cdk"
-      namelist /coupling/ CPL_NAME
-      write(6  ,nml=coupling)
       return
       end

@@ -70,8 +70,6 @@
          call close_status_file3 ()
       endif
 
-      call itf_cpl_terminate (Lun_out.gt.0)
-
       call out_launchpost2 (.true.,.not.continue_L)
 
       if (Lun_out.gt.0) call out_stat ()

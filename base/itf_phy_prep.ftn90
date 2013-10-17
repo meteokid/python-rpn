@@ -28,7 +28,7 @@
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <msg.h>
-#include "itf_cpl.cdk"
+
       integer,parameter :: NCOPY = 2
       character(len=*),parameter :: FOLD_BUS_S = 'Dd' !Dynamic field into dyn bus
       character(len=*),parameter :: COPY_LIST_S(2,NCOPY) = reshape((/ &
@@ -51,19 +51,6 @@
             !TODO: abort?
          endif
       enddo
-
-      if (C_coupling_L) then
-         tr2d => atm_local_busin(:,:,1)
-         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_mcp)
-         tr2d => atm_local_busin(:,:,2)
-         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i7)
-         tr2d => atm_local_busin(:,:,3)
-         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_tm)
-         tr2d => atm_local_busin(:,:,4)
-         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_gl)
-         tr2d => atm_local_busin(:,:,5)
-         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i8)
-      endif
 !     ________________________________________________________________
 !
       return

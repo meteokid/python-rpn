@@ -39,7 +39,6 @@
 !
 #include "e_grids.cdk"
 #include "grd.cdk"
-#include "itf_cpl.cdk"
 #include "pilot.cdk"
 #include "path.cdk"
 #include "step.cdk"
@@ -47,8 +46,7 @@
 
       include 'gemdyn_version.inc'
 
-      integer  grid_nml2, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
-      external grid_nml2, ptopo_nml, e_gement_nml, itf_cpl_nml, step_nml
+      integer, external :: grid_nml2, ptopo_nml, e_gement_nml, step_nml
 
       character*1024 fn
       integer ierr,err(5)
@@ -64,8 +62,7 @@
       err(2) = ptopo_nml    (fn)
       err(3) = step_nml     (fn)
       err(4) = e_gement_nml (fn)
-      err(5) = itf_cpl_nml  (fn)
-      ierr   = min(err(1),err(2),err(3),err(4),err(5))
+      ierr   = min(err(1),err(2),err(3),err(4))
       call handle_error(ierr,'e_gemnml','Error reading nml')
 
       if (.not.Step_leapyears_L) call Ignore_leapYear ()
@@ -84,7 +81,6 @@
       ierr = ptopo_nml    ('print')
       ierr = step_nml     ('print')
       ierr = e_gement_nml ('print')
-      if (C_coupling_L) ierr = itf_cpl_nml ('print')
 
       err = clib_symlink ( trim(Path_input_S)//'/constantes', 'constantes' )
 
