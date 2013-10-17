@@ -41,7 +41,6 @@
 #include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
-#include "vtx.cdk"
 #include "tr3d.cdk"
 #include "p_geof.cdk"
 !
