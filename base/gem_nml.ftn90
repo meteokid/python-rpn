@@ -92,16 +92,16 @@
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
       Schm_superwinds_L  = .true.
-      Schm_Adw_extrap_L= .false.
+      Schm_Adw_extrap_L= .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
-      Schm_wload_L    = .false.
+      Schm_wload_L    = .true.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
 !
-      Schm_phyms_L    = .false.
+      Schm_phyms_L    = .true.
       Schm_chems_L    = .false.
 !
       Lam_hint_S    = 'CUB_LAG'
@@ -126,17 +126,6 @@
 !
       Lctl_rxstat_S   = 'LCL_4'
       Lctl_debug_L    = .false.
-!
-      Acid_test_L        = .false.
-      Acid_skippospers_L = .false.
-      Acid_readsol_L     = .false.
-      Acid_readposi_L    = .false.
-      Acid_pilot_L       = .false.
-      Acid_i0         = 0
-      Acid_in         = 0
-      Acid_j0         = 0
-      Acid_jn         = 0
-      Acid_npas       = 0
 !
       Grd_rcoef(1) = 1.0
       Grd_rcoef(2) = 1.0
@@ -170,12 +159,6 @@
       Vspng_vec_L   = .false.
       Vspng_zmean_L = .false.      
 !
-! The following switches are NOT used anymore
-! TODO: complete removal hzd.cdk, nml.cdk, gem_nml.ftn90
-      Hzd_t1_0_L = .false.
-      Hzd_t0_0_L = .false.
-      Hzd_1d_L   = .false.
-!
       Zdot_divHLM_L  = .false.
 !
       Vtopo_start = -1
@@ -189,19 +172,6 @@
       P_lmvd_weigh_low_lat  =  1.0
       P_lmvd_high_lat       = 30.0
       P_lmvd_low_lat        =  5.0
-
-      P_dumpbus   = 0
-      P_dumpbus_S = 'ALL'
-
-      P_zong_znli = 0
-      P_zong_nbin = min( Grd_nj,Grd_ni )
-      P_zong_znmod = 1
-      P_zong_znoff_L = .false.
-      P_zong_znsus_L = .false.
-      P_zong_znsrf_s = ' '
-      P_zong_znprf_s = ' '
-
-      P_runlgt       = -1
 
       perturb_nbits=0
       perturb_npts=10

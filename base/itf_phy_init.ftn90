@@ -42,10 +42,7 @@
 #include "schm.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
-#include "p_serg.cdk"
-#include "itf_cpl.cdk"
 #include "itf_phy_buses.cdk"
-#include "itf_phy_config.cdk"
 #include "step.cdk"
 #include "ver.cdk"
 #include "path.cdk"
@@ -63,6 +60,7 @@
       integer nrec, phycompa, n, lght, soit, phy_offset, dateo
       integer err(DIM_ERR),i,offi2,offj2
       real, dimension(:), pointer :: std_p_prof
+      logical :: l_phyms_L
 !
 !     ---------------------------------------------------------------
 !
@@ -74,7 +72,6 @@
 
       prout  = Lun_out.gt.0 ! for print/write statements in stdout
 
-      Schm_phyms_L=.false.
       if ( Schm_theoc_L) then
          if (Lun_out.gt.0) write(Lun_out,9500)
          return
@@ -95,10 +92,9 @@
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 
-      err(1) = phy_nml (trim(Path_nml_S), set_dcst, Schm_phyms_L, Lun_out)
+      err(1) = phy_nml (trim(Path_nml_S), set_dcst, l_phyms_L, Lun_out)
       call handle_error(err(1),'itf_phy_init','phy_nml')
-
-      if (.not.Schm_phyms_L) return ! NO PHYSICS REQUIRED
+      call handle_error_l(l_phyms_L,'itf_phy_init','Problem with namelist physics_cfgs')      
 
       err=0
 
@@ -106,7 +102,7 @@
 
       call phy_optl('VSTAG'   , .true.      , 1,'SET',prout,err(1))
       call phy_opti('TLIFT'   , Schm_Tlift  , 1,'SET',prout,err(2))
-      call phy_optl('COUPLING', C_coupling_L, 1,'SET',prout,err(3))
+      call phy_optl('COUPLING', .false.     , 1,'SET',prout,err(3))
       call phy_optl('NOTOP'   , .true.      , 1,'SET',prout,err(4))
       call handle_error(minval(err(1:4)),'itf_phy_init','phy_opt set')
 
@@ -142,7 +138,6 @@
 
       call phy_opti('NI'      ,p_ni    ,1,'GET',.false.,err(1))
       call phy_opti('NJ'      ,p_nj    ,1,'GET',.false.,err(2))
-      call phy_opti('P_RUNLGT',p_runlgt,1,'GET',.false.,err(3))
 
       p_doni = l_ni - p_offi - offi2
       p_donj = l_nj - p_offj - offj2
@@ -156,32 +151,12 @@
 
       err = 0
       call phy_optl('SATUCO'    ,cond_satu_L  , 1, 'GET',prout,err(1))
-      call phy_optl('SATUCO'    ,P_cond_satu_L, 1, 'GET',prout,err(2))
-      call phy_opti('MOYHR'     ,P_out_moyhr  , 1, 'GET',prout,err(3))
       call handle_error(minval(err),'itf_phy_init','phy_opt get')
 
       ! Consistency check for saturation calculations
       if (Out3_satues_L .and. .not.cond_satu_L) then
           Out3_satues_L = .false.
           if (Lun_out.gt.0) write(Lun_out,9600)
-      endif
-
-      P_out_moyhr = ( P_out_moyhr * Cstv_dt_8 ) / 3600.
-!
-! Pre-establish BUS index for coupling
-!
-      if (C_coupling_L) then
-         bus = 'DYN'
-         call phy_busindx ('MCCPL'     ,  bus, cpl_mcp     , lght, soit)
-         call phy_busindx ('TMICECPL'  ,  bus, cpl_i7      , lght, soit)
-         call phy_busindx ('TWATERCPL' ,  bus, cpl_tm      , lght, soit)
-         call phy_busindx ('GLCPL'     ,  bus, cpl_gl      , lght, soit)
-         call phy_busindx ('ICEDPCPL'  ,  bus, cpl_i8      , lght, soit)
-         bus = 'PER'
-         call phy_busindx ('FLUSOLIS'  ,  bus, cpl_flusolis, lght, soit)
-         call phy_busindx ('FDSI'      ,  bus, cpl_fdsi    , lght, soit)
-         bus = 'VOL'
-         call phy_busindx ('RT'        ,  bus, cpl_rt      , lght, soit)
       endif
 !
 !     ---------------------------------------------------------------

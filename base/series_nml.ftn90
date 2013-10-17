@@ -1,4 +1,0 @@
-      integer function series_nml ()
-      implicit none
-      series_nml = -1
-      end

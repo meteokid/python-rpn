@@ -1,4 +1,3 @@
-#include "acid.cdk"
 #include "hybdim.cdk"
 #include "out3.cdk"
 #include "level.cdk"
@@ -28,9 +27,6 @@
 #include "clim.cdk"
 #include "rstr.cdk"
 #include "zdot.cdk"
-#include "itf_phy_config.cdk"
-#include "p_serg.cdk"
-#include "p_zong.cdk"
 #include "wil_williamson.cdk"
 #include "stat.cdk"
 #include "perturb.cdk"
@@ -38,11 +34,6 @@
 #include "iau.cdk"
 
       namelist /gem_cfgs/ stat_liste
-!Acid
-      namelist /gem_cfgs/ Acid_pilot_L
-      namelist /gem_cfgs/ Acid_readposi_L
-      namelist /gem_cfgs/ Acid_readsol_L
-      namelist /gem_cfgs/ Acid_test_L
 !C
       namelist /gem_cfgs/ Clim_climat_L
       namelist /gem_cfgs/ Clim_inincr_L
@@ -62,7 +53,6 @@
       namelist /gem_cfgs/ Lam_blend_T
       namelist /gem_cfgs/ Hyb
 !Hzd
-      namelist /gem_cfgs/ Hzd_1d_L
       namelist /gem_cfgs/ Hzd_difva_L
       namelist /gem_cfgs/ Hzd_lnr
       namelist /gem_cfgs/ Hzd_lnr_theta
@@ -70,8 +60,6 @@
       namelist /gem_cfgs/ Hzd_pwr
       namelist /gem_cfgs/ Hzd_pwr_theta
       namelist /gem_cfgs/ Hzd_pwr_tr
-      namelist /gem_cfgs/ Hzd_t0_0_L
-      namelist /gem_cfgs/ Hzd_t1_0_L
       namelist /gem_cfgs/ Hzd_tr3d_name_S
       namelist /gem_cfgs/ Hzd_type_S
 !Iau
@@ -125,19 +113,10 @@
       namelist /gem_cfgs/ Out3_uencode_L
 
 !P
-      namelist /gem_cfgs/ P_runlgt
       namelist /gem_cfgs/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs/ P_lmvd_high_lat
       namelist /gem_cfgs/ P_lmvd_low_lat
-      namelist /gem_cfgs/ P_dumpbus
-      namelist /gem_cfgs/ P_dumpbus_S
-      namelist /gem_cfgs/ P_zong_nbin
-      namelist /gem_cfgs/ P_zong_znli
-      namelist /gem_cfgs/ P_zong_znmod
-      namelist /gem_cfgs/ P_zong_znprf_s
-      namelist /gem_cfgs/ P_zong_znsrf_s
-      namelist /gem_cfgs/ P_zong_znsus_L
       namelist /gem_cfgs/ perturb_nbits
       namelist /gem_cfgs/ perturb_npts
 !R
@@ -154,6 +133,7 @@
       namelist /gem_cfgs/ Schm_moist_L
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
+      namelist /gem_cfgs/ Schm_phyms_L
       namelist /gem_cfgs/ Schm_psadj_L
       namelist /gem_cfgs/ Schm_Tlift
       namelist /gem_cfgs/ Schm_Topo_L      
@@ -190,11 +170,6 @@
 !
 !End gem_cfgs
 !
-!Acid
-      namelist /gem_cfgs_p/ Acid_pilot_L
-      namelist /gem_cfgs_p/ Acid_readposi_L
-      namelist /gem_cfgs_p/ Acid_readsol_L
-      namelist /gem_cfgs_p/ Acid_test_L
 !C
       namelist /gem_cfgs_p/ Clim_climat_L
       namelist /gem_cfgs_p/ Clim_inincr_L
@@ -211,7 +186,6 @@
       namelist /gem_cfgs_p/ Lam_blend_H
       namelist /gem_cfgs_p/ Lam_blend_T 
 !Hzd
-      namelist /gem_cfgs_p/ Hzd_1d_L
       namelist /gem_cfgs_p/ Hzd_difva_L
       namelist /gem_cfgs_p/ Hzd_lnr
       namelist /gem_cfgs_p/ Hzd_lnr_theta
@@ -219,14 +193,11 @@
       namelist /gem_cfgs_p/ Hzd_pwr
       namelist /gem_cfgs_p/ Hzd_pwr_theta
       namelist /gem_cfgs_p/ Hzd_pwr_tr
-      namelist /gem_cfgs_p/ Hzd_t0_0_L
-      namelist /gem_cfgs_p/ Hzd_t1_0_L
       namelist /gem_cfgs_p/ Hzd_type_S
 !Iau
       namelist /gem_cfgs_p/ Iau_coef
       namelist /gem_cfgs_p/ Iau_interval
       namelist /gem_cfgs_p/ Iau_period
-      namelist /gem_cfgs_p/ Iau_tracers_S
       namelist /gem_cfgs_p/ Iau_weight_S
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
@@ -270,17 +241,10 @@
       namelist /gem_cfgs_p/ Out3_uencode_L
 
 !P
-      namelist /gem_cfgs_p/ P_runlgt
       namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs_p/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs_p/ P_lmvd_high_lat
       namelist /gem_cfgs_p/ P_lmvd_low_lat
-      namelist /gem_cfgs_p/ P_dumpbus
-      namelist /gem_cfgs_p/ P_dumpbus_S
-      namelist /gem_cfgs_p/ P_zong_nbin
-      namelist /gem_cfgs_p/ P_zong_znli
-      namelist /gem_cfgs_p/ P_zong_znmod
-      namelist /gem_cfgs_p/ P_zong_znsus_L
       namelist /gem_cfgs_p/ perturb_nbits
       namelist /gem_cfgs_p/ perturb_npts
 !R
@@ -297,6 +261,7 @@
       namelist /gem_cfgs_p/ Schm_moist_L
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
+      namelist /gem_cfgs_p/ Schm_phyms_L
       namelist /gem_cfgs_p/ Schm_psadj_L
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_trapeze_L
@@ -364,8 +329,6 @@
       namelist /grdc_p/ Grdc_nj
       namelist /grdc_p/ Grdc_start_S
       namelist /grdc_p/ Grdc_end_S
-!
-!End series
 !
 #include "wil_nml.cdk"
 !
