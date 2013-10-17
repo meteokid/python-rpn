@@ -267,7 +267,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "acid.cdk"
 !
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax,err,no, &
               nijk(8,Ptopo_numproc),tnijk(8,Ptopo_numproc),nw,i0,in,j0,jn

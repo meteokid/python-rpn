@@ -60,7 +60,6 @@
 !
 !implicits
 #include "lun.cdk"
-#include "acid.cdk"
 #
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8
@@ -107,11 +106,11 @@
       var = max(0.d0,1.0d0*(sumd2 + moy*moy*npt_8 - 2*moy*sum) / npt_8)
       var = sqrt(var)
       no  = F_no
-      if (Acid_test_L.and.Acid_pilot_L) no=F_no-acid_npas
-      imin = imin-acid_i0
-      imax = imax-acid_i0
-      jmin = jmin-acid_j0
-      jmax = jmax-acid_j0
+
+      imin = imin
+      imax = imax
+      jmin = jmin
+      jmax = jmax
 !       
 ! ** On imprime
 !

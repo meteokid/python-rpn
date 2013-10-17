@@ -86,12 +86,6 @@
 
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 
-! This next code is still needed for kuklos
-      if ((Lctl_step.eq.Step_total).and.(Ptopo_couleur.eq.0)) then
-         call wlog('FEND')
-         call wlog('CEND')
-      endif
-
  3000 format( &
       //,'END OF CURRENT TIME SLICE (S/R GEM_CTRL) AT TIMESTEP',I8, &
        /,'=================================================')

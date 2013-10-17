@@ -49,19 +49,6 @@
       else
          call msg (MSG_ERROR,'(itf_phy_fillbus) Probleme making copy of PW_VV:P')
       endif
-
-!      if (C_coupling_L) then
-!         tr2d => atm_local_busin(:,:,1)
-!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_mcp)
-!         tr2d => atm_local_busin(:,:,2)
-!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i7)
-!         tr2d => atm_local_busin(:,:,3)
-!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_tm)
-!         tr2d => atm_local_busin(:,:,4)
-!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_gl)
-!         tr2d => atm_local_busin(:,:,5)
-!         istat = bus_fold(tr2d,FOLD_BUS_S,cpl_i8)
-!      endif
 !     ________________________________________________________________
 !
       return
