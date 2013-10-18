@@ -82,7 +82,7 @@
       real   , dimension (:      ), allocatable :: rna
       real   , dimension (:,:    ), allocatable :: ssqr,ssur,ssvr,ssq0,ssu0,ssv0
       real   , dimension (:,:    ), allocatable :: ssq0x,pres,ssqx
-      real   , dimension (:,:,:  ), allocatable :: dstlev,srclev,uur,vvr,ttr,zdr,qqr,wwr,meqx,ttx
+      real   , dimension (:,:,:  ), allocatable :: dstlev,srclev,uur,vvr,ttr,zdr,qqr,wwr,meqx,ttx,vtx,hutx
       real   , dimension (:,:,:,:), allocatable :: trr
       real*8 , dimension (:      ), allocatable :: cxa,cxb,cxc,cxd,cua,cub,cuc,cud,cya,cyb,cyc,cyd
       real*8 lnpis_8,lnpref_8,r1,r2
@@ -198,7 +198,22 @@
          allocate (pres(ngd1,nka_t))
          err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t,presstype,.false.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
-         call adj_ss2topo(ssq0x, topo1,pres,meqx,ttx,ngd1,nka_t)
+         jj=-1
+         do k=1,ntra
+               if (trname_a(k)(1:4).eq.'HU  ') jj=k
+         enddo
+         !call handle_error(jj,'casc_hvi','casc_hvi: no HU')
+         allocate(vtx(nid1,njd1,nka_t),hutx(nid1,njd1,nka_t))
+         if (ana_vt_l) then
+             vtx(:,:,:) = ttx(:,:,:)
+         else
+             do k=1,nka_t
+                call mfotvt (vtx(1,1,k),ttx(1,1,k),hutx(1,1,k), &
+                             ngd1,1,ngd1)
+             enddo
+         endif
+         call adj_ss2topo(ssq0x, topo1,pres,meqx,vtx,ngd1,nka_t)
+         deallocate (vtx,hutx)
          deallocate (pres)
 
          if ((presstype.eq.Ver_code).and.(G_nk+2.eq.nka_t)) then

@@ -71,7 +71,7 @@
 
       names(1)= 'UU' ; names(2)= 'UT1'
       call e_whichvar (names,2,e_fu_anal,current_date,var_uu,err_uu)
-      names(1)= 'TT1' ; names(2)= 'VT' ; names(3)= 'TT'
+      names(1)= 'TT1' ; names(2)= 'TT' ; names(3)= 'VT'
       call e_whichvar (names,3,e_fu_anal,current_date,vt,err_vt)
       names(1)= 'HU' ; names(2)= 'ES'; names(3)= 'TD' ; names(4)= 'HR'
       call e_whichvar (names,4,e_fu_anal,current_date,vh,err_hu)

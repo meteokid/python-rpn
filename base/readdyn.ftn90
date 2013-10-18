@@ -110,7 +110,7 @@
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
                                              gz_temp,zd_temp,w_temp,q_temp,   &
-                                             u_temp2,v_temp2, &
+                                             u_temp2,v_temp2, vt_temp,        &
                                              work,srclev,dstlev
       real, pointer    , dimension(:,:,:) :: tr,hu
       real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
@@ -298,10 +298,20 @@
 !         Compute pressure on model surface PPS
 !
           allocate(pres(nbpts,nka_t))
+          allocate(vt_temp(l_ni,l_nj,nkmax))
             err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
             call handle_error(err,'readdyn','readdyn:get_px')
+            if (ana_vt_l) then
+               vt_temp(:,:,:) = tt_temp(:,:,:)
+            else
+               do k=1,nka_t
+                  call mfotvt (vt_temp(1,1,k),tt_temp(1,1,k),hu_temp(1,1,k), &
+                               nbpts,1,nbpts)
+               enddo
+            endif
             call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,nka_t), &
-                             tt_temp,nbpts,nka_t)
+                             vt_temp,nbpts,nka_t)
+          deallocate(vt_temp)
 !           ps is p0 for non stag
              do j=1,l_nj
              do i=1,l_ni
@@ -309,8 +319,8 @@
                 pps(i,j)= F_s(i,j)
              enddo
              enddo
-             deallocate(pres)
-          else
+          deallocate(pres)
+         else
 !NO INTERPOLATION REQUIRED
              do j=1,l_nj
              do i=1,l_ni
@@ -318,7 +328,7 @@
                 F_s(i,j) = pps(i,j)
              end do
              end do
-          endif
+         endif
 !---------------------------------------------------------------------
 !     SETUP THE vertical interpolation column for SRC and DST
 !---------------------------------------------------------------------
