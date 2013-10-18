@@ -12,13 +12,9 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "msg.h"
-#include "stop_mpi.h"
-#include "model_macros_f.h"
-
 !/**
-subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
-                                F_fields_type_L, F_nfields, F_is_mom_L, &
+
+subroutine adx_main_3_intlag8 ( F_px, F_py, F_pz, F_is_mom_L, &
                                 F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk)
    implicit none
 #include <arch_specific.hf>
@@ -30,9 +26,6 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
    logical :: F_doAdwStat_L  !I, compute stats if .true.
    integer :: F_ni,F_nj,F_nk !I, pos array dims
    integer :: F_k0           !I, vertical scope F_k0 to F_nk
-   integer :: F_nfields      !I, nb of fields to advect
-   logical, dimension(2,F_nfields)         :: F_fields_type_L !I, fields type
-   character(len=*), dimension(2,F_nfields):: F_fields_list   !I, gmm flds lbls
    real, dimension(F_ni,F_nj,F_nk) :: F_px, F_py, F_pz !I, upstream positions at t1
 !
    !@author alain patoine
@@ -59,30 +52,20 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
-#include "ptopo.cdk"
-#include "lun.cdk"
-#include "lctl.cdk"
 #include "orh.cdk"
 #include "schm.cdk"
-#include "step.cdk"
+#include "rhsc.cdk"
+#include "tr3d.cdk"
 
    integer, external :: adx_ckbd3
 
-   integer, parameter :: FIELD_IN  = 1
-   integer, parameter :: FIELD_OUT = 2
-   integer, parameter :: IS_MOM    = 1
-   integer, parameter :: IS_WIND   = 2
-
    character(len=1) :: level_type_S
-
-   integer :: n,outside,sum_outside,ier
-   integer :: i0,j0,in,jn, istat
+   integer :: n,i0,j0,in,jn,istat
    integer, dimension(F_ni,F_nj,F_nk) :: exch_c1
    real   , dimension(F_ni,F_nj,F_nk) :: exch_n1, exch_xgg1, exch_xdd1
    real   , dimension(:), allocatable :: capx2,capy2,capz2
-   real   , dimension(3)              :: minv,maxv
+
    !---------------------------------------------------------------------
-   call msg(MSG_DEBUG, 'adx_main_3_intlag [begin]')
 
    call adx_get_ij0n (i0,in,j0,jn)
 
@@ -117,17 +100,40 @@ subroutine adx_main_3_intlag7 ( F_px, F_py, F_pz, F_fields_list,        &
 
    endif
 
-   do n = 1, F_nfields
-      if (F_fields_type_L(IS_MOM,n) .neqv. F_is_mom_L) cycle
-      call adx_interp_gmm7 ( F_fields_list(FIELD_OUT,n), F_fields_list(FIELD_IN,n), & 
-                             F_fields_type_L(IS_WIND,n),                            &
-                             F_px, F_py, F_pz, capx2, capy2, capz2, exch_c1,        &
-                             F_nk, i0, in, j0, jn, F_k0, level_type_S )
-   end do
+   if (F_is_mom_L) then
+      call adx_interp_gmm7 ( gmmk_ruw2_s, gmmk_ruw1_s , .true.     , &
+                             F_px, F_py, F_pz, capx2, capy2, capz2 , &
+                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+      call adx_interp_gmm7 ( gmmk_rvw2_s, gmmk_rvw1_s , .true.     , &
+                             F_px, F_py, F_pz, capx2, capy2, capz2 , &
+                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+      call adx_interp_gmm7 ( gmmk_rhsc_s, gmmk_orhsc_s, .false.    , &
+                             F_px, F_py, F_pz, capx2, capy2, capz2 , &
+                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+   else
+      call adx_interp_gmm7 ( gmmk_rhst_s, gmmk_orhst_s, .false.   , &
+                             F_px, F_py, F_pz, capx2, capy2, capz2, &
+                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
+      call adx_interp_gmm7 ( gmmk_rhsf_s, gmmk_orhsf_s, .false.   , &
+                             F_px, F_py, F_pz, capx2, capy2, capz2, &
+                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
+      if (.not. Schm_hydro_L) then
+         call adx_interp_gmm7 ( gmmk_rhsw_s, gmmk_orhsw_s, .false.   , &
+                                F_px, F_py, F_pz, capx2, capy2, capz2, &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
+      endif
+      if (Orh_icn == Schm_itcn) then
+         do n=1,Tr3d_ntr
+         call adx_interp_gmm7 ( 'TR/'//trim(Tr3d_name_S(n))//':M'         , &
+                                'TR/'//trim(Tr3d_name_S(n))//':P', .false., &
+                                F_px, F_py, F_pz, capx2, capy2, capz2     , &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
+         end do
+      endif
+   endif
 
-   if (.not.adx_lam_L) deallocate(capx2, capy2, capz2, stat=istat)
+   if (.not.adx_lam_L) deallocate(capx2, capy2, capz2)
 
-   call msg(MSG_DEBUG, 'adx_main_3_intlag [end]')
    !---------------------------------------------------------------------
    return
-end subroutine adx_main_3_intlag7
+end subroutine adx_main_3_intlag8

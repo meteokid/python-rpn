@@ -12,13 +12,12 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "msg.h"
 
 !/**
-subroutine adx_interp_gmm7 ( F_out_S, F_in_S, F_wind_L, &
-                             F_capx1, F_capy1, F_capz1, &
-                             F_capx2, F_capy2, F_capz2, &
-                             F_c1, F_nk, i0,in,j0,jn,k0, F_lev_S)
+subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
+                             F_capx1, F_capy1, F_capz1 , &
+                             F_capx2, F_capy2, F_capz2 , &
+                             F_c1, F_nk, i0,in,j0,jn,k0, F_lev_S )
    implicit none
 #include <arch_specific.hf>
 !
@@ -45,52 +44,32 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S, F_wind_L, &
 
    type(gmm_metadata) :: mymeta
    logical :: mono_L, clip_positive_L
-   integer :: err, kcorr
-   real, pointer, dimension (:,:,:) :: fld_in,fld_out
+   integer :: err
+   real, pointer, dimension (:,:,:) :: fld_in, fld_out
 
    !---------------------------------------------------------------------
 
-   call msg(MSG_DEBUG,'adx_interp_gmm')
-
    err =     gmm_get(F_in_S ,fld_in ,mymeta)
    err = min(gmm_get(F_out_S,fld_out,mymeta),err)
-   call handle_error(err,'adx_interp_gmm','gmm_get for '//trim(F_in_S)//', '//trim(F_out_S))
-
-!   print*,'======================================================================'
-!   print*,'ANDRE adx_interp_gmm F_in_S,F_out_S, k0, F_nk',F_in_S,' ',F_out_S,k0,F_nk
 
    mono_L = .false.
    clip_positive_L = .false.
-   kcorr=0
    if (F_in_S(1:3) == 'TR/') then
-     kcorr=1 ! AFSGAPM NOTE: The RHS do not have the top level any more but the tracers still do.
-             !               When the top level will be removed in the tracer, this line
-             !               of code will be removed along with the index on fld_out and fld_in
-     if (adw_positive_L) then
-        clip_positive_L = .true.
-     else
-        mono_L = adw_mono_L
-     endif
+      if (adw_positive_L) then
+         clip_positive_L = .true.
+      else
+         mono_L = adw_mono_L
+      endif
    endif
 
-   if (adw_stats_L) call glbstat2(fld_in, F_in_S, 'adx_int',                  &
-           mymeta%l(1)%low,mymeta%l(1)%high, mymeta%l(2)%low,mymeta%l(2)%high,&
-           1,F_nk+kcorr, i0,in,j0,jn,1+kcorr,F_nk+kcorr)
-
-   call adx_interp7 (fld_out(mymeta%l(1)%low,mymeta%l(2)%low,1+kcorr),&
-                     fld_in (mymeta%l(1)%low,mymeta%l(2)%low,1+kcorr),&
-                     F_c1,                 &
-                     F_capx1, F_capy1, F_capz1,              &
-                     F_capx2, F_capy2, F_capz2,              &
-                     mymeta%l(1)%low,mymeta%l(1)%high,       &
-                     mymeta%l(2)%low,mymeta%l(2)%high, F_nk, &
-                     F_wind_L, mono_L, clip_positive_L, i0,in,j0,jn,k0, F_lev_S)
-
-   if (adw_stats_L) call glbstat2(fld_out, F_out_S, 'adx_int',                &
-           mymeta%l(1)%low,mymeta%l(1)%high, mymeta%l(2)%low,mymeta%l(2)%high,&
-           1,F_nk+kcorr, i0,in,j0,jn,1+kcorr,F_nk+kcorr)
-
-   call msg(MSG_DEBUG,'adx_interp_gmm [end]')
+   call adx_interp7 (fld_out(mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_in (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     F_c1, F_capx1, F_capy1, F_capz1           ,&
+                     F_capx2, F_capy2, F_capz2                 ,&
+                     mymeta%l(1)%low,mymeta%l(1)%high          ,&
+                     mymeta%l(2)%low,mymeta%l(2)%high, F_nk    ,&
+                     F_wind_L, mono_L, clip_positive_L         ,&
+                     i0,in,j0,jn,k0, F_lev_S)
 
   !---------------------------------------------------------------------
 

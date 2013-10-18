@@ -40,9 +40,7 @@
 #include "ptopo.cdk"
 #include "lam.cdk"
 !
-      logical  decomp2
-      external decomp2
-
+      logical, external :: decomp3
       integer err,ierr
 !
 !-------------------------------------------------------------------
@@ -91,10 +89,10 @@
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
 !
       ierr = -1
-      if (decomp2 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true., &
-                   F_npex, (Grd_extension+1), F_checkparti_L ) .and.             &
-          decomp2 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true., &
-                   F_npey, (Grd_extension+1), F_checkparti_L )) ierr = 0
+      if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true., &
+                   F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.          &
+          decomp3 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true., &
+                   F_npey, (Grd_extension+1), F_checkparti_L, 0 )) ierr = 0
       if  (Lun_out.gt.0) then
          if (ierr.lt.0)  then
             write(lun_out,*) 'DOMAIN_DECOMP: ILLEGAL DOMAIN PARTITIONING'
@@ -120,10 +118,6 @@
 !-------------------------------------------------------------------
 !
       return
-      end
-      subroutine domain_decomp
-      print*, 'SUBROUTINE domain_decomp has been replaced by domain_decomp2'
-      stop
       end
 
 

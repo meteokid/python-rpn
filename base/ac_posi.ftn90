@@ -97,11 +97,25 @@
          if (ypx(i).le.ac_yp(Grdc_nj)) Grdc_gjf=i
       enddo
 
-      Grdc_gid = Grdc_gid - 2
-      Grdc_gjd = Grdc_gjd - 2
-      Grdc_gif = Grdc_gif + 3
-      Grdc_gjf = Grdc_gjf + 3
-      
+      ! Tests if same grid
+      if(&
+           Grdc_iref.eq.Grd_iref.and.&
+           Grdc_jref.eq.Grd_jref.and.&
+           abs(Grdc_latr-Grd_latr)<1.e-6.and.&
+           abs(Grdc_lonr-Grd_lonr)<1.e-6.and.&
+           abs(Grdc_dx-Grd_dx)/Grd_dx<1.e-6)then
+         write (6,1007)
+         Grdc_gid=1
+         Grdc_gif=dimgx
+         Grdc_gjd=1
+         Grdc_gjf=dimgy
+      else
+         Grdc_gid = Grdc_gid - 2
+         Grdc_gjd = Grdc_gjd - 2
+         Grdc_gif = Grdc_gif + 3
+         Grdc_gjf = Grdc_gjf + 3
+      endif
+
       if ( (Grdc_gid.lt.1    ).or.(Grdc_gjd.lt.1    ).or. &
            (Grdc_gif.gt.dimgx).or.(Grdc_gjf.gt.dimgy) ) Grdc_ndt = -1
 
@@ -152,6 +166,7 @@
  1006 format (/'################ SELF CASCADE DATA WILL BE PRODUCED ################'/&
                ' Cascade grid: Grdc_gid,Grdc_gif=',2I5, ';    Grdc_gjd,Grdc_gjf=',2I5/&
                ' Cascade grid: Grdc_ndt,Grdc_start,Grdc_end=',3i5)
+ 1007 format ( ' This is an acid test' )
  1010 format ( '####################################################################')
 !--------------------------------------------------------------------
       return

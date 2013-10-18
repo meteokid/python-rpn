@@ -31,10 +31,10 @@
       real*8 xpaq1(*),ypaq1(*),xpau1(*),ypav1(*)
       real uun(*),vvn(*),ttn(*),zdn(*),meqn(*),ssqn(*), &
            qqn(*),wwn(*),trn(*),topo1(*)
-      real uu1(F_ni,F_nj,lnk+1), vv1(F_ni,F_nj,lnk+1), &
-           tt1(F_ni,F_nj,lnk+2), zd1(F_ni,F_nj,lnk+1), &
-           qq1(F_ni,F_nj,lnk+2), ww1(F_ni,F_nj,lnk+1), &
-          ssq1(F_ni,F_nj)      , tr1(F_ni,F_nj,lnk+2,* )
+      real uu1(F_ni,F_nj,lnk)  , vv1(F_ni,F_nj,lnk), &
+           tt1(F_ni,F_nj,lnk)  , zd1(F_ni,F_nj,lnk), &
+           qq1(F_ni,F_nj,lnk)  , ww1(F_ni,F_nj,lnk), &
+          ssq1(F_ni,F_nj)      , tr1(F_ni,F_nj,lnk,* )
 !
 !author    M. Desgagne  2001
 !
@@ -70,7 +70,6 @@
 #include "cstv.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
-#include "acid.cdk"
 
       integer,external ::  get_px
 
@@ -99,29 +98,29 @@
       ngd1 = nid1 * njd1
 
       if (ngd.le.0) return
-!
+
       allocate ( idx(nid1), idy(njd1), idu(max(F_ni,F_nj)) )
       allocate ( cxa(nid1),cxb(nid1),cxc(nid1),cxd(nid1),  &
                  cua(max(nid1,njd1)),cub(max(nid1,njd1)),  &
                  cuc(max(nid1,njd1)),cud(max(nid1,njd1)),  &
                  cya(njd1),cyb(njd1),cyc(njd1),cyd(njd1)   )
-!
-      allocate ( uur(F_ni,F_nj,nka_m), vvr(F_ni,F_nj,nka_m  ), zdr(F_ni,F_nj,nka_t-1), &
-                 ttr(F_ni,F_nj,nka_t), qqr(F_ni,F_nj,nka_m+1), wwr(F_ni,F_nj,nka_t-1), &
-                 trr(F_ni,F_nj,nka_t,ntra),                                            &
-                 ssur(F_ni,F_nj), ssvr(F_ni,F_nj), ssqr(F_ni,F_nj),                    &
+
+      allocate ( uur(F_ni,F_nj,nka_m), vvr(F_ni,F_nj,nka_m), zdr(F_ni,F_nj,nka_t-1), &
+                 ttr(F_ni,F_nj,nka_t), qqr(F_ni,F_nj,nka_m-1), wwr(F_ni,F_nj,nka_t-1), &
+                 trr(F_ni,F_nj,nka_t,ntra),                                        &
+                 ssur(F_ni,F_nj), ssvr(F_ni,F_nj), ssqr(F_ni,F_nj),                &
                  ssq0(F_ni,F_nj), ssu0(F_ni,F_nj), ssv0(F_ni,F_nj) )
 
       allocate ( ttx  (nid1,njd1,nka_t),  meqx(nid1,njd1,nka_m), &
                  ssqx (nid1,njd1)      ,  ssq0x(nid1,njd1) )
-!
+
 ! Perform horizontal interpolations for ttx, meqx and ssqx on extended (nid1,njd1) grid
-!
-      call grid_to_grid_coef(xpq1,nid1,xpaq1,nia,idx,cxa,cxb,cxc,cxd, Lam_hint_S)
-      call grid_to_grid_coef(ypq1,njd1,ypaq1,nja,idy,cya,cyb,cyc,cyd, Lam_hint_S)
+
+      call grid_to_grid_coef (xpq1,nid1,xpaq1,nia,idx,cxa,cxb,cxc,cxd, Lam_hint_S)
+      call grid_to_grid_coef (ypq1,njd1,ypaq1,nja,idy,cya,cyb,cyc,cyd, Lam_hint_S)
 
       call hinterpo ( ttx,nid1,njd1, ttn,nia,nja,nka_t, &
-                      idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
+                      idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S )
       ttr(1:F_ni,1:F_nj,:) = ttx(1:F_ni,1:F_nj,:)
 
       if (presstype.eq.0) then !pressure levels
@@ -135,16 +134,16 @@
                           idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
           ssqr(1:F_ni,1:F_nj) = ssqx (1:F_ni,1:F_nj)
       endif
-!
+
 ! Perform horizontal interpolations for all other variables on regular (F_ni,F_nj) grid
-!
-      if (.not.Schm_hydro_L.and.ana_q_L)                  &
-      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m+1, &
+
+      if (ana_q_L)                                      &
+      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-      if (ana_zd_L)                                       &
+      if (ana_zd_L)                                     &
       call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-      if (ana_w_L)                                        &
+      if (ana_w_L)                                      &
       call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       do k=1,ntra
@@ -177,9 +176,9 @@
 
       deallocate (idx,idy,idu,cxa,cxb,cxc,cxd,cua,cub,cuc,cud, &
                                               cya,cyb,cyc,cyd)
-!
+
 ! Prepare destination ssq1,ssu0,ssv0 surface conditions for vertical interpolation
-!
+
       Vertint_L = .true.
 
 !     Obtain pressure S
@@ -193,7 +192,7 @@
           ssq0x(1:nid1,1:njd1) =ssq0x(1:nid1,1:njd1)-lnpref_8
       else
 !       Analysis NOT on pressure coordinates, obtain surface pressure
-!        whether or not there is vertical interpolation
+!       whether or not there is vertical interpolation
 
          allocate (pres(ngd1,nka_t))
          err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t,presstype,.false.)
@@ -201,18 +200,18 @@
          call adj_ss2topo(ssq0x, topo1,pres,meqx,ttx,ngd1,nka_t)
          deallocate (pres)
 
-         if ((presstype.eq.Ver_code).and.(G_nk+2.eq.nka_t)) then
+         if ((presstype.eq.Ver_code).and.(G_nk+1.eq.nka_t)) then
             Vertint_L   = .false.
             mustvinterp = 0
-            do k=1,G_nk+2
+            do k=1,G_nk
                r1=ana_at_8(k)
-               r2=Ver_a_8%t(k)
+               r2=Ver_a_8%t(k+1)
                if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
                r1=ana_bt_8(k)
-               r2=Ver_b_8%t(k)
+               r2=Ver_b_8%t(k+1)
                if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
             end do
-            do k=1,G_nk+1
+            do k=1,G_nk
                r1=ana_am_8(k)
                r2=Ver_a_8%m(k)
                if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
@@ -263,11 +262,11 @@
              enddo 
          endif
 
-         allocate (dstlev(F_ni,F_nj,G_nk+2),srclev(F_ni,F_nj,max(nka_t,nka_m+1)))
+         allocate (dstlev(F_ni,F_nj,G_nk+1),srclev(F_ni,F_nj,max(nka_t,nka_m)))
 
          err = get_px(srclev,ssqr,ngd,ana_at_8,ana_bt_8,nka_t,presstype,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
-         err = get_px(dstlev,ssq1,ngd,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
+         err = get_px(dstlev,ssq1,ngd,Ver_a_8%t(2),Ver_b_8%t(2),G_nk,Ver_code,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
       else
@@ -279,118 +278,93 @@
       deallocate (ttx, meqx, ssqx, ssq0x)
 
 ! VERTICAL INTERPOLATION (in log(pressure))
-!
+
 ! Interpolate ZD,W 
-!
+
       if (ana_zd_L) then
          if (Vertint_L) then
-             call vte_intvertx3(zd1,zdr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'ZD','cubic') 
+             call vte_intvertx3(zd1,zdr,srclev,dstlev,ngd,nka_t-1,G_nk,'ZD','cubic') 
          else
-             zd1(:,:,1:G_nk+1) = zdr(:,:,1:G_nk+1)
+             zd1(:,:,1:G_nk) = zdr(:,:,1:G_nk)
          endif
-      else
-         zd1 = 0.
       endif
-!
+
 ! Interpolate W 
-!
+
       if (ana_w_L) then
          if (Vertint_L) then
-             call vte_intvertx3(ww1,wwr,srclev,dstlev, ngd, nka_t-1,G_nk+1,'WW','cubic') 
+             call vte_intvertx3(ww1,wwr,srclev,dstlev,ngd,nka_t-1,G_nk,'WW','cubic') 
          else
-             ww1(:,:,1:G_nk+1) = wwr(:,:,1:G_nk+1)
+             ww1(:,:,1:G_nk) = wwr(:,:,1:G_nk)
          endif
-      else
-         ww1 = 0.
       endif
-!
+
 ! Interpolate TT
-!
+
       if (Vertint_L) then
-         call vte_intvertx3(tt1,ttr,srclev,dstlev, ngd, nka_t,G_nk+2,'VT','cubic') 
+         call vte_intvertx3(tt1,ttr,srclev,dstlev,ngd,nka_t,G_nk,'VT','cubic') 
       else 
-         tt1(:,:,1:G_nk+2) = ttr(:,:,1:G_nk+2)
+         tt1(:,:,1:G_nk) = ttr(:,:,1:G_nk)
       endif
-!
+
 ! Interpolate Tracers and place in either bcs or local space
 ! Use the same srclev,dstlev as calculated in TT
-!
-      do 100 n=1,Tr3d_ntr
+
+      do n=1,Tr3d_ntr
          jj=-1
          do k=1,ntra
             if (Tr3d_name_S(n).eq.trname_a(k)(1:4)) jj=k
          end do
          if (jj.gt.0) then
             if (Vertint_L) then
-                call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU','cubic')
-                tr1(:,:,1:G_nk+2,n) = max(tr1(:,:,1:G_nk+2,n),0.0)
+                call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk,'HU','cubic')
+                tr1(:,:,1:G_nk,n) = max(tr1(:,:,1:G_nk,n),0.0)
             else
-                tr1(:,:,1:G_nk+2,n) = trr(:,:,1:G_nk+2,jj)
+                tr1(:,:,1:G_nk,n) = trr(:,:,1:G_nk,jj)
             endif
          else
             tr1(:,:,:,n) = 0.
          endif
- 100  continue
-!
+      end do
+
 ! Interpolate Q
-!
-      if (.not.Schm_hydro_L) then
-          if(ana_q_L) then
-             if (Vertint_L) then
-                err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk,Ver_code,.true.)
-                call handle_error(err,'casc_hvi','casc_hvi:get_px')
-                do j=1,F_nj
-                do i=1,F_ni
-                   lnpis_8 = ssq1(i,j) + Cstv_Zsrf_8
-                   dstlev(i,j,G_nk+1) = lnpis_8
-                enddo
-                enddo
-!find pressure levels for qqr(2:nka_m) = qt1(1:G_nk)
-                err = get_px(srclev(1,1,2),ssqr,ngd,ana_am_8,ana_bm_8,nka_m-1,presstype,.true.)
-                call handle_error(err,'casc_hvi','casc_hvi:get_px')
-!set pressure level for qqr(1) = qt1(0)= 0
-!set pressure level for qqr(nka_m+1) = qt1(G_nk+1)= psurf
-                do j=1,F_nj
-                do i=1,F_ni
-                   srclev(i,j,1) = ana_at_8(1)
-                   lnpis_8 = ssqr(i,j) + Cstv_Zsrf_8
-                   srclev(i,j,nka_m+1) = lnpis_8
-                enddo
-                enddo
-                call vte_intvertx3(qq1(1,1,2),qqr,srclev,dstlev, ngd, nka_m+1,G_nk+1,'QQ','cubic') 
-                qq1(:,:,1) = 0.
-             else
-                qq1(:,:,1:G_nk+2) = qqr(:,:,1:G_nk+2)
-             endif
-          else
-             qq1 = 0.
-          endif
+
+      if(ana_q_L) then
+         if (Vertint_L) then
+            err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(2),Ver_b_8%m(2),G_nk,Ver_code,.true.)
+            call handle_error(err,'casc_hvi','casc_hvi:get_px')
+            err = get_px(srclev,ssqr,ngd,ana_am_8(2),ana_bm_8(2),nka_m-1,presstype,.true.)
+            call handle_error(err,'casc_hvi','casc_hvi:get_px')
+            call vte_intvertx3(qq1,qqr,srclev,dstlev,ngd,nka_m-1,G_nk,'QQ','cubic') 
+         else
+            qq1(:,:,2:G_nk) = qqr(:,:,2:G_nk)
+         endif
       endif
-!
+
 !     Interpolate UT1 and VT1
-!
+
       if (Vertint_L) then
          err = get_px(srclev,ssur,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
-         err = get_px(dstlev,ssu0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
+         err = get_px(dstlev,ssu0,ngd,Ver_a_8%m,Ver_b_8%m,G_nk,Ver_code,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx3(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk+1,'UU','cubic') 
+         call vte_intvertx3(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk,'UU','cubic') 
 
          err = get_px(srclev,ssvr,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
-         err = get_px(dstlev,ssv0,ngd,Ver_a_8%m(1),Ver_b_8%m(1),G_nk+1,Ver_code,.true.)
+         err = get_px(dstlev,ssv0,ngd,Ver_a_8%m,Ver_b_8%m,G_nk,Ver_code,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx3(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk+1,'VV','cubic') 
+         call vte_intvertx3(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk,'VV','cubic') 
 
          deallocate (dstlev,srclev)
 
       else
-         uu1(:,:,1:G_nk+1) = uur(:,:,1:G_nk+1)
-         vv1(:,:,1:G_nk+1) = vvr(:,:,1:G_nk+1) 
+         uu1(:,:,1:G_nk) = uur(:,:,1:G_nk)
+         vv1(:,:,1:G_nk) = vvr(:,:,1:G_nk) 
       endif
-!
+
       deallocate (ssur,ssvr,ssqr,ssq0,ssu0,ssv0)
       deallocate (uur,vvr,zdr,ttr,qqr,wwr,trr)
 !
@@ -398,4 +372,4 @@
 !
       return
       end
-!
+

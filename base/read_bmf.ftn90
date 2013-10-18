@@ -15,14 +15,13 @@
 
 !**s/r read_bmf - read the dynamics fields from entrance programs
 !
-#include "model_macros_f.h"
-!
-      subroutine read_bmf(za_8,zb_8,lvm, zat_8,zbt_8,lvt, &
-                          u_temp,lniu,lnju, v_temp,lniv,lnjv, &
-                          hu_temp,tt_temp,gz_temp,ps,topo_temp, &
-                          zd_temp,w_temp,q_temp,lni,lnj,nktmp)
+      subroutine read_bmf ( za_8,zb_8,lvm, zat_8,zbt_8,lvt      , &
+                            u_temp,lniu,lnju, v_temp,lniv,lnjv  , &
+                            hu_temp,tt_temp,gz_temp,ps,topo_temp, &
+                            zd_temp,w_temp,q_temp,lni,lnj,nktmp)
       implicit none
 #include <arch_specific.hf>
+
       integer lni,lnj,lniu,lnju,lniv,lnjv,lvm,lvt,nktmp
       real*8  za_8(lvm),zb_8(lvm),zat_8(lvt),zbt_8(lvt)
       real,   dimension(lni,lnj      ) :: ps,topo_temp
@@ -45,22 +44,16 @@
 ! v4_04 - Plante A.            - Remove offline mode
 ! v4_05 - Plante A.            - Add read for w, zd, q
 !
-!object
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "bmf.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "acq.cdk"
-#include "schm.cdk"
 #include "bcsgrds.cdk"
-!
+
       integer  bmf_get
       external bmf_get
-!
+
       integer i,err,nerr
       integer, parameter :: maxerr = 400
       integer, dimension(maxerr) ::  error
@@ -69,26 +62,18 @@
 !
 !     Read the BMF file associated to each Ptopo_myproc
 
-      error = -1
-      ana_zd_L=.false.
-      ana_w_L =.false.
-      ana_q_L =.false.
-!
+      error   = -1
+      ana_zd_L= .false. ; ana_w_L = .false. ; ana_q_L = .false.
+
 !     Initialization of some switches and dimensions
-!
+
       err = bmf_get ('AHAV',bmf_time1,bmf_time2,Acqi_datasp,-1,-1., &
                                                      1,2,1,1,1,1)
-
       Acql_prsanl   = (Acqi_datasp(2).eq.0) ! pressure
       Acql_siganl   = (Acqi_datasp(2).eq.1) ! SIGMA
       Acql_etaanl   = (Acqi_datasp(2).eq.3) ! SIGPT   (eta, rcoef=1.0)
-      Acql_hybanl   = (Acqi_datasp(2).eq.4) ! HYBLG   (hybrid Laprise/Girard)
-      Acql_staganl  = (Acqi_datasp(2).eq.6) ! HYBSTAG (staggered hybrid Girard)
-
-      zd_temp = 0.
-      w_temp = 0.
-      q_temp = 0.
-
+      Acql_hybanl   = (Acqi_datasp(2).eq.4) ! HYBLG   (hyb Laprise/Girard)
+      Acql_staganl  = (Acqi_datasp(2).eq.6) ! HYBSTAG (stag hybrid Girard)
       if (Acql_staganl)      Acql_hybanl  = .true.
 
       error(1) = bmf_get ('ZA  ',bmf_time1,bmf_time2,-1,-1.,za_8 ,1, &
@@ -136,23 +121,15 @@
          if (bmf_get('ZD  ',bmf_time1,bmf_time2,-1,zd_temp,-1., &
                                            1,lni,1,lnj,1,nktmp) .eq. 0) then
             ana_zd_L= .true.
-         else
-            zd_temp = 0.
          endif
 
          if (bmf_get('W   ',bmf_time1,bmf_time2,-1, w_temp,-1., &
                                            1,lni,1,lnj,1,nktmp) .eq. 0) then
             ana_w_L= .true.
-         else
-            w_temp = 0.
          endif
-         if(.not.Schm_hydro_L)then
-            if (bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1., &
-                                              1,lni,1,lnj,1,nktmp) .eq. 0) then
-               ana_q_L= .true.
-            else
-               q_temp = 0.
-            endif
+         if (bmf_get('Q   ',bmf_time1,bmf_time2,-1, q_temp,-1., &
+                                           1,lni,1,lnj,1,nktmp) .eq. 0) then
+            ana_q_L= .true.
          endif
       endif
 

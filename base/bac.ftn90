@@ -58,64 +58,51 @@
 #include "rhsc.cdk"
 #include "nl.cdk"
 #include "vt0.cdk" 
-#include "vtx.cdk" 
 #include "lam.cdk"
 #include "lctl.cdk"
 #include "nest.cdk"
 #include "wil_williamson.cdk"
 #include "grd.cdk"
 
-      type(gmm_metadata) :: mymeta
       integer :: istat, i0, j0, k0, in, jn
+      real, dimension(:,:,:), pointer :: nestq
 !     __________________________________________________________________
 !
       if (Schm_autobar_L.and.Williamson_case.eq.1) return
 
       if (Lun_debug_L) write(Lun_out,1000)
 
-      istat = gmm_get(gmmk_rhsu_s,rhsu,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsu)'
-      istat = gmm_get(gmmk_rhsv_s,rhsv,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsv)'
-      istat = gmm_get(gmmk_rhst_s,rhst,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhst)'
-      istat = gmm_get(gmmk_rhsf_s,rhsf,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsf)'
-      istat = gmm_get(gmmk_rhsb_s,rhsb,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsb)'
-      istat = gmm_get(gmmk_wt0_s,wt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(wt0)'
-      istat = gmm_get(gmmk_tt0_s,tt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(tt0)'
-      istat = gmm_get(gmmk_st0_s,st0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(st0)'
-      istat = gmm_get(gmmk_zdt0_s,zdt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(zdt0)'
-      istat = gmm_get(gmmk_rhsw_s,rhsw,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(rhsw)'
-      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(fis0)'
-      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(ut0)'
-      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'bac ERROR at gmm_get(vt0)'
-      istat = gmm_get(gmmk_wt0_s,wt0,mymeta)
-
-      istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
-      istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
+      istat = gmm_get (gmmk_rhsu_s, rhsu)
+      istat = gmm_get (gmmk_rhsv_s, rhsv)
+      istat = gmm_get (gmmk_rhst_s, rhst)
+      istat = gmm_get (gmmk_rhsf_s, rhsf)
+      istat = gmm_get (gmmk_rhsb_s, rhsb)
+      istat = gmm_get (gmmk_ut0_s , ut0 )
+      istat = gmm_get (gmmk_vt0_s , vt0 )
+      istat = gmm_get (gmmk_wt0_s , wt0 )
+      istat = gmm_get (gmmk_tt0_s , tt0 )
+      istat = gmm_get (gmmk_qt0_s , qt0 )
+      istat = gmm_get (gmmk_st0_s , st0 )
+      istat = gmm_get (gmmk_zdt0_s, zdt0)
+      istat = gmm_get (gmmk_rhsw_s, rhsw)
+      istat = gmm_get (gmmk_fis0_s, fis0)
+      if (G_lam) then
+         istat = gmm_get (gmmk_nest_q_s, nestq)
+      else
+         allocate (nestq(1,1,1))
+      endif
 
       i0 = 1   +pil_w
       in = l_ni-pil_e
       j0 = 1   +pil_s
       jn = l_nj-pil_n
-
       k0 = 1+Lam_gbpil_T
 
-      call  bacp (   Itr, Itnlh, F_lhs_sol, fis0                          , &
-                 ut0 ,  vt0, wt0(l_minx,l_miny,2), tt0   (l_minx,l_miny,1), &
-                 st0 , zdt0, qt0(l_minx,l_miny,1), nest_q(l_minx,l_miny,1), &
-                 rhsu, rhsv, rhst, rhsw, rhsf, rhsb, nl_u, nl_v, nl_t     , &
-                 nl_w, nl_f, nl_b, LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
+      call  bacp ( Itr, Itnlh, F_lhs_sol, fis0              , &
+                   ut0, vt0, wt0, tt0, st0, zdt0, qt0, nestq, &
+                   rhsu, rhsv, rhst, rhsw, rhsf, rhsb       , &
+                   nl_u, nl_v, nl_t, nl_w, nl_f, nl_b       , &
+                   LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
 
       if (Grd_yinyang_L) call yyg_bacwindst (ut0,vt0,zdt0,tt0,st0,qt0,LDIST_DIM,l_nk)
 

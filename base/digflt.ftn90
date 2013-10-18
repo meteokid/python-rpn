@@ -85,23 +85,21 @@
       istat = gmm_get(gmmk_qta_s,qta,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
 !
-      do k= 1, l_nk+1
+      do k= 1, l_nk
       do j= 1, l_nj 
       do i= 1, l_ni 
-         tta (i,j,k) =  tta(i,j,k) + dfcoef *  tt1(i,j,k)
-         uta (i,j,k) =  uta(i,j,k) + dfcoef *  ut1(i,j,k)
-         vta (i,j,k) =  vta(i,j,k) + dfcoef *  vt1(i,j,k)
-         zdta(i,j,k) = zdta(i,j,k) + dfcoef * zdt1(i,j,k)
-         wta (i,j,k) =  wta(i,j,k) + dfcoef *  wt1(i,j,k)
-         qta (i,j,k) =  qta(i,j,k) + dfcoef *  qt1(i,j,k)
+         tta (i,j,k)   =  tta(i,j,k)   + dfcoef *  tt1(i,j,k)
+         uta (i,j,k)   =  uta(i,j,k)   + dfcoef *  ut1(i,j,k)
+         vta (i,j,k)   =  vta(i,j,k)   + dfcoef *  vt1(i,j,k)
+         zdta(i,j,k)   = zdta(i,j,k)   + dfcoef * zdt1(i,j,k)
+         wta (i,j,k)   =  wta(i,j,k)   + dfcoef *  wt1(i,j,k)
+         qta (i,j,k+1) =  qta(i,j,k+1) + dfcoef *  qt1(i,j,k+1)
       end do
       end do
       end do
 !
       do j= 1, l_nj
       do i= 1, l_ni
-         qta (i,j,0)      = qta(i,j,0)      + dfcoef * qt1(i,j,0)
-         tta (i,j,l_nk+2) = tta(i,j,l_nk+2) + dfcoef * tt1(i,j,l_nk+2)
          sta (i,j)        = sta(i,j)        + dfcoef * st1(i,j)
       end do
       end do
@@ -116,7 +114,7 @@
          istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
 
          if ( Init_dftr_L ) then
-            do k=1,G_nk+2
+            do k=1,G_nk
             do j=1,l_nj
             do i=1,l_ni
                tra(i,j,k) = tra(i,j,k) + dfcoef * tr(i,j,k)
@@ -124,7 +122,7 @@
             end do
             end do
          elseif ( Step_kount .eq. (Init_dfnp-1)/2 ) then
-            tra(1:l_ni,1:l_nj,1:G_nk+2) = tr(1:l_ni,1:l_nj,1:G_nk+2)
+            tra(1:l_ni,1:l_nj,1:G_nk) = tr(1:l_ni,1:l_nj,1:G_nk)
          endif
 
       end do

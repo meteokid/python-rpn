@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine rdrstrt ()
-!
       implicit none
 #include <arch_specific.hf>
 !
@@ -40,60 +39,33 @@
 ! v3_31 - Desgagne M.       - new coupling interface to OASIS
 ! v3_31 - Desgagne M.       - restart with physics BUSPER
 ! v4_05 - Lepine M.         - VMM replacement with GMM
-!
-!object
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "itf_cpl.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
-!
-      integer  dim,ier
-      integer  fclos,wkoffit
-      external fclos,wkoffit
+
+      integer, external :: fclos,wkoffit
+      integer  ier
 !
 !     ---------------------------------------------------------------
 !
       if (Rstri_rstn_L) then
-!
-!         if (wkoffit('../restart_glbphy.bin').eq.10 .or. &
-!             wkoffit('../restart_glbcpl.bin').eq.10) then
-!
-!           Read one set of binary files for the whole domain
-!
-!            call rd1rstrt ()
-!
-!         else
-!
-!           Read one wa-file per tile
-!
-            read (Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
 
-            if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
-!
-            read (Lun_rstrt) dim
-            if (dim>0) then
-               if ( .not. associated ( atm_busin ) )  &
-                          allocate   ( atm_busin (cpl_ni,cpl_nj,n_fldin) )
-               read (Lun_rstrt) atm_busin
-            endif
-
-            close (Lun_rstrt)
-
-            ier = fclos(Lun_rstrt)  
-!         endif
-!
+         read (Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+         
+         if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
+         
+         close (Lun_rstrt)
+         
+         ier = fclos(Lun_rstrt)  
+         
       endif
-!
+
       call rdrstrt_phy ()
 !
 !     ---------------------------------------------------------------

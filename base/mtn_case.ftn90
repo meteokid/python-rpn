@@ -28,7 +28,7 @@
       real F_u    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_w    (Mminx:Mmaxx,Mminy:Mmaxy,*), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
            F_zd   (Mminx:Mmaxx,Mminy:Mmaxy,*), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)  , F_q(Mminx:Mmaxx,Mminy:Mmaxy,0:*)
+           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)  , F_q(Mminx:Mmaxx,Mminy:Mmaxy,*)
 !
 !author 
 !     Sylvie Gravel  - rpn - Aug 2003
@@ -133,13 +133,11 @@
       enddo
       enddo
 !
-      do k=1,g_nk+1
+      do k=1,g_nk
       do j=1,l_nj
       do i=1,l_ni
          F_u (i,j,k) = F_u (i,j,1)
          F_v (i,j,k) = 0.0
-         F_w (i,j,k) = 0.0
-         F_zd(i,j,k) = 0.0
       enddo
       enddo
       enddo
@@ -148,22 +146,16 @@
 !     Initialize temperature and vertical motion fields
 !---------------------------------------------------------------------
 !
-       do k=1,g_nk+1
+       do k=1,g_nk
          do j=1,l_nj
             do i=1,l_ni
-               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               tempo = exp(Ver_a_8%t(k+1)+Ver_b_8%t(k+1)*F_s(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                F_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
             enddo
          enddo
       enddo        
-!
-      do j=1,l_nj
-      do i=1,l_ni
-         F_t(i,j,g_nk+2)=F_t(i,j,g_nk+1)
-      enddo
-      enddo
 !
       else   ! MTN_PINTY or MTN_PINTY2 or NOFLOW
 !-----------------------------------------------------------------------
@@ -172,11 +164,10 @@
 !     Set wind images and temperature
 !-----------------------------------------------------------------------
 
-      do k=1,g_nk+1
+      do k=1,g_nk
       do j=1,l_nj
       do i=1,l_ni
          F_t (i,j,k) = mtn_tzero
-         F_w (i,j,k) = 0.0
       enddo
       enddo
       enddo
@@ -193,7 +184,6 @@
 
       do j=1,l_nj
       do i=1,l_ni
-         F_t (i,j,g_nk+2) = mtn_tzero
          psurf(i,j) = Cstv_pref_8 *  &
                       exp( -Dcst_grav_8 * F_topo(i,j)/ &
                            (Dcst_Rgasd_8 * mtn_tzero ) )	
@@ -225,12 +215,6 @@
          F_topo(i,j) = Dcst_grav_8 * F_topo(i,j)
       end do
       end do
-!
-!-----------------------------------------------------------------------
-!     if non-hydrostatic, initialize pres. perturb. and vert. motion
-!-----------------------------------------------------------------------
-!
-      if(.not.Schm_hydro_L) F_q(:,:,0:g_nk+1) = 0.
 !
       call rpn_comm_xch_halo ( F_topo, LDIST_DIM,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )

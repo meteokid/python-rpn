@@ -127,16 +127,16 @@ subroutine iau_apply()
   call datf2p(vdate,this_datei)
 
   !  Create list and GMM space for increment fields
-  flds(TT) = iau_field('TT',trim(IAU_PREFIX)//'TT',null(),null(),meta3d_nk2)
-  flds(UU) = iau_field('UU',trim(IAU_PREFIX)//'UU',null(),null(),meta3d_nk2)
-  flds(VV) = iau_field('VV',trim(IAU_PREFIX)//'VV',null(),null(),meta3d_nk2)
+  flds(TT) = iau_field('TT',trim(IAU_PREFIX)//'TT',null(),null(),meta3d_nk)
+  flds(UU) = iau_field('UU',trim(IAU_PREFIX)//'UU',null(),null(),meta3d_nk)
+  flds(VV) = iau_field('VV',trim(IAU_PREFIX)//'VV',null(),null(),meta3d_nk)
   flds(P0) = iau_field('P0',trim(IAU_PREFIX)//'P0',null(),null(),meta2d)
   first_tr = HU
-  flds(HU) = iau_field('HU',trim(IAU_PREFIX)//'HU',null(),null(),meta3d_nk2)
+  flds(HU) = iau_field('HU',trim(IAU_PREFIX)//'HU',null(),null(),meta3d_nk)
   i = 1
   do while (len_trim(Iau_tracers_S(i)) > 0)
      if (Iau_tracers_S(i) /= 'HU') &
-          flds(first_tr+i) = iau_field(Iau_tracers_S(i),trim(IAU_PREFIX)//trim(Iau_tracers_S(i)),null(),null(),meta3d_nk2)
+          flds(first_tr+i) = iau_field(Iau_tracers_S(i),trim(IAU_PREFIX)//trim(Iau_tracers_S(i)),null(),null(),meta3d_nk)
      i = i+1
   enddo
   nflds = first_tr + (i-1)
@@ -276,7 +276,7 @@ subroutine iau_apply()
   pw_tt = pw_tt + weight(Step_kount) * flds(TT)%ptr3d
   istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
   istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-  do k=1,l_nk+1
+  do k=1,l_nk
      ut1(1:l_niu,1:l_nj,k) = ut1(1:l_niu,1:l_nj,k) + weight(Step_kount) * flds(UU)%ptr3d(1:l_niu,1:l_nj,k)
      vt1(1:l_ni,1:l_njv,k) = vt1(1:l_ni,1:l_njv,k) + weight(Step_kount) * flds(VV)%ptr3d(1:l_ni,1:l_njv,k)
   enddo

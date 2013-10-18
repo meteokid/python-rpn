@@ -17,19 +17,18 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine casc_3df ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
-                            Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,F_datev )
+      subroutine casc_3df2 ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
+                             Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,Nk,F_datev)
       use nest_blending, only: nest_blend
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) F_datev
-      integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy
-      real F_u (Mminx:Mmaxx,Mminy:Mmaxy,  *), F_v(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_w (Mminx:Mmaxx,Mminy:Mmaxy,  *), F_t(Mminx:Mmaxx,Mminy:Mmaxy,*), &
-           F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  *), F_s(Mminx:Mmaxx,Mminy:Mmaxy  ), &
-           F_q (Mminx:Mmaxx,Mminy:Mmaxy,0:*),                                 &
-           F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
+      integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,Nk
+      real F_u (Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_v(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_w (Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_t(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_s(Mminx:Mmaxx,Mminy:Mmaxy   ), &
+           F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 !
 !author
 !     M. Desgagne  April 2006 (MC2 casc_3df_dynp)
@@ -168,7 +167,6 @@ End Interface
                          ana_am_8,ana_bm_8,ana_at_8,ana_bt_8, &
                           nia, nja, nka_m, nka_t, nvar, ntra, &
                                    presstype,F_datev,unf,err )
-
       nga = nia*nja
       nkgz= 1
       if (presstype.eq.0) nkgz= nka_m
@@ -179,20 +177,19 @@ End Interface
       nullify (meqr,topo_temp1,ss1)
       nullify (uu1,vv1,zd1,ttt1,qq1,ww1,trn,trp,tr1)
 
-      allocate (  uun(nga,nka_m  ), vvn (nga,nka_m  ), &
-                  zdn(nga,nka_t-1), ttn (nga,nka_t  ), &
-                  qqn(nga,nka_m+1), wwn (nga,nka_t-1), &
-                  ssqn(nga,     1), trn (nga,nka_t,ntra)      , &
-                  topo_temp1(l_ni+1-(east*1),l_nj+1-(north*1)), &
-                  meqn(nga,nkgz), trname_a(ntra) )
+      allocate ( uun(nga,nka_m), vvn(nga,nka_m), zdn(nga,nka_t-1), &
+                 ttn(nga,nka_t), qqn(nga,nka_m-1), wwn(nga,nka_t-1), &
+                 trn(nga,nka_t,ntra), ssqn(nga,1)              , &
+                 topo_temp1(l_ni+1-(east*1),l_nj+1-(north*1))  , &
+                 meqn(nga,nkgz), trname_a(ntra) )
 
       call blk_dist_data ( uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
                            trname_a, F_datev, nga, nka_m, nka_t , &
-                                      nkgz, nvar, ntra, unf, err )
+                                     nkgz, nvar, ntra, unf, err )
 
       call handle_error(err,'casc_3df_dynp','casc_3df_dynp')
 
-      call timing_stop ( 71 )
+      call timing_stop  ( 71 )
       call timing_start ( 72, '3DF_interp')
 
       if ( initial_data .and. (Lctl_step.eq.0) ) then
@@ -237,26 +234,27 @@ End Interface
       enddo
       enddo
 
-      allocate(uu1 (l_ni,l_nj,G_nk+1), vv1 (l_ni,l_nj,  G_nk+1), &
-               ttt1(l_ni,l_nj,G_nk+2), zd1 (l_ni,l_nj,  G_nk+1), &
-               ss1 (l_ni,l_nj       ), qq1 (l_ni,l_nj,0:G_nk+1), &
-               ww1 (l_ni,l_nj,G_nk+1), tr1 (l_ni,l_nj,  G_nk+2,Tr3d_ntr) )
+      allocate ( uu1 (l_ni,l_nj, G_nk  ), vv1 (l_ni,l_nj, G_nk), &
+                 ttt1(l_ni,l_nj, G_nk  ), zd1 (l_ni,l_nj, G_nk), &
+                 qq1 (l_ni,l_nj, G_nk  ), ww1 (l_ni,l_nj, G_nk), &
+                 tr1 (l_ni,l_nj, G_nk,Tr3d_ntr), ss1 (l_ni,l_nj) )
 
-      call casc_hvi (trname_a, xpxext(l_i0),ypxext(l_j0),xpuu,ypvv,xpaq,ypaq,xpau,ypav, &
-                     uu1,vv1,ttt1,zd1,ss1,qq1,ww1,tr1,topo_temp1,                       &
-                     uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn,                             &
+      call casc_hvi (trname_a, xpxext(l_i0),ypxext(l_j0)         , &
+                     xpuu,ypvv,xpaq,ypaq,xpau,ypav               , &
+                     uu1,vv1,ttt1,zd1,ss1,qq1,ww1,tr1,topo_temp1 , &
+                     uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn       , &
                      l_ni,l_nj,G_nk,nia,nja,nka_m,nka_t,presstype,ntra)
 
-      F_u (1:l_ni,1:l_nj,1:G_nk+1) = uu1
-      F_v (1:l_ni,1:l_nj,1:G_nk+1) = vv1
-      F_t (1:l_ni,1:l_nj,1:G_nk+2) = ttt1
-      F_zd(1:l_ni,1:l_nj,1:G_nk+1) = zd1
-      F_s (1:l_ni,1:l_nj         ) = ss1
-      F_w (1:l_ni,1:l_nj,1:G_nk+1) = ww1
-      if (.not. Schm_hydro_L) then
-        F_q(1:l_ni,1:l_nj,0:G_nk+1) = qq1
-      endif
+      F_u (1:l_ni,1:l_nj, 1:G_nk  ) = uu1
+      F_v (1:l_ni,1:l_nj, 1:G_nk  ) = vv1
+      F_t (1:l_ni,1:l_nj, 1:G_nk  ) = ttt1
+      F_s (1:l_ni,1:l_nj          ) = ss1
+      
+      if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
+      if (ana_w_L ) F_w (1:l_ni,1:l_nj, 1:G_nk  ) = ww1
+      if (ana_q_L ) F_q (1:l_ni,1:l_nj, 2:G_nk+1) = qq1
 
+      if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
       do n=1,Tr3d_ntr
          nullify (trp)
          if ( initial_data .and. (Lctl_step.eq.0) ) then
@@ -264,7 +262,7 @@ End Interface
          else
             istat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,mymeta)
          endif
-         trp(1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2,n)
+         trp(1:l_ni,1:l_nj,1:G_nk) = tr1(1:l_ni,1:l_nj,1:G_nk,n)
       end do
 
       deallocate (xpuu,ypvv,xpaq,ypaq,xpau,ypav)

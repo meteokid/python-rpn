@@ -194,6 +194,9 @@ contains
     case ('V')
        my_ni = l_ni ; my_nj = l_njv
        F_gmm_name = gmmk_nest_weightv_s
+    case ('Q')
+       my_ni = l_ni ; my_nj = l_nj
+       F_gmm_name = gmmk_nest_weightq_s
     case DEFAULT
        istat = -1
     end select

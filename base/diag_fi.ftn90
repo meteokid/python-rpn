@@ -23,7 +23,7 @@
 #include <arch_specific.hf>
 !     
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
-      real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,Nk+1)
+      real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
       real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
       real F_fis(Minx:Maxx,Miny:Maxy)
 !
@@ -49,16 +49,20 @@
 #include "ver.cdk"
 #include "schm.cdk"
 !     
-      integer i,j,k,nij
+      integer i,j,k,kq,nij
       real*8, parameter :: one = 1.d0
       real*8  yyy,qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
+      real :: onezero(l_nk)
 !
 !     ---------------------------------------------------------------
 !
+      onezero=1.
+      onezero(1)=0.
+
       nij = (in - i0 + 1)*(jn - j0 + 1)
 
-!$omp parallel private (qbar,yyy,xtmp_8,ytmp_8)
+!$omp parallel private (qbar,yyy,xtmp_8,ytmp_8,kq)
 
 !$omp do 
       do j=j0,jn
@@ -69,11 +73,12 @@
 !$omp enddo
 
       do k= G_nk,1,-1
+         kq=max(2,k)
          if(.not.Schm_hydro_L) then
 !$omp do
             do j=j0,jn
             do i=i0,in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
                xtmp_8(i,j)=-qbar
             end do
             end do

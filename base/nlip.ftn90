@@ -31,7 +31,7 @@
               F_nw   (DIST_SHAPE,Nk)    ,F_nf   (DIST_SHAPE,Nk)    , &
               F_u    (DIST_SHAPE,Nk)    ,F_v    (DIST_SHAPE,Nk)    , &
               F_t    (DIST_SHAPE,Nk)    ,F_s    (DIST_SHAPE)       , &
-              F_q    (DIST_SHAPE,Nk+1)  ,F_rc   (DIST_SHAPE,Nk)    , &
+              F_q    (DIST_SHAPE,2:Nk+1),F_rc   (DIST_SHAPE,Nk)    , &
 !              F_rp   (DIST_SHAPE,Nk)    ,F_rc   (DIST_SHAPE,Nk)    , &
               F_fis  (DIST_SHAPE)       ,F_nb   (DIST_SHAPE)
       real*8  F_rhs  (ni,nj,Nk)
@@ -64,9 +64,8 @@
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "acid.cdk"
-!
-      integer i, j, k, km, i0u, inu, j0v, jnv, nij, k0t
+
+      integer i, j, k, km,kq, i0u, inu, j0v, jnv, nij, k0t
       real    w_nt
       real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,c4,c5,qbar,ndiv, &
               w1,w2,w3,w4,w5,barz, barzp, wk2(DIST_SHAPE)
@@ -75,6 +74,7 @@
 !
       real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real, dimension(:,:,:), allocatable :: BsPq, FI, MU
+      real :: onezero(l_nk)
 !
 ! --------------------------------------------------------------------
 !
@@ -89,7 +89,7 @@
       call rpn_comm_xch_halo( F_s   , LDIST_DIM,l_ni,l_nj,1, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not. Schm_hydro_L) then
-        call rpn_comm_xch_halo( F_q,LDIST_DIM,l_ni,l_nj,G_nk+1, &
+        call rpn_comm_xch_halo( F_q,LDIST_DIM,l_ni,l_nj,G_nk, &
                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 !
@@ -110,6 +110,10 @@
       k0t=k0
       if(Schm_opentop_L) k0t=k0-1
       nij = (in - i0 +1)*(jn - j0 +1)
+
+      onezero=1.
+      onezero(1)=0.
+      
 !
 !
 !***********************************************************
@@ -135,7 +139,7 @@
       call diag_fi (FI, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
                     i0u,inu+1,j0v,jnv+1)
 
-!$omp parallel private(km,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
+!$omp parallel private(km,kq,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
 !$omp w1,w2,w3,w4,w5,qbar)
 !
 !$omp do
@@ -160,8 +164,6 @@
       end do
       end do
 !
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,1)
-!
 !     V barY stored in wk2
 !     ~~~~~~~~~~~~~~~~~~~~
       do j = j0, jn
@@ -182,8 +184,6 @@
               + inuvl_wxxu3_8(i,3)*wk2(i+1,j)+inuvl_wxxu3_8(i,4)*wk2(i+2,j))
       end do
       end do
-!
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,2)
 !
 !     Compute Nv for hydrostatic version 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,8 +243,6 @@
             F_nu(i,j,k) = F_nu(i,j,k) + c2 * w1 * w2
          end do
          end do
-!
-         if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,3)
 !
 !        Add nonhydrostatic contributions to Nv 
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -318,10 +316,10 @@
       endif
 !
     endif
-      if (Acid_test_L)call acid_stat_nlip_2(F_t,BsPq,F_nu,k,4)
 !
 !$omp do
       do k=k0t,l_nk
+         kq=max(2,k)      
 !
 !**********************************
 !   The nonlinear deviation of    *
@@ -368,11 +366,11 @@
 !           ~~~~~~~~~~~~~~~
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
 !              Compute Nw'
 !              ~~~~~~~~~~~
                F_nw(i,j,k) = - Dcst_grav_8 * ( MU  (i,j,k) &
-                      - Ver_idz_8%t(k) * ( F_q(i,j,k+1) - F_q(i,j,k) ) - qbar )
+                      - Ver_idz_8%t(k) * ( F_q(i,j,k+1) - F_q(i,j,kq)*onezero(k) ) - qbar )
               !Finish computing Nt'
                ~~~~~~~~~~~~~~~~~~~~
                F_nt(i,j,k) = F_nt(i,j,k) - Cstv_invT_8 * qbar

@@ -44,42 +44,29 @@
 #include "rhsc.cdk"
 #include "nl.cdk"
 #include "vt0.cdk" 
-#include "vtx.cdk" 
 #include "lam.cdk"
 
-      type(gmm_metadata) :: mymeta
       integer :: istat, i0, in, j0, jn, k0
 !     __________________________________________________________________
 !
       if (Lun_debug_L)  write(Lun_out,1000)
 
-      istat = gmm_get(gmmk_rhsc_s,rhsc,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(rhsc)'
-      istat = gmm_get(gmmk_ut0_s,ut0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(ut0)'
-      istat = gmm_get(gmmk_vt0_s,vt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(vt0)'
-      istat = gmm_get(gmmk_tt0_s,tt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(tt0)'
-      istat = gmm_get(gmmk_st0_s,st0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(st0)'
-      istat = gmm_get(gmmk_fis0_s,fis0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fis0)'
-      istat = gmm_get(gmmk_fiptx_s,fiptx,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(fiptx)'
-      istat = gmm_get(gmmk_qt0_s,qt0,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'nli ERROR at gmm_get(qt0)'
+      istat = gmm_get (gmmk_rhsc_s , rhsc )
+      istat = gmm_get (gmmk_ut0_s  , ut0  )
+      istat = gmm_get (gmmk_vt0_s  , vt0  )
+      istat = gmm_get (gmmk_tt0_s  , tt0  )
+      istat = gmm_get (gmmk_st0_s  , st0  )
+      istat = gmm_get (gmmk_fis0_s , fis0 )
+      istat = gmm_get (gmmk_qt0_s  , qt0  )
 
-      i0=1   +pil_w
-      in=l_ni-pil_e
-      j0=1   +pil_s 
-      jn=l_nj-pil_n 
+      i0= 1   +pil_w
+      in= l_ni-pil_e
+      j0= 1   +pil_s 
+      jn= l_nj-pil_n 
+      k0= 1+Lam_gbpil_T
 
-      k0=1+Lam_gbpil_T
-
-      call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f    , &
-                  ut0 , vt0 , tt0(l_minx,l_miny,2), st0  , &
-                  qt0(l_minx,l_miny,1), F_rhs_sol, rhsc  , &
+      call nlip ( nl_u, nl_v, nl_t , nl_c, nl_w, nl_f         , &
+                  ut0 , vt0 , tt0, st0, qt0, F_rhs_sol, rhsc  , &
                   fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
 
  1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

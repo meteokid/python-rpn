@@ -49,8 +49,9 @@
       stat_liste(3)='WT1'
       stat_liste(4)='ZDT1'
       stat_liste(5)='TT1'
-      stat_liste(6)='FIPTX'
-      stat_liste(7)='ST1'
+      stat_liste(6)='ST1'
+      stat_liste(7)='QT1'
+
       p1000hPa_8=100000.d0
       mtn_cfg = -1
       Step_gstat = 1
@@ -316,7 +317,6 @@
 
       Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 
-      if(.not.Schm_hydro_L) stat_liste(8)='QT1'
 
 !   adjust dimensions to include piloted area (pil_n, s, w, e)
 

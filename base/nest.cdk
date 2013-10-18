@@ -32,7 +32,7 @@
       real, pointer, dimension (:,:,:) :: nest_zd_deb => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:  ) :: nest_s_deb  => null() ! effective dimensions are (LDIST_SHAPE         )
       real, pointer, dimension (:,:,:) :: nest_w_deb  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: nest_q_deb  => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q_deb  => null() ! effective dimensions are (LDIST_SHAPE,2:l_nk+1)
 
       real, pointer, dimension (:,:,:) :: nest_u      => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:,:) :: nest_v      => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
@@ -40,7 +40,7 @@
       real, pointer, dimension (:,:,:) :: nest_zd     => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:  ) :: nest_s      => null() ! effective dimensions are (LDIST_SHAPE         )
       real, pointer, dimension (:,:,:) :: nest_w      => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: nest_q      => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q      => null() ! effective dimensions are (LDIST_SHAPE,2:l_nk+1)
 
       real, pointer, dimension (:,:,:) :: nest_u_fin  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:,:) :: nest_v_fin  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
@@ -48,9 +48,10 @@
       real, pointer, dimension (:,:,:) :: nest_zd_fin => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
       real, pointer, dimension (:,:  ) :: nest_s_fin  => null() ! effective dimensions are (LDIST_SHAPE         )
       real, pointer, dimension (:,:,:) :: nest_w_fin  => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: nest_q_fin  => null() ! effective dimensions are (LDIST_SHAPE,0:l_nk+1)
+      real, pointer, dimension (:,:,:) :: nest_q_fin  => null() ! effective dimensions are (LDIST_SHAPE,2:l_nk+1)
 
       real, pointer, dimension (:,:,:) :: nest_weightm=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
+      real, pointer, dimension (:,:,:) :: nest_weightq=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
       real, pointer, dimension (:,:,:) :: nest_weightu=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
       real, pointer, dimension (:,:,:) :: nest_weightv=> null() ! effective dimensions are (LDIST_SHAPE,  l_nk+2)
 
@@ -75,5 +76,5 @@
       common /nest_n_gmm/ gmmk_nest_u_fin_s , gmmk_nest_v_fin_s, gmmk_nest_t_fin_s
       common /nest_n_gmm/ gmmk_nest_zd_fin_s, gmmk_nest_s_fin_s, gmmk_nest_w_fin_s, gmmk_nest_q_fin_s
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_nest_weightm_s,gmmk_nest_weightu_s,gmmk_nest_weightv_s
-      common /nest_n_gmm/ gmmk_nest_weightm_s,gmmk_nest_weightu_s,gmmk_nest_weightv_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_nest_weightm_s,gmmk_nest_weightu_s,gmmk_nest_weightv_s,gmmk_nest_weightq_s
+      common /nest_n_gmm/ gmmk_nest_weightm_s,gmmk_nest_weightu_s,gmmk_nest_weightv_s,gmmk_nest_weightq_s

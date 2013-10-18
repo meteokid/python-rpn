@@ -23,9 +23,9 @@
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      real     F_u(DIST_SHAPE,Nk  ), F_v(DIST_SHAPE,Nk), &
-               F_zd(DIST_SHAPE,Nk+1),F_w(DIST_SHAPE,Nk+1), &
-               F_t(DIST_SHAPE,Nk+1)
+      real    F_u (DIST_SHAPE,Nk), F_v(DIST_SHAPE,Nk), &
+              F_zd(DIST_SHAPE,Nk), F_w(DIST_SHAPE,Nk), &
+              F_t (DIST_SHAPE,Nk)
 !
 !author
 !     Michel Desgagne  - October 2000
@@ -58,6 +58,7 @@
 !     ~~~~~~~~~~~~~~~
 !********not physical, done nevertheless*******
       call vspng_lam (F_zd,LDIST_DIM, l_ni , l_nj )
+
 !     Vertical wind
 !     ~~~~~~~~~~~~~
       call vspng_lam (F_w, LDIST_DIM, l_ni , l_nj )

@@ -40,11 +40,9 @@
 #include "geomg.cdk"
 #include "lam.cdk"
 #include "step.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
 !
-      type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum,istat
       real, pointer, dimension(:,:,:) :: tr1,trf
@@ -53,48 +51,50 @@
 !
       if (Lun_debug_L) write(Lun_out,1000)
 
-      istat = gmm_get(gmmk_ut1_s ,ut1 ,mymeta)
-      istat = gmm_get(gmmk_vt1_s ,vt1 ,mymeta)
-      istat = gmm_get(gmmk_wt1_s ,wt1 ,mymeta)
-      istat = gmm_get(gmmk_tt1_s ,tt1 ,mymeta)
-      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
-      istat = gmm_get(gmmk_st1_s ,st1 ,mymeta)
-      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
-      istat = gmm_get(gmmk_nest_q_fin_s,nest_q_fin,mymeta)
-      istat = gmm_get(gmmk_nest_q_s    ,nest_q    ,mymeta)
+      istat = gmm_get(gmmk_ut1_s , ut1 )
+      istat = gmm_get(gmmk_vt1_s , vt1 )
+      istat = gmm_get(gmmk_wt1_s , wt1 )
+      istat = gmm_get(gmmk_tt1_s , tt1 )
+      istat = gmm_get(gmmk_zdt1_s, zdt1)
+      istat = gmm_get(gmmk_st1_s , st1 )
+      istat = gmm_get(gmmk_qt1_s , qt1 )
+      istat = gmm_get(gmmk_nest_q_fin_s, nest_q_fin)
+      istat = gmm_get(gmmk_nest_q_s    , nest_q    )
 !
 !     copying values from UT1 to nest_u variables
 !
       if (.not. Lam_ctebcs_L) then
-         istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin ,mymeta)
-         istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin ,mymeta)
-         istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin ,mymeta)
-         istat = gmm_get(gmmk_nest_t_fin_s ,nest_t_fin ,mymeta)
-         istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin,mymeta)
-         istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin ,mymeta)
+
+         istat = gmm_get(gmmk_nest_u_fin_s , nest_u_fin )
+         istat = gmm_get(gmmk_nest_v_fin_s , nest_v_fin )
+         istat = gmm_get(gmmk_nest_w_fin_s , nest_w_fin )
+         istat = gmm_get(gmmk_nest_t_fin_s , nest_t_fin )
+         istat = gmm_get(gmmk_nest_zd_fin_s, nest_zd_fin)
+         istat = gmm_get(gmmk_nest_s_fin_s , nest_s_fin )
          nest_u_fin  = ut1
          nest_v_fin  = vt1
          nest_w_fin  = wt1
          nest_t_fin  = tt1
-         nest_zd_fin = zdt1
          nest_s_fin  = st1
+         nest_zd_fin = zdt1
          nest_q_fin  = qt1
 
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name,tr1,mymeta)
+            istat = gmm_get(tr_name, tr1)
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
-      	    istat = gmm_get(tr_name,trf,mymeta)
-            trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
+      	    istat = gmm_get(tr_name, trf)
+            trf = tr1
          end do
 
       else if (Grd_yinyang_L) then
-         istat = gmm_get(gmmk_nest_s_s ,nest_s ,mymeta)
-         istat = gmm_get(gmmk_nest_t_s ,nest_t ,mymeta)
-         istat = gmm_get(gmmk_nest_w_s ,nest_w ,mymeta)
-         istat = gmm_get(gmmk_nest_zd_s,nest_zd,mymeta)
-         istat = gmm_get(gmmk_nest_u_s ,nest_u ,mymeta)
-         istat = gmm_get(gmmk_nest_v_s ,nest_v ,mymeta)
+
+         istat = gmm_get(gmmk_nest_s_s ,nest_s )
+         istat = gmm_get(gmmk_nest_t_s ,nest_t )
+         istat = gmm_get(gmmk_nest_w_s ,nest_w )
+         istat = gmm_get(gmmk_nest_zd_s,nest_zd)
+         istat = gmm_get(gmmk_nest_u_s ,nest_u )
+         istat = gmm_get(gmmk_nest_v_s ,nest_v )
          nest_s  = st1
          nest_t  = tt1
          nest_w  = wt1
@@ -103,62 +103,60 @@
          call rpn_comm_xch_halo(nest_s, LDIST_DIM,l_ni,l_nj,1,      &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
          call yyg_scalbc(st1,nest_s,LDIST_DIM,1)
-         call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+         call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc(tt1,nest_t,LDIST_DIM,G_nk+2)
-         call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk+1, &
+         call yyg_scalbc(tt1,nest_t,LDIST_DIM,G_nk)
+         call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk+1)
-         call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk+1,&
+         call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk)
+         call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk,&
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk+1)
-         if (.not. Schm_hydro_L) then
-            nest_q = qt1
-            call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk+2,&
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk+2)
-         endif
+         call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk)
+         nest_q=qt1
+         call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk,&
+              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk)
 
 !        Convert wind to real orientation
 !$omp parallel private(i,j)
 !$omp do
-         do k= 1, G_nk+1
+         do k= 1, G_nk
          do j= 1, l_nj
          do i= 1, l_niu
-             ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
-             nest_u(i,j,k)=ut1(i,j,k)
+             ut1   (i,j,k)= ut1 (i,j,k)*Geomg_invcy_8(j)
+             nest_u(i,j,k)= ut1 (i,j,k)
          enddo
          enddo
          do j= 1, l_njv
          do i= 1, l_ni
-             vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
-             nest_v(i,j,k)=vt1(i,j,k)
+             vt1   (i,j,k)= vt1 (i,j,k)*Geomg_invcyv_8(j)
+             nest_v(i,j,k)= vt1 (i,j,k)
          enddo
          enddo
-         enddo
+      enddo
 !$omp enddo
 !$omp end parallel
 
 !        Exchange halos, interpolate and get U,V for Yin, Yang bcs
-         call rpn_comm_xch_halo(nest_u,LDIST_DIM,l_niu,l_nj,G_nk+1, &
+         call rpn_comm_xch_halo(nest_u,LDIST_DIM,l_niu,l_nj,G_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk+1, &
+         call rpn_comm_xch_halo(nest_v,LDIST_DIM,l_ni,l_njv,G_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk+1)
-         call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk+1)
+         call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk)
+         call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk)
 
 !        Convert the wind back
 !$omp parallel private(i,j)
 !$omp do
-         do k= 1, G_nk+1
+         do k= 1, G_nk
          do j= 1, l_nj
          do i= 1, l_niu
-            ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
+            ut1(i,j,k) =  ut1(i,j,k)*Geomg_cy_8 (j)
          enddo
          enddo
          do j= 1, l_njv
          do i= 1, l_ni
-            vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
+            vt1(i,j,k) =  vt1(i,j,k)*Geomg_cyv_8(j)
          enddo
          enddo
          enddo
@@ -168,41 +166,42 @@
 !        Tracers in Yin-Yang
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name,tr1,mymeta)
+            istat = gmm_get(tr_name, tr1)
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-      	    istat = gmm_get(tr_name,trf,mymeta)
-            trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
-            call rpn_comm_xch_halo(trf, LDIST_DIM,l_ni,l_nj,G_nk+2, &
+      	    istat = gmm_get(tr_name, trf)
+            trf (1:l_ni,1:l_nj,1:G_nk) = tr1(1:l_ni,1:l_nj,1:G_nk)
+            call rpn_comm_xch_halo(trf, LDIST_DIM,l_ni,l_nj,G_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-            call yyg_scalbc_mono(tr1,trf,LDIST_DIM,G_nk+2)
+            call yyg_scalbc_mono(tr1,trf,LDIST_DIM,G_nk)
          end do
   
       else
 
 !     Ordinary LAM
-         istat = gmm_get(gmmk_nest_u_s ,nest_u ,mymeta)
-         istat = gmm_get(gmmk_nest_v_s ,nest_v ,mymeta)
-         istat = gmm_get(gmmk_nest_w_s ,nest_w ,mymeta)
-         istat = gmm_get(gmmk_nest_t_s ,nest_t ,mymeta)
-         istat = gmm_get(gmmk_nest_zd_s,nest_zd,mymeta)
-         istat = gmm_get(gmmk_nest_s_s ,nest_s ,mymeta)
+         istat = gmm_get(gmmk_nest_u_s ,nest_u )
+         istat = gmm_get(gmmk_nest_v_s ,nest_v )
+         istat = gmm_get(gmmk_nest_w_s ,nest_w )
+         istat = gmm_get(gmmk_nest_t_s ,nest_t )
+         istat = gmm_get(gmmk_nest_zd_s,nest_zd)
+         istat = gmm_get(gmmk_nest_s_s ,nest_s )
          nest_u  = ut1
          nest_v  = vt1
          nest_w  = wt1
          nest_t  = tt1
-         nest_zd = zdt1
          nest_s  = st1
+         nest_zd = zdt1
          nest_q  = qt1
 
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
-            istat = gmm_get(tr_name,tr1,mymeta)
+            istat = gmm_get(tr_name, tr1)
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'
-            istat = gmm_get(tr_name,trf,mymeta)
-            trf (1:l_ni,1:l_nj,1:G_nk+2) = tr1(1:l_ni,1:l_nj,1:G_nk+2)
+            istat = gmm_get(tr_name, trf)
+            trf = tr1
          end do
+
       endif
-!
+
       Lam_previous_S= ''
       Lam_current_S = Step_runstrt_S
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)
@@ -211,6 +210,6 @@
 !
 !     ---------------------------------------------------------------
 !
- 1000 format(3X,'NESTING INITIALIZATION (NEST_INIT)')
+ 1000 format (3X,'NESTING INITIALIZATION (NEST_INIT)')
       return
       end

@@ -36,12 +36,16 @@
 #include "ver.cdk"
 #include "out.cdk"
 #include "grdc.cdk"
+#include "schm.cdk"
 !
-      integer i
+      integer i,k_phy
       character*15   startindx
       real*8, dimension (:), allocatable:: xu_8,yv_8
 !
 !------------------------------------------------------------------
+!
+      k_phy=0
+      if(schm_phyms_L)k_phy=1
 !
       unf = 201
 !
@@ -64,8 +68,8 @@
       call wrgeo_3df2(G_xg_8 (gid),out_nisg,G_yg_8(gjd),out_njsg, &
                       xu_8(1),             yv_8(1), &
                       Grdc_xlon1,Grdc_xlat1,Grdc_xlon2,Grdc_xlat2, &
-                      Ver_a_8%m(1), Ver_b_8%m(1), Ver_a_8%t, Ver_b_8%t, &
-                                            G_nk+1,G_nk+2,Ver_code,unf)
+                      Ver_a_8%m(1), Ver_b_8%m(1), Ver_a_8%t(2), Ver_b_8%t(2), &
+                      G_nk+k_phy,G_nk+k_phy,Ver_code,unf)
       deallocate(xu_8,yv_8)
 
       write (unf) 'DYNAMICS',nvar,ntr

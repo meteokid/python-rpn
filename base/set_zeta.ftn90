@@ -283,6 +283,15 @@
       Ver_ip1%t(G_nk+2)   = Ver_ip1%m(G_nk+1)
 !
 !     ----------------------------------------------------------
+!     Put last thermo a and b at surface if there is non physics
+!     ----------------------------------------------------------
+!
+      if(.not.Schm_phyms_L)then
+         Ver_a_8%t(G_nk+1)=Cstv_Zsrf_8
+         Ver_b_8%t(G_nk+1)=1.d0
+      endif
+!
+!     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------
       istat = vgrid_wb_put('ref-m',vcoord,ip1m)

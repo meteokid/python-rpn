@@ -30,7 +30,7 @@
 !
 !revision
 ! v4_11 - Desgagne, M.     - First revision
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
@@ -38,16 +38,16 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "pw.cdk"
-!
+
       integer i, j, k, n,istat
-      real, pointer, dimension(:,:,:)     :: tvirt,tt,hu,tr
+      real, pointer, dimension(:,:,:)   :: tvirt,tt,hu,tr
       real, dimension(LDIST_SHAPE,l_nk) :: sumpqj 
 !     ________________________________________________________________
 !
 !     Compute temperature from virtual temperature when tt2tv = .false.
 !     Compute virtual temperature from temperature when tt2tv = .true.
 !     --------------------------------------------
-!
+
       nullify (tvirt,tt,hu)
 
       if (.not.F_tt2tv) then
@@ -70,7 +70,7 @@
                do k = 1, l_nk
                do j = 1, l_nj
                do i = 1, l_ni
-                  sumpqj(i,j,k)=sumpqj(i,j,k)+tr(i,j,k+1)
+                  sumpqj(i,j,k)=sumpqj(i,j,k)+tr(i,j,k)
                end do
                end do
                end do
@@ -79,13 +79,13 @@
             endif
          end do
       endif
-!
+
       if (.not.F_tt2tv) then
-         call mfottvh2 ( F_t, tvirt(l_minx,l_miny,2), hu(l_minx,l_miny,2), sumpqj, &
-                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 ( F_t,tvirt,hu,sumpqj,l_minx,l_maxx,l_miny,l_maxy,&
+                                             l_nk,1,l_ni,1,l_nj, F_tt2tv)
       else
-         call mfottvh2 ( tt ,   F_t(l_minx,l_miny,2), hu(l_minx,l_miny,2), sumpqj, &
-                         l_minx,l_maxx,l_miny,l_maxy,l_nk,1,l_ni,1,l_nj, F_tt2tv)
+         call mfottvh2 ( tt ,F_t  ,hu,sumpqj,l_minx,l_maxx,l_miny,l_maxy,&
+                                             l_nk,1,l_ni,1,l_nj, F_tt2tv)
       endif
 !
 !     ________________________________________________________________

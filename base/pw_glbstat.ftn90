@@ -73,11 +73,11 @@
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',minus,mymeta)
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',plus,mymeta)
          call statfld3 (minus,'M_'//trim(Tr3d_name_S(i)), Step_kount, ' ',&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk+2,&
-                        1,1,2,l_ni,l_nj, g_nk+1,8)     
+                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
+                        1,1,1,l_ni,l_nj, g_nk,8)     
          call statfld3 (plus ,'P_'//trim(Tr3d_name_S(i)), Step_kount, ' ',&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk+2,&
-                        1,1,2,l_ni,l_nj, g_nk+1,8)     
+                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
+                        1,1,1,l_ni,l_nj, g_nk,8)     
       enddo
 !     ________________________________________________________________
 !

@@ -45,12 +45,20 @@
 !
       type(gmm_metadata) :: mymeta
       character* 512 filen
-      integer i,j,k,nis,njs,ind_o(G_nk+2),cnt,unf,key(21), &
+      integer i,j,k,k_phy,nis,njs,ind_o(G_nk+1),cnt,unf,key(21), &
               nvar,err,ofi,ofj,istat
       integer outindx(4),outindx_g(4,Ptopo_numproc)
       real, pointer, dimension(:,:,:) :: tr1
 !
 !------------------------------------------------------------------
+!
+      nullify (tr1)
+!
+      k_phy=0
+      if(Schm_phyms_L)then
+         allocate(tr1(LDIST_SHAPE,G_nk+1))         
+         k_phy=1
+      endif
 !
       outindx = 0
       if (Ptopo_blocme.eq.0) then
@@ -83,7 +91,7 @@
 !
       nis = out_ifg - out_idg + 1
       njs = out_jfg - out_jdg + 1
-      do k=1,G_nk+2
+      do k=1,G_nk+k_phy
          ind_o(k) = k
       end do
 !
@@ -106,38 +114,70 @@
                                          nvar, Grdc_ntr, filen )
 !
 ! tt1,st1,topo are usually written from e_intthm
-      call write_3df (  tt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+2, &
+      if(Schm_phyms_L)then
+         tr1(LDIST_SHAPE,1:G_nk)=tt1(LDIST_SHAPE,1:G_nk)
+         !call itf_phy_sfcdiag (tr1(1,1,G_nk+1),1,l_ni,1,l_nj,'TDIAG')
+         tr1(LDIST_SHAPE,G_nk+1)=tt1(LDIST_SHAPE,G_nk)
+      else
+         nullify(tr1); tr1 => tt1
+      endif
+
+      call write_3df (  tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+k_phy, &
                              'TT  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
       call write_3df (  st1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,1     , &
                              'S   ',gid, gif, gjd, gjf,1.0,ind_o,unf )
       call write_3df ( fis0,l_minx,l_maxx,l_miny,l_maxy,nis,njs,1     , &
                              'GZ  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
 ! wt1,zdt1, maybe qt1 from the model
-      call write_3df (  wt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+1, &
+      call write_3df (  wt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk, &
                              'W   ',gid, gif, gjd, gjf,1.0,ind_o,unf )
-      call write_3df ( zdt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+1, &
+      call write_3df ( zdt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk, &
                              'ZD  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
 !
       if (.not.Schm_hydro_L) then
-      call write_3df (qt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+2, &
+      call write_3df (qt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk, &
                              'Q   ',gid, gif, gjd, gjf,1.0,ind_o,unf )
       endif
-
+!
+! wind from model
+      if(Schm_phyms_L)then
+         tr1(LDIST_SHAPE,1:G_nk)=ut1(LDIST_SHAPE,1:G_nk)
+         !call itf_phy_sfcdiag (tr1(1,1,G_nk+1),1,l_ni,1,l_nj,'UDIAG')
+         tr1(LDIST_SHAPE,G_nk+1)=ut1(LDIST_SHAPE,G_nk)
+      else
+         nullify(tr1); tr1 => ut1
+      endif
+      call write_3df (  tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+k_phy, &
+                             'UU  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+      if(Schm_phyms_L)then
+         tr1(LDIST_SHAPE,1:G_nk)=vt1(LDIST_SHAPE,1:G_nk)
+         !call itf_phy_sfcdiag (tr1(1,1,G_nk+1),1,l_ni,1,l_nj,'VDIAG')
+         tr1(LDIST_SHAPE,G_nk+1)=vt1(LDIST_SHAPE,G_nk)         
+      else
+         nullify(tr1); tr1 => vt1
+      endif
+      call write_3df (  tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+k_phy, &
+                             'VV  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+!
+      if(Schm_phyms_L)then
+         deallocate(tr1)
+      endif
+!
 ! tracers written from model
        do k=1,Grdc_ntr
           nullify (tr1)
           istat=gmm_get('TR/'//trim(Grdc_trnm_S(k))//':P',tr1,mymeta)
+          if(Schm_phyms_L.and.trim(Grdc_trnm_S(k)).eq.'HU')then
+             !call itf_phy_sfcdiag (tr1(1,1,G_nk+1),1,l_ni,1,l_nj,'QDIAG')
+             tr1(LDIST_SHAPE,G_nk+1)=tr1(LDIST_SHAPE,G_nk)
+          else
+             tr1(1:l_ni:l_nj,1,G_nk+1)=0.
+          endif
           if (.not.GMM_IS_ERROR(istat)) then
-             call write_3df (tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+2, &
+             call write_3df (tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+k_phy, &
                        Grdc_trnm_S(k),gid, gif, gjd, gjf,1.0,ind_o,unf )
           endif
        end do
-!
-! wind from model
-      call write_3df (  ut1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+1, &
-                             'UU  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
-      call write_3df (  vt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+1, &
-                             'VV  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
 !
       if (Out_blocme.eq.0) then
          close (unf)

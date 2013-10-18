@@ -17,14 +17,15 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine diag_zd_w (F_zd, F_w, F_u, F_v, F_t, F_s, DIST_DIM, Nk, F_zd_L, F_w_L)
+      subroutine diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s, &
+                             DIST_DIM, Nk, F_zd_L, F_w_L )
       implicit none
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      real    F_zd(DIST_SHAPE,0:Nk), F_w(DIST_SHAPE,Nk), &
-              F_u (DIST_SHAPE,  Nk), F_v(DIST_SHAPE,Nk), &
-              F_t (DIST_SHAPE,  Nk), F_s(DIST_SHAPE)
+      real    F_zd(DIST_SHAPE,Nk), F_w(DIST_SHAPE,Nk), &
+              F_u (DIST_SHAPE,Nk), F_v(DIST_SHAPE,Nk), &
+              F_t (DIST_SHAPE,Nk), F_s(DIST_SHAPE)
       logical ::  F_zd_L,F_w_L
 !
 !authors
@@ -37,7 +38,7 @@
 !        |                                             |           |   |
 ! NAME   |             DESCRIPTION                     | DIMENSION |I/O|
 !--------|---------------------------------------------|-----------|---|
-! F_zd   | coordinat vertical motion ( 1/s )           | 3D (0:Nk) | o |
+! F_zd   | coordinat vertical motion ( 1/s )           | 3D (Nk)   | o |
 ! F_w    | true vertical motion      ( m/s )           | 3D (Nk)   | o |
 !--------|---------------------------------------------|-----------|---|
 ! F_u    | x component of velocity                     | 3D (Nk)   | i |
@@ -48,7 +49,6 @@
 ! F_w_L  | true to compute w                           | scal      | i |
 !________|_____________________________________________|___________|___|
 !
-!implicits
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "inuvl.cdk"
@@ -58,9 +58,7 @@
 #include "cstv.cdk"
 #include "intuv.cdk"
 #include "lun.cdk"
-!
-!modules
-!
+
       integer i, j, k, kp, i0, in, j0, jn, j00, jnn
       real roverg
       real div (DIST_SHAPE,Nk),adv,div_i(DIST_SHAPE,0:Nk)
@@ -72,10 +70,10 @@
 !     ________________________________________________________________
 !
       if(.not.(F_zd_L.or.F_w_L)) return
-!
+
       if (Lun_debug_L.and.F_zd_L) write (Lun_out,1000)
       if (Lun_debug_L.and.F_w_L ) write (Lun_out,1001)
-!
+
       ! enlever calcul si F_zd_L=.false.
 !
 ! Halo exchange needed because scope below goes one point in halo
@@ -86,7 +84,7 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (F_v,  LDIST_DIM, l_ni,l_njv, Nk,   &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-!
+
 !     Initializations
 
 !     local grid setup for final results
@@ -100,7 +98,7 @@
          if(l_south) j0 = 2
          if(l_north) jn = l_njv
       endif
-!
+
       j00=j0-1
       jnn=jn
       if (.not.G_lam) then         
@@ -115,33 +113,33 @@
             jnn=jn-1
          endif
       endif
-!
+
 !     CALCULATION of sbX, sbY, i.e. F_s on U and V points
-!
+
       do j=j0,jn
       do i=i0-1,in
          sbX(i,j)=F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*intuv_c0xxu_8(i)
       end do
       end do
-!
+
       do j=j00,jnn
       do i=i0,in
          sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*intuv_c0yyv_8(j)
       end do
       end do
-!
+
 !     CALCULATION of pi_s
-!
+
       do j=j0,jn
       do i=i0,in
          pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+F_s(i,j))
       end do
       end do
-!
+
       do k = 1, Nk
-!
+
 !        CALCULATION of U*dpi/dz and V*dpi/dz
-!
+
          do j=j0,jn
          do i=i0-1,in
             lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)
@@ -156,9 +154,9 @@
             VdpY(i,j)=F_v(i,j,k)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j))
          end do
          end do
-!
+
 !        CALCULATION of DIV(V*dpi/dz)
-!
+
          do j=j0,jn
          do i=i0,in
             div(i,j,k) = geomg_invcy2_8(j) * ( &
@@ -166,23 +164,23 @@
                       + (VdpY(i,j)-VdpY(i,j-1))*geomg_invDY_8(j) )
          enddo
          enddo
-!
+
 !        CALCULATION of lnpi_t and pi_t
-!
+
          do j=j0,jn
          do i=i0,in
              lnpi_t(i,j,k) = Ver_a_8%t(k+1) + Ver_b_8%t(k+1) * F_s(i,j)
                pi_t(i,j,k) = exp(lnpi_t(i,j,k))
          end do
          end do
-!
+
       enddo
-!
+
       if (Zdot_divHLM_L) then
 !     Compute lapse rate
          call verder (lapse,F_t,lnpi_t,2.0,2.0,LDIST_DIM, &
                                           Nk,i0,in,j0,jn)
-!
+
 !     Scale divergence by the lapse rate
          do k=1,Nk
             do j=j0,jn
@@ -192,9 +190,9 @@
             enddo
          enddo
       endif
-!
+
 !     INTEGRATION OF THE DIVERGENCE IN THE VERTICAL
-!
+
       div_i(i0:in,j0:jn,0)=0.
       do k=1,Nk
          do j=j0,jn
@@ -203,35 +201,29 @@
          enddo
          enddo
       enddo
-!
+
 !     CALCULATION of ZDOT
-!
-      if(F_zd_L)then
-!
-         if(G_lam) F_zd=0.0 ! ensure 0's in contours
-!
-         F_zd(1:l_ni,1:l_nj,0) = 0.
+
+      if (F_zd_L) then
+
          do k=1,Nk-1
             do j=j0,jn
             do i=i0,in
                F_zd(i,j,k) = ( Ver_b_8%t(k+1)*div_i(i,j,Nk)/pi_s(i,j) &
-                    - div_i(i,j,k)/pi_t(i,j,k) ) / &
-                    (1.+Ver_dbdz_8%t(k)*F_s(i,j))
+                             - div_i(i,j,k)/pi_t(i,j,k) ) /           &
+                              (1.+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
             end do
          end do
-         F_zd(1:l_ni,1:l_nj,Nk) = 0.
-!
+
       endif
-!
+
 !     CALCULATION of W
-!
-      if(F_w_L)then
-!
+
+      if (F_w_L) then
+
 !        Compute W=-omega/(g*ro)      ro=p/RT
-!
-         if(G_lam) F_w=0.0 ! ensure 0's in contours
-!
+
          RoverG=Dcst_rgasd_8/Dcst_grav_8
          do k=1,Nk
             kp=min(k+1,Nk)
@@ -252,8 +244,7 @@
          end do
 
       endif
-!
-!
+
 1000  format(3X,'COMPUTE DIAGNOSTIC ZDT1: (S/R DIAG_ZD_W)')
 1001  format(3X,'COMPUTE DIAGNOSTIC WT1:  (S/R DIAG_ZD_W)')
 !

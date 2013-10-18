@@ -120,6 +120,8 @@
          if (.not.itf_phy_busper_init_L) call itf_phy_geom3 (l_phy_gid, err)
       endif
 
+      call itf_phy_fillbus ()
+
       !TODO: find other solution for inbloc - rpn_comm_bloc creates new 
       ! communicator every call - we hit a limit after about 500 on AIX
 
@@ -132,8 +134,6 @@
 
       if (F_stepno < MAX_COMMBLOC_SWAP) &
            call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
-
-      call itf_phy_fillbus ()
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )

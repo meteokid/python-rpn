@@ -33,12 +33,6 @@
 ! v2_11 - Desgagne M.       - vertical sponge layer (vsl)
 ! v2_21 - Corbeil  L.       - ldnh_maxx and ldnh_maxy for vsl
 !
-!object 
-!
-!arguments
-!     None
-!
-!implicits
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
@@ -47,11 +41,8 @@
 #include "hzd.cdk"
 #include "vspng.cdk"
 #include "sol.cdk"
-! 
-!modules
-      logical  decomp2
-      external decomp2
-!
+
+      logical, external :: decomp3
       integer,parameter :: lowest = 2
       integer istat, minx, maxx, n, npartiel, n0, n1, dim, ierr
 !
@@ -74,8 +65,8 @@
          endif
       endif
 
-      if (.not. decomp2 (G_ni, ldnh_minx, ldnh_maxx, ldnh_ni, npartiel, 0, n0, &
-                       .true., .true., F_npex, lowest, F_checkparti_L )) ierr=-1
+      if (.not. decomp3 (G_ni, ldnh_minx, ldnh_maxx, ldnh_ni, npartiel, 0, n0, &
+                    .true., .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
 
       if (Lun_out.gt.0) then
          if (Sol_type_S.eq.'DIRECT') then
@@ -87,8 +78,8 @@
          endif
       endif
 
-      if (.not. decomp2 (G_nj, ldnh_miny, ldnh_maxy, ldnh_nj, npartiel, 0, n1, &
-                       .false.,.true., F_npey, lowest, F_checkparti_L )) ierr=-1
+      if (.not. decomp3 (G_nj, ldnh_miny, ldnh_maxy, ldnh_nj, npartiel, 0, n1, &
+                    .false.,.true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
 
       trp_22n = -1
 
@@ -103,8 +94,8 @@
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
                   ' Schm_nith distributed on F_npex PEs', Schm_nith,F_npex
 
-         if (.not. decomp2 (Schm_nith, minx, maxx, n, npartiel, 0, n0, &
-                     .true., .true., F_npex, -1, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (Schm_nith, minx, maxx, n, npartiel, 0, n0, &
+                  .true., .true., F_npex, -1, F_checkparti_L, 3 )) ierr=-1
 
          trp_12smin = minx ! most likely = 1 since no halo
          trp_12smax = maxx
@@ -120,8 +111,8 @@
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
                   ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
-         if (.not. decomp2 (G_ni, minx, maxx, n, npartiel, 0, n0, &
-                     .false., .true., F_npey, lowest, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
+                  .false., .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
 
          trp_22min = minx ! most likely = 1 since no halo
          trp_22max = maxx
@@ -141,25 +132,25 @@
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
                   ' G_nk   distributed on F_npex PEs', G_nk,F_npex
 
-         if (.not. decomp2 (G_nk, minx, maxx, n, npartiel, 0, n0, &
-                     .true. , .true., F_npex, lowest, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
 !
          trp_12dmin = minx ! most likely = 1 since no halo
          trp_12dmax = maxx
          trp_12dn   = n
          trp_12dn0  = n0
 !
-! Transpose 1===>2:G_nk+1 distributed on F_npex PEs (no halo)
+! Transpose 1===>2:G_nk distributed on F_npex PEs (no halo)
 !                  G_nj distributed on F_npey PEs (original layout)
 !                  G_ni NOT distributed
-!         initial layout  : (l_minx:l_maxx,     l_miny:l_maxy     ,G_nk+1)
-!         transpose layout: (l_miny:l_maxy,trp_p12dmin:trp_p12dmax,G_ni  )
+!         initial layout  : (l_minx:l_maxx,     l_miny:l_maxy     ,G_nk)
+!         transpose layout: (l_miny:l_maxy,trp_p12dmin:trp_p12dmax,G_ni)
 !
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
-                  ' G_nk+1 distributed on F_npex PEs', G_nk+1,F_npex
+                  ' G_nk distributed on F_npex PEs', G_nk,F_npex
 
-         if (.not. decomp2 (G_nk+1, minx, maxx, n, npartiel, 0, n0, &
-                     .true. , .true., F_npex, lowest, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
 
          trp_p12dmin = minx ! most likely = 1 since no halo
          trp_p12dmax = maxx
@@ -177,8 +168,8 @@
             if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
                      ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
-            if (.not. decomp2 (G_ni, minx, maxx, n, npartiel, 0, n0, &
-                        .false., .true., F_npey, lowest, F_checkparti_L )) ierr=-1
+            if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
+                     .false., .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
 
             trp_22min = minx ! most likely = 1 since no halo
             trp_22max = maxx
@@ -199,8 +190,8 @@
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for VSPNG (no halo):', &
                 ' ldnh_maxy distributed on F_npex PEs', ldnh_maxy,F_npex
 
-         if (.not. decomp2 (ldnh_maxy, minx, maxx, n, npartiel, 0, n0, &
-                     .true. , .true., F_npex, lowest, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (ldnh_maxy, minx, maxx, n, npartiel, 0, n0, &
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
 
          trp_12emin = 1
          trp_12emax = maxx
@@ -214,8 +205,8 @@
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for VSPNG (no halo):', &
                   ' ldnh_maxx distributed on F_npey', ldnh_maxx,F_npey
 
-         if (.not. decomp2 (ldnh_maxx, minx, maxx, n, npartiel, 0, n0, &
-                     .false. , .true., F_npey, lowest, F_checkparti_L )) ierr=-1
+         if (.not. decomp3 (ldnh_maxx, minx, maxx, n, npartiel, 0, n0, &
+                  .false. , .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
 !
          trp_22emin = 1
          trp_22emax = maxx

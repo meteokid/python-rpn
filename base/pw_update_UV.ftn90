@@ -42,7 +42,7 @@
       integer i, j, k, istat
       real con(YDIST_SHAPE)
       real*8 r0,deg2rad_8,idt
-      real, dimension(l_ni,l_nj,l_nk+2) :: uprev,vprev
+      real, dimension(l_ni,l_nj,l_nk) :: uprev,vprev
       logical, save :: initialized=.false.
 !     ________________________________________________________________
 !

@@ -155,7 +155,7 @@
          end do         
 
          if (VAR_ZD /= '') then
-            do k=1,lv_t-1
+            do k=1,lv_t
                kk=k
                if (Pil_bmf_L) kk=1
                code_h= e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),ip2a    , &
@@ -163,13 +163,13 @@
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
-                  call e_bmfsplitxy2 (zdn,nis,njs,'ZD  ',k,lv_t-1,pni,0,0,0)
+                  call e_bmfsplitxy2 (zdn,nis,njs,'ZD  ',k,lv_t,pni,0,0,0)
                endif            
             enddo
          endif
 
          if (VAR_W /= '') then
-            do k=1,lv_t-1
+            do k=1,lv_t
                kk=k
                if (Pil_bmf_L) kk=1 
                code_h= e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),ip2a, &
@@ -177,7 +177,7 @@
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
-                  call e_bmfsplitxy2 (wn,nis,njs,'W   ',k,lv_t-1,pni,0,0,0)
+                  call e_bmfsplitxy2 (wn,nis,njs,'W   ',k,lv_t,pni,0,0,0)
                endif            
             enddo
          endif

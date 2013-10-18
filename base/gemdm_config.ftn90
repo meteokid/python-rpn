@@ -194,8 +194,6 @@
       Grdc_iref   = Grdc_iref +   Grdc_pil
       Grdc_jref   = Grdc_jref +   Grdc_pil     
 
-      Acid_npas=0
-
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
       call low2up  (sol_type_S ,dumc_S)
@@ -237,11 +235,16 @@
          endif
       endif
 
-!     Check for open top (piloting or blending)
+!     Check for open top (piloting and blending)
       Schm_opentop_L  = .false.
-      if (Lam_blend_T > 0 .or. Lam_gbpil_T > 0) then
+      if (Lam_gbpil_T > 0) then
          Schm_opentop_L = .true.
+         if(lun_out.gt.0.and.Vspng_nk.ne.0)write (Lun_out, 9570)
          Vspng_nk       = 0
+      endif
+      if (Lam_gbpil_T <= 0 .and. Lam_blend_T > 0) then
+         if (lun_out.gt.0)write (Lun_out, 9580)
+         return
       endif
 
 !     Check for incompatible use of IAU and DF
@@ -276,6 +279,23 @@
 
           Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
+!
+      if (Init_dfnp <= 0) then
+         if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602) 
+         Init_balgm_L = .false.
+      endif
+      Init_dfnp = max(0,Init_dfnp)
+      if (Init_balgm_L) then
+      if ( mod(Init_dfnp,2) .ne. 1 ) then
+         if (Lun_out.gt.0) write(Lun_out,6600) Init_dfnp
+         return
+      endif
+      if ( Init_dfnp .eq. 1 ) then
+         if (Lun_out.gt.0) write(Lun_out,6601)
+         return
+      endif      
+      endif
+!
       if (Lctl_debug_L) then
          istat = gmm_verbosity(GMM_MSG_DEBUG)
          istat = wb_verbosity(WB_MSG_DEBUG)
@@ -299,6 +319,9 @@
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
+ 6600 format (/' PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN'/)
+ 6601 format (/' PROBLEM: THE VARIABLE Init_dfnp cannot be equal to 1'/)
+ 6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
@@ -315,6 +338,8 @@
  9400 format (/,'ABORT: Cstv_ptop_8 must be > 0',/)
  9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
  9560 format (/,'ABORT: Top piloting must have topology 2x* or *x2'/)
+ 9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
+ 9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 
 !
 !-------------------------------------------------------------------

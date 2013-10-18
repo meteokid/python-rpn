@@ -12,7 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "model_macros_f.h"
 
 !/**
 subroutine itf_adx_main (F_nb_iter)
@@ -28,28 +27,21 @@ subroutine itf_adx_main (F_nb_iter)
    !@revisions
 !**/
 
-#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "orh.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
 
-   integer, parameter :: NB_FIELDS_MAX = 999
-
-   character(len=GMM_MAXNAMELENGTH), dimension(2,NB_FIELDS_MAX) :: fields_lbl
-   logical, dimension(2,NB_FIELDS_MAX) :: fields_type_L
-
    logical :: doAdwStat_L
-   integer :: istat, nfields, nk_winds
-
+   integer :: nk_winds
    real, dimension(:,:,:), allocatable, save :: ud,vd,wd,ua,va,wa,wat
    logical, save :: is_allocated_L = .false.
 
    !---------------------------------------------------------------------
 
-   nk_winds=G_nk
-   if(Schm_superwinds_L)nk_winds=2*G_nk+1
+   nk_winds= G_nk
+   if(Schm_superwinds_L) nk_winds= 2*G_nk+1
 
    doAdwStat_L = .false.
    if (Step_gstat.gt.0) doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
@@ -61,19 +53,17 @@ subroutine itf_adx_main (F_nb_iter)
       allocate( ud(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
                 vd(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
                 wd(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
-                ua(l_ni,l_nj,G_nk), &
-                va(l_ni,l_nj,G_nk), &
-               	wa(l_ni,l_nj,G_nk), &
-               wat(l_ni,l_nj,G_nk), &
-		stat=istat)
-      call handle_error_l(istat==0,'itf_adx_main','Problem allocating mem')
+                ua(l_ni,l_nj,G_nk), va(l_ni,l_nj,G_nk)  , &
+               	wa(l_ni,l_nj,G_nk),wat(l_ni,l_nj,G_nk) )
    endif
 	
-   call itf_adx_get_winds2 (ud,vd,wd,ua,va,wa,wat,l_minx,l_maxx,l_miny,l_maxy,l_nk,l_ni,l_nj,nk_winds)
-   call itf_adx_get_field_list (fields_lbl,fields_type_L,nfields,NB_FIELDS_MAX)
+   call itf_adx_get_winds2 ( ud, vd, wd, ua, va, wa, wat, &
+                             l_minx,l_maxx,l_miny,l_maxy, &
+                             l_nk, l_ni, l_nj, nk_winds )
 
-   call adx_main7 (ud,vd,wd,ua,va,wa,wat, fields_lbl, fields_type_L, nfields, &
-                   l_minx,l_maxx,l_miny,l_maxy, nk_winds, F_nb_iter, doAdwStat_L)
+   call adx_main8 ( ud, vd, wd, ua, va, wa, wat, &
+                    l_minx,l_maxx,l_miny,l_maxy, &
+                    nk_winds, F_nb_iter, doAdwStat_L )
 
    !---------------------------------------------------------------------
 

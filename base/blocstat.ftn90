@@ -39,7 +39,6 @@
 #include "glb_ld.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
-#include "acid.cdk"
 #include "ptopo.cdk"
 #include "schm.cdk"
 #include "stat.cdk"
@@ -47,7 +46,7 @@
       logical,save :: done = .false.
       logical :: flag
       type(gmm_metadata) :: tmp_meta,mymeta
-      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat,k0
+      integer i0,in,j0,jn,inn,jnn,n,trunc(4),err,indx,istat
       real, pointer, dimension(:,:  ) :: wk2d
       real, pointer, dimension(:,:,:) :: wk3d
       character(len=GMM_MAXNAMELENGTH) :: stat_varname
@@ -65,10 +64,9 @@
       if (flag) then
 
          if (Ptopo_myproc.eq.0) write(6,1000) Lctl_step
-         i0 = 1+acid_i0
-         in = G_ni-acid_in
-         j0 = 1+acid_j0
-         jn = G_nj-acid_jn
+
+         i0 = 1 ; in = G_ni
+         j0 = 1 ; jn = G_nj
 
          do n=1,stat_nombre
             istat = gmm_getmeta(stat_liste(n),tmp_meta)
@@ -89,20 +87,11 @@
                                  i0,in-inn,j0,jn-jnn, 1,1)
                else
                   istat = gmm_get(stat_liste(n), wk3d, mymeta)
-                  k0=tmp_meta%l(3)%low
-                  if(&
-                  stat_liste(n)(1:2)=='WT'.or.&
-                  stat_liste(n)(1:2)=='TT'.or.&
-                  stat_liste(n)(1:2)=='FI'.or.&
-                  stat_liste(n)(1:2)=='QT'.or.&
-                  stat_liste(n)(1:2)=='TR')k0=tmp_meta%l(3)%low+1
-                  !if (Ptopo_myproc.eq.0)print*,'stat_liste(n),k0=',stat_liste(n),k0
                   call glbstat2 (wk3d,stat_varname,'', &
                                 tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
                                 tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
                                 tmp_meta%l(3)%low,tmp_meta%l(3)%high, &
-                                i0,in-inn,j0,jn-jnn, &
-                                k0,tmp_meta%l(3)%high-1)
+                                i0,in-inn,j0,jn-jnn,tmp_meta%l(3)%low,tmp_meta%l(3)%high)
                endif
             endif
          end do
@@ -169,10 +158,11 @@
             cnt = cnt + 1
             tmp_liste(cnt  ) = 'UT1'
             tmp_liste(cnt+1) = 'VT1'
-            tmp_liste(cnt+2) = 'WT1'
-            tmp_liste(cnt+3) = 'TT1'
-            tmp_liste(cnt+4) = 'ST1'
-            cnt = cnt + 4
+            tmp_liste(cnt+2) = 'ZDT1'
+            tmp_liste(cnt+3) = 'WT1'
+            tmp_liste(cnt+4) = 'TT1'
+            tmp_liste(cnt+5) = 'ST1'
+            cnt = cnt + 5
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
                cnt = cnt + 1
@@ -183,10 +173,11 @@
             cnt = cnt + 1
             tmp_liste(cnt  ) = 'UT0'
             tmp_liste(cnt+1) = 'VT0'
-            tmp_liste(cnt+2) = 'WT0'
-            tmp_liste(cnt+3) = 'TT0'
-            tmp_liste(cnt+4) = 'ST0'
-            cnt = cnt + 4
+            tmp_liste(cnt+2) = 'ZDT0'
+            tmp_liste(cnt+3) = 'WT0'
+            tmp_liste(cnt+4) = 'TT0'
+            tmp_liste(cnt+5) = 'ST0'
+            cnt = cnt + 5
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT0'
                cnt = cnt + 1

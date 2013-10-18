@@ -63,13 +63,11 @@
       if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(st1)'
       err = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(wt1)'
-      if (.not.Schm_hydro_L) then
       err = gmm_get(gmmk_qt1_s,qt1,mymeta)
       if (GMM_IS_ERROR(err)) print *,'slabsym ERROR at gmm_get(qt1)'
-      endif
 !
       if (l_north) then
-         do k=1,G_nk+1
+         do k=1,G_nk
             jin = l_nj-pil_n-1
             jj  = l_nj-pil_n
             do i=1,l_ni
@@ -83,6 +81,7 @@
                tt1 (i,jj,k) = tt1 (i,jin,k)
                wt1 (i,jj,k) = wt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
+               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -93,25 +92,13 @@
          do j=1,pil_n
          jj  = l_nj-pil_n+j
          do i=1,l_ni
-            tt1 (i,jj,G_nk+2) = tt1 (i,jin,G_nk+2)
             st1 (i,jj)        = st1 (i,jin)
          end do
          end do
-         if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
-            jin = l_nj-pil_n
-            do j=1,pil_n
-            jj  = l_nj-pil_n+j
-            do i=1,l_ni
-               qt1 (i,jj,k) = qt1 (i,jin,k)
-            end do
-            end do
-            end do
-         endif
       endif
 !
       if (l_south) then
-         do k=1,G_nk+1
+         do k=1,G_nk
             jin = pil_s+1
             do j=1,pil_s
             jj  = pil_s-j+1
@@ -120,6 +107,7 @@
                wt1 (i,jj,k) = wt1 (i,jin,k)
                tt1 (i,jj,k) = tt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
+               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -130,21 +118,9 @@
          do j=1,pil_s
          jj  = pil_s-j+1
          do i=1,l_ni
-            tt1 (i,jj,G_nk+2) = tt1 (i,jin,G_nk+2)
             st1 (i,jj)        = st1 (i,jin)
          end do
          end do
-         if (.not. Schm_hydro_L) then
-            do k=1,G_nk+1
-            jin = pil_s+1
-            do j=1,pil_s
-            jj  = pil_s-j+1
-            do i=1,l_ni
-               qt1 (i,jj,k) = qt1 (i,jin,k)
-            end do
-            end do
-            end do
-         endif
       endif
 !
       do n=1,Tr3d_ntr
@@ -152,7 +128,7 @@
          err = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr,mymeta)
          if (err.eq.0) then
          if (l_north)      then
-            do k=1,G_nk+1
+            do k=1,G_nk
                jin = l_nj-pil_n
                do j=1,pil_n
                   jj  = l_nj-pil_n+j
@@ -163,7 +139,7 @@
             enddo
          endif
          if (l_south) then
-            do k=1,G_nk+1
+            do k=1,G_nk
                jin = pil_s+1
                do j=1,pil_s
                   jj  = pil_s-j+1

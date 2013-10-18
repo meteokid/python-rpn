@@ -13,16 +13,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_vta - Initialization of the commons for digital filter
-!		 variables. Virtual Memory manager initialisation.
+!**s/r set_vta
 !
-#define SPY_VMM_CREATE spy_vmm_create
 #include "model_macros_f.h"
 !
       subroutine set_vta
-!
       implicit none
-#include <arch_specific.hf>
 !
 !author
 !     alain patoine - march 1994
@@ -32,34 +28,20 @@
 ! v2_21 - J. P. Toviessi - rename some model output variables
 ! v2_30 - Edouard S.     - remove pi' at the top
 ! v2_31 - Desgagne M.    - re-introduce 3D tracers*
-! v4_05 - Lepine M.         - VMM replacement with GMM
+! v4_05 - Lepine M.      - VMM replacement with GMM
 !
-!object
-!	This subroutine initializes the commons containing the
-!	keys used by the Virtual Memory Manager to identify the
-!	digital filter variables
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "vta.cdk"
-!
-!*
-!
+
       integer :: istat
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
-!
-!C       1.    Create digital filter variables
-!              -------------------------------
-!
+
       nullify(uta,vta,wta,tta,qta,zdta,sta)
 
       gmmk_uta_s  = 'DIGF_UU'
@@ -70,22 +52,22 @@
       gmmk_zdta_s = 'DIGF_ZD'
       gmmk_sta_s  = 'DIGF_S '
 
-      istat = gmm_create(gmmk_uta_s,uta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_uta_s,uta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(uta)'
 
-      istat = gmm_create(gmmk_vta_s,vta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_vta_s,vta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(vta)'
 
-      istat = gmm_create(gmmk_wta_s,wta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_wta_s,wta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(wta)'
 
-      istat = gmm_create(gmmk_tta_s,tta,meta3d_nk2,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_tta_s,tta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(tta)'
 
-      istat = gmm_create(gmmk_qta_s,qta,meta3d_0nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_qta_s,qta,meta3d_2nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(qta)'
 
-      istat = gmm_create(gmmk_zdta_s,zdta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_zdta_s,zdta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(zdta)'
 
       istat = gmm_create(gmmk_sta_s,sta,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)

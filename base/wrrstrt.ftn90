@@ -18,7 +18,6 @@
 #include "model_macros_f.h"
 !
       subroutine wrrstrt ()
-!
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,13 +38,7 @@
 ! v3_31 - Desgagne M.       - new coupling interface to OASIS
 ! v3_31 - Desgagne M.       - restart with physics BUSPER
 ! v4_05 - Lepine M.         - VMM replacement with GMM
-!
-!object
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
@@ -53,50 +46,33 @@
 #include "step.cdk"
 #include "lctl.cdk"
 #include "schm.cdk"
-#include "itf_cpl.cdk"
 #include "ifd.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
-!
-      integer,external :: fnom,fclos
-!
-      integer ier,dim,gmmstat
+
+      integer, external :: fnom,fclos
+
+      integer ier,gmmstat
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step
-!
-!      if (Rstri_glbcol_L) then
-!        Write one global binary file for the physics
-!        and chemistry restarts for the whole domain
-!         call wr1rstrt()
-!
-!        Write one global binary file for the dynamics 
-!        restart for the whole domain
-!         call glb_restart('W')
-!      else
 
-         Lun_rstrt = 0
-         ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
+      Lun_rstrt = 0
+      ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
 
-         write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+      write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
 
-         if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
-!
-         dim = cpl_ni*cpl_nj*n_fldin
-         write(Lun_rstrt) dim
-         if (dim>0) write(Lun_rstrt) atm_busin
+      if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 
-         ier = fclos(Lun_rstrt)  
+      ier = fclos(Lun_rstrt)  
 
 !        Write Gmm-files
 
-         gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
-!
-!      endif
-!
+      gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
+
       call wrrstrt_phy (.false.)
-!
+
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8, &
              /,'=========================================')
 !

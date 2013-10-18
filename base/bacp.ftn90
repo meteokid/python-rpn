@@ -11,7 +11,7 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-!---------------------------------- LICENCE END ---------------------------------
+!---------------------------------- LICENCE END --------------------------------
 
 !**s/r  bacp - backsubstitution: obtain new values of the variables:
 !                                                   u,v,w,t,q,s,zd
@@ -33,9 +33,9 @@
       real*8   F_lhs_sol (ni,nj,Nk)
       real     F_fis (DIST_SHAPE)                                    , &
                F_u   (DIST_SHAPE,  Nk)  , F_v     (DIST_SHAPE,  Nk)  , &
-               F_w   (DIST_SHAPE,  Nk)  , F_t     (DIST_SHAPE,0:Nk)  , &
-               F_s   (DIST_SHAPE)       , F_zd    (DIST_SHAPE,0:Nk)  , &
-               F_q   (DIST_SHAPE,  Nk+1), F_nest_q(DIST_SHAPE,  Nk+1), &
+               F_w   (DIST_SHAPE,  Nk)  , F_t     (DIST_SHAPE,  Nk)  , &
+               F_s   (DIST_SHAPE)       , F_zd    (DIST_SHAPE,  Nk)  , &
+               F_q   (DIST_SHAPE,2:Nk+1), F_nest_q(DIST_SHAPE,2:Nk+1), &
                F_ru  (DIST_SHAPE,  Nk)  , F_rv    (DIST_SHAPE,  Nk)  , &
                F_rt  (DIST_SHAPE,  Nk)  , F_rw    (DIST_SHAPE,  Nk)  , &
                F_rf  (DIST_SHAPE,  Nk)  , F_rb    (DIST_SHAPE)       , &
@@ -53,15 +53,15 @@
 #include "ver.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
-#include "acid.cdk"
 #include "lam.cdk"
 !
-      integer i, j, k, nij, k0t, istat
+      integer i, j, k, kq, nij, k0t, istat
       real*8  xxx, yyy, zzz, p1, p2, p3, p4, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real*8, dimension(:,:,:), allocatable :: Pbar
       real  , dimension(:,:,:), allocatable :: GP
       real*8, parameter :: zero=0.d0, one=1.d0
+      real onezero(l_nk+1)
 !     __________________________________________________________________
 !
       allocate (Pbar(DIST_SHAPE,Nk+1), GP(DIST_SHAPE,Nk+1))
@@ -76,6 +76,9 @@
       k0t=k0
       if(Schm_opentop_L) k0t=k0-1
 
+      onezero=1.
+      onezero(1)=0.
+
       do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n 
          do i= 1+pil_w, l_ni-pil_e 
@@ -84,12 +87,12 @@
          enddo
       end do
 !
-!$omp parallel private(xxx,yyy,zzz,qbar,xtmp_8,ytmp_8)
+!$omp parallel private(xxx,yyy,zzz,qbar,kq,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
-      if ( Schm_opentop_L .and. .not.Lam_acidtest_L ) then
+      if ( Schm_opentop_L ) then
 !$omp do
          do j= j0, jn
          do i= i0, in
@@ -174,13 +177,14 @@
 !        Note : we cannot use omp on loop k 
 !               due to vertical dependency F_q(i,j,k)
          do k=k0t,l_nk
+            kq=max(k,2)
             zzz = one/(one+Ver_wp_8%t(k)*Ver_dz_8%t(k))
             yyy = (one-Ver_wm_8%t(k)*Ver_dz_8%t(k))*zzz
             xxx = p3*Ver_dz_8%t(k)*zzz
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k+1) = yyy * F_q(i,j,k) &
+               F_q(i,j,k+1) = yyy * F_q(i,j,kq)*onezero(k) &
                             - xxx * ( F_rw(i,j,k) - F_nw(i,j,k) &
                                   - Cstv_invT_8 *F_w(i,j,k)  )
             end do
@@ -188,7 +192,6 @@
 !$omp enddo
          end do
 
-         if (Lam_acidtest_L) call sol_from_file (F_q,DIST_DIM,0,l_nk+1 )         
       endif
 
 !     Compute s
@@ -243,9 +246,10 @@
          if (.not. Schm_hydro_L) then
 !$omp do
             do k=k0t,l_nk-1
+               kq=max(k,2)
                do j= j0, jn 
                do i= i0, in 
-                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
+                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
                   F_zd(i,j,k)=F_zd(i,j,k)-Cstv_invT_8*qbar
                enddo
                enddo
@@ -260,6 +264,7 @@
 
 !$omp do
       do k=k0t,l_nk
+         kq=max(k,2)
          xxx=Cstv_RTstr_8*Ver_b_8%m(k)
          do j= j0, jn 
          do i= i0, in          
@@ -269,7 +274,7 @@
          if (.not. Schm_hydro_L) then
             do j= j0, jn 
             do i= i0, in          
-               GP(i,j,k)=GP(i,j,k)-Cstv_RTstr_8*F_q(i,j,k)       
+               GP(i,j,k)=GP(i,j,k)-Cstv_RTstr_8*F_q(i,j,kq)*onezero(k)       
             enddo
             enddo
          endif
@@ -288,10 +293,11 @@
       if(.not.Schm_autobar_L) then            ! safer for autobar
 !$omp do
          do k=k0t,l_nk
+            kq=max(k,2)
             if(.not.Schm_hydro_L) then
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
                ytmp_8(i,j)=-qbar
             enddo
             enddo
@@ -318,21 +324,6 @@
             enddo
          enddo
 !$omp enddo
-
-!$omp do
-         do j= j0, jn 
-         do i= i0, in
-         ! Note : on ecrit dans k = 0 ce qui parait incompatible
-         !        avec la declaration mais ce TT existe
-         !        Ce code disparaitra quand TT top sera enleve de la memoire.
-         ! Ce code est pour les sorties seulement.
-            F_t(i,j,0)=( (Ver_z_8%t(3)-Ver_z_8%t(1))*F_t(i,j,1) &
-                 -(Ver_z_8%t(2)-Ver_z_8%t(1))*F_t(i,j,2) )/ &
-                 (Ver_z_8%t(3)-Ver_z_8%t(2))             
-         enddo
-         enddo
-!$omp enddo
-
       endif
 
 !$omp end parallel

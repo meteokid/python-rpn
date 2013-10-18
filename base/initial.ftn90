@@ -56,17 +56,11 @@
 #include "schm.cdk"
 !
       type(gmm_metadata) :: meta2d
-      integer n, pndfnph, pnerr, pnlkey1(2), pnfirst, pnlast, gmmstat, istat
+      integer n, pndfnph, pnerr, pnlkey1(2), pnfirst, pnlast, gmmstat
       real    prn, promegc, prsum, prwin1, prwin2
 !
 !     ---------------------------------------------------------------
 !
-      istat = 0
-      if ( mod(Init_dfnp,2) .ne. 1 ) then
-         if (Lun_out.gt.0) write(Lun_out,2010) Init_dfnp
-         istat = -1
-      endif
-      call handle_error(istat,'initial','VARIABLE Init_dfnp is even')
 !
       if (Lun_out.gt.0) write(Lun_out,2020) Init_dfnp
 !
@@ -147,8 +141,6 @@
  1050 format(/,' =====> DIGITAL FILTER INITIALIZATION SCHEME: ', &
                'COMPLETED',/8x,'LAST TIMESTEP COMPLETED RESET TO:', &
                I5,/' ',55('='))
- 2010 format(/,'PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN', &
-      /,'==============================================')
  2020 format(/,'PREPARATION OF DIGITAL FILTER PARAMETERS', &
       /,'AND COEFFICIENTS (S/R INITIAL)          ', &
       /,'========================================',/,'Init_dfnp  = ',i4)

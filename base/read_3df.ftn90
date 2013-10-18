@@ -24,8 +24,8 @@
       logical F_zd_L, F_w_L, F_q_L
       integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,err
       character* (*) trname_a(ntra)
-      real  uun(nga,nka_m), vvn (nga,nka_m), zdn(nga,nka_t-1), ttn(nga,nka_t  ), &
-            ssqn(nga,1   ), meqn(nga,nka_m), qqn(nga,nka_m+1), wwn(nga,nka_t-1), &
+      real  uun(nga,nka_m), vvn (nga,nka_m), zdn(nga,nka_t-1), ttn(nga,nka_t), &
+            ssqn(nga,1   ), meqn(nga,nka_m), qqn(nga,nka_m-1), wwn(nga,nka_t-1), &
             trn (nga,nka_t,ntra)
 !
 !author
@@ -109,21 +109,21 @@
           if (nomvar.eq.'W   ') then
               F_w_L=.true.
               call filmup (nomvar,wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                                  nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
               cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'ZD  ') then
               F_zd_L=.true.
               call filmup (nomvar,zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                                  nka_t-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
               cumerr= cumerr + err
               cycle
           endif
           if (nomvar.eq.'Q   ') then
               F_q_L=.true.
               call filmup (nomvar,qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                                nka_m+1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                                  nka_m-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
               cumerr= cumerr + err
               cycle
           endif
@@ -144,7 +144,7 @@
           if (.not.found) then
              call filmup (nomvar,tracer_not_needed           , &
                           ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                          nk1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits)
+                          nk1,unf,ofi,ofj,err,ni1,nj1,nka_t,nbits)
           endif
 
       enddo read_vars

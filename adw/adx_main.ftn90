@@ -12,29 +12,26 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include <msg.h>
 #include <model_macros_f.h>
 
 !/**
-subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
-                      F_fields_list, F_fields_type_L, F_nfields, &
-                      F_minx,F_maxx,F_miny,F_maxy,F_nk_winds, F_nb_iter, F_doAdwStat_L)
+subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
+                       F_minx, F_maxx, F_miny, F_maxy,F_nk_winds, &
+                       F_nb_iter, F_doAdwStat_L )
    implicit none
 #include <arch_specific.hf>
+
    !@objective Perform advection
    !@arguments
+
    logical :: F_doAdwStat_L   !I, will compute stats if .true.
    integer :: F_nb_iter       !I, total number of iterations for trajectories
    integer :: F_minx,F_maxx,F_miny,F_maxy !I, bounds of model's wind arrays
    integer :: F_nk_winds      !I, nb of wind levels (momentum or super winds)
-   integer :: F_nfields       !I, nb of fields to advect
-   logical, dimension(2, F_nfields) :: &
-        F_fields_type_L       !I, fields type
-   character(len=*),dimension(2, F_nfields) :: &
-        F_fields_list         !I, list of gmm labels of fields to advect
    real, dimension(F_minx:F_maxx,F_miny:F_maxy, F_nk_winds) :: &
         F_ud, F_vd, F_wd      !I, real destag winds
    real, dimension(*) :: F_ua, F_va, F_wa, F_wat
+
    !@author  alain patoine
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
@@ -49,38 +46,35 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
 !**/
+
 #include <gmm.hf>
 #include "adx_gmm.cdk"
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 #include "glb_ld.cdk"
 
-   logical, parameter :: IS_MOM_LEVEL = .true.
-   logical, parameter :: POLE0_L = .false.
+   logical, parameter :: POLE0_L  = .false.
    logical, parameter :: EXTEND_L = .false.
 
    logical :: save_stats_L
    type(gmm_metadata) :: my_meta,my_meta2
    integer :: i,j,istat,i0,in,j0,jn,k0,k0t
-   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
-        pxm,pym,pzm
-   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: &
-        pxt,pyt,pzt,wdm
+   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: pxm,pym,pzm
+   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: pxt,pyt,pzt,wdm
    real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk_winds) :: &
         a_ud,a_vd,a_wd
    real :: dummy
 
-   real, pointer, dimension(:) :: &
-        xth, yth, zth, xcth, ycth, zcth, &
-        xct1, yct1, zct1
+   real, pointer, dimension(:) :: xth, yth, zth, xcth, ycth, zcth, &
+                                  xct1, yct1, zct1
 
 #define IS_SAME_BOUNDS(M1,M2) (M1%l(1)%low == M2%l(1)%low .and. M1%l(1)%high == M2%l(1)%high .and. M1%l(2)%low == M2%l(2)%low .and. M1%l(2)%high == M2%l(2)%high)
-   !---------------------------------------------------------------------
-   call msg(MSG_DEBUG,'adx_main [begin]')
 
-   nullify(xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
+   !---------------------------------------------------------------------
+
+   nullify (xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
    
-   k0=adx_gbpil_t+1
+   k0 = adx_gbpil_t+1
    k0t= k0
    if(adx_gbpil_t.gt.0)k0t=k0-1
 
@@ -91,9 +85,9 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                      adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
                      F_minx,F_maxx,F_miny,F_maxy, F_nk_winds)
 
-   call adx_grid_scalar (a_wd, F_wd,                          &
-                         adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
-                         F_minx,F_maxx,F_miny,F_maxy, F_nk_winds, POLE0_L, EXTEND_L)
+   call adx_grid_scalar (a_wd,F_wd, adx_lminx, adx_lmaxx    , &
+                         adx_lminy, adx_lmaxy, F_minx,F_maxx, &
+                         F_miny,F_maxy, F_nk_winds, POLE0_L, EXTEND_L)
 
    istat = GMM_OK
    istat = min(gmm_get(adx_xth_s,xth,my_meta),istat)
@@ -118,53 +112,49 @@ subroutine adx_main7 (F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    !TODO: check my_meta compared to adx_mlnijk
 
-   call handle_error(istat,'adx_main','gmm_get')
+!   call handle_error(istat,'adx_main','gmm_get')
 
    call timing_start (30, 'ADW_TRAJE')
 
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
-   call adx_main_2_pos6( F_nb_iter, &
-                         pxm , pym , pzm , &
-                         a_ud, a_vd, a_wd, &
-                         F_ua, F_va, F_wa, wdm, &
-                         xth , yth , zth , &
-                         xcth, ycth, zcth, &
-                         xct1, yct1, zct1, &
-        adx_lminx, adx_lmaxx, adx_lminy, adx_lmaxy, &
-        adx_mlni , adx_mlnj , max(k0t-2,1) , adx_lnkm, F_nk_winds)
+   call adx_main_2_pos6 ( F_nb_iter, pxm , pym , pzm             , &
+                          a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
+                          xth , yth , zth , xcth, ycth, zcth     , &
+                          xct1, yct1, zct1, adx_lminx, adx_lmaxx , &
+                          adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
+                          max(k0t-2,1), adx_lnkm, F_nk_winds )
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   call adx_cubicpos(pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm,adx_mlni,adx_mlnj,k0t,adx_lnkm,i0,in,j0,jn,.true.)
+   call adx_cubicpos ( pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
+                       adx_mlni,adx_mlnj,k0t,adx_lnkm   , &
+                       i0,in,j0,jn, .true. )
  
    call timing_stop (30)
 
    if (adw_stats_L) then
-      call adx_main_2_pos_stats( &
-           'm', &
-           a_ud  ,a_vd  ,a_wd  , &
-           pxm,  pym,  pzm , &
-           xth , yth , zth , &
-           xcth, ycth, zcth, &
-           xct1, yct1, zct1, &
-           adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,F_nk_winds,&
-           adx_mlni, adx_mlnj, adx_lnkm,adx_lnkm,i0,in,j0,jn,k0,adx_lnkm)
+      call adx_main_2_pos_stats('m', a_ud  ,a_vd  ,a_wd                , &
+                                pxm,  pym,  pzm , xth , yth , zth      , &
+                                xcth, ycth, zcth, xct1, yct1, zct1     , &
+                                adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                                F_nk_winds,adx_mlni, adx_mlnj, adx_lnkm, &
+                                adx_lnkm,i0,in,j0,jn,k0,adx_lnkm )
    endif
 
    call timing_start (31, 'ADW_INLAG')
 
-   call adx_main_3_intlag7 ( pxm, pym, pzm, F_fields_list, F_fields_type_L, F_nfields, &
-                             IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0,adx_lnkm )
+   call adx_main_3_intlag8 ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
+                             adx_mlni, adx_mlnj, k0 , adx_lnkm )
    
-   call adx_main_3_intlag7 ( pxt, pyt, pzt, F_fields_list, F_fields_type_L, F_nfields, &
-                        .not.IS_MOM_LEVEL, F_doAdwStat_L, adx_mlni,adx_mlnj,k0t,adx_lnkm )
+   call adx_main_3_intlag8 ( pxt, pyt, pzt, .false., F_doAdwStat_L, &
+                             adx_mlni, adx_mlnj, k0t, adx_lnkm )
 
    call timing_stop (31)
 
    adw_stats_L = save_stats_L
-   call msg(MSG_DEBUG,'adx_main [end]')
+
    !---------------------------------------------------------------------
    return
-end subroutine adx_main7
+end subroutine adx_main8
 
