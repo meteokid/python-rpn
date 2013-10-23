@@ -213,14 +213,21 @@ class RPNFile:
                     result.update_by_dict(item)
                     result.fileref=self
                     mylist2.append(result)
-                self.lastread=mylist[-1]
+                if (len(mylist) > 0):
+                  self.lastread=mylist[-1]
                 return mylist2
             elif key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
                               key.datev,key.handle)
             else:                          # get FIRST one that matches
-                if key.handle >= 0 :       # handle exists, return it
+                # If key.handle > 0, then this might be a duplicate check;
+                # if it is, then the key will be a full RPNMeta, which has
+                # the necessary information for __getitem__ and we can return
+                # the key without further processing.  If it is not such an
+                # instance (aka, a bare RPNKeys), then the handle isn't 
+                # useful and we should ignore it.
+                if (isinstance(key,RPNMeta) and key.handle >= 0) :
                     return key #TODO: may want to check if key.handle is valid
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
