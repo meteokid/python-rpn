@@ -54,7 +54,7 @@ Makefile.dep.mk:
 clean_objects:
 	rm -f *.o
 
-ifneq (,$(DEBUG))
+ifeq (,$(DEBUG))
 objects: $(OBJECTS)
 else
 objects: | clean_objects $(OBJECTS)

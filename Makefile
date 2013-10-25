@@ -32,7 +32,7 @@ default: | VERSION
 .PHONY: force_all
 force_all: distclean buildall distall force_allssmpkgs
 
-.PHONY: clean distclean
+.PHONY: clean mostlyclean distclean
 clean:
 	chmod -R u+w $(BUILDDIRROOT) 2> /dev/null || true ;\
 	rm -rf $(BUILDDIRROOT) 2> /dev/null || true
