@@ -123,7 +123,7 @@
 
       call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
-      err = phy_gmm2phy()
+      err = phy_gmm2phy2()
 
       err = min(phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
                        F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
