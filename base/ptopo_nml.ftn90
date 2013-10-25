@@ -15,8 +15,6 @@
 
 !**s/r ptopo_nml - Read namelist ptopo
 !
-#include "model_macros_f.h"
-!
       integer function ptopo_nml (F_namelistf_S)
       implicit none
 #include <arch_specific.hf>
@@ -34,25 +32,24 @@
 !object
 !  Default configuration and reading namelist ptopo
 !
-!implicits
 #include "ptopo.cdk"
 #include "lun.cdk"
-      integer,external :: fnom
 
+      integer,external :: fnom
       integer nrec,unf
 !
 !-------------------------------------------------------------------
 !
       ptopo_nml = -1
-!
+
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          ptopo_nml = 0
          if (Lun_out.gt.0) write (6  ,nml=resources)
          return
       endif
-!
+
 ! Defaults values for ptopo namelist variables
-!
+
       Ptopo_npex   =  1
       Ptopo_npey   =  1
       Ptopo_nblocx = -1
@@ -62,7 +59,7 @@
       Ptopo_nthreads_dyn = 0
       Ptopo_nthreads_phy = 0
       Ptopo_bind_L = .false.
-!
+
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)
@@ -71,10 +68,8 @@
             Ptopo_nblocx = Ptopo_npex
             Ptopo_nblocy = Ptopo_npey
          endif
-         if (Ptopo_ninblocx <= 0 .or. Ptopo_ninblocy <= 0) then
-            Ptopo_ninblocx = Ptopo_nblocx
-            Ptopo_ninblocy = Ptopo_nblocy
-         endif
+         Ptopo_ninblocx= min(max(1,Ptopo_ninblocx),Ptopo_npex)
+         Ptopo_ninblocy= min(max(1,Ptopo_ninblocy),Ptopo_npey)
          call fclos (unf)
          ptopo_nml = 1
          goto 7777
@@ -82,13 +77,12 @@
          goto 9220
       endif
 
-!
  9110 write (6, 8150) trim( F_namelistf_S )
       call fclos (unf)
       goto 7777
-!
+
  9220 write (6, 8155) trim( F_namelistf_S )
-!
+
  8150 format (/,' NAMELIST resources    INVALID IN FILE: ',a)
  8155 format (/,' FILE: ',a,' NOT AVAILABLE')
 !
