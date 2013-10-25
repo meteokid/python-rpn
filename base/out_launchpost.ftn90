@@ -33,35 +33,47 @@
 #include "ptopo.cdk"
 #include "lctl.cdk"
 #include <clib_interface.cdk>
+      include "rpn_comm.inc"
 !
       character*1024 filen,filen_link,append
-      integer i, err, unf
+      logical pe0_master_L, release_dir_L
+      integer i, rank, err, unf
 !
 !----------------------------------------------------------------------
 !
-      if ((Ptopo_myproc.eq.0).and.(Ptopo_couleur.eq.0)) then
+      pe0_master_L = (Ptopo_myproc.eq.0) .and. (Ptopo_couleur.eq.0)
+      release_dir_L= Out_post_L .or. F_forceit_L
 
-      append=''
-      if (F_last_L) append='^last'
-
-      if (Out_post_L .or. F_forceit_L) then
+      if (pe0_master_L) then
+         
+         append=''
+         if (F_last_L) append='^last'
+         
+         if (release_dir_L) then
+            
+            filen      = trim(Path_output_S)//'/output_ready_MASTER'
+            filen_link = trim(Path_output_S)//'/output_ready'
+            unf   = 474
+            open  ( unf,file=filen,access='SEQUENTIAL',&
+                    form='FORMATTED',position='APPEND' )
+            write (unf,'(2(a))') trim(Out_laststep_S),trim(append)
+            close (unf)
+            
+         endif
+         
+      endif
       
-         filen      = trim(Path_output_S)//'/output_ready_MASTER'
-         filen_link = trim(Path_output_S)//'/output_ready'
-         unf   = 474
-         open  (unf,file=filen,access='SEQUENTIAL',form='FORMATTED',position='APPEND')
-         write (unf,'(2(a))') trim(Out_laststep_S),trim(append)
-         close (unf)
-         if (.not.F_forceit_L) then
+      if (release_dir_L.and.(.not.F_forceit_L)) then
+         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
+         call rpn_comm_rank (RPN_COMM_ALLGRIDS, rank , err)
+         if (rank.eq.0) then
             err = clib_symlink ( trim(filen), trim(filen_link) )
             write (6,1001) trim(Out_laststep_S),lctl_step
          endif
-
       endif
-
-      endif
-
- 1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a,' was released for postprocessing at timestep: ',i9)
+      
+1001  format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
+              ' was released for postprocessing at timestep: ',i9)
 !
 !----------------------------------------------------------------------
 !

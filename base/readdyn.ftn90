@@ -97,15 +97,15 @@
 #include "wil_williamson.cdk"
 !
 !modules
-      integer,external :: bmf_get,get_px,newdate
-      logical,external :: samelevel2
+      integer,external :: bmf_get,get_px,newdate,samevert
 !
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical initial_data
       integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,&
-              err_pwuu,err_pwvv,err_pwtt,prdfsum,istat,dat
-      integer G_nkt, G_nkm
+              err_pwuu,err_pwvv,err_pwtt,prdfsum,istat,dat,&
+              mustvinterp
+      integer G_nkt, G_nkm,i0,in,j0,jn
       real, allocatable, dimension(:    ) :: rna
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
@@ -164,7 +164,19 @@
                       zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
 
       Acql_vertint = .true.
-      if(Acqi_datasp(1)==11)Acql_vertint = .false.
+      if(Acqi_datasp(1)==11)then
+         Acql_vertint = .false.
+         i0=1;in=l_ni;j0=1;jn=l_nj
+         if (Grd_yinyang_L) then
+             i0=1+pil_w
+             in=l_ni-pil_e
+             j0=1+pil_s
+             jn=l_nj-pil_n
+         endif
+         mustvinterp = samevert(za_8,zb_8,nka_m,zat_8,zbt_8,nka_t,&
+                         gz_temp(1,1,nka_t),topo_temp,l_ni,l_nj,i0,in,j0,jn)
+         if (mustvinterp .gt. 0) Acql_vertint = .true.
+      endif
 
       if ( Schm_autobar_L ) then
            Acql_vertint = .false.

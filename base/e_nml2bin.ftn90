@@ -48,6 +48,7 @@
 !
 !implicits
 #include "e_tr.cdk"
+#include "e_anal.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "modconst.cdk"
@@ -72,6 +73,7 @@
          tracers_sval(1:E_tr3d_ntr) = E_tr3d_sval(1:E_tr3d_ntr)
          Mod_runstrt_S  = Step_runstrt_S
          labfl=0
+         horzint_L =(Anal_hav(1).ne.11)
          rootfn = trim(Path_output_S)//'/GEMDM_input/'
          err    = clib_mkdir (trim(rootfn))
          err    = fnom(labfl,trim(rootfn)//'/Modntr_ipc.nml','SEQ',0)
