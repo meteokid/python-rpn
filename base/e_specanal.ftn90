@@ -87,9 +87,9 @@
 
       if (err_vt.ge.0) then
          allocate ( hyb_t_8(nka) ) ; hyb_t_8=-1.
-         err = px_param( e_fu_anal,list,na_t,nka,lv_t,hyb_t_8, 'T',&
-                         presvar_8,presvar_S,PRESVAR_MAX,          &
-                         zat_8,zbt_8,vcode_S,vcode )
+         if (px_param( e_fu_anal,list,na_t,nka,lv_t,hyb_t_8, 'T',&
+                         presvar_8,presvar_S,PRESVAR_MAX        ,&
+                         zat_8,zbt_8,vcode_S,vcode ).lt.0 ) return
       endif
 
       ni1 = nia ; nka = -1
@@ -99,9 +99,9 @@
 
       if (err_uu.ge.0) then
          allocate ( hyb_8(nka) ) ; hyb_8 = -1.
-         err = px_param( e_fu_anal,list,na,nka,lv,hyb_8,  'M',&
-                         presvar_8,presvar_S,PRESVAR_MAX,     &
-                         za_8,zb_8,vcode_S,vcode )
+         if (px_param( e_fu_anal,list,na,nka,lv,hyb_8,  'M',&
+                         presvar_8,presvar_S,PRESVAR_MAX   ,&
+                         za_8,zb_8,vcode_S,vcode ).lt.0 ) return
       endif
 
       if ( (err_uu.lt.0).or.(err_vt.lt.0) ) then

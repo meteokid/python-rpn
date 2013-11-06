@@ -145,10 +145,6 @@
       nbpts = l_ni*l_nj
       G_nkt = G_nk+2
       G_nkm = G_nk+1
-      if (.not. Schm_phyms_L) then
-         G_nkt = G_nk+1
-         G_nkm = G_nk
-      endif
 
       nkmax = max ( nka_m, nka_t, G_nk+2 )
 
@@ -301,16 +297,15 @@
 !
              do j=1,l_nj
              do i=1,l_ni
-                F_s (i,j) =pps(i,j)-lnpref_8
-                pps(i,j) = F_s (i,j)
+                F_s (i,j)= pps (i,j)-lnpref_8
+                pps (i,j)= F_s (i,j)
              enddo
              enddo
          else if (Acql_vertint) then
 !         ANALYSIS IS ON ETA/SIG/HYB/ECMWF COORDINATES
 !         Compute pressure on model surface PPS
 !
-          allocate(pres(nbpts,nka_t))
-          allocate(vt_temp(l_ni,l_nj,nkmax))
+            allocate(pres(nbpts,nka_t), vt_temp(l_ni,l_nj,nkmax))
             err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
             call handle_error(err,'readdyn','readdyn:get_px')
             if (ana_vt_l) then
@@ -323,20 +318,20 @@
             endif
             call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,nka_t), &
                              vt_temp,nbpts,nka_t)
-          deallocate(vt_temp)
+
 !           ps is p0 for non stag
-             do j=1,l_nj
-             do i=1,l_ni
-                F_s(i,j)=log(pps(i,j))-lnpref_8
-                pps(i,j)= F_s(i,j)
-             enddo
-             enddo
-          deallocate(pres)
+            do j=1,l_nj
+            do i=1,l_ni
+               F_s(i,j)= log(pps(i,j))-lnpref_8
+               pps(i,j)= F_s(i,j)
+            enddo
+            enddo
+            deallocate(pres,vt_temp)
          else
 !NO INTERPOLATION REQUIRED
              do j=1,l_nj
              do i=1,l_ni
-                pps   (i,j) =  ps(i,j)
+                pps(i,j) =  ps(i,j)
                 F_s(i,j) = pps(i,j)
              end do
              end do
@@ -352,7 +347,6 @@
             err = get_px(dstlev,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk+2,Ver_code,.true.)
             call handle_error(err,'readdyn','readdyn:get_px')
          endif
-
 !
 !---------------------------------------------------------------------
 !     TRACERS, HU, thermo levels + diag, mass grid
@@ -464,11 +458,11 @@
                                nka_m,G_nkm,'QT','cubic')        
 !
             do k=1,g_nkm
-               F_q(:,:,k) = work(:,:,k)
+               F_q(1:l_ni,1:l_nj,k) = work(1:l_ni,1:l_nj,k)
             end do
          else
-            do k=2,G_nkm
-               F_q(:,:,k) = q_temp(:,:,k)
+            do k=1,G_nkm
+               F_q(1:l_ni,1:l_nj,k) = q_temp(1:l_ni,1:l_nj,k)
             end do
          endif
          F_q(:,:,0) = 0.

@@ -36,16 +36,19 @@
 ! v4_50 - Desgagne M. - Initial version
 
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "ptopo.cdk"
 
       integer, external :: fstecr, RPN_COMM_grid_redist
 
-      character*2 typvar      
+      character*2 typvar
+      logical wrapit_L
       integer, parameter :: ltok = 1
-      integer  nz, err, nblock, nis, njs, k, kk, pnip2, npas, ig4
+      integer  nz, err, nblock, ni, nis, njs, k, kk, pnip2, npas, ig4
       integer, dimension (:)    , allocatable :: zlist
+      real   , dimension (:,:  ), pointer     :: guwrap
       real   , dimension (:,:,:), pointer     :: wk
 !
 !----------------------------------------------------------------------
@@ -93,6 +96,9 @@
 
       if (Out_blocme.eq.0) then
 
+         wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) )
+         if (wrapit_L) allocate ( guwrap(G_ni+1,njs) )
+
          do k= nz, 1, -1
 
             if (zlist(k).gt.0) then
@@ -107,10 +113,17 @@
                                 pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'U'   , &
                                 meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
                                 meta(kk)%dtyp,Out_rewrit_L)
-              else
+               else
 
-                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo, &
-                                int(Out_deet),npas,nis,njs,1,meta(kk)%ip1     , &
+                  if (wrapit_L) then
+                     guwrap(1:G_ni,1:njs) = wk(1:G_ni,1:njs,k)
+                     guwrap(G_ni+1,:) = guwrap(1,:) ; ni= G_ni+1
+                  else
+                     guwrap => wk(1:nis,1:njs,k)    ; ni= nis
+                  endif
+
+                  err = fstecr(guwrap,guwrap,-meta(kk)%nbits,Out_unf,Out_dateo, &
+                                int(Out_deet),npas,ni, njs,1,meta(kk)%ip1     , &
                                 pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'Z'   , &
                                 meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
                                 meta(kk)%dtyp,Out_rewrit_L)
@@ -120,9 +133,12 @@
 
          end do
 
+         if (wrapit_L) deallocate (guwrap)
+
       endif
 
       deallocate (wk,zlist)
+
       if (out3_type_S .eq. 'REGDYN') then
          call timing_stop (84)
       else

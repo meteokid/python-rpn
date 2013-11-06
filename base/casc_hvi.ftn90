@@ -324,9 +324,17 @@
          if (jj.gt.0) then
             if (Vertint_L) then
                 call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU','cubic')
-                tr1(:,:,1:G_nk+2,n) = max(tr1(:,:,1:G_nk+2,n),0.0)
+                if (Schm_bitpattern_L) then
+                    tr1(:,:,1:G_nk+2,n) = tr1(:,:,1:G_nk+2,n)
+                else
+                    tr1(:,:,1:G_nk+2,n) = max(tr1(:,:,1:G_nk+2,n),0.0)
+                endif
             else
-                tr1(:,:,1:G_nk+2,n) = trr(:,:,1:G_nk+2,jj)
+                if (Schm_bitpattern_L) then
+                    tr1(:,:,1:G_nk+2,n) = trr(:,:,1:G_nk+2,jj)
+                else
+                    tr1(:,:,1:G_nk+2,n) = max(trr(:,:,1:G_nk+2,jj),0.0)
+                endif
             endif
          else
             tr1(:,:,:,n) = 0.

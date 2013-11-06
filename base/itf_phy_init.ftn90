@@ -51,7 +51,7 @@
 #include "path.cdk"
 #include "tr3d.cdk"
 
-      integer, parameter :: COMPATIBILITY_LVL = 3
+      integer, parameter :: COMPATIBILITY_LVL = 4
       integer, parameter :: DIM_ERR = 14
 
       logical,external :: set_dcst
