@@ -345,6 +345,7 @@ $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION):
 	mydomain=`true_path .` ;\
 	ssm created -d $${mydomain} --defaultRepositorySource $(SSMDEPOTDIR) --yes ;\
 	if [[ ! -e $${mydomain}/.SsmDepot ]] ; then echo $(SSMDEPOTDIR) > $@/.SsmDepot ; fi ;\
+	echo "systemRelease:3.*:ssmOsRelease:26 24" >> $@/etc/ssm.d/platforms/Linux ;\
 	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)
 $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_$(SSMARCH): | $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
 	cd $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION) ;\
