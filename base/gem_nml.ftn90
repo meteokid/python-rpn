@@ -216,7 +216,7 @@
       Out3_unit_S    = ' '
       Out3_closestep = -1
       Out3_postfreq  =  0
-      Out3_ndigits   = -1
+      Out3_ndigits   = 3
       Out3_ip3       = 0
       Out3_nbitg     = 16
       Out3_linbot    = 0

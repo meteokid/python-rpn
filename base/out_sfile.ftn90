@@ -47,17 +47,16 @@
 #include "step.cdk"
 #include "ptopo.cdk"
 
-      integer, external :: prog_filename,fnom,fstouv,fstopc
+      integer, external :: fnom,fstouv,fstopc
 
-      character*1024 out_filename_s
+      character*1024 out_filename_s,myformat_S,my_hour
       character*16   datev,fdate
       character*15   startindx
-      character*7    my_hour
       character*6    my_block
       character*4    unit_ext
       character*2    my_prefix
       logical flag
-      integer clostep,prognum,err,i,indx
+      integer clostep,prognum,err,i,indx,len0,len1
       real, parameter :: eps=1.e-12
       real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac
       parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
@@ -105,19 +104,14 @@
          call up2low ( Out_prefix_S,my_prefix)
          write(my_block,'(a,i2.2,a,i2.2)') '-',Out_myblocx,'-',Out_myblocy
 
-         if (prognum.lt.0) then
-            if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) then
-               write(my_hour,'(a,i7.6)') '_',prognum
-            else
-               write(my_hour,'(a,i4.3)') '_',prognum
-            endif
-         else
-            if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) then
-               write(my_hour,'(a,i6.6)') '_',prognum
-            else
-               write(my_hour,'(a,i3.3)') '_',prognum
-            endif
-         endif
+         len1 = max(3,Out3_ndigits)
+         if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) &
+              len1 = max(6,len1)
+         len0 = len1
+         if (prognum < 0) len0 = len0+1
+         write(myformat_S,'(a,i1.1,a,i1.1,a') '(a,i',len0,'.',len1,')'
+         my_hour = ' '
+         write(my_hour,trim(myformat_S)) '_',prognum
 
          Out_dateo = Out3_date
          call datf2p(fdate,Out_dateo)
@@ -132,10 +126,6 @@
 !        Out_filename_S= ppYYYYMMDDhh[-XX-YY]_ddd[U]
          Out_filename_S= trim(my_prefix)//fdate(1:8)//fdate(10:11)// &
                          my_block//trim(my_hour)//trim(unit_ext)
-
-!         err = prog_filename (Out_filename_S,Out_prefix_S,date,hour,-1,-1, &
-!                              Out_myblocx,Out_myblocy,prognum,Out_ndigits, &
-!                              Out_unit_S)
 
          Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)
 
