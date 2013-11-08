@@ -193,7 +193,7 @@
                 x1 = min(Grid_x1(gridset),G_niu)
                 if (Out3_fullplane_L) then
                    x1 = Grid_x1(gridset)
-                   tr3(G_ni,:,:) = tr3(G_niu,:,:)
+                   tr3(l_ni,:,:) = tr3(l_niu,:,:)
                 endif
                 call out_sgrid2( Grid_x0 (gridset),x1              , &
                                  Grid_y0 (gridset),Grid_y1(gridset), &
@@ -214,7 +214,7 @@
                 y1 = min(Grid_y1(gridset),G_njv)
                 if (Out3_fullplane_L) then
                    y1 = Grid_y1(gridset)
-                   tr3(:,G_nj,:) = tr3(:,G_njv,:)
+                   tr3(:,l_nj,:) = tr3(:,l_njv,:)
                 endif
                 call out_sgrid2 ( Grid_x0(gridset),Grid_x1(gridset), &
                                   Grid_y0(gridset),y1              , &

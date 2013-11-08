@@ -56,7 +56,7 @@ subroutine iau_apply()
   ! Local parameters
   integer, parameter :: TT=1,UU=2,VV=3,P0=4,HU=5
   integer, parameter :: MAX_IAU_FIELDS=HU+IAU_MAX_TRACERS
-  character(len=GMM_MAXNAMELENGTH), parameter :: IAU_PREFIX='IAU/'
+  character(len=GMM_MAXNAMELENGTH), parameter :: IAU_PREFIX='I_'
 
   ! Local derived types
   type iau_field
@@ -103,15 +103,16 @@ subroutine iau_apply()
      case ('constant')
         weight = Cstv_dt_8 / Iau_period
      case ('sin')
+        call handle_error_l(Iau_cutoff>0.,'iau_apply','Cutoff period must be greater than 0')
         n=int(size(weight))/2
         j=0
         do while (j < size(weight))
            i = j-n; j = j+1
            if (i == 0) then
-              weight(j) = 2.*Cstv_dt_8/(Iau_coef(1)*3600.)
+              weight(j) = 2.*Cstv_dt_8/(Iau_cutoff*3600.)
            else
               weight(j) = sin(i*Dcst_pi_8/(n+1))/(i*Dcst_pi_8/(n+1)) * &
-                   sin(i*(2.*Dcst_pi_8*Cstv_dt_8/(Iau_coef(1)*3600.)))/(i*Dcst_pi_8)
+                   sin(i*(2.*Dcst_pi_8*Cstv_dt_8/(Iau_cutoff*3600.)))/(i*Dcst_pi_8)
            endif
         enddo
         weight = weight/sum(weight(1:size(weight)-add))
@@ -164,6 +165,7 @@ subroutine iau_apply()
      if (Lun_out > 0) write(Lun_out,1000) trim(vdate)
      call handle_error_l(clib_isreadok(iau_fname)==CLIB_OK,'iau_apply', &
           'IAU input does not exist or is not readable at '//trim(iau_fname))
+     call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
      istat = fstopc('MSGLVL',fst_msg_level,.true.)
      istat = fstopc('MSGLVL','INFORM',.false.)
      fd = fstmpi_open(iau_fname,F_readonly_L=.true.,F_dir_ok_L=.true.)
@@ -235,6 +237,7 @@ subroutine iau_apply()
         if (associated(ip1s)) deallocate(ip1s)
      enddo
      istat = fstmpi_close(fd)
+     call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
      istat = fstopc('MSGLVL',fst_msg_level,.false.)
      datei = this_datei
 
@@ -252,6 +255,10 @@ subroutine iau_apply()
      enddo
      call itf_phy_uvgridscal(flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,size(flds(UU)%ptr3d,dim=3),.false. )
      flds(P0)%ptr2d = 100.*flds(P0)%ptr2d
+     if (Grd_yinyang_L) then
+        call yyg_iauexchange(flds(P0)%ptr2d,flds(TT)%ptr3d,flds(HU)%ptr3d,flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,l_nk)
+        call handle_error_l(nflds==first_tr,'iau_apply','Yin-Yan exchange not implemented for Iau_tracers_s list')
+     endif
 
   else
      ! Retrieve IAU data from GMM

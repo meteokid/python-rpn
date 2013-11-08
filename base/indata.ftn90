@@ -65,8 +65,9 @@
 #include "step.cdk"
 #include "tr3d.cdk"
 #include "bcsgrds.cdk"
+#include "nest.cdk"
 
-      integer k,istat,dim
+      integer i,j,k,istat,dim
       real fistmp(LDIST_SHAPE)
       real, dimension(:,:,:), pointer :: plus,minus
 !
@@ -123,6 +124,7 @@
          call yyg_scalbc(fis0,fistmp,LDIST_DIM,1)
          call rpn_comm_xch_halo(fis0  , LDIST_DIM,l_ni,l_nj,1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call yyg_nest_all()
       endif
       call rpn_comm_xch_halo(fis0  , LDIST_DIM,l_ni,l_nj,1, &
            G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -139,7 +141,36 @@
       call diag_zd_w ( zdt1,wt1, ut1,vt1,tt1,st1 , &
                        LDIST_DIM, G_nk, .not.Ana_zd_L, .not.Ana_w_L )
 
-      if (G_lam) call nest_init ()
+      if (Grd_yinyang_L) then
+          if (.not. Ana_zd_L) then
+              istat = gmm_get(gmmk_nest_zd_s ,nest_zd)
+              do k= 1, G_nk
+              do j= 1, l_nj
+              do i= 1, l_ni
+                 nest_zd(i,j,k) =zdt1(i,j,k)
+              enddo
+              enddo
+              enddo
+              call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+              call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk)
+          endif
+          if (.not. Ana_w_L) then
+              istat = gmm_get(gmmk_nest_w_s ,nest_w)
+              do k= 1, G_nk
+              do j= 1, l_nj
+              do i= 1, l_ni
+                 nest_w(i,j,k) =wt1(i,j,k)
+              enddo
+              enddo
+              enddo
+              call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+              call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk)
+          endif
+      endif     
+
+      if (G_lam.and..not.Grd_yinyang_L) call nest_init ()
 
       if (.not.Acql_pwuv) call pw_update_UV
       if (.not.Acql_pwtt) call pw_update_T

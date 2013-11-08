@@ -198,6 +198,7 @@
 
              if (subid >= 0) then
                  interp2_S = 'NEAREST'
+                 same_grid_L = .true.
                  err = ezsetopt ('USE_1SUBGRID', 'YES')
                  err = ezsetival('SUBGRIDID', subid)
              endif
@@ -217,7 +218,10 @@
             err = ezsint(f, w1)
             e_rdhint3 = 1
          !# WILL NOT reset to default because in GEMNTR, we need this onegrid for e_intwind... winds being staggered they can never be interpoled with nearest/onegrid... reset needed
-            if (subid >= 0) err = ezsetopt('USE_1SUBGRID','NO')
+            if (subid >= 0) then
+               e_rdhint3 = 0 !Like no horizontal interpolation
+               err = ezsetopt('USE_1SUBGRID','NO')
+            endif
          endif
          if (interp2_S.ne.'NEAREST') then
             do i=1,ni*nj

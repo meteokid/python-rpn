@@ -38,7 +38,7 @@
       integer i, j, k, istat
       real*8 idt
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()
-      real, dimension(l_ni,l_nj,l_nk+2) :: tprev
+      real, dimension(l_ni,l_nj,l_nk) :: tprev
       logical, save :: initialized=.false.
       real, dimension(:,:,:), pointer :: plus,minus
 !     ________________________________________________________________

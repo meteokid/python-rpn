@@ -19,7 +19,6 @@
 !--------------------|-------------------------------------------------|
 ! Schm_hydro_L       | .true. -> hydrostatic run                       |
 !                    | .false.-> non-hydrostatic run                   |
-! Schm_moist_L       | .true.-> model has moisture                     |
 ! Schm_nkbz_L        | .true.-> not-a-knot bc for z-spline             |
 !                    | .false.-> natural bc for z-spline               |
 ! Schm_phyms_L       | .true. PHYSICS package is used in model run     |
@@ -58,7 +57,7 @@
 !----------------------------------------------------------------------
 !
 #endif
-      logical Schm_hydro_L ,Schm_moist_L, Schm_nkbz_L , Schm_autobar_L
+      logical Schm_hydro_L ,Schm_nkbz_L , Schm_autobar_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
       logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
@@ -67,7 +66,7 @@
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith
 !
-      common / schm_l / Schm_hydro_L  , Schm_moist_L
+      common / schm_l / Schm_hydro_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L 
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_psadj_L  , Schm_opentop_L

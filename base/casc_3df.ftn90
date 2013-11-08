@@ -118,6 +118,7 @@ End Interface
       real, dimension (:,:,:,:), pointer :: tr1=>null()
 
       real ssq_temp(LDIST_SHAPE),topo_nest(LDIST_SHAPE),step_current
+      real, dimension(LDIST_SHAPE,G_nk) :: qh,tt
       real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1), lnpis_8, diffd
 !
 !-----------------------------------------------------------------------
@@ -192,7 +193,7 @@ End Interface
       call timing_stop  ( 71 )
       call timing_start ( 72, '3DF_interp')
 
-      if ( initial_data .and. (Lctl_step.eq.0) ) then
+      if ( initial_data .and. (Step_kount.eq.0) ) then
          allocate ( meqr(l_ni,l_nj))
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
@@ -247,7 +248,6 @@ End Interface
 
       F_u (1:l_ni,1:l_nj, 1:G_nk  ) = uu1
       F_v (1:l_ni,1:l_nj, 1:G_nk  ) = vv1
-      F_t (1:l_ni,1:l_nj, 1:G_nk  ) = ttt1
       F_s (1:l_ni,1:l_nj          ) = ss1
       
       if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
@@ -257,13 +257,24 @@ End Interface
       if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
       do n=1,Tr3d_ntr
          nullify (trp)
-         if ( initial_data .and. (Lctl_step.eq.0) ) then
+         if ( initial_data .and. (Step_kount.eq.0) ) then
             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',trp,mymeta)
          else
             istat = gmm_get('NEST/'//trim(Tr3d_name_S(n))//':F',trp,mymeta)
          endif
          trp(1:l_ni,1:l_nj,1:G_nk) = tr1(1:l_ni,1:l_nj,1:G_nk,n)
       end do
+      if (ana_vt_l) then
+          F_t (1:l_ni,1:l_nj,1:G_nk) = ttt1
+      else
+         tt (1:l_ni,1:l_nj,1:G_nk) = ttt1
+          nullify(trp)
+          istat = gmm_get('TR/'//'HU'//':P',trp,mymeta)
+          if (GMM_IS_ERROR(istat)) print *,'casc_3df_dynp: ERROR at gmm_get','TR/'//'HU'//':P'
+          call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
+          call mfottvh2(tt,F_t,trp,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+                           1,l_ni,1,l_nj,.true.)
+      endif
 
       deallocate (xpuu,ypvv,xpaq,ypaq,xpau,ypav)
       deallocate (ana_am_8,ana_bm_8,ana_at_8,ana_bt_8)

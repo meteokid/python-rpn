@@ -103,11 +103,12 @@
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
                                                gz_temp,zd_temp,w_temp,q_temp, &
-                                               u_temp2,v_temp2,work
+                                               u_temp2,v_temp2,work, vt_temp
       real, allocatable, dimension(:,:,:) :: srclev_m,dstlev_m,srclev_t,dstlev_t
-      real, pointer    , dimension(:,:,:) :: tr
+      real, pointer    , dimension(:,:,:) :: tr,hu
       real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp, topo_abdes
+      real, dimension(LDIST_SHAPE,G_nk) :: qh,tt
       real*8 lnpref_8,fistr_top_8,diffd
       real step_current
 !
@@ -123,6 +124,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      
       lnpref_8 = log(Cstv_pref_8)
 
       call datp2f   ( dat, F_datev )
@@ -204,10 +206,10 @@
             ' Acql_siganl =',Acql_siganl ,' Acql_hybanl =',Acql_hybanl, &
             ' Acql_prsanl=',Acql_prsanl
          write(lun_out,*) &
-            ' Acql_staganl =',Acql_staganl
+            ' Acql_staganl =',Acql_staganl,' Acql_vertint =',Acql_vertint
       endif
 
-      allocate(work(l_ni,l_nj,max(nkmax,G_nk+2)))
+      allocate(work(l_ni,l_nj,max(nkmax,G_nk+1)))
 
 !---------------------------------------------------------------------
 !     OBTAIN PS,PPS
@@ -234,10 +236,20 @@
       else if (Acql_vertint) then  ! ANALYSIS IS ON ETA/SIG/HYB/ECMWF COORDINATES
          
          allocate(pres(nbpts,nka_t))
+         allocate(vt_temp(l_ni,l_nj,nkmax))
          err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
          call handle_error(err,'readdyn','readdyn:get_px')
+         if (ana_vt_l) then
+            vt_temp(:,:,:) = tt_temp(:,:,:)
+         else
+            do k=1,nka_t
+               call mfotvt (vt_temp(1,1,k),tt_temp(1,1,k),hu_temp(1,1,k), &
+                    nbpts,1,nbpts)
+            enddo
+         endif
          call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,nka_t), &
-              tt_temp,nbpts,nka_t)
+              vt_temp,nbpts,nka_t)
+         deallocate(vt_temp)
          do j=1,l_nj
             do i=1,l_ni
                F_s(i,j)=log(pps(i,j))-lnpref_8
@@ -258,7 +270,7 @@
       endif
       
 !---------------------------------------------------------------------
-!     OBTAIN TT, thermo levels + diag, mass grid
+!     SETUP THE vertical interpolation column for SRC and DST
 !---------------------------------------------------------------------
 
       if (Acql_vertint) then
@@ -274,12 +286,6 @@
          call handle_error(err,'readdyn','readdyn:get_px')
          err = get_px (dstlev_m,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
          call handle_error(err,'readdyn','readdyn:get_px')
-
-         call vte_intvertx3 ( work,tt_temp,srclev_t,dstlev_t,nbpts, &
-                              nka_t,G_nk,'VT','cubic' )
-         F_t(1:l_ni,1:l_nj,1:G_nk)  = work(1:l_ni,1:l_nj,1:G_nk)
-      else
-         F_t(1:l_ni,1:l_nj,1:G_nk)  = tt_temp(1:l_ni,1:l_nj,1:G_nk)
       endif
 
 !---------------------------------------------------------------------
@@ -313,6 +319,31 @@
             tr (1:l_ni,1:l_nj,1:G_nk) = Tr3d_sval(k)
          endif
       end do
+      
+!     TEMPERATURE TT1
+      if (Acql_vertint) then
+         call vte_intvertx3(work,tt_temp,srclev_t,dstlev_t,nbpts, &
+              nka_t,G_nk,'VT','cubic')
+         call glbstat2(tt_temp,'tt','temp',1,l_ni,1,l_nj,1,nka_t,1,l_ni,1,l_nj,1,nka_t)
+         call glbstat2(work,'work','temp',1,l_ni,1,l_nj,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
+      else
+         work(:,:,:)=tt_temp(:,:,:)
+      endif
+      if (ana_vt_l) then
+         F_t(1:l_ni,1:l_nj,1:G_nk)  = work(1:l_ni,1:l_nj,1:G_nk)
+      else
+         tt (1:l_ni,1:l_nj,1:G_nk)  = work(1:l_ni,1:l_nj,1:G_nk)
+         nullify(hu)
+         istat = gmm_get('TR/'//'HU'//trim(suff_tr),hu,mymeta)
+         if (GMM_IS_ERROR(istat)) print *,'readdyn ERROR at gmm_get','TR/'//'HU'//trim(suff_tr)
+         call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
+         call glbstat2(tt ,'tt' ,'vt' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
+         call glbstat2(hu ,'hu' ,'hu' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
+         call glbstat2(qh ,'qh' ,'qh' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
+         call mfottvh2(tt,F_t,hu,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
+              1,l_ni,1,l_nj,.true.)
+         call glbstat2(F_t,'F_t','F_t',LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
+      endif      
 
       if (ana_zd_L) then
          if (Acql_vertint) then

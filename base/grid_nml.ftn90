@@ -32,6 +32,7 @@
 ! v3_31 - Lee V.            - added extra CHECK for LAM grid
 ! v4_04 - Plante            - Remove offline mode
 ! v4_40 - Qaddouri/Lee      - Add Yin/Yang grid
+! v4_60 - Lee V.            - GY grids need only Grd_nj (Y points)
 !
 !object
 !  Default configuration and reading namelist grid
@@ -112,6 +113,7 @@
 
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
+      if (Grd_typ_S(1:2).eq.'GY') Grd_ni=(Grd_nj-1)*3 + 1
 !
       if (Grd_ni*Grd_nj.eq.0) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
@@ -145,6 +147,7 @@
                Grd_xlat1  = yan_xlat1_8 ; Grd_xlon1  = yan_xlon1_8
                Grd_xlat2  = yan_xlat2_8 ; Grd_xlon2  = yan_xlon2_8
             endif
+            if (Lun_out.gt.0) write(Lun_out,1003) Grd_ni,Grd_nj
 
             Grd_nila = Grd_ni
             Grd_njla = Grd_nj
@@ -290,6 +293,12 @@
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
  1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
+ 1003 format(/, '-----------------------------------'/,&
+            /1X,' GY uses GRD_NJ to compute GRD_NI  '/, &
+                'WILL IGNORE GRD_NI in NAMELIST grid'/, &
+            /1X,' YIN-YANG (CORE) GRID WILL BE: '/, &
+            /1X,' GRD_NI=',I5,' GRD_NJ=',I5,/, &
+            /,  '-----------------------------------')
  1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
                 21x,'IG1-4: '4i8)
  1100 FORMAT (1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &

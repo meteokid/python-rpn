@@ -31,16 +31,23 @@
 #include "gmm.hf"
 #include "vt0.cdk"
 #include "vt1.cdk"
-
+#include "tr3d.cdk"
       type(gmm_metadata) :: mymeta
       integer :: istat
-      real, pointer, dimension(:,:,:) :: tr0,tr1
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      integer i, j, k, kk
+      real, pointer, dimension(:,:,:) :: plus,minus
 !
 !     ---------------------------------------------------------------
 !
-      istat = gmm_get('TR/HU:M',tr0,mymeta)
-      istat = gmm_get('TR/HU:P',tr1,mymeta)
-      tr0   = tr1
+
+! For humidity
+      do k=1,Tr3d_ntr
+         nullify (plus, minus)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':M',minus,mymeta)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(k))//':P',plus,mymeta)
+         minus = plus
+      enddo
 
       istat = gmm_get(gmmk_tt0_s,tt0,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'frstgss ERROR at gmm_get(tt0)'

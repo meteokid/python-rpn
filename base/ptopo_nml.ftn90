@@ -37,7 +37,6 @@
 !implicits
 #include "ptopo.cdk"
 #include "lun.cdk"
-      integer,parameter :: MAX_INBLOC = 1 !- TODO: increase this limit when we know how many concurent file acces is supported; could be machine dependent.
       integer,external :: fnom
 
       integer nrec,unf
@@ -76,8 +75,6 @@
             Ptopo_ninblocx = Ptopo_nblocx
             Ptopo_ninblocy = Ptopo_nblocy
          endif
-         Ptopo_ninblocx = min(Ptopo_ninblocx,MAX_INBLOC)
-         Ptopo_ninblocy = min(Ptopo_ninblocy,MAX_INBLOC)
          call fclos (unf)
          ptopo_nml = 1
          goto 7777

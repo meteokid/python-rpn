@@ -63,7 +63,7 @@
 !     Read the BMF file associated to each Ptopo_myproc
 
       error   = -1
-      ana_zd_L= .false. ; ana_w_L = .false. ; ana_q_L = .false.
+      ana_zd_L= .false. ; ana_w_L = .false. ; ana_q_L = .false.; ana_vt_L = .false.
 
 !     Initialization of some switches and dimensions
 
@@ -105,16 +105,26 @@
          error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1., &
                                                      1,lni,1,lnj,1,nktmp)
          nerr = nerr + 1
-         error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,-1., &
+         error(nerr) = bmf_get('TT  ',bmf_time1,bmf_time2,-1,tt_temp,-1., &
                                                      1,lni,1,lnj,1,nktmp)
+         if (error(nerr).ne.0) then
+            error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp,-1., &
+                                                     1,lni,1,lnj,1,nktmp)
+            ana_vt_L=.true.
+         endif
       else
          if (Acql_siganl) Acqr_ptopa = 0.
          nerr = nerr + 1
          error(nerr) = bmf_get('P0  ',bmf_time1,bmf_time2,-1,ps, &
                                             -1.,1,lni,1,lnj,1,1)
          nerr = nerr + 1
+         error(nerr) = bmf_get('TT  ',bmf_time1,bmf_time2,-1,tt_temp,-1., &
+                                                     1,lni,1,lnj,1,nktmp)
+         if (error(nerr).ne.0) then
          error(nerr) = bmf_get('VT  ',bmf_time1,bmf_time2,-1,tt_temp, &
                                              -1.,1,lni,1,lnj,1,nktmp)
+         ana_vt_L=.true.
+         endif
          nerr = nerr + 1
          error(nerr) = bmf_get('HU  ',bmf_time1,bmf_time2,-1,hu_temp,-1., &
                                                      1,lni,1,lnj,1,nktmp)

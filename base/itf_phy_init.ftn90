@@ -103,7 +103,6 @@
       call phy_optl('VSTAG'   , .true.      , 1,'SET',prout,err(1))
       call phy_opti('TLIFT'   , Schm_Tlift  , 1,'SET',prout,err(2))
       call phy_optl('COUPLING', .false.     , 1,'SET',prout,err(3))
-      call phy_optl('NOTOP'   , .true.      , 1,'SET',prout,err(4))
       call handle_error(minval(err(1:4)),'itf_phy_init','phy_opt set')
 
 ! Provide a list of tracer variables read by the entry

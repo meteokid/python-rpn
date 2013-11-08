@@ -131,7 +131,9 @@
       enddo
  81   continue
       if ((Out3_nundr.gt.0).and.(Out3_lieb_nk.gt.0)) Out3_lieb_nk=0
-!
+
+      call handle_error_L(.not.(Out3_fullplane_L.and..not.G_lam),'Out3_fullplane_L not yet implemented for GU grids')
+
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 !
       if (Step_runstrt_S == 'NIL') then
@@ -286,14 +288,14 @@
       endif
       Init_dfnp = max(0,Init_dfnp)
       if (Init_balgm_L) then
-      if ( mod(Init_dfnp,2) .ne. 1 ) then
-         if (Lun_out.gt.0) write(Lun_out,6600) Init_dfnp
-         return
-      endif
-      if ( Init_dfnp .eq. 1 ) then
-         if (Lun_out.gt.0) write(Lun_out,6601)
-         return
-      endif      
+         if ( mod(Init_dfnp,2) .ne. 1 ) then
+            if (Lun_out.gt.0) write(Lun_out,6600) Init_dfnp
+            return
+         endif
+         if ( Init_dfnp .eq. 1 ) then
+            if (Lun_out.gt.0) write(Lun_out,6601)
+            return
+         endif
       endif
 !
       if (Lctl_debug_L) then

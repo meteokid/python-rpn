@@ -1,0 +1,129 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r yyg_nest_all - for interpolating and nesting Yin-Yang boundary conditions
+!
+#include "model_macros_f.h"
+!
+      subroutine yyg_nest_all ()
+      implicit none
+#include <arch_specific.hf>
+!
+!author 
+!     Michel Desgagne   - Spring 2006
+!
+!revision
+! v4_40 - Lee/Qaddouri  - adapt (nest_bcs) for Yin-yang (called every timestep)
+! v4_50 - Lee V.        - use cubic mono interp for tracers
+! v4_60 - Lee V.        - change routine name : nest_bcs_yy to yyg_nest_all
+!
+!object
+!
+!arguments
+!       none
+!
+!implicits
+#include "gmm.hf"
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "nest.cdk"
+#include "tr3d.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
+#include "geomg.cdk"
+!
+      type(gmm_metadata) :: mymeta
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      integer err,i,j,k,nvar,n,istat
+      real, pointer, dimension(:,:,:) :: tr,tr1
+
+!----------------------------------------------------------------------
+!
+      if (Lun_debug_L) write (Lun_out,1001)
+      istat = gmm_get(gmmk_nest_w_s ,nest_w ,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_w)'
+      istat = gmm_get(gmmk_nest_t_s ,nest_t ,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_t)'
+      istat = gmm_get(gmmk_nest_zd_s,nest_zd,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_zd)'
+      istat = gmm_get(gmmk_nest_s_s ,nest_s ,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'nest_bcs ERROR at gmm_get(nest_s)'
+!
+!also update the last timestep info
+      istat = gmm_get(gmmk_ut1_s , ut1 ,mymeta)
+      istat = gmm_get(gmmk_vt1_s , vt1 ,mymeta)
+      istat = gmm_get(gmmk_wt1_s , wt1 ,mymeta)
+      istat = gmm_get(gmmk_tt1_s , tt1 ,mymeta)
+      istat = gmm_get(gmmk_zdt1_s,zdt1 ,mymeta)
+      istat = gmm_get(gmmk_st1_s , st1 ,mymeta)
+      if (.not.Schm_hydro_L) then
+         istat = gmm_get(gmmk_nest_q_s,nest_q,mymeta)
+         istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      endif
+!
+
+      do k= 1, G_nk
+      do j= 1, l_nj
+      do i= 1, l_ni
+         nest_t (i,j,k) = tt1(i,j,k)
+         nest_w(i,j,k)  =  wt1(i,j,k)
+         nest_zd(i,j,k) =zdt1(i,j,k)
+      enddo
+      enddo
+      enddo
+!
+      do j= 1, l_nj
+      do i= 1, l_ni
+        nest_s (i,j)=st1(i,j)
+      enddo
+      enddo
+!
+      call rpn_comm_xch_halo(nest_s, LDIST_DIM,l_ni,l_nj,1,      &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(st1,nest_s,LDIST_DIM,1)
+      call rpn_comm_xch_halo(nest_t, LDIST_DIM,l_ni,l_nj,G_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(tt1,nest_t,LDIST_DIM,G_nk)
+
+      call rpn_comm_xch_halo(nest_w, LDIST_DIM,l_ni,l_nj,G_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(wt1,nest_w,LDIST_DIM,G_nk)
+
+      call rpn_comm_xch_halo(nest_zd, LDIST_DIM,l_ni,l_nj,G_nk,&
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call yyg_scalbc(zdt1,nest_zd,LDIST_DIM,G_nk)
+!
+      if (.not. Schm_hydro_L) then
+
+        do k=2,G_nk+1
+        do j=1,l_nj
+        do i=1,l_ni
+           nest_q(i,j,k)=qt1(i,j,k)
+        end do
+        end do
+        end do
+        call rpn_comm_xch_halo(nest_q, LDIST_DIM,l_ni,l_nj,G_nk, &
+                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+        call yyg_scalbc(qt1,nest_q,LDIST_DIM,G_nk)
+      endif
+
+      call yyg_nestuv(ut1,vt1,LDIST_DIM,G_nk)
+!
+      call yyg_nest_tracers2('P')
+!
+!----------------------------------------------------------------------
+ 1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nest_all)')
+!
+      return
+      end

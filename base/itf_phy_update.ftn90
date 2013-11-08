@@ -61,7 +61,7 @@
       !# Note: Secial case at step=0, tracers are not updated at surface
       do k=1, Tr3d_ntr
          if (trim(Tr3d_name_S(k)) == 'HU' .or. &
-             any(Tr3d_username_S(1:Tr3d_userntr) == 'HU') ) cycle
+             any(Tr3d_username_S(1:Tr3d_userntr) == trim(Tr3d_name_S(k))) ) cycle
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
          istat = gmm_get(trim(trname_S),data3d)
          call phy_unfold (data3d, trim(trname_S), 'D', 1, l_nk, &

@@ -13,32 +13,29 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r yyg_bacwindst - YY exchange for variables u,v,zd,t,s,q
+!**s/r yyg_iauexhange - YY exchange for IAU increments
 !
 #include "model_macros_f.h"
 !
-      subroutine yyg_bacwindst ( F_u, F_v, F_zd, F_t, F_s, F_q, DIST_DIM, Nk )
+      subroutine yyg_iauexchange ( F_s, F_t, F_hu, F_u, F_v, DIST_DIM, Nk )
       implicit none
 #include <arch_specific.hf>
 !
       integer  DIST_DIM, Nk 
 ! 
       real     F_u  (DIST_SHAPE,  Nk)  ,  F_v (DIST_SHAPE,  Nk), &
-               F_zd (DIST_SHAPE,  Nk)
-      real     F_t  (DIST_SHAPE,  Nk)  ,F_s (DIST_SHAPE), &
-               F_q (DIST_SHAPE,2:Nk+1)
+               F_hu (DIST_SHAPE,  Nk)
+      real     F_t  (DIST_SHAPE,  Nk)  ,F_s (DIST_SHAPE)
 !
 !author
-!     Lee/Qaddouri  - Nov 2009
+!     McTaggart-Cowan  - Sept 2013
 !
 !revision
-! v4_40 - Lee/Qaddouri      - initial MPI version 
-! v4_50 - Lee/Qaddouri      - add exchange of T,S,Q as well
 !
 !object
-! Exchange the Yin-Yang boundary conditions for U,V,Zd,T,S,Q after bacp
+! Exchange the Yin-Yang boundary conditions for S,T,HU,U,V increments
 !
-!arguments: F_u (ut0), F_v (vt0), F_zd (zdt0), F_t (tt0), F_s (st0), F_q (qt0)
+!arguments: F_s (st0), F_t (tt0), F_hu (tr/hut0), F_u (ut0), F_v (vt0)
 !
 !implicits
 #include "glb_ld.cdk"
@@ -47,10 +44,10 @@
 #include "lun.cdk"
 !
       integer i, j, k
-      real tempzd  (DIST_SHAPE,  l_nk)
-      real temps   (DIST_SHAPE )
-      real tempt  (DIST_SHAPE,  l_nk)
-      real tempq  (DIST_SHAPE,2:l_nk+1)
+!     temp variables to manipulate winds for Yin-Yang
+      real temps   (DIST_SHAPE       )
+      real tempt   (DIST_SHAPE,  l_nk)
+      real temphu  (DIST_SHAPE,  l_nk)
 !
 !     __________________________________________________________________
 !
@@ -58,25 +55,25 @@
 
       call yyg_nestuv(F_u,F_v,DIST_DIM,l_nk)
 
-      tempt = 0.
+      temps = 0. 
       temps(1:l_ni,1:l_nj) = F_s(1:l_ni,1:l_nj)
-      tempq = 0.
-      tempzd = 0.
+
+      tempt = 0.
+      temphu = 0.
 !$omp parallel private(i,j)
 !$omp do
       do k= 1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni
-            tempzd(i,j,k)=F_zd (i,j,k)
-         enddo
-         enddo
-
          do j= 1, l_nj
          do i= 1, l_ni
             tempt(i,j,k)=F_t (i,j,k)
          enddo
          enddo
          
+         do j= 1, l_nj
+         do i= 1, l_ni
+            temphu(i,j,k)=F_hu (i,j,k)
+         enddo
+         enddo
       enddo
 !$omp enddo
 !$omp end parallel
@@ -84,35 +81,26 @@
       call rpn_comm_xch_halo(temps,LDIST_DIM,l_ni,l_nj,1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call yyg_scalbc(F_s,temps,LDIST_DIM,1)
+      call rpn_comm_xch_halo(F_s,LDIST_DIM,l_ni,l_nj,1, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       call rpn_comm_xch_halo(tempt,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call yyg_scalbc(F_t,tempt,LDIST_DIM,l_nk)
-
-      call rpn_comm_xch_halo(tempzd,LDIST_DIM,l_ni,l_nj,l_nk, &
+      call rpn_comm_xch_halo(F_t,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(F_zd,tempzd,LDIST_DIM,l_nk)
 
-      if (.not. Schm_hydro_L) then
-!$omp parallel private(i,j)
-!$omp do
-      do k= 2,l_nk+1
-         do j= 1, l_nj
-         do i= 1, l_ni
-            tempq(i,j,k)=F_q (i,j,k)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-!$omp end parallel
-      call rpn_comm_xch_halo(tempq,LDIST_DIM,l_ni,l_nj,l_nk, &
+      call rpn_comm_xch_halo(temphu,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(F_q,tempq,LDIST_DIM,l_nk)
+      call yyg_scalbc(F_hu,temphu,LDIST_DIM,l_nk)
+      call rpn_comm_xch_halo(F_hu,LDIST_DIM,l_ni,l_nj,l_nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-      endif
 !     __________________________________________________________________
 !
-1000  format (5X,'BACK SUBSTITUTION: (S/R YYG_BACWINDST)')
+1000  format (5X,'IAU APPLICATION: (S/R YYG_IAUEXCHANGE)')
 !
       return
       end
+
+

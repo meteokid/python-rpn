@@ -87,6 +87,7 @@
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
+#include "grd.cdk"
 #include "clim.cdk"
 #include "modconst.cdk"
 !
@@ -142,6 +143,8 @@
 
       bkup_L = .false.
 
+      if (Grd_yinyang_L) call yyg_nest_all()
+
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
       do istep = step0, stepf
@@ -159,6 +162,12 @@
          call hzd_main
 
          call iau_apply
+
+         if (Grd_yinyang_L) call yyg_nest_all()
+
+         call pw_update_GPW()
+         call pw_update_UV('P')
+         call pw_update_T ('P')
 !
 !C    Digital filter
 !     --------------

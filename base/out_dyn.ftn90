@@ -72,8 +72,8 @@
       character*15 datev,pdate
       logical periodx_L,ontimec,flag_clos
       integer i,j,k,istat,jj,kk,levset,gridset
-      real wlnpi_m(LDIST_SHAPE,0:G_nk+1), &
-           wlnpi_t(LDIST_SHAPE,  G_nk+2),  p0(LDIST_SHAPE)
+      real wlnpi_m(LDIST_SHAPE,G_nk+1), &
+           wlnpi_t(LDIST_SHAPE,G_nk+1),  p0(LDIST_SHAPE)
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
 !
@@ -98,16 +98,14 @@
          istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
          istat= gmm_get(gmmk_st1_s        ,st1        ,mymeta)
 
-         wlnpi_m(:,:,0)= Cstv_Ztop_8
          do k=1,G_nk+1
-            wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k  ))
-            wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k-1))
+            wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
+            wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
          enddo
          if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
-         wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
 
-         call out_padbuf (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
-         call out_padbuf (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk+2)
+         call out_padbuf (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
+         call out_padbuf (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
          Out_ip3 = 0
          if (Out3_ip3.eq.-1) Out_ip3 = Lctl_step
@@ -143,13 +141,14 @@
             call out_tracer (wlnpi_t,LDIST_DIM,G_nk,levset,kk)
 
             !     output of temperature, humidity and mass fields,omega
+
             call out_thm (wlnpi_m,wlnpi_t,st1,LDIST_DIM,G_nk,levset,kk)
 
             !     output of winds
-            call out_uv (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
+            call out_uv (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of divergence and vorticity
-            call out_dq (wlnpi_m(l_minx,l_miny,1),LDIST_DIM,G_nk,levset,kk)
+            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of gmm
             call out_gmm2 (levset,kk)

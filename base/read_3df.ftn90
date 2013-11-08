@@ -15,13 +15,13 @@
 
 !**s/r read_3df - Reads self-nested 3DF pilot files where
 !
-      subroutine read_3df2 (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
-                            trname_a,F_zd_L, F_w_L, F_q_L, nvar, ntra, &
+      subroutine read_3df3 (unf,uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
+                            trname_a,F_zd_L, F_w_L, F_q_L, F_vt_L,nvar, ntra, &
                             nga,nka_m,nka_t, ofi,ofj,err)
       implicit none
 #include <arch_specific.hf>
 !
-      logical F_zd_L, F_w_L, F_q_L
+      logical F_zd_L, F_w_L, F_q_L, F_vt_L
       integer unf,nvar,ntra,nga,nka_m,nka_t,ofi,ofj,err
       character* (*) trname_a(ntra)
       real  uun(nga,nka_m), vvn (nga,nka_m), zdn(nga,nka_t-1), ttn(nga,nka_t), &
@@ -36,6 +36,7 @@
 ! v3_30 - McTaggart-Cowan R. - implement variable orography
 ! v4_05 - Plante/McTaggart   - read all available tracers
 ! v4_05 - McTaggart-Cowan R. - initialize trname_a @@NOT@@
+! v4_60 - Lee V.             - add key for whether VT is found
 !
 #include "ifd.cdk"
 #include "tr3d.cdk"
@@ -63,6 +64,7 @@
       F_zd_L= .false.
       F_w_L = .false.
       F_q_L = .false.
+      F_vt_L = .false.
 
 !     Initialize tracer names
       trname_a= '!@@NOT@@'
@@ -87,6 +89,14 @@
           endif
           if (nomvar.eq.'TT  ') then
               tt_L=.true.
+              call filmup (nomvar,ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
+                                  nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+              cumerr= cumerr + err
+              cycle
+          endif
+          if (nomvar.eq.'VT  ') then
+              tt_L=.true.
+              F_vt_L= .true.
               call filmup (nomvar,ttn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
                                   nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
               cumerr= cumerr + err

@@ -63,7 +63,7 @@
       namelist /gem_cfgs/ Hzd_tr3d_name_S
       namelist /gem_cfgs/ Hzd_type_S
 !Iau
-      namelist /gem_cfgs/ Iau_coef
+      namelist /gem_cfgs/ Iau_cutoff
       namelist /gem_cfgs/ Iau_interval
       namelist /gem_cfgs/ Iau_period
       namelist /gem_cfgs/ Iau_tracers_S
@@ -130,7 +130,6 @@
       namelist /gem_cfgs/ Schm_itnlh
       namelist /gem_cfgs/ Schm_itraj
       namelist /gem_cfgs/ Schm_modcn
-      namelist /gem_cfgs/ Schm_moist_L
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
       namelist /gem_cfgs/ Schm_phyms_L
@@ -195,7 +194,7 @@
       namelist /gem_cfgs_p/ Hzd_pwr_tr
       namelist /gem_cfgs_p/ Hzd_type_S
 !Iau
-      namelist /gem_cfgs_p/ Iau_coef
+      namelist /gem_cfgs_p/ Iau_cutoff
       namelist /gem_cfgs_p/ Iau_interval
       namelist /gem_cfgs_p/ Iau_period
       namelist /gem_cfgs_p/ Iau_weight_S
@@ -258,7 +257,6 @@
       namelist /gem_cfgs_p/ Schm_itnlh
       namelist /gem_cfgs_p/ Schm_itraj
       namelist /gem_cfgs_p/ Schm_modcn
-      namelist /gem_cfgs_p/ Schm_moist_L
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
       namelist /gem_cfgs_p/ Schm_phyms_L

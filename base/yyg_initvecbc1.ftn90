@@ -35,13 +35,13 @@
       integer kkproc,adr
       integer, dimension (:), pointer :: recv_len,recvw_len,recve_len,recvs_len,recvn_len
       integer, dimension (:), pointer :: send_len,sendw_len,sende_len,sends_len,sendn_len
-      real*8  xx_8(G_ni-1,G_nj),yy_8(G_ni-1,G_nj)
-      real*8  xgu_8(G_ni-1),ygv_8(G_nj-1)
+      real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
+      real*8  xgu_8(G_niu),ygv_8(G_nj-1)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
 !
 !     Get global xgu,ygv,xx,yy
-       do i=1,G_ni-1
+       do i=1,G_niu
        xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
        enddo
        do j=1,G_nj-1
@@ -49,7 +49,7 @@
        enddo
 !
       do j=1,G_nj
-      do i=1,G_ni-1
+      do i=1,G_niu
          xx_8(i,j)=xgu_8(i)
          yy_8(i,j)=G_yg_8(j)
       enddo
@@ -99,9 +99,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 
@@ -137,7 +137,7 @@
 !
 ! East section
       do j=1, G_nj
-      do i=G_ni-glb_pil_e,G_ni-1
+      do i=G_niu-glb_pil_e+1,G_niu
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -147,9 +147,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 ! check to collect from who
@@ -182,7 +182,7 @@
 !
 ! South section
       do j=1,glb_pil_s
-      do i=1+glb_pil_w,G_ni-1-glb_pil_e
+      do i=1+glb_pil_w,G_niu-glb_pil_e
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -192,9 +192,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 ! check to collect from who
@@ -227,7 +227,7 @@
 !
 ! North section
       do j=G_nj-glb_pil_n+1,G_nj
-      do i=1+glb_pil_w,G_ni-1-glb_pil_e
+      do i=1+glb_pil_w,G_niu-glb_pil_e
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -237,9 +237,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 
@@ -437,9 +437,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 
@@ -491,7 +491,7 @@
 !
 ! East section
       do j=1, G_nj
-      do i=G_ni-glb_pil_e,G_ni-1
+      do i=G_niu-glb_pil_e+1,G_niu
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -501,9 +501,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 ! check to collect from who
@@ -552,7 +552,7 @@
 !
 ! South section
       do j=1,glb_pil_s
-      do i=1+glb_pil_w,G_ni-1-glb_pil_e
+      do i=1+glb_pil_w,G_niu-glb_pil_e
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -562,9 +562,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 ! check to collect from who
@@ -613,7 +613,7 @@
 !
 ! North section
       do j=G_nj-glb_pil_n+1,G_nj
-      do i=1+glb_pil_w,G_ni-1-glb_pil_e
+      do i=1+glb_pil_w,G_niu-glb_pil_e
 !        U vector
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
@@ -623,9 +623,9 @@
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-         imx2 = min(max(imx2-1,glb_pil_w+1),G_ni-glb_pil_e-3)
+         imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
          imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 !
 

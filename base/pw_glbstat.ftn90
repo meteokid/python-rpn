@@ -15,8 +15,9 @@
 
 !**s/r pw_glbstat - Update physical quantities
 !
-      subroutine pw_glbstat
+      subroutine pw_glbstat(name_S)
       implicit none
+      character * (*) name_S
 #include <arch_specific.hf>
 !
 !author
@@ -45,37 +46,48 @@
            gmmk_pw_gz_moins_s,gmmk_pw_gz_plus_s/), (/size(pw_list,dim=2),size(pw_list,dim=1)/)))
 !     ________________________________________________________________
 
+      print*,'size(pw_list,dim=1)',size(pw_list,dim=1)
+
       do fld=1,size(pw_list,dim=1)
          nullify(plus,minus)
          istat = gmm_get(pw_list(fld,1),minus,mymeta)
          istat = gmm_get(pw_list(fld,2),plus,mymeta)
-         call statfld3 (minus,pw_list(fld,1), Step_kount, ' ',&
+         call statfld3 (minus,pw_list(fld,1), Step_kount, name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,g_nk ,&
                         1,1,1,l_ni,l_nj, g_nk,8)     
-         call statfld3 (plus ,pw_list(fld,2), Step_kount, ' ',&
+         call statfld3 (plus ,pw_list(fld,2), Step_kount, name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,g_nk ,&
-                        1,1,1,l_ni,l_nj, g_nk,8)     
+                        1,1,1,l_ni,l_nj, g_nk,8)
+         !do k=1,g_nk
+         !   print*,'k=',k
+         !   call statfld3 (plus ,pw_list(fld,2), Step_kount, name_S,&
+         !               l_minx,l_maxx,l_miny,l_maxy,1,g_nk ,&
+         !               1,1,k,l_ni,l_nj,k,8)
+         !enddo
       enddo
+
+      
+
       istat = gmm_get(gmmk_pw_pm_moins_s,minus,mymeta)     
       call statfld3 (minus,'PPMM', Step_kount, ' ',&
                      l_minx,l_maxx, l_miny,l_maxy, 0,g_nk+1,&
-                     1,1,1,l_ni,l_nj, g_nk+1,8)     
+                     1,1,0,l_ni,l_nj, g_nk+1,8)     
       istat = gmm_get(gmmk_pw_pm_plus_s,minus,mymeta)     
       call statfld3 (minus,'PPMP', Step_kount, ' ',&
                      l_minx,l_maxx, l_miny,l_maxy, 0,g_nk+1,&
-                     1,1,1,l_ni,l_nj, g_nk+1,8)     
+                     1,1,0,l_ni,l_nj, g_nk+1,8)     
       istat = gmm_get(gmmk_pw_pt_plus_s,minus,mymeta)     
       call statfld3 (minus,'PPTP', Step_kount, ' ',&
                      l_minx,l_maxx, l_miny,l_maxy, 0,g_nk+1,&
-                     1,1,1,l_ni,l_nj, g_nk+1,8)
+                     1,1,0,l_ni,l_nj, g_nk+1,8)
       do i=1,Tr3d_ntr
          nullify(plus,minus)
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',minus,mymeta)
          istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',plus,mymeta)
-         call statfld3 (minus,'M_'//trim(Tr3d_name_S(i)), Step_kount, ' ',&
+         call statfld3 (minus,'M_'//trim(Tr3d_name_S(i)), Step_kount, name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
                         1,1,1,l_ni,l_nj, g_nk,8)     
-         call statfld3 (plus ,'P_'//trim(Tr3d_name_S(i)), Step_kount, ' ',&
+         call statfld3 (plus ,'P_'//trim(Tr3d_name_S(i)), Step_kount, name_S,&
                         l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
                         1,1,1,l_ni,l_nj, g_nk,8)     
       enddo

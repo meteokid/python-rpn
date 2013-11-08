@@ -77,7 +77,11 @@
       USERBUS: if (have_userbus_L) then
 !        User has provided an input busper - make sure that it is complete
          write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_myrow
-         fn  = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
+         if (Grd_yinyang_L) then
+            fn = '../../busper/'//trim(Grd_yinyang_S)//'/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
+         else
+            fn = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
+         endif
          if (Lun_out > 0) write(Lun_out,1000) trim(fn)
          yela = clib_fileexist (trim(fn))
          call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)

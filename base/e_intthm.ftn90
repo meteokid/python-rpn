@@ -61,7 +61,7 @@
 #include "hgc.cdk"
 
       integer, external :: e_rdhint3,fstinf
-      character*4 vhh
+      character*4 vhh,vtt
       logical horinterp_L
       integer i,k,kk,nis,njs,nks,ng,code_h,keyt,nic,njc,nkc,err
       real*8 c1, c2
@@ -77,6 +77,11 @@
       c2 = 10.d0 * Dcst_grav_8
       if (vt.eq.'TT1') c1 = 0.
       vhh= vh//'  '
+      if (vt.eq.'TT  ') then
+          vtt='TT  '
+      else 
+          vtt='VT  '
+      endif
 
       if (Pil_bmf_L) then
          nis= nifi
@@ -130,6 +135,7 @@
          write(6,*) 'ANALYSIS IS IN SIGMA OR ETA OR HYBRID COORDINATES'
 
 ! Temperature and humidity
+ 
 
          do k=1,lv_t
             kk=k
@@ -146,11 +152,9 @@
             horinterp_L= horinterp_L .or. (code_h.gt.0)
 
             ttn(:,kk) = ttn(:,kk) + c1
-            if (vt.eq.'TT') call mfotvt (ttn(1,kk),ttn(1,kk),hun(1,kk),ng,1,ng)
-
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (hun,nis,njs,'HU  ',k,lv_t,pni,0,0,0)
-               call e_bmfsplitxy2 (ttn,nis,njs,'VT  ',k,lv_t,pni,0,0,0)
+               call e_bmfsplitxy2 (ttn,nis,njs,vtt,k,lv_t,pni,0,0,0)
             endif
          end do         
 
@@ -212,7 +216,7 @@
          if (Pil_bmf_L) then
             call e_bmfsplitxy2 (gzn,nis,njs,'GZ  ',1,1,pni,0,0,0)
          else
-            call e_write_3df ( ttn,nis,njs, lv_t  , 'TT  ', unf_casc )
+            call e_write_3df ( ttn,nis,njs, lv_t  , vtt   , unf_casc )
             call e_write_3df ( gzn,nis,njs, 1     , 'GZ  ', unf_casc )
             call e_write_3df ( hun,nis,njs, lv_t  , 'HU  ', unf_casc )
             if (VAR_ZD /= '') call e_write_3df (zdn,nis,njs,lv_t-1,'ZD  ',unf_casc)
@@ -276,7 +280,7 @@
          deallocate(rna_tlev)
 
          if (.not.Pil_bmf_L) then
-            call e_write_3df ( ttn,nis,njs,lv_t  ,'TT  ',unf_casc)
+            call e_write_3df ( ttn,nis,njs,lv_t  ,'VT  ',unf_casc)
             call e_write_3df ( gzn,nis,njs,lv_t  ,'GZ  ',unf_casc)
             call e_write_3df ( hun,nis,njs,lv_t  ,'HU  ',unf_casc)
          endif
@@ -335,6 +339,7 @@
       errcode = 0
 
       if (.not.horinterp_L) anal_hav(1) = 11
+      print *,'e_intthm.ftn has horinterp_L =',horinterp_L,'anal_hav(1)=',anal_hav(1)
      
  1001 format(/,'COMPUTE TT, HU and GZ (S/R E_INTTHM)',/,25('+'))
 

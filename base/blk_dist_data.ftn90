@@ -71,8 +71,9 @@
 
                read (F_unf); read (F_unf); read (F_unf); read (F_unf); read (F_unf)
                write (6,1001) Ptopo_myproc,trim(basename)
-               call read_3df2 (F_unf,uu,vv,zd,tt,ssq,meq,qq,ww,tr         , &
-                               trname_a, ana_zd_L,ana_w_L,ana_q_L, F_nvar , &
+               call read_3df3 (F_unf,uu,vv,zd,tt,ssq,meq,qq,ww,tr         , &
+                               trname_a,                                    &
+                               ana_zd_L,ana_w_L,ana_q_L,ana_vt_L, F_nvar , &
                                F_ntra,nga,F_nka_m,F_nka_t,ofi,ofj,err)
 
                close (F_unf)
@@ -92,7 +93,7 @@
 
       cnt= len(trname_a(1)) * F_ntra
       call RPN_COMM_bcastc (trname_a, cnt, "MPI_CHARACTER",0,"BLOC",err)
-      call RPN_COMM_bcast  (ana_zd_L,   3, "MPI_LOGICAL"  ,0,"BLOC",err)
+      call RPN_COMM_bcast  (ana_zd_L,   4, "MPI_LOGICAL"  ,0,"BLOC",err)
 
       if (Ptopo_blocme.eq.0) then
 

@@ -114,56 +114,10 @@
          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
-         if (Grd_yinyang_L) then
-            !  Exchange info on pilot zones for Yin and Yang since cubic interp
-            !  requires a few extra points to bring winds to the PHI grid
-!$omp parallel private(i,j)
-!$omp do
-             do k= 1, G_nk+1
-             do j= 1, l_nj
-             do i= 1, l_niu
-                tempu(i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
-                uu_temp(i,j,k)=tempu(i,j,k)
-             enddo
-             enddo
-             do j= 1, l_njv
-             do i= 1, l_ni
-                tempv(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
-                vv_temp(i,j,k)=tempv(i,j,k)
-             enddo
-             enddo
-             enddo
-!$omp enddo
-!$omp end parallel
-   
-             call rpn_comm_xch_halo(tempu,LDIST_DIM,l_niu,l_nj,G_nk+1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-             call rpn_comm_xch_halo(tempv,LDIST_DIM,l_ni,l_njv,G_nk+1, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-             call  yyg_vecbc1(uu_temp,tempu,tempv,LDIST_DIM,G_nk+1)
-             call  yyg_vecbc2(vv_temp,tempv,tempu,LDIST_DIM,G_nk+1)
-   
-!$omp parallel private(i,j)
-!$omp do
-             do k= 1, G_nk+1
-             do j= 1, l_nj
-             do i= 1, l_niu
-                uu_temp(i,j,k) =  uu_temp(i,j,k)*Geomg_cy_8(j)
-             enddo
-             enddo
-             do j= 1, l_njv
-             do i= 1, l_ni
-                vv_temp(i,j,k) =  vv_temp(i,j,k)*Geomg_cyv_8(j)
-             enddo
-             enddo
-             enddo
-!$omp enddo
-!$omp end parallel
 
-          else
-             uu_temp=ut1
-             vv_temp=vt1
-          endif
+!vl      Grd_yinyang_L NO longer needed to exchange pilot
+         uu_temp=ut1
+         vv_temp=vt1
 
           do j= 1, l_nj
              c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
