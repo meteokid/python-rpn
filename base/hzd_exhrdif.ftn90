@@ -40,7 +40,7 @@
       integer i,j,k, nn, mm, ni, nj, nij, i0,in,j0,jn, stag_x,stag_y
       integer lnr_deb,lnr_fin
       real wk1(LDIST_SHAPE,Nk),rnr,pwr
-      real*8 pt25,nu_dif,epsilon,lnr,visco,lnr_min,lnr_max,pente,b,hh
+      real*8 pt25,nu_dif,epsilon,lnr,visco(nk),lnr_min,lnr_max,pente,b,hh
 
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !     __________________________________________________________________
@@ -56,6 +56,7 @@
 
       rnr = log(1.- Hzd_lnR)
       pwr = Hzd_pwr
+
       if (F_grd_S.eq.'S_THETA') then
          rnr = log(1.- Hzd_lnR_theta)
          pwr = Hzd_pwr_theta
@@ -65,14 +66,28 @@
          pwr = Hzd_pwr_tr
       endif
 
-      lnr = 1.0d0 - exp(rnr)
+      if ((F_grd_S.eq.'S_THETA').or.(F_grd_S.eq.'S_TR')) then
 
-      nu_dif = 0.d0
-      if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
-      nu_dif = min ( nu_dif, pt25-epsilon)
-      visco  = min ( nu_dif, pt25 )
+         lnr    = 1.0d0 - exp(rnr)
+         nu_dif = 0.0d0
+         if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
+         nu_dif = min ( nu_dif, pt25-epsilon )
+         visco  = min ( nu_dif, pt25 )
+         if (nu_dif.lt.1.0e-10) return
 
-      if (nu_dif.lt.1.0e-10) return
+      else
+
+         do k=1,nk
+            rnr    = log(1.- Hzd_visco_8(k))
+            lnr    = 1.0d0 - exp(rnr)
+            nu_dif = 0.0d0
+            if (Hzd_del(k).gt.0) nu_dif = pt25*lnr**(2.d0/Hzd_del(k))
+            nu_dif  = min ( nu_dif, pt25-epsilon )
+            visco(k)= min ( nu_dif, pt25 )
+            if (nu_dif.lt.1.0e-10) return
+         end do
+
+      endif
 
       i0 = Minx
       in = Maxx

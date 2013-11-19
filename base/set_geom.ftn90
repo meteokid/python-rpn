@@ -155,6 +155,10 @@
          Geomn_longs(i) =  G_xg_8(i)  * rad2deg_8
          Geomn_longu(i) = (G_xg_8(i+1)+G_xg_8(i))*HALF_8*rad2deg_8
       end do
+      if (G_lam) then
+         Geomn_longu(G_ni+1) = &
+       (G_xg_8(G_ni)+(G_xg_8(G_ni)-G_xg_8(G_ni-1)))*HALF_8*rad2deg_8
+      endif
       do i = 1, G_nj
          Geomn_latgs(i) = G_yg_8(i) * rad2deg_8
       end do
@@ -162,6 +166,10 @@
       do i =1, G_njv
          Geomn_latgv(i) = (G_yg_8(i+1)+G_yg_8(i))*HALF_8*rad2deg_8
       end do
+      if (G_lam) then
+         Geomn_latgv(G_nj)= &
+         (G_yg_8(G_nj)+(G_yg_8(G_nj)-G_yg_8(G_nj-1)))*HALF_8*rad2deg_8
+      endif
 
       call hpalloc(Geomg_x_8_   ,LARRAY1DX, err,8)
       call hpalloc(Geomg_y_8_   ,LARRAY1DY, err,8)

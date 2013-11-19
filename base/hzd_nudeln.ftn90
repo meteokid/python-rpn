@@ -25,7 +25,7 @@
       integer lminx,lmaxx,lminy,lmaxy,lnk,is,js,m,n
       real rfd (lminx:lmaxx,lminy:lmaxy,lnk), &
            sfd (lminx:lmaxx,lminy:lmaxy,lnk)
-      real*8 nu
+      real*8 nu(lnk)
 !
 !AUTHORs    C. Girard & M. Desgagne
 !
@@ -70,13 +70,12 @@
       iff= l_ni-pil_e-is*east
       jf = l_nj-pil_n-js*north
 !
-      c1 = nu*(one-two*nu)
-      c2 = nu**2
-      c3 = nu*four*(nu-one)
-!
-!$omp parallel private (wk)
+!$omp parallel private (wk,c1,c2,c3)
 !$omp do
       do k=1,lnk
+         c1 = nu(k)*(one-two*nu(k))
+         c2 = nu(k)**2
+         c3 = nu(k)*four*(nu(k)-one)
          if (m.eq.1) then
             do j=jd-1,jf+1
             do i=id-1,iff+1
