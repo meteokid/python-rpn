@@ -12,13 +12,13 @@ OTHERS   =  $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
 #LIBS     = $(MODEL) $(V4D) $(PHY) $(PATCH) $(CHM) $(CPL) $(OTHERS)
 LIBS     = $(OTHERS)
 
-INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.4-dev
+INSTALLDIR= $(HOME)/ovbin/python/lib.linux-i686-2.6-dev
 DOCTESTPYMODULES = rpn_helpers.py rpnstd.py 
 
 PYVERSIONFILE = rpn_version.py
 CVERSIONFILE = rpn_version.h
-VERSION   = 1.3.0
-LASTUPDATE= 2013-08
+VERSION   = 1.2.3
+LASTUPDATE= 2013-11
 
 versionfile:
 	echo "__VERSION__ = '$(VERSION)'" > $(PYVERSIONFILE)
@@ -39,7 +39,10 @@ all: versionfile
 	for i in $(COMPONENTS); \
 	do cd $$i ; $(MAKE) all ; cd .. ;\
 	done ;\
-	python setup.py build
+	python setup.py build --compiler=$(CCNAME) 
+	#python setup.py build --compiler=intel
+	#CC=$(CC) CFLAGS=-I${HOME}/include python setup.py build
+	# other flags: LDFLAGS, INCLUDES, LIBS
 
 install: all
 	cp -R build/lib.* $(INSTALLDIR)

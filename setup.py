@@ -4,14 +4,9 @@ import rpn_version
 
 #TODO: . s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
 
-#myecarch = 'Linux_pgi611'
-#myrmnlib = 'rmnshared_013'
-#myecarch = 'Linux_pgi9xx'
-#myecarch = 'Linux_x86-64/pgi9xx'
-myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301']
-#myrmnlib = ['PyFTN_helpers','rmnshared_013']
-myrmnlib = ['PyFTN_helpers','rmnshared_014_pgi9xx_rc1']
-#myrmnlib = ['PyFTN_helpers','rmnshared_014_rc1']
+myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301','Linux_x86-64/intel13sp1']
+#myrmnlib = ['PyFTN_helpers','rmnshared_014_rc2']
+myrmnlib = ['rmnshared_014_rc2',]
 
 architecture = os.getenv('EC_ARCH')
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
@@ -41,6 +36,7 @@ print '#Debug architecture=',architecture
 print '#Debug runtime_libs=',runtime_libs
 print '#Debug Shared Objects loaded with',SharedLd
 print '#Debug eclibpath=',eclibpath
+print '#Debug eclibshar=',eclibsharedpath
 print '#Debug ecincpath=',ecincpath
 
 Fstd_module = Extension('Fstdc',
@@ -48,6 +44,7 @@ Fstd_module = Extension('Fstdc',
             libraries = myrmnlib,
             extra_objects = ['utils/get_corners_xy.o'],
             extra_link_args = runtime_libs,
+            extra_compile_args = ['-Wtrigraphs','-fpic'],
             library_dirs = [eclibsharedpath],
             sources = ['utils/py_capi_ftn_utils.c','Fstdc.c'])
 

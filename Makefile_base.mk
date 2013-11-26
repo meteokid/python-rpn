@@ -8,8 +8,8 @@ INCLUDES = $(BASEDIR)/utils $(BASEDIR)/jim
 OMP    = 
 OPTIL  = 2
 MPI    = 
-RMNLIBSHARED = rmnshared_013
-RMNLIB  = rmnbeta
+RMNLIBSHARED = rmnshared_014_rc2
+RMNLIB  = rmn_014_rc2
 #RMNLIB  = rmnbeta_6_oct_2008
 #LIBPATH = .
 #RMNLIB  = rmn_rc010
@@ -23,6 +23,7 @@ RBUILD  = s.compile $(DEBUG)
 CCOMPF  =
 CCOMPF =
 CC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optc="$(CFLAGS)" $(COMPF) $(CCOMPF) -src
+#CC = s.cc
 FC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optf="$(FFLAGS)" $(COMPF) $(FCOMPF) -src
 FTNC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI) -defines "=$(DEFINE)" -optf="$(FFLAGS) $(CPPFLAGS)" -P $(COMPF) $(FCOMPF) -src
 PTNC = sed 's/^[[:blank:]].*PROGRAM /      SUBROUTINE /' | sed 's/^[[:blank:]].*program /      subroutine /'  > $*.f

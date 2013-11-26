@@ -7,15 +7,16 @@
 ! It is distributed WITHOUT ANY WARRANTY of FITNESS FOR ANY PARTICULAR PURPOSE.
 !-------------------------------------------------------------------------- 
 !/**
-program test_get_corners_xy
+subroutine test_get_corners_xy0(ni,nj)
    implicit none
    !@objective Test get_corners_xy
+   !@arguments
+   integer,intent(in) :: ni,nj
    !@author  Stephane Chamberland, 2009-10
    !@revisions
    !**/
    integer, parameter :: SW=1,NW=2,NE=3,SE=4,DIM_I=1,DIM_J=2
    integer , parameter :: NB_CORNERS = 4
-   integer :: ni=3,nj=3
    real,dimension(ni,nj)   :: x,y
    real,dimension(NB_CORNERS,ni,nj) :: xc,yc
    integer :: istat 
@@ -61,5 +62,15 @@ program test_get_corners_xy
    endif
    !---------------------------------------------------------------------
    return
-end program test_get_corners_xy
+end subroutine test_get_corners_xy0
 
+program test_get_corners_xy
+   implicit none
+   !@objective Test get_corners_xy
+   !@author  Stephane Chamberland, 2009-10
+   !@revisions
+   !**/
+   !---------------------------------------------------------------------
+   call test_get_corners_xy0(3,3)
+   !---------------------------------------------------------------------
+end program
