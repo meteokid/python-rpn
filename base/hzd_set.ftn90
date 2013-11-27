@@ -90,9 +90,16 @@
          istat = -1
       endif
 
-      if ( (Hzd_type_S.eq.'HO_EXP').and.(.not.G_lam) ) then
-         call msg(MSG_ERROR,'hzd_set: HO_EXP diffusion NOT avalaible for GU configurations')
-         istat = -1
+      if (G_lam) then
+         if (Hzd_type_S.ne.'HO_EXP') then
+            call msg(MSG_ERROR,'HZD_SET: CAN only use HO_EXP hor. diffusion in LAM configurations')
+            istat = -1
+         endif
+      else
+         if (Hzd_type_S.ne.'HO_IMP') then
+            call msg(MSG_ERROR,'HZD_SET: CAN only use HO_IMP hor. diffusion in NONE LAM configurations')
+            istat = -1
+         endif
       endif
 
       call handle_error(istat,'hzd_set','')

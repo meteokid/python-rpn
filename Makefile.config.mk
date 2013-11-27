@@ -94,7 +94,8 @@ export SSMPOSTCHMOD     := a-w
 ##DESRDIR location where to perform the installation
 export DESTDIR := $(HOME)/SsmBundles/
 export SSM_RELDIR := GEM/
-export SSM_X := x/
+#export SSM_X := x/
+export SSM_X := 
 export SSM_RELDIRDOM     := $(SSM_RELDIR)d/$(SSM_X)
 export SSM_RELDIRBNDL    := $(SSM_RELDIR)$(SSM_X)
 export SSMINSTALLDIR     := $(DESTDIR)$(SSM_RELDIR)
