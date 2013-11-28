@@ -129,9 +129,7 @@
       Grd_rcoef(1) = 1.0
       Grd_rcoef(2) = 1.0
 !
-      do k = 1, maxhlev
-         hyb(k) = -1.
-      end do
+      hyb = -1.
 !
       sol_fft_L     = .true.
       sol_type_S    = 'DIRECT'
@@ -146,6 +144,7 @@
       Hzd_type_S = "NIL"
       Hzd_difva_L= .false.
       Hzd_pwr        = -1
+      Hzd_prof_S     = "NIL"
       Hzd_lnr        = -1.
       Hzd_pwr_theta  = -1
       Hzd_lnr_theta  = -1.
@@ -186,7 +185,7 @@
       Out3_unit_S    = ' '
       Out3_closestep = -1
       Out3_postfreq  =  0
-      Out3_ndigits   = -1
+      Out3_ndigits   = 3
       Out3_ip3       = 0
       Out3_nbitg     = 16
       Out3_linbot    = 0
@@ -225,9 +224,7 @@
       Grdc_end_S  = ''
       Grdc_initphy_L = .false.
       Grdc_nbits = 32
-      do k=1,max_trnm
-         Grdc_trnm_S(k) = '@#$%'
-      end do
+      Grdc_trnm_S= '@#$%'
 !
       stat_liste = ''
 !

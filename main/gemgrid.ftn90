@@ -37,14 +37,16 @@
 !     Computes positional parameters (>>=lat ^^=lon)
 !
       integer, external :: fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,&
-                           grid_nml2,exdb
+                           grid_nml2,gem_nml,exdb
 #include "grd.cdk"
 #include "hgc.cdk"
+#include "lam.cdk"
+#include "glb_pil.cdk"
 #include <clib_interface.cdk>
 
       character*120 outfile,gfile,dumc,fn,etk,etk_ext
       logical lam,radians
-      integer ni,nila,uout,err,npack,i,j,k
+      integer nila,uout,err,npack,i,j,k
 
       integer narguments,npos
       parameter(narguments=5)
@@ -55,7 +57,7 @@
 
       integer Ptopo_npex,Ptopo_npey,Ptopo_nblocx,Ptopo_nblocy
       integer itile,jtile,i0,j0,i1,j1,ierx, iery, spil3df
-      integer Grd_ip1,Grd_ip2,Grd_ip3,G_ni,G_nj
+      integer Grd_ip1,Grd_ip2,Grd_ip3,G_ni,G_nj, ni,nj, in,jn
       real    xlim_1,xlim_n,ylim_1,ylim_n
       real  , dimension(:), allocatable :: xpos, ypos
       real*8, dimension(:), allocatable :: x_8, y_8
@@ -90,7 +92,13 @@
          print *,"Use checknml to verify: \'checknml grid\'"
          stop
       endif
+      if (gem_nml(fn).lt.0) then
+         print *,'STOP: problem with NAMELIST GEM_CFGS'
+         print *,"Use checknml to verify: \'checknml gem_cfgs\'"
+         stop
+      endif
       err= grid_nml2('print',lam)
+      err= gem_nml  ('print'    )
 
 !     Setup before calling e_grid
       Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
@@ -178,6 +186,72 @@
       err= fstfrm(uout)
       err= fclos (uout)
 
+      if (LAM) then
+         uout=0
+         if (fnom(uout,trim(outfile)//'_core','RND',0).ge.0) then
+            err= fstouv (uout, 'RND')
+         else
+            print *,'problem opening', trim(outfile//'_core')
+            stop
+         endif
+
+         i0= 1      + Grd_extension 
+         in= Grd_ni - Grd_extension
+         j0= 1      + Grd_extension
+         jn= Grd_nj - Grd_extension
+         ni = in-i0+1
+         nj = jn-j0+1
+
+         xpos(1:ni) = x_8(i0:in)
+         ypos(1:nj) = y_8(j0:jn)
+         
+         call set_igs2 ( Grd_ip1,Grd_ip2, &
+                         xpos,ypos,ni,nj, &
+                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                         1,ni,1,1,nj,1)
+         err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, ni, 1, 1, &
+                       Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+         err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, nj, 1, &
+                       Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+         err= fstfrm(uout)
+         err= fclos (uout)
+        
+         uout=0
+         if (fnom(uout,trim(outfile)//'_free','RND',0).ge.0) then
+            err= fstouv (uout, 'RND')
+         else
+            print *,'problem opening', trim(outfile//'_core')
+            stop
+         endif
+
+         i0= 1      + Grd_extension + Lam_blend_H
+         in= Grd_ni - Grd_extension - Lam_blend_H
+         j0= 1      + Grd_extension + Lam_blend_H
+         jn= Grd_nj - Grd_extension - Lam_blend_H
+         ni = in-i0+1
+         nj = jn-j0+1
+
+         xpos(1:ni) = x_8(i0:in)
+         ypos(1:nj) = y_8(j0:jn)
+         
+         call set_igs2 ( Grd_ip1,Grd_ip2, &
+                         xpos,ypos,ni,nj, &
+                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                         1,ni,1,1,nj,1)
+         err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, ni, 1, 1, &
+                       Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+         err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, nj, 1, &
+                       Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+                       Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+         err= fstfrm(uout)
+         err= fclos (uout)         
+      endif
+
       endif
 
       deallocate (x_8, y_8, xpos, ypos)
@@ -188,6 +262,8 @@
          Grd_yinyang_S = 'YAN'
          goto 88
       endif
+
+      
 !      
 !-------------------------------------------------------------------
 !

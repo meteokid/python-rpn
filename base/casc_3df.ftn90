@@ -90,7 +90,6 @@ End Subroutine blk_dist_georef
 End Interface
 
       type(gmm_metadata) :: mymeta
-      character*8 hint
       character(len=GMM_MAXNAMELENGTH), dimension (:), pointer :: trname_a
       character*1024 fn
 
@@ -198,15 +197,14 @@ End Interface
          allocate (idx(l_ni), idy(l_nj), &
                    cxa(l_ni), cxb(l_ni), cxc(l_ni) ,cxd(l_ni), &
                    cya(l_nj), cyb(l_nj), cyc(l_nj), cyd(l_nj) )
-         hint = Lam_hint_S
-!         hint = 'LINEAR'
+         if (.not. Ana_horzint_L) Lam_hint_S = 'NEAREST'
          call grid_to_grid_coef (xpxext(l_i0),l_ni, &
-                                 xpaq,nia,idx,cxa,cxb,cxc,cxd,hint)
+                                 xpaq,nia,idx,cxa,cxb,cxc,cxd,Lam_hint_S)
          call grid_to_grid_coef (ypxext(l_j0),l_nj, &
-                                 ypaq,nja,idy,cya,cyb,cyc,cyd,hint)
+                                 ypaq,nja,idy,cya,cyb,cyc,cyd,Lam_hint_S)
 
          call hinterpo ( meqr,l_ni,l_nj, meqn,nia,nja,    1,idx,idy, &
-                         cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
+                         cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
 
          call get_topo (topo_temp,l_ni,l_nj)
 

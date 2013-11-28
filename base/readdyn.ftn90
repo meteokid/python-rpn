@@ -92,7 +92,6 @@
 #include "wil_williamson.cdk"
 
       integer,external :: bmf_get,get_px,newdate
-      logical,external :: samelevel2
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name

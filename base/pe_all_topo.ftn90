@@ -32,6 +32,7 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include <clib_interface.cdk>
+      include "rpn_comm.inc"
 !
       integer,parameter :: BUFSIZE=10000
       integer, external :: ouvrstrt,wkoffit,OMP_get_max_threads
@@ -87,7 +88,7 @@
 ! Initializes PEs block partitions for the PEs (grouping PEs)
 !
       Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx*Ptopo_npey/Ptopo_nblocy
-      call rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
+      err= rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 !
 ! Initializes OpenMP
 !

@@ -54,6 +54,7 @@
       namelist /gem_cfgs/ Hyb
 !Hzd
       namelist /gem_cfgs/ Hzd_difva_L
+      namelist /gem_cfgs/ Hzd_prof_S
       namelist /gem_cfgs/ Hzd_lnr
       namelist /gem_cfgs/ Hzd_lnr_theta
       namelist /gem_cfgs/ Hzd_lnr_tr

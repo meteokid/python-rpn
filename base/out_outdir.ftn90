@@ -37,11 +37,13 @@
 #include <clib_interface.cdk>
       include "rpn_comm.inc"
 !
-      character(len=1024),save :: dirstep_S=' ',diryy_S=' ',dirbloc_S=' '
+      character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
+                                  FMT=' ', last_S=' '
       character*10 postjob_S
       character*7  blocxy_S
+      character*2  digits_S
       logical flag
-      integer err,last_step_post,flag_step_post,stepno,timing
+      integer err,last_step_post,flag_step_post,stepno,timing,ndigits,remainder
 !
 !----------------------------------------------------------------------
 !
@@ -64,8 +66,20 @@
       endif
 
       Out_post_L     = (flag_step_post.gt.last_step_post)
-
       last_step_post = min(last_step_post+Step_delay,upperlimit)
+
+! These next few lines will serve soon in establishing
+! a self adjustable lenght for last_S which will replace postjob_S
+!      ndigits=1
+!      remainder=Step_total/10
+!      do while (remainder > 0)
+!         remainder=remainder/10
+!         ndigits = ndigits + 1
+!      end do
+!      write (digits_S,'(i2)') ndigits
+!      FMT="(i"//trim(digits_S)//"."//trim(digits_S)//")"
+!      write (last_S,trim(FMT)) last_step_post
+
       if (last_step_post.ge.0) then
          write (postjob_S,'(i10.10)') last_step_post
       else

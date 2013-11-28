@@ -69,7 +69,7 @@ subroutine iau_apply()
 
   ! Local variables
   integer, save :: datei=-1
-  integer :: i,j,k,kk,fd,istat,dateo,iau_vtime,this_datei,key,nflds,gidi,gset,sgid,first_tr,n,add
+  integer :: i,j,k,kk,fd,istat,dateo,iau_vtime,this_datei,key,nflds,gidi,gset,sgid,first_tr,n,add,istat0
   integer, dimension(1), target :: any_level
   integer, dimension(:), pointer :: ip1s,ip1_gem
   real :: split
@@ -86,24 +86,35 @@ subroutine iau_apply()
   ! External subprograms
   integer, external :: ezsetival
 
+  call timing_start(50, 'IAU      ')
+
   !  Preliminary calculation to determine if IAU is required
   if (Cstv_dt_8*Step_kount > Iau_period) return
 
   iau_fname = trim(Path_input_S)//'/IAUREP'
 
   !  Precompute filter coefficients on initialization
+  istat0 = RMN_OK
   COMPUTE_WEIGHTS: if (datei < 0) then
      i = nint(Iau_period/Cstv_dt_8)
      add = 0; if (mod(i,2) == 0) add = 1
      i = i+add
      allocate(weight(i))
-     call handle_error_l(clib_tolower(Iau_weight_S)==CLIB_OK,'iau_apply', &
-          'Inavlid string for Iau_weight_S='//trim(Iau_weight_S))
+     istat = clib_tolower(Iau_weight_S)
+     if (.not.RMN_IS_OK(istat)) then
+        istat0 = RMN_ERR
+        call msg(MSG_ERROR,'(iau_apply) Inavlid string for Iau_weight_S='//trim(Iau_weight_S))
+        goto 666
+     endif
      select case (Iau_weight_S)
      case ('constant')
         weight = Cstv_dt_8 / Iau_period
      case ('sin')
-        call handle_error_l(Iau_cutoff>0.,'iau_apply','Cutoff period must be greater than 0')
+        if (Iau_cutoff<=0.) then
+           istat0 = RMN_ERR
+           call msg(MSG_ERROR,'(iau_apply) Cutoff period must be greater than 0')
+           goto 666
+        endif
         n=int(size(weight))/2
         j=0
         do while (j < size(weight))
@@ -118,10 +129,19 @@ subroutine iau_apply()
         weight = weight/sum(weight(1:size(weight)-add))
      end select
   endif COMPUTE_WEIGHTS
-  call handle_error_l(Step_kount<=size(weight),'iau_apply','Overrun of filter coefficient vector')
+
+  if (Step_kount>size(weight)) then
+     call msg(MSG_ERROR,'(iau_apply) Overrun of filter coefficient vector')
+     istat0 = RMN_ERR
+     goto 666
+  endif
 
   !  Determine date information
-  call handle_error_l(Iau_interval>0.,'iau_apply','Invalid (null or negative) Iau_interval in settings file')
+  if (Iau_interval<=0.) then
+     call msg(MSG_ERROR,'(iau_apply) Invalid (null or negative) Iau_interval in settings file')
+     istat0 = RMN_ERR
+     goto 666
+  endif
   iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
   call datp2f(dateo,Mod_runstrt_S)
   call incdatr(this_datei,dateo,dble(iau_vtime/3600.))
@@ -154,26 +174,31 @@ subroutine iau_apply()
      if (istat == GMM_VARIABLE_ALREADY_CREATED) then
         call msg(MSG_INFO,'(iau_apply) Will recover from GMM re-creation')
      elseif (GMM_IS_ERROR(istat)) then
+
         call msg(MSG_ERROR,'(iau_apply) Cannot gmm_create required fields for IAU')
-        return
+!!$        return !# could cause a mpi hang
+        istat0 = RMN_ERR
+        goto 666
      endif
   endif
+
+666 call handle_error(istat0,'iau_apply','')
 
   !  Read updated increment from input files if required
   error_raised = .false.
   READ_IAU_DATA: if (this_datei /= datei) then
      if (Lun_out > 0) write(Lun_out,1000) trim(vdate)
-     call handle_error_l(clib_isreadok(iau_fname)==CLIB_OK,'iau_apply', &
-          'IAU input does not exist or is not readable at '//trim(iau_fname))
      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
      istat = fstopc('MSGLVL',fst_msg_level,.true.)
      istat = fstopc('MSGLVL','INFORM',.false.)
      fd = fstmpi_open(iau_fname,F_readonly_L=.true.,F_dir_ok_L=.true.)
-     call handle_error_l(fd/=RMN_ERR,'iau_apply','Unable to open IAU input '//trim(iau_fname))
+!!$     call handle_error_l(fd/=RMN_ERR,'iau_apply','Unable to open IAU input '//trim(iau_fname))
      if (.not.Lun_debug_L .and. Ptopo_myproc/=0) istat = fstopc('MSGLVL','SYSTEM',.false.)
+
      any_level = -1
+     gidi = -1
      nullify(ip1s,data)
-     do i=1,nflds
+     DO_FLDS: do i=1,nflds
         if (GMM_IS_ERROR(gmm_getmeta(flds(i)%gmmkey,mymeta))) then
            call msg(MSG_ERROR,'(iau_apply) Cannot retrieve metadata for '//trim(flds(i)%nomvar)); error_raised=.true.
         endif
@@ -182,41 +207,53 @@ subroutine iau_apply()
            if (GMM_IS_ERROR(gmm_get(flds(i)%gmmkey,flds(i)%ptr3d,mymeta))) then
               call msg(MSG_ERROR,'(iau_apply) Cannot retrieve GMM space for 3D field '//trim(flds(i)%nomvar)); error_raised=.true.
            endif
-           call handle_error_l(RMN_IS_OK(vgrid_from_file_mpi(fd,flds(i)%nomvar,this_datei,vgi,ip1s,ltype)),'iau_apply', &
-                'Cannot obtain obtaining ip1 list for analysis increments of '//trim(flds(i)%nomvar))
-           ip1_gem => Ver_ip1%t
-           if (ltype(1:1) == 'M') ip1_gem => Ver_ip1%m
-           do k=1,size(ip1_gem)
-              found = .false.
-              kk = 1
-              do while (.not.found .and. kk <= size(ip1s))
-                 if (ip1s(kk) == ip1_gem(k)) found = .true.
-                 kk = kk+1
+           istat = vgrid_from_file_mpi(fd,flds(i)%nomvar,this_datei,vgi,ip1s,ltype)
+           if (.not.RMN_IS_OK(istat)) then
+              error_raised = .true.
+              call msg(MSG_ERROR,'(iau_apply) Cannot obtain obtaining ip1 list for analysis increments of '//trim(flds(i)%nomvar))
+           else
+              ip1_gem => Ver_ip1%t
+              if (ltype(1:1) == 'M') ip1_gem => Ver_ip1%m
+              do k=1,size(ip1_gem)
+                 found = .false.
+                 kk = 1
+                 do while (.not.found .and. kk <= size(ip1s))
+                    if (ip1s(kk) == ip1_gem(k)) found = .true.
+                    kk = kk+1
+                 enddo
+                 if (.not.found) then 
+                    call msg(MSG_ERROR,'(iau_apply) Level list in IAU input file does not match GEM config for '//trim(flds(i)%nomvar)); error_raised=.true.
+                    error_raised = .true.
+                 endif
               enddo
-              if (.not.found) then 
-                 call msg(MSG_ERROR,'(iau_apply) Level list in IAU input file does not match GEM config for '//trim(flds(i)%nomvar)); error_raised=.true.
-                 error_raised = .true.
-              endif
-           enddo
+           endif
         else
            if (GMM_IS_ERROR(gmm_get(flds(i)%gmmkey,flds(i)%ptr2d,mymeta))) then
               call msg(MSG_ERROR,'(iau_apply) Cannot retrieve GMM space for 2D field '//trim(flds(i)%nomvar)); error_raised=.true.
            endif
            ip1_gem => any_level
         endif DATA_3D
-        do k=1,size(ip1_gem)
+
+        DO_IP1: do k=1,size(ip1_gem)
            key = fstmpi_find(fd,flds(i)%nomvar,this_datei,ip1_gem(k),-1,-1)
            if (.not.RMN_IS_OK(key)) then
               call msg(MSG_ERROR,'(iau_apply) Cannot find '//trim(flds(i)%nomvar)//' for all levels in IAU input'); error_raised=.true.
            endif
-           if (.not.RMN_IS_OK(fstmpi_read(key,data,F_fileid=fd,F_gridid=gidi))) then
+           if (gidi < 0) then
+              istat = fstmpi_read(key,data,F_fileid=fd,F_gridid=gidi)
+              !# Note: This assumes that all input fields are on the same grid
+              sgid = ezgrid_subcolocated(gidi,Grd_lclcore_gid)
+              if (sgid < 0) then
+                 call msg(MSG_ERROR,'(iau_apply) Field '//trim(flds(i)%nomvar)//' is not on the current model grid'); error_raised=.true.
+              endif
+           else
+              istat = fstmpi_read(key,data)
+           endif
+           if (.not.RMN_IS_OK(istat)) then
               call msg(MSG_ERROR,'(iau_apply) Cannot read '//trim(flds(i)%nomvar)//' for all levels in IAU input'); error_raised=.true.
+              cycle DO_IP1
            endif
            gset = ezdefset(Grd_local_gid,gidi)
-           sgid = ezgrid_subcolocated(gidi,Grd_lclcore_gid)
-           if (sgid < 0) then
-              call msg(MSG_ERROR,'(iau_apply) Field '//trim(flds(i)%nomvar)//' is not on the current model grid'); error_raised=.true.
-           endif
            istat = ezsetival('SUBGRIDID',sgid)
            istat = min(ezsetopt('INTERP_DEGREE','nearest'),istat)
            istat = min(ezsetopt('USE_1SUBGRID','YES'),istat)
@@ -231,11 +268,12 @@ subroutine iau_apply()
            if (.not.RMN_IS_OK(istat)) then
               call msg(MSG_ERROR,'(iau_apply) Cannot interpolate IAU field for '//trim(flds(i)%nomvar)); error_raised=.true.
            endif
-           deallocate(data)
-        enddo
+           if (associated(data)) deallocate(data) !# May want to recycle memory
+        enddo DO_IP1
+
         nullify(ip1_gem)
         if (associated(ip1s)) deallocate(ip1s)
-     enddo
+     enddo DO_FLDS
      istat = fstmpi_close(fd)
      call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
      istat = fstopc('MSGLVL',fst_msg_level,.false.)
@@ -257,10 +295,14 @@ subroutine iau_apply()
      flds(P0)%ptr2d = 100.*flds(P0)%ptr2d
      if (Grd_yinyang_L) then
         call yyg_iauexchange(flds(P0)%ptr2d,flds(TT)%ptr3d,flds(HU)%ptr3d,flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,l_nk)
-        call handle_error_l(nflds==first_tr,'iau_apply','Yin-Yan exchange not implemented for Iau_tracers_s list')
+        if (nflds/=first_tr) then
+           call msg(MSG_ERROR,'(iau_apply) Yin-Yan exchange not implemented for Iau_tracers_s list')
+           error_raised=.true.
+        endif
      endif
 
-  else
+  else !# READ_IAU_DATA
+
      ! Retrieve IAU data from GMM
      do i=1,nflds
         istat = GMM_OK
@@ -276,7 +318,7 @@ subroutine iau_apply()
      enddo
 
   endif READ_IAU_DATA
-  if (error_raised) call handle_error(-1,'iau_apply','Aborting due to error encountered during IAU processing')
+  call handle_error_l(.not.error_raised,'iau_apply','Aborting due to error encountered during IAU processing')
 
   !  Add increments to model and tracer states
   istat = gmm_get(gmmk_pw_tt_plus_s,pw_tt,mymeta)
@@ -302,6 +344,9 @@ subroutine iau_apply()
 
   !  Emit message to alert user to IAU application
   if (Lun_out > 0) write (Lun_out,2000) trim(vdate)
+  
+  call timing_stop(50)
+  return
   
   !  Messaging definitions
 1000 format(/,' IAU_APPLY - READING ANALYSIS INCREMENTS FOR ',a)

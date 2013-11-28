@@ -31,10 +31,10 @@
       real*8 xpaq1(*),ypaq1(*),xpau1(*),ypav1(*)
       real uun(*),vvn(*),ttn(*),zdn(*),meqn(*),ssqn(*), &
            qqn(*),wwn(*),trn(*),topo1(*)
-      real uu1(F_ni,F_nj,lnk)  , vv1(F_ni,F_nj,lnk), &
-           tt1(F_ni,F_nj,lnk)  , zd1(F_ni,F_nj,lnk), &
-           qq1(F_ni,F_nj,lnk)  , ww1(F_ni,F_nj,lnk), &
-          ssq1(F_ni,F_nj)      , tr1(F_ni,F_nj,lnk,* )
+      real uu1(F_ni,F_nj,lnk+1), vv1(F_ni,F_nj,lnk+1), &
+           tt1(F_ni,F_nj,lnk+2), zd1(F_ni,F_nj,lnk+1), &
+           qq1(F_ni,F_nj,lnk+2), ww1(F_ni,F_nj,lnk+1), &
+           ssq1(F_ni,F_nj)     , tr1(F_ni,F_nj,lnk+2,* )
 !
 !author    M. Desgagne  2001
 !
@@ -69,12 +69,13 @@
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "ptopo.cdk"
+#include "grd.cdk"
 #include "lun.cdk"
 
-      integer,external ::  get_px
+      integer,external ::  get_px,samevert
 
       logical Vertint_L
-      integer i,j,k,n,nga,err,jj,mustvinterp,mustvinterp_g
+      integer i,j,k,n,nga,err,jj,mustvinterp,i0,in,j0,jn
       integer nid1,njd1,ngd,ngd1,nidu,njdv
       integer, dimension (:      ), allocatable :: idx,idu,idy
       real s1,s2
@@ -112,8 +113,10 @@
                  ssq0(F_ni,F_nj), ssu0(F_ni,F_nj), ssv0(F_ni,F_nj) )
 
       allocate ( ttx  (nid1,njd1,nka_t),  meqx(nid1,njd1,nka_m), &
-                 ssqx (nid1,njd1)      ,  ssq0x(nid1,njd1) )
+                 ssqx (nid1,njd1)      ,  ssq0x(nid1,njd1),      &
+                 hutx (nid1,njd1,nka_t) )
 
+!
 ! Perform horizontal interpolations for ttx, meqx and ssqx on extended (nid1,njd1) grid
 
       call grid_to_grid_coef (xpq1,nid1,xpaq1,nia,idx,cxa,cxb,cxc,cxd, Lam_hint_S)
@@ -122,6 +125,7 @@
       call hinterpo ( ttx,nid1,njd1, ttn,nia,nja,nka_t, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S )
       ttr(1:F_ni,1:F_nj,:) = ttx(1:F_ni,1:F_nj,:)
+ 
 
       if (presstype.eq.0) then !pressure levels
           call hinterpo ( meqx,nid1,njd1, meqn,nia,nja,nka_m, &
@@ -134,11 +138,12 @@
                           idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
           ssqr(1:F_ni,1:F_nj) = ssqx (1:F_ni,1:F_nj)
       endif
-
-! Perform horizontal interpolations for all other variables on regular (F_ni,F_nj) grid
-
-      if (ana_q_L)                                      &
-      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m-1, &
+!
+! Perform horizontal interpolations for all other variables on 
+! regular (F_ni,F_nj) grid
+!
+      if (.not.Schm_hydro_L.and.ana_q_L)                  &
+      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m+1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       if (ana_zd_L)                                     &
       call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t-1, &
@@ -147,6 +152,9 @@
       call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       do k=1,ntra
+         if (trname_a(k)(1:4).eq.'HU  ')                                         &
+         call hinterpo (hutx        ,nid1,njd1,trn((k-1)*nga*(nka_t)+1),nia,nja, &
+                        nka_t,idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
          if (trname_a(k).ne.'!@@NOT@@')                                          &
          call hinterpo (trr(1,1,1,k),F_ni,F_nj,trn((k-1)*nga*(nka_t)+1),nia,nja, &
                         nka_t,idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
@@ -190,20 +198,31 @@
           call gz2p0(ssq0x,meqx,topo1,rna,ngd1,nka_m)
           deallocate (rna)
           ssq0x(1:nid1,1:njd1) =ssq0x(1:nid1,1:njd1)-lnpref_8
-      else
+
+      else if ( presstype.eq.Ver_code .and. .not.Ana_horzint_L) then
+          Vertint_L   = .false.
+          i0=1;in=l_ni;j0=1;jn=l_nj
+          if (Grd_yinyang_L) then
+              i0=1+pil_w
+              in=l_ni-pil_e
+              j0=1+pil_s
+              jn=l_nj-pil_n
+          endif
+          mustvinterp = samevert(ana_am_8,ana_bm_8,nka_m,ana_at_8,ana_bt_8,&
+                        nka_t,meqx,topo1,nid1,njd1,i0,in,j0,jn)
+          if ( mustvinterp .gt. 0 ) Vertint_L = .true.
+      endif
+
+      if (Lun_out.gt.0)write(Lun_out,*) 'Vertical interpolation=',Vertint_L
+
 !       Analysis NOT on pressure coordinates, obtain surface pressure
 !       whether or not there is vertical interpolation
 
+      if (Vertint_L) then 
          allocate (pres(ngd1,nka_t))
          err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t,presstype,.false.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
-         jj=-1
-         do k=1,ntra
-               if (trname_a(k)(1:4).eq.'HU  ') jj=k
-         enddo
-         !call handle_error(jj,'casc_hvi','casc_hvi: no HU')
-         allocate(vtx(nid1,njd1,nka_t),hutx(nid1,njd1,nka_t))
-
+         allocate(vtx(nid1,njd1,nka_t))
          if (ana_vt_l) then
              vtx(:,:,:) = ttx(:,:,:)
          else
@@ -212,46 +231,12 @@
                              ngd1,1,ngd1)
              enddo
          endif
-         call adj_ss2topo(ssq0x, topo1,pres,meqx,ttx,ngd1,nka_t)
-         deallocate (vtx,hutx)
-         deallocate (pres)
-
-         if ((presstype.eq.Ver_code).and.(G_nk+1.eq.nka_t)) then
-            Vertint_L   = .false.
-            mustvinterp = 0
-            do k=1,G_nk
-               r1=ana_at_8(k)
-               r2=Ver_a_8%t(k+1)
-               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
-               r1=ana_bt_8(k)
-               r2=Ver_b_8%t(k+1)
-               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
-            end do
-            do k=1,G_nk
-               r1=ana_am_8(k)
-               r2=Ver_a_8%m(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
-               r1=ana_bm_8(k)
-               r2=Ver_b_8%m(k)
-               if (abs((r1-r2)/r1).gt.1.e-10) mustvinterp=mustvinterp+1
-            end do
-            do j=1,njd1
-            do i=1,nid1
-               s1=ssq0x(i,j)
-               s2=exp(ssqx (i,j))*Cstv_pref_8 
-               if (abs((s1-s2)/s1).gt.1.e-5) mustvinterp=mustvinterp+1
-            enddo
-            enddo
-            call rpn_comm_allreduce ( mustvinterp,mustvinterp_g,1, &
-                               "MPI_integer","MPI_SUM","grid",err)
-            if ( mustvinterp_g .gt. 0 ) Vertint_L = .true.
-         endif
+         call adj_ss2topo(ssq0x, topo1,pres,meqx,vtx,ngd1,nka_t)
          ssq0x(1:nid1,1:njd1) = log(ssq0x(1:nid1,1:njd1)/Cstv_pref_8)
-      endif
+         deallocate (vtx,pres)
 
 ! Compute ssq1,ssu0 and ssv0 and a first set of srclev,dstlev
 
-      if (Vertint_L) then
          ssq1(1:F_ni,1:F_nj) = ssq0x(1:F_ni,1:F_nj)
          nidu=F_ni
          njdv=F_nj
@@ -291,7 +276,7 @@
 
       endif
 
-      deallocate (ttx, meqx, ssqx, ssq0x)
+      deallocate (ttx, meqx, ssqx, ssq0x, hutx)
 
 ! VERTICAL INTERPOLATION (in log(pressure))
 
@@ -333,10 +318,18 @@
          end do
          if (jj.gt.0) then
             if (Vertint_L) then
-                call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk,'HU','cubic')
-                tr1(:,:,1:G_nk,n) = max(tr1(:,:,1:G_nk,n),0.0)
+                call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev,ngd,nka_t,G_nk+2,'HU','cubic')
+                if (Schm_bitpattern_L) then
+                    tr1(:,:,1:G_nk+2,n) = tr1(:,:,1:G_nk+2,n)
+                else
+                    tr1(:,:,1:G_nk+2,n) = max(tr1(:,:,1:G_nk+2,n),0.0)
+                endif
             else
-                tr1(:,:,1:G_nk,n) = trr(:,:,1:G_nk,jj)
+                if (Schm_bitpattern_L) then
+                    tr1(:,:,1:G_nk+2,n) = trr(:,:,1:G_nk+2,jj)
+                else
+                    tr1(:,:,1:G_nk+2,n) = max(trr(:,:,1:G_nk+2,jj),0.0)
+                endif
             endif
          else
             tr1(:,:,:,n) = 0.

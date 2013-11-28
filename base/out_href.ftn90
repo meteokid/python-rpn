@@ -72,7 +72,7 @@
       if (Out3_fullplane_L) then
          nis= Out_gridin - Out_gridi0 + 1
          njs= Out_gridjn - Out_gridj0 + 1
-!         if (nis.eq.G_ni)  nis= nis   + 1
+         if ( (Grd_typ_S(1:2)=='GU') .and. (nis.eq.G_ni) ) nis= nis   + 1
          if (Out3_uencode_L) flag= flag .and. (Ptopo_couleur.eq.0)
       else
          flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)

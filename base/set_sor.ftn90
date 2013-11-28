@@ -116,6 +116,7 @@
          if (Lun_out.gt.0) write(Lun_out,5000) pnerror
       endif
       
+      Out3_ndigits = max(3,Out3_ndigits)
       if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
          unit_S = 'HOURS'
       endif
@@ -127,11 +128,11 @@
       endif
       if (Out3_unit_s .eq. 'S') then
          unit_S = 'SECONDS'
-         Out3_ndigits = 6
+         Out3_ndigits = max(6,Out3_ndigits)
       endif
       if (Out3_unit_s .eq. 'P') then
          unit_S = 'TIMESTEPS'
-         Out3_ndigits = 6
+         Out3_ndigits = max(6,Out3_ndigits)
       endif
       if (Lun_out.gt.0) write(Lun_out,3000)unit_S
       ! Transfer filter and xnbit info to requested variables
