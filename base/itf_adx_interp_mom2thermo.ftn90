@@ -39,17 +39,14 @@
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
 
       !---------------------------------------------------------------------
-
       allocate(zd_z_8(l_nk+1))
-      zd_z_8(1:l_nk+1)=Ver_a_8%t(1:l_nk+1)
-      if(Schm_Adw_extrap_L)then
-         ! Last zdot limits are at top and surface not at Ver_a_8%t(1) and  Ver_a_8%t(l_nk+1)
-         zd_z_8(1)=Cstv_Ztop_8
-         zd_z_8(l_nk+1)=Cstv_Zsrf_8
-      else
-         if(Schm_Tlift.eq.1)zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+      zd_z_8(1)=Cstv_Ztop_8
+      zd_z_8(2:l_nk+1)=Ver_a_8%t(1:l_nk)
+      zd_z_8(l_nk+1)=Cstv_Zsrf_8
+      if(Schm_Tlift.eq.1)then
+         zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+         call handle_error(-1,'itf_adx_interp_mom2thermo','review for Tlift')
       endif
-
 
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
 !$omp                  i,j,k,w1,w2,w3,w4,den)

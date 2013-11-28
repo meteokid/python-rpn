@@ -36,6 +36,7 @@
 #include "lun.cdk"
 
       integer,external :: fnom
+
       integer nrec,unf
 !
 !-------------------------------------------------------------------

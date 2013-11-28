@@ -148,7 +148,8 @@
             call out_uv (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of divergence and vorticity
-            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
+! To COMPLETE
+!            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of gmm
             call out_gmm2 (levset,kk)

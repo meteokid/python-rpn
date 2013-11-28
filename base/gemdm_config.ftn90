@@ -73,8 +73,11 @@
 !
       Level_mode_ip1 = 1
       Level_kind_ip1 = 5
-      Level_version  = 2
-      if(Schm_Tlift.eq.1) Level_version  = 3
+      Level_version  = 4
+      if(Schm_Tlift.eq.1)then
+         call handle_error(-1,'gemdm_config','review for toplev removed and Tlift')
+         Level_version  = 3
+      endif
 !
       if (G_lam) then
          Glb_pil_n = Grd_extension

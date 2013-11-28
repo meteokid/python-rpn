@@ -169,7 +169,7 @@
 
          do j=j0,jn
          do i=i0,in
-             lnpi_t(i,j,k) = Ver_a_8%t(k+1) + Ver_b_8%t(k+1) * F_s(i,j)
+             lnpi_t(i,j,k) = Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)
                pi_t(i,j,k) = exp(lnpi_t(i,j,k))
          end do
          end do
@@ -209,7 +209,7 @@
          do k=1,Nk-1
             do j=j0,jn
             do i=i0,in
-               F_zd(i,j,k) = ( Ver_b_8%t(k+1)*div_i(i,j,Nk)/pi_s(i,j) &
+               F_zd(i,j,k) = ( Ver_b_8%t(k)*div_i(i,j,Nk)/pi_s(i,j) &
                              - div_i(i,j,k)/pi_t(i,j,k) ) /           &
                               (1.+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
@@ -237,7 +237,7 @@
                   ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*(sbY(i,j  )-F_s(i,j))   &
                    -(F_v(i,j-1,kp)+F_v(i,j-1,k))*(sbY(i,j-1)-F_s(i,j)) ) )
               !pidot=omega
-               pidot=pi_t(i,j,k)*Ver_b_8%t(k+1)*adv - div_i(i,j,k)
+               pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
             end do
             end do

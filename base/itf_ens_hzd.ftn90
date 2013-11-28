@@ -20,7 +20,7 @@
 #include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
-      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk+1)
+      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk)
 !
 !author  Lubos Spacek - February 2010
 !     
@@ -71,6 +71,10 @@ include "phy_itf.inc"
          if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
          istat = gmm_get(gmmk_difvt1_s,difvt1,mymeta)
          if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
+         istat = gmm_get(gmmk_ugwdt1_s,ugwdt1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
+         istat = gmm_get(gmmk_vgwdt1_s,vgwdt1,mymeta)
+         if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
 
          if (mode == "SAVE") then
             difut1 = F_ut1
@@ -84,9 +88,6 @@ include "phy_itf.inc"
 !
                istat = phy_bus2gmm(gmmk_ugwdt1_s,'phytd_ugwd','Vd')
                if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1-s'
-               istat = gmm_get(gmmk_ugwdt1_s,ugwdt1,mymeta)
-               if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
-               ugwdt1(:,:,l_nk+1)=0.
                do k= 1, l_nk
                   do j= 1, l_nj
                      do i= 1, l_ni
@@ -97,9 +98,6 @@ include "phy_itf.inc"
 !
                istat = phy_bus2gmm(gmmk_vgwdt1_s,'phytd_vgwd','Vd')
                if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1-s'
-               istat = gmm_get(gmmk_vgwdt1_s,vgwdt1,mymeta)
-               if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
-               vgwdt1(:,:,l_nk+1)=0.
                do k= 1, l_nk
                   do j= 1, l_nj
                      do i= 1, l_ni

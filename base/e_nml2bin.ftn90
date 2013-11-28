@@ -72,8 +72,8 @@
          tracers_name(1:E_tr3d_ntr) = E_trname_S (1:E_tr3d_ntr)
          tracers_sval(1:E_tr3d_ntr) = E_tr3d_sval(1:E_tr3d_ntr)
          Mod_runstrt_S  = Step_runstrt_S
+         horzint_L      = (Anal_hav(1).ne.11)
          labfl=0
-         horzint_L =(Anal_hav(1).ne.11)
          rootfn = trim(Path_output_S)//'/GEMDM_input/'
          err    = clib_mkdir (trim(rootfn))
          err    = fnom(labfl,trim(rootfn)//'/Modntr_ipc.nml','SEQ',0)

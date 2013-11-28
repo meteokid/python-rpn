@@ -90,7 +90,6 @@ subroutine iau_apply()
 
   !  Preliminary calculation to determine if IAU is required
   if (Cstv_dt_8*Step_kount > Iau_period) return
-
   iau_fname = trim(Path_input_S)//'/IAUREP'
 
   !  Precompute filter coefficients on initialization
@@ -337,10 +336,10 @@ subroutine iau_apply()
      tr = tr + weight(Step_kount) * flds(i)%ptr3d
   enddo
   istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
-  call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
-  call pw_update_GPW
-  call pw_update_UV
-  call pw_update_T
+  call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
+  call pw_update_GPW()
+  call pw_update_UV('P')
+  call pw_update_T('P')
 
   !  Emit message to alert user to IAU application
   if (Lun_out > 0) write (Lun_out,2000) trim(vdate)

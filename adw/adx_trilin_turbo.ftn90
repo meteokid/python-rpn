@@ -84,12 +84,7 @@ subroutine adx_trilin_turbo4 (F_out   , F_in    , F_dt    ,            &
    real*8  :: prd_8, prdt_8, p_z00_8
    !---------------------------------------------------------------------
 
-   if(Adx_extrap_L)then
-      p_z00_8 = adx_verZ_8%m(0)
-   else
-      ! it is at 3/4 to validate
-      p_z00_8 = 0.5d0*( adx_verZ_8%m(1)+ adx_verZ_8%m(0))
-   endif
+   p_z00_8 = adx_verZ_8%m(0)
 
 !$omp parallel do private(n,o1,o2,prf1,prf2,prf3,prf4,prd_8,ii,prdt_8,jj,kk,ij)
 

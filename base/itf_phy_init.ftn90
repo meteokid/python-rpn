@@ -56,17 +56,18 @@
       external :: getijlalo, itf_phy_rdfile
 
       character*3 bus
-      logical prout,cond_satu_L
+      logical prout,cond_satu_L, phyms_L
       integer nrec, phycompa, n, lght, soit, phy_offset, dateo
       integer err(DIM_ERR),i,offi2,offj2
       real, dimension(:), pointer :: std_p_prof
-      logical :: l_phyms_L
 !
 !     ---------------------------------------------------------------
 !
 !   General rules:
 !    1) .ftn & .cdk with prefix itf_phy_ are the actual interface routines
 !    2) Those with prefix phy_ belong to the physics package
+
+      if (.not.Schm_phyms_L) return
 
       if (Lun_out.gt.0) write(Lun_out,1000)
 
@@ -92,9 +93,8 @@
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelist from file 'model_settings'
 
-      err(1) = phy_nml (trim(Path_nml_S), set_dcst, l_phyms_L, Lun_out)
-      call handle_error(err(1),'itf_phy_init','phy_nml')
-      call handle_error_l(l_phyms_L,'itf_phy_init','Problem with namelist physics_cfgs')      
+      err(1) = phy_nml (trim(Path_nml_S), set_dcst, phyms_L, Lun_out)
+      call handle_error(err(1),'itf_phy_init','Error in phy_nml')
 
       err=0
 

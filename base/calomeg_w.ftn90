@@ -69,7 +69,7 @@
       do k=1,l_nk
          do j=1,l_nj
             do i=1,l_ni
-               t1(i,j)= Ver_a_8%t(k+1) + Ver_b_8%t(k+1)*F_st1(i,j)
+               t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j)
             end do
          end do
          call vsexp(t2,t1,l_ni*l_nj)

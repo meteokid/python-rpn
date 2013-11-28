@@ -38,13 +38,7 @@
 ! v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
 ! v4_40 - Lee V.            - allow matrix setup only when Hzd_type_S="HO_IMP"
 !
-!object
-!     see id section
-!       
-!arguments
-!     none
-!
-!implicits
+
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"
@@ -60,7 +54,7 @@
 #include "ptopo.cdk"
 #include "hybdim.cdk"
 #include "ver.cdk"
-!      
+
       character*11  mess
       character*256 dumc_S,str1
       integer i,j,k,istat,dim,dim1,dim2,dpwr1,dpwr2,Gni,Gnj, &
@@ -73,7 +67,7 @@
       real levhyb
       real*8 ZERO_8, ONE_8, HALF_8
       PARAMETER( ZERO_8 = 0.0 , ONE_8  = 1.0 , HALF_8 = 0.5 )
-!*
+!
 !     ---------------------------------------------------------------
 !
 !     Set the length of the work matrices to the region without 
@@ -99,8 +93,8 @@
       if (G_lam) then
          if (Hzd_type_S.ne.'HO_EXP') then
             call msg(MSG_ERROR,'HZD_SET: CAN only use HO_EXP hor. diffusion in LAM configurations')
-            istat = -1
-         endif
+             istat = -1
+          endif
       else
          if (Hzd_type_S.ne.'HO_IMP') then
             call msg(MSG_ERROR,'HZD_SET: CAN only use HO_IMP hor. diffusion in NONE LAM configurations')
@@ -118,7 +112,7 @@
       do i=1,HZD_MAXPROF
          if ( Hzd_prof_S(i) .ne. "NIL") npin= npin+1
       end do
-      
+
       allocate (lnr(npin+2), lvl(npin+2), pwr(npin+2))
       allocate (Hzd_del(G_nk+1), Hzd_visco_8(G_nk+1))
 

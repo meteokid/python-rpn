@@ -148,7 +148,7 @@
       do k=1,Nk
          do j=j0,jn
             do i=i0,in
-               tempo = exp(Ver_a_8%t(k+1)+Ver_b_8%t(k+1)*F_s(i,j))
+               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)

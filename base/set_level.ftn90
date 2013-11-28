@@ -102,8 +102,8 @@
           write(Lun_out,*)
           write(Lun_out,*) F_argv_S(0),'=',F_argv_S(1),',',F_argv_S(2),',',(F_argv_S(i),i=3,F_argc)
       endif
-      Level_momentum = G_nk+1
-      Level_thermo = G_nk+1
+      Level_momentum = G_nk
+      Level_thermo = G_nk
       set_level = 0
       read( F_argv_S(1), * ) levset
       Level_sets = Level_sets + 1

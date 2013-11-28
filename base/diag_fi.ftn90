@@ -53,13 +53,9 @@
       real*8, parameter :: one = 1.d0
       real*8  yyy,qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
-      real :: onezero(l_nk)
 !
 !     ---------------------------------------------------------------
 !
-      onezero=1.
-      onezero(1)=0.
-
       nij = (in - i0 + 1)*(jn - j0 + 1)
 
 !$omp parallel private (qbar,yyy,xtmp_8,ytmp_8,kq)
@@ -78,7 +74,7 @@
 !$omp do
             do j=j0,jn
             do i=i0,in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
                xtmp_8(i,j)=-qbar
             end do
             end do

@@ -5,6 +5,5 @@
       real        tracers_sval (MAX_tracers)
       logical horzint_L
 
-      namelist /modipc_cfgs/ Mod_runstrt_S, &
-                             horzint_L,&
+      namelist /modipc_cfgs/ Mod_runstrt_S, horzint_L, &
                              tracers_ntr, tracers_name, tracers_sval

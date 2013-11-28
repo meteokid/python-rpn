@@ -135,7 +135,7 @@
       real kbot(LDIST_SHAPE,G_nk+1),ktop(LDIST_SHAPE,G_nk+1)
       real ,dimension(:,:,:), allocatable::px_pres,hu_pres,td_pres,w5,w6
       real ,dimension(:,:,:), allocatable::tt_pres,vt_pres
-      real ,dimension(:), allocatable::prprlvl,rf,hyb_we
+      real ,dimension(:), allocatable::prprlvl,rf
       real ptop(LDIST_SHAPE),p0(LDIST_SHAPE)
       real px_ta(LDIST_SHAPE,G_nk+1),px_m(LDIST_SHAPE,G_nk+1), th(LDIST_SHAPE,G_nk+1)
       real tt(LDIST_SHAPE,G_nk+1),hu(LDIST_SHAPE,G_nk+1),t8(LDIST_SHAPE,G_nk+1), &
@@ -261,18 +261,16 @@
 !     Obtain HU from HUT1 and physics diag level
 !
       hu(:,:,1:l_nk) = hut1(:,:,1:l_nk)
-      hu(:,:,l_nk+1) = hu(:,:,l_nk) ! Fill the halo
-      call itf_phy_sfcdiag(hu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'QDIAG') 
-      !call glbstat2(hu,'hu','diag',LDIST_DIM,1,l_nk+1,1,l_ni,1,l_nj,l_nk+1,l_nk+1)
+      hu(:,:,l_nk+1) = hu(:,:,l_nk)
+      if (Schm_phyms_L) call itf_phy_sfcdiag(hu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'QDIAG') 
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
 !     Obtain Virtual temperature from TT1 and physics diag level
 !     On diag level there is no hydrometeor.
 !
       vt(:,:,1:l_nk) = tt1(:,:,1:l_nk)
-      w1(:,:)=tt1(:,:,l_nk) ! Fill the halo
-      call itf_phy_sfcdiag(w1,l_minx,l_maxx,l_miny,l_maxy,'TDIAG')
-      !call glbstat2(w1,'w1','tdiag',LDIST_DIM,1,l_nk+1,1,l_ni,1,l_nj,l_nk+1,l_nk+1)
+      w1(:,:)=tt1(:,:,l_nk)
+      if (Schm_phyms_L) call itf_phy_sfcdiag(w1,l_minx,l_maxx,l_miny,l_maxy,'TDIAG')
       ! W1 contain TT at diag levels, we need vt at diag level
       call mfotvt (vt(l_minx,l_miny,l_nk+1),w1,hu(l_minx,l_miny,l_nk+1),l_ninj,1,l_ninj)      
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)      
@@ -315,17 +313,13 @@
          !
          istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(zdt1)'
-         allocate(ffwe(LDIST_SHAPE,nk+1),hyb_we(nk+1))
-         hyb_we(1)=Ver_hyb%t(2)
-         hyb_we(nk)=1.0         
          ! Note: put WE=0 at first thermo level to close the domain
          !       Do not write we for thermo level nk+3/4 since zdt is at surface
          !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
          ffwe(:,:,1 )=0.
          ffwe(:,:,nk)=0.
          do k=2,nk-1
-            hyb_we(k)=Ver_hyb%t(k+1)
-            zd2etad=Ver_hyb%t(k+1)/(1.-Cstv_ptop_8/Cstv_pref_8)
+            zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
             do j=l_miny,l_maxy
             do i=l_minx,l_maxx
                ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
@@ -474,12 +468,8 @@
          enddo
       endif
 
-      if (Level_typ_S(levset) .eq. 'M') then
-!_______________________________________________________________________
-!
-!     4.0   Output 3-D Derived Variables on ETA levels (momentum/thermo)
-!_______________________________________________________________________
-!
+      if (Level_typ_S(levset) .eq. 'M') then  ! Output on model levels
+
 !       Setup the indexing for output 
           kind=Level_kind_ip1
           allocate (indo( min(Level_max(levset),Level_momentum) ))
@@ -498,20 +488,20 @@
               l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
               'GZ  ',prmult_pngz,0.0,kind,G_nk+1, indo, nko_m, nbit(pngz) )
              call ecris_fst2(gzt, &
-              l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+              l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'GZ  ',prmult_pngz,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pngz))
          endif
          if (pnvt.ne.0)then
-            call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+            call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo_t,nko_t, nbit(pnvt) )
          endif
          if (pnth.ne.0) then
-               call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+               call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                     'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pnvt) )               
          endif
 
          if (pntt.ne.0)then            
-            call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+            call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'TT ' ,1.0,pradd_pntt, kind,G_nk+1,indo_t,nko_t, nbit(pntt) )
          endif
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
@@ -534,7 +524,7 @@
              endif
              call ecris_fst2(px_m,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
               'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko_m,nbit(pnpx) )
-             call ecris_fst2(px_ta,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+             call ecris_fst2(px_ta,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'PX  ',prmult_pnpx,0.0,kind,G_nk,indo_t,nko_t,nbit(pnpx) )
          endif
 
@@ -542,7 +532,7 @@
 !        Calculate THETAW TW (t8=TW) (px=PX)
              call mthtaw4 (t8,hu,tt, px_ta,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,G_nk+1,l_ninj)
-             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'TW  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pntw) )
          endif
 
@@ -555,15 +545,15 @@
                 do k= 1,G_nk+1
                  do j= 1,l_nj
                  do i= 1,l_ni
-                    t8(i,j,k) = amin1( t8(i,j,k), 30.)
-                    t8(i,j,k) = amax1( t8(i,j,k), 0. )
+                    t8(i,j,k) = min( t8(i,j,k), 30.)
+                    t8(i,j,k) = max( t8(i,j,k), 0. )
                  enddo
                  enddo
                 enddo
              endif
 
              if (pnes.ne.0) &
-             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
               'ES  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pnes) )
 
              if (pntd.ne.0) then
@@ -575,7 +565,7 @@
                     enddo
                     enddo
                  enddo
-                 call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+                 call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo_t,nko_t,nbit(pntd) )
              endif
          endif
@@ -591,25 +581,25 @@
                 do k= 1,G_nk+1
                   do j= 1,l_nj
                   do i= 1,l_ni
-                     t8(i,j,k)=amin1( t8(i,j,k), 1.0 )
-                     t8(i,j,k)=amax1( t8(i,j,k), 0.  )
+                     t8(i,j,k)=min( t8(i,j,k), 1.0 )
+                     t8(i,j,k)=max( t8(i,j,k), 0.  )
                   enddo
                   enddo
                 enddo
              endif
-             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'HR  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pnhr) )
          endif
 
          if (pnww.ne.0) then
-             call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+             call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'WW  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pnww) )
          endif
 
          if (pnwe.ne.0) then
-             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hyb_we, &
+             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                  'WE  ',1.0,0.0, kind,nk, indo_t, min(nko_t,nk), nbit(pnwe) )
-             deallocate(ffwe,hyb_we)
+             deallocate(ffwe)
          endif
 
          if (pnzz.ne.0) then
@@ -626,16 +616,13 @@
                t8(i,j,G_nk+1) = t8(i,j,G_nk)
             enddo            
             enddo            
-            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
+            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
                     'ZZ  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pnzz) )
          endif
          deallocate(indo,indo_t)
-      else
-!_______________________________________________________________________
-!
-!     5.0    Output 3-D Derived Variables on PRESSURE levels
-!_______________________________________________________________________
-!
+
+      else   ! Output on pressure levels
+
 !       Set kind to 2 for pressure output
         kind=2
 !       Setup the indexing for output 
@@ -676,11 +663,11 @@
 
 !       Calculate GZ,VT (w5=GZ_pres, vt_pres=VT_pres)
 
-        call glbstat2(gzt     ,'gzt','debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
-        call glbstat2(vt      ,'vt' ,'debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
-        call glbstat2(wlnph_ta,'pxt','debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
-        call glbstat2(ttx     ,'ttx','debug',LDIST_DIM,1,nk_under,1,l_ni,1,l_nj,1,nk_under)
-        call glbstat2(htx     ,'htx','debug',LDIST_DIM,1,nk_under,1,l_ni,1,l_nj,1,nk_under)
+!        call glbstat2(gzt     ,'gzt','debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
+!        call glbstat2(vt      ,'vt' ,'debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
+!        call glbstat2(wlnph_ta,'pxt','debug',LDIST_DIM,1,l_nk+1  ,1,l_ni,1,l_nj,1,l_nk+1)
+!        call glbstat2(ttx     ,'ttx','debug',LDIST_DIM,1,nk_under,1,l_ni,1,l_nj,1,nk_under)
+!        call glbstat2(htx     ,'htx','debug',LDIST_DIM,1,nk_under,1,l_ni,1,l_nj,1,nk_under)
         
         call prgzvta( w5, vt_pres, prprlvl, nko, &
                       gzt, vt, wlnph_ta, wlao, &
@@ -742,8 +729,8 @@
                do k=1,nko
                  do j= 1, l_nj
                  do i= 1, l_ni
-                    w5(i,j,k) = amin1( w5(i,j,k), 30.)
-                    w5(i,j,k) = amax1( w5(i,j,k), 0. )
+                    w5(i,j,k) = min( w5(i,j,k), 30.)
+                    w5(i,j,k) = max( w5(i,j,k), 0. )
                  enddo
                  enddo
                enddo
@@ -784,8 +771,8 @@
                do k=1,nko
                   do j= 1, l_nj
                   do i= 1, l_ni
-                     w5(i,j,k) = amin1( w5(i,j,k), 1.0 )
-                     w5(i,j,k) = amax1( w5(i,j,k), 0.  )
+                     w5(i,j,k) = min( w5(i,j,k), 1.0 )
+                     w5(i,j,k) = max( w5(i,j,k), 0.  )
                   enddo
                   enddo
                enddo

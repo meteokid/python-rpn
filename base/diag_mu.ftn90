@@ -1,0 +1,98 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r diag_mu calculate mu: ratio of vertical to gravitational accelerations
+!
+#include "model_macros_f.h"
+!
+      subroutine diag_mu( F_mu, F_q, F_s, &
+                          Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
+!     
+      implicit none
+#include <arch_specific.hf>
+!     
+      integer Minx,Maxx,Miny,Maxy,i0,in,j0,jn,k0,Nk
+      real F_mu(Minx:Maxx,Miny:Maxy,Nk), F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
+      real  F_s(Minx:Maxx,Miny:Maxy)
+!
+!author
+!
+! claude girard 2013
+!
+!revision
+!
+!object
+!       see id section
+!
+!arguments
+!  Name        I/O                 Description
+!----------------------------------------------------------------
+! F_mu         O    - 
+! F_s          I    - log(pi_s/pref)
+! F_q          I    - log(p/pi)
+! i0,in,j0,jn  I    - index over which computation will be made.
+
+#include "cstv.cdk"
+#include "type.cdk"
+#include "ver.cdk"
+!     
+!*
+      integer i,j,k,nij,kq
+      real*8 one, qbar
+      parameter(one=1.d0)
+      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
+!
+!     ---------------------------------------------------------------
+!
+      nij = (in - i0 + 1)*(jn - j0 + 1)
+!
+!
+!$omp parallel private (qbar,xtmp_8,ytmp_8,kq)
+!
+!$omp do
+      do k=1,Nk
+         kq=max(2,k)
+         do j= j0, jn
+         do i= i0, in
+            xtmp_8(i,j) = one + ver_dbdz_8%t(k)*F_s(i,j)
+         enddo
+         enddo
+         call vrec ( ytmp_8, xtmp_8, nij )
+         do j= j0, jn
+         do i= i0, in
+            F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))*ytmp_8(i,j)
+         enddo
+         enddo
+         do j= j0, jn
+         do i= i0, in
+            qbar = Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*(F_q(i,j,kq)*Ver_onezero(k))
+            xtmp_8(i,j) = qbar
+         enddo
+         enddo
+         call vexp ( ytmp_8, xtmp_8, nij )
+         do j= j0, jn
+         do i= i0, in
+            F_mu(i,j,k) = ytmp_8(i,j)*(F_mu(i,j,k)+one)-one
+         enddo
+         enddo
+      enddo
+!$omp enddo
+!      
+!$omp end parallel
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

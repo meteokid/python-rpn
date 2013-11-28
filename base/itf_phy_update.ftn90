@@ -25,6 +25,7 @@
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "glb_ld.cdk"
+#include "vt1.cdk"
 #include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
@@ -70,7 +71,10 @@
          istat = gmm_get(trim(trname_S),minus)
          minus = data3d
       end do
-      
+      istat = gmm_get(gmmk_tt1_s, tt1)
+      call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call pw_update_GPW ()
+ 
    endif APPLY
 !
 !-----------------------------------------------------------------

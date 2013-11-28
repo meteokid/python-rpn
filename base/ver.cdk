@@ -1,4 +1,3 @@
-
 #include "type.cdk"
 
 #if defined (DOC)
@@ -9,30 +8,34 @@
 !                                                                      |
 !  Vertical coordinate parameters                                      |
 !______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Ver_ip1%(t,m)      | ip1      for the hybrid vertical coordinate     |
-!--------------------|-------------------------------------------------|
-! Ver_a_8%(t,m)      | A        for the hybrid vertical coordinate     |
+!                     |                                                |
+! NAME                | DESCRIPTION                                    |
 !----------------------------------------------------------------------|
-! Ver_b_8%(t,m)      | B        for the hybrid vertical coordinate     |
+! Ver_ip1%(t,m)       | ip1      for the hybrid vertical coordinate    |
 !----------------------------------------------------------------------|
-! Ver_z_8%(t,m)      | Coordinate zeta: ln(pistar)                     |
+! Ver_a_8%(t,m)       | A        for the hybrid vertical coordinate    |
 !----------------------------------------------------------------------|
-! Ver_dz_8%(t,m)     |            zeta spacing                         |
+! Ver_b_8%(t,m)       | B        for the hybrid vertical coordinate    |
 !----------------------------------------------------------------------|
-! Ver_idz_8%(t,m)    |    inverse zeta spacing                         |
+! Ver_z_8%(t,m)       | Coordinate zeta: ln(pistar)                    |
 !----------------------------------------------------------------------|
-! Ver_dbdz_8%(t,m)   | vertical derivative of B                        |
+! Ver_dz_8%(t,m)      |            zeta spacing                        |
 !----------------------------------------------------------------------|
-! Ver_fistr_8%(t,m)  | fistar: geopotential basic state                |
-! Ver_wp_8%(t,m)     | weights for averaging                           |
-! Ver_wm_8%(t,m)     | weights for averaging                           |
+! Ver_idz_8%(t,m)     |    inverse zeta spacing                        |
+!----------------------------------------------------------------------|
+! Ver_dbdz_8%(t,m)    | vertical derivative of B                       |
+!----------------------------------------------------------------------|
+! Ver_fistr_8%(t,m)   | fistar: geopotential basic state               |
+! Ver_wp_8%(t,m)      | weights for averaging                          |
+! Ver_wm_8%(t,m)      | weights for averaging                          |
 !----------------------------------------------------------------------|
 ! Ver_std_p_prof%(t,m)| STanDard Pressure PROFile for physics          |
 !----------------------------------------------------------------------|
 ! Ver_table_8         | real*8 table containing vgrid descriptors      |
+!----------------------------------------------------------------------|
+! Ver_bzz_8           | Double vertical averaging on B                 |
+!----------------------------------------------------------------------|
+! Ver_onezro          | Vector with one everywhere but zero at k=1     |
 !-----------------------------------------------------------------------
 !
 #endif
@@ -71,4 +74,8 @@
       common /ver_vi/ Ver_ip1
 !
       real*8, dimension(:,:,:), pointer :: ver_table_8
-      common /ver_p8/ ver_table_8
+      real*8, dimension(:)    , pointer :: Ver_bzz_8
+      common /ver_p8/ ver_table_8,Ver_bzz_8
+!
+      real, dimension(:), pointer :: Ver_onezero
+      common /ver_p/ Ver_onezero

@@ -74,7 +74,6 @@
 !
       real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real, dimension(:,:,:), allocatable :: BsPq, FI, MU
-      real :: onezero(l_nk)
 !
 ! --------------------------------------------------------------------
 !
@@ -110,10 +109,6 @@
       k0t=k0
       if(Schm_opentop_L) k0t=k0-1
       nij = (in - i0 +1)*(jn - j0 +1)
-
-      onezero=1.
-      onezero(1)=0.
-      
 !
 !
 !***********************************************************
@@ -134,13 +129,28 @@
           if (l_north) jnv = jnv+1
       endif
 !
-      call diag_var(BsPq,MU,F_s,F_q,     i0u,inu+1,j0v,jnv+1,k0t,l_nk)
-!
       call diag_fi (FI, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
                     i0u,inu+1,j0v,jnv+1)
 
+      if ( .not.Schm_hydro_L ) then
+          call diag_mu( MU, F_q, F_s, LDIST_DIM, l_nk, &
+                        i0u,inu+1,j0v,jnv+1)
+      endif
+
 !$omp parallel private(km,kq,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
 !$omp w1,w2,w3,w4,w5,qbar)
+!
+!$omp do
+       do k=k0t,l_nk+1
+         kq=max(2,k)
+         do j=j0v,jnv+1
+         do i=i0u,inu+1
+            BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
+            BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq)*Ver_onezero(k)
+         enddo
+         enddo
+      enddo
+!$omp enddo
 !
 !$omp do
       do 100 k=k0,l_nk
@@ -366,11 +376,11 @@
 !           ~~~~~~~~~~~~~~~
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
 !              Compute Nw'
 !              ~~~~~~~~~~~
                F_nw(i,j,k) = - Dcst_grav_8 * ( MU  (i,j,k) &
-                      - Ver_idz_8%t(k) * ( F_q(i,j,k+1) - F_q(i,j,kq)*onezero(k) ) - qbar )
+                      - Ver_idz_8%t(k) * ( F_q(i,j,k+1) - F_q(i,j,kq)*Ver_onezero(k) ) - qbar )
               !Finish computing Nt'
                ~~~~~~~~~~~~~~~~~~~~
                F_nt(i,j,k) = F_nt(i,j,k) - Cstv_invT_8 * qbar

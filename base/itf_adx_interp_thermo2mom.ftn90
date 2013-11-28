@@ -30,22 +30,15 @@
 #include "schm.cdk"
 #include "cstv.cdk"
 
-      integer :: i,j,k, i0,j0,in,jn
+      integer :: i,j,k,km2, i0,j0,in,jn
       real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
       real*8, dimension(:), pointer :: zd_z_8
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
 
       !---------------------------------------------------------------------
       allocate(zd_z_8(l_nk+1))
-      zd_z_8(2:l_nk)=Ver_a_8%t(2:l_nk)
-      if(Schm_Adw_extrap_L)then
-         zd_z_8(1)=Cstv_Ztop_8
-      else
-         ! AFSGAPM NOTE : Zdot is at top Ver_z_8%m(0), however, it was put at first thermo
-         !                level, one keep this if Schm_Adx_extrap_L=.false. to validate.
-         zd_z_8(1)=Ver_a_8%t(1)
-      endif
-      zd_z_8(l_nk+1)=Ver_z_8%m(l_nk+1)
+      zd_z_8(1)=Cstv_Ztop_8
+      zd_z_8(2:l_nk+1)=Ver_z_8%t(1:l_nk)
 
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
 !$omp                  i,j,k,w1,w2,w3,w4,den)
@@ -71,17 +64,21 @@
          w2 = lag3(xx, x2, x1, x3, x4)
          w3 = lag3(xx, x3, x1, x2, x4)
          w4 = lag3(xx, x4, x1, x2, x3)
+         ! zdt=0 is not present in vector but this allow to use this 
+         ! boundary condition anyway.
+         km2=max(1,k-2)
+         if(k.eq.2)w1=0.d0
          do j = j0, jn
             do i = i0, in
                F_fld_m(i,j,k)= &
-                    w1*F_fld_t(i,j,k-2) + w2*F_fld_t(i,j,k-1)  + &
+                    w1*F_fld_t(i,j,km2) + w2*F_fld_t(i,j,k-1)  + &
                     w3*F_fld_t(i,j,k  ) + w4*F_fld_t(i,j,k+1)
             enddo
          enddo
       enddo
 !$omp enddo
 
-      !- Note  F_fld_t(i,j,1) = 0     
+      !- Note zdot at top = 0     
       k = 1
       w2 = (zd_z_8(k)-Ver_z_8%m(k)) / (zd_z_8(k)-zd_z_8(k+1))
 
@@ -93,7 +90,7 @@
       enddo
 !$omp enddo
 
-      !- Note  F_fld_t(i,j,l_nk+1) = 0  
+      !- Note  zdot at surface = 0  
       k = l_nk
       w1 = (Ver_z_8%m(k)-zd_z_8(k+1)) / (zd_z_8(k)-zd_z_8(k+1))
 

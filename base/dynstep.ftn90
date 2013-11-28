@@ -143,6 +143,10 @@
 !
       call nest_gwa ()
 !
+      call pw_update_GPW()
+      call pw_update_UV('P')
+      call pw_update_T ('P')
+
 !     ===================
 !     END OF ONE TIMESTEP
 !     ===================

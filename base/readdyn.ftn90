@@ -91,13 +91,15 @@
 #include "bcsgrds.cdk"
 #include "wil_williamson.cdk"
 
-      integer,external :: bmf_get,get_px,newdate
+      integer,external :: bmf_get,get_px,newdate,samevert
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical initial_data
       integer nvar,i,j,k,kk,err,nbpts,nka_m,nka_t,nkmax,&
-              err_pwuu,err_pwvv,err_pwtt,prdfsum,istat,dat
+              err_pwuu,err_pwvv,err_pwtt,prdfsum,istat,dat,&
+              mustvinterp
+      integer G_nkt, G_nkm,i0,in,j0,jn
       real, allocatable, dimension(:    ) :: rna
       real, allocatable, dimension(:,:  ) :: pres,psu_temp,psv_temp,apsu_temp,apsv_temp
       real, allocatable, dimension(:,:,:) :: u_temp,v_temp, hu_temp, tt_temp, &
@@ -149,11 +151,23 @@
                       hu_temp,tt_temp,gz_temp,ps,topo_temp              , &
                       zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
 
-                             Acql_vertint = .true.
-      if(Acqi_datasp(1)==11) Acql_vertint = .false.
-      if ( Schm_autobar_L )  Acql_vertint = .false.
+      Acql_vertint = .true.
+      if(Acqi_datasp(1)==11)then
+         Acql_vertint = .false.
+         i0=1;in=l_ni;j0=1;jn=l_nj
+         if (Grd_yinyang_L) then
+             i0=1+pil_w
+             in=l_ni-pil_e
+             j0=1+pil_s
+             jn=l_nj-pil_n
+         endif
+         mustvinterp = samevert(za_8,zb_8,nka_m,zat_8,zbt_8,nka_t,&
+                         gz_temp(1,1,nka_t),topo_temp,l_ni,l_nj,i0,in,j0,jn)
+         if (mustvinterp .gt. 0) Acql_vertint = .true.
+      endif
 
       if ( Schm_autobar_L ) then
+           Acql_vertint = .false.
            Ana_zd_L=.true.
            Ana_w_L=.true.
            Ana_q_L = .true.
@@ -227,15 +241,14 @@
          
          do j=1,l_nj
             do i=1,l_ni
-               F_s (i,j) =pps(i,j)-lnpref_8
-               pps(i,j) = F_s (i,j)
+               F_s (i,j)= pps(i,j)-lnpref_8
+               pps (i,j)= F_s(i,j)
             enddo
          enddo
          
       else if (Acql_vertint) then  ! ANALYSIS IS ON ETA/SIG/HYB/ECMWF COORDINATES
          
-         allocate(pres(nbpts,nka_t))
-         allocate(vt_temp(l_ni,l_nj,nkmax))
+         allocate ( pres(nbpts,nka_t), vt_temp(l_ni,l_nj,nkmax) )
          err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
          call handle_error(err,'readdyn','readdyn:get_px')
          if (ana_vt_l) then
@@ -247,21 +260,20 @@
             enddo
          endif
          call adj_ss2topo(pps, topo_temp,pres,gz_temp(1,1,nka_t), &
-              vt_temp,nbpts,nka_t)
-         deallocate(vt_temp)
+                          vt_temp,nbpts,nka_t)
          do j=1,l_nj
             do i=1,l_ni
                F_s(i,j)=log(pps(i,j))-lnpref_8
                pps(i,j)= F_s(i,j)
             enddo
          enddo
-         deallocate(pres)
+         deallocate(pres,vt_temp)
          
       else  !NO INTERPOLATION REQUIRED
          
          do j=1,l_nj
             do i=1,l_ni
-               pps   (i,j) =  ps(i,j)
+               pps(i,j) =  ps(i,j)
                F_s(i,j) = pps(i,j)
             end do
          end do
@@ -276,7 +288,7 @@
          allocate ( srclev_t(l_ni,l_nj,nka_t), dstlev_t(l_ni,l_nj,G_nk) )
          err = get_px (srclev_t,ps ,l_ni*l_nj,zat_8,zbt_8,nka_t,Acqi_datasp(2),.true.)
          call handle_error(err,'readdyn','readdyn:get_px')
-         err = get_px (dstlev_t,pps,l_ni*l_nj,Ver_a_8%t(2),Ver_b_8%t(2),G_nk, &
+         err = get_px (dstlev_t,pps,l_ni*l_nj,Ver_a_8%t,Ver_b_8%t,G_nk, &
                        Ver_code,.true.)
          call handle_error(err,'readdyn','readdyn:get_px')
 
@@ -323,8 +335,6 @@
       if (Acql_vertint) then
          call vte_intvertx3(work,tt_temp,srclev_t,dstlev_t,nbpts, &
               nka_t,G_nk,'VT','cubic')
-         call glbstat2(tt_temp,'tt','temp',1,l_ni,1,l_nj,1,nka_t,1,l_ni,1,l_nj,1,nka_t)
-         call glbstat2(work,'work','temp',1,l_ni,1,l_nj,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
       else
          work(:,:,:)=tt_temp(:,:,:)
       endif
@@ -336,12 +346,8 @@
          istat = gmm_get('TR/'//'HU'//trim(suff_tr),hu,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'readdyn ERROR at gmm_get','TR/'//'HU'//trim(suff_tr)
          call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
-         call glbstat2(tt ,'tt' ,'vt' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
-         call glbstat2(hu ,'hu' ,'hu' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
-         call glbstat2(qh ,'qh' ,'qh' ,LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
          call mfottvh2(tt,F_t,hu,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
               1,l_ni,1,l_nj,.true.)
-         call glbstat2(F_t,'F_t','F_t',LDIST_DIM,1,G_nk,1,l_ni,1,l_nj,1,G_nk)
       endif      
 
       if (ana_zd_L) then
@@ -434,7 +440,7 @@
 
       do k=1,G_nk
          F_u(1:Acqi_niu,1:Acqi_nju,k) = u_temp(1:Acqi_niu,1:Acqi_nju,k)
-         F_v(1:Acqi_niu,1:Acqi_nju,k) = v_temp(1:Acqi_niu,1:Acqi_nju,k)
+         F_v(1:Acqi_niv,1:Acqi_njv,k) = v_temp(1:Acqi_niv,1:Acqi_njv,k)
       end do
 
       Acql_pwuv= .false. ;  Acql_pwtt= .false.

@@ -122,6 +122,10 @@
 !
       call yyg_nest_tracers2('P')
 !
+      call pw_update_UV ('P')
+      call pw_update_T  ('P')
+      call pw_update_GPW()
+!
 !----------------------------------------------------------------------
  1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nest_all)')
 !

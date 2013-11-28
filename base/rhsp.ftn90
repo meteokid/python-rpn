@@ -66,11 +66,10 @@
 #include "lun.cdk"
 #include "grd.cdk"
 !
-      integer i, j, k, km, i0, j0, in, jn, nij
+      integer i, j, k, km, kq, i0, j0, in, jn, nij
       real*8  c1,c2,c3,c4,c5, tdiv, BsPqbarz, fipbarz, &
               wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, &
-              xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj),bbarzz(l_nk)
-      real onezero(l_nk)
+              xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), allocatable :: BsPq, FIp, MU
 
       real*8, parameter :: one=1.d0
@@ -79,9 +78,6 @@
 !
       allocate(BsPq(DIST_SHAPE,l_nk+1), FIp(DIST_SHAPE,l_nk+1), MU(DIST_SHAPE,l_nk))
 !
-      onezero=1.0
-      onezero(1)=0.0
-
 !     Common coefficients       
 !
       c1  = Cstv_Beta_8 * Dcst_rgasd_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )
@@ -91,15 +87,6 @@
       c5  = one
 !
       if (schm_autobar_L)    c5 = 0.d0
-
-      bbarzz(1) = Ver_wp_8%m(1)*(Ver_wp_8%t(1)*Ver_b_8%m(2)  &
-                                +Ver_wm_8%t(1)*Ver_b_8%m(1))
-      do k=2,G_nk
-         bbarzz(k) = Ver_wp_8%m(k)*(Ver_wp_8%t(k  )*Ver_b_8%m(k+1)  &
-                                   +Ver_wm_8%t(k  )*Ver_b_8%m(k  )) &
-                    +Ver_wm_8%m(k)*(Ver_wp_8%t(k-1)*Ver_b_8%m(k  )  &
-                                   +Ver_wm_8%t(k-1)*Ver_b_8%m(k-1))
-      enddo
 !
 !     Exchanging halos for derivatives & interpolation 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -118,15 +105,30 @@
 !
       nij = l_ni*l_nj
 !
-      call diag_var(BsPq, MU, F_s, F_q, 1,l_ni+1,1,l_nj+1,1,l_nk)
-!
       call diag_fi (FIp, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
                     1,l_ni+1,1,l_nj+1)
 !
-
-!$omp parallel private(i,j,i0,j0,jn,in,km,barz,barzp, &
+      if (.not. Schm_hydro_L) then
+         call diag_mu(MU, F_q, F_s, LDIST_DIM, l_nk, &
+                    1,l_ni+1,1,l_nj+1)
+      endif
+!
+!$omp parallel private(i,j,i0,j0,jn,in,km,kq,barz,barzp, &
 !$omp     BsPqbarz,fipbarz,tdiv,wk1,wk2,xtmp_8,ytmp_8)
 !
+!
+!$omp do
+       do k=1,l_nk+1
+         kq=max(2,k)
+         do j=1,l_nj+1
+         do i=1,l_ni+1
+            BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
+            BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq)*Ver_onezero(k)
+         enddo
+         enddo
+      enddo
+!$omp enddo
+
 !$omp do 
       do 1000 k = 1,l_nk 
       km=max(k-1,1)
@@ -327,10 +329,10 @@
          tdiv = geomg_invcy2_8(j) * ( &
                 (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDX_8(i) &
               + (F_v (i,j,k)-F_v (i,j-1,k))*geomg_invDY_8(j) )&
-              + (F_zd(i,j,k)-onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
+              + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
               + Ver_wp_8%m(k) * F_zd(i,j,k) &
-              + Ver_wm_8%m(k) * onezero(k) * F_zd(i,j,km)
-         F_orc (i,j,k) = Cstv_invT_8 * ( c5*bbarzz(k)*F_s(i,j) + ytmp_8(i,j) ) &
+              + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+         F_orc (i,j,k) = Cstv_invT_8 * ( c5*Ver_bzz_8(k)*F_s(i,j) + ytmp_8(i,j) ) &
                        - Cstv_Beta_8 * tdiv   
       end do
       end do

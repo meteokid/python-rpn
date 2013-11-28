@@ -86,7 +86,6 @@
       Hzd_lnr = 0.
 
       Schm_trapeze_L=.false.
-      Schm_Adw_extrap_L=.true.
       Schm_phyms_L = .false.
 
       G_halox=3

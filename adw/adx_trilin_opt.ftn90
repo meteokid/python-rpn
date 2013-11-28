@@ -67,20 +67,10 @@ subroutine adx_trilin_opt4(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
 
    else !IF_NOSETINT
 
-      if(Adx_extrap_L)then
-         p_z00_8 = adx_verZ_8%m(0)
-      else
-         p_z00_8 = adx_verZ_8%m(1)
-      endif
+      p_z00_8 = adx_verZ_8%m(0)
       p_lcz   => adx_lcz%m
       p_bsz_8 => adx_bsz_8%m      
       if(adx_superwinds_L)then
-         if(Adx_extrap_L)then
-            p_z00_8 = adx_verZ_8%m(0)
-         else
-            ! level is a 3/4 to validate
-            p_z00_8 = 0.5d0*( adx_verZ_8%m(1)+ adx_verZ_8%m(0))
-         endif
          p_lcz   => adx_lcz%s
          p_bsz_8 => adx_bsz_8%s
       endif

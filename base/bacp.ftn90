@@ -61,7 +61,6 @@
       real*8, dimension(:,:,:), allocatable :: Pbar
       real  , dimension(:,:,:), allocatable :: GP
       real*8, parameter :: zero=0.d0, one=1.d0
-      real onezero(l_nk+1)
 !     __________________________________________________________________
 !
       allocate (Pbar(DIST_SHAPE,Nk+1), GP(DIST_SHAPE,Nk+1))
@@ -75,9 +74,6 @@
 
       k0t=k0
       if(Schm_opentop_L) k0t=k0-1
-
-      onezero=1.
-      onezero(1)=0.
 
       do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n 
@@ -184,7 +180,7 @@
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k+1) = yyy * F_q(i,j,kq)*onezero(k) &
+               F_q(i,j,k+1) = yyy * F_q(i,j,kq)*Ver_onezero(k) &
                             - xxx * ( F_rw(i,j,k) - F_nw(i,j,k) &
                                   - Cstv_invT_8 *F_w(i,j,k)  )
             end do
@@ -230,7 +226,7 @@
          do k=k0t,l_nk-1
             xxx=Ver_gokt2RT_8*Ver_idz_8%t(k)
             yyy=Ver_gokt2RT_8*Ver_epsilon_8
-            zzz=Ver_b_8%t(k+1)*Cstv_invT_8
+            zzz=Ver_b_8%t(k)*Cstv_invT_8
             if(Schm_autobar_L) zzz=0.d0
             do j= j0, jn 
             do i= i0, in 
@@ -249,7 +245,7 @@
                kq=max(k,2)
                do j= j0, jn 
                do i= i0, in 
-                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
+                  qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
                   F_zd(i,j,k)=F_zd(i,j,k)-Cstv_invT_8*qbar
                enddo
                enddo
@@ -274,7 +270,7 @@
          if (.not. Schm_hydro_L) then
             do j= j0, jn 
             do i= i0, in          
-               GP(i,j,k)=GP(i,j,k)-Cstv_RTstr_8*F_q(i,j,kq)*onezero(k)       
+               GP(i,j,k)=GP(i,j,k)-Cstv_RTstr_8*F_q(i,j,kq)*Ver_onezero(k)       
             enddo
             enddo
          endif
@@ -297,7 +293,7 @@
             if(.not.Schm_hydro_L) then
             do j= j0, jn
             do i= i0, in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*onezero(k))
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
                ytmp_8(i,j)=-qbar
             enddo
             enddo

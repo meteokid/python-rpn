@@ -81,7 +81,7 @@
       istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(wt1)'
 
-      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
+      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
 !     
 !**************************************
 !  3. Horizontal diffusiion on theta  *
@@ -136,7 +136,7 @@
 
       if ( switch_on_psadj ) call psadj
 
-      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk+1 )
+      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
 
       if (pwupdate .or. switch_on_psadj ) call pw_update_GPW
       if (pwupdate .or. switch_on_eqspng) then

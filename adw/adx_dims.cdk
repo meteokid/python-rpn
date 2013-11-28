@@ -28,9 +28,6 @@
       logical :: adx_is_period_y  !true if model is periodic in Y
       logical :: adx_trapeze_L    !true to get trapezoidal wind average 
       logical :: adx_superwinds_L !true to get super winds
-      logical :: adx_extrap_L     !true to extrapolate traj at top and sfc
-                                  !and put zdot at top and last thermo
-                                  !thermo level at surface
 
       integer :: adx_mhalox, adx_mhaloy !Model x/y halo size
       integer :: adx_maxcfl             !Max CFL defined by user
@@ -75,7 +72,6 @@
       common /adx_dims_l/ adx_is_period_y
       common /adx_dims_l/ adx_trapeze_L
       common /adx_dims_l/ adx_superwinds_L
-      common /adx_dims_l/ adx_extrap_L
 
       common /adx_dims_i/ adx_mhalox, adx_mhaloy
       common /adx_dims_i/ adx_maxcfl            

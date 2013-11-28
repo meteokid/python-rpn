@@ -12,59 +12,24 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-!**s/r gemdm - Main entry point for the GEMDM component
-!
-      subroutine gemdm
+!/**
+      subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, F_var_S)
       implicit none
+
+   !@objective
+   !@arguments
+      character*(*) F_var_S
+      integer  minx, maxx, miny, maxy
+      real F_dest(minx:maxx, miny:maxy)
+   !@author  Michel Desgagne  -  Summer 2013
+   !**/
 !
-!     ---------------------------------------------------------------
+!-----------------------------------------------------------------
 !
-! Initialize: Domain, MPI, processor topology and the model component
-
-      call init_component ('MOD')
-
-! Establish model configuration, domain decomposition and main memory
-
-      call set_world_view
-
-! Initialize geometry of the model
-
-      call set_geom
-
-! Initialize the ensemble prevision system
-
-      call itf_ens_init
-
-! Initialize the physics parameterization package
-
-      call itf_phy_init
-
-! Initialize tracers
-
-      call tracers
-
-! Read restart if present
-
-      call rdrstrt
-
-! Setup commons
-
-      call set_cn1
-
-! Initialize commons for output control
-
-      call set_sor
-
-! Run GEM
-
-      call gem_ctrl
-
-! Terminate
-
-      call stop_world_view
+      call phy_unfold (F_dest, F_var_S, 'P', 1, 1, &
+                       minx, maxx, miny, maxy, 1)  
 !
-!     ---------------------------------------------------------------
+!-----------------------------------------------------------------
 !
       return
-      end
+      end subroutine itf_phy_sfcdiag

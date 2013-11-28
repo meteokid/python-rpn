@@ -20,7 +20,7 @@
 !
       subroutine set_zeta2( F_hybuser, Nk )
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels, &
-           VGD_OK,VGD_ERROR
+           VGD_OK,VGD_ERROR,vgd_print
       use vgrid_wb, only: vgrid_wb_put
    !     
       implicit none
@@ -67,9 +67,9 @@
 !
 !               - - - - - - - - - Ver_z_8%m(n)
 !
-!               ================= Ver_a_8%t(n+1)
-!
-!               sssssssssssssssss Cstv_zsrf_8,Ver_z_8%t(n)
+!               ================= Ver_a_8%t(n) This level goes to the surface if no phy
+!               
+!               sssssssssssssssss Cstv_zsrf_8,Ver_z_8%t(n),Ver_a_8%t(n+1)
 !
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LAYERS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -124,19 +124,16 @@
 !
       type(vgrid_descriptor) :: vcoord
       integer k,istat,options
-      integer, dimension(:), pointer :: ip1m=>null(),ip1t=>null()
-      real, dimension(:), pointer :: hybm_free=>null(),hybt_free=>null(),std_p_prof=>null()
-      real :: hybm(0:G_nk+1),hybt(0:G_nk+2)
-      real*8 zero, half, one, two
-      parameter(zero=0.d0,half=0.5d0,one=1.d0,two=2.d0)
-      character*8 dumc
+      real, dimension(:), pointer :: std_p_prof=>null()
+      real*8 half, one
+      parameter(half=0.5d0,one=1.d0)
 !     __________________________________________________________________
 !
-      allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+2), &
-           Ver_std_p_prof%m(G_nk+1),Ver_std_p_prof%t(G_nk+2), &
-                  Ver_ip1%m(G_nk+1),       Ver_ip1%t(G_nk+2), &
-                  Ver_a_8%m(G_nk+1),       Ver_a_8%t(G_nk+2), &
-                  Ver_b_8%m(G_nk+1),       Ver_b_8%t(G_nk+2), &
+      allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &                 
+           Ver_std_p_prof%m(G_nk+1),Ver_std_p_prof%t(G_nk+1), &
+                  Ver_ip1%m(G_nk+1),       Ver_ip1%t(G_nk+1), &
+                  Ver_a_8%m(G_nk+1),       Ver_a_8%t(G_nk+1), &
+                  Ver_b_8%m(G_nk+1),       Ver_b_8%t(G_nk+1), &
                   Ver_z_8%m(G_nk+1),       Ver_z_8%t(G_nk  ), &
                  Ver_dz_8%m(G_nk  ),      Ver_dz_8%t(G_nk  ), &
                 Ver_idz_8%m(G_nk  ),     Ver_idz_8%t(G_nk  ), &
@@ -144,7 +141,8 @@
               Ver_fistr_8%m(G_nk  ),   Ver_fistr_8%t(G_nk  ), &
                  Ver_wp_8%m(G_nk  ),      Ver_wp_8%t(G_nk  ), &
                  Ver_wm_8%m(G_nk  ),      Ver_wm_8%t(G_nk  ), &
-                                                  stat=istat)
+                  Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
+                                                stat=istat)
       call check_alloc(istat,'set_zeta',1)
 !
       Cstv_RTstr_8= Dcst_rgasd_8*Cstv_Tstr_8
@@ -154,45 +152,49 @@
 !
       call handle_error_l(Cstv_pref_8.eq.100000.d0, 'set_zeta','Cstv_pref_8 must equal 100000.d0')
 !
-      Cstv_Zsrf_8 = log(Cstv_pref_8)
-      Cstv_Ztop_8 = log(Cstv_ptop_8)
-!
       ! Construct vertical coordinate
       istat = vgd_new (vcoord, kind=5, version=Level_version, hyb=F_hybuser, &
                      rcoef1=Grd_rcoef(1),rcoef2=Grd_rcoef(2) , &
                      ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8,stdout_unit=Lun_out)
+
+      if (Lun_debug_L) istat = vgd_print(vcoord)
+
+!      
+      Cstv_Zsrf_8 = log(Cstv_pref_8)
+      Cstv_Ztop_8 = log(Cstv_ptop_8)
+!     
       call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
 
       ! Retrieve information required to fill model arrays
-      Ver_a_8%m=>null();Ver_b_8%m=>null();Ver_a_8%t=>null();Ver_b_8%t=>null()
       if (vgd_get(vcoord,'CA_M - vertical A coefficient (m)',Ver_a_8%m  )/= VGD_OK) istat = VGD_ERROR
       if (vgd_get(vcoord,'CB_M - vertical B coefficient (m)',Ver_b_8%m  )/= VGD_OK) istat = VGD_ERROR
       if (vgd_get(vcoord,'CA_T - vertical A coefficient (t)',Ver_a_8%t  )/= VGD_OK) istat = VGD_ERROR
       if (vgd_get(vcoord,'CB_T - vertical B coefficient (t)',Ver_b_8%t  )/= VGD_OK) istat = VGD_ERROR
-      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,hybm_free  )/= VGD_OK) istat = VGD_ERROR
-      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,hybt_free  )/= VGD_OK) istat = VGD_ERROR
-      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,ip1m       )/= VGD_OK) istat = VGD_ERROR
-      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,ip1t       )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)'   ,Ver_hyb%m  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)'   ,Ver_hyb%t  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VIPM - level ip1 list (m)'        ,Ver_ip1%m  )/= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VIPT - level ip1 list (t)'        ,Ver_ip1%t  )/= VGD_OK) istat = VGD_ERROR
       call handle_error_l(istat==VGD_OK,'set_zeta','retrieving coordinate info')
 
-      istat = vgd_levels(vcoord,ip1m,std_p_prof,100000.,in_log=.false.) 
+      istat = vgd_levels(vcoord,Ver_ip1%m,std_p_prof,100000.,in_log=.false.) 
       call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for m levels')
       Ver_std_p_prof%m=std_p_prof
 
       deallocate(std_p_prof)
-      istat = vgd_levels(vcoord,ip1t,std_p_prof,100000.,in_log=.false.)
+      istat = vgd_levels(vcoord,Ver_ip1%t,std_p_prof,100000.,in_log=.false.)
+      
       call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
       Ver_std_p_prof%t=std_p_prof
 
       ! Add outside level at top boundary and fill hybrid coordinate values
-      hybm(1:size(hybm_free)) = hybm_free
-      hybt(1:size(hybt_free)) = hybt_free
-      hybm(0) = real(Cstv_ptop_8/Cstv_pref_8)
-      hybt(0) = hybm(0)
-      Ver_hyb%m(1:G_nk+1) = hybm(1:G_nk+1)
-      Ver_hyb%t(1:G_nk+2) = hybt(1:G_nk+2)
-      Ver_hyb_top = hybm(0)
-      if (Schm_autobar_L) Ver_hyb%t(1) = hybt(0)
+
+      !hybm(0) = real(Cstv_ptop_8/Cstv_pref_8)
+      if (Schm_autobar_L)then
+         print*,'A revoir pour enlevement de top thermo level'
+         call handle_error(-1,'set_zeta','A revoir pour enlevement de top thermo level')
+         !Ver_hyb%t(1) = hybt(0)
+      endif
+      
 !
 !     -------------
 !     Now define Z:
@@ -203,8 +205,8 @@
       enddo
 !
       do k = 1, G_nk
-         Ver_z_8%t(k) = Ver_a_8%t(k+1)
-      enddo
+         Ver_z_8%t(k) = Ver_a_8%t(k)
+      enddo      
 !
 !     --------------
 !     Compute fistar
@@ -212,31 +214,20 @@
 !     
       do k = 1, G_nk
          Ver_fistr_8%m(k)=-Cstv_RTstr_8*(Ver_z_8%m(k)-Cstv_Zsrf_8)
+         ! Ver_fistr_8%t is not used I think, remove it? (afsgapm)
          Ver_fistr_8%t(k)=-Cstv_RTstr_8*(Ver_z_8%t(k)-Cstv_Zsrf_8)
       enddo
 !
-      
-      if(Schm_adw_extrap_L)then
-         ! Once the Ver_a_8%t are shifted, replace the above Ver_z_8%t(k) with Ver_a_8%t(k)
-         ! and remove the following line
-         Ver_z_8%t(G_nk)=Cstv_Zsrf_8
-      endif
-
+      Ver_z_8%t(G_nk)=Cstv_Zsrf_8
+!
 !     ----------------------
 !     Compute dZ, 1/dZ, dBdZ
 !     ----------------------
 !
       Ver_dz_8%m(1)      = Ver_z_8%t(1)   - Cstv_Ztop_8
-      if(Schm_adw_extrap_L)then
-         do k=2,G_nk
-            Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
-         enddo
-      else
-         do k=2,G_nk-1
-            Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
-         enddo
-         Ver_dz_8%m(G_nk)   = Cstv_Zsrf_8    - Ver_z_8%t(G_nk-1)         
-      endif
+      do k=2,G_nk
+         Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
+      enddo
 !
       do k=1,G_nk
           Ver_idz_8%m(k) = one/Ver_dz_8%m(k)
@@ -276,26 +267,40 @@
       Ver_wp_8%t(G_nk) = 1.d0
       Ver_wm_8%t(G_nk) = 0.d0
 !
-!     Encode Ver_ip1 for OUTPUT
+!     -------------------------------------------------------
+!     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
+!     -------------------------------------------------------
 !
-      Ver_ip1%m(1:G_nk+1) = ip1m(1:G_nk+1)
-      Ver_ip1%t(1:G_nk+1) = ip1t(1:G_nk+1)
-      Ver_ip1%t(G_nk+2)   = Ver_ip1%m(G_nk+1)
+      Ver_bzz_8(1) = Ver_wp_8%m(1)*(Ver_wp_8%t(1)*Ver_b_8%m(2)  &
+                    +Ver_wm_8%t(1)*Ver_b_8%m(1))
+      do k=2,G_nk
+         Ver_bzz_8(k) = Ver_wp_8%m(k)*(Ver_wp_8%t(k  )*Ver_b_8%m(k+1)  &
+              +Ver_wm_8%t(k  )*Ver_b_8%m(k  )) &
+              +Ver_wm_8%m(k)*(Ver_wp_8%t(k-1)*Ver_b_8%m(k  )  &
+              +Ver_wm_8%t(k-1)*Ver_b_8%m(k-1))
+      enddo
+!
+!     -------------------------------------------------------
+!     Initialize Ver_onezero
+!     -------------------------------------------------------
+!
+      Ver_onezero=1.
+      Ver_onezero(1)=0.
 !
 !     ----------------------------------------------------------
 !     Put last thermo a and b at surface if there is non physics
 !     ----------------------------------------------------------
 !
       if(.not.Schm_phyms_L)then
-         Ver_a_8%t(G_nk+1)=Cstv_Zsrf_8
-         Ver_b_8%t(G_nk+1)=1.d0
+         Ver_a_8%t(G_nk)=Cstv_Zsrf_8
+         Ver_b_8%t(G_nk)=1.d0
       endif
 !
 !     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------
-      istat = vgrid_wb_put('ref-m',vcoord,ip1m)
-      istat = vgrid_wb_put('ref-t',vcoord,ip1t)
+      istat = vgrid_wb_put('ref-m',vcoord,Ver_ip1%m)
+      istat = vgrid_wb_put('ref-t',vcoord,Ver_ip1%t)
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
 
@@ -311,6 +316,8 @@
       istat= wb_put('model/Vgrid/ptop'     ,Cstv_ptop_8    ,options)
       istat= wb_put('model/Vgrid/pref'     ,Cstv_pref_8    ,options)
       istat= wb_put('model/Vgrid/vcode'    ,Ver_code       ,options)
+!
+      if (Lun_debug_L) call prgenab()
 !     __________________________________________________________________
 !
       return

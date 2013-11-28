@@ -65,8 +65,8 @@
       do k=1,G_nk
          print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
       enddo 
-      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),k=1,G_nk+2'
-      do k=1,G_nk+2
+      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),k=1,G_nk+1'
+      do k=1,G_nk+1
          print *,k,Ver_a_8%t(k),Ver_b_8%t(k)
       enddo 
       print *,'prgenab Ver_z_8%t(k),Ver_fistr_8%t(k),k=1,G_nk'
@@ -81,11 +81,10 @@
       do k=1,G_nk
          print *,k,Ver_wp_8%t(k),Ver_wm_8%t(k)
       enddo 
-      print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+2 for Output Levels'
+      print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+1 for Output Levels'
       do k=1,G_nk+1
          print *,k,Ver_hyb%m(k),Ver_hyb%t(k)
       enddo 
-      print *,G_nk+2,'            ',Ver_hyb%t(G_nk+2)
       endif
 
       return

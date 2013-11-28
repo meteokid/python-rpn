@@ -139,7 +139,6 @@
       namelist /gem_cfgs/ Schm_Topo_L      
       namelist /gem_cfgs/ Schm_trapeze_L
       namelist /gem_cfgs/ Schm_superwinds_L
-      namelist /gem_cfgs/ Schm_Adw_extrap_L
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
@@ -265,7 +264,6 @@
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_trapeze_L
       namelist /gem_cfgs_p/ Schm_superwinds_L
-      namelist /gem_cfgs_p/ Schm_Adw_extrap_L
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_xwvt3
 !Sol

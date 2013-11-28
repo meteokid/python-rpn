@@ -82,7 +82,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    logical,parameter :: DO_UV     = .true.
    real,   parameter :: DTH_1     = 1.
 
-   integer :: i, j, k, iter, ioff,kex
+   integer :: i, j, k, iter, ioff
    integer :: i0,in,j0,jn
    real    :: dth
    real, dimension(F_ni,F_nj,F_nk) :: u_d,v_d,w_d
@@ -98,15 +98,8 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 
    dth  = adx_dt_8/2.
 
-   if(adx_extrap_L)then
-      kex=1
-      ztop_bound=adx_verZ_8%m(0)
-      zbot_bound=adx_verZ_8%m(F_nk+1)
-   else    
-      kex=0
-      ztop_bound=adx_verZ_8%m(1)
-      zbot_bound=adx_verZ_8%m(F_nk)
-   endif
+   ztop_bound=adx_verZ_8%m(0)
+   zbot_bound=adx_verZ_8%m(F_nk+1)
 
    call adx_get_ij0n (i0,in,j0,jn)
 
@@ -173,7 +166,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 !$omp parallel
       if(adx_trapeze_L) then
 !$omp do
-         do k = max(2-kex,k0),F_nk-1+kex
+         do k = max(1,k0),F_nk
             do j = j0,jn
                do i = i0,in
                   F_zth(i,j,k) = adx_verZ_8%m(k) - (w_d(i,j,k)+F_wa(i,j,k))*dth
@@ -184,7 +177,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 !$omp enddo
       else ! mid-point rule !
 !$omp do
-         do k = max(2-kex,k0),F_nk-1+kex
+         do k = max(1,k0),F_nk
             do j = j0,jn
                do i = i0,in
                   F_zth(i,j,k) = adx_verZ_8%m(k) - 2.D0*dth*w_d(i,j,k)
@@ -214,37 +207,17 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
       endif
 
 !$omp parallel
-      if(Adx_extrap_L)then
 !$omp do
-         do k = k0,F_nk
-            do j = j0,jn
-            do i = i0,in
-               F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
-               F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
-               F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
-            enddo
-            enddo
+      do k = k0,F_nk
+         do j = j0,jn
+         do i = i0,in
+            F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
+            F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
+            F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
          enddo
-!$omp enddo
-      else
-!$omp do
-         do k = k0,F_nk
-            if     (k.eq.1) then
-               F_pz(i0:in,j0:jn, k) = ztop_bound
-            elseif (k.eq.F_nk) then
-               F_pz(i0:in,j0:jn, k) = zbot_bound
-            else
-               do j = j0,jn
-               do i = i0,in
-                  F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
-                  F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
-                  F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
-               enddo
-               enddo
-            endif
          enddo
+      enddo
 !$omp enddo
-      endif
 !$omp end parallel
    endif
 

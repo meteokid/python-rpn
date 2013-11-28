@@ -22,7 +22,7 @@
       integer DIST_DIM, Nk
       real    F_ugwdt1(DIST_SHAPE,Nk), F_vgwdt1(DIST_SHAPE,Nk)
       real    F_difut1(DIST_SHAPE,Nk), F_difvt1(DIST_SHAPE,Nk)
-      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk+1)
+      real    F_ut1(DIST_SHAPE,Nk), F_vt1(DIST_SHAPE,Nk), F_tt1(DIST_SHAPE,Nk)
 !
 !author 
 !     Lubos Spacek - rpn - apr 2005
@@ -77,7 +77,7 @@
 !
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
-      call ens_marfield_cg (mcsph1,E_nk+1)
+      call ens_marfield_cg (mcsph1,E_nk)
 
       if (.not.Ens_skeb_conf) then
          return
@@ -88,13 +88,13 @@
       allocate( dsp_gwd(LDIST_SHAPE,E_nk))
       allocate( dvrg(LDIST_SHAPE,E_nk))
 
-      call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_vt1,LDIST_DIM,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-      call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_nj,E_nk, &
+      call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       call rpn_comm_xch_halo (F_ugwdt1,LDIST_DIM,l_ni,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0) 
@@ -185,7 +185,7 @@
       endif
 
       if(Ens_skeb_alpt/=0.0)then
-         F_tt1(1:l_ni,1:l_nj,2:E_nk+1)=F_tt1(1:l_ni,1:l_nj,2:E_nk+1)+&
+         F_tt1(1:l_ni,1:l_nj,1:E_nk)=F_tt1(1:l_ni,1:l_nj,1:E_nk)+&
          Ens_skeb_alpt*cpdi* &
          dsp_local(1:l_ni,1:l_nj,:)*mcsph1(1:l_ni,1:l_nj,1:E_nk)
       endif

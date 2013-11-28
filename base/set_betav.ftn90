@@ -44,7 +44,8 @@
       integer i,j,k,i0,in,j0,jn
 
       zblen_max=Ver_a_8%t(l_nk+1)*(1.-Zblen_hmin/(287.*290.))
-      zblen_top=ver_a_8%t(1)
+      ! Pour valider (mettre a Cstv_ztop_8 autrement?)
+      zblen_top=0.5d0*(Ver_a_8%m(1)+Cstv_ztop_8)
       fact=1.d0
       if(Theo_case_S .eq. 'MTN_SCHAR' ) then
          fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(Dcst_rayt_8*Dcst_pi_8/180.))
@@ -66,7 +67,7 @@
                work2=zblen_max-zblen_top
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_m(i,j,k)=work1*work1*min(1.d0,fact)
-               work1=zblen_max-(Ver_a_8%t(k+1)+Ver_b_8%t(k+1)*F_s(i,j))
+               work1=zblen_max-(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_t(i,j,k)=work1*work1*min(1.d0,fact)
             enddo

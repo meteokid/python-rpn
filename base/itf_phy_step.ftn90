@@ -94,11 +94,6 @@
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
-      call pw_shuffle
-      call pw_update_UV
-      call pw_update_T
-      call pw_update_GPW
-
       !call pw_glbstat('DEBUG')
 
       if (.not.init_L) then
@@ -129,6 +124,8 @@
       err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
                        F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
                        Path_phy_S,geofilename_S)
+
+      call handle_error(err,'itf_phy_step','Problem with phy_input') 
 
       call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
 

@@ -161,9 +161,9 @@
 !           identify under ground grid point
 ! 
                if ( abs( wlao(i,j)*180./Dcst_pi_8 ) .ge. 49. ) then
-                   ttx(i,j,k) = vt(i,j,G_nk+2) +       .0005 * ttx(i,j,k)
+                   ttx(i,j,k) = vt(i,j,Nk) +       .0005 * ttx(i,j,k)
                else
-                   ttx(i,j,k) = vt(i,j,G_nk+2) + Dcst_stlo_8 * ttx(i,j,k)
+                   ttx(i,j,k) = vt(i,j,Nk) + Dcst_stlo_8 * ttx(i,j,k)
                endif
                w2(i,j,k) = 1.0
 

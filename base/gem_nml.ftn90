@@ -91,7 +91,6 @@
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
       Schm_superwinds_L  = .true.
-      Schm_Adw_extrap_L= .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_wload_L    = .true.
@@ -143,8 +142,8 @@
       Eigv_parity_L = .false.
       Hzd_type_S = "NIL"
       Hzd_difva_L= .false.
-      Hzd_pwr        = -1
       Hzd_prof_S     = "NIL"
+      Hzd_pwr        = -1
       Hzd_lnr        = -1.
       Hzd_pwr_theta  = -1
       Hzd_lnr_theta  = -1.
@@ -224,7 +223,6 @@
       Grdc_end_S  = ''
       Grdc_initphy_L = .false.
       Grdc_nbits = 32
-      Grdc_trnm_S= '@#$%'
 !
       stat_liste = ''
 !

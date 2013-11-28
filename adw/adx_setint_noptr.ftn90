@@ -59,14 +59,7 @@ subroutine adx_setint_lin_noptr2 (F_n,                     &
    integer :: ii, jj, kk, ij, i, j, k, n, cfl, err
    real*8  :: prd_8, prdt_8, p_z00_8
    !---------------------------------------------------------------------
-   if(adx_extrap_L)then
-      p_z00_8 = adx_verZ_8%m(0)
-      if(adx_superwinds_L)p_z00_8 = adx_verZ_8%m(0)
-   else
-      p_z00_8 = adx_verZ_8%m(1)
-      ! The following is the level at 3/4, to validate
-      if(adx_superwinds_L)p_z00_8 = 0.5d0*( adx_verZ_8%m(1)+ adx_verZ_8%m(0))
-   endif
+   p_z00_8 = adx_verZ_8%m(0)
 
 !$omp parallel private(n,prd_8,ii,prdt_8,jj,kk,ij)
 !$omp do
@@ -177,14 +170,7 @@ subroutine adx_setint_lin_noptr1(F_n, &
    integer :: ii, jj, kk, ij, i, j, k, n
    real*8  :: prd_8, prdt_8, p_z00_8
    !---------------------------------------------------------------------
-   if(adx_extrap_L)then
-      p_z00_8 = adx_verZ_8%m(0)
-      if(adx_superwinds_L)p_z00_8 = adx_verZ_8%m(0)
-   else
-      p_z00_8 = adx_verZ_8%m(1)
-      ! The following is the level at 3/4, to validate
-      if(adx_superwinds_L)p_z00_8 = 0.5d0*(adx_verZ_8%m(1)+adx_verZ_8%m(0))
-   endif
+   p_z00_8 = adx_verZ_8%m(0)
 
 !$omp parallel private(n,prd_8,ii,prdt_8,jj,kk,ij)
 !$omp do

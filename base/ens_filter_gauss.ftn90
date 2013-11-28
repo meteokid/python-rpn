@@ -66,7 +66,7 @@
       real*8  dpi, aaa2, bfact, lambda, sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
-      real  , dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk+1)  :: dsp_local
+      real  , dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)  :: dsp_local
       real*8, dimension(:),     allocatable  :: freqy
       real*8, dimension(:,:),   allocatable  :: freqx
       real*8, dimension(:,:,:), allocatable  :: psi_local,work_local,ffx_local
