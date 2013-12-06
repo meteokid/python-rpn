@@ -1,2 +1,3 @@
 MAKE = make
+CCNAME=unix
 

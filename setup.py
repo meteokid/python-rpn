@@ -6,7 +6,7 @@ import rpn_version
 
 myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301','Linux_x86-64/intel13sp1']
 #myrmnlib = ['PyFTN_helpers','rmnshared_014_rc2']
-myrmnlib = ['rmnshared_014_rc2',]
+myrmnlib = [os.getenv('RMNLIBSHARED','rmnshared_014_rc2'),]
 
 architecture = os.getenv('EC_ARCH')
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
