@@ -39,7 +39,7 @@ all: versionfile
 	for i in $(COMPONENTS); \
 	do cd $$i ; $(MAKE) all ; cd .. ;\
 	done ;\
-	python setup.py build --compiler=$(CCNAME) 
+	LDFLAGS=$(LDFLAGS) python setup.py build --compiler=$(CCNAME)
 	#python setup.py build --compiler=intel
 	#CC=$(CC) CFLAGS=-I${HOME}/include python setup.py build
 	# other flags: LDFLAGS, INCLUDES, LIBS

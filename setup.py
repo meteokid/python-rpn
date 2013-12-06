@@ -22,13 +22,13 @@ for mypath in eclibpath.split():
         eclibsharedpath = mypath
 
 if not architecture in myecarch:
-    print("WARNING: EC_ARCH should be "+myecarch+" and is: "+architecture)
+    print("WARNING: EC_ARCH should be "+' or '.join(myecarch)+" and is: "+architecture)
     #TODO: stop
 if not eclibsharedpath:
     print("WARNING: Could not find LIB PATH for "+str(myrmnlib))
     #TODO: stop
 
-runtime_libs=['-Wl,-rpath,'+eclibsharedpath]
+runtime_libs=[os.getenv('LDFLAGS',''),'-Wl,-rpath,'+eclibsharedpath]
 SharedLd=distutils.sysconfig.get_config_vars('LDSHARED')
 SharedLd=string.split(SharedLd[0])
 

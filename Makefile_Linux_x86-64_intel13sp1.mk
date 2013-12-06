@@ -2,6 +2,7 @@ MAKE = make
 PYARCH = linux-x86_64-2.6
 CCNAME = intel
 CCOPT  = -Wtrigraphs -fpic
+LDFLAGS=-static-intel
 
 # $CC ${SourceFile} $CC_options ${CFLAGS} \
 # 	$(s.prefix "" ${DEFINES} ) \
