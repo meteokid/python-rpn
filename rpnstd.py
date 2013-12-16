@@ -1174,7 +1174,7 @@ class RPNDate:
             else:
                 dummy=0
 #TODO: define named Cst for newdate in Fstdc
-                (self.stamp,dummy1,dummy2) = Fstdc.newdate(dummy,word1,word2,3)
+                (self.stamp,dummy1,dummy2) = Fstdc.newdate(dummy,word1,word2,Fstdc.NEWDATE_PRINT2STAMP)
         else:
             raise TypeError, 'RPNDate: arguments should be of type int'
 
@@ -1209,7 +1209,7 @@ class RPNDate:
         #TODO: oups 1 sec diff!!!
         """
         word1 = word2 = 0
-        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,Fstdc.NEWDATE_STAMP2PRINT)
         d = "%8.8d.%8.8d" % (word1, word2)
         yyyy = int(d[0:4])
         mo = int(d[4:6])
@@ -1223,7 +1223,7 @@ class RPNDate:
 
     def __repr__(self):
         word1 = word2 = 0
-        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,-3)
+        (dummy,word1,word2) = Fstdc.newdate(self.stamp,word1,word2,Fstdc.NEWDATE_STAMP2PRINT)
         return "RPNDate(%8.8d,%8.8d)" % (word1, word2)
 
 

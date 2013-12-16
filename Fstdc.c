@@ -30,6 +30,13 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #define LEVEL_KIND_HYB 5
 #define LEVEL_KIND_TH 6
 
+#define NEWDATE_PRINT2TRUE 2
+#define NEWDATE_TRUE2PRINT -2
+#define NEWDATE_PRINT2STAMP 3
+#define NEWDATE_STAMP2PRINT -3
+
+//TODO: define other named Cst for newdate modes
+
 static const int withFortranOrder = 1;
 
 //TODO: add more Error distinctions to catch more specific things
@@ -39,7 +46,7 @@ static PyObject *FstdcTooManyRecError;
 static PyObject *Fstdc_version(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args);
-static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args);
+/* static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args); */
 static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args);
 static PyObject *c2py_fstprm(int handle);
 static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args);
@@ -129,7 +136,7 @@ static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
-
+/*
 static char Fstdc_fstrwd__doc__[] =
         "Interface to fstrwd to rewind a RPN 2000 Standard File\n\
         Fstdc.fstrwd(iunit)\n\
@@ -151,7 +158,7 @@ static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args) {
         return NULL;
     }
 }
-
+*/
 
 static char Fstdc_fstinf__doc__[] =
         "Find a record matching provided criterias (Interface to fstinf, dsfsui, fstinfx)\n\
@@ -607,11 +614,55 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
 
 static char Fstdc_newdate__doc__[] =
         "Convert data to/from printable format and CMC stamp (Interface to newdate)\n\
-        (fdat1,fdat2,fdat3) = Fstdc.newdate(date1,date2,date3,mode)\n\
+        (fdat1,fdat2,fdat3) = Fstdc.newdate(dat1,dat2,dat3,mode)\n\
         @param ...see newdate doc... \n\
         @return tuple with converted date values ...see newdate doc...\n\
         @exception TypeError\n\
-        @exception Fstdc.error";
+        @exception Fstdc.error\n\
+\n\
+1.1 ARGUMENTS\n\
+mode can take the following values:-3,-2,-1,1,2,3\n\
+mode=1 : stamp to (true_date and run_number)\n\
+   out  fdat1  the truedate corresponding to dat2       integer\n\
+    in  dat2   cmc date-time stamp (old or new style)   integer\n\
+   out  fdat3  run number of the date-time stamp        integer\n\
+    in  mode   set to 1                                 integer \n\
+mode=-1 : (true_date and run_number) to stamp\n\
+    in  dat1   truedate to be converted                 integer\n\
+   out  fdat2  cmc date-time stamp (old or new style)   integer\n\
+    in  dat3   run number of the date-time stamp        integer\n\
+    in  mode   set to -1                                integer\n\
+mode=2 : printable to true_date\n\
+   out  fdat1  true_date                                integer\n\
+    in  dat2   date of the printable date (YYYYMMDD)    integer\n\
+    in  dat3   time of the printable date (HHMMSShh)    integer\n\
+    in  mode   set to 2                                 integer\n\
+mode=-2 : true_date to printable\n\
+    in  dat1   true_date                                integer\n\
+   out  fdat2  date of the printable date (YYYYMMDD)    integer\n\
+   out  fdat3  time of the printable date (HHMMSShh)    integer\n\
+    in  mode   set to -2                                integer\n\
+mode=3 : printable to stamp\n\
+   out  fdat1  cmc date-time stamp (old or new style)   integer\n\
+    in  dat2   date of the printable date (YYYYMMDD)    integer\n\
+    in  dat3   time of the printable date (HHMMSShh)    integer\n\
+    in  mode   set to 3                                 integer\n\
+mode=-3 : stamp to printable\n\
+    in  dat1   cmc date-time stamp (old or new style)   integer\n\
+   out  fdat2  date of the printable date (YYYYMMDD)    integer\n\
+   out  fdat3  time of the printable date (HHMMSShh)    integer\n\
+    in  mode   set to -3                                integer\n\
+mode=4 : 14 word old style DATE array to stamp and array(14)\n\
+   out  fdat1  CMC date-time stamp (old or new style)   integer\n\
+    in  dat2   14 word old style DATE array             integer\n\
+    in  dat3   unused                                   integer\n\
+    in  mode   set to 4                                 integer\n\
+mode=-4 : stamp to 14 word old style DATE array\n\
+    in  dat1   CMC date-time stamp (old or new style)   integer\n\
+   out  fdat2  14 word old style DATE array             integer\n\
+   out  fdat3  unused                                   integer\n\
+    in  mode   set to -4                                integer\n\
+";
 
 static PyObject *Fstdc_newdate(PyObject *self, PyObject *args) {
     int date1,date2,date3,mode,istat;
@@ -1243,7 +1294,7 @@ static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
 static struct PyMethodDef Fstdc_methods[] = {
     {"version", (PyCFunction)Fstdc_version, METH_VARARGS, Fstdc_version__doc__},
     {"fstouv",	(PyCFunction)Fstdc_fstouv,	METH_VARARGS,	Fstdc_fstouv__doc__},
-    {"fstrwd",	(PyCFunction)Fstdc_fstrwd,	METH_VARARGS,	Fstdc_fstrwd__doc__},
+    /* {"fstrwd",	(PyCFunction)Fstdc_fstrwd,	METH_VARARGS,	Fstdc_fstrwd__doc__}, */
     {"fstvoi",	(PyCFunction)Fstdc_fstvoi,	METH_VARARGS,	Fstdc_fstvoi__doc__},
     {"fstfrm",	(PyCFunction)Fstdc_fstfrm,	METH_VARARGS,	Fstdc_fstfrm__doc__},
     {"fstsui",	(PyCFunction)Fstdc_fstsui,	METH_VARARGS,	Fstdc_fstsui__doc__},
@@ -1307,9 +1358,14 @@ void initFstdc(void) {
 
     PyDict_SetItemString(d, "FSTDC_FILE_RO", PyString_FromString((const char*)FSTDC_FILE_RO));
     PyDict_SetItemString(d, "FSTDC_FILE_RW", PyString_FromString((const char*)FSTDC_FILE_RW));
-PyDict_SetItemString(d, "FSTDC_FILE_RW_OLD", PyString_FromString((const char*)FSTDC_FILE_RW_OLD));
+    PyDict_SetItemString(d, "FSTDC_FILE_RW_OLD", PyString_FromString((const char*)FSTDC_FILE_RW_OLD));
 
-//#TODO: define named Cst for newdate kinds
+    PyDict_SetItemString(d, "NEWDATE_PRINT2TRUE", PyInt_FromLong((long)NEWDATE_PRINT2TRUE));
+    PyDict_SetItemString(d, "NEWDATE_TRUE2PRINT", PyInt_FromLong((long)NEWDATE_TRUE2PRINT));
+    PyDict_SetItemString(d, "NEWDATE_PRINT2STAMP", PyInt_FromLong((long)NEWDATE_PRINT2STAMP));
+    PyDict_SetItemString(d, "NEWDATE_STAMP2PRINT", PyInt_FromLong((long)NEWDATE_STAMP2PRINT));
+
+//#TODO: define other named Cst for newdate modes
 
     istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
     istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
