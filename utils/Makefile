@@ -20,3 +20,6 @@ get_corners_xy.o: get_corners_xy.ftn90 int_macros.hf
 test: get_corners_xy.o
 	s.compile -src tests/test_get_corners_xy.ftn90 -obj get_corners_xy.o -o test_get_corners_xy.Abs
 	./test_get_corners_xy.Abs
+
+clean:
+	rm -f *.o
