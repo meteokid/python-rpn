@@ -11,6 +11,7 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 
 #include <rpnmacros.h>
 #include "armnlib.h"
+#include "convert_ip.h"
 
 #include <strings.h>
 
@@ -22,13 +23,21 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 #define FSTDC_FILE_RW_OLD "RND+R/W+OLD"
 #define FSTDC_FILE_RO "RND+R/O"
 
-#define LEVEL_KIND_MSL 0
-#define LEVEL_KIND_SIG 1
-#define LEVEL_KIND_PMB 2
-#define LEVEL_KIND_ANY 3
-#define LEVEL_KIND_MGL 4
-#define LEVEL_KIND_HYB 5
-#define LEVEL_KIND_TH 6
+#define LEVEL_KIND_MSL KIND_ABOVE_SEA
+#define LEVEL_KIND_SIG KIND_SIGMA
+#define LEVEL_KIND_PMB KIND_PRESSURE
+#define LEVEL_KIND_ANY KIND_ARBITRARY
+#define LEVEL_KIND_MGL KIND_ABOVE_GND
+#define LEVEL_KIND_HYB KIND_HYBRID
+#define LEVEL_KIND_TH KIND_THETA
+#define LEVEL_KIND_MPR KIND_M_PRES
+#define TIME_KIND_HR KIND_HOURS
+
+#define CONVIP_STYLE_DEFAULT 1
+#define CONVIP_STYLE_NEW 2
+#define CONVIP_STYLE_OLD 3
+#define CONVIP_IP2P_DEFAULT -1
+#define CONVIP_IP2P_31BITS 0
 
 #define NEWDATE_PRINT2TRUE 2
 #define NEWDATE_TRUE2PRINT -2
@@ -60,6 +69,8 @@ static PyObject *Fstdc_cxgaig(PyObject *self, PyObject *args);
 static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args);
 static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args);
+static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args);
 static PyObject *Fstdc_newdate(PyObject *self, PyObject *args);
 static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args);
@@ -121,12 +132,12 @@ static char Fstdc_fstvoi__doc__[] =
         "Print a list view a RPN Standard File rec (Interface to fstvoi)\n\
         Fstdc.fstvoi(iunit,option)\n\
         @param iunit file unit number handle returned by Fstdc_fstouv (int)\n\
-        @param option 'OLDSTYLE' or 'NEWSTYLE' (sting)\n\
+        @param option 'STYLE_OLD' or 'STYLE_NEW' (sting)\n\
         @return None\n\
         @exception TypeError";
 
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
-    char *options="NEWSTYLE";
+    char *options="STYLE_NEW";
     int iun;
     if (!PyArg_ParseTuple(args, "is",&iun,&options)) {
         return NULL;
@@ -610,6 +621,64 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
     }
     return (level_list);
 }
+
+static char Fstdc_ConvertP2Ip__doc__[] =
+        "Encoding of P (real value,kind) into IP123 RPN-STD files tags\n\
+        ip123 = Fstdc.EncodeIp(pvalue,pkind,istyle)\n\
+        @param  pvalue, value to encode, units depends on the kind (float)\n\
+        @param  pkind,  kind of pvalue (int)\n\
+        @param  istyle, CONVIP_STYLE_NEW/OLD/DEFAULT (int)\n\
+        @return IP encoded value (int)\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+
+static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args) {
+    float pvalue; //TODO: make it a list?
+    int pkind,istyle,ip123=0;
+
+    if (!PyArg_ParseTuple(args, "fii",&pvalue,&pkind,&istyle)) {
+        return NULL;
+    }
+    if (istyle != CONVIP_STYLE_DEFAULT && istyle != CONVIP_STYLE_NEW && istyle != CONVIP_STYLE_OLD) {
+      PyErr_SetString(FstdcError,"Invalid style in ConvertP2Ip");
+      return NULL;
+    }
+    if (pkind < 0 || (pkind > 6 && pkind != KIND_HOURS && pkind != KIND_SAMPLES && pkind != KIND_MTX_IND && pkind != KIND_M_PRES)) {
+      PyErr_SetString(FstdcError,"Invalid pkind in ConvertP2Ip");
+      return NULL;
+    }
+    ConvertIp(&ip123,&pvalue,&pkind,istyle);
+    //TODO: check return value
+    return Py_BuildValue("i",ip123);
+}
+
+
+static char Fstdc_ConvertIp2P__doc__[] =
+        "Decoding of IP123 RPN-STD files tags into P (real values, kind)\n\
+        (pvalue,pkind) = Fstdc.EncodeIp(ip123,imode)\n\
+        @param  ip123, IP encoded value (int)\n\
+        @param  imode, CONVIP_IP2P_DEFAULT or CONVIP_IP2P_31BITS (int)\n\
+        @return pvalue, real decoded value, units depends on the kind (float)\n\
+        @return pkind, kind of pvalue (int)\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+
+static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args) {
+    float pvalue=0.; //TODO: make it a list?
+    int pkind=0,imode,ip123;
+
+    if (!PyArg_ParseTuple(args, "ii",&ip123,&imode)) {
+        return NULL;
+    }
+    if (imode != CONVIP_IP2P_DEFAULT && imode != CONVIP_IP2P_31BITS) {
+      PyErr_SetString(FstdcError,"Invalid mode in ConvertIp2P");
+      return NULL;
+    }
+    ConvertIp(&ip123,&pvalue,&pkind,imode);
+    //TODO: check return value
+    return Py_BuildValue("(fi)",pvalue,pkind);
+}
+
 
 
 static char Fstdc_newdate__doc__[] =
@@ -1310,6 +1379,8 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"datematch",	(PyCFunction)Fstdc_datematch,	METH_VARARGS,	Fstdc_datematch__doc__},
     {"level_to_ip1",(PyCFunction)Fstdc_level_to_ip1,METH_VARARGS,	Fstdc_level_to_ip1__doc__},
     {"ip1_to_level",(PyCFunction)Fstdc_ip1_to_level,METH_VARARGS,	Fstdc_ip1_to_level__doc__},
+    {"ConvertP2Ip",(PyCFunction)Fstdc_ConvertP2Ip,METH_VARARGS,	Fstdc_ConvertP2Ip__doc__},
+    {"ConvertIp2P",(PyCFunction)Fstdc_ConvertIp2P,METH_VARARGS,	Fstdc_ConvertIp2P__doc__},
     //{"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
     {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
     {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
@@ -1355,6 +1426,26 @@ void initFstdc(void) {
     PyDict_SetItemString(d, "LEVEL_KIND_MGL", PyInt_FromLong((long)LEVEL_KIND_MGL));
     PyDict_SetItemString(d, "LEVEL_KIND_HYB", PyInt_FromLong((long)LEVEL_KIND_HYB));
     PyDict_SetItemString(d, "LEVEL_KIND_TH", PyInt_FromLong((long)LEVEL_KIND_TH));
+    PyDict_SetItemString(d, "LEVEL_KIND_MPR", PyInt_FromLong((long)LEVEL_KIND_MPR));
+    PyDict_SetItemString(d, "TIME_KIND_HR", PyInt_FromLong((long)TIME_KIND_HR));
+
+    PyDict_SetItemString(d, "KIND_ABOVE_SEA", PyInt_FromLong((long)KIND_ABOVE_SEA));
+    PyDict_SetItemString(d, "KIND_SIGMA", PyInt_FromLong((long)KIND_SIGMA));
+    PyDict_SetItemString(d, "KIND_PRESSURE", PyInt_FromLong((long)KIND_PRESSURE));
+    PyDict_SetItemString(d, "KIND_ARBITRARY", PyInt_FromLong((long)KIND_ARBITRARY));
+    PyDict_SetItemString(d, "KIND_ABOVE_GND", PyInt_FromLong((long)KIND_ABOVE_GND));
+    PyDict_SetItemString(d, "KIND_HYBRID", PyInt_FromLong((long)KIND_HYBRID));
+    PyDict_SetItemString(d, "KIND_THETA", PyInt_FromLong((long)KIND_THETA));
+    PyDict_SetItemString(d, "KIND_HOURS", PyInt_FromLong((long)KIND_HOURS));
+    PyDict_SetItemString(d, "KIND_SAMPLES", PyInt_FromLong((long)KIND_SAMPLES));
+    PyDict_SetItemString(d, "KIND_MTX_IND", PyInt_FromLong((long)KIND_MTX_IND));
+    PyDict_SetItemString(d, "KIND_M_PRES", PyInt_FromLong((long)KIND_M_PRES));
+
+    PyDict_SetItemString(d, "CONVIP_STYLE_DEFAULT", PyInt_FromLong((long)CONVIP_STYLE_DEFAULT));
+    PyDict_SetItemString(d, "CONVIP_STYLE_NEW", PyInt_FromLong((long)CONVIP_STYLE_NEW));
+    PyDict_SetItemString(d, "CONVIP_STYLE_OLD", PyInt_FromLong((long)CONVIP_STYLE_OLD));
+    PyDict_SetItemString(d, "CONVIP_IP2P_DEFAULT", PyInt_FromLong((long)CONVIP_IP2P_DEFAULT));
+    PyDict_SetItemString(d, "CONVIP_IP2P_31BITS", PyInt_FromLong((long)CONVIP_IP2P_31BITS));
 
     PyDict_SetItemString(d, "FSTDC_FILE_RO", PyString_FromString((const char*)FSTDC_FILE_RO));
     PyDict_SetItemString(d, "FSTDC_FILE_RW", PyString_FromString((const char*)FSTDC_FILE_RW));
