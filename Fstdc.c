@@ -77,7 +77,6 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args);
-//TODO: Add option-setting for ezscint
 static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetval(PyObject *self, PyObject *args);
@@ -113,7 +112,7 @@ static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args) {
     int iun=0,errorCode;
     char *filename="None";
     char *options="RND";
-    if (!PyArg_ParseTuple(args, "iss",&iun,&filename,&options)) {
+    if (!PyArg_ParseTuple(args, "iss:fstouv",&iun,&filename,&options)) {
         return NULL;
     }
     errorCode = c_fnom(&iun,filename,options,0);
@@ -139,7 +138,7 @@ static char Fstdc_fstvoi__doc__[] =
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
     char *options="STYLE_NEW";
     int iun;
-    if (!PyArg_ParseTuple(args, "is",&iun,&options)) {
+    if (!PyArg_ParseTuple(args, "is:fstvoi",&iun,&options)) {
         return NULL;
     }
     c_fstvoi(iun,options);
@@ -167,7 +166,7 @@ static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args) {
     int iun, inhandle=-2, ni=0, nj=0, nk=0, datev=0, ip1=0, ip2=0, ip3=0,handle=0;
     char *typvar, *nomvar, *etiket;
 
-    if (!PyArg_ParseTuple(args, "isssiiiii",&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&datev,&inhandle)) {
+    if (!PyArg_ParseTuple(args, "isssiiiii:fstinf",&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&datev,&inhandle)) {
         return NULL;
     }
     if (inhandle < -1) {
@@ -231,7 +230,7 @@ static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
     int nMatch=0,maxMatch=50000,recHandleMatchList[50000];
     PyObject *recParamList,*recParam;
 
-    if (!PyArg_ParseTuple(args, "isssiiii",&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&datev)) {
+    if (!PyArg_ParseTuple(args, "isssiiii:fstinl",&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&datev)) {
         return NULL;
     }
     recParamList = PyList_New(0);
@@ -264,7 +263,7 @@ static char Fstdc_fstsui__doc__[] =
         @exception Fstdc.error";
 static PyObject *Fstdc_fstsui(PyObject *self, PyObject *args) {
     int iun, ni=0, nj=0, nk=0, handle;
-    if (!PyArg_ParseTuple(args, "i",&iun)) {
+    if (!PyArg_ParseTuple(args, "i:fstsui",&iun)) {
         return NULL;
     }
     handle = c_fstsui(iun,&ni,&nj,&nk);
@@ -293,7 +292,7 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     int dateo=0, deet=0, npas=0, nbits=0, datyp=0, ig1=0, ig2=0, ig3=0, ig4=0;
     int swa=0, lng=0, dltf=0, ubc=0, extra1=0, extra2=0, extra3=0;
 
-    if (!PyArg_ParseTuple(args, "i",&handle)) {
+    if (!PyArg_ParseTuple(args, "i:fstluk",&handle)) {
         return NULL;
     }
     if (handle >= 0) {
@@ -361,7 +360,7 @@ static PyObject *Fstdc_fst_edit_dir(PyObject *self, PyObject *args) {
     int date=-1, deet=-1, npas=-1, ig1=-1, ig2=-1, ig3=-1, ig4=-1;
     int ni=-1,nj=-1,nk=-1,datyp=-1;
 
-    if (!PyArg_ParseTuple(args, "iiiiiiiiiissssiiiii",
+    if (!PyArg_ParseTuple(args, "iiiiiiiiiissssiiiii:fst_edit_dir",
             &handle,&date,&deet,&npas,&ni,&nj,&nk,&ip1,&ip2,&ip3,&typvar,&nomvar,&etiket,&grtyp,&ig1,&ig2,&ig3,&ig4,&datyp)) {
         return NULL;
     }
@@ -396,7 +395,7 @@ static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
        fst_data_length is documented to always return 0. */
     /*extern int c_fst_data_length(int);*/
 
-    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiiii",
+    if (!PyArg_ParseTuple(args, "Oisssiiiisiiiiiiii:fstecr",
                           &array,&iun,&nomvar,&typvar,&etiket,&ip1,&ip2,&ip3,&dateo,&grtyp,&ig1,&ig2,&ig3,&ig4,&deet,&npas,&nbits,&datyp)) {
         return NULL;
     }
@@ -430,7 +429,7 @@ static char Fstdc_fsteff__doc__[] =
         @exception Fstdc.error";
 static PyObject *Fstdc_fsteff(PyObject *self, PyObject *args) {
     int handle=0,istat=0;
-    if (!PyArg_ParseTuple(args, "i",&handle)) {
+    if (!PyArg_ParseTuple(args, "i:fsteff",&handle)) {
         return NULL;
     }
     istat = c_fsteff(handle);
@@ -452,7 +451,7 @@ static char Fstdc_fstfrm__doc__[] =
         @exception Fstdc.error";
 static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
     int iun=0,istat1,istat2;
-    if (!PyArg_ParseTuple(args, "i",&iun)) {
+    if (!PyArg_ParseTuple(args, "i:fstfrm",&iun)) {
         return NULL;
     }
     istat1 = c_fstfrm(iun);
@@ -479,7 +478,7 @@ static PyObject *Fstdc_cxgaig(PyObject *self, PyObject *args) {
     F77_REAL fxg1,fxg2,fxg3,fxg4;
     float xg1,xg2,xg3,xg4;
     char *grtyp;
-    if (!PyArg_ParseTuple(args, "sffff",&grtyp,&xg1,&xg2,&xg3,&xg4)) {
+    if (!PyArg_ParseTuple(args, "sffff:cxgaig",&grtyp,&xg1,&xg2,&xg3,&xg4)) {
         return NULL;
     }
     fxg1 = (F77_REAL)xg1;
@@ -503,7 +502,7 @@ static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args) {
     F77_INTEGER fig1,fig2,fig3,fig4;
     F77_REAL fxg1=0,fxg2=0,fxg3=0,fxg4=0;
     char *grtyp;
-    if (!PyArg_ParseTuple(args, "siiii",&grtyp,&ig1,&ig2,&ig3,&ig4)) {
+    if (!PyArg_ParseTuple(args, "siiii:cigaxg",&grtyp,&ig1,&ig2,&ig3,&ig4)) {
         return NULL;
     }
     fig1 = (F77_INTEGER)ig1;
@@ -531,7 +530,7 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
     char strg[strglen];
     PyObject *level_list, *ip1_list=Py_None, *item, *ipnewold_obj;
 
-    if (!PyArg_ParseTuple(args, "Oi",&level_list,&kind)) {
+    if (!PyArg_ParseTuple(args, "Oi:level_to_ip1",&level_list,&kind)) {
         return NULL;
     }
     fkind = (F77_INTEGER)kind;
@@ -568,7 +567,7 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
     char strg[strglen];
     PyObject *ip1_list=Py_None, *level_list, *item, *level_kind_obj;
 
-    if (!PyArg_ParseTuple(args, "O",&ip1_list)) {
+    if (!PyArg_ParseTuple(args, "O:ip1_to_level",&ip1_list)) {
         return NULL;
     }
     fmode = -1;
@@ -600,7 +599,7 @@ static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args) {
     float pvalue; //TODO: make it a list?
     int pkind,istyle,ip123=0;
 
-    if (!PyArg_ParseTuple(args, "fii",&pvalue,&pkind,&istyle)) {
+    if (!PyArg_ParseTuple(args, "fii:ConvertP2Ip",&pvalue,&pkind,&istyle)) {
         return NULL;
     }
     if (istyle != CONVIP_STYLE_DEFAULT && istyle != CONVIP_STYLE_NEW && istyle != CONVIP_STYLE_OLD) {
@@ -630,7 +629,7 @@ static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args) {
     float pvalue=0.; //TODO: make it a list?
     int pkind=0,imode,ip123;
 
-    if (!PyArg_ParseTuple(args, "ii",&ip123,&imode)) {
+    if (!PyArg_ParseTuple(args, "ii:ConvertIp2P",&ip123,&imode)) {
         return NULL;
     }
     if (imode != CONVIP_IP2P_DEFAULT && imode != CONVIP_IP2P_31BITS) {
@@ -783,7 +782,7 @@ mode=-4 : stamp to 14 word old style DATE array\n\
 static PyObject *Fstdc_newdate(PyObject *self, PyObject *args) {
     int date1,date2,date3,mode,istat;
     F77_INTEGER fdat1,fdat2,fdat3,fmode;
-    if (!PyArg_ParseTuple(args, "iiii",&date1,&date2,&date3,&mode)) {
+    if (!PyArg_ParseTuple(args, "iiii:newdate",&date1,&date2,&date3,&mode)) {
         return NULL;
     }
     fdat1 = (F77_INTEGER)date1;
@@ -810,7 +809,7 @@ static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args) {
     int date1,date2;
     F77_REAL8 fnhours=0;
     F77_INTEGER fdat1,fdat2;
-    if (!PyArg_ParseTuple(args, "ii",&date1,&date2)) {
+    if (!PyArg_ParseTuple(args, "ii:difdatr",&date1,&date2)) {
         return NULL;
     }
     fdat1 = (F77_INTEGER)date1;
@@ -833,7 +832,7 @@ static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args) {
     double nhours;
     F77_INTEGER fdat1,fdat2;
     F77_REAL8 fnhours;
-    if (!PyArg_ParseTuple(args, "id",&date2,&nhours)) {
+    if (!PyArg_ParseTuple(args, "id:incdatr",&date2,&nhours)) {
         return NULL;
     }
     fdat2 = (F77_INTEGER)date2;
@@ -864,7 +863,7 @@ static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
     F77_REAL8 fnhours=0;
     F77_INTEGER fdat1,fdat2;
 
-    if (!PyArg_ParseTuple(args, "iiif",&datelu,&debut,&fin,&delta)) {
+    if (!PyArg_ParseTuple(args, "iiif:datematch",&datelu,&debut,&fin,&delta)) {
         return NULL;
     }
 	 ddelta = (double)delta;
@@ -907,7 +906,7 @@ static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     int type_num=NPY_FLOAT;
     PyArrayObject *lat,*lon,*clat,*clon,*xsS,*ysS,*x,*y,*xc,*yc;
     F77_INTEGER fni,fnj;
-    if (!PyArg_ParseTuple(args, "(ii)s(siiii)(OO)i(ii)i",
+    if (!PyArg_ParseTuple(args, "(ii)s(siiii)(OO)i(ii)i:ezgetlalo",
             &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,
             &xsS,&ysS,&hasSrcAxis,&i0S,&j0S,&doCorners)) {
         return NULL;
@@ -1126,7 +1125,7 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
 
     newarray2=NULL;                     // shut up the compiler
 
-    if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)(OO)i(ii)(ii)s(siiii)(OO)i(ii)i",
+    if (!PyArg_ParseTuple(args, "OO(ii)s(siiii)(OO)i(ii)(ii)s(siiii)(OO)i(ii)i:ezinterp",
         &arrayin,&arrayin2,
         &niS,&njS,&grtypS,&grrefS,&ig1S,&ig2S,&ig3S,&ig4S,&xsS,&ysS,&hasSrcAxis,&i0S,&j0S,
         &niD,&njD,&grtypD,&grrefD,&ig1D,&ig2D,&ig3D,&ig4D,&xsD,&ysD,&hasDstAxis,&i0D,&j0D,
@@ -1215,7 +1214,7 @@ static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args) {
     char *in_option=0; // User-input option to get
     int ier = 0;
 
-    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+    if (!PyArg_ParseTuple(args,"s:ezgetopt",&in_option) || !in_option) {
         // No valid arguments passed
         return NULL;
     }
@@ -1244,7 +1243,7 @@ static PyObject * Fstdc_ezsetopt(PyObject *self, PyObject *args) {
     char *in_value=0; // User-input value
     int ier = 0;
 
-    if (!PyArg_ParseTuple(args,"ss",&in_option,&in_value) || !in_option || !in_value) {
+    if (!PyArg_ParseTuple(args,"ss:ezsetopt",&in_option,&in_value) || !in_option || !in_value) {
         // No valid arguments passed
         return NULL;
     }
@@ -1276,7 +1275,7 @@ static PyObject * Fstdc_ezgetval(PyObject *self, PyObject *args) {
 
     int ier = 0; // ezget[i]val error code
 
-    if (!PyArg_ParseTuple(args,"s",&in_option) || !in_option) {
+    if (!PyArg_ParseTuple(args,"s:ezgetval",&in_option) || !in_option) {
         // No valid arguments
         return NULL;
     }
@@ -1342,7 +1341,7 @@ static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
     if (!strcasecmp("weight_number",in_option) ||
         !strcasecmp("missing_points_tolerance",in_option)) {
         // Re-parse the options to get an integer value
-        if (!PyArg_ParseTuple(args,"si",&in_option,&int_value)) {
+        if (!PyArg_ParseTuple(args,"si:ezsetval",&in_option,&int_value)) {
             return NULL;
         }
         // c_ezsetival appears to int_value by value rather than reference,
@@ -1358,7 +1357,7 @@ static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
         return Py_None;
     }
     // Otherwise we can assume we have a floating-point option
-    if (!PyArg_ParseTuple(args,"sf",&in_option,&float_value) || !in_option) {
+    if (!PyArg_ParseTuple(args,"sf:ezsetval",&in_option,&float_value) || !in_option) {
         // No valid arguments
         return NULL;
     }
@@ -1474,6 +1473,7 @@ void initFstdc(void) {
     PyDict_SetItemString(d, "NEWDATE_STAMP2PRINT", PyInt_FromLong((long)NEWDATE_STAMP2PRINT));
 
 //#TODO: define other named Cst for newdate modes
+//#TODO: define other named Cst for ezsetsval
 
     istat = c_fstopi(msglvl,8,0); //8 - print fatal error messages and up;10 - print system (internal) error messages only
     istat = c_fstopi(tolrnc,6,0); //6 - tolerate warning level and lower;8 - tolerate error level and lower
