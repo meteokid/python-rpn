@@ -270,6 +270,71 @@ class FstdcInterpTests(unittest.TestCase):
                 print 'la2b:',la2b
         self.assertFalse(numpy.any(numpy.abs(la2-la2b)>self.epsilon))
 
+
+class FstdcConvertIp2PKnownValues(unittest.TestCase):
+
+#lvlnew,lvlold,ipnew,ipold,kind
+#we need to specify 2 levels since the old style ip1 give is an approx of level in some cases
+    knownValues = (
+    (0.,    0.,    15728640, 12001,Fstdc.KIND_ABOVE_SEA),
+    (13.5,  15.,   8523608,  12004,Fstdc.KIND_ABOVE_SEA),
+    (1500., 1500., 6441456,  12301,Fstdc.KIND_ABOVE_SEA),
+    (5525., 5525., 6843956,  13106,Fstdc.KIND_ABOVE_SEA),
+    (12750.,12750.,5370380,  14551,Fstdc.KIND_ABOVE_SEA),
+    (0.,    0.,    32505856, 2000, Fstdc.KIND_SIGMA),
+    (0.1,   0.1,   27362976, 3000, Fstdc.KIND_SIGMA),
+    (0.02,  0.02,  28511552, 2200, Fstdc.KIND_SIGMA),
+    (0.000003,0.,  32805856, 2000, Fstdc.KIND_SIGMA),
+    (1024.,1024.,  39948288, 1024, Fstdc.KIND_PRESSURE),
+    (850., 850.,   41744464, 850,  Fstdc.KIND_PRESSURE),
+    (650., 650.,   41544464, 650,  Fstdc.KIND_PRESSURE),
+    (500., 500.,   41394464, 500,  Fstdc.KIND_PRESSURE),
+    (10.,  10.,    42043040, 10,   Fstdc.KIND_PRESSURE),
+    (2.,   2.,     43191616, 1840, Fstdc.KIND_PRESSURE),
+    (0.3,  0.3,    44340192, 1660, Fstdc.KIND_PRESSURE)
+    )
+    #TODO: add values for other kinds:
+    #define KIND_ARBITRARY 3
+    #define KIND_ABOVE_GND 4
+    #define KIND_HYBRID 5
+    #define KIND_THETA 6
+    #define KIND_HOURS 10
+
+    def testConvertIp2PKnownValues(self):
+        """ConvertIp2P should give known result with known input"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            (lvl2,kind2) = Fstdc.ConvertIp2P(ipnew,Fstdc.CONVIP_IP2P_DEFAULT)
+            self.assertEqual(kind2,kind)
+            self.assertAlmostEqual(lvlnew,lvl2,6)
+
+    def testConvertP2IpKnownValues(self):
+        """ConvertP2Ip should give known result with known input"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            ipnew2 = Fstdc.ConvertP2Ip(lvlnew,kind,Fstdc.CONVIP_STYLE_NEW)
+            self.assertEqual(ipnew2,ipnew)
+
+    def testSanity(self):
+        """ConvertIp2P(ConvertP2Ip(n))==n for all n"""
+        for lvlnew,lvlold,ipnew,ipold,kind in self.knownValues:
+            (lvl2,kind2) = Fstdc.ConvertIp2P(ipnew,Fstdc.CONVIP_IP2P_DEFAULT)
+            ipnew2 = Fstdc.ConvertP2Ip(lvl2,kind2,Fstdc.CONVIP_STYLE_NEW)
+            self.assertEqual(ipnew2,ipnew)
+
+
+class FstdcEncodeIPKnownValues(unittest.TestCase):
+    
+    def testEncodeIPKnownValues(self):
+        """EncodeIP should give known result with known input"""
+        pass #TODO:
+        
+    def testDecodeIPKnownValues(self):
+        """DecodeIP should give known result with known input"""
+        pass #TODO:
+
+    def testSanity(self):
+        """EncodeIP(DecodeIP(n))==n for all n"""
+        pass #TODO:
+
 if __name__ == "__main__":
     unittest.main()
 

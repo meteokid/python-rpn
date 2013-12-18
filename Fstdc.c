@@ -55,7 +55,6 @@ static PyObject *FstdcTooManyRecError;
 static PyObject *Fstdc_version(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args);
 static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args);
-/* static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args); */
 static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args);
 static PyObject *c2py_fstprm(int handle);
 static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args);
@@ -71,12 +70,14 @@ static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args);
+static PyObject *Fstdc_EncodeIp(PyObject *self, PyObject *args);
+static PyObject *Fstdc_DecodeIp(PyObject *self, PyObject *args);
 static PyObject *Fstdc_newdate(PyObject *self, PyObject *args);
 static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args);
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args);
-// Add option-setting for ezscint
+//TODO: Add option-setting for ezscint
 static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetval(PyObject *self, PyObject *args);
@@ -108,7 +109,6 @@ static char Fstdc_fstouv__doc__[] =
         @return File unit number (int), NULL on error\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstouv(PyObject *self, PyObject *args) {
     int iun=0,errorCode;
     char *filename="None";
@@ -147,29 +147,6 @@ static PyObject *Fstdc_fstvoi(PyObject *self, PyObject *args) {
     return Py_None;
 }
 
-/*
-static char Fstdc_fstrwd__doc__[] =
-        "Interface to fstrwd to rewind a RPN 2000 Standard File\n\
-        Fstdc.fstrwd(iunit)\n\
-        @param iunit unit number of the file handle, 0 for a new one (int)\n\
-        @exception TypeError\n\
-        @exception Fstdc.error";
-
-static PyObject *Fstdc_fstrwd(PyObject *self, PyObject *args) {
-    int iun=0,errorCode;
-    if (!PyArg_ParseTuple(args, "i",&iun)) {
-        return NULL;
-    }
-	 errorCode = c_fstrwd(iun);
-    if (errorCode >= 0) {
-		  Py_INCREF(Py_None);
-		  return Py_None;
-    } else {
-        PyErr_SetString(FstdcError,"Failed to rewind file");
-        return NULL;
-    }
-}
-*/
 
 static char Fstdc_fstinf__doc__[] =
         "Find a record matching provided criterias (Interface to fstinf, dsfsui, fstinfx)\n\
@@ -186,7 +163,6 @@ static char Fstdc_fstinf__doc__[] =
         @returns python dict with record handle + record params keys/values\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstinf(PyObject *self, PyObject *args) {
     int iun, inhandle=-2, ni=0, nj=0, nk=0, datev=0, ip1=0, ip2=0, ip3=0,handle=0;
     char *typvar, *nomvar, *etiket;
@@ -249,7 +225,6 @@ static char Fstdc_fstinl__doc__[] =
         @exception TypeError\n\
         @exception Fstdc.error\n\
         @exception Fstdc.tooManyRecError";
-
 static PyObject *Fstdc_fstinl(PyObject *self, PyObject *args) {
     int i,iun, ier, ni=0, nj=0, nk=0, datev=0, ip1=0, ip2=0, ip3=0;
     char *typvar, *nomvar, *etiket;
@@ -287,7 +262,6 @@ static char Fstdc_fstsui__doc__[] =
         @returns python dict with record handle + record params keys/values\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstsui(PyObject *self, PyObject *args) {
     int iun, ni=0, nj=0, nk=0, handle;
     if (!PyArg_ParseTuple(args, "i",&iun)) {
@@ -305,7 +279,6 @@ static char Fstdc_fstluk__doc__[] =
         @return record data (numpy.ndarray)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
     PyArrayObject *newarray;
     int ndims=3;
@@ -380,7 +353,6 @@ static char Fstdc_fst_edit_dir__doc__[] =
         @param ... \n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fst_edit_dir(PyObject *self, PyObject *args) {
     int handle=0;
     int errorCode=0;
@@ -412,7 +384,6 @@ static char Fstdc_fstecr__doc__[] =
         @param ... \n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstecr(PyObject *self, PyObject *args) {
     int iun, ip1=0, ip2=0, ip3=0, istat;
     char *typvar, *nomvar, *etiket, *grtyp;
@@ -457,7 +428,6 @@ static char Fstdc_fsteff__doc__[] =
         @param ihandle handle of the record to erase (int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fsteff(PyObject *self, PyObject *args) {
     int handle=0,istat=0;
     if (!PyArg_ParseTuple(args, "i",&handle)) {
@@ -480,7 +450,6 @@ static char Fstdc_fstfrm__doc__[] =
         @param iunit file unit number handle returned by Fstdc_fstouv (int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_fstfrm(PyObject *self, PyObject *args) {
     int iun=0,istat1,istat2;
     if (!PyArg_ParseTuple(args, "i",&iun)) {
@@ -505,7 +474,6 @@ static char Fstdc_cxgaig__doc__[] =
         @return (ig1,ig2,ig3,ig4)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_cxgaig(PyObject *self, PyObject *args) {
     F77_INTEGER fig1,fig2,fig3,fig4;
     F77_REAL fxg1,fxg2,fxg3,fxg4;
@@ -530,7 +498,6 @@ static char Fstdc_cigaxg__doc__[] =
         @return (xg1,xg2,xg3,xg4)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args) {
     int ig1,ig2,ig3,ig4;
     F77_INTEGER fig1,fig2,fig3,fig4;
@@ -548,7 +515,6 @@ static PyObject *Fstdc_cigaxg(PyObject *self, PyObject *args) {
 }
 
 
-
 static char Fstdc_level_to_ip1__doc__[] =
         "Encode level value to ip1 (Interface to convip)\n\
         myip1List = Fstdc.level_to_ip1(level_list,kind) \n\
@@ -557,7 +523,6 @@ static char Fstdc_level_to_ip1__doc__[] =
         @return [(ip1new,ip1old),...] (list of tuple of int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_level_to_ip1(PyObject *self, PyObject *args) {
     const int strglen = 30;
     int i,kind, nelm;
@@ -595,7 +560,6 @@ static char Fstdc_ip1_to_level__doc__[] =
         @return list of tuple (level,kind)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
     const int strglen = 30;
     int i,nelm;
@@ -622,16 +586,16 @@ static PyObject *Fstdc_ip1_to_level(PyObject *self, PyObject *args) {
     return (level_list);
 }
 
+
 static char Fstdc_ConvertP2Ip__doc__[] =
         "Encoding of P (real value,kind) into IP123 RPN-STD files tags\n\
-        ip123 = Fstdc.EncodeIp(pvalue,pkind,istyle)\n\
+        ip123 = Fstdc.ConvertP2Ip(pvalue,pkind,istyle)\n\
         @param  pvalue, value to encode, units depends on the kind (float)\n\
         @param  pkind,  kind of pvalue (int)\n\
         @param  istyle, CONVIP_STYLE_NEW/OLD/DEFAULT (int)\n\
         @return IP encoded value (int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args) {
     float pvalue; //TODO: make it a list?
     int pkind,istyle,ip123=0;
@@ -655,14 +619,13 @@ static PyObject *Fstdc_ConvertP2Ip(PyObject *self, PyObject *args) {
 
 static char Fstdc_ConvertIp2P__doc__[] =
         "Decoding of IP123 RPN-STD files tags into P (real values, kind)\n\
-        (pvalue,pkind) = Fstdc.EncodeIp(ip123,imode)\n\
+        (pvalue,pkind) = Fstdc.ConvertIp2P(ip123,imode)\n\
         @param  ip123, IP encoded value (int)\n\
         @param  imode, CONVIP_IP2P_DEFAULT or CONVIP_IP2P_31BITS (int)\n\
         @return pvalue, real decoded value, units depends on the kind (float)\n\
         @return pkind, kind of pvalue (int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args) {
     float pvalue=0.; //TODO: make it a list?
     int pkind=0,imode,ip123;
@@ -679,6 +642,91 @@ static PyObject *Fstdc_ConvertIp2P(PyObject *self, PyObject *args) {
     return Py_BuildValue("(fi)",pvalue,pkind);
 }
 
+
+static char Fstdc_EncodeIp__doc__[] = 
+        "Encoding of real level and time values+kind into the ip1+ip2+ip3 files tags triolets\n\
+        (ip1,ip2,ip3) = Fstdc.EncodeIp(pvalues)\n\
+        @param  pvalues, real level and time values/intervals, units depends on the kind\n\
+                pvalues must have has the format of list/tuple of tuples\n\
+                [(rp1.v1, rp1.v2, rp1.kind), (rp2.v1, rp2.v2, rp2.kind), (rp3.v1, rp3.v2, rp3.kind)]\n\
+                where v1,v2 are float, kind is an int (named constant KIND_*)\n\
+                RP1 must contain a level (or a pair of levels) in the atmosphere\n\
+                RP2 must contain  a time (or a pair of times)\n\
+                RP3 may contain anything, RP3%hi will be ignored (if RP1 or RP2 contains a pair, RP3 is ignored)\n\
+                If RP1 is not a level or RP2 is not a time, Fstdc.error is raised\n\
+                If RP1 and RP2 both contains a range , Fstdc.error is raised\n\
+        @return IP encoded values, tuple of int\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+static PyObject *Fstdc_EncodeIp(PyObject *self, PyObject *args) {
+  PyObject *rp123_list=Py_None, *item,*item1,*item2,*item3;
+    int nelm,ip1,ip2,ip3,istat;
+    ip_info rp1,rp2,rp3;
+
+    if (!PyArg_ParseTuple(args, "((ffi)(ffi)(ffi)):EncodeIp",&rp1.v1,&rp1.v2,&rp1.kind,&rp2.v1,&rp2.v2,&rp2.kind,&rp3.v1,&rp3.v2,&rp3.kind)) {
+      return NULL;
+    }
+
+    istat = EncodeIp(&ip1,&ip2,&ip3,&rp1,&rp2,&rp3);
+    if (istat == CONVERT_ERROR) {
+      PyErr_SetString(FstdcError,"Proleme encoding provided values to ip123 in EncodeIp");
+      return NULL;
+    }
+    Py_BuildValue("(iii)",ip1,ip2,ip3);
+}
+
+
+static char Fstdc_DecodeIp__doc__[] = 
+        "Decoding of ip1+ip2+ip3 files tags triolets into level+times values or interval\n\
+        pvalues = Fstdc.DecodeIp([ip1,ip2,ip3])\n\
+        @param  [ip1,ip2,ip3], tuple/list of int\n\
+        @return pvalues, real decoded level and time values/intervals, units depends on the kind\n\
+                pvalues has the format of list/tuple of tuples\n\
+                [(rp1.v1, rp1.v2, rp1.kind), (rp2.v1, rp2.v2, rp2.kind), (rp3.v1, rp3.v2, rp3.kind)]\n\
+                where v1,v2 are float, kind is an int (named constant KIND_*)\n\
+                RP1 will contain a level (or a pair of levels in atmospheric ascending order) in the atmosphere\n\
+                RP2 will contain a time (or a pair of times in ascending order)\n\
+                RP3.v1 will be the same as RP3.v2 (if RP1 or RP2 contains a pair, RP3 is ignored)\n\
+        @exception TypeError\n\
+        @exception Fstdc.error";
+static PyObject *Fstdc_DecodeIp(PyObject *self, PyObject *args) {
+    PyObject *ip123_list=Py_None, *item;
+    int nelm,ip1=-1,ip2=-1,ip3=-1,istat;
+    ip_info rp1,rp2,rp3;
+
+    if (!PyArg_ParseTuple(args, "(iii):DecodeIp",&ip1,&ip2,&ip3)) {
+      return NULL;
+    }
+
+    /*
+    if (!PyArg_ParseTuple(args, "O",&ip123_list)) {
+        return NULL;
+    }
+    nelm = PyList_Size(ip123_list);
+    if (nelm == -1) {
+      if (!PyArg_ParseTuple(ip123_list, "iii",&ip1,&ip2,&ip3)) {
+          return NULL;
+        }
+    } else if (nelm == 3) {
+      item = PyList_GetItem(ip123_list,0); ip1  = (int)PyLong_AsLong(item);
+      item = PyList_GetItem(ip123_list,1); ip2  = (int)PyLong_AsLong(item);
+      item = PyList_GetItem(ip123_list,2); ip3  = (int)PyLong_AsLong(item);
+    } else {
+      PyErr_SetString(FstdcError,"DecodeIp argument should be a tuple/list with (ip1,ip2,ip3)");
+      return NULL;
+    }
+    */
+
+    INIT_ip_info(rp1)
+    INIT_ip_info(rp2)
+    INIT_ip_info(rp3)
+    istat = DecodeIp(&rp1,&rp2,&rp3,ip1,ip2,ip3);
+    if (istat == CONVERT_ERROR) {
+      PyErr_SetString(FstdcError,"Proleme decoding ip123 in DecodeIp");
+      return NULL;
+    }
+    return Py_BuildValue("((ffi),(ffi),(ffi))",rp1.v1,rp1.v2,rp1.kind,rp2.v1,rp2.v2,rp2.kind,rp3.v1,rp3.v2,rp3.kind);
+}
 
 
 static char Fstdc_newdate__doc__[] =
@@ -732,7 +780,6 @@ mode=-4 : stamp to 14 word old style DATE array\n\
    out  fdat3  unused                                   integer\n\
     in  mode   set to -4                                integer\n\
 ";
-
 static PyObject *Fstdc_newdate(PyObject *self, PyObject *args) {
     int date1,date2,date3,mode,istat;
     F77_INTEGER fdat1,fdat2,fdat3,fmode;
@@ -759,7 +806,6 @@ static char Fstdc_difdatr__doc__[] =
         @param date2 CMC datatime stamp (int)\n\
         @return number of hours = date2-date1 (float)\n\
         @exception TypeError";
-
 static PyObject *Fstdc_difdatr(PyObject *self, PyObject *args) {
     int date1,date2;
     F77_REAL8 fnhours=0;
@@ -782,7 +828,6 @@ static char Fstdc_incdatr__doc__[] =
         @return Increase CMC datetime stamp (int)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_incdatr(PyObject *self, PyObject *args) {
     int date2,istat;
     double nhours;
@@ -811,7 +856,6 @@ static char Fstdc_datematch__doc__[] =
         @param delta (float)\n\
         @return 1:if date match; 0 otherwise\n\
         @exception TypeError";
-
 static PyObject *Fstdc_datematch(PyObject *self, PyObject *args) {
     int datelu=0, debut=0, fin=0;
     float delta=0.;
@@ -854,7 +898,6 @@ static char Fstdc_ezgetlalo__doc__[] =
         @return tuple of (numpy.ndarray) with center lat/lon (lat,lon) and optionally corners lat/lon (clat,clon)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_ezgetlalo(PyObject *self, PyObject *args) {
     int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
     int hasSrcAxis,doCorners,ier,n,nbcorners=4;
@@ -1069,7 +1112,6 @@ static char Fstdc_ezinterp__doc__[] =
         @return interpolated data (numpy.ndarray)\n\
         @exception TypeError\n\
         @exception Fstdc.error";
-
 static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     int ig1S, ig2S, ig3S, ig4S, niS, njS, i0S,j0S, gdid_src;
     int ig1D, ig2D, ig3D, ig4D, niD, njD, i0D,j0D, gdid_dst;
@@ -1159,34 +1201,7 @@ static PyObject *Fstdc_ezinterp(PyObject *self, PyObject *args) {
     return NULL;
 }
 
-/*
-static char Fstdc_mapdscrpt__doc__[] =
-"Interface to get map descriptors for use with PyNGL\nmyMapDescDict = Fstdc_mapdscrpt(x1,y1,x2,y2,ni,nj,cgrtyp,ig1,ig2,ig3,ig4)\n@param ...TODO... \n@return python dict with keys/values";
 
-static PyObject *Fstdc_mapdscrpt(PyObject *self, PyObject *args) {
-    int ig1, ig2, ig3, ig4, one=1, ni, nj, proj;
-    char *cgrtyp;
-    float x1,y1, x2,y2, polat,polong, rot, lat1,lon1, lat2,lon2;
-
-    if (!PyArg_ParseTuple(args, "ffffiisiiii",&x1,&y1,&x2,&y2,&ni,&nj,&cgrtyp,&ig1,&ig2,&ig3,&ig4)) {
-        return NULL;
-    }
-#if defined(DEBUG)
-    printf("Debug apres parse tuple cgrtyp[0]=%c\n",cgrtyp[0]);
-    printf("Debug appel Mapdesc_PyNGL\n");
-#endif
-    f77name(mapdesc_pyngl)(cgrtyp,&one,&ig1,&ig2,&ig3,&ig4,&x1,&y1,&x2,&y2,
-        &ni,&nj,&proj,&polat,&polong,&rot,&lat1,&lon1,&lat2,&lon2,1);
-#if defined(DEBUG)
-    printf("Fstdc.mapdscrpt ig1=%d ig2=%d ig3=%d ig4=%d\n",ig1,ig2,ig3,ig4);
-    printf("Fstdc.mapdscrpt polat=%f polong=%f rot=%f, lat1=%f lon1=%f lat2=%f, lon2=%f\n",polat,polong,rot,lat1,lon1,lat2,lon2);
-#endif
-    return Py_BuildValue("{s:f,s:f,s:f,s:f,s:f,s:f,s:f}",
-        "polat",polat,"polong",polong,"rot",rot,
-        "lat1",lat1,"lon1",lon1,"lat2",lat2,"lon2",lon2);
-    // return Py_BuildValue("f",rot);
-}
-*/
 static char Fstdc_ezgetopt__doc__[] =
     "Get the string representation of one of the internal ezscint options\n\
         opt_val = Fstrc.ezgetopt(option)\n\
@@ -1215,6 +1230,7 @@ static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args) {
 
     return Py_BuildValue("s",upper_value);
 }
+
 
 static char Fstdc_ezsetopt__doc__[] =
     "Get the string representation of one of the internal ezscint options\n\
@@ -1246,13 +1262,13 @@ static PyObject * Fstdc_ezsetopt(PyObject *self, PyObject *args) {
 
 }
 
+
 static char Fstdc_ezgetval__doc__[] =
     "Get an internal ezscint float or integer value by keyword\n\
         opt_val = Fstdc.ezgetval(option)\n\
         @type option: A string\n\
         @param option: The keyword of the option to retrieve\n\
         @return: The value of the option as returned by ezget[i]val";
-
 static PyObject * Fstdc_ezgetval(PyObject *self, PyObject *args) {
     char * in_option = 0; // User-input option
     float float_value = 0; // The value of a floating-point option
@@ -1294,6 +1310,8 @@ static PyObject * Fstdc_ezgetval(PyObject *self, PyObject *args) {
     }
     return Py_BuildValue("f",float_value);
 }
+
+
 static char Fstdc_ezsetval__doc__[] =
     "Set an internal ezscint float or integer value by keyword\n\
         opt_val = Fstdc.ezgetval(option,value)\n\
@@ -1356,8 +1374,6 @@ static PyObject * Fstdc_ezsetval(PyObject *self, PyObject *args) {
 }
 
 
-
-
 /* List of methods defined in the module */
 
 static struct PyMethodDef Fstdc_methods[] = {
@@ -1381,7 +1397,8 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"ip1_to_level",(PyCFunction)Fstdc_ip1_to_level,METH_VARARGS,	Fstdc_ip1_to_level__doc__},
     {"ConvertP2Ip",(PyCFunction)Fstdc_ConvertP2Ip,METH_VARARGS,	Fstdc_ConvertP2Ip__doc__},
     {"ConvertIp2P",(PyCFunction)Fstdc_ConvertIp2P,METH_VARARGS,	Fstdc_ConvertIp2P__doc__},
-    //{"mapdscrpt",	(PyCFunction)Fstdc_mapdscrpt,	METH_VARARGS,	Fstdc_mapdscrpt__doc__},
+    {"EncodeIp",(PyCFunction)Fstdc_EncodeIp,METH_VARARGS,	Fstdc_EncodeIp__doc__},
+    {"DecodeIp",(PyCFunction)Fstdc_DecodeIp,METH_VARARGS,	Fstdc_DecodeIp__doc__},
     {"ezinterp",	(PyCFunction)Fstdc_ezinterp,	METH_VARARGS,	Fstdc_ezinterp__doc__},
     {"cxgaig",	(PyCFunction)Fstdc_cxgaig,	METH_VARARGS,	Fstdc_cxgaig__doc__},
     {"cigaxg",	(PyCFunction)Fstdc_cigaxg,	METH_VARARGS,	Fstdc_cigaxg__doc__},
@@ -1397,7 +1414,7 @@ static struct PyMethodDef Fstdc_methods[] = {
 /* Initialization function for the module (*must* be called initFstdc) */
 
 static char Fstdc_module_documentation[] =
-"Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
+"Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Michel Valin <Michel.Valin@ec.gc.ca>\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
 
 void initFstdc(void) {
     PyObject *m, *d;
