@@ -321,19 +321,53 @@ class FstdcConvertIp2PKnownValues(unittest.TestCase):
             self.assertEqual(ipnew2,ipnew)
 
 
-class FstdcEncodeIPKnownValues(unittest.TestCase):
+class FstdcEncodeIpKnownValues(unittest.TestCase):
+
+    #rp1.v1,rpn1.v2,rp1.kind, rp2.v1,rpn2.v2,rp2.kind, ip1,ip2,ip3
+    knownValues = (
+    (5525.,5525.,Fstdc.KIND_ABOVE_SEA, 2., 2.,Fstdc.KIND_HOURS, 6843956, 177409344, 66060288), #rp1,    rp2
+    (13.5, 1500.,Fstdc.KIND_ABOVE_SEA, 3., 3.,Fstdc.KIND_HOURS, 8523608, 177509344, 6441456), #rp1.v12,rp2
+    (1500.,1500.,Fstdc.KIND_ABOVE_SEA, 6.,12.,Fstdc.KIND_HOURS, 6441456, 176280768, 177809344)   #rp1,    rp2.v12
+    )
     
-    def testEncodeIPKnownValues(self):
-        """EncodeIP should give known result with known input"""
-        pass #TODO:
+    knownErrors = (
+   (13.5, 1500.,Fstdc.KIND_ABOVE_SEA, 3., 6.,Fstdc.KIND_HOURS, 0,0,0), #rp1.v12,rp2.v12 == error
+   (13.5, 1500.,Fstdc.KIND_ABOVE_SEA, 3., 3.,Fstdc.KIND_ABOVE_SEA, 0,0,0), #rp2.kind == level error
+    )
+
+    def testEncodeIpKnownValues(self):
+        """EncodeIp should give known result with known input"""
+        for rp1v1,rp1v2,rp1k,rp2v1,rp2v2,rp2k,ip1,ip2,ip3 in self.knownValues:
+            (ip1b,ip2b,ip3b) = Fstdc.EncodeIp([(rp1v1,rp1v2,rp1k),(rp2v1,rp2v2,rp2k),(0.,0.,Fstdc.KIND_ARBITRARY)])
+            self.assertEqual((ip1b,ip2b,ip3b),(ip1,ip2,ip3))
         
-    def testDecodeIPKnownValues(self):
-        """DecodeIP should give known result with known input"""
-        pass #TODO:
+    def testEncodeIpKnownErrors(self):
+        """EncodeIp should raise an exeption for Known Errors"""
+        for rp1v1,rp1v2,rp1k,rp2v1,rp2v2,rp2k,ip1,ip2,ip3 in self.knownErrors:
+            try:
+                (ip1b,ip2b,ip3b) = Fstdc.EncodeIp([(rp1v1,rp1v2,rp1k),(rp2v1,rp2v2,rp2k),(0.,0.,Fstdc.KIND_ARBITRARY)])
+                self.assertEqual((ip1b,ip2b,ip3b),("Except Fstdc.error",))
+            except Fstdc.error:
+                self.assertEqual("Except Fstdc.error","Except Fstdc.error")
+
+    def testDecodeIpKnownValues(self):
+        """DecodeIp should give known result with known input"""
+        for rp1v1,rp1v2,rp1k,rp2v1,rp2v2,rp2k,ip1,ip2,ip3 in self.knownValues:
+            ((rp1v1b,rp1v2b,rp1kb),(rp2v1b,rp2v2b,rp2kb),(rp3v1b,rp3v2b,rp3kb)) = Fstdc.DecodeIp((ip1,ip2,ip3))
+            self.assertEqual(rp1kb,rp1k)
+            self.assertEqual(rp2kb,rp2k)
+            self.assertAlmostEqual(rp1v1b,rp1v1,6)
+            self.assertAlmostEqual(rp1v2b,rp1v2,6)
+            self.assertAlmostEqual(rp2v1b,rp2v1,6)
+            self.assertAlmostEqual(rp2v2b,rp2v2,6)
+
 
     def testSanity(self):
-        """EncodeIP(DecodeIP(n))==n for all n"""
-        pass #TODO:
+        """EncodeIp(DecodeIp(n))==n for all n"""
+        for rp1v1,rp1v2,rp1k,rp2v1,rp2v2,rp2k,ip1,ip2,ip3 in self.knownValues:
+            ((rp1v1b,rp1v2b,rp1kb),(rp2v1b,rp2v2b,rp2kb),(rp3v1b,rp3v2b,rp3kb)) = Fstdc.DecodeIp((ip1,ip2,ip3))
+            (ip1b,ip2b,ip3b) = Fstdc.EncodeIp([(rp1v1b,rp1v2b,rp1kb),(rp2v1b,rp2v2b,rp2kb),(rp3v1b,rp3v2b,rp3kb)])
+            self.assertEqual((ip1b,ip2b,ip3b),(ip1,ip2,ip3))
 
 if __name__ == "__main__":
     unittest.main()
