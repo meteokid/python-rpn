@@ -17,6 +17,7 @@
 !
       subroutine var_gestdic (string)
       implicit none
+#include <arch_specific.hf>
 
       character(len=*),intent(in)  :: string
 

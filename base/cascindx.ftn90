@@ -15,6 +15,7 @@
       integer function cascindx ( ideb,ifin,jdeb,jfin,&
                                   xfi,yfi,nid,njd,xpx,ypx,nis,njs )
       implicit none
+#include <arch_specific.hf>
 
       integer ideb,ifin,jdeb,jfin,nid,njd,nis,njs
       real xfi(nid), yfi(njd), xpx(nis), ypx(njs)

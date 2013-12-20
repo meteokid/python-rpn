@@ -18,7 +18,7 @@
 !
       subroutine e_dynframe
       implicit none
-!
+#include <arch_specific.hf>
 !AUTHOR  M. Desgagne    April 2002
 !
 !revision 

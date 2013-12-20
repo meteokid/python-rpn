@@ -17,6 +17,7 @@
 !
       subroutine step_update ( F_step, F_bkup_L, F_finalstep )
       implicit none
+#include <arch_specific.hf>
 !
       logical F_bkup_L
       integer F_step,F_finalstep

@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
       subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, F_ut1,F_vt1,F_tt1, DIST_DIM, Nk)
       implicit none
+#include <arch_specific.hf>
 !
       integer DIST_DIM, Nk
       real    F_ugwdt1(DIST_SHAPE,Nk), F_vgwdt1(DIST_SHAPE,Nk)

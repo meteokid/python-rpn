@@ -15,6 +15,7 @@
 !/**
       subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, F_var_S)
       implicit none
+#include <arch_specific.hf>
 
    !@objective
    !@arguments

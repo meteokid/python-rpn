@@ -20,6 +20,7 @@
       subroutine e_3dfreso ( F_grd_S, F_dx, F_dy, F_nia, F_nja, &
                              F_ig1a , F_ig2a, F_ig3a, F_ig4a )
       implicit none
+#include <arch_specific.hf>
 
       character*1 F_grd_S
       integer F_nia,F_nja,F_ig1a,F_ig2a,F_ig3a,F_ig4a

@@ -16,6 +16,7 @@
 !**s/r itf_phy_fillbus
       subroutine itf_phy_fillbus
       implicit none
+#include <arch_specific.hf>
 !
 !author
 !     Michel Desgagne - SUmmer 2013

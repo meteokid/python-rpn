@@ -17,6 +17,7 @@
 !
       subroutine gemntr
       implicit none
+#include <arch_specific.hf>
 !
 ! ---------------------------------------------------------------------
 !

@@ -18,6 +18,7 @@
 !
       subroutine e_dynfld (date1,errcode) 
       implicit none
+#include <arch_specific.hf>
 
       character*16 date1
       integer errcode

@@ -17,6 +17,7 @@
 !
       subroutine out_steps ( F_step0, F_stepf )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_step0, F_stepf
 !

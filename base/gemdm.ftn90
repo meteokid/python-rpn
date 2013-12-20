@@ -17,6 +17,7 @@
 !
       subroutine gemdm
       implicit none
+#include <arch_specific.hf>
 !
 !     ---------------------------------------------------------------
 !

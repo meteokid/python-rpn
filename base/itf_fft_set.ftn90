@@ -17,6 +17,7 @@
 !
       subroutine itf_fft_set ( F_dim, F_type_S, F_pri_8 )
       implicit none
+#include <arch_specific.hf>
 !
       character*(*) F_type_S
       integer       F_dim

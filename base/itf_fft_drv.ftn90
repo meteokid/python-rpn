@@ -17,6 +17,7 @@
 !
       subroutine itf_fft_drv ( F_vec, F_n1 ,F_n2 ,F_n3, F_dir )
       implicit none
+#include <arch_specific.hf>
 !
       integer F_n1 ,F_n2 ,F_n3, F_dir
       real*8  F_vec(*)
