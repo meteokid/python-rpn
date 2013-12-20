@@ -212,12 +212,14 @@ $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 
 sometools: prgemnml gemgrid toc2nml
 
-allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
+#allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
+allbin_gemdyn: monitor toc2nml gemgrid prgemnml split3df #gemabs
+
+#		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 
 allbincheck_gemdyn:
 	if [[ \
 		   -f $(BINDIR)/gemprnml_$(BASE_ARCH).Abs \
-		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/gemgrid_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/split3df_$(BASE_ARCH).Abs \
 		&& -f $(BINDIR)/toc2nml \

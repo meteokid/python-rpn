@@ -105,8 +105,10 @@ function adx_config() result(F_stat)
       endif
    endif
 
-   if (Adw_gccsa_L.and.adx_trapeze_L) &
-        call handle_error(-1,'adx_main','Adw_gccsa_L cannot be used with adx_trapeze_L')
+   if (Adw_gccsa_L.and.adx_trapeze_L) then
+      call msg(MSG_ERROR,'adw_nml: Adw_gccsa_L cannot be used with adx_trapeze_L')
+      F_stat = -1
+   endif
 
    if (adw_positive_L .and. adw_mono_L) then
       call msg(MSG_ERROR,'adw_nml: adw_positive_L and adw_mono_L cannot be both .true.')
