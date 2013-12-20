@@ -310,6 +310,40 @@ BUILDINFO:
 	cat ssmuse_dependencies.bndl >> $@
 
 
+## Target: uninstall
+.PHONY: uninstall uninstall_domain uninstall_pkgs uninstall_pkgs_all uninstall_pkgs_arch uninstall_pkgs_multi uninstall_bndl
+uninstall: | uninstall_bndl uninstall_domain
+uninstall_domain:
+	chmod u+w $(SSMINSTALLDIRDOM)/$(PKGNAME)
+	chmod u+w -R $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	rm -rf $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)/$(PKGNAME)
+uninstall_pkgs:
+	for mytype in $(SSM_PKG); do \
+		$(MAKE) -f Makefile.base.mk $(NOPRINTDIR) $(MFLAGS) \
+			uninstall_pkgs_$${mytype} ;\
+	done
+uninstall_pkgs_all:
+	chmod u+w $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	chmod u+w -R $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_all
+	rm -rf $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_all
+	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+uninstall_pkgs_arch: 
+	chmod u+w $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	chmod u+w -R $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_*
+	rm -rf $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_*
+	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+uninstall_pkgs_multi:
+	chmod u+w $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+	chmod u+w -R $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_multi
+	rm -rf $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)/$(PKGNAME)_$(VERSION)_multi
+	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRDOM)/$(PKGNAME)/$(PKGNAME)_$(VERSION)
+uninstall_bndl:
+	chmod u+w $(SSMINSTALLDIRBNDL)/$(PKGNAME) ;\
+	rm -f $(SSMINSTALLDIRBNDL)/$(PKGNAME)/$(VERSION).bndl ;\
+	chmod $(SSMPOSTCHMOD) $(SSMINSTALLDIRBNDL)/$(PKGNAME)
+
+
 ## Target: install (install/publish ssm pkgs)
 .PHONY: install install_domain install_pkgs install_pkgs_all install_pkgs_arch install_pkgs_multi install_bndl
 #TODO: domain name should be: $(PKGNAME)_$(VERSION) or $(PKGNAME)/$(PKGNAME)_$(VERSION)

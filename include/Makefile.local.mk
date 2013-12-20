@@ -23,8 +23,11 @@ CHM         = $(CHM_VERSION) $(CHMLIBS)
 #CHM         = chm
 
 #PHY         = rpnphy_stubs
-PHY         = rpnphy rpnphy_surface
-CLASSLIBS   = rpnphy_class
+#CLASSLIBS   = rpnphy_class
+#PHYSURFACELIBS = rpnphy_surface
+#PHYCONVECTLIBS = rpnphy_convect
+#CHMLIBS = rpnphy_chm_stubs
+PHY         = $(PHYLIBS)
 
 #PROF          = prof_stubs
 PROF          = prof_003
