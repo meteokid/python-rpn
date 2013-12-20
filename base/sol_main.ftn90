@@ -26,13 +26,13 @@
 !     Michel Roch - rpn - nov 1993
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_40 - Lee/Qaddouri      - for LAM version
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_03 - Tanguay M.        - Williamson's cases
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_40 - Qaddouri A.       - initialize wk1,wk2 to 0.0 for LAM/Yin-Yang
+! v2_00 - Desgagne/Lee       - initial MPI version
+! v3_00 - Desgagne & Lee     - Lam configuration
+! v3_01 - Qaddouri A.        - add call sol_parite_2
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v3_21 - Desgagne M.        - Optimization
+! v3_30 - Qaddouri A.        - add Call to iterative solver 
+! v4_40 - Qaddouri A.        - Add Schwarz iterative solution for YinYang
 !
 #include "glb_ld.cdk"
 #include "grd.cdk"

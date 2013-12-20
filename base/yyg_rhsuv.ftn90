@@ -64,8 +64,8 @@
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
-         temp_F_u (i,j,k)= F_oru(i,j,k)*Geomg_invcy_8(j)
-         temp1_F_u(i,j,k)= F_oru(i,j,k)*Geomg_invcy_8(j)
+         temp_F_u (i,j,k)= F_oru(i,j,k)
+         temp1_F_u(i,j,k)= F_oru(i,j,k)
       enddo
       enddo
       enddo
@@ -78,8 +78,8 @@
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
-         temp_F_v (i,j,k)= F_orv(i,j,k)*Geomg_invcyv_8(j)
-         temp1_F_v(i,j,k)= F_orv(i,j,k)*Geomg_invcyv_8(j)
+         temp_F_v (i,j,k)= F_orv(i,j,k)
+         temp1_F_v(i,j,k)= F_orv(i,j,k)
       enddo
       enddo
       enddo
@@ -95,7 +95,7 @@
 
       call  yyg_vecbc1(temp1_F_u,temp_F_u,temp_F_v,LDIST_DIM,G_nk)
       call  yyg_vecbc2(temp1_F_v,temp_F_v,temp_F_u,LDIST_DIM,G_nk)
-      
+
 !Now copy back only the data that has to be updated.
 
 !$omp parallel private(i,j) shared(temp1_F_u,temp1_F_v)
@@ -103,11 +103,11 @@
 !$omp do
          do k= 1, G_nk
             do j= 1,l_nj
-               F_oru(1,j,k)= temp1_F_u (1,j,k)*Geomg_cy_8(j)
+               F_oru(1,j,k)= temp1_F_u (1,j,k)
             enddo
             do j= 1,l_njv
-               F_orv(1,j,k)= temp1_F_v (1,j,k)*Geomg_cyv_8(j)
-               F_orv(2,j,k)= temp1_F_v (2,j,k)*Geomg_cyv_8(j)
+               F_orv(1,j,k)= temp1_F_v (1,j,k)
+               F_orv(2,j,k)= temp1_F_v (2,j,k)
             enddo
          enddo
 !$omp enddo
@@ -117,11 +117,11 @@
 !$omp do
          do k= 1, G_nk
             do j= 1,l_nj
-               F_oru(l_niu,j,k)= temp1_F_u (l_niu,j,k)*Geomg_cy_8(j)
+               F_oru(l_niu,j,k)= temp1_F_u (l_niu,j,k)
             enddo
             do j= 1,l_njv
-               F_orv(l_niu,j,k)= temp1_F_v (l_niu,j,k)*Geomg_cyv_8(j)
-               F_orv(l_ni,j ,k)= temp1_F_v (l_ni,j ,k)*Geomg_cyv_8(j)
+               F_orv(l_niu,j,k)= temp1_F_v (l_niu,j,k)
+               F_orv(l_ni,j ,k)= temp1_F_v (l_ni,j ,k)
             enddo
          enddo
 !$omp enddo
@@ -131,11 +131,11 @@
 !$omp do
          do k= 1, G_nk
             do i= 1, l_niu
-               F_oru(i,1,k)=temp1_F_u (i,1,k)*Geomg_cy_8(1)
-               F_oru(i,2,k)=temp1_F_u (i,2,k)*Geomg_cy_8(2)
+               F_oru(i,1,k)=temp1_F_u (i,1,k)
+               F_oru(i,2,k)=temp1_F_u (i,2,k)
             enddo
             do i= 1, l_ni
-               F_orv(i,1,k)=temp1_F_v (i,1,k)*Geomg_cyv_8(1)
+               F_orv(i,1,k)=temp1_F_v (i,1,k)
             enddo
          enddo
 !$omp enddo
@@ -145,11 +145,11 @@
 !$omp do
          do k= 1, G_nk
             do i= 1, l_niu
-               F_oru(i,l_njv,k)= temp1_F_u (i,l_njv,k)*Geomg_cy_8(l_njv)
-               F_oru(i,l_nj ,k)= temp1_F_u (i,l_nj ,k)*Geomg_cy_8(l_nj )
+               F_oru(i,l_njv,k)= temp1_F_u (i,l_njv,k)
+               F_oru(i,l_nj ,k)= temp1_F_u (i,l_nj ,k)
             enddo
             do i= 1, l_ni
-               F_orv(i,l_njv,k)= temp1_F_v (i,l_njv,k)*Geomg_cyv_8(l_njv)
+               F_orv(i,l_njv,k)= temp1_F_v (i,l_njv,k)
             enddo
          enddo
 !$omp enddo

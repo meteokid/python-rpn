@@ -34,7 +34,6 @@
 !                    |         time step; afterward, q and s are re-   |
 !                    |         computed;this can be done in            |
 !                    |                           hydrostatic mode only)|
-! Schm_wload_L       | .true.-> Effet of water loading included        |
 ! Schm_theoc_L       | .true.-> theoretical case                       |
 ! Schm_itcn          | number of iterations for Crank-Nicholson        |
 ! Schm_modcn         | frequency of Crank-Nicholson procedure          |
@@ -52,14 +51,15 @@
 ! Schm_Tlift         | 1: last thermo level at last momentum level     |
 ! Schm_trapeze_L     | Use trapeziodal average for advection winds     |
 ! Schm_superwinds_L  | Use super winds for advection                   |
+! Schm_cub_traj_L    | Use cubic interpolation in trajectory comp.     |
 !----------------------------------------------------------------------
 !
 #endif
       logical Schm_hydro_L ,Schm_nkbz_L , Schm_autobar_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_psadj_L, Schm_opentop_L
-      logical Schm_wload_L ,Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L
+      logical Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
-      logical Schm_hzdadw_L,Schm_bitpattern_L
+      logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith
@@ -68,11 +68,11 @@
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L 
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_psadj_L  , Schm_opentop_L
-      common / schm_l / Schm_wload_L  , Schm_trapeze_L
+      common / schm_l / Schm_trapeze_L
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
-      common / schm_l / Schm_hzdadw_L
+      common / schm_l / Schm_hzdadw_L , Schm_cub_traj_L
       common / schm_l / Schm_bitpattern_L
 
       common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3

@@ -35,7 +35,6 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
 !
       type(gmm_metadata) :: mymeta
@@ -43,28 +42,27 @@
       real, pointer, dimension(:,:,:)     :: tr
 !     ________________________________________________________________
 !
-!
       F_qh = 0.
-      if(Schm_wload_L)then
-!        Sum over Hydrometeors
-         do n = 1, Tr3d_ntr
-            if (Tr3d_wload (n)) then
-               nullify (tr)
-               istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
+
+!     Sum over Hydrometeors
+      do n = 1, Tr3d_ntr
+         if (Tr3d_wload (n)) then
+            nullify (tr)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
 !$omp parallel private(j,i)
 !$omp do
-               do k = 1, l_nk
+            do k = 1, l_nk
                do j = 1, l_nj
-               do i = 1, l_ni
-                  F_qh(i,j,k)=F_qh(i,j,k)+tr(i,j,k)
+                  do i = 1, l_ni
+                     F_qh(i,j,k)=F_qh(i,j,k)+tr(i,j,k)
+                  end do
                end do
-               end do
-               end do
+            end do
 !$omp enddo
 !$omp end parallel
-            endif
-         end do
-      endif
+         endif
+      end do
+
 !     ________________________________________________________________
 !
       return

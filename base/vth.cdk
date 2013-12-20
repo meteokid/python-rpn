@@ -24,27 +24,27 @@
 !----------------------------------------------------------------------
 !
 #endif
-!
-      real, pointer, dimension (:,:,:) :: uth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
-      real, pointer, dimension (:,:,:) :: vth         => null() ! effective dimensions are (LDIST_SHAPE,   l_nk  )
-      real, pointer, dimension (:,:,:) :: zdth        => null() ! effective dimensions are (LDIST_SHAPE,   l_nk+1)
-      real, pointer, dimension (:    ) :: xth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-      real, pointer, dimension (:    ) :: yth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-      real, pointer, dimension (:    ) :: zth         => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-      real, pointer, dimension (:    ) :: xcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-      real, pointer, dimension (:    ) :: ycth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-      real, pointer, dimension (:    ) :: zcth        => null() ! effective dimensions are (l_ni * l_nj *  l_nk)
-!
+
+      real, pointer, dimension (:,:,:) :: uth   => null()
+      real, pointer, dimension (:,:,:) :: vth   => null()
+      real, pointer, dimension (:,:,:) :: zdth  => null()
+      real, pointer, dimension (:    ) :: xth   => null()
+      real, pointer, dimension (:    ) :: yth   => null()
+      real, pointer, dimension (:    ) :: zth   => null()
+      real, pointer, dimension (:    ) :: xcth  => null()
+      real, pointer, dimension (:    ) :: ycth  => null()
+      real, pointer, dimension (:    ) :: zcth  => null()
+
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
-      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
-!
-      common /vth_n_gmm / gmmk_uth_s  , gmmk_vth_s  , gmmk_zdth_s
-      common /vth_n_gmm / gmmk_xth_s  , gmmk_yth_s  , gmmk_zth_s
-      common /vth_n_gmm / gmmk_xcth_s , gmmk_ycth_s , gmmk_zcth_s
-!
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
+                                          gmmk_xth_s , gmmk_yth_s , gmmk_zth_s , &
+                                          gmmk_xcth_s, gmmk_ycth_s, gmmk_zcth_s
+
+      common /vth_n_gmm / gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
+                          gmmk_xth_s , gmmk_yth_s , gmmk_zth_s , &
+                          gmmk_xcth_s, gmmk_ycth_s, gmmk_zcth_s
+

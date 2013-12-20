@@ -30,9 +30,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
    real,dimension(F_num), intent(in) :: F_x, F_y, F_z ! interpolation target x,y,z coordinates
    real,dimension(*), intent(in) :: F_in              ! field to interpolate 
    real,dimension(F_num), intent(out) :: F_out        ! result of interpolation   
-   
-   logical :: andre_print_L
-!
+   !
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
 !**/
@@ -71,7 +69,7 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
 
    p_z00_8 = adx_verZ_8%m(0)
    if (F_lev_S == 'm') then
-      kkmax   = adx_lnkm - 1
+      kkmax   = adx_lnk - 1
       p_lcz     => adx_lcz%m
       p_bsz_8   => adx_bsz_8%m
       p_zabcd_8 => adx_zabcd_8%m
@@ -79,8 +77,8 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
       p_zcabd_8 => adx_zcabd_8%m
       p_zdabc_8 => adx_zdabc_8%m
       p_zbc_8   => adx_zbc_8%m
-   else
-      kkmax   = adx_lnkm-1
+   else if (F_lev_S == 't') then
+      kkmax   = adx_lnk-1
       p_lcz     => adx_lcz%t
       p_bsz_8   => adx_bsz_8%t
       p_zabcd_8 => adx_zabcd_8%t
@@ -88,6 +86,19 @@ subroutine adx_tricub_lag3d7 (F_out, F_in, F_x, F_y, F_z, F_num,&
       p_zcabd_8 => adx_zcabd_8%t
       p_zdabc_8 => adx_zdabc_8%t
       p_zbc_8   => adx_zbc_8%t
+   else if (F_lev_S == 's') then
+      kkmax   = adx_lnks - 1
+      p_lcz     => adx_lcz%s
+      p_bsz_8   => adx_bsz_8%s
+      p_zabcd_8 => adx_zabcd_8%s
+      p_zbacd_8 => adx_zbacd_8%s
+      p_zcabd_8 => adx_zcabd_8%s
+      p_zdabc_8 => adx_zdabc_8%s
+      p_zbc_8   => adx_zbc_8%s
+   else
+      !TO DO catch this error (since notr all cpu pass here we cannot call handle_error)
+      ! This s/r should be a function with a return status.
+      ! print*,'ERROR IN ADX_TRICUB_LAG3D'
    endif
 
    if (F_mono_L) then

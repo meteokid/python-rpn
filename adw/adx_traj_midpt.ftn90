@@ -56,7 +56,7 @@ subroutine adx_traj_midpt ( F_lon, F_lat, F_x, F_y, F_z, F_um, F_vm, &
 !$omp beta,sinbeta,pdux,pduy,pduz, &
 !$omp pdzM,pdxM,pdyM,latM,lonM)
 
-   do k=k0,adx_lnkm
+   do k=k0,adx_lnk
       do j=j0,jn
          do i=i0,in
             n = (k-1)*adx_mlnij + ((j-1)*adx_mlni) + i

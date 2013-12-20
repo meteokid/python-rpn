@@ -295,7 +295,7 @@
       end do
 !
       if(pnwe.ne.0)then
-         !call handle_error(-1,'out_thm','REVIEW CODE FOR NOMVAR=WE')
+         call handle_error(-1,'out_thm','REVIEW CODE FOR NOMVAR=WE')
          !
          ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
          !

@@ -13,15 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_exhrdif - applies horizontal explicit diffusion
+!**s/r hzd_exp_visco - applies horizontal explicit diffusion
 !
-#include "model_macros_f.h"
-      subroutine hzd_exhrdif (F_f2hzd, F_grd_S, NK)
+      subroutine hzd_exp_visco (F_f2hzd, F_grd_S, NK)
       implicit none
 #include <arch_specific.hf>
-!
+
       character*(*) F_grd_S
-      integer       DIST_DIM, Nk
+      integer       NK
       real          F_f2hzd (*)
 !
 !AUTHORs    C. Girard & M. Desgagne
@@ -30,32 +29,20 @@
 ! v3_21 - Desgagne M.    - initial MPI version
 ! v3_30 - Desgagne M.    - openMP precision in shared variables
 ! v4_15 - Desgagne M.    - refonte majeure
-!
+
 #include "glb_ld.cdk"
 #include "hzd.cdk"
-#include "lctl.cdk"
-#include "cstv.cdk"
-#include "lun.cdk"
-!
-      integer i,j,k, nn, mm, ni, nj, nij, i0,in,j0,jn, stag_x,stag_y
-      integer lnr_deb,lnr_fin
-      real wk1(LDIST_SHAPE,Nk),rnr,pwr
-      real*8 pt25,nu_dif,epsilon,lnr,visco,lnr_min,lnr_max,pente,b,hh
+
+      integer i,j,k, nn, mm, ni, nj, stag_x,stag_y
+      real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk),rnr,pwr
+      real*8 pt25,nu_dif,epsilon,lnr,visco(nk)
 
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !     __________________________________________________________________
 !
-!      lnr_deb= 72
-!      lnr_fin= 120
-!      lnr_min= Hzd_lnr
-!      lnr_max= 5*Hzd_lnr
-!      pente= (lnr_max-lnr_min)/dble(lnr_fin-lnr_deb)
-!      b    = lnr_min - pente*dble(lnr_deb)
-!      hh   = Lctl_step*Cstv_dt_8/3600.00
-!      rnr  = log(1. - min(lnr_max,max(lnr_min,pente*hh + b)))
-
       rnr = log(1.- Hzd_lnR)
       pwr = Hzd_pwr
+
       if (F_grd_S.eq.'S_THETA') then
          rnr = log(1.- Hzd_lnR_theta)
          pwr = Hzd_pwr_theta
@@ -65,47 +52,56 @@
          pwr = Hzd_pwr_tr
       endif
 
-      lnr = 1.0d0 - exp(rnr)
+      if ((F_grd_S.eq.'S_THETA').or.(F_grd_S.eq.'S_TR')) then
 
-      nu_dif = 0.d0
-      if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
-      nu_dif = min ( nu_dif, pt25-epsilon)
-      visco  = min ( nu_dif, pt25 )
+         lnr    = 1.0d0 - exp(rnr)
+         nu_dif = 0.0d0
+         if (pwr.gt.0) nu_dif = pt25*lnr**(2.d0/pwr)
+         nu_dif = min ( nu_dif, pt25-epsilon )
+         visco  = min ( nu_dif, pt25 )
+         if (nu_dif.lt.1.0e-10) return
 
-      if (nu_dif.lt.1.0e-10) return
+      else
 
-      i0 = Minx
-      in = Maxx
-      j0 = Miny
-      jn = Maxy
-      nij= (in-i0+1)*(jn-j0+1)
+         do k=1,nk
+            rnr    = log(1.- Hzd_visco_8(k))
+            lnr    = 1.0d0 - exp(rnr)
+            nu_dif = 0.0d0
+            if (Hzd_del(k).gt.0) nu_dif = pt25*lnr**(2.d0/Hzd_del(k))
+            nu_dif  = min ( nu_dif, pt25-epsilon )
+            visco(k)= min ( nu_dif, pt25 )
+            if (nu_dif.lt.1.0e-10) return
+         end do
+
+      endif
+
       nn = pwr/2
       
-      stag_x = 0
-      stag_y = 0
-      ni=l_ni
-      nj=l_nj
+      stag_x= 0 ; stag_y= 0
+      ni= l_ni  ; nj= l_nj
+
       if (F_grd_S.eq.'U')then
-         stag_x = 1
-         ni=l_niu
+         stag_x= 1
+         ni= l_niu
       endif
       if (F_grd_S.eq.'V')then
-         stag_y = 1
-         nj=l_njv
+         stag_y= 1
+         nj= l_njv
       endif
 
-      call rpn_comm_xch_halo ( F_f2hzd, LDIST_DIM, ni,nj, Nk, &
-                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo ( F_f2hzd, l_minx,l_maxx,l_miny,l_maxy,&
+               ni,nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       do mm=1,nn
 
-         call hzd_nudeln (F_f2hzd, wk1, LDIST_DIM, Nk, visco, stag_x,stag_y, mm,nn)
+         call hzd_nudeln (F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
+                                    Nk, visco, stag_x,stag_y, mm,nn )
 
-         if (mm.ne.nn) call rpn_comm_xch_halo( wk1, LDIST_DIM, ni,nj, Nk, &
-                                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         if (mm.ne.nn) &
+              call rpn_comm_xch_halo( wk1, l_minx,l_maxx,l_miny,l_maxy,&
+                  ni,nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       end do
-
 !     __________________________________________________________________
 !
       return

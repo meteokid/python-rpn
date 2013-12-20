@@ -13,14 +13,18 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-   subroutine itf_adx_interp_mom2thermo(F_fld_t,F_fld_m)
+   subroutine itf_adx_interp_mom2thermo2 (F_fld_t,F_fld_m, &
+                                   minx,maxx,miny,maxy,nk)
       implicit none
 #include <arch_specific.hf>
 
       !@objective interpolate from momentum to thermodynamic levels
       !@arguments
-      real, dimension(:,:,:), pointer :: F_fld_m !intent(in)
-      real, dimension(:,:,:), pointer :: F_fld_t !intent(out)
+
+      integer minx,maxx,miny,maxy,nk
+      real F_fld_t(minx:maxx,miny:maxy,nk+1), &
+           F_fld_m(minx:maxx,miny:maxy,nk  )
+
       !@revisions
       ! v4_40 - Qaddouri/Lee      - Yin-Yang, to use global range
       !**/
@@ -34,12 +38,12 @@
 
       integer :: i,j,k, i0,j0,in,jn
       real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4,den
-      real*8, dimension(:), pointer :: zd_z_8
+      real*8  :: zd_z_8(l_nk+1)
 
 #define lag3(xx, x1, x2, x3, x4)  (((xx - x2) * (xx - x3) * (xx - x4))/( (x1 - x2) * (x1 - x3) * (x1 - x4)))
 
       !---------------------------------------------------------------------
-      allocate(zd_z_8(l_nk+1))
+
       zd_z_8(1)=Cstv_Ztop_8
       zd_z_8(2:l_nk+1)=Ver_a_8%t(1:l_nk)
       zd_z_8(l_nk+1)=Cstv_Zsrf_8
@@ -134,8 +138,7 @@
       enddo
 !$omp enddo
 !$omp end parallel
-      deallocate(zd_z_8)
 
       !---------------------------------------------------------------------
       return
-   end subroutine itf_adx_interp_mom2thermo
+   end subroutine itf_adx_interp_mom2thermo2

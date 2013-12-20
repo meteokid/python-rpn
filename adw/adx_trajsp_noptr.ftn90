@@ -52,7 +52,7 @@ subroutine adx_trajsp1_noptr(F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
 !$omp parallel do private(ysin,ycos,yrec,xasin,xatan,yatan, &
 !$omp zatan,yasin,xsin,xcos, n,pdx,pdy,pdz,pdsa,pdca, &
 !$omp pdcai,pdso,pdco,pdux,pduy,pduz,pdsinal,pdcosal)
-   do k=1,adx_lnkm
+   do k=1,adx_lnk
       do j=j0,jn
          do i=i0,in
             n = (k-1)*adx_mlnij + ((j-1)*adx_mlni) + i

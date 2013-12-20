@@ -73,7 +73,6 @@ subroutine iau_apply()
   integer, dimension(1), target :: any_level
   integer, dimension(:), pointer :: ip1s,ip1_gem
   real :: split
-  real, dimension(YDIST_SHAPE) :: con
   real, dimension(:), pointer, save :: weight
   real, dimension(:,:,:), pointer :: data,tr,pw_tt
   character(len=16) :: ltype,vdate
@@ -220,7 +219,7 @@ subroutine iau_apply()
                     if (ip1s(kk) == ip1_gem(k)) found = .true.
                     kk = kk+1
                  enddo
-                 if (.not.found) then 
+                 if (.not.found) then
                     call msg(MSG_ERROR,'(iau_apply) Level list in IAU input file does not match GEM config for '//trim(flds(i)%nomvar)); error_raised=.true.
                     error_raised = .true.
                  endif
@@ -279,15 +278,14 @@ subroutine iau_apply()
      datei = this_datei
 
      ! Adapt units and horizontal positioning
-     con(1:l_nj)= cos(geomg_y_8(1:l_nj)) / Dcst_rayt_8
      do k=1,size(flds(UU)%ptr3d,dim=3)
         flds(UU)%ptr3d(l_minx:l_maxx,l_miny:0,k) = 0. ; flds(UU)%ptr3d(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
         flds(VV)%ptr3d(l_minx:l_maxx,l_miny:0,k) = 0. ; flds(VV)%ptr3d(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
         flds(UU)%ptr3d(l_minx:0,l_miny:l_maxy,k) = 0. ; flds(UU)%ptr3d(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
         flds(VV)%ptr3d(l_minx:0,l_miny:l_maxy,k) = 0. ; flds(VV)%ptr3d(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
         do j=1,l_nj
-           flds(UU)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(UU)%ptr3d(1:l_ni,j,k) * con(j)
-           flds(VV)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(VV)%ptr3d(1:l_ni,j,k) * con(j)
+           flds(UU)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(UU)%ptr3d(1:l_ni,j,k)
+           flds(VV)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(VV)%ptr3d(1:l_ni,j,k)
         enddo
      enddo
      call itf_phy_uvgridscal(flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,size(flds(UU)%ptr3d,dim=3),.false. )
@@ -343,13 +341,13 @@ subroutine iau_apply()
 
   !  Emit message to alert user to IAU application
   if (Lun_out > 0) write (Lun_out,2000) trim(vdate)
-  
+
   call timing_stop(50)
   return
-  
+
   !  Messaging definitions
 1000 format(/,' IAU_APPLY - READING ANALYSIS INCREMENTS FOR ',a)
 2000 format(/,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT ',a)
 
 end subroutine iau_apply
-        
+

@@ -62,7 +62,6 @@
       namelist /gem_cfgs/ Hzd_pwr_theta
       namelist /gem_cfgs/ Hzd_pwr_tr
       namelist /gem_cfgs/ Hzd_tr3d_name_S
-      namelist /gem_cfgs/ Hzd_type_S
 !Iau
       namelist /gem_cfgs/ Iau_cutoff
       namelist /gem_cfgs/ Iau_interval
@@ -125,6 +124,7 @@
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
+      namelist /gem_cfgs/ Schm_cub_traj_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
@@ -140,7 +140,6 @@
       namelist /gem_cfgs/ Schm_trapeze_L
       namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
-      namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_xwvt3
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
@@ -192,7 +191,6 @@
       namelist /gem_cfgs_p/ Hzd_pwr
       namelist /gem_cfgs_p/ Hzd_pwr_theta
       namelist /gem_cfgs_p/ Hzd_pwr_tr
-      namelist /gem_cfgs_p/ Hzd_type_S
 !Iau
       namelist /gem_cfgs_p/ Iau_cutoff
       namelist /gem_cfgs_p/ Iau_interval
@@ -251,6 +249,7 @@
 !Schm
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
+      namelist /gem_cfgs_p/ Schm_cub_traj_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn
@@ -264,7 +263,6 @@
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_trapeze_L
       namelist /gem_cfgs_p/ Schm_superwinds_L
-      namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_xwvt3
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps

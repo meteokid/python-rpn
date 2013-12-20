@@ -37,6 +37,7 @@
 ! v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
 !                             produce BCS or 3DF files
 ! v4_30 - Tanguay & Plante  - Derive image winds from true winds when no interpolation
+! v4.7  - Gaudreault S.     - Removing wind images
 !
 !object
 !        see above ID
@@ -181,8 +182,6 @@
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
                call e_bmfsplitxy2 (vv,nisv,njsv,'VV  ',k,lv,pni ,0,0,0)
             else
-               call vte_uv2img ( uu,vv,nisu,njsu,nisv,njsv,1, &
-                                 yg_8(E_grdc_gjd),ygv_8(E_grdc_gjd) )
                call e_fill_3df ( uu,uun,nisu,njsu,lv,k,1.0,0.0)
                call e_fill_3df ( vv,vvn,nisv,njsv,lv,k,1.0,0.0)
             endif

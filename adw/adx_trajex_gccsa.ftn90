@@ -61,7 +61,7 @@ subroutine adx_trajex_gccsa (F_xto,  F_yto,  F_u, F_v, F_xcto, F_ycto, &
 !$omp parallel private(term_8,n,idx_k,idx_kj,xto_8,yto_8,F_v_dt, F_u_dt, &
 !$omp                  cos_xto_8,sin_xto_8,cos_yto_8,sin_yto_8)
 !$omp do
-   do k=k0,adx_lnkm
+   do k=k0,adx_lnk
       idx_k = (k-1)*adx_mlnij
       do j=j0,jn
          idx_kj = idx_k + ((j-1)*adx_mlni)

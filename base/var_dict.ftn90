@@ -13,34 +13,42 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_ctrl 
-!
-#include "model_macros_f.h"
-!
-      subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, NK)
+!**s/r var_dict
+
+      subroutine var_dict
       implicit none
 #include <arch_specific.hf>
 !
-      character*(*) F_grd_S
-      integer DIST_DIM, Nk
-      real    F_f2hzd (*)
-!
 !author
-!     Michel Desgagne -- Fall 2010
+!     Michel Desgagne  -- fall 2013
 !
 !revision
-! v4_15 - Desgagne M.       - initial version 
-!
-#include "hzd.cdk"
-!
-!     _________________________________________________________________
-!
-      if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_imp_ctrl  (F_f2hzd, F_grd_S, NK)
+! v4_70 - Desgagne M.   -   Initial version
 
-      if (Hzd_type_S.eq.'HO_EXP') &
-         call hzd_exp_visco (F_f2hzd, F_grd_S, NK)
-!     _________________________________________________________________
+#include "vardict.cdk"
+!
+!-------------------------------------------------------------------
+!
+      allocate (vardict(500))
+
+      vardict%out_name = '@#$%'
+      vardict%gmm_name = '@#$%'
+      vardict%hor_stag = ''
+      vardict%ver_stag = ''
+      var_cnt          = 0
+      vardict%fact_mult= 1.
+      vardict%fact_add = 0.
+
+! 9.80616
+! KNAMS      0.514791
+
+      call var_gestdic ('GMMNAME=PW_UU:P ; OUTNAME=UU ;HSTAG=U ; VSTAG=M ; fact_Mul=1.942536 ; fact_Add= 0.    ')
+      call var_gestdic ('GMMNAME=PW_VV:P ; OUTNAME=VV ;HSTAG=V ; VSTAG=M ; fact_Mul=1.942536 ; fact_Add= 0.    ')
+      call var_gestdic ('GMMNAME=PW_TT:P ; OUTNAME=TT ;HSTAG=Q ; VSTAG=T ; fact_Mul=1.       ; fact_Add=-273.15')
+      call var_gestdic ('GMMNAME=PW_GZ:P ; OUTNAME=GZ ;HSTAG=Q ; VSTAG=M ; fact_Mul=1.       ; fact_Add= 0.    ')
+
+!
+!     ---------------------------------------------------------------
 !
       return
       end

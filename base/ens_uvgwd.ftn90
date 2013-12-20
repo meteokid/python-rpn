@@ -51,6 +51,12 @@
 !*
 !     __________________________________________________________________
 !
+
+      print *,'Broken code, please fix !'
+      print *,'Stéphane Gaudreault <stephane.gaudreault@ec.gc.ca>'
+      stop
+
+
       i0 = 1
       in = l_niu
       j0 = 1

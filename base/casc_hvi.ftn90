@@ -196,7 +196,10 @@
           call gz2p0(ssq0x,meqx,topo1,rna,ngd1,nka_m)
           deallocate (rna)
           ssq0x(1:nid1,1:njd1) =ssq0x(1:nid1,1:njd1)-lnpref_8
-      else if ( presstype.eq.Ver_code .and. .not.Ana_horzint_L) then
+!      else if ( presstype.eq.Ver_code .and. .not.Ana_horzint_L )then
+      else if ( (presstype.eq.Ver_code .and. .not.Ana_horzint_L) .or. &
+                (Lam_hint_S.eq.'NEAREST') ) then
+!         NOTE: test ".or. (Lam_hint_S.eq.'NEAREST')" is needed for the acid test
           Vertint_L   = .false.
           i0=1;in=l_ni;j0=1;jn=l_nj
           if (Grd_yinyang_L) then
@@ -342,7 +345,7 @@
             call handle_error(err,'casc_hvi','casc_hvi:get_px')
             call vte_intvertx3(qq1,qqr,srclev,dstlev,ngd,nka_m-1,G_nk,'QQ','cubic') 
          else
-            qq1(:,:,2:G_nk) = qqr(:,:,2:G_nk)
+            qq1(:,:,1:G_nk) = qqr(:,:,1:G_nk)
          endif
       endif
 

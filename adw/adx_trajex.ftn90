@@ -51,7 +51,7 @@ subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
 
 !$omp parallel private(xasin,yasin,xatan,yatan,zatan,n,prx,pry,prz,prdot2)
 !$omp do
-   do k=k0,adx_lnkm
+   do k=k0,adx_lnk
       do j=j0,jn
          do i=i0,in
 

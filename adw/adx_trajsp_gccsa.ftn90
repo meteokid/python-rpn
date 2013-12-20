@@ -53,7 +53,7 @@ subroutine adx_trajsp_gccsa ( F_lon, F_lat, F_u, F_v, &
    one_ov6_8=1.0D0/6.0D0
 
 !$omp parallel do private(term_8,idx_k,idx_kj,n,F_v_dt,F_u_dt)
-   do k=k0,adx_lnkm
+   do k=k0,adx_lnk
       idx_k = (k-1)*adx_mlnij
       do j=j0,jn
          idx_kj = idx_k + ((j-1)*adx_mlni)

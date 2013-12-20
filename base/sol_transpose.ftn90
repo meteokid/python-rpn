@@ -13,48 +13,44 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_transpose - Establish layout for the 2 level-transpose used
+!**s/r sol_transpose - Establish layout for the 2 level-transpose used
 !                      in the solver and the horizontal diffusion
-!
-#include "model_macros_f.h"
-!
-      subroutine set_transpose2 ( F_npex, F_npey, F_checkparti_L )
+
+      subroutine sol_transpose ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_checkparti_L
       integer F_npex, F_npey
 !author
-!     M. Desgagne - rpn - 1999
+!     M. Desgagne - fall 2013
 !
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version
 ! v2_10 - Desgagne M.       - add partitioning checks
 ! v2_11 - Desgagne M.       - vertical sponge layer (vsl)
 ! v2_21 - Corbeil  L.       - ldnh_maxx and ldnh_maxy for vsl
-!
+
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
 #include "trp.cdk"
-#include "hzd.cdk"
-#include "vspng.cdk"
 #include "sol.cdk"
 
       logical, external :: decomp3
       integer,parameter :: lowest = 2
-      integer istat, minx, maxx, n, npartiel, n0, n1, dim, ierr
+      integer minx, maxx, n, npartiel, n0, n1, ierr
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
       ierr=0
-!
+
 ! Establishing local dimensions and computing arena (data topology) for:
 !          G_ni distributed on Ptopo_npex PEs and 
 !          G_nj distributed on Ptopo_npey PEs both without halo
-!
+
       if (Lun_out.gt.0) then
          if (Sol_type_S.eq.'DIRECT') then
             write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
@@ -90,7 +86,7 @@
 !                  G_ni NOT distributed
 !         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
 !         transpose layout: (l_miny:l_maxy,trp_12smin:trp_12smax,G_ni)
-!
+
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for SOLVER (no halo):', &
                   ' Schm_nith distributed on F_npex PEs', Schm_nith,F_npex
 
@@ -107,7 +103,7 @@
 !                  G_ni distributed on F_npey PEs (no Halo)
 !  initial layout  : (    l_miny:l_maxy    ,trp_12smin:trp_12smax,G_ni)
 !  transpose layout: (trp_12smin:trp_12smax,trp_22min :trp_22max ,G_nj)
-!
+
          if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
                   ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
@@ -118,115 +114,21 @@
          trp_22max = maxx
          trp_22n   = n
          trp_22n0  = n0
-!
+
       endif
 
-      if (Hzd_type_S.eq.'HO_IMP') then
-!
-! Transpose 1===>2:G_nk distributed on F_npex PEs (no halo)
-!                  G_nj distributed on F_npey PEs (original layout)
-!                  G_ni NOT distributed
-!         initial layout  : (l_minx:l_maxx,    l_miny:l_maxy    ,G_nk)
-!         transpose layout: (l_miny:l_maxy,trp_12dmin:trp_12dmax,G_ni)
-!
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
-                  ' G_nk   distributed on F_npex PEs', G_nk,F_npex
-
-         if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
-!
-         trp_12dmin = minx ! most likely = 1 since no halo
-         trp_12dmax = maxx
-         trp_12dn   = n
-         trp_12dn0  = n0
-!
-! Transpose 1===>2:G_nk distributed on F_npex PEs (no halo)
-!                  G_nj distributed on F_npey PEs (original layout)
-!                  G_ni NOT distributed
-!         initial layout  : (l_minx:l_maxx,     l_miny:l_maxy     ,G_nk)
-!         transpose layout: (l_miny:l_maxy,trp_p12dmin:trp_p12dmax,G_ni)
-!
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for HZD (no halo):', &
-                  ' G_nk distributed on F_npex PEs', G_nk,F_npex
-
-         if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
-
-         trp_p12dmin = minx ! most likely = 1 since no halo
-         trp_p12dmax = maxx
-         trp_p12dn   = n
-         trp_p12dn0  = n0
-!
-! Transpose 2===>2:G_nk distributed on F_npex PEs (no halo)
-!                  G_nj NOT distributed
-!                  G_ni distributed on F_npey PEs (no Halo)
-!  initial layout  : (    l_miny:l_maxy    ,trp_12smin:trp_12smax,G_ni)
-!  transpose layout: (trp_12smin:trp_12smax,trp_22min :trp_22max ,G_nj)
-!
-         if (trp_22n.lt.0) then
-
-            if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for SOLVER (no halo):', &
-                     ' G_ni distributed on F_npey PEs', G_ni,F_npey
-
-            if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
-                     .false., .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
-
-            trp_22min = minx ! most likely = 1 since no halo
-            trp_22max = maxx
-            trp_22n   = n
-            trp_22n0  = n0
-         endif
-
-     endif
-!
-!    Vertical sponge near model lid
-!
-     if ( (.not.G_lam) .and. (Vspng_nk.gt.0) ) then
-
-!                  Vspng_n_spng top layers NOT distributed
-!                  ldnh_maxy distributed on F_npex PEs
-!                  G_ni NOT distributed
-
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 1===>2 for VSPNG (no halo):', &
-                ' ldnh_maxy distributed on F_npex PEs', ldnh_maxy,F_npex
-
-         if (.not. decomp3 (ldnh_maxy, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
-
-         trp_12emin = 1
-         trp_12emax = maxx
-         trp_12en   = n
-         trp_12en0  = n0
-!
-!                  Vspng_n_spng top layers NOT distributed
-!                  ldnh_maxx distributed on F_npey PEs
-!                  G_nj NOT distributed
-!
-         if (Lun_out.gt.0) write(Lun_out,1002) ' Transpose 2===>2 for VSPNG (no halo):', &
-                  ' ldnh_maxx distributed on F_npey', ldnh_maxx,F_npey
-
-         if (.not. decomp3 (ldnh_maxx, minx, maxx, n, npartiel, 0, n0, &
-                  .false. , .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
-!
-         trp_22emin = 1
-         trp_22emax = maxx
-         trp_22en   = n
-         trp_22en0  = n0
-!
-      endif
-!
       if  (Lun_out.gt.0) then
          if (ierr.lt.0)  then
-            write(lun_out,*) 'SET_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
+            write(lun_out,*) 'SOL_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
          else
-            write(lun_out,*) 'SET_TRANSPOSE: PARTITIONING is OK'
+            write(lun_out,*) 'SOL_TRANSPOSE: PARTITIONING is OK'
          endif
       endif
-!
+
       if (.not.F_checkparti_L) &
-      call handle_error(ierr,'SET_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')
+      call handle_error(ierr,'SOL_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')
 !
- 1000 format (/' SET_TRANSPOSE: checking various dimension partitionning:')
+ 1000 format (/' SOL_TRANSPOSE: checking SOLVER dimension partitionning:')
  1002 format (a/a45,i6,' /',i5)
 !     ---------------------------------------------------------------
 !

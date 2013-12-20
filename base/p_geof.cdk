@@ -22,14 +22,15 @@
 !
 #endif
 !
-      real, pointer, dimension (:,:) :: fis0      => null() ! effective dimensions are (LDIST_SHAPE)
-      real, pointer, dimension (:,:) :: topo_low  => null() ! effective dimensions are (LDIST_SHAPE)
-      real, pointer, dimension (:,:) :: topo_high => null() ! effective dimensions are (LDIST_SHAPE)
+      real, pointer, dimension (:,:) :: fis0      => null()
+      real, pointer, dimension (:,:) :: topo_low  => null()
+      real, pointer, dimension (:,:) :: topo_high => null()
  
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
-      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
       character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s
+
       common /geof_n_gmm/ gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s

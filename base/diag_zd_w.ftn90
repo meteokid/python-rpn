@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -33,6 +33,8 @@
 !
 !revision
 !
+! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
+!
 !arguments
 !______________________________________________________________________
 !        |                                             |           |   |
@@ -51,7 +53,6 @@
 !
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "inuvl.cdk"
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "zdot.cdk"
@@ -101,7 +102,7 @@
 
       j00=j0-1
       jnn=jn
-      if (.not.G_lam) then         
+      if (.not.G_lam) then
          if(l_south) then
              sbY(i0:in,j0-1)=0.
              F_v(i0:in,j0-1,1:Nk)=0.
@@ -151,7 +152,7 @@
          do i=i0,in
             lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)
              pbY=exp(lnpi)
-            VdpY(i,j)=F_v(i,j,k)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j))
+            VdpY(i,j)=F_v(i,j,k)*geomg_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j))
          end do
          end do
 
@@ -159,9 +160,8 @@
 
          do j=j0,jn
          do i=i0,in
-            div(i,j,k) = geomg_invcy2_8(j) * ( &
-                        (UdpX(i,j)-UdpX(i-1,j))*geomg_invDX_8(i) &
-                      + (VdpY(i,j)-VdpY(i,j-1))*geomg_invDY_8(j) )
+            div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomg_invDX_8(i,j) &
+                       + (VdpY(i,j)-VdpY(i,j-1))*geomg_invcy_8(j)*geomg_invDY_8(j)
          enddo
          enddo
 
@@ -186,7 +186,7 @@
             do j=j0,jn
             do i=i0,in
                div(i,j,k) = div(i,j,k) * (tanh(2.*lapse(i,j,k)/Dcst_pi_8)+1.)/2.
-            enddo 
+            enddo
             enddo
          enddo
       endif
@@ -230,12 +230,12 @@
             do j=j0,jn
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
-               adv=geomg_invcy2_8(j) * 0.5 * ( geomg_invDX_8(i) *  &
-                  ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
-                   -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
-                                                    + geomg_invDY_8(j) *  &
-                  ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*(sbY(i,j  )-F_s(i,j))   &
-                   -(F_v(i,j-1,kp)+F_v(i,j-1,k))*(sbY(i,j-1)-F_s(i,j)) ) )
+               adv= 0.5 * ( geomg_invDX_8(i,j) *  &
+                    ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
+                     -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
+                  + geomg_invcy_8(j) * geomg_invDY_8(j) *  &
+                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*geomg_cyv_8(j)*(sbY(i,j  )-F_s(i,j))   &
+                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*geomg_cyv_8(j-1)*(sbY(i,j-1)-F_s(i,j)) ) )
               !pidot=omega
                pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot

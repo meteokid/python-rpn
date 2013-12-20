@@ -1,0 +1,184 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!**s/r out_allvar - General output for GMM variables
+!
+#include "model_macros_f.h"
+!
+      subroutine out_allvar (levset,set)
+      use out_vref_mod, only: out_vref
+      implicit none
+#include <arch_specific.hf>
+!
+      integer levset,set
+!
+!author
+!     Lee V.                    - rpn July 2009 (from output VMM)
+!
+!revision
+! v3_20 - Lee V.            - initial MPI version
+! v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
+! v3_31 - Lee V.            - kind is set to 2 (press) for 2D fields, not -1
+! v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
+! v4_05 - Lee V.            - adaptation to GMM
+! v4_13 - Lee V.            - ptrs to GMM variables must have the right shape
+! v4_40 - Lee V.            - change in argument call for this routine
+!                             in order to select the "bot" levels
+! v4_40 - Lee V.            - bug correction for when number of pressure levels
+!                             is greater than number of model levels
+! v4_50 - Lee V.            - add Outd_varnm_S to check against GMM variables
+!                             in order to output PW_xx:P variables
+!
+!object
+!     output all the GMM fields
+!	
+!
+! Index vectors for level indentifications
+! ----------------------------------------
+! 
+! There is one vector for the momentum level : Ver_hyb%m.
+!
+! There are 1 vector for the thermo levels :
+!    Ver_hyb%t : Thermo levels without special levels but top and surface.
+!
+!                Ver_hyb%m(1:G_nk)                 Ver_hyb%t(1:G_nk+1)
+! model top
+! ===========1        -                              X
+! o o o o o o2        -                              -
+! - - - - - -3        X                              -
+!
+! ===========4        -                              X
+!  
+!    ...             ...                            ...
+!
+!
+! ===========2*k      -                              X
+!
+! - - - - - -2*k+1    X                              -
+!
+!    ...             ...                            ...
+!
+! - - - - - -2*G_nk+1 X                              -
+! o o o o o o2*G_nk+2 -                              -
+! ===========2*G_nk+3 -                              X
+! model surface
+!
+!----------------------------------------------------------------------
+#include "gmm.hf"
+#include "glb_ld.cdk"
+#include "out3.cdk"
+#include "grid.cdk"
+#include "outd.cdk"
+#include "lun.cdk"
+#include "vardict.cdk"
+#include "ver.cdk"
+#include "level.cdk"
+!
+      type(gmm_metadata) :: tmp_meta
+!      character(len=GMM_MAXNAMELENGTH), dimension(256) :: keylist
+!      character(len=2) class_var(100,3)
+      logical periodx_L
+      integer nko,i,ii,gridset,ig2,istat,id,cid
+      integer, dimension(:), allocatable::indo
+      real, pointer, dimension(:,:,:) :: tr3
+      real, pointer, dimension(:,:  ) :: tr2
+      real, pointer, dimension(:    ) :: level_type
+!_______________________________________________________________________
+!
+!      if ( Level_typ_S(levset).eq.'P') return
+
+!      nkeys     = gmm_keys(keylist)
+
+      periodx_L = .false.
+      if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
+            Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
+
+!      class_var(1,1) = 'UT' ; class_var(1,2) = 'UU' ; class_var(1,3) = 'MM'
+!      class_var(2,1) = 'VT' ; class_var(2,2) = 'VV' ; class_var(2,3) = 'MM'
+!      class_var(3,1) = 'QT' ; class_var(3,2) = 'QQ' ; class_var(3,3) = 'MM'
+!      class_var(4,1) = 'TT' ; class_var(4,2) = 'QQ' ; class_var(4,3) = 'TT'
+!      class_var(5,1) = 'WT' ; class_var(5,2) = 'QQ' ; class_var(5,3) = 'TT'
+!      class_var(6,1) = 'ZD' ; class_var(6,2) = 'QQ' ; class_var(6,3) = 'TT'
+!      class_var(7,1) = 'TR' ; class_var(7,2) = 'QQ' ; class_var(7,3) = 'TT'
+!      class_var(8,1) = 'ST' ; class_var(8,2) = 'QQ' ; class_var(8,3) = 'SF'
+
+!     Setup the indexing for output  vardict(var_cnt)%gmm_name
+      allocate (indo   ( min(Level_max(levset),G_nk) ))
+      call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko)
+
+      do ii=1,Outd_var_max(set)
+      do  i=1,var_cnt
+
+!         print*, ii,i,Outd_varnm_S(ii,set)(1:4),vardict(i)%out_name(1:4)
+
+         if (Outd_varnm_S(ii,set)(1:4).eq.vardict(i)%out_name(1:4)) then
+            gridset = Outd_grid(set)
+!            id = -1
+!            do cid=1,8
+!               if (keylist(i)(1:2) == class_var(cid,1)) id=cid
+!            end do
+!            if (id.lt.0) then
+!               if (Lun_out.gt.0) write(Lun_out,1001) trim(keylist(i))
+!               cycle
+!            endif
+            ig2 = Grid_ig2(gridset)
+            if (vardict(i)%hor_stag == 'U') ig2 = ig2 + 1
+            if (vardict(i)%hor_stag == 'V') ig2 = ig2 + 2
+
+            level_type => Ver_hyb%t(2:G_nk+2)
+            if (vardict(i)%ver_stag == 'M') level_type => Ver_hyb%m
+
+            call out_sgrid2( Grid_x0 (gridset),Grid_x1 (gridset), &
+                             Grid_y0 (gridset),Grid_y1 (gridset), &
+                             Grid_ig1(gridset),ig2              , &
+                             periodx_L, Grid_stride(gridset)    , &
+                             Grid_etikext_s(gridset) )
+
+            
+            if (vardict(i)%hor_stag == 'U') call out_href2 ( 'U_point' )
+            if (vardict(i)%hor_stag == 'V') call out_href2 ( 'V_point' )
+
+            nullify(tr2,tr3)
+            istat = gmm_getmeta (vardict(i)%gmm_name,tmp_meta)
+
+            if ( Level_typ_S(levset).eq.'M') then
+            if (tmp_meta%l(3)%high.le.1) then
+               istat = gmm_get(trim(vardict(i)%gmm_name),tr2,tmp_meta)
+               call ecris_fst2(tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                    tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                               0,vardict(i)%out_name(1:4),1.0,0.0,Level_kind_ip1,&
+                               1,1,1, Outd_nbit(ii,set) )
+            else
+               istat = gmm_get(trim(vardict(i)%gmm_name),tr3,tmp_meta)
+               call ecris_fst2(tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                    tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                               level_type,vardict(i)%out_name(1:4),1.0,0.0,Level_kind_ip1,&
+                               G_nk,indo,nko, Outd_nbit(ii,set) )
+            endif
+            endif
+
+            goto 800
+         endif
+
+      end do
+ 800  end do
+
+      deallocate(indo)
+
+ 1001 format(/' ===> In out_gmm: table class_var is incomplete for variable: ',a/)
+
+! ___________________________________________________________________
+      return
+      end

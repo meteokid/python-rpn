@@ -48,7 +48,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "intuv.cdk"
-#include "inuvl.cdk"
 #include "schm.cdk"
 !
 !notes
@@ -67,8 +66,8 @@
       do j = j0, jn
       do i = i0, in
          F_wrk(i,j,k) = geomg_invcyv2_8(j) * (  &
-                ( F_v(i+1,j,k) - F_v(i,j,k) ) * geomg_invDXu_8(i) - &
-                ( F_u(i,j+1,k) - F_u(i,j,k) ) * geomg_invDYv_8(j) )
+                ( F_v(i+1,j,k) - F_v(i,j,k) ) * geomg_invDXu_8(i,j) * Geomg_cy_8(j) - &
+                ( F_u(i,j+1,k) - F_u(i,j,k) ) * geomg_invDYv_8(j) * geomg_cyv_8(j))
       end do
       end do
       end do

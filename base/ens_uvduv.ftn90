@@ -60,6 +60,11 @@
       if ((G_lam).and.(l_west)) i0 = 2
       if (l_south) j0 = 2
 !
+
+      print *,'Broken code, please fix !'
+      print *,'Stéphane Gaudreault <stephane.gaudreault@ec.gc.ca>'
+      stop
+
       do k=1,Nk
          do j = j0, jn
          coni  = (( 1.0/geomg_cy_8(j))  * Dcst_rayt_8)**2

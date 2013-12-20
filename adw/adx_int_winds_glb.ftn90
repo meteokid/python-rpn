@@ -17,7 +17,7 @@
 #include "model_macros_f.h"
 
 !/**
-subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
+subroutine adx_int_winds_glb(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
      F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
      F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
    implicit none
@@ -50,14 +50,13 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
 
    integer, external :: adx_ckbd3
 
-   logical :: save_nosetint_L
    integer :: nb_flds, istat,outside,sum_outside,ier
    real    :: dummy
    integer, dimension(F_ni,F_nj,F_nk) :: wrkc1
    real,    dimension(F_ni,F_nj,F_nk) :: wrkz1, wrky
    real,    dimension(:,:,:), allocatable :: xpos2,ypos2,zpos2
    !---------------------------------------------------------------------
-   call msg(MSG_DEBUG,'adx_pos_glb [begin]')
+   call msg(MSG_DEBUG,'adx_int_winds_glb [begin]')
 
    call adx_exch_1c(F_wrkx1,F_wrky1,wrkz1,wrkc1,F_xth,F_yth,F_zth,F_ni,F_nj,F_k0,F_nk)
 
@@ -72,21 +71,18 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
         adx_fro_n, adx_fro_s, adx_fro_a, &
         adx_for_n, adx_for_s, adx_for_a, 3)
 
-   call adx_trilin_opt4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
+   call adx_trilin5(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
         F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
         F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
 
    istat = 1
    if (adx_fro_a > 0 .and. adw_ckbd_L) istat = adx_ckbd3(ypos2,adx_fro_n,adx_fro_s)
-   call handle_error(istat,'adx_pos_glb','Error raised in adx_ckbd')
+   call handle_error(istat,'adx_int_winds_glb','Error raised in adx_ckbd')
 
    if (adx_fro_a > 0) then
-      save_nosetint_L = adw_nosetint_L
-      adw_nosetint_L  = .false.
-      call adx_trilin_opt4(xpos2,ypos2,F_u1,F_u2,xpos2,ypos2,zpos2, &
+      call adx_trilin5(xpos2,ypos2,F_u1,F_u2,xpos2,ypos2,zpos2, &
            F_dth,F_has_u2_L, 1,adx_fro_a,1,1,&
            adx_fro_a,1,F_aminx, F_amaxx, F_aminy, F_amaxy,1,1, F_nk_super)
-      adw_nosetint_L = save_nosetint_L
    endif
 
    nb_flds = 1
@@ -101,8 +97,8 @@ subroutine adx_pos_glb4(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
 
    deallocate(xpos2,ypos2,zpos2,stat=istat)
 
-   call msg(MSG_DEBUG,'adx_pos_glb [end]')
+   call msg(MSG_DEBUG,'adx_int_winds_glb [end]')
    !---------------------------------------------------------------------
    return
-end subroutine adx_pos_glb4
+end subroutine adx_int_winds_glb
 

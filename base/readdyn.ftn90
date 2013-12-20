@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -30,7 +30,7 @@
            F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_s(Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), F_topo (Mminx:Mmaxx,Mminy:Mmaxy)
 !
-!author 
+!author
 !     Michel Roch - rpn - jan 1994
 !
 !revision
@@ -40,9 +40,9 @@
 ! v2_21 - Desgagne M.      - new calling sequence to glbdist and
 ! v2_21                      rpn_comm stooge for MPI
 ! v2_21 - Lee V.           - modifications for LAM version
-! v2_30 - Corbeil L.       - Added BMF stuff instead of rdfld, added 
+! v2_30 - Corbeil L.       - Added BMF stuff instead of rdfld, added
 ! v2_30                      vertical interpolation
-! v2_31 - Edouard/Lee      - proper treatment of hybrid coordinate 
+! v2_31 - Edouard/Lee      - proper treatment of hybrid coordinate
 ! v2_31 - Desgagne         - clean up and introduce tracers
 ! v2_31 - Lee V.           - enable case for no interpolation
 ! v2_32 - Lee V.           - hybrid coordinate derives from "HY" record
@@ -62,7 +62,7 @@
 ! v4_00 - Plante & Girard  - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_03 - Lee V.           - Adapt to using new pressure functions
 ! v4_04 - Plante A.        - Remove offline mode
-! v4_04 - Tanguay M.       - modif when autobar on IBM 
+! v4_04 - Tanguay M.       - modif when autobar on IBM
 ! v4_05 - Plante A.        - Add reads and interpolation for w, zd, q
 ! v4_40 - Lee V.           - Add setup for Yin-yang barotropic (Williamson)
 
@@ -71,8 +71,7 @@
 #include "lun.cdk"
 #include "bmf.cdk"
 #include "ptopo.cdk"
-#include "cstv.cdk" 
-#include "dcst.cdk" 
+#include "cstv.cdk"
 #include "lam.cdk"
 #include "geomg.cdk"
 #include "grd.cdk"
@@ -113,7 +112,7 @@
       real*8 lnpref_8,fistr_top_8,diffd
       real step_current
 !
-!     Acqi_datasp(2) 
+!     Acqi_datasp(2)
 !            0 => p =    A                         (B=0),  prs-anal
 !            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
 !            2 => p =    A+B*   ps       , F_p0=ps      ,  etasef-anal
@@ -125,7 +124,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      
+
       lnpref_8 = log(Cstv_pref_8)
 
       call datp2f   ( dat, F_datev )
@@ -226,10 +225,10 @@
 
 !---------------------------------------------------------------------
 !     OBTAIN PS,PPS
-!     NOTE: Acqi_vertlv, nka_m, nka_t 
-!     includes the diag/surface level at hyb=1.0, for vert. interp 
+!     NOTE: Acqi_vertlv, nka_m, nka_t
+!     includes the diag/surface level at hyb=1.0, for vert. interp
 !--------------------------------------------------------------------
-         
+
       if (Acql_prsanl) then   ! ANALYSIS IS ON PRESSURE COORDINATES
 
          allocate(rna(nka_m))
@@ -238,16 +237,16 @@
          enddo
          call gz2p0(pps,gz_temp,topo_temp,rna,nbpts,nka_m)
          deallocate (rna)
-         
+
          do j=1,l_nj
             do i=1,l_ni
                F_s (i,j)= pps(i,j)-lnpref_8
                pps (i,j)= F_s(i,j)
             enddo
          enddo
-         
+
       else if (Acql_vertint) then  ! ANALYSIS IS ON ETA/SIG/HYB/ECMWF COORDINATES
-         
+
          allocate ( pres(nbpts,nka_t), vt_temp(l_ni,l_nj,nkmax) )
          err = get_px(pres,ps,nbpts,zat_8,zbt_8,nka_t,Acqi_datasp(2),.false.)
          call handle_error(err,'readdyn','readdyn:get_px')
@@ -268,18 +267,18 @@
             enddo
          enddo
          deallocate(pres,vt_temp)
-         
+
       else  !NO INTERPOLATION REQUIRED
-         
+
          do j=1,l_nj
             do i=1,l_ni
                pps(i,j) =  ps(i,j)
                F_s(i,j) = pps(i,j)
             end do
          end do
-         
+
       endif
-      
+
 !---------------------------------------------------------------------
 !     SETUP THE vertical interpolation column for SRC and DST
 !---------------------------------------------------------------------
@@ -314,13 +313,13 @@
             if (Acql_vertint) then
                call vte_intvertx3 (work,hu_temp,srclev_t,dstlev_t,nbpts, &
                                                 nka_t,G_nk,'HU','cubic')
-               if (Schm_bitpattern_L) then 
+               if (Schm_bitpattern_L) then
                   tr (1:l_ni,1:l_nj,1:G_nk) = work   (1:l_ni,1:l_nj,1:G_nk)
                else
                   tr (1:l_ni,1:l_nj,1:G_nk) = max(work   (1:l_ni,1:l_nj,1:G_nk), 0.)
                endif
             else
-               if (Schm_bitpattern_L) then 
+               if (Schm_bitpattern_L) then
                   tr (1:l_ni,1:l_nj,1:G_nk) = hu_temp(1:l_ni,1:l_nj,1:G_nk)
                else
                   tr (1:l_ni,1:l_nj,1:G_nk) = max(hu_temp(1:l_ni,1:l_nj,1:G_nk), 0.)
@@ -330,7 +329,7 @@
             tr (1:l_ni,1:l_nj,1:G_nk) = Tr3d_sval(k)
          endif
       end do
-      
+
 !     TEMPERATURE TT1
       if (Acql_vertint) then
          call vte_intvertx3(work,tt_temp,srclev_t,dstlev_t,nbpts, &
@@ -348,7 +347,7 @@
          call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
          call mfottvh2(tt,F_t,hu,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
               1,l_ni,1,l_nj,.true.)
-      endif      
+      endif
 
       if (ana_zd_L) then
          if (Acql_vertint) then
@@ -375,7 +374,7 @@
          call handle_error(-1,'Please review this code for Q','readdyn')
          if (Acql_vertint) then
             call vte_intvertx3 (work,q_temp,srclev_m,dstlev_m,nbpts, &
-                                          nka_m,G_nk+1,'QT','cubic')        
+                                          nka_m,G_nk+1,'QT','cubic')
             F_q(1:l_ni,1:l_nj,2:G_nk+1) =   work(1:l_ni,1:l_nj,2:G_nk+1)
          else
             F_q(1:l_ni,1:l_nj,2:G_nk+1) = q_temp(1:l_ni,1:l_nj,2:G_nk+1)
@@ -395,7 +394,7 @@
         allocate ( u_temp2(Acqi_niu,Acqi_nju,nkmax), &
                    v_temp2(Acqi_niv,Acqi_njv,nkmax) )
 
-!       Get pressure on the U,V analysis grid 
+!       Get pressure on the U,V analysis grid
         call adj_ss2uv ( ps,l_ni,l_nj,apsu_temp,Acqi_niu,Acqi_nju, &
                          apsv_temp,Acqi_niv,Acqi_njv,Acqi_datasp(2))
 
@@ -435,9 +434,6 @@
         deallocate ( apsu_temp,apsv_temp,psu_temp,psv_temp,u_temp2,v_temp2 )
       endif
 
-      if(Acqi_datasp(1)/=11) call vte_uv2img (u_temp, v_temp, Acqi_niu, Acqi_nju, &
-                             Acqi_niv, Acqi_njv, G_nk, geomg_y_8(1), geomg_yv_8(1))
-
       do k=1,G_nk
          F_u(1:Acqi_niu,1:Acqi_nju,k) = u_temp(1:Acqi_niu,1:Acqi_nju,k)
          F_v(1:Acqi_niv,1:Acqi_njv,k) = v_temp(1:Acqi_niv,1:Acqi_njv,k)
@@ -461,7 +457,7 @@
             end do
             Acql_pwuv= .true.
          endif
-         
+
          err_pwtt = bmf_get ('PWTT',bmf_time1,bmf_time2,-1,hu_temp,-1, &
                                                1,l_ni,1, l_nj,1,nkmax)
          if (err_pwtt.eq.0) then
@@ -473,7 +469,7 @@
          endif
 
       endif
-      
+
       deallocate (u_temp,v_temp,gz_temp,tt_temp,hu_temp,zd_temp,w_temp, &
                                      q_temp,work,za_8,zb_8,zat_8,zbt_8)
       call bmf_clear

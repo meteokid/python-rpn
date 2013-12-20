@@ -54,7 +54,7 @@
                                         Hzd_av_8  ,Hzd_cv_8  ,Hzd_deltav_8  ,&
                                         Hzd_as_8  ,Hzd_cs_8  ,Hzd_deltas_8  ,&
                                         Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,&
-                                        Hzd_xp0_8, Hzd_yp0_8                ,&
+                                        Hzd_xp0_8, Hzd_yp0_8 ,Hzd_h0_8      ,&
                                         Hzd_evvec_8, Hzd_odvec_8            ,&
                                         Hzd_wevec_8, Hzd_wuevec_8           ,&
                                         Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
@@ -64,7 +64,7 @@
                          Hzd_av_8  ,Hzd_cv_8  ,Hzd_deltav_8  ,&
                          Hzd_as_8  ,Hzd_cs_8  ,Hzd_deltas_8  ,&
                          Hzd_astr_8,Hzd_cstr_8,Hzd_deltastr_8,&
-                         Hzd_xp0_8,Hzd_yp0_8                 ,&
+                         Hzd_xp0_8,Hzd_yp0_8  ,Hzd_h0_8      ,&
                          Hzd_evvec_8,Hzd_odvec_8             ,&
                          Hzd_wevec_8,Hzd_wuevec_8            ,&
                          Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
@@ -76,14 +76,14 @@
        character*8  Hzd_tr3d_name_S(HZD_MAXTR)
        character*12 Hzd_type_S
        character*64 Hzd_prof_S(HZD_MAXPROF)
-       logical      Hzd_ho_L  , Hzd_difva_L
+       logical      Hzd_hzdadw_L, Hzd_difva_L
        integer      Hzd_tr3d_ntr, Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
        integer, dimension(:), pointer :: Hzd_del
        real         Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
        real*8 , dimension(:), pointer :: Hzd_visco_8
 
        common /hzdc/ Hzd_type_S, Hzd_tr3d_name_S, Hzd_prof_S
-       common /hzdl/ Hzd_ho_L  , Hzd_difva_L
-       common /hzdi/ Hzd_tr3d_ntr, Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
+       common /hzdl/ Hzd_hzdadw_L, Hzd_difva_L
+       common /hzdi/ Hzd_tr3d_ntr, Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta, Hzd_del
        common /hzdr/ Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
        common /hzdr8/Hzd_visco_8

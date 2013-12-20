@@ -62,7 +62,7 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
 !$omp pdxA,pdyA,pdzA,pdsinA,pdcosA, &
 !$omp pdsxD,pdcxD,pdsyD,pdcyD,pdcyDi,pdsinD,pdsecD)
 
-   do k=k0,adx_lnkm
+   do k=k0,adx_lnk
 
       do j=j0,jn
          do i=i0,in

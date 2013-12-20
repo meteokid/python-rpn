@@ -20,7 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-!author 
+!author
 !     Michel Desgagne   - Spring 2006
 !
 !revision
@@ -124,14 +124,12 @@
        do k= 1, G_nk
         do j= 1, l_nj
           do i= 1, l_niu
-         ut1 (i,j,k)=ut1 (i,j,k)*Geomg_invcy_8(j)
          nest_u(i,j,k)=ut1(i,j,k)
 
         enddo
        enddo
         do j= 1, l_njv
           do i= 1, l_ni
-          vt1(i,j,k)=vt1 (i,j,k)*Geomg_invcyv_8(j)
           nest_v(i,j,k)=vt1(i,j,k)
           enddo
         enddo
@@ -145,25 +143,6 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call  yyg_vecbc1(ut1,nest_u,nest_v,LDIST_DIM,G_nk)
       call  yyg_vecbc2(vt1,nest_v,nest_u,LDIST_DIM,G_nk)
-
-!$omp parallel private(i,j)
-!$omp do
-      do k= 1, G_nk
-         do j= 1, l_nj
-         do i= 1, l_niu
-
-            ut1   (i,j,k) =  ut1(i,j,k)*Geomg_cy_8(j)
-         enddo
-         enddo
-         do j= 1, l_njv
-         do i= 1, l_ni
-            vt1(i,j,k)   =  vt1 (i,j,k)*Geomg_cyv_8(j)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-!$omp end parallel
-
 !
       do n=1,Tr3d_ntr
          tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':C'

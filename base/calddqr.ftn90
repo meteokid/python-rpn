@@ -39,6 +39,7 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_21 - Lee V.            - Output Optimization
 ! v3_30 - Lee V.            - LAM output correction
+! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !
 !object
 !   calculate DD and QQ from DS and QS
@@ -71,8 +72,8 @@
 ! F_diver      I/O   - divergence
 ! F_relv       I/O   - relative vorticity
 ! F_wlnph      I      - log of hydrostatique pressure
-! F_ui         I     - image wind u-component
-! F_vi         I     - image wind v-component
+! F_ui         I     - wind u-component
+! F_vi         I     - wind v-component
 ! F_dpdx             - work field
 ! F_dpdy             - work field
 ! F_dudp             - work field
@@ -119,7 +120,7 @@
          do j=j0,jn
          do i=i0,in
             F_dpdy(i,j,k)= ( F_wlnph(i+1,j,k) - F_wlnph(i,j,k) )  &
-                           * geomg_invDXu_8(i)*inv_geomg_cy_8(j)
+                           * geomg_invDXu_8(i,j)
             F_dvdp(i,j,k)= F_dvdp(i,j,k)*inv_geomg_cy_8(j)
          end do
          end do
@@ -168,10 +169,10 @@
          do i = i0, in
             F_dpdy(i,j,k)= (1.0 - intuv_c0yvy_8(j-1)) *  &
                  (F_wlnph(i,j,k)-F_wlnph(i,j-1,k))* &
-                 geomg_invDYv_8(j-1) * inv_geomg_cyv_8(j-1) + &
+                 geomg_invDYv_8(j-1) + &
                                 intuv_c0yvy_8(j-1)  *  &
                  (F_wlnph(i,j+1,k)-F_wlnph(i,j,k))* &
-                 geomg_invDYv_8(j) * inv_geomg_cyv_8(j)
+                 geomg_invDYv_8(j) 
          end do
          end do
          if (.not.G_lam) then
@@ -179,14 +180,14 @@
             do i = i0, in
                F_dpdy(i,1,k) = intuv_c0yvy_8(0) &
                          *(F_wlnph(i,2,k)-F_wlnph(i,1,k))* &
-                         geomg_invDYv_8(1)* inv_geomg_cyv_8(1)
+                         geomg_invDYv_8(1)
             end do
             endif
             if (l_north) then
             do i = i0, in
                F_dpdy(i,l_nj,k)=(1.-intuv_c0yvy_8(l_nj-1))* &
                        (F_wlnph(i,l_nj,k)-F_wlnph(i,l_nj-1,k))* &
-                       geomg_invDYv_8(l_nj-1)*inv_geomg_cyv_8(l_nj-1)
+                       geomg_invDYv_8(l_nj-1)
             end do
             endif
          endif

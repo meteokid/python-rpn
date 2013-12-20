@@ -34,12 +34,10 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_mono_L = .true.
    adw_positive_L = .false.
    adw_gccsa_L = .false.
-   adw_nosetint_L   = .false.
    adw_trunc_traj_L = .false.
    adw_halox  = -1
    adw_haloy  = -1
    adw_stats_L = .false.
-   adw_cub_traj_L=.false.
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
@@ -89,6 +87,7 @@ function adx_config() result(F_stat)
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "adx_nml.cdk"
+#include "adx_dims.cdk"
 !**/
    !---------------------------------------------------------------------
    F_stat = 0
@@ -105,6 +104,9 @@ function adx_config() result(F_stat)
          F_stat = -1
       endif
    endif
+
+   if (Adw_gccsa_L.and.adx_trapeze_L) &
+        call handle_error(-1,'adx_main','Adw_gccsa_L cannot be used with adx_trapeze_L')
 
    if (adw_positive_L .and. adw_mono_L) then
       call msg(MSG_ERROR,'adw_nml: adw_positive_L and adw_mono_L cannot be both .true.')

@@ -70,12 +70,15 @@
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf
       real hauteur, tempo, dx, slp, slpmax
-      real*8 pdsc1
       real, pointer    , dimension(:,:,:) :: tr
 !*
 !     ---------------------------------------------------------------
 !
       allocate(psurf (LDIST_SHAPE))
+
+      print *,'Broken code, please fix !'
+      print *,'Stéphane Gaudreault <stephane.gaudreault@ec.gc.ca>'
+      stop
 
 !---------------------------------------------------------------------
 !     Initialize orography
@@ -124,12 +127,11 @@
       capc1 = Dcst_grav_8**2/(mtn_nstar**2*Dcst_cpd_8*mtn_tzero)
 !
       do j=1,l_nj
-      pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
          psurf(i,j)=Cstv_pref_8*(1.-capc1 &
                +capc1*exp(-a00*F_topo(i,j)))**(1./Dcst_cappa_8)
          F_s   (i,j)   = log(psurf(i,j)/Cstv_pref_8)
-         F_u   (i,j,1) = mtn_flo * pdsc1
+         F_u   (i,j,1) = mtn_flo
       enddo
       enddo
 !
@@ -161,7 +163,7 @@
 !-----------------------------------------------------------------------
 !     Generate pressure from Cstv_ptop_8, Cstv_pref_8, and coordinate
 !     Generate corresponding geopotential for isothermal atmosphere
-!     Set wind images and temperature
+!     Set wind and temperature
 !-----------------------------------------------------------------------
 
       do k=1,g_nk
@@ -174,9 +176,8 @@
 
       do k=1,g_nk
       do j=1,l_nj
-      pdsc1 = geomg_cy_8(j) / Dcst_rayt_8
       do i=1,l_ni
-         F_u (i,j,k) = mtn_flo * pdsc1
+         F_u (i,j,k) = mtn_flo
          F_v (i,j,k) = 0.
       enddo
       enddo

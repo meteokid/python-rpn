@@ -78,7 +78,7 @@
 !     endif
 !      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridin,Out_gridj0,out_gridjn    ,1,nkfa)
 !
-      datyp = Out_datyp
+      datyp = 134
       pnip2 = max(0,Out_ip2)
       npas  = max(0,Out_npas)
 
@@ -90,8 +90,6 @@
 
       if (Out_blocme.eq.0) then
 
-         if (nbit.eq.32) datyp = 5
-!
          gridtyp = 'Z'
          if (Out_proj_S.eq.'X') gridtyp = 'X'
          g3 = 0

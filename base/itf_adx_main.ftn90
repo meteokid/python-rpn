@@ -13,7 +13,6 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
 subroutine itf_adx_main (F_nb_iter)
    implicit none
 #include <arch_specific.hf>
@@ -25,7 +24,6 @@ subroutine itf_adx_main (F_nb_iter)
 !
    !@author  Stephane Chamberland, Jan 2010
    !@revisions
-!**/
 
 #include "glb_ld.cdk"
 #include "schm.cdk"
@@ -36,7 +34,7 @@ subroutine itf_adx_main (F_nb_iter)
    logical :: doAdwStat_L
    integer :: nk_winds
    real, dimension(:,:,:), allocatable, save :: ud,vd,wd,ua,va,wa,wat
-   logical, save :: is_allocated_L = .false.
+   logical, save :: done = .false.
 
    !---------------------------------------------------------------------
 
@@ -46,24 +44,26 @@ subroutine itf_adx_main (F_nb_iter)
    doAdwStat_L = .false.
    if (Step_gstat.gt.0) doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
    doAdwStat_L = doAdwStat_L .and. &
-                 ((Orh_icn == Schm_itcn) .or. (.not.Orh_crank_L))
+                ((Orh_icn == Schm_itcn) .or. (.not.Orh_crank_L))
 
-   if (.not.is_allocated_L) then
-      is_allocated_L = .true.
-      allocate( ud(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
+   if (.not. done) &
+      allocate (ud(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
                 vd(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
                 wd(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &
                 ua(l_ni,l_nj,G_nk), va(l_ni,l_nj,G_nk)  , &
                	wa(l_ni,l_nj,G_nk),wat(l_ni,l_nj,G_nk) )
-   endif
-	
+
+! ua, va, wa, wat only if trapeze ??? + wat=zdt0 ???
+
    call itf_adx_get_winds2 ( ud, vd, wd, ua, va, wa, wat, &
                              l_minx,l_maxx,l_miny,l_maxy, &
                              l_nk, l_ni, l_nj, nk_winds )
 
-   call adx_main8 ( ud, vd, wd, ua, va, wa, wat, &
-                    l_minx,l_maxx,l_miny,l_maxy, &
-                    nk_winds, F_nb_iter, doAdwStat_L )
+   call adx_main ( ud, vd, wd, ua, va, wa, wat, &
+                   l_minx,l_maxx,l_miny,l_maxy, &
+                   nk_winds, F_nb_iter, doAdwStat_L )
+
+   done = .true.
 
    !---------------------------------------------------------------------
 

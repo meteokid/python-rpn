@@ -17,7 +17,7 @@
 #include "msg.h"
 #include "stop_mpi.h"
 !/**
-subroutine adx_main_2_pos6( F_nb_iter    ,        &
+subroutine adx_pos_m( F_nb_iter    ,        &
                             F_px  ,F_py  ,F_pz  , &
                             F_u   ,F_v   ,F_w   , &
                             F_ua  ,F_va  ,F_wa  , F_wdm, &
@@ -92,7 +92,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    
    !---------------------------------------------------------------------
 
-   call msg(MSG_DEBUG,'adx_main_2_pos')
+   call msg(MSG_DEBUG,'adx_pos_m')
 
    dummy3d => F_w
 
@@ -106,7 +106,7 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    if (driver) then
    open  (741, file='/users/dor/armn/mid/home/gem/v_4.1.3/adx_driver_trilin.bin',form='unformatted')
    write (741) F_aminx,F_amaxx,F_aminy,F_amaxy,F_ni,F_nj,F_nk,F_nk_winds,l_nk
-   write (741) adx_lnkt,adx_lnkm,adx_iimax,adx_jjmax,adx_mlni,adx_mlnj,adx_mlnij,adx_nit
+   write (741) adx_lnk,adx_iimax,adx_jjmax,adx_mlni,adx_mlnj,adx_mlnij,adx_nit
    write (741) adx_nijag,adx_int_j_off,adx_int_i_off,adx_dt_8,i0,in,j0,jn
    write (741) adx_gni,adx_gnj,adx_halox,adx_haloy,adx_lni,adx_lnj
    write (741) adx_gminx,adx_gmaxx,adx_gminy,adx_gmaxy,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy
@@ -124,11 +124,11 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
 
       !- 3d interpol of u and v winds and new upstream pos along x and y
       if (adx_lam_L) then
-         call adx_pos_lam4 (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
+         call adx_int_winds_lam (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
                             DTH_1,CLIP_TRAJ, DO_UV, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
+         call adx_int_winds_glb (u_d,v_d, F_u,F_v, F_xth,F_yth,F_zth, &
                             DTH_1,DO_UV, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
@@ -154,11 +154,11 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
       !- 3D interpol of zeta dot and new upstream pos along zeta
 
       if (adx_lam_L) then
-         call adx_pos_lam4 (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
+         call adx_int_winds_lam (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
                             DTH_1,CLIP_TRAJ, DO_W, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       else
-         call adx_pos_glb4 (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
+         call adx_int_winds_glb (w_d,v_d, F_w,dummy3d, F_xth,F_yth,F_zth, &
                             DTH_1,DO_W, i0,in,j0,jn, &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
@@ -251,20 +251,9 @@ subroutine adx_main_2_pos6( F_nb_iter    ,        &
    stop
    endif
 
-   call msg(MSG_DEBUG,'adx_main_2_pos [end]')
+   call msg(MSG_DEBUG,'adx_pos_m [end]')
 
    !---------------------------------------------------------------------
 
    return
-end subroutine adx_main_2_pos6
-!=============================================
-!=============================================
-!=============================================
-subroutine adx_main_2_pos5
-   implicit none
-#include <arch_specific.hf>
-   !---------------------------------------------------------------------
-   call stop_mpi(STOP_ERROR,'adx_main_2_pos5','called a stub')
-   !---------------------------------------------------------------------
-   return
-end subroutine adx_main_2_pos5
+end subroutine adx_pos_m

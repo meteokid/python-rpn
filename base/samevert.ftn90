@@ -14,18 +14,16 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**function samevert - 
-!
-#include "model_macros_f.h"
-!
-      integer function samevert( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
-                                   analtopo, F_topo, ni,nj,i0,in,j0,jn)
+
+      integer function samevert ( zam_8,zbm_8,lvm, zat_8,zbt_8,lvt, &
+                                  analtopo, F_topo, ni,nj,i0,in,j0,jn)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer ni,nj,i0,in,j0,jn,lvm,lvt
       real analtopo(ni,nj),F_topo (ni,nj)
       real*8 zam_8(lvm),zbm_8(lvm),zat_8(lvt),zbt_8(lvt)
-!
+
 !author
 ! v3_30 - Desgagne M        - from samelevel
 !
@@ -38,17 +36,12 @@
 !     samevert > 0 - means Vertical interpolation is needed.
 !     samevert = 0 - means NO vertical interpolation is needed. 
 !     samevert < 0 - error in this function
-!
-!arguments
-!
-!implicites
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-!
-!modules
-!*
+
       integer :: i,j,k,err,ndiff,sumdiff
       real, parameter :: DIFSIG=1.e-5
 !
@@ -65,12 +58,8 @@
           samevert=-1
           return
       endif
-!
+
       if (G_nk.ne.lvm-1) then
-          if (Lun_out.gt.0) then
-             write(lun_out,*) ' ******* WARNING ********'
-             write(Lun_out,*) ' NOT THE SAME NUMBER OF LEVELS'
-          endif
           samevert = 1
           return
       endif
@@ -86,10 +75,6 @@
               abs(zbt_8(k)-Ver_b_8%t(k)) > DIFSIG) samevert=samevert+1
       enddo
       if (samevert.gt.0) then
-          if (Lun_out.gt.0) then
-              write(lun_out,*) ' ******* WARNING ********'
-              write(Lun_out,*) 'SAME NUMBER OF LEVELS BUT NOT IDENTICAL LEVELS'
-          endif
           return
       endif
 
@@ -105,15 +90,6 @@
       call rpn_comm_allreduce (ndiff,sumdiff,1,"MPI_INTEGER", &
                                             "MPI_SUM","grid",err)
       samevert = sumdiff
-      if ( samevert.gt.0) then
-         if (Lun_out.gt.0) then
-            write(lun_out,*) ' ******* WARNING ********'
-            write(lun_out,*) &
-                 'ANALYSIS AND MODEL HAVE THE SAME VERTICAL LEVELS'
-            write(lun_out,*) &
-                 ' ...BUT THE TOPOGRAPHY IS NOT EQUIVALENT...'
-         endif
-      endif
 !
 ! ---------------------------------------------------------------------
 !

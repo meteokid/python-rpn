@@ -48,7 +48,7 @@ subroutine adx_get_params()
    istat = min(wb_get('model/G_njv',adx_gnjv),istat)
    istat = min(wb_get('model/l_ni',adx_mlni),istat)
    istat = min(wb_get('model/l_nj',adx_mlnj),istat)
-   istat = min(wb_get('model/l_nk',adx_lnkm),istat)
+   istat = min(wb_get('model/l_nk',adx_lnk),istat)
    istat = min(wb_get('model/l_i0',adx_mli0),istat)
    istat = min(wb_get('model/l_j0',adx_mlj0),istat)
    istat = min(wb_get('model/l_niu',adx_mlniu),istat)
@@ -70,6 +70,7 @@ subroutine adx_get_params()
    istat = min(wb_get('model/pil_e',adx_pil_e),istat)
    istat = min(wb_get('model/gbpil_t',adx_gbpil_t),istat)
    istat = min(wb_get('model/trapeze',adx_trapeze_L),istat)
+   istat = min(wb_get('model/cub_traj',adx_cub_traj_L),istat)
    istat = min(wb_get('model/superwinds',adx_superwinds_L),istat)
 
    istat = min(wb_get('model/cstv_dt',adx_dt_8),istat)
@@ -119,8 +120,6 @@ subroutine adx_get_params()
    adx_lmaxx = adx_lni + adx_halox
    adx_lminy = 1 - adx_haloy
    adx_lmaxy = adx_lnj + adx_haloy
-
-   adx_lnkt = adx_lnkm+1
 
    adx_iimax = adx_gni+2*adx_halox-2
    adx_jjmax = adx_gnj+adx_haloy

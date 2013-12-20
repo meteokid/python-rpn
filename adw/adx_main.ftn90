@@ -12,12 +12,10 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include <model_macros_f.h>
 
-!/**
-subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
-                       F_minx, F_maxx, F_miny, F_maxy,F_nk_winds, &
-                       F_nb_iter, F_doAdwStat_L )
+subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
+                      F_minx, F_maxx, F_miny, F_maxy,F_nk_winds, &
+                      F_nb_iter, F_doAdwStat_L )
    implicit none
 #include <arch_specific.hf>
 
@@ -45,7 +43,6 @@ subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    !@description
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
-!**/
 
 #include <gmm.hf>
 #include "adx_gmm.cdk"
@@ -58,12 +55,11 @@ subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    logical :: save_stats_L
    type(gmm_metadata) :: my_meta,my_meta2
-   integer :: i,j,istat,i0,in,j0,jn,k0,k0t
-   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: pxm,pym,pzm
-   real, dimension(adx_mlni,adx_mlnj,adx_lnkm) :: pxt,pyt,pzt,wdm
+   integer :: i,j,err,i0,in,j0,jn,k0,k0t
+   real, dimension(adx_mlni,adx_mlnj,adx_lnk) :: pxm,pym,pzm
+   real, dimension(adx_mlni,adx_mlnj,adx_lnk) :: pxt,pyt,pzt,wdm
    real, dimension(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk_winds) :: &
         a_ud,a_vd,a_wd
-   real :: dummy
 
    real, pointer, dimension(:) :: xth, yth, zth, xcth, ycth, zcth, &
                                   xct1, yct1, zct1
@@ -89,66 +85,53 @@ subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                          adx_lminy, adx_lmaxy, F_minx,F_maxx, &
                          F_miny,F_maxy, F_nk_winds, POLE0_L, EXTEND_L)
 
-   istat = GMM_OK
-   istat = min(gmm_get(adx_xth_s,xth,my_meta),istat)
-   istat = min(gmm_get(adx_yth_s,yth,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_zth_s,zth,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
+   err = gmm_get(adx_xth_s , xth)
+   err = gmm_get(adx_yth_s , yth)
+   err = gmm_get(adx_zth_s , zth)
 
-   istat = min(gmm_get(adx_xcth_s,xcth,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_ycth_s,ycth,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_zcth_s,zcth,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
+   err = gmm_get(adx_xcth_s,xcth)
+   err = gmm_get(adx_ycth_s,ycth)
+   err = gmm_get(adx_zcth_s,zcth)
 
-   istat = min(gmm_get(adx_xct1_s,xct1,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_yct1_s,yct1,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
-   istat = min(gmm_get(adx_zct1_s,zct1,my_meta2),istat)
-   if (.not.(IS_SAME_BOUNDS(my_meta,my_meta2))) istat = -1 
+   err = gmm_get(adx_xct1_s,xct1)
+   err = gmm_get(adx_yct1_s,yct1)
+   err = gmm_get(adx_zct1_s,zct1)
 
-   !TODO: check my_meta compared to adx_mlnijk
-
-!   call handle_error(istat,'adx_main','gmm_get')
-
-   call timing_start (30, 'ADW_TRAJE')
+   call timing_start (30, 'ADW_TRAJE')  ! Compute trajectories
 
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
-   call adx_main_2_pos6 ( F_nb_iter, pxm , pym , pzm             , &
-                          a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
-                          xth , yth , zth , xcth, ycth, zcth     , &
-                          xct1, yct1, zct1, adx_lminx, adx_lmaxx , &
-                          adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
-                          max(k0t-2,1), adx_lnkm, F_nk_winds )
+   call adx_pos_m ( F_nb_iter, pxm , pym , pzm             , &
+                    a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
+                    xth , yth , zth , xcth, ycth, zcth     , &
+                    xct1, yct1, zct1, adx_lminx, adx_lmaxx , &
+                    adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
+                          max(k0t-2,1), adx_lnk, F_nk_winds )
 
    call adx_get_ij0n (i0,in,j0,jn)
 
-   call adx_cubicpos ( pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
-                       adx_mlni,adx_mlnj,k0t,adx_lnkm   , &
+   call adx_pos_t ( pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
+                       adx_mlni,adx_mlnj,k0t,adx_lnk , &
                        i0,in,j0,jn, .true. )
  
    call timing_stop (30)
 
    if (adw_stats_L) then
-      call adx_main_2_pos_stats('m', a_ud  ,a_vd  ,a_wd                , &
-                                pxm,  pym,  pzm , xth , yth , zth      , &
-                                xcth, ycth, zcth, xct1, yct1, zct1     , &
-                                adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
-                                F_nk_winds,adx_mlni, adx_mlnj, adx_lnkm, &
-                                adx_lnkm,i0,in,j0,jn,k0,adx_lnkm )
+      call adx_stats('m', a_ud  ,a_vd  ,a_wd                , &
+                     pxm,  pym,  pzm , xth , yth , zth      , &
+                     xcth, ycth, zcth, xct1, yct1, zct1     , &
+                     adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+                      F_nk_winds,adx_mlni, adx_mlnj, adx_lnk, &
+                              adx_lnk,i0,in,j0,jn,k0,adx_lnk )
    endif
 
-   call timing_start (31, 'ADW_INLAG')
+   call timing_start (31, 'ADW_INLAG')  ! Interpolate 
 
-   call adx_main_3_intlag8 ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
-                             adx_mlni, adx_mlnj, k0 , adx_lnkm )
+   call adx_int_rhs ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
+                            adx_mlni, adx_mlnj, k0 , adx_lnk )
    
-   call adx_main_3_intlag8 ( pxt, pyt, pzt, .false., F_doAdwStat_L, &
-                             adx_mlni, adx_mlnj, k0t, adx_lnkm )
+   call adx_int_rhs ( pxt, pyt, pzt, .false., F_doAdwStat_L, &
+                            adx_mlni, adx_mlnj, k0t, adx_lnk )
 
    call timing_stop (31)
 
@@ -156,5 +139,5 @@ subroutine adx_main8 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    !---------------------------------------------------------------------
    return
-end subroutine adx_main8
+end subroutine adx_main
 

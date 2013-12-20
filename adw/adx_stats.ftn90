@@ -13,8 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
-subroutine adx_main_2_pos_stats( &
+subroutine adx_stats( &
      F_l_S, &
      F_su,F_sv,F_sw, &
      F_px  ,F_py  ,F_pz  , &
@@ -98,4 +97,4 @@ subroutine adx_main_2_pos_stats( &
         i0,in,j0,jn,k0,kn)
    !---------------------------------------------------------------------
    return
-end subroutine adx_main_2_pos_stats
+end subroutine adx_stats

@@ -90,10 +90,10 @@
       Schm_itraj    = 2
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
+      Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
-      Schm_wload_L    = .true.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
@@ -140,7 +140,6 @@
       sol_yyg_eps   = 1.d-07
 !
       Eigv_parity_L = .false.
-      Hzd_type_S = "NIL"
       Hzd_difva_L= .false.
       Hzd_prof_S     = "NIL"
       Hzd_pwr        = -1

@@ -75,6 +75,9 @@
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
 !
+      allocate (inuvl_wxxu3_8(l_minx:l_maxx,4),inuvl_wxux3_8(l_minx:l_maxx,4),&
+                inuvl_wyyv3_8(l_miny:l_maxy,4),inuvl_wyvy3_8(l_miny:l_maxy,4))
+
       call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX,err,8)
       call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX,err,8)
       call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX,err,8)
@@ -87,10 +90,10 @@
       call hpalloc(intuv_c0yvy_8_  ,LARRAY1DY,err,8)
       call hpalloc(intuv_c1yvy_8_  ,LARRAY1DY,err,8)
       call hpalloc(intuv_c2yvy_8_  ,LARRAY1DY,err,8)
-      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4,err,8)
-      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4,err,8)
-      call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4,err,8)
-      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4,err,8)
+!      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4,err,8)
+!      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4,err,8)
+!     call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4,err,8)
+!      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4,err,8)
 !
       do i = 1-G_halox,l_ni+G_halox
          indx = offi + i

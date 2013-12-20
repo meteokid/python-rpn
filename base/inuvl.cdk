@@ -20,7 +20,11 @@
 !
 #endif
 !
-      DCL_DYNVAR(inuvl, wxxu3_8, real*8,(XDIST_SHAPE,4))
-      DCL_DYNVAR(inuvl, wxux3_8, real*8,(XDIST_SHAPE,4))
-      DCL_DYNVAR(inuvl, wyyv3_8, real*8,(YDIST_SHAPE,4))
-      DCL_DYNVAR(inuvl, wyvy3_8, real*8,(YDIST_SHAPE,4))
+!      DCL_DYNVAR(inuvl, wxxu3_8, real*8,(XDIST_SHAPE,4))
+!      DCL_DYNVAR(inuvl, wxux3_8, real*8,(XDIST_SHAPE,4))
+!      DCL_DYNVAR(inuvl, wyyv3_8, real*8,(YDIST_SHAPE,4))
+!      DCL_DYNVAR(inuvl, wyvy3_8, real*8,(YDIST_SHAPE,4))
+
+      real*8, dimension(:,:), pointer :: inuvl_wxxu3_8,inuvl_wxux3_8
+      real*8, dimension(:,:), pointer :: inuvl_wyyv3_8,inuvl_wyvy3_8
+      common/inuvl/ inuvl_wxxu3_8,inuvl_wxux3_8,inuvl_wyyv3_8,inuvl_wyvy3_8

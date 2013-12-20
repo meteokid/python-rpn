@@ -123,7 +123,7 @@
       endif
 
       call write_3df (  tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk+k_phy, &
-                             'TT  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
+                             'VT  ',gid, gif, gjd, gjf,1.0,ind_o,unf )
       call write_3df (  st1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,1     , &
                              'S   ',gid, gif, gjd, gjf,1.0,ind_o,unf )
       call write_3df ( fis0,l_minx,l_maxx,l_miny,l_maxy,nis,njs,1     , &

@@ -55,7 +55,7 @@ End Subroutine out_stkecr
 End Interface
 
       character*8 dumc
-      integer modeip1,ip3,ig3,ig4,datyp,l_id,l_if,l_jd,l_jf,i,j,k
+      integer modeip1,ip3,ig3,ig4,l_id,l_if,l_jd,l_jf,i,j,k
       integer max_stack
       integer, save :: istk = 0
       real, save, dimension (:,:,:), pointer :: f2c => null()
@@ -94,9 +94,6 @@ End Interface
 !     Force oldip1style for output on pressure levels
       if (kind.eq.2) modeip1=3
 
-      datyp = Out_datyp
-      if (nbit.eq.32) datyp = 5
-
       ig3 = 0
       if (Out3_uencode_L) then
          ig3 = 1                             ! points de masse
@@ -119,7 +116,7 @@ End Interface
          meta(istk)%ni   = Out_gridin - Out_gridi0 + 1
          meta(istk)%nj   = Out_gridjn - Out_gridj0 + 1
          meta(istk)%nbits= nbit
-         meta(istk)%dtyp = datyp
+         meta(istk)%dtyp = 134
          if (istk.eq.max_stack) then
             call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy            ,&
                               meta,istk, l_id,l_if,l_jd,l_jf             ,&

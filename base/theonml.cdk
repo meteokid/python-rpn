@@ -84,4 +84,5 @@
       namelist /mtn_cfgs/ Out3_flipit_L, Out3_closestep
       namelist /mtn_cfgs/ G_periodx, G_periody
       namelist /mtn_cfgs/ Schm_trapeze_L
+      namelist /mtn_cfgs/ Schm_cub_traj_L
       namelist /mtn_cfgs/ Schm_superwinds_L

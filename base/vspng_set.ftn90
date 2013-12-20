@@ -13,17 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r vspng_set - Vertical sponge using a vertical modulation of 
-!                  the factorized del-2 horizontal diffusion for non-LAM
-!                  and 9 point filter for LAM.
-!
-#include "model_macros_f.h"
+!**s/r vspng_set - Vertical sponge setup
 !
       subroutine vspng_set
-!
       implicit none
 #include <arch_specific.hf>
-!
 !
 !author    
 !     Michel Desgagne  -  November 2000
@@ -35,30 +29,24 @@
 ! v3_30 - Spacek L./m.Roch  - add zmean for Grd_gauss_L 
 ! v3_32 - Lee V.            - stop run if LAM Vspng_nutop is undefined
 ! v4_50 = Qaddouri A.       - add setup For Yin-Yang vertical sponge
-!
-!object
-!       
-!arguments
-!     none
-!
-!implicits
+! v4_70 - Desgagne M.       - major revision
+
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "vspng.cdk"
 #include "grd.cdk"
-#include "type.cdk"
 #include "ver.cdk"
-!      
+#include "ptopo.cdk"
+
       integer i,j,k,istat
       real*8, dimension(:), allocatable :: weigh
-      real*8 pis2_8,pbot_8,wh_8,delp_8,TWO_8,c_8,nutop
-      parameter (TWO_8 = 2.0)
-      real*8 coeftop_8
-!*
+      real*8 pis2_8,pbot_8,wh_8,delp_8,c_8,nutop,coeftop_8
+!
 !     ---------------------------------------------------------------
 !
+      if (Vspng_coeftop.lt.0.) Vspng_nk = 0
       if (Vspng_nk.le.0) return
 
       if (Lun_out.gt.0) write (Lun_out,1001)
@@ -76,14 +64,10 @@
          istat = -1
       endif
 
-      if (Vspng_coeftop.lt.0.) then
-         if (Lun_out.gt.0) write (Lun_out,9002) Vspng_coeftop, Vspng_nk
-         istat = -1
-      endif
       call handle_error(istat,'vspng_set','')
 
       Vspng_nk = min(G_nk,Vspng_nk)
-      pis2_8   = Dcst_pi_8/TWO_8
+      pis2_8   = Dcst_pi_8/2.0d0
 
       pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
       delp_8 = pbot_8 - exp(Ver_z_8%m(1))
@@ -99,27 +83,28 @@
 
       nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
       Vspng_niter = int(4.d0*nutop+0.9999999)
-      if (Grd_yinyang_L.and.Vspng_Vec_L)then 
-        Vspng_niter = int(8.d0*nutop+0.9999999)
-        coeftop_8= (Dcst_rayt_8*c_8)**2*nutop/max(1.,float(Vspng_niter))/Cstv_dt_8
+
+      if (Vspng_Vec_L) then 
+         Vspng_niter = int(8.d0*nutop+0.9999999)
+         coeftop_8= (Dcst_rayt_8*c_8)**2*nutop/max(1.,float(Vspng_niter))/Cstv_dt_8
       endif
-      if (.not.G_lam) Vspng_niter = -1
 
       if (Lun_out.gt.0) then
          write (Lun_out,2002) Vspng_coeftop,Vspng_nk,nutop,Vspng_niter
          write (Lun_out,3001) 
       endif
 
-      if ((G_lam).and.(.not.Grd_yinyang_L.or..not.Vspng_vec_L)) then
+      if ((G_lam).and.(.not.Vspng_vec_L)) then
+
+         allocate (Vspng_nu_8(Vspng_nk))
 
          wh_8  = nutop/max(1.,float(Vspng_niter))
-         allocate (Vspng_nu_8(Vspng_nk))
          do k=1,Vspng_nk
             Vspng_nu_8(k) = weigh(k) * wh_8
-            if (Lun_out.gt.0) &
-            write (Lun_out,2005) &
+            if (Lun_out.gt.0) write (Lun_out,2005) &
                weigh(k)*Vspng_coeftop/max(1.,float(Vspng_niter)),&
-               Vspng_nu_8(k),exp(Ver_z_8%m(k)),k
+               Vspng_nu_8(k),&
+               exp(Ver_z_8%m(k)),k
          end do
 
       else
@@ -127,22 +112,21 @@
          allocate (Vspng_coef_8(Vspng_nk))
 
          do k=1,Vspng_nk
-          Vspng_coef_8(k) = weigh(k) * Vspng_coeftop
-          if (Grd_yinyang_L)Vspng_coef_8(k) = coeftop_8 
-            if (Lun_out.gt.0) &
-            write (Lun_out,2005) Vspng_coef_8(k),&
+            Vspng_coef_8(k) = weigh(k) * Vspng_coeftop
+            if (Grd_yinyang_L) Vspng_coef_8(k) = coeftop_8 
+            if (Lun_out.gt.0) write (Lun_out,2005) &
+               Vspng_coef_8(k),&
                Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
                exp(Ver_z_8%m(k)),k
 
-            Vspng_coef_8(k) = Vspng_coef_8(k) &
-                             *Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         end do
-
-         if (Lun_out.gt.0) write (Lun_out,2007) Vspng_zmean_L
+               Vspng_coef_8(k) = Vspng_coef_8(k) &
+                                *Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+         end do   
 
       endif
 
-      if (Lun_out.gt.0) print*
+      if (.not.G_lam) &
+         call vspng_imp_transpose ( Ptopo_npex, Ptopo_npey, .false. )
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &
                '(S/R VSPNG_SET)',/,51('='))
@@ -153,7 +137,6 @@
  2007 format('  SPONGE LAYER Vspng_zmean_L =',l2)
  3001 format('     Coef           Nu            Pres      Level')
  9001 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
- 9002 format('  Vspng_coeftop=',f10.2,/,'  Must set Vspng_coeftop > 0.0 when Vspng_nk>=1')
  9003 format('Vspng_vec_L works ONLY with YIN-YANG grid')
 !
 !     ---------------------------------------------------------------

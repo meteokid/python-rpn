@@ -111,7 +111,6 @@
       call low2up  (Out3_unit_S,dumc_S)
       Out3_unit_S=dumc_S
 !
-      Out_datyp      = 134
       Out_rewrit_L   = .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
 !
@@ -174,22 +173,16 @@
       if (time2sec(Grdc_nfe,sec)==RMN_OK) Grdc_ndt = sec/real(Cstv_dt_8)
       if (Grdc_ndt.gt.-1) Grdc_ndt = max( 1, Grdc_ndt)
 
-      if (Grdc_start_S == '') then
-         Grdc_start= 0
-      else
-         call difdatsd (diffd,Step_runstrt_S,Grdc_start_S)
-         Grdc_start = diffd*dble(86400) / Cstv_dt_8
+      Grdc_start= Lctl_step
+      if (Grdc_start_S /= '') then
+         if (time2sec(Grdc_start_S,sec)==RMN_OK) Grdc_start= sec / real(Step_dt)
       endif
 
-      if (Grdc_end_S == '') then
-         Grdc_end= Step_total
-      else
-         call difdatsd (diffd,Step_runstrt_S,Grdc_end_S)
-         Grdc_end = diffd*dble(86400) / Cstv_dt_8
+      Grdc_end= Step_total
+      if (Grdc_end_S /= '') then
+         if (time2sec(Grdc_end_S,sec)==RMN_OK) Grdc_end= sec / real(Step_dt)
       endif
 
-      Grdc_start  = min(max(0,Grdc_start),Step_total)
-      Grdc_end    = min(max(0,Grdc_end  ),Step_total)
       Grdc_maxcfl = max(1,Grdc_maxcfl)
       Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
       Grdc_ni     = Grdc_ni   + 2*Grdc_pil

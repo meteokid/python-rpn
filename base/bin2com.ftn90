@@ -74,23 +74,24 @@
       ierr = wkoffit(fn)
 
       if (ierr.ge.-1) then
-      if ( fnom (unf, fn, 'SEQ+OLD',ierr ) .eq. 0 ) then
-         read (unf  ,nml=modipc_cfgs)
-         Tr3d_userntr = tracers_ntr
-         Tr3d_username_S(1:Tr3d_userntr) = tracers_name(1:Tr3d_userntr)
-         Tr3d_usersval(1:Tr3d_userntr)   = tracers_sval(1:Tr3d_userntr)
-         Ana_horzint_L = horzint_L
-         call fclos (unf)
-         bin2com = 0
+         if ( fnom (unf, fn, 'SEQ+OLD',ierr ) .eq. 0 ) then
+            read (unf  ,nml=modipc_cfgs)
+            Tr3d_userntr = tracers_ntr
+            Tr3d_username_S(1:Tr3d_userntr) = tracers_name(1:Tr3d_userntr)
+            Tr3d_usersval  (1:Tr3d_userntr) = tracers_sval(1:Tr3d_userntr)
+            Ana_horzint_L = horzint_L	
+            call fclos (unf)	
+            bin2com = 0	
+         endif
       endif
-      endif
-
+	
       if (bin2com .lt. 0) then
-         Mod_runstrt_S  = 'NIL'
-         Out3_date       = 0
-         Tr3d_userntr    = 0
+         Mod_runstrt_S= 'NIL'
+         Out3_date    = 0
+         Tr3d_userntr = 0
+         Ana_horzint_L= .true.
          if (Grd_typ_S(1:1).eq.'L') then
-            bin2com      = 0
+            bin2com = 0
          else
             if (Lun_out.gt.0) write (6,1001) trim(fn)
          endif

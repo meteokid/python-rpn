@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,27 +14,31 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "model_macros_f.h"
 
-   subroutine itf_adx_img2real_winds(F_ur,F_vr,F_ui,F_vi)
+   subroutine itf_adx_normalize_winds(F_un,F_vn,F_ui,F_vi)
       implicit none
 #include <arch_specific.hf>
 
-      !@objective convert wind from image to real values
+      !@objective Normalize winds ( V = v/rayt)
       !@arguments
-      real, dimension(:,:,:), pointer :: F_ui,F_vi !I=image winds
-      real, dimension(:,:,:), pointer :: F_ur,F_vr !O=real winds
+      real, dimension(:,:,:), pointer :: F_ui,F_vi !I=real winds
+      real, dimension(:,:,:), pointer :: F_un,F_vn !O=normalized winds
       !@revisions
       ! v4_40 - Qaddouri/Lee      - Yin-Yang uses global range
+      ! v4.7  - Gaudreault S.     - Removing wind images
      !**/
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "grd.cdk"
+#include "dcst.cdk"
 
       integer :: i,j,k, i0,j0,in,jn
-      real*8  :: sc_8
+      real*8  :: inv_rayt_8
 
       !---------------------------------------------------------------------
-!$omp parallel private(i,j,k,i0,in,j0,jn,sc_8)
+!$omp parallel private(i,j,k,i0,in,j0,jn,inv_rayt_8)
+
+      inv_rayt_8 = 1.D0 / Dcst_rayt_8
+
       i0=1
       in=l_ni
       j0=1
@@ -47,9 +51,8 @@
 !$omp do
       do k = 1,l_nk
          do j = j0,jn
-            sc_8 = 1.D0 / geomg_cy_8(j)
             do i = i0,in
-               F_vr(i,j,k) = sc_8 * F_vi(i,j,k)
+               F_vn(i,j,k) = inv_rayt_8 * F_vi(i,j,k)
             enddo
          enddo
       enddo
@@ -64,12 +67,11 @@
          if (l_east) in = l_niu - 1
       endif
 
-!$omp do 
+!$omp do
       do k = 1,l_nk
          do j = j0,jn
-            sc_8 = 1.D0 / geomg_cy_8(j)
             do i = i0,in
-               F_ur(i,j,k) = sc_8 * F_ui(i,j,k)
+               F_un(i,j,k) = inv_rayt_8 * F_ui(i,j,k)
             enddo
          enddo
       enddo
@@ -78,4 +80,4 @@
 
       !---------------------------------------------------------------------
       return
-   end subroutine itf_adx_img2real_winds
+   end subroutine itf_adx_normalize_winds

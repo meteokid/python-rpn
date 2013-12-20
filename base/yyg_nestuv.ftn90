@@ -23,7 +23,7 @@
 !
       real     F_u  (DIST_SHAPE,  Nk)  ,  F_v (DIST_SHAPE,  Nk)
 !
-!author 
+!author
 !     Michel Desgagne   - Spring 2006
 !
 !revision
@@ -63,14 +63,13 @@
        do k= 1, NK
         do j= 1, l_nj
           do i= 1, l_niu
-         tempu (i,j,k)=F_u (i,j,k)*Geomg_invcy_8(j)
+         tempu (i,j,k)=F_u (i,j,k)
          tempu0(i,j,k)=tempu(i,j,k)
-
         enddo
        enddo
         do j= 1, l_njv
           do i= 1, l_ni
-          tempv(i,j,k)=F_v (i,j,k)*Geomg_invcyv_8(j)
+          tempv(i,j,k)=F_v (i,j,k)
           tempv0(i,j,k)=tempv(i,j,k)
           enddo
         enddo
@@ -90,12 +89,12 @@
          do k=1,Nk
             do j=l_nj-pil_n+1,l_nj
             do i=1,l_niu
-               F_u  (i,j,k) = tempu0(i,j,k)*Geomg_cy_8(j)
+               F_u  (i,j,k) = tempu0(i,j,k)
             end do
             end do
             do j=l_nj-pil_n,l_njv
             do i=1,l_ni
-               F_v  (i,j,k) = tempv0(i,j,k)*Geomg_cyv_8(j)
+               F_v  (i,j,k) = tempv0(i,j,k)
             end do
             end do
          end do
@@ -105,12 +104,12 @@
          do k=1,NK
             do j=1,l_nj
             do i=l_ni-pil_e,l_niu
-               F_u  (i,j,k) = tempu0(i,j,k)*Geomg_cy_8(j)
+               F_u  (i,j,k) = tempu0(i,j,k)
             end do
             end do
             do j=1,l_njv
             do i=l_ni-pil_e+1,l_ni
-               F_v  (i,j,k) = tempv0(i,j,k)*Geomg_cyv_8(j)
+               F_v  (i,j,k) = tempv0(i,j,k)
             end do
             end do
          end do
@@ -120,12 +119,12 @@
          do k=1,NK
             do j=1,pil_s
             do i=1,l_niu
-               F_u  (i,j,k) = tempu0(i,j,k)*Geomg_cy_8(j)
+               F_u  (i,j,k) = tempu0(i,j,k)
             end do
             end do
             do j=1,pil_s
             do i=1,l_ni
-               F_v  (i,j,k) = tempv0(i,j,k)*Geomg_cyv_8(j)
+               F_v  (i,j,k) = tempv0(i,j,k)
             end do
             end do
          end do
@@ -135,12 +134,12 @@
          do k=1,NK
             do j=1,l_nj
             do i=1,pil_w
-               F_u  (i,j,k) = tempu0(i,j,k)*Geomg_cy_8(j)
+               F_u  (i,j,k) = tempu0(i,j,k)
             enddo
             enddo
             do j=1,l_njv
             do i=1,pil_w
-               F_v  (i,j,k) = tempv0(i,j,k)*Geomg_cyv_8(j)
+               F_v  (i,j,k) = tempv0(i,j,k)
             end do
             end do
          end do

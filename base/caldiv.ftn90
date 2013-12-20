@@ -32,6 +32,7 @@
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from caldiv v1_03)
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v4.7  - Gaudreault S.     - removing wind images
 !
 !object
 !     see id section 
@@ -63,8 +64,8 @@
          do j = j0, jn
          do i = i0, l_niu
             F_div(i,j,k) = geomg_invcy2_8(j) * ( &
-                          (F_uu(i,j,k)-F_uu(i-1,j,k))*geomg_invDX_8(i)  &
-                         +(F_vv(i,j,k)-F_vv(i,j-1,k))*Geomg_invDY_8(j) )
+                          (F_uu(i,j,k)-F_uu(i-1,j,k))*geomg_invDX_8(i,j) * geomg_cy_8(j) &
+                         +(F_vv(i,j,k)-F_vv(i,j-1,k))*Geomg_invDY_8(j) * geomg_cy_8(j))
          end do
          end do
 !
@@ -72,15 +73,15 @@
             if (l_south) then
             do i = i0, in
                F_div(i,1,k) = geomg_invcy2_8(1) * ( &
-                             (F_uu(i,1,k)-F_uu(i-1,1,k))*geomg_invDX_8(i)  &
-                             +F_vv(i,1,k)               *Geomg_invDY_8(1) )
+                             (F_uu(i,1,k)-F_uu(i-1,1,k))*geomg_invDX_8(i,j) * geomg_cy_8(j)  &
+                             +F_vv(i,1,k)               *Geomg_invDY_8(1) * geomg_cy_8(1))
             end do
             endif
             if (l_north) then
             do i = i0, in
                F_div(i,l_nj,k) = geomg_invcy2_8(l_nj) * ( &
-                         (F_uu(i,l_nj,k)-F_uu(i-1,l_nj,k))*geomg_invDX_8(i)  &
-                         -F_vv(i,l_nj-1,k)                *Geomg_invDY_8(l_nj) )
+                         (F_uu(i,l_nj,k)-F_uu(i-1,l_nj,k))*geomg_invDX_8(i,j) * geomg_cy_8(j)  &
+                         -F_vv(i,l_nj-1,k)                *Geomg_invDY_8(l_nj) * geomg_cy_8(l_nj))
             end do
             endif
          endif

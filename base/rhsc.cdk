@@ -29,28 +29,29 @@
 !----------------------------------------------------------------------
 !
 #endif
-!
-      real, pointer, dimension (:,:,:) :: rhsu => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: rhsv => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: rhst => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: rhsc => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: rhsw => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: rhsf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: rhsp => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:  ) :: rhsb => null() ! effective dimensions are (LDIST_SHAPE         )
-      real, pointer, dimension (:,:,:) :: ruw1 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: rvw1 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: ruw2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: rvw2 => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
+
+      real, pointer, dimension (:,:,:) :: rhsu => null()
+      real, pointer, dimension (:,:,:) :: rhsv => null()
+      real, pointer, dimension (:,:,:) :: rhst => null()
+      real, pointer, dimension (:,:,:) :: rhsc => null()
+      real, pointer, dimension (:,:,:) :: rhsw => null()
+      real, pointer, dimension (:,:,:) :: rhsf => null()
+      real, pointer, dimension (:,:,:) :: rhsp => null()
+      real, pointer, dimension (:,:  ) :: rhsb => null()
+      real, pointer, dimension (:,:,:) :: ruw1 => null()
+      real, pointer, dimension (:,:,:) :: rvw1 => null()
+      real, pointer, dimension (:,:,:) :: ruw2 => null()
+      real, pointer, dimension (:,:,:) :: rvw2 => null()
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
-      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
-      common /rhsc_n_gmm/ gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s
-      common /rhsc_n_gmm/ gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s
-      common /rhsc_n_gmm/ gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s,&
+                                          gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s,&
+                                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+
+      common /rhsc_n_gmm/ gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s, &
+                          gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s, &
+                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s

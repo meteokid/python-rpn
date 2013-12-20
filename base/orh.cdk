@@ -25,25 +25,28 @@
 !----------------------------------------------------------------------
 !
 #endif
-!
+
       logical Orh_crank_L
       integer Orh_icn
       common / Orh / Orh_icn, Orh_crank_L
 
-      real, pointer, dimension (:,:,:) :: orhsu => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: orhsv => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: orhst => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: orhsc => null() ! effective dimensions are (LDIST_SHAPE,  l_nk  )
-      real, pointer, dimension (:,:,:) :: orhsw => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
-      real, pointer, dimension (:,:,:) :: orhsf => null() ! effective dimensions are (LDIST_SHAPE,  l_nk+1)
+      real, pointer, dimension (:,:,:) :: orhsu => null()
+      real, pointer, dimension (:,:,:) :: orhsv => null()
+      real, pointer, dimension (:,:,:) :: orhst => null()
+      real, pointer, dimension (:,:,:) :: orhsc => null()
+      real, pointer, dimension (:,:,:) :: orhsw => null()
+      real, pointer, dimension (:,:,:) :: orhsf => null()
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
-      integer, parameter :: GMM_MAXNAMELENGTH    =  32
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
-      common /orh_n_gmm/ gmmk_orhsu_s,gmmk_orhsv_s,gmmk_orhst_s,gmmk_orhsc_s,gmmk_orhsw_s,gmmk_orhsf_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_orhsu_s, gmmk_orhsv_s, gmmk_orhst_s,&
+                                          gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s
+
+      common /orh_n_gmm/ gmmk_orhsu_s, gmmk_orhsv_s, gmmk_orhst_s, &
+                         gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s
 
 !======================================================================
 

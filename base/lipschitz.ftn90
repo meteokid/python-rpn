@@ -2,18 +2,18 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p lipschitz - compute lipschitz stability criterion 
+!**s/p lipschitz - compute lipschitz stability criterion
 !
 #include "model_macros_f.h"
 !
@@ -28,9 +28,10 @@
       real F_w(DIST_SHAPE,Nk), F_u(DIST_SHAPE,Nk), F_v(DIST_SHAPE,Nk)
 !
 !author
-!     Claude Girard & Andre Plante - oct 2006 
+!     Claude Girard & Andre Plante - oct 2006
 !
 !revision
+! v4.7  - Gaudreault S.     - Removing wind images
 !
 !object
 !	compute lipschitz number
@@ -84,14 +85,14 @@
          km=max(k-1,1)
          do j= j0, F_jn
          do i= i0, F_in
-            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy2_8(j)*geomg_invDX_8(i)
+            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy_8(j)*geomg_invDX_8(i,j)
             if(dudx.gt.LipNOu) then
                iu=i
                ju=j
                ku=k
                LipNOu=dudx
             endif
-            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy2_8(j)*geomg_invDY_8(j)
+            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy_8(j)*geomg_invDY_8(j)
             if(dvdy.gt.LipNOv) then
                iv=i
                jv=j
@@ -123,4 +124,4 @@
 !     __________________________________________________________________
 !
       return
-      end 
+      end

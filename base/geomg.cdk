@@ -61,8 +61,8 @@
       DCL_DYNVAR(Geomg, cyv_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, cyv2_8,  real*8, (YDIST_SHAPE))
 !
-      DCL_DYNVAR(Geomg, invDX_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invDXu_8 ,  real*8, (XDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invDX_8  ,  real*8, (XDIST_SHAPE,YDIST_SHAPE))
+      DCL_DYNVAR(Geomg, invDXu_8 ,  real*8, (XDIST_SHAPE,YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invDY_8  ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invDYv_8 ,  real*8, (YDIST_SHAPE))
       DCL_DYNVAR(Geomg, invcy_8  ,  real*8, (YDIST_SHAPE))

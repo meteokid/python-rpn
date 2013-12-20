@@ -20,14 +20,11 @@
 !                |                  processors                           |
 ! adw_mono_L     | switch: .true. : advection of tracers is monotonic    |
 ! adw_positive_L | switch: .false.: positivity-preserving advection      |
-! adw_nosetint_L ! switch: .true. : no setint for TRILIN (done inside)   |
 ! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
 !                |                  vertical interpolation               |
 ! adw_maxcfl     |                                                       !
 ! adw_halox      | advection specific halo in x                          |
 ! adw_haloy      | advection specific halo in y                          |
-! adw_cub_traj_L | Use cubic interpolation on winds to find the upstream |
-!                | position                                              |
 ! adw_trajdebug_L| switch: .true. : use corrected momentum traj          |
 !                |         .false.: use bugged    momentum traj          |
 !________________________________________________________________________|
@@ -40,10 +37,8 @@
       logical :: adw_exdg_L
       logical :: adw_mono_L
       logical :: adw_positive_L
-      logical :: adw_nosetint_L
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
-      logical :: adw_cub_traj_L
       integer :: adw_maxcfl
       integer :: adw_halox
       integer :: adw_haloy      
@@ -54,8 +49,6 @@
       namelist /adw_cfgs/ adw_exdg_L
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_positive_L
-      namelist /adw_cfgs/ adw_nosetint_L
-      namelist /adw_cfgs/ adw_cub_traj_L
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_gccsa_L
@@ -63,10 +56,8 @@
       common /adw_nml_l/  adw_exdg_L
       common /adw_nml_l/  adw_mono_L
       common /adw_nml_l/  adw_positive_L
-      common /adw_nml_l/  adw_nosetint_L
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L
-      common /adw_nml_l/  adw_cub_traj_L
 
       common /adw_nml_i/  adw_halox
       common /adw_nml_i/  adw_haloy

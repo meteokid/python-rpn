@@ -26,7 +26,6 @@
 ! adx_dix_8    |
 ! adx_diy_8    |
 ! adx_diz_8    |
-! adx_dbz_8    |
 ! adx_xbc_8    | Coefficients for linear interpolation in x,y and z
 ! adx_ybc_8    |
 ! adx_zbc_8    |
@@ -71,14 +70,14 @@
 
       real*8, dimension(:),pointer :: adx_dlx_8, adx_bsx_8, adx_dix_8
       real*8, dimension(:),pointer :: adx_dly_8, adx_bsy_8, adx_diy_8
-      real*8, dimension(:),pointer :: adx_diz_8, adx_dbz_8
+      real*8, dimension(:),pointer :: adx_diz_8
       real*8, dimension(:),pointer :: adx_xbc_8, adx_ybc_8
       real*8, dimension(:),pointer :: adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8
       real*8, dimension(:),pointer :: adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8
 
       type(ADX_TYPE_V_R8) :: adx_dlz_8
-      type(ADX_TYPE_V_R8) :: adx_zbc_8
-      type(ADX_TYPE_V_R8) :: adx_zabcd_8, adx_zbacd_8, adx_zcabd_8, adx_zdabc_8
+      type(ADX_TYPE_SV_R8) :: adx_zbc_8
+      type(ADX_TYPE_SV_R8) :: adx_zabcd_8, adx_zbacd_8, adx_zcabd_8, adx_zdabc_8
 
       type(ADX_TYPE_SV_R8) :: adx_bsz_8
       type(ADX_TYPE_SV_I)  :: adx_lcz
@@ -90,7 +89,7 @@
 
       common /adx_interp_r8p/ adx_dlx_8, adx_bsx_8, adx_dix_8
       common /adx_interp_r8p/ adx_dly_8, adx_bsy_8, adx_diy_8
-      common /adx_interp_r8p/ adx_diz_8, adx_dbz_8
+      common /adx_interp_r8p/ adx_diz_8
       common /adx_interp_r8p/ adx_xbc_8, adx_ybc_8
       common /adx_interp_r8p/ adx_xabcd_8,adx_xbacd_8,adx_xcabd_8,adx_xdabc_8
       common /adx_interp_r8p/ adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,adx_ydabc_8

@@ -54,32 +54,24 @@
 #include "eq.cdk"
 #include "vt1.cdk"
 
-      type(gmm_metadata) :: mymeta
-      logical switch_on_hzd, switch_on_vrtspng, switch_on_eqspng, &
-              switch_on_theta, switch_on_psadj, mustrwnd, pwupdate
-      integer i,istat,k
+      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng, &
+              switch_on_eqspng, switch_on_THETA, switch_on_psadj
+      integer i,istat
       real, pointer, dimension(:,:,:) :: tr
 !     _________________________________________________________________
 !
-      switch_on_hzd     = Hzd_ho_L 
-      switch_on_theta   = Hzd_lnr_theta.gt.0.
-      switch_on_vrtspng = Vspng_nk.ge.1
-      switch_on_eqspng  = Eq_nlev .gt.1
+      switch_on_UVW     = Hzd_lnr      .gt.0.
+      switch_on_TR      = Hzd_lnr_tr   .gt.0.
+      switch_on_THETA   = Hzd_lnr_theta.gt.0.
+      switch_on_vrtspng = Vspng_nk     .ge.1
+      switch_on_eqspng  = Eq_nlev      .gt.1
       switch_on_psadj   = Schm_psadj_L
 
-      mustrwnd= switch_on_hzd.or.switch_on_vrtspng.or.switch_on_eqspng
-      pwupdate= switch_on_hzd.or.switch_on_vrtspng.or.switch_on_theta
-
-      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(zdt1)'
-      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'hzd_main ERROR at gmm_get(wt1)'
+      istat = gmm_get(gmmk_ut1_s,ut1)
+      istat = gmm_get(gmmk_vt1_s,vt1)
+      istat = gmm_get(gmmk_zdt1_s,zdt1)
+      istat = gmm_get(gmmk_tt1_s,tt1)
+      istat = gmm_get(gmmk_wt1_s,wt1)
 
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
 !     
@@ -87,29 +79,33 @@
 !  3. Horizontal diffusiion on theta  *
 !**************************************
 !
-      if ( switch_on_theta ) call hzd_theta
+      if ( switch_on_THETA ) then
+         call timing_start ( 61, 'HZD_theta' )
+         call hzd_theta
+         call timing_stop  ( 61 )
+      endif
 
-      if (mustrwnd) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 1 )
+      if ( switch_on_TR ) then
+         call timing_start ( 62, 'HZD_theta' )
+         do i=1, Hzd_tr3d_ntr
+            nullify (tr)
+            istat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr)
+            if (istat.eq.0) call hzd_ctrl3 (tr, 'S_TR', G_nk)
+         end do
+         call timing_stop  ( 62 )
+      endif
 !
 !***************************
 !  1. Horizontal diffusion *
 !***************************
 !
-      if ( switch_on_hzd ) then
-         call timing_start ( 60, 'HORDIFF' )
-
+      if ( switch_on_UVW ) then
+         call timing_start ( 63, 'HORDIFF' )
          call hzd_ctrl3 ( ut1, 'U', G_nk)
          call hzd_ctrl3 ( vt1, 'V', G_nk)
          call hzd_ctrl3 (zdt1, 'S', G_nk)
          call hzd_ctrl3 ( wt1, 'S', G_nk)
-
-         do i=1, Hzd_tr3d_ntr
-            nullify (tr)
-            istat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr,mymeta)
-            if (istat.eq.0) call hzd_ctrl3 (tr, 'S_TR', G_nk)
-         end do
-
-         call timing_stop ( 60 )
+         call timing_stop ( 63 )
       endif
 !     
 !***********************
@@ -127,22 +123,24 @@
 !*************************
 !
       if ( switch_on_eqspng ) then
-         call timing_start ( 68, 'EQUA_SPNG')
+         call timing_start ( 67, 'EQUA_SPNG')
          call eqspng_drv (ut1,vt1,LDIST_DIM,G_nk)
-         call timing_stop ( 68 )
+         call timing_stop ( 67 )
       endif
-
-      if (mustrwnd) call iw2rwnd ( ut1, vt1, LDIST_DIM, G_nk, 2 )
 
       if ( switch_on_psadj ) call psadj
 
       call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
 
-      if (pwupdate .or. switch_on_psadj ) call pw_update_GPW
-      if (pwupdate .or. switch_on_eqspng) then
+! Update pw_* variables
+
+      if (switch_on_UVW .or. switch_on_vrtspng .or. switch_on_THETA  &
+                        .or. switch_on_TR      .or. switch_on_psadj )&
+         call pw_update_GPW
+      if (switch_on_UVW .or. switch_on_vrtspng .or. switch_on_eqspng)&
          call pw_update_UV
+      if (switch_on_THETA .or. switch_on_TR .or. switch_on_vrtspng  )&
          call pw_update_T
-      endif
 !
 !     _________________________________________________________________
 !

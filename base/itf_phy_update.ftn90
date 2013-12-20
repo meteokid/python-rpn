@@ -29,7 +29,7 @@
 #include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
-      integer nelements, init, busidx, istat,k
+      integer nelements, init, busidx, istat, k, cnt
       real, pointer :: data3d(:,:,:), minus(:,:,:)
 !
 !-----------------------------------------------------------------
@@ -59,7 +59,7 @@
 
    else
 
-      !# Note: Secial case at step=0, tracers are not updated at surface
+      cnt = 0
       do k=1, Tr3d_ntr
          if (trim(Tr3d_name_S(k)) == 'HU' .or. &
              any(Tr3d_username_S(1:Tr3d_userntr) == trim(Tr3d_name_S(k))) ) cycle
@@ -70,10 +70,13 @@
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':M'
          istat = gmm_get(trim(trname_S),minus)
          minus = data3d
+         cnt = cnt + 1
       end do
-      istat = gmm_get(gmmk_tt1_s, tt1)
-      call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      call pw_update_GPW ()
+      if (cnt.gt.0) then
+         istat = gmm_get(gmmk_tt1_s, tt1)
+         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         call pw_update_GPW ()
+      endif
  
    endif APPLY
 !

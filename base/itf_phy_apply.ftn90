@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -42,10 +42,10 @@
 ! v4_04 - Spacek L.         - correction pnt_trp(1) to pnt_trp(HUCOND)!
 ! v4_05 - Lee V.            - remove OMP on Schm_wload, correction on h2o loop
 ! v4_06 - Lepine M.         - VMM replacement with GMM
+! v4.7  - Gaudreault S.     - Removing wind images
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "schm.cdk"
 #include "geomg.cdk"
 #include "vt1.cdk"
@@ -57,14 +57,14 @@
 
       type(gmm_metadata) :: mymeta
       integer i, j, k, km1,istat,lght, soit
-      real con(YDIST_SHAPE), tdu(LDIST_SHAPE,G_nk),tdv(LDIST_SHAPE,G_nk)
+      real tdu(LDIST_SHAPE,G_nk),tdv(LDIST_SHAPE,G_nk)
       character(len=3) :: bus_S
 !     __________________________________________________________________
 !
-! In LAM config: physics tendencies are valid on the global scope 
+! In LAM config: physics tendencies are valid on the global scope
 ! (3,G_ni-2) (3,G_nj-2). Because of horizontal staggering of tendencies
 ! of the wind components we lose additional points. Physics tendencies
-! on U are therefore valid with the scope (4,G_ni-4) (3,G_nj-2) and 
+! on U are therefore valid with the scope (4,G_ni-4) (3,G_nj-2) and
 ! physics tendencies on V  with the scope (3,G_ni-2) (4,G_nj-4).
 !
       if (.not.init_L) then
@@ -74,8 +74,6 @@
          call phy_busindx ('PHYTD_TT', bus_S, TT_indx, lght, soit)
          init_L = .true.
       endif
-
-      con(1:l_nj)= cos(geomg_y_8(1:l_nj)) / Dcst_rayt_8
 
       if (TT_indx.gt.0) then
          istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
@@ -99,9 +97,9 @@
             tdv(l_minx:0,l_miny:l_maxy,k) = 0. ; tdv(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
             do j= 1, l_nj
                tdu(1:l_ni,j,k) = (pw_uu_plus(1:l_ni,j,k)- &
-                                  pw_uu_copy(1:l_ni,j,k)) *con(j)
+                                  pw_uu_copy(1:l_ni,j,k))
                tdv(1:l_ni,j,k) = (pw_VV_plus(1:l_ni,j,k)- &
-                                  pw_VV_copy(1:l_ni,j,k)) *con(j)
+                                  pw_VV_copy(1:l_ni,j,k))
             end do
          end do
 !$omp enddo

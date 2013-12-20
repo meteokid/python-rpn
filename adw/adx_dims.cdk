@@ -27,6 +27,7 @@
       logical :: adx_is_period_x  !true if model is periodic in X
       logical :: adx_is_period_y  !true if model is periodic in Y
       logical :: adx_trapeze_L    !true to get trapezoidal wind average 
+      logical :: adx_cub_traj_L   !true to get cubic interpolation in trajectory comp.
       logical :: adx_superwinds_L !true to get super winds
 
       integer :: adx_mhalox, adx_mhaloy !Model x/y halo size
@@ -54,7 +55,8 @@
       integer :: adx_mli0,   adx_mlj0   !global i0,j0 of model local grid
       integer :: adx_mlnij
 
-      integer :: adx_lnkm, adx_lnkt     !nb of vertical mom & thermo levels
+      integer :: adx_lnk                !nb of vertical levels
+      integer :: adx_lnks               !nb of vertical levels in super winds
 
       !- Advection grid
       integer :: adx_halox, adx_haloy !Advection x/y halo size
@@ -71,6 +73,7 @@
       common /adx_dims_l/ adx_is_period_x
       common /adx_dims_l/ adx_is_period_y
       common /adx_dims_l/ adx_trapeze_L
+      common /adx_dims_l/ adx_cub_traj_L
       common /adx_dims_l/ adx_superwinds_L
 
       common /adx_dims_i/ adx_mhalox, adx_mhaloy
@@ -96,7 +99,7 @@
       common /adx_dims_i/ adx_mli0,   adx_mlj0
       common /adx_dims_i/ adx_mlnij
 
-      common /adx_dims_i/ adx_lnkm, adx_lnkt     
+      common /adx_dims_i/ adx_lnk, adx_lnks
 
       common /adx_dims_i/ adx_halox, adx_haloy 
       common /adx_dims_i/ adx_lminx, adx_lmaxx 

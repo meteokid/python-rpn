@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -31,21 +31,22 @@
 !
 !revision
 ! v2_00 - Lee V.            - initial MPI version (from out_uv v1_03)
-! v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename 
+! v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename
 ! v2_21                       truncate model output names to 4 characters
 ! v2_30 - Lee V.            - reorganize slab output to be more efficient;
 ! v2_30                       there are 3 kinds of grid output here: U,V,PHI
 ! v2_32 - Lee V.            - reduce dynamic allocation size
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_00 - Tanguay M.        - true winds adjoint
-! v3_03 - Tanguay M.        - introduce V4dg_imguv_L 
+! v3_03 - Tanguay M.        - introduce V4dg_imguv_L
 ! v3_20 - Lee V.            - output in block topology, standard file
 ! v3_21 - Lee V.            - Output Optimization
-! v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD 
-! v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step 
+! v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD
+! v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step
 ! v4_05 - Lee V.            - adaptation to GMM
 ! v4_40 - Lee V.            - change in argument call for this routine & prgen
 ! v4_50 - Lee V.            - Exchange winds between Yin and Yang in pilot area
+! v4.7  - Gaudreault S.     - Removing wind images
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -114,26 +115,12 @@
          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
          istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
          if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
-         
-         do j= 1, l_nj
-            c1_8(j) = Dcst_rayt_8 / geomg_cy_8(j)
-         end do
-         
+
          call uv_acg2g (uu ,ut1 ,1,0,LDIST_DIM,G_nk ,i0 ,in ,j0 ,jn )
          call uv_acg2g (vv ,vt1 ,2,0,LDIST_DIM,G_nk ,i0v,inv,j0v,jnv)
-         
-         if (.not.G_lam) then
-!         Compute real wind components from wind images.
-            do k=1,G_nk
-               do j= 1, l_nj
-                  do i= 1, l_ni
-                     uu(i,j,k) = c1_8(j) * uu(i,j,k)
-                     vv(i,j,k) = c1_8(j) * vv(i,j,k)
-                  end do
-               end do
-            end do
-         else
-            !         Borders need to be filled for LAM configuration
+
+         if (G_lam) then
+!         Borders need to be filled for LAM configuration
             do k=1,G_nk
                do i=1,i0-1
                   do j=1,l_nj
@@ -175,24 +162,18 @@
                      vv(i,j,k)=vv(i,jnv,k)
                   enddo
                enddo
-               do j= 1, l_nj
-                  do i= 1, l_ni
-                     uu(i,j,k) = c1_8(j) * uu(i,j,k)
-                     vv(i,j,k) = c1_8(j) * vv(i,j,k)
-                  end do
-               end do
             enddo
          endif
-         
+
       endif
 
       uu(:,:,l_nk+1) = uu(:,:,l_nk)
       vv(:,:,l_nk+1) = vv(:,:,l_nk)
-      if (Schm_phyms_L) call itf_phy_sfcdiag(uu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'UDIAG') 
-      if (Schm_phyms_L) call itf_phy_sfcdiag(vv(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'VDIAG') 
-      
+      if (Schm_phyms_L) call itf_phy_sfcdiag(uu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'UDIAG')
+      if (Schm_phyms_L) call itf_phy_sfcdiag(vv(l_minx,l_miny,l_nk+1),l_minx,l_maxx,l_miny,l_maxy,'VDIAG')
+
       lastdt = Lctl_step
-      
+
       i0 = 1
       in = l_ni
       j0 = 1
@@ -209,13 +190,13 @@
          if (pnuu.ne.0) &
               call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'UU  ',prmult,0.0,kind,G_nk+1, indo, nko, nbit(pnuu) )
-            
+
          if (pnvv.ne.0) &
               call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'VV  ',prmult,0.0,kind,G_nk+1, indo, nko, nbit(pnvv) )
          if (pnuv.ne.0) then
             do k = 1,G_nk+1
-               do j = j0, jn 
+               do j = j0, jn
                   do i = i0, in
                      uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
                                       vv(i,j,k)*vv(i,j,k))
@@ -242,7 +223,7 @@
          allocate(uu_pres(LDIST_SHAPE,nko))
          allocate(vv_pres(LDIST_SHAPE,nko))
          allocate(uv_pres(LDIST_SHAPE,nko))
-         
+
 !        Compute vertical derivative of UU,VV with respect to wlnph
 
          call verder (wku, uu, F_wlnph_m,2.0,2.0, &
@@ -280,7 +261,7 @@
             call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'UU  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuu) )
          endif
-        
+
          if (pnvv.ne.0) then
             if (filt(pnvv).gt.0) &
                  call filter(vv_pres,filt(pnvv),coef(pnvv),'G', .false., &
@@ -288,7 +269,7 @@
             call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'VV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnvv) )
          endif
-                     
+
          deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres)
 
       endif

@@ -13,12 +13,12 @@
 !if not, you can write to: EC-RPN COMM Group, 2121 TransCanada, suite 500, Dorval (Quebec), 
 !CANADA, H9P 1J3; or send e-mail to service.rpn@ec.gc.ca
 !-------------------------------------- LICENCE END --------------------------------------
-!**s/r adx_cubicpos - vertical interpolation of upstream position of momentum
+!**s/r adx_pos_t - vertical interpolation of upstream position of momentum
 !                    level to obtain those of the thermodynamic levels
 !
 #include "constants.h"
 !
-subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
+subroutine adx_pos_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
      F_ni,F_nj,F_k0,F_nk,i0,in,j0,jn,F_cubic_xy_L)
 !
    implicit none
@@ -88,10 +88,10 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
    integer vnik, vnikm, i,j,k
 !
    real*8  r2pi_8, two, half, alpha
-   real*8, dimension(i0:in,adx_lnkm) :: xcos,ycos,xsin,ysin,cx,cy,cz
-   real*8, dimension(i0:in,1:adx_lnkm-1) :: yasin,zatan,cxp,cyp,czp
-   real*8, dimension(2:adx_lnkm-2) :: w1, w2, w3, w4
-   real*8, dimension(i0:in,adx_lnkm) :: wdt
+   real*8, dimension(i0:in,adx_lnk) :: xcos,ycos,xsin,ysin,cx,cy,cz
+   real*8, dimension(i0:in,1:adx_lnk-1) :: yasin,zatan,cxp,cyp,czp
+   real*8, dimension(2:adx_lnk-2) :: w1, w2, w3, w4
+   real*8, dimension(i0:in,adx_lnk) :: wdt
    real*8 :: lag3, hh, x, x1, x2, x3, x4
    real :: ztop_bound, zbot_bound
    parameter (two = 2.0, half=0.5)
@@ -107,15 +107,15 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
    !***********************************************************************
    !
    ztop_bound=adx_verZ_8%m(0)
-   zbot_bound=adx_verZ_8%m(adx_lnkm+1)
+   zbot_bound=adx_verZ_8%m(adx_lnk+1)
    !
-   vnik = (in-i0+1)*adx_lnkm
-   vnikm= (in-i0+1)*(adx_lnkm-1)
+   vnik = (in-i0+1)*adx_lnk
+   vnikm= (in-i0+1)*(adx_lnk-1)
    !
    r2pi_8 = two * CONST_PI_8
    !
    ! Prepare parameters for cubic intepolation
-   do k=2,adx_lnkm-2
+   do k=2,adx_lnk-2
       hh = adx_verZ_8%t(k)
       x1 = adx_verZ_8%m(k-1)
       x2 = adx_verZ_8%m(k  )
@@ -136,7 +136,7 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
 !$omp cx, cy, cz, cxp, cyp, czp)
 !$omp do 
    do j=j0,jn
-      do k=1,adx_lnkm
+      do k=1,adx_lnk
       do i=i0,in
          xcos(i,k) = F_xm(i,j,k)
          ycos(i,k) = F_ym(i,j,k)
@@ -164,15 +164,15 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
 ! and is bound to first thermo level.                                  *
 !***********************************************************************
       do i=i0,in
-         F_xt(i,j,adx_lnkm) = F_xm(i,j,adx_lnkm)
-         F_yt(i,j,adx_lnkm) = F_ym(i,j,adx_lnkm)
-         F_zt(i,j,adx_lnkm) = zbot_bound
+         F_xt(i,j,adx_lnk) = F_xm(i,j,adx_lnk)
+         F_yt(i,j,adx_lnk) = F_ym(i,j,adx_lnk)
+         F_zt(i,j,adx_lnk) = zbot_bound
       enddo
 !
 !***********************************************************************
 ! cartesian coordinates of each momemtum levels                        *
 !***********************************************************************
-      do k=1,adx_lnkm
+      do k=1,adx_lnk
       do i=i0,in
          cx(i,k) = xcos(i,k)*ycos(i,k)
          cy(i,k) = xsin(i,k)*ycos(i,k)
@@ -192,8 +192,8 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
             czp(i,k)=0.0
          enddo
       enddo
-      do k=k00,adx_lnkm-1
-         if(F_cubic_xy_L.and.k.ge.2.and.k.le.adx_lnkm-2)then
+      do k=k00,adx_lnk-1
+         if(F_cubic_xy_L.and.k.ge.2.and.k.le.adx_lnk-2)then
             ! Cubic
             do i=i0,in
                cxp(i,k) = w1(k)*cx(i,k-1)+ &
@@ -245,12 +245,12 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
 
       if(adx_trapeze_L) then
    !  if(.false.) then
-         do k=k00,adx_lnkm-1
+         do k=k00,adx_lnk-1
             do i=i0,in
                F_yt(i,j,k) = yasin(i,k)
                F_xt(i,j,k) = zatan(i,k)
                if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
-               if(k.ge.2.and.k.le.adx_lnkm-2)then
+               if(k.ge.2.and.k.le.adx_lnk-2)then
                   !Cubic
                   wdt(i,k)= &
                        w1(k)*F_wdm(i,j,k-1)+ &
@@ -268,12 +268,12 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
             end do
          end do
       else
-         do k=k00,adx_lnkm-1
+         do k=k00,adx_lnk-1
             do i=i0,in
                F_yt(i,j,k) = yasin(i,k)
                F_xt(i,j,k) = zatan(i,k)
                if ( F_xt(i,j,k) .lt. 0.0 ) F_xt(i,j,k) = F_xt(i,j,k) + r2pi_8
-               if(k.ge.2.and.k.le.adx_lnkm-2)then
+               if(k.ge.2.and.k.le.adx_lnk-2)then
                   !Cubic
                   F_zt(i,j,k)= &
                        w1(k)*F_zm(i,j,k-1)+ &
@@ -296,4 +296,4 @@ subroutine adx_cubicpos ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
 !$omp end parallel
 !
 return
-end subroutine adx_cubicpos
+end subroutine adx_pos_t
