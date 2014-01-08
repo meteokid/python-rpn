@@ -60,4 +60,24 @@ int c_ezsetival(char * option, int value); // This appears to pass a literal int
 int c_fstopi(char *optname,int lvl,int setget);
 // Add grid release function
 int c_gdrls(int gdid);
+
+// Add wind conversion routines
+int c_gdwdfuv(int gdid, float * spdllout, float * dirllout, float * uugdin,
+               float * vvgdin, float * lat, float * lon, int npts);
+int c_gduvfwd(int gdid, float * uugdout, float * vvgdout, float * spdllin,
+               float * dirllin, float * lat, float * lon, int npts);
+
+// Scattered point interpolation
+
+// (lat,lon) scalar interpolation
+int c_gdllsval(int gdid, float * zvals, float * zin, float * lat, float * lon, int n);
+// (x,y) scalar interpolation
+int c_gdxysval(int gdid, float * zvals, float * zin, float * x, float * y, int n);
+// (lat,lon) vector interpolation
+int c_gdllvval(int gdid, float * uuvals, float * vvvals, float * uuin, float * vvin,
+               float * lat, float * lon, int n);
+// (x,y) vector interpolation
+int c_gdxyvval(int gdid, float * uuvals, float * vvvals, float * uuin, float * vvin,
+               float * x, float * y, int n);
+
 #endif

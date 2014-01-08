@@ -213,14 +213,21 @@ class RPNFile:
                     result.update_by_dict(item)
                     result.fileref=self
                     mylist2.append(result)
-                self.lastread=mylist[-1]
+                if (len(mylist) > 0):
+                  self.lastread=mylist[-1]
                 return mylist2
             elif key.nxt == 1:               # get NEXT one thatmatches
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
                               key.datev,key.handle)
             else:                          # get FIRST one that matches
-                if key.handle >= 0 :       # handle exists, return it
+                # If key.handle > 0, then this might be a duplicate check;
+                # if it is, then the key will be a full RPNMeta, which has
+                # the necessary information for __getitem__ and we can return
+                # the key without further processing.  If it is not such an
+                # instance (aka, a bare RPNKeys), then the handle isn't 
+                # useful and we should ignore it.
+                if (isinstance(key,RPNMeta) and key.handle >= 0) :
                     return key #TODO: may want to check if key.handle is valid
                 self.lastread=Fstdc.fstinf(self.iun,key.nom,key.type,
                               key.etiket,key.ip1,key.ip2,key.ip3,
@@ -307,6 +314,10 @@ class RPNFile:
             #print 'dict = ',index.__dict__
             if (value.flags.farray):
               #print 'fstecr Fortran style array'
+              # Check to see if the memory order is contiguous, else make
+              # a contiguous, Fortran-ordered copy for writing.
+              if (value.flags.f_contiguous == False):
+                  value = numpy.array(value,order='F')
               Fstdc.fstecr(value,
                          self.iun,index.nom,index.type,index.etiket,index.ip1,index.ip2,
                          index.ip3,index.dateo,index.grtyp,index.ig1,index.ig2,index.ig3,
@@ -769,6 +780,361 @@ class RPNGrid(RPNParm):
 ##     def reshapeDataFromScrip(self,data):
 ##         """Inverse operation of reshapeDataForScrip (use helper)"""
 ##         return self.helper.reshapeDataFromScrip(self.__dict__,data)
+
+    def getLatLon(self,xin=None,yin=None):
+        """ Get the latitude and longitude coordinates of the given (x,y) pairs;
+            If no pairs are specified, then return the latitude and longitude
+            coordinates for every grid point."""
+
+        # Step zero: if called with (None,None), build coordinate arrays
+        if (xin is None and yin is None):
+            xin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            yin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            xin[:,:] = numpy.array(range(1,self.shape[0]+1)).reshape((self.shape[0],-1))
+            yin[:,:] = numpy.array(range(1,self.shape[1]+1)).reshape((-1,self.shape[1]))
+        
+        # Step one: check to see if xin and yin are the right kind of arrays
+        # we need: numpy arrays of dtype float32 that have contiguous allocation.
+        # In order to be liberal about what we'll accept, we can do this as a
+        # try/catch block, with 'catch' making a numpy array from scratch.
+        try:
+            # An explicit check for numpy.ndarray is necessary, because the
+            # scalar types implement dtype and flags members that will
+            # fool the following lines; that causes a segfault in C-code that
+            # expects a legitimate array.
+            assert(isinstance(xin,numpy.ndarray))
+            assert(xin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous or xin.flags.f_contiguous)
+        except (AssertionError):
+            # One of those conditions was not true, so copy the input
+            # data to a numpy array.  Any further incompatibility,
+            # such as for the datatype, will raise an exception that
+            # propagates up.  For best compatibility with other routines,
+            # we'll also default to Fortran-ordering.  
+            xin = numpy.array(xin,dtype=numpy.float32,order='F')
+        
+        # Step two: check whether the ordering of xin and yin match:
+        try:
+            assert(isinstance(yin,numpy.ndarray))
+            assert(yin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous == yin.flags.c_contiguous)
+            assert(xin.flags.f_contiguous == yin.flags.f_contiguous)
+        except (AssertionError):
+            # Perform the same kind of allocation for yin as we might have
+            # to do for xin.  Since we want the ordering to match xin but
+            # don't care whether it's C or Fortran-ordering, we can use
+            # Python's equivalent of the ternary operator.
+            yin = numpy.array(yin,dtype=numpy.float32,
+                            order=(xin.flags.c_contiguous and 'C' or 'F'))
+
+        if (xin.shape != yin.shape):
+            raise ValueError('Input arays xin and yin must have the same shape')
+
+        # Get interpolation arguments
+        ezia = self.getEzInterpArgs(False)
+
+        # Call gdllfxy
+        return Fstdc.gdllfxy(xin,yin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0'])
+
+    def getXY(self,latin=None,lonin=None):
+        """ Get the (x,y) coordinates corresponding to every given (lat,lon)
+            input pair; this may be off the grid for coordinates that are
+            themselves not on the grid.  If no input is provided, return the
+            (x,y) arrays corresponding to every grid point."""
+        # Step zero: if called with (None,None), build coordinate arrays
+        if (latin is None and lonin is None):
+            xin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            yin = numpy.zeros(self.shape,dtype=numpy.float32,order='F');
+            xin[:,:] = numpy.array(range(1,self.shape[0]+1)).reshape((self.shape[0],-1))
+            yin[:,:] = numpy.array(range(1,self.shape[1]+1)).reshape((-1,self.shape[1]))
+            return(xin,yin)
+       
+        # Step one: Perform the same set of input checks as getLatLon
+        try:
+            assert(isinstance(latin,numpy.ndarray))
+            assert(latin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
+        except (AssertionError):
+            latin = numpy.array(latin,dtype=numpy.float32,order='F')
+        
+        # Step two: check whether the ordering of latin and lonin match:
+        try:
+            assert(isinstance(lonin,numpy.ndarray))
+            assert(lonin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous == lonin.flags.c_contiguous)
+            assert(latin.flags.f_contiguous == lonin.flags.f_contiguous)
+        except (AssertionError):
+            lonin = numpy.array(lonin,dtype=numpy.float32,
+                            order=(latin.flags.c_contiguous and 'C' or 'F'))
+
+        if (latin.shape != lonin.shape):
+            raise ValueError('Input arays latin and lonin must have the same shape')
+
+        # Get interpolation arguments
+        ezia = self.getEzInterpArgs(False)
+
+        # Call gdxyfll
+        print('calling gdxyfll')
+        return Fstdc.gdxyfll(latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0'])
+
+    def getWindSpdDir(self,uu,vv,latin=None,lonin=None):
+        """ Convert the provided (UU,VV) wind pairs to (UV,WD) speed/direction
+            pairs.  (UU,VV) must be:
+                1) At provided (latin, lonin) coordinates, or
+                2) Over the full grid (ni x nj) extent"""
+
+        if (latin is None and lonin is None): # Full grid conversion
+            # Verify that uu and vv are full-grid numpy arrays
+            try:
+                assert(isinstance(uu,numpy.ndarray))
+                assert(uu.dtype == numpy.float32)
+                assert(uu.flags.f_contiguous == True)
+            except (AssertionError):
+                uu = numpy.array(uu,dtype=numpy.float32,order='F')
+
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == True)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order='F')
+
+            # The array shapes must match this grid
+            if (uu.shape != self.shape or vv.shape != self.shape):
+                raise(ValueError('Full-grid winds UU and VV must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+            # Since we'll still be using a scattered-coordinate function to perform the conversion,
+            # grab the lat/lon coordinates from getLatLon()
+            (latin,lonin) = self.getLatLon()
+        else:
+            # Check inputs for consistency.  This is not necessary for full-grid
+            # converstion because it was handled in the block above.
+            try:
+                assert(isinstance(uu,numpy.ndarray))
+                assert(uu.dtype == numpy.float32)
+                assert(uu.flags.f_contiguous or uu.flags.c_contiguous)
+            except (AssertionError):
+                uu = numpy.array(uu,dtype=numpy.float32,order='F')
+            orderchar = uu.flags.f_contiguous and 'F' or 'C' # Keep this around for other arrays
+
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == uu.flags.f_contiguous)
+                assert(vv.flags.c_contiguous == uu.flags.c_contiguous)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order=orderchar)
+            if (uu.shape != vv.shape):
+                raise(ValueError('Wind fields UU and VV must have the same shape'))
+
+            try:
+                assert(isinstance(latin,numpy.ndarray))
+                assert(latin.dtype == numpy.float32)
+                assert(latin.flags.f_contiguous == uu.flags.f_contiguous)
+                assert(latin.flags.c_contiguous == uu.flags.c_contiguous)
+            except (AssertionError):
+                latin = numpy.array(latin,dtype=numpy.float32,order=orderchar)
+            if (latin.shape != uu.shape):
+                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            try:
+                assert(isinstance(lonin,numpy.ndarray))
+                assert(lonin.dtype == numpy.float32)
+                assert(lonin.flags.f_contiguous == uu.flags.f_contiguous)
+                assert(lonin.flags.c_contiguous == uu.flags.c_contiguous)
+            except (AssertionError):
+                lonin = numpy.array(lonin,dtype=numpy.float32,order=orderchar)
+            if (lonin.shape != uu.shape):
+                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+
+        # Now we have UU, VV, and coordinate arrays that match.  Grab the grid
+        # interpolation parameters
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gdwdfuv(uu,vv,latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
+    def getWindGrid(self,uv,wd,latin=None,lonin=None,xin=None,yin=None):
+        """ Convert the provided (UV,WD) wind (speed/direction) pairs to grid-
+            directed (UU,VV) form.  The provided (UV,WD) values must be:
+                1) At given (latin,lonin) coordinates, or
+                2) Over the full (ni x nj) grid extent"""
+        if (latin is None and lonin is None): # Full grid conversion
+            try:
+                assert(isinstance(uv,numpy.ndarray))
+                assert(uv.dtype == numpy.float32)
+                assert(uv.flags.f_contiguous == True)
+            except (AssertionError):
+                uv = numpy.array(uv,dtype=numpy.float32,order='F')
+
+            try:
+                assert(isinstance(wd,numpy.ndarray))
+                assert(wd.dtype == numpy.float32)
+                assert(wd.flags.f_contiguous == True)
+            except (AssertionError):
+                wd = numpy.array(wd,dtype=numpy.float32,order='F')
+
+            if (uv.shape != self.shape or wd.shape != self.shape):
+                raise(ValueError('Full-grid winds UV and WD must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+            (latin,lonin) = self.getLatLon()
+        else:
+            # Check inputs for consistency.  This is not necessary for full-grid
+            # converstion because it was handled in the block above.
+            try:
+                assert(isinstance(uv,numpy.ndarray))
+                assert(uv.dtype == numpy.float32)
+                assert(uv.flags.f_contiguous or uv.flags.c_contiguous)
+            except (AssertionError):
+                uv = numpy.array(uv,dtype=numpy.float32,order='F')
+            orderchar = uv.flags.f_contiguous and 'F' or 'C' # Keep this around for other arrays
+
+            try:
+                assert(isinstance(wd,numpy.ndarray))
+                assert(wd.dtype == numpy.float32)
+                assert(wd.flags.f_contiguous == uv.flags.f_contiguous)
+                assert(wd.flags.c_contiguous == uv.flags.c_contiguous)
+            except (AssertionError):
+                wd = numpy.array(wd,dtype=numpy.float32,order=orderchar)
+            if (uv.shape != wd.shape):
+                raise(ValueError('Wind fields UU and VV must have the same shape'))
+
+            try:
+                assert(isinstance(latin,numpy.ndarray))
+                assert(latin.dtype == numpy.float32)
+                assert(latin.flags.f_contiguous == uv.flags.f_contiguous)
+                assert(latin.flags.c_contiguous == uv.flags.c_contiguous)
+            except (AssertionError):
+                latin = numpy.array(latin,dtype=numpy.float32,order=orderchar)
+            if (latin.shape != uv.shape):
+                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+            try:
+                assert(isinstance(lonin,numpy.ndarray))
+                assert(lonin.dtype == numpy.float32)
+                assert(lonin.flags.f_contiguous == uv.flags.f_contiguous)
+                assert(lonin.flags.c_contiguous == uv.flags.c_contiguous)
+            except (AssertionError):
+                lonin = numpy.array(lonin,dtype=numpy.float32,order=orderchar)
+            if (lonin.shape != uv.shape):
+                raise(ValueError('Coordinate array shape must match that of the wind fields'))
+
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gduvfwd(uv,wd,latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
+    def interpolLatLon(self,latin,lonin,zz,vv=None):
+        """ Interpolate the given 'zz' field to scattered (lat,lon) coordinates;
+            if 'vv' is provided and not None, then vector interpolation (as
+            grid-directed winds) will be performed."""
+        # As per the previous functions, we have some array-verification to
+        # perform.  This time, latin and lonin must be compatible with
+        # each other (and contiguous), and zz/vv (if present) must match
+        # the grid.
+
+        # zz and vv have the strictest conditions, so start with those
+        try:
+            assert(isinstance(zz,numpy.ndarray))
+            assert(zz.dtype == numpy.float32)
+            assert(zz.flags.f_contiguous == True)
+        except (AssertionError):
+            zz = numpy.array(zz,dtype=numpy.float32,order='F')
+
+        if (zz.shape != self.shape):
+            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        if (vv is not None):
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == True)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order='F')
+            if (vv.shape != self.shape):
+                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        # Now for latin and lonin -- these are the same checks as getXY
+        try:
+            assert(isinstance(latin,numpy.ndarray))
+            assert(latin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous or latin.flags.f_contiguous)
+        except (AssertionError):
+            latin = numpy.array(latin,dtype=numpy.float32,order='F')
+        try:
+            assert(isinstance(lonin,numpy.ndarray))
+            assert(lonin.dtype == numpy.float32)
+            assert(latin.flags.c_contiguous == lonin.flags.c_contiguous)
+            assert(latin.flags.f_contiguous == lonin.flags.f_contiguous)
+        except (AssertionError):
+            lonin = numpy.array(lonin,dtype=numpy.float32,
+                            order=(latin.flags.c_contiguous and 'C' or 'F'))
+
+        # Now, call the interpolation routine.  That routine itself checks for scalar or vector
+        # interpolation, so we're free to pass vv=None if necessary.
+
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gdllval(zz,vv,latin,lonin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
+    def interpolXY(self,xin,yin,zz,vv=None):
+        """ Interpolate the given 'zz' field to scattered (x,y) coordinates;
+            if 'vv' is provided and not None, then vector interpolation (as
+            grid-directed winds) will be performed."""
+        # The structure of this method follows exactly from interpolLatLon,
+        # starting with input verification
+        
+        # zz and vv have the strictest conditions, so start with those
+        try:
+            assert(isinstance(zz,numpy.ndarray))
+            assert(zz.dtype == numpy.float32)
+            assert(zz.flags.f_contiguous == True)
+        except (AssertionError):
+            zz = numpy.array(zz,dtype=numpy.float32,order='F')
+
+        if (zz.shape != self.shape):
+            raise(ValueError('Full-grid field ZZ must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        if (vv is not None):
+            try:
+                assert(isinstance(vv,numpy.ndarray))
+                assert(vv.dtype == numpy.float32)
+                assert(vv.flags.f_contiguous == True)
+            except (AssertionError):
+                vv = numpy.array(vv,dtype=numpy.float32,order='F')
+            if (vv.shape != self.shape):
+                raise(ValueError('Full-grid field VV must match this grid\'s shape ({0},{1})'.format(self.shape[0],self.shape[1])))
+
+        try:
+            assert(isinstance(xin,numpy.ndarray))
+            assert(xin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous or xin.flags.f_contiguous)
+        except (AssertionError):
+            xin = numpy.array(xin,dtype=numpy.float32,order='F')
+        try:
+            assert(isinstance(yin,numpy.ndarray))
+            assert(yin.dtype == numpy.float32)
+            assert(xin.flags.c_contiguous == yin.flags.c_contiguous)
+            assert(xin.flags.f_contiguous == yin.flags.f_contiguous)
+        except (AssertionError):
+            yin = numpy.array(yin,dtype=numpy.float32,
+                            order=(xin.flags.c_contiguous and 'C' or 'F'))
+
+        # Now, call the interpolation routine.  That routine itself checks for scalar or vector
+        # interpolation, so we're free to pass vv=None if necessary.
+
+        ezia = self.getEzInterpArgs(False)
+
+        return(Fstdc.gdxyval(zz,vv,xin,yin,
+            ezia['shape'],ezia['grtyp'],ezia['g_ig14'],
+            ezia['xy_ref'],ezia['hasRef'],ezia['ij0']))
+
 
     def interpolVect(self,fromDataX,fromDataY=None,fromGrid=None):
         """Interpolate some gridded scalar/vectorial data to grid

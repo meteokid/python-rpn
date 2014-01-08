@@ -46,6 +46,95 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 
 //TODO: define other named Cst for newdate modes
 
+/* Provide some fallback definitions for older numpy API versions;
+   as of this writing (Dec 2013) the standard version of numpy
+   installed is 1.3, which is quite out of date.  Much of the
+   development since, however, has relied on features present in
+   numpy version 1.7 (which also deprecates the older API).  For
+   compatibility, provide wrappers for missing pieces of the
+   API as needed; this is mostly in array flags processing and
+   array creation */
+#if NPY_API_VERSION < 7
+   /* Numpy 1.7 introduced NPY_ARRAY prefixes for #defined constants
+      as the new preferred form */
+   #ifndef NPY_ARRAY_C_CONTIGUOUS
+      #define NPY_ARRAY_C_CONTIGUOUS NPY_C_CONTIGUOUS
+   #endif
+   #ifndef NPY_ARRAY_F_CONTIGUOUS
+      #define NPY_ARRAY_F_CONTIGUOUS NPY_F_CONTIGUOUS
+   #endif
+   #ifndef NPY_KEEPORDER
+      #define NPY_KEEPORDER 2
+   #endif
+   #if NPY_API_VERSION < 6
+      /* NewLikeArray doesn't exist prior to 1.6, so we have to
+         fake it.  It is only called in this code with (KEEPORDER,
+         NULL, 1) as parameters (to keep the parent arrays' strides,
+         to not override the descriptor, and to permit subtypes),
+         which aren't terribly special; we can supply such a
+         reduced function here.  The logic applied is based on the
+         Numpy 1.7 source's implementation of the same function */
+      static PyObject * PyArray_NewLikeArray(PyArrayObject* prototype,
+            NPY_ORDER order, PyArray_Descr* in_descr, int subok) {
+         /* Use PyArray_NewFromDescr to create a new array matching
+            the prototype's datatype and shape */
+         PyArray_Descr * descr;
+         if (in_descr) { // Use in_descr for type if supplied
+            descr = in_descr;
+         } else { // Otherwise copy the protype's
+            descr = prototype->descr;
+            Py_INCREF(descr);
+         }
+         PyTypeObject * thetype;
+         if (subok) {
+            thetype = Py_TYPE(prototype);
+         } else {
+            thetype = &PyArray_Type;
+         }
+
+         int flags = 0;
+         /* The full processing of order=NPY_KEEPORDER involves complicated
+            parsing of strides, which is not necessary in our limited use-
+            cases (because rmnlib needs contiguous memory access); we can
+            use the truncated logic based on the prototype's flags */
+         switch (order) {
+            case NPY_CORDER:
+               flags = NPY_CORDER; break;
+            case NPY_FORTRANORDER:
+               flags = NPY_FORTRANORDER; break;
+            case NPY_ANYORDER: // Fortran iff prototype is forder, otherwise C
+               if (prototype->flags & NPY_F_CONTIGUOUS) {
+                  flags = NPY_FORTRANORDER;
+               }
+               else {
+                  flags = NPY_CORDER;
+               }
+               break;
+            case NPY_KEEPORDER:
+               if (prototype->nd <= 1 || (prototype->flags & NPY_C_CONTIGUOUS)) {
+                  flags = NPY_CORDER;
+               } else { // Assume fortran order
+                  flags = NPY_FORTRANORDER;
+               }
+               break;
+            default:
+               PyErr_SetString(PyExc_ValueError,"Invalid order flags in call to NewLikeArray stub");
+               return NULL;
+         }
+
+         return PyArray_NewFromDescr(thetype, // Data type
+                                    descr, // Array descriptor
+                                    prototype->nd, // number of dimensions
+                                    prototype->dimensions, // size by dimension
+                                    NULL, // Strides are automatically generated
+                                    NULL, // Data -- allocate new memory
+                                    flags, // Default flags
+                                    subok ? (PyObject *) prototype : NULL);
+      }
+   #endif
+#endif
+
+
 static const int withFortranOrder = 1;
 
 //TODO: add more Error distinctions to catch more specific things
@@ -81,6 +170,19 @@ static PyObject *Fstdc_ezgetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetopt(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezsetval(PyObject *self, PyObject *args);
 static PyObject *Fstdc_ezgetval(PyObject *self, PyObject *args);
+// Add wind conversion routines
+static PyObject *Fstdc_gduvfwd(PyObject *self, PyObject *args);
+static PyObject *Fstdc_gdwdfuv(PyObject *self, PyObject *args);
+// Thin wrappers for (x,y) <-> (lat,lon)
+static PyObject *Fstdc_gdxyfll(PyObject *self, PyObject *args);
+static PyObject *Fstdc_gdllfxy(PyObject *self, PyObject *args);
+/* Scattered-point scalar and vector interpolation ((lat,lon)
+   and (x,y) formulation).  Note that this is not a wrapper
+   of a single function, since this encompasses both scalar
+   and vector options */
+static PyObject *Fstdc_gdllval(PyObject *self, PyObject *args);
+static PyObject *Fstdc_gdxyval(PyObject *self, PyObject *args);
+
 
 static int getGridHandle(int ni,int nj,char *grtyp,char *grref,
     int ig1,int ig2,int ig3,int ig4,int i0, int j0,
@@ -1101,6 +1203,785 @@ static int isGridTypeValid(char *grtyp) {
 }
 
 
+// Add wind conversion routines
+static char Fstdc_gdwdfuv__doc__[] = 
+        "Translate grid-directed winds to (magnitude,direction) pairs\n\
+        (UV, WD) = Fstdc.gdwdfuv(uuin,vvin,lat,lon,\n   \
+        (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n\
+        @param uuin, vvin -- Grid-directed wind fields\n\
+        @param lat,lon -- Latitude and longitude coordinates of those winds\n\
+        @param ni ... j0 -- grid definition parameters\n\
+        @return (UV, WD): Wind modulus and direction as numpy.ndarray";
+
+static PyObject *Fstdc_gdwdfuv(PyObject *self, PyObject *args) {
+    // Parameters for grid definition
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0;
+    int hasAxis;
+    char (*grtyp), (*grref);
+    PyArrayObject *uuin, *vvin, *lat, *lon, *xs, *ys;
+
+    // Return arrays
+    PyArrayObject *uvout, *wdout;
+    PyObject *retval = 0; // Return value
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OOOO(ii)s(siiii)(OO)i(ii)",
+            &uuin,&vvin,&lat,&lon,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (uuin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter uuin is not a float32 array");
+        return NULL;
+    }
+    if (vvin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter vvin is not a float32 array");
+        return NULL;
+    }
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
+        return NULL;
+    }
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that all input arrays have the same sizes
+    int ndim = PyArray_NDIM(uuin);
+    if (ndim != PyArray_NDIM(vvin) || ndim != PyArray_NDIM(lat) || ndim != PyArray_NDIM(lon)) {
+        PyErr_SetString(FstdcError,"All input arrays must have the same number of dimensions");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(uuin); ii++) {
+        int sz = PyArray_DIM(uuin,ii);
+        if (sz != PyArray_DIM(vvin,ii) || sz != PyArray_DIM(lat,ii) ||
+                sz != PyArray_DIM(lon,ii)) {
+            PyErr_SetString(FstdcError,"Input array size mismatch");
+            return NULL;
+        }
+    }
+
+    // Verify that all arrays have the same flags.  Since this is a "dumb" converter that
+    // internally works on 1D representations, we don't have to care about Fortran or C-
+    // ordering, but it's important that they match.
+
+    int aflags = PyArray_FLAGS(uuin);
+    // Check for contiguous allocation
+    if (!((aflags & NPY_ARRAY_C_CONTIGUOUS) || (aflags & NPY_ARRAY_F_CONTIGUOUS))) {
+        PyErr_SetString(FstdcError,"Input array is not contiguous");
+        return NULL;
+    }
+    // Check that flags match between input arrays
+    if (aflags != PyArray_FLAGS(vvin) || aflags != PyArray_FLAGS(lon) ||
+            aflags != PyArray_FLAGS(lat)) {
+        PyErr_SetString(FstdcError,"Input array flags mismatch; check array ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using uuin as a template
+    uvout = (PyArrayObject *) PyArray_NewLikeArray(uuin,NPY_KEEPORDER,NULL,1);
+    wdout = (PyArrayObject *) PyArray_NewLikeArray(uuin,NPY_KEEPORDER,NULL,1);
+
+    if (uvout == NULL || wdout == NULL) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(uvout); Py_XDECREF(wdout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        return NULL;
+    }
+
+    // At last, perform the wind conversion
+    int ier = c_gdwdfuv(gdid,PyArray_DATA(uvout),PyArray_DATA(wdout),
+                           PyArray_DATA(uuin),PyArray_DATA(vvin),
+                           PyArray_DATA(lat),PyArray_DATA(lon),
+                           PyArray_SIZE((PyObject *)uuin));
+    if (ier < 0) {
+        PyErr_SetString(FstdcError,"Error in call of gduvfwd");
+        Py_XDECREF(uvout); Py_XDECREF(wdout);
+    }
+
+    // Return
+    retval = Py_BuildValue("OO",uvout,wdout);
+    Py_XDECREF(uvout); Py_XDECREF(wdout);
+    return retval;
+
+
+    return NULL;
+}
+
+
+static char Fstdc_gduvfwd__doc__[] = 
+        "Translate (magnitude,direction) winds to grid-directed\n\
+        (UV, WD) = Fstdc.gduvfwd(uvin,wdin,lat,lon,\n   \
+        (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n \
+        @param uvin, wdin -- Grid-directed wind fields \n\
+        @param lat,lon -- Latitude and longitude coordinates of those winds\n\
+        @param ni ... j0 -- grid definition parameters\n\
+        @return (UU, VV): Grid-directed winds as numpy.ndarray";
+
+static PyObject *Fstdc_gduvfwd(PyObject *self, PyObject *args) {
+    // Parameters for grid definition
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0;
+    int hasAxis;
+    char (*grtyp), (*grref);
+    PyArrayObject *uvin, *wdin, *lat, *lon, *xs, *ys;
+
+    // Return arrays
+    PyArrayObject *uuout, *vvout;
+    PyObject *retval = 0; // Return value
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OOOO(ii)s(siiii)(OO)i(ii)",
+            &uvin,&wdin,&lat,&lon,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (uvin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter uvin is not a float32 array");
+        return NULL;
+    }
+    if (wdin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter wdin is not a float32 array");
+        return NULL;
+    }
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
+        return NULL;
+    }
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that all input arrays have the same sizes
+    int ndim = PyArray_NDIM(uvin);
+    if (ndim != PyArray_NDIM(wdin) || ndim != PyArray_NDIM(lat) || ndim != PyArray_NDIM(lon)) {
+        PyErr_SetString(FstdcError,"All input arrays must have the same number of dimensions");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(uvin); ii++) {
+        int sz = PyArray_DIM(uvin,ii);
+        if (sz != PyArray_DIM(wdin,ii) || sz != PyArray_DIM(lat,ii) ||
+                sz != PyArray_DIM(lon,ii)) {
+            PyErr_SetString(FstdcError,"Input array size mismatch");
+            return NULL;
+        }
+    }
+
+    // Verify that all arrays have the same flags.  Since this is a "dumb" converter that
+    // internally works on 1D representations, we don't have to care about Fortran or C-
+    // ordering, but it's important that they match.
+
+    int aflags = PyArray_FLAGS(uvin);
+    // Check for contiguous allocation
+    if (!((aflags & NPY_ARRAY_C_CONTIGUOUS) || (aflags & NPY_ARRAY_F_CONTIGUOUS))) {
+        PyErr_SetString(FstdcError,"Input array is not contiguous");
+        return NULL;
+    }
+    // Check that flags match between input arrays
+    if (aflags != PyArray_FLAGS(wdin) || aflags != PyArray_FLAGS(lon) ||
+            aflags != PyArray_FLAGS(lat)) {
+        PyErr_SetString(FstdcError,"Input array flags mismatch; check array ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using uvin as a template
+    uuout = (PyArrayObject *) PyArray_NewLikeArray(uvin,NPY_KEEPORDER,NULL,1);
+    vvout = (PyArrayObject *) PyArray_NewLikeArray(uvin,NPY_KEEPORDER,NULL,1);
+
+    if (uuout == NULL || vvout == NULL) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        return NULL;
+    }
+
+    // At last, perform the wind conversion
+    int ier = c_gduvfwd(gdid,PyArray_DATA(uuout),PyArray_DATA(vvout),
+                           PyArray_DATA(uvin),PyArray_DATA(wdin),
+                           PyArray_DATA(lat),PyArray_DATA(lon),
+                           PyArray_SIZE((PyObject *)uvin));
+    if (ier < 0) {
+        PyErr_SetString(FstdcError,"Error in call of gduvfwd");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+    }
+
+    // Return
+    retval = Py_BuildValue("OO",uuout,vvout);
+    Py_XDECREF(uuout); Py_XDECREF(vvout);
+    return retval;
+
+
+    return NULL;
+}
+
+static char Fstdc_gdllfxy__doc__[] =
+        "Get (latitude,longitude) pairs cooresponding to (x,y) grid coordinates\n\
+        (lat,lon) = Fstdc.gdllfxy(xin,yin,\n   \
+                (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n\
+        @param xin,yin: input coordinates (as float32 numpy array)\n\
+        @param (ni,nj) .. (i0,j0): Grid definition parameters\n\
+        @return (lat,lon): Computed latitude and longitude coordinates";
+
+static PyObject * Fstdc_gdllfxy(PyObject *self, PyObject *args) {
+    // Input arrays
+    PyArrayObject *xin, *yin;
+    // Output arrays
+    PyArrayObject *latout, *lonout;
+    // Grid definition parameters
+    char *grtyp, *grref;
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0, hasAxis;
+    PyArrayObject *xs, *ys;
+
+    PyObject * retval = 0;
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OO(ii)s(siiii)(OO)i(ii)",
+            &xin,&yin,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (xin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter xin is not a float32 array");
+        return NULL;
+    }
+    if (yin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter yin is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that all input arrays have the same sizes
+    int ndim = PyArray_NDIM(xin);
+    if (ndim != PyArray_NDIM(yin)) {
+        PyErr_SetString(FstdcError,"All input arrays must have the same number of dimensions");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(xin); ii++) {
+        int sz = PyArray_DIM(xin,ii);
+        if (sz != PyArray_DIM(yin,ii)) {
+            PyErr_SetString(FstdcError,"Input array size mismatch");
+            return NULL;
+        }
+    }
+
+    // Verify that all arrays have the same flags.  Since this is a "dumb" converter that
+    // internally works on 1D representations, we don't have to care about Fortran or C-
+    // ordering, but it's important that they match.
+
+    int aflags = PyArray_FLAGS(xin);
+    // Check for contiguous allocation
+    if (!((aflags & NPY_ARRAY_C_CONTIGUOUS) || (aflags & NPY_ARRAY_F_CONTIGUOUS))) {
+        PyErr_SetString(FstdcError,"Input array is not contiguous");
+        return NULL;
+    }
+    // Check that flags match between input arrays
+    if (aflags != PyArray_FLAGS(yin)) {
+        PyErr_SetString(FstdcError,"Input array flags mismatch; check array ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using uvin as a template
+    latout = (PyArrayObject *) PyArray_NewLikeArray(xin,NPY_KEEPORDER,NULL,1);
+    lonout = (PyArrayObject *) PyArray_NewLikeArray(xin,NPY_KEEPORDER,NULL,1);
+
+    if (latout == NULL || lonout == NULL) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(latout); Py_XDECREF(lonout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        return NULL;
+    }
+
+    // At last, perform the coordinate conversion
+    int ier = c_gdllfxy(gdid,PyArray_DATA(latout),PyArray_DATA(lonout),
+                           PyArray_DATA(xin),PyArray_DATA(yin),
+                           PyArray_SIZE((PyObject *)xin));
+    if (ier < 0) {
+        PyErr_SetString(FstdcError,"Error in call of gdllfxy");
+        Py_XDECREF(latout); Py_XDECREF(lonout);
+    }
+
+    // Return
+    retval = Py_BuildValue("OO",latout,lonout);
+    Py_XDECREF(latout); Py_XDECREF(lonout);
+    return retval;
+}
+
+static char Fstdc_gdxyfll__doc__[] =
+        "Get (x,y) pairs cooresponding to (lat,lon) grid coordinates\n\
+        (x,y) = Fstdc.gdxyfll(latin,lonin,\n   \
+                (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n\
+        @param latin,lonin: input coordinates (as float32 numpy array)\n\
+        @param (ni,nj) .. (i0,j0): Grid definition parameters\n\
+        @return (x,y): Computed x and y coordinates (as floating point)";
+
+static PyObject * Fstdc_gdxyfll(PyObject *self, PyObject *args) {
+    // Input arrays
+    PyArrayObject *latin, *lonin;
+    // Output arrays
+    PyArrayObject *xout, *yout;
+    // Grid definition parameters
+    char *grtyp, *grref;
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0, hasAxis;
+    PyArrayObject *xs, *ys;
+
+    PyObject * retval = 0;
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OO(ii)s(siiii)(OO)i(ii)",
+            &latin,&lonin,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (latin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter latin is not a float32 array");
+        return NULL;
+    }
+    if (lonin->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lonin is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that all input arrays have the same sizes
+    int ndim = PyArray_NDIM(latin);
+    if (ndim != PyArray_NDIM(lonin)) {
+        PyErr_SetString(FstdcError,"All input arrays must have the same number of dimensions");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(latin); ii++) {
+        int sz = PyArray_DIM(latin,ii);
+        if (sz != PyArray_DIM(lonin,ii)) {
+            PyErr_SetString(FstdcError,"Input array size mismatch");
+            return NULL;
+        }
+    }
+
+    // Verify that all arrays have the same flags.  Since this is a "dumb" converter that
+    // internally works on 1D representations, we don't have to care about Fortran or C-
+    // ordering, but it's important that they match.
+
+    int aflags = PyArray_FLAGS(latin);
+    // Check for contiguous allocation
+    if (!((aflags & NPY_ARRAY_C_CONTIGUOUS) || (aflags & NPY_ARRAY_F_CONTIGUOUS))) {
+        PyErr_SetString(FstdcError,"Input array is not contiguous");
+        return NULL;
+    }
+    // Check that flags match between input arrays
+    if (aflags != PyArray_FLAGS(lonin)) {
+        PyErr_SetString(FstdcError,"Input array flags mismatch; check array ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using uvin as a template
+    xout = (PyArrayObject *) PyArray_NewLikeArray(latin,NPY_KEEPORDER,NULL,1);
+    yout = (PyArrayObject *) PyArray_NewLikeArray(latin,NPY_KEEPORDER,NULL,1);
+
+    if (xout == NULL || yout == NULL) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(xout); Py_XDECREF(yout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        return NULL;
+    }
+
+    // At last, perform the coordinate conversion
+    int ier = c_gdxyfll(gdid,PyArray_DATA(xout),PyArray_DATA(yout),
+                           PyArray_DATA(latin),PyArray_DATA(lonin),
+                           PyArray_SIZE((PyObject *)latin));
+    if (ier < 0) {
+        PyErr_SetString(FstdcError,"Error in call of gdxyfll");
+        Py_XDECREF(xout); Py_XDECREF(yout);
+    }
+
+    // Return
+    retval = Py_BuildValue("OO",xout,yout);
+    Py_XDECREF(xout); Py_XDECREF(yout);
+    return retval;
+}
+
+static char Fstdc_gdllval__doc__[] = 
+        "Interpolate scalar or vector fields to scattered (lat,lon) points\n\
+        vararg = Fstdc.gdllval(uuin,vvin,lat,lon,\n   \
+        (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n\
+        @param (uuin,vvin): Fields to interpolate from; if vvin is None then\n \
+                            perform scalar interpolation\n\
+        @param lat,lon:  Latitude and longitude coordinates for interpolation\n\
+        @param ni ... j0: grid definition parameters\n\
+        @return Zout or (UU,VV): scalar or tuple of grid-directed, vector-interpolated\n \
+                                 fields, as appropriate";
+
+static PyObject *Fstdc_gdllval(PyObject *self, PyObject *args) {
+    // Parameters for grid definition
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0;
+    int hasAxis;
+    char (*grtyp), (*grref);
+    PyArrayObject *uuin, *vvin, *lat, *lon, *xs, *ys;
+
+    // Return arrays
+    PyArrayObject *uuout = 0, *vvout = 0;
+    PyObject *retval = 0; // Return value
+
+    // Flag for vector interoplation
+    int vector = 0; // Default to false
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OOOO(ii)s(siiii)(OO)i(ii)",
+            &uuin,&vvin,&lat,&lon,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check for status of vvin; if it is None then we're performing
+    // scalar interpolation.  Since Python None is a singular object,
+    // that's done by direct comparison with the Py_None pointer
+    if ((PyObject *) vvin == Py_None) {
+        vector = 0; // Scalar interpolation
+    } else {
+        vector = 1; // Vector interpolation
+    }
+
+    // We have two sets of conditions for array validity.  uuin and
+    // (for vector interpolation) vvin must conform to the grid, but
+    // lat and lon are more flexible, as they're interpreted as 1D
+    // arrays by rmnlib (we'll also replicate their format for output).
+
+    if (!(PyArray_FLAGS(uuin) & NPY_ARRAY_F_CONTIGUOUS)) {
+        PyErr_SetString(FstdcError,"Parameter uuin is not a Fortran-Contiguous array");
+        return NULL;
+    }
+    if (vector && !(PyArray_FLAGS(vvin) & NPY_ARRAY_F_CONTIGUOUS)) {
+        PyErr_SetString(FstdcError,"Parameter vvin is not a Fortran-Contiguous array");
+        return NULL;
+    }
+
+    if (uuin->descr->type_num != NPY_FLOAT || (vector && vvin->descr->type_num != NPY_FLOAT)) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must be of type numpy.float32");
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (lat->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lat is not a float32 array");
+        return NULL;
+    }
+    if (lon->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter lon is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that uuin and (if present) vvin match the grid size.
+    if (PyArray_NDIM(uuin) != 2 || (vector && PyArray_NDIM(vvin) != 2)) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must be two dimensional and match the grid size");
+        return NULL;
+    }
+    if (PyArray_DIM(uuin,0) != ni || PyArray_DIM(uuin,1) != nj ||
+            (vector && (PyArray_DIM(vvin,0) != ni || PyArray_DIM(vvin,1) != nj))) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must match the grid size");
+        return NULL;
+    }
+
+    if (PyArray_NDIM(lat) != PyArray_NDIM(lon)) {
+        PyErr_SetString(FstdcError,"Arrays lat and lon must have the same shape");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(lat); ii++) {
+        if (PyArray_DIM(lat,ii) != PyArray_DIM(lon,ii)) {
+            PyErr_SetString(FstdcError,"Arrays lat and lon must have the same shape");
+            return NULL;
+        }
+    }
+
+    // We're indifferent on whether lat and lon are fortran or C-style arrays, but they
+    // must match; use the array flags to verify.  (uuin and vvin were checked above,
+    // because they must be Fortran-ordered arrays).
+
+    if (PyArray_FLAGS(lat) != PyArray_FLAGS(lon)) {
+        PyErr_SetString(FstdcError,"Arrays lat and lon must have the same ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using lat as a template
+    uuout = (PyArrayObject *) PyArray_NewLikeArray(lat,NPY_KEEPORDER,NULL,1);
+    if (vector) {
+        vvout = (PyArrayObject *) PyArray_NewLikeArray(lon,NPY_KEEPORDER,NULL,1);
+    }
+
+    if (uuout == NULL || (vector && vvout == NULL)) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return NULL;
+    }
+
+    if (!vector) { // Scalar interpolation
+        int ier = c_gdllsval(gdid, PyArray_DATA(uuout), PyArray_DATA(uuin),
+                            PyArray_DATA(lat), PyArray_DATA(lon),
+                            PyArray_SIZE((PyObject *) lon));
+        if (ier < 0) {
+            PyErr_SetString(FstdcError,"Error in call of gdllsval (scalar)");
+            Py_XDECREF(uuout); Py_XDECREF(vvout);
+            return NULL;
+        }
+        return (PyObject *) uuout;
+    } else { // Vector interpolation
+        int ier = c_gdllvval(gdid, PyArray_DATA(uuout), PyArray_DATA(vvout),
+                                PyArray_DATA(uuin), PyArray_DATA(vvin),
+                                PyArray_DATA(lat), PyArray_DATA(lon),
+                                PyArray_SIZE((PyObject *) lon));
+        if (ier < 0) {
+            PyErr_SetString(FstdcError,"Error in call of gdllvval (vector)");
+            Py_XDECREF(uuout); Py_XDECREF(vvout);
+            return NULL;
+        }
+        retval = Py_BuildValue("OO",uuout,vvout);
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return retval;
+    }
+}
+
+static char Fstdc_gdxyval__doc__[] = 
+        "Interpolate scalar or vector fields to scattered (x,y) points\n\
+        vararg = Fstdc.gdxyval(uuin,vvin,x,y,\n   \
+        (ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xs,ys),hasAxis,(i0,j0))\n\
+        @param (uuin,vvin): Fields to interpolate from; if vvin is None then\n \
+                            perform scalar interpolation\n\
+        @param x,y:  X and Y-coordinates for interpolation\n\
+        @param ni ... j0: grid definition parameters\n\
+        @return Zout or (UU,VV): scalar or tuple of grid-directed, vector-interpolated\n \
+                                 fields, as appropriate";
+
+static PyObject *Fstdc_gdxyval(PyObject *self, PyObject *args) {
+    // Parameters for grid definition
+    int ni, nj, ig1, ig2, ig3, ig4, i0, j0;
+    int hasAxis;
+    char (*grtyp), (*grref);
+    PyArrayObject *uuin, *vvin, *x, *y, *xs, *ys;
+
+    // Return arrays
+    PyArrayObject *uuout = 0, *vvout = 0;
+    PyObject *retval = 0; // Return value
+
+    // Flag for vector interopxion
+    int vector = 0; // Default to false
+
+    // Grid ID
+    int gdid = -1;
+
+    // Parse input arguments
+    if (!PyArg_ParseTuple(args,"OOOO(ii)s(siiii)(OO)i(ii)",
+            &uuin,&vvin,&x,&y,&ni,&nj,&grtyp,&grref,
+            &ig1,&ig2,&ig3,&ig4,&xs,&ys,&hasAxis,&i0,&j0)) {
+        // If that returned 0, then there's some error with
+        // the parameter list
+        return NULL;
+    }
+
+    // Check for status of vvin; if it is None then we're performing
+    // scalar interpolation.  Since Python None is a singular object,
+    // that's done by direct comparison with the Py_None pointer
+    if ((PyObject *) vvin == Py_None) {
+        vector = 0; // Scalar interpolation
+    } else {
+        vector = 1; // Vector interpolation
+    }
+
+    // We have two sets of conditions for array validity.  uuin and
+    // (for vector interpolation) vvin must conform to the grid, but
+    // x and y are more flexible, as they're interpreted as 1D
+    // arrays by rmnlib (we'll also replicate their format for output).
+
+    if (!(PyArray_FLAGS(uuin) & NPY_ARRAY_F_CONTIGUOUS)) {
+        PyErr_SetString(FstdcError,"Parameter uuin is not a Fortran-Contiguous array");
+        return NULL;
+    }
+    if (vector && !(PyArray_FLAGS(vvin) & NPY_ARRAY_F_CONTIGUOUS)) {
+        PyErr_SetString(FstdcError,"Parameter vvin is not a Fortran-Contiguous array");
+        return NULL;
+    }
+
+    if (uuin->descr->type_num != NPY_FLOAT || (vector && vvin->descr->type_num != NPY_FLOAT)) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must be of type numpy.float32");
+        return NULL;
+    }
+
+    // Check input arrays for validity
+    if (x->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter x is not a float32 array");
+        return NULL;
+    }
+    if ( y->descr->type_num != NPY_FLOAT) {
+        PyErr_SetString(FstdcError,"Parameter y is not a float32 array");
+        return NULL;
+    }
+
+    // Verify that uuin and (if present) vvin match the grid size.
+    if (PyArray_NDIM(uuin) != 2 || (vector && PyArray_NDIM(vvin) != 2)) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must be two dimensional and match the grid size");
+        return NULL;
+    }
+    if (PyArray_DIM(uuin,0) != ni || PyArray_DIM(uuin,1) != nj ||
+            (vector && (PyArray_DIM(vvin,0) != ni || PyArray_DIM(vvin,1) != nj))) {
+        PyErr_SetString(FstdcError,"Interpolation arrays must match the grid size");
+        return NULL;
+    }
+
+    if (PyArray_NDIM(x) != PyArray_NDIM(y)) {
+        PyErr_SetString(FstdcError,"Arrays x and y must have the same shape");
+        return NULL;
+    }
+    int ii; // Loop counter
+    for (ii = 0; ii < PyArray_NDIM(x); ii++) {
+        if (PyArray_DIM(x,ii) != PyArray_DIM(y,ii)) {
+            PyErr_SetString(FstdcError,"Arrays x and y must have the same shape");
+            return NULL;
+        }
+    }
+
+    // We're indifferent on whether x and y are fortran or C-style arrays, but they
+    // must match; use the array flags to verify.  (uuin and vvin were checked above,
+    // because they must be Fortran-ordered arrays).
+
+    if (PyArray_FLAGS(x) != PyArray_FLAGS(y)) {
+        PyErr_SetString(FstdcError,"Arrays x and y must have the same ordering");
+        return NULL;
+    }
+
+    // Allocate output arrays, using x as a tempxe
+    uuout = (PyArrayObject *) PyArray_NewLikeArray(x,NPY_KEEPORDER,NULL,1);
+    if (vector) {
+        vvout = (PyArrayObject *) PyArray_NewLikeArray(y,NPY_KEEPORDER,NULL,1);
+    }
+
+    if (uuout == NULL || (vector && vvout == NULL)) {
+        PyErr_SetString(FstdcError,"Error allocating output arrays");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return NULL;
+    }
+
+
+    // Get grid handle for the call to ezscint
+    gdid = getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys);
+    if (gdid < 0) {
+        // If gdid < 0, then the parameters passed in don't form a valid
+        // grid, or alternately there was an error allocating the grid
+        // by ezscint
+        PyErr_SetString(FstdcError,"Invalid grid description or error in allocation");
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return NULL;
+    }
+
+    if (!vector) { // Scalar interpolation
+        int ier = c_gdxysval(gdid, PyArray_DATA(uuout), PyArray_DATA(uuin),
+                            PyArray_DATA(x), PyArray_DATA(y),
+                            PyArray_SIZE((PyObject *) y));
+        if (ier < 0) {
+            PyErr_SetString(FstdcError,"Error in call of gdxysval (scalar)");
+            Py_XDECREF(uuout); Py_XDECREF(vvout);
+            return NULL;
+        }
+        return (PyObject *) uuout;
+    } else { // Vector interpolation
+        int ier = c_gdxyvval(gdid, PyArray_DATA(uuout), PyArray_DATA(vvout),
+                                PyArray_DATA(uuin), PyArray_DATA(vvin),
+                                PyArray_DATA(x), PyArray_DATA(y),
+                                PyArray_SIZE((PyObject *) y));
+        if (ier < 0) {
+            PyErr_SetString(FstdcError,"Error in call of gdxyvval (vector)");
+            Py_XDECREF(uuout); Py_XDECREF(vvout);
+            return NULL;
+        }
+        retval = Py_BuildValue("OO",uuout,vvout);
+        Py_XDECREF(uuout); Py_XDECREF(vvout);
+        return retval;
+    }
+}
 static char Fstdc_ezinterp__doc__[] =
         "Interpolate from one grid to another\n\
         newArray = Fstdc.ezinterp(arrayin,arrayin2,\n  \
@@ -1406,6 +2287,12 @@ static struct PyMethodDef Fstdc_methods[] = {
     {"ezsetopt", (PyCFunction) Fstdc_ezsetopt, METH_VARARGS, Fstdc_ezsetopt__doc__},
     {"ezgetval", (PyCFunction) Fstdc_ezgetval, METH_VARARGS, Fstdc_ezgetval__doc__},
     {"ezsetval", (PyCFunction) Fstdc_ezsetval, METH_VARARGS, Fstdc_ezsetval__doc__},
+    {"gdwdfuv", (PyCFunction) Fstdc_gdwdfuv, METH_VARARGS, Fstdc_gdwdfuv__doc__},
+    {"gduvfwd", (PyCFunction) Fstdc_gduvfwd, METH_VARARGS, Fstdc_gduvfwd__doc__},
+    {"gdllfxy", (PyCFunction) Fstdc_gdllfxy, METH_VARARGS, Fstdc_gdllfxy__doc__},
+    {"gdxyfll", (PyCFunction) Fstdc_gdxyfll, METH_VARARGS, Fstdc_gdxyfll__doc__},
+    {"gdllval", (PyCFunction) Fstdc_gdllval, METH_VARARGS, Fstdc_gdllval__doc__},
+    {"gdxyval", (PyCFunction) Fstdc_gdxyval, METH_VARARGS, Fstdc_gdxyval__doc__},
     {NULL,	 (PyCFunction)NULL, 0, NULL}		/* sentinel */
 };
 
