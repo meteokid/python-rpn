@@ -18,6 +18,7 @@
 
     @author: Mario Lepine <mario.lepine@ec.gc.ca>
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+    @author: Christopher Subich <Christopher.Subich@ec.gc.ca>
 """
 import rpn_version
 from rpn_helpers import *

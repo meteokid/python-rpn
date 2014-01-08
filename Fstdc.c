@@ -3,7 +3,8 @@ Module Fstdc contains the functions used to access RPN Standard Files (rev 2000)
 @author: Michel Valin <michel.valin@ec.gc.ca>
 @author: Mario Lepine <mario.lepine@ec.gc.ca>
 @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-@date: 2009-09
+@author: Christopher Subich <Christopher.Subich@ec.gc.ca>
+@date: 2014-01
 */
 /* #define DEBUG On */
 #include <Python.h>
