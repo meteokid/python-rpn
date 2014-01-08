@@ -46,7 +46,7 @@ Fstd_module = Extension('Fstdc',
             extra_link_args = runtime_libs,
             extra_compile_args = ['-Wtrigraphs','-fpic'],
             library_dirs = [eclibsharedpath],
-            sources = ['utils/py_capi_ftn_utils.c','Fstdc.c'])
+            sources = ['utils/py_capi_ftn_utils.c','Fstdc.c','utils/numpy_compat.c'])
 
 setup(name = 'rpnstd',
     version = rpn_version.__VERSION__,
