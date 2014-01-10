@@ -1,4 +1,5 @@
-. s.ssmuse.dot /ssm/net/hpcs/201311/00-test/base /ssm/net/hpcs/201311/00-test/intel13sp1 /ssm/net/rpn/libs/201309/01
+. s.ssmuse.dot $(cat ssmuse_dependencies-dev.bndl)
 #export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
-py_version="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
-export PYTHONPATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${py_version}:$PYTHONPATH
+export PATH=$(pwd)/bin:$PATH
+export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
+export PYTHONPATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$PYTHONPATH

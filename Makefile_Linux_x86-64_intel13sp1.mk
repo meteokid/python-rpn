@@ -1,5 +1,5 @@
 MAKE   = make
-PYARCH = linux-x86_64-2.6
+PYARCH = linux-x86_64-$(PYVERSION)
 CCNAME = intel
 CCOPT  = -Wtrigraphs -fpic
 LDFLAGS=-static-intel
