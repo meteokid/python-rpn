@@ -1,6 +1,6 @@
 MAKE=make
 
-VERSION    = 1.3.0
+VERSION    = 1.3.0+dev
 LASTUPDATE = 2014-01
 
 include Makefile_base.mk
