@@ -19,13 +19,13 @@
 !
       integer function e_rdhint3 (   &
                   f, dgid, ni, nj, nomvar_S, ip1, ip2, ip3, etik_S, &
-                  typvar_S, anyip_L, fhint_L, interp_S, un1, stdo )
+                  typvar_S, anydate_L, fhint_L, interp_S, un1, stdo )
 !
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) nomvar_S,interp_S,etik_S,typvar_S
-      logical anyip_L,fhint_L
+      logical anydate_L,fhint_L
       integer dgid, ni, nj, ip1, ip2, ip3, un1, stdo
       real  f(*)
 !
@@ -39,6 +39,7 @@
 ! v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
 ! v3_02 - Dugas B.          - convip for topography
 ! v3_30 - McTaggart & Lee   - grid check, adjusted for LAM
+! v4_60 - Gravel S.         - replace anyip option by anydate_L
 !
 !implicites
 #include "e_grids.cdk"
@@ -93,11 +94,16 @@
 
       tr_ip_L = key.ge.0
 !
-      if ( (.not.tr_ip_L) .and. (anyip_L) ) then
+      if ( (.not.tr_ip_L) .and. (anydate_L) ) then
          call e_rdhint_out2(stdo, "Warning field not found: ",nomvar_S,ip1,ip2,ip3,' ')
-         write(stdo,*) "Will try to locate it with with no specific ip123"
-         key = fstinf (un1,nisrc,njsrc,nksrc,datev,etik_S,-1,-1,-1,typvar_S, &
+         write(stdo,*) "Will try to locate it with with no specific datev"
+         if (ip1 .eq. -1 .or. ip1 .eq. 0 ) then
+           key = fstinf (un1,nisrc,njsrc,nksrc,-1,etik_S,ip1,-1,-1,typvar_S, &
                                                              nomvar_S)
+         else
+           key = fstinf (un1,nisrc,njsrc,nksrc,-1,etik_S,ip1_all(zp1,kind),ip2 &
+              ,ip3,typvar_S,nomvar_S)
+         endif
       endif
       if (key .lt. 0) then
          call e_rdhint_out2(stdo, "Missing field: ",nomvar_S,ip1,ip2,ip3,' ')

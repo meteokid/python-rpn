@@ -58,7 +58,7 @@
       parameter( HALF_8 = 0.5 )
 
       integer i, j, k, k0, l, dim, err,Gni,Gnj,NSTOR,ierr,jj
-      real*8  sc_8, gdx_8, aab_8
+      real*8  sc_8, gdx_8, aab_8, wk(G_nk)
       real*8, dimension(:)  ,allocatable :: wk_8, wk2_8
 !
 !     ---------------------------------------------------------------
@@ -202,8 +202,8 @@
              Opr_xeval_8(1)    = ZERO_8
              Opr_xeval_8(G_ni) = - ONE_8 / ( sc_8 ** 2. )
              do i = 1, (G_ni-1)/2
-                Opr_xeval_8(2*i+1) = - (sin( dble(i) * sc_8 ) / sc_8 ) **2.
-                Opr_xeval_8(2*i)   =  Opr_xeval_8(2*i+1)
+                Opr_xeval_8(2*i+1)= - (sin( dble(i) * sc_8 ) / sc_8 ) **2.
+                Opr_xeval_8(2*i)  =  Opr_xeval_8(2*i+1)
              end do
          endif
 
@@ -212,10 +212,32 @@
       call set_oprz ()
       if (Grd_yinyang_L) call yyg_initstencils ()
 
-      if ( sol_type_S.eq.'ITERATIVE' ) then
+      if ( Sol_type_S(1:9).eq.'ITERATIVE' ) then
+
          if (Lun_out.gt.0) write (Lun_out,1001) trim(sol_precond_S)
-         if ( (sol_precond_S.eq.'JACOBI') .or.  &
-              (sol_precond_S.eq.'MULTICOL') ) call set_prec
+
+         sol_pil_w= pil_w ; sol_pil_e= pil_e
+         sol_pil_s= pil_s ; sol_pil_n= pil_n
+         sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
+         sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
+         sol_nloc = sol_niloc*sol_njloc*Schm_nith
+         
+         allocate (Prec_xevec_8(sol_niloc*sol_niloc)          ,&
+                   Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
+                   Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
+
+         do k =1,G_nk
+            do k0=1,G_nk
+               wk(k) = Opr_zevec_8 ((k-1)*G_nk+k0)
+            end do
+            if ( k .le. Schm_nith ) &
+                 wk(k)= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
+         enddo
+         
+         call eigenabc_local (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
+                              Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
+                        sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
+
       endif
 
 !     Initialize horizontal diffusion package

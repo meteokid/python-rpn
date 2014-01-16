@@ -35,6 +35,9 @@
 #include <clib_interface.cdk>
       include "rpn_comm.inc"
 !
+      logical slice_last_L
+      common /tempory_common_slice/ slice_last_L
+
       character*1024 filen,filen_link,append
       logical pe0_master_L, release_dir_L
       integer i, rank, err, unf
@@ -47,7 +50,7 @@
       if (pe0_master_L) then
          
          append=''
-         if (F_last_L) append='^last'
+         if (F_last_L .and. slice_last_L) append='^last'
          
          if (release_dir_L) then
             

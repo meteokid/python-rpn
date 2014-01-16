@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -53,7 +53,7 @@ subroutine adx_grid_scalar (F_fld_adw, F_fld_model,          &
         adx_is_period_x, adx_is_period_y, &
         F_fld_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni, nrow)
 
-   IF_LAM: if (.not.adx_lam_L) then
+   if (.not.adx_lam_L) then
       if (adx_is_south) then
          is_south_L = .true.
          call adx_pole0s2(F_fld_adw, F_fld_model, &
@@ -67,7 +67,7 @@ subroutine adx_grid_scalar (F_fld_adw, F_fld_model,          &
               F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,&
               F_nk, F_pol0_L, F_extend_L, is_south_L)
       endif
-   endif IF_LAM
+   endif
 
    call msg(MSG_DEBUG,'adx_model2adx_grid_scalar [end]')
 

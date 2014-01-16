@@ -20,7 +20,7 @@
 !
       integer function gemdm_config ( )
       implicit none
-!
+
 !author
 !     M. Desgagne    - Summer 2006
 !
@@ -32,10 +32,7 @@
 ! v4_05 - Desgagne M.       - Throw warning and return for digital filter in LAM
 ! v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
 ! v4_10 - Tanguay M.        - Adjust digital filter when LAM
-! 
-!
-!object
-!
+
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
@@ -46,31 +43,31 @@
 #include "ver.cdk"
 #include "out.cdk"
 #include "modconst.cdk"
-!
+
       integer, external :: bin2com,time2sec
 
       character*16  dumc_S, datev
       character*256 fln_S
       logical wronghyb
       integer i, k, nrec, ipcode, ipkind, istat
-      real pcode,deg_2_rad,sec
-      real*8 diffd, dayfrac, sec_in_day
+      real    pcode,deg_2_rad,sec
+      real*8  diffd, dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
 !-------------------------------------------------------------------
 !
       gemdm_config = -1
-!
+
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
          if (Lun_out.gt.0) write(Lun_out,6010)
       endif
-!
+
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
-!        
+     
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
-!
+
       Level_mode_ip1 = 1
       Level_kind_ip1 = 5
       Level_version  = 4
@@ -78,7 +75,7 @@
          call handle_error(-1,'gemdm_config','review for toplev removed and Tlift')
          Level_version  = 3
       endif
-!
+
       if (G_lam) then
          Glb_pil_n = Grd_extension
          Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
@@ -100,20 +97,20 @@
          Lam_gbpil_T = 0
          Lam_blend_T = 0
       endif
-!
+
       deg_2_rad = Dcst_pi_8/180.
-!
+
       P_lmvd_high_lat = min(90.,abs(P_lmvd_high_lat))
       P_lmvd_low_lat  = min(P_lmvd_high_lat,abs(P_lmvd_low_lat))
       P_lmvd_weigh_low_lat  = max(0.,min(1.,P_lmvd_weigh_low_lat ))
       P_lmvd_weigh_high_lat = max(0.,min(1.,P_lmvd_weigh_high_lat))
-!
+
       call low2up  (Out3_unit_S,dumc_S)
       Out3_unit_S=dumc_S
-!
+
       Out_rewrit_L   = .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
-!
+
       if (.not.Grd_yinyang_L) Out3_uencode_L  = .false.
       if (Out3_uencode_L)     Out3_fullplane_L= .true.
       if(Out3_nbitg .lt. 0) then
@@ -135,15 +132,15 @@
       if ((Out3_nundr.gt.0).and.(Out3_lieb_nk.gt.0)) Out3_lieb_nk=0
 
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
-!
+
       if (Step_runstrt_S == 'NIL') then
          Step_runstrt_S = Mod_runstrt_S
       else
          Mod_runstrt_S = Step_runstrt_S
       endif
-!
+
       Cstv_dt_8     = dble(Step_dt)
-!
+
 !     Counting # of vertical levels specified by user
       G_nk = 0
       do k = 1, maxhlev
@@ -152,9 +149,9 @@
       enddo
       if (lun_out.gt.0) &
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
-!
+
       call set_zeta2( hyb, G_nk )
-!
+
       if (Step_runstrt_S.eq."NIL") then
          if (lun_out.gt.0) then
             write (Lun_out, 6005)
@@ -192,28 +189,29 @@
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
+
       call low2up  (sol_type_S ,dumc_S)
       sol_type_S= dumc_S
       call low2up  (sol_precond_S ,dumc_S)
       sol_precond_S= dumc_S
-      if ( (Sol_type_S.ne.'ITERATIVE') .and. &
+
+      if ( (Sol_type_S.ne.'ITERATIVE_2D') .and. &
+           (Sol_type_S.ne.'ITERATIVE_3D') .and. &
            (Sol_type_S.ne.'DIRECT'   ) ) then
          if (lun_out.gt.0) write (Lun_out, 9200) Sol_type_S
          return
       endif
-      if (Sol_type_S.eq.'ITERATIVE') then
-!         if ( (Sol_precond_S .ne.'DIAGO')    .and. &
-!              (Sol_precond_S .ne.'MULTICOL') .and. &
-!              (Sol_precond_S .ne.'JACOBI'  ) ) then
+
+      if (Sol_type_S(1:9).eq.'ITERATIVE') then
          if (Sol_precond_S .ne.'JACOBI') then
             if (lun_out.gt.0) write (Lun_out, 9201) Sol_precond_S
             return
          endif
       endif
-!
+
       G_ni  = Grd_ni
       G_nj  = Grd_nj
-!
+
       G_niu = G_ni
       G_njv = G_nj - 1
       if (G_lam) then
@@ -275,7 +273,7 @@
 
           Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
-!
+
       if (Init_dfnp <= 0) then
          if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602) 
          Init_balgm_L = .false.
@@ -291,7 +289,7 @@
             return
          endif
       endif
-!
+
       if (Lctl_debug_L) then
          istat = gmm_verbosity(GMM_MSG_DEBUG)
          istat = wb_verbosity(WB_MSG_DEBUG)
@@ -300,7 +298,7 @@
       endif
 
       gemdm_config = 1
-!
+
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
                            2X,'00H FORECAST WILL BE VALID AT: ',a16,/ &
@@ -309,7 +307,7 @@
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
  6100 format (//'  =============================='/&
-                '  AUTO-BAROTROPIC RUN:          '/&
+               '  AUTO-BAROTROPIC RUN:          '/&
                 '  Schm_topo_L set to .false.,Out3_nundr=0 '/&
                 '  =============================='//)
  6300 format (/' Williamson case 3 and 4 are not available'/)
@@ -322,21 +320,11 @@
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
- 9100 format (/'ABORT: you must supply levels in namelist variable hyb'/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR ITERATIVE SOLVER: Sol_precond_S =',a/)
- 9250 format (/' ===> WRONG SPECIFICATION OF HYB VERTICAL LEVELS:'/ &
-               '      LEVELS MUST BE MONOTONICALLY INCREASING'/ &
-               '      FROM HYB(1) ---- ABORT ----'// &
-               '      Current choice:')
- 9300 format (/,'ABORT: ADJOINT not done for Sol_type_S = ITERATIVE',/)
- 9400 format (/,'ABORT: Cstv_ptop_8 must be > 0',/)
- 9550 format (/,'ABORT: hyb must be < 1.0 and > ',es10.4,/)
- 9560 format (/,'ABORT: Top piloting must have topology 2x* or *x2'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
-
 !
 !-------------------------------------------------------------------
 !

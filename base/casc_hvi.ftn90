@@ -282,7 +282,8 @@
 
       if (ana_zd_L) then
          if (Vertint_L) then
-             call vte_intvertx3(zd1,zdr,srclev,dstlev,ngd,nka_t-1,G_nk,'ZD','cubic') 
+            call vertint ( zd1,dstlev,G_nk, zdr,srclev,nka_t-1,&
+                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              zd1(:,:,1:G_nk) = zdr(:,:,1:G_nk)
          endif
@@ -292,7 +293,8 @@
 
       if (ana_w_L) then
          if (Vertint_L) then
-             call vte_intvertx3(ww1,wwr,srclev,dstlev,ngd,nka_t-1,G_nk,'WW','cubic') 
+            call vertint ( ww1,dstlev,G_nk, wwr,srclev,nka_t-1,&
+                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              ww1(:,:,1:G_nk) = wwr(:,:,1:G_nk)
          endif
@@ -301,7 +303,8 @@
 ! Interpolate TT
 
       if (Vertint_L) then
-         call vte_intvertx3(tt1,ttr,srclev,dstlev,ngd,nka_t,G_nk,'VT','cubic') 
+         call vertint ( tt1,dstlev,G_nk, ttr,srclev,nka_t,&
+                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.true.)
       else 
          tt1(:,:,1:G_nk) = ttr(:,:,1:G_nk)
       endif
@@ -316,19 +319,19 @@
          end do
          if (jj.gt.0) then
             if (Vertint_L) then
-                call vte_intvertx3(tr1(1,1,1,n),trr(1,1,1,jj),srclev,dstlev, &
-                                   ngd,nka_t,G_nk,'HU','cubic')
-                if (Schm_bitpattern_L) then
-                    tr1(:,:,1:G_nk,n) = tr1(:,:,1:G_nk,n)
-                else
-                    tr1(:,:,1:G_nk,n) = max(tr1(:,:,1:G_nk,n),0.0)
-                endif
+               call vertint ( tr1(1,1,1,n),dstlev,G_nk, trr(1,1,1,jj),srclev,nka_t,&
+                              1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
+               if (Schm_bitpattern_L) then
+                  tr1(:,:,1:G_nk,n) = tr1(:,:,1:G_nk,n)
+               else
+                  tr1(:,:,1:G_nk,n) = max(tr1(:,:,1:G_nk,n),0.0)
+               endif
             else
-                if (Schm_bitpattern_L) then
-                    tr1(:,:,1:G_nk,n) = trr(:,:,1:G_nk,jj)
-                else
-                    tr1(:,:,1:G_nk,n) = max(trr(:,:,1:G_nk,jj),0.0)
-                endif
+               if (Schm_bitpattern_L) then
+                  tr1(:,:,1:G_nk,n) = trr(:,:,1:G_nk,jj)
+               else
+                  tr1(:,:,1:G_nk,n) = max(trr(:,:,1:G_nk,jj),0.0)
+               endif
             endif
          else
             tr1(:,:,:,n) = 0.
@@ -343,7 +346,8 @@
             call handle_error(err,'casc_hvi','casc_hvi:get_px')
             err = get_px(srclev,ssqr,ngd,ana_am_8(2),ana_bm_8(2),nka_m-1,presstype,.true.)
             call handle_error(err,'casc_hvi','casc_hvi:get_px')
-            call vte_intvertx3(qq1,qqr,srclev,dstlev,ngd,nka_m-1,G_nk,'QQ','cubic') 
+            call vertint ( qq1,dstlev,G_nk, qqr,srclev,nka_m-1,&
+                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
             qq1(:,:,1:G_nk) = qqr(:,:,1:G_nk)
          endif
@@ -357,14 +361,16 @@
          err = get_px(dstlev,ssu0,ngd,Ver_a_8%m,Ver_b_8%m,G_nk,Ver_code,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx3(uu1,uur,srclev,dstlev, ngd, nka_m,G_nk,'UU','cubic') 
+         call vertint ( uu1,dstlev,G_nk, uur,srclev,nka_m,&
+                        1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
 
          err = get_px(srclev,ssvr,ngd,ana_am_8,ana_bm_8,nka_m,presstype,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
          err = get_px(dstlev,ssv0,ngd,Ver_a_8%m,Ver_b_8%m,G_nk,Ver_code,.true.)
          call handle_error(err,'casc_hvi','casc_hvi:get_px')
 
-         call vte_intvertx3(vv1,vvr,srclev,dstlev, ngd, nka_m,G_nk,'VV','cubic') 
+         call vertint ( vv1,dstlev,G_nk, vvr,srclev,nka_m,&
+                        1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
 
          deallocate (dstlev,srclev)
 

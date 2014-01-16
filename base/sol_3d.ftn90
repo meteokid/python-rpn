@@ -1,0 +1,104 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r sol_3d - Full 3D iterative elliptic solver based on fgmres.
+!               Available only for LAM configurations
+
+      subroutine sol_3d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, &
+                          F_iln, F_print_L, F_offi, F_offj )
+      implicit none
+#include <arch_specific.hf>
+
+      logical F_print_L
+      integer F_ni,F_nj,F_nk,F_iln,F_offi, F_offj
+      real*8  F_rhs_sol (F_ni,F_nj,F_nk), F_lhs_sol (F_ni,F_nj,F_nk)
+
+!author
+!     Abdessamad Qaddouri -- January 2014
+!
+!revision
+! v4-70 - Qaddouri A.      - initial version
+
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "ldnh.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "sol.cdk"
+#include "opr.cdk"
+
+      integer i,j,k,iter,its
+      real    linfini
+      real*8, dimension (ldnh_maxx,ldnh_maxy,l_nk) :: wk1,wk2
+      real*8  conv
+!
+!     ---------------------------------------------------------------
+!
+      wk1(:,:,:)= F_rhs_sol(:,:,:) ; wk2= 0.0
+
+      if (Grd_yinyang_L) then
+
+         do iter=1, Sol_yyg_maxits
+
+            call sol_fgmres ( wk2, wk1, F_iln, l_ni,l_nj  ,&
+                   ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,&
+                   G_nk, F_nk, Lun_debug_L, conv, its )
+
+            if ( F_print_L ) write(Lun_out,1003) conv, its
+
+            wk1 = 0.d0
+            call yyg_rhs_scalbc(wk1, wk2, ldnh_minx, ldnh_maxx,&
+                                ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
+            do k = 1, Schm_nith
+            do j = 1+pil_s, ldnh_nj-pil_n
+            do i = 1+pil_w, ldnh_ni-pil_e
+               wk1(i,j,k)= F_rhs_sol(i,j,k)+wk1(i,j,k)*Opr_opszp0_8(G_nk+k)/&
+                   Opr_opsxp0_8(G_ni+F_offi+i)/ Opr_opsyp0_8(G_nj+F_offj+j)
+            end do
+            end do
+            end do
+
+            if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
+            if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) goto 999
+
+         end do
+
+999      if (F_print_L) then
+            write(Lun_out,1002) linfini,iter
+            if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
+         endif
+
+      else
+
+         call sol_fgmres ( wk2, wk1, F_iln, l_ni,l_nj  ,&
+                ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy,&
+                G_nk, F_nk, Lun_debug_L, conv, its )
+
+         if ( F_print_L ) write(Lun_out,1003) conv, its
+         
+      endif
+
+      F_lhs_sol= wk2
+
+ 1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 1003 format (3x,'Final FGMRES_3D solver convergence criteria: ',1pe14.7,' at iteration', i3)
+ 9001 format (3x,'WARNING: iterative YYG solver DID NOT converge to requested criteria:: ',1pe14.7)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+

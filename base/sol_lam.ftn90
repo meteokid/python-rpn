@@ -45,17 +45,16 @@
 
       integer Gni, NK, i, j, nev, NSTOR, its, dim
       real*8  conv
-      real*8, dimension(:), allocatable :: wk_evec_8,abpt
+      real*8, dimension(:), allocatable :: wk_evec_8
 !
 !     ---------------------------------------------------------------
 !
-
-      if ( sol_type_S .eq. 'ITERATIVE' ) then
+      if ( sol_type_S .eq. 'ITERATIVE_2D' ) then
          
          NK = G_nk - Lam_gbpil_T
-         call  sol_fgmres3 ( F_sol_8, F_rhs_8, F_iln, l_ni, l_nj, &
-                         ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
-                         G_nk, NK, F_prout, conv, its )
+         call  sol_fgmres ( F_sol_8, F_rhs_8, F_iln, l_ni, l_nj, &
+                        ldnh_minx,ldnh_maxx,ldnh_miny,ldnh_maxy, &
+                        G_nk, NK, F_prout, conv, its )
          if ( F_prout ) write(Lun_out,1003) conv, its
 
       else
@@ -94,7 +93,6 @@
       endif
 
  1003 format (3x,'Final FGMRES solver convergence criteria: ',1pe14.7,' at iteration', i3)
-
 !
 !     ---------------------------------------------------------------
 ! 

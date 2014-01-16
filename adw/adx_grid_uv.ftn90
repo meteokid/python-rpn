@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -55,7 +55,7 @@ subroutine adx_grid_uv ( F_u_adw, F_v_adw, F_u_model,F_v_model, &
         F_v_adw, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni, nrow)
 
 !$omp parallel private(j1)
-   IF_LAM: if (.not.adx_lam_L) then
+   if (.not.adx_lam_L) then
       if (adx_is_south) then
          j1 = 0
          call adx_polw3(F_u_adw, F_v_adw, &
@@ -66,7 +66,7 @@ subroutine adx_grid_uv ( F_u_adw, F_v_adw, F_u_model,F_v_model, &
          call adx_polw3(F_u_adw, F_v_adw, &
               j1, F_aminx,F_amaxx,F_aminy,F_amaxy, adx_lni,adx_lnj, adx_halox,adx_haloy, F_nk)
      endif
-   endif IF_LAM
+   endif
 !$omp end parallel
 
    call msg(MSG_DEBUG,'adx_model2adx_grid_uv [end]')

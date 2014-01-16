@@ -13,33 +13,31 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  mat_vec -   matrix-vector: Helmhotz*vector  
+!**s/r mat_vec2D - 2D_elliptic matrix_vector's computation 
 !                 
-!
 #include "model_macros_f.h"
-      subroutine  mat_vecs ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil,  &
+      subroutine  mat_vecs2D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil,  &
                              njl,minx1, maxx1, minx2, maxx2,Nk,fdg1 )   
       implicit none
 #include <arch_specific.hf>
 !
       integer Minx, Maxx, Miny, Maxy,nil, njl, &
               minx1, maxx1, minx2, maxx2,Nk
-      real*8 Rhs(Minx:Maxx,Miny:Maxy,Nk), &
-             Sol(Minx:Maxx,Miny:Maxy,Nk), &
+      real*8  Rhs(Minx:Maxx,Miny:Maxy,Nk), &
+              Sol(Minx:Maxx,Miny:Maxy,Nk), &
              fdg1(minx1:maxx1, minx2:maxx2, Nk)
-!
 !author
 !       Abdessamad Qaddouri - December  2006
 !
 !revision
 ! v3_30 - Qaddouri A.       - initial version
-!
+
 #include "glb_ld.cdk"
 #include "opr.cdk"
 #include "cstv.cdk"
 #include "geomg.cdk"
 #include "sol.cdk"
-!
+
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8
 !
@@ -59,13 +57,12 @@
          enddo
       enddo
 !$omp enddo
-!
-!
+
 !$omp single
       call rpn_comm_xch_halon (fdg1,minx1,maxx1,minx2,maxx2,nil,njl, &
                          Nk,halox,haloy,G_periodx,G_periody,nil,0,2)
 !$omp end single
-!
+
 !$omp do
       do k=1, NK
          cst= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
@@ -81,10 +78,10 @@
                stencil3= Opr_opsxp2_8(2*G_ni+ii)*di_8
                stencil4= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(jj)
                stencil5= Opr_opsxp0_8(G_ni+ii)*Opr_opsyp2_8(2*G_nj+jj)
-!
-               Rhs(i,j,k) =stencil1*fdg1(i  ,j  ,k) +  &
+
+               Rhs(i,j,k) =stencil1*fdg1(i  ,j  ,k) + &
                            stencil2*fdg1(i-1,j  ,k) + &
-                           stencil5*fdg1(i  ,j+1,k) +  &
+                           stencil5*fdg1(i  ,j+1,k) + &
                            stencil4*fdg1(i  ,j-1,k) + &
                            stencil3*fdg1(i+1,j  ,k)
             enddo

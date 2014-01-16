@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-!**s/r prep_2 - Add metric corrections to r.h.s. of momentum equations.
+!**s/r prep - Add metric corrections to r.h.s. of momentum equations.
 !               Compute advective contributions on geopotential grid.
 !               Interpolate advection contribution from geopotential
 !               grid to wind grids. Update r.h.s with advective
@@ -23,10 +23,10 @@
 !
 #include "model_macros_f.h"
 !
-      subroutine pre2 ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
-                        F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  , &
-                        F_rw  ,F_rf  ,F_oru  ,F_orv  ,F_rb ,F_nest_t, &
-                        DIST_DIM, ni, nj, Nk )
+      subroutine pre ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
+                       F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  , &
+                       F_rw  ,F_rf  ,F_oru  ,F_orv  ,F_rb ,F_nest_t, &
+                       DIST_DIM, ni, nj, Nk )
 !
       implicit none
 #include <arch_specific.hf>
@@ -125,56 +125,107 @@
 !$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,&
 !$omp   mumu,cosy_d,secy_d,rdiv,www,xxx,yyy,zzz,w_rt)
 
+      if (G_lam) then
+!$omp do
+         do k= k0, l_nk
+            do j= j0, jn
+               do i= i0, in
+         
+!                 Compute components of r(t0) and put in x, y, z
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  x = geomg_cx_8(i) * geomg_cy_8(j)
+                  y = geomg_sx_8(i) * geomg_cy_8(j)
+                  z = geomg_sy_8(j)
+         
+!                 Compute (Rx, Ry, Rz) = (rx, ry, rz)
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  cosy_d = sqrt(one - F_zct1(i,j,k)*F_zct1(i,j,k))
+                  secy_d = 0.
+                  if (cosy_d .GT. zero) secy_d = one / cosy_d
+         
+                  rx = -secy_d * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
+                                  F_xct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
+                  ry = secy_d * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
+                                 F_yct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
+                  rz = cosy_d * F_rvw2(i,j,k)
+         
+!                 Compute components of c and put in cx, cy, cz
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  cx = x + Cstv_Beta_8*F_xct1(i,j,k)
+                  cy = y + Cstv_Beta_8*F_yct1(i,j,k)
+                  cz = z + Cstv_Beta_8*F_zct1(i,j,k)
+         
+!                 Compute mu and modify (Rx,Ry,Rz)
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
+                  rx = rx + mumu*cx
+                  ry = ry + mumu*cy
+                  rz = rz + mumu*cz
+         
+!                 Compute advective contributions on G-grid
+!                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  F_ruw2(i,j,k) = (x*ry - y*rx)*geomg_invcy_8(j) - F_ruw1(i,j,k)
+                  F_rvw2(i,j,k) = rz*geomg_invcy_8(j) - F_rvw1(i,j,k)
+         
+!!!!!!! CARTESIAN DISPLACEMENTS:replace above 2 by !!!!!
+!!!    F_ruw2(i,j,k) = F_ruw2(i,j,k) - F_ruw1(i,j,k) !!!
+!!!    F_rvw2(i,j,k) = F_rvw2(i,j,k) - F_rvw1(i,j,k) !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+         
+            end do
+         end do
+      end do
+!$omp enddo
+
+   else
+
 !$omp do
       do k= k0, l_nk
-      do j= j0, jn
-      do i= i0, in
-
-!     Compute components of r(t0) and put in x, y, z
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         x = geomg_cx_8(i) * geomg_cy_8(j)
-         y = geomg_sx_8(i) * geomg_cy_8(j)
-         z = geomg_sy_8(j)
-
-!     Compute (Rx, Ry, Rz) = (rx, ry, rz)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         cosy_d = sqrt(one - F_zct1(i,j,k)*F_zct1(i,j,k))
-         secy_d = 0.
-         if (cosy_d .GT. zero) secy_d = one / cosy_d
-
-         rx = -secy_d * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
-                         F_xct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
-         ry = secy_d * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
-                        F_yct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
-         rz = cosy_d * F_rvw2(i,j,k)
-
-!     Compute components of c and put in cx, cy, cz
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         cx = x + Cstv_Beta_8*F_xct1(i,j,k)
-         cy = y + Cstv_Beta_8*F_yct1(i,j,k)
-         cz = z + Cstv_Beta_8*F_zct1(i,j,k)
-
-!     Compute mu and modify (Rx,Ry,Rz)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
-         rx = rx + mumu*cx
-         ry = ry + mumu*cy
-         rz = rz + mumu*cz
-
-!     Compute advective contributions on G-grid
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         F_ruw2(i,j,k) = (x*ry - y*rx)*geomg_invcy_8(j) - F_ruw1(i,j,k)
-         F_rvw2(i,j,k) = rz*geomg_invcy_8(j) - F_rvw1(i,j,k)
-
-  !!!!!!! CARTESIAN DISPLACEMENTS:replace above 2 by !!!!!
-  !!!    F_ruw2(i,j,k) = F_ruw2(i,j,k) - F_ruw1(i,j,k) !!!
-  !!!    F_rvw2(i,j,k) = F_rvw2(i,j,k) - F_rvw1(i,j,k) !!!
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-   end do
-   end do
+         do j= j0, jn
+            do i= i0, in
+         
+!                 Compute components of r(t0) and put in x, y, z
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  y = geomg_cy_8(j)
+                  x = geomg_cx_8(i) * y
+                  y = geomg_sx_8(i) * y
+                  z = geomg_sy_8(j)
+         
+!                 Compute (Rx, Ry, Rz) = (rx, ry, rz)
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  mumu = ( one + F_zct1(i,j,k) )*( one - F_zct1(i,j,k) )
+                  if (mumu .GT. zero) mumu = one / mumu
+         
+                  rz = F_rvw2(i,j,k)
+                  ry =  mumu * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
+                                F_yct1(i,j,k)*F_zct1(i,j,k)*rz)
+                  rx = -mumu * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
+                                F_xct1(i,j,k)*F_zct1(i,j,k)*rz)
+         
+!                 Compute components of c and put in cx, cy, cz 
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  cx = x + Cstv_Beta_8*F_xct1(i,j,k)
+                  cy = y + Cstv_Beta_8*F_yct1(i,j,k)
+                  cz = z + Cstv_Beta_8*F_zct1(i,j,k)
+         
+         !     Compute mu and modify (Rx,Ry,Rz)
+         !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
+                  rx = rx + mumu*cx
+                  ry = ry + mumu*cy
+                  rz = rz + mumu*cz
+         
+         !     Compute advective contributions on G-grid 
+         !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  F_ruw2(i,j,k) = x*ry - y*rx - F_ruw1(i,j,k)
+                  F_rvw2(i,j,k) = rz - F_rvw1(i,j,k)
+         end do
+      end do
    end do
 !$omp enddo
+
+   end if
+
 !
 !$omp single
       call rpn_comm_xch_halo( F_ruw2, LDIST_DIM, l_ni,l_nj,G_nk, &
@@ -254,18 +305,39 @@
             end do
          endif
 !
-         do j= j0, jn
-         do i= i0, in
-!           Compute the divergence of the RHS of momentum equations
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            rdiv  = (F_ru(i,j,k)-F_ru(i-1,j,k)) * geomg_invDX_8(i,j) &
-                  + (F_rv(i,j,k)*geomg_cyv_8(j) - F_rv(i,j-1,k)*geomg_cyv_8(j-1)) * geomg_invDY_8(j)* geomg_invcy_8(j)
+
+         if (G_lam) then
+
+            do j= j0, jn
+               do i= i0, in
+!                 Compute the divergence of the RHS of momentum equations
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  rdiv  = (F_ru(i,j,k)-F_ru(i-1,j,k)) * geomg_invDX_8(i,j) &
+                        + (F_rv(i,j,k)*geomg_cyv_8(j) - F_rv(i,j-1,k) * geomg_cyv_8(j-1)) * geomg_invDY_8(j) * geomg_invcy_8(j)
 !
-!           Combine divergence & continuity equations : Rc'
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_8
-         end do
-         end do
+!                 Combine divergence & continuity equations : Rc'
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_8
+               end do
+            end do
+
+         else
+
+            do j= j0, jn
+               do i= i0, in
+!                 Compute the divergence of the RHS of momentum equations
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  rdiv  = geomg_invcy2_8(j) * ( &
+                        (F_ru(i,j,k)-F_ru(i-1,j,k))*geomg_invDX_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8) &
+                        + (F_rv(i,j,k)-F_rv(i,j-1,k))*geomg_invDY_8(j)  * (geomg_cy_8(j) * Dcst_rayt_8))
+!
+!                 Combine divergence & continuity equations : Rc'
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                  F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_8
+               end do
+            end do
+
+         end if
 !
       end do
 !$omp enddo

@@ -13,12 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r  sol_mat_vec -  call matrix vector opeartion  
+!**s/r  sol_mat_vec - call 2D or 3D matrix_vector subroutine  
 !                 
-#include "model_macros_f.h"
-!
-      subroutine  sol_matvec2 ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
-                                nil,njl, nk, minx1,maxx1,minx2,maxx2 )
+      subroutine  sol_matvec ( wk22, wk11, Minx, Maxx, Miny, Maxy,  &
+                               nil,njl, nk, minx1,maxx1,minx2,maxx2 )
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,14 +24,14 @@
       real*8  wk11(*),wk22(*)
 !
 !author
-!     Abdessamad Qaddouri - decembre 2006
+!     Abdessamad Qaddouri - decembre 2013
 !
 !revision
-! v3_30 - Qaddouri A.        - initial version
+! v4_6 - Qaddouri A.      - initial version
 !
 #include "sol.cdk"
 !
-      integer i0,in,j0,jn
+      integer i0,in,j0,jn,minx3,maxx3
       real*8 fdg1   ( minx1:maxx1, minx2:maxx2,nk ), &
              wint_8 (  Minx:Maxx ,  Miny:Maxy ,nk ), &
              wint_81(  Minx:Maxx ,  Miny:Maxy ,nk )     
@@ -44,12 +42,21 @@
       in = nil - sol_pil_e
       j0 = 1   + sol_pil_s
       jn = njl - sol_pil_n
-!
+
+      minx3= 0 ; maxx3= nk+1
+
       call  tab_vec ( wint_81, Minx,Maxx,Miny,Maxy,nk, &
                       wk11   , i0,in,j0,jn, -1 )
 
-      call mat_vecs ( wint_81, wint_8, Minx, Maxx, Miny, Maxy,nil, &
-                      njl,minx1, maxx1, minx2, maxx2,nk,fdg1 )
+      if (Sol_type_S(11:12).eq.'2D') then
+
+         call mat_vecs2D ( wint_81, wint_8, Minx, Maxx, Miny, Maxy,nil, &
+                           njl,minx1, maxx1, minx2, maxx2,nk, fdg1 )
+      else
+
+         call mat_vecs3D ( wint_81, wint_8, Minx, Maxx, Miny, Maxy,nil, &
+                           njl,minx1, maxx1, minx2, maxx2,nk,minx3,maxx3)
+      endif
 
       call  tab_vec ( wint_8 , Minx,Maxx,Miny,Maxy,nk, &
                       wk22   , i0,in,j0,jn, +1 )

@@ -43,6 +43,8 @@
 ! v4_03 - Lee V.            - Adapt to using new pressure functions
 ! v4_05 - Lee V.            - Always write P0 in Pascals
 ! v4_05 - Plante A.         - Read zdt1,wt1,qt1 if present
+! v4_70 - Gravel S.         - Remove ip2, ip3 test for e_rdhint3
+!                             replace anyip by anydate
 !
 !object
 !    Computes  the ln of surface and top pressure given the topo 
@@ -107,11 +109,11 @@
       if (.not.Anal_pres_L) then
 
          code_h= e_rdhint3 (p0,dstf_gid,nis,njs,'ST1 ',-1, &
-              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+              -1,-1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
 
          if (code_h.lt.0) then
             code_h= e_rdhint3 (wk2,dstf_gid,nis,njs,'P0  ',-1, &
-              ip2a,ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+              -1,-1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             if (Anal_hybstg_L) then
                p0(:) = log(wk2(:)*100./pref)
@@ -140,13 +142,13 @@
          do k=1,lv_t
             kk=k
             if (Pil_bmf_L) kk=1
-            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs,'HU  ',na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs,'HU  ',na_t(k),-1, &
+                -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             horinterp_L= horinterp_L .or. (code_h.gt.0)
 
-            code_h= e_rdhint3(ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k), ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3(ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k), -1, &
+                -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
 
             if (code_h.lt.0) goto 999
             horinterp_L= horinterp_L .or. (code_h.gt.0)
@@ -162,8 +164,8 @@
             do k=1,lv_t
                kk=k
                if (Pil_bmf_L) kk=1
-               code_h= e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),ip2a    , &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               code_h= e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),-1    , &
+                    -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
@@ -176,8 +178,8 @@
             do k=1,lv_t
                kk=k
                if (Pil_bmf_L) kk=1 
-               code_h= e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),ip2a, &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               code_h= e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),-1, &
+                    -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
@@ -190,8 +192,8 @@
             do k=1,lv
                kk=k
                if (Pil_bmf_L) kk=1  
-               code_h= e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',na(k),ip2a, &
-                    ip3a,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
+               code_h= e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',na(k),-1, &
+                    -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
@@ -200,10 +202,10 @@
             enddo
          endif
 
-         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),ip2a,ip3a,' ', &
+         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',na_t(lv_t),-1,-1,' ', &
                             tva,.false.,.false.,'CUBIC',e_fu_anal,6)
          if (code_h.lt.0) then
-            code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,ip2a,ip3a,' ', &
+            code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,-1,-1,' ', &
                             tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             gzn(:,1)= gzn(:,1)*Dcst_grav_8
@@ -234,18 +236,18 @@
             kk=k
             if (Pil_bmf_L) kk=1
 
-            code_h= e_rdhint3 (gzn(1,kk),dstf_gid,nis,njs,'GZ  ',na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3 (gzn(1,kk),dstf_gid,nis,njs,'GZ  ',na_t(k),-1, &
+                -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
 
-            code_h= e_rdhint3 (ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3 (ttn(1,kk),dstf_gid,nis,njs,vt,na_t(k),-1, &
+                -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
 
-            code_h= e_rdhint3 (wk2,dstf_gid,nis,njs,vhh,na_t(k),ip2a, &
-                ip3a,' ',tva,.true.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3 (wk2,dstf_gid,nis,njs,vhh,na_t(k),-1, &
+                -1,' ',tva,.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
 
@@ -302,7 +304,7 @@
             kk=k
             if (Pil_bmf_L) kk=1
             code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, E_tr3d_name_S(i), &
-                           na_t(k),ip2a,ip3a,' ',tva, .true.,.false.   , &
+                           na_t(k),-1,-1,' ',tva,E_tr_anydate_L,.false.   , &
                            'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) hun= E_tr3d_sval(i)
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
@@ -317,14 +319,14 @@
       end do
 
       keyt= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na_t(2), &
-                    ip2a,ip3a,' ','PWTT')
+                    -1,-1,' ','PWTT')
       if (keyt.ge.0) then
          err= 0
          do k=2,lv_t-1
             kk=k
             if (Pil_bmf_L) kk=1
-            keyt = e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'PWTT',na_t(k),ip2a, &
-                           ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyt = e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'PWTT',na_t(k),-1, &
+                           -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             if (keyt.ne.0) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (qn,nis,njs,'PWTT',k-1,lv_t-2,pni,0,0,0)

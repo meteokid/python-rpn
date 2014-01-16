@@ -90,12 +90,12 @@
       integer key,err,bcs_ext,unf,cobussiz,offbo,kind,istat
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L, flag_clos
-      real wlnpi_m(l_ni,l_nj,0:G_nk+1), wlnpi_t(l_ni,l_nj,G_nk+2)
-      real px_m(l_ni,l_nj,G_nk+1),px_t(l_ni,l_nj,G_nk+2)
+      real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m, wlnpi_t
       real p0(l_ni,l_nj),st1o(l_ni,l_nj)
-      real, dimension(:), allocatable::prprlvl,rff 
+      real, dimension(:), allocatable::prprlvl,rff
       real, dimension(:,:), allocatable :: cobusval
-      real, dimension(:,:,:), allocatable :: buso_pres
+      real, dimension(:,:,:), allocatable :: buso_pres,cible
+      real, dimension(:,:,:), pointer :: lnpres
       real*8  dayfrac
       real*8, parameter :: sec_in_day = 86400.0d0
 !
@@ -129,13 +129,12 @@
       istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
       istat= gmm_get(gmmk_st1_s        ,st1        ,mymeta)
       
-      wlnpi_m(:,:,0)= Cstv_Ztop_8
       do k=1,G_nk+1
-         wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k  ))
-         wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k-1))
+         wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
+         wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
       enddo
       if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
-      wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
+!      wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
 
       allocate (rff(Outp_multxmosaic),irff(Outp_multxmosaic))
 
@@ -296,10 +295,12 @@
 !            Set kind to 2 for pressure output
              kind=2
              nko=Level_max(levset)
-             allocate(indo(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko) ) 
+             allocate ( indo(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
+                        cible(l_ni,l_nj,nko) )
              do i = 1, nko
                 indo(i)=i
-                prprlvl(i) = level(i,levset) * 100.0
+                prprlvl(i)   = level(i,levset) * 100.0
+                cible(:,:,i) = log(prprlvl(i))
              enddo
 
              do ii=1, Outp_var_max(kk)
@@ -310,44 +311,23 @@
 
                       offbo = Obus_offset(j)
 
-                      if (Obus_stag(j).eq.1 ) then
+                      lnpres => wlnpi_m
+                      if ( Obus_stag(j) .eq. 1 ) lnpres => wlnpi_t
+                         
+                      call vertint ( buso_pres,cible,nko, bus_o(1,offbo),lnpres,G_nk,&
+                            1,l_ni,1,l_nj,p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj,&
+                            'linear', .false. )
 
-                         call verder( px_t,bus_o(1,offbo),                &
-                              wlnpi_t(1,1,2),2.0,2.0, 1,l_ni,1,l_nj,G_nk, &
-                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                         call prgen( buso_pres,bus_o(1,offbo), px_t,      &
-                              wlnpi_t(1,1,2),prprlvl,nko,Out3_cubzt_L,    &
-                              1,l_ni,1,l_nj,G_nk,                         &
-                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                         
-                         call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
-                              level(1,levset),Obus_var_s(j),      &
-                              Obus_mul(j),Obus_add(j),kind,       &
-                              nko,indo,nko,Outp_nbit(ii,kk) )
-                         
-                      else
-
-                         call verder( px_m,bus_o(1,offbo),                &
-                              wlnpi_m(1,1,1),2.0,2.0, 1,l_ni,1,l_nj,G_nk, &
-                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                         call prgen( buso_pres, bus_o(1,offbo), px_m,     &
-                              wlnpi_m(1,1,1),prprlvl,nko,Out3_cubzt_L,    &
-                              1,l_ni,1,l_nj,G_nk,                         &
-                              p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj)
-                         
-                         call ecris_fst2(buso_pres,1,l_ni,1,l_nj, &
-                              level(1,levset),Obus_var_s(j),      &
-                              Obus_mul(j),Obus_add(j),kind ,      &
-                              nko,indo,nko,Outp_nbit(ii,kk) )
-                         
-                      endif
+                      call ecris_fst2 ( buso_pres, 1,l_ni,1,l_nj    , &
+                           level(1,levset),Obus_var_s(j),Obus_mul(j), &
+                           Obus_add(j),kind,nko,indo,nko,Outp_nbit(ii,kk) )
                    endif
                 endif
 
              end do
              end do
 
-             deallocate(buso_pres, indo,prprlvl)
+             deallocate(buso_pres, indo, prprlvl, cible)
 
          endif
 

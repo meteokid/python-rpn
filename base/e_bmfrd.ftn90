@@ -16,12 +16,12 @@
 !** s/r e_bmfrd 
 !
       integer function e_bmfrd ( dgid, nix, njx, nv, ad, mp, ip1, gnk,  &
-                                                 anyip_L,arret_L,inter )
+                                                 anydate_L,arret_L,inter )
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) nv, inter
-      logical arret_L,anyip_L
+      logical arret_L,anydate_L
       integer dgid, nix, njx, gnk, ip1(*)
       real    ad, mp
 !
@@ -42,8 +42,8 @@
 ! MP                 | constant to multiply to field                   |
 ! IP1                | value(s) of encoded IP1 to read                 |
 ! GNK                | number of IP1 values in IP1 array               |
-! anyip_L            | .true. to obtain any IP1 of field NV if         |
-!                    | specified IP1 is not found                      |
+! anydate_L          | .true. to obtain any date of field NV if        |
+!                    | specified date is not found                     |
 ! arret_L            | .true. to abort if record is not found at all   |
 !----------------------------------------------------------------------
 !
@@ -68,8 +68,8 @@
 !
       do k=1,gnk
 !
-         e_bmfrd = e_rdhint3 (w1,dgid,nix,njx,nv,ip1(k),ip2a,ip3a,' ', &
-                               tva,anyip_L,.false.,inter,e_fu_anal,6)
+         e_bmfrd = e_rdhint3 (w1,dgid,nix,njx,nv,ip1(k),-1,-1,' ', &
+                               tva,anydate_L,.false.,inter,e_fu_anal,6)
          if (e_bmfrd.lt.0) goto 500
 !     
 !        SCALING

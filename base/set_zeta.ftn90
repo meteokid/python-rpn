@@ -125,7 +125,7 @@
       type(vgrid_descriptor) :: vcoord
       integer k,istat,options
       real, dimension(:), pointer :: std_p_prof=>null()
-      real*8 half, one
+      real*8 half, one, wk_8
       parameter(half=0.5d0,one=1.d0)
 !     __________________________________________________________________
 !
@@ -155,7 +155,8 @@
       ! Construct vertical coordinate
       istat = vgd_new (vcoord, kind=5, version=Level_version, hyb=F_hybuser, &
                      rcoef1=Grd_rcoef(1),rcoef2=Grd_rcoef(2) , &
-                     ptop_8=Cstv_ptop_8, pref_8=Cstv_pref_8,stdout_unit=Lun_out)
+                     ptop_8=Cstv_ptop_8,ptop_out_8=wk_8, pref_8=Cstv_pref_8,stdout_unit=Lun_out)
+      Cstv_ptop_8=wk_8
 
       if (Lun_debug_L) istat = vgd_print(vcoord)
 

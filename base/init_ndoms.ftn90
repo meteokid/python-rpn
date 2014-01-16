@@ -22,22 +22,25 @@
 #include <clib_interface.cdk>
 #include "grd.cdk"
 !
-      character*16 ndomains_S
-      integer indx1, dom_fin
+      logical slice_last_L
+      common /tempory_common_slice/ slice_last_L
+
+      character*16 ndomains_S, last_domain_S
+      integer indx1, dom_fin, last
 !
 !-------------------------------------------------------------------
 !
       err  = -1
 
       if (clib_getenv ('GEM_NDOMAINS',ndomains_S).lt.0) then
-         write (6,1001) 
+         write (6,1001) 'GEM_NDOMAINS'
          return
       endif
 
       indx1= index (ndomains_S,':')
 
       if (indx1.lt.1) then
-         write (6,1002) ndomains_S
+         write (6,1002) 'GEM_NDOMAINS',ndomains_S
          return
       endif
 
@@ -48,24 +51,37 @@
   33  write (6,1002) ndomains_S
       return
 
- 101  Grd_ndomains = dom_fin - dom_deb + 1
+ 101  if (clib_getenv ('DOMAIN_end',last_domain_S).lt.0) then
+         write (6,1001) 'DOMAIN_end'
+         return
+      endif
+
+      read (last_domain_S,*,end=43,err=43) last
+
+      goto 201
+  43  write (6,1002) 'DOMAIN_end',last_domain_S
+      return
+
+ 201  Grd_ndomains = dom_fin - dom_deb + 1
 
       if (Grd_ndomains.lt.1) then
          write (6,1003) ndomains,ndomains_S
          return
       endif
-!
+
+      slice_last_L = dom_fin .eq. last
+
       Grd_yinyang_L = .false.
       Grd_yinyang_S = ''
       if (clib_getenv ('GEM_YINYANG',ndomains_S).ge.0) &
       Grd_yinyang_L = .true.
-!
+
       ndomains = Grd_ndomains
       err      = 0
-!
- 1001 format (/' =====> Error in init_ndoms: Env variable GEM_NDOMAINS is undefined'/)
- 1002 format (/' =====> Error in init_ndoms: Env variable GEM_NDOMAINS incorrectly defined ',a/)
- 1003 format (/' =====> Error in init_ndoms: ndomains_S= 'i4,' Check Env variable GEM_NDOMAINS ',a/)
+
+ 1001 format (/' =====> Error in init_ndoms: Env variable ',a,' is undefined'/)
+ 1002 format (/' =====> Error in init_ndoms: Env variable ',a,' is incorrectly defined ',a/)
+ 1003 format (/' =====> Error in init_ndoms: ndomains_S= ',i4,' Check Env variable GEM_NDOMAINS ',a/)
 !
 !-------------------------------------------------------------------
 !

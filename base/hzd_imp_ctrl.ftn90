@@ -119,7 +119,7 @@
          call hzd_solfft2( F_f2hzd, wk1_8, a,c,d                       , &
                            trpmin,trpmax,trp_22min,trp_22max           , &
                            trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni, &
-                           l_ni,l_nj, trpn, xp, yp, Hzd_cdiff          , &
+                           l_ni,l_nj, trpn, xp, yp, cdiff              , &
                            Ptopo_npex,Ptopo_npey,G_lam )
 
       else
@@ -130,13 +130,13 @@
             call hzd_solparite_U ( F_f2hzd, wk1_8, evvec, odvec,                 &
                                    a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
                                    trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, Hzd_cdiff,           &
+                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
                                    Ptopo_npex,Ptopo_npey,NSTOR,(G_ni+1)/2 )
             else
             call hzd_solparite_2 ( F_f2hzd, wk1_8, evvec, odvec,                 &
                                    a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
                                    trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, Hzd_cdiff,           &
+                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
                                    Ptopo_npex,Ptopo_npey,NSTOR,nev )
             endif
 
@@ -145,7 +145,7 @@
             call hzd_solmxma     ( F_f2hzd, wk1_8, wh_evec,                      &
                                    a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
                                    trpn,trp_22n,G_nj, dpwr, LDIST_DIM, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, Hzd_cdiff,           &
+                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
                                    Ptopo_npex,Ptopo_npey)
          endif
 

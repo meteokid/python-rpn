@@ -38,7 +38,7 @@
 ! v4_04 - Tanguay M.        - Staggered version TL/AD
 ! v4_05 - Girard C.         - Added boundary condition for top piloting
 ! v4_40 - Tanguay M.        - Revision TL/AD
-! v4_7  - Gaudreault S.     - Simplify interface for gmm pointer
+! v4_70 - Gaudreault S.     - Simplify interface for gmm pointer
 !
 !arguments
 !  Name        I/O                 Description
@@ -46,65 +46,66 @@
 ! F_fnitraj     I         number of iterations to compute upstream
 !                         positions
 !----------------------------------------------------------------
-
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lun.cdk"
-#include "cstv.cdk"
-#include "schm.cdk"
-#include "orh.cdk"
-#include "ldnh.cdk"
-#include "nl.cdk"
+#include "lam.cdk"
 #include "lctl.cdk"
+#include "ldnh.cdk"
+#include "lun.cdk"
+#include "nest.cdk"
+#include "nl.cdk"
+#include "orh.cdk"
 #include "p_geof.cdk"
-#include "vtopo.cdk"
 #include "rhsc.cdk"
+#include "schm.cdk"
+#include "vtopo.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
-#include "nest.cdk"
-#include "lam.cdk"
 
-      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat
-      real dth
+!TODO : remove the following when removing GU
+#include "dcst.cdk"
+#include "geomg.cdk"
+
+      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j
       real*8, dimension (:,:,:), allocatable :: rhs_sol, lhs_sol
 !
 !     ---------------------------------------------------------------
 !
-      gmmstat = gmm_get (gmmk_ut0_s  , ut0)
-      gmmstat = gmm_get (gmmk_vt0_s  , vt0)
-      gmmstat = gmm_get (gmmk_wt0_s  , wt0)
-      gmmstat = gmm_get (gmmk_tt0_s  , tt0)
-      gmmstat = gmm_get (gmmk_st0_s  , st0)
-      gmmstat = gmm_get (gmmk_qt0_s  , qt0)
-      gmmstat = gmm_get (gmmk_zdt0_s , zdt0)
-      gmmstat = gmm_get (gmmk_ut1_s  , ut1)
-      gmmstat = gmm_get (gmmk_vt1_s  , vt1)
-      gmmstat = gmm_get (gmmk_wt1_s  , wt1)
-      gmmstat = gmm_get (gmmk_tt1_s  , tt1)
-      gmmstat = gmm_get (gmmk_st1_s  , st1)
-      gmmstat = gmm_get (gmmk_zdt1_s , zdt1)
+      gmmstat = gmm_get (gmmk_ut0_s, ut0)
+      gmmstat = gmm_get (gmmk_vt0_s, vt0)
+      gmmstat = gmm_get (gmmk_wt0_s, wt0)
+      gmmstat = gmm_get (gmmk_tt0_s, tt0)
+      gmmstat = gmm_get (gmmk_st0_s, st0)
+      gmmstat = gmm_get (gmmk_qt0_s, qt0)
+      gmmstat = gmm_get (gmmk_zdt0_s, zdt0)
+      gmmstat = gmm_get (gmmk_ut1_s, ut1)
+      gmmstat = gmm_get (gmmk_vt1_s, vt1)
+      gmmstat = gmm_get (gmmk_wt1_s, wt1)
+      gmmstat = gmm_get (gmmk_tt1_s, tt1)
+      gmmstat = gmm_get (gmmk_st1_s, st1)
+      gmmstat = gmm_get (gmmk_zdt1_s, zdt1)
       gmmstat = gmm_get (gmmk_orhsu_s, orhsu)
       gmmstat = gmm_get (gmmk_orhsv_s, orhsv)
       gmmstat = gmm_get (gmmk_orhsc_s, orhsc)
       gmmstat = gmm_get (gmmk_orhst_s, orhst)
       gmmstat = gmm_get (gmmk_orhsf_s, orhsf)
-      gmmstat = gmm_get (gmmk_fis0_s , fis0)
+      gmmstat = gmm_get (gmmk_fis0_s, fis0)
       gmmstat = gmm_get (gmmk_orhsw_s, orhsw)
-      gmmstat = gmm_get (gmmk_qt1_s  , qt1)
-      gmmstat = gmm_get (gmmk_rhsu_s , rhsu)
-      gmmstat = gmm_get (gmmk_rhsv_s , rhsv)
-      gmmstat = gmm_get (gmmk_rhst_s , rhst)
-      gmmstat = gmm_get (gmmk_rhsc_s , rhsc)
-      gmmstat = gmm_get (gmmk_rhsf_s , rhsf)
-      gmmstat = gmm_get (gmmk_rhsb_s , rhsb)
-      gmmstat = gmm_get (gmmk_ruw2_s , ruw2)
-      gmmstat = gmm_get (gmmk_rvw2_s , rvw2)
-      gmmstat = gmm_get (gmmk_xct1_s , xct1)
-      gmmstat = gmm_get (gmmk_yct1_s , yct1)
-      gmmstat = gmm_get (gmmk_zct1_s , zct1)
-      gmmstat = gmm_get (gmmk_rhsw_s , rhsw)
-      gmmstat = gmm_get (gmmk_ruw1_s , ruw1)
-      gmmstat = gmm_get (gmmk_rvw1_s , rvw1)
+      gmmstat = gmm_get (gmmk_qt1_s, qt1)
+      gmmstat = gmm_get (gmmk_rhsu_s, rhsu)
+      gmmstat = gmm_get (gmmk_rhsv_s, rhsv)
+      gmmstat = gmm_get (gmmk_rhst_s, rhst)
+      gmmstat = gmm_get (gmmk_rhsc_s, rhsc)
+      gmmstat = gmm_get (gmmk_rhsf_s, rhsf)
+      gmmstat = gmm_get (gmmk_rhsb_s, rhsb)
+      gmmstat = gmm_get (gmmk_ruw2_s, ruw2)
+      gmmstat = gmm_get (gmmk_rvw2_s, rvw2)
+      gmmstat = gmm_get (gmmk_xct1_s, xct1)
+      gmmstat = gmm_get (gmmk_yct1_s, yct1)
+      gmmstat = gmm_get (gmmk_zct1_s, zct1)
+      gmmstat = gmm_get (gmmk_rhsw_s, rhsw)
+      gmmstat = gmm_get (gmmk_ruw1_s, ruw1)
+      gmmstat = gmm_get (gmmk_rvw1_s, rvw1)
 
       if (G_lam) then
          gmmstat = gmm_get (gmmk_nest_u_s, nest_u)
@@ -124,34 +125,36 @@
       jn= l_nj-pil_n
       k0= 1+Lam_gbpil_T
 
-!     ---------------------------------------------------------------
-!C    rhs:	Compute rhs of the governing equations
-!C    int:	Perform Semi-Lagrangian advection
-!C    pre:	Compute non-linear Helmholtz problem (invariant part)
-!C    nli:	Compute non-linear components of the r.h.s. of the
-!C              Helmholtz problem and linear and nonlinear components
-!C              of the r.h.s. of the Helmholtz equation
-!C    solver:	Linear Helmholtz solver
-!C    bac:	Backsubtitution
-!     ---------------------------------------------------------------
-!
-      dth =  Cstv_dt_8/2.
+      if (.not. G_lam) then
+         do j = 1, l_nj
+            ut1(:,j,:) = ut1(:,j,:) * geomg_cy_8(j)  / Dcst_rayt_8
+            vt1(:,j,:) = vt1(:,j,:) * geomg_cyv_8(j) / Dcst_rayt_8
+            ut0(:,j,:) = ut0(:,j,:) * geomg_cy_8(j)  / Dcst_rayt_8
+            vt0(:,j,:) = vt0(:,j,:) * geomg_cyv_8(j) / Dcst_rayt_8
+         end do
+      end if
 
       if (Lun_debug_L) write(Lun_out,1000)
 
       if ( Orh_icn .eq. 1 ) then       ! Compute RHS
 
          call timing_start ( 20, 'RHS      ' )
-         call rhs2 ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf, &
-                     ruw1,  rvw1,  rhsu, rhsv, nest_u, nest_v, &
-                     ut1, vt1, wt1, tt1, st1, zdt1, qt1, fis0, &
-                     LDIST_DIM,l_nk )
+
+!        Compute the right-hand sides of the governing equations
+         call rhs (orhsu, orhsv, orhsc, orhst, orhsw, orhsf, &
+                   ruw1,  rvw1,  rhsu, rhsv, nest_u, nest_v, &
+                   ut1, vt1, wt1, tt1, st1, zdt1, qt1, fis0, &
+                   LDIST_DIM,l_nk)
+
          call timing_stop (20)
 
       endif
 
       call timing_start(21, 'ADW      ')
-      call itf_adx_main (F_fnitraj)    ! SL Advection
+
+!     Perform Semi-Lagrangian advection
+      call itf_adx_main (F_fnitraj)
+
       call timing_stop(21)
 
       call timing_start(22, 'PRE      ')
@@ -165,10 +168,12 @@
          endif
       endif
 
-      call pre2 ( rhsu, rhsv, ruw1 , ruw2 , rvw1, rvw2 , &
-                  xct1, yct1, zct1 , fis0 , rhsc, rhst , &
-                  rhsw, rhsf, orhsu, orhsv, rhsb,        &
-                  nest_t, LDIST_DIM, l_ni, l_nj, l_nk )
+!     Combine some rhs to obtain the linear part
+!     of the right-hand side of the elliptic problem
+      call pre (rhsu, rhsv, ruw1, ruw2, rvw1, rvw2, &
+                xct1, yct1, zct1, fis0, rhsc, rhst, &
+                rhsw, rhsf, orhsu, orhsv, rhsb,     &
+                nest_t, LDIST_DIM, l_ni, l_nj, l_nk)
 
       call timing_stop (22)
 
@@ -187,24 +192,44 @@
       do iln=1,Schm_itnlh
 
          call timing_start ( 23, 'NLI      ' )
-         call nli2 ( nl_u, nl_v, nl_t, nl_c, nl_w, nl_f,     &
-                     ut0, vt0, tt0, st0, qt0, rhs_sol, rhsc, &
-                     fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,j0,in,jn,k0 )
+
+!        Compute non-linear components and combine them
+!        to obtain final right-hand side of the elliptic problem
+         call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f,     &
+                   ut0, vt0, tt0, st0, qt0, rhs_sol, rhsc, &
+                   fis0, nl_b, LDIST_DIM, l_nk, ni, nj, i0,&
+                   j0,in,jn,k0)
+
          call timing_stop (23)
 
          call timing_start ( 24, 'SOL      ' )
+
+!        Solve the elliptic problem
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, iln)
+
          call timing_stop (24)
 
          call timing_start ( 25, 'BAC      ' )
-         call  bac2 ( iln, Schm_itnlh, lhs_sol, fis0,            &
-                      ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
-                      rhsu, rhsv, rhst, rhsw, rhsf, rhsb,        &
-                      nl_u, nl_v, nl_t, nl_w, nl_f, nl_b,        &
-                      LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn )
+
+!        Back subtitution: compute variables for the next iteration/time step
+         call  bac (iln, Schm_itnlh, lhs_sol, fis0,            &
+                    ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
+                    rhsu, rhsv, rhst, rhsw, rhsf, rhsb,        &
+                    nl_u, nl_v, nl_t, nl_w, nl_f, nl_b,        &
+                    LDIST_DIM, ni,nj,l_nk,i0, j0, k0, in, jn)
+
          call timing_stop (25)
 
       end do
+
+      if (.not. G_lam) then
+         do j = 1, l_nj
+            ut1(:,j,:) = ut1(:,j,:) * geomg_invcy_8(j)  * Dcst_rayt_8
+            vt1(:,j,:) = vt1(:,j,:) * geomg_invcyv_8(j) * Dcst_rayt_8
+            ut0(:,j,:) = ut0(:,j,:) * geomg_invcy_8(j)  * Dcst_rayt_8
+            vt0(:,j,:) = vt0(:,j,:) * geomg_invcyv_8(j) * Dcst_rayt_8
+         end do
+      end if
 
       deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,rhs_sol,lhs_sol)
 !

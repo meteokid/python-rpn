@@ -23,12 +23,12 @@
 !
 #include "model_macros_f.h"
 
-      subroutine bac2 ( F_itr , F_itnlh , F_lhs_sol, F_fis , &
-                        F_u   , F_v     , F_w  , F_t       , &
-                        F_s   , F_zd    , F_q  , F_nest_q  , &
-                        F_ru  , F_rv    , F_rt , F_rw  , F_rf , F_rb, &
-                        F_nu  , F_nv    , F_nt , F_nw  , F_nf , F_nb, &
-                        DIST_DIM, ni,nj,Nk, i0, j0, k0, in, jn )
+      subroutine bac ( F_itr , F_itnlh , F_lhs_sol, F_fis , &
+                       F_u   , F_v     , F_w  , F_t       , &
+                       F_s   , F_zd    , F_q  , F_nest_q  , &
+                       F_ru  , F_rv    , F_rt , F_rw  , F_rf , F_rb, &
+                       F_nu  , F_nv    , F_nt , F_nw  , F_nf , F_nb, &
+                       DIST_DIM, ni,nj,Nk, i0, j0, k0, in, jn )
       implicit none
 #include <arch_specific.hf>
 !
@@ -123,21 +123,43 @@
 
 !     Compute U & V
 !     ~~~~~~~~~~~~~
-
+      if (G_lam) then
 !$omp do
-      do k=k0,l_nk
-         do j= j0, jn
-         do i= i0, l_niu-pil_e
-            F_u(i,j,k) = ( Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k) - GP(i,j,k)) * geomg_invDXu_8(i,j)) )
-         end do
-         end do
-         do j= j0, l_njv-pil_n
-         do i= i0, in
-            F_v(i,j,k) = ( Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k) - GP(i,j,k)) * geomg_invDYv_8(j)) )
-         end do
-         end do
-      enddo
+         do k=k0,l_nk
+            do j= j0, jn
+               do i= i0, l_niu-pil_e
+                  F_u(i,j,k) = ( Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k) - GP(i,j,k)) * geomg_invDXu_8(i,j)) )
+               end do
+            end do
+
+            do j= j0, l_njv-pil_n
+               do i= i0, in
+                  F_v(i,j,k) = ( Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k) - GP(i,j,k)) * geomg_invDYv_8(j)) )
+               end do
+            end do
+         enddo
 !$omp enddo
+      else
+!$omp do
+         do k=k0,l_nk
+            do j= j0, jn
+               do i= i0, l_niu-pil_e
+                  F_u(i,j,k)= Cstv_tau_8*( F_ru(i,j,k)-F_nu(i,j,k) - &
+                              p4/Dcst_rayt_8*(GP(i+1,j,k)-GP(i,j,k)) &
+                              *geomg_invDXu_8(i,j)  * (geomg_cy_8(j) * Dcst_rayt_8))
+               end do
+            end do
+            
+            do j= j0, l_njv-pil_n
+               do i= i0, in
+                  F_v(i,j,k)= Cstv_tau_8*( F_rv(i,j,k)-F_nv(i,j,k) - &
+                              p4/Dcst_rayt_8*(GP(i,j+1,k) - GP(i,j,k)) &
+                              *geomg_invDYv_8(j)  * (geomg_cyv_8(j) * Dcst_rayt_8) )
+               end do
+            end do
+         enddo
+!$omp enddo
+      end if
 
 !     Compute w
 !     ~~~~~~~~~

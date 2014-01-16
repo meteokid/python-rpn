@@ -12,37 +12,30 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r  sol_fgmres -  call iterative elliptic solver 
+!**s/r sol_fgmres - FGMRES based iterative elliptic solver 
 !
-#include "model_macros_f.h"
-      subroutine sol_fgmres3 ( F_w2_8, F_w1_8, iln, nil, njl, &
-                               Minx, Maxx, Miny, Maxy, F_gnk, &
-                               F_nk, print_conv_L, conv, its )
+      subroutine sol_fgmres ( F_w2_8, F_w1_8, iln, nil, njl,&
+                              Minx, Maxx, Miny, Maxy, F_gnk,&
+                              F_nk, print_conv_L, conv, its )
       implicit none
 #include <arch_specific.hf>
-!
+
       logical print_conv_L
       integer iln, nil, njl, Minx, Maxx, Miny, Maxy, F_gnk, F_nk, its
       real*8 F_w1_8 (Minx:Maxx,Miny:Maxy,F_gnk), &
              F_w2_8 (Minx:Maxx,Miny:Maxy,F_gnk), conv
-!
+
 !author
-!       Abdessamad Qaddouri - December  2006
+!       Abdessamad Qaddouri -  2013
 !
 !revision
-! v3_30 - Qaddouri A.       - initial version
-! v4_40 - Qaddouri+Lee      - to save solver solution from last iteration
+! v4_70 - Qaddouri A.       - initial version
 !
-#include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "sol.cdk"
-#include "schm.cdk"
-#include "orh.cdk"
-#include "ptopo.cdk"
 #include "prec.cdk"
 
-!
       integer niloc,njloc,nloc
       integer halox, haloy, minx1, maxx1, minx2, maxx2
       real*8, dimension(:  ), allocatable :: wk11,wk22,rhs1,sol1
@@ -50,15 +43,15 @@
       real*8, dimension(:), pointer :: sol2
       integer icode,ischmi
       integer :: lastdt = -1
-      save sol2,lastdt
+      save sol2, lastdt
 !
 !     ---------------------------------------------------------------
 !
       niloc = (Nil-pil_e)-(1+pil_w)+1
       njloc = (Njl-pil_n)-(1+pil_s)+1
       nloc  = niloc*njloc*F_nk
-      if (lastdt .eq. -1) then
-!     allocate and initialize sol2
+
+      if (lastdt .eq. -1) then  ! allocate and initialize sol2
           allocate (sol2(nloc))
           sol2 = 0.
           lastdt = 0
@@ -67,6 +60,13 @@
       allocate (vv_8(nloc,sol_im+1),ww_8(nloc,sol_im),wk11(nloc), &
                 wk22(nloc),rhs1(nloc),sol1(nloc))
 
+! really necessary??? will kill the performance...
+      vv_8=0.d0
+      ww_8=0.d0
+      wk11=0.d0
+      wk22=0.d0
+      rhs1=0.d0
+ 
       halox = 1
       haloy = halox
 
@@ -92,32 +92,26 @@
 !-----------------------------------------------------------------------
 !     F G M R E S   L O O P
 !-----------------------------------------------------------------------
-   1    continue
+ 1    continue
 !-----------------------------------------------------------------------
+
       call fgmres2( nloc,sol_im,rhs1,sol1,ischmi,vv_8,ww_8,wk11,wk22, &
                            sol_fgm_eps,sol_fgm_maxits,its,conv,icode )
 
-!     Save solution into sol2
-      sol2=sol1
+      sol2= sol1  ! Save solution sol1 into sol2
 
       if (icode .eq. 1) then
 
-         if (sol_precond_S.eq.'DIAGO')         then
-            call sol_pre_diago ( wk22, wk11, Minx,Maxx,Miny,Maxy, &
-                                 nil,njl, minx1,maxx1,minx2,maxx2 )
-
-         else if (sol_precond_S.eq.'JACOBI')   then
-            call pre_jacobi2 ( wk22,wk11,Prec_xevec_8,niloc,njloc, &
-                               F_nk,Prec_ai_8,Prec_bi_8,Prec_ci_8 )
-
-         else if (sol_precond_S.eq.'MULTICOL') then
-            call sol_pre_multicol ( wk22, wk11, niloc, njloc, &
-                                    Minx, Maxx, Miny, Maxy, nil,njl, &
-                                    minx1, maxx1, minx2, maxx2, F_gnk )
+         if (trim(sol_precond_S).eq.'JACOBI')   then
+            if (Sol_type_S(11:12).eq.'2D') then
+               call pre_jacobi2D ( wk22,wk11,Prec_xevec_8,niloc,njloc,&
+                                   F_nk,Prec_ai_8,Prec_bi_8,Prec_ci_8 )
+            else
+               call pre_jacobi3D ( wk22,wk11,Prec_xevec_8,niloc,njloc,&
+                                   F_nk,Prec_ai_8,Prec_bi_8,Prec_ci_8 )
+            endif
          else
-
             call dcopy (nloc, wk11, 1, wk22, 1)
-
          endif
 
          goto 1
@@ -128,9 +122,11 @@
 
             if (Lun_debug_L.and.print_conv_L) write(lun_out, 199) conv,its
 
-            call  sol_matvec2 ( wk22, wk11, Minx, Maxx, Miny, Maxy, &
-                                nil,njl, F_nk, minx1,maxx1,minx2,maxx2 )
+            call sol_matvec ( wk22, wk11, Minx, Maxx, Miny, Maxy, &
+                           nil,njl, F_nk, minx1,maxx1,minx2,maxx2 )
+
             goto 1
+
          endif
 
       endif

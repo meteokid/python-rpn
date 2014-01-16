@@ -37,7 +37,8 @@
 ! v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
 !                             produce BCS or 3DF files
 ! v4_30 - Tanguay & Plante  - Derive image winds from true winds when no interpolation
-! v4.7  - Gaudreault S.     - Removing wind images
+! v4.70 - Gaudreault S.     - Removing wind images
+! v4_70 - Gravel S.         - Remove ip2, ip3 test for e_rdhint3
 !
 !object
 !        see above ID
@@ -120,10 +121,10 @@
 
          err= 0
          do k=1,lv
-            keyu = e_rdhint3 (uu,dstu_gid,nisu,njsu,var_uu,na(k),ip2a, &
-                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),ip2a, &
-                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyu = e_rdhint3 (uu,dstu_gid,nisu,njsu,var_uu,na(k),-1, &
+                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),-1, &
+                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
@@ -204,10 +205,10 @@
       if ((keyu.ge.0).and.(keyv.ge.0)) then
          err= 0
          do k=1,lv-1
-            keyu = e_rdhint3 (uu,dstf_gid,nifi,njfi,'PWUU',na(k),ip2a, &
-                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
-            keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),ip2a, &
-                     ip3a,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyu = e_rdhint3 (uu,dstf_gid,nifi,njfi,'PWUU',na(k),-1, &
+                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+            keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),-1, &
+                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
             if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv-1,pni,0,0,0)
