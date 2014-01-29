@@ -47,6 +47,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
                 dataType[0]=4;
             }
             dataLen[0]=4;
+            //TODO: missing break;?
         case NPY_SHORT:
             dataType[0]=4;
             dataLen[0]=2;

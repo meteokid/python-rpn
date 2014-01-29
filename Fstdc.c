@@ -392,7 +392,7 @@ static PyObject *Fstdc_fst_edit_dir(PyObject *self, PyObject *args) {
 
 static char Fstdc_fstecr__doc__[] =
         "Write record data & meta(params) to file (Interface to fstecr), always append (no overwrite)\n\
-        Fstdc.fstecr(array,iunit,nomvar,typvar,etiket,ip1,ip2,ip3,dateo,grtyp,ig1,ig2,ig3,ig4,deet,npas,nbits)\n\
+        Fstdc.fstecr(array,iunit,nomvar,typvar,etiket,ip1,ip2,ip3,dateo,grtyp,ig1,ig2,ig3,ig4,deet,npas,nbits,datyp)\n\
         @param array data to be written to file (numpy.ndarray)\n\
         @param iunit file unit number handle returned by Fstdc_fstouv (int)\n\
         @param ... \n\
@@ -2213,7 +2213,7 @@ static struct PyMethodDef Fstdc_methods[] = {
 /* Initialization function for the module (*must* be called initFstdc) */
 
 static char Fstdc_module_documentation[] =
-"Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Michel Valin <Michel.Valin@ec.gc.ca>\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>";
+"Module Fstdc contains the classes used to access RPN Standard Files (rev 2000)\n@author: Michel Valin <Michel.Valin@ec.gc.ca>\n@author: Mario Lepine <mario.lepine@ec.gc.ca>\n@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>\n@author: Christopher Subich <Christopher.Subich@ec.gc.ca>";
 
 void initFstdc(void) {
     PyObject *m, *d;
