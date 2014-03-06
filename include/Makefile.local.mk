@@ -131,7 +131,7 @@ $(LCLPO)/prgemnml.o: prgemnml.ftn90
 $(BINDIR)/gemprnml_$(BASE_ARCH).Abs: $(LCLPO)/prgemnml.o
 	export ATM_MODEL_NAME="prgemnml" ; makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj prgemnml.o bidon.o -o $@ -libpath $(PWD) $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS) $(UTIL)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true
 
 
@@ -144,7 +144,7 @@ $(LCLPO)/gemgrid.o: gemgrid.ftn90
 $(BINDIR)/gemgrid_$(BASE_ARCH).Abs: $(LCLPO)/gemgrid.o
 	export ATM_MODEL_NAME="gemgrid" ; makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj gemgrid.o bidon.o -o $@ -libpath $(PWD) $(LIBPATH) -libappl "gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/gemgrid.o 2>/dev/null || true 
 
 
@@ -158,7 +158,7 @@ $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs: $(LCLPO)/checkdmpart.o
 	export ATM_MODEL_NAME="checkdmpart" ; makemodelbidon checkdmpart > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
 	$(RBUILD) -obj checkdmpart.o bidon.o -o $@ $(OMP) $(MPI) \
-		-libpath $(LIBPATH) \
+		-libpath $(PWD) $(LIBPATH) \
 		-libappl $(LIBAPPL) \
 		-librmn $(RMN_VERSION) \
 		-libsys $(LIBSYS) \
@@ -190,7 +190,7 @@ $(LCLPO)/toc2nml.o: toc2nml.cdk90
 $(BINDIR)/toc2nml: $(LCLPO)/toc2nml.o
 	export ATM_MODEL_NAME="toc2nml" ; makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj toc2nml.o bidon.o -o $@ -libpath $(LIBPATH) -libappl "gemdyn_main $(VGRID)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj toc2nml.o bidon.o -o $@ -libpath $(PWD) $(LIBPATH) -libappl "gemdyn_main $(VGRID) $(UTIL)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
 
 monitor: $(BINDIR)/gem_monitor_end $(BINDIR)/gem_monitor_output
