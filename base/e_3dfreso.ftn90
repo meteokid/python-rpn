@@ -27,7 +27,7 @@
       real*8 F_dx,F_dy
 
 #include "e_fu.cdk"
-#include "pilot.cdk"
+#include "pilot1.cdk"
 #include "grd.cdk"
 
       integer, external :: fstinf,fstluk,ezqkdef,ezgxprm,ezget_nsubgrids, &

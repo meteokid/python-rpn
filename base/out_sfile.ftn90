@@ -109,7 +109,7 @@
               len1 = max(6,len1)
          len0 = len1
          if (prognum < 0) len0 = len0+1
-         write(myformat_S,'(a,i1.1,a,i1.1,a') '(a,i',len0,'.',len1,')'
+         write(myformat_S,'(a,i1.1,a,i1.1,a)') '(a,i',len0,'.',len1,')'
          my_hour = ' '
          write(my_hour,trim(myformat_S)) '_',prognum
 

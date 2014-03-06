@@ -9,7 +9,7 @@
 #include "e_anal.cdk"
 !
 #include "modconst.cdk"
-#include "pilot.cdk"
+#include "pilot1.cdk"
 #include "schm.cdk"
 !
       namelist /gement/   Anal_cond_L  , E_schm_adcub

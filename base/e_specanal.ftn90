@@ -34,7 +34,7 @@
 #include "grd.cdk"
 #include "lun.cdk"
 #include "filename.cdk"
-#include "pilot.cdk"
+#include "pilot1.cdk"
 
       integer,  external :: px_param, e_fstouv
       integer, parameter :: PRESVAR_MAX = 6, nlist = 2000
