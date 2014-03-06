@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -32,6 +32,7 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_exdg_L = .false.
    adw_ckbd_L = .false.
    adw_mono_L = .true.
+   adw_catmullrom_L = .false.
    adw_positive_L = .false.
    adw_gccsa_L = .false.
    adw_trunc_traj_L = .false.
@@ -105,10 +106,25 @@ function adx_config() result(F_stat)
       endif
    endif
 
-   if (Adw_gccsa_L.and.adx_trapeze_L) then
+   if (Adw_gccsa_L .and. adx_trapeze_L) then
       call msg(MSG_ERROR,'adw_nml: Adw_gccsa_L cannot be used with adx_trapeze_L')
       F_stat = -1
    endif
+
+   if (Adw_gccsa_L .and. adx_angular_displacement_L) then
+      call msg(MSG_ERROR,'adw_nml: Adw_gccsa_L cannot be used with adx_angular_displacement_L')
+      F_stat = -1
+   endif
+
+   if (adx_angular_displacement_L .and. .not.G_lam) then
+      call msg(MSG_ERROR,'adw_nml: adx_angular_displacement_L is supported only in a LAM')
+      F_stat = -1
+   end if
+
+   if (adw_catmullrom_L .and. .not.G_lam) then
+      call msg(MSG_ERROR,'adw_nml: adw_catmullrom_L is supported only in a LAM')
+      F_stat = -1
+   end if
 
    if (adw_positive_L .and. adw_mono_L) then
       call msg(MSG_ERROR,'adw_nml: adw_positive_L and adw_mono_L cannot be both .true.')

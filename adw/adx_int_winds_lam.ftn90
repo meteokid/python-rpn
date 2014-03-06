@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,40 +18,53 @@
 
 !/**
 subroutine adx_int_winds_lam(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
-     F_dth, F_cliptraj_L, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
-     F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
+                             F_dth, F_cliptraj_L, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
+                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
    implicit none
 #include <arch_specific.hf>
    !@objective
    !@arguments
-   logical :: F_cliptraj_L             !I, .T. to clip trajectories
-   logical :: F_has_u2_L               !I, .T. if F_u2 needs to be treated
-   real    :: F_dth                    !I, factor (1. or timestep)
-   integer :: F_nk, F_nk_super         !I, number of vertical levels
-   integer :: F_aminx, F_amaxx, F_aminy, F_amaxy !I, wind fields array bounds
-   integer :: F_ni, F_nj               !I, dims of position fields
-   integer :: F_i0,F_in,F_j0,F_jn,F_k0 !I, operator scope
-   real, dimension(F_ni,F_nj,F_nk) :: F_xth,F_yth !I/O, x,y positions
-   real, dimension(F_ni,F_nj,F_nk) :: F_zth       !I, z positions
-   real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super) :: &
-        F_u1,F_u2   !I, field to interpol
-   real, dimension(F_ni,F_nj,F_nk) :: F_wrkx1,F_wrky1  !O, F_dt * result of interp
-   integer :: num
+   logical, intent(in) :: F_cliptraj_L                                                  ! .T. to clip trajectories
+   logical, intent(in) :: F_has_u2_L                                                    ! .T. if F_u2 needs to be treated
+   real, intent(in)    :: F_dth                                                         ! factor (1. or timestep)
+   integer, intent(in) :: F_nk, F_nk_super                                              ! number of vertical levels
+   integer, intent(in) :: F_aminx, F_amaxx, F_aminy, F_amaxy                            ! wind fields array bounds
+   integer, intent(in) :: F_ni, F_nj                                                    ! dims of position fields
+   integer, intent(in) :: F_i0,F_in,F_j0,F_jn,F_k0                                      ! operator scope
+   real, dimension(F_ni,F_nj,F_nk), intent(inout) :: F_xth,F_yth                        ! x,y positions
+   real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_zth                                 ! z positions
+   real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk_super), intent(in) :: F_u1,F_u2 ! field to interpol
+   real, dimension(F_ni,F_nj,F_nk), intent(out) :: F_wrkx1,F_wrky1                      ! F_dt * result of interp
    !**/
    !---------------------------------------------------------------------
 #include "adx_dims.cdk"
+#include "adx_nml.cdk"
+
+   integer :: num
 
    call msg(MSG_DEBUG,'adx_int_winds_lam')
-   if (F_cliptraj_L) &
-        call adx_cliptraj3(F_xth,F_yth,F_i0,F_in,F_j0,F_jn,F_ni,F_nj,F_k0,F_nk,'')  
+   if (F_cliptraj_L) then
+        call adx_cliptraj3(F_xth,F_yth,F_i0,F_in,F_j0,F_jn,F_ni,F_nj,F_k0,F_nk,'')
+   end if
 
    if(adx_cub_traj_L) then
       num=F_ni*F_nj*F_nk
-      call adx_tricub_lag3d7(F_wrkx1, F_u1, F_xth,F_yth,F_zth,num, &
-                             .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
-      if(F_has_u2_L) &
-      call adx_tricub_lag3d7(F_wrky1, F_u2, F_xth,F_yth,F_zth,num, &
-                             .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+
+      if (adw_catmullrom_L) then
+         call adx_tricub_catmullrom(F_wrkx1, F_u1, F_xth,F_yth,F_zth,num, &
+                                    .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+         if(F_has_u2_L) then
+            call adx_tricub_catmullrom(F_wrky1, F_u2, F_xth,F_yth,F_zth,num, &
+                                       .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+         end if
+      else
+         call adx_tricub_lag3d7(F_wrkx1, F_u1, F_xth,F_yth,F_zth,num, &
+                                .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+         if(F_has_u2_L) then
+            call adx_tricub_lag3d7(F_wrky1, F_u2, F_xth,F_yth,F_zth,num, &
+                                   .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
+         end if
+      end if
    else
       call adx_trilin5(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
            F_dth, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &

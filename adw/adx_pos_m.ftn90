@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -29,7 +29,7 @@ subroutine adx_pos_m( F_nb_iter    ,        &
    implicit none
 #include <arch_specific.hf>
 !
-   !@objective calculate upstream positions at th and t1
+   !@objective calculate upstream positions at th and t1 using great circles
 !
    !@arguments
    integer :: F_nb_iter          !I, total number of iterations for traj
@@ -44,7 +44,7 @@ subroutine adx_pos_m( F_nb_iter    ,        &
    real,dimension(F_ni,F_nj,F_nk),target::&
         F_ua,   F_va,   F_wa, F_wdm     !O, Arival winds
    real, dimension(F_ni,F_nj,F_nk) :: &
-        F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time 
+        F_xth , F_yth , F_zth,&  !I/O, upwind longitudes at central time
         F_xcth, F_ycth, F_zcth,& !O, upwind cartesian positions at central time
         F_xct1, F_yct1, F_zct1   !O, upstream cartesian positions at t1
 !
@@ -54,7 +54,7 @@ subroutine adx_pos_m( F_nb_iter    ,        &
    ! v2_31 - Tanguay M.     - gem stop if adx_fro_a.gt.0 in anal mode
    ! v3_00 - Desgagne & Lee - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-   ! v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN 
+   ! v3_20 - Valin & Tanguay - Optimized SETINT/TRILIN
    ! v3_20 - Gravel S.       - Change test a lower and upper boundaries
    ! v3_20 - Tanguay M.      - Improve alarm when points outside advection grid
    ! v3_20 - Dugas B.        - correct calculation for LAM when Glb_pil gt 7
@@ -76,7 +76,6 @@ subroutine adx_pos_m( F_nb_iter    ,        &
 
    real*8, parameter :: PDP_8 = 1.D0 + 1.D-6
    real*8, parameter :: PDM_8 = 1.D0 - 1.D-6
-   logical,parameter :: driver = .false.
    logical,parameter :: CLIP_TRAJ = .true.
    logical,parameter :: DO_W      = .false.
    logical,parameter :: DO_UV     = .true.
@@ -89,36 +88,19 @@ subroutine adx_pos_m( F_nb_iter    ,        &
 
    real,   dimension(:,:,:), pointer :: dummy3d
    real :: ztop_bound, zbot_bound
-   
+
    !---------------------------------------------------------------------
 
    call msg(MSG_DEBUG,'adx_pos_m')
 
    dummy3d => F_w
 
-   dth  = adx_dt_8/2.
+   dth  = 0.5 * adx_dt_8
 
    ztop_bound=adx_verZ_8%m(0)
    zbot_bound=adx_verZ_8%m(F_nk+1)
 
    call adx_get_ij0n (i0,in,j0,jn)
-
-   if (driver) then
-   open  (741, file='/users/dor/armn/mid/home/gem/v_4.1.3/adx_driver_trilin.bin',form='unformatted')
-   write (741) F_aminx,F_amaxx,F_aminy,F_amaxy,F_ni,F_nj,F_nk,F_nk_winds,l_nk
-   write (741) adx_lnk,adx_iimax,adx_jjmax,adx_mlni,adx_mlnj,adx_mlnij,adx_nit
-   write (741) adx_nijag,adx_int_j_off,adx_int_i_off,adx_dt_8,i0,in,j0,jn
-   write (741) adx_gni,adx_gnj,adx_halox,adx_haloy,adx_lni,adx_lnj
-   write (741) adx_gminx,adx_gmaxx,adx_gminy,adx_gmaxy,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy
-   write (741) adx_ovdx_8,adx_ovdy_8,adx_ovdz_8,adx_y00_8,adx_x00_8
-   write (741) adx_xg_8,adx_yg_8,adx_verZ_8%t,adx_verZ_8%m,       &
-               adx_bsx_8,adx_bsy_8,adx_diz_8,adx_xbc_8,adx_ybc_8, &
-               adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8,               &
-               adx_bsz_8%t,adx_bsz_8%m,adx_bsz_8%s
-   write (741) adx_lcx,adx_lcy,adx_lcz%t,adx_lcz%m,adx_lcz%s
-   write (741) F_u,F_v,F_w, F_xth,F_yth,F_zth, F_xcth,F_ycth,F_zcth
-   close (741)
-   endif
 
    DO_ITER: do iter = 1, F_nb_iter
 
@@ -147,7 +129,7 @@ subroutine adx_pos_m( F_nb_iter    ,        &
 
             call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
                                    adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
-                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)           
+                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
          endif
       endif
 
@@ -219,36 +201,6 @@ subroutine adx_pos_m( F_nb_iter    ,        &
       enddo
 !$omp enddo
 !$omp end parallel
-   endif
-
-
-   if (driver) then
-   call glbstat2 ( F_xth, 'XTH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_yth, 'YTH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_zth, 'ZTH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_xcth, 'XCH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_ycth, 'YCH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_zcth, 'ZCH', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_xct1, 'XC1', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_yct1, 'YC1', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_zct1, 'ZC1', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_px, 'PX', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_py, 'PY', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   call glbstat2 ( F_pz, 'PZ', '', 1,F_ni,1,F_nj,1,F_nk, &
-                                     1,F_ni,1,F_nj,k0,F_nk  )
-   print*, F_nb_iter
-   stop
    endif
 
    call msg(MSG_DEBUG,'adx_pos_m [end]')

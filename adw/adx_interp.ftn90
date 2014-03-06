@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -23,7 +23,7 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
    implicit none
 #include <arch_specific.hf>
 !
-   !@objective 
+   !@objective
 !
    !@arguments
    character (len=*), intent(in) :: F_lev_S !I, m/t : Momemtum/thermo level
@@ -41,14 +41,14 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
 !
    !@author alain patoine
    !@revisions
-   ! v2_31 - Tanguay M.        - correction parameters adx_vder 
+   ! v2_31 - Tanguay M.        - correction parameters adx_vder
    ! v3_00 - Desgagne & Lee    - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-   ! v3_20 - Gravel & Valin & Tanguay - Lagrange 3D   
+   ! v3_20 - Gravel & Valin & Tanguay - Lagrange 3D
    ! v3_21 - Desgagne M.       - Revision Openmp
    ! v3_30 - McTaggart-Cowan   - Add truncated lag3d interpolator
    ! v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
-   ! v3_30 - Tanguay M.        - adjust OPENMP for LAM 
+   ! v3_30 - Tanguay M.        - adjust OPENMP for LAM
    ! v4_06 - Gaudreault S.     - Code optimization, Positivity-preserving advection
 !**/
 
@@ -73,9 +73,15 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
 
    nbpts = adx_mlni*adx_mlnj*F_nk
 
-   call adx_tricub_lag3d7 (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
-                                      F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)   
-   if (.not.adx_lam_L) then
+   if (adw_catmullrom_L) then
+      call adx_tricub_catmullrom (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
+                                  F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)
+   else
+      call adx_tricub_lag3d7 (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
+                              F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)
+   end if
+
+   if (.not. adx_lam_L) then
       if (adx_fro_a > 0 ) then
          call adx_tricub_lag3d7 (wrka, fld_adw, F_capx2, F_capy2, F_capz2, adx_fro_a, &
                                                 F_mono_L, 1,adx_fro_a,1,1,1,1, F_lev_S)
@@ -92,7 +98,7 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
    endif
 
    if (F_clip_positive_L) then
-!$omp parallel 
+!$omp parallel
 !$omp do
    do k = k0, F_nk
       where (wrkc(i0:in,j0:jn,k) < 0.)
@@ -104,7 +110,7 @@ subroutine adx_interp7 ( F_out, F_in, F_c1,         &
 !$omp enddo
 !$omp end parallel
    else
-!$omp parallel 
+!$omp parallel
 !$omp do
    do k = k0, F_nk
       F_out(i0:in,j0:jn,k) = wrkc(i0:in,j0:jn,k)

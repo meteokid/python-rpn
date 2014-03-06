@@ -36,18 +36,20 @@
       logical :: adw_ckbd_L
       logical :: adw_exdg_L
       logical :: adw_mono_L
+      logical :: adw_catmullrom_L
       logical :: adw_positive_L
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
       integer :: adw_maxcfl
       integer :: adw_halox
-      integer :: adw_haloy      
+      integer :: adw_haloy
 
       namelist /adw_cfgs/ adw_stats_L
       namelist /adw_cfgs/ adw_gccsa_L
       namelist /adw_cfgs/ adw_ckbd_L
       namelist /adw_cfgs/ adw_exdg_L
       namelist /adw_cfgs/ adw_mono_L
+      namelist /adw_cfgs/ adw_catmullrom_L
       namelist /adw_cfgs/ adw_positive_L
 
       common /adw_nml_l/  adw_stats_L
@@ -55,6 +57,7 @@
       common /adw_nml_l/  adw_ckbd_L
       common /adw_nml_l/  adw_exdg_L
       common /adw_nml_l/  adw_mono_L
+      common /adw_nml_l/  adw_catmullrom_L
       common /adw_nml_l/  adw_positive_L
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L

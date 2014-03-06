@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -70,6 +70,7 @@ subroutine adx_get_params()
    istat = min(wb_get('model/pil_e',adx_pil_e),istat)
    istat = min(wb_get('model/gbpil_t',adx_gbpil_t),istat)
    istat = min(wb_get('model/trapeze',adx_trapeze_L),istat)
+   istat = min(wb_get('model/metrics',adx_angular_displacement_L),istat)
    istat = min(wb_get('model/cub_traj',adx_cub_traj_L),istat)
    istat = min(wb_get('model/superwinds',adx_superwinds_L),istat)
 
@@ -114,7 +115,7 @@ subroutine adx_get_params()
    adx_gminx = 1 - adx_halox
    adx_gmaxx = adx_gni + adx_halox
    adx_gminy = 1 - adx_haloy
-   adx_gmaxy = adx_gnj + adx_haloy 
+   adx_gmaxy = adx_gnj + adx_haloy
 
    adx_lminx = 1 - adx_halox
    adx_lmaxx = adx_lni + adx_halox

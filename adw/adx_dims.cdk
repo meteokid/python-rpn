@@ -26,7 +26,8 @@
       logical :: adx_yinyang_L    !true if model is Yin-Yang
       logical :: adx_is_period_x  !true if model is periodic in X
       logical :: adx_is_period_y  !true if model is periodic in Y
-      logical :: adx_trapeze_L    !true to get trapezoidal wind average 
+      logical :: adx_trapeze_L    !true to get trapezoidal wind average
+      logical :: adx_angular_displacement_L    !true use angular_displacement (no great circle)
       logical :: adx_cub_traj_L   !true to get cubic interpolation in trajectory comp.
       logical :: adx_superwinds_L !true to get super winds
 
@@ -37,9 +38,9 @@
       integer :: adx_gni,   adx_gnj     !dims for model global fields
       integer :: adx_gniu,  adx_gnjv    !special dims for model glb u/v fields
 
-      integer :: adx_pil_n, adx_pil_s !n/s piloting zone size 
-      integer :: adx_pil_w, adx_pil_e !w/e piloting zone size 
-      integer :: adx_gbpil_t          !top piloting zone size 
+      integer :: adx_pil_n, adx_pil_s !n/s piloting zone size
+      integer :: adx_pil_w, adx_pil_e !w/e piloting zone size
+      integer :: adx_gbpil_t          !top piloting zone size
       integer :: adx_Tlift            !1 to put last Thermo level at last Momentum level
 
       !- Local grid
@@ -73,39 +74,40 @@
       common /adx_dims_l/ adx_is_period_x
       common /adx_dims_l/ adx_is_period_y
       common /adx_dims_l/ adx_trapeze_L
+      common /adx_dims_l/ adx_angular_displacement_L
       common /adx_dims_l/ adx_cub_traj_L
       common /adx_dims_l/ adx_superwinds_L
 
       common /adx_dims_i/ adx_mhalox, adx_mhaloy
-      common /adx_dims_i/ adx_maxcfl            
-      common /adx_dims_i/ adx_gminx, adx_gmaxx  
-      common /adx_dims_i/ adx_gminy, adx_gmaxy  
-      common /adx_dims_i/ adx_gni,   adx_gnj    
-      common /adx_dims_i/ adx_gniu,  adx_gnjv   
+      common /adx_dims_i/ adx_maxcfl
+      common /adx_dims_i/ adx_gminx, adx_gmaxx
+      common /adx_dims_i/ adx_gminy, adx_gmaxy
+      common /adx_dims_i/ adx_gni,   adx_gnj
+      common /adx_dims_i/ adx_gniu,  adx_gnjv
 
-      common /adx_dims_i/ adx_pil_n, adx_pil_s 
-      common /adx_dims_i/ adx_pil_w, adx_pil_e 
+      common /adx_dims_i/ adx_pil_n, adx_pil_s
+      common /adx_dims_i/ adx_pil_w, adx_pil_e
       common /adx_dims_i/ adx_gbpil_t, adx_Tlift
 
       common /adx_dims_l/ adx_is_west
       common /adx_dims_l/ adx_is_east
       common /adx_dims_l/ adx_is_south
-      common /adx_dims_l/ adx_is_north 
+      common /adx_dims_l/ adx_is_north
 
-      common /adx_dims_i/ adx_mlminx, adx_mlmaxx 
-      common /adx_dims_i/ adx_mlminy, adx_mlmaxy 
-      common /adx_dims_i/ adx_mlni,   adx_mlnj   
-      common /adx_dims_i/ adx_mlniu,  adx_mlnjv  
+      common /adx_dims_i/ adx_mlminx, adx_mlmaxx
+      common /adx_dims_i/ adx_mlminy, adx_mlmaxy
+      common /adx_dims_i/ adx_mlni,   adx_mlnj
+      common /adx_dims_i/ adx_mlniu,  adx_mlnjv
       common /adx_dims_i/ adx_mli0,   adx_mlj0
       common /adx_dims_i/ adx_mlnij
 
       common /adx_dims_i/ adx_lnk, adx_lnks
 
-      common /adx_dims_i/ adx_halox, adx_haloy 
-      common /adx_dims_i/ adx_lminx, adx_lmaxx 
-      common /adx_dims_i/ adx_lminy, adx_lmaxy 
-      common /adx_dims_i/ adx_lni,   adx_lnj   
-      common /adx_dims_i/ adx_li0,   adx_lj0   
+      common /adx_dims_i/ adx_halox, adx_haloy
+      common /adx_dims_i/ adx_lminx, adx_lmaxx
+      common /adx_dims_i/ adx_lminy, adx_lmaxy
+      common /adx_dims_i/ adx_lni,   adx_lnj
+      common /adx_dims_i/ adx_li0,   adx_lj0
       common /adx_dims_i/ adx_nit,   adx_njt
       common /adx_dims_i/ adx_nijag
       common /adx_dims_i/ adx_int_i_off,adx_int_j_off,adx_trj_i_off
