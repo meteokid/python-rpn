@@ -14,14 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r e_intwind - Wind components horizontal interpolation
-!
-#include "model_macros_f.h"
-#include "msg.h"
-!
+
       subroutine e_intwind (errcode)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer errcode
 
 !author       M ROCH     - july 95 - from intvent
@@ -37,12 +34,9 @@
 ! v3_30 - Lee/Desgagne      - new LAM IO , read from analysis files to
 !                             produce BCS or 3DF files
 ! v4_30 - Tanguay & Plante  - Derive image winds from true winds when no interpolation
+! v4_60 - Gravel S.         - Remove ip2, ip3 test for e_rdhint3
 ! v4.70 - Gaudreault S.     - Removing wind images
-! v4_70 - Gravel S.         - Remove ip2, ip3 test for e_rdhint3
-!
-!object
-!        see above ID
-!
+
 #include "e_fu.cdk"
 #include "e_anal.cdk"
 #include "e_grids.cdk"
@@ -53,8 +47,8 @@
 #include "e_grdc.cdk"
 #include "hgc.cdk"
 
-      integer, external :: fstinf,fstlir,fstprm,ezqkdef,ezsetopt,ezdefset,ezuvint,e_rdhint3
-
+      integer, external :: fstinf,fstlir,fstprm,ezqkdef,ezsetopt,&
+                           ezdefset,ezuvint,e_rdhint3
       logical flag_uvt1
       integer i, j, k, src_gid, key1, key2, keyu, keyv, nic, njc, ni1, nj1,  &
               nk1,nkc,err,iu,ju,iv,jv,nu,nv, istat
@@ -62,7 +56,7 @@
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3, ip2, ip3
       character*1  typ,grd
-      character*4  var,var_uu,var_vv
+      character*4  var,var_vv
       character*12 lab
 
       real, dimension (:)    , allocatable :: uu,vv,uv,w1,w2
@@ -93,27 +87,21 @@
       ip2 = ip2a
       ip3 = ip3a
 
-      flag_uvt1= .true.
-      var_uu   = 'UT1 '
-      var_vv   = 'VT1 '
       err      = 0
       errcode  = -1
+
+      if (trim(VAR_UU).eq.'UT1') then
+         var_vv   = 'VT1 '
+         flag_uvt1= .true.
+      else
+         var_vv   = 'VV  '
+         flag_uvt1= .false.
+      endif
 
       keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
                                                         ' ',var_uu)
       keyv= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
                                                         ' ',var_vv)
-
-      if ((keyu.lt.0).or.(keyv.lt.0)) then
-         var_uu   = 'UU  '
-         var_vv   = 'VV  '
-         flag_uvt1= .false.
-         
-         keyu= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
-                                                           ' ',var_uu)
-         keyv= fstinf (e_fu_anal,nic,njc,nkc,datev,' ',na(1),ip2,ip3,&
-                                                           ' ',var_vv)
-      endif
 
       if ((keyu.lt.0).or.(keyv.lt.0)) goto 999
 
@@ -122,9 +110,9 @@
          err= 0
          do k=1,lv
             keyu = e_rdhint3 (uu,dstu_gid,nisu,njsu,var_uu,na(k),-1, &
-                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+                     -1,' ',' ',.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstv_gid,nisv,njsv,var_vv,na(k),-1, &
-                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+                     -1,' ',' ',.false.,.false.,'NEAREST',e_fu_anal,6)
             if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nisu,njsu,'UU  ',k,lv,pniu,0,0,0)
@@ -206,9 +194,9 @@
          err= 0
          do k=1,lv-1
             keyu = e_rdhint3 (uu,dstf_gid,nifi,njfi,'PWUU',na(k),-1, &
-                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+                     -1,' ',' ',.false.,.false.,'NEAREST',e_fu_anal,6)
             keyv = e_rdhint3 (vv,dstf_gid,nifi,njfi,'PWVV',na(k),-1, &
-                     -1,' ',tva,.false.,.false.,'NEAREST',e_fu_anal,6)
+                     -1,' ',' ',.false.,.false.,'NEAREST',e_fu_anal,6)
             if ((keyu.ne.0).or.(keyv.ne.0)) goto 999
             if (Pil_bmf_L) then
                call e_bmfsplitxy2 (uu,nifi,njfi,'PWUU',k,lv-1,pni,0,0,0)

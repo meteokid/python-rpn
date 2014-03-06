@@ -19,9 +19,9 @@
 #include "model_macros_f.h"
 !
       subroutine rhs ( F_oru, F_orv, F_orc,F_ort,F_orw,   F_orf   , &
-                       F_ruw1,F_rvw1,F_ru, F_rv, F_nest_u,F_nest_v, &
-                       F_u,   F_v,   F_w,  F_t,  F_s,     F_zd    , &
-                       F_q,   F_fis, DIST_DIM, Nk )
+                        F_ruw1,F_rvw1,F_ru, F_rv, F_nest_u,F_nest_v, &
+                        F_u,   F_v,   F_w,  F_t,  F_s,     F_zd    , &
+                        F_q,   F_fis, DIST_DIM, Nk )
       implicit none
 #include <arch_specific.hf>
 !
@@ -53,6 +53,7 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
+!                           - Explicit integration of metric terms (optional)
 !
 #include "glb_ld.cdk"
 #include "cori.cdk"
@@ -71,6 +72,7 @@
       real*8  c1,c2,c3, tdiv, BsPqbarz, fipbarz, &
               wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, &
               xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
+      real*8 u_interp, v_interp, t_interp, inv_rayt, explicit
       real, dimension(:,:,:), allocatable :: BsPq, FIp, MU
 
       real*8, parameter :: one=1.d0
@@ -84,8 +86,12 @@
       c1  = Cstv_Beta_8 * Dcst_rgasd_8
       c2  = one / Cstv_Tstr_8
       c3  = one
+      inv_rayt = one / Dcst_rayt_8
 !
       if (schm_autobar_L)    c3 = 0.d0
+
+      explicit = 0.d0
+      if (Schm_angular_displacement_L) explicit = one
 !
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,13 +123,13 @@
 !
 !
 !$omp do
-       do k=1,l_nk+1
+      do k=1,l_nk+1
          kq=max(2,k)
          do j=1,l_nj+1
-         do i=1,l_ni+1
-            BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
-            BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq)*Ver_onezero(k)
-         enddo
+            do i=1,l_ni+1
+               BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
+               BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq) * Ver_onezero(k)
+            enddo
          enddo
       enddo
 !$omp enddo
@@ -179,24 +185,26 @@
 !     ~~~~~~~~~~
       if (G_lam) then
 
-         do j= j0, jn
-            do i= i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
-                      +Ver_wm_8%m(k)*F_t(i  ,j,km)
-               barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
-                      +Ver_wm_8%m(k)*F_t(i+1,j,km)
-               F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k)  &
-                        - c1 * ( ( one - intuv_c0xxu_8(i) )* barz &
-                                       + intuv_c0xxu_8(i)  * barzp ) &
-                             * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) &
-                             * geomg_invDXu_8(i,j) &
-                        - Cstv_Beta_8 * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) &
-                             * geomg_invDXu_8(i,j) &
-                        + Cstv_Beta_8 * Cori_fcoru_8(i,j) &
-                             * ( inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
-                               + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-                               + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
-                               + inuvl_wxxu3_8(i,4)*wk2(i+2,j) )
+      do j= j0, jn
+         do i= i0, in
+            barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
+                   +Ver_wm_8%m(k)*F_t(i  ,j,km)
+
+            barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
+                   +Ver_wm_8%m(k)*F_t(i+1,j,km)
+
+            t_interp = ( one - intuv_c0xxu_8(i) ) * barz + intuv_c0xxu_8(i) * barzp
+
+            v_interp = inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
+                     + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
+                     + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
+                     + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
+
+            F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k) &
+                         - c1 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXu_8(i,j)        &
+                         - Cstv_Beta_8 * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) * geomg_invDXu_8(i,j) &
+                         + Cstv_Beta_8 * (Cori_fcoru_8(i,j) + explicit * F_u(i,j,k) * inv_rayt * dtan(geomg_y_8(j))) * v_interp
+
             end do
          end do
 
@@ -208,14 +216,14 @@
                       +Ver_wm_8%m(k)*F_t(i  ,j,km)
                barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
                       +Ver_wm_8%m(k)*F_t(i+1,j,km)
-               F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k) &
+               F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k)  &
                         - (Cstv_Beta_8 * Dcst_rgasd_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * &
                         ( ( one - intuv_c0xxu_8(i) )* barz + intuv_c0xxu_8(i)  * barzp ) &
                              * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) &
                              * geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8) &
                         - (Cstv_Beta_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) &
                              * geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8)&
-                        + Cstv_Beta_8 * Cori_fcoru_8(i,j) &
+                        + Cstv_Beta_8 * Cori_fcoru_8(i,j)      &
                              * ( inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
                                + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
                                + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
@@ -272,24 +280,25 @@
 !     Compute Rv
 !     ~~~~~~~~~~
      if (G_lam) then
-         do j = j0, jn
-            do i = i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j  ,km)
-               barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j+1,km)
-               F_orv(i,j,k) = Cstv_invT_8 * F_v(i,j,k) &
-                        - c1 *( ( one - intuv_c0yyv_8(j) ) * barz &
-                                      + intuv_c0yyv_8(j)   * barzp ) &
-                             * ( BsPq(i,j+1,k) - BsPq (i,j,k) ) &
-                             * geomg_invDYv_8(j) &
-                        - Cstv_Beta_8 * wk1(i,j) * ( FIp(i,j+1,k) - FIp(i,j,k) ) &
-                             * geomg_invDYv_8(j) &
-                        - Cstv_Beta_8 * Cori_fcorv_8(i,j) &
-                             * ( inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
-                               + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
-                               + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
-                               + inuvl_wyyv3_8(j,4)*wk2(i,j+2) )
+      do j = j0, jn
+         do i = i0, in
+            barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
+                   +Ver_wm_8%m(k)*F_t(i,j  ,km)
+
+            barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
+                   +Ver_wm_8%m(k)*F_t(i,j+1,km)
+
+            t_interp = (one - intuv_c0yyv_8(j)) * barz + intuv_c0yyv_8(j) * barzp
+
+            u_interp = inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
+                     + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
+                     + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
+                     + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
+
+            F_orv(i,j,k) = Cstv_invT_8 * F_v(i,j,k) &
+                         - c1 * t_interp * ( BsPq(i,j+1,k) - BsPq (i,j,k) ) * geomg_invDYv_8(j)       &
+                         - Cstv_Beta_8 * wk1(i,j) * ( FIp(i,j+1,k) - FIp(i,j,k) ) * geomg_invDYv_8(j) &
+                         - Cstv_Beta_8 * (Cori_fcorv_8(i,j) + explicit * u_interp * inv_rayt * dtan(geomg_yv_8(j))) * u_interp
             end do
          end do
 

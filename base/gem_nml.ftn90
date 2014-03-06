@@ -64,15 +64,11 @@
       G_halox = 4
       G_haloy = G_halox
 !
-      Lam_blend_H_func_S = 'COS2'
-      Lam_blend_H = 10
-      Lam_blend_T =  0
-!
-      Iau_cutoff = 6.
-      Iau_interval = -1.
-      Iau_period = -1.
+      Iau_cutoff    = 6.
+      Iau_interval  = -1.
+      Iau_period    = -1.
       Iau_tracers_S = ''
-      Iau_weight_S = 'constant'
+      Iau_weight_S  = 'constant'
 !
       Init_balgm_L = .false.
       Init_dfwin_L = .true.
@@ -80,9 +76,9 @@
       Init_dfpl_8  = 21600.0
       Init_dftr_L  = .false.
 !
-      Schm_hydro_L    = .false.
-      Schm_hzdadw_L   = .false.
-      Schm_topo_L     = .true.
+      Schm_hydro_L  = .false.
+      Schm_hzdadw_L = .false.
+      Schm_topo_L   = .true.
       Schm_itcn     = 2
       Schm_modcn    = 1
       Schm_xwvt3    = 0
@@ -102,6 +98,10 @@
       Schm_phyms_L    = .true.
       Schm_chems_L    = .false.
 !
+      Lam_blend_H_func_S = 'COS2'
+      Lam_blend_H   = 10
+      Lam_blend_T   =  0
+      Lam_gbpil_T   = -1
       Lam_hint_S    = 'CUB_LAG'
       Lam_ctebcs_L  = .false.
       Lam_toptt_L   = .false.
@@ -111,8 +111,6 @@
       Lam_acidtest_L= .false.
 !
       Zblen_L   = .false.
-!
-      Lam_gbpil_T = -1
 !
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
@@ -221,7 +219,8 @@
       Grdc_start_S= '' 
       Grdc_end_S  = ''
       Grdc_initphy_L = .false.
-      Grdc_nbits = 32
+      Grdc_nbits  = 32
+      Grdc_trnm_S = '@#$%'
 !
       stat_liste = ''
 !

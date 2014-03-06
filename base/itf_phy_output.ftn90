@@ -133,8 +133,6 @@
          wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
          wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
       enddo
-      if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
-!      wlnpi_t (:,:,G_nk+2) = wlnpi_m (:,:,G_nk+1)
 
       allocate (rff(Outp_multxmosaic),irff(Outp_multxmosaic))
 

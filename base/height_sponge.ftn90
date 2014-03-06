@@ -35,7 +35,7 @@
 #include "theo.cdk"
 
       type(gmm_metadata) :: mymeta
-      integer err,i,j,k, longueur
+      integer err,i,j,k
       integer n,istat
       real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk),ubar
 
@@ -56,7 +56,7 @@
  
       call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
 
-      ubar= mtn_flo/Dcst_rayt_8
+      ubar= mtn_flo
 
       if(Theo_case_S .ne. 'MTN_SCHAR' ) then
          call apply (ut1, ubar, betav_m, LDIST_DIM, l_nk)

@@ -114,7 +114,8 @@
       istat= wb_put('model/Rstri/secondhalf', Rstri_secondhalf_L, &
                      WB_REWRITE_MANY)
 
-      last_step  = (Step_kount/Step_rsti)*Step_rsti + Step_rsti + Step_delay
+      last_step  = (Step_kount/Step_rsti)*Step_rsti + &
+                    Step_rsti + Step_delay
       upperlimit = min(Step_total,last_step)
 
       if (F_dgtflt_L) then
@@ -141,15 +142,14 @@
          endif
          call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
-         if ( .not.F_dgtflt_L .or. (Lctl_step.lt.(Lctl_step+Init_dfnp-1)/2) ) &
+         if ( .not.F_dgtflt_L .or. &
+              (Lctl_step.lt.(Lctl_step+Init_dfnp-1)/2) ) &
               call out_launchpost2 (.false.,.false.)
       else
          call out_steps (step0, stepf)
       endif
 
       bkup_L = .false.
-
-      if (Grd_yinyang_L) call yyg_nest_all()
 
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
@@ -171,7 +171,7 @@
 
          call iau_apply
 
-         if (Grd_yinyang_L) call yyg_nest_all()
+         if (Grd_yinyang_L) call yyg_xchng_all
 !
 !C    Digital filter
 !     --------------

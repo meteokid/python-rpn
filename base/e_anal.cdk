@@ -16,14 +16,11 @@
 !   VH and VT are defined in ANALLEV_2
 !  VH       - string to hold moisture variable, either 'HU' or 'ES'
 !  VT       - string to hold temperature variable, either 'TT' or 'VT'
-!  GRDA     - gridtyp found in the analyse file for data records
-!  TVA      - type of variable in the analyse file for data records
-!  LABANL   - label of the data records in the analyse file
 !  ANAL_COND - ice phase considered in humidity field of analysis?
 !  xg_8,yg_8,ygv_8- grid points in radians
 #endif
       INTEGER  LVMAX
-      PARAMETER (LVMAX   = 201)
+      PARAMETER (LVMAX   = 1000)
 
       INTEGER        nvar, nia, nja, NK, LV,LV_T
       INTEGER        ip1a, ip2a, ip3a
@@ -35,10 +32,8 @@
       REAL*8         za_8(LVMAX),zb_8(LVMAX)
       REAL*8         zat_8(LVMAX),zbt_8(LVMAX)
       real*8, dimension(:), pointer :: xg_8,yg_8,ygv_8
-      CHARACTER*4    VAR_ZD, VAR_W, VAR_Q, VT
-      CHARACTER*2    VH
-      CHARACTER*1    GRDA, TVA
-      CHARACTER*12   LABANL
+      CHARACTER*4    VAR_TT, VAR_UU, VAR_HU, VAR_SFCP, &
+                     VAR_ZD, VAR_W , VAR_Q
 
       COMMON/anali/  nvar, nia, nja, NK, LV, LV_T, NA,NA_T
       COMMON/anali/  ip1a, ip2a, ip3a
@@ -46,8 +41,8 @@
       COMMON/analr/  LNA, RNA, RNA_T,RCOEFA,PTOPA,PREFA,pia,pibb,pib
       COMMON/analpos/ xg_8,yg_8,ygv_8
       COMMON/analr8/  za_8,zb_8,zat_8,zbt_8
-      COMMON/anals/  VH,VT,VAR_ZD,VAR_W,VAR_Q,GRDA,TVA,LABANL
-
+      COMMON/anals/  VAR_TT, VAR_UU, VAR_HU, VAR_SFCP, &
+                     VAR_ZD, VAR_W , VAR_Q
       logical anal_sigma_L, anal_eta_L, anal_hyb_L, anal_pres_L
       logical anal_hybstg_L, anal_cond_L
       integer anal_hav

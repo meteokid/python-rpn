@@ -36,69 +36,28 @@
 ! Exchange the Yin-Yang boundary conditions for S,T,HU,U,V increments
 !
 !arguments: F_s (st0), F_t (tt0), F_hu (tr/hut0), F_u (ut0), F_v (vt0)
-!
-!implicits
+
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "schm.cdk"
-#include "lun.cdk"
-!
-      integer i, j, k
-!     temp variables to manipulate winds for Yin-Yang
-      real temps   (DIST_SHAPE       )
-      real tempt   (DIST_SHAPE,  l_nk)
-      real temphu  (DIST_SHAPE,  l_nk)
-!
+
 !     __________________________________________________________________
 !
-      if (Lun_debug_L) write(Lun_out,1000)
+      call yyg_nestuv(F_u, F_v, DIST_DIM, l_nk)
+      call yyg_xchng (F_s , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
+                      .false., 'CUBIC')
+      call yyg_xchng (F_t , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                      .false., 'CUBIC')
+      call yyg_xchng (F_hu, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                      .false., 'CUBIC')
 
-      call yyg_nestuv(F_u,F_v,DIST_DIM,l_nk)
-
-      temps = 0. 
-      temps(1:l_ni,1:l_nj) = F_s(1:l_ni,1:l_nj)
-
-      tempt = 0.
-      temphu = 0.
-!$omp parallel private(i,j)
-!$omp do
-      do k= 1,l_nk
-         do j= 1, l_nj
-         do i= 1, l_ni
-            tempt(i,j,k)=F_t (i,j,k)
-         enddo
-         enddo
-         
-         do j= 1, l_nj
-         do i= 1, l_ni
-            temphu(i,j,k)=F_hu (i,j,k)
-         enddo
-         enddo
-      enddo
-!$omp enddo
-!$omp end parallel
-
-      call rpn_comm_xch_halo(temps,LDIST_DIM,l_ni,l_nj,1, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(F_s,temps,LDIST_DIM,1)
       call rpn_comm_xch_halo(F_s,LDIST_DIM,l_ni,l_nj,1, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      call rpn_comm_xch_halo(tempt,LDIST_DIM,l_ni,l_nj,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(F_t,tempt,LDIST_DIM,l_nk)
       call rpn_comm_xch_halo(F_t,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      call rpn_comm_xch_halo(temphu,LDIST_DIM,l_ni,l_nj,l_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call yyg_scalbc(F_hu,temphu,LDIST_DIM,l_nk)
       call rpn_comm_xch_halo(F_hu,LDIST_DIM,l_ni,l_nj,l_nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
 !     __________________________________________________________________
 !
-1000  format (5X,'IAU APPLICATION: (S/R YYG_IAUEXCHANGE)')
 !
       return
       end

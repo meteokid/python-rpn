@@ -106,8 +106,8 @@
                  cuc(max(nid1,njd1)),cud(max(nid1,njd1)),  &
                  cya(njd1),cyb(njd1),cyc(njd1),cyd(njd1)   )
 
-      allocate ( uur(F_ni,F_nj,nka_m), vvr(F_ni,F_nj,nka_m), zdr(F_ni,F_nj,nka_t-1), &
-                 ttr(F_ni,F_nj,nka_t), qqr(F_ni,F_nj,nka_m-1), wwr(F_ni,F_nj,nka_t-1), &
+      allocate ( uur(F_ni,F_nj,nka_m), vvr(F_ni,F_nj,nka_m), zdr(F_ni,F_nj,nka_t), &
+                 ttr(F_ni,F_nj,nka_t), qqr(F_ni,F_nj,nka_m), wwr(F_ni,F_nj,nka_t), &
                  trr(F_ni,F_nj,nka_t,ntra),                                        &
                  ssur(F_ni,F_nj), ssvr(F_ni,F_nj), ssqr(F_ni,F_nj),                &
                  ssq0(F_ni,F_nj), ssu0(F_ni,F_nj), ssv0(F_ni,F_nj) )
@@ -141,13 +141,13 @@
 ! regular (F_ni,F_nj) grid
 
       if (ana_q_L)                                      &
-      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m-1, &
+      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       if (ana_zd_L)                                     &
-      call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t-1, &
+      call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       if (ana_w_L)                                      &
-      call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t-1, &
+      call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       do k=1,ntra
          if (trname_a(k)(1:4).eq.'HU  ')                                         &
@@ -282,7 +282,7 @@
 
       if (ana_zd_L) then
          if (Vertint_L) then
-            call vertint ( zd1,dstlev,G_nk, zdr,srclev,nka_t-1,&
+            call vertint ( zd1,dstlev,G_nk, zdr,srclev,nka_t,&
                            1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              zd1(:,:,1:G_nk) = zdr(:,:,1:G_nk)
@@ -293,7 +293,7 @@
 
       if (ana_w_L) then
          if (Vertint_L) then
-            call vertint ( ww1,dstlev,G_nk, wwr,srclev,nka_t-1,&
+            call vertint ( ww1,dstlev,G_nk, wwr,srclev,nka_t,&
                            1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              ww1(:,:,1:G_nk) = wwr(:,:,1:G_nk)
@@ -344,14 +344,15 @@
          if (Vertint_L) then
             err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(2),Ver_b_8%m(2),G_nk,Ver_code,.true.)
             call handle_error(err,'casc_hvi','casc_hvi:get_px')
-            err = get_px(srclev,ssqr,ngd,ana_am_8(2),ana_bm_8(2),nka_m-1,presstype,.true.)
+            err = get_px(srclev,ssqr,ngd,ana_am_8(2),ana_bm_8(2),nka_m,presstype,.true.)
             call handle_error(err,'casc_hvi','casc_hvi:get_px')
-            call vertint ( qq1,dstlev,G_nk, qqr,srclev,nka_m-1,&
+            call vertint ( qq1,dstlev,G_nk, qqr,srclev,nka_m,&
                            1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
             qq1(:,:,1:G_nk) = qqr(:,:,1:G_nk)
          endif
       endif
+!      qq1=0.
 
 !     Interpolate UT1 and VT1
 

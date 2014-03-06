@@ -147,8 +147,8 @@
          obusval = 999999.
          do n=1,Obus_top
             call phy_unfold (obusval(1,obus_offset(n)), obus_var_S(n), &
-                             obus_bus_S(n), 1, obus_shp(n),            &
-                             1,l_ni,1,l_nj,obus_shp(n) )
+                             obus_bus_S(n), 1, obus_mult(n)          , &
+                             1,l_ni,1,l_nj,obus_mult(n))
          end do
          call itf_phy_output (obusval,l_ni,l_nj,F_lctl_step)
          deallocate (obusval)

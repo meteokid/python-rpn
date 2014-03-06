@@ -16,10 +16,9 @@
 !**s/r set_cn1 - initialization of the commons at level one
 !
       subroutine set_cn1
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     michel roch - rpn - june 1993
 !
@@ -29,10 +28,11 @@
 ! v3_11 - Gravel S.         - modify for theoretical cases
 ! v3_21 - Lee V.            - remove Tr2d
 ! v3_30 - Desgagne & Winger - call glb_restart
-!
+
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "init.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
@@ -51,7 +51,15 @@
 !     -------------------------------------------------
       call set_vt( )
 
-      if (G_lam) call nest_set_gmmvar
+      if (Grd_yinyang_L) then
+!     Initialization for Yin-Yang communications
+         call yyg_initscalbc()
+         call yyg_initvecbc1()
+         call yyg_initvecbc2()
+         call yyg_rhs_initscalbc()
+      else
+         if (G_lam) call nest_set_gmmvar
+      endif
 
 !     Initialize right hand sides comdeck
 !     -----------------------------------

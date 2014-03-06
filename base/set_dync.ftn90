@@ -63,8 +63,6 @@
       Cstv_invT_8  = one/Cstv_tau_8
       Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
 !
-      if(Schm_autobar_L) Schm_hydro_L = .true.
-!
       if(Schm_hydro_L) then
          Ver_epsilon_8=0.d0
       else
@@ -77,8 +75,6 @@
 !
       Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
       Cstv_hco1_8 = 0.d0
-      if(Schm_autobar_L) &
-         Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Cstv_Ztop_8)
 
       Ver_alfat_8 = 1.d0
       Ver_cst_8   = 0.d0
@@ -104,18 +100,20 @@
          Ver_cstp_8  =     ( Ver_idz_8%t(k0-1) - xxx ) * yyy
       endif
 !
+      xxx = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)* &
+                (Ver_idz_8%t(G_nk)-aaa*Ver_wp_8%t(G_nk))
+      yyy = one/(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wp_8%t(G_nk))
+      Ver_alfas_8 = (Ver_idz_8%t(G_nk) &
+                  - Dcst_cappa_8*Ver_wm_8%t(G_nk)) * yyy
+      Ver_css_8   =            one / Ver_gokt2RT_8 * yyy
+      Ver_cssp_8  =        (Ver_idz_8%t(G_nk)+xxx) * yyy
+!
       if(Schm_autobar_L) then
+         Schm_hydro_L = .true.
          Ver_alfas_8 = 1.d0
          Ver_css_8   = 0.d0
          Ver_cssp_8  = 0.d0
-      else
-         xxx = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)* &
-                   (Ver_idz_8%t(G_nk)-aaa*Ver_wp_8%t(G_nk))
-         yyy = one/(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wp_8%t(G_nk))
-         Ver_alfas_8 = (Ver_idz_8%t(G_nk) &
-                     - Dcst_cappa_8*Ver_wm_8%t(G_nk)) * yyy
-         Ver_css_8   =            one / Ver_gokt2RT_8 * yyy
-         Ver_cssp_8  =        (Ver_idz_8%t(G_nk)+xxx) * yyy
+         Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Ver_z_8%m(1))
       endif
 !
       call set_opr()

@@ -46,8 +46,10 @@
 ! F_fnitraj     I         number of iterations to compute upstream
 !                         positions
 !----------------------------------------------------------------
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "lam.cdk"
 #include "lctl.cdk"
 #include "ldnh.cdk"
@@ -148,6 +150,12 @@
 
          call timing_stop (20)
 
+         call frstgss ()
+!
+!       Perform time interpolation of Lateral BCs for LAM configurations
+!
+         if ( G_lam .and. .not. Grd_yinyang_L ) call nest_bcs ()
+
       endif
 
       call timing_start(21, 'ADW      ')
@@ -212,7 +220,7 @@
          call timing_start ( 25, 'BAC      ' )
 
 !        Back subtitution: compute variables for the next iteration/time step
-         call  bac (iln, Schm_itnlh, lhs_sol, fis0,            &
+         call  bac ( lhs_sol, fis0,               &
                     ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
                     rhsu, rhsv, rhst, rhsw, rhsf, rhsb,        &
                     nl_u, nl_v, nl_t, nl_w, nl_f, nl_b,        &

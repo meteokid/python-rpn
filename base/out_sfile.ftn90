@@ -13,17 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r Out_sfile - to open new output file
-!
-#include "model_macros_f.h"
-!
+
       subroutine out_sfile2 (clostep_int,stepno)
       implicit none
 #include <arch_specific.hf>
 !
       integer clostep_int,stepno
-!
+
 !AUTHOR   Michel Desgagne     September   2003 (MC2)
 !
 !REVISION
@@ -34,10 +31,7 @@
 ! v3_30 - McTaggart-Cowan R.- Use existing Out_etik_S string instead of namelist value
 ! v3_31 - Winger K.         - correction to size in ypq(Out_nisg) to Out_njsg
 ! v4_03 - Lee V.            - ISST + modification of Out_etik_S in out_sgrid only
-!
-!ARGUMENTS
-!    NAMES       I/O  TYPE  DESCRIPTION
-!
+
 #include "clim.cdk"
 #include "cstv.cdk"
 #include "out.cdk"
@@ -61,7 +55,6 @@
       real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac
       parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
                   OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0)
-!
 !
 !----------------------------------------------------------------------
 !
@@ -130,8 +123,8 @@
          Out_filename_S = trim(Out_dirname_S)//'/'//trim(Out_filename_S)
 
          if (Out_unf.eq.0) then
-             err = fnom  (Out_unf, trim(Out_filename_S),'STD+RND',0)
-             err = fstouv(Out_unf ,'RND')
+            err = fnom  (Out_unf, trim(Out_filename_S),'STD+RND',0)
+            err = fstouv(Out_unf ,'RND')
          endif
 
       endif
@@ -147,15 +140,14 @@
 !
 #include "out.cdk"
 !
-      integer  fstfrm
-      external fstfrm
-
+      integer, external :: fstfrm
       integer err
+!
 !----------------------------------------------------------------------
 !
       call out_flush_stk ()
 
-      if (Out_blocme.eq.0) then
+      if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
          err = fstfrm(Out_unf)
          call fclos(Out_unf)
          Out_unf = 0

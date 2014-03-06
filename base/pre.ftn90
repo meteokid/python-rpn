@@ -55,7 +55,7 @@
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.         - Open top
 ! v4_40 - Qaddouri/Lee      - expand range of calculation for Yin-Yang only
-! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
+! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !
 !object
 !
@@ -93,7 +93,7 @@
       a2 = Ver_epsilon_8 / Cstv_RTstr_8
       a3 = one / ( Cstv_tau_8*Cstv_tau_8 * Cstv_RTstr_8 )
                          a4 = 0.d0
-      if(Schm_autobar_L) a4 = a3/(Cstv_Zsrf_8-Cstv_Ztop_8)
+      if(Schm_autobar_L) a4 = a3/(Cstv_Zsrf_8-Ver_z_8%m(1))
 !
       b1 = a2 * Dcst_grav_8 * Cstv_tau_8
       b2 = Ver_gamma_8 / ( Dcst_cappa_8 * Cstv_tau_8 )
@@ -126,56 +126,67 @@
 !$omp   mumu,cosy_d,secy_d,rdiv,www,xxx,yyy,zzz,w_rt)
 
       if (G_lam) then
+         if (Schm_angular_displacement_L) then
 !$omp do
-         do k= k0, l_nk
-            do j= j0, jn
-               do i= i0, in
-         
-!                 Compute components of r(t0) and put in x, y, z
-!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  x = geomg_cx_8(i) * geomg_cy_8(j)
-                  y = geomg_sx_8(i) * geomg_cy_8(j)
-                  z = geomg_sy_8(j)
-         
-!                 Compute (Rx, Ry, Rz) = (rx, ry, rz)
-!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  cosy_d = sqrt(one - F_zct1(i,j,k)*F_zct1(i,j,k))
-                  secy_d = 0.
-                  if (cosy_d .GT. zero) secy_d = one / cosy_d
-         
-                  rx = -secy_d * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
-                                  F_xct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
-                  ry = secy_d * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
-                                 F_yct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
-                  rz = cosy_d * F_rvw2(i,j,k)
-         
-!                 Compute components of c and put in cx, cy, cz
-!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  cx = x + Cstv_Beta_8*F_xct1(i,j,k)
-                  cy = y + Cstv_Beta_8*F_yct1(i,j,k)
-                  cz = z + Cstv_Beta_8*F_zct1(i,j,k)
-         
-!                 Compute mu and modify (Rx,Ry,Rz)
-!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
-                  rx = rx + mumu*cx
-                  ry = ry + mumu*cy
-                  rz = rz + mumu*cz
-         
-!                 Compute advective contributions on G-grid
-!                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  F_ruw2(i,j,k) = (x*ry - y*rx)*geomg_invcy_8(j) - F_ruw1(i,j,k)
-                  F_rvw2(i,j,k) = rz*geomg_invcy_8(j) - F_rvw1(i,j,k)
-         
-!!!!!!! CARTESIAN DISPLACEMENTS:replace above 2 by !!!!!
-!!!    F_ruw2(i,j,k) = F_ruw2(i,j,k) - F_ruw1(i,j,k) !!!
-!!!    F_rvw2(i,j,k) = F_rvw2(i,j,k) - F_rvw1(i,j,k) !!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-         
+            do k= k0, l_nk
+               do j= j0, jn
+                  do i= i0, in
+
+   !                 Compute advective contributions on G-grid
+   !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     F_ruw2(i,j,k) = F_ruw2(i,j,k) - F_ruw1(i,j,k)
+                     F_rvw2(i,j,k) = F_rvw2(i,j,k) - F_rvw1(i,j,k)
+
+                  end do
+               end do
+            end do
+!$omp enddo
+         else
+!$omp do
+            do k= k0, l_nk
+               do j= j0, jn
+                  do i= i0, in
+
+   !                 Compute components of r(t0) and put in x, y, z
+   !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     x = geomg_cx_8(i) * geomg_cy_8(j)
+                     y = geomg_sx_8(i) * geomg_cy_8(j)
+                     z = geomg_sy_8(j)
+
+   !                 Compute (Rx, Ry, Rz) = (rx, ry, rz)
+   !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     cosy_d = sqrt(one - F_zct1(i,j,k)*F_zct1(i,j,k))
+                     secy_d = 0.
+                     if (cosy_d .GT. zero) secy_d = one / cosy_d
+
+                     rx = -secy_d * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
+                                     F_xct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
+                     ry = secy_d * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
+                                    F_yct1(i,j,k)*F_zct1(i,j,k)*F_rvw2(i,j,k))
+                     rz = cosy_d * F_rvw2(i,j,k)
+
+   !                 Compute components of c and put in cx, cy, cz
+   !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     cx = x + Cstv_Beta_8*F_xct1(i,j,k)
+                     cy = y + Cstv_Beta_8*F_yct1(i,j,k)
+                     cz = z + Cstv_Beta_8*F_zct1(i,j,k)
+
+   !                 Compute mu and modify (Rx,Ry,Rz)
+   !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
+                     rx = rx + mumu*cx
+                     ry = ry + mumu*cy
+                     rz = rz + mumu*cz
+
+   !                 Compute advective contributions on G-grid
+   !                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                     F_ruw2(i,j,k) = (x*ry - y*rx)*geomg_invcy_8(j) - F_ruw1(i,j,k)
+                     F_rvw2(i,j,k) = rz*geomg_invcy_8(j) - F_rvw1(i,j,k)
+               end do
             end do
          end do
-      end do
 !$omp enddo
+      endif
 
    else
 
@@ -183,40 +194,39 @@
       do k= k0, l_nk
          do j= j0, jn
             do i= i0, in
-         
+
 !                 Compute components of r(t0) and put in x, y, z
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                  y = geomg_cy_8(j)
-                  x = geomg_cx_8(i) * y
-                  y = geomg_sx_8(i) * y
+                  x = geomg_cx_8(i) * geomg_cy_8(j)
+                  y = geomg_sx_8(i) * geomg_cy_8(j)
                   z = geomg_sy_8(j)
-         
+
 !                 Compute (Rx, Ry, Rz) = (rx, ry, rz)
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   mumu = ( one + F_zct1(i,j,k) )*( one - F_zct1(i,j,k) )
                   if (mumu .GT. zero) mumu = one / mumu
-         
+
                   rz = F_rvw2(i,j,k)
                   ry =  mumu * (F_xct1(i,j,k)*F_ruw2(i,j,k)- &
                                 F_yct1(i,j,k)*F_zct1(i,j,k)*rz)
                   rx = -mumu * (F_yct1(i,j,k)*F_ruw2(i,j,k)+ &
                                 F_xct1(i,j,k)*F_zct1(i,j,k)*rz)
-         
-!                 Compute components of c and put in cx, cy, cz 
+
+!                 Compute components of c and put in cx, cy, cz
 !                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   cx = x + Cstv_Beta_8*F_xct1(i,j,k)
                   cy = y + Cstv_Beta_8*F_yct1(i,j,k)
                   cz = z + Cstv_Beta_8*F_zct1(i,j,k)
-         
-         !     Compute mu and modify (Rx,Ry,Rz)
-         !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!                 Compute mu and modify (Rx,Ry,Rz)
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   mumu = - ( x*rx + y*ry + z*rz )/( x*cx + y*cy + z*cz )
                   rx = rx + mumu*cx
                   ry = ry + mumu*cy
                   rz = rz + mumu*cz
-         
-         !     Compute advective contributions on G-grid 
-         !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+!                 Compute advective contributions on G-grid
+!                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                   F_ruw2(i,j,k) = x*ry - y*rx - F_ruw1(i,j,k)
                   F_rvw2(i,j,k) = rz - F_rvw1(i,j,k)
          end do

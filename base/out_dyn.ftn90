@@ -102,7 +102,6 @@
             wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
             wlnpi_t(1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
          enddo
-         if (Schm_autobar_L) wlnpi_t(:,:,1) = Cstv_ztop_8
 
          call out_padbuf (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
          call out_padbuf (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
@@ -148,8 +147,7 @@
             call out_uv (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of divergence and vorticity
-! To COMPLETE
-!            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
+            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
 
             !     output of gmm
             call out_gmm2 (levset,kk)

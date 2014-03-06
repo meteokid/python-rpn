@@ -76,10 +76,6 @@
 !
       allocate(psurf (LDIST_SHAPE))
 
-      print *,'Broken code, please fix !'
-      print *,'Stéphane Gaudreault <stephane.gaudreault@ec.gc.ca>'
-      stop
-
 !---------------------------------------------------------------------
 !     Initialize orography
 !---------------------------------------------------------------------

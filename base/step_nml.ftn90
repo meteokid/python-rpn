@@ -57,10 +57,10 @@
       Fcst_end_S      = 'NIL'
       Step_total       = 0
       Step_nesdt       = 0
-      Step_rsti        = 9999999
-      Step_bkup        = 9999999
-      Step_gstat       = 9999999
-      Step_spinphy     = 9999999
+      Step_rsti        = -1
+      Step_bkup        = -1
+      Step_gstat       = -1
+      Step_spinphy     = -1
       Step_dt          = -1.0
       Step_leapyears_L = .true.
 
@@ -95,6 +95,11 @@
       if (time2sec(Fcst_start_S,sec)==RMN_OK) Lctl_step = sec / real(Step_dt)
       Step_delay= Lctl_step
       if (time2sec(Fcst_end_S,sec)==RMN_OK) Step_total = sec / real(Step_dt)
+
+      if (Step_gstat   .le. 0) Step_gstat  = Step_total+1
+      if (Step_bkup    .le. 0) Step_bkup   = Step_total+1
+      if (Step_spinphy .le. 0) Step_spinphy= Step_total+1
+      if (Step_rsti    .le. 0) Step_rsti   = Step_total+1
 
       step_nml = 1
 

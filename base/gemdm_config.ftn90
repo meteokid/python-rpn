@@ -252,26 +252,25 @@
 
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
-          if (lun_out.gt.0) write (Lun_out, 6100)
-          Schm_topo_L=.false.
-          Out3_nundr = 0
-      endif
-      if (Williamson_case.gt.0) then
-          if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
+         if (lun_out.gt.0) write (Lun_out, 6100)
+         Schm_hydro_L   = .true.
+         Schm_phyms_L   = .false.
+         if(Williamson_case.ne.7) Schm_topo_L = .false.
+         Out3_nundr = 0
+         if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
              if (lun_out.gt.0) write (Lun_out, 6300)
              return
-          endif
-          if (Williamson_case.gt.2.and.Williamson_alpha.ne.0.) then
-             if (lun_out.gt.0) write (Lun_out, 6400)
-             return
-          endif
-          if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
-              Williamson_alpha.ne.0.0 .and. Williamson_alpha.ne.90.0 ) then
-             if (lun_out.gt.0) write (Lun_out, 6500)
-             return
-          endif
-
-          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
+         endif
+         if (Williamson_case.gt.2.and.Williamson_alpha.ne.0.) then
+            if (lun_out.gt.0) write (Lun_out, 6400)
+            return
+         endif
+         if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
+             Williamson_alpha.ne.0.0 .and. Williamson_alpha.ne.90.0 ) then
+            if (lun_out.gt.0) write (Lun_out, 6500)
+            return
+         endif
+         Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
 
       if (Init_dfnp <= 0) then

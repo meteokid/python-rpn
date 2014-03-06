@@ -15,7 +15,8 @@
 
 !**s/r e_target3df - defines destination grids for 3df files
 !
-      subroutine e_target3df (F_grda_S,F_nia,F_nja,F_ig1a, F_ig2a, F_ig3a, F_ig4a)
+      subroutine e_target3df (F_grda_S, F_nia, F_nja, &
+                              F_ig1a, F_ig2a, F_ig3a, F_ig4a)
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,65 +30,86 @@
 !
 #include "e_anal.cdk"
 #include "e_grids.cdk"
+#include "e_fu.cdk"
 #include "pilot1.cdk"
 #include "hgc.cdk"
 #include "e_grdc.cdk"
 
-      integer, external :: cascindx, ezgdef_fmem, gdrls
+      logical, external :: samegrid_file
+      integer, external :: cascindx, ezgdef_fmem
 
-      integer i,err
+      logical same_grid_L
+      integer i,err,ni_target,nj_target,ni,nj
       real,   dimension(:), allocatable :: xpx,xpxu,ypx,ypxv
-      real*8  dx_8, dy_8, debut_8, pos_8, deg2rad_8
+      real*8  dx_8, dy_8, debut_8, pos_8, deg2rad_8, offsetx, offsety
 !
 ! ---------------------------------------------------------------------
 !
       if (Pil_bmf_L .or. (.not.LAM)) return
 
-      call e_3dfreso ( F_grda_S, dx_8,dy_8, F_nia,F_nja, &
+      ni= F_nia ; nj= F_nja
+      call e_3dfreso ( F_grda_S, dx_8,dy_8, ni,nj, &
                        F_ig1a,F_ig2a,F_ig3a,F_ig4a )
 
-      F_nia = (xfi(nifi) - xfi(1))/dx_8 + 13
-      F_nja = (yfi(njfi) - yfi(1))/dy_8 + 13
+      same_grid_L= samegrid_file ( e_fu_anal, F_ig1a, F_ig2a, F_ig3a ,&
+                           Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                                                      xfi, yfi, ni, nj)
+
+      ni_target = nint((xfi(nifi) - xfi(1))/dx_8) + 1
+      nj_target = nint((yfi(njfi) - yfi(1))/dy_8) + 1
+
+      offsetx= 0.
+      offsety= 0.
+      if (.not.same_grid_L) then
+         ni_target = ni_target + 12
+         nj_target = nj_target + 12
+         offsetx   = dx_8*5.0
+         offsety   = dy_8*5.0
+      endif
 
       deg2rad_8 = acos( -1.0d0 )/180.0d0
 
-      allocate (xpx(F_nia),ypx(F_nja),xpxu(F_nia-1),ypxv(F_nja-1))
+      allocate (xpx(ni_target),ypx(nj_target),xpxu(ni_target-1),ypxv(nj_target-1))
       if (associated( xg_8)) deallocate( xg_8)
       if (associated( yg_8)) deallocate( yg_8)
       if (associated(ygv_8)) deallocate(ygv_8)
-      allocate (xg_8(F_nia), yg_8(F_nja), ygv_8(F_nja-1))
+      allocate (xg_8(ni_target), yg_8(nj_target), ygv_8(nj_target-1))
 
-      debut_8= xfi(1) - dx_8*5.0
-      do i=1,F_nia
+      debut_8= xfi(1) - offsetx
+      do i=1,ni_target
          pos_8  = debut_8 + (i-1)*dx_8
          xpx (i)= pos_8
          xg_8(i)= pos_8 * deg2rad_8
       end do
 
-      debut_8= yfi(1) - dy_8*5.0
-      do i=1,F_nja
+      debut_8= yfi(1) - offsety
+      do i=1,nj_target
          pos_8  = debut_8 + (i-1)*dy_8
          ypx (i)= pos_8
          yg_8(i)= pos_8 * deg2rad_8
       end do
 
-      do i=1,F_nia-1
+      do i=1,ni_target-1
          xpxu(i)= 0.5 * ( xpx(i) + xpx(i+1) )
       enddo
-      do i=1,F_nja-1
+      do i=1,nj_target-1
          ypxv(i)= 0.5 * ( ypx(i) + ypx(i+1) )
          ygv_8(i) = ypxv(i) * deg2rad_8
       enddo
 
-      err = cascindx ( e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf,&
-                       xfi,yfi,nifi,njfi,xpx,ypx,F_nia,F_nja )
+      err = cascindx ( e_grdc_gid,e_grdc_gif,e_grdc_gjd,e_grdc_gjf, &
+                       xfi,yfi,nifi,njfi,xpx,ypx,ni_target,nj_target )
+
+      if ((err.lt.0).and.(same_grid_L)) then
+         e_grdc_gid= 1
+         e_grdc_gif= ni_target
+         e_grdc_gjd= 1
+         e_grdc_gjf= nj_target
+      endif
 
       e_grdc_ni = e_grdc_gif-e_grdc_gid+1
       e_grdc_nj = e_grdc_gjf-e_grdc_gjd+1
 
-      err = gdrls(dstf_gid)
-      err = gdrls(dstu_gid)
-      err = gdrls(dstv_gid)
       dstf_gid = ezgdef_fmem (e_grdc_ni  , e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
            Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xpx (e_grdc_gid), ypx (e_grdc_gjd))
       dstu_gid = ezgdef_fmem (e_grdc_ni-1, e_grdc_nj  , 'Z', 'E', Hgc_ig1ro, &
@@ -96,6 +118,8 @@
            Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xpx(e_grdc_gid), ypxv(e_grdc_gjd))
 
       deallocate(xpx,ypx,xpxu,ypxv,stat=err)
+
+      F_nia= -1 ; F_nja= -1
 !
 ! ---------------------------------------------------------------------
 !

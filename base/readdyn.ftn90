@@ -292,7 +292,7 @@
          call handle_error(err,'readdyn','readdyn:get_px')
 
          allocate ( srclev_m(l_ni,l_nj,nka_m), dstlev_m(l_ni,l_nj,G_nk+1) )
-         err = get_px (srclev_t,ps ,l_ni*l_nj,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
+         err = get_px (srclev_M,ps ,l_ni*l_nj,za_8,zb_8,nka_m,Acqi_datasp(2),.true.)
          call handle_error(err,'readdyn','readdyn:get_px')
          err = get_px (dstlev_m,pps,l_ni*l_nj,Ver_a_8%m,Ver_b_8%m,G_nk+1,Ver_code,.true.)
          call handle_error(err,'readdyn','readdyn:get_px')
@@ -371,14 +371,14 @@
       endif
 
       if (ana_q_L) then
-         ! This code will have to be reviewed
-         call handle_error(-1,'Please review this code for Q','readdyn')
          if (Acql_vertint) then
+            ! This code will have to be reviewed
+            call handle_error(-1,'Please review this code for Q','readdyn')
             call vertint ( work,dstlev_m,G_nk, q_temp,srclev_m,nka_m,&
                            1,l_ni,1,l_nj, 1,l_ni,1,l_nj,'cubic',.false.)
             F_q(1:l_ni,1:l_nj,2:G_nk+1) =   work(1:l_ni,1:l_nj,2:G_nk+1)
          else
-            F_q(1:l_ni,1:l_nj,2:G_nk+1) = q_temp(1:l_ni,1:l_nj,2:G_nk+1)
+            F_q(1:l_ni,1:l_nj,2:G_nk+1) = q_temp(1:l_ni,1:l_nj,1:G_nk)
          endif
       endif
 

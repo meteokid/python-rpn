@@ -59,20 +59,20 @@
           return
       endif
 
-      if (G_nk.ne.lvm-1) then
+      if (G_nk.ne.lvm) then
           samevert = 1
           return
       endif
 
-      !do k=1,lvm-1
       do k=1,lvm
          if (abs(zam_8(k)-Ver_a_8%m(k)) > DIFSIG .or. &
-              abs(zbm_8(k)-Ver_b_8%m(k)) > DIFSIG) samevert=samevert+1
+             abs(zbm_8(k)-Ver_b_8%m(k)) > DIFSIG) samevert=samevert+1
       enddo
-      !do k=1,lvt-1
+
+
       do k=1,lvt
          if (abs(zat_8(k)-Ver_a_8%t(k)) > DIFSIG .or. &
-              abs(zbt_8(k)-Ver_b_8%t(k)) > DIFSIG) samevert=samevert+1
+             abs(zbt_8(k)-Ver_b_8%t(k)) > DIFSIG) samevert=samevert+1
       enddo
       if (samevert.gt.0) then
           return
@@ -84,9 +84,12 @@
       sumdiff = 0
       do j= j0, jn
       do i= i0, in
-         if (abs(F_topo(i,j)-analtopo(i,j)) > 25.) ndiff = ndiff+1
+         if (abs(F_topo(i,j)-analtopo(i,j)) > 25.) then
+            ndiff = ndiff+1
+         endif
       enddo
       enddo
+
       call rpn_comm_allreduce (ndiff,sumdiff,1,"MPI_INTEGER", &
                                             "MPI_SUM","grid",err)
       samevert = sumdiff

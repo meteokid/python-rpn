@@ -14,14 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r dynstep -  Control of the dynamical timestep of the model
-!
-#include "model_macros_f.h"
-!
+
       subroutine dynstep
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     Michel Roch - rpn - nov 1993
 !
@@ -39,13 +36,9 @@
 !                             without the dynamical kernel
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_60 - Lee V.            - call yyg_nest_tracers before t02t1
-!
-!object
-!
-!arguments
-!       none
-!
-!implicits
+
+#include "gmm.hf"
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "orh.cdk"
 #include "init.cdk"
@@ -55,33 +48,38 @@
 #include "schm.cdk"
 #include "vtopo.cdk"
 #include "grd.cdk"
-!
-      integer itraj
+#include "tr3d.cdk"
+#include "vt1.cdk"
+
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L, secon_L
-!*
+      integer itraj,n,istat
+      real, pointer, dimension(:,:,:) :: tr1
+!
 !     ---------------------------------------------------------------
+!
       if (Lun_debug_L) write(Lun_out,1000)
       call timing_start ( 10, 'DYNSTEP' )
-!
+
 !     first_L is TRUE  for the first timestep
 !           or the first timestep after digital filter initialisation
-!
+
       first_L = (Step_kount.eq.1).or.(Rstri_idon_L .and.  &
                  Step_kount.eq.(Init_dfnp+1)/2)
-!
+
 !     secon_L is TRUE  for the second timestep
 !            or the second timestep after digital filter initialisation
-!
+
       secon_L = (Step_kount.eq.2).or.(Rstri_idon_L .and.  &
                  Step_kount.eq.(Init_dfnp+1)/2 + 1)
-!
+
 !     Orh_crank_L is TRUE for a time step using C-N procedure
-!
+
       Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 ))  &
                            .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
-!
+
       itraj = Schm_itraj
-!
+
       if (Schm_bitpattern_L) then
          call pospers ()
       else
@@ -90,41 +88,37 @@
             itraj = max( 5, Schm_itraj )
          endif
       endif
-!
-      call frstgss ()
-!
+
 ! Perform time interpolation of Lateral BCs for LAM configurations
-!
-      call nest_bcs ()
-!
+
       if ( Orh_crank_L ) then
-!     
+  
 !        CN iterations
-!     
+    
          if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
          do Orh_icn = 1,Schm_itcn-1
-!     
+    
             call tstpdyn (itraj)
             itraj = Schm_itraj
-!
+
             call hzd_momentum
-!     
+
          end do
          if (Lun_debug_L) write(Lun_out,1006)
-!     
+  
          Orh_icn=Schm_itcn
-!     
+ 
       else
-!     
+
          Orh_icn = 1
-!     
+  
       endif
-!     
+ 
 !     ------------------------------------------------------------
 !     Perform the timestep
 !     ------------------------------------------------------------
-!     
+ 
       call tstpdyn ( Schm_itraj )
 !     
 !     ------------------------------------------------------------
@@ -132,17 +126,23 @@
 !     C        variables at time level t1 -> t0 and rename all the
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
-!     
-      if (Grd_yinyang_L) call yyg_nest_tracers2('M')
 
       call t02t1 ()
-!
-!     --------------------------------------------------------------
-!     Blending solution for LAM config
-!     --------------------------------------------------------------
-!
-      call nest_gwa ()
-!
+
+      if (Grd_yinyang_L) then
+         do n= 1, Tr3d_ntr
+            tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
+            istat = gmm_get(tr_name, tr1)
+            call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .true., 'CUBIC')
+         end do
+         istat = gmm_get(gmmk_wt1_s , tr1)
+         call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                         .true., 'CUBIC')
+      else
+         if (G_lam) call nest_gwa ()
+      endif
+
       call pw_update_GPW()
       call pw_update_UV('P')
       call pw_update_T ('P')
@@ -150,12 +150,11 @@
 !     ===================
 !     END OF ONE TIMESTEP
 !     ===================
-!
+
       if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
 
       call timing_stop ( 10 )
 
-!
  1000 format( &
       /,'CONTROL OF DYNAMICAL STEP: (S/R DYNSTEP)', &
       /,'========================================'/)
@@ -164,6 +163,8 @@
           ' timestep(s) #####'/)
  1006 format( &
       /3X,'##### Crank-Nicholson iterations: ===> DONE... #####'/)
+!
+!     ---------------------------------------------------------------
 !
       return
       end

@@ -40,16 +40,13 @@
 #include "geomg.cdk"
 !
       integer i, j, k, i0, j0, in, jn
-      real temp_F_u(LDIST_SHAPE,nk), temp1_F_u(LDIST_SHAPE,nk),   &
-           temp_F_v(LDIST_SHAPE,nk), temp1_F_v(LDIST_SHAPE,nk)
+      real temp_ru(LDIST_SHAPE,nk), temp_ru1(LDIST_SHAPE,nk),   &
+           temp_rv(LDIST_SHAPE,nk), temp_rv1(LDIST_SHAPE,nk)
 !
 !     __________________________________________________________________
 !
-!  lazy code ===> should be fixed
-      temp_F_u (:,:,:)=0.0
-      temp_F_v (:,:,:)=0.0
-      temp1_F_u(:,:,:)=0.0
-      temp1_F_v(:,:,:)=0.0
+      temp_ru=0.
+      temp_rv=0.
 
 ! Fill temp U vectors
       i0=1
@@ -64,8 +61,7 @@
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
-         temp_F_u (i,j,k)= F_oru(i,j,k)
-         temp1_F_u(i,j,k)= F_oru(i,j,k)
+         temp_ru (i,j,k)= F_oru(i,j,k)
       enddo
       enddo
       enddo
@@ -78,36 +74,34 @@
       do k=1,l_nk
       do j=j0,jn
       do i=i0,in
-         temp_F_v (i,j,k)= F_orv(i,j,k)
-         temp1_F_v(i,j,k)= F_orv(i,j,k)
+         temp_rv (i,j,k)= F_orv(i,j,k)
       enddo
       enddo
       enddo
 
-      call rpn_comm_xch_halo(temp_F_u ,LDIST_DIM,l_niu,l_nj ,G_nk, &
+      call rpn_comm_xch_halo(temp_ru ,LDIST_DIM,l_niu,l_nj ,G_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(temp_F_v ,LDIST_DIM,l_ni ,l_njv,G_nk, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(temp1_F_u,LDIST_DIM,l_niu,l_nj ,G_nk, &
-                      G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(temp1_F_v,LDIST_DIM,l_ni ,l_njv,G_nk, &
+      call rpn_comm_xch_halo(temp_rv ,LDIST_DIM,l_ni ,l_njv,G_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
-      call  yyg_vecbc1(temp1_F_u,temp_F_u,temp_F_v,LDIST_DIM,G_nk)
-      call  yyg_vecbc2(temp1_F_v,temp_F_v,temp_F_u,LDIST_DIM,G_nk)
+      temp_ru1=temp_ru
+      temp_rv1=temp_rv
+
+      call  yyg_vecbc1(temp_ru1,temp_ru,temp_rv,LDIST_DIM,G_nk)
+      call  yyg_vecbc2(temp_rv1,temp_rv,temp_ru,LDIST_DIM,G_nk)
 
 !Now copy back only the data that has to be updated.
 
-!$omp parallel private(i,j) shared(temp1_F_u,temp1_F_v)
+!$omp parallel private(i,j) shared(temp_ru1,temp_rv1)
       if (l_west) then
 !$omp do
          do k= 1, G_nk
             do j= 1,l_nj
-               F_oru(1,j,k)= temp1_F_u (1,j,k)
+               F_oru(1,j,k)= temp_ru1 (1,j,k)
             enddo
             do j= 1,l_njv
-               F_orv(1,j,k)= temp1_F_v (1,j,k)
-               F_orv(2,j,k)= temp1_F_v (2,j,k)
+               F_orv(1,j,k)= temp_rv1 (1,j,k)
+               F_orv(2,j,k)= temp_rv1 (2,j,k)
             enddo
          enddo
 !$omp enddo
@@ -117,11 +111,11 @@
 !$omp do
          do k= 1, G_nk
             do j= 1,l_nj
-               F_oru(l_niu,j,k)= temp1_F_u (l_niu,j,k)
+               F_oru(l_niu,j,k)= temp_ru1 (l_niu,j,k)
             enddo
             do j= 1,l_njv
-               F_orv(l_niu,j,k)= temp1_F_v (l_niu,j,k)
-               F_orv(l_ni,j ,k)= temp1_F_v (l_ni,j ,k)
+               F_orv(l_niu,j,k)= temp_rv1 (l_niu,j,k)
+               F_orv(l_ni,j ,k)= temp_rv1 (l_ni,j ,k)
             enddo
          enddo
 !$omp enddo
@@ -131,11 +125,11 @@
 !$omp do
          do k= 1, G_nk
             do i= 1, l_niu
-               F_oru(i,1,k)=temp1_F_u (i,1,k)
-               F_oru(i,2,k)=temp1_F_u (i,2,k)
+               F_oru(i,1,k)=temp_ru1 (i,1,k)
+               F_oru(i,2,k)=temp_ru1 (i,2,k)
             enddo
             do i= 1, l_ni
-               F_orv(i,1,k)=temp1_F_v (i,1,k)
+               F_orv(i,1,k)=temp_rv1 (i,1,k)
             enddo
          enddo
 !$omp enddo
@@ -145,11 +139,11 @@
 !$omp do
          do k= 1, G_nk
             do i= 1, l_niu
-               F_oru(i,l_njv,k)= temp1_F_u (i,l_njv,k)
-               F_oru(i,l_nj ,k)= temp1_F_u (i,l_nj ,k)
+               F_oru(i,l_njv,k)= temp_ru1 (i,l_njv,k)
+               F_oru(i,l_nj ,k)= temp_ru1 (i,l_nj ,k)
             enddo
             do i= 1, l_ni
-               F_orv(i,l_njv,k)= temp1_F_v (i,l_njv,k)
+               F_orv(i,l_njv,k)= temp_rv1 (i,l_njv,k)
             enddo
          enddo
 !$omp enddo

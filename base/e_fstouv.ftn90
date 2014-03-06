@@ -32,13 +32,16 @@
       character*1   typ, grd
       character*4   var
       character*12  lab
-      integer,external :: e_pilotf2, fnom, fstouv, fstinf, fstprm
+      character*15  pdate
+      integer,external :: e_pilotf2, fnom, fstouv, fstinf, fstprm, fstfrm
       integer err, key, ni1,nj1,nk1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
 !
 ! ---------------------------------------------------------------------
 !
+      call datf2p (pdate,F_date)
+
       if (F_grd_S.eq.'L') then
          err= e_pilotf2 (F_date,F_nomvar_S,' ',' ',-1,-1,-1,F_pilot_S,F_unit)
       else
@@ -51,14 +54,23 @@
       key= -1
       if (err .ge. 0) then
          key = fstinf (F_unit,ni1,nj1,nk1,F_date,' ',-1,-1,-1,' ',F_nomvar_S)
-         if (key.ge.0) &
-         key = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, p1,ip2a,ip3a, &
-                        typ, var, lab, grd, g1, g2, g3, g4, &
-                        swa,lng, dlf, ubc, ex1, ex2, ex3 )
+         if (key.ge.0) then
+            key = fstprm ( key, dte, det, ipas, ni1,nj1,nk1, bit, dty, &
+                           p1,ip2a,ip3a, typ,var,lab,grd, g1,g2,g3,g4, &
+                           swa,lng, dlf, ubc, ex1, ex2, ex3 )
+            write (6,2004) F_nomvar_S, pdate
+         else
+            err = fstfrm(F_unit)
+            call fclos  (F_unit)
+            F_unit= -1
+            write (6,2005) F_nomvar_S, pdate
+         endif
       endif
       e_fstouv = min(0,key)
 
  2003 format (/' E_FSTOUV:  file ',a,' open on unit: ',i4)
+ 2004 format (12x,'found variable ',a, ' valid ',a)
+ 2005 format (12x,'variable ',a, ' valid ',a, ' NOT found')
 
 !
 ! ---------------------------------------------------------------------

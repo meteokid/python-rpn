@@ -15,49 +15,41 @@
 
 !**s/r nest_bcs -
 !
-#include "model_macros_f.h"
-!
       subroutine nest_bcs
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     Michel Desgagne   - Summer 2010
 !
 !revision
 ! v4_14 - Desgagne M.          - initial version
-!
-!object
-!
-!arguments
-!       none
-!
+
 #include "glb_ld.cdk"
 #include "lam.cdk"
-#include "grd.cdk"
 #include "schm.cdk"
 #include "theo.cdk"
 !
 !----------------------------------------------------------------------
 !
-      if ( G_lam .and. .not. Grd_yinyang_L) then
-         if (.not. Lam_ctebcs_L) call nest_intt
-         if (Schm_theoc_L) then
-             if (north+south+west+east.ge.1) then
-                if ( Theo_case_S .eq. 'BUBBLE'   .or.    &
-                     Theo_case_S .eq. 'BUBBLE_G' .or.    &
-                     Theo_case_S .eq. '2_BUBBLES' ) then
-                   call mirror ()
-                else
-                   call nest_bcs_t0 ()
-                endif
-                call slabsym ()
-             endif
-         else
-             call nest_bcs_t0 ()
-         endif
-      endif
+      if (.not. Lam_ctebcs_L) call nest_intt
 
+      if (Schm_theoc_L) then
+         if (north+south+west+east.ge.1) then
+            if ( Theo_case_S .eq. 'BUBBLE'   .or.    &
+                 Theo_case_S .eq. 'BUBBLE_G' .or.    &
+                 Theo_case_S .eq. '2_BUBBLES' ) then
+               call mirror ()
+            else
+               call nest_bcs_t0 ()
+            endif
+            call slabsym ()
+         endif
+      else
+
+         call nest_bcs_t0 ()
+
+      endif
 !
 !----------------------------------------------------------------------
 !

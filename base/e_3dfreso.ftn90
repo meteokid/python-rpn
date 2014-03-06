@@ -65,7 +65,7 @@
       endif
 
       if (F_grd_S == 'U') then
-         sgid = ezqkdef(F_nia,F_nja,'U',F_ig1a,F_ig2a,F_ig3a,F_ig4a,e_fu_anal)
+         sgid = ezqkdef(-1,-1,'U',F_ig1a,F_ig2a,F_ig3a,-1,e_fu_anal)
          nsousgrid = ezget_nsubgrids(sgid)
          allocate (subgrid(nsousgrid))
          err = ezget_subgridids(sgid,subgrid)
@@ -75,6 +75,7 @@
          dx = xpx(3)-xpx(2)
          dy = ypx(3)-ypx(2)
          deallocate (xpx,ypx,subgrid)
+         F_nia= ni1 ; F_nja= nj1
       endif
 
       if (dx.le.0) then

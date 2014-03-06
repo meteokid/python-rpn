@@ -125,8 +125,8 @@
       type(vgrid_descriptor) :: vcoord
       integer k,istat,options
       real, dimension(:), pointer :: std_p_prof=>null()
-      real*8 half, one, wk_8
-      parameter(half=0.5d0,one=1.d0)
+      real*8 half, one, zero, wk_8
+      parameter(half=0.5d0,one=1.d0,zero=0.d0)
 !     __________________________________________________________________
 !
       allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &                 
@@ -186,16 +186,6 @@
       
       call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
       Ver_std_p_prof%t=std_p_prof
-
-      ! Add outside level at top boundary and fill hybrid coordinate values
-
-      !hybm(0) = real(Cstv_ptop_8/Cstv_pref_8)
-      if (Schm_autobar_L)then
-         print*,'A revoir pour enlevement de top thermo level'
-         call handle_error(-1,'set_zeta','A revoir pour enlevement de top thermo level')
-         !Ver_hyb%t(1) = hybt(0)
-      endif
-      
 !
 !     -------------
 !     Now define Z:
@@ -251,11 +241,17 @@
       enddo
 !
           Ver_dbdz_8%m(1) = Ver_wp_8%m(1) * Ver_dbdz_8%t(1)  &
-                          + Ver_wm_8%m(1) * (Ver_b_8%m(1)-0.d0)/(Ver_z_8%m(1)-Cstv_Ztop_8)
+                          + Ver_wm_8%m(1) * (Ver_b_8%m(1)-zero)/(Ver_z_8%m(1)-Cstv_Ztop_8)
       do k=2,G_nk
           Ver_dbdz_8%m(k) = Ver_wp_8%m(k) * Ver_dbdz_8%t(k)  &
                           + Ver_wm_8%m(k) * Ver_dbdz_8%t(k-1)
       enddo
+
+      if(Schm_autobar_L) then
+         do k=1,G_nk
+            Ver_dbdz_8%m(k) = one/(Cstv_Zsrf_8-Ver_z_8%m(1))
+         enddo
+      endif
 !
 !     -------------------------------------------------------
 !     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS 
@@ -265,8 +261,8 @@
          Ver_wp_8%t(k) = half
          Ver_wm_8%t(k) = half
       enddo
-      Ver_wp_8%t(G_nk) = 1.d0
-      Ver_wm_8%t(G_nk) = 0.d0
+      Ver_wp_8%t(G_nk) = one
+      Ver_wm_8%t(G_nk) = zero
 !
 !     -------------------------------------------------------
 !     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
@@ -294,7 +290,7 @@
 !
       if(.not.Schm_phyms_L)then
          Ver_a_8%t(G_nk)=Cstv_Zsrf_8
-         Ver_b_8%t(G_nk)=1.d0
+         Ver_b_8%t(G_nk)=one
       endif
 !
 !     ----------------------------------------------------------

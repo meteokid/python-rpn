@@ -66,6 +66,11 @@
          posy => Geomn_latgv
          ig3  = 3
       endif
+      if (F_arakawa_S =='F_point') then
+         posx => Geomn_longu
+         posy => Geomn_latgv
+         ig3  = 4
+      endif
 
       nis = Out_nisg ; njs= Out_njsg
       flag= (Out_blocme.eq.0)
@@ -85,8 +90,8 @@
             vesion_uencode    = 1
             familly_uencode_S = 'F'
 
-            nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,1,&
-                                          ' ','^>',liste,lislon,nlis)
+            nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,ig3,&
+                                           ' ','^>',liste,lislon,nlis)
             if ((lislon.lt.1).and.(.not.Out_flipit_L)) then
                niyy=5+2*(10+nis+njs)
                allocate (yy(niyy))

@@ -21,8 +21,8 @@
 
       integer F_nga, F_nka_m, F_nka_t, F_nkgz, F_nvar, F_ntra, F_unf,F_err
       character* (*) F_datev, trname_a(F_ntra)
-      real  uun (F_nga,F_nka_m), vvn(F_nga,F_nka_m), zdn(F_nga,F_nka_t-1), &
-            ttn (F_nga,F_nka_t), qqn(F_nga,F_nka_m-1), wwn(F_nga,F_nka_t-1), &
+      real  uun (F_nga,F_nka_m), vvn(F_nga,F_nka_m), zdn(F_nga,F_nka_t), &
+            ttn (F_nga,F_nka_t), qqn(F_nga,F_nka_m), wwn(F_nga,F_nka_t), &
             meqn(F_nga,F_nkgz ), trn(F_nga,F_nka_t,F_ntra), ssqn(F_nga)
 
 #include "blk_input.cdk"
@@ -48,8 +48,8 @@
          nja= ifd_njaf - ifd_njad + 1
          nga= nia*nja
 
-         allocate ( uu (nia,nja,F_nka_m),vv (nia,nja,F_nka_m),zd(nia,nja,F_nka_t-1), &
-                    tt (nia,nja,F_nka_t),qq (nia,nja,F_nka_m-1),ww(nia,nja,F_nka_t-1), &
+         allocate ( uu (nia,nja,F_nka_m),vv (nia,nja,F_nka_m),zd(nia,nja,F_nka_t), &
+                    tt (nia,nja,F_nka_t),qq (nia,nja,F_nka_m),ww(nia,nja,F_nka_t), &
                     meq(nia,nja,F_nka_m),ssq(nia,nja),tr (nia,nja,F_nka_t,F_ntra) )
          uu=0.; vv=0.; zd=0.; tt=0.; ssq=0.; tr=0.;
          ww=0.; qq=0.; meq=0.;
@@ -103,11 +103,11 @@
          call local_data (meqn,F_nga, meq,nia,nja,F_nkgz ,0)
          call local_data (ssqn,F_nga, ssq,nia,nja,1      ,0)
          if (ana_zd_L) &
-         call local_data (zdn ,F_nga, zd ,nia,nja,F_nka_t-1,0)
+         call local_data (zdn ,F_nga, zd ,nia,nja,F_nka_t,0)
          if (ana_w_L ) &
-         call local_data (wwn ,F_nga, ww ,nia,nja,F_nka_t-1,0)
+         call local_data (wwn ,F_nga, ww ,nia,nja,F_nka_t,0)
          if (ana_q_L ) &
-         call local_data (qqn ,F_nga, qq ,nia,nja,F_nka_m-1,0)
+         call local_data (qqn ,F_nga, qq ,nia,nja,F_nka_m,0)
          do n=1,F_ntra
             if (trname_a(n).ne.'!@@NOT@@') &
             call local_data (trn(1,1,n) ,F_nga, tr(1,1,1,n) ,nia,nja,F_nka_t,0)
@@ -134,18 +134,18 @@
             call RPN_COMM_send (buf, blk_indx(iproc,5)*1      , 'MPI_REAL', &
                                                   iproc, tag, 'BLOC', err )
             if (ana_zd_L) then
-               call local_data (buf ,blk_indx(iproc,5), zd ,nia,nja,F_nka_t-1,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t-1), 'MPI_REAL', &
+               call local_data (buf ,blk_indx(iproc,5), zd ,nia,nja,F_nka_t,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t), 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             if (ana_w_L ) then
-               call local_data (buf ,blk_indx(iproc,5), ww ,nia,nja,F_nka_t-1,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t-1), 'MPI_REAL', &
+               call local_data (buf ,blk_indx(iproc,5), ww ,nia,nja,F_nka_t,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t), 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             if (ana_q_L ) then
-               call local_data (buf ,blk_indx(iproc,5), qq ,nia,nja,F_nka_m-1,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_m-1), 'MPI_REAL', &
+               call local_data (buf ,blk_indx(iproc,5), qq ,nia,nja,F_nka_m,iproc)
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_m), 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             do n=1,F_ntra
@@ -178,17 +178,17 @@
          call RPN_COMM_recv ( ssqn, cnt, 'MPI_REAL',0, &
                               tag, 'BLOC', status, err )
          if (ana_zd_L) then
-            cnt= F_nga*(F_nka_t-1)
+            cnt= F_nga*F_nka_t
             call RPN_COMM_recv ( zdn, cnt, 'MPI_REAL',0, &
                                  tag, 'BLOC', status, err )
          endif
          if (ana_w_L ) then
-            cnt= F_nga*(F_nka_t-1)
+            cnt= F_nga*F_nka_t
             call RPN_COMM_recv ( wwn, cnt, 'MPI_REAL',0, &
                                  tag, 'BLOC', status, err )
          endif
          if (ana_q_L ) then
-            cnt= F_nga*(F_nka_m-1)
+            cnt= F_nga*F_nka_m
             call RPN_COMM_recv ( qqn, cnt, 'MPI_REAL',0, &
                                  tag, 'BLOC', status, err )
          endif

@@ -28,20 +28,36 @@
 ! v4_50 - Desgagne M.     - Initial version
 !
 #include "lun.cdk"
+#include "grd.cdk"
+#include "filename.cdk"
+
       character*1024 msg
-      integer,external :: fstinf
-      integer i,key,ni1,nj1,nk1,err
+      integer,external :: fstinf,e_fstouv
+      integer i,key,ni1,nj1,nk1,err,err_ouv
 !
 ! ---------------------------------------------------------------------
 !
       err = -1
+
       do i=1, F_n
-         key = fstinf (F_unit,ni1,nj1,nk1,F_datev,' ', &
-                              -1,-1,-1,' ',F_names(i))
-         if ( key .ge. 0 ) then
-            err = 0
-            F_var_S = F_names(i)
-            exit
+
+         if (F_unit.le.0) then
+            err_ouv= e_fstouv (F_names(i), F_datev, Grd_typ_S(1:1),&
+                                pilot_dir, F_unit)
+         else
+            err_ouv= 0
+         endif
+
+         if (err_ouv .ge. 0 ) then
+
+            key = fstinf (F_unit,ni1,nj1,nk1,F_datev,' ',&
+                                  -1,-1,-1,' ',F_names(i))
+            if ( key .ge. 0 ) then
+               err = 0
+               F_var_S = F_names(i)
+               exit
+            endif
+
          endif
       end do
 

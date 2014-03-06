@@ -82,13 +82,13 @@
                      enddo
                      enddo
                   enddo
-                  call ecris_fst2(t4,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
-                                Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
-                                 Outd_nbit(ii,set) )
+                  call ecris_fst2(t4,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
+                             Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
+                             Outd_nbit(ii,set) )
                else
-                  call ecris_fst2(tr1,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(2), &
-                                 Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
-                                  Outd_nbit(ii,set) )
+                  call ecris_fst2(tr1,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
+                              Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
+                              Outd_nbit(ii,set) )
                endif
             endif
          enddo

@@ -17,8 +17,6 @@
 !                     to smooth momentum components for trajectory calculations after 
 !                     a Crank-Nicholson step avoiding pole problems
 !
-#include "model_macros_f.h"
-!
       subroutine hzd_momentum
       implicit none
 #include <arch_specific.hf>
@@ -38,38 +36,28 @@
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "vt0.cdk"
-#include "nest.cdk"
 #include "grd.cdk"
 
       logical, save :: switch_on_hzd= .true.
-      type(gmm_metadata) :: mymeta
-      integer istat,i,j,k
+      integer istat
 !     _________________________________________________________________
 !
       if (Schm_hzdadw_L .and. switch_on_hzd) then
 
-         istat= gmm_get(gmmk_zdt0_s,zdt0,mymeta)
-         istat= gmm_get(gmmk_ut0_s ,ut0 ,mymeta)
-         istat= gmm_get(gmmk_vt0_s ,vt0 ,mymeta)
-         istat= gmm_get(gmmk_nest_zd_s,nest_zd,mymeta)
+         istat= gmm_get(gmmk_zdt0_s,zdt0)
+         istat= gmm_get(gmmk_ut0_s ,ut0 )
+         istat= gmm_get(gmmk_vt0_s ,vt0 )
 
          call hzd_ctrl3(ut0 , 'U', G_nk)
          call hzd_ctrl3(vt0 , 'V', G_nk)
          call hzd_ctrl3(zdt0, 'S', G_nk)
+         
          if (Grd_yinyang_L) then
-             do k= 1,G_nk
-                do j= 1, l_nj
-                do i= 1, l_ni
-                   nest_zd(i,j,k)=zdt0 (i,j,k)
-                enddo
-                enddo
-             enddo
-             call rpn_comm_xch_halo(nest_zd,LDIST_DIM,l_ni,l_nj,G_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-             call yyg_scalbc(zdt0,nest_zd,LDIST_DIM,G_nk)
-
-             call yyg_nestuv(ut0,vt0,LDIST_DIM,G_nk)
+            call yyg_xchng (zdt0, l_minx,l_maxx,l_miny,l_maxy, &
+                            G_nk, .false., 'CUBIC')
+            call yyg_nestuv(ut0 , vt0, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          endif
+
       endif
 !     _________________________________________________________________
 !

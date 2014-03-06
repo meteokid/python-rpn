@@ -177,8 +177,8 @@ End Interface
       nullify (meqr,topo_temp1,ss1)
       nullify (uu1,vv1,zd1,ttt1,qq1,ww1,trn,trp,tr1)
 
-      allocate ( uun(nga,nka_m), vvn(nga,nka_m), zdn(nga,nka_t-1), &
-                 ttn(nga,nka_t), qqn(nga,nka_m-1), wwn(nga,nka_t-1), &
+      allocate ( uun(nga,nka_m), vvn(nga,nka_m), zdn(nga,nka_t), &
+                 ttn(nga,nka_t), qqn(nga,nka_m), wwn(nga,nka_t), &
                  trn(nga,nka_t,ntra), ssqn(nga,1)              , &
                  topo_temp1(l_ni+1-(east*1),l_nj+1-(north*1))  , &
                  meqn(nga,nkgz), trname_a(ntra) )
@@ -244,15 +244,14 @@ End Interface
                      uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn       , &
                      l_ni,l_nj,G_nk,nia,nja,nka_m,nka_t,presstype,ntra)
 
-      F_u (1:l_ni,1:l_nj, 1:G_nk  ) = uu1
-      F_v (1:l_ni,1:l_nj, 1:G_nk  ) = vv1
-      F_s (1:l_ni,1:l_nj          ) = ss1
+      F_u (1:l_niu,1:l_nj,1:G_nk) = uu1(1:l_niu,1:l_nj,1:G_nk)
+      F_v (1:l_ni,1:l_njv,1:G_nk) = vv1(1:l_ni,1:l_njv,1:G_nk)
+      F_s (1:l_ni,1:l_nj        ) = ss1
       
       if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
       if (ana_w_L ) F_w (1:l_ni,1:l_nj, 1:G_nk  ) = ww1
       if (ana_q_L ) F_q (1:l_ni,1:l_nj, 2:G_nk+1) = qq1
 
-      if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
       do n=1,Tr3d_ntr
          nullify (trp)
          if ( initial_data .and. (Step_kount.eq.0) ) then

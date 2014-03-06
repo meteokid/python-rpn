@@ -74,9 +74,15 @@
       E_schm_stlag    = .true.
       E_schm_adcub    = .true.
 !
-      E_tr3d_list_S  = ''
-      E_tr_anydate_L = .false.
+      E_tr3d_list_S   = ''
+      E_tr_anydate_L  = .false.
 !
+      VAR_TT          = '@#$%'
+      VAR_UU          = '@#$%'
+      VAR_ZD          = 'ZDT1'
+      VAR_W           = 'WT1'
+      VAR_Q           = 'QT1'
+
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)

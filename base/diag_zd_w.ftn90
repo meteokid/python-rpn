@@ -53,6 +53,7 @@
 !
 #include "glb_ld.cdk"
 #include "geomg.cdk"
+#include "grd.cdk"
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "zdot.cdk"
@@ -61,6 +62,7 @@
 #include "lun.cdk"
 
       integer i, j, k, kp, i0, in, j0, jn, j00, jnn
+      real*8 c1,c2
       real roverg
       real div (DIST_SHAPE,Nk),adv,div_i(DIST_SHAPE,0:Nk)
       real pi_t(DIST_SHAPE,Nk),lnpi_t(DIST_SHAPE,Nk),pidot
@@ -216,6 +218,10 @@
             end do
          end do
 
+         if (Grd_yinyang_L) &
+         call yyg_xchng (F_zd, l_minx,l_maxx,l_miny,l_maxy, Nk,&
+                         .false., 'CUBIC')
+
       endif
 
 !     CALCULATION of W
@@ -228,20 +234,26 @@
          do k=1,Nk
             kp=min(k+1,Nk)
             do j=j0,jn
+            c1=geomg_cyv_8(j  ) ! pgi optimizer is bugged without those 2 lines
+            c2=geomg_cyv_8(j-1)
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
                adv= 0.5 * ( geomg_invDX_8(i,j) *  &
                     ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
                   + geomg_invcy_8(j) * geomg_invDY_8(j) *  &
-                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*geomg_cyv_8(j)*(sbY(i,j  )-F_s(i,j))   &
-                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*geomg_cyv_8(j-1)*(sbY(i,j-1)-F_s(i,j)) ) )
+                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-F_s(i,j))   &
+                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-F_s(i,j)) ) )
               !pidot=omega
                pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
             end do
             end do
          end do
+
+         if (Grd_yinyang_L) &
+         call yyg_xchng (F_w, l_minx,l_maxx,l_miny,l_maxy, Nk,&
+                         .false., 'CUBIC')
 
       endif
 

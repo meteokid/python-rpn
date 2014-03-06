@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -85,6 +85,7 @@ subroutine itf_adx_set()
    istat = min(wb_put('model/gbpil_t',Lam_gbpil_t,options),istat)
    istat = min(wb_put('model/Tlift',Schm_Tlift,options),istat)
    istat = min(wb_put('model/trapeze',Schm_trapeze_L,options),istat)
+   istat = min(wb_put('model/metrics',Schm_angular_displacement_L,options),istat)
    istat = min(wb_put('model/cub_traj',Schm_cub_traj_L,options),istat)
    istat = min(wb_put('model/superwinds',Schm_superwinds_L,options),istat)
 

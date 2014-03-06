@@ -17,12 +17,11 @@
 !		         within the Virtual Memory manager (VMM)
 !
 !#define SPY_VMM_CREATE spy_vmm_create
-#include "model_macros_f.h"
-!
+
       subroutine nest_set_gmmvar
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Desgagne/Lee -        spring 2002
 !
@@ -41,7 +40,6 @@
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "lun.cdk"
 #include "nest.cdk" 
 #include "tr3d.cdk"
@@ -118,19 +116,10 @@
          endif
       end do
 
-      if (Grd_yinyang_L) then
-!     Initialization for Yin-Yang communications
-         call yyg_initscalbc()
-         call yyg_initvecbc1()
-         call yyg_initvecbc2()
-         call yyg_rhs_initscalbc()
-      else
-!     Initialization for blending weights
-         call nest_init_weight('M')
-         call nest_init_weight('U')
-         call nest_init_weight('V')
-         call nest_init_weight('Q')
-      endif
+      call nest_init_weight('M')
+      call nest_init_weight('U')
+      call nest_init_weight('V')
+      call nest_init_weight('Q')
 
  1000 format( &
       /,'INITIALIZATION OF NESTING VARIABLE COMDECKS (S/R nest_set_gmmvar)', &
