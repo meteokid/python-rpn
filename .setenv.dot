@@ -1,5 +1,7 @@
 . s.ssmuse.dot $(cat ssmuse_dependencies.bndl)
 . s.ssmuse.dot $(cat $modelutils/src/ssmuse_dependencies.bndl)
+export TEST_S_AR=1
+export COMP_ARCH=${COMP_ARCH:-${EC_ARCH#*/}}
 if [[ x$BASE_ARCH == xAIX-powerpc7 ]] ; then
    s.use gmake as make
 
@@ -17,3 +19,4 @@ if [[ x$BASE_ARCH == xAIX-powerpc7 ]] ; then
    fi
 
 fi
+export SSMVERSION=$(ssm version | cut -d. -f1)
