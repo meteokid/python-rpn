@@ -1,2 +1,0 @@
-/home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.2.2/all/bin/Um_runmod.ksh -cfg 1:1 -dircfg cfg_pilot_glb_digf -ptopo 2x1x1 -out_block 2x1
-/home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.2.2/all/bin/Um_runmod.ksh[5]: r.entry.dot:  not found

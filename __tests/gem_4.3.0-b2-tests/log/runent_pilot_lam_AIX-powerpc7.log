@@ -1,2 +1,0 @@
-/home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.2.2/all/bin/Um_runent.ksh -cfg 1:1 -dircfg cfg_pilot_lam -ptopo 2x1x1
-/home/ordenv/ssm-domains9/release/gem-scripts/gem-scripts_4.2.2/all/bin/Um_runent.ksh[5]: r.entry.dot:  not found
