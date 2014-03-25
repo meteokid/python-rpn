@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine iniobus (siz)
+      use phy_itf, only: phymeta,phy_getmeta
 !
 !implicits
 !
@@ -44,30 +45,22 @@
 #include "glb_pil.cdk"
 #include "dimout.cdk"
 #include "lun.cdk"
-#include "lctl.cdk"
 #include "dcst.cdk"
 #include "obus.cdk"
 #include "outp.cdk"
+#include "step.cdk"
 !
 !modules
-      integer,external :: doout,phy_getindx3
+      integer,external :: doout
 
-      integer,parameter :: MAXBUS = 1000
-      integer,parameter :: BUSPAR_I0=1
-      integer,parameter :: BUSPAR_NIK=2
-      integer,parameter :: BUSPAR_INIT=3
-      integer,parameter :: BUSPAR_STAG=4
-      integer,parameter :: BUSPAR_ESP=5
-      integer,parameter :: BUSPAR_FMUL=6
-      integer,parameter :: BUSPAR_NK=7
-      integer,parameter :: BUSPAR_MOSAIC=8
-      integer,parameter :: BUSPAR_MAXPAR=8
+      integer,parameter :: MAXOUT = 1000
 
       integer dostep(MAXSET),dostep_max,siz
       integer i,j,k,m,cnt,bigk,idx
-      character(len=4) :: udolist_S(MAXBUS)
+      character(len=4) :: udolist_S(MAXOUT)
       character(len=32) :: varname_S,outname_S,inname_S,bus_S
-      integer :: istat,index,param(BUSPAR_MAXPAR)
+      integer :: istat
+      type(phymeta) :: pmeta
 !
 !------------------------------------------------------------------
 !
@@ -108,22 +101,22 @@
          varname_S = ' '
          outname_S = udolist_S(j)
          inname_S = ' '
-         bus_S = ' '
-         istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
+         bus_S = 'PV'
+         if (Step_kount == 0) bus_S = trim(bus_S)//'E'
+         istat = phy_getmeta(pmeta,outname_S,F_npath='O',F_bpath=bus_S,F_quiet=.true.)
          if (.not.RMN_IS_OK(istat)) cycle
+         bus_S = pmeta%bus
          istat = clib_toupper(bus_S)
-         if (Lctl_step.ne.0 .and. bus_S=='E') cycle
-         if (bus_S=='D') cycle
          k=k+1
          obus_var_S(k) = udolist_S(j)(1:4)
          obus_bus_S(k) = bus_S(1:1)
          obus_offset(k) = bigk
-         obus_idx(k) = index
-         obus_addr(k) = param(BUSPAR_I0)
-         obus_stag(k) = param(BUSPAR_STAG)
-         obus_mult(k) = param(BUSPAR_FMUL)
-         obus_shp(k) = param(BUSPAR_NK)
-         obus_mosaic(k) = param(BUSPAR_MOSAIC)
+         obus_idx(k) = -1
+         obus_addr(k) = -1
+         obus_stag(k) = pmeta%stag
+         obus_mult(k) = pmeta%fmul
+         obus_shp(k) = pmeta%nk
+         obus_mosaic(k) = pmeta%mosaic
          obus_mul(k) = 1.0
          obus_add(k) = 0.0
          if (udolist_S(j)(1:4).eq.'LA  ') obus_mul(k)=180./Dcst_pi_8

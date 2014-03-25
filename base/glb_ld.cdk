@@ -51,7 +51,6 @@
 ! south              | =1 if touching south boundary for LAM           |
 ! east               | =1 if touching east  boundary for LAM           |
 ! west               | =1 if touching west  boundary for LAM           |
-! p_nk               | physic number of vertical levels [l_nk+2]
 !----------------------------------------------------------------------
 !
 !
@@ -68,13 +67,13 @@
       common / G_l / G_lam,G_periodx,G_periody
 !
       logical l_north, l_south, l_east, l_west, l_mesg_proc
-      integer l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0,p_nk
+      integer l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0
       integer l_minx, l_maxx, l_miny, l_maxy
       integer l_dimmsg, l_dim2d, l_dim3d
       integer pil_n,pil_s,pil_w,pil_e,north,south,east,west
 
       common / l / l_north, l_south, l_east, l_west, l_mesg_proc
-      common / l / l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0,p_nk
+      common / l / l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0
       common / l / l_minx, l_maxx, l_miny, l_maxy
       common / l / l_dimmsg, l_dim2d, l_dim3d
       common / l / pil_n,pil_s,pil_w,pil_e,north,south,east,west

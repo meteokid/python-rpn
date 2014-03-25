@@ -13,25 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine itf_phy_gdef(local_id, global_id, gxfi, gyfi)
-   implicit none
-   integer,intent(out) :: local_id, global_id
-   real,intent(out) :: gxfi(*), gyfi(*)
-   integer :: local_core_id
-   call itf_phy_gdef2(local_core_id, local_id, global_id, gxfi, gyfi)
-   return
-end subroutine itf_phy_gdef
-
-
 !**s/r itf_phy_gdef
 !
-#include "model_macros_f.h"
-      subroutine itf_phy_gdef2(local_core_id, local_id, global_id, gxfi, gyfi)
+!#include "model_macros_f.h"
+      subroutine itf_phy_gdef4 ()
+      use hgrid_wb, only: hgrid_wb_put
       implicit none
 #include <arch_specific.hf>
-!
-      integer,intent(out) :: local_core_id, local_id, global_id
-      real,intent(out) :: gxfi(*), gyfi(*)
 !
 !author 
 !     Michel Ddesgagne  -  Spring 2010
@@ -42,47 +30,68 @@ end subroutine itf_phy_gdef
 #include "glb_ld.cdk"
 #include "hgc.cdk"
 #include "ptopo.cdk"
-!
+#include "itf_phy.cdk"
+
       integer,external ::  ezgdef_fmem
-      integer i,offi,offj,indx,lc_ni,lc_nj,lc_i0,lc_j0
-      real lxfi(l_ni),lyfi(l_nj)
+      integer i,offi,offj,indx,lc_ni,lc_nj,lc_i0,lc_j0,istat,offset, &
+           p_ni,p_nj,local_core_id,local_id,global_id
+      real lxfi(l_ni), lyfi(l_nj), gxfi(G_ni+1), gyfi(G_nj)
       real*8 rad2deg_8 
 !
 !     ---------------------------------------------------------------
 !
 ! Local grid
 !
-rad2deg_8 = 180.0d0/Acos(-1.d0)
-offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-Do i=1,l_ni
-   indx = offi + i
-   lxfi(i) = G_xg_8(indx)*rad2deg_8
-End Do
-Do i=1,l_nj
-   indx = offj + i
-   lyfi(i) = G_yg_8(indx)*rad2deg_8
-End Do
-local_id  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,&
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi , lyfi )
-
-lc_i0 = 1 + pil_w
-lc_j0 = 1 + pil_s
-lc_ni = l_ni - pil_w - pil_e
-lc_nj = l_nj - pil_s - pil_n
-local_core_id  = ezgdef_fmem (lc_ni , lc_nj , 'Z', 'E', Hgc_ig1ro,&
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi(lc_i0) , lyfi(lc_j0) )
+      rad2deg_8 = 180.0d0/Acos(-1.d0)
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+      Do i=1,l_ni
+         indx = offi + i
+         lxfi(i) = G_xg_8(indx)*rad2deg_8
+      End Do
+      Do i=1,l_nj
+         indx = offj + i
+         lyfi(i) = G_yg_8(indx)*rad2deg_8
+      End Do
+      local_id  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro,&
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi , lyfi )
+      istat = hgrid_wb_put('grid/dyn_local',local_id,F_i0=1,F_j0=1, &
+           F_lni=l_ni,F_lnj=l_nj)
+!
+! Local core grid
+!
+      lc_i0 = 1 + pil_w
+      lc_j0 = 1 + pil_s
+      lc_ni = l_ni - pil_w - pil_e
+      lc_nj = l_nj - pil_s - pil_n
+      local_core_id  = ezgdef_fmem (lc_ni , lc_nj , 'Z', 'E', Hgc_ig1ro,&
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi(lc_i0) , lyfi(lc_j0) )
+      istat = hgrid_wb_put('grid/dyn_lclcore',local_core_id,F_i0=lc_i0,F_j0=lc_j0, &
+           F_lni=lc_ni,F_lnj=lc_nj)
+!
+! Physics grid
+!
+      offset= 0 ; if (G_lam) offset= 2
+      p_li0 = 1 + offset*west  ; p_li1 = l_ni-offset*east
+      p_lj0 = 1 + offset*south ; p_lj1 = l_nj-offset*north
+      p_ni = p_li1 - p_li0 + 1
+      p_nj = p_lj1 - p_lj0 + 1
+      p_lgid  = ezgdef_fmem (p_ni , p_nj , 'Z', 'E', Hgc_ig1ro,&
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, lxfi(p_li0) , lyfi(p_lj0) )
+      istat = hgrid_wb_put(trim(P_LNAME_S),p_lgid,F_i0=p_li0,F_j0=p_lj0, &
+           F_lni=p_ni,F_lnj=p_nj)
 !
 ! Global grid
 !
-Do i=1,G_ni+1
-   gxfi(i) = G_xg_8(i)*rad2deg_8
-End Do
-Do i=1,G_nj
-   gyfi(i) = G_yg_8(i)*rad2deg_8
-End Do
-global_id = ezgdef_fmem (G_ni, G_nj , 'Z', 'E', Hgc_ig1ro,&
-                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi , gyfi )
+      Do i=1,G_ni+1
+         gxfi(i) = G_xg_8(i)*rad2deg_8
+      End Do
+      Do i=1,G_nj
+         gyfi(i) = G_yg_8(i)*rad2deg_8
+      End Do
+      global_id = ezgdef_fmem (G_ni, G_nj , 'Z', 'E', Hgc_ig1ro,&
+           Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi , gyfi )
+      istat = hgrid_wb_put('grid/dyn_global',global_id,F_lni=G_ni,F_lnj=G_nj)
 !
 !     ---------------------------------------------------------------
 !

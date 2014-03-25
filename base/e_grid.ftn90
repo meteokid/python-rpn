@@ -148,7 +148,7 @@
       G_xg_8 => xdx ; G_xg_8 => xdy
       l_north = .true. ; l_south = .true. ; l_east = .true. ; l_west = .true.
       l_ni = nifi ; l_nj = njfi ; l_nk = 1 ; l_niu = niu ; l_njv = niv
-      l_i0 = 1 ; l_j0 = 1 ; p_nk = 1
+      l_i0 = 1 ; l_j0 = 1 
       l_minx = 1 ; l_maxx = l_ni ; l_miny = 1 ; l_maxy = l_nj
       pil_w = 0 ; pil_n = 0 ; pil_e = 0 ; pil_s = 0
       north = 1 ; south = 1 ; east = 1 ; west = 1

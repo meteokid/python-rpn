@@ -15,9 +15,8 @@
 
 !**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
 !
-#include "model_macros_f.h"
-
       subroutine itf_phy_step (F_stepno, F_lctl_step)
+        use phy_itf, only: phy_input,phy_step
       implicit none
 #include <arch_specific.hf>
 !
@@ -45,116 +44,58 @@
 ! v4_05 - Desgagne M.       - Update AIX binding rules
 ! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
 ! v4_14 - Dugas B.          - Account for increment forcings
-!                           - dumpbus3 is now all done here
-!   
+!                           - dumpbus3 is now all done here  
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_stepno      O           step number
 !----------------------------------------------------------------
-!
-#include <rmnlib_basics.hf>
-#include <gmm.hf>
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
+
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "out3.cdk"
-#include "cstv.cdk"
-#include "rstr.cdk"
-#include "modconst.cdk"
 #include "path.cdk"
-#include "grd.cdk"
-#include "obus.cdk"
-#include "itf_phy_buses.cdk"
-
-      include "phy_itf.inc"
+#include "itf_phy.cdk"
 
       integer,external :: itf_phy_prefold_opr
 
-      character(len=512),save :: geofilename_S = ' '
-      logical,save :: init_L = .false.
-      integer,save :: lcore_phy_gid = -1, l_phy_gid = -1, g_phy_gid = -1
-      integer,save :: dateo = -1
-      integer,save :: phydim_nj=0, phydim_nk=0
-      integer,save :: reduc_core(4), reduc_free(4)
-      real,pointer,save :: BUSENT3d(:,:) => null()
-      real,pointer,save :: BUSPER3d(:,:) => null()
-      real,pointer,save :: BUSVOL3d(:,:) => null()
-
-      integer :: j, n, obussiz, err
-      real :: gxfi(G_ni+1), gyfi(G_nj), prip2
-      real, dimension(:,:), allocatable :: obusval
+      integer err
 !
 !     ---------------------------------------------------------------
 !
-      if (itf_phy_busper_init_L.and.(F_stepno.eq.0)) return
+      if ( p_user_busper_L .and. (F_stepno.eq.0) ) return
 
-      call timing_start ( 40, 'PHYSTEP')
+      call timing_start ( 40, 'PHYSTEP' )
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
-      !call pw_glbstat('DEBUG')
+      if (F_stepno == 0) call itf_phy_geom4 (err)
 
-      if (.not.init_L) then
-         call itf_phy_gdef2(lcore_phy_gid, l_phy_gid, g_phy_gid, gxfi, gyfi)
-         call datp2f(dateo,Mod_runstrt_S)
-         geofilename_S = 'GEOPHY/Gem_geophy.fst'
-         init_L = .true.
-         call phy_opti('NJ',phydim_nj,1,'GET',.false.,err)
-         call phy_opti('NK',phydim_nk,1,'GET',.false.,err)
-         err =     gmm_get ('BUSPER_3d',BUSPER3d)
-         err = min(gmm_get ('BUSENT_3d',BUSENT3d),err)
-         err = min(gmm_get ('BUSVOL_3d',BUSVOL3d),err)
-         call handle_error(err,'itf_phy_step','Probleme getting buses') 
-         reduc_core = (/ Grd_left+ 1 + Lam_pil_w         , &
-                         Grd_left + Grd_nila  - Lam_pil_e, &
-                         Grd_belo + 1         + Lam_pil_s, &
-                         Grd_belo + Grd_njla  - Lam_pil_n /)
-         if (.not.itf_phy_busper_init_L) call itf_phy_geom3 (l_phy_gid, err)
-      endif
+      !call pw_glbstat('DEBUG')
 
       call itf_phy_fillbus ()
 
-      !TODO: find other solution for inbloc - rpn_comm_bloc creates new 
-      ! communicator every call - we hit a limit after about 500 on AIX
+      call rpn_comm_bloc (Ptopo_ninblocx,Ptopo_ninblocy)
 
-      call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
-
-      err = phy_input2(itf_phy_prefold_opr,dateo, nint(cstv_dt_8)      , &
-                       F_stepno,lcore_phy_gid,l_phy_gid,Path_phyincfg_S, &
-                       Path_phy_S,geofilename_S)
-
+      err = phy_input ( itf_phy_prefold_opr, F_stepno, Path_phyincfg_S,&
+           Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
       call handle_error(err,'itf_phy_step','Problem with phy_input') 
 
-      call rpn_comm_bloc(Ptopo_nblocx  ,Ptopo_nblocy  )
+      call rpn_comm_bloc ( Ptopo_nblocx  ,Ptopo_nblocy )
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0)  )
-      call phy_step2 (F_stepno,F_lctl_step)
+
+      err = phy_step ( F_stepno, F_lctl_step )
+      call handle_error(err,'itf_phy_step','Problem with phy_step') 
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_stepno    .eq.0) )
 
       call itf_phy_update3 ( F_stepno > 0 )
 
-      if (out3_newout_L) then
-         err = phy_output(dateo,nint(cstv_dt_8),F_stepno,l_phy_gid,g_phy_gid,reduc_core,trim(Path_outcfg_S),Path_output_S)
+      call itf_phy_output2 (F_lctl_step)
 
-      else
-         call iniobus (obussiz)
-         allocate (obusval(l_ni*l_nj,obussiz))
-         obusval = 999999.
-         do n=1,Obus_top
-            call phy_unfold (obusval(1,obus_offset(n)), obus_var_S(n), &
-                             obus_bus_S(n), 1, obus_mult(n)          , &
-                             1,l_ni,1,l_nj,obus_mult(n))
-         end do
-         call itf_phy_output (obusval,l_ni,l_nj,F_lctl_step)
-         deallocate (obusval)
-      endif
-
-      call timing_stop ( 40, 'PHY      ' )
+      call timing_stop ( 40 )
 
  1001 format(/,'PHYSICS : PERFORMING TIMESTEP #',I9, &
              /,'========================================')

@@ -15,26 +15,22 @@
 
 !s/r rdrstrt_phy - Read the restart file restart_BUSPER_$date
 !
-#include "model_macros_f.h"
-!
       subroutine rdrstrt_phy ()
-!
       implicit none
-!
+#include <arch_specific.hf>
+
 !author
 !     M. Desgagne - Mars 2008
 !
 !revision
 ! v3_31 - Desgagne M.       - initial version
 ! v4_14 - Dugas B.          - account for increment forcing data
-!
-!implicits
-#include <arch_specific.hf>
+
 #include <clib_interface.cdk>
 #include <gmm.hf>
 #include "lun.cdk"
 #include "lctl.cdk"
-#include "itf_phy_buses.cdk"
+#include "physics.cdk"
 #include "grd.cdk"
 #include "cstv.cdk"
 #include "lam.cdk"
@@ -44,18 +40,15 @@
 #include "modconst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-#include "clim.cdk"
-#include "cfld.cdk"
 #include "step.cdk"
-!
-!modules
-      integer  fnom,fclos
-      external fnom,fclos
-!
+#include "itf_phy.cdk"
+
+      integer, external :: fnom,fclos
+
       character*512 fn
       character*16 datev,datev_infile,startindx
       logical spin_L,have_userbus_L,read_userbus_L
-      integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),gmmstat
+      integer dim,dim_infile,unf,ier,yela,tousla,ibuf(4),gmmstat,errcode
       real, pointer, dimension (:,:) :: BUSPER_3d  => null()
       real   rbuf(6)
       real*8 dayfrac, sec_in_day
@@ -68,13 +61,16 @@
       if ( .not. Schm_phyms_L ) return
 
 !     Basic setup for busper reading
-      itf_phy_busper_init_L = .false.
+
+      p_user_busper_L = .false.
       have_userbus_L = (clib_fileexist(trim(Path_input_S)//'/BUSPER.tar') == CLIB_OK .and. Step_kount == 0)
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
 
 !     Check for possible busper flavours and completeness
-      USERBUS: if (have_userbus_L) then
+
+      errcode= 0
+      if (have_userbus_L) then
 !        User has provided an input busper - make sure that it is complete
          write (startindx,'((i3.3),a1,(i3.3))') Ptopo_mycol,'-',Ptopo_myrow
          if (Grd_yinyang_L) then
@@ -83,26 +79,33 @@
             fn = '../busper/'//trim(startindx)//'/BUSPER4spinphy_'//trim(datev)
          endif
          if (Lun_out > 0) write(Lun_out,1000) trim(fn)
-         yela = clib_fileexist (trim(fn))
-         call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)
-      else
+         if (clib_fileexist (trim(fn)).lt.1) errcode= -1
+      endif
+
+      call gem_error (errcode,'rdrstrt_phy','Incomplete set of USER specified BUSPER4spinphy files')
+
+      if (.not. have_userbus_L) then
 !        Check for a valid restart busper, and return if none are found
          fn  = 'restart_BUSPER'
          yela= clib_fileexist (trim(fn))
          call rpn_comm_ALLREDUCE (yela,tousla,1,"MPI_INTEGER","MPI_SUM","grid",ier)
          if (tousla .eq. -Ptopo_numproc) return
-      endif USERBUS
-      call handle_error_l(tousla==Ptopo_numproc,'rdrstrt_phy','Incomplete set of restart files')     
+         if (yela.lt.1) errcode= -1
+      endif
+
+      call gem_error (errcode,'rdrstrt_phy','Incomplete set of restart_BUSPER files')
 
 !     Open the busper file and check the spinup switch for reading
       unf = 0
       ier = fnom ( unf,fn,'SEQ+UNF+OLD',0 )
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step,trim(fn)
+
+      errcode= -1
       read (unf,err=999) spin_L
 
 !     Read busper metadata and continue to read busper only if it matches current configuration
       if (spin_L) then
-         read (unf) ibuf,rbuf
+         read (unf,err=999) ibuf,rbuf
          call datf2p (datev_infile,ibuf(1))
          dim_infile = ibuf(2)
          gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta_busper)
@@ -123,14 +126,17 @@
          else
             read (unf,err=999) BUSPER_3d
          endif
+!        Successful read of busper
+         errcode= 0
+         p_user_busper_L = .true.
+      else
+         errcode= 0
       endif
 
-!     Successful read of busper
-      itf_phy_busper_init_L = .true.
-
 !     Shutdown and error handling
-999   ier = fclos(unf)  
-      call handle_error_l(itf_phy_busper_init_L,'rdrstrt_phy','cannot read physics restart correctly')
+999   ier = fclos(unf) 
+
+      call gem_error (errcode,'rdrstrt_phy','cannot read physics restart correctly')
 !
  1000 format(/,'FOUND USER BUSPER INPUT - NOW LOOKING FOR PE-SPECIFIC RESTART AT',x,a)
  2000 format(/,'READING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &

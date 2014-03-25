@@ -44,7 +44,6 @@
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "mem.cdk"
-#include "itf_phy_buses.cdk"
 #include "lctl.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
@@ -53,6 +52,8 @@
 #include "ens_param.cdk"
 !
 !modules
+
+      integer p_ni,p_nj,p_offi,p_offj
        integer, external :: read_db_file,write_db_file
        real,    external :: plgndr, ran1, gasdev
        integer, external :: fnom,fstouv,fstfrm,fclos
@@ -66,7 +67,7 @@
 !
       integer :: nlat, nlon, ntrunc, nmdim, mzt, ndim_tot, dgid_myp
       integer :: l ,m, mz, mzp, i, j, k, naloc, indx, ier, ii, jj
-      integer :: soit,lght,indx_n, gmmstat
+      integer :: soit,lght,indx_n, gmmstat, istat
       integer :: gdgem,gdgauss, keys(5), nmstrt, nm, n, mtrunc, ltrunc
       real    :: xmn, xmx, xme, std, aa, tau, ar, Ens_mc2d_mean
       real    :: xf,offi,offj
@@ -100,6 +101,13 @@
 !
 ! Initialise les variables de Ens_nml.cdk
 !
+
+! this routine cannot work anymore because p_ni,p_nj,p_offi,p_offj
+! are undefined
+
+      print*, 'STOP in ens_marfield'
+      stop
+
       xmn = Ens_mc3d_min ; xmx = Ens_mc3d_max
 !NG  Mean of the 3D Markov chains now always middle between min and max
       xme = (Ens_mc3d_min+Ens_mc3d_max)/2.
@@ -129,8 +137,12 @@
       INITIALIZE: if (.not.init_done) then
          if(Ens_ptp_conf)then
             bus = 'PER'
-            call phy_busindx ('MRKV', bus, mrkv, lght, soit)
-            call phy_busindx ('MRK2', bus, mrk2, lght, soit)
+            
+            print*, 'use phy_put instead'
+            stop
+            
+!!$            istat = phybusindx ('MRKV', bus, mrkv, lght, soit)
+!!$            istat = phybusindx ('MRK2', bus, mrk2, lght, soit)
          endif
          if (Lun_out.gt.0) then
             write( Lun_out,1000)

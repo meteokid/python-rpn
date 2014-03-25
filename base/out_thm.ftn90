@@ -381,20 +381,20 @@
             enddo
             enddo
          enddo
-         gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)            
-         if(.false.)then
-            do k= G_nk,1,-1
-               do j= 1,l_nj
-               do i= 1,l_ni
-                  gzt(i,j,k)= .5*(gzm(i,j,k)+gzm(i,j,k+1))
-               enddo
-               enddo
-            enddo
-         else
-            call vertint ( gzt,wlnph_ta,G_nk+1, gzm,wlnph_m,G_nk+1,&
-                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                        'linear', .false. )
-         endif
+         gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
+
+! This simple linear averaging deteriorates the GZ arcad scores
+!            do k= G_nk,1,-1
+!               do j= 1,l_nj
+!               do i= 1,l_ni
+!                  gzt(i,j,k)= .5*(gzm(i,j,k)+gzm(i,j,k+1))
+!               enddo
+!              enddo
+!            enddo
+
+         call vertint ( gzt, wlnph_ta,G_nk+1, gzm, wlnph_m,G_nk+1,&
+                        l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj,&
+                        'cubic', .false. )
 
          if (Out3_nundr.gt.0) then
             call out_liebman_old (ttx,htx,vt,gzt,fis0,wlao, &

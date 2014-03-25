@@ -67,7 +67,7 @@
 #include "ver.cdk"
 #include "lun.cdk"
 
-      integer i, j, k, km,kq, i0u, inu, j0v, jnv, nij, k0t
+      integer i, j, k, km,kq, i0u, inu, j0v, jnv, nij, k0t, onept
       real    w_nt
       real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,qbar,ndiv, &
               w1,w2,w3,w4,w5,barz, barzp, wk2(DIST_SHAPE)
@@ -112,9 +112,11 @@
       if(Schm_opentop_L) k0t=k0-1
       nij = (in - i0 +1)*(jn - j0 +1)
 
-      explicit = 0.d0
-      if (Schm_angular_displacement_L) explicit = one
+      onept= 0
+      if(Grd_yinyang_L) onept=1
 
+      explicit= 0.d0
+      if (Schm_angular_displacement_L) explicit= one
 !
 !
 !***********************************************************
@@ -122,18 +124,16 @@
 !***********************************************************
 !
 !     Indices
+
       i0u = i0-1
       j0v = j0-1
-      if(.not.Grd_yinyang_L) then
-         if (l_west .and. G_lam) i0u=i0
-         if (l_south)            j0v=j0
-      endif
       inu = l_niu-pil_e
       jnv = l_njv-pil_n
-      if (Grd_yinyang_L) then
-          if (l_east)  inu = inu+1
-          if (l_north) jnv = jnv+1
-      endif
+
+      if (l_west.and.G_lam) i0u=i0 -onept
+      if (l_south)          j0v=j0 -onept
+      if (l_east )          inu=inu+onept
+      if (l_north)          jnv=jnv+onept
 !
       call diag_fi (FI, F_s, F_t, F_q, F_fis, LDIST_DIM, l_nk, &
                     i0u,inu+1,j0v,jnv+1)

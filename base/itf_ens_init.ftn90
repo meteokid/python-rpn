@@ -20,7 +20,7 @@
       subroutine itf_ens_init
       implicit none
 #include <arch_specific.hf>
-!
+
 !     author   
 !     Lubos Spacek - December 2009
 !     
@@ -29,60 +29,45 @@
 ! v4.4.0 - Gagnon N.       - Remove ptp_env_hor_f and add ptp_cape and ptp_tlc
 ! v4.5.0 - Gagnon N.       - Add ptp_crit_w and ptp_fac_reduc 
 !                          - Add else for non-ensemble case
-!
-!object
-!	See above ID.
-!
-!arguments
-!	none
-!
+
+#include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "path.cdk"
 #include "grd.cdk"
-!
+
       integer, external :: ens_nml
-      integer           :: ierr(9), imrkv2
+      integer           :: imrkv2, ier, err
       real              :: ptp_env_u, ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc
-      logical           :: ens_conf,stochphy, prout
+      logical           :: ens_conf, stochphy
 !
 !-------------------------------------------------------------------
 !
 ! Read the namelist
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
-!
-      ierr=0
 
-      ierr(1) = ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u,ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc,Lun_out)
-      call handle_error(ierr(1),'itf_ens_init','Problem with ens_nml')
-      if (ens_conf) then
-         prout = Lun_out.gt.0
-         call phy_opti('IMRKV2'     , imrkv2        ,1,'SET',prout,ierr(2))
-         call phy_optl('STOCHPHY'   , stochphy      ,1,'SET',prout,ierr(3))
-         call phy_optr('PTPENVU'    , ptp_env_u     ,1,'SET',prout,ierr(4))
-         call phy_optr('PTPENVB'    , ptp_env_b     ,1,'SET',prout,ierr(5))
-         call phy_optr('PTPCAPE'    , ptp_cape      ,1,'SET',prout,ierr(6))
-         call phy_optr('PTPTLC'     , ptp_tlc       ,1,'SET',prout,ierr(7))
-         call phy_optr('PTPCRITW'   , ptp_crit_w    ,1,'SET',prout,ierr(8))
-         call phy_optr('PTPFACREDUC', ptp_fac_reduc ,1,'SET',prout,ierr(9))
-         ierr(2) = min(ierr(2),ierr(3), ierr(4), ierr(5), ierr(6))
-         ierr(2) = min(ierr(2),ierr(7),ierr(8),ierr(9))
-         call handle_error(ierr(2),'itf_ens_init','physics initialization')
+      err= ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u, &
+                    ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc,Lun_out)
+      call handle_error(err,'itf_ens_init','Problem with ens_nml')
+
+      ier= WB_OK
+      ier= min(wb_put('phy/IMRKV2'     , imrkv2       , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/STOCHPHY'   , stochphy     , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPENVU'    , ptp_env_u    , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPENVB'    , ptp_env_b    , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPCAPE'    , ptp_cape     , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPTLC'     , ptp_tlc      , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPCRITW'   , ptp_crit_w   , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('phy/PTPFACREDUC', ptp_fac_reduc, WB_REWRITE_MANY),ier)
+      err=0
+      if (.not.WB_IS_OK(ier)) err= -1
+      call handle_error(err,'itf_ens_init','Problem with WB_put')
+
+      if (ens_conf) &
          call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
                            LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)
-      else
-         prout = Lun_out.gt.0
-         call phy_opti('IMRKV2'     , imrkv2        ,1,'SET',prout,ierr(2))
-         call phy_optl('STOCHPHY'   , stochphy      ,1,'SET',prout,ierr(3))
-         call phy_optr('PTPENVU'    , ptp_env_u     ,1,'SET',prout,ierr(4))
-         call phy_optr('PTPENVB'    , ptp_env_b     ,1,'SET',prout,ierr(5))
-         call phy_optr('PTPCAPE'    , ptp_cape      ,1,'SET',prout,ierr(6))
-         call phy_optr('PTPTLC'     , ptp_tlc       ,1,'SET',prout,ierr(7))
-         call phy_optr('PTPCRITW'   , ptp_crit_w    ,1,'SET',prout,ierr(8))
-         call phy_optr('PTPFACREDUC', ptp_fac_reduc ,1,'SET',prout,ierr(9))
-      endif
-!
+
  1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))
 !
 !-------------------------------------------------------------------

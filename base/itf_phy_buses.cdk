@@ -1,6 +1,0 @@
-
-      logical itf_phy_busper_init_L
-      integer p_ni,p_nj,p_offi,p_offj,p_doni,p_donj
-
-      common / p_bus_l /itf_phy_busper_init_L
-      common / p_bus / p_ni,p_nj,p_offi,p_offj,p_doni,p_donj

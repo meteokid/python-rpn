@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !/**
       subroutine itf_phy_update3 (F_apply_L)
+      use phy_itf, only: phy_get
       implicit none
 #include <arch_specific.hf>
 
@@ -28,33 +29,36 @@
 #include "grd.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
+#include "pw.cdk"
+#include "itf_phy.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
       integer nelements, init, busidx, istat, k, cnt
-      real, pointer :: data3d(:,:,:), minus(:,:,:)
+      real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
 !
 !-----------------------------------------------------------------
 !
+
    APPLY: if (F_apply_L) then
 
       do k=1, Tr3d_ntr
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
          istat = gmm_get(trim(trname_S),data3d)
-         call phy_unfold (data3d, trim(trname_S), 'D', 1, l_nk, &
-                          l_minx, l_maxx, l_miny, l_maxy, l_nk)
+         ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
+         istat = phy_get(ptr3d,trim(trname_S),F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
       enddo
 
-      istat = gmm_get ('PW_UU:P',data3d)
-      call phy_unfold (data3d, 'PW_UU:P', 'D', 1, l_nk, &
-                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+      istat = gmm_get (gmmk_pw_uu_plus_s,data3d)
+      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
+      istat = phy_get(ptr3d,gmmk_pw_uu_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
 
-      istat = gmm_get ('PW_VV:P',data3d)
-      call phy_unfold (data3d, 'PW_VV:P', 'D', 1, l_nk, &
-                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+      istat = gmm_get (gmmk_pw_vv_plus_s,data3d)
+      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
+      istat = phy_get(ptr3d,gmmk_pw_vv_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
 
-      istat = gmm_get ('PW_TT:P',data3d)
-      call phy_unfold (data3d, 'PW_TT:P', 'D', 1, l_nk, &
-                       l_minx, l_maxx, l_miny, l_maxy, l_nk)
+      istat = gmm_get (gmmk_pw_tt_plus_s,data3d)
+      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
+      istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
 
       call itf_phy_apply2 ()
 

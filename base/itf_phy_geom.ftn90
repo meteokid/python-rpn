@@ -16,13 +16,13 @@
 #include <model_macros_f.h>
 
 !/**
-subroutine itf_phy_geom3 (F_phy_gid, F_istat)
+subroutine itf_phy_geom4 (F_istat)
    use nest_blending, only: nest_blend
    implicit none
 #include <arch_specific.hf>
    !@objective
    !@argument
-   integer,intent(out) :: F_istat, F_phy_gid
+   integer,intent(out) :: F_istat
    !@author Michel Desgagne    -   Spring 2011
    !@revision
    !  2012-04, S.Chamberland - no more a callback, data in GMM (not in bus)
@@ -37,15 +37,12 @@ subroutine itf_phy_geom3 (F_phy_gid, F_istat)
 #include "p_geof.cdk"
 #include "dcst.cdk"
 #include "lam.cdk"
-      include "phy_itf.inc"
-
-   integer,external :: itf_phy_prefold_opr
 
    logical :: nest_it
    integer :: i,j,istat
    real,pointer :: wrk1(:,:)
+   real(kind=8) :: deg2rad_8
    real :: w1(LDIST_SHAPE,2),w2(LDIST_SHAPE,2)
-   real*8 :: deg2rad_8
    type(gmm_metadata) :: mymeta
    !---------------------------------------------------------------
    F_istat = RMN_OK
@@ -62,7 +59,7 @@ subroutine itf_phy_geom3 (F_phy_gid, F_istat)
       wrk1 = deg2rad_8*Geomn_latrx
    else
       F_istat = RMN_ERR
-      call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating DLAT')
+      call msg(MSG_ERROR,'(itf_phy_geom) Problem creating DLAT')
    endif
 
    nullify(wrk1)
@@ -75,17 +72,8 @@ subroutine itf_phy_geom3 (F_phy_gid, F_istat)
       endwhere
    else
       F_istat = RMN_ERR
-      call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating DLON')
+      call msg(MSG_ERROR,'(itf_phy_geom) Problem creating DLON')
    endif
-
-   nullify(wrk1)
-   istat = gmm_create('MF',wrk1,mymeta)
-   istat = min(gmm_get(gmmk_fis0_s,fis0),istat)
-   if (.not.RMN_IS_OK(istat)) then
-      F_istat = RMN_ERR
-      call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating MF')
-   endif
-   wrk1(1:l_ni,1:l_nj) = fis0(1:l_ni,1:l_nj) / Dcst_grav_8
 
    nullify(wrk1)
    istat = gmm_create('DXDY',wrk1,mymeta)
@@ -98,7 +86,7 @@ subroutine itf_phy_geom3 (F_phy_gid, F_istat)
       end do
    else
       F_istat = RMN_ERR
-      call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating DXDY')
+      call msg(MSG_ERROR,'(itf_phy_geom) Problem creating DXDY')
    endif
 
    nullify(wrk1)
@@ -111,13 +99,12 @@ subroutine itf_phy_geom3 (F_phy_gid, F_istat)
          w2 = 0.
          call nest_blend (w1(:,:,1),w2(:,:,1),LDIST_DIM,'M',level=G_nk+1)
       endif
-      wrk1(1:l_ni,1:l_nj) = w1(1:l_ni,1:l_nj,1)
-      F_istat= phy_geom2phy (itf_phy_prefold_opr,nint(Cstv_dt_8),F_phy_gid)
+      wrk1(1:l_ni,1:l_nj) = Cstv_dt_8 * w1(1:l_ni,1:l_nj,1)
    else
       F_istat= RMN_ERR
-      call msg(MSG_ERROR,'(itf_phy_geom) Probleme creating TDMASK')
+      call msg(MSG_ERROR,'(itf_phy_geom) Problem creating TDMASK')
    endif
 
    !---------------------------------------------------------------
    return
-end subroutine itf_phy_geom3
+end subroutine itf_phy_geom4

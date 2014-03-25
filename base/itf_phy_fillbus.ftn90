@@ -17,13 +17,13 @@
       subroutine itf_phy_fillbus
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne - SUmmer 2013
 !
 !revision
 ! v4_70 - Desgagne, M.     - initial version
-!
+
 #include <gmm.hf>
 #include <msg.h>
 
@@ -31,7 +31,7 @@
       real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
 !     ________________________________________________________________
 !
-      call phy_fillbus
+! Take a copy of PW_UU and PW_VV
 
       istat_src = gmm_get('PW_UU:P'   ,tr    )
       istat_dst = gmm_get('PW_UU_COPY',trcopy)

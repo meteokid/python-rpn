@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine set_sor()
+      use phy_itf, only: phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
 !
@@ -75,27 +76,24 @@
 #include "path.cdk"
       include "rpn_comm.inc"
 !
-      integer,external :: srequet,phy_getindx3
+      integer,external :: srequet
 
-      integer,parameter :: BUSPAR_I0=1  , BUSPAR_NIK=2   , BUSPAR_INIT=3,&
-                           BUSPAR_STAG=4, BUSPAR_ESP=5   , BUSPAR_FMUL=6,&
-                           BUSPAR_NK=7  , BUSPAR_MOSAIC=8,               &
-                           BUSPAR_MAXPAR=8, NBUS = 3
+      integer,parameter :: NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
                   (/'Entry    ', 'Permanent', 'Volatile '/)
 
       character*5 blank_S
       character*8 unit_S
       character*256 fn
-      character(len= 1) :: bus_S
-      character(len=32) :: varname_S,outname_S,inname_S,bus0_S
+      character(len=32) :: varname_S,outname_S,bus0_S
       logical iela
       integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic, noutpe
       integer, dimension (4,2) :: ixg, ixgall
-      integer istat,index,param(BUSPAR_MAXPAR),options
+      integer istat,options
       integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
       integer, dimension (:,:), allocatable :: comyy
       real, dimension (4,2) :: rot, rotall
+      type(phymeta) :: pmeta
 !
 !-------------------------------------------------------------------
 !
@@ -219,25 +217,17 @@
             endif
             do k=1, Outp_sets
                do j=1,Outp_var_max(k)
-                  varname_S = Outp_varnm_S(j,k)
-                  outname_S = ' '
-                  inname_S = ' '
-                  bus_S = bus0_S(1:1)
-                  istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
-                  if (.not.RMN_IS_OK(istat)) then
-                     varname_S = ' '
-                     outname_S = Outp_varnm_S(j,k)
-                     inname_S = ' '
-                     bus_S = bus0_S(1:1)
-                     istat = phy_getindx3(varname_S,outname_S,inname_S,bus_S,index,param,BUSPAR_MAXPAR)
-                  endif
+                  istat = phy_getmeta(pmeta,Outp_varnm_S(j,k),F_npath='VO', &
+                       F_bpath=bus0_S(1:1),F_quiet=.true.)
                   if (.not.RMN_IS_OK(istat)) then
                      cycle
                   endif
+                  varname_S = pmeta%vname
+                  outname_S = pmeta%oname
                   istat = clib_toupper(varname_S)
                   istat = clib_toupper(outname_S)
                   Outp_var_S(j,k) = outname_S
-                  multxmosaic = max(multxmosaic,param(BUSPAR_FMUL)*(param(BUSPAR_MOSAIC)+1))
+                  multxmosaic = max(multxmosaic,pmeta%fmul*(pmeta%mosaic+1))
                   cnt = cnt+1
                   if (Lun_out.gt.0) write(Lun_out,1007) &
                        outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &

@@ -54,7 +54,7 @@
 ! v4_40 - Qaddouri/Lee      - Exchange and interp winds between Yin, Yang
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !                           - Explicit integration of metric terms (optional)
-!
+
 #include "glb_ld.cdk"
 #include "cori.cdk"
 #include "cstv.cdk"
@@ -67,8 +67,8 @@
 #include "ver.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
-!
-      integer i, j, k, km, kq, i0, j0, in, jn, nij
+
+      integer i, j, k, km, kq, i0, j0, in, jn, nij, jext, onept
       real*8  c1,c2,c3, tdiv, BsPqbarz, fipbarz, &
               wk1(DIST_SHAPE), wk2(DIST_SHAPE), barz, barzp, &
               xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
@@ -76,7 +76,9 @@
       real, dimension(:,:,:), allocatable :: BsPq, FIp, MU
 
       real*8, parameter :: one=1.d0
-
+!
+!     ---------------------------------------------------------------
+!      
       if (Lun_debug_L) write (Lun_out,1000)
 
       allocate(BsPq(DIST_SHAPE,l_nk+1), FIp(DIST_SHAPE,l_nk+1), MU(DIST_SHAPE,l_nk))
@@ -90,8 +92,12 @@
 !
       if (schm_autobar_L)    c3 = 0.d0
 
-      explicit = 0.d0
-      if (Schm_angular_displacement_L) explicit = one
+      explicit= 0.d0
+      if (Schm_angular_displacement_L) explicit= one
+
+      jext = Grd_bsc_ext1
+      onept= 0
+      if(Grd_yinyang_L) onept= 1
 !
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,10 +156,10 @@
       j0 = 1
       jn = l_nj
       if (G_lam) then
-         if (l_west ) i0 = 2
-         if (l_east ) in = l_niu-1
-         if (l_south) j0 = 3
-         if (l_north) jn = l_njv-1
+         if (l_west ) i0 = 2+jext
+         if (l_east ) in = l_niu-1-jext
+         if (l_south) j0 = 3+jext
+         if (l_north) jn = l_njv-1-jext
       endif
 
 !     Compute (1 + MU) barXZ in wk1
@@ -245,10 +251,10 @@
       j0 = 1
       jn = l_njv
       if (G_lam) then
-         if (l_west ) i0 = 3
-         if (l_east ) in = l_niu-1
-         if (l_south) j0 = 2
-         if (l_north) jn = l_njv-1
+         if (l_west ) i0 = 3+jext
+         if (l_east ) in = l_niu-1-jext
+         if (l_south) j0 = 2+jext
+         if (l_north) jn = l_njv-1-jext
       endif
 
 !     Compute (1 + MU) barYZ in wk1
@@ -332,12 +338,12 @@
       j0 = 1
       in = l_ni
       jn = l_nj
-      if (G_lam.and.(.not.Grd_yinyang_L)) then
+      if (G_lam) then
          xtmp_8(:,:)=1.0D0
-         if (l_west)  i0 = 4
-         if (l_east)  in = l_niu-2
-         if (l_south) j0 = 4
-         if (l_north) jn = l_njv-2
+         if (l_west)  i0 = 4+jext-onept
+         if (l_east)  in = l_niu-2-jext+onept
+         if (l_south) j0 = 4+jext-onept
+         if (l_north) jn = l_njv-2-jext+onept
       endif
 !
 !********************************************
@@ -442,12 +448,12 @@
       j0 = 1
       in = l_ni
       jn = l_nj
-      if (G_lam.and.(.not.Grd_yinyang_L)) then
+      if (G_lam) then
          xtmp_8(:,:)=1.0D0
-         if (l_west)  i0 = 4
-         if (l_east)  in = l_niu-2
-         if (l_south) j0 = 4
-         if (l_north) jn = l_njv-2
+         if (l_west)  i0 = 4+jext-onept
+         if (l_east)  in = l_niu-2-jext+onept
+         if (l_south) j0 = 4+jext-onept
+         if (l_north) jn = l_njv-2-jext+onept
       endif
 
 !$omp do
@@ -516,6 +522,8 @@
       deallocate(BsPq,FIp,MU)
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
-
+!
+!     ---------------------------------------------------------------
+!      
       return
       end

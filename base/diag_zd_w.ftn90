@@ -53,7 +53,6 @@
 !
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "zdot.cdk"
@@ -218,10 +217,6 @@
             end do
          end do
 
-         if (Grd_yinyang_L) &
-         call yyg_xchng (F_zd, l_minx,l_maxx,l_miny,l_maxy, Nk,&
-                         .false., 'CUBIC')
-
       endif
 
 !     CALCULATION of W
@@ -250,10 +245,6 @@
             end do
             end do
          end do
-
-         if (Grd_yinyang_L) &
-         call yyg_xchng (F_w, l_minx,l_maxx,l_miny,l_maxy, Nk,&
-                         .false., 'CUBIC')
 
       endif
 

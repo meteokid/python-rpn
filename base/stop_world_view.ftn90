@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine stop_world_view
+      use phy_itf, only: phy_terminate
       implicit none
 #include <arch_specific.hf>
 !
@@ -44,7 +45,6 @@
 #include "step.cdk"
 #include "version.cdk"
 #include <clib_interface.cdk>
-      include "phy_itf.inc"
 !
       integer, external :: exfin, longueur
 !
@@ -54,7 +54,7 @@
 !
 !-------------------------------------------------------------------
 !
-      if (Schm_phyms_L) call phy_terminate
+      if (Schm_phyms_L) err = phy_terminate()
 
       continue_L= (Lctl_step.lt.Step_total)
 

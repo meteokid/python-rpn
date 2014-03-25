@@ -56,13 +56,7 @@
 ! v4_05 - Girard C.         - Open top
 ! v4_40 - Qaddouri/Lee      - expand range of calculation for Yin-Yang only
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!
-!object
-!
-!arguments
-!     see appropriate comdeck documentation
-!
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "lam.cdk"
@@ -76,17 +70,15 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-!
-!modules
+
       integer i, j, k,km , i0, i0u, j0, j0v, k0, k0t, in, inu, jn, jnv, onept
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, rdiv, cosy_d, secy_d, &
               a1,a2,a3,a4,b1,b2,b3,b4,www,xxx,yyy,zzz
       real    w_rt
-!
       real*8, parameter :: zero=0.d0, one=1.d0
-!*
-!     __________________________________________________________________
 !
+!     ---------------------------------------------------------------
+!  
       if (Lun_debug_L) write (Lun_out,1000)
 !
       a1 = Dcst_cappa_8 / Cstv_RTstr_8
@@ -251,16 +243,13 @@
 !
       i0u = i0-1
       j0v = j0-1
-      if(.not.Grd_yinyang_L) then
-         if (l_west .and. G_lam) i0u=i0
-         if (l_south)            j0v=j0
-      endif
       inu = l_niu-pil_e
       jnv = l_njv-pil_n
-      if (Grd_yinyang_L) then
-         if (l_east)  inu=inu + 1
-         if (l_north) jnv=jnv + 1
-      endif
+
+      if (l_west.and.G_lam) i0u=i0-onept
+      if (l_south)          j0v=j0-onept
+      if (l_east )          inu=inu+onept
+      if (l_north)          jnv=jnv+onept
 
       F_rv(:,0   ,:) = 0.
       F_rv(:,l_nj,:) = 0.
@@ -454,7 +443,7 @@
 
 1000  format(3X,'PRE-COMPUTATION FOR THE HELMHOLTZ PROBLEM: (S/R PRE)')
 !
-!     __________________________________________________________________
-!
+!     ---------------------------------------------------------------
+!  
       return
       end

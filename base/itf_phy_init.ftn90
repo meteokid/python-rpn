@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine itf_phy_init
+      use phy_itf, only: PHY_COMPATIBILITY_LVL,phy_nml,phy_init
       implicit none
 
 !author
@@ -42,21 +43,16 @@
 #include "schm.cdk"
 #include "out3.cdk"
 #include "cstv.cdk"
-#include "itf_phy_buses.cdk"
 #include "step.cdk"
 #include "ver.cdk"
 #include "path.cdk"
 #include "tr3d.cdk"
+#include "itf_phy.cdk"
 
-      integer, parameter :: COMPATIBILITY_LVL = 5
+      integer, parameter :: COMPATIBILITY_LVL = 6
 
-      logical,external :: set_dcst
-      integer,external :: phy_nml, phy_init, phy_compatibility
-      external :: getijlalo, itf_phy_rdfile
-
-      logical prout,cond_satu_L, phyms_L
-      integer phycompa, offset, dateo, err(10), offi2, offj2
-      real, dimension(:), pointer :: std_p_prof
+      logical prout, cond_satu_L
+      integer offset, dateo, err
 !
 !     ---------------------------------------------------------------
 !
@@ -65,7 +61,6 @@
       if (Lun_out.gt.0) write(Lun_out,1000)
 
       prout= Lun_out.gt.0 ! for print/write statements in stdout
-      err  = 0
 
       if ( Schm_theoc_L) then
          if (Lun_out.gt.0) write(Lun_out,9500)
@@ -74,76 +69,55 @@
 
 ! Important compatibility level check
 
-      phycompa = phy_compatibility ()
-      if ( phycompa .ne. COMPATIBILITY_LVL ) then
-         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL, phycompa
-         err(1) = -1
+      err = 0
+      if ( PHY_COMPATIBILITY_LVL .ne. COMPATIBILITY_LVL ) then
+         if (Lun_out.gt.0) write(Lun_out,9001) COMPATIBILITY_LVL, PHY_COMPATIBILITY_LVL
+         err = -1
       else
          if (Lun_out.gt.0) write(Lun_out,1002) COMPATIBILITY_LVL
       endif
-      call handle_error ( phycompa,'itf_phy_init', &
-                         'Wrong physics compatibility level')
+      call handle_error ( err,'itf_phy_init','Wrong physics compatibility level')
 
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelists from file 'model_settings'
 
-      err(1) = phy_nml (trim(Path_nml_S), set_dcst, phyms_L, Lun_out)
+      err= WB_OK
+      err= min(phy_nml ( trim(Path_nml_S), Lun_out ), err)
 
-! We set mandatory variables that cannot be set via the namelist
+! We put mandatory variables in the WhiteBoard
 
-      call phy_optl ('VSTAG'   , .true.     , 1, 'SET',prout,err(2))
-      call phy_opti ('TLIFT'   , Schm_Tlift , 1, 'SET',prout,err(3))
-      call phy_optl ('COUPLING', .false.    , 1, 'SET',prout,err(4))
-
-! Provide a list of tracer variables read by the entry
-
-      err(5) = wb_put('itf_phy/READ_TRACERS', Tr3d_username_S(1:Tr3d_userntr))
-
-      call handle_error(minval(err),'itf_phy_init','phy_nml or phy_optl_SET or wb_put')
-
-! Because of horizontal de-staggering of the wind components
-! we will lose 2 points around the global domain of a LAM config.
-! In LAM config, data will therefore be available to the physics
-! with the global scope (3,G_ni-2) (3,G_nj-2)
-
-      offset= 0 ; if (G_lam) offset= 2
-
-      p_offi = offset*west  ; offi2 = offset*east
-      p_offj = offset*south ; offj2 = offset*north
+      err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
+      err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
+      err= min(wb_put('itf_phy/COUPLING'    , .false.   ), err)
+      err= min(wb_put('itf_phy/READ_TRACERS', Tr3d_username_S(1:Tr3d_userntr)), err)
+      if (.not.WB_IS_OK(err)) then
+         call msg(MSG_ERROR,'(itf_phy_init) Problem with WB_put or phy_nml')
+         return
+      endif
       
 ! Complete physics initialization (see phy_init for interface content)
 
-      p_nk  = G_nk + 1
-
-      allocate(std_p_prof(p_nk))
-      std_p_prof= Ver_std_p_prof%m
-
-      call datp2f ( dateo, Step_runstrt_S)
-
-      err(1)= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8)       , &
-                         1+p_offi,l_ni-offi2, 1+p_offj, l_nj-offj2, &
-                         p_nk, std_p_prof, getijlalo)
-
-      deallocate (std_p_prof)
-
-      call handle_error(err(1),'itf_phy_init','phy_init3')
+      p_nk = G_nk+1
+      call itf_phy_gdef4 ( )
+      call datp2f   ( dateo, Step_runstrt_S)
+      err= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8),P_LNAME_S, &
+           'grid/dyn_lclcore', p_nk, Ver_std_p_prof%m)
+      call handle_error ( err, 'itf_phy_init', 'phy_init' )
 
 ! The current physics interface operate on an arbitrary number of
-! columns p_ni containing p_nk levels. Here p_ni is defined as a
+! columns p_ni containing G_nk+1 levels. Here p_ni is defined as a
 ! whole row of points 'j' and there will be p_nj rows to compute
 ! P_ni & p_nj are a function of the running length p_runlgt
 
-      err = 0
-      call phy_opti('NI', p_ni, 1,'GET', .false., err(1))
-      call phy_opti('NJ', p_nj, 1,'GET', .false., err(2))
+      err= WB_OK
+      err= min(wb_get('phy/satuco', cond_satu_L), err)
 
-      p_doni = l_ni - p_offi - offi2
-      p_donj = l_nj - p_offj - offj2
+      if (.not.WB_IS_OK(err)) then
+         call msg(MSG_ERROR,'(itf_phy_init) Problem with WB_get')
+         return
+      endif
 
-      call phy_optl('SATUCO', cond_satu_L, 1, 'GET',prout,err(3))
-      call handle_error(minval(err),'itf_phy_init','phy_opt_GET')
-
-      ! Consistency check for saturation calculations
+! Consistency check for saturation calculations
       if (Out3_satues_L .and. .not.cond_satu_L) then
           Out3_satues_L = .false.
           if (Lun_out.gt.0) write(Lun_out,9600)

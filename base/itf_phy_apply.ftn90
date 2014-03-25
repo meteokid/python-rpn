@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine itf_phy_apply2
+      use phy_itf, only: phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
 !
@@ -44,21 +45,18 @@
 ! v4_06 - Lepine M.         - VMM replacement with GMM
 ! v4.7  - Gaudreault S.     - Removing wind images
 !
-#include "gmm.hf"
+#include <rmnlib_basics.hf>
+#include <gmm.hf>
 #include "glb_ld.cdk"
-#include "schm.cdk"
-#include "geomg.cdk"
 #include "vt1.cdk"
-#include "p_geof.cdk"
 #include "pw.cdk"
 
       logical,save :: init_L = .false.
-      integer,save :: UU_indx=0, VV_indx=0, TT_indx=0
+      logical,save :: have_UU,have_VV,have_TT
 
-      type(gmm_metadata) :: mymeta
-      integer i, j, k, km1,istat,lght, soit
-      real tdu(LDIST_SHAPE,G_nk),tdv(LDIST_SHAPE,G_nk)
-      character(len=3) :: bus_S
+      integer :: j,k,istat
+      real, dimension(LDIST_SHAPE,G_nk) :: tdu,tdv
+      type(phymeta) :: pmeta
 !     __________________________________________________________________
 !
 ! In LAM config: physics tendencies are valid on the global scope
@@ -68,25 +66,24 @@
 ! physics tendencies on V  with the scope (3,G_ni-2) (4,G_nj-4).
 !
       if (.not.init_L) then
-         bus_S = 'VOL'
-         call phy_busindx ('PHYTD_UU', bus_S, UU_indx, lght, soit)
-         call phy_busindx ('PHYTD_VV', bus_S, VV_indx, lght, soit)
-         call phy_busindx ('PHYTD_TT', bus_S, TT_indx, lght, soit)
+         have_UU = RMN_IS_OK(phy_getmeta(pmeta,'PHYTD_UU',F_npath='V',F_bpath='V'))
+         have_VV = RMN_IS_OK(phy_getmeta(pmeta,'PHYTD_VV',F_npath='V',F_bpath='V'))
+         have_TT = RMN_IS_OK(phy_getmeta(pmeta,'PHYTD_TT',F_npath='V',F_bpath='V'))
          init_L = .true.
       endif
 
-      if (TT_indx.gt.0) then
-         istat = gmm_get(gmmk_tt1_s, tt1, mymeta)
+      if (have_TT) then
+         istat = gmm_get(gmmk_tt1_s, tt1)
          call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy,l_nk)
       endif
 
-      if ((UU_indx.gt.0) .and. (VV_indx.gt.0)) then
-         istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-         istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-         istat = gmm_get('PW_UU:P'   ,pw_uu_plus,mymeta)
-         istat = gmm_get('PW_VV:P'   ,pw_vv_plus,mymeta)
-         istat = gmm_get('PW_UU_COPY',pw_uu_copy,mymeta)
-         istat = gmm_get('PW_VV_COPY',pw_vv_copy,mymeta)
+      if (have_UU .and. have_VV) then
+         istat = gmm_get(gmmk_ut1_s,ut1)
+         istat = gmm_get(gmmk_vt1_s,vt1)
+         istat = gmm_get('PW_UU:P'   ,pw_uu_plus)
+         istat = gmm_get('PW_VV:P'   ,pw_vv_plus)
+         istat = gmm_get('PW_UU_COPY',pw_uu_copy)
+         istat = gmm_get('PW_VV_COPY',pw_vv_copy)
 
 !$omp parallel private(j)
 !$omp do

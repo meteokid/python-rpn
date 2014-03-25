@@ -71,15 +71,6 @@
 
 !$omp do
       do k=1,l_nk+1
-         if (k.eq.1)then
-            pw_pm_plus(:,:,0) = Cstv_ptop_8
-            ! This is not used it think
-            do j=1,l_nj
-            do i=1,l_ni
-               pw_pt_plus(i,j,0) = 0.5d0*(Cstv_ptop_8+Ver_a_8%m(1)+Ver_b_8%m(1)*st1(i,j))
-            enddo
-            enddo
-         endif
          do j=1,l_nj
          do i=1,l_ni
             wk1(i,j,1) = Ver_a_8%m(k) + Ver_b_8%m(k) * st1(i,j)
@@ -96,10 +87,10 @@
       do k=1,l_nk
          pw_ww_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= fip(1:l_ni,1:l_nj,k) + &
-                        Ver_fistr_8%m(k)-fis0(1:l_ni,1:l_nj)
+                        Ver_fistr_8%m(k)
       end do
 !$omp enddo
-      
+      pw_gz_plus(1:l_ni,1:l_nj,l_nk+1)= fis0(1:l_ni,1:l_nj)
 
 !$omp do
       do j= 1, l_nj

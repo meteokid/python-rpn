@@ -14,21 +14,25 @@
 !---------------------------------- LICENCE END ---------------------------------
 !/**
       subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, F_var_S)
+      use phy_itf, only: phy_get
       implicit none
 #include <arch_specific.hf>
 
    !@objective
    !@arguments
-      character*(*) F_var_S
-      integer  minx, maxx, miny, maxy
-      real F_dest(minx:maxx, miny:maxy)
+      character(len=*) :: F_var_S
+      integer :: minx, maxx, miny, maxy
+      real, dimension(minx:maxx,miny:maxy,1), target :: F_dest
    !@author  Michel Desgagne  -  Summer 2013
    !**/
+#include "itf_phy.cdk"
+      integer :: istat
+      real, dimension(:,:,:), pointer :: ptr3d
 !
 !-----------------------------------------------------------------
 !
-      call phy_unfold (F_dest, F_var_S, 'P', 1, 1, &
-                       minx, maxx, miny, maxy, 1)  
+      ptr3d => F_dest(p_li0:p_li1,p_lj0:p_lj1,:)
+      istat = phy_get(ptr3d,F_var_S,F_npath='VO',F_bpath='P')
 !
 !-----------------------------------------------------------------
 !

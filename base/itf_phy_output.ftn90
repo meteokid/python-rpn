@@ -12,20 +12,18 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-!**s/r itf_phy_output
-#include "model_macros_f.h"
-!
-      subroutine itf_phy_output ( bus_o, F_ni, F_nj, stepno )
-      use out_vref_mod, only: out_vref
 
+!**s/r itf_phy_output
+!
+      subroutine itf_phy_output2 (stepno)
+      use out_vref_mod, only: out_vref
+      use phy_itf, only: phy_get
       implicit none
 #include <arch_specific.hf>
-!
-      integer F_ni,F_nj,ni,nj,stepno
-      real bus_o(F_ni*F_nj,*)
-!
-!AUTHOR     Michel Desgagne                July 2004 (MC2)
+
+      integer stepno
+
+!AUTHOR     Michel Desgagne                July 2004
 !
 !REVISION
 ! v3_20 - Lee V.            -  initial GEMDM version
@@ -36,24 +34,7 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_06 - Lee V.            - out_sgrid,out_href interface changed
 ! v4_40 - Lee V.            - add mosaic output, pressure output
-!
-!
-!OBJECT
-!    Gather the index of physics variables to write on disk 
-!    for the current timestep.
-!
-!ARGUMENTS
-!    NAMES     I/O  TYPE  A/S        DESCRIPTION
-!
-!   fni         I    I    S    folded dimension along X
-!   fnj         I    I    S    folded dimension along Y
-!   l_ni        I    I    S    computational hor. dimension along X
-!   l_nj        I    I    S    computational hor. dimension along Y
-!   ni          I    I    S    regular dimension along X
-!   nj          I    I    S    regular dimension along Y
-!   stepno      I    I    S    step number
-!
-!IMPLICIT
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -65,7 +46,6 @@
 #include "init.cdk"
 #include "rstr.cdk"
 #include "out.cdk"
-#include "itf_phy_buses.cdk"
 #include "obus.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
@@ -79,18 +59,20 @@
 #include "cstv.cdk"
 #include "schm.cdk"
 #include "out_listes.cdk"
-!
+#include "itf_phy.cdk"
+
       type(gmm_metadata) :: mymeta
       character*4 ext_S
       character*6 etikadd_S
       character*15 datev,pdate
       character*1024 filen
-      integer i,j,k,mult,mosaic,cnt,nko,nko_t,levset,ii,jj,kk,ip3,ig1,gridset
+      integer i,j,k,n,mult,mosaic,cnt,nko,nko_t,levset,ii,jj,kk,&
+              ip3,ig1,gridset,key,err,bcs_ext,unf,cobussiz,offbo,&
+              kind,istat,obussiz
       integer, dimension (:), allocatable :: indo,indo_t,irff
-      integer key,err,bcs_ext,unf,cobussiz,offbo,kind,istat
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L, flag_clos
-      real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m, wlnpi_t
+      real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m,wlnpi_t
       real p0(l_ni,l_nj),st1o(l_ni,l_nj)
       real, dimension(:), allocatable::prprlvl,rff
       real, dimension(:,:), allocatable :: cobusval
@@ -98,9 +80,27 @@
       real, dimension(:,:,:), pointer :: lnpres
       real*8  dayfrac
       real*8, parameter :: sec_in_day = 86400.0d0
+      real, dimension(:,:), allocatable :: obusval
+      real, dimension(:,:,:), allocatable, target :: data3d
+      real, dimension(:,:,:), pointer :: ptr3d
 !
 !----------------------------------------------------------------------
 !
+      call iniobus (obussiz)
+      allocate (obusval(l_ni*l_nj,obussiz))
+      obusval = 999999.
+      do n= 1, Obus_top
+
+
+
+!!$         call phy_unfold (obusval(1,obus_offset(n)), obus_var_S(n),&
+!!$                          obus_bus_S(n), 1, obus_mult(n)          ,&
+!!$                          1,l_ni,1,l_nj,obus_mult(n))
+
+
+
+      end do
+
       if (Obus_top.le.0) then
          if (Lun_out.gt.0) write(Lun_out,7002) stepno
          return
@@ -124,6 +124,10 @@
       if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
            ((stepno.gt.(Init_dfnp-1)/2)) ) &
              ext_S = '_dgf'
+
+!     setup domain extent to retrieve physics data
+      allocate(data3d(l_ni,l_nj,G_nk+1))
+      data3d = 0.
 
       istat= gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,mymeta)
       istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
@@ -203,11 +207,15 @@
          do 20  j=1, Obus_top
 
             if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
+
+
                if (obus_shp(j).eq.1) then
 !                  2D field - on 0mb
                    if ( obus_mult(j).eq.1.and.obus_mosaic(j).eq.0) then
 !                     2d non multiple, non mosaic field, 0mb field,kind=2
-                      call ecris_fst2(bus_o(1,obus_offset(j)), &
+                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
+                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
+                      call ecris_fst2(data3d, &
                               1,l_ni,1,l_nj,0.0,obus_var_s(j), &
                               Obus_mul(j),Obus_add(j),2,1,1,1, &
                                               Outp_nbit(ii,kk) )
@@ -228,7 +236,9 @@
                          enddo
                          enddo
                       endif
-                      call ecris_fst2(bus_o(1,obus_offset(j)), &
+                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
+                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
+                      call ecris_fst2(data3d, &
                               1,l_ni,1,l_nj,rff,obus_var_s(j), &
                                Obus_mul(j),Obus_add(j),3, cnt, &
                                     irff,cnt, Outp_nbit(ii,kk) )
@@ -264,13 +274,15 @@
                 if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
 
                    if (obus_shp(j).gt.1) then
+                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
+                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
                       if (obus_stag(j).eq.1) then ! thermo
-                         call ecris_fst2 (bus_o(1,obus_offset(j))     , &
+                         call ecris_fst2 (data3d, &
                               1,l_ni,1,l_nj,Ver_hyb%t(2),obus_var_s(j), &
                               Obus_mul(j),Obus_add(j),kind            , &
                               G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
                       else  ! momentum
-                         call ecris_fst2  (bus_o(1,obus_offset(j))    , &
+                         call ecris_fst2 (data3d, &
                               1,l_ni,1,l_nj,Ver_hyb%m   ,obus_var_s(j), &
                               Obus_mul(j),Obus_add(j),kind            , &
                               G_nk+1,indo  ,nko  , Outp_nbit(ii,kk) )
@@ -295,6 +307,7 @@
              nko=Level_max(levset)
              allocate ( indo(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
                         cible(l_ni,l_nj,nko) )
+             buso_pres= 0.
              do i = 1, nko
                 indo(i)=i
                 prprlvl(i)   = level(i,levset) * 100.0
@@ -307,18 +320,21 @@
                 if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
                    if (Obus_shp(j).gt.1) then
 
-                      offbo = Obus_offset(j)
+                      offbo = obus_offset(j)
 
                       lnpres => wlnpi_m
                       if ( Obus_stag(j) .eq. 1 ) lnpres => wlnpi_t
-                         
-                      call vertint ( buso_pres,cible,nko, bus_o(1,offbo),lnpres,G_nk,&
-                            1,l_ni,1,l_nj,p_offi+1,p_offi+p_ni, p_offj+1,p_offj+p_nj,&
-                            'linear', .false. )
+
+                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:G_nk)
+                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
+
+                      call vertint ( buso_pres,cible,nko, data3d,lnpres,G_nk,&
+                                   1,l_ni, 1,l_nj, 1,l_ni, 1,l_nj, 'linear', .false. )
 
                       call ecris_fst2 ( buso_pres, 1,l_ni,1,l_nj    , &
                            level(1,levset),Obus_var_s(j),Obus_mul(j), &
                            Obus_add(j),kind,nko,indo,nko,Outp_nbit(ii,kk) )
+
                    endif
                 endif
 
@@ -339,7 +355,7 @@
          
       end do
 
-      deallocate(rff,irff)
+      deallocate(rff,irff,obusval,data3d)
 
       call timing_stop ( 90 )
 

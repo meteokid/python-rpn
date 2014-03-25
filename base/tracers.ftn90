@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine tracers ()
+      use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
 !
@@ -46,31 +47,24 @@
 #include "lun.cdk"
 #include "hzd.cdk"
 #include "tr3d.cdk"
-      integer,external :: phy_getvarlist
-      integer,parameter :: MAXVARS = 1024
       logical hu_L,flag
-      integer i,j,k,indx1,nvars,needinit,istat
-      character(len=32) :: varname_S,outname_S,inname_S,bus_s,&
-           varlist_S(MAXVARS),prefix_S,basename_S,time_S,ext_S
+      integer i,j,k,indx1,needinit,istat
+      character(len= PHY_MAXNAMELENGTH) :: varname_S,prefix_S,basename_S,time_S,ext_S
+      type(phymeta), dimension(:), pointer :: pmeta
 !*
 !     __________________________________________________________________
 !
-      varlist_S = ' '
-      varname_S = ' '
-      outname_S = ' '
-      inname_S = ' '
-      bus_S = 'D'
-      needinit = -1
-      nvars = phy_getvarlist(varlist_S,varname_S,outname_S,inname_S,bus_S,needinit,MAXVARS)
-      do i=1,nvars
-         varname_S = varlist_S(i)
+      istat = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+
+      do i=1,size(pmeta)
+         varname_S = pmeta(i)%vname
          istat = clib_toupper(varname_S)
          if (varname_S(1:3) /= 'TR/') cycle
          call gmmx_name_parts(varname_S,prefix_S,basename_S,time_S,ext_S)
          if (any(Tr3d_name_S(1:tr3d_ntr) == basename_S)) cycle
          tr3d_ntr = tr3d_ntr + 1
          Tr3d_name_S(tr3d_ntr) = basename_S
-         Tr3d_wload(tr3d_ntr)  = (ext_S == ',W')
+         Tr3d_wload(tr3d_ntr)  = pmeta(i)%wload
       enddo
 
       hu_L   = .false.
