@@ -481,7 +481,7 @@
          endif
          if (pnth.ne.0) then
                call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pnvt) )               
+                    'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pnth) )               
          endif
 
          if (pntt.ne.0)then            
