@@ -13,23 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r ens_gemnml - read parametres for ensemble forecast
+!**s/r ens_nml - read parametres for ensemble forecast
 !
-#include "model_macros_f.h"
-!
-      integer function ens_nml                                              &
-      (F_namelist_S,F_Grdtyp_S,F_ens_conf_L,F_stochphy_L,F_imrkv2,&
-       F_ens_ptp_env_u, F_ens_ptp_env_b, F_ens_ptp_cape, F_ens_ptp_tlc,&
-       F_ens_ptp_crit_w, F_ens_ptp_fac_reduc, F_unout) 
+      integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout) 
       implicit none
 #include <arch_specific.hf>
 !
-      character* (*) F_namelist_S,F_Grdtyp_S
-      logical F_ens_conf_L,F_stochphy_L
-      integer F_imrkv2,F_unout
-      real F_ens_ptp_env_u, F_ens_ptp_env_b, F_ens_ptp_cape, F_ens_ptp_tlc
-      real F_ens_ptp_crit_w, F_ens_ptp_fac_reduc
-!
+      character* (*) F_namelist_S, F_Grdtyp_S
+      integer F_unout
+
 !author Lubos Spacek - May 2005
 !
 !revision
@@ -47,60 +39,49 @@
 !
 !arguments
 !  Name           I/O                 Description
-!-----------------------------------------------------------------------------------------
-! F_namelistf_S       I                  namelist path
-! F_Grdtyp_S          I                  grid configuration (GU required)
-! F_stochphy_L        O                  stochastic physics
-! F_imrkv2            O                  number of 2d markov chains
-! F_ens_ptp_env_u     I                  upper sigma value for PTP vertical profile
-! F_ens_ptp_env_b     I                  lower sigma value for PTP vertical profile
-! F_ens_ptp_cape      I                  CAPE value for no PTP on a given point 
-! F_ens_ptp_tlc       I                  TLC (conv. pcp.) value for no PTP on a given point
-! F_ens_ptp_crit_w    I                  vertical velocity (m/s) above that we do not perturb with PTP 
-! F_ens_ptp_fac_reduc I                  reduction factor (0.0-1.0) of the PTP perturbations when convection occurs
-! F_unout             I                  output unit
-!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------
+! F_namelistf_S       I             namelist path
+! F_Grdtyp_S          I             grid configuration (GU required)
+! F_unout             I             output unit
+!-----------------------------------------------------------------------
 !
+#include <WhiteBoard.hf>
 #include "ens_param.cdk"
 
-!
       integer, external :: fnom,wkoffit
-      logical found_namelist_ok
-      integer i, err,err_open,err_read,unf,nrec
-!
-      namelist /ensembles/                                     &
-          Ens_conf,      Ens_skeb_conf,                            &
-          Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd,   &
-          Ens_mc_seed,   Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz,  &
-          Ens_mc3d_trnl, Ens_mc3d_trnh,                            &
-          Ens_mc3d_max,  Ens_mc3d_min,  Ens_mc3d_std,   &
-          Ens_mc3d_tau,  Ens_mc3d_str,  Ens_skeb_alph, Ens_skeb_alpt,  &
-          Ens_skeb_bfc,  Ens_skeb_lam,                             &
-          Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha, Ens_mc2d_trnl,    &
-          Ens_mc2d_trnh, Ens_dim2,      Ens_mc2d_min,  Ens_mc2d_max,     &
-          Ens_mc2d_std,  Ens_mc2d_tau,  Ens_mc2d_str,     &
+      logical found_namelist_ok, stochphy_L
+      integer i, ier,err,err_open,unf,nrec
+
+      namelist /ensembles/                                           &
+          Ens_conf,      Ens_skeb_conf,                              &
+          Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd, &
+          Ens_mc_seed,   Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz,&
+          Ens_mc3d_trnl, Ens_mc3d_trnh,                              &
+          Ens_mc3d_max,  Ens_mc3d_min,  Ens_mc3d_std,                &
+          Ens_mc3d_tau,  Ens_mc3d_str,  Ens_skeb_alph, Ens_skeb_alpt,&
+          Ens_skeb_bfc,  Ens_skeb_lam,                               &
+          Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha, Ens_mc2d_trnl,&
+          Ens_mc2d_trnh, Ens_dim2,      Ens_mc2d_min,  Ens_mc2d_max, &
+          Ens_mc2d_std,  Ens_mc2d_tau,  Ens_mc2d_str,                &
           Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
           Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
-
 !
 !--------------------------------------------------------------------
 !
-      F_ens_conf_L = .false.
-      ens_nml = -1; err_read = 0
- 
-!
+      ens_nml= -1
+
       if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
          ens_nml = 0
          if (F_unout.ge.0) write (F_unout,nml=ensembles)
-         goto 999
+         return
       endif
-!
-      Ens_conf      = .false.
-      Ens_mc_seed      = -1
+
+      Ens_conf        = .false.
+      Ens_mc_seed     = -1
       Ens_skeb_conf   = .false.
       Ens_skeb_dif    = .false.
       Ens_skeb_gwd    = .false.
-      Ens_stat   = .false.
+      Ens_stat        = .false.
       Ens_skeb_div    = .false.
       Ens_mc3d_nlon   = 16 
       Ens_mc3d_nlat   =  8
@@ -112,43 +93,34 @@
       Ens_mc3d_std    = 0.0
       Ens_mc3d_tau    = 0.0
       Ens_mc3d_str    = 0.0
-!
+
       Ens_skeb_bfc    = 1.0e-01
       Ens_skeb_lam    = 2.0e+05
       Ens_skeb_alph   = 0.0
       Ens_skeb_alpt   = 0.0
-!  
-      Ens_ptp_conf  = .false.
-      Ens_mc2d_nlon     = 16
-      Ens_mc2d_nlat     =  8
-      Ens_mc2d_ncha     =  1
-      Ens_mc2d_trnl     =  1
-      Ens_mc2d_trnh     =  8
-      Ens_mc2d_min      = 0.0
-      Ens_mc2d_max      = 0.0
-      Ens_mc2d_std      = 0.0
-      Ens_mc2d_tau      = 0.0
-      Ens_mc2d_str      = 0.0
-      Ens_ptp_env_u = 1.0
-      Ens_ptp_env_b = 1.0
-      Ens_ptp_cape = 0.0
-      Ens_ptp_tlc = 0.0
-      Ens_ptp_crit_w = 100.0
+
+      Ens_ptp_conf    = .false.
+      Ens_mc2d_nlon   = 16
+      Ens_mc2d_nlat   =  8
+      Ens_mc2d_ncha   =  1
+      Ens_mc2d_trnl   =  1
+      Ens_mc2d_trnh   =  8
+      Ens_mc2d_min    = 0.0
+      Ens_mc2d_max    = 0.0
+      Ens_mc2d_std    = 0.0
+      Ens_mc2d_tau    = 0.0
+      Ens_mc2d_str    = 0.0
+      Ens_ptp_env_u   = 1.0
+      Ens_ptp_env_b   = 1.0
+      Ens_ptp_cape    = 0.0
+      Ens_ptp_tlc     = 0.0
+      Ens_ptp_crit_w  = 100.0
       Ens_ptp_fac_reduc = 0.0
-!
-      F_stochphy_L  = Ens_ptp_conf
-      F_imrkv2      = Ens_mc2d_ncha
-      F_ens_ptp_env_u = Ens_ptp_env_u
-      F_ens_ptp_env_b = Ens_ptp_env_b
-      F_ens_ptp_cape = Ens_ptp_cape
-      F_ens_ptp_tlc = Ens_ptp_tlc
-      F_ens_ptp_crit_w = Ens_ptp_crit_w
-      F_ens_ptp_fac_reduc = Ens_ptp_fac_reduc
-!
+
       unf = 0
       found_namelist_ok = .false.
       err = wkoffit (F_namelist_S)
-!
+
       if (err.ge.-1) then
          err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', nrec)
          if (err_open.eq.0) then
@@ -158,15 +130,16 @@
          endif
  1000    call fclos (unf)
       endif
-!
-      if(found_namelist_ok)then
+
+      if (found_namelist_ok) then
+
          ens_nml = 1
-!
+
          if ((F_Grdtyp_S.ne.'GU'.and.F_Grdtyp_S.ne.'GY').and.Ens_skeb_conf) then
             if(F_unout.ge.0) write(F_unout,"(a,a)" ) 'Ens_nml: ','Ens_skeb only available with grid GU/GY'
             ens_nml = -1
          endif
-!
+
          if ((Ens_mc_seed.lt.0))then
             if(F_unout.ge.0)write(F_unout,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
             ens_nml = -1
@@ -176,38 +149,31 @@
             if(F_unout.ge.0)write(F_unout,*)'Nlon must equal 2*nlat'
             ens_nml = -1
          endif
-!
+
          if (Ens_mc2d_ncha.gt.MAX2DC) then
             if(F_unout.ge.0)write(F_unout,*)'Ens_mc2d_ncha must be <=9'
             ens_nml = -1
          endif
-!
+
          do i=1,Ens_mc2d_ncha
             if (Ens_mc2d_nlon(i).ne.2*Ens_mc2d_nlat(i))then
                 if(F_unout.ge.0)write(F_unout,*)'Nlon2 must equal 2*nlat2'
                 ens_nml = -1
             endif
          enddo
-!
-         if (ens_nml.lt.0) goto 999
+
+         if (ens_nml.lt.0) return
+
          Ens_mc3d_dim    = (Ens_mc3d_trnh+1)*(Ens_mc3d_trnh+2)/2
          Ens_mc3d_mzt    = (Ens_mc3d_trnz-1)/2
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
-         Ens_stat   =  Ens_stat.and.Ens_conf
+         Ens_stat        =  Ens_stat.and.Ens_conf
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
-         Ens_dim2      = (Ens_mc2d_trnh+1)*(Ens_mc2d_trnh+2)/2
-         Ens_dim2_max  = maxval(Ens_dim2)
-         F_ens_conf_L  = Ens_conf
-         F_stochphy_L  = Ens_ptp_conf.and.Ens_conf
-         F_imrkv2      = Ens_mc2d_ncha
-         F_ens_ptp_env_u = Ens_ptp_env_u
-         F_ens_ptp_env_b = Ens_ptp_env_b
-         F_ens_ptp_cape = Ens_ptp_cape
-         F_ens_ptp_tlc = Ens_ptp_tlc
-         F_ens_ptp_crit_w = Ens_ptp_crit_w
-         F_ens_ptp_fac_reduc = Ens_ptp_fac_reduc
+         Ens_dim2        = (Ens_mc2d_trnh+1)*(Ens_mc2d_trnh+2)/2
+         Ens_dim2_max    =  maxval(Ens_dim2)
 
-!
+         stochphy_L  = Ens_ptp_conf.and.Ens_conf
+
          if(F_unout.ge.0)then
             write(F_unout,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
             write(F_unout,"(a,i5)" )'Ens_mc3d_dim   = ',Ens_mc3d_dim
@@ -217,21 +183,34 @@
             write(F_unout,'(a,l5)' )'Ens_skeb_div   = ',Ens_skeb_div
             write(F_unout,'(a,9i5)')'Ens_dim2     = ',Ens_dim2
             write(F_unout,'(a,i5)' )'Ens_dim2_max = ',Ens_dim2_max
-            write(F_unout,'(a,l5)' )'F_stochphy_L = ',F_stochphy_L
-            write(F_unout,'(a,i5)' )'F_imrkv2     = ',F_imrkv2
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_u = ',F_ens_ptp_env_u
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_env_b = ',F_ens_ptp_env_b
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_cape = ',F_ens_ptp_cape
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_tlc = ',F_ens_ptp_tlc
-            write(F_unout,'(a,f12.5)' )'F_ens_ptp_crit_w = ',F_ens_ptp_crit_w
-            write(F_unout,'(a,f8.5)' )'F_ens_ptp_fac_reduc = ',F_ens_ptp_fac_reduc
+            write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
+            write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_mc2d_ncha
+            write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u
+            write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_b = ',Ens_ptp_env_b
+            write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_cape = ',Ens_ptp_cape
+            write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_tlc = ',Ens_ptp_tlc
+            write(F_unout,'(a,f12.5)' )'Ens_ens_ptp_crit_w = ',Ens_ptp_crit_w
+            write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_fac_reduc = ',Ens_ptp_fac_reduc
          endif
       else
           ens_nml = 0
       endif
+
+      ier= WB_OK
+      ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha    , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPCAPE'    , Ens_ptp_cape     , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPTLC'     , Ens_ptp_tlc      , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPCRITW'   , Ens_ptp_crit_w   , WB_REWRITE_MANY),ier)
+      ier= min(wb_put('ens/PTPFACREDUC', Ens_ptp_fac_reduc, WB_REWRITE_MANY),ier)
+
+      err=0
+      if (.not.WB_IS_OK(ier)) ens_nml= -1
 !
 !--------------------------------------------------------------------
 !
  999  return
       end
-!
+

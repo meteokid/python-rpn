@@ -1,7 +1,7 @@
 
       real, pointer, dimension (:,:,:) :: pw_uu_plus  => null()
       real, pointer, dimension (:,:,:) :: pw_vv_plus  => null()
-      real, pointer, dimension (:,:,:) :: pw_ww_plus  => null()
+      real, pointer, dimension (:,:,:) :: pw_wz_plus  => null()
       real, pointer, dimension (:,:,:) :: pw_tt_plus  => null()
       real, pointer, dimension (:,:,:) :: pw_pm_plus  => null()
       real, pointer, dimension (:,:,:) :: pw_pt_plus  => null()
@@ -9,14 +9,15 @@
 
       real, pointer, dimension (:,:,:) :: pw_uu_moins => null()
       real, pointer, dimension (:,:,:) :: pw_vv_moins => null()
-      real, pointer, dimension (:,:,:) :: pw_ww_moins => null()
+      real, pointer, dimension (:,:,:) :: pw_wz_moins => null()
       real, pointer, dimension (:,:,:) :: pw_tt_moins => null()
       real, pointer, dimension (:,:,:) :: pw_pm_moins => null()
+      real, pointer, dimension (:,:,:) :: pw_pt_moins => null()
       real, pointer, dimension (:,:,:) :: pw_gz_moins => null()
 
       real, pointer, dimension (:,:,:) :: pw_uu_dyn   => null()
       real, pointer, dimension (:,:,:) :: pw_vv_dyn   => null()
-      real, pointer, dimension (:,:,:) :: pw_ww_dyn   => null()
+      real, pointer, dimension (:,:,:) :: pw_wz_dyn   => null()
       real, pointer, dimension (:,:,:) :: pw_tt_dyn   => null()
 
       real, pointer, dimension (:,:,:) :: pw_uu_copy  => null()
@@ -27,23 +28,24 @@
       integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_plus_s, gmmk_pw_vv_plus_s, gmmk_pw_ww_plus_s,&
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_pw_uu_plus_s, gmmk_pw_vv_plus_s, gmmk_pw_wz_plus_s,&
                        gmmk_pw_tt_plus_s, gmmk_pw_pm_plus_s, gmmk_pw_pt_plus_s, gmmk_pw_gz_plus_s,&
 
-                   gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_ww_moins_s, gmmk_pw_tt_moins_s,&
-                   gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s                                        ,&
+                   gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_wz_moins_s, gmmk_pw_tt_moins_s,&
+                   gmmk_pw_pm_moins_s, gmmk_pw_pt_moins_s, gmmk_pw_gz_moins_s                                        ,&
 
-                   gmmk_pw_uu_dyn_s , gmmk_pw_vv_dyn_s,  gmmk_pw_ww_dyn_s, gmmk_pw_tt_dyn_s      ,&
+                   gmmk_pw_uu_dyn_s , gmmk_pw_vv_dyn_s,  gmmk_pw_wz_dyn_s, gmmk_pw_tt_dyn_s      ,&
                    gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s
 
-      common /physical_n_gmm/ gmmk_pw_uu_plus_s, gmmk_pw_vv_plus_s, gmmk_pw_ww_plus_s   ,&
+      common /physical_n_gmm/ gmmk_pw_uu_plus_s, gmmk_pw_vv_plus_s, gmmk_pw_wz_plus_s   ,&
                               gmmk_pw_tt_plus_s, gmmk_pw_pm_plus_s, gmmk_pw_pt_plus_s   ,&
                               gmmk_pw_gz_plus_s                                         ,&
                               
-                              gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_ww_moins_s,&
-                              gmmk_pw_tt_moins_s, gmmk_pw_pm_moins_s, gmmk_pw_gz_moins_s,&
+                              gmmk_pw_uu_moins_s, gmmk_pw_vv_moins_s, gmmk_pw_wz_moins_s,&
+                              gmmk_pw_tt_moins_s, gmmk_pw_pm_moins_s, gmmk_pw_pt_moins_s,&
+                              gmmk_pw_gz_moins_s,                                        &
                               gmmk_pw_uu_dyn_s                                          ,&
                               
-                              gmmk_pw_vv_dyn_s , gmmk_pw_ww_dyn_s  , gmmk_pw_tt_dyn_s   ,&
+                              gmmk_pw_vv_dyn_s , gmmk_pw_wz_dyn_s  , gmmk_pw_tt_dyn_s   ,&
                               gmmk_pw_uu_copy_s, gmmk_pw_vv_copy_s
 

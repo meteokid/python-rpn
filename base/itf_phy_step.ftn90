@@ -15,40 +15,23 @@
 
 !**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
 !
-      subroutine itf_phy_step (F_stepno, F_lctl_step)
-        use phy_itf, only: phy_input,phy_step
+      subroutine itf_phy_step ( F_step_kount, F_lctl_step )
+      use phy_itf, only: phy_input,phy_step
       implicit none
 #include <arch_specific.hf>
-!
-      integer, intent(IN) :: F_stepno, F_lctl_step
-!
-!author 
-!     Michel roch - rpn - april 1994
+
+      integer, intent(IN) :: F_step_kount, F_lctl_step
+
+!authors 
+!     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_21 - Desgagne/Methot/Bilodeau - dzmin calculation
-! v2_31 - Desgagne          - clean up and introduce h2o tracers
-! v2_32 - Lee V.            - call genslabp here, add "HY" record to slabs
-! v3_00 - Laroche S.        - adapted for simplified physics
-! v3_02 - Tanguay M.        - Add V4dg_oktr_L for v4d_rwtraj_kmkt 
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_11 - Dugas B.          - Correct DUMPBUS mechanism for OpenMP
-! v3_12 - Leduc A-M         - Add variables gzm and topo
-! v3_20 - Lee & Kallaur     - Add coding to support chemistry modules. (may/june 2005)
-! v3_21 - Valcke, S.        - Bugfix: no call to itf_phy_apply in offline mode
-! v3_30 - Tanguay M.        - adapt TL/AD to pvptr
-! v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
-! v4_03 - Spacek L.         - Staggered version
-! v4_04 - Plante A.         - Remove offline mode
-! v4_05 - Desgagne M.       - Update AIX binding rules
-! v4_13 - Spacek L.         - Allocate geofld as entry analogy to Phy_busper3D
-! v4_14 - Dugas B.          - Account for increment forcings
-!                           - dumpbus3 is now all done here  
+! v4_70 - authors          - initial version
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-! F_stepno      O           step number
+! F_step_kount  I          step count
+! F_lctl_step   I          step number
 !----------------------------------------------------------------
 
 #include "lun.cdk"
@@ -62,38 +45,39 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( p_user_busper_L .and. (F_stepno.eq.0) ) return
+      if ( p_user_busper_L .and. (F_step_kount.eq.0) ) return
 
       call timing_start ( 40, 'PHYSTEP' )
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
-      if (F_stepno == 0) call itf_phy_geom4 (err)
+      if (F_step_kount == 0) call itf_phy_geom4 (err)
 
       !call pw_glbstat('DEBUG')
 
-      call itf_phy_fillbus ()
+      call itf_phy_copy ()
 
       call rpn_comm_bloc (Ptopo_ninblocx,Ptopo_ninblocy)
 
-      err = phy_input ( itf_phy_prefold_opr, F_stepno, Path_phyincfg_S,&
-           Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
-      call handle_error(err,'itf_phy_step','Problem with phy_input') 
+      err = phy_input ( itf_phy_prefold_opr,F_step_kount,Path_phyincfg_S,&
+                        Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
+      call handle_error (err,'itf_phy_step','Problem with phy_input') 
 
       call rpn_comm_bloc ( Ptopo_nblocx  ,Ptopo_nblocy )
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
-                                         (F_stepno    .eq.0)  )
+                                         (F_step_kount    .eq.0)  )
 
-      err = phy_step ( F_stepno, F_lctl_step )
-      call handle_error(err,'itf_phy_step','Problem with phy_step') 
+      err = phy_step ( F_step_kount, F_lctl_step )
+
+      call handle_error (err,'itf_phy_step','Problem with phy_step') 
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
-                                         (F_stepno    .eq.0) )
+                                         (F_step_kount    .eq.0) )
 
-      call itf_phy_update3 ( F_stepno > 0 )
+      call itf_phy_update3 ( F_step_kount > 0 )
 
-      call itf_phy_output2 (F_lctl_step)
+      call itf_phy_output2 ( F_lctl_step )
 
       call timing_stop ( 40 )
 

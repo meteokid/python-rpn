@@ -13,10 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r itf_ens_init - initialize ensemble prevision system
+!**s/r ens_setmem - initialize ensemble prevision system
 !
-      subroutine ens_set_mem(l_minx,l_maxx,G_halox,l_ni,     &
-                             l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      subroutine ens_setmem (l_minx,l_maxx,G_halox,l_ni,     &
+                                 l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,36 +30,32 @@
 ! v4_12 - Spacek L.        - Initial version
 ! v_4.1.3 - N. Gagnon      - Change name of most parameters in the NAMELIST
 !
-!object
-!	See above ID.
-!
-!arguments
-!	none
-!
+
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "ens_gmm_dim.cdk"
 #include "ens_gmm_var.cdk"
 #include "ens_param.cdk"
-!
+
       integer :: istat
 !-------------------------------------------------------------------
 !
-      if(.not.Ens_conf)return
-      if (Lun_out.gt.0)write(Lun_out,6010)
-!
+      if (.not.Ens_conf) return
+
+      if (Lun_out.gt.0) write(Lun_out,6010)
+
       call gmm_build_meta3D(meta3d_sh2,          &
                             1,l_ni,0,0,l_ni,     &
                             1,l_nj,0,0,l_nj,     &
                             1,l_nk,0,0,l_nk,     &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta2d_anm,                               &
-                            1,Ens_mc3d_dim,0,0,Ens_mc3d_dim,              &
+      call gmm_build_meta2D(meta2d_anm,                                     &
+                            1,Ens_mc3d_dim,0,0,Ens_mc3d_dim,                &
                             -Ens_mc3d_mzt,Ens_mc3d_mzt,0,0,2*Ens_mc3d_mzt+1,&
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta2d_znm,                      &
-                            1,Ens_dim2_max,0,0,Ens_dim2_max, &
-                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,       &
+      call gmm_build_meta2D(meta2d_znm,                       &
+                            1,Ens_dim2_max,0,0,Ens_dim2_max,  &
+                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,&
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &
@@ -90,7 +86,7 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'znm'
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
-!
+
  6000 format('ens_set_mem at gmm_create(',A,')')
  6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SET_MEM)' &
              /(55('=')))

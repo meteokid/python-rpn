@@ -13,44 +13,45 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r itf_phy_prep -
-      subroutine itf_phy_prep
-      use bus_fold_mod
+!**s/r itf_phy_copy
+      subroutine itf_phy_copy
       implicit none
-!
+#include <arch_specific.hf>
+
 !author
-!     Michel Desgagne - June 2009
+!     Michel Desgagne - Summer 2013
 !
 !revision
-! v4_06 - Desgagne, M.     - First revision
-!
-#include <arch_specific.hf>
-#include <rmnlib_basics.hf>
+! v4_70 - Desgagne, M.     - initial version
+
 #include <gmm.hf>
 #include <msg.h>
 
-      integer,parameter :: NCOPY = 2
-      character(len=*),parameter :: FOLD_BUS_S = 'Dd' !Dynamic field into dyn bus
-      character(len=*),parameter :: COPY_LIST_S(2,NCOPY) = reshape((/ &
-           'PW_UU:P   ','PW_UU_COPY', &
-           'PW_VV:P   ','PW_VV_COPY' &
-           /),(/2,NCOPY/))
-      integer i,istat
+      integer istat_src, istat_dst
       real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
-      real, pointer, dimension (:,:  ) :: tr2d  => null()
 !     ________________________________________________________________
 !
-      do i=1,NCOPY
-         nullify(tr,trcopy)
-         istat = gmm_get(COPY_LIST_S(1,i),tr)
-         istat  = min(gmm_get(COPY_LIST_S(2,i),trcopy),istat)
-         if (RMN_IS_OK(istat)) then
-            trcopy = tr
-         else
-            call msg(MSG_ERROR,'(itf_phy_prep) Probleme making copy of '//trim(COPY_LIST_S(1,i)))
-            !TODO: abort?
-         endif
-      enddo
+! Take a copy of PW_UU:P
+
+      istat_src = gmm_get('PW_UU:P'   ,tr    )
+      istat_dst = gmm_get('PW_UU_COPY',trcopy)
+
+      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
+         trcopy = tr
+      else
+         call msg (MSG_ERROR,'(itf_phy_copy) Probleme making copy of PW_UU:P')
+      endif
+
+! Take a copy of PW_VV:P
+
+      istat_src = gmm_get('PW_VV:P'   ,tr    )
+      istat_dst = gmm_get('PW_VV_COPY',trcopy)
+
+      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
+         trcopy = tr
+      else
+         call msg (MSG_ERROR,'(itf_phy_copy) Probleme making copy of PW_VV:P')
+      endif
 !     ________________________________________________________________
 !
       return

@@ -91,7 +91,7 @@
          enddo
       end do
 !
-!$omp parallel private(xxx,yyy,zzz,qbar,kq,xtmp_8,ytmp_8)
+!$omp parallel private(xxx,yyy,zzz,qbar,Pbar,kq,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~

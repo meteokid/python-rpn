@@ -41,7 +41,7 @@
       pw_list = transpose(reshape( (/ &
            gmmk_pw_uu_moins_s,gmmk_pw_uu_plus_s, &
            gmmk_pw_vv_moins_s,gmmk_pw_vv_plus_s, &
-           gmmk_pw_ww_moins_s,gmmk_pw_ww_plus_s, &
+           gmmk_pw_wz_moins_s,gmmk_pw_wz_plus_s, &
            gmmk_pw_tt_moins_s,gmmk_pw_tt_plus_s, &
            gmmk_pw_gz_moins_s,gmmk_pw_gz_plus_s/), (/size(pw_list,dim=2),size(pw_list,dim=1)/)))
 !     ________________________________________________________________
@@ -78,6 +78,10 @@
                      1,1,0,l_ni,l_nj, g_nk+1,8)     
       istat = gmm_get(gmmk_pw_pt_plus_s,minus,mymeta)     
       call statfld3 (minus,'PPTP', Step_kount, ' ',&
+                     l_minx,l_maxx, l_miny,l_maxy, 0,g_nk+1,&
+                     1,1,0,l_ni,l_nj, g_nk+1,8)
+      istat = gmm_get(gmmk_pw_pt_moins_s,minus,mymeta)     
+      call statfld3 (minus,'PPTM', Step_kount, ' ',&
                      l_minx,l_maxx, l_miny,l_maxy, 0,g_nk+1,&
                      1,1,0,l_ni,l_nj, g_nk+1,8)
       do i=1,Tr3d_ntr

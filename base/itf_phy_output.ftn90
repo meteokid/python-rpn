@@ -17,7 +17,7 @@
 !
       subroutine itf_phy_output2 (stepno)
       use out_vref_mod, only: out_vref
-      use phy_itf, only: phy_get
+      use phy_itf, only: phy_get,phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
 
@@ -42,66 +42,38 @@
 #include "lctl.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
-#include "geomn.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
 #include "out.cdk"
-#include "obus.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "outp.cdk"
-#include "ptopo.cdk"
 #include "pw.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "vt1.cdk"
-#include "cstv.cdk"
-#include "schm.cdk"
 #include "out_listes.cdk"
 #include "itf_phy.cdk"
 
-      type(gmm_metadata) :: mymeta
+      type(phymeta) :: pmeta
       character*4 ext_S
       character*6 etikadd_S
-      character*15 datev,pdate
-      character*1024 filen
-      integer i,j,k,n,mult,mosaic,cnt,nko,nko_t,levset,ii,jj,kk,&
-              ip3,ig1,gridset,key,err,bcs_ext,unf,cobussiz,offbo,&
-              kind,istat,obussiz
-      integer, dimension (:), allocatable :: indo,indo_t,irff
+      integer i,ii,jj,k,kk,levset,nko,nko_t,cnt,ip3,istat,&
+              gridset,ig1,mult,mosaic,bcs_ext
+      integer, dimension (:), allocatable :: indo_pres,indo,indo_t,irff
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L, flag_clos
       real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m,wlnpi_t
-      real p0(l_ni,l_nj),st1o(l_ni,l_nj)
+      real p0(l_ni,l_nj),st1o(l_ni,l_nj),mul
       real, dimension(:), allocatable::prprlvl,rff
-      real, dimension(:,:), allocatable :: cobusval
       real, dimension(:,:,:), allocatable :: buso_pres,cible
       real, dimension(:,:,:), pointer :: lnpres
-      real*8  dayfrac
-      real*8, parameter :: sec_in_day = 86400.0d0
-      real, dimension(:,:), allocatable :: obusval
       real, dimension(:,:,:), allocatable, target :: data3d
       real, dimension(:,:,:), pointer :: ptr3d
 !
 !----------------------------------------------------------------------
 !
-      call iniobus (obussiz)
-      allocate (obusval(l_ni*l_nj,obussiz))
-      obusval = 999999.
-      do n= 1, Obus_top
-
-
-
-!!$         call phy_unfold (obusval(1,obus_offset(n)), obus_var_S(n),&
-!!$                          obus_bus_S(n), 1, obus_mult(n)          ,&
-!!$                          1,l_ni,1,l_nj,obus_mult(n))
-
-
-
-      end do
-
-      if (Obus_top.le.0) then
+      if (outp_sorties(0,stepno).le.0) then
          if (Lun_out.gt.0) write(Lun_out,7002) stepno
          return
       else
@@ -129,9 +101,9 @@
       allocate(data3d(l_ni,l_nj,G_nk+1))
       data3d = 0.
 
-      istat= gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus ,mymeta)
-      istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus ,mymeta)
-      istat= gmm_get(gmmk_st1_s        ,st1        ,mymeta)
+      istat= gmm_get(gmmk_pw_pm_plus_s ,pw_pm_plus)
+      istat= gmm_get(gmmk_pw_pt_plus_s ,pw_pt_plus)
+      istat= gmm_get(gmmk_st1_s        ,st1       )
       
       do k=1,G_nk+1
          wlnpi_m(1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
@@ -151,6 +123,24 @@
          levset   = Outp_lev(kk)
          periodx_L= .not.G_lam .and. ((Grid_x1(gridset)-Grid_x0(gridset)+1).eq.G_ni)
             
+         allocate (indo_t( min(Level_max(levset),Level_thermo)   ))
+         allocate (indo  ( min(Level_max(levset),Level_momentum) ))
+         
+         call out_slev (Level(1,levset), Level_max(levset), &
+                        Level_thermo-1,indo_t,nko_t)
+         call out_slev (Level(1,levset), Level_max(levset), &
+                        Level_momentum,indo,nko)
+
+         nko= Level_max(levset)
+         allocate ( indo_pres(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
+                    cible(l_ni,l_nj,nko) )
+         buso_pres= 0.
+         do i = 1, nko
+            indo_pres(i)= i
+            prprlvl(i)   = level(i,levset) * 100.0
+            cible(:,:,i) = log(prprlvl(i))
+         enddo
+
          ig1 = Grid_ig1(gridset)
          bcs_ext = 0
          if (G_lam) bcs_ext = Grd_bsc_ext1
@@ -182,11 +172,28 @@
 ! Preparation for Pressure output
              call out_vref(Level(1:Level_max(levset),levset),ig1=ig1)
          endif
-!_________________________________________________________________
-!
-!     2.0    Output 2D physics variables
-!_________________________________________________________________
 
+         do ii=1, Outp_var_max(kk)
+
+            if (phy_getmeta ( pmeta, Outp_var_S(ii,kk), F_npath='O',&
+                              F_bpath='PV', F_quiet=.true. ) .eq. 0 ) then
+
+               if (pmeta%nk .eq. 1) then
+!                 2D field
+                  mul= 1.0
+                  if (trim(Outp_var_S(ii,kk)).eq.'LA') mul= 180./Dcst_pi_8
+                  if (trim(Outp_var_S(ii,kk)).eq.'LO') mul= 180./Dcst_pi_8
+                  if (trim(Outp_var_S(ii,kk)).eq.'SD') mul= 100.
+
+                  if ( pmeta%fmul.eq.1 .and. pmeta%mosaic.eq.0) then
+                     ! 2D none multiple, none mosaic field, 0mb field, kind=2
+                     ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
+                     istat = phy_get ( ptr3d, Outp_var_S(ii,kk),F_npath='O', &
+                                       F_bpath='PV')
+                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, 0.0,Outp_var_S(ii,kk),&
+                                       mul,0., 2, 1,1,1,Outp_nbit(ii,kk) )
+                  else
+                     ! 2D (multiple) field - on arbitrary levels, kind=3
 !     multiple 2D fields and mosaic tiles are stored in
 !     slices of NI where the order is as follows:
 !     Example is for Mult=3, mosaic = 3
@@ -202,161 +209,75 @@
 !     1.03 (aggregate of tile 2 for multiple 1
 !     2.03 (aggregate of tile 2 for multiple 2
 !     3.03 (aggregate of tile 2 for multiple 3
-
-         do 30 ii=1, Outp_var_max(kk)
-         do 20  j=1, Obus_top
-
-            if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
-
-
-               if (obus_shp(j).eq.1) then
-!                  2D field - on 0mb
-                   if ( obus_mult(j).eq.1.and.obus_mosaic(j).eq.0) then
-!                     2d non multiple, non mosaic field, 0mb field,kind=2
-                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
-                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
-                      call ecris_fst2(data3d, &
-                              1,l_ni,1,l_nj,0.0,obus_var_s(j), &
-                              Obus_mul(j),Obus_add(j),2,1,1,1, &
-                                              Outp_nbit(ii,kk) )
-                   else
-!                     2D (multiple) field - on arbitrary levels,kind=3
-                      do mult=1,obus_mult(j)
+                     do mult=1,pmeta%fmul
                          rff(mult)= mult
-                         irff(mult)=mult 
-                      enddo
-                      cnt=obus_mult(j)
-                      if(obus_mosaic(j).gt.0) then
-!                     Add to output if Mosaic field found
-                         do mosaic=1,obus_mosaic(j)
-                         do mult=1,obus_mult(j)
-                               cnt=cnt+1
-                               rff(cnt)=mult*1.0 + mosaic/100.
-                               irff(cnt)=cnt
-                         enddo
-                         enddo
-                      endif
-                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
-                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
-                      call ecris_fst2(data3d, &
-                              1,l_ni,1,l_nj,rff,obus_var_s(j), &
-                               Obus_mul(j),Obus_add(j),3, cnt, &
-                                    irff,cnt, Outp_nbit(ii,kk) )
-                   endif
+                        irff(mult)= mult 
+                     enddo
+                     cnt= pmeta%fmul
+                     if(pmeta%mosaic.gt.0) then
+                        !Add to output if Mosaic field found
+                        do mosaic=1, pmeta%mosaic
+                        do mult  =1, pmeta%fmul
+                           cnt= cnt+1
+                            rff(cnt)= mult*1.0 + mosaic/100.
+                           irff(cnt)= cnt
+                        end do
+                        end do
+                     endif
+                     ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
+                     istat = phy_get ( ptr3d, Outp_var_S(ii,kk),F_npath='O', &
+                                       F_bpath='PV')
+                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, rff,Outp_var_S(ii,kk),&
+                                       mul,0., 3, cnt, irff,cnt, Outp_nbit(ii,kk) )
+                  endif
+               else
+                  ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
+                  istat = phy_get ( ptr3d, Outp_var_S(ii,kk),F_npath='O', &
+                                     F_bpath='PV')
+
+                  if (Level_typ_S(levset).eq.'M') then
+
+                     if (pmeta%stag .eq. 1) then ! thermo
+                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%t(2)  , &
+                                         Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
+                                         G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
+                     else  ! momentum
+                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%m     , &
+                                         Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
+                                         G_nk+1,indo  ,nko  , Outp_nbit(ii,kk) )
+                     endif
+
+                  elseif (Level_typ_S(levset).eq.'P') then
+
+                     lnpres => wlnpi_m
+                     if ( pmeta%stag .eq. 1 ) lnpres => wlnpi_t
+
+                     call vertint ( buso_pres, cible, nko, data3d, lnpres, G_nk,&
+                                    1,l_ni, 1,l_nj, 1,l_ni, 1,l_nj, 'linear', .false. )
+
+                     call ecris_fst2 ( buso_pres, 1,l_ni, 1,l_nj    , &
+                             level(1,levset),Outp_var_S(ii,kk),1.,0., &
+                             2,nko,indo_pres,nko,Outp_nbit(ii,kk) )
+
+                  endif
                endif
             endif
+         end do
 
-   20    continue
-   30    continue
-
-!_________________________________________________________________
-!
-!     3.0    Output 3D physics variables
-!_________________________________________________________________
-
-         if (Level_typ_S(levset).eq.'M') then
-!_______________________________________________________________________
-!
-!     3.0a   Output of 3D physics Variables on model levels
-!_______________________________________________________________________
-             allocate (indo_t( min(Level_max(levset),Level_thermo) ))
-             allocate (indo( min(Level_max(levset),Level_momentum) ))
-
-             call out_slev(Level(1,levset), Level_max(levset), &
-                        Level_thermo-1,indo_t,nko_t)
-             call out_slev(Level(1,levset), Level_max(levset), &
-                        Level_momentum,indo,nko)
-
-             kind=Level_kind_ip1
-             do ii=1, Outp_var_max(kk)
-             do  j=1, Obus_top
-
-                if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
-
-                   if (obus_shp(j).gt.1) then
-                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
-                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
-                      if (obus_stag(j).eq.1) then ! thermo
-                         call ecris_fst2 (data3d, &
-                              1,l_ni,1,l_nj,Ver_hyb%t(2),obus_var_s(j), &
-                              Obus_mul(j),Obus_add(j),kind            , &
-                              G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
-                      else  ! momentum
-                         call ecris_fst2 (data3d, &
-                              1,l_ni,1,l_nj,Ver_hyb%m   ,obus_var_s(j), &
-                              Obus_mul(j),Obus_add(j),kind            , &
-                              G_nk+1,indo  ,nko  , Outp_nbit(ii,kk) )
-                      endif
-                   endif
-                   
-                endif
-
-             end do
-             end do
-
-             deallocate(indo,indo_t)
-
-         elseif (Level_typ_S(levset).eq.'P') then
-!_______________________________________________________________________
-!
-!     3.0a   Output of 3D physics Variables on pressure levels
-!_______________________________________________________________________
-!
-!            Set kind to 2 for pressure output
-             kind=2
-             nko=Level_max(levset)
-             allocate ( indo(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
-                        cible(l_ni,l_nj,nko) )
-             buso_pres= 0.
-             do i = 1, nko
-                indo(i)=i
-                prprlvl(i)   = level(i,levset) * 100.0
-                cible(:,:,i) = log(prprlvl(i))
-             enddo
-
-             do ii=1, Outp_var_max(kk)
-             do  j=1, Obus_top
-
-                if ( Outp_var_S(ii,kk).eq. Obus_var_S(j) ) then
-                   if (Obus_shp(j).gt.1) then
-
-                      offbo = obus_offset(j)
-
-                      lnpres => wlnpi_m
-                      if ( Obus_stag(j) .eq. 1 ) lnpres => wlnpi_t
-
-                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:G_nk)
-                      istat = phy_get(ptr3d,obus_var_s(j),F_npath='O',F_bpath=obus_bus_S(j))
-
-                      call vertint ( buso_pres,cible,nko, data3d,lnpres,G_nk,&
-                                   1,l_ni, 1,l_nj, 1,l_ni, 1,l_nj, 'linear', .false. )
-
-                      call ecris_fst2 ( buso_pres, 1,l_ni,1,l_nj    , &
-                           level(1,levset),Obus_var_s(j),Obus_mul(j), &
-                           Obus_add(j),kind,nko,indo,nko,Outp_nbit(ii,kk) )
-
-                   endif
-                endif
-
-             end do
-             end do
-
-             deallocate(buso_pres, indo, prprlvl, cible)
-
-         endif
-
+         deallocate (indo, indo_t, buso_pres, indo_pres, prprlvl, cible)
+         
          flag_clos= .true.
          if (jj .lt. outp_sorties(0,stepno)) then
             flag_clos= .not.( (gridset.eq.Outp_grid(outp_sorties(jj+1,stepno))).and. &
-              (Level_typ_S(levset).eq.Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
+                 (Level_typ_S(levset).eq.Level_typ_S(Outp_lev(outp_sorties(jj+1,stepno)))))
          endif
          
          if (flag_clos) call out_cfile2
          
       end do
-
-      deallocate(rff,irff,obusval,data3d)
-
+      
+      deallocate(rff,irff,data3d)
+      
       call timing_stop ( 90 )
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)

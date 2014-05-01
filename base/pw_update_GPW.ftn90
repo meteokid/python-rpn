@@ -46,11 +46,11 @@
 !     ________________________________________________________________
 !
 
-      istat = gmm_get(gmmk_pw_ww_plus_s , pw_ww_plus )
+      istat = gmm_get(gmmk_pw_wz_plus_s , pw_wz_plus )
       istat = gmm_get(gmmk_pw_gz_plus_s , pw_gz_plus )
       istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus )
       istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus )
-      istat = gmm_get(gmmk_pw_ww_dyn_s  , pw_ww_dyn  )
+      istat = gmm_get(gmmk_pw_wz_dyn_s  , pw_wz_dyn  )
 
       istat = gmm_get(gmmk_tt1_s  ,   tt1)
       istat = gmm_get(gmmk_wt1_s  ,   wt1)
@@ -65,7 +65,7 @@
 
 !$omp do
       do k=1,l_nk
-         wprev (1:l_ni,1:l_nj,k) = pw_ww_plus (1:l_ni,1:l_nj,k)
+         wprev (1:l_ni,1:l_nj,k) = pw_wz_plus (1:l_ni,1:l_nj,k)
       end do
 !$omp enddo
 
@@ -85,7 +85,7 @@
 
 !$omp do
       do k=1,l_nk
-         pw_ww_plus(:,:,k) = wt1(:,:,k)
+         pw_wz_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= fip(1:l_ni,1:l_nj,k) + &
                         Ver_fistr_8%m(k)
       end do
@@ -104,8 +104,8 @@
          idt = 1d0/Cstv_dt_8
 !$omp do  
          do k= 1, l_nk
-            pw_ww_dyn (1:l_ni,1:l_nj,k) = pw_ww_dyn (1:l_ni,1:l_nj,k) + &
-            idt * ( pw_ww_plus (1:l_ni,1:l_nj,k) - wprev (1:l_ni,1:l_nj,k) )
+            pw_wz_dyn (1:l_ni,1:l_nj,k) = pw_wz_dyn (1:l_ni,1:l_nj,k) + &
+            idt * ( pw_wz_plus (1:l_ni,1:l_nj,k) - wprev (1:l_ni,1:l_nj,k) )
          end do
 !$omp enddo
       endif

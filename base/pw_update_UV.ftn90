@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pw_update_UV - Update physical quantities UU, VV and WW
+!**s/r pw_update_UV - Update physical quantities UU and VV
 !
 #include "model_macros_f.h"
 !
@@ -47,7 +47,7 @@
 !
       deg2rad_8   = acos( -ONE_8 )/CLXXX_8
 
-      nullify(pw_uu_dyn,pw_vv_dyn,pw_ww_dyn)
+      nullify(pw_uu_dyn,pw_vv_dyn)
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
       istat = gmm_get (gmmk_ut1_s       , ut1       )
@@ -90,7 +90,6 @@
          do j= 1, l_nj
             pw_uu_dyn (1:l_ni,j,k) = pw_uu_dyn (1:l_ni,j,k) + idt * ( pw_uu_plus (1:l_ni,j,k) - uprev (1:l_ni,j,k) )
             pw_vv_dyn (1:l_ni,j,k) = pw_vv_dyn (1:l_ni,j,k) + idt * ( pw_vv_plus (1:l_ni,j,k) - vprev (1:l_ni,j,k) )
-!!!            pw_ww_dyn (1:l_ni,j,k) = pw_ww_dyn (1:l_ni,j,k) + idt * ( pw_ww (1:l_ni,j,k) - wprev (1:l_ni,j,k) )
          enddo
          enddo
 !$omp enddo

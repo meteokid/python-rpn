@@ -15,8 +15,6 @@
 
 !**s/r itf_ens_init - initialize ensemble prevision system
 !
-#include "model_macros_f.h"
-!
       subroutine itf_ens_init
       implicit none
 #include <arch_specific.hf>
@@ -37,9 +35,7 @@
 #include "grd.cdk"
 
       integer, external :: ens_nml
-      integer           :: imrkv2, ier, err
-      real              :: ptp_env_u, ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc
-      logical           :: ens_conf, stochphy
+      integer err
 !
 !-------------------------------------------------------------------
 !
@@ -47,26 +43,12 @@
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
 
-      err= ens_nml (Path_nml_S,Grd_typ_S,ens_conf,stochphy,imrkv2,ptp_env_u, &
-                    ptp_env_b,ptp_cape,ptp_tlc,ptp_crit_w,ptp_fac_reduc,Lun_out)
-      call handle_error(err,'itf_ens_init','Problem with ens_nml')
+      err= ens_nml (Path_nml_S, Grd_typ_S, Lun_out)
 
-      ier= WB_OK
-      ier= min(wb_put('phy/IMRKV2'     , imrkv2       , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/STOCHPHY'   , stochphy     , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPENVU'    , ptp_env_u    , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPENVB'    , ptp_env_b    , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPCAPE'    , ptp_cape     , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPTLC'     , ptp_tlc      , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPCRITW'   , ptp_crit_w   , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('phy/PTPFACREDUC', ptp_fac_reduc, WB_REWRITE_MANY),ier)
-      err=0
-      if (.not.WB_IS_OK(ier)) err= -1
-      call handle_error(err,'itf_ens_init','Problem with WB_put')
+      call handle_error (err,'itf_ens_init','Problem with ens_nml')
 
-      if (ens_conf) &
-         call ens_set_mem (LXDIST_DIM,G_halox,l_ni, &
-                           LYDIST_DIM,G_haloy,l_nj,l_nk,Lun_out)
+      call ens_setmem (l_minx,l_maxx,G_halox,l_ni, &
+                       l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
 
  1000 format(/,'INITIALIZATION OF ENSEMBLES (S/R ITF_ENS_INIT)'/(46('=')))
 !

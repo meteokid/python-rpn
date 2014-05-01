@@ -18,12 +18,14 @@
       implicit none
 #include <arch_specific.hf>
 
-   !@objective
-   !@arguments
-   logical,intent(in) :: F_apply_L
-   !@author  Michel Desgagne  -  SUmmer 2013
-   !**/
+      logical,intent(in) :: F_apply_L
 
+!authors 
+!     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
+!
+!revision
+! v4_70 - authors          - initial version
+   
 #include <gmm.hf>
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -41,7 +43,7 @@
 
    APPLY: if (F_apply_L) then
 
-      do k=1, Tr3d_ntr
+      do k= 1, Tr3d_ntr
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
          istat = gmm_get(trim(trname_S),data3d)
          ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
@@ -65,14 +67,12 @@
    else
 
       cnt = 0
-      do k=1, Tr3d_ntr
+      do k= 1, Tr3d_ntr
          if (trim(Tr3d_name_S(k)) == 'HU' .or.                          &
              any(Tr3d_username_S(1:Tr3d_userntr)==trim(Tr3d_name_S(k))))&
              cycle
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
          istat = gmm_get(trim(trname_S),data3d)
-!!$         call phy_unfold (data3d, trim(trname_S), 'D', 1, l_nk, &
-!!$                          l_minx, l_maxx, l_miny, l_maxy, l_nk)
          ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:l_nk)
          istat = phy_get(ptr3d,trim(trname_S),F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':M'
@@ -82,7 +82,7 @@
          
          istat = gmm_get(trim(trname_S),minus)
          minus = data3d
-         cnt = cnt + 1
+         cnt   = cnt + 1
       end do
 
       if (cnt.gt.0) then

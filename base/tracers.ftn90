@@ -48,15 +48,15 @@
 #include "hzd.cdk"
 #include "tr3d.cdk"
       logical hu_L,flag
-      integer i,j,k,indx1,needinit,istat
-      character(len= PHY_MAXNAMELENGTH) :: varname_S,prefix_S,basename_S,time_S,ext_S
+      integer i,j,k,indx1,needinit,istat,nmeta
+      character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S,basename_S,time_S,ext_S
       type(phymeta), dimension(:), pointer :: pmeta
 !*
 !     __________________________________________________________________
 !
-      istat = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
+      nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
 
-      do i=1,size(pmeta)
+      do i=1,nmeta
          varname_S = pmeta(i)%vname
          istat = clib_toupper(varname_S)
          if (varname_S(1:3) /= 'TR/') cycle
