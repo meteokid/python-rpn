@@ -1,4 +1,3 @@
-##VERSIONS in this file are used only for echo/information
 PHY_VERSION   = $(ATM_PHY_VERSION)
 CHM_VERSION   = rpnphy_chm_stubs
 CPL_VERSION   = 107

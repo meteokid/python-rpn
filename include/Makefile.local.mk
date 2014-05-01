@@ -134,7 +134,13 @@ prgemnml:
 	export ATM_MODEL_NAME="prgemnml" ;\
 	makemodelbidon prgemnml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj *.o -o $(mainprgemnml) -libpath $(PWD) $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS) $(OTHERS)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) -codebeta $(CODEBETA) ;\
+	$(RBUILD) -obj *.o -o $(mainprgemnml) $(OMP) \
+		-libpath $(PWD) $(LIBPATH) \
+		-libappl "gemdyn_main gemdyn $(MODELUTILSLIBS) $(OTHERS)" \
+		-librmn $(RMN_VERSION) \
+		-libsys $(LIBSYS) \
+		-codebeta $(CODEBETA)  \
+		-optf "=$(LFLAGS)" ;\
 	/bin/mv $(mainprgemnml) $(BINDIR)/$(mainprgemnml) ;\
 	/bin/rm -f $(mainprgemnml)_* bidon.o;\
 	echo VGRID_VERSION = $(VGRID_VERSION);\
@@ -154,7 +160,13 @@ gemgrid:
 	export ATM_MODEL_NAME="gemgrid" ;\
 	makemodelbidon gemgrid > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj *.o -o gemgrid_$(BASE_ARCH).Abs -libpath $(PWD) $(LIBPATH) -libappl "gemdyn_main gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" -librmn $(RMN_VERSION) -libsys $(LIBSYS) ;\
+	$(RBUILD) -obj *.o -o gemgrid_$(BASE_ARCH).Abs $(OMP) \
+		-libpath $(PWD) $(LIBPATH) \
+		-libappl "gemdyn_main gemdyn $(MODELUTILSLIBS) $(OTHERS) rpn_commstubs$(COMM_VERSION)" \
+		-librmn $(RMN_VERSION) 
+		-libsys $(LIBSYS) \
+		-codebeta $(CODEBETA) \
+		-optf "=$(LFLAGS)" ;\
 	/bin/mv gemgrid_$(BASE_ARCH).Abs $(BINDIR)/gemgrid_$(BASE_ARCH).Abs ;\
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/gemgrid.o 2>/dev/null || true 
 
@@ -190,6 +202,7 @@ $(BINDIR)/split3df_$(BASE_ARCH).Abs: #$(LCLPO)/split3df.o
 	$(RBUILD) -obj *.o -o $@ $(OMP) -mpi \
 		-libpath $(PWD) $(LIBPATH) \
 		-libappl gemdyn_main $(LIBAPPL) \
+		-libsys $(LIBSYS) \
 		-optf "=$(LFLAGS)"
 	/bin/rm -f $(LCLPO)/bidon.o $(LCLPO)/split3df.o 2>/dev/null || true 
 
@@ -203,7 +216,13 @@ toc2nml: $(BINDIR)/toc2nml
 $(BINDIR)/toc2nml: #$(LCLPO)/toc2nml.o
 	export ATM_MODEL_NAME="toc2nml" ; makemodelbidon toc2nml > bidon.f90 ; $(MAKE) bidon.o ; rm -f bidon.f90 ;\
 	cd $(LCLPO) ;\
-	$(RBUILD) -obj *.o -o $@ -libpath $(PWD) $(LIBPATH) -libappl "gemdyn_main $(VGRID) $(UTIL)" -librmn $(RMN_VERSION) -libsys $(LIBSYS)
+	$(RBUILD) -obj *.o -o $@ $(OMP) \
+		-libpath $(PWD) $(LIBPATH) \
+		-libappl "gemdyn_main $(VGRID) $(UTIL)" \
+		-librmn $(RMN_VERSION) \
+		-libsys $(LIBSYS) \
+		-codebeta $(CODEBETA) \
+		-optf "=$(LFLAGS)" 
 	/bin/rm -f $(LCLPO)/bidon.o 2>/dev/null || true 
 
 monitor: $(BINDIR)/gem_monitor_end $(BINDIR)/gem_monitor_output
@@ -215,7 +234,7 @@ gem_monitor_end.c:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 	$(MAKE) gem_monitor_end.o
-	$(RBUILD) -obj gem_monitor_end.o -o $@ -conly
+	$(RBUILD) $(OMP) -obj gem_monitor_end.o -o $@ -conly
 	rm -f gem_monitor_end.o 2>/dev/null || true
 
 gem_monitor_output.c: 
@@ -223,7 +242,7 @@ gem_monitor_output.c:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 	$(MAKE) gem_monitor_output.o
-	$(RBUILD) -obj gem_monitor_output.o -o $@ -conly
+	$(RBUILD) $(OMP) -obj gem_monitor_output.o -o $@ -conly
 	rm -f gem_monitor_output.o 2>/dev/null || true
 
 sometools: prgemnml gemgrid toc2nml
