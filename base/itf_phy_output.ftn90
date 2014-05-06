@@ -59,7 +59,7 @@
       character*4 ext_S
       character*6 etikadd_S
       integer i,ii,jj,k,kk,levset,nko,nko_t,cnt,ip3,istat,&
-              gridset,ig1,mult,mosaic,bcs_ext
+              gridset,ig1,mult,mosaic,bcs_ext,add_diag
       integer, dimension (:), allocatable :: indo_pres,indo,indo_t,irff
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L, flag_clos
@@ -123,15 +123,18 @@
          levset   = Outp_lev(kk)
          periodx_L= .not.G_lam .and. ((Grid_x1(gridset)-Grid_x0(gridset)+1).eq.G_ni)
             
-         allocate (indo_t( min(Level_max(levset),Level_thermo)   ))
-         allocate (indo  ( min(Level_max(levset),Level_momentum) ))
-         
-         call out_slev (Level(1,levset), Level_max(levset), &
-                        Level_thermo-1,indo_t,nko_t)
-         call out_slev (Level(1,levset), Level_max(levset), &
-                        Level_momentum,indo,nko)
+         add_diag = 0
+         if (Level_typ_S(levset) == 'M' .and. Level_max(levset) == G_nk) add_diag = 1
 
-         nko= Level_max(levset)
+         allocate (indo_t( min(Level_max(levset)+add_diag,Level_thermo+add_diag)   ))
+         allocate (indo  ( min(Level_max(levset)+add_diag,Level_momentum+add_diag) ))
+         
+         call out_slev (Level(1,levset), Level_max(levset)+add_diag, &
+                        Level_thermo+add_diag,indo_t,nko_t)
+         call out_slev (Level(1,levset), Level_max(levset)+add_diag, &
+                        Level_momentum+add_diag,indo,nko)
+
+         nko= Level_max(levset)+add_diag
          allocate ( indo_pres(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
                     cible(l_ni,l_nj,nko) )
          buso_pres= 0.
@@ -238,7 +241,7 @@
                   if (Level_typ_S(levset).eq.'M') then
 
                      if (pmeta%stag .eq. 1) then ! thermo
-                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%t(2)  , &
+                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%t  , &
                                          Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
                                          G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
                      else  ! momentum
