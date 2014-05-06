@@ -131,6 +131,7 @@
       namelist /gem_cfgs/ Schm_itnlh
       namelist /gem_cfgs/ Schm_itraj
       namelist /gem_cfgs/ Schm_modcn
+      namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
       namelist /gem_cfgs/ Schm_phyms_L
@@ -257,6 +258,7 @@
       namelist /gem_cfgs_p/ Schm_itnlh
       namelist /gem_cfgs_p/ Schm_itraj
       namelist /gem_cfgs_p/ Schm_modcn
+      namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
       namelist /gem_cfgs_p/ Schm_phyms_L

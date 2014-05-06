@@ -59,9 +59,11 @@
 
       call rpn_comm_bloc (Ptopo_ninblocx,Ptopo_ninblocy)
 
+      call timing_start ( 45, 'PHY_INPUT')
       err = phy_input ( itf_phy_prefold_opr,F_step_kount,Path_phyincfg_S,&
                         Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
       call handle_error (err,'itf_phy_step','Problem with phy_input') 
+      call timing_stop  ( 45 )
 
       call rpn_comm_bloc ( Ptopo_nblocx  ,Ptopo_nblocy )
 

@@ -35,20 +35,22 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "schm.cdk"
 #include "tr3d.cdk"
 !
-      type(gmm_metadata) :: mymeta
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tr
 !     ________________________________________________________________
 !
       F_qh = 0.
 
+      if (.not.Schm_wload_L) return
+
 !     Sum over Hydrometeors
       do n = 1, Tr3d_ntr
          if (Tr3d_wload (n)) then
             nullify (tr)
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr,mymeta)
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':'//F_timelevel_S,tr)
 !$omp parallel private(j,i)
 !$omp do
             do k = 1, l_nk
