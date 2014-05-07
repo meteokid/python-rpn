@@ -1,4 +1,4 @@
-. s.ssmuse.dot $(cat ssmuse_dependencies.bndl)
+. s.ssmuse.dot $(cat ssmuse_dependencies-pgi9xx.bndl)
 #. s.ssmuse.dot $(cat $modelutils/src/ssmuse_dependencies.bndl)
 export TEST_S_AR=1
 export COMP_ARCH=${COMP_ARCH:-${EC_ARCH#*/}}
