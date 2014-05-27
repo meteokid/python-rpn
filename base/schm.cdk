@@ -47,6 +47,8 @@
 !                    | Helmholtz problem                               |
 ! Schm_itraj         | number of iterations to compute trjectories     |
 ! Schm_nith          | number of vertical modes treated implicitely    |
+! Schm_nblendyy      | -1: no blending, 0: blend at init only,         |
+!                    | > 0: blend at every nblendyy timestep           |
 ! Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
 ! Schm_Tlift         | 1: last thermo level at last momentum level     |
 ! Schm_trapeze_L     | Use trapeziodal average for advection winds     |
@@ -64,7 +66,7 @@
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
 !
       integer Schm_itcn , Schm_modcn, Schm_xwvt3, Schm_Tlift
-      integer Schm_itnlh, Schm_itraj, Schm_nith
+      integer Schm_itnlh, Schm_itraj, Schm_nith,  Schm_nblendyy
 !
       common / schm_l / Schm_hydro_L  , Schm_wload_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L
@@ -80,5 +82,5 @@
 
       common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
-      common / schm_i / Schm_Tlift
+      common / schm_i / Schm_Tlift    ,Schm_nblendyy
 !

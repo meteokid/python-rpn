@@ -1,6 +1,3 @@
-
-#if defined (DOC)
-!
 !**comdeck geomg.cdk
 !
 !______________________________________________________________________
@@ -30,6 +27,7 @@
 !----------------------------------------------------------------------
 ! geomg_invDX_8      | inverse DELTAX = 1/d(lambda)                    |
 ! geomg_invDXu_8     | inverse DELTAX for u points                     |
+! geomg_invDXz_8     | inverse DELTAX for z points (ex: for vorticity) |
 ! geomg_invDY_8      | inverse DELTAY = cos(theta)2/dsin(theta)        |
 ! geomg_invDYv_8     | inverse DELTAY for v points                     |
 !                    | n.b. DELTAY.ne.geomg_hy_8                       |
@@ -39,33 +37,98 @@
 ! geomg_invcyv2_8    | inverse of geomg_cyv2_8                         |
 !----------------------------------------------------------------------
 !
-#endif
-!
+      real*8 Geomg_x_8(l_minx:l_maxx)
+      pointer(Geomg_x_8_,Geomg_x_8)
+      common/Geomg/Geomg_x_8_
 
-      DCL_DYNVAR(Geomg, x_8   ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, xu_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, y_8   ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, yv_8  ,  real*8, (YDIST_SHAPE))
-!
-      DCL_DYNVAR(Geomg, hx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hxu_8 ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hy_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, hyv_8 ,  real*8, (YDIST_SHAPE))
-!
-      DCL_DYNVAR(Geomg, sx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, sy_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, cx_8  ,  real*8, (XDIST_SHAPE))
-      DCL_DYNVAR(Geomg, cy_8  ,  real*8, (YDIST_SHAPE))
-!
-      DCL_DYNVAR(Geomg, cy2_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, cyv_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, cyv2_8,  real*8, (YDIST_SHAPE))
-!
-      DCL_DYNVAR(Geomg, invDX_8  ,  real*8, (XDIST_SHAPE,YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invDXu_8 ,  real*8, (XDIST_SHAPE,YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invDY_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invDYv_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invcy_8  ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invcyv_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invcy2_8 ,  real*8, (YDIST_SHAPE))
-      DCL_DYNVAR(Geomg, invcyv2_8,  real*8, (YDIST_SHAPE))
+      real*8 Geomg_xu_8(l_minx:l_maxx)
+      pointer(Geomg_xu_8_,Geomg_xu_8)
+      common/Geomg/Geomg_xu_8_
+
+      real*8 Geomg_y_8(l_miny:l_maxy)
+      pointer(Geomg_y_8_,Geomg_y_8)
+      common/Geomg/Geomg_y_8_
+
+      real*8 Geomg_yv_8(l_miny:l_maxy)
+      pointer(Geomg_yv_8_,Geomg_yv_8)
+      common/Geomg/Geomg_yv_8_
+
+      real*8 Geomg_hx_8(l_minx:l_maxx)
+      pointer(Geomg_hx_8_,Geomg_hx_8)
+      common/Geomg/Geomg_hx_8_
+
+      real*8 Geomg_hxu_8(l_minx:l_maxx)
+      pointer(Geomg_hxu_8_,Geomg_hxu_8)
+      common/Geomg/Geomg_hxu_8_
+
+      real*8 Geomg_hy_8(l_miny:l_maxy)
+      pointer(Geomg_hy_8_,Geomg_hy_8)
+      common/Geomg/Geomg_hy_8_
+
+      real*8 Geomg_hyv_8(l_miny:l_maxy)
+      pointer(Geomg_hyv_8_,Geomg_hyv_8)
+      common/Geomg/Geomg_hyv_8_
+
+      real*8 Geomg_sx_8(l_minx:l_maxx)
+      pointer(Geomg_sx_8_,Geomg_sx_8)
+      common/Geomg/Geomg_sx_8_
+
+      real*8 Geomg_sy_8(l_miny:l_maxy)
+      pointer(Geomg_sy_8_,Geomg_sy_8)
+      common/Geomg/Geomg_sy_8_
+
+      real*8 Geomg_cx_8(l_minx:l_maxx)
+      pointer(Geomg_cx_8_,Geomg_cx_8)
+      common/Geomg/Geomg_cx_8_
+
+      real*8 Geomg_cy_8(l_miny:l_maxy)
+      pointer(Geomg_cy_8_,Geomg_cy_8)
+      common/Geomg/Geomg_cy_8_
+
+      real*8 Geomg_cy2_8(l_miny:l_maxy)
+      pointer(Geomg_cy2_8_,Geomg_cy2_8)
+      common/Geomg/Geomg_cy2_8_
+
+      real*8 Geomg_cyv_8(l_miny:l_maxy)
+      pointer(Geomg_cyv_8_,Geomg_cyv_8)
+      common/Geomg/Geomg_cyv_8_
+
+      real*8 Geomg_cyv2_8(l_miny:l_maxy)
+      pointer(Geomg_cyv2_8_,Geomg_cyv2_8)
+      common/Geomg/Geomg_cyv2_8_
+
+      real*8 Geomg_invDX_8(l_minx:l_maxx,l_miny:l_maxy)
+      pointer(Geomg_invDX_8_,Geomg_invDX_8)
+      common/Geomg/Geomg_invDX_8_
+
+      real*8 Geomg_invDXu_8(l_minx:l_maxx,l_miny:l_maxy)
+      pointer(Geomg_invDXu_8_,Geomg_invDXu_8)
+      common/Geomg/Geomg_invDXu_8_
+
+      real*8 Geomg_invDXz_8(l_minx:l_maxx,l_miny:l_maxy)
+      pointer(Geomg_invDXz_8_,Geomg_invDXz_8)
+      common/Geomg/Geomg_invDXz_8_
+
+      real*8 Geomg_invDY_8(l_miny:l_maxy)
+      pointer(Geomg_invDY_8_,Geomg_invDY_8)
+      common/Geomg/Geomg_invDY_8_
+
+      real*8 Geomg_invDYv_8(l_miny:l_maxy)
+      pointer(Geomg_invDYv_8_,Geomg_invDYv_8)
+      common/Geomg/Geomg_invDYv_8_
+
+      real*8 Geomg_invcy_8(l_miny:l_maxy)
+      pointer(Geomg_invcy_8_,Geomg_invcy_8)
+      common/Geomg/Geomg_invcy_8_
+
+      real*8 Geomg_invcyv_8(l_miny:l_maxy)
+      pointer(Geomg_invcyv_8_,Geomg_invcyv_8)
+      common/Geomg/Geomg_invcyv_8_
+
+      real*8 Geomg_invcy2_8(l_miny:l_maxy)
+      pointer(Geomg_invcy2_8_,Geomg_invcy2_8)
+      common/Geomg/Geomg_invcy2_8_
+
+      real*8 Geomg_invcyv2_8(l_miny:l_maxy)
+      pointer(Geomg_invcyv2_8_,Geomg_invcyv2_8)
+      common/Geomg/Geomg_invcyv2_8_

@@ -53,12 +53,11 @@
       integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
       integer np, rank, ierr, keys(8), npartiel
       integer i, j, k, i0, j0, in, jn, nij, inn, trx
-      real    pi, err, deltax, cpdi
-      real*8  dpi, aaa2
+      real    pi, err, deltax, cpdi, dummy
+      real*8  dpi, aaa
 !     Arrays
       real  , dimension(:,:,:), allocatable  :: dsp_local, fgem
       real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
-      real  , dimension(:,:,:), allocatable  :: dvrg
 
       type(gmm_metadata) :: meta3d
       integer :: gmmstat
@@ -67,7 +66,7 @@
 !
       dpi=4.d0*atan(1.0d0)
       cpdi=1./real(Dcst_cpd_8)
-      aaa2= 1.d0/Dcst_rayt_8**2
+      aaa= Dcst_rayt_8**2
       deltax=sqrt(((2.0*dpi/real(G_ni))*Dcst_rayt_8)* &
                      ((dpi/real(G_nj))*Dcst_rayt_8))
 !
@@ -87,7 +86,6 @@
       allocate( dsp_local(LDIST_SHAPE,E_nk))
       allocate( dsp_dif(LDIST_SHAPE,E_nk))
       allocate( dsp_gwd(LDIST_SHAPE,E_nk))
-      allocate( dvrg(LDIST_SHAPE,E_nk))
 
       call rpn_comm_xch_halo (F_ut1,LDIST_DIM,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -209,44 +207,55 @@
 
       i0 = 1
       in = l_niu
+!      in = l_ni
       j0 = 1
       jn = l_njv
+!      jn = l_nj
 
-      if ((G_lam).and.(l_west)) i0 = 2
-      if (l_south) j0 = 2
+!      if ((G_lam).and.(l_west)) i0 = 2
+!      if (l_south) j0 = 2
 
       F_difut1(:,:,E_nk)=0.0;F_difvt1(:,:,E_nk)=0.0;
+!         do k=1,E_nk
+!         do i=l_minx,l_maxx
+!         dsp_local(i,:,k)=Geomg_cyv_8(:)*sin(Geomg_xu_8(i))
+!         enddo
+!         enddo
       do k=1,G_nk
-         do j= j0, jn 
-            do i= i0, l_niu
-               F_difut1(i,j,k)= aaa2*(dsp_local(i,j,k)-dsp_local(i-1,j,k)) / geomg_hxu_8(i)
-               F_difut1(i,j,k)=Ens_skeb_alph*deltax*F_difut1(i,j,k)
-               F_vt1(i,j,k) = F_vt1(i,j,k)+F_difut1(i,j,k)
+         do j= j0, jn
+            do i= i0, l_ni
+               F_difut1(i,j,k) = (dsp_local(i,j,k)-dsp_local(i-1,j,k))* &
+                                  Geomg_invDXz_8(i,j)
+!                                 (Dcst_rayt_8*Geomg_hx_8(i-1)*geomg_cyv_8(j))
+               F_difut1(i,j,k) = Ens_skeb_alph*deltax*F_difut1(i,j,k)
+               F_vt1(i,j,k)    = F_vt1(i,j,k)+F_difut1(i,j,k)
             enddo
          enddo
 !
-         do j= j0, l_njv !-pil_n
+         do j= j0, l_nj !-pil_n
             do i= i0, in 
-               F_difvt1(i,j,k)= aaa2*(dsp_local(i,j+1,k) - dsp_local(i,j,k))*geomg_invDY_8(j)
+               F_difvt1(i,j,k) = (dsp_local(i,j,k) - dsp_local(i,j-1,k)) * &
+                                  Geomg_invDYv_8(j)
+!                                 (Dcst_rayt_8*Geomg_hy_8(j-1))
                F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
                F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
             enddo
          enddo
-         if (.not.G_lam) then
-            if (l_south) then
-            do i = i0, in
-               F_difut1(i,1,k)= 0.0
-               F_difvt1(i,1,k)= 0.0
-            end do
-            endif
+!         if (.not.G_lam) then
+!            if (l_south) then
+!            do i = i0, in
+!               F_difut1(i,1,k)= 0.0
+!               F_difvt1(i,1,k)= 0.0
+!            end do
+!            endif
 
-            if (l_north) then
-            do i = i0, in
-               F_difut1(i,l_nj,k)= 0.0
-               F_difvt1(i,l_nj,k)= 0.0
-            end do
-            endif
-         endif
+!            if (l_north) then
+!            do i = i0, in
+!               F_difut1(i,l_nj,k)= 0.0
+!               F_difvt1(i,l_nj,k)= 0.0
+!            end do
+!            endif
+!         endif
       enddo
 
       if(Ens_stat)then
@@ -261,34 +270,69 @@
       endif
 
       if(Ens_skeb_div)then
+!         F_difut1=0.; F_difvt1=0.
+!         F_difut1(:,:,E_nk)=1.
+!         do j=l_miny,l_maxy
+!         F_difut1(:,j,E_nk)=Geomg_cy_8(j)
+!         F_difut1(:,j,E_nk)=Geomg_cy_8(j)*Geomg_sx_8(:)
+!         F_difut1(:,j,E_nk)=-Geomg_sy_8(j)*Geomg_sx_8(:)
+!         F_difut1(:,j,E_nk)=sin(Geomg_xu_8(:))*Geomg_sy_8(j)
+!         enddo
+!         do i=l_minx,l_maxx
+!         F_difvt1(i,:,E_nk)=Geomg_cyv_8(:)
+!         F_difvt1(i,:,E_nk)=Geomg_cyv_8(:)*geomg_sx_8(i)
+!          F_difvt1(i,:,E_nk)=Geomg_cx_8(i)
+!         enddo
          call rpn_comm_xch_halo (F_difut1,LDIST_DIM,l_niu,l_nj,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo (F_difvt1,LDIST_DIM,l_ni,l_njv,E_nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
-        call caldiv_2 ( dvrg, F_difut1, F_difvt1, DIST_DIM, E_nk )
-          if (G_lam) then
-             if (l_west) then
-                dvrg(1,j0:l_njv,:) = dvrg(2,j0:l_njv,:)
-             endif
-             if (l_east) then
-                dvrg(l_ni,j0:l_njv,:) = dvrg(l_niu,j0:l_njv,:)
-             endif
-             if (l_south) then
-                dvrg(:,1,:) = dvrg(:,2,:)
-             endif
-             if (l_north) then
-                dvrg(:,l_nj,:) = dvrg(:,l_njv,:)
-             endif
-          endif
+      gmmstat = gmm_get(gmmk_ensdiv_s ,ensdiv,meta3d)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'ensvor'
+      gmmstat = gmm_get(gmmk_ensvor_s ,ensvor,meta3d)
+      if (GMM_IS_ERROR(gmmstat))write(*,6000)'ensvor'
+
+!        call caldiv_2 ( ensdiv, ensvor,F_difut1, F_difvt1, DIST_DIM, E_nk )
+        call cal_ddqq ( ensdiv, ensvor,dummy,F_difvt1, F_difut1, &
+                        0,0,dummy,dummy,.true.,.true.,.false., &
+                        DIST_DIM, E_nk )
+!write(*,*)'maxvald',maxval(ensdiv(1:l_ni,1:l_nj,E_nk)),maxloc(ensdiv(1:l_ni,1:l_nj,E_nk))
+!write(*,*)'minvald',minval(ensdiv(1:l_ni,1:l_nj,E_nk)),minloc(ensdiv(1:l_ni,1:l_nj,E_nk))
+!write(*,*)'maxvalv',maxval(ensvor(1:l_ni,1:l_nj,E_nk)),maxloc(ensvor(1:l_ni,1:l_nj,E_nk))
+!write(*,*)'minvalv',minval(ensvor(1:l_ni,1:l_nj,E_nk)),minloc(ensvor(1:l_ni,1:l_nj,E_nk))
+!do j=1,l_nj
+!write(*,*)'divj',j,ensdiv(1,j,E_nk),ensdiv(2,j,E_nk),ensdiv(3,j,E_nk)
+!enddo
+!do j=1,l_nj
+!write(*,*)'vorj',j,ensvor(1,j,E_nk),ensvor(2,j,E_nk),ensvor(3,j,E_nk)
+!enddo
+!do i=1,l_ni
+!write(*,*)'divi',i,ensdiv(i,2,E_nk),ensdiv(i,3,E_nk),ensdiv(i,4,E_nk)
+!enddo
+!do j=l_miny,l_maxy
+!write(*,*)'Geomg_hxu_8',i,geomg_invDX_8(1,j)
+!enddo
+!do j=l_miny,l_maxy
+!write(*,1)'v',j,sin(Geomg_xu_8(1))*Geomg_sy_8(j),sin(Geomg_xu_8(2))*Geomg_sy_8(!j),sin(Geomg_xu_8(3))*Geomg_sy_8(j)
+!write(*,1)'v',j,Dcst_rayt_8*F_difvt1(1,j,E_nk),Dcst_rayt_8*F_difvt1(2,j,E_nk),D!cst_rayt_8*F_difvt1(3,j,E_nk)
+!write(*,1)'u',j,Geomg_cx_8(1),Geomg_cx_8(2),Geomg_cx_8(3)
+!write(*,1)'u',j,Dcst_rayt_8*F_difut1(1,j,E_nk),Dcst_rayt_8*F_difut1(2,j,E_nk),Dcst_rayt_8*F_difut1(3,j,E_nk)
+!enddo
+!1 format(a3,i3,3(2x,e12.6))
+!do i=l_minx,l_maxx
+!write(*,*)'Geomg_x_8',i, Geomg_x_8(i)
+!enddo
+!stop'krava'
         if(Ens_stat)then
-           call glbstat2 (dvrg,'DVRG','FRCING', &
+           call glbstat2 (ensdiv,'DVRG','FRCING', &
+             LDIST_DIM,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+           call glbstat2 (ensvor,'VORT','FRCING', &
              LDIST_DIM,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
         endif
       endif
 
       deallocate(dsp_dif,dsp_gwd,dsp_local)
-      deallocate(dvrg)
 
  6000 format('ens_filter at gmm_get(',A,')')
       end subroutine ens_filter

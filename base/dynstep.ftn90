@@ -52,7 +52,7 @@
 #include "vt1.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      logical first_L, secon_L
+      logical first_L, secon_L, yyblend
       integer itraj,n,istat
       real, pointer, dimension(:,:,:) :: tr1
 !
@@ -139,6 +139,9 @@
          istat = gmm_get(gmmk_wt1_s , tr1)
          call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .true., 'CUBIC')
+         yyblend= ( (Schm_nblendyy.gt.0) .and. &
+                    (mod(Step_kount,Schm_nblendyy).eq.0) )
+         call yyg_blend (yyblend)
       else
          if (G_lam) call nest_gwa ()
       endif

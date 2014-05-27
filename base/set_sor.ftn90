@@ -204,7 +204,8 @@
 
       if (Schm_phyms_L) then
          cnt = 0
-         
+         Outp_var_S = '!@#$'
+
          if (Lun_out.gt.0) write(Lun_out,1000)
 
          DO_BUS: do ibus = 1,NBUS
@@ -219,7 +220,7 @@
                do j=1,Outp_var_max(k)
                   istat = phy_getmeta(pmeta,Outp_varnm_S(j,k),F_npath='VO', &
                        F_bpath=bus0_S(1:1),F_quiet=.true.)
-                  if (.not.RMN_IS_OK(istat)) then
+                  if (istat <= 0) then
                      cycle
                   endif
                   varname_S = pmeta%vname

@@ -66,6 +66,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
 
    real,   dimension(:,:,:), pointer :: dummy3d
    real :: ztop_bound, zbot_bound
+   real*8 :: inv_cy_8
 
    !---------------------------------------------------------------------
 
@@ -92,8 +93,9 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
 !$omp do
          do k=k0,F_nk
             do j=j0,jn
+               inv_cy_8 = 1.d0 / adx_cy_8(j)
                do i=i0,in
-                  F_xth(i,j,k) = Adx_xx_8(i) - (u_d(i,j,k)/cos(F_yth(i,j,k)) + F_ua(i,j,k)/cos(Adx_yy_8(j))) * dth
+                  F_xth(i,j,k) = Adx_xx_8(i) - (u_d(i,j,k)/cos(F_yth(i,j,k)) + F_ua(i,j,k) * inv_cy_8) * dth
                   F_yth(i,j,k) = Adx_yy_8(j) - (v_d(i,j,k) + F_va(i,j,k)) * dth
                end do
             end do

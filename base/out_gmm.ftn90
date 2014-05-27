@@ -112,7 +112,12 @@
       class_var(6,1) = 'ZD' ; class_var(6,2) = 'QQ' ; class_var(6,3) = 'TT'
       class_var(7,1) = 'TR' ; class_var(7,2) = 'QQ' ; class_var(7,3) = 'TT'
       class_var(8,1) = 'ST' ; class_var(8,2) = 'QQ' ; class_var(8,3) = 'SF'
-
+      class_var(9,1) = 'MC' ; class_var(9,2) = 'QQ' ; class_var(9,3) = 'TT'
+      class_var(10,1) = 'DI' ; class_var(10,2) = 'UU' ; class_var(10,3) = 'MM'
+      class_var(11,1) = 'UG' ; class_var(11,2) = 'UU' ; class_var(11,3) = 'MM'
+      class_var(12,1) = 'VG' ; class_var(12,2) = 'VV' ; class_var(12,3) = 'MM'
+      class_var(13,1) = 'EN' ; class_var(13,2) = 'QQ' ; class_var(13,3) = 'TT'
+      class_var(14,1) = 'FI' ; class_var(14,2) = 'QQ' ; class_var(14,3) = 'SF'
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko)
@@ -123,7 +128,7 @@
          if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
-            do cid=1,8
+            do cid=1,14
                if (keylist(i)(1:2) == class_var(cid,1)) id=cid
             end do
             if (id.lt.0) then

@@ -85,6 +85,7 @@
       Schm_xwvt3    = 0
       Schm_itnlh    = 2
       Schm_itraj    = 2
+      Schm_nblendyy = -1
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
       Schm_cub_traj_L = .false.

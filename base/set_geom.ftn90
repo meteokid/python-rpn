@@ -67,7 +67,7 @@
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
-      real*8 scale_factor
+      real*8 scale_factor, scale_factor_z
       parameter( ZERO_8  = 0.0 )
       parameter( HALF_8  = 0.5 )
       parameter( ONE_8   = 1.0 )
@@ -160,7 +160,7 @@
          do i=G_ni+1,2*G_ni
             G_xg_8(i) = G_xg_8(i-G_ni) + TWO_8*Dcst_pi_8
          end do
-         
+
          G_yg_8( 0    ) = -(G_yg_8(1) + Dcst_pi_8)
          G_yg_8(-1    ) = -TWO_8*Dcst_pi_8 -  &
               (G_yg_8(0)+G_yg_8(1)+G_yg_8(2))
@@ -203,6 +203,7 @@
       call hpalloc(Geomg_cyv2_8_,LARRAY1DY, err,8)
       call hpalloc(Geomg_invDX_8_   ,LARRAY1DX*LARRAY1DY, err,8)
       call hpalloc(Geomg_invDXu_8_  ,LARRAY1DX*LARRAY1DY, err,8)
+      call hpalloc(Geomg_invDXz_8_  ,LARRAY1DX*LARRAY1DY, err,8)
       call hpalloc(Geomg_invDY_8_   ,LARRAY1DY, err,8)
       call hpalloc(Geomg_invDYv_8_  ,LARRAY1DY, err,8)
       call hpalloc(Geomg_invcy_8_   ,LARRAY1DY, err,8)
@@ -241,11 +242,13 @@
       end do
 
       do j=1-G_haloy,l_nj+G_haloy
-         scale_factor = Dcst_rayt_8 * Geomg_cy_8(j)
+         scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
+         scale_factor_z = Dcst_rayt_8 * Geomg_cyv_8(j)
          do i=1-G_halox,l_ni+G_halox
             indx = offi + i
             Geomg_invDXu_8(i,j) = ONE_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx)))
             Geomg_invDX_8(i,j)  = TWO_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx-1)))
+            Geomg_invDXz_8(i,j) = ONE_8/(scale_factor_z * ( G_xg_8(indx+1)- G_xg_8(indx)))
          end do
       end do
 

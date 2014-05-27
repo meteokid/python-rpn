@@ -60,7 +60,7 @@
 #include "grd.cdk"
 #include "schm.cdk"
 
-      integer i,j,k,ii,istat,psum, kind,nko,l_ninj
+      integer i,j,k,ii,istat,psum, kind,nko,nkof,l_ninj
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,pnuu,pnvv,pnuv
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
@@ -164,10 +164,12 @@
 
       uu(:,:,l_nk+1) = uu(:,:,l_nk)
       vv(:,:,l_nk+1) = vv(:,:,l_nk)
-      if (Schm_phyms_L) call itf_phy_sfcdiag (uu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
-                                                               l_miny,l_maxy,'UDIAG')
-      if (Schm_phyms_L) call itf_phy_sfcdiag (vv(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
-                                                               l_miny,l_maxy,'VDIAG')
+      if (Schm_phyms_L) then
+         call itf_phy_sfcdiag (uu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
+                                                l_miny,l_maxy,'UDIAG')
+         call itf_phy_sfcdiag (vv(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
+                                                l_miny,l_maxy,'VDIAG')
+      endif
 
       lastdt = Lctl_step
 
@@ -180,17 +182,22 @@
 
          kind=Level_kind_ip1
 !       Setup the indexing for output
-         allocate (indo( min(Level_max(levset),Level_momentum) ))
+         allocate (indo(G_nk+1))
          call out_slev(Level(1,levset), Level_max(levset), &
                        Level_momentum,indo,nko)
+         nkof= nko
+         if (nko .eq. G_nk) then
+            nkof= G_nk + 1
+            indo(nkof)= nkof
+         endif
 
          if (pnuu.ne.0) &
               call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'UU  ',prmult,0.0,kind,G_nk+1, indo, nko, nbit(pnuu) )
+                 'UU  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnuu) )
 
          if (pnvv.ne.0) &
               call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'VV  ',prmult,0.0,kind,G_nk+1, indo, nko, nbit(pnvv) )
+                 'VV  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnvv) )
          if (pnuv.ne.0) then
             do k = 1,G_nk+1
                do j = j0, jn
@@ -201,7 +208,7 @@
                enddo
             enddo
             call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'UV  ',prmult,0.0,kind,G_nk+1, indo, nko, nbit(pnuv) )
+                 'UV  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnuv) )
          endif
          deallocate(indo)
 

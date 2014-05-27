@@ -85,8 +85,9 @@
                     vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                      qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
 
-         call cal_ddqq (div, vor, qr, ut1, vt1                     ,&
+         call cal_ddqq (div,qr,vor, ut1, vt1                     ,&
                         filt(pndd),coef(pndd),filt(pnqq),coef(pnqq),&
+                        (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk)
       else
          kind= 2
@@ -117,8 +118,9 @@
                     vor(l_minx:l_maxx,l_miny:l_maxy,nko),&
                      qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
 
-         call cal_ddqq (div,vor,qr, uu_pres,vv_pres                ,&
+         call cal_ddqq (div,qr,vor, uu_pres,vv_pres                ,&
                         filt(pndd),coef(pndd),filt(pnqq),coef(pnqq),&
+                        (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
                         l_minx,l_maxx,l_miny,l_maxy, nko)
 
          deallocate (uu_pres,vv_pres,cible)

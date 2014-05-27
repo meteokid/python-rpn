@@ -66,6 +66,8 @@
       gmmk_difvt1_s= 'DIFVT1'
       gmmk_ugwdt1_s= 'UGWDT1'
       gmmk_vgwdt1_s= 'VGWDT1'
+      gmmk_ensdiv_s= 'ENSDIV'
+      gmmk_ensvor_s= 'ENSVOR'
       gmmk_anm_s   = 'ANMENS'
       gmmk_znm_s   = 'ZNMENS'
       gmmk_dumdum_s= 'DUMDUM'
@@ -80,6 +82,10 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
       istat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
+      istat = gmm_create(gmmk_ensdiv_s,ensdiv,meta3d_nk,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ensdiv'
+      istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ensvor'
       istat = gmm_create(gmmk_anm_s   ,anm   ,meta2d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'anm'
       istat = gmm_create(gmmk_znm_s   ,znm   ,meta2d_znm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
@@ -88,7 +94,7 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 
  6000 format('ens_set_mem at gmm_create(',A,')')
- 6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SET_MEM)' &
+ 6010 format(/,'INITIALIZATION OF MEMORY FOR ENSEMBLES (S/R ENS_SETMEM)' &
              /(55('=')))
 !
 !-------------------------------------------------------------------

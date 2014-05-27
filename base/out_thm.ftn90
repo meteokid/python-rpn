@@ -113,7 +113,7 @@
 
       type(gmm_metadata) :: mymeta
       real deg2rad,zd2etad
-      integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,istat,nk_under
+      integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,nkof,istat,nk_under
       integer, dimension(:), allocatable::indo,indo_t
       real andre(l_ni,l_nj)
       real w1(LDIST_SHAPE), w2(LDIST_SHAPE)
@@ -453,13 +453,19 @@
 
 !       Setup the indexing for output 
           kind=Level_kind_ip1
-          allocate (indo( min(Level_max(levset),Level_momentum) ))
-          allocate (indo_t( min(Level_max(levset),Level_thermo) ))
+          allocate ( indo(G_nk+1), indo_t(G_nk+1) )
+!          allocate (indo( min(Level_max(levset),Level_momentum) ))
+!          allocate (indo_t( min(Level_max(levset),Level_thermo) ))
           call out_slev(Level(1,levset), Level_max(levset), &
                         Level_momentum,indo,nko)
           call out_slev(Level(1,levset), Level_max(levset), &
                         Level_thermo,indo_t,nko_t)
-
+          nkof= nko_t
+          if (nko_t .eq. G_nk) then
+             nkof= G_nk + 1
+             indo_t(nkof)= nkof
+          endif
+          
           if (pngz.ne.0)then
              nko_m=nko
              if (indo(nko).eq.G_nk+1 .and. indo_t(nko_t).eq.G_nk+1) then
@@ -477,16 +483,16 @@
           endif
          if (pnvt.ne.0)then
             call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo_t,nko_t, nbit(pnvt) )
+                 'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo_t,nkof, nbit(pnvt) )
          endif
          if (pnth.ne.0) then
                call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pnth) )               
+                    'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nkof,nbit(pnth) )               
          endif
 
          if (pntt.ne.0)then            
             call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'TT  ' ,1.0,pradd_pntt, kind,G_nk+1,indo_t,nko_t, nbit(pntt) )
+                 'TT  ' ,1.0,pradd_pntt, kind,G_nk+1,indo_t,nkof, nbit(pntt) )
          endif
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
 
@@ -517,7 +523,7 @@
              call mthtaw4 (t8,hu,tt, px_ta,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,G_nk+1,l_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-              'TW  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pntw) )
+              'TW  ',1.0,0.0, kind,G_nk+1, indo_t, nkof, nbit(pntw) )
          endif
 
          if (pnes.ne.0 .or. pntd.ne.0) then
@@ -538,7 +544,7 @@
 
              if (pnes.ne.0) &
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-              'ES  ',1.0,0.0, kind,G_nk+1, indo_t, nko_t, nbit(pnes) )
+              'ES  ',1.0,0.0, kind,G_nk+1, indo_t, nkof, nbit(pnes) )
 
              if (pntd.ne.0) then
 !            Calculate TD (tt=TT,t8=old ES, t8=TD=TT-ES)
@@ -550,7 +556,7 @@
                     enddo
                  enddo
                  call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo_t,nko_t,nbit(pntd) )
+                 'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo_t,nkof,nbit(pntd) )
              endif
          endif
 

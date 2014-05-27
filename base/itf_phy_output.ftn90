@@ -176,12 +176,12 @@
              call out_vref(Level(1:Level_max(levset),levset),ig1=ig1)
          endif
 
-         do ii=1, Outp_var_max(kk)
+         PHYSICS_VARS: do ii=1, Outp_var_max(kk)
 
-            if (phy_getmeta ( pmeta, Outp_var_S(ii,kk), F_npath='O',&
-                              F_bpath='PV', F_quiet=.true. ) .eq. 0 ) then
+            WRITE_FIELD: if (phy_getmeta ( pmeta, Outp_var_S(ii,kk), F_npath='O',&
+                 F_bpath='PVE', F_quiet=.true. ) > 0 ) then
 
-               if (pmeta%nk .eq. 1) then
+               FIELD_SHAPE: if (pmeta%nk .eq. 1) then
 !                 2D field
                   mul= 1.0
                   if (trim(Outp_var_S(ii,kk)).eq.'LA') mul= 180./Dcst_pi_8
@@ -263,9 +263,9 @@
                              2,nko,indo_pres,nko,Outp_nbit(ii,kk) )
 
                   endif
-               endif
-            endif
-         end do
+               endif FIELD_SHAPE
+            endif WRITE_FIELD
+         end do PHYSICS_VARS
 
          deallocate (indo, indo_t, buso_pres, indo_pres, prprlvl, cible)
          

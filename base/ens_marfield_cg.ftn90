@@ -19,6 +19,7 @@
 !     
       subroutine ens_marfield_cg(fgem,E_nk)
 !
+      use phy_itf, only: phy_put
       use harmonsphere, only : harmon, harmon_init, harmon_destroy, harmons
       implicit none
 #include <arch_specific.hf>
@@ -38,6 +39,7 @@
 !arguments     none
 !
 !implicits
+#include <rmnlib_basics.hf>
 #include "gmm.hf"
 #include "ens_gmm_dim.cdk"
 #include "ens_gmm_var.cdk"
@@ -50,16 +52,16 @@
 #include "ptopo.cdk"
 #include "hgc.cdk"
 #include "ens_param.cdk"
+#include "itf_phy.cdk"
 !
 !modules
 
       integer p_ni,p_nj,p_offi,p_offj
        integer, external :: read_db_file,write_db_file
        real,    external :: plgndr, ran1, gasdev
-       integer, external :: fnom,fstouv,fstfrm,fclos
-       integer, external :: ezgdef_fmem,ezqkdef,ezsint,ezdefset,ezsetopt
+!       integer, external :: fnom,fstouv,fstfrm,fclos
+!       integer, external :: ezgdef_fmem,ezqkdef,ezsint,ezdefset,ezsetopt
 
-      real, pointer, dimension(:,:) :: BUSPER_3d
 !
 ! nlat, nlon                 dimension of the Gaussian grid
 ! mzt                        Nombre d'onde vertical
@@ -92,21 +94,16 @@
       type (harmon) :: harmon_dsc 
       real,    dimension(:),    allocatable :: veco1,xsiv,xcov
       complex, dimension(:,:,:),allocatable :: pnm
-      real,    dimension(:,:,:),allocatable :: fgau, fgau_str, fgem_str
+      real,    dimension(:,:,:),allocatable :: fgau, fgau_str
       complex, dimension(:,:),  allocatable :: pnm2
-      real,    dimension(:,:),  allocatable :: fgau2, fgau2_str, fgem2_str
+      real,    dimension(:,:),  allocatable :: fgau2, fgau2_str
+      real,    dimension(:,:,:),pointer     :: fgem2_str, fgem_str
 !
 ! variables et champs auxiliaires complexes
       complex,dimension(:,:),allocatable :: hoco,veco
 !
 ! Initialise les variables de Ens_nml.cdk
 !
-
-! this routine cannot work anymore because p_ni,p_nj,p_offi,p_offj
-! are undefined
-
-      print*, 'STOP in ens_marfield'
-      stop
 
       xmn = Ens_mc3d_min ; xmx = Ens_mc3d_max
 !NG  Mean of the 3D Markov chains now always middle between min and max
@@ -136,10 +133,6 @@
 !
       INITIALIZE: if (.not.init_done) then
          if(Ens_ptp_conf)then
-            bus = 'PER'
-            
-            print*, 'use phy_put instead'
-            stop
             
 !!$            istat = phybusindx ('MRKV', bus, mrkv, lght, soit)
 !!$            istat = phybusindx ('MRK2', bus, mrk2, lght, soit)
@@ -334,7 +327,6 @@
 
       !TODO: should not work on perbus directly, replace by bus_unfold + opr + bus_fold?
 
-      gmmstat = gmm_get ('BUSPER_3d',BUSPER_3d,meta)
       if(aa/=0.and.aa/=1)then
          where (abs(fgau) > 1.)
             fgau=sign(1.,fgau)
@@ -349,38 +341,19 @@
             ier = ezsint(fgem_str(1,1,k),fgau_str(1,1,k))
          enddo
 !
-      if(Ens_stat)then
-          call glbstat2 (fgem_str,'MCSP','STR', &
-           1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-      endif
+         if(Ens_stat)then
+            call glbstat2 (fgem_str,'MCSP','STR', &
+             1,l_ni,1,l_nj,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
+         endif
 
-         do j=1,p_nj
-            jj=j+p_offj
-            do k=1,E_nk
-               do i=1,p_ni
-                  ii=i+p_offi
-                  indx = (k-1)*p_ni+i-1
-                  busper_3d(mrkv+indx,j)=fgem_str(ii,jj,k)
-               enddo
-            enddo
-         enddo
-         deallocate(fgau_str,fgem_str)
       else
-!
-         do j=1,p_nj
-            jj=j+p_offj
-            do k=1,E_nk
-               do i=1,p_ni
-                  ii=i+p_offi
-                  indx = (k-1)*p_ni+i-1
-                  busper_3d(mrkv+indx,j)=1.0
-               enddo
-            enddo
-         enddo
+         fgem_str=1.0
       endif
-      deallocate(fgau,pnm,veco)
+      istat = phy_put(fgem_str,'mrkv',F_npath='V',F_bpath='P')
+      deallocate(fgau,pnm,veco,fgau_str,fgem_str)
+
 !====================================
-      allocate(fgem2_str(l_ni,l_nj))
+      allocate(fgem2_str(l_ni,l_nj,Ens_mc2d_ncha))
 
       do mz=1,Ens_mc2d_ncha
          allocate(fgau2(Ens_mc2d_nlon(mz),Ens_mc2d_nlat(mz)))
@@ -433,29 +406,14 @@
         (Ens_mc2d_max(mz)-Ens_mc2d_mean)
          if(Ens_mc2d_mean/=0.0) fgau2_str=fgau2_str+Ens_mc2d_mean
 !
-            ier = ezsint(fgem2_str,fgau2_str)
+            ier = ezsint(fgem2_str(:,:,mz),fgau2_str)
+         else
+            fgem2_str(:,:,mz)=1.0
+         endif
 !
-         do j=1,p_nj
-            jj=j+p_offj
-               do i=1,p_ni
-                  ii=i+p_offi
-                  indx = (mz-1)*p_ni+i-1
-                  busper_3d(mrk2+indx,j)=fgem2_str(ii,jj)
-               enddo
-          enddo
-        else
-          do j=1,p_nj
-            jj=j+p_offj
-            do i=1,p_ni
-              ii=i+p_offi
-              indx = (mz-1)*p_ni+i-1
-              busper_3d(mrk2+indx,j)=1.0
-            enddo
-          enddo
-        endif
 
         if(Ens_stat)then
-          call glbstat2 (fgem2_str,'MC2D','STR',&
+          call glbstat2 (fgem2_str(:,:,mz),'MC2D','STR',&
            1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
 !          call glbstat2 (fgau2(Ens_mc2d_nlon(mz),Ens_mc2d_nlat(mz)),'MCGA','NOSTR',&
 !           1,Ens_mc2d_nlon(mz),1,Ens_mc2d_nlat(mz),1,1,1,G_ni,1,G_nj,1,1)
@@ -466,10 +424,11 @@
 
         deallocate(fgau2,fgau2_str,pnm2)
 
-      enddo
+     enddo
+     istat = phy_put(fgem2_str,'mrk2',F_npath='V',F_bpath='P')
 !
 
-      deallocate(fgem2_str)
+     deallocate(fgem2_str)
 !     
 !
  1000 format( &

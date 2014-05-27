@@ -142,8 +142,12 @@
       call diag_zd_w ( zdt1,wt1, ut1,vt1,tt1,st1 , &
                        LDIST_DIM, G_nk, .not.Ana_zd_L, .not.Ana_w_L )
 
-      if (G_lam.and..not.Grd_yinyang_L) call nest_init ()
-
+      if ( Grd_yinyang_L ) then
+         call yyg_blend (Schm_nblendyy.ge.0)
+      else
+         if ( G_lam ) call nest_init ()
+      endif
+         
       if (.not.Acql_pwuv) call pw_update_UV
       if (.not.Acql_pwtt) call pw_update_T
       call pw_update_GPW

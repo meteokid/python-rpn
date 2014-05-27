@@ -22,11 +22,11 @@
 !
 !
 #endif
-!
+
       character(len=*), parameter :: P_LNAME_S='grid/phy_local'
-!
-      integer :: p_lgid,p_li0,p_li1,p_lj0,p_lj1,p_nk
+
+      integer :: p_lgid,p_li0,p_li1,p_lj0,p_lj1
       logical :: p_user_busper_L
-!
-      common / itf_phy_i / p_lgid,p_li0,p_li1,p_lj0,p_lj1,p_nk
+
+      common / itf_phy_i / p_lgid,p_li0,p_li1,p_lj0,p_lj1
       common / itf_phy_l / p_user_busper_L

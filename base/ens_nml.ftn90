@@ -50,7 +50,7 @@
 
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
-      integer i, ier,err,err_open,unf,nrec
+      integer i, ier,err,err_open,unf,nrec,ios
 
       namelist /ensembles/                                           &
           Ens_conf,      Ens_skeb_conf,                              &
@@ -120,11 +120,10 @@
       unf = 0
       found_namelist_ok = .false.
       err = wkoffit (F_namelist_S)
-
       if (err.ge.-1) then
          err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', nrec)
          if (err_open.eq.0) then
-            read (unf, nml=ensembles, end = 1000, err=999)
+            read (unf, nml=ensembles, end = 1000, err=999, iostat=ios)
             found_namelist_ok = .true.
             if (F_unout.ge.0) write (F_unout,nml=ensembles)
          endif
@@ -197,20 +196,27 @@
       endif
 
       ier= WB_OK
-      ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha    , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPCAPE'    , Ens_ptp_cape     , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPTLC'     , Ens_ptp_tlc      , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPCRITW'   , Ens_ptp_crit_w   , WB_REWRITE_MANY),ier)
-      ier= min(wb_put('ens/PTPFACREDUC', Ens_ptp_fac_reduc, WB_REWRITE_MANY),ier)
+      if (stochphy_L) then
+         ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha    , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPCAPE'    , Ens_ptp_cape     , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPTLC'     , Ens_ptp_tlc      , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPCRITW'   , Ens_ptp_crit_w   , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/PTPFACREDUC', Ens_ptp_fac_reduc, WB_REWRITE_MANY),ier)
+      endif
 
       err=0
       if (.not.WB_IS_OK(ier)) ens_nml= -1
 !
 !--------------------------------------------------------------------
 !
- 999  return
+      if(ios<0)then
+        ier= min(wb_put('ens/STOCHPHY'   , Ens_ptp_conf       , WB_REWRITE_MANY),ier)
+        ens_nml= -3
+      endif
+999   continue
+      return
       end
 
