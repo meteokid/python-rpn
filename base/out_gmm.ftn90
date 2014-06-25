@@ -15,15 +15,13 @@
 
 !**s/r out_gmm - output GMM fields
 !
-#include "model_macros_f.h"
-!
       subroutine out_gmm2 (levset,set)
       use out_vref_mod, only: out_vref
       implicit none
 #include <arch_specific.hf>
-!
+
       integer levset,set
-!
+
 !author
 !     Lee V.                    - rpn July 2009 (from output VMM)
 !
@@ -74,8 +72,7 @@
 ! o o o o o o2*G_nk+2 -                              -
 ! ===========2*G_nk+3 -                              X
 ! model surface
-!
-!----------------------------------------------------------------------
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "out3.cdk"
@@ -84,7 +81,7 @@
 #include "lun.cdk"
 #include "ver.cdk"
 #include "level.cdk"
-!
+
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(256) :: keylist
       character(len=2) class_var(100,3)
@@ -104,20 +101,24 @@
       if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
             Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
 
-      class_var(1,1) = 'UT' ; class_var(1,2) = 'UU' ; class_var(1,3) = 'MM'
-      class_var(2,1) = 'VT' ; class_var(2,2) = 'VV' ; class_var(2,3) = 'MM'
-      class_var(3,1) = 'QT' ; class_var(3,2) = 'QQ' ; class_var(3,3) = 'MQ'
-      class_var(4,1) = 'TT' ; class_var(4,2) = 'QQ' ; class_var(4,3) = 'TT'
-      class_var(5,1) = 'WT' ; class_var(5,2) = 'QQ' ; class_var(5,3) = 'TT'
-      class_var(6,1) = 'ZD' ; class_var(6,2) = 'QQ' ; class_var(6,3) = 'TT'
-      class_var(7,1) = 'TR' ; class_var(7,2) = 'QQ' ; class_var(7,3) = 'TT'
-      class_var(8,1) = 'ST' ; class_var(8,2) = 'QQ' ; class_var(8,3) = 'SF'
-      class_var(9,1) = 'MC' ; class_var(9,2) = 'QQ' ; class_var(9,3) = 'TT'
+      class_var( 1,1) = 'UT' ; class_var( 1,2) = 'UU' ; class_var( 1,3) = 'MM'
+      class_var( 2,1) = 'VT' ; class_var( 2,2) = 'VV' ; class_var( 2,3) = 'MM'
+      class_var( 3,1) = 'QT' ; class_var( 3,2) = 'QQ' ; class_var( 3,3) = 'MQ'
+      class_var( 4,1) = 'TT' ; class_var( 4,2) = 'QQ' ; class_var( 4,3) = 'TT'
+      class_var( 5,1) = 'WT' ; class_var( 5,2) = 'QQ' ; class_var( 5,3) = 'TT'
+      class_var( 6,1) = 'ZD' ; class_var( 6,2) = 'QQ' ; class_var( 6,3) = 'TT'
+      class_var( 7,1) = 'TR' ; class_var( 7,2) = 'QQ' ; class_var( 7,3) = 'TT'
+      class_var( 8,1) = 'ST' ; class_var( 8,2) = 'QQ' ; class_var( 8,3) = 'SF'
+      class_var( 9,1) = 'MC' ; class_var( 9,2) = 'QQ' ; class_var( 9,3) = 'TT'
       class_var(10,1) = 'DI' ; class_var(10,2) = 'UU' ; class_var(10,3) = 'MM'
       class_var(11,1) = 'UG' ; class_var(11,2) = 'UU' ; class_var(11,3) = 'MM'
       class_var(12,1) = 'VG' ; class_var(12,2) = 'VV' ; class_var(12,3) = 'MM'
       class_var(13,1) = 'EN' ; class_var(13,2) = 'QQ' ; class_var(13,3) = 'TT'
       class_var(14,1) = 'FI' ; class_var(14,2) = 'QQ' ; class_var(14,3) = 'SF'
+      class_var(15,1) = 'UD' ; class_var(15,2) = 'QQ' ; class_var(15,3) = 'MM'
+      class_var(16,1) = 'VD' ; class_var(16,2) = 'QQ' ; class_var(16,3) = 'MM'
+      class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
+
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko)
@@ -128,7 +129,7 @@
          if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
-            do cid=1,14
+            do cid=1,17
                if (keylist(i)(1:2) == class_var(cid,1)) id=cid
             end do
             if (id.lt.0) then

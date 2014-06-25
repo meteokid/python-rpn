@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r itf_phy_copy
+
       subroutine itf_phy_copy
       implicit none
 #include <arch_specific.hf>
@@ -25,33 +26,29 @@
 ! v4_70 - Desgagne, M.     - initial version
 
 #include <gmm.hf>
-#include <msg.h>
+#include "glb_ld.cdk"
+#include "pw.cdk"
 
-      integer istat_src, istat_dst
-      real, pointer, dimension (:,:,:) :: tr, trcopy  => null()
+      integer istat,k
+      real, pointer, dimension (:,:,:) :: uu_copy,vv_copy,tt_copy  => null()
 !     ________________________________________________________________
 !
-! Take a copy of PW_UU:P
+      istat = gmm_get(gmmk_pw_uu_plus_s,pw_uu_plus)
+      istat = gmm_get(gmmk_pw_uu_copy_s,uu_copy   )
+      istat = gmm_get(gmmk_pw_vv_plus_s,pw_vv_plus)
+      istat = gmm_get(gmmk_pw_vv_copy_s,vv_copy   )
+      istat = gmm_get(gmmk_pw_tt_plus_s,pw_tt_plus)
+      istat = gmm_get(gmmk_pw_tt_copy_s,tt_copy   )
 
-      istat_src = gmm_get('PW_UU:P'   ,tr    )
-      istat_dst = gmm_get('PW_UU_COPY',trcopy)
-
-      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
-         trcopy = tr
-      else
-         call msg (MSG_ERROR,'(itf_phy_copy) Probleme making copy of PW_UU:P')
-      endif
-
-! Take a copy of PW_VV:P
-
-      istat_src = gmm_get('PW_VV:P'   ,tr    )
-      istat_dst = gmm_get('PW_VV_COPY',trcopy)
-
-      if ((istat_src.eq.0).and.(istat_dst.eq.0)) then
-         trcopy = tr
-      else
-         call msg (MSG_ERROR,'(itf_phy_copy) Probleme making copy of PW_VV:P')
-      endif
+!$omp parallel
+!$omp do
+      do k= 1, G_nk
+         uu_copy(:,:,k) = pw_uu_plus(:,:,k)
+         vv_copy(:,:,k) = pw_vv_plus(:,:,k)
+         tt_copy(:,:,k) = pw_tt_plus(:,:,k)
+      end do
+!$omp enddo
+!$omp end parallel
 !     ________________________________________________________________
 !
       return

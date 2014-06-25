@@ -14,20 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**   fillup field from data in 3DF files
-#include "model_macros_f.h"
-!
+
       subroutine filmup ( nomvar,f,n1,n2,n3,n4,nk,unf,ofi,ofj, &
                                         err,ni1,nj1,nk1,nbits )
       implicit none
 #include <arch_specific.hf>
-!
+
       character*(*) nomvar
       integer n1,n2,n3,n4,nk,unf,ofi,ofj,err
       integer ni1,nj1,nk1,nbits
       real f(n1:n2,n3:n4,nk)
       
 #include "lun.cdk"
-!
+
       integer i,j,k,n,nb
       real tr1(ni1,nj1,nk1)
       real, dimension (:), allocatable :: wkc
@@ -55,6 +54,7 @@
           if(Lun_out.gt.0)  &
              write(Lun_out,*) 'Error, filmup ',nomvar(1:4),  &
                      'levels required=',nk,'levels to read=',nk1
+          goto 45
       endif
 
       do k=1,nk

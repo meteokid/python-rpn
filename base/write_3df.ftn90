@@ -12,51 +12,45 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-!**s/r write_3df
-#include "model_macros_f.h"
 !
-      subroutine write_3df ( fa,lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
-                             nomvar,gid, gif, gjd, gjf,con,ind_o,unf )
+      subroutine write_3df2 ( fa,lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
+                              nomvar,gid, gif, gjd, gjf, unf )
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) nomvar
       integer lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
-              gid, gif, gjd, gjf, ind_o(*), unf
-      real fa(*),con
-!
+              gid, gif, gjd, gjf, unf
+      real fa (lminx:lmaxx,lminy:lmaxy,nks)
+
 !author 
 !     Michel Desgagne   - Spring 2006
 !
 !revision
 ! v3_30 - Lee V.          - initial version
-!
-!*
+
 #include "grdc.cdk"
 #include "ptopo.cdk"
-#include "lctl.cdk"
-#include "lun.cdk"
-!
-      integer i,j,k,n,nbits,nb
-      real tr1(nis,njs,nks),add
+
+      integer i,j,k,n,nbits,nb,ind_o(nks)
+      real tr1(nis,njs,nks),add,con
       real, dimension (:), allocatable :: wkc
-      logical prout_L
 !
 !----------------------------------------------------------------------
 !
 !     Writing field 'nomvar' if fa to binary fortran file unit=unf
 !
-      add = 0.
+      add = 0. ; con = 1.
+      do k= 1, nks
+         ind_o(k) = k
+      end do
       call blkcol ( tr1,nis,njs,gid,gif,gjd,gjf,con,add, &
                     fa,lminx,lmaxx,lminy,lmaxy,nks,ind_o,nks )
-!
       nb = 0
       nbits = Grdc_nbits
-!
+
       if (Ptopo_blocme.eq.0) then
+         print*, 'write_3df: ',nomvar(1:4),nis,njs,nks,nbits
          write (unf) nomvar(1:4),nis,njs,nks,nbits
          if (nbits.ge.32) then
             do k=1,nks
@@ -74,5 +68,6 @@
       endif
 !
 !----------------------------------------------------------------------
+!
       return
       end

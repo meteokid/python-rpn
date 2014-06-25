@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,15 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r gem_nml
-!
-#include "model_macros_f.h"
-!
+
       integer function gem_nml (F_namelistf_S)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) F_namelistf_S
-!
+
 !author
 !     M. Desgagne    - Summer  2006
 !
@@ -38,12 +36,12 @@
 !
 !object
 !  Default configuration and reading namelists gem_cfgs and grdc
-!
+
 #include "nml.cdk"
-!
+
       integer  fnom
       external fnom
-!
+
       character*64 dumc_S
       integer i,k,nrec,err,unf
 !
@@ -132,12 +130,14 @@
 !
       sol_fft_L     = .true.
       sol_type_S    = 'DIRECT'
-      sol_precond_S = 'JACOBI'
+      Sol3D_krylov_S = 'FGMRES'
+      sol2D_precond_S = 'JACOBI'
+      sol3D_precond_S = 'JACOBI'
       sol_im        = 15
       sol_fgm_maxits= 200
       sol_fgm_eps   = 1.d-07
       sol_yyg_maxits= 40
-      sol_yyg_eps   = 1.d-07
+      sol_yyg_eps   = 1.d-04
 !
       Eigv_parity_L = .false.
       Hzd_difva_L= .false.
@@ -153,7 +153,7 @@
       Vspng_coeftop = -1.
       Vspng_njpole  = 3
       Vspng_vec_L   = .false.
-      Vspng_zmean_L = .false.      
+      Vspng_zmean_L = .false.
 !
       Zdot_divHLM_L  = .false.
 !
@@ -174,7 +174,6 @@
 
       Eq_sponge=0.
 
-      Out3_zund        = 0.
       Out3_lieb_levels = 0.
       Out3_lieb_conv   = 0.1
       Out3_lieb_maxite = 100
@@ -204,13 +203,13 @@
 !
 !     Williamson's cases section
 !     --------------------------
-      Williamson_case     = 0 
+      Williamson_case     = 0
       Williamson_alpha    = 0.0
 !
       Grdc_xlat1  = Grd_xlat1
       Grdc_xlon1  = Grd_xlon1
       Grdc_xlat2  = Grd_xlat2
-      Grdc_xlon2  = Grd_xlon2 
+      Grdc_xlon2  = Grd_xlon2
       Grdc_ni     = 0
       Grdc_nj     = 0
       grdc_dx     = -1.
@@ -218,7 +217,7 @@
       Grdc_Hblen  = 10
       Grdc_maxcfl = 1
       Grdc_nfe    = ''
-      Grdc_start_S= '' 
+      Grdc_start_S= ''
       Grdc_end_S  = ''
       Grdc_initphy_L = .false.
       Grdc_nbits  = 32
@@ -250,15 +249,15 @@
       gem_nml = 1
       goto 9999
 !
- 9110 if (Lun_out.gt.0) then 
+ 9110 if (Lun_out.gt.0) then
          write (Lun_out, 9050) trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
 !
  9120 call fclos (unf)
-      if (Lun_out.ge.0) then  
-         write (Lun_out, 9150) 'gem_cfgs',trim( F_namelistf_S ) 
+      if (Lun_out.ge.0) then
+         write (Lun_out, 9150) 'gem_cfgs',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
@@ -270,8 +269,8 @@
       goto 9999
 !
  9130 call fclos (unf)
-      if (Lun_out.ge.0) then  
-         write (Lun_out, 9150) 'grdc',trim( F_namelistf_S ) 
+      if (Lun_out.ge.0) then
+         write (Lun_out, 9150) 'grdc',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
 !

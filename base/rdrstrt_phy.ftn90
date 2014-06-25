@@ -41,7 +41,6 @@
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "step.cdk"
-#include "itf_phy.cdk"
 
       integer, external :: fnom,fclos
 
@@ -62,7 +61,7 @@
 
 !     Basic setup for busper reading
 
-      p_user_busper_L = .false.
+      Rstri_user_busper_L = .false.
       have_userbus_L = (clib_fileexist(trim(Path_input_S)//'/BUSPER.tar') == CLIB_OK .and. Step_kount == 0)
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Mod_runstrt_S,dayfrac)
@@ -128,7 +127,7 @@
          endif
 !        Successful read of busper
          errcode= 0
-         p_user_busper_L = .true.
+         Rstri_user_busper_L = .true.
       else
          errcode= 0
       endif

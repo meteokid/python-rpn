@@ -15,21 +15,19 @@
 
 !**s/r casc_3df  - Reads 3DF pilot files
 !
-#include "model_macros_f.h"
-!
       subroutine casc_3df2 ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
-                             Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,Nk,F_datev)
+                             Mminx,Mmaxx,Mminy,Mmaxy, Nk, F_datev )
       use nest_blending, only: nest_blend
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) F_datev
-      integer Mminx,Mmaxx,Mminy,Mmaxy,dimgx,dimgy,Nk
+      integer Mminx,Mmaxx,Mminy,Mmaxy,Nk
       real F_u (Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_v(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_w (Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_t(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd(Mminx:Mmaxx,Mminy:Mmaxy,  Nk), F_s(Mminx:Mmaxx,Mminy:Mmaxy   ), &
            F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
-!
+
 !author
 !     M. Desgagne  April 2006 (MC2 casc_3df_dynp)
 !
@@ -42,7 +40,7 @@
 ! v4_05 - Lee V.         - Ind_u,Ind_v vectors are filled incorrectly
 ! v4_06 - McTaggart-Cowan R. - Nesajr correction
 ! v4_06 - Lee V.         - Predat is called outside of this routine
-!*
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "bcsgrds.cdk"
@@ -66,7 +64,7 @@
 #include "p_geof.cdk"
 #include "filename.cdk"
 #include "hgc.cdk"
-!
+
 !        presstype
 !            0 => p =    A                         (B=0),  prs-anal
 !            1 => p =    A+B*   ps       , F_p0=ps (A=0),  sig-anal
@@ -75,15 +73,14 @@
 !            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
 !        ?   5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
-!
+
 Interface
 subroutine blk_dist_georef (F_xpaq    ,F_ypaq    ,F_xpau    ,F_ypav, &
                         F_ana_am_8,F_ana_bm_8,F_ana_at_8,F_ana_bt_8, &
-                        F_nia, F_nja, F_nka_m,F_nka_t,F_nvar,F_ntra, &
-                        F_vtype, F_datev_S, F_unf, F_err)
+                        F_nia, F_nja, F_nka_t, F_nka_m, F_diag_lvl , &
+                        F_ntra, F_vtype, F_datev_S, F_unf, F_err)
       character* (*) F_datev_S
-      integer F_nia,F_nja,F_nka_m,F_nka_t,F_nvar,F_ntra, &
-              F_vtype,F_unf,F_err
+      integer F_nia,F_nja,F_nka_t,F_nka_m,F_diag_lvl,F_ntra,F_vtype,F_unf,F_err
       real*8, dimension (:), pointer :: F_xpaq,F_ypaq,F_xpau,F_ypav, &
                          F_ana_am_8,F_ana_bm_8,F_ana_at_8,F_ana_bt_8
 End Subroutine blk_dist_georef
@@ -94,9 +91,9 @@ End Interface
       character*1024 fn
 
       logical initial_data
-      integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_m,nka_t,nkgz,ntra, &
-              ni1,nj1,nk1,n,err,presstype,nbits,unf, &
-              ofi,ofj,l_in,l_jn,nvar, cnt,pid,gid,nij,ijk,istat
+      integer i,j,k,jj,jjj,kk,nia,nja,nk0,nka_t,nka_m,nkgz,ntra, &
+              ni1,nj1,nk1,n,err,presstype,nbits,unf,diag_lvl   , &
+              ofi,ofj,l_in,l_jn,cnt,pid,gid,nij,ijk,istat,nid1,njd1
       integer i0,in,j0,jn,ni2,nj2
       integer idd,jdo,mult,shp,bigk,offbb,offbo,offg,ng,nga
       integer, dimension (:  ), pointer :: idx,idy,nks
@@ -116,31 +113,34 @@ End Interface
               qq1=>null(), ww1=>null(), trn=>null(), trp =>null()
       real, dimension (:,:,:,:), pointer :: tr1=>null()
 
-      real ssq_temp(LDIST_SHAPE),topo_nest(LDIST_SHAPE),step_current
-      real, dimension(LDIST_SHAPE,G_nk) :: qh,tt
-      real*8 xpxext(0:dimgx+1), ypxext(0:dimgy+1), lnpis_8, diffd
+      real ssq_temp (l_minx:l_maxx,l_miny:l_maxy),&
+           topo_nest(l_minx:l_maxx,l_miny:l_maxy), step_current
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk) :: qh,tt
+      real*8 xpxext(0:G_ni+1), ypxext(0:G_nj+1), lnpis_8, diffd
 !
 !-----------------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(lun_out,9000) trim(F_datev)
 
-      ng = l_ni * l_nj
-      ofi= l_i0 - 1
-      ofj= l_j0 - 1
+      nid1 = l_ni+1-(east *1)
+      njd1 = l_nj+1-(north*1)
+      ng   = l_ni * l_nj
+      ofi  = l_i0 - 1
+      ofj  = l_j0 - 1
 !
 ! Positional parameters on extended global mass point grid
 !
-      do i=1,dimgx
+      do i=1,G_ni
          xpxext(i) = G_xg_8(i)
       end do
       xpxext(      0) = xpxext(    1) - (xpxext(    2)-xpxext(      1))
-      xpxext(dimgx+1) = xpxext(dimgx) + (xpxext(dimgx)-xpxext(dimgx-1))
+      xpxext(G_ni+1) = xpxext(G_ni) + (xpxext(G_ni)-xpxext(G_ni-1))
 
-      do i=1,dimgy
+      do i=1,G_nj
          ypxext(i) = G_yg_8(i)
       end do
       ypxext(      0) = ypxext(    1) - (ypxext(    2)-ypxext(      1))
-      ypxext(dimgy+1) = ypxext(dimgy) + (ypxext(dimgy)-ypxext(dimgy-1))
+      ypxext(G_nj+1) = ypxext(G_nj) + (ypxext(G_nj)-ypxext(G_nj-1))
 !
 ! Positional parameters of model target u and v grids (xpuu and ypvv).
 !
@@ -163,13 +163,13 @@ End Interface
 
       call timing_start ( 71, '3DF_input')
 
-      call blk_dist_georef ( xpaq    ,ypaq    ,xpau    ,ypav, &
-                         ana_am_8,ana_bm_8,ana_at_8,ana_bt_8, &
-                          nia, nja, nka_m, nka_t, nvar, ntra, &
-                                   presstype,F_datev,unf,err )
+      call blk_dist_georef ( xpaq    ,ypaq    ,xpau    ,ypav,&
+                         ana_am_8,ana_bm_8,ana_at_8,ana_bt_8,&
+                         nia, nja, nka_t, nka_m, diag_lvl   ,&
+                         ntra, presstype, F_datev, unf, err )
       nga = nia*nja
       nkgz= 1
-      if (presstype.eq.0) nkgz= nka_m
+      if (presstype.eq.0) nkgz= nka_t
 
       nullify (trname_a,idx,idy,nks)
       nullify (cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd)
@@ -177,17 +177,17 @@ End Interface
       nullify (meqr,topo_temp1,ss1)
       nullify (uu1,vv1,zd1,ttt1,qq1,ww1,trn,trp,tr1)
 
-      allocate ( uun(nga,nka_m), vvn(nga,nka_m), zdn(nga,nka_t), &
-                 ttn(nga,nka_t), qqn(nga,nka_m), wwn(nga,nka_t), &
-                 trn(nga,nka_t,ntra), ssqn(nga,1)              , &
-                 topo_temp1(l_ni+1-(east*1),l_nj+1-(north*1))  , &
-                 meqn(nga,nkgz), trname_a(ntra) )
+      allocate ( uun(nga,nka_m+diag_lvl), vvn(nga,nka_m+diag_lvl)     ,&
+                 ttn(nga,nka_t+diag_lvl), trn(nga,nka_t+diag_lvl,ntra),&
+                 qqn(nga,nka_m), wwn(nga,nka_t), zdn(nga,nka_t)       ,&
+                 ssqn(nga,1), topo_temp1(nid1,njd1), meqn(nga,nkgz)   ,&
+                 trname_a(ntra) )
 
       call blk_dist_data ( uun,vvn,zdn,ttn,ssqn,meqn,qqn,wwn,trn, &
-                           trname_a, F_datev, nga, nka_m, nka_t , &
-                                     nkgz, nvar, ntra, unf, err )
+                           trname_a, F_datev, nga, nka_t, nka_m , &
+                           diag_lvl, nkgz, ntra, unf, err )
 
-      call handle_error(err,'casc_3df_dynp','casc_3df_dynp')
+      call handle_error (err,'casc_3df_dynp','casc_3df_dynp')
 
       call timing_stop  ( 71 )
       call timing_start ( 72, '3DF_interp')
@@ -218,15 +218,15 @@ End Interface
       if (Vtopo_L) then
          call difdatsd (diffd,Step_runstrt_S,F_datev)
          step_current = diffd*86400.d0/dble(step_dt)
-         call var_topo2 (topo_nest, step_current, LDIST_DIM)
+         call var_topo2 (topo_nest,step_current,l_minx,l_maxx,l_miny,l_maxy)
       else
          topo_nest = F_topo
       endif
-!
-! topo is inflated!
-      call rpn_comm_xch_halo ( topo_nest, LDIST_DIM,l_ni,l_nj,1, &
-                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
+      call rpn_comm_xch_halo ( topo_nest,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,&
+                               1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
+      ! topo is extended
       do j=1,l_nj+1-(north*1)
       do i=1,l_ni+1-(east*1)
          topo_temp1(i,j) = topo_nest(i,j)
@@ -238,16 +238,17 @@ End Interface
                  qq1 (l_ni,l_nj, G_nk  ), ww1 (l_ni,l_nj, G_nk), &
                  tr1 (l_ni,l_nj, G_nk,Tr3d_ntr), ss1 (l_ni,l_nj) )
 
-      call casc_hvi (trname_a, xpxext(l_i0),ypxext(l_j0)         , &
-                     xpuu,ypvv,xpaq,ypaq,xpau,ypav               , &
-                     uu1,vv1,ttt1,zd1,ss1,qq1,ww1,tr1,topo_temp1 , &
-                     uun,vvn,ttn,zdn,meqn,ssqn,qqn,wwn,trn       , &
-                     l_ni,l_nj,G_nk,nia,nja,nka_m,nka_t,presstype,ntra)
+      call casc_hvi (uu1,vv1,ttt1,zd1,ss1 ,qq1,ww1,tr1,topo_temp1,&
+                     uun,vvn,ttn ,zdn,ssqn,qqn,wwn,trn,meqn      ,&
+                     xpxext(l_i0),ypxext(l_j0),xpuu,ypvv         ,&
+                     xpaq,ypaq,xpau,ypav,trname_a                ,&
+                     l_ni,l_nj,G_nk,nid1,njd1,nkgz,nia,nja       ,&
+                     nka_t, nka_m, diag_lvl, presstype,ntra)
 
       F_u (1:l_niu,1:l_nj,1:G_nk) = uu1(1:l_niu,1:l_nj,1:G_nk)
       F_v (1:l_ni,1:l_njv,1:G_nk) = vv1(1:l_ni,1:l_njv,1:G_nk)
       F_s (1:l_ni,1:l_nj        ) = ss1
-      
+
       if (ana_zd_L) F_zd(1:l_ni,1:l_nj, 1:G_nk  ) = zd1
       if (ana_w_L ) F_w (1:l_ni,1:l_nj, 1:G_nk  ) = ww1
       if (ana_q_L ) F_q (1:l_ni,1:l_nj, 2:G_nk+1) = qq1
@@ -267,7 +268,8 @@ End Interface
          tt (1:l_ni,1:l_nj,1:G_nk) = ttt1
           nullify(trp)
           istat = gmm_get('TR/'//'HU'//':P',trp,mymeta)
-          if (GMM_IS_ERROR(istat)) print *,'casc_3df_dynp: ERROR at gmm_get','TR/'//'HU'//':P'
+          if (GMM_IS_ERROR(istat)) print *, &
+               'casc_3df_dynp: ERROR at gmm_get','TR/'//'HU'//':P'
           call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
           call mfottvh2(tt,F_t,trp,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
                            1,l_ni,1,l_nj,.true.)
@@ -291,6 +293,7 @@ End Interface
              /,' ===============================================')
 !
 !-----------------------------------------------------------------------
+!
       return
       end
-!
+

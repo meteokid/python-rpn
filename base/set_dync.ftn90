@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,7 @@
 #include "model_macros_f.h"
 !
       subroutine set_dync
+      use matvec_mod, only: matvec_init
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,17 +35,14 @@
 ! v4_00 - Plante & Girard    - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.          - Open top
 !
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "lam.cdk"
 #include "cstv.cdk"
-#include "grd.cdk"
-#include "schm.cdk"
-#include "pres.cdk"
 #include "dcst.cdk"
-#include "type.cdk"
+#include "glb_ld.cdk"
+#include "lam.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
+#include "sol.cdk"
 #include "ver.cdk"
-#include "ptopo.cdk"
 
       integer k,err,istat,k0
       real*8 one, aaa, xxx, yyy
@@ -56,7 +54,7 @@
           write(Lun_out,*)'SETTING up OPR,ADW,...(S/R SET_DYNC)'
           write(Lun_out,*)'===================================='
       endif
-!     
+!
       k0=1+Lam_gbpil_T
 
       Cstv_tau_8   = Cstv_dt_8 * Cstv_bA_8
@@ -118,6 +116,10 @@
 !
       call set_opr()
       call itf_adx_set()
+
+      if (Sol_type_S == 'ITERATIVE_3D') then
+         call matvec_init()
+     end if
 !
 !     ---------------------------------------------------------------
 !

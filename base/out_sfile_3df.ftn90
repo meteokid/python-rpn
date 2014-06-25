@@ -13,18 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r out_sfile_3df - to open 3DF format file for cascade mode
 !
-#include "model_macros_f.h"
-!
-      subroutine out_sfile_3df2( datev, unf, gid, gif, gjd, gjf, nvar, ntr, filen )
+      subroutine out_sfile_3df3 ( datev, unf, gid, gif, gjd, gjf, ntr, filen )
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) datev, filen
-      integer unf, gid, gif, gjd, gjf, nvar, ntr
-!
+      integer unf, gid, gif, gjd, gjf, ntr
+
 !author Michel Desgagne (MC2 2001)
 !
 !revision
@@ -37,43 +34,41 @@
 #include "out.cdk"
 #include "grdc.cdk"
 #include "schm.cdk"
-!
-      integer i,k_phy
+
+      integer i
       character*15   startindx
-      real*8, dimension (:), allocatable:: xu_8,yv_8
+      real*8 xu_8(Out_nisg), yv_8(Out_njsg)
 !
 !------------------------------------------------------------------
 !
-      k_phy=0
-      if(schm_phyms_L)k_phy=1
-!
       unf = 201
-!
+
       write (startindx,'((i7.7),a1,(i7.7))') out_idg,'-',out_jdg
-!
+
       filen= '3df'//'_'//datev//'_'//startindx
       filen = trim(Out_dirname_S)// '/' // trim(filen)
-      open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
-                                                position='APPEND')
+      open (unf,file=filen,access='SEQUENTIAL',form='UNFORMATTED')
+! don't know why filen was position='APPEND' before but it makes no sense
 
 !     Warning: Geomg_X is local, G_xg is global
-      allocate(xu_8(Out_nisg),yv_8(Out_njsg))
+
       do i=1,Out_nisg
          xu_8(i) = 0.5 * (G_xg_8(i+gid-1) + G_xg_8(i+gid))
       enddo
       do i=1,Out_njsg
          yv_8(i) = 0.5 * (G_yg_8(i+gjd-1) + G_yg_8(i+gjd))
       enddo
-!
-      call wrgeo_3df2(G_xg_8 (gid),out_nisg,G_yg_8(gjd),out_njsg, &
-                      xu_8(1),             yv_8(1), &
-                      Grdc_xlon1,Grdc_xlat1,Grdc_xlon2,Grdc_xlat2, &
-                      Ver_a_8%m, Ver_b_8%m, Ver_a_8%t, Ver_b_8%t, &
-                      G_nk+k_phy,G_nk+k_phy,Ver_code,unf)
-      deallocate(xu_8,yv_8)
 
-      write (unf) 'DYNAMICS',nvar,ntr
+      i=0
+      if (Schm_phyms_L) i=1
+
+      write (unf) out_nisg,out_njsg,G_nk,G_nk,Ver_code,ntr,i
+      write (unf) Grdc_xlon1,Grdc_xlat1,Grdc_xlon2,Grdc_xlat2
+      write (unf) G_xg_8(gid:gid+out_nisg-1), &
+                  G_yg_8(gjd:gjd+out_njsg-1), xu_8, yv_8
+      write (unf) Ver_a_8%m, Ver_b_8%m, Ver_a_8%t, Ver_b_8%t
 !
 !------------------------------------------------------------------
+!
       return
       end

@@ -15,89 +15,41 @@
 
 !**s/r pw_update_UV - Update physical quantities UU and VV
 !
-#include "model_macros_f.h"
-!
       subroutine pw_update_UV
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne - May 2010
 !
 !revision
 ! v4_14 - Desgagne, M.     - Initial revision
 ! v4.7  - Gaudreault S.    - Removing wind images
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "vt1.cdk"
 #include "pw.cdk"
-#include "geomn.cdk"
-#include "cstv.cdk"
-!
-      real*8, parameter :: ONE_8   = 1.d0
-      real*8, parameter :: CLXXX_8 = 180.d0
 
-      integer i, j, k, istat
-      real*8 r0,deg2rad_8,idt
-      real, dimension(l_ni,l_nj,l_nk) :: uprev,vprev
-      logical, save :: initialized=.false.
+      integer k, istat
 !     ________________________________________________________________
 !
-      deg2rad_8   = acos( -ONE_8 )/CLXXX_8
-
-      nullify(pw_uu_dyn,pw_vv_dyn)
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
       istat = gmm_get (gmmk_ut1_s       , ut1       )
       istat = gmm_get (gmmk_vt1_s       , vt1       )
-      istat = gmm_get (gmmk_pw_uu_dyn_s , pw_uu_dyn )
-      istat = gmm_get (gmmk_pw_vv_dyn_s , pw_vv_dyn )
 
-!$omp parallel private(j)
+!$omp parallel
 !$omp do
       do k= 1, l_nk
-         uprev (1:l_ni,1:l_nj,k) = pw_uu_plus (1:l_ni,1:l_nj,k)
-         vprev (1:l_ni,1:l_nj,k) = pw_vv_plus (1:l_ni,1:l_nj,k)
-         pw_uu_plus (1:l_ni,1:l_nj,k) = ut1   (1:l_ni,1:l_nj,k)
-         pw_vv_plus (1:l_ni,1:l_nj,k) = vt1   (1:l_ni,1:l_nj,k)
+         pw_uu_plus (1:l_ni,1:l_nj,k) = ut1(1:l_ni,1:l_nj,k)
+         pw_vv_plus (1:l_ni,1:l_nj,k) = vt1(1:l_ni,1:l_nj,k)
       enddo
 !$omp enddo
 !$omp end parallel
 !
-      call itf_phy_uvgridscal ( pw_uu_plus, pw_vv_plus, LDIST_DIM, &
-                                l_nk, .true. )
-
-!$omp parallel private(j)
-!$omp do
-      do k= 1, l_nk
-      do j= 1, l_nj
-         pw_uu_plus (1:l_ni,j,k) = pw_uu_plus (1:l_ni,j,k)
-         pw_vv_plus (1:l_ni,j,k) = pw_vv_plus (1:l_ni,j,k)
-      enddo
-      enddo
-!$omp enddo
-!$omp end parallel
-!
-!     Keep a running total of tendencies for this timestep
-!     ----------------------------------------------------
-      if (initialized) then
-         idt = 1d0/Cstv_dt_8
-!$omp parallel private(j)
-!$omp do  
-         do k= 1, l_nk
-         do j= 1, l_nj
-            pw_uu_dyn (1:l_ni,j,k) = pw_uu_dyn (1:l_ni,j,k) + idt * ( pw_uu_plus (1:l_ni,j,k) - uprev (1:l_ni,j,k) )
-            pw_vv_dyn (1:l_ni,j,k) = pw_vv_dyn (1:l_ni,j,k) + idt * ( pw_vv_plus (1:l_ni,j,k) - vprev (1:l_ni,j,k) )
-         enddo
-         enddo
-!$omp enddo
-!$omp end parallel
-      endif
-!
-!     Initial update has been completed
-      initialized = .true.
+      call itf_phy_uvgridscal ( pw_uu_plus, pw_vv_plus, &
+               l_minx,l_maxx,l_miny,l_maxy,l_nk, .true. )
 !     ________________________________________________________________
 !
       return

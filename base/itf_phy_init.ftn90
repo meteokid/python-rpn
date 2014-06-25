@@ -36,7 +36,6 @@
 #include "ver.cdk"
 #include "path.cdk"
 #include "tr3d.cdk"
-#include "itf_phy.cdk"
 
       integer, parameter :: COMPATIBILITY_LVL = 6
 
@@ -59,7 +58,8 @@
       err = 0
       if ( PHY_COMPATIBILITY_LVL .ne. COMPATIBILITY_LVL ) err = -1
 
-      call gem_error ( err,'itf_phy_init','Wrong physics compatibility level')
+      call gem_error ( err, 'itf_phy_init', &
+                       'Wrong physics compatibility level')
 
 ! Initialize physics configuration with default values and read 
 ! user configuration in namelists from file 'model_settings'
@@ -72,21 +72,18 @@
       err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
       err= min(wb_put('itf_phy/COUPLING'    , .false.   ), err)
-      err= min(wb_put('itf_phy/READ_TRACERS', Tr3d_username_S(1:Tr3d_userntr)), err)
+      err= min(wb_put('itf_phy/READ_TRACERS', &
+               Tr3d_username_S(1:Tr3d_userntr)), err)
 
       call gem_error ( err,'itf_phy_init','phy_nml or WB_put' )
       
-! Grid definitions
-
-      call itf_phy_gdef4 ()
-
 ! Complete physics initialization (see phy_init for interface content)
 
       call datp2f   ( dateo, Step_runstrt_S)
 
-      err= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8),P_LNAME_S,&
-                      'grid/dyn_lclcore', G_nk+1, Ver_std_p_prof%m )
-
+      err= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8), &
+              'model/Hgrid/lclphy','model/Hgrid/lclcore', &
+                               G_nk+1, Ver_std_p_prof%m )
 
 ! The current physics interface operate on an arbitrary number of
 ! columns p_ni containing G_nk+1 levels. Here p_ni is defined as a

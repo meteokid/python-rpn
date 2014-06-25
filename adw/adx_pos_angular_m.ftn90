@@ -12,7 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include <model_macros_f.h>
 #include "constants.h"
 #include "msg.h"
 #include "stop_mpi.h"
@@ -156,7 +155,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
    ! Departure point
 
    if (adx_trapeze_L) then
-      ! (almost) nothing to do ...
+      ! nothing to do ...
       F_px = F_xth
       F_py = F_yth
       F_pz = F_zth
@@ -169,26 +168,15 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
             do i=i0,in
                F_px(i,j,k) = Adx_xx_8(i) - u_d(i,j,k)/cos(F_yth(i,j,k)) * adx_dt_8
                F_py(i,j,k) = Adx_yy_8(j) - v_d(i,j,k) * adx_dt_8
+               F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
+               F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
+               F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
             end do
          end do
       enddo
 !$omp enddo
 !$omp end parallel
    endif
-
-!$omp parallel
-!$omp do
-   do k = k0,F_nk
-      do j = j0,jn
-         do i = i0,in
-            F_pz(i,j,k) = F_zth(i,j,k) - adx_verZ_8%m(k)
-            F_pz(i,j,k) = Adx_verZ_8%m(k) + 2.0 * F_pz(i,j,k)
-            F_pz(i,j,k) = min(zbot_bound,max(F_pz(i,j,k),ztop_bound))
-         enddo
-      enddo
-   enddo
-!$omp enddo
-!$omp end parallel
 
    call msg(MSG_DEBUG,'adx_pos_m_lam [end]')
 

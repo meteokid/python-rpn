@@ -16,16 +16,13 @@
 !  s/r set_zeta    - Generates A and B of the hybrid coordinate
 !                    Also sets Z and other related vertical parameters.
 !
-#include "model_macros_f.h"
-!
       subroutine set_zeta2( F_hybuser, Nk )
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels, &
            VGD_OK,VGD_ERROR,vgd_print
       use vgrid_wb, only: vgrid_wb_put
-   !     
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Nk
       real, dimension(Nk) :: F_hybuser        !user-specified hybrid coordinate values
 !
@@ -288,9 +285,10 @@
 !     Put last thermo a and b at surface if there is non physics
 !     ----------------------------------------------------------
 !
-      if(.not.Schm_phyms_L)then
-         Ver_a_8%t(G_nk)=Cstv_Zsrf_8
-         Ver_b_8%t(G_nk)=one
+      if (.not.Schm_phyms_L) then
+         Ver_a_8%t(G_nk)= Cstv_Zsrf_8
+         Ver_b_8%t(G_nk)= one
+         Ver_hyb%t(G_nk)= one
       endif
 !
 !     ----------------------------------------------------------

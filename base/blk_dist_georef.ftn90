@@ -15,12 +15,12 @@
 
       subroutine blk_dist_georef (F_xpaq    ,F_ypaq    ,F_xpau    ,F_ypav, &
                               F_ana_am_8,F_ana_bm_8,F_ana_at_8,F_ana_bt_8, &
-                              F_nia, F_nja, F_nka_m,F_nka_t,F_nvar,F_ntra, &
-                              F_vtype, F_datev_S,F_unf,F_err)
+                              F_nia, F_nja, F_nka_t, F_nka_m, F_diag_lvl , &
+                              F_ntra, F_vtype, F_datev_S, F_unf, F_err)
       implicit none
 #include <arch_specific.hf>
       character* (*) F_datev_S
-      integer F_nia,F_nja,F_nka_m,F_nka_t,F_nvar,F_ntra,F_vtype,F_unf,F_err
+      integer F_nia,F_nja,F_nka_t,F_nka_m,F_diag_lvl,F_ntra,F_vtype,F_unf,F_err
       real*8, dimension (:), pointer :: F_xpaq,F_ypaq,F_xpau,F_ypav, &
                          F_ana_am_8,F_ana_bm_8,F_ana_at_8,F_ana_bt_8
 !
@@ -40,8 +40,8 @@
       real    xlon1,xlat1,xlon2,xlat2
       real, parameter :: EPS = 1.E-6
 
-      integer nia,nja,nkam,nkat,nvar,ntra,vtyp
-      common /blkcom_i/ nia,nja,nkam,nkat,nvar,ntra,vtyp
+      integer nia,nja,nka_t,nka_m,ntra,vtyp,diag_lvl
+      common /blkcom_i/ nia,nja,nka_t,nka_m,ntra,vtyp,diag_lvl
 
       integer n, iproc, tag, err, status, dim, extra
       real*8  xri,xrf,yri,yrf,deg2rad_8,resax,resay,rapres
@@ -51,9 +51,8 @@
 !----------------------------------------------------------------------
 !
       deg2rad_8 = Dcst_pi_8/180.d0
-      F_err  = -1 ; F_nia  = -1 ; F_nja = -1
-      F_nka_m= -1 ; F_nka_t= -1
-      F_nvar = -1 ; F_ntra = -1 ; F_vtype= -1
+      F_err  = -1 ; F_nia  = -1 ; F_nja  = -1
+      F_nka_t= -1 ; F_nka_m= -1 ; F_ntra = -1 ; F_vtype= -1
 
       if (associated(F_ana_am_8)) deallocate(F_ana_am_8)
       if (associated(F_ana_bm_8)) deallocate(F_ana_bm_8)
@@ -81,18 +80,17 @@
             goto 33
          endif
 
-         read (F_unf,end=33,err=33) nomvar,ni1,nj1,F_nka_m,F_nka_t,F_vtype
+         read (F_unf,end=33,err=33) ni1,nj1,F_nka_t,F_nka_m,F_vtype,F_ntra,F_diag_lvl
          read (F_unf,end=33,err=33) xlon1,xlat1,xlon2,xlat2
 
          allocate (xp1(ni1),yp1(nj1),xu1(ni1),yv1(nj1))
 
          read (F_unf,end=33,err=33) xp1,yp1,xu1,yv1
 
-         allocate( F_ana_am_8(F_nka_m), F_ana_bm_8(F_nka_m), &
-                   F_ana_at_8(F_nka_t), F_ana_bt_8(F_nka_t) )
+         allocate( F_ana_am_8(F_nka_m+1), F_ana_bm_8(F_nka_m+1),&
+                   F_ana_at_8(F_nka_t+1), F_ana_bt_8(F_nka_t+1) )
 
          read (F_unf,end=33,err=33) F_ana_am_8,F_ana_bm_8,F_ana_at_8,F_ana_bt_8
-         read (F_unf,end=33,err=33) dynophy,F_nvar,F_ntra
 
          close (F_unf)
 
@@ -173,11 +171,11 @@
                nia= -1
                nja= -1
             endif
-            nkam= F_nka_m
-            nkat= F_nka_t
-            nvar= F_nvar
-            ntra= F_ntra
-            vtyp= F_vtype
+            nka_t   = F_nka_t
+            nka_m   = F_nka_m
+            ntra    = F_ntra
+            vtyp    = F_vtype
+            diag_lvl= F_diag_lvl
             call RPN_COMM_send (nia, 7, 'MPI_INTEGER', iproc, &
                                             tag, 'BLOC', err )
             if (F_err .eq. 0) then
@@ -205,11 +203,10 @@
          call RPN_COMM_recv ( nia, 7, 'MPI_INTEGER', 0, &
                               tag, 'BLOC', status, err )
          if ((nia.gt.0).and.(nja.gt.0)) then
-            F_nia  = nia  ; F_nja  = nja
-            F_nka_m= nkam ; F_nka_t= nkat
-            F_nvar = nvar ; F_ntra = ntra ; F_vtype= vtyp
-            allocate (F_ana_am_8(F_nka_m), F_ana_bm_8(F_nka_m), &
-                      F_ana_at_8(F_nka_t), F_ana_bt_8(F_nka_t) )
+            F_nia  = nia  ; F_nja  = nja  ; F_nka_t  = nka_t ; F_nka_m  = nka_m 
+            F_ntra = ntra ; F_vtype= vtyp ; F_diag_lvl = diag_lvl
+            allocate (F_ana_am_8(F_nka_m+1), F_ana_bm_8(F_nka_m+1), &
+                      F_ana_at_8(F_nka_t+1), F_ana_bt_8(F_nka_t+1) )
             allocate (F_xpaq(F_nia), F_ypaq(F_nja),&
                       F_xpau(F_nia), F_ypav(F_nja) )
             dim = 2*F_nia+2*F_nja
@@ -228,10 +225,10 @@
 
       call handle_error ( F_err,'blk_dist_georef','Problem reading 3DF file '//trim(fn) )
 
-      call RPN_COMM_bcast (F_ana_am_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-      call RPN_COMM_bcast (F_ana_bm_8, F_nka_m, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-      call RPN_COMM_bcast (F_ana_at_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
-      call RPN_COMM_bcast (F_ana_bt_8, F_nka_t, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_am_8, F_nka_m+1, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_bm_8, F_nka_m+1, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_at_8, F_nka_t+1, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
+      call RPN_COMM_bcast (F_ana_bt_8, F_nka_t+1, "MPI_DOUBLE_PRECISION",0,"BLOC",err)
 
       if (Ptopo_blocme.eq.0) then
          do iproc = 0, Ptopo_numpe_perb-1

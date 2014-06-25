@@ -83,6 +83,6 @@
       namelist /mtn_cfgs/ Vtopo_ndt, Out3_etik_s,Lctl_rxstat_S
       namelist /mtn_cfgs/ Out3_flipit_L, Out3_closestep
       namelist /mtn_cfgs/ G_periodx, G_periody
-      namelist /mtn_cfgs/ Schm_trapeze_L
+      namelist /mtn_cfgs/ Schm_trapeze_L, Schm_angular_displacement_L
       namelist /mtn_cfgs/ Schm_cub_traj_L
       namelist /mtn_cfgs/ Schm_superwinds_L

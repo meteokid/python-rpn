@@ -13,16 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !** e_sfile_3df - to open a new 3DF file 
-!
-#include "model_macros_f.h"
 !
       subroutine e_sfile_3df (datev,msg,gid, gif, gjd, gjf, &
                                                    rootfn)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) datev, msg,rootfn
       integer  gid, gif, gjd, gjf
 
@@ -42,11 +39,10 @@
 #include "e_tr.cdk"
 #include "path.cdk"
 #include "grd.cdk"
-!
-      character*2   md
+
       character*15  startindx
       character*512 filen
-      integer idg,jdg,mode,ntr,i,ii,nis,njs
+      integer idg,jdg,ntr,i,ii,nis,njs
       real*8 pt5
       real*8, dimension(:), allocatable :: xxu,yyv
       parameter ( pt5    = 0.5d0 )
@@ -57,43 +53,41 @@
       unf_casc = 201
       idg=1
       jdg=1
-      mode=2
       nis = gif-gid+1
       njs = gjf-gjd+1
       ntr=1+E_tr3d_ntr ! for HU
       allocate (xxu(nis),yyv(njs))
-!
-      write (md,'(i2.2)') mode
+
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg
       filen= '3df'//'_'//trim(datev)//'_'//startindx
       if (Grd_yinyang_L) then
-      filen= trim(rootfn)//'/'//trim(filen)
+         filen= trim(rootfn)//'/'//trim(filen)
       else
-      filen= trim(rootfn)//trim(filen)
+         filen= trim(rootfn)//trim(filen)
       endif
 
-      open (unf_casc,file=filen,access='SEQUENTIAL',form='UNFORMATTED', &
-                                                position='APPEND')
-!
+      open (unf_casc,file=filen,access='SEQUENTIAL', &
+                                 form='UNFORMATTED')
+! don't know why filen was position='APPEND' before but it makes no sense
+
       do i=1,nis-1
          ii    = gid+i
          xxu(i) = pt5 * ( xg_8(ii-1) + xg_8(ii) )
       enddo
       xxu(nis) = xg_8(gif) + pt5 * ( xg_8(gif) - xg_8(gif-1) )
-!
+
       do i=1,njs-1
          ii    = gjd+i
-         yyv(i) = pt5 * ( yg_8(ii-1) + yg_8(ii) )
+         yyv(i)= pt5 * ( yg_8(ii-1) + yg_8(ii) )
       enddo
       yyv(njs) = yg_8(gjf) + pt5 * ( yg_8(gjf) - yg_8(gjf-1) )
-!
-      call wrgeo_3df2(xg_8(gid),gif-gid+1,yg_8(gjd),gjf-gjd+1, &
-                      xxu,          yyv, &
-                      Grd_xlon1,Grd_xlat1,Grd_xlon2,Grd_xlat2, &
-                      za_8,zb_8,zat_8,zbt_8, &
-                      lv,lv_t,Anal_hav(2),unf_casc)
-!
-      write (unf_casc) msg,nvar,ntr
+
+      write (unf_casc) nis,njs,lv_t,lv,Anal_hav(2),ntr,0
+      write (unf_casc) Grd_xlon1,Grd_xlat1,Grd_xlon2,Grd_xlat2
+      write (unf_casc) xg_8(gid:gid+nis-1),yg_8(gjd:gjd+njs-1),xxu, yyv
+      write (unf_casc) za_8 (1:lv  +1),zb_8 (1:lv  +1), &
+                       zat_8(1:lv_t+1),zbt_8(1:lv_t+1)
+      
       deallocate (xxu,yyv)
 !
 !------------------------------------------------------------------

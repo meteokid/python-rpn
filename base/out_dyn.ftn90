@@ -15,15 +15,13 @@
 
 !**s/r out_dyn - perform dynamic output
 !
-#include "model_macros_f.h"
-!
       subroutine out_dyn ( F_reg_out, F_casc_L )
       use out_vref_mod, only: out_vref
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_reg_out, F_casc_L
-!
+
 !author
 !     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
 !
@@ -47,7 +45,7 @@
 !object
 !     Subroutine to control the production of
 !     the output of the dynamic variables
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "out3.cdk"
@@ -67,13 +65,14 @@
 #include "pw.cdk"
 #include "out_listes.cdk"
 #include "ver.cdk"
-!
+
       type(gmm_metadata) :: mymeta
       character*15 datev,pdate
       logical periodx_L,ontimec,flag_clos
       integer i,j,k,istat,jj,kk,levset,gridset
-      real wlnpi_m(LDIST_SHAPE,G_nk+1), &
-           wlnpi_t(LDIST_SHAPE,G_nk+1),  p0(LDIST_SHAPE)
+      real wlnpi_m(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), &
+           wlnpi_t(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), &
+           p0(l_minx:l_maxx,l_miny:l_maxy)
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
 !
@@ -91,6 +90,8 @@
          endif
 
          if (Lun_out.gt.0) write(Lun_out,7001) Lctl_step,trim(Out_laststep_S)
+
+         call diag_output
 
          out3_type_S= 'REGDYN'
 
@@ -131,23 +132,23 @@
             call out_href2  ( 'Mass_point' )
 
             if (Level_typ_S(levset).eq.'M') then
-               call out_vref (p0, LDIST_DIM)
+               call out_vref (p0, l_minx,l_maxx,l_miny,l_maxy)
             elseif (Level_typ_S(levset).eq.'P') then
                call out_vref (Level_allpres(1:Level_npres))
             endif
 
             !     output of 3-D tracers
-            call out_tracer (wlnpi_t,LDIST_DIM,G_nk,levset,kk)
+            call out_tracer (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
             !     output of temperature, humidity and mass fields,omega
 
-            call out_thm (wlnpi_m,wlnpi_t,st1,LDIST_DIM,G_nk,levset,kk)
+            call out_thm (wlnpi_m,wlnpi_t,st1,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
             !     output of winds
-            call out_uv (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
+            call out_uv (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
             !     output of divergence and vorticity
-            call out_dq (wlnpi_m,LDIST_DIM,G_nk,levset,kk)
+            call out_dq (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
             !     output of gmm
             call out_gmm2 (levset,kk)

@@ -25,13 +25,15 @@
       real, dimension(minx:maxx,miny:maxy,1), target :: F_dest
    !@author  Michel Desgagne  -  Summer 2013
    !**/
-#include "itf_phy.cdk"
+
+#include "grd.cdk"
+
       integer :: istat
       real, dimension(:,:,:), pointer :: ptr3d
 !
 !-----------------------------------------------------------------
 !
-      ptr3d => F_dest(p_li0:p_li1,p_lj0:p_lj1,:)
+      ptr3d => F_dest(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
       istat = phy_get(ptr3d,F_var_S,F_npath='VO',F_bpath='P')
 !
 !-----------------------------------------------------------------

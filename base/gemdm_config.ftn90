@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -15,9 +15,8 @@
 
 !**s/r gemdm_config - Establish final model configuration
 !
-#include <model_macros_f.h>
 #include <msg.h>
-!
+
       integer function gemdm_config ( )
       implicit none
 
@@ -60,11 +59,11 @@
 
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
-         if (Lun_out.gt.0) write(Lun_out,6010)
+         if (Lun_out>0) write(Lun_out,6010)
       endif
 
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
-     
+
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
@@ -114,22 +113,15 @@
       if (.not.Grd_yinyang_L) Out3_uencode_L  = .false.
       if (Out3_uencode_L)     Out3_fullplane_L= .true.
       if(Out3_nbitg .lt. 0) then
-         if (lun_out.gt.0) write (Lun_out, 9154)
+         if (lun_out>0) write (Lun_out, 9154)
          Out3_nbitg=16
       endif
-      Out3_nundr = 0
-      do i = 1, MAXELEM
-         if(Out3_zund(i) .eq. 0 ) goto 80
-         Out3_nundr = Out3_nundr + 1
-      enddo
- 80   continue
       Out3_lieb_nk = 0
       do i = 1, MAXELEM
          if(Out3_lieb_levels(i) .le. 0. ) goto 81
          Out3_lieb_nk = Out3_lieb_nk + 1
       enddo
  81   continue
-      if ((Out3_nundr.gt.0).and.(Out3_lieb_nk.gt.0)) Out3_lieb_nk=0
 
       if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
 
@@ -147,28 +139,28 @@
          if (hyb(k) .lt. 0.) exit
          G_nk = k
       enddo
-      if (lun_out.gt.0) &
+      if (lun_out>0) &
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 
       call set_zeta2( hyb, G_nk )
 
       if (Step_runstrt_S.eq."NIL") then
-         if (lun_out.gt.0) then
+         if (lun_out>0) then
             write (Lun_out, 6005)
             write (Lun_out, 8000)
          endif
          return
       endif
-      
+
       dayfrac= - (Lctl_step * Step_dt / sec_in_day)
       call incdatsd (datev, Step_runstrt_S, dayfrac)
       call datp2f ( Out3_date, datev )
 
-      if (lun_out.gt.0) write (Lun_out,6007) Step_runstrt_S, datev
+      if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
 
       Grdc_ndt = -1
       if (time2sec(Grdc_nfe,sec)==RMN_OK) Grdc_ndt = sec/real(Cstv_dt_8)
-      if (Grdc_ndt.gt.-1) Grdc_ndt = max( 1, Grdc_ndt)
+      if (Grdc_ndt>-1) Grdc_ndt = max( 1, Grdc_ndt)
 
       Grdc_start= Lctl_step
       if (Grdc_start_S /= '') then
@@ -185,29 +177,48 @@
       Grdc_ni     = Grdc_ni   + 2*Grdc_pil
       Grdc_nj     = Grdc_nj   + 2*Grdc_pil
       Grdc_iref   = Grdc_iref +   Grdc_pil
-      Grdc_jref   = Grdc_jref +   Grdc_pil     
+      Grdc_jref   = Grdc_jref +   Grdc_pil
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
 
       call low2up  (sol_type_S ,dumc_S)
-      sol_type_S= dumc_S
-      call low2up  (sol_precond_S ,dumc_S)
-      sol_precond_S= dumc_S
+      sol_type_S = trim(dumc_S)
+      call low2up  (sol2D_precond_S ,dumc_S)
+      sol2D_precond_S = trim(dumc_S)
+      call low2up  (sol3D_precond_S ,dumc_S)
+      sol3D_precond_S = trim(dumc_S)
 
-      if ( (Sol_type_S.ne.'ITERATIVE_2D') .and. &
-           (Sol_type_S.ne.'ITERATIVE_3D') .and. &
-           (Sol_type_S.ne.'DIRECT'   ) ) then
-         if (lun_out.gt.0) write (Lun_out, 9200) Sol_type_S
+      if ( (Sol_type_S /= 'ITERATIVE_2D') .and. &
+           (Sol_type_S /= 'ITERATIVE_3D') .and. &
+           (Sol_type_S /= 'DIRECT'   ) ) then
+         if (lun_out>0) write (Lun_out, 9200) Sol_type_S
          return
       endif
 
-      if (Sol_type_S(1:9).eq.'ITERATIVE') then
-         if (Sol_precond_S .ne.'JACOBI') then
-            if (lun_out.gt.0) write (Lun_out, 9201) Sol_precond_S
+      if (Sol_type_S(1:9) == 'ITERATIVE') then
+         if (Sol2D_precond_S /= 'JACOBI') then
+            if (lun_out>0) write (Lun_out, 9201) Sol2D_precond_S
             return
          endif
       endif
+
+      if (Sol_type_S == 'ITERATIVE_3D') then
+         if (Sol3D_krylov_S /= 'FGMRES' .and. Sol3D_krylov_S /= 'FBICGSTAB') then
+            if (Lun_out > 0) then
+               write(Lun_out, *) 'ABORT: WRONG CHOICE OF KRYLOV METHOD FOR 3D ITERATIVE SOLVER: Sol3D_krylov_S =', Sol3D_krylov_S
+            end if
+            return
+         end if
+
+         if (Sol3D_precond_S /= 'JACOBI') then
+            if (lun_out>0) then
+               write (Lun_out, *) 'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 3D ITERATIVE SOLVER: Sol3D_precond_S =', Sol3D_precond_S
+            end if
+            return
+         endif
+
+      end if
 
       G_ni  = Grd_ni
       G_nj  = Grd_nj
@@ -218,10 +229,10 @@
          G_niu = G_ni - 1
          if (Eigv_parity_L) then
             Eigv_parity_L = .false.
-            if (lun_out.gt.0) write (Lun_out, 7005)
+            if (lun_out > 0) write (Lun_out, 7005)
          endif
          if (Schm_psadj_L.and..not.Grd_yinyang_L) then
-            if (lun_out.gt.0) then
+            if (lun_out > 0) then
                write (Lun_out, 7020)
                write (Lun_out, 8000)
             endif
@@ -233,17 +244,17 @@
       Schm_opentop_L  = .false.
       if (Lam_gbpil_T > 0) then
          Schm_opentop_L = .true.
-         if(lun_out.gt.0.and.Vspng_nk.ne.0)write (Lun_out, 9570)
+         if(lun_out>0.and.Vspng_nk/=0)write (Lun_out, 9570)
          Vspng_nk       = 0
       endif
       if (Lam_gbpil_T <= 0 .and. Lam_blend_T > 0) then
-         if (lun_out.gt.0)write (Lun_out, 9580)
+         if (lun_out>0)write (Lun_out, 9580)
          return
       endif
 
 !     Check for incompatible use of IAU and DF
       if (Iau_period > 0. .and. Init_balgm_L) then
-         if (Lun_out.gt.0) then
+         if (Lun_out>0) then
             write (Lun_out, 7040)
             write (Lun_out, 8000)
          endif
@@ -252,39 +263,38 @@
 
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
-         if (lun_out.gt.0) write (Lun_out, 6100)
+         if (lun_out>0) write (Lun_out, 6100)
          Schm_hydro_L   = .true.
          Schm_phyms_L   = .false.
-         if(Williamson_case.ne.7) Schm_topo_L = .false.
-         Out3_nundr = 0
+         if(Williamson_case/=7) Schm_topo_L = .false.
          if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
-             if (lun_out.gt.0) write (Lun_out, 6300)
+             if (lun_out>0) write (Lun_out, 6300)
              return
          endif
-         if (Williamson_case.gt.2.and.Williamson_alpha.ne.0.) then
-            if (lun_out.gt.0) write (Lun_out, 6400)
+         if (Williamson_case>2.and.Williamson_alpha/=0.) then
+            if (lun_out>0) write (Lun_out, 6400)
             return
          endif
          if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
-             Williamson_alpha.ne.0.0 .and. Williamson_alpha.ne.90.0 ) then
-            if (lun_out.gt.0) write (Lun_out, 6500)
+             Williamson_alpha/=0.0 .and. Williamson_alpha/=90.0 ) then
+            if (lun_out>0) write (Lun_out, 6500)
             return
          endif
          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
 
       if (Init_dfnp <= 0) then
-         if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602) 
+         if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602)
          Init_balgm_L = .false.
       endif
       Init_dfnp = max(0,Init_dfnp)
       if (Init_balgm_L) then
-         if ( mod(Init_dfnp,2) .ne. 1 ) then
-            if (Lun_out.gt.0) write(Lun_out,6600) Init_dfnp
+         if ( mod(Init_dfnp,2) /= 1 ) then
+            if (Lun_out>0) write(Lun_out,6600) Init_dfnp
             return
          endif
          if ( Init_dfnp .eq. 1 ) then
-            if (Lun_out.gt.0) write(Lun_out,6601)
+            if (Lun_out>0) write(Lun_out,6601)
             return
          endif
       endif
@@ -307,7 +317,7 @@
                 '  =============================='//)
  6100 format (//'  =============================='/&
                '  AUTO-BAROTROPIC RUN:          '/&
-                '  Schm_topo_L set to .false.,Out3_nundr=0 '/&
+                '  Schm_topo_L set to .false. '/&
                 '  =============================='//)
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
@@ -321,7 +331,7 @@
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
- 9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR ITERATIVE SOLVER: Sol_precond_S =',a/)
+ 9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 !

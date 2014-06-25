@@ -103,7 +103,6 @@
       namelist /gem_cfgs/ Out3_ndigits
       namelist /gem_cfgs/ Out3_satues_L
       namelist /gem_cfgs/ Out3_unit_S
-      namelist /gem_cfgs/ Out3_zund
       namelist /gem_cfgs/ Out3_lieb_levels
       namelist /gem_cfgs/ Out3_lieb_maxite
       namelist /gem_cfgs/ Out3_lieb_conv
@@ -151,8 +150,10 @@
       namelist /gem_cfgs/ Sol_im
       namelist /gem_cfgs/ Sol_fgm_maxits
       namelist /gem_cfgs/ Sol_yyg_maxits
-      namelist /gem_cfgs/ Sol_precond_S
+      namelist /gem_cfgs/ Sol2D_precond_S
+      namelist /gem_cfgs/ Sol3D_precond_S
       namelist /gem_cfgs/ Sol_type_S
+      namelist /gem_cfgs/ Sol3D_krylov_S
 
 !Vspng
       namelist /gem_cfgs/ Vspng_coeftop
@@ -277,8 +278,10 @@
       namelist /gem_cfgs_p/ Sol_im
       namelist /gem_cfgs_p/ Sol_fgm_maxits
       namelist /gem_cfgs_p/ Sol_yyg_maxits
-      namelist /gem_cfgs_p/ Sol_precond_S
+      namelist /gem_cfgs_p/ Sol2D_precond_S
+      namelist /gem_cfgs_p/ Sol3D_precond_S
       namelist /gem_cfgs_p/ Sol_type_S
+      namelist /gem_cfgs_p/ Sol3D_krylov_S
 !Vspng
       namelist /gem_cfgs_p/ Vspng_coeftop
       namelist /gem_cfgs_p/ Vspng_njpole

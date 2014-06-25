@@ -13,19 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r out_liebman
-!
-#include "model_macros_f.h"
-!
-      subroutine out_liebman_old (ttx,htx,vt,gz_ta,fis0,wlao,&
-                                  Minx,Maxx,Miny,Maxy,nkund,nk)
+      subroutine out_liebman ( ttx, htx, vt, gz, fis0, wlao,&
+                               Minx,Maxx,Miny,Maxy,nkund,nk )
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, nkund,nk
-      real ttx (DIST_SHAPE,nkund), htx  (DIST_SHAPE,nkund), &
-           vt  (DIST_SHAPE,nk   ), gz_ta(DIST_SHAPE,nk   ), &
-           fis0(DIST_SHAPE      ), wlao (DIST_SHAPE      )
+      integer Minx,Maxx,Miny,Maxy, nkund, nk
+      real ttx (Minx:Maxx,Miny:Maxy,nkund), &
+           htx (Minx:Maxx,Miny:Maxy,nkund), &
+           vt  (Minx:Maxx,Miny:Maxy,nk   ), &
+           gz  (Minx:Maxx,Miny:Maxy,nk   ), &
+           fis0(Minx:Maxx,Miny:Maxy), wlao (Minx:Maxx,Miny:Maxy)
 !
 !author
 !     Michel Desgagne - Fall 2011
@@ -33,113 +31,12 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "out3.cdk"
-#include "ptopo.cdk"
 
       integer i,j,k,kk,kgrnd
-
-      real w1(LDIST_SHAPE), w2(LDIST_SHAPE)
-      real wk1(G_ni,G_nj),wk2(G_ni,G_nj)
-      real wk3(G_ni,G_nj+2),wk4(G_ni,G_nj+2)
-
-      do k=1,nkund
-
-         do j=1,l_nj
-         do i=1,l_ni
-
-!        Store fictitious height level in htx
-
-         htx(i,j,k) = Out3_zund(k) * Dcst_grav_8
-
-!        Determine if fictitious level is above or below ground
-
-         w1(i,j) = fis0(i,j) - htx(i,j,k)
-
-         if ( w1(i,j) .gt. 0 ) then
-
-!           fictitious level is under ground:
-!           temperature is obtained by linear EXTrapolation
-!           identify under ground grid point
+      real w2(l_minx:l_maxx,l_miny:l_maxy,Out3_lieb_nk), grad
+!
+!----------------------------------------------------------------------
 ! 
-            if ( abs( wlao(i,j)*180./Dcst_pi_8 ) .ge. 49. ) then
-
-                w1(i,j) = vt(i,j,G_nk+2) +       .0005 * w1(i,j)
-            else
-                w1(i,j) = vt(i,j,G_nk+2) + Dcst_stlo_8 * w1(i,j)
-            endif
-
-            w2(i,j) = 1.0
-
-        else
-
-!           fictitious level is above ground:
-!           temperature is obtained by linear INTerpolation
-!           identify above ground grid point
-
-            do kk=l_nk+1,1,-1
-               kgrnd = kk
-               w1(i,j) = gz_ta (i,j,kk) - htx(i,j,k)
-               if ( w1(i,j) .gt. 0. ) goto 10
-            enddo
- 10         continue
-            
-            w2(i,j)= - (   vt(i,j,kgrnd) -    vt(i,j,kgrnd+1) ) / &
-                     (gz_ta(i,j,kgrnd) - gz_ta(i,j,kgrnd+1) )
-            
-            w1(i,j) = vt (i,j,kgrnd) + w2(i,j) * w1(i,j)
-
-            w2(i,j) = 0.0
-
-         endif
-
-         end do
-         end do
-
-         call glbcolc (wk1,G_ni,G_nj,w1,l_minx,l_maxx,l_miny,l_maxy,1)
-         call glbcolc (wk2,G_ni,G_nj,w2,l_minx,l_maxx,l_miny,l_maxy,1)
-
-!        For all under ground grid points at level htx(i,j,k)
-!        recompute temperature by HORIZONTAL interpolation
-!
-         if (Ptopo_myproc.eq.0)  &
-              call liebman_2 (wk1,wk2,wk3,wk4,0.1,G_ni,G_nj)
-
-         call glbdist (wk1,G_ni,G_nj,w1,l_minx,l_maxx,l_miny,l_maxy, &
-                               1,G_halox,G_haloy)
-
-         do j=1,l_nj
-         do i=1,l_ni
-            ttx(i,j,k) = w1(i,j)
-         enddo
-         enddo
-
-      end do
-
-      return
-      end
-
-      subroutine out_liebman (ttx,htx,vt,gz_ta,fis0,wlao,&
-                              Minx,Maxx,Miny,Maxy,nkund,nk)
-      implicit none
-#include <arch_specific.hf>
-!
-      integer DIST_DIM, nkund,nk
-      real ttx (DIST_SHAPE,nkund), htx  (DIST_SHAPE,nkund), &
-           vt  (DIST_SHAPE,nk   ), gz_ta(DIST_SHAPE,nk   ), &
-           fis0(DIST_SHAPE      ), wlao (DIST_SHAPE      )
-!
-!author
-!     Michel Desgagne - Fall 2011
-
-#include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "out3.cdk"
-
-      integer i,j,k,kk,kgrnd
-      real w2(LDIST_SHAPE,Out3_lieb_nk), grad
-      DOUBLE PRECISION START, END, omp_get_wtime
-
-      START = omp_get_wtime()
-
 !$omp parallel private (grad, kgrnd) shared (w2)
 !$omp do
 
@@ -159,7 +56,7 @@
 !           fictitious level is under ground:
 !           temperature is obtained by linear EXTrapolation
 !           identify under ground grid point
-! 
+
                if ( abs( wlao(i,j)*180./Dcst_pi_8 ) .ge. 49. ) then
                    ttx(i,j,k) = vt(i,j,Nk) +       .0005 * ttx(i,j,k)
                else
@@ -173,13 +70,13 @@
 !           temperature is obtained by linear INTerpolation
 !           identify above ground grid point
 
-               do kk=l_nk+1,1,-1
+               do kk= nk, 1, -1
                   kgrnd = kk
-                  ttx(i,j,k) = gz_ta (i,j,kk) - htx(i,j,k)
+                  ttx(i,j,k) = gz (i,j,kk) - htx(i,j,k)
                   if ( ttx(i,j,k) .gt. 0. ) goto 10
                enddo
- 10            grad = - (   vt(i,j,kgrnd) -    vt(i,j,kgrnd+1) ) / &
-                        (gz_ta(i,j,kgrnd) - gz_ta(i,j,kgrnd+1) )
+ 10            grad = - (vt(i,j,kgrnd) - vt(i,j,kgrnd+1) ) / &
+                        (gz(i,j,kgrnd) - gz(i,j,kgrnd+1) )
                ttx(i,j,k) = vt (i,j,kgrnd) + grad * ttx(i,j,k)
                w2(i,j,k) = 0.0
 
@@ -198,9 +95,8 @@
 
       call liebman_dm (ttx,w2,Out3_lieb_conv,Out3_lieb_maxite,&
                        l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
-
-      END = omp_get_wtime()
-!      PRINT *, 'Stuff took ', END - START, ' seconds.', END ,START
-
+!
+!----------------------------------------------------------------------
+! 
       return
       end

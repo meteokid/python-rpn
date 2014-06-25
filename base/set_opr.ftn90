@@ -28,13 +28,12 @@
 ! v3_00 - Lee/Qaddouri      - Lam configuration
 ! v3_30 - Dugas B.          - Corriger l'allocation avec hpalloc
 ! v3_30 - Qaddouri A.       - add eigenmodes with definite parity
-!       - Qaddouri A.       - add call for setting of preconditioning variables 
+!       - Qaddouri A.       - add call for setting of preconditioning variables
 ! v4_40 - Qaddouri A.       - setup operators for Yin-Yang
 !
 !object
 !	This subroutine initializes the commons containing the
 !	matrices used by the operators of the model
-	
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "grd.cdk"
@@ -47,7 +46,7 @@
 #include "sol.cdk"
 #include "cstv.cdk"
 #include "trp.cdk"
-#include "prec.cdk" 
+#include "prec.cdk"
 #include "ptopo.cdk"
 #include "type.cdk"
 #include "ver.cdk"
@@ -214,14 +213,18 @@
 
       if ( Sol_type_S(1:9).eq.'ITERATIVE' ) then
 
-         if (Lun_out.gt.0) write (Lun_out,1001) trim(sol_precond_S)
+         if (Sol_type_S(11:12).eq.'2D') then
+            if (Lun_out.gt.0) write (Lun_out,1001) trim(sol2D_precond_S)
+         else
+            if (Lun_out.gt.0) write (Lun_out,1002) trim(Sol3D_krylov_S), trim(sol3D_precond_S)
+         end if
 
          sol_pil_w= pil_w ; sol_pil_e= pil_e
          sol_pil_s= pil_s ; sol_pil_n= pil_n
          sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
          sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
          sol_nloc = sol_niloc*sol_njloc*Schm_nith
-         
+
          allocate (Prec_xevec_8(sol_niloc*sol_niloc)          ,&
                    Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
                    Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
@@ -233,7 +236,7 @@
             if ( k .le. Schm_nith ) &
                  wk(k)= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
          enddo
-         
+
          call eigenabc_local (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
                               Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
                         sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
@@ -243,7 +246,7 @@
 !     Initialize horizontal diffusion package
 
       call hzd_set ()
-  
+
 !     Initialize common block for vertical sponge
 
       call vspng_set ()
@@ -254,7 +257,10 @@
 
  1000 format(/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)', &
              /,'=============================================')
- 1001 format(/,'WILL USE FGMRES ITERATIVE SOLVER WITH ',a, &
+ 1001 format(/,'WILL USE FGMRES 2D ITERATIVE SOLVER WITH ',a, &
+               ' PRECONDITIONNER' &
+             /,'=============================================')
+ 1002 format(/,'WILL USE ',a,' 3D ITERATIVE SOLVER WITH ',a, &
                ' PRECONDITIONNER' &
              /,'=============================================')
 !

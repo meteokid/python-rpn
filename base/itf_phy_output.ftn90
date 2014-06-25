@@ -53,13 +53,13 @@
 #include "ver.cdk"
 #include "vt1.cdk"
 #include "out_listes.cdk"
-#include "itf_phy.cdk"
 
       type(phymeta) :: pmeta
       character*4 ext_S
       character*6 etikadd_S
       integer i,ii,jj,k,kk,levset,nko,nko_t,cnt,ip3,istat,&
-              gridset,ig1,mult,mosaic,bcs_ext,add_diag
+              gridset,ig1,mult,mosaic,bcs_ext,add_diag   ,&
+              p_li0,p_li1,p_lj0,p_lj1
       integer, dimension (:), allocatable :: indo_pres,indo,indo_t,irff
       integer grille_x0,grille_x1,grille_y0,grille_y1
       logical periodx_L, flag_clos
@@ -115,6 +115,9 @@
       Out_ip3 = 0
       if (Out3_ip3.eq.-1) Out_ip3 = Lctl_step
       if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
+
+      p_li0= Grd_lphy_i0 ; p_li1=Grd_lphy_in
+      p_lj0= Grd_lphy_j0 ; p_lj1=Grd_lphy_jn
 
       do jj=1, outp_sorties(0,stepno)
 

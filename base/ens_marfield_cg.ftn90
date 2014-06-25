@@ -52,7 +52,6 @@
 #include "ptopo.cdk"
 #include "hgc.cdk"
 #include "ens_param.cdk"
-#include "itf_phy.cdk"
 !
 !modules
 

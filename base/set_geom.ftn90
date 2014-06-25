@@ -17,10 +17,10 @@
 #include "model_macros_f.h"
 !
       subroutine set_geom
-!
+      use hgrid_wb, only: hgrid_wb_put
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     M. Desgagne - V. Lee ( after version v1_03 of setgeom )
 !
@@ -61,7 +61,9 @@
       character*12 gem_debug
       character*8 dumc
       integer offi,offj,indx,err,ierx,iery,dgid,hgc(4)
-      integer i,j,k,dimy,istat,pnip1,lam,ni,nj,options
+      integer i,j,k,dimy,istat,pnip1,lam,ni,nj,offset
+!      integer p_lgid,p_li0,p_li1,p_lj0,p_lj1,p_ni,p_nj,offset
+!integer Grd_lphy_gid
       real xfi(0:l_ni+1),yfi(0:l_nj+1),height,heightp1
       real gxfi(g_ni),gyfi(g_nj)
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
@@ -276,24 +278,41 @@
          enddo
       endif
 
+      Grd_global_gid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro, &
+                       Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1) , gyfi(1))
+      Grd_local_gid  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
+                       Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xfi(1) ,  yfi(1))
+      Grd_lclcore_gid= ezgdef_fmem (l_ni-pil_w-pil_e, l_nj-pil_s-pil_n,&
+                       'Z', 'E', Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                       xfi(1+pil_w), yfi(1+pil_s) )
+
+      offset= 0 ; if (G_lam) offset= 2
+      Grd_lphy_i0 = 1 + offset*west  ; Grd_lphy_in = l_ni-offset*east
+      Grd_lphy_j0 = 1 + offset*south ; Grd_lphy_jn = l_nj-offset*north
+      Grd_lphy_ni = Grd_lphy_in - Grd_lphy_i0 + 1
+      Grd_lphy_nj = Grd_lphy_jn - Grd_lphy_j0 + 1
+
+      Grd_lphy_gid  = ezgdef_fmem ( Grd_lphy_ni, Grd_lphy_nj, 'Z', 'E', &
+                      Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro      , &
+                      xfi(Grd_lphy_i0), yfi(Grd_lphy_j0) )
+
+      istat= hgrid_wb_put ('model/Hgrid/global' ,Grd_global_gid  , &
+                            F_lni=G_ni,F_lnj=G_nj)
+      istat= hgrid_wb_put ('model/Hgrid/local'  ,Grd_local_gid   , &
+                            F_lni=l_ni,F_lnj=l_nj)
+      istat= hgrid_wb_put ('model/Hgrid/lclcore',Grd_lclcore_gid , &
+                  F_lni=l_ni-pil_w-pil_e, F_lnj=l_nj-pil_s-pil_n , &
+                  F_i0=1+pil_w, F_j0=1+pil_s)
+      istat= hgrid_wb_put ('model/Hgrid/lclphy' ,Grd_lphy_gid    , &
+                  F_lni=Grd_lphy_ni, F_lnj=Grd_lphy_nj           , &
+                  F_i0=Grd_lphy_i0, F_j0=Grd_lphy_j0)
+
       hgc(1)= Hgc_ig1ro
       hgc(2)= Hgc_ig2ro
       hgc(3)= Hgc_ig3ro
       hgc(4)= Hgc_ig4ro
 
-      Grd_global_gid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro, &
-                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1) , gyfi(1) )
-      Grd_local_gid  = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
-                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,  xfi(1) ,  yfi(1) )
-      Grd_lclcore_gid= ezgdef_fmem (l_ni-pil_w-pil_e, l_nj-pil_s-pil_n,&
-                  'Z', 'E', Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
-                  xfi(1+pil_w), yfi(1+pil_s) )
-
-      options = WB_REWRITE_NONE+WB_IS_LOCAL
-      istat= wb_put('model/Hgrid/global_gid' ,Grd_global_gid ,options)
-      istat= wb_put('model/Hgrid/local_gid'  ,Grd_local_gid  ,options)
-      istat= wb_put('model/Hgrid/lclcore_gid',Grd_lclcore_gid,options)
-      istat= wb_put('model/Hgrid/hgcrot     ',hgc            ,options)
+      istat= wb_put('model/Hgrid/hgcrot',hgc,WB_REWRITE_NONE+WB_IS_LOCAL)
 
       err = gdll (Grd_local_gid, Geomn_latrx, Geomn_lonrx)
       do j=1,l_nj

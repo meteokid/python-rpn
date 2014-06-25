@@ -37,7 +37,7 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
-#include "itf_phy.cdk"
+#include "rstr.cdk"
 
       integer,external :: itf_phy_prefold_opr
 
@@ -45,7 +45,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( p_user_busper_L .and. (F_step_kount.eq.0) ) return
+      if ( Rstri_user_busper_L .and. (F_step_kount.eq.0) ) return
 
       call timing_start ( 40, 'PHYSTEP' )
 

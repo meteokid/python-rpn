@@ -15,24 +15,22 @@
 
 !**s/r out_tracer - calculate and output tracer fields
 !
-#include "model_macros_f.h"
-!
-      subroutine out_tracer (F_wlnph_ta,DIST_DIM,F_nk,levset,set)
+      subroutine out_tracer (F_wlnph_ta, Minx,Maxx,Miny,Maxy,F_nk,&
+                                                       levset,set)
       implicit none
 #include <arch_specific.hf>
 !
-      integer F_nk,DIST_DIM,levset,set
-      real F_wlnph_ta(DIST_SHAPE,F_nk)
-!
+      integer F_nk,Minx,Maxx,Miny,Maxy,levset,set
+      real F_wlnph_ta(Minx:Maxx,Miny:Maxy,F_nk)
+
 !author
 !     Lee V.                    - rpn May 2004
 !
 !revision
-! v3_20 - Lee V.            - initial MPI version (from bloctr     v3_12)
-! v3_30 - Lee V.            - option to clip tracers with Out3_cliph_L
-! v4_05 - Lee V.            - adaptation to GMM
-! v4_40 - Lee V.            - change in argument call for this routine & prgen
-!
+! v3_20 - Lee V.    - initial MPI version (from bloctr     v3_12)
+! v3_30 - Lee V.    - option to clip tracers with Out3_cliph_L
+! v4_05 - Lee V.    - adaptation to GMM
+! v4_40 - Lee V.    - change in argument call for this routine & prgen
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -50,7 +48,8 @@
       integer, dimension(:), allocatable::indo
       real ,dimension(:), allocatable::prprlvl,rf
       real ,dimension(:,:,:), allocatable:: w4,cible
-      real t4(LDIST_SHAPE,G_nk+1), t5(LDIST_SHAPE,G_nk+1) 
+      real t4(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), &
+           t5(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) 
       logical outvar_L
       real, pointer, dimension(:,:,:) :: tr1
 !_______________________________________________________________________
@@ -91,6 +90,7 @@
                               Outd_nbit(ii,set) )
                endif
                if ( (trim(Outd_var_S(ii,set)) == 'HU') .and. (Schm_phyms_L) ) then
+                  t4(:,:,G_nk+1) = tr1(:,:,G_nk)
                   call itf_phy_sfcdiag (t4(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,'QDIAG')
                   if (Out3_cliph_L) t4(:,:,G_nk+1) = max ( t4(:,:,G_nk+1), 0. )
                   call ecris_fst2(t4,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t  ,&
@@ -108,7 +108,8 @@
 
 !       Setup the indexing for output
          nko=Level_max(levset)
-         allocate ( indo(nko), rf(nko) , prprlvl(nko), w4(LDIST_SHAPE,nko), &
+         allocate ( indo(nko), rf(nko) , prprlvl(nko), &
+                  w4(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     cible(l_minx:l_maxx,l_miny:l_maxy,nko) )
 
          do i = 1, nko

@@ -46,7 +46,6 @@
 !                    | and VT is done even if cubic interpolation is   |
 !                    | .true. (it has no effect if cubic interpolation |
 !                    |                                  is .false.)    |
-! Out3_nundr         | number of levels for underground extrapolation  |
 ! Out3_zund          | list of levels for underground extrapolation    |
 ! Out3_filtpass      | number of filtering passes (see Out3_filt_s)    |
 ! Out3_filtcoef      | filter coefficient (see Out3_filt_s)            |
@@ -63,7 +62,7 @@
       logical Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L
       logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L, Out3_satues_L
       logical Out3_fullplane_L, Out3_uencode_L
-      integer Out3_nbitg, Out3_linbot, Out3_nundr, Out3_zund(MAXELEM)
+      integer Out3_nbitg, Out3_linbot
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
       integer Out3_date, Out3_postfreq, Out3_nblock
@@ -82,9 +81,10 @@
       common / Out3_l / Out3_satues_L,Out3_newout_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postfreq
-      common / Out3_i / Out3_nbitg,Out3_linbot,Out3_nundr,Out3_zund
-      common / Out3_i / Out3_nblock,Out3_comyy,Out3_outpe_x,Out3_outpe_y
+      common / Out3_i / Out3_nbitg,Out3_linbot
+      common / Out3_i / Out3_nblock
       common / Out3_i / Out3_ndigits, Out3_closestep,Out3_ip3
       common / Out3_i / Out3_lieb_nk  , Out3_lieb_maxite
       common / out3_r / Out3_filtcoef, Out3_lieb_conv, Out3_lieb_levels
+      common / out3_p / Out3_comyy,Out3_outpe_x,Out3_outpe_y
 !

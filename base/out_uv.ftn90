@@ -15,15 +15,13 @@
 
 !**s/r out_uv - output winds
 !
-#include "model_macros_f.h"
-!
       subroutine out_uv (F_wlnph_m, Minx,Maxx,Miny,Maxy, nk, levset, set)
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy,nk,levset,set
       real F_wlnph_m(Minx:Maxx,Miny:Maxy,nk+1)
-!
+
 !author
 !     james caveen/andre methot - rpn july/nov 1995
 !
@@ -60,7 +58,7 @@
 #include "grd.cdk"
 #include "schm.cdk"
 
-      integer i,j,k,ii,istat,psum, kind,nko,nkof,l_ninj
+      integer i,j,k,ii,istat,psum, kind,nko,nkof,nk_src,l_ninj
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,pnuu,pnvv,pnuv
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
@@ -107,9 +105,7 @@
       if (lastdt .ne. Lctl_step) then
 
          istat = gmm_get(gmmk_ut1_s,ut1)
-         if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(ut1)'
          istat = gmm_get(gmmk_vt1_s,vt1)
-         if (GMM_IS_ERROR(istat)) print *,'out_dyn ERROR at gmm_get(vt1)'
 
          call uv_acg2g (uu ,ut1 ,1,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0 ,in ,j0 ,jn )
          call uv_acg2g (vv ,vt1 ,2,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0v,inv,j0v,jnv)
@@ -162,12 +158,13 @@
 
       endif
 
-      uu(:,:,l_nk+1) = uu(:,:,l_nk)
-      vv(:,:,l_nk+1) = vv(:,:,l_nk)
       if (Schm_phyms_L) then
-         call itf_phy_sfcdiag (uu(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
+         nk_src= l_nk+1
+         uu(:,:,nk_src) = uu(:,:,l_nk)
+         vv(:,:,nk_src) = vv(:,:,l_nk)
+         call itf_phy_sfcdiag (uu(l_minx,l_miny,nk_src),l_minx,l_maxx,&
                                                 l_miny,l_maxy,'UDIAG')
-         call itf_phy_sfcdiag (vv(l_minx,l_miny,l_nk+1),l_minx,l_maxx,&
+         call itf_phy_sfcdiag (vv(l_minx,l_miny,nk_src),l_minx,l_maxx,&
                                                 l_miny,l_maxy,'VDIAG')
       endif
 
@@ -177,6 +174,8 @@
       in = l_ni
       j0 = 1
       jn = l_nj
+      nk_src = G_nk
+      if (Schm_phyms_L) nk_src = G_nk+1
 
       if (Level_typ_S(levset) .eq. 'M') then  ! Output on model levels
 
@@ -187,8 +186,15 @@
                        Level_momentum,indo,nko)
          nkof= nko
          if (nko .eq. G_nk) then
-            nkof= G_nk + 1
+            nkof= nk_src
             indo(nkof)= nkof
+         else
+            if ((nko .eq. 1).and.(indo(1).eq.G_nk)) then
+               if (Schm_phyms_L) then
+                  nkof= 2
+                  indo(nkof)= G_nk + 1
+               endif
+            endif
          endif
 
          if (pnuu.ne.0) &
@@ -199,7 +205,7 @@
               call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
                  'VV  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnvv) )
          if (pnuv.ne.0) then
-            do k = 1,G_nk+1
+            do k = 1, nk_src
                do j = j0, jn
                   do i = i0, in
                      uv(i,j,k) = sqrt(uu(i,j,k)*uu(i,j,k)+ &
@@ -232,10 +238,10 @@
 
 !        Vertical interpolation
 
-         call vertint ( uu_pres,cible,nko, uu,F_wlnph_m,G_nk+1    ,&
+         call vertint ( uu_pres,cible,nko, uu,F_wlnph_m, nk_src   ,&
                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                         'linear', .false. )
-         call vertint ( vv_pres,cible,nko, vv,F_wlnph_m,G_nk+1    ,&
+         call vertint ( vv_pres,cible,nko, vv,F_wlnph_m, nk_src   ,&
                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                         'linear', .false. )
 

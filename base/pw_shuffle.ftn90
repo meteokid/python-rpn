@@ -13,71 +13,36 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pw_update - Update physical quantities
-!
+!**s/r pw_shuffle - Rename time level :P -> :M
 !
       subroutine pw_shuffle
       implicit none
 #include <arch_specific.hf>
 !
 !author
-!     Michel Desgagne - May 2010
+!     Michel Desgagne - Spring 2014
 !
 !revision
-! v4_14 - Desgagne, M.     - Initial revision
+! v4_70 - Desgagne, M.     - Initial revision
 !
 #include "gmm.hf"
-#include "pw.cdk"
-#include "tr3d.cdk"
-#include "step.cdk"
-!
-      integer istat,fld,i
-      real, dimension(:,:,:), pointer :: plus,minus
-      character(len=GMM_MAXNAMELENGTH), dimension(7,2) :: pw_list
-      type(gmm_metadata) :: mymeta
-!
-!     Set list of fields to shuffle
-      pw_list = transpose(reshape( (/ &
-           gmmk_pw_uu_moins_s,gmmk_pw_uu_plus_s, &
-           gmmk_pw_vv_moins_s,gmmk_pw_vv_plus_s, &
-           gmmk_pw_wz_moins_s,gmmk_pw_wz_plus_s, &
-           gmmk_pw_tt_moins_s,gmmk_pw_tt_plus_s, &
-           gmmk_pw_pm_moins_s,gmmk_pw_pm_plus_s, &
-           gmmk_pw_pt_moins_s,gmmk_pw_pt_plus_s, &
-           gmmk_pw_gz_moins_s,gmmk_pw_gz_plus_s/), (/size(pw_list,dim=2),size(pw_list,dim=1)/)))
-!
-!     Reset physical world dynamics tendencies for the new timestep
-      nullify(pw_uu_dyn,pw_vv_dyn,pw_wz_dyn,pw_tt_dyn)
-      istat = gmm_get (gmmk_pw_uu_dyn_s, pw_uu_dyn, mymeta)
-      istat = gmm_get (gmmk_pw_vv_dyn_s, pw_vv_dyn, mymeta)
-      istat = gmm_get (gmmk_pw_wz_dyn_s, pw_wz_dyn, mymeta)
-      istat = gmm_get (gmmk_pw_tt_dyn_s, pw_tt_dyn, mymeta)
-      pw_uu_dyn = 0.
-      pw_vv_dyn = 0.
-      pw_wz_dyn = 0.
-      pw_tt_dyn = 0.
-!     ________________________________________________________________
-!     Assign time-plus values to time-minus  Do not gmm_shuffle() because
-!     time-plus value also need to be valid at the start of the step for
-!     computing the dynamics-component tendencies.
-      do fld=1,size(pw_list,dim=1)
-         nullify(plus,minus)
-         istat = gmm_get(pw_list(fld,1),minus,mymeta)
-         istat = gmm_get(pw_list(fld,2),plus,mymeta)
-         minus = plus
-      enddo
+
+      integer gmmstat
+      character(len=8) , dimension(2), parameter :: pw_uulist = ['PW_UU:P','PW_UU:M']
+      character(len=8) , dimension(2), parameter :: pw_vvlist = ['PW_VV:P','PW_VV:M']
+      character(len=8) , dimension(2), parameter :: pw_ttlist = ['PW_TT:P','PW_TT:M']
+      character(len=8) , dimension(2), parameter :: pw_pmlist = ['PW_PM:P','PW_PM:M']
+      character(len=8) , dimension(2), parameter :: pw_ptlist = ['PW_PT:P','PW_PT:M']
+      character(len=8) , dimension(2), parameter :: pw_gzlist = ['PW_GZ:P','PW_GZ:M']
 !     ________________________________________________________________
 !
-!     Copy initial tracer values from time-plus to time-minus
-
-      if (Step_kount == 0) then
-         do i=1,Tr3d_ntr
-            nullify(plus,minus)
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',minus,mymeta)
-            istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',plus,mymeta)
-            minus = plus
-         enddo
-      endif
-
+      gmmstat = gmm_shuffle (pw_uulist)
+      gmmstat = gmm_shuffle (pw_vvlist)
+      gmmstat = gmm_shuffle (pw_ttlist)
+      gmmstat = gmm_shuffle (pw_pmlist)
+      gmmstat = gmm_shuffle (pw_ptlist)
+      gmmstat = gmm_shuffle (pw_gzlist)
+!     ________________________________________________________________
+!
       return
       end
