@@ -247,10 +247,9 @@ $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 
 sometools: prgemnml gemgrid toc2nml
 
-#allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
-allbin_gemdyn: monitor toc2nml gemgrid prgemnml split3df #gemabs
+allbin_gemdyn: monitor toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
+#allbin_gemdyn: monitor toc2nml gemgrid prgemnml split3df #gemabs
 
-#		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 
 allbincheck_gemdyn:
 	if [[ \
@@ -260,6 +259,7 @@ allbincheck_gemdyn:
 		&& -f $(BINDIR)/toc2nml \
 		&& -f $(BINDIR)/gem_monitor_end \
 		&& -f $(BINDIR)/gem_monitor_output \
+		&& -f $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs \
 		]] ; then \
 		exit 0 ;\
 	fi ;\
