@@ -68,11 +68,11 @@
       Iau_tracers_S = ''
       Iau_weight_S  = 'constant'
 !
-      Init_balgm_L = .false.
-      Init_dfwin_L = .true.
-      Init_dfnp    = 5
-      Init_dfpl_8  = 21600.0
-      Init_dftr_L  = .false.
+      Init_balgm_L   = .false.
+      Init_dfwin_L   = .true.
+      Init_dflength_S= '5p'
+      Init_dfpl_S    = '6h'
+      Init_dftr_L    = .false.
 !
       Schm_hydro_L  = .false.
       Schm_hzdadw_L = .false.
@@ -181,7 +181,7 @@
       Out3_etik_S    = 'GEMDM'
       Out3_unit_S    = ' '
       Out3_closestep = -1
-      Out3_postfreq  =  0
+      Out3_postfreq_S= ''
       Out3_ndigits   = 3
       Out3_ip3       = 0
       Out3_nbitg     = 16

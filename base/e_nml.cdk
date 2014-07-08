@@ -1,30 +1,18 @@
-#if defined (DOC)
-!revisions (e_nml)
-! v3.30 - Desgagne             - remove references to namelist /ptopo/
-#endif
-!
-#include "e_topo.cdk"
-#include "e_schm.cdk"
+
 #include "e_tr.cdk"
 #include "e_anal.cdk"
-!
+
 #include "modconst.cdk"
 #include "pilot1.cdk"
-#include "schm.cdk"
-!
-      namelist /gement/ Anal_cond_L  , E_schm_adcub
-      namelist /gement/ E_schm_stlag , E_tr3d_list_S , E_tr_anydate_L
-      namelist /gement/ Pil_bmf_L    , Pil_dx        , Pil_hblen
-      namelist /gement/ Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel
-      namelist /gement/ Topo_dgfmx_L , Topo_dgfms_L  , Topo_filmx_L 
-      namelist /gement/ Topo_clip_oro_L
+
+      namelist /gement/ Anal_cond_L 
+      namelist /gement/ E_tr3d_list_S , E_tr_anydate_L
+      namelist /gement/ Pil_bmf_L    , Pil_dx
+      namelist /gement/ Pil_jobstrt_S, Pil_jobend_S
       namelist /gement/ VAR_TT, VAR_UU, VAR_ZD, VAR_W , VAR_Q
 
-      namelist /gement_p/ Anal_cond_L  , E_schm_adcub
-      namelist /gement_p/ E_schm_stlag                 
-      namelist /gement_p/ Pil_bmf_L    , Pil_dx        , Pil_hblen
-      namelist /gement_p/ Pil_jobstrt_S, Pil_jobend_S  , Pil_lancemodel
-      namelist /gement_p/ Topo_dgfmx_L , Topo_dgfms_L  , Topo_filmx_L
-      namelist /gement_p/ Topo_clip_oro_L
+      namelist /gement_p/ Anal_cond_L
+      namelist /gement_p/ Pil_bmf_L    , Pil_dx
+      namelist /gement_p/ Pil_jobstrt_S, Pil_jobend_S
       namelist /gement_p/ VAR_TT, VAR_UU, VAR_ZD, VAR_W , VAR_Q
 

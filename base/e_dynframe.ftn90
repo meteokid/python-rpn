@@ -40,9 +40,11 @@
 #include "pilot1.cdk"
 #include "filename.cdk"
 #include "ptopo.cdk"
+#include "path.cdk"
 
-      character*16 date1, date2, msg
+      character*16 date1, date2, msg, interp_S
       character*16, dimension(:), allocatable :: lesdates
+      character*1024 fn
       integer i, cnt, mpx, ldni, irest, istart, nframe
       integer, dimension(:), allocatable :: err, errt
       real*8 dayfrac, sec_in_day
@@ -102,7 +104,10 @@
       err= 0
       if (Pil_bmf_L .and. (ldni.gt.0)) then
          allocate ( topo (nifi*njfi) )
-         call e_gettopo (topo, nifi, njfi, err)
+         interp_S = 'LINEAR'
+         fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
+         call get_field ( topo, nifi, njfi, 'ME', trim(fn), &
+                          interp_S, xfi, yfi, err )
       endif
       call handle_error(err,'e_dynframe','Probleme with e_gettopo')
 

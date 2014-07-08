@@ -43,12 +43,12 @@
 #include "out.cdk"
 #include "modconst.cdk"
 
-      integer, external :: bin2com,time2sec
+      integer, external :: bin2com, time2step, time2sec
 
       character*16  dumc_S, datev
       character*256 fln_S
       logical wronghyb
-      integer i, k, nrec, ipcode, ipkind, istat
+      integer i, k, nrec, ipcode, ipkind, istat, err
       real    pcode,deg_2_rad,sec
       real*8  diffd, dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -158,19 +158,15 @@
 
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
 
-      Grdc_ndt = -1
-      if (time2sec(Grdc_nfe,sec)==RMN_OK) Grdc_ndt = sec/real(Cstv_dt_8)
-      if (Grdc_ndt>-1) Grdc_ndt = max( 1, Grdc_ndt)
+      err= 0
+      err= min( time2step (Grdc_nfe    , Step_dt, Lun_out, Grdc_ndt  ), err)
+      err= min( time2step (Grdc_start_S, Step_dt, Lun_out, Grdc_start), err)
+      err= min( time2step (Grdc_end_S  , Step_dt, Lun_out, Grdc_end  ), err)
+      if (err.lt.0) return
 
-      Grdc_start= Lctl_step
-      if (Grdc_start_S /= '') then
-         if (time2sec(Grdc_start_S,sec)==RMN_OK) Grdc_start= sec / real(Step_dt)
-      endif
-
-      Grdc_end= Step_total
-      if (Grdc_end_S /= '') then
-         if (time2sec(Grdc_end_S,sec)==RMN_OK) Grdc_end= sec / real(Step_dt)
-      endif
+      if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
+      if (Grdc_start <  0) Grdc_start= Lctl_step
+      if (Grdc_end   <  0) Grdc_end  = Step_total
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
       Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
@@ -283,20 +279,19 @@
          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
 
+      err= 0
+      err= min( time2step (Init_dflength_S, Step_dt, Lun_out, Init_dfnp), err)
+      err= min( time2sec  (Init_dfpl_S    , sec)                        , err)
+      if (err.lt.0) return
+
       if (Init_dfnp <= 0) then
          if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602)
          Init_balgm_L = .false.
       endif
-      Init_dfnp = max(0,Init_dfnp)
+      Init_dfnp   = max(2,Init_dfnp)
+      Init_dfpl_8 = sec
       if (Init_balgm_L) then
-         if ( mod(Init_dfnp,2) /= 1 ) then
-            if (Lun_out>0) write(Lun_out,6600) Init_dfnp
-            return
-         endif
-         if ( Init_dfnp .eq. 1 ) then
-            if (Lun_out>0) write(Lun_out,6601)
-            return
-         endif
+         if ( mod(Init_dfnp,2) /= 1 ) Init_dfnp= Init_dfnp+1
       endif
 
       if (Lctl_debug_L) then
@@ -322,8 +317,6 @@
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
- 6600 format (/' PROBLEM: THE VARIABLE Init_dfnp = ',i4,'  IS EVEN'/)
- 6601 format (/' PROBLEM: THE VARIABLE Init_dfnp cannot be equal to 1'/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)

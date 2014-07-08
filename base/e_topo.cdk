@@ -1,36 +1,5 @@
 
-#if defined (DOC)
-!
-!**comdeck e_topo.cdk
-!
-!   Contains the parameters controlling the pre-treatment of topographic
-!   fields. The parameters are initialized in "SET_TOPO_2".
-!
-!______________________________________________________________________
-!                                                                      |
-!  PRE TREATMENT of TOPOGRAPHIC fields                                 |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Topo_filmx_L       | switch-> true  -filtering 2 delta X topography  |
-!                    |          false -no filters to topography        |
-!                    |                                                 |
-! Topo_dgfmx_L       | switch-> true  -filtering using digital. filt   |
-!                    |          false -no digital filter to topography |
-!                    |                                                 |
-! Topo_dgfms_L       | switch-> true  -digital filt. consider map scale|
-!                    |          false -digital filt. ignore map scale  |
-!                    |                                                 |
-!                    |                                                 |
-!----------------------------------------------------------------------|
-!
-#endif
-!
-      logical Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L,Topo_clip_oro_L
       real, dimension(:), pointer :: topo
-!
-      common / topo_l / Topo_filmx_L,Topo_dgfmx_L,Topo_dgfms_L,Topo_clip_oro_L
       common / topo_r / topo
-!
+
 

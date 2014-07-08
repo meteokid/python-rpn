@@ -13,12 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine write_3df2 ( fa,lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
-                              nomvar,gid, gif, gjd, gjf, unf )
+      subroutine write_3df3 ( fa,lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
+                              nomvar,gid, gif, gjd, gjf, unf, done )
       implicit none
 #include <arch_specific.hf>
 
       character* (*) nomvar
+      logical done
       integer lminx,lmaxx,lminy,lmaxy,nis,njs,nks, &
               gid, gif, gjd, gjf, unf
       real fa (lminx:lmaxx,lminy:lmaxy,nks)
@@ -31,6 +32,7 @@
 
 #include "grdc.cdk"
 #include "ptopo.cdk"
+#include "lun.cdk"
 
       integer i,j,k,n,nbits,nb,ind_o(nks)
       real tr1(nis,njs,nks),add,con
@@ -50,7 +52,10 @@
       nbits = Grdc_nbits
 
       if (Ptopo_blocme.eq.0) then
-         print*, 'write_3df: ',nomvar(1:4),nis,njs,nks,nbits
+
+         if ((.not.done).and.(Lun_out.gt.0)) write(Lun_out,3000) &
+           'writing 3df record:',nomvar(1:4),nis,njs,nks,nbits
+
          write (unf) nomvar(1:4),nis,njs,nks,nbits
          if (nbits.ge.32) then
             do k=1,nks
@@ -66,6 +71,8 @@
             deallocate (wkc)
          endif
       endif
+
+ 3000 format (3x,a,x,a,4i7)
 !
 !----------------------------------------------------------------------
 !

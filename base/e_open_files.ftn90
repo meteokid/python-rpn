@@ -14,35 +14,32 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r e_open_files
-!
-#include "model_macros_f.h"
-!
+
       subroutine e_open_files (current_date)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer current_date
-!
+
 !author 
 !    Michel Desgagne - Summer 2008
 !
 !revision
 ! v3_31 - Desgagne M.       - Initial version
 ! v4_03 - Lee/Desgagne - ISST
-!
+
 #include "e_anal.cdk"
 #include "e_grids.cdk"
 #include "e_topo.cdk"
 #include "bmf.cdk"
 #include "ptopo.cdk"
 #include "e_cdate.cdk"
-#include "e_schm.cdk"
 #include "pilot1.cdk"
 #include "e_grdc.cdk"
 #include "grd.cdk"
 #include "path.cdk"
 #include <clib_interface.cdk>
-!
+
       integer, external :: newdate
       character*16 pdate
       character*1024 rootfn,filen
@@ -83,7 +80,7 @@
       else
 
 !        Write out the 3df_filemap.txt
-!
+
          filen=trim(rootfn)//'/3df_'//trim(pdate)//'_filemap.txt'
          open (9,file=filen,access='SEQUENTIAL',form='FORMATTED')
          write (9,'(2i8,4e15.7,2i10,l4)')1,1, &

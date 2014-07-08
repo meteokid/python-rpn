@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r step_nml - Read namelist time
-!
+
       integer function step_nml (F_namelistf_S)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) F_namelistf_S
-!
+
 !authors    Michel Desgagne - Spring 2011
 ! 
 !revision
@@ -28,14 +28,14 @@
 !
 !object
 !  Default configuration and reading namelist 'step'
-!
+
 #include <rmnlib_basics.hf>
 #include "lun.cdk"
 #include "grd.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
 
-      integer,external ::  step_calc,time2sec
+      integer,external ::  step_calc,time2step
 
       integer nrec,unf,err
       real :: sec
@@ -52,15 +52,15 @@
 
 ! Defaults values for ptopo namelist variables
 
-      Step_runstrt_S   = 'NIL'
-      Fcst_start_S    = '0H'
-      Fcst_end_S      = 'NIL'
-      Step_total       = 0
-      Step_nesdt       = 0
-      Step_rsti        = -1
-      Step_bkup        = -1
-      Step_gstat       = -1
-      Step_spinphy     = -1
+      Step_runstrt_S = 'NIL'
+      Fcst_start_S   = ''
+      Fcst_end_S     = ''
+      Fcst_nesdt_S   = ''
+      Fcst_gstat_S   = ''
+      Fcst_rstrt_S   = ''
+      Fcst_bkup_S    = ''
+      Fcst_spinphy_S = ''
+
       Step_dt          = -1.0
       Step_leapyears_L = .true.
 
@@ -85,17 +85,29 @@
                     ' Step_dt must be specified in namelist &step'
          goto 9999
       endif
+
+      err= 0
+      err= min( time2step (Fcst_start_S  , Step_dt, Lun_out, Lctl_step )  , err)
+      err= min( time2step (Fcst_end_S    , Step_dt, Lun_out, Step_total)  , err)
+      err= min( time2step (Fcst_rstrt_S  , Step_dt, Lun_out, Step_rsti)   , err)
+      err= min( time2step (Fcst_bkup_S   , Step_dt, Lun_out, Step_bkup)   , err)
+      err= min( time2step (Fcst_gstat_S  , Step_dt, Lun_out, Step_gstat)  , err)
+      err= min( time2step (Fcst_nesdt_S  , Step_dt, Lun_out, Step_nesdt)  , err)
+      err= min( time2step (Fcst_spinphy_S, Step_dt, Lun_out, Step_spinphy), err)
+      if (err.lt.0) goto 9999
+
       if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
                     ' Step_nesdt must be specified in namelist &step'
          goto 9999
+      else
+         Step_nesdt= Step_nesdt * Step_dt
       endif
 
-      Lctl_step = 0
-      if (time2sec(Fcst_start_S,sec)==RMN_OK) Lctl_step = sec / real(Step_dt)
       Step_delay= Lctl_step
-      if (time2sec(Fcst_end_S,sec)==RMN_OK) Step_total = sec / real(Step_dt)
 
+      if (Step_total   .lt. 0) Step_total  = 0
+      if (Lctl_step    .lt. 0) Lctl_step   = 0
       if (Step_gstat   .le. 0) Step_gstat  = Step_total+1
       if (Step_bkup    .le. 0) Step_bkup   = Step_total+1
       if (Step_spinphy .le. 0) Step_spinphy= Step_total+1
@@ -106,10 +118,10 @@
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',A/)
+
+ 9999 err = fclos (unf)
 !
 !-------------------------------------------------------------------
 !
- 9999 err = fclos (unf)
       return
-
-    end function step_nml
+      end function step_nml

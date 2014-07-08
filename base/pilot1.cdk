@@ -9,23 +9,18 @@
 ! Pil_jobend_S       | End date for LAM run         (yyyymmdd.hhmmss)  |
 ! Pil_jobstrt_S      | Starting date of validity of BCs                |
 !                    | for LAM config (yyyymmdd.hhmmss)                |
-! Pil_3df_L          | True to generate boundary conditions for LAM    |
 ! Pil_bmf_L          | True to generate BMF files only, default isFalse|
 ! Pil_dx             | resolution of output for feeding model in radians
-! Pil_sfc2d_L        | True to generate geophy.bin (surface fields)    |
-! Pil_hblen          | Number of points for the horizontal blending    |
 ! Pil_pil            | Number of points for the pilot region           |
 !--------------------|-------------------------------------------------|
 !
       character*16 Pil_jobstrt_S,Pil_jobend_S
-!
       logical Pil_bmf_L
-!
-      integer Pil_hblen,Pil_pil,Pil_lancemodel
+      integer Pil_pil
       real    Pil_dx
-!
+
       common /pilr/ Pil_dx
       common /pils/ Pil_jobstrt_S,Pil_jobend_S
       common /pill/ Pil_bmf_L
-      common /pili/ Pil_hblen,Pil_pil,Pil_lancemodel
+      common /pili/ Pil_pil
 !

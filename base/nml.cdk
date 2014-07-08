@@ -71,8 +71,8 @@
 !Init
       namelist /gem_cfgs/ Init_balgm_L
       namelist /gem_cfgs/ Init_dfwin_L
-      namelist /gem_cfgs/ Init_dfnp
-      namelist /gem_cfgs/ Init_dfpl_8
+      namelist /gem_cfgs/ Init_dflength_S
+      namelist /gem_cfgs/ Init_dfpl_S
       namelist /gem_cfgs/ Init_dftr_L
 !Lam
       namelist /gem_cfgs/ Lam_0ptend_L
@@ -106,7 +106,7 @@
       namelist /gem_cfgs/ Out3_lieb_levels
       namelist /gem_cfgs/ Out3_lieb_maxite
       namelist /gem_cfgs/ Out3_lieb_conv
-      namelist /gem_cfgs/ Out3_postfreq
+      namelist /gem_cfgs/ Out3_postfreq_S
       namelist /gem_cfgs/ Out3_newout_L
       namelist /gem_cfgs/ Out3_fullplane_L
       namelist /gem_cfgs/ Out3_uencode_L
@@ -203,8 +203,8 @@
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
       namelist /gem_cfgs_p/ Init_dfwin_L
-      namelist /gem_cfgs_p/ Init_dfnp
-      namelist /gem_cfgs_p/ Init_dfpl_8
+      namelist /gem_cfgs_p/ Init_dflength_S
+      namelist /gem_cfgs_p/ Init_dfpl_S
       namelist /gem_cfgs_p/ Init_dftr_L
 !Lam
       namelist /gem_cfgs_p/ Lam_0ptend_L
@@ -236,7 +236,7 @@
       namelist /gem_cfgs_p/ Out3_unit_S
       namelist /gem_cfgs_p/ Out3_lieb_maxite
       namelist /gem_cfgs_p/ Out3_lieb_conv
-      namelist /gem_cfgs_p/ Out3_postfreq
+      namelist /gem_cfgs_p/ Out3_postfreq_S
       namelist /gem_cfgs_p/ Out3_newout_L
       namelist /gem_cfgs_p/ Out3_fullplane_L
       namelist /gem_cfgs_p/ Out3_uencode_L
