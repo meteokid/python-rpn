@@ -15,7 +15,7 @@
 
 !**   s/r ens_marfield_cg - define a markov chain field
 !     
-#include "model_macros_f.h"
+
 !     
       subroutine ens_marfield_cg(fgem,E_nk)
 !
@@ -38,7 +38,7 @@
 !	
 !arguments     none
 !
-!implicits
+
 #include <rmnlib_basics.hf>
 #include "gmm.hf"
 #include "ens_gmm_dim.cdk"
@@ -52,8 +52,9 @@
 #include "ptopo.cdk"
 #include "hgc.cdk"
 #include "ens_param.cdk"
+#include "step.cdk"
 !
-!modules
+
 
       integer p_ni,p_nj,p_offi,p_offj
        integer, external :: read_db_file,write_db_file
@@ -150,7 +151,7 @@
       pagset=> dumdum(35,1)
       paidum=> dumdum(36,1)
 !     Rstri_rstn_L
-      if ( Lctl_step .eq. 1) then
+      if ( Step_kount .eq. 1 ) then
 
          paiv  => dumdum( 1,1)
          paiy  => dumdum(33,1)
