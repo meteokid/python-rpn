@@ -323,7 +323,7 @@
                endif
             endif
          else
-            tr (1:l_ni,1:l_nj,1:G_nk) = Tr3d_sval(k)
+            tr (1:l_ni,1:l_nj,1:G_nk) = 0.
          endif
       end do
 

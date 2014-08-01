@@ -61,7 +61,6 @@
       namelist /gem_cfgs/ Hzd_pwr
       namelist /gem_cfgs/ Hzd_pwr_theta
       namelist /gem_cfgs/ Hzd_pwr_tr
-      namelist /gem_cfgs/ Hzd_tr3d_name_S
 !Iau
       namelist /gem_cfgs/ Iau_cutoff
       namelist /gem_cfgs/ Iau_interval
@@ -154,6 +153,8 @@
       namelist /gem_cfgs/ Sol3D_precond_S
       namelist /gem_cfgs/ Sol_type_S
       namelist /gem_cfgs/ Sol3D_krylov_S
+
+      namelist /gem_cfgs/ Tr3d_list_S
 
 !Vspng
       namelist /gem_cfgs/ Vspng_coeftop

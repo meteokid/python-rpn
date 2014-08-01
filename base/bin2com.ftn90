@@ -15,12 +15,10 @@
 
 !**s/r bin2com - reads parameters from labfl
 !
-#include "model_macros_f.h"
-!
       integer function bin2com ()
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     michel desgagne -  Jan 2000
 !
@@ -43,12 +41,7 @@
 ! v4_03 - Spacek/Desgagne   - ISST
 ! v4_04 - Plante A.         - Remove offline mode.
 ! v4_14 - Dugas B.          - Read leap year control flag
-!
-!object
-!     See above id
-!	
-!arguments - none
-!
+
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "bcsgrds.cdk"
@@ -58,10 +51,9 @@
 #include "modconst.cdk"
 #include "lun.cdk"
 #include "modipc.cdk"
-!
-      integer  fnom,wkoffit
-      external fnom,wkoffit
-!
+
+      integer, external :: fnom,wkoffit
+
       character*512 fn
       integer  unf, ierr
 !
@@ -76,9 +68,6 @@
       if (ierr.ge.-1) then
          if ( fnom (unf, fn, 'SEQ+OLD',ierr ) .eq. 0 ) then
             read (unf  ,nml=modipc_cfgs)
-            Tr3d_userntr = tracers_ntr
-            Tr3d_username_S(1:Tr3d_userntr) = tracers_name(1:Tr3d_userntr)
-            Tr3d_usersval  (1:Tr3d_userntr) = tracers_sval(1:Tr3d_userntr)
             Ana_horzint_L = horzint_L	
             call fclos (unf)	
             bin2com = 0	
@@ -88,16 +77,19 @@
       if (bin2com .lt. 0) then
          Mod_runstrt_S= 'NIL'
          Out3_date    = 0
-         Tr3d_userntr = 0
+         Tr3d_ntr     = 0
          Ana_horzint_L= .true.
          if (Grd_typ_S(1:1).eq.'L') then
             bin2com = 0
          else
-            if (Lun_out.gt.0) write (6,1001) trim(fn)
+            if (Lun_out.gt.0) write (6,1005) trim(fn)
          endif
       endif
 
- 1001 format (/' File ',a,' not available - ABORT -'/)
+      Tr3d_ntr_from_gemntr = Tr3d_ntr
+      Tr3d_from_gemntr_S(1:Tr3d_ntr) = Tr3d_name_S(1:Tr3d_ntr)
+
+ 1005 format (/' File ',a,' not available - ABORT -'/)
 !
 !     ---------------------------------------------------------------
 !

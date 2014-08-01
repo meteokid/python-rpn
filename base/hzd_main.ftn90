@@ -15,12 +15,10 @@
 
 !**s/r hzd_main - applies horizontal diffusion on a given set of fields
 !
-#include "model_macros_f.h"
-!
       subroutine hzd_main 
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Joseph-Pierre Toviessi ( after version v1_03 of dif )
 !
@@ -44,18 +42,18 @@
 ! v4_15 - Desgagne M.       - refonte majeure
 ! v4_40 - Plante A.         - Equatorial_sponge
 ! v4_50 - Desgagne M.       - New control switches
-!
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "hzd.cdk"
+#include "tr3d.cdk"
 #include "vspng.cdk"
 #include "schm.cdk"
 #include "eq.cdk"
 #include "vt1.cdk"
 
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng, &
-              switch_on_eqspng, switch_on_THETA, switch_on_psadj
+              switch_on_eqspng, switch_on_THETA
       integer i,istat
       real, pointer, dimension(:,:,:) :: tr
 !     _________________________________________________________________
@@ -65,7 +63,6 @@
       switch_on_THETA   = Hzd_lnr_theta.gt.0.
       switch_on_vrtspng = Vspng_nk     .ge.1
       switch_on_eqspng  = Eq_nlev      .gt.1
-      switch_on_psadj   = Schm_psadj_L
 
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
@@ -73,7 +70,7 @@
       istat = gmm_get(gmmk_tt1_s,tt1)
       istat = gmm_get(gmmk_wt1_s,wt1)
 
-      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
+      call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
 !     
 !**************************************
 !  3. Horizontal diffusiion on theta  *
@@ -87,10 +84,12 @@
 
       if ( switch_on_TR ) then
          call timing_start ( 62, 'HZD_theta' )
-         do i=1, Hzd_tr3d_ntr
-            nullify (tr)
-            istat = gmm_get('TR/'//trim(Hzd_tr3d_name_S(i))//':P',tr)
-            if (istat.eq.0) call hzd_ctrl3 (tr, 'S_TR', G_nk)
+         do i=1, Tr3d_ntr
+            if (Tr3d_hzd(i)) then
+               nullify (tr)
+               istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',tr)
+               if (istat.eq.0) call hzd_ctrl3 (tr, 'S_TR', G_nk)
+            endif
          end do
          call timing_stop  ( 62 )
       endif
@@ -114,7 +113,8 @@
 !
       if ( switch_on_vrtspng ) then
          call timing_start ( 65, 'V_SPNG' )
-         call vspng_drv3 (ut1,vt1,zdt1,wt1,tt1,LDIST_DIM,G_nk)
+         call vspng_drv3 (ut1, vt1, zdt1, wt1, tt1, &
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 65 )
       endif
 !     
@@ -124,18 +124,16 @@
 !
       if ( switch_on_eqspng ) then
          call timing_start ( 67, 'EQUA_SPNG')
-         call eqspng_drv (ut1,vt1,LDIST_DIM,G_nk)
+         call eqspng_drv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 67 )
       endif
 
-      if ( switch_on_psadj ) call psadj
-
-      call itf_ens_hzd ( ut1, vt1, tt1, LDIST_DIM, G_nk )
+      call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
 ! Update pw_* variables
 
-      if (switch_on_UVW .or. switch_on_vrtspng .or. switch_on_THETA  &
-                        .or. switch_on_TR      .or. switch_on_psadj )&
+      if (switch_on_UVW   .or. switch_on_vrtspng .or. &
+          switch_on_THETA .or. switch_on_TR ) &
          call pw_update_GPW
       if (switch_on_UVW .or. switch_on_vrtspng .or. switch_on_eqspng)&
          call pw_update_UV

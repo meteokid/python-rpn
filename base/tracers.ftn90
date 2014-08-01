@@ -13,15 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r tracers - Initializes list of tracers
-!
-#include "model_macros_f.h"
-!
+!**s/r tracers - Establishes final list of tracers for GEMDM
+
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne  -  Sept 2001
 !
@@ -29,8 +27,6 @@
 ! v2_31 - Desgagne M.       - initial version
 ! v3_21 - Lee V.            - remove Tr2d
 ! v3_30 - Desgagne M.       - memory calculation for tracers
-!
-!object
 !
 !arguments
 !        Tr3d_name_S acquires the list of tracers from itf_phy_inikey
@@ -41,17 +37,16 @@
 !            but this is converted via BMF/BCS/3DF as QC
 !        Tracers requested under auto cascade requires only the first
 !        2 letters
-!
-!implicits
+
 #include <clib_interface.cdk>
 #include "lun.cdk"
-#include "hzd.cdk"
 #include "tr3d.cdk"
-      logical hu_L,flag
-      integer i,j,k,indx1,needinit,istat,nmeta
+
+      integer, external :: decode_tracers
+      integer i,istat,nmeta
       character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S,basename_S,time_S,ext_S
       type(phymeta), dimension(:), pointer :: pmeta
-!*
+!
 !     __________________________________________________________________
 !
       nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
@@ -61,74 +56,37 @@
          istat = clib_toupper(varname_S)
          if (varname_S(1:3) /= 'TR/') cycle
          call gmmx_name_parts(varname_S,prefix_S,basename_S,time_S,ext_S)
-         if (any(Tr3d_name_S(1:tr3d_ntr) == basename_S)) cycle
-         tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = basename_S
-         Tr3d_wload(tr3d_ntr)  = pmeta(i)%wload
+         if (any(Tr3d_name_S(1:Tr3d_ntr) == basename_S)) cycle
+         Tr3d_ntr = Tr3d_ntr + 1
+         Tr3d_name_S(Tr3d_ntr)= basename_S
+         Tr3d_hzd   (Tr3d_ntr)= .false. ; Tr3d_wload(Tr3d_ntr)= pmeta(i)%wload
+         Tr3d_mono  (Tr3d_ntr)= 0       ; Tr3d_mass (Tr3d_ntr)= 0
       enddo
 
-      hu_L   = .false.
-      do k=1,tr3d_ntr
-         if (Tr3d_name_S(k)(1:2).eq.'HU') then
-            hu_L  = .true.
-            indx1 = k
-         endif
+      do i=1,MAXTR3D
+         istat = decode_tracers (Tr3d_list_s(i))
       end do
 
-      if (.not.hu_L) then
-         tr3d_ntr = tr3d_ntr + 1
+      if (.not. any(Tr3d_name_S(1:Tr3d_ntr) == 'HU')) then
+         Tr3d_ntr = Tr3d_ntr + 1
          Tr3d_name_S(tr3d_ntr)(1:4) = 'HU  '
-         indx1 = tr3d_ntr
-      endif
-      Tr3d_wload (indx1) = .false.
+         Tr3d_hzd   (Tr3d_ntr)= .false. ; Tr3d_wload(Tr3d_ntr)= .false.
+         Tr3d_mono  (Tr3d_ntr)= 0       ; Tr3d_mass (Tr3d_ntr)= 0
+      else
+         do i=1,Tr3d_ntr
+            if (Tr3d_name_S(i)(1:2).eq.'HU') Tr3d_wload(i)= .false.
+         end do
+      endif   
 
-      do 10 i=1,Tr3d_userntr
-!
-! Is user tracers already in Tr3d stack?
-         do k=1,tr3d_ntr
-            if (trim(Tr3d_name_S(k)).eq.trim(Tr3d_username_S(i))) then
-               Tr3d_sval(k) = Tr3d_usersval(i)
-               goto 10
-            endif
-         end do
-!
-! Otherwise add user tracer to Tr3d stack
-         tr3d_ntr = tr3d_ntr + 1
-         Tr3d_name_S(tr3d_ntr) = Tr3d_username_S(i)
- 10   continue
-!
       if (Lun_out.gt.0) then
-         write (Lun_out,'(/a)') 'TRACERS (3D storage):'
-         do i=1,tr3d_ntr
-            write (Lun_out,1002) trim(Tr3d_name_S(i)),i
+         write (Lun_out,1001)
+         do i=1,Tr3d_ntr
+            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i)
          end do
       endif
-!
-! Trim user list of tracers to horizontally diffuse (Hzd_tr3d_name_S)
-! to fit the current list of tracers of this run
-!
-      Hzd_tr3d_ntr = 0
-      do i=1, HZD_MAXTR
-         call low2up (Hzd_tr3d_name_S(i),varname_S)
-         flag=.false.
-         do k=1,tr3d_ntr
-            if (trim(varname_S).eq.trim(Tr3d_name_S(k))) then
-               do j=1,Hzd_tr3d_ntr
-                  if (trim(varname_S).eq.trim(Hzd_tr3d_name_S(j)))flag=.true.
-               end do
-               if (.not.flag) then
-                  Hzd_tr3d_ntr = Hzd_tr3d_ntr + 1
-                  flag=.true.
-                  cycle
-               else
-                  flag=.false.
-               endif
-            endif
-         end do
-         if (flag) Hzd_tr3d_name_S(Hzd_tr3d_ntr) = varname_S
-      end do
-!
- 1002 format (2x,a16,2x,i4)
+
+ 1001 format (/' Final liste of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass')
+ 1002 format (4x,a4,2l6,2i6)
 !
 !     __________________________________________________________________
 !

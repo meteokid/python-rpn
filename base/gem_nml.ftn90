@@ -148,7 +148,6 @@
       Hzd_lnr_theta  = -1.
       Hzd_pwr_tr = -1
       Hzd_lnr_tr = -1.
-      Hzd_tr3d_name_S = ''
       Vspng_nk      = 0
       Vspng_coeftop = -1.
       Vspng_njpole  = 3
@@ -160,7 +159,7 @@
       Vtopo_start = -1
       Vtopo_ndt   = 0
 !
-      Tr3d_ntr = 0
+      Tr3d_list_S = ''
 !
 ! The default here is NO modulation (weigh is 1.0 everywhere)
 ! Activation can be done with P_lmvd_weigh_high_lat=0.

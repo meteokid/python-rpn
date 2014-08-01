@@ -55,7 +55,6 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
 #include "orh.cdk"
 #include "schm.cdk"
 #include "rhsc.cdk"
-#include "tr3d.cdk"
 
    integer, external :: adx_ckbd3
 
@@ -121,14 +120,6 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
          call adx_interp_gmm7 ( gmmk_rhsw_s, gmmk_orhsw_s, .false.   , &
                                 F_px, F_py, F_pz, capx2, capy2, capz2, &
                                 exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
-      endif
-      if (Orh_icn == Schm_itcn) then
-         do n=1,Tr3d_ntr
-         call adx_interp_gmm7 ( 'TR/'//trim(Tr3d_name_S(n))//':M'         , &
-                                'TR/'//trim(Tr3d_name_S(n))//':P', .false., &
-                                F_px, F_py, F_pz, capx2, capy2, capz2     , &
-                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 't')
-         end do
       endif
    endif
 

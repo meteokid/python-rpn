@@ -13,39 +13,120 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include "model_macros_f.h"
       subroutine e_trinit ()
       implicit none
 #include <arch_specific.hf>
+
+!author
+!     M. Desgagne -  summer 2014
 !
 !revision
-! v3_22 - Lee V.            - removed Trvs tracers
-#include "e_tr.cdk"
+! v4_70 - Desgagne M.   - initial version
+
+#include "lun.cdk"
+#include "tr3d.cdk"
+
+      integer, external :: decode_tracers
+      integer i,j,err
 !
-      character*50 dumc
-      integer i,in
+!     ---------------------------------------------------------------
 !
-      E_tr3d_ntr = 0
-      do i=1,MAXTR
-         E_tr3d_name_S(i) = '0000'
-         call low2up (E_tr3d_list_S(i),dumc)
-         if ((dumc(1:2).eq."HU").or.(dumc(1:2).eq."ES")) dumc = ''
-         E_tr3d_list_S(i) = dumc
+      Tr3d_ntr = 0
+
+      do i=1,MAXTR3D
+         err = decode_tracers (Tr3d_list_s(i))
       end do
-!
-      do i=1,MAXTR
-         if (E_tr3d_list_S(i).ne.'') then
-            E_tr3d_ntr = E_tr3d_ntr+1
-            in=index(E_tr3d_list_S(i),"=")+1
-            if (in.ge.3) then
-               E_tr3d_name_S(E_tr3d_ntr) = E_tr3d_list_S(i)(1:in-2)
-               read (E_tr3d_list_S(i)(in:20),*) E_tr3d_sval (E_tr3d_ntr)
-            else
-               E_tr3d_name_S(E_tr3d_ntr) = E_tr3d_list_S(i)
-               E_tr3d_sval  (E_tr3d_ntr) = 0.
-            endif
+
+ 10   do i=1,Tr3d_ntr
+         if (trim(Tr3d_name_S(i)) == 'HU') then
+            Tr3d_ntr= Tr3d_ntr-1
+            do j=i,Tr3d_ntr
+               Tr3d_name_S(j)= Tr3d_name_S(i+1)
+               Tr3d_wload (j)= Tr3d_wload (i+1)
+               Tr3d_hzd   (j)= Tr3d_hzd   (i+1)
+               Tr3d_mono  (j)= Tr3d_mono  (i+1)
+               Tr3d_mass  (j)= Tr3d_mass  (i+1)
+               goto 10
+            end do
          endif
       end do
+
+      if (Lun_out.gt.0) then
+         write (Lun_out,1001)
+         do i=1,Tr3d_ntr
+            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i)
+         end do
+      endif
+
+ 1001 format (/' Final liste of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass')
+ 1002 format (4x,a4,2l6,2i6)
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end
+
+      integer function decode_tracers (F_string_S)
+      implicit none
+      
+      character*(*) F_string_S
+
+#include "tr3d.cdk"
+
+      character*1024 string
+      logical new_tracers
+      integer i, ind, deb, eqi, this_tracer
+!
+!     ---------------------------------------------------------------
+!
+      ind= index(F_string_S,";")
+      if ((trim(F_string_S) == '') .or. (ind .eq. 1)) return
+      if (ind .eq. 0) ind= len(F_string_S) + 1
+
+      call low2up (F_string_S,string)
+      F_string_S = string
+      
+      new_tracers=.true.
+      do i=1, Tr3d_ntr
+         if (F_string_S(1:ind-1) == trim(Tr3d_name_S(i))) then
+            new_tracers=.false.
+            this_tracer=i
+         endif
+      end do
+
+      if (new_tracers) then
+         Tr3d_ntr= Tr3d_ntr+1
+         Tr3d_name_S(Tr3d_ntr) = F_string_S(1:ind-1)
+         Tr3d_wload(Tr3d_ntr)= .false. ; Tr3d_hzd (Tr3d_ntr)= .false.
+         Tr3d_mono (Tr3d_ntr)= 0       ; Tr3d_mass(Tr3d_ntr)= 0
+         this_tracer= Tr3d_ntr
+      endif
+
+ 44   if (ind .gt. len(F_string_S)) return
+
+      deb= ind+1
+      ind= index(F_string_S(deb:),";")
+      if (ind .eq. 0) then
+         ind= len(F_string_S) + 1
+      else
+         ind= ind + deb - 1
+      endif
+      eqi= index(F_string_S(deb:ind-1),"=")
+      if (eqi .eq. 0) goto 44
+      eqi= eqi + deb - 1
+
+      if (trim(F_string_S(deb:eqi-1)) == 'WLOAD') &
+           read(F_string_S(eqi+1:ind-1),*) Tr3d_wload(this_tracer)
+      if (trim(F_string_S(deb:eqi-1)) == 'HZD'  ) &
+           read(F_string_S(eqi+1:ind-1),*) Tr3d_hzd  (this_tracer)
+      if (trim(F_string_S(deb:eqi-1)) == 'MONO' ) &
+           read(F_string_S(eqi+1:ind-1),*) Tr3d_mono (this_tracer)
+      if (trim(F_string_S(deb:eqi-1)) == 'MASS' ) &
+           read(F_string_S(eqi+1:ind-1),*) Tr3d_mass (this_tracer)
+
+      goto 44
+!
+!     ---------------------------------------------------------------
 !
       return
       end

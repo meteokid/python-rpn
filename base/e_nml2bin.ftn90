@@ -15,16 +15,13 @@
 
 !**s/r e_nml2bin - writes parameters to labfl
 !
-#include "model_macros_f.h"
-!
       subroutine e_nml2bin
-!
       implicit none
 #include <arch_specific.hf>
-!
+
       integer l_ni, l_nj
       parameter (l_ni=1, l_nj=1)
-!
+
 !author michel desgagne - Jan 2000
 !
 !revision
@@ -42,12 +39,8 @@
 ! v4_03 - Spacek/Desgagne   - ISST
 ! v4_04 - Plante A.         - Remove offline mode
 ! v4_14 - Dugas B.          - add leap year control option
-!
-!arguments
-!	none
-!
-!implicits
-#include "e_tr.cdk"
+
+#include "tr3d.cdk"
 #include "e_anal.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
@@ -55,9 +48,8 @@
 #include "step.cdk"
 #include <clib_interface.cdk>
 #include "modipc.cdk"
-!
-      integer  fnom
-      external fnom
+
+      integer, external :: fnom
       integer labfl,err
       character*1024 rootfn
 !
@@ -66,11 +58,6 @@
       err = 0
 
       if (Ptopo_myproc.eq.0) then
-         tracers_ntr = E_tr3d_ntr
-         tracers_name= ''
-         tracers_sval= 0.
-         tracers_name(1:E_tr3d_ntr) = E_trname_S (1:E_tr3d_ntr)
-         tracers_sval(1:E_tr3d_ntr) = E_tr3d_sval(1:E_tr3d_ntr)
          Mod_runstrt_S  = Step_runstrt_S
          horzint_L      = (Anal_hav(1).ne.11)
          labfl=0
@@ -82,7 +69,7 @@
             close (labfl)
          endif
       endif
-!
+
       call handle_error(err,'e_nm2bin','Trying to open file labfl.bin')
 !
 !     ---------------------------------------------------------------

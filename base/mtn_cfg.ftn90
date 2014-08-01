@@ -375,8 +375,6 @@
       G_halox = min(G_halox,Grd_ni-1)
       G_haloy = G_halox
 
-      Tr3d_userntr = 0
-!
       mtn_cfg = 1
 !
       step_dt=cstv_dt_8

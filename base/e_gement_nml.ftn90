@@ -62,8 +62,8 @@
 
       Anal_cond_L     = .false.
 
-      E_tr3d_list_S   = ''
-      E_tr_anydate_L  = .false.
+      Tr3d_list_S     = ''
+      Tr3d_anydate_L  = .false.
 
       VAR_TT          = '@#$%'
       VAR_UU          = '@#$%'

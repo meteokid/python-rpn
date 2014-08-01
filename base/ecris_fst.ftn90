@@ -12,36 +12,28 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-!**s/r ecris_fst2
-!
-#include "model_macros_f.h"
 !
       subroutine ecris_fst2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul, &
-                                 add,kind,nkfa,ind_o,nk_o,nbit)
+                              add,kind,nkfa,ind_o,nk_o,nbit )
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) nomvar
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,ind_o(*),nk_o,kind
       real fa(lminx:lmaxx,lminy:lmaxy,*),rf(*),mul,add
-!
-!
+
 !author  M. Desgagne 2001 (MC2)
 !
 !revision
 ! v3_30 - Desgagne/Lee - Out_datyp is defined for data compression by default
 ! v3_30 - Girard C.    - inverse output levels for option in Out_Flipit
-!
-!#include "dimout.cdk"
+
 #include "out.cdk"
 #include "out3.cdk"
 #include "level.cdk"
-!
-      integer  fstecr
-      external fstecr
-!
+
+      integer, external :: fstecr
+
       character*1 gridtyp
       character*2 typvar
       character*8 dumc
@@ -52,9 +44,7 @@
       real wkf1(lminx:lmaxx,lminy:lmaxy,nkfa)
       real wkf2(lminx:lmaxx,lminy:lmaxy,nkfa)
       real, dimension (:,:  ), allocatable :: wk1,wk2
-      real, dimension (:,:,:), allocatable :: tr1
-      real tr2(Out_nisl,Out_njsl,nk_o)
-      pointer (patr2, tr2)
+      real, dimension (:,:,:), pointer     :: tr1,tr2
 !
 !----------------------------------------------------------------------
 !
@@ -70,14 +60,7 @@
       if ((Out_nisl.le.0).or.(Out_njsl.le.0)) return
 !     Force oldip1style for output on pressure levels
       if (kind.eq.2) modeip1=3
-!
-!     Filter if requested and if on PRESSURE levels
-!     if (filt.gt.0) then
-!         call filter(fa,wkf1,wkf2,filt,coef,'G',.false.,
-!    %                       lminx,lmaxx,lminy,lmaxy, nkfa)
-!     endif
-!      call glbstat (fa,nomvar,lminx,lmaxx,lminy,lmaxy,nkfa,Out_gridi0,Out_gridin,Out_gridj0,out_gridjn    ,1,nkfa)
-!
+
       datyp = 134
       pnip2 = max(0,Out_ip2)
       npas  = max(0,Out_npas)
@@ -106,17 +89,17 @@
          nis = Out_ifg - Out_idg + 1
          njs = Out_jfg - Out_jdg + 1
          allocate (tr1(nis,njs,nk_o))
-         patr2 = loc(tr1)
+         tr2 => tr1
          if (stride_L) then
-            call hpalloc (patr2,Out_nisl*Out_njsl*nk_o,ier,1)
+            allocate (tr2(Out_nisl,Out_njsl,nk_o))
             if (Out_nblocx*Out_nblocy.gt.1) then
                g3 = (out_rgridi0-Out_gridi0)/Out_stride+1
                g4 = (out_rgridj0-Out_gridj0)/Out_stride+1
             endif
          endif 
-!
+
       endif
-!
+
       if (out3_type_S .eq. 'REGDYN') then
          call timing_start ( 82, 'OUT_D#COL')
       else
@@ -129,7 +112,7 @@
       else
          call timing_stop (91)
       endif
-!
+
       if (out3_type_S .eq. 'REGDYN') then
          call timing_start ( 84, 'OUT_D#ECR')
       else
@@ -137,7 +120,7 @@
       endif
 
       if (Out_blocme.eq.0) then
-!
+
       if (stride_L) then
          nrd = Out_stride-1
          oi  = out_rgridi0-max(Out_bloci0 ,Out_gridi0)+1
@@ -160,9 +143,9 @@
          end do
          end do
       endif
-!
+
       if (Out_flipit_L) then
-!
+
          allocate (wk2(Out_nisl,nk_o))
          do j=1,Out_njsl
             do k=1,nk_o
@@ -175,7 +158,7 @@
                          Out_etik_S,'X',0,0,0,0,datyp,Out_rewrit_L)
          end do
          deallocate (wk2)
-!
+
       else if (Out_nisg.eq.Out_nisl+1)then
          allocate ( wk2(Out_nisg,Out_njsl) )
 
@@ -196,7 +179,7 @@
          end do
          deallocate (wk2)
       else
-!
+
          do k=1,nk_o
             n = ind_o(k)
             call convip(pnip1,rf(n),kind,modeip1,dumc,.false.)
@@ -205,12 +188,12 @@
                           typvar,nomvar,Out_etik_S,gridtyp, &
                           Out_ig1,Out_ig2,g3,g4,datyp,Out_rewrit_L)
          end do
-!     
+
       endif
-!
+
       deallocate (tr1)
-      if (stride_L) call hpdeallc (patr2 , ier, 1)
-!
+      if (stride_L) deallocate (tr2)
+
       endif
 
       if (out3_type_S .eq. 'REGDYN') then
@@ -220,6 +203,7 @@
       endif
 !
 !--------------------------------------------------------------------
+!
       return
       end
 

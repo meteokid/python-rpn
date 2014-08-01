@@ -36,7 +36,7 @@
 #include "e_anal.cdk"
 #include "e_grids.cdk"
 #include "grdc.cdk"
-#include "e_tr.cdk"
+#include "tr3d.cdk"
 #include "path.cdk"
 #include "grd.cdk"
 
@@ -51,11 +51,10 @@
 !
 !     Set the unit for cascade output
       unf_casc = 201
-      idg=1
-      jdg=1
+      idg = 1 ; jdg = 1
       nis = gif-gid+1
       njs = gjf-gjd+1
-      ntr=1+E_tr3d_ntr ! for HU
+      ntr = Tr3d_ntr + 1 ! for HU
       allocate (xxu(nis),yyv(njs))
 
       write (startindx,'((i7.7),a1,(i7.7))') idg,'-',jdg

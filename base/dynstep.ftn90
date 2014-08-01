@@ -120,7 +120,11 @@
 !     ------------------------------------------------------------
  
       call tstpdyn ( Schm_itraj )
-!     
+
+      if (Schm_psadj_L) call psadj
+
+      call tracers_step
+
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the
 !     C        variables at time level t1 -> t0 and rename all the

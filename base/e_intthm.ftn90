@@ -55,7 +55,7 @@
 #include "e_anal.cdk"
 #include "dcst.cdk"
 #include "pilot1.cdk"
-#include "e_tr.cdk"
+#include "tr3d.cdk"
 #include "e_grdc.cdk"
 #include "e_cdate.cdk"
 #include "hgc.cdk"
@@ -293,29 +293,22 @@
 !     For tracer variables, search does not have to be successful
 !     They can be assigned a constant value.
 
-      do i=1,E_tr3d_ntr
-         E_trname_S(i)=E_tr3d_name_S(i)
-         if ( E_tr3d_name_S(i)(3:4).eq.'T1'.or. &
-              E_tr3d_name_S(i)(3:4).eq.'T0'    ) &
-              E_trname_S(i) = E_Tr3d_name_S(i)(1:2)//'  '
-      enddo
-
-      do i=1,E_tr3d_ntr
+      do i=1, Tr3d_ntr
          do k=1,lv_t
             kk=k
             if (Pil_bmf_L) kk=1
-            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, E_tr3d_name_S(i), &
-                           na_t(k),-1,-1,' ',' ',E_tr_anydate_L,.false.   , &
+            code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, Tr3d_name_S(i), &
+                           na_t(k),-1,-1,' ',' ',Tr3d_anydate_L,.false.  , &
                            'CUBIC',e_fu_anal,6)
-            if (code_h.lt.0) hun= E_tr3d_sval(i)
+            if (code_h.lt.0) hun= 0.
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
             
             if (Pil_bmf_L) then
-               call e_bmfsplitxy2 (hun,nis,njs,E_trname_S(i),k,lv_t,pni,0,0,0)
+               call e_bmfsplitxy2 (hun,nis,njs,Tr3d_name_S(i),k,lv_t,pni,0,0,0)
             endif
          enddo
          if (.not.Pil_bmf_L) then
-            call e_write_3df ( hun,nis,njs,lv_t,E_trname_S(i),unf_casc )
+            call e_write_3df ( hun,nis,njs,lv_t,Tr3d_name_S(i),unf_casc )
          endif 
       end do
 
