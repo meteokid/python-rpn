@@ -15,14 +15,12 @@
 
 !**s/r blocstat  - Performs 2D-3D statistics on model fields
 !
-#include "model_macros_f.h"
-!
       subroutine blocstat (F_forceit_L)
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_forceit_L
-!
+
 !author
 !     M. Desgagne  	- fall 2009
 !
@@ -34,7 +32,7 @@
 ! v3_21 - Lee V.            - Remove Tr2d
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_11 - Tanguay M.        - Use blocstat when (TL/AD) 
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "step.cdk"
@@ -42,7 +40,7 @@
 #include "ptopo.cdk"
 #include "schm.cdk"
 #include "stat.cdk"
-!
+
       logical,save :: done = .false.
       logical :: flag
       type(gmm_metadata) :: tmp_meta,mymeta

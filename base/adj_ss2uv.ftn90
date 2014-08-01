@@ -32,12 +32,12 @@
 !
 !object
 !       computes hydrostatic surface pressure for U, V grid
-!implicits
-#include "model_macros_f.h"
+
+
 #include "glb_ld.cdk"
 !*
       integer i,j
-      real p0_temp(LDIST_SHAPE)
+      real p0_temp(l_minx:l_maxx,l_miny:l_maxy)
 !
 !     ---------------------------------------------------------------
 !
@@ -57,7 +57,7 @@
              p0_temp(i,j) = F_ssq0(i,j)
           enddo
           enddo
-          call rpn_comm_xch_halo ( p0_temp, LDIST_DIM,l_ni,l_nj,1, &
+          call rpn_comm_xch_halo ( p0_temp, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
           do j=1,nju
           do i=1,niu
@@ -77,7 +77,7 @@
              p0_temp(i,j) = log(F_ssq0(i,j))
           enddo
           enddo
-          call rpn_comm_xch_halo ( p0_temp, LDIST_DIM,l_ni,l_nj,1, &
+          call rpn_comm_xch_halo ( p0_temp, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
           do j=1,nju
           do i=1,niu

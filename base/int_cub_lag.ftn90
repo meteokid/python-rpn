@@ -96,9 +96,9 @@
 
 
 !**s/r int_cub_lag2 - to do YY cubic interpolation for fields (local PE)
-#include "model_macros_f.h"
 
-       Subroutine int_cub_lag2(FF,F,Imx,Imy,geomgx,geomgy,DIST_DIM,Xi,Yi) 
+
+       Subroutine int_cub_lag2(FF,F,Imx,Imy,geomgx,geomgy,Minx,Maxx,Miny,Maxy,Xi,Yi) 
 
        implicit none
 #include <arch_specific.hf>
@@ -109,12 +109,12 @@
 !
 #include "glb_ld.cdk"
 
-       integer Imx,Imy,Nx,Ny,DIST_DIM
+       integer Imx,Imy,Nx,Ny,Minx,Maxx,Miny,Maxy
        integer k,i,j,Mx,My
        real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
        integer Im, Jm
        real*8 YY,y1,y2,y3,y4,FF,Fi
-       real*8 F(DIST_SHAPE),fx1,fx2,fx3,fx4
+       real*8 F(Minx:Maxx,Miny:Maxy),fx1,fx2,fx3,fx4
        real*8 Xi,Yi,geomgx(Minx:Maxx),geomgy(Miny:Maxy)
 
 !

@@ -16,7 +16,7 @@
 !**s/r hzd_solfft_lam - parallel direct sol_8ution of high-order diffusion 
 !                   equation with fffts
 
-#include "model_macros_f.h"
+
        subroutine hzd_solfft_lam2(F_sol, F_Rhs_8                   , &
                               F_a_8, F_c_8, F_deltai_8             , &
                    minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr, &

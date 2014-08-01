@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r set_fft - determine if fast fourier transforms is needed
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_fft
       implicit none

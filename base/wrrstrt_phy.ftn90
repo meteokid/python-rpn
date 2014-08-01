@@ -15,7 +15,7 @@
 
 !s/r wrrstrt_phy - Write the restart file restart_BUSPER_$date
 !
-#include "model_macros_f.h"
+
 !
       subroutine wrrstrt_phy (F_spin_L)
       implicit none
@@ -28,7 +28,7 @@
 ! v3_31 - Desgagne M.       - initial MPI version
 ! v4_14 - Dugas B.          - account for increment forcing data
 !
-!implicits
+
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "lun.cdk"

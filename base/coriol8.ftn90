@@ -16,18 +16,18 @@
 !**s/r coriol8 - compute coriolis FACTOR multiplied by a constant
 !		 on the U and V grids
 !
-#include "model_macros_f.h"
+
 !
       subroutine coriol8 ( F_u_8, F_v_8, F_x_8, F_y_8,  &
-                           F_xu_8, F_yv_8, F_ct_8, F_rot_8, DIST_DIM)
+                           F_xu_8, F_yv_8, F_ct_8, F_rot_8, Minx,Maxx,Miny,Maxy)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM
-      real*8 F_u_8(DIST_SHAPE), F_v_8(DIST_SHAPE),  &
-             F_x_8(PXDIST_SHAPE), F_y_8(PYDIST_SHAPE), &
-             F_xu_8(PXDIST_SHAPE), F_yv_8(PYDIST_SHAPE), &
+      integer Minx,Maxx,Miny,Maxy
+      real*8 F_u_8(Minx:Maxx,Miny:Maxy), F_v_8(Minx:Maxx,Miny:Maxy),  &
+             F_x_8(Minx:Maxx), F_y_8(Miny:Maxy), &
+             F_xu_8(Minx:Maxx), F_yv_8(Miny:Maxy), &
              F_ct_8,               F_rot_8(3,3)
 !
 !author

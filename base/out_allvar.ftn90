@@ -15,7 +15,7 @@
 
 !**s/r out_allvar - General output for GMM variables
 !
-#include "model_macros_f.h"
+
 !
       subroutine out_allvar (levset,set)
       use out_vref_mod, only: out_vref

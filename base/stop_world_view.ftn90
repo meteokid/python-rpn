@@ -15,7 +15,7 @@
 
 !**s/r stop_world_view - Update status file and stop MPI
 !
-#include "model_macros_f.h"
+
 !
       subroutine stop_world_view
       use phy_itf, only: phy_terminate

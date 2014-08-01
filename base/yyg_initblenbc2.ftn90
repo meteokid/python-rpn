@@ -15,7 +15,7 @@
 !***s/r yyg_initblenbc2 - to initialize communication pattern for cubic
 !                            blending of scalar fields
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initblenbc2()
       implicit none

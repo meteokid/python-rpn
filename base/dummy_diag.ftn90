@@ -15,7 +15,7 @@
 
 !**s/r surfix - Copy last level dynamical field in diag level. 
 !
-#include "model_macros_f.h"
+
 !
       subroutine dummy_diag
 !
@@ -31,7 +31,7 @@
 !
 !object
 !	
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"

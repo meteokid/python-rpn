@@ -115,7 +115,7 @@
 ! F_mdmg_L      I
 !----------------------------------------------------------------
 !
-!implicites
+
 !
       real prmg, prhs, prgl, pral, prsd, prvg, przp, prlh
       logical pltrouv

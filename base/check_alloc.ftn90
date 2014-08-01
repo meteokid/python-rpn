@@ -15,7 +15,7 @@
 
 !  s/r check_alloc - Check memory allocation form allocate function status
 !
-#include "model_macros_f.h"
+
 !
       subroutine check_alloc(istat,from_routine,iflag)
 !
@@ -40,7 +40,7 @@
 !  from_routine  I         Name of routine calling this
 !  iflag         I         integer to pass to handle_error
 !
-!implicits
+
 #include "lun.cdk"
 !----------------------------------------------------------------
       

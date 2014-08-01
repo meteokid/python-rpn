@@ -15,7 +15,7 @@
 
 !**s/r wil_galewski_wind_8 
 !
-#include "model_macros_f.h"
+
 !
       function wil_galewski_wind_8 (evaluated_at_lat_8,kind)
 !
@@ -37,7 +37,7 @@
 !     kind = 1 = u wind
 !     kind = 2 = vorticity
 !
-!implicits
+
 #include "dcst.cdk"
 !
 !     ---------------------------------------------------------

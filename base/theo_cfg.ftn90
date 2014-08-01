@@ -15,7 +15,7 @@
 
 !**s/r theo_cfg - reads parameters from namelist theo_cfgs
 !
-#include "model_macros_f.h"
+
 !
       subroutine theo_cfg
       implicit none

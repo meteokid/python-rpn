@@ -16,16 +16,16 @@
 !**s/r uv_acg2g - Arakawa-C grid to grid interpolator for wind
 !                 like quantities
 !
-#include "model_macros_f.h"
+
 !
-      subroutine uv_acg2g (F_dst,F_src,F_gridi,F_grido,DIST_DIM,  &
+      subroutine uv_acg2g (F_dst,F_src,F_gridi,F_grido,Minx,Maxx,Miny,Maxy,  &
                                         Nk, F_i0,F_in,F_j0,F_jn)
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM,Nk,F_i0,F_in,F_j0,F_jn
+      integer Minx,Maxx,Miny,Maxy,Nk,F_i0,F_in,F_j0,F_jn
       integer F_gridi, F_grido
-      real F_dst(DIST_SHAPE,Nk), F_src(DIST_SHAPE,Nk)
+      real F_dst(Minx:Maxx,Miny:Maxy,Nk), F_src(Minx:Maxx,Miny:Maxy,Nk)
 
 !author
 !     J. Caveen - rpn - july 1995
@@ -102,7 +102,7 @@
          nje = l_nj
          if (F_gridi.eq.1) nie = l_niu
          if (F_gridi.eq.2) nje = l_njv
-         call rpn_comm_xch_halo (F_src,LDIST_DIM,nie,nje,Nk, &
+         call rpn_comm_xch_halo (F_src,l_minx,l_maxx,l_miny,l_maxy,nie,nje,Nk, &
                    G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       endif

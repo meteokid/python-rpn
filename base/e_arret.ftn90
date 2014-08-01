@@ -36,11 +36,11 @@
 !arguments
 ! FTNAME   name of routine that is aborting program
 !
-!implicits
+
 #include "e_fu.cdk"
 
 !
-!modules
+
       INTEGER  exfin, fstfrm
       EXTERNAL exfin, fstfrm
 

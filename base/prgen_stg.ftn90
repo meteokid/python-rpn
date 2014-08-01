@@ -15,22 +15,22 @@
 
 !**s/r prgen_stg - interpolation (general) on a given pressure level
 !
-#include "model_macros_f.h"
+
 !
       subroutine prgen_stg (F_out,F_in_top,F_in,F_in_bot,F_deriv, &
            F_wlnph_top,F_wlnph,F_wlnph_bot, &
-           F_pres, Nkout, F_cubic_L, DIST_DIM, Nk)
+           F_pres, Nkout, F_cubic_L, Minx,Maxx,Miny,Maxy, Nk)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM,Nk,Nkout
+      integer Minx,Maxx,Miny,Maxy,Nk,Nkout
       logical F_cubic_L
-      real    F_pres(Nkout), F_out(DIST_SHAPE,Nkout), &
-              F_in_top(DIST_SHAPE),F_in(DIST_SHAPE,Nk), &
-              F_in_bot(DIST_SHAPE),F_deriv(DIST_SHAPE,Nk), &
-              F_wlnph_top(DIST_SHAPE),F_wlnph(DIST_SHAPE,Nk), &
-              F_wlnph_bot(DIST_SHAPE)
+      real    F_pres(Nkout), F_out(Minx:Maxx,Miny:Maxy,Nkout), &
+              F_in_top(Minx:Maxx,Miny:Maxy),F_in(Minx:Maxx,Miny:Maxy,Nk), &
+              F_in_bot(Minx:Maxx,Miny:Maxy),F_deriv(Minx:Maxx,Miny:Maxy,Nk), &
+              F_wlnph_top(Minx:Maxx,Miny:Maxy),F_wlnph(Minx:Maxx,Miny:Maxy,Nk), &
+              F_wlnph_bot(Minx:Maxx,Miny:Maxy)
 !
 !author
 !     Andre Plante after prgen alain patoine
@@ -59,7 +59,7 @@
 ! Note : It is assumed that F_wlnph_top < F_wlnph(*,1) and 
 !                           F_wlnph_bot > F_wlnph(*,Nk) 
 !
-!implicits
+
 #include "glb_ld.cdk"
 !
 !*

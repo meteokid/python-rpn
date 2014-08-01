@@ -14,9 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r yyg_vecbc2 - to interpolate and exchange V wind
 !
-#include "model_macros_f.h"
 
-      Subroutine yyg_vecbc2(tab_dst,tabv_src,tabu_src,DIST_DIM,NK)
+
+      Subroutine yyg_vecbc2(tab_dst,tabv_src,tabu_src,Minx,Maxx,Miny,Maxy,NK)
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,11 +31,11 @@
 #include "glb_pil.cdk"
 #include "yyg_pilv.cdk"
 
-      integer DIST_DIM,Ni,Nj,NK,numproc
-      real  tabu_src (DIST_SHAPE,Nk), tabv_src (DIST_SHAPE,Nk)
-      real  tab_dst (DIST_SHAPE,Nk)
-      real*8  tabu_src_8(DIST_SHAPE,NK)
-      real*8  tabv_src_8(DIST_SHAPE,NK)
+      integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc
+      real  tabu_src (Minx:Maxx,Miny:Maxy,Nk), tabv_src (Minx:Maxx,Miny:Maxy,Nk)
+      real  tab_dst (Minx:Maxx,Miny:Maxy,Nk)
+      real*8  tabu_src_8(Minx:Maxx,Miny:Maxy,NK)
+      real*8  tabv_src_8(Minx:Maxx,Miny:Maxy,NK)
       integer ierr,i,j,k,kk,kk_proc,m,mm,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
@@ -98,11 +98,11 @@
                    mm=(m-1)*NK+k
                    call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k),  &
                              Pil_vsend_imx1(adr),Pil_vsend_imy1(adr), &
-                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,              & 
+                             Geomg_x_8,Geomg_yv_8,l_minx,l_maxx,l_miny,l_maxy,              & 
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k),  &
                              Pil_vsend_imx2(adr),Pil_vsend_imy2(adr), &
-                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,              &
+                             Geomg_xu_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,              &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    send_pil(mm,KK)=                                       &
                    real(Pil_vsend_s1(adr)*tabv_8 + Pil_vsend_s2(adr)*tabu_8)
@@ -121,11 +121,11 @@
                    mm=(Pil_vsendw_len(kk)+m-1)*NK+k
                    call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx1(adr),Pil_vsend_imy1(adr),&
-                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
+                             Geomg_x_8,Geomg_yv_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx2(adr),Pil_vsend_imy2(adr),&
-                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
+                             Geomg_xu_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    send_pil(mm,KK)=                                      &
                    real(Pil_vsend_s1(adr)*tabv_8 + Pil_vsend_s2(adr)*tabu_8)
@@ -144,11 +144,11 @@
                    mm=(Pil_vsendw_len(kk)+Pil_vsende_len(kk)+m-1)*NK+k
                    call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx1(adr),Pil_vsend_imy1(adr),&
-                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
+                             Geomg_x_8,Geomg_yv_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx2(adr),Pil_vsend_imy2(adr),&
-                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
+                             Geomg_xu_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    send_pil(mm,KK)=                                      & 
                    real(Pil_vsend_s1(adr)*tabv_8 + Pil_vsend_s2(adr)*tabu_8)
@@ -167,11 +167,11 @@
                    mm=(Pil_vsendw_len(kk)+Pil_vsende_len(kk)+Pil_vsends_len(kk)+m-1)*NK+k
                    call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx1(adr),Pil_vsend_imy1(adr),&
-                             Geomg_x_8,Geomg_yv_8,LDIST_DIM,             &
+                             Geomg_x_8,Geomg_yv_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k), &
                              Pil_vsend_imx2(adr),Pil_vsend_imy2(adr),&
-                             Geomg_xu_8,Geomg_y_8,LDIST_DIM,             &
+                             Geomg_xu_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,             &
                              Pil_vsend_xxr(adr),Pil_vsend_yyr(adr))
                    send_pil(mm,KK)=                                      &
                    real(Pil_vsend_s1(adr)*tabv_8 + Pil_vsend_s2(adr)*tabu_8)

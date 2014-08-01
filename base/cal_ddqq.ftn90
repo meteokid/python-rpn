@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !** s/r cal_ddqq - Computes horizontal divergence, vorticity and relative vorticity
-#include "model_macros_f.h"
+
 
       subroutine cal_ddqq ( F_DD,F_QR,F_QQ, F_uu,F_vv           , &
                             F_filtdd,F_coefdd, F_filtqq,F_coefqq, &

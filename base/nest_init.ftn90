@@ -14,12 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r nest_init -- Initializes nesting data for LAM configuration
 !
-#include "model_macros_f.h"
-!
       subroutine nest_init ()
       implicit none
 #include <arch_specific.hf>
-!
+
 !author   M. Desgagne - April 2002
 !
 !revision
@@ -28,8 +26,7 @@
 ! v3_30 - Tanguay M.   - adapt to bcs
 ! v4_05 - Plante A.    - Top nesting
 ! v4_05 - Lepine M.    - VMM replacement with GMM
-!
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
@@ -41,7 +38,7 @@
 #include "schm.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-!
+
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum,istat
       real, pointer, dimension(:,:,:) :: tr1,trf

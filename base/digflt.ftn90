@@ -15,12 +15,9 @@
 
 !**s/r digflt -  Compute digitally filtered fields
 !
-#include "model_macros_f.h"
-!
      subroutine digflt
-!
       implicit none
-!
+
 !author
 !     Alain Patoine - march 94
 !
@@ -46,7 +43,7 @@
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
-!
+
       integer i, j, k, n, err,istat
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra

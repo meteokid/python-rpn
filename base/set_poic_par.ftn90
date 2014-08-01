@@ -17,7 +17,7 @@
 !                     east-west, C grid model using reflexion symmetry 
 !                     of grid (global)
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_poic_par ( F_eival_8, F_evvec_8, F_odvec_8, F_xg_8, &
                                                           F_ni, NSTOR )
@@ -48,7 +48,7 @@
 ! F_ni         I    - number of points
 ! NSTOR        I    - storage dimension
 !
-!implicits
+
 #include "dcst.cdk"
 !
       integer i, j, nev, nod

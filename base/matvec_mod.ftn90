@@ -2,10 +2,10 @@ module matvec_mod
    ! Matrix-vector product subroutines
    !
    ! Author
-   !     Stéphane Gaudreault -- June 2014
+   !     Stephane Gaudreault / Abdessamad Qaddouri -- June 2014
    !
    ! Revision
-   !     v4-70 - Gaudreault S.      - initial version
+   !     v4_70 - Gaudreault/Qaddouri      - initial version
    !
    implicit none
    private

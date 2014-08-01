@@ -15,7 +15,7 @@
 !----------------------------------------------------------------------
 !
 #endif
-!
-      DCL_DYNVAR(cori, fcoru_8  ,  real*8, (LDIST_SHAPE))
-      DCL_DYNVAR(cori, fcorv_8  ,  real*8, (LDIST_SHAPE))
-!
+
+      real*8, dimension(:,:), pointer :: cori_fcoru_8,cori_fcorv_8
+      common /cori/ cori_fcoru_8,cori_fcorv_8
+

@@ -15,12 +15,10 @@
 
 !**s/r nest_intt -- Linear interpolation in time of nesting data
 !
-#include "model_macros_f.h"
-!
       subroutine nest_intt
       implicit none
 #include <arch_specific.hf>
-!
+
 !author   M. Desgagne - April 2002
 !
 !revision
@@ -31,7 +29,7 @@
 ! v4_04 - Plante A.                 - Remove offline
 ! v4_05 - Lepine M.                 - VMM replacement with GMM
 ! v4_10 - Tanguay M.                - Adjust digital filter when LAM
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lam.cdk"
@@ -41,7 +39,7 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "step.cdk"
-!
+
       integer,external ::  newdate
 !
       character*16 datev

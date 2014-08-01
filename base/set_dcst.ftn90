@@ -13,38 +13,37 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**function set_dcst - initializes geophysical constants
-!
+
       logical function set_dcst ( val, liste, nbre, unout )
       implicit none
 #include <arch_specific.hf>
-!
+
       integer nbre,unout
       character * (*) liste(nbre)
       real val(nbre)
-!
+
 !author
 !     M. Desgagne July 2005
-!
+
       integer i, ier, flag(nbre)
       real rdval
 !
 !     ---------------------------------------------------------------
 !
       if (unout.gt.0) write (6,1000)
-!
+
       flag = 0
-!
+
       call constnt (rdval,ier,liste,0)
       rdval = 0.4
       call constnt (rdval,ier,'KARMAN',3)
       do i=1,nbre
          call constnt (val(i),flag(i),liste(i),0)
       end do
-!
+
       set_dcst  = .true.
-!
+
       do i=1,nbre
          if (flag(i).eq.1) then
             if (unout.gt.0) write (unout,1005) liste(i),val(i)
@@ -53,7 +52,7 @@
             set_dcst  = .false.
          endif
       end do
-!
+
   100 format (1x,52('*'))
   102 format (1x,'*',4x,A,5x,'*')
   103 format (1x,'*',4x,A,F4.2,A,11x,'*')

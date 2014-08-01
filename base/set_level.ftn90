@@ -15,7 +15,7 @@
 
 !**s/r set_level - initialization of common block LEVEL
 !
-#include "model_macros_f.h"
+
 !
       integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
@@ -83,7 +83,7 @@
 !      [a,b,c] means level a,b and c are requested
 !      <a,b,c> means levels a to b, incrementing every c are requested
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "dimout.cdk"

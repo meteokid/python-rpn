@@ -15,7 +15,7 @@
 
 !**s/r tt2virt - Update physical quantities
 !
-#include "model_macros_f.h"
+
 !
       subroutine tt2virt2 (F_t, F_tt2tv, Minx,Maxx,Miny,Maxy,Nk)
       implicit none

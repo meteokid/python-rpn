@@ -16,7 +16,7 @@
 !**s/r e_setinuvl - setup coefficients for cubic lagrange interpolation of 
 !                 wind-like quantities from one grid to another
 !
-#include "model_macros_f.h"
+
 !
       subroutine e_setinuvl
       implicit none
@@ -41,7 +41,7 @@
 !arguments
 !       none
 !
-!implicits
+
 #include "dcst.cdk"
 #include "e_grids.cdk"
 #include "e_geomg.cdk"

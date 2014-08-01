@@ -16,7 +16,7 @@
 !**function srequet - reads from a file to initialize output requests
 !                     for grid, levels, timesteps and variables
 !
-#include "model_macros_f.h"
+
 !
       integer function srequet()
 !
@@ -74,7 +74,7 @@
 !    'process_f_callback' will set the input file and activate all the
 !    functions declared in "rpn_fortran_callback" calls previously.
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
@@ -88,7 +88,7 @@
 #include "outp.cdk"
 #include "outc.cdk"
 #include "path.cdk"
-!modules
+
       integer process_f_callback,longueur
       external process_f_callback,longueur
       integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,j

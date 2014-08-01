@@ -15,16 +15,16 @@
 
 !**s/r intm2t - upward vertical integration of variable ne momentum level.
 !
-#include "model_macros_f.h"
+
 !
-      subroutine intm2t_up (F_gg_t, F_ff_m, F_con, F_hz_m_8, DIST_DIM,Nk, &
+      subroutine intm2t_up (F_gg_t, F_ff_m, F_con, F_hz_m_8, Minx,Maxx,Miny,Maxy,Nk, &
                             F_i0,F_in,F_j0,F_jn,F_k0)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk,F_i0,F_in,F_j0,F_jn,F_k0
-      real F_gg_t(DIST_SHAPE,Nk+1),F_ff_m(DIST_SHAPE,Nk),F_con
+      integer Minx,Maxx,Miny,Maxy, Nk,F_i0,F_in,F_j0,F_jn,F_k0
+      real F_gg_t(Minx:Maxx,Miny:Maxy,Nk+1),F_ff_m(Minx:Maxx,Miny:Maxy,Nk),F_con
       real*8  F_hz_m_8(Nk)
 !
 !author
@@ -49,11 +49,11 @@
 !  F_hz_m_8    I          intervals in z-direction (on momentum levels)
 !----------------------------------------------------------------
 !
-!implicits 
+ 
 #include "glb_ld.cdk"
 !
       integer i, j, k
-      real w1(DIST_SHAPE,2)
+      real w1(Minx:Maxx,Miny:Maxy,2)
       real*8  ccc 
 !
 !notes

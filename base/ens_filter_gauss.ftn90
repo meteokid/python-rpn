@@ -30,7 +30,7 @@
 !arguments
 !	none
 !
-!implicits
+
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "trp.cdk"
@@ -44,7 +44,7 @@
 #include "ens_param.cdk"
 
 !
-!modules
+
 !
 !variables
 !______________________________________________________________________

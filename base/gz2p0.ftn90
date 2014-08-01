@@ -15,7 +15,7 @@
 
 !**s/r gz2p0 - Compute P0 from GZ from pressure coordinate
 !
-#include "model_macros_f.h"
+
 !
       subroutine gz2p0(F_ps, F_gz, F_topo,F_rna,NN, Nk)
 !
@@ -45,7 +45,7 @@
 ! NN           I    - number of points on the plane
 ! Nk           I    - number of levels from the pressure analyse
 !
-!implicits
+
 #include "lun.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"

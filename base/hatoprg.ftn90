@@ -15,7 +15,7 @@
 
 !**s/r hatoprg - downward vertical integration 
 !
-#include "model_macros_f.h"
+
 !
       subroutine hatoprg ( F_gg, F_ff, F_con, F_hz_8, ng, Nk )
 !
@@ -51,7 +51,7 @@
 !  F_hz_8      I          intervals in z-direction
 !----------------------------------------------------------------
 !
-!implicits 
+ 
 #include "glb_ld.cdk"
 !
       integer i, k

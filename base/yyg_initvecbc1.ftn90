@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !***s/r yyg_initvecbc1 - to initialize communication pattern for U field 
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initvecbc1()
       implicit none

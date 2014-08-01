@@ -15,7 +15,7 @@
 
 !*s/r out_href2 - write horizontal positional parameters
 !
-#include "model_macros_f.h"
+
 !
       subroutine out_href2 (F_arakawa_S)
 !(F_xpos,F_ypos)

@@ -21,26 +21,26 @@
 !               Combine some rhs obtaining Rt", Rf" and Rc", the linear
 !               contributions to the rhs of Helmholtz equation
 !
-#include "model_macros_f.h"
+
 !
       subroutine pre ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
                        F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  , &
                        F_rw  ,F_rf  ,F_oru  ,F_orv  ,F_rb ,F_nest_t, &
-                       DIST_DIM, ni, nj, Nk )
+                       Minx,Maxx,Miny,Maxy, ni, nj, Nk )
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, ni, nj, Nk
-      real F_ru    (DIST_SHAPE,Nk)  ,F_rv    (DIST_SHAPE,Nk)  , &
-           F_ruw1  (DIST_SHAPE,Nk)  ,F_ruw2  (DIST_SHAPE,Nk)  , &
-           F_rvw1  (DIST_SHAPE,Nk)  ,F_rvw2  (DIST_SHAPE,Nk)  , &
+      integer Minx,Maxx,Miny,Maxy, ni, nj, Nk
+      real F_ru    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rv    (Minx:Maxx,Miny:Maxy,Nk)  , &
+           F_ruw1  (Minx:Maxx,Miny:Maxy,Nk)  ,F_ruw2  (Minx:Maxx,Miny:Maxy,Nk)  , &
+           F_rvw1  (Minx:Maxx,Miny:Maxy,Nk)  ,F_rvw2  (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_xct1  (ni,nj,Nk)       ,F_yct1  (ni,nj,Nk)       , &
-           F_zct1  (ni,nj,Nk)       ,F_fis   (DIST_SHAPE)     , &
-           F_rc    (DIST_SHAPE,Nk)  ,F_rt    (DIST_SHAPE,Nk), &
-           F_rw    (DIST_SHAPE,Nk)  ,F_rf    (DIST_SHAPE,Nk), &
-           F_oru   (DIST_SHAPE,Nk)  ,F_orv   (DIST_SHAPE,Nk)  , &
-           F_rb    (DIST_SHAPE)     ,F_nest_t(DIST_SHAPE,Nk)
+           F_zct1  (ni,nj,Nk)       ,F_fis   (Minx:Maxx,Miny:Maxy)     , &
+           F_rc    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rt    (Minx:Maxx,Miny:Maxy,Nk), &
+           F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk), &
+           F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
+           F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)
 !
 !author
 !     Alain Patoine
@@ -230,9 +230,9 @@
 
 !
 !$omp single
-      call rpn_comm_xch_halo( F_ruw2, LDIST_DIM, l_ni,l_nj,G_nk, &
+      call rpn_comm_xch_halo( F_ruw2, l_minx,l_maxx,l_miny,l_maxy, l_ni,l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_rvw2, LDIST_DIM, l_ni, l_nj,G_nk, &
+      call rpn_comm_xch_halo( F_rvw2, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
 !     Indices to compute Right-Hand Sides

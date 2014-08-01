@@ -15,11 +15,9 @@
 
 !**s/r ta2t1tx -  Transfer variables ta into t1
 !
-#include "model_macros_f.h"
-!
       subroutine ta2t1tx
       implicit none
-!
+
 !author
 !     Alain Patoine - april 94
 !
@@ -33,7 +31,8 @@
 ! V4    - Girard-Plante     - Staggered version
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! V4_11 - Plante A.         - Add diag var on vertical scope
-!                             recompute fip	
+!                             recompute fip
+	
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "glb_ld.cdk"
@@ -43,7 +42,7 @@
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "p_geof.cdk"
-!
+
       integer i,j,k,n,istat
       real, pointer, dimension(:,:,:) :: tr,tra
       real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf

@@ -16,16 +16,16 @@
 !**s/r horwavg - Compute difference of horizontal area
 !                weighted averages of a field 
 !
-#include "model_macros_f.h"
+
 !
-      subroutine horwavg ( F_avg_8, F_in1, F_in2, DIST_DIM )
+      subroutine horwavg ( F_avg_8, F_in1, F_in2, Minx,Maxx,Miny,Maxy )
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM
+      integer Minx,Maxx,Miny,Maxy
       real*8 F_avg_8
-      real F_in1(DIST_SHAPE), F_in2(DIST_SHAPE)
+      real F_in1(Minx:Maxx,Miny:Maxy), F_in2(Minx:Maxx,Miny:Maxy)
 !
 !author 
 !     J.P. Toviessi ( after version v1_03 of horwavg )
@@ -45,7 +45,7 @@
 !  F_in2        I          field for which we want an average
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
 #include "dcst.cdk"
@@ -59,8 +59,8 @@
 !
 !     ---------------------------------------------------------------
 !
-      call glbcolc (wk1,G_ni,G_nj,F_in1,DIST_DIM,1)
-      call glbcolc (wk2,G_ni,G_nj,F_in2,DIST_DIM,1)
+      call glbcolc (wk1,G_ni,G_nj,F_in1,Minx,Maxx,Miny,Maxy,1)
+      call glbcolc (wk2,G_ni,G_nj,F_in2,Minx,Maxx,Miny,Maxy,1)
 !
       if (Ptopo_myproc.eq.0) then
          avg_8(1) = ZERO_8

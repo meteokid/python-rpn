@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r wil_case8: Galewsky's barotropic wave
 !
-#include "model_macros_f.h"
+
 
       subroutine wil_case8 (gz_temp,lni,lnj,nk)
       implicit none
@@ -40,7 +40,7 @@
 #include "ptopo.cdk"
 !
       integer i,j,k,lniu,lnju,lniv,lnjv
-      real    PICLL(G_ni,G_nj),gzloc(LDIST_SHAPE)
+      real    PICLL(G_ni,G_nj),gzloc(l_minx:l_maxx,l_miny:l_maxy)
       real*8 lat2_8,alph_8,beta_8,hhat_8
       real*8 ratio1_8,ratio2_8,expos1_8,expos2_8,rad2deg_8,RLON
 !

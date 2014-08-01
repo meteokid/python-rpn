@@ -16,7 +16,7 @@
 !**s/r set_schm - initialize the parameters controlling the
 !                 schemes used in the model
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_schm
       implicit none
@@ -38,7 +38,7 @@
 !arguments
 !       none
 !	
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"

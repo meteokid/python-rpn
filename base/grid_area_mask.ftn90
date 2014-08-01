@@ -1,0 +1,183 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!**s/r grid_area_mask - Evaluate area and mask 
+
+      subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj) 
+      implicit none
+#include <arch_specific.hf>
+
+      integer,                   intent(in)  :: Ni,Nj   
+      real*8 , dimension(Ni,Nj), intent(out) :: F_area_8
+      real*8 , dimension(Ni,Nj), intent(out) :: F_mask_8
+ 
+!author
+!     Author Qaddouri/Tanguay -- Summer 2014
+!
+!revision
+! v4_70 - Qaddouri/Tanguay     - initial version
+
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "ptopo.cdk"
+#include "grd.cdk"
+
+      real*8, external :: yyg_weight
+      integer i,j,k,indx,indy,offi,offj,np_subd,nxs,nxf,nys,nyf,ii,jj
+      real*8, parameter :: HALF_8 = 0.5
+      real*8 hx_8,hy_8, poids(G_ni,G_nj), area_4(G_ni,G_nj), &
+             dx,dy,x_a_4,y_a_4,sp,sf,sp1,sf1
+!
+!     ---------------------------------------------------------------
+!
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+
+      !-------------
+      !Yin-Yang grid 
+      !-------------
+      if (Grd_yinyang_L) then
+
+         do j=1, l_nj
+            jj = offj+j
+            do i=1, l_ni
+               ii = offi+i
+               F_area_8(i,j)= ( G_xg_8(ii+1)-G_xg_8(ii-1) )   * HALF_8 * &
+                              (sin((G_yg_8(jj+1)+G_yg_8(jj  ))* HALF_8)- &
+                               sin((G_yg_8(jj  )+G_yg_8(jj-1))* HALF_8))
+            enddo
+         enddo
+
+         !1) Find out where YIN lat lon points are in (YAN) grid with call to smat.
+         !2) If they are not outside of Yin grid, put area to zero for those points.
+         !--------------------------------------------------------------------------
+         np_subd = G_ni-Lam_pil_e-Lam_pil_w
+
+         sp    = 0.0
+         sf    = 0.0
+
+         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
+
+            y_a_4 = G_yg_8(j)
+
+            do i = 1+Lam_pil_w, G_ni-Lam_pil_e
+
+               x_a_4 = G_xg_8(i)-acos(-1.D0)
+               dx    = ( G_xg_8(i+1)-G_xg_8(i-1) ) * HALF_8
+               dy    = (sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8) -  &
+                        sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8))
+
+               area_4(i,j) = dx*dy
+               poids (i,j) = yyg_weight (x_a_4,y_a_4,dx,dy,np_subd)
+
+               !Check if poids <0
+               !-----------------
+               if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+                   sp = sp + poids(i,j)*area_4(i,j)
+               elseif (abs(poids(i,j)-1.0) .lt. 1.0e-14) then
+                   sf = sf + poids(i,j)*area_4(i,j)
+               endif
+
+            enddo
+
+         enddo
+
+         !Correct and scale poids
+         !-----------------------
+         sp1 = 0.0
+         sf1 = 0.0
+
+         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
+         do i = 1+Lam_pil_w, G_ni-Lam_pil_e
+
+            x_a_4 = poids(i,j)*(2.0*acos(-1.D0) - sf)/sp
+
+            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+                poids(i,j) = min( 1.0d0, x_a_4 )
+            endif
+            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+                sp1 = sp1 + poids(i,j)*area_4(i,j)
+            elseif (abs(poids(i,j)-1.0) .lt. 1.e-14) then
+                sf1 = sf1 + poids(i,j)*area_4(i,j)
+            endif
+
+         enddo
+         enddo
+
+         !Correct
+         !-------
+         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
+         do i = 1+Lam_pil_w, G_ni-Lam_pil_e
+            x_a_4 = poids(i,j)*(2.0*acos(-1.D0) - sf1)/sp1
+
+            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+                poids(i,j) = min( 1.0d0, x_a_4 )
+            endif
+ 
+         enddo
+         enddo
+
+         F_mask_8 = 0.d0
+         do j=1+pil_s,l_nj-pil_n
+            jj = offj+j
+            do i = 1+pil_w,l_ni-pil_e
+               ii = offi+i
+               F_mask_8(i,j) = poids(ii,jj)
+            enddo
+         enddo
+
+      !------------
+      !Lat-Lon grid
+      !------------
+      else
+
+         do j=1,l_nj
+         do i=1,l_ni
+
+            indx = offi + i
+            hx_8 = ( G_xg_8(indx+1)- G_xg_8(indx-1) ) * HALF_8
+
+            !TEMPORAIRE: To allow same accurary (without 2*PI impact)
+            !--------------------------------------------------------
+            if (indx.eq.1   ) hx_8 = ( G_xg_8(indx+2)- G_xg_8(indx  ) ) * HALF_8
+            if (indx.eq.G_ni) hx_8 = ( G_xg_8(indx  )- G_xg_8(indx-2) ) * HALF_8
+
+            indy = offj + j
+
+            if (indy.ne.1.and.indy.ne.G_nj) then
+                hy_8 = &
+                       ( sin((G_yg_8(indy+1)+G_yg_8(indy  ))* HALF_8) -  &
+                         sin((G_yg_8(indy  )+G_yg_8(indy-1))* HALF_8) )
+            elseif(indy.eq.1) then
+                hy_8 = &
+                       ( sin((G_yg_8(indy+1)+G_yg_8(indy  ))* HALF_8) -  &
+                       (- 1.0d0) )
+            elseif(indy.eq.G_nj) then
+                hy_8 = &
+                       ( (  1.0d0) -  &
+                         sin((G_yg_8(indy  )+G_yg_8(indy-1))* HALF_8) )
+            endif
+
+            F_area_8(i,j) = hx_8 * hy_8
+            F_mask_8(i,j) = 1.0
+
+         end do
+         end do
+
+      endif
+!
+!     ---------------------------------------------------------------
+!
+      return
+      end

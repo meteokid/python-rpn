@@ -15,7 +15,7 @@
 
 !**s/r bubble_cfg - reads parameters from namelist bubble_cfgs
 !
-#include "model_macros_f.h"
+
 !
       subroutine bubble_cfg ( pass_L )
       implicit none

@@ -15,7 +15,7 @@
 
 !**s/p set_grid - initialization of common block GRID
 !
-#include "model_macros_f.h"
+
 !
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
       implicit none

@@ -15,7 +15,7 @@
 
 !s/r wrrstrt - Write the restart file
 !
-#include "model_macros_f.h"
+
 !
       subroutine wrrstrt ()
       implicit none

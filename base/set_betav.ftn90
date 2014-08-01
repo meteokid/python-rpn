@@ -13,14 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include "model_macros_f.h"
 
-      subroutine set_betav(betav_m,betav_t,F_s, DIST_DIM, Nk)
+
+      subroutine set_betav(betav_m,betav_t,F_s, Minx,Maxx,Miny,Maxy, Nk)
 
       implicit none
 #include <arch_specific.hf>
 
-      integer  DIST_DIM, Nk
+      integer  Minx,Maxx,Miny,Maxy, Nk
 
 #include "glb_pil.cdk"
 #include "cstv.cdk"
@@ -34,8 +34,8 @@
 #include "mtn.cdk"
 #include "theo.cdk"
 
-      real betav_m(DIST_SHAPE,Nk),betav_t(DIST_SHAPE,Nk)
-      real F_s(DIST_SHAPE)
+      real betav_m(Minx:Maxx,Miny:Maxy,Nk),betav_t(Minx:Maxx,Miny:Maxy,Nk)
+      real F_s(Minx:Maxx,Miny:Maxy)
 !
       real Zblen_max,Zblen_top
 

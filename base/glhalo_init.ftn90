@@ -15,7 +15,7 @@
 
 !** s/r glhalo_init - 
 !
-#include "model_macros_f.h"
+
 !
       subroutine glhalo_init()
 !
@@ -36,7 +36,7 @@
 ! F_v1         I/O       
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"

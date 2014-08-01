@@ -15,17 +15,15 @@
 
 !**s/r hzd_solmxma - parallel direct solution of high-order 
 !                    diffusion equation with mxma8  
-#include "model_macros_f.h"
-!
+
       subroutine hzd_solmxma (F_sol, F_Rhs_8, F_Xevec_8 , &
                      F_a_8, F_c_8 ,F_deltai_8, &
                      minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr, &
                      Minx,Maxx,Miny,Maxy,Gnk,Gni,nil,njl,nkl, &
                      F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
-!
       implicit none
 #include <arch_specific.hf>
-!
+
       integer minx1, maxx1, minx2, maxx2, nx1, nx2, nx3  , &
               Minx , Maxx , Miny , Maxy , Gnk, Gni, F_pwr, &
               njl  , nkl  , nil  , F_npex, F_npey
@@ -35,7 +33,7 @@
              F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
              F_Rhs_8(Minx:Maxx,Miny:Maxy,Gnk),F_Xevec_8(*)
       real F_cdiff, F_sol(Minx:Maxx,Miny:Maxy,Gnk)
-!
+
 !author
 !     Abdessamad Qaddouri
 !
@@ -44,8 +42,6 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - Corbeil L.        - new RPNCOMM transpose
-!
-!object
 !
 !arguments
 !  Name        I/O                 Description
@@ -79,11 +75,11 @@
 ! F_cdiff      I    - Hzd_cdiff
 ! F_npex1      I    - number of processors on X
 ! F_npey1      I    - number of processors on Y
-!
+
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-!
+
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni+F_npex) :: fdg1_8
       real*8, dimension(Miny:Maxy ,minx1:maxx1,Gni) :: fwft_8
       real*8, dimension(minx1:maxx1,minx2:maxx2,nx3+F_npey) :: fdg2_8
@@ -92,18 +88,14 @@
       parameter( ZERO_8 = 0.0 )
       integer dim, o1,o2,i,j,k,l_pil_w,l_pil_e
       integer kkii,  kilon, ki0, kin, pin
-!*
 !     __________________________________________________________________
 !
 !
-!     call tmg_start0(99,'hzd_solmxma')
       l_pil_w=0
       l_pil_e=0
       if (l_south) l_pil_w= Lam_pil_w
       if (l_north) l_pil_e= Lam_pil_e
 
-!
-!
       kilon = ( maxx2-l_pil_e-minx2+l_pil_w+1 + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
       if (G_lam) then
           do k = 1, Gnk
@@ -334,7 +326,6 @@
 !$omp enddo
 !
 !$omp single
-!       call tmg_stop0(11)
        call rpn_comm_transpose(fwft_8,Miny,Maxy,nx3,(maxx1-minx1+1), &
                                         minx2, maxx2,Gni,fdg2_8,-2,2)
 !$omp end single
@@ -376,10 +367,6 @@
                                 (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8, -1, &
                                    1.0d0,0.d0)
       endif
-
-!     call tmg_stop0(99)
-!
-!
 !     __________________________________________________________________
 !
       return

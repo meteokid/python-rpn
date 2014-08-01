@@ -15,20 +15,17 @@
 
 !**s/r xyfil - Filtering of a field (x-y filter)
 !
-#include "model_macros_f.h"
-!
       subroutine xyfil ( F_d, F_s, F_w1, F_co, F_whx_8, F_why_8,  &
-                         F_pole_L, DIST_DIM,Nk)
-!
+                         F_pole_L, Minx,Maxx,Miny,Maxy,Nk)
       implicit none
 #include <arch_specific.hf>
-!
-      integer DIST_DIM, Nk
+
+      integer Minx,Maxx,Miny,Maxy, Nk
       logical F_pole_L
-      real F_d(DIST_SHAPE,Nk), F_s(DIST_SHAPE,Nk), F_w1(DIST_SHAPE,Nk), &
-           F_co
+      real F_d (Minx:Maxx,Miny:Maxy,Nk), F_s(Minx:Maxx,Miny:Maxy,Nk), &
+           F_w1(Minx:Maxx,Miny:Maxy,Nk), F_co
       real*8 F_whx_8(Minx:Maxx), F_why_8(Miny:Maxy)
-!
+
 !author
 !
 !revision
@@ -47,16 +44,17 @@
 ! F_why_8       I              grid point spacings on y-axis
 ! F_pole_L      I              field includes poles if .true.
 !----------------------------------------------------------------
-!
-!implicit
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-!
-      real w2hx(XDIST_SHAPE), w2hy(YDIST_SHAPE)
-!
+
+      real w2hx(l_minx:l_maxx), w2hy(l_miny:l_maxy)
+
       real prmean1, prmean2, prcom1
       integer i, j, k, i0, in, j0, jn
-!*
+!
+!     ---------------------------------------------------------------
+!
       prcom1 = 1. - F_co
 !
 !
@@ -72,8 +70,8 @@
          w2hy(j) = F_why_8(j) + F_why_8(j-1)
       end do
 !
-      call rpn_comm_xch_halo (F_s,LDIST_DIM,l_ni,l_nj,Nk, &
-              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_s,l_minx,l_maxx,l_miny,l_maxy,&
+           l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
 !   INTERPOLATION ALONG X
 !
@@ -111,8 +109,8 @@
       endif
       endif
 !
-      call rpn_comm_xch_halo (F_w1,LDIST_DIM,l_ni,l_nj,Nk, &
-              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halo (F_w1,l_minx,l_maxx,l_miny,l_maxy, &
+           l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
 !   INTERPOLATION ALONG Y
 !
@@ -126,7 +124,7 @@
         end do
         end do
       end do
-!
+
       if (l_south) then
          do k=1,Nk
          do i= 1+pil_w, l_ni-pil_e 
@@ -141,6 +139,8 @@
          end do
          end do
       endif
+!
+!     ---------------------------------------------------------------
 !
       return
       end

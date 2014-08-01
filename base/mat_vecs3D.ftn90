@@ -15,7 +15,7 @@
 
 !**s/r mat_vecs3D - 3D_elliptic matrix_vector's computation 
 !                 
-#include "model_macros_f.h"
+
       subroutine  mat_vecs3D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil, &
                      njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )   
       implicit none

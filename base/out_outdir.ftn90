@@ -15,7 +15,7 @@
 
 !**s/r out_outdir - Establishes output directory base on Lctl_step and Out3_postfreq
 !
-#include "model_macros_f.h"
+
       subroutine out_outdir (current_step, upperlimit)
       implicit none
 #include <arch_specific.hf>

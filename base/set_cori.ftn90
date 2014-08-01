@@ -15,58 +15,37 @@
 
 !**s/r set_cori - allocate and compute coriolis factor
 !
-#include "model_macros_f.h"
-!
       subroutine set_cori
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     michel roch - rpn - aug 95
 !
 !revision
 ! v2_00 - Desgagne/Lee      - initial MPI version (from setcori v1_03)
 ! v3_00 - Desgagne & Lee    - Lam configuration
-!
-!object
-!	See above id.
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
 #include "geomg.cdk"
 #include "cori.cdk"
-!
-!*
-!
-      integer dim,dyn_alloc_error
+
       real*8 ONE
       parameter ( ONE = 1.0 )
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(lun_out,1000)
-!
-!
-!C	1.	allocate memory for coriolis factor on U and V grids
-!		_____________________________________________________
-!
-      dim = LARRAY2D*2
-      DYNAMIC_ALLOC(Cori_fcoru_8,dim)
-      DYNAMIC_ALLOC(Cori_fcorv_8,dim)
-!
-!
-!	2.	compute coriolis factors on U and V grids
-!		_________________________________________
-!
-      call coriol8 ( cori_fcoru_8, cori_fcorv_8, geomg_x_8, geomg_y_8,  &
+
+      allocate (cori_fcoru_8(l_minx:l_maxx,l_miny:l_maxy),&
+                cori_fcorv_8(l_minx:l_maxx,l_miny:l_maxy))
+
+      call coriol8 ( cori_fcoru_8, cori_fcorv_8, geomg_x_8, geomg_y_8,&
                      geomg_xu_8, geomg_yv_8, ONE, Grd_rot_8, &
-                     LDIST_DIM)
-!
+                     l_minx,l_maxx,l_miny,l_maxy)
+
  1000 format( &
       /,'ALLOCATE AND COMPUTE CORIOLIS FACTOR (S/R SET_CORI)', &
       /,'==================================================')

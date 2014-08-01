@@ -15,7 +15,7 @@
 !**s/r set_poic - preparation of projection matrix in the east-west, 
 !                   C grid model
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_poic ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8, &
                                                    F_npts, NSTOR )
@@ -47,7 +47,7 @@
 ! F_xp2_8      I    - alongx second derivatives diagonals
 ! F_npts       I    - number of points to operate on
 !
-!implicits
+
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"

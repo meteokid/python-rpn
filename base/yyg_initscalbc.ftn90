@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !***s/r yyg_initscalbc - to initialize communication pattern for scalar fields
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initscalbc()
       implicit none

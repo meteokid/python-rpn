@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r wil_uvcase6
 !
-#include "model_macros_f.h"
+
 !
       subroutine wil_uvcase6( u_temp,lniu,lnju,v_temp,lniv,lnjv,nk)
       implicit none
@@ -35,17 +35,17 @@
 !arguments
 !	none
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
-!modules
+
 !
       integer i,j,k,R_case
       REAL*8  DLON,K_Case,OMG
-      real    uloc(LDIST_SHAPE),vloc(LDIST_SHAPE)
+      real    uloc(l_minx:l_maxx,l_miny:l_maxy),vloc(l_minx:l_maxx,l_miny:l_maxy)
       real    UICLL(G_ni,G_nj),VICLL(G_ni,G_nj)
       real*8  UI_U(G_niu,G_nj),UI_V(G_ni,G_njv)
       real*8  VI_U(G_niu,G_nj),VI_V(G_ni,G_njv)

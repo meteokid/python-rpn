@@ -15,7 +15,7 @@
 
 !**s/p set_filt - initialize list of variables for filtering before output
 !
-#include "model_macros_f.h"
+
 !
       integer function set_filt (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
@@ -60,7 +60,7 @@
 !----------------------------------------------------------------
 !
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"

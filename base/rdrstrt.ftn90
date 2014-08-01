@@ -15,7 +15,7 @@
 
 !**s/r rdrstrt - Read the restart file
 !
-#include "model_macros_f.h"
+
 !
       subroutine rdrstrt ()
       implicit none

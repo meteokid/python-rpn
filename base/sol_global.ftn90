@@ -22,11 +22,12 @@
       real*8 F_rhs_8(F_ni,F_nj,F_nk), F_sol_8 (F_ni,F_nj,F_nk), &
              F_dg1(*), F_dg2(*), F_dwfft(*)
 
-!author
-!     Desgagne   Spring 2013
+!
+!author 
+!     Michel Desgagne / Abdessamad Qaddouri -- January 2014
 !
 !revision
-! v4_50 - Desgagne M.       - initial version
+! v4_70 - Desgagne/Qaddouri  - initial version
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"

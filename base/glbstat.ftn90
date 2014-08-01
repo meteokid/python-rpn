@@ -16,7 +16,7 @@
 
 !**s/r glbstat2 - 
 !
-#include "model_macros_f.h"
+
 !
       subroutine glbstat2 (F_field, F_var_S, F_from_S,  &
                            Minx,Maxx,Miny,Maxy,Mink,Maxk, &
@@ -48,7 +48,7 @@
 ! F_k0,F_kn     I         Range of levels on which to perform statistics
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"

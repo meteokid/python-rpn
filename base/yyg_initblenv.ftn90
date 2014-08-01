@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !***s/r yyg_initblenv - to initialize communication pattern for V field 
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initblenv()
       implicit none

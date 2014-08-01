@@ -15,16 +15,16 @@
 
 !**   s/r vspngv_YY
 !     
-#include "model_macros_f.h"
+
 !     
-      subroutine vspngv_YY ( F_champ, T_champ,DIST_DIM, pni, pnj )
+      subroutine vspngv_YY ( F_champ, T_champ,Minx,Maxx,Miny,Maxy, pni, pnj )
 
       implicit none
 #include <arch_specific.hf>
 !     
-      integer DIST_DIM,pni,pnj
-      real F_champ(DIST_SHAPE,*)
-      real T_champ(DIST_SHAPE,*)
+      integer Minx,Maxx,Miny,Maxy,pni,pnj
+      real F_champ(Minx:Maxx,Miny:Maxy,*)
+      real T_champ(Minx:Maxx,Miny:Maxy,*)
 
 !     
 !     author   Abdessamad Qaddouri                        2012
@@ -52,7 +52,7 @@
       parameter(two=2.d0)
       real wk(l_ni,l_nj,Vspng_nk)
       integer ii,jj
-      real*8 ruw(DIST_SHAPE,Vspng_nk)
+      real*8 ruw(Minx:Maxx,Miny:Maxy,Vspng_nk)
       real*8 cst_8,cappa_8,aaa,bbb,ccc
       real*8, save, dimension(:,:,:), pointer :: stencils => null()
       logical, save :: done_L=.false.
@@ -64,21 +64,21 @@
       i0=1     + pil_w
       in=l_ni  - pil_e
 !     
-      call rpn_comm_xch_halo (F_champ,LDIST_DIM,pni,pnj, &
+      call rpn_comm_xch_halo (F_champ,l_minx,l_maxx,l_miny,l_maxy,pni,pnj, &
       G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !     interpole U on phi_grid
-      call rpn_comm_xch_halo (T_champ,LDIST_DIM,l_niu,l_nj, &
+      call rpn_comm_xch_halo (T_champ,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj, &
       G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !
       if(.not.done_L)then
-         allocate(stencils(DIST_SHAPE,2:5),stat=istat)
+         allocate(stencils(Minx:Maxx,Miny:Maxy,2:5),stat=istat)
          if(istat<0)call handle_error(-1,'vspngv_YY','Allocating stencils')
       endif
 !
 !     $omp parallel private (i,j,jj,ii,cst_8,stencil1,cappa_8, &
 !     $opm                   aaa,bbb,ccc)
       if(.not.done_L)then
-         allocate(stencils(DIST_SHAPE,5))
+         allocate(stencils(Minx:Maxx,Miny:Maxy,5))
 !$omp do
          do j=j0,jn
             jj=j+l_j0-1

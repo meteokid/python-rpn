@@ -13,14 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r bcs_ftype - to determine whether pilot file is BMF,BCS or 3DF
-!
+
       subroutine bcs_ftype2 ( ft, datev )
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) ft, datev
+
 !author
 !        Michel Desgagne - 2001 (from MC2 bcs_ftype)
 !revision
@@ -30,12 +30,11 @@
 !ARGUMENTS
 !    NAMES     I/O  TYPE  A/S        DESCRIPTION
 !     ft        O   C     S       Input file type
-!
-!IMPLICIT
+
 #include "ifd.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-!
+
       integer  nav_3df2
       external nav_3df2
 

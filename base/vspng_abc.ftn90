@@ -15,22 +15,20 @@
 
 !**s/r vspng_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
 !
-#include "model_macros_f.h"
-!
       subroutine vspng_abc2(F_aix_8 , F_bix_8, F_cix_8, F_dix_8 , &
                             F_aiy_8 , F_biy_8, F_ciy_8, F_cy2_8 , &
                             F_xp0_8 , F_xp2_8, F_yp0_8, F_yp2_8 , &
                             F_coef_8, F_njpole, Gni, Gnj,F_gnjv, NK)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer F_njpole,Gni,Gnj,F_gnjv,NK
       real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*), &
              F_aiy_8(*), F_biy_8(*), F_ciy_8(*), F_cy2_8(*), &
              F_xp0_8(Gni,3), F_xp2_8(Gni,3), &
              F_yp0_8(Gnj,3), F_yp2_8(Gnj,3), &
              F_coef_8(NK)
-!
+
 !author    
 !     Michel Desgagne  October 2000
 !
@@ -40,19 +38,16 @@
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_20 - Lee V.            - correction to insure index in,jn >=0
 !
-!object
-!       
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 !  F_aix_8
 !----------------------------------------------------------------
 ! 
-!implicit
 #include "glb_ld.cdk"
 #include "trp.cdk"
 #include "ptopo.cdk"
-!     
+    
       integer i, j, k, ii, jj, j2, in, jn
       real*8 ax_8(NK,trp_12emax,G_ni), bx_8(NK,trp_12emax,G_ni), &
              cx_8(NK,trp_12emax,G_ni), ay_8(NK,trp_22emax,G_nj), &
@@ -60,7 +55,7 @@
              diy_8,mdifc(Gnj)
       real*8 ZERO_8,ONE_8,HALF_8
       parameter ( ZERO_8 = 0.0 , ONE_8 = 1.0 , HALF_8 = 0.5 )
-!*
+!
 !     ---------------------------------------------------------------
 !
       if (F_njpole .lt. 1) then
@@ -166,7 +161,6 @@
       enddo
 !$omp enddo
 
-!
 !$omp do
       do j = 1, F_gnjv
       do i = in+1,trp_22emax
@@ -179,13 +173,12 @@
       enddo
 !$omp enddo
 !$omp end parallel
-!
+
       call set_trig21 (F_aiy_8,F_biy_8,F_ciy_8,diy_8, ay_8,by_8,cy_8,  &
                        NK*trp_22emax, 1, F_gnjv,  &
                        NK*trp_22en, .false.)
 !
 !     ---------------------------------------------------------------
 !
-!     call tmg_stop(86)
       return
       end

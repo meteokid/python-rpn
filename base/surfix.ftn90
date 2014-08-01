@@ -15,7 +15,7 @@
 
 !**s/r surfix - force wind and temperature values at surface
 !
-#include "model_macros_f.h"
+
 !
       subroutine surfix 
 !
@@ -32,7 +32,7 @@
 !
 !object
 !	
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt0.cdk"

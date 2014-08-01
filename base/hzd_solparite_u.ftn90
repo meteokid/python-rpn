@@ -15,18 +15,16 @@
 
 !**s/r hzd_solmxma - parallel direct solution of high-order diffusion 
 !        equation with mxma8 using reflexion symmetry of U-grid (global)
-#include "model_macros_f.h"
-!
+
        subroutine hzd_solparite_U ( &
                  F_sol, F_Rhs_8, F_evxevec_8 ,F_oddxevec_8, &
                  F_a_8, F_c_8 ,F_deltai_8, &
                  minx1, maxx1, minx2, maxx2, nx1, nx2, nx3, F_pwr, &
                  minx,maxx,miny,maxy,gnk,gni,nil,njl,nkl, &
                  F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey,NSTOR,nev)
-!
       implicit none
 #include <arch_specific.hf>
-!
+
       integer minx1, maxx1, minx2, maxx2, nx1, nx2, nx3  , &
               minx , maxx , miny , maxy , gnk, gni, F_pwr, &
               njl  , nkl  , nil  , F_npex, F_npey,NSTOR,nev
@@ -38,7 +36,7 @@
       real*8   F_evxevec_8(NSTOR*NSTOR),F_oddxevec_8(NSTOR*NSTOR)
 
       real F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
-!
+
 !author
 !     Abdessamad Qaddouri
 !
@@ -48,8 +46,6 @@
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - Corbeil L.         - new RPNCOMM transpose
 !
-!object
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -57,8 +53,9 @@
 !  F_Rhs_8         I        work vector
 !
 !----------------------------------------------------------------
-!
+
 #include "ptopo.cdk"
+
       real*8   fdg1_8( miny:maxy ,minx1:maxx1,gni+F_npex), &
                fdg2_8(minx1:maxx1,minx2:maxx2,nx3+F_npey), &
                dn3_8(minx1:maxx1,minx2:maxx2,F_pwr,nx3 ), &
@@ -69,15 +66,9 @@
       real*8   ZERO_8, fact_8
       parameter( ZERO_8 = 0.0 )
       integer o1,o2,i,j,k,nevi,gnii,kkii,ki0,kin,kilon,pi0,pin
-
-
-!*
 !     __________________________________________________________________
 !
       kilon = (maxx2-minx2 +1+Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-
-!      call tmg_start0(75,'hzd_solparite_U')
-
 
       fact_8 =  ((-1)**F_pwr)*dble(F_cdiff)
       call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1,(Maxy-Miny+1), &
@@ -425,8 +416,8 @@
 !$omp do
       do k= 1,Nkl
         do j= 1,njl
-           fdg1_8(j,k,nev)       = fdg12_8(j,k,nev)+fdg12_8(j,k,nevi)
-           fdg1_8(j,k,gnii)    = fdg12_8(j,k,nev)-fdg12_8(j,k,nevi)
+           fdg1_8(j,k,nev)  = fdg12_8(j,k,nev)+fdg12_8(j,k,nevi)
+           fdg1_8(j,k,gnii) = fdg12_8(j,k,nev)-fdg12_8(j,k,nevi)
         enddo
       enddo
 !$omp end do
@@ -435,10 +426,7 @@
 !$omp end parallel
       call rpn_comm_transpose48(F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1), &
                                 (Maxy-Miny+1), Minx1, Maxx1, gnk, fdg1_8, &
-                                 -1,1.0d0,0.d0 )
-
-!      call tmg_stop0(75)
-!
+                                 -1,1.0d0,0.d0 )!
 !     __________________________________________________________________
 !
       return

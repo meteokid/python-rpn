@@ -17,7 +17,7 @@
 !                   de l'operateur unidimensionnel.
 !                   direction de travail: suivant la latitude.
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_delpwr (F_a_8,F_c_8,F_deltai_8,F_pwr, &
                              minx2,maxx2,nx3,nx2,n20,F_opsyp0_8, &

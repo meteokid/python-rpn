@@ -32,7 +32,7 @@
 !
 !arguments
 ! 
-!implicits
+
 !
       real*8 zero
       parameter( zero = 0.0 )

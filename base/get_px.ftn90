@@ -59,7 +59,7 @@
 !            5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
 !
-!implicits
+
 !
 !*
       integer i,k

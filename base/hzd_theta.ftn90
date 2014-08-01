@@ -15,7 +15,7 @@
 
 !**s/r hzd_theta - applies horizontal diffusion on theta
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_theta
       implicit none
@@ -38,7 +38,7 @@
       type(gmm_metadata) :: mymeta
       integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5
-      real :: pres_t(l_ni,l_nj,G_nk),th(LDIST_SHAPE,G_nk)
+      real :: pres_t(l_ni,l_nj,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
 !
 !     _________________________________________________________________
 !

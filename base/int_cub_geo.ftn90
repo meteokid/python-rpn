@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r int_cubgeo_lag - to do YY cubic interpolation for scalar fields
-#include "model_macros_f.h"
+
 
        Subroutine int_cub_geo(FF,F,Imx,Imy,Ni,Nj,Xi,Yi,x_8,y_8) 
 

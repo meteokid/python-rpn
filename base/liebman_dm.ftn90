@@ -15,7 +15,7 @@
 
 !**s/r liebman_dm - modifiy a portion of input field by overrelaxation with del**2=0.
 !
-#include "model_macros_f.h"
+
       subroutine liebman_dm (F_field,  F_mask, F_conv, F_maxite, &
                                      Minx, Maxx, Miny, Maxy, Nk)
       implicit none

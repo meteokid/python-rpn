@@ -15,7 +15,7 @@
 
 !**s/r wil_galewski_mean_8 
 !
-#include "model_macros_f.h"
+
 !
       function wil_galewski_mean_8 (evaluated_at_lat_8)
 !
@@ -34,7 +34,7 @@
 !     Evaluate Mean of geopotential in balanced state 
 !     of Galewski's case (Tellus,2004)
 !
-!implicits
+
 #include "dcst.cdk"
 !
 !     ---------------------------------------------------------

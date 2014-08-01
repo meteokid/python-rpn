@@ -15,7 +15,7 @@
 
 !**s/r Out_sblock - sets up global indices for each block
 !
-#include "model_macros_f.h"
+
 !
       subroutine out_sblock2(F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy, &
                  F_mycol,F_myrow,F_ni,F_nj, F_blocme, F_mybloc, &
@@ -48,7 +48,7 @@
 !arguments
 !     None
 !
-!implicits
+
 #include "out.cdk"
 !
       integer i, j, err

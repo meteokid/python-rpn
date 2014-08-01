@@ -15,7 +15,7 @@
 
 !**S/R HZD_areal - AREAL AVERAGE on a given area
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_areal (F_wk1,F_xp0_8,F_yp0_8,Minx,Maxx,Miny, &
                                                 Maxy,Gni,Gnj,Nk)
@@ -34,7 +34,7 @@
 !
 !arguments
 ! 
-!implicits
+
 !
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"

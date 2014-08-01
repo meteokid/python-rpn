@@ -15,7 +15,7 @@
 
 !**s/r set_step - initialization of common block TIMESTEP
 !
-#include "model_macros_f.h"
+
 !
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
 !
@@ -89,7 +89,7 @@
 ! day of a month so that, depending on the starting date, the first
 ! month could be shorter than expected.
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "dimout.cdk"
@@ -98,7 +98,7 @@
 #include "step.cdk"
 #include "lun.cdk"
 
-!modules
+
 !*
 !
       integer i,j,k,ii,num,istep
@@ -252,12 +252,12 @@
 ! so that, depending on the starting date, the first month could
 ! be shorter than expected.
 !
-!implicits
+
 #include "cstv.cdk"
 #include "out3.cdk"
 #include "lun.cdk"
 
-!modules
+
 !*
       real*8   hours
       logical, save :: First_call_L = .true.

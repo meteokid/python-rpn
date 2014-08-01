@@ -15,7 +15,7 @@
 
 !**s/r e_specanal2 - extraction of analysis levels
 !
-#include "model_macros_f.h"
+
 !
       subroutine e_specanal2 (current_date, errcode)
       implicit none

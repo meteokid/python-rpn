@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r wil_case2
 !
-#include "model_macros_f.h"
+
 !
       subroutine wil_case2(gz_temp,lni,lnj,nk)
       implicit none
@@ -36,20 +36,20 @@
 !arguments
 !	none
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
 #include "wil_williamson.cdk"
-!modules
+
 !
       integer i,j,k
       REAL*8  PHI0,UBAR,SINA,COSA,ETAAMP,PHIAMP
-      real    PICLL(G_ni,G_nj),gzloc(LDIST_SHAPE)
-      real    UICLL(G_ni,G_nj),uloc(LDIST_SHAPE)
-      real    VICLL(G_ni,G_nj),vloc(LDIST_SHAPE)
+      real    PICLL(G_ni,G_nj),gzloc(l_minx:l_maxx,l_miny:l_maxy)
+      real    UICLL(G_ni,G_nj),uloc(l_minx:l_maxx,l_miny:l_maxy)
+      real    VICLL(G_ni,G_nj),vloc(l_minx:l_maxx,l_miny:l_maxy)
       real    EICLL(G_ni,G_nj)
       real    DICLL(G_ni,G_nj)
       REAL*8  RLON,RLAT,TIME, SINT,COST,PHIAY,PHIBY,PHICY

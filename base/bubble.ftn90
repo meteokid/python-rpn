@@ -16,7 +16,7 @@
 !**s/r bubble - generates initial condition for convective bubble
 !               experiment (Robert, A.)
 !
-#include "model_macros_f.h"
+
 !
       subroutine bubble
       implicit none
@@ -41,7 +41,7 @@
 !        end subroutine acqui
 !     END INTERFACE
 !
-!implicits
+
 #include "stop_mpi.h"
       call stop_mpi(STOP_ERROR,'bubble','theo case no longer avail.')
 

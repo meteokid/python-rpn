@@ -15,7 +15,7 @@
 
 !**s/r init_component
 !
-#include "model_macros_f.h"
+
       subroutine init_component (F_component_S)
       implicit none
 !

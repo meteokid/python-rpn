@@ -15,7 +15,7 @@
 
 !**s/r  pre_diago -  Diagonal preconditioning  
 !
-#include "model_macros_f.h"
+
       subroutine pre_diago( Sol, Rhs, Minx, Maxx, Miny, Maxy, &
                             nil,njl, minx1, maxx1, minx2, maxx2, Nk )
       implicit none

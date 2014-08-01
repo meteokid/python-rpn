@@ -15,17 +15,17 @@
 
 !**s/p lipschitz - compute lipschitz stability criterion
 !
-#include "model_macros_f.h"
+
 !
-      subroutine lipschitz(F_u, F_v, F_w, DIST_DIM, Nk, &
+      subroutine lipschitz(F_u, F_v, F_w, Minx,Maxx,Miny,Maxy, Nk, &
                                       F_i0,F_in,F_j0,F_jn)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk
+      integer Minx,Maxx,Miny,Maxy, Nk
       integer F_i0,F_in,F_j0,F_jn
-      real F_w(DIST_SHAPE,Nk), F_u(DIST_SHAPE,Nk), F_v(DIST_SHAPE,Nk)
+      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk)
 !
 !author
 !     Claude Girard & Andre Plante - oct 2006
@@ -50,7 +50,7 @@
 ! F_j0         I    - starting point of calculation on N-S axis
 ! F_jn         I    - ending point of calculation on N-S axis
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "type.cdk"

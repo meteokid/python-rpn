@@ -1,0 +1,2 @@
+   real, dimension(:,:,:), pointer :: pxt,pyt,pzt
+   common /adx_position_t/ pxt,pyt,pzt

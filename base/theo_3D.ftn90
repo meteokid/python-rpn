@@ -15,7 +15,7 @@
 
 !**s/r theo_3D
 !
-#include "model_macros_f.h"
+
 !
       subroutine theo_3D_2( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
                            pref_tr, suff_tr )

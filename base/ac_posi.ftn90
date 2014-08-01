@@ -15,16 +15,15 @@
 
 !**s/r ac_posi - find the positional points to extract cascade grid
 !                from the current model grid configuration
-#include "model_macros_f.h"
-!     
+
       subroutine ac_posi (xp,yp,dimgx,dimgy,prout)
       implicit none
 #include <arch_specific.hf>
-!     
+
       logical prout
       integer dimgx,dimgy
       real*8 xp(dimgx), yp(dimgy)
-!
+
 !author
 !        Michel Desgagne - 2001 (from MC2)
 !revision
@@ -32,7 +31,7 @@
 ! v3_30 - McTaggart-Cowan R.- Allow for user-defined domain tag extensions
 ! v4_03 - Lee/Desgagne - ISST
 !
-!*
+
 #include "dcst.cdk"
 #include "grd.cdk"
 #include "grdc.cdk"
@@ -41,7 +40,7 @@
 #include "rstr.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
-!
+
       integer  stretch_axis2
       external stretch_axis2
       integer i,k,cnt,ierx,dum1,dum2

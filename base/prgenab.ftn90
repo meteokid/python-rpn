@@ -16,7 +16,7 @@
 !  s/r prgenab- To print out all the values set in set_zeta
 !               Only active under Out_DEBUG_L mode
 !
-#include "model_macros_f.h"
+
 !
       subroutine prgenab ()
       implicit none

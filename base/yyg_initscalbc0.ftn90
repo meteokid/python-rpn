@@ -15,7 +15,7 @@
 !***s/r yyg_initscalbc1 - to initialize communication pattern for nearest
 !                            interpolation of scalar fields
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initscalbc0()
       implicit none

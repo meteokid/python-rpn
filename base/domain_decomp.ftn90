@@ -15,7 +15,7 @@
 
 !**s/r domain_decomp
 !
-#include "model_macros_f.h"
+
 !
       subroutine domain_decomp2 ( F_npex, F_npey, F_checkparti_L )
       implicit none
@@ -32,7 +32,7 @@
 !
 !object
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "grd.cdk"

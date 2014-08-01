@@ -15,7 +15,7 @@
 
 !**s/r diag_fi - Computes geopotential by vertically integrating the temperature
 !
-#include "model_macros_f.h"
+
 !
       subroutine diag_fi ( F_fip, F_s, F_t, F_q, F_fis, &
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )

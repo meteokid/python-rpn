@@ -15,29 +15,26 @@
 
 !**s/r sumhydrom - Sum over Hydrometeors (GMM)
 !
-#include "model_macros_f.h"
-!
       subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer minx,maxx,miny,maxy,nk
-!     nk has to be l_nk
       character(1) F_timelevel_S
       real F_qh(minx:maxx,miny:maxy,nk)
-!
+
 !author
 !     Michel Desgagne - Dec 2009
 !
 !revision
 ! v4_11 - Desgagne, M.     - First revision
 ! v4_60 - Lee, V.          - extracted this out of tt2virt
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
-!
+
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tr
 !     ________________________________________________________________

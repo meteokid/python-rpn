@@ -13,21 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
-#include "model_macros_f.h"
       subroutine glbcolc2(f2rc,g_id,g_if,g_jd,g_jf, &
                           f2cc,lminx,lmaxx,lminy,lmaxy,lnk,z_out,nk_out)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer g_id,g_if,g_jd,g_jf,lminx,lmaxx,lminy,lmaxy,lnk,nk_out
       integer z_out(nk_out)
       real f2rc(g_id:g_if,g_jd:g_jf,nk_out),  &
            f2cc(lminx:lmaxx,lminy:lmaxy,lnk)
-!
+
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
-!
+
       integer i, j, k, iproc, tag, err, status
       integer si,sj,loindx,hiindx,loindy,hiindy
       integer len,l_id,l_if,l_jd,l_jf
@@ -52,11 +50,11 @@
       l_jd = max(loindy,(g_jd-sj))
       l_jf = min(hiindy,(g_jf-sj))
       len = max(0,(l_if-l_id+1))*max(0,(l_jf-l_jd+1))*lnk
-!          
+          
       if (Ptopo_myproc.eq.0) then
-!
+
 !       Copy local data (LD) segment to global field on processor 1
-!
+
          if (len.gt.0) then
             len = 0
             do k = 1, nk_out
@@ -79,9 +77,9 @@
                enddo
             enddo
          endif
-!
+
 !       Receive the local data (LD) segments from all other processors
-!
+
          do iproc = 1, Ptopo_numproc-1
             call RPN_COMM_recv ( len, 5, 'MPI_INTEGER', iproc, &
                                  tag,'GRID', status, err )
@@ -99,11 +97,11 @@
                enddo 
             endif
          enddo 
-!
+
       else
-!
+
 !       Send local data (LD) segment to processor 1
-!
+
          len = 0
          do k = 1, nk_out
             do j = l_jd, l_jf
@@ -117,10 +115,11 @@
          call RPN_COMM_send ( len, 5, 'MPI_INTEGER', 0, tag,'GRID',err )
          if (len.gt.0) &
          call RPN_COMM_send ( buf, len, 'MPI_REAL', 0, tag, 'GRID',err )
-!
+
       endif
 !
 !----------------------------------------------------------------------
+!
       return
       end
-!
+

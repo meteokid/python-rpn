@@ -15,13 +15,10 @@
 
 !**s/r t02t1 -  Rename time level t0 -> t1
 !
-#include "model_macros_f.h"
-!
       subroutine t02t1
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     Michel Roch - rpn - nov 1993
 !
@@ -35,18 +32,14 @@
 !object
 !     Associate the variables at time t1 to the space on disk and memory
 !     associated with the variables at time t0
-!	
-!arguments
-!	none
-!
-!implicits
+	
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "vt0.cdk"
 #include "vt1.cdk"
-!
+
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
@@ -56,7 +49,7 @@
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2) :: tr_list
       integer i,istat
-!*
+!
 !     ---------------------------------------------------------------
 !      
       istat = gmm_shuffle( ut_list)

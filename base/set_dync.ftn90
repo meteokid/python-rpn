@@ -15,13 +15,11 @@
 
 !**   s/r set_dync - initialize the dynamics model configuration
 !
-#include "model_macros_f.h"
-!
       subroutine set_dync
       use matvec_mod, only: matvec_init
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     M. Desgagne - V. Lee ( after version v1_03 of setdync )
 !
@@ -34,10 +32,11 @@
 ! v3_30 - Desgagne M.        - Add calls to: set_opr and adw_set
 ! v4_00 - Plante & Girard    - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.          - Open top
-!
+
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
+#include "geomg.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
@@ -54,13 +53,13 @@
           write(Lun_out,*)'SETTING up OPR,ADW,...(S/R SET_DYNC)'
           write(Lun_out,*)'===================================='
       endif
-!
+
       k0=1+Lam_gbpil_T
 
       Cstv_tau_8   = Cstv_dt_8 * Cstv_bA_8
       Cstv_invT_8  = one/Cstv_tau_8
       Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
-!
+
       if(Schm_hydro_L) then
          Ver_epsilon_8=0.d0
       else
@@ -70,7 +69,7 @@
       Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
       Ver_gokt2RT_8= Ver_gamma_8/ &
               (Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Cstv_RTstr_8)
-!
+
       Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
       Cstv_hco1_8 = 0.d0
 
@@ -97,7 +96,7 @@
          Ver_cst_8   =             one / Ver_gokt2RT_8 * yyy
          Ver_cstp_8  =     ( Ver_idz_8%t(k0-1) - xxx ) * yyy
       endif
-!
+
       xxx = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)* &
                 (Ver_idz_8%t(G_nk)-aaa*Ver_wp_8%t(G_nk))
       yyy = one/(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wp_8%t(G_nk))
@@ -105,7 +104,7 @@
                   - Dcst_cappa_8*Ver_wm_8%t(G_nk)) * yyy
       Ver_css_8   =            one / Ver_gokt2RT_8 * yyy
       Ver_cssp_8  =        (Ver_idz_8%t(G_nk)+xxx) * yyy
-!
+
       if(Schm_autobar_L) then
          Schm_hydro_L = .true.
          Ver_alfas_8 = 1.d0
@@ -113,9 +112,12 @@
          Ver_cssp_8  = 0.d0
          Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Ver_z_8%m(1))
       endif
-!
-      call set_opr()
-      call itf_adx_set()
+
+      call set_opr
+
+      call itf_adx_set
+
+      call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
 
       if (Sol_type_S == 'ITERATIVE_3D') then
          call matvec_init()

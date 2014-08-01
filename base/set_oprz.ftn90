@@ -16,7 +16,7 @@
 !**s/r set_oprz - Computes vertical operators and matrices a,b,c
 !                 for the elliptic solver
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_oprz
       implicit none

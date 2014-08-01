@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !*** s/r yyg_rhs_initscalbc - to initialize communication pattern for RHS data
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_rhs_initscalbc()
       implicit none

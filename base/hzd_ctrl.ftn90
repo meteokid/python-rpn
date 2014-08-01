@@ -15,14 +15,14 @@
 
 !**s/r hzd_ctrl 
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, NK)
       implicit none
 #include <arch_specific.hf>
 !
       character*(*) F_grd_S
-      integer DIST_DIM, Nk
+      integer Minx,Maxx,Miny,Maxy, Nk
       real    F_f2hzd (*)
 !
 !author

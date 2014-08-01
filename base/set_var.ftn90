@@ -15,7 +15,7 @@
 
 !**s/p set_var - initialize list of variables to output
 !
-#include "model_macros_f.h"
+
 !
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
@@ -81,7 +81,7 @@
 !  For each "sortie" command, the levelset, gridset and stepset must be
 !  specified or an error will occur.
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"

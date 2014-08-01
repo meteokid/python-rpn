@@ -17,7 +17,6 @@
 !       problem. With  mxma8 and using Opr_opsxp2_8 eigenvector's parity
 !                     
 !
-#include "model_macros_f.h"
       subroutine  sol_parite_2 ( Sol, Rhs, evxevec,oddxevec, &
                                 Minx, Maxx, Miny, Maxy, njl, &
                                 Minz, Maxz, Nk, Nkl,  &
@@ -25,11 +24,11 @@
                                 minx1, maxx1, minx2, maxx2,nx3, &
                                 F_npex1, F_npey1, ai, bi, ci, &
                                 fdg1,fdg2,fdwfft,fdg12,NSTOR,nev)
-!
+
       implicit none
 #include <arch_specific.hf>
 #include "ptopo.cdk"
-!
+
 !author    Abdessamad Qaddouri
 !
 !revision
@@ -43,7 +42,7 @@
 !   i      - odd-Xevec- Odd eigenvectors
 !   i      - Gni      - number of points in x-direction
 !   i      - Gnj      - number of points in y-direction
-!
+
       integer  F_npex1 , F_npey1
       integer  minx1, maxx1, minx2, maxx2,nx3
       integer  jk
@@ -51,8 +50,6 @@
       Real*8   ai(minx1:maxx1,minx2:maxx2,nx3), &
                bi(minx1:maxx1,minx2:maxx2,nx3), &
                ci(minx1:maxx1,minx2:maxx2,nx3)
-
-
 
       integer  Minx, Maxx, Miny, Maxy, njl, &
                Minz, Maxz, Nk  , Nkl , &
@@ -64,18 +61,16 @@
       real*8   fdg1(Miny:Maxy,Minz:Maxz,Gni+F_npex1)
       real*8   fdg2(Minz:Maxz,Minij:Maxij,Gnj+F_npey1)
       real*8   fdg12(Miny:Maxy,Minz:Maxz,Gni)
-!
+
       integer  j, jr, err, ki,dim
       real*8   zero, one
       parameter( zero = 0.0 )
       parameter( one  = 1.0 )
 
-!
       integer i,  k, nevi,gnii,ki0,kin,kkii,kilon,kitotal
 !
+!     ---------------------------------------------------------------
 !
-!     call tmg_start0(88,'sol_parite total')
- 
       call rpn_comm_transpose( Rhs, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                          Minz, Maxz, Nk, fdg1, 1,2 )
 
@@ -282,11 +277,10 @@
         endif
 !$omp end parallel
 
-!
       call rpn_comm_transpose( Sol, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                    Minz, Maxz, Nk, fdg1, -1, 2)
- 
-!     call tmg_stop0(88)
-
-      return
+!
+!     ---------------------------------------------------------------
+!
+     return
       end

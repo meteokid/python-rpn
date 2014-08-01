@@ -15,19 +15,17 @@
 
 !**s/r out_fstecr
 !
-!!#include "model_macros_f.h"
-!
       subroutine out_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul,  &
                               add,kind,nkfa,ind_o,nk_o,nbit,F_empty_stk_L)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) nomvar
       logical F_empty_stk_L
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,nk_o,kind
       integer ind_o(nk_o)
       real fa(lminx:lmaxx,lminy:lmaxy,nkfa),rf(nkfa),mul,add
-!
+
 !author
 !    Michel Desgagne - Fall 2012
 !
@@ -40,7 +38,7 @@
 #include "level.cdk"
 #include "ptopo.cdk"
       include "out_meta.cdk"
-!
+
 Interface
 subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  , &
                         l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf, &

@@ -73,7 +73,7 @@
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
       err= min(wb_put('itf_phy/COUPLING'    , .false.   ), err)
       err= min(wb_put('itf_phy/READ_TRACERS', &
-               Tr3d_username_S(1:Tr3d_userntr)), err)
+              Tr3d_from_gemntr_S(1:Tr3d_ntr_from_gemntr)), err)
 
       call gem_error ( err,'itf_phy_init','phy_nml or WB_put' )
       

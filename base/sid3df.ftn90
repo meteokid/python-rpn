@@ -15,7 +15,7 @@
 
 !**s/r sid3df
 !
-#include "model_macros_f.h"
+
 !
       function sid3df2(xpaq,ypaq,xpau,ypav,unf,done, &
                                nia,nja,nka_m,nka_t,presstype) result(F_istat)

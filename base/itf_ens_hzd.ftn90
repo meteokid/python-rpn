@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include "model_macros_f.h"
+
       subroutine itf_ens_hzd ( F_ut1, F_vt1, F_tt1, Minx,Maxx,Miny,Maxy, Nk )
       use phy_itf, only: phy_get
       implicit none

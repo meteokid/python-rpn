@@ -17,14 +17,14 @@
 !
 #include <model_macros_f.h>
 !
-      subroutine ens_uvduv ( F_duv, F_uu, F_vv, DIST_DIM, Nk )
+      subroutine ens_uvduv ( F_duv, F_uu, F_vv, Minx,Maxx,Miny,Maxy, Nk )
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer  DIST_DIM, Nk
-      real     F_duv(DIST_SHAPE,Nk), F_uu  (DIST_SHAPE,Nk), &
-               F_vv (DIST_SHAPE,Nk)
+      integer  Minx,Maxx,Miny,Maxy, Nk
+      real     F_duv(Minx:Maxx,Miny:Maxy,Nk), F_uu  (Minx:Maxx,Miny:Maxy,Nk), &
+               F_vv (Minx:Maxx,Miny:Maxy,Nk)
 !
 !authors
 !      Lubos Spacek - apr 2005
@@ -44,7 +44,7 @@
 ! F_vv          I        wind-like field on V-grid
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"

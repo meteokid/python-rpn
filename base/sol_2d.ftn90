@@ -25,16 +25,10 @@
       real*8  F_rhs_sol (F_ni,F_nj,F_nk), F_lhs_sol (F_ni,F_nj,F_nk)
 !
 !author 
-!     Michel Roch - rpn - nov 1993
+!     Michel Desgagne / Abdessamad Qaddouri -- January 2014
 !
 !revision
-! v2_00 - Desgagne/Lee       - initial MPI version
-! v3_00 - Desgagne & Lee     - Lam configuration
-! v3_01 - Qaddouri A.        - add call sol_parite_2
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_21 - Desgagne M.        - Optimization
-! v3_30 - Qaddouri A.        - add Call to iterative solver 
-! v4_40 - Qaddouri A.        - Add Schwarz iterative solution for YinYa
+! v4_70 - Desgagne/Qaddouri  - initial version
 
 #include "glb_ld.cdk"
 #include "grd.cdk"

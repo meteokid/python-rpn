@@ -16,11 +16,10 @@
 !**s/r mirror - mirror boundary condition for BUBBLE theoretical
 !               case
 !
-#include "model_macros_f.h"
-!
       subroutine mirror ()
       implicit none
 #include <arch_specific.hf>
+
 !author 
 !     Gravel              - spring 2003 (after MC2 v_4.9.3)
 !
@@ -28,22 +27,18 @@
 ! v3_11 - Gravel             - initial version
 ! v4_05 - Lepine M.          - VMM replacement with GMM
 !
-!object
-!
-!arguments
-!       none
-!
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
-!
+
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,istat
       integer ii, iin, jj, jin
+!
 !----------------------------------------------------------------------
 !
       istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
@@ -208,6 +203,8 @@
          end do
          end do
       endif
+!
+!----------------------------------------------------------------------
 !
 	stop 'mirror'
 

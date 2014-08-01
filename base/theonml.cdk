@@ -6,7 +6,6 @@
 #include "grd.cdk"
 #include "lam.cdk"
 #include "nest.cdk"
-#include "tr3d.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
 #include "lctl.cdk"
@@ -34,7 +33,7 @@
 
       namelist /bubble_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
       namelist /bubble_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
-      namelist /bubble_cfgs/ Tr3d_userntr, Lam_ctebcs_L
+      namelist /bubble_cfgs/ Lam_ctebcs_L
       namelist /bubble_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
       namelist /bubble_cfgs/ Step_total, Step_rsti, Step_gstat
       namelist /bubble_cfgs/ Hyb, Grd_rcoef, Pres_ptop
@@ -59,7 +58,7 @@
 
       namelist /mtn_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
       namelist /mtn_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
-      namelist /mtn_cfgs/ Tr3d_userntr, Lam_ctebcs_L
+      namelist /mtn_cfgs/ Lam_ctebcs_L
       namelist /mtn_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
       namelist /mtn_cfgs/ Step_total, Step_rsti, Step_gstat
       namelist /mtn_cfgs/ Hyb, Grd_rcoef, Pres_ptop

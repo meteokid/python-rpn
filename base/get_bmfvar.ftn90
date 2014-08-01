@@ -15,7 +15,7 @@
 
 !**s/r get_bmfvar - read the dynamics fields from entrance programs
 !
-#include "model_macros_f.h"
+
 !
       subroutine get_bmfvar (F_niu, F_nju, F_niv, F_njv, F_nka_m, F_nka_t)
       implicit none

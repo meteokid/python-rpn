@@ -16,7 +16,7 @@
 !**s/r hzd_delpwr_1d - Same as hzd_delpwr for 1d diffusion 
 !                      (based on HZD_DELPWR, A.Qaddouri)
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_delpwr_1d (F_deltai_8,F_pwr,gni,nx3,F_opsyp0_8, &
                                 F_opsyp2_8,F_opsypm_8,F_eival_8,F_cdiff)

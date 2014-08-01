@@ -26,7 +26,6 @@ module out_vref_mod
      module procedure out_vref_pres
   end interface
 
-#include "model_macros_f.h"
 #include <arch_specific.hf>
 
 contains

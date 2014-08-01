@@ -13,26 +13,24 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r e_pilotf
-!
+
       integer function e_pilotf2 (datev,nomvar,etk,typvar,ip1,ip2,ip3, &
                                                      F_pilot_S,F_unit)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) nomvar,etk,typvar,F_pilot_S
       integer datev,ip1,ip2,ip3,F_unit
-!
+
 !AUTHOR  M. Desgagne    November 2001
 !
 !revision
 ! v3_30 - Desgagne M - to search the list again if a record is not found
 ! v4_03 - Lee/Desgagne - ISST
-!
-!IMPLICIT
+
 #include "filename.cdk"
-!
+
       integer  fnom,fstouv,fstinf,fstfrm,fclos
       external fnom,fstouv,fstinf,fstfrm,fclos
       character*16 date

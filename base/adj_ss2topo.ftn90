@@ -102,8 +102,8 @@
 ! NK            I         number of levels to look through
 !----------------------------------------------------------------------
 !
-!implicits
-#include "model_macros_f.h"
+
+
 #include "dcst.cdk"
 !*
       integer i,k

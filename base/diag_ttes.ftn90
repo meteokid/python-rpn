@@ -15,7 +15,7 @@
 
 !**s/r diag_ttes
 !
-#include "model_macros_f.h"
+
 !
       subroutine diag_ttes (tt,es,ni,nj,ki)
       implicit none

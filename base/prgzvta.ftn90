@@ -16,25 +16,25 @@
 !**s/r prgzvta - interpolation of geopotential and virtual temperature on
 !                given pressure levels
 !
-#include "model_macros_f.h"
+
 !
       subroutine prgzvta(F_gzout, F_vtout,  F_pres, Nkout, &
                          F_gzin,  F_vtin,   F_wlnph,  F_la, &
                          F_vtund, F_gzund,  F_nundr, &
                          F_cubzt_L, F_linbot, &
-                         DIST_DIM, F_Nk)
+                         Minx,Maxx,Miny,Maxy, F_Nk)
 !
       implicit none
 #include <arch_specific.hf>
 !
       logical F_cubzt_L
       integer F_nundr, F_linbot
-      integer DIST_DIM,F_Nk,Nkout
+      integer Minx,Maxx,Miny,Maxy,F_Nk,Nkout
       real    F_pres(Nkout)
-      real    F_gzout(DIST_SHAPE,Nkout),F_vtout(DIST_SHAPE,Nkout)
-      real    F_gzin (DIST_SHAPE,F_Nk), F_vtin (DIST_SHAPE,F_Nk)
-      real    F_wlnph (DIST_SHAPE,F_Nk), F_la   (DIST_SHAPE)
-      real    F_vtund(DIST_SHAPE,F_nundr), F_gzund(DIST_SHAPE,F_nundr)
+      real    F_gzout(Minx:Maxx,Miny:Maxy,Nkout),F_vtout(Minx:Maxx,Miny:Maxy,Nkout)
+      real    F_gzin (Minx:Maxx,Miny:Maxy,F_Nk), F_vtin (Minx:Maxx,Miny:Maxy,F_Nk)
+      real    F_wlnph (Minx:Maxx,Miny:Maxy,F_Nk), F_la   (Minx:Maxx,Miny:Maxy)
+      real    F_vtund(Minx:Maxx,Miny:Maxy,F_nundr), F_gzund(Minx:Maxx,Miny:Maxy,F_nundr)
 !
 !author
 !     Alain Patoine - from prgzvtl except we introduce linear 
@@ -85,11 +85,11 @@
 !   F_vtund(i,j,2) and F_gzund(i,j,2) --> second highest level
 !   ......................................and so on
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 !
-!modules
+
 !     none
 !
 !*

@@ -15,16 +15,13 @@
 
 !**s/r glbcolc
 !
-#include "model_macros_f.h"
-!
-      subroutine glbcolc (F_2rc,bni,bnj,F_2cc,DIST_DIM,nk)
-!
+      subroutine glbcolc (F_2rc,bni,bnj,F_2cc,Minx,Maxx,Miny,Maxy,nk)
       implicit none
 #include <arch_specific.hf>
-!
-      integer bni,bnj,DIST_DIM,nk
-      real F_2rc(bni,bnj,nk), F_2cc(DIST_SHAPE,nk)
-!
+
+      integer bni,bnj,Minx,Maxx,Miny,Maxy,nk
+      real F_2rc(bni,bnj,nk), F_2cc(Minx:Maxx,Miny:Maxy,nk)
+
 !author
 !     M. Desgagne - v. lee
 !
@@ -32,15 +29,13 @@
 ! v2_00 - Desgagne M.       - initial MPI version (from MC2 v4.9)
 ! v2_21 - Desgagne M.       - rpn_comm stooge for glbcolc
 !
-!object
-!	
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_2rc         O           Global reception array
 ! bni,bnj       I           Horizontal dimension of F_2rc
 ! F_2cc         O           Local array to collect
-! DIST_DIM      I           Horizontal dimension of F_2rc
+! Minx,Maxx,Miny,Maxy       Horizontal dimension of F_2rc
 ! nk            I           Vertical dimension of F_2bc and F_2rc
 !----------------------------------------------------------------
 !
@@ -49,7 +44,7 @@
 !----------------------------------------------------------------------
 !
       call RPN_COMM_coll (F_2rc,1,bni,1,bnj,bni,bnj,nk,0,0,1, &
-                          F_2cc,DIST_DIM,0,0,err)
+                          F_2cc,Minx,Maxx,Miny,Maxy,0,0,err)
 !
 !----------------------------------------------------------------------
 !

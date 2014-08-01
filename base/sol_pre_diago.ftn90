@@ -15,7 +15,7 @@
 
 !**s/r  sol_pre_diago -  call diagonal Preconditionner  
 !
-#include "model_macros_f.h"
+
 !
 !
       subroutine  sol_pre_diago ( wk22, wk11, Minx,Maxx,Miny,Maxy, &

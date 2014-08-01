@@ -16,18 +16,18 @@
 !**s/r  verder - compute vertical derivative of input field 
 !                 with respect to field F_wlnph
 !
-#include "model_macros_f.h"
+
 !
       subroutine verder (F_der, F_infield, F_wlnph, F_con1, F_con2, &
-                                   DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn)
+                                   Minx,Maxx,Miny,Maxy, F_Nk,F_i0,F_in,F_j0,F_jn)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, F_Nk,F_i0,F_in,F_j0,F_jn
+      integer Minx,Maxx,Miny,Maxy, F_Nk,F_i0,F_in,F_j0,F_jn
       real    F_con1, F_con2
-      real    F_der(DIST_SHAPE,F_Nk),F_infield (DIST_SHAPE,F_Nk), &
-              F_wlnph(DIST_SHAPE,F_Nk)
+      real    F_der(Minx:Maxx,Miny:Maxy,F_Nk),F_infield (Minx:Maxx,Miny:Maxy,F_Nk), &
+              F_wlnph(Minx:Maxx,Miny:Maxy,F_Nk)
 !
 !author
 !     alain patoine - after ddsig (efr)
@@ -54,7 +54,7 @@
 ! F_j0         I    - starting point of calculation on N-S axis
 ! F_jn         I    - ending point of calculation on N-S axis
 !
-!implicits
+
 #include "glb_ld.cdk"
 !
 !*

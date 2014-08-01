@@ -15,28 +15,17 @@
 
 !**s/r set_intuv - computes (u,v) cubic lagrange interpolation coefficients
 !
-#include "model_macros_f.h"
-!
       subroutine set_intuv
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !       jean cote/andre methot - rpn/cmc - sept 96
 !
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from setinuvl v1_03)
 ! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_30 - Dugas B.          - Corriger l'allocation avec hpalloc
-!
-!object
-!	See above id.
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
@@ -44,17 +33,16 @@
 #include "inuvl.cdk"
 #include "dcst.cdk"
 #include "ptopo.cdk"
-!
-!*
+
       real*8 zero, half, one, two, three
       parameter( zero  = 0.0 )
       parameter( half  = 0.5 )
       parameter( one   = 1.0 )
       parameter( two   = 2.0 )
       parameter( three = 3.0 )
-!
+
       integer  i, j, indx, offi, offj, err
-!
+
 !   * Statement functions
       real*8 c00,c11,c22,c0,hh,hm,hp,del
       real*8 lag2, lag3, x, x1, x2, x3, x4
@@ -77,23 +65,12 @@
 !
       allocate (inuvl_wxxu3_8(l_minx:l_maxx,4),inuvl_wxux3_8(l_minx:l_maxx,4),&
                 inuvl_wyyv3_8(l_miny:l_maxy,4),inuvl_wyvy3_8(l_miny:l_maxy,4))
-
-      call hpalloc(intuv_c0xxu_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c1xxu_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c2xxu_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c0xux_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c1xux_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c2xux_8_  ,LARRAY1DX,err,8)
-      call hpalloc(intuv_c0yyv_8_  ,LARRAY1DY,err,8)
-      call hpalloc(intuv_c1yyv_8_  ,LARRAY1DY,err,8)
-      call hpalloc(intuv_c2yyv_8_  ,LARRAY1DY,err,8)
-      call hpalloc(intuv_c0yvy_8_  ,LARRAY1DY,err,8)
-      call hpalloc(intuv_c1yvy_8_  ,LARRAY1DY,err,8)
-      call hpalloc(intuv_c2yvy_8_  ,LARRAY1DY,err,8)
-!      call hpalloc(inuvl_wxxu3_8_  ,LARRAY1DX*4,err,8)
-!      call hpalloc(inuvl_wxux3_8_  ,LARRAY1DX*4,err,8)
-!     call hpalloc(inuvl_wyyv3_8_  ,LARRAY1DY*4,err,8)
-!      call hpalloc(inuvl_wyvy3_8_  ,LARRAY1DY*4,err,8)
+      allocate (intuv_c0xxu_8(l_minx:l_maxx), intuv_c1xxu_8(l_minx:l_maxx),&
+                intuv_c2xxu_8(l_minx:l_maxx), intuv_c0xux_8(l_minx:l_maxx),&
+                intuv_c1xux_8(l_minx:l_maxx), intuv_c2xux_8(l_minx:l_maxx),&
+                intuv_c0yyv_8(l_miny:l_maxy), intuv_c1yyv_8(l_miny:l_maxy),&
+                intuv_c2yyv_8(l_miny:l_maxy), intuv_c0yvy_8(l_miny:l_maxy),&
+                intuv_c1yvy_8(l_miny:l_maxy), intuv_c2yvy_8(l_miny:l_maxy))
 !
       do i = 1-G_halox,l_ni+G_halox
          indx = offi + i

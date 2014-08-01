@@ -50,10 +50,12 @@
       real*8  conv
       real*8, dimension(:,:,:), allocatable, save ::  saved_sol
       integer :: i0, il, j0, jl
-
-      i0 = 1  + pil_w
+!
+!     ---------------------------------------------------------------
+!
+      i0 = 1    + pil_w
       il = l_ni - pil_e
-      j0 = 1  + pil_s
+      j0 = 1    + pil_s
       jl = l_nj - pil_n
 
       if (.not. allocated(saved_sol)) then
@@ -67,20 +69,22 @@
          do iter=1, Sol_yyg_maxits
             select case(Sol3D_krylov_S)
                case ('FGMRES')
-                  its = krylov_fgmres (F_lhs_sol, matvec_3d, rhs_yy, saved_sol, &
-                                       l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx,      &
-                                       ldnh_miny, ldnh_maxy, i0, il, j0, jl,       &
-                                       sol_fgm_eps, sol_im, sol_fgm_maxits, Sol3D_precond_S, conv)
+                  its = krylov_fgmres (F_lhs_sol, matvec_3d, rhs_yy, saved_sol,&
+                                       l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx  ,&
+                                       ldnh_miny, ldnh_maxy, i0, il, j0, jl   ,&
+                                       sol_fgm_eps, sol_im, sol_fgm_maxits    ,&
+                                       Sol3D_precond_S, conv)
 
                if ( F_print_L ) then
                   write(Lun_out, "(3x,'Final FGMRES 3D solver convergence criteria: ',1pe14.7,' at iteration ', i3)") conv, its
                end if
 
                case ('FBICGSTAB')
-                  its = krylov_fbicgstab (F_lhs_sol, matvec_3d, rhs_yy, saved_sol, &
-                                          l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx,      &
-                                          ldnh_miny, ldnh_maxy, i0, il, j0, jl,       &
-                                           sol_fgm_eps, sol_fgm_maxits, Sol3D_precond_S, conv)
+                  its = krylov_fbicgstab (F_lhs_sol, matvec_3d, rhs_yy, saved_sol,&
+                                          l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx  ,&
+                                          ldnh_miny, ldnh_maxy, i0, il, j0, jl   ,&
+                                          sol_fgm_eps, sol_fgm_maxits            ,&
+                                          Sol3D_precond_S, conv)
 
                   if ( F_print_L ) then
                      write(Lun_out, "(3x,'Final BiCGSTAB 3D solver convergence criteria: ',1pe14.7,' at iteration ', i3)") conv, its
@@ -88,8 +92,8 @@
             end select
 
             rhs_yy = 0.d0
-            call yyg_rhs_scalbc(rhs_yy, F_lhs_sol, ldnh_minx, ldnh_maxx,&
-                                ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
+            call yyg_rhs_scalbc (rhs_yy, F_lhs_sol, ldnh_minx, ldnh_maxx,&
+                                 ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
             do k = 1, Schm_nith
                do j = 1+pil_s, ldnh_nj-pil_n
                   do i = 1+pil_w, ldnh_ni-pil_e
@@ -113,20 +117,22 @@
 
          select case(Sol3D_krylov_S)
             case ('FGMRES')
-               its = krylov_fgmres (F_lhs_sol, matvec_3d, F_rhs_sol, saved_sol, &
-                                   l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx,       &
-                                   ldnh_miny, ldnh_maxy, i0, il, j0, jl,        &
-                                   sol_fgm_eps, sol_im, sol_fgm_maxits, Sol3D_precond_S, conv)
+               its = krylov_fgmres (F_lhs_sol, matvec_3d, F_rhs_sol, saved_sol,&
+                                    l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx     ,&
+                                    ldnh_miny, ldnh_maxy, i0, il, j0, jl      ,&
+                                    sol_fgm_eps, sol_im, sol_fgm_maxits       ,&
+                                    Sol3D_precond_S, conv)
 
                if ( F_print_L ) then
                   write(Lun_out, "(3x,'Final FGMRES 3D solver convergence criteria: ',1pe14.7,' at iteration ', i3)") conv, its
                end if
 
             case ('FBICGSTAB')
-               its = krylov_fbicgstab (F_lhs_sol, matvec_3d, F_rhs_sol, saved_sol, &
-                                       l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx,      &
-                                       ldnh_miny, ldnh_maxy, i0, il, j0, jl,       &
-                                       sol_fgm_eps, sol_fgm_maxits, Sol3D_precond_S, conv)
+               its = krylov_fbicgstab (F_lhs_sol, matvec_3d, F_rhs_sol, saved_sol,&
+                                       l_ni,l_nj, F_nk, ldnh_minx, ldnh_maxx     ,&
+                                       ldnh_miny, ldnh_maxy, i0, il, j0, jl      ,&
+                                       sol_fgm_eps, sol_fgm_maxits               ,&
+                                       Sol3D_precond_S, conv)
 
                if ( F_print_L ) then
                   write(Lun_out, "(3x,'Final BiCGSTAB 3D solver convergence criteria: ',1pe14.7,' at iteration ', i3)") conv, its
@@ -135,7 +141,6 @@
       endif
 
       saved_sol = F_lhs_sol
-
 
  1001 format (3x,'Iterative YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)
  1002 format (3x,'Final YYG    solver convergence criteria: ',1pe14.7,' at iteration', i3)

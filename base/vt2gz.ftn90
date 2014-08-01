@@ -15,7 +15,7 @@
 
 !**s/r vt2gz - Compute hydrostatic GZ from P0 and VT
 !
-#include "model_macros_f.h"
+
 !
       subroutine vt2gz (F_gz, F_pr, F_vt, n, Nk)
       implicit none
@@ -41,7 +41,7 @@
 ! F_pr         I    - 
 ! F_vt         I    - virtual temperature
 !
-!implicits
+
 #include "dcst.cdk"
 #include "cstv.cdk"
 !

@@ -15,7 +15,7 @@
 
 !**s/r grid_nml
 !
-#include "model_macros_f.h"
+
 !
       integer function grid_nml2 (F_namelistf_S, F_lam)
       implicit none

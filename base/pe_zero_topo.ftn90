@@ -15,7 +15,7 @@
 
 !**s/r pe_zero_topo - Initialize processor topology
 !
-#include "model_macros_f.h"
+
 !
       subroutine pe_zero_topo (F_npx, F_npy )
       implicit none
@@ -29,7 +29,7 @@
 !revision
 ! v4_03 - Desgagne M.       - initial version, ISST
 !
-!implicits
+
 #include "component.cdk"
 #include "ptopo.cdk"
 #include "version.cdk"

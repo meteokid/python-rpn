@@ -16,11 +16,10 @@
 !**s/r slabsym - symmetrical boundary conditions for theoretical
 !               cases
 !
-#include "model_macros_f.h"
-!
       subroutine slabsym ()
       implicit none
 #include <arch_specific.hf>
+
 !author 
 !     Gravel              - spring 2003 (after MC2 v_4.9.3)
 !
@@ -28,20 +27,14 @@
 ! v3_11 - Gravel             - initial version
 ! v3_30 - Lee V              - changed t0=> t1,nest is after t02t1
 ! v4_05 - Lepine M.          - VMM replacement with GMM
-!
-!object
-!
-!arguments
-!       none
-!
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
-!
+
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n
       integer jin, jj

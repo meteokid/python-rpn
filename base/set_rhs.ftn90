@@ -17,7 +17,7 @@
 !               equations
 !
 #define SPY_VMM_CREATE spy_vmm_create
-#include "model_macros_f.h"
+
 !
       subroutine set_rhs
       implicit none
@@ -37,7 +37,7 @@
 !arguments
 !	none
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "gmm.hf"

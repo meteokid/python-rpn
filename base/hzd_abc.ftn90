@@ -15,22 +15,20 @@
 
 !**s/r hzd_abc -- Prepares matrices aix,bix,cix,dix,aiy,biy,ciy
 !
-#include "model_macros_f.h"
-!
       subroutine hzd_abc (F_aix_8, F_bix_8, F_cix_8, F_dix_8 , &
                           F_aiy_8, F_biy_8, F_ciy_8, F_coef_8, &
                           F_cy2_8, F_xp0_8, F_xp2_8, F_yp0_8 , &
                           F_yp2_8, Gni, Gnj, lnjs_nh, lnj,  &
-                          ni22s, ni22, PYDIST_DIM, F_gnjv, lnjv)
+                          ni22s, ni22, Miny,Maxy, F_gnjv, lnjv)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer Gni,Gnj,lnjs_nh,lnj,ni22s,ni22,PYDIST_DIM, &
+      integer Gni,Gnj,lnjs_nh,lnj,ni22s,ni22,Miny,Maxy, &
               F_gnjv, lnjv
       real*8 F_aix_8(*), F_bix_8(*), F_cix_8(*), F_dix_8(*),  &
              F_aiy_8(*), F_biy_8(*), F_ciy_8(*), F_coef_8, &
-             F_cy2_8(PYDIST_SHAPE) , F_xp0_8(Gni,3), F_xp2_8(Gni,3),  &
+             F_cy2_8(Miny:Maxy) , F_xp0_8(Gni,3), F_xp2_8(Gni,3),  &
              F_yp0_8(Gnj,3), F_yp2_8(Gnj,3)
 !
 !author    
@@ -52,7 +50,7 @@
 !  F_aix_8
 !----------------------------------------------------------------
 ! 
-!implicit
+
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 #include "grd.cdk"

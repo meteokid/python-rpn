@@ -15,7 +15,7 @@
 
 !**s/r set_gmm
 !
-#include "model_macros_f.h"
+
 !
       subroutine set_gmm
       implicit none
@@ -45,32 +45,32 @@
                             0,0,0,0,0, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta3D(meta3d_nk, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             1,l_nk,0,0,l_nk, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta3D(meta3d_nk1, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             1,l_nk+1,0,0,l_nk+1, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta3D(meta3d_0nk, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             0,l_nk,0,0,l_nk+1, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta3D(meta3d_0nk1, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             0,l_nk+1,0,0,l_nk+2, &
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta3D(meta3d_2nk1, &
-                            LXDIST_DIM,G_halox,G_halox,l_ni, &
-                            LYDIST_DIM,G_haloy,G_haloy,l_nj, &
+                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
+                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             2,l_nk+1,0,0,l_nk, &
                             0,GMM_NULL_FLAGS)
 

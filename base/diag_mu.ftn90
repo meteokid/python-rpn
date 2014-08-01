@@ -15,7 +15,7 @@
 
 !**s/r diag_mu calculate mu: ratio of vertical to gravitational accelerations
 !
-#include "model_macros_f.h"
+
 !
       subroutine diag_mu( F_mu, F_q, F_s, &
                           Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )

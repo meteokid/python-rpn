@@ -16,7 +16,7 @@
 
 !**s/r  pressure_sponge -  Performs vertical blending
 !
-#include "model_macros_f.h"
+
 !
       subroutine height_sponge ()
       implicit none
@@ -37,7 +37,7 @@
       type(gmm_metadata) :: mymeta
       integer err,i,j,k
       integer n,istat
-      real betav_m(LDIST_SHAPE,l_nk),betav_t(LDIST_SHAPE,l_nk),ubar
+      real betav_m(l_minx:l_maxx,l_miny:l_maxy,l_nk),betav_t(l_minx:l_maxx,l_miny:l_maxy,l_nk),ubar
 
 !----------------------------------------------------------------------
  
@@ -54,38 +54,38 @@
       istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
  
-      call set_betav(betav_m,betav_t,st1,LDIST_DIM,l_nk)
+      call set_betav(betav_m,betav_t,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
       ubar= mtn_flo
 
       if(Theo_case_S .ne. 'MTN_SCHAR' ) then
-         call apply (ut1, ubar, betav_m, LDIST_DIM, l_nk)
-         call apply (vt1, 0.  , betav_m, LDIST_DIM, l_nk)
-         call apply (qt1, 0.  , betav_m, LDIST_DIM, l_nk)
+         call apply (ut1, ubar, betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         call apply (vt1, 0.  , betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
+         call apply (qt1, 0.  , betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
          if(Zblen_spngtt_L)then
-            call apply_tt(tt1,betav_t,st1,LDIST_DIM,l_nk)
+            call apply_tt(tt1,betav_t,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
          endif
       endif
 
-      call apply (wt1, 0., betav_t, LDIST_DIM, l_nk)
+      call apply (wt1, 0., betav_t, l_minx,l_maxx,l_miny,l_maxy, l_nk)
  
 !----------------------------------------------------------------------
       return
       end
 
 !=======================================================================
-#include "model_macros_f.h"
 
-      subroutine apply(ff,value,betav, DIST_DIM, Nk)
+
+      subroutine apply(ff,value,betav, Minx,Maxx,Miny,Maxy, Nk)
 
       implicit none
 #include <arch_specific.hf>
 
-      integer  DIST_DIM, Nk 
+      integer  Minx,Maxx,Miny,Maxy, Nk 
 
 #include "glb_ld.cdk"
 
-      real ff(DIST_SHAPE,Nk),value,betav(DIST_SHAPE,Nk)
+      real ff(Minx:Maxx,Miny:Maxy,Nk),value,betav(Minx:Maxx,Miny:Maxy,Nk)
 
       integer i,j,k,i0,in,j0,jn 
 
@@ -110,14 +110,14 @@
 
       end
 !=======================================================================
-#include "model_macros_f.h"
 
-      subroutine apply_tt(tt,betav_t, F_s,DIST_DIM, Nk)
+
+      subroutine apply_tt(tt,betav_t, F_s,Minx,Maxx,Miny,Maxy, Nk)
 
       implicit none
 #include <arch_specific.hf>
 
-      integer  DIST_DIM, Nk 
+      integer  Minx,Maxx,Miny,Maxy, Nk 
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -126,8 +126,8 @@
 #include "type.cdk"
 #include "ver.cdk"
 
-      real tt(DIST_SHAPE,Nk),F_s(DIST_SHAPE)
-      real betav_t(DIST_SHAPE,Nk)
+      real tt(Minx:Maxx,Miny:Maxy,Nk),F_s(Minx:Maxx,Miny:Maxy)
+      real betav_t(Minx:Maxx,Miny:Maxy,Nk)
 
       real capc1,my_tt,a00,a02,tempo,hauteur
 

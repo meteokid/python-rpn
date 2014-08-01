@@ -13,29 +13,26 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**s/r out_slev
 !
       subroutine out_slev (F_level,F_levmax,F_nk,F_indo,F_nko)
-
       implicit none
 #include <arch_specific.hf>
-!
+
       integer F_nk,F_indo(*),F_nko, F_levmax
       real F_level(*)
-!
+
 !AUTHOR   Michel Desgagne     July 2004 (MC2)
 !
 !REVISION
 ! v3_20 - Lee V.            - Adapted for GEMDM
 ! v4_40 - Lee V.            - change in argument call for this routine
 !                             in order to select the "bot" levels
-!
 !ARGUMENTS
 !    NAMES       I/O  TYPE  DESCRIPTION
-!
+
       integer k,kk
-!*
+!
 !----------------------------------------------------------------------
 !
 !     initialize output level array to 0
@@ -61,6 +58,7 @@
       F_nko=kk
 !
 !----------------------------------------------------------------------
+!
       return
       end
 

@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !***s/r yyg_initblenu - to initialize communication pattern for U field 
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_initblenu()
       implicit none

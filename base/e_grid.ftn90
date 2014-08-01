@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r e_grid - compute the grid of the model
-#include "model_macros_f.h"
+
 !
       subroutine e_grid 
       implicit none
@@ -30,7 +30,7 @@
 ! v3_30 - Desgagne M.       - Check that LAM grid does not extend to
 !                             global coverage and eliminated Grd_roule
 !
-!implicits
+
 #include "e_grids.cdk"
 #include "e_geomg.cdk"
 #include "dcst.cdk"

@@ -15,14 +15,14 @@
 !
 !*s/r yyg_rhsuv - Exchange and interp the right-hand sides: Ru, Rv for Yin-Yang
 !
-#include "model_macros_f.h"
+
 !
-      subroutine yyg_rhsuv ( F_oru, F_orv, DIST_DIM, Nk )
+      subroutine yyg_rhsuv ( F_oru, F_orv, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk
-      real F_oru (DIST_SHAPE,  Nk), F_orv (DIST_SHAPE,  Nk)
+      integer Minx,Maxx,Miny,Maxy, Nk
+      real F_oru (Minx:Maxx,Miny:Maxy,  Nk), F_orv (Minx:Maxx,Miny:Maxy,  Nk)
 !
 !author
 !     Qaddouri/Lee      Nov 2009
@@ -35,13 +35,13 @@
 !
 !arguments
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 !
       integer i, j, k, i0, j0, in, jn
-      real temp_ru(LDIST_SHAPE,nk), temp_ru1(LDIST_SHAPE,nk),   &
-           temp_rv(LDIST_SHAPE,nk), temp_rv1(LDIST_SHAPE,nk)
+      real temp_ru(l_minx:l_maxx,l_miny:l_maxy,nk), temp_ru1(l_minx:l_maxx,l_miny:l_maxy,nk),   &
+           temp_rv(l_minx:l_maxx,l_miny:l_maxy,nk), temp_rv1(l_minx:l_maxx,l_miny:l_maxy,nk)
 !
 !     __________________________________________________________________
 !
@@ -79,16 +79,16 @@
       enddo
       enddo
 
-      call rpn_comm_xch_halo(temp_ru ,LDIST_DIM,l_niu,l_nj ,G_nk, &
+      call rpn_comm_xch_halo(temp_ru ,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo(temp_rv ,LDIST_DIM,l_ni ,l_njv,G_nk, &
+      call rpn_comm_xch_halo(temp_rv ,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       temp_ru1=temp_ru
       temp_rv1=temp_rv
 
-      call  yyg_vecbc1(temp_ru1,temp_ru,temp_rv,LDIST_DIM,G_nk)
-      call  yyg_vecbc2(temp_rv1,temp_rv,temp_ru,LDIST_DIM,G_nk)
+      call  yyg_vecbc1(temp_ru1,temp_ru,temp_rv,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+      call  yyg_vecbc2(temp_rv1,temp_rv,temp_ru,l_minx,l_maxx,l_miny,l_maxy,G_nk)
 
 !Now copy back only the data that has to be updated.
 

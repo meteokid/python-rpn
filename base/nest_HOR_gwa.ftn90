@@ -15,14 +15,11 @@
 
 !**s/r nest_HOR_gwa
 !
-#include "model_macros_f.h"
-!
       subroutine nest_HOR_gwa
       use nest_blending
-!, only: nest_blend
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     Michel Desgagne   - Spring 2006
 !
@@ -30,13 +27,7 @@
 ! v3_30 - Lee V.          - initial version
 ! v4_05 - Plante A.       - top blending
 ! v4_05 - Lepine M.       - VMM replacement with GMM
-!
-!object
-!
-!arguments
-!       none
-!
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
@@ -44,7 +35,7 @@
 #include "nest.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
-!
+
       integer n, gmmstat
       real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
 !

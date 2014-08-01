@@ -15,7 +15,7 @@
 
 !**s/r  sol_pre_multicol -  call multicolored block-gauss seidel  
 !
-#include "model_macros_f.h"
+
 !
       subroutine  sol_pre_multicol ( wk22, wk11,niloc,njloc, &
                              Minx, Maxx, Miny, Maxy,nil,njl, &

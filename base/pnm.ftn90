@@ -15,23 +15,23 @@
 
 !**s/r pnm2 - calculates MSL pressure
 !
-#include "model_macros_f.h"
+
 !
 	subroutine pnm2( F_pnm,   F_vts,   F_fis, F_lnps, F_la, &
                          F_vtund, F_fiund, F_und, &
-                         DIST_DIM, Nk)
+                         Minx,Maxx,Miny,Maxy, Nk)
 !
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk
+      integer Minx,Maxx,Miny,Maxy, Nk
 !
-      real F_pnm(DIST_SHAPE), F_vts(DIST_SHAPE,Nk) 
-      real F_fis(DIST_SHAPE,Nk)
-      real F_lnps(DIST_SHAPE,Nk), F_la (DIST_SHAPE)
+      real F_pnm(Minx:Maxx,Miny:Maxy), F_vts(Minx:Maxx,Miny:Maxy,Nk) 
+      real F_fis(Minx:Maxx,Miny:Maxy,Nk)
+      real F_lnps(Minx:Maxx,Miny:Maxy,Nk), F_la (Minx:Maxx,Miny:Maxy)
 !
       integer F_und
-      real    F_vtund(DIST_SHAPE,F_und),F_fiund(DIST_SHAPE,F_und)
+      real    F_vtund(Minx:Maxx,Miny:Maxy,F_und),F_fiund(Minx:Maxx,Miny:Maxy,F_und)
 !
 !author
 !     andre methot - alain patoine - after pnm1
@@ -137,11 +137,11 @@
 !   F_vtund(i,j,2) and F_fiund(i,j,2) --> second highest level
 !   ......................................and so on
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 !
-!modules
+
 !     none
 !
 !*

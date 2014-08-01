@@ -15,7 +15,7 @@
 
 !**s/r write_fst 
 !
-#include "model_macros_f.h"
+
 !
       SUBROUTINE write_fst (buf,nx,ny,nz,varname,maxrange, &
                               ig1,ig2,ig3,grdtype,filename)
@@ -34,7 +34,7 @@
 !object
 !     Write buf in a fst file
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "geomn.cdk"
 #include "out.cdk"

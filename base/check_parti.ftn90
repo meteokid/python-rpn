@@ -38,7 +38,7 @@
 !  F_n          I         Global dimension
 !  F_npe        I         Number of PEs
 !----------------------------------------------------------------
-!implicits
+
 #include "lun.cdk"
 !
       integer part_ok,part_ok_,err

@@ -15,14 +15,14 @@
 
 !**   s/r vzpng_zmean - Calculate add/substract mean zonal wind component
 !
-#include "model_macros_f.h"
+
 !
-      subroutine vspng_zmean( F_pert,F_field,tsum_8,DIST_DIM, Nk, lmean )
+      subroutine vspng_zmean( F_pert,F_field,tsum_8,Minx,Maxx,Miny,Maxy, Nk, lmean )
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, Nk
-      real F_field(DIST_SHAPE,Nk),F_pert(DIST_SHAPE,Nk)
+      integer Minx,Maxx,Miny,Maxy, Nk
+      real F_field(Minx:Maxx,Miny:Maxy,Nk),F_pert(Minx:Maxx,Miny:Maxy,Nk)
       real*8 tsum_8(l_nj,Nk)
       logical lmean
 !
@@ -40,7 +40,7 @@
 !     the corresponding component. It is supposed to be used only for
 !     non rotated grid.
 !     
-!implicits
+
 #include "glb_ld.cdk"
 !
       integer i,j,k

@@ -15,18 +15,18 @@
 
 !*s/r vspng_del2 - horizontal diffusion problem
 !
-#include "model_macros_f.h"
+
 !
       subroutine vspng_del2 ( F_sol, F_opsxp0_8, F_opsyp0_8  , &
                               F_aix_8,F_bix_8,F_cix_8,F_dix_8, &
                               F_aiy_8,F_biy_8,F_ciy_8        , &
-                              DIST_DIM, nke, ntrp12, ntrp22, fnjb)
+                              Minx,Maxx,Miny,Maxy, nke, ntrp12, ntrp22, fnjb)
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM, nke, ntrp12, ntrp22, fnjb
+      integer Minx,Maxx,Miny,Maxy, nke, ntrp12, ntrp22, fnjb
 !
-      real   F_sol(DIST_SHAPE,*)
+      real   F_sol(Minx:Maxx,Miny:Maxy,*)
       real*8 F_opsxp0_8(*),F_opsyp0_8(*), &
              F_aix_8(nke,ntrp12,*),F_bix_8(nke,ntrp12,*), &
              F_cix_8(nke,ntrp12,*),F_dix_8(nke,ntrp12,*), &
@@ -49,7 +49,7 @@
 !  
 !----------------------------------------------------------------
 !
-!implicit
+
 #include "glb_ld.cdk"
 #include "trp.cdk"
 #include "ldnh.cdk"

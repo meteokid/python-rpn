@@ -15,7 +15,7 @@
 
 !**s/r gemdm - control of the job at the highest level
 !
-#include "model_macros_f.h"
+
 !
       subroutine glb_restart (mode)
       implicit none

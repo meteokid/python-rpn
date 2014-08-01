@@ -15,15 +15,15 @@
 
 !**s/r vspng_lam
 !
-#include "model_macros_f.h"
+
 !
-      subroutine vspng_lam ( F_champ, DIST_DIM, pni, pnj )
+      subroutine vspng_lam ( F_champ, Minx,Maxx,Miny,Maxy, pni, pnj )
 
       implicit none
 #include <arch_specific.hf>
 !
-      integer DIST_DIM,pni,pnj
-      real F_champ(DIST_SHAPE,*)
+      integer Minx,Maxx,Miny,Maxy,pni,pnj
+      real F_champ(Minx:Maxx,Miny:Maxy,*)
 !
 !author   Claude Girard                         Sept  2002
 !
@@ -33,7 +33,7 @@
 !object
 !     This routine iterates around a 9 points horizontal filter
 !*
-!implicit
+
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "vspng.cdk"
@@ -56,7 +56,7 @@
       do iter = 1, Vspng_niter
 !
          call timing_start ( 46, 'VSPNG_COMM' )
-         call rpn_comm_xch_halo (F_champ,LDIST_DIM,pni,pnj, &
+         call rpn_comm_xch_halo (F_champ,l_minx,l_maxx,l_miny,l_maxy,pni,pnj, &
                 Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call timing_stop (46)
 !

@@ -14,9 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r yyg_blenbc2- to interpolate (cubic) and exchange or blend scalar data
 !
-#include "model_macros_f.h"
 
-      Subroutine yyg_blenbc2(tab_dst,tab_src,DIST_DIM,NK)
+
+      Subroutine yyg_blenbc2(tab_dst,tab_src,Minx,Maxx,Miny,Maxy,NK)
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,10 +31,10 @@
 #include "glb_pil.cdk"
 #include "yyg_bln.cdk"
 
-      integer DIST_DIM,Ni,Nj,NK,numproc
-      real  tab_src (DIST_SHAPE,Nk)
-      real  tab_dst (DIST_SHAPE,Nk)
-      real*8  tab_src_8(DIST_SHAPE,NK)
+      integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc
+      real  tab_src (Minx:Maxx,Miny:Maxy,Nk)
+      real  tab_dst (Minx:Maxx,Miny:Maxy,Nk)
+      real*8  tab_src_8(Minx:Maxx,Miny:Maxy,NK)
       integer ierr,i,j,k,kk,kk_proc,m,mm,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
       real sent,recv
@@ -96,7 +96,7 @@
                    mm=(m-1)*NK+k
                    call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
                              Bln_send_imx(adr),Bln_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,LDIST_DIM,                  &
+                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
                              Bln_send_xxr(adr),Bln_send_yyr(adr))
                    send_pil(mm,KK)=real(send_pil_8)
                 enddo

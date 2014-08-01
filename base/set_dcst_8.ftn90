@@ -13,20 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!opyright (C) 2001  MSC-RPN COMM  %%%MC2%%%
 !**function set_dcst_8 - initializes geophysical constants
 !
       logical function set_dcst_8 ( val, liste, nbre, unout, numproc )
       implicit none
 #include <arch_specific.hf>
-!
+
       integer nbre,unout,numproc
       character * (*) liste(nbre)
       real*8 val(nbre)
-!
+
 !author
 !     M. Desgagne July 2005
-!
+
       integer i, ier, ierrmpi, flag(nbre)
       real*8 rdval
       external RPN_COMM_bcst_x
@@ -34,9 +33,9 @@
 !     ---------------------------------------------------------------
 !
       if (unout.gt.0) write (unout,1000)
-!
+
       flag = 0
-!
+
       i=1
       if (unout.gt.0) then
          ier = 1
@@ -52,17 +51,17 @@
          write(unout,100)
          endif
       endif
-!
+
       if (numproc.gt.1)  &
          call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x, &
                                                 8,0,0,ierrmpi)
-!
+
       do i=1,nbre
          call constnt (val(i),flag(i),liste(i),100)
       end do
-!
+
       set_dcst_8  = .true.
-!
+
       do i=1,nbre
          if (flag(i).eq.1) then
             if (unout.gt.0) write (unout,1005) liste(i),val(i)
@@ -71,7 +70,7 @@
             set_dcst_8  = .false.
          endif
       end do
-!
+
   100 format (1x,52('*'))
   102 format (1x,'*',4x,A,5x,'*')
   103 format (1x,'*',4x,A,F4.2,A,11x,'*')

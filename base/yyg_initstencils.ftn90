@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r yyg_initstencils - Computes Yin-Yang BC stencils for the elliptic solver
 !
-#include "model_macros_f.h"
+
 !
       subroutine yyg_initstencils
 !
@@ -33,14 +33,14 @@
 !arguments
 !     None
 !
-!implicits
+
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lam.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
 !
-!modules
+
 !
 !
       real*8 one, half

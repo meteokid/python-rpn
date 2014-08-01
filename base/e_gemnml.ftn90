@@ -17,7 +17,7 @@
 !                 namelists: gemnml, grid, ptopo
 !
 !
-#include "model_macros_f.h"
+
 !
       subroutine e_gemnml
       implicit none

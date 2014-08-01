@@ -15,7 +15,7 @@
 
 !**s/r pospers - initialise upstream positions at time th as grid point positions
 !
-#include "model_macros_f.h"
+
 !
       subroutine pospers
 !
@@ -34,7 +34,7 @@
 !arguments
 !     none
 !
-!implicits
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"

@@ -16,7 +16,7 @@
 !**s/r  Eigenabc_local - local eigenvalues and eigenvectors and inverse
 !                      tridiagonal coefficients For the preconditioning
 !
-#include "model_macros_f.h"
+
 !
       subroutine eigenabc_local ( eval_local, evec_local, ai_local, &
                        bi_local,ci_local,nil,njl,Ni,Nj,Nk,i0,j0,wk)

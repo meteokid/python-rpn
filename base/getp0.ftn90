@@ -105,8 +105,8 @@
 ! F_sig_L      I         TRUE if sigma levels 
 !----------------------------------------------------------------------
 !
-!implicits
-#include "model_macros_f.h"
+
+
 #include "dcst.cdk"
 !*
       integer i,k

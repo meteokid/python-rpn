@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !*s/r yyg_rhs_scalbc - to interpolate and exchange RHS data
 !
-#include "model_macros_f.h"
+
 
       Subroutine yyg_rhs_scalbc(rhs_dst1,sol_src1,minx,maxx,miny,maxy, &
                                 NK,iter,Linfini)
@@ -37,8 +37,8 @@
       integer minx,maxx,miny,maxy,Ni,Nj,NK,numproc
       real*8  sol_src1(minx:maxx,miny:maxy,Nk)
       real*8  rhs_dst1(minx:maxx,miny:maxy,Nk)
-      real*8  tab_src_8(LDIST_SHAPE,Nk)
-      real    tab_src(LDIST_SHAPE,Nk)
+      real*8  tab_src_8(l_minx:l_maxx,l_miny:l_maxy,Nk)
+      real    tab_src(l_minx:l_maxx,l_miny:l_maxy,Nk)
       real    linfini,L1,L2,L3(2),L4(2),infini(Nk)
       integer ierr,i,j,k,kk,kk_proc,m,mm,iter,adr
       real, dimension (:,:), allocatable :: recv_pil,send_pil
@@ -74,7 +74,7 @@
          recvlen=max(recvlen,Rhsx_recv_len(kk))
       enddo
       
-      call rpn_comm_xch_halo(tab_src, LDIST_DIM,l_ni,l_nj,NK, &
+      call rpn_comm_xch_halo(tab_src, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,NK, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       tab_src_8(:,:,:)=dble(tab_src(:,:,:))
@@ -117,7 +117,7 @@
                    j= Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy, &
                              Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -138,7 +138,7 @@
                    j=Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy, &
                              Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -157,7 +157,7 @@
                    mm=(Rhsx_sendw_len(kk)+Rhsx_sende_len(kk)+m-1)*NK+k
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,LDIST_DIM, &
+                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy, &
                              Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)
@@ -178,7 +178,7 @@
                    j=Rhsx_send_imy(adr)
                    call int_cub_lag2(send_Rhsx_8,tab_src_8(l_minx,l_miny,k), &
                              Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,LDIST_DIM,  &
+                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,  &
                              Rhsx_send_xxr(adr),Rhsx_send_yyr(adr))
                    infini(k)=max(infini(k),abs(real(send_Rhsx_8)-Sol_rhs(mm,1,kk)))
                    Sol_rhs(mm,1,kk)=real(send_Rhsx_8)

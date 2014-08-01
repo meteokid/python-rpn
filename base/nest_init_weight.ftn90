@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-#include "model_macros_f.h"
+
 !
 !***s/r nest_init_weight:Initialize a 3D matrix of weight (values between 0 and 1) that
 !                        will be used to compute the weight of the piloting field. 1 means
@@ -206,7 +206,7 @@ subroutine nest_init_weight (F_grid)
   end do
 
 !!!!TODO: remove this section when BCs treatment re-formulated
-  call glbcolc (wk1,G_ni,G_nj,weight,LDIST_DIM,1)
+  call glbcolc (wk1,G_ni,G_nj,weight,l_minx,l_maxx,l_miny,l_maxy,1)
   if (Ptopo_myproc.eq.0) then
      do i = w2, e2
         wk1(i,s2) = 0.
@@ -217,7 +217,7 @@ subroutine nest_init_weight (F_grid)
         wk1(e2,j) = 0.
      end do
   endif
-  call glbdist (wk1,G_ni,G_nj,weight,LDIST_DIM,1,G_halox,G_haloy)
+  call glbdist (wk1,G_ni,G_nj,weight,l_minx,l_maxx,l_miny,l_maxy,1,G_halox,G_haloy)
 !!!!
   Lam_wgt0 = .false.
   do k=G_nk+1,1,-1

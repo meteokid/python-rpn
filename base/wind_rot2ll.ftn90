@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !
-#include "model_macros_f.h"
+
 !
 !**s/r wind_rot2ll - transform (rotate) U/V from grid winds to E-W/N-S
 
@@ -43,7 +43,7 @@
 !  nbpts     I       - number of points
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "grd.cdk"
 !
       INTEGER :: ii,jj
@@ -91,7 +91,7 @@
 !  nbpts     I       - number of points
 !----------------------------------------------------------------
 !
-!implicits
+
 #include "grd.cdk"
 !*
       INTEGER :: ii,jj

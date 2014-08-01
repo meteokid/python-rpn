@@ -1,4 +1,3 @@
 
-!opyright (C) 2001  MSC-RPN COMM  %%%GEM%%%
       character*32 v_interp
       common /vinterpoc/ v_interp

@@ -15,27 +15,24 @@
 
 !**s/r hzd_del2 - horizontal diffusion problem
 !
-#include "model_macros_f.h"
-!
       subroutine hzd_del2  (F_sol, F_rhs_8, F_opsxp0_8, F_opsyp0_8, &
                             F_aix_8,F_bix_8,F_cix_8,F_dix_8, &
                             F_aiy_8,F_biy_8,F_ciy_8,F_g1_8,F_g2_8, &
-                            DIST_DIM,Nk, Gni,Gnj, lnjs_nh,  &
+                            Minx,Maxx,Miny,Maxy,Nk, Gni,Gnj, lnjs_nh,  &
                             nk12s, nk12, ni22s, ni22, fnjb)
-!
       implicit none
 #include <arch_specific.hf>
-!
-      integer DIST_DIM, Nk, Gni, Gnj, lnjs_nh, &
+
+      integer Minx,Maxx,Miny,Maxy, Nk, Gni, Gnj, lnjs_nh, &
               nk12s, nk12, ni22s, ni22, fnjb
-!
-      real   F_sol(DIST_SHAPE,Nk)
+
+      real   F_sol(Minx:Maxx,Miny:Maxy,Nk)
       real*8 F_rhs_8,F_opsxp0_8(*),F_opsyp0_8(*), &
              F_aix_8(lnjs_nh,Gni),F_bix_8(lnjs_nh,Gni), &
              F_cix_8(lnjs_nh,Gni),F_dix_8(lnjs_nh,Gni), &
              F_aiy_8(ni22s,Gnj),F_biy_8(ni22s,Gnj),F_ciy_8(ni22s,Gnj), &
-             F_g1_8(PYDIST_SHAPE,nk12s,*),F_g2_8(nk12s,ni22s,*)
-!
+             F_g1_8(Miny:Maxy,nk12s,*),F_g2_8(nk12s,ni22s,*)
+
 !author    
 !     J.P. Toviessi / Jean Cote
 !
@@ -45,8 +42,6 @@
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - Corbeil L.        - new RPNCOMM transpose
 !
-!object
-!
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -54,27 +49,22 @@
 !  F_rhs_8      I            r.h.s. of horizontal diffusion equation
 !  
 !----------------------------------------------------------------
-!
-!implicit
+
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
-!
+
       integer i, j, k, cnt,k0,kn,k1,klon,ktotal
       real*8 g1(nk12*l_nj,Gni), ax(nk12*l_nj,Gni), cx(nk12*l_nj,Gni), &
              g2(nk12*ni22,Gnj), ay(nk12*ni22,Gnj), cy(nk12*ni22,Gnj)
 
-!*
 !     __________________________________________________________________
 !
-!     call tmg_start0(62,'hzd_del2 total')
-
 !
-      call rpn_comm_transpose48 ( F_sol , XDIST_DIM, Gni,1, ARRAY1DY, &
-                                ARRAY1DY, 1, nk12s, Nk  , F_g1_8,  1 &
+      call rpn_comm_transpose48 ( F_sol , l_minx,l_maxx, Gni,1, (maxy-miny+1), &
+                                (maxy-miny+1), 1, nk12s, Nk  , F_g1_8,  1 &
                                 ,1.0d0,0.d0)
 !$omp parallel private(k0,kn,k1,cnt,i,j,k) shared(g1,g2,ax,ay,cx,cy,ktotal,klon)
-!
-!
+
 !$omp do
       do i = 1, Gni-1
          cnt = 0
@@ -142,7 +132,7 @@
 !$omp enddo
 !
 !$omp single
-      call rpn_comm_transpose ( F_g1_8 , YDIST_DIM, Gnj, nk12s, &
+      call rpn_comm_transpose ( F_g1_8 , l_miny,l_maxy, Gnj, nk12s, &
                                 1, ni22s, Gni, F_g2_8,  2, 2 )
 !$omp end single
 !
@@ -200,12 +190,9 @@
       call rpn_comm_transpose ( F_g1_8 , Miny, Maxy, Gnj, nk12s, &
                                 1, ni22s, Gni, F_g2_8, -2, 2 )
 !
-      call rpn_comm_transpose48 ( F_sol , Minx, Maxx, Gni,1, ARRAY1DY, &
-                                ARRAY1DY, 1, nk12s, Nk  , F_g1_8, -1 &
+      call rpn_comm_transpose48 ( F_sol , Minx, Maxx, Gni,1, (maxy-miny+1), &
+                                (maxy-miny+1), 1, nk12s, Nk  , F_g1_8, -1 &
                                 ,1.0d0,0.d0)
-
-!     call tmg_stop0(62)
-!
 !     __________________________________________________________________
 !
       return

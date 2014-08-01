@@ -15,7 +15,7 @@
 
 !**s/r hzd_bfct - Factorize a block-tridiagonal matrix in block LU
 !
-#include "model_macros_f.h"
+
 !
       subroutine hzd_bfct (F_a_8,F_b_8,F_c_8,F_deltainv_8,F_pwr,minx2, &
                                                       maxx2,nx3, nx2)

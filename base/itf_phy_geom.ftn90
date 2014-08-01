@@ -42,7 +42,7 @@ subroutine itf_phy_geom4 (F_istat)
    integer :: i,j,istat
    real,pointer :: wrk1(:,:)
    real(kind=8) :: deg2rad_8
-   real :: w1(LDIST_SHAPE,2),w2(LDIST_SHAPE,2)
+   real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),w2(l_minx:l_maxx,l_miny:l_maxy,2)
    type(gmm_metadata) :: mymeta
    !---------------------------------------------------------------
    F_istat = RMN_OK
@@ -97,7 +97,7 @@ subroutine itf_phy_geom4 (F_istat)
                 ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
       if ( nest_it ) then
          w2 = 0.
-         call nest_blend (w1(:,:,1),w2(:,:,1),LDIST_DIM,'M',level=G_nk+1)
+         call nest_blend (w1(:,:,1),w2(:,:,1),l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
       endif
       wrk1(1:l_ni,1:l_nj) = Cstv_dt_8 * w1(1:l_ni,1:l_nj,1)
    else

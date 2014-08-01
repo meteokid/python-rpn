@@ -16,7 +16,7 @@
 !**   hinterpo - horizontal interpolater, resolution must be uniform
 !                and from coarse to fine
 !
-#include "model_macros_f.h"
+
       subroutine hinterpo ( dst,nid,njd, src,nis,njs, nk, indxx,indxy, &
                                  cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,hint)
       implicit none

@@ -15,7 +15,7 @@
 
 !**s/p doout - Check if current timestep requires output
 !
-#include "model_macros_f.h"
+
 !
       integer function doout(F_dostep,F_set)
 !
