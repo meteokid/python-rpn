@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pw_glbstat - Update physical quantities
+!**s/r pw_glbstat - Global statistics on physical (PW) quantities
 !
       subroutine pw_glbstat (name_S)
       implicit none
@@ -33,10 +33,12 @@
 #include "tr3d.cdk"
 #include "step.cdk"
 !
-      integer istat,fld,i,k
-      integer, parameter :: nvar=13
+      type(gmm_metadata) :: meta
+      integer istat,fld,i,k,err
+      integer, parameter :: nvar=17
       character(len=GMM_MAXNAMELENGTH) laliste(nvar)
-      real, dimension(:,:,:), pointer :: wk
+      real, dimension(:,:  ), pointer :: wk2d
+      real, dimension(:,:,:), pointer :: wk3d
 !     ________________________________________________________________
 !
       laliste( 1) = gmmk_pw_uu_moins_s
@@ -52,26 +54,39 @@
       laliste(11) = gmmk_pw_pt_plus_s
       laliste(12) = gmmk_pw_gz_moins_s
       laliste(13) = gmmk_pw_gz_plus_s
+      laliste(14) = gmmk_pw_me_moins_s
+      laliste(15) = gmmk_pw_me_plus_s
+      laliste(16) = gmmk_pw_p0_moins_s
+      laliste(17) = gmmk_pw_p0_plus_s
 
       do fld=1,nvar
-         nullify(wk)
-         istat= gmm_get(laliste(fld),wk)
-         call statfld3 (wk, laliste(fld)(4:), Step_kount, name_S,&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
-                        1,1,1,l_ni,l_nj, g_nk,8)
+         err = gmm_getmeta (trim(laliste(fld)), meta)
+         if (meta%l(3)%high.le.1) then
+            nullify(wk2d)
+            istat= gmm_get(laliste(fld),wk2d)
+            call statfld3 (wk2d, laliste(fld)(4:), Step_kount, name_S,&
+                       l_minx,l_maxx, l_miny,l_maxy, 1,1,&
+                       1,1,1,l_ni,l_nj, 1,8)
+         else
+            nullify(wk3d)
+            istat= gmm_get(laliste(fld),wk3d)
+            call statfld3 (wk3d, laliste(fld)(4:), Step_kount, name_S,&
+                       l_minx,l_maxx, l_miny,l_maxy, 1,meta%l(3)%high,&
+                       1,1,1,l_ni,l_nj, meta%l(3)%high,8)
+         endif
       end do
 
       do i=1,Tr3d_ntr
-         nullify(wk)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',wk)
-         call statfld3 (wk,trim(Tr3d_name_S(i))//':M', Step_kount, name_S,&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
-                        1,1,1,l_ni,l_nj, g_nk,8)     
-         nullify(wk)
-         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',wk)
-         call statfld3 (wk,trim(Tr3d_name_S(i))//':P', Step_kount, name_S,&
-                        l_minx,l_maxx, l_miny,l_maxy, 1,g_nk,&
-                        1,1,1,l_ni,l_nj, g_nk,8)     
+         nullify(wk3d)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':M',wk3d)
+         call statfld3 (wk3d,trim(Tr3d_name_S(i))//':M', Step_kount, name_S,&
+                        l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
+                        1,1,1,l_ni,l_nj, G_nk,8)     
+         nullify(wk3d)
+         istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',wk3d)
+         call statfld3 (wk3d,trim(Tr3d_name_S(i))//':P', Step_kount, name_S,&
+                        l_minx,l_maxx, l_miny,l_maxy, 1,G_nk,&
+                        1,1,1,l_ni,l_nj, G_nk,8)     
       enddo
 !     ________________________________________________________________
 !

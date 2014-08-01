@@ -185,6 +185,8 @@
       gmmk_pw_pm_plus_s  = 'PW_PM:P'
       gmmk_pw_pt_plus_s  = 'PW_PT:P'
       gmmk_pw_gz_plus_s  = 'PW_GZ:P'
+      gmmk_pw_me_plus_s  = 'PW_ME:P'
+      gmmk_pw_p0_plus_s  = 'PW_P0:P'
 
       gmmk_pw_uu_moins_s = 'PW_UU:M'
       gmmk_pw_vv_moins_s = 'PW_VV:M'
@@ -192,6 +194,8 @@
       gmmk_pw_pm_moins_s = 'PW_PM:M'
       gmmk_pw_pt_moins_s = 'PW_PT:M'
       gmmk_pw_gz_moins_s = 'PW_GZ:M'
+      gmmk_pw_me_moins_s = 'PW_ME:M'
+      gmmk_pw_p0_moins_s = 'PW_P0:M'
 
       gmmk_pw_uu_dyn_s   = 'UDYN'
       gmmk_pw_vv_dyn_s   = 'VDYN'
@@ -211,16 +215,24 @@
       istat = min(gmm_create(gmmk_pw_vv_plus_s  ,pw_vv_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
       istat = min(gmm_create(gmmk_pw_wz_plus_s  ,pw_wz_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
       istat = min(gmm_create(gmmk_pw_tt_plus_s  ,pw_tt_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_pm_plus_s  ,pw_pm_plus  ,meta3d_nk1,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_pt_plus_s  ,pw_pt_plus  ,meta3d_nk1,GMM_FLAG_RSTR),istat)
-      istat = min(gmm_create(gmmk_pw_gz_plus_s  ,pw_gz_plus  ,meta3d_nk1,GMM_FLAG_RSTR),istat)
+
+      istat = min(gmm_create(gmmk_pw_pt_plus_s  ,pw_pt_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_gz_plus_s  ,pw_gz_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_pm_plus_s  ,pw_pm_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
+
+      istat = min(gmm_create(gmmk_pw_me_plus_s  ,pw_me_plus  ,meta2d    ,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_p0_plus_s  ,pw_p0_plus  ,meta2d    ,GMM_FLAG_RSTR),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk) ,istat)
       istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk) ,istat)
       istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk) ,istat)
-      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk1),istat)
-      istat = min(gmm_create(gmmk_pw_pt_moins_s ,pw_pt_moins ,meta3d_nk1),istat)
-      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk1),istat)
+
+      istat = min(gmm_create(gmmk_pw_pt_moins_s ,pw_pt_moins ,meta3d_nk) ,istat)
+      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk) ,istat)
+      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk) ,istat)
+
+      istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ),istat)
+      istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_dyn_s   ,pw_uu_dyn   ,meta3d_nk),istat)
       istat = min(gmm_create(gmmk_pw_vv_dyn_s   ,pw_vv_dyn   ,meta3d_nk),istat)

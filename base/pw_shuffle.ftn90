@@ -34,6 +34,8 @@
       character(len=8) , dimension(2), parameter :: pw_pmlist = ['PW_PM:P','PW_PM:M']
       character(len=8) , dimension(2), parameter :: pw_ptlist = ['PW_PT:P','PW_PT:M']
       character(len=8) , dimension(2), parameter :: pw_gzlist = ['PW_GZ:P','PW_GZ:M']
+      character(len=8) , dimension(2), parameter :: pw_melist = ['PW_ME:P','PW_ME:M']
+      character(len=8) , dimension(2), parameter :: pw_p0list = ['PW_P0:P','PW_P0:M']
 !     ________________________________________________________________
 !
       gmmstat = gmm_shuffle (pw_uulist)
@@ -42,6 +44,8 @@
       gmmstat = gmm_shuffle (pw_pmlist)
       gmmstat = gmm_shuffle (pw_ptlist)
       gmmstat = gmm_shuffle (pw_gzlist)
+      gmmstat = gmm_shuffle (pw_melist)
+      gmmstat = gmm_shuffle (pw_p0list)
 !     ________________________________________________________________
 !
       return

@@ -15,7 +15,7 @@
 
 !**s/r gem_run - Performs the integration of the model
 !
-#include "model_macros_f.h"
+
 !
       subroutine gem_run (F_dgtflt_L, F_rstrt_L)
 !
@@ -169,7 +169,7 @@
 
          call hzd_main
 
-         call iau_apply
+         call iau_apply2
 
          if (Grd_yinyang_L) call yyg_xchng_all
 !

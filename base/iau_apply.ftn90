@@ -12,342 +12,232 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-!**s/r iau_apply
-!
-#include "model_macros_f.h"
-!
-subroutine iau_apply()
-  use fstmpi_mod, only: fstmpi_open,fstmpi_find,fstmpi_read,fstmpi_close
-  use vgrid_from_file_mod, only: vgrid_from_file_mpi
-  use vgrid_descriptors, only: vgrid_descriptor
-  use ezgrid_mod, only: ezgrid_subcolocated
-  implicit none
-#include <arch_specific.hf>
-  !
+subroutine iau_apply2()
+   use input_mod
+   implicit none
   !author
   !       R. McTaggart-Cowan - Summer 2013
   !revision
-  !
+  !       S.Chamberland, 2014-07: use input_mod, allow vinterp
   !object
   !  Add an analysis increments to the model state (IAU).
-  !
+#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <msg.h>
-#include <gmm.hf>
 #include <clib_interface.cdk>
-#include "path.cdk"
+#include <gmm.hf>
+#include <msg.h>
+#include "dcst.cdk"
+#include "modconst.cdk"
 #include "cstv.cdk"
 #include "lctl.cdk"
-#include "modconst.cdk"
-#include "ver.cdk"
-#include "var_gmm.cdk"
-#include "grd.cdk"
-#include "dcst.cdk"
+#include "step.cdk"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
+#include "grd.cdk"
+#include "path.cdk"
+#include "var_gmm.cdk"
 #include "vt1.cdk"
 #include "pw.cdk"
 #include "iau.cdk"
-#include "step.cdk"
-#include "lun.cdk"
-#include "ptopo.cdk"
+   character(len=2),parameter :: IAU_PREFIX='I_'
+   character(len=6),parameter :: IAU_FILE = 'IAUREP'
+   logical,parameter :: UVSCAL2WGRID = .false.
+   logical,parameter :: ALLOWDIR = .true.
+   logical,parameter :: DO_TT2TV = .true.
+   logical,save :: is_init_L = .false.
+   integer,save :: inputid = -1, nbvar = 0, step_freq2 = 0, kount = 0
+   real,pointer,save :: weight(:)
+   character(len=256) :: incfg_S,vgrid_S
+   character(len=16)  :: iname0_S,iname1_S,datev_S
+   integer :: istat,dateo,datev,iau_vtime,step_freq,ivar,ni1,nj1,i,j,n,nw,add,&
+        lijk(3),uijk(3)
+   real,pointer,dimension(:,:,:) :: data0,data1,myptr0,myptr1
+   real,pointer,dimension(:,:) :: myptr2d
+   type(gmm_metadata) :: mymeta
+   !--------------------------------------------------------------------------
+   if (Cstv_dt_8*Step_kount > Iau_period .or. Iau_interval<=0.) return
+   call timing_start(50, 'IAU      ')
 
-  ! Local parameters
-  integer, parameter :: TT=1,UU=2,VV=3,P0=4,HU=5
-  integer, parameter :: MAX_IAU_FIELDS=HU+IAU_MAX_TRACERS
-  character(len=GMM_MAXNAMELENGTH), parameter :: IAU_PREFIX='I_'
+   call handle_error(-1,'(iau_apply) Not fully implemented yet')
 
-  ! Local derived types
-  type iau_field
-     character(len=4) :: nomvar
-     character(len=GMM_MAXNAMELENGTH) :: gmmkey
-     real, dimension(:,:), pointer :: ptr2d
-     real, dimension(:,:,:), pointer :: ptr3d
-     type(gmm_metadata) :: meta
-  end type iau_field
+   call datp2f(dateo,Mod_runstrt_S)
+   iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
+   call incdatr(datev,dateo,dble(iau_vtime)/3600.d0)
+   call datf2p(datev_S,datev)
 
-  ! Local variables
-  integer, save :: datei=-1
-  integer :: i,j,k,kk,fd,istat,dateo,iau_vtime,this_datei,key,nflds,gidi,gset,sgid,first_tr,n,add,istat0
-  integer, dimension(1), target :: any_level
-  integer, dimension(:), pointer :: ip1s,ip1_gem
-  real :: split
-  real, dimension(:), pointer, save :: weight
-  real, dimension(:,:,:), pointer :: data,tr,pw_tt
-  character(len=16) :: ltype,vdate
-  character(len=1024) :: iau_fname,fst_msg_level
-  logical :: error_raised,found
-  type(vgrid_descriptor) :: vgi
-  type(iau_field), dimension(MAX_IAU_FIELDS) :: flds
-  type(gmm_metadata) :: mymeta
+   IF_INIT: if (.not.is_init_L) then
+      is_init_L = .true.
 
-  ! External subprograms
-  integer, external :: ezsetival
+      !# Set up input module
+      inputid = input_new(datev,nint(Cstv_dt_8))
+      istat = input_setgridid(inputid,Grd_lclcore_gid)
+      istat = min(input_set_basedir(inputid,Path_input_S),inputid)
+      istat = min(input_set_filename(inputid,IAU_FILE,IAU_FILE,ALLOWDIR,INPUT_FILES_ANAL),istat)
+      step_freq  = nint(Iau_interval/Cstv_dt_8)
+      step_freq2 = nint((Iau_interval/2)/Cstv_dt_8) !TODO: check
+      write(incfg_S,'(a,i4,a,a,a)') 'freq=0,',step_freq, &
+           '; search=',trim(IAU_FILE), &
+           '; typvar=R; hinterp=cubic; vinterp=c-cond'
+      istat = min(input_add(inputid,'in=TT; levels=-1;'//trim(incfg_S)),istat)
+      istat = min(input_add(inputid,'in=HU; levels=-1;'//trim(incfg_S)),istat)
+      istat = min(input_add(inputid,'in=UU; IN2=VV; levels=-1;'//trim(incfg_S)),istat)
+      istat = min(input_add(inputid,'in=P0; '//trim(incfg_S)),istat)
+      ivar = 1
+      do while (len_trim(Iau_tracers_S(ivar)) > 0)
+         istat = min(clib_tolower(Iau_tracers_S(ivar)),istat)
+         if (Iau_tracers_S(ivar) /= 'hu') &
+              istat = min(input_add(inputid,'in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S)),istat)
+         ivar = ivar+1 
+         if (ivar > size(Iau_tracers_S)) exit
+      enddo
+      nbvar = input_nbvar(inputid)
+      call handle_error_l(RMN_IS_OK(istat).and.nbvar>0,'iau_apply', &
+           'Problem initializing the input module')
 
-  call timing_start(50, 'IAU      ')
+      !# Create data space to save inc values between read-incr
+      DO_IVAR0: do ivar = 1,nbvar
+         istat = input_meta(inputid,ivar,iname0_S,iname1_S)
+         nullify(data0,data1)
+         if (iname0_S == 'p0') then
+            mymeta = meta2d ; mymeta%l(3) = gmm_layout(1,1,0,0,1)
+            istat = gmm_create(IAU_PREFIX//trim(iname0_S),data0, &
+                 mymeta,GMM_FLAG_IZER)
+         else
+            istat = gmm_create(IAU_PREFIX//trim(iname0_S),data0, &
+                 meta3d_nk,GMM_FLAG_IZER)
+            if (iname1_S /= ' ') &
+                 istat = gmm_create(IAU_PREFIX//trim(iname1_S),data1, &
+                 meta3d_nk,GMM_FLAG_IZER)
+         endif
+      end do DO_IVAR0
 
-  !  Preliminary calculation to determine if IAU is required
-  if (Cstv_dt_8*Step_kount > Iau_period) return
-  iau_fname = trim(Path_input_S)//'/IAUREP'
+      !# Precompute filter coefficients on initialization
+      nw = nint(Iau_period/Cstv_dt_8)
+      add = 0; if (mod(nw,2) == 0) add = 1
+      nw = nw+add
+      allocate(weight(nw))
+      istat = clib_tolower(Iau_weight_S)
+      select case (Iau_weight_S)
+      case ('constant')
+         weight = Cstv_dt_8 / Iau_period
+      case ('sin')
+         call handle_error_l(Iau_cutoff>0.,'iau_apply', &
+              'Cutoff period must be greater than 0')
+         j = 0 ; i = nw ; n = nw/2
+         do while (j < nw)
+            i = j-n; j = j+1
+            if (i == 0) then
+               weight(j) = 2.*Cstv_dt_8/(Iau_cutoff*3600.)
+            else
+               weight(j) = sin(i*Dcst_pi_8/(n+1)) / (i*Dcst_pi_8/(n+1)) * &
+                    sin(i*(2.*Dcst_pi_8*Cstv_dt_8/(Iau_cutoff*3600.))) / &
+                    (i*Dcst_pi_8)
+            endif
+         enddo
+         weight = weight/sum(weight(1:size(weight)-add))
+      case default
+         call handle_error(RMN_ERR,'iau_apply', &
+              'Unknown Iau_weight_S='//trim(Iau_weight_S))
+      end select
 
-  !  Precompute filter coefficients on initialization
-  istat0 = RMN_OK
-  COMPUTE_WEIGHTS: if (datei < 0) then
-     i = nint(Iau_period/Cstv_dt_8)
-     add = 0; if (mod(i,2) == 0) add = 1
-     i = i+add
-     allocate(weight(i))
-     istat = clib_tolower(Iau_weight_S)
-     if (.not.RMN_IS_OK(istat)) then
-        istat0 = RMN_ERR
-        call msg(MSG_ERROR,'(iau_apply) Inavlid string for Iau_weight_S='//trim(Iau_weight_S))
-        goto 666
-     endif
-     select case (Iau_weight_S)
-     case ('constant')
-        weight = Cstv_dt_8 / Iau_period
-     case ('sin')
-        if (Iau_cutoff<=0.) then
-           istat0 = RMN_ERR
-           call msg(MSG_ERROR,'(iau_apply) Cutoff period must be greater than 0')
-           goto 666
-        endif
-        n=int(size(weight))/2
-        j=0
-        do while (j < size(weight))
-           i = j-n; j = j+1
-           if (i == 0) then
-              weight(j) = 2.*Cstv_dt_8/(Iau_cutoff*3600.)
-           else
-              weight(j) = sin(i*Dcst_pi_8/(n+1))/(i*Dcst_pi_8/(n+1)) * &
-                   sin(i*(2.*Dcst_pi_8*Cstv_dt_8/(Iau_cutoff*3600.)))/(i*Dcst_pi_8)
-           endif
-        enddo
-        weight = weight/sum(weight(1:size(weight)-add))
-     end select
-  endif COMPUTE_WEIGHTS
+   endif IF_INIT
 
-  if (Step_kount>size(weight)) then
-     call msg(MSG_ERROR,'(iau_apply) Overrun of filter coefficient vector')
-     istat0 = RMN_ERR
-     goto 666
-  endif
+   if (Step_kount > 0) kount = Step_kount+step_freq2
+   DO_IVAR: do ivar = 1,nbvar
 
-  !  Determine date information
-  if (Iau_interval<=0.) then
-     call msg(MSG_ERROR,'(iau_apply) Invalid (null or negative) Iau_interval in settings file')
-     istat0 = RMN_ERR
-     goto 666
-  endif
-  iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
-  call datp2f(dateo,Mod_runstrt_S)
-  call incdatr(this_datei,dateo,dble(iau_vtime/3600.))
-  call datf2p(vdate,this_datei)
+      istat = input_meta(inputid,ivar,iname0_S,iname1_S)
+      nullify(data0,data1)
+      istat = gmm_get(IAU_PREFIX//trim(iname0_S),data0)
+      if (iname1_S /= '') istat = gmm_get(IAU_PREFIX//trim(iname1_S),data1)
+      if (.not.associated(data0) .or. &
+           (iname1_S /= '' .and..not.associated(data1))) then
+         call msg(MSG_ERROR,'(iau_apply) Problem getting ptr for: '//trim(iname0_S)//' '//trim(iname1_S))
+         cycle DO_IVAR
+      endif
 
-  !  Create list and GMM space for increment fields
-  flds(TT) = iau_field('TT',trim(IAU_PREFIX)//'TT',null(),null(),meta3d_nk)
-  flds(UU) = iau_field('UU',trim(IAU_PREFIX)//'UU',null(),null(),meta3d_nk)
-  flds(VV) = iau_field('VV',trim(IAU_PREFIX)//'VV',null(),null(),meta3d_nk)
-  flds(P0) = iau_field('P0',trim(IAU_PREFIX)//'P0',null(),null(),meta2d)
-  first_tr = HU
-  flds(HU) = iau_field('HU',trim(IAU_PREFIX)//'HU',null(),null(),meta3d_nk)
-  i = 1
-  do while (len_trim(Iau_tracers_S(i)) > 0)
-     if (Iau_tracers_S(i) /= 'HU') &
-          flds(first_tr+i) = iau_field(Iau_tracers_S(i),trim(IAU_PREFIX)//trim(Iau_tracers_S(i)),null(),null(),meta3d_nk)
-     i = i+1
-  enddo
-  nflds = first_tr + (i-1)
-  if (datei < 0) then
-     istat = GMM_OK
-     do i=1,nflds
-        nullify(flds(i)%ptr2d,flds(i)%ptr3d)
-        if (flds(i)%meta%l(3)%n > 0) then
-           istat = min(gmm_create(trim(flds(i)%gmmkey),flds(i)%ptr3d,flds(i)%meta,GMM_FLAG_IZER),istat)
-        else
-           istat = min(gmm_create(trim(flds(i)%gmmkey),flds(i)%ptr2d,flds(i)%meta,GMM_FLAG_IZER),istat)
-        endif
-     enddo
-     if (istat == GMM_VARIABLE_ALREADY_CREATED) then
-        call msg(MSG_INFO,'(iau_apply) Will recover from GMM re-creation')
-     elseif (GMM_IS_ERROR(istat)) then
+      istat = input_isvarstep(inputid,ivar,kount)
+      IF_READ: if (RMN_IS_OK(istat)) then
 
-        call msg(MSG_ERROR,'(iau_apply) Cannot gmm_create required fields for IAU')
-!!$        return !# could cause a mpi hang
-        istat0 = RMN_ERR
-        goto 666
-     endif
-  endif
+         !# Get interpolted data from file
+         vgrid_S = 'ref-t'
+         if (iname0_S == 'uu') vgrid_S = 'ref-m' !TODO: check
+         nullify(myptr0,myptr1,myptr2d)
+         istat = input_get(inputid,ivar,kount,Grd_local_gid,vgrid_S, &
+              myptr0,myptr1)
+         if (.not.RMN_IS_OK(istat) .or. .not.associated(myptr0) .or. &
+           (iname1_S /= '' .and..not.associated(myptr1))) then
+            call msg(MSG_ERROR,'(iau_apply) Problem getting data for: '//trim(iname0_S)//' '//trim(iname1_S))
+            cycle DO_IVAR
+         endif
 
-666 call handle_error(istat0,'iau_apply','')
+         !# Move data to grid with halos; save in GMM
+         if (associated(myptr0)) then
+            data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
+            deallocate(myptr0, stat=istat)
+         endif
+         if (associated(myptr1)) then
+            data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
+            deallocate(myptr1,stat=istat)
+         endif
 
-  !  Read updated increment from input files if required
-  error_raised = .false.
-  READ_IAU_DATA: if (this_datei /= datei) then
-     if (Lun_out > 0) write(Lun_out,1000) trim(vdate)
-     call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
-     istat = fstopc('MSGLVL',fst_msg_level,.true.)
-     istat = fstopc('MSGLVL','INFORM',.false.)
-     fd = fstmpi_open(iau_fname,F_readonly_L=.true.,F_dir_ok_L=.true.)
-!!$     call handle_error_l(fd/=RMN_ERR,'iau_apply','Unable to open IAU input '//trim(iau_fname))
-     if (.not.Lun_debug_L .and. Ptopo_myproc/=0) istat = fstopc('MSGLVL','SYSTEM',.false.)
+         !# Adapt units and horizontal positioning
+         lijk = lbound(data0) ; uijk = ubound(data0)
+         if (iname0_S == 'uu') then
+            data0 = data0 * Dcst_knams_8
+            call itf_phy_uvgridscal(data0,data1,lijk(1),uijk(1), &
+                 lijk(2),uijk(2),uijk(3),UVSCAL2WGRID)
+         endif
+         if (iname0_S == 'p0') data0 = 100.*data0
+         IF_YY: if (Grd_yinyang_L .and. &
+              (iname0_S == 'hu' .or. .not.any(iname0_S == Iau_tracers_S))) then
+            if (iname1_S /= ' ' .and. associated(data1)) then
+               call yyg_nestuv(data0,data1,lijk(1),uijk(1), &
+                    lijk(2),uijk(2),uijk(1))
+            else
+               call yyg_xchng (data0 ,lijk(1),uijk(1),lijk(2),uijk(2),uijk(1), &
+                    .false., 'CUBIC')
+               call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
+                    l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody, &
+                    l_ni,0 )
+            endif
+         endif IF_YY
 
-     any_level = -1
-     gidi = -1
-     nullify(ip1s,data)
-     DO_FLDS: do i=1,nflds
-        if (GMM_IS_ERROR(gmm_getmeta(flds(i)%gmmkey,mymeta))) then
-           call msg(MSG_ERROR,'(iau_apply) Cannot retrieve metadata for '//trim(flds(i)%nomvar)); error_raised=.true.
-        endif
-        nullify(flds(i)%ptr2d,flds(i)%ptr3d)
-        DATA_3D: if (mymeta%l(3)%n > 0) then
-           if (GMM_IS_ERROR(gmm_get(flds(i)%gmmkey,flds(i)%ptr3d,mymeta))) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot retrieve GMM space for 3D field '//trim(flds(i)%nomvar)); error_raised=.true.
-           endif
-           istat = vgrid_from_file_mpi(fd,flds(i)%nomvar,this_datei,vgi,ip1s,ltype)
-           if (.not.RMN_IS_OK(istat)) then
-              error_raised = .true.
-              call msg(MSG_ERROR,'(iau_apply) Cannot obtain obtaining ip1 list for analysis increments of '//trim(flds(i)%nomvar))
-           else
-              ip1_gem => Ver_ip1%t
-              if (ltype(1:1) == 'M') ip1_gem => Ver_ip1%m
-              do k=1,size(ip1_gem)
-                 found = .false.
-                 kk = 1
-                 do while (.not.found .and. kk <= size(ip1s))
-                    if (ip1s(kk) == ip1_gem(k)) found = .true.
-                    kk = kk+1
-                 enddo
-                 if (.not.found) then
-                    call msg(MSG_ERROR,'(iau_apply) Level list in IAU input file does not match GEM config for '//trim(flds(i)%nomvar)); error_raised=.true.
-                    error_raised = .true.
-                 endif
-              enddo
-           endif
-        else
-           if (GMM_IS_ERROR(gmm_get(flds(i)%gmmkey,flds(i)%ptr2d,mymeta))) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot retrieve GMM space for 2D field '//trim(flds(i)%nomvar)); error_raised=.true.
-           endif
-           ip1_gem => any_level
-        endif DATA_3D
+      endif IF_READ
 
-        DO_IP1: do k=1,size(ip1_gem)
-           key = fstmpi_find(fd,flds(i)%nomvar,this_datei,ip1_gem(k),-1,-1)
-           if (.not.RMN_IS_OK(key)) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot find '//trim(flds(i)%nomvar)//' for all levels in IAU input'); error_raised=.true.
-           endif
-           if (gidi < 0) then
-              istat = fstmpi_read(key,data,F_fileid=fd,F_gridid=gidi)
-              !# Note: This assumes that all input fields are on the same grid
-              sgid = ezgrid_subcolocated(gidi,Grd_lclcore_gid)
-              if (sgid < 0) then
-                 call msg(MSG_ERROR,'(iau_apply) Field '//trim(flds(i)%nomvar)//' is not on the current model grid'); error_raised=.true.
-              endif
-           else
-              istat = fstmpi_read(key,data)
-           endif
-           if (.not.RMN_IS_OK(istat)) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot read '//trim(flds(i)%nomvar)//' for all levels in IAU input'); error_raised=.true.
-              cycle DO_IP1
-           endif
-           gset = ezdefset(Grd_local_gid,gidi)
-           istat = ezsetival('SUBGRIDID',sgid)
-           istat = min(ezsetopt('INTERP_DEGREE','nearest'),istat)
-           istat = min(ezsetopt('USE_1SUBGRID','YES'),istat)
-           if (.not.RMN_IS_OK(istat)) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot set EZ interpolation options for '//trim(flds(i)%nomvar)); error_raised=.true.
-           endif
-           if (associated(flds(i)%ptr3d)) then
-              istat = ezsint(flds(i)%ptr3d(1:l_ni,1:l_nj,k),data(:,:,1))
-           else
-              istat = ezsint(flds(i)%ptr2d(1:l_ni,1:l_nj),data(:,:,1))
-           endif
-           if (.not.RMN_IS_OK(istat)) then
-              call msg(MSG_ERROR,'(iau_apply) Cannot interpolate IAU field for '//trim(flds(i)%nomvar)); error_raised=.true.
-           endif
-           if (associated(data)) deallocate(data) !# May want to recycle memory
-        enddo DO_IP1
+      !# Add increments to model and tracer states
+      ni1 = l_ni ; nj1 = l_nj
+      nullify(myptr0,myptr1,myptr2d)
+      select case(iname0_S)
+      case('tt')
+         istat = gmm_get(gmmk_pw_tt_plus_s,myptr0)
+         print '(a,i4," : ",f10.5," : ",f10.5," < ",f10.5)','[iau_apply] ',Step_kount,data0(l_ni/2,l_nj/2,l_nk/2),minval(data0),maxval(data0)
+      case('uu')
+         ni1 = l_niu ; nj1 = l_njv
+         istat = gmm_get(gmmk_ut1_s,myptr0)
+         istat = gmm_get(gmmk_vt1_s,myptr1)
+      case('p0')
+         istat = gmm_get(gmmk_st1_s,myptr2d)
+      case default
+         istat = clib_toupper(iname0_S)
+         istat = gmm_get('TR/'//trim(iname0_S)//':P',myptr0)
+      end select
+      if (associated(myptr0)) myptr0(1:ni1,1:l_nj,:) = &
+           myptr0(1:ni1,1:l_nj,:) + weight(Step_kount) * data0(1:ni1,1:l_nj,:)
+      if (associated(myptr1).and.associated(data1)) myptr1(1:l_ni,1:nj1,:) = &
+           myptr1(1:l_ni,1:nj1,:) + weight(Step_kount) * data1(1:l_ni,1:nj1,:)
+      if (associated(myptr2d)) myptr2d(:,:) = &
+           myptr2d(:,:) + weight(Step_kount) * data0(:,:,1)
 
-        nullify(ip1_gem)
-        if (associated(ip1s)) deallocate(ip1s)
-     enddo DO_FLDS
-     istat = fstmpi_close(fd)
-     call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
-     istat = fstopc('MSGLVL',fst_msg_level,.false.)
-     datei = this_datei
+   enddo DO_IVAR
 
-     ! Adapt units and horizontal positioning
-     do k=1,size(flds(UU)%ptr3d,dim=3)
-        flds(UU)%ptr3d(l_minx:l_maxx,l_miny:0,k) = 0. ; flds(UU)%ptr3d(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
-        flds(VV)%ptr3d(l_minx:l_maxx,l_miny:0,k) = 0. ; flds(VV)%ptr3d(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
-        flds(UU)%ptr3d(l_minx:0,l_miny:l_maxy,k) = 0. ; flds(UU)%ptr3d(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
-        flds(VV)%ptr3d(l_minx:0,l_miny:l_maxy,k) = 0. ; flds(VV)%ptr3d(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
-        do j=1,l_nj
-           flds(UU)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(UU)%ptr3d(1:l_ni,j,k)
-           flds(VV)%ptr3d(1:l_ni,j,k) = Dcst_knams_8 * flds(VV)%ptr3d(1:l_ni,j,k)
-        enddo
-     enddo
-     call itf_phy_uvgridscal(flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,size(flds(UU)%ptr3d,dim=3),.false. )
-     flds(P0)%ptr2d = 100.*flds(P0)%ptr2d
-     if (Grd_yinyang_L) then
-        call yyg_iauexchange(flds(P0)%ptr2d,flds(TT)%ptr3d,flds(HU)%ptr3d,flds(UU)%ptr3d,flds(VV)%ptr3d,LDIST_DIM,l_nk)
-        if (nflds/=first_tr) then
-           call msg(MSG_ERROR,'(iau_apply) Yin-Yan exchange not implemented for Iau_tracers_s list')
-           error_raised=.true.
-        endif
-     endif
+   nullify(myptr0)
+   istat = gmm_get(gmmk_tt1_s,myptr0)
+   call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+   call pw_update_GPW()
+   call pw_update_UV('P')
+   call pw_update_T('P')
 
-  else !# READ_IAU_DATA
-
-     ! Retrieve IAU data from GMM
-     do i=1,nflds
-        istat = GMM_OK
-        nullify(flds(i)%ptr2d,flds(i)%ptr3d)
-        if (flds(i)%meta%l(3)%n > 0) then
-           istat = min(gmm_get(trim(flds(i)%gmmkey),flds(i)%ptr3d,mymeta),istat)
-        else
-           istat = min(gmm_get(trim(flds(i)%gmmkey),flds(i)%ptr2d,mymeta),istat)
-        endif
-        if (GMM_IS_ERROR(istat)) then
-           call msg(MSG_ERROR,'(iau_apply) Cannot gmm_get '//trim(flds(i)%nomvar)//' for IAU'); error_raised=.true.
-        endif
-     enddo
-
-  endif READ_IAU_DATA
-  call handle_error_l(.not.error_raised,'iau_apply','Aborting due to error encountered during IAU processing')
-
-  !  Add increments to model and tracer states
-  istat = gmm_get(gmmk_pw_tt_plus_s,pw_tt,mymeta)
-  pw_tt = pw_tt + weight(Step_kount) * flds(TT)%ptr3d
-  istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-  istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-  do k=1,l_nk
-     ut1(1:l_niu,1:l_nj,k) = ut1(1:l_niu,1:l_nj,k) + weight(Step_kount) * flds(UU)%ptr3d(1:l_niu,1:l_nj,k)
-     vt1(1:l_ni,1:l_njv,k) = vt1(1:l_ni,1:l_njv,k) + weight(Step_kount) * flds(VV)%ptr3d(1:l_ni,1:l_njv,k)
-  enddo
-  istat = gmm_get(gmmk_st1_s,st1,mymeta)
-  st1 = st1 + log(1 + weight(Step_kount)*flds(P0)%ptr2d/Cstv_pref_8)
-  do i=first_tr,nflds
-     nullify(tr)
-     istat = gmm_get('TR/'//trim(flds(i)%nomvar)//':P',tr,mymeta)
-     tr = tr + weight(Step_kount) * flds(i)%ptr3d
-  enddo
-  istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
-  call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
-  call pw_update_GPW()
-  call pw_update_UV('P')
-  call pw_update_T('P')
-
-  !  Emit message to alert user to IAU application
-  if (Lun_out > 0) write (Lun_out,2000) trim(vdate)
-
-  call timing_stop(50)
-  return
-
-  !  Messaging definitions
-1000 format(/,' IAU_APPLY - READING ANALYSIS INCREMENTS FOR ',a)
-2000 format(/,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT ',a)
-
-end subroutine iau_apply
-
+   call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
+   call timing_stop(50)
+   !--------------------------------------------------------------------------
+   return
+end subroutine iau_apply2
