@@ -37,6 +37,8 @@
 !
       call gemtim4 ( Lun_out, 'END OF GEMNTR', .true. )
 
+      call memusage ( Lun_out )
+
       if (Ptopo_myproc.eq.0) then
          err= exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
          call write_status_file3 ('_status=ED' )

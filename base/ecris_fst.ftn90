@@ -98,6 +98,12 @@
             endif
          endif 
 
+      else
+         
+         nis = 1
+         njs = 1
+         allocate (tr1(nis,njs,nk_o))
+
       endif
 
       if (out3_type_S .eq. 'REGDYN') then
@@ -106,7 +112,7 @@
          call timing_start ( 91, 'OUT_P#COL')
       endif
       call blkcol ( tr1,nis,njs,Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,mul, &
-                    add,fa,lminx,lmaxx,lminy,lmaxy,nkfa,ind_o,nk_o)
+                    add,fa,lminx,lmaxx,lminy,lmaxy,nkfa,ind_o,nk_o )
       if (out3_type_S .eq. 'REGDYN') then
          call timing_stop (82)
       else
