@@ -50,6 +50,8 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 #include "adx_nml.cdk"
 #include "adx_pos.cdk"
 #include "glb_ld.cdk"
+#include "orh.cdk"
+#include "schm.cdk"
 
    logical, parameter :: POLE0_L  = .false.
    logical, parameter :: EXTEND_L = .false.
@@ -61,6 +63,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    real, pointer, dimension(:) :: xth, yth, zth, xcth, ycth, zcth, &
                                   xct1, yct1, zct1
+   real pyt_store(adx_mlni,adx_mlnj,adx_lnk)
    !---------------------------------------------------------------------
    nullify (xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
    if (.not.associated(pxt)) allocate (pxt(adx_mlni,adx_mlnj,adx_lnk), &
@@ -139,8 +142,12 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    call adx_int_rhs ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
                       adx_mlni, adx_mlnj, k0 , adx_lnk )
 
+   if (Orh_icn == Schm_itcn) pyt_store = pyt 
+
    call adx_int_rhs ( pxt, pyt, pzt, .false., F_doAdwStat_L, &
                       adx_mlni, adx_mlnj, k0t, adx_lnk )
+
+   if (Orh_icn == Schm_itcn) pyt = pyt_store 
 
    call timing_stop (31)
 
