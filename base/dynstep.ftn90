@@ -150,9 +150,9 @@
          if (G_lam) call nest_gwa ()
       endif
 
-      call pw_update_GPW()
-      call pw_update_UV('P')
-      call pw_update_T ('P')
+      call pw_update_GPW
+      call pw_update_UV
+      call pw_update_T
 
 !     ===================
 !     END OF ONE TIMESTEP

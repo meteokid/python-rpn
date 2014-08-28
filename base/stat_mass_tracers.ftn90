@@ -1,0 +1,82 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+
+!/**
+subroutine stat_mass_tracers (F_time,F_comment_S) 
+
+   implicit none
+ 
+   !@arguments
+   integer,          intent(in) :: F_time       !I, Time 0 or Time 1 
+   character(len=*), intent(in) :: F_comment_S  !I, Comment
+
+   !@author  Monique Tanguay
+   !@revisions
+   ! v4_70 - Tanguay,M.        - Initial Version
+
+!**/
+
+#include "glb_ld.cdk"
+#include "gmm.hf"
+#include "tr3d.cdk"
+#include "lam.cdk"
+#include "wil_williamson.cdk"
+#include "lun.cdk"
+
+   type(gmm_metadata) :: mymeta
+   logical :: mixing_L
+   integer :: err,n,k0,reset_RHO
+   real    :: bidon
+   real, pointer, dimension (:,:,:) :: fld_tr
+   real*8 tracer_8
+
+   character(len=GMM_MAXNAMELENGTH) in_S
+
+   !---------------------------------------------------------------------
+
+   reset_RHO = -1 
+
+   k0 = Lam_gbpil_T+1 
+
+   do n=1,Tr3d_ntr
+
+      if (Tr3d_mass(n) <= 0) cycle 
+
+      if (reset_RHO<0) reset_RHO = 0 
+
+      if (F_time==1) in_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
+      if (F_time==0) in_S = 'TR/'//trim(Tr3d_name_S(n))//':M'
+
+      err = gmm_get(in_S,fld_tr,mymeta)
+
+      mixing_L = .true.
+      pseudo_RHO_L = Advection_2D_3D_L.and.in_S(1:5) == 'TR/HU'
+      if (pseudo_RHO_L) mixing_L = .false.
+
+      call mass_tr (tracer_8,F_time,Tr3d_name_S(n),fld_tr(mymeta%l(1)%low,mymeta%l(2)%low,1),mixing_L,&
+                    mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
+
+      reset_RHO = 1 
+
+   enddo
+
+   if (reset_RHO>0) call mass_tr (tracer_8,F_time,'RHO ',bidon,.FALSE.,& 
+                                  mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
+
+   if (Lun_out>0) write(Lun_out,*) ''
+
+   return
+
+end subroutine stat_mass_tracers 

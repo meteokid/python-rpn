@@ -27,7 +27,11 @@
 
 !     _________________________________________________________________
 !
+      call stat_mass_tracers (1,"BEFORE ADVECTION") 
+
       call adx_tracers_interp
+
+      call stat_mass_tracers (0,"AFTER ADVECTION") 
 
       ! add code here for tracer conservation
       ! code should be named adx_tracers_mono.ftn90

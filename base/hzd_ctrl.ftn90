@@ -17,7 +17,7 @@
 !
 
 !
-      subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, NK)
+      subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, Nk)
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,15 +31,17 @@
 !revision
 ! v4_15 - Desgagne M.       - initial version 
 !
+#include "glb_ld.cdk"
 #include "hzd.cdk"
 !
 !     _________________________________________________________________
 !
       if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_imp_ctrl  (F_f2hzd, F_grd_S, NK)
+         call hzd_imp_ctrl  (F_f2hzd, F_grd_S, Nk)
 
       if (Hzd_type_S.eq.'HO_EXP') &
-         call hzd_exp_visco (F_f2hzd, F_grd_S, NK)
+         call hzd_exp_visco2( F_f2hzd, F_grd_S, &
+	                      l_minx,l_maxx,l_miny,l_maxy, Nk )
 !     _________________________________________________________________
 !
       return

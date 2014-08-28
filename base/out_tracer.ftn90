@@ -124,11 +124,12 @@
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
                   nullify (tr1)
-                  istat=gmm_get('TR/'//Tr3d_name_S(n)(1:2)//':P',tr1)
+                  istat=gmm_get('TR/'//Tr3d_name_S(n)//':P',tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
                   cycle
                endif
             enddo
+
             if (outvar_L) then
 
                if ( (trim(Outd_var_S(ii,set)) == 'HU') .and. (Schm_phyms_L) ) then

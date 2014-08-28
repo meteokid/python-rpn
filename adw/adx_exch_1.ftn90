@@ -61,6 +61,10 @@ subroutine adx_exch_1c(F_x_out,F_y_out,F_z_out,F_c_out,F_x_in,F_y_in,F_z_in, &
    !  Exchange number of points to be exchanged to 
    !  allow temporary space allocation.
    ! 
+   !  Move upstream positions that are outside advection source inside
+   !  the domain (at j=1) so that interpolation performed on all points
+   !  will be valid.
+   !
    ! The positions are stored  in the following manner:
    ! adx_for_n values followed by adx_for_s values = adx_for_a values
 !**/

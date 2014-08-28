@@ -83,6 +83,7 @@
 
       err= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8), &
               'model/Hgrid/lclphy','model/Hgrid/lclcore', &
+              'model/Hgrid/global','model/Hgrid/local'  , &
                                G_nk+1, Ver_std_p_prof%m )
 
 ! The current physics interface operate on an arbitrary number of

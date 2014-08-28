@@ -191,7 +191,8 @@
                istat = gmm_get(tr_name,tr,mymeta)
             if (GMM_IS_ERROR(istat)) print *,'readdyn ERROR at gmm_get',tr_name
             if ( err.eq.0 ) then
-                 tr (1:l_ni,1:l_nj,1:g_nk) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk), 0.)
+                 if (Tr3d_name_S(k)/="HU") tr (1:l_ni,1:l_nj,1:g_nk) = max(gz_temp(1:l_ni,1:l_nj,1:g_nk), 0.)
+                 if (Tr3d_name_S(k)=="HU") tr (1:l_ni,1:l_nj,1:g_nk) = 1.0 
             endif
          enddo
       endif

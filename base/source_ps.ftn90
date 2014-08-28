@@ -1,0 +1,98 @@
+!
+!**s/r source_ps - Estimate source of surface pressure due to fluxes of water:
+!                  d(ps) = Vertical_Integral [ d(qw)/(1-qw)] d(pi) (Claude Girard)
+
+      subroutine source_ps (F_number)
+
+      implicit none
+
+      integer F_number
+
+#include "gmm.hf"
+#include "glb_ld.cdk"
+#include "vt1.cdk"
+#include "cstv.cdk"
+#include "tr3d.cdk"
+#include "lun.cdk"
+
+      integer i,j,k,n,istat
+      real, pointer, dimension(:,:,:)     :: tr_p
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: qw_base,d_qw 
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy)         :: d_ps,pr_p0,pr_p0_cor
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk+1):: pr_m,pr_t
+      real, dimension(:,:,:,:), allocatable, save :: tr_after_dyn 
+
+!     ________________________________________________________________
+!
+      !Store TR3D after dynamics
+      !-------------------------
+      if (F_number==1) then 
+
+          if (.not. allocated(tr_after_dyn)) allocate(tr_after_dyn(l_minx:l_maxx,l_miny:l_maxy,l_nk,Tr3d_ntr))
+
+          do n=1, Tr3d_ntr
+             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr_p) !AFTER DYNAMICS
+             tr_after_dyn(:,:,:,n)  = tr_p(:,:,:)
+          end do
+
+          return
+
+      endif
+
+      qw_base = 0.
+
+      do n=1, Tr3d_ntr
+         if (Tr3d_wload(n).or.Tr3d_name_S(n)(1:2).eq.'HU') then
+            do k=1,l_nk
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               qw_base(i,j,k) = tr_after_dyn(i,j,k,n) + qw_base(i,j,k) 
+            enddo
+            enddo
+            enddo
+         endif
+      end do
+
+      d_qw = 0.
+
+      do n=1, Tr3d_ntr
+         if (Tr3d_wload(n).or.Tr3d_name_S(n)(1:2).eq.'HU') then
+            istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr_p) !AFTER PHYSICS
+            do k=1,l_nk
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               d_qw(i,j,k) = (tr_p(i,j,k) - tr_after_dyn(i,j,k,n)) + d_qw(i,j,k)
+            enddo
+            enddo
+            enddo
+         endif
+      end do
+
+      istat = gmm_get(gmmk_st1_s,st1)
+
+      call calc_pressure ( pr_m, pr_t, pr_p0, st1, &
+                           l_minx,l_maxx, l_miny,l_maxy, l_nk )
+
+      pr_m(:,:,l_nk+1) = pr_p0(:,:)
+
+      d_ps = 0.
+
+      do j=1+pil_s,l_nj-pil_n
+      do i=1+pil_w,l_ni-pil_e
+         do k=1,l_nk
+           d_ps(i,j) = (d_qw(i,j,k)/(1-qw_base(i,j,k))) * (pr_m(i,j,k+1) - pr_m(i,j,k)) + d_ps(i,j)
+         enddo
+      enddo
+      enddo
+
+      pr_p0_cor = pr_p0 + d_ps 
+
+      do j=1+pil_s,l_nj-pil_n
+      do i=1+pil_w,l_ni-pil_e
+!         st1(i,j)= log(pr_p0_cor(i,j)/ Cstv_pref_8)
+      end do
+      end do 
+!     ________________________________________________________________
+ 
+      return
+      end

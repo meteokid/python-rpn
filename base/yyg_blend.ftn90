@@ -53,7 +53,7 @@
 
       call yyg_blenuv (ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
 
-      call pw_update_UV ('P')
+      call pw_update_UV
 !
 !----------------------------------------------------------------------
  1001 format(3X,'BLEND YY Boundary ConditionS: (S/R yyg_blend)')

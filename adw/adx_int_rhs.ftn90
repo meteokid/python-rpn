@@ -61,7 +61,7 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
    character(len=1) :: level_type_S
    integer :: n,i0,j0,in,jn,istat
    integer, dimension(F_ni,F_nj,F_nk) :: exch_c1
-   real   , dimension(F_ni,F_nj,F_nk) :: exch_n1, exch_xgg1, exch_xdd1
+   real   , dimension(F_ni,F_nj,F_nk) :: exch_n1, exch_xgg1, exch_xdd1, py_store
    real   , dimension(:), allocatable :: capx2,capy2,capz2
 
    !---------------------------------------------------------------------
@@ -80,6 +80,8 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
                                         'INTERP '//trim(level_type_S))
 
    else
+
+      py_store=F_py
 
       call adx_exch_1c ( exch_n1, exch_xgg1, exch_xdd1, exch_c1, &
                               F_px, F_py, F_pz, F_ni,F_nj,F_k0,F_nk )
@@ -123,7 +125,10 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
       endif
    endif
 
-   if (.not.adx_lam_L) deallocate(capx2, capy2, capz2)
+   if (.not.adx_lam_L)then
+      deallocate(capx2, capy2, capz2)
+      if(adx_for_a > 0 ) F_py=py_store
+   endif
 
    !---------------------------------------------------------------------
    return

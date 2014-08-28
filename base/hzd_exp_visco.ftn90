@@ -15,13 +15,13 @@
 
 !**s/r hzd_exp_visco - applies horizontal explicit diffusion
 !
-      subroutine hzd_exp_visco (F_f2hzd, F_grd_S, NK)
+      subroutine hzd_exp_visco2(F_f2hzd, F_grd_S, Minx,Maxx,Miny,Maxy, NK)
       implicit none
 #include <arch_specific.hf>
 
       character*(*) F_grd_S
-      integer       NK
-      real          F_f2hzd (*)
+      integer       Minx,Maxx,Miny,Maxy,Nk
+      real          F_f2hzd (Minx:Maxx,Miny:Maxy,Nk)
 !
 !AUTHORs    C. Girard & M. Desgagne
 !
@@ -33,7 +33,7 @@
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 
-      integer i,j,k, nn, mm, ni, nj, stag_x,stag_y
+      integer i, j, k, nn, mm
       real wk1(l_minx:l_maxx,l_miny:l_maxy,Nk),rnr,pwr
       real*8 pt25,nu_dif,epsilon,lnr,visco(nk)
 
@@ -63,7 +63,7 @@
 
       else
 
-         do k=1,nk
+         do k=1,Nk
             rnr    = log(1.- Hzd_visco_8(k))
             lnr    = 1.0d0 - exp(rnr)
             nu_dif = 0.0d0
@@ -77,29 +77,17 @@
 
       nn = pwr/2
       
-      stag_x= 0 ; stag_y= 0
-      ni= l_ni  ; nj= l_nj
-
-      if (F_grd_S.eq.'U')then
-         stag_x= 1
-         ni= l_niu
-      endif
-      if (F_grd_S.eq.'V')then
-         stag_y= 1
-         nj= l_njv
-      endif
-
       call rpn_comm_xch_halo ( F_f2hzd, l_minx,l_maxx,l_miny,l_maxy,&
-               ni,nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+           l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       do mm=1,nn
 
-         call hzd_nudeln (F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
-                                    Nk, visco, stag_x,stag_y, mm,nn )
+         call hzd_nudeln2(F_f2hzd, wk1, l_minx,l_maxx,l_miny,l_maxy,&
+                                                   Nk, visco, mm,nn )
 
          if (mm.ne.nn) &
               call rpn_comm_xch_halo( wk1, l_minx,l_maxx,l_miny,l_maxy,&
-                  ni,nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+              l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       end do
 !     __________________________________________________________________

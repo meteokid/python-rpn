@@ -278,6 +278,11 @@
          endif
          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
+      Advection_2D_3D_L = .FALSE.
+      if (Schm_autobar_L.and.Williamson_case==1) then
+          Advection_2D_3D_L = .TRUE.
+          if (lun_out>0) write (Lun_out, 7021)
+      endif
 
       err= 0
       err= min( time2step (Init_dflength_S, Step_dt, Lun_out, Init_dfnp), err)
@@ -320,6 +325,9 @@
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 7021 format (//'  ================================================'/&
+                '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&
+                '  ================================================'//)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)

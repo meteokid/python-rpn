@@ -232,9 +232,9 @@ subroutine iau_apply2()
    nullify(myptr0)
    istat = gmm_get(gmmk_tt1_s,myptr0)
    call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-   call pw_update_GPW()
-   call pw_update_UV('P')
-   call pw_update_T('P')
+   call pw_update_GPW
+   call pw_update_UV
+   call pw_update_T
 
    call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
    call timing_stop(50)
