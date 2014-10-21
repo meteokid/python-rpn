@@ -130,15 +130,15 @@
       if ( .not. Rstri_rstn_L ) then
          call out_outdir (Step_kount, upperlimit)
          if (Step_kount.eq.0) then
-            call out_dyn (.false., .true.) ! casc output
             call out_steps (Lctl_step,Lctl_step)
             if ( Schm_phyms_L ) then
                call pw_shuffle
-               call pw_update_GPW()
+               call pw_update_GPW
                call pw_update_UV
                call pw_update_T
                call itf_phy_step (0,Lctl_step)
             endif
+            call out_dyn (.false., .true.) ! casc output
          endif
          call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
@@ -160,24 +160,12 @@
          call out_outdir (Step_kount, upperlimit)
 
          call pw_shuffle
-      
-         call dynstep
 
-         !Store Tracers after dynamics
-         !----------------------------
-         if ( Schm_phyms_L ) call source_ps(1) 
+         call dynstep
 
          call out_dyn (.false., .true.) ! casc output
 
          if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
-
-         !Estimate source of surface pressure due to fluxes of water  
-         !----------------------------------------------------------
-         if ( Schm_phyms_L ) call source_ps(2) 
-
-         !Estimate average of surface pressure
-         !------------------------------------
-         call stat_ps
 
          call hzd_main
 

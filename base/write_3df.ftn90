@@ -60,6 +60,8 @@
          if (nbits.ge.32) then
             do k=1,nks
                write (unf) tr1(:,:,k)
+!               call statfld3 (tr1(1,1,k),nomvar, k, '', &
+!                              1,nis,1,njs,1,1, 1,1,1,nis,njs,1,8)
             end do
          else
             n = (nis*njs*nbits+120+32-1)/32

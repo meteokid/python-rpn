@@ -70,8 +70,8 @@
       integer i, j, k, km,kq, i0u, inu, j0v, jnv, nij, k0t, onept
       real    w_nt
       real*8  a1,a2,b1,b2,b3,b4,c1,c2,c3,qbar,ndiv, &
-              w1,w2,w3,w4,w5,barz, barzp, wk2(Minx:Maxx,Miny:Maxy)
-      real*8  u_interp, v_interp, inv_rayt, explicit
+              w1,w2,w3,w4,w5,barz, barzp, wk1(Minx:Maxx,Miny:Maxy),wk2(Minx:Maxx,Miny:Maxy)
+      real*8  t_interp, u_interp, v_interp
       real*8, parameter :: zero=0.d0, one=1.d0
 !
       real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
@@ -103,10 +103,9 @@
       b3 = one / ( Dcst_cappa_8 * Cstv_tau_8 )
       b4 = one / ( Dcst_cappa_8 * Cstv_tau_8*Cstv_tau_8*Cstv_Tstr_8 )
 !
-      c1 = Dcst_rayt_8**2 * Ver_epsilon_8
+      c1 = Dcst_rayt_8**2
       c2 = one / Cstv_RTstr_8
       c3 = Dcst_cappa_8 / Cstv_RTstr_8
-      inv_rayt = one / Dcst_rayt_8
 
       k0t=k0
       if(Schm_opentop_L) k0t=k0-1
@@ -114,9 +113,6 @@
 
       onept= 0
       if(Grd_yinyang_L) onept=1
-
-      explicit= 0.d0
-      if (Schm_angular_displacement_L) explicit= one
 !
 !
 !***********************************************************
@@ -143,16 +139,15 @@
                         i0u,inu+1,j0v,jnv+1)
       endif
 
-!$omp parallel private(km,kq,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk2, &
-!$omp w1,w2,w3,w4,w5,qbar)
+!$omp parallel private(km,kq,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk1,wk2, &
+!$omp w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp)
 !
 !$omp do
        do k=k0t,l_nk+1
          kq=max(2,k)
          do j=j0v,jnv+1
          do i=i0u,inu+1
-            BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
-            BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq)*Ver_onezero(k)
+            BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq)*Ver_onezero(k)
          enddo
          enddo
       enddo
@@ -161,44 +156,21 @@
 !$omp do
       do k=k0,l_nk
       km=max(k-1,1)
+      if (Schm_hydro_L) wk1 = 0.d0 ! SINCE MU=0
 !
-!     Compute Nu for hydrostatic version
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!     Compute Nu
+!     ~~~~~~~~~~
 
-!     Pressure gradient term: RT' barXZ * dBsPq/dX
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (G_lam) then
-
+      if (.not.Schm_hydro_L) then
          do j= j0, jn
-            do i= i0u, inu
-               barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
-                     +Ver_wm_8%m(k)*F_t(i  ,j,km)
-               barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
-                     +Ver_wm_8%m(k)*F_t(i+1,j,km)
-               w2 = ( one - intuv_c0xxu_8(i) ) * barz &
-                          + intuv_c0xxu_8(i)   * barzp - Cstv_tstr_8
-               w3 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXu_8(i,j)
-               F_nu(i,j,k) = Dcst_rgasd_8 * ( w2 * w3 )
-            end do
+         do i= i0u, inu
+            barz  = Ver_wp_8%m(k)*MU(i  ,j,k)+Ver_wm_8%m(k)*MU(i  ,j,km)
+            barzp = Ver_wp_8%m(k)*MU(i+1,j,k)+Ver_wm_8%m(k)*MU(i+1,j,km)
+            wk1(i,j) = (one-intuv_c0xxu_8(i))*barz+intuv_c0xxu_8(i)*barzp
          end do
-
-      else
-
-         do j= j0, jn
-            do i= i0u, inu
-               barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
-                     +Ver_wm_8%m(k)*F_t(i  ,j,km)
-               barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
-                     +Ver_wm_8%m(k)*F_t(i+1,j,km)
-               w2 = ( one - intuv_c0xxu_8(i) ) * barz &
-                          + intuv_c0xxu_8(i)   * barzp - Cstv_tstr_8
-               w3 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8)
-               F_nu(i,j,k) = (Dcst_rgasd_8 / Dcst_rayt_8**2) * ( w2 * w3 )
-            end do
          end do
+      endif
 
-      end if
-!
 !     V barY stored in wk2
 !     ~~~~~~~~~~~~~~~~~~~~
       do j = j0, jn
@@ -210,55 +182,41 @@
       end do
       end do
 
-!     Coriolis term & metric terms: - (f + u/a * tan(phi)) * V barXY
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       do j= j0, jn
       do i= i0u, inu
-         v_interp = inuvl_wxxu3_8(i,1) * wk2(i-1,j) &
-           + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-           + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
-           + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
 
-         F_nu(i,j,k) = F_nu(i,j,k) - (Cori_fcoru_8(i,j) + explicit * f_u(i,j,k)* inv_rayt * dtan(geomg_y_8(j))) * v_interp
+!        Pressure gradient and mu terms: RT' barXZ * dBsPq/dX + mu barXZ * dfi'/dX
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         barz  = Ver_wp_8%m(k)*F_t(i  ,j,k)+Ver_wm_8%m(k)*F_t(i  ,j,km)
+         barzp = Ver_wp_8%m(k)*F_t(i+1,j,k)+Ver_wm_8%m(k)*F_t(i+1,j,km)
+         t_interp = (one-intuv_c0xxu_8(i))* barz+intuv_c0xxu_8(i)*barzp - Cstv_tstr_8
+         w2 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXu_8(i,j)
+         w3 = (   FI(i+1,j,k) -   FI(i,j,k) ) * Geomg_invDXu_8(i,j)
+         F_nu(i,j,k) = Dcst_rgasd_8 * t_interp * w2 + wk1(i,j) * w3
+
+!        Coriolis term & metric terms: - (f + tan(phi)/a * U ) * V barXY
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         v_interp = inuvl_wxxu3_8(i,1) * wk2(i-1,j) &
+                  + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
+                  + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
+                  + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
+         F_nu(i,j,k) = F_nu(i,j,k) - ( Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp
+
       end do
       end do
 !
-!     Compute Nv for hydrostatic version
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+!     Compute Nv
+!     ~~~~~~~~~~
 
-!     Pressure gradient term: RT' barYZ * dBsPq/dY
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if (G_lam) then
-
-         do j= j0v, jnv
-            do i= i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
-                     +Ver_wm_8%m(k)*F_t(i,j  ,km)
-               barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
-                     +Ver_wm_8%m(k)*F_t(i,j+1,km)
-               w2 = ( one - intuv_c0yyv_8(j) ) * barz &
-                          + intuv_c0yyv_8(j)   * barzp - Cstv_tstr_8
-               w3 = ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * Geomg_invDYv_8(j)
-               F_nv(i,j,k) = Dcst_rgasd_8 * ( w2 * w3 )
-            end do
+      if (.not. Schm_hydro_L) then
+         do j = j0v, jnv
+         do i = i0, in
+            barz  = Ver_wp_8%m(k)*MU(i,j  ,k)+Ver_wm_8%m(k)*MU(i,j  ,km)
+            barzp = Ver_wp_8%m(k)*MU(i,j+1,k)+Ver_wm_8%m(k)*MU(i,j+1,km)
+            wk1(i,j) = (one-intuv_c0yyv_8(j))*barz+intuv_c0yyv_8(j)*barzp
          end do
-
-      else
-
-         do j= j0v, jnv
-            do i= i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j  ,km)
-               barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j+1,km)
-               w2 = ( one - intuv_c0yyv_8(j) ) * barz &
-                          + intuv_c0yyv_8(j)   * barzp - Cstv_tstr_8
-               w3 = ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * Geomg_invDYv_8(j) * (geomg_cyv_8(j) * Dcst_rayt_8)
-               F_nv(i,j,k) = (Dcst_rgasd_8 / Dcst_rayt_8**2) * ( w2 * w3 )
-            end do
          end do
-
-      end if
+      endif
 !
 !     U barX stored in wk2
 !     ~~~~~~~~~~~~~~~~~~~~
@@ -271,95 +229,28 @@
       end do
       end do
 
-!     Coriolis term & metric terms: + f * U barXY + (U barXY)^2/a * tan(phi)
-!     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       do j = j0v, jnv
       do i = i0, in
+
+!        Pressure gradient and Mu term: RT' barYZ * dBsPq/dY + mu barYZ * dfi'/dY
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+         barz  = Ver_wp_8%m(k)*F_t(i,j  ,k)+Ver_wm_8%m(k)*F_t(i,j  ,km)
+         barzp = Ver_wp_8%m(k)*F_t(i,j+1,k)+Ver_wm_8%m(k)*F_t(i,j+1,km)
+         t_interp = (one-intuv_c0yyv_8(j))*barz+intuv_c0yyv_8(j)*barzp - Cstv_tstr_8
+         w2 = ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * Geomg_invDYv_8(j)
+         w3 = (   FI(i,j+1,k) -   FI(i,j,k) ) * Geomg_invDYv_8(j)
+         F_nv(i,j,k) = Dcst_rgasd_8 * t_interp * w2 + wk1(i,j) * w3
+
+!        Coriolis term & metric terms: + f * U barXY + tan(phi)/a * (U barXY)^2
+!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          u_interp = inuvl_wyyv3_8(j,1) * wk2(i,j-1) &
                   + inuvl_wyyv3_8(j,2) * wk2(i,j  ) &
                   + inuvl_wyyv3_8(j,3) * wk2(i,j+1) &
                   + inuvl_wyyv3_8(j,4) * wk2(i,j+2)
-         F_nv(i,j,k) = F_nv(i,j,k) + (Cori_fcorv_8(i,j) + explicit * u_interp * inv_rayt * dtan(geomg_yv_8(j))) * u_interp
+         F_nv(i,j,k) = F_nv(i,j,k) + ( Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp
+
       end do
       end do
-!
-      if (.not. Schm_hydro_L) then
-!
-!        Add nonhydrostatic contributions to Nu
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         if (G_lam) then
-
-!        Mu term: mu barXZ * dfi'/dX
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= j0, jn
-         do i= i0u, inu
-            barz  = Ver_wp_8%m(k)*MU(i  ,j,k) &
-                   +Ver_wm_8%m(k)*MU(i  ,j,km)
-            barzp = Ver_wp_8%m(k)*MU(i+1,j,k) &
-                   +Ver_wm_8%m(k)*MU(i+1,j,km)
-            w1 = ( one - intuv_c0xxu_8(i) ) * barz &
-                       + intuv_c0xxu_8(i)   * barzp
-            w2 = ( FI(i+1,j,k)-FI(i,j,k) ) * Geomg_invDXu_8(i,j)
-            F_nu(i,j,k) = F_nu(i,j,k) + w1 * w2
-         end do
-         end do
-!
-!        Add nonhydrostatic contributions to Nv
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-!        Mu term: mu barYZ * dfi'/dY
-!        ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         do j= j0v, jnv
-         do i= i0, in
-            barz  = Ver_wp_8%m(k)*MU(i,j  ,k) &
-                   +Ver_wm_8%m(k)*MU(i,j  ,km)
-            barzp = Ver_wp_8%m(k)*MU(i,j+1,k) &
-                   +Ver_wm_8%m(k)*MU(i,j+1,km)
-            w1 = ( one - intuv_c0yyv_8(j) ) * barz &
-                       + intuv_c0yyv_8(j)   * barzp
-            w2 = ( FI(i,j+1,k) - FI(i,j,k) ) * Geomg_invDYv_8(j)
-            F_nv(i,j,k) = F_nv(i,j,k) + w1 * w2
-         end do
-         end do
-
-         else
-
-!           Mu term: mu barXZ * dfi'/dX
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            do j= j0, jn
-               do i= i0u, inu
-                  barz  = Ver_wp_8%m(k)*MU(i  ,j,k) &
-                         +Ver_wm_8%m(k)*MU(i  ,j,km)
-                  barzp = Ver_wp_8%m(k)*MU(i+1,j,k) &
-                         +Ver_wm_8%m(k)*MU(i+1,j,km)
-                  w1 = ( one - intuv_c0xxu_8(i) ) * barz &
-                             + intuv_c0xxu_8(i)   * barzp
-                  w2 = ( FI(i+1,j,k)-FI(i,j,k) ) * Geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8)
-                  F_nu(i,j,k) = F_nu(i,j,k) + (one / Dcst_rayt_8**2) * w1 * w2
-               end do
-            end do
-!
-!           Add nonhydrostatic contributions to Nv
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-!           Mu term: mu barYZ * dfi'/dY
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            do j= j0v, jnv
-               do i= i0, in
-                  barz  = Ver_wp_8%m(k)*MU(i,j  ,k) &
-                         +Ver_wm_8%m(k)*MU(i,j  ,km)
-                  barzp = Ver_wp_8%m(k)*MU(i,j+1,k) &
-                         +Ver_wm_8%m(k)*MU(i,j+1,km)
-                  w1 = ( one - intuv_c0yyv_8(j) ) * barz &
-                             + intuv_c0yyv_8(j)   * barzp
-                  w2 = ( FI(i,j+1,k) - FI(i,j,k) ) * Geomg_invDYv_8(j) * (geomg_cyv_8(j) * Dcst_rayt_8)
-                  F_nv(i,j,k) = F_nv(i,j,k) + (one / Dcst_rayt_8**2) * w1 * w2
-               end do
-            end do
-
-         end if
-
-      endif
 !
       end do
 !$omp enddo
@@ -536,26 +427,22 @@
 !        Compute Nc'
 !        ~~~~~~~~~~~
           if (G_lam) then
-
-          do j= j0,jn
-          do i= i0,in
-              ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDX_8(i,j) &
+             do j= j0,jn
+             do i= i0,in
+                 ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDX_8(i,j) &
                    + (F_nv(i,j,k)*geomg_cyv_8(j) - F_nv(i,j-1,k)*geomg_cyv_8(j-1)) * Geomg_invDY_8(j) * geomg_invcy_8(j)
-            F_nc(i,j,k) = ndiv      - Cstv_invT_8 * F_nc(i,j,k)
-         end do
-         end do
-
-         else
-
-            do j= j0,jn
-               do i= i0,in
-                  ndiv      = geomg_invcy2_8(j) * ( &
-                              (F_nu(i,j,k)-F_nu(i-1,j,k))*geomg_invDX_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8) &
-                            + (F_nv(i,j,k)-F_nv(i,j-1,k))*Geomg_invDY_8(j) * (geomg_cy_8(j) * Dcst_rayt_8) )
-                  F_nc(i,j,k) = ndiv      - Cstv_invT_8 * F_nc(i,j,k)
-               end do
+               F_nc(i,j,k) = ndiv      - Cstv_invT_8 * F_nc(i,j,k)
             end do
-
+            end do
+         else
+            do j= j0,jn
+            do i= i0,in
+               ndiv      = geomg_invcy2_8(j) * ( &
+                           (F_nu(i,j,k)-F_nu(i-1,j,k))*geomg_invDX_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8) &
+                         + (F_nv(i,j,k)-F_nv(i,j-1,k))*Geomg_invDY_8(j) * (geomg_cy_8(j) * Dcst_rayt_8) )
+               F_nc(i,j,k) = ndiv      - Cstv_invT_8 * F_nc(i,j,k)
+            end do
+            end do
          end if
 
       end do
@@ -573,8 +460,8 @@
       do k=k0,l_nk
          w1=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
          w2=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
-         w3=c1*Ver_dz_8%m(k)
-         w4=Ver_wm_8%m(k)
+         w3=Ver_epsilon_8*Ver_dz_8%m(k)*Ver_wp_8%m(k)
+         w4=Ver_epsilon_8*Ver_dz_8%m(k)*Ver_wm_8%m(k)
          km=max(k-1,1)
          if(k.eq.1)then
             w2=zero
@@ -582,11 +469,9 @@
          endif
          do j= j0, jn
          do i= i0, in
-            w5 =  Dcst_rayt_8**2 * ( F_rc(i,j,k) &
-                 - Ver_dz_8%m(k) *   F_nc(i,j,k) &
-                 + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km) )
-            F_rhs(i,j,k) = w5 + w3 * ( Ver_wp_8%m(k) * F_nf(i,j,k  ) &
-                              + w4 * F_nf(i,j,km ) )
+            F_rhs(i,j,k) =  c1 * ( F_rc(i,j,k) - Ver_dz_8%m(k) * F_nc(i,j,k) &
+                                  + w1 * F_nt(i,j,k) - w2 * F_nt(i,j,km) &
+                                  + w3 * F_nf(i,j,k) + w4 * F_nf(i,j,km)     )
          enddo
          enddo
       enddo
@@ -601,8 +486,7 @@
          do j= j0, jn
          do i= i0, in
             F_nb(i,j)    = F_nt(i,j,k0-1)-b3*F_nb(i,j)+b4*F_t(i,j,k0-1)
-            F_rhs(i,j,k0)= F_rhs(i,j,k0) &
-                           + Dcst_rayt_8**2 * Ver_cstp_8 * F_nb(i,j)
+            F_rhs(i,j,k0)= F_rhs(i,j,k0) + c1 * Ver_cstp_8 * F_nb(i,j)
          end do
          end do
 !$omp enddo
@@ -611,8 +495,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) &
-                           - Dcst_rayt_8**2 * Ver_cssp_8 * F_nt(i,j,l_nk)
+         F_rhs(i,j,l_nk) = F_rhs(i,j,l_nk) - c1 * Ver_cssp_8 * F_nt(i,j,l_nk)
       end do
       end do
 !$omp enddo

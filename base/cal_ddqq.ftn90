@@ -77,7 +77,7 @@
             do i = i0, in
                F_QR(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(i,j)) &
                            - ((F_uu(i,j+1,k)*geomg_cy_8(j+1) - F_uu(i,j,k)*geomg_cy_8(j)) * &
-                              geomg_invDYv_8(j) * geomg_invcyv_8(j))
+                              geomg_invDYz_8(j) * geomg_invcyv_8(j))
             end do
             end do
             F_QR(1:i0-1,:,k) = 0. ; F_QR(in+1:l_ni,:,k)= 0.
@@ -107,7 +107,7 @@
                do i = i0, in
                   F_QQ(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(i,j)) &
                               - ((F_uu(i,j+1,k)*geomg_cy_8(j+1) - F_uu(i,j,k)*geomg_cy_8(j)) * &
-                                 geomg_invDYv_8(j) * geomg_invcyv_8(j))
+                                 geomg_invDYz_8(j) * geomg_invcyv_8(j))
                end do
                end do
                F_QQ(1:i0-1,:,k) = 0. ; F_QQ(in+1:l_ni,:,k)= 0.

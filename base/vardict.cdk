@@ -2,7 +2,7 @@
         sequence
         character*128 gmm_name
         character*4 out_name
-        character*1 hor_stag, ver_stag
+        character*4 hor_stag, ver_stag
         real fact_mult, fact_add
       end type var_structure
 

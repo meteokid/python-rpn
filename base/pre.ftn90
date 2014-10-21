@@ -73,7 +73,7 @@
 
       integer i, j, k,km , i0, i0u, j0, j0v, k0, k0t, in, inu, jn, jnv, onept
       real*8  x, y, z, cx, cy, cz, rx, ry, rz, mumu, rdiv, cosy_d, secy_d, &
-              a1,a2,a3,a4,b1,b2,b3,b4,www,xxx,yyy,zzz
+              a1,a2,a3,a4,b1,b2,b3,b4,w1,w2,w3,w4
       real    w_rt
       real*8, parameter :: zero=0.d0, one=1.d0
 !
@@ -115,7 +115,7 @@
       endif
 
 !$omp parallel private(x,y,z,rz,ry,rx,cx,cy,cz,&
-!$omp   mumu,cosy_d,secy_d,rdiv,www,xxx,yyy,zzz,w_rt)
+!$omp   mumu,cosy_d,secy_d,rdiv,w1,w2,w3,w4,w_rt)
 
       if (G_lam) then
          if (Schm_angular_displacement_L) then
@@ -290,16 +290,16 @@
          if(.not.Schm_hydro_L) then
 !           Combine continuity & w equations
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            www= Ver_wm_8%m(k)
+            w1= Ver_wm_8%m(k)
             km=max(k-1,1)
             if(k.eq.1)then
-               www=zero
+               w1=zero
             endif
             do j= j0, jn
             do i= i0, in
                F_rc(i,j,k) = F_rc(i,j,k) - b1 *  &
                                 ( Ver_wp_8%m(k) * F_rw(i,j,k  ) &
-                                + www           * F_rw(i,j,km) )
+                                + w1           * F_rw(i,j,km) )
             end do
             end do
          endif
@@ -390,30 +390,22 @@
 !
 !$omp do
       do k=k0,l_nk
-         xxx=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
-         yyy=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
-         www= Ver_wm_8%m(k)
+         w1=one + Ver_dz_8%m(k) * Ver_wp_8%m(k)
+         w2=one - Ver_dz_8%m(k) * Ver_wm_8%m(k)
+         w3=Ver_epsilon_8*Ver_dz_8%m(k)*Ver_wp_8%m(k)
+         w4=Ver_epsilon_8*Ver_dz_8%m(k)*Ver_wm_8%m(k)
          km=max(k-1,1)
          if(k.eq.1)then
-            yyy=zero
-            www=zero
+            w2=zero
+            w4=zero
          endif
          do j= j0, jn
          do i= i0, in
             F_rc(i,j,k) = Ver_dz_8%m(k) * ( F_rc(i,j,k) - a4 * F_fis(i,j) ) &
-                           - xxx * F_rt(i,j,k) + yyy * F_rt(i,j,km)
+                           - w1 * F_rt(i,j,k) + w2 * F_rt(i,j,km) &
+                           - w3 * F_rf(i,j,k) - w4 * F_rf(i,j,km)
          end do
          end do
-         if (.not. Schm_hydro_L) then
-            zzz=Ver_dz_8%m(k) * Ver_epsilon_8
-            do j= j0, jn
-            do i= i0, in
-               F_rc(i,j,k) = F_rc(i,j,k) - zzz * &
-                                ( Ver_wp_8%m(k) * F_rf(i,j,k) &
-                                + www           * F_rf(i,j,km) )
-            end do
-            end do
-         endif
       end do
 !$omp enddo
 !

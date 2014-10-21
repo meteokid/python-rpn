@@ -227,7 +227,7 @@
             Eigv_parity_L = .false.
             if (lun_out > 0) write (Lun_out, 7005)
          endif
-         if (Schm_psadj_L.and..not.Grd_yinyang_L) then
+         if ((Schm_psadj_S/='NIL').and..not.Grd_yinyang_L) then
             if (lun_out > 0) then
                write (Lun_out, 7020)
                write (Lun_out, 8000)
@@ -300,9 +300,10 @@
       endif
 
       if (Lctl_debug_L) then
-         istat = gmm_verbosity(GMM_MSG_DEBUG)
-         istat = wb_verbosity(WB_MSG_DEBUG)
-         call msg_set_minMessageLevel(MSG_DEBUG)
+         call msg_set_minMessageLevel(MSG_INFOPLUS)
+!        istat = gmm_verbosity(GMM_MSG_DEBUG)
+!        istat = wb_verbosity(WB_MSG_DEBUG)
+!        call msg_set_minMessageLevel(MSG_DEBUG)
          call handle_error_setdebug(Lctl_debug_L)
       endif
 
@@ -324,7 +325,7 @@
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
- 7020 format (/' OPTION Schm_psadj_L=.true. NOT AVAILABLE IF LAM'/)
+ 7020 format (/' OPTION Schm_psadj_S/=NIL NOT AVAILABLE IF LAM'/)
  7021 format (//'  ================================================'/&
                 '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&
                 '  ================================================'//)

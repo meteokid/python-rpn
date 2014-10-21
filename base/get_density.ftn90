@@ -22,13 +22,14 @@
 
       !Arguments
       !---------
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_density           !O, Fluid's density 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_mass              !O, Fluid's mass 
       integer,                                    intent(in) :: F_time              !I, Time 0 or Time 1
       integer,                                    intent(in) :: Minx,Maxx,Miny,Maxy !I, Dimension H  
       integer,                                    intent(in) :: k0                  !I, scope of operator
       integer,                                    intent(in) :: F_nk                !I, number of vertical levels
- 
+
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_density           !O, Fluid's density 
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_mass              !O, Fluid's mass 
+
       !@author  Monique Tanguay 
       !@revisions
       ! v4_70 - Tanguay,M.        - Initial Version

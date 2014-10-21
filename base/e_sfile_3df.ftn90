@@ -86,6 +86,7 @@
       write (unf_casc) xg_8(gid:gid+nis-1),yg_8(gjd:gjd+njs-1),xxu, yyv
       write (unf_casc) za_8 (1:lv  +1),zb_8 (1:lv  +1), &
                        zat_8(1:lv_t+1),zbt_8(1:lv_t+1)
+      write (unf_casc) 'HU  ',Tr3d_name_S(1:Tr3d_ntr)
       
       deallocate (xxu,yyv)
 !

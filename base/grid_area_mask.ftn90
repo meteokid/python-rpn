@@ -67,10 +67,10 @@
          !1) Find out where YIN lat lon points are in (YAN) grid with call to smat.
          !2) If they are not outside of Yin grid, put area to zero for those points.
          !--------------------------------------------------------------------------
-         np_subd = G_ni-Lam_pil_e-Lam_pil_w
+         np_subd = 4*(G_ni-Lam_pil_e-Lam_pil_w)
 
-         sp    = 0.0
-         sf    = 0.0
+         sp    = 0.d0
+         sf    = 0.d0
 
          do j = 1+Lam_pil_s, G_nj-Lam_pil_n
 
@@ -78,7 +78,7 @@
 
             do i = 1+Lam_pil_w, G_ni-Lam_pil_e
 
-               x_a_4 = G_xg_8(i)-acos(-1.D0)
+               x_a_4 = G_xg_8(i)-acos(-1.d0)
                dx    = ( G_xg_8(i+1)-G_xg_8(i-1) ) * HALF_8
                dy    = (sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8) -  &
                         sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8))
@@ -88,9 +88,9 @@
 
                !Check if poids <0
                !-----------------
-               if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+               if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
                    sp = sp + poids(i,j)*area_4(i,j)
-               elseif (abs(poids(i,j)-1.0) .lt. 1.0e-14) then
+               elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
                    sf = sf + poids(i,j)*area_4(i,j)
                endif
 
@@ -100,20 +100,20 @@
 
          !Correct and scale poids
          !-----------------------
-         sp1 = 0.0
-         sf1 = 0.0
+         sp1 = 0.d0
+         sf1 = 0.d0
 
          do j = 1+Lam_pil_s, G_nj-Lam_pil_n
          do i = 1+Lam_pil_w, G_ni-Lam_pil_e
 
-            x_a_4 = poids(i,j)*(2.0*acos(-1.D0) - sf)/sp
+            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf)/sp
 
-            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
                 poids(i,j) = min( 1.0d0, x_a_4 )
             endif
-            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
+            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.d0) then
                 sp1 = sp1 + poids(i,j)*area_4(i,j)
-            elseif (abs(poids(i,j)-1.0) .lt. 1.e-14) then
+            elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
                 sf1 = sf1 + poids(i,j)*area_4(i,j)
             endif
 
@@ -124,10 +124,10 @@
          !-------
          do j = 1+Lam_pil_s, G_nj-Lam_pil_n
          do i = 1+Lam_pil_w, G_ni-Lam_pil_e
-            x_a_4 = poids(i,j)*(2.0*acos(-1.D0) - sf1)/sp1
+            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf1)/sp1
 
-            if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.0) then
-                poids(i,j) = min( 1.0d0, x_a_4 )
+            if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
+                poids(i,j) = min( 1.d0, x_a_4 )
             endif
  
          enddo

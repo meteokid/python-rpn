@@ -45,6 +45,7 @@
 ! F_fis        I    - surface geopotential
 !
 #include "glb_ld.cdk"
+#include "dcst.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
@@ -96,7 +97,7 @@
             end do
 !$omp enddo
          endif
-         yyy=Cstv_RTstr_8*Ver_dz_8%t(k)/Cstv_Tstr_8
+         yyy=Dcst_rgasd_8*Ver_dz_8%t(k)
 !$omp do
          do j=j0,jn
          do i=i0,in

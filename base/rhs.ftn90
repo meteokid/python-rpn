@@ -69,7 +69,7 @@
       real*8  c1,c2,c3, tdiv, BsPqbarz, fipbarz, &
               wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy), barz, barzp, &
               xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
-      real*8 u_interp, v_interp, t_interp, inv_rayt, explicit
+      real*8 u_interp, v_interp, t_interp
       real, dimension(:,:,:), allocatable :: BsPq, FIp, MU
 
       real*8, parameter :: one=1.d0
@@ -85,12 +85,8 @@
       c1  = Cstv_Beta_8 * Dcst_rgasd_8
       c2  = one / Cstv_Tstr_8
       c3  = one
-      inv_rayt = one / Dcst_rayt_8
 
       if (schm_autobar_L)    c3 = 0.d0
-
-      explicit= 0.d0
-      if (Schm_angular_displacement_L) explicit= one
 
       jext = Grd_bsc_ext1
       onept= 0
@@ -129,8 +125,7 @@
          kq=max(2,k)
          do j=1,l_nj+1
             do i=1,l_ni+1
-               BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j)
-               BsPq(i,j,k) = BsPq(i,j,k) + F_q(i,j,kq) * Ver_onezero(k)
+               BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq) * Ver_onezero(k)
             enddo
          enddo
       enddo
@@ -162,10 +157,8 @@
       if (.not.Schm_hydro_L) then
          do j= j0, jn
          do i= i0, in
-            barz  = Ver_wp_8%m(k)*MU(i  ,j,k) &
-                   +Ver_wm_8%m(k)*MU(i  ,j,km)
-            barzp = Ver_wp_8%m(k)*MU(i+1,j,k) &
-                   +Ver_wm_8%m(k)*MU(i+1,j,km)
+            barz  = Ver_wp_8%m(k)*MU(i  ,j,k)+Ver_wm_8%m(k)*MU(i  ,j,km)
+            barzp = Ver_wp_8%m(k)*MU(i+1,j,k)+Ver_wm_8%m(k)*MU(i+1,j,km)
             wk1(i,j) = one + ( one - intuv_c0xxu_8(i) ) * barz &
                                    + intuv_c0xxu_8(i)   * barzp
          end do
@@ -185,55 +178,24 @@
 
 !     Compute Ru
 !     ~~~~~~~~~~
-      if (G_lam) then
-
       do j= j0, jn
-         do i= i0, in
-            barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
-                   +Ver_wm_8%m(k)*F_t(i  ,j,km)
+      do i= i0, in
+         barz  = Ver_wp_8%m(k)*F_t(i  ,j,k)+Ver_wm_8%m(k)*F_t(i  ,j,km)
+         barzp = Ver_wp_8%m(k)*F_t(i+1,j,k)+Ver_wm_8%m(k)*F_t(i+1,j,km)
 
-            barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
-                   +Ver_wm_8%m(k)*F_t(i+1,j,km)
+         t_interp = ( one - intuv_c0xxu_8(i) ) * barz + intuv_c0xxu_8(i) * barzp
 
-            t_interp = ( one - intuv_c0xxu_8(i) ) * barz + intuv_c0xxu_8(i) * barzp
+         v_interp = inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
+                  + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
+                  + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
+                  + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
 
-            v_interp = inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
-                     + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-                     + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
-                     + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
-
-            F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k) &
-                         - c1 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXu_8(i,j)        &
-                         - Cstv_Beta_8 * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) * geomg_invDXu_8(i,j) &
-                         + Cstv_Beta_8 * (Cori_fcoru_8(i,j) + explicit * F_u(i,j,k) * inv_rayt * dtan(geomg_y_8(j))) * v_interp
-
-            end do
+         F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k) &
+                      - c1 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXu_8(i,j)        &
+                      - Cstv_Beta_8 * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) * geomg_invDXu_8(i,j) &
+                      + Cstv_Beta_8 * (Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp
          end do
-
-      else
-
-         do j= j0, jn
-            do i= i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i  ,j,k) &
-                      +Ver_wm_8%m(k)*F_t(i  ,j,km)
-               barzp = Ver_wp_8%m(k)*F_t(i+1,j,k) &
-                      +Ver_wm_8%m(k)*F_t(i+1,j,km)
-               F_oru(i,j,k) = Cstv_invT_8 * F_u(i,j,k)  &
-                        - (Cstv_Beta_8 * Dcst_rgasd_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * &
-                        ( ( one - intuv_c0xxu_8(i) )* barz + intuv_c0xxu_8(i)  * barzp ) &
-                             * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) &
-                             * geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8) &
-                        - (Cstv_Beta_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * wk1(i,j) * ( FIp(i+1,j,k) - FIp(i,j,k) ) &
-                             * geomg_invDXu_8(i,j) * (geomg_cy_8(j) * Dcst_rayt_8)&
-                        + Cstv_Beta_8 * Cori_fcoru_8(i,j)      &
-                             * ( inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
-                               + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-                               + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
-                               + inuvl_wxxu3_8(i,4)*wk2(i+2,j) )
-            end do
-         end do
-
-      end if
+      end do
 
 !********************************
 ! Compute Rv: RHS of V equation *
@@ -256,10 +218,8 @@
       if (.not. Schm_hydro_L) then
          do j = j0, jn
          do i = i0, in
-            barz  = Ver_wp_8%m(k)*MU(i,j  ,k) &
-                   +Ver_wm_8%m(k)*MU(i,j  ,km)
-            barzp = Ver_wp_8%m(k)*MU(i,j+1,k) &
-                   +Ver_wm_8%m(k)*MU(i,j+1,km)
+            barz  = Ver_wp_8%m(k)*MU(i,j  ,k)+Ver_wm_8%m(k)*MU(i,j  ,km)
+            barzp = Ver_wp_8%m(k)*MU(i,j+1,k)+Ver_wm_8%m(k)*MU(i,j+1,km)
             wk1(i,j) = one + ( one - intuv_c0yyv_8(j) ) * barz  &
                                    + intuv_c0yyv_8(j)   * barzp
          end do
@@ -279,53 +239,24 @@
 
 !     Compute Rv
 !     ~~~~~~~~~~
-     if (G_lam) then
       do j = j0, jn
-         do i = i0, in
-            barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
-                   +Ver_wm_8%m(k)*F_t(i,j  ,km)
+      do i = i0, in
+         barz  = Ver_wp_8%m(k)*F_t(i,j  ,k)+Ver_wm_8%m(k)*F_t(i,j  ,km)
+         barzp = Ver_wp_8%m(k)*F_t(i,j+1,k)+Ver_wm_8%m(k)*F_t(i,j+1,km)
 
-            barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
-                   +Ver_wm_8%m(k)*F_t(i,j+1,km)
+         t_interp = (one - intuv_c0yyv_8(j)) * barz + intuv_c0yyv_8(j) * barzp
 
-            t_interp = (one - intuv_c0yyv_8(j)) * barz + intuv_c0yyv_8(j) * barzp
+         u_interp = inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
+                  + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
+                  + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
+                  + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
 
-            u_interp = inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
-                     + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
-                     + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
-                     + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
-
-            F_orv(i,j,k) = Cstv_invT_8 * F_v(i,j,k) &
-                         - c1 * t_interp * ( BsPq(i,j+1,k) - BsPq (i,j,k) ) * geomg_invDYv_8(j)       &
-                         - Cstv_Beta_8 * wk1(i,j) * ( FIp(i,j+1,k) - FIp(i,j,k) ) * geomg_invDYv_8(j) &
-                         - Cstv_Beta_8 * (Cori_fcorv_8(i,j) + explicit * u_interp * inv_rayt * dtan(geomg_yv_8(j))) * u_interp
-            end do
-         end do
-
-      else
-
-         do j = j0, jn
-            do i = i0, in
-               barz  = Ver_wp_8%m(k)*F_t(i,j  ,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j  ,km)
-               barzp = Ver_wp_8%m(k)*F_t(i,j+1,k) &
-                      +Ver_wm_8%m(k)*F_t(i,j+1,km)
-               F_orv(i,j,k) = Cstv_invT_8 * F_v(i,j,k) &
-                        - (Cstv_Beta_8 * Dcst_rgasd_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * &
-                        ( ( one - intuv_c0yyv_8(j) ) * barz + intuv_c0yyv_8(j)   * barzp ) &
-                             * ( BsPq(i,j+1,k) - BsPq (i,j,k) ) &
-                             * geomg_invDYv_8(j) * (geomg_cyv_8(j) * Dcst_rayt_8) &
-                        - (Cstv_Beta_8 / ( Dcst_rayt_8 * Dcst_rayt_8 )) * wk1(i,j) * ( FIp(i,j+1,k) - FIp(i,j,k) ) &
-                             * geomg_invDYv_8(j) * (geomg_cyv_8(j) * Dcst_rayt_8) &
-                        - Cstv_Beta_8 * Cori_fcorv_8(i,j) &
-                             * ( inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
-                               + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
-                               + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
-                               + inuvl_wyyv3_8(j,4)*wk2(i,j+2) )
-            end do
-         end do
-
-      end if
+         F_orv(i,j,k) = Cstv_invT_8 * F_v(i,j,k) &
+                      - c1 * t_interp * ( BsPq(i,j+1,k) - BsPq (i,j,k) ) * geomg_invDYv_8(j)       &
+                      - Cstv_Beta_8 * wk1(i,j) * ( FIp(i,j+1,k) - FIp(i,j,k) ) * geomg_invDYv_8(j) &
+                      - Cstv_Beta_8 * (Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp
+      end do
+      end do
 
 !     Indices to compute all fields on mass grid at routine output
       i0 = 1
@@ -388,34 +319,30 @@
       call vlog( ytmp_8, xtmp_8, nij)
 
       if (G_lam) then
-
          do j = j0, jn
-            do i = i0, in
-               tdiv = ((F_u (i,j,k)-F_u (i-1,j,k)) * geomg_invDX_8(i,j)) &
-                    + ((F_v (i,j,k)*geomg_cyv_8(j) - F_v (i,j-1,k)*geomg_cyv_8(j-1)) * geomg_invDY_8(j) * geomg_invcy_8(j)) &
-                    + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
-                    + Ver_wp_8%m(k) * F_zd(i,j,k) &
-                    + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
-               F_orc (i,j,k) = Cstv_invT_8 * ( c3*Ver_bzz_8(k)*F_s(i,j) + ytmp_8(i,j) ) &
-                             - Cstv_Beta_8 * tdiv
-            end do
+         do i = i0, in
+            tdiv = ((F_u (i,j,k)-F_u (i-1,j,k)) * geomg_invDX_8(i,j)) &
+                 + ((F_v (i,j,k)*geomg_cyv_8(j) - F_v (i,j-1,k)*geomg_cyv_8(j-1)) * geomg_invDY_8(j) * geomg_invcy_8(j)) &
+                 + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
+                 + Ver_wp_8%m(k) * F_zd(i,j,k) &
+                 + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+            F_orc (i,j,k) = Cstv_invT_8 * ( c3*Ver_bzz_8(k)*F_s(i,j) + ytmp_8(i,j) ) &
+                          - Cstv_Beta_8 * tdiv
          end do
-
+         end do
       else
-
          do j = j0, jn
-            do i = i0, in
-               tdiv = geomg_invcy2_8(j) * ( &
-                      (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDX_8(i,j)  * (geomg_cy_8(j) * Dcst_rayt_8)&
-                    + (F_v (i,j,k)-F_v (i,j-1,k))*geomg_invDY_8(j) * (geomg_cy_8(j) * Dcst_rayt_8) )&
-                    + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
-                    + Ver_wp_8%m(k) * F_zd(i,j,k) &
-                    + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
-               F_orc (i,j,k) = Cstv_invT_8 * ( c3*Ver_bzz_8(k)*F_s(i,j) + ytmp_8(i,j) ) &
-                             - Cstv_Beta_8 * tdiv
-            end do
+         do i = i0, in
+            tdiv = geomg_invcy2_8(j) * ( &
+                   (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDX_8(i,j)  * (geomg_cy_8(j) * Dcst_rayt_8)&
+                 + (F_v (i,j,k)-F_v (i,j-1,k))*geomg_invDY_8(j) * (geomg_cy_8(j) * Dcst_rayt_8) )&
+                 + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
+                 + Ver_wp_8%m(k) * F_zd(i,j,k) &
+                 + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+            F_orc (i,j,k) = Cstv_invT_8 * ( c3*Ver_bzz_8(k)*F_s(i,j) + ytmp_8(i,j) ) &
+                          - Cstv_Beta_8 * tdiv
          end do
-
+         end do
       end if
 
    end do

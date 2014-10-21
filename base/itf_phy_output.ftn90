@@ -175,10 +175,10 @@
 
          if (Level_typ_S(levset).eq.'M') then
 ! Preparation for Model level output
-!             call out_vref(p0,l_minx,l_maxx,l_miny,l_maxy,ig1=ig1)
+             call out_vref(ig1=ig1,etiket=Out_etik_S)
          else
 ! Preparation for Pressure output
-             call out_vref(Level(1:Level_max(levset),levset),ig1=ig1)
+             call out_vref(Level(1:Level_max(levset),levset),ig1=ig1,etiket=Out_etik_S)
          endif
 
          PHYSICS_VARS: do ii=1, Outp_var_max(kk)

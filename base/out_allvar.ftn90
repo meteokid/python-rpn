@@ -18,7 +18,6 @@
 
 !
       subroutine out_allvar (levset,set)
-      use out_vref_mod, only: out_vref
       implicit none
 #include <arch_specific.hf>
 !

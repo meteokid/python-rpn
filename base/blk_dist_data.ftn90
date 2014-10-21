@@ -20,7 +20,8 @@
 #include <arch_specific.hf>
 
       integer F_nga, F_nka_t, F_nka_m, F_diag_lvl, F_nkgz, F_ntra, F_unf,F_err
-      character* (*) F_datev, trname_a(F_ntra)
+      character* (*) F_datev
+      character*4 trname_a(F_ntra)
       real  uun (F_nga,F_nka_m+F_diag_lvl), vvn(F_nga,F_nka_m+F_diag_lvl)       ,&
             ttn (F_nga,F_nka_t+F_diag_lvl), trn(F_nga,F_nka_t+F_diag_lvl,F_ntra),&
             zdn (F_nga,F_nka_t), qqn (F_nga,F_nka_m), wwn(F_nga,F_nka_t)        ,&
@@ -72,6 +73,7 @@
                if (F_err.lt.0) goto 999
 
                read (F_unf); read (F_unf); read (F_unf); read (F_unf)
+               read (F_unf) trname_a(1:F_ntra)
 
                write (6,1001) Ptopo_myproc,trim(basename)
                call read_3df3 (F_unf,uu,vv,zd,tt,ssq,meq,qq,ww,tr,trname_a,&

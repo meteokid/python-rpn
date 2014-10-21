@@ -89,9 +89,10 @@
                               Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
                               Outd_nbit(ii,set) )
                endif
-               if ( (trim(Outd_var_S(ii,set)) == 'HU') .and. (Schm_phyms_L) ) then
+               if (Schm_phyms_L)  then
                   t4(:,:,G_nk+1) = tr1(:,:,G_nk)
-                  call itf_phy_sfcdiag (t4(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,'QDIAG')
+                  call itf_phy_sfcdiag (t4(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,&
+                                                        'TR/'//trim(Outd_var_S(ii,set))//':P')
                   if (Out3_cliph_L) t4(:,:,G_nk+1) = max ( t4(:,:,G_nk+1), 0. )
                   call ecris_fst2(t4,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t  ,&
                              Outd_var_S(ii,set),1.0,0.0,kind,G_nk+1,G_nk+1,1,&
@@ -132,11 +133,11 @@
 
             if (outvar_L) then
 
-               if ( (trim(Outd_var_S(ii,set)) == 'HU') .and. (Schm_phyms_L) ) then
+               if (Schm_phyms_L) then
                   t5(:,:,1:G_nk) = tr1(:,:,1:G_nk)
                   t5(:,:,G_nk+1) = t5(:,:,G_nk)
-                  call itf_phy_sfcdiag (t5(l_minx,l_miny,G_nk+1), &
-                                        l_minx,l_maxx,l_miny,l_maxy,'QDIAG') 
+                  call itf_phy_sfcdiag (t5(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,&
+                                                        'TR/'//trim(Outd_var_S(ii,set))//':P')
                   call vertint ( w4,cible,nko, t5 ,F_wlnph_ta,G_nk+1,&
                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                           'linear', .false. )

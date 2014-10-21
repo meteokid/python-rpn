@@ -43,7 +43,7 @@
       namelist /bubble_cfgs/ Schm_phyms_L, Schm_itcn, Schm_modcn
       namelist /bubble_cfgs/ Schm_xwvt3
       namelist /bubble_cfgs/ Schm_itnlh, Schm_itraj
-      namelist /bubble_cfgs/ Schm_adcub_L, Schm_psadj_L
+      namelist /bubble_cfgs/ Schm_adcub_L, Schm_psadj_S
       namelist /bubble_cfgs/ Cstv_dt_8, Cstv_ptop_8, Cstv_tstr_8
       namelist /bubble_cfgs/ Cstv_bA_8
       namelist /bubble_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
@@ -68,7 +68,7 @@
       namelist /mtn_cfgs/ Schm_phyms_L, Schm_itcn, Schm_modcn
       namelist /mtn_cfgs/ Schm_xwvt3
       namelist /mtn_cfgs/ Schm_itnlh, Schm_itraj
-      namelist /mtn_cfgs/ Schm_adcub_L, Schm_psadj_L
+      namelist /mtn_cfgs/ Schm_adcub_L, Schm_psadj_S
       namelist /mtn_cfgs/ Schm_autobar_L
       namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
       namelist /mtn_cfgs/ Cstv_ptop_8, Cstv_tstr_8

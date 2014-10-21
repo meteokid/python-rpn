@@ -23,7 +23,7 @@
 !
       logical F_zd_L, F_w_L, F_q_L, F_vt_L
       integer unf,ntra,nga,nka_t,nka_m,diag_lvl,ofi,ofj,err
-      character* (*) trname_a(ntra)
+      character*4 trname_a(ntra)
       real  uun (nga,nka_m+diag_lvl), vvn (nga,nka_m+diag_lvl)     , &
             ttn (nga,nka_t+diag_lvl), trn (nga,nka_t+diag_lvl,ntra), &
             zdn (nga,nka_t), wwn(nga,nka_t), &
@@ -43,7 +43,7 @@
 #include "tr3d.cdk"
 #include "lun.cdk"
 !
-      character*4 nomvar
+      character*4 nomvar,tracers(ntra)
       logical, save :: done=.false.
       logical s_L,gz_L,tt_L,uu_L,vv_L,found,found_diag
       integer i,j,k,ntr,n,cumerr,ni1,nj1,nk1,nbits,lindex,indx_hu
@@ -69,7 +69,7 @@
       F_q_L = .false.
       F_vt_L = .false.
 !     Initialize tracer names
-      trname_a= '!@@NOT@@'
+      tracers= '!@@NOT@@'
       found_diag= .false.
 
       cumerr= 0
@@ -142,9 +142,9 @@
       endif
       if (nomvar.eq.'DIAG') then
          found_diag= .true.
-         allocate(tr1(nga,4))
+         allocate(tr1(nga,3+ntra))
          call filmup (nomvar,tr1,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                      4,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                      3+ntra,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
          cumerr= cumerr + err
          goto 10
       endif
@@ -154,7 +154,7 @@
       do n=1,Tr3d_ntr
          if (trim(nomvar).eq.trim(Tr3d_name_S(n)))then
             ntr= ntr+1
-            trname_a(ntr)= nomvar
+            tracers(ntr)= nomvar
             lindex= ntr
             found = .true.
             if (nomvar == 'HU') indx_hu=ntr
@@ -190,14 +190,23 @@
          err= -1
          return
       endif
-      
+
       if (found_diag) then
-         ttn(:,nka_t+diag_lvl)        = tr1(:,1)
-         trn(:,nka_t+diag_lvl,indx_hu)= tr1(:,2)
-         uun(:,nka_m+diag_lvl)        = tr1(:,3)
-         vvn(:,nka_m+diag_lvl)        = tr1(:,4)
+         ttn(:,nka_t+diag_lvl) = tr1(:,1)
+         uun(:,nka_m+diag_lvl) = tr1(:,2)
+         vvn(:,nka_m+diag_lvl) = tr1(:,3)
+         do n=1,Tr3d_ntr
+            do k=1,ntra
+               if (trim(trname_a(k)).eq.trim(Tr3d_name_S(n)))then
+                  trn(:,nka_t+diag_lvl,n)= tr1(:,3+k)
+                  cycle
+               endif
+            end do
+         end do
          deallocate (tr1)
       endif
+
+      trname_a = tracers
 
       err= 0
 

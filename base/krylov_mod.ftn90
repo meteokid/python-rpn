@@ -19,8 +19,8 @@ module krylov_mod
    private
 
 #include "prec.cdk"
-#include "glb_ld.cdk"
 #include "lun.cdk"
+#include "glb_ld.cdk"
 
    public :: krylov_fbicgstab, krylov_fgmres
 
@@ -45,8 +45,10 @@ contains
       ! A matrix-vector product routine (A.*v).
       interface
          subroutine matvec(v, prod)
-            real*8, dimension (:, :, :), intent(in) :: v
-            real*8, dimension (:, :, :), intent(out) :: prod
+#include "ldnh.cdk"
+#include "glb_ld.cdk"
+            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
+            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
       end interface
       !
@@ -258,8 +260,10 @@ contains
       ! A matrix-vector product routine (A.*vv).
       interface
          subroutine matvec(v, prod)
-            real*8, dimension (:, :, :), intent(in) :: v
-            real*8, dimension (:, :, :), intent(out) :: prod
+#include "ldnh.cdk"
+#include "glb_ld.cdk"
+            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(in) :: v
+            real*8, dimension (ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk), intent(out) :: prod
          end subroutine
       end interface
       !

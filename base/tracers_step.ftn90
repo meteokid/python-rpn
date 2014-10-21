@@ -15,9 +15,11 @@
 
 !**s/r tracers_step
 !
-      subroutine tracers_step
+      subroutine tracers_step (F_water_tracers_only_L)
       implicit none
 #include <arch_specific.hf>
+
+      logical, intent(IN) :: F_water_tracers_only_L
 
 !author
 !     Michel Desgagne --- summer 2014
@@ -27,11 +29,13 @@
 
 !     _________________________________________________________________
 !
-      call stat_mass_tracers (1,"BEFORE ADVECTION") 
+      if (.not. F_water_tracers_only_L) &
+           call stat_mass_tracers (1,"BEFORE ADVECTION")
 
-      call adx_tracers_interp
+      call adx_tracers_interp (F_water_tracers_only_L)
 
-      call stat_mass_tracers (0,"AFTER ADVECTION") 
+      if (.not. F_water_tracers_only_L) &
+           call stat_mass_tracers (0,"AFTER ADVECTION")
 
       ! add code here for tracer conservation
       ! code should be named adx_tracers_mono.ftn90

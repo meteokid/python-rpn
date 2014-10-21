@@ -121,9 +121,11 @@
  
       call tstpdyn ( Schm_itraj )
 
-      if (Schm_psadj_L) call psadj
+      call tracers_step (.true. )
 
-      call tracers_step
+      call psadj
+
+      call tracers_step (.false.)
 
 !     ------------------------------------------------------------
 !     C	  When the timestep is completed, rename all the

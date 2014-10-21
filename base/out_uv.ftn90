@@ -156,16 +156,16 @@
             enddo
          endif
 
-      endif
+         if (Schm_phyms_L) then
+            nk_src= l_nk+1
+            uu(:,:,nk_src) = uu(:,:,l_nk)
+            vv(:,:,nk_src) = vv(:,:,l_nk)
+            call itf_phy_sfcdiag (uu(l_minx,l_miny,nk_src),l_minx,l_maxx,&
+                                                  l_miny,l_maxy,'PW_UU:P')
+            call itf_phy_sfcdiag (vv(l_minx,l_miny,nk_src),l_minx,l_maxx,&
+                                                  l_miny,l_maxy,'PW_VV:P')
+         endif
 
-      if (Schm_phyms_L) then
-         nk_src= l_nk+1
-         uu(:,:,nk_src) = uu(:,:,l_nk)
-         vv(:,:,nk_src) = vv(:,:,l_nk)
-         call itf_phy_sfcdiag (uu(l_minx,l_miny,nk_src),l_minx,l_maxx,&
-                                                l_miny,l_maxy,'UDIAG')
-         call itf_phy_sfcdiag (vv(l_minx,l_miny,nk_src),l_minx,l_maxx,&
-                                                l_miny,l_maxy,'VDIAG')
       endif
 
       lastdt = Lctl_step

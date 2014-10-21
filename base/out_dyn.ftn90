@@ -71,8 +71,6 @@
       integer i,j,k,istat,jj,kk,levset,gridset
       real wlnpi_m(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), &
            wlnpi_t(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
-!, &
-!           p0(l_minx:l_maxx,l_miny:l_maxy)
       real*8 dayfrac,sec_in_day
       parameter ( sec_in_day=86400.0d0 )
 !
@@ -135,9 +133,9 @@
             call out_href2  ( 'Mass_point' )
 
             if (Level_typ_S(levset).eq.'M') then
-!               call out_vref (p0, l_minx,l_maxx,l_miny,l_maxy)
+               call out_vref (etiket=Out_etik_S)
             elseif (Level_typ_S(levset).eq.'P') then
-               call out_vref (Level_allpres(1:Level_npres))
+               call out_vref (Level_allpres(1:Level_npres),etiket=Out_etik_S)
             endif
 
             !     output of 3-D tracers
@@ -193,8 +191,9 @@
             call datf2p (pdate,Out3_date)
             dayfrac = dble(Lctl_step) * Cstv_dt_8 / sec_in_day
             call incdatsd (datev,pdate,dayfrac)
-            call out_dyn_3df (datev, Grdc_gid, Grdc_gif,&
-                                     Grdc_gjd, Grdc_gjf )
+
+            call out_dyn_3df_2 (datev)
+
          endif
 
          ontimec = .false.

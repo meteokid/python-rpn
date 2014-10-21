@@ -77,7 +77,6 @@
       Schm_hydro_L  = .false.
       Schm_hzdadw_L = .false.
       Schm_topo_L   = .true.
-      Schm_wload_L  = .false.
       Schm_itcn     = 2
       Schm_modcn    = 1
       Schm_xwvt3    = 0
@@ -89,11 +88,13 @@
       Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
-      Schm_psadj_L    = .false.
+      Schm_psadj_S    = 'NIL'
+      Schm_source_ps_L= .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
+      Schm_wload_L  = .false.
 !
       Schm_phyms_L    = .true.
       Schm_chems_L    = .false.
@@ -244,6 +245,8 @@
 !
       call low2up (Lctl_rxstat_S ,dumc_S)
       Lctl_rxstat_S = dumc_S
+      call low2up (Schm_psadj_S ,dumc_S)
+      Schm_psadj_S = dumc_S
 !
       gem_nml = 1
       goto 9999

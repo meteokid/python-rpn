@@ -39,6 +39,8 @@
       if (nbits.ge.32) then
          do k=1,nk1
             read (unf,end=45,err=45) tr1(:,:,k)
+!            call statfld3 (tr1(1,1,k),nomvar, k, '', &
+!                           1,ni1,1,nj1,1,1, 1,1,1,ni1,nj1,1,8)
          end do
       else
          n = (ni1*nj1*nbits+120+32-1)/32

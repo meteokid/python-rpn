@@ -31,15 +31,14 @@ module out_vref_mod
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine out_vref_model(F_ref,minx,maxx,miny,maxy,ig1,ig2)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_write,vgd_print,VGD_OK,vgd_get
+  subroutine out_vref_model(ig1,ig2,etiket)
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get
     ! Write the vertical coordinate descriptor (model levels)
 
     implicit none
 
-    real, dimension(minx:maxx,miny:maxy), intent(in) :: F_ref !reference (surface) field
-    integer, intent(in) :: minx,maxx,miny,maxy          !bounds for reference field
     integer, intent(in), optional :: ig1,ig2            !override 'out.cdk' values of ig1,ig2
+    character(len=*), optional :: etiket               !override etiket value
 
     !author
     !     v.lee - rpn march 2008
@@ -90,6 +89,11 @@ contains
             ip1_m    = Ver_ip1%m,       &
             ip1_t    = Ver_ip1%t)
 
+       if(present(etiket))then
+          err = vgd_put(vgd,key='ETIK - record stamp',value=etiket)
+          ! there should be en error trapping
+       endif
+
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
 
@@ -100,15 +104,15 @@ contains
   end subroutine out_vref_model
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine out_vref_pres(F_rf,ig1,ig2)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_write,vgd_print,VGD_OK
+  subroutine out_vref_pres(F_rf,ig1,ig2,etiket)
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK
     ! Write the vertical coordinate descriptor (pressure levels)
 
     implicit none
 
     real, dimension(:), intent(in) :: F_rf              !List of pressure levels to output
     integer, intent(in), optional :: ig1,ig2            !override 'out.cdk' values of ig1,ig2
-
+    character(len=*), optional :: etiket               !override etiket value
     !author
     !     R. McTaggart-Cowan - Aug 2009
     !
@@ -155,9 +159,16 @@ contains
             a_m_8    = dble(F_rf*100.), &
             b_m_8    = zero,            &
             ip1_m    = ip1s)
+       ! there should be en error trapping
+
+       if(present(etiket))then
+          err = vgd_put(vgd,key='ETIK - record stamp',value=etiket)
+          ! there should be en error trapping
+       endif
 
        if (report(Out_ig1,Out_ig2)) err = vgd_print(vgd,Lun_out)
        err = vgd_write(vgd,unit=Out_unf,format='fst')
+       ! there should be en error trapping
 
     endif
     

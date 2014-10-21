@@ -109,8 +109,11 @@
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
 
-      if(Schm_cub_traj_L.and.(.not.G_lam))&
+      if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
            call handle_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
+      if ( (Schm_psadj_S=='DRY') .and. (.not.Schm_wload_L) ) &
+           call handle_error(-1,'set_world_view','Scmh_wload_L must be true if Schm_psadj_S=DRY')
+
       call adx_nml_print ()
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 

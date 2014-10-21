@@ -245,7 +245,7 @@
       if (Schm_phyms_L) then
          nk_src= l_nk+1
          hu(:,:,nk_src) = hu(:,:,l_nk)
-         call itf_phy_sfcdiag (hu(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,'QDIAG')
+         call itf_phy_sfcdiag (hu(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,'TR/HU:P')
       endif
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,nk_src)
 !
@@ -254,7 +254,7 @@
       call tt2virt2 (tt,.false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
       if (Schm_phyms_L) then
          tt(:,:,nk_src) = tt(:,:,l_nk)
-         call itf_phy_sfcdiag (tt(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,'TDIAG')
+         call itf_phy_sfcdiag (tt(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P')
       endif
       call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,nk_src)
 !

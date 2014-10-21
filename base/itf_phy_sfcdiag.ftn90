@@ -27,6 +27,7 @@
    !**/
 
 #include "grd.cdk"
+#include "glb_ld.cdk"
 
       integer :: istat
       real, dimension(:,:,:), pointer :: ptr3d
@@ -34,7 +35,8 @@
 !-----------------------------------------------------------------
 !
       ptr3d => F_dest(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-      istat = phy_get(ptr3d,F_var_S,F_npath='VO',F_bpath='P')
+      istat = phy_get(ptr3d,F_var_S,F_npath='VO',F_bpath='D', &
+               F_start=(/-1,-1,l_nk+1/),F_end=(/-1,-1,l_nk+1/))
 !
 !-----------------------------------------------------------------
 !

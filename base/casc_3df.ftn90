@@ -87,7 +87,7 @@ End Subroutine blk_dist_georef
 End Interface
 
       type(gmm_metadata) :: mymeta
-      character(len=GMM_MAXNAMELENGTH), dimension (:), pointer :: trname_a
+      character(len=4), dimension (:), pointer :: trname_a
       character*1024 fn
 
       logical initial_data

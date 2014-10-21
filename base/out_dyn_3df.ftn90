@@ -15,12 +15,11 @@
 
 !**s/r out_dyn_3df - model output in 3DF files for cascade
 !
-      subroutine out_dyn_3df ( datev, gid, gif, gjd, gjf )
+      subroutine out_dyn_3df_2 ( datev )
       implicit none
 #include <arch_specific.hf>
 
       character* (*) datev
-      integer gid, gif, gjd, gjf
 
 !author M.Desgagne ( MC2 2001)
 !
@@ -42,8 +41,8 @@
 
       character* 512 filen
       logical, save :: done=.false.
-      integer i,j,k,nis,njs,cnt,unf,nvar,err,ofi,ofj,istat
-      integer outindx(4),outindx_g(4,Ptopo_numproc)
+      integer i,j,k,nis,njs,cnt,unf,nvar,err,ofi,ofj,istat,ntra
+      integer outindx(4),outindx_g(4,Ptopo_numproc),gid,gif,gjd,gjf
       real, pointer, dimension(:,:,:) :: tr1,tr2
 !
 !------------------------------------------------------------------
@@ -59,6 +58,9 @@
       endif
       call RPN_COMM_gather (outindx  , 4,"MPI_INTEGER"  ,outindx_g, &
                                   4, "MPI_INTEGER"  ,0,"GRID", err)
+
+      gid= Grdc_gid ; gif= Grdc_gif
+      gjd= Grdc_gjd ; gjf= Grdc_gjf
 
       if (Ptopo_myproc.eq.0) then
          filen=trim(Out_dirname_S)//'/3df_'//trim(datev)//'_filemap.txt'
@@ -96,9 +98,7 @@
          nvar = 8
       endif
 
-      if (Out_blocme.eq.0)  &
-           call out_sfile_3df3 ( datev, unf, gid, gif, gjd, gjf,&
-                                               Grdc_ntr, filen )
+      if (Out_blocme.eq.0) call out_sfile_3df3 ( datev, unf )
 
       call write_3df3 (  tt1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk, &
                              'VT  ',gid, gif, gjd, gjf, unf, done )
@@ -127,29 +127,26 @@
          if (.not.GMM_IS_ERROR(istat)) then
             call write_3df3 (tr2,l_minx,l_maxx,l_miny,l_maxy,nis,njs,&
                  G_nk, Grdc_trnm_S(k), gid, gif, gjd, gjf, unf, done )
+!            call statfld3 (tr2,trim(Grdc_trnm_S(k)), 0, '', &
+!                 l_minx,l_maxx,l_miny,l_maxy,1,g_nk,gid,gjd,1,gif,gjf,g_nk,8)
          endif
       end do
 
       if ( Schm_phyms_L )then
-         allocate(tr1(l_minx:l_maxx,l_miny:l_maxy,4))
-         if (Step_kount.eq.0) then
-            istat=gmm_get('TR/HU:P',tr2)
-            tr1(:,:,1) = tt1(:,:,G_nk)
-            tr1(:,:,2) = tr2(:,:,G_nk)
-            tr1(:,:,3) = ut1(:,:,G_nk)
-            tr1(:,:,4) = vt1(:,:,G_nk)
-         else
-            call itf_phy_sfcdiag(tr1(l_minx,l_miny,1),&
-                   l_minx,l_maxx,l_miny,l_maxy,'TDIAG')
-            call itf_phy_sfcdiag(tr1(l_minx,l_miny,2),&
-                   l_minx,l_maxx,l_miny,l_maxy,'QDIAG')
-            call itf_phy_sfcdiag(tr1(l_minx,l_miny,3),&
-                   l_minx,l_maxx,l_miny,l_maxy,'UDIAG')
-            call itf_phy_sfcdiag(tr1(l_minx,l_miny,4),&
-                   l_minx,l_maxx,l_miny,l_maxy,'VDIAG')
-         endif
-         call write_3df3 (tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,4,&
-                               'DIAG',gid, gif, gjd, gjf, unf, done )
+         ntra= 3+Grdc_ntr
+         allocate(tr1(l_minx:l_maxx,l_miny:l_maxy,ntra))
+         call itf_phy_sfcdiag(tr1(l_minx,l_miny,1),&
+              l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P')
+         call itf_phy_sfcdiag(tr1(l_minx,l_miny,2),&
+              l_minx,l_maxx,l_miny,l_maxy,'PW_UU:P')
+         call itf_phy_sfcdiag(tr1(l_minx,l_miny,3),&
+              l_minx,l_maxx,l_miny,l_maxy,'PW_VV:P')
+         do k=1,Grdc_ntr
+            call itf_phy_sfcdiag(tr1(l_minx,l_miny,3+k),&
+              l_minx,l_maxx,l_miny,l_maxy,'TR/'//trim(Grdc_trnm_S(k))//':P')
+         end do
+         call write_3df3 (tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,ntra,&
+                                  'DIAG',gid, gif, gjd, gjf, unf, done )
          deallocate (tr1)
       endif
 

@@ -65,7 +65,7 @@
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
-      real*8 scale_factor, scale_factor_z
+      real*8 scale_factor, scale_factor_u, scale_factor_z
       parameter( ZERO_8  = 0.0 )
       parameter( HALF_8  = 0.5 )
       parameter( ONE_8   = 1.0 )
@@ -191,10 +191,11 @@
                 Geomg_sx_8(l_minx:l_maxx),Geomg_sy_8 (l_miny:l_maxy),&
                 Geomg_cx_8(l_minx:l_maxx),Geomg_cy_8 (l_miny:l_maxy),&
                 Geomg_cy2_8(l_miny:l_maxy),Geomg_cyv_8(l_miny:l_maxy),&
+                Geomg_tyoa_8(l_minx:l_maxx),Geomg_tyoav_8(l_minx:l_maxx),&
                 Geomg_cyv2_8(l_miny:l_maxy)  ,Geomg_invDY_8 (l_miny:l_maxy),&
-                Geomg_invDYv_8(l_miny:l_maxy),Geomg_invcy_8 (l_miny:l_maxy),&
-                Geomg_invcyv_8(l_miny:l_maxy),Geomg_invcy2_8(l_miny:l_maxy),&
-                Geomg_invcyv2_8(l_miny:l_maxy),&
+                Geomg_invDYv_8(l_miny:l_maxy),Geomg_invDYz_8(l_miny:l_maxy),&
+                Geomg_invcy_8 (l_miny:l_maxy),Geomg_invcyv_8(l_miny:l_maxy),&
+                Geomg_invcy2_8(l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy),&
                 Geomg_invDX_8 (l_minx:l_maxx,l_miny:l_maxy),&
                 Geomg_invDXu_8(l_minx:l_maxx,l_miny:l_maxy),&
                 Geomg_invDXz_8(l_minx:l_maxx,l_miny:l_maxy),&
@@ -226,14 +227,31 @@
          Geomg_cyv2_8(j)= cos( Geomg_yv_8(j) )**2
          Geomg_invDY_8(j)  = TWO_8/(Dcst_rayt_8 * ( G_yg_8(indx+1)- G_yg_8(indx-1)))
          Geomg_invDYv_8(j) = ONE_8/(Dcst_rayt_8 * ( G_yg_8(indx+1)- G_yg_8(indx)))
+         Geomg_invDYz_8(j) = ONE_8/(Dcst_rayt_8 * ( G_yg_8(indx+1)- G_yg_8(indx)))
+         if(.not.G_lam) Geomg_invDYv_8(j) = Geomg_invDYv_8(j)*Geomg_cyv_8(j)/Dcst_rayt_8
+         Geomg_tyoa_8(j) = 0.d0
+         Geomg_tyoav_8(j)= 0.d0
       end do
+ 
+      if (Schm_angular_displacement_L) then
+         do j=1-G_haloy, l_nj+G_haloy
+            indx = offj + j
+            Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
+            Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
+         enddo
+      endif
 
       do j=1-G_haloy,l_nj+G_haloy
+         if(G_lam) then
+            scale_factor_u = Dcst_rayt_8 * Geomg_cy_8(j)
+         else
+            scale_factor_u = Dcst_rayt_8 * Dcst_rayt_8
+         endif
          scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
          scale_factor_z = Dcst_rayt_8 * Geomg_cyv_8(j)
          do i=1-G_halox,l_ni+G_halox
             indx = offi + i
-            Geomg_invDXu_8(i,j) = ONE_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx)))
+            Geomg_invDXu_8(i,j) = ONE_8/(scale_factor_u * ( G_xg_8(indx+1)- G_xg_8(indx)))
             Geomg_invDX_8(i,j)  = TWO_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx-1)))
             Geomg_invDXz_8(i,j) = ONE_8/(scale_factor_z * ( G_xg_8(indx+1)- G_xg_8(indx)))
          end do
