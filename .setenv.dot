@@ -1,1 +1,26 @@
-.setenv-pgi9xx.dot
+#!/bin/ksh
+COMP_ARCH_DEFAULT=intel13sp1u2
+[[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
+if [[ x"$1" != x"savehist=500" ]] ; then
+   export COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}}
+else
+   export COMP_ARCH=${COMP_ARCH_DEFAULT}
+fi
+echo "USING: COMP_ARCH=$COMP_ARCH"
+
+if [[ -f .setenv_${COMP_ARCH}.dot ]] ; then
+   echo ". .setenv_${COMP_ARCH}.dot"
+   . .setenv_${COMP_ARCH}.dot
+fi
+if [[ -f ssmusedep_${COMP_ARCH}.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep_${COMP_ARCH}.bndl"
+   . s.ssmuse.dot $(cat ssmusedep_${COMP_ARCH}.bndl)
+fi
+if [[ -f ssmusedep_all.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep_all.bndl"
+   . s.ssmuse.dot $(cat ssmusedep_all.bndl)
+fi
+
+export PATH=$(pwd)/bin:$PATH
+#export TEST_S_AR=1
+export SSMVERSION=$(ssm version | cut -d. -f1)

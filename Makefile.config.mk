@@ -100,7 +100,8 @@ export SSM_RELDIRBNDL    := $(SSM_RELDIR)$(SSM_X)
 export SSMINSTALLDIR     := $(DESTDIR)$(SSM_RELDIR)
 export SSMINSTALLDIRDOM  := $(DESTDIR)$(SSM_RELDIRDOM)
 export SSMINSTALLDIRBNDL := $(DESTDIR)$(SSM_RELDIRBNDL)
-export SSMDEPENDENCIES   := $(PWD)/ssmuse_dependencies.bndl
+export SSMDEPENDENCIES   := $(PWD)/ssmusedep_pre.bndl $(PWD)/ssmusedep.bndl
+export SSMDEPENDENCIESPOST := $(PWD)/ssmusedep_post.bndl
 
 ##TAR gnu tar function name on localhost
 export TAR := $(shell mu.echo_tarcmd)

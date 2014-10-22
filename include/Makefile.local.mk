@@ -15,7 +15,9 @@ BINDIR    = $(MONBINDIR)
 
 
 ## Some Shortcut/Alias to Lib Names
-GEMLIBS     = gemdyn
+GEMDYN_VERSION = 
+GEMDYNLIBS  = gemdyn$(GEMDYN_VERSION)
+GEMLIBS     = $(GEMDYNLIBS)
 
 CHMLIBPATH  = 
 CHM         = $(CHM_VERSION) $(CHMLIBS)
