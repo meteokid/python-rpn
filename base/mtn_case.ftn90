@@ -62,6 +62,7 @@
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf
       real hauteur, tempo, dx, slp, slpmax
+      real*8 temp1, temp2
       real, pointer    , dimension(:,:,:) :: tr
 !
 !     ---------------------------------------------------------------
@@ -139,10 +140,15 @@
        do k=1,g_nk
          do j=1,l_nj
             do i=1,l_ni
-               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               tempo = exp(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
-               F_t(i,j,k)=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+               temp1=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+               tempo = exp(Ver_a_8%m(k+1)+Ver_b_8%m(k+1)*F_s(i,j))
+               a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
+               hauteur=-log((capc1-1.+a02)/capc1)/a00
+               temp2=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
+               F_t(i,j,k)=Ver_wp_8%t(k)*temp2+Ver_wm_8%t(k)*temp1
             enddo
          enddo
       enddo        

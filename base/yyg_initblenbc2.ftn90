@@ -15,8 +15,6 @@
 !***s/r yyg_initblenbc2 - to initialize communication pattern for cubic
 !                            blending of scalar fields
 !
-
-
       Subroutine yyg_initblenbc2()
       implicit none
 #include <arch_specific.hf>
@@ -77,10 +75,13 @@
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &
 !            imy.ge.1+glb_pil_s .and. imy.le.G_nj-glb_pil_n) then
+! It is important to do this check before min-max
+!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj) 
          if (imx.gt.1+glb_pil_w .and. imx.lt.G_ni-glb_pil_e .and. &
              imy.gt.1+glb_pil_s .and. imy.lt.G_nj-glb_pil_n) then
              imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
              imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+
 ! check to collect from who
              if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
                  j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then
@@ -226,11 +227,14 @@
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &
 !            imy.ge.1+glb_pil_s .and. imy.le.G_nj-glb_pil_n) then
+! It is important to do this check before min-max
+!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
+
          if (imx.gt.1+glb_pil_w .and. imx.lt.G_ni-glb_pil_e .and. &
              imy.gt.1+glb_pil_s .and. imy.lt.G_nj-glb_pil_n) then
-
              imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
              imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+
 ! check to collect from who
              if (i  .ge.l_i0.and.i  .le.l_i0+l_ni-1 .and. &
                  j  .ge.l_j0.and.j  .le.l_j0+l_nj-1      ) then

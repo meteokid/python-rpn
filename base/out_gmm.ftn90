@@ -84,7 +84,7 @@
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(256) :: keylist
       character(len=2) class_var(100,3)
-      logical periodx_L
+      logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,ig2,istat,id,cid
       integer, dimension(:), allocatable::indo
       real, pointer, dimension(:,:,:) :: tr3
@@ -120,7 +120,7 @@
 
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
-      call out_slev ( Level(1,levset), Level_max(levset),G_nk,indo,nko)
+      call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
 
       do ii=1,Outd_var_max(set)
       do  i=1,nkeys

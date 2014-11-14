@@ -16,6 +16,8 @@
 !**s/r itf_phy_output
 !
       subroutine itf_phy_output2 (stepno)
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
       use phy_itf, only: phy_get,phymeta,phy_getmeta
       implicit none
@@ -50,22 +52,23 @@
 #include "level.cdk"
 #include "outp.cdk"
 #include "pw.cdk"
-#include "ver.cdk"
 #include "vt1.cdk"
 #include "out_listes.cdk"
 
       type(phymeta) :: pmeta
+      type(vgrid_descriptor) :: vcoord
       character*4 ext_S
       character*6 etikadd_S
-      integer i,ii,jj,k,kk,levset,nko,nko_t,cnt,ip3,istat,&
-              gridset,ig1,mult,mosaic,bcs_ext,add_diag   ,&
-              p_li0,p_li1,p_lj0,p_lj1
-      integer, dimension (:), allocatable :: indo_pres,indo,indo_t,irff
+      integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,ip3,istat,&
+              gridset,ig1,mult,mosaic,bcs_ext,p_li0,p_li1,p_lj0,p_lj1
       integer grille_x0,grille_x1,grille_y0,grille_y1
-      logical periodx_L, flag_clos
+      integer, dimension (:), allocatable :: indo_pres,indo,irff
+      integer, dimension(:), pointer :: ip1m
+      logical periodx_L, flag_clos, write_diag_lev
       real mul
       real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m,wlnpi_t
       real, dimension(:), allocatable::prprlvl,rff
+      real, dimension(:), pointer :: hybm,hybt
       real, dimension(:,:,:), allocatable :: buso_pres,cible
       real, dimension(:,:,:), pointer :: lnpres
       real, dimension(:,:,:), allocatable, target :: data3d
@@ -121,29 +124,30 @@
       p_li0= Grd_lphy_i0 ; p_li1=Grd_lphy_in
       p_lj0= Grd_lphy_j0 ; p_lj1=Grd_lphy_jn
 
+!     Retreieve vertical coordinate description
+      nullify(ip1m,hybm,hybt)
+      istat = vgrid_wb_get('ref-m',vcoord,ip1m)
+      deallocate(ip1m); nullify(ip1m)
+      if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
+      if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+
       do jj=1, outp_sorties(0,stepno)
 
          kk       = outp_sorties(jj,stepno)
          gridset  = Outp_grid(kk)
          levset   = Outp_lev(kk)
          periodx_L= .not.G_lam .and. ((Grid_x1(gridset)-Grid_x0(gridset)+1).eq.G_ni)
-            
-         add_diag = 0
-         if (Level_typ_S(levset) == 'M' .and. Level_max(levset) == G_nk) add_diag = 1
 
-         allocate (indo_t( min(Level_max(levset)+add_diag,Level_thermo+add_diag)   ))
-         allocate (indo  ( min(Level_max(levset)+add_diag,Level_momentum+add_diag) ))
+         allocate (indo  ( min(Level_max(levset),Level_momentum) ))
          
-         call out_slev (Level(1,levset), Level_max(levset)+add_diag, &
-                        Level_thermo+add_diag,indo_t,nko_t)
-         call out_slev (Level(1,levset), Level_max(levset)+add_diag, &
-                        Level_momentum+add_diag,indo,nko)
+         call out_slev2 (Level(1,levset), Level_max(levset), &
+                        Level_momentum,indo,nko,write_diag_lev)
 
-         nko= Level_max(levset)+add_diag
-         allocate ( indo_pres(nko),buso_pres(l_ni,l_nj,nko),prprlvl(nko),&
-                    cible(l_ni,l_nj,nko) )
+         nko_pres = Level_max(levset)
+         allocate ( indo_pres(nko_pres),buso_pres(l_ni,l_nj,nko_pres),prprlvl(nko_pres),&
+                    cible(l_ni,l_nj,nko_pres) )
          buso_pres= 0.
-         do i = 1, nko
+         do i = 1, nko_pres
             indo_pres(i)= i
             prprlvl(i)   = level(i,levset) * 100.0
             cible(:,:,i) = log(prprlvl(i))
@@ -246,13 +250,21 @@
                   if (Level_typ_S(levset).eq.'M') then
 
                      if (pmeta%stag .eq. 1) then ! thermo
-                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%t  , &
+                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, hybt  , &
                                          Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
-                                         G_nk+1,indo_t,nko_t, Outp_nbit(ii,kk) )
+                                         G_nk,indo,nko,Outp_nbit(ii,kk) )
+                        if (write_diag_lev) then
+                           call ecris_fst2 (data3d(1,1,G_nk+1), 1,l_ni, 1,l_nj, hybt(G_nk+2), &
+                                Outp_var_S(ii,kk),1.,0.,Level_kind_diag,1,1,1, Outp_nbit(ii,kk) )
+                        endif
                      else  ! momentum
-                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, Ver_hyb%m     , &
+                        call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, hybm     , &
                                          Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
-                                         G_nk+1,indo  ,nko  , Outp_nbit(ii,kk) )
+                                         G_nk,indo,nko,Outp_nbit(ii,kk) )
+                        if (write_diag_lev) then
+                           call ecris_fst2 (data3d(1,1,G_nk+1), 1,l_ni, 1,l_nj, hybm(G_nk+2), &
+                                Outp_var_S(ii,kk),1.,0.,Level_kind_diag,1,1,1, Outp_nbit(ii,kk) )
+                        endif
                      endif
 
                   elseif (Level_typ_S(levset).eq.'P') then
@@ -260,19 +272,19 @@
                      lnpres => wlnpi_m
                      if ( pmeta%stag .eq. 1 ) lnpres => wlnpi_t
 
-                     call vertint ( buso_pres, cible, nko, data3d, lnpres, G_nk,&
+                     call vertint ( buso_pres, cible, nko_pres, data3d, lnpres, G_nk,&
                                     1,l_ni, 1,l_nj, 1,l_ni, 1,l_nj, 'linear', .false. )
 
                      call ecris_fst2 ( buso_pres, 1,l_ni, 1,l_nj    , &
                              level(1,levset),Outp_var_S(ii,kk),1.,0., &
-                             2,nko,indo_pres,nko,Outp_nbit(ii,kk) )
+                             2,nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk) )
 
                   endif
                endif FIELD_SHAPE
             endif WRITE_FIELD
          end do PHYSICS_VARS
 
-         deallocate (indo, indo_t, buso_pres, indo_pres, prprlvl, cible)
+         deallocate (indo, buso_pres, indo_pres, prprlvl, cible)
          
          flag_clos= .true.
          if (jj .lt. outp_sorties(0,stepno)) then
@@ -285,7 +297,8 @@
       end do
       
       deallocate(rff,irff,data3d)
-      
+      deallocate(hybm,hybt); nullify(hybm,hybt)
+
       call timing_stop ( 90 )
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)

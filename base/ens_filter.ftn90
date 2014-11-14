@@ -218,7 +218,7 @@
          do j= j0, l_nj !-pil_n
             do i= i0, in 
                F_difvt1(i,j,k) = (dsp_local(i,j,k) - dsp_local(i,j-1,k)) * &
-                                  Geomg_invDYz_8(j)
+                                  Geomg_invDYv_8(j)
                F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
                F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
             enddo

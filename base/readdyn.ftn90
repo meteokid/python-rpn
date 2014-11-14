@@ -118,11 +118,9 @@
 !            4 => p =    A+B*   ps       , F_p0=ps      ,  hyb-anal
 !            5 => p =    A+B*   ps       , F_p0=ps      ,  ecm-anal
 !            6 => p =exp(A+B*ln(ps/pref)), F_p0=ps      ,  stg-anal
-
 !
 !     ---------------------------------------------------------------
 !
-
       lnpref_8 = log(Cstv_pref_8)
 
       call datp2f   ( dat, F_datev )
@@ -348,7 +346,7 @@
 
       if (ana_zd_L) then
          if (Acql_vertint) then
-            call vertint ( work,dstlev_t,G_nk, zd_temp,srclev_t,nka_t,&
+            call vertint ( work,dstlev_t,G_nk, zd_temp,srclev_t,nka_t-1,&
                            1,l_ni,1,l_nj, 1,l_ni,1,l_nj,'cubic',.false.)
             F_zd(1:l_ni,1:l_nj,1:G_nk) = work(1:l_ni,1:l_nj,1:G_nk)
          else
@@ -358,7 +356,7 @@
 
       if (ana_w_L) then
          if (Acql_vertint) then
-            call vertint ( work,dstlev_t,G_nk, w_temp,srclev_t,nka_t,&
+            call vertint ( work,dstlev_t,G_nk, w_temp,srclev_t,nka_t-1,&
                            1,l_ni,1,l_nj, 1,l_ni,1,l_nj,'cubic',.false.)
             F_w(1:l_ni,1:l_nj,1:G_nk) =   work(1:l_ni,1:l_nj,1:G_nk)
          else
@@ -368,11 +366,9 @@
 
       if (ana_q_L) then
          if (Acql_vertint) then
-            ! This code will have to be reviewed
-            call handle_error(-1,'Please review this code for Q','readdyn')
-            call vertint ( work,dstlev_m,G_nk, q_temp,srclev_m,nka_m,&
+            call vertint ( work,dstlev_m(1,1,2),G_nk, q_temp,srclev_m(1,1,2),nka_m-1,&
                            1,l_ni,1,l_nj, 1,l_ni,1,l_nj,'cubic',.false.)
-            F_q(1:l_ni,1:l_nj,2:G_nk+1) =   work(1:l_ni,1:l_nj,2:G_nk+1)
+            F_q(1:l_ni,1:l_nj,2:G_nk+1) = work  (1:l_ni,1:l_nj,1:G_nk)
          else
             F_q(1:l_ni,1:l_nj,2:G_nk+1) = q_temp(1:l_ni,1:l_nj,1:G_nk)
          endif

@@ -73,7 +73,7 @@
       real, pointer    , dimension(:,:,:) :: tr,hu
       real*8,allocatable,dimension(:    ) :: za_8,zb_8,zat_8,zbt_8
       real, dimension(l_ni,l_nj) :: pps, ps , topo_temp, topo_abdes
-      real*8 lnpref_8,fistr_top_8,diffd
+      real*8 diffd
       real step_current
 !
 !     ---------------------------------------------------------------
@@ -145,11 +145,9 @@
          topo_temp(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj)
       endif
 
-      lnpref_8 = log(Cstv_pref_8)
-      fistr_top_8=-Cstv_RTstr_8*(Ver_z_8%m(1)-Cstv_Zsrf_8)
       do j=1,l_nj
       do i=1,l_ni
-         pps(i,j)=lnpref_8
+         pps(i,j)=Cstv_Zsrf_8
 
 !        Reduce size of mountains
 !        ------------------------
@@ -160,15 +158,15 @@
          endif
 
 !        Define log(surface pressure)
-         F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-fistr_top_8-F_topo(i,j)) &
-                    /Cstv_rtstr_8
+         F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-Ver_FIstr_8(1)-F_topo(i,j)) &
+                    /(Dcst_Rgasd_8*Cstv_Tstr_8)
       enddo
       enddo
 
       do k=1,g_nk
       do j=1,l_nj
       do i=1,l_ni
-         F_t(i,j,k)  = Cstv_tstr_8
+         F_t(i,j,k)  = Cstv_Tstr_8
          F_zd (i,j,k) = 0.0
          F_w (i,j,k) = 0.0
       end do

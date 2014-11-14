@@ -14,8 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 !***s/r yyg_initblenu - to initialize communication pattern for U field 
 !
-
-
       Subroutine yyg_initblenu()
       implicit none
 #include <arch_specific.hf>
@@ -85,7 +83,11 @@
          call localise(imx2,imy2,x_a,y_a, &
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
+
 ! check if this point can be found in the other grid
+! It is important to do this check before min-max
+!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
+
          if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_niu-glb_pil_e .and. &
              imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj-glb_pil_n  .and. &
              imx2.gt.1+glb_pil_w .and. imx2.lt.G_niu-glb_pil_e .and. &
@@ -95,6 +97,7 @@
              imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
              imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
              imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+
 !
 
 ! check to collect from who
@@ -251,6 +254,9 @@
                           G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
 ! check if this point can be found in the other grid
+! It is important to do this check before min-max
+!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
+
          if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_niu-glb_pil_e .and. &
              imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj-glb_pil_n  .and. &
              imx2.gt.1+glb_pil_w .and. imx2.lt.G_niu-glb_pil_e .and. &
@@ -260,6 +266,7 @@
              imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
              imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
              imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+
 !
 
 ! check to collect from who

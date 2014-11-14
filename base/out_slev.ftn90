@@ -15,12 +15,13 @@
 
 !**s/r out_slev
 !
-      subroutine out_slev (F_level,F_levmax,F_nk,F_indo,F_nko)
+      subroutine out_slev2 (F_level,F_levmax,F_nk,F_indo,F_nko,F_write_diag_lev)
       implicit none
 #include <arch_specific.hf>
 
       integer F_nk,F_indo(*),F_nko, F_levmax
       real F_level(*)
+      logical F_write_diag_lev
 
 !AUTHOR   Michel Desgagne     July 2004 (MC2)
 !
@@ -30,6 +31,8 @@
 !                             in order to select the "bot" levels
 !ARGUMENTS
 !    NAMES       I/O  TYPE  DESCRIPTION
+
+#include "schm.cdk"
 
       integer k,kk
 !
@@ -56,6 +59,12 @@
          endif
       enddo
       F_nko=kk
+      
+      ! Diagnostic level additions
+      F_write_diag_lev = .false.
+      if ( Schm_phyms_L .and. &
+           ( (F_nko == F_nk) .or. &
+              any(F_indo(1:F_nko)==F_nk))) F_write_diag_lev = .true.
 !
 !----------------------------------------------------------------------
 !

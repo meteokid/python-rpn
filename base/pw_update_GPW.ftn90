@@ -60,7 +60,7 @@
       do k=1,l_nk
          pw_wz_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= fip(1:l_ni,1:l_nj,k) + &
-                                      Ver_fistr_8%m(k)
+                                      Ver_fistr_8(k)
          if (k.eq.1) &
          pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
       end do

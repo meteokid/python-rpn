@@ -44,8 +44,8 @@
 #include "ver.cdk"
 
       integer k,err,istat,k0
-      real*8 one, aaa, xxx, yyy
-      parameter( one = 1.d0 )
+      real*8  w1, w2
+      real*8, parameter :: zero=0.d0, one=1.d0
 !
 !     ---------------------------------------------------------------
 
@@ -60,57 +60,53 @@
       Cstv_invT_8  = one/Cstv_tau_8
       Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
 
-      if(Schm_hydro_L) then
-         Ver_epsilon_8=0.d0
-      else
-         Ver_epsilon_8=Cstv_RTstr_8/ &
-              (Dcst_grav_8*Dcst_grav_8*Cstv_tau_8*Cstv_tau_8)
-      endif
-      Ver_gamma_8=Dcst_cappa_8/(Dcst_cappa_8+Ver_epsilon_8)
-      Ver_gokt2RT_8= Ver_gamma_8/ &
-              (Dcst_cappa_8*Cstv_tau_8*Cstv_tau_8*Cstv_RTstr_8)
+      Ver_igt_8    = Cstv_invT_8/Dcst_grav_8
+      Ver_ikt_8    = Cstv_invT_8/Dcst_cappa_8
+      if(Schm_hydro_L) Ver_igt_8=zero
+      Ver_igt2_8   = Ver_igt_8**2
 
-      Cstv_hco0_8 = Dcst_rayt_8 * Dcst_rayt_8 * Ver_gokt2RT_8
-      Cstv_hco1_8 = 0.d0
+      do k=1,G_nk
+         Ver_epsi_8(k)=Dcst_Rgasd_8*Ver_Tstr_8%t(k)*Ver_igt2_8
+         Ver_gama_8(k)=Cstv_invT_8**2/ &
+              (Dcst_Rgasd_8*Ver_Tstr_8%t(k)*(Dcst_cappa_8+Ver_epsi_8(k)))
+      enddo
 
-      Ver_alfat_8 = 1.d0
-      Ver_cst_8   = 0.d0
-      Ver_cstp_8  = 0.d0
-      aaa = (one-Dcst_cappa_8)*Ver_epsilon_8
+      Cstv_hco0_8 = Dcst_rayt_8**2
+      Cstv_hco1_8 = zero
+      Cstv_hco2_8 = one
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!   PURELY FOR VALIDATION PURPOSES    !!!!!!!!!!!!!!!!!!
-      if(.not.Schm_opentop_L) then
-            yyy = one/(one/(Ver_z_8%m(1)-Cstv_Ztop_8))
-         Ver_alfat_8 = one/(Ver_z_8%m(1)-Cstv_Ztop_8) * yyy
-      endif
-!!!!!!   PURELY FOR VALIDATION PURPOSES    !!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      Ver_alfat_8 = one
+      Ver_cst_8   = zero
+      Ver_cstp_8  = zero
 
       if(Schm_opentop_L) then
-         xxx =   Ver_dz_8%m(k0)*Ver_wm_8%m(k0)* &
-                     (Ver_idz_8%t(k0-1)+aaa*Ver_wm_8%t(k0-1))
-         yyy =   one/(Ver_idz_8%t(k0-1)+Ver_epsilon_8*Ver_wm_8%t(k0-1))
+         w1 = Ver_dz_8%m(k0)*Ver_wm_8%m(k0)*(Ver_idz_8%t(k0-1) &
+                 +(one-Dcst_cappa_8)*Ver_epsi_8(k0-1)*Ver_wm_8%t(k0-1))
+         w2 = one/(Ver_idz_8%t(k0-1)+Ver_epsi_8(k0-1)*Ver_wm_8%t(k0-1))
          Ver_alfat_8 = (Ver_idz_8%t(k0-1) &
-                     - Ver_epsilon_8*Ver_wp_8%t(k0-1)) * yyy
-         Ver_cst_8   =             one / Ver_gokt2RT_8 * yyy
-         Ver_cstp_8  =     ( Ver_idz_8%t(k0-1) - xxx ) * yyy
+                     - Ver_epsi_8(k0-1)*Ver_wp_8%t(k0-1)) * w2
+         Ver_cst_8   =             one / Ver_gama_8(k0-1) * w2
+         Ver_cstp_8  =         ( Ver_idz_8%t(k0-1) - w1 ) * w2
       endif
 
-      xxx = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)* &
-                (Ver_idz_8%t(G_nk)-aaa*Ver_wp_8%t(G_nk))
-      yyy = one/(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wp_8%t(G_nk))
+      w1 = Ver_dz_8%m(G_nk)*Ver_wp_8%m(G_nk)*(Ver_idz_8%t(G_nk) &
+           -(one-Dcst_cappa_8)*Ver_epsi_8(G_nk)*Ver_wp_8%t(G_nk))
+      w2 = one/(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wp_8%t(G_nk))
       Ver_alfas_8 = (Ver_idz_8%t(G_nk) &
-                  - Dcst_cappa_8*Ver_wm_8%t(G_nk)) * yyy
-      Ver_css_8   =            one / Ver_gokt2RT_8 * yyy
-      Ver_cssp_8  =        (Ver_idz_8%t(G_nk)+xxx) * yyy
+                  - Dcst_cappa_8*Ver_wm_8%t(G_nk)) * w2
+      Ver_css_8   =         one / Ver_gama_8(G_nk) * w2
+      Ver_cssp_8  =         (Ver_idz_8%t(G_nk)+w1) * w2
 
+      Cstv_bar0_8 = zero
+      Cstv_bar1_8 = one
       if(Schm_autobar_L) then
-         Schm_hydro_L = .true.
-         Ver_alfas_8 = 1.d0
-         Ver_css_8   = 0.d0
-         Ver_cssp_8  = 0.d0
+         Cstv_bar0_8 = Cstv_invT_8**2/Ver_FIstr_8(1)
+         Cstv_bar1_8 = zero
+         Ver_alfas_8 = one
+         Ver_css_8   = zero
+         Ver_cssp_8  = zero
          Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Ver_z_8%m(1))
+         Cstv_hco2_8 = zero
       endif
 
       call set_opr

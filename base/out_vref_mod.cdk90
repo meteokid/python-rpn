@@ -32,7 +32,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine out_vref_model(ig1,ig2,etiket)
-    use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get
+    use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,vgd_write,vgd_print,VGD_OK,vgd_get
+    use vgrid_wb, only: vgrid_wb_get
     ! Write the vertical coordinate descriptor (model levels)
 
     implicit none
@@ -61,6 +62,7 @@ contains
 
     ! Internal variables
     integer :: err,my_ig1,my_ig2
+    integer, dimension(:), pointer :: ip1m
     type(vgrid_descriptor) :: vgd
 
     ! Set default values
@@ -70,24 +72,12 @@ contains
     if (present(ig2)) my_ig2 = ig2
 
     ! Write coordinate descriptor
-
     if (writeDescriptor()) then
-       err = vgd_new(vgd,               &
-            kind     = Level_kind_ip1,  &
-            version  = Level_version,   &
-            nk       = G_nk,            &
-            ip1      = my_ig1,          &
-            ip2      = my_ig2,          &
-            ptop_8   = Cstv_ptop_8,     &
-            pref_8   = Cstv_pref_8,     &
-            rcoef1   = Grd_rcoef(1),    &
-            rcoef2   = Grd_rcoef(2),    &
-            a_m_8    = Ver_a_8%m,       &
-            b_m_8    = Ver_b_8%m,       &
-            a_t_8    = Ver_a_8%t,       &
-            b_t_8    = Ver_b_8%t,       &
-            ip1_m    = Ver_ip1%m,       &
-            ip1_t    = Ver_ip1%t)
+       nullify(ip1m)
+       err = vgrid_wb_get('ref-m',vgd,ip1m)
+       deallocate(ip1m); nullify(ip1m)
+       err = vgd_put(vgd,'IP_1 - record ip1',my_ig1) 
+       err = vgd_put(vgd,'IP_2 - record ip2',my_ig1) 
 
        if(present(etiket))then
           err = vgd_put(vgd,key='ETIK - record stamp',value=etiket)

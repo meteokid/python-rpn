@@ -88,7 +88,7 @@
       Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
-      Schm_psadj_S    = 'NIL'
+      Schm_psadj_L    = .false.
       Schm_source_ps_L= .false.
       Schm_pcsty_L    = .true.
       Schm_pheat_L    = .true.
@@ -118,7 +118,6 @@
 !
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
-      Cstv_ptop_8  = -1.d0
       Cstv_tstr_8  = 240.0
 !
       Lctl_rxstat_S   = 'LCL_4'
@@ -198,7 +197,7 @@
       Out3_debug_L   = .false.
       Out3_flipit_L  = .false.
       Out3_newout_L  = .false.
-      Out3_fullplane_L = .false.
+      Out3_fullplane_L = .true.
       Out3_uencode_L   = .false.
 !
 !     Williamson's cases section
@@ -245,8 +244,6 @@
 !
       call low2up (Lctl_rxstat_S ,dumc_S)
       Lctl_rxstat_S = dumc_S
-      call low2up (Schm_psadj_S ,dumc_S)
-      Schm_psadj_S = dumc_S
 !
       gem_nml = 1
       goto 9999

@@ -38,7 +38,6 @@
       namelist /gem_cfgs/ Clim_climat_L
       namelist /gem_cfgs/ Clim_inincr_L
       namelist /gem_cfgs/ Cstv_bA_8
-      namelist /gem_cfgs/ Cstv_ptop_8
       namelist /gem_cfgs/ Cstv_tstr_8
       namelist /gem_cfgs/ Eigv_parity_L
       namelist /gem_cfgs/ G_halox
@@ -133,11 +132,10 @@
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
       namelist /gem_cfgs/ Schm_phyms_L
-      namelist /gem_cfgs/ Schm_psadj_S
+      namelist /gem_cfgs/ Schm_psadj_L
       namelist /gem_cfgs/ Schm_Tlift
       namelist /gem_cfgs/ Schm_Topo_L
       namelist /gem_cfgs/ Schm_trapeze_L
-      namelist /gem_cfgs/ Schm_angular_displacement_L
       namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_xwvt3
@@ -178,7 +176,6 @@
       namelist /gem_cfgs_p/ Clim_climat_L
       namelist /gem_cfgs_p/ Clim_inincr_L
       namelist /gem_cfgs_p/ Cstv_bA_8
-      namelist /gem_cfgs_p/ Cstv_ptop_8
       namelist /gem_cfgs_p/ Cstv_tstr_8
       namelist /gem_cfgs_p/ Eigv_parity_L
       namelist /gem_cfgs_p/ G_halox
@@ -266,10 +263,9 @@
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
       namelist /gem_cfgs_p/ Schm_phyms_L
-      namelist /gem_cfgs_p/ Schm_psadj_S
+      namelist /gem_cfgs_p/ Schm_psadj_L
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_trapeze_L
-      namelist /gem_cfgs_p/ Schm_angular_displacement_L
       namelist /gem_cfgs_p/ Schm_superwinds_L
       namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_source_ps_L

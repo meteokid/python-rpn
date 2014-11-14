@@ -20,6 +20,7 @@
 ! Level_typ_S        | level type: "P" for pressure in mb, "M" for eta |
 !                    | which corresponds to each defined Level set     |
 ! Level_kind_ip1     | value of KIND to be used in CONVIP function     |
+! Level_kind_diag    | value of KIND for the diagnostic level          |
 ! Level_mode_ip1     | '3' for oldstyle, '1' for newstyle              |
 ! Level_momentum     | # of levels in momentum including the surface   |
 ! Level_thermo       | # of levels in momentum including the surface   |
@@ -35,7 +36,7 @@
       PARAMETER (MAXLEV = 201)
       real Level(MAXLEV,MAXSET),Level_allpres(MAXSET*MAXLEV)
       integer Level_id(MAXSET),Level_sets,Level_thermo,Level_momentum
-      integer Level_max(MAXSET),Level_kind_ip1,Level_mode_ip1
+      integer Level_max(MAXSET),Level_kind_ip1,Level_kind_diag,Level_mode_ip1
       integer :: Level_version,Level_npres
       character(len=1) Level_typ_S(MAXSET)
 
@@ -43,5 +44,6 @@
 
       COMMON /Level_i/ Level_id,Level_max,Level_version,Level_thermo,Level_npres
       COMMON /Level_i/ Level_sets,Level_kind_ip1,Level_mode_ip1,Level_momentum
+      COMMON /Level_i/ Level_kind_diag
 
       COMMON /Level_c/ Level_typ_S

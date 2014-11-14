@@ -41,11 +41,8 @@
 !
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
-#include "ver.cdk"
 #include "opr.cdk"
-#include "schm.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
 !
@@ -58,10 +55,8 @@
 !
       F_evec_8= 0. ; F_levec_8= 0. ; wk1= 0. ; B1= 0. ; err= 0
     
-      xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
+      xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
-!
-      if(Schm_autobar_L) xxx = zero
 !
       do j=1,F_nk
 !

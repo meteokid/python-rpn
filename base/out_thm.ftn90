@@ -17,6 +17,8 @@
 !
       subroutine out_thm ( wlnph_m, wlnph_ta, F_st1, Minx,Maxx,Miny,Maxy,&
                                                          nk, levset, set )
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vgrid_wb, only: vgrid_wb_get
       implicit none
 #include <arch_specific.hf>
 !
@@ -113,8 +115,8 @@
 
       type(gmm_metadata) :: mymeta
       real deg2rad,zd2etad
-      integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,nkof,istat,nk_under,nk_src
-      integer, dimension(:), allocatable::indo,indo_t
+      integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,istat,nk_under,nk_src
+      integer, dimension(:), allocatable::indo
       real andre(l_ni,l_nj)
       real w1(l_minx:l_maxx,l_miny:l_maxy), w2(l_minx:l_maxx,l_miny:l_maxy)
       real w3(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), qh(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
@@ -146,6 +148,12 @@
       real*8, parameter :: ZERO_8 = 0.0
       real    prmult_pngz, prmult_pnpx, prmult_pnme
       real    pradd_pnvt,  pradd_pntt,  pradd_pntd
+
+      type(vgrid_descriptor) :: vcoord
+      integer, dimension(:), pointer :: ip1m
+      real, dimension(:), pointer :: hybm,hybt
+      save hybm,hybt
+      logical :: write_diag_lev
 !
 !-------------------------------------------------------------------
 !
@@ -158,7 +166,6 @@
       pradd_pnvt   = -Dcst_tcdk_8
       pradd_pntt   = -Dcst_tcdk_8
       pradd_pntd   = -Dcst_tcdk_8
-
 
       pnpn=0
       pnp0=0
@@ -239,7 +246,7 @@
 !_______________________________________________________________________
 !
 !     Obtain HU from HUT1 and physics diag level
-!
+
       hu(:,:,1:l_nk)= hut1(:,:,1:l_nk)
       nk_src= l_nk
       if (Schm_phyms_L) then
@@ -257,10 +264,10 @@
          call itf_phy_sfcdiag (tt(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P')
       endif
       call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,nk_src)
-!
+
 !     Obtain Virtual temperature from TT1 and physics diag level
 !     On diag level there is no hydrometeor.
-!
+
       vt(:,:,1:l_nk) = tt1(:,:,1:l_nk)
       if (Schm_phyms_L) then
          call mfotvt (vt(l_minx,l_miny,nk_src),tt(l_minx,l_miny,nk_src),&
@@ -271,7 +278,7 @@
 !     Store PTOP (PT)
       ptop (:,:) = Cstv_ptop_8
       l_ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-!
+
 !     Compute and store P0
       w1(:,:)=F_st1(:,:)
       call vsexp (w2,w1,l_ninj)
@@ -280,7 +287,7 @@
          p0(i,j) = w2(i,j)*Cstv_pref_8
       end do
       end do
-!
+
       if(pnwe.ne.0)then
          call handle_error(-1,'out_thm','REVIEW CODE FOR NOMVAR=WE')
          !
@@ -313,14 +320,13 @@
             end do
          end do
       endif
-!
 !_________________________________________________________________
 !
 !     2.0    Output 2D variables 
 !_________________________________________________________________
 !     output 2D fields on 0mb (pressure)
       kind=2
-!
+
       if (pnme.ne.0)then
             call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'ME  ',prmult_pnme,0.0,kind,1,1, 1, nbit(pnme) )
@@ -338,7 +344,6 @@
       if (pnlo.ne.0) &
           call ecris_fst2(Geomn_lonrx,1,l_ni,1,l_nj,0.0, &
               'LO  ',1.0,0.0,kind,1, 1, 1, nbit(pnlo) )
-
 !_______________________________________________________________________
 !
 !     3.0    Precomputations for output over pressure levels or PN or 
@@ -378,7 +383,7 @@
          do k=G_nk,1,-1
             do j= 1,l_nj
             do i= 1,l_ni
-               gzm(i,j,k)=gzm(i,j,k)+Ver_fistr_8%m(k)
+               gzm(i,j,k)=gzm(i,j,k)+Ver_fistr_8(k)
             enddo
             enddo
          enddo
@@ -448,81 +453,92 @@
 
 !       Setup the indexing for output 
          kind=Level_kind_ip1
-         allocate ( indo(G_nk+1), indo_t(G_nk+1) )
-         call out_slev(Level(1,levset), Level_max(levset), &
-                       Level_momentum,indo,nko)
-         call out_slev(Level(1,levset), Level_max(levset), &
-                       Level_thermo,indo_t,nko_t)
-         nkof= nko_t
-         if (nko_t .eq. G_nk) then
-            nkof= nk_src
-            indo_t(nkof)= nkof
-         else
-            if ((nko_t .eq. 1).and.(indo_t(1).eq.G_nk)) then
-               if (Schm_phyms_L) then
-                  nkof= 2
-                  indo_t(nkof)= G_nk + 1
-               endif
-            endif
+         allocate ( indo(G_nk+1) )
+         call out_slev2(Level(1,levset), Level_max(levset), &
+              Level_momentum,indo,nko,write_diag_lev)
+
+!        Retreieve vertical coordinate description
+         if ( .not. associated (hybm) ) then
+            nullify(ip1m,hybm,hybt)
+            istat = vgrid_wb_get('ref-m',vcoord,ip1m)
+            deallocate(ip1m); nullify(ip1m)
+            if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
+            if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
          endif
           
          if (pngz.ne.0)then
-            nko_m=nko
-            if (indo(nko).eq.G_nk+1 .and. indo_t(nko_t).eq.G_nk+1) nko_m= nko-1
             call ecris_fst2(gzm(l_minx,l_miny,1), &
-              l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-              'GZ  ',prmult_pngz,0.0,kind,G_nk+1, indo, nko_m, nbit(pngz) )
-            call ecris_fst2(gzt, &
-              l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-              'GZ  ',prmult_pngz,0.0,kind,G_nk+1,indo_t,nko_t,nbit(pngz))
-            call ecris_fst2(gzt(l_minx,l_miny,G_nk+1), &
-              l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t(G_nk+1), &
-              'GZ  ',prmult_pngz,0.0,kind,1,1,1,nbit(pngz))
+              l_minx,l_maxx,l_miny,l_maxy,hybm, &
+              'GZ  ',prmult_pngz,0.0,kind,G_nk, indo, nko, nbit(pngz) )
+            call ecris_fst2(gzt(l_minx,l_miny,1), &
+              l_minx,l_maxx,l_miny,l_maxy,hybt, &
+              'GZ  ',prmult_pngz,0.0,kind,G_nk+1, indo, nko, nbit(pngz) )
+!            if (write_diag_lev) then
+               call ecris_fst2(gzt(l_minx,l_miny,G_nk+1), &
+                    l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
+                    'GZ  ',prmult_pngz,0.0,kind,1,1,1,nbit(pngz))
+!            endif
          endif
 
          if (pnvt.ne.0)then
-            call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo_t,nkof, nbit(pnvt) )
+            call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo,nko,nbit(pnvt) )
+!            if (write_diag_lev) then
+!               call ecris_fst2(vt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                    'VT  ',1.0,pradd_pnvt,Level_kind_diag,1,1,1,nbit(pnvt) )
+!            endif
          endif
          if (pnth.ne.0) then
-               call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'TH  ',1.0,0.0,kind,G_nk+1,indo_t,nkof,nbit(pnth) )               
+               call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                    'TH  ',1.0,0.0,kind,G_nk+1,indo,nko,nbit(pnth) )
+!               if (write_diag_lev) then
+!                  call ecris_fst2(th(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                       'TH  ',1.0,0.0,Level_kind_diag,1,1,1,nbit(pnth) )
+!               endif
          endif
 
-         if (pntt.ne.0)then            
-            call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'TT  ' ,1.0,pradd_pntt, kind,G_nk+1,indo_t,nkof, nbit(pntt) )
+         if (pntt.ne.0)then
+            call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'TT  ' ,1.0,pradd_pntt, kind,G_nk+1,indo,nko, nbit(pntt) )
+            if (write_diag_lev) then
+               call ecris_fst2(tt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'TT  ',1.0,pradd_pntt,Level_kind_diag,1,1,1,nbit(pntt) )
+            endif
          endif
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
 
 !            Calculate PX (in px), thermo levels.
 !            And output all the levels!
              call vsexp(px_ta(l_minx,l_miny,1),wlnph_ta(Minx,Miny,1),(l_ninj*G_nk))
-             px_ta(:,:,G_nk+1) = p0(:,:)
+             px_ta(:,:,G_nk+1) = p0
 
 !            Calculate PX (in px), momentum levels.
              call vsexp(px_m(l_minx,l_miny,1),wlnph_m(l_minx,l_miny,1),l_ninj*G_nk)
-             px_m(:,:,G_nk+1) = p0(:,:)
+             px_m(:,:,G_nk+1) = p0
 
          endif
                      
          if (pnpx.ne.0)then
-             nko_m=nko
-             if (indo(nko).eq.G_nk+1 .and. indo_t(nko_t).eq.G_nk+1) then
-                 nko_m= nko-1
+             call ecris_fst2(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+              'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko,nbit(pnpx) )
+             call ecris_fst2(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+              'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko,nbit(pnpx) )
+             if (write_diag_lev) then
+                call ecris_fst2(px_ta(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
+                    'PX  ',prmult_pnpx,0.0,kind,1,1,1,nbit(pnpx) )
              endif
-             call ecris_fst2(px_m,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-              'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko_m,nbit(pnpx) )
-             call ecris_fst2(px_ta,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-              'PX  ',prmult_pnpx,0.0,kind,G_nk,indo_t,nko_t,nbit(pnpx) )
          endif
 
          if (pntw.ne.0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
              call mthtaw4 (t8,hu,tt, px_ta,Out3_satues_L, &
                            .true.,Dcst_trpl_8,l_ninj,nk_src,l_ninj)
-             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-              'TW  ',1.0,0.0, kind,G_nk+1, indo_t, nkof, nbit(pntw) )
+             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+              'TW  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pntw) )
+!             if (write_diag_lev) then
+!                call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                     'TW  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pntw) )
+!             endif
          endif
 
          if (pnes.ne.0 .or. pntd.ne.0) then
@@ -540,9 +556,14 @@
                enddo
             endif
 
-            if (pnes.ne.0) &
-               call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                   'ES  ',1.0,0.0, kind,G_nk+1, indo_t, nkof, nbit(pnes) )
+            if (pnes.ne.0) then
+               call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                    'ES  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnes) )
+!               if (write_diag_lev) then
+!                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                    'ES  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnes) )
+!               endif
+            endif
 
             if (pntd.ne.0) then
 !            Calculate TD (tt=TT,t8=old ES, t8=TD=TT-ES)
@@ -553,8 +574,12 @@
                   enddo
                   enddo
                enddo
-               call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo_t,nkof,nbit(pntd) )
+               call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                    'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo,nko,nbit(pntd) )
+!               if (write_diag_lev) then
+!                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                       'TD  ',1.0,pradd_pntd,Level_kind_diag,1,1,1,nbit(pntd) )
+!               endif
             endif
          endif
 
@@ -574,26 +599,30 @@
                   enddo
                enddo
             endif
-            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'HR  ',1.0,0.0, kind,G_nk+1, indo_t, nkof, nbit(pnhr) )
+            call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'HR  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnhr) )
+!            if (write_diag_lev) then
+!               call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+!                    'HR  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnhr) )
+!            endif
          endif
 
          if (pnww.ne.0) then
-            call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'WW  ',1.0,0.0, kind,G_nk, indo_t, nko_t, nbit(pnww) )
+            call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'WW  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnww) )
          endif
 
          if (pnwe.ne.0) then
-            call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                 'WE  ',1.0,0.0, kind,nk, indo_t, min(nko_t,nk), nbit(pnwe) )
+            call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                 'WE  ',1.0,0.0, kind,nk, indo, min(nko,nk), nbit(pnwe) )
             deallocate(ffwe)
          endif
 
          if (pnzz.ne.0) then
-            call ecris_fst2(wt1,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%t, &
-                    'ZZ  ',1.0,0.0, kind,G_nk, indo_t, nko_t, nbit(pnzz) )
+            call ecris_fst2(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                    'ZZ  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnzz) )
          endif
-         deallocate(indo,indo_t)
+         deallocate(indo)
 
       else   ! Output on pressure levels
 

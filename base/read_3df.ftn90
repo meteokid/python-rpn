@@ -24,10 +24,10 @@
       logical F_zd_L, F_w_L, F_q_L, F_vt_L
       integer unf,ntra,nga,nka_t,nka_m,diag_lvl,ofi,ofj,err
       character*4 trname_a(ntra)
-      real  uun (nga,nka_m+diag_lvl), vvn (nga,nka_m+diag_lvl)     , &
-            ttn (nga,nka_t+diag_lvl), trn (nga,nka_t+diag_lvl,ntra), &
-            zdn (nga,nka_t), wwn(nga,nka_t), &
-            meqn(nga,nka_t), qqn(nga,nka_m), ssqn(nga,1)
+      real  uun (nga,nka_m+diag_lvl  ), vvn (nga,nka_m+diag_lvl)     , &
+            ttn (nga,nka_t+diag_lvl  ), trn (nga,nka_t+diag_lvl,ntra), &
+            zdn (nga,nka_t+diag_lvl-1), wwn (nga,nka_t+diag_lvl-1)   , &
+            qqn (nga,nka_m+diag_lvl-1), meqn(nga,nka_t), ssqn(nga,1)
 !
 !author
 !     M. Desgagne  April 2006 (MC2 read_3df)
@@ -122,21 +122,21 @@
       if (nomvar.eq.'W   ') then
          F_w_L=.true.
          call filmup (nomvar,wwn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                      nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                      nka_t+diag_lvl-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
          cumerr= cumerr + err
          goto 10
       endif
       if (nomvar.eq.'ZD  ') then
          F_zd_L=.true.
          call filmup (nomvar,zdn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                      nka_t,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                      nka_t+diag_lvl-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
          cumerr= cumerr + err
          goto 10
       endif
       if (nomvar.eq.'Q   ') then
          F_q_L=.true.
          call filmup (nomvar,qqn,ifd_niad,ifd_niaf,ifd_njad,ifd_njaf, &
-                      nka_m,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
+                      nka_m+diag_lvl-1,unf,ofi,ofj,err,ni1,nj1,nk1,nbits )
          cumerr= cumerr + err
          goto 10
       endif

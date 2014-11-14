@@ -52,11 +52,10 @@
       do k=1,G_nk+1
          print *,k,Ver_a_8%m(k),Ver_b_8%m(k)
       enddo
-      print *,'prgenab Ver_z_8%m(k),Ver_fistr_8%m(k),k=1,G_nk'
-      do k=1,G_nk
-         print *,k,Ver_z_8%m(k),Ver_fistr_8%m(k)
+      print *,'prgenab Ver_z_8%m(k),Ver_fistr_8(k),k=1,G_nk+1'
+      do k=1,G_nk+1
+         print *,k,Ver_z_8%m(k),Ver_fistr_8(k)
       enddo
-      print *,G_nk+1,Ver_z_8%m(G_nk+1)
       print *,'prgenab Ver_dz_8%m(k),Ver_idz_8%m(k),Ver_dbdz_8%m(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_dz_8%m(k),Ver_idz_8%m(k),Ver_dbdz_8%m(k)
@@ -69,9 +68,9 @@
       do k=1,G_nk+1
          print *,k,Ver_a_8%t(k),Ver_b_8%t(k)
       enddo 
-      print *,'prgenab Ver_z_8%t(k),Ver_fistr_8%t(k),k=1,G_nk'
+      print *,'prgenab Ver_z_8%t(k),k=1,G_nk'
       do k=1,G_nk
-         print *,k,Ver_z_8%t(k),Ver_fistr_8%t(k)
+         print *,k,Ver_z_8%t(k)
       enddo 
       print *,'prgenab Ver_dz_8%t(k),Ver_idz_8%t(k),Ver_dbdz_8%t(k),k=1,G_nk'
       do k=1,G_nk

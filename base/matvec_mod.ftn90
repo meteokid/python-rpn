@@ -37,7 +37,7 @@ contains
 
       allocate (matrix(7,ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk))
 
-      xxx = - Ver_epsilon_8 * (1.d0 - Dcst_cappa_8) + Cstv_hco1_8
+      xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
 !$omp parallel private (i,j,k,jj,ii,di_8)

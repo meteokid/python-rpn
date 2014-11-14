@@ -135,7 +135,7 @@
 
       if (Lun_out.gt.0) then
          write(Lun_out,1010)  &
-              (Dcst_rayt_8**2.)/(Cstv_dt_8*Hzd_cdiff),Hzd_pwr/2,'U,V,W,ZD'
+              (Dcst_rayt_8**2.)/(Cstv_dt_8*Hzd_cdiff),Hzd_pwr/2,'U,V,W,ZD,THETA'
          write(Lun_out,1010)  &
               (Dcst_rayt_8**2.)/(Cstv_dt_8*Hzd_cdiff_tr),Hzd_pwr_tr/2,'Tracers'
          print*

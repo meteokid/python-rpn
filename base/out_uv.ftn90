@@ -16,6 +16,8 @@
 !**s/r out_uv - output winds
 !
       subroutine out_uv (F_wlnph_m, Minx,Maxx,Miny,Maxy, nk, levset, set)
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
+      use vgrid_wb, only: vgrid_wb_get
       implicit none
 #include <arch_specific.hf>
 
@@ -54,22 +56,28 @@
 #include "level.cdk"
 #include "outd.cdk"
 #include "lctl.cdk"
-#include "ver.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
 
-      integer i,j,k,ii,istat,psum, kind,nko,nkof,nk_src,l_ninj
+      type(vgrid_descriptor) :: vcoord
+
+      integer i,j,k,ii,istat,psum, kind,nko,nk_src,l_ninj
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,pnuu,pnvv,pnuv
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
+      integer, dimension(:), pointer :: ip1m
       integer, save :: lastdt = -1
 
       real coef(0:Outd_var_max(set)+1),prmult
       real uv(l_minx:l_maxx,l_miny:l_maxy,nk+1)
       real, dimension(:    ), allocatable::prprlvl,rf
+      real, dimension(:    ), pointer :: hybm
+      save hybm
       real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres,cible
       real, dimension(:,:,:), pointer, save :: uu,vv
       real*8 c1_8(l_nj)
+
+      logical :: write_diag_lev
 !
 !-------------------------------------------------------------------
 !
@@ -157,12 +165,11 @@
          endif
 
          if (Schm_phyms_L) then
-            nk_src= l_nk+1
-            uu(:,:,nk_src) = uu(:,:,l_nk)
-            vv(:,:,nk_src) = vv(:,:,l_nk)
-            call itf_phy_sfcdiag (uu(l_minx,l_miny,nk_src),l_minx,l_maxx,&
+            uu(:,:,G_nk+1) = uu(:,:,G_nk)
+            vv(:,:,G_nk+1) = vv(:,:,G_nk)
+            call itf_phy_sfcdiag (uu(l_minx,l_miny,G_nk+1),l_minx,l_maxx,&
                                                   l_miny,l_maxy,'PW_UU:P')
-            call itf_phy_sfcdiag (vv(l_minx,l_miny,nk_src),l_minx,l_maxx,&
+            call itf_phy_sfcdiag (vv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,&
                                                   l_miny,l_maxy,'PW_VV:P')
          endif
 
@@ -182,28 +189,35 @@
          kind=Level_kind_ip1
 !       Setup the indexing for output
          allocate (indo(G_nk+1))
-         call out_slev(Level(1,levset), Level_max(levset), &
-                       Level_momentum,indo,nko)
-         nkof= nko
-         if (nko .eq. G_nk) then
-            nkof= nk_src
-            indo(nkof)= nkof
-         else
-            if ((nko .eq. 1).and.(indo(1).eq.G_nk)) then
-               if (Schm_phyms_L) then
-                  nkof= 2
-                  indo(nkof)= G_nk + 1
-               endif
+         call out_slev2(Level(1,levset), Level_max(levset), &
+                       Level_momentum,indo,nko,write_diag_lev)
+
+!        Retreieve vertical coordinate description
+         if ( .not. associated(hybm) ) then
+            nullify(ip1m,hybm)
+            istat = vgrid_wb_get('ref-m',vcoord,ip1m)
+            deallocate(ip1m); nullify(ip1m)
+            if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
+         endif
+
+         if (pnuu.ne.0) then
+            call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+                 'UU  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnuu) )
+            if (write_diag_lev) then
+               call ecris_fst2(uu(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
+                    hybm(G_nk+2),'UU  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnuu) )
             endif
          endif
 
-         if (pnuu.ne.0) &
-              call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'UU  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnuu) )
+         if (pnvv.ne.0) then
+            call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+                 'VV  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnvv) )
+            if (write_diag_lev) then
+               call ecris_fst2(vv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
+                    hybm(G_nk+2),'VV  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnvv) )
+            endif
+         endif
 
-         if (pnvv.ne.0) &
-              call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'VV  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnvv) )
          if (pnuv.ne.0) then
             do k = 1, nk_src
                do j = j0, jn
@@ -213,8 +227,12 @@
                   enddo
                enddo
             enddo
-            call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,Ver_hyb%m, &
-                 'UV  ',prmult,0.0,kind,G_nk+1, indo, nkof, nbit(pnuv) )
+            call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+                 'UV  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnuv) )
+!            if (write_diag_lev) then
+!               call ecris_fst2(uv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
+!                    hybm(G_nk+2),'UV  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnuv) )
+!            endif
          endif
          deallocate(indo)
 

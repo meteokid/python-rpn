@@ -179,7 +179,8 @@ End Interface
 
       allocate ( uun(nga,nka_m+diag_lvl), vvn(nga,nka_m+diag_lvl)     ,&
                  ttn(nga,nka_t+diag_lvl), trn(nga,nka_t+diag_lvl,ntra),&
-                 qqn(nga,nka_m), wwn(nga,nka_t), zdn(nga,nka_t)       ,&
+                 qqn(nga,nka_m-1+diag_lvl), wwn(nga,nka_t-1+diag_lvl) ,&
+                 zdn(nga,nka_t-1+diag_lvl)                            ,&
                  ssqn(nga,1), topo_temp1(nid1,njd1), meqn(nga,nkgz)   ,&
                  trname_a(ntra) )
 

@@ -64,7 +64,7 @@
       character*4 vhh,vtt,dumc
       logical horinterp_L
       integer i,k,kk,nis,njs,nks,ng,code_h,keyt,nic,njc,nkc,err
-      integer lev_qt(lv)
+      integer ip1_qt(lv-1)
       real*8 c1, c2
       real, parameter :: pref=100000.
       real, dimension (:  ), allocatable :: p0,wk2,rna_tlev
@@ -159,7 +159,7 @@
          end do         
 
          if (VAR_ZD /= '') then
-            do k=1,lv_t
+            do k=1,lv_t-1
                kk=k
                if (Pil_bmf_L) kk=1
                code_h= e_rdhint3 (zdn(1,kk),dstf_gid,nis,njs,VAR_ZD,na_t(k),-1    , &
@@ -167,13 +167,13 @@
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
-                  call e_bmfsplitxy2 (zdn,nis,njs,'ZD  ',k,lv_t,pni,0,0,0)
+                  call e_bmfsplitxy2 (zdn,nis,njs,'ZD  ',k,lv_t-1,pni,0,0,0)
                endif            
             enddo
          endif
 
          if (VAR_W /= '') then
-            do k=1,lv_t
+            do k=1,lv_t-1
                kk=k
                if (Pil_bmf_L) kk=1 
                code_h= e_rdhint3 (wn(1,kk),dstf_gid,nis,njs,VAR_W,na_t(k),-1, &
@@ -181,33 +181,33 @@
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
-                  call e_bmfsplitxy2 (wn,nis,njs,'W   ',k,lv_t,pni,0,0,0)
+                  call e_bmfsplitxy2 (wn,nis,njs,'W   ',k,lv_t-1,pni,0,0,0)
                endif            
             enddo
          endif
 
-         lev_qt(1:lv-1)= na(2:lv)
-         call convip(lev_qt(lv),1.,5,2,dumc,.false.)
+         ip1_qt(1:lv-1)=na(2:lv)
+         call convip(ip1_qt(lv-1),1.,5,+2,'',.true.)
 
          if (VAR_Q /= '') then
-            do k=1,lv
+            do k=1,lv-1
                kk=k
                if (Pil_bmf_L) kk=1 
-               code_h= e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',lev_qt(k),-1,&
+               code_h= e_rdhint3 (qn(1,kk),dstf_gid,nis,njs,'QT1 ',ip1_qt(k),-1,&
                                   -1,' ',' ',.false.,.false.,'CUBIC',e_fu_anal,6)
                if (code_h.lt.0) goto 999
                horinterp_L= horinterp_L .or. (code_h.gt.0)
                if (Pil_bmf_L) then
-                  call e_bmfsplitxy2 (qn,nis,njs,'Q   ',k,lv,pni,0,0,0)                
+                  call e_bmfsplitxy2 (qn,nis,njs,'Q   ',k,lv-1,pni,0,0,0)                
                endif
             enddo
          endif
 
-         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',lev_qt(lv),-1,-1,' ', &
-                            ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
+         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',ip1_qt(lv-1),-1,-1,' ',&
+                                        ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
          if (code_h.lt.0) then
-            code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,-1,-1,' ', &
-                            ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
+            code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,-1,-1,' ',&
+                                ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
             if (code_h.lt.0) goto 999
             gzn(:,1)= gzn(:,1)*Dcst_grav_8
          else
@@ -222,9 +222,9 @@
             call e_write_3df ( ttn,nis,njs, lv_t  , vtt   , unf_casc )
             call e_write_3df ( gzn,nis,njs, 1     , 'GZ  ', unf_casc )
             call e_write_3df ( hun,nis,njs, lv_t  , 'HU  ', unf_casc )
-            if (VAR_ZD /= '') call e_write_3df (zdn,nis,njs,lv_t,'ZD  ',unf_casc)
-            if (VAR_W  /= '') call e_write_3df (wn ,nis,njs,lv_t,'W   ',unf_casc)
-            if (VAR_Q  /= '') call e_write_3df (qn ,nis,njs,lv  ,'Q   ',unf_casc)
+            if (VAR_ZD /= '') call e_write_3df (zdn,nis,njs,lv_t-1,'ZD  ',unf_casc)
+            if (VAR_W  /= '') call e_write_3df (wn ,nis,njs,lv_t-1,'W   ',unf_casc)
+            if (VAR_Q  /= '') call e_write_3df (qn ,nis,njs,lv  -1,'Q   ',unf_casc)
          endif
 
       else

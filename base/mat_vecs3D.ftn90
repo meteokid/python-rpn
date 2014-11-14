@@ -47,7 +47,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      xxx = - Ver_epsilon_8*(one-Dcst_cappa_8) + Cstv_hco1_8
+      xxx = - Cstv_hco2_8
       yyy = - Cstv_hco1_8
 
       fdg1= 0.0d0 ; rhs= 0.0d0

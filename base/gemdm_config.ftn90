@@ -69,7 +69,8 @@
 
       Level_mode_ip1 = 1
       Level_kind_ip1 = 5
-      Level_version  = 4
+      Level_version  = 5
+
       if(Schm_Tlift.eq.1)then
          call handle_error(-1,'gemdm_config','review for toplev removed and Tlift')
          Level_version  = 3
@@ -88,6 +89,9 @@
          Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
          if (Schm_theoc_L) Lam_blend_Hy = 0
          Lam_tdeb = 999999.0
+         Schm_angular_displacement_L = .true.
+      else
+         Schm_angular_displacement_L = .false.
       endif
       if ((G_lam).and.(.not.Grd_yinyang_L)) then
          Lam_gbpil_T = max(0,Lam_gbpil_T)
@@ -95,6 +99,15 @@
       else
          Lam_gbpil_T = 0
          Lam_blend_T = 0
+      endif
+
+      if (Schm_trapeze_L) then
+         if (.not. G_lam) then
+            if (lun_out>0)write (Lun_out, 9480)
+            return
+         endif
+         Schm_psadj_L    = .true.
+         Schm_cub_traj_L = .true.
       endif
 
       deg_2_rad = Dcst_pi_8/180.
@@ -221,13 +234,14 @@
 
       G_niu = G_ni
       G_njv = G_nj - 1
+
       if (G_lam) then
          G_niu = G_ni - 1
          if (Eigv_parity_L) then
             Eigv_parity_L = .false.
             if (lun_out > 0) write (Lun_out, 7005)
          endif
-         if ((Schm_psadj_S/='NIL').and..not.Grd_yinyang_L) then
+         if (Schm_psadj_L .and. .not.Grd_yinyang_L) then
             if (lun_out > 0) then
                write (Lun_out, 7020)
                write (Lun_out, 8000)
@@ -307,6 +321,12 @@
          call handle_error_setdebug(Lctl_debug_L)
       endif
 
+      if (Hzd_lnr_theta .le. 0.) then
+         if (lun_out>0) write (Lun_out, 6200)
+         Hzd_lnr_theta = Hzd_lnr
+         Hzd_pwr_theta = Hzd_pwr
+      endif
+
       gemdm_config = 1
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
@@ -320,12 +340,14 @@
                '  AUTO-BAROTROPIC RUN:          '/&
                 '  Schm_topo_L set to .false. '/&
                 '  =============================='//)
+ 6200 format ( ' DEFAULT FOR THETA HOR. DIFFUSION IS:'/&
+               ' Hzd_lnr_theta = Hzd_lnr, Hzd_pwr_theta = Hzd_pwr'/)
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
- 7020 format (/' OPTION Schm_psadj_S/=NIL NOT AVAILABLE IF LAM'/)
+ 7020 format (/' OPTION Schm_psadj_L NOT AVAILABLE IF LAM'/)
  7021 format (//'  ================================================'/&
                 '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&
                 '  ================================================'//)
@@ -335,6 +357,7 @@
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
+ 9480 format (/,'ABORT: Schm_trapeze_L only available in LAM configuration'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 !
 !-------------------------------------------------------------------

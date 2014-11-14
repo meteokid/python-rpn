@@ -29,10 +29,11 @@
       character(len=*) :: trname_a(ntra)
       real*8 xpq1(F_nid1), ypq1(F_njd1), xpu1(F_ni), ypv1(F_nj)
       real*8 xpaq1(nia),ypaq1(nja),xpau1(nia),ypav1(nja)
-      real uun(nia,nja,nka_m+diag_lvl),vvn(nia,nja,nka_m+diag_lvl)     ,&
-           ttn(nia,nja,nka_t+diag_lvl),trn(nia,nja,nka_t+diag_lvl,ntra),&
-           zdn(nia,nja,nka_t), meqn(nia,nja,F_nkgz), ssqn(nia,nja)     ,&
-           qqn(nia,nja,nka_m), wwn (nia,nja,nka_t ), topo1(F_nid1,F_njd1)
+      real uun(nia,nja,nka_m+diag_lvl  ), vvn(nia,nja,nka_m+diag_lvl)     ,&
+           ttn(nia,nja,nka_t+diag_lvl  ), trn(nia,nja,nka_t+diag_lvl,ntra),&
+           zdn(nia,nja,nka_t+diag_lvl-1), qqn(nia,nja,nka_m+diag_lvl-1)   ,&
+           wwn(nia,nja,nka_t+diag_lvl-1), meqn(nia,nja,F_nkgz)            ,&
+           ssqn(nia,nja), topo1(F_nid1,F_njd1)
       real uu1(F_ni,F_nj,lnk)  , vv1(F_ni,F_nj,lnk), &
            tt1(F_ni,F_nj,lnk)  , zd1(F_ni,F_nj,lnk), &
            qq1(F_ni,F_nj,lnk)  , ww1(F_ni,F_nj,lnk), &
@@ -74,17 +75,19 @@
 
       integer,external ::  get_px,samevert
 
-      logical Vertint_L
+      logical Vertint_L,adjust_sfcpres
       integer i,j,k,n,nga,err,jj,mustvinterp,i0,in,j0,jn
       integer nid1,njd1,ngd,ngd1,nidu,njdv
       integer, dimension (:      ), allocatable :: idx,idu,idy
       real s1,s2
       real   , dimension (:      ), allocatable :: rna
       real   , dimension (:,:    ), allocatable :: ssqr,ssur,ssvr,ssq0,ssu0,ssv0
-      real   , dimension (:,:    ), allocatable :: ssq0x,pres,ssqx
-      real   , dimension (:,:,:  ), allocatable :: dstlev,srclev,uur,vvr,ttr,zdr,qqr,wwr,meqx,ttx,vtx,hutx
+      real   , dimension (:,:    ), allocatable :: ssq0x,ssqx
+      real   , dimension (:,:,:  ), allocatable :: dstlev,srclev,uur,vvr,ttr,zdr, &
+                                                   qqr,wwr,meqx,ttx,vtx,hutx,pres
       real   , dimension (:,:,:,:), allocatable :: trr
-      real*8 , dimension (:      ), allocatable :: cxa,cxb,cxc,cxd,cua,cub,cuc,cud,cya,cyb,cyc,cyd
+      real*8 , dimension (:      ), allocatable :: cxa,cxb,cxc,cxd,cua,cub,cuc,cud, &
+                                                   cya,cyb,cyc,cyd
       real*8 lnpis_8,lnpref_8,r1,r2
 !
 !-----------------------------------------------------------------------
@@ -106,10 +109,11 @@
                  cuc(max(nid1,njd1)),cud(max(nid1,njd1)),  &
                  cya(njd1),cyb(njd1),cyc(njd1),cyd(njd1)   )
 
-      allocate ( uur(F_ni,F_nj,nka_m+diag_lvl), vvr(F_ni,F_nj,nka_m+diag_lvl)     ,&
-                 ttr(F_ni,F_nj,nka_t+diag_lvl), trr(F_ni,F_nj,nka_t+diag_lvl,ntra),&
-                 qqr(F_ni,F_nj,nka_m), wwr(F_ni,F_nj,nka_t), zdr(F_ni,F_nj,nka_t) ,&
-                 ssur(F_ni,F_nj), ssvr(F_ni,F_nj), ssqr(F_ni,F_nj)                ,&
+      allocate ( uur(F_ni,F_nj,nka_m+diag_lvl  ), vvr(F_ni,F_nj,nka_m+diag_lvl)     ,&
+                 ttr(F_ni,F_nj,nka_t+diag_lvl  ), trr(F_ni,F_nj,nka_t+diag_lvl,ntra),&
+                 qqr(F_ni,F_nj,nka_m+diag_lvl-1), wwr(F_ni,F_nj,nka_t+diag_lvl-1)   ,&
+                 zdr(F_ni,F_nj,nka_t+diag_lvl-1)                                    ,&
+                 ssur(F_ni,F_nj), ssvr(F_ni,F_nj), ssqr(F_ni,F_nj)                  ,&
                  ssq0(F_ni,F_nj), ssu0(F_ni,F_nj), ssv0(F_ni,F_nj) )
 
       allocate ( ttx (nid1,njd1,nka_t+diag_lvl), meqx(nid1,njd1,nka_t),&
@@ -139,14 +143,14 @@
 ! Perform horizontal interpolations for all other variables on 
 ! regular (F_ni,F_nj) grid
 
-      if (ana_q_L)                                      &
-      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m, &
+      if (ana_q_L)                                                 &
+      call hinterpo ( qqr,F_ni,F_nj, qqn,nia,nja,nka_m+diag_lvl-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-      if (ana_zd_L)                                     &
-      call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t, &
+      if (ana_zd_L)                                                &
+      call hinterpo ( zdr,F_ni,F_nj, zdn,nia,nja,nka_t+diag_lvl-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
-      if (ana_w_L)                                      &
-      call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t, &
+      if (ana_w_L)                                                 &
+      call hinterpo ( wwr,F_ni,F_nj, wwn,nia,nja,nka_t+diag_lvl-1, &
                       idx,idy,cxa,cxb,cxc,cxd,cya,cyb,cyc,cyd,Lam_hint_S)
       do k=1,ntra
          if (trname_a(k)(1:4).eq.'HU  ')                                          &
@@ -214,8 +218,16 @@
       if (Lun_out.gt.0) write(Lun_out,*) 'Vertical interpolation=',Vertint_L
 
       if (Vertint_L) then
+         adjust_sfcpres=.false.
          if (presstype.ne.0) then
-            allocate (pres(ngd1,nka_t+diag_lvl),vtx(nid1,njd1,nka_t+diag_lvl))
+            if (diag_lvl.gt.0) then
+               adjust_sfcpres=.true.
+            else
+               if (ana_bt_8(nka_t+diag_lvl).gt.0.99999) adjust_sfcpres=.true.
+            endif
+         endif
+         if (adjust_sfcpres) then
+            allocate (pres(nid1,njd1,nka_t+diag_lvl),vtx(nid1,njd1,nka_t+diag_lvl))
             err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t+diag_lvl,presstype,.false.)
             if (ana_vt_l) then
                vtx(:,:,:) = ttx(:,:,:)
@@ -228,6 +240,12 @@
             call adj_ss2topo(ssq0x, topo1,pres,meqx,ttx,ngd1,nka_t+diag_lvl)
             ssq0x(1:nid1,1:njd1) = log(ssq0x(1:nid1,1:njd1)/Cstv_pref_8)
             deallocate (vtx,pres)
+         else
+            if ( maxval(ssqx) .lt. .4) then
+               ssq0x(1:nid1,1:njd1) = ssqx(1:nid1,1:njd1)
+            else
+               ssq0x(1:nid1,1:njd1) = log(ssqx(1:nid1,1:njd1)/Cstv_pref_8)
+            endif
          endif
 
 ! Compute ssq1,ssu0 and ssv0 and a first set of srclev,dstlev
@@ -278,8 +296,8 @@
 
       if (ana_zd_L) then
          if (Vertint_L) then
-            call vertint ( zd1,dstlev,G_nk, zdr,srclev,nka_t, &
-                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
+            call vertint (zd1,dstlev,G_nk, zdr,srclev,nka_t-1+diag_lvl,&
+                          1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              zd1(:,:,1:G_nk) = zdr(:,:,1:G_nk)
          endif
@@ -289,8 +307,8 @@
 
       if (ana_w_L) then
          if (Vertint_L) then
-            call vertint ( ww1,dstlev,G_nk, wwr,srclev,nka_t, &
-                           1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
+            call vertint (ww1,dstlev,G_nk, wwr,srclev,nka_t-1+diag_lvl,&
+                          1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
              ww1(:,:,1:G_nk) = wwr(:,:,1:G_nk)
          endif
@@ -338,9 +356,9 @@
 
       if(ana_q_L) then
          if (Vertint_L) then
-            err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(2),Ver_b_8%m(2),G_nk,Ver_code,.true.)
-            err = get_px(srclev,ssqr,ngd,ana_am_8(2),ana_bm_8(2),nka_m,presstype,.true.)
-            call vertint ( qq1,dstlev,G_nk, qqr,srclev,nka_m,&
+            err = get_px(dstlev,ssq1,ngd,Ver_a_8%m(2),Ver_b_8%m(2),G_nk   ,Ver_code ,.true.)
+            err = get_px(srclev,ssqr,ngd,ana_am_8 (2),ana_bm_8 (2),nka_m-1+diag_lvl,presstype,.true.)
+            call vertint ( qq1,dstlev,G_nk, qqr,srclev,nka_m-1+diag_lvl,&
                            1,F_ni,1,F_nj, 1,F_ni,1,F_nj,'cubic',.false.)
          else
             qq1(:,:,1:G_nk) = qqr(:,:,1:G_nk)

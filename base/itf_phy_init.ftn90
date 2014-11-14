@@ -16,6 +16,8 @@
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,VGD_OK,VGD_ERROR
+      use vgrid_wb, only: vgrid_wb_get
       use phy_itf, only: PHY_COMPATIBILITY_LVL, phy_nml, phy_init
       implicit none
 
@@ -36,11 +38,16 @@
 #include "ver.cdk"
 #include "path.cdk"
 #include "tr3d.cdk"
+#include "level.cdk"
 
       integer, parameter :: COMPATIBILITY_LVL = 6
 
+      type(vgrid_descriptor) :: vcoord
       logical cond_satu_L
-      integer dateo, err
+      integer dateo,err,zuip,ztip
+      integer, dimension(:), pointer :: ip1m
+      real :: zu,zt
+      
 !
 !     ---------------------------------------------------------------
 !
@@ -94,7 +101,26 @@
 
       err= min(wb_get('phy/satuco', cond_satu_L), err)
 
+! Retrieve the heights of the diagnostic levels (thermodynamic
+! and momentum) from the physics
+
+      err= min(wb_get('phy/zu', zu), err)
+      err= min(wb_get('phy/zt', zt), err)
+
       call gem_error ( err,'itf_phy_init','phy_init or WB_get' )
+
+! Add the diagnostic heights to the vertical coordinate of the model
+
+      err = VGD_OK
+      nullify(ip1m)
+      Level_kind_diag=4
+      err = min(vgrid_wb_get('ref-m',vcoord,ip1m), err)
+      call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
+      call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
+      err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
+      err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+
+      call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 
 ! Consistency check for saturation calculations
 

@@ -15,24 +15,21 @@
 
 !**s/r px_param - to return A,B values given a list of keys tagged to records
 !                 in a RPN standard file
-!
-      integer function px_param(iun,fstkeys,ip1,fstkeys_max,ip1_max,hyb_8 , &
-                                 staglevs,presvar_8,presvar_S, presvar_max, &
-                                 a_8,b_8,vcode_S,vcode)
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK
-!
+
+      integer function px_param ( iun,fstkeys,ip1,fstkeys_max,ip1_max,hyb_8 , &
+                                  staglevs,a_8,b_8,vcode_S,vcode,diag_lvl_L )
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,VGD_OK,vgd_print
       implicit none
 #include <arch_specific.hf>
-!
-      integer iun,fstkeys_max,ip1_max,presvar_max,vcode
+
+      logical diag_lvl_L
+      integer iun,fstkeys_max,ip1_max,vcode
       integer ip1(fstkeys_max),fstkeys(fstkeys_max)
-      real*8  presvar_8(presvar_max)
       real*8  hyb_8(fstkeys_max),hybm_8(fstkeys_max)
       real*8  a_8(fstkeys_max),b_8(fstkeys_max)
       character*1 staglevs
-      character*6 presvar_S(presvar_max)
       character*8 vcode_S
-!
+
 !author
 !     V.Lee July 2008 (from GEMDM, hybrid code)
 !     and contributions from Andre Plante, Cecilien Charette
@@ -59,17 +56,8 @@
 !                        5=ECMWF  (ecmwf levels)
 !                        6=HYBSTAG(staggered hybrid Girard)
 ! vcode_S       O       name of vertical coordinate found
-! presvar_max   I       number of elements to return in presvar_8
-! presvar_S     O       names of each presvar_8 variable
-! presvar_8     O       array of values stored for the following variables:
-!                       presvar_8(1)= pref (reference pressure in mb)
-!                       presvar_8(2)= ptop  (mb)
-!                       presvar_8(3)= etatop_8 (mb)
-!                       presvar_8(4)= rcoef (coefficient btwn 1.0 to 2.0)
-!                       presvar_8(5)= rcoef (coefficient btwn 1.0 to 2.0)
 ! ----------------------------------------------------------------
 ! the function will return 0 upon success, -1 if there is an error
-!*
 
       integer   fstinf, fstprm, fstlir, fstluk, fnom, &
                 read_decode_hyb,read_decode_bang
@@ -92,7 +80,9 @@
       real,   dimension(:,:), allocatable :: work
       real*8, dimension(:), pointer :: lookup_a_8,lookup_b_8
       real*8, dimension(:,:),allocatable:: work_8
-
+!
+! ---------------------------------------------------------------------
+!
       px_param=0
       rcoef(1)=0.0
       rcoef(2)=0.0
@@ -104,18 +94,22 @@
       rcoef_8(1)=0.0d0
       rcoef_8(2)=0.0d0
 
+      diag_lvl_L = .false.
       do k=1,fstkeys_max
-         px_param = fstprm ( fstkeys(k), dateo, deet, ipas, ni, nj, nk,  &
-           bit, datyp, ip1a,ip2a,ip3a, tva, var, etik_S, grda,  &
-           ig1a,ig2a,ig3a,ig4a, swa,lng, dlf, ubc, ex1, ex2, ex3 )
+         px_param = fstprm ( fstkeys(k), dateo, deet, ipas, ni, nj, nk,&
+                    bit, datyp, ip1a,ip2a,ip3a, tva, var, etik_S, grda,&
+                 ig1a,ig2a,ig3a,ig4a, swa,lng, dlf, ubc, ex1, ex2, ex3 )
          if (px_param.lt.0) then
              print *,'px_param error: fstprm on key',fstkeys(k)
              return
          endif
-         call convip (ip1a, lev, kind,-1, blk_S, .false.)
+         call convip (ip1a, lev, i,-1, blk_S, .false.)
+         if (k.eq.1) kind=i
+         if ((k.eq.fstkeys_max).and.(i.eq.4)) diag_lvl_L = .true.
          ip1(k)=ip1a
          hyb_8(k)=lev
       enddo
+      
       call incdatr(datev,dateo,ipas*deet/3600.0d0)
 
 !     Sort levels in ascending order
@@ -238,19 +232,20 @@
 !         xx_key=fstinf (iun,ni, nj, nk, -1,' ',ig1a,ig2a,-1 ,' ','!!  ')
          xx_key=fstinf (iun,ni, nj, nk, -1,' ',-1,-1,-1 ,' ','!!  ')
          if (xx_key.ge.0) then
-             status = vgd_new(vgd,unit=iun,format='fst',ip1=-1,ip2=-1)
+             status = vgd_new (vgd,unit=iun,format='fst',ip1=-1,ip2=-1)
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot build coordinate descriptor'
                 return
              endif
-
-             status = vgd_get(vgd,key='CA_'//stagLevs,value=lookup_a_8)
+             status =          vgd_get(vgd,key='CA_'//stagLevs,value=lookup_a_8)
              status = status + vgd_get(vgd,key='CB_'//stagLevs,value=lookup_b_8)
              status = status + vgd_get(vgd,key='VIP'//stagLevs,value=lookup_ip1)
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot retrieve info from !!'
                 return
              endif
+
+!             status = vgd_print (vgd)
              do i=1,size(ip1)
                 j = 1; found = .false.
                 do while (.not.found .and. j<=minval((/size(lookup_a_8),size(lookup_b_8),size(lookup_ip1)/)))
@@ -268,9 +263,9 @@
                 return
              endif
              status = vgd_get(vgd,key='PREF - reference pressure',value=pref_8)
-             status = status + vgd_get(vgd,key='PTOP - top level pressure',value=ptop_8)
              status = status + vgd_get(vgd,key='RC_1 - first R-coef value',value=rcoef_8(1))
              status = status + vgd_get(vgd,key='RC_2 - second R-coef value',value=rcoef_8(2))
+
              if (status /= VGD_OK) then
                 print*, 'px_param error: cannot retrieve coordinate details'
                 return
@@ -320,16 +315,10 @@
               a_8(i) = pr2_8 * 100.0d0* (hybm_8(i) - b_8(i) )
            enddo
       endif
-      presvar_8(1)=pref_8
-      presvar_8(2)=ptop_8
-      presvar_8(3)=etatop_8
-      presvar_8(4)=rcoef_8(1)
-      presvar_8(5)=rcoef_8(2)
-      presvar_S(1)='pref'
-      presvar_S(2)='ptop'
-      presvar_S(3)='etatop'
-      presvar_S(4)='rcoef1'
-      presvar_S(5)='rcoef2'
+
       px_param = 0
+!
+! ---------------------------------------------------------------------
+!
       return
       end

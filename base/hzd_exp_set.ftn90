@@ -38,7 +38,7 @@
       integer, dimension(:) , allocatable :: pwr, lvl
       real   , dimension(:) , allocatable :: lnr
       real*8 c_8, x1, x2, rr, weight
-      real levhyb,coef,coef_tr
+      real levhyb,coef,coef_tr,coef_theta
 !
 !     ---------------------------------------------------------------
 !
@@ -125,6 +125,8 @@
       coef    = (2./c_8)**Hzd_pwr    / (-log(1.d0- x1))
       x1= Hzd_lnR_tr
       coef_tr = (2./c_8)**Hzd_pwr_tr / (-log(1.d0- x1))
+      x1= Hzd_lnR_theta
+      coef_theta = (2./c_8)**Hzd_pwr_theta / (-log(1.d0- x1))
       
       if (Lun_out.gt.0) then
          if (npin.gt.0) then
@@ -140,6 +142,8 @@
          endif
          write(Lun_out,1010)  &
               (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_tr),Hzd_pwr_tr/2,'Tracers'
+         write(Lun_out,1010)  &
+              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
       endif
       
  1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a )

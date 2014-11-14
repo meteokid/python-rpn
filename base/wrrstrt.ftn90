@@ -50,28 +50,47 @@
 #include "zblen.cdk"
 #include "cstv.cdk"
 
+      include "rpn_comm.inc"
+
       integer, external :: fnom,fclos
 
-      integer ier,gmmstat
+      integer ier,gmmstat,me,howmany,newcomm,i
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,2000) Lctl_step
 
-      Lun_rstrt = 0
-      ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
+      call split_on_hostid (RPN_COMM_comm('GRID'),me,howmany,newcomm)
 
-      write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+      do i=0,howmany-1
 
-      if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
+         if (i.eq.me) then
+            call timing_start ( 33, 'RESTART_1' )
 
-      ier = fclos(Lun_rstrt)  
+            Lun_rstrt = 0
+            ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
 
-!        Write Gmm-files
+            write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
 
-      gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
+            if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 
-      call wrrstrt_phy (.false.)
+            ier = fclos(Lun_rstrt)  
+            call timing_stop (33)
+
+            !        Write Gmm-files
+
+            call timing_start ( 34, 'RESTART_2' )
+            gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
+            call timing_stop (34)
+
+            call timing_start ( 35, 'RESTART_3' )
+            call wrrstrt_phy (.false.)
+            call timing_stop (35)
+         endif
+
+         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, ier)
+
+      end do
 
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8, &
              /,'=========================================')

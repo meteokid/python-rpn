@@ -40,7 +40,7 @@
 #include "level.cdk"
 #include "ver.cdk"
 
-      logical periodx_L
+      logical periodx_L,write_diag_lev
       integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset,ig2
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable :: indo
@@ -71,11 +71,12 @@
       if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
             Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
 
+      write_diag_lev = .false.
       if (Level_typ_S(levset) .eq. 'M') then
          kind=Level_kind_ip1
          allocate (indo( min(Level_max(levset),Level_momentum) ))
-         call out_slev ( Level(1,levset), Level_max(levset), &
-                         Level_momentum,indo,nko )         
+         call out_slev2 ( Level(1,levset), Level_max(levset), &
+              Level_momentum,indo,nko,write_diag_lev)         
          call rpn_comm_xch_halo (ut1,l_minx,l_maxx,l_miny,l_maxy,&
             l_niu,l_nj,G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo (vt1,l_minx,l_maxx,l_miny,l_maxy,&

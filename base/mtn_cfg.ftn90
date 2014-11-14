@@ -103,6 +103,7 @@
          Schm_hydro_L = .false.
          Schm_trapeze_L=.true.
          Schm_cub_traj_L=.true.
+         Schm_angular_displacement_L = .true.
 
          Height_top_8 = 19500.d0
 
@@ -124,10 +125,8 @@
          Zblen_spngthick=9000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
 
-         Cstv_tstr_8 = 2.144760293471223e+02
-
         !FAST INTEGRATION(4hr)      CLASSICAL INTEGRATION
-         Step_total  = 455         !Step_total  = 1800
+         Step_total  = 450         !Step_total  = 1800
          Cstv_dt_8   = 32.         !Cstv_dt_8   = 8.
         !GROWING MOUNTAIN
          Vtopo_start = 0
@@ -155,7 +154,6 @@
 
          Lam_blend_H=25
 
-!        Zblen_spngthick=1.00531e+04
          Zblen_spngthick=9000.
          Zblen_hmin = Height_top_8 - Zblen_spngthick
 

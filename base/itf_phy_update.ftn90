@@ -51,7 +51,8 @@
          do n= 1, Tr3d_ntr
             trname_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(trim(trname_S),data3d)
-            if (Tr3d_wload(n).or.Tr3d_name_S(n)(1:2).eq.'HU') then
+            if ( (Tr3d_name_S(n)(1:2).eq.'HU') .or. &
+                 (Schm_wload_L.and.Tr3d_wload(n)) )then
                ptr3d => tdu(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
                istat = phy_get(ptr3d,trim(trname_S),F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
 !$omp parallel

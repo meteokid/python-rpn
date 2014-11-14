@@ -111,8 +111,6 @@
 
       if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
            call handle_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
-      if ( (Schm_psadj_S=='DRY') .and. (.not.Schm_wload_L) ) &
-           call handle_error(-1,'set_world_view','Scmh_wload_L must be true if Schm_psadj_S=DRY')
 
       call adx_nml_print ()
 
