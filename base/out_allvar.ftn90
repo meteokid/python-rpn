@@ -1,7 +1,0 @@
-subroutine out_allvar (levset,set)
-  implicit none
-#include <arch_specific.hf>
-  integer levset,set
-  print*, "out_allvar() REMOVED!"
-  stop
-end subroutine out_allvar
