@@ -12,15 +12,20 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-subroutine iau_apply2()
+
+subroutine iau_apply2(F_kount)
+   use vGrid_Descriptors
+   use vgrid_wb
    use input_mod
    implicit none
-  !author
-  !       R. McTaggart-Cowan - Summer 2013
-  !revision
-  !       S.Chamberland, 2014-07: use input_mod, allow vinterp
-  !object
-  !  Add an analysis increments to the model state (IAU).
+   !@params
+   integer, intent(in) :: F_kount !step_kound
+   !@author
+   !       R. McTaggart-Cowan - Summer 2013
+   !@revision
+   !       S.Chamberland, 2014-07: use input_mod, allow vinterp
+   !@object
+   !  Add an analysis increments to the model state (IAU).
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <clib_interface.cdk>
@@ -46,18 +51,22 @@ subroutine iau_apply2()
    logical,save :: is_init_L = .false.
    integer,save :: inputid = -1, nbvar = 0, step_freq2 = 0, kount = 0
    real,pointer,save :: weight(:)
-   character(len=256) :: incfg_S,vgrid_S
+   real, pointer, dimension(:,:) :: refp0,pw_p0
+   character(len=256) :: incfg_S,vgrid_S,msg_S
    character(len=16)  :: iname0_S,iname1_S,datev_S
    integer :: istat,dateo,datev,iau_vtime,step_freq,ivar,ni1,nj1,i,j,n,nw,add,&
-        lijk(3),uijk(3)
+        lijk(3),uijk(3),step_0
    real,pointer,dimension(:,:,:) :: data0,data1,myptr0,myptr1
    real,pointer,dimension(:,:) :: myptr2d
    type(gmm_metadata) :: mymeta
+   type(vgrid_descriptor) :: vgridm,vgridt
+   integer,pointer :: ip1list(:)
    !--------------------------------------------------------------------------
-   if (Cstv_dt_8*Step_kount > Iau_period .or. Iau_interval<=0.) return
-   call timing_start(50, 'IAU      ')
+!!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
+!!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
 
-   call handle_error(-1,'(iau_apply) Not fully implemented yet')
+   if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
+   call timing_start(50, 'IAU      ')
 
    call datp2f(dateo,Mod_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
@@ -74,18 +83,28 @@ subroutine iau_apply2()
       istat = min(input_set_filename(inputid,IAU_FILE,IAU_FILE,ALLOWDIR,INPUT_FILES_ANAL),istat)
       step_freq  = nint(Iau_interval/Cstv_dt_8)
       step_freq2 = nint((Iau_interval/2)/Cstv_dt_8) !TODO: check
-      write(incfg_S,'(a,i4,a,a,a)') 'freq=0,',step_freq, &
+      step_0 = mod((nint(Iau_period)/nint(Iau_interval)),2)*step_freq2
+      write(incfg_S,'(a,i4,a,i4,a,a,a)') 'freq=',step_0,',',step_freq, &
            '; search=',trim(IAU_FILE), &
            '; typvar=R; hinterp=cubic; vinterp=c-cond'
+      call msg(MSG_INFO,'(iau_apply) add input: in=TT; levels=-1;'//trim(incfg_S))
       istat = min(input_add(inputid,'in=TT; levels=-1;'//trim(incfg_S)),istat)
+      call msg(MSG_INFO,'(iau_apply) add input: in=HU; levels=-1;'//trim(incfg_S))
       istat = min(input_add(inputid,'in=HU; levels=-1;'//trim(incfg_S)),istat)
+      call msg(MSG_INFO,'(iau_apply) add input: in=UU; IN2=VV; levels=-1;'//trim(incfg_S))
       istat = min(input_add(inputid,'in=UU; IN2=VV; levels=-1;'//trim(incfg_S)),istat)
+      write(incfg_S,'(a,i4,a,i4,a,a,a)') 'freq=',step_0,',',step_freq, &
+           '; search=',trim(IAU_FILE), &
+           '; typvar=R; hinterp=cubic'
+      call msg(MSG_INFO,'(iau_apply) add input: in=P0;'//trim(incfg_S))
       istat = min(input_add(inputid,'in=P0; '//trim(incfg_S)),istat)
       ivar = 1
       do while (len_trim(Iau_tracers_S(ivar)) > 0)
          istat = min(clib_tolower(Iau_tracers_S(ivar)),istat)
-         if (Iau_tracers_S(ivar) /= 'hu') &
-              istat = min(input_add(inputid,'in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S)),istat)
+         if (Iau_tracers_S(ivar) /= 'hu') then
+            call msg(MSG_INFO,'(iau_apply) add input: in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S))
+            istat = min(input_add(inputid,'in='//trim(Iau_tracers_S(ivar))//'; levels=-1;'//trim(incfg_S)),istat)
+         endif
          ivar = ivar+1 
          if (ivar > size(Iau_tracers_S)) exit
       enddo
@@ -115,10 +134,14 @@ subroutine iau_apply2()
       add = 0; if (mod(nw,2) == 0) add = 1
       nw = nw+add
       allocate(weight(nw))
+      call msg(MSG_INFO,'(iau_apply) Precompute filter coefficients - '//trim(Iau_weight_S))
       istat = clib_tolower(Iau_weight_S)
       select case (Iau_weight_S)
       case ('constant')
          weight = Cstv_dt_8 / Iau_period
+      case ('spike')
+         weight = 0.
+         weight(nw/2) = 1.
       case ('sin')
          call handle_error_l(Iau_cutoff>0.,'iau_apply', &
               'Cutoff period must be greater than 0')
@@ -139,11 +162,32 @@ subroutine iau_apply2()
               'Unknown Iau_weight_S='//trim(Iau_weight_S))
       end select
 
+      !# define a vert coor with ref on l_ni/j
+      nullify(ip1list)
+      istat = vgrid_wb_get('ref-m',vgridm,ip1list)
+      istat = vgrid_wb_put('iau-m',vgridm,ip1list,'IAUREFP0:P')
+      nullify(ip1list)
+      istat = vgrid_wb_get('ref-t',vgridt,ip1list)
+      istat = vgrid_wb_put('iau-t',vgridt,ip1list,'IAUREFP0:P')
+      mymeta = GMM_NULL_METADATA
+      mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
+      mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
+      nullify(refp0)
+      istat = gmm_create('IAUREFP0:P',refp0,mymeta)
+ 
    endif IF_INIT
 
-   if (Step_kount > 0) kount = Step_kount+step_freq2
-   DO_IVAR: do ivar = 1,nbvar
+   !# Update reference surface field for vgrid
+   nullify(pw_p0,refp0)
+   istat = gmm_get('PW_P0:P',pw_p0)
+   istat = gmm_get('IAUREFP0:P',refp0)
+   if (associated(refp0) .and. associated(pw_p0)) then
+      refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
+   endif
 
+
+   if (F_kount > 0) kount = F_kount+step_freq2-1
+   DO_IVAR: do ivar = 1,nbvar
       istat = input_meta(inputid,ivar,iname0_S,iname1_S)
       nullify(data0,data1)
       istat = gmm_get(IAU_PREFIX//trim(iname0_S),data0)
@@ -157,9 +201,12 @@ subroutine iau_apply2()
       istat = input_isvarstep(inputid,ivar,kount)
       IF_READ: if (RMN_IS_OK(istat)) then
 
+         write(msg_S,'(i7)') kount*nint(Cstv_dt_8)
+         call msg(MSG_INFO,'(iau_apply) Reading: '//trim(iname0_S)//' at t0+'//trim(msg_S)//'s')
+
          !# Get interpolted data from file
-         vgrid_S = 'ref-t'
-         if (iname0_S == 'uu') vgrid_S = 'ref-m' !TODO: check
+         vgrid_S = 'iau-t'
+         if (iname0_S == 'uu') vgrid_S = 'iau-m'
          nullify(myptr0,myptr1,myptr2d)
          istat = input_get(inputid,ivar,kount,Grd_local_gid,vgrid_S, &
               myptr0,myptr1)
@@ -183,8 +230,16 @@ subroutine iau_apply2()
          lijk = lbound(data0) ; uijk = ubound(data0)
          if (iname0_S == 'uu') then
             data0 = data0 * Dcst_knams_8
-            call itf_phy_uvgridscal(data0,data1,lijk(1),uijk(1), &
-                 lijk(2),uijk(2),uijk(3),UVSCAL2WGRID)
+            data1 = data1 * Dcst_knams_8
+            nullify(myptr0,myptr1)
+            allocate(myptr0(l_minx:l_maxx,l_miny:l_maxy,uijk(3)),myptr1(l_minx:l_maxx,l_miny:l_maxy,uijk(3)))
+            myptr0 = 0.; myptr1 = 0.
+            myptr0(1:l_ni,1:l_nj,:) = data0(1:l_ni,1:l_nj,:)
+            myptr1(1:l_ni,1:l_nj,:) = data1(1:l_ni,1:l_nj,:)
+            call itf_phy_uvgridscal(myptr0,myptr1,l_minx,l_maxx,l_miny,l_maxy,uijk(3),UVSCAL2WGRID)
+            data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
+            data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
+            deallocate(myptr0,myptr1,stat=istat); nullify(myptr0,myptr1)
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
          IF_YY: if (Grd_yinyang_L .and. &
@@ -203,40 +258,58 @@ subroutine iau_apply2()
 
       endif IF_READ
 
-      !# Add increments to model and tracer states
-      ni1 = l_ni ; nj1 = l_nj
-      nullify(myptr0,myptr1,myptr2d)
-      select case(iname0_S)
-      case('tt')
-         istat = gmm_get(gmmk_pw_tt_plus_s,myptr0)
-         print '(a,i4," : ",f10.5," : ",f10.5," < ",f10.5)','[iau_apply] ',Step_kount,data0(l_ni/2,l_nj/2,l_nk/2),minval(data0),maxval(data0)
-      case('uu')
-         ni1 = l_niu ; nj1 = l_njv
-         istat = gmm_get(gmmk_ut1_s,myptr0)
-         istat = gmm_get(gmmk_vt1_s,myptr1)
-      case('p0')
-         istat = gmm_get(gmmk_st1_s,myptr2d)
-      case default
-         istat = clib_toupper(iname0_S)
-         istat = gmm_get('TR/'//trim(iname0_S)//':P',myptr0)
-      end select
-      if (associated(myptr0)) myptr0(1:ni1,1:l_nj,:) = &
-           myptr0(1:ni1,1:l_nj,:) + weight(Step_kount) * data0(1:ni1,1:l_nj,:)
-      if (associated(myptr1).and.associated(data1)) myptr1(1:l_ni,1:nj1,:) = &
-           myptr1(1:l_ni,1:nj1,:) + weight(Step_kount) * data1(1:l_ni,1:nj1,:)
-      if (associated(myptr2d)) myptr2d(:,:) = &
-           myptr2d(:,:) + weight(Step_kount) * data0(:,:,1)
+      IF_KOUNT0: if (F_kount > 0 .and. weight(max(1,F_kount)) > 0.) then
+
+         !# Add increments to model and tracer states
+         ni1 = l_ni ; nj1 = l_nj
+         nullify(myptr0,myptr1,myptr2d)
+         select case(iname0_S)
+         case('tt')
+            istat = gmm_get(gmmk_pw_tt_plus_s,myptr0)
+!!$            print '(a,i4," : ",f10.5," : ",f10.5," < ",f10.5)','[iau_apply] ',F_kount,data0(l_ni/2,l_nj/2,l_nk/2),minval(data0),maxval(data0)
+         case('uu')
+            ni1 = l_niu ; nj1 = l_njv
+            istat = gmm_get(gmmk_ut1_s,myptr0)
+            istat = gmm_get(gmmk_vt1_s,myptr1)
+         case('p0')
+            istat = gmm_get(gmmk_st1_s,myptr2d)
+         case default
+            istat = clib_toupper(iname0_S)
+            istat = gmm_get('TR/'//trim(iname0_S)//':P',myptr0)
+         end select
+
+         write(msg_S,'(a,i6,3(a,f12.6))') '; step=',F_kount,'; w=',weight(F_kount),'; min=',minval(data0(1:ni1,1:l_nj,:)),'; max=',maxval(data0(1:ni1,1:l_nj,:))
+         call msg(MSG_INFO,'(iau_apply) Add increments: '//trim(iname0_S)//trim(msg_S))
+         if (associated(data1)) then
+            write(msg_S,'(a,i6,3(a,f12.6))') '; step=',F_kount,'; w=',weight(F_kount),'; min=',minval(data1(1:ni1,1:l_nj,:)),'; max=',maxval(data1(1:ni1,1:l_nj,:))
+            call msg(MSG_INFO,'(iau_apply) Add increments: '//trim(iname1_S)//trim(msg_S))
+         endif
+
+         if (associated(myptr0)) myptr0(1:ni1,1:l_nj,:) = &
+              myptr0(1:ni1,1:l_nj,:) + weight(F_kount) * data0(1:ni1,1:l_nj,:)
+         if (associated(myptr1).and.associated(data1)) myptr1(1:l_ni,1:nj1,:) = &
+              myptr1(1:l_ni,1:nj1,:) + weight(F_kount) * data1(1:l_ni,1:nj1,:)
+         if (associated(myptr2d)) then
+            if (iname0_S == 'p0') then
+               myptr2d(1:l_ni,1:l_nj) = myptr2d(1:l_ni,1:l_nj) + log(1 + weight(F_kount)*data0(1:l_ni,1:l_nj,1)/Cstv_pref_8)
+            else
+               myptr2d(1:l_ni,1:l_nj) = myptr2d(1:l_ni,1:l_nj) + weight(F_kount) * data0(1:l_ni,1:l_nj,1)
+            endif
+         endif
+      endif IF_KOUNT0
 
    enddo DO_IVAR
 
-   nullify(myptr0)
-   istat = gmm_get(gmmk_tt1_s,myptr0)
-   call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-   call pw_update_GPW
-   call pw_update_UV
-   call pw_update_T
+   if (F_kount > 0) then
+      nullify(myptr0)
+      istat = gmm_get(gmmk_tt1_s,myptr0)
+      call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call pw_update_GPW
+      call pw_update_UV
+      call pw_update_T
 
-   call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
+      call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
+   endif
    call timing_stop(50)
    !--------------------------------------------------------------------------
    return

@@ -130,6 +130,7 @@
       if ( .not. Rstri_rstn_L ) then
          call out_outdir (Step_kount, upperlimit)
          if (Step_kount.eq.0) then
+            call iau_apply2 (Step_kount)
             call out_steps (Lctl_step,Lctl_step)
             if ( Schm_phyms_L ) then
                call pw_shuffle
@@ -169,7 +170,7 @@
 
          call hzd_main
 
-         call iau_apply2
+         call iau_apply2 (Step_kount)
 
          if (Grd_yinyang_L) call yyg_xchng_all
 !
