@@ -115,22 +115,13 @@ subroutine adx_pos_m( F_nb_iter    ,        &
                             F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0,F_nk,F_nk_winds)
       endif
 
-      if (Adw_gccsa_L) then
-          call adx_trajsp_gccsa (F_xth,F_yth, u_d,v_d, &
-                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
+      if(adx_trapeze_L) then
+         call adx_traj_trapeze (F_xth,F_yth, F_xct1,F_yct1,F_zct1, &
+                                u_d,v_d,F_ua,F_va,dth,i0,in,j0,jn,k0)
       else
-         if(adx_trapeze_L) then
-            call adx_traj_trapeze (F_xth,F_yth, F_xct1,F_yct1,F_zct1, &
-                                   u_d,v_d,F_ua,F_va,dth,i0,in,j0,jn,k0)
-         else
-!           should replace adx_trajsp2
-!           call adx_traj_midpt   (F_xth,F_yth, F_xcth,F_ycth,F_zcth, &
-!                                  u_d,v_d,          dth,i0,in,j0,jn,k0)
-
-            call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
-                                   adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
-                                       dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
-         endif
+         call adx_trajsp2 (F_xth,F_yth, F_xcth,F_ycth,F_zcth, u_d,v_d, &
+                                adx_cx_8,adx_cy_8,adx_sx_8,adx_sy_8, &
+                                    dth,i0,in,j0,jn,k0,adx_lni,adx_lnj)
       endif
 
       !- 3D interpol of zeta dot and new upstream pos along zeta
@@ -179,14 +170,8 @@ subroutine adx_pos_m( F_nb_iter    ,        &
       F_pz=F_zth
       F_wdm=w_d
    else
-
-      if (Adw_gccsa_L) then
-          call adx_trajex_gccsa (F_px, F_py, u_d,v_d,&
-                     F_xct1,F_yct1,F_zct1,dth, i0,in,j0,jn,k0)
-      else
-          call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
+       call adx_trajex2 (F_px, F_py, F_xct1,F_yct1,F_zct1, &
                         F_xcth,F_ycth,F_zcth,i0,in,j0,jn,k0)
-      endif
 
 !$omp parallel
 !$omp do

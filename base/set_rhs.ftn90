@@ -116,6 +116,9 @@
       istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
 !
+      istat = gmm_get (gmmk_rhsw_s, rhsw)
+      rhsw  = 0.
+
  1000 format( &
       /,'INITIALIZATION OF RIGHT-HAND SIDE COMDECK (S/R SET_RHS)', &
       /,'=======================================================')

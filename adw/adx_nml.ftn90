@@ -34,7 +34,6 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_mono_L = .true.
    adw_catmullrom_L = .false.
    adw_positive_L = .false.
-   adw_gccsa_L = .false.
    adw_trunc_traj_L = .false.
    adw_halox  = -1
    adw_haloy  = -1
@@ -100,26 +99,7 @@ function adx_config() result(F_stat)
    if (.not.G_lam) then
       adw_halox = max(3,adw_halox)
       adw_haloy = max(2,adw_haloy)
-      if (adw_gccsa_L) then
-         call msg(MSG_ERROR,'adw_nml: adw_gccsa_L cannot be .true. if .not. G_lam')
-         F_stat = -1
-      endif
    endif
-
-   if (Adw_gccsa_L .and. adx_trapeze_L) then
-      call msg(MSG_ERROR,'adw_nml: Adw_gccsa_L cannot be used with adx_trapeze_L')
-      F_stat = -1
-   endif
-
-   if (Adw_gccsa_L .and. adx_angular_displacement_L) then
-      call msg(MSG_ERROR,'adw_nml: Adw_gccsa_L cannot be used with adx_angular_displacement_L')
-      F_stat = -1
-   endif
-
-   if (adx_angular_displacement_L .and. .not.G_lam) then
-      call msg(MSG_ERROR,'adw_nml: adx_angular_displacement_L is supported only in a LAM')
-      F_stat = -1
-   end if
 
    if (adw_catmullrom_L .and. .not.G_lam) then
       call msg(MSG_ERROR,'adw_nml: adw_catmullrom_L is supported only in a LAM')

@@ -117,7 +117,6 @@
       real deg2rad,zd2etad
       integer i,j,k,ii,l_ninj,nko,nko_t,nko_m,istat,nk_under,nk_src
       integer, dimension(:), allocatable::indo
-      real andre(l_ni,l_nj)
       real w1(l_minx:l_maxx,l_miny:l_maxy), w2(l_minx:l_maxx,l_miny:l_maxy)
       real w3(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), qh(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
       real posit((l_maxx-l_minx+1)*(l_maxy-l_miny+1)*(G_nk+1)*6)
@@ -147,16 +146,17 @@
 
       real*8, parameter :: ZERO_8 = 0.0
       real    prmult_pngz, prmult_pnpx, prmult_pnme
-      real    pradd_pnvt,  pradd_pntt,  pradd_pntd
+      real    pradd_pnvt,  pradd_pntt,  pradd_pntd, work
 
       type(vgrid_descriptor) :: vcoord
       integer, dimension(:), pointer :: ip1m
-      real, dimension(:), pointer :: hybm,hybt
-      save hybm,hybt
+      real, dimension(:), pointer :: hybm,hybt,hybt_w
+      save hybm,hybt,hybt_w
       logical :: write_diag_lev
 !
 !-------------------------------------------------------------------
 !
+
       l_ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
 
       prmult_pngz  = 0.1 / Dcst_grav_8
@@ -289,7 +289,6 @@
       end do
 
       if(pnwe.ne.0)then
-         call handle_error(-1,'out_thm','REVIEW CODE FOR NOMVAR=WE')
          !
          ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
          !
@@ -309,9 +308,9 @@
          ! Note: put WE=0 at first thermo level to close the domain
          !       Do not write we for thermo level nk+3/4 since zdt is at surface
          !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
-         ffwe(:,:,1 )=0.
+         allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,nk))
          ffwe(:,:,nk)=0.
-         do k=2,nk-1
+         do k=1,nk-1
             zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
             do j=l_miny,l_maxy
             do i=l_minx,l_maxx
@@ -459,11 +458,15 @@
 
 !        Retreieve vertical coordinate description
          if ( .not. associated (hybm) ) then
-            nullify(ip1m,hybm,hybt)
+            nullify(ip1m,hybm,hybt,hybt_w)
             istat = vgrid_wb_get('ref-m',vcoord,ip1m)
             deallocate(ip1m); nullify(ip1m)
             if (vgd_get(vcoord,'VCDM - vertical coordinate (m)',hybm) /= VGD_OK) istat = VGD_ERROR
             if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
+            allocate(hybt_w(nk))
+            ! Remove special thermo level at nk+1/4 from list
+            hybt_w(1:nk-1)=hybt(1:nk-1)
+            hybt_w(nk)=1.
          endif
           
          if (pngz.ne.0)then
@@ -608,18 +611,22 @@
          endif
 
          if (pnww.ne.0) then
-            call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnww) )
          endif
 
          if (pnwe.ne.0) then
-            call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            ! Write WE=0. at top value using ffwe(nk) which is also 0., hyb top = Cstv_ptop_8/Cstv_pref_8
+            work=Cstv_ptop_8/Cstv_pref_8
+            call ecris_fst2(ffwe(l_minx,l_miny,nk),l_minx,l_maxx,l_miny,l_maxy,work, &
+                 'WE  ',1.0,0.0, kind,1,1,1, nbit(pnwe) )
+            ! Write inside domain
+            call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WE  ',1.0,0.0, kind,nk, indo, min(nko,nk), nbit(pnwe) )
-            deallocate(ffwe)
          endif
 
          if (pnzz.ne.0) then
-            call ecris_fst2(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+            call ecris_fst2(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                     'ZZ  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnzz) )
          endif
          deallocate(indo)

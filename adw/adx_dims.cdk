@@ -27,7 +27,7 @@
       logical :: adx_is_period_x  !true if model is periodic in X
       logical :: adx_is_period_y  !true if model is periodic in Y
       logical :: adx_trapeze_L    !true to get trapezoidal wind average
-      logical :: adx_angular_displacement_L    !true to get trapezoidal wind average
+      logical :: adx_hor_int_traj_L  !true to horizontally interpolate trajectories
       logical :: adx_cub_traj_L   !true to get cubic interpolation in trajectory comp.
       logical :: adx_superwinds_L !true to get super winds
 
@@ -74,7 +74,7 @@
       common /adx_dims_l/ adx_is_period_x
       common /adx_dims_l/ adx_is_period_y
       common /adx_dims_l/ adx_trapeze_L
-      common /adx_dims_l/ adx_angular_displacement_L
+      common /adx_dims_l/ adx_hor_int_traj_L
       common /adx_dims_l/ adx_cub_traj_L
       common /adx_dims_l/ adx_superwinds_L
 

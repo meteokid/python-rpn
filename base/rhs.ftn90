@@ -16,14 +16,12 @@
 !*s/r rhs - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
 !            save the results for next iteration in the o's
 !
-
-!
       subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
                        F_ruw1,F_rvw1,F_u,F_v,F_w,F_t,F_s,F_zd  , &
                        F_q,   F_fis, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Minx,Maxx,Miny,Maxy, Nk
       real F_oru   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,  Nk), &
            F_orc   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_ort   (Minx:Maxx,Miny:Maxy,  Nk), &
@@ -65,12 +63,14 @@
 #include "lun.cdk"
 #include "grd.cdk"
 
-      integer i, j, k, km, kq, i0, j0, in, jn, nij, jext, onept
+      logical, save :: done=.false.
+      integer i, j, k, km, kq, i0, j0, in, jn, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, &
               wk2(Minx:Maxx,Miny:Maxy), barz, barzp, &
               xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real*8 u_interp, v_interp, t_interp, mu_interp
-      real, dimension(:,:,:), allocatable :: BsPq, FIp, MU
+      real, dimension(:,:,:), pointer :: BsPq, FIp, MU
+      save MU
 
       real*8, parameter :: one=1.d0, zero=0.d0
 !
@@ -78,27 +78,31 @@
 !      
       if (Lun_debug_L) write (Lun_out,1000)
 
-      allocate(BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), FIp(Minx:Maxx,Miny:Maxy,l_nk+1), MU(Minx:Maxx,Miny:Maxy,l_nk))
-!
+      nullify  ( BsPq, FIp )
+      allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), FIp(Minx:Maxx,Miny:Maxy,l_nk+1) )
+
+      if (.not.done) then
+         nullify  ( MU )
+         allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
+      endif
+
 !     Common coefficients
-!
+
       jext = Grd_bsc_ext1
-      onept= 0
-      if(Grd_yinyang_L) onept= 1
 
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      call rpn_comm_xch_halo( F_u , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj,G_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_v , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_njv,G_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_t , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_s , l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
-                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_u , l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj ,G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_v , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv,G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_t , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo( F_s , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not.Schm_hydro_L) then
-         call rpn_comm_xch_halo(  F_q, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk, &
-                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo(  F_q, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk,&
+                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
       nij = l_ni*l_nj
@@ -107,7 +111,10 @@
                     1,l_ni+1,1,l_nj+1)
 
       if (Schm_hydro_L) then
-         MU=0.
+         if (.not.done) then
+            MU= 0.
+            done= .true.
+         endif
       else
          call diag_mu(MU, F_q, F_s, l_minx,l_maxx,l_miny,l_maxy, l_nk, &
                     1,l_ni+1,1,l_nj+1)
@@ -176,6 +183,8 @@
                   + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
                   + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
 
+    !!   v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k)) !! linear interpolation
+
          F_oru(i,j,k) = Cstv_invT_8  * F_u(i,j,k) - Cstv_Beta_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXMu_8(i,j)  &
                             + ( one + mu_interp)* (  FIp(i+1,j,k) -  FIp(i,j,k) ) * geomg_invDXMu_8(i,j)  &
@@ -228,6 +237,8 @@
                   + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
                   + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
 
+   !!    u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))  !! linear interpolation
+
          F_orv(i,j,k) = Cstv_invT_8  * F_v(i,j,k) - Cstv_Beta_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomg_invDYMv_8(j) &
                             + ( one + mu_interp)* (  FIp(i,j+1,k) -  FIp(i,j,k) ) * geomg_invDYMv_8(j) &
@@ -242,10 +253,10 @@
       jn = l_nj
       if (G_lam) then
          xtmp_8(:,:) = one
-         if (l_west)  i0 = 4+jext-onept
-         if (l_east)  in = l_niu-2-jext+onept
-         if (l_south) j0 = 4+jext-onept
-         if (l_north) jn = l_njv-2-jext+onept
+         if (l_west)  i0 = 4+jext
+         if (l_east)  in = l_niu-2-jext
+         if (l_south) j0 = 4+jext
+         if (l_north) jn = l_njv-2-jext
       endif
 
 !********************************************
@@ -303,11 +314,10 @@
 
 !$omp  end parallel
 
+      if( (G_lam.and.(.not.Schm_hor_int_traj_L)) .or. (.not.G_lam) ) then
 !******************************************************
 ! Interpolate Ru, Rv from U-, V-grid to G-grid, resp. *
 !******************************************************
-
-      if (Grd_yinyang_L) call yyg_rhsuv (F_oru,F_orv,Minx,Maxx,Miny,Maxy, G_nk)
 
       call rpn_comm_xch_halo ( F_oru, l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj,G_nk, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -322,10 +332,10 @@
       jn = l_nj
       if (G_lam) then
          xtmp_8(:,:)=1.0D0
-         if (l_west)  i0 = 4+jext-onept
-         if (l_east)  in = l_niu-2-jext+onept
-         if (l_south) j0 = 4+jext-onept
-         if (l_north) jn = l_njv-2-jext+onept
+         if (l_west)  i0 = 4+jext
+         if (l_east)  in = l_niu-2-jext
+         if (l_south) j0 = 4+jext
+         if (l_north) jn = l_njv-2-jext
       endif
 
 !$omp do
@@ -346,7 +356,13 @@
 !$omp enddo
 !$omp  end parallel
 
-      deallocate(BsPq,FIp,MU)
+      else ! HORIZONTAL INTERPOLATION OF TRAJECTORIES
+         F_ruw1=F_oru
+         F_rvw1=F_orv
+      endif
+
+      deallocate ( BsPq, FIp )
+      if (.not.Schm_hydro_L) deallocate ( MU )
 
 1000  format(3X,'COMPUTE THE RIGHT-HAND-SIDES: (S/R RHS)')
 !

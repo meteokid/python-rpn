@@ -63,12 +63,18 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    real, pointer, dimension(:) :: xth, yth, zth, xcth, ycth, zcth, &
                                   xct1, yct1, zct1
-   real pyt_store(adx_mlni,adx_mlnj,adx_lnk)
    !---------------------------------------------------------------------
    nullify (xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
+!  nullify (pxt, pyt, pzt, pxmu, pymu, pzmu, pxmv, pymv, pzmv)
    if (.not.associated(pxt)) allocate (pxt(adx_mlni,adx_mlnj,adx_lnk), &
                                        pyt(adx_mlni,adx_mlnj,adx_lnk), &
-                                       pzt(adx_mlni,adx_mlnj,adx_lnk))
+                                       pzt(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pxmu(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pymu(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pzmu(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pxmv(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pymv(adx_mlni,adx_mlnj,adx_lnk), &
+                                       pzmv(adx_mlni,adx_mlnj,adx_lnk)  )
 
    k0 = adx_gbpil_t+1
    k0t= k0
@@ -99,12 +105,21 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
 
-   if (adx_angular_displacement_L) then
+   call adx_get_ij0n (i0,in,j0,jn)
+
+   if (G_lam) then
       call adx_pos_angular_m (F_nb_iter, pxm , pym , pzm             , &
                               a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
                               xth, yth, zth, adx_lminx, adx_lmaxx , &
                               adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
                               max(k0t-2,1), adx_lnk, F_nk_winds)
+      if(adx_hor_int_traj_L) &
+      call adx_pos_muv (pxmu, pymu, pzmu, pxmv, pymv, pzmv, pxm, pym, pzm, &
+                        adx_mlni, adx_mlnj, k0, adx_lnk, i0,in,j0,jn)
+
+      call adx_pos_angular_t (pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
+                              adx_mlni,adx_mlnj,k0t,adx_lnk , &
+                              i0,in,j0,jn, .true.)
    else
       call adx_pos_m (F_nb_iter, pxm , pym , pzm             , &
                       a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
@@ -112,15 +127,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                       xct1, yct1, zct1, adx_lminx, adx_lmaxx , &
                       adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
                       max(k0t-2,1), adx_lnk, F_nk_winds)
-   end if
 
-   call adx_get_ij0n (i0,in,j0,jn)
-
-   if (adx_angular_displacement_L) then
-      call adx_pos_angular_t (pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
-                              adx_mlni,adx_mlnj,k0t,adx_lnk , &
-                              i0,in,j0,jn, .true.)
-   else
       call adx_pos_t (pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
                       adx_mlni,adx_mlnj,k0t,adx_lnk , &
                       i0,in,j0,jn, .true.)
@@ -140,9 +147,11 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    call timing_start (31, 'ADW_INLAG')  ! Interpolate
 
    call adx_int_rhs ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
+                      pxmu,pymu,pzmu,pxmv,pymv,pzmv, &
                       adx_mlni, adx_mlnj, k0 , adx_lnk )
 
    call adx_int_rhs ( pxt, pyt, pzt, .false., F_doAdwStat_L, &
+                      pxmu,pymu,pzmu,pxmv,pymv,pzmv, &
                       adx_mlni, adx_mlnj, k0t, adx_lnk )
 
    call timing_stop (31)

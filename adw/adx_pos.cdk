@@ -1,2 +1,6 @@
    real, dimension(:,:,:), pointer :: pxt,pyt,pzt
+   real, dimension(:,:,:), pointer :: pxmu,pymu,pzmu
+   real, dimension(:,:,:), pointer :: pxmv,pymv,pzmv
    common /adx_position_t/ pxt,pyt,pzt
+   common /adx_position_mu/ pxmu,pymu,pzmu
+   common /adx_position_mv/ pxmv,pymv,pzmv

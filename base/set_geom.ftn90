@@ -247,9 +247,8 @@
          Geomg_tyoav_8  (j)= 0.d0
       end do
  
-      if (Schm_angular_displacement_L) then
+      if (G_lam) then ! FOR METRIC TERMS IN MOMENTUM EQUATIONS
          do j=1-G_haloy, l_nj+G_haloy
-            indx = offj + j
             Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
             Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
          enddo

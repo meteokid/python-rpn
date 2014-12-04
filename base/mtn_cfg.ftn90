@@ -83,10 +83,10 @@
 
       Hzd_lnr = 0.
 
-      Schm_angular_displacement_L = .false.
       Schm_trapeze_L=.false.
       Schm_cub_traj_L=.false.
       Schm_phyms_L = .false.
+      Schm_psadj_L=.false.
 
       G_halox=3
 
@@ -94,6 +94,7 @@
       Zblen_spngtt_L = .true.
 
       Out3_flipit_L  = .true.
+      Out3_fullplane_L  = .false.
       Out3_closestep = 28800
 
       istat = 0
@@ -103,7 +104,6 @@
          Schm_hydro_L = .false.
          Schm_trapeze_L=.true.
          Schm_cub_traj_L=.true.
-         Schm_angular_displacement_L = .true.
 
          Height_top_8 = 19500.d0
 

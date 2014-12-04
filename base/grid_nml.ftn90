@@ -106,6 +106,7 @@
       F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_typ_S(1:2).eq.'GY') 
 
       Grd_bsc_base = 5
+      if(Grd_yinyang_L) Grd_bsc_base=Grd_bsc_base+1
       Grd_bsc_ext1 = 3
       Grd_maxcfl   = max(1,Grd_maxcfl)
       Grd_extension= 0
@@ -300,7 +301,7 @@
             /1X,' GRD_NI=',I5,' GRD_NJ=',I5,/, &
             /,  '-----------------------------------')
  1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
-                21x,'IG1-4: '4i8)
+                21x,'IG1-4: ',4i8)
  1100 FORMAT (1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &
         /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
         /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES' &

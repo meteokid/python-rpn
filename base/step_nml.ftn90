@@ -87,14 +87,38 @@
       endif
 
       err= 0
-      err= min( time2step (Fcst_start_S  , Step_dt, Lun_out, Lctl_step )  , err)
-      err= min( time2step (Fcst_end_S    , Step_dt, Lun_out, Step_total)  , err)
-      err= min( time2step (Fcst_rstrt_S  , Step_dt, Lun_out, Step_rsti)   , err)
-      err= min( time2step (Fcst_bkup_S   , Step_dt, Lun_out, Step_bkup)   , err)
-      err= min( time2step (Fcst_gstat_S  , Step_dt, Lun_out, Step_gstat)  , err)
-      err= min( time2step (Fcst_nesdt_S  , Step_dt, Lun_out, Step_nesdt)  , err)
-      err= min( time2step (Fcst_spinphy_S, Step_dt, Lun_out, Step_spinphy), err)
+
+      if ( Fcst_start_S  == '' ) Fcst_start_S  = '0H'
+      if ( Fcst_end_S    == '' ) Fcst_end_S    = Fcst_start_S
+
+      err= min( time2step (Fcst_start_S, Step_dt, Lun_out, Lctl_step ), err)
+      err= min( time2step (Fcst_end_S  , Step_dt, Lun_out, Step_total), err)
+      err= min( time2step (Fcst_nesdt_S, Step_dt, Lun_out, Step_nesdt), err)
+
+      if ( Fcst_rstrt_S  == '' ) then
+         Step_rsti= Step_total-Lctl_step+1
+      else
+         err= min( time2step (Fcst_rstrt_S, Step_dt, Lun_out, Step_rsti), err)
+      endif
+      if ( Fcst_bkup_S  == '' ) then
+         Step_bkup= Step_total-Lctl_step+1
+      else
+         err= min( time2step (Fcst_bkup_S, Step_dt, Lun_out, Step_bkup), err)
+      endif
+      if ( Fcst_gstat_S  == '' ) then
+         Step_gstat= Step_total-Lctl_step+1
+      else
+         err= min( time2step (Fcst_gstat_S, Step_dt, Lun_out, Step_gstat), err)
+      endif
+      if ( Fcst_spinphy_S  == '' ) then
+         Step_spinphy= Step_total-Lctl_step+1
+      else
+         err= min( time2step (Fcst_spinphy_S, Step_dt, Lun_out, Step_spinphy), err)
+      endif
+
       if (err.lt.0) goto 9999
+
+      Step_delay= Lctl_step
 
       if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
@@ -103,15 +127,6 @@
       else
          Step_nesdt= Step_nesdt * Step_dt
       endif
-
-      Step_delay= Lctl_step
-
-      if (Step_total   .lt. 0) Step_total  = 0
-      if (Lctl_step    .lt. 0) Lctl_step   = 0
-      if (Step_gstat   .le. 0) Step_gstat  = Step_total+1
-      if (Step_bkup    .le. 0) Step_bkup   = Step_total+1
-      if (Step_spinphy .le. 0) Step_spinphy= Step_total+1
-      if (Step_rsti    .le. 0) Step_rsti   = Step_total+1
 
       step_nml = 1
 

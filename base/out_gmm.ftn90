@@ -90,10 +90,15 @@
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
+      real, pointer, dimension(:    ), save :: hybt_w=>null()
 !_______________________________________________________________________
 !
       if ( Level_typ_S(levset).eq.'P') return
-
+      if ( .not. associated (hybt_w) ) then
+         allocate(hybt_w(G_nk))
+         hybt_w(1:G_nk-1)=Ver_hyb%t
+         hybt_w(G_nk)=1.
+      endif         
       nkeys     = gmm_keys(keylist)
 
       periodx_L = .false.
@@ -104,7 +109,7 @@
       class_var( 2,1) = 'VT' ; class_var( 2,2) = 'VV' ; class_var( 2,3) = 'MM'
       class_var( 3,1) = 'QT' ; class_var( 3,2) = 'QQ' ; class_var( 3,3) = 'MQ'
       class_var( 4,1) = 'TT' ; class_var( 4,2) = 'QQ' ; class_var( 4,3) = 'TT'
-      class_var( 5,1) = 'WT' ; class_var( 5,2) = 'QQ' ; class_var( 5,3) = 'TT'
+      class_var( 5,1) = 'WT' ; class_var( 5,2) = 'QQ' ; class_var( 5,3) = 'TW'
       class_var( 6,1) = 'ZD' ; class_var( 6,2) = 'QQ' ; class_var( 6,3) = 'TT'
       class_var( 7,1) = 'TR' ; class_var( 7,2) = 'QQ' ; class_var( 7,3) = 'TT'
       class_var( 8,1) = 'ST' ; class_var( 8,2) = 'QQ' ; class_var( 8,3) = 'SF'
@@ -141,6 +146,7 @@
             level_type => Ver_hyb%t
             if (class_var(id,3) == 'MM') level_type => Ver_hyb%m
             if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m(2:G_nk+1)
+            if (class_var(id,3) == 'TW') level_type => hybt_w
             call out_sgrid2( Grid_x0 (gridset),Grid_x1 (gridset), &
                              Grid_y0 (gridset),Grid_y1 (gridset), &
                              Grid_ig1(gridset),ig2              , &

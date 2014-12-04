@@ -84,9 +84,10 @@
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_Tlift    = 0
-      Schm_trapeze_L  = .false.
+      Schm_trapeze_L  = .true.
       Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
+      Schm_hor_int_traj_L  = .false.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_source_ps_L= .false.

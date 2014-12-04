@@ -89,9 +89,6 @@
          Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
          if (Schm_theoc_L) Lam_blend_Hy = 0
          Lam_tdeb = 999999.0
-         Schm_angular_displacement_L = .true.
-      else
-         Schm_angular_displacement_L = .false.
       endif
       if ((G_lam).and.(.not.Grd_yinyang_L)) then
          Lam_gbpil_T = max(0,Lam_gbpil_T)
@@ -106,8 +103,6 @@
             if (lun_out>0)write (Lun_out, 9480)
             return
          endif
-         Schm_psadj_L    = .true.
-         Schm_cub_traj_L = .true.
       endif
 
       deg_2_rad = Dcst_pi_8/180.

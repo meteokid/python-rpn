@@ -141,6 +141,7 @@
       namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
+      namelist /gem_cfgs/ Schm_hor_int_traj_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
       namelist /gem_cfgs/ Sol_yyg_eps
@@ -270,6 +271,7 @@
       namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
+      namelist /gem_cfgs_p/ Schm_hor_int_traj_L
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps

@@ -14,8 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 !/**
 
-subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
-                                F_doAdwStat_L, F_ni,F_nj,F_k0,F_nk)
+subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, F_doAdwStat_L, &
+                         F_pxu,F_pyu,F_pzu,F_pxv,F_pyv,F_pzv, &
+                                F_ni,F_nj,F_k0,F_nk)
    implicit none
 #include <arch_specific.hf>
 !
@@ -27,6 +28,8 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
    integer :: F_ni,F_nj,F_nk !I, pos array dims
    integer :: F_k0           !I, vertical scope F_k0 to F_nk
    real, dimension(F_ni,F_nj,F_nk) :: F_px, F_py, F_pz !I, upstream positions at t1
+   real, dimension(F_ni,F_nj,F_nk) :: F_pxu, F_pyu, F_pzu
+   real, dimension(F_ni,F_nj,F_nk) :: F_pxv, F_pyv, F_pzv
 !
    !@author alain patoine
    !@revisions
@@ -79,6 +82,12 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
       call adx_cliptraj3 ( F_px, F_py, i0, in, j0, jn, F_ni,F_nj,F_k0,F_nk,  &
                                         'INTERP '//trim(level_type_S))
 
+      if(adx_hor_int_traj_L) then
+         call adx_cliptraj3 ( F_pxu, F_pyu, i0, in, j0, jn, F_ni,F_nj,F_k0,F_nk,  &
+                                        'INTERP '//trim(level_type_S))
+         call adx_cliptraj3 ( F_pxv, F_pyv, i0, in, j0, jn, F_ni,F_nj,F_k0,F_nk,  &
+                                        'INTERP '//trim(level_type_S))
+      endif
    else
 
       py_store=F_py
@@ -102,12 +111,21 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, &
    endif
 
    if (F_is_mom_L) then
-      call adx_interp_gmm7 ( gmmk_ruw2_s, gmmk_ruw1_s , .true.     , &
-                             F_px, F_py, F_pz, capx2, capy2, capz2 , &
-                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
-      call adx_interp_gmm7 ( gmmk_rvw2_s, gmmk_rvw1_s , .true.     , &
-                             F_px, F_py, F_pz, capx2, capy2, capz2 , &
-                             exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+      if(adx_lam_L.and.adx_hor_int_traj_L) then
+         call adx_interp_gmm7 ( gmmk_ruw2_s, gmmk_ruw1_s , .true.     , &
+                                F_pxu, F_pyu, F_pzu, capx2, capy2, capz2 , &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+         call adx_interp_gmm7 ( gmmk_rvw2_s, gmmk_rvw1_s , .true.     , &
+                                F_pxv, F_pyv, F_pzv, capx2, capy2, capz2 , &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+      else
+         call adx_interp_gmm7 ( gmmk_ruw2_s, gmmk_ruw1_s , .true.     , &
+                                F_px, F_py, F_pz, capx2, capy2, capz2 , &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+         call adx_interp_gmm7 ( gmmk_rvw2_s, gmmk_rvw1_s , .true.     , &
+                                F_px, F_py, F_pz, capx2, capy2, capz2 , &
+                                exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
+      endif
       call adx_interp_gmm7 ( gmmk_rhsc_s, gmmk_orhsc_s, .false.    , &
                              F_px, F_py, F_pz, capx2, capy2, capz2 , &
                              exch_c1, F_nk, i0, in, j0, jn, F_k0, 'm')
