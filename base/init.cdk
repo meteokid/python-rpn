@@ -25,13 +25,13 @@
 #endif
 !
       character*16 Init_dflength_S, Init_dfpl_S
-      logical  Init_balgm_L, Init_dfwin_L, Init_dftr_L
-      integer  Init_dfnp
+      logical  Init_balgm_L, Init_dfwin_L, Init_dftr_L, Init_mode_L
+      integer  Init_dfnp, Init_halfspan
       real, dimension(:), pointer :: Init_dfco
       real*8   Init_dfpl_8
 !
       common / inits / Init_dflength_S, Init_dfpl_S
-      common / initl / Init_balgm_L, Init_dfwin_L, Init_dftr_L
-      common / initn / Init_dfnp
+      common / initl / Init_balgm_L, Init_dfwin_L, Init_dftr_L, Init_mode_L
+      common / initn / Init_dfnp, Init_halfspan
       common / initr / Init_dfpl_8
       common / initp / Init_dfco

@@ -83,6 +83,7 @@
 !
 ! ---------------------------------------------------------------------
 !
+      nullify(lookup_ip1,lookup_a_8,lookup_b_8)
       px_param=0
       rcoef(1)=0.0
       rcoef(2)=0.0
@@ -257,6 +258,8 @@
                    j = j+1
                 enddo
              enddo
+             deallocate(lookup_a_8,lookup_b_8,lookup_ip1)
+             nullify(lookup_a_8,lookup_b_8,lookup_ip1)
 
              if (.not.found) then
                 print*, 'px_param error: cannot match ip1 to a/b coefs: ',ip1(i)

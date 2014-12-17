@@ -33,17 +33,23 @@
       integer kkproc,adr
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_njv),yy_8(G_ni,G_njv)
-      real*8  xgu_8(G_ni-1),ygv_8(G_njv)
+      real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
 !
 !     Get global xgu,ygv,xx,yy
-       do i=1,G_ni-1
+       do i=1-G_ni,2*G_ni-1
        xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
        enddo
-       do j=1,G_njv
+       do j=1-G_nj,2*G_nj-1
        ygv_8(j)= 0.5D0*(G_yg_8(j+1)+G_yg_8(j))
        enddo
+!      do i=1,G_ni-1
+!      xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
+!      enddo
+!      do j=1,G_njv
+!      ygv_8(j)= 0.5D0*(G_yg_8(j+1)+G_yg_8(j))
+!      enddo
 !
       do j=1,G_njv
       do i=1,G_ni

@@ -37,9 +37,6 @@
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (0,"AFTER ADVECTION")
 
-      ! add code here for tracer conservation
-      ! code should be named adx_tracers_mono.ftn90
-      !                      adx_tracers_mass.ftn90
 !     _________________________________________________________________
 !
       return

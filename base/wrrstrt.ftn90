@@ -15,8 +15,6 @@
 
 !s/r wrrstrt - Write the restart file
 !
-
-!
       subroutine wrrstrt ()
       implicit none
 #include <arch_specific.hf>
@@ -70,7 +68,7 @@
             Lun_rstrt = 0
             ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
 
-            write(Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+            write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
 
             if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 
@@ -84,7 +82,9 @@
             call timing_stop (34)
 
             call timing_start ( 35, 'RESTART_3' )
-            call wrrstrt_phy (.false.)
+
+            call itf_phy_restart ('W', .false.)
+
             call timing_stop (35)
          endif
 

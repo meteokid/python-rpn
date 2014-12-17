@@ -45,7 +45,6 @@
 #include "lun.cdk"
 #include "out3.cdk"
 #include "init.cdk"
-#include "rstr.cdk"
 #include "out.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
@@ -96,9 +95,7 @@
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
 
 !     setup of filename extension if needed
-      if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
-           ((stepno.gt.(Init_dfnp-1)/2)) ) &
-             ext_S = '_dgf'
+      if ( Init_mode_L .and. (stepno.gt.Init_halfspan) ) ext_S= '_dgf'
 
 !     setup domain extent to retrieve physics data
       allocate(data3d(l_ni,l_nj,G_nk+1))

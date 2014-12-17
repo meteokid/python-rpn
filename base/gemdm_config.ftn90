@@ -100,7 +100,14 @@
 
       if (Schm_trapeze_L) then
          if (.not. G_lam) then
-            if (lun_out>0)write (Lun_out, 9480)
+            if (lun_out>0) write (Lun_out, 9480) 'Schm_trapeze_L'
+            return
+         endif
+      endif
+
+      if (Schm_cub_traj_L) then
+         if (.not. G_lam) then
+            if (lun_out>0) write (Lun_out, 9480) 'Schm_cub_traj_L'
             return
          endif
       endif
@@ -131,8 +138,6 @@
       enddo
  81   continue
 
-      if ( Schm_modcn .eq. 0 ) Schm_modcn = Step_total
-
       if (Step_runstrt_S == 'NIL') then
          Step_runstrt_S = Mod_runstrt_S
       else
@@ -151,6 +156,8 @@
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 
       call set_zeta2( hyb, G_nk )
+
+      Schm_nith = G_nk
 
       if (Step_runstrt_S.eq."NIL") then
          if (lun_out>0) then
@@ -302,11 +309,19 @@
          if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602)
          Init_balgm_L = .false.
       endif
-      Init_dfnp   = max(2,Init_dfnp)
       Init_dfpl_8 = sec
       if (Init_balgm_L) then
+         Init_dfnp   = max(2,Init_dfnp)
          if ( mod(Init_dfnp,2) /= 1 ) Init_dfnp= Init_dfnp+1
+         Init_mode_L = .true.
+         Init_halfspan = (Init_dfnp - 1) / 2
+      else
+         Init_mode_L = .false.
+         Init_dfnp   = -9999
+         Init_halfspan = -9999
       endif
+
+      istat= wb_put('model/Init/halfspan',Init_halfspan,WB_REWRITE_NONE)
 
       if (Lctl_debug_L) then
          call msg_set_minMessageLevel(MSG_INFOPLUS)
@@ -352,7 +367,7 @@
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
- 9480 format (/,'ABORT: Schm_trapeze_L only available in LAM configuration'/)
+ 9480 format (/,'ABORT: ',a,' only available in LAM configuration'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 !
 !-------------------------------------------------------------------

@@ -21,19 +21,9 @@
 
 !author 
 !     Michel Roch - rpn - nov 1993
-!
+
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Tanguay M.        - introduce diffusion at T1 when 4D-Var 
-! v2_11 - Desgagne M.       - vertical sponge layer
-! v2_21 - Tanguay M.        - ADJ of vertical sponge layer
-! v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_03 - Tanguay M.        - Adjoint Lam configuration
-! v3_11 - Gravel S.         - provide for variable topography
-! v3_20 - Pellerin P.       - schm_offline_l: allow to run 
-! v3_30 - Lee V.            - new Lam I/O with acid test
-!                             without the dynamical kernel
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_60 - Lee V.            - call yyg_nest_tracers before t02t1
 
@@ -44,7 +34,6 @@
 #include "init.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
-#include "rstr.cdk"
 #include "schm.cdk"
 #include "vtopo.cdk"
 #include "grd.cdk"
@@ -52,8 +41,8 @@
 #include "vt1.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      logical first_L, secon_L, yyblend
-      integer itraj,n,istat
+      logical first_L, yyblend
+      integer itraj, n, istat
       real, pointer, dimension(:,:,:) :: tr1
 !
 !     ---------------------------------------------------------------
@@ -64,19 +53,8 @@
 !     first_L is TRUE  for the first timestep
 !           or the first timestep after digital filter initialisation
 
-      first_L = (Step_kount.eq.1).or.(Rstri_idon_L .and.  &
+      first_L = (Step_kount.eq.1).or.(.not.Init_mode_L .and.  &
                  Step_kount.eq.(Init_dfnp+1)/2)
-
-!     secon_L is TRUE  for the second timestep
-!            or the second timestep after digital filter initialisation
-
-      secon_L = (Step_kount.eq.2).or.(Rstri_idon_L .and.  &
-                 Step_kount.eq.(Init_dfnp+1)/2 + 1)
-
-!     Orh_crank_L is TRUE for a time step using C-N procedure
-
-      Orh_crank_L= first_L .or. ( secon_L .and. ( Schm_xwvt3 .gt. 0 ))  &
-                           .or. ( mod(Lctl_step-1,Schm_modcn) .eq. 0 )
 
       itraj = Schm_itraj
 
@@ -88,36 +66,21 @@
             itraj = max( 5, Schm_itraj )
          endif
       endif
-
-! Perform time interpolation of Lateral BCs for LAM configurations
-
-      if ( Orh_crank_L ) then
-  
-!        CN iterations
     
-         if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
+      if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
-         do Orh_icn = 1,Schm_itcn-1
+      do Orh_icn = 1,Schm_itcn-1
     
-            call tstpdyn (itraj)
-            itraj = Schm_itraj
-
-            call hzd_momentum
-
-         end do
-         if (Lun_debug_L) write(Lun_out,1006)
+         call tstpdyn (itraj)
+         itraj = Schm_itraj
+         
+         call hzd_momentum
+         
+      end do
+      
+      if (Lun_debug_L) write(Lun_out,1006)
   
-         Orh_icn=Schm_itcn
- 
-      else
-
-         Orh_icn = 1
-  
-      endif
- 
-!     ------------------------------------------------------------
-!     Perform the timestep
-!     ------------------------------------------------------------
+      Orh_icn=Schm_itcn
  
       call tstpdyn ( Schm_itraj )
 
@@ -155,10 +118,6 @@
       call pw_update_GPW
       call pw_update_UV
       call pw_update_T
-
-!     ===================
-!     END OF ONE TIMESTEP
-!     ===================
 
       if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
 

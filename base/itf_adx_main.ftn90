@@ -43,8 +43,7 @@ subroutine itf_adx_main (F_nb_iter)
 
    doAdwStat_L = .false.
    if (Step_gstat.gt.0) doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
-   doAdwStat_L = doAdwStat_L .and. &
-                ((Orh_icn == Schm_itcn) .or. (.not.Orh_crank_L))
+   doAdwStat_L = doAdwStat_L .and. (Orh_icn == Schm_itcn)
 
    if (.not. done) &
       allocate (ud(l_minx:l_maxx,l_miny:l_maxy,nk_winds), &

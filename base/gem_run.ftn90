@@ -15,70 +15,19 @@
 
 !**s/r gem_run - Performs the integration of the model
 !
-
-!
       subroutine gem_run (F_dgtflt_L, F_rstrt_L)
-!
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_dgtflt_L, F_rstrt_L
-!
-!author
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version (from rhs v1_03)
-! v2_10 - Tanguay M.        - control cost function when 4D-Var (conf/100=1) 
-! v2_20 - Desgagne M.       - correction for Step_total=0
-! v2_21 - Dugas B.          - activate climate mode
-! v2_21 - Lee V.            - changed calling sequence in p_main
-! v2_30 - Dugas B.          - add call to gemtim
-! v2_31 - Patoine A.        - logic of restart around Step_kount
-! v2_31 - Tanguay M.        - adapt ADJ to diffusion in gem_run 
-! v3_00 - Tanguay M.        - cancel parameter in v4d_ctrlcst 
-! v3_00 - Laroche S.        - adapt for simplified physics
-! v3_01 - Tanguay M.        - introduce identity option
-! v3_01 - Lee V.            - introduce horizontal sponge
-! v3_02 - Tanguay M.        - cosmetics for identity option
-! v3_02 - Buehner M.        - integration stops at timestep V4dg_steplast 
-! v3_02                       if in V4d mode
-! v3_03 - Tanguay M.        - Call hdif_phy  
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_11 - Tanguay M.        - Extend TRAJ for conversion for DYNOUT2
-!                           - ADJ of digital filter
-! v3_20 - Gravel S.         - background vertical diffusion
-! v3_20 - Tanguay M.        - Introduce Hzd_hdif0_L
-! v3_20 - Dugas B.          - Replace GEMTIM by GEMTIM2(may re-define Step_rsti)
-! v3_30 - Desgagne M.       - Restructure code, added output for cascade mode
-! v4    - Gravel-Girard-Plante - staggered version
-! v4_04 - Tanguay M.        - Staggered version TL/AD
-! v4_04 - Plante A.         - Remove offline mode
-! v4_05 - Desgagne M.       - Restrict length of digital filter
-! v4_05 - Plante-Girard     - Remove surfix
-! v4_11 - Tanguay M.        - Reset Communication 3D_Var-(TL/AD)
-! v4_30 - Tanguay M.        - Revision
-! v4_30 - Dugas B.          - Increment management now done in itf_phy_step
-!
-!object
-!	Performs the integration of the model
-!
-!       A timestep is composed of a dynamics timestep followed by a
-!       physics timestep.
-!
-!       During initialization, the digital filter data is collected
-!       at every timestep.
-!
-!       Output is performed if required.
-!
-!       Diagnostics (zonal or grid point) are extracted if required.
-!
+
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
 ! F_dgtflt_L    I         Digital initiatization mode
 ! F_rstrt_L     O         Is a restart required
 !----------------------------------------------------------------
-!
+
 #include <WhiteBoard.hf>
 #include "init.cdk"
 #include "lun.cdk"
@@ -90,8 +39,7 @@
 #include "grd.cdk"
 #include "clim.cdk"
 #include "modconst.cdk"
-!
-      logical, external :: digflt_half
+
       character*16 datev
       logical bkup_L
       integer last_step,fstep,istep,step0,stepf,upperlimit,istat
@@ -110,16 +58,14 @@
                       fstep = Step_total
       if (F_dgtflt_L) fstep = Lctl_step+Init_dfnp-1
 
-      Rstri_secondhalf_L= digflt_half(Lctl_step)
-      istat= wb_put('model/Rstri/secondhalf', Rstri_secondhalf_L, &
-                     WB_REWRITE_MANY)
+      istat= wb_put('model/Init/mode', F_dgtflt_L, WB_REWRITE_MANY)
 
       last_step  = (Step_kount/Step_rsti)*Step_rsti + &
                     Step_rsti + Step_delay
       upperlimit = min(Step_total,last_step)
 
       if (F_dgtflt_L) then
-         if (last_step.ge.(Lctl_step+Init_dfnp-1)/2 ) last_step = fstep
+         if (last_step.ge.(Lctl_step+Init_halfspan)) last_step= fstep
       else
          last_step = min(Step_total,last_step)
       endif
@@ -144,7 +90,7 @@
          call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
          if ( .not.F_dgtflt_L .or. &
-              (Lctl_step.lt.(Lctl_step+Init_dfnp-1)/2) ) &
+              (Lctl_step.lt.(Lctl_step+Init_halfspan) ) )&
               call out_launchpost2 (.false.,.false.)
       else
          call out_steps (step0, stepf)
@@ -173,14 +119,9 @@
          call iau_apply2 (Step_kount)
 
          if (Grd_yinyang_L) call yyg_xchng_all
-!
-!C    Digital filter
-!     --------------
-         if ( F_dgtflt_L ) call digflt
-!
-!C    Perform output if required
-!     --------------------------
-!
+
+         if ( F_dgtflt_L ) call digflt ! digital filter
+
          call out_dyn (.true., .false.) ! regular output
 
          call blocstat (.false.)

@@ -30,6 +30,7 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! V4_10 - Plante A.         - Thermo upstream positions
+! v4_70 - Tanguay M.        - GEM4 Mass-Conservation 
 !@description
 !  Notes:
 !	The level at time t0 is not created explicitly in the
@@ -62,6 +63,7 @@
 #include "vt1.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"
+#include "vt_tracers.cdk"
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
@@ -174,6 +176,19 @@
          nullify(tr)
          istat = min(gmm_create('DIGF_'//trim(Tr3d_name_S(i))      ,tr,mymeta3d_nk_t,flag_r_n),istat)
       end do
+
+      gmmk_cub_s = 'CUB'
+      gmmk_mono_s= 'MONO'
+      gmmk_lin_s = 'LIN'
+      gmmk_min_s = 'MIN'
+      gmmk_max_s = 'MAX'
+
+      istat = GMM_OK
+      istat = min(gmm_create(gmmk_cub_s,  fld_cub , mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_mono_s, fld_mono, mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_lin_s,  fld_lin,  mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_min_s,  fld_min , mymeta3d_nk_t,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_max_s,  fld_max , mymeta3d_nk_t,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')

@@ -62,7 +62,6 @@
 !
       tag2=14 ; sendlen=0 ; recvlen=0 ; ireq=0
 
-      F_interpo_S='CUBIC'
       if (trim(F_interpo_S) == 'CUBIC') then
          sendmaxproc= Pil_sendmaxproc
          recvmaxproc= Pil_recvmaxproc

@@ -30,8 +30,6 @@
       err = gemdm_config ()
       if (err .lt. 0) goto 987
 
-      call set_schm
-
       Lun_out=6
 
       write (6,'(/a)') '  ====> READING npex, npey from STDIN:'

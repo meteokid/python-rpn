@@ -56,7 +56,7 @@
 !
       if (Rstri_rstn_L) then
 
-         read (Lun_rstrt) Lctl_step,Step_kount,Rstri_idon_L,Cstv_ptop_8
+         read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
          
          if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
          
@@ -66,7 +66,7 @@
          
       endif
 
-      call rdrstrt_phy ()
+      call itf_phy_restart ('R', .false.)
 !
 !     ---------------------------------------------------------------
 !      

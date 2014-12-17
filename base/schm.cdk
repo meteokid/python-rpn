@@ -12,7 +12,6 @@
 !______________________________________________________________________
 !                                                                      |
 !  VARIABLES ASSOCIATED WITH CONTROLLING SCHEMES USED IN THE MODEL     |
-!                                         (set_schm)                   |
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
@@ -36,13 +35,6 @@
 !                    |                           hydrostatic mode only)|
 ! Schm_theoc_L       | .true.-> theoretical case                       |
 ! Schm_itcn          | number of iterations for Crank-Nicholson        |
-! Schm_modcn         | frequency of Crank-Nicholson procedure          |
-! Schm_xwvt3         | type of extrapolation for wind calculation      |
-!                    | at time t-dt/2 (th):                            |
-!                    |    =0  => two time levels (t1, t2)              |
-!                    |    =1  => two time levels (t1, t2) for u,v      |
-!                    |         three time levels for vertical wind     |
-!                    |    =2  => three time levels (t1, t2, t3)        |
 ! Schm_itnlh         | number of iterations to solve non-linear        |
 !                    | Helmholtz problem                               |
 ! Schm_itraj         | number of iterations to compute trjectories     |
@@ -65,7 +57,7 @@
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
 !
-      integer Schm_itcn , Schm_modcn, Schm_xwvt3, Schm_Tlift
+      integer Schm_itcn , Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith,  Schm_nblendyy
 !
       common / schm_l / Schm_hydro_L  , Schm_psadj_L
@@ -77,9 +69,7 @@
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
       common / schm_l / Schm_hzdadw_L , Schm_cub_traj_L
-      common / schm_l / Schm_bitpattern_L
-
-      common / schm_i / Schm_itcn     , Schm_modcn, Schm_xwvt3
+      common / schm_l / Schm_bitpattern_L, Schm_itcn
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
       common / schm_i / Schm_Tlift    ,Schm_nblendyy
 !

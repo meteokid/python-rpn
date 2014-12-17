@@ -45,20 +45,24 @@
 #include "ver.cdk"
 #include "grd.cdk"
 #include "wil_williamson.cdk"
+#include "cstv.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err
-      real*8  l_mass_8,g_mass_8
-      real, dimension(:,:,:), allocatable, save :: density,mass 
+      real*8  l_mass_8,g_mass_8,constant_8
+      real, dimension(:,:,:), allocatable, save :: density,mass
       character(len=15) type_S
       character(len= 7) time_S
-      real*8, parameter :: ONE_8 = 1.0, QUATRO_8 = 4.0
+      character(len= 9) communicate_S
+      real*8, parameter :: QUATRO_8 = 4.0
       !----------------------------------------------------------
 
       if (.not. allocated(density)) allocate(density(Minx:Maxx,Miny:Maxy,F_nk))
       if (.not. allocated(   mass)) allocate(   mass(Minx:Maxx,Miny:Maxy,F_nk))
 
-      if (F_reset_RHO_L) call get_density (density,mass,F_time,Minx,Maxx,Miny,Maxy,F_nk,k0) 
+      if (F_reset_RHO_L) call get_density (density,mass,F_time,Minx,Maxx,Miny,Maxy,F_nk,k0)
+
+      if (.NOT.F_mixing_L.and.F_name_S/='RHO ') density = F_tracer
 
       !Evaluate Local Integral  
       !-----------------------
@@ -74,37 +78,25 @@
             enddo
          enddo
 
-      elseif (F_name_S=='RHO ') then
-
-         do k=k0,F_nk
-            do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               l_mass_8 = l_mass_8 +  density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
-           enddo
-           enddo
-         enddo
-
-      else 
-
-         do k=k0,F_nk
-            do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               l_mass_8 = l_mass_8 + F_tracer(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
-            enddo
-            enddo
-         enddo
-
-      endif
-
-      !Evaluate Global Integral using MPI_ALLREDUCE  
-      !--------------------------------------------
-      if (Grd_yinyang_L) then  
-         call rpn_comm_ALLREDUCE(l_mass_8,g_mass_8,1, &
-                              "MPI_DOUBLE_PRECISION","MPI_SUM","MULTIGRID",err )
       else
-         call rpn_comm_ALLREDUCE(l_mass_8,g_mass_8,1, &       
-                              "MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
+
+         do k=k0,F_nk
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+               l_mass_8 = l_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
+           enddo
+           enddo
+         enddo
+
       endif
+
+      communicate_S = "GRID"
+      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+
+      !--------------------------------------------
+      !Evaluate Global Integral using MPI_ALLREDUCE
+      !--------------------------------------------
+      call rpn_comm_ALLREDUCE(l_mass_8,g_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
 
       g_mass_8 = g_mass_8 /(QUATRO_8 * Dcst_pi_8)
 
@@ -114,7 +106,10 @@
       if( F_time==1) time_S = "TIME T1"
       if (F_time==0) time_S = "TIME T0"
 
-      if (Lun_out>0.and.F_comment_S/="") write(Lun_out,1000) 'TRACERS: ',type_S,time_S,g_mass_8,F_name_S,F_comment_S
+      constant_8 = 0.0d0
+      if (F_name_S=='RHO '.and..NOT.Advection_2D_3D_L) constant_8 = - Cstv_pref_8 
+
+      if (Lun_out>0.and.F_comment_S/="") write(Lun_out,1000) 'TRACERS: ',type_S,time_S,g_mass_8 + constant_8,F_name_S,F_comment_S
 
       F_mass_tracer_8 = g_mass_8 
 

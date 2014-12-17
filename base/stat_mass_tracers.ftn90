@@ -46,13 +46,15 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 
    !---------------------------------------------------------------------
 
+   RETURN !Remove to allow printing the mass of tracers   
+
    reset_RHO = -1 
 
    k0 = Lam_gbpil_T+1 
 
    do n=1,Tr3d_ntr
 
-      if (Tr3d_mass(n) <= 0) cycle 
+      if (Tr3d_mass(n) <= 0) cycle
 
       if (reset_RHO<0) reset_RHO = 0 
 
@@ -72,8 +74,8 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 
    enddo
 
-   if (reset_RHO>0) call mass_tr (tracer_8,F_time,'RHO ',bidon,.FALSE.,& 
-                                  mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
+!!!if (reset_RHO>0) call mass_tr (tracer_8,F_time,'RHO ',bidon,.FALSE.,& 
+!!!                               mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
 
    if (Lun_out>0) write(Lun_out,*) ''
 

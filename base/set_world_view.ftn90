@@ -142,10 +142,6 @@
       f1= 0
       ierr= wb_put('model/outout/pe_master', f1)
 !
-! Initializes schemes control comdeck
-!
-      call set_schm
-!
 ! Initializes GMM
 !
       call set_gmm

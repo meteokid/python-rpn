@@ -1,7 +1,3 @@
-
-#if defined (DOC)
-!
-!**comdeck rstr.cdk
 !
 !______________________________________________________________________
 !                                                                      |
@@ -11,18 +7,10 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! Rstri_rstn_L       | .true.  to restart the job                      |
-!                    | .false. to start   the job                      |
-! Rstri_idon_L       | .true. initialization is done                   |
-! Rstri_half_L       | .true. if (Lctl_step.ge.(Init_dfnp-1)/2)?       |
 ! Rstri_glbcol_L     | .true. to write one global binary restart file  |
 !----------------------------------------------------------------------
-!
-!
-#endif
-      logical Rstri_rstn_L  , Rstri_idon_L, &
-              Rstri_glbcol_L, Rstri_secondhalf_L, Rstri_user_busper_L
-!
-      common / Rstrl / Rstri_rstn_L  , Rstri_idon_L
-      common / Rstrl / Rstri_glbcol_L, Rstri_secondhalf_L
-      common / Rstrl / Rstri_user_busper_L
-!
+
+      logical Rstri_rstn_L, Rstri_glbcol_L, Rstri_user_busper_L
+
+      common / Rstrl / Rstri_rstn_L, Rstri_glbcol_L, Rstri_user_busper_L
+

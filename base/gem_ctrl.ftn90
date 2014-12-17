@@ -15,16 +15,12 @@
 
 !**s/r gem_ctrl - initiate the forward integration of the model
 !
-
-!
       subroutine gem_ctrl
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     Michel Roch - rpn - june 1993
-!
 !revision
 ! v2_00 - Desgagne M.       - initial MPI version (from gefcn2 v1_03)
 ! v2_10 - Tanguay M.        - cancel indata and p_main when 4D-Var 
@@ -36,12 +32,11 @@
 ! v3_21 - Tanguay M.        - do filtering at t=0 in v4d_predat
 ! v3_21 - valcke, S.        - add oasis coupling initialization
 ! v3_30 - Desgagne M.       - moved calls set_adw,set_opr to set_dync
-!
 !object
 !     Beginning of the integration. This subroutine
 !     reads the data and performs initialization if required.
 !     It then initiates the forward intergration of the model.
-!	
+
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
@@ -50,7 +45,7 @@
 #include "rstr.cdk"
 #include "ptopo.cdk"
 #include "vtopo.cdk"
-!
+
       logical rstrt_L
       data rstrt_L /.false./
 !
@@ -78,7 +73,7 @@
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
 
-      if ( Init_balgm_L .and. .not.Rstri_idon_L ) call initial (rstrt_L)
+      if ( Init_mode_L ) call initial (rstrt_L)
 
       if (.not.rstrt_L) call gem_run (.false., rstrt_L)
 

@@ -38,8 +38,6 @@
 #include "glb_ld.cdk"
 #include "init.cdk"
 #include "step.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
@@ -47,41 +45,39 @@
       integer i, j, k, n, err,istat
       real dfcoef
       real, pointer, dimension(:,:,:) :: tr,tra
-      real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
-      type(gmm_metadata) :: meta_busper,mymeta
 !     __________________________________________________________________
 !
-      dfcoef = Init_dfco( abs( (Init_dfnp-1)/2 - Step_kount ) )
-!
-      istat = gmm_get(gmmk_uta_s,uta,mymeta)
+      dfcoef = Init_dfco ( abs( (Init_halfspan - Step_kount ) ) )
+
+      istat = gmm_get(gmmk_uta_s,uta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(uta)'
-      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      istat = gmm_get(gmmk_ut1_s,ut1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vta_s,vta,mymeta)
+      istat = gmm_get(gmmk_vta_s,vta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vta)'
-      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      istat = gmm_get(gmmk_vt1_s,vt1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_tta_s,tta,mymeta)
+      istat = gmm_get(gmmk_tta_s,tta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tta)'
-      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      istat = gmm_get(gmmk_tt1_s,tt1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_zdta_s,zdta,mymeta)
+      istat = gmm_get(gmmk_zdta_s,zdta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdta)'
-      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      istat = gmm_get(gmmk_zdt1_s,zdt1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(zdt1)'
-      istat = gmm_get(gmmk_sta_s,sta,mymeta)
+      istat = gmm_get(gmmk_sta_s,sta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(sta)'
-      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      istat = gmm_get(gmmk_st1_s,st1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_wta_s,wta,mymeta)
+      istat = gmm_get(gmmk_wta_s,wta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wta)'
-      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      istat = gmm_get(gmmk_wt1_s,wt1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(wt1)'
-      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      istat = gmm_get(gmmk_qt1_s,qt1)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qt1)'
-      istat = gmm_get(gmmk_qta_s,qta,mymeta)
+      istat = gmm_get(gmmk_qta_s,qta)
       if (GMM_IS_ERROR(istat)) print *,'digflt ERROR at gmm_get(qta)'
-!
+
       do k= 1, l_nk
       do j= 1, l_nj 
       do i= 1, l_ni 
@@ -94,10 +90,10 @@
       end do
       end do
       end do
-!
+
       do j= 1, l_nj
       do i= 1, l_ni
-         sta (i,j)        = sta(i,j)        + dfcoef * st1(i,j)
+         sta (i,j)     = sta(i,j)      + dfcoef * st1(i,j)
       end do
       end do
 
@@ -107,8 +103,8 @@
 
       do n=1,Tr3d_ntr
 
-         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
-         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
+         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra)
+         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr )
 
          if ( Init_dftr_L ) then
             do k=1,G_nk
@@ -118,24 +114,11 @@
             end do
             end do
             end do
-         elseif ( Step_kount .eq. (Init_dfnp-1)/2 ) then
+         elseif ( Step_kount .eq. Init_halfspan ) then
             tra(1:l_ni,1:l_nj,1:G_nk) = tr(1:l_ni,1:l_nj,1:G_nk)
          endif
 
       end do
-
-!**********************************************************************
-! Physics fields at half span are saved to be used after initialisation
-!**********************************************************************
-
-      if ( Step_kount .eq. (Init_dfnp-1)/2 .and. Schm_phyms_L ) then
-         nullify(BUSPER_3d,BUSPER_3d_digf)
-         istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,meta_busper)
-         istat = gmm_create ('BUSPER_3d_digf', BUSPER_3d_digf ,meta_busper,&
-                                GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,meta_busper)
-         BUSPER_3d_digf = BUSPER_3d
-      endif
 !     __________________________________________________________________
 !
       return

@@ -34,15 +34,18 @@
       integer, dimension (:), pointer :: recv_len,recvw_len,recve_len,recvs_len,recvn_len
       integer, dimension (:), pointer :: send_len,sendw_len,sende_len,sends_len,sendn_len
       real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
-      real*8  xgu_8(G_niu),ygv_8(G_nj-1)
+      real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
 !
-!     Get global xgu,ygv,xx,yy
-       do i=1,G_niu
+!     The orig alloc of (G_xg_8(1-G_ni:2*G_ni) , G_yg_8(1-G_nj:2*G_nj) )
+!     Localise could get point way outside of the actual grid in blend
+!     So get global xgu,ygv,xx,yy
+
+       do i=1-G_ni,2*G_ni-1
        xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
        enddo
-       do j=1,G_nj-1
+       do j=1-G_nj,2*G_nj-1
        ygv_8(j)= 0.5D0*(G_yg_8(j+1)+G_yg_8(j))
        enddo
 !
@@ -159,9 +162,11 @@
       allocate (Bln_usendproc(Bln_usendmaxproc))
       allocate (Bln_usend_len(Bln_usendmaxproc))
       allocate (Bln_usend_adr(Bln_usendmaxproc))
+      Bln_urecvproc(:) = 0
       Bln_urecv_len(:) = 0
-      Bln_usend_len(:) = 0
       Bln_urecv_adr(:) = 0
+      Bln_usendproc(:) = 0
+      Bln_usend_len(:) = 0
       Bln_usend_adr(:) = 0
 
 !    print*,'Bln_usendmaxproc=',Bln_usendmaxproc,'recvmaxproc=',Bln_urecvmaxproc

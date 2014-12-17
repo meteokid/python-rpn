@@ -78,21 +78,11 @@
          ok2output = .false.
 
          if (Timestep_init_L(j)) then
-            if (Init_balgm_L .and. (.not. Rstri_idon_L) .and. &
-                (Lctl_step .le. (Init_dfnp-1))) then
-              ok2output = .true.
-            endif
+            if (Init_mode_L) ok2output = .true.
          else
-            if (.not.Init_balgm_L) then
+            if (.not.Init_mode_L) then
                ok2output = .true.
-            else if ((F_set.eq.1) .and. &
-                        (Rstri_idon_L.or.Lctl_step.lt.(Init_dfnp-1)/2)) then
-               ok2output = .true.
-            else if ((F_set.eq.1) .and. &
-                        (.not.Rstri_idon_L.or.Lctl_step.gt.Init_dfnp-1)) then
-               ok2output = .true.
-            else if ((F_set.eq.2 .or. F_set.eq.3).and. &
-                        (Rstri_idon_L.or.Lctl_step.le.(Init_dfnp-1)/2)) then
+            else if (Lctl_step.lt.Init_halfspan) then
                ok2output = .true.
             endif
          endif

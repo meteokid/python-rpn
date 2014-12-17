@@ -42,9 +42,9 @@
 !
       F_bkup_L = mod( Step_kount, Step_bkup ).eq.0
 
-      if ( F_step.eq.Step_spinphy ) call wrrstrt_phy (.true.)
+      if ( F_step.eq.Step_spinphy ) call itf_phy_restart ('W', .true.)
 
-      flag= F_dgtflt_L .and. F_step.ge.(Init_dfnp-1)/2
+      flag= F_dgtflt_L .and. F_step.ge.Init_halfspan
       if ( (F_step.ne.F_finalstep) .and. (.not.flag) ) &
            call out_launchpost2 (.false.,.false.)
       

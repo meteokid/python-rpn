@@ -34,6 +34,7 @@
 #include "grd.cdk"
 #include "dcst.cdk"
 #include "tr3d.cdk"
+#include "schm.cdk"
 
       integer err, i, j, istat, n, k
       real, pointer, dimension(:,:,:)                      :: tr
@@ -50,7 +51,7 @@
 !     Calculate qw
 !     ------------
       do n=1, Tr3d_ntr
-         if (Tr3d_wload(n).or.Tr3d_name_S(n)(1:2).eq.'HU') then
+         if ((Tr3d_wload(n).and.Schm_wload_L).or.Tr3d_name_S(n)(1:2).eq.'HU') then
             istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr)
             do k=1,l_nk
             do j=1+pil_s,l_nj-pil_n

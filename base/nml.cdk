@@ -33,6 +33,9 @@
 #include "eq.cdk"
 #include "iau.cdk"
 
+      integer Schm_modcn,Schm_xwvt3
+      namelist /gem_cfgs/ Schm_modcn,Schm_xwvt3
+
       namelist /gem_cfgs/ stat_liste
 !C
       namelist /gem_cfgs/ Clim_climat_L
@@ -127,7 +130,6 @@
       namelist /gem_cfgs/ Schm_itcn
       namelist /gem_cfgs/ Schm_itnlh
       namelist /gem_cfgs/ Schm_itraj
-      namelist /gem_cfgs/ Schm_modcn
       namelist /gem_cfgs/ Schm_nblendyy
       namelist /gem_cfgs/ Schm_pcsty_L
       namelist /gem_cfgs/ Schm_pheat_L
@@ -138,7 +140,6 @@
       namelist /gem_cfgs/ Schm_trapeze_L
       namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
-      namelist /gem_cfgs/ Schm_xwvt3
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
       namelist /gem_cfgs/ Schm_hor_int_traj_L
@@ -259,7 +260,6 @@
       namelist /gem_cfgs_p/ Schm_itcn
       namelist /gem_cfgs_p/ Schm_itnlh
       namelist /gem_cfgs_p/ Schm_itraj
-      namelist /gem_cfgs_p/ Schm_modcn
       namelist /gem_cfgs_p/ Schm_nblendyy
       namelist /gem_cfgs_p/ Schm_pcsty_L
       namelist /gem_cfgs_p/ Schm_pheat_L
@@ -268,7 +268,6 @@
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_trapeze_L
       namelist /gem_cfgs_p/ Schm_superwinds_L
-      namelist /gem_cfgs_p/ Schm_xwvt3
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_hor_int_traj_L

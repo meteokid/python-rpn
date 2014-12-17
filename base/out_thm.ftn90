@@ -476,28 +476,28 @@
             call ecris_fst2(gzt(l_minx,l_miny,1), &
               l_minx,l_maxx,l_miny,l_maxy,hybt, &
               'GZ  ',prmult_pngz,0.0,kind,G_nk+1, indo, nko, nbit(pngz) )
-!            if (write_diag_lev) then
+            if (write_diag_lev) then
                call ecris_fst2(gzt(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
                     'GZ  ',prmult_pngz,0.0,kind,1,1,1,nbit(pngz))
-!            endif
+            endif
          endif
 
          if (pnvt.ne.0)then
             call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo,nko,nbit(pnvt) )
-!            if (write_diag_lev) then
-!               call ecris_fst2(vt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                    'VT  ',1.0,pradd_pnvt,Level_kind_diag,1,1,1,nbit(pnvt) )
-!            endif
+            if (write_diag_lev) then
+               call ecris_fst2(vt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'VT  ',1.0,pradd_pnvt,Level_kind_diag,1,1,1,nbit(pnvt) )
+            endif
          endif
          if (pnth.ne.0) then
                call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TH  ',1.0,0.0,kind,G_nk+1,indo,nko,nbit(pnth) )
-!               if (write_diag_lev) then
-!                  call ecris_fst2(th(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                       'TH  ',1.0,0.0,Level_kind_diag,1,1,1,nbit(pnth) )
-!               endif
+               if (write_diag_lev) then
+                  call ecris_fst2(th(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                       'TH  ',1.0,0.0,Level_kind_diag,1,1,1,nbit(pnth) )
+               endif
          endif
 
          if (pntt.ne.0)then
@@ -538,10 +538,10 @@
                            .true.,Dcst_trpl_8,l_ninj,nk_src,l_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
               'TW  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pntw) )
-!             if (write_diag_lev) then
-!                call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                     'TW  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pntw) )
-!             endif
+             if (write_diag_lev) then
+                call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                     'TW  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pntw) )
+             endif
          endif
 
          if (pnes.ne.0 .or. pntd.ne.0) then
@@ -562,10 +562,10 @@
             if (pnes.ne.0) then
                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'ES  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnes) )
-!               if (write_diag_lev) then
-!                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                    'ES  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnes) )
-!               endif
+               if (write_diag_lev) then
+                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'ES  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnes) )
+               endif
             endif
 
             if (pntd.ne.0) then
@@ -579,10 +579,10 @@
                enddo
                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                     'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo,nko,nbit(pntd) )
-!               if (write_diag_lev) then
-!                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                       'TD  ',1.0,pradd_pntd,Level_kind_diag,1,1,1,nbit(pntd) )
-!               endif
+               if (write_diag_lev) then
+                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                       'TD  ',1.0,pradd_pntd,Level_kind_diag,1,1,1,nbit(pntd) )
+               endif
             endif
          endif
 
@@ -604,10 +604,10 @@
             endif
             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                  'HR  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnhr) )
-!            if (write_diag_lev) then
-!               call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-!                    'HR  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnhr) )
-!            endif
+            if (write_diag_lev) then
+               call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'HR  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnhr) )
+            endif
          endif
 
          if (pnww.ne.0) then

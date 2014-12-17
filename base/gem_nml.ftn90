@@ -78,13 +78,12 @@
       Schm_hzdadw_L = .false.
       Schm_topo_L   = .true.
       Schm_itcn     = 2
-      Schm_modcn    = 1
-      Schm_xwvt3    = 0
       Schm_itnlh    = 2
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_Tlift    = 0
-      Schm_trapeze_L  = .true.
+      Schm_trapeze_L  = .false.
+      if (G_lam) Schm_trapeze_L  = .true.
       Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
       Schm_hor_int_traj_L  = .false.

@@ -35,48 +35,42 @@
 	
 #include <arch_specific.hf>
 #include <gmm.hf>
-#include "glb_ld.cdk"
-#include "lun.cdk"
-#include "schm.cdk"
 #include "vta.cdk"
 #include "vt1.cdk"
 #include "tr3d.cdk"
-#include "p_geof.cdk"
 
-      integer i,j,k,n,istat
+      integer n,istat
       real, pointer, dimension(:,:,:) :: tr,tra
-      real, pointer, dimension(:,:) :: BUSPER_3d,BUSPER_3d_digf
-      type(gmm_metadata) :: mymeta
 !
 !     ---------------------------------------------------------------
 !
-      istat = gmm_get(gmmk_uta_s,uta,mymeta)
+      istat = gmm_get(gmmk_uta_s,uta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(uta)'
-      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
+      istat = gmm_get(gmmk_ut1_s,ut1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vta_s,vta,mymeta)
+      istat = gmm_get(gmmk_vta_s,vta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(vta)'
-      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
+      istat = gmm_get(gmmk_vt1_s,vt1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_wta_s,wta,mymeta)
+      istat = gmm_get(gmmk_wta_s,wta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(wta)'
-      istat = gmm_get(gmmk_wt1_s,wt1,mymeta)
+      istat = gmm_get(gmmk_wt1_s,wt1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(wt1)'
-      istat = gmm_get(gmmk_tta_s,tta,mymeta)
+      istat = gmm_get(gmmk_tta_s,tta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(tta)'
-      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
+      istat = gmm_get(gmmk_tt1_s,tt1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_zdta_s,zdta,mymeta)
+      istat = gmm_get(gmmk_zdta_s,zdta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(zdta)'
-      istat = gmm_get(gmmk_zdt1_s,zdt1,mymeta)
+      istat = gmm_get(gmmk_zdt1_s,zdt1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(zdt1)'
-      istat = gmm_get(gmmk_sta_s,sta,mymeta)
+      istat = gmm_get(gmmk_sta_s,sta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(sta)'
-      istat = gmm_get(gmmk_st1_s,st1,mymeta)
+      istat = gmm_get(gmmk_st1_s,st1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
+      istat = gmm_get(gmmk_qt1_s,qt1)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
-      istat = gmm_get(gmmk_qta_s,qta,mymeta)
+      istat = gmm_get(gmmk_qta_s,qta)
       if (GMM_IS_ERROR(istat)) print *,'ta2t1tx ERROR at gmm_get(qt1)'
 
       ut1  = uta ; vt1  = vta ; wt1  = wta
@@ -84,22 +78,12 @@
       st1  = sta
 
       do n=1,Tr3d_ntr
-         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra, mymeta)
-         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr , mymeta)
+         istat = gmm_get('DIGF_'//trim(Tr3d_name_S(n))      , tra)
+         istat = gmm_get('TR/'  //trim(Tr3d_name_S(n))//':P', tr )
          tr = tra
       end do
-
-!******************************************************************
-!     Physics BUSPER
-!******************************************************************
-
-      if ( Schm_phyms_L ) then
-         nullify(BUSPER_3d,BUSPER_3d_digf)
-         istat = gmm_get ('BUSPER_3d_digf',BUSPER_3d_digf,mymeta)
-         istat = gmm_get ('BUSPER_3d'     ,BUSPER_3d     ,mymeta)
-         BUSPER_3d = BUSPER_3d_digf
-      endif
 !
 !     ---------------------------------------------------------------
+!
       return
       end

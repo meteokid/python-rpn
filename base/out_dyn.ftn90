@@ -52,7 +52,6 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "init.cdk"
-#include "rstr.cdk"
 #include "vt1.cdk"
 #include "grid.cdk"
 #include "level.cdk"
@@ -178,8 +177,8 @@
          if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) &
               ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
 
-         if ( ((Init_balgm_L).and.(.not.Rstri_idon_L)).and. &
-              ((Lctl_step.gt.(Init_dfnp-1)/2)) ) ontimec = .false.
+         if ( Init_mode_L .and. (Lctl_step.ge.Init_halfspan) ) &
+              ontimec = .false.
 
          if ( ontimec ) then
 

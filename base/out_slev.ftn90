@@ -65,6 +65,7 @@
       if ( Schm_phyms_L .and. &
            ( (F_nko == F_nk) .or. &
               any(F_indo(1:F_nko)==F_nk))) F_write_diag_lev = .true.
+      if (F_write_diag_lev .and. all(F_level(1:F_levmax)==0.0)) F_nko = 0
 !
 !----------------------------------------------------------------------
 !

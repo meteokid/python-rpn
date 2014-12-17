@@ -121,7 +121,7 @@
       endif
 
 !$omp parallel private(i,j,i0,j0,jn,in,km,kq,barz,barzp, &
-!$omp     BsPqbarz,fipbarz,tdiv,wk2,xtmp_8,ytmp_8)
+!$omp     dlnTstr_8,BsPqbarz,fipbarz,tdiv,wk2,xtmp_8,ytmp_8)
 
 !$omp do
       do k=1,l_nk+1

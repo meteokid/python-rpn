@@ -66,7 +66,7 @@
 #include "dcst.cdk"
 #include "geomg.cdk"
 
-      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j
+      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j, icln
       real*8, dimension (:,:,:), allocatable :: rhs_sol, lhs_sol
 !
 !     ---------------------------------------------------------------
@@ -160,7 +160,7 @@
 
       call timing_start(22, 'PRE      ')
 
-      if ( Orh_crank_L .and. Orh_icn.eq.1 ) then
+      if ( Orh_icn.eq.1 ) then
          if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
             gmmstat = gmm_get(gmmk_fis0_s,fis0)
             call var_topo2 (fis0, real(Lctl_step),&
@@ -197,10 +197,12 @@
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
+         icln=Orh_icn*iln
+         if ( G_lam .and. .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f     ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc ,&
                    fis0, nl_b, l_minx,l_maxx,l_miny,l_maxy,&
-                   l_nk, ni, nj, i0, j0, in, jn, k0)
+                   l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
          call timing_stop (23)
 

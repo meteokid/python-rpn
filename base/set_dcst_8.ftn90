@@ -54,7 +54,7 @@
 
       if (numproc.gt.1)  &
          call constnt_x (rdval,ier,liste(i),4,RPN_COMM_bcst_x, &
-                                                8,0,0,ierrmpi)
+                                                4,0,0,ierrmpi)
 
       do i=1,nbre
          call constnt (val(i),flag(i),liste(i),100)
