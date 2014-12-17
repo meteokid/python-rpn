@@ -36,7 +36,7 @@ PROF          = prof_003
 #PROFLIBPATH   = $(ARMNLIB)/lib/$(BASE_ARCH)
 PROFLIBPATH   =
 
-CPL         = cpl_stubs
+CPL         = cpl_stubs itf_cpl_stubs
 #CPL        = cpl_$(CPL_VERSION)
 CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)/lib/$(EC_ARCH)
 
@@ -266,12 +266,5 @@ allbincheck_gemdyn:
 		exit 0 ;\
 	fi ;\
 	exit 1
-
-## Dependencies not handled properly by r.make_exp
-out_vref_mod.f90: out_vref_mod.cdk90 glb_ld.cdk type.cdk ver.cdk cstv.cdk dimout.cdk grd.cdk level.cdk grid.cdk lun.cdk out.cdk out3.cdk ptopo.cdk
-out_vref_mod.o: out_vref_mod.cdk90 glb_ld.cdk type.cdk ver.cdk cstv.cdk dimout.cdk grd.cdk level.cdk grid.cdk lun.cdk out.cdk out3.cdk ptopo.cdk
-
-nest_blending.o: nest_blending.cdk90   glb_ld.cdk nest.cdk
-nest_blending_ad.o: nest_blending_ad.cdk90   glb_ld.cdk nest.cdk
 
 ## ====================================================================

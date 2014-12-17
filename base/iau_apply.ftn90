@@ -43,6 +43,7 @@ subroutine iau_apply2(F_kount)
 #include "vt1.cdk"
 #include "pw.cdk"
 #include "iau.cdk"
+#include "ptopo.cdk"
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'
    logical,parameter :: UVSCAL2WGRID = .false.
@@ -67,6 +68,7 @@ subroutine iau_apply2(F_kount)
 
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
    call timing_start(50, 'IAU      ')
+   call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
    call datp2f(dateo,Mod_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
@@ -213,8 +215,9 @@ subroutine iau_apply2(F_kount)
          if (.not.RMN_IS_OK(istat) .or. .not.associated(myptr0) .or. &
            (iname1_S /= '' .and..not.associated(myptr1))) then
             call msg(MSG_ERROR,'(iau_apply) Problem getting data for: '//trim(iname0_S)//' '//trim(iname1_S))
-            cycle DO_IVAR
+            istat = RMN_ERR
          endif
+         call handle_error(istat,'(iau_apply) Problem getting data for: '//trim(iname0_S)//' '//trim(iname1_S))
 
          !# Move data to grid with halos; save in GMM
          if (associated(myptr0)) then
@@ -242,13 +245,14 @@ subroutine iau_apply2(F_kount)
             deallocate(myptr0,myptr1,stat=istat); nullify(myptr0,myptr1)
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
+
          IF_YY: if (Grd_yinyang_L .and. &
               (iname0_S == 'hu' .or. .not.any(iname0_S == Iau_tracers_S))) then
             if (iname1_S /= ' ' .and. associated(data1)) then
                call yyg_nestuv(data0,data1,lijk(1),uijk(1), &
-                    lijk(2),uijk(2),uijk(1))
+                    lijk(2),uijk(2),uijk(3))
             else
-               call yyg_xchng (data0 ,lijk(1),uijk(1),lijk(2),uijk(2),uijk(1), &
+               call yyg_xchng (data0 ,lijk(1),uijk(1),lijk(2),uijk(2),uijk(3), &
                     .false., 'CUBIC')
                call rpn_comm_xch_halo(data0,lijk(1),uijk(1),lijk(2),uijk(2), &
                     l_ni,l_nj,uijk(3),G_halox,G_haloy,G_periodx,G_periody, &
@@ -257,7 +261,7 @@ subroutine iau_apply2(F_kount)
          endif IF_YY
 
       endif IF_READ
-
+      
       IF_KOUNT0: if (F_kount > 0 .and. weight(max(1,F_kount)) > 0.) then
 
          !# Add increments to model and tracer states
@@ -310,6 +314,7 @@ subroutine iau_apply2(F_kount)
 
       call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
    endif
+   call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
    call timing_stop(50)
    !--------------------------------------------------------------------------
    return
