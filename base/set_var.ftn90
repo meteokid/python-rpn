@@ -36,6 +36,7 @@
 ! v2_32                       user so, they are matched to the SORTIE command
 ! v3_30 - Lee/Bilodeau      - bug fix to allow lower and upper case var names
 ! v4_50 - Lee V.            - Add Outd_varname_S for "longer" output names
+! v4_70 - Lee V.            - Force 32 bit output for LA,LO
 !
 !object
 !       initialization of the common blocks OUTD,OUTP. This function is
@@ -213,6 +214,8 @@
              Outd_var_S(jj,j)=string4
              if (Outd_var_S(jj,j)(1:3).eq.'PW_') Outd_var_S(jj,j)= 'PW'//Outd_varnm_S(jj,j)(4:5)
              Outd_nbit(jj,j)  = Out3_nbitg
+             if (Outd_var_S(jj,j)(1:2).eq.'LA') Outd_nbit(jj,j)= 32
+             if (Outd_var_S(jj,j)(1:2).eq.'LO') Outd_nbit(jj,j)= 32
           enddo
           if (jj.gt.0) then
               Outd_sets       = j
@@ -238,6 +241,8 @@
              call low2up  (F_argv_S(ii+1),string16)
              Outp_varnm_S(jj,j)=string16
              Outp_nbit(jj,j)  = Out3_nbitg
+             if (Outp_varnm_S(jj,j)(1:2).eq.'LA') Outp_nbit(jj,j)= 32
+             if (Outp_varnm_S(jj,j)(1:2).eq.'LO') Outp_nbit(jj,j)= 32
           enddo
           if (jj.gt.0) then
               Outp_sets       = j

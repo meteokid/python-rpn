@@ -62,6 +62,10 @@
 !$omp end parallel
 
       if (Hzd_type_S.eq.'HO_IMP') then
+         th(l_minx:0     ,:,:) = 273.
+         th(l_ni+1:l_maxx,:,:) = 273.
+         th(1:l_ni,l_miny:0     ,:) = 273.
+         th(1:l_ni,l_nj+1:l_maxy,:) = 273.
          call hzd_ctrl3 ( th, 'S'      , G_nk )
       else
          call hzd_ctrl3 ( th, 'S_THETA', G_nk )

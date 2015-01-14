@@ -75,7 +75,7 @@
 
       integer,external ::  get_px,samevert
 
-      logical Vertint_L,adjust_sfcpres
+      logical Vertint_L,adjust_sfcpres,flag_sfcpres
       integer i,j,k,n,nga,err,jj,mustvinterp,i0,in,j0,jn
       integer nid1,njd1,ngd,ngd1,nidu,njdv
       integer, dimension (:      ), allocatable :: idx,idu,idy
@@ -229,6 +229,17 @@
          if (adjust_sfcpres) then
             allocate (pres(nid1,njd1,nka_t+diag_lvl),vtx(nid1,njd1,nka_t+diag_lvl))
             err = get_px(pres,ssqx,ngd1,ana_at_8,ana_bt_8,nka_t+diag_lvl,presstype,.false.)
+            if (presstype.eq.6) then
+               flag_sfcpres= .false. ! do it only if necessary
+               do j=1,njd1
+               do i=1,nid1
+                  if (abs(pres(i,j,nka_t+diag_lvl)-Cstv_pref_8*exp(ssqx(i,j))) / &
+                          pres(i,j,nka_t+diag_lvl) .gt. 1.e-6) flag_sfcpres= .true.
+               enddo
+               end do
+               if (flag_sfcpres) pres(:,:,nka_t+diag_lvl) = Cstv_pref_8*exp(ssqx(:,:))
+           endif
+
             if (ana_vt_l) then
                vtx(:,:,:) = ttx(:,:,:)
             else
@@ -241,7 +252,8 @@
             ssq0x(1:nid1,1:njd1) = log(ssq0x(1:nid1,1:njd1)/Cstv_pref_8)
             deallocate (vtx,pres)
          else
-            if ( maxval(ssqx) .lt. .4) then
+            if (presstype.eq.6) then
+!if ( maxval(ssqx) .lt. .4) then
                ssq0x(1:nid1,1:njd1) = ssqx(1:nid1,1:njd1)
             else
                ssq0x(1:nid1,1:njd1) = log(ssqx(1:nid1,1:njd1)/Cstv_pref_8)

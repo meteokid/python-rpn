@@ -39,6 +39,7 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v3_30 - McTaggart-Cowan R.- parse optional tag extension from string
 ! v4_04 - Lee V. & Winger K.- to output LAM zone without pilot, without blend
+! v4_70 - Lee V.            - Abort run if REDUC option is requested for GY
 !
 !object
 !	initialization of the common block GRID. This function is
@@ -138,6 +139,13 @@
           if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
               Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
+          if (Grd_typ_S(1:2) == 'GY') then
+          if (Lun_out.gt.0) &
+          write(Lun_out,*)'SET_GRID ERROR: Reduc is not available for Grid Type GY'
+          Grid_sets = Grid_sets - 1
+          set_grid = 1
+          stop
+          endif
           grdtyp_S='reduc'
                gridout(1)=0
                gridout(2)=0
