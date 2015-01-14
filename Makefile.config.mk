@@ -83,7 +83,8 @@ export SSMARCH := $(shell mu.ssmarch)
 #export SSM_PKG := multi
 export SSM_PKG := all arch
 
-export SUBDIRS_SSMALL   := src RCS include bin
+#export SUBDIRS_SSMALL   := src RCS include bin
+export SUBDIRS_SSMALL   := src include bin
 export SUBDIRS_SSMARCH  := include/$(EC_ARCH) bin/$(BASE_ARCH) lib/$(EC_ARCH)
 export SUBDIRS_SSMMULTI := $(SUBDIRS_SSMALL) $(SUBDIRS_SSMARCH)
 
