@@ -74,7 +74,7 @@ gem: $(GEM_ABS)
 allbin_gem: $(GEM_ABS_FILES)
 	ls -l $(GEM_ABS_FILES)
 allbincheck_gem:
-	for item in $(GEMDYN_ABS_FILES) ; do \
+	for item in $(GEM_ABS_FILES) ; do \
 		if [[ ! -x $${item} ]] ; then exit 1 ; fi ;\
 	done ;\
 	exit 0
@@ -100,14 +100,6 @@ gemntr:
 		chmod u+x $(BINDIR)/$(mainntr) ;\
 		ls -lL $(BINDIR)/$(mainntr) ;\
 	fi
-	# ;\
-	# echo DYN_VERSION   = $(ATM_DYN_VERSION);\
-	# echo PHY_VERSION   = $(ATM_PHY_VERSION);\
-	# echo CHM_VERSION   = $(CHM_VERSION);\
-	# echo CPL_VERSION   = $(CPL_VERSION);\
-	# echo VGRID_VERSION = "$(VGRID_VERSION) default:$(VGRID_VERSION_)";\
-	# echo RMN_VERSION   = $(RMN_VERSION);\
-	# echo COMM_VERSION  = $(COMM_VERSION)
 
 $(BINDIR)/$(maindm): gemdm
 	if [[ -r $(maindm) ]] ; then cp $(maindm) $@ 2>/dev/null ; fi
@@ -122,14 +114,6 @@ gemdm:
 		chmod u+x $(BINDIR)/$(maindm) ;\
 		ls -lL $(BINDIR)/$(maindm) ;\
 	fi
-	# ; set +x ;\
-	# echo DYN_VERSION   = $(ATM_DYN_VERSION);\
-	# echo PHY_VERSION   = $(ATM_PHY_VERSION);\
-	# echo CHM_VERSION   = $(CHM_VERSION);\
-	# echo CPL_VERSION   = $(CPL_VERSION);\
-	# echo "VGRID_VERSION = $(VGRID_VERSION) default:$(VGRID_VERSION_)";\
-	# echo RMN_VERSION   = $(RMN_VERSION);\
-	# echo COMM_VERSION  = $(COMM_VERSION)
 
 
 ## GemDyn Targets
@@ -158,11 +142,6 @@ prgemnml:
 		-optf "=$(LFLAGS)" ;\
 	/bin/mv $(mainprgemnml) $(BINDIR)/$(mainprgemnml) ;\
 	 /bin/rm -f $(mainprgemnml)_* bidon.o
-	# ;\
-	# echo VGRID_VERSION = $(VGRID_VERSION);\
-	# echo RMN_VERSION   = $(RMN_VERSION);\
-	# echo COMM_VERSION  = $(COMM_VERSION)
-
 
 
 # gemgrid: $(BINDIR)/gemgrid_$(BASE_ARCH).Abs
@@ -245,9 +224,9 @@ monitor: $(BINDIR)/gem_monitor_end $(BINDIR)/gem_monitor_output
 
 gem_monitor_end: $(BINDIR)/gem_monitor_end
 	ls -lL $(BINDIR)/$@
-# gem_monitor_end.c: 
-# 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
-# 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
+gem_monitor_end.c: 
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 	$(MAKE) gem_monitor_end.o
 	$(RBUILD) $(OMP) -obj gem_monitor_end.o -o $@ -conly
@@ -255,9 +234,9 @@ $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 
 gem_monitor_output: $(BINDIR)/gem_monitor_output
 	ls -lL $(BINDIR)/$@
-# gem_monitor_output.c: 
-# 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
-# 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
+gem_monitor_output.c: 
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
+	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 	$(MAKE) gem_monitor_output.o
 	$(RBUILD) $(OMP) -obj gem_monitor_output.o -o $@ -conly
@@ -265,7 +244,7 @@ $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 
 sometools: prgemnml gemgrid toc2nml
 
-allbin_gemdyn: $(GEMDYN_ABS_FILES)
+allbin_gemdyn: $(GEMDYN_ABS)
 #allbin_gemdyn:  toc2nml gemgrid checkdmpart prgemnml split3df #gemabs
 #allbin_gemdyn: monitor toc2nml gemgrid prgemnml split3df #gemabs
 
