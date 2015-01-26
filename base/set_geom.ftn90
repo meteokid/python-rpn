@@ -191,7 +191,7 @@
                 Geomg_sx_8(l_minx:l_maxx),Geomg_sy_8 (l_miny:l_maxy),&
                 Geomg_cx_8(l_minx:l_maxx),Geomg_cy_8 (l_miny:l_maxy),&
                 Geomg_cy2_8    (l_miny:l_maxy),Geomg_cyv_8    (l_miny:l_maxy),&
-                Geomg_tyoa_8   (l_minx:l_maxx),Geomg_tyoav_8  (l_minx:l_maxx),&
+                Geomg_tyoa_8   (l_miny:l_maxy),Geomg_tyoav_8  (l_miny:l_maxy),&
                 Geomg_cyv2_8   (l_miny:l_maxy),Geomg_cyM_8    (l_miny:l_maxy),&
                 Geomg_invDY_8  (l_miny:l_maxy),Geomg_invDYM_8 (l_miny:l_maxy),&
                 Geomg_invDYv_8 (l_miny:l_maxy),Geomg_invDYMv_8(l_miny:l_maxy),&
