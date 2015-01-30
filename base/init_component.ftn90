@@ -38,7 +38,7 @@
 #include <clib_interface.cdk>
 !
       logical, external :: set_dcst_8
-      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, pe_zero_topo
+      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, pe_zero_topo, model_timeout_alarm
       external init_ndoms
 !
       character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
@@ -48,6 +48,7 @@
 !
 !--------------------------------------------------------------------
 !
+      ierr= model_timeout_alarm(600)
       call rpn_comm_mydomain (init_ndoms, mydomain)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain

@@ -15,18 +15,16 @@
 
 !**s/r diag_fi - Computes geopotential by vertically integrating the temperature
 !
-
-!
       subroutine diag_fi ( F_fip, F_s, F_t, F_q, F_fis, &
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       implicit none
 #include <arch_specific.hf>
-!     
+
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
       real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
       real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
       real F_fis(Minx:Maxx,Miny:Maxy)
-!
+
 !author
 !
 ! Andre Plante july 2006.
@@ -43,13 +41,13 @@
 ! F_s          I    - log(pis/pistars)
 ! F_t          I    - temperature
 ! F_fis        I    - surface geopotential
-!
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
-!     
+ 
       integer i,j,k,kq,nij
       real*8, parameter :: one = 1.d0
       real*8  yyy,qbar
@@ -101,7 +99,7 @@
 !$omp do
          do j=j0,jn
          do i=i0,in
-            F_fip(i,j,k)=F_fip(i,j,k+1)+yyy*(F_t(i,j,k)*xtmp_8(i,j)-Ver_Tstr_8%t(k))
+            F_fip(i,j,k)=F_fip(i,j,k+1)+yyy*(F_t(i,j,k)*xtmp_8(i,j)-Ver_Tstr_8(k))
          end do
          end do
 !$omp enddo

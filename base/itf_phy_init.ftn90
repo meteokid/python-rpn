@@ -78,7 +78,6 @@
 
       err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
-      err= min(wb_put('itf_phy/COUPLING'    , .false.   ), err)
       if (Tr3d_ntr_from_gemntr > 0) then
          err= min(wb_put('itf_phy/READ_TRACERS', &
               Tr3d_from_gemntr_S(1:Tr3d_ntr_from_gemntr)), err)

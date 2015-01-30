@@ -27,6 +27,7 @@
 #include "ver.cdk"
 #include "dcst.cdk"
 #include "ptopo.cdk"
+#include "sol.cdk"
 !
       namelist /theo_cfgs/ Theo_case_S
       namelist /theo_cfgs/ Out3_etik_S, Lctl_debug_L
@@ -72,3 +73,4 @@
       namelist /mtn_cfgs/ Vtopo_ndt, Lctl_rxstat_S
       namelist /mtn_cfgs/ G_periodx, G_periody
       namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L
+      namelist /mtn_cfgs/ Sol_type_S

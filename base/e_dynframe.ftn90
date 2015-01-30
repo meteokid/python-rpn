@@ -42,10 +42,12 @@
 #include "ptopo.cdk"
 #include "path.cdk"
 
+      integer, external :: model_timeout_alarm
+
       character*16 date1, date2, msg, interp_S
       character*16, dimension(:), allocatable :: lesdates
       character*1024 fn
-      integer i, cnt, mpx, ldni, irest, istart, nframe
+      integer i, cnt, mpx, ldni, irest, istart, nframe, ierr
       integer, dimension(:), allocatable :: err, errt
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -116,6 +118,7 @@
       err= 0 ;       cnt=0
       do while (date1.le.Pil_jobend_S)
 
+         ierr= model_timeout_alarm(600)
          cnt = cnt+1
          call e_dynfld (date1, err(cnt+istart-1))
 

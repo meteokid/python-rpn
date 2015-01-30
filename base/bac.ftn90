@@ -21,8 +21,6 @@
 ! v4_50 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds,T,S,Q
 ! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !
-
-
       subroutine bac ( F_lhs_sol, F_fis , &
                        F_u   , F_v     , F_w  , F_t       , &
                        F_s   , F_zd    , F_q  , F_nest_q  , &
@@ -31,7 +29,7 @@
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
       implicit none
 #include <arch_specific.hf>
-!
+
       integer  Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
       real*8   F_lhs_sol (ni,nj,Nk)
       real     F_fis (Minx:Maxx,Miny:Maxy)                                    , &
@@ -45,7 +43,7 @@
                F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
-!
+
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -59,8 +57,8 @@
 #include "ptopo.cdk"
 #include "lam.cdk"
 #include "wil_williamson.cdk"
-!
-      integer i, j, k, kq, nij, k0t, istat
+
+      integer i, j, k, km, kq, nij, k0t, istat
       real*8  w1, w2, w3, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
@@ -86,7 +84,7 @@
          enddo
       end do
 !
-!$omp parallel private(w1,w2,w3,qbar,Pbar,kq,xtmp_8,ytmp_8)
+!$omp parallel private(w1,w2,w3,qbar,Pbar,km,kq,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,7 +136,7 @@
 
 !$omp do
       do k=k0t,l_nk
-         w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstr_8%t(k)/Dcst_grav_8
+         w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstr_8(k)/Dcst_grav_8
          do j= j0, jn
          do i= i0, in
             Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
@@ -192,7 +190,7 @@
 !     Compute s
 !     ~~~~~~~~~
 
-      w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8%m(l_nk+1))
+      w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
 !$omp do
       do j= j0, jn
       do i= i0, in
@@ -213,8 +211,7 @@
          kq=max(k,2)
          w1=Ver_gama_8(k)*Ver_idz_8%t(k)
          w2=Ver_gama_8(k)*Ver_epsi_8(k)
-         w3=Cstv_invT_8
-         if(Schm_autobar_L) w3=0.d0
+         w3=Cstv_invT_8*Cstv_bar1_8
          do j= j0, jn
          do i= i0, in
             Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
@@ -232,8 +229,9 @@
 
 !$omp do
       do k=k0t,l_nk
+         km=max(k-1,1)
          kq=max(k,2)
-         w1=Dcst_Rgasd_8*Ver_Tstr_8%m(k)
+         w1=Dcst_Rgasd_8*(Ver_wp_8%m(k)*Ver_Tstr_8(k)+Ver_wm_8%m(k)*Ver_Tstr_8(km))
          do j= j0, jn
          do i= i0, in
             GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+F_q(i,j,kq)*Ver_onezero(k))
@@ -270,7 +268,7 @@
          w1=Ver_idz_8%t(k)/Dcst_rgasd_8
          do j= j0, jn
             do i= i0, in
-               F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstr_8%t(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))
+               F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstr_8(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))
             enddo
          enddo
       enddo

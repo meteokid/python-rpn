@@ -22,7 +22,7 @@
       !---------
       integer,                                   intent(in) :: Minx,Maxx,Miny,Maxy !I, Dimension H
       integer,                                   intent(in) :: F_nk                !I, Number of vertical levels
-      real, dimension(F_nk+1),                   intent(out):: F_tmean             !I: Mean temperature on Momentum levels  
+      real, dimension(F_nk),                     intent(out):: F_tmean             !I: Mean temperature levels  
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in) :: F_t                 !I: Temperature  
  
       !@author  Monique Tanguay
@@ -88,16 +88,11 @@
 
       !Estimate Global mean on Momentum levels
       !---------------------------------------
-      do k=2,F_nk
+      do k=1,F_nk
 
-         F_tmean(k) = Ver_wp_8%m(k)*g_avg_8(k)+Ver_wm_8%m(k)*g_avg_8(k-1)
+         F_tmean(k) = g_avg_8(k)
 
       enddo
-
-      !Prescribe means at top/bottom so as to recover the current Thermo means when doing Momemtum to Thermo average  
-      !-------------------------------------------------------------------------------------------------------------
-      F_tmean(F_nk+1) = (g_avg_8(F_nk) + Ver_wm_8%t(F_nk) * Cstv_Tstr_8)/Ver_wp_8%t(F_nk) 
-      F_tmean(1)      = (g_avg_8(1)    + Ver_wp_8%t(1)    * Cstv_Tstr_8)/Ver_wm_8%t(1)
 
       return
       end

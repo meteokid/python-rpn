@@ -139,10 +139,10 @@
                Ver_dbdz_8%m(G_nk  ),    Ver_dbdz_8%t(G_nk  ), &
                  Ver_wp_8%m(G_nk  ),      Ver_wp_8%t(G_nk  ), &
                  Ver_wm_8%m(G_nk  ),      Ver_wm_8%t(G_nk  ), &
-               Ver_Tstr_8%m(G_nk+1),    Ver_Tstr_8%t(G_nk  ), &
-                 Ver_gama_8(G_nk  ),      Ver_epsi_8(G_nk  ), &
-                Ver_FIstr_8(G_nk+1),       Ver_bzz_8(G_nk  ), &
-                Ver_onezero(G_nk+1),   stat=istat)
+                 Ver_Tstr_8(G_nk  ),      Ver_gama_8(G_nk  ), &
+                 Ver_epsi_8(G_nk  ),     Ver_FIstr_8(G_nk+1), &
+                  Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
+                                                    stat=istat)
 
       call check_alloc(istat,'set_zeta',1)
 

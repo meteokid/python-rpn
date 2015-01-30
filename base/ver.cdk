@@ -27,15 +27,15 @@
 !----------------------------------------------------------------------|
 ! Ver_wp_8%(t,m)      | weights for averaging                          |
 ! Ver_wm_8%(t,m)      | weights for averaging                          |
-! Ver_Tstr8%(t,m)     | variable T*                                    |
 !----------------------------------------------------------------------|
 ! Ver_std_p_prof%(t,m)| STanDard Pressure PROFile for physics          |
 !----------------------------------------------------------------------|
 ! Ver_table_8         | real*8 table containing vgrid descriptors      |
 !----------------------------------------------------------------------|
+! Ver_Tstr_8          | variable T*                                    |
 ! Ver_gama_8          | A parameter function of T*                     |
 ! Ver_epsi_8          | A parameter function of T*: RT*/(g tau)**2     |
-! Ver_FIstr_8         | FIstar: geopotential basic state               |
+! Ver_FIstr_8         | FI*: geopotential basic state function of T*   |
 ! Ver_bzz_8           | Double vertical averaging on B                 |
 !----------------------------------------------------------------------|
 ! Ver_onezero         | Vector with one everywhere but zero at k=1     |
@@ -52,7 +52,6 @@
       type (vertical_8) Ver_dbdz_8  
       type (vertical_8) Ver_wp_8
       type (vertical_8) Ver_wm_8
-      type (vertical_8) Ver_Tstr_8
 !
       type (vertical)   Ver_hyb
       type (vertical)   Ver_std_p_prof
@@ -61,7 +60,7 @@
 !
 !
       common /ver_v8/ Ver_a_8,Ver_b_8,Ver_z_8,Ver_dz_8,Ver_idz_8
-      common /ver_v8/ Ver_dbdz_8,Ver_wp_8,Ver_wm_8,Ver_Tstr_8
+      common /ver_v8/ Ver_dbdz_8,Ver_wp_8,Ver_wm_8
 !
       common /ver_v/ Ver_hyb,Ver_std_p_prof,Ver_hyb_top
 !
@@ -77,10 +76,11 @@
       common /ver_vi/ Ver_ip1
 !
       real*8, dimension(:,:,:), pointer :: ver_table_8
+      real*8, dimension(:)    , pointer :: Ver_Tstr_8
       real*8, dimension(:)    , pointer :: Ver_gama_8,Ver_epsi_8
       real*8, dimension(:)    , pointer :: Ver_FIstr_8,Ver_bzz_8
       common /ver_p8/ ver_table_8
-      common /ver_p8/ Ver_gama_8,Ver_epsi_8,Ver_FIstr_8,Ver_bzz_8
+      common /ver_p8/ Ver_Tstr_8,Ver_gama_8,Ver_epsi_8,Ver_FIstr_8,Ver_bzz_8
 !
       real, dimension(:), pointer :: Ver_onezero
       common /ver_p/ Ver_onezero

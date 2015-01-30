@@ -40,9 +40,11 @@
 #include "clim.cdk"
 #include "modconst.cdk"
 
+      integer, external :: model_timeout_alarm
       character*16 datev
       logical bkup_L
-      integer last_step,fstep,istep,step0,stepf,upperlimit,istat
+      integer last_step,fstep,istep,step0,stepf,upperlimit, &
+              istat, seconds_since
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -102,6 +104,8 @@
 
       do istep = step0, stepf
 
+         seconds_since= model_timeout_alarm(600)
+
          call step_update (istep, bkup_L, fstep)
 
          call out_outdir (Step_kount, upperlimit)
@@ -129,6 +133,8 @@
          call step_close (Lctl_step, bkup_L, F_dgtflt_L, stepf)
 
       end do
+
+      seconds_since= model_timeout_alarm(600)
 
       call max_rss (' GEMDM',Lun_out.gt.0)
 

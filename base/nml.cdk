@@ -125,6 +125,7 @@
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_cub_traj_L
+      namelist /gem_cfgs/ Schm_cub_Coriolis_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
@@ -255,6 +256,7 @@
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_traj_L
+      namelist /gem_cfgs_p/ Schm_cub_Coriolis_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn

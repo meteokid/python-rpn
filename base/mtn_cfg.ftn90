@@ -178,7 +178,7 @@
          mtn_nstar= -1
          mtn_flo  = 32.
          mtn_hwx  = 5
-         mtn_hght = 100.
+         mtn_hght = 1.
 
          Grd_ni = 161
          Grd_nj = 1
@@ -326,13 +326,11 @@
       Grd_nila = Grd_ni
       Grd_njla = Grd_nj
       Grd_jref = (Grd_nj+1 )/2
-      aa=cstv_tstr_8
-      cstv_tstr_8=aa
 
       if(mtn_nstar.lt.0.)            &!  isothermal case
-         mtn_nstar=Dcst_grav_8/sqrt(Dcst_cpd_8*Cstv_tstr_8)
+         mtn_nstar=Dcst_grav_8/sqrt(Dcst_cpd_8*mtn_tzero)
       if(mtn_nstar.eq.0.0) then     !  isentropic case
-         c1_8=Dcst_grav_8/(Dcst_cpd_8*Cstv_tstr_8)
+         c1_8=Dcst_grav_8/(Dcst_cpd_8*mtn_tzero)
          Exner_8=1.d0-c1_8*Height_top_8
       else
          c1_8=Dcst_grav_8**2/(Dcst_cpd_8*mtn_tzero*mtn_nstar**2)
