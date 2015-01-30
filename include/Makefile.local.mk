@@ -21,9 +21,8 @@ GEMLIBS     = $(GEMDYNLIBS)
 
 OBJECTS_gemdyn = $(OBJECTS_gemdyn_base) $(OBJECTS_gemdyn_adw)
 OBJECTS_libgemdyn_cpl_stubs = cpl_stubs.o
-OBJECTS_libgemdyn_itf_cpl_stubs = itf_cpl_stubs.o
-OBJECTS_libgemdyn_cpl_prof_stubs = prof_stubs.o
-GEMDYN_LIBS = gemdyn_main gemdyn gemdyn_itf_cpl_stubs gemdyn_cpl_stubs gemdyn_prof_stubs
+OBJECTS_libgemdyn_prof_stubs = prof_stubs.o
+GEMDYN_LIBS = gemdyn_main gemdyn gemdyn_cpl_stubs gemdyn_prof_stubs
 GEMDYN_LIBS_V = $(foreach item,$(GEMDYN_LIBS),$(item)_$(GEMDYN_VERSION).a)
 GEMDYN_LIBS_FILES = $(foreach item,$(GEMDYN_LIBS),lib$(item).a)
 GEMDYN_MOD_FILES = $(foreach item,$(FORTRAN_MODULES_gemdyn),$(item).[Mm][Oo][Dd])
@@ -50,7 +49,7 @@ PROF          = prof_003
 #PROFLIBPATH   = $(ARMNLIB)/lib/$(BASE_ARCH)
 PROFLIBPATH   =
 
-CPL         = cpl_stubs itf_cpl_stubs
+CPL         = cpl_stubs
 #CPL        = cpl_$(CPL_VERSION)
 CPLLIBPATH = /users/dor/armn/mod/cpl/v_$(CPL_VERSION)/lib/$(EC_ARCH)
 

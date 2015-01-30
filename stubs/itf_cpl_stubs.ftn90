@@ -1,3 +1,0 @@
-subroutine itf_cpl_restart
-return
-end
