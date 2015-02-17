@@ -1,7 +1,7 @@
 MAKE=make
 
-VERSION    = 1.3.0+dev
-LASTUPDATE = 2014-01
+VERSION    = 1.3.1
+LASTUPDATE = 2015-02
 
 include Makefile_base.mk
 include $(EC_ARCH)/Makefile.inc.mk
@@ -11,7 +11,7 @@ BASEDIR = $(PWD)
 COMPONENTS = utils
 
 COMM     =
-OTHERS   = $(RPNCOMM) lapack blas massvp4 bindcpu_002 $(LLAPI) $(IBM_LD)
+OTHERS   = $(RPNCOMM) $(LAPACK) $(BLAS) massv_p4 $(LLAPI) $(IBM_LD)
 LIBS     = $(OTHERS)
 
 INSTALLDIR = $(HOME)/ovbin/python/lib.linux-i686-$(PYVERSION)-dev
@@ -62,7 +62,7 @@ all: versionfile
 	for i in $(COMPONENTS); \
 	do cd $$i ; $(MAKE) all ; cd .. ;\
 	done ;\
-	RMNLIBSHARED=$(RMNLIBSHARED) LDFLAGS=$(LDFLAGS) python setup.py build --compiler=$(CCNAME)
+	RMNLIBSHARED=$(RMNLIBSHARED) LDFLAGS="$(LDFLAGS)" python setup.py build --compiler=$(CCNAME)
 	#python setup.py build --compiler=intel
 	#CC=$(CC) CFLAGS=-I${HOME}/include python setup.py build
 	# other flags: LDFLAGS, INCLUDES, LIBS

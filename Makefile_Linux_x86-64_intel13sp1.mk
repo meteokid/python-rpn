@@ -2,7 +2,10 @@ MAKE   = make
 PYARCH = linux-x86_64-$(PYVERSION)
 CCNAME = intel
 CCOPT  = -Wtrigraphs -fpic
-LDFLAGS=-static-intel
+LAPACK     = 
+BLAS       = 
+EC_MKL     = -mkl -fp-model precise
+LDFLAGS = -static-intel $(EC_MKL)
 
 # $CC ${SourceFile} $CC_options ${CFLAGS} \
 # 	$(s.prefix "" ${DEFINES} ) \

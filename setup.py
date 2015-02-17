@@ -4,13 +4,12 @@ import rpn_version
 
 #TODO: . s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
 
-myecarch = ['Linux_x86-64/pgi9xx','Linux_x86-64/pgi1301','Linux_x86-64/intel13sp1']
-#myrmnlib = ['PyFTN_helpers','rmnshared_014_rc2']
-myrmnlib = [os.getenv('RMNLIBSHARED','rmnshared_014_rc2'),]
+myecarch = ['Linux_x86-64/intel13sp1u2']
+myrmnlib = [os.getenv('RMNLIBSHARED','rmnshared_015.1'),]
 
 architecture = os.getenv('EC_ARCH')
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
-ecincpath = os.getenv('EC_INCLUDE_PATH')+' '+'/usr/local/env/armnlib/include'+' '+'/usr/local/env/armnlib/include/'+architecture+' '+'./utils'
+ecincpath = os.getenv('EC_INCLUDE_PATH')+' '+'./utils'
 
 eclibsharedpath = ''
 for mypath in eclibpath.split():
@@ -44,7 +43,7 @@ Fstd_module = Extension('Fstdc',
             libraries = myrmnlib,
             extra_objects = ['utils/get_corners_xy.o'],
             extra_link_args = runtime_libs,
-            extra_compile_args = ['-Wtrigraphs','-fpic'],
+            extra_compile_args = ['-Wtrigraphs','-fpic','-fp-model precise','-mkl'],
             library_dirs = [eclibsharedpath],
             sources = ['utils/py_capi_ftn_utils.c','Fstdc.c','utils/numpy_compat.c'])
 

@@ -8,8 +8,8 @@ INCLUDES = $(BASEDIR)/utils $(BASEDIR)/jim
 OMP    = 
 OPTIL  = 2
 MPI    = 
-RMNLIBSHARED = rmnshared_014_rc2
-RMNLIB  = rmn_014_rc2
+RMNLIBSHARED = rmnshared_015.1
+RMNLIB  = rmn_015.1
 #RMNLIB  = rmnbeta_6_oct_2008
 #LIBPATH = .
 #RMNLIB  = rmn_rc010
@@ -22,9 +22,9 @@ RCOMPIL = s.compile $(DEBUG)
 RBUILD  = s.compile $(DEBUG)
 CCOMPF  =
 CCOMPF =
-CC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optc="$(CFLAGS)" $(COMPF) $(CCOMPF) -src
+CC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optc="$(CFLAGS) -mkl -fp-model precise" $(COMPF) $(CCOMPF) -src
 #CC = s.cc
-FC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optf="$(FFLAGS)" $(COMPF) $(FCOMPF) -src
+FC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI)  -defines "=$(DEFINE)" -includes "$(INCLUDES)" -O $(OPTIL) -optf="$(FFLAGS) -mkl -fp-model precise" $(COMPF) $(FCOMPF) -src
 FTNC = $(RCOMPIL) -arch $(EC_ARCH) -abi $(ABI) -defines "=$(DEFINE)" -optf="$(FFLAGS) $(CPPFLAGS)" -P $(COMPF) $(FCOMPF) -src
 PTNC = sed 's/^[[:blank:]].*PROGRAM /      SUBROUTINE /' | sed 's/^[[:blank:]].*program /      subroutine /'  > $*.f
 
