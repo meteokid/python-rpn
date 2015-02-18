@@ -133,6 +133,61 @@ class RPNFile:
         array=Fstdc.fstluk(target)   # 2 - get data
         #TODO: make ni,nj,nk consistent?
         #TODO: update self.grid?
+        if (params.datyp==7):
+            # String types need some special handling.  They are returned from
+            # Fstdc.fstluk as N-dimensional arrays of one character, but we can
+            # do better.  For datyp=7, ni corresponds to the maximum length of
+            # the string.
+
+            # Officially, this datatype requires nj and nk to be 1 -- see
+            #    http://web-mrb.cmc.ec.gc.ca/mrb/si/eng/si/index.html
+            # for the fuller documentation.  Unofficially, this requirement
+            # is broken by GEM itself, for writing out an array of string-based
+            # station names with nj != 1.  We'll support that convention.
+
+            # Create a string of the appropriate maximum length
+            dtype_str = numpy.dtype((numpy.str_,params.ni))
+
+            # Now, as an additional complication, there is an incompatibility bug
+            # within rmnlib.  Prior to version 15.1, strings were written to file
+            # with their high-order bit flipped.  With version 15.1 and later, they
+            # are written properly.  This is consistent within versions, but it means
+            # that reading strings across the version barrier will give inconsistent
+            # results.
+
+            # To detect whether this has happened (as a precursor to fixing it),
+            # let's look at the last row of output.  Fortran strings are space-padded
+            # to the maximum length, so we would expect the last row of output to mostly
+            # consist of ' ' characters.  If instead they mostly have the high-bit set,
+            # then we can reasonably conclude that we're reading across a version
+            # incompatibility.
+
+            # Reshape a potentially 1D or 3D array into a 2D array
+            array = array.reshape(params.ni,-1)
+
+            if ( numpy.sum( array[params.ni-1,:].view(numpy.uint8) > 127) > 0.5*params.nj*params.nk):
+                # Correct the error
+                array = (array.view(numpy.uint8) ^ 128).view((numpy.str_,1))
+
+            # Replace the array view with one that collapses individual characters
+            array = array.view(dtype_str).reshape((1,-1))
+            
+            # Remove the space padding
+            for kk in range(0,array.shape[1]):
+                array[0,kk] = array[0,kk].rstrip(' ')
+
+            # And restore the proper shape.  Having a singleton first dimension is
+            # useless, so collapse that away.  This will be a no-op for variables
+            # that are simply one single string, and for variables such as the gem
+            # timeseries station list we'll get a 1D array for what was a 1D array
+            # of strings in the original Fortran
+            if (params.nk > 1):
+                array = array.reshape((params.nj,params.nk))
+            elif (params.nj > 1):
+                array = array.reshape(params.nj)
+            else:
+                array = array.reshape(1)
+            
         return RPNRec(array,params)
 
     def __contains__(self,key):
@@ -313,6 +368,44 @@ class RPNFile:
             self.lastwrite=0
             #print 'writing data',value.shape,' to file, keys=',index
             #print 'dict = ',index.__dict__
+
+            # Check to see if we're writing string data, with strings of greater
+            # than one length.  If the strings have length 1, then we can presume
+            # we're writing a character array and can proceed.
+            if (value.dtype.kind == 'S' and value.dtype.itemsize > 1):
+                # Get the maximum number of characters per string in the existing array
+                max_strlen = value.dtype.itemsize
+                # If this is less than implied by the Meta's .ni value, expand these strings
+                # into an enclosing array
+                if (max_strlen > index.ni):
+                    value = numpy.array(value,dtype=(numpy.str_,index.ni))
+                # Now, re-interperet these values as a multidimensional array of single
+                # characters.
+
+                # First, ensure that this array is in Fortran order.  Strings are indexed
+                # along the first dimension, which varies fastest.  Later reshaping will
+                # require Fortran order.
+
+                # Additionally, make a copy of the array so that we can space-pad the
+                # end of the strings.  This should enhance compatibility with Fortran
+                # programs that happen to read these strings.
+
+                value = value.copy(order='F')
+
+                value1d = value.reshape([-1]) # This creates an alternate view of the memory
+                for kk in range(0,len(value1d)):
+                    value1d[kk] = value1d[kk] + ' '*(max_strlen-len(value1d[kk]))
+                
+                # Second, view this array as consisting of 1D characters.  This will
+                # screw up the shape, to be fixed next.
+
+                value1 = value.view(dtype=(numpy.str_,1))
+
+                # Finally, reshape the array
+                value = value1.reshape((-1,) + value.shape, order='F')
+
+                print(value)
+
             if (value.flags.farray):
               #print 'fstecr Fortran style array'
               # Check to see if the memory order is contiguous, else make

@@ -331,8 +331,8 @@ static PyObject *Fstdc_fstluk(PyObject *self, PyObject *args) {
             type_num=NPY_FLOAT;
         }
     }
-    else if (datyp == 3 )
-        type_num=NPY_CHAR;
+    else if (datyp == 3 || datyp == 7)
+        type_num=NPY_STRING;
     else {
         PyErr_SetString(FstdcError,"Unrecognized data type");
         return NULL;

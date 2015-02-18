@@ -35,6 +35,10 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
     //fprintf(stderr,"INFO: datyp in=%d\n",dataType[0]);
     dataLen[0]  = -1;
     switch (array->descr->type_num) {
+        case NPY_CHAR: case NPY_STRING:
+           dataType[0] = 7;
+           dataLen[0] = 1;
+           break;
         case NPY_LONG:
             // Aside from this check, LONG and INT have identical logic
             if (sizeof(long)!=4)
@@ -47,7 +51,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
                 dataType[0]=4;
             }
             dataLen[0]=4;
-            //TODO: missing break;?
+            break;
         case NPY_SHORT:
             dataType[0]=4;
             dataLen[0]=2;
@@ -118,7 +122,7 @@ void getPyFtnArrayDataTypeAndLen(int *dataType, int *dataLen,PyArrayObject *arra
             break;
         //TODO: case NPY_CHAR, dataType[0] == 3;dataLen[0]=?
         default:
-            fprintf(stderr,"ERROR: Unsupported data type :%c\n",array->descr->type);
+            fprintf(stderr,"ERROR: Unsupported data type :%c (%d)\n",array->descr->type,array->descr->type_num);
             // dataType[0] should now be set to -1 as an error condition, see ArrayValid
             dataType[0]=-1;
             break;
