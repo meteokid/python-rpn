@@ -38,6 +38,7 @@ subroutine adx_int_winds_glb(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    !@author Stephane Chamberland
    !@revisions
    ! v4_40 - Tanguay M.        - Revision TL/AD
+   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
    !**/
 #include "adx_nml.cdk"
 #include "adx_poles.cdk"
@@ -67,7 +68,7 @@ subroutine adx_int_winds_glb(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
         stat=istat)
    call handle_error_l(istat==0,'adx_main_2_pos/adx_pos','Problem allocating mem')
 
-   call adx_exch_2(xpos2, ypos2, zpos2, F_wrkx1, F_wrky1, wrkz1, &
+   call adx_exch_2(xpos2, ypos2, zpos2, dummy, dummy, F_wrkx1, F_wrky1, wrkz1, dummy, dummy, &
         adx_fro_n, adx_fro_s, adx_fro_a, &
         adx_for_n, adx_for_s, adx_for_a, 3)
 
@@ -88,12 +89,12 @@ subroutine adx_int_winds_glb(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    nb_flds = 1
    if (F_has_u2_L) nb_flds = 2
 
-   call adx_exch_2(wrkz1, wrky, dummy, xpos2, ypos2, dummy, &
+   call adx_exch_2(wrkz1, wrky, dummy, dummy, dummy, xpos2, ypos2, dummy, dummy, dummy, &
         adx_for_n, adx_for_s, adx_for_a, &
         adx_fro_n, adx_fro_s, adx_fro_a, nb_flds)
 
    if (adx_for_a > 0) &
-        call adx_exch_3b(F_wrkx1, F_wrky1, wrkz1, wrky, wrkc1, nb_flds,F_ni,F_nj,F_nk)
+        call adx_exch_3b(F_wrkx1,F_wrky1,dummy,dummy,dummy,wrkz1,wrky,dummy,dummy,dummy,wrkc1,nb_flds,F_ni,F_nj,F_nk)
 
    deallocate(xpos2,ypos2,zpos2,stat=istat)
 

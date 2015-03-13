@@ -36,7 +36,7 @@
 ! Out3_ip3           | integer value for IP3 in the FST records        |
 !                    |  default: 0, >0 : given value, -1:uses timestep |
 ! Out3_flipit_L      | .true. to flip field from ni*nj*nk to ni*nk*nj  |
-! Out3_satues_L      | .true. for humidity variables to consider       |
+! Out3_sfcdiag_L     ! to output physics surface diagnostic level      !
 !                    |        water/ice phase for saturation           |
 !                    | .false. for water phase only for saturation     |
 ! Out3_nbitg         | number of bits to keep for all outputs except   |
@@ -62,8 +62,8 @@
       character*4  Out3_unit_S
       logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L,Out3_newout_L
       logical Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L
-      logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L, Out3_satues_L
-      logical Out3_fullplane_L, Out3_uencode_L
+      logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L
+      logical Out3_fullplane_L, Out3_uencode_L, out3_sfcdiag_L
       integer Out3_nbitg, Out3_linbot
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
@@ -80,7 +80,7 @@
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
       common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uencode_L
       common / Out3_l / Out3_cubww_L, Out3_flipit_L,Out3_debug_L
-      common / Out3_l / Out3_satues_L,Out3_newout_L
+      common / Out3_l / Out3_newout_L,out3_sfcdiag_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postfreq
       common / Out3_i / Out3_nbitg,Out3_linbot

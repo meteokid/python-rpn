@@ -75,8 +75,7 @@
       integer i,j,k,n
       real w1(l_minx:l_maxx,l_miny:l_maxy,nk)
       real w2(l_minx:l_maxx,l_miny:l_maxy,nk)
-      real*8 whx,why
-      pointer (pawhx, whx(l_minx:l_maxx)), (pawhy, why(l_miny:l_maxy)) 
+
 !*
 !        -----------------------------------------------------
 !     IN CASE WHERE ZERO IS NOT QUITE EQUAL TO ZERO
@@ -87,14 +86,7 @@
       call handle_error_l(F_coef>0..and.F_coef<=0.5,'filter','THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED')
 
       if ( ( F_coef .gt. 0. ) .and. ( F_coef .le. 0.5 ) ) then
-         pawhx = 0
-         pawhy = 0 
-         if ((F_d_S.eq.'G').or.(F_d_S.eq.'V')) &
-              pawhx= loc(geomg_hx_8(l_minx))
-         if ((F_d_S.eq.'G').or.(F_d_S.eq.'U')) &
-              pawhy= loc(geomg_hy_8(l_miny))
-         if (F_d_S.eq.'U') pawhx= loc(geomg_hxu_8(l_minx))
-         if (F_d_S.eq.'V') pawhy= loc(geomg_hyv_8(l_miny))
+
 !
          do n=1,F_lx
          do k=1,Nk
@@ -104,7 +96,7 @@
          end do
          end do
          end do
-         call xyfil (F_fd,w2,w1,F_coef,whx,why,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
+         call xyfil (F_fd,w2,w1,F_coef,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
          if ( F_flag_L ) then 
          do k=1,Nk
          do j= 1+pil_s, l_nj-pil_n 
@@ -113,7 +105,7 @@
          end do
          end do
          end do
-         call xyfil(F_fd,w2,w1,-F_coef,whx,why,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
+         call xyfil(F_fd,w2,w1,-F_coef,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
          endif
          end do
        endif

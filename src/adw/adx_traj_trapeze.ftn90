@@ -72,6 +72,9 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
 
             pdsyD = F_z(n)
             pdcyD = sqrt((1.d0+pdsyD)*(1.d0-pdsyD))
+
+            if (pdcyD/=0.) then !TEMPORAIRE (PROBLEM otherwise at 360x180)   
+
             pdcyDi= 1.d0 / pdcyD
             pdsxD = F_y(n) * pdcyDi
             pdcxD = F_x(n) * pdcyDi
@@ -87,6 +90,12 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
             alfa(i,j) = sqrt(F_ua(n)**2 + F_va(n)**2) * F_dth
             beta(i,j) = sqrt( pduxD(i,j)*pduxD(i,j) + pduyD(i,j)*pduyD(i,j) & 
                                                     + pduzD(i,j)*pduzD(i,j) ) * F_dth
+            else
+
+            beta(i,j) = 0. 
+
+            endif
+
          end do
       end do
 

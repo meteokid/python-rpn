@@ -70,7 +70,6 @@ subroutine adx_get_params()
    istat = min(wb_get('model/pil_e',adx_pil_e),istat)
    istat = min(wb_get('model/gbpil_t',adx_gbpil_t),istat)
    istat = min(wb_get('model/trapeze',adx_trapeze_L),istat)
-   istat = min(wb_get('model/hor_int_traj',adx_hor_int_traj_L),istat)
    istat = min(wb_get('model/cub_traj',adx_cub_traj_L),istat)
    istat = min(wb_get('model/superwinds',adx_superwinds_L),istat)
 

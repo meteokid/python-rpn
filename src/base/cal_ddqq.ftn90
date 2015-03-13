@@ -57,9 +57,9 @@
          do k = 1 , Nk
             do j = j0, jn
             do i = i0, in
-               F_DD(i,j,k) = ((F_uu(i,j,k) - F_uu(i-1,j,k)) * geomg_invDX_8(i,j)) &
+               F_DD(i,j,k) = ((F_uu(i,j,k) - F_uu(i-1,j,k)) * geomg_invDX_8(j)) &
                            + ((F_vv(i,j,k)*geomg_cyv_8(j) - F_vv(i,j-1,k)*geomg_cyv_8(j-1)) &
-                             * Geomg_invDY_8(j) * geomg_invcy_8(j))
+                             * Geomg_invDY_8* geomg_invcy_8(j))
             end do
             end do
             F_DD(1:i0-1,:,k) = 0. ; F_DD(in+1:l_ni,:,k)= 0.
@@ -75,9 +75,9 @@
          do k = 1 , Nk
             do j = j0, jn
             do i = i0, in
-               F_QR(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(i,j)) &
+               F_QR(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(j)) &
                            - ((F_uu(i,j+1,k)*geomg_cy_8(j+1) - F_uu(i,j,k)*geomg_cy_8(j)) * &
-                              geomg_invDYv_8(j) * geomg_invcyv_8(j))
+                              geomg_invDY_8 * geomg_invcyv_8(j))
             end do
             end do
             F_QR(1:i0-1,:,k) = 0. ; F_QR(in+1:l_ni,:,k)= 0.
@@ -105,9 +105,9 @@
             do k = 1 , Nk
                do j = j0, jn
                do i = i0, in
-                  F_QQ(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(i,j)) &
+                  F_QQ(i,j,k) = ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(j)) &
                               - ((F_uu(i,j+1,k)*geomg_cy_8(j+1) - F_uu(i,j,k)*geomg_cy_8(j)) * &
-                                 geomg_invDYv_8(j) * geomg_invcyv_8(j))
+                                 geomg_invDY_8 * geomg_invcyv_8(j))
                end do
                end do
                F_QQ(1:i0-1,:,k) = 0. ; F_QQ(in+1:l_ni,:,k)= 0.

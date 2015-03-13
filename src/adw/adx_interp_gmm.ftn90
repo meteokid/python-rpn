@@ -17,7 +17,7 @@
 subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                              F_capx1, F_capy1, F_capz1 , &
                              F_capx2, F_capy2, F_capz2 , &
-                             F_c1, F_nk, i0,in,j0,jn,k0, F_lev_S )
+                             F_c1, F_nk, i0,in,j0,jn,k0, F_lev_S, F_mono_kind, F_mass_kind )
    implicit none
 #include <arch_specific.hf>
 !
@@ -33,19 +33,24 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
    real, intent(in)    :: F_capx1(*), F_capy1(*), F_capz1(*)
    real, intent(in)    :: F_capx2(*), F_capy2(*), F_capz2(*)
    character(len=*), intent(in) :: F_lev_S !I, m/t : Momemtum/thermo level
+   integer, intent(in) :: F_mono_kind      !I, Kind of Shape preservation
+   integer, intent(in) :: F_mass_kind      !I, Kind of  Mass conservation
 !
    !@revisions
    !  2009-12,  Stephane Chamberland: original code from adx_main_3
    !  2012-06,  Stephane Gaudreault: Code optimization, Positivity-preserving advection
+   !  2014-09,  Monique Tanguay    : GEM4 Mass-Conservation 
 !**/
 
 #include "gmm.hf"
 #include "adx_nml.cdk"
+#include "vt_tracers.cdk"
 
    type(gmm_metadata) :: mymeta
-   logical :: mono_L, clip_positive_L
+   logical :: mono_L, clip_positive_L, conserv_L
    integer :: err
    real, pointer, dimension (:,:,:) :: fld_in, fld_out
+   real, dimension(1,1,1), target :: no_conserv
 
    !---------------------------------------------------------------------
 
@@ -60,16 +65,56 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
       else
          mono_L = adw_mono_L
       endif
+
    endif
 
-   call adx_interp7 (fld_out(mymeta%l(1)%low,mymeta%l(2)%low,1),&
-                     fld_in (mymeta%l(1)%low,mymeta%l(2)%low,1),&
-                     F_c1, F_capx1, F_capy1, F_capz1           ,&
-                     F_capx2, F_capy2, F_capz2                 ,&
-                     mymeta%l(1)%low,mymeta%l(1)%high          ,&
-                     mymeta%l(2)%low,mymeta%l(2)%high, F_nk    ,&
-                     F_wind_L, mono_L, clip_positive_L         ,&
-                     i0,in,j0,jn,k0, F_lev_S)
+   conserv_L = F_mono_kind/=0.or.F_mass_kind/=0
+
+   if (conserv_L) then
+
+      nullify(fld_cub,fld_mono,fld_lin,fld_min,fld_max)
+
+      err = gmm_get(gmmk_cub_s ,fld_cub ,mymeta)
+      err = gmm_get(gmmk_mono_s,fld_mono,mymeta)
+      err = gmm_get(gmmk_lin_s ,fld_lin ,mymeta)
+      err = gmm_get(gmmk_min_s ,fld_min ,mymeta)
+      err = gmm_get(gmmk_max_s ,fld_max ,mymeta)
+
+   else
+
+      fld_cub  => no_conserv
+      fld_mono => no_conserv
+      fld_lin  => no_conserv
+      fld_min  => no_conserv
+      fld_max  => no_conserv
+
+   endif
+
+   call adx_interp7 (fld_out (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_cub (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_mono(mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_lin (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_min (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_max (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     fld_in  (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     F_c1, F_capx1, F_capy1, F_capz1            ,&
+                     F_capx2, F_capy2, F_capz2                  ,&
+                     mymeta%l(1)%low,mymeta%l(1)%high           ,&
+                     mymeta%l(2)%low,mymeta%l(2)%high, F_nk     ,&
+                     F_wind_L, mono_L, clip_positive_L          ,&
+                     conserv_L,i0,in,j0,jn,k0, F_lev_S)
+
+   if (conserv_L)  call adx_tracers_mono_mass (F_out_S,                                    &
+                                               fld_out (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_cub (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_mono(mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_lin (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_min (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_max (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               fld_in  (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               mymeta%l(1)%low,mymeta%l(1)%high           ,&
+                                               mymeta%l(2)%low,mymeta%l(2)%high,F_nk      ,&
+                                               i0,in,j0,jn,k0,F_mono_kind,F_mass_kind)
 
   !---------------------------------------------------------------------
 

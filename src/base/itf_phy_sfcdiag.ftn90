@@ -13,7 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !/**
-      subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, F_var_S)
+      subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, &
+                                  F_var_S, F_status, F_quiet_L)
       use phy_itf, only: phy_get
       implicit none
 #include <arch_specific.hf>
@@ -21,7 +22,8 @@
    !@objective
    !@arguments
       character(len=*) :: F_var_S
-      integer :: minx, maxx, miny, maxy
+      logical :: F_quiet_L
+      integer :: minx, maxx, miny, maxy, F_status
       real, dimension(minx:maxx,miny:maxy,1), target :: F_dest
    !@author  Michel Desgagne  -  Summer 2013
    !**/
@@ -29,14 +31,15 @@
 #include "grd.cdk"
 #include "glb_ld.cdk"
 
-      integer :: istat
       real, dimension(:,:,:), pointer :: ptr3d
 !
 !-----------------------------------------------------------------
 !
       ptr3d => F_dest(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-      istat = phy_get(ptr3d,F_var_S,F_npath='VO',F_bpath='D', &
-               F_start=(/-1,-1,l_nk+1/),F_end=(/-1,-1,l_nk+1/))
+
+      F_status = phy_get (ptr3d, F_var_S, F_npath='VO', F_bpath='D'    ,&
+                       F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                       F_quiet=F_quiet_L)
 !
 !-----------------------------------------------------------------
 !

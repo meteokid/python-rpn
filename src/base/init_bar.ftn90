@@ -158,8 +158,9 @@
          endif
 
 !        Define log(surface pressure)
-         F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-Ver_FIstr_8(1)-F_topo(i,j)) &
-                    /(Dcst_Rgasd_8*Cstv_Tstr_8)
+         F_s(i,j)=(Dcst_grav_8*gz_temp(i,j,1)-F_topo(i,j)) &
+                  /(Dcst_Rgasd_8*Cstv_Tstr_8) &
+                 +Ver_z_8%m(1)-Cstv_Zsrf_8
       enddo
       enddo
 

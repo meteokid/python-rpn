@@ -65,11 +65,9 @@
             if (trim(Tr3d_name_S(j))==trim(varname)) dejala=j
          enddo
          if (dejala==0) then
-            if (trim(varname)=='HU') then
-               Tr3d_ntr = Tr3d_ntr + 1
-               dejala   = Tr3d_ntr
-               Tr3d_name_S(dejala)= trim(varname)
-            endif
+            Tr3d_ntr = Tr3d_ntr + 1
+            dejala   = Tr3d_ntr
+            Tr3d_name_S(dejala)= trim(varname)
          endif
          Tr3d_hzd (dejala)= (hzd>0) ; Tr3d_wload(dejala)= (wload>0)
          Tr3d_mono(dejala)= monot   ; Tr3d_mass (dejala)= massc

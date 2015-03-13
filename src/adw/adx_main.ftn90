@@ -113,7 +113,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                               xth, yth, zth, adx_lminx, adx_lmaxx , &
                               adx_lminy,adx_lmaxy, adx_mlni,adx_mlnj , &
                               max(k0t-2,1), adx_lnk, F_nk_winds)
-      if(adx_hor_int_traj_L) &
+
       call adx_pos_muv (pxmu, pymu, pzmu, pxmv, pymv, pzmv, pxm, pym, pzm, &
                         adx_mlni, adx_mlnj, k0, adx_lnk, i0,in,j0,jn)
 

@@ -15,8 +15,8 @@
 #include "msg.h"
 
 !/**
-subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
-     F_a_for,   F_b_for,   F_c_for, &
+subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, F_d_fro, F_e_fro, &
+     F_a_for,   F_b_for,   F_c_for, F_d_for, F_e_for, &
      F_n_fro_n, F_n_fro_s, F_n_fro_a, &
      F_n_for_n, F_n_for_s, F_n_for_a, &
      F_n_treat)
@@ -27,8 +27,8 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
    integer :: F_n_fro_n, F_n_fro_s, F_n_fro_a
    integer :: F_n_for_n, F_n_for_s, F_n_for_a
    integer :: F_n_treat
-   real :: F_a_fro(F_n_fro_a), F_b_fro(F_n_fro_a), F_c_fro(F_n_fro_a)
-   real :: F_a_for(F_n_for_a), F_b_for(F_n_for_a), F_c_for(F_n_for_a)
+   real :: F_a_fro(F_n_fro_a), F_b_fro(F_n_fro_a), F_c_fro(F_n_fro_a), F_d_fro(F_n_fro_a), F_e_fro(F_n_fro_a)
+   real :: F_a_for(F_n_for_a), F_b_for(F_n_for_a), F_c_for(F_n_for_a), F_d_for(F_n_for_a), F_e_for(F_n_for_a)
    !______________________________________________________________________
    !              |                                                 |     |
    ! NAME         | DESCRIPTION                                     | I/O |
@@ -58,6 +58,7 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
    !@revisions
    ! v2_31 - Corbeil L.       - replaced MPI calls by rpn_comm, removed 
    ! v2_31                      ptopo.cdk and removed stkmem calls
+   ! v4_XX - Tanguay M.       - GEM4 Mass-Conservation
    !@description
    ! The information is strored in the following manner:
    !
@@ -93,6 +94,14 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
             abc_for_n(n,2) = F_b_for(n)
             abc_for_n(n,3) = F_c_for(n)
          enddo
+      else if (F_n_treat == 5) then
+         do n = 1, F_n_for_n
+            abc_for_n(n,1) = F_a_for(n)
+            abc_for_n(n,2) = F_b_for(n)
+            abc_for_n(n,3) = F_c_for(n)
+            abc_for_n(n,4) = F_d_for(n)
+            abc_for_n(n,5) = F_e_for(n)
+         enddo
       endif
 
    endif
@@ -113,6 +122,14 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
             abc_for_s(n,1) = F_a_for(F_n_for_n+n)
             abc_for_s(n,2) = F_b_for(F_n_for_n+n)
             abc_for_s(n,3) = F_c_for(F_n_for_n+n)
+         enddo
+      else if (F_n_treat == 5) then
+         do n = 1, F_n_for_s
+            abc_for_s(n,1) = F_a_for(F_n_for_n+n)
+            abc_for_s(n,2) = F_b_for(F_n_for_n+n)
+            abc_for_s(n,3) = F_c_for(F_n_for_n+n)
+            abc_for_s(n,4) = F_d_for(F_n_for_n+n)
+            abc_for_s(n,5) = F_e_for(F_n_for_n+n)
          enddo
       endif
 
@@ -141,6 +158,14 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
             F_b_fro(n) = abc_fro_n(n,2)
             F_c_fro(n) = abc_fro_n(n,3)
          enddo
+      else if (F_n_treat == 5) then
+         do n = 1, F_n_fro_n
+            F_a_fro(n) = abc_fro_n(n,1)
+            F_b_fro(n) = abc_fro_n(n,2)
+            F_c_fro(n) = abc_fro_n(n,3)
+            F_d_fro(n) = abc_fro_n(n,4)
+            F_e_fro(n) = abc_fro_n(n,5)
+         enddo
       endif
 
    endif
@@ -161,6 +186,14 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, &
             F_a_fro(F_n_fro_n+n) = abc_fro_s(n,1)
             F_b_fro(F_n_fro_n+n) = abc_fro_s(n,2)
             F_c_fro(F_n_fro_n+n) = abc_fro_s(n,3)
+         enddo
+      else if (F_n_treat == 5) then
+         do n = 1, F_n_fro_s
+            F_a_fro(F_n_fro_n+n) = abc_fro_s(n,1)
+            F_b_fro(F_n_fro_n+n) = abc_fro_s(n,2)
+            F_c_fro(F_n_fro_n+n) = abc_fro_s(n,3)
+            F_d_fro(F_n_fro_n+n) = abc_fro_s(n,4)
+            F_e_fro(F_n_fro_n+n) = abc_fro_s(n,5)
          enddo
       endif
 

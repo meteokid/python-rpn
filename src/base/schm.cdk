@@ -44,20 +44,17 @@
 ! Schm_chems_S       | Chemical scheme to use ('NIL' if none)          |
 ! Schm_Tlift         | 1: last thermo level at last momentum level     |
 ! Schm_trapeze_L     | Use trapeziodal average for advection winds     |
-! Schm_hor_int_traj_L| horizontal interpolation of trajectories        |
 ! Schm_superwinds_L  | Use super winds for advection                   |
 ! Schm_cub_traj_L    | Use cubic interpolation in trajectory comp.     |
-! Schm_cub_Coriolis_L| Use cubic interpolation for Coriolis winds.     |
 !----------------------------------------------------------------------
 !
 #endif
       logical Schm_psadj_L
       logical Schm_hydro_L ,Schm_nkbz_L , Schm_autobar_L, Schm_wload_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_source_ps_L, Schm_opentop_L
-      logical Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L, Schm_hor_int_traj_L
+      logical Schm_pcsty_L, Schm_chems_L, Schm_trapeze_L
       logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
-      logical Schm_cub_Coriolis_L
 !
       integer Schm_itcn , Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith,  Schm_nblendyy
@@ -66,12 +63,11 @@
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L, Schm_wload_L
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_source_ps_L  , Schm_opentop_L
-      common / schm_l / Schm_trapeze_L, Schm_hor_int_traj_L
+      common / schm_l / Schm_trapeze_L
       common / schm_l / Schm_pcsty_L  , Schm_chems_L
       common / schm_l / Schm_pheat_L  , Schm_theoc_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
       common / schm_l / Schm_hzdadw_L , Schm_cub_traj_L
-      common / schm_l / Schm_cub_Coriolis_L
       common / schm_l / Schm_bitpattern_L, Schm_itcn
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
       common / schm_i / Schm_Tlift    ,Schm_nblendyy

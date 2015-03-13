@@ -15,7 +15,6 @@
 
 !**s/r ens_filter_gauss - Gaussian filter
 !
-#include <model_macros_f.h>
       subroutine ens_filter_gauss(bfact,lambda,dsp_local)
       implicit none
 #include <arch_specific.hf>

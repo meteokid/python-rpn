@@ -25,20 +25,20 @@ subroutine adx_get_ij0n(i0,in,j0,jn)
 #include "adx_dims.cdk"
    !**/
    !---------------------------------------------------------------------
-   integer :: onept
+   integer :: jext
 
    i0 = 1
    in = adx_mlni
    j0 = 1
    jn = adx_mlnj
-   onept=0
-   if (adx_yinyang_L) onept=1
 
    if (adx_lam_L) then
-      if (adx_is_west)  i0 = adx_pil_w - 1 - onept
-      if (adx_is_east)  in = adx_mlniu - adx_pil_e + 2 + onept
-      if (adx_is_south) j0 = adx_pil_s - 1 - onept
-      if (adx_is_north) jn = adx_mlnjv - adx_pil_n + 2 + onept
+      jext=1
+      if (adx_yinyang_L) jext=2
+      if (adx_is_west)  i0 =            adx_pil_w - jext
+      if (adx_is_east)  in = adx_mlni - adx_pil_e + jext
+      if (adx_is_south) j0 =            adx_pil_s - jext
+      if (adx_is_north) jn = adx_mlnj - adx_pil_n + jext
    endif
 
    !---------------------------------------------------------------------

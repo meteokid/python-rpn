@@ -15,8 +15,6 @@
 
 !** s/r ens_uvduv - Computes sqrt((u*du)**2 +(v*dv)**2) of wind-like fields 
 !
-#include <model_macros_f.h>
-!
       subroutine ens_uvduv ( F_duv, F_uu, F_vv, Minx,Maxx,Miny,Maxy, Nk )
 !
       implicit none

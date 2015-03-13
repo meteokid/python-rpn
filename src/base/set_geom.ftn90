@@ -16,6 +16,7 @@
 !
       subroutine set_geom
       use hgrid_wb, only: hgrid_wb_put
+      
       implicit none
 #include <arch_specific.hf>
 
@@ -66,6 +67,7 @@
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
       real*8 scale_factor, scale_factor_z
+      real*8 Del_xg , Del_yg 
       parameter( ZERO_8  = 0.0 )
       parameter( HALF_8  = 0.5 )
       parameter( ONE_8   = 1.0 )
@@ -92,7 +94,7 @@
                 Geomn_latgv(G_nj),Geomn_longu(G_ni+1), &
                 Geomn_latij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy), &
                 Geomn_lonij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy))
-
+  
       call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,     &
                            Grd_x0_8, Grd_xl_8, Grd_left,                     &
                            Grd_y0_8, Grd_yl_8, Grd_belo,                     &
@@ -172,7 +174,8 @@
             G_yg_8(j) = 1.01*G_yg_8(j-1)
          end do
       endif
-!
+      
+
 !C             Compute longitudes in degrees for model output
 !              ----------------------------------------------
       do i = 1, G_ni+1
@@ -185,44 +188,45 @@
       end do
 
       allocate (Geomg_x_8(l_minx:l_maxx),Geomg_xu_8(l_minx:l_maxx),&
-                Geomg_y_8(l_miny:l_maxy),Geomg_yv_8(l_miny:l_maxy),&
-                Geomg_hx_8(l_minx:l_maxx),Geomg_hxu_8(l_minx:l_maxx),&
-                Geomg_hy_8(l_miny:l_maxy),Geomg_hyv_8(l_miny:l_maxy),&
+                
+                Geomg_y_8(l_miny:l_maxy),Geomg_yv_8(l_miny:l_maxy),&   
                 Geomg_sx_8(l_minx:l_maxx),Geomg_sy_8 (l_miny:l_maxy),&
                 Geomg_cx_8(l_minx:l_maxx),Geomg_cy_8 (l_miny:l_maxy),&
                 Geomg_cy2_8    (l_miny:l_maxy),Geomg_cyv_8    (l_miny:l_maxy),&
-                Geomg_tyoa_8   (l_miny:l_maxy),Geomg_tyoav_8  (l_miny:l_maxy),&
+                Geomg_tyoa_8   (l_minx:l_maxx),Geomg_tyoav_8  (l_minx:l_maxx),&
                 Geomg_cyv2_8   (l_miny:l_maxy),Geomg_cyM_8    (l_miny:l_maxy),&
-                Geomg_invDY_8  (l_miny:l_maxy),Geomg_invDYM_8 (l_miny:l_maxy),&
-                Geomg_invDYv_8 (l_miny:l_maxy),Geomg_invDYMv_8(l_miny:l_maxy),&
-                Geomg_invcy_8  (l_miny:l_maxy),Geomg_invcyv_8 (l_miny:l_maxy),&
-                Geomg_invcy2_8 (l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy),&
-                Geomg_invDX_8  (l_minx:l_maxx,l_miny:l_maxy),&
-                Geomg_invDXM_8 (l_minx:l_maxx,l_miny:l_maxy),&
-                Geomg_invDXu_8 (l_minx:l_maxx,l_miny:l_maxy),&
-                Geomg_invDXMu_8(l_minx:l_maxx,l_miny:l_maxy),&
-                Geomg_invDXz_8(l_minx:l_maxx,l_miny:l_maxy),&
+                Geomg_invDYM_8 (l_miny:l_maxy),Geomg_invDYMv_8(l_miny:l_maxy),&
+                Geomg_invcy_8  (l_miny:l_maxy),Geomg_invcyv_8 (l_miny:l_maxy) ,&
+                Geomg_invcy2_8 (l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy) ,&
+                Geomg_invDX_8  (l_miny:l_maxy),Geomg_invDXM_8 (l_miny:l_maxy) ,&
+                Geomg_invDXMu_8(l_miny:l_maxy) ,&
+                Geomg_invDXz_8(l_miny:l_maxy),&
                 Geomg_area_8(l_ni,l_nj),Geomg_mask_8(l_ni,l_nj))
+         
+        offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+        offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+  
 
-      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+         Del_xg=G_xg_8(2)-G_xg_8(1)
+         Del_yg=G_yg_8(2)-G_yg_8(1)
+        
+         Geomg_hx_8  = Del_xg   
+         Geomg_hy_8  = Del_yg
+  
+         Geomg_invDY_8  = ONE_8/(Dcst_rayt_8 *Del_yg )
 
       do i=1-G_halox, l_ni+G_halox
          indx = offi + i
          Geomg_x_8  (i) =  G_xg_8(indx)
          Geomg_xu_8 (i) = (G_xg_8(indx+1)+ G_xg_8(indx)) * HALF_8
-         Geomg_hx_8 (i) =  G_xg_8(indx+1)- G_xg_8(indx)
-         Geomg_hxu_8(i) = (G_xg_8(indx+2)- G_xg_8(indx)) * HALF_8
          Geomg_sx_8(i) = sin( Geomg_x_8(i) )
          Geomg_cx_8(i) = cos( Geomg_x_8(i) )
       end do
-
+      
       do j=1-G_haloy, l_nj+G_haloy
-         indx = offj + j
+         indx = offj + j   
          Geomg_y_8  (j) =  G_yg_8(indx)
          Geomg_yv_8 (j) = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF_8
-         Geomg_hy_8 (j) =  G_yg_8(indx+1)- G_yg_8(indx)
-         Geomg_hyv_8(j) = (G_yg_8(indx+2)- G_yg_8(indx)) * HALF_8
          Geomg_sy_8  (j)= sin( Geomg_y_8 (j) )
          Geomg_cy_8  (j)= cos( Geomg_y_8 (j) )
          Geomg_cy2_8 (j)= cos( Geomg_y_8 (j) )**2
@@ -237,17 +241,17 @@
       call vrec (geomg_invcy_8   , geomg_cy_8, dimy )
       call vrec (geomg_invcyv_8  , geomg_cyv_8, dimy )
 
+
+             
       do j=1-G_haloy, l_nj+G_haloy
          indx = offj + j
-         Geomg_invDY_8  (j)= TWO_8/(Dcst_rayt_8 * ( G_yg_8(indx+1)- G_yg_8(indx-1)))
-         Geomg_invDYv_8 (j)= ONE_8/(Dcst_rayt_8 * ( G_yg_8(indx+1)- G_yg_8(indx)))
-         Geomg_invDYM_8 (j)= Geomg_invDY_8 (j)*geomg_invcy_8(j)
-         Geomg_invDYMv_8(j)= Geomg_invDYv_8(j)
+         Geomg_invDYMv_8(j)= Geomg_invDY_8
+         Geomg_invDYM_8 (j)= Geomg_invDY_8*geomg_invcy_8(j)
          Geomg_tyoa_8   (j)= 0.d0
          Geomg_tyoav_8  (j)= 0.d0
       end do
  
-      if (G_lam) then ! FOR METRIC TERMS IN MOMENTUM EQUATIONS
+      if (G_lam) then
          do j=1-G_haloy, l_nj+G_haloy
             Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
             Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
@@ -257,25 +261,19 @@
       do j=1-G_haloy, l_nj+G_haloy
          scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
          scale_factor_z = Dcst_rayt_8 * Geomg_cyv_8(j)
-         do i=1-G_halox,l_ni+G_halox
-            indx = offi + i
-            Geomg_invDXu_8 (i,j) = ONE_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx)))
-            Geomg_invDX_8  (i,j) = TWO_8/(scale_factor * ( G_xg_8(indx+1)- G_xg_8(indx-1)))
-            Geomg_invDXz_8 (i,j) = ONE_8/(scale_factor_z * ( G_xg_8(indx+1)- G_xg_8(indx)))
-            Geomg_invDXM_8 (i,j) = Geomg_invDX_8(i,j)
-            Geomg_invDXMu_8(i,j) = Geomg_invDXu_8(i,j)
-         end do
+         Geomg_invDX_8  (j) = ONE_8/(scale_factor * Del_xg )
+         Geomg_invDXz_8 (j) = ONE_8/(scale_factor_z * Del_xg )
+         Geomg_invDXM_8 (j) = Geomg_invDX_8(j)
+         Geomg_invDXMu_8(j) = Geomg_invDX_8(j)  
       end do
 
-      if (.not.G_lam) then
+      if (.not.G_lam) then 
          do j=1-G_haloy, l_nj+G_haloy
             Geomg_cyM_8    (j) = ONE_8
-            Geomg_invDYM_8 (j) = Geomg_invDY_8(j) *geomg_invcy_8(j)*Dcst_rayt_8
-            Geomg_invDYMv_8(j) = Geomg_invDYv_8(j)*Geomg_cyv_8(j)  /Dcst_rayt_8
-            do i=1-G_halox,l_ni+G_halox
-               Geomg_invDXM_8 (i,j)= Geomg_invDX_8 (i,j)*geomg_invcy_8(j)*Dcst_rayt_8
-               Geomg_invDXMu_8(i,j)= Geomg_invDXu_8(i,j)*geomg_cy_8(j)   /Dcst_rayt_8
-            end do
+            Geomg_invDYM_8 (j) = Geomg_invDY_8*geomg_invcy_8(j)*Dcst_rayt_8
+            Geomg_invDYMv_8(j) = Geomg_invDY_8*Geomg_cyv_8(j)  /Dcst_rayt_8
+            Geomg_invDXM_8 (j)= Geomg_invDX_8 (j)*geomg_invcy_8(j)*Dcst_rayt_8
+            Geomg_invDXMu_8(j)= Geomg_invDX_8(j)*geomg_cy_8(j)   /Dcst_rayt_8
          end do
       endif
 

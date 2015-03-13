@@ -85,14 +85,14 @@
          km=max(k-1,1)
          do j= j0, F_jn
          do i= i0, F_in
-            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy_8(j)*geomg_invDX_8(i,j)
+            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy_8(j)*geomg_invDX_8(j)
             if(dudx.gt.LipNOu) then
                iu=i
                ju=j
                ku=k
                LipNOu=dudx
             endif
-            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy_8(j)*geomg_invDY_8(j)
+            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy_8(j)*geomg_invDY_8
             if(dvdy.gt.LipNOv) then
                iv=i
                jv=j

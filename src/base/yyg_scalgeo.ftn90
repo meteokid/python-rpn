@@ -40,6 +40,7 @@
 !     Copy original fields to a source and destination tables with halo
 
       tab_srcf = 0.
+      tab_dstf = 0.
       tab_srcf(1:l_ni,1:l_nj,1:Nk)= F_src(1:l_ni,1:l_nj,1:Nk)
       tab_dstf(1:l_ni,1:l_nj,1:Nk)= F_src(1:l_ni,1:l_nj,1:Nk)
 

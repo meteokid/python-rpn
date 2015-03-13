@@ -102,7 +102,6 @@
       namelist /gem_cfgs/ Out3_linbot
       namelist /gem_cfgs/ Out3_nbitg
       namelist /gem_cfgs/ Out3_ndigits
-      namelist /gem_cfgs/ Out3_satues_L
       namelist /gem_cfgs/ Out3_unit_S
       namelist /gem_cfgs/ Out3_lieb_levels
       namelist /gem_cfgs/ Out3_lieb_maxite
@@ -125,7 +124,6 @@
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_cub_traj_L
-      namelist /gem_cfgs/ Schm_cub_Coriolis_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
@@ -143,7 +141,6 @@
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
-      namelist /gem_cfgs/ Schm_hor_int_traj_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
       namelist /gem_cfgs/ Sol_yyg_eps
@@ -234,7 +231,6 @@
       namelist /gem_cfgs_p/ Out3_linbot
       namelist /gem_cfgs_p/ Out3_nbitg
       namelist /gem_cfgs_p/ Out3_ndigits
-      namelist /gem_cfgs_p/ Out3_satues_L
       namelist /gem_cfgs_p/ Out3_unit_S
       namelist /gem_cfgs_p/ Out3_lieb_maxite
       namelist /gem_cfgs_p/ Out3_lieb_conv
@@ -256,7 +252,6 @@
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_traj_L
-      namelist /gem_cfgs_p/ Schm_cub_Coriolis_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn
@@ -272,7 +267,6 @@
       namelist /gem_cfgs_p/ Schm_superwinds_L
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
-      namelist /gem_cfgs_p/ Schm_hor_int_traj_L
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps

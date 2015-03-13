@@ -40,14 +40,12 @@
 #include "tr3d.cdk"
 #include "level.cdk"
 
-      integer, parameter :: COMPATIBILITY_LVL = 6
+      integer, parameter :: COMPATIBILITY_LVL = 7
 
       type(vgrid_descriptor) :: vcoord
-      logical cond_satu_L
       integer dateo,err,zuip,ztip
       integer, dimension(:), pointer :: ip1m
       real :: zu,zt
-      
 !
 !     ---------------------------------------------------------------
 !
@@ -93,15 +91,8 @@
               'model/Hgrid/global','model/Hgrid/local'  , &
                                G_nk+1, Ver_std_p_prof%m )
 
-! The current physics interface operate on an arbitrary number of
-! columns p_ni containing G_nk+1 levels. Here p_ni is defined as a
-! whole row of points 'j' and there will be p_nj rows to compute
-! P_ni & p_nj are a function of the running length p_runlgt
-
-      err= min(wb_get('phy/satuco', cond_satu_L), err)
-
 ! Retrieve the heights of the diagnostic levels (thermodynamic
-! and momentum) from the physics
+! and momentum) from the physics ( zero means NO diagnostic level)
 
       err= min(wb_get('phy/zu', zu), err)
       err= min(wb_get('phy/zt', zt), err)
@@ -111,28 +102,23 @@
 ! Add the diagnostic heights to the vertical coordinate of the model
 
       err = VGD_OK
-      nullify(ip1m)
-      Level_kind_diag=4
-      err = min(vgrid_wb_get('ref-m',vcoord,ip1m), err)
-      call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
-      call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
-      err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
-      err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+      if ((zu.gt.0.) .and. (zt.gt.0.) ) then
+         nullify(ip1m)
+         Level_kind_diag=4
+         err = min(vgrid_wb_get('ref-m',vcoord,ip1m), err)
+         call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
+         call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
+         err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
+         err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+         out3_sfcdiag_L= .true.
+      endif
 
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
-
-! Consistency check for saturation calculations
-
-      if (Out3_satues_L .and. .not.cond_satu_L) then
-          Out3_satues_L = .false.
-          if (Lun_out.gt.0) write(Lun_out,9600)
-      endif
 
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &
              /,'====================================================')
  9500 format(/,' PHYSICS NOT SUPPORTED FOR NOW IN THEORETICAL CASE')
- 9600 format(/ 'Out3_satues_L reset to .false. as SATUCO eq false')
 !     ---------------------------------------------------------------
 !
       return

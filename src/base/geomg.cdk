@@ -13,9 +13,7 @@
 ! geomg_yv_8         | latitude  of v points                           |
 !--------------------|-------------------------------------------------|
 ! geomg_hx_8         | distance between grid points in x direction     |
-! geomg_hxu_8        | distance btwn pts in x direction for u points   |
-! geomg_hy_8         | distance between grid points in y direction     |
-! geomg_hyv_8        | distance btwn pts in y direction for v points   |
+! geomg_hy_8         | distance between grid points in y direction     |   |
 !----------------------------------------------------------------------
 ! geomg_sx_8         | sine of longitude                               |
 ! geomg_sy_8         | sine of latitude                                |
@@ -35,12 +33,10 @@
 ! geomg_tyoav_8      | tangent of latitude divided by rayt (v points)  |
 !--------------------|-------------------------------------------------|
 ! geomg_invDY_8      | inverse DELTAY = cos(theta)2/dsin(theta)        |
-! geomg_invDYM_8  ** | SPECIAL for MODEL core only                     |
-! geomg_invDYv_8     | inverse DELTAY for v points                     |
+! geomg_invDYM_8  ** | SPECIAL for MODEL core only                     |           
 ! geomg_invDYMv_8 ** | SPECIAL for MODEL core only                     |
 ! geomg_invDX_8      | inverse DELTAX = 1/d(lambda)                    |
 ! geomg_invDXM_8  ** | SPECIAL for MODEL core only                     |
-! geomg_invDXu_8     | inverse DELTAX for u points                     |
 ! geomg_invDXMu_8 ** | SPECIAL for MODEL core only                     |
 ! geomg_invDXz_8     | inverse DELTAX for z points (ex: for vorticity) |
 !----------------------------------------------------------------------
@@ -48,26 +44,29 @@
 ! geomg_mask_8       |                                                 |
 !----------------------------------------------------------------------
 !
-      real*8, dimension(:), pointer :: &
-          Geomg_x_8    ,Geomg_xu_8    ,Geomg_y_8     ,Geomg_yv_8     ,&
-          Geomg_hx_8   ,Geomg_hxu_8   ,Geomg_hy_8    ,Geomg_hyv_8    ,&
+       real*8 ::   Geomg_invDY_8,Geomg_hx_8   ,Geomg_hy_8   
+
+       real*8, dimension(:), pointer :: &
+          Geomg_x_8    ,Geomg_xu_8    ,Geomg_y_8     ,Geomg_yv_8     ,&   
           Geomg_sx_8   ,Geomg_sy_8    ,Geomg_cx_8    ,Geomg_cy_8     ,&
           Geomg_cy2_8  ,Geomg_cyv_8   ,Geomg_cyv2_8  ,Geomg_cyM_8    ,&
           Geomg_invcy_8,Geomg_invcyv_8,Geomg_invcy2_8,Geomg_invcyv2_8,&
           Geomg_tyoa_8 ,Geomg_tyoav_8 ,&
-          Geomg_invDY_8,Geomg_invDYM_8,Geomg_invDYv_8,Geomg_invDYMv_8
-
+          Geomg_invDYM_8,Geomg_invDYMv_8,&
+          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,&
+          Geomg_invDXz_8
       real*8, dimension(:,:), pointer :: &
-          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXu_8,Geomg_invDXMu_8,&
-          Geomg_invDXz_8,Geomg_area_8  ,Geomg_mask_8
+         Geomg_area_8  ,Geomg_mask_8
 
       common /Geomg/ &
           Geomg_x_8     ,Geomg_xu_8    ,Geomg_y_8     ,Geomg_yv_8     ,&
-          Geomg_hx_8    ,Geomg_hxu_8   ,Geomg_hy_8    ,Geomg_hyv_8    ,&
           Geomg_sx_8    ,Geomg_sy_8    ,Geomg_cx_8    ,Geomg_cy_8     ,&
           Geomg_cy2_8   ,Geomg_cyv_8   ,Geomg_cyv2_8  ,Geomg_cyM_8    ,&
           Geomg_invcy_8 ,Geomg_invcyv_8,Geomg_invcy2_8,Geomg_invcyv2_8,&
           Geomg_tyoa_8  ,Geomg_tyoav_8 ,&
-          Geomg_invDY_8 ,Geomg_invDYM_8,Geomg_invDYv_8,Geomg_invDYMv_8,&
-          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXu_8,Geomg_invDXMu_8,&
+          Geomg_invDYM_8,Geomg_invDYMv_8,&
+          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,&
           Geomg_invDXz_8,Geomg_area_8  ,Geomg_mask_8
+       
+      common /Geomg_h/ &         
+          Geomg_invDY_8,Geomg_hx_8 ,Geomg_hy_8  

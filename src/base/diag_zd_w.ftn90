@@ -69,6 +69,7 @@
       real sbX (Minx:Maxx,Miny:Maxy),sbY(Minx:Maxx,Miny:Maxy),pi_s(Minx:Maxx,Miny:Maxy)
       real UdpX(Minx:Maxx,Miny:Maxy),    VdpY(Minx:Maxx,Miny:Maxy)
       real lapse(Minx:Maxx,Miny:Maxy,Nk)
+      real*8, parameter :: half=0.5d0
 !     ________________________________________________________________
 !
       if(.not.(F_zd_L.or.F_w_L)) return
@@ -120,13 +121,13 @@
 
       do j=j0,jn
       do i=i0-1,in
-         sbX(i,j)=F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*intuv_c0xxu_8(i)
+         sbX(i,j)=F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half
       end do
       end do
 
       do j=j00,jnn
       do i=i0,in
-         sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*intuv_c0yyv_8(j)
+         sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half
       end do
       end do
 
@@ -161,8 +162,8 @@
 
          do j=j0,jn
          do i=i0,in
-            div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomg_invDX_8(i,j) &
-                       + (VdpY(i,j)-VdpY(i,j-1))*geomg_invcy_8(j)*geomg_invDY_8(j)
+            div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomg_invDX_8(j) &
+                       + (VdpY(i,j)-VdpY(i,j-1))*geomg_invcy_8(j)*geomg_invDY_8
          enddo
          enddo
 
@@ -233,10 +234,11 @@
             c2=geomg_cyv_8(j-1)
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
-               adv= 0.5 * ( geomg_invDX_8(i,j) *  &
+!               adv= 0.5 * ( geomg_invDX_8(i,j) *  &
+                adv= 0.5 * ( geomg_invDX_8(j) *  &
                     ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
-                  + geomg_invcy_8(j) * geomg_invDY_8(j) *  &
+                  + geomg_invcy_8(j) * geomg_invDY_8 *  &
                     ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-F_s(i,j))   &
                      -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-F_s(i,j)) ) )
               !pidot=omega

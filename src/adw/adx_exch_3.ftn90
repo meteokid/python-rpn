@@ -21,7 +21,8 @@ subroutine adx_exch_3()
 end subroutine adx_exch_3
 
 !/**
-subroutine adx_exch_3b(F_1_out, F_2_out, F_1_in,  F_2_in,  F_c_in, F_n_treat,&
+subroutine adx_exch_3b(F_1_out, F_2_out, F_3_out, F_4_out, F_5_out, &
+                       F_1_in , F_2_in , F_3_in , F_4_in , F_5_in , F_c_in, F_n_treat, &
    F_ni,F_nj,F_nk)
    implicit none
 #include <arch_specific.hf>
@@ -33,19 +34,24 @@ subroutine adx_exch_3b(F_1_out, F_2_out, F_1_in,  F_2_in,  F_c_in, F_n_treat,&
    integer :: F_ni,F_nj,F_nk        !I, dims
    integer :: F_n_treat
    integer :: F_c_in(adx_for_a)
-   real    :: F_1_in(adx_for_a), F_2_in(adx_for_a)
-   real,dimension(F_ni*F_nj*F_nk) :: F_1_out, F_2_out
+   real    :: F_1_in(adx_for_a), F_2_in(adx_for_a), F_3_in(adx_for_a), F_4_in(adx_for_a), F_5_in(adx_for_a)
+   real,dimension(F_ni*F_nj*F_nk) :: F_1_out, F_2_out, F_3_out, F_4_out, F_5_out
    !______________________________________________________________________
    !              |                                                 |     |
    ! NAME         | DESCRIPTION                                     | I/O |
    !--------------|-------------------------------------------------|-----|
    !              |                                                 |     |
    ! F_1_out      | \ interpolated fields for which some values     |  o  |
-   ! F_2_out      | / obtained from neighbors have to be fetched    |  o  |
-   !              |   back in the appropriate positions             |     |
+   ! F_2_out      | | obtained from neighbors have to be fetched    |  o  |
+   ! F_3_out      | |  back in the appropriate positions            |  o  |
+   ! F_4_out      | |                                               |  o  |
+   ! F_5_out      | /                                               |  o  |
    !              |                                                 |     |
    ! F_1_in       | \ interpolated values obtained from neighbors   |  i  |
-   ! F_2_in       | /                                               |  i  |
+   ! F_2_in       | |                                               |  i  |
+   ! F_3_in       | |                                               |  i  |
+   ! F_4_in       | |                                               |  i  |
+   ! F_5_in       | /                                               |  i  |
    !              |                                                 |     |
    ! F_c_in       | 3D coordinates of points for which upstream     |  i  |
    !              | positions were outside advection source grid and|     |
@@ -55,6 +61,7 @@ subroutine adx_exch_3b(F_1_out, F_2_out, F_1_in,  F_2_in,  F_c_in, F_n_treat,&
    !______________|_________________________________________________|_____|
    !@author alain patoine
    !@revisions
+   ! v4_XX - Tanguay M.       - GEM4 Mass-Conservation
    !  
 !**/
    integer :: n
@@ -71,6 +78,16 @@ subroutine adx_exch_3b(F_1_out, F_2_out, F_1_in,  F_2_in,  F_c_in, F_n_treat,&
       do n = 1, adx_for_a
          F_1_out(F_c_in(n)) = F_1_in(n)
          F_2_out(F_c_in(n)) = F_2_in(n)
+      enddo
+
+   else if (F_n_treat == 5) then
+
+      do n = 1, adx_for_a
+         F_1_out(F_c_in(n)) = F_1_in(n)
+         F_2_out(F_c_in(n)) = F_2_in(n)
+         F_3_out(F_c_in(n)) = F_3_in(n)
+         F_4_out(F_c_in(n)) = F_4_in(n)
+         F_5_out(F_c_in(n)) = F_5_in(n)
       enddo
 
    endif

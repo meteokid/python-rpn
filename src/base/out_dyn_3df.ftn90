@@ -33,6 +33,7 @@
 #include "out.cdk"
 #include "p_geof.cdk"
 #include "vt1.cdk"
+#include "out3.cdk"
 #include "schm.cdk"
 #include "step.cdk"
 #include "grdc.cdk"
@@ -124,27 +125,27 @@
       do k=1,Grdc_ntr
          nullify (tr2)
          istat=gmm_get('TR/'//trim(Grdc_trnm_S(k))//':P',tr2)
-         if (.not.GMM_IS_ERROR(istat)) then
-            call write_3df3 (tr2,l_minx,l_maxx,l_miny,l_maxy,nis,njs,&
-                 G_nk, Grdc_trnm_S(k), gid, gif, gjd, gjf, unf, done )
-!            call statfld3 (tr2,trim(Grdc_trnm_S(k)), 0, '', &
-!                 l_minx,l_maxx,l_miny,l_maxy,1,g_nk,gid,gjd,1,gif,gjf,g_nk,8)
-         endif
+         call write_3df3 ( tr2,l_minx,l_maxx,l_miny,l_maxy,nis,njs,G_nk,&
+                           Grdc_trnm_S(k), gid, gif, gjd, gjf, unf, done )
       end do
 
-      if ( Schm_phyms_L )then
+      if ( out3_sfcdiag_L ) then
          ntra= 3+Grdc_ntr
          allocate(tr1(l_minx:l_maxx,l_miny:l_maxy,ntra))
+         tr1=0.
          call itf_phy_sfcdiag(tr1(l_minx,l_miny,1),&
-              l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P')
+              l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P',istat,.false.)
          call itf_phy_sfcdiag(tr1(l_minx,l_miny,2),&
-              l_minx,l_maxx,l_miny,l_maxy,'PW_UU:P')
+              l_minx,l_maxx,l_miny,l_maxy,'PW_UU:P',istat,.false.)
          call itf_phy_sfcdiag(tr1(l_minx,l_miny,3),&
-              l_minx,l_maxx,l_miny,l_maxy,'PW_VV:P')
+              l_minx,l_maxx,l_miny,l_maxy,'PW_VV:P',istat,.false.)
          do k=1,Grdc_ntr
-            call itf_phy_sfcdiag(tr1(l_minx,l_miny,3+k),&
-              l_minx,l_maxx,l_miny,l_maxy,'TR/'//trim(Grdc_trnm_S(k))//':P')
+            nullify (tr2)
+            call itf_phy_sfcdiag(tr1(l_minx,l_miny,k+3),&
+                            l_minx,l_maxx,l_miny,l_maxy,&
+                            'TR/'//trim(Grdc_trnm_S(k))//':P',istat,.true.)
          end do
+
          call write_3df3 (tr1,l_minx,l_maxx,l_miny,l_maxy,nis,njs,ntra,&
                                   'DIAG',gid, gif, gjd, gjf, unf, done )
          deallocate (tr1)
@@ -153,7 +154,6 @@
       if (Out_blocme.eq.0) then
          close (unf)
       endif
-
       done= .true.
 !
 !------------------------------------------------------------------

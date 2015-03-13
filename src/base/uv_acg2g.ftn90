@@ -68,6 +68,8 @@
 
       logical cubic
       integer i,j,k,nie,nje
+
+      real*8, parameter :: half=0.5d0 , alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !
 !-----------------------------------------------------------------
 !
@@ -83,6 +85,9 @@
          F_in = l_ni
          F_j0 = 1
          F_jn = l_nj
+
+
+
 
 !$omp parallel private(i,j)
 !$omp do
@@ -126,8 +131,7 @@
 
             do j = F_j0, F_jn
             do i = F_i0, F_in
-               F_dst(i,j,k)= (1.0 - intuv_c0xux_8(i-1)) * F_src(i-1,j,k) &
-                            +       intuv_c0xux_8(i-1)  * F_src(i  ,j,k)
+               F_dst(i,j,k)= (F_src(i-1,j,k) + F_src(i,j,k))*half
             end do
             end do
 
@@ -135,10 +139,9 @@
 
             do j = F_j0, F_jn
             do i = F_i0, F_in
-               F_dst(i,j,k) =   inuvl_wxux3_8(i,1) * F_src(i-2,j,k) &
-                            +   inuvl_wxux3_8(i,2) * F_src(i-1,j,k) &
-                            +   inuvl_wxux3_8(i,3) * F_src(i  ,j,k) &
-                            +   inuvl_wxux3_8(i,4) * F_src(i+1,j,k)
+               F_dst(i,j,k) =  ( F_src(i-2,j,k) + F_src(i+1,j,k) )*alpha1  &
+                               + ( F_src(i-1,j,k) + F_src(i  ,j,k) )*alpha2
+                            
             end do
             end do
 
@@ -169,21 +172,19 @@
 
             do j = F_j0, F_jn
             do i = F_i0, F_in
-            F_dst(i,j,k)= (1.0 - intuv_c0yvy_8(j-1)) * F_src(i,j-1,k) + &
-                                 intuv_c0yvy_8(j-1)  * F_src(i,j,k)
+            F_dst(i,j,k)= (F_src(i,j-1,k) + F_src(i,j,k))*half
             end do
             end do
 
             if (.not.G_lam) then
                if (l_south) then
                do i = F_i0, F_in
-                  F_dst(i,1,k) = intuv_c0yvy_8(0) * F_src(i,1,k)
+                  F_dst(i,1,k) = F_src(i,1,k)*half
                end do
                endif
                if (l_north) then
                do i = F_i0, F_in
-                  F_dst(i,F_jn+1,k)=  &
-                       (1.0-intuv_c0yvy_8(F_jn))*F_src(i,F_jn,k)
+                  F_dst(i,F_jn+1,k)= F_src(i,F_jn,k)*half
                end do
                endif
             endif
@@ -200,7 +201,6 @@
             end do
 
             if (.not.G_lam) then
-
                if (l_south) then
                do i = F_i0, F_in
                F_dst(i,1,k) = (inuvl_wyvy3_8(1,3) * F_src(i,1,k) * geomg_cyv_8(1) &
@@ -225,7 +225,6 @@
                                   * geomg_invcy_8(F_jn+1)
                end do
                endif
-
             endif
             endif
          enddo
@@ -256,10 +255,9 @@
          do k = 1,Nk
             do j = F_j0, F_jn
             do i = F_i0, F_in
-               F_dst(i,j,k) = inuvl_wxxu3_8(i,1)*F_src(i-1,j,k) &
-                            + inuvl_wxxu3_8(i,2)*F_src(i  ,j,k) &
-                            + inuvl_wxxu3_8(i,3)*F_src(i+1,j,k) &
-                            + inuvl_wxxu3_8(i,4)*F_src(i+2,j,k)
+               F_dst(i,j,k) = ( F_src(i-1,j,k) + F_src(i+2,j,k) )*alpha1  &
+                            + ( F_src(i  ,j,k) + F_src(i+1,j,k) )*alpha2
+                            
             end do
             end do
          end do
@@ -282,10 +280,8 @@
          do k = 1,Nk
             do j = F_j0, F_jn
             do i = F_i0, F_in
-               F_dst(i,j,k) = inuvl_wyyv3_8(j,1)*F_src(i,j-1,k) &
-                            + inuvl_wyyv3_8(j,2)*F_src(i,j  ,k) &
-                            + inuvl_wyyv3_8(j,3)*F_src(i,j+1,k) &
-                            + inuvl_wyyv3_8(j,4)*F_src(i,j+2,k)
+               F_dst(i,j,k) = alpha1*( F_src(i,j-1,k) + F_src(i,j+2,k) ) &
+                            + alpha2*( F_src(i,j  ,k) + F_src(i,j+1,k))                           
             end do
             end do
 

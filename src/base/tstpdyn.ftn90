@@ -175,7 +175,8 @@
       call pre (rhsu, rhsv, ruw1, ruw2, rvw1, rvw2, &
                 xct1, yct1, zct1, fis0, rhsc, rhst, &
                 rhsw, rhsf, orhsu, orhsv, rhsb,     &
-                nest_t, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj, l_nk)
+                nest_t, l_minx,l_maxx,l_miny,l_maxy,&
+                i0, j0, in, jn, k0, l_ni, l_nj, l_nk)
 
       call timing_stop (22)
 

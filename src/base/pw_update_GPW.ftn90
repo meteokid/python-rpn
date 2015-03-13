@@ -33,7 +33,7 @@
 #include "pw.cdk"
 
       integer i, j, k, istat
-      real fip(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
+      real fi(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
 !     ________________________________________________________________
 !
       istat = gmm_get(gmmk_pw_wz_plus_s , pw_wz_plus )
@@ -49,7 +49,7 @@
       istat = gmm_get(gmmk_fis0_s ,  fis0)
       istat = gmm_get(gmmk_qt1_s  ,   qt1)
 
-      call diag_fi (fip, st1, tt1, qt1, fis0, &
+      call diag_fi (fi, st1, tt1, qt1, fis0, &
                     l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
       call calc_pressure ( pw_pm_plus, pw_pt_plus, pw_p0_plus, st1, &
@@ -59,8 +59,7 @@
 !$omp do
       do k=1,l_nk
          pw_wz_plus(:,:,k) = wt1(:,:,k)
-         pw_gz_plus(1:l_ni,1:l_nj,k)= fip(1:l_ni,1:l_nj,k) + &
-                                      Ver_fistr_8(k)
+         pw_gz_plus(1:l_ni,1:l_nj,k)= fi(1:l_ni,1:l_nj,k)
          if (k.eq.1) &
          pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
       end do

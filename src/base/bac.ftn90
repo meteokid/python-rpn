@@ -21,6 +21,8 @@
 ! v4_50 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds,T,S,Q
 ! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
 !
+
+
       subroutine bac ( F_lhs_sol, F_fis , &
                        F_u   , F_v     , F_w  , F_t       , &
                        F_s   , F_zd    , F_q  , F_nest_q  , &
@@ -29,7 +31,7 @@
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
       implicit none
 #include <arch_specific.hf>
-
+!
       integer  Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
       real*8   F_lhs_sol (ni,nj,Nk)
       real     F_fis (Minx:Maxx,Miny:Maxy)                                    , &
@@ -43,7 +45,7 @@
                F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
-
+!
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -57,7 +59,7 @@
 #include "ptopo.cdk"
 #include "lam.cdk"
 #include "wil_williamson.cdk"
-
+!
       integer i, j, k, km, kq, nij, k0t, istat
       real*8  w1, w2, w3, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
@@ -119,7 +121,7 @@
       do k=k0,l_nk
          do j= j0, jn
          do i= i0, l_niu-pil_e
-            F_u(i,j,k) = Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(i,j))
+            F_u(i,j,k) = Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
          end do
          end do
 
@@ -189,7 +191,7 @@
 
 !     Compute s
 !     ~~~~~~~~~
-
+    
       w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
 !$omp do
       do j= j0, jn

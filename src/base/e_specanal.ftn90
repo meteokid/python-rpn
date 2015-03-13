@@ -86,7 +86,7 @@
          return
       endif
 
-      nia = -1 ; nka = -1
+      nia = -1 ; nka = -1; zat_8=-99. ; zbt_8=-99. ; za_8=-99. ; zb_8=-99.
       call e_hvgrid (VAR_TT,     current_date, e_fu_anal, nia,nja,nka, &
                       grda, ig1a,ig2a,ig3a,ig4a,list,nlist,err_vt)
 

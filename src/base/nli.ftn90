@@ -71,19 +71,17 @@
       integer i, j, k, km,kq,kp, i0u, inu, j0v, jnv, nij, k0t, onept
       real    w_nt
       real*8  c1,qbar,ndiv,w1,w2,w3,w4,barz,barzp,MUlin,dlnTstr_8, &
-              wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)
-      real*8  t_interp, mu_interp, u_interp, v_interp
-      real*8, parameter :: zero=0.d0, one=1.d0
-
+              t_interp, mu_interp, u_interp, v_interp
+      real*8, parameter :: one=1.d0, half=0.5d0
       real*8, dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
-      real, dimension(:,:,:), pointer :: BsPq, FIp, MU
+      real, dimension(:,:,:), pointer :: BsPq, FI, MU
       save MU
 !     __________________________________________________________________
 !
       if (Lun_debug_L)  write(Lun_out,1000)
 
-      nullify  ( BsPq, FIp )
-      allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), FIp(Minx:Maxx,Miny:Maxy,l_nk+1) )
+      nullify  ( BsPq, FI )
+      allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), FI(Minx:Maxx,Miny:Maxy,l_nk+1) )
 
       if (.not.done) then
          nullify  ( MU )
@@ -129,7 +127,7 @@
       if (l_east )          inu=inu+onept
       if (l_north)          jnv=jnv+onept
 
-      call diag_fi ( FIp, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
+      call diag_fi ( FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
                                                l_nk, i0u, inu+1, j0v, jnv+1 )
 
       if (Schm_hydro_L) then
@@ -142,7 +140,7 @@
                                                  i0u, inu+1, j0v, jnv+1 )
       endif
 
-!$omp parallel private(km,kq,kp,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv,wk1,wk2, &
+!$omp parallel private(km,kq,kp,xtmp_8,ytmp_8,w_nt,barz,barzp,ndiv, &
 !$omp dlnTstr_8,w1,w2,w3,w4,qbar,t_interp,u_interp,v_interp)
 
 !$omp do
@@ -163,33 +161,6 @@
 !     Compute Nu
 !     ~~~~~~~~~~
 
-!     V barY stored in wk2
-!     ~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0, jn
-         do i = i0u-1, inu+2
-            wk2(i,j) = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k) &
-                     + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k) &
-                     + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k) &
-                     + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)
-         end do
-         end do
-         do j= j0, jn
-         do i= i0u, inu
-            wk1(i,j) = inuvl_wxxu3_8(i,1) * wk2(i-1,j) &
-                     + inuvl_wxxu3_8(i,2) * wk2(i  ,j) &
-                     + inuvl_wxxu3_8(i,3) * wk2(i+1,j) &
-                     + inuvl_wxxu3_8(i,4) * wk2(i+2,j)
-         end do
-         end do
-      else
-         do j= j0, jn
-         do i= i0u, inu
-            wk1(i,j) = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
-         end do
-         end do
-      endif
-
       do j= j0, jn
       do i= i0u, inu
 
@@ -197,21 +168,21 @@
 !        ~~~~~~~~
          barz  = Ver_wp_8%m(k)*MU(i  ,j,k)+Ver_wm_8%m(k)*MU(i  ,j,km)
          barzp = Ver_wp_8%m(k)*MU(i+1,j,k)+Ver_wm_8%m(k)*MU(i+1,j,km)
-         mu_interp = (one-intuv_c0xxu_8(i))*barz+intuv_c0xxu_8(i)*barzp
+         mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and mu terms: RT' barXZ * dBsPq/dX + mu barXZ * dfi'/dX
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          barz  = Ver_wp_8%m(k)*(F_t(i  ,j,k)-Ver_Tstr_8(k))+Ver_wm_8%m(k)*(F_t(i  ,j,km)-Ver_Tstr_8(km))
          barzp = Ver_wp_8%m(k)*(F_t(i+1,j,k)-Ver_Tstr_8(k))+Ver_wm_8%m(k)*(F_t(i+1,j,km)-Ver_Tstr_8(km))
-         t_interp = (one-intuv_c0xxu_8(i))* barz+intuv_c0xxu_8(i)*barzp
+         t_interp = (barz+barzp)*half 
 
-         w1 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXMu_8(i,j)
-         w2 = (  FIp(i+1,j,k) -  FIp(i,j,k) ) * Geomg_invDXMu_8(i,j)
+         w1 = ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * Geomg_invDXMu_8(j)
+         w2 = (   FI(i+1,j,k) -   FI(i,j,k) ) * Geomg_invDXMu_8(j)
          F_nu(i,j,k) = Dcst_rgasd_8 * t_interp * w1 + mu_interp * w2
 
 !        Coriolis term & metric terms: - (f + tan(phi)/a * U ) * V barXY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         v_interp = wk1(i,j)
+         v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
          F_nu(i,j,k) = F_nu(i,j,k) - ( Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp
 
@@ -220,34 +191,6 @@
 
 !     Compute Nv
 !     ~~~~~~~~~~
-
-!     U barX stored in wk2
-!     ~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0v-1, jnv+2
-         do i = i0, in
-            wk2(i,j) = inuvl_wxux3_8(i,1)*F_u(i-2,j,k) &
-                     + inuvl_wxux3_8(i,2)*F_u(i-1,j,k) &
-                     + inuvl_wxux3_8(i,3)*F_u(i  ,j,k) &
-                     + inuvl_wxux3_8(i,4)*F_u(i+1,j,k)
-         end do
-         end do
-         do j = j0v, jnv
-         do i = i0, in
-            wk1(i,j) = inuvl_wyyv3_8(j,1) * wk2(i,j-1) &
-                     + inuvl_wyyv3_8(j,2) * wk2(i,j  ) &
-                     + inuvl_wyyv3_8(j,3) * wk2(i,j+1) &
-                     + inuvl_wyyv3_8(j,4) * wk2(i,j+2)
-         end do
-         end do
-      else
-         do j = j0v, jnv
-         do i = i0, in
-            wk1(i,j) = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
-         end do
-         end do
-      endif
-
       do j = j0v, jnv
       do i = i0, in
 
@@ -255,21 +198,21 @@
 !        ~~~~~~~~
          barz  = Ver_wp_8%m(k)*MU(i,j  ,k)+Ver_wm_8%m(k)*MU(i,j  ,km)
          barzp = Ver_wp_8%m(k)*MU(i,j+1,k)+Ver_wm_8%m(k)*MU(i,j+1,km)
-         mu_interp = (one-intuv_c0yyv_8(j))*barz+intuv_c0yyv_8(j)*barzp
+         mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and Mu term: RT' barYZ * dBsPq/dY + mu barYZ * dfi'/dY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          barz  = Ver_wp_8%m(k)*(F_t(i,j  ,k)-Ver_Tstr_8(k))+Ver_wm_8%m(k)*(F_t(i,j  ,km)-Ver_Tstr_8(km))
          barzp = Ver_wp_8%m(k)*(F_t(i,j+1,k)-Ver_Tstr_8(k))+Ver_wm_8%m(k)*(F_t(i,j+1,km)-Ver_Tstr_8(km))
-         t_interp = (one-intuv_c0yyv_8(j))*barz+intuv_c0yyv_8(j)*barzp
+         t_interp = (barz+barzp)*half
 
          w1 = ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * Geomg_invDYMv_8(j)
-         w2 = (  FIp(i,j+1,k) -  FIp(i,j,k) ) * Geomg_invDYMv_8(j)
+         w2 = (   FI(i,j+1,k) -   FI(i,j,k) ) * Geomg_invDYMv_8(j)
          F_nv(i,j,k) = Dcst_rgasd_8 * t_interp * w1 + mu_interp * w2
 
 !        Coriolis term & metric terms: + f * U barXY + tan(phi)/a * (U barXY)^2
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         u_interp = wk1(i,j)
+         u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
          F_nv(i,j,k) = F_nv(i,j,k) + ( Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp
 
@@ -366,7 +309,7 @@
 !           Compute Nw and Nt' (Nf=0)
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~
             F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
-            F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j)+w1*(FIp(i,j,k+1)-FIp(i,j,k)) &
+            F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j)+w1*(FI(i,j,k+1)-FI(i,j,k)) + one &
                                       +Ver_dbdz_8%t(k)*F_s(i,j)-qbar)
          end do
          end do
@@ -427,7 +370,7 @@
                         - w1*F_nw(i,j,k) - w2*F_nw(i,j,km)
 !        Compute Nc'
 !        ~~~~~~~~~~~
-            ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDXM_8(i,j) &
+            ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDXM_8(j) &
                + (F_nv(i,j,k)*geomg_cyM_8(j)-F_nv(i,j-1,k)*geomg_cyM_8(j-1))*Geomg_invDYM_8(j)
             F_nc(i,j,k) = ndiv  - Cstv_invT_8 * F_nc(i,j,k)
          end do
@@ -462,14 +405,13 @@
 
 !     Apply boundary conditions
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~
-
       if(Schm_opentop_L) then
          F_rhs(:,:,1:(k0t)) = 0.0
          w1 = Cstv_invT_8 / Ver_Tstr_8(k0t)
 !$omp do
          do j= j0, jn
          do i= i0, in
-            F_nb(i,j)    = F_nt(i,j,k0t)-Ver_ikt_8*(F_nb(i,j)+w1*F_t(i,j,k0t))
+            F_nb(i,j)    = F_nt(i,j,k0t)-Ver_ikt_8*(F_nb(i,j)-w1*F_t(i,j,k0t))
             F_rhs(i,j,k0)= F_rhs(i,j,k0) + c1 * Ver_cstp_8 * F_nb(i,j)
          end do
          end do
@@ -486,7 +428,7 @@
 
 !$omp end parallel
 
-      deallocate ( BsPq, FIp )
+      deallocate ( BsPq, FI )
       if (.not.Schm_hydro_L) deallocate ( MU )
 
 1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

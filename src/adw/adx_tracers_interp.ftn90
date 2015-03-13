@@ -24,6 +24,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
    !@author  Michel Desgagne
    !@revisions
    ! v4_70 - Desgagne          - Initial Version
+   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
@@ -35,6 +36,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
    integer, dimension(adx_mlni, adx_mlnj, adx_lnk) :: exch_c1
    real   , dimension(adx_mlni, adx_mlnj, adx_lnk) :: exch_n1, exch_xgg1, exch_xdd1
    real   , dimension(:), allocatable :: capx2,capy2,capz2
+   real    dummy
 
    !---------------------------------------------------------------------
 
@@ -48,8 +50,8 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
                  capy2(max(1,adx_fro_a)), &
                  capz2(max(1,adx_fro_a)) )
 
-      call adx_exch_2 ( capx2, capy2, capz2,             &
-                        exch_n1, exch_xgg1, exch_xdd1,   &
+      call adx_exch_2 ( capx2, capy2, capz2, dummy, dummy,           &
+                        exch_n1, exch_xgg1, exch_xdd1, dummy, dummy, &
                         adx_fro_n, adx_fro_s, adx_fro_a, &
                         adx_for_n, adx_for_s, adx_for_a, 3)
    endif
@@ -64,7 +66,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
       call adx_interp_gmm7 ( 'TR/'//trim(Tr3d_name_S(n))//':M'         , &
                              'TR/'//trim(Tr3d_name_S(n))//':P', .false., &
                               pxt, pyt, pzt, capx2, capy2, capz2       , &
-                              exch_c1, adx_lnk, i0, in, j0, jn, adx_gbpil_t+1, 't')
+                              exch_c1, adx_lnk, i0, in, j0, jn, adx_gbpil_t+1, 't', Tr3d_mono(n), Tr3d_mass(n) )
    end do
 
    if (.not.adx_lam_L) deallocate(capx2, capy2, capz2)

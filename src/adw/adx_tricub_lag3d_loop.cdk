@@ -1,3 +1,14 @@
+!$omp parallel private(o1, o2, o3, o4, a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4,  &
+!$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
+!$omp                  ii,jj,kk,iL,idxk, idxjk,zcubic_L,capx,capy,capz,prf1,prf2)&
+!$omp          shared (F_mono, F_cub, F_lin, F_min, F_max, F_in, F_x, F_y, F_z,         &
+!$omp                  adx_y00_8,adx_x00_8,adx_ovdx_8,adx_ovdy_8,                       &
+!$omp                  adx_ovdz_8, adx_lcx,adx_lcy, adx_bsx_8,adx_bsy_8,p_bsz_8, adx_xabcd_8,   &
+!$omp                  adx_xbacd_8,adx_xcabd_8,adx_xdabc_8, adx_yabcd_8,adx_ybacd_8,adx_ycabd_8,&
+!$omp                  adx_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
+!$omp                  F_num, i0, in, j0, jn, k0, F_nk)
+!$omp do private(prmin, prmax)
+
    do k=k0,F_nk
       idxk = (k-1)*Adx_mlnij
       do j=j0,jn
@@ -113,17 +124,40 @@
                p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk+1)
                p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk+1)
 
-               F_out(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
+               F_cub(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
             else
                p3 = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1)
                p2 = 1. - p3
 
-               F_out(n) = p2 * b1 + p3 * c1
+               F_cub(n) = p2 * b1 + p3 * c1
             endif
 
+#ifdef ADX_CONSERV
+            iL = max(1,min(ii,Adx_iimax+1)) !As in adx_trilin_ijk
+            capx = (rri-Adx_bsx_8(iL)) *Adx_xbc_8(iL) !As in adx_trilin_turbo
+            capy = (rrj-Adx_bsy_8(jj)) *Adx_ybc_8(jj) !As in adx_trilin_turbo
+            capz = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1) !As in adx_tricub_lag3d_loop
+
+            prf1 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                   capy        * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+            prf2 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
+                   capy        * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+            F_lin (n) = max((1. - capz) * prf1 + capz * prf2,0.0d0)
 #ifdef ADX_MONO
-               F_out(n) = max(prmin , min(prmax,F_out(n)))
+            F_mono(n) = max(prmin , min(prmax,F_cub(n)))
+            F_min (n) = prmin
+            F_max (n) = prmax
 #endif
+#else
+#ifdef ADX_MONO
+            F_cub(n) = max(prmin , min(prmax,F_cub(n)))
+#endif
+#endif
+
+
          enddo 
       enddo 
    enddo 
+
+!$omp enddo
+!$omp end parallel

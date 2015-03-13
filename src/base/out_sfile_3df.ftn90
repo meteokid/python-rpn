@@ -32,8 +32,8 @@
 #include "glb_ld.cdk"
 #include "ver.cdk"
 #include "out.cdk"
+#include "out3.cdk"
 #include "grdc.cdk"
-#include "schm.cdk"
 
       integer i
       character*512 filen
@@ -60,7 +60,7 @@
       enddo
 
       i=0
-      if (Schm_phyms_L) i=1
+      if (out3_sfcdiag_L) i=1
 
       write (unf) out_nisg,out_njsg,G_nk,G_nk,Ver_code,Grdc_ntr,i
       write (unf) Grdc_xlon1,Grdc_xlat1,Grdc_xlon2,Grdc_xlat2

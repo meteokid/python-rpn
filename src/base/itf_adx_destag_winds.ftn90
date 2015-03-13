@@ -39,11 +39,10 @@
       !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid
       !      real*8 inuvl_wyvy3_8(l_miny:l_maxy,4) ! coef for V to PHI-grid
 
-      integer :: i,j,k,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv
-      integer :: i0,j0,in,jn
+      integer :: i,j,k,i0,in,j0,jn,i0u,inu,j0v,jnv,jext
       real, dimension(:,:,:), allocatable :: uu,vv
       real*8  :: inv_rayt_8
-
+      real*8, parameter ::  alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
       !---------------------------------------------------------------------
 
       inv_rayt_8 = 1.D0 / Dcst_rayt_8
@@ -53,21 +52,22 @@
       call rpn_comm_xch_halo(F_vth,l_minx,l_maxx,l_miny,l_maxy,&
            l_ni,l_njv,l_nk,G_halox,G_haloy,G_periodx,G_periody,G_ni,0)
 
+      i0 = 1
+      in = l_ni
+      j0 = 1
+      jn = l_nj
+
       i0u = 1
       inu = l_ni
-      j0u = 1
-      jnu = l_nj
-
-      i0v = 1
-      inv = l_ni
       j0v = 0
       jnv = l_nj
 
       if (G_lam) then
-         if (l_west)  i0u = 3
-         if (l_east)  inu = l_niu - 1
-         if (l_south) j0v = 3
-         if (l_north) jnv = l_njv - 1
+         jext=2
+         if (l_west)  i0u = 1    + jext
+         if (l_east)  inu = l_ni - jext
+         if (l_south) j0v = 1    + jext
+         if (l_north) jnv = l_nj - jext
       endif
 
        !- Interpolate advection winds to geopotential grid
@@ -78,15 +78,16 @@
 !$omp do
       DO_K: do k=1,l_nk
 
-         do j = j0u, jnu
+         do j = j0, jn
             do i = i0u, inu
-               uu(i,j,k) = inuvl_wxux3_8(i,1)*F_uth(i-2,j,k) + inuvl_wxux3_8(i,2)*F_uth(i-1,j,k) &
-                         + inuvl_wxux3_8(i,3)*F_uth(i  ,j,k) + inuvl_wxux3_8(i,4)*F_uth(i+1,j,k)
+               uu(i,j,k) = ( F_uth(i-2,j,k) + F_uth(i+1,j,k) )*alpha1 &
+                          + ( F_uth(i  ,j,k) + F_uth(i-1,j,k) )*alpha2
+                         
             enddo
          enddo
 
          do j = j0v, jnv
-            do i = i0v, inv
+            do i = i0, in
                vv(i,j,k) = inuvl_wyvy3_8(j,1)*F_vth(i,j-2,k) + inuvl_wyvy3_8(j,2)*F_vth(i,j-1,k) &
                          + inuvl_wyvy3_8(j,3)*F_vth(i,j  ,k) + inuvl_wyvy3_8(j,4)*F_vth(i,j+1,k)
             enddo
@@ -98,13 +99,13 @@
       if (G_lam) then
 !$omp do
          do k = 1,l_nk
-            do j = j0u,jnu
+            do j = j0,jn
                do i = i0u,inu
                   F_uth(i,j,k) = inv_rayt_8 * uu(i,j,k)
                enddo
             enddo
             do j = j0v,jnv
-               do i = i0v,inv
+               do i = i0,in
                   F_vth(i,j,k) = inv_rayt_8 * vv(i,j,k)
                enddo
             enddo
@@ -113,14 +114,14 @@
       else
 !$omp do
          do k = 1,l_nk
-            do j = j0u,jnu
+            do j = j0,jn
                do i = i0u,inu
                   ! Convert wind image to real wind / rayt
                   F_uth(i,j,k) = uu(i,j,k) * geomg_invcy_8(j)
                enddo
             enddo
             do j = j0v,jnv
-               do i = i0v,inv
+               do i = i0,in
                   ! Convert wind image to real wind / rayt
                   F_vth(i,j,k) = vv(i,j,k) * geomg_invcy_8(j) 
                enddo

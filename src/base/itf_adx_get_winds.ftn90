@@ -117,7 +117,7 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    else
 
-      call itf_adx_interp_thermo2mom2 (wm,zdth,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call itf_adx_interp_thermo2mom2 (wm,wh,l_minx,l_maxx,l_miny,l_maxy,l_nk)
       F_ud=uh; F_vd=vh; F_wd=wm
 
    endif

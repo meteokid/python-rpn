@@ -26,6 +26,12 @@
 ! adw_trajdebug_L| switch: .true. : use corrected momentum traj          |
 !                |         .false.: use bugged    momentum traj          |
 !________________________________________________________________________|
+! MASS-CONSERVATION for Chemical Tracers                                 |
+!________________________________________________________________________|
+! adw_BC_min_max_L  |switch:.T.:MONO(CLIPPING) after Bermejo-Conde Def.=T|
+! adw_ILMC_min_max_L|switch:.T.:MONO(CLIPPING) after ILMC          Def.=T|
+! adw_ILMC_sweep_max|Number of neighborhood zones in ILMC          Def.=2|
+!________________________________________________________________________|
 !
 #endif
 
@@ -37,9 +43,12 @@
       logical :: adw_positive_L
       logical :: adw_nkbz_L
       logical :: adw_trunc_traj_L
+      logical :: adw_BC_min_max_L
+      logical :: adw_ILMC_min_max_L
       integer :: adw_maxcfl
       integer :: adw_halox
       integer :: adw_haloy
+      integer :: adw_ILMC_sweep_max
 
       namelist /adw_cfgs/ adw_stats_L
       namelist /adw_cfgs/ adw_ckbd_L
@@ -47,6 +56,9 @@
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_catmullrom_L
       namelist /adw_cfgs/ adw_positive_L
+      namelist /adw_cfgs/ adw_BC_min_max_L
+      namelist /adw_cfgs/ adw_ILMC_sweep_max
+      namelist /adw_cfgs/ adw_ILMC_min_max_L
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_ckbd_L
@@ -56,8 +68,11 @@
       common /adw_nml_l/  adw_positive_L
       common /adw_nml_l/  adw_nkbz_L
       common /adw_nml_l/  adw_trunc_traj_L
+      common /adw_nml_l/  adw_BC_min_max_L
+      common /adw_nml_l/  adw_ILMC_min_max_L
 
       common /adw_nml_i/  adw_halox
       common /adw_nml_i/  adw_haloy
       common /adw_nml_i/  adw_maxcfl
+      common /adw_nml_i/  adw_ILMC_sweep_max
 
