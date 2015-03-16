@@ -215,11 +215,15 @@ $(LIBDIR)/libgemdyn.a: $(LIBDIR)/libgemdyn_$(GEMDYN_VERSION).a
 
 GEMDYN_SSMALL_NAME  = gemdyn_$(GEMDYN_VERSION)_all
 GEMDYN_SSMARCH_NAME = gemdyn+$(COMP_ARCH)_$(GEMDYN_VERSION)_$(SSMARCH)
+GEMDYN_SSMALL_FILES  = $(GEMDYN_SSMALL_NAME).ssm
+GEMDYN_SSMARCH_FILES = $(GEMDYN_SSMARCH_NAME).ssm
+
 .PHONY: gemdyn_ssm gemdyn_ssm_all.ssm rm_gemdyn_ssm_all.ssm gemdyn_ssm_all rm_gemdyn_ssm_all gemdyn_ssm_arch.ssm rm_gemdyn_ssm_arch.ssm gemdyn_ssm_arch gemdyn_ssm_arch_rm
 gemdyn_ssm: gemdyn_ssm_all.ssm gemdyn_ssm_arch.ssm
 rm_gemdyn_ssm: rm_gemdyn_ssm_all.ssm rm_gemdyn_ssm_all rm_gemdyn_ssm_arch.ssm gemdyn_ssm_arch_rm
 
-gemdyn_ssm_all.ssm: gemdyn_ssm_all rm_gemdyn_ssm_all.ssm $(SSMDEPOTDIR)/$(GEMDYN_SSMALL_NAME).ssm
+gemdyn_ssm_all.ssm: $(GEMDYN_SSMALL_FILES)
+$(GEMDYN_SSMALL_FILES): gemdyn_ssm_all rm_gemdyn_ssm_all.ssm $(SSMDEPOTDIR)/$(GEMDYN_SSMALL_NAME).ssm
 rm_gemdyn_ssm_all.ssm:
 	rm -f $(SSMDEPOTDIR)/$(GEMDYN_SSMALL_NAME).ssm
 $(SSMDEPOTDIR)/$(GEMDYN_SSMALL_NAME).ssm:
@@ -236,7 +240,8 @@ $(BUILD)/$(GEMDYN_SSMALL_NAME):
 	cat $@/ssmusedep.bndl >> $@/BUILDINFO ; \
 	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) "all ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
-gemdyn_ssm_arch.ssm: gemdyn_ssm_arch rm_gemdyn_ssm_arch.ssm $(SSMDEPOTDIR)/$(GEMDYN_SSMARCH_NAME).ssm
+gemdyn_ssm_arch.ssm: $(GEMDYN_SSMARCH_FILES)
+$(GEMDYN_SSMARCH_FILES): gemdyn_ssm_arch rm_gemdyn_ssm_arch.ssm $(SSMDEPOTDIR)/$(GEMDYN_SSMARCH_NAME).ssm
 rm_gemdyn_ssm_arch.ssm:
 	rm -f $(SSMDEPOTDIR)/$(GEMDYN_SSMARCH_NAME).ssm
 $(SSMDEPOTDIR)/$(GEMDYN_SSMARCH_NAME).ssm:
