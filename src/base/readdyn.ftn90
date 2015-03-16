@@ -353,6 +353,7 @@
          tr_name = trim(pref_tr)//'HU'//trim(suff_tr)
          istat = gmm_get(tr_name,hu,mymeta)
          call sumhydro(qh,l_minx,l_maxx,l_miny,l_maxy,G_nk,'P')
+         if (pref_tr(1:5) == 'NEST/') qh= 0. ! Must fix sumhydro or tt2virt
          call mfottvh2(tt,F_t,hu,qh,l_minx,l_maxx,l_miny,l_maxy, G_nk, &
               1,l_ni,1,l_nj,.true.)
       endif

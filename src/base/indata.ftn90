@@ -104,9 +104,9 @@
                          'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
                          G_nk, Step_runstrt_S)
       elseif ( ifd_ftype.eq.'3DF') then
-         call casc_3df2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0, &
+         call casc_3df3 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0, &
                                 l_minx,l_maxx,l_miny,l_maxy, &
-                                G_nk,Step_runstrt_S )
+                                G_nk,'TR/',':P',Step_runstrt_S )
       else
          call readdyn4 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     , &
                          'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
@@ -118,8 +118,8 @@
 
       call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
 
-      call set_dync(tt1,fis0,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-!
+      call set_dync
+
       if (Grd_yinyang_L) then
          fistmp(:,:)=fis0(:,:)
          call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &

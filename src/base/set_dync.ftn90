@@ -15,18 +15,10 @@
 
 !**   s/r set_dync - initialize the dynamics model configuration
 !
-      subroutine set_dync(F_t,F_fis,Minx,Maxx,Miny,Maxy,F_nk)
+      subroutine set_dync
       use matvec_mod, only: matvec_init
       implicit none
 #include <arch_specific.hf>
-
-      !Arguments
-      !---------
-      integer,                                   intent(in) :: Minx,Maxx,Miny,Maxy !I, Dimension H
-      integer,                intent(in) :: F_nk     !I, Number of vertical levels 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in) :: F_t                 !I: Temperature
-      real, dimension(Minx:Maxx,Miny:Maxy),   intent(inout) :: F_fis               !I: Terrain
-
 
 !author
 !     M. Desgagne - V. Lee ( after version v1_03 of setdync )
@@ -41,6 +33,7 @@
 ! v4_00 - Plante & Girard    - Log-hydro-pressure coord on Charney-Phillips grid
 ! v4_05 - Girard C.          - Open top
 
+#include "gmm.hf"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
@@ -50,6 +43,7 @@
 #include "schm.cdk"
 #include "sol.cdk"
 #include "ver.cdk"
+#include "vt1.cdk"
 
       integer k,err,istat,k0,i,j
       real tmean(G_nk)
@@ -76,7 +70,8 @@
 
       if( Cstv_Tstr_8 .lt. 0. .or. Cstv_Tstr_8.gt.1000. ) then
          ! TSTAR variable at least in the vertical
-         call estimate_tmean (tmean,F_t,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         err = gmm_get(gmmk_tt1_s,tt1)
+         call estimate_tmean (tmean,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
          Ver_Tstr_8(1:G_nk) = tmean(1:G_nk)
       else
          do k=1,G_nk

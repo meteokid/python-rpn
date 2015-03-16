@@ -153,7 +153,6 @@
       real, dimension(:), pointer :: hybm,hybt,hybt_w
       save hybm,hybt,hybt_w
       logical :: write_diag_lev,near_sfc_L
-      !#TODO: satues_L = .true. makes the model crash
       logical :: satues_L = .false.
 !
 !-------------------------------------------------------------------
@@ -598,11 +597,6 @@
          endif
 
          if (pnwe.ne.0) then
-            ! Write WE=0. at top value using ffwe(nk) which is also 0., hyb top = Cstv_ptop_8/Cstv_pref_8
-            work=Cstv_ptop_8/Cstv_pref_8
-            call ecris_fst2(ffwe(l_minx,l_miny,nk),l_minx,l_maxx,l_miny,l_maxy,work, &
-                 'WE  ',1.0,0.0, kind,1,1,1, nbit(pnwe) )
-            ! Write inside domain
             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WE  ',1.0,0.0, kind,nk, indo, min(nko,nk), nbit(pnwe) )
          endif
