@@ -40,6 +40,7 @@
 ! v3_31 - Desgagne M.       - restart with physics BUSPER
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -48,6 +49,7 @@
 #include "schm.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
+#include "ver.cdk"
 
       integer, external :: fclos,wkoffit
       integer  ier
@@ -56,7 +58,10 @@
 !
       if (Rstri_rstn_L) then
 
-         read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
+         read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8,&
+                          Ver_Tstr_8%m(1:G_nk+1), &
+                          Ver_Tstr_8%t(1:G_nk+1), &
+                          Ver_fistr_8 (1:G_nk+1)
          
          if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
          

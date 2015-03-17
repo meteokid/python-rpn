@@ -37,6 +37,7 @@
 ! v3_31 - Desgagne M.       - restart with physics BUSPER
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 
+#include "glb_ld.cdk"
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
@@ -47,6 +48,7 @@
 #include "ifd.cdk"
 #include "zblen.cdk"
 #include "cstv.cdk"
+#include "ver.cdk"
 
       include "rpn_comm.inc"
 
@@ -68,7 +70,11 @@
             Lun_rstrt = 0
             ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
 
-            write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
+            write(Lun_rstrt) Lctl_step,Step_kount,&
+                          Init_mode_L,Cstv_ptop_8,&
+                          Ver_Tstr_8%m(1:G_nk+1) ,&
+                          Ver_Tstr_8%t(1:G_nk+1) ,&
+                          Ver_fistr_8 (1:G_nk+1)
 
             if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
 

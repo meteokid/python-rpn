@@ -146,7 +146,7 @@
 
       real*8, parameter :: ZERO_8 = 0.0
       real    prmult_pngz, prmult_pnpx, prmult_pnme
-      real    pradd_pnvt,  pradd_pntt,  pradd_pntd, work
+      real    pradd_pnvt,  pradd_pntt,  pradd_pntd
 
       type(vgrid_descriptor) :: vcoord
       integer, dimension(:), pointer :: ip1m
@@ -611,11 +611,6 @@
          endif
 
          if (pnwe.ne.0) then
-            ! Write WE=0. at top value using ffwe(nk) which is also 0., hyb top = Cstv_ptop_8/Cstv_pref_8
-            work=Cstv_ptop_8/Cstv_pref_8
-            call ecris_fst2(ffwe(l_minx,l_miny,nk),l_minx,l_maxx,l_miny,l_maxy,work, &
-                 'WE  ',1.0,0.0, kind,1,1,1, nbit(pnwe) )
-            ! Write inside domain
             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WE  ',1.0,0.0, kind,nk, indo, min(nko,nk), nbit(pnwe) )
          endif

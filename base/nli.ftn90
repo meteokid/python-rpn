@@ -429,7 +429,7 @@
 !$omp do
          do j= j0, jn
          do i= i0, in
-            F_nb(i,j)    = F_nt(i,j,k0t)-Ver_ikt_8*(F_nb(i,j)+w1*F_t(i,j,k0t))
+            F_nb(i,j)    = F_nt(i,j,k0t)-Ver_ikt_8*(F_nb(i,j)-w1*F_t(i,j,k0t))
             F_rhs(i,j,k0)= F_rhs(i,j,k0) + c1 * Ver_cstp_8 * F_nb(i,j)
          end do
          end do

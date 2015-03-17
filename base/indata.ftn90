@@ -104,13 +104,13 @@
                          'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
                          G_nk, Step_runstrt_S)
       elseif ( ifd_ftype.eq.'3DF') then
-         call casc_3df2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0, &
-                                l_minx,l_maxx,l_miny,l_maxy, &
-                                G_nk,Step_runstrt_S )
+         call casc_3df3 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0 , &
+                          l_minx,l_maxx,l_miny,l_maxy, G_nk , &
+                          'TR/',':P',Step_runstrt_S )
       else
          call readdyn4 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     , &
                          'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
-                         G_nk, Step_runstrt_S)
+                         G_nk, Step_runstrt_S )
       endif
 
       dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk

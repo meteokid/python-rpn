@@ -97,6 +97,7 @@ End Interface
          ig3 = 1                             ! points de masse
          if (trim(nomvar) == 'UT1')  ig3 = 2 ! points U
          if (trim(nomvar) == 'VT1')  ig3 = 3 ! points V
+         if (trim(nomvar) == 'QQ' )  ig3 = 4 ! points f
       endif
 
       do k= 1, nk_o
