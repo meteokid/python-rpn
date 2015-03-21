@@ -24,3 +24,5 @@ fi
 export PATH=$(pwd)/bin:$PATH
 #export TEST_S_AR=1
 export SSMVERSION=$(ssm version | cut -d. -f1)
+
+export gemdyn=$(pwd)

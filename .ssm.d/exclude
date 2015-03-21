@@ -4,3 +4,7 @@
 [.]git/*
 [.]fo/
 [.]fo/*
+build-*/
+build-*/*
+.rde.*
+Makefile.dep.*

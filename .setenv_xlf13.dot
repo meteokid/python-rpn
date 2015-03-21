@@ -1,4 +1,0 @@
-#!/bin/ksh
-s.use gmake as make
-
-
