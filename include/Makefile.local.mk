@@ -14,6 +14,7 @@ GEMDYN_VERSION0  = x/4.8.0-a3
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
+
 ## Some Shortcut/Alias to Lib Names
 GEMDYN_LIBS_DEP = $(RPNPHY_LIBS_V) $(MODELUTILS_LIBS_V) $(MODELUTILS_LIBS_DEP)
 
@@ -33,11 +34,8 @@ OBJECTS_MERGED_gemdyn = $(foreach item,$(GEMDYN_LIBS_MERGED),$(OBJECTS_$(item)))
 
 GEMDYN_MOD_FILES  = $(foreach item,$(FORTRAN_MODULES_gemdyn),$(item).[Mm][Oo][Dd])
 
-GEM_ABS       = gemntr gemdm
-GEM_ABS_FILES = $(BINDIR)/$(mainntr) $(BINDIR)/$(maindm)
-
-GEMDYN_ABS        = gem_monitor_end gem_monitor_output toc2nml gemgrid checkdmpart prgemnml split3df $(GEM_ABS)
-GEMDYN_ABS_FILES  = $(BINDIR)/gem_monitor_output $(BINDIR)/gem_monitor_end $(BINDIR)/toc2nml $(BINDIR)/gemgrid_$(BASE_ARCH).Abs $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs $(BINDIR)/gemprnml_$(BASE_ARCH).Abs $(BINDIR)/split3df_$(BASE_ARCH).Abs $(BINDIR)/$(mainntr) $(BINDIR)/$(maindm) $(GEM_ABS_FILES)
+GEMDYN_ABS        = gem_monitor_end gem_monitor_output toc2nml gemgrid checkdmpart prgemnml split3df
+GEMDYN_ABS_FILES  = $(BINDIR)/gem_monitor_output $(BINDIR)/gem_monitor_end $(BINDIR)/toc2nml $(BINDIR)/gemgrid_$(BASE_ARCH).Abs $(BINDIR)/checkdmpart_$(BASE_ARCH).Abs $(BINDIR)/gemprnml_$(BASE_ARCH).Abs $(BINDIR)/split3df_$(BASE_ARCH).Abs
 
 ## GEM model Libpath and libs
 #MODEL3_LIBAPPL = $(GEMDYN_LIBS_V)
@@ -45,75 +43,15 @@ MODEL3_LIBPATH = $(LIBCPLPATH)
 
 
 ##
-.PHONY: gem_vfiles gemdyn_vfiles
-GEM_VFILES = gem_version.inc gem_version.h
-gem_vfiles: $(GEM_VFILES)
-GEMDYN_VFILES = gemdyn_version.inc gemdyn_version.h $(GEM_VFILES)
+.PHONY: gemdyn_vfiles
+GEMDYN_VFILES = gemdyn_version.inc gemdyn_version.h
 gemdyn_vfiles: $(GEMDYN_VFILES)
-gem_version.inc:
-	.rdemkversionfile "gem" "$(GEMDYN_VERSION)" . f
-gem_version.h:
-	.rdemkversionfile "gem" "$(GEMDYN_VERSION)" . c
 gemdyn_version.inc:
 	.rdemkversionfile "gemdyn" "$(GEMDYN_VERSION)" . f
 gemdyn_version.h:
 	.rdemkversionfile "gemdyn" "$(GEMDYN_VERSION)" . c
 
 #---- Abs targets -----------------------------------------------------
-
-## GEM model targets (modelutils/gemdyn/rpnphy)
-.PHONY: gem gemntr gemdm gem_nompi gemntr_nompi gemdm_nompi allbin_gem allbincheck_gem
-
-allbin_gem: $(GEM_ABS)
-	ls -l $(GEM_ABS_FILES)
-allbincheck_gem:
-	for item in $(GEM_ABS_FILES) ; do \
-		if [[ ! -x $${item} ]] ; then exit 1 ; fi ;\
-	done ;\
-	exit 0
-
-gem: | gemntr gemdm
-
-mainntr = $(ABSPREFIX)maingemntr$(ABSPOSTFIX)_$(BASE_ARCH).Abs
-mainntr_rel = $(ABSPREFIX)maingemntr_REL_$(BASE_ARCH).Abs
-gemntr: | gemntr_rm $(BINDIR)/$(mainntr)
-	ls -l $(BINDIR)/$(mainntr)
-gemntr_rm:
-	rm -f $(BINDIR)/$(mainntr)
-$(BINDIR)/$(mainntr): | $(GEMDYN_VFILES)
-	export MAINSUBNAME="gemntr" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	$(RBUILD4objMPI)
-
-maindm  = $(ABSPREFIX)maingemdm$(ABSPOSTFIX)_$(BASE_ARCH).Abs
-maindm_rel  = $(ABSPREFIX)maingemdm_REL_$(BASE_ARCH).Abs
-gemdm: | gemdm_rm $(BINDIR)/$(maindm)
-	ls -l $(BINDIR)/$(maindm)
-gemdm_rm:
-	rm -f $(BINDIR)/$(maindm)
-$(BINDIR)/$(maindm): | $(GEMDYN_VFILES)
-	export MAINSUBNAME="gemdm" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	$(RBUILD4objMPI)
-
-gem_nompi: | gemntr_nompi gemdm_nompi
-
-gemntr_nompi: | $(GEMDYN_VFILES)
-	export MAINSUBNAME="gemntr" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	$(RBUILD4objNOMPI)
-
-gemdm_nompi: | $(GEMDYN_VFILES)
-	export MAINSUBNAME="gemdm" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	$(RBUILD4objMPI)
-
 
 ## GemDyn Targets
 
@@ -127,6 +65,7 @@ prgemnml_rm:
 $(BINDIR)/$(mainprgemnml): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
@@ -139,6 +78,7 @@ gemgrid_rm:
 $(BINDIR)/$(maingemgrid): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="gemgrid" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
@@ -151,6 +91,7 @@ checkdmpart_rm:
 $(BINDIR)/$(maincheckdmpart): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="checkdmpart" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -162,6 +103,7 @@ split3df_rm:
 $(BINDIR)/$(mainsplit3df): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="split3df" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -173,6 +115,7 @@ toc2nml_rm:
 $(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
 	export MAINSUBNAME="toc2nml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)

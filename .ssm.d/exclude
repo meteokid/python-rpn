@@ -6,5 +6,5 @@
 [.]fo/*
 build-*/
 build-*/*
-.rde.*
-Makefile.dep.*
+[.]rde*
+Makefile.dep*
