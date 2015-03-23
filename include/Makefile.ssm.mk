@@ -27,13 +27,13 @@ $(GEMDYN_SSMALL_FILES): gemdyn_ssm_all rm_gemdyn_ssm_all.ssm $(SSM_DEPOT_DIR)/$(
 rm_gemdyn_ssm_all.ssm:
 	rm -f $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm
 $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm:
-	cd $(BUILD) ; tar czvf $@ $(basename $(notdir $@))
+	cd $(BUILDSSM) ; tar czvf $@ $(basename $(notdir $@))
 	ls -l $@
 
-gemdyn_ssm_all: rm_gemdyn_ssm_all $(BUILD)/$(GEMDYN_SSMALL_NAME)
+gemdyn_ssm_all: rm_gemdyn_ssm_all $(BUILDSSM)/$(GEMDYN_SSMALL_NAME)
 rm_gemdyn_ssm_all:
-	rm -rf $(BUILD)/$(GEMDYN_SSMALL_NAME)
-$(BUILD)/$(GEMDYN_SSMALL_NAME):
+	rm -rf $(BUILDSSM)/$(GEMDYN_SSMALL_NAME)
+$(BUILDSSM)/$(GEMDYN_SSMALL_NAME):
 	rm -rf $@ ; mkdir -p $@ ; \
 	rsync -av --exclude-from=$(DIRORIG_gemdyn)/.ssm.d/exclude $(DIRORIG_gemdyn)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
@@ -45,16 +45,18 @@ $(GEMDYN_SSMARCH_FILES): gemdyn_ssm_arch rm_gemdyn_ssm_arch.ssm $(SSM_DEPOT_DIR)
 rm_gemdyn_ssm_arch.ssm:
 	rm -f $(SSM_DEPOT_DIR)/$(GEMDYN_SSMARCH_NAME).ssm
 $(SSM_DEPOT_DIR)/$(GEMDYN_SSMARCH_NAME).ssm:
-	cd $(BUILD) ; tar czvf $@ $(basename $(notdir $@))
+	cd $(BUILDSSM) ; tar czvf $@ $(basename $(notdir $@))
 	ls -l $@
 
-gemdyn_ssm_arch: gemdyn_ssm_arch_rm $(BUILD)/$(GEMDYN_SSMARCH_NAME)
+gemdyn_ssm_arch: gemdyn_ssm_arch_rm $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 gemdyn_ssm_arch_rm:
-	rm -rf $(BUILD)/$(GEMDYN_SSMARCH_NAME)
-$(BUILD)/$(GEMDYN_SSMARCH_NAME):
+	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
+$(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/include/$(EC_ARCH) $@/lib/$(EC_ARCH) $@/bin/$(BASE_ARCH) ; \
+	cd $(MODDIR) ; \
 	cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
-	rsync -av $(wildcard libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so) $@/lib/$(EC_ARCH)/ ; \
+	cd $(LIBDIR) ; \
+	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) f ; \
 	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) c ; \
 	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) sh ; \
