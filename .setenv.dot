@@ -1,5 +1,11 @@
-. s.ssmuse.dot $(cat ssmuse_dependencies-dev.bndl)
+if [[ x"$1" == x"--dev" ]] ; then
+	. s.ssmuse.dot $(cat ssmuse_dependencies-dev.bndl)
+else
+   export RMN_VERSION=_015.2
+   export RMN_LIBPATH=/ssm/net/rpn/libs/15.2/ubuntu-12.04-amd64-64/lib/Linux_x86-64/intel13sp1u2
+fi
+
 #export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
 export PATH=$(pwd)/bin:$PATH
 export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
-export PYTHONPATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$PYTHONPATH
+export PYTHONPATH=$(pwd):$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$(pwd)/lib:${RMN_LIBPATH}:$PYTHONPATH

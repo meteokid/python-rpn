@@ -1,7 +1,7 @@
 MAKE=make
 
-VERSION    = 1.3.1
-LASTUPDATE = 2015-02
+VERSION    = 1.3.2
+LASTUPDATE = 2015-03
 
 include Makefile_base.mk
 include $(EC_ARCH)/Makefile.inc.mk

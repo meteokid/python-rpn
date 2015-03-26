@@ -5,7 +5,7 @@ import rpn_version
 #TODO: . s.ssmuse.dot legacy pgi9xxshared rmnlib-dev
 
 myecarch = ['Linux_x86-64/intel13sp1u2']
-myrmnlib = [os.getenv('RMNLIBSHARED','rmnshared_015.1'),]
+myrmnlib = [os.getenv('RMNLIBSHARED','rmnshared_015.2'),]
 
 architecture = os.getenv('EC_ARCH')
 eclibpath = os.getenv('EC_LD_LIBRARY_PATH')
