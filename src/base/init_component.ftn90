@@ -35,7 +35,7 @@
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "version.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 !
       logical, external :: set_dcst_8
       integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, pe_zero_topo, model_timeout_alarm

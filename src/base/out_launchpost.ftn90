@@ -32,7 +32,7 @@
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 !
       logical slice_last_L

@@ -19,7 +19,7 @@
 !
       integer ndomains,dom_deb,err
 !
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include "grd.cdk"
 !
       logical slice_last_L

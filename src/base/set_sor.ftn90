@@ -51,7 +51,7 @@
 
 #include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"

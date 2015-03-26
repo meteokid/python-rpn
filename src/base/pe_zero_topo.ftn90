@@ -34,7 +34,7 @@
 #include "ptopo.cdk"
 #include "version.cdk"
 #include "path.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
       include 'gemdyn_version.inc'
 !
       integer,external :: exdb,ptopo_nml

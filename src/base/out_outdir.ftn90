@@ -34,7 +34,7 @@
 #include "lun.cdk"
 #include "path.cdk"
 #include "step.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 !
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &

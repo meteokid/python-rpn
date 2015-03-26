@@ -42,7 +42,7 @@
 #include "hgc.cdk"
 #include "lam.cdk"
 #include "glb_pil.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 
       character*120 outfile,gfile,dumc,fn,etk,etk_ext
       logical lam,radians

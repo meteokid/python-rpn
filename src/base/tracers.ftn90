@@ -38,7 +38,7 @@
 !        Tracers requested under auto cascade requires only the first
 !        2 letters
 
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include "lun.cdk"
 #include "tr3d.cdk"
 

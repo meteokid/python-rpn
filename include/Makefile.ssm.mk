@@ -53,6 +53,10 @@ gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/include/$(EC_ARCH) $@/lib/$(EC_ARCH) $@/bin/$(BASE_ARCH) ; \
+	echo $(BASE_ARCH) > $@/include/$(BASE_ARCH)/.restricted ; \
+	echo $(ORDENV_PLAT) >> $@/include/$(BASE_ARCH)/.restricted ; \
+	echo $(EC_ARCH) > $@/include/$(EC_ARCH)/.restricted ; \
+	echo $(ORDENV_PLAT)/$(COMP_ARCH) >> $@/include/$(EC_ARCH)/.restricted ; \
 	cd $(MODDIR) ; \
 	cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
 	cd $(LIBDIR) ; \

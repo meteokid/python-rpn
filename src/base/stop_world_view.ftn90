@@ -44,7 +44,7 @@
 #include "schm.cdk"
 #include "step.cdk"
 #include "version.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 !
       integer, external :: exfin, longueur
 !

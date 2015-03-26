@@ -28,7 +28,7 @@ subroutine iau_apply2(F_kount)
    !  Add an analysis increments to the model state (IAU).
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include <gmm.hf>
 #include <msg.h>
 #include "dcst.cdk"

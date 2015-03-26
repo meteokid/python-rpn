@@ -46,7 +46,7 @@
 #include "path.cdk"
 #include "modconst.cdk"
 #include "step.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include "modipc.cdk"
 
       integer, external :: fnom

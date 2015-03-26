@@ -31,7 +31,7 @@
 #include "path.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 !
       integer,parameter :: BUFSIZE=10000

@@ -38,7 +38,7 @@
 #include "bmf.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 !
       integer  bmf_gobe
       external bmf_gobe

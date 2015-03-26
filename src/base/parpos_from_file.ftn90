@@ -21,7 +21,7 @@
       integer ni,nj
       real*8  x_8(ni), y_8(nj)
 !
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 
       character*512 task_basedir_S,filename
       integer err,wkoffit,n1,n2,i,j,offi,offj

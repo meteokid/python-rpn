@@ -38,7 +38,7 @@
 #include "e_grdc.cdk"
 #include "grd.cdk"
 #include "path.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 
       integer, external :: newdate
       character*16 pdate

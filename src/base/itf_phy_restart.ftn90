@@ -29,7 +29,7 @@
 !
 
 #include <arch_specific.hf>
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 #include <gmm.hf>
 #include "lun.cdk"
 #include "lctl.cdk"

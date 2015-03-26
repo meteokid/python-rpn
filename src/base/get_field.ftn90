@@ -36,7 +36,7 @@
 #include "lun.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 !
       integer,external :: fnom,fstouv,fstinf,fstprm,fstluk,fstfrm,fclos,&
            ezgdef_fmem,ezdefset,ezsetopt,ezsint,ezqkdef,ezgetopt,&

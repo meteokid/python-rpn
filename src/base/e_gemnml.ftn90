@@ -42,7 +42,7 @@
 #include "pilot1.cdk"
 #include "path.cdk"
 #include "step.cdk"
-#include <clib_interface.cdk>
+#include <clib_interface_mu.hf>
 
       include 'gemdyn_version.inc'
 
