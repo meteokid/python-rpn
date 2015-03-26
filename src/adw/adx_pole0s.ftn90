@@ -24,7 +24,7 @@ subroutine adx_pole0s()
    return
 end subroutine adx_pole0s
 
-!/**
+!/@*
 subroutine adx_pole0s2(F_fld_adw, F_fld_model, &
      F_aminx,F_amaxx,F_aminy,F_amaxy,F_minx,F_maxx,F_miny,F_maxy,F_nk,&
      F_pol0_L, F_extend_L, F_is_south_L)
@@ -44,7 +44,7 @@ subroutine adx_pole0s2(F_fld_adw, F_fld_model, &
         F_fld_model        !I, fld on model-grid
    real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: &
         F_fld_adw          !O, fld on adw-grid
-   !**/
+   !*@/
    integer :: j1, j2, i, k
    real*8  :: ww_8
    !---------------------------------------------------------------------

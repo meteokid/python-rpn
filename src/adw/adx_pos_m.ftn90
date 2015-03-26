@@ -16,7 +16,7 @@
 #include "constants.h"
 #include "msg.h"
 #include "stop_mpi.h"
-!/**
+!/@*
 subroutine adx_pos_m( F_nb_iter    ,        &
                             F_px  ,F_py  ,F_pz  , &
                             F_u   ,F_v   ,F_w   , &
@@ -63,7 +63,7 @@ subroutine adx_pos_m( F_nb_iter    ,        &
    ! V4_10 - Plante A.       - Support to thermodynamic positions.
    ! V4_14 - Plante A.       - Do not compute position in top pilot zone
    ! v4_40 - Lee/Qaddouri    - add Adw_gccsa_L option for trajsp,trajex
-!**/
+!*@/
 
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"

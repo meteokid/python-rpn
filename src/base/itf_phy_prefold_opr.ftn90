@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
+!/@*
 function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
              F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn) result(F_istat)
    implicit none
@@ -27,7 +27,7 @@ function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
    integer :: F_istat
    !@author Stephane Chamberland, 2012-04
    !@revisions
-   !**/
+   !*@/
 
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>

@@ -16,7 +16,7 @@
 #include "constants.h"
 #include "stop_mpi.h"
 
-!/**
+!/@*
 subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
                         F_zcto, F_xctm, F_yctm, F_zctm,i0,in,j0,jn,k0)
    implicit none
@@ -35,7 +35,7 @@ subroutine adx_trajex2 (F_xto,  F_yto,  F_xcto, F_ycto, &
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-!**/
+!*@/
 
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"

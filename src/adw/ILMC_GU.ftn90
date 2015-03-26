@@ -29,7 +29,7 @@
       !     efficient transport scheme in the online integrated Enviro-HIRLAM model.
       !     Geosci. Model Dev., 6, 1029-1042, 2013   
       !
-!**/
+!*@/
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"

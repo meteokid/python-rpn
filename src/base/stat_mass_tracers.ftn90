@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
+!/@*
 subroutine stat_mass_tracers (F_time,F_comment_S) 
 
    implicit none
@@ -26,7 +26,7 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
    !@revisions
    ! v4_70 - Tanguay,M.        - Initial Version
 
-!**/
+!*@/
 
 #include "glb_ld.cdk"
 #include "gmm.hf"

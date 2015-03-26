@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
+!/@*
 subroutine adx_lag3d_tricub2(F_out, F_in, F_x, F_y, F_z, &
                              adx_y00_8,adx_x00_8,p_z00_8,adx_ovdx_8,adx_ovdy_8,adx_ovdz_8, &
                              adx_lcx,adx_lcy,p_lcz, adx_bsx_8,adx_bsy_8,p_bsz_8, &
@@ -56,7 +56,7 @@ subroutine adx_lag3d_tricub2(F_out, F_in, F_x, F_y, F_z, &
    !@revisions
    ! v3_20 - Gravel & Valin & Tanguay - initial version 
    ! v3_21 - Desgagne M.       - Revision Openmp
-!**/
+!*@/
 
 !#undef __ADX_DIMS__
 #include "adx_dims.cdk"

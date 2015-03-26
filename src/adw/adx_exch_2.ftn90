@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, F_d_fro, F_e_fro, &
      F_a_for,   F_b_for,   F_c_for, F_d_for, F_e_for, &
      F_n_fro_n, F_n_fro_s, F_n_fro_a, &
@@ -70,7 +70,7 @@ subroutine adx_exch_2(F_a_fro, F_b_fro, F_c_fro, F_d_fro, F_e_fro, &
    !
    ! WARNING: This code may result in allocating arrays with 0 size
    !          and therefore will send an empty message
-!**/
+!*@/
 #include "adx_dims.cdk"
    integer :: nwrn,nwrs,status,n 
    real :: abc_for_n(F_n_for_n,F_n_treat), abc_for_s(F_n_for_s,F_n_treat)

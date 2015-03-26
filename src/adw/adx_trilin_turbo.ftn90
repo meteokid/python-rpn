@@ -16,7 +16,7 @@
 
 #include "model_macros_f.h"
 
-!/**
+!/@*
 subroutine adx_trilin_turbo4 (F_out   , F_in    , F_dt    ,            &
                               F_n     , F_capx  , F_capy  , F_capz  ,  &
                               F_x     , F_y     , F_z     ,            &
@@ -73,7 +73,7 @@ subroutine adx_trilin_turbo4 (F_out   , F_in    , F_dt    ,            &
    ! v4_14 - Plante A. - Scope on loop k
    ! v4_40 - Tanguay M.        - Revision TL/AD
 
-   !**/
+   !*@/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
@@ -204,7 +204,7 @@ subroutine adx_trilin_turbo4 (F_out   , F_in    , F_dt    ,            &
    return
 end subroutine adx_trilin_turbo4
 
-!/**
+!/@*
 subroutine adx_trilin_turbo3 (F_out, F_in, F_dt, &
                               F_x, F_y, F_capz, F_ii, F_jj, F_kk, &
                               F_bsx_8, F_bsy_8, F_xbc_8, F_ybc_8, &
@@ -234,7 +234,7 @@ subroutine adx_trilin_turbo3 (F_out, F_in, F_dt, &
    ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
    ! V4_14 -Plante A.       - Scope on loop k
-!**/
+!*@/
 
 #undef __ADX_DIMS__
 #include "adx_dims.cdk"

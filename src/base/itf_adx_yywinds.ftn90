@@ -27,7 +27,7 @@ subroutine itf_adx_yywinds2 (F_u,F_v,i0u,j0u,inu,jnu,i0v,j0v,inv,jnv, &
   !@revisions
   ! v4_40 - Qaddouri/Lee      - Yin-Yang uses global range
   ! v4.7  - Gaudreault S.     - Removing wind images
-  !**/
+  !*@/
 
 #include "glb_ld.cdk"
 

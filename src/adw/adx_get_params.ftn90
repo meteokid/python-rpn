@@ -15,7 +15,7 @@
 #include "constants.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_get_params()
    implicit none
 #include <arch_specific.hf>
@@ -24,7 +24,7 @@ subroutine adx_get_params()
    !@revisions
    ! v4_14 PLante A.    - add 'model/gbpil_t',adx_gbpil_t
    ! v4_40 - Qaddouri/Lee - add Adx_yinyang_L key
-   !**/
+   !*@/
 #include <WhiteBoard.hf>
 #include "adx_dims.cdk"
 #include "adx_gmm.cdk"

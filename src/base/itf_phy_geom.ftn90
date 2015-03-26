@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
+!/@*
 subroutine itf_phy_geom4 (F_istat)
    use nest_blending, only: nest_blend
    implicit none
@@ -24,7 +24,7 @@ subroutine itf_phy_geom4 (F_istat)
    !@author Michel Desgagne    -   Spring 2011
    !@revision
    !  2012-04, S.Chamberland - no more a callback, data in GMM (not in bus)
-   !**/
+   !*@/
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <msg.h>

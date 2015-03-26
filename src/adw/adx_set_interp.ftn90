@@ -15,14 +15,14 @@
 #include "constants.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_set_interp()
    implicit none
 #include <arch_specific.hf>
    !@objective set 1-D interpolation of grid reflexion across the pole 
    !@author  alain patoine
    !@revisions
-   !**/
+   !*@/
    !
    !     Example of level positions for a 5 layer model (adx_lnkm=5)
    !

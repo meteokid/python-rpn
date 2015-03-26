@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include <msg.h>
 
-!/**
+!/@*
 subroutine itf_adx_set()
    implicit none
 #include <arch_specific.hf>
@@ -23,7 +23,7 @@ subroutine itf_adx_set()
    !@revisions
    !@ v4_14 Plante A.    - add 'model/gbpil_t',Lam_gbpil_t
    !@ v4_40 Qaddouri/Lee - add Adx_yinyang_L key
-!**/
+!*@/
 #include <WhiteBoard.hf>
 #include "grd.cdk"
 #include "glb_ld.cdk"

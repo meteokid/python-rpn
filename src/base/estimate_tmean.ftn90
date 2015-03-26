@@ -29,7 +29,7 @@
       !@revisions
       ! v4_XX - Tanguay,M.        - Initial Version
 
-!**/
+!*@/
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "grd.cdk"

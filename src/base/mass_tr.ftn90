@@ -37,7 +37,7 @@
       ! v4_70 - Tanguay,M.        - Initial Version
       ! v4_70 - Qaddouri,A.       - Version for Yin-Yang Grid
 
-!**/
+!*@/
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "lun.cdk"

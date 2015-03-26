@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/**
+!/@*
 subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                              F_capx1, F_capy1, F_capz1 , &
                              F_capx2, F_capy2, F_capz2 , &
@@ -40,7 +40,7 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
    !  2009-12,  Stephane Chamberland: original code from adx_main_3
    !  2012-06,  Stephane Gaudreault: Code optimization, Positivity-preserving advection
    !  2014-09,  Monique Tanguay    : GEM4 Mass-Conservation 
-!**/
+!*@/
 
 #include "gmm.hf"
 #include "adx_nml.cdk"

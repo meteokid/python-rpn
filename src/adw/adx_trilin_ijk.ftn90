@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!/**
+!/@*
 subroutine adx_trilin_ijk1 ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,       &
                             F_lcx, F_lcy, F_lcz, F_bsx_8, F_bsy_8, F_bsz_8, &
                             F_diz_8, F_z00_8, F_iimax,                      &
@@ -43,7 +43,7 @@ subroutine adx_trilin_ijk1 ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,       &
    ! v3_20 -Valin & Tanguay -  initial version 
    ! v3_21 -Tanguay M.      -  evaluate min-max vertical CFL as function of k 
    ! v4_10 -Plante A.       -  Replace single locator vector with 3 vectors.
-!**/
+!*@/
 
 #include "adx_dims.cdk"
 #include "adx_interp.cdk"
@@ -99,7 +99,7 @@ subroutine adx_trilin_ijk1 ( F_x, F_y, F_z, F_capz, F_ii, F_jj, F_kk,       &
    return
 end subroutine adx_trilin_ijk1
 
-!/**
+!/@*
 subroutine adx_trilin_ijk()
    call stop_mpi(STOP_ERROR,'adx_trilin_ijk','called a stub')
    return

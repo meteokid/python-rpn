@@ -15,14 +15,14 @@
 #include "constants.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_set_interp_pole()
    implicit none
 #include <arch_specific.hf>
    !@objective set 1-D interpolation of grid reflexion across the pole 
    !@author  alain patoine
    !@revisions
-   !**/
+   !*@/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_poles.cdk"

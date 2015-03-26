@@ -15,7 +15,7 @@
 #include "constants.h"
 #include "msg.h"
 #include "stop_mpi.h"
-!/**
+!/@*
 subroutine adx_pos_angular_m (F_nb_iter    ,        &
                               F_px  ,F_py  ,F_pz  , &
                               F_u   ,F_v   ,F_w   , &
@@ -42,7 +42,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
 !
    !@author Stéphane Gaudreault, Claude Girard
    !@revisions
-!**/
+!*@/
 
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"

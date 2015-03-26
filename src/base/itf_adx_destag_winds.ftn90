@@ -25,7 +25,7 @@
 
       !@revisions
       ! v4_40 - Qaddouri/Lee      - Yin-Yang, to exchange unstaggered winds
-      !**/
+      !*@/
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"

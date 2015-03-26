@@ -15,7 +15,7 @@
 #include "stop_mpi.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_grid_scalar (F_fld_adw, F_fld_model,          &
                             F_aminx,F_amaxx,F_aminy,F_amaxy, &
                             F_minx,F_maxx,F_miny,F_maxy,F_nk,F_pol0_L,F_extend_L)
@@ -34,7 +34,7 @@ subroutine adx_grid_scalar (F_fld_adw, F_fld_model,          &
         F_fld_model       !I, fld on model-grid
    real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk) :: &
         F_fld_adw         !O, fld on adw-grid
-!**/
+!*@/
 
 #include "adx_dims.cdk"
 

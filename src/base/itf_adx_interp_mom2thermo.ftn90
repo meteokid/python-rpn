@@ -27,7 +27,7 @@
 
       !@revisions
       ! v4_40 - Qaddouri/Lee      - Yin-Yang, to use global range
-      !**/
+      !*@/
 
 #include "glb_ld.cdk"
 #include "grd.cdk"

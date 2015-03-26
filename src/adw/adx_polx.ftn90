@@ -32,7 +32,7 @@ subroutine adx_polx2()
    return
 end subroutine adx_polx2
 
-!/**
+!/@*
 subroutine adx_polx3(F_field, F_sud, F_aminx,F_amaxx,F_aminy,F_amaxy, &
      F_lni,F_lnj, F_halox,F_haloy, F_nk )
    implicit none
@@ -48,7 +48,7 @@ subroutine adx_polx3(F_field, F_sud, F_aminx,F_amaxx,F_aminy,F_amaxy, &
    !@author alain patoine
    !@revisions
    ! v3_21 - Desgagne M.           - Revision Openmp
-!**/
+!*@/
 #include "adx_grid.cdk"
 #include "adx_poles.cdk"
 

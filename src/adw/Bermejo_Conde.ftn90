@@ -29,7 +29,7 @@
       !     semi-Lagrangian scheme. MWR,130,423-430
       !     Based on Bermejo/Conde template from GEM3 (Gravel and DeGrandpre 2012)
       !
-!**/
+!*@/
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"

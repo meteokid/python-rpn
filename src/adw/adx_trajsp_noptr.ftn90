@@ -16,7 +16,7 @@
 #include "constants.h"
 #include "stop_mpi.h"
 
-!/**
+!/@*
 subroutine adx_trajsp1_noptr(F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
      F_cx_8,F_cy_8,F_sx_8,F_sy_8, &
      F_dt,i0,in,j0,jn,F_ni,F_nj)
@@ -38,7 +38,7 @@ subroutine adx_trajsp1_noptr(F_lon, F_lat, F_x, F_y, F_z, F_u, F_v, &
    !@revisions
    ! v3_00 - Desgagne & Lee    - Lam configuration
    ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-!**/
+!*@/
 #include "adx_dims.cdk"
    integer :: vnij, i,j,k, n
    real*8 :: pdsa, pdca, pdcai, pdso, pdco, pdx, pdy, pdz

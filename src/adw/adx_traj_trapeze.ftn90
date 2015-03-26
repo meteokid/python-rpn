@@ -15,7 +15,7 @@
 #include "msg.h"
 #include "constants.h"
 #include "stop_mpi.h"
-!/**
+!/@*
 subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
                               F_ud, F_vd, F_ua, F_va, &
                               F_dth,i0,in,j0,jn,k0 )
@@ -34,7 +34,7 @@ subroutine adx_traj_trapeze ( F_lon, F_lat, F_x, F_y, F_z, &
    integer :: i0,in,j0,jn,k0 !I,   scope of operators
 !
    !@author  claude girard
-!**/
+!*@/
 
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"

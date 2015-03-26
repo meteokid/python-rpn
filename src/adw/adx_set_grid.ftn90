@@ -15,7 +15,7 @@
 #include "constants.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_set_grid()
    implicit none
 #include <arch_specific.hf>
@@ -23,7 +23,7 @@ subroutine adx_set_grid()
    !@author Stephane Chamberland, 2010-01
    !@revisions
    !@ v4_40 Lee/Qaddouri - add precalculation of vsec, vtan variables for GCCSA
-   !**/
+   !*@/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
    integer :: istat, i, j

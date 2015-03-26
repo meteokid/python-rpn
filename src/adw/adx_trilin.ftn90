@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_trilin5(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
      F_dth,F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
      F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk,F_nk_winds)
@@ -36,7 +36,7 @@ subroutine adx_trilin5(F_xo,F_yo,F_u1,F_u2,F_xth,F_yth,F_zth, &
    !@revisions
    ! v4_40 - Tanguay M.        - Revision TL/AD
    ! v4_70 - PLante A.         - remove adw_nosetint_L
-!**/
+!*@/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"

@@ -15,7 +15,7 @@
 #include "msg.h"
 #include "stop_mpi.h"
 
-!/**
+!/@*
 subroutine adx_cliptraj3(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,k0,F_nk, mesg)
    implicit none
 #include <arch_specific.hf>
@@ -33,7 +33,7 @@ subroutine adx_cliptraj3(F_x,  F_y, i0, in, j0, jn, F_ni,F_nj,k0,F_nk, mesg)
    !@revisions
    ! v3_31 - Desgagne M.  - Initial version
    ! v4_40 - Qaddouri/Lee - Yin-Yang trajectory clipping
-!**/
+!*@/
 #include "adx_grid.cdk"
    real*8,  parameter :: EPS_8 = 1.D-5
 !  integer, parameter :: BCS_BASE = 4

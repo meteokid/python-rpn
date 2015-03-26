@@ -15,7 +15,7 @@
 #include "constants.h"
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_set()
    implicit none
 #include <arch_specific.hf>
@@ -26,7 +26,7 @@ subroutine adx_set()
    !@revisions
    ! v3_20 - Gravel & Valin & Tanguay - Lagrange 3D and optimized SETINT/TRILIN
    ! v4_10 - Plante A.                - Add support to thermo upstream pos
-!**/
+!*@/
 #include "adx_dims.cdk"
    !---------------------------------------------------------------------
    call msg(MSG_DEBUG,'adx_set')

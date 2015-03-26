@@ -40,7 +40,7 @@ subroutine adx_stats( &
         F_xct1, F_yct1, F_zct1   !I, upstream cartesian positions at t1
    real, dimension(minx:maxx,miny:maxy,F_nks) :: &
         F_su,F_sv,F_sw
-   !**/
+   !*@/
    !---------------------------------------------------------------------
 !!$   print *,'s',minx,maxx,miny,maxy,1,F_nks
 !!$   print *,trim(F_l_S),1,F_ni,1,F_nj,1,F_nk

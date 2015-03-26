@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "stop_mpi.h"
 
-!/**
+!/@*
 subroutine adx_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F_nk, F_lev_S)
    implicit none
 #include <arch_specific.hf>
@@ -27,7 +27,7 @@ subroutine adx_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F
         F_x_in, F_y_in, F_z_in         !I, upstream positions 
    !@author Vivian Lee         October 2002 
    !@revisions
-!**/
+!*@/
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
@@ -221,4 +221,4 @@ subroutine adx_cfl_lam2()
    return
 end subroutine adx_cfl_lam2
 
-!/**
+!/@*

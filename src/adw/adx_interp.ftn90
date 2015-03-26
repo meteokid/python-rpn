@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, &
                          F_capx1, F_capy1, F_capz1, &
                          F_capx2, F_capy2, F_capz2, &
@@ -52,7 +52,7 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    ! v3_30 - Tanguay M.        - adjust OPENMP for LAM
    ! v4_06 - Gaudreault S.     - Code optimization, Positivity-preserving advection
    ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
-!**/
+!*@/
 
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"

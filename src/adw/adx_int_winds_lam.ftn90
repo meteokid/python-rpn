@@ -16,7 +16,7 @@
 #include "msg.h"
 #include "stop_mpi.h"
 
-!/**
+!/@*
 subroutine adx_int_winds_lam(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
                              F_dth, F_cliptraj_L, F_has_u2_L, F_i0,F_in,F_j0,F_jn, &
                              F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,F_k0,F_nk, F_nk_super)
@@ -38,7 +38,7 @@ subroutine adx_int_winds_lam(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
 !
    !@revisions
    !  2014-09,  Monique Tanguay    : GEM4 Mass-Conservation
-   !**/
+   !*@/
    !---------------------------------------------------------------------
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"

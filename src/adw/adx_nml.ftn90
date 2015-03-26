@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!/**
+!/@*
 function adx_nml(F_nmlFileName_S) result(F_stat)
    implicit none
 #include <arch_specific.hf>
@@ -26,7 +26,7 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    !@author Stephane Chamberland, Nov 2009
    !@revisions
    ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
-!**/
+!*@/
    integer :: fileUnit
    integer, external :: file_open_existing
    !---------------------------------------------------------------------
@@ -64,13 +64,13 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
 end function adx_nml
 
 
-!/**
+!/@*
 subroutine adx_nml_print()
    implicit none
 #include <arch_specific.hf>
 #include "msg.h"
 #include "adx_nml.cdk"
-!**/
+!*@/
    integer :: msgUnit
    integer, external :: msg_getUnit !TODO: get full interface from <msg.hf>
    !---------------------------------------------------------------------
@@ -81,7 +81,7 @@ subroutine adx_nml_print()
 end subroutine adx_nml_print
 
 
-!/**
+!/@*
 function adx_config() result(F_stat)
    implicit none
 #include <arch_specific.hf>
@@ -93,7 +93,7 @@ function adx_config() result(F_stat)
 #include "grd.cdk"
 #include "adx_nml.cdk"
 #include "adx_dims.cdk"
-!**/
+!*@/
    !---------------------------------------------------------------------
    F_stat = 0
 
