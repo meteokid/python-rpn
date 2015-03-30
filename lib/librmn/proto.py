@@ -307,13 +307,69 @@ EXTERNAL FUNCTIONS in fstd98
             int, ... TODO ...
 
     c_fstinl(iun, ni, nj, nk, datev, etiket, ip1, ip2, ip3, typvar, nomvar,
-            liste, infon, nmax)
+             liste, infon, nmax)
         Locates all the records that matches the research keys
         Proto:
             int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev, 
                          char *etiket, int ip1, int ip2, int ip3,
                          char *typvar, char *nomvar,
                          word *liste, int *infon, int nmax)
+        Args:
+            iun    (int): (I) unit number
+            ... TODO ...
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstlic(field, iun, niin, njin, nkin,
+             datein, etiketin, ip1in, ip2in, ip3in,
+             typvarin, nomvarin,
+             ig1in, ig2in, ig3in, ig4in, grtypin)
+        Search for a record that matches the research keys and
+        check that the remaining parmeters match the record descriptors
+        Proto:
+            int c_fstlic(word *field, int iun, int niin, int njin, int nkin,
+                         int datein, char *etiketin,
+                         int ip1in, int ip2in, int ip3in,
+                         char *typvarin, char *nomvarin,
+                         int ig1in, int ig2in, int ig3in, int ig4in,
+                         char *grtypin)
+        Args:
+            iun    (int): (I) unit number
+            ... TODO ...
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstlir(field, iun, ni, nj, nk, datev, etiket,
+             ip1, ip2, ip3, typvar, nomvar)
+        Reads the next record that matches the research keys
+        Proto:
+            int c_fstlir(word *field, int iun, int *ni, int *nj, int *nk,
+                         int datev, char *etiket,
+                         int ip1, int ip2, int ip3, char *typvar, char *nomvar)
+        Args:
+            iun    (int): (I) unit number
+            ... TODO ...
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstlirx(field,handle,iun,ni,nj,nk,datev,etiket,ip1,ip2,ip3,
+              typvar,nomvar)
+        Reads the next record that matches the research keys.
+        The search begins at the position given by handle.
+        Proto:
+            int c_fstlirx(word *field, int handle, int iun,
+                          int *ni, int *nj, int *nk, int datev, char *etiket,
+                          int ip1, int ip2, int ip3, char *typvar, char *nomvar)
+        Args:
+            iun    (int): (I) unit number
+            ... TODO ...
+        Returns:
+            int, zero successful, non-zero otherwise
+
+    c_fstlis(field, iun, ni, nj, nk)
+        Reads the next record that matches the last search criterias
+        Proto:
+            int c_fstlis(word *field, int iun, int *ni, int *nj, int *nk)
         Args:
             iun    (int): (I) unit number
             ... TODO ...
@@ -332,6 +388,21 @@ EXTERNAL FUNCTIONS in fstd98
             librmn.c_fstluk.argtypes default to data of type _np.float32
             To read other data types you'll need to redefine it with the
             appropriate type
+
+    c_fstmsq(field, iun, ni, nj, nk, datev, etiket,
+             ip1, ip2, ip3, typvar, nomvar)
+        Mask a portion of the research keys
+        Proto:
+            int c_fstmsq(int iun,int *mip1,int *mip2,int *mip3,char *metiket,int getmode)
+        Args:
+            iun     (int): (I) unit number
+            mip1    (int): (I/O) mask for vertical level
+            mip2    (int): (I/O) mask for forecast hour
+            mip3    (int): (I/O) mask for ip3
+            metiket (str): (I/O) mask for label
+            getmode (int): (I)   1: getmode, 0:set mode
+        Returns:
+            int, zero successful, non-zero otherwise
 
     c_fstnbr(iun)
         Returns the number of records of the file associated with unit
@@ -403,6 +474,16 @@ EXTERNAL FUNCTIONS in fstd98
             ... TODO ...
         Returns:
             int, zero successful, non-zero otherwise
+
+    c_fstsui(iun, ni, nj, nk)
+        Finds the next record that matches the last search criterias
+        Proto:
+            int c_fstsui(int iun, int *ni, int *nj, int *nk)
+        Args:
+            iun    (int): (I) unit number
+            ... TODO ...
+        Returns:
+            int, ... TODO ...
 
     c_fst_version()
         Returns package version number
@@ -790,6 +871,97 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns:
            int, 0 on success, -1 on error
 
+
+    c_gdxywdval(gdin, uuout, vvout, uuin, vvin, x, y, n)
+        Vector interpolation of points located at x-y coordinates,
+        returned as speed and direction (UVand WD).
+        Proto:
+            wordint c_gdxywdval(wordint gdin, ftnfloat *uuout, ftnfloat *vvout,
+                                ftnfloat *uuin, ftnfloat *vvin,
+                                ftnfloat *x, ftnfloat *y, wordint n)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
+        Converts, on grid 'gdid', the direction/speed values at grid points to grid coordinates.
+        ier = c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
+        Proto:
+             wordint c_gduvfwd(wordint gdid,
+                               ftnfloat *uugdout, ftnfloat *vvgdout,
+                               ftnfloat *uullin, ftnfloat *vvllin,
+                               ftnfloat *latin, ftnfloat *lonin, wordint npts)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
+        Converts, on grid 'gdid', the grid winds at grid points speed/direction
+        ier = c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
+        Proto:
+            wordint c_gdwdfuv(wordint gdid, ftnfloat *spd_out, ftnfloat *wd_out,
+                              ftnfloat *uuin, ftnfloat *vvin, 
+                              ftnfloat *latin, ftnfloat *lonin, wordint npts)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gdsetmask(gdid, mask)
+        Associates a permanent mask with grid 'gdid'
+        ier = c_gdsetmask(gdid, mask)
+        Proto:
+            int c_gdsetmask(int gdid, int *mask)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error   
+
+    c_gdgetmask(gdid, mask)
+        Returns the mask associated with grid 'gdid'
+        ier = c_gdgetmask(gdid, mask)
+        Proto:
+            int c_gdgetmask(int gdid, int *mask)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error   
+
+    c_ezsint_mdm(zout, mask_out, zin, mask_in)
+        Scalar interpolation, using the source field andan associated mask.
+        Returns the interpolated field and an interpolated mask.
+        ier = c_ezsint_mdm(zout, mask_out, zin, mask_in)
+        Proto:
+            int c_ezsint_mdm(float *zout, int *mask_out, float *zin, int *mask_in)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
+        Vector interpolation, using the source field and an associated mask.
+        Returns the interpolated winds and an interpolated mask.
+        ier = c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
+        Proto:
+            int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out, float *uuin, float *vvin, int *mask_in)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_ezsint_mask(mask_out, mask_in)
+        Interpolation of the source mask to the output mask using the
+        current (gdin, gdout) set
+        ier = c_ezsint_mask(mask_out, mask_in)
+        Proto:
+            int c_ezsint_mask(int *mask_out, int *mask_in)
+        Args:
+           ... TODO ...  
+        Returns:
+           int, 0 on success, -1 on error
+
     c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
         Universal grid definition. Applicable to all cases.
         gdid = c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
@@ -806,9 +978,10 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         positional parameters taken from the calling arguments)
         gdid = c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
         Proto:
-           wordint c_ezgdef_fmem(wordint ni, wordint nj, char *grtyp, char *grref,
-                      wordint ig1, wordint ig2, wordint ig3, wordint ig4,
-                      ftnfloat *ax, ftnfloat *ay)
+           wordint c_ezgdef_fmem(wordint ni, wordint nj,
+                   char *grtyp, char *grref,
+                   wordint ig1, wordint ig2, wordint ig3, wordint ig4,
+                   ftnfloat *ax, ftnfloat *ay)
         Args:
            ... TODO ...
         Returns:
@@ -819,12 +992,25 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         subgrids in one record)
         gdid = ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
         Proto:
-           wordint c_ezgdef_supergrid(wordint ni, wordint nj, char *grtyp, char *grref,
-                                   wordint vercode,wordint nsubgrids, wordint *subgrid)
+           wordint c_ezgdef_supergrid(wordint ni, wordint nj,
+                   char *grtyp, char *grref,
+                   wordint vercode,wordint nsubgrids, wordint *subgrid)
         Args:
            ... TODO ...
         Returns:
            int, super grid id on success, -1 on error
+
+    c_ezgdef(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
+        Generic grid definition (obsolete - consider using ezqkdef or ezgdef_fmem)
+        gdid = c_ezgdef(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
+        Proto:
+            wordint c_ezgdef(wordint ni, wordint nj, char *grtyp, char *grref,
+                             wordint ig1, wordint ig2, wordint ig3, wordint ig4,
+                             ftnfloat *ax, ftnfloat *ay);
+        Args:
+           ... TODO ...
+        Returns:
+           int, gtid id on success, -1 on error
 
     c_ezgprm(gdid, grtyp, ni, nj, ig1, ig2, ig3, ig4)
         Get current grid parameters
@@ -848,7 +1034,53 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
-   
+
+    c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1,
+              ip2, ip3, dateo, deet, npas, nbits)
+        Get the standard file attributes of the positional records
+ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
+        Proto:
+            wordint c_ezgfstp(wordint gdid,
+                      char *nomvarx, char *typvarx, char *etiketx,
+                      char *nomvary, char *typvary, char *etikety,
+                      wordint *ip1, wordint *ip2, wordint *ip3,
+                      wordint *dateo, wordint *deet, wordint *npas, wordint *nbits);
+        Args:
+           ... TODO ...
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gdgaxes(gdid, ax, ay)
+        Gets the deformation axes of the 'Z' grid
+        ier = c_gdgaxes(gdid, ax, ay)
+        Proto:
+            wordint c_gdgaxes(wordint gdid, ftnfloat *ax, ftnfloat *ay)
+        Args:
+           ... TODO ...
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gdxpncf(gdid, i1, i2, j1, j2)
+        Gets the expansion coefficients used to expand grid 'gdid'
+        ier = c_gdxpncf(gdid, i1, i2, j1, j2)
+        Proto:
+            wordint c_gdxpncf(wordint gdin, wordint *i1, wordint *i2,
+                              wordint *j1, wordint *j2)
+        Args:
+           ... TODO ...
+        Returns:
+           int, 0 on success, -1 on error
+
+    c_gdgxpndaxes(gdid, ax, ay)
+        Gets the deformation axes of the 'Z' grid on an expanded grid ax(i1:i2), ay(j1:j2)
+        ier = c_gdgxpndaxes(gdid, ax, ay)
+        Proto:
+            wordint c_gdgxpndaxes(wordint gdid, ftnfloat *ax, ftnfloat *ay)
+        Args:
+           ... TODO ...
+        Returns:
+           int, 0 on success, -1 on error
+
     c_ezsetival(option, value)
         Sets an integer numerical option for the package (updated 03-2014)
         ier = c_ezsetival('option', value)
@@ -895,7 +1127,6 @@ EXTERNAL FUNCTIONS in interp (ezscint)
    ... TODO ...
 
 """
-#TODO: list function itf and desc in doc string
 
 import ctypes as _ct
 import numpy  as _np
@@ -1034,74 +1265,36 @@ librmn.c_fstinl.restype  = _ct.c_int
 c_fstinl = librmn.c_fstinl
 
 
-#TODO:
-## librmn.c_fstlic.argtypes = ()
-## librmn.c_fstlic.restype  = _ct.c_int
-## c_fstlic = librmn.c_fstlic
-"""Search for a record that matches the research keys and check that the remaining parmeters match the record descriptors
-Proto:
-   int c_fstlic(word *field, int iun, int niin, int njin, int nkin,
-                int datein, char *etiketin, int ip1in, int ip2in, int ip3in,
-                char *typvarin, char *nomvarin,
-                int ig1in, int ig2in, int ig3in, int ig4in, char *grtypin)
-Args:
-   iun    (int): (I) unit number
-   ...
-Returns:
-   int, zero successful, non-zero otherwise
-"""
+librmn.c_fstlic.argtypes = (_npc.ndpointer(dtype=_np.float32),
+    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p,
+    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p)
+librmn.c_fstlic.restype  = _ct.c_int
+c_fstlic = librmn.c_fstlic
 
 
-#TODO:
-## handle = -2;  /* means handle will be discarded */
-## key = c_fstlirx(field,handle,iun,ni,nj,nk,datev,etiket,ip1,ip2,ip3,
-##                     typvar,nomvar);
-## librmn.c_fstlir.argtypes = ()
-## librmn.c_fstlir.restype  = _ct.c_int
-## c_fstlir = librmn.c_fstlir
-"""Reads the next record that matches the research keys
-Proto:
-   int c_fstlir(word *field, int iun, int *ni, int *nj, int *nk,
-                int datev, char *etiket,
-                int ip1, int ip2, int ip3, char *typvar, char *nomvar)
-Args:
-   iun    (int): (I) unit number
-   ...
-Returns:
-   int, zero successful, non-zero otherwise
-"""
+librmn.c_fstlir.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p)
+librmn.c_fstlir.restype  = _ct.c_int
+c_fstlir = librmn.c_fstlir
 
 
-#TODO:
-## librmn.c_fstlirx.argtypes = ()
-## librmn.c_fstlirx.restype  = _ct.c_int
-## c_fstlirx = librmn.c_fstlirx
-"""Reads the next record that matches the research keys. The search begins at the position given by handle.
-Proto:
-   int c_fstlirx(word *field, int handle, int iun,
-                 int *ni, int *nj, int *nk, int datev, char *etiket,
-                 int ip1, int ip2, int ip3, char *typvar, char *nomvar)
-Args:
-   iun    (int): (I) unit number
-   ...
-Returns:
-   int, zero successful, non-zero otherwise
-"""
+librmn.c_fstlirx.argtypes = (_npc.ndpointer(dtype=_np.float32),
+    _ct.c_int,_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p)
+librmn.c_fstlirx.restype  = _ct.c_int
+c_fstlirx = librmn.c_fstlirx
 
 
-#TODO:
-## librmn.c_fstlis.argtypes = ()
-## librmn.c_fstlis.restype  = _ct.c_int
-## c_fstlis = librmn.c_fstlis
-"""Reads the next record that matches the last search criterias
-Proto:
-   int c_fstlis(word *field, int iun, int *ni, int *nj, int *nk)
-Args:
-   iun    (int): (I) unit number
-   ...
-Returns:
-   int, zero successful, non-zero otherwise
-"""
+librmn.c_fstlis.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_fstlis.restype  = _ct.c_int
+c_fstlis = librmn.c_fstlis
 
 
 librmn.c_fstluk.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
@@ -1110,16 +1303,11 @@ librmn.c_fstluk.restype  = _ct.c_int
 c_fstluk = librmn.c_fstluk
 
 
-## int c_fstmsq(int iun,int *mip1,int *mip2,int *mip3,char *metiket,int getmode)
-## *Object: Mask a portion of the research keys
-## *Arguments
-## *   IN    iun     unit number associated to the file
-## * IN/OUT  mip1    mask for vertical level
-## * IN/OUT  mip2    mask for forecast hour
-## * IN/OUT  mip3    mask for ip3 (user defined identifier)
-## * IN/OUT  metiket mask for label
-## *   IN    getmode logical (1: getmode 0:set mode)
-#TODO:
+librmn.c_fstmsq.argtypes = (_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+    _ct.c_char_p,_ct.c_int)
+librmn.c_fstmsq.restype  = _ct.c_int
+c_fstmsq = librmn.c_fstmsq
 
 
 librmn.c_fstnbr.argtypes = (_ct.c_int,)
@@ -1160,21 +1348,10 @@ librmn.c_fstprm.restype  = _ct.c_int
 c_fstprm = librmn.c_fstprm
 
 
-#TODO
-## librmn.c_fstsui.argtypes = []
-## librmn.c_fstsui.restype  = _ct.c_int
-## c_fstsui = librmn.c_fstsui
-"""Finds the next record that matches the last search criterias
-Proto:
-   int c_fstsui(int iun, int *ni, int *nj, int *nk)
-Args:
-   IN  iun     unit number associated to the file
-  OUT ni      dimension 1 of the data field
-  OUT nj      dimension 2 of the data field
-  OUT nk      dimension 3 of the data field
-Returns:
-   int, zero successful, non-zero otherwise
-"""
+librmn.c_fstsui.argtypes = (_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_fstsui.restype  = _ct.c_int
+c_fstsui = librmn.c_fstsui
 
 
 librmn.c_fst_version.argtypes = []
@@ -1364,8 +1541,6 @@ librmn.c_gdllsval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdllsval.restype  = _ct.c_int
 c_gdllsval = librmn.c_gdllsval
-"""
-"""
 
 
 librmn.c_gdxysval.argtypes = (_ct.c_int,
@@ -1374,8 +1549,6 @@ librmn.c_gdxysval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdxysval.restype  = _ct.c_int
 c_gdxysval = librmn.c_gdxysval
-"""S
-"""
 
 
 librmn.c_gdllvval.argtypes = (_ct.c_int,
@@ -1385,8 +1558,6 @@ librmn.c_gdllvval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdllvval.restype  = _ct.c_int
 c_gdllvval = librmn.c_gdllvval
-"""
-"""
 
 
 librmn.c_gdxyvval.argtypes = (_ct.c_int,
@@ -1396,8 +1567,6 @@ librmn.c_gdxyvval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdxyvval.restype  = _ct.c_int
 c_gdxyvval = librmn.c_gdxyvval
-"""
-"""
 
 
 librmn.c_gdllwdval.argtypes = (_ct.c_int,
@@ -1407,8 +1576,7 @@ librmn.c_gdllwdval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdllwdval.restype  = _ct.c_int
 c_gdllwdval = librmn.c_gdllwdval
-"""
-"""
+
 
 
 librmn.c_gdxywdval.argtypes = (_ct.c_int,
@@ -1418,17 +1586,6 @@ librmn.c_gdxywdval.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdxywdval.restype  = _ct.c_int
 c_gdxywdval = librmn.c_gdxywdval
-"""Vector interpolation of points located at x-y coordinates, returned as speed and direction (UVand WD).
-ier = c_gdxywdval(gdid, spdout, wdout, uuin, vvin, x, y, n)
-Proto:
-   wordint c_gdxywdval(wordint gdin, ftnfloat *uuout, ftnfloat *vvout,
-               ftnfloat *uuin, ftnfloat *vvin,
-               ftnfloat *x, ftnfloat *y, wordint n)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_gduvfwd.argtypes = (_ct.c_int,
@@ -1438,17 +1595,6 @@ librmn.c_gduvfwd.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gduvfwd.restype  = _ct.c_int
 c_gduvfwd = librmn.c_gduvfwd
-"""Converts, on grid 'gdid', the direction/speed values at grid points to grid coordinates.
-ier = c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
-Proto:
-   wordint c_gduvfwd(wordint gdid, ftnfloat *uugdout, ftnfloat *vvgdout,
-              ftnfloat *uullin, ftnfloat *vvllin,
-              ftnfloat *latin, ftnfloat *lonin, wordint npts)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_gdwdfuv.argtypes = (_ct.c_int,
@@ -1458,44 +1604,17 @@ librmn.c_gdwdfuv.argtypes = (_ct.c_int,
                     _ct.c_int)
 librmn.c_gdwdfuv.restype  = _ct.c_int
 c_gdwdfuv = librmn.c_gdwdfuv
-"""Converts, on grid 'gdid', the grid winds at grid points speed/direction
-ier = c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
-Proto:
-   wordint c_gdwdfuv(wordint gdid, ftnfloat *spd_out, ftnfloat *wd_out,
-              ftnfloat *uuin, ftnfloat *vvin, 
-              ftnfloat *latin, ftnfloat *lonin, wordint npts)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_gdsetmask.argtypes = (_ct.c_int, _ct.POINTER(_ct.c_int))
 librmn.c_gdsetmask.restype  = _ct.c_int
 c_gdsetmask = librmn.c_gdsetmask
-"""Associates a permanent mask with grid 'gdid'
-ier = c_gdsetmask(gdid, mask)
-Proto:
-   int c_gdsetmask(int gdid, int *mask)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
+
 
 librmn.c_gdgetmask.argtypes = (_ct.c_int, _ct.POINTER(_ct.c_int))
 librmn.c_gdgetmask.restype  = _ct.c_int
 c_gdgetmask = librmn.c_gdgetmask
-"""Returns the mask associated with grid 'gdid'
-ier = c_gdgetmask(gdid, mask)
-Proto:
-   int c_gdgetmask(int gdid, int *mask)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
+
 
 #Note: Not in librmn at the moment
 ##  = librmn.
@@ -1527,14 +1646,7 @@ librmn.c_ezsint_mdm.argtypes = (_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
                                 _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
 librmn.c_ezsint_mdm.restype  = _ct.c_int
 c_ezsint_mdm = librmn.c_ezsint_mdm
-"""Scalar interpolation, using the source field and an associated mask. Returns the interpolated field and an interpolated mask.
-ier = c_ezsint_mdm(zout, mask_out, zin, mask_in)
-Proto:
-   int c_ezsint_mdm(float *zout, int *mask_out, float *zin, int *mask_in)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
+"""
 """
 
 
@@ -1543,29 +1655,11 @@ librmn.c_ezuvint_mdm.argtypes = (
     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
 librmn.c_ezuvint_mdm.restype  = _ct.c_int
 c_ezuvint_mdm = librmn.c_ezuvint_mdm
-"""Vector interpolation, using the source field and an associated mask. Returns the interpolated winds and an interpolated mask.
-ier = c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
-Proto:
-   int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out, float *uuin, float *vvin, int *mask_in)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_ezsint_mask.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
 librmn.c_ezsint_mask.restype  = _ct.c_int
 c_ezsint_mask = librmn.c_ezsint_mask
-"""Interpolation of the source mask to the output mask using the current (gdin, gdout) set
-ier = c_ezsint_mask(mask_out, mask_in)
-Proto:
-   int c_ezsint_mask(int *mask_out, int *mask_in)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_ezgdef_fmem.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
@@ -1586,17 +1680,6 @@ librmn.c_ezgdef.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
                     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
 librmn.c_ezgdef.restype  = _ct.c_int
 c_ezgdef = librmn.c_ezgdef
-"""Generic grid definition (obsolete - consider using ezqkdef or ezgdef_fmem)
-gdid = c_ezgdef(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
-Proto:
-   wordint c_ezgdef(wordint ni, wordint nj, char *grtyp, char *grref,
-                   wordint ig1, wordint ig2, wordint ig3, wordint ig4,
-                   ftnfloat *ax, ftnfloat *ay);
-Args:
-   
-Returns:
-   int, gtid id on success, -1 on error
-"""
 
 
 librmn.c_ezgprm.argtypes = (_ct.c_int,_ct.c_char_p,
@@ -1626,33 +1709,11 @@ librmn.c_ezgfstp.argtypes = (_ct.c_int,
             _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
 librmn.c_ezgfstp.restype  = _ct.c_int
 c_ezgfstp = librmn.c_ezgfstp
-"""Get the standard file attributes of the positional records
-ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
-Proto:
-   wordint c_ezgfstp(wordint gdid,
-              char *nomvarx, char *typvarx, char *etiketx,
-              char *nomvary, char *typvary, char *etikety,
-              wordint *ip1, wordint *ip2, wordint *ip3,
-              wordint *dateo, wordint *deet, wordint *npas, wordint *nbits);
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_gdgaxes.argtypes = (_ct.c_int,_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
 librmn.c_gdgaxes.restype  = _ct.c_int
 c_gdgaxes = librmn.c_gdgaxes
-""" Gets the deformation axes of the 'Z' grid
-ier = c_gdgaxes(gdid, ax, ay)
-Proto:
-   wordint c_gdgaxes(wordint gdid, ftnfloat *ax, ftnfloat *ay)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_ezget_nsubgrids.argtypes = (_ct.c_int,)
@@ -1670,31 +1731,13 @@ librmn.c_gdxpncf.argtypes = (_ct.c_int,
                     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
 librmn.c_gdxpncf.restype  = _ct.c_int
 c_gdxpncf = librmn.c_gdxpncf
-"""Gets the expansion coefficients used to expand grid 'gdid'
-ier = c_gdxpncf(gdid, i1, i2, j1, j2)
-Proto:
-   wordint c_gdxpncf(wordint gdin, wordint *i1, wordint *i2,
-                                   wordint *j1, wordint *j2)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
 
 
 librmn.c_gdgxpndaxes.argtypes = (_ct.c_int,
                     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
 librmn.c_gdgxpndaxes.restype  = _ct.c_int
 c_gdgxpndaxes = librmn.c_gdgxpndaxes
-"""Gets the deformation axes of the 'Z' grid on an expanded grid ax(i1:i2), ay(j1:j2)
-ier = c_gdgxpndaxes(gdid, ax, ay)
-Proto:
-   wordint c_gdgxpndaxes(wordint gdid, ftnfloat *ax, ftnfloat *ay)
-Args:
-   
-Returns:
-   int, 0 on success, -1 on error
-"""
+
 
 #Note: Not in librmn at the moment
 ## librmn.c_gdxpngd.argtypes = (_ct.c_int,
