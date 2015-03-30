@@ -1,9 +1,23 @@
+#!/bin/ksh
 if [[ x"$1" == x"--dev" ]] ; then
 	. s.ssmuse.dot $(cat ssmuse_dependencies-dev.bndl)
-else
-   export RMN_VERSION=_015.2
-   export RMN_LIBPATH=/ssm/net/rpn/libs/15.2/ubuntu-12.04-amd64-64/lib/Linux_x86-64/intel13sp1u2
 fi
+
+if [[ -f .setenv_${COMP_ARCH}.dot ]] ; then
+   echo ". .setenv_${COMP_ARCH}.dot"
+   . .setenv_${COMP_ARCH}.dot
+fi
+if [[ -f ssmusedep_${COMP_ARCH}.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep_${COMP_ARCH}.bndl"
+   . s.ssmuse.dot $(cat ssmusedep_${COMP_ARCH}.bndl)
+fi
+if [[ -f ssmusedep.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep.bndl"
+   . s.ssmuse.dot $(cat ssmusedep.bndl)
+fi
+
+
+. $(pwd)/bin/.env_setup.dot rpnpy dev all $(pwd) $(pwd)
 
 #export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
 export PATH=$(pwd)/bin:$PATH

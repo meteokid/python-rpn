@@ -1,0 +1,909 @@
+#!/usr/bin/env python
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+
+"""
+ Module librmn is a ctypes import of librmnshared.so
+ 
+ The librmn python module includes
+ - python wrapper to main librmn's C functions
+ - helper functions
+ - prototypes for many librmn's C functions
+ - pre-defined constants
+ - along with comprenhensive inline documentation
+
+ @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+"""
+#TODO: split: base, primitives, fstd, helpers
+#TODO: burp
+#TODO: rdiag
+
+__VERSION__     = '1.0.0'
+__LASTUPDATED__ = '2015-03'
+
+import os
+import ctypes as ct
+import numpy  as np
+import numpy.ctypeslib as npct
+
+#from librmn_proto import *
+
+c_mkstr = lambda x: ct.create_string_buffer(x)
+c_toint = lambda x: (x if (type(x) != type(ct.c_int())) else x.value)
+
+rmn_version = os.getenv('RMN_VERSION','_015.2').strip()
+rmn_libfile = 'librmnshared'+rmn_version+'.so'
+
+eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
+rmn_libpath = rmn_libfile
+if not os.path.exists(rmn_libpath):
+    for path in eclibpath:
+        rmn_libpath = os.path.join(path,rmn_libfile)
+        if os.path.exists(rmn_libpath):
+            break
+        else:
+            rmn_libpath = None
+
+if not rmn_libpath:
+    raise IOError,(-1,'Failed to find librmn.so: ',rmn_libfile)
+
+## librmn = np.ctypeslib.load_library(rmn_libfile,rmn_libpath)
+librmn = ct.cdll.LoadLibrary(rmn_libpath)
+
+WKOFFIT_TYPE_LIST = { #TODO:
+    'STD_RND_89' : 1,
+    'STD_RND_98' : 33
+    }
+
+FSTOP_GET = 1
+FSTOP_SET = 0
+FSTOP_MSGLVL = "MSGLVL"
+FSTOP_TOLRNC = "TOLRNC"
+FSTOP_PRINTOPT  = "PRINTOPT"
+FSTOP_TURBOCOMP = "TURBOCOMP"
+(FSTOPI_MSG_DEBUG,   FSTOPI_MSG_INFO,  FSTOPI_MSG_WARNING,
+ FSTOPI_MSG_ERROR,   FSTOPI_MSG_FATAL, FSTOPI_MSG_SYSTEM, FSTOPI_MSG_CATAST) = (0,2,4,6,8,10,10)
+(FSTOPI_TOL_NONE,    FSTOPI_TOL_DEBUG, FSTOPI_TOL_INFO,
+ FSTOPI_TOL_WARNING, FSTOPI_TOL_ERROR, FSTOPI_TOL_FATAL)  = (0,2,4,6,8,10)
+(FSTOPS_MSG_DEBUG,   FSTOPS_MSG_INFO,  FSTOPS_MSG_WARNING,
+ FSTOPS_MSG_ERROR,   FSTOPS_MSG_FATAL, FSTOPS_MSG_SYSTEM, FSTOPS_MSG_CATAST) = \
+ ("DEBUG","INFORM","WARNIN","ERRORS","FATALE","SYSTEM","CATAST")
+(FSTOPS_TURBO_FAST, FSTOPS_TURBO_BEST) = ("FAST", "BEST")
+(FST_RW, FST_RW_OLD, FST_RO) = ("RND+R/W", "RND+R/W+OLD", "RND+R/O")
+(FST_FIND_ANY_INT, FST_FIND_ANY_STR) = (-1, ' ')
+
+FST_GRTYP_LEN  = 1
+FST_TYPVAR_LEN = 2
+FST_NOMVAR_LEN = 4
+FST_ETIKET_LEN = 12
+
+## KIND = 0, hauteur (m) par rapport au niveau de la mer (-20,000 -> 100,000)
+## KIND = 1, sigma   (0.0 -> 1.0)
+## KIND = 2, p est en pression (mb)  (0 -> 1100)
+## KIND = 3, code arbitraire  (-4.8e8 -> 1.0e10)
+## KIND = 4, hauteur (M) par rapport au niveau du sol    (-20,000 -> 100,000)
+## KIND = 5, coordonnee hybride        (0.0 -> 1.0)
+## KIND = 6, coordonnee theta (1 -> 200,000)
+## KIND =10, temps en heure    (0.0 -> 200,000.0)
+## KIND =15, reserve (entiers)        
+## KIND =17, indice x de la matrice de conversion (1.0 -> 1.0e10)
+##           (partage avec kind=1 a cause du range exclusif
+## KIND =21, p est en metres-pression  (partage avec kind=5 a cause du range exclusif) (0 -> 1,000,000) fact=1e4
+#define KIND_ABOVE_SEA 0
+#define KIND_SIGMA 1
+#define KIND_PRESSURE 2
+#define KIND_ARBITRARY 3
+#define KIND_ABOVE_GND 4
+#define KIND_HYBRID 5
+#define KIND_THETA 6
+#define KIND_HOURS 10
+#define KIND_SAMPLES 15
+#define KIND_MTX_IND 17
+#define KIND_M_PRES 21
+
+#define LEVEL_KIND_MSL KIND_ABOVE_SEA
+#define LEVEL_KIND_SIG KIND_SIGMA
+#define LEVEL_KIND_PMB KIND_PRESSURE
+#define LEVEL_KIND_ANY KIND_ARBITRARY
+#define LEVEL_KIND_MGL KIND_ABOVE_GND
+#define LEVEL_KIND_HYB KIND_HYBRID
+#define LEVEL_KIND_TH KIND_THETA
+#define LEVEL_KIND_MPR KIND_M_PRES
+#define TIME_KIND_HR KIND_HOURS
+
+        ##     0: binary, transparent
+        ##     1: floating point
+        ##     2: unsigned integer
+        ##     3: character (R4A in an integer)
+        ##     4: signed integer
+        ##     5: IEEE floating point
+        ##     6: floating point (16 bit, made for compressor)
+        ##     7: character string
+        ##     8: complex IEEE
+        ##   130: compressed short integer  (128+2)
+        ##   133: compressed IEEE           (128+5)
+        ##   134: compressed floating point (128+6)
+        ## +128 : second stage packer active
+        ## +64  : missing value convention used
+FST_DATYP_LIST = {
+    'binary' : 0,
+    'float' : 1,
+    'uint' : 2,
+    'char_r4a' : 3,
+    'int' : 4,
+    'float_IEEE' : 5,
+    'float16' : 6,
+    'char' : 7,
+    'complex' : 8,
+    'float_compressed' : 129,
+    'uint_compressed' : 130,
+    'char_r4a_compressed' : 131,
+    'int_compressed' : 132,
+    'float_IEEE_compressed' : 133,
+    'float16_compressed' : 134,
+    'char_compressed' : 135,
+    'complex_compressed' : 136,
+    }
+FST_DATYP2NUMPY_LIST = { #TODO: review
+            0: np.uint32  ,# binary, transparent
+            1: np.float32 ,# floating point
+            2: np.uint32  ,# unsigned integer
+            3: np.uint32  ,# character (R4A in an integer)
+            4: np.int32   ,# signed integer
+            5: np.float32 ,# IEEE floating point
+            6: np.float16 ,# floating point (16 bit, made for compressor)
+            7: np.uint8   ,# character string
+            8: np.complex64 ,# complex IEEE
+    }
+
+FST_RDE_META_DEFAULT = {
+        'dateo' : 0,
+        'deet'  : 0,
+        'npas'  : 0,
+        'ni'    : 1,
+        'nj'    : 1,
+        'nk'    : 1,
+        'nbits' : 16,
+        'datyp' : FST_DATYP_LIST['float_IEEE_compressed'],
+        'ip1'   : 0,
+        'ip2'   : 0,
+        'ip3'   : 0,
+        'typvar': 'P',
+        'nomvar': ' ',
+        'etiket': ' ',
+        'grtyp' : 'G',
+        'ig1'   : 0,
+        'ig2'   : 0,
+        'ig3'   : 0,
+        'ig4'   : 0,
+        'swa'   : 0,
+        'lng'   : 0,
+        'dltf'  : 0,
+        'ubc'   : 0,
+        'xtra1' : 0,
+        'xtra2' : 0,
+        'xtra3' : 0
+        }
+
+## wordint c_wkoffit(char *nom,int l1) 
+c_wkoffit = librmn.c_wkoffit
+librmn.c_wkoffit.argtypes = (ct.c_char_p,ct.c_int)
+librmn.c_wkoffit.restype  = ct.c_int
+def wkoffit(filename):
+    """Return type of file (int)
+
+    filename : path/name of the file to examine
+
+    return file type code as follow:
+          -3     FICHIER INEXISTANT
+          -2     FICHIER VIDE
+          -1     FICHIER INCONNU
+           1     FICHIER STANDARD RANDOM 89
+           2     FICHIER STANDARD SEQUENTIEL 89
+           3     FICHIER STANDARD SEQUENTIEL FORTRAN 89
+           4     FICHIER CCRN
+           5     FICHIER CCRN-RPN
+           6     FICHIER BURP
+           7     FICHIER GRIB
+           8     FICHIER BUFR
+           9     FICHIER BLOK
+          10     FICHIER FORTRAN
+          11     FICHIER COMPRESS
+          12     FICHIER GIF89
+          13     FICHIER GIF87
+          14     FICHIER IRIS
+          15     FICHIER JPG
+          16     FICHIER KMW
+          17     FICHIER PBM
+          18     FICHIER PCL
+          19     FICHIER PCX
+          20     FICHIER PDSVICAR
+          21     FICHIER PM
+          22     FICHIER PPM
+          23     FICHIER PS
+          24     FICHIER KMW_
+          25     FICHIER RRBX
+          26     FICHIER SUNRAS
+          27     FICHIER TIFF
+          28     FICHIER UTAHRLE
+          29     FICHIER XBM
+          30     FICHIER XWD
+          31     FICHIER ASCII
+          32     FICHIER BMP
+          33     FICHIER STANDARD RANDOM 98
+          34     FICHIER STANDARD SEQUENTIEL 98
+          35     FICHIER NETCDF
+    """
+    return librmn.c_wkoffit(filename,len(filename))
+
+
+def isFST(filename):
+    """Return True if file is of RPN STD RND type
+    
+    filename : path/name of the file to examine
+    """
+    return (wkoffit(filename) in (WKOFFIT_TYPE_LIST['STD_RND_89'],WKOFFIT_TYPE_LIST['STD_RND_98']))
+
+
+c_fst_version = librmn.c_fst_version
+librmn.c_fst_version.argtypes = []
+librmn.c_fst_version.restype  = ct.c_int
+
+c_fstopi = librmn.c_fstopi
+librmn.c_fstopi.argtypes = (ct.c_char_p,ct.c_int,ct.c_int)
+librmn.c_fstopi.restype  = ct.c_int
+c_fstopc = librmn.c_fstopc
+librmn.c_fstopc.argtypes = (ct.c_char_p,ct.c_char_p,ct.c_int)
+librmn.c_fstopc.restype  = ct.c_int
+def fstopt(optName,optValue,setOget=FSTOP_SET):
+    """Set or print FST option.
+
+    optName  : name of option to be set or printed
+               or one of these constants:
+               FSTOP_MSGLVL, FSTOP_TOLRNC, FSTOP_PRINTOPT, FSTOP_TURBOCOMP
+    optValue : value to be set (int or string)
+               or one of these constants:
+               for optName=FSTOP_MSGLVL:
+                  FSTOPI_MSG_DEBUG,   FSTOPI_MSG_INFO,  FSTOPI_MSG_WARNING,
+                  FSTOPI_MSG_ERROR,   FSTOPI_MSG_FATAL, FSTOPI_MSG_SYSTEM,
+                  FSTOPI_MSG_CATAST
+               for optName=FSTOP_TOLRNC:
+                  FSTOPI_TOL_NONE,    FSTOPI_TOL_DEBUG, FSTOPI_TOL_INFO,
+                  FSTOPI_TOL_WARNING, FSTOPI_TOL_ERROR, FSTOPI_TOL_FATAL
+               for optName=FSTOP_TURBOCOMP:
+                  FSTOPS_TURBO_FAST, FSTOPS_TURBO_BEST
+    setOget  : define mode, set or print/get
+               one of these constants: FSTOP_SET, FSTOP_GET
+               default: set mode
+               
+    return None on error int>=0 otherwise
+    """
+    if type(optValue) == type(''):
+        istat = librmn.c_fstopc(optName,optValue,setOget)
+    elif type(optValue) == type(1):
+        istat = librmn.c_fstopi(optName,optValue,setOget)
+    else:
+        return None
+    if istat >= 0: return istat
+    return None
+
+c_fnom = librmn.c_fnom
+librmn.c_fnom.argtypes = (ct.POINTER(ct.c_int),ct.c_char_p,ct.c_char_p,ct.c_int)
+librmn.c_fnom.restype  = ct.c_int
+def fnom(filename,filemode=FST_RW,iunit=0):
+    """Open a file and make the connection with a unit number.
+    
+    filename : path/name of the file to open
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+    iunit    : forced unit number to conect to
+               if zero, will select a free unit
+
+    return Associated file unit number
+    return None on error
+    """
+    iunit2 = ct.c_int(iunit)
+    istat = librmn.c_fnom(ct.byref(iunit2),filename,filemode,0)
+    istat = c_toint(istat)
+    if istat >= 0: return iunit2.value
+    return None
+
+
+c_fclos = librmn.c_fclos
+librmn.c_fclos.argtypes = (ct.c_int,)
+librmn.c_fclos.restype  = ct.c_int
+def fclos(iunit):
+    """Close file associated with unit through fnom
+    
+    iunit   : unit number associated to the file
+              obtained with fnom
+            
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fclos(iunit)
+    if istat < 0: return None
+    return istat
+
+
+c_fstouv = librmn.c_fstouv
+librmn.c_fstouv.argtypes = (ct.c_int,ct.c_char_p)
+librmn.c_fstouv.restype  = ct.c_int
+def fstouv(iunit,filemode=FST_RW):
+    """Opens a RPN standard file
+    
+    iunit    : unit number associated to the file
+               obtained with fnom
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fstouv(iunit,filemode)
+    if istat < 0: return None
+    return istat
+
+
+def fstopenall(paths,filemode=FST_RO):
+    """shortcut for fnom+fstouv+fstlnk
+    
+    paths    : path/name of the file to open
+               if paths is a list, open+link all files
+               if path is a dir, open+link all fst files in dir
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+               
+    return Associated file unit number
+    """
+    if type(paths) == type(''): paths = [paths]
+    l = []
+    for x in paths:
+        if os.path.isdir(x):
+            for (dirpath, dirnames, filenames) in os.walk(x):
+                for f in filenames:
+                    if isFST(os.path.join(x,f)):
+                        l.append(os.path.join(x,f))
+                break
+            pass #TODO splice file list, discard non fst files
+        else:
+            l.append(x)
+    if filemode != FST_RO and len(paths) > 1:
+        return None #print error msg
+    iunitlist = []
+    for x in paths:
+        i = fnom(x,filemode)
+        if i:
+            i2 = fstouv(i,filemode)
+            if i2 != None: #TODO: else warning/ignore
+                iunitlist.append(i)
+    if len(iunitlist) == 0:
+        return None #print error msg
+    if len(iunitlist) == 1:
+        return iunitlist[0]
+    return fstlnk(unitList)
+
+
+def fstcloseall(iunit):
+    """shortcut for fclos+fstfrm
+    
+    iunit    : unit number associated to the file
+               obtained with fnom or fstopenall
+               
+    return None on error int>=0 otherwise
+    """
+    #TODO: loop on all linked units
+    istat = fclos(iunit)
+    istat = fstfrm(iunit)
+    return istat
+    
+        
+## ftnword f77name(fstlnk)(ftnword *liste, ftnword *f_n)
+## int c_xdflnk(word *liste, int n)
+c_xdflnk = librmn.c_xdflnk
+librmn.c_xdflnk.argtypes = (npct.ndpointer(dtype=np.intc),ct.c_int)
+librmn.c_xdflnk.restype  = ct.c_int
+def fstlnk(unitList):
+    """Links a list of files together for search purpose
+
+    unitList : list of previously opened (fnom+fstouv) file units
+
+    return File unit for the grouped unit
+    return None on error
+    """
+    if len(unitList)<1 or unitList[0]<=0: return None
+    cunitList = nm.asarray(unitList, dtype=nm.intc)
+    istat = librmn.c_xdflnk(cunitList,len(cunitList))
+    if istat<0: return None
+    return unitList[0]
+
+
+c_fstfrm = librmn.c_fstfrm
+librmn.c_fstfrm.argtypes = (ct.c_int,)
+librmn.c_fstfrm.restype  = ct.c_int
+def fstfrm(iunit):
+    """Close a RPN standard file
+    
+    iunit    : unit number associated to the file
+               obtained with fnom+fstouv
+
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fstfrm(iunit)
+    if istat < 0: return None
+    return istat
+
+
+c_fstvoi = librmn.c_fstvoi
+librmn.c_fstvoi.argtypes = (ct.c_int,ct.c_char_p)
+librmn.c_fstvoi.restype  = ct.c_int
+
+c_fstnbr = librmn.c_fstnbr
+librmn.c_fstnbr.argtypes = (ct.c_int,)
+librmn.c_fstnbr.restype  = ct.c_int
+
+c_fstnbrv = librmn.c_fstnbrv
+librmn.c_fstnbrv.argtypes = (ct.c_int,)
+librmn.c_fstnbrv.restype  = ct.c_int
+
+
+## int c_fstinf(int iun, int *ni, int *nj, int *nk, int datev,char *in_etiket,
+##                  int ip1, int ip2, int ip3, char *in_typvar, char *in_nomvar)
+c_fstinf = librmn.c_fstinf
+librmn.c_fstinf.argtypes = (ct.c_int,
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.c_int,ct.c_char_p,ct.c_int,ct.c_int,ct.c_int,ct.c_char_p,ct.c_char_p)
+librmn.c_fstinf.restype  = ct.c_int
+def fstinf(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
+    """Locate the next record that matches the research keys
+        
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            }
+    return None if no matching record
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    return fstinfx(-2,iunit,datev,etiket,ip1,ip2,ip3,typvar,nomvar)
+
+
+## int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
+##                  int datev,char *in_etiket,
+##                  int ip1, int ip2, int ip3, char *in_typvar, char *in_nomvar)
+c_fstinfx = librmn.c_fstinfx
+librmn.c_fstinfx.argtypes = (ct.c_int,ct.c_int,
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.c_int,ct.c_char_p,ct.c_int,ct.c_int,ct.c_int,ct.c_char_p,ct.c_char_p)
+librmn.c_fstinfx.restype  = ct.c_int
+def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
+    """Locate the next record that matches the research keys
+       The search begins at the position given by key/handle
+       obtained with fstinf or fstinl, ...
+
+    key     : record key/handle of the search start position
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            }
+    return None if no matching record
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    (cni,cnj,cnk) = (ct.c_int(),ct.c_int(),ct.c_int())
+    key2 = librmn.c_fstinfx(key,iunit,ct.byref(cni),ct.byref(cnj),ct.byref(cnk),datev,etiket,ip1,ip2,ip3,typvar,nomvar)
+    key2 = c_toint(key2)
+    if key2 < 0: return None
+    fx = lambda x: (x.value if x.value>0 else 1)
+    return {
+        'key'   : key2 ,
+        'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
+        }
+
+
+## int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev, char *etiket,
+##                  int ip1, int ip2, int ip3, char *typvar, char *nomvar,
+##                  word *liste, int *infon, int nmax)
+c_fstinl = librmn.c_fstinl
+librmn.c_fstinl.argtypes = (ct.c_int,
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.c_int,ct.c_char_p,ct.c_int,ct.c_int,ct.c_int,ct.c_char_p,ct.c_char_p,
+    npct.ndpointer(dtype=np.intc),ct.POINTER(ct.c_int),ct.c_int)
+librmn.c_fstinl.restype  = ct.c_int
+def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',nrecmax=-1):
+    """Locate all the record matching the research keys
+        
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+    nrecmax : maximum number or record to find (-1 = all)
+
+    return list of keys
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    if nrecmax <= 0: nrecmax = c_fstnbrv(iunit)
+    creclist = np.empty(nrecmax,dtype=np.intc)
+    print nrecmax,creclist,repr(creclist)
+    (cni,cnj,cnk,cnfound) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    istat = librmn.c_fstinl(iunit,ct.byref(cni),ct.byref(cnj),ct.byref(cnk),datev,etiket,ip1,ip2,ip3,typvar,nomvar,creclist,cnfound,nrecmax)
+    if cnfound <= 0: return []
+    return creclist[0:cnfound.value-1].tolist()
+    
+
+## int c_fstprm(int handle,
+##                      int *dateo, int *deet, int *npas,
+##                      int *ni, int *nj, int *nk,
+##                      int *nbits, int *datyp, int *ip1,
+##                      int *ip2, int *ip3, char *typvar,
+##                      char *nomvar, char *etiket, char *grtyp,
+##                      int *ig1, int *ig2, int *ig3,
+##                      int *ig4, int *swa, int *lng,
+##                      int *dltf, int *ubc, int *extra1,
+##                      int *extra2, int *extra3)
+c_fstprm = librmn.c_fstprm
+librmn.c_fstprm.argtypes = (ct.c_int,
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.c_char_p,
+    ct.c_char_p,ct.c_char_p,ct.c_char_p,
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),
+    ct.POINTER(ct.c_int),ct.POINTER(ct.c_int))
+librmn.c_fstprm.restype  = ct.c_int
+def fstprm(key):
+    """Get all the description informations of the record.
+    
+    key : positioning information to the record,
+          obtained with fstinf or fstinl, ...
+    
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            'dateo' : date time stamp
+            'deet'  : length of a time step in seconds
+            'npas'  : time step number
+            'ni'    : first dimension of the data field
+            'nj'    : second dimension of the data field
+            'nk'    : third dimension of the data field
+            'nbits' : number of bits kept for the elements of the field
+            'datyp' : data type of the elements
+            'ip1'   : vertical level
+            'ip2'   : forecast hour
+            'ip3'   : user defined identifier
+            'typvar': type of field (forecast, analysis, climatology)
+            'nomvar': variable name
+            'etiket': label
+            'grtyp' : type of geographical projection
+            'ig1'   : first grid descriptor
+            'ig2'   : second grid descriptor
+            'ig3'   : third grid descriptor
+            'ig4'   : fourth grid descriptor
+            'swa'   : starting word address
+            'lng'   : record length
+            'dltf'  : delete flag
+            'ubc'   : unused bit count
+            'xtra1' : extra parameter
+            'xtra2' : extra parameter
+            'xtra3' : extra parameter
+            }
+    return None on error
+    """
+    (cni,cnj,cnk)        = (ct.c_int(),ct.c_int(),ct.c_int())
+    (cdateo,cdeet,cnpas) = (ct.c_int(),ct.c_int(),ct.c_int())
+    (cnbits,cdatyp,cip1,cip2,cip3) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    (ctypvar,cnomvar,cetiket) = (c_mkstr(' '*FST_TYPVAR_LEN),c_mkstr(' '*FST_NOMVAR_LEN),c_mkstr(' '*FST_ETIKET_LEN))
+    (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*FST_GRTYP_LEN),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    (cswa,clng,cdltf,cubc,cxtra1,cxtra2,cxtra3) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    istat = librmn.c_fstprm(
+        key,ct.byref(cdateo),ct.byref(cdeet),ct.byref(cnpas),
+        ct.byref(cni),ct.byref(cnj),ct.byref(cnk),
+        ct.byref(cnbits),ct.byref(cdatyp),
+        ct.byref(cip1),ct.byref(cip2),ct.byref(cip3),
+        ctypvar,cnomvar,cetiket,
+        cgrtyp,ct.byref(cig1),ct.byref(cig2),ct.byref(cig3),ct.byref(cig4),
+        ct.byref(cswa),ct.byref(clng),ct.byref(cdltf),ct.byref(cubc),
+        ct.byref(cxtra1),ct.byref(cxtra2),ct.byref(cxtra3))
+    istat = c_toint(istat)
+    if istat < 0: return None
+    return {
+        'key'   : key ,
+        'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
+        'dateo' : cdateo.value,
+        'deet'  : cdeet.value,
+        'npas'  : cnpas.value,
+        'ni'    : cni.value,
+        'nj'    : cnj.value,
+        'nk'    : cnk.value,
+        'nbits' : cnbits.value,
+        'datyp' : cdatyp.value,
+        'ip1'   : cip1.value,
+        'ip2'   : cip2.value,
+        'ip3'   : cip3.value,
+        'typvar': ctypvar.value,
+        'nomvar': cnomvar.value,
+        'etiket': cetiket.value,
+        'grtyp' : cgrtyp.value,
+        'ig1'   : cig1.value,
+        'ig2'   : cig2.value,
+        'ig3'   : cig3.value,
+        'ig4'   : cig4.value,
+        'swa'   : cswa.value,
+        'lng'   : clng.value,
+        'dltf'  : cdltf.value,
+        'ubc'   : cubc.value,
+        'xtra1' : cxtra1.value,
+        'xtra2' : cxtra2.value,
+        'xtra3' : cxtra3.value
+        }
+
+
+def dtype_fst2numpy(datyp):
+    """Return the numpy dtype datyp for the given fst datyp
+            0: binary, transparent
+            1: floating point
+            2: unsigned integer
+            3: character (R4A in an integer)
+            4: signed integer
+            5: IEEE floating point
+            6: floating point (16 bit, made for compressor)
+            7: character string
+            8: complex IEEE
+          130: compressed short integer  (128+2)
+          133: compressed IEEE           (128+5)
+          134: compressed floating point (128+6)
+        +128 : second stage packer active
+        +64  : missing value convention used
+    """
+    datyp = (datyp-128 if datyp>=128 else datyp)
+    datyp = (datyp-64 if datyp>=64 else datyp)
+    return FST_DATYP2NUMPY_LIST[datyp]
+    
+def dtype_numpy2fst(dtype,compress=True,missing=False):
+    """Return the fst datyp for the given numpy dtype
+       Optionally specify compression and missing value options.
+    """
+    datyp = 0 #default returned type: binary
+    for k in FST_DATYP2NUMPY_LIST.keys():
+        if FST_DATYP2NUMPY_LIST[k] == dtype:
+            datyp = k
+            break
+    if compress: datyp += 128
+    if missing:  datyp += 64
+    return datyp
+
+
+## int c_fstluk(word *field, int handle, int *ni, int *nj, int *nk)
+c_fstluk = librmn.c_fstluk
+## librmn.c_fstluk.argtypes = 
+librmn.c_fstluk.restype  = ct.c_int
+def fstluk(key,dtype=None):
+    """Read the record at position given by key/handle
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+    dtype : array type of the returned data
+            Default is determined from records' datyp
+            Could be any numpy.ndarray type
+            See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+            
+    return {
+            'd'   : data,       # record data as a numpy.ndarray
+            ...                 # same params list as fstprm
+            }
+    return None on error
+    """
+    params = fstprm(key)
+    if params is None: return None
+    (cni,cnj,cnk) = (ct.c_int(),ct.c_int(),ct.c_int())
+    if dtype is None: dtype = dtype_fst2numpy(params['datyp'])
+    librmn.c_fstluk.argtypes = (npct.ndpointer(dtype=dtype),ct.c_int,
+        ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int))
+    data = np.empty(params['shape'],dtype=dtype)
+    istat = librmn.c_fstluk(data,key,cni,cnj,cnk)
+    if istat < 0: return None
+    params['d'] = data
+    return params
+
+## int c_fst_edit_dir(int handle,
+##                    unsigned int date, int deet, int npas,
+##                    int ni, int nj, int nk,
+##                    int ip1, int ip2, int ip3,
+##                    char *in_typvar, char *in_nomvar, char *in_etiket,
+##                    char *in_grtyp, int ig1, int ig2,
+##                    int ig3, int ig4, int datyp)
+c_fst_edit_dir = librmn.c_fst_edit_dir
+librmn.c_fst_edit_dir.argtypes = (ct.c_int,ct.c_int,ct.c_int,ct.c_int,
+                                  ct.c_int,ct.c_int,ct.c_int,
+                                  ct.c_int,ct.c_int,ct.c_int,
+                                  ct.c_char_p,ct.c_char_p,ct.c_char_p,
+                                  ct.c_char_p,ct.c_int,ct.c_int,
+                                  ct.c_int,ct.c_int,ct.c_int)
+librmn.c_fst_edit_dir.restype  = ct.c_int
+def fst_edit_dir(key, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
+                 ip1=-1, ip2=-1, ip3=-1,
+                 typvar=' ', nomvar=' ', etiket=' ', grtyp=' ',
+                 ig1=-1, ig2=-1, ig3=-1, ig4=-1, datyp=-1):
+    """Edits the directory content of a RPN standard file
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+    dateo : date time stamp
+    deet  : length of a time step in seconds
+    npas  : time step number
+    ni    : first dimension of the data field
+    nj    : second dimension of the data field
+    nk    : third dimension of the data field
+    nbits : number of bits kept for the elements of the field
+    datyp : data type of the elements
+    ip1   : vertical level
+    ip2   : forecast hour
+    ip3   : user defined identifier
+    typvar: type of field (forecast, analysis, climatology)
+    nomvar: variable name
+    etiket: label
+    grtyp : type of geographical projection
+    ig1   : first grid descriptor
+    ig2   : second grid descriptor
+    ig3   : third grid descriptor
+    ig4   : fourth grid descriptor
+            
+    return None on error int>=0 otherwise
+
+    Only provided parameters with value different than default are updated
+    """
+    istat = librmn.fst_edit_dir(key,dateo, deet, npas, ni, nj, nk,
+                 ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
+                 ig1, ig2, ig3, ig4, datyp)
+    if istat < 0: return None
+    return istat
+
+## int c_fsteff(int handle)
+#c_fsteff
+c_fsteff = librmn.c_fsteff
+librmn.c_fsteff.argtypes = (ct.c_int,)
+librmn.c_fsteff.restype  = ct.c_int
+def fsteff(key):
+    """Deletes the record associated to handle.
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+            
+    return None on error int>=0 otherwise
+    """
+    istat = c_fsteff(key)
+    if istat < 0: return None
+    return istat
+
+## int c_fstecr(word *field_in, void * work, int npak,
+##                         int iun, int date,
+##                         int deet, int npas,
+##                         int ni, int nj, int nk,
+##                         int ip1, int ip2, int ip3,
+##                         char *in_typvar, char *in_nomvar, char *in_etiket,
+##                         char *in_grtyp, int ig1, int ig2,
+##                         int ig3, int ig4,
+##                         int in_datyp_ori, int rewrit)
+c_fstecr = librmn.c_fstecr
+## librmn.c_fstecr.argtypes = (ct.c_int,)
+librmn.c_fstecr.restype  = ct.c_int
+def fstecr(iunit,data,meta,rewrite=True):
+    """Writes record to file
+    """
+    #TODO: check if file is open with write permission
+    meta2 = FST_RDE_META_DEFAULT.copy() #.deepcopy()
+    for k in meta.keys():
+        if k != 'd' and meta[k] not in (' ',-1): meta2[k] = meta[k]
+    irewrite = (1 if rewrite else 0)
+    npak = -abs(meta['nbits'])
+    librmn.c_fstecr.argtypes = (
+        npct.ndpointer(dtype=data.dtype), npct.ndpointer(dtype=data.dtype),
+        ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
+        ct.c_int, ct.c_int, ct.c_int,
+        ct.c_int, ct.c_int, ct.c_int,
+        ct.c_char_p, ct.c_char_p, ct.c_char_p,ct.c_char_p,
+        ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
+    istat = librmn.c_fstecr(data, data, npak, iunit,
+                meta['dateo'], meta['deet'], meta['npas'],
+                meta['ni'], meta['nj'], meta['nk'],
+                meta['ip1'], meta['ip2'], meta['ip3'],
+                meta['typvar'], meta['nomvar'], meta['etiket'], meta['grtyp'],
+                meta['ig1'], meta['ig2'], meta['ig3'], meta['ig4'],
+                meta['datyp'], irewrite)
+    if istat < 0: return None
+    return istat
+
+#c_fstsui
+#c_fstlic
+
+#c_fstmsq
+
+#c_fstlir
+#c_fstlirx
+#c_fstlis
+
+#c_ip1_all
+#c_ip2_all
+#c_ip3_all
+
+#c_ip1_val
+#c_ip2_val
+#c_ip3_val
+
+#ip_is_equal
+
+
+(CONVIP_STYLE_DEFAULT, CONVIP_STYLE_NEW, CONVIP_STYLE_OLD,
+ CONVIP_IP2P_DEFAULT, CONVIP_IP2P_31BITS) = (1, 2, 3, -1, 0)
+
+(NEWDATE_PRINT2TRUE, NEWDATE_TRUE2PRINT, NEWDATE_PRINT2STAMP,
+ NEWDATE_STAMP2PRINT) = (2, -2, 3, -3)
+
+if __name__ == "__main__":
+    print c_fst_version()
+    
+    value = FSTOPS_MSG_DEBUG
+    istat = fstopt(FSTOP_MSGLVL,value,FSTOP_GET)
+    istat = fstopt(FSTOP_MSGLVL,value,FSTOP_SET)
+
+    value = FSTOPS_MSG_FATAL
+    istat = fstopt(FSTOP_TOLRNC,value,FSTOP_GET)
+    istat = fstopt(FSTOP_TOLRNC,value,FSTOP_SET)
+    istat = fstopt(FSTOP_TOLRNC,value,FSTOP_GET)
+
+    filename = '2009042700_000'
+
+    print wkoffit(filename)
+    print isFST(filename)
+    
+    iunit = fnom(filename,FST_RO);
+    istat = fstouv(iunit,FST_RO)
+
+    #istat = c_fstvoi(iunit,'')
+    print c_fstnbrv(iunit)
+    ni=-1;nj=-1;nk=-1
+    istat = fstinf(iunit)
+    print 'fstinf=',istat
+    key = istat['key']
+    istat = fstprm(key)
+    print 'fstprm=',istat
+
+    keylist = fstinl(iunit,nomvar='tt')
+    print 'fstinl=',len(keylist),keylist
+    myrec = fstluk(keylist[0])
+    istat = fstecr(iunit,myrec['d'],myrec)
+    
+    istat = fstfrm(iunit);
+    istat = fclos(iunit);
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
