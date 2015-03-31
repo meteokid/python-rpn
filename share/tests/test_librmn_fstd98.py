@@ -91,6 +91,22 @@ class Librmn_fstd98_Test(unittest.TestCase):
         return (self.la,self.lo)
 
 
+    def test_fstvoi_fstversion(self):
+        """fstvoi, fst_version should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        funit = rmn.fstopenall(self.fname,rmn.FST_RW)
+        ## ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        ## myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
+        ## funit = rmn.fstopenall(myfile,rmn.FST_RO)
+        rmn.fstvoi(funit)
+        rmn.fstvoi(funit,'NINJNK+GRIDINFO')
+        rmn.fstcloseall(funit)
+        self.erase_testfile()
+
+        a = rmn.fst_version()
+        self.assertEqual(a,200001)
+
     def test_isfst_openall_fstnbr(self):
         """isfst_openall_fstnbr should give known result with known input"""
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)

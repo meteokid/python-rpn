@@ -164,6 +164,36 @@ class Librmn_ConvertIp_Test(unittest.TestCase):
     ##         self.assertEqual((ip1b,ip2b,ip3b),(ip1,ip2,ip3))
 
 
+    def test_ip123_all_val(self):
+        """ip123_all, ip123_vall should give known result with known input"""
+        for pk1,pk2,pk3,ip1,ip2,ip3 in self.ip123knownValues:
+            ip1a1 = rmn.ip1_all(pk1.v1,pk1.kind)
+            ip1v1 = rmn.ip1_val(pk1.v1,pk1.kind)
+            ip1a2 = rmn.ip1_all(pk1.v2,pk1.kind)
+            ip1v2 = rmn.ip1_val(pk1.v2,pk1.kind)
+            self.assertEqual(ip1a1,ip1)
+            self.assertEqual(ip1v1,ip1)
+            self.assertEqual(ip1a2,ip1)
+            self.assertEqual(ip1v2,ip1)
+            
+            ip2a1 = rmn.ip2_all(pk2.v1,pk2.kind)
+            ip2v1 = rmn.ip2_val(pk2.v1,pk2.kind)
+            ip2a2 = rmn.ip2_all(pk2.v2,pk2.kind)
+            ip2v2 = rmn.ip2_val(pk2.v2,pk2.kind)
+            self.assertEqual(ip2a1,ip2)
+            self.assertEqual(ip2v1,ip2)
+            self.assertEqual(ip2a2,ip2)
+            self.assertEqual(ip2v2,ip2)
+
+            ip3a1 = rmn.ip3_all(pk3.v1,pk3.kind)
+            ip3v1 = rmn.ip3_val(pk3.v1,pk3.kind)
+            ip3a2 = rmn.ip3_all(pk3.v2,pk3.kind)
+            ip3v2 = rmn.ip3_val(pk3.v2,pk3.kind)
+            self.assertEqual(ip3a1,ip3)
+            self.assertEqual(ip3v1,ip3)
+            self.assertEqual(ip3a2,ip3)
+            self.assertEqual(ip3v2,ip3)
+            
 #--- fstd98/????? ---------------------------------------------------
 
 

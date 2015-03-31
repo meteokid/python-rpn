@@ -674,16 +674,109 @@ def fstsui(iunit):
         'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
         }
 
-#TODO: fstvoi
-#TODO: fst_version
+def fstvoi(iunit,options=' '):
+    """Prints out the directory content of a RPN standard file
 
-#TODO: ip1_all,ip2_all,ip3_all
-#TODO: ip1_val,ip2_val,ip3_val
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    options : printing options
+              a string with desired fields list, '+' separated
+              possible fields (keywords):
+              NONOMV, NOTYPV, NOETIQ,
+              NINJNK, DATEO, DATESTAMPO,
+              DATEV, LEVEL, IPALL, IP1,
+              NOIP23, NODEET, NONPAS, NODTY,
+              GRIDINFO
+    """
+    return _rp.c_fstvoi(iunit,options)
+
+
+def fst_version():
+    """Returns package version number
+    """
+    return _rp.c_fst_version()
+
+
+def ip1_all(level,kind):
+    """Generates all possible coded ip1 values for a given level
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip1new on success, -1 on error
+    """
+    return _rp.c_ip1_all(level,kind)
+
+
+def ip2_all(level,kind):
+    """Generates all possible coded ip2 values for a given level
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip2new on success, -1 on error
+    """
+    return _rp.c_ip2_all(level,kind)
+
+
+def ip3_all(level,kind):
+    """Generates all possible coded ip3 values for a given level
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip3new on success, -1 on error
+    """
+    return _rp.c_ip3_all(level,kind)
+
+
+def ip1_val(level,kind):
+    """Generates coded ip1 value for a given level (shorthand for convip)
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip1new on success, -1 on error
+    """
+    return _rp.c_ip1_val(level,kind)
+
+def ip2_val(level,kind):
+    """Generates coded ip2 value for a given level (shorthand for convip)
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip2new on success, -1 on error
+    """
+    return _rp.c_ip2_val(level,kind)
+
+
+def ip3_val(level,kind):
+    """Generates coded ip3 value for a given level (shorthand for convip)
+
+    level : float, level value
+    kind  : int,   level kind
+
+    return int, ip3new on success, -1 on error
+    """
+    return _rp.c_ip3_val(level,kind)
+
+
 #TODO: ip_is_equal
+## def ip_is_equal(target, ip, ind):
+##     """Compares different coded values of an ip for equality
+    
+##     target: must be first value in the table of coded value to compare with
+##     ip    : current ip record value to compare
+##     ind   : index (1,2 or 3) representing ip1, ip2 or ip3 comparaisons
+    
+##     return ???
+##     """
+##     return _rp.ip_is_equal(target, ip, ind)
+
 
 #--- fstd98/convip_plus & convert_ip123 ---------------------------------
 
-#TODO: review, test the 4 following and review docstring
     
 def convertIp(mode,v,k=0):
     """Codage/Decodage P,kind <-> IP pour IP1, IP2, IP3
