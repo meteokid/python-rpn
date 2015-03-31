@@ -14,4 +14,4 @@ __dist__/
 __dist__/*
 __old/
 __old/*
-
+*.pyc

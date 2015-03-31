@@ -85,11 +85,10 @@ def fstopenall(paths,filemode=_rc.FST_RO):
                     if isFST(os.path.join(x,f)):
                         l.append(os.path.join(x,f))
                 break
-            pass #TODO splice file list, discard non fst files
         else:
             l.append(x)
     if filemode != _rc.FST_RO and len(paths) > 1:
-        return None #print error msg
+        return None #TODO: print error msg
     iunitlist = []
     for x in paths:
         i = _rb.fnom(x,filemode)
@@ -324,10 +323,122 @@ def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',
     return creclist[0:cnfound.value].tolist()
 
 
-#TODO: fstlic
-#TODO: fstlir
-#TODO: fstlirx
-#TODO: fstlis
+## Note: fstlic not very usefull, provide better python implementation
+## def fstlic(iunit, ni=-1,nj=-1,nk=-1,datev=-1,etiket=' ',
+##            ip1=-1, ip2=-1, ip3=-1, typvar=' ', nomvar=' ',
+##            ig1=-1, ig2=-1, ig3=-1, ig4=-1, grtyp=' ',
+##            dtype=None,rank=None):
+##     """Search for a record that matches the research keys and
+##     check that the remaining parmeters match the record descriptors
+##     
+##     iunit   : unit number associated to the file
+##               obtained with fnom+fstouv
+##     ni, nj, nk: filter fields with field dims
+##     datev   : valid date
+##     etiket  : label
+##     ip1     : vertical level
+##     ip2     : forecast hour
+##     ip3     : user defined identifier
+##     typvar  : type of field
+##     nomvar  : variable name
+##     ig1, ig2, ig3, ig4: filter fields with field's ig1-4
+##     grtyp   : grid type
+##     dtype : array type of the returned data
+##             Default is determined from records' datyp
+##             Could be any numpy.ndarray type
+##             See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+##     rank  : try to return an array with the specified rank
+##    
+##     return record data as a numpy.ndarray
+##     return None on error    
+##     """
+##     if type(iunit) != type(1):
+##        raise TypeError("fstluk: Expecting a iunit of type %s, Got %s : %s" % (type(1),type(iunit),repr(iunit)))
+
+
+def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
+           typvar=' ', nomvar=' ', dtype=None, rank=None):
+    """Reads the next record that matches the research keys
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+    dtype   : array type of the returned data
+              Default is determined from records' datyp
+              Could be any numpy.ndarray type
+              See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+    rank    : try to return an array with the specified rank
+  
+    return {
+            'd'   : data,       # record data as a numpy.ndarray
+            ...                 # same params list as fstprm
+            }
+    return None on error
+    """
+    key = -2
+    return fstlirx(key, iunit, datev, etiket, ip1, ip2, ip3,
+                   typvar, nomvar, dtype, rank)
+
+
+def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
+            typvar=' ', nomvar=' ',dtype=None,rank=None):
+    """Reads the next record that matches the research keys
+    The search begins at the position given by record key/handle.
+
+    key     : key/handle from where to start the search
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+    dtype   : array type of the returned data
+              Default is determined from records' datyp
+              Could be any numpy.ndarray type
+              See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+    rank    : try to return an array with the specified rank
+
+    return {
+            'd'   : data,       # record data as a numpy.ndarray
+            ...                 # same params list as fstprm
+            }
+    return None on error
+    """
+    key2 = fstinfx(key,iunit,datev,etiket,ip1,ip2,ip3,typvar,nomvar)
+    if (key2):
+        return fstluk(key2['key'],dtype,rank)
+    return None
+
+
+def fstlis(iunit,dtype=None,rank=None):
+    """Reads the next record that matches the research criterias
+
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    dtype   : array type of the returned data
+              Default is determined from records' datyp
+              Could be any numpy.ndarray type
+              See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+    rank    : try to return an array with the specified rank
+   
+    return {
+            'd'   : data,       # record data as a numpy.ndarray
+            ...                 # same params list as fstprm
+            }
+    return None on error
+    """
+    key = fstsui(iunit)
+    if (key):
+        return fstluk(key['key'],dtype,rank)
+    return None
 
 
 def fstlnk(unitList):
@@ -387,8 +498,25 @@ def fstluk(key,dtype=None,rank=None):
 
 
 #TODO: fstmsq
-#TODO: fstnbr
-#TODO: fstnbrv
+
+def fstnbr(iunit):
+    """Returns the number of records of the file associated with unit
+    
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    return  int, nb of records
+    """
+    return _rp.c_fstnbr(iunit)
+
+
+def fstnbrv(iunit):
+    """Returns the number of valid records (excluding deleted records)
+    
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    return  int, nb of valid records
+    """
+    return _rp.c_fstnbrv(iunit)
 
 
 def fstopt(optName,optValue,setOget=_rc.FSTOP_SET):
@@ -526,7 +654,26 @@ def fstprm(key):
         }
 
 
-#TODO: fstsui
+def fstsui(iunit):
+    """Finds the next record that matches the last search criterias
+
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            }
+    return None if no matching record
+    """
+    (cni,cnj,cnk) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
+    key = _rp.c_fstsui(iunit,_ct.byref(cni),_ct.byref(cnj),_ct.byref(cnk))
+    if key < 0: return None
+    return {
+        'key'   : key ,
+        'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
+        }
+
 #TODO: fstvoi
 #TODO: fst_version
 

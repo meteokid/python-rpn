@@ -68,8 +68,8 @@ rpnpy_version.h:
 	.rdemkversionfile "rpnpy" "$(RPNPY_VERSION)" $(ROOT)/include c
 LASTUPDATE = $(shell date '+%Y-%m-%d %H:%M %Z')
 rpnpy_version.py:
-	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(ROOT)/lib/$@
-	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(ROOT)/lib/$@
+	echo "__VERSION__ = '$(RPNPY_VERSION)'" > $(ROOT)/lib/rpnpy/version.py
+	echo "__LASTUPDATE__ = '$(LASTUPDATE)'" >> $(ROOT)/lib/rpnpy/version.py
 
 
 #---- ARCH Specific overrides -----------------------------------------

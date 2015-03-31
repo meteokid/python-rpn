@@ -28,8 +28,7 @@
 #TODO: modelutil's tdpack
 #TODO: modelutil's ???
 
-__VERSION__     = '1.0.0'
-__LASTUPDATED__ = '2015-03'
+from rpnpy.version import *
 
 __SUBMODULES__ = ['proto','const','base','fstd98','interp']
 __all__ = ['loadRMNlib','librmn','RMN_VERSION','RMN_LIBPATH'] + __SUBMODULES__

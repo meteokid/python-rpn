@@ -350,7 +350,7 @@ EXTERNAL FUNCTIONS in fstd98
             iun    (int): (I) unit number
             ... TODO ...
         Returns:
-            int, zero successful, non-zero otherwise
+            int, key/handle to record, <0 on error
 
     c_fstlirx(field,handle,iun,ni,nj,nk,datev,etiket,ip1,ip2,ip3,
               typvar,nomvar)
@@ -364,7 +364,7 @@ EXTERNAL FUNCTIONS in fstd98
             iun    (int): (I) unit number
             ... TODO ...
         Returns:
-            int, zero successful, non-zero otherwise
+            int, key/handle to record, <0 on error
 
     c_fstlis(field, iun, ni, nj, nk)
         Reads the next record that matches the last search criterias

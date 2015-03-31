@@ -90,23 +90,84 @@ class Librmn_fstd98_Test(unittest.TestCase):
         rmn.fstcloseall(funit)
         return (self.la,self.lo)
 
-    def test_fstinf_fstluk(self):
+
+    def test_isfst_openall_fstnbr(self):
+        """isfst_openall_fstnbr should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        ## rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST,rmn.FSTOP_GET)
+
+        HOME = os.getenv('HOME')
+        a = rmn.isFST(os.path.join(HOME.strip(),'.profile'))
+        self.assertFalse(a,'isFST should return false on non FST files')
+
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
+        a = rmn.isFST(myfile)
+        self.assertTrue(a,'isFST should return true on FST files')
+    
+        funit = rmn.fstopenall(myfile,rmn.FST_RO)
+        self.assertTrue(funit>0,'fstopenall should return a valid file unit')
+
+        nrec = rmn.c_fstnbrv(funit)
+        self.assertEqual(nrec,1083,' c_fstnbrv found %d/1083 rec ' % nrec)
+        
+        nrec = rmn.fstnbrv(funit)
+        self.assertEqual(nrec,1083,' fstnbrv found %d/1083 rec ' % nrec)
+       
+        rmn.fstcloseall(funit)
+
+
+    def test_fstsui_fstprm_fstlir(self):
+        """fstsui_fstprm_fstlir should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
+        funit = rmn.fstopenall(myfile,rmn.FST_RO)
+
+        k = rmn.fstinf(funit)['key']
+        a = rmn.fstprm(k)
+        self.assertEqual(a['nomvar'].strip(),'P0','fstinf/fstprm wrong rec, Got %s expected P0' % (a['nomvar']))
+        k = rmn.fstsui(funit)['key']
+        a = rmn.fstprm(k)
+        self.assertEqual(a['nomvar'].strip(),'TT','fstsui/fstprm wrong rec, Got %s expected TT' % (a['nomvar']))
+
+        k = rmn.fstinf(funit,nomvar='MX')['key']
+        a = rmn.fstlir(funit)
+        self.assertEqual(a['nomvar'].strip(),'P0','fstlir wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),530)
+        self.assertEqual(int(np.amax(a['d'])),1039)
+  
+        k = rmn.fstinf(funit,nomvar='MX')['key']
+        a = rmn.fstlirx(k,funit)
+        self.assertEqual(a['nomvar'].strip(),'LA','fstlirx wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),-88)
+        self.assertEqual(int(np.amax(a['d'])),88)
+
+        a = rmn.fstlis(funit)
+        self.assertEqual(a['nomvar'].strip(),'LO','fstlirx wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),-180)
+        self.assertEqual(int(np.amax(a['d'])),178)
+
+        rmn.fstcloseall(funit)
+
+    def test_fstecr_fstinf_fstluk(self):
         """fstinf, fstluk should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
         (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
         a = rmn.isFST(self.fname)
         self.assertTrue(a)
         funit = rmn.fstopenall(self.fname,rmn.FST_RW)
         nrec = rmn.c_fstnbrv(funit)
-        self.assertEqual(nrec,2,' c_fstnbrv found %d/2 rec ' % nrec)
         keylist = rmn.fstinl(funit)
-        self.assertEqual(len(keylist),2,'fstinl found %d/2 rec: %s' % (len(keylist),repr(keylist)))
         kla = rmn.fstinf(funit,nomvar='LA')['key']
         la2 = rmn.fstluk(kla)#,rank=2)
         klo = rmn.fstinf(funit,nomvar='LO')['key']
         lo2 = rmn.fstluk(klo)#,rank=2)
-        istat = rmn.fst_edit_dir(klo,nomvar='QW')        
-        istat = rmn.fsteff(kla)
         rmn.fstcloseall(funit)
+        self.erase_testfile()
+
+        self.assertEqual(nrec,2,' c_fstnbrv found %d/2 rec ' % nrec)
+        self.assertEqual(len(keylist),2,'fstinl found %d/2 rec: %s' % (len(keylist),repr(keylist)))
 
         self.assertEqual(la2['nomvar'].strip(),la['nomvar'].strip())
         self.assertEqual(lo2['nomvar'].strip(),lo['nomvar'].strip())
@@ -127,15 +188,25 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > epsilon))
 
 
+    def test_fsteditdir_fsteff(self):
+        """fst_edit_dir should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        funit = rmn.fstopenall(self.fname,rmn.FST_RW)
+        kla = rmn.fstinf(funit,nomvar='LA')['key']
+        klo = rmn.fstinf(funit,nomvar='LO')['key']
+        istat = rmn.fst_edit_dir(klo,nomvar='QW')        
+        istat = rmn.fsteff(kla)
+        rmn.fstcloseall(funit)
+
         funit = rmn.fstopenall(self.fname,rmn.FST_RO)
         kla = rmn.fstinf(funit,nomvar='LA')
-        self.assertEqual(kla,None,'LA found after delete: '+repr(kla))
         klo = rmn.fstinf(funit,nomvar='QW')['key']
-        self.assertNotEqual(klo,None,'QW not found after rename: '+repr(klo))
         rmn.fstcloseall(funit)
-        
         self.erase_testfile()
-        
+        self.assertEqual(kla,None,'LA found after delete: '+repr(kla))
+        self.assertNotEqual(klo,None,'QW not found after rename: '+repr(klo))
+
 
 if __name__ == "__main__":
     unittest.main()
