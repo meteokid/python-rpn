@@ -2,7 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.base"""
 
-import librmn.all as rmn
+import rpnpy.librmn.all as rmn
 import unittest
 import ctypes as ct
 import numpy as np

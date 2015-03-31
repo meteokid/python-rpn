@@ -11,9 +11,9 @@ import os
 import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
-import librmn.proto as _rp
-import librmn.const as _rc
-import librmn.base as _rb
+from . import proto as _rp
+from . import const as _rc
+from . import base as _rb
 
 c_mkstr = lambda x: _ct.create_string_buffer(x)
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)

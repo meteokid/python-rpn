@@ -16,6 +16,7 @@
  help(librmn.const)
  help(librmn.base)
  help(librmn.fstd98)
+ help(librmn.interp)
 
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """

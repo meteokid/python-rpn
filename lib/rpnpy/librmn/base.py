@@ -8,8 +8,8 @@
 """
 
 import ctypes as _ct
-import librmn.proto as _rp
-import librmn.const as _rc
+from . import proto as _rp
+from . import const as _rc
 
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 isListType = lambda x: type(x) in (type([]),type((1,)))

@@ -3,7 +3,7 @@
 """Unit tests for librmn.fstd98"""
 
 import os
-import librmn.all as rmn
+import rpnpy.librmn.all as rmn
 import unittest
 ## import ctypes as ct
 import numpy as np
