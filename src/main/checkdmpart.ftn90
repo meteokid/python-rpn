@@ -3,6 +3,7 @@
 
       integer, external ::  grid_nml2 , gem_nml , gemdm_config
 
+#include <clib_interface.cdk>
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
@@ -10,6 +11,7 @@
 #include "step.cdk"
 #include "hzd.cdk"
 
+      character*16 ndomains_S
       integer err,Pelocal,Petotal,npex,npey
 
       call RPN_COMM_init('',Pelocal,Petotal,1,1)
@@ -17,13 +19,16 @@
       Step_runstrt_S='2011020300'
       Step_dt=5
 
+      Grd_yinyang_L = .false.
+      Grd_yinyang_S = ''
+      if (clib_getenv ('GEM_YINYANG',ndomains_S).ge.0) &
+      Grd_yinyang_L = .true.
+
       err = grid_nml2 ('./gem_settings.nml',G_lam)
       if (err .lt. 0) goto 987
       Lun_out=6
       err = grid_nml2 ('print',G_lam)
       Lun_out=0
-
-      if (Grd_typ_S(1:2).eq.'GY') Grd_yinyang_L=.true.
 
       err = gem_nml   ('./gem_settings.nml')
       if (err .lt. 0) goto 987
