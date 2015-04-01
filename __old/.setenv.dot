@@ -16,13 +16,11 @@ if [[ -f ssmusedep_${COMP_ARCH}.bndl ]] ; then
    echo ". s.ssmuse.dot ssmusedep_${COMP_ARCH}.bndl"
    . s.ssmuse.dot $(cat ssmusedep_${COMP_ARCH}.bndl)
 fi
-if [[ -f ssmusedep.bndl ]] ; then
-   echo ". s.ssmuse.dot ssmusedep.bndl"
-   . s.ssmuse.dot $(cat ssmusedep.bndl)
+if [[ -f ssmusedep_all.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep_all.bndl"
+   . s.ssmuse.dot $(cat ssmusedep_all.bndl)
 fi
 
 export PATH=$(pwd)/bin:$PATH
 #export TEST_S_AR=1
 export SSMVERSION=$(ssm version | cut -d. -f1)
-
-export gemdyn=$(pwd)

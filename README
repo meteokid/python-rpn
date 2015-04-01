@@ -1,0 +1,40 @@
+
+==== Building ============================================================
+#Note: this suppose you already installed modelutils, rpnphy and that
+#      it could be found in the location specified in ssmusedep.bndl
+#TODO: howto build with modelutils at the same time
+#      ouv_exp_gemdyn --dodeps
+#      make ... COMPONENTS="modelutils rpnphy gemdyn"
+
+#git clone ssh://armnenv@localhost/~armnenv/GitDepots/gemdyn.git
+git clone ssh://localhost/~armnenv/GitDepots/gemdyn.git
+cd gemdyn
+#git checkout -b tmp gemdyn_VERSION
+#update version number (including leading 'x/') in ./include/Makefile.local.mk
+. ./.setenv.dot
+./bin/ouv_exp_gemdyn
+rdemklink
+make -j 8 components_objects
+make components_libs components_abs components_ssm
+
+#For additional ARCH
+	  ssh MYMACH
+	  cd /PATH/
+	  . ./setenv.dot
+	  rdemklink
+	  make -j 8 components_objects
+	  make components_libs components_abs components_ssm_arch
+
+==== Installing ==========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./setenv.dot
+make components_install CONFIRM_INSTALL=yes
+
+==== Uninstalling ========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./setenv.dot
+make components_uninstall UNINSTALL_CONFIRM=yes

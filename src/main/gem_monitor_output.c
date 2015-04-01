@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-main(int argc, char **argv){
+main_gem_monitor_output(int argc, char **argv){
 int i, fd;
 char buffer[32768];
 pid_t pp=getppid();
