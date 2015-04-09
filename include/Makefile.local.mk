@@ -10,13 +10,14 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/4.8.a3
+GEMDYN_VERSION0  = x/4.8.a4
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
 
 ## Some Shortcut/Alias to Lib Names
 GEMDYN_LIBS_DEP = $(RPNPHY_LIBS_V) $(MODELUTILS_LIBS_V) $(MODELUTILS_LIBS_DEP)
+GEMDYN_LIBS_SHARED_DEP = $(RPNPHY_LIBS_SHARED_V) $(MODELUTILS_LIBS_SHARED_V) $(MODELUTILS_LIBS_DEP)
 
 LIBCPLPATH  = 
 LIBCPL      =
@@ -24,11 +25,19 @@ LIBCPL      =
 GEMDYN_LIBS_MERGED = gemdyn_main gemdyn_base gemdyn_adw
 GEMDYN_LIBS_OTHER  = $(LIBCPL)
 GEMDYN_LIBS_ALL    = $(GEMDYN_LIBS_MERGED) $(GEMDYN_LIBS_OTHER)
-GEMDYN_LIBS        = gemdyn $(GEMDYN_LIBS_OTHER) 
-GEMDYN_LIBS_V      = gemdyn_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
+GEMDYN_LIBS_0      = gemdyn
+GEMDYN_LIBS        = $(GEMDYN_LIBS_0) $(GEMDYN_LIBS_OTHER) 
+GEMDYN_LIBS_V      = $(GEMDYN_LIBS_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
 
+GEMDYN_LIBS_SHARED_ALL = $(foreach item,$(GEMDYN_LIBS_ALL),$(item)-shared)
+GEMDYN_LIBS_SHARED_0   = $(GEMDYN_LIBS_0)-shared
+GEMDYN_LIBS_SHARED     = $(GEMDYN_LIBS_SHARED_0) $(GEMDYN_LIBS_OTHER) 
+GEMDYN_LIBS_SHARED_V   = $(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
+
+GEMDYN_LIBS_OTHER_FILES = $(foreach item,$(GEMDYN_LIBS_OTHER),$(LIBDIR)/lib$(item).a) 
+                        # $(foreach item,$(GEMDYN_LIBS_SHARED_ALL),$(LIBDIR)/lib$(item).so)
 GEMDYN_LIBS_ALL_FILES = $(foreach item,$(GEMDYN_LIBS_ALL),$(LIBDIR)/lib$(item).a)
-GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/libgemdyn.a $(GEMDYN_LIBS_ALL_FILES) 
+GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIBS_0).a $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so $(GEMDYN_LIBS_ALL_FILES) 
 
 OBJECTS_MERGED_gemdyn = $(foreach item,$(GEMDYN_LIBS_MERGED),$(OBJECTS_$(item)))
 
@@ -159,12 +168,21 @@ gemdyn_libs: $(OBJECTS_gemdyn) $(GEMDYN_LIBS_ALL_FILES_PLUS) | $(GEMDYN_VFILES)
 $(foreach item,$(GEMDYN_LIBS_ALL),$(eval $(call LIB_template1,$(item),GEMDYN)))
 $(foreach item,$(GEMDYN_LIBS_ALL),$(eval $(call LIB_template2,$(item),GEMDYN)))
 
-$(LIBDIR)/libgemdyn_$(GEMDYN_VERSION).a: $(OBJECTS_gemdyn) | $(GEMDYN_VFILES)
+$(LIBDIR)/lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a: $(OBJECTS_gemdyn) | $(GEMDYN_VFILES)
 	rm -f $@ $@_$$$$; ar r $@_$$$$ $(OBJECTS_MERGED_gemdyn); mv $@_$$$$ $@
-$(LIBDIR)/libgemdyn.a: $(LIBDIR)/libgemdyn_$(GEMDYN_VERSION).a
+$(LIBDIR)/lib$(GEMDYN_LIBS_0).a: $(LIBDIR)/lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a
 	cd $(LIBDIR) ; rm -f $@ ;\
-	ln -s libgemdyn_$(GEMDYN_VERSION).a $@
+	ln -s lib$(GEMDYN_LIBS_0)_$(GEMDYN_VERSION).a $@
 
+$(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so: $(OBJECTS_gemdyn) $(GEMDYN_LIBS_OTHER_FILES) | $(GEMDYN_VFILES)
+	export RBUILD_EXTRA_OBJ="$(OBJECTS_MERGED_gemdyn)" ;\
+	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_OTHER) $(GEMDYN_LIBS_DEP)" ;\
+	$(RBUILD4MPI_SO)
+	ls -l $@
+$(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so: $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so
+	cd $(LIBDIR) ; rm -f $@ ;\
+	ln -s lib$(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION).so $@
+	ls -l $@ ; ls -lL $@
 
 ifneq (,$(DEBUGMAKE))
 $(info ## ==== $$gemdyn/include/Makefile.local.mk [END] =====================)

@@ -14,27 +14,36 @@ cd gemdyn
 . ./.setenv.dot
 ./bin/ouv_exp_gemdyn
 rdemklink
-make -j 8 components_objects
-make components_libs components_abs components_ssm
+make -j components_objects
+make components_libs 
+make components_abs 
+make components_ssm
 
 #For additional ARCH
 	  ssh MYMACH
 	  cd /PATH/
-	  . ./setenv.dot
+	  . ./.setenv.dot
+	  #./bin/ouv_exp_gemdyn #optional if build in same dir as above
 	  rdemklink
-	  make -j 8 components_objects
-	  make components_libs components_abs components_ssm_arch
+	  make -j 6 components_objects
+	  make components_libs
+	  make components_abs 
+	  make components_ssm_arch
 
 ==== Installing ==========================================================
 
+#This will install ssm pkg on all ARCH
+
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./.setenv.dot
 make components_install CONFIRM_INSTALL=yes
 
 ==== Uninstalling ========================================================
 
+#This will uninstall ssm pkg on all ARCH
+
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./.setenv.dot
 make components_uninstall UNINSTALL_CONFIRM=yes
