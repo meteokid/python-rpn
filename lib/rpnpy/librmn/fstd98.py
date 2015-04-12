@@ -15,11 +15,11 @@ from . import proto as _rp
 from . import const as _rc
 from . import base as _rb
 
+#---- helpers -------------------------------------------------------
+
 c_mkstr = lambda x: _ct.create_string_buffer(x)
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 isListType = lambda x: type(x) in (type([]),type((1,)))
-
-#---- helpers -------------------------------------------------------
 
 def dtype_fst2numpy(datyp):
     """Return the numpy dtype datyp for the given fst datyp

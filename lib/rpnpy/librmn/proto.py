@@ -807,7 +807,7 @@ EXTERNAL FUNCTIONS in interp (ezscint)
 
     c_ezget_subgridids(super_gdid, subgridids )
         Gets the list of grid ids for the subgrids in the 'U' grid (super_gdid).
-        ier = c_ezget_subgridids(super_gdid, subgridids )
+        ier = c_ezget_subgridids(super_gdid, subgridids)
         Proto:
            wordint c_ezget_subgridids(wordint gdid, wordint *subgrid)
         Args:
@@ -930,7 +930,7 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            int, 0 on success, -1 on error   
 
     c_ezsint_mdm(zout, mask_out, zin, mask_in)
-        Scalar interpolation, using the source field andan associated mask.
+        Scalar interpolation, using the source field and an associated mask.
         Returns the interpolated field and an interpolated mask.
         ier = c_ezsint_mdm(zout, mask_out, zin, mask_in)
         Proto:
@@ -987,10 +987,10 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns:
            int, grid id on success, -1 on error
 
-    ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
+    c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
         U grid definition (which associates to a list of concatenated
         subgrids in one record)
-        gdid = ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
+        gdid = c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
         Proto:
            wordint c_ezgdef_supergrid(wordint ni, wordint nj,
                    char *grtyp, char *grref,
