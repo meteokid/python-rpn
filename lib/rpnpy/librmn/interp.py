@@ -156,7 +156,7 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
         ni,nj        : grid dims (int)
         grtyp, grref : grid type and grid ref type (str)
         vercode      : 
-        subgridid    : 
+        subgridid    : list of subgrid id (list, tuple or numpy.ndarray)
         gridParams   : key=value pairs for each grid params (dict)
     Returns:
         int, super grid id
@@ -179,10 +179,12 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
             subgridid = gridParams['subgridid']
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
-    if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(subgridid)) != (int,int,str,str,int,_np.ndarray):
+    csubgridid = subgridid
+    if type(subgridid) in (list,tuple): csubgridid = _np.array(subgridid)
+    if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(csubgridid)) != (int,int,str,str,int,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
     nsubgrids = subgridid.size
-    gdid = _rp.c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
+    gdid = _rp.c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,csubgridid)
     if gdid >= 0:
         return gdid
     raise EzscintError()
@@ -601,7 +603,7 @@ def gdxyfll(gdid, lat, lon):
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat,lon should have the same size")
     (cx,cy) = (_np.empty(clat.size,dtype=_np.float32),_np.empty(clat.size,dtype=_np.float32))
-    istat = c_gdxyfll(gdid, cx, cy, clat, clon, clat.size)
+    istat = _rp.c_gdxyfll(gdid, cx, cy, clat, clon, clat.size)
     if istat >= 0:
         return {
             'id'  : gdid,
@@ -639,7 +641,7 @@ def gdllfxy(gdid, xpts, ypts):
     if cx.size != cy.size:
         raise TypeError("gdllfxy: provided xpts,ypts should have the same size")
     (clat,clon) = (_np.empty(cx.size,dtype=_np.float32),_np.empty(cx.size,dtype=_np.float32))
-    istat = c_gdllfxy(gdid, clat, clon, cx, cy, cx.size)
+    istat = _rp.c_gdllfxy(gdid, clat, clon, cx, cy, cx.size)
     if istat >= 0:
         return {
             'id'  : gdid,
@@ -651,8 +653,37 @@ def gdllfxy(gdid, xpts, ypts):
     raise EzscintError()
 
 
-#TODO:    c_gdgetmask(gdid, mask)
+def gdgetmask(gdid, mask=None):
+    """Returns the mask associated with grid 'gdid'
 
+    mask = gdgetmask(gdid)
+    mask = gdgetmask(gdid, mask)
+    
+    Args:
+        gdid : id of the grid (int)
+        mask : mask array (numpy.ndarray)
+    Returns:
+        mask array (numpy.ndarray)
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdgetmask: Expecting data of type int, Got %s" % (type(gdid)))
+    gridParams = ezgxprm(gdid)
+    if mask:
+        if type(mask) != _np.ndarray:
+            raise TypeError("gdgetmask: Expecting mask array of type numpy.ndarray, Got %s" % (type(mask)))
+        if mask.shape != gridParams['shape']:
+            raise TypeError("gdgetmask: Provided mask array have inconsistent shape compered to the grid")
+    else:
+        mask = _np.empty(gridParams['shape'],dtype=_np.float32)
+    istat = _rp.c_gdgetmask(gdid, mask)
+    if istat >= 0:
+        return mask
+    #TODO: should we return gridParams as well (also for other similar functions above)
+    raise EzscintError()
+    
 #TODO:    c_gdxpncf(gdid, i1, i2, j1, j2)
 #TODO:    c_gdgxpndaxes(gdid, ax, ay)
 
@@ -660,15 +691,17 @@ def gdllfxy(gdid, xpts, ypts):
 #---- Interpolation Functions
 
 
-def ezsint(zin,gdidin,gdidout): #TODO: user should be able to provide zout array
-    """ Scalar interpolation on previsouly defined gridset (ezdefset)
+def ezsint(gdidout,gdidin,zin,zout=None):
+    """Scalar horizontal interpolation
 
-    zout = ezsint(zin,gdidin,gdidout)
-    
+    zout = ezsint(gdidout,gdidin,zin)
+    zout = ezsint(gdidout,gdidin,zin,zout)
+
     Args:
-        zin     : data to interpolate (numpy.ndarray)
-        gdidid  : grid id describing zin grid
         gdidout : output grid id
+        gdidid  : grid id describing zin grid
+        zin     : data to interpolate (numpy.ndarray)
+        zout    : interp.result array (numpy.ndarray)
     Returns:
         numpy.ndarray, interpolation result
     Raises:
@@ -678,16 +711,63 @@ def ezsint(zin,gdidin,gdidout): #TODO: user should be able to provide zout array
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(zin) == numpy.ndarray):
         raise TypeError("ezsint: Expecting data of type numpy.ndarray, Got %s" % (type(zin)))
-    #TODO: check that zin and gdidin have consistent shape
+    gridParams = ezgxprm(gdidin)
+    if zin.shape != gridParams['shape']:
+        raise TypeError("ezsint: Provided zin array have inconsistent shape compered to the input grid")
     dshape = ezgprm(gdidout)['shape']
-    zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
+    if zout:
+        if not (type(zout) == numpy.ndarray):
+            raise TypeError("ezsint: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
+        if zout.shape != dshape:
+            raise TypeError("ezsint: Provided zout array have inconsistent shape compered to the output grid")
+    else:
+        zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
     istat = _rp.c_ezsint(zout, zin)
     if istat >= 0:
         return zout
     raise EzscintError()
 
 
-#TODO:    c_ezuvint(uuout, vvout, uuin, vvin)
+def ezuvint(gdidout,gdidin,uuin,vvin,uuout=None,vvout=None):
+    """Vectorial horizontal interpolation
+
+    (uuout,vvout) = ezuvint(gdidout,gdidin,uuin,vvin)
+    (uuout,vvout) = ezuvint(gdidout,gdidin,uuin,vvin,uuout,vvout)
+
+    Args:
+        gdidout : output grid id
+        gdidid  : grid id describing uuin grid
+        uuin     : data x-part to interpolate (numpy.ndarray)
+        vvin     : data y-part to interpolate (numpy.ndarray)
+        uuout    : interp.result array x-part (numpy.ndarray)
+        vvout    : interp.result array y-part (numpy.ndarray)
+    Returns:
+        interpolation result (numpy.ndarray,numpy.ndarray)
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    gridsetid = ezdefset(gdidout, gdidin)
+    if not (type(uuin) == numpy.ndarray and type(vvin) == numpy.ndarray):
+        raise TypeError("ezuvint: Expecting data of type numpy.ndarray, Got %s, %s" % (type(uuin),type(vvin)))
+    gridParams = ezgxprm(gdidin)
+    if uuin.shape != gridParams['shape'] or vvin.shape != gridParams['shape']:
+        raise TypeError("ezuvint: Provided uuin,vvin array have inconsistent shape compered to the input grid")
+    dshape = ezgprm(gdidout)['shape']
+    if uuout and vvout:
+        if not (type(uuout) == numpy.ndarray and type(vvout) == numpy.ndarray):
+            raise TypeError("ezuvint: Expecting uuout,vvout of type numpy.ndarray, Got %s" % (type(uuout)))
+        if uuout.shape != dshape or vvout.shape != dshape:
+            raise TypeError("ezuvint: Provided uuout,vvout array have inconsistent shape compered to the output grid")
+    else:
+        uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
+        vvout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
+    istat = _rp.c_ezuvint(uuout, vvout, uuin, vvin)
+    if istat >= 0:
+        return (uuout,vvout)
+    raise EzscintError()
+
+
 #TODO:    c_gdllsval(gdid, zout, zin, lat, lon, n)
 #TODO:    c_gdxysval(gdid, zout, zin, x, y, n)
 #TODO:    c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
@@ -700,10 +780,29 @@ def ezsint(zin,gdidin,gdidout): #TODO: user should be able to provide zout array
 
 #---- Other Functions
 
-#TODO:    c_gdrls(gdid)
+def gdrls(gdid):
+    """Frees a previously allocated grid
+    
+    gdrls(gdid)
+
+    Args:
+        gdid : grid id to free/release
+    Returns:
+        None
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdrls: Expecting gdid of type int, Got %s" % (type(gdid)))
+    istat = _rp.c_gdrls(gdid)
+    if istat >= 0:
+        return istat
+    raise EzscintError()
 
 #TODO:    c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
 #TODO:    c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
+
 
 if __name__ == "__main__":
     import doctest
