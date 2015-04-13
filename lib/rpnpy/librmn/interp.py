@@ -14,6 +14,8 @@ from . import proto as _rp
 from . import const as _rc
 from . import base as _rb
 
+#TODO: make sure caller can provide allocated array (recycle mem)
+
 #---- helpers -------------------------------------------------------
 
 c_mkstr = lambda x: _ct.create_string_buffer(x)
@@ -39,13 +41,13 @@ def ezsetopt(option, value):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(option) == type("")):
-        raise TypeError("ezgetopt: Expecting data of type %s, Got %s" % (type(""),type(option)))
-    if type(value) == type(1):
+    if not (type(option) == str):
+        raise TypeError("ezgetopt: Expecting data of type str, Got %s" % (type(option)))
+    if type(value) == int:
         istat = _rp.c_ezsetival(option, value)
-    elif type(value) == type(1.0):
+    elif type(value) == float:
         istat = _rp.c_ezsetval(option, value)
-    elif type(value) == type(" "):
+    elif type(value) == str:
         istat = _rp.c_ezsetopt(option, value)
     else:
         raise TypeError("ezsetopt: Not a supported type %s" % (type(value)))
@@ -72,12 +74,15 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None, iun
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if type(ni) == type({}):
+    if type(ni) == dict:
         gridParams = ni
         try:
-            #TODO: accept shape instead of ni,nj
-            ni = gridParams['ni']
-            nj = gridParams['nj']
+            (ni,nj) = gridParams['shape']
+        except:
+            (ni,nj) = (None,None)
+        try:
+            if not ni: ni = gridParams['ni']
+            if not nj: nj = gridParams['nj']
             grtyp = gridParams['grtyp']
             ig1 = gridParams['ig1']
             ig2 = gridParams['ig2']
@@ -86,7 +91,7 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None, iun
             iunit = gridParams['iunit']
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
-    if (type(ni),type(nj),type(grtyp),type(ig1),type(ig2),type(ig3),type(ig4),type(iunit)) != (type(1),type(1),type(" "),type(1),type(2),type(3),type(4),type(5)):
+    if (type(ni),type(nj),type(grtyp),type(ig1),type(ig2),type(ig3),type(ig4),type(iunit)) != (int,int,str,int,int,int,int,int):
         raise TypeError('ezqkdef: wrong input data type')
     gdid = _rp.c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
     if gdid >= 0:
@@ -113,12 +118,15 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None, ig3=Non
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if type(ni) == type({}):
+    if type(ni) == dict:
         gridParams = ni
         try:
-            #TODO: accept shape instead of ni,nj
-            ni = gridParams['ni']
-            nj = gridParams['nj']
+            (ni,nj) = gridParams['shape']
+        except:
+            (ni,nj) = (None,None)
+        try:
+            if not ni: ni = gridParams['ni']
+            if not nj: nj = gridParams['nj']
             grtyp = gridParams['grtyp']
             grref = gridParams['grref']
             ig1 = gridParams['ig1']
@@ -129,7 +137,7 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None, ig3=Non
             ay = gridParams['ay']
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
-    if (type(ni),type(nj),type(grtyp),type(grref),type(ig1),type(ig2),type(ig3),type(ig4),type(ax),type(ay)) != (type(1),type(1),type(" "),type(" "),type(1),type(2),type(3),type(4),_np.ndarray,_np.ndarray):
+    if (type(ni),type(nj),type(grtyp),type(grref),type(ig1),type(ig2),type(ig3),type(ig4),type(ax),type(ay)) != (int,int,str,str,int,int,int,int,_np.ndarray,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
     #TODO: check ni,nj ... ax,ay dims consis
     gdid = _rp.c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
@@ -156,21 +164,24 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if type(ni) == type({}):
+    if type(ni) == dict:
         gridParams = ni
         try:
-            #TODO: accept shape instead of ni,nj
-            ni = gridParams['ni']
-            nj = gridParams['nj']
+            (ni,nj) = gridParams['shape']
+        except:
+            (ni,nj) = (None,None)
+        try:
+            if not ni: ni = gridParams['ni']
+            if not nj: nj = gridParams['nj']
             grtyp = gridParams['grtyp']
             grref = gridParams['grref']
             vercode = gridParams['vercode']
             subgridid = gridParams['subgridid']
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
-    if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(subgridid)) != (type(1),type(1),type(" "),type(" "),type(1),_np.ndarray):
+    if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(subgridid)) != (int,int,str,str,int,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
-    nsubgrids = subgridid.size #TODO check this
+    nsubgrids = subgridid.size
     gdid = _rp.c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
     if gdid >= 0:
         return gdid
@@ -180,7 +191,7 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
 def ezdefset(gdidout, gdidin):
     """Defines a set of grids for interpolation
     
-    gdid = ezdefset(gdidout, gdidin) #TODO: check this, does it return gdid
+    gridsetid = ezdefset(gdidout, gdidin)
 
     Args:
         gdidout : output grid id (int) 
@@ -191,8 +202,8 @@ def ezdefset(gdidout, gdidin):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdidout) == type(1) and type(gdidin) == type(1)):
-        raise TypeError("ezdefset: Expecting a grid ids of type %s, Got %s, %s" % (type(1),type(gdidout),type(gdidin)))
+    if not (type(gdidout) == int and type(gdidin) == int):
+        raise TypeError("ezdefset: Expecting a grid ids of type int, Got %s, %s" % (type(gdidout),type(gdidin)))
     istat = _rp.c_ezdefset(gdidout, gdidin)
     if istat >= 0:
         return istat
@@ -213,8 +224,8 @@ def gdsetmask(gdid, mask):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdid) == type(1) and type(mask) == _np.ndarray):
-        raise TypeError("gdsetmask: Expecting args of type %s,%s Got %s, %s" % (type(1),repr(_np.ndarray),type(gdid),type(mask)))
+    if not (type(gdid) == int and type(mask) == _np.ndarray):
+        raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray Got %s, %s" % (type(gdid),type(mask)))
     istat = _rp.c_gdsetmask(gdid, mask)
     if istat >= 0:
         return istat
@@ -224,7 +235,7 @@ def gdsetmask(gdid, mask):
 #---- Query Functions
 
 
-def ezgetopt(option,vtype=type(1)):
+def ezgetopt(option,vtype=int):
     """Gets an option value from the package
     
     value = ezgetopt(option)
@@ -241,15 +252,15 @@ def ezgetopt(option,vtype=type(1)):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(option) == type("")):
-        raise TypeError("ezgetopt: Expecting data of type %s, Got %s" % (type(""),type(option)))
-    if vtype == type(1):
+    if not (type(option) == str):
+        raise TypeError("ezgetopt: Expecting data of type str, Got %s" % (type(option)))
+    if vtype == int:
         cvalue = _ct.c_int()
         istat = _rp.c_ezgetival(option, cvalue)
-    elif vtype == type(1.0):
+    elif vtype == float:
         cvalue = _ct.c_float()
         istat = _rp.c_ezgetval(option, cvalue)
-    elif vtype == type(" "):
+    elif vtype == str:
         cvalue = c_mkstr(' '*64)
         istat = _rp.c_ezgetopt(option, cvalue)
     else:
@@ -272,8 +283,8 @@ def ezget_nsubgrids(super_gdid):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(super_gdid) == type(1)):
-        raise TypeError("ezgetival: Expecting data of type %s, Got %s" % (type(1),type(super_gdid)))
+    if not (type(super_gdid) == int):
+        raise TypeError("ezgetival: Expecting data of type int, Got %s" % (type(super_gdid)))
     nsubgrids = _rp.c_ezget_nsubgrids(super_gdid)
     if nsubgrids >= 0:
         return nsubgrids
@@ -309,10 +320,11 @@ def ezgprm(gdid):
         gdid (int): id of the grid
     Returns:
         {
+            'id'    : grid id, same as input arg
             'shape' : (ni,nj) # dimensions of the grid
             'ni'    : first dimension of the grid
             'nj'    : second dimension of the grid
-            'grtyp' : type of geographical projection
+            'grtyp' : type of geographical projection (one of 'A', 'B', 'E', 'G', 'L', 'N', 'S')
             'ig1'   : first grid descriptor
             'ig2'   : second grid descriptor
             'ig3'   : third grid descriptor
@@ -322,13 +334,14 @@ def ezgprm(gdid):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdid) == type(1)):
-        raise TypeError("ezgprm: Expecting data of type %s, Got %s" % (type(1),type(gdid)))
+    if not (type(gdid) == int):
+        raise TypeError("ezgprm: Expecting data of type int, Got %s" % (type(gdid)))
     (cni,cnj) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     istat = _rp.c_ezgprm(gdid, cgrtyp, cni, cnj, cig1, cig2, cig3, cig4)
     if istat >= 0:
         return {
+            'id'    : gdid,
             'shape' : (max(1,cni.value),max(1,cnj.value)),
             'ni'    : cni.value,
             'nj'    : cnj.value,
@@ -336,7 +349,7 @@ def ezgprm(gdid):
             'ig1'   : cig1.value,
             'ig2'   : cig2.value,
             'ig3'   : cig3.value,
-            'ig4'   : cig4.value,
+            'ig4'   : cig4.value
             }
     raise EzscintError()
     
@@ -350,15 +363,16 @@ def ezgxprm(gdid):
         gdid (int): id of the grid
     Returns:
         {
+            'id'    : grid id, same as input arg
             'shape'  : (ni,nj) # dimensions of the grid
             'ni'     : first dimension of the grid
             'nj'     : second dimension of the grid
-            'grtyp'  : type of geographical projection
+            'grtyp'  : type of geographical projection (one of 'Z','#','Y','U')
             'ig1'    : first grid descriptor
             'ig2'    : second grid descriptor
             'ig3'    : third grid descriptor
             'ig4'    : fourth grid descriptor
-            'grref'  : grid ref type
+            'grref'  : grid ref type (one of 'A', 'B', 'E', 'G', 'L', 'N', 'S')
             'ig1ref' : first grid descriptor of grid ref
             'ig2ref' : second grid descriptor of grid ref
             'ig3ref' : third grid descriptor of grid ref
@@ -368,14 +382,15 @@ def ezgxprm(gdid):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdid) == type(1)):
-        raise TypeError("ezgxprm: Expecting data of type %s, Got %s" % (type(1),type(gdid)))
+    if not (type(gdid) == int):
+        raise TypeError("ezgxprm: Expecting data of type int, Got %s" % (type(gdid)))
     (cni,cnj) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cgrref,cig1ref,cig2ref,cig3ref,cig4ref) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     istat = _rp.c_ezgprm(gdid, cgrtyp, cni, cnj, cig1, cig2, cig3, cig4, cgrref,cig1ref,cig2ref,cig3ref,cig4ref)
     if istat >= 0:
         return {
+            'id'    : gdid,
             'shape' : (max(1,cni.value),max(1,cnj.value)),
             'ni'    : cni.value,
             'nj'    : cnj.value,
@@ -388,7 +403,7 @@ def ezgxprm(gdid):
             'ig1ref'   : cig1ref.value,
             'ig2ref'   : cig2ref.value,
             'ig3ref'   : cig3ref.value,
-            'ig4ref'   : cig4ref.value,
+            'ig4ref'   : cig4ref.value
             }
     #TODO: ezgxprm: be more explicit on the ref values: tags, i0,j0,...
     raise EzscintError()
@@ -403,6 +418,7 @@ def ezgfstp(gdid):
         gdid (int): id of the grid
     Returns:
         {
+            'id'    : grid id, same as input arg
             'typvarx': x-axe type of field (forecast, analysis, climatology)
             'nomvarx': x-axe variable name
             'etikx'  : x-axe label
@@ -421,8 +437,8 @@ def ezgfstp(gdid):
         TypeError on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdid) == type(1)):
-        raise TypeError("ezgfstp: Expecting data of type %s, Got %s" % (type(1),type(gdid)))
+    if not (type(gdid) == int):
+        raise TypeError("ezgfstp: Expecting data of type int, Got %s" % (type(gdid)))
     (ctypvarx,cnomvarx,cetikx) = (c_mkstr(' '*_rc.FST_TYPVAR_LEN),c_mkstr(' '*_rc.FST_NOMVAR_LEN),c_mkstr(' '*_rc.FST_ETIKET_LEN))
     (ctypvary,cnomvary,cetiky) = (c_mkstr(' '*_rc.FST_TYPVAR_LEN),c_mkstr(' '*_rc.FST_NOMVAR_LEN),c_mkstr(' '*_rc.FST_ETIKET_LEN))
     (cip1,cip2,cip3) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
@@ -430,37 +446,221 @@ def ezgfstp(gdid):
     istat = _rp.c_ezgfstp(gdid, cnomvarx, ctypvarx, cetikx, cnomvary, ctypvary, cetiky, cip1, cip2, cip3, cdateo, cdeet, cnpas, cnbits)
     if istat >= 0:
         return {
-        'typvarx': ctypvarx.value,
-        'nomvarx': cnomvarx.value,
-        'etikx'  : cetikx.value,
-        'typvary': ctypvary.value,
-        'nomvary': cnomvary.value,
-        'etiky ' : cetiky.value,
-        'ip1'   : cip1.value,
-        'ip2'   : cip2.value,
-        'ip3'   : cip3.value,
-        'dateo' : cdateo.value,
-        'deet'  : cdeet.value,
-        'npas'  : cnpas.value,
-        'nbits' : cnbits.value,
+            'id'    : gdid,
+            'typvarx': ctypvarx.value,
+            'nomvarx': cnomvarx.value,
+            'etikx'  : cetikx.value,
+            'typvary': ctypvary.value,
+            'nomvary': cnomvary.value,
+            'etiky ' : cetiky.value,
+            'ip1'   : cip1.value,
+            'ip2'   : cip2.value,
+            'ip3'   : cip3.value,
+            'dateo' : cdateo.value,
+            'deet'  : cdeet.value,
+            'npas'  : cnpas.value,
+            'nbits' : cnbits.value
             }
     raise EzscintError()
 
 
-#TODO:    c_gdgaxes(gdid, ax, ay)
+def gdgaxes(gdid,ax=None,ay=None):
+    """Gets the deformation axes of the Z, Y, # grids
+    
+    gridAxes = gdgaxes(gdid)
+    gridAxes = gdgaxes(gdid, gridAxes)
+    gridAxes = gdgaxes(gdid, ax, ay)
+    Args:
+        gdid     : id of the grid (int)
+        gridAxes : grid axes dictionary, same as return gridAxes (dict)
+        ax, ay   : 2 pre-allocated grid axes arrays (numpy.ndarray)
+    Returns:
+        {
+            'id' : grid id, same as input arg
+            'ax' : x grid axe data (numpy.ndarray)
+            'ay' : y grid axe data (numpy.ndarray)
+        }
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdgaxes: Expecting data of type int, Got %s" % (type(gdid)))
+    if type(ax) == dict:
+        gridAxes = ax
+        try:
+            ax = gridAxes['ax']
+            ay = gridAxes['ay']
+        except:
+            raise TypeError("gdgaxes: Expecting gridAxes = {'ax':ax,'ay':ay}")
+    nsubgrids = ezget_nsubgrids(gdid)
+    if nsubgrids > 1:
+        raise EzscintError("gdgaxes: supergrids not supported yet, loop through individual grids instead") #TODO: automate the process (loop) for super grids
+    gridParams = ezgxprm(gdid)
+    axshape = None
+    ayshape = None
+    if gridParams['grtyp'].lower() == 'y':
+        axshape = gridParams['shape']
+        ayshape = gridParams['shape']
+    elif gridParams['grtyp'].lower() in ('z','#'):
+        axshape = (gridParams['shape'][0],1)
+        ayshape = (1,gridParams['shape'][1])
+    #elif gridParams['grtyp'].lower() == 'u': #TODO add support of U/F-grids
+    else:
+        raise EzscintError("gdgaxes: grtyp/grref = %s/%s not supported" % (gridParams['grtyp'],gridParams['grref']))
+    if ax is None:
+        ax = _np.empty(axshape,dtype=_np.float32,order='FORTRAN')
+        ay = _np.empty(ayshape,dtype=_np.float32,order='FORTRAN')
+    elif not(type(ax) == _np.ndarray and type(ay) == _np.ndarray):
+        raise TypeError("gdgaxes: Expecting ax,ay as 2 numpy.ndarray, Got %s, %s" % (type(ax),type(ay)))
+    if ax.shape != axshape or ay.shape != ayshape:
+        raise TypeError("gdgaxes: provided ax, ay have the wrong shape")
+    istat = _rp.c_gdgaxes(gdid,ax,ay)
+    if istat >= 0:
+        return {
+            'id' : gdid,
+            'ax' : ax,
+            'ay' : ay
+            }
+    raise EzscintError()
 
-#TODO:    c_gdll(gdid, lat, lon)
-#TODO:    c_gdxyfll(gdid, x, y, lat, lon, n)
-#TODO:    c_gdllfxy(gdid, lat, lon, x, y, n)
+
+def gdll(gdid,lat=None,lon=None):
+    """Gets the latitude/longitude position of grid 'gdid'
+    
+    gridLatLon = gdll(gdid)
+    gridLatLon = gdll(gdid, gridLatLon)
+    gridLatLon = gdll(gdid, lat,lon)
+    Args:
+        gdid       : id of the grid (int)
+        gridLatLon : grid lat,lon dictionary, same as return gridLatLon (dict)
+        lat,lon    : 2 pre-allocated lat,lon arrays (numpy.ndarray)
+    Returns:
+        {
+            'id'  : grid id, same as input arg
+            'lat' : latitude  data (numpy.ndarray)
+            'lon' : longitude data (numpy.ndarray)
+        }
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdll: Expecting data of type int, Got %s" % (type(gdid)))
+    if type(lat) == dict:
+        gridLatLon = lat
+        try:
+            lat = gridAxes['lat']
+            lon = gridAxes['lon']
+        except:
+            raise TypeError("gdll: Expecting gridLatLon = {'lat':lat,'lon':lon}")
+    nsubgrids = ezget_nsubgrids(gdid)
+    if nsubgrids > 1:
+        raise EzscintError("gdll: supergrids not supported yet, loop through individual grids instead") #TODO: automate the process (loop) for super grids
+    gridParams = ezgxprm(gdid)
+    if lat is None:
+        lat = _np.empty(gridParams['shape'],dtype=_np.float32,order='FORTRAN')
+        lon = _np.empty(gridParams['shape'],dtype=_np.float32,order='FORTRAN')
+    elif not(type(lat) == _np.ndarray and type(lon) == _np.ndarray):
+        raise TypeError("gdll: Expecting lat,lon as 2 numpy.ndarray, Got %s, %s" % (type(lat),type(lon)))
+    if lat.shape != gridParams['shape'] or lon.shape != gridParams['shape']:
+        raise TypeError("gdll: provided lat,lon have the wrong shape")
+    istat = _rp.c_gdll(gdidlat,lon)
+    if istat >= 0:
+        return {
+            'id'  : gdid,
+            'lat' : lat,
+            'lon' : lon
+            }
+    raise EzscintError()
+
+
+def gdxyfll(gdid, lat, lon):
+    """Returns the x-y positions of lat lon points on grid 'gdid'
+    
+    pointXY = gdxyfll(gdid, lat, lon)
+    
+    Args:
+        gdid     : id of the grid (int)
+        lat,lon  : list of points lat, lon (list, tuple or numpy.ndarray)
+    Returns:
+        {
+            'id' : grid id, same as input arg
+            'x'  : list of points x-coor (numpy.ndarray)
+            'y'  : list of points y-coor (numpy.ndarray)
+        }
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdxyfll: Expecting data of type int, Got %s" % (type(gdid)))
+    (clat,clon) = lat,lon
+    if type(lat) in (list,tuple): clat = _np.array(lat,dtype=_np.float32)
+    if type(lon) in (list,tuple): clon = _np.array(lon,dtype=_np.float32)
+    if clat.size != clon.size:
+        raise TypeError("gdxyfll: provided lat,lon should have the same size")
+    (cx,cy) = (_np.empty(clat.size,dtype=_np.float32),_np.empty(clat.size,dtype=_np.float32))
+    istat = c_gdxyfll(gdid, cx, cy, clat, clon, clat.size)
+    if istat >= 0:
+        return {
+            'id'  : gdid,
+            'lat' : clat,
+            'lon' : clon,
+            'x'   : cx,
+            'y'   : cy
+            }
+    raise EzscintError()
+
+
+def gdllfxy(gdid, xpts, ypts):
+    """Returns the lat-lon coordinates of data located at positions x-y on grid GDID
+    
+     pointLL = gdllfxy(gdid, xpts, ypts)
+     
+    Args:
+        gdid       : id of the grid (int)
+        xpts, ypts : list of points x,y coor (list, tuple or numpy.ndarray)
+    Returns:
+        {
+            'id'  : grid id, same as input arg
+            'lat' : list of points lat-coor (numpy.ndarray)
+            'lon' : list of points lon-coor (numpy.ndarray)
+        }
+    Raises:
+        TypeError on wrong input arg types
+        EzscintError on any other error
+    """
+    if not (type(gdid) == int):
+        raise TypeError("gdllfxy: Expecting data of type int, Got %s" % (type(gdid)))
+    (cx,cy) = (xpts,ypts)
+    if type(cx) in (list,tuple): cx = _np.array(xpts,dtype=_np.float32)
+    if type(cy) in (list,tuple): cy = _np.array(ypts,dtype=_np.float32)
+    if cx.size != cy.size:
+        raise TypeError("gdllfxy: provided xpts,ypts should have the same size")
+    (clat,clon) = (_np.empty(cx.size,dtype=_np.float32),_np.empty(cx.size,dtype=_np.float32))
+    istat = c_gdllfxy(gdid, clat, clon, cx, cy, cx.size)
+    if istat >= 0:
+        return {
+            'id'  : gdid,
+            'lat' : clat,
+            'lon' : clon,
+            'x'   : cx,
+            'y'   : cy
+            }
+    raise EzscintError()
+
 
 #TODO:    c_gdgetmask(gdid, mask)
 
 #TODO:    c_gdxpncf(gdid, i1, i2, j1, j2)
 #TODO:    c_gdgxpndaxes(gdid, ax, ay)
 
+
 #---- Interpolation Functions
 
-def ezsint(zin,gdidin,gdidout):
+
+def ezsint(zin,gdidin,gdidout): #TODO: user should be able to provide zout array
     """ Scalar interpolation on previsouly defined gridset (ezdefset)
 
     zout = ezsint(zin,gdidin,gdidout)
@@ -477,7 +677,7 @@ def ezsint(zin,gdidin,gdidout):
     """
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(zin) == numpy.ndarray):
-        raise TypeError("ezsint: Expecting data of type %s, Got %s" % (repr(numpy.ndarray),type(zin)))
+        raise TypeError("ezsint: Expecting data of type numpy.ndarray, Got %s" % (type(zin)))
     #TODO: check that zin and gdidin have consistent shape
     dshape = ezgprm(gdidout)['shape']
     zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
