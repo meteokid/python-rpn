@@ -53,9 +53,10 @@
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
 
-      ierr = clib_getenv ('TASK_WORK'  ,Path_work_S  )
-      ierr = clib_getenv ('TASK_INPUT' ,Path_input_S )
-      ierr = clib_getenv ('TASK_OUTPUT',Path_output_S)
+      ierr = clib_getenv ('TASK_BASEDIR',Path_basedir_S)
+      ierr = clib_getenv ('TASK_WORK'   ,Path_work_S   )
+      ierr = clib_getenv ('TASK_INPUT'  ,Path_input_S  )
+      ierr = clib_getenv ('TASK_OUTPUT' ,Path_output_S )
 
       Path_input_S  = trim(Path_input_S ) // '/' // trim(my_dir)
       Path_work_S   = trim(Path_work_S  ) // '/' // trim(my_dir)

@@ -14,39 +14,14 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r set_world_view
-!
 
-!
       subroutine set_world_view
-!
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Lee V.            - added watch_pid mechanism (returnpid)
-! v2_10 - Desgagne M.       - Add partitioning checks
-! v2_20 - Desgagne M.       - remove watch_dog (MPISUSPEND=ON)
-! v2_21 - Dugas B.          - possibly initialize convip
-! v2_21 - Lee V.            - modifications for LAM version and slab outputs
-! v2_30 - Dugas B.          - add call to gemtim
-! v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
-! v2_32 - Desgagne M.       - option for FST2000 encoding of ip1
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_03 - Desgagne M.       - new procedure for call to set_dcst8
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_11 - Lee V.            - place output in local PE directory
-! v3_21 - Desgagne M.       - using RMNLIB to access constants
-! v3_30 - Desgagne M.       - Cleaner approach to model startup
-! v3_30 - Desgagne & Winger - Initialize variable for VMM files
-! v4_04 - Tanguay M.        - Williamson's cases
-! v4_05 - Plante A.         - Open top
-! v4_10 - Lepine M.         - VMM replacement with GMM
-! v4_40 - Lee/Qaddouri      - add call to define PE topology for YinYang
-!
+
 #include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
@@ -68,7 +43,7 @@
 !-------------------------------------------------------------------
 !
       err = RPN_COMM_bloc ( Ptopo_nblocx, Ptopo_nblocy )
-      call handle_error(err,'pe_all_topo','rpn_comm_bloc')
+      call gem_error(err,'pe_all_topo','rpn_comm_bloc')
 
       call RPN_COMM_carac ( Ptopo_npex,Ptopo_npey,Ptopo_myproc, &
                             n1,n2,n3,n4,n5,n6,n7 ,Ptopo_mybloc, &
@@ -82,10 +57,9 @@
       Path_phy_S=trim(Path_input_S)//'/'
 
       err(:) = 0
+
       if ( Schm_theoc_L ) then
-
          call theo_cfg
-
       else
 !
 ! Read namelists from file Path_nml_S
@@ -95,22 +69,27 @@
          err(3) = step_nml    (Path_nml_S)
          err(4) = gem_nml     (Path_nml_S)
          err(5) = adx_nml     (Path_nml_S)
-
+			
       endif
-      call handle_error(minval(err(:)),'set_world_view','Error reading nml')
+
+      call gem_error(minval(err(:)),'set_world_view','Error reading nml')
+!
+! Read physics namelist
+!
+		call itf_phy_nml
 !
 ! Establish final configuration
 !
       err(1) = gemdm_config ( )
       err(2) = adx_config   ( )
-      call handle_error(min(err(1),err(2)),'set_world_view','config')
+      call gem_error(min(err(1),err(2)),'set_world_view','config')
 
       ierr = grid_nml2   ('print',G_lam)
       ierr = step_nml    ('print')
       ierr = gem_nml     ('print')
 
       if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
-           call handle_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
+           call gem_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
 
       call adx_nml_print ()
 
@@ -145,7 +124,7 @@
 ! Initializes GMM
 !
       call set_gmm
-
+			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
 !
 !-------------------------------------------------------------------

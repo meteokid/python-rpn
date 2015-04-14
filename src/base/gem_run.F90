@@ -15,20 +15,18 @@
 
 !**s/r gem_run - Performs the integration of the model
 !
-      subroutine gem_run (F_dgtflt_L, F_rstrt_L)
+      subroutine gem_run (F_rstrt_L)
       implicit none
 #include <arch_specific.hf>
 
-      logical F_dgtflt_L, F_rstrt_L
+      logical F_rstrt_L
 
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
-! F_dgtflt_L    I         Digital initiatization mode
 ! F_rstrt_L     O         Is a restart required
 !----------------------------------------------------------------
 
-#include <WhiteBoard.hf>
 #include "init.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -37,14 +35,13 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "grd.cdk"
-#include "clim.cdk"
 #include "modconst.cdk"
 
+      logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
       logical bkup_L
-      integer last_step,fstep,istep,step0,stepf,upperlimit, &
-              istat, seconds_since
+      integer last_step,fstep,istep,step0,stepf,seconds_since
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -57,29 +54,14 @@
 
       call blocstat (.true.)
 
-                      fstep = Step_total
-      if (F_dgtflt_L) fstep = Lctl_step+Init_dfnp-1
-
-      istat= wb_put('model/Init/mode', F_dgtflt_L, WB_REWRITE_MANY)
-
-      last_step  = (Step_kount/Step_rsti)*Step_rsti + &
-                    Step_rsti + Step_delay
-      upperlimit = min(Step_total,last_step)
-
-      if (F_dgtflt_L) then
-         if (last_step.ge.(Lctl_step+Init_halfspan)) last_step= fstep
-      else
-         last_step = min(Step_total,last_step)
-      endif
-
-      step0 = Lctl_step+1
-      stepf = last_step
+      stepf= Step_total
+      if (Init_mode_L) stepf= Init_dfnp-1
+      F_rstrt_L = .false.
 
       if ( .not. Rstri_rstn_L ) then
-         call out_outdir (Step_kount, upperlimit)
+         call out_outdir (Step_total)
          if (Step_kount.eq.0) then
             call iau_apply2 (Step_kount)
-            call out_steps (Lctl_step,Lctl_step)
             if ( Schm_phyms_L ) then
                call pw_shuffle
                call pw_update_GPW
@@ -89,26 +71,19 @@
             endif
             call out_dyn (.false., .true.) ! casc output
          endif
-         call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
-         if ( .not.F_dgtflt_L .or. &
-              (Lctl_step.lt.(Lctl_step+Init_halfspan) ) )&
-              call out_launchpost2 (.false.,.false.)
-      else
-         call out_steps (step0, stepf)
       endif
-
-      bkup_L = .false.
 
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
-      do istep = step0, stepf
+      do while (Step_kount .lt. stepf)
 
          seconds_since= model_timeout_alarm(600)
 
-         call step_update (istep, bkup_L, fstep)
+         Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
+         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,stepf
 
-         call out_outdir (Step_kount, upperlimit)
+         call out_outdir (Step_total)
 
          call pw_shuffle
 
@@ -124,30 +99,27 @@
 
          if (Grd_yinyang_L) call yyg_xchng_all
 
-         if ( F_dgtflt_L ) call digflt ! digital filter
+         if ( Init_mode_L ) call digflt ! digital filter
 
          call out_dyn (.true., .false.) ! regular output
 
          call blocstat (.false.)
 
-         call step_close (Lctl_step, bkup_L, F_dgtflt_L, stepf)
+         F_rstrt_L= gem_muststop (stepf)
+
+         if (F_rstrt_L) exit
 
       end do
 
       seconds_since= model_timeout_alarm(600)
 
-      call max_rss (' GEMDM',Lun_out.gt.0)
-
-      F_rstrt_L = .false.
-
-      if ((Lctl_step.lt.fstep).or.(Clim_climat_L)) F_rstrt_L = .true.
-
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
- 3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
- 4000 format(/,'END OF THE TIME LOOP (S/R GEM_RUN) AT TIMESTEP',I8, &
-      /,'===================================================')
+ 1001 format(/,'DYNAMICS: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
+             /,'=========================================================')
+ 4000 format(/,'GEM_RUN: END OF THE TIME LOOP AT TIMESTEP',I8, &
+             /,'===================================================')
 !
 !     ---------------------------------------------------------------
 !

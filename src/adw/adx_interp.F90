@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 
-!/@*
+!*
 subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, &
                          F_capx1, F_capy1, F_capz1, &
                          F_capx2, F_capy2, F_capz2, &
@@ -52,7 +52,7 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    ! v3_30 - Tanguay M.        - adjust OPENMP for LAM
    ! v4_06 - Gaudreault S.     - Code optimization, Positivity-preserving advection
    ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
-!*@/
+!**/
 
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
@@ -67,15 +67,24 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    real, dimension(:), pointer             :: w_mono_a, w_lin_a, w_min_a, w_max_a
    real, dimension(adx_mlni,adx_mlnj,F_nk) :: w_mono_b, w_lin_b, w_min_b, w_max_b, &
                                               w_mono_c, w_lin_c, w_min_c, w_max_c
+   real, dimension(1), target              :: no_conserv
 
    !---------------------------------------------------------------------
    nullify(wrka)
    call msg(MSG_DEBUG,'adx_interp')
    if (.not.adx_lam_L) allocate (wrka(max(1,adx_fro_a)))
 
-   nullify(w_mono_a,w_lin_a,w_min_a,w_max_a)
-   if (.not.adx_lam_L.and.F_conserv_L) allocate (w_mono_a(max(1,adx_fro_a)),w_lin_a(max(1,adx_fro_a)), &
-                                                 w_min_a (max(1,adx_fro_a)),w_max_a(max(1,adx_fro_a)))
+   if (.not.adx_lam_L) then
+      if (F_conserv_L) then
+         allocate (w_mono_a(max(1,adx_fro_a)),w_lin_a(max(1,adx_fro_a)), &
+                   w_min_a (max(1,adx_fro_a)),w_max_a(max(1,adx_fro_a)))
+      else
+         w_mono_a => no_conserv
+         w_lin_a  => no_conserv
+         w_min_a  => no_conserv
+         w_max_a  => no_conserv
+      endif
+   endif
 
    call adx_grid_scalar (fld_adw, F_in, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
                                    Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)

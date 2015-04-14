@@ -29,35 +29,21 @@
 
 #include "glb_ld.cdk"
 
-      real  tab_srcf(l_minx:l_maxx,l_miny:l_maxy,NK), &
-            tab_dstf(l_minx:l_maxx,l_miny:l_maxy,NK)
+      real  tab_dstf(l_minx:l_maxx,l_miny:l_maxy,NK)
       character*32 UPinterp_S
 !
 !----------------------------------------------------------------------
 !      
       call low2up  (interp_S,UPinterp_S)
 
-!     Copy original fields to a source and destination tables with halo
+!     Copy original fields to a source and destination tables with 
+!     zeroed halo
 
-      tab_srcf = 0.
       tab_dstf = 0.
-      tab_srcf(1:l_ni,1:l_nj,1:Nk)= F_src(1:l_ni,1:l_nj,1:Nk)
       tab_dstf(1:l_ni,1:l_nj,1:Nk)= F_src(1:l_ni,1:l_nj,1:Nk)
 
-      call rpn_comm_xch_halo(tab_srcf, l_minx,l_maxx,l_miny,l_maxy,&
-           l_ni,l_nj,NK,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-
-      if (trim(UPinterp_S).eq.'NEAREST') then
-         call yyg_scalbc0(tab_dstf,tab_srcf,l_minx,l_maxx,l_miny,l_maxy,NK)
-      elseif (trim(UPinterp_S).eq.'LINEAR') then
-         call yyg_scalbc1(tab_dstf,tab_srcf,l_minx,l_maxx,l_miny,l_maxy,NK)
-      elseif (trim(UPinterp_S).eq.'CUBIC') then
-         call yyg_xchng (tab_dstf, l_minx,l_maxx,l_miny,l_maxy, &
-                         Nk, .false., 'CUBIC')
-      else
-         print*,'Cannot find interpolator'
-         stop
-      endif
+      call yyg_xchng (tab_dstf, l_minx,l_maxx,l_miny,l_maxy, &
+                         Nk, .false., trim(UPinterp_S))
 
       F_src(1:l_ni,1:l_nj,1:Nk)= tab_dstf(1:l_ni,1:l_nj,1:Nk)
 !

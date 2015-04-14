@@ -24,7 +24,6 @@
       integer F_step,ns
       integer F_sorties(0:ns)
 
-#include "init.cdk"
 #include "dimout.cdk"
 #include "timestep.cdk"
 #include "outd.cdk"
@@ -33,7 +32,7 @@
 #include "level.cdk"
 
       integer i,j,k,liste_m(2,50),liste_p(2,50),liste_h(2,50), &
-              cnt,cnt_m,cnt_p,cnt_h,o_sets, half_span
+              cnt,cnt_m,cnt_p,cnt_h,o_sets
       integer, dimension(:), pointer :: o_step, o_lev, o_grid
 !
 !     ---------------------------------------------------------------
@@ -43,26 +42,21 @@
          o_step => Outd_step
          o_lev  => Outd_lev
          o_grid => Outd_grid
-         half_span= Init_halfspan
       endif
       if (trim(F_component_S) == 'PHY' ) then
          o_sets =  Outp_sets
          o_step => Outp_step
          o_lev  => Outp_lev
          o_grid => Outp_grid
-         half_span= Init_halfspan + 1
       endif
       if (trim(F_component_S) == 'CHM' ) then
          o_sets =  Outc_sets
          o_step => Outc_step
          o_lev  => Outc_lev
          o_grid => Outc_grid
-         half_span= Init_halfspan + 1
       endif
 
       cnt=0 ; cnt_m=0 ; cnt_p=0 ; cnt_h=0
-
-      if ( Init_mode_L .and. (F_step.ge.half_span) ) goto 998
 
       do j=1,Timestep_sets
           do i=1,Timestep_max(j)

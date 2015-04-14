@@ -16,17 +16,15 @@
       subroutine init_ndoms (ndomains,dom_deb,err)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer ndomains,dom_deb,err
-!
+
 #include <clib_interface_mu.hf>
+#include <WhiteBoard.hf>
 #include "grd.cdk"
-!
-      logical slice_last_L
-      common /tempory_common_slice/ slice_last_L
 
       character*16 ndomains_S, last_domain_S
-      integer indx1, dom_fin, last
+      integer indx1, dom_fin, last, istat
 !
 !-------------------------------------------------------------------
 !
@@ -69,7 +67,7 @@
          return
       endif
 
-      slice_last_L = dom_fin .eq. last
+      istat = wb_put('model/last_domain',(dom_fin.eq.last),WB_REWRITE_NONE)
 
       Grd_yinyang_L = .false.
       Grd_yinyang_S = ''

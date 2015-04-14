@@ -1,7 +1,5 @@
 !**s/p Bermejo_Conde - Ensures conservation of interpolated field (Bermejo and Conde,2002)
 
-#include <model_macros_f.h>
-
       subroutine Bermejo_Conde (F_name_S,F_out,F_high,F_low,F_min,F_max,F_old,Minx,Maxx,Miny,Maxy,F_nk,k0,F_CLIP_L,F_ILMC_L)
 
       implicit none
@@ -182,7 +180,7 @@
       endif
 
  1000 format(1X,A34,E20.12,1X,A4)
- 1001 format(1X,A23,E10.4,'%')
+ 1001 format(1X,A23,E11.4,'%')
  1002 format(1X,A34,3(E20.12,1X))
  1003 format(1X,A34,F20.2,1X,A4)
 

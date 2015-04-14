@@ -84,112 +84,14 @@
          if (Pil_send_len(kk).gt.0) then
 !            prepare something to send
 
-             mm=0
+                adr=Pil_send_adr(kk)+1
 
-! make for west
-             do m=1,Pil_sendw_len(kk)
-                adr=Pil_sendw_adr(kk)+m
-
-!$omp parallel private (mm,sendu_pil_8,sendv_pil_8,i,j) &
-!$omp          shared (tabu_src_8,tabv_src_8,send_pil)
-!$omp do
-                do k=1,NK
-                   mm=(m-1)*NK*2 + k*2
-                   call int_cub_lag2(sendu_pil_8,tabu_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   call int_cub_lag2(sendv_pil_8,tabv_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   send_pil(mm-1,KK)=real(Pil_send_s1(adr)*sendu_pil_8 +   &
-                                        Pil_send_s2(adr)*sendv_pil_8   )
-                   send_pil(mm,KK)=real(Pil_send_s3(adr)*sendu_pil_8 +     &
-                                        Pil_send_s4(adr)*sendv_pil_8   )
-                enddo
-!$omp enddo
-!$omp end parallel
-             enddo
-! make for east
-             do m=1,Pil_sende_len(kk)
-                adr=Pil_sende_adr(kk)+m
-
-!$omp parallel private (mm,sendu_pil_8,sendv_pil_8,i,j) &
-!$omp          shared (tabu_src_8,tabv_src_8,send_pil)
-!$omp do
-                do k=1,NK
-!                  mm=(m-1)*NK*2 + k*2
-                   mm=(Pil_sendw_len(kk)+m-1)*NK*2 + k*2
-                   call int_cub_lag2(sendu_pil_8,tabu_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   call int_cub_lag2(sendv_pil_8,tabv_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   send_pil(mm-1,KK)=real(Pil_send_s1(adr)*sendu_pil_8 +   &
-                                        Pil_send_s2(adr)*sendv_pil_8   )
-                   send_pil(mm,KK)=real(Pil_send_s3(adr)*sendu_pil_8 +     &
-                                        Pil_send_s4(adr)*sendv_pil_8   )
-                enddo
-!$omp enddo
-!$omp end parallel
-             enddo
-! make for south
-             do m=1,Pil_sends_len(kk)
-                adr=Pil_sends_adr(kk)+m
-
-!$omp parallel private (mm,sendu_pil_8,sendv_pil_8,i,j) &
-!$omp          shared (tabu_src_8,tabv_src_8,send_pil)
-!$omp do
-                do k=1,NK
-!                  mm=(m-1)*NK*2 + k*2
-                   mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+m-1)*NK*2 + k*2
-                   call int_cub_lag2(sendu_pil_8,tabu_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   call int_cub_lag2(sendv_pil_8,tabv_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   send_pil(mm-1,KK)=real(Pil_send_s1(adr)*sendu_pil_8 +   &
-                                        Pil_send_s2(adr)*sendv_pil_8   )
-                   send_pil(mm,KK)=real(Pil_send_s3(adr)*sendu_pil_8 +     &
-                                        Pil_send_s4(adr)*sendv_pil_8   )
-                enddo
-!$omp enddo
-!$omp end parallel
-
-             enddo
-! make for north
-             do m=1,Pil_sendn_len(kk)
-                adr=Pil_sendn_adr(kk)+m
-
-!$omp parallel private (mm,sendu_pil_8,sendv_pil_8,i,j)  &
-!$omp          shared (tabu_src_8,tabv_src_8,send_pil)
-!$omp do
-                do k=1,NK
-!                  mm=(m-1)*NK*2 + k*2
-                   mm=(Pil_sendw_len(kk)+Pil_sende_len(kk)+Pil_sends_len(kk)+m-1)*NK*2 + k*2
-                   call int_cub_lag2(sendu_pil_8,tabu_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   call int_cub_lag2(sendv_pil_8,tabv_src_8(l_minx,l_miny,k),&
-                             Pil_send_imx(adr),Pil_send_imy(adr),        &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Pil_send_xxr(adr),Pil_send_yyr(adr))
-                   send_pil(mm-1,KK)=real(Pil_send_s1(adr)*sendu_pil_8 +   &
-                                        Pil_send_s2(adr)*sendv_pil_8   )
-                   send_pil(mm,KK)=real(Pil_send_s3(adr)*sendu_pil_8 +     &
-                                        Pil_send_s4(adr)*sendv_pil_8   )
-                enddo
-!$omp enddo
-!$omp end parallel
-             enddo
+                   call int_cubuv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
+                        Pil_send_imx(adr),Pil_send_imy(adr),          &
+                        Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy, &
+                        Pil_send_xxr(adr),Pil_send_yyr(adr),Pil_send_len(kk),&
+                        Pil_send_s1(adr),Pil_send_s2(adr),            &
+                        Pil_send_s3(adr),Pil_send_s4(adr)            )
 
              ireq = ireq+1
 !            print *,'scaluv: sending',Pil_send_len(kk)*NK*2,' to ',kk_proc
@@ -236,10 +138,9 @@
       if (recvlen.gt.0) then
 
           do 300 kk=1, Pil_recvmaxproc
-! fill my west
              mm=0
-             do m=1,Pil_recvw_len(kk)
-             adr=Pil_recvw_adr(kk)+m
+             do m=1,Pil_recv_len(kk)
+             adr=Pil_recv_adr(kk)+m
              do k=1,NK
                 mm=mm+1
                 tabu_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
@@ -247,37 +148,6 @@
                 tabv_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
              enddo
              enddo
-! fill my east
-             do m=1,Pil_recve_len(kk)
-             adr=Pil_recve_adr(kk)+m
-             do k=1,NK
-                mm=mm+1
-                tabu_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-                mm=mm+1
-                tabv_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-             enddo
-             enddo
-! fill my south
-             do m=1,Pil_recvs_len(kk)
-             adr=Pil_recvs_adr(kk)+m
-             do k=1,NK
-                mm=mm+1
-                tabu_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-                mm=mm+1
-                tabv_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-             enddo
-             enddo
-! fill my north
-             do m=1,Pil_recvn_len(kk)
-             adr=Pil_recvn_adr(kk)+m
-             do k=1,NK
-                mm=mm+1
-                tabu_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-                mm=mm+1
-                tabv_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
-             enddo
-             enddo
-
  300  continue
 
        

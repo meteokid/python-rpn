@@ -43,11 +43,9 @@
 #include "lun.cdk"
 #include "step.cdk"
 #include "rstr.cdk"
-#include "ptopo.cdk"
 #include "vtopo.cdk"
 
-      logical rstrt_L
-      data rstrt_L /.false./
+      logical :: rstrt_L= .false.
 !
 !     ---------------------------------------------------------------
 !
@@ -75,15 +73,12 @@
 
       if ( Init_mode_L ) call initial (rstrt_L)
 
-      if (.not.rstrt_L) call gem_run (.false., rstrt_L)
-
-      if (rstrt_L) call wrrstrt ()
+      if (.not.rstrt_L) call gem_run (rstrt_L)
 
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 
- 3000 format( &
-      //,'END OF CURRENT TIME SLICE (S/R GEM_CTRL) AT TIMESTEP',I8, &
-       /,'=================================================')
+ 3000 format(/,'GEM_CTRL: END OF CURRENT TIME SLICE AT TIMESTEP',I8, &
+             /,'===================================================')
 
 !     ---------------------------------------------------------------
 !

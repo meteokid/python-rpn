@@ -84,32 +84,16 @@
          if (Bln_vsend_len(kk).gt.0) then
 !            prepare something to send
 
-             mm=0
+                adr=Bln_vsend_adr(kk)+1
 
-! make for west
-             do m=1,Bln_vsend_len(kk)
-                adr=Bln_vsend_adr(kk)+m
-
-!$omp parallel private (mm,tabu_8,tabv_8) &
-!$omp          shared (tabu_src_8,tabv_src_8,send_pil)
-!$omp do
-                do k=1,NK
-!                  mm=mm+1
-                   mm=(m-1)*NK+k
-                   call int_cub_lag2(tabv_8,tabv_src_8(l_minx,l_miny,k),  &
-                             Bln_vsend_imx1(adr),Bln_vsend_imy1(adr), &
-                             Geomg_x_8,Geomg_yv_8,l_minx,l_maxx,l_miny,l_maxy,              & 
-                             Bln_vsend_xxr(adr),Bln_vsend_yyr(adr))
-                   call int_cub_lag2(tabu_8,tabu_src_8(l_minx,l_miny,k),  &
-                             Bln_vsend_imx2(adr),Bln_vsend_imy2(adr), &
-                             Geomg_xu_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,              &
-                             Bln_vsend_xxr(adr),Bln_vsend_yyr(adr))
-                   send_pil(mm,KK)=                                       &
-                   real(Bln_vsend_s1(adr)*tabv_8 + Bln_vsend_s2(adr)*tabu_8)
-                enddo
-!$omp enddo
-!$omp end parallel
-             enddo
+             call int_cubv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
+                             Bln_vsend_imx1(adr),Bln_vsend_imy1(adr),  &
+                             Bln_vsend_imx2(adr),Bln_vsend_imy2(adr),  &
+                             Geomg_xu_8,Geomg_y_8,Geomg_x_8,Geomg_yv_8,&
+                             l_minx,l_maxx,l_miny,l_maxy, Nk,          & 
+                             Bln_vsend_xxr(adr),Bln_vsend_yyr(adr),    &
+                             Bln_vsend_len(kk) ,                       &
+                             Bln_vsend_s1(adr) ,Bln_vsend_s2(adr) )
 
              ireq = ireq+1
 !            print *,'vecbc2: sending',Bln_vsend_len(kk)*NK,' to ',kk_proc
@@ -155,7 +139,6 @@
       if (recvlen.gt.0) then
 
           do 300 kk=1,Bln_vrecvmaxproc
-! fill my west
              mm=0
              do m=1,Bln_vrecv_len(kk)
              adr=Bln_vrecv_adr(kk)+m

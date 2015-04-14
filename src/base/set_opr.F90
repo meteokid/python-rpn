@@ -209,7 +209,10 @@
       endif
 
       call set_oprz ()
-      if (Grd_yinyang_L) call yyg_initstencils ()
+      if (Grd_yinyang_L) then
+          call yyg_initstencils ()
+          call yyg_rhs_initscalbc()
+      endif
 
       if ( Sol_type_S(1:9).eq.'ITERATIVE' ) then
 

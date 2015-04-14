@@ -36,6 +36,7 @@
 !----------------------------------------------------------------
 
 #include "gmm.hf"
+#include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
@@ -49,7 +50,7 @@
 #include "schm.cdk"
 
       type(gmm_metadata) :: meta2d
-      integer n, pndfnph, pnerr, pnlkey1(2), pnfirst, pnlast, gmmstat
+      integer n, pndfnph, err, pnlkey1(2), pnfirst, pnlast, gmmstat
       real    prn, promegc, prsum, prwin1, prwin2
 !
 !     ---------------------------------------------------------------
@@ -98,12 +99,13 @@
       if ( .not. Rstri_rstn_L ) call digflt()
 
       if (Lun_out.gt.0) write(Lun_out,1000) &
-           Lctl_step,Lctl_step+Init_dfnp-1
+           Lctl_step,Lctl_step+Init_dfnp-1-Step_kount
 
-      call gem_run (.true., F_rstrt_L)
+      call gem_run (F_rstrt_L)
 
-      if (Step_kount.eq.Init_dfnp-1) then
+      if ((Step_kount.eq.Init_dfnp-1).and.(.not.F_rstrt_L)) then
          Init_mode_L = .false.
+         err= wb_put('model/Init/mode', Init_mode_L, WB_REWRITE_MANY)
          call ta2t1tx()
          Lctl_step = Lctl_step  - Init_halfspan
          Step_kount= Step_kount - Init_halfspan

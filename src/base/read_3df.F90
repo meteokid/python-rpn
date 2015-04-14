@@ -195,9 +195,9 @@
          ttn(:,nka_t+diag_lvl) = tr1(:,1)
          uun(:,nka_m+diag_lvl) = tr1(:,2)
          vvn(:,nka_m+diag_lvl) = tr1(:,3)
-         do 20 n=1,Tr3d_ntr
+           do 20 n=1,ntr
             do k=1,ntra
-               if (trim(trname_a(k)).eq.trim(Tr3d_name_S(n)))then
+               if (trim(trname_a(k)).eq.trim(tracers(n)))then
                   trn(:,nka_t+diag_lvl,n)= tr1(:,3+k)
                   goto 20
                endif

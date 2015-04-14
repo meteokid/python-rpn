@@ -191,8 +191,6 @@
 
       call gem_error (errcode,'itf_phy_restart','cannot read physics restart correctly')
       endif
-
-      if (.not. F_spin_L) call itf_cpl_restart (F_WorR_S)
       
  1000 format(/,'FOUND USER BUSPER INPUT - NOW LOOKING FOR PE-SPECIFIC RESTART AT',x,a)
  2000 format(/,'READING A PHYSICS RESTART FILE AT TIMESTEP #',I8,x,a, &

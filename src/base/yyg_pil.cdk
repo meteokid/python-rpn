@@ -9,39 +9,42 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
-! Pil_recvw_len(M)   | Number of values to receive from each PE for    |
-!                    | its West Pilot area  (M=Ptopo_numproc)          |
-! Pil_recvw_i(*,M)   | local gridpoint I to receive value from PE(*)   |
-! Pil_recvw_j(*,M)   | local gridpoint J to receive value from PE(*)   |
-! Pil_sendw_len(*)   | Number of values to send to  PE (*) for West    |
-! Pil_sendw_imx(*,M) | closest I gridpoint on the other panel to find  |
-!                    | the value for Pil_sendw_xxr,Pil_sendw_yyr       |
-! Pil_sendw_imy(*,M) | closest J gridpoint on the other panel to find  |
-!                    | the value for  Pil_sendw_xxr,Pil_sendw_yyr      |
-! Pil_sendw_xxr(*,M) | longitude in the other panel to find the value  |
+! M                  | Total number of Processors in Yang or Yin       |
+! Pil_recvproc(M)    | Processor number to receive data FROM           |
+! Pil_recv_len(M)    | Number of values to receive from Pil_recvproc(i)|
+! Pil_recv_adr(M)    | Address of starting index in vector for receiv- |
+!                    | ing data from processor Pil_recvproc(i)         |
+! Pil_recv_i(*,M)    | local gridpoint I to receive value from PE(i)   |
+! Pil_recv_j(*,M)    | local gridpoint J to receive value from PE(i)   |
+! Pil_sendproc(M)    | Processor number to send  data TO               |
+! Pil_send_len(M)    | Number of values to send to Pil_sendproc(i)     |
+! Pil_send_adr(M)    | Address of starting index in vector for send-   |
+!                    | ing data to   processor Pil_sendproc(i)         |
+! Pil_send_imx(*,M)  | closest I gridpoint on the other panel to find  |
+!                    | the value for Pil_send_xxr,Pil_send_yyr         |
+! Pil_send_imy(*,M)  | closest J gridpoint on the other panel to find  |
+!                    | the value for  Pil_send_xxr,Pil_send_yyr        |
+! Pil_send_xxr(*,M)  | longitude in the other panel to find the value  |
 !                    | for receiving panel                             |
-! Pil_sendw_yyr(*,M) | latitude in the other panel to find the value   |
+! Pil_send_yyr(*,M)  | latitude in the other panel to find the value   |
 !                    | for receiving panel                             |
-! Pil_sendw_s1(*,M)  | element (s(1,1)) in matrix for polar vectors    |
+! Pil_send_s1(*,M)   | element (s(1,1)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s2(*,M)  | element (s(1,2)) in matrix for polar vectors    |
+! Pil_send_s2(*,M)   | element (s(1,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s3(*,M)  | element (s(2,1)) in matrix for polar vectors    |
+! Pil_send_s3(*,M)   | element (s(2,1)) in matrix for polar vectors    |
 !                    | transformation                                  |
-! Pil_sendw_s4(*,M)  | element (s(2,2)) in matrix for polar vectors    |
+! Pil_send_s4(*,M)   | element (s(2,2)) in matrix for polar vectors    |
 !                    | transformation                                  |
 !______________________________________________________________________|
 #endif
 !
-!Declarations for Scalar variables (on Phi grid)
+!Declarations for Scalar variables (on Phi grid for cubic interpolation)
       integer  Pil_send_all, Pil_recv_all,Pil_sendmaxproc,Pil_recvmaxproc
       integer, dimension (:  ), pointer :: &
                Pil_sendproc, Pil_recvproc, &
                Pil_recv_len, Pil_send_len, &
-               Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
-               Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len, &
-               Pil_recvw_adr, Pil_recve_adr, Pil_recvs_adr, Pil_recvn_adr, &
-               Pil_sendw_adr, Pil_sende_adr, Pil_sends_adr, Pil_sendn_adr, &
+               Pil_recv_adr, Pil_send_adr, &
                Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
 !
       real*8,  dimension (: ), pointer :: &
@@ -52,10 +55,7 @@
                Pil_sendmaxproc,Pil_recvmaxproc, &
                Pil_sendproc, Pil_recvproc, &
                Pil_recv_len, Pil_send_len, &
-               Pil_recvw_len, Pil_recve_len, Pil_recvs_len, Pil_recvn_len, &
-               Pil_sendw_len, Pil_sende_len, Pil_sends_len, Pil_sendn_len, &
-               Pil_recvw_adr, Pil_recve_adr, Pil_recvs_adr, Pil_recvn_adr, &
-               Pil_sendw_adr, Pil_sende_adr, Pil_sends_adr, Pil_sendn_adr, &
+               Pil_recv_adr, Pil_send_adr, &
                Pil_recv_i   , Pil_recv_j   , Pil_send_imx , Pil_send_imy
 
       common/Pil_r8/ &

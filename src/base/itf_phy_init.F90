@@ -18,8 +18,9 @@
       subroutine itf_phy_init
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
-      use phy_itf, only: PHY_COMPATIBILITY_LVL, phy_nml, phy_init
+      use phy_itf, only: phy_init
       implicit none
+#include <arch_specific.hf>
 
 !authors 
 !     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
@@ -27,7 +28,6 @@
 !revision
 ! v4_70 - authors          - initial version
 
-#include <arch_specific.hf>
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -40,8 +40,6 @@
 #include "tr3d.cdk"
 #include "level.cdk"
 
-      integer, parameter :: COMPATIBILITY_LVL = 7
-
       type(vgrid_descriptor) :: vcoord
       integer dateo,err,zuip,ztip
       integer, dimension(:), pointer :: ip1m
@@ -53,27 +51,9 @@
 
       if (Lun_out.gt.0) write(Lun_out,1000)
 
-      if ( Schm_theoc_L) then
-         if (Lun_out.gt.0) write(Lun_out,9500)
-         return
-      endif
-
-! Important compatibility level check
-
-      err = 0
-      if ( PHY_COMPATIBILITY_LVL .ne. COMPATIBILITY_LVL ) err = -1
-
-      call gem_error ( err, 'itf_phy_init', &
-                       'Wrong physics compatibility level')
-
-! Initialize physics configuration with default values and read 
-! user configuration in namelists from file 'model_settings'
-
-      err= 0
-      err= min(phy_nml ( trim(Path_nml_S) ), err)
-
 ! We put mandatory variables in the WhiteBoard
 
+      err= 0
       err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
       if (Tr3d_ntr_from_gemntr > 0) then

@@ -16,17 +16,17 @@
 !**s/r out_outdir - Establishes output directory base on Lctl_step and Out3_postfreq
 !
 
-      subroutine out_outdir (current_step, upperlimit)
+      subroutine out_outdir (upperlimit)
       implicit none
 #include <arch_specific.hf>
-!
-      integer current_step,upperlimit
-!
+
+      integer upperlimit
+
 !AUTHOR   Michel Desgagne  - Summer 2010
 !
 !REVISION
 ! v4_14 - Desgagne M.      - Initial version
-!
+
 #include "grd.cdk"
 #include "out.cdk"
 #include "out3.cdk"
@@ -36,7 +36,7 @@
 #include "step.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
-!
+
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
                                   FMT=' ', last_S=' '
       character*10 postjob_S
@@ -47,9 +47,11 @@
 !
 !----------------------------------------------------------------------
 !
+      call out_steps
+
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
 
-      stepno = max(current_step,1)
+      stepno = max(Step_kount,1)
       if (Out3_postfreq .gt. 0) then
          last_step_post = stepno / Out3_postfreq
          last_step_post = (last_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
@@ -94,7 +96,7 @@
          dirstep_S = Out_dirname_S        
          if (Ptopo_myproc == 0 .and. Ptopo_couleur == 0) then
             err = clib_mkdir(trim(Out_dirname_S))
-            if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),current_step
+            if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),Step_kount
          endif
       endif
 

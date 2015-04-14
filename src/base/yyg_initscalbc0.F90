@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!***s/r yyg_initscalbc1 - to initialize communication pattern for nearest
+!***s/r yyg_initscalbc0 - to initialize communication pattern for nearest
 !                            interpolation of scalar fields
 !
 
@@ -32,8 +32,7 @@
 
       integer err,Ndim,i,j,k,imx,imy,kk,ii,jj,ki,ksend,krecv
       integer kkproc
-      integer, dimension (:), pointer :: recv_len,recvw_len,recve_len,recvs_len,recvn_len
-      integer, dimension (:), pointer :: send_len,sendw_len,sende_len,sends_len,sendn_len
+      integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
@@ -57,25 +56,9 @@
 ! And allocate temp vectors needed for counting for each processor
 !
       allocate (recv_len (Ptopo_numproc))
-      allocate (recvw_len(Ptopo_numproc))
-      allocate (recve_len(Ptopo_numproc))
-      allocate (recvs_len(Ptopo_numproc))
-      allocate (recvn_len(Ptopo_numproc))
       allocate (send_len (Ptopo_numproc))
-      allocate (sendw_len(Ptopo_numproc))
-      allocate (sende_len(Ptopo_numproc))
-      allocate (sends_len(Ptopo_numproc))
-      allocate (sendn_len(Ptopo_numproc))
       recv_len (:)=0
-      recvw_len(:)=0
-      recve_len(:)=0
-      recvs_len(:)=0
-      recvn_len(:)=0
       send_len (:)=0
-      sendw_len(:)=0
-      sende_len(:)=0
-      sends_len(:)=0
-      sendn_len(:)=0
 !
 ! FIRST PASS is to find the number of processor to tag for
 ! communication and the number of items to send and receive for each
@@ -99,7 +82,7 @@
              do kk=1,Ptopo_numproc
                 if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk)) then
-                    recvw_len(kk)=recvw_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                 endif
              enddo       
          endif
@@ -110,7 +93,7 @@
              do kk=1,Ptopo_numproc
                 if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
-                    sendw_len(kk)=sendw_len(kk)+1
+                    send_len(kk)=send_len(kk)+1
                 endif
              enddo       
          endif
@@ -135,7 +118,7 @@
              do kk=1,Ptopo_numproc
                 if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
-                    recve_len(kk)=recve_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                 endif
              enddo       
          endif
@@ -146,7 +129,7 @@
              do kk=1,Ptopo_numproc
                 if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
-                    sende_len(kk)=sende_len(kk)+1
+                    send_len(kk)=send_len(kk)+1
                 endif
              enddo       
          endif
@@ -171,7 +154,7 @@
              do kk=1,Ptopo_numproc
                 if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
-                    recvs_len(kk)=recvs_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                 endif
              enddo       
          endif
@@ -182,7 +165,7 @@
              do kk=1,Ptopo_numproc
                 if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
-                    sends_len(kk)=sends_len(kk)+1
+                    send_len(kk)=send_len(kk)+1
                 endif
              enddo       
          endif
@@ -208,7 +191,7 @@
              do kk=1,Ptopo_numproc
                 if (imx.ge.Ptopo_gindx(1,kk).and.imx.le.Ptopo_gindx(2,kk).and. &
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
-                    recvn_len(kk)=recvn_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                 endif
              enddo       
          endif
@@ -219,7 +202,7 @@
              do kk=1,Ptopo_numproc
                 if (i  .ge.Ptopo_gindx(1,kk).and.i  .le.Ptopo_gindx(2,kk).and. &
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
-                    sendn_len(kk)=sendn_len(kk)+1
+                    send_len(kk)=send_len(kk)+1
                 endif
              enddo       
          endif
@@ -235,8 +218,6 @@
      Pil0_recvmaxproc=0
      
      do kk=1,Ptopo_numproc
-        send_len(kk)=sendw_len(kk)+sende_len(kk) + sends_len(kk)+sendn_len(kk)
-        recv_len(kk)=recvw_len(kk)+recve_len(kk) + recvs_len(kk)+recvn_len(kk)
         Pil0_send_all=send_len(kk)+Pil0_send_all
         Pil0_recv_all=recv_len(kk)+Pil0_recv_all
 
@@ -247,41 +228,15 @@
 !     print *,'Allocate common vectors'
       allocate (Pil0_recvproc(Pil0_recvmaxproc))
       allocate (Pil0_recv_len(Pil0_recvmaxproc))
-      allocate (Pil0_recvw_len(Pil0_recvmaxproc))
-      allocate (Pil0_recve_len(Pil0_recvmaxproc))
-      allocate (Pil0_recvs_len(Pil0_recvmaxproc))
-      allocate (Pil0_recvn_len(Pil0_recvmaxproc))
-      allocate (Pil0_recvw_adr(Pil0_recvmaxproc))
-      allocate (Pil0_recve_adr(Pil0_recvmaxproc))
-      allocate (Pil0_recvs_adr(Pil0_recvmaxproc))
-      allocate (Pil0_recvn_adr(Pil0_recvmaxproc))
+      allocate (Pil0_recv_adr(Pil0_recvmaxproc))
 
       allocate (Pil0_sendproc(Pil0_sendmaxproc))
       allocate (Pil0_send_len(Pil0_sendmaxproc))
-      allocate (Pil0_sendw_len(Pil0_sendmaxproc))
-      allocate (Pil0_sende_len(Pil0_sendmaxproc))
-      allocate (Pil0_sends_len(Pil0_sendmaxproc))
-      allocate (Pil0_sendn_len(Pil0_sendmaxproc))
-      allocate (Pil0_sendw_adr(Pil0_sendmaxproc))
-      allocate (Pil0_sende_adr(Pil0_sendmaxproc))
-      allocate (Pil0_sends_adr(Pil0_sendmaxproc))
-      allocate (Pil0_sendn_adr(Pil0_sendmaxproc))
-      Pil0_recvw_len(:) = 0
-      Pil0_recve_len(:) = 0
-      Pil0_recvs_len(:) = 0
-      Pil0_recvn_len(:) = 0
-      Pil0_sendw_len(:) = 0
-      Pil0_sende_len(:) = 0
-      Pil0_sends_len(:) = 0
-      Pil0_sendn_len(:) = 0
-      Pil0_recvw_adr(:) = 0
-      Pil0_recve_adr(:) = 0
-      Pil0_recvs_adr(:) = 0
-      Pil0_recvn_adr(:) = 0
-      Pil0_sendw_adr(:) = 0
-      Pil0_sende_adr(:) = 0
-      Pil0_sends_adr(:) = 0
-      Pil0_sendn_adr(:) = 0
+      allocate (Pil0_send_adr(Pil0_sendmaxproc))
+      Pil0_recv_len(:) = 0
+      Pil0_send_len(:) = 0
+      Pil0_recv_adr(:) = 0
+      Pil0_send_adr(:) = 0
 
 !    print*,'Pil0_sendmaxproc=',Pil0_sendmaxproc,'recvmaxproc=',Pil0_recvmaxproc
        
@@ -297,31 +252,17 @@
             ksend=ksend+1
             Pil0_sendproc(ksend)=kk
             Pil0_send_len(ksend)=send_len(kk)
-            Pil0_sendw_len(ksend)=sendw_len(kk)
-            Pil0_sende_len(ksend)=sende_len(kk)
-            Pil0_sends_len(ksend)=sends_len(kk)
-            Pil0_sendn_len(ksend)=sendn_len(kk)
 
-            Pil0_sendw_adr(ksend)= Pil0_send_all
+            Pil0_send_adr(ksend)= Pil0_send_all
             Pil0_send_all= Pil0_send_all + Pil0_send_len(ksend)
-            Pil0_sende_adr(ksend)= Pil0_sendw_adr(ksend)+Pil0_sendw_len(ksend)
-            Pil0_sends_adr(ksend)= Pil0_sende_adr(ksend)+Pil0_sende_len(ksend)
-            Pil0_sendn_adr(ksend)= Pil0_sends_adr(ksend)+Pil0_sends_len(ksend)
         endif
         if (recv_len(kk).gt.0) then
             krecv=krecv+1
             Pil0_recvproc(krecv)=kk
             Pil0_recv_len(krecv)=recv_len(kk)
-            Pil0_recvw_len(krecv)=recvw_len(kk)
-            Pil0_recve_len(krecv)=recve_len(kk)
-            Pil0_recvs_len(krecv)=recvs_len(kk)
-            Pil0_recvn_len(krecv)=recvn_len(kk)
 
-            Pil0_recvw_adr(krecv)= Pil0_recv_all
+            Pil0_recv_adr(krecv)= Pil0_recv_all
             Pil0_recv_all= Pil0_recv_all + Pil0_recv_len(krecv)
-            Pil0_recve_adr(krecv)= Pil0_recvw_adr(krecv)+Pil0_recvw_len(krecv)
-            Pil0_recvs_adr(krecv)= Pil0_recve_adr(krecv)+Pil0_recve_len(krecv)
-            Pil0_recvn_adr(krecv)= Pil0_recvs_adr(krecv)+Pil0_recvs_len(krecv)
         endif
             
      enddo
@@ -330,10 +271,10 @@
 
 !     print *,'Summary of comm procs'
 !     do kk=1,Pil0_recvmaxproc
-!       print *,'From proc:',Pil0_recvproc(kk),'Pil0_recv_len',Pil0_recvw_len(kk),Pil0_recve_len(kk),Pil0_recvs_len(kk),Pil0_recvn_len(kk),'adr',Pil0_recvw_adr(kk),Pil0_recve_adr(kk),Pil0_recvs_adr(kk),Pil0_recvn_adr(kk)
+!       print *,'From proc:',Pil0_recvproc(kk),'Pil0_recv_len=',Pil0_recv_len(kk),'Pil0_recv_adr=',Pil0_recv_adr(kk)
 !     enddo
 !     do kk=1,Pil0_sendmaxproc
-!       print *,'To proc:',Pil0_sendproc(kk),'Pil0_send_len',Pil0_sendw_len(kk),Pil0_sende_len(kk),Pil0_sends_len(kk),Pil0_sendn_len(kk),'adr',Pil0_sendw_adr(kk),Pil0_sende_adr(kk),Pil0_sends_adr(kk),Pil0_sendn_adr(kk)
+!       print *,'To proc:',Pil0_sendproc(kk),'Pil0_send_len=',Pil0_send_len(kk),'Pil0_send_adr=',Pil0_send_adr(kk)
 !     enddo
 
 !
@@ -366,14 +307,8 @@
       endif
 !
 
-      recvw_len(:)=0
-      recve_len(:)=0
-      recvs_len(:)=0
-      recvn_len(:)=0
-      sendw_len(:)=0
-      sende_len(:)=0
-      sends_len(:)=0
-      sendn_len(:)=0
+      recv_len(:)=0
+      send_len(:)=0
 !
 ! SECOND PASS is to initialize the vectors with information for communication
 !
@@ -396,11 +331,11 @@
                 ki=Pil0_recvproc(kk)
                 if (imx.ge.Ptopo_gindx(1,ki).and.imx.le.Ptopo_gindx(2,ki).and. &
                     imy.ge.Ptopo_gindx(3,ki).and.imy.le.Ptopo_gindx(4,ki))then
-                    recvw_len(kk)=recvw_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
-                    Pil0_recv_i(Pil0_recvw_adr(kk)+recvw_len(kk))=ii
-                    Pil0_recv_j(Pil0_recvw_adr(kk)+recvw_len(kk))=jj
+                    Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
+                    Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
              enddo       
          endif
@@ -412,15 +347,15 @@
                 ki=Pil0_sendproc(kk)
                 if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
                     j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
-                    sendw_len(kk)=sendw_len(kk)+1
-                    Pil0_send_imx(Pil0_sendw_adr(kk)+sendw_len(kk))=imx-l_i0+1
-                    Pil0_send_imy(Pil0_sendw_adr(kk)+sendw_len(kk))=imy-l_j0+1
-                    Pil0_send_xxr(Pil0_sendw_adr(kk)+sendw_len(kk))=x_a
-                    Pil0_send_yyr(Pil0_sendw_adr(kk)+sendw_len(kk))=y_a
-                    Pil0_send_s1(Pil0_sendw_adr(kk)+sendw_len(kk))=s(1,1)
-                    Pil0_send_s2(Pil0_sendw_adr(kk)+sendw_len(kk))=s(1,2)
-                    Pil0_send_s3(Pil0_sendw_adr(kk)+sendw_len(kk))=s(2,1)
-                    Pil0_send_s4(Pil0_sendw_adr(kk)+sendw_len(kk))=s(2,2)
+                    send_len(kk)=send_len(kk)+1
+                    Pil0_send_imx(Pil0_send_adr(kk)+send_len(kk))=imx-l_i0+1
+                    Pil0_send_imy(Pil0_send_adr(kk)+send_len(kk))=imy-l_j0+1
+                    Pil0_send_xxr(Pil0_send_adr(kk)+send_len(kk))=x_a
+                    Pil0_send_yyr(Pil0_send_adr(kk)+send_len(kk))=y_a
+                    Pil0_send_s1(Pil0_send_adr(kk)+send_len(kk))=s(1,1)
+                    Pil0_send_s2(Pil0_send_adr(kk)+send_len(kk))=s(1,2)
+                    Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
+                    Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
              enddo       
          endif
@@ -446,11 +381,11 @@
                 ki=Pil0_recvproc(kk)
                 if (imx.ge.Ptopo_gindx(1,ki).and.imx.le.Ptopo_gindx(2,ki).and. &
                     imy.ge.Ptopo_gindx(3,ki).and.imy.le.Ptopo_gindx(4,ki))then
-                    recve_len(kk)=recve_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
-                    Pil0_recv_i(Pil0_recve_adr(kk)+recve_len(kk))=ii
-                    Pil0_recv_j(Pil0_recve_adr(kk)+recve_len(kk))=jj
+                    Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
+                    Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
              enddo       
          endif
@@ -462,15 +397,15 @@
                 ki=Pil0_sendproc(kk)
                 if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
                     j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
-                    sende_len(kk)=sende_len(kk)+1
-                    Pil0_send_imx(Pil0_sende_adr(kk)+sende_len(kk))=imx-l_i0+1
-                    Pil0_send_imy(Pil0_sende_adr(kk)+sende_len(kk))=imy-l_j0+1
-                    Pil0_send_xxr(Pil0_sende_adr(kk)+sende_len(kk))=x_a
-                    Pil0_send_yyr(Pil0_sende_adr(kk)+sende_len(kk))=y_a
-                    Pil0_send_s1(Pil0_sende_adr(kk)+sende_len(kk))=s(1,1)
-                    Pil0_send_s2(Pil0_sende_adr(kk)+sende_len(kk))=s(1,2)
-                    Pil0_send_s3(Pil0_sende_adr(kk)+sende_len(kk))=s(2,1)
-                    Pil0_send_s4(Pil0_sende_adr(kk)+sende_len(kk))=s(2,2)
+                    send_len(kk)=send_len(kk)+1
+                    Pil0_send_imx(Pil0_send_adr(kk)+send_len(kk))=imx-l_i0+1
+                    Pil0_send_imy(Pil0_send_adr(kk)+send_len(kk))=imy-l_j0+1
+                    Pil0_send_xxr(Pil0_send_adr(kk)+send_len(kk))=x_a
+                    Pil0_send_yyr(Pil0_send_adr(kk)+send_len(kk))=y_a
+                    Pil0_send_s1(Pil0_send_adr(kk)+send_len(kk))=s(1,1)
+                    Pil0_send_s2(Pil0_send_adr(kk)+send_len(kk))=s(1,2)
+                    Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
+                    Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
              enddo       
          endif
@@ -496,11 +431,11 @@
                 ki=Pil0_recvproc(kk)
                 if (imx.ge.Ptopo_gindx(1,ki).and.imx.le.Ptopo_gindx(2,ki).and. &
                     imy.ge.Ptopo_gindx(3,ki).and.imy.le.Ptopo_gindx(4,ki))then
-                    recvs_len(kk)=recvs_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
-                    Pil0_recv_i(Pil0_recvs_adr(kk)+recvs_len(kk))=ii
-                    Pil0_recv_j(Pil0_recvs_adr(kk)+recvs_len(kk))=jj
+                    Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
+                    Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
              enddo       
          endif
@@ -512,15 +447,15 @@
                 ki=Pil0_sendproc(kk)
                 if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
                     j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
-                    sends_len(kk)=sends_len(kk)+1
-                    Pil0_send_imx(Pil0_sends_adr(kk)+sends_len(kk))=imx-l_i0+1
-                    Pil0_send_imy(Pil0_sends_adr(kk)+sends_len(kk))=imy-l_j0+1
-                    Pil0_send_xxr(Pil0_sends_adr(kk)+sends_len(kk))=x_a
-                    Pil0_send_yyr(Pil0_sends_adr(kk)+sends_len(kk))=y_a
-                    Pil0_send_s1(Pil0_sends_adr(kk)+sends_len(kk))=s(1,1)
-                    Pil0_send_s2(Pil0_sends_adr(kk)+sends_len(kk))=s(1,2)
-                    Pil0_send_s3(Pil0_sends_adr(kk)+sends_len(kk))=s(2,1)
-                    Pil0_send_s4(Pil0_sends_adr(kk)+sends_len(kk))=s(2,2)
+                    send_len(kk)=send_len(kk)+1
+                    Pil0_send_imx(Pil0_send_adr(kk)+send_len(kk))=imx-l_i0+1
+                    Pil0_send_imy(Pil0_send_adr(kk)+send_len(kk))=imy-l_j0+1
+                    Pil0_send_xxr(Pil0_send_adr(kk)+send_len(kk))=x_a
+                    Pil0_send_yyr(Pil0_send_adr(kk)+send_len(kk))=y_a
+                    Pil0_send_s1(Pil0_send_adr(kk)+send_len(kk))=s(1,1)
+                    Pil0_send_s2(Pil0_send_adr(kk)+send_len(kk))=s(1,2)
+                    Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
+                    Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
              enddo       
          endif
@@ -547,11 +482,11 @@
                 ki=Pil0_recvproc(kk)
                 if (imx.ge.Ptopo_gindx(1,ki).and.imx.le.Ptopo_gindx(2,ki).and. &
                     imy.ge.Ptopo_gindx(3,ki).and.imy.le.Ptopo_gindx(4,ki))then
-                    recvn_len(kk)=recvn_len(kk)+1
+                    recv_len(kk)=recv_len(kk)+1
                     ii=i-l_i0+1
                     jj=j-l_j0+1
-                    Pil0_recv_i(Pil0_recvn_adr(kk)+recvn_len(kk))=ii
-                    Pil0_recv_j(Pil0_recvn_adr(kk)+recvn_len(kk))=jj
+                    Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
+                    Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
              enddo       
          endif
@@ -563,15 +498,15 @@
                 ki=Pil0_sendproc(kk)
                 if (i  .ge.Ptopo_gindx(1,ki).and.i  .le.Ptopo_gindx(2,ki).and. &
                     j  .ge.Ptopo_gindx(3,ki).and.j  .le.Ptopo_gindx(4,ki))then
-                    sendn_len(kk)=sendn_len(kk)+1
-                    Pil0_send_imx(Pil0_sendn_adr(kk)+sendn_len(kk))=imx-l_i0+1
-                    Pil0_send_imy(Pil0_sendn_adr(kk)+sendn_len(kk))=imy-l_j0+1
-                    Pil0_send_xxr(Pil0_sendn_adr(kk)+sendn_len(kk))=x_a
-                    Pil0_send_yyr(Pil0_sendn_adr(kk)+sendn_len(kk))=y_a
-                    Pil0_send_s1(Pil0_sendn_adr(kk)+sendn_len(kk))=s(1,1)
-                    Pil0_send_s2(Pil0_sendn_adr(kk)+sendn_len(kk))=s(1,2)
-                    Pil0_send_s3(Pil0_sendn_adr(kk)+sendn_len(kk))=s(2,1)
-                    Pil0_send_s4(Pil0_sendn_adr(kk)+sendn_len(kk))=s(2,2)
+                    send_len(kk)=send_len(kk)+1
+                    Pil0_send_imx(Pil0_send_adr(kk)+send_len(kk))=imx-l_i0+1
+                    Pil0_send_imy(Pil0_send_adr(kk)+send_len(kk))=imy-l_j0+1
+                    Pil0_send_xxr(Pil0_send_adr(kk)+send_len(kk))=x_a
+                    Pil0_send_yyr(Pil0_send_adr(kk)+send_len(kk))=y_a
+                    Pil0_send_s1(Pil0_send_adr(kk)+send_len(kk))=s(1,1)
+                    Pil0_send_s2(Pil0_send_adr(kk)+send_len(kk))=s(1,2)
+                    Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
+                    Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
              enddo       
          endif
@@ -585,10 +520,7 @@
 !        else
 !            kkproc = kk -1
 !        endif
-!    write(6,1000) 'Pil0_recvw_len',kkproc,Pil0_recvw_len(kk),Pil0_recvw_adr(kk)
-!    write(6,1000) 'Pil0_recve_len',kkproc,Pil0_recve_len(kk),Pil0_recve_adr(kk)
-!    write(6,1000) 'Pil0_recvs_len',kkproc,Pil0_recvs_len(kk),Pil0_recvs_adr(kk)
-!    write(6,1000) 'Pil0_recvn_len',kkproc,Pil0_recvn_len(kk),Pil0_recvn_adr(kk)
+!    write(6,1000) 'Pil0_recv_len',kkproc,Pil0_recv_len(kk),Pil0_recv_adr(kk)
 !   enddo
 !Check send lengths to each processor
 
@@ -599,13 +531,9 @@
 !        else
 !            kkproc = kk -1
 !        endif
-! write(6,1000) 'Pil0_sendw_len',kkproc,Pil0_sendw_len(kk),Pil0_sendw_adr(kk)
-! write(6,1000) 'Pil0_sende_len',kkproc,Pil0_sende_len(kk),Pil0_sende_adr(kk)
-! write(6,1000) 'Pil0_sends_len',kkproc,Pil0_sends_len(kk),Pil0_sends_adr(kk)
-! write(6,1000) 'Pil0_sendn_len',kkproc,Pil0_sendn_len(kk),Pil0_sendn_adr(kk)
+! write(6,1000) 'Pil0_send_len',kkproc,Pil0_send_len(kk),Pil0_send_adr(kk)
 !     enddo
-      deallocate (recv_len,recvw_len,recve_len,recvs_len,recvn_len)
-      deallocate (send_len,sendw_len,sende_len,sends_len,sendn_len)
+      deallocate (recv_len,send_len)
 
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)

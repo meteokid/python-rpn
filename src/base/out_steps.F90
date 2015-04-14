@@ -13,40 +13,56 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r out_steps -
-!
-!
-      subroutine out_steps ( F_step0, F_stepf )
+
+      subroutine out_steps
       implicit none
 #include <arch_specific.hf>
-!
-      integer F_step0, F_stepf
-!
+
 !author
-!     Michel Desgagne  -  WInter 2013
+!     Michel Desgagne  -  Winter 2013
 !
 !revision
 ! v4_50 - Desgagne M.       - Initial version
-!
+
 #include "dimout.cdk"
+#include "init.cdk"
+#include "lctl.cdk"
 #include "out_listes.cdk"
 
-      integer istep
-      logical, save :: done = .false.
+      integer istep,step0,stepf
+      integer, save :: marker
+      logical, save :: done = .false., dgflt_L = .true.
 !
 !     ---------------------------------------------------------------
 !
-      if (.not. done) nullify(outd_sorties,outp_sorties,outc_sorties)
+      if (.not. done) then
+         nullify(outd_sorties,outp_sorties,outc_sorties)
+         marker= Lctl_step - 1
+      endif
 
+      if ( (.not.Init_mode_L) .and. dgflt_L) marker= Lctl_step - 1
+      dgflt_L = Init_mode_L
+
+      if (marker .ge. Lctl_step) return
+
+      step0 = Lctl_step
+      stepf = Lctl_step + 50
+      marker= stepf
+        
       if (associated(outd_sorties)) deallocate (outd_sorties)
       if (associated(outp_sorties)) deallocate (outp_sorties)
       if (associated(outc_sorties)) deallocate (outc_sorties)
-      allocate (outd_sorties(0:MAXSET,F_step0:F_stepf))
-      allocate (outp_sorties(0:MAXSET,F_step0:F_stepf))
-      allocate (outc_sorties(0:MAXSET,F_step0:F_stepf))
+      allocate (outd_sorties(0:MAXSET,step0:stepf))
+      allocate (outp_sorties(0:MAXSET,step0:stepf))
+      allocate (outc_sorties(0:MAXSET,step0:stepf))
 
-      do istep = F_step0, F_stepf
+      outd_sorties(0,:)= 0 ; outp_sorties(0,:)= 0 ; outc_sorties(0,:)= 0
+      do istep = step0, stepf
+         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan)) )&
          call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
+         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan+1)) )&
          call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
+         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan+1)) )&
          call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
       end do
 

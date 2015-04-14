@@ -18,6 +18,7 @@
 
 !
       subroutine rdrstrt ()
+      use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>
 !
@@ -40,6 +41,7 @@
 ! v3_31 - Desgagne M.       - restart with physics BUSPER
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 
+#include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "init.cdk"
 #include "rstr.cdk"
@@ -66,7 +68,9 @@
          
       endif
 
-      call itf_phy_restart ('R', .false.)
+      ier= wb_put('model/Init/mode'    ,Init_mode_L  , WB_REWRITE_MANY)
+
+      ier= phy_restart ('R', .false.)
 !
 !     ---------------------------------------------------------------
 !      

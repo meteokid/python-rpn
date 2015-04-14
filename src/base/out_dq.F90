@@ -158,11 +158,11 @@
          if (Level_typ_S(levset) .eq. 'M') then
             call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               Ver_hyb%m, 'QQ  ', 1.0,0.0,kind , &
-                              nk, indo, nko, nbit(pndd) )
+                              nk, indo, nko, nbit(pnqq) )
          else
             call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               rf, 'QQ  ', 1.0,0.0, kind       , &
-                              nko, indo, nko, nbit(pndd) )
+                              nko, indo, nko, nbit(pnqq) )
          endif
 
       endif
@@ -172,11 +172,11 @@
          if (Level_typ_S(levset) .eq. 'M') then
             call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
                               Ver_hyb%m, 'QR  ', 1.0,0.0,kind , &
-                              nk, indo, nko, nbit(pndd) )
+                              nk, indo, nko, nbit(pnqr) )
          else
             call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
                               rf, 'QR  ', 1.0,0.0, kind       , &
-                              nko, indo, nko, nbit(pndd) )
+                              nko, indo, nko, nbit(pnqr) )
          endif
 
       endif

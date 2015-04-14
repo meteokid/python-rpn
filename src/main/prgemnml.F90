@@ -14,7 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r prgemnml
-#include <model_macros_f.h>
       subroutine prgemnml()
       implicit none
 #include <arch_specific.hf>

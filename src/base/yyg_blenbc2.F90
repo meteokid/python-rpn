@@ -44,9 +44,13 @@
       integer request(Ptopo_numproc*2)
       real*8  send_pil_8
       integer tag2,recvlen,sendlen,tag1,ireq
+      logical mono_L
+      character*32 interp_S
       tag2=14
       tag1=13
       
+      interp_S='CUBIC'
+      mono_L = .false.
       sendlen=0
       recvlen=0
       ireq=0
@@ -83,26 +87,13 @@
          if (Bln_send_len(kk).gt.0) then
 !            prepare something to send
 
-             mm=0
+             adr=Bln_send_adr(kk)+1
 
-! make for west
-             do m=1,Bln_send_len(kk)
-                adr=Bln_send_adr(kk)+m
-
-!$omp parallel private (mm,send_pil_8,i,j) &
-!$omp          shared (tab_src_8,send_pil)
-!$omp do
-                do k=1,NK
-                   mm=(m-1)*NK+k
-                   call int_cub_lag2(send_pil_8,tab_src_8(l_minx,l_miny,k), &
-                             Bln_send_imx(adr),Bln_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,                  &
-                             Bln_send_xxr(adr),Bln_send_yyr(adr))
-                   send_pil(mm,KK)=real(send_pil_8)
-                enddo
-!$omp enddo
-!$omp end parallel
-             enddo
+             call yyg_interp1(send_pil(1,KK),tab_src_8, &
+                      Bln_send_imx(adr),Bln_send_imy(adr), &
+                      Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,NK, &
+                      Bln_send_xxr(adr),Bln_send_yyr(adr),Bln_send_len(kk),&
+                      mono_L,interp_S)
 
              ireq = ireq+1
 !            print *,'scalbc: sending',Bln_send_len(kk)*NK,' to ',kk_proc
@@ -148,7 +139,6 @@
       if (recvlen.gt.0) then
 
           do 300 kk=1, Bln_recvmaxproc
-
              mm=0
              do m=1,Bln_recv_len(kk)
              adr=Bln_recv_adr(kk)+m

@@ -1,8 +1,6 @@
-!**s/p ILMC_GY - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Yin-Yang 
+!**s/p ILMC_GU - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Global Uniform
 
-#include <model_macros_f.h>
-
-      subroutine ILMC_GY (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0)
+      subroutine ILMC_GU (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
       use array_ILMC
 
@@ -19,7 +17,7 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_min  !I: MIN over cell
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_max  !I: MAX over cell
  
-      !Author Abdessamad Qaddouri
+      !Author Monique Tanguay 
       !
       !Revision
       ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
@@ -34,15 +32,21 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "adx_nml.cdk"
+#include "adx_poles.cdk"
+#include "adx_dims.cdk"
 
       !----------------------------------------------------------
       integer SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p, &
-              istat,shift,nrow,j1,j2,reset(k0:F_nk,3),l_reset(3),g_reset(3),time_m,w1,w2,size,n,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c
+              istat,shift,nrow,j1,j2,reset(k0:F_nk,3),l_reset(3),g_reset(3),time_m,w1,w2,size,n,e1,e2,en
 
       real F_new(Minx:Maxx,Miny:Maxy,F_nk),l_density(Minx:Maxx,Miny:Maxy,F_nk),l_mass(Minx:Maxx,Miny:Maxy,F_nk), &
            dif_p(400),dif_m(400),ok_p,s_dif_p,ok_m,s_dif_m,o_shoot,u_shoot,ratio_p,ratio_m
 
-      real F_copy(Minx:Maxx,Miny:Maxy,F_nk)
+      real a_new (adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), &
+           a_min (adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), &
+           a_max (adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), &
+           a_mass(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), &
+           a_copy(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk)
 
       real*8 mass_new_8,mass_out_8,ratio_8,mass_deficit_8
 
@@ -65,23 +69,6 @@
 
       F_new = F_high
 
-      !----------------------------
-      !Define CORE and OUTSIDE CORE
-      !----------------------------
-      il_c = pil_w+1 
-      ir_c = l_ni-pil_e 
-      jl_c = pil_s+1 
-      jr_c = l_nj-pil_n 
-
-      il = Minx
-      ir = Maxx 
-      jl = Miny
-      jr = Maxy 
-      if (l_west)  il = il_c 
-      if (l_east)  ir = ir_c 
-      if (l_south) jl = jl_c 
-      if (l_north) jr = jr_c 
-
       !Default values if no Mass correction
       !------------------------------------
       F_out = F_high 
@@ -95,28 +82,56 @@
 
       call get_density (l_density,l_mass,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
+      nrow = 999
+      if (adx_lam_L) nrow = 0
+
       !-------------------------------
       !Fill East-West/North-South Halo
       !-------------------------------
-      call rpn_comm_xch_halo (F_min, LDIST_DIM,l_ni,l_nj,F_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halox (F_min,Minx,Maxx,Miny,Maxy,                  &
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_min,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
 
-      call rpn_comm_xch_halo (F_max, LDIST_DIM,l_ni,l_nj,F_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halox (F_max,Minx,Maxx,Miny,Maxy,                  &
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_max,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
 
-      call rpn_comm_xch_halo (l_mass,LDIST_DIM,l_ni,l_nj,F_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halox (l_mass,Minx,Maxx,Miny,Maxy,                 &
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_mass,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
+
+      call rpn_comm_xch_halox (F_new,Minx,Maxx,Miny,Maxy,                  & !NEEDED to Fill East-West band 
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_new,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
+
+      if (.NOT.l_west) a_new = 0. 
+
+      !********************************************
+      if (l_west) then !ONLY L_WEST DO CALCULATIONS
+      !********************************************
+
+      !-----------------------------------------------------------------------------------------------------------------
+      !Set East-West/North-South halo of a_new to ZERO since Adjoint (Needed for East-West band) is done after CORE loop
+      !-----------------------------------------------------------------------------------------------------------------
+      a_new(adx_lminx:adx_lmaxx,adx_lminy :0        ,k0:F_nk) = 0. 
+      a_new(adx_lminx:adx_lmaxx,adx_mlnj+1:adx_lmaxy,k0:F_nk) = 0. 
+      a_new(adx_lminx:0        ,adx_lminy :adx_lmaxy,k0:F_nk) = 0. 
+      a_new(adx_lni+1:adx_lmaxx,adx_lminy :adx_lmaxy,k0:F_nk) = 0. 
 
       !------------------------------------------------------
       !Allocation and Define surrounding cells for each sweep
       !------------------------------------------------------
       if (.NOT.done_L) then
 
-      allocate (sweep_rd(Adw_ILMC_sweep_max,l_ni,l_nj,F_nk))
+      allocate (sweep_rd(Adw_ILMC_sweep_max,adx_lni,adx_mlnj,F_nk))
 
       do k=1,F_nk
-         do j=1,l_nj
-         do i=1,l_ni
+         do j=1,adx_mlnj
+         do i=1,adx_lni
          do n=1,Adw_ILMC_sweep_max
 
             w1   = 2*n + 1
@@ -134,15 +149,15 @@
 
 !$omp parallel do                                        &
 !$omp private(sweep,i,j,ii,ix,jx,kx,kx_m,kx_p,limit_i_L) &
-!$omp shared (j1,j2,sweep_rd,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c)
+!$omp shared (j1,j2,e1,e2,en,sweep_rd)
 
       do k=k0,F_nk
 
          kx_m = k
          kx_p = k
 
-         do j=jl_c,jr_c
-         do i=il_c,ir_c
+         do j=1,adx_mlnj
+         do i=1,adx_lni
 
             do sweep = 1,Adw_ILMC_sweep_max
 
@@ -153,18 +168,66 @@
                   kx_p = min(k+sweep,F_nk)
                endif
 
-               j1 = max(j-sweep,jl)
-               j2 = min(j+sweep,jr)
+               j1 = max(j-sweep,adx_lminy)
+               j2 = min(j+sweep,adx_lmaxy)
 
-               do jx = j1,j2
+               if ((j-sweep<=0.and.l_south).or.(j+sweep>=adx_mlnj+1.and.l_north)) then
+
+                   if (j-sweep<=0.and.l_south) then
+                      e1 = 1
+                      e2 = 1-(j-sweep)
+                      en = 1
+                      j1 = 1
+                   else
+                      e1 = adx_mlnj 
+                      e2 = 2*adx_mlnj+1-(j+sweep)
+                      en =-1
+                      j2 = adx_mlnj 
+                   endif
+
+                   do jx = e1,e2,en
+
+                      do kx = kx_m,kx_p
+
+                         limit_i_L = (jx/=e2).and.((.NOT.Schm_autobar_L.and.(kx>k-sweep.and.k<k+sweep)).or.Schm_autobar_L)
+
+                         do ii = adx_iln(i)-sweep,adx_iln(i)+sweep
+
+                            if (limit_i_L.and.ii/=adx_iln(i)-sweep.and.ii/=adx_iln(i)+sweep) cycle
+
+                            ix = ii
+
+                            if (ix<1      ) ix = ix + adx_lni
+                            if (ix>adx_lni) ix = ix - adx_lni
+
+                            sweep_rd(sweep,i,j,k)%i_rd(sweep_rd(sweep,i,j,k)%cell + 1) = ix
+                            sweep_rd(sweep,i,j,k)%j_rd(sweep_rd(sweep,i,j,k)%cell + 1) = jx
+                            sweep_rd(sweep,i,j,k)%k_rd(sweep_rd(sweep,i,j,k)%cell + 1) = kx
+
+                            sweep_rd(sweep,i,j,k)%cell = sweep_rd(sweep,i,j,k)%cell + 1
+
+                         enddo
+
+                      enddo
+
+                   enddo
+
+               endif
+
+               do jx = j1,j2 
 
                   do kx = kx_m,kx_p
 
                      limit_i_L = (jx/=j-sweep.and.jx/=j+sweep).and.((.NOT.Schm_autobar_L.and.(kx>k-sweep.and.k<k+sweep)).or.Schm_autobar_L)
 
-                     do ix = max(i-sweep,il),min(i+sweep,ir)
+                     do ii = i-sweep,i+sweep
 
-                        if (limit_i_L.and.ix/=i-sweep.and.ix/=i+sweep) cycle
+                        if (limit_i_L.and.ii/=i-sweep.and.ii/=i+sweep) cycle
+
+                        ix = ii
+
+                        if (ix<1      ) ix = ix + adx_lni
+                        if (ix>adx_lni) ix = ix - adx_lni
 
                         sweep_rd(sweep,i,j,k)%i_rd(sweep_rd(sweep,i,j,k)%cell + 1) = ix
                         sweep_rd(sweep,i,j,k)%j_rd(sweep_rd(sweep,i,j,k)%cell + 1) = jx
@@ -199,52 +262,78 @@
       SIDE_max_0 = (2*Adw_ILMC_sweep_max + 1)*2+1
 
 #define CORE
-#include "ilmc_gy_loop.cdk"
+#include "ilmc_gu_loop.cdk"
+
+      !********************************************
+      endif !ONLY L_WEST DO CALCULATIONS
+      !********************************************
+
+      F_new = 0.
+
+      !----------------------------------------------------------------------
+      !Adjoint of Fill East-West/North-South Halo (Needed for East-West band) 
+      !----------------------------------------------------------------------
+      call rpn_comm_adj_halox (F_new,Minx,Maxx,Miny,Maxy,                  &
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_new,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
 
       !-------------------------------
       !Fill East-West/North-South Halo
       !-------------------------------
-      call rpn_comm_xch_halo (F_new, LDIST_DIM,l_ni,l_nj,F_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_xch_halox (F_new,Minx,Maxx,Miny,Maxy,                  & 
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_new,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
 
-      !-----------------------------------------------------------------------------------
-      !Set YIN-YAN boundary of a_new to ZERO since Adjoint is done after OUTSIDE CORE loop
-      !-----------------------------------------------------------------------------------
-      if (l_west)  F_new(Minx:il-1,Miny:Maxy,k0:F_nk) = 0. 
-      if (l_east)  F_new(ir+1:Maxx,Miny:Maxy,k0:F_nk) = 0. 
-      if (l_south) F_new(Minx:Maxx,Miny:jl-1,k0:F_nk) = 0. 
-      if (l_north) F_new(Minx:Maxx,jr+1:Maxy,k0:F_nk) = 0. 
+      if (.NOT.l_west) a_new = 0. 
+
+      !********************************************
+      if (l_west) then !ONLY L_WEST DO CALCULATIONS
+      !********************************************
+
+      !---------------------------------------------------------------------------------
+      !Set East-West halo of a_new to ZERO since Adjoint is done after OUTSIDE CORE loop
+      !---------------------------------------------------------------------------------
+      a_new(adx_lminx:0        ,adx_lminy :adx_lmaxy,k0:F_nk) = 0.
+      a_new(adx_lni+1:adx_lmaxx,adx_lminy :adx_lmaxy,k0:F_nk) = 0.
 
       !----------------------------------------------------------------------------
       !Compute ILMC solution F_out while preserving mass: USE ELEMENTS OUTSIDE CORE
       !----------------------------------------------------------------------------
 
-      F_copy = F_new
+      a_copy = a_new
 
 #undef CORE
-#include "ilmc_gy_loop.cdk"
+#include "ilmc_gu_loop.cdk"
 
-      !-----------------------------------------------------------
-      !Recover perturbation in East-West/North-South halo of F_new
-      !-----------------------------------------------------------
-!$omp parallel do private(i,j) shared(F_new,F_copy,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c)
+      !-------------------------------------------------
+      !Recover perturbation in North-South halo of a_new
+      !-------------------------------------------------
+!$omp parallel do private(i,j) shared(a_new,a_copy)
       do k=k0,F_nk
-         do j=jl,jr
-            do i=il,ir
-               if ((i>=il_c.and.i<=ir_c).and.(j>=jl_c.and.j<=jr_c)) cycle
-               F_new(i,j,k) = F_new(i,j,k) - F_copy(i,j,k)
+         do j=adx_lminy,adx_lmaxy
+            if (j>=1.and.j<=adx_mlnj) cycle
+            do i=adx_lminx,adx_lmaxx
+               a_new(i,j,k) = a_new(i,j,k) - a_copy(i,j,k) 
             enddo
          enddo
       enddo
 !$omp end parallel do
 
-      F_out = F_new
+      !********************************************
+      endif !ONLY L_WEST DO CALCULATIONS
+      !********************************************
+
+      F_out = 0.
 
       !------------------------------------------
       !Adjoint of Fill East-West/North-South Halo
       !------------------------------------------
-      call rpn_comm_adj_halo (F_out, LDIST_DIM,l_ni,l_nj,F_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call rpn_comm_adj_halox (F_out,Minx,Maxx,Miny,Maxy,                  &
+                               adx_mlni,adx_mlnj,F_nk,adx_halox,adx_haloy, &
+                               adx_is_period_x,adx_is_period_y,            &
+                               a_new,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,adx_lni,nrow)
 
       !---------------------------------------
       !Reset Min-Max Monotonicity if requested
@@ -253,8 +342,8 @@
 
 !$omp parallel do private(i,j) shared(F_out,F_min,F_max,reset)
       do k=k0,F_nk
-         do j=jl_c,jr_c
-         do i=il_c,ir_c
+         do j=1,adx_mlnj
+         do i=1,adx_mlni
 
             if (F_out(i,j,k) < F_min(i,j,k)) then
 
@@ -312,7 +401,7 @@
       call timing_stop(88)
 
  1000 format(1X,A34,E20.12,1X,A4)
- 1001 format(1X,A23,E10.4,'%')
+ 1001 format(1X,A23,E11.4,'%')
 
       return
       end

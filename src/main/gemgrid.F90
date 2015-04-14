@@ -14,7 +14,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r gemgrid - grille program
-#include <model_macros_f.h>
       subroutine gemgrid
       implicit none
 #include <arch_specific.hf>

@@ -77,7 +77,7 @@ contains
        err = vgrid_wb_get('ref-m',vgd,ip1m)
        deallocate(ip1m); nullify(ip1m)
        err = vgd_put(vgd,'IP_1 - record ip1',my_ig1) 
-       err = vgd_put(vgd,'IP_2 - record ip2',my_ig1) 
+       err = vgd_put(vgd,'IP_2 - record ip2',my_ig2) 
 
        if(present(etiket))then
           err = vgd_put(vgd,key='ETIK - record stamp',value=etiket)

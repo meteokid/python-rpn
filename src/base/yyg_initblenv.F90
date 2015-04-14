@@ -83,19 +83,19 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx1,imy1,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max
 !   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
 
-         if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_ni-glb_pil_e .and. &
-             imy1.gt.1+glb_pil_s .and. imy1.lt.G_njv-glb_pil_n  .and. &
-             imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni-glb_pil_e .and. &
-             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n) then
+         if (imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni-glb_pil_e .and. &
+             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n  .and. &
+             imx1.gt.1+glb_pil_w .and. imx1.lt.G_ni-glb_pil_e .and. &
+             imy1.gt.1+glb_pil_s .and. imy1.lt.G_njv-glb_pil_n) then
 
              imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
              imy1 = min(max(imy1-1,glb_pil_s+1),G_njv-glb_pil_n-3)
@@ -251,19 +251,19 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx1,imy1,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
                           xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max
 !   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
 
-         if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_ni-glb_pil_e .and. &
-             imy1.gt.1+glb_pil_s .and. imy1.lt.G_njv-glb_pil_n  .and. &
-             imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni-glb_pil_e .and. &
-             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n) then
+         if (imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni-glb_pil_e .and. &
+             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n  .and. &
+             imx1.gt.1+glb_pil_w .and. imx1.lt.G_ni-glb_pil_e .and. &
+             imy1.gt.1+glb_pil_s .and. imy1.lt.G_njv-glb_pil_n) then
 
              imx1 = min(max(imx1-1,glb_pil_w+1),G_ni-glb_pil_e-3)
              imy1 = min(max(imy1-1,glb_pil_s+1),G_njv-glb_pil_n-3)
@@ -310,8 +310,8 @@
                         Bln_vsend_imy2(adr)=imy2-l_j0+1
                         Bln_vsend_xxr(adr)=x_a
                         Bln_vsend_yyr(adr)=y_a
-                        Bln_vsend_s1(adr)=s(2,2)
-                        Bln_vsend_s2(adr)=s(2,1)
+                        Bln_vsend_s1(adr)=s(2,1)
+                        Bln_vsend_s2(adr)=s(2,2)
                     endif
                  enddo       
              endif

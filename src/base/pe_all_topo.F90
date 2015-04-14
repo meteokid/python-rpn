@@ -14,28 +14,29 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r pe_all_topo - First initialization steps
-!
+
       subroutine pe_all_topo
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne - Summer 2006
-!
+
 !revision
 ! v3_30 - Desgagne M.       - initial version
 ! v4_03 - Desgagne/Lee      - adaptation to new scripts
 ! v4_40 - Tanguay M.        - Revision TL/AD
-!
+
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "lun.cdk"
+#include "rstr.cdk"
 #include "schm.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
-!
+
       integer,parameter :: BUFSIZE=10000
-      integer, external :: ouvrstrt,wkoffit,OMP_get_max_threads
+      integer, external :: fnom,wkoffit,OMP_get_max_threads
 
       character*3 mycol_S,myrow_S
       character*500 fn, pwd_S
@@ -48,19 +49,8 @@
       call timing_init2 ( Ptopo_myproc, 'GEMDM' )
       call timing_start ( 1, 'GEMDM')
       call timing_start ( 2, 'INIT_GEM')
-!
-! Initializes I/O Fortran units
-!
-      lun_out  = -1
-      lun_in   =  5
-      lun_lab  = -1
-      Lun_zonl = -1
-      Lun_cte  = -1
-      lun_tsrs = 61
-      lun_pilot= 62
-      lun_waphy= 65
-      lun_wapta= 66
-      Lun_rstrt= -1
+
+      lun_out    = -1
       Lun_debug_L=.false.
 !
 ! Broadcasts processor topology
@@ -101,7 +91,7 @@
          call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
          call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
-         lun_out  =  6
+         lun_out= 6
       endif
 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 
@@ -136,7 +126,15 @@
       call array_to_file (bufcte,size(bufcte),'constantes'    )
       call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
 
-      Lun_rstrt = ouvrstrt( )
+      Lun_rstrt= 0 ; Rstri_rstn_L= .false.
+      err= wkoffit('gem_restart')
+      if (err.ge.-1) then
+         err= fnom( Lun_rstrt,'gem_restart','SEQ+UNF+OLD',0 )
+     	   if (err.ge.0) then
+           Rstri_rstn_L = .true.
+           if (lun_out.gt.0) write (lun_out,1001)
+         endif
+      endif
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 !
@@ -151,6 +149,7 @@
          call fclos (unf)
       endif
 
+ 1001 format (/' RESTART DETECTED'/)
  8255 format (/," MPI CONFIG (npex x npey): ",i4,' x ',i3,/, &
           " OMP CONFIG (npeOpenMP x nthreads_dyn x nthreads_phy): ",&
             i4,' x ',i3,' x ',i3)

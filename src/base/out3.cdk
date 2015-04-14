@@ -56,7 +56,7 @@
 #endif
 #include "dimout.cdk"
       character*16 Out3_xnbits_S(MAXELEM),Out3_filt_S(MAXELEM),&
-                   Out3_postfreq_S
+                   Out3_postfreq_S,Out3_closestep_S
       character*12 Out3_etik_S
       character*6  Out3_type_S
       character*4  Out3_unit_S
@@ -76,6 +76,7 @@
 !
       common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
       common / out3_c / Out3_type_S, Out3_unit_S, Out3_postfreq_S
+      common / out3_c / Out3_closestep_S
       common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
       common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uencode_L

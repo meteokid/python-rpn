@@ -16,6 +16,7 @@
 !s/r wrrstrt - Write the restart file
 !
       subroutine wrrstrt ()
+      use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>
 !
@@ -66,7 +67,7 @@
             call timing_start ( 33, 'RESTART_1' )
 
             Lun_rstrt = 0
-            ier = fnom (Lun_rstrt,'restart','SEQ+UNF',0)
+            ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
 
@@ -83,7 +84,7 @@
 
             call timing_start ( 35, 'RESTART_3' )
 
-            call itf_phy_restart ('W', .false.)
+            ier = phy_restart ('W', .false.)
 
             call timing_stop (35)
          endif

@@ -14,14 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r stop_world_view - Update status file and stop MPI
-!
 
-!
       subroutine stop_world_view
       use phy_itf, only: phy_terminate
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     M. Desgagne
 !
@@ -36,7 +34,7 @@
 ! v2_31 - Desgagne M.       - remove system call to Um_hook.sh (-post)
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - M. Desgagne       - change to exfin
-!
+
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
@@ -45,9 +43,9 @@
 #include "step.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
-!
-      integer, external :: exfin, longueur
-!
+
+      integer, external :: exfin
+
       character*256 postjob_S
       logical continue_L
       integer err
@@ -60,7 +58,7 @@
 
       if (Lun_out.gt.0) then
          write (postjob_S,34) Lctl_step
-         postjob_S='_endstep='//postjob_S(1:longueur(postjob_S))
+         postjob_S='_endstep='//trim(postjob_S)
          call write_status_file3 (postjob_S)
          if (continue_L) then
             call write_status_file3 ('_status=RS')
@@ -70,11 +68,9 @@
          call close_status_file3 ()
       endif
 
-      call out_launchpost2 (.true.,.not.continue_L)
-
       if (Lun_out.gt.0) call out_stat ()
 
-      if (.not. continue_L) err = clib_remove('restart')
+      if (.not. continue_L) err = clib_remove('gem_restart')
 
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )
       call memusage ( Lun_out )
@@ -88,7 +84,6 @@
       call rpn_comm_Barrier("grid", err)
       call rpn_comm_FINALIZE(err)
 
- 33   format (i6)
  34   format (i10.10)
 !
 !-------------------------------------------------------------------

@@ -39,8 +39,7 @@
 
 #include "nml.cdk"
 
-      integer  fnom
-      external fnom
+      integer, external :: fnom
 
       character*64 dumc_S
       integer i,k,nrec,err,unf
@@ -48,7 +47,7 @@
 !-------------------------------------------------------------------
 !
       gem_nml = -1
-!
+
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          gem_nml = 0
          if ( Lun_out.ge.0) write (Lun_out,nml=gem_cfgs_p)
@@ -56,24 +55,24 @@
              Grdc_ndt.gt.0) write (lun_out,nml=grdc_p)
          return
       endif
-!
+
       Rstri_glbcol_L = .false.
-!
+
       G_halox = 4
       G_haloy = G_halox
-!
+
       Iau_cutoff    = 6.
       Iau_interval  = -1.
       Iau_period    = -1.
       Iau_tracers_S = ''
       Iau_weight_S  = 'constant'
-!
+
       Init_balgm_L   = .false.
       Init_dfwin_L   = .true.
       Init_dflength_S= '5p'
       Init_dfpl_S    = '6h'
       Init_dftr_L    = .false.
-!
+
       Schm_hydro_L  = .false.
       Schm_hzdadw_L = .false.
       Schm_topo_L   = .true.
@@ -94,10 +93,7 @@
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L  = .false.
-!
-      Schm_phyms_L    = .true.
-      Schm_chems_L    = .false.
-!
+
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
       Lam_blend_T   =  0
@@ -109,24 +105,24 @@
       Lam_blendoro_L= .true.
       Lam_current_S = '20000101.000000'
       Lam_acidtest_L= .false.
-!
+
       Zblen_L   = .false.
-!
+
       Clim_climat_L  = .false.
       Clim_inincr_L  = .false.
-!
+
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
       Cstv_tstr_8  = 240.0
-!
+
       Lctl_rxstat_S   = 'LCL_4'
       Lctl_debug_L    = .false.
-!
+
       Grd_rcoef(1) = 1.0
       Grd_rcoef(2) = 1.0
-!
+
       hyb = -1.
-!
+
       sol_fft_L     = .true.
       sol_type_S    = 'DIRECT'
       Sol3D_krylov_S = 'FGMRES'
@@ -137,7 +133,7 @@
       sol_fgm_eps   = 1.d-07
       sol_yyg_maxits= 40
       sol_yyg_eps   = 1.d-04
-!
+
       Eigv_parity_L = .false.
       Hzd_difva_L= .false.
       Hzd_prof_S     = "NIL"
@@ -152,14 +148,14 @@
       Vspng_njpole  = 3
       Vspng_vec_L   = .false.
       Vspng_zmean_L = .false.
-!
+
       Zdot_divHLM_L  = .false.
-!
+
       Vtopo_start = -1
       Vtopo_ndt   = 0
-!
+
       Tr3d_list_S = ''
-!
+
 ! The default here is NO modulation (weigh is 1.0 everywhere)
 ! Activation can be done with P_lmvd_weigh_high_lat=0.
       P_lmvd_weigh_high_lat =  1.0
@@ -178,7 +174,7 @@
 
       Out3_etik_S    = 'GEMDM'
       Out3_unit_S    = ' '
-      Out3_closestep = -1
+      Out3_closestep_S= ""
       Out3_postfreq_S= ''
       Out3_ndigits   = 3
       Out3_ip3       = 0
@@ -202,7 +198,7 @@
 !     --------------------------
       Williamson_case     = 0
       Williamson_alpha    = 0.0
-!
+
       Grdc_xlat1  = Grd_xlat1
       Grdc_xlon1  = Grd_xlon1
       Grdc_xlat2  = Grd_xlat2
@@ -219,58 +215,58 @@
       Grdc_initphy_L = .false.
       Grdc_nbits  = 32
       Grdc_trnm_S = '@#$%'
-!
+
       stat_liste = ''
-!
+
       if (F_namelistf_S .ne. '') then
-!
+
          unf = 0
          if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110
          rewind(unf)
          read (unf, nml=gem_cfgs, end = 9120, err=9120)
          rewind(unf)
-!
+
          rewind(unf)
          read  (unf, nml=williamson, end = 1001, err = 9125)
  1001    continue
          rewind(unf)
-!
+
          read (unf, nml=grdc,     end = 1000, err=9130)
  1000    call fclos (unf)
-!
+
       endif
-!
+
       call low2up (Lctl_rxstat_S ,dumc_S)
       Lctl_rxstat_S = dumc_S
-!
+
       gem_nml = 1
       goto 9999
-!
+
  9110 if (Lun_out.gt.0) then
          write (Lun_out, 9050) trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
-!
+
  9120 call fclos (unf)
       if (Lun_out.ge.0) then
          write (Lun_out, 9150) 'gem_cfgs',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
       goto 9999
-!
+
  9125 if (Lun_out.gt.0) then
           write (Lun_out, 9525)
           write (Lun_out, 8000)
       endif
       goto 9999
-!
+
  9130 call fclos (unf)
       if (Lun_out.ge.0) then
          write (Lun_out, 9150) 'grdc',trim( F_namelistf_S )
          write (Lun_out, 8000)
       endif
-!
+
  8000 format (/,'========= ABORT IN S/R gem_nml.f ============='/)
  9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)

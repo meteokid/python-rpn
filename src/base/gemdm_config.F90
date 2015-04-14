@@ -125,6 +125,9 @@
       Out_rewrit_L   = .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
 
+      err= time2step (Out3_closestep_S, Step_dt, Lun_out, Out3_closestep)
+      Out3_closestep= min(Out3_closestep,Step_total)
+
       if (.not.Grd_yinyang_L) Out3_uencode_L  = .false.
       if (Out3_uencode_L)     Out3_fullplane_L= .true.
       if(Out3_nbitg .lt. 0) then
@@ -155,6 +158,7 @@
       if (lun_out>0) &
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 
+		if (Schm_autobar_L) Schm_phyms_L   = .false.
       call set_zeta2( hyb, G_nk )
 
       Schm_nith = G_nk
@@ -277,7 +281,6 @@
       if (Schm_autobar_L) then
          if (lun_out>0) write (Lun_out, 6100)
          Schm_hydro_L   = .true.
-         Schm_phyms_L   = .false.
          if(Williamson_case/=7) Schm_topo_L = .false.
          if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
              if (lun_out>0) write (Lun_out, 6300)
@@ -305,6 +308,8 @@
       err= min( time2sec  (Init_dfpl_S    , sec)                        , err)
       if (err.lt.0) return
 
+      Init_halfspan = -9999
+
       if (Init_dfnp <= 0) then
          if (Init_balgm_L .and. Lun_out > 0) write(Lun_out,6602)
          Init_balgm_L = .false.
@@ -320,8 +325,7 @@
          Init_dfnp   = -9999
          Init_halfspan = -9999
       endif
-
-      istat= wb_put('model/Init/halfspan',Init_halfspan,WB_REWRITE_NONE)
+      err= wb_put('model/Init/halfspan',Init_halfspan, WB_REWRITE_NONE)
 
       if (Lctl_debug_L) then
          call msg_set_minMessageLevel(MSG_INFOPLUS)

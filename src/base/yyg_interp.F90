@@ -15,17 +15,20 @@
 
 !**s/r yyg_interp - YY horizontal interpolation controler
 
-      subroutine yyg_interp ( FF, F, Imx,Imy, geomgx,geomgy,   &
-                              Minx,Maxx,Miny,Maxy,Xi,Yi,mono_l,&
+      subroutine yyg_interp1( FF, F, Imx,Imy, geomgx,geomgy,   &
+                              Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l,&
                               F_interp_S ) 
       implicit none
 #include <arch_specific.hf>
        
       character* (*) F_interp_S
       logical mono_l
-      integer Imx,Imy, Minx,Maxx,Miny,Maxy
-      real*8  FF, F(Minx:Maxx,Miny:Maxy), &
-              geomgx(Minx:Maxx),geomgy(Miny:Maxy), Xi, Yi
+      integer NLEN,Nk,Minx,Maxx,Miny,Maxy
+      integer Imx(NLEN),Imy(NLEN)
+      real FF(NLEN*Nk)
+      real*8  F(Minx:Maxx,Miny:Maxy,Nk), &
+              geomgx(Minx:Maxx),geomgy(Miny:Maxy), &
+              Xi(NLEN), Yi(NLEN)
 !
 !author   
 !       Michel Desgagne - Spring 2014
@@ -35,20 +38,14 @@
 !----------------------------------------------------------------------
 !
        if (trim(F_interp_S) == 'CUBIC') then
-          call int_cub_lag3 ( FF, F, Imx,Imy, geomgx,geomgy,   &
-                              Minx,Maxx,Miny,Maxy,Xi,Yi,mono_l )
+          call int_cub_lag4 ( FF, F, Imx,Imy, geomgx,geomgy,   &
+                              Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN,mono_l )
        elseif (trim(F_interp_S) == 'LINEAR') then
-          print*, 'stop in yyg_interp for F_interp_S= ',trim(F_interp_S)
-          stop
-! to be completed
-!          call int_lin_lag2  ( FF, F, Imx,Imy, geomgx,geomgy,   &
-!                              Minx,Maxx,Miny,Maxy,Xi,Yi        )
+           call int_lin_lag3  ( FF, F, Imx,Imy, geomgx,geomgy,   &
+                               Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN)
        elseif (trim(F_interp_S) == 'NEAREST') then
-          print*, 'stop in yyg_interp for F_interp_S= ',trim(F_interp_S)
-          stop
-! to be completed
-!          call int_near_lag2 ( FF, F, Imx,Imy, geomgx,geomgy,   &
-!                              Minx,Maxx,Miny,Maxy,Xi,Yi        )
+           call int_near_lag3 ( FF, F, Imx,Imy, geomgx,geomgy,   &
+                               Minx,Maxx,Miny,Maxy,Nk,Xi,Yi,NLEN)
        endif
 !
 !----------------------------------------------------------------------

@@ -13,7 +13,49 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r int_lin_lag - to do YY linear interpolation for scalar 
+       subroutine int_lin_lag3(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Nk,Xi,Yi,NLEN)
 
+       implicit none
+#include <arch_specific.hf>
+
+       integer minx,miny,maxx,maxy,Nk,NLEN
+       integer Imx(NLEN),Imy(NLEN)
+       real FF(NLEN*Nk)
+       real*8 F(minx:maxx,miny:maxy,Nk),geomgx(Minx:Maxx),geomgy(Miny:Maxy)
+       real*8 Xi(NLEN),Yi(NLEN)
+!
+!author
+!           Abdessamad Qaddouri - October 2009
+!
+       integer i,j,k,Im, Jm
+       real*8 FF_8,h1,h2,betax,betax1,betay,betay1
+
+       h1=Geomgx(2)-Geomgx(1)
+       h2=Geomgy(2)-Geomgy(1)
+
+!$omp parallel private (i,j,k,im,jm, &
+!$omp     FF_8,betax,betax1,betay,betay1) &
+!$omp shared (h1,h2)
+!$omp do
+
+   Do 200 i=1,NLEN
+
+       Im = Imx(i)
+       Jm = Imy(i)
+       betax= (Xi(i)-Geomgx(Im))/h1
+       betax1= (1.0-betax)
+       betay=(Yi(i)-Geomgy(Jm))/h2
+       betay1=1.0-betay
+   Do 300 k=1,Nk
+       FF_8 = betay1*(betax1*F(Im,Jm,k)+betax*F(Im+1,Jm,k))+ &
+                    betay*(betax1*F(Im,Jm+1,k)+betax*F(Im+1,Jm+1,k))
+       FF((i-1)*Nk+k)=real(FF_8)
+   300 continue
+   200 continue
+!$omp enddo
+!$omp end parallel
+      return
+      end
        subroutine int_lin_lag2(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Xi,Yi)
 
        implicit none

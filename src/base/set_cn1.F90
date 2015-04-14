@@ -55,7 +55,7 @@
          call yyg_initscalbc()
          call yyg_initvecbc1()
          call yyg_initvecbc2()
-         call yyg_rhs_initscalbc()
+         !call yyg_rhs_initscalbc()
          call yyg_initblenbc2()
          call yyg_initblenu()
          call yyg_initblenv()

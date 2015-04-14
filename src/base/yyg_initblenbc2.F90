@@ -171,7 +171,7 @@
 !     print *,'krecv=',krecv,'Bln_recvmaxproc=',Bln_recvmaxproc
 !     print *,'ksend=',ksend,'Bln_sendmaxproc=',Bln_sendmaxproc
 
-!     print *,'Summary of comm procs'
+!     print *,'Summary of BLN comm procs'
 !     do kk=1,Bln_recvmaxproc
 !       print *,'From proc:',Bln_recvproc(kk),'Bln_recv_len',Bln_recv_len(kk),'adr',Bln_recv_adr(kk)
 !     enddo

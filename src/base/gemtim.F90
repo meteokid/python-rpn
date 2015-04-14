@@ -13,33 +13,27 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemtim4 - Timing routine for AIX architecture
-!
+!**s/r gemtim4 - Timing routine
+
       subroutine gemtim4 ( unf, from, last )
       implicit none
 #include <arch_specific.hf>
-!
+
       character*(*) from
       logical last
       integer unf
-!author
-!     B. Dugas
-!
-!revision
-! v4_40 - Desgagne M.   - Add wall clock and accumulators
-!
+
+      include 'step.cdk'
+
       logical, save :: timini_L
       data timini_L / .false. /
-!
-#if defined (AIX)
-!#include "cstv.cdk"
-      integer get_max_rss
-      external get_max_rss
+
+      integer, external :: get_max_rss
       real    spJour,Jour
       integer Used0,Used,SoftLim,HardLim,ppjour
       integer maxJour,Hold_Rsti,ierr
       save    Used0,ppJour,Jour
-!
+
       character date_S*8 ,time_S*10
       character jour_S*11,heure_S*10
       real          users,systs
@@ -59,27 +53,34 @@
       jour_S  = date_S(1:4)//'/'//date_S(5:6)//'/'//date_S(7:8)//' '
       heure_S = time_S(1:2)//'h'//time_S(3:4)//'m'//time_S(5:6)//'s,'
 
+#if defined (AIX)
       call setrteopts('cpu_time_type=total_usertime')
+#endif
       call cpu_time( users )
 
+#if defined (AIX)
       call setrteopts('cpu_time_type=total_systime')
+#endif
       call cpu_time( systs )
 
       END = omp_get_wtime()
 
       if (timini_L) then
+         if (trim(from) =='CURRENT TIMESTEP') Step_maxwall = max(Step_maxwall,END-START)
          write(unf,1000) 'TIME: '//jour_S//heure_S, END-START, users-user0, &
                           systs-syst0,get_max_rss(),from
          ACCUM_w= ACCUM_w + END-START
          ACCUM_u= ACCUM_u + users-user0
          ACCUM_s= ACCUM_s + systs-syst0
          if (last) write(unf,1001) ACCUM_w,ACCUM_u,ACCUM_s
+      else
+         Step_maxwall = -1.d0
       endif
 
       user0 = users
       syst0 = systs
       START = END
-#endif
+
       timini_L = .true.
 !
 !----------------------------------------------------------------

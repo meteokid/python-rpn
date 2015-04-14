@@ -27,7 +27,7 @@
       logical Step_leapyears_L
       integer Step_total  , Step_rsti , Step_bkup, Step_gstat, Step_delay
       integer Step_spinphy, Step_nesdt, Step_kount
-      real*8 Step_dt
+      real*8 Step_dt, Step_maxwall
 
       common / Step_S / Step_runstrt_S  , Fcst_start_S, &
               Fcst_end_S  , Fcst_nesdt_S, Fcst_gstat_S, &
@@ -35,12 +35,9 @@
       common / Step_I / Step_leapyears_L
       common / Step_I / Step_total  , Step_rsti, Step_bkup, Step_gstat
       common / Step_I / Step_spinphy, Step_nesdt, Step_delay, Step_kount
-      common / Step_R / Step_dt
+      common / Step_R / Step_dt, Step_maxwall
 
-      namelist /step/ Step_runstrt_S  , Fcst_start_S, &
-            Fcst_end_S  , Fcst_nesdt_S, Fcst_gstat_S, &
-            Fcst_rstrt_S, Fcst_bkup_S , Fcst_spinphy_S
-      namelist /step/ Step_leapyears_L
-!      namelist /step/ Step_rsti, Step_bkup, Step_gstat
-!      namelist /step/ Step_spinphy, Step_nesdt
-      namelist /step/ Step_dt
+      namelist /step/ Step_runstrt_S , Fcst_start_S              , &
+                      Fcst_end_S     , Fcst_nesdt_S, Fcst_gstat_S, &
+                      Fcst_rstrt_S   , Fcst_bkup_S , Fcst_spinphy_S
+      namelist /step/ Step_leapyears_L, Step_dt
