@@ -12,48 +12,87 @@ from . import proto as _rp
 from . import const as _rc
 
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
-isListType = lambda x: type(x) in (type([]),type((1,)))
+isListType = lambda x: type(x) in (list,tuple)
+
+class RMNBaseError(Exception):
+    pass
 
 #--- primitives -----------------------------------------------------
 
+#TODO: raise exception on error instead of returning error code
+
 def fclos(iunit):
     """Close file associated with unit through fnom
-    
-    iunit   : unit number associated to the file
-              obtained with fnom
-            
-    return None on error int>=0 otherwise
+
+    fclos(iunit)
+
+    Args:
+        iunit   : unit number associated to the file
+                  obtained with fnom
+    Returns:
+        None
+    Raises:
+        TypeError  on wrong input arg types    
+        ValueError on invalid input arg value
+        RMNBaseError on any other error       
     """
+    if not (type(iunit) == int):
+        raise TypeError("fcols: Expecting arg of type int, Got %s" % (type(iunit)))
+    if iunit < 0:
+        raise ValueError("fclos: must provide a valide iunit: %d" % (iunit))
     istat = _rp.c_fclos(iunit)
-    if istat < 0: return None
+    if istat < 0:
+        raise RMNBaseError()
     return istat
 
 
 def fnom(filename,filemode=_rc.FST_RW,iunit=0):
     """Open a file and make the connection with a unit number.
-    
-    filename : path/name of the file to open
-    filemode : a string with the desired filemode (see librmn doc)
-               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
-    iunit    : forced unit number to conect to
-               if zero, will select a free unit
 
-    return Associated file unit number
-    return None on error
+    iunit = fnom(filename)
+    iunit = fnom(filename,filemode)
+    iunit = fnom(filename,filemode,iunit)
+
+    Args:
+        filename : path/name of the file to open
+        filemode : a string with the desired filemode (see librmn doc)
+                   or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+        iunit    : forced unit number to conect to
+                   if zero, will select a free unit
+    Returns:
+        int, Associated file unit number
+    Raises:
+        TypeError  on wrong input arg types    
+        ValueError on invalid input arg value
+        RMNBaseError on any other error       
     """
-    iunit2 = _ct.c_int(iunit)
-    istat = _rp.c_fnom(_ct.byref(iunit2),filename,filemode,0)
+    if not (type(iunit) == int):
+        raise TypeError("fnom: Expecting arg of type int, Got %s" % (type(iunit)))
+    ciunit = _ct.c_int(max(0,iunit))
+    if not (type(iunit) == int):
+        raise TypeError("fnom: Expecting arg of type int, Got %s" % (type(iunit)))
+    if not (type(filename) == str):
+        raise TypeError("fnom: Expecting filename arg of type str, Got %s" % (type(filename)))
+    if filename.strip() == '':
+        raise ValueError("fnom: must provide a valide filename")
+    if not (type(filemode) == str):
+        raise TypeError("fnom: Expecting arg filemode of type str, Got %s" % (type(filemode)))
+    istat = _rp.c_fnom(_ct.byref(ciunit),filename,filemode,0)
     istat = c_toint(istat)
-    if istat >= 0: return iunit2.value
-    return None
+    if istat < 0:
+        raise RMNBaseError()
+    return ciunit.value
 
 
 def wkoffit(filename):
     """Return type of file (int)
 
-    filename : path/name of the file to examine
+    ftype = wkoffit(filename)
 
-    return file type code as follow:
+    Args:
+        filename : path/name of the file to examine
+    Returns:
+        int, file type code as follow:
           -3     FICHIER INEXISTANT
           -2     FICHIER VIDE
           -1     FICHIER INCONNU
@@ -92,96 +131,161 @@ def wkoffit(filename):
           33     FICHIER STANDARD RANDOM 98
           34     FICHIER STANDARD SEQUENTIEL 98
           35     FICHIER NETCDF
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
     """
+    if not (type(filename) == str):
+        raise TypeError("wkoffit: Expecting filename arg of type str, Got %s" % (type(filename)))
+    if filename.strip() == '':
+        raise ValueError("wkoffit: must provide a valide filename")
     return _rp.c_wkoffit(filename,len(filename))
 
 
 #--- base -----------------------------------------------------------
 
 
-def cigaxg(proj,ig1,ig2=0,ig3=0,ig4=0):
-    """Encode real grid descriptors into ig1,ig2,ig3,ig4
+def cigaxg(grtyp,ig1,ig2=0,ig3=0,ig4=0):
+    """Decode ig1,ig2,ig3,ig4 into real grid descriptors
+
+    (xg1,xg2,xg3,xg4) = cigaxg(grtyp,ig1,ig2,ig3,ig4)
+    (xg1,xg2,xg3,xg4) = cigaxg(grtyp,ig1234)
+    
     Args:
-        proj   (str): (I)
-        ig1..4 (int): encoded grid descriptor values
-          or
-        ig1    (int,int,int,int): tuple/list with encoded grid desc values
+        grtyp  : type of geographical projection (str)
+        ig1..4 : 4 grid descriptors encoded values (4x int)
+        ig1234 : 4 grid descriptors encoded values (tuple or list of 4x int)
     Returns:
-        (float,float,float,float), Decoded grid parameters value
-        None on error
+        (float,float,float,float), Decoded grid parameters
+        Meaning of xg1..4 values depends on the grid type,
+        please refer to Librmn's doc on grids for more details
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
     """
+    if not (type(grtyp) == str):
+        raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" % (type(grtyp)))
+    if grtyp.strip() == '':
+        raise ValueError("cigaxg: must provide a valide grtyp")
     (cig1,cig2,cig3,cig4) = (_ct.c_int(ig1),_ct.c_int(ig2),_ct.c_int(ig3),_ct.c_int(ig4))            
     if isListType(ig1):
         (cig1,cig2,cig3,cig4) = (_ct.c_int(ig1[0]),_ct.c_int(ig1[1]),_ct.c_int(ig1[2]),_ct.c_int(ig1[3]))            
     (cxg1,cxg2,cxg3,cxg4) = (_ct.c_float(0.),_ct.c_float(0.),_ct.c_float(0.),_ct.c_float(0.))
-    istat = _rp.f_cigaxg(proj,
+    istat = _rp.f_cigaxg(grtyp,
                 _ct.byref(cxg1),_ct.byref(cxg2),_ct.byref(cxg3),_ct.byref(cxg4),
                 _ct.byref(cig1),_ct.byref(cig2),_ct.byref(cig3),_ct.byref(cig4))
-    if istat < 0: return None
+    if istat < 0:
+        raise RMNBaseError()
     return (cxg1.value,cxg2.value,cxg3.value,cxg4.value)
 
 
-def cxgaig(proj,xg1,xg2=0.,xg3=0.,xg4=0.):
-    """Decode ig1,ig2,ig3,ig4 into real grid descriptors 
+def cxgaig(grtyp,xg1,xg2=0.,xg3=0.,xg4=0.):
+    """Encode real grid descriptors into ig1,ig2,ig3,ig4
+
+    (ig1,ig2,ig3,ig4) = cxgaig(grtyp,xg1,xg2,xg3,xg4)
+    (ig1,ig2,ig3,ig4) = cxgaig(grtyp,xg1234)
+    
     Args:
-        proj   (str): (I)
-        xg1..4 (float): encoded grid descriptor values
-          or
-        xg1    (float,...,float): tuple/list with real grid desc values
+        grtyp  : type of geographical projection (str)
+        xg1..4 : 4 grid descriptors values (4x float)
+        xg1234 : 4 grid descriptors values (tuple or list of 4x float)
+                 Meaning of xg1..4 values depends on the grid type,
+                 please refer to Librmn's doc on grids for more details
     Returns:
         (int,int,int,int), Encoded grid parameters
-        None on error
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
     """
+    if not (type(grtyp) == str):
+        raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" % (type(grtyp)))
+    if grtyp.strip() == '':
+        raise ValueError("cigaxg: must provide a valide grtyp")
     (cxg1,cxg2,cxg3,cxg4) = (_ct.c_float(xg1),_ct.c_float(xg2),_ct.c_float(xg3),_ct.c_float(xg4))
     if isListType(xg1):
         (cxg1,cxg2,cxg3,cxg4) = (_ct.c_float(xg1[0]),_ct.c_float(xg1[1]),_ct.c_float(xg1[2]),_ct.c_float(xg1[3]))
     (cig1,cig2,cig3,cig4) = (_ct.c_int(0),_ct.c_int(0),_ct.c_int(0),_ct.c_int(0))
-    istat = _rp.f_cxgaig(proj,
+    istat = _rp.f_cxgaig(grtyp,
             _ct.byref(cig1),_ct.byref(cig2),_ct.byref(cig3),_ct.byref(cig4),
             _ct.byref(cxg1),_ct.byref(cxg2),_ct.byref(cxg3),_ct.byref(cxg4))
-    if istat < 0: return None
+    if istat < 0:
+        raise RMNBaseError()
     return (cig1.value,cig2.value,cig3.value,cig4.value)
 
 
 def incdatr(idate,nhours):
     """Increate idate by nhours
+
+    date2 = incdatr(idate,nhours)
+    
     Args:
-        idate  (int)  : CMC encodec date
-        nhours (float): number of hours
+        idate  : CMC encodec date (int)
+        nhours : number of hours (float)
     Returns:
         int, CMC encodec date, idate+nhours
-        None on error
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
     """
+    if type(idate) != int:
+       raise TypeError("incdatr: Expecting idate of type int, Got %s : %s" % (type(idate),repr(idate)))
+    if idate < 0:
+        raise ValueError("incdatr: must provide a valide idate: %d" % (idate))
+    if type(nhours) == int: nhours = float(nhours)
+    if type(nhours) != float:
+       raise TypeError("incdatr: Expecting nhours of type float, Got %s : %s" % (type(nhours),repr(nhours)))
     (cidateout,cidatein,cnhours) = (_ct.c_int(idate),_ct.c_int(idate),_ct.c_double(nhours))
     _rp.f_incdatr(_ct.byref(cidateout),_ct.byref(cidatein),_ct.byref(cnhours))
-    if cidateout.value == 101010101: return None
+    if cidateout.value == 101010101:
+        raise RMNBaseError()
     return cidateout.value
 
 
 def difdatr(idate1,idate2):
     """Compute de diffence between dates in hours (nhours = idate1 - idate2)
+
+    nhours = difdatr(idate1,idate2)
+    
     Args:
-        idate1 (int)  : CMC encodec date
-        idate2 (int)  : CMC encodec date
+        idate1 : CMC encodec date (int)
+        idate2 : CMC encodec date (int)
     Returns:
         float, number of hours resulting from idate1 - idate2
-        None on error
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
     """
+    if type(idate1) != int or type(idate2) != int:
+       raise TypeError("difdatr: Expecting idate1,2 of type int, Got %s,%s" % (type(idate1),type(idate2)))
+    if idate1 < 0 or idate2 < 0:
+        raise ValueError("difdatr: must provide a valide idates: %d,%d" % (idate1,idate2))
     (cidate1,cidate2,cnhours) = (_ct.c_int(idate1),_ct.c_int(idate2),_ct.c_double())
     _rp.f_difdatr(_ct.byref(cidate1),_ct.byref(cidate2),_ct.byref(cnhours))
-    if cnhours.value == 2.**30: return None
+    if cnhours.value == 2.**30:
+        raise RMNBaseError()
     return cnhours.value
 
 
 def newdate(imode,idate1,idate2=0):
     """Convert date format between: printable, CMC date-time stamp, true date
+
+    outdate = newdate(imode,idate1,idate2)
+    
     Args:
-        imode  (int)  : Conversion mode see below
-        idate1 (int)  : See Note below
-        idate2 (int)  : See Note below
+        imode  : Conversion mode see below (int)
+        idate1 : imode dependent, See Note below (int)
+        idate2 : imode dependent, See Note below (int)
     Returns:
         The converted value(s), imode dependent, see note below
-        None on error
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
+        
     imode CAN TAKE THE FOLLOWING VALUES:-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7
     imode=1 : STAMP TO (TRUE_DATE AND RUN_NUMBER)
         (odate1,odate2) = newdate(imode,idate1)
@@ -252,6 +356,12 @@ def newdate(imode,idate1,idate2=0):
         odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
         odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
     """
+    if type(imode) != int:
+       raise TypeError("incdatr: Expecting imode of type int, Got %s : %s" % (type(imode),repr(imode)))
+    if type(idate1) != int or type(idate2) != int:
+       raise TypeError("newdate: Expecting idate1,2 of type int, Got %s,%s" % (type(idate1),type(idate2)))
+    if idate1 < 0 or idate2 < 0:
+        raise ValueError("newdate: must provide a valide idates: %d,%d" % (idate1,idate2))
     cimode = _ct.c_int(imode)
     (cidate1,cidate2,cidate3) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     if imode == 1:
@@ -283,11 +393,10 @@ def newdate(imode,idate1,idate2=0):
     elif imode == -7:
        cidate1 = _ct.c_int(idate1)
     else:
-       return None
-
+       raise ValueError("incdatr: must provide a valide imode: %d" % (imode))
     istat = _rp.f_newdate(_ct.byref(cidate1),_ct.byref(cidate2),_ct.byref(cidate3),_ct.byref(cimode))
-    if istat == 1: return None
-
+    if istat == 1:
+        raise RMNBaseError()
     if imode == 1:
        return (cidate1.value,cidate3.value)
     elif imode == -1:
