@@ -10,11 +10,12 @@
 import ctypes as _ct
 from . import proto as _rp
 from . import const as _rc
+from . import RMNError
 
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 isListType = lambda x: type(x) in (list,tuple)
 
-class RMNBaseError(Exception):
+class RMNBaseError(RMNError):
     pass
 
 #--- primitives -----------------------------------------------------

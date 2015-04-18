@@ -14,10 +14,9 @@ import numpy.ctypeslib as _npc
 from . import proto as _rp
 from . import const as _rc
 from . import base as _rb
+from . import RMNError
 
-#TODO: raise exception on error instead of returning error code
 #TODO: make sure caller can provide allocated array (recycle mem)
-#TODO: more input args check
 
 #---- helpers -------------------------------------------------------
 
@@ -25,7 +24,7 @@ c_mkstr = lambda x: _ct.create_string_buffer(x)
 c_toint = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
 isListType = lambda x: type(x) in (list,tuple)
 
-class FSTDError(Exception):
+class FSTDError(RMNError):
     pass
 
 def dtype_fst2numpy(datyp):
