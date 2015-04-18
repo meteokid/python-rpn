@@ -9,52 +9,120 @@ import unittest
 
 class Librmn_interp_Test(unittest.TestCase):
 
-    def test_interp(self):
-        """Need to write some ezscint tests"""
-        a = rmn.isFST('myfile')
-        self.assertTrue(a,'Need to write some ezscint tests')
+    def getGridParams_L(self):
+        gp = {
+            'shape' : (90,180),
+            'ni' : 90,
+            'nj' : 180,
+            'grtyp' : 'L',
+            'dlat' : 0.5,
+            'dlon' : 0.25,
+            'lat0' : 45.,
+            'lon0' : 273.
+            }
+        ig1234 = rmn.cxgaig(gp['grtyp'],gp['lat0'],gp['lon0'],
+                            gp['dlat'],gp['dlon'])
+        gp['ig1'] = ig1234[0]
+        gp['ig2'] = ig1234[1]
+        gp['ig3'] = ig1234[2]
+        gp['ig4'] = ig1234[3]
+        return gp
+
+    def test_ezsetopt_ezgetopt(self):
+        " "
+        otplist = [
+            (rmn.EZ_OPT_WEIGHT_NUMBER,2), #int
+            (rmn.EZ_OPT_EXTRAP_VALUE,99.), #float
+            (rmn.EZ_OPT_EXTRAP_DEGREE.lower(),rmn.EZ_EXTRAP_VALUE.lower()) #str
+            ]
+        for (o,v) in otplist:
+            rmn.ezsetopt(o,v)
+            v1 = rmn.ezgetopt(o,vtype=type(v))
+            self.assertEqual(v1,v)
     
+    def test_ezqkdef_ezgprm(self):
+        gp = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp)
+        self.assertTrue(gid1>=0)
+        gp['id'] = gid1
+        gprm = rmn.ezgprm(gid1)
+        for k in gprm.keys():
+            self.assertEqual(gp[k],gprm[k])
+            
+    def test_ezqkdef_ezgxprm(self):
+        gp = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp['ni'],gp['nj'],gp['grtyp'],
+                           gp['ig1'],gp['ig2'],gp['ig3'],gp['ig4'])
+        self.assertTrue(gid1>=0)
+        gp['id'] = gid1
+        gp['grref'] = ' '
+        gp['ig1ref'] = 0
+        gp['ig2ref'] = 0
+        gp['ig3ref'] = 0
+        gp['ig4ref'] = 0
+        gprm = rmn.ezgxprm(gid1)
+        for k in gprm.keys():
+            self.assertEqual(gp[k],gprm[k])
+        
+    def test_ezqkdef_1subgrid(self):
+        gp = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp)
+        self.assertTrue(gid1>=0)
+        ng = rmn.ezget_nsubgrids(gid1)
+        self.assertEqual(ng,1)
+        subgid = rmn.ezget_subgridids(gid1)
+        self.assertEqual(subgid,[gid1])
 
-## class Librmn_ezgetlaloKnownValues(unittest.TestCase):
+    def test_ezqkdef_gdll(self):
+        gp = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp)
+        self.assertTrue(gid1>=0)
+        gll = rmn.gdll(gid1)
+        self.assertEqual(gp['shape'],gll['lat'].shape)
+        self.assertEqual(gp['shape'],gll['lon'].shape)
+        self.assertEqual(gp['lat0'],gll['lat'][0,0])
+        self.assertEqual(gp['lon0'],gll['lon'][0,0])
 
-##     la = np.array(
-##         [[-89.5, -89. , -88.5],
-##         [-89.5, -89. , -88.5],
-##         [-89.5, -89. , -88.5]]
-##         ,dtype=np.dtype('float32'),order='FORTRAN')
-##     lo = np.array(
-##         [[ 180. ,  180. ,  180. ],
-##         [ 180.5,  180.5,  180.5],
-##         [ 181. ,  181. ,  181. ]]
-##         ,dtype=np.dtype('float32'),order='FORTRAN')
-##     cla = np.array(
-##         [[[-89.75, -89.25, -88.75],
-##         [-89.75, -89.25, -88.75],
-##         [-89.75, -89.25, -88.75]],
-##         [[-89.25, -88.75, -88.25],
-##         [-89.25, -88.75, -88.25],
-##         [-89.25, -88.75, -88.25]],
-##         [[-89.25, -88.75, -88.25],
-##         [-89.25, -88.75, -88.25],
-##         [-89.25, -88.75, -88.25]],
-##         [[-89.75, -89.25, -88.75],
-##         [-89.75, -89.25, -88.75],
-##         [-89.75, -89.25, -88.75]]]
-##         ,dtype=np.dtype('float32'),order='FORTRAN')
-##     clo = np.array(
-##         [[[ 179.75,  179.75,  179.75],
-##         [ 180.25,  180.25,  180.25],
-##         [ 180.75,  180.75,  180.75]],
-##         [[ 179.75,  179.75,  179.75],
-##         [ 180.25,  180.25,  180.25],
-##         [ 180.75,  180.75,  180.75]],
-##         [[ 180.25,  180.25,  180.25],
-##         [ 180.75,  180.75,  180.75],
-##         [ 181.25,  181.25,  181.25]],
-##         [[ 180.25,  180.25,  180.25],
-##         [ 180.75,  180.75,  180.75],
-##         [ 181.25,  181.25,  181.25]]]
-##         ,dtype=np.dtype('float32'),order='FORTRAN')
+
+    ## la = np.array(
+    ##     [[-89.5, -89. , -88.5],
+    ##     [-89.5, -89. , -88.5],
+    ##     [-89.5, -89. , -88.5]]
+    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+    ## lo = np.array(
+    ##     [[ 180. ,  180. ,  180. ],
+    ##     [ 180.5,  180.5,  180.5],
+    ##     [ 181. ,  181. ,  181. ]]
+    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+    ## cla = np.array(
+    ##     [[[-89.75, -89.25, -88.75],
+    ##     [-89.75, -89.25, -88.75],
+    ##     [-89.75, -89.25, -88.75]],
+    ##     [[-89.25, -88.75, -88.25],
+    ##     [-89.25, -88.75, -88.25],
+    ##     [-89.25, -88.75, -88.25]],
+    ##     [[-89.25, -88.75, -88.25],
+    ##     [-89.25, -88.75, -88.25],
+    ##     [-89.25, -88.75, -88.25]],
+    ##     [[-89.75, -89.25, -88.75],
+    ##     [-89.75, -89.25, -88.75],
+    ##     [-89.75, -89.25, -88.75]]]
+    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+    ## clo = np.array(
+    ##     [[[ 179.75,  179.75,  179.75],
+    ##     [ 180.25,  180.25,  180.25],
+    ##     [ 180.75,  180.75,  180.75]],
+    ##     [[ 179.75,  179.75,  179.75],
+    ##     [ 180.25,  180.25,  180.25],
+    ##     [ 180.75,  180.75,  180.75]],
+    ##     [[ 180.25,  180.25,  180.25],
+    ##     [ 180.75,  180.75,  180.75],
+    ##     [ 181.25,  181.25,  181.25]],
+    ##     [[ 180.25,  180.25,  180.25],
+    ##     [ 180.75,  180.75,  180.75],
+    ##     [ 181.25,  181.25,  181.25]]]
+    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
+
 
 
 ##     def test_Librmn_ezgetlalo_KnownValues(self):
