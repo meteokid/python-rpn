@@ -714,14 +714,14 @@ def ezsint(gdidout,gdidin,zin,zout=None):
         EzscintError on any other error
     """
     gridsetid = ezdefset(gdidout, gdidin)
-    if not (type(zin) == numpy.ndarray):
+    if not (type(zin) == _np.ndarray):
         raise TypeError("ezsint: expecting args of type numpy.ndarray, Got %s" % (type(zin)))
     gridParams = ezgxprm(gdidin)
     if zin.shape != gridParams['shape']:
         raise TypeError("ezsint: Provided zin array have inconsistent shape compered to the input grid")
     dshape = ezgprm(gdidout)['shape']
     if zout:
-        if not (type(zout) == numpy.ndarray):
+        if not (type(zout) == _np.ndarray):
             raise TypeError("ezsint: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
         if zout.shape != dshape:
             raise TypeError("ezsint: Provided zout array have inconsistent shape compered to the output grid")
@@ -753,14 +753,14 @@ def ezuvint(gdidout,gdidin,uuin,vvin,uuout=None,vvout=None):
         EzscintError on any other error
     """
     gridsetid = ezdefset(gdidout, gdidin)
-    if not (type(uuin) == numpy.ndarray and type(vvin) == numpy.ndarray):
+    if not (type(uuin) == _np.ndarray and type(vvin) == _np.ndarray):
         raise TypeError("ezuvint: expecting args of type numpy.ndarray, Got %s, %s" % (type(uuin),type(vvin)))
     gridParams = ezgxprm(gdidin)
     if uuin.shape != gridParams['shape'] or vvin.shape != gridParams['shape']:
         raise TypeError("ezuvint: Provided uuin,vvin array have inconsistent shape compered to the input grid")
     dshape = ezgprm(gdidout)['shape']
     if uuout and vvout:
-        if not (type(uuout) == numpy.ndarray and type(vvout) == numpy.ndarray):
+        if not (type(uuout) == _np.ndarray and type(vvout) == _np.ndarray):
             raise TypeError("ezuvint: Expecting uuout,vvout of type numpy.ndarray, Got %s" % (type(uuout)))
         if uuout.shape != dshape or vvout.shape != dshape:
             raise TypeError("ezuvint: Provided uuout,vvout array have inconsistent shape compered to the output grid")
@@ -798,13 +798,15 @@ def gdrls(gdid):
         TypeError    on wrong input arg types
         EzscintError on any other error
     """
-    if not (type(gdid) == int):
-        raise TypeError("gdrls: Expecting gdid of type int, Got %s" % (type(gdid)))
-    istat = _rp.c_gdrls(gdid)
-    if istat >= 0:
-        return istat
-    raise EzscintError()
-
+    if not isinstance(gdid,(list,tuple)): gdid = [gdid]
+    for id1 in gdid:
+        if not (type(id1) == int):
+            raise TypeError("gdrls: Expecting gdid of type int, Got %s" % (type(id1)))
+        istat = _rp.c_gdrls(id1)
+        if istat < 0:
+            raise EzscintError()
+    return None
+    
 #TODO:    c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
 #TODO:    c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
 

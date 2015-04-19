@@ -5,21 +5,13 @@
 import rpnpy.librmn.all as rmn
 import unittest
 ## import ctypes as ct
-## import numpy as np
+import numpy as np
 
 class Librmn_interp_Test(unittest.TestCase):
 
-    def getGridParams_L(self):
-        gp = {
-            'shape' : (90,180),
-            'ni' : 90,
-            'nj' : 180,
-            'grtyp' : 'L',
-            'dlat' : 0.5,
-            'dlon' : 0.25,
-            'lat0' : 45.,
-            'lon0' : 273.
-            }
+    epsilon = 0.0005
+    
+    def setIG_L(self,gp):
         ig1234 = rmn.cxgaig(gp['grtyp'],gp['lat0'],gp['lon0'],
                             gp['dlat'],gp['dlon'])
         gp['ig1'] = ig1234[0]
@@ -27,9 +19,34 @@ class Librmn_interp_Test(unittest.TestCase):
         gp['ig3'] = ig1234[2]
         gp['ig4'] = ig1234[3]
         return gp
+        
+    def getGridParams_L(self):
+        gp = {
+            'shape' : (90,180),
+            'ni' : 90,
+            'nj' : 180,
+            'grtyp' : 'L',
+            'dlat' : 0.5,
+            'dlon' : 0.5,
+            'lat0' : 45.,
+            'lon0' : 273.
+            }
+        return self.setIG_L(gp)
+    
+    def getGridParams_L2x(self):
+        gp = {
+            'shape' : (45,90),
+            'ni' : 45,
+            'nj' : 90,
+            'grtyp' : 'L',
+            'dlat' : 0.5,
+            'dlon' : 0.5,
+            'lat0' : 45.,
+            'lon0' : 273.25
+            }
+        return self.setIG_L(gp)
 
     def test_ezsetopt_ezgetopt(self):
-        " "
         otplist = [
             (rmn.EZ_OPT_WEIGHT_NUMBER,2), #int
             (rmn.EZ_OPT_EXTRAP_VALUE,99.), #float
@@ -63,6 +80,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gprm = rmn.ezgxprm(gid1)
         for k in gprm.keys():
             self.assertEqual(gp[k],gprm[k])
+        rmn.gdrls(gid1)
         
     def test_ezqkdef_1subgrid(self):
         gp = self.getGridParams_L()
@@ -72,6 +90,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertEqual(ng,1)
         subgid = rmn.ezget_subgridids(gid1)
         self.assertEqual(subgid,[gid1])
+        rmn.gdrls(gid1)
 
     def test_ezqkdef_gdll(self):
         gp = self.getGridParams_L()
@@ -82,7 +101,52 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertEqual(gp['shape'],gll['lon'].shape)
         self.assertEqual(gp['lat0'],gll['lat'][0,0])
         self.assertEqual(gp['lon0'],gll['lon'][0,0])
+        rmn.gdrls(gid1)
 
+    def test_ezsint(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        gp2 = self.getGridParams_L2x()
+        gid2 = rmn.ezqkdef(gp2)
+        self.assertTrue(gid2>=0)
+        setid = rmn.ezdefset(gid2, gid1)
+        self.assertTrue(setid>=0)
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            zin[:,x] = x
+        zout = rmn.ezsint(gid2,gid1,zin)
+        self.assertEqual(gp2['shape'],zout.shape)
+        for j in xrange(gp2['nj']):
+            for i in xrange(gp2['ni']):
+                self.assertTrue(abs((zin[i,j]+zin[i+1,j])/2.-zout[i,j]) < self.epsilon)
+        #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
+
+    def test_ezuvint(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        gp2 = self.getGridParams_L2x()
+        gid2 = rmn.ezqkdef(gp2)
+        self.assertTrue(gid2>=0)
+        setid = rmn.ezdefset(gid2, gid1)
+        self.assertTrue(setid>=0)
+        uuin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        vvin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            uuin[:,x] = x
+        vvin = uuin*3.
+        (uuout,vvout) = rmn.ezuvint(gid2,gid1,uuin,vvin)
+        self.assertEqual(gp2['shape'],uuout.shape)
+        self.assertEqual(gp2['shape'],vvout.shape)
+        for j in xrange(gp2['nj']):
+            for i in xrange(gp2['ni']):
+                self.assertTrue(abs((uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]) < self.epsilon,'uvint, u: abs(%f-%f)=%f' % (((uuin[i,j]+uuin[i+1,j])/2),uuout[i,j],(uuin[i,j]+uuin[i+1,j])/2.-uuout[i,j]))
+
+                self.assertTrue(abs((vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]) < self.epsilon,'uvint, v: abs(%f-%f)=%f' % (((vvin[i,j]+vvin[i+1,j])/2),vvout[i,j],(vvin[i,j]+vvin[i+1,j])/2.-vvout[i,j]))
+                ## self.assertEqual((uuin[i,j]+uuin[i+1,j])/2.,uuout[i,j])
+                ## self.assertEqual((vvin[i,j]+vvin[i+1,j])/2.,vvout[i,j])
+        #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
     ## la = np.array(
     ##     [[-89.5, -89. , -88.5],
