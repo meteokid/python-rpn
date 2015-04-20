@@ -213,6 +213,7 @@ class Librmn_interp_Test(unittest.TestCase):
                 ## self.assertEqual((vvin[i,j]+vvin[i+1,j])/2.,vvout[i,j])
         #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
+
     def test_ezgkdef_fmem_gdxyfll(self):
         gp = self.getGridParams_ZE()
         gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
@@ -229,6 +230,7 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(abs(xypts['x'][1]-2.)<self.epsilon)
         self.assertTrue(abs(xypts['y'][1]-2.)<self.epsilon)
         rmn.gdrls(gid1)
+
 
     def test_ezgkdef_fmem_gdllfxy(self):
         gp = self.getGridParams_ZE()
@@ -247,193 +249,100 @@ class Librmn_interp_Test(unittest.TestCase):
         self.assertTrue(abs(llpts['lat'][1]-gp['ay'][0,2])<self.epsilon)
         rmn.gdrls(gid1)
 
-#TODO: test_ezgdef_supergrid
-#TODO: test_gdsetmask, test_gdgetmask
+
+    def test_gdllsval(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            zin[:,x] = x
+        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
+        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
+        zout = rmn.gdllsval(gid1,lat,lon,zin)
+        self.assertEqual(lat.shape,zout.shape)
+        self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
+        rmn.gdrls(gid1)
+
+    def test_gdxysval(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        zin = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            zin[:,x] = x
+        xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        zout = rmn.gdxysval(gid1,xx,yy,zin)
+        self.assertEqual(xx.shape,zout.shape)
+        self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
+        rmn.gdrls(gid1)
+
+
+    def test_gdllvval(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            zin[:,x] = x
+            zin2[:,x] = x+1
+        lat = np.array([gp1['lat0']+gp1['dlat']/2.],dtype=np.float32,order='FORTRAN')
+        lon = np.array([(gp1['lon0']+gp1['dlon'])/2.],dtype=np.float32,order='FORTRAN')
+        (zout,zout2) = rmn.gdllvval(gid1,lat,lon,zin,zin2)
+        self.assertEqual(lat.shape,zout.shape)
+        self.assertEqual(lat.shape,zout2.shape)
+        self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
+        self.assertTrue(abs((zin2[0,0]+zin2[1,1])/2. - zout2[0]) < self.epsilon)
+        rmn.gdrls(gid1)
+
+
+    def test_gdxyvval(self):
+        gp1 = self.getGridParams_L()
+        gid1 = rmn.ezqkdef(gp1)
+        self.assertTrue(gid1>=0)
+        zin  = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        zin2 = np.empty(gp1['shape'],dtype=np.float32,order='FORTRAN')
+        for x in xrange(gp1['ni']):
+            zin[:,x] = x
+            zin2[:,x] = x+1
+        xx = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        yy = np.array([1.5],dtype=np.float32,order='FORTRAN')
+        (zout,zout2) = rmn.gdxyvval(gid1,xx,yy,zin,zin2)
+        self.assertEqual(xx.shape,zout.shape)
+        self.assertTrue(abs((zin[0,0]+zin[1,1])/2. - zout[0]) < self.epsilon)
+        self.assertTrue(abs((zin2[0,0]+zin2[1,1])/2. - zout2[0]) < self.epsilon)
+        rmn.gdrls(gid1)
+
+    ## def test_gdsetmask_gdgetmask(self):
+    ##     gp1 = self.getGridParams_L()
+    ##     gid1 = rmn.ezqkdef(gp1)
+    ##     self.assertTrue(gid1>=0)
+    ##     mask = np.empty(gp1['shape'],dtype=np.intc,order='FORTRAN')
+    ##     mask[:,:] = 0
+    ##     for i in xrange(min(gp1['ni'],gp1['nj'])):
+    ##         mask[i,i] = 1
+    ##     rmn.gdsetmask(gid1,mask)
+    ##     mask2 = rmn.gdgetmask(gid1)
+    ##     print [mask[i,i] for i in xrange(min(gp1['ni'],gp1['nj']))]
+    ##     print [mask2[i,i] for i in xrange(min(gp1['ni'],gp1['nj']))]
+    ##     self.assertEqual(mask.shape,mask2.shape)
+    ##     for j in xrange(gp1['nj']):
+    ##         for i in xrange(gp1['ni']):
+    ##             self.assertEqual(mask[i,j],mask2[i,j])
+    ##     rmn.gdrls(gid1)
+
 #TODO: test_ezkqdef with file
+#TODO: test_ezgdef_supergrid
 #TODO: test_ezgfstp
 
-#TODO:    c_gdllsval(gdid, zout, zin, lat, lon, n)
-#TODO:    c_gdxysval(gdid, zout, zin, x, y, n)
-#TODO:    c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
-#TODO:    c_gdxyvval(gdid, uuout, vvout, uuin, vvin, x, y, n)
 #TODO:    c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
 #TODO:    c_gdxywdval(gdin, uuout, vvout, uuin, vvin, x, y, n)
 
 #TODO:    c_ezsint_mdm(zout, mask_out, zin, mask_in)
 #TODO:    c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
 #TODO:    c_ezsint_mask(mask_out, mask_in)
-
-    ## la = np.array(
-    ##     [[-89.5, -89. , -88.5],
-    ##     [-89.5, -89. , -88.5],
-    ##     [-89.5, -89. , -88.5]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
-    ## lo = np.array(
-    ##     [[ 180. ,  180. ,  180. ],
-    ##     [ 180.5,  180.5,  180.5],
-    ##     [ 181. ,  181. ,  181. ]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
-    ## cla = np.array(
-    ##     [[[-89.75, -89.25, -88.75],
-    ##     [-89.75, -89.25, -88.75],
-    ##     [-89.75, -89.25, -88.75]],
-    ##     [[-89.25, -88.75, -88.25],
-    ##     [-89.25, -88.75, -88.25],
-    ##     [-89.25, -88.75, -88.25]],
-    ##     [[-89.25, -88.75, -88.25],
-    ##     [-89.25, -88.75, -88.25],
-    ##     [-89.25, -88.75, -88.25]],
-    ##     [[-89.75, -89.25, -88.75],
-    ##     [-89.75, -89.25, -88.75],
-    ##     [-89.75, -89.25, -88.75]]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
-    ## clo = np.array(
-    ##     [[[ 179.75,  179.75,  179.75],
-    ##     [ 180.25,  180.25,  180.25],
-    ##     [ 180.75,  180.75,  180.75]],
-    ##     [[ 179.75,  179.75,  179.75],
-    ##     [ 180.25,  180.25,  180.25],
-    ##     [ 180.75,  180.75,  180.75]],
-    ##     [[ 180.25,  180.25,  180.25],
-    ##     [ 180.75,  180.75,  180.75],
-    ##     [ 181.25,  181.25,  181.25]],
-    ##     [[ 180.25,  180.25,  180.25],
-    ##     [ 180.75,  180.75,  180.75],
-    ##     [ 181.25,  181.25,  181.25]]]
-    ##     ,dtype=np.dtype('float32')).T #,order='FORTRAN')
-
-
-
-##     def test_Librmn_ezgetlalo_KnownValues(self):
-##         """Librmn_ezgetlalo should give known result with known input"""
-##         (ni,nj) = self.la.shape
-##         grtyp='L'
-##         grref='L'
-##         (ig1,ig2,ig3,ig4) =  rmn.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
-##         hasAxes = 0
-##         doCorners = 0
-##         (i0,j0) = (0,0)
-##         (la2,lo2) = rmn.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
-##         if np.any(self.la!=la2):
-##             print self.la
-##             print la2
-##         if np.any(self.lo!=lo2):
-##             print self.lo
-##             print lo2
-##         self.assertFalse(np.any(self.la!=la2))
-##         self.assertFalse(np.any(self.lo!=lo2))
-
-##     def test_Librmn_ezgetlalo_KnownValues2(self):
-##         """Librmn_ezgetlalo corners should give known result with known input"""
-##         (ni,nj) = self.la.shape
-##         grtyp='L'
-##         grref='L'
-##         (ig1,ig2,ig3,ig4) =  rmn.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
-##         hasAxes = 0
-##         doCorners = 1
-##         (i0,j0) = (0,0)
-##         (la2,lo2,cla2,clo2) = rmn.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
-##         if np.any(self.la!=la2):
-##             print self.la
-##             print la2
-##         if np.any(self.lo!=lo2):
-##             print self.lo
-##             print lo2
-##         self.assertFalse(np.any(self.la!=la2))
-##         self.assertFalse(np.any(self.lo!=lo2))
-##         for ic in range(0,4):
-##             if np.any(self.cla[ic,...]!=cla2[ic,...]):
-##                 print ic,'cla'
-##                 print self.cla[ic,...]
-##                 print cla2[ic,...]
-##             self.assertFalse(np.any(self.cla[ic,...]!=cla2[ic,...]))
-##             if np.any(self.clo[ic,...]!=clo2[ic,...]):
-##                 print ic,'clo'
-##                 print self.clo[ic,...]
-##                 print clo2[ic,...]
-##             self.assertFalse(np.any(self.clo[ic,...]!=clo2[ic,...]))
-
-##     def test_Librmn_ezgetlalo_Z_KnownValues(self):
-##         """Librmn_ezgetlalo with Z grid should give known result with known input"""
-##         (ni,nj) = self.la.shape
-##         grtyp='Z'
-##         grref='L'
-##         (ig1,ig2,ig3,ig4) =  rmn.cxgaig(grref,0.,0.,1.,1.)
-##         xaxis = self.lo[:,0].reshape((self.lo.shape[0],1)).copy('FORTRAN')
-##         yaxis = self.la[0,:].reshape((1,self.la.shape[1])).copy('FORTRAN')
-##         hasAxes = 1
-##         doCorners = 0
-##         (i0,j0) = (0,0)
-##         (la2,lo2) = rmn.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
-##         if np.any(self.la!=la2):
-##             print self.la
-##             print la2
-##         if np.any(self.lo!=lo2):
-##             print self.lo
-##             print lo2
-##         self.assertFalse(np.any(self.la!=la2))
-##         self.assertFalse(np.any(self.lo!=lo2))
-
-##     def test_Librmn_ezgetlalo_Dieze_KnownValues(self):
-##         """Librmn_ezgetlalo with #-grid should give known result with known input"""
-##         (ni,nj) = self.la.shape
-##         grtyp='#'
-##         grref='L'
-##         (ig1,ig2,ig3,ig4) =  rmn.cxgaig(grref,0.,0.,1.,1.)
-##         xaxis = self.lo[:,0].reshape((self.lo.shape[0],1)).copy('FORTRAN')
-##         yaxis = self.la[0,:].reshape((1,self.la.shape[1])).copy('FORTRAN')
-##         hasAxes = 1
-##         doCorners = 0
-##         (i0,j0) = (2,2)
-##         (la2,lo2) = rmn.ezgetlalo((ni-1,nj-1),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
-##         if np.any(self.la[1:,1:]!=la2):
-##             print self.la[1:,1:]
-##             print la2
-##         if np.any(self.lo[1:,1:]!=lo2):
-##             print self.lo[1:,1:]
-##             print lo2
-##         self.assertFalse(np.any(self.la[1:,1:]!=la2))
-##         self.assertFalse(np.any(self.lo[1:,1:]!=lo2))
-
-## class LibrmnInterpTests(unittest.TestCase):
-
-##     epsilon = 1.e-5
-
-##     def gridL(self,dlalo=0.5,nij=10):
-##         """provide grid and rec values for other tests"""
-##         grtyp='L'
-##         grref=grtyp
-##         la0 = 0.-dlalo*(nij/2.)
-##         lo0 = 180.-dlalo*(nij/2.)
-##         ig14 = (ig1,ig2,ig3,ig4) =  rmn.cxgaig(grtyp,la0,lo0,dlalo,dlalo)
-##         axes = (None,None)
-##         hasAxes = 0
-##         ij0 = (1,1)
-##         doCorners = 0
-##         (la,lo) = rmn.ezgetlalo((nij,nij),grtyp,(grref,ig1,ig2,ig3,ig4),axes,hasAxes,ij0,doCorners)
-##         return (grtyp,ig14,(nij,nij),la,lo)
-
-##     def test_Librmn_exinterp_KnownValues(self):
-##         """Librmn_exinterp should give known result with known input"""
-##         (g1_grtyp,g1_ig14,g1_shape,la1,lo1) = self.gridL(0.5,6)
-##         (g2_grtyp,g2_ig14,g2_shape,la2,lo2) = self.gridL(0.25,8)
-##         axes = (None,None)
-##         ij0  = (1,1)
-##         g1ig14 = list(g1_ig14)
-##         g1ig14.insert(0,g1_grtyp)
-##         g2ig14 = list(g2_ig14)
-##         g2ig14.insert(0,g2_grtyp)
-##         la2b = rmn.ezinterp(la1,None,
-##             g1_shape,g1_grtyp,g1ig14,axes,0,ij0,
-##             g2_shape,g2_grtyp,g2ig14,axes,0,ij0,
-##             0)
-##         if np.any(np.abs(la2-la2b)>self.epsilon):
-##                 print 'g1:'+repr((g1_grtyp,g1_ig14,g1_shape))
-##                 print 'g2:'+repr((g2_grtyp,g2_ig14,g2_shape))
-##                 print 'la2:',la2
-##                 print 'la2b:',la2b
-##         self.assertFalse(np.any(np.abs(la2-la2b)>self.epsilon))
-
 
 if __name__ == "__main__":
     unittest.main()

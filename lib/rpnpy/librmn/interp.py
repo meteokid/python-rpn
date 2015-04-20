@@ -211,9 +211,9 @@ def ezdefset(gdidout, gdidin):
     if not (type(gdidout) == int and type(gdidin) == int):
         raise TypeError("ezdefset: Expecting a grid ids of type int, Got %s, %s" % (type(gdidout),type(gdidin)))
     istat = _rp.c_ezdefset(gdidout, gdidin)
-    if istat >= 0:
-        return istat
-    raise EzscintError()
+    if istat < 0:
+        raise EzscintError()
+    return istat
 
 
 def gdsetmask(gdid, mask):
@@ -232,10 +232,12 @@ def gdsetmask(gdid, mask):
     """
     if not (type(gdid) == int and type(mask) == _np.ndarray):
         raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray Got %s, %s" % (type(gdid),type(mask)))
+    if not mask.dtype in (_np.intc,_np.int32):
+        raise TypeError("gdsetmask: Expecting mask arg of type numpy,intc Got %s, %s" % (type(mask.dtype)))
     istat = _rp.c_gdsetmask(gdid, mask)
-    if istat >= 0:
-        return istat
-    raise EzscintError()
+    if istat < 0:
+        raise EzscintError()
+    return istat
 
 
 #---- Query Functions
@@ -681,14 +683,16 @@ def gdgetmask(gdid, mask=None):
             raise TypeError("gdgetmask: Expecting mask array of type numpy.ndarray, Got %s" % (type(mask)))
         if mask.shape != gridParams['shape']:
             raise TypeError("gdgetmask: Provided mask array have inconsistent shape compered to the grid")
+        if not mask.dtype in (_np.intc,_np.int32):
+            raise TypeError("gdsetmask: Expecting mask arg of type numpy,intc Got %s, %s" % (type(mask.dtype)))
     else:
-        mask = _np.empty(gridParams['shape'],dtype=_np.float32)
+        mask = _np.empty(gridParams['shape'],dtype=_np.intc)
     istat = _rp.c_gdgetmask(gdid, mask)
-    if istat >= 0:
-        return mask
-    #TODO: should we return gridParams as well (also for other similar functions above)
-    raise EzscintError()
-    
+    if istat < 0:
+        raise EzscintError()
+    return mask
+
+
 #TODO:    c_gdxpncf(gdid, i1, i2, j1, j2)
 #TODO:    c_gdgxpndaxes(gdid, ax, ay)
 
@@ -773,10 +777,200 @@ def ezuvint(gdidout,gdidin,uuin,vvin,uuout=None,vvout=None):
     raise EzscintError()
 
 
-#TODO:    c_gdllsval(gdid, zout, zin, lat, lon, n)
-#TODO:    c_gdxysval(gdid, zout, zin, x, y, n)
-#TODO:    c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
-#TODO:    c_gdxyvval(gdid, uuout, vvout, uuin, vvin, x, y, n)
+def gdllsval(gdid,lat,lon,zin,zout=None):
+    """Scalar interpolation to points located at lat-lon coordinates
+
+    zout = gdllsval(gdid,lat,lon,zin)
+    zout = gdllsval(gdid,lat,lon,zin,zout)
+
+    Args:
+        gdid    : id of the grid (int)
+        lat     : list of resquested points lat  (numpy.ndarray)
+        lon     : list of resquested points lon  (numpy.ndarray)
+        zin     : data to interpolate, on grid gdid (numpy.ndarray)
+        zout    : optional, interp.result array, same shape a lat,lon (numpy.ndarray)
+    Returns:
+        numpy.ndarray, interpolation result, same shape a lat,lon 
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+    """
+    if not isinstance(zin,_np.ndarray):
+        raise TypeError("gdllsval: expecting zin arg of type numpy.ndarray, Got %s" % (type(zin)))
+    gridParams = ezgxprm(gdid)
+    if zin.shape != gridParams['shape']:
+        raise TypeError("gdllsval: Provided zin array have inconsistent shape compered to the input grid")
+    if not isinstance(lat,_np.ndarray):
+        raise TypeError("gdllsval: expecting lat arg of type numpy.ndarray, Got %s" % (type(lat)))
+    if not isinstance(lon,_np.ndarray):
+        raise TypeError("gdllsval: expecting lon arg of type numpy.ndarray, Got %s" % (type(lon)))
+    if lat.shape != lon.shape:
+        raise TypeError("gdllsval: Provided lat,lon arrays have inconsistent shapes")
+    dshape = lat.shape
+    if zout:
+        if not (type(zout) == _np.ndarray):
+            raise TypeError("gdllsval: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
+        if zout.shape != dshape:
+            raise TypeError("gdllsval: Provided zout array have inconsistent shape compered to lat,lon arrays")
+    else:
+        zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
+    istat = _rp.c_gdllsval(gdid, zout, zin, lat, lon, lat.size)
+    if istat >= 0:
+        return zout
+    raise EzscintError()
+
+
+def gdxysval(gdid,xpts,ypts,zin,zout=None):
+    """Scalar intepolation to points located at x-y coordinates
+
+    zout = gdxysval(gdid,xpts,ypts,zin)
+    zout = gdxysval(gdid,xpts,ypts,zin,zout)
+
+    Args:
+        gdid    : id of the grid (int)
+        xpts     : list of resquested points x-coor  (numpy.ndarray)
+        ypts     : list of resquested points y-coor  (numpy.ndarray)
+        zin     : data to interpolate, on grid gdid (numpy.ndarray)
+        zout    : optional, interp.result array, same shape a xpts,ypts (numpy.ndarray)
+    Returns:
+        numpy.ndarray, interpolation result, same shape a xpts,ypts 
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+    """
+    if not isinstance(zin,_np.ndarray):
+        raise TypeError("gdxysval: expecting zin arg of type numpy.ndarray, Got %s" % (type(zin)))
+    gridParams = ezgxprm(gdid)
+    if zin.shape != gridParams['shape']:
+        raise TypeError("gdxysval: Provided zin array have inconsistent shape compered to the input grid")
+    if not isinstance(xpts,_np.ndarray):
+        raise TypeError("gdxysval: expecting xpts arg of type numpy.ndarray, Got %s" % (type(xpts)))
+    if not isinstance(ypts,_np.ndarray):
+        raise TypeError("gdxysval: expecting ypts arg of type numpy.ndarray, Got %s" % (type(ypts)))
+    if xpts.shape != ypts.shape:
+        raise TypeError("gdxysval: Provided xpts,ypts arrays have inconsistent shapes")
+    dshape = xpts.shape
+    if zout:
+        if not (type(zout) == _np.ndarray):
+            raise TypeError("gdxysval: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
+        if zout.shape != dshape:
+            raise TypeError("gdxysval: Provided zout array have inconsistent shape compered to xpts,ypts arrays")
+    else:
+        zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
+    istat = _rp.c_gdxysval(gdid, zout, zin, xpts, ypts, xpts.size)
+    if istat >= 0:
+        return zout
+    raise EzscintError()
+
+
+def gdllvval(gdid,lat,lon,uuin,vvin,uuout=None,vvout=None):
+    """Vectorial interpolation to points located at lat-lon coordinates
+
+    (uuout,vvout) = gdllsval(gdid,lat,lon,uuin,vvin)
+    (uuout,vvout) = gdllsval(gdid,lat,lon,uuin,vvin,uuout,vvout)
+
+    Args:
+        gdid    : id of the grid (int)
+        lat     : list of resquested points lat  (numpy.ndarray)
+        lon     : list of resquested points lon  (numpy.ndarray)
+        uuin, vvin   : data to interpolate, on grid gdid (numpy.ndarray)
+        uuout, vvout : optional, interp.result array, same shape a lat,lon (numpy.ndarray)
+    Returns:
+        (uuout, vvout), tuple of 2 numpy.ndarray, interpolation result, same shape a lat,lon 
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+    """
+    if not isinstance(uuin,_np.ndarray):
+        raise TypeError("gdllvval: expecting uuin arg of type numpy.ndarray, Got %s" % (type(uuin)))
+    if not isinstance(vvin,_np.ndarray):
+        raise TypeError("gdllvval: expecting vvin arg of type numpy.ndarray, Got %s" % (type(vvin)))
+    gridParams = ezgxprm(gdid)
+    if uuin.shape != gridParams['shape']:
+        raise TypeError("gdllvval: Provided uuin array have inconsistent shape compered to the input grid")
+    if vvin.shape != gridParams['shape']:
+        raise TypeError("gdllvval: Provided vvin array have inconsistent shape compered to the input grid")
+    if not isinstance(lat,_np.ndarray):
+        raise TypeError("gdllvval: expecting lat arg of type numpy.ndarray, Got %s" % (type(lat)))
+    if not isinstance(lon,_np.ndarray):
+        raise TypeError("gdllvval: expecting lon arg of type numpy.ndarray, Got %s" % (type(lon)))
+    if lat.shape != lon.shape:
+        raise TypeError("gdllvval: Provided lat,lon arrays have inconsistent shapes")
+    dshape = lat.shape
+    if uuout:
+        if not (type(uuout) == _np.ndarray):
+            raise TypeError("gdllvval: Expecting uuout of type numpy.ndarray, Got %s" % (type(uuout)))
+        if uuout.shape != dshape:
+            raise TypeError("gdllvval: Provided uuout array have inconsistent shape compered to lat,lon arrays")
+    else:
+        uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
+    if vvout:
+        if not (type(vvout) == _np.ndarray):
+            raise TypeError("gdllvval: Expecting vvout of type numpy.ndarray, Got %s" % (type(vvout)))
+        if vvout.shape != dshape:
+            raise TypeError("gdllvval: Provided vvout array have inconsistent shape compered to lat,lon arrays")
+    else:
+        vvout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
+    istat = _rp.c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, lat.size)
+    if istat >= 0:
+        return (uuout,vvout)
+    raise EzscintError()
+
+
+def gdxyvval(gdid,xpts,ypts,uuin,vvin,uuout=None,vvout=None):
+    """Vectorial intepolation to points located at x-y coordinates
+
+    (uuout,vvout) = gdxysval(gdid,xpts,ypts,uuin,vvin)
+    (uuout,vvout) = gdxysval(gdid,xpts,ypts,uuin,vvin,uuout,vvout)
+
+    Args:
+        gdid    : id of the grid (int)
+        xpts     : list of resquested points x-coor  (numpy.ndarray)
+        ypts     : list of resquested points y-coor  (numpy.ndarray)
+        uuin     : data to interpolate, on grid gdid (numpy.ndarray)
+        uuout    : optional, interp.result array, same shape a xpts,ypts (numpy.ndarray)
+    Returns:
+        numpy.ndarray, interpolation result, same shape a xpts,ypts 
+    Raises:
+        TypeError    on wrong input arg types
+        EzscintError on any other error
+    """
+    if not isinstance(uuin,_np.ndarray):
+        raise TypeError("dgxyvval: expecting uuin arg of type numpy.ndarray, Got %s" % (type(uuin)))
+    if not isinstance(vvin,_np.ndarray):
+        raise TypeError("dgxyvval: expecting vvin arg of type numpy.ndarray, Got %s" % (type(vvin)))
+    gridParams = ezgxprm(gdid)
+    if uuin.shape != gridParams['shape']:
+        raise TypeError("dgxyvval: Provided uuin array have inconsistent shape compered to the input grid")
+    if vvin.shape != gridParams['shape']:
+        raise TypeError("dgxyvval: Provided vvin array have inconsistent shape compered to the input grid")
+    if not isinstance(xpts,_np.ndarray):
+        raise TypeError("dgxyvval: expecting xpts arg of type numpy.ndarray, Got %s" % (type(xpts)))
+    if not isinstance(ypts,_np.ndarray):
+        raise TypeError("dgxyvval: expecting ypts arg of type numpy.ndarray, Got %s" % (type(ypts)))
+    if xpts.shape != ypts.shape:
+        raise TypeError("dgxyvval: Provided xpts,ypts arrays have inconsistent shapes")
+    dshape = xpts.shape
+    if uuout:
+        if not (type(uuout) == _np.ndarray):
+            raise TypeError("dgxyvval: Expecting uuout of type numpy.ndarray, Got %s" % (type(uuout)))
+        if uuout.shape != dshape:
+            raise TypeError("dgxyvval: Provided uuout array have inconsistent shape compered to xpts,ypts arrays")
+    else:
+        uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
+    if vvout:
+        if not (type(vvout) == _np.ndarray):
+            raise TypeError("dgxyvval: Expecting vvout of type numpy.ndarray, Got %s" % (type(vvout)))
+        if vvout.shape != dshape:
+            raise TypeError("dgxyvval: Provided vvout array have inconsistent shape compered to xpts,ypts arrays")
+    else:
+        vvout = _np.empty(dshape,dtype=vvin.dtype,order='FORTRAN')
+    istat = _rp.c_gdxyvval(gdid, uuout, vvout, uuin, vvin, xpts, ypts, xpts.size)
+    if istat >= 0:
+        return (uuout,vvout)
+    raise EzscintError()
+
+
 #TODO:    c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
 #TODO:    c_gdxywdval(gdin, uuout, vvout, uuin, vvin, x, y, n)
 

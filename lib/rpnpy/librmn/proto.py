@@ -1038,7 +1038,7 @@ EXTERNAL FUNCTIONS in interp (ezscint)
     c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1,
               ip2, ip3, dateo, deet, npas, nbits)
         Get the standard file attributes of the positional records
-ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
+        ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
         Proto:
             wordint c_ezgfstp(wordint gdid,
                       char *nomvarx, char *typvarx, char *etiketx,
@@ -1639,12 +1639,12 @@ librmn.c_gdwdfuv.restype  = _ct.c_int
 c_gdwdfuv = librmn.c_gdwdfuv
 
 
-librmn.c_gdsetmask.argtypes = (_ct.c_int, _ct.POINTER(_ct.c_int))
+librmn.c_gdsetmask.argtypes = (_ct.c_int, _npc.ndpointer(dtype=_np.intc))
 librmn.c_gdsetmask.restype  = _ct.c_int
 c_gdsetmask = librmn.c_gdsetmask
 
 
-librmn.c_gdgetmask.argtypes = (_ct.c_int, _ct.POINTER(_ct.c_int))
+librmn.c_gdgetmask.argtypes = (_ct.c_int, _npc.ndpointer(dtype=_np.intc))
 librmn.c_gdgetmask.restype  = _ct.c_int
 c_gdgetmask = librmn.c_gdgetmask
 
@@ -1675,7 +1675,7 @@ c_gdgetmask = librmn.c_gdgetmask
 ## """
 
 
-librmn.c_ezsint_mdm.argtypes = (_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
+librmn.c_ezsint_mdm.argtypes = (_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),  #TODO:Check this
                                 _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
 librmn.c_ezsint_mdm.restype  = _ct.c_int
 c_ezsint_mdm = librmn.c_ezsint_mdm
@@ -1684,13 +1684,13 @@ c_ezsint_mdm = librmn.c_ezsint_mdm
 
 
 librmn.c_ezuvint_mdm.argtypes = (
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),  #TODO:Check this
     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
 librmn.c_ezuvint_mdm.restype  = _ct.c_int
 c_ezuvint_mdm = librmn.c_ezuvint_mdm
 
 
-librmn.c_ezsint_mask.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_ezsint_mask.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))  #TODO:Check this
 librmn.c_ezsint_mask.restype  = _ct.c_int
 c_ezsint_mask = librmn.c_ezsint_mask
 
@@ -1709,11 +1709,11 @@ librmn.c_ezgdef_supergrid.restype  = _ct.c_int
 c_ezgdef_supergrid = librmn.c_ezgdef_supergrid
 
 
-librmn.c_ezgdef.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-                    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-                    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
-librmn.c_ezgdef.restype  = _ct.c_int
-c_ezgdef = librmn.c_ezgdef
+## librmn.c_ezgdef.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
+##                     _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
+##                     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+## librmn.c_ezgdef.restype  = _ct.c_int
+## c_ezgdef = librmn.c_ezgdef
 
 
 librmn.c_ezgprm.argtypes = (_ct.c_int,_ct.c_char_p,
@@ -1763,14 +1763,14 @@ c_ezget_subgridids = librmn.c_ezget_subgridids
 
 
 librmn.c_gdxpncf.argtypes = (_ct.c_int,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int), #TODO: check this
                     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
 librmn.c_gdxpncf.restype  = _ct.c_int
 c_gdxpncf = librmn.c_gdxpncf
 
 
 librmn.c_gdgxpndaxes.argtypes = (_ct.c_int,
-                    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+                    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))  #TODO: check this
 librmn.c_gdgxpndaxes.restype  = _ct.c_int
 c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
