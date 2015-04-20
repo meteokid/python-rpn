@@ -1223,12 +1223,14 @@ librmn.c_fstecr.restype  = _ct.c_int
 c_fstecr = librmn.c_fstecr
 
 
-librmn.c_fst_edit_dir.argtypes = (_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-                                  _ct.c_int,_ct.c_int,_ct.c_int,
-                                  _ct.c_int,_ct.c_int,_ct.c_int,
-                                  _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
-                                  _ct.c_char_p,_ct.c_int,_ct.c_int,
-                                  _ct.c_int,_ct.c_int,_ct.c_int)
+librmn.c_fst_edit_dir.argtypes = (
+    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
+    _ct.c_char_p,_ct.c_int,_ct.c_int,
+    _ct.c_int,_ct.c_int,_ct.c_int
+    )
 librmn.c_fst_edit_dir.restype  = _ct.c_int
 c_fst_edit_dir = librmn.c_fst_edit_dir
 
@@ -1243,69 +1245,90 @@ librmn.c_fstfrm.restype  = _ct.c_int
 c_fstfrm = librmn.c_fstfrm
 
 
-librmn.c_fstinf.argtypes = (_ct.c_int,
+librmn.c_fstinf.argtypes = (
+    _ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p)
+    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p
+    )
 librmn.c_fstinf.restype  = _ct.c_int
 c_fstinf = librmn.c_fstinf
 
 
-librmn.c_fstinfx.argtypes = (_ct.c_int,_ct.c_int,
+librmn.c_fstinfx.argtypes = (
+    _ct.c_int,_ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p)
+    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p
+    )
 librmn.c_fstinfx.restype  = _ct.c_int
 c_fstinfx = librmn.c_fstinfx
 
 
-librmn.c_fstinl.argtypes = (_ct.c_int,
+librmn.c_fstinl.argtypes = (
+    _ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-    _npc.ndpointer(dtype=_np.intc),_ct.POINTER(_ct.c_int),_ct.c_int)
+    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
+    _ct.c_char_p,_ct.c_char_p,
+    _npc.ndpointer(dtype=_np.intc),_ct.POINTER(_ct.c_int),_ct.c_int
+    )
 librmn.c_fstinl.restype  = _ct.c_int
 c_fstinl = librmn.c_fstinl
 
 
-librmn.c_fstlic.argtypes = (_npc.ndpointer(dtype=_np.float32),
+librmn.c_fstlic.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
     _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
     _ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
     _ct.c_char_p,_ct.c_char_p,
-    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p)
+    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p
+    )
 librmn.c_fstlic.restype  = _ct.c_int
 c_fstlic = librmn.c_fstlic
 
 
-librmn.c_fstlir.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
+librmn.c_fstlir.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p)
+    _ct.c_char_p,_ct.c_char_p
+    )
 librmn.c_fstlir.restype  = _ct.c_int
 c_fstlir = librmn.c_fstlir
 
 
-librmn.c_fstlirx.argtypes = (_npc.ndpointer(dtype=_np.float32),
+librmn.c_fstlirx.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
     _ct.c_int,_ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p)
+    _ct.c_char_p,_ct.c_char_p
+    )
 librmn.c_fstlirx.restype  = _ct.c_int
 c_fstlirx = librmn.c_fstlirx
 
 
-librmn.c_fstlis.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_fstlis.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    )
 librmn.c_fstlis.restype  = _ct.c_int
 c_fstlis = librmn.c_fstlis
 
 
-librmn.c_fstluk.argtypes = (_npc.ndpointer(dtype=_np.float32),_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_fstluk.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    )
 librmn.c_fstluk.restype  = _ct.c_int
 c_fstluk = librmn.c_fstluk
 
 
-librmn.c_fstmsq.argtypes = (_ct.c_int,
+librmn.c_fstmsq.argtypes = (
+    _ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_char_p,_ct.c_int)
+    _ct.c_char_p,_ct.c_int
+    )
 librmn.c_fstmsq.restype  = _ct.c_int
 c_fstmsq = librmn.c_fstmsq
 
@@ -1334,7 +1357,8 @@ librmn.c_fstouv.restype  = _ct.c_int
 c_fstouv = librmn.c_fstouv
 
 
-librmn.c_fstprm.argtypes = (_ct.c_int,
+librmn.c_fstprm.argtypes = (
+    _ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
@@ -1343,13 +1367,16 @@ librmn.c_fstprm.argtypes = (_ct.c_int,
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    )
 librmn.c_fstprm.restype  = _ct.c_int
 c_fstprm = librmn.c_fstprm
 
 
-librmn.c_fstsui.argtypes = (_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_fstsui.argtypes = (
+    _ct.c_int,
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    )
 librmn.c_fstsui.restype  = _ct.c_int
 c_fstsui = librmn.c_fstsui
 
@@ -1402,7 +1429,10 @@ c_ip_is_equal = librmn.ip_is_equal
 #--- fstd98/convip_plus & convert_ip123 ---------------------------------
 
 
-librmn.ConvertIp.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),_ct.c_int)
+librmn.ConvertIp.argtypes = (
+    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_float),
+    _ct.POINTER(_ct.c_int),_ct.c_int
+    )
 c_ConvertIp = librmn.ConvertIp
 
 
@@ -1410,7 +1440,8 @@ librmn.ConvertIPtoPK.argtypes = (
     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_int,_ct.c_int)
+    _ct.c_int,_ct.c_int,_ct.c_int
+    )
 librmn.ConvertIPtoPK.restype  = _ct.c_int
 c_ConvertIPtoPK = librmn.ConvertIPtoPK
 
@@ -1419,14 +1450,16 @@ librmn.ConvertPKtoIP.argtypes = (
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
     _ct.c_int,_ct.c_float,
     _ct.c_int,_ct.c_float,
-    _ct.c_int,_ct.c_float)
+    _ct.c_int,_ct.c_float
+    )
 librmn.ConvertPKtoIP.restype  = _ct.c_int
 c_ConvertPKtoIP = librmn.ConvertPKtoIP
 
 
 librmn.EncodeIp.argtypes = (
     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP))
+    _ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP)
+    )
 librmn.EncodeIp.restype  = _ct.c_int
 c_EncodeIp = librmn.EncodeIp
 
@@ -1434,7 +1467,8 @@ c_EncodeIp = librmn.EncodeIp
 #TODO: ctypes struct
 librmn.DecodeIp.argtypes = (
     _ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),
-    _ct.c_int,_ct.c_int,_ct.c_int)
+    _ct.c_int,_ct.c_int,_ct.c_int
+    )
 c_DecodeIp = librmn.DecodeIp
 
 
@@ -1451,7 +1485,11 @@ c_xdflnk = librmn.c_xdflnk
 
 #---- interp (ezscint) ----------------------------------------------
 
-librmn.c_ezqkdef.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int)
+librmn.c_ezqkdef.argtypes = (
+    _ct.c_int,_ct.c_int,_ct.c_char_p,
+    _ct.c_int,_ct.c_int,
+    _ct.c_int,_ct.c_int,_ct.c_int
+    )
 librmn.c_ezqkdef.restype  = _ct.c_int
 c_ezqkdef = librmn.c_ezqkdef
 
@@ -1461,31 +1499,39 @@ librmn.c_ezdefset.restype  = _ct.c_int
 c_ezdefset = librmn.c_ezdefset
 
 
-librmn.c_ezsint.argtypes = (_npc.ndpointer(dtype=_np.float32),
-                            _npc.ndpointer(dtype=_np.float32))
+librmn.c_ezsint.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32)
+    )
 librmn.c_ezsint.restype  = _ct.c_int
 c_ezsint = librmn.c_ezsint
 
 
-librmn.c_ezuvint.argtypes = (_npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32))
+librmn.c_ezuvint.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32)
+    )
 librmn.c_ezuvint.restype  = _ct.c_int
 c_ezuvint = librmn.c_ezuvint
 
 
-librmn.c_ezwdint.argtypes = (_npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32))
+librmn.c_ezwdint.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32)
+    )
 librmn.c_ezwdint.restype  = _ct.c_int
 c_ezwdint = librmn.c_ezwdint
 
 
-librmn.c_gdll.argtypes = (_ct.c_int,
-                          _npc.ndpointer(dtype=_np.float32),
-                          _npc.ndpointer(dtype=_np.float32))
+librmn.c_gdll.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32)
+    )
 librmn.c_gdll.restype  = _ct.c_int
 c_gdll = librmn.c_gdll
 
@@ -1503,7 +1549,6 @@ c_ezsetival = librmn.c_ezsetival
 librmn.c_ezgetval.argtypes = (_ct.c_char_p,_ct.POINTER(_ct.c_float))
 librmn.c_ezgetval.restype  = _ct.c_int
 c_ezgetval = librmn.c_ezgetval
-
 
 
 librmn.c_ezgetival.argtypes = (_ct.c_char_p,_ct.POINTER(_ct.c_int))
@@ -1526,115 +1571,135 @@ librmn.c_gdrls.restype  = _ct.c_int
 c_gdrls = librmn.c_gdrls
 
 
-librmn.c_gdxyfll.argtypes = (_ct.c_int,
-                               _npc.ndpointer(dtype=_np.float32),
-                               _npc.ndpointer(dtype=_np.float32),
-                               _npc.ndpointer(dtype=_np.float32),
-                               _npc.ndpointer(dtype=_np.float32),
-                               _ct.c_int)
+librmn.c_gdxyfll.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdxyfll.restype  = _ct.c_int
 c_gdxyfll = librmn.c_gdxyfll
 
 
-librmn.c_gdllfxy.argtypes = (_ct.c_int,
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _npc.ndpointer(dtype=_np.float32),
-                             _ct.c_int)
+librmn.c_gdllfxy.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdllfxy.restype  = _ct.c_int
 c_gdllfxy = librmn.c_gdllfxy
 
 
-librmn.c_gdllsval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdllsval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdllsval.restype  = _ct.c_int
 c_gdllsval = librmn.c_gdllsval
 
 
-librmn.c_gdxysval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdxysval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdxysval.restype  = _ct.c_int
 c_gdxysval = librmn.c_gdxysval
 
 
-librmn.c_gdllvval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdllvval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdllvval.restype  = _ct.c_int
 c_gdllvval = librmn.c_gdllvval
 
 
-librmn.c_gdxyvval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdxyvval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdxyvval.restype  = _ct.c_int
 c_gdxyvval = librmn.c_gdxyvval
 
 
-librmn.c_gdllwdval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdllwdval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdllwdval.restype  = _ct.c_int
 c_gdllwdval = librmn.c_gdllwdval
 
 
 
-librmn.c_gdxywdval.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdxywdval.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdxywdval.restype  = _ct.c_int
 c_gdxywdval = librmn.c_gdxywdval
 
 
-librmn.c_gduvfwd.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gduvfwd.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gduvfwd.restype  = _ct.c_int
 c_gduvfwd = librmn.c_gduvfwd
 
 
-librmn.c_gdwdfuv.argtypes = (_ct.c_int,
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _npc.ndpointer(dtype=_np.float32),
-                              _ct.c_int)
+librmn.c_gdwdfuv.argtypes = (
+    _ct.c_int,
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
 librmn.c_gdwdfuv.restype  = _ct.c_int
 c_gdwdfuv = librmn.c_gdwdfuv
 
@@ -1675,8 +1740,12 @@ c_gdgetmask = librmn.c_gdgetmask
 ## """
 
 
-librmn.c_ezsint_mdm.argtypes = (_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),  #TODO:Check this
-                                _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
+librmn.c_ezsint_mdm.argtypes = (
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.intc),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.intc)
+    )
 librmn.c_ezsint_mdm.restype  = _ct.c_int
 c_ezsint_mdm = librmn.c_ezsint_mdm
 """
@@ -1684,13 +1753,21 @@ c_ezsint_mdm = librmn.c_ezsint_mdm
 
 
 librmn.c_ezuvint_mdm.argtypes = (
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),  #TODO:Check this
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int))
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.intc),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.intc)
+    )
 librmn.c_ezuvint_mdm.restype  = _ct.c_int
 c_ezuvint_mdm = librmn.c_ezuvint_mdm
 
 
-librmn.c_ezsint_mask.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))  #TODO:Check this
+librmn.c_ezsint_mask.argtypes = (
+    _npc.ndpointer(dtype=_np.intc),
+    _npc.ndpointer(dtype=_np.intc)
+    )
 librmn.c_ezsint_mask.restype  = _ct.c_int
 c_ezsint_mask = librmn.c_ezsint_mask
 
@@ -1763,14 +1840,15 @@ c_ezget_subgridids = librmn.c_ezget_subgridids
 
 
 librmn.c_gdxpncf.argtypes = (_ct.c_int,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int), #TODO: check this
+                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
                     _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
 librmn.c_gdxpncf.restype  = _ct.c_int
 c_gdxpncf = librmn.c_gdxpncf
 
 
 librmn.c_gdgxpndaxes.argtypes = (_ct.c_int,
-                    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))  #TODO: check this
+                                 _npc.ndpointer(dtype=_np.float32),
+                                 _npc.ndpointer(dtype=_np.float32))
 librmn.c_gdgxpndaxes.restype  = _ct.c_int
 c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
