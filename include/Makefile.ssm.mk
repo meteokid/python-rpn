@@ -27,7 +27,9 @@ $(GEMDYN_SSMALL_FILES): gemdyn_ssm_all rm_gemdyn_ssm_all.ssm $(SSM_DEPOT_DIR)/$(
 rm_gemdyn_ssm_all.ssm:
 	rm -f $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm
 $(SSM_DEPOT_DIR)/$(GEMDYN_SSMALL_NAME).ssm:
-	cd $(BUILDSSM) ; tar czvf $@ $(basename $(notdir $@))
+	cd $(BUILDSSM)  ;\
+	chmod a+x $(basename $(notdir $@))/bin/* 2>/dev/null || true ;\
+	tar czvf $@ $(basename $(notdir $@))
 	ls -l $@
 
 gemdyn_ssm_all: rm_gemdyn_ssm_all $(BUILDSSM)/$(GEMDYN_SSMALL_NAME)
