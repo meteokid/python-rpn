@@ -1526,14 +1526,14 @@ librmn.c_gdrls.restype  = _ct.c_int
 c_gdrls = librmn.c_gdrls
 
 
-librmn.c_gdxyfll_s.argtypes = (_ct.c_int,
+librmn.c_gdxyfll.argtypes = (_ct.c_int,
                                _npc.ndpointer(dtype=_np.float32),
                                _npc.ndpointer(dtype=_np.float32),
                                _npc.ndpointer(dtype=_np.float32),
                                _npc.ndpointer(dtype=_np.float32),
                                _ct.c_int)
-librmn.c_gdxyfll_s.restype  = _ct.c_int
-c_gdxyfll_s = librmn.c_gdxyfll_s
+librmn.c_gdxyfll.restype  = _ct.c_int
+c_gdxyfll = librmn.c_gdxyfll
 
 
 librmn.c_gdllfxy.argtypes = (_ct.c_int,

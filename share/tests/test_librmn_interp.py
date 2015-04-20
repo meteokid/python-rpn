@@ -213,6 +213,56 @@ class Librmn_interp_Test(unittest.TestCase):
                 ## self.assertEqual((vvin[i,j]+vvin[i+1,j])/2.,vvout[i,j])
         #rmn.gdrls([gid1,gid2]) #TODO: Makes the test crash
 
+    def test_ezgkdef_fmem_gdxyfll(self):
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        lat = np.array([gp['ay'][0,0],gp['ay'][0,1]],dtype=np.float32,order='FORTRAN')
+        lon = np.array([gp['ax'][0,0],gp['ax'][1,0]],dtype=np.float32,order='FORTRAN')
+        xypts = rmn.gdxyfll(gid1, lat, lon)
+        self.assertEqual(xypts['x'].shape,lat.shape)
+        self.assertEqual(xypts['y'].shape,lat.shape)
+        self.assertTrue(abs(xypts['x'][0]-1.)<self.epsilon)
+        self.assertTrue(abs(xypts['y'][0]-1.)<self.epsilon)
+        self.assertTrue(abs(xypts['x'][1]-2.)<self.epsilon)
+        self.assertTrue(abs(xypts['y'][1]-2.)<self.epsilon)
+        rmn.gdrls(gid1)
+
+    def test_ezgkdef_fmem_gdllfxy(self):
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        xx = np.array([1.,2.],dtype=np.float32,order='FORTRAN')
+        yy = np.array([1.,3.],dtype=np.float32,order='FORTRAN')
+        llpts = rmn.gdllfxy(gid1, xx, yy)
+        self.assertEqual(llpts['x'].shape,xx.shape)
+        self.assertEqual(llpts['y'].shape,xx.shape)
+        self.assertTrue(abs(llpts['lon'][0]-gp['ax'][0,0])<self.epsilon)
+        self.assertTrue(abs(llpts['lat'][0]-gp['ay'][0,0])<self.epsilon)
+        self.assertTrue(abs(llpts['lon'][1]-gp['ax'][1,0])<self.epsilon)
+        self.assertTrue(abs(llpts['lat'][1]-gp['ay'][0,2])<self.epsilon)
+        rmn.gdrls(gid1)
+
+#TODO: test_ezgdef_supergrid
+#TODO: test_gdsetmask, test_gdgetmask
+#TODO: test_ezkqdef with file
+#TODO: test_ezgfstp
+
+#TODO:    c_gdllsval(gdid, zout, zin, lat, lon, n)
+#TODO:    c_gdxysval(gdid, zout, zin, x, y, n)
+#TODO:    c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
+#TODO:    c_gdxyvval(gdid, uuout, vvout, uuin, vvin, x, y, n)
+#TODO:    c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
+#TODO:    c_gdxywdval(gdin, uuout, vvout, uuin, vvin, x, y, n)
+
+#TODO:    c_ezsint_mdm(zout, mask_out, zin, mask_in)
+#TODO:    c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
+#TODO:    c_ezsint_mask(mask_out, mask_in)
+
     ## la = np.array(
     ##     [[-89.5, -89. , -88.5],
     ##     [-89.5, -89. , -88.5],
