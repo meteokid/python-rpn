@@ -1697,13 +1697,14 @@ c_ezsint_mask = librmn.c_ezsint_mask
 
 librmn.c_ezgdef_fmem.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
                     _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-                    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+                    _npc.ndpointer(dtype=_np.float32),
+                    _npc.ndpointer(dtype=_np.float32))
 librmn.c_ezgdef_fmem.restype  = _ct.c_int
 c_ezgdef_fmem = librmn.c_ezgdef_fmem
 
 
 librmn.c_ezgdef_supergrid.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-                    _ct.c_int,_ct.c_int,_ct.POINTER(_ct.c_int))
+                    _ct.c_int,_ct.c_int,_npc.ndpointer(dtype=_np.intc))
 librmn.c_ezgdef_supergrid.restype  = _ct.c_int
 c_ezgdef_supergrid = librmn.c_ezgdef_supergrid
 
@@ -1744,7 +1745,9 @@ librmn.c_ezgfstp.restype  = _ct.c_int
 c_ezgfstp = librmn.c_ezgfstp
 
 
-librmn.c_gdgaxes.argtypes = (_ct.c_int,_ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+librmn.c_gdgaxes.argtypes = (_ct.c_int,
+                             _npc.ndpointer(dtype=_np.float32),
+                             _npc.ndpointer(dtype=_np.float32))
 librmn.c_gdgaxes.restype  = _ct.c_int
 c_gdgaxes = librmn.c_gdgaxes
 

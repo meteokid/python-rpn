@@ -394,7 +394,7 @@ def ezgxprm(gdid):
     (cni,cnj) = (_ct.c_int(),_ct.c_int())
     (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cgrref,cig1ref,cig2ref,cig3ref,cig4ref) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
-    istat = _rp.c_ezgprm(gdid, cgrtyp, cni, cnj, cig1, cig2, cig3, cig4, cgrref,cig1ref,cig2ref,cig3ref,cig4ref)
+    istat = _rp.c_ezgxprm(gdid, cni, cnj, cgrtyp, cig1, cig2, cig3, cig4, cgrref,cig1ref,cig2ref,cig3ref,cig4ref)
     if istat >= 0:
         return {
             'id'    : gdid,

@@ -19,32 +19,69 @@ class Librmn_interp_Test(unittest.TestCase):
         gp['ig3'] = ig1234[2]
         gp['ig4'] = ig1234[3]
         return gp
-        
-    def getGridParams_L(self):
-        gp = {
-            'shape' : (90,180),
-            'ni' : 90,
-            'nj' : 180,
-            'grtyp' : 'L',
-            'dlat' : 0.5,
-            'dlon' : 0.5,
-            'lat0' : 45.,
-            'lon0' : 273.
-            }
-        return self.setIG_L(gp)
     
-    def getGridParams_L2x(self):
+    def setIG_ZE(self,gp,offx=0):
+        ig1234 = rmn.cxgaig(gp['grref'],gp['xlat1'],gp['xlon1'],
+                            gp['xlat2'],gp['xlon2'])
+        gp['ig1ref'] = ig1234[0]
+        gp['ig2ref'] = ig1234[1]
+        gp['ig3ref'] = ig1234[2]
+        gp['ig4ref'] = ig1234[3]
+        gp['ig1'] = ig1234[0]
+        gp['ig2'] = ig1234[1]
+        gp['ig3'] = ig1234[2]
+        gp['ig4'] = ig1234[3]
+        ## if offx: offx=1
+        ## gp['ig1'] = 123+offx
+        ## gp['ig2'] = 231+offx
+        ## gp['ig3'] = 312+offx
+        ## gp['ig4'] = 0
+        return gp
+        
+    def getGridParams_L(self,offx=0):
+        (ni,nj) = (90,180)
+        if offx:
+            offx=0.25
+            (ni,nj) = (45,90)
         gp = {
-            'shape' : (45,90),
-            'ni' : 45,
-            'nj' : 90,
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
             'grtyp' : 'L',
             'dlat' : 0.5,
             'dlon' : 0.5,
             'lat0' : 45.,
-            'lon0' : 273.25
+            'lon0' : 273.+offx
             }
         return self.setIG_L(gp)
+        
+    def getGridParams_ZE(self,offx=0):
+        (ni,nj) = (50,30)
+        if offx:
+            offx=0.25
+            (ni,nj) = (30,20)
+        gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 0.,
+            'xlon2' : 270.,
+            'dlat' : 0.5,
+            'dlon' : 0.5,
+            'lat0' : 45.,
+            'lon0' : 273.+offx
+            }
+        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
+        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
+        for i in xrange(ni):
+            gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+        for j in xrange(nj):
+            gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+        return self.setIG_ZE(gp,offx)
 
     def test_ezsetopt_ezgetopt(self):
         otplist = [
@@ -72,7 +109,7 @@ class Librmn_interp_Test(unittest.TestCase):
                            gp['ig1'],gp['ig2'],gp['ig3'],gp['ig4'])
         self.assertTrue(gid1>=0)
         gp['id'] = gid1
-        gp['grref'] = ' '
+        gp['grref'] = ''
         gp['ig1ref'] = 0
         gp['ig2ref'] = 0
         gp['ig3ref'] = 0
@@ -81,7 +118,35 @@ class Librmn_interp_Test(unittest.TestCase):
         for k in gprm.keys():
             self.assertEqual(gp[k],gprm[k])
         rmn.gdrls(gid1)
-        
+    
+    def test_ezgkdef_fmem_ezgxprm(self):
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        gp['id'] = gid1
+        gprm = rmn.ezgxprm(gid1)
+        for k in gprm.keys():
+            self.assertEqual(gp[k],gprm[k],'(%s) Expected: %s, Got: %s :: %s' % (k,repr(gp[k]),repr(gprm[k]),repr(gprm)))
+        rmn.gdrls(gid1)
+
+    def test_ezgkdef_fmem_gdgaxes(self):
+        gp = self.getGridParams_ZE()
+        gid1 = rmn.ezgdef_fmem(gp['ni'],gp['nj'],gp['grtyp'],gp['grref'],
+                               gp['ig1ref'],gp['ig2ref'],gp['ig3ref'],gp['ig4ref'],
+                               gp['ax'],gp['ay'])
+        self.assertTrue(gid1>=0)
+        gp['id'] = gid1
+        axes = rmn.gdgaxes(gid1)
+        self.assertEqual(axes['ax'].shape,gp['ax'].shape)
+        self.assertEqual(axes['ay'].shape,gp['ay'].shape)
+        for i in xrange(gp['ni']):
+            self.assertTrue(abs(axes['ax'][i,0]-gp['ax'][i,0])<self.epsilon)
+        for j in xrange(gp['nj']):
+            self.assertTrue(abs(axes['ay'][0,j]-gp['ay'][0,j])<self.epsilon)
+        rmn.gdrls(gid1)
+
     def test_ezqkdef_1subgrid(self):
         gp = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp)
@@ -107,7 +172,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        gp2 = self.getGridParams_L2x()
+        gp2 = self.getGridParams_L(0.25)
         gid2 = rmn.ezqkdef(gp2)
         self.assertTrue(gid2>=0)
         setid = rmn.ezdefset(gid2, gid1)
@@ -126,7 +191,7 @@ class Librmn_interp_Test(unittest.TestCase):
         gp1 = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp1)
         self.assertTrue(gid1>=0)
-        gp2 = self.getGridParams_L2x()
+        gp2 = self.getGridParams_L(0.25)
         gid2 = rmn.ezqkdef(gp2)
         self.assertTrue(gid2>=0)
         setid = rmn.ezdefset(gid2, gid1)
