@@ -184,10 +184,11 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
     csubgridid = subgridid
-    if type(subgridid) in (list,tuple): csubgridid = _np.array(subgridid)
+    if type(subgridid) in (list,tuple):
+        csubgridid = _np.array(subgridid,dtype=_np.intc,order='FORTRAN')
     if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(csubgridid)) != (int,int,str,str,int,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
-    nsubgrids = subgridid.size
+    nsubgrids = csubgridid.size
     gdid = _rp.c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,csubgridid)
     if gdid >= 0:
         return gdid

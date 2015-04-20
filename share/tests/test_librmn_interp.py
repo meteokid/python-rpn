@@ -2,6 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.interp"""
 
+import os
 import rpnpy.librmn.all as rmn
 import unittest
 ## import ctypes as ct
@@ -55,11 +56,8 @@ class Librmn_interp_Test(unittest.TestCase):
             }
         return self.setIG_L(gp)
         
-    def getGridParams_ZE(self,offx=0):
+    def getGridParams_ZE(self):
         (ni,nj) = (50,30)
-        if offx:
-            offx=0.25
-            (ni,nj) = (30,20)
         gp = {
             'shape' : (ni,nj),
             'ni' : ni,
@@ -73,7 +71,7 @@ class Librmn_interp_Test(unittest.TestCase):
             'dlat' : 0.5,
             'dlon' : 0.5,
             'lat0' : 45.,
-            'lon0' : 273.+offx
+            'lon0' : 273.
             }
         gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
         gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
@@ -81,7 +79,38 @@ class Librmn_interp_Test(unittest.TestCase):
             gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
         for j in xrange(nj):
             gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
-        return self.setIG_ZE(gp,offx)
+        return self.setIG_ZE(gp)
+        
+    def getGridParams_ZEYY(self,YY=0):
+        nj = 31
+        ni = (nj-1)*3 + 1
+        (ni,nj) = (50,30)
+        (xlat1,xlon1,xlat2,xlon2) = (0., 180., 0., 270.)
+        if YY > 0:
+            (xlat1,xlon1,xlat2,xlon2) =  (0., 180., 45., 180.)
+        gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'xlat1' : xlat1,
+            'xlon1' : xlon1,
+            'xlat2' : xlat2,
+            'xlon2' : xlon2,
+            'dlat' : (90./float(nj)),
+            'dlon' : (270./float(ni)),
+            'lat0' : -45.,
+            'lon0' : 45.
+            }
+        gp['ax'] = np.empty((ni,1),dtype=np.float32,order='FORTRAN')
+        gp['ay'] = np.empty((1,nj),dtype=np.float32,order='FORTRAN')
+        for i in xrange(ni):
+            gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+        for j in xrange(nj):
+            gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+        return self.setIG_ZE(gp)
+
 
     def test_ezsetopt_ezgetopt(self):
         otplist = [
@@ -102,7 +131,44 @@ class Librmn_interp_Test(unittest.TestCase):
         gprm = rmn.ezgprm(gid1)
         for k in gprm.keys():
             self.assertEqual(gp[k],gprm[k])
-            
+        rmn.gdrls(gid1)
+
+
+    def test_ezqkdef_file_ezgprm_ezgfstp(self):
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+        funit = rmn.fstopenall(myfile,rmn.FST_RO)
+        (ni,nj) = (201,100)
+        gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'ig1'   : 2002,
+            'ig2'   : 1000,
+            'ig3'   : 0,
+            'ig4'   : 0,
+            'grref' : 'E',
+            'ig1ref' : 900,
+            'ig2ref' : 0,
+            'ig3ref' : 43200,
+            'ig4ref' : 43200,
+            'iunit'  : funit
+            }
+        gid1 = rmn.ezqkdef(gp)
+        a = rmn.ezgfstp(gid1)
+        rmn.fstcloseall(funit)
+        self.assertTrue(gid1>=0)
+        gp['id'] = gid1
+        gprm = rmn.ezgxprm(gid1)
+        for k in gprm.keys():
+            self.assertEqual(gp[k],gprm[k])
+        self.assertEqual(a['nomvarx'].strip(),'>>')
+        self.assertEqual(a['nomvary'].strip(),'^^')
+        rmn.gdrls(gid1)
+
+
     def test_ezqkdef_ezgxprm(self):
         gp = self.getGridParams_L()
         gid1 = rmn.ezqkdef(gp['ni'],gp['nj'],gp['grtyp'],
@@ -333,9 +399,39 @@ class Librmn_interp_Test(unittest.TestCase):
     ##             self.assertEqual(mask[i,j],mask2[i,j])
     ##     rmn.gdrls(gid1)
 
-#TODO: test_ezkqdef with file
+
+    def test_ezgkdef_fmem_YY_ezgxprm_supergrid(self):
+        gp1 = self.getGridParams_ZEYY(0)
+        gp2 = self.getGridParams_ZEYY(1)
+        gid1 = rmn.ezgdef_fmem(gp1['ni'],gp1['nj'],gp1['grtyp'],gp1['grref'],
+                               gp1['ig1ref'],gp1['ig2ref'],gp1['ig3ref'],gp1['ig4ref'],
+                               gp1['ax'],gp1['ay'])        
+        gid2 = rmn.ezgdef_fmem(gp2['ni'],gp2['nj'],gp2['grtyp'],gp2['grref'],
+                               gp2['ig1ref'],gp2['ig2ref'],gp2['ig3ref'],gp2['ig4ref'],
+                               gp2['ax'],gp2['ay'])
+        self.assertTrue(gid1>=0)
+        self.assertTrue(gid2>=0)
+        subgridid = [gid1,gid2]
+        gp12 = {
+            'ni' : gp1['ni'],
+            'nj' : 2*gp1['nj'],
+            'grtyp' : 'U',
+            'grref' : 'F',
+            'vercode' : 1
+            }
+        gid12 = rmn.ezgdef_supergrid(gp12['ni'],gp12['nj'],
+                                     gp12['grtyp'],gp12['grref'],
+                                     gp12['vercode'],subgridid)
+        self.assertTrue(gid12>=0)
+        ng = rmn.ezget_nsubgrids(gid12)
+        self.assertEqual(ng,2)
+        subgid = rmn.ezget_subgridids(gid12)
+        self.assertEqual(len(subgid),2)
+        self.assertEqual(subgid[0],gid1)
+        self.assertEqual(subgid[1],gid2)
+
+
 #TODO: test_ezgdef_supergrid
-#TODO: test_ezgfstp
 
 #TODO:    c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
 #TODO:    c_gdxywdval(gdin, uuout, vvout, uuin, vvin, x, y, n)
