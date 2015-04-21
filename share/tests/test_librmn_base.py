@@ -30,6 +30,11 @@ class LibrmnFilesKnownValues(unittest.TestCase):
             iout2 = rmn.fclos(iout)
             self.assertEqual((iout,iout2),(iunit,0),mypath+':'+repr((iout,iout2))+' != '+repr((iunit,0)))
 
+    def testcrc32(self):
+        a = np.array([3,7,5],dtype=np.uint32)
+        crc = rmn.crc32(0,a)
+        self.assertEqual(827387316L,crc)
+        
 #--- base/cxgaix ----------------------------------------------------
 
 class LibrmnCigaxgKnownValues(unittest.TestCase):

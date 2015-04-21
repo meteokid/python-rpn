@@ -143,6 +143,22 @@ def wkoffit(filename):
     return _rp.c_wkoffit(filename,len(filename))
 
 
+def crc32(crc,buf):
+    """Compute the Cyclic Redundancy Check (CRC)
+
+    crc = crc32()
+
+    Args:
+       crc : initial crc value (int)
+       buf : list of number to compute updated crc (numpy.ndarray of uint32)
+    Returns:
+       crc : computed crc value (int)
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value    
+    """
+    return _rp.c_crc32(crc,buf,buf.size*4)
+
 #--- base -----------------------------------------------------------
 
 
