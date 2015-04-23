@@ -75,7 +75,7 @@ doctests:
 alltests: doctests
 	echo -e "\n======= PY-UnitTest List ========\n" ; \
 	for i in $(MODULES_TESTS); \
-	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
+	do echo -e "\n==== PY-UnitTest: " $$i "====\n"; python $$i ;\
 	done
 
 
