@@ -44,9 +44,9 @@ class Librmn_fstd98_Test(unittest.TestCase):
     fname = '__rpnstd__testfile__.fst'
     la = None
     lo = None
+    epsilon = 0.05
 
     def erase_testfile(self):
-        import os
         try:
             os.unlink(self.fname)
         except:
@@ -191,17 +191,68 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertEqual(la2['d'].shape,la['d'].shape)
         self.assertEqual(lo2['d'].shape,lo['d'].shape)
 
-        epsilon = 0.05
-        if np.any(np.fabs(la2['d'] - la['d']) > epsilon):
+        if np.any(np.fabs(la2['d'] - la['d']) > self.epsilon):
                 print 'la2:',la2['d']
                 print 'la :',la['d']
                 print np.fabs(la2['d'] - la['d'])
-        self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > epsilon))
-        if np.any(np.fabs(lo2['d'] - lo['d']) > epsilon):
+        self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
+        if np.any(np.fabs(lo2['d'] - lo['d']) > self.epsilon):
                 print 'lo2:',lo2['d']
                 print 'lo :',lo['d']
                 print np.fabs(lo2['d'] - lo['d'])
-        self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > epsilon))
+        self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
+
+
+    def test_fstecr_fstluk_order(self):
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        fname = '__rpnstd__testfile2__.fst'
+        try:
+            os.unlink(fname)
+        except:
+            pass
+        funit = rmn.fstopenall(fname,rmn.FST_RW)
+        (ig1,ig2,ig3,ig4) = rmn.cxgaig(self.grtyp,self.xg14[0],self.xg14[1],self.xg14[2],self.xg14[3])
+        (ni,nj) = (90,45)
+        la = rmn.FST_RDE_META_DEFAULT.copy()
+        la.update(
+            {'nomvar' : 'LA',
+             'typvar' : 'C',
+             'ni' : ni,
+             'nj' : nj,
+             'nk' : 1,
+             'grtyp' : self.grtyp,
+             'ig1' : ig1,
+             'ig2' : ig2,
+             'ig3' : ig3,
+             'ig4' : ig4
+             }
+            )
+        lo = la.copy()
+        lo['nomvar'] = 'LO'
+        #Note: For the order to be ok in the FSTD file, order='FORTRAN' is mandatory
+        la['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
+        lo['d'] = np.empty((ni,nj),dtype=np.float32,order='FORTRAN')
+        for j in xrange(nj):
+            for i in xrange(ni):
+                lo['d'][i,j] = 100.+float(i)        
+                la['d'][i,j] = float(j)
+        rmn.fstecr(funit,la['d'],la)
+        rmn.fstecr(funit,lo['d'],lo)
+        rmn.fstcloseall(funit)
+        funit = rmn.fstopenall(fname,rmn.FST_RW)
+        kla = rmn.fstinf(funit,nomvar='LA')['key']
+        la2 = rmn.fstluk(kla)#,rank=2)
+        klo = rmn.fstinf(funit,nomvar='LO')['key']
+        lo2 = rmn.fstluk(klo)#,rank=2)
+        rmn.fstcloseall(funit)
+        try:
+            os.unlink(fname)
+        except:
+            pass
+        self.assertTrue(np.isfortran(la2['d']))
+        self.assertTrue(np.isfortran(lo2['d']))
+        self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
+        self.assertFalse(np.any(np.fabs(lo2['d'] - lo['d']) > self.epsilon))
 
 
     def test_fsteditdir_fsteff(self):

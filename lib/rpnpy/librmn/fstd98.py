@@ -253,7 +253,7 @@ def fstecr(iunit,data,meta,rewrite=True):
     
     Args:
         iunit : file unit number (int)
-        data  : data to be written (numpy.ndarray)
+        data  : data to be written (numpy.ndarray, FORTRAN order)
         meta  : associated metadata (dict)
                 Not specified meta params will be set to their default value
                 as in FST_RDE_META_DEFAULT
@@ -276,6 +276,8 @@ def fstecr(iunit,data,meta,rewrite=True):
         raise ValueError("fstecr: must provide a valide iunit: %d" % (iunit))
     if not (type(data) == _np.ndarray and type(meta) == dict):
         raise TypeError("fstecr: Expecting args of type numpy.ndarray, dict, Got %s,%s" % (type(data),type(meta)))
+    if not _np.isfortran(data):
+        raise TypeError("fstecr: Expecting data type numpy.ndarray with FORTRAN order")
     #TODO: check if file is open with write permission
     meta2 = _rc.FST_RDE_META_DEFAULT.copy()
     for k in meta.keys():
@@ -710,7 +712,7 @@ def fstluk(key,dtype=None,rank=None):
         rank  : try to return an array with the specified rank
     Returns:
         {
-            'd'   : data,       # record data as a numpy.ndarray
+            'd'   : data,       # record data as a numpy.ndarray, FORTRAN order
             ...                 # same params list as fstprm
         }
     Raises:
