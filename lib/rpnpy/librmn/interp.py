@@ -320,13 +320,14 @@ def ezget_subgridids(super_gdid):
     raise EzscintError()
 
 
-def ezgprm(gdid):
+def ezgprm(gdid,doSubGrid=False):
     """Get grid parameters
     
     gridParams = ezgprm(gdid)
     
     Args:
-        gdid (int): id of the grid
+        gdid      : id of the grid (int)
+        doSubGrid : recurse
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -348,8 +349,9 @@ def ezgprm(gdid):
     (cni,cnj) = (_ct.c_int(),_ct.c_int())
     (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     istat = _rp.c_ezgprm(gdid, cgrtyp, cni, cnj, cig1, cig2, cig3, cig4)
-    if istat >= 0:
-        return {
+    if istat < 0:
+        raise EzscintError()
+    params = {
             'id'    : gdid,
             'shape' : (max(1,cni.value),max(1,cnj.value)),
             'ni'    : cni.value,
@@ -360,10 +362,18 @@ def ezgprm(gdid):
             'ig3'   : cig3.value,
             'ig4'   : cig4.value
             }
-    raise EzscintError()
-    
+    if doSubGrid:
+        params['nsubgrids'] = _ri.ezget_nsubgrids(gid)
+        params['subgridid'] = _ri.ezget_subgridids(gid)
+        params['subgrid'] = [gdid]
+        if params['nsubgrids'] > 1:
+            params['subgrid'] = []
+            for gid2 in params['subgridid']:
+                params['subgrid'].append(ezgprm(gid2))
+    return params
+            
 #TODO: merge ezgprm et ezgxprm et gdgaxes (conditional axes)?
-def ezgxprm(gdid):
+def ezgxprm(gdid,doSubGrid=False):
     """Get extended grid parameters
     
     gridParams = ezgxprm(gdid)
@@ -398,8 +408,9 @@ def ezgxprm(gdid):
     (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cgrref,cig1ref,cig2ref,cig3ref,cig4ref) = (c_mkstr(' '*_rc.FST_GRTYP_LEN),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
     istat = _rp.c_ezgxprm(gdid, cni, cnj, cgrtyp, cig1, cig2, cig3, cig4, cgrref,cig1ref,cig2ref,cig3ref,cig4ref)
-    if istat >= 0:
-        return {
+    if istat < 0:
+        raise EzscintError()
+    params = {
             'id'    : gdid,
             'shape' : (max(1,cni.value),max(1,cnj.value)),
             'ni'    : cni.value,
@@ -416,7 +427,15 @@ def ezgxprm(gdid):
             'ig4ref'   : cig4ref.value
             }
     #TODO: ezgxprm: be more explicit on the ref values: tags, i0,j0,...
-    raise EzscintError()
+    if doSubGrid:
+        params['nsubgrids'] = _ri.ezget_nsubgrids(gid)
+        params['subgridid'] = _ri.ezget_subgridids(gid)
+        params['subgrid'] = [gdid]
+        if params['nsubgrids'] > 1:
+            params['subgrid'] = []
+            for gid2 in params['subgridid']:
+                params['subgrid'].append(ezgxprm(gid2))
+    return params
 
 
 def ezgfstp(gdid):
