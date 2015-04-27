@@ -14,7 +14,7 @@ class LibrmnFilesKnownValues(unittest.TestCase):
     #(path,itype,iunit)
     knownValues = (
         (rmn.RMN_LIBPATH,-1,999),
-        ('/users/dor/armn/env/SsmBundles/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst',rmn.WKOFFIT_TYPE_LIST['STD_RND_98'],999),
+        ('/users/dor/armn/env/SsmBundles/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst',rmn.WKOFFIT_TYPE_LIST['STANDARD RANDOM 89'],999),
         )
 
     def testWkoffitKnownValues(self):

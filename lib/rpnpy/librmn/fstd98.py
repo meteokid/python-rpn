@@ -113,7 +113,7 @@ def isFST(filename):
         raise TypeError("isFST: Expecting arg of type str, Got %s" % (type(filename)))
     if filename.strip() == '':
         raise ValueError("isFST: must provide a valide filename")
-    return _rb.wkoffit(filename) in (_rc.WKOFFIT_TYPE_LIST['STD_RND_89'],_rc.WKOFFIT_TYPE_LIST['STD_RND_98'])
+    return _rb.wkoffit(filename) in (_rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 89'],_rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'])
         
     
 

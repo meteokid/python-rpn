@@ -10,8 +10,44 @@ import numpy  as _np
 #--- primitives -----------------------------------------------------
 
 WKOFFIT_TYPE_LIST = { #TODO:
-    'STD_RND_89' : 1,
-    'STD_RND_98' : 33
+    'INEXISTANT' : -3,
+    'VIDE' : -2,
+    'INCONNU' : -1,
+    'STANDARD RANDOM 89' : 1,
+    'STANDARD SEQUENTIEL 89' : 2,
+    'STANDARD SEQUENTIEL FORTRAN 89' : 3,
+    'CCRN' : 4,
+    'CCRN-RPN' : 5,
+    'BURP' : 6,
+    'GRIB' : 7,
+    'BUFR' : 8,
+    'BLOK' : 9,
+    'FORTRAN' : 10,
+    'COMPRESS' : 11,
+    'GIF89' : 12,
+    'GIF87' : 13,
+    'IRIS' : 14,
+    'JPG' : 15,
+    'KMW' : 16,
+    'PBM' : 17,
+    'PCL' : 18,
+    'PCX' : 19,
+    'PDSVICAR' : 20,
+    'PM' : 21,
+    'PPM' : 22,
+    'PS' : 23,
+    'KMW' : 24,
+    'RRBX' : 25,
+    'SUNRAS' : 26,
+    'TIFF' : 27,
+    'UTAHRLE' : 28,
+    'XBM' : 29,
+    'XWD' : 30,
+    'ASCII' : 31,
+    'BMP' : 32,
+    'STANDARD RANDOM 98' : 33,
+    'STANDARD SEQUENTIEL 98' : 34,
+    'NETCDF' : 35
     }
 
 #--- base -----------------------------------------------------------
