@@ -14,8 +14,6 @@ from . import base as _rb
 from . import interp as _ri
 from . import llacar as _ll
 
-#TODO: general defGrid fn
-
 def decodeIG2dict(grtyp,ig1,ig2,ig3,ig4):
     """Decode encode grid values into a dict with meaningful labels
     
@@ -245,6 +243,57 @@ def getIgTags(params):
             )
 
 
+def encodeGrid(params):
+    """Define an FSTD grid with the provided parameters
+
+    gridParams = encodeGrid(params)
+    
+    Args:
+       params: grid parameters given as a dictionary (dict)
+               at least 'grtyp' must be defined
+               other parameters is grtyp dependent,
+               See defGrid_* specific function for details
+    Returns:
+        {
+            'shape' : (ni,nj) # dimensions of the grid
+            'ni'    : grid dim along the x-axis (int)
+            'nj'    : grid dim along the y-axis (int)
+            'grtyp' : grid type (str)
+            ...
+            list of other parameters is grtyp dependent,
+            See defGrid_* specific function for details
+         }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+    """
+    try:
+        params['grtyp'] = params['grtyp'].strip().upper()
+    except:
+        raise RMNError('encodeGrid: grtyp must be provided')
+    try:
+        params['grref'] = params['grref'].strip().upper()
+    except:
+        params['grref'] = params['grtyp']
+    if params['grtyp'] == 'L':
+        return defGrid_L(params)
+    elif params['grtyp'] == 'E':
+        return defGrid_E(params)
+    elif params['grtyp'] == 'G':
+        return defGrid_G(params)
+    elif params['grtyp'] in ('N','S'):
+        return defGrid_PS(params)
+    elif params['grtyp'] == 'U':
+        return defGrid_YY(params)
+    elif params['grtyp'] == 'Z' and  params['grref'] == 'E':
+        return defGrid_ZE(params)
+    elif params['grtyp'] == '#' and  params['grref'] == 'E':
+        return defGrid_diezeE(params)
+    else:
+        raise RMNError('encodeGrid: Grid type not yet supported %s(%s)' % (params['grtyp'],params['grref']))
+        
+    
 def defGrid_L(ni,nj=None,lat0=None,lon0=None,dlat=None,dlon=None,setGridId=True):
     """Defines an FSTD LatLon (cylindrical equidistant) Grid (LAM)
 
