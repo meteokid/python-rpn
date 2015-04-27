@@ -80,6 +80,32 @@ class Librmn_grids_Test(unittest.TestCase):
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
 
+    def test_degGrid_YY(self):
+        params = rmn.defGrid_YY(31,1.5)
+        params2 = rmn.decodeGrid(params['id'])
+        for k in params.keys():
+            if k == 'subgrid':
+                pass
+            elif isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                self.assertFalse(ok)
+            elif isinstance(params[k],float):
+                self.assertTrue(abs(params[k]-params2[k]) < self.epsilon)
+            else:
+                self.assertEqual(params[k],params2[k])
+        for i in (0,1):
+            p0 = params['subgrid'][i]
+            p2 = params2['subgrid'][i]
+            for k in p0.keys():
+                if isinstance(p0[k],np.ndarray):
+                    ok = np.any(np.abs(p0[k]-p2[k]) > self.epsilon)
+                    self.assertFalse(ok)
+                elif isinstance(p0[k],float):
+                    self.assertTrue(abs(p0[k]-p2[k]) < self.epsilon)
+                else:
+                    self.assertEqual(p0[k],p2[k])
+            
+
 
 if __name__ == "__main__":
     unittest.main()
