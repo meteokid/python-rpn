@@ -5,7 +5,7 @@
  Module librmn is a ctypes import of librmnshared.so
  
  The librmn python module includes
- - prototypes for many librmn's C functions
+ - prototypes for many librmn C functions
 
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 
@@ -249,7 +249,7 @@ EXTERNAL FUNCTIONS in fstd98
 
         Note:
            librmn.c_fstecr.argtypes default to data of type _np.float32
-           To write other data types you'll need to redefine it with the
+           To write other data types you will need to redefine it with the
            appropriate type
 
 
@@ -399,7 +399,7 @@ EXTERNAL FUNCTIONS in fstd98
             int, zero successful, non-zero otherwise
         Note:
             librmn.c_fstluk.argtypes default to data of type _np.float32
-            To read other data types you'll need to redefine it with the
+            To read other data types you will need to redefine it with the
             appropriate type
 
     c_fstmsq(field, iun, ni, nj, nk, datev, etiket,
@@ -606,7 +606,7 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
                 6, p est en coordonnee theta            (1 -> 200,000)
                 10, p represente le temps en heure      (0.0 -> 1.0e10)
                 15, reserve (entiers)                                   
-                17, p represente l'indice x de la matrice de conversion
+                17, p indice x de la matrice de conversion
                                                         (1.0 -> 1.0e10)
                     (partage avec kind=1 a cause du range exclusif
                 21, p est en metres-pression (fact=1e4) (0 -> 1,000,000)
@@ -614,7 +614,7 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
             mode:
                 -1, de IP -->  P
                 0, forcer conversion pour ip a 31 bits
-                   (default = ip a 15 bits) (appel d'initialisation)
+                   (default = ip a 15 bits) (initialisation call)
                 +1, de P  --> IP
                 +2, de P  --> IP en mode NEWSTYLE force a true
                 +3, de P  --> IP en mode NEWSTYLE force a false
@@ -671,7 +671,7 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
     c_DecodeIp(RP1,RP2,RP3,IP1V,IP2V,IP3V)
         Produce valid (real value,kind) pairs from (ip1,ip2,ip3) triplet
         Proto:
-            function decode_ip_0(RP1,RP2,RP3,IP1V,IP2V,IP3V) result(status) BIND (C,name='Deco
+            function decode_ip_0(RP1,RP2,RP3,IP1V,IP2V,IP3V) result(status) BIND (C,name='DecodeIp')
             integer(C_INT) :: status
             integer(C_INT), value, intent(IN)  :: IP1V,IP2V,IP3V
             type(FLOAT_IP), intent(OUT) :: RP1,RP2,RP3

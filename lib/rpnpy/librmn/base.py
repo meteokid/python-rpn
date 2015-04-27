@@ -2,7 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 
 """
- Module librmn.base contains python wrapper to main librmn's base and primitives C functions
+ Module librmn.base contains python wrapper to main librmn base and primitives C functions
  
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
@@ -146,11 +146,11 @@ def wkoffit(filename):
 def crc32(crc,buf):
     """Compute the Cyclic Redundancy Check (CRC)
 
-    crc = crc32()
+    crc = crc32(crc0,buf)
 
     Args:
-       crc : initial crc value (int)
-       buf : list of number to compute updated crc (numpy.ndarray of uint32)
+       crc0 : initial crc value (int)
+       buf  : list of number to compute updated crc (numpy.ndarray of uint32)
     Returns:
        crc : computed crc value (int)
     Raises:
@@ -175,7 +175,7 @@ def cigaxg(grtyp,ig1,ig2=0,ig3=0,ig4=0):
     Returns:
         (float,float,float,float), Decoded grid parameters
         Meaning of xg1..4 values depends on the grid type,
-        please refer to Librmn's doc on grids for more details
+        please refer to Librmn doc on grids for more details
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
@@ -208,7 +208,7 @@ def cxgaig(grtyp,xg1,xg2=0.,xg3=0.,xg4=0.):
         xg1..4 : 4 grid descriptors values (4x float)
         xg1234 : 4 grid descriptors values (tuple or list of 4x float)
                  Meaning of xg1..4 values depends on the grid type,
-                 please refer to Librmn's doc on grids for more details
+                 please refer to Librmn doc on grids for more details
     Returns:
         (int,int,int,int), Encoded grid parameters
     Raises:
