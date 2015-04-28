@@ -262,7 +262,7 @@ def incdatr(idate,nhours):
 
 
 def difdatr(idate1,idate2):
-    """Compute de diffence between dates in hours (nhours = idate1 - idate2)
+    """Compute the diffence between dates in hours (nhours = idate1 - idate2)
 
     nhours = difdatr(idate1,idate2)
     

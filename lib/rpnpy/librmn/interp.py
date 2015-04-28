@@ -2,7 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 
 """
- Module librmn.intero contains python wrapper to main librmn's interp (ezscint) C functions
+ Module librmn.interp contains python wrapper to main librmn's interp (ezscint) C functions
  
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
