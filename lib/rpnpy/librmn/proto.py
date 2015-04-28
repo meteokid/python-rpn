@@ -1161,6 +1161,15 @@ class FLOAT_IP(_ct.Structure):
                 ("v2", _ct.c_float),
                 ("kind", _ct.c_int)]
 
+    def __str__(self):
+        return "FLOAT_IP(%f,%f,%d)" % (self.v1,self.v2,self.kind)
+    def __repr__(self):
+        return "FLOAT_IP(%f,%f,%d)" % (self.v1,self.v2,self.kind)
+
+    def toList(self):
+        return (self.v1,self.v2,self.kind)
+
+
 #--- primitives -----------------------------------------------------
 
 librmn.c_fclos.argtypes = (_ct.c_int,)
