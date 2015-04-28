@@ -1,0 +1,17 @@
+[.]svn/
+[.]svn/*
+[.]git/
+[.]git/*
+[.]fo/
+[.]fo/*
+build-*
+build-*/*
+[.]rde*
+Makefile.dep*
+__build__/
+__build__/*
+__dist__/
+__dist__/*
+__old/
+__old/*
+*.pyc

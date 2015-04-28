@@ -1,0 +1,798 @@
+#!/usr/bin/env python
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+
+"""
+ Module librmn is a ctypes import of librmnshared.so
+ 
+ The librmn python module includes
+ - python wrapper to main librmn's C functions
+ - helper functions
+ - prototypes for many librmn's C functions
+ - pre-defined constants
+ - along with comprenhensive inline documentation
+
+ @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+"""
+#TODO: unit tests
+
+#TODO: ezscint
+#TODO: burp
+#TODO: rdiag
+#TODO: vgrid
+
+__VERSION__     = '1.0.0'
+__LASTUPDATED__ = '2015-03'
+
+import os
+import ctypes as ct
+import numpy  as np
+import numpy.ctypeslib as npct
+
+from librmn.proto import *
+from librmn.const import *
+
+c_mkstr = lambda x: ct.create_string_buffer(x)
+c_toint = lambda x: (x if (type(x) != type(ct.c_int())) else x.value)
+isListType = lambda x: type(x) in (type([]),type((1,)))
+
+def wkoffit(filename):
+    """Return type of file (int)
+
+    filename : path/name of the file to examine
+
+    return file type code as follow:
+          -3     FICHIER INEXISTANT
+          -2     FICHIER VIDE
+          -1     FICHIER INCONNU
+           1     FICHIER STANDARD RANDOM 89
+           2     FICHIER STANDARD SEQUENTIEL 89
+           3     FICHIER STANDARD SEQUENTIEL FORTRAN 89
+           4     FICHIER CCRN
+           5     FICHIER CCRN-RPN
+           6     FICHIER BURP
+           7     FICHIER GRIB
+           8     FICHIER BUFR
+           9     FICHIER BLOK
+          10     FICHIER FORTRAN
+          11     FICHIER COMPRESS
+          12     FICHIER GIF89
+          13     FICHIER GIF87
+          14     FICHIER IRIS
+          15     FICHIER JPG
+          16     FICHIER KMW
+          17     FICHIER PBM
+          18     FICHIER PCL
+          19     FICHIER PCX
+          20     FICHIER PDSVICAR
+          21     FICHIER PM
+          22     FICHIER PPM
+          23     FICHIER PS
+          24     FICHIER KMW_
+          25     FICHIER RRBX
+          26     FICHIER SUNRAS
+          27     FICHIER TIFF
+          28     FICHIER UTAHRLE
+          29     FICHIER XBM
+          30     FICHIER XWD
+          31     FICHIER ASCII
+          32     FICHIER BMP
+          33     FICHIER STANDARD RANDOM 98
+          34     FICHIER STANDARD SEQUENTIEL 98
+          35     FICHIER NETCDF
+    """
+    return librmn.c_wkoffit(filename,len(filename))
+
+
+def isFST(filename):
+    """Return True if file is of RPN STD RND type
+    
+    filename : path/name of the file to examine
+    """
+    return (wkoffit(filename) in (WKOFFIT_TYPE_LIST['STD_RND_89'],WKOFFIT_TYPE_LIST['STD_RND_98']))
+
+
+def fstopt(optName,optValue,setOget=FSTOP_SET):
+    """Set or print FST option.
+
+    optName  : name of option to be set or printed
+               or one of these constants:
+               FSTOP_MSGLVL, FSTOP_TOLRNC, FSTOP_PRINTOPT, FSTOP_TURBOCOMP
+    optValue : value to be set (int or string)
+               or one of these constants:
+               for optName=FSTOP_MSGLVL:
+                  FSTOPI_MSG_DEBUG,   FSTOPI_MSG_INFO,  FSTOPI_MSG_WARNING,
+                  FSTOPI_MSG_ERROR,   FSTOPI_MSG_FATAL, FSTOPI_MSG_SYSTEM,
+                  FSTOPI_MSG_CATAST
+               for optName=FSTOP_TOLRNC:
+                  FSTOPI_TOL_NONE,    FSTOPI_TOL_DEBUG, FSTOPI_TOL_INFO,
+                  FSTOPI_TOL_WARNING, FSTOPI_TOL_ERROR, FSTOPI_TOL_FATAL
+               for optName=FSTOP_TURBOCOMP:
+                  FSTOPS_TURBO_FAST, FSTOPS_TURBO_BEST
+    setOget  : define mode, set or print/get
+               one of these constants: FSTOP_SET, FSTOP_GET
+               default: set mode
+               
+    return None on error int>=0 otherwise
+    """
+    if type(optValue) == type(''):
+        istat = librmn.c_fstopc(optName,optValue,setOget)
+    elif type(optValue) == type(1):
+        istat = librmn.c_fstopi(optName,optValue,setOget)
+    else:
+        return None
+    if istat >= 0: return istat
+    return None
+
+
+def fnom(filename,filemode=FST_RW,iunit=0):
+    """Open a file and make the connection with a unit number.
+    
+    filename : path/name of the file to open
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+    iunit    : forced unit number to conect to
+               if zero, will select a free unit
+
+    return Associated file unit number
+    return None on error
+    """
+    iunit2 = ct.c_int(iunit)
+    istat = librmn.c_fnom(ct.byref(iunit2),filename,filemode,0)
+    istat = c_toint(istat)
+    if istat >= 0: return iunit2.value
+    return None
+
+
+def fclos(iunit):
+    """Close file associated with unit through fnom
+    
+    iunit   : unit number associated to the file
+              obtained with fnom
+            
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fclos(iunit)
+    if istat < 0: return None
+    return istat
+
+
+def fstouv(iunit,filemode=FST_RW):
+    """Opens a RPN standard file
+    
+    iunit    : unit number associated to the file
+               obtained with fnom
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fstouv(iunit,filemode)
+    if istat < 0: return None
+    return istat
+
+
+def fstopenall(paths,filemode=FST_RO):
+    """shortcut for fnom+fstouv+fstlnk
+    
+    paths    : path/name of the file to open
+               if paths is a list, open+link all files
+               if path is a dir, open+link all fst files in dir
+    filemode : a string with the desired filemode (see librmn doc)
+               or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+               
+    return Associated file unit number
+    """
+    if type(paths) == type(''): paths = [paths]
+    l = []
+    for x in paths:
+        if os.path.isdir(x):
+            for (dirpath, dirnames, filenames) in os.walk(x):
+                for f in filenames:
+                    if isFST(os.path.join(x,f)):
+                        l.append(os.path.join(x,f))
+                break
+            pass #TODO splice file list, discard non fst files
+        else:
+            l.append(x)
+    if filemode != FST_RO and len(paths) > 1:
+        return None #print error msg
+    iunitlist = []
+    for x in paths:
+        i = fnom(x,filemode)
+        if i:
+            i2 = fstouv(i,filemode)
+            if i2 != None: #TODO: else warning/ignore
+                iunitlist.append(i)
+    if len(iunitlist) == 0:
+        return None #print error msg
+    if len(iunitlist) == 1:
+        return iunitlist[0]
+    return fstlnk(unitList)
+
+
+def fstcloseall(iunit):
+    """shortcut for fclos+fstfrm
+    
+    iunit    : unit number associated to the file
+               obtained with fnom or fstopenall
+               
+    return None on error int>=0 otherwise
+    """
+    #TODO: loop on all linked units
+    istat = fclos(iunit)
+    istat = fstfrm(iunit)
+    return istat
+    
+
+def fstlnk(unitList):
+    """Links a list of files together for search purpose
+
+    unitList : list of previously opened (fnom+fstouv) file units
+
+    return File unit for the grouped unit
+    return None on error
+    """
+    if len(unitList)<1 or unitList[0]<=0: return None
+    cunitList = nm.asarray(unitList, dtype=nm.intc)
+    istat = librmn.c_xdflnk(cunitList,len(cunitList))
+    if istat<0: return None
+    return unitList[0]
+
+
+def fstfrm(iunit):
+    """Close a RPN standard file
+    
+    iunit    : unit number associated to the file
+               obtained with fnom+fstouv
+
+    return None on error int>=0 otherwise
+    """
+    istat = librmn.c_fstfrm(iunit)
+    if istat < 0: return None
+    return istat
+
+
+def fstinf(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
+    """Locate the next record that matches the research keys
+        
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            }
+    return None if no matching record
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    return fstinfx(-2,iunit,datev,etiket,ip1,ip2,ip3,typvar,nomvar)
+
+
+def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
+    """Locate the next record that matches the research keys
+       The search begins at the position given by key/handle
+       obtained with fstinf or fstinl, ...
+
+    key     : record key/handle of the search start position
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            }
+    return None if no matching record
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    (cni,cnj,cnk) = (ct.c_int(),ct.c_int(),ct.c_int())
+    key2 = librmn.c_fstinfx(key,iunit,ct.byref(cni),ct.byref(cnj),ct.byref(cnk),datev,etiket,ip1,ip2,ip3,typvar,nomvar)
+    key2 = c_toint(key2)
+    if key2 < 0: return None
+    fx = lambda x: (x.value if x.value>0 else 1)
+    return {
+        'key'   : key2 ,
+        'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
+        }
+
+
+def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',nrecmax=-1):
+    """Locate all the record matching the research keys
+        
+    iunit   : unit number associated to the file
+              obtained with fnom+fstouv
+    datev   : valid date
+    etiket  : label
+    ip1     : vertical level
+    ip2     : forecast hour
+    ip3     : user defined identifier
+    typvar  : type of field
+    nomvar  : variable name
+    nrecmax : maximum number or record to find (-1 = all)
+
+    return list of keys
+
+    Only provided parameters with value different than default
+    are used as selction criteria
+    """
+    if nrecmax <= 0: nrecmax = c_fstnbrv(iunit)
+    creclist = np.empty(nrecmax,dtype=np.intc)
+    print nrecmax,creclist,repr(creclist)
+    (cni,cnj,cnk,cnfound) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    istat = librmn.c_fstinl(iunit,ct.byref(cni),ct.byref(cnj),ct.byref(cnk),datev,etiket,ip1,ip2,ip3,typvar,nomvar,creclist,cnfound,nrecmax)
+    if cnfound <= 0: return []
+    return creclist[0:cnfound.value-1].tolist()
+    
+
+def fstprm(key):
+    """Get all the description informations of the record.
+    
+    key : positioning information to the record,
+          obtained with fstinf or fstinl, ...
+    
+    return {
+            'key'   : key,       # key/handle of the 1st matching record
+            'shape' : (ni,nj,nk) # dimensions of the field
+            'dateo' : date time stamp
+            'deet'  : length of a time step in seconds
+            'npas'  : time step number
+            'ni'    : first dimension of the data field
+            'nj'    : second dimension of the data field
+            'nk'    : third dimension of the data field
+            'nbits' : number of bits kept for the elements of the field
+            'datyp' : data type of the elements
+            'ip1'   : vertical level
+            'ip2'   : forecast hour
+            'ip3'   : user defined identifier
+            'typvar': type of field (forecast, analysis, climatology)
+            'nomvar': variable name
+            'etiket': label
+            'grtyp' : type of geographical projection
+            'ig1'   : first grid descriptor
+            'ig2'   : second grid descriptor
+            'ig3'   : third grid descriptor
+            'ig4'   : fourth grid descriptor
+            'swa'   : starting word address
+            'lng'   : record length
+            'dltf'  : delete flag
+            'ubc'   : unused bit count
+            'xtra1' : extra parameter
+            'xtra2' : extra parameter
+            'xtra3' : extra parameter
+            }
+    return None on error
+    """
+    (cni,cnj,cnk)        = (ct.c_int(),ct.c_int(),ct.c_int())
+    (cdateo,cdeet,cnpas) = (ct.c_int(),ct.c_int(),ct.c_int())
+    (cnbits,cdatyp,cip1,cip2,cip3) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    (ctypvar,cnomvar,cetiket) = (c_mkstr(' '*FST_TYPVAR_LEN),c_mkstr(' '*FST_NOMVAR_LEN),c_mkstr(' '*FST_ETIKET_LEN))
+    (cgrtyp,cig1,cig2,cig3,cig4) = (c_mkstr(' '*FST_GRTYP_LEN),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    (cswa,clng,cdltf,cubc,cxtra1,cxtra2,cxtra3) = (ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int(),ct.c_int())
+    istat = librmn.c_fstprm(
+        key,ct.byref(cdateo),ct.byref(cdeet),ct.byref(cnpas),
+        ct.byref(cni),ct.byref(cnj),ct.byref(cnk),
+        ct.byref(cnbits),ct.byref(cdatyp),
+        ct.byref(cip1),ct.byref(cip2),ct.byref(cip3),
+        ctypvar,cnomvar,cetiket,
+        cgrtyp,ct.byref(cig1),ct.byref(cig2),ct.byref(cig3),ct.byref(cig4),
+        ct.byref(cswa),ct.byref(clng),ct.byref(cdltf),ct.byref(cubc),
+        ct.byref(cxtra1),ct.byref(cxtra2),ct.byref(cxtra3))
+    istat = c_toint(istat)
+    if istat < 0: return None
+    return {
+        'key'   : key ,
+        'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
+        'dateo' : cdateo.value,
+        'deet'  : cdeet.value,
+        'npas'  : cnpas.value,
+        'ni'    : cni.value,
+        'nj'    : cnj.value,
+        'nk'    : cnk.value,
+        'nbits' : cnbits.value,
+        'datyp' : cdatyp.value,
+        'ip1'   : cip1.value,
+        'ip2'   : cip2.value,
+        'ip3'   : cip3.value,
+        'typvar': ctypvar.value,
+        'nomvar': cnomvar.value,
+        'etiket': cetiket.value,
+        'grtyp' : cgrtyp.value,
+        'ig1'   : cig1.value,
+        'ig2'   : cig2.value,
+        'ig3'   : cig3.value,
+        'ig4'   : cig4.value,
+        'swa'   : cswa.value,
+        'lng'   : clng.value,
+        'dltf'  : cdltf.value,
+        'ubc'   : cubc.value,
+        'xtra1' : cxtra1.value,
+        'xtra2' : cxtra2.value,
+        'xtra3' : cxtra3.value
+        }
+
+
+def dtype_fst2numpy(datyp):
+    """Return the numpy dtype datyp for the given fst datyp
+            0: binary, transparent
+            1: floating point
+            2: unsigned integer
+            3: character (R4A in an integer)
+            4: signed integer
+            5: IEEE floating point
+            6: floating point (16 bit, made for compressor)
+            7: character string
+            8: complex IEEE
+          130: compressed short integer  (128+2)
+          133: compressed IEEE           (128+5)
+          134: compressed floating point (128+6)
+        +128 : second stage packer active
+        +64  : missing value convention used
+    """
+    datyp = (datyp-128 if datyp>=128 else datyp)
+    datyp = (datyp-64 if datyp>=64 else datyp)
+    return FST_DATYP2NUMPY_LIST[datyp]
+    
+def dtype_numpy2fst(dtype,compress=True,missing=False):
+    """Return the fst datyp for the given numpy dtype
+       Optionally specify compression and missing value options.
+    """
+    datyp = 0 #default returned type: binary
+    for k in FST_DATYP2NUMPY_LIST.keys():
+        if FST_DATYP2NUMPY_LIST[k] == dtype:
+            datyp = k
+            break
+    if compress: datyp += 128
+    if missing:  datyp += 64
+    return datyp
+
+
+def fstluk(key,dtype=None):
+    """Read the record at position given by key/handle
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+    dtype : array type of the returned data
+            Default is determined from records' datyp
+            Could be any numpy.ndarray type
+            See: http://docs.scipy.org/doc/numpy/user/basics.types.html
+            
+    return {
+            'd'   : data,       # record data as a numpy.ndarray
+            ...                 # same params list as fstprm
+            }
+    return None on error
+    """
+    params = fstprm(key)
+    if params is None: return None
+    (cni,cnj,cnk) = (ct.c_int(),ct.c_int(),ct.c_int())
+    if dtype is None: dtype = dtype_fst2numpy(params['datyp'])
+    librmn.c_fstluk.argtypes = (npct.ndpointer(dtype=dtype),ct.c_int,
+        ct.POINTER(ct.c_int),ct.POINTER(ct.c_int),ct.POINTER(ct.c_int))
+    data = np.empty(params['shape'],dtype=dtype)
+    istat = librmn.c_fstluk(data,key,cni,cnj,cnk)
+    if istat < 0: return None
+    params['d'] = data
+    return params
+
+
+def fst_edit_dir(key, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
+                 ip1=-1, ip2=-1, ip3=-1,
+                 typvar=' ', nomvar=' ', etiket=' ', grtyp=' ',
+                 ig1=-1, ig2=-1, ig3=-1, ig4=-1, datyp=-1):
+    """Edits the directory content of a RPN standard file
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+    dateo : date time stamp
+    deet  : length of a time step in seconds
+    npas  : time step number
+    ni    : first dimension of the data field
+    nj    : second dimension of the data field
+    nk    : third dimension of the data field
+    nbits : number of bits kept for the elements of the field
+    datyp : data type of the elements
+    ip1   : vertical level
+    ip2   : forecast hour
+    ip3   : user defined identifier
+    typvar: type of field (forecast, analysis, climatology)
+    nomvar: variable name
+    etiket: label
+    grtyp : type of geographical projection
+    ig1   : first grid descriptor
+    ig2   : second grid descriptor
+    ig3   : third grid descriptor
+    ig4   : fourth grid descriptor
+            
+    return None on error int>=0 otherwise
+
+    Only provided parameters with value different than default are updated
+    """
+    istat = librmn.fst_edit_dir(key,dateo, deet, npas, ni, nj, nk,
+                 ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
+                 ig1, ig2, ig3, ig4, datyp)
+    if istat < 0: return None
+    return istat
+
+
+def fsteff(key):
+    """Deletes the record associated to handle.
+    
+    key   : positioning information to the record,
+            obtained with fstinf or fstinl, ...
+            
+    return None on error int>=0 otherwise
+    """
+    istat = c_fsteff(key)
+    if istat < 0: return None
+    return istat
+
+
+def fstecr(iunit,data,meta,rewrite=True):
+    """Writes record to file
+    """
+    #TODO: check if file is open with write permission
+    meta2 = FST_RDE_META_DEFAULT.copy() #.deepcopy()
+    for k in meta.keys():
+        if k != 'd' and meta[k] not in (' ',-1): meta2[k] = meta[k]
+    irewrite = (1 if rewrite else 0)
+    npak = -abs(meta['nbits'])
+    librmn.c_fstecr.argtypes = (
+        npct.ndpointer(dtype=data.dtype), npct.ndpointer(dtype=data.dtype),
+        ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int,
+        ct.c_int, ct.c_int, ct.c_int,
+        ct.c_int, ct.c_int, ct.c_int,
+        ct.c_char_p, ct.c_char_p, ct.c_char_p,ct.c_char_p,
+        ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
+    istat = librmn.c_fstecr(data, data, npak, iunit,
+                meta['dateo'], meta['deet'], meta['npas'],
+                meta['ni'], meta['nj'], meta['nk'],
+                meta['ip1'], meta['ip2'], meta['ip3'],
+                meta['typvar'], meta['nomvar'], meta['etiket'], meta['grtyp'],
+                meta['ig1'], meta['ig2'], meta['ig3'], meta['ig4'],
+                meta['datyp'], irewrite)
+    if istat < 0: return None
+    return istat
+
+
+def cigaxg(proj,ig1,ig2=0,ig3=0,ig4=0):
+    """Encode real grid descriptors into ig1,ig2,ig3,ig4
+    Args:
+        proj   (str): (I)
+        ig1..4 (int): encoded grid descriptor values
+          or
+        ig1    (int,int,int,int): tuple/list with encoded grid desc values
+    Returns:
+        (float,float,float,float), Decoded grid parameters value
+        None on error
+    """
+    (cig1,cig2,cig3,cig4) = (ct.c_int(ig1),ct.c_int(ig2),ct.c_int(ig3),ct.c_int(ig4))            
+    if isListType(ig1):
+        (cig1,cig2,cig3,cig4) = (ct.c_int(ig1[0]),ct.c_int(ig1[1]),ct.c_int(ig1[2]),ct.c_int(ig1[3]))            
+    (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(0.),ct.c_float(0.),ct.c_float(0.),ct.c_float(0.))
+    istat = f_cigaxg(proj,
+                ct.byref(cxg1),ct.byref(cxg2),ct.byref(cxg3),ct.byref(cxg4),
+                ct.byref(cig1),ct.byref(cig2),ct.byref(cig3),ct.byref(cig4))
+    if istat < 0: return None
+    return (cxg1.value,cxg2.value,cxg3.value,cxg4.value)
+
+
+def cxgaig(proj,xg1,xg2=0.,xg3=0.,xg4=0.):
+    """Decode ig1,ig2,ig3,ig4 into real grid descriptors 
+    Args:
+        proj   (str): (I)
+        xg1..4 (float): encoded grid descriptor values
+          or
+        xg1    (float,...,float): tuple/list with real grid desc values
+    Returns:
+        (int,int,int,int), Encoded grid parameters
+        None on error
+    """
+    (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(xg1),ct.c_float(xg2),ct.c_float(xg3),ct.c_float(xg4))
+    if isListType(xg1):
+        (cxg1,cxg2,cxg3,cxg4) = (ct.c_float(xg1[0]),ct.c_float(xg1[1]),ct.c_float(xg1[2]),ct.c_float(xg1[3]))
+    (cig1,cig2,cig3,cig4) = (ct.c_int(0),ct.c_int(0),ct.c_int(0),ct.c_int(0))
+    istat = f_cxgaig(proj,
+            ct.byref(cig1),ct.byref(cig2),ct.byref(cig3),ct.byref(cig4),
+            ct.byref(cxg1),ct.byref(cxg2),ct.byref(cxg3),ct.byref(cxg4))
+    if istat < 0: return None
+    return (cig1.value,cig2.value,cig3.value,cig4.value)
+
+
+def incdatr(idate,nhours):
+    """Increate idate by nhours
+    Args:
+        idate  (int)  : CMC encodec date
+        nhours (float): number of hours
+    Returns:
+        int, CMC encodec date, idate+nhours
+        None on error
+    """
+    (cidateout,cidatein,nhours) = (ct.c_int(idate),ct.c_int(idate),ct.c_double(nhours))
+    f_incdatr(ct.byref(cidateout),ct.byref(cidatein),ct.byref(cnhours))
+    if cidateout.value == 101010101: return None
+    return cidateout.value
+
+
+def difdatr(idate1,idate2):
+    """Compute de diffence between dates in hours (nhours = idate1 - idate2)
+    Args:
+        idate1 (int)  : CMC encodec date
+        idate2 (int)  : CMC encodec date
+    Returns:
+        float, number of hours resulting from idate1 - idate2
+        None on error
+    """
+    (cidate1,cidate2,nhours) = (ct.c_int(idate1),ct.c_int(idate2),ct.c_double())
+    f_difdatr(ct.byref(cidate1),ct.byref(cidate2),ct.byref(cnhours))
+    if cnhours.value == 2.**30: return None
+    return cnhours.value
+
+
+def newdate(imode,idate1,idate2=0):
+    """Convert date format between: printable, CMC date-time stamp, true date
+    Args:
+        imode  (int)  : Conversion mode see below
+        idate1 (int)  : See Note below
+        idate2 (int)  : See Note below
+    Returns:
+        The converted value(s), imode dependent, see note below
+        None on error
+    imode CAN TAKE THE FOLLOWING VALUES:-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7
+    imode=1 : STAMP TO (TRUE_DATE AND RUN_NUMBER)
+        (odate1,odate2) = newdate(imode,idate1)
+        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+        odate1 : THE TRUEDATE CORRESPONDING TO DAT2
+        odate2 : RUN NUMBER OF THE DATE-TIME STAMP
+    imode=-1 : (TRUE_DATE AND RUN_NUMBER) TO STAMP
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : TRUEDATE TO BE CONVERTED
+        idate2 : RUN NUMBER OF THE DATE-TIME STAMP
+        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+    imode=2 : PRINTABLE TO TRUE_DATE
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+        odate1 : TRUE_DATE
+    imode=-2 : TRUE_DATE TO PRINTABLE
+        (odate1,odate2) = newdate(imode,idate1)
+        idate1 : TRUE_DATE
+        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+    imode=3 : PRINTABLE TO STAMP
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+    imode=-3 : STAMP TO PRINTABLE
+        (odate1,odate2) = newdate(imode,idate1)
+        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+    imode=4 : 14 word old style DATE array TO STAMP and array(14)
+        odate1 = newdate(imode,idate1)
+        idate1 : 14 word old style DATE array
+        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+    imode=-4 : STAMP TO 14 word old style DATE array
+        odate1 = newdate(imode,idate1)
+        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+        odate1 : 14 word old style DATE array
+    imode=5    PRINTABLE TO EXTENDED STAMP (year 0 to 10,000)
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+        odate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
+    imode=-5   EXTENDED STAMP (year 0 to 10,000) TO PRINTABLE
+        (odate1,odate2) = newdate(imode,idate1)
+        idate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
+        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+    imode=6 :  EXTENDED STAMP TO EXTENDED TRUE_DATE (in hours)
+        (odate1,odate2) = newdate(imode,idate1)
+        idate2 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+        odate1 : THE TRUEDATE CORRESPONDING TO DAT2
+        odate2 : RUN NUMBER, UNUSED (0)
+    imode=-6 : EXTENDED TRUE_DATE (in hours) TO EXTENDED STAMP
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : TRUEDATE TO BE CONVERTED
+        idate2 : RUN NUMBER, UNUSED
+        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+    imode=7  : PRINTABLE TO EXTENDED TRUE_DATE (in hours)
+        odate1 = newdate(imode,idate1,idate2)
+        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+        odate1 : EXTENDED TRUE_DATE
+    imode=-7 : EXTENDED TRUE_DATE (in hours) TO PRINTABLE
+        (odate1,odate2) = newdate(imode,idate1)
+        idate1 : EXTENDED TRUE_DATE
+        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+    """
+    cimode = ct.c_int(idate)
+    (cidate1,cidate2,cidate3) = (ct.c_int(),ct.c_int(),ct.c_int())
+    if imode == 1:
+       cidate2 = ct.c_int(idate1)
+    elif imode == -1:
+       (cidate1,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == 2:
+       (cidate2,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == -2:
+       cidate1 = ct.c_int(idate1)
+    elif imode == 3:
+       (cidate2,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == -3:
+       cidate1 = ct.c_int(idate1)
+    elif imode == 4:
+       (cidate2,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == -4:
+       (cidate1,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == 5:
+       (cidate2,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == -5:
+       cidate1 = ct.c_int(idate1)
+    elif imode == 6:
+       cidate2 = ct.c_int(idate1)
+    elif imode == -6:
+       (cidate1,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == 7:
+       (cidate2,cidate3) = (ct.c_int(idate1),ct.c_int(idate2))
+    elif imode == -7:
+       cidate1 = ct.c_int(idate1)
+    else:
+       return None
+
+    istat = f_newdate(ct.byref(cidate1),ct.byref(cidate2),ct.byref(cidate3),ct.byref(cimode))
+    if istat == 1: return None
+
+    if imode == 1:
+       return (cidate1.value,cidate3.value)
+    elif imode == -1:
+       return cidate2.value
+    elif imode == 2:
+       return cidate1.value
+    elif imode == -2:
+       return (cidate2.value,cidate3.value)
+    elif imode == 3:
+       return cidate1.value
+    elif imode == -3:
+       return (cidate2.value,cidate3.value)
+    elif imode == 4:
+       return cidate1.value
+    elif imode == -4:
+       return cidate2.value
+    elif imode == 5:
+       return cidate1.value
+    elif imode == -5:
+       return (cidate2.value,cidate3.value)
+    elif imode == 6:
+       return (cidate1.value,cidate3.value)
+    elif imode == -6:
+       return cidate2.value
+    elif imode == 7:
+       return cidate1.value
+    elif imode == -7:
+       return (cidate2.value,cidate3.value)
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

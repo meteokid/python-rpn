@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 #!/usr/bin/env python2
 import optparse,sys,re
-from ftnnml import *
+from rpnpy.ftnnml import *
 
 if __name__ == "__main__":
     
     # Command line arguments
-    usage = "usage: \n\t%prog [options] key1 [key2] ...\n\t%prog [options] nml1/key1 [nml2/key2] ..."
-    parser = optparse.OptionParser(usage=usage)
+    desc="Get list of values, variable names and namelists names from a Fortran namelist file"
+    usage = """
+    %prog [options] key1 [key2] ...
+    %prog [options] nml1/key1 [nml2/key2] ..."""
+    parser = optparse.OptionParser(usage=usage,description=desc)
     parser.add_option("-f","--file",dest="nml_file",default="./gem_settings.nml",
                       help="Name of FILE containing namelist [default 'gem_settings.nml']",metavar="FILE")
     parser.add_option("-o","--output",dest="prefix",default=None,
@@ -86,3 +89,7 @@ if __name__ == "__main__":
             fd = sys.stdout            
         fd.write(expr+str(value)+'\n')        
         if outFile: fd.close()
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
