@@ -170,7 +170,7 @@
          Out_prefix_S(1:1) = 'p'
          Out_prefix_S(2:2) = Level_typ_S(levset)
 
-         call out_sfile2 (Out3_closestep,stepno)
+         call out_sfile3 (stepno)
 
          call out_href2 ( 'Mass_point' )
 

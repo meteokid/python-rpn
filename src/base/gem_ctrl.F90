@@ -58,7 +58,6 @@
       if ( .not. Rstri_rstn_L ) then
 
          call indata()
-         Step_kount = 0
 
       else
 

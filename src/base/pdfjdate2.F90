@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pdfjdate2 - number of days since "Mod_runstrt_S(year) - 1"
+!**s/r pdfjdate2 - number of days since "Step_runstrt_S(year) - 1"
       subroutine pdfjdate2 (jdate,yyyy,mo,dd,hh,mm,ss)
       implicit none
 #include <arch_specific.hf>
@@ -27,7 +27,7 @@
 ! v3_32 - Dugas B.          - use newdate/difdatr rather than jd inline function
 !
 !arguments I/O
-! jdate                 (O) - number of days since Jan 01, 00Z of "Mod_runstrt_S(year) - 1"
+! jdate                 (O) - number of days since Jan 01, 00Z of "Step_runstrt_S(year) - 1"
 ! "yyyy mo dd hh mm ss" (I) - calendar date to compare with
 
 !  calculate the number of days since the first day of the year before
@@ -35,7 +35,7 @@
 !  can be turned ON or OFF via calls to ACCEPT_LeapYear() and
 !  Ignore_LeapYear(), respectively
 !!
-#include "modconst.cdk"
+#include "step.cdk"
 
       integer, save :: stamp0
       integer ier, TIM1, stamp1
@@ -48,8 +48,8 @@
       jdate = -1.0_8
 
       if (.not.done) then
-         ! initialization of stamp0 to "Mod_runstrt_S(year) - 1"
-         read(Mod_runstrt_S,'(I4)') TIM1
+         ! initialization of stamp0 to "Step_runstrt_S(year) - 1"
+         read(Step_runstrt_S,'(I4)') TIM1
          if (TIM1 > 0) TIM1 = TIM1-1
          TIM1 = tim1*10000+0101
          ier = newdate( stamp0, TIM1,TIM2, MOD )
@@ -68,7 +68,7 @@
          stop ' in pdfjdate2'
       endif
 
-      ! number of hours between "yyyy mo dd" and "Mod_runstrt_S(year) - 1"
+      ! number of hours between "yyyy mo dd" and "Step_runstrt_S(year) - 1"
       call difdatr( stamp1,stamp0, jdate )
 
       ! add "hh mm ss" hours to jdate and convert to days

@@ -17,6 +17,7 @@
 !
       subroutine set_sor()
       use phy_itf, only: phymeta,phy_getmeta
+      use timestr_mod
       implicit none
 #include <arch_specific.hf>
 !
@@ -60,7 +61,6 @@
 #include "grd.cdk"
 #include "grid.cdk"
 #include "level.cdk"
-#include "modconst.cdk"
 #include "timestep.cdk"
 #include "schm.cdk"
 #include "step.cdk"
@@ -74,7 +74,7 @@
 #include "path.cdk"
       include "rpn_comm.inc"
 !
-      integer,external :: srequet,time2step
+      integer,external :: srequet
 
       integer,parameter :: NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
@@ -87,7 +87,7 @@
       logical iela
       integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic, noutpe
       integer, dimension (4,2) :: ixg, ixgall
-      integer istat,options
+      integer istat,options,rsti
       integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
       integer, dimension (:,:), allocatable :: comyy
       real, dimension (4,2) :: rot, rotall
@@ -113,24 +113,26 @@
       endif
       
       Out3_ndigits = max(3,Out3_ndigits)
-      if (Out3_unit_s .eq. ' '.or. Out3_unit_s .eq. 'H') then
-         unit_S = 'HOURS'
-      endif
-      if (Out3_unit_s .eq. 'D') then
-         unit_S = 'DAYS'
-      endif
-      if (Out3_unit_s .eq. 'M') then
-         unit_S = 'MINUTES'
-      endif
-      if (Out3_unit_s .eq. 'S') then
-         unit_S = 'SECONDS'
-         Out3_ndigits = max(6,Out3_ndigits)
-      endif
-      if (Out3_unit_s .eq. 'P') then
+      select case(Out3_unit_s(3:3))
+      case('STE') 
          unit_S = 'TIMESTEPS'
          Out3_ndigits = max(6,Out3_ndigits)
-      endif
+      case('SEC')
+         unit_S = 'SECONDS'
+         Out3_ndigits = max(6,Out3_ndigits)
+      case('MIN')
+         unit_S = 'MINUTES'
+      case('HOU')
+         unit_S = 'HOURS'
+      case('DAY')
+         unit_S = 'DAYS'
+      case('MON')
+         unit_S = 'MONTHS'
+      case default
+         unit_S = 'HOURS'
+      end select
       if (Lun_out.gt.0) write(Lun_out,3000)unit_S
+
       ! Transfer filter and xnbit info to requested variables
       do k=1, Outd_sets
          do j=1,Outd_var_max(k)
@@ -258,17 +260,16 @@
       call RPN_COMM_allreduce ( rot  , rotall  ,       8,&
            RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
 
+      ierr = timestr2step(rsti,Fcst_rstrt_S,Cstv_dt_8)
+      if (.not.RMN_IS_OK(ierr)) rsti = Step_total-Lctl_step
       call out_sblock2(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
            Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &
            l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,Ptopo_gindx,Ptopo_numproc,&
            Ptopo_myproc,ixgall,rotall,Hgc_gxtyp_s,Out3_unit_S,int(Cstv_dt_8),&
-           Out3_date,Out3_etik_S, Out3_ndigits, Mod_runstrt_S, &
-           min(Step_total, Lctl_step+Step_rsti),Out3_flipit_L,Out3_debug_L)
+           Out3_date,Out3_etik_S, Out3_ndigits, Step_runstrt_S, &
+           min(Step_total, Lctl_step+rsti),Out3_flipit_L,Out3_debug_L)
 
       Out_laststep_S = ' '
-
-      ierr= time2step (Out3_postfreq_S, Step_dt, Lun_out, Out3_postfreq )
-      Out3_postfreq = max(0,Out3_postfreq)
 
       call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
 

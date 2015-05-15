@@ -16,6 +16,7 @@
 !**s/r step_nml - Read namelist time
 
       integer function step_nml (F_namelistf_S)
+      use timestr_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -33,11 +34,10 @@
 #include "lun.cdk"
 #include "grd.cdk"
 #include "lctl.cdk"
+#include "rstr.cdk"
 #include "step.cdk"
 
-      integer,external ::  step_calc,time2step
-
-      integer nrec,unf,err
+      integer nrec,unf,err,initial_step
       real :: sec
 !
 !-------------------------------------------------------------------
@@ -60,6 +60,7 @@
       Fcst_rstrt_S   = ''
       Fcst_bkup_S    = ''
       Fcst_spinphy_S = ''
+      Fcst_alarm_S = ''
 
       Step_dt          = -1.0
       Step_leapyears_L = .true.
@@ -91,34 +92,42 @@
       if ( Fcst_start_S  == '' ) Fcst_start_S  = '0H'
       if ( Fcst_end_S    == '' ) Fcst_end_S    = Fcst_start_S
 
-      err= min( time2step (Fcst_start_S, Step_dt, Lun_out, Lctl_step ), err)
-      err= min( time2step (Fcst_end_S  , Step_dt, Lun_out, Step_total), err)
-      err= min( time2step (Fcst_nesdt_S, Step_dt, Lun_out, Step_nesdt), err)
+      err= min( timestr2step (initial_step, Fcst_start_S, Step_dt), err)
+      err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
+      err= min( timestr2step (Step_nesdt  , Fcst_nesdt_S, Step_dt), err)
 
       if ( Fcst_rstrt_S  == '' ) then
-         Step_rsti= Step_total-Lctl_step+1
+         write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total-initial_step+1
       else
-         err= min( time2step (Fcst_rstrt_S, Step_dt, Lun_out, Step_rsti), err)
+         err = timestr_check(Fcst_rstrt_S)
       endif
       if ( Fcst_bkup_S  == '' ) then
-         Step_bkup= Step_total-Lctl_step+1
+         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total-initial_step+1
       else
-         err= min( time2step (Fcst_bkup_S, Step_dt, Lun_out, Step_bkup), err)
+         err = timestr_check(Fcst_bkup_S)
       endif
+
       if ( Fcst_gstat_S  == '' ) then
-         Step_gstat= Step_total-Lctl_step+1
+         Step_gstat= Step_total-initial_step+1
       else
-         err= min( time2step (Fcst_gstat_S, Step_dt, Lun_out, Step_gstat), err)
+         err= min( timestr2step (Step_gstat, Fcst_gstat_S, Step_dt), err)
       endif
       if ( Fcst_spinphy_S  == '' ) then
-         Step_spinphy= Step_total-Lctl_step+1
+         Step_spinphy= Step_total-initial_step+1
       else
-         err= min( time2step (Fcst_spinphy_S, Step_dt, Lun_out, Step_spinphy), err)
+         err= min( timestr2step (Step_spinphy, Fcst_spinphy_S, Step_dt), err)
+      endif
+      if ( Fcst_alarm_S  == '' ) then
+         Step_alarm= 600
+      else
+         err= min( timestr2step (Step_alarm, Fcst_alarm_S, Step_dt), err)
       endif
 
       if (err.lt.0) goto 9999
 
-      Step_delay= Lctl_step
+      Step_delay= initial_step
+
+      if (.not.Rstri_rstn_L) Lctl_step= initial_step
 
       if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
          if (Lun_out.gt.0) write(Lun_out,*)  &

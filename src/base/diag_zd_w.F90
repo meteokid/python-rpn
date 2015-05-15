@@ -17,7 +17,7 @@
 !
 
 !
-      subroutine diag_zd_w ( F_zd, F_w, F_u, F_v, F_t, F_s, &
+      subroutine diag_zd_w2( F_zd, F_w, F_xd, F_u, F_v, F_t, F_s, &
                              Minx,Maxx,Miny,Maxy, Nk, F_zd_L, F_w_L )
       implicit none
 #include <arch_specific.hf>
@@ -25,7 +25,8 @@
       integer Minx,Maxx,Miny,Maxy, Nk
       real    F_zd(Minx:Maxx,Miny:Maxy,Nk), F_w(Minx:Maxx,Miny:Maxy,Nk), &
               F_u (Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk), &
-              F_t (Minx:Maxx,Miny:Maxy,Nk), F_s(Minx:Maxx,Miny:Maxy)
+              F_t (Minx:Maxx,Miny:Maxy,Nk), F_s(Minx:Maxx,Miny:Maxy)   , &
+              F_xd(Minx:Maxx,Miny:Maxy,Nk)
       logical ::  F_zd_L,F_w_L
 !
 !authors
@@ -234,7 +235,6 @@
             c2=geomg_cyv_8(j-1)
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
-!               adv= 0.5 * ( geomg_invDX_8(i,j) *  &
                 adv= 0.5 * ( geomg_invDX_8(j) *  &
                     ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
@@ -244,6 +244,8 @@
               !pidot=omega
                pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
+              !ksidot=omega/pi
+               F_xd(i,j,k)=pidot/pi_t(i,j,k)
             end do
             end do
          end do

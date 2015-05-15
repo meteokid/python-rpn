@@ -40,22 +40,7 @@
 !
       if (.not. Lam_ctebcs_L) call nest_intt
 
-      if (Schm_theoc_L) then
-         if (north+south+west+east.ge.1) then
-            if ( Theo_case_S .eq. 'BUBBLE'   .or.    &
-                 Theo_case_S .eq. 'BUBBLE_G' .or.    &
-                 Theo_case_S .eq. '2_BUBBLES' ) then
-               call mirror ()
-            else
-               call nest_bcs_t0 ()
-            endif
-            call slabsym ()
-         endif
-      else
-
-         call nest_bcs_t0 ()
-
-      endif
+      call nest_bcs_t0 ()
 
 !**************************************
 ! Apply HORIZONTAL BOUNDARY CONDITIONS 

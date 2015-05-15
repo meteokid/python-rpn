@@ -88,7 +88,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
                               F_amaxy,k0,F_nk,F_nk_winds)
 
       if(adx_trapeze_L) then
-!$omp parallel
+!$omp parallel private (inv_cy_8)
 !$omp do
          do k=k0,F_nk
             do j=j0,jn

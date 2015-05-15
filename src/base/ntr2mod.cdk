@@ -1,0 +1,4 @@
+      character*16 NTR_runstrt_S
+      logical NTR_horzint_L
+      common /ntr2mod_C/ NTR_runstrt_S
+      common /ntr2mod_L/ NTR_horzint_L

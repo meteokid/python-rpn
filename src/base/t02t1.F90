@@ -42,11 +42,13 @@
 
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qt_list  = (/ 'QT0', 'QT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: zdt_list = (/ 'ZDT0', 'ZDT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: xdt_list = (/ 'XDT0', 'XDT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: qdt_list = (/ 'QDT0', 'QDT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2) :: tr_list
       integer i,istat
 !
@@ -54,13 +56,20 @@
 !      
       istat = gmm_shuffle( ut_list)
       istat = gmm_shuffle( vt_list)
-      istat = gmm_shuffle( wt_list)
       istat = gmm_shuffle( tt_list)
-      istat = gmm_shuffle(zdt_list)
       istat = gmm_shuffle( st_list)
+      istat = gmm_shuffle( wt_list)
 !
       if (.not. Schm_hydro_L) then
-         istat = gmm_shuffle(qt_list)
+         istat = gmm_shuffle( qt_list)
+      endif
+!
+      istat = gmm_shuffle(zdt_list)
+      if ( Schm_nolog_L ) then
+         istat = gmm_shuffle(xdt_list)
+         if (.not. Schm_hydro_L) then
+            istat = gmm_shuffle(qdt_list)
+         endif
       endif
 !
       do i=1,Tr3d_ntr

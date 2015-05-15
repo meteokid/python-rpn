@@ -67,6 +67,9 @@
       istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_zd_fin)'
       istatg=min(istat,istatg)
+      istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
+      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_xd_fin)'
+      istatg=min(istat,istatg)
       istat = gmm_get(gmmk_nest_s_fin_s,nest_s_fin)
       if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_s_fin)'
       istatg=min(istat,istatg)
@@ -96,7 +99,7 @@
                         'NEST/',':F',l_minx,l_maxx,l_miny,l_maxy,G_nk,F_datev_S)
       endif
 
-      call diag_zd_w ( nest_zd_fin, nest_w_fin      , &
+      call diag_zd_w2( nest_zd_fin, nest_w_fin, nest_xd_fin     , &
                        nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin, &
                        l_minx,l_maxx,l_miny,l_maxy, G_nk             , &
                        .not.Ana_zd_L, .not.Ana_w_L )

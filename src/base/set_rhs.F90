@@ -60,6 +60,8 @@
       gmmk_rhsf_s = 'RHSF'
       gmmk_rhsp_s = 'RHSP'
       gmmk_rhsb_s = 'RHSB'
+      gmmk_rhsx_s = 'RHSX'
+      gmmk_rhsq_s = 'RHSQ'
 !
       gmmk_ruw1_s = 'RUW1'
       gmmk_ruw2_s = 'RUW2'
@@ -72,10 +74,12 @@
       gmmk_orhsc_s = 'ORHC'
       gmmk_orhsw_s = 'ORHW'
       gmmk_orhsf_s = 'ORHF'
+      gmmk_orhsx_s = 'ORHX'
+      gmmk_orhsq_s = 'ORHQ'
 !
-      nullify (rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb)
+      nullify (rhsu,rhsv,rhst,rhsc,rhsw,rhsf,rhsp,rhsb,rhsx,rhsq)
       nullify (ruw1,rvw1,ruw2,rvw2)
-      nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf)
+      nullify (orhsu,orhsv,orhst,orhsc,orhsw,orhsf,orhsx,orhsq)
 !
       istat = gmm_create(gmmk_rhsu_s,rhsu,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsu)'
@@ -93,6 +97,10 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsp)'
       istat = gmm_create(gmmk_rhsb_s,rhsb,meta2d   , GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsb)'
+      istat = gmm_create(gmmk_rhsx_s,rhsx,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsx)'
+      istat = gmm_create(gmmk_rhsq_s,rhsq,meta3d_nk, GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(rhsq)'
 !
       istat = gmm_create(gmmk_ruw1_s,ruw1,meta3d_nk, GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(ruw1)'
@@ -115,6 +123,10 @@
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsw)'
       istat = gmm_create(gmmk_orhsf_s,orhsf,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsf)'
+      istat = gmm_create(gmmk_orhsx_s,orhsx,meta3d_nk,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsx)'
+      istat = gmm_create(gmmk_orhsq_s,orhsq,meta3d_nk,GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat)) print *,'set_rhs ERROR at gmm_create(orhsq)'
 !
       istat = gmm_get (gmmk_rhsw_s, rhsw)
       rhsw  = 0.

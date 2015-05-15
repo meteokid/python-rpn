@@ -36,6 +36,8 @@
       real, pointer, dimension (:,:,:) :: orhsc => null()
       real, pointer, dimension (:,:,:) :: orhsw => null()
       real, pointer, dimension (:,:,:) :: orhsf => null()
+      real, pointer, dimension (:,:,:) :: orhsx => null()
+      real, pointer, dimension (:,:,:) :: orhsq => null()
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
@@ -43,10 +45,12 @@
 #endif
 
       character(len=GMM_MAXNAMELENGTH) :: gmmk_orhsu_s, gmmk_orhsv_s, gmmk_orhst_s,&
-                                          gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s
+                                          gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s,&
+                                          gmmk_orhsx_s, gmmk_orhsq_s
 
       common /orh_n_gmm/ gmmk_orhsu_s, gmmk_orhsv_s, gmmk_orhst_s, &
-                         gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s
+                         gmmk_orhsc_s, gmmk_orhsw_s, gmmk_orhsf_s, &
+                         gmmk_orhsx_s, gmmk_orhsq_s
 
 !======================================================================
 

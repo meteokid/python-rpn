@@ -31,7 +31,7 @@
 
       call e_dynframe
 
-      call e_nml2bin 
+      call e_ntr2mod
 
       call e_stopntr2
 !

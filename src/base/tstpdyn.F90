@@ -73,39 +73,51 @@
 !
       gmmstat = gmm_get (gmmk_ut0_s, ut0)
       gmmstat = gmm_get (gmmk_vt0_s, vt0)
-      gmmstat = gmm_get (gmmk_wt0_s, wt0)
       gmmstat = gmm_get (gmmk_tt0_s, tt0)
       gmmstat = gmm_get (gmmk_st0_s, st0)
+      gmmstat = gmm_get (gmmk_wt0_s, wt0)
       gmmstat = gmm_get (gmmk_qt0_s, qt0)
       gmmstat = gmm_get (gmmk_zdt0_s, zdt0)
+      gmmstat = gmm_get (gmmk_xdt0_s, xdt0)
+      gmmstat = gmm_get (gmmk_qdt0_s, qdt0)
+      gmmstat = gmm_get (gmmk_fis0_s, fis0)
+
       gmmstat = gmm_get (gmmk_ut1_s, ut1)
       gmmstat = gmm_get (gmmk_vt1_s, vt1)
-      gmmstat = gmm_get (gmmk_wt1_s, wt1)
       gmmstat = gmm_get (gmmk_tt1_s, tt1)
       gmmstat = gmm_get (gmmk_st1_s, st1)
+      gmmstat = gmm_get (gmmk_wt1_s, wt1)
+      gmmstat = gmm_get (gmmk_qt1_s, qt1)
       gmmstat = gmm_get (gmmk_zdt1_s, zdt1)
+      gmmstat = gmm_get (gmmk_xdt1_s, xdt1)
+      gmmstat = gmm_get (gmmk_qdt1_s, qdt1)
+
       gmmstat = gmm_get (gmmk_orhsu_s, orhsu)
       gmmstat = gmm_get (gmmk_orhsv_s, orhsv)
-      gmmstat = gmm_get (gmmk_orhsc_s, orhsc)
       gmmstat = gmm_get (gmmk_orhst_s, orhst)
+      gmmstat = gmm_get (gmmk_orhsc_s, orhsc)
       gmmstat = gmm_get (gmmk_orhsf_s, orhsf)
-      gmmstat = gmm_get (gmmk_fis0_s, fis0)
       gmmstat = gmm_get (gmmk_orhsw_s, orhsw)
-      gmmstat = gmm_get (gmmk_qt1_s, qt1)
+      gmmstat = gmm_get (gmmk_orhsx_s, orhsx)
+      gmmstat = gmm_get (gmmk_orhsq_s, orhsq)
+
       gmmstat = gmm_get (gmmk_rhsu_s, rhsu)
       gmmstat = gmm_get (gmmk_rhsv_s, rhsv)
       gmmstat = gmm_get (gmmk_rhst_s, rhst)
       gmmstat = gmm_get (gmmk_rhsc_s, rhsc)
       gmmstat = gmm_get (gmmk_rhsf_s, rhsf)
+      gmmstat = gmm_get (gmmk_rhsw_s, rhsw)
+      gmmstat = gmm_get (gmmk_rhsx_s, rhsx)
+      gmmstat = gmm_get (gmmk_rhsq_s, rhsq)
       gmmstat = gmm_get (gmmk_rhsb_s, rhsb)
+
+      gmmstat = gmm_get (gmmk_ruw1_s, ruw1)
+      gmmstat = gmm_get (gmmk_rvw1_s, rvw1)
       gmmstat = gmm_get (gmmk_ruw2_s, ruw2)
       gmmstat = gmm_get (gmmk_rvw2_s, rvw2)
       gmmstat = gmm_get (gmmk_xct1_s, xct1)
       gmmstat = gmm_get (gmmk_yct1_s, yct1)
       gmmstat = gmm_get (gmmk_zct1_s, zct1)
-      gmmstat = gmm_get (gmmk_rhsw_s, rhsw)
-      gmmstat = gmm_get (gmmk_ruw1_s, ruw1)
-      gmmstat = gmm_get (gmmk_rvw1_s, rvw1)
 
       if (G_lam) then
          gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
@@ -137,8 +149,8 @@
          call timing_start ( 20, 'RHS      ' )
 
 !        Compute the right-hand sides of the governing equations
-         call rhs (orhsu, orhsv, orhsc, orhst, orhsw, orhsf    , &
-                   ruw1, rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,fis0, &
+         call rhs (orhsu, orhsv, orhsc, orhst, orhsw, orhsf, orhsx, orhsq, &
+                   ruw1,rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,xdt1,qdt1,fis0, &
                    l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
          call timing_stop (20)
@@ -202,7 +214,7 @@
          if ( G_lam .and. .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f     ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc ,&
-                   fis0, nl_b, l_minx,l_maxx,l_miny,l_maxy,&
+                   fis0, nl_b, xdt0, qdt0, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
          call timing_stop (23)
@@ -221,6 +233,7 @@
                     ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
                     rhsu, rhsv, rhst, rhsw, rhsf, rhsb        ,&
                     nl_u, nl_v, nl_t, nl_w, nl_f, nl_b        ,&
+                    xdt0, qdt0, rhsx, rhsq                    ,&
                     l_minx, l_maxx, l_miny, l_maxy            ,&
                     ni,nj,l_nk,i0, j0, k0, in, jn)
 

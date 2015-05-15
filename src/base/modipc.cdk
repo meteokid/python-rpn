@@ -1,5 +1,0 @@
-
-      logical horzint_L
-      namelist /modipc_cfgs/ Mod_runstrt_S, horzint_L, &
-                      Tr3d_name_S,Tr3d_wload,Tr3d_hzd, &
-                      Tr3d_mono,Tr3d_mass,Tr3d_ntr

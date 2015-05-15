@@ -28,6 +28,7 @@
                        F_s   , F_zd    , F_q  , F_nest_q  , &
                        F_ru  , F_rv    , F_rt , F_rw  , F_rf , F_rb, &
                        F_nu  , F_nv    , F_nt , F_nw  , F_nf , F_nb, &
+                       F_xd  , F_qd    , F_rx , F_rq  , &
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
       implicit none
 #include <arch_specific.hf>
@@ -42,6 +43,8 @@
                F_ru  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_rt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_rf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rb    (Minx:Maxx,Miny:Maxy)       , &
+               F_xd  (Minx:Maxx,Miny:Maxy,  Nk)  , F_qd    (Minx:Maxx,Miny:Maxy,  Nk)  , &
+               F_rx  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rq    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
@@ -133,22 +136,25 @@
       enddo
 !$omp enddo
 
-!     Compute w
-!     ~~~~~~~~~
-
+      if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nolog_L))) then
+!
+!        Compute w
+!        ~~~~~~~~~
 !$omp do
-      do k=k0t,l_nk
-         w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstr_8(k)/Dcst_grav_8
-         do j= j0, jn
-         do i= i0, in
-            Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
-            F_w(i,j,k) = w1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
-            + Ver_gama_8(k) * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
-                                     + Dcst_cappa_8 * Pbar ) )
+         do k=k0t,l_nk
+            w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstr_8(k)/Dcst_grav_8
+            do j= j0, jn
+            do i= i0, in
+               Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
+               F_w(i,j,k) = w1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
+               + Ver_gama_8(k) * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
+                                        + Dcst_cappa_8 * Pbar ) )
+            end do
+            end do
          end do
-         end do
-      end do
 !$omp enddo
+
+      endif
 
       if(.not.Schm_hydro_L) then
 
@@ -226,6 +232,31 @@
       enddo
 !$omp enddo
 
+      if(schm_nolog_L) then
+!$omp do
+         do k=k0t,l_nk
+         do j= j0, jn
+         do i= i0, in
+            F_xd(i,j,k)=Cstv_invT_8*Ver_b_8%t(k)*F_s(i,j)+F_zd(i,j,k)-F_rx(i,j,k)
+         end do
+         end do
+         end do
+!$omp enddo
+         if(.not.Schm_hydro_L) then
+!$omp do
+            do k=k0t,l_nk
+            kq=max(k,2)
+            do j= j0, jn
+            do i= i0, in
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+               F_qd(i,j,k)=Cstv_invT_8*qbar-F_rq(i,j,k)
+            end do
+            end do
+            end do
+!$omp enddo
+         endif
+      endif
+
 !     Compute FI' (into GP)
 !     ~~~~~~~~~~~
 
@@ -275,6 +306,18 @@
          enddo
       enddo
 !$omp enddo
+
+      if(Schm_nolog_L.and.Schm_hydro_L) then
+!$omp do
+         do k=k0t,l_nk
+            do j= j0, jn
+            do i= i0, in
+               F_w(i,j,k)=-F_xd(i,j,k)*Dcst_rgasd_8*F_t(i,j,k)/Dcst_grav_8
+            end do
+            end do
+         end do
+!$omp enddo
+      endif
 
       if(Schm_autobar_L) then
          F_t=Cstv_Tstr_8 ; F_zd=0. ! not necessary but safer

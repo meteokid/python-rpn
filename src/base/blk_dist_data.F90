@@ -88,6 +88,8 @@
 
          end do
 
+!      ww(:,:,F_nka_t)=0.
+!zd(:,:,F_nka_t)
       endif
 
  999  call gem_error(F_err,'blk_dist_data ','Problem reading file '//trim(fn))
@@ -138,17 +140,17 @@
                                                   iproc, tag, 'BLOC', err )
             if (ana_zd_L) then
                call local_data (buf ,blk_indx(iproc,5), zd ,nia,nja,F_nka_t,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t+F_diag_lvl-1), 'MPI_REAL', &
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_t, 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             if (ana_w_L ) then
                call local_data (buf ,blk_indx(iproc,5), ww ,nia,nja,F_nka_t,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_t+F_diag_lvl-1), 'MPI_REAL', &
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_t, 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             if (ana_q_L ) then
                call local_data (buf ,blk_indx(iproc,5), qq ,nia,nja,F_nka_m,iproc)
-               call RPN_COMM_send (buf, blk_indx(iproc,5)*(F_nka_m+F_diag_lvl-1), 'MPI_REAL', &
+               call RPN_COMM_send (buf, blk_indx(iproc,5)*F_nka_m, 'MPI_REAL', &
                                                        iproc, tag, 'BLOC', err )
             endif
             do n=1,F_ntra
@@ -191,7 +193,6 @@
             call RPN_COMM_recv ( wwn, cnt, 'MPI_REAL',0, &
                                  tag, 'BLOC', status, err )
          endif
-
          cnt= F_nga*F_nka_m
          if (ana_q_L ) then
             call RPN_COMM_recv ( qqn, cnt, 'MPI_REAL',0, &

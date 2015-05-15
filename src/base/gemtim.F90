@@ -25,23 +25,17 @@
 
       include 'step.cdk'
 
-      logical, save :: timini_L
-      data timini_L / .false. /
-
       integer, external :: get_max_rss
-      real    spJour,Jour
-      integer Used0,Used,SoftLim,HardLim,ppjour
-      integer maxJour,Hold_Rsti,ierr
-      save    Used0,ppJour,Jour
 
-      character date_S*8 ,time_S*10
-      character jour_S*11,heure_S*10
-      real          users,systs
-      real, save :: user0,syst0
-      DOUBLE PRECISION, save ::  START, END, ACCUM_w,ACCUM_u,ACCUM_s
+      character date_S*8 ,time_S*10, jour_S*11, heure_S*10
+      logical, save :: timini_L = .false.
+      integer Used,SoftLim,HardLim,maxJour,Hold_Rsti,ierr
+      integer, save :: Used0,ppJour
+      real          users,systs,spJour
+      real, save :: user0=0.0, syst0=0.0, Jour
+      DOUBLE PRECISION, save ::  START=-1.d0, END, avgtime(10)=0.d0, &
+                                 ACCUM_w=0.d0, ACCUM_u=0.d0, ACCUM_s=0.d0
       DOUBLE PRECISION omp_get_wtime
-      data user0,syst0,START / 0.0, 0.0, -1.d0 /
-      data ACCUM_w,ACCUM_u,ACCUM_s / 0.d0, 0.d0, 0.d0 /
 !
 !----------------------------------------------------------------
 !
@@ -66,7 +60,11 @@
       END = omp_get_wtime()
 
       if (timini_L) then
-         if (trim(from) =='CURRENT TIMESTEP') Step_maxwall = max(Step_maxwall,END-START)
+         if (trim(from) =='CURRENT TIMESTEP') then
+            avgtime(1:9) = avgtime(2:10)
+            avgtime(10)  = END-START
+            Step_maxwall = sum(avgtime) / 10.d0
+         endif
          write(unf,1000) 'TIME: '//jour_S//heure_S, END-START, users-user0, &
                           systs-syst0,get_max_rss(),from
          ACCUM_w= ACCUM_w + END-START
@@ -77,9 +75,7 @@
          Step_maxwall = -1.d0
       endif
 
-      user0 = users
-      syst0 = systs
-      START = END
+      user0= users  ;  syst0= systs  ;  START= END
 
       timini_L = .true.
 !

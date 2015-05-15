@@ -652,6 +652,8 @@
                       ttx, htx, nk_under,Out3_cubzt_L,  &
                       Out3_linbot, l_minx,l_maxx,l_miny,l_maxy,nk_src)
 
+        call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
+
         if (pngz.ne.0) then
            if (filt(pngz).gt.0)then
               call filter(w5,filt(pngz),coef(pngz),'G', .false., &
@@ -686,6 +688,7 @@
 !           Calculate THETAW TW (w5=TW_pres) (px_pres=PX)
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
                         l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
+            call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mthtaw4 (w5,hu_pres,w6, &
                            px_pres,satues_l, &
                            .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
@@ -700,6 +703,7 @@
 !           Calculate ES (w5=ES_pres,hu_pres=HU,w2=VT,px_pres=PX)
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
                         l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
+            call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mhuaes3 (w5, hu_pres,w6, &
                           px_pres,satues_l, &
                           l_ninj, nko, l_ninj)

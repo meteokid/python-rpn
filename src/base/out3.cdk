@@ -18,8 +18,6 @@
 !                    | filter coefficient (Out3_filtcoef)              |
 ! Out3_date          | date time stamp of the run                      |
 ! Out3_etik_S        | label to use for model run                      |
-! Out3_unit_S        | output name in units of steps or hours (P or H) |
-!                    | or days,minutes,seconds,(D,M,S)                 |
 ! Out3_ndigits       | minimum number used to count the units in       |
 !                    | output name (type is specified in Out3_unit_S   |
 ! Out3_cliph_L       | .true. to clip humidity variables on output     |
@@ -49,14 +47,14 @@
 ! Out3_zund          | list of levels for underground extrapolation    |
 ! Out3_filtpass      | number of filtering passes (see Out3_filt_s)    |
 ! Out3_filtcoef      | filter coefficient (see Out3_filt_s)            |
-! Out3_closetep      | requested number of steps to close output file  |
-! Out3_postfreq_S    | Post processing frequency                       |
-! Out3_postfreq      | Post processing frequency (in # of timesteps)   |
+! Out3_close_interval_S | interval of output file name change               |
+! Out3_unit_S           | output name in units from Out3_close_interval_S   |
+! Out3_postproc_fact    | Post processing frequency (in # of close_interval)|
 ! ---------------------------------------------------------------------
 #endif
 #include "dimout.cdk"
       character*16 Out3_xnbits_S(MAXELEM),Out3_filt_S(MAXELEM),&
-                   Out3_postfreq_S,Out3_closestep_S
+                   Out3_close_interval_S
       character*12 Out3_etik_S
       character*6  Out3_type_S
       character*4  Out3_unit_S
@@ -66,28 +64,29 @@
       logical Out3_fullplane_L, Out3_uencode_L, out3_sfcdiag_L
       integer Out3_nbitg, Out3_linbot
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
-      integer Out3_closestep,Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
-      integer Out3_date, Out3_postfreq, Out3_nblock
+      integer Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
+      integer Out3_date, Out3_postproc_fact, Out3_nblock
       integer, dimension(:  ), pointer :: Out3_outpe_x,Out3_outpe_y
       integer, dimension(:,:), pointer :: Out3_comyy
       integer Out3_lieb_nk, Out3_lieb_maxite
       real    Out3_filtcoef(MAXELEM)
       real    Out3_lieb_conv, Out3_lieb_levels(MAXELEM)
+      real    Out3_close_interval
 !
       common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
-      common / out3_c / Out3_type_S, Out3_unit_S, Out3_postfreq_S
-      common / out3_c / Out3_closestep_S
+      common / out3_c / Out3_type_S, Out3_unit_S
+      common / out3_c / Out3_close_interval_S
       common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L
       common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
       common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uencode_L
       common / Out3_l / Out3_cubww_L, Out3_flipit_L,Out3_debug_L
       common / Out3_l / Out3_newout_L,out3_sfcdiag_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
-      common / out3_i / Out3_filtpass_max,Out3_date,Out3_postfreq
+      common / out3_i / Out3_filtpass_max,Out3_date,Out3_postproc_fact
       common / Out3_i / Out3_nbitg,Out3_linbot
       common / Out3_i / Out3_nblock
-      common / Out3_i / Out3_ndigits, Out3_closestep,Out3_ip3
-      common / Out3_i / Out3_lieb_nk  , Out3_lieb_maxite
+      common / Out3_i / Out3_ndigits, Out3_close_interval, Out3_ip3
+      common / Out3_i / Out3_lieb_nk, Out3_lieb_maxite
       common / out3_r / Out3_filtcoef, Out3_lieb_conv, Out3_lieb_levels
       common / out3_p / Out3_comyy,Out3_outpe_x,Out3_outpe_y
 !

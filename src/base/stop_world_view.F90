@@ -70,7 +70,10 @@
 
       if (Lun_out.gt.0) call out_stat ()
 
-      if (.not. continue_L) err = clib_remove('gem_restart')
+      if (.not. continue_L) then
+         err = clib_remove('gem_restart')
+         err = clib_remove('gmm_restart')
+      endif
 
       call gemtim4 ( Lun_out, 'END OF RUN', .true. )
       call memusage ( Lun_out )
@@ -81,7 +84,7 @@
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
 
-      call rpn_comm_Barrier("grid", err)
+!      call rpn_comm_Barrier("grid", err)
       call rpn_comm_FINALIZE(err)
 
  34   format (i10.10)

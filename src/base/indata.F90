@@ -85,6 +85,8 @@
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(tt1)'
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(zdt1)'
+      istat = gmm_get(gmmk_xdt1_s,xdt1)
+      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(xdt1)'
       istat = gmm_get(gmmk_st1_s,st1)
       if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(st1)'
       istat = gmm_get(gmmk_fis0_s,fis0)
@@ -139,7 +141,7 @@
          minus = plus
       enddo
 
-      call diag_zd_w ( zdt1,wt1, ut1,vt1,tt1,st1, l_minx,l_maxx,&
+      call diag_zd_w2( zdt1,wt1,xdt1, ut1,vt1,tt1,st1, l_minx,l_maxx,&
                l_miny,l_maxy, G_nk, .not.Ana_zd_L, .not.Ana_w_L )
 
       if ( Grd_yinyang_L ) then

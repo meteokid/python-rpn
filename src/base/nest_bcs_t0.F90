@@ -44,75 +44,124 @@
 !
       istat = gmm_get(gmmk_nest_u_s ,nest_u )
       istat = gmm_get(gmmk_nest_v_s ,nest_v )
-      istat = gmm_get(gmmk_nest_w_s ,nest_w )
       istat = gmm_get(gmmk_nest_t_s ,nest_t )
-      istat = gmm_get(gmmk_nest_zd_s,nest_zd)
       istat = gmm_get(gmmk_nest_s_s ,nest_s )
+      istat = gmm_get(gmmk_nest_w_s ,nest_w )
+      istat = gmm_get(gmmk_nest_zd_s,nest_zd)
 
       istat = gmm_get(gmmk_ut0_s , ut0 )
       istat = gmm_get(gmmk_vt0_s , vt0 )
-      istat = gmm_get(gmmk_wt0_s , wt0 )
       istat = gmm_get(gmmk_tt0_s , tt0 )
-      istat = gmm_get(gmmk_zdt0_s,zdt0 )
       istat = gmm_get(gmmk_st0_s , st0 )
+      istat = gmm_get(gmmk_wt0_s , wt0 )
+      istat = gmm_get(gmmk_zdt0_s,zdt0 )
 
       if (.not.Schm_hydro_L) then
          istat = gmm_get(gmmk_nest_q_s,nest_q)
          istat = gmm_get(gmmk_qt0_s,qt0)
       endif
 
+      if ( Schm_nolog_L) then
+         istat = gmm_get(gmmk_nest_xd_s,nest_xd)
+         istat = gmm_get(gmmk_xdt0_s,xdt0 )
+         if (.not.Schm_hydro_L) then
+            istat = gmm_get(gmmk_nest_qd_s,nest_qd)
+            istat = gmm_get(gmmk_qdt0_s,qdt0)
+         endif
+      endif
+
       if (l_north) then
-         tt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_t (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
-         wt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_w (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
-         zdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_zd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
          ut0 (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_u (1:l_niu,l_nj-pil_n+1:l_nj ,1:G_nk)
          vt0 (1:l_ni ,l_nj-pil_n  :l_njv,1:G_nk) = nest_v (1:l_ni ,l_nj-pil_n  :l_njv,1:G_nk)
+         tt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_t (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
          st0 (1:l_ni ,l_nj-pil_n+1:l_nj) = nest_s (1:l_ni,l_nj-pil_n+1:l_nj)
-         if (.not. Schm_hydro_L) &
-         qt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1) = nest_q (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1)
+         wt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_w (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
+         if (.not. Schm_hydro_L) then
+            qt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1) = nest_q (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1)
+         endif
+
+         zdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_zd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
+         if ( Schm_nolog_L) then
+            xdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_xd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
+            if (.not. Schm_hydro_L) then
+               qdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)   = nest_qd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
+            endif
+         endif
       endif
 
       if (l_south) then
-         tt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_t (1:l_ni ,1:pil_s ,1:G_nk)
-         wt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_w (1:l_ni ,1:pil_s ,1:G_nk)
-         zdt0(1:l_ni ,1:pil_s ,1:G_nk) = nest_zd(1:l_ni ,1:pil_s ,1:G_nk)
          ut0 (1:l_niu,1:pil_s ,1:G_nk) = nest_u (1:l_niu,1:pil_s ,1:G_nk)
          vt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_v (1:l_ni ,1:pil_s ,1:G_nk)
+         tt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_t (1:l_ni ,1:pil_s ,1:G_nk)
          st0 (1:l_ni ,1:pil_s) = nest_s (1:l_ni,1:pil_s)
-         if (.not. Schm_hydro_L) &
-         qt0 (1:l_ni ,1:pil_s ,2:G_nk+1) = nest_q (1:l_ni ,1:pil_s ,2:G_nk+1)
+         wt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_w (1:l_ni ,1:pil_s ,1:G_nk)
+         if (.not. Schm_hydro_L) then
+            qt0 (1:l_ni ,1:pil_s ,2:G_nk+1) = nest_q (1:l_ni ,1:pil_s ,2:G_nk+1)
+         endif
+
+         zdt0(1:l_ni ,1:pil_s ,1:G_nk) = nest_zd(1:l_ni ,1:pil_s ,1:G_nk)
+         if ( Schm_nolog_L) then
+            xdt0(1:l_ni ,1:pil_s ,1:G_nk) = nest_xd(1:l_ni ,1:pil_s ,1:G_nk)
+            if (.not. Schm_hydro_L) then
+               qdt0(1:l_ni ,1:pil_s ,1:G_nk)   = nest_qd(1:l_ni ,1:pil_s ,1:G_nk)
+            endif
+         endif
       endif
 
       if (l_east) then
-         tt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_t (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
-         wt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_w (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
-         zdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_zd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
          ut0 (l_ni-pil_e  :l_niu,1:l_nj ,1:G_nk) = nest_u (l_ni-pil_e  :l_niu,1:l_nj ,1:G_nk)
          vt0 (l_ni-pil_e+1:l_ni ,1:l_njv,1:G_nk) = nest_v (l_ni-pil_e+1:l_ni ,1:l_njv,1:G_nk)
+         tt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_t (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
          st0 (l_ni-pil_e+1:l_ni ,1:l_nj) = nest_s (l_ni-pil_e+1:l_ni,1:l_nj)
-         if (.not. Schm_hydro_L) &
-         qt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1) = nest_q (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1)
+         wt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_w (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
+         if (.not. Schm_hydro_L) then
+            qt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1) = nest_q (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1)
+         endif
+
+         zdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_zd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
+         if ( Schm_nolog_L) then
+            xdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_xd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
+            if (.not. Schm_hydro_L) then
+               qdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)   = nest_qd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
+            endif
+         endif
       endif
 
       if (l_west) then
-         tt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_t (1:pil_w, 1:l_nj , 1:G_nk)
-         wt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_w (1:pil_w, 1:l_nj , 1:G_nk)
-         zdt0(1:pil_w, 1:l_nj , 1:G_nk) = nest_zd(1:pil_w, 1:l_nj , 1:G_nk)
          ut0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_u (1:pil_w, 1:l_nj , 1:G_nk)
          vt0 (1:pil_w, 1:l_njv, 1:G_nk) = nest_v (1:pil_w, 1:l_njv, 1:G_nk)
+         tt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_t (1:pil_w, 1:l_nj , 1:G_nk)
          st0 (1:pil_w, 1:l_nj) = nest_s (1:pil_w,1:l_nj)
-         if (.not. Schm_hydro_L) &
-         qt0 (1:pil_w, 1:l_nj, 2:G_nk+1) = nest_q (1:pil_w, 1:l_nj, 2:G_nk+1)
+         wt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_w (1:pil_w, 1:l_nj , 1:G_nk)
+         if (.not. Schm_hydro_L) then
+            qt0 (1:pil_w, 1:l_nj, 2:G_nk+1) = nest_q (1:pil_w, 1:l_nj, 2:G_nk+1)
+         endif
+
+         zdt0(1:pil_w, 1:l_nj , 1:G_nk) = nest_zd(1:pil_w, 1:l_nj , 1:G_nk)
+         if ( Schm_nolog_L) then
+            xdt0(1:pil_w, 1:l_nj , 1:G_nk) = nest_xd(1:pil_w, 1:l_nj , 1:G_nk)
+            if (.not. Schm_hydro_L) then
+               qdt0(1:pil_w, 1:l_nj, 1:G_nk)   = nest_qd(1:pil_w, 1:l_nj , 1:G_nk)
+            endif
+         endif
       endif
 
       if (Schm_opentop_L) then
-         wt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_w (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
-         tt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_t (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
-         zdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_zd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
          ut0 (1:l_niu,1:l_nj ,1:Lam_gbpil_t) = nest_u (1:l_niu,1:l_nj ,1:Lam_gbpil_t)
          vt0 (1:l_ni ,1:l_njv,1:Lam_gbpil_t) = nest_v (1:l_ni ,1:l_njv,1:Lam_gbpil_t)
-         if (.not. Schm_hydro_L) &
-         qt0 (1:l_ni,1:l_nj,2:Lam_gbpil_t) = nest_q (1:l_ni,1:l_nj,2:Lam_gbpil_t)
+         tt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_t (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
+         wt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_w (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
+         if (.not. Schm_hydro_L) then
+            qt0 (1:l_ni,1:l_nj,2:Lam_gbpil_t)     = nest_q (1:l_ni,1:l_nj,2:Lam_gbpil_t)
+         endif
+
+         zdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_zd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
+         if ( Schm_nolog_L) then
+            xdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_xd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
+            if (.not. Schm_hydro_L) then
+               qdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_qd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
+            endif
+         endif
       endif
 
       if (Lam_toptt_L) then

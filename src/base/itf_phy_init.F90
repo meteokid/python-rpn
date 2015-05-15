@@ -41,7 +41,7 @@
 #include "level.cdk"
 
       type(vgrid_descriptor) :: vcoord
-      integer dateo,err,zuip,ztip
+      integer err,zuip,ztip
       integer, dimension(:), pointer :: ip1m
       real :: zu,zt
 !
@@ -56,20 +56,18 @@
       err= 0
       err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
-      if (Tr3d_ntr_from_gemntr > 0) then
+      if (NTR_Tr3d_ntr > 0) then
          err= min(wb_put('itf_phy/READ_TRACERS', &
-              Tr3d_from_gemntr_S(1:Tr3d_ntr_from_gemntr)), err)
+              NTR_Tr3d_name_S(1:NTR_Tr3d_ntr)), err)
       endif
       call gem_error ( err,'itf_phy_init','phy_nml or WB_put' )
       
 ! Complete physics initialization (see phy_init for interface content)
 
-      call datp2f   ( dateo, Step_runstrt_S)
-
-      err= phy_init ( Path_phy_S, dateo, real(Cstv_dt_8), &
-              'model/Hgrid/lclphy','model/Hgrid/lclcore', &
-              'model/Hgrid/global','model/Hgrid/local'  , &
-                               G_nk+1, Ver_std_p_prof%m )
+      err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
+                      'model/Hgrid/lclphy','model/Hgrid/lclcore', &
+                      'model/Hgrid/global','model/Hgrid/local'  , &
+                                       G_nk+1, Ver_std_p_prof%m )
 
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)

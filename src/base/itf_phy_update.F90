@@ -168,7 +168,7 @@
       cnt = 0
       do k= 1, Tr3d_ntr
          if (trim(Tr3d_name_S(k)) == 'HU' .or.                          &
-             any(Tr3d_from_gemntr_S(1:Tr3d_ntr_from_gemntr)==trim(Tr3d_name_S(k))))&
+             any(NTR_Tr3d_name_S(1:NTR_Tr3d_ntr)==trim(Tr3d_name_S(k))))&
              cycle
          trname_S = 'TR/'//trim(Tr3d_name_S(k))//':P'
          istat = gmm_get(trim(trname_S),data3d)

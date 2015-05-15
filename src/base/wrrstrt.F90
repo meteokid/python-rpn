@@ -41,13 +41,10 @@
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
-#include "rstr.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
-#include "schm.cdk"
-#include "ifd.cdk"
-#include "zblen.cdk"
-#include "cstv.cdk"
+#include "tr3d.cdk"
+#include "ntr2mod.cdk"
 
       include "rpn_comm.inc"
 
@@ -61,37 +58,32 @@
 
       call split_on_hostid (RPN_COMM_comm('GRID'),me,howmany,newcomm)
 
+      call timing_start ( 33, 'RESTART' )
       do i=0,howmany-1
-
          if (i.eq.me) then
-            call timing_start ( 33, 'RESTART_1' )
 
             Lun_rstrt = 0
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
-            write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
-
-            if(Schm_theoc_L) write(Lun_rstrt) Zblen_hmin
+            write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
+            write(Lun_rstrt)  NTR_runstrt_S, NTR_horzint_L       , &
+                      NTR_Tr3d_name_S,NTR_Tr3d_wload,NTR_Tr3d_hzd, &
+                      NTR_Tr3d_mono,NTR_Tr3d_mass,NTR_Tr3d_ntr
 
             ier = fclos(Lun_rstrt)  
-            call timing_stop (33)
 
             !        Write Gmm-files
 
-            call timing_start ( 34, 'RESTART_2' )
             gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
-            call timing_stop (34)
-
-            call timing_start ( 35, 'RESTART_3' )
 
             ier = phy_restart ('W', .false.)
 
-            call timing_stop (35)
          endif
 
-         call rpn_comm_barrier (RPN_COMM_ALLGRIDS, ier)
+         call mpi_barrier (newcomm,ier)
 
       end do
+      call timing_stop (33)
 
  2000 format(/,'WRITING A RESTART FILE AT TIMESTEP #',I8, &
              /,'=========================================')

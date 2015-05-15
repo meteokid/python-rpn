@@ -13,8 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r e_dateo - to obtain date from either the given analysis (GLB run)
-!                or from the namelist key Mod_runstrt_S (LAM run)
+!**s/r e_dateo - obtain initial date from either the given analysis (GLB configs)
+!                or from the namelist key Step_runstrt_S
 !
       subroutine e_dateo
       implicit none
@@ -85,8 +85,8 @@
 !
  1001 format (/' Incorrect VALIDITY time in ',a,/' VALIDITY=',a,' INTENDED=',&
                  a,' -----ABORT-----'/)
- 1005 format(/' Pil_jobstrt_S and Pil_jobend_S must both', &
-             /' be specified in LAM configuration - ABORT -'/)
+ 1005 format(/' In LAM configuration: Pil_jobstrt_S and Pil_jobend_S must both', &
+             /' be specified when not specifying Step_runstrt_S - ABORT -'/)
  1006 format(/' Step_nesdt must ', &
              /' be specified in LAM configuration - ABORT -'/)
 !

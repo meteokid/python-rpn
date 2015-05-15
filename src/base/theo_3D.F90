@@ -31,12 +31,7 @@
 !
 !---------------------------------------------------------------------
 !
-      if (      Theo_case_S.eq.'BUBBLE' &
-           .or. Theo_case_S.eq.'BUBBLE_G' &
-           .or. Theo_case_S.eq.'2_BUBBLES') then
-         call bubble()
-!
-      else if ( Theo_case_S.eq.'MTN_SCHAR'  &
+      if ( Theo_case_S.eq.'MTN_SCHAR'  &
            .or. Theo_case_S.eq.'MTN_SCHAR2' &
            .or. Theo_case_S.eq.'MTN_PINTY' &
            .or. Theo_case_S.eq.'MTN_PINTY2' &

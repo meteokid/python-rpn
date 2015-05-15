@@ -17,6 +17,7 @@
 !
 
       subroutine out_outdir (upperlimit)
+      use timestr_mod, only: timestr_prognum,timestr_unitfact
       implicit none
 #include <arch_specific.hf>
 
@@ -27,6 +28,8 @@
 !REVISION
 ! v4_14 - Desgagne M.      - Initial version
 
+#include <rmnlib_basics.hf>
+#include "cstv.cdk"
 #include "grd.cdk"
 #include "out.cdk"
 #include "out3.cdk"
@@ -36,6 +39,10 @@
 #include "step.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
+      
+!!$      real(RDOUBLE),parameter :: SECDAY  = 86400.0d0
+!!$      real(RDOUBLE),parameter :: SECHOUR = 3600.0d0
+!!$      real(RDOUBLE),parameter :: SECMIN  = 60.0d0
 
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
                                   FMT=' ', last_S=' '
@@ -43,7 +50,9 @@
       character*7  blocxy_S
       character*2  digits_S
       logical flag
-      integer err,last_step_post,flag_step_post,stepno,timing,ndigits,remainder
+      integer err,last_step_post,flag_step_post,stepno,timing,ndigits,remainder,prognum,prognum1
+      real :: interval
+      real(RDOUBLE) :: fatc_8
 !
 !----------------------------------------------------------------------
 !
@@ -51,24 +60,27 @@
 
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
 
-      stepno = max(Step_kount,1)
-      if (Out3_postfreq .gt. 0) then
-         last_step_post = stepno / Out3_postfreq
-         last_step_post = (last_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
-      else
+      if (Out3_postproc_fact <= 0) then
          last_step_post = upperlimit
-      endif
-
-      stepno = stepno + 1
-      if (Out3_postfreq .gt. 0) then
-         flag_step_post = stepno / Out3_postfreq
-         flag_step_post = (flag_step_post+min(1,mod(stepno, Out3_postfreq))) * Out3_postfreq
-      else
          flag_step_post = upperlimit
-      endif
+         Out_post_L = .false.
+      else
+         interval = Out3_close_interval * Out3_postproc_fact
+         stepno = max(Step_kount,1)
+         err = timestr_prognum(prognum ,Out3_unit_S,interval,Out_dateo,&
+                               float(Out_deet),stepno  ,Out_endstepno)
+         err = timestr_prognum(prognum1,Out3_unit_S,interval,Out_dateo,&
+                               float(Out_deet),stepno+1,Out_endstepno)
+         Out_post_L = (prognum1 > prognum .or. stepno == Out_endstepno)
 
-      Out_post_L     = (flag_step_post.gt.last_step_post)
-      last_step_post = min(last_step_post+Step_delay,upperlimit)
+         if (Out3_unit_S(1:3) == 'MON') then
+            last_step_post = prognum
+         else
+            fatc_8 = timestr_unitfact(Out3_unit_S,Cstv_dt_8)
+            last_step_post = nint(dble(prognum) * fatc_8)
+            last_step_post = min(last_step_post+Step_delay,upperlimit)
+         endif
+      endif
 
 ! These next few lines will serve soon in establishing
 ! a self adjustable lenght for last_S which will replace postjob_S

@@ -36,7 +36,7 @@
 
       integer, external :: gem_nml,gemdm_config,grid_nml2, &
                            adx_nml,adx_config            , &
-                           RPN_COMM_bloc,step_nml,bin2com
+                           RPN_COMM_bloc,step_nml,from_ntr
       character*50 LADATE,dumc1_S
       integer ierr,err(8),f1,f2,f3,f4,n1,n2,n3,n4,n5,n6,n7
 !
@@ -65,18 +65,18 @@
 ! Read namelists from file Path_nml_S
 !
          err(1) = grid_nml2   (Path_nml_S,G_lam)
-         err(2) = bin2com ()
-         err(3) = step_nml    (Path_nml_S)
-         err(4) = gem_nml     (Path_nml_S)
-         err(5) = adx_nml     (Path_nml_S)
-			
+         err(2) = step_nml    (Path_nml_S)
+         err(3) = gem_nml     (Path_nml_S)
+         err(4) = adx_nml     (Path_nml_S)
+         err(5) = from_ntr ()
+
       endif
 
       call gem_error(minval(err(:)),'set_world_view','Error reading nml')
 !
 ! Read physics namelist
 !
-		call itf_phy_nml
+      call itf_phy_nml
 !
 ! Establish final configuration
 !

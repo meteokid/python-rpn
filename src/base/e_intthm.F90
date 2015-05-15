@@ -64,7 +64,8 @@
       character*4 vhh,vtt,dumc
       logical horinterp_L
       integer i,k,kk,nis,njs,nks,ng,code_h,keyt,nic,njc,nkc,err
-      integer ip1_qt(lv-1)
+      integer ip1_qt(lv-1),ip1_gz,kind
+      real zip1
       real*8 c1, c2
       real, parameter :: pref=100000.
       real, dimension (:  ), allocatable :: p0,wk2,rna_tlev
@@ -203,8 +204,10 @@
             enddo
          endif
 
-         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',ip1_qt(lv-1),-1,-1,' ',&
-                                        ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
+         call convip ( na(1) , zip1, kind, -1, dumc, .false. )
+         call convip ( ip1_gz, 1.  , kind, +2, ''  , .true.  )
+         code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'GZ  ',ip1_gz,-1,-1,' ',&
+                                 ' ',.false.,.false.,'CUBIC',e_fu_anal,6)
          if (code_h.lt.0) then
             code_h= e_rdhint3 (gzn,dstf_gid,nis,njs,'ME  ',0,-1,-1,' ',&
                                 ' ',.false.,.false.,'CUBIC',e_fu_anal,6)

@@ -45,10 +45,6 @@
 
       call tracers
 
-! Read restart if present
-
-      call rdrstrt
-
 ! Setup commons
 
       call set_cn1

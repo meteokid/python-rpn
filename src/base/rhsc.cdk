@@ -42,6 +42,8 @@
       real, pointer, dimension (:,:,:) :: rvw1 => null()
       real, pointer, dimension (:,:,:) :: ruw2 => null()
       real, pointer, dimension (:,:,:) :: rvw2 => null()
+      real, pointer, dimension (:,:,:) :: rhsx => null()
+      real, pointer, dimension (:,:,:) :: rhsq => null()
 
 #if !defined(GMM_IS_OK)
 #define GMM_IS_OK(errcode) (errcode >= 0)
@@ -50,8 +52,10 @@
 
       character(len=GMM_MAXNAMELENGTH) :: gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s,&
                                           gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s,&
-                                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+                                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s,&
+                                          gmmk_rhsx_s,gmmk_rhsq_s
 
       common /rhsc_n_gmm/ gmmk_rhsu_s,gmmk_rhsv_s,gmmk_rhst_s,gmmk_rhsc_s, &
                           gmmk_rhsw_s,gmmk_rhsf_s,gmmk_rhsp_s,gmmk_rhsb_s, &
-                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s
+                          gmmk_ruw1_s,gmmk_rvw1_s,gmmk_ruw2_s,gmmk_rvw2_s, &
+			  gmmk_rhsx_s,gmmk_rhsq_s

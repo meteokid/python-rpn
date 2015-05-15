@@ -14,63 +14,33 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r rdrstrt - Read the restart file
-!
 
-!
       subroutine rdrstrt ()
-      use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     M. Desgagne - Mars 2000
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Desgagne M.       - introduce WA files
-! v2_30 - Dugas B.          - call ouvrstrt to open restrart file
-! v2_30 - Corbeil L.        - Added reading of pres_surf and pres_top
-! v2_31 - Desgagne M.       - Add Tr2d tracers
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_21 - Valcke, S.        - Oasis coupling: Removed waread of c_cplg_step
-! v3_21 - Lee V.            - Remove Tr2d tracers
-! v3_30 - Desgagne M.       - restart for coupling
-! v3_30 - Desgagne & Winger - Read one global binary restart file if existing
-! v3_31 - Lee V.            - bugfix for restart for LAM BCS
-! v3_31 - Desgagne M.       - new coupling interface to OASIS
-! v3_31 - Desgagne M.       - restart with physics BUSPER
-! v4_05 - Lepine M.         - VMM replacement with GMM
 
-#include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "init.cdk"
-#include "rstr.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
-#include "schm.cdk"
-#include "zblen.cdk"
-#include "cstv.cdk"
+#include "tr3d.cdk"
+#include "ntr2mod.cdk"
 
-      integer, external :: fclos,wkoffit
-      integer  ier
 !
 !     ---------------------------------------------------------------
 !
-      if (Rstri_rstn_L) then
-
-         read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L,Cstv_ptop_8
-         
-         if(Schm_theoc_L) read(Lun_rstrt) Zblen_hmin
-         
-         close (Lun_rstrt)
-         
-         ier = fclos(Lun_rstrt)  
-         
-      endif
-
-      ier= wb_put('model/Init/mode'    ,Init_mode_L  , WB_REWRITE_MANY)
-
-      ier= phy_restart ('R', .false.)
+      rewind (Lun_rstrt)
+      read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
+      read (Lun_rstrt) NTR_runstrt_S, NTR_horzint_L, &
+        NTR_Tr3d_name_S,NTR_Tr3d_wload,NTR_Tr3d_hzd, &
+        NTR_Tr3d_mono,NTR_Tr3d_mass,NTR_Tr3d_ntr
+      close(Lun_rstrt)
+      call fclos(Lun_rstrt) 
 !
 !     ---------------------------------------------------------------
 !      

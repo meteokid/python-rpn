@@ -289,7 +289,7 @@
 !$omp do
          do j= j0, jn
          do i= i0, in
-            F_rb(i,j) = F_rt(i,j,k0t) - Ver_ikt_8*(F_rb(i,j) - w1*F_nest_t(i,j,k0t))
+            F_rb(i,j) = F_rt(i,j,k0t) - Ver_ikt_8*(F_rb(i,j) - w1*(F_nest_t(i,j,k0t)-Ver_Tstr_8(k0t)))
             F_rc(i,j,k0  ) = F_rc(i,j,k0  ) - Ver_cstp_8 * F_rb(i,j)
          end do
          end do

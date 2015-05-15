@@ -39,11 +39,10 @@
       integer cte_ok,istat
       logical set_dcst_8
       external set_dcst_8
-      integer  fnom,gem_nml,bubble_cfg,mtn_cfg,adx_nml
-      external fnom,gem_nml,bubble_cfg,mtn_cfg,adx_nml
+      integer  fnom,gem_nml,mtn_cfg,adx_nml
+      external fnom,gem_nml,mtn_cfg,adx_nml
 !
       integer k, unf, status, err, nrec
-      character*16  dumc_S
 !*
 !     ---------------------------------------------------------------
       cte_ok = 0
@@ -73,11 +72,7 @@
       read (unf, nml=theo_cfgs, end = 9000, err=9000)
 !
 !
-      if (      Theo_case_S .eq. 'BUBBLE' &
-           .or. Theo_case_S .eq. 'BUBBLE_G' &
-           .or. Theo_case_S .eq. '2_BUBBLES') then
-         err = bubble_cfg (unf)
-      elseif (  Theo_case_S .eq. 'MTN_SCHAR' &
+      if (  Theo_case_S .eq. 'MTN_SCHAR' &
            .or. Theo_case_S .eq. 'MTN_SCHAR2' &
            .or. Theo_case_S .eq. 'MTN_PINTY' &
            .or. Theo_case_S .eq. 'MTN_PINTY2' &
@@ -96,8 +91,6 @@
       call fclos (unf)
       if (err.lt.0) goto 9999
 !
-      call low2up  (Hzd_type_S,dumc_S)
-      Hzd_type_S = dumc_S
 
       if (Lun_out.gt.0) write (Lun_out, 7050) Theo_case_S
       status=1

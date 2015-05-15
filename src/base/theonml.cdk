@@ -16,11 +16,9 @@
 #include "schm.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
-#include "hzd.cdk"
 #include "eigv.cdk"
 #include "vspng.cdk"
 #include "init.cdk"
-#include "bubble.cdk"
 #include "mtn.cdk"
 #include "zblen.cdk"
 #include "vtopo.cdk"
@@ -28,49 +26,25 @@
 #include "dcst.cdk"
 #include "ptopo.cdk"
 #include "sol.cdk"
+#include "theo_dif.cdk"
 !
-      namelist /theo_cfgs/ Theo_case_S
-      namelist /theo_cfgs/ Out3_etik_S, Lctl_debug_L
+      namelist /theo_cfgs/ Theo_case_S, Lctl_debug_L
 
-      namelist /bubble_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
-      namelist /bubble_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
-      namelist /bubble_cfgs/ Lam_ctebcs_L
-      namelist /bubble_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
-      namelist /bubble_cfgs/ Step_total, Step_rsti, Step_gstat
-      namelist /bubble_cfgs/ Hyb, Grd_rcoef, Pres_ptop
-      namelist /bubble_cfgs/ Schm_hydro_L
-      namelist /bubble_cfgs/ Schm_itcn
-      namelist /bubble_cfgs/ Schm_itnlh, Schm_itraj
-      namelist /bubble_cfgs/ Schm_adcub_L
-      namelist /bubble_cfgs/ Cstv_dt_8, Cstv_ptop_8, Cstv_tstr_8
-      namelist /bubble_cfgs/ Cstv_bA_8
-      namelist /bubble_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
-      namelist /bubble_cfgs/ Vspng_coeftop
-      namelist /bubble_cfgs/ Vspng_nk
-      namelist /bubble_cfgs/ bb_dpth,  bb_radius,  bb_xcntr,  bb_zcntr
-      namelist /bubble_cfgs/ bb_dpth2, bb_radius2, bb_zcntr2
-      namelist /bubble_cfgs/ bb_isoth, Zblen_L, Zblen_spngthick
-      namelist /bubble_cfgs/ Zblen_spngtt_L, Vtopo_start, Vtopo_ndt
-
-      namelist /mtn_cfgs/ Grd_ni, Grd_nj, G_nk, Grd_nila, Grd_njla
-      namelist /mtn_cfgs/ Grd_dx, Grd_dy, G_halox, G_haloy
-      namelist /mtn_cfgs/ Lam_ctebcs_L
+      namelist /mtn_cfgs/ Out3_etik_S,Out3_close_interval_S
+      namelist /mtn_cfgs/ Grd_ni, Grd_nj, G_nk
+      namelist /mtn_cfgs/ Grd_dx, Grd_dy
       namelist /mtn_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
-      namelist /mtn_cfgs/ Step_total, Step_rsti, Step_gstat
-      namelist /mtn_cfgs/ Hyb, Grd_rcoef, Pres_ptop
+      namelist /mtn_cfgs/ Step_total, Step_gstat
+      namelist /mtn_cfgs/ Grd_rcoef
       namelist /mtn_cfgs/ Schm_hydro_L
-      namelist /mtn_cfgs/ Schm_itcn
-      namelist /mtn_cfgs/ Schm_itnlh, Schm_itraj
-      namelist /mtn_cfgs/ Schm_adcub_L
+      namelist /mtn_cfgs/ Schm_itcn, Schm_itnlh
       namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
       namelist /mtn_cfgs/ Cstv_tstr_8
-      namelist /mtn_cfgs/ Hzd_type_S, Hzd_pwr, Hzd_lnr
-      namelist /mtn_cfgs/ Vspng_coeftop
-      namelist /mtn_cfgs/ Vspng_nk
+      namelist /mtn_cfgs/ hdif_pwr, hdif_lnr
       namelist /mtn_cfgs/ mtn_tzero,mtn_nstar,mtn_flo,mtn_hwx
-      namelist /mtn_cfgs/ mtn_hwx1, mtn_hght, Zblen_L, Zblen_spngthick
-      namelist /mtn_cfgs/ Zblen_spngtt_L, Vtopo_start
-      namelist /mtn_cfgs/ Vtopo_ndt, Lctl_rxstat_S
+      namelist /mtn_cfgs/ mtn_hwx1, mtn_hght
+      namelist /mtn_cfgs/ Zblen_L, Zblen_spngthick, Zblen_spngtt_L
+      namelist /mtn_cfgs/ Vtopo_start, Vtopo_ndt
       namelist /mtn_cfgs/ G_periodx, G_periody
       namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L
       namelist /mtn_cfgs/ Sol_type_S

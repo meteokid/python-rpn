@@ -12,12 +12,14 @@
 !--------------------|-------------------------------------------------|
 !  ut1               | U: x component of velocity                      |
 !  vt1               | V: y component of velocity                      |
-!  wt1               | w: z component of velocity                      |
 !  tt1               | T: temperature                                  |
-! zdt1               | Zdot: generalized vertical velocity             |
 !  st1               | s: log of surface pressure minus a constant     |
-!--------------------|-------------------------------------------------|
+!  wt1               | w:      dz/dt                                   |
 !  qt1               | q: log of non-hydrostatic perturbation pressure |
+!--------------------|-------------------------------------------------|
+! zdt1               | Zetadot:dZeta/dt: generalized vertical velocity |
+! xdt1               |         dlnpi/dt                                |
+! qdt1               | qdot:   dq/dt                                   |
 !--------------------|-------------------------------------------------|
 ! trt1               | passive tracer(s)                               |
 !----------------------------------------------------------------------|
@@ -28,14 +30,15 @@
 !
 #endif
 
-      real, pointer, dimension (:,:,:) :: ut1  => null()
-      real, pointer, dimension (:,:,:) :: vt1  => null()
-      real, pointer, dimension (:,:,:) :: wt1  => null()
-      real, pointer, dimension (:,:,:) :: tt1  => null()
+      real, pointer, dimension (:,:,:) ::  ut1 => null()
+      real, pointer, dimension (:,:,:) ::  vt1 => null()
+      real, pointer, dimension (:,:,:) ::  tt1 => null()
+      real, pointer, dimension (:,:)   ::  st1 => null()
+      real, pointer, dimension (:,:,:) ::  wt1 => null()
+      real, pointer, dimension (:,:,:) ::  qt1 => null()
       real, pointer, dimension (:,:,:) :: zdt1 => null()
-      real, pointer, dimension (:,:,:) :: qt1  => null()
-      real, pointer, dimension (:,:,:) :: wup  => null()
-      real, pointer, dimension (:,:)   :: st1  => null()
+      real, pointer, dimension (:,:,:) :: xdt1 => null()
+      real, pointer, dimension (:,:,:) :: qdt1 => null()
       real, pointer, dimension (:)     :: xct1 => null()
       real, pointer, dimension (:)     :: yct1 => null()
       real, pointer, dimension (:)     :: zct1 => null()
@@ -45,12 +48,14 @@
       integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_wup_s, gmmk_xct1_s, gmmk_yct1_s, &
-                              gmmk_zct1_s, gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s, &
-                              gmmk_st1_s , gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_xct1_s, gmmk_yct1_s,gmmk_zct1_s, &
+                              gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s , &
+                              gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s, &
+                              gmmk_xdt1_s, gmmk_qdt1_s
 
-      common /vt1_n_gmm/ gmmk_wup_s, gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, &
+      common /vt1_n_gmm/      gmmk_xct1_s, gmmk_yct1_s, gmmk_zct1_s, &
                               gmmk_wt1_s , gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s, &
-                              gmmk_qt1_s , gmmk_ut1_s, gmmk_vt1_s
+                              gmmk_qt1_s , gmmk_ut1_s, gmmk_vt1_s, &
+                              gmmk_xdt1_s, gmmk_qdt1_s
 
       

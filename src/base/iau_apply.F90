@@ -32,7 +32,6 @@ subroutine iau_apply2(F_kount)
 #include <gmm.hf>
 #include <msg.h>
 #include "dcst.cdk"
-#include "modconst.cdk"
 #include "cstv.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
@@ -70,7 +69,7 @@ subroutine iau_apply2(F_kount)
    call timing_start(50, 'IAU      ')
    call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
-   call datp2f(dateo,Mod_runstrt_S)
+   call datp2f(dateo,Step_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
    call incdatr(datev,dateo,dble(iau_vtime)/3600.d0)
    call datf2p(datev_S,datev)

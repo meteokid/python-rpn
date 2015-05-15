@@ -43,9 +43,8 @@
 
       integer i,j,k,i0,in,j0,jn
 
-      zblen_max=Ver_a_8%t(l_nk+1)*(1.-Zblen_hmin/(287.*290.))
-      ! Pour valider (mettre a Cstv_ztop_8 autrement?)
-      zblen_top=0.5d0*(Ver_a_8%m(1)+Cstv_ztop_8)
+      zblen_max=Cstv_Zsrf_8*(1.-Zblen_hmin/(287.*290.))
+      zblen_top=Cstv_ztop_8
       fact=1.d0
       if(Theo_case_S .eq. 'MTN_SCHAR' ) then
          fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(Dcst_rayt_8*Dcst_pi_8/180.))

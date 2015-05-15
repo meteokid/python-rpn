@@ -83,6 +83,7 @@
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
       if (G_lam) Schm_trapeze_L  = .true.
+      Schm_nolog_L    = .false.
       Schm_cub_traj_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
@@ -173,9 +174,8 @@
       Out3_lieb_maxite = 100
 
       Out3_etik_S    = 'GEMDM'
-      Out3_unit_S    = ' '
-      Out3_closestep_S= ""
-      Out3_postfreq_S= ''
+      Out3_close_interval_S= "" !# Out3_closestep_S= ""
+      Out3_postproc_fact = 0    !# Out3_postfreq_S= ''
       Out3_ndigits   = 3
       Out3_ip3       = 0
       Out3_nbitg     = 16

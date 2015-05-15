@@ -35,7 +35,6 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "grd.cdk"
-#include "modconst.cdk"
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
@@ -48,7 +47,7 @@
 !     ---------------------------------------------------------------
 !
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
-      call incdatsd (datev,Mod_runstrt_S,dayfrac)
+      call incdatsd (datev,Step_runstrt_S,dayfrac)
 
       if (Lun_out.gt.0) write (6,900) datev
 
@@ -78,7 +77,7 @@
 
       do while (Step_kount .lt. stepf)
 
-         seconds_since= model_timeout_alarm(600)
+         seconds_since= model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
          if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,stepf
@@ -111,7 +110,7 @@
 
       end do
 
-      seconds_since= model_timeout_alarm(600)
+      seconds_since= model_timeout_alarm(Step_alarm)
 
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 

@@ -23,19 +23,16 @@
       Grd_yinyang_S = ''
       if (clib_getenv ('GEM_YINYANG',ndomains_S).ge.0) &
       Grd_yinyang_L = .true.
+      Lun_out=6
 
       err = grid_nml2 ('./gem_settings.nml',G_lam)
       if (err .lt. 0) goto 987
-      Lun_out=6
       err = grid_nml2 ('print',G_lam)
-      Lun_out=0
 
       err = gem_nml   ('./gem_settings.nml')
       if (err .lt. 0) goto 987
       err = gemdm_config ()
       if (err .lt. 0) goto 987
-
-      Lun_out=6
 
       write (6,'(/a)') '  ====> READING npex, npey from STDIN:'
       read(5,*) npex, npey

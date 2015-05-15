@@ -38,7 +38,6 @@
 #include "init.cdk"
 #include "schm.cdk"
 #include "rstr.cdk"
-#include "modconst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "clim.cdk"
@@ -72,7 +71,7 @@
       unf = 0
 !
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
-      call incdatsd (datev,Mod_runstrt_S,dayfrac)
+      call incdatsd (datev,Step_runstrt_S,dayfrac)
 
       fn='restart_BUSPER'
       if (F_spin_L) fn= 'BUSPER4spinphy_'//trim(datev)
@@ -118,7 +117,7 @@
       Rstri_user_busper_L = .false.
       have_userbus_L = (clib_fileexist(trim(Path_input_S)//'/BUSPER.tar') == CLIB_OK .and. Step_kount == 0)
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
-      call incdatsd (datev,Mod_runstrt_S,dayfrac)
+      call incdatsd (datev,Step_runstrt_S,dayfrac)
 
 !     Check for possible busper flavours and completeness
 

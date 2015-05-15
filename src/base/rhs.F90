@@ -16,9 +16,9 @@
 !*s/r rhs - compute the right-hand sides: Ru, Rv, Rc, Rt, Rw, Rf,
 !            save the results for next iteration in the o's
 !
-      subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
-                       F_ruw1,F_rvw1,F_u,F_v,F_w,F_t,F_s,F_zd  , &
-                       F_q,   F_fis, Minx,Maxx,Miny,Maxy, Nk )
+      subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf,F_orx,F_orq, &
+                       F_ruw1,F_rvw1,F_u,F_v,F_w,F_t,F_s,F_zd,F_q,F_xd,F_qd, &
+                              F_fis, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
 
@@ -26,9 +26,11 @@
       real F_oru   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,  Nk), &
            F_orc   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_ort   (Minx:Maxx,Miny:Maxy,  Nk), &
            F_orw   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orf   (Minx:Maxx,Miny:Maxy,  Nk), &
+           F_orx   (Minx:Maxx,Miny:Maxy,  Nk)  ,F_orq   (Minx:Maxx,Miny:Maxy,  Nk), &
            F_ruw1  (Minx:Maxx,Miny:Maxy,  Nk)  ,F_rvw1  (Minx:Maxx,Miny:Maxy,  Nk), &
            F_u     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_v     (Minx:Maxx,Miny:Maxy,  Nk), &
            F_w     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_t     (Minx:Maxx,Miny:Maxy,  Nk), &
+           F_xd    (Minx:Maxx,Miny:Maxy,  Nk)  ,F_qd    (Minx:Maxx,Miny:Maxy,  Nk), &
            F_s     (Minx:Maxx,Miny:Maxy)       ,F_zd    (Minx:Maxx,Miny:Maxy,  Nk), &
            F_q     (Minx:Maxx,Miny:Maxy,2:Nk+1),F_fis   (Minx:Maxx,Miny:Maxy)
 
@@ -68,7 +70,7 @@
       integer :: i0u, inu, j0v, jnv
       integer :: i, j, k, km, kq, kp, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, barz, barzp, &
-              u_interp, v_interp, t_interp, mu_interp, &
+              u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
               xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), pointer :: BsPq, FI, MU
       save MU
@@ -147,6 +149,7 @@
       endif
 
 !$omp parallel private(km,kq,kp,barz,barzp, &
+!$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
 !$omp     dlnTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
 
 !$omp do
@@ -164,6 +167,7 @@
       do k = 1,l_nk
       km=max(k-1,1)
       kp=min(k+1,l_nk)
+      kq=max(k,2)
 
 !********************************
 ! Compute Ru: RHS of U equation *
@@ -220,24 +224,43 @@
 ! Compute Rw: RHS of  w equation            *
 !********************************************
 
-      if (G_lam) then
-         xtmp_8(:,:) = one
+
+      if (Schm_nolog_L) then
+         do j= j0, jn
+         do i= i0, in
+            BsPqbarz = Ver_wp_8%t(k)*BsPq(i,j,k+1)+Ver_wm_8%t(k)*BsPq(i,j,k)
+            F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)/Ver_Tstr_8(k)-one - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
+                         + Cstv_Beta_8 * Dcst_cappa_8 * (F_zd(i,j,k)+(F_t(i,j,k)/Ver_Tstr_8(k)-one)*(F_xd(i,j,k)+F_qd(i,j,k)))
+            F_orx(i,j,k) = Cstv_invT_8 * Ver_b_8%t(k)*F_s(i,j) &
+                         + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
+            F_orq(i,j,k) = Cstv_invT_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
+                         + Cstv_Beta_8 * F_qd(i,j,k)
+         end do
+         end do
+      else
+         if (G_lam) then
+            xtmp_8(:,:) = one
+         endif
+         do j = j0, jn
+         do i = i0, in
+            xtmp_8(i,j) = F_t(i,j,k) / Ver_Tstr_8(k)
+         end do
+         end do
+         call vlog( ytmp_8, xtmp_8, nij )
+         do j= j0, jn
+         do i= i0, in
+            BsPqbarz = Ver_wp_8%t(k)*BsPq(i,j,k+1)+Ver_wm_8%t(k)*BsPq(i,j,k)
+            F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
+                         + Cstv_Beta_8 * Dcst_cappa_8 * F_zd(i,j,k)
+         end do
+         end do
       endif
-      do j = j0, jn
-      do i = i0, in
-         xtmp_8(i,j) = F_t(i,j,k) / Ver_Tstr_8(k)
-      end do
-      end do
-      call vlog( ytmp_8, xtmp_8, nij )
 
       do j= j0, jn
       do i= i0, in
-         BsPqbarz = Ver_wp_8%t(k)*BsPq(i,j,k+1)+Ver_wm_8%t(k)*BsPq(i,j,k)
          fipbarz  = Ver_wp_8%t(k)* (FI(i,j,k+1)-Ver_FIstr_8(k+1))+Ver_wm_8%t(k)* (FI(i,j,k)-Ver_FIstr_8(k))
          F_orw(i,j,k) = Cstv_invT_8 * F_w(i,j,k) &
                       + Cstv_Beta_8 * Dcst_grav_8 * MU(i,j,k)
-         F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
-                      + Cstv_Beta_8 * Dcst_cappa_8 * F_zd(i,j,k)
          F_orf(i,j,k) = Cstv_invT_8 * fipbarz  &
                       + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstr_8(k) * F_zd(i,j,k) &
                       + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
@@ -258,24 +281,38 @@
 !*****************************************
 ! Compute Rc: RHS of Continuity equation *
 !*****************************************
-      do j = j0, jn
-      do i = i0, in
-         xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
-      end do
-      end do
-      call vlog( ytmp_8, xtmp_8, nij)
 
-      do j = j0, jn
-      do i = i0, in
-         tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
-              + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
+      if(Schm_nolog_L) then
+         do j = j0, jn
+         do i = i0, in
+            tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
+                 + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
+                 + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)
+            zdot = Ver_wp_8%m(k) * F_zd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+            xdot = Ver_wp_8%m(k) * F_xd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_xd(i,j,km)
+            F_orc(i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*Ver_b_8%m(k) + Ver_dbdz_8%m(k) ) * F_s(i,j) &
+                         - Cstv_Beta_8 * ( tdiv + zdot + Ver_dbdz_8%m(k)*F_s(i,j)*(tdiv+xdot) )
+         end do
+         end do
+      else
+         do j = j0, jn
+         do i = i0, in
+            xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
+         end do
+         end do
+         call vlog( ytmp_8, xtmp_8, nij)
+         do j = j0, jn
+         do i = i0, in
+            tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
+                 + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
               + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
               + Ver_wp_8%m(k) * F_zd(i,j,k) &
               + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
          F_orc (i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*Ver_b_8%m(k)*F_s(i,j) + ytmp_8(i,j) ) &
                        - Cstv_Beta_8 * tdiv
-      end do
-      end do
+         end do
+         end do
+      endif
 
    end do
 !$omp enddo

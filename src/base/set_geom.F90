@@ -187,20 +187,19 @@
          Geomn_latgv(i) = (G_yg_8(i+1)+G_yg_8(i))*HALF_8*rad2deg_8
       end do
 
-      allocate (Geomg_x_8(l_minx:l_maxx),Geomg_xu_8(l_minx:l_maxx),&
-                
-                Geomg_y_8(l_miny:l_maxy),Geomg_yv_8(l_miny:l_maxy),&   
+      allocate (Geomg_x_8 (l_minx:l_maxx),Geomg_xu_8 (l_minx:l_maxx),&
                 Geomg_sx_8(l_minx:l_maxx),Geomg_sy_8 (l_miny:l_maxy),&
                 Geomg_cx_8(l_minx:l_maxx),Geomg_cy_8 (l_miny:l_maxy),&
+                
+                Geomg_y_8      (l_miny:l_maxy),Geomg_yv_8     (l_miny:l_maxy),&
                 Geomg_cy2_8    (l_miny:l_maxy),Geomg_cyv_8    (l_miny:l_maxy),&
                 Geomg_tyoa_8   (l_miny:l_maxy),Geomg_tyoav_8  (l_miny:l_maxy),&
                 Geomg_cyv2_8   (l_miny:l_maxy),Geomg_cyM_8    (l_miny:l_maxy),&
                 Geomg_invDYM_8 (l_miny:l_maxy),Geomg_invDYMv_8(l_miny:l_maxy),&
-                Geomg_invcy_8  (l_miny:l_maxy),Geomg_invcyv_8 (l_miny:l_maxy) ,&
-                Geomg_invcy2_8 (l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy) ,&
-                Geomg_invDX_8  (l_miny:l_maxy),Geomg_invDXM_8 (l_miny:l_maxy) ,&
-                Geomg_invDXMu_8(l_miny:l_maxy) ,&
-                Geomg_invDXz_8(l_miny:l_maxy),&
+                Geomg_invcy_8  (l_miny:l_maxy),Geomg_invcyv_8 (l_miny:l_maxy),&
+                Geomg_invcy2_8 (l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy),&
+                Geomg_invDX_8  (l_miny:l_maxy),Geomg_invDXM_8 (l_miny:l_maxy),&
+                Geomg_invDXMu_8(l_miny:l_maxy),Geomg_invDXz_8 (l_miny:l_maxy),&
                 Geomg_area_8(l_ni,l_nj),Geomg_mask_8(l_ni,l_nj))
          
         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1

@@ -32,19 +32,21 @@
 #include "schm.cdk"
 #include "theo.cdk"
 #include "zblen.cdk"
+#include "theo_dif.cdk"
 
-      logical flag
 !
 !----------------------------------------------------------------------
 !
-      flag = (.not. Schm_theoc_L) .or.                 &
-             (.not. ( Theo_case_S .eq. 'BUBBLE'   .or. &
-                      Theo_case_S .eq. 'BUBBLE_G' .or. &
-                      Theo_case_S .eq. '2_BUBBLES' ) )
-
-      if (flag) call nest_HOR_gwa ()
+      call nest_HOR_gwa ()
       
-      if (( Schm_theoc_L ) .and. ( Zblen_L )) call height_sponge()
+      if ( Schm_theoc_L ) then
+
+         if ( hdif_lnr .gt. 0. ) call theo_hdif_main
+         if ( Zblen_L ) call height_sponge()
+
+         call slabsym()
+
+      endif
 !
 !----------------------------------------------------------------------
 !

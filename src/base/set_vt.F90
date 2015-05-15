@@ -94,41 +94,49 @@
       mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
       mymetasc_p00   = SET_GMMUSR_FLAG(metasc     ,flag_s_f)
 
-      gmmk_ut0_s   = 'UT0'
-      gmmk_vt0_s   = 'VT0'
-      gmmk_wt0_s   = 'WT0'
-      gmmk_tt0_s   = 'TT0'
+      gmmk_ut0_s   =  'UT0'
+      gmmk_vt0_s   =  'VT0'
+      gmmk_tt0_s   =  'TT0'
+      gmmk_st0_s   =  'ST0'
+      gmmk_wt0_s   =  'WT0'
+      gmmk_qt0_s   =  'QT0'
       gmmk_zdt0_s  = 'ZDT0'
-      gmmk_qt0_s   = 'QT0'
-      gmmk_st0_s   = 'ST0'
-      gmmk_p00_s   = 'P00'
+      gmmk_xdt0_s  = 'XDT0'
+      gmmk_qdt0_s  = 'QDT0'
+      gmmk_p00_s   =  'P00'
 
-      gmmk_ut1_s   = 'UT1'
-      gmmk_vt1_s   = 'VT1'
-      gmmk_wt1_s   = 'WT1'
-      gmmk_tt1_s   = 'TT1'
+      gmmk_ut1_s   =  'UT1'
+      gmmk_vt1_s   =  'VT1'
+      gmmk_tt1_s   =  'TT1'
+      gmmk_st1_s   =  'ST1'
+      gmmk_wt1_s   =  'WT1'
+      gmmk_qt1_s   =  'QT1'
       gmmk_zdt1_s  = 'ZDT1'
-      gmmk_qt1_s   = 'QT1'
-      gmmk_st1_s   = 'ST1'
+      gmmk_xdt1_s  = 'XDT1'
+      gmmk_qdt1_s  = 'QDT1'
 
       istat = GMM_OK
 
-      istat = min(gmm_create(gmmk_ut0_s , ut0 , mymeta3d_nk_u , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_vt0_s , vt0 , mymeta3d_nk_v , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_wt0_s , wt0 , mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_tt0_s , tt0 , mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zdt0_s, zdt0, mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_st0_s , st0 , mymeta2d_s    , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_p00_s , p00 , mymetasc_p00  , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_qt0_s , qt0 , mymeta3d_nk_q , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_ut0_s ,  ut0 , mymeta3d_nk_u , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_vt0_s ,  vt0 , mymeta3d_nk_v , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_tt0_s ,  tt0 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_st0_s ,  st0 , mymeta2d_s    , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_wt0_s ,  wt0 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_qt0_s ,  qt0 , mymeta3d_nk_q , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdt0_s, zdt0 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_xdt0_s, xdt0 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_qdt0_s, qdt0 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_p00_s ,  p00 , mymetasc_p00  , flag_r_n),istat)
 
-      istat = min(gmm_create(gmmk_ut1_s , ut1 , mymeta3d_nk_u , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_vt1_s , vt1 , mymeta3d_nk_v , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_wt1_s , wt1 , mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_tt1_s , tt1 , mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zdt1_s, zdt1, mymeta3d_nk_t , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_st1_s , st1 , mymeta2d_s    , flag_r_n),istat)
-      istat = min(gmm_create(gmmk_qt1_s , qt1 , mymeta3d_nk_q , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_ut1_s ,  ut1 , mymeta3d_nk_u , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_vt1_s ,  vt1 , mymeta3d_nk_v , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_tt1_s ,  tt1 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_st1_s ,  st1 , mymeta2d_s    , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_wt1_s ,  wt1 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_qt1_s ,  qt1 , mymeta3d_nk_q , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdt1_s, zdt1 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_xdt1_s, xdt1 , mymeta3d_nk_t , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_qdt1_s, qdt1 , mymeta3d_nk_t , flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')

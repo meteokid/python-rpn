@@ -18,6 +18,7 @@
 #include <msg.h>
 
       integer function gemdm_config ( )
+      use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       implicit none
 
 !author
@@ -38,12 +39,10 @@
 #include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
+#include "ntr2mod.cdk"
 #include "step.cdk"
 #include "ver.cdk"
 #include "out.cdk"
-#include "modconst.cdk"
-
-      integer, external :: bin2com, time2step, time2sec
 
       character*16  dumc_S, datev
       character*256 fln_S
@@ -119,14 +118,18 @@
       P_lmvd_weigh_low_lat  = max(0.,min(1.,P_lmvd_weigh_low_lat ))
       P_lmvd_weigh_high_lat = max(0.,min(1.,P_lmvd_weigh_high_lat))
 
-      call low2up  (Out3_unit_S,dumc_S)
-      Out3_unit_S=dumc_S
-
       Out_rewrit_L   = .false.
       if (Clim_climat_L) Out_rewrit_L=.true.
 
-      err= time2step (Out3_closestep_S, Step_dt, Lun_out, Out3_closestep)
-      Out3_closestep= min(Out3_closestep,Step_total)
+      if (Out3_close_interval_S == " ") Out3_close_interval_S= '1H'
+      err = timestr_parse(Out3_close_interval,Out3_unit_S,Out3_close_interval_S)
+      if (Out3_close_interval <= 0.) Out3_close_interval_S= '1H'
+      err = timestr_parse(Out3_close_interval,Out3_unit_S,Out3_close_interval_S)
+      if (.not.RMN_IS_OK(err)) then
+         if (lun_out>0) write (Lun_out, *) "(gemdm_config) Invalid Out3_close_interval_S="//trim(Out3_close_interval_S)
+         return
+      endif
+      Out3_postproc_fact = max(0,Out3_postproc_fact)
 
       if (.not.Grd_yinyang_L) Out3_uencode_L  = .false.
       if (Out3_uencode_L)     Out3_fullplane_L= .true.
@@ -141,11 +144,7 @@
       enddo
  81   continue
 
-      if (Step_runstrt_S == 'NIL') then
-         Step_runstrt_S = Mod_runstrt_S
-      else
-         Mod_runstrt_S = Step_runstrt_S
-      endif
+      if (Step_runstrt_S == 'NIL') Step_runstrt_S= NTR_runstrt_S
 
       Cstv_dt_8     = dble(Step_dt)
 
@@ -174,13 +173,14 @@
       dayfrac= - (Lctl_step * Step_dt / sec_in_day)
       call incdatsd (datev, Step_runstrt_S, dayfrac)
       call datp2f ( Out3_date, datev )
+      call datp2f ( Step_CMCdate0, Step_runstrt_S)
 
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
 
       err= 0
-      err= min( time2step (Grdc_nfe    , Step_dt, Lun_out, Grdc_ndt  ), err)
-      err= min( time2step (Grdc_start_S, Step_dt, Lun_out, Grdc_start), err)
-      err= min( time2step (Grdc_end_S  , Step_dt, Lun_out, Grdc_end  ), err)
+      err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)
+      err= min( timestr2step (Grdc_start, Grdc_start_S, Step_dt), err)
+      err= min( timestr2step (Grdc_end,   Grdc_end_S  , Step_dt), err)
       if (err.lt.0) return
 
       if (Grdc_ndt   > -1) Grdc_ndt  = max( 1, Grdc_ndt)
@@ -304,8 +304,8 @@
       endif
 
       err= 0
-      err= min( time2step (Init_dflength_S, Step_dt, Lun_out, Init_dfnp), err)
-      err= min( time2sec  (Init_dfpl_S    , sec)                        , err)
+      err= min( timestr2step (Init_dfnp, Init_dflength_S, Step_dt), err)
+      err= min( timestr2sec  (sec,       Init_dfpl_S,     Step_dt), err)
       if (err.lt.0) return
 
       Init_halfspan = -9999
@@ -318,13 +318,16 @@
       if (Init_balgm_L) then
          Init_dfnp   = max(2,Init_dfnp)
          if ( mod(Init_dfnp,2) /= 1 ) Init_dfnp= Init_dfnp+1
-         Init_mode_L = .true.
          Init_halfspan = (Init_dfnp - 1) / 2
       else
-         Init_mode_L = .false.
          Init_dfnp   = -9999
          Init_halfspan = -9999
       endif
+      if (.not.Rstri_rstn_L) then
+         Init_mode_L= .false.
+         if (Init_balgm_L) Init_mode_L= .true.
+      endif
+      err= wb_put('model/Init/mode',    Init_mode_L,   WB_REWRITE_MANY)
       err= wb_put('model/Init/halfspan',Init_halfspan, WB_REWRITE_NONE)
 
       if (Lctl_debug_L) then

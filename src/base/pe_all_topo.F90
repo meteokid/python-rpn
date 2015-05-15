@@ -27,11 +27,13 @@
 ! v4_03 - Desgagne/Lee      - adaptation to new scripts
 ! v4_40 - Tanguay M.        - Revision TL/AD
 
+#include <WhiteBoard.hf>
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
+#include "step.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 
@@ -55,7 +57,7 @@
 !
 ! Broadcasts processor topology
 !
-      call RPN_COMM_bcast (Ptopo_npex  , 8, "MPI_INTEGER",0,"grid",err )
+      call RPN_COMM_bcast (Ptopo_npex  , 8, "MPI_INTEGER",0,"grid",err)
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
 
       Ptopo_npeOpenMP = OMP_get_max_threads()
@@ -100,7 +102,7 @@
       write(myrow_S,10) Ptopo_myrow
 10    format(i3.3)
 
-      if (Ptopo_myproc.eq.0) call mk_gem_dirs (Ptopo_npex,Ptopo_npey)
+      if (Ptopo_myproc.eq.0) call mkdir_gem ('./',Ptopo_npex,Ptopo_npey)
       call rpn_comm_barrier("grid", err)
 
       err= clib_chdir(mycol_S//'-'//myrow_S)
@@ -126,15 +128,17 @@
       call array_to_file (bufcte,size(bufcte),'constantes'    )
       call array_to_file (bufinphycfg,size(bufinphycfg),trim(Path_phyincfg_S))
 
-      Lun_rstrt= 0 ; Rstri_rstn_L= .false.
+      Lun_rstrt= 0 ; Rstri_rstn_L= .false. ; Step_kount= 0
       err= wkoffit('gem_restart')
       if (err.ge.-1) then
          err= fnom( Lun_rstrt,'gem_restart','SEQ+UNF+OLD',0 )
      	   if (err.ge.0) then
            Rstri_rstn_L = .true.
            if (lun_out.gt.0) write (lun_out,1001)
+           call rdrstrt
          endif
       endif
+      err= wb_put('model/restart', Rstri_rstn_L)
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 !
@@ -160,20 +164,28 @@
       return
       end
 
-subroutine mk_gem_dirs(npex,npey)
-implicit none
-integer, intent(IN) :: npex,npey
+      subroutine mkdir_gem (F_path_S,F_npex,F_npey)
+      implicit none
 
-integer :: i,j,status
-integer :: mk_gem_dir
+      character*(*), intent(IN) :: F_path_S
+      integer      , intent(IN) :: F_npex,F_npey
 
+#include <clib_interface_mu.hf>
+      character*2048 ici
+      integer :: i,j,status,err
+      integer :: mk_gem_dir
+
+      err= clib_getcwd(ici)
+      err= clib_chdir(trim(F_path_S))
 !$OMP PARALLEL DO private(i,j,status)
-do j=0,npey-1
-do i=0,npex-1
-  status = mk_gem_dir(i,j)
-enddo
-enddo
+      do j=0,F_npey-1
+      do i=0,F_npex-1
+         status = mk_gem_dir(i,j)
+      enddo
+      enddo
 !$OMP END PARALLEL DO
+      err= clib_chdir(ici)
+
 return
 end
 

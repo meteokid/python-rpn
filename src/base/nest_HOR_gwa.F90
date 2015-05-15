@@ -53,24 +53,38 @@
       gmmstat = gmm_get (gmmk_nest_v_s, fld_nest3d)
       call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'V')
 
+      gmmstat = gmm_get (gmmk_tt1_s   , fld3d     )
+      gmmstat = gmm_get (gmmk_nest_t_s, fld_nest3d)
+      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+
+      call nest_blend (gmmk_st1_s  ,gmmk_nest_s_s  ,'M')
+
       gmmstat = gmm_get (gmmk_wt1_s   , fld3d     )
       gmmstat = gmm_get (gmmk_nest_w_s, fld_nest3d)
       call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
 
-      gmmstat = gmm_get (gmmk_tt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_t_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+      if ( .not.Schm_hydro_L ) then
+         gmmstat = gmm_get (gmmk_qt1_s   , fld3d     )
+         gmmstat = gmm_get (gmmk_nest_q_s, fld_nest3d)
+         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'Q')
+      endif
 
       gmmstat = gmm_get (gmmk_zdt1_s   , fld3d     )
       gmmstat = gmm_get (gmmk_nest_zd_s, fld_nest3d)
       call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
 
-      gmmstat = gmm_get (gmmk_qt1_s   , fld3d     )
-      gmmstat = gmm_get (gmmk_nest_q_s, fld_nest3d)
-      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'Q')
+      if ( Schm_nolog_L ) then
+         gmmstat = gmm_get (gmmk_xdt1_s   , fld3d     )
+         gmmstat = gmm_get (gmmk_nest_xd_s, fld_nest3d)
+         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+         if ( .not.Schm_hydro_L ) then
+            gmmstat = gmm_get (gmmk_qdt1_s   , fld3d     )
+            gmmstat = gmm_get (gmmk_nest_qd_s, fld_nest3d)
+            call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+         endif
+      endif
 
-      call nest_blend (gmmk_st1_s  ,gmmk_nest_s_s  ,'M')
-
+      
       do n=1,Tr3d_ntr
          gmmstat = gmm_get ('TR/'//trim(Tr3d_name_S(n))//':P'  , fld3d     )
          gmmstat = gmm_get ('NEST/'//trim(Tr3d_name_S(n))//':C', fld_nest3d)

@@ -81,10 +81,11 @@
 !
       Lam_ctebcs_L=.true.
 
-      Hzd_lnr = 0.
+      hdif_lnr = 0.
+      hdif_pwr = 6
 
-      Schm_trapeze_L=.false.
-      Schm_cub_traj_L=.false.
+      Schm_trapeze_L=.true.
+      Schm_cub_traj_L=.true.
       Schm_phyms_L = .false.
       Schm_psadj_L=.false.
 
@@ -95,15 +96,15 @@
 
       Out3_flipit_L  = .true.
       Out3_fullplane_L  = .false.
-      Out3_closestep = 28800
+      Out3_close_interval_S = '999h'
+      Out3_close_interval = 999
+      Out3_unit_S = 'HOU'
 
       istat = 0
       if ( Theo_case_S.eq.'MTN_SCHAR') then
 
          Out3_etik_s  = 'SCHAR'
          Schm_hydro_L = .false.
-         Schm_trapeze_L=.true.
-         Schm_cub_traj_L=.true.
 
          Height_top_8 = 19500.d0
 
@@ -130,7 +131,7 @@
          Cstv_dt_8   = 32.         !Cstv_dt_8   = 8.
         !GROWING MOUNTAIN
          Vtopo_start = 0
-         Vtopo_ndt   = 45          !Vtopo_ndt   = 180
+         Vtopo_ndt   = 75          !Vtopo_ndt   = 300
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
@@ -344,7 +345,6 @@
          Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/Dcst_grav_8*height_8)
          pres_8=Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
          hyb(k)=(pres_8-Cstv_ptop_8)/(p1000hPa_8-Cstv_ptop_8)
-         if(k.ne.1.and.Ptopo_myproc.eq.0) write( Lun_out, *) hyb(k),hyb(k)-hyb(k-1)
       enddo
 !
 !     denormalize
@@ -374,8 +374,10 @@
       mtn_cfg = 1
 !
       step_dt=cstv_dt_8
-      Step_rsti=9999999
-      Step_bkup=9999999
+!!$      Step_rsti=9999999
+!!$      Step_bkup=9999999
+      Fcst_rstrt_S = 'step,9999999'
+      Fcst_bkup_S  = 'step,9999999'
       return
 !
  9000 write (Lun_out, 9100)

@@ -161,9 +161,17 @@
             tmp_liste(cnt+4) = 'TT1'
             tmp_liste(cnt+5) = 'ST1'
             cnt = cnt + 5
+            if(Schm_nolog_L) then
+               tmp_liste(cnt+1) = 'XDT1'
+               cnt = cnt + 1
+            endif
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
                cnt = cnt + 1
+               if(Schm_nolog_L) then
+                  tmp_liste(cnt+1) = 'QDT1'
+                  cnt = cnt + 1
+               endif
             endif
             if (stat_liste(k) .ne. 'ALL') cycle
          endif
@@ -176,9 +184,17 @@
             tmp_liste(cnt+4) = 'TT0'
             tmp_liste(cnt+5) = 'ST0'
             cnt = cnt + 5
+            if(Schm_nolog_L) then
+               tmp_liste(cnt+1) = 'XDT0'
+               cnt = cnt + 1
+            endif
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT0'
                cnt = cnt + 1
+               if(Schm_nolog_L) then
+                  tmp_liste(cnt+1) = 'QDT0'
+                  cnt = cnt + 1
+               endif
             endif
             cycle
          endif

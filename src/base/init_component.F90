@@ -34,6 +34,7 @@
 #include "lun.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
+#include "step.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
 !
@@ -48,7 +49,7 @@
 !
 !--------------------------------------------------------------------
 !
-      ierr= model_timeout_alarm(600)
+      ierr= model_timeout_alarm(Step_alarm)
       call rpn_comm_mydomain (init_ndoms, mydomain)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain

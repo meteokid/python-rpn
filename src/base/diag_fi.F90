@@ -14,19 +14,17 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r diag_fi - Computes geopotential by vertically integrating the temperature
-!
 
-!
       subroutine diag_fi ( F_fi, F_s, F_t, F_q, F_fis, &
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       implicit none
 #include <arch_specific.hf>
-!     
+    
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
       real F_fi (Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
       real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
       real F_fis(Minx:Maxx,Miny:Maxy)
-!
+
 !author
 !
 ! Andre Plante july 2006.
@@ -43,69 +41,64 @@
 ! F_s          I    - log(pis/pistars)
 ! F_t          I    - temperature
 ! F_fis        I    - surface geopotential
-!
+
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
-!     
+ 
       integer i,j,k,kq,nij
       real*8, parameter :: one = 1.d0
       real*8  yyy,qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
+      real*8, dimension(i0:in,j0:jn,G_nk) :: ztmp_8
 !
 !     ---------------------------------------------------------------
 !
-      nij = (in - i0 + 1)*(jn - j0 + 1)
+      nij = (in - i0 + 1) * (jn - j0 + 1)
 
-!$omp parallel private (qbar,yyy,xtmp_8,ytmp_8,kq)
+!$omp parallel private(qbar,yyy,xtmp_8,ytmp_8,kq) shared(ztmp_8)
 
-!$omp do 
-      do j=j0,jn
-      do i=i0,in
-         F_fi(i,j,G_nk+1)=F_fis(i,j)
-      end do
-      end do
-!$omp enddo
-
-      do k= G_nk,1,-1
+!$omp do
+      do k= 1, G_nk
          kq=max(2,k)
          if(.not.Schm_hydro_L) then
-!$omp do
             do j=j0,jn
             do i=i0,in
                qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
                xtmp_8(i,j)=-qbar
             end do
             end do
-!$omp enddo
             call vexp(ytmp_8,xtmp_8,nij)
-!$omp do
             do j=j0,jn
             do i=i0,in
-               xtmp_8(i,j)=ytmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+               ztmp_8(i,j,k)=ytmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
             end do
-!$omp enddo
          else
-!$omp do
             do j=j0,jn
             do i=i0,in
-               xtmp_8(i,j)=one+Ver_dbdz_8%t(k)*F_s(i,j)
+               ztmp_8(i,j,k)=one+Ver_dbdz_8%t(k)*F_s(i,j)
             end do
             end do
-!$omp enddo
          endif
-         yyy=Dcst_rgasd_8*Ver_dz_8%t(k)
-!$omp do
-         do j=j0,jn
-         do i=i0,in
-            F_fi(i,j,k)=F_fi(i,j,k+1)+yyy*F_t(i,j,k)*xtmp_8(i,j)
-         end do
-         end do
-!$omp enddo
       end do
+!$omp enddo
+
+!$omp do 
+      do j=j0,jn
+         do i=i0,in
+            F_fi(i,j,G_nk+1)=F_fis(i,j)
+         end do
+         do k= G_nk,1,-1
+            yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
+            do i= i0,in
+               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*ztmp_8(i,j,k)
+            end do
+         end do
+      end do
+!$omp enddo
 
 !$omp end parallel
 

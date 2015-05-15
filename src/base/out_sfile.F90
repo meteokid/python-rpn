@@ -15,11 +15,19 @@
 
 !**s/r Out_sfile - to open new output file
 
-      subroutine out_sfile2 (clostep_int,stepno)
+subroutine out_sfile2 (clostep_int,stepno)
+   integer ::  clostep_int,stepno
+   print *,'Abort - Called deprecated sub: out_sfile2'
+   stop
+end subroutine out_sfile2
+
+
+      subroutine out_sfile3 (F_stepno)
+      use timestr_mod, only: timestr_prognum
       implicit none
 #include <arch_specific.hf>
 !
-      integer clostep_int,stepno
+      integer,intent(in) ::  F_stepno
 
 !AUTHOR   Michel Desgagne     September   2003 (MC2)
 !
@@ -32,16 +40,18 @@
 ! v3_31 - Winger K.         - correction to size in ypq(Out_nisg) to Out_njsg
 ! v4_03 - Lee V.            - ISST + modification of Out_etik_S in out_sgrid only
 
+#include <rmnlib_basics.hf>
 #include "clim.cdk"
 #include "cstv.cdk"
 #include "out.cdk"
 #include "out3.cdk"
-#include "modconst.cdk"
 #include "path.cdk"
 #include "step.cdk"
 #include "ptopo.cdk"
 
-      integer, external :: fnom,fstouv,fstopc
+!!$      integer, external :: fnom,fstouv,fstopc
+      real,   parameter :: eps=1.e-12
+      real*8, parameter :: OV_day = 1.0d0/86400.0d0
 
       character*1024 out_filename_s,myformat_S,my_hour
       character*16   datev,fdate
@@ -50,18 +60,15 @@
       character*4    unit_ext
       character*2    my_prefix
       logical flag
-      integer clostep,prognum,err,i,indx,len0,len1
-      real, parameter :: eps=1.e-12
-      real*8 sec_clostep,ONE, OV_day, OV_hour, OV_min, dayfrac
-      parameter ( ONE = 1.0d0, OV_day = ONE/86400.0d0, &
-                  OV_hour = ONE/3600.0d0, OV_min = ONE/60.0d0)
+      integer prognum,err,i,indx,len0,len1
+      real*8 dayfrac
 !
 !----------------------------------------------------------------------
 !
 !      err = fstopc('MSGLVL','INFORM',.false.)
       err = fstopc('MSGLVL','SYSTEM',.false.)
 
-      Out_npas = stepno
+      Out_npas = F_stepno
 
       flag= (Out_blocme.eq.0)
 
@@ -73,49 +80,35 @@
 
       if (flag) then
 
-         if (clostep_int.le.0) then
-            clostep = stepno
-         else
-            if (mod(stepno,clostep_int).eq.0) then
-               clostep = stepno
-               if (stepno.eq.0) clostep = clostep_int
-            else
-               clostep = (stepno/clostep_int + 1) * clostep_int
-            endif
+         Out_ip2 = int (dble(F_stepno) * Out_deet / 3600. + eps)
+
+         Out_dateo = Out3_date
+         call datf2p(fdate,Out_dateo)
+         if (F_stepno.lt.0) then
+            dayfrac = dble(F_stepno-Step_delay) * Cstv_dt_8 * OV_day
+            call incdatsd (datev,Step_runstrt_S,dayfrac)
+            call datp2f   (Out_dateo,datev)
          endif
-         if (.not.Clim_climat_L) clostep = min(clostep,Out_endstepno)
-         sec_clostep  = dble(clostep)*dble(Out_deet)
-         Out_ip2 = int (dble(stepno) * Out_deet / 3600. + eps)
 
-!        Out_unit_S=H or blank:
-         prognum = ceiling(sec_clostep *OV_hour - eps)
-         if (Out_unit_S.eq.'P') prognum = clostep
-         if (Out_unit_S.eq.'D') prognum = ceiling(sec_clostep * OV_day - eps)
-         if (Out_unit_S.eq.'M') prognum = ceiling(sec_clostep * OV_min - eps)
-         if (Out_unit_S.eq.'S') prognum = ceiling(sec_clostep - eps)
-
+         err = timestr_prognum(prognum,Out3_unit_S,Out3_close_interval,Out_dateo,float(Out_deet),F_stepno,Out_endstepno)
+         unit_ext = ' '
+         if (Out3_unit_S(1:3) == 'SEC') unit_ext = 's'
+         if (Out3_unit_S(1:3) == 'MIN') unit_ext = 'm'
+         if (Out3_unit_S(1:3) == 'DAY') unit_ext = 'd'
+         if (Out3_unit_S(1:3) == 'STE') unit_ext = 'p'
+         if (Out3_unit_S(1:3) == 'MON') unit_ext = 'n'
+         
          call up2low ( Out_prefix_S,my_prefix)
          write(my_block,'(a,i2.2,a,i2.2)') '-',Out_myblocx,'-',Out_myblocy
 
          len1 = max(3,Out3_ndigits)
-         if ((Out_unit_s .eq. 'S').or.(Out_unit_s .eq. 'P')) &
-              len1 = max(6,len1)
+         if (any(Out3_unit_s(1:3) == (/'SEC','STE'/))) len1 = max(6,len1)
          len0 = len1
          if (prognum < 0) len0 = len0+1
          write(myformat_S,'(a,i1.1,a,i1.1,a)') '(a,i',len0,'.',len1,')'
          my_hour = ' '
          write(my_hour,trim(myformat_S)) '_',prognum
-
-         Out_dateo = Out3_date
-         call datf2p(fdate,Out_dateo)
-         if (stepno.lt.0) then
-            dayfrac = dble(stepno-Step_delay) * Cstv_dt_8 * OV_day
-            call incdatsd (datev,Mod_runstrt_S,dayfrac)
-            call datp2f   (Out_dateo,datev)
-         endif
          
-         call up2low(Out3_unit_S,unit_ext)
-
 !        Out_filename_S= ppYYYYMMDDhh[-XX-YY]_ddd[U]
          Out_filename_S= trim(my_prefix)//fdate(1:8)//fdate(10:11)// &
                          my_block//trim(my_hour)//trim(unit_ext)
