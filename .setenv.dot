@@ -1,7 +1,8 @@
 #!/bin/ksh
 if [[ x"$1" == x"--dev" ]] ; then
+   shift
    echo 'Loading dev env'
-	. s.ssmuse.dot $(cat ssmuse_dependencies-dev.bndl)
+	. s.ssmuse.dot $(cat ssmusedep-dev.bndl)
 else
    echo 'Loading Run-time env'
 fi
@@ -18,11 +19,14 @@ if [[ -f ssmusedep.bndl ]] ; then
    echo ". s.ssmuse.dot ssmusedep.bndl"
    . s.ssmuse.dot $(cat ssmusedep.bndl)
 fi
+if [[ -f ssmusedep_post.bndl ]] ; then
+   echo ". s.ssmuse.dot ssmusedep_post.bndl"
+   . s.ssmuse.dot $(cat ssmusedep_post.bndl)
+fi
 
 
 . $(pwd)/bin/.env_setup.dot rpnpy dev all $(pwd) $(pwd)
 
-#export EC_LD_LIBRARY_PATH="$(true_path ~armnlib/LIBSO) $EC_LD_LIBRARY_PATH"
 export PATH=$(pwd)/bin:$PATH
 export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
 export PYTHONPATH=$(pwd):$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$(pwd)/lib:${RMN_LIBPATH}:$PYTHONPATH

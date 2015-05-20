@@ -53,9 +53,9 @@ COMPONENTS_SSM_ALL  := $(foreach item,$(COMPONENTS_UC),$($(item)_SSMALL_FILES))
 COMPONENTS_SSM_ARCH := $(foreach item,$(COMPONENTS_UC),$($(item)_SSMARCH_FILES))
 COMPONENTS_SSM := $(COMPONENTS_SSM_ALL) $(COMPONENTS_SSM_ARCH)
 .PHONY: components_ssm
-components_ssm: $(COMPONENTS_SSM)
-components_ssm_all: $(COMPONENTS_SSM_ALL)
-components_ssm_arch: $(COMPONENTS_SSM_ARCH)
+components_ssm: $(COMPONENTS_VFILES) $(COMPONENTS_SSM)
+components_ssm_all: $(COMPONENTS_VFILES) $(COMPONENTS_SSM_ALL)
+components_ssm_arch: $(COMPONENTS_VFILES) $(COMPONENTS_SSM_ARCH)
 
 
 COMPONENTS_INSTALL_ALL := $(foreach item,$(COMPONENTS_UC),$($(item)_INSTALL))

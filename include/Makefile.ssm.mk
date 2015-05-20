@@ -7,20 +7,22 @@ endif
 #------------------------------------
 
 RPNPY_SSMALL_NAME  = rpnpy_$(RPNPY_VERSION)_all
-# RPNPY_SSMARCH_NAME = rpnpy+$(COMP_ARCH)_$(RPNPY_VERSION)_$(SSMARCH)
+# RPNPY_SSMARCH_NAME = rpnpy+$(COMP_ARCH)+$(PYVERSION)_$(RPNPY_VERSION)_$(SSMARCH)
 RPNPY_SSMALL_FILES  = $(RPNPY_SSMALL_NAME).ssm
 # RPNPY_SSMARCH_FILES = $(RPNPY_SSMARCH_NAME).ssm
 
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
-RPNPY_SSM_BASE_DOM  = $(SSM_BASE)/ENV/d/$(RPNPY_VERSION_X)rpnpy
-RPNPY_SSM_BASE_BNDL = $(SSM_BASE)/ENV/$(RPNPY_VERSION_X)rpnpy
+RPNPY_SSM_BASE_DOM  = $(SSM_BASE)/ENV/d/py/$(PYVERSION)/$(RPNPY_VERSION_X)rpnpy
+RPNPY_SSM_BASE_BNDL = $(SSM_BASE)/ENV/py/$(PYVERSION)/$(RPNPY_VERSION_X)rpnpy
 RPNPY_INSTALL   = rpnpy_install
 RPNPY_UNINSTALL = rpnpy_uninstall
 
 .PHONY: rpnpy_ssm rpnpy_ssm_all.ssm rm_rpnpy_ssm_all.ssm rpnpy_ssm_all rm_rpnpy_ssm_all rpnpy_ssm_arch.ssm rm_rpnpy_ssm_arch.ssm rpnpy_ssm_arch rpnpy_ssm_arch_rm
-rpnpy_ssm: rpnpy_ssm_all.ssm rpnpy_ssm_arch.ssm
-rm_rpnpy_ssm: rm_rpnpy_ssm_all.ssm rm_rpnpy_ssm_all rm_rpnpy_ssm_arch.ssm rpnpy_ssm_arch_rm
+# rpnpy_ssm: rpnpy_ssm_all.ssm rpnpy_ssm_arch.ssm
+# rm_rpnpy_ssm: rm_rpnpy_ssm_all.ssm rm_rpnpy_ssm_all rm_rpnpy_ssm_arch.ssm rpnpy_ssm_arch_rm
+rpnpy_ssm: rpnpy_ssm_all.ssm
+rm_rpnpy_ssm: rm_rpnpy_ssm_all.ssm rm_rpnpy_ssm_all
 
 rpnpy_ssm_all.ssm: $(RPNPY_SSMALL_FILES)
 $(RPNPY_SSMALL_FILES): rpnpy_ssm_all rm_rpnpy_ssm_all.ssm $(SSM_DEPOT_DIR)/$(RPNPY_SSMALL_NAME).ssm
@@ -35,7 +37,7 @@ rm_rpnpy_ssm_all:
 	rm -rf $(BUILDSSM)/$(RPNPY_SSMALL_NAME)
 $(BUILDSSM)/$(RPNPY_SSMALL_NAME):
 	rm -rf $@ ; mkdir -p $@ ; \
-	rsync -av --exclude-from=$(DIRORIG_rpnpy)/.ssm.d/exclude $(DIRORIG_rpnpy)/ $@/ ; \
+	rsync -av --exclude-from=$(rpnpy)/.ssm.d/exclude $(rpnpy)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
 	cat $@/ssmusedep.bndl >> $@/BUILDINFO ; \
 	.rdemk_ssm_control rpnpy $(RPNPY_VERSION) "all ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
@@ -66,7 +68,7 @@ $(BUILDSSM)/$(RPNPY_SSMARCH_NAME):
 	.rdemkversionfile rpnpy $(RPNPY_VERSION) $@/include/$(EC_ARCH) sh ; \
 	cd $(BINDIR) ; \
 	cp $(RPNPY_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
-	cp -R $(DIRORIG_rpnpy)/.ssm.d $@/ ; \
+	cp -R $(rpnpy)/.ssm.d $@/ ; \
 	.rdemk_ssm_control rpnpy $(RPNPY_VERSION) "$(SSMORDARCH) ; $(SSMARCH) ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
 
 

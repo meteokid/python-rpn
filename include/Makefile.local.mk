@@ -14,13 +14,13 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 
 ## Some Shortcut/Alias to Lib Names
 
-ifeq (,$(RMN_VERSION_FULL))
-   $(error RMN_VERSION_FULL not defined; export RMN_VERSION_FULL=_015.2)
+ifeq (,$(RPNPY_RMN_VERSION))
+   $(error RPNPY_RMN_VERSION not defined; export RPNPY_RMN_VERSION=_015.2)
 endif
 
-RMN_VERSION    = rmn$(RMN_VERSION_FULL)
+RMN_VERSION    = rmn$(RPNPY_RMN_VERSION)
 LIBRMN         = $(RMN_VERSION)
-LIBRMNSHARED   = rmnshared$(RMN_VERSION_FULL)
+LIBRMNSHARED   = rmnshared$(RPNPY_RMN_VERSION)
 
 COMM_VERSION   = _40511b
 LIBCOMM        = rpn_comm$(COMM_VERSION) $(COMM_stubs)

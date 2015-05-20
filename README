@@ -5,32 +5,37 @@
 git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git
 cd rpnpy
 #git checkout -b tmp rpnpy_VERSION
-#update version number (including leading 'x/') in ./include/Makefile.local.mk
-. ./.setenv.dot
-./bin/ouv_exp_rpnpy
+#update version number (including leading 'x/') in ./VERSION
+#update default RMN_VERSION and LIBPATH in: ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
+. ./.setenv.dot --dev
 rdemklink
-make -j 8 components_objects
-make components_libs components_abs components_ssm
+./bin/ouv_exp_rpnpy
+#make -j 8 components_objects
+#make components_libs 
+#make components_abs 
+make components_ssm
 
 #For additional ARCH
 	  ssh MYMACH
 	  cd /PATH/
-	  . ./.setenv.dot
-	  #./bin/ouv_exp_rpnpy
+	  . ./.setenv.dot --dev
 	  rdemklink
-	  make -j 8 components_objects
-	  make components_libs components_abs components_ssm_arch
+	  #./bin/ouv_exp_rpnpy
+	  #make -j 8 components_objects
+	  #make components_libs 
+	  #make components_abs 
+	  make components_ssm_arch
 
 ==== Installing ==========================================================
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./.setenv.dot --dev
 make components_install CONFIRM_INSTALL=yes
 
 ==== Uninstalling ========================================================
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./setenv.dot --dev
 make components_uninstall UNINSTALL_CONFIRM=yes
