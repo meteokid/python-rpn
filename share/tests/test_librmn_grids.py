@@ -105,6 +105,11 @@ class Librmn_grids_Test(unittest.TestCase):
                 else:
                     self.assertEqual(p0[k],p2[k])
             
+    def test_yyg_yangrot(self):
+        (xlat1,xlon1,xlat2,xlon2) = (0.,180.,0.,270.)
+        (xlat1b,xlon1b,xlat2b,xlon2b) = rmn.yyg_yangrot_py(xlat1,xlon1,xlat2,xlon2)
+        (xlat1c,xlon1c,xlat2c,xlon2c) = rmn.yyg_yangrot_py(xlat1b,xlon1b,xlat2b,xlon2b)
+        self.assertEqual((xlat1,xlon1,xlat2,xlon2),(xlat1c,xlon1c,xlat2c,xlon2c))
 
 
 if __name__ == "__main__":

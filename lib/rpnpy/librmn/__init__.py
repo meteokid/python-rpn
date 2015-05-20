@@ -17,12 +17,11 @@
  help(librmn.base)
  help(librmn.fstd98)
  help(librmn.interp)
+ help(librmn.grids)
 
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
-#TODO: unit tests
 
-#TODO: ezscint
 #TODO: burp
 #TODO: rdiag
 #TODO: vgrid
@@ -31,7 +30,7 @@
 
 from rpnpy.version import *
 
-__SUBMODULES__ = ['proto','const','base','fstd98','interp','grids']
+__SUBMODULES__ = ['proto','const','base','fstd98','interp','llacar','grids']
 __all__ = ['loadRMNlib','librmn','RMN_VERSION','RMN_LIBPATH','RMNError'] + __SUBMODULES__
 
 RMN_VERSION_DEFAULT = '_015.2'
@@ -44,8 +43,8 @@ def loadRMNlib(rmn_version=None):
 
     Args:
        rmn_version (str): librmnshared version number to load
-                          Default: RMN_VERSION Env.Var.
-                                   RMN_VERSION_DEFAULT if not RMN_VERSION
+                          Default: RPNPY_RMN_VERSION Env.Var.
+                                   RMN_VERSION_DEFAULT if not RPNPY_RMN_VERSION
     Returns:
        (RMN_VERSION, RMN_LIBPATH, librmn)
        where:
@@ -62,7 +61,7 @@ def loadRMNlib(rmn_version=None):
     ## import numpy.ctypeslib as npct
 
     if rmn_version is None:
-        RMN_VERSION = os.getenv('RMN_VERSION',RMN_VERSION_DEFAULT).strip()
+        RMN_VERSION = os.getenv('RPNPY_RMN_VERSION',RMN_VERSION_DEFAULT).strip()
     else:
         RMN_VERSION = rmn_version
     rmn_libfile = 'librmnshared'+RMN_VERSION.strip()+'.so'

@@ -20,8 +20,6 @@ class RMNBaseError(RMNError):
 
 #--- primitives -----------------------------------------------------
 
-#TODO: raise exception on error instead of returning error code
-
 def fclos(iunit):
     """Close file associated with unit through fnom
 

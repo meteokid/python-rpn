@@ -84,10 +84,10 @@ def dtype_numpy2fst(npdtype,compress=True,missing=False):
     Raises:
         TypeError on wrong input arg types
     """
-    if not (type(npdtype) == _np.dtype):
+    if not (type(npdtype) == _np.dtype or type(npdtype) == type):
         raise TypeError("dtype_numpy2fst: Expecting arg of type numpy.dtype, Got %s" % (type(npdtype)))
     datyp = 0 #default returned type: binary
-    for k in _rc.FST_DATYP2NUMPY_LIST.keys():
+    for k in _rc.FST_DATYP2NUMPY_LIST.keys(): 
         if _rc.FST_DATYP2NUMPY_LIST[k] == npdtype:
             datyp = k
             break
@@ -1440,7 +1440,7 @@ def kindToString(kind):
         raise TypeError("kindToString: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
         raise ValueError("kindToString: must provide a valide iunit: %d" % (kind))
-    (s1,s1) = (_ct.c_char_p,_ct.c_char_p) #TODO: string buffer?
+    (s1,s2) = (c_mkstr(' '),c_mkstr(' '))
     _rp.c_KindToString(kind,s1,s2)
     s12 = s1[0]+s2[0]
     if s12.strip() == '':

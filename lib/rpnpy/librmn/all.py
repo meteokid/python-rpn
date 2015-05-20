@@ -9,6 +9,8 @@ Short hand to load all librmn submodules in the same namespace
  help(librmn.base)
  help(librmn.fstd98)
  help(librmn.interp)
+ help(librmn.llacar)
+ help(librmn.grids)
 
 """
 
@@ -18,4 +20,5 @@ from .const import *
 from .base import *
 from .fstd98 import *
 from .interp import *
+from .llacar import *
 from .grids import *
