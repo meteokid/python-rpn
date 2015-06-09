@@ -37,5 +37,5 @@ make components_install CONFIRM_INSTALL=yes
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot --dev
+. ./.setenv.dot --dev
 make components_uninstall UNINSTALL_CONFIRM=yes
