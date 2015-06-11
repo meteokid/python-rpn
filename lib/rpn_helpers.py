@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Module rpn_helpers contains the helpers functions/classes for the rpn package
 
     @author: Mario Lepine <mario.lepine@ec.gc.ca>
@@ -168,7 +169,7 @@ def cigaxg(grtyp,ig1,ig2=None,ig3=None,ig4=None):
     >>> cigaxg('N',2005,  2005,  2100,   400)
     (200.5, 200.5, 40000.0, 21.0)
     >>> cigaxg('N',400,  1000, 29830, 57333)
-    (200.5013427734375, 220.49639892578125, 40000.0, 260.0)
+    (200.5013427734375, 220.4964141845703, 40000.0, 260.0)
     >>> cigaxg('S',2005,  2005,  2100,   400)
     (200.5, 200.5, 40000.0, 21.0)
     >>> cigaxg('L',50,    50,    50, 18000)

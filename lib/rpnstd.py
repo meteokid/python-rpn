@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #TODO: should be able to search all rec tags and get the list of recs (handle or RPNMeta)
 #TODO: consistant naming in doc for; rec, data , meta, grid...
 #TODO: class RPNFields (a collection of related rec: levels,#...)

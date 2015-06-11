@@ -625,11 +625,14 @@ def gdxyfll(gdid, lat, lon):
     if not (type(gdid) == int):
         raise TypeError("gdxyfll: expecting args of type int, Got %s" % (type(gdid)))
     (clat,clon) = lat,lon
-    if type(lat) in (list,tuple): clat = _np.array(lat,dtype=_np.float32)
-    if type(lon) in (list,tuple): clon = _np.array(lon,dtype=_np.float32)
+    if type(lat) in (list,tuple):
+        clat = _np.array(lat,dtype=_np.float32,order='FORTRAN')
+    if type(lon) in (list,tuple):
+        clon = _np.array(lon,dtype=_np.float32,order='FORTRAN')
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat,lon should have the same size")
-    (cx,cy) = (_np.empty(clat.size,dtype=_np.float32),_np.empty(clat.size,dtype=_np.float32))
+    cx = _np.empty(clat.shape,dtype=_np.float32,order='FORTRAN')
+    cy = _np.empty(clat.shape,dtype=_np.float32,order='FORTRAN')
     istat = _rp.c_gdxyfll(gdid, cx, cy, clat, clon, clat.size)
     if istat >= 0:
         return {
@@ -663,11 +666,14 @@ def gdllfxy(gdid, xpts, ypts):
     if not (type(gdid) == int):
         raise TypeError("gdllfxy: expecting args of type int, Got %s" % (type(gdid)))
     (cx,cy) = (xpts,ypts)
-    if type(cx) in (list,tuple): cx = _np.array(xpts,dtype=_np.float32)
-    if type(cy) in (list,tuple): cy = _np.array(ypts,dtype=_np.float32)
+    if type(cx) in (list,tuple):
+        cx = _np.array(xpts,dtype=_np.float32,order='FORTRAN')
+    if type(cy) in (list,tuple):
+        cy = _np.array(ypts,dtype=_np.float32,order='FORTRAN')
     if cx.size != cy.size:
         raise TypeError("gdllfxy: provided xpts,ypts should have the same size")
-    (clat,clon) = (_np.empty(cx.size,dtype=_np.float32),_np.empty(cx.size,dtype=_np.float32))
+    clat = _np.empty(cx.shape,dtype=_np.float32,order='FORTRAN')
+    clon = _np.empty(cx.shape,dtype=_np.float32,order='FORTRAN')
     istat = _rp.c_gdllfxy(gdid, clat, clon, cx, cy, cx.size)
     if istat >= 0:
         return {
