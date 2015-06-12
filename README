@@ -29,12 +29,12 @@ make components_libs components_abs components_ssm
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./.setenv.dot
 make components_install CONFIRM_INSTALL=yes
 
 ==== Uninstalling ========================================================
 
 ssh MY_INSTALL_MACH
 cd /PATH/
-. ./setenv.dot
+. ./.setenv.dot
 make components_uninstall UNINSTALL_CONFIRM=yes

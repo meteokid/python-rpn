@@ -5,7 +5,7 @@ $(info ## )
 endif
 #VERBOSE=1
 
-ATM_MODEL_ISOFFICIAL := true
+export ATM_MODEL_ISOFFICIAL := true
 RBUILD_EXTRA_OBJ0    := 
 
 COMPONENTS        := gemdyn
@@ -36,8 +36,8 @@ components_vfiles: $(COMPONENTS_VFILES)
 components_objects: $(COMPONENTS_VFILES) $(OBJECTS)
 
 
-.PHONY: components_libs
 COMPONENTS_LIBS_FILES = $(foreach item,$(COMPONENTS_UC),$($(item)_LIBS_ALL_FILES_PLUS))
+.PHONY: components_libs
 components_libs: $(COMPONENTS_VFILES) $(OBJECTS) $(COMPONENTS_LIBS_FILES)
 	ls -l $(COMPONENTS_LIBS_FILES)
 	ls -lL $(COMPONENTS_LIBS_FILES)
