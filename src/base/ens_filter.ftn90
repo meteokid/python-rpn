@@ -248,7 +248,7 @@
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'ensvor'
 
       call cal_ddqq ( ensdiv, ensvor,dummy,F_difvt1, F_difut1, &
-                      0,0,dummy,dummy,.true.,.true.,.false., &
+                      0,dummy,0,dummy,.true.,.true.,.false., &
                       Minx,Maxx,Miny,Maxy, E_nk )
       if(Ens_stat)then
          call glbstat2 (ensdiv,'DVRG','FRCING', &

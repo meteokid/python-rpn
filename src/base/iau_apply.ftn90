@@ -79,7 +79,7 @@ subroutine iau_apply2(F_kount)
       is_init_L = .true.
 
       !# Set up input module
-      inputid = input_new(datev,nint(Cstv_dt_8))
+      inputid = input_new(dateo,nint(Cstv_dt_8))
       istat = input_setgridid(inputid,Grd_lclcore_gid)
       istat = min(input_set_basedir(inputid,Path_input_S),inputid)
       istat = min(input_set_filename(inputid,IAU_FILE,IAU_FILE,ALLOWDIR,INPUT_FILES_ANAL),istat)

@@ -134,6 +134,7 @@
       real, dimension(:,:,:), pointer :: gzm,gzt,ttx,htx,ffwe
       real, dimension(:,:), pointer :: wlao
 
+      logical,save :: done_L=.false.
       integer,save :: lastdt = -1
       save gzm,gzt,htx,ttx,wlao
 
@@ -355,7 +356,9 @@
 !
       nk_under = Out3_lieb_nk
 
-      If (lastdt .eq. -1) then
+      If (.not. done_L) then
+          lastdt = Lctl_step-1
+          done_L=.true.
           allocate ( ttx (l_minx:l_maxx,l_miny:l_maxy,nk_under),&
                      htx (l_minx:l_maxx,l_miny:l_maxy,nk_under),&
                      gzt (l_minx:l_maxx,l_miny:l_maxy,G_nk+1  ),&

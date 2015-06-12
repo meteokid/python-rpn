@@ -65,8 +65,8 @@
       integer, dimension(:), pointer :: ip1m
       logical periodx_L, flag_clos, write_diag_lev
       real mul
-      real, dimension (l_ni,l_nj,G_nk+1), target ::  wlnpi_m,wlnpi_t
-      real, dimension(:), allocatable::prprlvl,rff
+      real, dimension (l_ni,l_nj,G_nk+1), target :: wlnpi_m, wlnpi_t
+      real, dimension(:), allocatable :: rff
       real, dimension(:), pointer :: hybm,hybt
       real, dimension(:,:,:), allocatable :: buso_pres,cible
       real, dimension(:,:,:), pointer :: lnpres
@@ -140,16 +140,6 @@
          call out_slev2 (Level(1,levset), Level_max(levset), &
                         Level_momentum,indo,nko,write_diag_lev)
 
-         nko_pres = Level_max(levset)
-         allocate ( indo_pres(nko_pres),buso_pres(l_ni,l_nj,nko_pres),prprlvl(nko_pres),&
-                    cible(l_ni,l_nj,nko_pres) )
-         buso_pres= 0.
-         do i = 1, nko_pres
-            indo_pres(i)= i
-            prprlvl(i)   = level(i,levset) * 100.0
-            cible(:,:,i) = log(prprlvl(i))
-         enddo
-
          ig1 = Grid_ig1(gridset)
          bcs_ext = 0
          if (G_lam) bcs_ext = Grd_bsc_ext1
@@ -180,6 +170,14 @@
          else
 ! Preparation for Pressure output
              call out_vref(Level(1:Level_max(levset),levset),ig1=ig1,etiket=Out_etik_S)
+             nko_pres = Level_max(levset)
+             allocate ( indo_pres(nko_pres),buso_pres(l_ni,l_nj,nko_pres), &
+                        cible(l_ni,l_nj,nko_pres) )
+             buso_pres= 0.
+             do i = 1, nko_pres
+                indo_pres(i) = i
+                cible(:,:,i) = log(level(i,levset) * 100.0)
+             enddo
          endif
 
          PHYSICS_VARS: do ii=1, Outp_var_max(kk)
@@ -281,8 +279,10 @@
             endif WRITE_FIELD
          end do PHYSICS_VARS
 
-         deallocate (indo, buso_pres, indo_pres, prprlvl, cible)
-         
+         deallocate (indo)
+         if (Level_typ_S(levset).eq.'P') &
+              deallocate (buso_pres, indo_pres, cible)
+        
          flag_clos= .true.
          if (jj .lt. outp_sorties(0,stepno)) then
             flag_clos= .not.( (gridset.eq.Outp_grid(outp_sorties(jj+1,stepno))).and. &

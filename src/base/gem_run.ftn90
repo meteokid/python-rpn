@@ -75,9 +75,9 @@
 
       if ( .not. Rstri_rstn_L ) then
          call out_outdir (Step_kount, upperlimit)
+         call out_steps  (Lctl_step,Lctl_step)
          if (Step_kount.eq.0) then
             call iau_apply2 (Step_kount)
-            call out_steps (Lctl_step,Lctl_step)
             if ( Schm_phyms_L ) then
                call pw_shuffle
                call pw_update_GPW
@@ -85,8 +85,8 @@
                call pw_update_T
                call itf_phy_step (0,Lctl_step)
             endif
-            call out_dyn (.false., .true.) ! casc output
          endif
+         call out_dyn (.false., .true.) ! casc output
          call out_steps (Lctl_step, max(stepf,Lctl_step))
          call out_dyn (.true., .false.) ! regular output
          if ( .not.F_dgtflt_L .or. &

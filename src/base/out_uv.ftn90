@@ -66,6 +66,7 @@
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1m
+      logical, save :: done_L = .false.
       integer, save :: lastdt = -1
 
       real coef(0:Outd_var_max(set)+1),prmult
@@ -105,7 +106,9 @@
       psum=pnuu+pnuv+pnvv
       if (psum.eq.0)return
 
-      If (lastdt .eq. -1) then
+      If (.not.done_L) then
+         lastdt = Lctl_step-1
+         done_L = .true.
          allocate ( uu(minx:maxx,miny:maxy,G_nk+1) )
          allocate ( vv(minx:maxx,miny:maxy,G_nk+1) )
       endif

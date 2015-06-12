@@ -141,7 +141,7 @@
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
                   nullify (tr1)
-                  istat=gmm_get('TR/'//Tr3d_name_S(n)//':P',tr1)
+                  istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
                   cycle
                endif

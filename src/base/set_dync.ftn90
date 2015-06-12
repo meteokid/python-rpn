@@ -105,7 +105,7 @@
          Ver_alfas_8 = one
          Ver_css_8   = zero
          Ver_cssp_8  = zero
-         Cstv_hco1_8 = Dcst_cappa_8/(Cstv_Zsrf_8-Ver_z_8%m(1))
+         Cstv_hco1_8 = Cstv_bar0_8
          Cstv_hco2_8 = zero
       endif
 
