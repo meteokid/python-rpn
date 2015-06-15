@@ -53,7 +53,7 @@
 !
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 
-      call timing_start ( 34, 'MUSTOP' )
+      call timing_start2 ( 70, 'MUSTOP', 1 )
       pe0_master_L = (Ptopo_myproc.eq.0) .and. (Ptopo_couleur.eq.0)
       filen      = trim(Path_output_S)//'/output_ready_MASTER'
       filen_link = trim(Path_output_S)//'/output_ready'
@@ -141,7 +141,7 @@
       if (gem_muststop) call wrrstrt ()
       
       call gemtim4 ( Lun_out, 'CURRENT TIMESTEP', .false. )
-      call timing_stop (34)
+      call timing_stop (70)
 
  1001 format (' OUT_LAUNCHPOST: DIRECTORY output/',a, &
               ' was released for postprocessing at timestep: ',i9)

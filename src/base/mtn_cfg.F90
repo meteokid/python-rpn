@@ -324,8 +324,6 @@
 !
       Grd_ni   = Grd_ni + 2*Grd_extension
       Grd_nj   = Grd_nj + 2*Grd_extension
-      Grd_nila = Grd_ni
-      Grd_njla = Grd_nj
       Grd_jref = (Grd_nj+1 )/2
 
       if(mtn_nstar.lt.0.)            &!  isothermal case
@@ -363,8 +361,6 @@
               Grd_x0_8,Grd_y0_8,Grd_xl_8,Grd_yl_8
           return
        endif
-      Grd_dxmax=Grd_xl_8
-      Grd_dymax=Grd_yl_8
       call datp2f( idatx, Step_runstrt_S)
       Out3_date= idatx
 

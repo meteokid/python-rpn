@@ -82,15 +82,17 @@
       Schm_nblendyy = -1
       Schm_Tlift    = 0
       Schm_trapeze_L  = .false.
-      if (G_lam) Schm_trapeze_L  = .true.
+      if (G_lam) Schm_trapeze_L = .true.
       Schm_nolog_L    = .false.
+      Schm_settls_L   = .false.
+      Schm_settls_lim_L= .false.
+      Schm_capa_var_L = .false.
       Schm_cub_traj_L = .false.
+      if (G_lam.and.Schm_trapeze_L) Schm_cub_traj_L = .true.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_source_ps_L= .false.
-      Schm_pcsty_L    = .true.
-      Schm_pheat_L    = .true.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L  = .false.
@@ -108,9 +110,6 @@
       Lam_acidtest_L= .false.
 
       Zblen_L   = .false.
-
-      Clim_climat_L  = .false.
-      Clim_inincr_L  = .false.
 
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
@@ -135,7 +134,6 @@
       sol_yyg_maxits= 40
       sol_yyg_eps   = 1.d-04
 
-      Eigv_parity_L = .false.
       Hzd_difva_L= .false.
       Hzd_prof_S     = "NIL"
       Hzd_pwr        = -1
@@ -181,14 +179,6 @@
       Out3_nbitg     = 16
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
-      Out3_cubzt_L   = .true.
-      Out3_cubuv_L   = .true.
-      Out3_cubds_L   = .true.
-      Out3_cubqs_L   = .true.
-      Out3_cubdd_L   = .true.
-      Out3_cubqq_L   = .true.
-      Out3_cubww_L   = .true.
-      Out3_debug_L   = .false.
       Out3_flipit_L  = .false.
       Out3_newout_L  = .false.
       Out3_fullplane_L = .true.

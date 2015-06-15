@@ -100,6 +100,7 @@
 #include "grd.cdk"
 #include "lam.cdk"
 #include "grid.cdk"
+#include "out3.cdk"
 !
 !*
       integer i, j, k, gridset,gridout(5),niout,njout,longueur
@@ -126,47 +127,39 @@
       j = Grid_sets
       Grid_id(j)=gridset
       Grid_etikext_S(j) = ''
+
       if(index(F_argv_S(2),'model') .ne. 0) then
-          grdtyp_S='model'
-          if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-              Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
+         grdtyp_S='model'
+         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
+             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'core') .ne. 0) then
-          grdtyp_S='core'
-          if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-              Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
+         grdtyp_S='core'
+         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
+             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'free') .ne. 0) then
-          grdtyp_S='free'
-          if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-              Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
+         grdtyp_S='free'
+         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
+             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
-          if (Grd_typ_S(1:2) == 'GY') then
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_GRID ERROR: Reduc is not available for Grid Type GY'
-          Grid_sets = Grid_sets - 1
-          set_grid = 1
-          stop
-          endif
-          grdtyp_S='reduc'
-               gridout(1)=0
-               gridout(2)=0
-               gridout(3)=0
-               gridout(4)=0
-               gridout(5)=1
-               read(F_argv_S(3),*)gridout(1)
-               read(F_argv_S(4),*)gridout(2)
-               read(F_argv_S(5),*)gridout(3)
-               read(F_argv_S(6),*)gridout(4)
-               if (F_argc.gt.6) then
-                  if (index(F_argv_S(7),'"').eq.0) read(F_argv_S(7),*)gridout(5)
-                  if (index(F_argv_S(F_argc),'"').gt.0)  &
-           Grid_etikext_S(j) = F_argv_S(F_argc)(2:longueur(F_argv_S(F_argc))-1)
-	       endif
+         grdtyp_S='reduc'
+         gridout(1)= 0 ; gridout(2)= 0
+         gridout(3)= 0 ; gridout(4)= 0
+         gridout(5)=1
+         read(F_argv_S(3),*) gridout(1)
+         read(F_argv_S(4),*) gridout(2)
+         read(F_argv_S(5),*) gridout(3)
+         read(F_argv_S(6),*) gridout(4)
+         if (F_argc.gt.6) then
+            if (index(F_argv_S(7),'"').eq.0) read(F_argv_S(7),*)gridout(5)
+            if (index(F_argv_S(F_argc),'"').gt.0)  &
+            Grid_etikext_S(j) = F_argv_S(F_argc)(2:longueur(F_argv_S(F_argc))-1)
+         endif
       else
-          if (Lun_out.gt.0) &
-          write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
-          Grid_sets = Grid_sets - 1
-          set_grid = 1
-          return
+         if (Lun_out.gt.0) &
+         write(Lun_out,*)'SET_GRID WARNING: Grid Type Undefined'
+         Grid_sets = Grid_sets - 1
+         set_grid = 1
+         return
       endif
 
 !    Calculate the origin and outer coordinates of the output grid
@@ -183,17 +176,17 @@
 
       else if (grdtyp_S.eq.'core') then
 !     
-         Grid_x0(j)=Grd_left+ 1 + Lam_pil_w
-         Grid_x1(j)=Grd_left + Grd_nila  - Lam_pil_e
-         Grid_y0(j)=Grd_belo + 1         + Lam_pil_s
-         Grid_y1(j)=Grd_belo + Grd_njla  - Lam_pil_n
+         Grid_x0(j)=1      + Lam_pil_w
+         Grid_x1(j)=Grd_ni - Lam_pil_e
+         Grid_y0(j)=1      + Lam_pil_s
+         Grid_y1(j)=Grd_nj - Lam_pil_n
 
       else if (grdtyp_S.eq.'free') then
 !     
-         Grid_x0(j)=Grd_left + 1         + Lam_pil_w + Lam_blend_Hx
-         Grid_x1(j)=Grd_left + Grd_nila  - Lam_pil_e - Lam_blend_Hx
-         Grid_y0(j)=Grd_belo + 1         + Lam_pil_s + Lam_blend_Hy
-         Grid_y1(j)=Grd_belo + Grd_njla  - Lam_pil_n - Lam_blend_Hy
+         Grid_x0(j)=1       + Lam_pil_w + Lam_blend_Hx
+         Grid_x1(j)=Grd_ni  - Lam_pil_e - Lam_blend_Hx
+         Grid_y0(j)=1       + Lam_pil_s + Lam_blend_Hy
+         Grid_y1(j)=Grd_nj  - Lam_pil_n - Lam_blend_Hy
 
       else if (grdtyp_S.eq.'reduc') then
 
@@ -203,17 +196,27 @@
          Grid_y1(j)=max( Grid_y0(j), min(G_nj,gridout(4)) )
 !         Grid_stride(j)=min( max(gridout(5),1), &
 !             min(Grid_x1(j)-Grid_x0(j)+1,Grid_y1(j)-Grid_y0(j)+1)/2-1 )
+         if (Grd_yinyang_L) then
+            Out3_uencode_L= .false.
+            if (lun_out.gt.0) call write_status_file3 ('Out3_uencode_L=0')
+            if (trim(Grd_yinyang_S) .eq. 'YAN') then
+               Grid_x0(j)= 0 ; Grid_x1(j)= -1
+            endif
+         endif
+
       endif
-      
+
       niout=Grid_x1(j) - Grid_x0(j) + 1
       njout=Grid_y1(j) - Grid_y0(j) + 1
       if (niout.lt.1.or.njout.lt.1) then
           Grid_sets = Grid_sets - 1
-          if (Lun_out.gt.0) &
+          if (.not. ((Grd_yinyang_L).and.(trim(Grd_yinyang_S) .eq. 'YAN'))) then
+             if (Lun_out.gt.0) &
              write (Lun_out,*)'ERROR in description of output grid!'
+          endif
           return
       endif
-!
+
       if (Lun_out.gt.0) then
       write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
       endif

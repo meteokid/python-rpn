@@ -42,19 +42,24 @@
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L, yyblend
-      integer itraj, n, istat
+      integer itraj, n, istat, keep_itcn
       real, pointer, dimension(:,:,:) :: tr1
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write(Lun_out,1000)
-      call timing_start ( 10, 'DYNSTEP' )
+      call timing_start2 ( 10, 'DYNSTEP', 1 )
 
 !     first_L is TRUE  for the first timestep
 !           or the first timestep after digital filter initialisation
 
       first_L = (Step_kount.eq.1).or.(.not.Init_mode_L .and.  &
                  Step_kount.eq.(Init_dfnp+1)/2)
+
+      Schm_step_settls_L = Schm_settls_L.and..NOT.first_L
+
+      keep_itcn = Schm_itcn
+      if (Schm_step_settls_L) Schm_itcn = 1
 
       itraj = Schm_itraj
 
@@ -96,6 +101,8 @@
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
 
+      if (Schm_settls_L) call t2et1_wnd ()
+
       call t02t1 ()
 
       if (Grd_yinyang_L) then
@@ -120,6 +127,8 @@
       call pw_update_T
 
       if ( Lctl_step-Vtopo_start .eq. Vtopo_ndt) Vtopo_L = .false.
+
+      Schm_itcn = keep_itcn
 
       call timing_stop ( 10 )
 

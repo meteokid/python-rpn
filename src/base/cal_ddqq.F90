@@ -68,8 +68,8 @@
       endif
 
       if (F_filtdd.gt.0) &
-           call filter ( F_DD, F_filtdd,F_coefdd,'G', .false.,&
-                              l_minx,l_maxx,l_miny,l_maxy, Nk )
+           call filter2( F_DD, F_filtdd,F_coefdd, &
+                         l_minx,l_maxx,l_miny,l_maxy,Nk )
 
       if (F_relvor_L) then
          do k = 1 , Nk
@@ -84,8 +84,8 @@
             F_QR(:,1:j0-1,k) = 0. ; F_QR(:,jn+1:l_nj,k)= 0.
          end do
          if (F_filtqq.gt.0) &
-           call filter ( F_QR, F_filtqq,F_coefqq,'G', .false.,&
-                         l_minx,l_maxx,l_miny,l_maxy, Nk )      
+           call filter2( F_QR, F_filtqq,F_coefqq, &
+                         l_minx,l_maxx,l_miny,l_maxy,Nk )      
       endif
 
       if (F_absvor_L)then
@@ -114,8 +114,8 @@
                F_QQ(:,1:j0-1,k) = 0. ; F_QQ(:,jn+1:l_nj,k)= 0.
             end do
             if (F_filtqq.gt.0) &
-                 call filter ( F_QQ, F_filtqq,F_coefqq,'G', .false.,&
-                                   l_minx,l_maxx,l_miny,l_maxy, Nk )      
+                 call filter2( F_QQ, F_filtqq,F_coefqq, &
+                               l_minx,l_maxx,l_miny,l_maxy,Nk )      
             do k =  1, Nk
                do j = j0, jn
                do i = i0, in

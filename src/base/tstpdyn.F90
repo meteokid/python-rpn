@@ -68,6 +68,7 @@
 
       integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j, icln
       real*8, dimension (:,:,:), allocatable :: rhs_sol, lhs_sol
+      real, pointer, dimension(:,:,:)  :: hut1, hut0
 !
 !     ---------------------------------------------------------------
 !
@@ -119,6 +120,9 @@
       gmmstat = gmm_get (gmmk_yct1_s, yct1)
       gmmstat = gmm_get (gmmk_zct1_s, zct1)
 
+      gmmstat = gmm_get('TR/HU:M' ,hut1)
+      gmmstat = gmm_get('TR/HU:P' ,hut0)
+
       if (G_lam) then
          gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
          gmmstat = gmm_get (gmmk_nest_q_s, nest_q)
@@ -146,11 +150,11 @@
 
       if ( Orh_icn .eq. 1 ) then       ! Compute RHS
 
-         call timing_start ( 20, 'RHS      ' )
+         call timing_start2 ( 20, 'RHS', 10 )
 
 !        Compute the right-hand sides of the governing equations
          call rhs (orhsu, orhsv, orhsc, orhst, orhsw, orhsf, orhsx, orhsq, &
-                   ruw1,rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,xdt1,qdt1,fis0, &
+                   ruw1,rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,xdt1,qdt1,hut1,fis0, &
                    l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
          call timing_stop (20)
@@ -163,14 +167,14 @@
 
       endif
 
-      call timing_start(21, 'ADW      ')
+      call timing_start2 (21, 'ADW', 10)
 
 !     Perform Semi-Lagrangian advection
       call itf_adx_main (F_fnitraj)
 
       call timing_stop(21)
 
-      call timing_start(22, 'PRE      ')
+      call timing_start2 (22, 'PRE', 10)
 
       if ( Orh_icn.eq.1 ) then
          if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
@@ -186,7 +190,7 @@
 !     of the right-hand side of the elliptic problem
       call pre (rhsu, rhsv, ruw1, ruw2, rvw1, rvw2, &
                 xct1, yct1, zct1, fis0, rhsc, rhst, &
-                rhsw, rhsf, orhsu, orhsv, rhsb,     &
+                rhsw, rhsf, rhsx, rhsq, orhsu, orhsv, rhsb, &
                 nest_t, l_minx,l_maxx,l_miny,l_maxy,&
                 i0, j0, in, jn, k0, l_ni, l_nj, l_nk)
 
@@ -206,7 +210,7 @@
 
       do iln=1,Schm_itnlh
 
-         call timing_start ( 23, 'NLI      ' )
+         call timing_start2 ( 23, 'NLI', 10 )
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
@@ -214,19 +218,19 @@
          if ( G_lam .and. .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f     ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc ,&
-                   fis0, nl_b, xdt0, qdt0, l_minx,l_maxx,l_miny,l_maxy,&
+                   fis0, nl_b, xdt0, qdt0, hut0, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
          call timing_stop (23)
 
-         call timing_start ( 24, 'SOL      ' )
+         call timing_start2 ( 24, 'SOL', 10 )
 
 !        Solve the elliptic problem
          call sol_main (rhs_sol,lhs_sol,ni,nj, l_nk, iln)
 
          call timing_stop (24)
 
-         call timing_start ( 25, 'BAC      ' )
+         call timing_start2 ( 25, 'BAC', 10 )
 
 !        Back subtitution: compute variables for the next iteration/time step
          call  bac (lhs_sol, fis0                             ,&

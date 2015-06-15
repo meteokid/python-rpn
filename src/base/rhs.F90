@@ -18,7 +18,7 @@
 !
       subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf,F_orx,F_orq, &
                        F_ruw1,F_rvw1,F_u,F_v,F_w,F_t,F_s,F_zd,F_q,F_xd,F_qd, &
-                              F_fis, Minx,Maxx,Miny,Maxy, Nk )
+                              F_hu,F_fis, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +32,8 @@
            F_w     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_t     (Minx:Maxx,Miny:Maxy,  Nk), &
            F_xd    (Minx:Maxx,Miny:Maxy,  Nk)  ,F_qd    (Minx:Maxx,Miny:Maxy,  Nk), &
            F_s     (Minx:Maxx,Miny:Maxy)       ,F_zd    (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_q     (Minx:Maxx,Miny:Maxy,2:Nk+1),F_fis   (Minx:Maxx,Miny:Maxy)
+           F_q     (Minx:Maxx,Miny:Maxy,2:Nk+1),F_hu    (Minx:Maxx,Miny:Maxy,  Nk), &
+           F_fis   (Minx:Maxx,Miny:Maxy)
 
 !author
 !     Alain Patoine
@@ -58,7 +59,6 @@
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "schm.cdk"
-#include "intuv.cdk"
 #include "inuvl.cdk"
 #include "type.cdk"
 #include "ver.cdk"
@@ -69,9 +69,9 @@
       integer :: i0,  in,  j0,  jn
       integer :: i0u, inu, j0v, jnv
       integer :: i, j, k, km, kq, kp, nij, jext
-      real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, barz, barzp, &
+      real*8  tdiv, BsPqbarz, fipbarz, dTstr_8, barz, barzp, p1, p2, &
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
-              xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
+              w1, delta_8, xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), pointer :: BsPq, FI, MU
       save MU
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
@@ -88,6 +88,13 @@
          nullify  ( MU )
          allocate ( MU(Minx:Maxx,Miny:Maxy,l_nk) )
       endif
+
+      p1=one
+      p2=zero
+      if(Schm_nolog_L) p1=zero
+      if(Schm_nolog_L) p2=one
+      delta_8 = zero
+      if(Schm_capa_var_L) delta_8 = 0.233d0
 
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,7 +157,7 @@
 
 !$omp parallel private(km,kq,kp,barz,barzp, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
-!$omp     dlnTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
+!$omp     dTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
 
 !$omp do
       do k=1,l_nk+1
@@ -158,6 +165,7 @@
          do j=j0v,jnv+1
             do i=i0u,inu+1
                BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq) * Ver_onezero(k)
+                 FI(i,j,k) = FI(i,j,k) - Ver_FIstr_8(k)
             enddo
          enddo
       enddo
@@ -228,10 +236,10 @@
       if (Schm_nolog_L) then
          do j= j0, jn
          do i= i0, in
-            BsPqbarz = Ver_wp_8%t(k)*BsPq(i,j,k+1)+Ver_wm_8%t(k)*BsPq(i,j,k)
-            F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)/Ver_Tstr_8(k)-one - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
-                         + Cstv_Beta_8 * Dcst_cappa_8 * (F_zd(i,j,k)+(F_t(i,j,k)/Ver_Tstr_8(k)-one)*(F_xd(i,j,k)+F_qd(i,j,k)))
-            F_orx(i,j,k) = Cstv_invT_8 * Ver_b_8%t(k)*F_s(i,j) &
+            w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
+            F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstr_8(k) ) &
+                         + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*(F_xd(i,j,k)+F_qd(i,j,k))
+            F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8*Ver_b_8%t(k)*F_s(i,j) &
                          + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
             F_orq(i,j,k) = Cstv_invT_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
                          + Cstv_Beta_8 * F_qd(i,j,k)
@@ -258,10 +266,9 @@
 
       do j= j0, jn
       do i= i0, in
-         fipbarz  = Ver_wp_8%t(k)* (FI(i,j,k+1)-Ver_FIstr_8(k+1))+Ver_wm_8%t(k)* (FI(i,j,k)-Ver_FIstr_8(k))
          F_orw(i,j,k) = Cstv_invT_8 * F_w(i,j,k) &
                       + Cstv_Beta_8 * Dcst_grav_8 * MU(i,j,k)
-         F_orf(i,j,k) = Cstv_invT_8 * fipbarz  &
+         F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*FI(i,j,k+1)+Ver_wm_8%t(k)*FI(i,j,k) )  &
                       + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstr_8(k) * F_zd(i,j,k) &
                       + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
       end do
@@ -270,10 +277,10 @@
       if(Cstv_Tstr_8.lt.0.) then
          barz  = Ver_wp_8%m(k )*Ver_Tstr_8(k )+Ver_wm_8%m(k )*Ver_Tstr_8(km)
          barzp = Ver_wp_8%m(kp)*Ver_Tstr_8(kp)+Ver_wm_8%m(kp)*Ver_Tstr_8(k )
-         dlnTstr_8=log(barzp/barz)*Ver_idz_8%t(k)
+         dTstr_8=(barzp-barz)*Ver_idz_8%t(k)
          do j = j0, jn
          do i = i0, in
-            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * F_zd(i,j,k) * dlnTstr_8
+            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * F_zd(i,j,k) * (p2+p1/Ver_Tstr_8(k))*dTstr_8
          end do
          end do
       endif

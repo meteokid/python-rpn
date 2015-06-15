@@ -162,7 +162,7 @@ End Interface
 !
       unf= 76
 
-      call timing_start ( 71, '3DF_input')
+      call timing_start2 ( 71, '3DF_input', 2)
 
       call blk_dist_georef ( xpaq    ,ypaq    ,xpau    ,ypav,&
                          ana_am_8,ana_bm_8,ana_at_8,ana_bt_8,&
@@ -191,7 +191,7 @@ End Interface
       call handle_error (err,'casc_3df_dynp','casc_3df_dynp')
 
       call timing_stop  ( 71 )
-      call timing_start ( 72, '3DF_interp')
+      call timing_start2 ( 72, '3DF_interp', 2)
 
       if ( initial_data .and. (Step_kount.eq.0) ) then
          allocate ( meqr(l_ni,l_nj))

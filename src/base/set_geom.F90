@@ -61,8 +61,9 @@
       character*8 dumc
       integer offi,offj,indx,err,ierx,iery,dgid,hgc(4)
       integer i,j,k,dimy,istat,pnip1,lam,ni,nj,offset
+      integer nila,njla,belo,left
       real xfi(0:l_ni+1),yfi(0:l_nj+1),height,heightp1
-      real gxfi(g_ni),gyfi(g_nj)
+      real gxfi(g_ni),gyfi(g_nj), dxmax, dymax
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
@@ -94,13 +95,12 @@
                 Geomn_latgv(G_nj),Geomn_longu(G_ni+1), &
                 Geomn_latij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy), &
                 Geomn_lonij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy))
-  
-      call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,     &
-                           Grd_x0_8, Grd_xl_8, Grd_left,                     &
-                           Grd_y0_8, Grd_yl_8, Grd_belo,                     &
-                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,         &
-                           Grd_yinyang_L, Grd_gauss_L, G_lam, Grd_uniform_L, &
-                           ierx, iery, Lun_out.gt.0 )
+
+      dxmax = 360. ; dymax = 180. ; nila= Grd_ni ; njla= Grd_nj
+      call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy  , &
+                           Grd_x0_8,Grd_xl_8,left,Grd_y0_8,Grd_yl_8, belo, &
+                           nila,njla,dxmax,dymax,Grd_yinyang_L,Grd_gauss_L,&
+                           G_lam, Grd_uniform_L, ierx, iery, Lun_out.gt.0  )
 
       if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
              write (Lun_out,*)'ERROR in generating XGI_8 values!'
@@ -175,9 +175,8 @@
          end do
       endif
       
-
-!C             Compute longitudes in degrees for model output
-!              ----------------------------------------------
+!             Compute longitudes in degrees for model output
+!             ----------------------------------------------
       do i = 1, G_ni+1
          Geomn_longs(i) =  G_xg_8(i) * rad2deg_8
          Geomn_longu(i) = (G_xg_8(i+1)+G_xg_8(i))*HALF_8*rad2deg_8
@@ -269,10 +268,10 @@
       if (.not.G_lam) then 
          do j=1-G_haloy, l_nj+G_haloy
             Geomg_cyM_8    (j) = ONE_8
-            Geomg_invDYM_8 (j) = Geomg_invDY_8*geomg_invcy_8(j)*Dcst_rayt_8
-            Geomg_invDYMv_8(j) = Geomg_invDY_8*Geomg_cyv_8(j)  /Dcst_rayt_8
-            Geomg_invDXM_8 (j)= Geomg_invDX_8 (j)*geomg_invcy_8(j)*Dcst_rayt_8
-            Geomg_invDXMu_8(j)= Geomg_invDX_8(j)*geomg_cy_8(j)   /Dcst_rayt_8
+            Geomg_invDYM_8 (j) = Geomg_invDY_8   *geomg_invcy_8(j) *Dcst_rayt_8
+            Geomg_invDYMv_8(j) = Geomg_invDY_8   *Geomg_cyv_8  (j) /Dcst_rayt_8
+            Geomg_invDXM_8 (j) = Geomg_invDX_8(j)*geomg_invcy_8(j) *Dcst_rayt_8
+            Geomg_invDXMu_8(j) = Geomg_invDX_8(j)*geomg_cy_8   (j) /Dcst_rayt_8
          end do
       endif
 
@@ -350,12 +349,12 @@
       dgid = ezgdef_fmem (ni , nj , 'Z', 'E', Hgc_ig1ro, &
                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi(Geomn_minx) , yfi(Geomn_miny) )
       err = gdll (dgid,Geomn_latij,Geomn_lonij)
-!
-!C              Computes coriolis factor
+
+!     Computes coriolis factor
 !		------------------------
       call set_cori()
-!
-!C              Computes (u,v) interpolation coefficients for coriolis
+
+!     Computes (u,v) interpolation coefficients for coriolis
 !		and right hand side computations
 !		------------------------------------------------------
       call set_intuv()

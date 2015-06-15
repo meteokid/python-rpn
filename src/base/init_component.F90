@@ -49,6 +49,7 @@
 !
 !--------------------------------------------------------------------
 !
+      call gemtim4 ( 6, '', .false. )
       ierr= model_timeout_alarm(Step_alarm)
       call rpn_comm_mydomain (init_ndoms, mydomain)
 
@@ -73,6 +74,9 @@
       Ptopo_couleur= RPN_COMM_init_multi_level (pe_zero_topo, Ptopo_myproc,Ptopo_numproc, &
                                                 Ptopo_npex,Ptopo_npey,Grd_ndomains,ngrids )
 
+      call timing_init2 ( Ptopo_myproc, F_component_S)
+      call timing_start2 ( 1, 'GEMDM', 0)
+
       if (Grd_yinyang_L) then
          Ptopo_intracomm = RPN_COMM_comm ('GRID')
          Ptopo_intercomm = RPN_COMM_comm ('GRIDPEERS')
@@ -95,9 +99,7 @@
       ierr = 0
       if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
                               Lun_out,Ptopo_numproc ) ) ierr=-1
-      call handle_error (ierr,'e_gemnml','set_dcst_8')
-
-      call gemtim4 ( Lun_out, 'END OF e_initntr', .false. )
+      call gem_error (ierr, 'init_component', 'set_dcst_8')
 !
 !--------------------------------------------------------------------
 !

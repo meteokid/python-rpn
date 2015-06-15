@@ -62,7 +62,6 @@
 !
 #include "glb_ld.cdk"
 #include "schm.cdk"
-#include "intuv.cdk"
 #include "inuvl.cdk"
 #include "geomg.cdk"
 

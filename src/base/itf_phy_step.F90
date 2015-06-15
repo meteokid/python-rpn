@@ -47,7 +47,7 @@
 !
       if ( Rstri_user_busper_L .and. (F_step_kount.eq.0) ) return
 
-      call timing_start ( 40, 'PHYSTEP' )
+      call timing_start2 ( 40, 'PHYSTEP', 1 )
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
@@ -59,7 +59,7 @@
 
       call rpn_comm_bloc (Ptopo_ninblocx,Ptopo_ninblocy)
 
-      call timing_start ( 45, 'PHY_INPUT')
+      call timing_start2 ( 45, 'PHY_input', 40)
       err = phy_input ( itf_phy_prefold_opr,F_step_kount,Path_phyincfg_S,&
                         Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
       call handle_error (err,'itf_phy_step','Problem with phy_input') 
@@ -70,16 +70,22 @@
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0)  )
 
+      call timing_start2 ( 46, 'PHY_step', 40)
       err = phy_step ( F_step_kount, F_lctl_step )
+      call timing_stop  ( 46 )
 
       call handle_error (err,'itf_phy_step','Problem with phy_step') 
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0) )
 
+      call timing_start2 ( 47, 'PHY_update', 40)
       call itf_phy_update3 ( F_step_kount > 0 )
+      call timing_stop  ( 47 )
 
+      call timing_start2 ( 48, 'PHY_output', 40)
       call itf_phy_output2 ( F_lctl_step )
+      call timing_stop  ( 48 )
 
       call timing_stop ( 40 )
 

@@ -44,29 +44,34 @@
 ! Schm_nolog_L       | .true. -> Eliminating log tendencies            |
 ! Schm_superwinds_L  | Use super winds for advection                   |
 ! Schm_cub_traj_L    | Use cubic interpolation in trajectory comp.     |
+! Schm_settls_L      | .true. -> activating SETTLS scheme              |
+! Schm_step_settls_L | .true. -> actually a SETTLS step                |
+! Schm_settls_lim_L  | .true. -> activating Diamantakis limiter        |
+! Schm_capa_var_L    | .true. -> variable cappa in thermod. eqn.       |
 !----------------------------------------------------------------------
 !
 #endif
-      logical Schm_psadj_L
+      logical Schm_psadj_L ,Schm_settls_L,Schm_step_settls_L,Schm_settls_lim_L
       logical Schm_hydro_L ,Schm_nkbz_L , Schm_autobar_L, Schm_wload_L
       logical Schm_phyms_L ,Schm_adcub_L, Schm_source_ps_L, Schm_opentop_L
-      logical Schm_pcsty_L, Schm_trapeze_L, Schm_nolog_L
-      logical Schm_Topo_L  ,Schm_pheat_L, Schm_theoc_L, Schm_superwinds_L
+      logical Schm_trapeze_L, Schm_nolog_L, Schm_capa_var_L
+      logical Schm_Topo_L  ,Schm_theoc_L  , Schm_superwinds_L
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
-!
+
       integer Schm_itcn , Schm_Tlift
       integer Schm_itnlh, Schm_itraj, Schm_nith,  Schm_nblendyy
-!
+
       common / schm_l / Schm_hydro_L  , Schm_psadj_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L, Schm_wload_L
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_source_ps_L  , Schm_opentop_L
       common / schm_l / Schm_trapeze_L, Schm_nolog_L
-      common / schm_l / Schm_pcsty_L
-      common / schm_l / Schm_pheat_L  , Schm_theoc_L
+      common / schm_l / Schm_theoc_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
       common / schm_l / Schm_hzdadw_L , Schm_cub_traj_L
       common / schm_l / Schm_bitpattern_L, Schm_itcn
+      common / schm_l / Schm_settls_L , Schm_step_settls_L, Schm_settls_lim_L
+      common / schm_l / Schm_capa_var_L
       common / schm_i / Schm_itnlh    , Schm_itraj, Schm_nith
       common / schm_i / Schm_Tlift    ,Schm_nblendyy
-!
+

@@ -118,24 +118,6 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single
 
-!     Compute U & V
-!     ~~~~~~~~~~~~~
-!$omp do
-      do k=k0,l_nk
-         do j= j0, jn
-         do i= i0, l_niu-pil_e
-            F_u(i,j,k) = Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
-         end do
-         end do
-
-         do j= j0, l_njv-pil_n
-         do i= i0, in
-            F_v(i,j,k) = Cstv_tau_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomg_invDYMv_8(j))
-         end do
-         end do
-      enddo
-!$omp enddo
-
       if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nolog_L))) then
 !
 !        Compute w
@@ -193,56 +175,10 @@
 !$omp enddo
          end do
 
-      endif
-
-!     Compute s
-!     ~~~~~~~~~
-    
-      w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
-!$omp do
-      do j= j0, jn
-      do i= i0, in
-         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-F_q(i,j,l_nk+1)
-      end do
-      end do
-!$omp enddo
-
-!     Compute zd
-!     ~~~~~~~~~~
-
-!        N.B.  Top Boundary condition:
-!                 Closed Top(k0t.eq.1):  F_zd(i,j,k0t) = 0
-!                   Open Top(k0t.ne.1):  F_zd(i,j,k0t) is computed
-
-!$omp do
-      do k=k0t,l_nk-1
-         kq=max(k,2)
-         w1=Ver_gama_8(k)*Ver_idz_8%t(k)
-         w2=Ver_gama_8(k)*Ver_epsi_8(k)
-         w3=Cstv_invT_8*Cstv_bar1_8
-         do j= j0, jn
-         do i= i0, in
-            Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
-            qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
-            F_zd(i,j,k)=-Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
-                       + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
-                       - w3 * ( Ver_b_8%t(k)*F_s(i,j)+qbar )
-         enddo
-         enddo
-      enddo
-!$omp enddo
-
-      if(schm_nolog_L) then
-!$omp do
-         do k=k0t,l_nk
-         do j= j0, jn
-         do i= i0, in
-            F_xd(i,j,k)=Cstv_invT_8*Ver_b_8%t(k)*F_s(i,j)+F_zd(i,j,k)-F_rx(i,j,k)
-         end do
-         end do
-         end do
-!$omp enddo
-         if(.not.Schm_hydro_L) then
+         if(Schm_nolog_L) then
+!
+!        Compute qdot
+!        ~~~~~~~~~~~~
 !$omp do
             do k=k0t,l_nk
             kq=max(k,2)
@@ -255,6 +191,92 @@
             end do
 !$omp enddo
          endif
+
+      endif
+
+!     Compute U & V
+!     ~~~~~~~~~~~~~
+!$omp do
+      do k=k0,l_nk
+         do j= j0, jn
+         do i= i0, l_niu-pil_e
+            F_u(i,j,k) = Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
+         end do
+         end do
+
+         do j= j0, l_njv-pil_n
+         do i= i0, in
+            F_v(i,j,k) = Cstv_tau_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomg_invDYMv_8(j))
+         end do
+         end do
+      enddo
+!$omp enddo
+!     Compute s
+!     ~~~~~~~~~
+    
+      w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
+!$omp do
+      do j= j0, jn
+      do i= i0, in
+         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-F_q(i,j,l_nk+1)
+      end do
+      end do
+!$omp enddo
+
+      if(schm_nolog_L) then
+
+!     Compute ksidot and zdot
+!     ~~~~~~~~~~~~~~~~~~~~~~~
+!$omp do
+         do k=k0t,l_nk-1
+            kq=max(k,2)
+            w1=Ver_gama_8(k)*(Ver_idz_8%t(k)-Ver_epsi_8(k)*Ver_wp_8%t(k))
+            w2=Ver_gama_8(k)*(Ver_idz_8%t(k)+Ver_epsi_8(k)*Ver_wm_8%t(k))
+            w3=Cstv_invT_8*Cstv_bar1_8*Ver_b_8%t(k)
+            do j= j0, jn
+            do i= i0, in
+               F_xd(i,j,k) = - Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
+                             + w1 * GP(i,j,k+1) - w2 * GP(i,j,k) ) &
+                             - F_qd(i,j,k)
+               F_zd(i,j,k) = F_xd(i,j,k) - w3 * F_s(i,j) + F_rx(i,j,k)
+            enddo
+            enddo
+         enddo
+!$omp enddo
+         w3=Cstv_invT_8*Cstv_bar1_8*Ver_b_8%t(l_nk)
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_xd(i,j,l_nk)=w3 * F_s(i,j) - F_rx(i,j,l_nk)
+         end do
+         end do
+!$omp enddo
+      else
+
+!     Compute zdot
+!     ~~~~~~~~~~~~
+
+!        N.B.  Top Boundary condition:
+!                 Closed Top(k0t.eq.1):  F_zd(i,j,k0t) = 0
+!                   Open Top(k0t.ne.1):  F_zd(i,j,k0t) is computed
+
+!$omp do
+         do k=k0t,l_nk-1
+            kq=max(k,2)
+            w1=Ver_gama_8(k)*Ver_idz_8%t(k)
+            w2=Ver_gama_8(k)*Ver_epsi_8(k)
+            w3=Cstv_invT_8*Cstv_bar1_8
+            do j= j0, jn
+            do i= i0, in
+               Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
+               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+               F_zd(i,j,k)=-Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
+                          + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
+                          - w3 * ( Ver_b_8%t(k)*F_s(i,j)+qbar )
+            enddo
+            enddo
+         enddo
+!$omp enddo
       endif
 
 !     Compute FI' (into GP)

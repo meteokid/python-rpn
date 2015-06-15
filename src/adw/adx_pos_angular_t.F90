@@ -85,6 +85,7 @@ subroutine adx_pos_angular_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm,
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_dyn.cdk"
+#include "schm.cdk"
 !***********************************************************************
    integer vnik, vnikm, i,j,k
 !
@@ -179,7 +180,7 @@ subroutine adx_pos_angular_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm,
          endif
       enddo
 
-      if(adx_trapeze_L) then
+      if(adx_trapeze_L.or.Schm_step_settls_L) then
 !        working with displacements
          do k=k00,adx_lnk-1
             do i=i0,in

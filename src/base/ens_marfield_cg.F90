@@ -19,7 +19,7 @@
 !     
       subroutine ens_marfield_cg(fgem,E_nk)
 !
-      use phy_itf, only: phy_put
+      use phy_itf
       use harmonsphere, only : harmon, harmon_init, harmon_destroy, harmons
       implicit none
 #include <arch_specific.hf>
@@ -53,6 +53,7 @@
 #include "hgc.cdk"
 #include "ens_param.cdk"
 #include "step.cdk"
+#include "grd.cdk"
 !
 
 
@@ -97,7 +98,7 @@
       real,    dimension(:,:,:),allocatable :: fgau, fgau_str
       complex, dimension(:,:),  allocatable :: pnm2
       real,    dimension(:,:),  allocatable :: fgau2, fgau2_str
-      real,    dimension(:,:,:),pointer     :: fgem2_str, fgem_str
+      real,    dimension(:,:,:),pointer     :: fgem2_str, fgem_str, ptr3d
 !
 ! variables et champs auxiliaires complexes
       complex,dimension(:,:),allocatable :: hoco,veco
@@ -132,17 +133,11 @@
 !     Assure that busper is to 1 at the begining in inichamp1
 !
       INITIALIZE: if (.not.init_done) then
-         if(Ens_ptp_conf)then
-            
-!!$            istat = phybusindx ('MRKV', bus, mrkv, lght, soit)
-!!$            istat = phybusindx ('MRK2', bus, mrk2, lght, soit)
-         endif
          if (Lun_out.gt.0) then
             write( Lun_out,1000)
             write( Lun_out,1009)xmn,xmx,xme,std,tau,ntrunc,nlon,nlat,2*mzt+1
          endif
          init_done=.true.
-!c         return
       endif INITIALIZE
 
       paiv  => dumdum( 1,1)
@@ -289,14 +284,14 @@
 !
 !*    Interpolation to the processors grids and fill in perbus
 !
-     offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-     offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+     p_offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+     p_offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
      do i=1,l_ni
-        indx = offi + i
+        indx = p_offi + i
         xfi(i) = G_xg_8(indx)*rad2deg_8
      end do
      do i=1,l_nj
-        indx = offj + i
+        indx = p_offj + i
         yfi(i) = G_yg_8(indx)*rad2deg_8
      end do
 
@@ -332,7 +327,7 @@
             fgau=sign(1.,fgau)
          end where
 
-         allocate(fgau_str(nlon,nlat,E_nk),fgem_str(l_ni,l_nj,E_nk))
+         allocate(fgau_str(nlon,nlat,E_nk),fgem_str(l_ni,l_nj,E_nk+1))
          sig2=1./LOG((aa/(aa-1.))**2)
          fgau_str=fgau*(aa*exp(-fgau**2/2./sig2)+2.-aa)*(xmx-xme)
          if(xme/=0.0) fgau_str=fgau_str+xme
@@ -340,6 +335,7 @@
          do k=1,E_nk
             ier = ezsint(fgem_str(1,1,k),fgau_str(1,1,k))
          enddo
+         fgem_str(:,:,E_nk+1)=0.0
 !
          if(Ens_stat)then
             call glbstat2 (fgem_str,'MCSP','STR', &
@@ -349,7 +345,9 @@
       else
          fgem_str=1.0
       endif
-      istat = phy_put(fgem_str,'mrkv',F_npath='V',F_bpath='P')
+      ptr3d => fgem_str(Grd_lphy_i0:Grd_lphy_in, &
+                        Grd_lphy_j0:Grd_lphy_jn, 1:E_nk+1)
+      istat = phy_put(ptr3d,'mrkv',F_npath='V',F_bpath='P')
       deallocate(fgau,pnm,veco,fgau_str,fgem_str)
 
 !====================================
@@ -425,9 +423,14 @@
         deallocate(fgau2,fgau2_str,pnm2)
 
      enddo
-     istat = phy_put(fgem2_str,'mrk2',F_npath='V',F_bpath='P')
-!
+!      allocate ( wk1(iend2(1),iend2(2),iend2(3)) )
+!      wk1(:,:,:)= fgem2_str(istart2(1)+1:l_ni-istart2(1),istart2(2)+1:l_nj-istart2(1),:)
+!      istat = phy_put(wk1,'mrk2',F_npath='V',F_bpath='P')
+!      deallocate ( wk1 )
 
+     ptr3d => fgem2_str(Grd_lphy_i0:Grd_lphy_in, &
+                        Grd_lphy_j0:Grd_lphy_jn, 1:Ens_mc2d_ncha)
+     istat = phy_put(ptr3d ,'mrk2',F_npath='V',F_bpath='P')
      deallocate(fgem2_str)
 !     
 !

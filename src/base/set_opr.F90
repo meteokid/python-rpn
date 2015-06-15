@@ -42,7 +42,6 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "opr.cdk"
-#include "eigv.cdk"
 #include "sol.cdk"
 #include "cstv.cdk"
 #include "trp.cdk"
@@ -165,17 +164,8 @@
 
       if ( .not. Fft_fast_L ) then
 
-         if( .not. Eigv_parity_L) then
-            call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
-                                             Opr_opsxp2_8, Gni, G_ni )
-         else
-!         Eigenmodes with definite parity
-            NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
-            dim = NSTOR*NSTOR
-            allocate (Opr_evvec_8(dim),Opr_odvec_8(dim))
-            call  set_poic_par ( Opr_xeval_8, Opr_evvec_8, Opr_odvec_8, &
-                                               G_xg_8(1), G_ni, NSTOR )
-         endif
+         call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
+                                           Opr_opsxp2_8, Gni, G_ni )
 
       else
 

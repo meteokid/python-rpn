@@ -37,7 +37,7 @@
 #include "rstr.cdk"
 #include "step.cdk"
 
-      integer nrec,unf,err,initial_step
+      integer nrec,unf,err
       real :: sec
 !
 !-------------------------------------------------------------------
@@ -92,28 +92,28 @@
       if ( Fcst_start_S  == '' ) Fcst_start_S  = '0H'
       if ( Fcst_end_S    == '' ) Fcst_end_S    = Fcst_start_S
 
-      err= min( timestr2step (initial_step, Fcst_start_S, Step_dt), err)
+      err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
       err= min( timestr2step (Step_nesdt  , Fcst_nesdt_S, Step_dt), err)
 
       if ( Fcst_rstrt_S  == '' ) then
-         write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total-initial_step+1
+         write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total-Step_initial+1
       else
          err = timestr_check(Fcst_rstrt_S)
       endif
       if ( Fcst_bkup_S  == '' ) then
-         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total-initial_step+1
+         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total-Step_initial+1
       else
          err = timestr_check(Fcst_bkup_S)
       endif
 
       if ( Fcst_gstat_S  == '' ) then
-         Step_gstat= Step_total-initial_step+1
+         Step_gstat= Step_total-Step_initial+1
       else
          err= min( timestr2step (Step_gstat, Fcst_gstat_S, Step_dt), err)
       endif
       if ( Fcst_spinphy_S  == '' ) then
-         Step_spinphy= Step_total-initial_step+1
+         Step_spinphy= Step_total-Step_initial+1
       else
          err= min( timestr2step (Step_spinphy, Fcst_spinphy_S, Step_dt), err)
       endif
@@ -125,9 +125,9 @@
 
       if (err.lt.0) goto 9999
 
-      Step_delay= initial_step
+      Step_delay= Step_initial
 
-      if (.not.Rstri_rstn_L) Lctl_step= initial_step
+      if (.not.Rstri_rstn_L) Lctl_step= Step_initial
 
       if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
@@ -141,7 +141,7 @@
 
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
- 7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',A/)
+ 7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',a/)
 
  9999 err = fclos (unf)
 !

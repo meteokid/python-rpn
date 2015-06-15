@@ -40,12 +40,13 @@
 #include "grd.cdk"
 #include "hgc.cdk"
 #include "lam.cdk"
+#include "lun.cdk"
 #include "glb_pil.cdk"
 #include <clib_interface_mu.hf>
 
       character*120 outfile,gfile,dumc,fn,etk,etk_ext
       logical lam,radians
-      integer nila,uout,err,npack,i,j,k
+      integer uout,err,npack,i,j,k
 
       integer narguments,npos
       parameter(narguments=5)
@@ -57,7 +58,8 @@
       integer Ptopo_npex,Ptopo_npey,Ptopo_nblocx,Ptopo_nblocy
       integer itile,jtile,i0,j0,i1,j1,ierx, iery, spil3df
       integer Grd_ip1,Grd_ip2,Grd_ip3,G_ni,G_nj, ni,nj, in,jn
-      real    xlim_1,xlim_n,ylim_1,ylim_n
+      integer nila,njla,belo,left
+      real    xlim_1,xlim_n,ylim_1,ylim_n,dxmax, dymax
       real  , dimension(:), allocatable :: xpos, ypos
       real*8, dimension(:), allocatable :: x_8, y_8
 
@@ -70,6 +72,7 @@
 
       call ccard(liste,defaut,val,narguments,npos)
 
+      lun_out = 6
       read(val(1),*) spil3df
       read(val(2),*) Ptopo_npex
       read(val(3),*) Ptopo_npey
@@ -105,10 +108,11 @@
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
-      call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,       & 
-                           Grd_x0_8, Grd_xl_8, Grd_left,                   &
-                           Grd_y0_8, Grd_yl_8, Grd_belo,                   &
-                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,       &
+      dxmax = 360. ; dymax = 180. 
+      call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,   & 
+                           Grd_x0_8, Grd_xl_8, left,                   &
+                           Grd_y0_8, Grd_yl_8, belo,                   &
+                           nila, njla, dxmax, dymax,                   &
                            Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
                            ierx, iery, .true. )
 

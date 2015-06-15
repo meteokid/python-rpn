@@ -21,16 +21,6 @@
 ! Out3_ndigits       | minimum number used to count the units in       |
 !                    | output name (type is specified in Out3_unit_S   |
 ! Out3_cliph_L       | .true. to clip humidity variables on output     |
-! The following are "cub??"   switches used in the context of vertical |
-! interpolation toward pressure levels:                                |
-! Out3_cubzt_L       | .true. for cubic interpolation for GZ,VT and HU |
-! Out3_cubuv_L       | .true. for cubic interpolation for UU,VV and UV |
-! Out3_cubds_L       | .true. for cubic interpolation for DS           |
-! Out3_cubqs_L       | .true. for cubic interpolation for QS and Q3    |
-! Out3_cubdd_L       | .true. for cubic interpolation for DD           |
-! Out3_cubqq_L       | .true. for cubic interpolation for QQ and QR    |
-! Out3_cubww_L       | .true. for cubic interpolation for WW           |
-! Out3_debug_L       | .true. to echo standard out from FST functions  |
 ! Out3_ip3           | integer value for IP3 in the FST records        |
 !                    |  default: 0, >0 : given value, -1:uses timestep |
 ! Out3_flipit_L      | .true. to flip field from ni*nj*nk to ni*nk*nj  |
@@ -58,9 +48,7 @@
       character*12 Out3_etik_S
       character*6  Out3_type_S
       character*4  Out3_unit_S
-      logical Out3_cliph_L, Out3_cubzt_L, Out3_cubuv_L,Out3_newout_L
-      logical Out3_cubds_L, Out3_cubqs_L, Out3_cubdd_L, Out3_cubqq_L
-      logical Out3_cubww_L, Out3_flipit_L,Out3_debug_L
+      logical Out3_cliph_L, Out3_newout_L, Out3_flipit_L
       logical Out3_fullplane_L, Out3_uencode_L, out3_sfcdiag_L
       integer Out3_nbitg, Out3_linbot
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
@@ -72,14 +60,13 @@
       real    Out3_filtcoef(MAXELEM)
       real    Out3_lieb_conv, Out3_lieb_levels(MAXELEM)
       real    Out3_close_interval
-!
+
       common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
       common / out3_c / Out3_type_S, Out3_unit_S
       common / out3_c / Out3_close_interval_S
-      common / Out3_l / Out3_cliph_L,Out3_cubzt_L,Out3_cubuv_L
-      common / Out3_l / Out3_cubds_L,Out3_cubqs_L,Out3_cubdd_L
-      common / Out3_l / Out3_cubqq_L,Out3_fullplane_L,Out3_uencode_L
-      common / Out3_l / Out3_cubww_L, Out3_flipit_L,Out3_debug_L
+      common / Out3_l / Out3_cliph_L
+      common / Out3_l / Out3_fullplane_L,Out3_uencode_L
+      common / Out3_l / Out3_flipit_L
       common / Out3_l / Out3_newout_L,out3_sfcdiag_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postproc_fact
@@ -89,4 +76,4 @@
       common / Out3_i / Out3_lieb_nk, Out3_lieb_maxite
       common / out3_r / Out3_filtcoef, Out3_lieb_conv, Out3_lieb_levels
       common / out3_p / Out3_comyy,Out3_outpe_x,Out3_outpe_y
-!
+

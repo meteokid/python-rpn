@@ -53,12 +53,6 @@
          goto 999
       endif
 !
-      if ( Grd_ni .ne. Grd_nila ) then
-         if (Lun_out.gt.0)  &
-         write(Lun_out,*)'Fft_fast_L = .false. ====> non-uniform grid'
-         goto 999
-      endif
-!
 !        2.    test grid factorization
 !              -----------------------
       onept = 0

@@ -66,6 +66,7 @@
       integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1m
+      logical, save :: done_L= .false.
       integer, save :: lastdt = -1
 
       real coef(0:Outd_var_max(set)+1),prmult
@@ -104,7 +105,9 @@
       psum=pnuu+pnuv+pnvv
       if (psum.eq.0)return
 
-      If (lastdt .eq. -1) then
+      If (.not.done_L) then
+         done_L=.true.
+         lastdt=Lctl_step-1
          allocate ( uu(minx:maxx,miny:maxy,G_nk+1) )
          allocate ( vv(minx:maxx,miny:maxy,G_nk+1) )
       endif
@@ -274,24 +277,24 @@
                enddo
             enddo
             if (filt(pnuv).gt.0) &
-               call filter(uv_pres,filt(pnuv),coef(pnuv),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+               call filter2( uv_pres,filt(pnuv),coef(pnuv), &
+                             l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'UV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuv) )
          endif
 
          if (pnuu.ne.0) then
             if (filt(pnuu).gt.0) &
-                call filter(uu_pres,filt(pnuu),coef(pnuu),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( uu_pres,filt(pnuu),coef(pnuu), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'UU  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuu) )
          endif
 
          if (pnvv.ne.0) then
             if (filt(pnvv).gt.0) &
-                 call filter(vv_pres,filt(pnvv),coef(pnvv),'G', .false., &
-                             l_minx,l_maxx,l_miny,l_maxy, nko)
+                 call filter2( vv_pres,filt(pnvv),coef(pnvv), &
+                               l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'VV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnvv) )
          endif

@@ -100,7 +100,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    err = gmm_get(adx_yct1_s,yct1)
    err = gmm_get(adx_zct1_s,zct1)
 
-   call timing_start (30, 'ADW_TRAJE')  ! Compute trajectories
+   call timing_start2 (30, 'ADW_TRAJE', 21)  ! Compute trajectories
 
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
@@ -144,7 +144,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                      adx_lnk,i0,in,j0,jn,k0,adx_lnk )
    endif
 
-   call timing_start (31, 'ADW_INLAG')  ! Interpolate
+   call timing_start2 (31, 'ADW_INLAG', 21)  ! Interpolate
 
    call adx_int_rhs ( pxm, pym, pzm, .true. , F_doAdwStat_L, &
                       pxmu,pymu,pzmu,pxmv,pymv,pzmv, &

@@ -54,7 +54,7 @@
 !
       if (Schm_phyms_L) err = phy_terminate()
 
-      continue_L= (Lctl_step.lt.Step_total)
+      continue_L= (Step_kount.lt.Step_total)
 
       if (Lun_out.gt.0) then
          write (postjob_S,34) Lctl_step
@@ -84,7 +84,6 @@
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
 
-!      call rpn_comm_Barrier("grid", err)
       call rpn_comm_FINALIZE(err)
 
  34   format (i10.10)

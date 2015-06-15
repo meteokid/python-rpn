@@ -262,12 +262,12 @@
 
       ierr = timestr2step(rsti,Fcst_rstrt_S,Cstv_dt_8)
       if (.not.RMN_IS_OK(ierr)) rsti = Step_total-Lctl_step
-      call out_sblock2(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
+      call out_sblock3(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
            Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &
            l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,Ptopo_gindx,Ptopo_numproc,&
            Ptopo_myproc,ixgall,rotall,Hgc_gxtyp_s,Out3_unit_S,int(Cstv_dt_8),&
            Out3_date,Out3_etik_S, Out3_ndigits, Step_runstrt_S, &
-           min(Step_total, Lctl_step+rsti),Out3_flipit_L,Out3_debug_L)
+           min(Step_total, Lctl_step+rsti),Out3_flipit_L)
 
       Out_laststep_S = ' '
 

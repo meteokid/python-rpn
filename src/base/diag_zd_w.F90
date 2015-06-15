@@ -58,7 +58,6 @@
 #include "dcst.cdk"
 #include "zdot.cdk"
 #include "cstv.cdk"
-#include "intuv.cdk"
 #include "lun.cdk"
 
       integer i, j, k, kp, i0, in, j0, jn, j00, jnn

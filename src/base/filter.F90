@@ -13,105 +13,95 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r filter - filters given field using 2-delta x and/or dgf filter
-!
+!**s/r filter - 2-delta x filter
 
-!
-      subroutine filter (F_fd, F_lx, F_coef, F_d_S,  &
-                         F_flag_L,Minx,Maxx,Miny,Maxy,Nk)
-!
+      subroutine filter2 (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
       implicit none
 #include <arch_specific.hf>
-!
-      integer Minx,Maxx,Miny,Maxy,F_lx,Nk
+
+      integer Minx,Maxx,Miny,Maxy,Nk, F_lx
       real F_fd(Minx:Maxx,Miny:Maxy,Nk),  F_coef
-      character*1 F_d_S
-      logical F_flag_L
-!
-!author
-!     andre methot
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v3_12 - Lee V.            - removed work fields from calling parameters
-!
-!object
-!
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_stepno      O           step number
-!----------------------------------------------------------------
-!
-! ______________________________________________________________________
-!         |                                             |          |   |
-!  NAME   |             DESCRIPTION                     |DIMENSIONS|IN |
-!         |                                             |          |OUT|
-! --------|---------------------------------------------|----------|---|
-!         |                                             |          |   |
-! F_fd | field to be filtered                        | fnis,fnjs|io |
-!         |                                             | fnks     |   |
-!         |                                             |          |   |
-! F_lx  | number of pass into 2 delta x filter        | scalar   | i |
-!         |                                             |          |   |
-! F_coef  | 2 delta x filter coefficient                | scalar   | i |
-!         |                                             |          |   |
-!         |                                             |          |   |
-! F_d_S   | 'G' : topography is on geopotential grid    | scalar   | i |
-!         | 'U' : topography is on U wind component grid|          |   |
-!         | 'V' : topography is on V wind component grid|          |   |
-!         |                                             |          |   |
-! F_flag_L | switch: if true => for each pass in         | scalar   | i |
-!         |         2 delta x filter, do an additionnal |          |   |
-!         |         pass with negative a negative coefficient      |   |
-!         |                                             |          |   |
-!           THIS CODE DOES NOT ALLOW 'U' or 'V' GRID YET
-! ______________________________________________________________________
-!
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
+
+      integer i, j, k, i0, in, j0, jn, n
+      real w1(l_minx:l_maxx,l_miny:l_maxy,nk),coef
+      real*8, parameter :: half=0.5d0
 !
-      integer i,j,k,n
-      real w1(l_minx:l_maxx,l_miny:l_maxy,nk)
-      real w2(l_minx:l_maxx,l_miny:l_maxy,nk)
-
-!*
-!        -----------------------------------------------------
-!     IN CASE WHERE ZERO IS NOT QUITE EQUAL TO ZERO
-
-      if ( abs(F_coef) .lt. 0.0001 ) return
+!-------------------------------------------------------------------
 !
+      if ( ( F_coef .ge. 0.0001 ) .and. ( F_coef .le. 0.5 ) ) then
+         
+         coef = 1. - F_coef
+         i0 = 1 + pil_w
+         if ((l_west).and.(G_lam)) i0 = i0+1
+         in = l_niu - pil_e
+         j0 = 1 + pil_s
+         if (l_south) j0 = j0+1
+         jn = l_njv - pil_n
 
-      call handle_error_l(F_coef>0..and.F_coef<=0.5,'filter','THE RANGE OF VALIDITY OF THE COEFFICIENT IS NOT RESPECTED')
-
-      if ( ( F_coef .gt. 0. ) .and. ( F_coef .le. 0.5 ) ) then
-
-!
          do n=1,F_lx
-         do k=1,Nk
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-            w2(i,j,k) = F_fd(i,j,k)
+
+            call rpn_comm_xch_halo (F_fd,l_minx,l_maxx,l_miny,l_maxy,&
+              l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+            do k=1,Nk
+               do j= 1+pil_s, l_nj-pil_n 
+               do i=i0,in
+                  w1(i,j,k)= F_coef* (F_fd(i-1,j,k)+F_fd(i+1,j,k))*half &
+                             + coef* F_fd (i,j,k)
+               end do
+               end do
+            end do
+            if (G_lam) then
+               if (l_west) then
+                  do k=1,Nk
+                     do j= 1+pil_s, l_nj-pil_n 
+                        w1(i0-1,j,k) = F_fd(i0-1,j,k)
+                     end do
+                  end do
+               endif
+               if (l_east) then
+                  do k=1,Nk
+                     do j= 1+pil_s, l_nj-pil_n 
+                        w1(in+1,j,k) = F_fd(in+1,j,k)
+                     end do
+                  end do
+               endif
+            endif
+
+            call rpn_comm_xch_halo (w1,  l_minx,l_maxx,l_miny,l_maxy, &
+               l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+
+            do k=1,Nk
+               do j=j0,jn
+               do i= 1+pil_w, l_ni-pil_e 
+                  F_fd(i,j,k)= F_coef * (w1(i,j-1,k)+w1(i,j+1,k))*half &
+                               + coef * w1(i,j,k)
+                  end do
+               end do
+            end do
+
+            if (l_south) then
+               do k=1,Nk
+                  do i= 1+pil_w, l_ni-pil_e 
+                     F_fd(i,j0-1,k) = w1(i,j0-1,k)
+                  end do
+               end do
+            endif
+            if (l_north) then
+               do k=1,Nk
+                  do i= 1+pil_w, l_ni-pil_e 
+                     F_fd(i,jn+1,k) = w1(i,jn+1,k)
+                  end do
+               end do
+            endif
+
          end do
-         end do
-         end do
-         call xyfil (F_fd,w2,w1,F_coef,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
-         if ( F_flag_L ) then 
-         do k=1,Nk
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e 
-            w2(i,j,k) = F_fd(i,j,k)
-         end do
-         end do
-         end do
-         call xyfil(F_fd,w2,w1,-F_coef,.false.,l_minx,l_maxx,l_miny,l_maxy,Nk)
-         endif
-         end do
-       endif
+
+      endif
 !
-!-------------------------------------------------------------
-!-------------------------------------------------------------
+!-------------------------------------------------------------------
 !
       return
       end

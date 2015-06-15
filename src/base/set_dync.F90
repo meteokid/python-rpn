@@ -68,8 +68,8 @@
       if(Schm_hydro_L) Ver_igt_8=zero
       Ver_igt2_8   = Ver_igt_8**2
 
-      if( Cstv_Tstr_8 .lt. 0. .or. Cstv_Tstr_8.gt.1000. ) then
-         ! TSTAR variable at least in the vertical
+      if( Cstv_Tstr_8 .lt. 0. ) then
+         ! TSTAR variable in the vertical
          err = gmm_get(gmmk_tt1_s,tt1)
          call estimate_tmean (tmean,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
          Ver_Tstr_8(1:G_nk) = tmean(1:G_nk)
@@ -134,12 +134,9 @@
 
       call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
 
-      if (Sol_type_S == 'ITERATIVE_3D') then
-         call matvec_init()
-     end if
+      if (Sol_type_S == 'ITERATIVE_3D') call matvec_init()
 !
 !     ---------------------------------------------------------------
 !
       return
       end
-

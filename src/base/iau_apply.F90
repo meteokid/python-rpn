@@ -66,7 +66,7 @@ subroutine iau_apply2(F_kount)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
 
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
-   call timing_start(50, 'IAU      ')
+   call timing_start2(50, 'IAU', 1)
    call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
    call datp2f(dateo,Step_runstrt_S)
@@ -78,7 +78,7 @@ subroutine iau_apply2(F_kount)
       is_init_L = .true.
 
       !# Set up input module
-      inputid = input_new(datev,nint(Cstv_dt_8))
+      inputid = input_new(dateo,nint(Cstv_dt_8))
       istat = input_setgridid(inputid,Grd_lclcore_gid)
       istat = min(input_set_basedir(inputid,Path_input_S),inputid)
       istat = min(input_set_filename(inputid,IAU_FILE,IAU_FILE,ALLOWDIR,INPUT_FILES_ANAL),istat)

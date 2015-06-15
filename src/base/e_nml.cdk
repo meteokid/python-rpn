@@ -2,7 +2,6 @@
 #include "tr3d.cdk"
 #include "e_anal.cdk"
 
-#include "modconst.cdk"
 #include "pilot1.cdk"
 
       namelist /gement/ Anal_cond_L 

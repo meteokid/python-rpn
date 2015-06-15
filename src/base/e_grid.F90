@@ -15,11 +15,10 @@
 
 !**s/r e_grid - compute the grid of the model
 
-!
       subroutine e_grid 
       implicit none
 #include <arch_specific.hf>
-!
+
 !author  unknown
 !
 !revision
@@ -29,7 +28,6 @@
 ! v3_11 - Tanguay M.        - Introduce Grd_gauss_L 
 ! v3_30 - Desgagne M.       - Check that LAM grid does not extend to
 !                             global coverage and eliminated Grd_roule
-!
 
 #include "e_grids.cdk"
 #include "e_geomg.cdk"
@@ -39,11 +37,13 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
-!
+
       integer,external :: ezgdef_fmem
-!
+
       logical global_extend
       integer i, j, ierx, iery
+      integer nila,njla,belo,left
+      real dxmax, dymax
       real*8 x_8(0:Grd_ni+1), y_8(0:Grd_nj+1)
       real*8 deg2rad_8
       real*8, parameter :: pt5    = 0.5d0, epsilon = 1.0d-5
@@ -65,10 +65,10 @@
       allocate (              xdcy(Grd_nj),               xdcyv(Grd_nj-1))
       allocate (xdhx(Grd_ni) ,xdhy(Grd_nj), xdhxu(0:Grd_ni), xdhyv(0:Grd_nj))
 
+      dxmax= 360. ; dymax= 180. ; nila= Grd_ni ; njla= Grd_nj
       call set_gemHgrid3 ( x_8(1), y_8(1), Grd_ni, Grd_nj, Grd_dx, Grd_dy, & 
-                           Grd_x0_8, Grd_xl_8, Grd_left,                   &
-                           Grd_y0_8, Grd_yl_8, Grd_belo,                   &
-                           Grd_nila, Grd_njla, Grd_dxmax, Grd_dymax,       &
+                           Grd_x0_8,Grd_xl_8,left, Grd_y0_8,Grd_yl_8,belo, &
+                           nila, njla, dxmax, dymax                      , &
                            Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
                            ierx, iery, .true. )
 

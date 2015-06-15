@@ -48,12 +48,12 @@
 !
 !-------------------------------------------------------------------
 !
-      call timing_init2 ( Ptopo_myproc, 'GEMDM' )
-      call timing_start ( 1, 'GEMDM')
-      call timing_start ( 2, 'INIT_GEM')
-
       lun_out    = -1
       Lun_debug_L=.false.
+      if (Ptopo_myproc.eq.0) lun_out= 6
+
+      call gemtim4 ( Lun_out, 'STARTING GEMDM', .false. )
+      call timing_start2 ( 2, 'INIT_GEM', 1)
 !
 ! Broadcasts processor topology
 !
@@ -93,7 +93,6 @@
          call array_from_file(bufoutcfg,size(bufoutcfg),Path_outcfg_S)
          call array_from_file(bufcte,size(bufcte),trim(Path_input_S)//'/constantes')
          call array_from_file(bufinphycfg,size(bufinphycfg),Path_phyincfg_S)
-         lun_out= 6
       endif
 
 ! Changing directory to local Ptopo_mycol_Ptopo_myrow 

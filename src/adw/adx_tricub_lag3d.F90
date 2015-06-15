@@ -73,7 +73,7 @@ subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y
 
    !---------------------------------------------------------------------
    
-   call timing_start (33, 'ADW_LAG3D')
+   call timing_start2 (33, 'ADW_LAG3D', 31)
 
    p_z00_8 = adx_verZ_8%m(0)
    if (F_lev_S == 'm') then

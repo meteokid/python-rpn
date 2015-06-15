@@ -134,6 +134,7 @@
       real, dimension(:,:,:), pointer :: gzm,gzt,ttx,htx,ffwe
       real, dimension(:,:), pointer :: wlao
 
+      logical,save :: done_L = .false.
       integer,save :: lastdt = -1
       save gzm,gzt,htx,ttx,wlao
 
@@ -357,7 +358,9 @@
 !
       nk_under = Out3_lieb_nk
 
-      If (lastdt .eq. -1) then
+      If (.not.done_L) then
+          lastdt= Lctl_step-1
+          done_L=.true.
           allocate ( ttx (l_minx:l_maxx,l_miny:l_maxy,nk_under),&
                      htx (l_minx:l_maxx,l_miny:l_maxy,nk_under),&
                      gzt (l_minx:l_maxx,l_miny:l_maxy,G_nk+1  ),&
@@ -400,8 +403,8 @@
          call pnm2  (w1, vt(l_minx,l_miny,nk_src),fis0,w2,wlao, &
                 ttx,htx,nk_under,l_minx,l_maxx,l_miny,l_maxy,1)
          if (filt(pnpn).gt.0) &
-              call filter (w1,filt(pnpn),coef(pnpn),'G', .false., &
-                           l_minx,l_maxx,l_miny,l_maxy, 1)
+              call filter2( w1,filt(pnpn),coef(pnpn), &
+                            l_minx,l_maxx,l_miny,l_maxy,1)
          call ecris_fst2( w1,l_minx,l_maxx,l_miny,l_maxy,0.0, &
                           'PN  ',.01, 0.0, kind, 1, 1, 1, nbit(pnpn) )
       endif
@@ -414,8 +417,8 @@
          enddo
          enddo
          if (filt(pnp0).gt.0)&
-         call filter (w1,filt(pnp0),coef(pnp0),'G', .false.,&
-                      l_minx,l_maxx,l_miny,l_maxy, 1)
+         call filter2( w1,filt(pnp0),coef(pnp0), &
+                       l_minx,l_maxx,l_miny,l_maxy,1)
          call ecris_fst2 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
                          'P0  ',.01, 0.0, kind, 1, 1, 1, nbit(pnp0)) 
       endif
@@ -647,17 +650,17 @@
          endif
 
 !       Calculate GZ,VT (w5=GZ_pres, vt_pres=VT_pres)
-        call prgzvta( w5, vt_pres, prprlvl, nko, &
-                      gzt, vt, wlnph_ta, wlao  , &
-                      ttx, htx, nk_under,Out3_cubzt_L,  &
+        call prgzvta( w5, vt_pres, prprlvl, nko , &
+                      gzt, vt, wlnph_ta, wlao   , &
+                      ttx, htx, nk_under,.false., &
                       Out3_linbot, l_minx,l_maxx,l_miny,l_maxy,nk_src)
 
         call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
 
         if (pngz.ne.0) then
            if (filt(pngz).gt.0)then
-              call filter(w5,filt(pngz),coef(pngz),'G', .false., &
-                    l_minx,l_maxx,l_miny,l_maxy, nko)
+              call filter2( w5,filt(pngz),coef(pngz), &
+                            l_minx,l_maxx,l_miny,l_maxy,nko)
            endif
            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'GZ  ',prmult_pngz,0.0, kind,nko,indo,nko,nbit(pngz) )
@@ -693,8 +696,8 @@
                            px_pres,satues_l, &
                            .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
             if (filt(pntw).gt.0) &
-                call filter(w5,filt(pntw),coef(pntw),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( w5,filt(pntw),coef(pntw), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TW  ',1.0,0.0, kind,nko, indo, nko, nbit(pntw) )
         endif
@@ -727,16 +730,16 @@
                  enddo
                  enddo
               enddo
-              call filter(td_pres,filt(pntd),coef(pntd),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+              call filter2( td_pres,filt(pntd),coef(pntd), &
+                            l_minx,l_maxx,l_miny,l_maxy, nko )
               call ecris_fst2(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'TD  ',1.0,pradd_pntd, kind,nko,indo,nko,nbit(pntd) )
             endif
 
             if (pnes.ne.0) then
                 if (filt(pnes).gt.0) &
-                    call filter(w5,filt(pnes),coef(pnes),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                    call filter2( w5,filt(pnes),coef(pnes), &
+                                  l_minx,l_maxx,l_miny,l_maxy,nko )
                 call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                    'ES  ',1.0,0.0, kind,nko, indo, nko, nbit(pnes) )
             endif
@@ -756,16 +759,16 @@
               enddo
            endif
            if (filt(pnhr).gt.0) &
-                call filter(w5,filt(pnhr),coef(pnhr),'G', .false., &
-                            l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( w5,filt(pnhr),coef(pnhr), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                 'HR  ',1.0,0.0, kind,nko, indo, nko, nbit(pnhr) )
         endif
         
         if (pnvt.ne.0) then
             if (filt(pnvt).gt.0) &
-                call filter(vt_pres,filt(pnvt),coef(pnvt),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( vt_pres,filt(pnvt),coef(pnvt), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
               'VT  ',1.0,pradd_pnvt, kind,nko,indo, nko, nbit(pnvt) )
         endif
@@ -780,8 +783,8 @@
 
         if (pntt.ne.0) then
             if (filt(pntt).gt.0) &
-                call filter(tt_pres,filt(pntt),coef(pntt),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( tt_pres,filt(pntt),coef(pntt), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
               'TT  ',1.0,pradd_pntt, kind,nko, indo, nko, nbit(pntt) )
         endif
@@ -791,8 +794,8 @@
                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                            'linear', .false. )
             if (filt(pnww).gt.0) &
-                call filter(w5,filt(pnww),coef(pnww),'G', .false., &
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
+                call filter2( w5,filt(pnww),coef(pnww), &
+                              l_minx,l_maxx,l_miny,l_maxy,nko )
              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'WW  ',1.0,0.0, kind,nko, indo, nko, nbit(pnww) )
         endif

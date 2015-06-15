@@ -51,7 +51,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      call timing_start ( 99, 'BLOCSTAT ' )
+      call timing_start2 ( 99, 'BLOCSTAT', 1 )
 
       if (.not.done) call set_statliste
 !

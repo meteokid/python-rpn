@@ -156,7 +156,8 @@ subroutine adx_int_rhs ( F_px, F_py, F_pz, F_is_mom_L, F_doAdwStat_L, &
          call adx_interp_gmm7 ( gmmk_rhsx_s, gmmk_orhsx_s, .false.   , &
                                 F_px, F_py, F_pz, capx2, capy2, capz2, &
                                 exch_c1, F_nk, i0, in, j0, jn, F_k0, 't', 0, 0)
-      else
+      endif
+      if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nolog_L))) then
          call adx_interp_gmm7 ( gmmk_rhsf_s, gmmk_orhsf_s, .false.   , &
                                 F_px, F_py, F_pz, capx2, capy2, capz2, &
                                 exch_c1, F_nk, i0, in, j0, jn, F_k0, 't', 0, 0)

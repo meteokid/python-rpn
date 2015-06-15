@@ -34,7 +34,6 @@
 #include "ldnh.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
-#include "eigv.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
 #include "schm.cdk"
@@ -55,42 +54,24 @@
          
       else
          
-         if (.not. Eigv_parity_L) then
-
-            Gni= G_ni-Lam_pil_w-Lam_pil_e
-            dim= Gni*Gni
-            allocate ( wk_evec_8(Gni*Gni) )
-            do j=1,Gni
-            do i=1,Gni
-               wk_evec_8((j-1)*Gni+i)= &
-                    Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
-            enddo
-            enddo
-
-            call sol_mxma ( F_sol_8, F_rhs_8, wk_evec_8         ,&
-                 ldnh_maxx, ldnh_maxy, ldnh_nj, dim             ,&
-                 trp_12smax, trp_12sn, trp_22max, trp_22n       ,&
-                 G_ni, G_nj, G_nk, trp_12sn                     ,& 
-                 Ptopo_npex, Ptopo_npey                         ,&
-                 Sol_ai_8,Sol_bi_8,Sol_ci_8,F_dg1,F_dg2,F_dwfft)
-
-            deallocate (wk_evec_8)
-
-         else
-
-            nev= (G_ni+2)/2
-            NSTOR = nev + ( 1 - mod(nev,2) )
-            allocate (abpt((l_maxy-l_miny+1)*(trp_12smax-trp_12smin+1)*G_ni))
-            call sol_parite_2( F_sol_8, F_rhs_8, Opr_evvec_8, Opr_odvec_8,&
-                 ldnh_minx,ldnh_maxx, ldnh_miny,ldnh_maxy, ldnh_nj       ,&
-                 trp_12smin, trp_12smax, Schm_nith, trp_12sn             ,&
-                 G_ni, G_nj, trp_22min , trp_22max, trp_22n              ,&
-                 trp_12smin, trp_12smax, trp_22min, trp_22max,G_nj       ,&
-                 Ptopo_npex, Ptopo_npey, Sol_ai_8,Sol_bi_8,Sol_ci_8      ,&
-                 F_dg1,F_dg2,F_dwfft, abpt, NSTOR,nev)
-            deallocate (abpt)
-
-         endif
+         Gni= G_ni-Lam_pil_w-Lam_pil_e
+         dim= Gni*Gni
+         allocate ( wk_evec_8(Gni*Gni) )
+         do j=1,Gni
+         do i=1,Gni
+            wk_evec_8((j-1)*Gni+i)= &
+            Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
+         enddo
+         enddo
+         
+         call sol_mxma ( F_sol_8, F_rhs_8, wk_evec_8         ,&
+              ldnh_maxx, ldnh_maxy, ldnh_nj, dim             ,&
+              trp_12smax, trp_12sn, trp_22max, trp_22n       ,&
+              G_ni, G_nj, G_nk, trp_12sn                     ,& 
+              Ptopo_npex, Ptopo_npey                         ,&
+              Sol_ai_8,Sol_bi_8,Sol_ci_8,F_dg1,F_dg2,F_dwfft )
+         
+         deallocate (wk_evec_8)
 
       endif
 !

@@ -145,7 +145,7 @@
 !
 !     Temporal linear interpolation
 !      
-      call timing_start ( 70, 'NESTINTT')
+      call timing_start2 ( 70, 'NESTINTT', 10)
 
       b = (tx - Lam_tdeb) / (Lam_tfin - Lam_tdeb)
       a = one - b

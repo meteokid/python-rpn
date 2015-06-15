@@ -55,12 +55,12 @@
       if (l_east)  in=l_niu-1
       do iter = 1, Vspng_niter
 !
-         call timing_start ( 46, 'VSPNG_COMM' )
+         call timing_start2 ( 46, 'VSPNG_COMM', 65 )
          call rpn_comm_xch_halo (F_champ,l_minx,l_maxx,l_miny,l_maxy,pni,pnj, &
                 Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call timing_stop (46)
 !
-         call timing_start ( 47, 'VSPNG_CALC' )
+         call timing_start2 ( 47, 'VSPNG_CALC', 65 )
          do k=1,Vspng_nk
             c1= (one-two*Vspng_nu_8(k))*Vspng_nu_8(k)
             c2= Vspng_nu_8(k)**two

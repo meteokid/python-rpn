@@ -75,7 +75,7 @@
 !
 !----------------------------------------------------------------------
 !
-      call timing_start ( 80, 'OUT_DYN')
+      call timing_start2 ( 80, 'OUT_DYN', 1)
 !
 !########## REGULAR OUTPUT #######################################
 !
@@ -137,20 +137,14 @@
                call out_vref (Level_allpres(1:Level_npres),etiket=Out_etik_S)
             endif
 
-            !     output of 3-D tracers
             call out_tracer (wlnpi_t,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
-
-            !     output of temperature, humidity and mass fields,omega
 
             call out_thm (wlnpi_m,wlnpi_t,st1,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
-            !     output of winds
             call out_uv (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
-            !     output of divergence and vorticity
             call out_dq (wlnpi_m,l_minx,l_maxx,l_miny,l_maxy,G_nk,levset,kk)
 
-            !     output of gmm
             call out_gmm2 (levset,kk)
 
             flag_clos= .true.

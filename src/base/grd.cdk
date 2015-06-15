@@ -19,10 +19,6 @@
 ! Grd_gauss_L        | .true. for Gaussian grid                        |
 ! Grd_ni             | number of points along NI                       |
 ! Grd_nj             | number of points along NJ                       |
-! Grd_nila           | # of points along NI for core in variable grid  |
-! Grd_njla           | # of points along NJ for core in variable grid  |
-! Grd_left           | # of points left of core grid                   |
-! Grd_belo           | # of points below   core grid                   |
 ! Grd_bsc_base       | # of points (5) minimum for                     |
 ! Grd_bsc_ext1       | # of points (3) minimum for                     |
 ! Grd_maxcfl         | Courrant number                                 |
@@ -35,37 +31,34 @@
       character*2  Grd_typ_S
       character*12 Grd_yinyang_S
       logical Grd_roule, Grd_uniform_L, Grd_gauss_L, Grd_yinyang_L
-      integer Grd_ni, Grd_nj, Grd_nila, Grd_njla, Grd_left, Grd_belo
+      integer Grd_ni, Grd_nj
       integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       integer Grd_iref, Grd_jref, Grd_maxcfl
       integer Grd_ndomains, Grd_mydomain
       integer Grd_local_gid,Grd_lclcore_gid,Grd_global_gid,Grd_lphy_gid
       integer Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn,Grd_lphy_ni,Grd_lphy_nj
-      real Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
-      real Grd_latr, Grd_lonr
+      real Grd_dx, Grd_dy, Grd_latr, Grd_lonr
       real Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2, Grd_rot
       real Grd_rcoef,Grd_overlap
       real*8 Grd_rot_8(3,3), Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
       real*8 Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
-!   
+
       common / Grd_c / Grd_typ_S, Grd_yinyang_S
       common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L,Grd_yinyang_L
-      common / Grd_i / Grd_ni  , Grd_nj  , Grd_nila, Grd_njla
-      common / Grd_i / Grd_left, Grd_belo, Grd_iref, Grd_jref, Grd_maxcfl
+      common / Grd_i / Grd_ni, Grd_nj, Grd_maxcfl, Grd_iref, Grd_jref
       common / Grd_i / Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       common / Grd_i / Grd_ndomains, Grd_mydomain
       common / Grd_i / Grd_local_gid,Grd_lclcore_gid,Grd_global_gid,Grd_lphy_gid
       common / Grd_i / Grd_lphy_i0,Grd_lphy_in,Grd_lphy_j0,Grd_lphy_jn,Grd_lphy_ni,Grd_lphy_nj
-      common / Grd_r / Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
-      common / Grd_r / Grd_latr, Grd_lonr
+      common / Grd_r / Grd_dx, Grd_dy, Grd_latr, Grd_lonr
       common / Grd_r / Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
       common / Grd_r / Grd_rot(3,3),Grd_rcoef(2),Grd_overlap
       common / Grd_r8/ Grd_rot_8, Grd_x0_8, Grd_xl_8, Grd_y0_8, Grd_yl_8
       common / Grd_r8/ Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
-!
+
       namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj, Grd_maxcfl
-      namelist /grid/ Grd_nila, Grd_njla, Grd_iref, Grd_jref
-      namelist /grid/ Grd_dx, Grd_dy, Grd_dxmax, Grd_dymax
+      namelist /grid/ Grd_iref, Grd_jref
+      namelist /grid/ Grd_dx, Grd_dy
       namelist /grid/ Grd_latr, Grd_lonr, Grd_overlap
       namelist /grid/ Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
       namelist /grid/ Grd_gauss_L

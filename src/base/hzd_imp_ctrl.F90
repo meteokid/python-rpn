@@ -48,7 +48,6 @@
 #include "hzd.cdk"
 #include "opr.cdk"
 #include "ptopo.cdk"
-#include "eigv.cdk"
 !
       integer dpwr, nev, NSTOR, trpmin,trpmax,trpn
       real cdiff
@@ -124,31 +123,11 @@
 
       else
 
-         if ( Eigv_parity_L) then
-
-            if (F_grd_S.eq.'U') then 
-            call hzd_solparite_U ( F_f2hzd, wk1_8, evvec, odvec,                 &
-                                   a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
-                                   trpn,trp_22n,G_nj, dpwr, l_minx,l_maxx,l_miny,l_maxy, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
-                                   Ptopo_npex,Ptopo_npey,NSTOR,(G_ni+1)/2 )
-            else
-            call hzd_solparite_2 ( F_f2hzd, wk1_8, evvec, odvec,                 &
-                                   a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
-                                   trpn,trp_22n,G_nj, dpwr, l_minx,l_maxx,l_miny,l_maxy, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
-                                   Ptopo_npex,Ptopo_npey,NSTOR,nev )
-            endif
-
-         else
-
-            call hzd_solmxma     ( F_f2hzd, wk1_8, wh_evec,                      &
-                                   a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
-                                   trpn,trp_22n,G_nj, dpwr, l_minx,l_maxx,l_miny,l_maxy, Nk, G_ni, &
-                                   l_ni,l_nj, trpn, xp, yp, cdiff,               &
-                                   Ptopo_npex,Ptopo_npey)
-         endif
-
+         call hzd_solmxma     ( F_f2hzd, wk1_8, wh_evec,                      &
+                                a,c,d, trpmin,trpmax,trp_22min,trp_22max,     &
+                                trpn,trp_22n,G_nj, dpwr, l_minx,l_maxx,l_miny,l_maxy, Nk, G_ni, &
+                                l_ni,l_nj, trpn, xp, yp, cdiff,               &
+                                Ptopo_npex,Ptopo_npey)
       endif
 !     __________________________________________________________________
 !

@@ -82,8 +82,6 @@
          if (Lun_out.gt.0) write(Lun_out,7001) stepno,trim(Out_laststep_S)
       endif
 
-      call timing_start ( 90, 'OUT_PHY  ')
-
       out3_type_S= 'REGPHY'
 !
 !     setup of ip3 and modifs to label
@@ -295,8 +293,6 @@
       
       deallocate(rff,irff,data3d)
       deallocate(hybm,hybt); nullify(hybm,hybt)
-
-      call timing_stop ( 90 )
 
  7001 format(/,' OUT_PHY- WRITING PHYSICS OUTPUT FOR STEP (',I8,') in directory: ',a)
  8001 format(/,' OUT_PHY- WRITING CASCADE OUTPUT FOR STEP (',I8,') in directory: ',a)

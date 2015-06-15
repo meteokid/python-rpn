@@ -23,8 +23,8 @@
 !
       subroutine pre ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
                        F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  , &
-                       F_rw  ,F_rf  ,F_oru  ,F_orv  ,F_rb ,F_nest_t, &
-                       Minx,Maxx,Miny,Maxy, &
+                       F_rw  ,F_rf  ,F_rx   ,F_rq   ,F_oru  ,F_orv , &
+                       F_rb,F_nest_t, Minx,Maxx,Miny,Maxy, &
                        i0, j0, in, jn, k0, ni, nj, Nk )
       implicit none
 #include <arch_specific.hf>
@@ -35,6 +35,7 @@
            F_rvw1  (Minx:Maxx,Miny:Maxy,Nk)  ,F_rvw2  (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rc    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rt    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
+           F_rx    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rq    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)  , &
            F_fis   (Minx:Maxx,Miny:Maxy)                                        , &
@@ -195,6 +196,26 @@
 
 !$omp parallel private(km,rdiv,w1,w2,w3,w4,w_rt)
 
+      if(Schm_nolog_L) then
+!$omp do
+         do k=k0, l_nk
+            km=max(k-1,1)
+            w1= Ver_idz_8%m(k)+Ver_wp_8%m(k)
+            w2=(Ver_idz_8%m(k)-Ver_wm_8%m(k))*Ver_onezero(k)
+            w3=Dcst_rgasd_8*Ver_Tstr_8(k)
+            w4=one/Ver_Tstr_8(k)
+            do j= j0, jn
+            do i= i0, in
+               F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k )) &
+                                      +w2*(F_rx(i,j,km)+F_rq(i,j,km))
+               F_rf(i,j,k)=F_rf(i,j,k)+w3*(F_rx(i,j,k )+F_rq(i,j,k ))
+               F_rt(i,j,k)=F_rt(i,j,k)*w4
+            end do
+            end do
+         end do
+!$omp enddo
+      endif
+
 !$omp do
       do k=k0, l_nk
 
@@ -226,7 +247,7 @@
 !$omp do
          do j= j0, jn
          do i= i0, in
-            F_rb(i,j) = F_rt(i,j,k0-1)
+            F_rb(i,j) = F_rt(i,j,k0t)
          end do
          end do
 !$omp enddo
@@ -296,6 +317,15 @@
 !$omp enddo
       endif
 
+      if(Schm_nolog_L) then
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - Cstv_invT_8 * (F_rx(i,j,l_nk)+F_rq(i,j,l_nk))
+         end do
+         end do
+!$omp enddo
+      endif
       w1 = Cstv_invT_8**2 / ( Dcst_Rgasd_8 * Ver_Tstr_8(l_nk) )
 !$omp do
       do j= j0, jn

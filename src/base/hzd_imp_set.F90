@@ -39,7 +39,6 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "hzd.cdk"
-#include "eigv.cdk"
 #include "dcst.cdk"
 #include "fft.cdk"
 #include "trp.cdk"
@@ -77,26 +76,17 @@
 
       if ( .not. Fft_fast_L ) then
 
-         if ( Eigv_parity_L) then
-            !                Eigenmodes with definite parity
-            NSTOR = (G_ni+2)/2 + ( 1 - mod((G_ni+2)/2,2) )
-            dim = NSTOR*NSTOR
-            allocate (Hzd_evvec_8(dim),Hzd_odvec_8(dim))
-            call set_poic_par_U (Hzd_xeval_8, Hzd_evvec_8 , &
-                       Hzd_odvec_8, G_xg_8(1), G_ni, NSTOR)
-         else
-            allocate ( Hzd_xevec_8 (G_ni*G_ni*2) )
-            call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8, &
-                             Hzd_xp2_8, G_ni, G_ni )
-            allocate ( Hzd_wevec_8(G_ni*G_ni), Hzd_wuevec_8(G_ni*G_ni) )
-            do j=1,G_ni
+         allocate ( Hzd_xevec_8 (G_ni*G_ni*2) )
+         call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8, &
+                          Hzd_xp2_8, G_ni, G_ni )
+         allocate ( Hzd_wevec_8(G_ni*G_ni), Hzd_wuevec_8(G_ni*G_ni) )
+         do j=1,G_ni
             do i=1,G_ni
                Hzd_wuevec_8((j-1)*G_ni+i)=Hzd_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
                Hzd_wevec_8 ((j-1)*G_ni+i)=Opr_xevec_8((j+Lam_pil_w-1)*G_ni+i+Lam_pil_w)
             enddo
-            enddo
-         endif
-
+         enddo
+         
       else
 
          c_8 = Dcst_pi_8 / dble( G_ni )

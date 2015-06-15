@@ -45,8 +45,6 @@
 !
 !-------------------------------------------------------------------
 !
-      call gemtim4 ( 6, '', .false. )
-
       err= clib_mkdir (Path_output_S)
 
       call  open_status_file3 (trim(Path_output_S)//'/status_'//trim(COMPONENT)//'.dot')

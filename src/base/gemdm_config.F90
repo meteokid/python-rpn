@@ -20,6 +20,7 @@
       integer function gemdm_config ( )
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       implicit none
+#include <arch_specific.hf>
 
 !author
 !     M. Desgagne    - Summer 2006
@@ -33,15 +34,13 @@
 ! v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
 ! v4_10 - Tanguay M.        - Adjust digital filter when LAM
 
-#include <arch_specific.hf>
 #include <rmnlib_basics.hf>
-#include <gmm.hf>
 #include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
-#include "ntr2mod.cdk"
 #include "step.cdk"
 #include "ver.cdk"
+#include "ntr2mod.cdk"
 #include "out.cdk"
 
       character*16  dumc_S, datev
@@ -49,12 +48,27 @@
       logical wronghyb
       integer i, k, nrec, ipcode, ipkind, istat, err
       real    pcode,deg_2_rad,sec
-      real*8  diffd, dayfrac, sec_in_day
+      real*8  dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
 !-------------------------------------------------------------------
 !
       gemdm_config = -1
+
+      if (Step_runstrt_S == 'NIL') Step_runstrt_S= NTR_runstrt_S
+      if (Step_runstrt_S == 'NIL') then
+         if (lun_out>0) then
+            write (Lun_out, 6005)
+            write (Lun_out, 8000)
+         endif
+         return
+      endif
+
+      dayfrac= - (Step_initial * Step_dt / sec_in_day)
+      call incdatsd (datev, Step_runstrt_S, dayfrac)
+      call datp2f ( Out3_date, datev )
+      if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
+      call datp2f ( Step_CMCdate0, Step_runstrt_S)
 
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
@@ -71,7 +85,7 @@
       Level_version  = 5
 
       if(Schm_Tlift.eq.1)then
-         call handle_error(-1,'gemdm_config','review for toplev removed and Tlift')
+         call gem_error (-1, 'gemdm_config','review for toplev removed and Tlift')
          Level_version  = 3
       endif
 
@@ -97,13 +111,6 @@
          Lam_blend_T = 0
       endif
 
-      if (Schm_trapeze_L) then
-         if (.not. G_lam) then
-            if (lun_out>0) write (Lun_out, 9480) 'Schm_trapeze_L'
-            return
-         endif
-      endif
-
       if (Schm_cub_traj_L) then
          if (.not. G_lam) then
             if (lun_out>0) write (Lun_out, 9480) 'Schm_cub_traj_L'
@@ -119,7 +126,6 @@
       P_lmvd_weigh_high_lat = max(0.,min(1.,P_lmvd_weigh_high_lat))
 
       Out_rewrit_L   = .false.
-      if (Clim_climat_L) Out_rewrit_L=.true.
 
       if (Out3_close_interval_S == " ") Out3_close_interval_S= '1H'
       err = timestr_parse(Out3_close_interval,Out3_unit_S,Out3_close_interval_S)
@@ -144,8 +150,6 @@
       enddo
  81   continue
 
-      if (Step_runstrt_S == 'NIL') Step_runstrt_S= NTR_runstrt_S
-
       Cstv_dt_8     = dble(Step_dt)
 
 !     Counting # of vertical levels specified by user
@@ -157,25 +161,11 @@
       if (lun_out>0) &
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 
-		if (Schm_autobar_L) Schm_phyms_L   = .false.
+		if (Schm_autobar_L) Schm_phyms_L= .false.
+
       call set_zeta2( hyb, G_nk )
 
       Schm_nith = G_nk
-
-      if (Step_runstrt_S.eq."NIL") then
-         if (lun_out>0) then
-            write (Lun_out, 6005)
-            write (Lun_out, 8000)
-         endif
-         return
-      endif
-
-      dayfrac= - (Lctl_step * Step_dt / sec_in_day)
-      call incdatsd (datev, Step_runstrt_S, dayfrac)
-      call datp2f ( Out3_date, datev )
-      call datp2f ( Step_CMCdate0, Step_runstrt_S)
-
-      if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
 
       err= 0
       err= min( timestr2step (Grdc_ndt,   Grdc_nfe    , Step_dt), err)
@@ -243,10 +233,6 @@
 
       if (G_lam) then
          G_niu = G_ni - 1
-         if (Eigv_parity_L) then
-            Eigv_parity_L = .false.
-            if (lun_out > 0) write (Lun_out, 7005)
-         endif
          if (Schm_psadj_L .and. .not.Grd_yinyang_L) then
             if (lun_out > 0) then
                write (Lun_out, 7020)
@@ -349,7 +335,7 @@
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
                            2X,'00H FORECAST WILL BE VALID AT: ',a16,/ &
-              X,48('#')/)
+               X,48('#')/)
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
@@ -363,7 +349,6 @@
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
- 7005 format (/' EIGENMODES with definite PARITY NOT AVAILABLE IF LAM'/)
  7020 format (/' OPTION Schm_psadj_L NOT AVAILABLE IF LAM'/)
  7021 format (//'  ================================================'/&
                 '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&

@@ -58,6 +58,8 @@
       real, pointer, dimension(:,:,:) :: tr
 !     _________________________________________________________________
 !
+      call timing_start2 ( 60, 'HZD_main', 1 )
+
       switch_on_UVW     = Hzd_lnr      .gt.0.
       switch_on_TR      = Hzd_lnr_tr   .gt.0.
       switch_on_THETA   = Hzd_lnr_theta.gt.0.
@@ -77,13 +79,13 @@
 !**************************************
 !
       if ( switch_on_THETA ) then
-         call timing_start ( 61, 'HZD_theta' )
+         call timing_start2 ( 61, 'HZD_theta', 60 )
          call hzd_theta
          call timing_stop  ( 61 )
       endif
 
       if ( switch_on_TR ) then
-         call timing_start ( 62, 'HZD_theta' )
+         call timing_start2 ( 62, 'HZD_tracers', 60 )
          do i=1, Tr3d_ntr
             if (Tr3d_hzd(i)) then
                nullify (tr)
@@ -99,7 +101,7 @@
 !***************************
 !
       if ( switch_on_UVW ) then
-         call timing_start ( 63, 'HORDIFF' )
+         call timing_start2 ( 63, 'HZD_bkgrnd', 60 )
          call hzd_ctrl3 ( ut1, 'U', G_nk)
          call hzd_ctrl3 ( vt1, 'V', G_nk)
          call hzd_ctrl3 (zdt1, 'S', G_nk)
@@ -112,7 +114,7 @@
 !***********************
 !
       if ( switch_on_vrtspng ) then
-         call timing_start ( 65, 'V_SPNG' )
+         call timing_start2 ( 65, 'V_SPNG', 60 )
          call vspng_drv3 (ut1, vt1, zdt1, wt1, tt1, &
                           l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 65 )
@@ -123,7 +125,7 @@
 !*************************
 !
       if ( switch_on_eqspng ) then
-         call timing_start ( 67, 'EQUA_SPNG')
+         call timing_start2 ( 67, 'EQUA_SPNG', 60)
          call eqspng_drv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 67 )
       endif
@@ -139,6 +141,8 @@
          call pw_update_UV
       if (switch_on_THETA .or. switch_on_TR .or. switch_on_vrtspng  )&
          call pw_update_T
+
+         call timing_stop ( 60 )
 !
 !     _________________________________________________________________
 !

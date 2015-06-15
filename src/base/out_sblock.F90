@@ -17,11 +17,11 @@
 !
 
 !
-      subroutine out_sblock2(F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy, &
+      subroutine out_sblock3(F_numpe_perb,F_nblocx,F_nblocy,F_myblocx,F_myblocy, &
                  F_mycol,F_myrow,F_ni,F_nj, F_blocme, F_mybloc, &
                  F_gindx,F_numproc,F_myproc,F_ixg,F_rot,F_grtyp_S,F_unit_S, &
                  F_deet, F_dateo, F_etik_S, F_ndigits,F_runstrt_S, &
-                 F_endstepno, F_flipit_L, F_debug_L)
+                 F_endstepno, F_flipit_L)
 !
       implicit none
 #include <arch_specific.hf>
@@ -34,7 +34,7 @@
               F_blocme,F_numproc,F_myproc, F_dateo,F_deet,F_endstepno
       integer F_gindx(6,F_numproc),F_ni,F_nj,F_ixg(8)
       integer F_ndigits
-      logical F_flipit_L, F_debug_L
+      logical F_flipit_L
       real    F_rot(8)
 !author
 !     M. Desgagne - V. Lee
@@ -60,7 +60,6 @@
 !
       Out_unf        = 0
       Out_flipit_L   = F_flipit_L
-      Out_debug_L    = F_debug_L
       Out_gridtyp_S  = F_grtyp_S
       Out_unit_S     = F_unit_S
       Out_etiket_S   = F_etik_S

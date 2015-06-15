@@ -66,7 +66,7 @@ subroutine adx_tricub_catmullrom (F_out, F_in, F_x, F_y, F_z, F_num,&
 
    !---------------------------------------------------------------------
 
-   call timing_start (34, 'ADW_CATMUL')
+   call timing_start2 (34, 'ADW_CATMUL', 31)
 
    p_z00_8 = adx_verZ_8%m(0)
    if (F_lev_S == 'm') then

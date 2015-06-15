@@ -62,9 +62,9 @@
       allocate ( wk(nis,njs,nz+1), zlist(nz) ) ; zlist= -1 
 
       if (out3_type_S .eq. 'REGDYN') then
-         call timing_start ( 82, 'OUT_DUCOL')
+         call timing_start2 ( 82, 'OUT_DUCOL', 80)
       else
-         call timing_start ( 91, 'OUT_PUCOL')
+         call timing_start2 ( 91, 'OUT_PUCOL', 48)
       endif
 
       err= RPN_COMM_grid_redist (fa, l_minx,l_maxx, l_id,l_if         ,&
@@ -81,9 +81,9 @@
       endif
 
       if (out3_type_S .eq. 'REGDYN') then
-         call timing_start ( 84, 'OUT_DUECR')
+         call timing_start2 ( 84, 'OUT_DUECR', 80)
       else
-         call timing_start ( 92, 'OUT_PUECR')
+         call timing_start2 ( 92, 'OUT_PUECR', 48)
       endif
 
       pnip2 = max(0,ip2)

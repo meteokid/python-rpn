@@ -15,15 +15,13 @@
 
 !**s/r grid_nml
 !
-
-!
       integer function grid_nml2 (F_namelistf_S, F_lam)
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) F_namelistf_S
       logical F_lam
-!
+
 !author
 !     M. Desgagne    - Summer  2006
 !
@@ -36,7 +34,7 @@
 !
 !object
 !  Default configuration and reading namelist grid
-!
+
 #include "grd.cdk"
 #include "hgc.cdk"
 #include "lun.cdk"
@@ -53,25 +51,21 @@
 !-------------------------------------------------------------------
 !
       grid_nml2 = -1
-!
+
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          grid_nml2 = 0
          if (Lun_out.gt.0) write (Lun_out  ,nml=grid) 
          return
       endif
-!
+
 ! Defaults values for ptopo namelist variables
-!
+
       Grd_typ_S = 'GU'
       Grd_ni    = 0
       Grd_nj    = 0 
       Grd_maxcfl= 1
-      Grd_nila  = 0
-      Grd_njla  = 0
       Grd_dx    = 0.
       Grd_dy    = 0.
-      Grd_dxmax = 360.
-      Grd_dymax = 180.
       Grd_iref  = 1
       Grd_jref  = 1
       Grd_latr  = 0.
@@ -84,7 +78,7 @@
       Grd_xlon2 = 270.
       Grd_xlat2 = 0.
       Grd_gauss_L = .false.
-!
+
       if (F_namelistf_S .ne. '') then
          unf = 0
          if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
@@ -95,12 +89,12 @@
          read (unf, nml=grid, end = 9120, err=9130)
          goto 9000
       endif
-!
+
  9120 if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
       goto 9999
  9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
       goto 9999
-!
+
  9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S    = dumc
       F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_typ_S(1:2).eq.'GY') 
@@ -115,16 +109,16 @@
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
       if (Grd_typ_S(1:2).eq.'GY') Grd_ni=(Grd_nj-1)*3 + 1
-!
+
       if (Grd_ni*Grd_nj.eq.0) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
                            'VERIFY Grd_NI & Grd_NJ IN NAMELIST grid'
          goto 9999
       endif
-!
+
       Grd_x0_8=  0.0 ; Grd_xl_8=360.0
       Grd_y0_8=-90.0 ; Grd_yl_8= 90.0
-!
+
       select case (Grd_typ_S(1:1))
 
       case ('G')                             ! Global grid
@@ -132,8 +126,6 @@
          select case (Grd_typ_S(2:2))
 
          case ('U')             ! Uniform
-            Grd_nila = Grd_ni
-            Grd_njla = Grd_nj
             Grd_dx   = 360./Grd_ni
             Grd_dy   = 180./Grd_nj
 
@@ -150,33 +142,23 @@
             endif
             if (Lun_out.gt.0) write(Lun_out,1003) Grd_ni,Grd_nj
 
-            Grd_nila = Grd_ni
-            Grd_njla = Grd_nj
             Grd_x0_8 =   45.0 - 3.0*Grd_overlap
             Grd_xl_8 =  315.0 + 3.0*Grd_overlap
             Grd_y0_8 = -45.0  -     Grd_overlap
             Grd_yl_8 =  45.0  +     Grd_overlap
 
-            delta_8  = (Grd_xl_8-Grd_x0_8)/(Grd_nila-1)
+            delta_8  = (Grd_xl_8-Grd_x0_8)/(Grd_ni-1)
             Grd_dx   = delta_8
             Grd_x0_8 = Grd_x0_8 - Grd_extension*delta_8
             Grd_xl_8 = Grd_xl_8 + Grd_extension*delta_8
 
-            delta_8  = (Grd_yl_8-Grd_y0_8)/(Grd_njla-1)
+            delta_8  = (Grd_yl_8-Grd_y0_8)/(Grd_nj-1)
             Grd_dy   = delta_8
             Grd_y0_8 = Grd_y0_8 - Grd_extension*delta_8
             Grd_yl_8 = Grd_yl_8 + Grd_extension*delta_8
 
             Grd_ni   = Grd_ni + 2  *Grd_extension
             Grd_nj   = Grd_nj + 2  *Grd_extension
-
-         case ('V')             ! Variable resolution
-            if (Grd_nila*Grd_njla*Grd_dx*Grd_dy.eq.0) then
-               if (Lun_out.gt.0) write(Lun_out,*)  &
-                          'VERIFY Grd_NILA, Grd_NJLA, Grd_DX & ', &
-                          'Grd_DY IN NAMELIST grid'
-               goto 9999
-            endif
 
          end select
 
@@ -191,8 +173,6 @@
          Grd_nj   = Grd_nj   + 2*Grd_extension
          Grd_iref = Grd_iref +   Grd_extension
          Grd_jref = Grd_jref +   Grd_extension
-         Grd_nila = Grd_ni
-         Grd_njla = Grd_nj
          if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or. &
              Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
             if (Lun_out.gt.0) write(Lun_out,1002) &
@@ -213,15 +193,7 @@
          endif
 
       end select
-!
-      if (nint( 360./Grd_dxmax ) .gt. Grd_ni+1 .or. &
-          nint( 180./Grd_dymax ) .gt. Grd_nj+1 ) then
-         if (Lun_out.gt.0) write(Lun_out,*)  &
-                    ' INCONSISTENT Grd_NI, Grd_NJ, ', &
-                    ' Grd_DXMAX & Grd_DYMAX values in namelist grid'
-         goto 9999
-      endif
-!
+
 !     compute RPN/FST grid descriptors
 !
       Hgc_gxtyp_s = 'E'
@@ -242,12 +214,12 @@
                         (  abs(Grd_xlon2-270.d0).lt.epsilon) .and. &
                         (  abs(Grd_xlat1       ).lt.epsilon) .and. &
                         (  abs(Grd_xlat2       ).lt.epsilon) )
-!
+
       Grd_rot_8      = 0.
       Grd_rot_8(1,1) = 1.
       Grd_rot_8(2,2) = 1.
       Grd_rot_8(3,3) = 1.
-!
+
       if (Grd_roule) then
 !
 !     Compute the rotation matrix that allows transformation
@@ -272,7 +244,7 @@
          d_8 = sqrt ( ( ( (a_8*xyz1_8(1)) - xyz2_8(1) ) / b_8 )**2 + &
                       ( ( (a_8*xyz1_8(2)) - xyz2_8(2) ) / b_8 )**2 + &
                       ( ( (a_8*xyz1_8(3)) - xyz2_8(3) ) / b_8 )**2  )
-!
+
          Grd_rot_8(1,1)=  -xyz1_8(1)/c_8
          Grd_rot_8(1,2)=  -xyz1_8(2)/c_8
          Grd_rot_8(1,3)=  -xyz1_8(3)/c_8
@@ -285,9 +257,9 @@
               ( (xyz2_8(1)*xyz1_8(3)) - (xyz1_8(1)*xyz2_8(3)))/b_8
          Grd_rot_8(3,3)=   &
               ( (xyz1_8(1)*xyz2_8(2)) - (xyz2_8(1)*xyz1_8(2)))/b_8
-!
+
       endif
-!
+
       grid_nml2 = 1
 
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &

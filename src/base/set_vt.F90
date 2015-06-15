@@ -61,6 +61,7 @@
 #include "vt0.cdk"
 #include "vth.cdk"
 #include "vt1.cdk"
+#include "vt2.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"
 #include "vt_tracers.cdk"
@@ -200,6 +201,21 @@
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(TR/*)')
+
+      !SETTLS
+      !------
+      gmmk_ut2_s   = 'UT2'
+      gmmk_vt2_s   = 'VT2'
+      gmmk_zdt2_s  = 'ZDT2'
+
+      istat = GMM_OK
+
+      istat = min(gmm_create(gmmk_ut2_s , ut2 , mymeta3d_nk_u , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_vt2_s , vt2 , mymeta3d_nk_v , flag_r_n),istat)
+      istat = min(gmm_create(gmmk_zdt2_s, zdt2, mymeta3d_nk_t , flag_r_n),istat)
+
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t2)')
 
       gmmk_pw_uu_plus_s  = 'PW_UU:P'
       gmmk_pw_vv_plus_s  = 'PW_VV:P'

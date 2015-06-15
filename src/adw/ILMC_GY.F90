@@ -49,7 +49,7 @@
 
       !----------------------------------------------------------
 
-      call timing_start(88,'ILMC')
+      call timing_start2 (37,'ILMC_GY',31)
 
       time_m = 0
 

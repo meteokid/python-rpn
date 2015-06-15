@@ -169,8 +169,8 @@
                endif
 
                if (Outd_filtpass(ii,set).gt.0) &
-                    call filter(w4,Outd_filtpass(ii,set)      , &
-                            Outd_filtcoef(ii,set),'G', .false., &
+                    call filter2( w4,Outd_filtpass(ii,set), &
+                                    Outd_filtcoef(ii,set), &
                             l_minx,l_maxx,l_miny,l_maxy, nko)
                if (Out3_cliph_L) then
                   do k=1,nko

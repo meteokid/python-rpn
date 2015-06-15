@@ -58,7 +58,7 @@
 
       call split_on_hostid (RPN_COMM_comm('GRID'),me,howmany,newcomm)
 
-      call timing_start ( 33, 'RESTART' )
+      call timing_start2 ( 33, 'RESTART', 34 )
       do i=0,howmany-1
          if (i.eq.me) then
 
