@@ -71,7 +71,7 @@ def loadRMNlib(rmn_version=None):
     eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
     RMN_LIBPATH = rmn_libfile
     if not os.path.exists(RMN_LIBPATH):
-        for path in pylibpath + eclibpath + eclibpath:
+        for path in pylibpath + ldlibpath + eclibpath:
             RMN_LIBPATH = os.path.join(path.strip(),rmn_libfile)
             if os.path.exists(RMN_LIBPATH):
                 break
