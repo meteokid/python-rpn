@@ -627,7 +627,7 @@ def _getGridHandle(ni,nj,grtyp,grref,ig1,ig2,ig3,ig4,i0,j0,xs,ys):
         if grtyp == '#':
             i0b = i0-1
             j0b = j0-1
-        gdid = _rmn.ezgdef_fmem(ni,nj,grtypZ,grref,ig1,ig2,ig3,ig4,xs[i0b:],ys[j0b:]);
+        gdid = _rmn.ezgdef_fmem(ni,nj,grtypZ,grref,ig1,ig2,ig3,ig4,xs[i0b:,0],ys[0,j0b:]);
     elif grtyp == 'Y':
         gdid = _rmn.ezgdef_fmem(ni,nj,grtypY,grref,ig1,ig2,ig3,ig4,xs[i0b:,j0b:],ys[i0b:,j0b:]);
     else:
@@ -675,8 +675,8 @@ def ezgetlalo(nij,grtyp,refparam,xyAxis,hasAxis,ij0,doCorners):
     for icorner in xrange(4):
         di = dij_corners[icorner][0]
         dj = dij_corners[icorner][1]
-        xnew = x.copy() + dij_corners[icorner][0]
-        ynew = y.copy() + dij_corners[icorner][1]
+        xnew = x.copy('FORTRAN') + dij_corners[icorner][0]
+        ynew = y.copy('FORTRAN') + dij_corners[icorner][1]
         ## print icorner,'z   :',xc1[:,0]
         ## print icorner,'x   :',x
         ## print icorner,'xnew:',xnew

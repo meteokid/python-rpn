@@ -12,7 +12,7 @@ COMPONENTS        := rpnpy
 COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS_UC),$($(item)_VFILES))
 
-MODULES_DOCTESTS := $(ROOT)/lib/rpnpy/rpndate.py
+MODULES_DOCTESTS := $(ROOT)/lib/Fstdc.py $(ROOT)/lib/rpnstd.py $(ROOT)/lib/rpnpy/rpndate.py
 MODULES_TESTS    := $(wildcard $(ROOT)/share/tests/test_*.py)
 
 #------------------------------------
@@ -72,12 +72,13 @@ doctests:
 	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
 	done
 
-alltests: doctests
+unittests: 
 	echo -e "\n======= PY-UnitTest List ========\n" ; \
 	for i in $(MODULES_TESTS); \
 	do echo -e "\n==== PY-UnitTest: " $$i "====\n"; python $$i ;\
 	done
 
+alltests: doctests unittests
 
 ifneq (,$(DEBUGMAKE))
 $(info ## ==== $$rpnpy/Makefile.user.mk [END] ================================)

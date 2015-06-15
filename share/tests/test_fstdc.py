@@ -152,11 +152,11 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (i0,j0) = (0,0)
         (la2,lo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
         if numpy.any(self.la!=la2):
-            print self.la
-            print la2
+            print "\nLAT Expected:\n",self.la
+            print "LAT Got:\n",la2
         if numpy.any(self.lo!=lo2):
-            print self.lo
-            print lo2
+            print "\nLON Expected:\n",self.lo
+            print "LON Got:\n",lo2
         self.assertFalse(numpy.any(self.la!=la2))
         self.assertFalse(numpy.any(self.lo!=lo2))
 
@@ -171,23 +171,23 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (i0,j0) = (0,0)
         (la2,lo2,cla2,clo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(None,None),hasAxes,(i0,j0),doCorners)
         if numpy.any(self.la!=la2):
-            print self.la
-            print la2
+            print "\nLAT Expected:\n",self.la
+            print "LAT Got:\n",la2
         if numpy.any(self.lo!=lo2):
-            print self.lo
-            print lo2
+            print "\nLON Expected:\n",self.lo
+            print "LON Got:\n",lo2
         self.assertFalse(numpy.any(self.la!=la2))
         self.assertFalse(numpy.any(self.lo!=lo2))
         for ic in range(0,4):
             if numpy.any(self.cla[ic,...]!=cla2[ic,...]):
-                print ic,'cla'
-                print self.cla[ic,...]
-                print cla2[ic,...]
+                print "\n",ic,'cla'
+                print "LAT Expected:\n",self.cla[ic,...]
+                print "LAT Got:\n",cla2[ic,...]
             self.assertFalse(numpy.any(self.cla[ic,...]!=cla2[ic,...]))
             if numpy.any(self.clo[ic,...]!=clo2[ic,...]):
-                print ic,'clo'
-                print self.clo[ic,...]
-                print clo2[ic,...]
+                print "\n",ic,'clo'
+                print "\nLON Expected:\n",self.clo[ic,...]
+                print "LON Got:\n",clo2[ic,...]
             self.assertFalse(numpy.any(self.clo[ic,...]!=clo2[ic,...]))
 
     def test_Fstdc_ezgetlalo_Z_KnownValues(self):
@@ -203,11 +203,11 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (i0,j0) = (0,0)
         (la2,lo2) = Fstdc.ezgetlalo((ni,nj),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
         if numpy.any(self.la!=la2):
-            print self.la
-            print la2
+            print "\nLAT Expected:\n",self.la
+            print "LAT Got:\n",la2
         if numpy.any(self.lo!=lo2):
-            print self.lo
-            print lo2
+            print "\nLON Expected:\n",self.lo
+            print "LON Got:\n",lo2
         self.assertFalse(numpy.any(self.la!=la2))
         self.assertFalse(numpy.any(self.lo!=lo2))
 
@@ -224,11 +224,11 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (i0,j0) = (2,2)
         (la2,lo2) = Fstdc.ezgetlalo((ni-1,nj-1),grtyp,(grref,ig1,ig2,ig3,ig4),(xaxis,yaxis),hasAxes,(i0,j0),doCorners)
         if numpy.any(self.la[1:,1:]!=la2):
-            print self.la[1:,1:]
-            print la2
+            print "\nLAT Expected:\n",self.la[1:,1:]
+            print "LAT Got:\n",la2
         if numpy.any(self.lo[1:,1:]!=lo2):
-            print self.lo[1:,1:]
-            print lo2
+            print "\nLON Expected:\n",self.lo[1:,1:]
+            print "LON Got:\n",lo2
         self.assertFalse(numpy.any(self.la[1:,1:]!=la2))
         self.assertFalse(numpy.any(self.lo[1:,1:]!=lo2))
 
