@@ -132,8 +132,8 @@
                yy(sindx+10    :sindx+9+nis    )= posx(Out_gridi0:Out_gridi0+nis-1)
                yy(sindx+10+nis:sindx+9+nis+njs)= posy(Out_gridj0:Out_gridj0+njs-1)
 
-               err= fstecr(yy,yy, -32, Out_unf,0,0,0,niyy,1,1       ,&
-                           Out_ig1,Out_ig2,ig3,'X','^>','YYG_UE_GEMV4',&
+               err= fstecr(yy,yy, -32, Out_unf,0,0,0,niyy,1,1     , &
+                           Out_ig1,Out_ig2,ig3,'X','^>',Out_etik_S, &
                            familly_uencode_S,vesion_uencode,0,0,0, 5, .true.)
             endif
 
