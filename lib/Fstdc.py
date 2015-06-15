@@ -372,7 +372,14 @@ def gdwdfuv(uuin,vvin,lat,lon,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
     @return (UV, WD): Wind modulus and direction as numpy.ndarray
     """
     raise error('gdwdfuv: Not implemented yet')
-
+    try:
+        gid = _getGridHandle(nij[0],nij[1],grtyp,
+                             refparam[0],refparam[1],refparam[2],
+                             refparam[3],refparam[4],
+                             ij0[0],ij0[1],xyAxis[0],xyAxis[1])
+    except:
+        raise error("gdwdfuv: Invalid Grid Desc")
+  
 
 def gduvfwd(uvin,wdin,lat,lon,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
     """Translate (magnitude,direction) winds to grid-directed
@@ -384,6 +391,13 @@ def gduvfwd(uvin,wdin,lat,lon,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
     @return (UU, VV): Grid-directed winds as numpy.ndarray
     """
     raise error('gduvfwd: Not implemented yet')
+    try:
+        gid = _getGridHandle(nij[0],nij[1],grtyp,
+                             refparam[0],refparam[1],refparam[2],
+                             refparam[3],refparam[4],
+                             ij0[0],ij0[1],xyAxis[0],xyAxis[1])
+    except:
+        raise error("gduvfwd: Invalid Grid Desc")
 
 
 def gdllval(uuin,vvin,lat,lon,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
@@ -397,7 +411,20 @@ def gdllval(uuin,vvin,lat,lon,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
     @return Zout or (UU,VV): scalar or tuple of grid-directed,
                              vector-interpolated fields, as appropriate
     """
-    raise error('gdllval: Not implemented yet')
+    try:
+        gid = _getGridHandle(nij[0],nij[1],grtyp,
+                             refparam[0],refparam[1],refparam[2],
+                             refparam[3],refparam[4],
+                             ij0[0],ij0[1],xyAxis[0],xyAxis[1])
+    except:
+        raise error("gdllval: Invalid Grid Desc")
+    try:
+        if vvin == None:
+            return _rmn.gdllsval(gid,lat,lon,uuin)
+        else:
+            return _rmn.gdllvval(gid,lat,lon,uuin,vvin)
+    except:
+        raise error("gdllval: Problem interpolating")
 
 
 def gdxyval(uuin,vvin,x,y,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
@@ -411,7 +438,20 @@ def gdxyval(uuin,vvin,x,y,nij,grtyp,refparam,xyAxis,hasAxis,ij0):
     @return Zout or (UU,VV): scalar or tuple of grid-directed,
                              vector-interpolated fields, as appropriate
     """
-    raise error('gdxyval: Not implemented yet')
+    try:
+        gid = _getGridHandle(nij[0],nij[1],grtyp,
+                             refparam[0],refparam[1],refparam[2],
+                             refparam[3],refparam[4],
+                             ij0[0],ij0[1],xyAxis[0],xyAxis[1])
+    except:
+        raise error("gdxyval: Invalid Grid Desc")
+    try:
+        if vvin == None:
+            return _rmn.gdxysval(gid,x,y,uuin)
+        else:
+            return _rmn.gdxyvval(gid,x,y,uuin,vvin)
+    except:
+        raise error("gdxyval: Problem interpolating")
 
 
 def ezinterp(arrayin,arrayin2,
@@ -693,7 +733,18 @@ def fstsui(iunit):
         @exception TypeError
         @exception Fstdc.error
     """
-    raise error('fstsui: Not implemented yet')
+    try:
+        mymatch = _rmn.fstsui(iunit)
+    except:
+        raise error('Problem getting record list')
+    if not mymatch:
+        raise error('No matching record')
+    recParams = _rmn.fstprm(mymatch['key'])
+    recParams['handle'] = recParams['key']
+    recParams['nom']    = recParams['nomvar']
+    recParams['type']   = recParams['typvar']
+    recParams['datev']  = recParams['xtra1']  #TODO: Keep Fstdc original bug?
+    return recParams
 
 
 def datematch(indate,dateRangeStart,dateRangeEnd,delta):
@@ -706,7 +757,24 @@ def datematch(indate,dateRangeStart,dateRangeEnd,delta):
         @return 1:if date match; 0 otherwise
         @exception TypeError
     """
-    raise error('datematch: Not implemented yet')
+    if dateRangeEnd != -1:
+        if _rmn.difdatr(indate,dateRangeEnd) > 0.:
+            return 0
+    toler  = 0.00023 #tolerance d'erreur de 5 sec
+    nhours = 0.
+    if dateRangeStart != -1:
+        nhours = _rmn.difdatr(indate,dateRangeStart)
+        if nhours < 0.:
+            return 0
+    else:
+        if dateRangeEnd == -1:
+            return 1
+        nhours = _rmn.difdatr(dateRangeEnd,indate)
+    modulo = nhours % delta
+    if modulo < toler or (delta - modulo) < toler:
+        return 1
+    else:
+        return 0
 
 
 def ezgetopt(option):
@@ -717,7 +785,10 @@ def ezgetopt(option):
         @rtype: A string
         @return: The string result of the query
     """
-    raise error('ezgetopt: Not implemented yet')
+    try:
+        return ezgetopt(option,str)
+    except:
+        raise error('Problem getting ezopt value')
 
 
 def ezsetopt(option,value):
@@ -727,7 +798,10 @@ def ezsetopt(option,value):
         @param option: The ezscint option 
         @param value: The value to set
     """
-    raise error('ezsetopt: Not implemented yet')
+    try:
+        _rmn.ezsetopt(option, value)
+    except:
+        raise error('Problem setting ezopt value')
 
 
 def ezgetval(option):
@@ -737,7 +811,14 @@ def ezgetval(option):
         @param option: The keyword of the option to retrieve
         @return: The value of the option as returned by ezget[i]val
     """
-    raise error('ezgetval: Not implemented yet')
+    try:
+        option = option.lower().strip()
+        if option == "weight_number" or option == "missing_points_tolerance":
+            return ezgetopt(option,int)
+        else:
+            return ezgetopt(option,float)
+    except:
+        raise error('Problem getting ezopt value')
 
 
 def ezsetval(option,value):
@@ -748,7 +829,10 @@ def ezsetval(option,value):
         @type value: Float or integer, as appropriate for the option
         @param value: The value to set
     """
-    raise error('ezsetval: Not implemented yet')
+    try:
+        _rmn.ezsetopt(option, value)
+    except:
+        raise error('Problem setting ezopt value')
 
 
 if __name__ == "__main__":

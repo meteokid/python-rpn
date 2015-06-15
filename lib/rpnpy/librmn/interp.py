@@ -253,8 +253,7 @@ def ezgetopt(option,vtype=int):
     Args:
         option : option name (string)
         vtype  : type of requested option (type.int, type.float or type.string)
-                 default: string
-                 Returns:
+                 default: int
     Returns:
         option value of the requested type
     Raises:
