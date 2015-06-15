@@ -102,9 +102,9 @@ class FstdcLevel_to_ip1KnownValues(unittest.TestCase):
 class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
 
     la = numpy.array(
-        [[-89.5, -89. , -88.5],
-        [-89.5, -89. , -88.5],
-        [-89.5, -89. , -88.5]]
+        [[-69.5, -69. , -68.5],
+        [-69.5, -69. , -68.5],
+        [-69.5, -69. , -68.5]]
         ,dtype=numpy.dtype('float32'),order='FORTRAN')
     lo = numpy.array(
         [[ 180. ,  180. ,  180. ],
@@ -112,18 +112,18 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         [ 181. ,  181. ,  181. ]]
         ,dtype=numpy.dtype('float32'),order='FORTRAN')
     cla = numpy.array(
-        [[[-89.75, -89.25, -88.75],
-        [-89.75, -89.25, -88.75],
-        [-89.75, -89.25, -88.75]],
-        [[-89.25, -88.75, -88.25],
-        [-89.25, -88.75, -88.25],
-        [-89.25, -88.75, -88.25]],
-        [[-89.25, -88.75, -88.25],
-        [-89.25, -88.75, -88.25],
-        [-89.25, -88.75, -88.25]],
-        [[-89.75, -89.25, -88.75],
-        [-89.75, -89.25, -88.75],
-        [-89.75, -89.25, -88.75]]]
+        [[[-69.75, -69.25, -68.75],
+        [-69.75, -69.25, -68.75],
+        [-69.75, -69.25, -68.75]],
+        [[-69.25, -68.75, -68.25],
+        [-69.25, -68.75, -68.25],
+        [-69.25, -68.75, -68.25]],
+        [[-69.25, -68.75, -68.25],
+        [-69.25, -68.75, -68.25],
+        [-69.25, -68.75, -68.25]],
+        [[-69.75, -69.25, -68.75],
+        [-69.75, -69.25, -68.75],
+        [-69.75, -69.25, -68.75]]]
         ,dtype=numpy.dtype('float32'),order='FORTRAN')
     clo = numpy.array(
         [[[ 179.75,  179.75,  179.75],
@@ -146,7 +146,7 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (ni,nj) = self.la.shape
         grtyp='L'
         grref='L'
-        (ig1,ig2,ig3,ig4) =  Fstdc.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
+        (ig1,ig2,ig3,ig4) =  Fstdc.cxgaig(grtyp,-69.5,180.0,0.5,0.5)
         hasAxes = 0
         doCorners = 0
         (i0,j0) = (0,0)
@@ -165,7 +165,7 @@ class Fstdc_ezgetlaloKnownValues(unittest.TestCase):
         (ni,nj) = self.la.shape
         grtyp='L'
         grref='L'
-        (ig1,ig2,ig3,ig4) =  Fstdc.cxgaig(grtyp,-89.5,180.0,0.5,0.5)
+        (ig1,ig2,ig3,ig4) =  Fstdc.cxgaig(grtyp,-69.5,180.0,0.5,0.5)
         hasAxes = 0
         doCorners = 1
         (i0,j0) = (0,0)

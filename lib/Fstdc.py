@@ -6,7 +6,7 @@
 """
 import ctypes as _ct
 import numpy  as _np
-from scipy import interpolate
+## from scipy import interpolate
 import rpnpy.version as rpn_version
 import rpnpy.librmn.all as _rmn
 
@@ -662,10 +662,10 @@ def ezgetlalo(nij,grtyp,refparam,xyAxis,hasAxis,ij0,doCorners):
     nij2 = (4,gridLaLo['lat'].shape[0],gridLaLo['lat'].shape[1])
     xc4  = _np.empty(nij2,dtype=_np.float32,order='FORTRAN')
     yc4  = _np.empty(nij2,dtype=_np.float32,order='FORTRAN')
-    x = _np.arange(float(nij2[1]))
-    y = _np.arange(float(nij2[2]))
-    fx = interpolate.interp2d(x, y, xc1, kind='linear',copy=False)
-    fy = interpolate.interp2d(x, y, yc1, kind='linear',copy=False)
+    ## x = _np.arange(float(nij2[1]))
+    ## y = _np.arange(float(nij2[2]))
+    ## fx = interpolate.interp2d(x, y, xc1, kind='linear',copy=False)
+    ## fy = interpolate.interp2d(x, y, yc1, kind='linear',copy=False)
     dij_corners = (
         (-0.5,-0.5),  #SW
         (-0.5, 0.5),  #NW
@@ -675,13 +675,12 @@ def ezgetlalo(nij,grtyp,refparam,xyAxis,hasAxis,ij0,doCorners):
     for icorner in xrange(4):
         di = dij_corners[icorner][0]
         dj = dij_corners[icorner][1]
-        xnew = x.copy('FORTRAN') + dij_corners[icorner][0]
-        ynew = y.copy('FORTRAN') + dij_corners[icorner][1]
-        ## print icorner,'z   :',xc1[:,0]
-        ## print icorner,'x   :',x
-        ## print icorner,'xnew:',xnew
-        xc4[icorner,:,:] = fx(xnew,ynew)
-        yc4[icorner,:,:] = fy(xnew,ynew)
+        ## xnew = x.copy('FORTRAN') + dij_corners[icorner][0]
+        ## ynew = y.copy('FORTRAN') + dij_corners[icorner][1]
+        ## xc4[icorner,:,:] = fx(xnew,ynew)
+        ## yc4[icorner,:,:] = fy(xnew,ynew)
+        xc4[icorner,:,:] = xc1[:,:] + dij_corners[icorner][0]
+        yc4[icorner,:,:] = yc1[:,:] + dij_corners[icorner][1]
     llc = _rmn.gdllfxy(gid, xc4, yc4)
     return (gridLaLo['lat'],gridLaLo['lon'],llc['lat'],llc['lon'])
 
