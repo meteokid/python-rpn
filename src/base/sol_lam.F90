@@ -37,7 +37,6 @@
 #include "ldnh.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
-#include "eigv.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
 #include "schm.cdk"

@@ -107,9 +107,9 @@
       endif
 
       if (out3_type_S .eq. 'REGDYN') then
-         call timing_start ( 82, 'OUT_D#COL')
+         call timing_start2( 82, 'OUT_D#COL',80)
       else
-         call timing_start ( 91, 'OUT_P#COL')
+         call timing_start2( 91, 'OUT_P#COL',48)
       endif
       call blkcol ( tr1,nis,njs,Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,mul, &
                     add,fa,lminx,lmaxx,lminy,lmaxy,nkfa,ind_o,nk_o )
@@ -120,9 +120,9 @@
       endif
 
       if (out3_type_S .eq. 'REGDYN') then
-         call timing_start ( 84, 'OUT_D#ECR')
+         call timing_start2( 84, 'OUT_D#ECR',80)
       else
-         call timing_start ( 92, 'OUT_P#ECR')
+         call timing_start2( 92, 'OUT_P#ECR',48)
       endif
 
       if (Out_blocme.eq.0) then

@@ -40,7 +40,6 @@
 #include "rstr.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-#include "clim.cdk"
 #include "cfld.cdk"
 #include "step.cdk"
 

@@ -41,7 +41,6 @@ end subroutine out_sfile2
 ! v4_03 - Lee V.            - ISST + modification of Out_etik_S in out_sgrid only
 
 #include <rmnlib_basics.hf>
-#include "clim.cdk"
 #include "cstv.cdk"
 #include "out.cdk"
 #include "out3.cdk"

@@ -14,7 +14,6 @@
 #include "cstv.cdk"
 #include "lctl.cdk"
 #include "hzd.cdk"
-#include "eigv.cdk"
 #include "vspng.cdk"
 #include "geomg.cdk"
 #include "grd.cdk"

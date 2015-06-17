@@ -16,7 +16,6 @@
 #include "schm.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
-#include "eigv.cdk"
 #include "vspng.cdk"
 #include "init.cdk"
 #include "mtn.cdk"
