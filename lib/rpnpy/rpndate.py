@@ -266,7 +266,7 @@ class RPNDateRange(object):
     >>> dr = RPNDateRange(d1,d2,6)
     >>> dr #1
     RPNDateRage(from:(20030423,11453500), to:(20030425,11453500), delta:6) at (20030423,11453500)
-    >>> dr.lenght() #1
+    >>> dr.length() #1
     48.0
     >>> dr.next() #1
     RPNDate(20030423,17453500) ; RPNDate(20030423,11453500,dt=  3600.0,nstep=     6.0)
@@ -307,11 +307,17 @@ class RPNDateRange(object):
         else:
             raise TypeError,'RPNDateRange: arguments type error RPNDateRange(RPNDate,RPNDate,Real)'
 
-    def lenght(self):
+    def length(self):
         """Provide the duration of the date range
         @return Number of hours
         """
         return abs(self.dateFin-self.dateDebut)
+
+    def lenght(self):
+        """(deprecated, use length) Provide the duration of the date range
+        Kept for backward compatibility, please use length()
+        """
+        return self.length()
 
     def remains():
         """Provide the number of hours left in the date range
