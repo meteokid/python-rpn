@@ -1,59 +1,195 @@
-'Test fst_edit_dir'
+#!/usr/bin/env python
+"""Unit test for fst_edit_dir"""
 
-def main():
-    'Copy FSTD file, then change time-step number'
+import os
+import unittest
+from shutil import copy
+from os import chmod, stat
+from stat import S_IWUSR
 
-    from shutil import copy
-    from os import chmod, stat
-    from stat import S_IWUSR
+import rpnpy.librmn.all as rmn
 
-    from rpnpy.librmn.const import FST_RO, FST_RW
-    from rpnpy.librmn.fstd98 import fstcloseall, fstinf, fstopenall, fst_edit_dir
+vname = 'UU'
 
-    ref_file = '/users/dor/armn/env/SsmBundles/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/2009042700_012'
+class UnitTest_fst_edit_dir(unittest.TestCase):
 
-    fref = fstopenall(ref_file, FST_RO)
-    [dateo, npas] = read_dateo_npas(fref)
-    fstcloseall(fref)
+    def read_dateo_npas(self,fname,vname):
+        'Read date of original analysis and time-step number'
 
-    print 'Reference file'
-    print 'dateo: ' + str(dateo)
-    print 'npas: ' + str(npas)
+        iunit = rmn.fstopenall(fname, rmn.FST_RO)
+        key   = rmn.fstinf(iunit, nomvar=vname)['key']
+        recmeta = rmn.fstprm(key)
+        rmn.fstcloseall(iunit)
 
-    new_file = 'new.fst'
+        return recmeta['datev'],recmeta['dateo'],recmeta['deet'],recmeta['npas']
 
-    copy(ref_file, new_file)
-    chmod(new_file, stat(new_file).st_mode | S_IWUSR)
+    def copy_file(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        ref_file = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_012')
+        
+        TMPDIR = os.getenv('TMPDIR')
+        new_file = os.path.join(TMPDIR.strip(),'new.fst')
+        
+        copy(ref_file, new_file)
+        chmod(new_file, stat(new_file).st_mode | S_IWUSR)
 
-    fnew = fstopenall(new_file, FST_RW)
-    [dateo, npas] = read_dateo_npas(fnew)
+        return ref_file, new_file
 
-    print 'New file'
-    print 'Before fst_edit_dir'
-    print 'dateo: ' + str(dateo)
-    print 'npas: ' + str(npas)
 
-    key = fstinf(fnew, nomvar='UU')['key']
-    fst_edit_dir(key, npas=49)
+    def test_fst_edit_dir_datev(self):
+        """Changing datev with fst_edit_dir should update dateo accordingly"""
+        
+        [ref_file, new_file] = self.copy_file()
 
-    [dateo, npas] = read_dateo_npas(fnew)
+        #Compare before
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
 
-    print 'After fst_edit_dir'
-    print 'dateo: ' + str(dateo)
-    print 'npas: ' + str(npas)
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertEqual(datev,datev1)
+        self.assertEqual(dateo,dateo1)
+        
+        #Edit datev in ref_file
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        datev2 = rmn.incdatr(datev,1.)
+        dateo2 = rmn.incdatr(dateo,1.)
 
-    fstcloseall(fnew)
+        fnew = rmn.fstopenall(new_file, rmn.FST_RW)
+        key  = rmn.fstinf(fnew, nomvar=vname)['key']
+        rmn.fst_edit_dir(key, datev=datev2)
+        rmn.fstcloseall(fnew)
 
-def read_dateo_npas(iunit):
-    'Read date of original analysis and time-step number'
-    from rpnpy.librmn.fstd98 import fstinf, fstprm
+        #Compare after
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+        
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertNotEqual(datev,datev1)
+        self.assertEqual(datev2,datev1)
+        self.assertNotEqual(dateo,dateo1)
+        self.assertEqual(dateo2,dateo1)
 
-    key = fstinf(iunit, nomvar='UU')['key']
 
-    dateo = fstprm(key)['dateo']
-    npas = fstprm(key)['npas']
 
-    return dateo, npas
+    def test_fst_edit_dir_dateo(self):
+        """Changing dateo with fst_edit_dir should update datev accordingly"""
+        
+        [ref_file, new_file] = self.copy_file()
 
-if __name__ == '__main__':
-    main()
+        #Compare before
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertEqual(datev,datev1)
+        self.assertEqual(dateo,dateo1)
+        
+        #Edit dateo in ref_file
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        dateo2 = rmn.incdatr(dateo,1.)
+        datev2 = rmn.incdatr(datev,1.)
+
+        fnew = rmn.fstopenall(new_file, rmn.FST_RW)
+        key  = rmn.fstinf(fnew, nomvar=vname)['key']
+        rmn.fst_edit_dir(key, dateo=dateo2)
+        rmn.fstcloseall(fnew)
+
+        #Compare after
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+        
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertNotEqual(datev,datev1)
+        self.assertEqual(datev2,datev1)
+        self.assertNotEqual(dateo,dateo1)
+        self.assertEqual(dateo2,dateo1)
+
+
+    def test_fst_edit_dir_npas(self):
+        """Changing npas with fst_edit_dir should update dateo accordingly"""
+        
+        [ref_file, new_file] = self.copy_file()
+
+        #Compare before
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertEqual(datev,datev1)
+        self.assertEqual(dateo,dateo1)
+        
+        #Edit npas in ref_file
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        npas2 = npas+1
+        dateo2 = rmn.incdatr(dateo,-1.*deet/3600.)
+        datev2 = datev
+
+        fnew = rmn.fstopenall(new_file, rmn.FST_RW)
+        key  = rmn.fstinf(fnew, nomvar=vname)['key']
+        rmn.fst_edit_dir(key, npas=npas2)
+        rmn.fstcloseall(fnew)
+
+        #Compare after
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+        
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas2,npas1)
+        self.assertEqual(datev,datev1)
+        self.assertEqual(datev2,datev1)
+        self.assertNotEqual(dateo,dateo1)
+        self.assertEqual(dateo2,dateo1)
+
+
+    def test_fst_edit_dir_npas_keepdateo(self):
+        """Changing npas with keepdate in fst_edit_dir should update datev accordingly"""
+        
+        [ref_file, new_file] = self.copy_file()
+
+        #Compare before
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas,npas1)
+        self.assertEqual(datev,datev1)
+        self.assertEqual(dateo,dateo1)
+        
+        #Edit npas in ref_file
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        npas2 = npas+1
+        dateo2 = dateo
+        datev2 = rmn.incdatr(datev,deet/3600.)
+
+        fnew = rmn.fstopenall(new_file, rmn.FST_RW)
+        key  = rmn.fstinf(fnew, nomvar=vname)['key']
+        rmn.fst_edit_dir(key, npas=npas2,keep_dateo=True)
+        rmn.fstcloseall(fnew)
+
+        #Compare after
+        [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
+        [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
+        
+        print 'o ',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo),npas*deet/3600.,npas,deet
+        print 'o2',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev2),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo2),npas2*deet/3600.,npas2,deet
+        print 'o1',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev1),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo1),npas1*deet/3600.,npas1,deet
+
+        self.assertEqual(deet,deet1)
+        self.assertEqual(npas2,npas1)
+        self.assertNotEqual(datev,datev1)
+        self.assertEqual(datev2,datev1)
+        self.assertEqual(dateo,dateo1)
+        self.assertEqual(dateo2,dateo1)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

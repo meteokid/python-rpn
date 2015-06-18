@@ -308,21 +308,27 @@ def fstecr(iunit,data,meta,rewrite=True):
     raise FSTDError()
 
 
-def fst_edit_dir(key, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
+def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
                  ip1=-1, ip2=-1, ip3=-1,
                  typvar=' ', nomvar=' ', etiket=' ', grtyp=' ',
-                 ig1=-1, ig2=-1, ig3=-1, ig4=-1, datyp=-1):
+                 ig1=-1, ig2=-1, ig3=-1, ig4=-1, datyp=-1, keep_dateo=False):
     """Edits the directory content of a RPN standard file
     Only provided parameters with value different than default are updated
+    
+    Note: by default datev is kept constant unless
+          dateo is specified or
+          keep_dateo=True
 
     fst_edit_dir(key, ... )
     
     Args:
         key   : positioning information to the record,
                 obtained with fstinf or fstinl, ...
-        dateo : date time stamp
+        dateo : date of origin (date time stamp), cannot change dateo and datev
+        datev : valid date     (date time stamp), cannot change dateo and datev
         deet  : length of a time step in seconds
-        npas  : time step number
+                (datev constant unless keep_dateo)
+        npas  : time step number (datev constant unless keep_dateo)
         ni    : first dimension of the data field
         nj    : second dimension of the data field
         nk    : third dimension of the data field
@@ -339,6 +345,10 @@ def fst_edit_dir(key, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         ig2   : second grid descriptor
         ig3   : third grid descriptor
         ig4   : fourth grid descriptor
+        keep_dateo : by default datev is kept constant unless
+                     dateo is specified or
+                     keep_dateo=True
+                     (keep_dateo must be False is datev is provided)
     Returns:
         None
     Raises:
@@ -346,11 +356,27 @@ def fst_edit_dir(key, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         ValueError on invalid input arg value
         FSTDError  on any other error
     """
-    if not (type(key) == int):
-        raise TypeError("fst_edit_dir: Expecting arg of type int, Got %s" % (type(key)))
+    if datev != -1:
+        if dateo != -1:
+            raise FSTDError("fst_edit_dir: Cannot change dateo and datev simultaneously, try using npas or deet to change the other value")
+        if keep_dateo:
+            raise FSTDError("fst_edit_dir: Cannot change datev while keeping dateo unchanged, try using npas or deet to change datev instead")
+    if dateo != -1:
+        if keep_dateo:
+            raise FSTDError("fst_edit_dir: Cannot change dateo while keeping dateo unchanged! Try using datev, npas or deet to change dateo instead")
     if key < 0:
         raise ValueError("fst_edit_dir: must provide a valide record key: %d" % (key))
-    istat = _rp.c_fst_edit_dir(key,dateo, deet, npas, ni, nj, nk,
+    if dateo != -1:
+        recparams = fstprm(key)
+        deet1 = recparams['deet'] if deet == -1 else deet
+        npas1 = recparams['npas'] if npas == -1 else npas
+        datev = _rb.incdatr(dateo,deet1*npas1/3600.)
+    if keep_dateo and (npas != 1 or deet != 1):
+        recparams = fstprm(key)
+        deet1 = recparams['deet'] if deet == -1 else deet
+        npas1 = recparams['npas'] if npas == -1 else npas
+        datev = _rb.incdatr(recparams['dateo'],deet1*npas1/3600.)
+    istat = _rp.c_fst_edit_dir(key,datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
                  ig1, ig2, ig3, ig4, datyp)
     if istat >=0:
@@ -886,6 +912,7 @@ def fstprm(key):
             'key'   : key,       # key/handle of the record
             'shape' : (ni,nj,nk) # dimensions of the field
             'dateo' : date time stamp
+            'datev' : date of validity (dateo+ deet * npas)
             'deet'  : length of a time step in seconds
             'npas'  : time step number
             'ni'    : first dimension of the data field
@@ -939,10 +966,12 @@ def fstprm(key):
     istat = c_toint(istat)
     if istat < 0:
         raise FSTDError()
+    datev = _rb.incdatr(cdateo.value,(cdeet.value*cnpas.value)/3600.)
     return {
         'key'   : key ,
         'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
         'dateo' : cdateo.value,
+        'datev' : datev,
         'deet'  : cdeet.value,
         'npas'  : cnpas.value,
         'ni'    : cni.value,
