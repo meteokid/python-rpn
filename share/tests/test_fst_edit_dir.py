@@ -175,10 +175,6 @@ class UnitTest_fst_edit_dir(unittest.TestCase):
         [datev,  dateo,  deet,  npas]  = self.read_dateo_npas(ref_file,vname)
         [datev1, dateo1, deet1, npas1] = self.read_dateo_npas(new_file,vname)
         
-        print 'o ',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo),npas*deet/3600.,npas,deet
-        print 'o2',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev2),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo2),npas2*deet/3600.,npas2,deet
-        print 'o1',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,datev1),':',rmn.newdate(rmn.NEWDATE_STAMP2PRINT,dateo1),npas1*deet/3600.,npas1,deet
-
         self.assertEqual(deet,deet1)
         self.assertEqual(npas2,npas1)
         self.assertNotEqual(datev,datev1)

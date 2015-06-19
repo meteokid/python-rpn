@@ -38,7 +38,7 @@ def fclos(iunit):
     if not (type(iunit) == int):
         raise TypeError("fcols: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fclos: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fclos: must provide a valid iunit: %d" % (iunit))
     istat = _rp.c_fclos(iunit)
     if istat < 0:
         raise RMNBaseError()
@@ -73,7 +73,7 @@ def fnom(filename,filemode=_rc.FST_RW,iunit=0):
     if not (type(filename) == str):
         raise TypeError("fnom: Expecting filename arg of type str, Got %s" % (type(filename)))
     if filename.strip() == '':
-        raise ValueError("fnom: must provide a valide filename")
+        raise ValueError("fnom: must provide a valid filename")
     if not (type(filemode) == str):
         raise TypeError("fnom: Expecting arg filemode of type str, Got %s" % (type(filemode)))
     istat = _rp.c_fnom(_ct.byref(ciunit),filename,filemode,0)
@@ -137,7 +137,7 @@ def wkoffit(filename):
     if not (type(filename) == str):
         raise TypeError("wkoffit: Expecting filename arg of type str, Got %s" % (type(filename)))
     if filename.strip() == '':
-        raise ValueError("wkoffit: must provide a valide filename")
+        raise ValueError("wkoffit: must provide a valid filename")
     return _rp.c_wkoffit(filename,len(filename))
 
 
@@ -182,7 +182,7 @@ def cigaxg(grtyp,ig1,ig2=0,ig3=0,ig4=0):
     if not (type(grtyp) == str):
         raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" % (type(grtyp)))
     if grtyp.strip() == '':
-        raise ValueError("cigaxg: must provide a valide grtyp")
+        raise ValueError("cigaxg: must provide a valid grtyp")
     (cig1,cig2,cig3,cig4) = (_ct.c_int(ig1),_ct.c_int(ig2),_ct.c_int(ig3),_ct.c_int(ig4))            
     if isListType(ig1):
         (cig1,cig2,cig3,cig4) = (_ct.c_int(ig1[0]),_ct.c_int(ig1[1]),_ct.c_int(ig1[2]),_ct.c_int(ig1[3]))            
@@ -217,7 +217,7 @@ def cxgaig(grtyp,xg1,xg2=0.,xg3=0.,xg4=0.):
     if not (type(grtyp) == str):
         raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" % (type(grtyp)))
     if grtyp.strip() == '':
-        raise ValueError("cigaxg: must provide a valide grtyp")
+        raise ValueError("cigaxg: must provide a valid grtyp")
     (cxg1,cxg2,cxg3,cxg4) = (_ct.c_float(xg1),_ct.c_float(xg2),_ct.c_float(xg3),_ct.c_float(xg4))
     if isListType(xg1):
         (cxg1,cxg2,cxg3,cxg4) = (_ct.c_float(xg1[0]),_ct.c_float(xg1[1]),_ct.c_float(xg1[2]),_ct.c_float(xg1[3]))
@@ -248,7 +248,7 @@ def incdatr(idate,nhours):
     if type(idate) != int:
        raise TypeError("incdatr: Expecting idate of type int, Got %s : %s" % (type(idate),repr(idate)))
     if idate < 0:
-        raise ValueError("incdatr: must provide a valide idate: %d" % (idate))
+        raise ValueError("incdatr: must provide a valid idate: %d" % (idate))
     if type(nhours) == int: nhours = float(nhours)
     if type(nhours) != float:
        raise TypeError("incdatr: Expecting nhours of type float, Got %s : %s" % (type(nhours),repr(nhours)))
@@ -277,7 +277,7 @@ def difdatr(idate1,idate2):
     if type(idate1) != int or type(idate2) != int:
        raise TypeError("difdatr: Expecting idate1,2 of type int, Got %s,%s" % (type(idate1),type(idate2)))
     if idate1 < 0 or idate2 < 0:
-        raise ValueError("difdatr: must provide a valide idates: %d,%d" % (idate1,idate2))
+        raise ValueError("difdatr: must provide a valid idates: %d,%d" % (idate1,idate2))
     (cidate1,cidate2,cnhours) = (_ct.c_int(idate1),_ct.c_int(idate2),_ct.c_double())
     _rp.f_difdatr(_ct.byref(cidate1),_ct.byref(cidate2),_ct.byref(cnhours))
     if cnhours.value == 2.**30:
@@ -376,7 +376,7 @@ def newdate(imode,idate1,idate2=0):
     if type(idate1) != int or type(idate2) != int:
        raise TypeError("newdate: Expecting idate1,2 of type int, Got %s,%s" % (type(idate1),type(idate2)))
     if idate1 < 0 or idate2 < 0:
-        raise ValueError("newdate: must provide a valide idates: %d,%d" % (idate1,idate2))
+        raise ValueError("newdate: must provide a valid idates: %d,%d" % (idate1,idate2))
     cimode = _ct.c_int(imode)
     (cidate1,cidate2,cidate3) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     if imode == 1:
@@ -408,7 +408,7 @@ def newdate(imode,idate1,idate2=0):
     elif imode == -7:
        cidate1 = _ct.c_int(idate1)
     else:
-       raise ValueError("incdatr: must provide a valide imode: %d" % (imode))
+       raise ValueError("incdatr: must provide a valid imode: %d" % (imode))
     istat = _rp.f_newdate(_ct.byref(cidate1),_ct.byref(cidate2),_ct.byref(cidate3),_ct.byref(cimode))
     if istat == 1: #TODO: check this, should it be (istat < 0)
         raise RMNBaseError()

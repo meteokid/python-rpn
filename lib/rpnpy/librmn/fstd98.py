@@ -112,7 +112,7 @@ def isFST(filename):
     if not (type(filename) == str):
         raise TypeError("isFST: Expecting arg of type str, Got %s" % (type(filename)))
     if filename.strip() == '':
-        raise ValueError("isFST: must provide a valide filename")
+        raise ValueError("isFST: must provide a valid filename")
     return _rb.wkoffit(filename) in (_rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 89'],_rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'])
         
     
@@ -147,7 +147,7 @@ def fstopenall(paths,filemode=_rc.FST_RO):
         if not (type(x) == str):
             raise TypeError("fstopenall: Expecting arg of type str, Got %s" % (type(x)))
         if x.strip() == '':
-            raise ValueError("fstopenall: must provide a valide path")
+            raise ValueError("fstopenall: must provide a valid path")
         if os.path.isdir(x):
             for (dirpath, dirnames, filenames) in os.walk(x):
                 for f in filenames:
@@ -191,7 +191,7 @@ def fstcloseall(iunit):
     if not (type(iunit) == int):
         raise TypeError("fstcloseall: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstcloseall: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstcloseall: must provide a valid iunit: %d" % (iunit))
     #TODO: loop on all linked units
     istat = fstfrm(iunit)
     if istat >= 0:
@@ -273,7 +273,7 @@ def fstecr(iunit,data,meta,rewrite=True):
     if not (type(iunit) == int):
         raise TypeError("fstecr: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstecr: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstecr: must provide a valid iunit: %d" % (iunit))
     if not (type(data) == _np.ndarray and type(meta) == dict):
         raise TypeError("fstecr: Expecting args of type numpy.ndarray, dict, Got %s,%s" % (type(data),type(meta)))
     if not _np.isfortran(data):
@@ -365,7 +365,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         if keep_dateo:
             raise FSTDError("fst_edit_dir: Cannot change dateo while keeping dateo unchanged! Try using datev, npas or deet to change dateo instead")
     if key < 0:
-        raise ValueError("fst_edit_dir: must provide a valide record key: %d" % (key))
+        raise ValueError("fst_edit_dir: must provide a valid record key: %d" % (key))
     if dateo != -1:
         recparams = fstprm(key)
         deet1 = recparams['deet'] if deet == -1 else deet
@@ -402,7 +402,7 @@ def fsteff(key):
     if not (type(key) == int):
         raise TypeError("fsteff: Expecting arg of type int, Got %s" % (type(key)))
     if key < 0:
-        raise ValueError("fsteff: must provide a valide record key: %d" % (key))
+        raise ValueError("fsteff: must provide a valid record key: %d" % (key))
     istat = _rp.c_fsteff(key)
     if istat >=0:
         return istat
@@ -427,7 +427,7 @@ def fstfrm(iunit):
     if not (type(iunit) == int):
         raise TypeError("fstfrm: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstfrm: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstfrm: must provide a valid iunit: %d" % (iunit))
     istat = _rp.c_fstfrm(iunit)
     if istat >=0:
         return istat
@@ -499,7 +499,7 @@ def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar
     if not (type(iunit) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinfx: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstinfx: must provide a valid iunit: %d" % (iunit))
     if not (type(key) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" % (type(key)))
     (cni,cnj,cnk) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
@@ -542,7 +542,7 @@ def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',
     if not (type(iunit) == int):
         raise TypeError("fstinl: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinl: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstinl: must provide a valid iunit: %d" % (iunit))
     if nrecmax <= 0: nrecmax = _rp.c_fstnbrv(iunit)
     creclist = _np.empty(nrecmax,dtype=_np.intc)
     (cni,cnj,cnk,cnfound) = (_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
@@ -713,7 +713,7 @@ def fstlnk(unitList):
     if not (type(unitList) in (list,tuple)):
         raise TypeError("fstlnk: Expecting arg of type list, Got %s" % (type(unitList)))
     if len(unitList)<1 or min(unitList)<=0:
-        raise ValueError("fstlnk: must provide a valide iunit: %d" % (min(unitList)))
+        raise ValueError("fstlnk: must provide a valid iunit: %d" % (min(unitList)))
     cunitList = nm.asarray(unitList, dtype=nm.intc)
     istat = _rp.c_xdflnk(cunitList,len(cunitList))
     if istat >= 0:
@@ -749,7 +749,7 @@ def fstluk(key,dtype=None,rank=None):
     if type(key) != int:
        raise TypeError("fstluk: Expecting a key of type int, Got %s : %s" % (type(key),repr(key)))
     if key < 0:
-        raise ValueError("fstluk: must provide a valide key: %d" % (key))
+        raise ValueError("fstluk: must provide a valid key: %d" % (key))
     params = fstprm(key)
     if params is None:
         raise FSTDError()
@@ -795,7 +795,7 @@ def fstnbr(iunit):
     if not (type(iunit) == int):
         raise TypeError("fstnbr: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstnbr: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstnbr: must provide a valid iunit: %d" % (iunit))
     nrec = _rp.c_fstnbr(iunit)
     if nrec < 0:
         raise FSTDError()        
@@ -820,7 +820,7 @@ def fstnbrv(iunit):
     if not (type(iunit) == int):
         raise TypeError("fstnbrv: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstnbrv: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstnbrv: must provide a valid iunit: %d" % (iunit))
     nrec = _rp.c_fstnbrv(iunit)
     if nrec < 0:
         raise FSTDError()        
@@ -890,7 +890,7 @@ def fstouv(iunit,filemode=_rc.FST_RW):
     if not (type(iunit) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinfx: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstinfx: must provide a valid iunit: %d" % (iunit))
     if not (type(filemode) == str):
         raise TypeError("fstinfx: Expecting arg filemode of type str, Got %s" % (type(filemode)))
     istat = _rp.c_fstouv(iunit,filemode)
@@ -947,7 +947,7 @@ def fstprm(key):
     if type(key) != int:
        raise TypeError("fstprm: Expecting a key of type int, Got %s : %s" % (type(key),repr(key)))
     if key < 0:
-        raise ValueError("fstprm: must provide a valide key: %d" % (key))
+        raise ValueError("fstprm: must provide a valid key: %d" % (key))
     (cni,cnj,cnk)        = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cdateo,cdeet,cnpas) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     (cnbits,cdatyp,cip1,cip2,cip3) = (_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int(),_ct.c_int())
@@ -1022,7 +1022,7 @@ def fstsui(iunit):
     if not (type(iunit) == int):
         raise TypeError("fstsui: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstsui: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstsui: must provide a valid iunit: %d" % (iunit))
     (cni,cnj,cnk) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
     key = _rp.c_fstsui(iunit,_ct.byref(cni),_ct.byref(cnj),_ct.byref(cnk))
     if key < 0: return None
@@ -1059,7 +1059,7 @@ def fstvoi(iunit,options=' '):
     if not (type(iunit) == int):
         raise TypeError("fstvoi: Expecting arg of type int, Got %s" % (type(iunit)))
     if iunit < 0:
-        raise ValueError("fstvoi: must provide a valide iunit: %d" % (iunit))
+        raise ValueError("fstvoi: must provide a valid iunit: %d" % (iunit))
     if not (type(options) == str):
         raise TypeError("fstvoi: Expecting options arg of type str, Got %s" % (type(options)))
     istat = _rp.c_fstvoi(iunit,options)
@@ -1100,7 +1100,7 @@ def ip1_all(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip1_all: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip1_all: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip1_all: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip1_all(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1128,7 +1128,7 @@ def ip2_all(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip2_all: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip2_all: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip2_all: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip2_all(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1156,7 +1156,7 @@ def ip3_all(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip3_all: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip3_all: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip3_all: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip3_all(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1184,7 +1184,7 @@ def ip1_val(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip1_val: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip1_val: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip1_val: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip1_val(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1212,7 +1212,7 @@ def ip2_val(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip2_val: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip2_val: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip2_val: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip2_val(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1240,7 +1240,7 @@ def ip3_val(level,kind):
     if not (type(kind) == int):
         raise TypeError("ip3_val: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("ip3_val: must provide a valide iunit: %d" % (kind))
+        raise ValueError("ip3_val: must provide a valid iunit: %d" % (kind))
     ip = _rp.c_ip3_val(level,kind)
     if ip < 0:
         raise FSTDError()
@@ -1309,7 +1309,7 @@ def convertIp(mode,v,k=0):
     if type(mode) != int:
        raise TypeError("convertIp: Expecting mode to be of type int, Got %s : %s" % (type(mode),repr(mode)))
     if mode < -1 or mode > 3:
-        raise ValueError("convertIp: must provide a valide mode: %d" % (key))
+        raise ValueError("convertIp: must provide a valid mode: %d" % (key))
     if mode >0:
         if type(v) == int: v = float(v)
         if type(v) !=  float:
@@ -1468,7 +1468,7 @@ def kindToString(kind):
     if not (type(kind) == int):
         raise TypeError("kindToString: Expecting arg of type int, Got %s" % (type(kind)))
     if kind < 0:
-        raise ValueError("kindToString: must provide a valide iunit: %d" % (kind))
+        raise ValueError("kindToString: must provide a valid iunit: %d" % (kind))
     (s1,s2) = (c_mkstr(' '),c_mkstr(' '))
     _rp.c_KindToString(kind,s1,s2)
     s12 = s1[0]+s2[0]
