@@ -176,6 +176,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
         nrec = rmn.c_fstnbrv(funit)
         keylist = rmn.fstinl(funit)
         kla = rmn.fstinf(funit,nomvar='LA')['key']
+        la2prm = rmn.fstprm(kla)#,rank=2)
         la2 = rmn.fstluk(kla)#,rank=2)
         klo = rmn.fstinf(funit,nomvar='LO')['key']
         lo2 = rmn.fstluk(klo)#,rank=2)

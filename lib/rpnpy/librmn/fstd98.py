@@ -361,21 +361,24 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             raise FSTDError("fst_edit_dir: Cannot change dateo and datev simultaneously, try using npas or deet to change the other value")
         if keep_dateo:
             raise FSTDError("fst_edit_dir: Cannot change datev while keeping dateo unchanged, try using npas or deet to change datev instead")
-    if dateo != -1:
-        if keep_dateo:
-            raise FSTDError("fst_edit_dir: Cannot change dateo while keeping dateo unchanged! Try using datev, npas or deet to change dateo instead")
     if key < 0:
         raise ValueError("fst_edit_dir: must provide a valid record key: %d" % (key))
     if dateo != -1:
         recparams = fstprm(key)
         deet1 = recparams['deet'] if deet == -1 else deet
         npas1 = recparams['npas'] if npas == -1 else npas
-        datev = _rb.incdatr(dateo,deet1*npas1/3600.)
-    if keep_dateo and (npas != 1 or deet != 1):
+        if deet1 ==0 or npas1 == 0 or dateo == 0:
+            datev = dateo
+        else:
+            datev = _rb.incdatr(dateo,deet1*npas1/3600.)
+    elif keep_dateo and (npas != -1 or deet != -1):
         recparams = fstprm(key)
-        deet1 = recparams['deet'] if deet == -1 else deet
-        npas1 = recparams['npas'] if npas == -1 else npas
-        datev = _rb.incdatr(recparams['dateo'],deet1*npas1/3600.)
+        if recparams['dateo'] == 0:
+            datev = 0
+        else:
+            deet1 = recparams['deet'] if deet == -1 else deet
+            npas1 = recparams['npas'] if npas == -1 else npas
+            datev = _rb.incdatr(recparams['dateo'],deet1*npas1/3600.)
     istat = _rp.c_fst_edit_dir(key,datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
                  ig1, ig2, ig3, ig4, datyp)
@@ -966,7 +969,9 @@ def fstprm(key):
     istat = c_toint(istat)
     if istat < 0:
         raise FSTDError()
-    datev = _rb.incdatr(cdateo.value,(cdeet.value*cnpas.value)/3600.)
+    datev = cdateo.value
+    if cdateo.value != 0 and cdeet.value != 0 and cnpas.value != 0:
+        datev = _rb.incdatr(cdateo.value,(cdeet.value*cnpas.value)/3600.)
     return {
         'key'   : key ,
         'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
