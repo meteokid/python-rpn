@@ -49,7 +49,9 @@ class RPNDate(object):
     >>> d6 = d5.toDateTime()
     >>> d6 == d4
     True
-    
+    >>> str(d5)
+    '20030423.11453500'
+
     ## >>> a = RPNMeta(d1.stamp,1800,3)
     ## >>> d3 = RPNDate(a)
     ## >>> d3
@@ -234,7 +236,6 @@ class RPNDate(object):
         RPNDate.update(self,dateo=self.datev,dt=0,nstep=0)
         return self
 
-
     def __repr__(self):
         ymd = hms = 0
         (ymd,hms) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT,self.datev)
@@ -244,7 +245,11 @@ class RPNDate(object):
             ymd0 = hms0 = 0
             (ymd0,hms0) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT,self.dateo)
             return "RPNDate(%8.8d,%8.8d) ; RPNDate(%8.8d,%8.8d,dt=%8.1f,nstep=%8.1f)" % (ymd, hms, ymd0, hms0,self.dt,self.nstep)
-
+    
+    def __str__(self):
+        ymd = hms = 0
+        (ymd,hms) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT,self.datev)
+        return "%8.8d.%8.8d" % (ymd, hms)
 
 
 #TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
@@ -339,11 +344,11 @@ class RPNDateRange(object):
         self.now=self.dateDebut
 
     def __repr__(self):
-        d1 = repr(self.dateDebut)
-        d2 = repr(self.dateFin)
-        d0 = repr(self.now)
-        return "RPNDateRage(from:%s, to:%s, delta:%d) at %s" % (d1[7:26],d2[7:26],self.delta,d0[7:26])
- 
+        d1 = str(self.dateDebut).replace('.',',')
+        d2 = str(self.dateFin).replace('.',',')
+        d0 = str(self.now).replace('.',',')
+        return "RPNDateRage(from:(%s), to:(%s), delta:%d) at (%s)" % (d1,d2,self.delta,d0)
+  
     def __iter__(self):
         tmp = RPNDateRange(self.dateDebut,self.dateFin,self.delta)
         tmp.now = tmp.now - tmp.delta
