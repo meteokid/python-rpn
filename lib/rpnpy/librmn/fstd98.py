@@ -370,7 +370,10 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         if deet1 ==0 or npas1 == 0 or dateo == 0:
             datev = dateo
         else:
-            datev = _rb.incdatr(dateo,deet1*npas1/3600.)
+            try: 
+                datev = _rb.incdatr(dateo,deet1*npas1/3600.)
+            except:
+                raise FSTDError('fst_edit_dir: error computing datev to set dateo')
     elif keep_dateo and (npas != -1 or deet != -1):
         recparams = fstprm(key)
         if recparams['dateo'] == 0:
@@ -378,7 +381,10 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         else:
             deet1 = recparams['deet'] if deet == -1 else deet
             npas1 = recparams['npas'] if npas == -1 else npas
-            datev = _rb.incdatr(recparams['dateo'],deet1*npas1/3600.)
+            try:
+                datev = _rb.incdatr(recparams['dateo'],deet1*npas1/3600.)
+            except:
+                raise FSTDError('fst_edit_dir: error computing datev to keep_dateo')
     istat = _rp.c_fst_edit_dir(key,datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
                  ig1, ig2, ig3, ig4, datyp)
@@ -916,6 +922,7 @@ def fstprm(key):
             'shape' : (ni,nj,nk) # dimensions of the field
             'dateo' : date time stamp
             'datev' : date of validity (dateo+ deet * npas)
+                      Will be set to '-1' if not able to compute it (dateo invalid)
             'deet'  : length of a time step in seconds
             'npas'  : time step number
             'ni'    : first dimension of the data field
@@ -971,7 +978,10 @@ def fstprm(key):
         raise FSTDError()
     datev = cdateo.value
     if cdateo.value != 0 and cdeet.value != 0 and cnpas.value != 0:
-        datev = _rb.incdatr(cdateo.value,(cdeet.value*cnpas.value)/3600.)
+        try:
+            datev = _rb.incdatr(cdateo.value,(cdeet.value*cnpas.value)/3600.)
+        except:
+            datev = -1
     return {
         'key'   : key ,
         'shape' : (max(1,cni.value),max(1,cnj.value),max(1,cnk.value)),
