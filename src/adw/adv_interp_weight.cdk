@@ -1,0 +1,16 @@
+   logical :: zcubic_L(:)
+   integer :: nmin, nmax
+   real, dimension(:), pointer ::  o2x
+   real, dimension(:), pointer ::  p1x,p2x,p3x,p4x
+   real, dimension(:), pointer ::  p1y,p2y,p3y,p4y
+   real, dimension(:), pointer ::  p1z,p2z,p3z,p4z
+   real, dimension(:), pointer ::  capx,capy,capz
+   
+  common /adv_interp_l/  zcubic_L
+   common /adv_interp_1/  nmin,nmax
+   common /adv_interp_2/  o2x
+   common /adv_weight_x/  p1x,p2x,p3x,p4x
+   common /adv_weight_y/  p1y,p2y,p3y,p4y
+   common /adv_weight_z/  p1z,p2z,p3z,p4z
+   common /adv_weight_cap/  capx,capy,capz
+  

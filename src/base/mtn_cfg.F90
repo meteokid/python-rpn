@@ -95,7 +95,6 @@
       Zblen_spngtt_L = .true.
 
       Out3_flipit_L  = .true.
-      Out3_fullplane_L  = .false.
       Out3_close_interval_S = '999h'
       Out3_close_interval = 999
       Out3_unit_S = 'HOU'

@@ -126,6 +126,7 @@
 
             Out_prefix_S(1:1) = 'd'
             Out_prefix_S(2:2) = Level_typ_S(levset)
+            Out_reduc_l       = Grid_reduc(gridset)
          
             call out_sfile3 ( Lctl_step )
             

@@ -33,6 +33,7 @@
 ! v4_50 - Desgagne M. - Initial version
 
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "level.cdk"
@@ -88,17 +89,17 @@ End Interface
          return
       endif
 
-      modeip1=level_mode_ip1
+      modeip1= 1
 !     Force oldip1style for output on pressure levels
       if (kind.eq.2) modeip1=3
 
-      ig3 = 0
-      if (Out3_uencode_L) then
+!      ig3 = 0
+!      if (Grd_yinyang_L) then
          ig3 = 1                             ! points de masse
          if (trim(nomvar) == 'UT1')  ig3 = 2 ! points U
          if (trim(nomvar) == 'VT1')  ig3 = 3 ! points V
          if (trim(nomvar) == 'QQ' )  ig3 = 4 ! points f
-      endif
+!      endif
 
       do k= 1, nk_o
          istk = istk + 1
@@ -130,32 +131,6 @@ End Interface
 !
       return
       end
-
-      subroutine out_flush_stk ()
-      implicit none
-#include <arch_specific.hf>
-!
-!author
-!    Michel Desgagne - Fall 2012
-!
-!revision
-! v4_50 - Desgagne M. - Initial version
-
-#include "out3.cdk"
-
-      real dummy
-!
-!--------------------------------------------------------------------
-!
-      if (Out3_fullplane_L) &
-           call out_fstecr ( dummy,dummy,dummy,dummy,dummy,dummy,&
-                             dummy,dummy,dummy,dummy,dummy,dummy,&
-                             dummy,dummy, .true. )
-!
-!--------------------------------------------------------------------
-!
-      return
-      end     
 
       subroutine out_stat
       implicit none

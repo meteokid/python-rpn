@@ -55,13 +55,15 @@
 !
 !
 #endif
-!
+!   
+      logical Advection_lam_legacy
       logical G_lam, G_periodx, G_periody
       integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       integer G_halox, G_haloy
       real*8, dimension(:), pointer :: G_xg_8, G_yg_8
       common / G_p / G_xg_8, G_yg_8
 !
+      common /G_legacy/Advection_lam_legacy
       common / G / G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       common / G / G_halox, G_haloy
       common / G_l / G_lam,G_periodx,G_periody

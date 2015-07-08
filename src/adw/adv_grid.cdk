@@ -1,0 +1,46 @@
+#if !defined(__ADV_GRID__)
+#define __ADV_GRID__
+
+#if defined(DOC)
+!**comdeck adv_grid.cdk
+!______________________________________________________________________
+!                                                                      |
+! GRIDS USED IN THE ADVECTION CONTEXT                                  |
+!______________________________________________________________________|
+!                                                                      |
+! 3 different grids are refered to throughout the advection process:   |
+!                                                                      |
+! GLOBAL GRID:    Global domain                                        |
+!                                                                      |
+! ADVECTION GRID: In the general case, the tiles adjacent to the poles |
+!                 would have an advection source grid periodic in x.   |
+!                 For the other tiles, the advection grid would be the |
+!                 same as the local grid.                              |
+!                                                                      |
+! LOCAL GRID:     Local domain                                         |
+!                                                                      |
+! All of these grids could include halos or not                        |
+!______________________________________________________________________|
+#endif
+
+      type :: ADV_TYPE_VER_8
+         sequence
+         real*8, dimension(:), pointer :: t,m
+      end type ADV_TYPE_VER_8
+
+      real*8, pointer :: adv_xg_8(:), adv_yg_8(:) !glb grid x,y coor
+      real*8, pointer :: adv_xx_8(:),adv_yy_8(:)  !local grid x,y coor
+      real*8, pointer :: adv_vsec_8(:),adv_vtan_8(:)!local grid,sec,tan on lat
+      real*8, pointer :: adv_cx_8(:),adv_sx_8(:)  !local grid cos/sin x
+      real*8, pointer :: adv_cy_8(:),adv_sy_8(:)  !local grid cos/sin y
+
+      type(ADV_TYPE_VER_8) :: adv_verZ_8          !Coor zeta: ln(pistar)
+
+      common /adv_grid_r8p/ adv_xg_8,adv_yg_8
+      common /adv_grid_r8p/ adv_xx_8,adv_yy_8
+      common /adv_grid_r8p/ adv_vsec_8,adv_vtan_8
+      common /adv_grid_r8p/ adv_cx_8,adv_sx_8
+      common /adv_grid_r8p/ adv_cy_8,adv_sy_8
+
+      common /adv_grid_v8/ adv_verZ_8
+#endif

@@ -104,7 +104,7 @@
             if (zlist(k).gt.0) then
                kk= zlist(k)
 
-               if (Out3_uencode_L) then
+               if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
                   call out_mergeyy (wk(1,1,k), nis*njs)
                   if (Ptopo_couleur.eq.0) &

@@ -58,18 +58,13 @@
       istat = gmm_shuffle( vt_list)
       istat = gmm_shuffle( tt_list)
       istat = gmm_shuffle( st_list)
+      istat = gmm_shuffle(zdt_list)
+      istat = gmm_shuffle(xdt_list)
       istat = gmm_shuffle( wt_list)
 !
       if (.not. Schm_hydro_L) then
          istat = gmm_shuffle( qt_list)
-      endif
-!
-      istat = gmm_shuffle(zdt_list)
-      if ( Schm_nolog_L ) then
-         istat = gmm_shuffle(xdt_list)
-         if (.not. Schm_hydro_L) then
-            istat = gmm_shuffle(qdt_list)
-         endif
+         istat = gmm_shuffle(qdt_list)
       endif
 !
       do i=1,Tr3d_ntr

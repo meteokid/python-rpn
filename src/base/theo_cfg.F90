@@ -35,12 +35,13 @@
 #include "theonml.cdk"
 #include "cst_lis.cdk"
 #include "path.cdk"
+!#include "glb_ld.cdk"
 ! 
       integer cte_ok,istat
       logical set_dcst_8
       external set_dcst_8
-      integer  fnom,gem_nml,mtn_cfg,adx_nml
-      external fnom,gem_nml,mtn_cfg,adx_nml
+      integer  fnom,gem_nml,mtn_cfg,adv_nml,adx_nml
+      external fnom,gem_nml,mtn_cfg,adv_nml,adx_nml
 !
       integer k, unf, status, err, nrec
 !*
@@ -57,7 +58,13 @@
       endif
 !
       err = gem_nml   ('')
-      err = adx_nml   (Path_nml_S)
+
+      if (.not. Advection_lam_legacy) then
+      err = adv_nml   (Path_nml_S)
+      else
+      err = adx_nml   (Path_nml_S)      
+      endif
+
 
       Theo_case_S    = 'xxx'
       Step_runstrt_S = '19980101.000000'

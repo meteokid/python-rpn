@@ -101,7 +101,11 @@
 !     Print max courrant numbers if LAM configuration
          if (G_lam) then
          if (Ptopo_myproc==0 .and. Lctl_step>0) then
+          if (Advection_lam_legacy)then
             call adx_cfl_print()
+          else
+            call adv_cfl_print()
+          endif
          endif
          endif
 !
@@ -160,18 +164,12 @@
             tmp_liste(cnt+3) = 'WT1'
             tmp_liste(cnt+4) = 'TT1'
             tmp_liste(cnt+5) = 'ST1'
-            cnt = cnt + 5
-            if(Schm_nolog_L) then
-               tmp_liste(cnt+1) = 'XDT1'
-               cnt = cnt + 1
-            endif
+            tmp_liste(cnt+6) = 'XDT1'
+            cnt = cnt + 6
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
-               cnt = cnt + 1
-               if(Schm_nolog_L) then
-                  tmp_liste(cnt+1) = 'QDT1'
-                  cnt = cnt + 1
-               endif
+               tmp_liste(cnt+2) = 'QDT1'
+               cnt = cnt + 2
             endif
             if (stat_liste(k) .ne. 'ALL') cycle
          endif
@@ -183,18 +181,12 @@
             tmp_liste(cnt+3) = 'WT0'
             tmp_liste(cnt+4) = 'TT0'
             tmp_liste(cnt+5) = 'ST0'
-            cnt = cnt + 5
-            if(Schm_nolog_L) then
-               tmp_liste(cnt+1) = 'XDT0'
-               cnt = cnt + 1
-            endif
+            tmp_liste(cnt+6) = 'XDT0'
+            cnt = cnt + 6
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT0'
-               cnt = cnt + 1
-               if(Schm_nolog_L) then
-                  tmp_liste(cnt+1) = 'QDT0'
-                  cnt = cnt + 1
-               endif
+               tmp_liste(cnt+2) = 'QDT0'
+               cnt = cnt + 2
             endif
             cycle
          endif

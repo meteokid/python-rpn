@@ -16,6 +16,7 @@
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 !
       subroutine tstpdyn ( F_fnitraj )
+      use advection_mod, only: advection_semilag
       implicit none
 #include <arch_specific.hf>
 
@@ -170,7 +171,12 @@
       call timing_start2 (21, 'ADW', 10)
 
 !     Perform Semi-Lagrangian advection
-      call itf_adx_main (F_fnitraj)
+      
+      if (G_lam .and. .not. Advection_lam_legacy) then
+         call advection_semilag (F_fnitraj) 
+      else
+         call itf_adx_main (F_fnitraj)
+      endif
 
       call timing_stop(21)
 
@@ -202,7 +208,7 @@
       nj = l_maxy-l_miny+1
       allocate (nl_u(ni,nj,l_nk),nl_v(ni,nj,l_nk),nl_t(ni,nj,l_nk), &
                 nl_c(ni,nj,l_nk),nl_f(ni,nj,l_nk),nl_w(ni,nj,l_nk), &
-                nl_b(ni,nj))
+                nl_x(ni,nj,l_nk),nl_b(ni,nj))
 
       ni = ldnh_maxx-ldnh_minx+1
       nj = ldnh_maxy-ldnh_miny+1
@@ -216,7 +222,7 @@
 !        to obtain final right-hand side of the elliptic problem
          icln=Orh_icn*iln
          if ( G_lam .and. .not. Grd_yinyang_L ) icln=icln+1
-         call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f     ,&
+         call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f, nl_x     ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc ,&
                    fis0, nl_b, xdt0, qdt0, hut0, l_minx,l_maxx,l_miny,l_maxy,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
@@ -235,9 +241,9 @@
 !        Back subtitution: compute variables for the next iteration/time step
          call  bac (lhs_sol, fis0                             ,&
                     ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
-                    rhsu, rhsv, rhst, rhsw, rhsf, rhsb        ,&
-                    nl_u, nl_v, nl_t, nl_w, nl_f, nl_b        ,&
-                    xdt0, qdt0, rhsx, rhsq                    ,&
+                    rhsu, rhsv, rhst, rhsw, rhsf, rhsx, rhsb  ,&
+                    nl_u, nl_v, nl_t, nl_w, nl_f, nl_x, nl_b  ,&
+                    xdt0, qdt0, rhsq                          ,&
                     l_minx, l_maxx, l_miny, l_maxy            ,&
                     ni,nj,l_nk,i0, j0, k0, in, jn)
 
@@ -258,7 +264,7 @@
          end do
       end if
 
-      deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,rhs_sol,lhs_sol)
+      deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,nl_x,rhs_sol,lhs_sol)
 !
 !     ---------------------------------------------------------------
 !

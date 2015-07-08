@@ -25,8 +25,8 @@
 !
 #endif
 
-      real, pointer, dimension (:,:,:) :: uth   => null()
-      real, pointer, dimension (:,:,:) :: vth   => null()
+!      real, pointer, dimension (:,:,:) :: uth   => null()
+!      real, pointer, dimension (:,:,:) :: vth   => null()
       real, pointer, dimension (:,:,:) :: zdth  => null()
       real, pointer, dimension (:    ) :: xth   => null()
       real, pointer, dimension (:    ) :: yth   => null()
@@ -40,11 +40,13 @@
       integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
+!      character(len=GMM_MAXNAMELENGTH) :: gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
+      character(len=GMM_MAXNAMELENGTH) ::  gmmk_zdth_s, &
                                           gmmk_xth_s , gmmk_yth_s , gmmk_zth_s , &
                                           gmmk_xcth_s, gmmk_ycth_s, gmmk_zcth_s
 
-      common /vth_n_gmm / gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
+      common /vth_n_gmm /   gmmk_zdth_s, &
+!       common /vth_n_gmm / gmmk_uth_s , gmmk_vth_s , gmmk_zdth_s, &
                           gmmk_xth_s , gmmk_yth_s , gmmk_zth_s , &
                           gmmk_xcth_s, gmmk_ycth_s, gmmk_zcth_s
 

@@ -134,7 +134,7 @@ contains
     ! Set initializing values
     zero = 0.d0
     do k=1,size(F_rf)
-       call convip(ip1s(k),F_rf(k),2,Level_mode_ip1,'',.false.)
+       call convip(ip1s(k),F_rf(k),2,1,'',.false.)
     enddo
 
     ! Write coordinate descriptor
@@ -168,16 +168,9 @@ contains
     ! Decide whether or not to write descriptor based on local tile
     implicit none
 #include "out.cdk"
-#include "out3.cdk"
 #include "ptopo.cdk"
 
-    writeDescriptor = (Out_blocme == 0)
-
-    if (Out3_fullplane_L) then
-       if (Out3_uencode_L) writeDescriptor= writeDescriptor .and. (Ptopo_couleur.eq.0)
-    else
-       writeDescriptor= writeDescriptor .and. (Out_nisl > 0) .and. (Out_njsl > 0)
-    endif
+    writeDescriptor = (Out_blocme == 0) .and. (Ptopo_couleur == 0)
 
     return
   end function writeDescriptor

@@ -66,7 +66,7 @@
       character*2    Out_typvar_S,Out_prefix_S
       character*3    Out_ext_S
       logical        Out_flipit_L, Out_rewrit_L
-      logical        Out_post_L  , Out_diruse_L
+      logical        Out_post_L  , Out_diruse_L, Out_reduc_l
       real           Out_rot(8)
 
       integer Out_date,Out_hour,Out_dateo
@@ -125,5 +125,5 @@
       common /out_c/ Out_typvar_S,Out_prefix_S, Out_ext_s
 
       common /out_l/ Out_flipit_L, Out_rewrit_L
-      common /out_l/ Out_post_L  , Out_diruse_L
+      common /out_l/ Out_post_L  , Out_diruse_L, Out_reduc_l
       common /out_r/ Out_rot

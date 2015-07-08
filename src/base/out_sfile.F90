@@ -15,18 +15,11 @@
 
 !**s/r Out_sfile - to open new output file
 
-subroutine out_sfile2 (clostep_int,stepno)
-   integer ::  clostep_int,stepno
-   print *,'Abort - Called deprecated sub: out_sfile2'
-   stop
-end subroutine out_sfile2
-
-
       subroutine out_sfile3 (F_stepno)
       use timestr_mod, only: timestr_prognum
       implicit none
 #include <arch_specific.hf>
-!
+
       integer,intent(in) ::  F_stepno
 
 !AUTHOR   Michel Desgagne     September   2003 (MC2)
@@ -48,7 +41,6 @@ end subroutine out_sfile2
 #include "step.cdk"
 #include "ptopo.cdk"
 
-!!$      integer, external :: fnom,fstouv,fstopc
       real,   parameter :: eps=1.e-12
       real*8, parameter :: OV_day = 1.0d0/86400.0d0
 
@@ -69,13 +61,7 @@ end subroutine out_sfile2
 
       Out_npas = F_stepno
 
-      flag= (Out_blocme.eq.0)
-
-      if (Out3_fullplane_L) then
-         if (Out3_uencode_L) flag= flag .and. (Ptopo_couleur.eq.0)
-      else
-         flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)
-      endif
+      flag= (Out_blocme.eq.0) .and. (Ptopo_couleur.eq.0)
 
       if (flag) then
 
@@ -134,10 +120,13 @@ end subroutine out_sfile2
 !
       integer, external :: fstfrm
       integer err
+      real dummy
 !
 !----------------------------------------------------------------------
 !
-      call out_flush_stk ()
+      call out_fstecr ( dummy,dummy,dummy,dummy,dummy,dummy,&
+                        dummy,dummy,dummy,dummy,dummy,dummy,&
+                        dummy,dummy, .true. )
 
       if ((Out_blocme.eq.0).and.(Out_unf.gt.0)) then
          err = fstfrm(Out_unf)

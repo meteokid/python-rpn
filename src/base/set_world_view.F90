@@ -28,14 +28,13 @@
 #include "grd.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
-#include "out3.cdk"
 #include "step.cdk"
 #include "path.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
 
       integer, external :: gem_nml,gemdm_config,grid_nml2, &
-                           adx_nml,adx_config            , &
+                           adv_nml,adv_config,adx_nml,adx_config, &
                            RPN_COMM_bloc,step_nml,from_ntr
       character*50 LADATE,dumc1_S
       integer ierr,err(8),f1,f2,f3,f4,n1,n2,n3,n4,n5,n6,n7
@@ -67,7 +66,11 @@
          err(1) = grid_nml2   (Path_nml_S,G_lam)
          err(2) = step_nml    (Path_nml_S)
          err(3) = gem_nml     (Path_nml_S)
-         err(4) = adx_nml     (Path_nml_S)
+         if (.not. Advection_lam_legacy) then
+          err(4) = adv_nml     (Path_nml_S)
+         else
+          err(4) = adx_nml     (Path_nml_S)
+         endif
          err(5) = from_ntr ()
 
       endif
@@ -81,7 +84,11 @@
 ! Establish final configuration
 !
       err(1) = gemdm_config ( )
-      err(2) = adx_config   ( )
+      if(.not.Advection_lam_legacy) then
+       err(2) = adv_config   ( )
+      else
+       err(2) = adx_config   ( )
+      endif
       call gem_error(min(err(1),err(2)),'set_world_view','config')
 
       ierr = grid_nml2   ('print',G_lam)
@@ -91,7 +98,11 @@
       if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
            call gem_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
 
-      call adx_nml_print ()
+      if(.not. Advection_lam_legacy) then
+       call adv_nml_print ()
+      else
+       call adx_nml_print ()
+      endif
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
 !
@@ -110,10 +121,6 @@
          call write_status_file3 ('communications_established=YES' )
          if (Grd_yinyang_L)    &
          call write_status_file3 ('GEM_YINYANG=1')
-         if (Out3_fullplane_L) &
-         call write_status_file3 ('Out3_fullplane_L=1')
-         if (Out3_uencode_L)   &
-         call write_status_file3 ('Out3_uencode_L=1')
       endif
 !
 ! Master output PE for all none distributed components

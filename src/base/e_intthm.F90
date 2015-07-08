@@ -303,7 +303,7 @@
             code_h= e_rdhint3 (hun(1,kk),dstf_gid,nis,njs, Tr3d_name_S(i), &
                            na_t(k),-1,-1,' ',' ',Tr3d_anydate_L,.false.  , &
                            'CUBIC',e_fu_anal,6)
-            if (code_h.lt.0) hun= 0.
+            if (code_h.lt.0) hun(:,kk)= 0.
             horinterp_L= horinterp_L .or. (code_h.gt.0)         
             
             if (Pil_bmf_L) then

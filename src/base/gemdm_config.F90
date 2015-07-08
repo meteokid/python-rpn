@@ -80,7 +80,6 @@
 !     Use newcode style:
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
-      Level_mode_ip1 = 1
       Level_kind_ip1 = 5
       Level_version  = 5
 
@@ -137,8 +136,6 @@
       endif
       Out3_postproc_fact = max(0,Out3_postproc_fact)
 
-      if (.not.Grd_yinyang_L) Out3_uencode_L  = .false.
-      if (Out3_uencode_L)     Out3_fullplane_L= .true.
       if(Out3_nbitg .lt. 0) then
          if (lun_out>0) write (Lun_out, 9154)
          Out3_nbitg=16

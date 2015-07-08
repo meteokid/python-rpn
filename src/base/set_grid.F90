@@ -14,16 +14,14 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p set_grid - initialization of common block GRID
-!
 
-!
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
       implicit none
 #include <arch_specific.hf>
         integer F_argc,F_v1,F_v2
         character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
         character*5 stuff_S
-!
+
 !author 
 !     Vivian Lee - rpn - April 1999
 !
@@ -101,9 +99,9 @@
 #include "lam.cdk"
 #include "grid.cdk"
 #include "out3.cdk"
-!
-!*
-      integer i, j, k, gridset,gridout(5),niout,njout,longueur
+
+      integer i, j, k, gridset,gridout(5),longueur
+      integer niout,njout
       external longueur
       character*8 grdtyp_S
 !
@@ -165,7 +163,8 @@
 !    Calculate the origin and outer coordinates of the output grid
 !    and set to the maximum/minimum possible
 !
-      Grid_stride(j)=1
+      Grid_reduc (j)= (grdtyp_S.eq.'reduc')
+      Grid_stride(j)= 1
 
       if (grdtyp_S.eq.'model') then
 
@@ -175,14 +174,14 @@
          Grid_y1(j)=G_nj
 
       else if (grdtyp_S.eq.'core') then
-!     
+
          Grid_x0(j)=1      + Lam_pil_w
          Grid_x1(j)=Grd_ni - Lam_pil_e
          Grid_y0(j)=1      + Lam_pil_s
          Grid_y1(j)=Grd_nj - Lam_pil_n
 
       else if (grdtyp_S.eq.'free') then
-!     
+
          Grid_x0(j)=1       + Lam_pil_w + Lam_blend_Hx
          Grid_x1(j)=Grd_ni  - Lam_pil_e - Lam_blend_Hx
          Grid_y0(j)=1       + Lam_pil_s + Lam_blend_Hy
@@ -197,8 +196,6 @@
 !         Grid_stride(j)=min( max(gridout(5),1), &
 !             min(Grid_x1(j)-Grid_x0(j)+1,Grid_y1(j)-Grid_y0(j)+1)/2-1 )
          if (Grd_yinyang_L) then
-            Out3_uencode_L= .false.
-            if (lun_out.gt.0) call write_status_file3 ('Out3_uencode_L=0')
             if (trim(Grd_yinyang_S) .eq. 'YAN') then
                Grid_x0(j)= 0 ; Grid_x1(j)= -1
             endif
@@ -217,9 +214,7 @@
           return
       endif
 
-      if (Lun_out.gt.0) then
-      write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
-      endif
+      if (Lun_out.gt.0) write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
 !
 !-------------------------------------------------------------------
 !

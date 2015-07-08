@@ -111,19 +111,6 @@
             if (Lun_out>0) write(Lun_out,1001) trim(Out_laststep_S),Step_kount
          endif
       endif
-
-      if (Grd_yinyang_L) then
-         ! Wait for multigrid PE0 to be finished subdir creation
-         call rpn_comm_barrier(RPN_COMM_MULTIGRID, err)
-
-         Out_dirname_S = trim(Out_dirname_S)//'/'//trim(Grd_yinyang_S)
-         if (diryy_S /= Out_dirname_S) then
-            diryy_S = Out_dirname_S
-            if (Ptopo_myproc == 0) then
-               err = clib_mkdir(trim(Out_dirname_S))
-            endif
-         endif
-      endif
       
       ! Wait for Grid PE0 to be finished subdir creation
       call rpn_comm_barrier(RPN_COMM_BLOCMASTER, err)
@@ -131,7 +118,8 @@
       ! Each block master now creates an independent subdir for outputs
       Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
       err = CLIB_OK
-      if (Ptopo_blocme == 0 .and. dirbloc_S /= Out_dirname_S) then
+      if (Ptopo_blocme == 0 .and. dirbloc_S /= Out_dirname_S &
+                            .and. Ptopo_couleur == 0) then
          dirbloc_S = Out_dirname_S
          err = clib_mkdir ( trim(Out_dirname_S) )
          err = clib_isdir ( trim(Out_dirname_S) )

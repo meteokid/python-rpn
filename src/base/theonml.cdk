@@ -35,7 +35,7 @@
       namelist /mtn_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
       namelist /mtn_cfgs/ Step_total, Step_gstat
       namelist /mtn_cfgs/ Grd_rcoef
-      namelist /mtn_cfgs/ Schm_hydro_L,Schm_nolog_L,Schm_settls_L
+      namelist /mtn_cfgs/ Schm_hydro_L,Schm_settls_L
       namelist /mtn_cfgs/ Schm_itcn, Schm_itnlh
       namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
       namelist /mtn_cfgs/ Cstv_tstr_8

@@ -56,6 +56,8 @@
          return
       endif
 
+      Advection_lam_legacy= .true.
+
       Rstri_glbcol_L = .false.
 
       G_halox = 4
@@ -81,11 +83,10 @@
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_Tlift    = 0
+      Schm_MTeul    = 0
       Schm_trapeze_L  = .false.
       if (G_lam) Schm_trapeze_L = .true.
-      Schm_nolog_L    = .false.
       Schm_settls_L   = .false.
-      Schm_settls_lim_L= .false.
       Schm_capa_var_L = .false.
       Schm_cub_traj_L = .false.
       if (G_lam.and.Schm_trapeze_L) Schm_cub_traj_L = .true.
@@ -134,19 +135,20 @@
       sol_yyg_maxits= 40
       sol_yyg_eps   = 1.d-04
 
-      Hzd_difva_L= .false.
+      Hzd_difva_L    = .false.
       Hzd_prof_S     = "NIL"
       Hzd_pwr        = -1
       Hzd_lnr        = -1.
       Hzd_pwr_theta  = -1
       Hzd_lnr_theta  = -1.
-      Hzd_pwr_tr = -1
-      Hzd_lnr_tr = -1.
-      Vspng_nk      = 0
-      Vspng_coeftop = -1.
-      Vspng_njpole  = 3
-      Vspng_vec_L   = .false.
-      Vspng_zmean_L = .false.
+      Hzd_pwr_tr     = -1
+      Hzd_lnr_tr     = -1.
+      Hzd_div_damp   = -1.
+      Vspng_nk       = 0
+      Vspng_coeftop  = -1.
+      Vspng_njpole   = 3
+      Vspng_vec_L    = .false.
+      Vspng_zmean_L  = .false.
 
       Zdot_divHLM_L  = .false.
 
@@ -180,9 +182,6 @@
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
       Out3_flipit_L  = .false.
-      Out3_newout_L  = .false.
-      Out3_fullplane_L = .true.
-      Out3_uencode_L   = .false.
 !
 !     Williamson's cases section
 !     --------------------------

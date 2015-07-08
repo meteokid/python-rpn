@@ -99,7 +99,7 @@
       Grd_typ_S    = dumc
       F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_typ_S(1:2).eq.'GY') 
 
-      Grd_bsc_base = 5
+      Grd_bsc_base = 4
       if(Grd_yinyang_L) Grd_bsc_base=Grd_bsc_base+1
       Grd_bsc_ext1 = 3
       Grd_maxcfl   = max(1,Grd_maxcfl)

@@ -95,14 +95,15 @@
       err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
       err= min( timestr2step (Step_nesdt  , Fcst_nesdt_S, Step_dt), err)
+      Step_total= Step_total - Step_initial
 
       if ( Fcst_rstrt_S  == '' ) then
-         write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total-Step_initial+1
+         write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total+1
       else
          err = timestr_check(Fcst_rstrt_S)
       endif
       if ( Fcst_bkup_S  == '' ) then
-         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total-Step_initial+1
+         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total+1
       else
          err = timestr_check(Fcst_bkup_S)
       endif

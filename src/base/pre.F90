@@ -81,9 +81,6 @@
       k0t= k0
       if(Schm_opentop_L) k0t= k0-1
 
-  !   if(l_west) print*,'in pre, i0=',i0
-  !   if(l_east) print*,'in pre, in=',in
-
       if (.not.G_lam) then ! GU
 
 !*****************************************************************
@@ -164,7 +161,7 @@
             do i= i0u, inu
                F_ru(i,j,k) =  F_oru(i,j,k)  &
                           + ( F_ruw2(i-1,j,k) + F_ruw2(i+2,j,k) )*alpha1 &
-                          + ( F_ruw2(i  ,j,k) + F_ruw2(i+1,j,k) )*alpha2                                             
+                          + ( F_ruw2(i  ,j,k) + F_ruw2(i+1,j,k) )*alpha2
             end do
             end do
 
@@ -183,10 +180,10 @@
 
       else
 
-      call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
-                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+         call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
+                                 G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       endif
 
@@ -196,30 +193,26 @@
 
 !$omp parallel private(km,rdiv,w1,w2,w3,w4,w_rt)
 
-      if(Schm_nolog_L) then
-!$omp do
-         do k=k0, l_nk
-            km=max(k-1,1)
-            w1= Ver_idz_8%m(k)+Ver_wp_8%m(k)
-            w2=(Ver_idz_8%m(k)-Ver_wm_8%m(k))*Ver_onezero(k)
-            w3=Dcst_rgasd_8*Ver_Tstr_8(k)
-            w4=one/Ver_Tstr_8(k)
-            do j= j0, jn
-            do i= i0, in
-               F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k )) &
-                                      +w2*(F_rx(i,j,km)+F_rq(i,j,km))
-               F_rf(i,j,k)=F_rf(i,j,k)+w3*(F_rx(i,j,k )+F_rq(i,j,k ))
-               F_rt(i,j,k)=F_rt(i,j,k)*w4
-            end do
-            end do
-         end do
-!$omp enddo
-      endif
-
 !$omp do
       do k=k0, l_nk
-
          km=max(k-1,1)
+         w1= Ver_idz_8%m(k)+Ver_wp_8%m(k)
+         w2=(Ver_idz_8%m(k)-Ver_wm_8%m(k))*Ver_onezero(k)
+         w3=Dcst_rgasd_8*Ver_Tstr_8(k)
+         w4=one/Ver_Tstr_8(k)
+         do j= j0, jn
+         do i= i0, in
+
+!           Preliminary combinations
+!           ~~~~~~~~~~~~~~~~~~~~~~~~
+            F_rt(i,j,k)=F_rt(i,j,k)*w4
+            F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k )) &
+                                   +w2*(F_rx(i,j,km)+F_rq(i,j,km))
+            F_rf(i,j,k)=F_rf(i,j,k)+w3*(F_rx(i,j,k )+F_rq(i,j,k ))
+
+         end do
+         end do
+
          w1= Ver_igt_8*Ver_wp_8%m(k)
          w2= Ver_igt_8*Ver_wm_8%m(k)*Ver_onezero(k)
          do j= j0, jn
@@ -237,6 +230,7 @@
 !           Combine divergence & continuity equations : Rc'
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_8
+
          end do
          end do
 
@@ -303,10 +297,10 @@
       end do
 !$omp enddo
 
-!     Apply lower and upper boundary conditions
+!     Apply upper boundary conditions
 !
       if (Schm_opentop_L) then
-        w1=Cstv_invT_8/Ver_Tstr_8(k0t)
+         w1=Cstv_invT_8/Ver_Tstr_8(k0t)
 !$omp do
          do j= j0, jn
          do i= i0, in
@@ -317,19 +311,13 @@
 !$omp enddo
       endif
 
-      if(Schm_nolog_L) then
-!$omp do
-         do j= j0, jn
-         do i= i0, in
-            F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - Cstv_invT_8 * (F_rx(i,j,l_nk)+F_rq(i,j,l_nk))
-         end do
-         end do
-!$omp enddo
-      endif
+!     Apply lower boundary conditions
+!
       w1 = Cstv_invT_8**2 / ( Dcst_Rgasd_8 * Ver_Tstr_8(l_nk) )
 !$omp do
       do j= j0, jn
       do i= i0, in
+         F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - Cstv_invT_8 * (F_rx(i,j,l_nk)+F_rq(i,j,l_nk))
          F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - w1 * F_fis(i,j)
          F_rc(i,j,l_nk) = F_rc(i,j,l_nk) + Ver_cssp_8 * F_rt(i,j,l_nk)
       end do

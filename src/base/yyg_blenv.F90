@@ -86,7 +86,7 @@
 
                 adr=Bln_vsend_adr(kk)+1
 
-             call int_cubv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
+             call int_cubvec_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
                              Bln_vsend_imx1(adr),Bln_vsend_imy1(adr),  &
                              Bln_vsend_imx2(adr),Bln_vsend_imy2(adr),  &
                              Geomg_xu_8,Geomg_y_8,Geomg_x_8,Geomg_yv_8,&

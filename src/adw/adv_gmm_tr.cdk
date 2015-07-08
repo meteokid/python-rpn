@@ -1,0 +1,18 @@
+#if !defined(__ADV_GMM_TR__)
+#define __ADV_MMM_TR__
+
+!**comdeck adv_gmm_tr.cdk
+
+      character(len=40) :: adv_xth_tr_s  , adv_yth_tr_s  , adv_zth_tr_s
+      character(len=40) :: adv_xcth_tr_s , adv_ycth_tr_s , adv_zcth_tr_s
+      character(len=40) :: adv_xth_t_tr_s , adv_yth_t_tr_s , adv_zth_t_tr_s
+      character(len=40) :: adv_xcth_t_tr_s, adv_ycth_t_tr_s, adv_zcth_t_tr_s
+      character(len=40) :: adv_xct1_tr_s, adv_yct1_tr_s, adv_zct1_tr_s
+
+      common /adv_gmm_tr_s/ adv_xth_tr_s  , adv_yth_tr_s  , adv_zth_tr_s
+      common /adv_gmm_tr_s/ adv_xcth_tr_s , adv_ycth_tr_s , adv_zcth_tr_s
+      common /adv_gmm_tr_s/ adv_xth_t_tr_s , adv_yth_t_tr_s , adv_zth_t_tr_s
+      common /adv_gmm_tr_s/ adv_xcth_t_tr_s, adv_ycth_t_tr_s, adv_zcth_t_tr_s
+      common /adv_gmm_tr_s/ adv_xct1_tr_s, adv_yct1_tr_s, adv_zct1_tr_s
+
+#endif

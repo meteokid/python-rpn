@@ -12,20 +12,28 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!
-      subroutine ecris_fst2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul, &
-                              add,kind,nkfa,ind_o,nk_o,nbit )
-      implicit none
+!/@*
+subroutine adv_cfl_print()
+   implicit none
 #include <arch_specific.hf>
+   !@objective Print precomputed CFL and reset stats
+   !@author  Stephane Chamberland, 2010-01
+   !@revisions
+#include "adv_cfl.cdk"
+   !*@/
+   real :: cfl
+   !---------------------------------------------------------------------
+   cfl = sngl(adv_cfl_8(1))
+   write (6,99) 'x,y',adv_cfl_i(1,1),adv_cfl_i(2,1), adv_cfl_i(3,1),cfl
+   cfl = sngl(adv_cfl_8(2))
+   write (6,99) 'z'  ,adv_cfl_i(1,2),adv_cfl_i(2,2), adv_cfl_i(3,2),cfl
+   cfl = sngl(adv_cfl_8(3))
+   write (6,99) '3D' ,adv_cfl_i(1,3),adv_cfl_i(2,3), adv_cfl_i(3,3),cfl
+   adv_cfl_8 (:  ) = 0.d0
+   adv_cfl_i (:,:) = 0
 
-      character* (*) nomvar
-      integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,ind_o(*),nk_o,kind
-      real fa(lminx:lmaxx,lminy:lmaxy,*),rf(*),mul,add
+99 format(' MAX COURANT NUMBER:  ', a3,': [(',i4,',',i4,',',i4,') ',f12.5,']')
 
-      call out_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul, &
-                            add,kind,nkfa,ind_o,nk_o,nbit,.false. )
-
-      return
-      end
-
-
+   !---------------------------------------------------------------------
+   return
+end subroutine adv_cfl_print

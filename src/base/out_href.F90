@@ -13,30 +13,25 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!*s/r out_href2 - write horizontal positional parameters
-!
+!*s/r out_href - write horizontal positional parameters
 
-!
       subroutine out_href2 (F_arakawa_S)
-!(F_xpos,F_ypos)
+
       implicit none
 #include <arch_specific.hf>
-!
+
       character* (*) F_arakawa_S
-!      real F_xpos(*), F_ypos(*)
-!
+
 !author
 !     v.lee - rpn march 2008
 !
 !revision
 ! v4_03 - Lee V.            - initial MPI version (from wrhref MC2)
-!
 
 #include "glb_ld.cdk"
 #include "geomn.cdk"
 #include "grd.cdk"
 #include "out.cdk"
-#include "out3.cdk"
 #include "ptopo.cdk"
 
       integer, external  :: fstinl,fstecr
@@ -73,19 +68,13 @@
       endif
 
       nis = Out_nisg ; njs= Out_njsg
-      flag= (Out_blocme.eq.0)
-      if (Out3_fullplane_L) then
-         nis= Out_gridin - Out_gridi0 + 1
-         njs= Out_gridjn - Out_gridj0 + 1
-         if ( (Grd_typ_S(1:2)=='GU') .and. (nis.eq.G_ni) ) nis= nis   + 1
-         if (Out3_uencode_L) flag= flag .and. (Ptopo_couleur.eq.0)
-      else
-         flag= flag .and. (Out_nisl.gt.0) .and. (Out_njsl.gt.0)
-      endif
+      if ( (nis.le.0) .or. (njs.le.0) ) return
+      flag= (Out_blocme.eq.0) .and. (Ptopo_couleur.eq.0)
+      if ( (Grd_typ_S(1:2)=='GU') .and. (nis.eq.G_ni) ) nis= nis + 1
 
       if (flag) then
 
-         if (Out3_uencode_L) then
+         if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
             vesion_uencode    = 1
             familly_uencode_S = 'F'
@@ -139,7 +128,7 @@
 
          else
 
-            nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,0, &
+            nrec= fstinl (Out_unf,n1,n2,n3,' ',' ',Out_ig1,Out_ig2,ig3, &
                                        ' ','>>',liste,lislon,nlis)
             if ((lislon.lt.1).and.(.not.Out_flipit_L)) then
             if ( Out_stride .le. 1 ) then
@@ -150,11 +139,11 @@
                Out_rgridi0 = max(Out_bloci0,Out_gridi0)
                Out_rgridj0 = max(Out_blocj0,Out_gridj0)
                err=fstecr(posx(Out_gridi0),wk,-32,Out_unf,Out_dateo         ,&
-                          0,0, nis,1,1, Out_ig1,Out_ig2,0,'X', '>>'         ,&
+                          0,0, nis,1,1, Out_ig1,Out_ig2,ig3,'X', '>>'       ,&
                           Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
                           Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
                err=fstecr(posy(Out_gridj0),wk,-32,Out_unf,Out_dateo         ,&
-                          0,0, 1,njs,1,Out_ig1,Out_ig2,0,'X', '^^'          ,&
+                          0,0, 1,njs,1,Out_ig1,Out_ig2,ig3,'X', '^^'        ,&
                           Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
                           Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
             else
@@ -172,13 +161,13 @@
                   if (indx.ge.Out_blocj0) &
                   Out_rgridj0= min(Out_rgridj0,max(Out_blocj0,indx))
                end do
-               err=fstecr(xpos,wk,-32,Out_unf,Out_dateo,0,0,Out_nisg,1 ,&
-                              1, Out_ig1,Out_ig2,0,'X', '>>',Out_etik_S,&
-                                  Out_gridtyp_S, Out_ixg(1), Out_ixg(2),&
+               err=fstecr(xpos,wk,-32,Out_unf,Out_dateo,0,0,Out_nisg,1   ,&
+                              1, Out_ig1,Out_ig2,ig3,'X', '>>',Out_etik_S,&
+                                  Out_gridtyp_S, Out_ixg(1), Out_ixg(2)  ,&
                                        Out_ixg(3), Out_ixg(4), 5, .true.)
-               err=fstecr(ypos,wk,-32,Out_unf,Out_dateo,0,0,1,Out_njsg ,&
-                              1, Out_ig1,Out_ig2,0,'X', '^^',Out_etik_S,&
-                                  Out_gridtyp_S, Out_ixg(1), Out_ixg(2),&
+               err=fstecr(ypos,wk,-32,Out_unf,Out_dateo,0,0,1,Out_njsg   ,&
+                              1, Out_ig1,Out_ig2,ig3,'X', '^^',Out_etik_S,&
+                                  Out_gridtyp_S, Out_ixg(1), Out_ixg(2)  ,&
                                        Out_ixg(3), Out_ixg(4), 5, .true.)
             endif
             endif

@@ -48,8 +48,7 @@
       character*12 Out3_etik_S
       character*6  Out3_type_S
       character*4  Out3_unit_S
-      logical Out3_cliph_L, Out3_newout_L, Out3_flipit_L
-      logical Out3_fullplane_L, Out3_uencode_L, out3_sfcdiag_L
+      logical Out3_cliph_L, Out3_newout_L, Out3_flipit_L, Out3_sfcdiag_L
       integer Out3_nbitg, Out3_linbot
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_filtpass_max, Out3_xnbits_max,Out3_ip3
@@ -64,10 +63,8 @@
       common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
       common / out3_c / Out3_type_S, Out3_unit_S
       common / out3_c / Out3_close_interval_S
-      common / Out3_l / Out3_cliph_L
-      common / Out3_l / Out3_fullplane_L,Out3_uencode_L
-      common / Out3_l / Out3_flipit_L
-      common / Out3_l / Out3_newout_L,out3_sfcdiag_L
+      common / Out3_l / Out3_cliph_L, Out3_flipit_L
+      common / Out3_l / Out3_newout_L,Out3_sfcdiag_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postproc_fact
       common / Out3_i / Out3_nbitg,Out3_linbot

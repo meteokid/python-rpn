@@ -96,22 +96,21 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
        
       !Set V_d = 2*V(r,t1)-V(r,t2)
       !---------------------------
-      uh = 2.*ut1-ut2 ; vh = 2.*vt1-vt2 ; wh = 2.*zdt1-zdt2
 
-      !SETTLS limiter according to Diamantakis
-      if(Schm_settls_lim_L) then
-         beta=1.9
-         !do k=12,20 ! was sufficient on test case
-         do k=1,l_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               if(abs(zdt1(i,j,k)-zdt2(i,j,k)).gt.beta*0.5*(abs(zdt1(i,j,k))+abs(zdt2(i,j,k)))) then
-                  wh(i,j,k)=zdt1(i,j,k)
-               endif
-            enddo
-            enddo
+      beta=1.9
+      do k=1,l_nk
+         do j=1,l_nj
+         do i=1,l_ni
+            uh(i,j,k) = 2.0* ut1(i,j,k) - ut2(i,j,k)
+            vh(i,j,k) = 2.0* vt1(i,j,k) - vt2(i,j,k)
+            wh(i,j,k) = 2.0*zdt1(i,j,k) -zdt2(i,j,k)
+           !SETTLS limiter according to Diamantakis
+            if(abs(zdt1(i,j,k)-zdt2(i,j,k)).gt.beta*0.5*(abs(zdt1(i,j,k))+abs(zdt2(i,j,k)))) then
+               wh(i,j,k)=zdt1(i,j,k)
+            endif
          enddo
-      endif
+         enddo
+      enddo
 
    else
       uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )
