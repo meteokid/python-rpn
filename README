@@ -1,8 +1,29 @@
 
+==== Developing code ============================================================
+
+# Basic setup
+git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
+cd rpnpy
+. ./.setenv.dot --dev
+rdemklink
+./bin/ouv_exp_rpnpy
+make components_vfiles
+
+# Edit python source in:
+# ./lib/
+# ./share/tests/
+
+# Test your code modificatons with:
+make alltests
+
+# Once tested you may send your code/patch 
+#	  (or path to your git clone after you commited your changes) 
+#	  to stephane.chamberland@ec.gc.ca
+
 ==== Building ============================================================
 
 #git clone ssh://armnenv@localhost/~armnenv/GitDepots/python-rpn.git
-git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git
+git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
 cd rpnpy
 #git checkout -b tmp rpnpy_VERSION
 #update version number (including leading 'x/') in ./VERSION
