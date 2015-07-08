@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 
-!/**
+!/@*
 subroutine adv_tricub_lag3d (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y, F_z, F_num,&
                               F_mono_L, F_conserv_L, i0, in, j0, jn, k0, F_nk, F_lev_S)
 
@@ -41,7 +41,7 @@ subroutine adv_tricub_lag3d (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y,
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
    !  2014-XX,  Monique Tanguay    : GEM4 Mass-Conservation
-!**/
+!*@/
 
 #include "adv_dims.cdk"
 #include "adv_grid.cdk"
