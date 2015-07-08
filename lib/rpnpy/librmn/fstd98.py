@@ -777,7 +777,7 @@ def fstluk(key,dtype=None,rank=None):
     params['shape'] = myshape
     #raise ValueError("fstluk (%d, %d, %d) r=%d, s=%s" % (wantrank, minrank, len(params['shape']),rank, repr(params['shape'][0:rank])))
     data = _np.empty(params['shape'],dtype=dtype,order='FORTRAN')
-    istat = _rp.c_fstluk(data,key,cni,cnj,cnk)
+    istat = _rp.c_fstluk(data,key,_ct.byref(cni),_ct.byref(cnj),_ct.byref(cnk))
     if istat < 0:
         raise FSTDError()  
     params['d'] = data

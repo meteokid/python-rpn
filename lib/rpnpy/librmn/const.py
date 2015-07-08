@@ -149,7 +149,7 @@ FST_DATYP2NUMPY_LIST = { #TODO: review
     3: _np.uint32  ,# character (R4A in an integer)
     4: _np.int32   ,# signed integer
     5: _np.float32 ,# IEEE floating point
-    6: _np.float16 ,# floating point (16 bit, made for compressor)
+    6: _np.float32 ,# floating point (16 bit, made for compressor)
     7: _np.uint8   ,# character string
     8: _np.complex64 ,# complex IEEE
 }

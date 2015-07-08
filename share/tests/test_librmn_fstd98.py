@@ -276,6 +276,18 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertNotEqual(klo,None,'QW not found after rename: '+repr(klo))
 
 
+    def test_fstluk_f16_datyp134(self):
+        """fstluk of f16 fields (datyp=134) should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        CMCGRIDF = os.getenv('CMCGRIDF')
+        myfile = os.path.join(CMCGRIDF.strip(),'prog','gsloce','2015070706_042')
+        funit = rmn.fstopenall(myfile,rmn.FST_RO)
+        k = rmn.fstinf(funit, nomvar='UUW', typvar='P@')
+        r = rmn.fstluk(k['key'])
+        self.assertEqual(r['nomvar'],'UUW ')
+        rmn.fstcloseall(funit)
+
+
 if __name__ == "__main__":
     unittest.main()
 
