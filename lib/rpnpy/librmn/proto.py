@@ -143,7 +143,53 @@ EXTERNAL FUNCTIONS in base
             ... TODO ...
         Note:
             if difdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
-        
+
+    f_NewDate_Options(value,command)
+        Set/get option for newdate, incdatr, difdatr
+        Proto:
+           subroutine NewDate_Options(value,command)
+              character*(*) value,command
+        Args:
+           value   (I/O): option and value to be set/get (str)
+                          possible values:
+                          if command == 'get':
+                             'year'
+                          if command == 'set':
+                             'year=gregorian'
+                             'year=365_day'
+                             'year=360_day'
+           command (I)  : type of operation (str)
+                          possible values: 'set','get','unset'
+        Note:
+           A) Permits alternative calendar options, via either
+              the NEWDATE_OPTIONS environment variable (which
+              has precedence) or via appropriate "set" commands
+           B) Also, returns calendar status via the "get" command
+           C) The Get_Calendar_Status entry also return this
+           The known calendars options are currently:
+             gregorian
+             365_day (no leap years) and
+             360_day
+
+
+    f_Ignore_LeapYear()
+        Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+        Equivalent to: NewDate_Options('year=365_day','set')
+        Proto:
+           subroutine Ignore_LeapYear()
+        Args:
+           None
+
+
+    f_Accept_LeapYear()
+        Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+        Equivalent to: NewDate_Options('year=gregorian','set')
+        Proto:
+           subroutine Accept_LeapYear()
+        Args:
+           None
+
+
     f_newdate(dat1,dat2,dat3,mode)
         converts dates between two of the following formats: printable date, cmc date-time stamp, true date
         Proto:
@@ -1237,6 +1283,21 @@ f_difdati = librmn.difdati_
 librmn.difdatr_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_double))
 ## f_difdatr = f77name(librmn.difdatr)
 f_difdatr = librmn.difdatr_
+
+
+librmn.newdate_options_.argtypes = (_ct.c_char_p,_ct.c_char_p)
+## f_newdate_options = f77name(librmn.newdate_options)
+f_newdate_options = librmn.newdate_options_
+
+
+librmn.ignore_leapyear_.argtypes = []
+## f_newdate_options = f77name(librmn.ignore_leapyear)
+f_ignore_leapyear = librmn.ignore_leapyear_
+
+
+librmn.accept_leapyear_.argtypes = []
+## f_newdate_options = f77name(librmn.accept_leapyear)
+f_accept_leapyear = librmn.accept_leapyear_
 
 
 librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))

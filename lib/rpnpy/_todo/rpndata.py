@@ -3,18 +3,20 @@
 
     @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
-import rpn_version
-from rpnbasedict import *
-#from rpn_helpers import *
-from rpndate import *
-from rpnhgrid import *
-from rpnvgrid import *
+import rpnpy.version
+from rpnpy.rpnbasedict import *
+from rpnpy.rpndate import *
+from rpnpy.rpnhgrid import *
+from rpnpy.rpnvgrid import *
 
-import numpy
+import numpy as np
 
 class RPNData(RPNBaseDict):
     """RPN data/meta container class.
     Hold record data and metadata, needed to interact with RPNRec in RPNSTD files
+    TODO: replace name/type/etiket by id(str) + extra(dict)
+    TODO: replace date by timeinfo?
+
     The RPNData instance has the folowing attributes:
         d     : Actual Data            (type=numpy.ndarray)
         name  : Name/tag/id            (type=string)
@@ -97,7 +99,7 @@ class RPNData(RPNBaseDict):
     def _getDefaultKeyVal(self):
         (KDEF,KTYPE,KWILD) = (RPNBaseDict.KDEF,RPNBaseDict.KTYPE,RPNBaseDict.KWILD)
         return {
-            'd'     : {KDEF:None, KTYPE:numpy.ndarray,  KWILD:None},
+            'd'     : {KDEF:None, KTYPE:np.ndarray,  KWILD:None},
             'name'  : {KDEF:None, KTYPE:type(''),       KWILD:' '},
             'type'  : {KDEF:None, KTYPE:type(''),       KWILD:' '},
             'etiket': {KDEF:None, KTYPE:type(''),       KWILD:' '},

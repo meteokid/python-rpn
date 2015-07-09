@@ -57,6 +57,10 @@ NEWDATE_TRUE2PRINT  = -2
 NEWDATE_PRINT2STAMP = 3
 NEWDATE_STAMP2PRINT = -3
 
+NEWDATE_OPT_360DAYS = 'year=365_day'
+NEWDATE_OPT_365DAYS = 'year=360_day'
+NEWDATE_OPT_GREGORIAN = 'year=gregorian'
+
 #--- fstd98/fstd98 --------------------------------------------------
 
 FSTOP_GET = 1
