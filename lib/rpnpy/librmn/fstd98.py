@@ -1441,7 +1441,7 @@ def EncodeIp(rp1,rp2,rp3):
 
 
 def DecodeIp(ip1,ip2,ip3):
-    """Produce decoded (real value,kind) pairs from (ip1,ip2,ip3) ecnoded triplet
+    """Produce decoded (real value,kind) pairs from (ip1,ip2,ip3) encoded triplet
 
     (rp1,rp2,rp3) = DecodeIp(ip1,ip2,ip3)
     
