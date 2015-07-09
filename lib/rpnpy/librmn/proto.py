@@ -144,7 +144,7 @@ EXTERNAL FUNCTIONS in base
         Note:
             if difdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
 
-    f_NewDate_Options(value,command)
+    f_NewDate_Options(value,command,value_len,command_len)
         Set/get option for newdate, incdatr, difdatr
         Proto:
            subroutine NewDate_Options(value,command)
@@ -1285,7 +1285,7 @@ librmn.difdatr_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.PO
 f_difdatr = librmn.difdatr_
 
 
-librmn.newdate_options_.argtypes = (_ct.c_char_p,_ct.c_char_p)
+librmn.newdate_options_.argtypes = (_ct.c_char_p,_ct.c_char_p,_ct.c_int,_ct.c_int)
 ## f_newdate_options = f77name(librmn.newdate_options)
 f_newdate_options = librmn.newdate_options_
 

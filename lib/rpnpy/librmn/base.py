@@ -286,46 +286,44 @@ def difdatr(idate1,idate2):
     return cnhours.value
 
 
-## def newdate_options_set(option):
-##     """Set option for newdate, incdatr, difdatr
+def newdate_options_set(option):
+    """Set option for newdate, incdatr, difdatr
 
-##     newdate_options_set('year=gregorian')
-##     Args:
-##         option : 'option=value' to set (str)
-##                  possible values:
-##                     'year=gregorian'
-##                     'year=365_day'
-##                     'year=360_day'
-##     Returns:
-##         None
-##     Raises:
-##         TypeError if option not a string
-##     """
-##     cmd = 'set'
-##     _rp.f_newdate_options(option,cmd)
+    newdate_options_set('year=gregorian')
+    Args:
+        option : 'option=value' to set (str)
+                 possible values:
+                    'year=gregorian'
+                    'year=365_day'
+                    'year=360_day'
+    Returns:
+        None
+    Raises:
+        TypeError if option not a string
+    """
+    cmd = 'set'
+    _rp.f_newdate_options(option,cmd,len(option),len(cmd))
 
 
-## def newdate_options_get(option):
-##     """Get option for newdate, incdatr, difdatr
+def newdate_options_get(option):
+    """Get option for newdate, incdatr, difdatr
 
-##     value = newdate_options_get('year')
+    value = newdate_options_get('year')
     
-##     Args:
-##         option : option name (str)
-##                  possible values:
-##                     'year'
-##     Returns:
-##         option value (str)
-##     Raises:
-##         TypeError if option not a string
-##     """
-##     cmd = c_mkstr('get ')
-##     #optionv = c_mkstr(option.strip()+' '*32)
-##     optionv = c_mkstr('year            ')
-##     print option,':',optionv.value,':',cmd.value
-##     _rp.f_newdate_options(optionv,cmd)
-##     print option,':',optionv.value,':',cmd.value
-##     return optionv.value.strip()
+    Args:
+        option : option name (str)
+                 possible values:
+                    'year'
+    Returns:
+        option value (str)
+    Raises:
+        TypeError if option not a string
+    """
+    cmd = c_mkstr('get ')
+    optionv = c_mkstr(option.strip()+' '*32)
+    #optionv = c_mkstr('year            ')
+    _rp.f_newdate_options(optionv,cmd,len(optionv.value),len(cmd.value))
+    return optionv.value.strip()
 
 
 def ignore_leapyear():
@@ -356,20 +354,20 @@ def accept_leapyear():
     _rp.f_accept_leapyear()
 
 
-## def get_leapyear_status():
-##     """Get the leapyear status used in newdate, incdatr, difdatr
+def get_leapyear_status():
+    """Get the leapyear status used in newdate, incdatr, difdatr
 
-##     isLeapYear = get_leapyear_status()
+    isLeapYear = get_leapyear_status()
     
-##     Args:
-##         None
-##     Returns:
-##         True is leap year is used
-##     """
-##     val = newdate_options_get('year')
-##     if val.strip() in ('365_day','360_day'):
-##         return True
-##     return False    
+    Args:
+        None
+    Returns:
+        True is leap year is used
+    """
+    val = newdate_options_get('year')
+    if val.strip() in ('365_day','360_day'):
+        return True
+    return False    
 
 
 def newdate(imode,idate1,idate2=0):

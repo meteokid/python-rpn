@@ -150,45 +150,45 @@ class LibrmnNewdateOptKnownValues(unittest.TestCase):
         (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate2)
         self.assertEqual(yyyymmdd2,20120229)
 
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_365DAYS)
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_360DAYS)
-        ## idate2 = rmn.incdatr(idate1,nhours)
-        ## (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate2)
-        ## self.assertEqual(yyyymmdd2,20120301)
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_365DAYS)
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_360DAYS)
+        idate2 = rmn.incdatr(idate1,nhours)
+        (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate2)
+        self.assertEqual(yyyymmdd2,20120301)
 
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_GREGORIAN)
-        ## idate2 = rmn.incdatr(idate1,nhours)
-        ## (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate2)
-        ## self.assertEqual(yyyymmdd2,20120229)
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_GREGORIAN)
+        idate2 = rmn.incdatr(idate1,nhours)
+        (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate2)
+        self.assertEqual(yyyymmdd2,20120229)
 
 
     def testNewdateOptKnownValues(self):
         """Newdate_option should give known result with known input"""
-        ## value = rmn.newdate_options_get('year')
-        ## self.assertEqual(value,'gregorian')
+        value = rmn.newdate_options_get('year')
+        self.assertEqual(value,'gregorian')
         
-        ## isleapyear = rmn.get_leapyear_status()
-        ## self.assertEqual(isleapyear,False)
+        isleapyear = rmn.get_leapyear_status()
+        self.assertEqual(isleapyear,False)
 
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_360DAYS)
-        ## value = rmn.newdate_options_get('year')
-        ## self.assertEqual(value,'360_day')
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_360DAYS)
+        value = rmn.newdate_options_get('year')
+        self.assertEqual(value,'360_day')
         
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_365DAYS)
-        ## value = rmn.newdate_options_get('year')
-        ## self.assertEqual(value,'365_day')
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_365DAYS)
+        value = rmn.newdate_options_get('year')
+        self.assertEqual(value,'365_day')
 
-        ## rmn.newdate_options_set(rmn.NEWDATE_OPT_GREGORIAN)
-        ## value = rmn.newdate_options_get('year')
-        ## self.assertEqual(value,'gregorian')
+        rmn.newdate_options_set(rmn.NEWDATE_OPT_GREGORIAN)
+        value = rmn.newdate_options_get('year')
+        self.assertEqual(value,'gregorian')
 
-        ## rmn.accept_leapyear()
-        ## isleapyear = rmn.get_leapyear_status()
-        ## self.assertEqual(isleapyear,False)
+        rmn.accept_leapyear()
+        isleapyear = rmn.get_leapyear_status()
+        self.assertEqual(isleapyear,False)
 
-        ## rmn.ignore_leapyear()
-        ## isleapyear = rmn.get_leapyear_status()
-        ## self.assertEqual(isleapyear,True)
+        rmn.ignore_leapyear()
+        isleapyear = rmn.get_leapyear_status()
+        self.assertEqual(isleapyear,True)
 
         
 class LibrmnNewdateKnownValues(unittest.TestCase):
