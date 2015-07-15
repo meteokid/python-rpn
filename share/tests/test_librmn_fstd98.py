@@ -133,6 +133,26 @@ class Librmn_fstd98_Test(unittest.TestCase):
         rmn.fstcloseall(funit)
 
 
+    def test_isfst_openall_dir_fstnbr(self):
+        """isfst_openall__dir_fstnbr should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        ## rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST,rmn.FSTOP_GET)
+
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        mydir = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')    
+        funit = rmn.fstopenall(mydir,rmn.FILE_MODE_RO)
+        self.assertTrue(funit>0,'fstopenall should return a valid file unit')
+
+        reclist = rmn.fstinl(funit,nomvar='VF')
+        self.assertEqual(len(reclist),26,' fstinl of VF found %d/26 rec ' % len(reclist))
+
+        #Note: fstnbr does not work on linked files...
+        ## nrec = rmn.fstnbrv(funit)
+        ## self.assertEqual(nrec,9999,' fstnbrv found %d/???? rec ' % nrec)
+       
+        rmn.fstcloseall(funit)
+
+
     def test_fstsui_fstprm_fstlir(self):
         """fstsui_fstprm_fstlir should give known result with known input"""
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
@@ -278,14 +298,15 @@ class Librmn_fstd98_Test(unittest.TestCase):
 
     def test_fstluk_f16_datyp134(self):
         """fstluk of f16 fields (datyp=134) should give known result with known input"""
-        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
-        CMCGRIDF = os.getenv('CMCGRIDF')
-        myfile = os.path.join(CMCGRIDF.strip(),'prog','gsloce','2015070706_042')
-        funit = rmn.fstopenall(myfile,rmn.FST_RO)
-        k = rmn.fstinf(funit, nomvar='UUW', typvar='P@')
-        r = rmn.fstluk(k['key'])
-        self.assertEqual(r['nomvar'],'UUW ')
-        rmn.fstcloseall(funit)
+        self.assertEqual(0,1,'Need to update test with a new FST file')
+    ##     rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+    ##     CMCGRIDF = os.getenv('CMCGRIDF')
+    ##     myfile = os.path.join(CMCGRIDF.strip(),'prog','gsloce','2015070706_042')
+    ##     funit = rmn.fstopenall(myfile,rmn.FST_RO)
+    ##     k = rmn.fstinf(funit, nomvar='UUW', typvar='P@')
+    ##     r = rmn.fstluk(k['key'])
+    ##     self.assertEqual(r['nomvar'],'UUW ')
+    ##     rmn.fstcloseall(funit)
 
 
 if __name__ == "__main__":

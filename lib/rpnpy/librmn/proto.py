@@ -435,6 +435,16 @@ EXTERNAL FUNCTIONS in fstd98
         Returns:
             int, zero successful, non-zero otherwise
 
+    f_fstlnk(liste,n)
+        Links a list of files together for search purpose
+        Proto:
+            ftnword f77name(fstlnk)(ftnword *liste, ftnword *f_n)
+        Args:
+            liste : (I) list of unit numbers (ndpointer(dtype=_np.int32))
+            n     : (I) size of liste (int)
+        Returns:
+            int, zero successful, non-zero otherwise
+    
     c_fstluk(field, handle, ni, nj, nk)
         Read the record at position given by handle.
         Proto:
@@ -1410,6 +1420,12 @@ librmn.c_fstlis.argtypes = (
     )
 librmn.c_fstlis.restype  = _ct.c_int
 c_fstlis = librmn.c_fstlis
+
+
+librmn.fstlnk_.argtypes = (_npc.ndpointer(dtype=_np.int32),_ct.POINTER(_ct.c_int))
+## f_fstlnk = f77name(librmn.fstlnk)
+librmn.fstlnk_.restype  = _ct.c_int
+f_fstlnk = librmn.fstlnk_
 
 
 librmn.c_fstluk.argtypes = (

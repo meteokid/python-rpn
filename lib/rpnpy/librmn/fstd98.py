@@ -117,7 +117,7 @@ def isFST(filename):
         
     
 
-def fstopenall(paths,filemode=_rc.FST_RO):
+def fstopenall(paths,filemode=_rc.FST_RO,verbose=None):
     """
     Open all fstfiles found in path
     Shortcut for fnom+fstouv+fstlnk
@@ -152,24 +152,34 @@ def fstopenall(paths,filemode=_rc.FST_RO):
             for (dirpath, dirnames, filenames) in os.walk(x):
                 for f in filenames:
                     if isFST(os.path.join(x,f)):
+                        if verbose:
+                            print "(fstopenall) Found FST file: "+os.path.join(x,f)
                         l.append(os.path.join(x,f))
+                    elif verbose:
+                        print "(fstopenall) Ignoring non FST file: "+os.path.join(x,f)
                 break
         else:
             l.append(x)
     if filemode != _rc.FST_RO and len(paths) > 1:
         return None #TODO: print error msg
     iunitlist = []
-    for x in paths:
+    for x in l:
         i = _rb.fnom(x,filemode)
         if i:
             i2 = fstouv(i,filemode)
             if i2 != None: #TODO: else warning/ignore
                 iunitlist.append(i)
+                if verbose:
+                    print "(fstopenall) Opening: "+x,i
+            elif verbose:
+                print "(fstopenall) Problem Opening: "+x
+        elif verbose:
+            print "(fstopenall) Problem Opening: "+x
     if len(iunitlist) == 0:
         raise FSTDError("fstopenall: unable to open any file in path %s" % (path))
     if len(iunitlist) == 1:
         return iunitlist[0]
-    return fstlnk(unitList)
+    return fstlnk(iunitlist)
 
 
 def fstcloseall(iunit):
@@ -723,8 +733,12 @@ def fstlnk(unitList):
         raise TypeError("fstlnk: Expecting arg of type list, Got %s" % (type(unitList)))
     if len(unitList)<1 or min(unitList)<=0:
         raise ValueError("fstlnk: must provide a valid iunit: %d" % (min(unitList)))
-    cunitList = nm.asarray(unitList, dtype=nm.intc)
-    istat = _rp.c_xdflnk(cunitList,len(cunitList))
+    if len(unitList) > 40: #TODO: check this limit
+        raise ValueError("fstlnk: Too many files (max 40): %d" % (len(unitList)))
+    cunitList = _np.asarray(unitList, dtype=_np.intc)
+    ## istat = _rp.c_xdflnk(cunitList,len(cunitList))
+    cnunits = _ct.c_int(len(cunitList))
+    istat = _rp.f_fstlnk(cunitList,_ct.byref(cnunits))
     if istat >= 0:
         return unitList[0]
     raise FSTDError()
