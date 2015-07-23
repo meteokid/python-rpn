@@ -2,7 +2,7 @@
 !$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
 !$omp                  ii,jj,kk,iL,idxk, idxjk,zcubic_L,capx,capy,capz,prf1,prf2)&
 !$omp          shared (F_mono, F_cub, F_lin, F_min, F_max, F_in, F_x, F_y, F_z,         &
-!$omp                  adv_y00_8,adv_x00_8,adv_ovdx_8,adv_ovdy_8,                       &
+!$omp                  adv_y00_8,adv_x00_8,adv_ovdx_8,adv_ovdy_8,   adv_xbc_8,     adv_ybc_8 ,  &
 !$omp                  adv_ovdz_8, adv_lcx,adv_lcy, adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,   &
 !$omp                  adv_xbacd_8,adv_xcabd_8,adv_xdabc_8, adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,&
 !$omp                  adv_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
@@ -142,8 +142,8 @@
 
 #ifdef ADV_CONSERV
             iL = max(1,min(ii,adv_iimax+1)) !As in adv_trilin_ijk
-            capx = (rri-adv_bsx_8(iL)) *adv_x_8 !As in adv_trilin_turbo
-            capy = (rrj-adv_bsy_8(jj)) *adv_y_8 !As in adv_trilin_turbo
+            capx = (rri-adv_bsx_8(iL)) *adv_xbc_8(il) !As in adv_trilin_turbo
+            capy = (rrj-adv_bsy_8(jj)) *adv_ybc_8(jj) !As in adv_trilin_turbo
             capz = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1) !As in adv_tricub_lag3d_loop
 
             prf1 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &

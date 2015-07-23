@@ -118,12 +118,14 @@
             if (Anal_hybstg_L) then
                p0(:) = log(wk2(:)*100./pref)
             else
-               if (.not. Anal_pres_L) p0(:) = wk2(:) * 100.
+               p0(:) = wk2(:) * 100.
             endif
          endif
 
          horinterp_L= horinterp_L .or. (code_h.gt.0)
-
+      else 
+! Bogus surface pressure given for pressure analysis
+         p0(:) = 1000.0
       endif
 
       if (Pil_bmf_L) then

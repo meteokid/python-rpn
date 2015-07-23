@@ -8,7 +8,6 @@
 !                |                                                       |
 ! NAME           | DESCRIPTION                                           |
 !----------------|-------------------------------------------------------|
-! adw_stats_L    | switch: .true. : prints stats of traj and interp-var  |
 ! adw_ckbd_L     | switch: .true. : check if upstream points from north  |
 !                |                  and south pe's for which an interpo- |
 !                |                  lation is requested are inside own   |
@@ -18,7 +17,7 @@
 !                |                  processors                           |
 ! adw_mono_L     | switch: .true. : advection of tracers is monotonic    |
 ! adw_positive_L | switch: .false.: positivity-preserving advection      |
-! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
+i! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
 !                |                  vertical interpolation               |
 ! adw_maxcfl     |                                                       !
 ! adw_halox      | advection specific halo in x                          |
@@ -34,40 +33,24 @@
 !________________________________________________________________________|
 !
 #endif
-
-      logical :: adw_stats_L
-      logical :: adw_ckbd_L
-      logical :: adw_exdg_L
       logical :: adw_mono_L
       logical :: adw_catmullrom_L
-      logical :: adw_positive_L
-      logical :: adw_nkbz_L
-      logical :: adw_trunc_traj_L
       logical :: adw_BC_min_max_L
       logical :: adw_ILMC_min_max_L
       integer :: adw_maxcfl
       integer :: adw_halox
       integer :: adw_haloy
       integer :: adw_ILMC_sweep_max
-
-      namelist /adw_cfgs/ adw_stats_L
-      namelist /adw_cfgs/ adw_ckbd_L
-      namelist /adw_cfgs/ adw_exdg_L
+      
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_catmullrom_L
-      namelist /adw_cfgs/ adw_positive_L
       namelist /adw_cfgs/ adw_BC_min_max_L
       namelist /adw_cfgs/ adw_ILMC_sweep_max
       namelist /adw_cfgs/ adw_ILMC_min_max_L
 
-      common /adw_nml_l/  adw_stats_L
-      common /adw_nml_l/  adw_ckbd_L
-      common /adw_nml_l/  adw_exdg_L
       common /adw_nml_l/  adw_mono_L
       common /adw_nml_l/  adw_catmullrom_L
-      common /adw_nml_l/  adw_positive_L
-      common /adw_nml_l/  adw_nkbz_L
-      common /adw_nml_l/  adw_trunc_traj_L
+ 
       common /adw_nml_l/  adw_BC_min_max_L
       common /adw_nml_l/  adw_ILMC_min_max_L
 

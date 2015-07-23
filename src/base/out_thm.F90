@@ -446,7 +446,7 @@
                           Level_momentum,indo,nko,near_sfc_L)
          write_diag_lev= near_sfc_L .and. out3_sfcdiag_L
 
-!        Retreieve vertical coordinate description
+!        Retrieve vertical coordinate description
          if ( .not. associated (hybm) ) then
             nullify(ip1m,hybm,hybt,hybt_w)
             istat = vgrid_wb_get('ref-m',vcoord,ip1m)

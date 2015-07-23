@@ -37,13 +37,10 @@
 #include "lun.cdk"
 #include "path.cdk"
 #include "step.cdk"
+#include "init.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
       
-!!$      real(RDOUBLE),parameter :: SECDAY  = 86400.0d0
-!!$      real(RDOUBLE),parameter :: SECHOUR = 3600.0d0
-!!$      real(RDOUBLE),parameter :: SECMIN  = 60.0d0
-
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
                                   FMT=' ', last_S=' '
       character*10 postjob_S
@@ -57,6 +54,8 @@
 !----------------------------------------------------------------------
 !
       call out_steps
+
+      if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
 
       write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
 

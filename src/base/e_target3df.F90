@@ -53,7 +53,7 @@
 
       same_grid_L= samegrid_file ( e_fu_anal, F_ig1a, F_ig2a, F_ig3a ,&
                            Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
-                                                      xfi, yfi, ni, nj)
+                                                  xfi, yfi, nifi, njfi)
 
       ni_target = nint((xfi(nifi) - xfi(1))/dx_8) + 1
       nj_target = nint((yfi(njfi) - yfi(1))/dy_8) + 1

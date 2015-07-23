@@ -16,12 +16,9 @@
 !**s/r tracers_step
 !
       subroutine tracers_step (F_water_tracers_only_L)
-   
-use adv_tracers_interpol_mod  , only :adv_tracers_interp_lam
-
-   implicit none
+      implicit none
 #include <arch_specific.hf>
-#include "glb_ld.cdk"
+
       logical, intent(IN) :: F_water_tracers_only_L
 
 !author
@@ -30,22 +27,25 @@ use adv_tracers_interpol_mod  , only :adv_tracers_interp_lam
 !revision
 ! v4_70 - Desgagne M.       - initial version 
 
+#include "glb_ld.cdk"
+
 !     _________________________________________________________________
 !
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (1,"BEFORE ADVECTION")
      
-       if (G_lam .and. .not. Advection_lam_legacy) then
+       if (Advection_lam_legacy) then
      
-        call adv_tracers_interp_lam (F_water_tracers_only_L)    
+          call adx_tracers_interp (F_water_tracers_only_L)
       
        else
-        call adx_tracers_interp (F_water_tracers_only_L)    
+
+          call adv_tracers (F_water_tracers_only_L)    
+   
        endif
 
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (0,"AFTER ADVECTION")
-
 !     _________________________________________________________________
 !
       return

@@ -260,11 +260,7 @@
 
          else
 
-            if (presstype.eq.6) then
-               ssq0x(1:nid1,1:njd1) = ssqx(1:nid1,1:njd1)
-            else
-               ssq0x(1:nid1,1:njd1) = log(ssqx(1:nid1,1:njd1)/Cstv_pref_8)
-            endif
+            if (presstype.eq.6) ssq0x(1:nid1,1:njd1)= ssqx(1:nid1,1:njd1)
 
          endif
 

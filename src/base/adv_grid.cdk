@@ -23,6 +23,19 @@
 !______________________________________________________________________|
 #endif
 
+    !-Global grid           
+      integer :: adv_gminx, adv_gmaxx   !min/max x dims for model global fields
+      integer :: adv_gminy, adv_gmaxy   !min/max y dims for model global fields
+  
+    ! Local grid         
+      integer :: adv_lnij
+
+    !- Advection grid
+      integer :: adv_nit,   adv_njt
+      integer :: adv_nijag
+      integer :: adv_int_i_off,adv_int_j_off,adv_trj_i_off
+      integer :: adv_iimax,adv_jjmax
+
       type :: ADV_TYPE_VER_8
          sequence
          real*8, dimension(:), pointer :: t,m
@@ -35,6 +48,14 @@
       real*8, pointer :: adv_cy_8(:),adv_sy_8(:)  !local grid cos/sin y
 
       type(ADV_TYPE_VER_8) :: adv_verZ_8          !Coor zeta: ln(pistar)
+
+      common /adv_dims_i/ adv_lnij
+      common /adv_dims_i/ adv_gminx, adv_gmaxx
+      common /adv_dims_i/ adv_gminy, adv_gmaxy
+      common /adv_dims_i/ adv_nit,   adv_njt
+      common /adv_dims_i/ adv_nijag
+      common /adv_dims_i/ adv_int_i_off,adv_int_j_off,adv_trj_i_off
+      common /adv_dims_i/ adv_iimax,adv_jjmax
 
       common /adv_grid_r8p/ adv_xg_8,adv_yg_8
       common /adv_grid_r8p/ adv_xx_8,adv_yy_8

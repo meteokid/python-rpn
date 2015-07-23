@@ -15,18 +15,15 @@
 
 !**s/r diag_mu calculate mu: ratio of vertical to gravitational accelerations
 !
-
-!
       subroutine diag_mu( F_mu, F_q, F_s, &
-                          Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
-!     
+                          Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )   
       implicit none
 #include <arch_specific.hf>
-!     
+    
       integer Minx,Maxx,Miny,Maxy,i0,in,j0,jn,k0,Nk
       real F_mu(Minx:Maxx,Miny:Maxy,Nk), F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
       real  F_s(Minx:Maxx,Miny:Maxy)
-!
+
 !author
 !
 ! claude girard 2013
@@ -47,49 +44,27 @@
 #include "cstv.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-!     
-!*
-      integer i,j,k,nij,kq
-      real*8 one, qbar
+
+      integer i,j,k,kq
+      real*8 one, c1, c2
       parameter(one=1.d0)
-      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
 !
 !     ---------------------------------------------------------------
 !
-      nij = (in - i0 + 1)*(jn - j0 + 1)
-!
-!
-!$omp parallel private (qbar,xtmp_8,ytmp_8,kq)
-!
+!$omp parallel private (kq,c1,c2)
 !$omp do
       do k=1,Nk
          kq=max(2,k)
          do j= j0, jn
          do i= i0, in
-            xtmp_8(i,j) = one + ver_dbdz_8%t(k)*F_s(i,j)
-         enddo
-         enddo
-         call vrec ( ytmp_8, xtmp_8, nij )
-         do j= j0, jn
-         do i= i0, in
-            F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))*ytmp_8(i,j)
-         enddo
-         enddo
-         do j= j0, jn
-         do i= i0, in
-            qbar = Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*(F_q(i,j,kq)*Ver_onezero(k))
-            xtmp_8(i,j) = qbar
-         enddo
-         enddo
-         call vexp ( ytmp_8, xtmp_8, nij )
-         do j= j0, jn
-         do i= i0, in
-            F_mu(i,j,k) = ytmp_8(i,j)*(F_mu(i,j,k)+one)-one
+            c1= one + ver_dbdz_8%t(k)*F_s(i,j)
+            c2= Ver_wp_8%t(k)*F_q(i,j,k+1) + Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+            F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))/c1
+            F_mu(i,j,k) = exp(c2)*(F_mu(i,j,k)+one)-one
          enddo
          enddo
       enddo
 !$omp enddo
-!      
 !$omp end parallel
 !
 !     ---------------------------------------------------------------

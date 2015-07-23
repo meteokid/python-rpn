@@ -17,8 +17,8 @@
 !                    Also sets Z and other related vertical parameters.
 !
       subroutine set_zeta2( F_hybuser, Nk )
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_levels, &
-           VGD_OK,VGD_ERROR,vgd_print
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_put,&
+                                   vgd_levels,VGD_OK,VGD_ERROR,vgd_print
       use vgrid_wb, only: vgrid_wb_put
       implicit none
 #include <arch_specific.hf>
@@ -289,12 +289,27 @@
 
 ! Doing this will produce an output file that the
 ! model cannot read back
-      if (.not.Schm_phyms_L) then
-         Ver_a_8%t(G_nk)= Cstv_Zsrf_8
-         Ver_b_8%t(G_nk)= one
-         Ver_hyb%t(G_nk)= one
-      endif
-
+!!$      if (.not.Schm_phyms_L) then
+!!$
+!!$         Ver_a_8%t(G_nk)= Cstv_Zsrf_8
+!!$         Ver_b_8%t(G_nk)= one
+!!$         Ver_hyb%t(G_nk)= one
+!!$         call convip (Ver_ip1%t(G_nk),Ver_hyb%t(G_nk),5,+1,'',.true.)
+!!$
+!!$         nullify (wkpt8)
+!!$         istat= vgd_get(vcoord,'CA_T - vertical A coefficient (t)',wkpt8)
+!!$         wkpt8(G_nk) = Ver_a_8%t(G_nk)
+!!$         istat= vgd_put(vcoord,'CA_T - vertical A coefficient (t)',wkpt8)
+!!$         nullify (wkpt8)
+!!$         istat= vgd_get(vcoord,'CB_T - vertical B coefficient (t)',wkpt8)
+!!$         wkpt8(G_nk) = Ver_b_8%t(G_nk)
+!!$         istat= vgd_put(vcoord,'CB_T - vertical B coefficient (t)',wkpt8)
+!!$         nullify (wkpti)
+!!$         istat= vgd_get(vcoord,'VIPT - level ip1 list (t)' ,wkpti)
+!!$         wkpti(G_nk) = Ver_ip1%t(G_nk)
+!!$         istat= vgd_put(vcoord,'VIPT - level ip1 list (t)' ,wkpti)
+!!$
+!!$      endif
 !     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------

@@ -64,6 +64,7 @@
 #include "pw.cdk"
 #include "out_listes.cdk"
 #include "ver.cdk"
+#include "step.cdk"
 
       character*15 datev,pdate
       logical periodx_L,ontimec,flag_clos
@@ -172,7 +173,7 @@
          if ( Lctl_step.ge.Grdc_start.and.Lctl_step.le.Grdc_end) &
               ontimec = (mod(Lctl_step+Grdc_start,Grdc_ndt).eq.0)
 
-         if ( Init_mode_L .and. (Lctl_step.ge.Init_halfspan) ) &
+         if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) &
               ontimec = .false.
 
          if ( ontimec ) then

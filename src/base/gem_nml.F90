@@ -57,6 +57,7 @@
       endif
 
       Advection_lam_legacy= .true.
+      if (.not. G_lam) Advection_lam_legacy= .true.
 
       Rstri_glbcol_L = .false.
 

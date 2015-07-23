@@ -17,7 +17,7 @@
 !
       subroutine set_dync
       use matvec_mod, only: matvec_init
-      use advection_set_mod, only : adv_set
+    
       implicit none
 #include <arch_specific.hf>
 
@@ -131,13 +131,7 @@
 
       call set_opr
 
-	   if (G_lam .and. .not. Advection_lam_legacy) then
-       call adv_set
-      else
-       call itf_adx_set
-      endif
-
-      
+	   if ( Advection_lam_legacy ) call itf_adx_set
 
       call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
 

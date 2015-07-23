@@ -27,6 +27,7 @@
 #include "dimout.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
+#include "step.cdk"
 #include "out_listes.cdk"
 
       integer istep,step0,stepf
@@ -58,11 +59,10 @@
 
       outd_sorties(0,:)= 0 ; outp_sorties(0,:)= 0 ; outc_sorties(0,:)= 0
       do istep = step0, stepf
-         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan)) )&
+         if (.not.(Init_mode_L .and. (istep+Step_initial).ge.Init_halfspan)) &
          call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
-         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan+1)) )&
+         if (Init_mode_L .and. (istep+Step_initial).ge.Init_halfspan+1) cycle
          call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
-         if (.not. (Init_mode_L .and. (istep.ge.Init_halfspan+1)) )&
          call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
       end do
 

@@ -44,7 +44,6 @@
 #include "lctl.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
-#include "init.cdk"
 #include "out.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
@@ -56,7 +55,6 @@
 
       type(phymeta) :: pmeta
       type(vgrid_descriptor) :: vcoord
-      character*4 ext_S
       character*6 etikadd_S
       integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,ip3,istat,&
               gridset,ig1,mult,mosaic,bcs_ext,p_li0,p_li1,p_lj0,p_lj1
@@ -88,12 +86,10 @@
 !
       ip3=0
       etikadd_S = ' '
-      ext_S=""
       if (Out3_ip3.eq.-1) ip3 = stepno
       if (Out3_ip3.gt.0 ) ip3 = Out3_ip3
 
 !     setup of filename extension if needed
-      if ( Init_mode_L .and. (stepno.gt.Init_halfspan) ) ext_S= '_dgf'
 
 !     setup domain extent to retrieve physics data
       allocate(data3d(l_ni,l_nj,G_nk+1))

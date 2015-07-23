@@ -44,64 +44,55 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
  
-      integer i,j,k,kq,nij
+      integer i,j,k,kq
       real*8, parameter :: one = 1.d0
       real*8  yyy,qbar
-      real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
-      real*8, dimension(i0:in,j0:jn,G_nk) :: ztmp_8
 !
 !     ---------------------------------------------------------------
 !
-      nij = (in - i0 + 1) * (jn - j0 + 1)
-
-!$omp parallel private(qbar,yyy,xtmp_8,ytmp_8,kq) shared(ztmp_8)
-
-!$omp do
-      do k= 1, G_nk
-         kq=max(2,k)
-         if(.not.Schm_hydro_L) then
-            do j=j0,jn
-            do i=i0,in
-               qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
-               xtmp_8(i,j)=-qbar
-            end do
-            end do
-            call vexp(ytmp_8,xtmp_8,nij)
-            do j=j0,jn
-            do i=i0,in
-               ztmp_8(i,j,k)=ytmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
-            end do
-            end do
-         else
-            do j=j0,jn
-            do i=i0,in
-               ztmp_8(i,j,k)=one+Ver_dbdz_8%t(k)*F_s(i,j)
-            end do
-            end do
-         endif
-      end do
-!$omp enddo
+!$omp parallel private(qbar,yyy,kq)
 
 !$omp do 
       do j=j0,jn
          do i=i0,in
-            F_fi(i,j,G_nk+1)=F_fis(i,j)
+            F_fi(i,j,G_nk+1)= F_fis(i,j)
          end do
+      end do
+!$omp enddo
+
+      if (Schm_hydro_L) then
+
+!$omp do 
+      do j=j0,jn
          do k= G_nk,1,-1
             yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
-               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*ztmp_8(i,j,k)
+               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
          end do
       end do
 !$omp enddo
 
-!$omp end parallel
+      else
 
+!$omp do 
+      do j=j0,jn
+         do k= G_nk,1,-1
+            kq = max(2,k)
+            yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
+            do i= i0,in
+               qbar=-(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*exp(qbar)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+            end do
+         end do
+      end do
+!$omp enddo
+
+      endif
+!$omp end parallel
 !
 !     ---------------------------------------------------------------
 !

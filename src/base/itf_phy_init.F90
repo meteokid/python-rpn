@@ -47,6 +47,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      out3_sfcdiag_L= .false.
       if (.not.Schm_phyms_L) return
 
       if (Lun_out.gt.0) write(Lun_out,1000)

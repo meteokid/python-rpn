@@ -12,10 +12,9 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-#include "stop_mpi.h"
 
-!/@*
-subroutine adv_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F_nk,F_lev_S)
+subroutine adv_cfl_lam3 ( F_x_in, F_y_in, F_z_in, i0, in, j0, jn, &
+                          F_ni, F_nj, k0, F_nk, F_lev_S )
    implicit none
 #include <arch_specific.hf>
    !@objective Compute the courrant numbers for this time step
@@ -28,7 +27,7 @@ subroutine adv_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F
    !@author Vivian Lee         October 2002 
    !@revisions
 !*@/
-#include "adv_dims.cdk"
+
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
 #include "adv_cfl.cdk"
@@ -209,18 +208,3 @@ subroutine adv_cfl_lam3(F_x_in, F_y_in, F_z_in, i0, in, j0, jn, F_ni,F_nj, k0, F
    !---------------------------------------------------------------------
    return
 end subroutine adv_cfl_lam3
-
-!=========================================================================
-!== stubs ================================================================
-!=========================================================================
-
-subroutine adv_cfl_lam()
-   call stop_mpi(STOP_ERROR,'adv_cfl_lam','called a stub')
-   return
-end subroutine adv_cfl_lam
-subroutine adv_cfl_lam2()
-   call stop_mpi(STOP_ERROR,'adv_cfl_lam2','called a stub')
-   return
-end subroutine adv_cfl_lam2
-
-!/@*

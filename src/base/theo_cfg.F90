@@ -15,12 +15,10 @@
 
 !**s/r theo_cfg - reads parameters from namelist theo_cfgs
 !
-
-!
       subroutine theo_cfg
       implicit none
 #include <arch_specific.hf>
-!
+
 !author 
 !     sylvie gravel   -  Apr 2003
 !
@@ -31,54 +29,50 @@
 !     See above id
 !	
 !arguments - none
-!
+
 #include "theonml.cdk"
 #include "cst_lis.cdk"
 #include "path.cdk"
-!#include "glb_ld.cdk"
-! 
+
       integer cte_ok,istat
       logical set_dcst_8
       external set_dcst_8
       integer  fnom,gem_nml,mtn_cfg,adv_nml,adx_nml
       external fnom,gem_nml,mtn_cfg,adv_nml,adx_nml
-!
+
       integer k, unf, status, err, nrec
-!*
+!
 !     ---------------------------------------------------------------
       cte_ok = 0
       if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, 0,1 ) ) &
            cte_ok=-1
-!
+
       status = -1
-!
+
       if ( Ptopo_npey .gt.1) then
            if (Lun_out.gt.0) write (Lun_out, 9240)
            goto 9999
       endif
-!
+
       err = gem_nml   ('')
-
-      if (.not. Advection_lam_legacy) then
-      err = adv_nml   (Path_nml_S)
+      if (Advection_lam_legacy) then
+         err = adx_nml (Path_nml_S)
       else
-      err = adx_nml   (Path_nml_S)      
+         err = adv_nml (Path_nml_S)
       endif
-
 
       Theo_case_S    = 'xxx'
       Step_runstrt_S = '19980101.000000'
       Out3_etik_S    = 'THEOC'
       Out3_ip3       = -1
       Lctl_debug_L   = .false.
-!
+
       unf = 0
       if (fnom (unf, trim(Path_nml_S), 'SEQ+OLD' , nrec) .ne. 0) goto 9110
 
       rewind(unf)
       read (unf, nml=theo_cfgs, end = 9000, err=9000)
-!
-!
+
       if (  Theo_case_S .eq. 'MTN_SCHAR' &
            .or. Theo_case_S .eq. 'MTN_SCHAR2' &
            .or. Theo_case_S .eq. 'MTN_PINTY' &
@@ -97,12 +91,12 @@
       endif
       call fclos (unf)
       if (err.lt.0) goto 9999
-!
+
 
       if (Lun_out.gt.0) write (Lun_out, 7050) Theo_case_S
       status=1
       return 
-!
+
  9110 if (Lun_out.gt.0) then 
          write (Lun_out, 9050)
          write (Lun_out, 8000)
@@ -114,7 +108,7 @@
          write (Lun_out, 9100)
          write (Lun_out, 8000)
       endif
-!
+
  9999 continue
       call handle_error(-1,'theo_cfg','') !TODO: fix me
 !
@@ -125,7 +119,7 @@
  9100 format (/,' NAMELIST theo_cfgs ABSENT or INVALID FROM FILE: model_settings'/)
  9200 format (/,' Unsupported theoretical case: ',a/)
  9240 format (/,' For theoretical cases, number of PEs in y must be 1 '/)
-!
+
       return
       end
 

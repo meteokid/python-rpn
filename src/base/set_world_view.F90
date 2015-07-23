@@ -66,10 +66,10 @@
          err(1) = grid_nml2   (Path_nml_S,G_lam)
          err(2) = step_nml    (Path_nml_S)
          err(3) = gem_nml     (Path_nml_S)
-         if (.not. Advection_lam_legacy) then
-          err(4) = adv_nml     (Path_nml_S)
+         if (Advection_lam_legacy) then
+            err(4) = adx_nml  (Path_nml_S)
          else
-          err(4) = adx_nml     (Path_nml_S)
+            err(4) = adv_nml  (Path_nml_S)
          endif
          err(5) = from_ntr ()
 
@@ -83,12 +83,9 @@
 !
 ! Establish final configuration
 !
-      err(1) = gemdm_config ( )
-      if(.not.Advection_lam_legacy) then
-       err(2) = adv_config   ( )
-      else
-       err(2) = adx_config   ( )
-      endif
+      err(1) = gemdm_config ()
+      if (.not.G_lam) err(2) = adx_config ()
+
       call gem_error(min(err(1),err(2)),'set_world_view','config')
 
       ierr = grid_nml2   ('print',G_lam)
@@ -97,11 +94,11 @@
 
       if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
            call gem_error(-1,'set_world_view','Schm_cub_traj_L=.true. cannot be used with non LAM grid')
-
-      if(.not. Advection_lam_legacy) then
-       call adv_nml_print ()
+ 
+      if (Advection_lam_legacy) then
+         call adx_nml_print ()
       else
-       call adx_nml_print ()
+         call adv_nml_print ()
       endif
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) write (Lun_out, nml=williamson) 
@@ -121,6 +118,7 @@
          call write_status_file3 ('communications_established=YES' )
          if (Grd_yinyang_L)    &
          call write_status_file3 ('GEM_YINYANG=1')
+
       endif
 !
 ! Master output PE for all none distributed components
