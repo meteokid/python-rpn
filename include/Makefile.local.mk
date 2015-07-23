@@ -137,6 +137,7 @@ gem_monitor_end.c:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 	mybidon=gem_monitor_end_123456789 ;\
+	if [[ ! -f gem_monitor_end.c ]] ; then rdeco gem_monitor_end.c ; fi ;\
 	cat gem_monitor_end.c | sed 's/main_gem_monitor_end/main/' > $${mybidon}.c ;\
 	$(RDECC) -o $@ -src $${mybidon}.c && rm -f $${mybidon}.[co]
 
@@ -148,6 +149,7 @@ gem_monitor_output.c:
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
 $(BINDIR)/gem_monitor_output: gem_monitor_output.c
 	mybidon=gem_monitor_output_123456789 ;\
+	if [[ ! -f gem_monitor_output.c ]] ; then rdeco gem_monitor_output.c ; fi ;\
 	cat gem_monitor_output.c | sed 's/main_gem_monitor_output/main/' > $${mybidon}.c ;\
 	$(RDECC) -o $@ -src $${mybidon}.c && rm -f $${mybidon}.[co]
 

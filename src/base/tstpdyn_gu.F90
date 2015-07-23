@@ -16,7 +16,6 @@
 !**s/r tstpdyn_gu -  Dynamics timestep for GU grids
 !
       subroutine tstpdyn_gu ( F_fnitraj )
-      use advection_mod, only: advection_semilag
       implicit none
 #include <arch_specific.hf>
 
