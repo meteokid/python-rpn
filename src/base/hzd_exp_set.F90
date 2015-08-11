@@ -145,6 +145,8 @@
          write(Lun_out,1010)  &
               (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
       endif
+
+      call hzd_exp5p_set ()
       
  1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a )
  1011 format (/' VERTICAL PROFILE OF HORIZONTAL DIFFUSION PWR/LNR: '/, &

@@ -30,6 +30,7 @@
 ! v3_32 - Lee V.            - stop run if LAM Vspng_nutop is undefined
 ! v4_50 = Qaddouri A.       - add setup For Yin-Yang vertical sponge
 ! v4_70 - Desgagne M.       - major revision
+! v4_80 - Qaddouri A.       - switch to 5 pts explicit horiz. diffusion for LAMs
 
 #include "glb_ld.cdk"
 #include "cstv.cdk"
@@ -42,7 +43,7 @@
 
       integer i,j,k,istat
       real*8, dimension(:), allocatable :: weigh
-      real*8 pis2_8,pbot_8,wh_8,delp_8,c_8,nutop,coeftop_8
+      real*8 pis2_8,pbot_8,delp_8,c_8,nutop
 !
 !     ---------------------------------------------------------------
 !
@@ -59,11 +60,6 @@
          endif
       endif
 
-      if(Vspng_vec_L.and..not.Grd_yinyang_L)then
-         if (Lun_out.gt.0) write (Lun_out,9003)
-         istat = -1
-      endif
-
       call handle_error(istat,'vspng_set','')
 
       Vspng_nk = min(G_nk,Vspng_nk)
@@ -71,8 +67,8 @@
 
       pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
       delp_8 = pbot_8 - exp(Ver_z_8%m(1))
-      allocate (weigh(Vspng_nk))
 
+      allocate ( weigh(Vspng_nk), Vspng_coef_8(Vspng_nk) )
       do k=1,Vspng_nk
          weigh(k) = (sin(pis2_8*(pbot_8-exp(Ver_z_8%m(k)))/(delp_8)))**2
       end do
@@ -82,48 +78,24 @@
       c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
       nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
-      Vspng_niter = int(4.d0*nutop+0.9999999)
-
-      if (Vspng_Vec_L) then 
-         Vspng_niter = int(8.d0*nutop+0.9999999)
-         coeftop_8= (Dcst_rayt_8*c_8)**2*nutop/max(1.,float(Vspng_niter))/Cstv_dt_8
-      endif
+      Vspng_niter = int(8.d0*nutop+0.9999999)
 
       if (Lun_out.gt.0) then
          write (Lun_out,2002) Vspng_coeftop,Vspng_nk,nutop,Vspng_niter
          write (Lun_out,3001) 
       endif
 
-      if ((G_lam).and.(.not.Vspng_vec_L)) then
+      nutop = dble(Vspng_coeftop)/max(1.d0,dble(Vspng_niter))
 
-         allocate (Vspng_nu_8(Vspng_nk))
-
-         wh_8  = nutop/max(1.,float(Vspng_niter))
-         do k=1,Vspng_nk
-            Vspng_nu_8(k) = weigh(k) * wh_8
-            if (Lun_out.gt.0) write (Lun_out,2005) &
-               weigh(k)*Vspng_coeftop/max(1.,float(Vspng_niter)),&
-               Vspng_nu_8(k),&
-               exp(Ver_z_8%m(k)),k
-         end do
-
-      else
-
-         allocate (Vspng_coef_8(Vspng_nk))
-
-         do k=1,Vspng_nk
-            Vspng_coef_8(k) = weigh(k) * Vspng_coeftop
-            if (Grd_yinyang_L) Vspng_coef_8(k) = coeftop_8 
-            if (Lun_out.gt.0) write (Lun_out,2005) &
-               Vspng_coef_8(k),&
-               Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
-               exp(Ver_z_8%m(k)),k
-
-               Vspng_coef_8(k) = Vspng_coef_8(k) &
-                                *Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
-         end do   
-
-      endif
+      do k=1,Vspng_nk
+         Vspng_coef_8(k) = weigh(k) * nutop
+         if (Lun_out.gt.0) write (Lun_out,2005) &
+                       Vspng_coef_8(k)      ,&
+                       Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
+                       exp(Ver_z_8%m(k)),k
+         Vspng_coef_8(k)= Vspng_coef_8(k) * & 
+                          Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+      end do
 
       if (.not.G_lam) &
          call vspng_imp_transpose ( Ptopo_npex, Ptopo_npey, .false. )
@@ -132,13 +104,13 @@
                '(S/R VSPNG_SET)',/,51('='))
  2002 format('  SPONGE LAYER PROFILE BASED ON: Vspng_coeftop=',1pe10.2, &
              '  m**2 AND Vspng_nk=',i3/'  Nu_top=',1pe14.6, &
-             '  Vspng_niter=',i4)
+             '  Vspng_niter=',i8)
  2005 format(1pe14.6,1pe14.6,f11.2,i8)
  2007 format('  SPONGE LAYER Vspng_zmean_L =',l2)
  3001 format('     Coef           Nu            Pres      Level')
  9001 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
- 9003 format('Vspng_vec_L works ONLY with YIN-YANG grid')
 !
 !     ---------------------------------------------------------------
+!
       return
       end

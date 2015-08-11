@@ -92,6 +92,7 @@
 #include "outc.cdk"
 #include "grid.cdk"
 #include "level.cdk"
+#include "dcst.cdk"
 #include "timestep.cdk"
 !
 !*
@@ -213,10 +214,29 @@
              Outd_varnm_S(jj,j)=string16
              Outd_var_S(jj,j)=string4
              if (Outd_var_S(jj,j)(1:3).eq.'PW_') Outd_var_S(jj,j)= 'PW'//Outd_varnm_S(jj,j)(4:5)
-             Outd_nbit(jj,j)  = Out3_nbitg
-             if (Outd_var_S(jj,j)(1:2).eq.'LA') Outd_nbit(jj,j)= 32
-             if (Outd_var_S(jj,j)(1:2).eq.'LO') Outd_nbit(jj,j)= 32
+             Outd_nbit(jj,j)    = Out3_nbitg
+             Outd_filtpass(jj,j)= 0
+             Outd_filtcoef(jj,j)= 0.0
+             Outd_convmult(jj,j)= 1.0
+             Outd_convadd (jj,j)= 0.0
+             
+             if (Outd_var_S(jj,j)(1:4).eq.'LA  ') Outd_nbit(jj,j)= 32
+             if (Outd_var_S(jj,j)(1:4).eq.'LO  ') Outd_nbit(jj,j)= 32
+
+             if (Outd_var_S(jj,j)(1:4).eq.'GZ  ') Outd_convmult(jj,j)=0.1 / Dcst_grav_8
+             if (Outd_var_S(jj,j)(1:4).eq.'ME  ') Outd_convmult(jj,j)=1.0 / Dcst_grav_8
+             if (Outd_var_S(jj,j)(1:4).eq.'PX  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'P0  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'PT  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'PN  ') Outd_convmult(jj,j)= .01
+             if (Outd_var_S(jj,j)(1:4).eq.'VT  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'TT  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'TD  ') Outd_convadd (jj,j)= -Dcst_tcdk_8
+             if (Outd_var_S(jj,j)(1:4).eq.'UU  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'VV  '.or. &
+                 Outd_var_S(jj,j)(1:4).eq.'UV  ') Outd_convmult(jj,j)=1.0 / Dcst_knams_8
           enddo
+
           if (jj.gt.0) then
               Outd_sets       = j
               Outd_var_max(j) = jj
@@ -241,8 +261,19 @@
              call low2up  (F_argv_S(ii+1),string16)
              Outp_varnm_S(jj,j)=string16
              Outp_nbit(jj,j)  = Out3_nbitg
-             if (Outp_varnm_S(jj,j)(1:2).eq.'LA') Outp_nbit(jj,j)= 32
-             if (Outp_varnm_S(jj,j)(1:2).eq.'LO') Outp_nbit(jj,j)= 32
+             Outp_filtpass(jj,j)= 0
+             Outp_filtcoef(jj,j)= 0.0
+             Outp_convmult(jj,j)= 1.0
+             Outp_convadd (jj,j)= 0.0
+             if (Outp_varnm_S(jj,j)(1:2).eq.'LA') then
+                 Outp_nbit(jj,j)= 32
+                 Outp_convmult(jj,j)=180./Dcst_pi_8
+             endif
+             if (Outp_varnm_S(jj,j)(1:2).eq.'LO') then
+                 Outp_nbit(jj,j)= 32
+                 Outp_convmult(jj,j)=180./Dcst_pi_8
+             endif
+             if (Outp_varnm_S(jj,j)(1:2).eq.'SD') Outp_convmult(jj,j)=100.
           enddo
           if (jj.gt.0) then
               Outp_sets       = j
@@ -276,6 +307,10 @@
              jj = jj + 1
              Outc_varnm_S(jj,j)= F_argv_S(ii+1)
              Outc_nbit(jj,j)   = Out3_nbitg
+             Outc_filtpass(jj,j)= 0
+             Outc_filtcoef(jj,j)= 0.0
+             Outc_convmult(jj,j)= 1.0
+             Outc_convadd (jj,j)= 0.0
           enddo
           if (jj.gt.0) then
               Outc_sets       = j

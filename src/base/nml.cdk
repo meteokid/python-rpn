@@ -31,23 +31,18 @@
 #include "eq.cdk"
 #include "iau.cdk"
 #include "div_damp.cdk"
+#include "spn.cdk"
 
-      namelist /gem_cfgs/ stat_liste
-!C
       namelist /gem_cfgs/ Cstv_bA_8
       namelist /gem_cfgs/ Cstv_tstr_8
+
+      namelist /gem_cfgs/ Eq_sponge
+
       namelist /gem_cfgs/ G_halox
       namelist /gem_cfgs/ G_haloy
       namelist /gem_cfgs/ Grd_rcoef
-!E
-      namelist /gem_cfgs/ Eq_sponge
-!Glb
-      namelist /gem_cfgs/ Lam_gbpil_T
-!H
-      namelist /gem_cfgs/ Lam_blend_H
-      namelist /gem_cfgs/ Lam_blend_T
+
       namelist /gem_cfgs/ Hyb
-!Hzd
       namelist /gem_cfgs/ Hzd_difva_L
       namelist /gem_cfgs/ Hzd_prof_S
       namelist /gem_cfgs/ Hzd_lnr
@@ -70,13 +65,16 @@
       namelist /gem_cfgs/ Init_dfpl_S
       namelist /gem_cfgs/ Init_dftr_L
 !Lam
+      namelist /gem_cfgs/ Lam_gbpil_T
+      namelist /gem_cfgs/ Lam_blend_H
+      namelist /gem_cfgs/ Lam_blend_T
       namelist /gem_cfgs/ Lam_0ptend_L
       namelist /gem_cfgs/ Lam_ctebcs_L
       namelist /gem_cfgs/ Lam_hint_S
       namelist /gem_cfgs/ Lam_toptt_L
       namelist /gem_cfgs/ Lam_blendoro_L
       namelist /gem_cfgs/ Lam_acidtest_L
-!Lctl
+
       namelist /gem_cfgs/ Lctl_debug_L
       namelist /gem_cfgs/ Lctl_rxstat_S
 !Out3
@@ -93,14 +91,13 @@
       namelist /gem_cfgs/ Out3_lieb_conv
       namelist /gem_cfgs/ Out3_postproc_fact
 
-!P
       namelist /gem_cfgs/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs/ P_lmvd_high_lat
       namelist /gem_cfgs/ P_lmvd_low_lat
       namelist /gem_cfgs/ perturb_nbits
       namelist /gem_cfgs/ perturb_npts
-!R
+
       namelist /gem_cfgs/ Rstri_glbcol_L
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
@@ -134,19 +131,30 @@
       namelist /gem_cfgs/ Sol3D_precond_S
       namelist /gem_cfgs/ Sol_type_S
       namelist /gem_cfgs/ Sol3D_krylov_S
+!Spn
+      namelist /gem_cfgs/ Spn_nudging_S
+      namelist /gem_cfgs/ Spn_start_lev
+      namelist /gem_cfgs/ Spn_up_const_lev
+      namelist /gem_cfgs/ Spn_trans_shape_S
+      namelist /gem_cfgs/ Spn_relax_hours
+      namelist /gem_cfgs/ Spn_cutoff_scale_large
+      namelist /gem_cfgs/ Spn_cutoff_scale_small
+      namelist /gem_cfgs/ Spn_step
+      namelist /gem_cfgs/ Spn_weight_L
+      namelist /gem_cfgs/ Spn_wt_pwr
+
+      namelist /gem_cfgs/ stat_liste
 
       namelist /gem_cfgs/ Tr3d_list_S
-
 !Vspng
       namelist /gem_cfgs/ Vspng_coeftop
       namelist /gem_cfgs/ Vspng_njpole
       namelist /gem_cfgs/ Vspng_nk
-      namelist /gem_cfgs/ Vspng_vec_L
       namelist /gem_cfgs/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs/ Vtopo_ndt
       namelist /gem_cfgs/ Vtopo_start
-!Z
+
       namelist /gem_cfgs/ Zblen_L
       namelist /gem_cfgs/ Zblen_spngthick
       namelist /gem_cfgs/ Zblen_spngtt_L
@@ -154,17 +162,12 @@
 !
 !End gem_cfgs
 !
-!C
       namelist /gem_cfgs_p/ Cstv_bA_8
       namelist /gem_cfgs_p/ Cstv_tstr_8
+
       namelist /gem_cfgs_p/ G_halox
       namelist /gem_cfgs_p/ G_haloy
       namelist /gem_cfgs_p/ Grd_rcoef
-!Glb
-      namelist /gem_cfgs_p/ Lam_gbpil_T
-!H
-      namelist /gem_cfgs_p/ Lam_blend_H
-      namelist /gem_cfgs_p/ Lam_blend_T
 !Hzd
       namelist /gem_cfgs_p/ Hzd_difva_L
       namelist /gem_cfgs_p/ Hzd_lnr
@@ -186,6 +189,9 @@
       namelist /gem_cfgs_p/ Init_dfpl_S
       namelist /gem_cfgs_p/ Init_dftr_L
 !Lam
+      namelist /gem_cfgs_p/ Lam_gbpil_T
+      namelist /gem_cfgs_p/ Lam_blend_H
+      namelist /gem_cfgs_p/ Lam_blend_T
       namelist /gem_cfgs_p/ Lam_0ptend_L
       namelist /gem_cfgs_p/ Lam_ctebcs_L
       namelist /gem_cfgs_p/ Lam_hint_S
@@ -207,14 +213,13 @@
       namelist /gem_cfgs_p/ Out3_lieb_conv
       namelist /gem_cfgs_p/ Out3_postproc_fact
 
-!P
       namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs_p/ P_lmvd_weigh_low_lat
       namelist /gem_cfgs_p/ P_lmvd_high_lat
       namelist /gem_cfgs_p/ P_lmvd_low_lat
       namelist /gem_cfgs_p/ perturb_nbits
       namelist /gem_cfgs_p/ perturb_npts
-!R
+
       namelist /gem_cfgs_p/ Rstri_glbcol_L
 !Schm
       namelist /gem_cfgs_p/ Schm_adcub_L
@@ -246,11 +251,21 @@
       namelist /gem_cfgs_p/ Sol3D_precond_S
       namelist /gem_cfgs_p/ Sol_type_S
       namelist /gem_cfgs_p/ Sol3D_krylov_S
+!Spn
+      namelist /gem_cfgs_p/ Spn_nudging_S
+      namelist /gem_cfgs_p/ Spn_start_lev
+      namelist /gem_cfgs_p/ Spn_up_const_lev
+      namelist /gem_cfgs_p/ Spn_trans_shape_S
+      namelist /gem_cfgs_p/ Spn_relax_hours
+      namelist /gem_cfgs_p/ Spn_cutoff_scale_large
+      namelist /gem_cfgs_p/ Spn_cutoff_scale_small
+      namelist /gem_cfgs_p/ Spn_step
+      namelist /gem_cfgs_p/ Spn_weight_L
+      namelist /gem_cfgs_p/ Spn_wt_pwr
 !Vspng
       namelist /gem_cfgs_p/ Vspng_coeftop
       namelist /gem_cfgs_p/ Vspng_njpole
       namelist /gem_cfgs_p/ Vspng_nk
-      namelist /gem_cfgs_p/ Vspng_vec_L
       namelist /gem_cfgs_p/ Vspng_zmean_L
 !Vtopo
       namelist /gem_cfgs_p/ Vtopo_ndt

@@ -122,6 +122,8 @@
          if (G_lam) call nest_gwa ()
       endif
 
+      if (G_lam) call spn_main
+
       call pw_update_GPW
       call pw_update_UV
       call pw_update_T

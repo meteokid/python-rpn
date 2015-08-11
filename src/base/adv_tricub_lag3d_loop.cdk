@@ -15,7 +15,7 @@
          idxjk = idxk + ((j-1)*l_ni)
          do i=i0,in
             n = idxjk + i
-
+!print*,'-------------loop   1'
            rri= F_x(n)
             ii = (rri - adv_x00_8) * adv_ovdx_8
             ii = adv_lcx(ii+1) + 1
@@ -36,7 +36,7 @@
 
             zcubic_L = (kk > 0) .and. (kk < kkmax-1)
 
-
+!print*,'-------------loop   2'
             !- x interpolation
             ra = adv_bsx_8(ii-1)
             rb = adv_bsx_8(ii  )

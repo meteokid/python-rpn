@@ -142,12 +142,8 @@
               pnhr,pnpx,pntw,pnwe,pnww,pnzz,pnth
       integer pnpn,pnp0,psum,pnpt,pnla,pnlo,pnme,pnmx
 
-      integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
-      real    coef(0:Outd_var_max(set)+1)
-
       real*8, parameter :: ZERO_8 = 0.0
-      real    prmult_pngz, prmult_pnpx, prmult_pnme
-      real    pradd_pnvt,  pradd_pntt,  pradd_pntd, work
+      real    work
 
       type(vgrid_descriptor) :: vcoord
       integer, dimension(:), pointer :: ip1m
@@ -159,14 +155,6 @@
 !-------------------------------------------------------------------
 !
       l_ninj= (l_maxx-l_minx+1)*(l_maxy-l_miny+1)
-
-      prmult_pngz  = 0.1 / Dcst_grav_8
-      prmult_pnpx  = 0.01
-      prmult_pnme  = 1.0 / Dcst_grav_8
-
-      pradd_pnvt   = -Dcst_tcdk_8
-      pradd_pntt   = -Dcst_tcdk_8
-      pradd_pntd   = -Dcst_tcdk_8
 
       pnpn=0
       pnp0=0
@@ -189,12 +177,6 @@
       pnzz=0
       pnth=0
 
-      do ii=0,Outd_var_max(set)
-         coef(ii)=0.0
-         filt(ii)=0
-         nbit(ii)=0
-      enddo
-      
       do ii=1,Outd_var_max(set)
         if (Outd_var_S(ii,set).eq.'PN') pnpn=ii
         if (Outd_var_S(ii,set).eq.'P0') pnp0=ii
@@ -203,27 +185,18 @@
         if (Outd_var_S(ii,set).eq.'LO') pnlo=ii
         if (Outd_var_S(ii,set).eq.'ME') pnme=ii
         if (Outd_var_S(ii,set).eq.'MX') pnmx=ii
-        nbit(ii)=Outd_nbit(ii,set)
-        filt(ii)=Outd_filtpass(ii,set)
-        coef(ii)=Outd_filtcoef(ii,set)
-      enddo
-
-      do ii=1,Outd_var_max(set)
-         if (Outd_var_S(ii,set).eq.'GZ') pngz=ii
-         if (Outd_var_S(ii,set).eq.'VT') pnvt=ii
-         if (Outd_var_S(ii,set).eq.'TT') pntt=ii
-         if (Outd_var_S(ii,set).eq.'ES') pnes=ii
-         if (Outd_var_S(ii,set).eq.'TD') pntd=ii
-         if (Outd_var_S(ii,set).eq.'HR') pnhr=ii
-         if (Outd_var_S(ii,set).eq.'PX') pnpx=ii
-         if (Outd_var_S(ii,set).eq.'TW') pntw=ii
-         if (Outd_var_S(ii,set).eq.'WE') pnwe=ii
-         if (Outd_var_S(ii,set).eq.'WW') pnww=ii
-         if (Outd_var_S(ii,set).eq.'ZZ') pnzz=ii
-         if (Outd_var_S(ii,set).eq.'TH') pnth=ii
-        nbit(ii)=Outd_nbit(ii,set)
-        filt(ii)=Outd_filtpass(ii,set)
-        coef(ii)=Outd_filtcoef(ii,set)
+        if (Outd_var_S(ii,set).eq.'GZ') pngz=ii
+        if (Outd_var_S(ii,set).eq.'VT') pnvt=ii
+        if (Outd_var_S(ii,set).eq.'TT') pntt=ii
+        if (Outd_var_S(ii,set).eq.'ES') pnes=ii
+        if (Outd_var_S(ii,set).eq.'TD') pntd=ii
+        if (Outd_var_S(ii,set).eq.'HR') pnhr=ii
+        if (Outd_var_S(ii,set).eq.'PX') pnpx=ii
+        if (Outd_var_S(ii,set).eq.'TW') pntw=ii
+        if (Outd_var_S(ii,set).eq.'WE') pnwe=ii
+        if (Outd_var_S(ii,set).eq.'WW') pnww=ii
+        if (Outd_var_S(ii,set).eq.'ZZ') pnzz=ii
+        if (Outd_var_S(ii,set).eq.'TH') pnth=ii
       enddo
 
       if (pnpt.ne.0.and.Grd_rcoef(2).ne.1.0) pnpt=0
@@ -330,21 +303,26 @@
 
       if (pnme.ne.0)then
             call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'ME  ',prmult_pnme,0.0,kind,1,1, 1, nbit(pnme) )
+              'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
+              kind,1,1, 1, Outd_nbit(pnme,set) )
          endif
       if (pnmx.ne.0)then
             call ecris_fst2(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'MX  ',1.0,0.0,kind,1,1, 1, nbit(pnmx) )
+              'MX  ',Outd_convmult(pnmx,set),Outd_convadd(pnmx,set),&
+              kind,1,1, 1, Outd_nbit(pnmx,set) )
          endif
       if (pnpt.ne.0) &
           call ecris_fst2(ptop,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-              'PT  ',.01,0.0,kind,1, 1, 1, nbit(pnpt) )
+              'PT  ',Outd_convmult(pnpt,set),Outd_convadd(pnpt,set),&
+              kind,1, 1, 1, Outd_nbit(pnpt,set) )
       if (pnla.ne.0) &
           call ecris_fst2(Geomn_latrx,1,l_ni,1,l_nj,0.0, &
-              'LA  ',1.0,0.0,kind,1, 1, 1, nbit(pnla) )
+              'LA  ',Outd_convmult(pnla,set),Outd_convadd(pnla,set),&
+              kind,1, 1, 1, Outd_nbit(pnla,set) )
       if (pnlo.ne.0) &
           call ecris_fst2(Geomn_lonrx,1,l_ni,1,l_nj,0.0, &
-              'LO  ',1.0,0.0,kind,1, 1, 1, nbit(pnlo) )
+              'LO  ',Outd_convmult(pnlo,set),Outd_convadd(pnlo,set),&
+              kind,1, 1, 1, Outd_nbit(pnlo,set) )
 !_______________________________________________________________________
 !
 !     3.0    Precomputations for output over pressure levels or PN or 
@@ -402,11 +380,12 @@
          call vslog (w2, p0, l_ninj)
          call pnm2  (w1, vt(l_minx,l_miny,nk_src),fis0,w2,wlao, &
                 ttx,htx,nk_under,l_minx,l_maxx,l_miny,l_maxy,1)
-         if (filt(pnpn).gt.0) &
-              call filter2( w1,filt(pnpn),coef(pnpn), &
-                            l_minx,l_maxx,l_miny,l_maxy,1)
+         if (Outd_filtpass(pnpn,set).gt.0) &
+             call filter2( w1,Outd_filtpass(pnpn,set),Outd_filtcoef(pnpn,set),&
+                           l_minx,l_maxx,l_miny,l_maxy,1)
          call ecris_fst2( w1,l_minx,l_maxx,l_miny,l_maxy,0.0, &
-                          'PN  ',.01, 0.0, kind, 1, 1, 1, nbit(pnpn) )
+              'PN  ',Outd_convmult(pnpn,set),Outd_convadd(pnpn,set), &
+              kind, 1, 1, 1, Outd_nbit(pnpn,set) )
       endif
       
 !     Calculate P0      
@@ -416,11 +395,12 @@
             w1(i,j) = p0(i,j)
          enddo
          enddo
-         if (filt(pnp0).gt.0)&
-         call filter2( w1,filt(pnp0),coef(pnp0), &
+         if (Outd_filtpass(pnp0,set).gt.0)&
+         call filter2( w1,Outd_filtpass(pnp0,set),Outd_filtcoef(pnp0,set), &
                        l_minx,l_maxx,l_miny,l_maxy,1)
          call ecris_fst2 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
-                         'P0  ',.01, 0.0, kind, 1, 1, 1, nbit(pnp0)) 
+              'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
+              kind, 1, 1, 1, Outd_nbit(pnp0,set)) 
       endif
 
       if (pnww.ne.0) then
@@ -460,40 +440,52 @@
          endif
           
          if (pngz.ne.0)then
-            call ecris_fst2(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm,'GZ  ',&
-                            prmult_pngz,0.0,kind,G_nk+1, indo, nko, nbit(pngz) )
-            call ecris_fst2(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt,'GZ  ',&
-                            prmult_pngz,0.0,kind,G_nk+1, indo, nko, nbit(pngz) )
+            call ecris_fst2(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+               'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
+               kind,G_nk+1,indo,nko,Outd_nbit(pngz,set) )
+            call ecris_fst2(gzt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+               'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
+               kind,G_nk+1,indo,nko,Outd_nbit(pngz,set) )
             if (near_sfc_L) then
                call ecris_fst2(gzt(l_minx,l_miny,G_nk+1)    , &
                     l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
-                    'GZ  ',prmult_pngz,0.0,kind,1,1,1,nbit(pngz))
+               'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
+               kind,1,1,1,Outd_nbit(pngz,set))
             endif
          endif
 
          if (pnvt.ne.0)then
             call ecris_fst2(vt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                 'VT  ',1.0,pradd_pnvt,kind,G_nk+1,indo,nko,nbit(pnvt) )
+                 'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
+                 kind,G_nk+1,indo,nko,Outd_nbit(pnvt,set) )
             if (write_diag_lev) then
-               call ecris_fst2(vt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                    'VT  ',1.0,pradd_pnvt,Level_kind_diag,1,1,1,nbit(pnvt) )
+               call ecris_fst2(vt(l_minx,l_miny,G_nk+1),&
+                               l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set),&
+                    Level_kind_diag,1,1,1,Outd_nbit(pnvt,set) )
             endif
          endif
          if (pnth.ne.0) then
                call ecris_fst2(th,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                    'TH  ',1.0,0.0,kind,G_nk+1,indo,nko,nbit(pnth) )
+                    'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
+                    kind,G_nk+1,indo,nko,Outd_nbit(pnth,set) )
                if (write_diag_lev) then
-                  call ecris_fst2(th(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                       'TH  ',1.0,0.0,Level_kind_diag,1,1,1,nbit(pnth) )
+                  call ecris_fst2(th(l_minx,l_miny,G_nk+1),&
+                                  l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                       'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set),&
+                       Level_kind_diag,1,1,1,Outd_nbit(pnth,set) )
                endif
          endif
 
          if (pntt.ne.0)then
             call ecris_fst2(tt,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                 'TT  ' ,1.0,pradd_pntt, kind,G_nk+1,indo,nko, nbit(pntt) )
+                 'TT  ' ,Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
+                 kind, G_nk+1,indo,nko,Outd_nbit(pntt,set) )
             if (write_diag_lev) then
-               call ecris_fst2(tt(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                    'TT  ',1.0,pradd_pntt,Level_kind_diag,1,1,1,nbit(pntt) )
+               call ecris_fst2(tt(l_minx,l_miny,G_nk+1),&
+                               l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                 'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set),&
+                 Level_kind_diag,1,1,1,Outd_nbit(pntt,set) )
             endif
          endif
          if (pnes.ne.0.or.pnpx.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0)then
@@ -511,12 +503,16 @@
                      
          if (pnpx.ne.0)then
              call ecris_fst2(px_m,l_minx,l_maxx,l_miny,l_maxy,hybm, &
-              'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko,nbit(pnpx) )
+                  'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set), &
+                  kind,G_nk+1,indo,nko,Outd_nbit(pnpx,set) )
              call ecris_fst2(px_ta,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-              'PX  ',prmult_pnpx,0.0,kind,G_nk+1,indo,nko,nbit(pnpx) )
+                  'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+                  kind,G_nk+1,indo,nko,Outd_nbit(pnpx,set) )
              if (near_sfc_L) then
-                call ecris_fst2(px_ta(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
-                    'PX  ',prmult_pnpx,0.0,kind,1,1,1,nbit(pnpx) )
+                call ecris_fst2(px_ta(l_minx,l_miny,G_nk+1), &
+                                l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+1), &
+                     'PX  ',Outd_convmult(pnpx,set),Outd_convadd(pnpx,set),&
+                     kind,1,1,1,Outd_nbit(pnpx,set) )
              endif
          endif
 
@@ -525,10 +521,13 @@
              call mthtaw4 (t8,hu,tt, px_ta,satues_l, &
                            .true.,Dcst_trpl_8,l_ninj,nk_src,l_ninj)
              call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-              'TW  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pntw) )
+                  'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
+                  kind,G_nk+1, indo, nko, Outd_nbit(pntw,set) )
              if (write_diag_lev) then
-                call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                     'TW  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pntw) )
+                call ecris_fst2(t8(l_minx,l_miny,G_nk+1),&
+                     l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                     'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set),&
+                     Level_kind_diag,1,1,1, Outd_nbit(pntw,set) )
              endif
          endif
 
@@ -549,10 +548,13 @@
 
             if (pnes.ne.0) then
                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                    'ES  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnes) )
+                    'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
+                    kind,G_nk+1,indo,nko,Outd_nbit(pnes,set) )
                if (write_diag_lev) then
-                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                    'ES  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnes) )
+                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1), &
+                                  l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                       'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
+                       Level_kind_diag,1,1,1,Outd_nbit(pnes,set) )
                endif
             endif
 
@@ -566,10 +568,13 @@
                   enddo
                enddo
                call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                    'TD  ',1.0,pradd_pntd,kind,G_nk+1,indo,nko,nbit(pntd) )
+                    'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
+                    kind,G_nk+1,indo,nko,Outd_nbit(pntd,set) )
                if (write_diag_lev) then
-                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                       'TD  ',1.0,pradd_pntd,Level_kind_diag,1,1,1,nbit(pntd) )
+                  call ecris_fst2(t8(l_minx,l_miny,G_nk+1), &
+                       l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                       'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
+                       Level_kind_diag,1,1,1,Outd_nbit(pntd,set) )
                endif
             endif
          endif
@@ -587,26 +592,32 @@
                enddo
             endif
             call ecris_fst2(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                 'HR  ',1.0,0.0, kind,G_nk+1, indo, nko, nbit(pnhr) )
+                 'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
+                 kind,G_nk+1,indo,nko,Outd_nbit(pnhr,set) )
             if (write_diag_lev) then
-               call ecris_fst2(t8(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
-                    'HR  ',1.0,0.0, Level_kind_diag,1,1,1, nbit(pnhr) )
+               call ecris_fst2(t8(l_minx,l_miny,G_nk+1), &
+                    l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2), &
+                    'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set),&
+                    Level_kind_diag,1,1,1,Outd_nbit(pnhr,set) )
             endif
          endif
 
          if (pnww.ne.0) then
             call ecris_fst2(omega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
-                 'WW  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnww) )
+                 'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
+                 kind,G_nk,indo,nko,Outd_nbit(pnww,set) )
          endif
 
          if (pnwe.ne.0) then
             call ecris_fst2(ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
-                 'WE  ',1.0,0.0, kind,nk, indo, min(nko,nk), nbit(pnwe) )
+                 'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
+                 kind,nk,indo,min(nko,nk),Outd_nbit(pnwe,set) )
          endif
 
          if (pnzz.ne.0) then
             call ecris_fst2(wt1,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
-                    'ZZ  ',1.0,0.0, kind,G_nk, indo, nko, nbit(pnzz) )
+                 'ZZ  ',Outd_convmult(pnzz,set),Outd_convadd(pnzz,set),&
+                 kind,G_nk,indo,nko,Outd_nbit(pnzz,set) )
          endif
          deallocate(indo)
 
@@ -658,18 +669,19 @@
         call out_padbuf(vt_pres,l_minx,l_maxx,l_miny,l_maxy,nko)
 
         if (pngz.ne.0) then
-           if (filt(pngz).gt.0)then
-              call filter2( w5,filt(pngz),coef(pngz), &
+           if (Outd_filtpass(pngz,set).gt.0)then
+              call filter2( w5,Outd_filtpass(pngz,set),Outd_filtcoef(pngz,set), &
                             l_minx,l_maxx,l_miny,l_maxy,nko)
            endif
            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'GZ  ',prmult_pngz,0.0, kind,nko,indo,nko,nbit(pngz) )
+              'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set), &
+              kind,nko,indo,nko,Outd_nbit(pngz,set) )
         endif
 
         if (pntt.ne.0.or.pntd.ne.0.or.pnhr.ne.0) then
 
 !           Calculate TT (tt_pres=TT,vt_pres=VT,hu_pres=HU)
-           call mfottv2(tt_pres,vt_pres,hu_pres, l_minx, l_maxx,l_miny,l_maxy, &
+           call mfottv2(tt_pres,vt_pres,hu_pres,l_minx,l_maxx,l_miny,l_maxy, &
                             nko,1,l_ni,1,l_nj,.false.)
         endif
 
@@ -695,11 +707,12 @@
             call mthtaw4 (w5,hu_pres,w6, &
                            px_pres,satues_l, &
                            .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
-            if (filt(pntw).gt.0) &
-                call filter2( w5,filt(pntw),coef(pntw), &
+            if (Outd_filtpass(pntw,set).gt.0) &
+                call filter2( w5,Outd_filtpass(pntw,set),Outd_filtcoef(pntw,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                'TW  ',1.0,0.0, kind,nko, indo, nko, nbit(pntw) )
+                'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
+                kind,nko, indo, nko, Outd_nbit(pntw,set) )
         endif
 !
         if (pnes.ne.0.or.pntd.ne.0) then
@@ -707,8 +720,7 @@
             call mfottv2 (w6,vt_pres,hu_pres,l_minx,l_maxx, &
                         l_miny,l_maxy,nko,1,l_ni,1,l_nj,.false.)
             call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
-            call mhuaes3 (w5, hu_pres,w6, &
-                          px_pres,satues_l, &
+            call mhuaes3 (w5, hu_pres,w6, px_pres,satues_l, &
                           l_ninj, nko, l_ninj)
             if ( Out3_cliph_L ) then
                do k=1,nko
@@ -730,18 +742,20 @@
                  enddo
                  enddo
               enddo
-              call filter2( td_pres,filt(pntd),coef(pntd), &
+              call filter2( td_pres,Outd_filtpass(pntd,set),Outd_filtcoef(pntd,set), &
                             l_minx,l_maxx,l_miny,l_maxy, nko )
               call ecris_fst2(td_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                'TD  ',1.0,pradd_pntd, kind,nko,indo,nko,nbit(pntd) )
+                'TD  ',Outd_convmult(pntd,set),Outd_convadd(pntd,set),&
+                kind,nko,indo,nko,Outd_nbit(pntd,set) )
             endif
 
             if (pnes.ne.0) then
-                if (filt(pnes).gt.0) &
-                    call filter2( w5,filt(pnes),coef(pnes), &
+                if (Outd_filtpass(pnes,set).gt.0) &
+                    call filter2( w5,Outd_filtpass(pnes,set),Outd_filtcoef(pnes,set), &
                                   l_minx,l_maxx,l_miny,l_maxy,nko )
                 call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                   'ES  ',1.0,0.0, kind,nko, indo, nko, nbit(pnes) )
+                   'ES  ',Outd_convmult(pnes,set),Outd_convadd(pnes,set),&
+                   kind,nko,indo,nko,Outd_nbit(pnes,set))
             endif
         endif
 
@@ -758,19 +772,21 @@
                  enddo
               enddo
            endif
-           if (filt(pnhr).gt.0) &
-                call filter2( w5,filt(pnhr),coef(pnhr), &
+           if (Outd_filtpass(pnhr,set).gt.0) &
+                call filter2( w5,Outd_filtpass(pnhr,set),Outd_filtcoef(pnhr,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
            call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                'HR  ',1.0,0.0, kind,nko, indo, nko, nbit(pnhr) )
+                'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set), &
+                kind,nko, indo, nko, Outd_nbit(pnhr,set) )
         endif
         
         if (pnvt.ne.0) then
-            if (filt(pnvt).gt.0) &
-                call filter2( vt_pres,filt(pnvt),coef(pnvt), &
+            if (Outd_filtpass(pnvt,set).gt.0) &
+                call filter2( vt_pres,Outd_filtpass(pnvt,set),Outd_filtcoef(pnvt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(vt_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'VT  ',1.0,pradd_pnvt, kind,nko,indo, nko, nbit(pnvt) )
+                 'VT  ',Outd_convmult(pnvt,set),Outd_convadd(pnvt,set), &
+                 kind,nko,indo, nko, Outd_nbit(pnvt,set) )
         endif
 
          if (pnth.ne.0) then
@@ -778,26 +794,29 @@
                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                            'linear', .false. )
             call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-              'TH  ',1.0,      0.0,  kind,nko, indo, nko, nbit(pnth) )
+                 'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set), &
+                 kind,nko, indo, nko, Outd_nbit(pnth,set) )
          endif
 
         if (pntt.ne.0) then
-            if (filt(pntt).gt.0) &
-                call filter2( tt_pres,filt(pntt),coef(pntt), &
+            if (Outd_filtpass(pntt,set).gt.0) &
+                call filter2( tt_pres,Outd_filtpass(pntt,set),Outd_filtcoef(pntt,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
             call ecris_fst2(tt_pres,l_minx,l_maxx,l_miny,l_maxy,rf,  &
-              'TT  ',1.0,pradd_pntt, kind,nko, indo, nko, nbit(pntt) )
+                 'TT  ',Outd_convmult(pntt,set),Outd_convadd(pntt,set), &
+                 kind,nko, indo, nko, Outd_nbit(pntt,set) )
         endif
 
         if (pnww.ne.0) then
             call vertint ( w5,cible,nko, omega,wlnph_ta,G_nk         ,&
                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                            'linear', .false. )
-            if (filt(pnww).gt.0) &
-                call filter2( w5,filt(pnww),coef(pnww), &
+            if (Outd_filtpass(pnww,set).gt.0) &
+                call filter2( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
              call ecris_fst2(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                 'WW  ',1.0,0.0, kind,nko, indo, nko, nbit(pnww) )
+                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set), &
+                  kind,nko, indo, nko, Outd_nbit(pnww,set) )
         endif
 
       deallocate(indo,rf,prprlvl,cible)

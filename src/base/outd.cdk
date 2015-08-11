@@ -40,6 +40,8 @@
       integer Outd_nbit(MAXELEM,MAXSET)
       integer Outd_filtpass(MAXELEM,MAXSET)
       real    Outd_filtcoef(MAXELEM,MAXSET)
+      real    Outd_convmult(MAXELEM,MAXSET)
+      real    Outd_convadd (MAXELEM,MAXSET)
       integer, dimension(MAXSET), target ::  Outd_lev,Outd_grid,Outd_step
       integer Outd_var_max(MAXSET)
       integer Outd_sets
@@ -47,5 +49,5 @@
       COMMON /Outd/ Outd_lev,Outd_grid,Outd_step
       COMMON /Outd/ Outd_var_max, Outd_sets, Outd_nbit,Outd_filtpass
       COMMON /Outd_c/ Outd_var_S,Outd_varnm_S
-      COMMON /Outd_r/ Outd_filtcoef
+      COMMON /Outd_r/ Outd_filtcoef,Outd_convmult,Outd_convadd
 

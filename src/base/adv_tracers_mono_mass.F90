@@ -12,36 +12,27 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+      subroutine adv_tracers_mono_mass ( F_name_S, F_out, F_cub, &
+                              F_mono, F_lin, F_min, F_max, F_in, &
+                              Minx,Maxx,Miny,Maxy,F_nk         , &
+                              i0,in,j0,jn,k0,F_mono_kind,F_mass_kind )
 
-!/@*
-subroutine adv_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, &
-                                   Minx,Maxx,Miny,Maxy,F_nk,i0,in,j0,jn,k0,F_mono_kind,F_mass_kind )
-
-   implicit none
+      implicit none
 #include <arch_specific.hf>
 
-   !@objective
-
-   !Apply Shape Preservation/Mass Conservation schemes
-   !--------------------------------------------------
-!
-!
-!revision
-!
-   !@arguments
-   character(len=*), intent(in) ::F_name_S !I, Name of the interpolated field
-   integer, intent(in) :: F_nk             !I, Number of vertical levels
-   integer, intent(in) :: i0,in,j0,jn,k0   !I, Scope of operator
-   integer, intent(in) :: F_mono_kind      !I, Kind of Shape preservation
-   integer, intent(in) :: F_mass_kind      !I, Kind of Mass conservation
-   integer, intent(in) :: Minx,Maxx,Miny,Maxy
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out)    :: F_out  !I: Corrected (Shape preserved/conservative) solution
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_cub  !I: Cubic  SL solution
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_mono !I: Cubic  SL solution
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_lin  !I: Linear SL solution
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_min  !I: MIN over cell
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_max  !I: MAX over cell
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_in   !I: Field at previous time step
+      character(len=*), intent(in) ::F_name_S !I, Name of the interpolated field
+      integer, intent(in) :: F_nk !I, Number of vertical levels
+      integer, intent(in) :: i0,in,j0,jn,k0 !I, Scope of operator
+      integer, intent(in) :: F_mono_kind !I, Kind of Shape preservation
+      integer, intent(in) :: F_mass_kind !I, Kind of Mass conservation
+      integer, intent(in) :: Minx,Maxx,Miny,Maxy
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_out !Corrected (Shape preserved/conservative) solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_cub !Cubic  SL solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_mono!Cubic  SL solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_lin !Linear SL solution
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_min !MIN over cell
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_max !MAX over cell
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_in  !Field at previous time step
 !
 !   author Monique Tanguay 
 !
@@ -49,65 +40,70 @@ subroutine adv_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
    ! v4_XX - Tanguay M.        - initial version 
    ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
 !*@/
+   !@objective
+   !Apply Shape Preservation/Mass Conservation schemes
+   !--------------------------------------------------
 
 #include "lun.cdk"
 #include "adv_grid.cdk"
 #include "grd.cdk"
-   logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L
-   real high(Minx:Maxx,Miny:Maxy,F_nk)
 
-   !---------------------------------------------------------------------
-
-   CLIP_L          = F_mono_kind == 1
-   ILMC_L          = F_mono_kind == 2
-   Bermejo_Conde_L = F_mass_kind == 1
-   Cubic_L         = F_mono_kind == 0.and.F_mass_kind /= 1 
+      logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L
+      real high(Minx:Maxx,Miny:Maxy,F_nk)
+!     
+!---------------------------------------------------------------------
+!     
+      CLIP_L          = F_mono_kind == 1
+      ILMC_L          = F_mono_kind == 2
+      Bermejo_Conde_L = F_mass_kind == 1
+      Cubic_L         = F_mono_kind == 0.and.F_mass_kind /= 1 
 
    !Cubic or Mono(CLIPPING) interpolation
    !-------------------------------------
-   if (.NOT.Bermejo_Conde_L.and..NOT.ILMC_L) then
+      if (.NOT.Bermejo_Conde_L.and..NOT.ILMC_L) then
 
-      if (Cubic_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
-      if (CLIP_L)  F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
+         if (Cubic_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
+         if (CLIP_L)  F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
 
-      if (Lun_out.gt.0.and..not.CLIP_L) then
-         write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
-         write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
-         write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
-      elseif(Lun_out.gt.0) then
-         write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
-         write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
-         write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+         if (Lun_out.gt.0.and..not.CLIP_L) then
+            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+            write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
+            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+         elseif(Lun_out.gt.0) then
+            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+            write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
+            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+         endif
+
+         return
+
       endif
-
-      return
-
-   endif
 
    !Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
    !-----------------------------------------------------------------------
-   if (ILMC_L.and.     Grd_yinyang_L) call ILMC_GY (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
-   if (ILMC_L.and..not.Grd_yinyang_L) call ILMC_GU (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
+      if (ILMC_L.and.     Grd_yinyang_L) &
+      call ILMC_GY (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
+      if (ILMC_L.and..not.Grd_yinyang_L) &
+      call ILMC_GU (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
 
    !Restore Mass-Conservation: Bermejo and Conde,2002,MWR
    !-----------------------------------------------------
-   if (Bermejo_Conde_L) then
+      if (Bermejo_Conde_L) then
 
-       high = F_cub
+         high = F_cub
+         if (CLIP_L.or.ILMC_L) high = F_mono
 
-       if (CLIP_L.or.ILMC_L) high = F_mono
+         call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,&
+                             F_in,Minx,Maxx,Miny,Maxy,F_nk,k0,CLIP_L,ILMC_L)
 
-       call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,Minx,Maxx,Miny,Maxy,F_nk,k0,CLIP_L,ILMC_L)
+      else
 
-   else
+         F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
+         return
 
-       F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
-
-       return
-
-   endif   
-
-  !---------------------------------------------------------------------
-
-   return
-end subroutine adv_tracers_mono_mass 
+      endif   
+!     
+!---------------------------------------------------------------------
+!     
+      return
+      end subroutine adv_tracers_mono_mass

@@ -1,4 +1,5 @@
       subroutine gem_error (F_errorCode, F_FromSubName, F_Message)
+#include <must_use.hf>
       implicit none
 #include <arch_specific.hf>
       integer :: F_errorCode

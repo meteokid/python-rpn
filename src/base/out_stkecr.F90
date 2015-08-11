@@ -15,12 +15,13 @@
 
 !**s/r out_stkecr
 !
-      subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  , &
-                              l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf, &
+      subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  ,&
+                              l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf,&
                               ip2,ip3 )
+#include <must_use.hf>
       implicit none
 #include <arch_specific.hf>
-!
+
       include "out_meta.cdk"
 
       integer lminx,lmaxx,lminy,lmaxy,nplans
@@ -37,19 +38,21 @@
 
 #include "glb_ld.cdk"
 #include "grd.cdk"
+#include "grid.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "ptopo.cdk"
+      include "rpn_comm.inc"
 
-      integer, external :: fstecr, RPN_COMM_grid_redist
-
+      integer, external :: fstecr, RPN_COMM_grid_redist, &
+                                   RPN_COMM_shuf_ezcoll
       character*2 typvar
       logical wrapit_L
       integer, parameter :: ltok = 1
       integer  nz, err, nblock, ni, nis, njs, k, kk, pnip2, npas, ig4
       integer, dimension (:)    , allocatable :: zlist
       real   , dimension (:,:  ), pointer     :: guwrap
-      real   , dimension (:,:,:), pointer     :: wk
+      real   , dimension (:,:,:), pointer     :: wk, wk_glb
 !
 !----------------------------------------------------------------------
 !
@@ -59,13 +62,19 @@
 
       nblock= Ptopo_nblocx*Ptopo_nblocy
       nz    = (nplans + nblock -1) / nblock
-      allocate ( wk(nis,njs,nz+1), zlist(nz) ) ; zlist= -1 
+      allocate ( wk(nis,njs,nz+1), zlist(nz) , wk_glb(G_ni,G_nj,nz+1) )
+      zlist= -1 ; wk= -9999.
+! wk_glb= -9999.
 
       if (out3_type_S .eq. 'REGDYN') then
          call timing_start2 ( 82, 'OUT_DUCOL', 80)
       else
          call timing_start2 ( 91, 'OUT_PUCOL', 48)
       endif
+
+!!$      err= RPN_COMM_shuf_ezcoll (Grid_comm_setno, Grid_comm_id, wk_glb,&
+!!$                                 nz, fa, nplans, zlist)
+!!$      wk(1:nis,1:njs,:) = wk_glb(g_id:g_if,g_jd:g_jf,:)                   
 
       err= RPN_COMM_grid_redist (fa, l_minx,l_maxx, l_id,l_if         ,&
                                      l_miny,l_maxy, l_jd,l_jf, nplans ,& 
@@ -95,6 +104,7 @@
       endif
 
       if (Out_blocme.eq.0) then
+!      if (Grid_iome .ge.0) then
 
          wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) )
          if (wrapit_L) allocate ( guwrap(G_ni+1,njs) )
@@ -137,7 +147,7 @@
 
       endif
 
-      deallocate (wk,zlist)
+      deallocate (wk,wk_glb,zlist)
 
       if (out3_type_S .eq. 'REGDYN') then
          call timing_stop (84)

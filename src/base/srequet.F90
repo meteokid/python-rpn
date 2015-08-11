@@ -91,10 +91,10 @@
 
       integer process_f_callback,longueur
       external process_f_callback,longueur
-      integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,j
-      external set_level,set_step,set_grid,set_filt,set_xnbit,set_var
+      integer set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
+      external set_level,set_step,set_grid,set_filt,set_xnbit,set_var,set_conv
 
-      integer p1a,p1b,istat,nada
+      integer p1a,p1b,istat,nada,j
 !*
 !
       call rpn_f_callback_setverbose(Lun_out)
@@ -111,6 +111,7 @@
       p1b = -10
 
       call rpn_fortran_callback('filtre'  ,set_filt ,' ',p1a,p1b)
+      call rpn_fortran_callback('convert' ,set_conv ,' ',p1a,p1b)
       call rpn_fortran_callback('xnbit'   ,set_xnbit,' ',p1a,p1b)
       call rpn_fortran_callback('levels'  ,set_level,' ',p1a,p1b)
       call rpn_fortran_callback('grid'    ,set_grid ,' ',p1a,p1b)

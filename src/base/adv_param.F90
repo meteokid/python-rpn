@@ -21,65 +21,65 @@
    !@author  alain patoine
    !@revisions
    !*@/
-   !
 
 #include "glb_ld.cdk"
 #include "adv_grid.cdk"
+#include "adv_dims.cdk"
 #include "adv_interp.cdk"
    
       real*8, parameter :: LARGE_8 = 1.D20
       real*8, parameter :: FRAC1OV6_8 = 1.D0/6.D0
 
-      integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, istat2, ind
-      integer :: i0, j0, k0, pnx, pny, pnz, nkm, nkt
+      integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, &
+                 istat2, ind, i0, j0, k0, pnx, pny, pnz, nkm, nkt
 
       real*8 :: ra,rb,rc,rd
       real*8 :: prhxmn, prhymn, prhzmn, dummy, pdfi
 
-      real*8 :: whx(G_ni+2*G_halox)
-      real*8 :: why(G_nj+2*G_haloy)
+      real*8 :: whx(G_ni+2*adv_halox)
+      real*8 :: why(G_nj+2*adv_haloy)
 
       real*8 :: qzz_m_8(3*l_nk), qzi_m_8(4*l_nk)
       real*8 :: qzz_t_8(3*l_nk), qzi_t_8(4*l_nk)
 
-      real*8,dimension(:),pointer :: whzt,whzm
+      real*8, dimension(:),allocatable :: whzt,whzm
 
 #if !defined(TRIPROD)
 #define TRIPROD(za,zb,zc,zd) ((za-zb)*(za-zc)*(za-zd))
 #endif
 !
 !     ---------------------------------------------------------------
-!      
+!   
       nkm=l_nk ; nkt=l_nk
+      
       allocate( whzm(0:nkm+1), whzt(0:nkt+1))
-
       allocate( &
-      adv_xbc_8(G_ni+2*G_halox), & ! (xc-xb)     along x
-      adv_xabcd_8(G_ni+2*G_halox), & ! triproducts along x
-      adv_xbacd_8(G_ni+2*G_halox), &
-      adv_xcabd_8(G_ni+2*G_halox), &
-      adv_xdabc_8(G_ni+2*G_halox), &
-      adv_ybc_8(G_nj+2*G_haloy), & ! (yc-yb)     along y 
-      adv_yabcd_8(G_nj+2*G_haloy), & ! triproducts along y
-      adv_ybacd_8(G_nj+2*G_haloy), &
-      adv_ycabd_8(G_nj+2*G_haloy), &
-      adv_ydabc_8(G_nj+2*G_haloy) )
+      adv_xbc_8(G_ni+2*adv_halox), & ! (xc-xb)     along x
+      adv_xabcd_8(G_ni+2*adv_halox), & ! triproducts along x
+      adv_xbacd_8(G_ni+2*adv_halox), &
+      adv_xcabd_8(G_ni+2*adv_halox), &
+      adv_xdabc_8(G_ni+2*adv_halox), &
+      adv_ybc_8(G_nj+2*adv_haloy), & ! (yc-yb)     along y 
+      adv_yabcd_8(G_nj+2*adv_haloy), & ! triproducts along y
+      adv_ybacd_8(G_nj+2*adv_haloy), &
+      adv_ycabd_8(G_nj+2*adv_haloy), &
+      adv_ydabc_8(G_nj+2*adv_haloy) )
 
       do i = adv_gminx+1,adv_gmaxx-2
          ra = adv_xg_8(i-1)
          rb = adv_xg_8(i)
          rc = adv_xg_8(i+1)
          rd = adv_xg_8(i+2)
-         adv_xabcd_8(G_halox+i) = 1.D0/TRIPROD(ra,rb,rc,rd)
-         adv_xbacd_8(G_halox+i) = 1.D0/TRIPROD(rb,ra,rc,rd)
-         adv_xcabd_8(G_halox+i) = 1.D0/TRIPROD(rc,ra,rb,rd)
-         adv_xdabc_8(G_halox+i) = 1.D0/TRIPROD(rd,ra,rb,rc)
+         adv_xabcd_8(adv_halox+i) = 1.D0/TRIPROD(ra,rb,rc,rd)
+         adv_xbacd_8(adv_halox+i) = 1.D0/TRIPROD(rb,ra,rc,rd)
+         adv_xcabd_8(adv_halox+i) = 1.D0/TRIPROD(rc,ra,rb,rd)
+         adv_xdabc_8(adv_halox+i) = 1.D0/TRIPROD(rd,ra,rb,rc)
       enddo
 
       do i = adv_gminx,adv_gmaxx-1
          rb = adv_xg_8(i)
          rc = adv_xg_8(i+1)
-         adv_xbc_8(G_halox+i) = 1.D0/(rc-rb)
+         adv_xbc_8(adv_halox+i) = 1.D0/(rc-rb)
       enddo
 
       do j = adv_gminy+1,adv_gmaxy-2
@@ -87,16 +87,16 @@
          rb = adv_yg_8(j)
          rc = adv_yg_8(j+1)
          rd = adv_yg_8(j+2)
-         adv_yabcd_8(G_haloy+j) = 1.D0/TRIPROD(ra,rb,rc,rd)
-         adv_ybacd_8(G_haloy+j) = 1.D0/TRIPROD(rb,ra,rc,rd)
-         adv_ycabd_8(G_haloy+j) = 1.D0/TRIPROD(rc,ra,rb,rd)
-         adv_ydabc_8(G_haloy+j) = 1.D0/TRIPROD(rd,ra,rb,rc)
+         adv_yabcd_8(adv_haloy+j) = 1.D0/TRIPROD(ra,rb,rc,rd)
+         adv_ybacd_8(adv_haloy+j) = 1.D0/TRIPROD(rb,ra,rc,rd)
+         adv_ycabd_8(adv_haloy+j) = 1.D0/TRIPROD(rc,ra,rb,rd)
+         adv_ydabc_8(adv_haloy+j) = 1.D0/TRIPROD(rd,ra,rb,rc)
       enddo
 
       do j = adv_gminy,adv_gmaxy-1
          rb = adv_yg_8(j)
          rc = adv_yg_8(j+1)
-         adv_ybc_8(G_haloy+j) = 1.D0/(rc-rb)
+         adv_ybc_8(adv_haloy+j) = 1.D0/(rc-rb)
       enddo
 
       trj_i_off = 0
@@ -109,13 +109,13 @@
       prhzmn = LARGE_8
 
       do i = adv_gminx,adv_gmaxx-1
-         whx(G_halox+i) = adv_xg_8(i+1) - adv_xg_8(i)
-         prhxmn = min(whx(G_halox+i), prhxmn)
+         whx(adv_halox+i) = adv_xg_8(i+1) - adv_xg_8(i)
+         prhxmn = min(whx(adv_halox+i), prhxmn)
       enddo
 
       do j = adv_gminy,adv_gmaxy-1
-         why(G_haloy+j) = adv_yg_8(j+1) - adv_yg_8(j)
-         prhymn = min(why(G_haloy+j), prhymn)
+         why(adv_haloy+j) = adv_yg_8(j+1) - adv_yg_8(j)
+         prhymn = min(why(adv_haloy+j), prhymn)
       enddo
 
 ! Prepare zeta on super vertical grid
@@ -147,12 +147,10 @@
       allocate( &
       adv_lcx(pnx), &
       adv_lcy(pny), &
-      adv_bsx_8(G_ni+2*G_halox), &
-      adv_dlx_8(G_ni+2*G_halox), &
-      
-      adv_bsy_8(G_nj+2*G_haloy), &
-      adv_dly_8(G_nj+2*G_haloy), &
-      
+      adv_bsx_8(G_ni+2*adv_halox), &
+      adv_dlx_8(G_ni+2*adv_halox), &     
+      adv_bsy_8(G_nj+2*adv_haloy), &
+      adv_dly_8(G_nj+2*adv_haloy), &      
       adv_lcz%t(pnz), &
       adv_lcz%m(pnz),  &
       adv_bsz_8%t(0:nkt-1)  , &
@@ -163,27 +161,30 @@
       i0 = 1
       do i=1,pnx
          pdfi = adv_xg_8(adv_gminx) + (i-1) * prhxmn
-         if (pdfi > adv_xg_8(i0+1-G_halox)) i0 = min(G_ni+2*G_halox-1,i0+1)
+         if (pdfi > adv_xg_8(i0+1-adv_halox)) i0 = min(G_ni+2*adv_halox-1,i0+1)
          adv_lcx(i) = i0
       enddo
       do i = adv_gminx,adv_gmaxx-1
-         adv_dlx_8(G_halox+i) =       whx(G_halox+i)
+         adv_dlx_8(adv_halox+i) =       whx(adv_halox+i)
       enddo
       do i = adv_gminx,adv_gmaxx
-         adv_bsx_8(G_halox+i) = adv_xg_8(i)
+         adv_bsx_8(adv_halox+i) = adv_xg_8(i)
       enddo
 
       j0 = 1
       do j = 1,pny
          pdfi = adv_yg_8(adv_gminy) + (j-1) * prhymn
-         if (pdfi > adv_yg_8(j0+1-G_haloy)) j0 = min(G_nj+2*G_haloy-1,j0+1)
+         if (pdfi > adv_yg_8(j0+1-adv_haloy)) j0 = min(G_nj+2*adv_haloy-1,j0+1)
          adv_lcy(j) = j0
       enddo
       do j = adv_gminy,adv_gmaxy-1
-         adv_dly_8(G_haloy+j) =       why(G_haloy+j)
+         adv_dly_8(adv_haloy+j) =       why(adv_haloy+j)
+         
+
       enddo
       do j = adv_gminy,adv_gmaxy
-         adv_bsy_8(G_haloy+j) = adv_yg_8(j)
+         adv_bsy_8(adv_haloy+j) = adv_yg_8(j)
+
       enddo
 
       k0 = 1
@@ -195,9 +196,11 @@
       enddo
       do k = 0,nkt+1            !! warning note the shift in k !!
          adv_dlz_8%t(k-1) =       whzt(k)
+
       enddo
       do k = 1,nkt
          adv_bsz_8%t(k-1) = adv_verZ_8%t(k)
+
       enddo
 
       k0 = 1
@@ -212,9 +215,7 @@
       do k = 1,nkm
          adv_bsz_8%m(k-1) = adv_verZ_8%m(k)
       enddo
-
-      
-      
+           
       allocate( &
       adv_zbc_8%t(nkt),   adv_zbc_8%m(nkm),    &
       adv_zabcd_8%t(nkt), adv_zabcd_8%m(nkm),  &
@@ -245,8 +246,7 @@
          adv_zcabd_8%t(k) = 1.0/TRIPROD(rc,ra,rb,rd)
          adv_zdabc_8%t(k) = 1.0/TRIPROD(rd,ra,rb,rc)
       enddo
-
-      
+     
       do k = 1,nkm-1
          rb = adv_verZ_8%m(k)
          rc = adv_verZ_8%m(k+1)
@@ -262,5 +262,6 @@
       deallocate(whzt, whzm)
 !     
 !     ---------------------------------------------------------------
-!        
+!       
+      return
       end subroutine adv_param

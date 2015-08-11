@@ -42,24 +42,18 @@
 
       logical periodx_L,write_diag_lev
       integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset,ig2
-      integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable :: indo
-      real  coef(0:Outd_var_max(set)+1)
       real, dimension(:    ), allocatable:: rf
       real, dimension(:,:,:), allocatable:: uu_pres,vv_pres,cible, &
                                             div,vor,qr
 !_______________________________________________________________________
 !
       pndd=0 ; pnqq=0 ; pnqr=0
-      coef(0)= 0.0 ; filt(0)= 0 ; nbit(0)= 0
 
       do i=1,Outd_var_max(set)
         if (Outd_var_S(i,set).eq.'DD') pndd=i
         if (Outd_var_S(i,set).eq.'QQ') pnqq=i
         if (Outd_var_S(i,set).eq.'QR') pnqr=i
-        nbit(i)=Outd_nbit    (i,set)
-        filt(i)=Outd_filtpass(i,set)
-        coef(i)=Outd_filtcoef(i,set)
       enddo
 
       if (pndd+pnqq+pnqr.eq.0)return
@@ -87,7 +81,8 @@
                      qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
 
          call cal_ddqq (div,qr,vor, ut1, vt1                     ,&
-                        filt(pndd),coef(pndd),filt(pnqq),coef(pnqq),&
+                        Outd_filtpass(pndd,set),Outd_filtcoef(pndd,set),&
+                        Outd_filtpass(pnqq,set),Outd_filtcoef(pnqq,set),&
                         (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk)
       else
@@ -120,7 +115,8 @@
                      qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
 
          call cal_ddqq (div,qr,vor, uu_pres,vv_pres                ,&
-                        filt(pndd),coef(pndd),filt(pnqq),coef(pnqq),&
+                        Outd_filtpass(pndd,set),Outd_filtcoef(pndd,set),&
+                        Outd_filtpass(pnqq,set),Outd_filtcoef(pnqq,set),&
                         (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
                         l_minx,l_maxx,l_miny,l_maxy, nko)
 
@@ -131,12 +127,14 @@
 
          if (Level_typ_S(levset) .eq. 'M') then
             call ecris_fst2 ( div, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m, 'DD  ', 1.0,0.0,kind , &
-                              nk, indo, nko, nbit(pndd) )
+                              Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
+                              Outd_convadd(pndd,set),kind , &
+                              nk, indo, nko, Outd_nbit(pndd,set) )
          else
             call ecris_fst2 ( div, l_minx,l_maxx,l_miny,l_maxy, &
-                              rf, 'DD  ', 1.0,0.0, kind       , &
-                              nko, indo, nko, nbit(pndd) )
+                              rf,'DD  ',Outd_convmult(pndd,set),&
+                              Outd_convadd(pndd,set), kind     , &
+                              nko, indo, nko, Outd_nbit(pndd,set) )
          endif
 
       endif
@@ -157,12 +155,14 @@
 
          if (Level_typ_S(levset) .eq. 'M') then
             call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m, 'QQ  ', 1.0,0.0,kind , &
-                              nk, indo, nko, nbit(pnqq) )
+                              Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
+                              Outd_convadd(pnqq,set),kind , &
+                              nk, indo, nko, Outd_nbit(pnqq,set) )
          else
             call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
-                              rf, 'QQ  ', 1.0,0.0, kind       , &
-                              nko, indo, nko, nbit(pnqq) )
+                              rf,'QQ  ',Outd_convmult(pnqq,set),&
+                              Outd_convadd(pnqq,set), kind       , &
+                              nko, indo, nko, Outd_nbit(pnqq,set) )
          endif
 
       endif
@@ -171,12 +171,14 @@
 
          if (Level_typ_S(levset) .eq. 'M') then
             call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m, 'QR  ', 1.0,0.0,kind , &
-                              nk, indo, nko, nbit(pnqr) )
+                              Ver_hyb%m,'QR  ',Outd_convmult(pnqr,set),&
+                              Outd_convadd(pnqr,set),kind , &
+                              nk, indo, nko, Outd_nbit(pnqr,set) )
          else
             call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
-                              rf, 'QR  ', 1.0,0.0, kind       , &
-                              nko, indo, nko, nbit(pnqr) )
+                              rf,'QR  ',Outd_convmult(pnqr,set),&
+                              Outd_convadd(pnqr,set), kind       , &
+                              nko, indo, nko, Outd_nbit(pnqr,set) )
          endif
 
       endif

@@ -21,13 +21,17 @@
                          rhsx, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
-      
+
       integer,intent(in) ::  F_fnitraj, F_icn
       integer,intent(in) ::  Minx,Maxx,Miny,Maxy, Nk
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: ut0, vt0, zdt0 ! winds at time t0
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: ut1, vt1, zdt1 ! winds at time t1
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: orhsu, orhsv, orhsc, orhst, orhsf, orhsq, orhsw, orhsx                                              
-      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(inout) :: rhsu, rhsv, rhsc,  rhst, rhsf, rhsq, rhsw, rhsx
+      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: orhsu, orhsv, orhsc, orhst, &
+                                                            orhsf, orhsq, orhsw, orhsx                                              
+      real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(inout) :: rhsu, rhsv, rhsc,  rhst, &
+                                                               rhsf, rhsq, rhsw, rhsx
+!@objective perform semi-lagrangian advection
+!@author  Rabah Aider (based on : adx_main , adx_interp_gmm  )  June 2015
 
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -38,14 +42,16 @@
 #include "step.cdk"
 #include "adv_pos.cdk"
 #include "vth.cdk"
-      logical, save :: setgrid = .false. ! 
+#include "adv_grid.cdk"
+#include "adv_dims.cdk"
+      
       logical :: doAdwStat_L
       integer :: i0,j0,in,jn,i0u,inu,j0v,jnv ! advection computational i,j,k domain  (glb_ld.cdk)
       integer :: k0, k0m, k0t, err, jext
       real, dimension(:,:,:), allocatable  :: pxm, pym, pzm ! upstream positions valid at time t1
       real, dimension(:,:,:), allocatable  :: ua,va,wa,wat  ! arrival winds
       real, dimension(:,:,:), allocatable  :: ud,vd,wd      ! de-staggered   departure winds 
-!      real, pointer, dimension(:) :: xth, yth, zth
+      real, dimension(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk) :: a_ud , a_vd , a_wd
 !
 !     ---------------------------------------------------------------
 !      
@@ -74,14 +80,7 @@
      err = gmm_get(gmmk_xth_s , xth)
      err = gmm_get(gmmk_yth_s , yth)
      err = gmm_get(gmmk_zth_s , zth)
-	  
-      
-!     Set advection grid & get parameters for interpolation 
-      if (.not. setgrid ) then
-         call adv_setgrid ()
-         call adv_param   ()
-         setgrid = .true.
-      endif
+
       
 !     Get advection computational i,j,k domain
       i0 = 1 ; in = l_ni
@@ -107,24 +106,35 @@
       k0t= k0     
       if(Lam_gbpil_t.gt.0) k0t=k0-1
       k0m=max(k0t-2,1)
+    
+      call timing_start2 (30, 'ADV_TRAJE', 21) ! Compute trajectories
 
- 
-!     Process winds in preparation for SL advection: unstagger & interpolate from Thermo to Momentum levels
+! Process winds in preparation for SL advection: unstagger & interpolate from Thermo to Momentum levels
       call adv_prepareWinds ( ud, vd, wd, ua, va, wa, wat    , &
                               ut0, vt0 , zdt0, ut1, vt1, zdt1, &
                               l_minx, l_maxx, l_miny, l_maxy , &
                               l_ni , l_nj , l_nk )
- 
-!     calculate upstream positions at t1 using angular displacement & trapezoidal rule
 
-      call adv_trapeze (F_fnitraj, pxm , pym , pzm,  &
-                        ud, vd, wd, ua, va ,wa , wat  ,&
-                        xth, yth, zth, i0, in, j0, jn, i0u, &
-                        inu, j0v, jnv, k0, k0m, k0t,&
-                        l_minx, l_maxx, l_miny, l_maxy, l_ni, l_nj, l_nk )
+! Extend the grid from model to adection with filled halos
 
- 
+      call adv_extend_grid (a_ud,a_vd, a_wd, ud, vd, wd            , &
+                            adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, &
+                            l_minx,l_maxx,l_miny,l_maxy, l_nk)
+
+
+! Calculate upstream positions at t1 using angular displacement & trapezoidal rule
+
+      call adv_trapeze (F_fnitraj, pxm , pym , pzm        ,&
+                        a_ud, a_vd, a_wd, ua, va ,wa , wat,&
+                        xth, yth, zth, i0, in, j0, jn, i0u,&
+                        inu, j0v, jnv, k0, k0m, k0t       ,&
+                        adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
+
+      call timing_stop (30) 
+      call timing_start2 (31, 'ADV_INLAG', 21)
+
 !     RHS interpolation : momentum levels                            
+      
       call adv_cubic('RHSU_S', rhsu, orhsu, pxmu, pymu, pzmu, l_ni, l_nj, l_nk, &
                          l_minx, l_maxx, l_miny, l_maxy, i0u, inu, j0, jn, k0, 'm',0,0)    
  
@@ -151,17 +161,18 @@
          call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt,  l_ni , l_nj , l_nk,&
                         l_minx, l_maxx, l_miny,l_maxy, i0, in, j0, jn, k0t, 't',0,0)
       endif
-      
+
+      call timing_stop (31)  
 ! Compute Courant numbers (CFL) for stats 
 
-     if ( doAdwStat_L ) then 
-      call  adv_cfl_lam3 (pxm, pym, pzm, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'m')
-      call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                                        
-     endif
-
+      if ( doAdwStat_L ) then 
+         call  adv_cfl_lam3 (pxm, pym, pzm, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'m')
+         call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                                        
+      endif
 
       deallocate (pxm,pym,pzm,ua,va,wa,wat,ud,vd,wd)
 !
 !     ---------------------------------------------------------------
-!      
+!     
+      return
       end subroutine adv_main

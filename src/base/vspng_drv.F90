@@ -14,19 +14,17 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r vspng_drv - Main driver for top sponge layer
-!
 
-!
-      subroutine vspng_drv3 ( F_u, F_v, F_zd, F_w, F_t, Minx,Maxx,Miny,Maxy, Nk)
-!
+      subroutine vspng_drv3 ( F_u, F_v, F_zd, F_w, F_t, &
+                               Minx,Maxx,Miny,Maxy, Nk)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Minx,Maxx,Miny,Maxy, Nk
-      real F_u  (Minx:Maxx,Miny:Maxy,Nk)  , F_v (Minx:Maxx,Miny:Maxy,Nk), &
-           F_zd (Minx:Maxx,Miny:Maxy,Nk)  , F_w (Minx:Maxx,Miny:Maxy,Nk), &
+      real F_u  (Minx:Maxx,Miny:Maxy,Nk), F_v (Minx:Maxx,Miny:Maxy,Nk), &
+           F_zd (Minx:Maxx,Miny:Maxy,Nk), F_w (Minx:Maxx,Miny:Maxy,Nk), &
            F_t  (Minx:Maxx,Miny:Maxy,Nk)
-!
+
 !author
 !     Michel Desgagne  - October 2000
 !
@@ -66,13 +64,13 @@
 #include "opr.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-!
+
       integer i,j,jj,k,nkspng
       real*8 HALF_8,TWO_8,c_8,invp0t_8
       parameter( HALF_8  = 0.5 )
       parameter(  TWO_8  = 2.0 )
       parameter(invp0t_8 = .00001d0)
-!
+
       real*8 tmean_8(l_nj,Nk)
       real*8, dimension (trp_12emax*G_ni*Vspng_nk) ::  &
                                                 aix_8,bix_8,cix_8,dix_8
@@ -82,13 +80,8 @@
 !     ---------------------------------------------------------------
 !
       if(G_lam)then
-         if(Grd_yinyang_L.and.Vspng_vec_L)then
-            call vspng_drv_YY( F_u, F_v, F_zd, F_w, F_t, &
-                 Minx,Maxx,Miny,Maxy, Nk )
-         else
-            call vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
-                 Minx,Maxx,Miny,Maxy, Nk )
-         endif
+         call vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
+                                Minx,Maxx,Miny,Maxy, Nk )
          return
       endif
 

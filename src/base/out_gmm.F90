@@ -160,13 +160,15 @@
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
                call ecris_fst2(tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                     tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
-                               0,keylist(i),1.0,0.0,Level_kind_ip1,&
+                               0,keylist(i),Outd_convmult(ii,set),&
+                               Outd_convadd(ii,set),Level_kind_ip1,&
                                1,1,1, Outd_nbit(ii,set) )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
                call ecris_fst2(tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                     tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
-                               level_type,keylist(i),1.0,0.0,Level_kind_ip1,&
+                               level_type,keylist(i),Outd_convmult(ii,set),&
+                               Outd_convadd(ii,set),Level_kind_ip1,&
                                G_nk,indo,nko, Outd_nbit(ii,set) )
             endif
 

@@ -16,6 +16,7 @@
 !s/r wrrstrt - Write the restart file
 !
       subroutine wrrstrt ()
+#include <must_use.hf>
       use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>

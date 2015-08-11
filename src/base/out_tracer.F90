@@ -98,23 +98,27 @@
                      enddo
                   enddo
                   call ecris_fst2(t4,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                             Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
+                       Outd_var_S(ii,set),Outd_convmult(ii,set), &
+                       Outd_convadd(ii,set),kind,G_nk,indo,nko, &
                              Outd_nbit(ii,set) )
                else
                   call ecris_fst2(tr1,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                              Outd_var_S(ii,set),1.0,0.0,kind,G_nk,indo,nko, &
+                       Outd_var_S(ii,set),Outd_convmult(ii,set), &
+                       Outd_convadd(ii,set),kind,G_nk,indo,nko, &
                               Outd_nbit(ii,set) )
                endif
 
                if (write_diag_lev)  then
                   t4(:,:,G_nk+1) = tr1(:,:,G_nk)
                   call itf_phy_sfcdiag (t4(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy,&
-                                            'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
+                                   'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
                   if (istat.eq.0) then
                      if (Out3_cliph_L) t4(:,:,G_nk+1) = max ( t4(:,:,G_nk+1), 0. )
-                     call ecris_fst2 ( t4(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy   ,&
-                                       hybt(G_nk+2),Outd_var_S(ii,set),1.0,0.0,Level_kind_diag,&
-                                        1,1,1,Outd_nbit(ii,set) )
+                     call ecris_fst2 ( t4(l_minx,l_miny,G_nk+1), &
+                                  l_minx,l_maxx,l_miny,l_maxy, & 
+                                  hybt(G_nk+2),Outd_var_S(ii,set), &
+                                  Outd_convmult(ii,set),Outd_convadd(ii,set), &
+                                  Level_kind_diag,1,1,1,Outd_nbit(ii,set) )
                   endif
                endif
                   
@@ -182,7 +186,8 @@
                   enddo
                endif
                call ecris_fst2 ( w4,l_minx,l_maxx,l_miny,l_maxy,rf  , &
-                                 Outd_var_S(ii,set),1.0,0.0,kind,nko, &
+                                 Outd_var_S(ii,set),Outd_convmult(ii,set), &
+                                 Outd_convadd(ii,set),kind,nko, &
                                  indo, nko, Outd_nbit(ii,set) )
                
             endif

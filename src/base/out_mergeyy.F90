@@ -16,6 +16,7 @@
 !**s/r out_mergeyy
 !
       subroutine out_mergeyy (F_vec, n)
+#include <must_use.hf>
       implicit none
 #include <arch_specific.hf>
 

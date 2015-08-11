@@ -44,7 +44,7 @@
 #include "glb_pil.cdk"
 #include <clib_interface_mu.hf>
 
-      character*120 outfile,gfile,dumc,fn,etk,etk_ext
+      character*120 outfile,gfile,dumc,fn,etk,etk_ext,dum1
       logical lam,radians
       integer uout,err,npack,i,j,k
 
@@ -86,7 +86,9 @@
       outfile       = 'tape1'
       gfile         = 'gfilemap.txt'
       Grd_yinyang_S = 'YIN'
-
+      Grd_yinyang_L = .false.
+      if (clib_getenv ('GEM_YINYANG',dum1).ge.0) &
+      Grd_yinyang_L = .true.
 !     Read grid namelist using grid_nml
 
  88   if (grid_nml2(fn,lam).lt.0) then
@@ -103,7 +105,7 @@
       err= gem_nml  ('print'    )
 
 !     Setup before calling e_grid
-      Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
+!      Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
       LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
@@ -265,8 +267,6 @@
          Grd_yinyang_S = 'YAN'
          goto 88
       endif
-
-      
 !      
 !-------------------------------------------------------------------
 !

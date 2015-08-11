@@ -63,13 +63,11 @@
 
       integer i,j,k,ii,istat,psum, kind,nko,nk_src,l_ninj
       integer i0,in,j0,jn,i0v,inv,j0v,jnv,pnuu,pnvv,pnuv
-      integer nbit(0:Outd_var_max(set)+1),filt(0:Outd_var_max(set)+1)
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1m
       logical, save :: done_L= .false.
       integer, save :: lastdt = -1
 
-      real coef(0:Outd_var_max(set)+1),prmult
       real uv(l_minx:l_maxx,l_miny:l_maxy,nk+1)
       real, dimension(:    ), allocatable::prprlvl,rf
       real, dimension(:    ), pointer :: hybm
@@ -81,11 +79,7 @@
 !
 !-------------------------------------------------------------------
 !
-      prmult =  1.0 / Dcst_knams_8
       pnuu=0 ; pnvv=0 ; pnuv=0
-
-      coef(0:Outd_var_max(set)) = 0.
-      filt(0:Outd_var_max(set)) = 0 ; nbit(0:Outd_var_max(set)) = 0
 
       do ii=1,Outd_var_max(set)
          if (Outd_var_S(ii,set).eq.'UU')then
@@ -97,9 +91,6 @@
          if (Outd_var_S(ii,set).eq.'UV')then
             pnuv=ii
          endif
-         nbit(ii)=Outd_nbit(ii,set)
-         filt(ii)=Outd_filtpass(ii,set)
-         coef(ii)=Outd_filtcoef(ii,set)
       enddo
 
       psum=pnuu+pnuv+pnvv
@@ -205,19 +196,25 @@
 
          if (pnuu.ne.0) then
             call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,hybm, &
-                 'UU  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnuu) )
+              'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
+              kind,G_nk, indo, nko,Outd_nbit(pnuu,set) )
             if (write_diag_lev) then
-               call ecris_fst2(uu(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
-                    hybm(G_nk+2),'UU  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnuu) )
+               call ecris_fst2(uu(l_minx,l_miny,G_nk+1), &
+                               l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
+                'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set), &
+                Level_kind_diag,1,1,1,Outd_nbit(pnuu,set) )
             endif
          endif
 
          if (pnvv.ne.0) then
             call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
-                 'VV  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnvv) )
+              'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set), &
+              kind,G_nk, indo, nko,Outd_nbit(pnvv,set) )
             if (write_diag_lev) then
-               call ecris_fst2(vv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
-                    hybm(G_nk+2),'VV  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnvv) )
+               call ecris_fst2(vv(l_minx,l_miny,G_nk+1), &
+                    l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
+                    'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
+                    Level_kind_diag,1,1,1, Outd_nbit(pnvv,set) )
             endif
          endif
 
@@ -231,10 +228,13 @@
                enddo
             enddo
             call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
-                 'UV  ',prmult,0.0,kind,G_nk, indo, nko, nbit(pnuv) )
+                 'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
+                 kind,G_nk, indo, nko, Outd_nbit(pnuv,set) )
             if (write_diag_lev) then
-               call ecris_fst2(uv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,l_miny,l_maxy, &
-                    hybm(G_nk+2),'UV  ',prmult,0.0,Level_kind_diag,1,1,1,nbit(pnuv) )
+               call ecris_fst2(uv(l_minx,l_miny,G_nk+1), &
+                    l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
+                    'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
+                    Level_kind_diag,1,1,1, Outd_nbit(pnuv,set) )
             endif
          endif
          deallocate(indo)
@@ -276,27 +276,33 @@
                   enddo
                enddo
             enddo
-            if (filt(pnuv).gt.0) &
-               call filter2( uv_pres,filt(pnuv),coef(pnuv), &
+            if (Outd_filtpass(pnuv,set).gt.0) &
+               call filter2( uv_pres,Outd_filtpass(pnuv,set),&
+                             Outd_filtcoef(pnuv,set), &
                              l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                 'UV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuv) )
+                 'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set), &
+                 kind,nko, indo, nko, Outd_nbit(pnuv,set) )
          endif
 
          if (pnuu.ne.0) then
-            if (filt(pnuu).gt.0) &
-                call filter2( uu_pres,filt(pnuu),coef(pnuu), &
+            if (Outd_filtpass(pnuu,set).gt.0) &
+                call filter2( uu_pres,Outd_filtpass(pnuu,set),&
+                              Outd_filtcoef(pnuu,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                 'UU  ',prmult,0.0, kind,nko, indo, nko, nbit(pnuu) )
+                 'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set), &
+                 kind,nko, indo, nko, Outd_nbit(pnuu,set) )
          endif
 
          if (pnvv.ne.0) then
-            if (filt(pnvv).gt.0) &
-                 call filter2( vv_pres,filt(pnvv),coef(pnvv), &
+            if (Outd_filtpass(pnvv,set).gt.0) &
+                 call filter2( vv_pres,Outd_filtpass(pnvv,set),&
+                               Outd_filtcoef(pnvv,set), &
                                l_minx,l_maxx,l_miny,l_maxy,nko)
             call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
-                 'VV  ',prmult,0.0, kind,nko, indo, nko, nbit(pnvv) )
+                 'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set), &
+                 kind,nko, indo, nko, Outd_nbit(pnvv,set) )
          endif
 
          deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres,cible)

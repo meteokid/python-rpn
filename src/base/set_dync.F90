@@ -131,7 +131,14 @@
 
       call set_opr
 
-	   if ( Advection_lam_legacy ) call itf_adx_set
+       if ( Advection_lam_legacy ) then
+       call itf_adx_set
+      else
+      call adv_setgrid
+      call adv_param 
+      endif
+
+      
 
       call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
 

@@ -59,7 +59,7 @@
 !----------------------------------------------------------------
 !
 
-#include "lun.cdk"
+!#include "lun.cdk"
 
       integer i,j,k,imin,jmin,kmin,imax,jmax,kmax
       real*8 sum,sumd2,moy,var,mind,maxd,fijk,npt_8
@@ -114,15 +114,15 @@
 !       
 ! ** On imprime
 !
-      if(Lun_out.gt.0) then
+!      if(Lun_out.gt.0) then
          if (F_rx.lt.8) then
-            write(Lun_out,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(6,98) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S 
          else
-            write(Lun_out,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
+            write(6,99) no,F_nv_S,moy,var,imin,jmin,kmin,mind, &
                                        imax,jmax,kmax,maxd,F_from_S 
          endif
-      endif
+!      endif
 !
  98   format (i4,a4,' Mean:',1pe14.6,' Std:',1pe14.6, &
               ' Min:[(',i3,',',i3,',',i3,')', &

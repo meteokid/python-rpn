@@ -12,16 +12,18 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!
-      subroutine adv_thermo2mom (F_fld_m, F_fld_t, F_ni,F_nj,F_nk, F_minx, F_maxx, F_miny, F_maxy)
 
-implicit none
-
+      subroutine adv_thermo2mom (F_fld_m, F_fld_t, F_ni,F_nj,F_nk, &
+                                 F_minx, F_maxx, F_miny, F_maxy)
+      implicit none
 #include <arch_specific.hf>
+
       integer, intent(in) :: F_ni,F_nj,F_nk
       integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy
-		real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in) :: F_fld_t
-		real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk), intent(out) :: F_fld_m
+		real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in)  :: F_fld_t
+		real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(out) :: F_fld_m
+
+!@objective interpolate from thermodynamic to momentum levels
 
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -33,7 +35,6 @@ implicit none
 		real*8  :: zd_z_8(F_nk+1)
 
 #define lag3(xx, x1, x2, x3, x4)  ((((xx) - (x2)) * ((xx) - (x3)) * ((xx) - (x4)))/( ((x1) - (x2)) * ((x1) - (x3)) * ((x1) - (x4))))
-
 !
 !     ---------------------------------------------------------------
 !      
@@ -108,7 +109,8 @@ implicit none
 !$omp enddo
 
 !$omp end parallel
-!
-!     ---------------------------------------------------------------
-!      
+!     
+!---------------------------------------------------------------------
+!     
+      return
       end subroutine adv_thermo2mom

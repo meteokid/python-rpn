@@ -16,6 +16,7 @@
 !**s/r set_sor - initialization of all control parameters for output
 !
       subroutine set_sor()
+#include <must_use.hf>
       use phy_itf, only: phymeta,phy_getmeta
       use timestr_mod
       implicit none
@@ -254,7 +255,7 @@
          rot(3,Ptopo_couleur+1)= Grd_xlat2
          rot(4,Ptopo_couleur+1)= Grd_xlon2
       endif
-
+      
       call RPN_COMM_allreduce ( ixg  , ixgall  ,       8,&
            RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
       call RPN_COMM_allreduce ( rot  , rotall  ,       8,&

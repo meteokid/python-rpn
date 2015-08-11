@@ -19,9 +19,12 @@
 
 !     @objective:  set parmaters of the advection grid ( from  adx_set )
 
+#include "constants.h"
 #include "adv_grid.cdk"
+#include "adv_dims.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "ver.cdk"
 
       character(len=40) :: label
@@ -31,40 +34,39 @@
 !     
 !     ---------------------------------------------------------------
 !     
-      allocate ( adv_xx_8(l_minx:l_maxx), adv_cx_8(l_ni), adv_sx_8(l_ni), &
-                 adv_yy_8(l_miny:l_maxy), adv_vsec_8(l_miny:l_maxy)     , &
-                 adv_vtan_8(l_miny:l_maxy),adv_cy_8(l_nj), adv_sy_8(l_nj) )      
-      allocate( v_zm_8(0:l_nk+1), v_zt_8(1:l_nk) )
-      
-      v_zm_8(0) = Cstv_Ztop_8
-      
-      do k=1,l_nk+1    
-         v_zm_8(k) = Ver_a_8%m(k)
-      enddo
-
-      do k=1,l_nk   
-         v_zt_8(k) = Ver_z_8%t(k)
-      enddo
+      allocate( adv_verz_8%m (0:l_nk+1),  adv_verz_8%t(1:l_nk))
+ 
+      adv_maxcfl = max(1,Grd_maxcfl)
+      adv_halox = max(1,adv_maxcfl + 1)
+      adv_haloy = adv_halox
       
       adv_int_i_off = l_i0 - 1
       adv_int_j_off = l_j0 - 1
       adv_trj_i_off = 0
 
-      adv_gminx = 1 - G_halox
-      adv_gmaxx = G_ni + G_halox
-      adv_gminy = 1 - G_haloy
-      adv_gmaxy = G_nj + G_haloy
-      
-      adv_iimax = G_ni+2*G_halox-2
-      adv_jjmax = G_nj+G_haloy
-      adv_nit = l_maxx - l_minx + 1
-      adv_njt = l_maxy - l_miny + 1
+      adv_gminx = 1 - adv_halox
+      adv_gmaxx = G_ni + adv_halox
+      adv_gminy = 1 - adv_haloy
+      adv_gmaxy = G_nj + adv_haloy
+
+      adv_lminx = 1 - adv_halox   
+      adv_lmaxx = l_ni + adv_halox  
+      adv_lminy = 1 - adv_haloy
+      adv_lmaxy = l_nj + adv_haloy
+
+      adv_iimax = G_ni+2*adv_halox-2
+      adv_jjmax = G_nj+adv_haloy
+      adv_nit = adv_lmaxx - adv_lminx + 1
+      adv_njt = adv_lmaxy - adv_lminy + 1
       adv_nijag = adv_nit * adv_njt
       adv_lnij = l_ni*l_nj
 
-      allocate( adv_xg_8(adv_gminx:adv_gmaxx),  adv_yg_8(adv_gminy:adv_gmaxy) , &
-      adv_verz_8%m (0:l_nk+1),  adv_verz_8%t(1:l_nk))
-      
+      allocate ( adv_xg_8(adv_gminx:adv_gmaxx), &
+                 adv_yg_8(adv_gminy:adv_gmaxy), &
+                 adv_xx_8(adv_lminx:adv_lmaxx), &
+                 adv_yy_8(adv_lminy:adv_lmaxy), &
+                 adv_cy_8(l_nj) )
+    
       do i = 1,G_ni
          adv_xg_8(i) = G_xg_8(i)    
       enddo
@@ -73,14 +75,16 @@
          adv_yg_8(j) = G_yg_8(j)
       enddo
 
-      adv_verz_8%m(:) = v_zm_8(:)
-      adv_verz_8%t(:) = v_zt_8(:)
-
-      deallocate(v_zm_8, v_zt_8)
-      
+      adv_verz_8%m(0)=Cstv_Ztop_8
+      do k=1,l_nk
+         adv_verz_8%m(k) = Ver_a_8%m(k)
+         adv_verz_8%t(k) = Ver_a_8%t(k)
+      enddo
+      adv_verz_8%m(l_nk+1)=Cstv_Zsrf_8 
+  
       prhxmn =  adv_xg_8(2)-adv_xg_8(1)
       do i = 0,adv_gminx,-1
-         adv_xg_8(i) = adv_xg_8(i+1)  - prhxmn      
+         adv_xg_8(i) = adv_xg_8(i+1)  - prhxmn     
       enddo
       do i = G_ni+1,adv_gmaxx
          adv_xg_8(i) = adv_xg_8(i-1) + prhxmn 
@@ -95,29 +99,18 @@
       enddo
       
 !- advection grid
-      do i = l_minx,l_maxx
+      do i = adv_lminx,adv_lmaxx
          adv_xx_8(i) = adv_xg_8(l_i0-1+i)
       enddo
-      do j = l_miny,l_maxy
+      do j = adv_lminy,adv_lmaxy
          adv_yy_8(j) = adv_yg_8(l_j0-1+j)
-      enddo
-
-      do j = l_miny,l_maxy
-!- precalculation vsec, vtan for grand circle computation
-         adv_vsec_8(j) = 1.0D0/(cos(adv_yy_8(j)))
-         adv_vtan_8(j) = tan(adv_yy_8(j))
-      enddo
-
-      do i = 1,l_ni
-         adv_cx_8(i) = cos(adv_xx_8(i))
-         adv_sx_8(i) = sin(adv_xx_8(i))
       enddo
 
       do j = 1,l_nj
          adv_cy_8(j) = cos(adv_yy_8(j))
-         adv_sy_8(j) = sin(adv_yy_8(j))
       enddo
 !     
-!     ---------------------------------------------------------------
+!---------------------------------------------------------------------
 !     
+      return
       end subroutine adv_setgrid

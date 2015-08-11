@@ -19,8 +19,6 @@
       implicit none
 #include <arch_specific.hf>
 
- !@Objectives: Process winds in preparation for advection: de-stagger and interpolate from thermo to momentum levels
-
       integer, intent(in) :: F_minx,F_maxx,F_miny,F_maxy    ! min, max values for indices
       integer, intent(in) :: F_ni,F_nj                      ! horizontal dims of position fields
       integer, intent(in) :: F_nk                           ! nb of winds vertical levels
@@ -28,6 +26,8 @@
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in) :: ut1, vt1 , zdt1 
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(out) :: F_ud, F_vd, F_wd    ! model un-staggered departure winds
       real, dimension(F_ni,F_nj,F_nk), intent(out):: F_ua,F_va,F_wa,F_wat                  ! arrival unstaggered  winds
+
+ !@Objectives: Process winds in preparation for advection: de-stagger and interpolate from thermo to momentum levels
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -55,10 +55,10 @@
       if(.NOT.Schm_step_settls_L) then
          uh = ut0
          vh = vt0
-
-         call adv_destagWinds (uh,vh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
+  
+         call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
          call adv_thermo2mom  (wm,zdt0,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
-
+       
 !     Unstaggered arrival winds
          F_ua = uh(1:F_ni,1:F_nj,1:F_nk)
          F_va = vh(1:F_ni,1:F_nj,1:F_nk)
@@ -73,7 +73,7 @@
 !Set V_a = V(r,t1)
 !-----------------
          uh = ut1 ; vh = vt1
-         call adv_destagWinds (uh,vh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+         call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
          call adv_thermo2mom  (wm,zdt1,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
          F_ua =  uh(1:F_ni,1:F_nj,1:F_nk)
          F_va =  vh(1:F_ni,1:F_nj,1:F_nk)
@@ -98,7 +98,9 @@
          enddo
 
       endif
-      call adv_destagWinds (uh,vh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+
+      call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+
       call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
 !     Destag departure winds
@@ -110,4 +112,5 @@
 !     
 !     ---------------------------------------------------------------
 !     
+      return
       end subroutine adv_prepareWinds

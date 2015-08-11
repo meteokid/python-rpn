@@ -184,18 +184,15 @@
 
                FIELD_SHAPE: if (pmeta%nk .eq. 1) then
 !                 2D field
-                  mul= 1.0
-                  if (trim(Outp_var_S(ii,kk)).eq.'LA') mul= 180./Dcst_pi_8
-                  if (trim(Outp_var_S(ii,kk)).eq.'LO') mul= 180./Dcst_pi_8
-                  if (trim(Outp_var_S(ii,kk)).eq.'SD') mul= 100.
 
                   if ( pmeta%fmul.eq.1 .and. pmeta%mosaic.eq.0) then
                      ! 2D none multiple, none mosaic field, 0mb field, kind=2
                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
                      istat = phy_get ( ptr3d, Outp_var_S(ii,kk),F_npath='O', &
                                        F_bpath='PV')
-                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, 0.0,Outp_var_S(ii,kk),&
-                                       mul,0., 2, 1,1,1,Outp_nbit(ii,kk) )
+                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, 0.0, &
+                          Outp_var_S(ii,kk),Outp_convmult(ii,kk),   &
+                          Outp_convadd(ii,kk), 2, 1,1,1,Outp_nbit(ii,kk) )
                   else
                      ! 2D (multiple) field - on arbitrary levels, kind=3
 !     multiple 2D fields and mosaic tiles are stored in
@@ -231,8 +228,9 @@
                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
                      istat = phy_get ( ptr3d, Outp_var_S(ii,kk),F_npath='O', &
                                        F_bpath='PV')
-                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, rff,Outp_var_S(ii,kk),&
-                                       mul,0., 3, cnt, irff,cnt, Outp_nbit(ii,kk) )
+                     call ecris_fst2 ( data3d, 1,l_ni, 1,l_nj, rff, &
+                          Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
+                          Outp_convadd(ii,kk), 3,cnt,irff,cnt,Outp_nbit(ii,kk) )
                   endif
                else
                   ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
@@ -243,19 +241,27 @@
 
                      if (pmeta%stag .eq. 1) then ! thermo
                         call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, hybt  , &
-                                         Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
+                             Outp_var_S(ii,kk),Outp_convmult(ii,kk), &
+                             Outp_convadd(ii,kk),Level_kind_ip1, &
                                          G_nk,indo,nko,Outp_nbit(ii,kk) )
                         if (write_diag_lev) then
-                           call ecris_fst2 (data3d(1,1,G_nk+1), 1,l_ni, 1,l_nj, hybt(G_nk+2), &
-                                Outp_var_S(ii,kk),1.,0.,Level_kind_diag,1,1,1, Outp_nbit(ii,kk) )
+                           call ecris_fst2 (data3d(1,1,G_nk+1), &
+                                1,l_ni, 1,l_nj, hybt(G_nk+2), &
+                                Outp_var_S(ii,kk),Outp_convmult(ii,kk), &
+                                Outp_convadd(ii,kk),Level_kind_diag,1,1,1,&
+                                Outp_nbit(ii,kk) )
                         endif
                      else  ! momentum
                         call ecris_fst2 (data3d, 1,l_ni, 1,l_nj, hybm     , &
-                                         Outp_var_S(ii,kk),1.,0.,Level_kind_ip1, &
+                             Outp_var_S(ii,kk),Outp_convmult(ii,kk), &
+                             Outp_convadd(ii,kk),Level_kind_ip1, &
                                          G_nk,indo,nko,Outp_nbit(ii,kk) )
                         if (write_diag_lev) then
-                           call ecris_fst2 (data3d(1,1,G_nk+1), 1,l_ni, 1,l_nj, hybm(G_nk+2), &
-                                Outp_var_S(ii,kk),1.,0.,Level_kind_diag,1,1,1, Outp_nbit(ii,kk) )
+                           call ecris_fst2 (data3d(1,1,G_nk+1), &
+                                1,l_ni, 1,l_nj, hybm(G_nk+2), &
+                                Outp_var_S(ii,kk),Outp_convmult(ii,kk), &
+                                Outp_convadd(ii,kk),Level_kind_diag,1,1,1, &
+                                Outp_nbit(ii,kk) )
                         endif
                      endif
 
@@ -268,7 +274,8 @@
                                     1,l_ni, 1,l_nj, 1,l_ni, 1,l_nj, 'linear', .false. )
 
                      call ecris_fst2 ( buso_pres, 1,l_ni, 1,l_nj    , &
-                             level(1,levset),Outp_var_S(ii,kk),1.,0., &
+                             level(1,levset),Outp_var_S(ii,kk),&
+                             Outp_convmult(ii,kk),Outp_convadd(ii,kk), &
                              2,nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk) )
 
                   endif

@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r tstpdyn -  Dynamics timestep for LU and GY grids
+!**s/r tstpdyn -  Performs a dynamical timestep of the model
 !
       subroutine tstpdyn ( F_fnitraj )
       implicit none
@@ -22,10 +22,21 @@
       integer F_fnitraj
 
 !author
-!     Claude Girard  - summer 2015
+!     Alain Patoine ( after version v1_93 of tstpdyn2 )
 !
 !revision
-! v4_80 - Desgagne M.       - initial LAM version
+! v2_00 - Desgagne M.       - initial MPI version
+! v2_10 - Tanguay M.        - store TRAJ for 4D-Var
+! v2_30 - Edouard S.        - introduce Ncn
+! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_03 - Tanguay M.        - Adjoint NoHyd configuration
+! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
+! v3_20 - Tanguay M.        - Option of storing instead of redoing TRAJ
+! v3_21 - Desgagne M.       - introduce new timing routines
+! v4_04 - Tanguay M.        - Staggered version TL/AD
+! v4_05 - Girard C.         - Added boundary condition for top piloting
+! v4_40 - Tanguay M.        - Revision TL/AD
+! v4_70 - Gaudreault S.     - Simplify interface for gmm pointer
 !
 !arguments
 !  Name        I/O                 Description
@@ -61,11 +72,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (.not. G_lam) then
-         call tstpdyn_gu ( F_fnitraj )
-         return
-      endif
-
       gmmstat = gmm_get (gmmk_ut0_s, ut0)
       gmmstat = gmm_get (gmmk_vt0_s, vt0)
       gmmstat = gmm_get (gmmk_tt0_s, tt0)
@@ -117,8 +123,13 @@
       gmmstat = gmm_get('TR/HU:M' ,hut1)
       gmmstat = gmm_get('TR/HU:P' ,hut0)
 
-      gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
-      gmmstat = gmm_get (gmmk_nest_q_s, nest_q)
+      if (G_lam) then
+         gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
+         gmmstat = gmm_get (gmmk_nest_q_s, nest_q)
+      else
+         nest_t => ut1
+         nest_q => ut1
+      endif
 
       i0= 1   +pil_w
       in= l_ni-pil_e
@@ -126,41 +137,52 @@
       jn= l_nj-pil_n
       k0= 1+Lam_gbpil_T
 
+      if (.not. G_lam) then
+         do j = 1, l_nj
+            ut1(:,j,:) = ut1(:,j,:) * geomg_cy_8(j)  / Dcst_rayt_8
+            vt1(:,j,:) = vt1(:,j,:) * geomg_cyv_8(j) / Dcst_rayt_8
+            ut0(:,j,:) = ut0(:,j,:) * geomg_cy_8(j)  / Dcst_rayt_8
+            vt0(:,j,:) = vt0(:,j,:) * geomg_cyv_8(j) / Dcst_rayt_8
+         end do
+      end if
+
+      if (Lun_debug_L) write(Lun_out,1000)
+
       if ( Orh_icn .eq. 1 ) then       ! Compute RHS
 
          call timing_start2 ( 20, 'RHS', 10 )
 
-         call rhs &
-            (orhsu, orhsv, orhsc, orhst, orhsw, orhsf, orhsx, orhsq, &
-             ruw1,rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,xdt1,qdt1,hut1 , &
-             fis0, l_minx,l_maxx,l_miny,l_maxy,l_nk)
+!        Compute the right-hand sides of the governing equations
+         call rhs (orhsu, orhsv, orhsc, orhst, orhsw, orhsf, orhsx, orhsq, &
+                   ruw1,rvw1,ut1,vt1,wt1,tt1,st1,zdt1,qt1,xdt1,qdt1,hut1,fis0, &
+                   l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
          call timing_stop (20)
 
          call frstgss ()
 
-! Lateral BCs for LAM configurations
+! Perform time interpolation of Lateral BCs for LAM configurations
 
-         if ( .not. Grd_yinyang_L ) call nest_bcs ()
+         if ( G_lam .and. .not. Grd_yinyang_L ) call nest_bcs ()
 
       endif
 
-! Semi-Lagrangian advection
-
-      call timing_start2 (21, 'ADW', 10)
-
-      if (Advection_lam_legacy) then
-         call itf_adx_main (F_fnitraj)
-      else
+!     Perform Semi-Lagrangian advection
+      
+      if (G_lam .and. .not. Advection_lam_legacy) then
+         call timing_start2 (21, 'ADV', 10)
          call  adv_main ( F_fnitraj, Orh_icn               ,&
                           ut0, vt0 , zdt0, ut1, vt1 , zdt1 ,&
                           orhsu, rhsu, orhsv, rhsv, orhsc  ,&
                           rhsc, orhst,  rhst, orhsf, rhsf  ,&
                           orhsq, rhsq, orhsw, rhsw, orhsx  ,&
                       rhsx,l_minx,l_maxx,l_miny,l_maxy,l_nk )
+         call timing_stop(21)
+      else
+         call timing_start2 (21, 'ADW', 10)
+         call itf_adx_main (F_fnitraj)
+         call timing_stop(21)
       endif
-    
-      call timing_stop(21)
 
       call timing_start2 (22, 'PRE', 10)
 
@@ -184,6 +206,8 @@
 
       call timing_stop (22)
 
+      if ( Lun_debug_L ) write (Lun_out,1005) Schm_itnlh
+
       ni = l_maxx-l_minx+1
       nj = l_maxy-l_miny+1
       allocate (nl_u(ni,nj,l_nk),nl_v(ni,nj,l_nk),nl_t(ni,nj,l_nk), &
@@ -194,14 +218,14 @@
       nj = ldnh_maxy-ldnh_miny+1
       allocate ( rhs_sol(ni,nj,l_nk), lhs_sol(ni,nj,l_nk) )
 
-      do iln= 1, Schm_itnlh
+      do iln=1,Schm_itnlh
 
          call timing_start2 ( 23, 'NLI', 10 )
 
 !        Compute non-linear components and combine them
 !        to obtain final right-hand side of the elliptic problem
          icln=Orh_icn*iln
-         if ( .not. Grd_yinyang_L ) icln=icln+1
+         if ( G_lam .and. .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f, nl_x     ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc ,&
                    fis0, nl_b, xdt0, qdt0, hut0, l_minx,l_maxx,l_miny,l_maxy,&
@@ -235,10 +259,25 @@
          call yyg_xchng (wt0, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .false., 'CUBIC')
 
-      deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,nl_x,&
-                  rhs_sol,lhs_sol)
+      if (.not. G_lam) then
+         do j = 1, l_nj
+            ut1(:,j,:) = ut1(:,j,:) * geomg_invcy_8(j)  * Dcst_rayt_8
+            vt1(:,j,:) = vt1(:,j,:) * geomg_invcyv_8(j) * Dcst_rayt_8
+            ut0(:,j,:) = ut0(:,j,:) * geomg_invcy_8(j)  * Dcst_rayt_8
+            vt0(:,j,:) = vt0(:,j,:) * geomg_invcyv_8(j) * Dcst_rayt_8
+         end do
+      end if
+
+      deallocate (nl_u,nl_v,nl_t,nl_c,nl_f,nl_b,nl_w,nl_x,rhs_sol,lhs_sol)
 !
 !     ---------------------------------------------------------------
 !
+ 1000 format( &
+       3X,'PERFORM A DYNAMICAL STEP: (S/R TSTPDYN)', &
+      /3X,'========================================',/)
+ 1005 format( &
+       3X,'ITERATING SCHM_ITNLH=',I3,' TIMES TO SOLVE NON-LINEAR ', &
+          'HELMHOLTZ PROBLEM')
+
       return
       end

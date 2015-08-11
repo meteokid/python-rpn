@@ -67,6 +67,9 @@
 
       if (.not.G_lam) call glhalo_init()
 
+!     Initializing for spectral nudging
+      if (G_lam) call spn_init()
+
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
 

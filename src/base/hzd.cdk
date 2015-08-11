@@ -70,6 +70,12 @@
                          Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
                          Hzd_xevec_8, Hzd_xeval_8
 
+       real*8, dimension(:,:,:), pointer :: Hzd_geom_q => null()
+       real*8, dimension(:,:,:), pointer :: Hzd_geom_u => null()
+       real*8, dimension(:,:,:), pointer :: Hzd_geom_v => null()
+
+       common /Hzd_pntr/ Hzd_geom_q, Hzd_geom_u, Hzd_geom_v
+
        integer, parameter :: HZD_MAXTR   = 500
        integer, parameter :: HZD_MAXPROF = 500
 

@@ -41,11 +41,13 @@
       integer Grid_id (MAXGRID1), Grid_stride(MAXGRID1)
       integer Grid_ig3(MAXGRID1), Grid_ig4   (MAXGRID1)
       integer Grid_sets
+      integer Grid_comm_id, Grid_comm_setno, Grid_iome, Grid_nnodes
 
       COMMON /Grid_l/ Grid_reduc
       COMMON /Grid_i/ Grid_ig1,Grid_ig2,Grid_ig3,Grid_ig4
       COMMON /Grid_i/ Grid_x0,Grid_x1,Grid_y0,Grid_y1
-      COMMON /Grid_i/ Grid_id,Grid_stride,Grid_sets
+      COMMON /Grid_i/ Grid_id,Grid_stride,Grid_sets,Grid_comm_id
+      COMMON /Grid_i/ Grid_comm_setno, Grid_iome, Grid_nnodes
       COMMON /Grid_c/ Grid_etikext_s
 
 

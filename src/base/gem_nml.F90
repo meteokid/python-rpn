@@ -56,7 +56,7 @@
          return
       endif
 
-      Advection_lam_legacy= .true.
+      Advection_lam_legacy= .false.
       if (.not. G_lam) Advection_lam_legacy= .true.
 
       Rstri_glbcol_L = .false.
@@ -111,6 +111,17 @@
       Lam_current_S = '20000101.000000'
       Lam_acidtest_L= .false.
 
+      Spn_nudging_S = ' '
+      Spn_start_lev = 1.0
+      Spn_up_const_lev = 0.0
+      Spn_trans_shape_S = 'LINEAR'
+      Spn_relax_hours = 10.
+      Spn_cutoff_scale_small=100.
+      Spn_cutoff_scale_large=300.
+      Spn_step=21600
+      Spn_weight_L = .false.
+      Spn_wt_pwr=2
+
       Zblen_L   = .false.
 
       Cstv_dt_8    = 900
@@ -148,7 +159,6 @@
       Vspng_nk       = 0
       Vspng_coeftop  = -1.
       Vspng_njpole   = 3
-      Vspng_vec_L    = .false.
       Vspng_zmean_L  = .false.
 
       Zdot_divHLM_L  = .false.
