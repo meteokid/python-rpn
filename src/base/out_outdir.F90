@@ -17,7 +17,7 @@
 !
 
       subroutine out_outdir (upperlimit)
-#include <must_use.hf>
+use iso_c_binding
       use timestr_mod, only: timestr_prognum,timestr_unitfact
       implicit none
 #include <arch_specific.hf>

@@ -15,7 +15,7 @@
 !**s/r gem_muststop
 !
       logical function gem_muststop (F_finalstep)
-#include <must_use.hf>
+use iso_c_binding
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
       implicit none
 #include <arch_specific.hf>

@@ -16,7 +16,7 @@
 !**s/r set_sor - initialization of all control parameters for output
 !
       subroutine set_sor()
-#include <must_use.hf>
+use iso_c_binding
       use phy_itf, only: phymeta,phy_getmeta
       use timestr_mod
       implicit none

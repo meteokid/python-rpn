@@ -16,7 +16,7 @@
 !**s/r set_world_view
 
       subroutine set_world_view
-#include <must_use.hf>
+use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 

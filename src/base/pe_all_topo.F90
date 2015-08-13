@@ -16,7 +16,7 @@
 !**s/r pe_all_topo - First initialization steps
 
       subroutine pe_all_topo
-#include <must_use.hf>
+use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 

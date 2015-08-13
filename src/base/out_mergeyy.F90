@@ -16,7 +16,7 @@
 !**s/r out_mergeyy
 !
       subroutine out_mergeyy (F_vec, n)
-#include <must_use.hf>
+use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 

@@ -1,5 +1,5 @@
 #!/bin/ksh
-COMP_ARCH_DEFAULT=intel13sp1u2
+COMP_ARCH_DEFAULT=${COMP_ARCH_DEFAULT:-intel13sp1u2}
 [[ x$BASE_ARCH == xAIX-powerpc7 ]] && COMP_ARCH_DEFAULT=xlf13
 if [[ x"$1" != x"savehist=500" ]] ; then
    export COMP_ARCH=${1:-${COMP_ARCH_DEFAULT}}

@@ -18,7 +18,7 @@
       subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  ,&
                               l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf,&
                               ip2,ip3 )
-#include <must_use.hf>
+use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 
