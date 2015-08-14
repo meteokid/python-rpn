@@ -2,7 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 
 """
-  Module librmn.fstd98 contains python wrapper to main librmn's fstd98, convip C functions along wiht helper functions
+  Module librmn.fstd98 contains python wrapper to main librmn's fstd98, convip C functions along with helper functions
 
  @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
@@ -27,7 +27,7 @@ isListType = lambda x: type(x) in (list,tuple)
 class FSTDError(RMNError):
     pass
 
-def dtype_fst2numpy(datyp):
+def dtype_fst2numpy(datyp,nbits=None):
     """Return the numpy dtype datyp for the given fst datyp
 
     numpy_dtype = dtype_fst2numpy(fst_datyp)
@@ -60,7 +60,10 @@ def dtype_fst2numpy(datyp):
     datyp = (datyp-128 if datyp>=128 else datyp)
     datyp = (datyp-64 if datyp>=64 else datyp)
     try:
-        return _rc.FST_DATYP2NUMPY_LIST[datyp]
+        if nbits==64:
+            return _rc.FST_DATYP2NUMPY_LIST64[datyp]
+        else:
+            return _rc.FST_DATYP2NUMPY_LIST[datyp]
     except:
         raise FSTDError()
 
@@ -647,9 +650,9 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     """Reads the next record that matches the research keys
     Only provided parameters with value different than default
     are used as selction criteria
-    The search begins at the position given by record key/handle.
+    The search begins right after at the position given by record key/handle.
 
-    record = fstlirs(key, iunit, ... )
+    record = fstlirx(key, iunit, ... )
 
     Args:
         key     : key/handle from where to start the search
@@ -777,7 +780,7 @@ def fstluk(key,dtype=None,rank=None):
     if params is None:
         raise FSTDError()
     (cni,cnj,cnk) = (_ct.c_int(),_ct.c_int(),_ct.c_int())
-    if dtype is None: dtype = dtype_fst2numpy(params['datyp'])
+    if dtype is None: dtype = dtype_fst2numpy(params['datyp'],params['nbits'])
     _rp.c_fstluk.argtypes = (_npc.ndpointer(dtype=dtype),_ct.c_int,
         _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
     wantrank = 1 if rank is None else rank
@@ -1423,7 +1426,7 @@ def convertPKtoIP(pk1,pk2,pk3):
 
 
 def EncodeIp(rp1,rp2,rp3):
-    """Produce encode (ip1,ip2,ip3) triplet from (real value,kind) pairs
+    """Produce encoded (ip1,ip2,ip3) triplet from (real value,kind) pairs
 
     (ip1,ip2,ip3) = EncodeIp(rp1,rp2,rp3)
 

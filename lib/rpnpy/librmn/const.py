@@ -158,6 +158,18 @@ FST_DATYP2NUMPY_LIST = { #TODO: review
     8: _np.complex64 ,# complex IEEE
 }
 
+FST_DATYP2NUMPY_LIST64 = { #TODO: review
+    0: _np.uint64  ,# binary, transparent
+    1: _np.float64 ,# floating point
+    2: _np.uint64  ,# unsigned integer
+    3: _np.uint64  ,# character (R4A in an integer)
+    4: _np.int64   ,# signed integer
+    5: _np.float64 ,# IEEE floating point
+    6: _np.float64 ,# floating point (16 bit, made for compressor)
+    #7: _np.uint8   ,# character string
+    8: _np.complex128 ,# complex IEEE
+}
+
 FST_RDE_META_DEFAULT = {
     'dateo' : 0,
     'deet'  : 0,
