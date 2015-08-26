@@ -311,6 +311,8 @@ def fstecr(iunit,data,meta,rewrite=True):
         _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,_ct.c_char_p,
         _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int)
     #TODO: what if data is not 32 bits, should we copy to 32bits field, modify nijk? 
+    if not data.flags['F_CONTIGUOUS']:
+        data = _np.asfortranarray(data, dtype=data.dtype)
     istat = _rp.c_fstecr(data, data, npak, iunit,
                 meta2['dateo'], meta2['deet'], meta2['npas'],
                 meta2['ni'],    meta2['nj'],   meta2['nk'],
@@ -740,7 +742,7 @@ def fstlnk(unitList):
         raise ValueError("fstlnk: must provide a valid iunit: %d" % (min(unitList)))
     if len(unitList) > 40: #TODO: check this limit
         raise ValueError("fstlnk: Too many files (max 40): %d" % (len(unitList)))
-    cunitList = _np.asarray(unitList, dtype=_np.intc)
+    cunitList = _np.asfortranarray(unitList, dtype=_np.intc)
     ## istat = _rp.c_xdflnk(cunitList,len(cunitList))
     cnunits = _ct.c_int(len(cunitList))
     istat = _rp.f_fstlnk(cunitList,_ct.byref(cnunits))
@@ -795,6 +797,9 @@ def fstluk(key,dtype=None,rank=None):
     myshape[0:maxrank] = params['shape'][0:maxrank]
     params['shape'] = myshape
     #raise ValueError("fstluk (%d, %d, %d) r=%d, s=%s" % (wantrank, minrank, len(params['shape']),rank, repr(params['shape'][0:rank])))
+    #TODO: if provided data array:
+    ## if not (data.dtype == dtype and data.flags['F_CONTIGUOUS']):
+    ##     data = _np.asfortranarray(data, data.dtype=dtype)    
     data = _np.empty(params['shape'],dtype=dtype,order='FORTRAN')
     istat = _rp.c_fstluk(data,key,_ct.byref(cni),_ct.byref(cnj),_ct.byref(cnk))
     if istat < 0:

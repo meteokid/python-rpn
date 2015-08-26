@@ -9,10 +9,8 @@
 
 import ctypes as _ct
 import numpy  as _np
-import numpy.ctypeslib as _npc
 from . import proto as _rp
 from . import const as _rc
-from . import base as _rb
 from . import RMNError
 
 #TODO: make sure caller can provide allocated array (recycle mem)
@@ -143,7 +141,21 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None, ig3=Non
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
     if (type(ni),type(nj),type(grtyp),type(grref),type(ig1),type(ig2),type(ig3),type(ig4),type(ax),type(ay)) != (int,int,str,str,int,int,int,int,_np.ndarray,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
-    #TODO: check ni,nj ... ax,ay dims consis
+    if grtyp in ('Z','z','#'):
+        if ax.size != ni or ay.size != nj:
+            raise EzscintError('ezgdef_fmem: size mismatch for provided ax,ay compared to ni,nj')
+    elif grtyp in ('Y','y'):
+        if ax.shape != (ni,nj) or ay.shape != (ni,nj):
+            raise EzscintError('ezgdef_fmem: size mismatch for provided ax,ay compared to ni,nj')
+    elif grtyp in ('U','u'):
+        pass
+        #TODO: check ni,nj ... ax,ay dims consis for U grids
+    else:
+        raise EzscintError('ezgdef_fmem: Unknown grid type: '+grtyp)
+    if not (ax.dtype == _np.float32 and ax.flags['F_CONTIGUOUS']):
+        ax = _np.asfortranarray(ax, dtype=_np.float32)    
+    if not (ay.dtype == _np.float32 and ay.flags['F_CONTIGUOUS']):
+        ay = _np.asfortranarray(ay, dtype=_np.float32)    
     gdid = _rp.c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
     if gdid >= 0:
         return gdid
@@ -183,9 +195,7 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode,subgridid):
             subgridid = gridParams['subgridid']
         except:
             raise TypeError('ezgdef_fmem: provided incomplete grid description')
-    csubgridid = subgridid
-    if type(subgridid) in (list,tuple):
-        csubgridid = _np.array(subgridid,dtype=_np.intc,order='FORTRAN')
+    csubgridid = _np.asfortranarray(subgridid,dtype=_np.intc)
     if (type(ni),type(nj),type(grtyp),type(grref),type(vercode),type(csubgridid)) != (int,int,str,str,int,_np.ndarray):
         raise TypeError('ezgdef_fmem: wrong input data type')
     nsubgrids = csubgridid.size
@@ -235,6 +245,8 @@ def gdsetmask(gdid, mask):
         raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray Got %s, %s" % (type(gdid),type(mask)))
     if not mask.dtype in (_np.intc,_np.int32):
         raise TypeError("gdsetmask: Expecting mask arg of type numpy,intc Got %s, %s" % (type(mask.dtype)))
+    if not mask.flags['F_CONTIGUOUS']:
+        mask = _np.asfortranarray(mask, dtype=mask.dtype)
     istat = _rp.c_gdsetmask(gdid, mask)
     if istat < 0:
         raise EzscintError()
@@ -312,7 +324,7 @@ def ezget_subgridids(super_gdid):
         EzscintError on any other error
     """
     nsubgrids = ezget_nsubgrids(super_gdid)
-    cgridlist = _np.empty(nsubgrids,dtype=_np.intc)
+    cgridlist = _np.empty(nsubgrids,dtype=_np.intc,order='FORTRAN')
     istat = _rp.c_ezget_subgridids(super_gdid, cgridlist)
     if istat >= 0:
         return cgridlist.tolist()
@@ -541,6 +553,10 @@ def gdgaxes(gdid,ax=None,ay=None):
         ay = _np.empty(ayshape,dtype=_np.float32,order='FORTRAN')
     elif not(type(ax) == _np.ndarray and type(ay) == _np.ndarray):
         raise TypeError("gdgaxes: Expecting ax,ay as 2 numpy.ndarray, Got %s, %s" % (type(ax),type(ay)))
+    if not (ax.dtype == _np.float32 and ax.flags['F_CONTIGUOUS']):
+        ax = _np.asfortranarray(ax, dtype=_np.float32)
+    if not (ay.dtype == _np.float32 and ay.flags['F_CONTIGUOUS']):
+        ay = _np.asfortranarray(ay, dtype=_np.float32)
     if ax.shape != axshape or ay.shape != ayshape:
         raise TypeError("gdgaxes: provided ax, ay have the wrong shape")
     istat = _rp.c_gdgaxes(gdid,ax,ay)
@@ -591,6 +607,10 @@ def gdll(gdid,lat=None,lon=None):
         lon = _np.empty(gridParams['shape'],dtype=_np.float32,order='FORTRAN')
     elif not(type(lat) == _np.ndarray and type(lon) == _np.ndarray):
         raise TypeError("gdll: Expecting lat,lon as 2 numpy.ndarray, Got %s, %s" % (type(lat),type(lon)))
+    if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
+        lat = _np.asfortranarray(lat, dtype=_np.float32)
+    if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
+        lon = _np.asfortranarray(lon, dtype=_np.float32)
     if lat.shape != gridParams['shape'] or lon.shape != gridParams['shape']:
         raise TypeError("gdll: provided lat,lon have the wrong shape")
     istat = _rp.c_gdll(gdid,lat,lon)
@@ -625,9 +645,19 @@ def gdxyfll(gdid, lat, lon):
         raise TypeError("gdxyfll: expecting args of type int, Got %s" % (type(gdid)))
     (clat,clon) = lat,lon
     if type(lat) in (list,tuple):
-        clat = _np.array(lat,dtype=_np.float32,order='FORTRAN')
+        clat = _np.asfortranarray(lat,dtype=_np.float32)
+    elif type(lat) == _np.ndarray:
+        if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
+            clat = _np.asfortranarray(lat,dtype=_np.float32)
+    else:
+        raise TypeError("y: provided lat must be arrays")
     if type(lon) in (list,tuple):
-        clon = _np.array(lon,dtype=_np.float32,order='FORTRAN')
+        clon = _np.asfortranarray(lon,dtype=_np.float32)
+    elif type(lon) == _np.ndarray:
+        if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
+            clon = _np.asfortranarray(lon,dtype=_np.float32)
+    else:
+        raise TypeError("y: provided lon must be arrays")
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat,lon should have the same size")
     cx = _np.empty(clat.shape,dtype=_np.float32,order='FORTRAN')
@@ -666,9 +696,19 @@ def gdllfxy(gdid, xpts, ypts):
         raise TypeError("gdllfxy: expecting args of type int, Got %s" % (type(gdid)))
     (cx,cy) = (xpts,ypts)
     if type(cx) in (list,tuple):
-        cx = _np.array(xpts,dtype=_np.float32,order='FORTRAN')
+        cx = _np.asfortranarray(xpts,dtype=_np.float32)
+    elif type(cx) == _np.ndarray:
+        if not (cx.dtype == _np.float32 and cx.flags['F_CONTIGUOUS']):
+            cx = _np.asfortranarray(xpts,dtype=_np.float32)
+    else:
+        raise TypeError("y: provided xpts must be arrays")
     if type(cy) in (list,tuple):
-        cy = _np.array(ypts,dtype=_np.float32,order='FORTRAN')
+        cy = _np.asfortranarray(ypts,dtype=_np.float32)
+    elif type(cy) == _np.ndarray:
+        if not (cy.dtype == _np.float32 and cy.flags['F_CONTIGUOUS']):
+            cy = _np.asfortranarray(ypts,dtype=_np.float32)
+    else:
+        raise TypeError("y: provided ypts must be arrays")
     if cx.size != cy.size:
         raise TypeError("gdllfxy: provided xpts,ypts should have the same size")
     clat = _np.empty(cx.shape,dtype=_np.float32,order='FORTRAN')
@@ -710,8 +750,10 @@ def gdgetmask(gdid, mask=None):
             raise TypeError("gdgetmask: Provided mask array have inconsistent shape compered to the grid")
         if not mask.dtype in (_np.intc,_np.int32):
             raise TypeError("gdsetmask: Expecting mask arg of type numpy,intc Got %s, %s" % (type(mask.dtype)))
+        if not mask.flags['F_CONTIGUOUS']:
+            mask = _np.asfortranarray(mask, dtype=mask.dtype)
     else:
-        mask = _np.empty(gridParams['shape'],dtype=_np.intc)
+        mask = _np.empty(gridParams['shape'], dtype=_np.intc)
     istat = _rp.c_gdgetmask(gdid, mask)
     if istat < 0:
         raise EzscintError()
@@ -749,11 +791,15 @@ def ezsint(gdidout,gdidin,zin,zout=None):
     if zin.shape != gridParams['shape']:
         raise TypeError("ezsint: Provided zin array have inconsistent shape compered to the input grid")
     dshape = ezgprm(gdidout)['shape']
+    if not (zin.dtype == _np.float32 and zin.flags['F_CONTIGUOUS']):
+        zin = _np.asfortranarray(zin, dtype=_np.float32)    
     if zout:
         if not (type(zout) == _np.ndarray):
             raise TypeError("ezsint: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
         if zout.shape != dshape:
             raise TypeError("ezsint: Provided zout array have inconsistent shape compered to the output grid")
+        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
+            zout = _np.asfortranarray(zout, dtype=_np.float32)    
     else:
         zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
     istat = _rp.c_ezsint(zout, zin)
@@ -761,7 +807,7 @@ def ezsint(gdidout,gdidin,zin,zout=None):
         return zout
     raise EzscintError()
 
-
+    
 def ezuvint(gdidout,gdidin,uuin,vvin,uuout=None,vvout=None):
     """Vectorial horizontal interpolation
 
@@ -787,12 +833,20 @@ def ezuvint(gdidout,gdidin,uuin,vvin,uuout=None,vvout=None):
     gridParams = ezgxprm(gdidin)
     if uuin.shape != gridParams['shape'] or vvin.shape != gridParams['shape']:
         raise TypeError("ezuvint: Provided uuin,vvin array have inconsistent shape compered to the input grid")
+    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
+        uuin = _np.asfortranarray(uuin, dtype=_np.float32)    
+    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
+        vvin = _np.asfortranarray(vvin, dtype=_np.float32)      
     dshape = ezgprm(gdidout)['shape']
     if uuout and vvout:
         if not (type(uuout) == _np.ndarray and type(vvout) == _np.ndarray):
             raise TypeError("ezuvint: Expecting uuout,vvout of type numpy.ndarray, Got %s" % (type(uuout)))
         if uuout.shape != dshape or vvout.shape != dshape:
             raise TypeError("ezuvint: Provided uuout,vvout array have inconsistent shape compered to the output grid")
+        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
+            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
+        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
+            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
     else:
         uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
         vvout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
@@ -832,11 +886,17 @@ def gdllsval(gdid,lat,lon,zin,zout=None):
     if lat.shape != lon.shape:
         raise TypeError("gdllsval: Provided lat,lon arrays have inconsistent shapes")
     dshape = lat.shape
+    if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
+        lat = _np.asfortranarray(lat, dtype=_np.float32)
+    if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
+        lon = _np.asfortranarray(lon, dtype=_np.float32)
     if zout:
         if not (type(zout) == _np.ndarray):
             raise TypeError("gdllsval: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
         if zout.shape != dshape:
             raise TypeError("gdllsval: Provided zout array have inconsistent shape compered to lat,lon arrays")
+        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
+            zout = _np.asfortranarray(zout, dtype=_np.float32)
     else:
         zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
     istat = _rp.c_gdllsval(gdid, zout, zin, lat, lon, lat.size)
@@ -875,11 +935,19 @@ def gdxysval(gdid,xpts,ypts,zin,zout=None):
     if xpts.shape != ypts.shape:
         raise TypeError("gdxysval: Provided xpts,ypts arrays have inconsistent shapes")
     dshape = xpts.shape
+    if not (xpts.dtype == _np.float32 and xpts.flags['F_CONTIGUOUS']):
+        xpts = _np.asfortranarray(xpts, dtype=_np.float32)
+    if not (ypts.dtype == _np.float32 and ypts.flags['F_CONTIGUOUS']):
+        ypts = _np.asfortranarray(ypts, dtype=_np.float32)
+    if not (zin.dtype == _np.float32 and zin.flags['F_CONTIGUOUS']):
+        zin = _np.asfortranarray(zin, dtype=_np.float32)
     if zout:
         if not (type(zout) == _np.ndarray):
             raise TypeError("gdxysval: Expecting zout of type numpy.ndarray, Got %s" % (type(zout)))
         if zout.shape != dshape:
             raise TypeError("gdxysval: Provided zout array have inconsistent shape compered to xpts,ypts arrays")
+        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
+            zout = _np.asfortranarray(zout, dtype=_np.float32)
     else:
         zout = _np.empty(dshape,dtype=zin.dtype,order='FORTRAN')
     istat = _rp.c_gdxysval(gdid, zout, zin, xpts, ypts, xpts.size)
@@ -921,12 +989,22 @@ def gdllvval(gdid,lat,lon,uuin,vvin,uuout=None,vvout=None):
         raise TypeError("gdllvval: expecting lon arg of type numpy.ndarray, Got %s" % (type(lon)))
     if lat.shape != lon.shape:
         raise TypeError("gdllvval: Provided lat,lon arrays have inconsistent shapes")
+    if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
+        lat = _np.asfortranarray(lat, dtype=_np.float32)
+    if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
+        lon = _np.asfortranarray(lon, dtype=_np.float32)
+    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
+        uuin = _np.asfortranarray(uuin, dtype=_np.float32)
+    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
+        vvin = _np.asfortranarray(vvin, dtype=_np.float32)
     dshape = lat.shape
     if uuout:
         if not (type(uuout) == _np.ndarray):
             raise TypeError("gdllvval: Expecting uuout of type numpy.ndarray, Got %s" % (type(uuout)))
         if uuout.shape != dshape:
             raise TypeError("gdllvval: Provided uuout array have inconsistent shape compered to lat,lon arrays")
+        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
+            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
     else:
         uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
     if vvout:
@@ -934,6 +1012,8 @@ def gdllvval(gdid,lat,lon,uuin,vvin,uuout=None,vvout=None):
             raise TypeError("gdllvval: Expecting vvout of type numpy.ndarray, Got %s" % (type(vvout)))
         if vvout.shape != dshape:
             raise TypeError("gdllvval: Provided vvout array have inconsistent shape compered to lat,lon arrays")
+        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
+            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
     else:
         vvout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
     istat = _rp.c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, lat.size)
@@ -975,12 +1055,22 @@ def gdxyvval(gdid,xpts,ypts,uuin,vvin,uuout=None,vvout=None):
         raise TypeError("dgxyvval: expecting ypts arg of type numpy.ndarray, Got %s" % (type(ypts)))
     if xpts.shape != ypts.shape:
         raise TypeError("dgxyvval: Provided xpts,ypts arrays have inconsistent shapes")
+    if not (xpts.dtype == _np.float32 and xpts.flags['F_CONTIGUOUS']):
+        xpts = _np.asfortranarray(xpts, dtype=_np.float32)
+    if not (ypts.dtype == _np.float32 and ypts.flags['F_CONTIGUOUS']):
+        ypts = _np.asfortranarray(ypts, dtype=_np.float32)
+    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
+        uuin = _np.asfortranarray(uuin, dtype=_np.float32)
+    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
+        vvin = _np.asfortranarray(vvin, dtype=_np.float32)
     dshape = xpts.shape
     if uuout:
         if not (type(uuout) == _np.ndarray):
             raise TypeError("dgxyvval: Expecting uuout of type numpy.ndarray, Got %s" % (type(uuout)))
         if uuout.shape != dshape:
             raise TypeError("dgxyvval: Provided uuout array have inconsistent shape compered to xpts,ypts arrays")
+        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
+            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
     else:
         uuout = _np.empty(dshape,dtype=uuin.dtype,order='FORTRAN')
     if vvout:
@@ -988,6 +1078,8 @@ def gdxyvval(gdid,xpts,ypts,uuin,vvin,uuout=None,vvout=None):
             raise TypeError("dgxyvval: Expecting vvout of type numpy.ndarray, Got %s" % (type(vvout)))
         if vvout.shape != dshape:
             raise TypeError("dgxyvval: Provided vvout array have inconsistent shape compered to xpts,ypts arrays")
+        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
+            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
     else:
         vvout = _np.empty(dshape,dtype=vvin.dtype,order='FORTRAN')
     istat = _rp.c_gdxyvval(gdid, uuout, vvout, uuin, vvin, xpts, ypts, xpts.size)

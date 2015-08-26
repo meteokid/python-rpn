@@ -55,7 +55,7 @@ def getusername(userstr,ufilter):
     return user
 
 
-def getstats(myfile,myusers,myversions,mymonths,ufilter,vfilter,lmergeminor):
+def getstats(myfile,myusers,myversions,mymonths,mymonths2,ufilter,vfilter,lmergeminor):
     """Parse a stat file to count users and version
 
     Stat file format:
@@ -105,13 +105,21 @@ def getstats(myfile,myusers,myversions,mymonths,ufilter,vfilter,lmergeminor):
             if not v in mymonths[month].keys():
                 mymonths[month][v] = 0
             mymonths[month][v] += 1
-
+            
+            if not month in mymonths2.keys():
+                mymonths2[month] = {}
+            if not v in mymonths2[month].keys():
+                mymonths2[month][v] = {}
+            if not user in mymonths2[month][v].keys():
+                mymonths2[month][v][user] = 0
+            mymonths2[month][v][user] += 1
+                
             if not v in myversions.keys():
                 myversions[v] = {}
             if not user in myversions[v].keys():
                 myversions[v][user] = 0
             myversions[v][user] += 1
-    return myusers,myversions,mymonths
+    return myusers,myversions,mymonths,mymonths2
 
 
 def printstats(mymsg,myarray,ldetails,ufilter,vfilter):
@@ -167,8 +175,9 @@ if __name__ == "__main__":
     myusers    = {}
     myversions = {}
     mymonths   = {}
+    mymonths2  = {}
     for myfile in args:
-        (myusers,myversions,mymonths) = getstats(myfile,myusers,myversions,mymonths,ufilterlist,vfileterlist,options.lmergeminor)
+        (myusers,myversions,mymonths,mymonths2) = getstats(myfile,myusers,myversions,mymonths,mymonths2,ufilterlist,vfileterlist,options.lmergeminor)
     (total,onetime) = (0,0)
     
     if options.lusers:
@@ -176,8 +185,13 @@ if __name__ == "__main__":
     if options.lversions: 
         (total1,onetime1) = printstats('#==== Per Version Stats ====',myversions,options.ldetails,options.ufilter,options.vfilter)
         if total == 0: (total,onetime) = (total1,onetime1)
+    if options.lusers and options.lmonths:
+        for m in mymonths2.keys():
+            for v in mymonths2[m].keys():
+                mymonths2[m][v] = len(mymonths2[m][v].keys())
+        (total1,onetime1) = printstats('#==== Per Month User Stats ====',mymonths2,options.ldetails,options.ufilter,options.vfilter)
     if options.lmonths: 
-        (total1,onetime1) = printstats('#==== Per Month Stats ====',mymonths,options.ldetails,options.ufilter,options.vfilter)
+        (total1,onetime1) = printstats('#==== Per Month Usage Stats ====',mymonths,options.ldetails,options.ufilter,options.vfilter)
         if total == 0: (total,onetime) = (total1,onetime1)
 
     print '#==== Stats Summary ===='
@@ -186,4 +200,3 @@ if __name__ == "__main__":
     print 'Total Version = ',len(myversions)
     print 'Total User    = ',len(myusers), "(onetime user=",onetime,')'
     print 'Total Usage   = ',total
-        

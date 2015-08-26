@@ -8,6 +8,7 @@
 """
 
 import ctypes as _ct
+import numpy  as _np
 from . import proto as _rp
 from . import const as _rc
 from . import RMNError
@@ -156,6 +157,8 @@ def crc32(crc,buf):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value    
     """
+    if not (buf.dtype == _np.uint32 and buf.flags['F_CONTIGUOUS']):
+        buf = _np.asfortranarray(buf, dtype=_np.uint32)
     return _rp.c_crc32(crc,buf,buf.size*4)
 
 #--- base -----------------------------------------------------------
@@ -476,10 +479,11 @@ def newdate(imode,idate1,idate2=0):
        (cidate2,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
     elif imode == -3:
        cidate1 = _ct.c_int(idate1)
-    elif imode == 4:
-       (cidate2,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
-    elif imode == -4:
-       (cidate1,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
+    #TODO: add support for imode == 4
+    ## elif imode == 4:
+    ##    (cidate2,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
+    ## elif imode == -4:
+    ##    (cidate1,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
     elif imode == 5:
        (cidate2,cidate3) = (_ct.c_int(idate1),_ct.c_int(idate2))
     elif imode == -5:
@@ -509,10 +513,11 @@ def newdate(imode,idate1,idate2=0):
        return cidate1.value
     elif imode == -3:
        return (cidate2.value,cidate3.value)
-    elif imode == 4:
-       return cidate1.value
-    elif imode == -4:
-       return cidate2.value
+    #TODO: add support for imode == 4
+    ## elif imode == 4:
+    ##    return cidate1.value
+    ## elif imode == -4:
+    ##    return cidate2.value
     elif imode == 5:
        return cidate1.value
     elif imode == -5:
