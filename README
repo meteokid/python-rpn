@@ -5,7 +5,7 @@
 git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
 cd rpnpy
 . ./.setenv.dot --dev
-storage_model=${storage_model:-$TMPDIR}
+export storage_model=${storage_model:-$TMPDIR}
 rdemklink
 ./bin/ouv_exp_rpnpy
 make components_vfiles
@@ -30,7 +30,7 @@ cd rpnpy
 #update version number (including leading 'x/') in ./VERSION
 #update default RMN_VERSION and LIBPATH in: ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
 . ./.setenv.dot --dev
-storage_model=${storage_model:-$TMPDIR}
+export storage_model=${storage_model:-$TMPDIR}
 rdemklink
 ./bin/ouv_exp_rpnpy
 #make -j 8 components_objects
@@ -42,7 +42,7 @@ make components_ssm
 	  ssh MYMACH
 	  cd /PATH/
 	  . ./.setenv.dot --dev
-     storage_model=${storage_model:-$TMPDIR}
+     export storage_model=${storage_model:-$TMPDIR}
 	  rdemklink
 	  #./bin/ouv_exp_rpnpy
 	  #make -j 8 components_objects

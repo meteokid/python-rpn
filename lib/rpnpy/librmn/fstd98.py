@@ -90,10 +90,11 @@ def dtype_numpy2fst(npdtype,compress=True,missing=False):
     if not (type(npdtype) == _np.dtype or type(npdtype) == type):
         raise TypeError("dtype_numpy2fst: Expecting arg of type numpy.dtype, Got %s" % (type(npdtype)))
     datyp = 0 #default returned type: binary
-    for k in _rc.FST_DATYP2NUMPY_LIST.keys(): 
-        if _rc.FST_DATYP2NUMPY_LIST[k] == npdtype:
-            datyp = k
+    for (i,t) in _rc.FST_DATYP2NUMPY_LIST.items() + _rc.FST_DATYP2NUMPY_LIST64.items():
+        if t == npdtype:
+            datyp = i
             break
+    #TODO: should we force nbits to 64 when 64 bits type?
     if compress: datyp += 128
     if missing:  datyp += 64
     return datyp
@@ -309,6 +310,7 @@ def fstecr(iunit,data,meta,rewrite=True):
         _ct.c_int, _ct.c_int, _ct.c_int,
         _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,_ct.c_char_p,
         _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int)
+    #TODO: what if data is not 32 bits, should we copy to 32bits field, modify nijk? 
     istat = _rp.c_fstecr(data, data, npak, iunit,
                 meta2['dateo'], meta2['deet'], meta2['npas'],
                 meta2['ni'],    meta2['nj'],   meta2['nk'],
