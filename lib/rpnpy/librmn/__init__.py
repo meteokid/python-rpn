@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 
 """
  Module librmn is a ctypes import of librmnshared.so
@@ -30,12 +31,16 @@
 
 from rpnpy.version import *
 
-__SUBMODULES__ = ['proto','const','base','fstd98','interp','llacar','grids']
-__all__ = ['loadRMNlib','librmn','RMN_VERSION','RMN_LIBPATH','RMNError'] + __SUBMODULES__
+__SUBMODULES__ = ['proto', 'const', 'base', 'fstd98', 'interp',
+                  'llacar', 'grids']
+__all__ = ['loadRMNlib', 'librmn', 'RMN_VERSION', 'RMN_LIBPATH',
+           'RMNError'] + __SUBMODULES__
 
 RMN_VERSION_DEFAULT = '_015.2'
 
 class RMNError(Exception):
+    """General RMN module error/exception
+    """
     pass
 
 def loadRMNlib(rmn_version=None):
@@ -61,10 +66,11 @@ def loadRMNlib(rmn_version=None):
     ## import numpy.ctypeslib as npct
 
     if rmn_version is None:
-        RMN_VERSION = os.getenv('RPNPY_RMN_VERSION',RMN_VERSION_DEFAULT).strip()
+        RMN_VERSION = os.getenv('RPNPY_RMN_VERSION',
+                                RMN_VERSION_DEFAULT).strip()
     else:
         RMN_VERSION = rmn_version
-    rmn_libfile = 'librmnshared'+RMN_VERSION.strip()+'.so'
+    rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.so'
 
     pylibpath   = os.getenv('PYTHONPATH').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH').split(':')
@@ -72,24 +78,25 @@ def loadRMNlib(rmn_version=None):
     RMN_LIBPATH = rmn_libfile
     if not os.path.exists(RMN_LIBPATH):
         for path in pylibpath + ldlibpath + eclibpath:
-            RMN_LIBPATH = os.path.join(path.strip(),rmn_libfile)
+            RMN_LIBPATH = os.path.join(path.strip(), rmn_libfile)
             if os.path.exists(RMN_LIBPATH):
                 break
             else:
                 RMN_LIBPATH = None
 
     if not RMN_LIBPATH:
-        raise IOError,(-1,'Failed to find librmn.so: ',rmn_libfile)
+        raise IOError, (-1, 'Failed to find librmn.so: ', rmn_libfile)
 
     librmn = None
     try:
         librmn = ct.cdll.LoadLibrary(RMN_LIBPATH)
-        #librmn = np.ctypeslib.load_library(rmn_libfile,RMN_LIBPATH)
+        #librmn = np.ctypeslib.load_library(rmn_libfile, RMN_LIBPATH)
     except IOError:
-        raise IOError('ERROR: cannot load librmn shared version: '+RMN_VERSION)
+        raise IOError('ERROR: cannot load librmn shared version: ' +
+                      RMN_VERSION)
     return (RMN_VERSION, RMN_LIBPATH, librmn)
 
-(RMN_VERSION,RMN_LIBPATH,librmn) = loadRMNlib()
+(RMN_VERSION, RMN_LIBPATH, librmn) = loadRMNlib()
     
 if __name__ == "__main__":
     import doctest

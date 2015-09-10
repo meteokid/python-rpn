@@ -26,18 +26,19 @@
 import math
 
 from math import acos, atan2, cos, sin
-from numpy import array, float64, zeros
+from numpy import array, float64
 from numpy.linalg import norm
 
-def llacar_py(lon,lat):
-    """Transformation from a set of points in the spherical coordinate system to cartesian space
+def llacar_py(lon, lat):
+    """Transformation from a set of points in the spherical coordinate
+    system to cartesian space
 
-    xyz = llacar_py(lon,lat)
+    xyz = llacar_py(lon, lat)
 
     Args:
-        lat, lon: (float,float)
+        lat, lon: (float, float)
     Returns:
-        (x,y,z) : coordinates in cartesian space (float,float,float)
+        (x, y, z) : coordinates in cartesian space (float, float, float)
     Raises:
         TypeError
     """
@@ -45,32 +46,35 @@ def llacar_py(lon,lat):
     x = math.cos(deg2rad*lat)*math.cos(deg2rad*lon)
     y = math.cos(deg2rad*lat)*math.sin(deg2rad*lon)
     z = math.sin(deg2rad*lat)
-    return (x,y,z)
+    return (x, y, z)
 
 
 def cartall_py(xyz):
-    """Computes the lon,lat positions for a rotated system
+    """Computes the lon, lat positions for a rotated system
 
-    (lon,lat) = cartall_py()
+    (lon, lat) = cartall_py()
     Args:
-        xyz : rotation matrix (float,float,float)
+        xyz : rotation matrix (float, float, float)
     Returns:
-        (lon,lat), spherical coor of points (float,float)
+        (lon, lat), spherical coor of points (float, float)
     Raises:
         TypeError
    """
     rad2deg = 180./math.pi
-    lat = math.asin(max(-1.,min(1.,xyz[2]))) * rad2deg
-    lon = math.atan2(xyz[1],xyz[0]) * rad2deg
+    lat = math.asin(max(-1., min(1., xyz[2]))) * rad2deg
+    lon = math.atan2(xyz[1], xyz[0]) * rad2deg
     lon = lon % 360.
-    if lon < 0.: lon += 360.
-    return (lon,lat)
+    if lon < 0.:
+        lon += 360.
+    return (lon, lat)
 
 
 def cartesian_to_spherical(vector):
-    """Convert the Cartesian vector [x, y, z] to spherical coordinates [r, theta, phi].
+    """Convert the Cartesian vector [x, y, z]
+    to spherical coordinates [r, theta, phi].
 
-    The parameter r is the radial distance, theta is the polar angle, and phi is the azimuth.
+    The parameter r is the radial distance, theta is the polar angle,
+    and phi is the azimuth.
 
 
     @param vector:  The Cartesian vector [x, y, z].
@@ -96,9 +100,11 @@ def cartesian_to_spherical(vector):
 
 
 def spherical_to_cartesian(spherical_vect, cart_vect):
-    """Convert the spherical coordinate vector [r, theta, phi] to the Cartesian vector [x, y, z].
+    """Convert the spherical coordinate vector [r, theta, phi]
+    to the Cartesian vector [x, y, z].
 
-    The parameter r is the radial distance, theta is the polar angle, and phi is the azimuth.
+    The parameter r is the radial distance,
+    theta is the polar angle, and phi is the azimuth.
 
 
     @param spherical_vect:  The spherical coordinate vector [r, theta, phi].

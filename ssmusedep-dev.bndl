@@ -8,6 +8,6 @@ AIX-powerpc7:/ssm/net/cmdn/vgrid/5.4.0/xlf13
 
 GEM/d/gem-data/gem-data_4.2.0
 
-ENV/x/rde/1.0.b10
+ENV/x/rde/1.0.b11
 
 ENV/others/rpnpy-logger

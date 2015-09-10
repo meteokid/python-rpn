@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 
 """
  Module librmn is a ctypes import of librmnshared.so
@@ -21,7 +22,7 @@ EXTERNAL FUNCTIONS in primitive
         Returns:
            int, zero if the connection is successful, non-zero otherwise
          
-    c_fnom(iun,nom,ftype,lrec):
+    c_fnom(iun, nom, ftype, lrec):
         Open a file and make the connection with a unit number.
         Proto:
            int c_fnom(int *iun, char *nom, char *ftype, int lrec)
@@ -29,7 +30,8 @@ EXTERNAL FUNCTIONS in primitive
            iun   (int): (I/O) unit number
            nom   (str): (I) string containing the name of the file
            ftype (str): (I) string that contains the desired file attributes
-           lrec  (int): (I) length of record(must be 0 except if type contains D77)
+           lrec  (int): (I) length of record(must be 0 except
+                            if type contains D77)
         Returns:
            int, zero if the connection is successful, non-zero otherwise
          
@@ -47,10 +49,12 @@ EXTERNAL FUNCTIONS in primitive
     c_crc32():
         Compute the Cyclic Redundancy Check (CRC)
         Proto:
-           unsigned int crc32(unsigned int crc, const unsigned char *buf, unsigned int lbuf)
+           unsigned int crc32(unsigned int crc, const unsigned char *buf,
+                              unsigned int lbuf)
         Args:
            crc  (int) : (I) initial crc
-           buf        : (I) list of params to compute updated crc (numpy.ndarray of type uint32)
+           buf        : (I) list of params to compute updated crc
+                            (numpy.ndarray of type uint32)
            lbuf (int) : (I) length of buf*4
         Returns:
            int, Cyclic Redundancy Check number
@@ -59,12 +63,12 @@ EXTERNAL FUNCTIONS in primitive
 EXTERNAL FUNCTIONS in base
 
     f_cigaxg(cgtyp, xg1, xg2, xg3, xg4, ig1, ig2, ig3, ig4)
-        Encode real grid descriptors into ig1,ig2,ig3,ig4
+        Encode real grid descriptors into ig1, ig2, ig3, ig4
         Proto:
-           subroutine cigaxg(cgtyp,xg1,xg2,xg3,xg4,ig1,ig2,ig3,ig4)
+           subroutine cigaxg(cgtyp, xg1, xg2, xg3, xg4, ig1, ig2, ig3, ig4)
             character(len=*) :: cgtyp
-            integer :: ig1,ig2,ig3,ig4
-            real :: xg1,xg2,xg3,xg4
+            integer :: ig1, ig2, ig3, ig4
+            real :: xg1, xg2, xg3, xg4
         Args:
            in    - cgtyp - type de grille (voir ouvrir)
            out   - xg1   - ** descripteur de grille (reel),
@@ -79,13 +83,13 @@ EXTERNAL FUNCTIONS in base
            in    - ig3   - descripteur de grille (entier) voir ouvrir
            in    - ig4   - descripteur de grille (entier) voir ouvrir
 
-    f_cxgaig(cgtyp,ig1,ig2,ig3,ig4,xg1,xg2,xg3,xg4)
-        encode real grid descriptors into ig1,ig2,ig3,ig4
+    f_cxgaig(cgtyp, ig1, ig2, ig3, ig4, xg1, xg2, xg3, xg4)
+        encode real grid descriptors into ig1, ig2, ig3, ig4
         Proto:
-            subroutine cxgaig(cgtyp,ig1,ig2,ig3,ig4,xg1,xg2,xg3,xg4)
+            subroutine cxgaig(cgtyp, ig1, ig2, ig3, ig4, xg1, xg2, xg3, xg4)
             character(len=*) :: cgtyp
-            integer :: ig1,ig2,ig3,ig4
-            real :: xg1,xg2,xg3,xg4
+            integer :: ig1, ig2, ig3, ig4
+            real :: xg1, xg2, xg3, xg4
         Args:
             in    - cgtyp - type de grille (voir ouvrir)
             out   - ig1   - descripteur de grille (entier) voir ouvrir
@@ -100,55 +104,62 @@ EXTERNAL FUNCTIONS in base
                                                           = 2, sud **
                                igtyp = 'e', lat1, lon1, lat2, lon2
 
-    f_incdati(idate1,idate2,nhours)
-        increase idate2 by nhours (idate1=idate2+nhours), rounded idate2, nhours to nearest hour
+    f_incdati(idate1, idate2, nhours)
+        increase idate2 by nhours (idate1=idate2+nhours), rounded idate2,
+        nhours to nearest hour
         Proto:
-            subroutine incdati(idate1,idate2,nhours)
-            integer idate1,idate2
+            subroutine incdati(idate1, idate2, nhours)
+            integer idate1, idate2
             real*8  nhours
         Args:
             ... TODO ...
         Note:
-            if incdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
+            if incdat receive bad arguments,
+            idate1=101010101 (1910/10/10 10z run 1)
 
-    f_incdatr(idate1,idate2,nhours)
+    f_incdatr(idate1, idate2, nhours)
         increase idate2 by nhours (idate1=idate2+nhours)
         Proto:
-            subroutine incdatr(idate1,idate2,nhours)
-            integer idate1,idate2
+            subroutine incdatr(idate1, idate2, nhours)
+            integer idate1, idate2
             real*8  nhours
         Args:
             ... TODO ...
         Note:
-            if incdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
+            if incdat receive bad arguments,
+            idate1=101010101 (1910/10/10 10z run 1)
 
-    f_difdati(idate1,idate2,nhours)
-        Compute date difference in hours, rounded idate2, nhours (nhours=idate1-idate2), rounded idate1, idate2 to nearest hour
+    f_difdati(idate1, idate2, nhours)
+        Compute date difference in hours, rounded idate2, nhours
+        (nhours=idate1-idate2), rounded idate1, idate2 to nearest hour
         Proto:
-            subroutine difdati(idate1,idate2,nhours)
-            integer idate1,idate2
+            subroutine difdati(idate1, idate2, nhours)
+            integer idate1, idate2
             real*8  nhours
         Args:
              ... TODO ...
        Note:
-            if difdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
+            if difdat receive bad arguments,
+            idate1=101010101 (1910/10/10 10z run 1)
 
-    f_difdatr(idate1,idate2,nhours)
-        Compute date difference in hours, rounded idate2, nhours (nhours=idate1-idate2)
+    f_difdatr(idate1, idate2, nhours)
+        Compute date difference in hours, rounded idate2, nhours
+        (nhours=idate1-idate2)
         Proto:
-            subroutine difdatr(idate1,idate2,nhours)
-            integer idate1,idate2
+            subroutine difdatr(idate1, idate2, nhours)
+            integer idate1, idate2
             real*8  nhours
         Args:
             ... TODO ...
         Note:
-            if difdat receive bad arguments, idate1=101010101 (1910/10/10 10z run 1)
+            if difdat receive bad arguments,
+            idate1=101010101 (1910/10/10 10z run 1)
 
-    f_NewDate_Options(value,command,value_len,command_len)
+    f_NewDate_Options(value, command, value_len, command_len)
         Set/get option for newdate, incdatr, difdatr
         Proto:
-           subroutine NewDate_Options(value,command)
-              character*(*) value,command
+           subroutine NewDate_Options(value, command)
+              character*(*) value, command
         Args:
            value   (I/O): option and value to be set/get (str)
                           possible values:
@@ -159,7 +170,7 @@ EXTERNAL FUNCTIONS in base
                              'year=365_day'
                              'year=360_day'
            command (I)  : type of operation (str)
-                          possible values: 'set','get','unset'
+                          possible values: 'set', 'get', 'unset'
         Note:
            A) Permits alternative calendar options, via either
               the NEWDATE_OPTIONS environment variable (which
@@ -174,7 +185,7 @@ EXTERNAL FUNCTIONS in base
 
     f_Ignore_LeapYear()
         Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
-        Equivalent to: NewDate_Options('year=365_day','set')
+        Equivalent to: NewDate_Options('year=365_day', 'set')
         Proto:
            subroutine Ignore_LeapYear()
         Args:
@@ -183,22 +194,24 @@ EXTERNAL FUNCTIONS in base
 
     f_Accept_LeapYear()
         Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
-        Equivalent to: NewDate_Options('year=gregorian','set')
+        Equivalent to: NewDate_Options('year=gregorian', 'set')
         Proto:
            subroutine Accept_LeapYear()
         Args:
            None
 
 
-    f_newdate(dat1,dat2,dat3,mode)
-        converts dates between two of the following formats: printable date, cmc date-time stamp, true date
+    f_newdate(dat1, dat2, dat3, mode)
+        converts dates between two of the following formats:
+        printable date, cmc date-time stamp, true date
         Proto:
-            function newdate(dat1,dat2,dat3,mode)
-            integer newdate,dat1,dat2(*),dat3,mode
+            function newdate(dat1, dat2, dat3, mode)
+            integer newdate, dat1, dat2(*), dat3, mode
         Args:
             See Note below
         Note:
-            mode can take the following values:-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7
+            mode can take the following values:
+            -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7
             mode=1 : stamp to (true_date and run_number)
                 out - dat1 - the truedate corresponding to dat2
                  in - dat2 - cmc date-time stamp (old or new style)
@@ -239,12 +252,12 @@ EXTERNAL FUNCTIONS in base
                 out - dat2 - 14 word old style date array
                  in - dat3 - unused
                  in - mode - set to -4
-            mode=5    printable to extended stamp (year 0 to 10,000)
+            mode=5    printable to extended stamp (year 0 to 10, 000)
                 out - dat1 - extended date-time stamp (new style only)
                  in - dat2 - date of the printable date (yyyymmdd)
                  in - dat3 - time of the printable date (hhmmsshh)
                  in - mode - set to 5
-            mode=-5   extended stamp (year 0 to 10,000) to printable
+            mode=-5   extended stamp (year 0 to 10, 000) to printable
                  in - dat1 - extended date-time stamp (new style only)
                 out - dat2 - date of the printable date (yyyymmdd)
                 out - dat3 - time of the printable date (hhmmsshh)
@@ -340,7 +353,7 @@ EXTERNAL FUNCTIONS in fstd98
         Locate the next record that matches the research keys
         Proto:
             int c_fstinf(int iun, int *ni, int *nj, int *nk,
-                         int datev,char *in_etiket,
+                         int datev, char *in_etiket,
                          int ip1, int ip2, int ip3,
                          char *in_typvar, char *in_nomvar)
         Args:
@@ -355,11 +368,12 @@ EXTERNAL FUNCTIONS in fstd98
         The search begins at the position given by handle.
         Proto:
         int c_fstinfx(int handle, int iun, int *ni, int *nj, int *nk,
-                      int datev,char *in_etiket,
+                      int datev, char *in_etiket,
                       int ip1, int ip2, int ip3,
                       char *in_typvar, char *in_nomvar)
         Args:
-            handle (int): (I) handle record used as a starting point (<0 for file start)
+            handle (int): (I) handle record used as a starting point
+            (<0 for file start)
             iun    (int): (I) unit number
             ... TODO ...
         Returns:
@@ -411,8 +425,8 @@ EXTERNAL FUNCTIONS in fstd98
         Returns:
             int, key/handle to record, <0 on error
 
-    c_fstlirx(field,handle,iun,ni,nj,nk,datev,etiket,ip1,ip2,ip3,
-              typvar,nomvar)
+    c_fstlirx(field, handle, iun, ni, nj, nk, datev, etiket, ip1, ip2, ip3,
+              typvar, nomvar)
         Reads the next record that matches the research keys.
         The search begins at the position given by handle.
         Proto:
@@ -435,7 +449,7 @@ EXTERNAL FUNCTIONS in fstd98
         Returns:
             int, zero successful, non-zero otherwise
 
-    f_fstlnk(liste,n)
+    f_fstlnk(liste, n)
         Links a list of files together for search purpose
         Proto:
             ftnword f77name(fstlnk)(ftnword *liste, ftnword *f_n)
@@ -462,7 +476,8 @@ EXTERNAL FUNCTIONS in fstd98
              ip1, ip2, ip3, typvar, nomvar)
         Mask a portion of the research keys
         Proto:
-            int c_fstmsq(int iun,int *mip1,int *mip2,int *mip3,char *metiket,int getmode)
+            int c_fstmsq(int iun, int *mip1, int *mip2, int *mip3,
+                         char *metiket, int getmode)
         Args:
             iun     (int): (I) unit number
             mip1    (int): (I/O) mask for vertical level
@@ -564,7 +579,7 @@ EXTERNAL FUNCTIONS in fstd98
     c_fstvoi(iun, options)
         Prints out the directory content of a RPN standard file
         Proto:
-            int c_fstvoi(int iun,char *options)
+            int c_fstvoi(int iun, char *options)
         Args:
             IN  iun     unit number associated to the file
             ... TODO ...
@@ -636,16 +651,18 @@ EXTERNAL FUNCTIONS in fstd98
         Proto:
             int ip_is_equal(int target, int ip, int ind)
         Args:
-            IN target: must be first value in the table of coded value to compare with
+            IN target: must be first value in the table of coded value
+                       to compare with
             IN ip    : current ip record value to compare
-            IN ind   : index (1,2 or 3) representing ip1, ip2 or ip3 comparaisons
+            IN ind   : index (1, 2 or 3)
+                       representing ip1, ip2 or ip3 comparaisons
         Returns:
             int, ... TODO ...
         
 EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
 
     c_ConvertIp(ip, p, kind, mode)
-        Codage/Decodage P,kind <-> IP pour IP1, IP2, IP3
+        Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
         Args:
             ip   (int)  : (I/O) Valeur codee
             p    (float): (I/O) Valeur reelle
@@ -653,19 +670,19 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
             mode (int)  : (I)   Mode de conversion
         Note: successeur de convip
             kind:
-                0, p en metre rel. au niveau de la mer  (-20,000 -> 100,000)
+                0, p en metre rel. au niveau de la mer  (-20, 000 -> 100, 000)
                 1, p est en sigma                       (0.0 -> 1.0)
                 2, p est en pression (mb)               (0 -> 1100)
                 3, p est un code arbitraire             (-4.8e8 -> 1.0e10)
-                4, p est en metre rel. au niveau du sol (-20,000 -> 100,000)
+                4, p est en metre rel. au niveau du sol (-20, 000 -> 100, 000)
                 5, p est en coordonnee hybride          (0.0 -> 1.0)
-                6, p est en coordonnee theta            (1 -> 200,000)
+                6, p est en coordonnee theta            (1 -> 200, 000)
                 10, p represente le temps en heure      (0.0 -> 1.0e10)
                 15, reserve (entiers)                                   
                 17, p indice x de la matrice de conversion
                                                         (1.0 -> 1.0e10)
                     (partage avec kind=1 a cause du range exclusif
-                21, p est en metres-pression (fact=1e4) (0 -> 1,000,000)
+                21, p est en metres-pression (fact=1e4) (0 -> 1, 000, 000)
                     (partage avec kind=5 a cause du range exclusif)
             mode:
                 -1, de IP -->  P
@@ -675,67 +692,76 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
                 +2, de P  --> IP en mode NEWSTYLE force a true
                 +3, de P  --> IP en mode NEWSTYLE force a false
 
-    c_ConvertIPtoPK(rp1,kind1,rp2,kind2,rp3,kind3,ip1v,ip2v,ip3v)
-        Convert/decode ip1,ip2,ip3 to their kind + real value conterparts
+    c_ConvertIPtoPK(rp1, kind1, rp2, kind2, rp3, kind3, ip1v, ip2v, ip3v)
+        Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
         Proto:
-            ConvertIPtoPK(RP1,kind1,RP2,kind2,RP3,kind3,IP1V,IP2V,IP3V) result(status)
+            ConvertIPtoPK(RP1, kind1, RP2, kind2, RP3, kind3,
+                          IP1V, IP2V, IP3V) result(status)
             integer(C_INT) :: status
-            real(C_FLOAT),         intent(OUT) :: rp1,rp2,rp3
-            integer(C_INT),        intent(OUT) :: kind1,kind2,kind3
-            integer(C_INT), value, intent(IN)  :: ip1v,ip2v,ip3v
+            real(C_FLOAT),         intent(OUT) :: rp1, rp2, rp3
+            integer(C_INT),        intent(OUT) :: kind1, kind2, kind3
+            integer(C_INT), value, intent(IN)  :: ip1v, ip2v, ip3v
         Args:
-            ip1v,ip2v,ip3v : ip values to be decoded
-            rp1,kind1  : result of ip1v decoding
-            rp2,kind2  : result of ip2v decoding
-            rp3,kind3  : result of ip3v decoding
+            ip1v, ip2v, ip3v : ip values to be decoded
+            rp1, kind1  : result of ip1v decoding
+            rp2, kind2  : result of ip2v decoding
+            rp3, kind3  : result of ip3v decoding
         Returns:
             int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
 
-    c_ConvertPKtoIP(IP1,IP2,IP3,P1,kkind1,P2,kkind2,P3,kkind3)
-        Convert/encode kind + real value into ip1,ip2,ip3
+    c_ConvertPKtoIP(IP1, IP2, IP3, P1, kkind1, P2, kkind2, P3, kkind3)
+        Convert/encode kind + real value into ip1, ip2, ip3
         Proto:
-            ConvertPKtoIP(IP1,IP2,IP3,P1,kkind1,P2,kkind2,P3,kkind3) result(status)
+            ConvertPKtoIP(IP1, IP2, IP3, P1, kkind1, P2, kkind2,
+                          P3, kkind3) result(status)
             integer(C_INT) :: status
-            integer(C_INT),        intent(OUT) :: IP1,IP2,IP3
-            real(C_FLOAT),  value, intent(IN)  :: P1,P2,P3
-            integer(C_INT), value, intent(IN)  :: kkind1,kkind2,kkind3
+            integer(C_INT),        intent(OUT) :: IP1, IP2, IP3
+            real(C_FLOAT),  value, intent(IN)  :: P1, P2, P3
+            integer(C_INT), value, intent(IN)  :: kkind1, kkind2, kkind3
         Args:
-            p1,kkind1 : must be a level
-            p2,kkind2 : should be a time but a level is accepted
+            p1, kkind1 : must be a level
+            p2, kkind2 : should be a time but a level is accepted
                         (flagged as warning)
-            p3,kkind3 : may be anything
-            ip1,ip2,ip3 : will contain the encoded values in case of success,
+            p3, kkind3 : may be anything
+            ip1, ip2, ip3 : will contain the encoded values in case of success,
                           and are undefined otherwise
         Returns:
             int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
 
-    c_EncodeIp(ip1,ip2,ip3,rp1,rp2,rp3)
-        Produce a valid (ip1,ip2,ip3) triplet from (real value,kind) pairs
+    c_EncodeIp(ip1, ip2, ip3, rp1, rp2, rp3)
+        Produce a valid (ip1, ip2, ip3) triplet from (real value, kind) pairs
         Proto:
-            function encode_ip_0(ip1,ip2,ip3,rp1,rp2,rp3) result(status) bind (c,name='encodeip')
+            function encode_ip_0(ip1, ip2, ip3, rp1, rp2, rp3)
+                     result(status) bind (c, name='encodeip')
             integer(C_INT) :: status
-            integer(C_INT), intent(OUT) :: IP1,IP2,IP3
-            type(FLOAT_IP), intent(IN)  :: RP1,RP2,RP3
+            integer(C_INT), intent(OUT) :: IP1, IP2, IP3
+            type(FLOAT_IP), intent(IN)  :: RP1, RP2, RP3
         Args:
             RP1 must contain a level (or a pair of levels) in the atmosphere
             RP2 must contain  a time (or a pair of times)
-            RP3 may contain anything, RP3.v2 will be ignored (if RP1 or RP2 contains a pair, RP3 is ignored)
-            IP1,IP2,IP3 will contain the encoded values in case of success, and are undefined otherwise
+            RP3 may contain anything, RP3.v2 will be ignored
+                (if RP1 or RP2 contains a pair, RP3 is ignored)
+            IP1, IP2, IP3 will contain the encoded values in case of success,
+                and are undefined otherwise
         Returns:
             CONVERT_ERROR=32 in case of error, CONVERT_OK=0
 
-    c_DecodeIp(RP1,RP2,RP3,IP1V,IP2V,IP3V)
-        Produce valid (real value,kind) pairs from (ip1,ip2,ip3) triplet
+    c_DecodeIp(RP1, RP2, RP3, IP1V, IP2V, IP3V)
+        Produce valid (real value, kind) pairs from (ip1, ip2, ip3) triplet
         Proto:
-            function decode_ip_0(RP1,RP2,RP3,IP1V,IP2V,IP3V) result(status) BIND (C,name='DecodeIp')
+            function decode_ip_0(RP1, RP2, RP3, IP1V, IP2V, IP3V)
+                     result(status) BIND (C, name='DecodeIp')
             integer(C_INT) :: status
-            integer(C_INT), value, intent(IN)  :: IP1V,IP2V,IP3V
-            type(FLOAT_IP), intent(OUT) :: RP1,RP2,RP3
+            integer(C_INT), value, intent(IN)  :: IP1V, IP2V, IP3V
+            type(FLOAT_IP), intent(OUT) :: RP1, RP2, RP3
         Args:
-            ip1/2/3 : should be encoded 'new style' but old style encoding is accepted
-            RP1   : will contain a level (or a pair of levels in atmospheric ascending order) in the atmosphere
+            ip1/2/3 : should be encoded 'new style' but old style
+                      encoding is accepted
+            RP1   : will contain a level (or a pair of levels in
+                    atmospheric ascending order) in the atmosphere
             RP2   : will contain a time (or a pair of times in ascending order)
-            RP3.v2 :will be the same as RP3.v1 (if RP1 or RP2 contains a pair, RP3 is ignored)
+            RP3.v2: will be the same as RP3.v1 (if RP1 or RP2 contains a pair,
+                    RP3 is ignored)
         Returns:
             CONVERT_ERROR=32 in case of error, CONVERT_OK=0
 
@@ -788,7 +814,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Vector interpolation, grid to grid
             ier = c_ezuvint(uuout, vvout, uuin, vvin)
         Proto:
-           wordint c_ezuvint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloat *vvin)
+           wordint c_ezuvint(ftnfloat *uuout, ftnfloat *vvout,
+                             ftnfloat *uuin, ftnfloat *vvin)
         Args:
               ... TODO ...
         Returns:
@@ -798,7 +825,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Vector interpolation, grid to speed/direction
         ier = c_ezwdint(spdout, wdout, uuin, vvin)
         Proto:
-           wordint c_ezwdint(ftnfloat *uuout, ftnfloat *vvout, ftnfloat *uuin, ftnfloat *vvin)
+           wordint c_ezwdint(ftnfloat *uuout, ftnfloat *vvout,
+                             ftnfloat *uuin, ftnfloat *vvin)
         Args:
             ... TODO ...
         Returns:
@@ -848,17 +876,20 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns the x-y positions of lat lon points on grid 'gdid'
         ier = c_gdxyfll(gdid, x, y, lat, lon, n)
         Proto:
-           wordint c_gdxyfll_s(wordint gdid, ftnfloat *x, ftnfloat *y, ftnfloat *lat, ftnfloat *lon, wordint n)
+           wordint c_gdxyfll_s(wordint gdid, ftnfloat *x, ftnfloat *y,
+                               ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
            ... TODO ...   
         Returns:
            int, 0 on success, -1 on error
 
     c_gdllfxy(gdid, lat, lon, x, y, n)
-        Returns the lat-lon coordinates of data located at positions x-y on grid GDID
+        Returns the lat-lon coordinates of data located at positions x-y
+        on grid GDID
         ier = c_gdllfxy(gdid, lat, lon, x, y, n)
         Proto:
-           wordint c_gdllfxy(wordint gdid, ftnfloat *lat, ftnfloat *lon, ftnfloat *x, ftnfloat *y, wordint n)
+           wordint c_gdllfxy(wordint gdid, ftnfloat *lat, ftnfloat *lon,
+                             ftnfloat *x, ftnfloat *y, wordint n)
         Args:
            ... TODO ...  
         Returns:
@@ -872,7 +903,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Args:
            super_gdid (int): id of the super grid
         Returns:
-           int, number of sub grids associated with super_gdid on success, -1 on error
+           int, number of sub grids associated with super_gdid on success,
+                -1 on error
 
     c_ezget_subgridids(super_gdid, subgridids )
         Gets the list of grid ids for the subgrids in the 'U' grid (super_gdid).
@@ -888,7 +920,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Scalar interpolation of points located at lat-lon coordinates.
         ier = c_gdllsval(gdid, zout, zin, lat, lon, n)
         Proto:
-            wordint c_gdllsval(wordint gdid, ftnfloat *zout, ftnfloat *zin, ftnfloat *lat, ftnfloat *lon, wordint n)
+            wordint c_gdllsval(wordint gdid, ftnfloat *zout, ftnfloat *zin,
+                               ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
             ... TODO ...  
         Returns:
@@ -898,14 +931,16 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Scalar intepolation of points located at x-y coordinates.
         ier = c_gdxysval(gdid, zout, zin, x, y, n)
         Proto:
-           wordint c_gdxysval(wordint gdin, ftnfloat *zout, ftnfloat *zin, ftnfloat *x, ftnfloat *y, wordint n)
+           wordint c_gdxysval(wordint gdin, ftnfloat *zout, ftnfloat *zin,
+                              ftnfloat *x, ftnfloat *y, wordint n)
         Args:
            ... TODO ...  
         Returns:
            int, 0 on success, -1 on error
 
     c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
-        Vector interpolation of points located at lat-lon coordinates, returned as grid components (UU and VV).
+        Vector interpolation of points located at lat-lon coordinates,
+        returned as grid components (UU and VV).
         ier = c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllvval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
@@ -917,7 +952,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            int, 0 on success, -1 on error
 
     c_gdxyvval(gdid, uuout, vvout, uuin, vvin, x, y, n)
-        Vector interpolation of points located at x-y coordinates, returned as grid components (UU and VV).
+        Vector interpolation of points located at x-y coordinates,
+        returned as grid components (UU and VV).
         ier = c_gdxyvval(gdid, uuout, vvout, uuin, vvin, x, y, n)
         Proto:
            wordint c_gdxyvval(wordint gdin, ftnfloat *uuout, ftnfloat *vvout,
@@ -929,7 +965,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            int, 0 on success, -1 on error
 
     c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
-        Vector interpolation of points located at lat-lon coordinates, returned as speed and direction (UV and WD).
+        Vector interpolation of points located at lat-lon coordinates,
+        returned as speed and direction (UV and WD).
         ier = c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllwdval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
@@ -954,7 +991,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            int, 0 on success, -1 on error
 
     c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
-        Converts, on grid 'gdid', the direction/speed values at grid points to grid coordinates.
+        Converts, on grid 'gdid', the direction/speed values at grid points
+        to grid coordinates.
         ier = c_gduvfwd(gdid, uuout, vvout, spdin, wdin, lat, lon, n)
         Proto:
              wordint c_gduvfwd(wordint gdid,
@@ -1003,7 +1041,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns the interpolated field and an interpolated mask.
         ier = c_ezsint_mdm(zout, mask_out, zin, mask_in)
         Proto:
-            int c_ezsint_mdm(float *zout, int *mask_out, float *zin, int *mask_in)
+            int c_ezsint_mdm(float *zout, int *mask_out, float *zin,
+                             int *mask_in)
         Args:
            ... TODO ...  
         Returns:
@@ -1014,7 +1053,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns the interpolated winds and an interpolated mask.
         ier = c_ezuvint_mdm(uuout, vvout, mask_out, uuin, vvin, mask_in)
         Proto:
-            int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out, float *uuin, float *vvin, int *mask_in)
+            int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out,
+                              float *uuin, float *vvin, int *mask_in)
         Args:
            ... TODO ...  
         Returns:
@@ -1036,7 +1076,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         gdid = c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
         Proto:
            wordint c_ezqkdef(wordint ni, wordint nj, char *grtyp,
-                 wordint ig1, wordint ig2, wordint ig3, wordint ig4, wordint iunit)
+                 wordint ig1, wordint ig2, wordint ig3, wordint ig4,
+                 wordint iunit)
         Args:
            ... TODO ... 
         Returns:
@@ -1056,21 +1097,23 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         Returns:
            int, grid id on success, -1 on error
 
-    c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
+    c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode, nsubgrids, subgridid)
         U grid definition (which associates to a list of concatenated
         subgrids in one record)
-        gdid = c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,nsubgrids,subgridid)
+        gdid = c_ezgdef_supergrid(ni, nj, grtyp, grref, vercode,
+                                  nsubgrids, subgridid)
         Proto:
            wordint c_ezgdef_supergrid(wordint ni, wordint nj,
                    char *grtyp, char *grref,
-                   wordint vercode,wordint nsubgrids, wordint *subgrid)
+                   wordint vercode, wordint nsubgrids, wordint *subgrid)
         Args:
            ... TODO ...
         Returns:
            int, super grid id on success, -1 on error
 
     c_ezgdef(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
-        Generic grid definition (obsolete - consider using ezqkdef or ezgdef_fmem)
+        Generic grid definition
+        (obsolete - consider using ezqkdef orezgdef_fmem)
         gdid = c_ezgdef(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
         Proto:
             wordint c_ezgdef(wordint ni, wordint nj, char *grtyp, char *grref,
@@ -1086,19 +1129,24 @@ EXTERNAL FUNCTIONS in interp (ezscint)
         ier = c_ezgprm(gdid, grtyp, ni, nj, ig1, ig2, ig3, ig4)
         Proto:
            wordint c_ezgprm(wordint gdid, char *grtyp, wordint *ni, wordint *nj,
-                            wordint *ig1, wordint *ig2, wordint *ig3, wordint *ig4);
+                            wordint *ig1, wordint *ig2, wordint *ig3,
+                            wordint *ig4);
         Args:
            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
-    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref, ig1ref, ig2ref, ig3ref, ig4ref)
+    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref, 
+              ig1ref, ig2ref, ig3ref, ig4ref)
         Get extended grid parameters
-        ier = c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref, ig1ref, ig2ref, ig3ref, ig4ref)
+        ier = c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref,
+                        ig1ref, ig2ref, ig3ref, ig4ref)
         Proto:
            wordint c_ezgxprm(wordint gdid, wordint *ni, wordint *nj, 
-                char *grtyp, wordint *ig1, wordint *ig2, wordint *ig3, wordint *ig4,
-                char *grref, wordint *ig1ref, wordint *ig2ref, wordint *ig3ref, wordint *ig4ref);
+                char *grtyp, wordint *ig1, wordint *ig2, 
+                wordint *ig3, wordint *ig4,
+                char *grref, wordint *ig1ref, wordint *ig2ref,
+                wordint *ig3ref, wordint *ig4ref);
         Args:
            ... TODO ...
         Returns:
@@ -1107,13 +1155,15 @@ EXTERNAL FUNCTIONS in interp (ezscint)
     c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1,
               ip2, ip3, dateo, deet, npas, nbits)
         Get the standard file attributes of the positional records
-        ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary, etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
+        ier = c_ezgfstp(gdid, nomvarx, typvarx, etikx, nomvary, typvary,
+                        etiky, ip1, ip2, ip3, dateo, deet, npas, nbits)
         Proto:
             wordint c_ezgfstp(wordint gdid,
                       char *nomvarx, char *typvarx, char *etiketx,
                       char *nomvary, char *typvary, char *etikety,
                       wordint *ip1, wordint *ip2, wordint *ip3,
-                      wordint *dateo, wordint *deet, wordint *npas, wordint *nbits);
+                      wordint *dateo, wordint *deet, wordint *npas,
+                      wordint *nbits);
         Args:
            ... TODO ...
         Returns:
@@ -1141,7 +1191,8 @@ EXTERNAL FUNCTIONS in interp (ezscint)
            int, 0 on success, -1 on error
 
     c_gdgxpndaxes(gdid, ax, ay)
-        Gets the deformation axes of the 'Z' grid on an expanded grid ax(i1:i2), ay(j1:j2)
+        Gets the deformation axes of the 'Z' grid on an expanded
+        grid ax(i1:i2), ay(j1:j2)
         ier = c_gdgxpndaxes(gdid, ax, ay)
         Proto:
             wordint c_gdgxpndaxes(wordint gdid, ftnfloat *ax, ftnfloat *ay)
@@ -1204,7 +1255,7 @@ import numpy.ctypeslib as _npc
 from . import librmn
 
 ## Convert function name with Fortran name mangling
-f77name = lambda x: str(x)+'_'
+f77name = lambda x: str(x) + '_'
 """Convert function name with Fortran name mangling"""
 
 ## f77name = lambda x: getattr(, '_'+x)()
@@ -1212,27 +1263,30 @@ f77name = lambda x: str(x)+'_'
 ##     getattr(o, name)()
 
 class FLOAT_IP(_ct.Structure):
-    """A structure to hold level values and kind with support for a value range"""
+    """A structure to hold level values and kind with support for
+       a value range"""
     _fields_ = [("v1", _ct.c_float),
                 ("v2", _ct.c_float),
                 ("kind", _ct.c_int)]
 
     def __str__(self):
-        return "FLOAT_IP(%f,%f,%d)" % (self.v1,self.v2,self.kind)
+        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
     def __repr__(self):
-        return "FLOAT_IP(%f,%f,%d)" % (self.v1,self.v2,self.kind)
+        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
 
     def toList(self):
-        return (self.v1,self.v2,self.kind)
+        """Retrun (v1,v2,kind)"""
+        return (self.v1, self.v2, self.kind)
 
 
 #--- primitives -----------------------------------------------------
 
-librmn.c_fclos.argtypes = (_ct.c_int,)
+librmn.c_fclos.argtypes = (_ct.c_int, )
 librmn.c_fclos.restype  = _ct.c_int
 c_fclos = librmn.c_fclos
 
-librmn.c_fnom.argtypes = (_ct.POINTER(_ct.c_int), _ct.c_char_p, _ct.c_char_p, _ct.c_int)
+librmn.c_fnom.argtypes = (_ct.POINTER(_ct.c_int), _ct.c_char_p,
+                          _ct.c_char_p, _ct.c_int)
 librmn.c_fnom.restype  = _ct.c_int
 c_fnom = librmn.c_fnom
 
@@ -1258,44 +1312,49 @@ c_crc32 = librmn.crc32
 # Fortran function a provided with a formal interface in librmn_c.c
 
 librmn.cigaxg_.argtypes = (_ct.c_char_p,
-                          _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),
-                          _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),
-                          _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                          _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+                          _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float),
+                          _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float),
+                          _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                          _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 ## f_cigaxg = f77name(librmn.cigaxg)
 f_cigaxg = librmn.cigaxg_
 
 
 librmn.cxgaig_.argtypes = (_ct.c_char_p,
-                          _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                          _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                          _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float),
-                          _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+                          _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                          _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                          _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float),
+                          _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float))
 ## f_cxgaig = f77name(librmn.cxgaig)
 f_cxgaig = librmn.cxgaig_
 
 
-librmn.incdati_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_double))
+librmn.incdati_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                            _ct.POINTER(_ct.c_double))
 ## f_incdati = f77name(librmn.incdati)
 f_incdati = librmn.incdati_
 
 
-librmn.incdatr_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_double))
+librmn.incdatr_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                            _ct.POINTER(_ct.c_double))
 ## f_incdatr = f77name(librmn.incdatr)
 f_incdatr = librmn.incdatr_
 
 
-librmn.difdati_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_double))
+librmn.difdati_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                            _ct.POINTER(_ct.c_double))
 ## f_difdati = f77name(librmn.difdati)
 f_difdati = librmn.difdati_
 
 
-librmn.difdatr_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_double))
+librmn.difdatr_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                            _ct.POINTER(_ct.c_double))
 ## f_difdatr = f77name(librmn.difdatr)
 f_difdatr = librmn.difdatr_
 
 
-librmn.newdate_options_.argtypes = (_ct.c_char_p,_ct.c_char_p,_ct.c_int,_ct.c_int)
+librmn.newdate_options_.argtypes = (_ct.c_char_p, _ct.c_char_p, _ct.c_int,
+                                    _ct.c_int)
 ## f_newdate_options = f77name(librmn.newdate_options)
 f_newdate_options = librmn.newdate_options_
 
@@ -1310,7 +1369,8 @@ librmn.accept_leapyear_.argtypes = []
 f_accept_leapyear = librmn.accept_leapyear_
 
 
-librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                            _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.newdate_.restype  = _ct.c_int
 ## f_newdate = f77name(librmn.newdate)
 f_newdate = librmn.newdate_
@@ -1323,49 +1383,49 @@ librmn.c_fstecr.argtypes = (
     _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
     _ct.c_int, _ct.c_int, _ct.c_int,
     _ct.c_int, _ct.c_int, _ct.c_int,
-    _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,_ct.c_char_p,
+    _ct.c_char_p, _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,
     _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int)
 librmn.c_fstecr.restype  = _ct.c_int
 c_fstecr = librmn.c_fstecr
 
 
 librmn.c_fst_edit_dir.argtypes = (
-    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
-    _ct.c_char_p,_ct.c_int,_ct.c_int,
-    _ct.c_int,_ct.c_int,_ct.c_int
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,
+    _ct.c_char_p, _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int
     )
 librmn.c_fst_edit_dir.restype  = _ct.c_int
 c_fst_edit_dir = librmn.c_fst_edit_dir
 
 
-librmn.c_fsteff.argtypes = (_ct.c_int,)
+librmn.c_fsteff.argtypes = (_ct.c_int, )
 librmn.c_fsteff.restype  = _ct.c_int
 c_fsteff = librmn.c_fsteff
 
 
-librmn.c_fstfrm.argtypes = (_ct.c_int,)
+librmn.c_fstfrm.argtypes = (_ct.c_int, )
 librmn.c_fstfrm.restype  = _ct.c_int
 c_fstfrm = librmn.c_fstfrm
 
 
 librmn.c_fstinf.argtypes = (
     _ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p
     )
 librmn.c_fstinf.restype  = _ct.c_int
 c_fstinf = librmn.c_fstinf
 
 
 librmn.c_fstinfx.argtypes = (
-    _ct.c_int,_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p
+    _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p
     )
 librmn.c_fstinfx.restype  = _ct.c_int
 c_fstinfx = librmn.c_fstinfx
@@ -1373,10 +1433,10 @@ c_fstinfx = librmn.c_fstinfx
 
 librmn.c_fstinl.argtypes = (
     _ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p,
-    _npc.ndpointer(dtype=_np.intc),_ct.POINTER(_ct.c_int),_ct.c_int
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p,
+    _npc.ndpointer(dtype=_np.intc), _ct.POINTER(_ct.c_int), _ct.c_int
     )
 librmn.c_fstinl.restype  = _ct.c_int
 c_fstinl = librmn.c_fstinl
@@ -1384,20 +1444,20 @@ c_fstinl = librmn.c_fstinl
 
 librmn.c_fstlic.argtypes = (
     _npc.ndpointer(dtype=_np.float32),
-    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p,
-    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,_ct.c_char_p
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p,
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_char_p
     )
 librmn.c_fstlic.restype  = _ct.c_int
 c_fstlic = librmn.c_fstlic
 
 
 librmn.c_fstlir.argtypes = (
-    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p
+    _npc.ndpointer(dtype=_np.float32), _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p
     )
 librmn.c_fstlir.restype  = _ct.c_int
 c_fstlir = librmn.c_fstlir
@@ -1405,32 +1465,33 @@ c_fstlir = librmn.c_fstlir
 
 librmn.c_fstlirx.argtypes = (
     _npc.ndpointer(dtype=_np.float32),
-    _ct.c_int,_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_char_p,_ct.c_int,_ct.c_int,_ct.c_int,
-    _ct.c_char_p,_ct.c_char_p
+    _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_char_p, _ct.c_char_p
     )
 librmn.c_fstlirx.restype  = _ct.c_int
 c_fstlirx = librmn.c_fstlirx
 
 
 librmn.c_fstlis.argtypes = (
-    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    _npc.ndpointer(dtype=_np.float32), _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int)
     )
 librmn.c_fstlis.restype  = _ct.c_int
 c_fstlis = librmn.c_fstlis
 
 
-librmn.fstlnk_.argtypes = (_npc.ndpointer(dtype=_np.int32),_ct.POINTER(_ct.c_int))
+librmn.fstlnk_.argtypes = (_npc.ndpointer(dtype=_np.int32),
+                           _ct.POINTER(_ct.c_int))
 ## f_fstlnk = f77name(librmn.fstlnk)
 librmn.fstlnk_.restype  = _ct.c_int
 f_fstlnk = librmn.fstlnk_
 
 
 librmn.c_fstluk.argtypes = (
-    _npc.ndpointer(dtype=_np.float32),_ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    _npc.ndpointer(dtype=_np.float32), _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int)
     )
 librmn.c_fstluk.restype  = _ct.c_int
 c_fstluk = librmn.c_fstluk
@@ -1438,48 +1499,48 @@ c_fstluk = librmn.c_fstluk
 
 librmn.c_fstmsq.argtypes = (
     _ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_char_p,_ct.c_int
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_char_p, _ct.c_int
     )
 librmn.c_fstmsq.restype  = _ct.c_int
 c_fstmsq = librmn.c_fstmsq
 
 
-librmn.c_fstnbr.argtypes = (_ct.c_int,)
+librmn.c_fstnbr.argtypes = (_ct.c_int, )
 librmn.c_fstnbr.restype  = _ct.c_int
 c_fstnbr = librmn.c_fstnbr
 
 
-librmn.c_fstnbrv.argtypes = (_ct.c_int,)
+librmn.c_fstnbrv.argtypes = (_ct.c_int, )
 librmn.c_fstnbrv.restype  = _ct.c_int
 c_fstnbrv = librmn.c_fstnbrv
 
 
-librmn.c_fstopc.argtypes = (_ct.c_char_p,_ct.c_char_p,_ct.c_int)
+librmn.c_fstopc.argtypes = (_ct.c_char_p, _ct.c_char_p, _ct.c_int)
 librmn.c_fstopc.restype  = _ct.c_int
 c_fstopc = librmn.c_fstopc
 
-librmn.c_fstopi.argtypes = (_ct.c_char_p,_ct.c_int,_ct.c_int)
+librmn.c_fstopi.argtypes = (_ct.c_char_p, _ct.c_int, _ct.c_int)
 librmn.c_fstopi.restype  = _ct.c_int
 c_fstopi = librmn.c_fstopi
 
 
-librmn.c_fstouv.argtypes = (_ct.c_int,_ct.c_char_p)
+librmn.c_fstouv.argtypes = (_ct.c_int, _ct.c_char_p)
 librmn.c_fstouv.restype  = _ct.c_int
 c_fstouv = librmn.c_fstouv
 
 
 librmn.c_fstprm.argtypes = (
     _ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.c_char_p,
-    _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.c_char_p,
+    _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int)
     )
 librmn.c_fstprm.restype  = _ct.c_int
 c_fstprm = librmn.c_fstprm
@@ -1487,7 +1548,7 @@ c_fstprm = librmn.c_fstprm
 
 librmn.c_fstsui.argtypes = (
     _ct.c_int,
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int)
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int)
     )
 librmn.c_fstsui.restype  = _ct.c_int
 c_fstsui = librmn.c_fstsui
@@ -1498,42 +1559,42 @@ librmn.c_fst_version.restype  = _ct.c_int
 c_fst_version = librmn.c_fst_version
 
 
-librmn.c_fstvoi.argtypes = (_ct.c_int,_ct.c_char_p)
+librmn.c_fstvoi.argtypes = (_ct.c_int, _ct.c_char_p)
 librmn.c_fstvoi.restype  = _ct.c_int
 c_fstvoi = librmn.c_fstvoi
 
 
-librmn.c_ip1_all.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip1_all.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip1_all.restype  = _ct.c_int
 c_ip1_all = librmn.c_ip1_all
 
 
-librmn.c_ip2_all.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip2_all.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip2_all.restype  = _ct.c_int
 c_ip2_all = librmn.c_ip2_all
 
 
-librmn.c_ip3_all.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip3_all.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip3_all.restype  = _ct.c_int
 c_ip3_all = librmn.c_ip3_all
 
 
-librmn.c_ip1_val.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip1_val.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip1_val.restype  = _ct.c_int
 c_ip1_val = librmn.c_ip1_val
 
 
-librmn.c_ip2_val.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip2_val.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip2_val.restype  = _ct.c_int
 c_ip2_val = librmn.c_ip2_val
 
 
-librmn.c_ip3_val.argtypes = (_ct.c_float,_ct.c_int)
+librmn.c_ip3_val.argtypes = (_ct.c_float, _ct.c_int)
 librmn.c_ip3_val.restype  = _ct.c_int
 c_ip3_val = librmn.c_ip3_val
 
 
-librmn.ip_is_equal.argtypes = (_ct.c_int,_ct.c_int,_ct.c_int)
+librmn.ip_is_equal.argtypes = (_ct.c_int, _ct.c_int, _ct.c_int)
 librmn.ip_is_equal.restype  = _ct.c_int
 c_ip_is_equal = librmn.ip_is_equal
 
@@ -1542,35 +1603,35 @@ c_ip_is_equal = librmn.ip_is_equal
 
 
 librmn.ConvertIp.argtypes = (
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_float),
-    _ct.POINTER(_ct.c_int),_ct.c_int
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_float),
+    _ct.POINTER(_ct.c_int), _ct.c_int
     )
 c_ConvertIp = librmn.ConvertIp
 
 
 librmn.ConvertIPtoPK.argtypes = (
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_int,_ct.c_int
+    _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_int, _ct.c_int
     )
 librmn.ConvertIPtoPK.restype  = _ct.c_int
 c_ConvertIPtoPK = librmn.ConvertIPtoPK
 
 
 librmn.ConvertPKtoIP.argtypes = (
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.c_int,_ct.c_float,
-    _ct.c_int,_ct.c_float,
-    _ct.c_int,_ct.c_float
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_float,
+    _ct.c_int, _ct.c_float,
+    _ct.c_int, _ct.c_float
     )
 librmn.ConvertPKtoIP.restype  = _ct.c_int
 c_ConvertPKtoIP = librmn.ConvertPKtoIP
 
 
 librmn.EncodeIp.argtypes = (
-    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-    _ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP)
+    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+    _ct.POINTER(FLOAT_IP), _ct.POINTER(FLOAT_IP), _ct.POINTER(FLOAT_IP)
     )
 librmn.EncodeIp.restype  = _ct.c_int
 c_EncodeIp = librmn.EncodeIp
@@ -1578,19 +1639,19 @@ c_EncodeIp = librmn.EncodeIp
 
 #TODO: ctypes struct
 librmn.DecodeIp.argtypes = (
-    _ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),_ct.POINTER(FLOAT_IP),
-    _ct.c_int,_ct.c_int,_ct.c_int
+    _ct.POINTER(FLOAT_IP), _ct.POINTER(FLOAT_IP), _ct.POINTER(FLOAT_IP),
+    _ct.c_int, _ct.c_int, _ct.c_int
     )
 c_DecodeIp = librmn.DecodeIp
 
 
-librmn.KindToString.argtypes = (_ct.c_int,_ct.c_char_p,_ct.c_char_p)
+librmn.KindToString.argtypes = (_ct.c_int, _ct.c_char_p, _ct.c_char_p)
 c_KindToString = librmn.KindToString
 
 
 #--- fstd98/xdf98 ---------------------------------------------------
 
-librmn.c_xdflnk.argtypes = (_npc.ndpointer(dtype=_np.intc),_ct.c_int)
+librmn.c_xdflnk.argtypes = (_npc.ndpointer(dtype=_np.intc), _ct.c_int)
 librmn.c_xdflnk.restype  = _ct.c_int
 c_xdflnk = librmn.c_xdflnk
 
@@ -1598,15 +1659,15 @@ c_xdflnk = librmn.c_xdflnk
 #---- interp (ezscint) ----------------------------------------------
 
 librmn.c_ezqkdef.argtypes = (
-    _ct.c_int,_ct.c_int,_ct.c_char_p,
-    _ct.c_int,_ct.c_int,
-    _ct.c_int,_ct.c_int,_ct.c_int
+    _ct.c_int, _ct.c_int, _ct.c_char_p,
+    _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int
     )
 librmn.c_ezqkdef.restype  = _ct.c_int
 c_ezqkdef = librmn.c_ezqkdef
 
 
-librmn.c_ezdefset.argtypes = (_ct.c_int,_ct.c_int)
+librmn.c_ezdefset.argtypes = (_ct.c_int, _ct.c_int)
 librmn.c_ezdefset.restype  = _ct.c_int
 c_ezdefset = librmn.c_ezdefset
 
@@ -1648,37 +1709,37 @@ librmn.c_gdll.restype  = _ct.c_int
 c_gdll = librmn.c_gdll
 
 
-librmn.c_ezsetval.argtypes = (_ct.c_char_p,_ct.c_float)
+librmn.c_ezsetval.argtypes = (_ct.c_char_p, _ct.c_float)
 librmn.c_ezsetval.restype  = _ct.c_int
 c_ezsetval = librmn.c_ezsetval
 
 
-librmn.c_ezsetival.argtypes = (_ct.c_char_p,_ct.c_int)
+librmn.c_ezsetival.argtypes = (_ct.c_char_p, _ct.c_int)
 librmn.c_ezsetival.restype  = _ct.c_int
 c_ezsetival = librmn.c_ezsetival
 
 
-librmn.c_ezgetval.argtypes = (_ct.c_char_p,_ct.POINTER(_ct.c_float))
+librmn.c_ezgetval.argtypes = (_ct.c_char_p, _ct.POINTER(_ct.c_float))
 librmn.c_ezgetval.restype  = _ct.c_int
 c_ezgetval = librmn.c_ezgetval
 
 
-librmn.c_ezgetival.argtypes = (_ct.c_char_p,_ct.POINTER(_ct.c_int))
+librmn.c_ezgetival.argtypes = (_ct.c_char_p, _ct.POINTER(_ct.c_int))
 librmn.c_ezgetival.restype  = _ct.c_int
 c_ezgetival = librmn.c_ezgetival
 
 
-librmn.c_ezsetopt.argtypes = (_ct.c_char_p,_ct.c_char_p)
+librmn.c_ezsetopt.argtypes = (_ct.c_char_p, _ct.c_char_p)
 librmn.c_ezsetopt.restype  = _ct.c_int
 c_ezsetopt = librmn.c_ezsetopt
 
 
-librmn.c_ezgetopt.argtypes = (_ct.c_char_p,_ct.c_char_p)
+librmn.c_ezgetopt.argtypes = (_ct.c_char_p, _ct.c_char_p)
 librmn.c_ezgetopt.restype  = _ct.c_int
 c_ezgetopt = librmn.c_ezgetopt
 
 
-librmn.c_gdrls.argtypes = (_ct.c_int,)
+librmn.c_gdrls.argtypes = (_ct.c_int, )
 librmn.c_gdrls.restype  = _ct.c_int
 c_gdrls = librmn.c_gdrls
 
@@ -1830,7 +1891,8 @@ c_gdgetmask = librmn.c_gdgetmask
 ##  = librmn.
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
-## """Scalar interpolation, using the mask associated by the function 'gdsetmask' (*** currently not implemented)
+## """Scalar interpolation, using the mask associated by the
+##    function 'gdsetmask' (*** currently not implemented)
 ## ier = ezsint_m(zout, zin)
 ## Proto:
 ## Args:
@@ -1843,7 +1905,8 @@ c_gdgetmask = librmn.c_gdgetmask
 ##  = librmn.
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
-## """Vector interpolation, using the mask associated by the function 'gdsetmask' (*** currently not implemented)
+## """Vector interpolation, using the mask associated by the
+##    function 'gdsetmask' (*** currently not implemented)
 ## ier = ezuvint_m(uuout, vvout, uuin, vvin)
 ## Proto:
 ## Args:
@@ -1860,8 +1923,6 @@ librmn.c_ezsint_mdm.argtypes = (
     )
 librmn.c_ezsint_mdm.restype  = _ct.c_int
 c_ezsint_mdm = librmn.c_ezsint_mdm
-"""
-"""
 
 
 librmn.c_ezuvint_mdm.argtypes = (
@@ -1884,54 +1945,57 @@ librmn.c_ezsint_mask.restype  = _ct.c_int
 c_ezsint_mask = librmn.c_ezsint_mask
 
 
-librmn.c_ezgdef_fmem.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-                    _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-                    _npc.ndpointer(dtype=_np.float32),
-                    _npc.ndpointer(dtype=_np.float32))
+librmn.c_ezgdef_fmem.argtypes = (_ct.c_int, _ct.c_int, _ct.c_char_p,
+                                 _ct.c_char_p,_ct.c_int, _ct.c_int,
+                                 _ct.c_int, _ct.c_int,
+                                 _npc.ndpointer(dtype=_np.float32),
+                                 _npc.ndpointer(dtype=_np.float32))
 librmn.c_ezgdef_fmem.restype  = _ct.c_int
 c_ezgdef_fmem = librmn.c_ezgdef_fmem
 
 
 librmn.c_ezgdef_supergrid.argtypes = (
-    _ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-    _ct.c_int,_ct.c_int,_npc.ndpointer(dtype=_np.intc)
+    _ct.c_int, _ct.c_int, _ct.c_char_p, _ct.c_char_p,
+    _ct.c_int, _ct.c_int, _npc.ndpointer(dtype=_np.intc)
     )
 librmn.c_ezgdef_supergrid.restype  = _ct.c_int
 c_ezgdef_supergrid = librmn.c_ezgdef_supergrid
 
 
-## librmn.c_ezgdef.argtypes = (_ct.c_int,_ct.c_int,_ct.c_char_p,_ct.c_char_p,
-##                     _ct.c_int,_ct.c_int,_ct.c_int,_ct.c_int,
-##                     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+## librmn.c_ezgdef.argtypes = (_ct.c_int, _ct.c_int, _ct.c_char_p,
+##                     _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+##                     _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float))
 ## librmn.c_ezgdef.restype  = _ct.c_int
 ## c_ezgdef = librmn.c_ezgdef
 
 
-librmn.c_ezgprm.argtypes = (_ct.c_int,_ct.c_char_p,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+librmn.c_ezgprm.argtypes = (_ct.c_int, _ct.c_char_p,
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.c_ezgprm.restype  = _ct.c_int
 c_ezgprm = librmn.c_ezgprm
 
 
-librmn.c_ezgxprm.argtypes = (_ct.c_int,_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+librmn.c_ezgxprm.argtypes = (_ct.c_int, _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int),
                     _ct.c_char_p,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
                     _ct.c_char_p,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.c_ezgxprm.restype  = _ct.c_int
 c_ezgxprm = librmn.c_ezgxprm
 
 
 librmn.c_ezgfstp.argtypes = (_ct.c_int,
-            _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
-            _ct.c_char_p,_ct.c_char_p,_ct.c_char_p,
-            _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-            _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-            _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+            _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,
+            _ct.c_char_p, _ct.c_char_p, _ct.c_char_p,
+            _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+            _ct.POINTER(_ct.c_int),
+            _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+            _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.c_ezgfstp.restype  = _ct.c_int
 c_ezgfstp = librmn.c_ezgfstp
 
@@ -1943,19 +2007,19 @@ librmn.c_gdgaxes.restype  = _ct.c_int
 c_gdgaxes = librmn.c_gdgaxes
 
 
-librmn.c_ezget_nsubgrids.argtypes = (_ct.c_int,)
+librmn.c_ezget_nsubgrids.argtypes = (_ct.c_int, )
 librmn.c_ezget_nsubgrids.restype  = _ct.c_int
 c_ezget_nsubgrids = librmn.c_ezget_nsubgrids
 
 
-librmn.c_ezget_subgridids.argtypes = (_ct.c_int,_npc.ndpointer(dtype=_np.intc))
+librmn.c_ezget_subgridids.argtypes = (_ct.c_int, _npc.ndpointer(dtype=_np.intc))
 librmn.c_ezget_subgridids.restype  = _ct.c_int
 c_ezget_subgridids = librmn.c_ezget_subgridids
 
 
 librmn.c_gdxpncf.argtypes = (_ct.c_int,
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int),
-                    _ct.POINTER(_ct.c_int),_ct.POINTER(_ct.c_int))
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
+                    _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.c_gdxpncf.restype  = _ct.c_int
 c_gdxpncf = librmn.c_gdxpncf
 
@@ -1969,7 +2033,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
 #Note: Not in librmn at the moment
 ## librmn.c_gdxpngd.argtypes = (_ct.c_int,
-##                     _ct.POINTER(_ct.c_float),_ct.POINTER(_ct.c_float))
+##                     _ct.POINTER(_ct.c_float), _ct.POINTER(_ct.c_float))
 ## librmn.c_gdxpngd.restype  = _ct.c_int
 ## c_gdxpngd = librmn.c_gdxpngd
 ## """Gets the expanded grid.
@@ -1997,7 +2061,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
-## """Bilinear interpolation from a regular grid, without wrap around the borders.
+## """Bilinear interpolation from a regular grid,
+##    without wrap around the borders.
 ## call ez_rgdint_1_nw(zo, px, py, npts, z, ni, j1, j2)
 ## Proto:
 ## Args:
@@ -2021,7 +2086,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
-## """Bicubic interpolation from a regular grid, without wrap around the borders.
+## """Bicubic interpolation from a regular grid,
+##    without wrap around the borders.
 ## call ez_rgdint_3_nw(zo, px, py, npts, z, ni, j1, j2)
 ## Proto:
 ## Args:
@@ -2045,7 +2111,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
-## """Bicubic interpolation from a regular grid, without wrap around the borders.
+## """Bicubic interpolation from a regular grid,
+##    without wrap around the borders.
 ## call ez_rgdint_3_wnnc(zo, px, py, npts, z, ni, j1, j2, wrap)
 ## Proto:
 ## Args:
@@ -2057,7 +2124,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
-## """Bicubic interpolation from a gaussian grid, without wrap around the borders.
+## """Bicubic interpolation from a gaussian grid,
+##    without wrap around the borders.
 ## call ez_gggdint_nw(zo, px, py, npts, ay, z, i1, i2, j1, j2)
 ## Proto:
 ## Args:
@@ -2129,7 +2197,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
-## """Interpolation from a irregular grid, without wrap around the borders and without the Newton coefficients.
+## """Interpolation from a irregular grid,
+##    without wrap around the borders and without the Newton coefficients.
 ## call ez_irgdint_nws(zo, px, py, npts, ax, ay, z, i1, i2, j1, j2, degree)
 ## Proto:
 ## Args:
@@ -2148,7 +2217,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 #define WB_FORTRAN_INT 2
 #define WB_FORTRAN_CHAR 3
 #define WB_FORTRAN_BOOL 4
-#define WB_OPTION_SET(options,option) (0 .ne. iand(options,option))
+#define WB_OPTION_SET(options, option) (0 .ne. iand(options, option))
 
 #define WB_IS_ARRAY 4096
 #define WB_REWRITE_AT_RESTART 2048
@@ -2212,41 +2281,54 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
 ## /*
 ##   get the data associated with a whiteboard entry 
-##   name   : pointer to character string containing name of key (length MUST be supplied in Lname)
+##   name   : pointer to character string containing name of key
+##            (length MUST be supplied in Lname)
 ##   Type   : character value R/I/L/C , key type  real/inetger/logical/character
-##   Ltype  : length in bytes of each key element 4/8 for R/I/L, 1->WB_MAXSTRINGLENGTH for character strings
-##   value  : pointer to where data is to be returned (everything considered as unsigned bytes)
+##   Ltype  : length in bytes of each key element 4/8 for R/I/L,
+##            1->WB_MAXSTRINGLENGTH for character strings
+##   value  : pointer to where data is to be returned
+##            (everything considered as unsigned bytes)
 ##   Nval   : number of elements that can be stored into value
 ##   Lname  : length of key pointed to by name (FORTRAN style)
 ## */
-## int c_wb_get(WhiteBoard *WB, unsigned char *name, char Type, int Ltype,unsigned char *value, int Nval, int Lname){
+## int c_wb_get(WhiteBoard *WB, unsigned char *name, char Type,
+##              int Ltype, unsigned char *value, int Nval, int Lname){
 
 ## /*
 ##   put entry into whiteboard
-##   name   : pointer to character string containing name of key (length MUST be supplied in Lname)
+##   name   : pointer to character string containing name of key
+##           (length MUST be supplied in Lname)
 ##   Type   : character value R/I/L/C , key type  real/inetger/logical/character
-##   Ltype  : length in bytes of each key element 4/8 for R/I/L, 1->WB_MAXSTRINGLENGTH for character strings
-##   value  : pointer to data asssociated with key (everything considered as unsigned bytes)
+##   Ltype  : length in bytes of each key element 4/8 for R/I/L,
+##            1->WB_MAXSTRINGLENGTH for character strings
+##   value  : pointer to data asssociated with key
+##            (everything considered as unsigned bytes)
 ##   Nval   : number of elements (0 means a scalar) (1 or more means an array)
 ##   Options: options associated with name
 ##   Lname  : length of key pointed to by name (FORTRAN style)
 ## */
-## int c_wb_put(WhiteBoard *WB, unsigned char *name,char Type,int Ltype,unsigned char *value,int Nval,int Options,int Lname){
+## int c_wb_put(WhiteBoard *WB, unsigned char *name, char Type, int Ltype,
+##              unsigned char *value, int Nval, int Options, int Lname){
 
 ## /* read a dictionary or user directive file */
-## int c_wb_read(WhiteBoard *WB, char *filename, char *package, char *section, int Options, int Lfilename, int Lpackage, int Lsection){
+## int c_wb_read(WhiteBoard *WB, char *filename, char *package, char *section,
+##               int Options, int Lfilename, int Lpackage, int Lsection){
 
 ## /*
 ##  basic whiteboard check/action routine, the Whiteboard "swiss knife"
-##   name   : pointer to character string containing name of key (length MUST be supplied in Lname)
-##   OptionsMask: options mask to be tested, call Action if OptionsMask&options  is non zero
+##   name   : pointer to character string containing name of key
+##            (length MUST be supplied in Lname)
+##   OptionsMask: options mask to be tested,
+##                call Action if OptionsMask&options  is non zero
 ##   Lname  : length of key pointed to by name (FORTRAN style)
 ##   printflag: print messages if nonzero
 ##   Action:  routine to be called if name and OptionsMask &options  is non zero
-##   blinddata: pointer to be passed to Action routine as a second argument (first argument is matching line)
+##   blinddata: pointer to be passed to Action routine as a second argument
+##              (first argument is matching line)
 ## */
-## typedef int (*ACTION)(LINE *,void *);
-## int c_wb_check(WhiteBoard *WB, unsigned char *name, int OptionsMask, int Lname, int printflag, ACTION Action, void *blinddata ){
+## typedef int (*ACTION)(LINE *, void *);
+## int c_wb_check(WhiteBoard *WB, unsigned char *name, int OptionsMask,
+##                int Lname, int printflag, ACTION Action, void *blinddata ){
 
 ## /* write checkpoint file */
 ## int c_wb_checkpoint(){
@@ -2255,9 +2337,12 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## int c_wb_reload(){
 
 
-## /* FORTRAN callable subroutine to get emtadata associated with a whiteboard name */
-## wordint f77_name(f_wb_get_meta)(WhiteBoard **WB, unsigned char *name, wordint *elementtype, wordint *elementsize,
-##                                        wordint *elements, wordint *options, F2Cl lname){
+## /* FORTRAN callable subroutine to get emtadata associated
+##    with a whiteboard name */
+## wordint f77_name(f_wb_get_meta)(WhiteBoard **WB, unsigned char *name,
+##                                 wordint *elementtype, wordint *elementsize,
+##                                 wordint *elements, wordint *options,
+##                                 F2Cl lname){
 ##    int Elementtype, Elementsize, Elements;
 ##    LINE *line;
 ##    PAGE *page;
@@ -2266,10 +2351,14 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## /*
 ##    int Options=0;
 ## */
-##    status = c_wb_lookup(*WB,name,&Elementtype,&Elementsize,&Elements,&line,&page,0,Lname); /* no screaming if not found */
+##    status = c_wb_lookup(*WB, name, &Elementtype, &Elementsize,
+##                         &Elements, &line, &page, 0, Lname);
+##    /* no screaming if not found */
 
 ## /* get a list of keys matching a name */
-## wordint f77_name(f_wb_get_keys)(WhiteBoard **WB, unsigned char *labels, wordint *nlabels, unsigned char *name, F2Cl llabels, F2Cl lname){
+## wordint f77_name(f_wb_get_keys)(WhiteBoard **WB, unsigned char *labels,
+##                                 wordint *nlabels, unsigned char *name,
+##                                 F2Cl llabels, F2Cl lname){
 ##    int Lname = lname;
 ##    int status;
 ##    KEYS keys;
@@ -2277,7 +2366,8 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ##    keys.UserKeyArray = labels;
 ##    keys.UserMaxLabels = *nlabels;
 ##    keys.UserKeyLength = llabels;
-##    status = c_wb_check(*WB, name, -1, Lname, message_level<=WB_MSG_INFO, CopyKeyName, &keys) ;
+##    status = c_wb_check(*WB, name, -1, Lname, message_level<=WB_MSG_INFO,
+##                        CopyKeyName, &keys) ;
 ##    return (status);
 ## }
 

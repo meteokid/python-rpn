@@ -36,7 +36,7 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'PM' : 21,
     'PPM' : 22,
     'PS' : 23,
-    'KMW' : 24,
+    'KMW_' : 24,
     'RRBX' : 25,
     'SUNRAS' : 26,
     'TIFF' : 27,
@@ -147,27 +147,27 @@ FST_DATYP_LIST = {
     }
 
 FST_DATYP2NUMPY_LIST = { #TODO: review
-    0: _np.uint32  ,# binary, transparent
-    1: _np.float32 ,# floating point
-    2: _np.uint32  ,# unsigned integer
-    3: _np.uint32  ,# character (R4A in an integer)
-    4: _np.int32   ,# signed integer
-    5: _np.float32 ,# IEEE floating point
-    6: _np.float32 ,# floating point (16 bit, made for compressor)
-    7: _np.uint8   ,# character string
-    8: _np.complex64 ,# complex IEEE
+    0: _np.uint32  , # binary, transparent
+    1: _np.float32 , # floating point
+    2: _np.uint32  , # unsigned integer
+    3: _np.uint32  , # character (R4A in an integer)
+    4: _np.int32   , # signed integer
+    5: _np.float32 , # IEEE floating point
+    6: _np.float32 , # floating point (16 bit, made for compressor)
+    7: _np.uint8   , # character string
+    8: _np.complex64 , # complex IEEE
 }
 
 FST_DATYP2NUMPY_LIST64 = { #TODO: review
-    0: _np.uint64  ,# binary, transparent
-    1: _np.float64 ,# floating point
-    2: _np.uint64  ,# unsigned integer
-    3: _np.uint64  ,# character (R4A in an integer)
-    4: _np.int64   ,# signed integer
-    5: _np.float64 ,# IEEE floating point
-    6: _np.float64 ,# floating point (16 bit, made for compressor)
-    #7: _np.uint8   ,# character string
-    8: _np.complex128 ,# complex IEEE
+    0: _np.uint64  , # binary, transparent
+    1: _np.float64 , # floating point
+    2: _np.uint64  , # unsigned integer
+    3: _np.uint64  , # character (R4A in an integer)
+    4: _np.int64   , # signed integer
+    5: _np.float64 , # IEEE floating point
+    6: _np.float64 , # floating point (16 bit, made for compressor)
+    #7: _np.uint8   , # character string
+    8: _np.complex128 , # complex IEEE
 }
 
 FST_RDE_META_DEFAULT = {
@@ -201,18 +201,20 @@ FST_RDE_META_DEFAULT = {
 
 #--- fstd98/convip_plus & convert_ip123 ---------------------------------
 
-## KIND = 0, hauteur (m) par rapport au niveau de la mer (-20,000 -> 100,000)
+## KIND = 0, hauteur (m) par rapport au niveau de la mer (-20, 000 -> 100, 000)
 ## KIND = 1, sigma   (0.0 -> 1.0)
 ## KIND = 2, p est en pression (mb)  (0 -> 1100)
 ## KIND = 3, code arbitraire  (-4.8e8 -> 1.0e10)
-## KIND = 4, hauteur (M) par rapport au niveau du sol    (-20,000 -> 100,000)
+## KIND = 4, hauteur (M) par rapport au niveau du sol    (-20, 000 -> 100, 000)
 ## KIND = 5, coordonnee hybride        (0.0 -> 1.0)
-## KIND = 6, coordonnee theta (1 -> 200,000)
-## KIND =10, temps en heure    (0.0 -> 200,000.0)
+## KIND = 6, coordonnee theta (1 -> 200, 000)
+## KIND =10, temps en heure    (0.0 -> 200, 000.0)
 ## KIND =15, reserve (entiers)        
 ## KIND =17, indice x de la matrice de conversion (1.0 -> 1.0e10)
 ##           (partage avec kind=1 a cause du range exclusif
-## KIND =21, p est en metres-pression  (partage avec kind=5 a cause du range exclusif) (0 -> 1,000,000) fact=1e4
+## KIND =21, p est en metres-pression
+##           (partage avec kind=5 a cause du range exclusif)
+##           (0 -> 1, 000, 000) fact=1e4
 KIND_ABOVE_SEA = 0
 KIND_SIGMA     = 1
 KIND_PRESSURE  = 2

@@ -63,23 +63,23 @@ class RPNData(RPNBaseDict):
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test'), ('hgrid', None), ('name', 't3'), ('type', None), ('vgrid', None)])
     
-    >>> d2.update([['name','list'],['etiket','test2']])
+    >>> d2.update([['name', 'list'], ['etiket', 'test2']])
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test2'), ('hgrid', None), ('name', 'list'), ('type', None), ('vgrid', None)])
     
-    >>> d2.update([('name','list2')])
+    >>> d2.update([('name', 'list2')])
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test2'), ('hgrid', None), ('name', 'list2'), ('type', None), ('vgrid', None)])
     
-    >>> d2.update((('etiket','test3'),))
+    >>> d2.update((('etiket', 'test3'), ))
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test3'), ('hgrid', None), ('name', 'list2'), ('type', None), ('vgrid', None)])
     
-    >>> d2.update({'etiket': ' '},cond=True)
+    >>> d2.update({'etiket': ' '}, cond=True)
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test3'), ('hgrid', None), ('name', 'list2'), ('type', None), ('vgrid', None)])
     
-    >>> d2.update((('etiket', ' '),),cond=True)
+    >>> d2.update((('etiket', ' '), ), cond=True)
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', 'test3'), ('hgrid', None), ('name', 'list2'), ('type', None), ('vgrid', None)])
     
@@ -87,8 +87,8 @@ class RPNData(RPNBaseDict):
     >>> print d2
     RPNData([('d', None), ('date', None), ('etiket', ' '), ('hgrid', None), ('name', 'list2'), ('type', None), ('vgrid', None)])
     
-    >>> #d2.update((('etiket','test3',' '),))  #except TypeError:
-    >>> #d2.update(['etiket','test3'])        #except TypeError:
+    >>> #d2.update((('etiket', 'test3', ' '), ))  #except TypeError:
+    >>> #d2.update(['etiket', 'test3'])        #except TypeError:
     >>> #d2.update(' ')                        #except TypeError:
     
     >>> d3 = RPNData(d2)           #Equivalent to d3 = d2.deepcopy()
@@ -97,22 +97,22 @@ class RPNData(RPNBaseDict):
     """
     
     def _getDefaultKeyVal(self):
-        (KDEF,KTYPE,KWILD) = (RPNBaseDict.KDEF,RPNBaseDict.KTYPE,RPNBaseDict.KWILD)
+        (KDEF, KTYPE, KWILD) = (RPNBaseDict.KDEF, RPNBaseDict.KTYPE, RPNBaseDict.KWILD)
         return {
             'd'     : {KDEF:None, KTYPE:np.ndarray,  KWILD:None},
             'name'  : {KDEF:None, KTYPE:type(''),       KWILD:' '},
             'type'  : {KDEF:None, KTYPE:type(''),       KWILD:' '},
             'etiket': {KDEF:None, KTYPE:type(''),       KWILD:' '},
-            'vgrid' : {KDEF:None, KTYPE:type(RPNVGgrid),KWILD:None},
-            'hgrid' : {KDEF:None, KTYPE:type(RPNHGgrid),KWILD:None},
+            'vgrid' : {KDEF:None, KTYPE:type(RPNVGgrid), KWILD:None},
+            'hgrid' : {KDEF:None, KTYPE:type(RPNHGgrid), KWILD:None},
             'date'  : {KDEF:None, KTYPE:type(RPNDate),  KWILD:None}
             }
 
-    def __init__(self,other=None):
-        RPNBaseDict.__init__(self,other)
+    def __init__(self, other=None):
+        RPNBaseDict.__init__(self, other)
         #TODO: check consitency 'd' with vgrid and hgrid
 
-    def _checkSetItem(self,name,value):
+    def _checkSetItem(self, name, value):
         #TODO: check consitency 'd' with vgrid and hgrid
         return True
 
