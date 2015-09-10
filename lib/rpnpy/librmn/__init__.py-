@@ -272,7 +272,7 @@ def fstinf(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ')
     return None if no matching record
 
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
     """
     return fstinfx(-2,iunit,datev,etiket,ip1,ip2,ip3,typvar,nomvar)
 
@@ -300,7 +300,7 @@ def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar
     return None if no matching record
 
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
     """
     (cni,cnj,cnk) = (ct.c_int(),ct.c_int(),ct.c_int())
     key2 = librmn.c_fstinfx(key,iunit,ct.byref(cni),ct.byref(cnj),ct.byref(cnk),datev,etiket,ip1,ip2,ip3,typvar,nomvar)
@@ -330,7 +330,7 @@ def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',
     return list of keys
 
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
     """
     if nrecmax <= 0: nrecmax = c_fstnbrv(iunit)
     creclist = np.empty(nrecmax,dtype=np.intc)
