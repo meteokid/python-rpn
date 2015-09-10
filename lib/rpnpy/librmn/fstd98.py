@@ -463,7 +463,7 @@ def fstfrm(iunit):
 def fstinf(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
     """Locate the next record that matches the research keys
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
 
     recmatch = fstinf(iunit, ... )
 
@@ -494,7 +494,7 @@ def fstinf(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ')
 def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' '):
     """Locate the next record that matches the research keys
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
     The search begins at the position given by key/handle
     obtained with fstinf or fstinl, ...
 
@@ -542,7 +542,7 @@ def fstinfx(key,iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar
 def fstinl(iunit,datev=-1,etiket=' ',ip1=-1,ip2=-1,ip3=-1,typvar=' ',nomvar=' ',nrecmax=-1):
     """Locate all the record matching the research keys
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
         
     recmatchlist = fstinl(iunit, ... )
     
@@ -614,7 +614,7 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
            typvar=' ', nomvar=' ', dtype=None, rank=None):
     """Reads the next record that matches the research keys
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
 
     record = fstlir(iunit, ... )
     
@@ -653,7 +653,7 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             typvar=' ', nomvar=' ',dtype=None,rank=None):
     """Reads the next record that matches the research keys
     Only provided parameters with value different than default
-    are used as selction criteria
+    are used as selection criteria
     The search begins right after at the position given by record key/handle.
 
     record = fstlirx(key, iunit, ... )
