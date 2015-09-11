@@ -102,7 +102,7 @@ subroutine itf_phy_geom4 (F_istat)
          w2 = 0.
          call nest_blend (w1(:,:,1),w2(:,:,1),l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
       endif
-      wrk1(1:l_ni,1:l_nj) = Cstv_dt_8 * w1(1:l_ni,1:l_nj,1)
+      wrk1(1:l_ni,1:l_nj) = w1(1:l_ni,1:l_nj,1)
    else
       F_istat= RMN_ERR
       call msg(MSG_ERROR,'(itf_phy_geom) Problem creating TDMASK')

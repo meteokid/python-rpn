@@ -265,15 +265,15 @@
              Outp_filtcoef(jj,j)= 0.0
              Outp_convmult(jj,j)= 1.0
              Outp_convadd (jj,j)= 0.0
-             if (Outp_varnm_S(jj,j)(1:2).eq.'LA') then
+             if (Outp_varnm_S(jj,j)(1:4).eq.'LA') then
                  Outp_nbit(jj,j)= 32
                  Outp_convmult(jj,j)=180./Dcst_pi_8
              endif
-             if (Outp_varnm_S(jj,j)(1:2).eq.'LO') then
+             if (Outp_varnm_S(jj,j)(1:4).eq.'LO') then
                  Outp_nbit(jj,j)= 32
                  Outp_convmult(jj,j)=180./Dcst_pi_8
              endif
-             if (Outp_varnm_S(jj,j)(1:2).eq.'SD') Outp_convmult(jj,j)=100.
+             if (Outp_varnm_S(jj,j)(1:4).eq.'SD') Outp_convmult(jj,j)=100.
           enddo
           if (jj.gt.0) then
               Outp_sets       = j
