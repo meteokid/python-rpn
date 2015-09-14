@@ -311,7 +311,7 @@ def fstecr(iunit, data, meta, rewrite=True):
     if not (type(data) == _np.ndarray and type(meta) == dict):
         raise TypeError("fstecr: Expecting args of type %s, %s, Got %s, %s" %
                         ('numpy.ndarray', 'dict', type(data), type(meta)))
-    if not _np.isfortran(data):
+    if not data.flags['F_CONTIGUOUS']:
         raise TypeError("fstecr: Expecting data type " +
                         "numpy.ndarray with FORTRAN order")
     #TODO: check if file is open with write permission
