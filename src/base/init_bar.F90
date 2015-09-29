@@ -78,6 +78,9 @@
 !
 !     ---------------------------------------------------------------
 !
+      !#TODO: update for BMF removal
+      call gem_error(-1,'init_bar','Need update, BMF option not avail. anymore')
+
       call datp2f   ( dat, F_datev )
       err = newdate ( dat, bmf_time1, bmf_time2, -3 )
 
@@ -85,7 +88,7 @@
 !
 ! Lecture des donnees
 !
-      call get_bmfvar ( Acqi_niu, Acqi_nju, Acqi_niv, Acqi_njv, nka_m, nka_t )
+!!$      call get_bmfvar ( Acqi_niu, Acqi_nju, Acqi_niv, Acqi_njv, nka_m, nka_t )
 
       nbpts = l_ni*l_nj
       nkmax = max ( nka_m, nka_t, G_nk+1 )
@@ -96,10 +99,10 @@
                  gz_temp(l_ni,l_nj,nkmax), zd_temp(l_ni,l_nj,nkmax),               &
                   w_temp(l_ni,l_nj,nkmax),  q_temp(l_ni,l_nj,nkmax)                )
 
-      call read_bmf ( za_8, zb_8, nka_m, zat_8, zbt_8, nka_t            , &
-                      u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv, &
-                      hu_temp,tt_temp,gz_temp,ps,topo_temp              , &
-                      zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
+!!$      call read_bmf ( za_8, zb_8, nka_m, zat_8, zbt_8, nka_t            , &
+!!$                      u_temp,Acqi_niu,Acqi_nju, v_temp,Acqi_niv,Acqi_njv, &
+!!$                      hu_temp,tt_temp,gz_temp,ps,topo_temp              , &
+!!$                      zd_temp,w_temp,q_temp, l_ni, l_nj, nkmax)
 
       Acql_vertint = .false.
       Ana_zd_L=.true.
