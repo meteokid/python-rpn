@@ -14,7 +14,6 @@
 #include "step.cdk"
 #include "pres.cdk"
 #include "schm.cdk"
-#include "type.cdk"
 #include "cstv.cdk"
 #include "vspng.cdk"
 #include "init.cdk"
@@ -34,7 +33,7 @@
       namelist /mtn_cfgs/ Grd_dx, Grd_dy
       namelist /mtn_cfgs/ Lam_blend_H, Lam_blend_Hx, Lam_blend_Hy
       namelist /mtn_cfgs/ Step_total, Step_gstat
-      namelist /mtn_cfgs/ Grd_rcoef
+      namelist /mtn_cfgs/ Grd_rcoef,Schm_mteul
       namelist /mtn_cfgs/ Schm_hydro_L,Schm_settls_L
       namelist /mtn_cfgs/ Schm_itcn, Schm_itnlh
       namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
@@ -46,4 +45,4 @@
       namelist /mtn_cfgs/ Vtopo_start, Vtopo_ndt
       namelist /mtn_cfgs/ G_periodx, G_periody
       namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L
-      namelist /mtn_cfgs/ Sol_type_S
+      namelist /mtn_cfgs/ Sol_type_S,Schm_lift_ltl_L

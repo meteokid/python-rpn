@@ -10,7 +10,9 @@
 !______________________________________________________________________|
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------       |
+!--------------------|-------------------------------------------------|
+! inuvl_wxxu3_8      | coefficients for PHI-grid to   U-grid           |
+! inuvl_wxux3_8      | coefficients for   U-grid to PHI-grid           |
 ! inuvl_wyyv3_8      | coefficients for PHI-grid to   V-grid           |
 ! inuvl_wyvy3_8      | coefficients for   V-grid to PHI-grid           |
 !----------------------------------------------------------------------
@@ -18,7 +20,6 @@
 !
 #endif
 
-      real*8, dimension(:,:), pointer :: inuvl_wyyv3_8, inuvl_wyvy3_8
-                                     
-      common/inuvl/ inuvl_wyyv3_8, inuvl_wyvy3_8
-                    
+      real*8, dimension(:,:), pointer :: inuvl_wxxu3_8,inuvl_wxux3_8
+      real*8, dimension(:,:), pointer :: inuvl_wyyv3_8,inuvl_wyvy3_8
+      common/inuvl/ inuvl_wxxu3_8,inuvl_wxux3_8,inuvl_wyyv3_8,inuvl_wyvy3_8

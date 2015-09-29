@@ -40,75 +40,41 @@
 #include "glb_ld.cdk"
 #include "nest.cdk"
 #include "p_geof.cdk"
-#include "ifd.cdk"
 #include "lun.cdk"
-#include "path.cdk"
 #include "bcsgrds.cdk"
 
-      integer err,errbcs1,errbcs2,n,id,k,istat,istatg
+      integer istat
       real, pointer, dimension(:,:,:) :: tr1
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
-      istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_u_fin)'
-      istatg=istat
-      istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_v_fin)'
-      istatg=min(istat,istatg)
-      istat = gmm_get(gmmk_nest_w_fin_s,nest_w_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_w_fin)'
-      istatg=min(istat,istatg)
-      istat = gmm_get(gmmk_nest_t_fin_s,nest_t_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_t_fin)'
-      istatg=min(istat,istatg)
+      istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin )
+      istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin )
+      istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
+      istat = gmm_get(gmmk_nest_t_fin_s ,nest_t_fin )
       istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_zd_fin)'
-      istatg=min(istat,istatg)
       istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_xd_fin)'
-      istatg=min(istat,istatg)
-      istat = gmm_get(gmmk_nest_s_fin_s,nest_s_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_s_fin)'
-      istatg=min(istat,istatg)
-      istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(nest_q_fin)'
-      istatg=min(istat,istatg)
+      istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin )
+      istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
       istat = gmm_get(gmmk_fis0_s,fis0)
-      if (GMM_IS_ERROR(istat)) print*,'nest_indata ERROR at gmm_get(fis0)'
-      istatg=min(istat,istatg)
-
-      Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
-
-      call bcs_ftype2 (ifd_ftype, F_datev_S)
 
       nest_zd_fin=0. ; nest_w_fin=0. ; nest_q_fin= 0.
 
-      if (ifd_ftype.eq.'3DF') then
+      call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
+                      nest_zd_fin, nest_s_fin, nest_q_fin, fis0      ,&
+                      l_minx,l_maxx,l_miny,l_maxy,G_nk,'NEST/'       ,&
+                      ':F', F_datev_S)
 
-         call casc_3df3 (nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin, &
-                         nest_zd_fin, nest_s_fin, nest_q_fin, fis0,       &
-                         l_minx,l_maxx,l_miny,l_maxy,G_nk,'NEST/',':F',F_datev_S)
-
-      else
-
-         call readdyn4 (nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin, &
-                        nest_zd_fin, nest_s_fin, nest_q_fin, fis0      , &
-                        'NEST/',':F',l_minx,l_maxx,l_miny,l_maxy,G_nk,F_datev_S)
-      endif
-
-      call diag_zd_w2( nest_zd_fin, nest_w_fin, nest_xd_fin     , &
-                       nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin, &
-                       l_minx,l_maxx,l_miny,l_maxy, G_nk             , &
+      call diag_zd_w2( nest_zd_fin, nest_w_fin, nest_xd_fin          ,&
+                       nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin,&
+                       l_minx,l_maxx,l_miny,l_maxy, G_nk             ,&
                        .not.Ana_zd_L, .not.Ana_w_L )
 !
 !     ---------------------------------------------------------------
 !
- 205  format (/' PROBLEM WITH LBCS AT: ',a,', PROC#:',i4,' --ABORT--'/)
  1000 format(3X,'GETTING DATA FROM NEST TO BCS: (S/R NEST_INDATA)')
- 1001 format (/' WRONG ifd_ftype in nest_indata: --- ABORT ---'/)
 
       return
       end

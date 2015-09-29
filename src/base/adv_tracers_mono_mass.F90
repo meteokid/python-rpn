@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
       subroutine adv_tracers_mono_mass ( F_name_S, F_out, F_cub, &
                               F_mono, F_lin, F_min, F_max, F_in, &
+                              F_for_flux_o,F_for_flux_i        , &
                               Minx,Maxx,Miny,Maxy,F_nk         , &
                               i0,in,j0,jn,k0,F_mono_kind,F_mass_kind )
 
@@ -33,6 +34,8 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_min !MIN over cell
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_max !MAX over cell
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_in  !Field at previous time step
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_o !I: Advected mixing ratio with 0 in NEST
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_i !I: Advected mixing ratio with 0 in CORE
 !
 !   author Monique Tanguay 
 !
@@ -45,10 +48,9 @@
    !--------------------------------------------------
 
 #include "lun.cdk"
-#include "adv_grid.cdk"
-#include "grd.cdk"
+#include "adv_nml.cdk"
 
-      logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L
+      logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L, SLICE_L
       real high(Minx:Maxx,Miny:Maxy,F_nk)
 !     
 !---------------------------------------------------------------------
@@ -56,23 +58,28 @@
       CLIP_L          = F_mono_kind == 1
       ILMC_L          = F_mono_kind == 2
       Bermejo_Conde_L = F_mass_kind == 1
-      Cubic_L         = F_mono_kind == 0.and.F_mass_kind /= 1 
+      SLICE_L         = F_mass_kind == 2 
+      Cubic_L         = F_mono_kind == 0.and.F_mass_kind == 9
 
    !Cubic or Mono(CLIPPING) interpolation
    !-------------------------------------
       if (.NOT.Bermejo_Conde_L.and..NOT.ILMC_L) then
 
-         if (Cubic_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
-         if (CLIP_L)  F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
+         if (Cubic_L.or.SLICE_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
+         if (CLIP_L)             F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
 
-         if (Lun_out.gt.0.and..not.CLIP_L) then
-            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+         if (Lun_out.gt.0.and..not.CLIP_L.and..not.SLICE_L) then
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
-            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
-         elseif(Lun_out.gt.0) then
-            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+         elseif(Lun_out.gt.0.and.CLIP_L) then
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
-            write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+         elseif(Lun_out.gt.0.and.SLICE_L) then
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+            write(Lun_out,*) 'TRACERS: Local Mass Conserving SL interpolation SLICE Zerroulat et al.(2002): ',F_name_S(4:7)
+            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
          endif
 
          return
@@ -81,10 +88,7 @@
 
    !Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
    !-----------------------------------------------------------------------
-      if (ILMC_L.and.     Grd_yinyang_L) &
-      call ILMC_GY (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
-      if (ILMC_L.and..not.Grd_yinyang_L) &
-      call ILMC_GU (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
+      if (ILMC_L) call ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,adw_ILMC_min_max_L,adw_ILMC_sweep_max) 
 
    !Restore Mass-Conservation: Bermejo and Conde,2002,MWR
    !-----------------------------------------------------
@@ -93,8 +97,8 @@
          high = F_cub
          if (CLIP_L.or.ILMC_L) high = F_mono
 
-         call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,&
-                             F_in,Minx,Maxx,Miny,Maxy,F_nk,k0,CLIP_L,ILMC_L)
+         call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,F_for_flux_o,F_for_flux_i, &
+                             Minx,Maxx,Miny,Maxy,F_nk,k0,adw_BC_min_max_L,CLIP_L,ILMC_L)
 
       else
 

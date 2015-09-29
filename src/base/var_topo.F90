@@ -15,41 +15,28 @@
 
 !**s/r var_topo - varies topography incrementally from analysis
 !                 topography to target topography
-!
+
       subroutine var_topo2 (F_topo, F_step, Minx,Maxx,Miny,Maxy)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Minx,Maxx,Miny,Maxy
       real F_topo (Minx:Maxx,Miny:Maxy), F_step
-!
-!author
-!     Sylvie Gravel
-!
-!revision
-! v3_11 - Gravel S.         - initial version
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_40 - Desgagne M.       - Major interface changes
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "p_geof.cdk" 
 #include "dcst.cdk"
 #include "vtopo.cdk"
-!
-      type(gmm_metadata) :: meta2d
-      integer i,j, gmmstat,istat
+
+      integer i,j, gmmstat
       real*8, parameter :: one = 1.0d0
       real*8, parameter :: two = 2.0d0
       real*8  lt, pio2, f, a, b
 !     __________________________________________________________________
 !
-      istat = 0
-      if (Vtopo_ndt.eq.0) istat = -1
-      call handle_error(istat,'var_topo','var_topo : Vtopo_ndt must be > 0')
-
-      gmmstat = gmm_get(gmmk_topo_low_s , topo_low , meta2d)
-      gmmstat = gmm_get(gmmk_topo_high_s, topo_high, meta2d)
+      gmmstat = gmm_get(gmmk_topo_low_s , topo_low )
+      gmmstat = gmm_get(gmmk_topo_high_s, topo_high)
 
       lt   = Vtopo_ndt
       pio2 = Dcst_pi_8 / two

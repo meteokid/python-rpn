@@ -56,11 +56,6 @@
          return
       endif
 
-      Advection_lam_legacy= .false.
-      if (.not. G_lam) Advection_lam_legacy= .true.
-
-      Rstri_glbcol_L = .false.
-
       G_halox = 4
       G_haloy = G_halox
 
@@ -85,12 +80,14 @@
       Schm_nblendyy = -1
       Schm_Tlift    = 0
       Schm_MTeul    = 0
+      Schm_advec    = 1
       Schm_trapeze_L  = .false.
       if (G_lam) Schm_trapeze_L = .true.
       Schm_settls_L   = .false.
       Schm_capa_var_L = .false.
       Schm_cub_traj_L = .false.
       if (G_lam.and.Schm_trapeze_L) Schm_cub_traj_L = .true.
+      Schm_cub_Coriolis_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
@@ -98,6 +95,7 @@
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L  = .false.
+      Schm_lift_ltl_L  = .false.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -156,6 +154,11 @@
       Hzd_pwr_tr     = -1
       Hzd_lnr_tr     = -1.
       Hzd_div_damp   = -1.
+      Hzd_type_S     = 'HO_EXP9P'
+      Hzd_smago_L    = .false.
+      Hzd_smago_param= -1
+      Hzd_smago_delta= -1
+
       Vspng_nk       = 0
       Vspng_coeftop  = -1.
       Vspng_njpole   = 3
@@ -167,6 +170,7 @@
       Vtopo_ndt   = 0
 
       Tr3d_list_S = ''
+      Tr3d_ntr    = 0
 
 ! The default here is NO modulation (weigh is 1.0 everywhere)
 ! Activation can be done with P_lmvd_weigh_high_lat=0.
@@ -179,6 +183,9 @@
       perturb_npts=10
 
       Eq_sponge=0.
+
+      Inp_npes  = 1
+      Out3_npes = 1
 
       Out3_lieb_levels = 0.
       Out3_lieb_conv   = 0.1

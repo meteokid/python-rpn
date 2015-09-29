@@ -13,25 +13,21 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r out_outdir - Establishes output directory base on Lctl_step and Out3_postfreq
-!
-
-      subroutine out_outdir (upperlimit)
-use iso_c_binding
+      subroutine out_outdir
+      use iso_c_binding
       use timestr_mod, only: timestr_prognum,timestr_unitfact
       implicit none
 #include <arch_specific.hf>
 
-      integer upperlimit
-
-!AUTHOR   Michel Desgagne  - Summer 2010
+!AUTHOR   Michel Desgagne  - Summer 2015
 !
 !REVISION
-! v4_14 - Desgagne M.      - Initial version
+! v4_80 - Desgagne M.      - Initial version
 
 #include <rmnlib_basics.hf>
 #include "cstv.cdk"
 #include "grd.cdk"
+#include "lctl.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "ptopo.cdk"
@@ -44,21 +40,26 @@ use iso_c_binding
       
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
                                   FMT=' ', last_S=' '
+      character*16 datev
       character*10 postjob_S
       character*7  blocxy_S
       character*2  digits_S
-      logical flag
-      integer err,last_step_post,flag_step_post,stepno,timing,ndigits,remainder,prognum,prognum1
+      integer err,last_step_post,flag_step_post,stepno,timing,ndigits, &
+              remainder,prognum,prognum1,upperlimit
       real :: interval
-      real(RDOUBLE) :: fatc_8
+      real,   parameter :: eps=1.e-12
+      real*8, parameter :: OV_day = 1.0d0/86400.0d0
+      real*8  dayfrac,fatc_8
 !
 !----------------------------------------------------------------------
 !
+      upperlimit = Step_total
+
       call out_steps
 
       if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
 
-      write (blocxy_S ,'(I3.3,"-",I3.3)') Out_myblocx, Out_myblocy
+      write (blocxy_S,'(I3.3,"-",I3.3)') Ptopo_mycol, Ptopo_myrow
 
       if (Out3_postproc_fact <= 0) then
          last_step_post = upperlimit
@@ -113,20 +114,38 @@ use iso_c_binding
       endif
       
       ! Wait for Grid PE0 to be finished subdir creation
-      call rpn_comm_barrier(RPN_COMM_BLOCMASTER, err)
+      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
 
-      ! Each block master now creates an independent subdir for outputs
+      ! Each io pe now creates an independent subdir for outputs
       Out_dirname_S = trim(Out_dirname_S)//'/'//blocxy_S
       err = CLIB_OK
-      if (Ptopo_blocme == 0 .and. dirbloc_S /= Out_dirname_S &
-                            .and. Ptopo_couleur == 0) then
+      if (Out3_iome .ge. 0 .and. dirbloc_S /= Out_dirname_S &
+                           .and. Ptopo_couleur == 0) then
          dirbloc_S = Out_dirname_S
          err = clib_mkdir ( trim(Out_dirname_S) )
          err = clib_isdir ( trim(Out_dirname_S) )
       endif
 
-      call handle_error(err,'out_outdir','unable to create output directory structure')
+      call gem_error (err,'out_outdir','unable to create output directory structure')
 
+      Out_dateo = Out3_date
+      if ( lctl_step .lt. 0 ) then  ! adjust Out_dateo because ip2=npas=0
+         dayfrac = dble(lctl_step-Step_delay) * Cstv_dt_8 * OV_day
+         call incdatsd (datev,Step_runstrt_S,dayfrac)
+         call datp2f   (Out_dateo,datev)
+      endif
+
+      Out_ip2  = int (dble(lctl_step) * Out_deet / 3600. + eps)
+      Out_ip2  = max (0, Out_ip2  )
+      Out_npas = max (0, Lctl_step)
+
+      Out_ip3  = 0
+      if (Out3_ip3.eq.-1) Out_ip3 = max (0, Lctl_step)
+      if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
+
+      Out_typvar_S = 'P'
+      if (Lctl_step.lt.0) Out_typvar_S = 'I'
+      
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !
 !----------------------------------------------------------------------

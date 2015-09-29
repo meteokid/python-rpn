@@ -18,9 +18,10 @@
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
       implicit none
 #include <arch_specific.hf>
-        integer F_argc,F_v1,F_v2
-        character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
-        character*5 stuff_S
+
+      integer F_argc,F_v1,F_v2
+      character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
+      character*5 stuff_S
 
 !author 
 !     Vivian Lee - rpn - April 1999
@@ -124,20 +125,13 @@
 
       j = Grid_sets
       Grid_id(j)=gridset
-      Grid_etikext_S(j) = ''
 
       if(index(F_argv_S(2),'model') .ne. 0) then
          grdtyp_S='model'
-         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'core') .ne. 0) then
          grdtyp_S='core'
-         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'free') .ne. 0) then
          grdtyp_S='free'
-         if (F_argc.gt.2.and.index(F_argv_S(3),'"').gt.0)  &
-             Grid_etikext_S(j) = F_argv_S(3)(2:longueur(F_argv_S(3))-1)
       else if (index(F_argv_S(2),'reduc') .ne. 0) then
          grdtyp_S='reduc'
          gridout(1)= 0 ; gridout(2)= 0
@@ -149,8 +143,6 @@
          read(F_argv_S(6),*) gridout(4)
          if (F_argc.gt.6) then
             if (index(F_argv_S(7),'"').eq.0) read(F_argv_S(7),*)gridout(5)
-            if (index(F_argv_S(F_argc),'"').gt.0)  &
-            Grid_etikext_S(j) = F_argv_S(F_argc)(2:longueur(F_argv_S(F_argc))-1)
          endif
       else
          if (Lun_out.gt.0) &
@@ -162,8 +154,7 @@
 
 !    Calculate the origin and outer coordinates of the output grid
 !    and set to the maximum/minimum possible
-!
-      Grid_reduc (j)= (grdtyp_S.eq.'reduc')
+
       Grid_stride(j)= 1
 
       if (grdtyp_S.eq.'model') then
@@ -193,8 +184,8 @@
          Grid_x1(j)=max( Grid_x0(j), min(G_ni,gridout(2)) )
          Grid_y0(j)=min( G_nj, max(1,gridout(3)) )
          Grid_y1(j)=max( Grid_y0(j), min(G_nj,gridout(4)) )
-!         Grid_stride(j)=min( max(gridout(5),1), &
-!             min(Grid_x1(j)-Grid_x0(j)+1,Grid_y1(j)-Grid_y0(j)+1)/2-1 )
+         Grid_stride(j)=min( max(gridout(5),1), &
+             min(Grid_x1(j)-Grid_x0(j)+1,Grid_y1(j)-Grid_y0(j)+1)/2-1 )
          if (Grd_yinyang_L) then
             if (trim(Grd_yinyang_S) .eq. 'YAN') then
                Grid_x0(j)= 0 ; Grid_x1(j)= -1
@@ -214,7 +205,7 @@
           return
       endif
 
-      if (Lun_out.gt.0) write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
+!      if (Lun_out.gt.0) write(Lun_out,*) ' Grid_set(',j,') : Grid_id=',Grid_id(j)
 !
 !-------------------------------------------------------------------
 !

@@ -16,22 +16,12 @@
 !**s/r hzd_momentum - applies horizontal diffusion on zdt and possibly on u and v
 !                     to smooth momentum components for trajectory calculations after 
 !                     a Crank-Nicholson step avoiding pole problems
-!
+
       subroutine hzd_momentum
+      use hzd_ctrl
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     Claude Girard - spring 2012
-!
-!revision
-! v4_40 - Girard C.      - initial version
-!
-!object
-!	
-!arguments
-!     none
-!
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
@@ -40,7 +30,8 @@
 
       logical, save :: switch_on_hzd= .true.
       integer istat
-!     _________________________________________________________________
+!
+!-------------------------------------------------------------------
 !
       if (Schm_hzdadw_L .and. switch_on_hzd) then
 
@@ -48,10 +39,9 @@
          istat= gmm_get(gmmk_ut0_s ,ut0 )
          istat= gmm_get(gmmk_vt0_s ,vt0 )
 
-         call hzd_ctrl3(ut0 , 'U', G_nk)
-         call hzd_ctrl3(vt0 , 'V', G_nk)
-         call hzd_ctrl3(zdt0, 'S', G_nk)
-         
+         call hzd_ctrl4 ( ut0, vt0, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_ctrl4 (zdt0, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
+
          if (Grd_yinyang_L) then
             call yyg_xchng (zdt0, l_minx,l_maxx,l_miny,l_maxy, &
                             G_nk, .false., 'CUBIC')
@@ -59,7 +49,8 @@
          endif
 
       endif
-!     _________________________________________________________________
+!
+!-------------------------------------------------------------------
 !
       return
       end

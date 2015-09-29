@@ -14,24 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r blocstat  - Performs 2D-3D statistics on model fields
-!
+
       subroutine blocstat (F_forceit_L)
       implicit none
 #include <arch_specific.hf>
 
       logical F_forceit_L
-
-!author
-!     M. Desgagne  	- fall 2009
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Desgagne M.       - 4D-var statistics control
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_02 - Lee V.            - CFL, trajectory stats for LAM
-! v3_21 - Lee V.            - Remove Tr2d
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_11 - Tanguay M.        - Use blocstat when (TL/AD) 
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -54,7 +42,7 @@
       call timing_start2 ( 99, 'BLOCSTAT', 1 )
 
       if (.not.done) call set_statliste
-!
+
       flag = .false.
       if (Step_gstat.gt.0) flag = (mod(Lctl_step,Step_gstat).eq.0)
       flag = flag .or. F_forceit_L
@@ -86,10 +74,11 @@
                else
                   istat = gmm_get(stat_liste(n), wk3d, mymeta)
                   call glbstat2 (wk3d,stat_varname,'', &
-                                tmp_meta%l(1)%low,tmp_meta%l(1)%high, &
-                                tmp_meta%l(2)%low,tmp_meta%l(2)%high, &
-                                tmp_meta%l(3)%low,tmp_meta%l(3)%high, &
-                                i0,in-inn,j0,jn-jnn,tmp_meta%l(3)%low,tmp_meta%l(3)%high)
+                                tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                                tmp_meta%l(3)%low,tmp_meta%l(3)%high,&
+                                i0,in-inn,j0,jn-jnn                 ,&
+                                tmp_meta%l(3)%low,tmp_meta%l(3)%high)
                endif
             endif
          end do
@@ -97,26 +86,26 @@
 !         if ((Ptopo_numproc.eq.1).and.(Schm_theoc_L)) then
 !            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
 !         endif
-!
+
 !     Print max courrant numbers if LAM configuration
          if (G_lam) then
          if (Ptopo_myproc==0 .and. Lctl_step>0) then
-          if (Advection_lam_legacy)then
-            call adx_cfl_print()
-          else
-            call adv_cfl_print()
-          endif
+            if (G_lam) then
+               call adv_cfl_print()
+            else
+               call adx_cfl_print()
+            endif
          endif
          endif
-!
+
          if (Ptopo_myproc.eq.0) write(6,1001)
 
       endif
-!
+
       done = .true.
       call timing_stop ( 99 )
       call flush(6)
-!
+
  1000 format (/ 19('#'),' BLOC STAT ',i6,1X,19('#'))
  1001 format (  19('#'),' BLOC STAT ...done')
 !     ---------------------------------------------------------------

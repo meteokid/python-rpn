@@ -55,8 +55,6 @@
 
       !----------------------------------------------------------
 
-      call timing_start2 (36,'ILMC_GU',31)
-
       time_m = 0
 
       reset  = 0
@@ -77,7 +75,7 @@
 
       if (Lun_out>0) then
          write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',Adw_ILMC_min_max_L
-         write(Lun_out,1000) 'TRACERS: Mass BEFORE ILMC        =',mass_new_8,F_name_S(4:7)
+         write(Lun_out,1000) 'TRACERS: Mass BEFORE ILMC        =',mass_new_8,F_name_S(4:6)
       endif
 
       call get_density (l_density,l_mass,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
@@ -388,7 +386,7 @@
       call RPN_COMM_allreduce (l_reset,g_reset,3,"MPI_INTEGER","MPI_SUM","NS",err)
 
       if (Lun_out>0) then
-         write(Lun_out,1000) 'TRACERS: Mass  AFTER ILMC        =',mass_out_8,F_name_S(4:7)
+         write(Lun_out,1000) 'TRACERS: Mass  AFTER ILMC        =',mass_out_8,F_name_S(4:6)
          write(Lun_out,*)    'TRACERS: # pts OVER/UNDER SHOOT  =',g_reset(3),'over',G_ni*G_nj*F_nk
          write(Lun_out,*)    'TRACERS: # pts CLIPPED           =',g_reset(1) + g_reset(2),'over',G_ni*G_nj*F_nk
          write(Lun_out,*)    'TRACERS: RESET_MIN_ILMC          =',g_reset(1),'over',G_ni*G_nj*F_nk
@@ -398,9 +396,7 @@
 
       if (Lun_out>0) write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
 
-      call timing_stop(88)
-
- 1000 format(1X,A34,E20.12,1X,A4)
+ 1000 format(1X,A34,E20.12,1X,A3)
  1001 format(1X,A23,E11.4,'%')
 
       return

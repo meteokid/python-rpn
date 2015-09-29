@@ -25,6 +25,7 @@
 !
 !revision
 ! v4_70 - authors          - initial version
+! v4_XX - Tanguay M.       - SOURCE_PS: REAL*8 with iterations
    
 #include <gmm.hf>
 #include "glb_ld.cdk"
@@ -34,20 +35,22 @@
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"
+#include "lun.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S
-      integer nelements, init, busidx, istat, i,j,k,n, cnt
+      integer nelements, init, busidx, istat, i,j,k,n, cnt, iteration
       real, dimension(:,:,:), pointer :: data3d,minus,ptr3d
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv
-      real pr_p0_dyn(l_minx:l_maxx,l_miny:l_maxy), d_ps(l_ni)
-      real, dimension(l_ni,l_nj,G_nk) :: qw_phy,d_qw
+      real,  dimension(l_ni,l_nj,G_nk) :: qw_phy,qw_dyn
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)        :: pr_p0_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) :: pr_m_dyn_8,pr_m_phy_8,pr_t_8
 !
 !-----------------------------------------------------------------
 !
    if (F_apply_L) then
 
       if (Schm_source_ps_L) then
-         qw_phy = 0. ; d_qw   = 0.
+         qw_phy = 0. ; qw_dyn = 0.
          do n= 1, Tr3d_ntr
             trname_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(trim(trname_S),data3d)
@@ -61,8 +64,8 @@
                do k=1, l_nk
                do j=1+pil_s,l_nj-pil_n
                do i=1+pil_w,l_ni-pil_e
-                  d_qw  (i,j,k)= d_qw  (i,j,k) + (tdu(i,j,k) - data3d(i,j,k))
-                  qw_phy(i,j,k)= qw_phy(i,j,k) +  tdu(i,j,k)
+                  qw_phy(i,j,k)= qw_phy(i,j,k) +    tdu(i,j,k)
+                  qw_dyn(i,j,k)= qw_dyn(i,j,k) + data3d(i,j,k)
                   data3d(i,j,k)= tdu   (i,j,k)
                enddo
                enddo
@@ -90,7 +93,6 @@
       istat = gmm_get (gmmk_tt1_s, tt1)
       istat = gmm_get (gmmk_pw_uu_copy_s,pw_uu_copy)
       istat = gmm_get (gmmk_pw_vv_copy_s,pw_vv_copy)
-      istat = gmm_get (gmmk_pw_tt_copy_s,pw_tt_copy)
       istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
       istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
@@ -115,10 +117,6 @@
                                  pw_uu_copy(1:l_ni,1:l_nj,k))
          tdv(1:l_ni,1:l_nj,k) = (pw_VV_plus(1:l_ni,1:l_nj,k)- &
                                  pw_VV_copy(1:l_ni,1:l_nj,k))
-         pw_uu_copy(1:l_ni,1:l_nj,k) = tdu(1:l_ni,1:l_nj,k)
-         pw_vv_copy(1:l_ni,1:l_nj,k) = tdv(1:l_ni,1:l_nj,k)
-         pw_tt_copy(1:l_ni,1:l_nj,k) = (pw_tt_plus(1:l_ni,1:l_nj,k)- &
-                                        pw_tt_copy(1:l_ni,1:l_nj,k))
       end do
 !$omp enddo
 !$omp end parallel
@@ -136,28 +134,60 @@
 
       if (Schm_source_ps_L) then
 
-         istat = gmm_get(gmmk_st1_s,st1)
-         call calc_pressure ( tdu, tdv, pr_p0_dyn, st1, l_minx,l_maxx, l_miny,l_maxy, l_nk )
+         iteration = 1
 
-      !Estimate source of surface pressure due to fluxes of water:
-      !d(ps) = Vertical_Integral [ d(qw)/(1-qw_phy)] d(pi) (Claude Girard)
-      !-------------------------------------------------------------------
-!$omp parallel private(d_ps) shared(d_qw,qw_phy,tdu,pr_p0_dyn,st1)
-!$omp do
+         istat = gmm_get(gmmk_st1_s,st1)
+
+         !Obtain pressure levels
+         !----------------------
+         call calc_pressure_8 (pr_m_dyn_8,pr_t_8,pr_p0_8,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+         pr_m_dyn_8(:,:,l_nk+1) = pr_p0_8(:,:)
+
+     800 continue
+
+         !Obtain pressure levels
+         !----------------------
+         call calc_pressure_8 (pr_m_phy_8,pr_t_8,pr_p0_8,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+         pr_m_phy_8(:,:,l_nk+1) = pr_p0_8(:,:)
+
+         pr_p0_8(:,:) = pr_m_phy_8(:,:,1)
+
+         !Estimate source of surface pressure due to fluxes of water:
+         !-----------------------------------------------------------------------------------------------------
+         !Vertical_Integral [d(p_phy)_k+1] = Vertical_Integral [ d(p_phy)_k q_phy + d(p_dyn) (1-q_dyn) based on
+         !-----------------------------------------------------------------------------------------------------
+         !d(ps) = Vertical_Integral [ d(qw)/(1-qw_phy)] d(pi) (Claude Girard) 
+         !-----------------------------------------------------------------------------------------------------
+!$omp parallel do shared(qw_dyn,qw_phy,pr_m_dyn_8,pr_m_phy_8,pr_p0_8)
          do j=1+pil_s,l_nj-pil_n
-            d_ps= 0.
-            do k=1,l_nk-1
-            do i=1+pil_w,l_ni-pil_e
-               d_ps(i)= d_ps(i) + (d_qw(i,j,k)/(1-qw_phy(i,j,k))) * (tdu(i,j,k+1)-tdu(i,j,k))
+            do k=1,l_nk
+               do i=1+pil_w,l_ni-pil_e
+                  pr_p0_8(i,j)= pr_p0_8(i,j) + (1.0-qw_dyn(i,j,k)) * (pr_m_dyn_8(i,j,k+1)-pr_m_dyn_8(i,j,k)) + &
+                                                    qw_phy(i,j,k)  * (pr_m_phy_8(i,j,k+1)-pr_m_phy_8(i,j,k))
+               enddo
             enddo
-            enddo
-            do i=1+pil_w,l_ni-pil_e
-               d_ps(i)= d_ps(i) + (d_qw(i,j,l_nk)/(1-qw_phy(i,j,l_nk))) * (pr_p0_dyn(i,j)-tdu(i,j,l_nk))
-               st1(i,j)= log( (pr_p0_dyn(i,j) + d_ps(i)) / Cstv_pref_8)
-            end do
          enddo
-!$omp enddo
-!$omp end parallel
+!$omp end parallel do
+
+!$omp parallel do shared(pr_p0_8,st1)
+         do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            st1(i,j)= log(pr_p0_8(i,j)/Cstv_pref_8)
+         end do
+         end do
+!$omp end parallel do 
+
+         iteration = iteration + 1
+
+         if (iteration<4) goto 800
+
+         if (Lun_out>0) write(Lun_out,*) ''
+         if (Lun_out>0) write(Lun_out,*) '--------------------------------------'
+         if (Lun_out>0) write(Lun_out,*) 'SOURCE_PS is done for DRY AIR (REAL*8)'
+         if (Lun_out>0) write(Lun_out,*) '--------------------------------------'
+         if (Lun_out>0) write(Lun_out,*) ''
 
          call pw_update_GPW() 
 

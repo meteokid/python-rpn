@@ -15,20 +15,19 @@
 
 !**s/r get_topo - Obtain topography from geophysical file
 
-
-!
-      subroutine get_topo ( F_topo, ni, nj )
+      subroutine get_topo2 ( F_topo, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
       implicit none
 #include <arch_specific.hf>
-!
-      integer ni,nj
-      real F_topo (ni,nj)
-!
+
+      integer Minx,Maxx,Miny,Maxy, i0,in,j0,jn
+      real F_topo (Minx:Maxx,Miny:Maxy)
+
 !author   
 !     M. Desgagne  -   Spring 2010
 !
 !revision
 ! v4_13 -  Desgagne M.           - initial version
+! v4_80 -  Deagagne M.           - new min:max interface
 !
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
@@ -36,13 +35,13 @@
 #include "dcst.cdk"
 #include "schm.cdk"
 #include "grd.cdk"
-!
+
       character*8    inttyp
       character*1024 fn
       integer status
       real   xfi(G_ni), yfi(G_nj), topo_destination(G_ni,G_nj)
       real*8 rad2deg_8 
-
+!
 !-----------------------------------------------------------------------
 !
       status = 0
@@ -67,13 +66,12 @@
 
       call handle_error (status,'GET_TOPO','Topography NOT specified')
 
-      call glbdist (topo_destination,G_ni,G_nj,F_topo,1,l_ni,1,l_nj,1,0,0)
+      call glbdist (topo_destination,G_ni,G_nj,F_topo,Minx,Maxx,Miny,Maxy,1,0,0)
 
-      F_topo = F_topo * Dcst_grav_8
+      F_topo(i0:in,j0:jn) = F_topo(i0:in,j0:jn) * Dcst_grav_8
 !
 !-----------------------------------------------------------------------
 !
       return
       end
-!
 

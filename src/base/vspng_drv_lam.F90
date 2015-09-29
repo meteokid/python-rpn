@@ -17,6 +17,7 @@
 
       subroutine vspng_drv_lam ( F_u, F_v, F_zd, F_w, F_t, &
                                    Minx,Maxx,Miny,Maxy, Nk )
+      use hzd_exp
       implicit none
 #include <arch_specific.hf>
 
@@ -33,65 +34,29 @@
 !
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "vspng.cdk"
-
-      integer iter1,iter2,BL_iter,SL_iter,m_eps 
 !
 !     ---------------------------------------------------------------
 !
-      BL_iter= int(Vspng_niter/G_halox)
-       m_eps = mod(Vspng_niter,G_halox)
-      if (m_eps.gt.0) BL_iter= BL_iter+1
-      SL_iter= G_halox
-
-      do iter1= 1, BL_iter
-
-         if (iter1 .eq. BL_iter) then
-            if (m_eps.gt.0) SL_iter= m_eps
-         endif
-
 !     Momentum
 !     ~~~~~~~~
-         if (Grd_yinyang_L) &
-         call  yyg_nestuv (F_u, F_v, l_minx,l_maxx,l_miny,l_maxy, Vspng_nk )
-         call rpn_comm_xch_halo (F_u,l_minx,l_maxx,l_miny,l_maxy,l_niu,l_nj, &
-                          Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-         call rpn_comm_xch_halo (F_v,l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_njv, &
-                          Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call hzd_exp_deln ( F_u,  'U', l_minx,l_maxx,l_miny,l_maxy,&
+                          Vspng_nk, F_VV=F_v, F_type_S='VSPNG' )
+
 !     Vertical motion
 !     ~~~~~~~~~~~~~~~
-         if (Grd_yinyang_L) &
-         call yyg_xchng (F_zd , l_minx,l_maxx,l_miny,l_maxy, Vspng_nk,&
-                                                      .false., 'CUBIC')
-         call rpn_comm_xch_halo (F_zd,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
-                          Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call hzd_exp_deln ( F_zd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                          Vspng_nk, F_type_S='VSPNG' )
          
 !     Vertical wind
 !     ~~~~~~~~~~~~~
-         if (Grd_yinyang_L) &
-         call yyg_xchng (F_w , l_minx,l_maxx,l_miny,l_maxy, Vspng_nk,&
-                                                     .false., 'CUBIC')
-         call rpn_comm_xch_halo (F_w,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
-                       Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+      call hzd_exp_deln ( F_w,  'M', l_minx,l_maxx,l_miny,l_maxy,&
+                          Vspng_nk, F_type_S='VSPNG' )
 
 !     Temperature
 !     ~~~~~~~~~~~~~
-         if (Grd_yinyang_L) &
-         call yyg_xchng (F_t , l_minx,l_maxx,l_miny,l_maxy, Vspng_nk,&
-                                                     .false., 'CUBIC')
-         call rpn_comm_xch_halo (F_t,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj, &
-                       Vspng_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-
-         do iter2= 1, SL_iter
-            call hzd_exp5p ( F_u , l_minx,l_maxx,l_miny,l_maxy,Vspng_nk, Vspng_coef_8, 'U')
-            call hzd_exp5p ( F_v , l_minx,l_maxx,l_miny,l_maxy,Vspng_nk, Vspng_coef_8, 'V')
-            call hzd_exp5p ( F_t , l_minx,l_maxx,l_miny,l_maxy,Vspng_nk, Vspng_coef_8, 'M')
-            call hzd_exp5p ( F_zd, l_minx,l_maxx,l_miny,l_maxy,Vspng_nk, Vspng_coef_8, 'M')
-            call hzd_exp5p ( F_w , l_minx,l_maxx,l_miny,l_maxy,Vspng_nk, Vspng_coef_8, 'M')
-         enddo
-     
-      enddo
+      call hzd_exp_deln ( F_t,  'M', l_minx,l_maxx,l_miny,l_maxy,&
+                          Vspng_nk, F_type_S='VSPNG' )
 !
 !     ---------------------------------------------------------------
 !

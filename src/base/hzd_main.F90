@@ -15,7 +15,8 @@
 
 !**s/r hzd_main - applies horizontal diffusion on a given set of fields
 !
-      subroutine hzd_main 
+      subroutine hzd_main
+      use hzd_ctrl
       implicit none
 #include <arch_specific.hf>
 
@@ -23,25 +24,10 @@
 !     Joseph-Pierre Toviessi ( after version v1_03 of dif )
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version 
-! v2_10 - Qaddouri&Desgagne - higher order diffusion operator
-! v2_21 - Desgagne M.       - new call to horwavg
-! v2_30 - Edouard  S.       - adapt for vertical hybrid coordinate
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_01 - Toviessi J. P.    - add call hzd_ho_parite
-! v3_02 - Desgagne M.       - correction for non-hydrostatic version
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v3_20 - Tanguay M.        - Introduce Hzd_hzdmain_n_L
-! v3_21 - Desgagne M.       - added explicit horiz diff.
-! v4_xx - Gravel, S.        - adapt to vertical staggering
-! v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
-! v4_04 - Girard-Plante     - Diffuse only real winds, zdot and theta.
-!                           - Move psadj code in new s/r psadj
-! v4_05 - Plante A.         - Diffusion of w all the time
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_15 - Desgagne M.       - refonte majeure
 ! v4_40 - Plante A.         - Equatorial_sponge
 ! v4_50 - Desgagne M.       - New control switches
+! v4_80 - Lee&Qaddouri      - Add DEL N horizontal diffusion
+! v4_80 - Gaudreault S.     - Nonlinear Smagorinsky diffusion
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -56,11 +42,13 @@
               switch_on_eqspng, switch_on_THETA
       integer i,istat
       real, pointer, dimension(:,:,:) :: tr
-!     _________________________________________________________________
+!
+!-------------------------------------------------------------------
 !
       call timing_start2 ( 60, 'HZD_main', 1 )
 
       switch_on_UVW     = Hzd_lnr      .gt.0.
+      switch_on_UVW     = switch_on_UVW.or.Hzd_smago_L
       switch_on_TR      = Hzd_lnr_tr   .gt.0.
       switch_on_THETA   = Hzd_lnr_theta.gt.0.
       switch_on_vrtspng = Vspng_nk     .ge.1
@@ -73,16 +61,20 @@
       istat = gmm_get(gmmk_wt1_s,wt1)
 
       call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
-!     
-!**************************************
-!  3. Horizontal diffusiion on theta  *
-!**************************************
-!
+    
+!**********************************
+!  Horizontal diffusion on theta  *
+!**********************************
+
       if ( switch_on_THETA ) then
          call timing_start2 ( 61, 'HZD_theta', 60 )
          call hzd_theta
          call timing_stop  ( 61 )
       endif
+
+!**********************************
+!  Horizontal diffusion on tracers*
+!**********************************
 
       if ( switch_on_TR ) then
          call timing_start2 ( 62, 'HZD_tracers', 60 )
@@ -90,28 +82,39 @@
             if (Tr3d_hzd(i)) then
                nullify (tr)
                istat = gmm_get('TR/'//trim(Tr3d_name_S(i))//':P',tr)
-               if (istat.eq.0) call hzd_ctrl3 (tr, 'S_TR', G_nk)
+               if (istat.eq.0) call hzd_ctrl4 &
+                     (tr, 'S_TR', l_minx,l_maxx,l_miny,l_maxy,G_nk)
             endif
          end do
          call timing_stop  ( 62 )
       endif
-!
-!***************************
-!  1. Horizontal diffusion *
-!***************************
-!
+
+!************************
+! Smagorinsky diffusion *
+!************************
+
+      if (Hzd_smago_L) then
+         call timing_start2 ( 64, 'HZD_smago', 60 )
+         call hzd_smago(ut1, vt1, hzd_smago_param, hzd_smago_delta, &
+                        l_minx, l_maxx, l_miny, l_maxy, G_nk)
+         call timing_stop ( 64 )
+      end if
+
+!************************
+!  Horizontal diffusion *
+!************************
+
       if ( switch_on_UVW ) then
          call timing_start2 ( 63, 'HZD_bkgrnd', 60 )
-         call hzd_ctrl3 ( ut1, 'U', G_nk)
-         call hzd_ctrl3 ( vt1, 'V', G_nk)
-         call hzd_ctrl3 (zdt1, 'S', G_nk)
-         call hzd_ctrl3 ( wt1, 'S', G_nk)
+         call hzd_ctrl4 ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_ctrl4 (zdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 63 )
       endif
 !     
-!***********************
-!  2. Vertical sponge  *
-!***********************
+!********************
+!  Vertical sponge  *
+!********************
 !
       if ( switch_on_vrtspng ) then
          call timing_start2 ( 65, 'V_SPNG', 60 )
@@ -119,11 +122,11 @@
                           l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 65 )
       endif
-!     
-!*************************
-!  3. Equatorial sponge  *
-!*************************
-!
+
+!**********************
+!  Equatorial sponge  *
+!**********************
+
       if ( switch_on_eqspng ) then
          call timing_start2 ( 67, 'EQUA_SPNG', 60)
          call eqspng_drv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -142,9 +145,9 @@
       if (switch_on_THETA .or. switch_on_TR .or. switch_on_vrtspng  )&
          call pw_update_T
 
-         call timing_stop ( 60 )
+      call timing_stop ( 60 )
 !
-!     _________________________________________________________________
+!-------------------------------------------------------------------
 !
       return
       end

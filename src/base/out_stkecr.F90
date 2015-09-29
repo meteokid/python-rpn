@@ -14,42 +14,37 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r out_stkecr
-!
-      subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  ,&
-                              l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf,&
-                              ip2,ip3 )
-use iso_c_binding
+
+      subroutine out_stkecr2 ( fa,lminx,lmaxx,lminy,lmaxy, &
+                               meta,nplans, g_id,g_if,g_jd,g_jf )
+      use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 
       include "out_meta.cdk"
 
       integer lminx,lmaxx,lminy,lmaxy,nplans
-      integer l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf
-      integer ip2,ip3
+      integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
       type (meta_fstecr), dimension(:), pointer :: meta
-!
+
 !author
 !    Michel Desgagne - Fall 2012
-!
 !revision
 ! v4_50 - Desgagne M. - Initial version
+! v4_80 - Desgagne M. - switch to RPN_COMM_shuf_ezcoll
 
 #include "glb_ld.cdk"
 #include "grd.cdk"
-#include "grid.cdk"
-#include "out3.cdk"
 #include "out.cdk"
+#include "out3.cdk"
 #include "ptopo.cdk"
+#include <rmnlib_basics.hf>
       include "rpn_comm.inc"
 
-      integer, external :: fstecr, RPN_COMM_grid_redist, &
-                                   RPN_COMM_shuf_ezcoll
-      character*2 typvar
+      integer, external :: RPN_COMM_shuf_ezcoll
       logical wrapit_L
-      integer, parameter :: ltok = 1
-      integer  nz, err, nblock, ni, nis, njs, k, kk, pnip2, npas, ig4
+      integer  nz, err, ni, nis, njs, k, kk
       integer, dimension (:)    , allocatable :: zlist
       real   , dimension (:,:  ), pointer     :: guwrap
       real   , dimension (:,:,:), pointer     :: wk, wk_glb
@@ -58,53 +53,32 @@ use iso_c_binding
 !
       nis= g_if - g_id + 1
       njs= g_jf - g_jd + 1
-      ig4= 0
+      if ( (nis .le. 1) .or. (njs .le. 1) ) return
 
-      nblock= Ptopo_nblocx*Ptopo_nblocy
-      nz    = (nplans + nblock -1) / nblock
+      nz    = (nplans + Out3_npes -1) / Out3_npes
       allocate ( wk(nis,njs,nz+1), zlist(nz) , wk_glb(G_ni,G_nj,nz+1) )
-      zlist= -1 ; wk= -9999.
-! wk_glb= -9999.
+      zlist= -1
 
-      if (out3_type_S .eq. 'REGDYN') then
+      if (out_type_S .eq. 'REGDYN') then
          call timing_start2 ( 82, 'OUT_DUCOL', 80)
       else
          call timing_start2 ( 91, 'OUT_PUCOL', 48)
       endif
 
-!!$      err= RPN_COMM_shuf_ezcoll (Grid_comm_setno, Grid_comm_id, wk_glb,&
-!!$                                 nz, fa, nplans, zlist)
-!!$      wk(1:nis,1:njs,:) = wk_glb(g_id:g_if,g_jd:g_jf,:)                   
+      err= RPN_COMM_shuf_ezcoll (Out3_comm_setno, Out3_comm_id, wk_glb,&
+                                 nz, fa, nplans, zlist)
 
-      err= RPN_COMM_grid_redist (fa, l_minx,l_maxx, l_id,l_if         ,&
-                                     l_miny,l_maxy, l_jd,l_jf, nplans ,& 
-                                 wk, g_id, g_if, g_jd, g_jf           ,&
-                                 nz, zlist, G_ni, G_nj                ,&
-                                 Out3_outpe_x,Ptopo_nblocx            ,&
-                                 Out3_outpe_y,Ptopo_nblocy, ltok)
-
-      if (out3_type_S .eq. 'REGDYN') then
+      if (out_type_S .eq. 'REGDYN') then
          call timing_stop (82)
-      else
-         call timing_stop (91)
-      endif
-
-      if (out3_type_S .eq. 'REGDYN') then
          call timing_start2 ( 84, 'OUT_DUECR', 80)
       else
+         call timing_stop (91)
          call timing_start2 ( 92, 'OUT_PUECR', 48)
       endif
 
-      pnip2 = max(0,ip2)
-      npas  = max(0,Out_npas)
-      if (Out_npas.ge.0) then
-         typvar= Out_typvar_S
-      else
-         typvar= 'I'
-      endif
+      if (Out3_iome .ge.0) then
 
-      if (Out_blocme.eq.0) then
-!      if (Grid_iome .ge.0) then
+         wk(1:nis,1:njs,:) = wk_glb(g_id:g_if,g_jd:g_jf,:)
 
          wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) )
          if (wrapit_L) allocate ( guwrap(G_ni+1,njs) )
@@ -118,11 +92,11 @@ use iso_c_binding
 
                   call out_mergeyy (wk(1,1,k), nis*njs)
                   if (Ptopo_couleur.eq.0) &
-                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo, &
-                                int(Out_deet),npas,nis,2*njs,1,meta(kk)%ip1   , &
-                                pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'U'   , &
-                                meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
-                                meta(kk)%dtyp,Out_rewrit_L)
+                  err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo ,&
+                                Out_deet,Out_npas,nis,2*njs,1,meta(kk)%ip1     ,&
+                                Out_ip2,Out_ip3,Out_typvar_S,meta(kk)%nv       ,&
+                                Out_etik_S,'U',meta(kk)%ig1,meta(kk)%ig2       ,&
+                                meta(kk)%ig3,Out_ig4,meta(kk)%dtyp,Out_rewrit_L)
                else
 
                   if (wrapit_L) then
@@ -132,11 +106,11 @@ use iso_c_binding
                      guwrap => wk(1:nis,1:njs,k)    ; ni= nis
                   endif
 
-                  err = fstecr(guwrap,guwrap,-meta(kk)%nbits,Out_unf,Out_dateo, &
-                                int(Out_deet),npas,ni, njs,1,meta(kk)%ip1     , &
-                                pnip2,ip3,typvar,meta(kk)%nv,Out_etik_S,'Z'   , &
-                                meta(kk)%ig1,meta(kk)%ig2,meta(kk)%ig3,ig4    , &
-                                meta(kk)%dtyp,Out_rewrit_L)
+                  err = fstecr(guwrap,guwrap,-meta(kk)%nbits,Out_unf,Out_dateo,&
+                               Out_deet,out_npas,ni,njs,1,meta(kk)%ip1        ,&
+                               Out_ip2,Out_ip3,Out_typvar_S,meta(kk)%nv       ,&
+                               Out_etik_S,'Z',meta(kk)%ig1,meta(kk)%ig2       ,&
+                               meta(kk)%ig3,Out_ig4,meta(kk)%dtyp,Out_rewrit_L)
                endif
 
             endif
@@ -149,12 +123,13 @@ use iso_c_binding
 
       deallocate (wk,wk_glb,zlist)
 
-      if (out3_type_S .eq. 'REGDYN') then
+      if (out_type_S .eq. 'REGDYN') then
          call timing_stop (84)
       else
          call timing_stop (92)
       endif
-
+!
 !--------------------------------------------------------------------
+!
       return
       end

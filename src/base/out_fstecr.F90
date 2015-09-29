@@ -14,9 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r out_fstecr
-!
-      subroutine out_fstecr ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,mul,  &
-                              add,kind,nkfa,ind_o,nk_o,nbit,F_empty_stk_L)
+
+      subroutine out_fstecr2 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,&
+                               mul,add, kind,nkfa,ind_o,nk_o       ,&
+                               nbit,F_empty_stk_L)
       implicit none
 #include <arch_specific.hf>
 
@@ -24,37 +25,34 @@
       logical F_empty_stk_L
       integer lminx,lmaxx,lminy,lmaxy,nkfa,nbit,nk_o,kind
       integer ind_o(nk_o)
-      real fa(lminx:lmaxx,lminy:lmaxy,nkfa),rf(nkfa),mul,add
+      real fa (lminx:lmaxx,lminy:lmaxy,nkfa), rf(nkfa), mul,add
 
 !author
 !    Michel Desgagne - Fall 2012
 !
 !revision
 ! v4_50 - Desgagne M. - Initial version
+! v4_80 - Desgagne M. - major re-factorization of output
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "out3.cdk"
 #include "out.cdk"
-#include "level.cdk"
-#include "ptopo.cdk"
+#include "out3.cdk"
       include "out_meta.cdk"
 
 Interface
-subroutine out_stkecr ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans  , &
-                        l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf, &
-                        ip2,ip3 )
+subroutine out_stkecr2 ( fa,lminx,lmaxx,lminy,lmaxy,meta,nplans, &
+                         g_id,g_if,g_jd,g_jf )
       include "out_meta.cdk"
       integer lminx,lmaxx,lminy,lmaxy,nplans
-      integer l_id,l_if,l_jd,l_jf, g_id,g_if,g_jd,g_jf
-      integer ip2,ip3
+      integer g_id,g_if,g_jd,g_jf
       real fa(lminx:lmaxx,lminy:lmaxy,nplans)
       type (meta_fstecr), dimension(:), pointer :: meta
-End Subroutine out_stkecr
+End Subroutine out_stkecr2
 End Interface
 
       character*8 dumc
-      integer modeip1,ip3,ig3,ig4,l_id,l_if,l_jd,l_jf,i,j,k
+      logical, save :: done= .false.
+      integer modeip1,i,j,k
       integer max_stack
       integer, save :: istk = 0
       real, save, dimension (:,:,:), pointer :: f2c => null()
@@ -62,25 +60,19 @@ End Interface
 !
 !----------------------------------------------------------------------
 !
-      max_stack= Ptopo_nblocx*Ptopo_nblocy
+      max_stack= Out3_npes
       if (.not.associated(meta)) allocate (meta(max_stack))
-      if (.not.associated(f2c )) allocate (f2c(l_minx:l_maxx,l_miny:l_maxy,max_stack))
-
-      l_id = max(1   ,(Out_gridi0-Out_myproci0+1))
-      l_if = min(l_ni,(Out_gridin-Out_myproci0+1))
-      l_jd = max(1   ,(Out_gridj0-Out_myprocj0+1))
-      l_jf = min(l_nj,(Out_gridjn-Out_myprocj0+1))
-
-      ip3 = Out_ip3
-      if (ip3.lt.0) ip3 = Out_npas
-      ig4 = 0
+      if (.not.associated(f2c )) &
+         allocate (f2c(l_minx:l_maxx,l_miny:l_maxy,max_stack))
+      if (.not.done) then
+         out_stk_full= 0 ; out_stk_cnt= 0 ; done= .true.
+      endif
 
       if (F_empty_stk_L) then
          if ( istk .gt. 0) then
-            call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy            ,&
-                              meta,istk, l_id,l_if,l_jd,l_jf             ,&
-                              Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,&
-                              Out_ip2,ip3 )
+            call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
+                               meta,istk, Out_gridi0,Out_gridin,&
+                                          Out_gridj0,Out_gridjn )
             out_stk_cnt= out_stk_cnt + 1
             out_stk_part(out_stk_cnt) = istk
          endif
@@ -90,16 +82,7 @@ End Interface
       endif
 
       modeip1= 1
-!     Force oldip1style for output on pressure levels
-      if (kind.eq.2) modeip1=3
-
-!      ig3 = 0
-!      if (Grd_yinyang_L) then
-         ig3 = 1                             ! points de masse
-         if (trim(nomvar) == 'UT1')  ig3 = 2 ! points U
-         if (trim(nomvar) == 'VT1')  ig3 = 3 ! points V
-         if (trim(nomvar) == 'QQ' )  ig3 = 4 ! points f
-!      endif
+      if (kind.eq.2) modeip1= 3 !old ip1 style for pressure lvls output
 
       do k= 1, nk_o
          istk = istk + 1
@@ -108,20 +91,20 @@ End Interface
             f2c(i,j,istk)= fa(i,j,ind_o(k))*mul + add
          end do
          end do
-         call convip(meta(istk)%ip1,rf(ind_o(k)),kind,modeip1,dumc,.false.)
+         call convip ( meta(istk)%ip1, rf(ind_o(k)), kind,&
+                       modeip1,dumc,.false. )
          meta(istk)%nv   = nomvar
          meta(istk)%ig1  = Out_ig1
          meta(istk)%ig2  = Out_ig2
-         meta(istk)%ig3  = ig3
+         meta(istk)%ig3  = Out_ig3
          meta(istk)%ni   = Out_gridin - Out_gridi0 + 1
          meta(istk)%nj   = Out_gridjn - Out_gridj0 + 1
          meta(istk)%nbits= nbit
          meta(istk)%dtyp = 134
          if (istk.eq.max_stack) then
-            call out_stkecr ( f2c,l_minx,l_maxx,l_miny,l_maxy            ,&
-                              meta,istk, l_id,l_if,l_jd,l_jf             ,&
-                              Out_gridi0,Out_gridin,Out_gridj0,Out_gridjn,&
-                              Out_ip2,ip3 )
+            call out_stkecr2 ( f2c,l_minx,l_maxx,l_miny,l_maxy ,&
+                               meta,istk, Out_gridi0,Out_gridin,&
+                                          Out_gridj0,Out_gridjn )
             istk=0
             out_stk_full= out_stk_full + 1
          endif
@@ -131,33 +114,3 @@ End Interface
 !
       return
       end
-
-      subroutine out_stat
-      implicit none
-#include <arch_specific.hf>
-!
-!author
-!    Michel Desgagne - Fall 2012
-!
-!revision
-! v4_50 - Desgagne M. - Initial version
-
-      include "out_meta.cdk"
-!
-!--------------------------------------------------------------------
-!
-      print*, 'OUTPUT_STAT: full stack called: ',out_stk_full,' times'
-      if (out_stk_cnt .gt. 0) then
-         print*, 'OUTPUT_STAT: partial stack called: ',out_stk_cnt, 'times'
-         print*, 'OUTPUT_STAT: ',out_stk_part(1:out_stk_cnt)
-      endif
-!
-!--------------------------------------------------------------------
-!
-      return
-      end      
-
-      BLOCK DATA out_stat_start
-      include "out_meta.cdk"
-      data out_stk_full,out_stk_cnt /0,0/
-      END BLOCK DATA out_stat_start

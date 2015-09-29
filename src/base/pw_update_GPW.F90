@@ -42,6 +42,8 @@
       istat = gmm_get(gmmk_pw_pt_plus_s , pw_pt_plus )
       istat = gmm_get(gmmk_pw_me_plus_s , pw_me_plus )
       istat = gmm_get(gmmk_pw_p0_plus_s , pw_p0_plus )
+      istat = gmm_get(gmmk_pw_log_pm_s  , pw_log_pm  )
+      istat = gmm_get(gmmk_pw_log_pt_s  , pw_log_pt  )
 
       istat = gmm_get(gmmk_tt1_s  ,   tt1)
       istat = gmm_get(gmmk_wt1_s  ,   wt1)
@@ -60,12 +62,17 @@
       do k=1,l_nk
          pw_wz_plus(:,:,k) = wt1(:,:,k)
          pw_gz_plus(1:l_ni,1:l_nj,k)= fi(1:l_ni,1:l_nj,k)
+         pw_log_pm (1:l_ni,1:l_nj,k)= log(pw_pm_plus(1:l_ni,1:l_nj,k))
+         pw_log_pt (1:l_ni,1:l_nj,k)= log(pw_pt_plus(1:l_ni,1:l_nj,k))
          if (k.eq.1) &
          pw_me_plus(1:l_ni,1:l_nj)= fis0(1:l_ni,1:l_nj)
+         if (k.eq.l_nk) then
+            pw_log_pm(1:l_ni,1:l_nj,l_nk+1)= log(pw_p0_plus(1:l_ni,1:l_nj))
+            pw_log_pt(1:l_ni,1:l_nj,l_nk+1)= pw_log_pm(1:l_ni,1:l_nj,l_nk+1)
+         endif
       end do
 !$omp enddo
 !$omp end parallel
-
 !     ________________________________________________________________
 !
       return

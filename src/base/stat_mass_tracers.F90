@@ -36,7 +36,6 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 #include "lun.cdk"
 
    type(gmm_metadata) :: mymeta
-   logical :: mixing_L
    integer :: err,n,k0,reset_RHO
    real    :: bidon
    real, pointer, dimension (:,:,:) :: fld_tr
@@ -46,14 +45,13 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 
    !---------------------------------------------------------------------
 
-   RETURN !Remove to allow printing the mass of tracers   
+  !RETURN !Remove to allow printing the mass of tracers   
 
    reset_RHO = -1 
 
    k0 = Lam_gbpil_T+1 
 
    do n=1,Tr3d_ntr
-
       if (Tr3d_mass(n) <= 0) cycle
 
       if (reset_RHO<0) reset_RHO = 0 
@@ -63,21 +61,15 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 
       err = gmm_get(in_S,fld_tr,mymeta)
 
-      mixing_L = .true.
-      pseudo_RHO_L = Advection_2D_3D_L.and.in_S(1:5) == 'TR/HU'
-      if (pseudo_RHO_L) mixing_L = .false.
-
-      call mass_tr (tracer_8,F_time,Tr3d_name_S(n),fld_tr(mymeta%l(1)%low,mymeta%l(2)%low,1),mixing_L,&
+      call mass_tr (tracer_8,F_time,Tr3d_name_S(n),fld_tr(mymeta%l(1)%low,mymeta%l(2)%low,1),.TRUE.,&
                     mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
 
       reset_RHO = 1 
 
    enddo
 
-!!!if (reset_RHO>0) call mass_tr (tracer_8,F_time,'RHO ',bidon,.FALSE.,& 
-!!!                               mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
-
-   if (Lun_out>0) write(Lun_out,*) ''
+   if (reset_RHO>0) call mass_tr (tracer_8,F_time,'RHO ',bidon,.FALSE.,& 
+                                  mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk,k0,F_comment_S,reset_RHO==0)
 
    return
 

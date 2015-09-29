@@ -122,14 +122,6 @@
 
       istat= process_f_callback(trim(Path_outcfg_S))
 
-      do j=1,Grid_sets
-         call set_igs2 ( Grid_ig1(j),Grid_ig2(j)                  , &
-                         Geomn_longs,Geomn_latgs,G_ni,G_nj        , &
-                         Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                         Grid_x0(j),Grid_x1(j),Grid_stride(j)     , &
-                         Grid_y0(j),Grid_y1(j),Grid_stride(j) ) 
-      end do
-
       if (Lun_out.gt.0) then
          write(Lun_out,*)' Level_allpres=',(Level_allpres(j),j=1,Level_npres)
          write(Lun_out,*)'SREQUET:Number of warnings =',istat

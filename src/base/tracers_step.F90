@@ -14,35 +14,29 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r tracers_step
-!
+
       subroutine tracers_step (F_water_tracers_only_L)
       implicit none
 #include <arch_specific.hf>
 
       logical, intent(IN) :: F_water_tracers_only_L
 
-!author
-!     Michel Desgagne --- summer 2014
-!
-!revision
-! v4_70 - Desgagne M.       - initial version 
-
 #include "glb_ld.cdk"
+#include "adv_slice_storage.cdk"
 
 !     _________________________________________________________________
 !
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (1,"BEFORE ADVECTION")
-     
-       if (Advection_lam_legacy) then
-     
-          call adx_tracers_interp (F_water_tracers_only_L)
-      
-       else
 
-          call adv_tracers (F_water_tracers_only_L)    
-   
-       endif
+      if (.not. F_water_tracers_only_L) &
+      Adv_do_only_once_each_timestep_L = .TRUE.
+
+      if (G_lam) then
+         call adv_tracers (F_water_tracers_only_L)    
+      else
+         call adx_tracers_interp (F_water_tracers_only_L)
+      endif
 
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (0,"AFTER ADVECTION")

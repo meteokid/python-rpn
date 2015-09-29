@@ -42,7 +42,6 @@ subroutine iau_apply2(F_kount)
 #include "vt1.cdk"
 #include "pw.cdk"
 #include "iau.cdk"
-#include "ptopo.cdk"
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'
    logical,parameter :: UVSCAL2WGRID = .false.
@@ -67,7 +66,6 @@ subroutine iau_apply2(F_kount)
 
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
    call timing_start2(50, 'IAU', 1)
-   call rpn_comm_bloc(Ptopo_ninblocx,Ptopo_ninblocy)
 
    call datp2f(dateo,Step_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))
@@ -313,7 +311,6 @@ subroutine iau_apply2(F_kount)
 
       call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
    endif
-   call rpn_comm_bloc(Ptopo_nblocx,Ptopo_nblocy)
    call timing_stop(50)
    !--------------------------------------------------------------------------
    return

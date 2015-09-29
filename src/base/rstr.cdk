@@ -1,16 +1,5 @@
-!
-!______________________________________________________________________
-!                                                                      |
-!  VARIABLES ASSOCIATED WITH RESTART of the MODEL                      |
-!______________________________________________________________________|
-!                    |                                                 |
-! NAME               | DESCRIPTION                                     |
-!--------------------|-------------------------------------------------|
-! Rstri_rstn_L       | .true.  to restart the job                      |
-! Rstri_glbcol_L     | .true. to write one global binary restart file  |
-!----------------------------------------------------------------------
 
-      logical Rstri_rstn_L, Rstri_glbcol_L, Rstri_user_busper_L
+      logical Rstri_rstn_L, Rstri_user_busper_L
 
-      common / Rstrl / Rstri_rstn_L, Rstri_glbcol_L, Rstri_user_busper_L
+      common / Rstrl / Rstri_rstn_L, Rstri_user_busper_L
 

@@ -14,24 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r domain_decomp
-!
 
-!
       subroutine domain_decomp2 ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_checkparti_L
       integer F_npex, F_npey
-!
+
 !author
 !     Michel Desgagne     Summer 2006
 !
 !revision
 ! v3_30 - Desgagne M.       - Initial version
-!
-!object
-!
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -39,17 +34,14 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "lam.cdk"
-!
+
       logical, external :: decomp3
       integer err,ierr
 !
 !-------------------------------------------------------------------
 !
-      if (Lun_out.gt.0) write(Lun_out,1001) Ptopo_nblocx,Ptopo_nblocy, &
-                                            Ptopo_ninblocx,Ptopo_ninblocy
-!
 !     Establishing data topology
-!
+
       l_west  = (0            .eq. Ptopo_mycol)
       l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
       l_south = (0            .eq. Ptopo_myrow)
@@ -72,7 +64,7 @@
       Lam_pil_s = 0
       G_periodx = .true.
       G_periody = .false.
-!     
+
       if (G_lam) then
          if (l_west ) pil_w = Glb_pil_w
          if (l_north) pil_n = Glb_pil_n
@@ -86,7 +78,7 @@
       endif
 
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
-!
+
       ierr = -1
       if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true., &
                    F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.          &
@@ -99,22 +91,20 @@
             write(lun_out,*) 'DOMAIN_DECOMP: PARTITIONING is OK'
          endif
       endif
-!
+
       l_nk = G_nk
       l_njv= l_nj
       l_niu= l_ni
       if (l_north) l_njv= l_nj - 1
       if ((l_east).and.(G_lam)) l_niu = l_ni - 1
-!
+
       if (.not.F_checkparti_L) then
-         call handle_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
+         call gem_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
          call glbpos   
       endif
-!
+
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
                2(i6,' in ',i6,' subdomains',5x)/)
- 1001 format (/'BLOC TOPO: Ptopo_nblocx= ,'i4,' Ptopo_nblocy= ',i4/&
-               '           Ptopo_ninblocx= ,'i4,' Ptopo_ninblocy= ',i4)
 !
 !-------------------------------------------------------------------
 !

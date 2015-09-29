@@ -8,6 +8,7 @@
 #include "lam.cdk"
 #include "lun.cdk"
 #include "path.cdk"
+#include "inp.cdk"
 #include "init.cdk"
 #include "schm.cdk"
 #include "type.cdk"
@@ -52,6 +53,10 @@
       namelist /gem_cfgs/ Hzd_pwr_theta
       namelist /gem_cfgs/ Hzd_pwr_tr
       namelist /gem_cfgs/ Hzd_div_damp
+      namelist /gem_cfgs/ Hzd_type_S
+      namelist /gem_cfgs/ Hzd_smago_L
+      namelist /gem_cfgs/ Hzd_smago_param
+      namelist /gem_cfgs/ Hzd_smago_delta
 !Iau
       namelist /gem_cfgs/ Iau_cutoff
       namelist /gem_cfgs/ Iau_interval
@@ -64,6 +69,8 @@
       namelist /gem_cfgs/ Init_dflength_S
       namelist /gem_cfgs/ Init_dfpl_S
       namelist /gem_cfgs/ Init_dftr_L
+
+      namelist /gem_cfgs/ Inp_npes
 !Lam
       namelist /gem_cfgs/ Lam_gbpil_T
       namelist /gem_cfgs/ Lam_blend_H
@@ -90,6 +97,7 @@
       namelist /gem_cfgs/ Out3_lieb_maxite
       namelist /gem_cfgs/ Out3_lieb_conv
       namelist /gem_cfgs/ Out3_postproc_fact
+      namelist /gem_cfgs/ Out3_npes
 
       namelist /gem_cfgs/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs/ P_lmvd_weigh_low_lat
@@ -98,11 +106,11 @@
       namelist /gem_cfgs/ perturb_nbits
       namelist /gem_cfgs/ perturb_npts
 
-      namelist /gem_cfgs/ Rstri_glbcol_L
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_cub_traj_L
+      namelist /gem_cfgs/ Schm_cub_Coriolis_L  
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
@@ -116,10 +124,12 @@
       namelist /gem_cfgs/ Schm_settls_L
       namelist /gem_cfgs/ Schm_capa_var_L
       namelist /gem_cfgs/ Schm_MTeul
+      namelist /gem_cfgs/ Schm_advec
       namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
+      namelist /gem_cfgs/ Schm_lift_ltl_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
       namelist /gem_cfgs/ Sol_yyg_eps
@@ -177,6 +187,10 @@
       namelist /gem_cfgs_p/ Hzd_pwr_theta
       namelist /gem_cfgs_p/ Hzd_pwr_tr
       namelist /gem_cfgs_p/ Hzd_div_damp
+      namelist /gem_cfgs_p/ Hzd_type_S
+      namelist /gem_cfgs_p/ Hzd_smago_L
+      namelist /gem_cfgs_p/ Hzd_smago_param
+      namelist /gem_cfgs_p/ Hzd_smago_delta
 !Iau
       namelist /gem_cfgs_p/ Iau_cutoff
       namelist /gem_cfgs_p/ Iau_interval
@@ -188,6 +202,8 @@
       namelist /gem_cfgs_p/ Init_dflength_S
       namelist /gem_cfgs_p/ Init_dfpl_S
       namelist /gem_cfgs_p/ Init_dftr_L
+
+      namelist /gem_cfgs_p/ Inp_npes
 !Lam
       namelist /gem_cfgs_p/ Lam_gbpil_T
       namelist /gem_cfgs_p/ Lam_blend_H
@@ -212,6 +228,7 @@
       namelist /gem_cfgs_p/ Out3_lieb_maxite
       namelist /gem_cfgs_p/ Out3_lieb_conv
       namelist /gem_cfgs_p/ Out3_postproc_fact
+      namelist /gem_cfgs_p/ Out3_npes
 
       namelist /gem_cfgs_p/ P_lmvd_weigh_high_lat
       namelist /gem_cfgs_p/ P_lmvd_weigh_low_lat
@@ -220,11 +237,11 @@
       namelist /gem_cfgs_p/ perturb_nbits
       namelist /gem_cfgs_p/ perturb_npts
 
-      namelist /gem_cfgs_p/ Rstri_glbcol_L
 !Schm
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_traj_L
+      namelist /gem_cfgs_p/ Schm_cub_Coriolis_L 
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn
@@ -237,9 +254,11 @@
       namelist /gem_cfgs_p/ Schm_settls_L
       namelist /gem_cfgs_p/ Schm_capa_var_L
       namelist /gem_cfgs_p/ Schm_MTeul
+      namelist /gem_cfgs_p/ Schm_advec
       namelist /gem_cfgs_p/ Schm_superwinds_L
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
+      namelist /gem_cfgs_p/ Schm_lift_ltl_L
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps

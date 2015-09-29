@@ -40,7 +40,6 @@
 #include "nml.cdk"
 #include "step.cdk"
 #include "ver.cdk"
-#include "ntr2mod.cdk"
 #include "out.cdk"
 
       character*16  dumc_S, datev
@@ -55,7 +54,6 @@
 !
       gemdm_config = -1
 
-      if (Step_runstrt_S == 'NIL') Step_runstrt_S= NTR_runstrt_S
       if (Step_runstrt_S == 'NIL') then
          if (lun_out>0) then
             write (Lun_out, 6005)
@@ -64,16 +62,16 @@
          return
       endif
 
+      if (.not.Step_leapyears_L) then
+         call Ignore_LeapYear ()
+         if (Lun_out>0) write(Lun_out,6010)
+      endif
+
       dayfrac= - (Step_initial * Step_dt / sec_in_day)
       call incdatsd (datev, Step_runstrt_S, dayfrac)
       call datp2f ( Out3_date, datev )
       if (lun_out>0) write (Lun_out,6007) Step_runstrt_S, datev
       call datp2f ( Step_CMCdate0, Step_runstrt_S)
-
-      if (.not.Step_leapyears_L) then
-         call Ignore_LeapYear ()
-         if (Lun_out>0) write(Lun_out,6010)
-      endif
 
       Lun_debug_L = (Lctl_debug_L.and.Ptopo_myproc.eq.0)
 
@@ -158,7 +156,7 @@
       if (lun_out>0) &
       write(lun_out,'(2x,"hyb="/5(f12.9,","))') hyb(1:g_nk)
 
-		if (Schm_autobar_L) Schm_phyms_L= .false.
+      if (Schm_autobar_L) Schm_phyms_L= .false.
 
       call set_zeta2( hyb, G_nk )
 
@@ -219,7 +217,22 @@
             end if
             return
          endif
+      end if
 
+      if (Hzd_smago_L) then
+         if (.not.G_lam) then
+            if (lun_out>0) then
+               write (Lun_out, *) 'ABORT: Smagorinksy-type horizontal diffusion only available for LAM/YY'
+            end if
+            return
+         end if
+
+         if (Hzd_smago_param <=0 .or. Hzd_smago_delta <= 0) then
+            if (lun_out>0) then
+               write (Lun_out, *) 'ABORT: Hzd_smago_param and Hzd_smago_delta must be set to a positive value', Hzd_smago_param, Hzd_smago_delta
+            end if
+            return
+         end if
       end if
 
       G_ni  = Grd_ni
@@ -228,16 +241,7 @@
       G_niu = G_ni
       G_njv = G_nj - 1
 
-      if (G_lam) then
-         G_niu = G_ni - 1
-         if (Schm_psadj_L .and. .not.Grd_yinyang_L) then
-            if (lun_out > 0) then
-               write (Lun_out, 7020)
-               write (Lun_out, 8000)
-            endif
-            return
-         endif
-      endif
+      if (G_lam) G_niu= G_ni - 1
 
 !     Check for open top (piloting and blending)
       Schm_opentop_L  = .false.
@@ -281,6 +285,7 @@
          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
       Advection_2D_3D_L = .FALSE.
+      pseudo_RHO_L      = .FALSE.
       if (Schm_autobar_L.and.Williamson_case==1) then
           Advection_2D_3D_L = .TRUE.
           if (lun_out>0) write (Lun_out, 7021)
@@ -346,7 +351,6 @@
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
- 7020 format (/' OPTION Schm_psadj_L NOT AVAILABLE IF LAM'/)
  7021 format (//'  ================================================'/&
                 '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&
                 '  ================================================'//)

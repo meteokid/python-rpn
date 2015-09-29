@@ -1,0 +1,41 @@
+
+      !STORAGE: LOCAL CONSERVATION SLICE Zerroukat et al.(2002) 
+      !--------------------------------------------------------
+      logical adv_do_only_once_each_timestep_L
+      integer n_F_nk,ip,jp,offi_,offj_,L1,R1,L2,R2,jL,jR,jX,jY,err,s_bin,n_bin,s_cin,n_cin
+      real*8  slope_8,casc00_8,casc2a_8,casc2b_8,casc3a_8,casc3b_8,casc11_8,scale_mass_8,c_area_8,gc_area_8
+
+      integer j_ps,j_pn
+      common/local_storage_SLICE_i/j_ps,j_pn,adv_do_only_once_each_timestep_L
+
+      real*8, parameter :: EPS_8 = 1.0D-06
+
+      real*8, pointer, dimension(:,:,:) :: x_usm_8=>null(),y_usm_8=>null(),z_usm_8=>null(), &
+                                           x_svm_8=>null(),y_svm_8=>null(),z_svm_8=>null(), &
+                                           x_bin_8=>null(),z_bin_8=>null(),                 &
+                                           x_cin_8=>null(),z_cin_8=>null(),                 &
+                                           z_bve_8=>null()
+
+      real*8,       pointer, dimension(:,:)   :: w_casc00_8=>null()
+      real*8,       pointer, dimension(:,:)   :: w_casc11_8=>null()
+
+      real*8, save, pointer, dimension(:,:,:) :: sx_b1_8   =>null(),sx_b2_8   =>null()
+      integer,save, pointer, dimension(:,:)   :: c1_w      =>null(),c1_e      =>null(), &
+                                                 c2_w      =>null(),c2_e      =>null()
+      real*8,       pointer, dimension(:,:)   :: w_casc2a_8=>null(),w_casc2b_8=>null()
+
+      real*8, save, pointer, dimension(:,:,:) :: sy_b1_8   =>null(),sy_b2_8   =>null()
+      integer,save, pointer, dimension(:,:)   :: c1_s      =>null(),c1_n      =>null(), &
+                                                 c2_s      =>null(),c2_n      =>null()
+      real*8,       pointer, dimension(:,:)   :: w_casc3a_8=>null(),w_casc3b_8=>null()
+
+      real*8, pointer, dimension(:)     :: xi1_8=>null(),xi2_8=>null(), &
+                                           mi1_8=>null(),mi2_8=>null()
+
+      real*8, pointer, dimension(:)     :: yj1_8=>null(),yj2_8=>null(), &
+                                           mj1_8=>null(),mj2_8=>null()
+
+      real*8, pointer, dimension(:,:,:) :: m_ijk_8,m_cew_8,m_cns_8,m_cve_8
+
+      real*8   distance_GC_8 
+      external distance_GC_8

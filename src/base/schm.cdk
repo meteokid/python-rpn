@@ -43,6 +43,12 @@
 ! Schm_MTeul         |    0   ->    NO Eulerian mountain treatment     |
 !                    |    1   -> Eulerian mountain treatment in 1 eqn  |
 !                    |    2   -> Eulerian mountain treatment in 2 eqns |
+! Schm_cub_Coriolis_L| Use cubic interpolation for Coriolis winds.     |      
+! Schm_lift_ltl_L    | .true. -> lifting last thermo level.            |      
+! Schm_advec         |    0   ->          NO advection                 |
+!                    |    1   -> traditional advection                 |
+!                    |    2   ->  consistant advection with respect    |
+!                    |                 to off-centering                |
 !----------------------------------------------------------------------
 !
 #endif
@@ -52,21 +58,22 @@
       logical Schm_trapeze_L, Schm_capa_var_L
       logical Schm_Topo_L  ,Schm_theoc_L  , Schm_superwinds_L
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
+      logical Schm_lift_ltl_L, Schm_cub_Coriolis_L      
 
       integer Schm_itcn , Schm_itnlh, Schm_Tlift   , Schm_MTeul
-      integer Schm_itraj, Schm_nith , Schm_nblendyy
+      integer Schm_itraj, Schm_nith , Schm_nblendyy, Schm_advec
 
       common / schm_l / Schm_hydro_L  , Schm_psadj_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L, Schm_wload_L
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_source_ps_L  , Schm_opentop_L
       common / schm_l / Schm_trapeze_L, Schm_capa_var_L
-      common / schm_l / Schm_theoc_L
+      common / schm_l / Schm_theoc_L, Schm_lift_ltl_L
       common / schm_l / Schm_Topo_L   , Schm_superwinds_L
       common / schm_l / Schm_hzdadw_L , Schm_cub_traj_L
-      common / schm_l / Schm_bitpattern_L
+      common / schm_l / Schm_bitpattern_L, Schm_cub_Coriolis_L
       common / schm_l / Schm_settls_L , Schm_step_settls_L
 
       common / schm_i / Schm_itcn , Schm_itnlh, Schm_Tlift, Schm_Mteul
-      common / schm_i / Schm_itraj, Schm_nith , Schm_nblendyy
+      common / schm_i / Schm_itraj, Schm_nith , Schm_nblendyy, Schm_advec
 

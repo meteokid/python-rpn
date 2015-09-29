@@ -68,7 +68,7 @@
          call close_status_file3 ()
       endif
 
-      if (Lun_out.gt.0) call out_stat ()
+      if (Lun_out.gt.0) call out_stat2 ()
 
       if (.not. continue_L) then
          err = clib_remove('gem_restart')

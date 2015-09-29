@@ -1,61 +1,22 @@
-#if defined(DOC)
-!
-!**comdeck adw.cdk
-!________________________________________________________________________
-!                                                                        |
-! VARIABLES FOR ADVECTION                                                |
-!________________________________________________________________________|
-!                |                                                       |
-! NAME           | DESCRIPTION                                           |
-!----------------|-------------------------------------------------------|
-! adw_ckbd_L     | switch: .true. : check if upstream points from north  |
-!                |                  and south pe's for which an interpo- |
-!                |                  lation is requested are inside own   |
-!                |                  advection source grid                |
-! adw_exdg_L     | switch: .true. : print diagnostics on the number of   |
-!                |                  upstream positions exchanged among   |
-!                |                  processors                           |
-! adw_mono_L     | switch: .true. : advection of tracers is monotonic    |
-! adw_positive_L | switch: .false.: positivity-preserving advection      |
-i! adw_nkbz_L     | switch: .true. : no knot boundary condition for       |
-!                |                  vertical interpolation               |
-! adw_maxcfl     |                                                       !
-! adw_halox      | advection specific halo in x                          |
-! adw_haloy      | advection specific halo in y                          |
-! adw_trajdebug_L| switch: .true. : use corrected momentum traj          |
-!                |         .false.: use bugged    momentum traj          |
-!________________________________________________________________________|
-! MASS-CONSERVATION for Chemical Tracers                                 |
-!________________________________________________________________________|
-! adw_BC_min_max_L  |switch:.T.:MONO(CLIPPING) after Bermejo-Conde Def.=T|
-! adw_ILMC_min_max_L|switch:.T.:MONO(CLIPPING) after ILMC          Def.=T|
-! adw_ILMC_sweep_max|Number of neighborhood zones in ILMC          Def.=2|
-!________________________________________________________________________|
-!
-#endif
-      logical :: adw_mono_L
-      logical :: adw_catmullrom_L
-      logical :: adw_BC_min_max_L
-      logical :: adw_ILMC_min_max_L
-      integer :: adw_maxcfl
-      integer :: adw_halox
-      integer :: adw_haloy
-      integer :: adw_ILMC_sweep_max
-      
+
+      logical :: adw_mono_L      , adw_catmullrom_L,&
+                 adw_BC_min_max_L, adw_ILMC_min_max_L
+      integer :: adw_maxcfl, adw_halox, adw_haloy, adw_ILMC_sweep_max,&
+                 Adw_reconstruction, Adw_PPM_mono
+      integer pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
+
+      common /adw_nml_l/ adw_mono_L      , adw_catmullrom_L,&
+                         adw_BC_min_max_L, adw_ILMC_min_max_L
+      common /adw_nml_i/ adw_maxcfl, adw_halox, adw_haloy,&
+                         adw_ILMC_sweep_max              ,&
+                         Adw_reconstruction, Adw_PPM_mono
+      common /EXTENSION_I/ pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
+
       namelist /adw_cfgs/ adw_mono_L
       namelist /adw_cfgs/ adw_catmullrom_L
       namelist /adw_cfgs/ adw_BC_min_max_L
       namelist /adw_cfgs/ adw_ILMC_sweep_max
       namelist /adw_cfgs/ adw_ILMC_min_max_L
-
-      common /adw_nml_l/  adw_mono_L
-      common /adw_nml_l/  adw_catmullrom_L
- 
-      common /adw_nml_l/  adw_BC_min_max_L
-      common /adw_nml_l/  adw_ILMC_min_max_L
-
-      common /adw_nml_i/  adw_halox
-      common /adw_nml_i/  adw_haloy
-      common /adw_nml_i/  adw_maxcfl
-      common /adw_nml_i/  adw_ILMC_sweep_max
+      namelist /adw_cfgs/ Adw_reconstruction
+      namelist /adw_cfgs/ Adw_PPM_mono
 

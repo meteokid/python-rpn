@@ -42,12 +42,11 @@
 ! i0,in,j0,jn  I    - index over which computation will be made.
 
 #include "cstv.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 
       integer i,j,k,kq
-      real*8 one, c1, c2
-      parameter(one=1.d0)
+      real*8  c1, c2
+      real*8, parameter :: one = 1.d0, half = .5d0
 !
 !     ---------------------------------------------------------------
 !
@@ -58,7 +57,7 @@
          do j= j0, jn
          do i= i0, in
             c1= one + ver_dbdz_8%t(k)*F_s(i,j)
-            c2= Ver_wp_8%t(k)*F_q(i,j,k+1) + Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+            c2= half*(F_q(i,j,k+1) + F_q(i,j,kq)*Ver_onezero(k))
             F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))/c1
             F_mu(i,j,k) = exp(c2)*(F_mu(i,j,k)+one)-one
          enddo

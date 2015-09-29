@@ -178,10 +178,10 @@ contains
     character(len=*), intent(in) :: F_grid              !staggered grid ('U':u-grid,'V':v-grid,'M':mass-grid)
     character(len=*), intent(out) :: F_gmm_name         !name of GMM weight variable
     integer, intent(out), optional :: F_ni,F_nj         !i,j dimensions of the weight field
-    integer :: my_ni,my_nj,istat
+    integer :: my_ni,my_nj
 #include "glb_ld.cdk"
 #include "nest.cdk"
-    istat = 0
+
     select case (trim(F_grid))
     case ('M')
        my_ni = l_ni ; my_nj = l_nj
@@ -196,9 +196,9 @@ contains
        my_ni = l_ni ; my_nj = l_nj
        F_gmm_name = gmmk_nest_weightq_s
     case DEFAULT
-       istat = -1
+       call gem_error(-1,'blending::get_weight_info',&
+         'received invalid grid request '//trim(F_grid))
     end select
-    call handle_error(istat,'blending::get_weight_info','received invalid grid request '//trim(F_grid))
 
     if (present(F_ni)) F_ni = my_ni
     if (present(F_nj)) F_nj = my_nj

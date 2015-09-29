@@ -25,26 +25,8 @@
 !     Lee V.                    - rpn July 2009 (from output VMM)
 !
 !revision
-! v3_20 - Lee V.            - initial MPI version
-! v3_30 - McTaggart-Cowan R.- allow for user-defined domain tag extensions
-! v3_31 - Lee V.            - kind is set to 2 (press) for 2D fields, not -1
-! v4_03 - Lee V.            - modification of Out_etik_S in out_sgrid only
-! v4_05 - Lee V.            - adaptation to GMM
-! v4_13 - Lee V.            - ptrs to GMM variables must have the right shape
-! v4_40 - Lee V.            - change in argument call for this routine
-!                             in order to select the "bot" levels
-! v4_40 - Lee V.            - bug correction for when number of pressure levels
-!                             is greater than number of model levels
-! v4_50 - Lee V.            - add Outd_varnm_S to check against GMM variables
-!                             in order to output PW_xx:P variables
+! v4_80 - Desgagne M.       - initial version
 !
-!object
-!     output all the GMM fields
-!	
-!
-! Index vectors for level indentifications
-! ----------------------------------------
-! 
 ! There is one vector for the momentum level : Ver_hyb%m.
 !
 ! There are 1 vector for the thermo levels :
@@ -85,7 +67,7 @@
       character(len=GMM_MAXNAMELENGTH), dimension(256) :: keylist
       character(len=2) class_var(100,3)
       logical periodx_L,write_diag_lev
-      integer nkeys,nko,i,ii,gridset,ig2,istat,id,cid
+      integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
@@ -140,36 +122,42 @@
                if (Lun_out.gt.0) write(Lun_out,1001) trim(keylist(i))
                cycle
             endif
-            ig2 = Grid_ig2(gridset)
-            if (class_var(id,2) == 'UU') ig2 = ig2 + 1
-            if (class_var(id,2) == 'VV') ig2 = ig2 + 2
             level_type => Ver_hyb%t
             if (class_var(id,3) == 'MM') level_type => Ver_hyb%m
             if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m(2:G_nk+1)
             if (class_var(id,3) == 'TW') level_type => hybt_w
-            call out_sgrid2( Grid_x0 (gridset),Grid_x1 (gridset), &
-                             Grid_y0 (gridset),Grid_y1 (gridset), &
-                             Grid_ig1(gridset),ig2              , &
-                             periodx_L, Grid_stride(gridset)    , &
-                             Grid_etikext_s(gridset) )
-            if (class_var(id,2) == 'UU') call out_href2 ( 'U_point' )
-            if (class_var(id,2) == 'VV') call out_href2 ( 'V_point' )
+
+            select case (class_var(id,2))
+            case('UU') 
+               call out_href3 ( 'U_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+            case('VV') 
+               call out_href3 ( 'V_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+            case default
+               call out_href3 ( 'Mass_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+            end select
+
             nullify(tr2,tr3)
             istat = gmm_getmeta(keylist(i),tmp_meta)
             if (tmp_meta%l(3)%high.le.1) then
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
-               call ecris_fst2(tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
-                                    tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
-                               0,keylist(i),Outd_convmult(ii,set),&
-                               Outd_convadd(ii,set),Level_kind_ip1,&
-                               1,1,1, Outd_nbit(ii,set) )
+               call out_fstecr2 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                      tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                                       0,keylist(i),Outd_convmult(ii,set) ,&
+                                       Outd_convadd(ii,set),Level_kind_ip1,&
+                                       1,1,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
-               call ecris_fst2(tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
-                                    tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+               call out_fstecr2 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                      tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                level_type,keylist(i),Outd_convmult(ii,set),&
-                               Outd_convadd(ii,set),Level_kind_ip1,&
-                               G_nk,indo,nko, Outd_nbit(ii,set) )
+                                      Outd_convadd(ii,set),Level_kind_ip1 ,&
+                                  G_nk,indo,nko, Outd_nbit(ii,set),.false. )
             endif
 
             goto 800

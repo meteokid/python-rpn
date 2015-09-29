@@ -1,0 +1,199 @@
+   !-------------------------------------
+   !Compute the initial mass distribution
+   !-------------------------------------
+
+   do k=k0,F_nk
+      idxk = (k-1)*l_ni*l_nj
+      do j=1,l_nj
+         idxjk = idxk + ((j-1)*l_ni)
+         do i=1,l_ni
+
+            n = idxjk + i
+
+            ii = i + Adv_halox + offi_ !TO BE REVISED
+            jj = j + Adv_haloy + offj_
+            kk = k
+
+            o2 = (kk-1)*adv_nijag + (jj-adv_int_j_off-1)*adv_nit + (ii-adv_int_i_off)
+
+         !!!m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j))
+            m_ijk_8(i,j,k) = F_in_rho(o2) * (Geomg_area_8(i,j) * Ver_dz_8%t(k))
+
+         enddo
+      enddo
+   enddo
+
+   do k=k0,F_nk
+      do j=j0_c,jn_c
+
+         w_casc00_8(j,k) = 0.0d0
+
+         do i=i0_c,in_c
+
+            w_casc00_8(j,k) = w_casc00_8(j,k) + m_ijk_8(i,j,k)  
+
+         enddo
+
+      enddo
+   enddo
+
+   !-----------
+   !3D Forecast
+   !-----------
+   if (.NOT.Schm_autobar_L) then
+
+   !TO BE REVISED
+
+   !-----------
+   !2D Forecast
+   !-----------
+   else
+
+   do k=k0,F_nk
+      do j=1,l_nj
+         do i=1,l_ni
+
+            m_cve_8(i,j,k) = m_ijk_8(i,j,k) 
+
+         enddo
+      enddo
+   enddo
+
+   endif
+
+   !---------------------------------------------------------------------------------------------------------------------
+   !Compute 1D EW-remapping: {m_cew, Boundaries(x_bin,ys,z_bin)}(Mapping#2) from {m_cve, Centers(xs,ys,z_bve)}(Mapping#1) 
+   !---------------------------------------------------------------------------------------------------------------------
+
+   do k=k0,F_nk
+      do j=j_ps,j_pn
+
+         w_casc2a_8(j,k) = 0.0d0
+         w_casc2b_8(j,k) = 0.0d0
+
+         L1=c1_w(j,k) 
+         R1=c1_e(j,k) 
+
+         L2=c2_w(j,k) 
+         R2=c2_e(j,k) 
+
+         do i=L1,R1
+            mi1_8(i) = m_cve_8(i,j,k)
+         enddo
+
+         do i=L1-1,R1
+            xi1_8(i) = sx_b1_8(i,j,k)
+         enddo
+
+         !Extend the remapping in order to monitor masses   
+         !-----------------------------------------------
+         xi2_8(L2-2) = xi1_8(L1-1) 
+         do i=L2-1,R2
+            xi2_8(i) = sx_b2_8(i,j,k)
+         enddo
+         xi2_8(R2+1) = xi1_8(R1) 
+
+         call adv_remapping (mi2_8(L2-1:R2+1),xi2_8(L2-2:R2+1),(R2+1)-(L2-1)+1, &
+                             mi1_8(L1:R1),xi1_8(L1-1:R1),R1-L1+1)
+
+         do i=L2,R2
+            m_cew_8(i,j,k) = mi2_8(i)
+         enddo
+
+         !Diagnostics
+         !-----------
+         do i=L1,R1
+            w_casc2a_8(j,k) = w_casc2a_8(j,k) + mi1_8(i) 
+         enddo
+
+         do i=L2-1,R2+1
+            w_casc2b_8(j,k) = w_casc2b_8(j,k) + mi2_8(i)
+         enddo
+
+      enddo
+   enddo
+
+   !-------------------------------------------------------------------------------------------------------------------
+   !Compute 1D NS-remapping: {m_cns, Boundaries(x,y,z)_svm}(Mapping#2) from {m_cew, Centers(x_cin,ys,z_cin)}(Mapping#1) 
+   !-------------------------------------------------------------------------------------------------------------------
+
+   do k=k0,F_nk
+      do i=i0_c,in_c
+
+         w_casc3a_8(i,k) = 0.0d0
+         w_casc3b_8(i,k) = 0.0d0
+
+         L1=c1_s(i,k)
+         R1=c1_n(i,k)
+
+         L2=c2_s(i,k)
+         R2=c2_n(i,k)
+
+         do j=L1,R1
+            mj1_8(j) = m_cew_8(i,j,k) 
+         enddo
+
+         do j=L1-1,R1
+            yj1_8(j) = sy_b1_8(j,i,k)
+         enddo
+
+         !Extend the remapping in order to monitor masses
+         !-----------------------------------------------
+         yj2_8(L2-2) = sy_b1_8(L1-1,i,k)
+         do j=L2-1,R2
+            yj2_8(j) = sy_b2_8(j,i,k)
+         enddo
+         yj2_8(R2+1) = sy_b1_8(R1,i,k)
+
+         call adv_remapping (mj2_8(L2-1:R2+1),yj2_8(L2-2:R2+1),(R2+1)-(L2-1)+1, &
+                             mj1_8(L1:R1),yj1_8(L1-1:R1),R1-L1+1)
+
+         do j=L2,R2
+            m_cns_8(i,j,k) = mj2_8(j)
+         enddo
+
+         !Diagnostics
+         !-----------
+         do j=L1,R1
+            w_casc3a_8(i,k) = w_casc3a_8(i,k) + mj1_8(j)
+         enddo
+
+         do j=L2-1,R2+1
+            w_casc3b_8(i,k) = w_casc3b_8(i,k) + mj2_8(j)
+         enddo
+
+      enddo
+   enddo
+
+   !--------
+   !Finalize 
+   !--------
+
+   do k=k0,F_nk
+      do i=i0_c,in_c
+
+         w_casc11_8(i,k) = 0.0d0
+
+         do j=j0_c,jn_c
+
+            w_casc11_8(i,k) = w_casc11_8(i,k) + m_cns_8(i,j,k)
+
+         enddo
+
+      enddo
+   enddo
+
+   do k=k0,F_nk
+      idxk = (k-1)*l_ni*l_nj
+      do j=j0_c,jn_c
+         idxjk = idxk + ((j-1)*l_ni)
+         do i=i0_c,in_c
+
+            n = idxjk + i
+
+         !!!F_cub_rho(n) = m_cns_8(i,j,k) / (Geomg_area_8(i,j) * Ver_dz_8%t(k) *  Geomg_mask_8(i,j)) !TO BE REVISED
+            F_cub_rho(n) = m_cns_8(i,j,k) / (Geomg_area_8(i,j) * Ver_dz_8%t(k))                      !TO BE REVISED
+
+         enddo
+      enddo
+   enddo

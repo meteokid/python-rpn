@@ -32,15 +32,11 @@
 
       integer :: i,j,k,km2, i0,j0,in,jn
 		real*8  :: xx, x1, x2, x3, x4, w1, w2, w3, w4
-		real*8  :: zd_z_8(F_nk+1)
 
 #define lag3(xx, x1, x2, x3, x4)  ((((xx) - (x2)) * ((xx) - (x3)) * ((xx) - (x4)))/( ((x1) - (x2)) * ((x1) - (x3)) * ((x1) - (x4))))
 !
 !     ---------------------------------------------------------------
 !      
-      zd_z_8(1) = Cstv_Ztop_8
-      zd_z_8(2:F_nk+1) = Ver_z_8%t(1:F_nk)
-
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
 !$omp                  i,j,k,w1,w2,w3,w4)
       i0 = 1
@@ -57,10 +53,10 @@
 !$omp do
       do k=2,F_nk-1
          xx = Ver_z_8%m(k)
-         x1 = zd_z_8(k-1)
-         x2 = zd_z_8(k)
-         x3 = zd_z_8(k+1)
-         x4 = zd_z_8(k+2)
+         x1 = Ver_z_8%x(k-2)
+         x2 = Ver_z_8%x(k-1)
+         x3 = Ver_z_8%x(k)
+         x4 = Ver_z_8%x(k+1)
          w1 = lag3(xx, x1, x2, x3, x4)
          w2 = lag3(xx, x2, x1, x3, x4)
          w3 = lag3(xx, x3, x1, x2, x4)
@@ -86,7 +82,7 @@
 
 !- Note zdot at top = 0
       k = 1
-      w2 = (zd_z_8(k)-Ver_z_8%m(k)) / (zd_z_8(k)-zd_z_8(k+1))
+      w2 = (Ver_z_8%x(k-1)-Ver_z_8%m(k)) / (Ver_z_8%x(k-1)-Ver_z_8%x(k))
 
 !$omp do
       do j = j0, jn
@@ -98,7 +94,7 @@
 
 !- Note  zdot at surface = 0
       k = F_nk
-      w1 = (Ver_z_8%m(k)-zd_z_8(k+1)) / (zd_z_8(k)-zd_z_8(k+1))
+      w1 = (Ver_z_8%m(k)-Ver_z_8%x(k)) / (Ver_z_8%x(k-1)-Ver_z_8%x(k))
 
 !$omp do
       do j = j0, jn

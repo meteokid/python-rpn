@@ -32,7 +32,6 @@
 
 #include "stop_mpi.h"
 #include "msg.h"
-#include "adv_dims.cdk"
 #include "adv_grid.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"

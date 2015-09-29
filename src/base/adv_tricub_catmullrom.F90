@@ -32,9 +32,9 @@
    !@objective Tri-cubic interp: Lagrange vertical / Catmull-Rom horiz.
 
 #include "adv_grid.cdk"
-#include "adv_dims.cdk"
 #include "adv_interp.cdk"
 #include "glb_ld.cdk"
+#include "ver.cdk"
 
       logical :: zcubic_L
 
@@ -54,7 +54,7 @@
 !     
       call timing_start2 (34, 'ADV_CATMUL', 31)
 
-      p_z00_8 = adv_verZ_8%m(0)
+      p_z00_8 = Ver_z_8%m(0)
       if (F_lev_S == 'm') then
          kkmax   = F_nk - 1
          p_lcz     => adv_lcz%m
@@ -73,6 +73,14 @@
          p_zcabd_8 => adv_zcabd_8%t
          p_zdabc_8 => adv_zdabc_8%t
          p_zbc_8   => adv_zbc_8%t
+      else if (F_lev_S == 'x') then
+         p_lcz     => adv_lcz%x
+         p_bsz_8   => adv_bsz_8%x
+         p_zabcd_8 => adv_zabcd_8%x
+         p_zbacd_8 => adv_zbacd_8%x
+         p_zcabd_8 => adv_zcabd_8%x
+         p_zdabc_8 => adv_zdabc_8%x
+         p_zbc_8   => adv_zbc_8%x
       endif
 
       if (F_mono_L) then

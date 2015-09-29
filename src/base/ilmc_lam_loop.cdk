@@ -1,0 +1,113 @@
+      do shift=1,SIDE_max_0
+
+!$omp parallel do                                                   &
+!$omp private(i,j,sweep,ii,o_shoot,u_shoot,s_dif_p,s_dif_m,         &
+!$omp         dif_p,dif_m,ok_p,ok_m,ratio_m,ratio_p,i_rd,j_rd,k_rd) &
+!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,F_new,F_max,F_min,l_mass)
+
+      do k=k0+shift-1,F_nk,SIDE_max_0
+
+         do j=jl_c,jr_c
+         do i=il_c,ir_c
+
+            o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
+            u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+
+            if (o_shoot==0..and.u_shoot==0.) cycle
+
+            do sweep = 1,F_ILMC_sweep_max
+
+               if (o_shoot==0..and.u_shoot==0.) cycle
+
+               s_dif_p = 0.
+               s_dif_m = 0.
+
+               do ii = 1,sweep_rd(sweep,i,j,k)%cell
+
+                  i_rd = sweep_rd(sweep,i,j,k)%i_rd(ii)
+                  j_rd = sweep_rd(sweep,i,j,k)%j_rd(ii)
+                  k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
+
+#ifdef CORE
+                  if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#else
+                  if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#endif
+
+                  dif_p(ii) = max(0., F_max(i_rd,j_rd,k_rd) - F_new(i_rd,j_rd,k_rd))
+                  s_dif_p   = dif_p(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_p
+
+                  dif_m(ii) = max(0., F_new(i_rd,j_rd,k_rd) - F_min(i_rd,j_rd,k_rd))
+                  s_dif_m   = dif_m(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_m
+
+               enddo
+
+               ok_p = min(s_dif_p,o_shoot)
+               ok_m = min(s_dif_m,u_shoot)
+
+               !Positive violation: Add Mass to surrounding cells up to Local Maximum
+               !---------------------------------------------------------------------
+               if (ok_p>0.) then
+
+                   reset(k,3) = reset(k,3) + 1
+
+                   F_new(i,j,k) = max(F_new(i,j,k) - real(ok_p/l_mass(i,j,k)),F_min(i,j,k))
+
+                   ratio_p = ok_p/s_dif_p
+
+                   do ii = 1,sweep_rd(sweep,i,j,k)%cell
+
+                      i_rd = sweep_rd(sweep,i,j,k)%i_rd(ii)
+                      j_rd = sweep_rd(sweep,i,j,k)%j_rd(ii)
+                      k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
+#ifdef CORE
+                      if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#else
+                      if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#endif
+                      if (dif_p(ii)>0.) F_new(i_rd,j_rd,k_rd) = min(F_new(i_rd,j_rd,k_rd) + real(dif_p(ii)*ratio_p),F_max(i_rd,j_rd,k_rd))
+
+                   enddo
+
+               !Negative violation: Subtract Mass from surrounding cells up to Local Minimum
+               !----------------------------------------------------------------------------
+               elseif (ok_m>0.) then
+
+                   reset(k,3) = reset(k,3) + 1
+
+                   F_new(i,j,k) = min(F_new(i,j,k) + real(ok_m/l_mass(i,j,k)),F_max(i,j,k))
+
+                   ratio_m = ok_m/s_dif_m
+
+                   do ii = 1,sweep_rd(sweep,i,j,k)%cell
+
+                      i_rd = sweep_rd(sweep,i,j,k)%i_rd(ii)
+                      j_rd = sweep_rd(sweep,i,j,k)%j_rd(ii)
+                      k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
+#ifdef CORE
+                      if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#else
+                      if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+#endif
+                      if (dif_m(ii)>0.) F_new(i_rd,j_rd,k_rd) = max(F_new(i_rd,j_rd,k_rd) - real(dif_m(ii)*ratio_m),F_min(i_rd,j_rd,k_rd))
+
+                   enddo
+
+               endif
+
+               o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
+               u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+
+               if (o_shoot==0..and.u_shoot==0.) cycle
+
+            enddo ! Do sweep
+
+            if (o_shoot==0..and.u_shoot==0.) cycle
+
+         enddo
+         enddo
+
+      enddo
+!$omp end parallel do
+
+      enddo ! do shift

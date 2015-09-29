@@ -56,7 +56,6 @@ contains
 #include "dimout.cdk"
 #include "grd.cdk"
 #include "level.cdk"
-#include "grid.cdk"
 #include "lun.cdk"
 #include "out.cdk"
 
@@ -167,10 +166,10 @@ contains
   logical function writeDescriptor()
     ! Decide whether or not to write descriptor based on local tile
     implicit none
-#include "out.cdk"
+#include "out3.cdk"
 #include "ptopo.cdk"
 
-    writeDescriptor = (Out_blocme == 0) .and. (Ptopo_couleur == 0)
+    writeDescriptor = (Out3_iome >= 0) .and. (Ptopo_couleur == 0)
 
     return
   end function writeDescriptor

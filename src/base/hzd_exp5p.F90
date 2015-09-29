@@ -14,16 +14,17 @@
 !----------------------------------LICENCE END ---------------------------------
 
 !**s/r hzd_exp5p  - 5 points explicit horizontal diffusion operator 
-!                   for LAM configurations
+!                   which includes geometric terms (hzd_geom_*)
  
-      subroutine hzd_exp5p ( F_champ, Minx,Maxx,Miny,Maxy, NK,&
-                                        F_coef_8, F_arakawa_S )
+      subroutine hzd_exp5p ( F_champ, F_temp, Minx,Maxx,Miny,Maxy, NK,&
+                                        F_coef_8, F_arakawa_S,mm,dpwr )
       implicit none
 #include <arch_specific.hf>
  
       character*1 F_arakawa_S
-      integer Minx,Maxx,Miny,Maxy,NK
+      integer Minx,Maxx,Miny,Maxy,NK,mm,dpwr
       real F_champ(Minx:Maxx,Miny:Maxy,NK)
+      real F_temp(Minx:Maxx,Miny:Maxy,NK)
       real*8 F_coef_8(NK)
     
 !author    
@@ -38,7 +39,7 @@
 #include "hzd.cdk"
 
       integer i,j,k,i0,in,j0,jn
-      real*8 wk_8 (Minx:Maxx,Miny:Maxy)
+      real*8 wk_8 (Minx:Maxx,Miny:Maxy,Nk)
       real*8, dimension(:,:,:), pointer :: stencils => null()
 !
 !---------------------------------------------------------------------
@@ -59,27 +60,61 @@
          jn  = l_njv - 1 + G_haloy*(1-north)
       end select
 
-!$omp parallel private(wk_8)
+      if (mm.eq.1) then
+          F_champ(:,:,1:NK) = F_temp(:,:,1:NK)
+      else if (mm.eq.2) then
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
+      else
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
+      endif
+
+!     del2 explicit
+!$omp parallel shared (wk_8)
 !$omp do
        do k=1,NK
           do j= j0, jn
           do i= i0, in
-             wk_8(i,j)= stencils(i,j,1)*F_champ(i  ,j  ,k) + &
-                        stencils(i,j,2)*F_champ(i-1,j  ,k) + &
-                        stencils(i,j,3)*F_champ(i+1,j  ,k) + &
-                        stencils(i,j,4)*F_champ(i  ,j-1,k) + &
-                        stencils(i,j,5)*F_champ(i  ,j+1,k)
-          enddo
-          enddo
-          do j= j0, jn
-          do i= i0, in
-             F_champ(i,j,k)= F_champ(i,j,k) + F_coef_8(k)*wk_8(i,j)
+             wk_8(i,j,k)= stencils(i,j,1)*F_temp(i  ,j  ,k) + &
+                          stencils(i,j,2)*F_temp(i-1,j  ,k) + &
+                          stencils(i,j,3)*F_temp(i+1,j  ,k) + &
+                          stencils(i,j,4)*F_temp(i  ,j-1,k) + &
+                          stencils(i,j,5)*F_temp(i  ,j+1,k)
           enddo
           enddo
        enddo
 !$omp end do
 !$omp end parallel
 
+      if (mm.eq.dpwr) then
+
+!     Apply diffusion operator
+!$omp parallel private(i,j) shared(wk_8) 
+!$omp do
+          do k=1,NK
+             do j= j0, jn
+             do i= i0, in
+                F_champ(i,j,k)= F_champ(i,j,k) + F_coef_8(k)*wk_8(i,j,k)
+             enddo
+             enddo
+          enddo
+!$omp end do
+!$omp end parallel
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
+
+      else
+!$omp parallel private(i,j) shared(wk_8) 
+!$omp do
+          do k=1,NK
+             do j= j0, jn
+             do i= i0, in
+                F_temp(i,j,k)= F_champ(i,j,k) + F_coef_8(k)*wk_8(i,j,k)
+             enddo
+             enddo
+          enddo
+!$omp end do
+!$omp end parallel
+     
+      endif
 !
 !----------------------------------------------------------------------
 !

@@ -48,7 +48,7 @@
 #include "schm.cdk"
  
       integer i,j,k,kq
-      real*8, parameter :: one = 1.d0
+      real*8, parameter :: one = 1.d0, half = .5d0
       real*8  yyy,qbar
 !
 !     ---------------------------------------------------------------
@@ -84,7 +84,7 @@
             kq = max(2,k)
             yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
-               qbar=-(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+               qbar=-half*(F_q(i,j,k+1)+F_q(i,j,kq)*Ver_onezero(k))
                F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*exp(qbar)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
          end do

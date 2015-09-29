@@ -226,6 +226,8 @@
       gmmk_pw_gz_plus_s  = 'PW_GZ:P'
       gmmk_pw_me_plus_s  = 'PW_ME:P'
       gmmk_pw_p0_plus_s  = 'PW_P0:P'
+      gmmk_pw_log_pm_s   = 'PW_LNPM'
+      gmmk_pw_log_pt_s   = 'PW_LNPT'
 
       gmmk_pw_uu_moins_s = 'PW_UU:M'
       gmmk_pw_vv_moins_s = 'PW_VV:M'
@@ -236,18 +238,12 @@
       gmmk_pw_me_moins_s = 'PW_ME:M'
       gmmk_pw_p0_moins_s = 'PW_P0:M'
 
-      gmmk_pw_uu_dyn_s   = 'UDYN'
-      gmmk_pw_vv_dyn_s   = 'VDYN'
-      gmmk_pw_tt_dyn_s   = 'TDDY'
-
       gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
       gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
-      gmmk_pw_tt_copy_s  = 'PW_TT_COPY'
 
       nullify(pw_uu_plus ,pw_vv_plus ,pw_wz_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
       nullify(pw_uu_moins,pw_vv_moins,            pw_tt_moins,pw_pm_moins,pw_gz_moins)
-      nullify(pw_uu_dyn  ,pw_vv_dyn  ,pw_tt_dyn)
-      nullify(pw_uu_copy ,pw_vv_copy ,pw_tt_copy)
+      nullify(pw_uu_copy ,pw_vv_copy, pw_log_pm, pw_log_pt)
 
       istat = GMM_OK
       istat = min(gmm_create(gmmk_pw_uu_plus_s  ,pw_uu_plus  ,meta3d_nk ,GMM_FLAG_RSTR),istat)
@@ -261,6 +257,8 @@
 
       istat = min(gmm_create(gmmk_pw_me_plus_s  ,pw_me_plus  ,meta2d    ,GMM_FLAG_RSTR),istat)
       istat = min(gmm_create(gmmk_pw_p0_plus_s  ,pw_p0_plus  ,meta2d    ,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_log_pm_s   ,pw_log_pm   ,meta3d_nk1,GMM_FLAG_RSTR),istat)
+      istat = min(gmm_create(gmmk_pw_log_pt_s   ,pw_log_pt   ,meta3d_nk1,GMM_FLAG_RSTR),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk) ,istat)
       istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk) ,istat)
@@ -273,13 +271,8 @@
       istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ),istat)
       istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_dyn_s   ,pw_uu_dyn   ,meta3d_nk),istat)
-      istat = min(gmm_create(gmmk_pw_vv_dyn_s   ,pw_vv_dyn   ,meta3d_nk),istat)
-      istat = min(gmm_create(gmmk_pw_tt_dyn_s   ,pw_tt_dyn   ,meta3d_nk),istat)
-
       istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk),istat)
       istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk),istat)
-      istat = min(gmm_create(gmmk_pw_tt_copy_s  ,pw_tt_copy  ,meta3d_nk),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')

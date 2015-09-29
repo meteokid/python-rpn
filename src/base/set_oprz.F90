@@ -40,7 +40,6 @@
 #include "sol.cdk"
 #include "cstv.cdk"
 #include "trp.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
 
@@ -99,15 +98,28 @@
                              -Ver_idz_8%t(k)*Ver_gama_8(k)*Ver_idz_8%m(k)
          Opr_opszp2_8(CC+k) =+Ver_idz_8%t(k)*Ver_gama_8(k)*Ver_idz_8%m(k)
       end do
-      Opr_opszp2_8(AA+G_nk) =+Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*Ver_idz_8%m(G_nk)
-      Opr_opszp2_8(BB+G_nk) =-Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*Ver_idz_8%m(G_nk) &
-                             -Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)*Ver_idz_8%m(G_nk)*(one-ver_alfas_8)
+      Opr_opszp2_8(AA+G_nk) =+Ver_idz_8%m(G_nk)/Ver_wpstar_8(G_nk)* &
+                              (Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+                              +Ver_idz_8%t(G_nk  )*Ver_gama_8(G_nk  )*Ver_betas_8 )
+      Opr_opszp2_8(BB+G_nk) =-Ver_idz_8%m(G_nk)/Ver_wpstar_8(G_nk)* &
+                             (Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+                             +Ver_idz_8%t(G_nk  )*Ver_gama_8(G_nk  )*(one-ver_alfas_8) )
       Opr_opszp2_8(CC+G_nk) = 0.d0
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !     First Derivative Operator (non symetric)
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
+      Ver_wm1_8=Ver_wm_8%m(G_nk)*(one-Ver_wp_8%m(G_nk)*Ver_wmstar_8(G_nk) &
+                                    /(Ver_wm_8%m(G_nk)*Ver_wpstar_8(G_nk)))
+      Ver_wm2_8=Ver_wm_8%m(G_nk)*(one-Ver_wp_8%m(G_nk)*Ver_wmstar_8(G_nk) &
+                 /(one-Dcst_cappa_8)/(Ver_wm_8%m(G_nk)*Ver_wpstar_8(G_nk)))
+      Ver_Falfas_8=(one-Dcst_cappa_8*Ver_wpstar_8(G_nk)) &
+                  /(one-Dcst_cappa_8)/Ver_wpstar_8(G_nk) &
+                  *(.5d0*Ver_wmstar_8(G_nk)+Ver_wpstar_8(G_nk)*Ver_alfas_8)
+      Ver_Fbetas_8=(one-Dcst_cappa_8 *Ver_wpstar_8(G_nk)) &
+                  /(one-Dcst_cappa_8)/Ver_wpstar_8(G_nk) &
+                  *(.5d0*Ver_wmstar_8(G_nk)+Ver_wpstar_8(G_nk)*Ver_betas_8)
       Opr_opszpl_8(AA+k0)   = 0.d0
       Opr_opszpl_8(BB+k0)   =-Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)
       Opr_opszpl_8(CC+k0)   =+Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)
@@ -117,9 +129,12 @@
                              -Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)
          Opr_opszpl_8(CC+k) =+Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)
       end do
-      Opr_opszpl_8(AA+G_nk) =-Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1)
-      Opr_opszpl_8(BB+G_nk) =+Ver_wm_8%m(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
-                             -Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)*(one-Ver_alfas_8)
+      Opr_opszpl_8(AA+G_nk) =-Ver_wm1_8*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+                             +Ver_betas_8/Ver_wpstar_8(G_nk) &
+                             *Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)
+      Opr_opszpl_8(BB+G_nk) =+Ver_wm1_8*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+                             -(one-Ver_alfas_8)/Ver_wpstar_8(G_nk) &
+                             *Ver_wp_8%m(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)
       Opr_opszpl_8(CC+G_nk) = 0.d0
 !
 !     ~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,18 +142,18 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~
 !
       Opr_opszpm_8(AA+k0)   = 0.d0
-      Opr_opszpm_8(BB+k0)   = Ver_wp_8%m(k0)*Ver_wm_8%t(k0)*Ver_gama_8(k0)*Ver_epsi_8(k0)
-      Opr_opszpm_8(CC+k0)   = Ver_wp_8%m(k0)*Ver_wp_8%t(k0)*Ver_gama_8(k0)*Ver_epsi_8(k0)
+      Opr_opszpm_8(BB+k0)   = Ver_wp_8%m(k0)*.5d0*Ver_gama_8(k0)*Ver_epsi_8(k0)
+      Opr_opszpm_8(CC+k0)   = Ver_wp_8%m(k0)*.5d0*Ver_gama_8(k0)*Ver_epsi_8(k0)
       do k = k0+1, G_nk-1
-         Opr_opszpm_8(AA+k) = Ver_wm_8%m(k)*Ver_wm_8%t(k-1)*Ver_gama_8(k-1)*Ver_epsi_8(k-1)
-         Opr_opszpm_8(BB+k) = Ver_wm_8%m(k)*Ver_wp_8%t(k-1)*Ver_gama_8(k-1)*Ver_epsi_8(k-1) &
-                            + Ver_wp_8%m(k)*Ver_wm_8%t(k)*Ver_gama_8(k)*Ver_epsi_8(k)
-         Opr_opszpm_8(CC+k) = Ver_wp_8%m(k)*Ver_wp_8%t(k)*Ver_gama_8(k)*Ver_epsi_8(k)
+         Opr_opszpm_8(AA+k) = Ver_wm_8%m(k)*.5d0*Ver_gama_8(k-1)*Ver_epsi_8(k-1)
+         Opr_opszpm_8(BB+k) = Ver_wm_8%m(k)*.5d0*Ver_gama_8(k-1)*Ver_epsi_8(k-1) &
+                            + Ver_wp_8%m(k)*.5d0*Ver_gama_8(k)*Ver_epsi_8(k)
+         Opr_opszpm_8(CC+k) = Ver_wp_8%m(k)*.5d0*Ver_gama_8(k)*Ver_epsi_8(k)
       end do
-      Opr_opszpm_8(AA+G_nk) = Ver_wm_8%m(G_nk)*Ver_wm_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1)
-      Opr_opszpm_8(BB+G_nk) = Ver_wm_8%m(G_nk)*Ver_wp_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1) &
-                            + Ver_wp_8%m(G_nk) &
-                            *(Ver_wp_8%t(G_nk)*Ver_alfas_8+Ver_wm_8%t(G_nk))*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)
+      Opr_opszpm_8(AA+G_nk) = Ver_wm2_8*.5d0*Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1) &
+                            + Ver_wp_8%m(G_nk)*Ver_Fbetas_8*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)
+      Opr_opszpm_8(BB+G_nk) = Ver_wm2_8*.5d0*Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1) &
+                            + Ver_wp_8%m(G_nk)*Ver_Falfas_8*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)
       Opr_opszpm_8(CC+G_nk) = 0.d0
 !
 !
@@ -150,15 +165,25 @@
             		     *(Ver_wp_8%t(k0-1)+Ver_wm_8%t(k0-1)*Ver_alfat_8)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)
       endif
 !
-      do k = k0, G_nk
+!     substracting derivative of gamma*epsi
+      do k = k0, G_nk-1
          km=max(k-1,1)
          Opr_opszpl_8(BB+k) = Opr_opszpl_8(BB+k) - Ver_idz_8%m(k) &
                             *(Ver_gama_8(k)*Ver_epsi_8(k)-Ver_onezero(k)*Ver_gama_8(km)*Ver_epsi_8(km))
+      end do
+      Opr_opszpl_8(AA+G_nk) = Opr_opszpl_8(AA+G_nk) &
+             - Ver_idz_8%m(G_nk)/Ver_wpstar_8(G_nk)*.5d0*Ver_wmstar_8(G_nk) &
+             * (Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)-Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1))
+      Opr_opszpl_8(BB+G_nk) = Opr_opszpl_8(BB+G_nk) &
+             - Ver_idz_8%m(G_nk)/Ver_wpstar_8(G_nk)*(one-.5d0*Ver_wmstar_8(G_nk)) &
+             * (Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)-Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1))
+
+!     multiplying by 1-cappa
+      do k = k0, G_nk
          Opr_opszpm_8(AA+k) = Opr_opszpm_8(AA+k)*(one-Dcst_cappa_8)
          Opr_opszpm_8(BB+k) = Opr_opszpm_8(BB+k)*(one-Dcst_cappa_8)
          Opr_opszpm_8(CC+k) = Opr_opszpm_8(CC+k)*(one-Dcst_cappa_8)
       end do
-
 !     ---------------------------------------------------
 !     Compute eigenvalues and eigenvector in the vertical
 !     ---------------------------------------------------

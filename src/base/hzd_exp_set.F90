@@ -14,17 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r hzd_exp_set
-!
+
       subroutine hzd_exp_set
       implicit none
 #include <arch_specific.hf>
-!
-!author    
-!     Michel Desgagne - fall 2013 (after hzd_set.ftn90)
-!
-!revision
-! v4_70 - Desgagne M.      - Initial version
-!
 
 #include "glb_ld.cdk"
 #include "hzd.cdk"
@@ -42,6 +35,11 @@
 !
 !     ---------------------------------------------------------------
 !
+      call hzd_exp_geom
+
+      call hzd_exp5p_set
+
+      if ( Hzd_type_S .eq. 'HO_EXP9P' ) then
       npin= 0
       do i=1,HZD_MAXPROF
          if ( Hzd_prof_S(i) .ne. "NIL") npin= npin+1
@@ -129,6 +127,7 @@
       coef_theta = (2./c_8)**Hzd_pwr_theta / (-log(1.d0- x1))
       
       if (Lun_out.gt.0) then
+         write(Lun_out,1000)
          if (npin.gt.0) then
             write (Lun_out,1011)
             do k=1,G_nk+1
@@ -145,9 +144,9 @@
          write(Lun_out,1010)  &
               (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
       endif
-
-      call hzd_exp5p_set ()
+      endif
       
+ 1000 format (3X,'For the 9 points diffusion operator:')
  1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a )
  1011 format (/' VERTICAL PROFILE OF HORIZONTAL DIFFUSION PWR/LNR: '/, &
                2x,'level',3x,'PWR',7x,'LNR',10x,'COEFFICIENT')

@@ -13,36 +13,79 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_ctrl 
-!
-
-!
-      subroutine hzd_ctrl3 (F_f2hzd, F_grd_S, Nk)
-      implicit none
+module hzd_ctrl
+  use hzd_exp
+  implicit none
 #include <arch_specific.hf>
-!
-      character*(*) F_grd_S
-      integer Minx,Maxx,Miny,Maxy, Nk
-      real    F_f2hzd (*)
-!
-!author
-!     Michel Desgagne -- Fall 2010
-!
-!revision
-! v4_15 - Desgagne M.       - initial version 
-!
+  private
+  public :: hzd_ctrl4
+
+  interface hzd_ctrl4
+     module procedure hzd_ctrl_scalar
+     module procedure hzd_ctrl_vector
+  end interface
+
 #include "glb_ld.cdk"
 #include "hzd.cdk"
+
+contains
+
+      subroutine hzd_ctrl_scalar ( F_f2hzd, F_type_S, &
+                                   Minx,Maxx,Miny,Maxy,Nk )
+      implicit none
+
+      character*(*), intent(IN) :: F_type_S
+      integer      , intent(IN) :: Minx,Maxx,Miny,Maxy,Nk
+      real, dimension(Minx:Maxx,Miny:Maxy,Nk),&
+                     intent (INOUT) :: F_f2hzd
 !
-!     _________________________________________________________________
+!-------------------------------------------------------------------
 !
       if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_imp_ctrl  (F_f2hzd, F_grd_S, Nk)
+         call hzd_imp_ctrl  (F_f2hzd, F_type_S, Nk)
 
-      if (Hzd_type_S.eq.'HO_EXP') &
-         call hzd_exp_visco2( F_f2hzd, F_grd_S, &
-	                      l_minx,l_maxx,l_miny,l_maxy, Nk )
-!     _________________________________________________________________
+      if (Hzd_type_S.eq.'HO_EXP5P') &
+         call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                             Nk, F_type_S=F_type_S )
+
+      if (Hzd_type_S.eq.'HO_EXP9P') &
+         call hzd_exp_visco2( F_f2hzd, F_type_S, &
+	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+!
+!-------------------------------------------------------------------
 !
       return
-      end
+      end subroutine hzd_ctrl_scalar
+
+      subroutine hzd_ctrl_vector ( F_u, F_v, &
+                                   Minx,Maxx,Miny,Maxy,Nk )
+      implicit none
+
+      integer Minx,Maxx,Miny,Maxy,Nk
+      real    F_u (Minx:Maxx,Miny:Maxy,Nk), &
+              F_v (Minx:Maxx,Miny:Maxy,Nk)
+!
+!-------------------------------------------------------------------
+!
+      if (Hzd_type_S.eq.'HO_IMP') then
+         call hzd_imp_ctrl  (F_u, 'U', Nk)
+         call hzd_imp_ctrl  (F_v, 'V', Nk)
+      endif
+
+      if (Hzd_type_S.eq.'HO_EXP5P') &
+         call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
+                             Nk, F_VV=F_v )
+
+      if (Hzd_type_S.eq.'HO_EXP9P') then
+         call hzd_exp_visco2( F_u, 'U', &
+	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+         call hzd_exp_visco2( F_v, 'V', &
+	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+      endif
+!
+!-------------------------------------------------------------------
+!
+      return
+      end subroutine hzd_ctrl_vector
+
+end module hzd_ctrl

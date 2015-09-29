@@ -26,7 +26,8 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_50 - Qaddouri-PLante   - YY version
 ! v4_70 - Tanguay M.        - dry air pressure conservation
-
+! v4_XX - Tanguay M.        - REAL*8 with iterations 
+!	
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
@@ -36,85 +37,141 @@
 #include "vt1.cdk"
 #include "ptopo.cdk"
 #include "grd.cdk"
+#include "lun.cdk"
+#include "tr3d.cdk"
+#include "dcst.cdk"
 
-      logical, parameter :: wet=.false.
-      integer i,j, istat, offi, offj, isize, ierr
-      real wk0(l_minx:l_maxx,l_miny:l_maxy), wk1(l_minx:l_maxx,l_miny:l_maxy)
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk):: pr_m1,pr_t1,pr_m0,pr_t0
-      real, dimension(l_minx:l_maxx,l_miny:l_maxy)     :: pr_p0_1,pr_p0_0
-      real*8 :: bbb_8,avg_8(3),savg_8(3),total_surface_pressure, area
-      real*8, parameter :: ZERO_8 = 0.0, ONE_8 = 1.d0
+      type(gmm_metadata) :: mymeta
+      integer err,i,j,k,n,istat,iteration
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_p0_dry_1_8,pr_p0_dry_0_8 
+      real*8 l_avg_8,g_avg_ps_dry_0_8
+      real*8,parameter :: QUATRO_8 = 4.0d0, ONE_8 = 1.0d0
+      character(len= 9) communicate_S
+      real*8, save :: g_avg_ps_dry_initial_8,scale_8
+      logical,save :: done_L=.FALSE.
 !     _________________________________________________________________
-!
+
       if (.not.Schm_psadj_L) return
 
-      istat= gmm_get(gmmk_st0_s,st0)
-      istat= gmm_get(gmmk_st1_s,st1)
+      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) then
 
-      if (wet) then
-!$omp parallel private(i) shared(st0,st1)
-!$omp do
-         do j= 1+pil_s, l_nj-pil_n 
-         do i= 1+pil_w, l_ni-pil_e
-            wk0(i,j)= (exp(st0(i,j)) - 1.) * Cstv_pref_8
-            wk1(i,j)= (exp(st1(i,j)) - 1.) * Cstv_pref_8
-         end do
-         end do
-!$omp enddo
-!$omp end parallel
-      else
-         ! Compute pressure
-         call calc_pressure ( pr_m1, pr_t1, pr_p0_1, st1, l_minx,l_maxx, l_miny,l_maxy, l_nk )
-         call calc_pressure ( pr_m0, pr_t0, pr_p0_0, st0, l_minx,l_maxx, l_miny,l_maxy, l_nk )
+         call psadj_LAM_0
 
-         ! Compute dry surface pressure
-         call dry_sfc_pressure (wk0, pr_m0, pr_p0_0, l_minx,l_maxx,l_miny,l_maxy,l_nk, 'M')
-         call dry_sfc_pressure (wk1, pr_m1, pr_p0_1, l_minx,l_maxx,l_miny,l_maxy,l_nk, 'P')
+         return
+
       endif
 
-      if (Grd_yinyang_L) then
+      if (Lun_out>0) write(Lun_out,*) ''
+      if (Lun_out>0) write(Lun_out,*) '----------------------------------'
+      if (Lun_out>0) write(Lun_out,*) 'PSADJ is done for DRY AIR (REAL*8)'
+      if (Lun_out>0) write(Lun_out,*) '----------------------------------'
+      if (Lun_out>0) write(Lun_out,*) ''
 
-         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-         offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-         
-         avg_8= ZERO_8 ; isize=3
+      iteration = 1
+
+      communicate_S = "GRID"
+      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+
+      !Estimate area and dry air mass at initial time  
+      !----------------------------------------------
+      if (.NOT.done_L) then
+
+         !Estimate area
+         !-------------
+         if (Grd_yinyang_L) then
+
+            l_avg_8 = 0.0d0 
+
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+
+               l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+
+            enddo
+            enddo
+
+            call RPN_COMM_allreduce (l_avg_8,scale_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+            scale_8 = 1.0/scale_8
+
+         else
+ 
+            scale_8 = 1.0/(QUATRO_8 * Dcst_pi_8)
+
+         endif
+
+         istat = gmm_get(gmmk_st1_s,st1,mymeta)
+
+         !Obtain pressure levels
+         !----------------------
+         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_1_8,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+         !Compute dry surface pressure (- Cstv_pref_8)
+         !--------------------------------------------
+         call dry_sfc_pressure_8 (pr_p0_dry_1_8,pr_m_8,pr_p0_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
+
+         l_avg_8 = 0.0d0
+
+         !Estimate dry air mass at initial time
+         !-------------------------------------
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            area= Geomg_area_8(i,j)*Geomg_mask_8(i,j)
-            avg_8(1)= avg_8(1) + area * wk0(i,j)
-            avg_8(2)= avg_8(2) + area
-            avg_8(3)= avg_8(3) + area * wk1(i,j)
+
+            l_avg_8 = l_avg_8 + pr_p0_dry_1_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j) 
+
          enddo
          enddo
 
-         call RPN_COMM_allreduce(avg_8,savg_8,isize,&
-              "MPI_DOUBLE_PRECISION","MPI_SUM","MULTIGRID",ierr)
+         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_initial_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-         avg_8(2)= savg_8(3)/savg_8(2)
-         avg_8(1)= savg_8(1)/savg_8(2)
+         g_avg_ps_dry_initial_8 = g_avg_ps_dry_initial_8 * scale_8
 
-         bbb_8   = avg_8(2) - avg_8(1)
+         done_L = .TRUE.
 
-         call RPN_COMM_bcast(bbb_8,1,'MPI_DOUBLE_PRECISION',0,'GRID',ierr)
+      endif 
 
-      else
-         call horwavg ( bbb_8, wk1, wk0, l_minx,l_maxx,l_miny,l_maxy)
-      endif
+  800 continue 
 
-!     Redistribute the average mass loss at the surface, ...
+      istat = gmm_get(gmmk_st0_s,st0,mymeta)
 
-!$omp parallel private(i,total_surface_pressure) shared(st0,bbb_8)
-!$omp do
-      do j= 1+pil_s, l_nj-pil_n 
-      do i= 1+pil_w, l_ni-pil_e
-         total_surface_pressure = (exp(st0(i,j)) - 1.) * Cstv_pref_8
-         st0(i,j)= log(ONE_8+ (total_surface_pressure + bbb_8) / Cstv_pref_8)
+      !Obtain pressure levels
+      !----------------------
+      call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+
+      !Compute dry surface pressure (- Cstv_pref_8)
+      !--------------------------------------------
+      call dry_sfc_pressure_8 (pr_p0_dry_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+
+      l_avg_8 = 0.0d0
+
+      !Estimate dry air mass 
+      !---------------------
+      do j=1+pil_s,l_nj-pil_n
+      do i=1+pil_w,l_ni-pil_e
+
+         l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+
+      enddo
+      enddo
+
+      call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+
+      g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * scale_8
+
+      !Correct surface pressure in order to preserve dry air mass    
+      !----------------------------------------------------------
+      pr_p0_0_8 = pr_p0_0_8 + (g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+
+      do j=1+pil_s,l_nj-pil_n
+      do i=1+pil_w,l_ni-pil_e
+         st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
       end do
       end do
-!$omp enddo
-!$omp end parallel
-    
-!     _________________________________________________________________
-!
+
+      iteration = iteration + 1
+
+      if (iteration<4) goto 800 
+
       return
       end

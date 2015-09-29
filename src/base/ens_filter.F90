@@ -247,9 +247,23 @@
       gmmstat = gmm_get(gmmk_ensvor_s ,ensvor,meta3d)
       if (GMM_IS_ERROR(gmmstat))write(*,6000)'ensvor'
 
-      call cal_ddqq ( ensdiv, ensvor,dummy,F_difvt1, F_difut1, &
-                      0,dummy,0,dummy,.true.,.true.,.false., &
-                      Minx,Maxx,Miny,Maxy, E_nk )
+! This call to cal_ddqq is wrong because F_difvt1, F_difut1 are inverted
+! It has anyways been replaced by calls to cal_div and cal_vor and it
+! definitively needs to be checked.
+      
+      
+!      call cal_ddqq ( ensdiv, ensvor,dummy,F_difvt1, F_difut1, &
+!                      0,dummy,0,dummy,.true.,.true.,.false., &
+!                      Minx,Maxx,Miny,Maxy, E_nk )
+
+      call cal_div ( ensdiv, F_difut1, F_difvt1, 0, dummy,&
+                     l_minx,l_maxx,l_miny,l_maxy, E_nk )
+      call cal_vor ( ensvor, dummy, F_difut1, F_difvt1, 0, dummy, .false., &
+                     l_minx,l_maxx,l_miny,l_maxy, E_nk )
+
+      call gem_error(-1,'ens_filter','Must check calls to cal_div and cal_vor')
+
+
       if(Ens_stat)then
          call glbstat2 (ensdiv,'DVRG','FRCING', &
               l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)

@@ -46,16 +46,44 @@
 #include "grd.cdk"
 #include "wil_williamson.cdk"
 #include "cstv.cdk"
+#include "ptopo.cdk"
+#include "adv_nml.cdk"
 
       !----------------------------------------------------------
-      integer i,j,k,err
-      real*8  l_mass_8,g_mass_8,constant_8
+      integer i,j,k,err,i0,in,j0,jn
+      real*8   c_mass_8, s_mass_8, c_area_8, s_area_8, & 
+              gc_mass_8,gs_mass_8,gp_mass_8,scale_8
       real, dimension(:,:,:), allocatable, save :: density,mass
       character(len=15) type_S
       character(len= 7) time_S
       character(len= 9) communicate_S
       real*8, parameter :: QUATRO_8 = 4.0
+      logical,parameter :: SAROJA_L=.TRUE. 
+      logical LAM_L
+      logical,save :: done_L=.FALSE.
+      real*8 ,save :: gc_area_8,gs_area_8 
+
+      !Extracted form linoz_o3col (J. de Grandpre)
       !----------------------------------------------------------
+      real*8, parameter :: Nav = 6.022142d23 , g0 = 9.80665d0 , air_molmass = 28.9644d0
+      real*8, parameter :: cst = (1e-4/g0)*( Nav / (1.e-3*air_molmass) )* 1.D3 / 2.687D19  ! molec/cm2 -> DU
+
+      real*8, parameter :: cst2= (1e-21/g0) !SAROJA
+      !----------------------------------------------------------
+
+      LAM_L = G_lam.and..not.Grd_yinyang_L
+
+      i0 = 1+pil_w
+      in = l_ni-pil_e
+      j0 = 1+pil_s
+      jn = l_nj-pil_n
+
+      if (F_name_S=='FLUX') then
+         i0 = 1
+         in = l_ni
+         j0 = 1
+         jn = l_nj
+      endif
 
       if (.not. allocated(density)) allocate(density(Minx:Maxx,Miny:Maxy,F_nk))
       if (.not. allocated(   mass)) allocate(   mass(Minx:Maxx,Miny:Maxy,F_nk))
@@ -64,41 +92,156 @@
 
       if (.NOT.F_mixing_L.and.F_name_S/='RHO ') density = F_tracer
 
-      !Evaluate Local Integral  
-      !-----------------------
-      l_mass_8 = 0.0d0
+      !Evaluate Area(s)  
+      !----------------
+      if (.NOT.done_L) then
+
+         if (.NOT.LAM_L) then
+
+            gc_area_8 = QUATRO_8 * Dcst_pi_8
+
+             s_area_8 = 0.0d0
+            gs_area_8 = 0.0d0
+
+            !Evaluate area on a subset of Yin or Yan
+            !---------------------------------------
+            if (Grd_yinyang_L) then
+
+            do j=1+pil_sub_s,l_nj-pil_sub_n
+            do i=1+pil_sub_w,l_ni-pil_sub_e
+               s_area_8 = s_area_8 + Geomg_area_8(i,j)
+            enddo
+            enddo
+
+            call rpn_comm_ALLREDUCE(s_area_8,gs_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
+
+            endif
+
+         else
+
+             c_area_8 = 0.0d0
+            gc_area_8 = 0.0d0
+
+            do j=1+pil_s,l_nj-pil_n !Note: Even with F_name_S=FLUX, we divide by CORE area
+            do i=1+pil_w,l_ni-pil_e
+               c_area_8 = c_area_8 + Geomg_area_8(i,j)
+            enddo
+            enddo
+
+            call rpn_comm_ALLREDUCE(c_area_8,gc_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
+
+         endif
+
+         done_L = .TRUE.
+
+      endif
+
+      !Evaluate Local Mass  
+      !-------------------
+      c_mass_8 = 0.0d0
+      s_mass_8 = 0.0d0
 
       if (F_mixing_L) then
 
+         if (Grd_yinyang_L) then
+
          do k=k0,F_nk
-            do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               l_mass_8 = l_mass_8 + F_tracer(i,j,k) * mass(i,j,k) * Geomg_mask_8(i,j) 
+            do j=j0,jn
+            do i=i0,in
+               c_mass_8 = c_mass_8 + F_tracer(i,j,k) * mass(i,j,k) * Geomg_mask_8(i,j) 
             enddo
             enddo
          enddo
+
+         else 
+
+         do k=k0,F_nk
+            do j=j0,jn
+            do i=i0,in
+               c_mass_8 = c_mass_8 + F_tracer(i,j,k) * mass(i,j,k)
+            enddo
+            enddo
+         enddo
+
+         endif
+
+         !Evaluate mass on a subset of Yin or Yan
+         !---------------------------------------
+         if (Grd_yinyang_L) then
+
+         do k=k0,F_nk
+            do j=1+pil_sub_s,l_nj-pil_sub_n
+            do i=1+pil_sub_w,l_ni-pil_sub_e
+               s_mass_8 = s_mass_8 + F_tracer(i,j,k) * mass(i,j,k)
+            enddo
+            enddo
+         enddo
+
+         endif 
 
       else
 
          do k=k0,F_nk
-            do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-               l_mass_8 = l_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
+            do j=j0,jn
+            do i=i0,in
+               c_mass_8 = c_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
            enddo
            enddo
          enddo
+
+         !Evaluate mass on a subset of Yin or Yan
+         !---------------------------------------
+         if (Grd_yinyang_L) then
+
+         do k=k0,F_nk
+            do j=1+pil_sub_s,l_nj-pil_sub_n
+            do i=1+pil_sub_w,l_ni-pil_sub_e
+               s_mass_8 = s_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k)
+           enddo
+           enddo
+         enddo
+
+         endif
 
       endif
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-      !--------------------------------------------
-      !Evaluate Global Integral using MPI_ALLREDUCE
-      !--------------------------------------------
-      call rpn_comm_ALLREDUCE(l_mass_8,g_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
+      gp_mass_8 = 0.0d0
+      gs_mass_8 = 0.0d0
 
-      g_mass_8 = g_mass_8 /(QUATRO_8 * Dcst_pi_8)
+      !----------------------------------------
+      !Evaluate Global Mass using MPI_ALLREDUCE
+      !----------------------------------------
+      call rpn_comm_ALLREDUCE(c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
+      if (Grd_yinyang_L) then 
+      call rpn_comm_ALLREDUCE(s_mass_8,gs_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID"       ,err )
+      call rpn_comm_ALLREDUCE(c_mass_8,gp_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID"       ,err )
+      endif
+
+      if ((G_lam.or.F_name_S=='RHO ').or..NOT.SAROJA_L) then
+         gc_mass_8 = gc_mass_8 / gc_area_8
+      else
+         gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
+      endif
+
+      if (Grd_yinyang_L) then
+          gp_mass_8 = gp_mass_8 / gc_area_8 * 2.0d0
+          gs_mass_8 = gs_mass_8 / gs_area_8
+      endif
+
+      if (G_lam.or..NOT.SAROJA_L) then
+         scale_8 = cst
+      else
+         scale_8 = cst2
+      endif
+
+      if (Advection_2D_3D_L.or.F_name_S=='RHO '.or..NOT.F_mixing_L) scale_8 = 1.0d0
+
+      gc_mass_8 = gc_mass_8 * scale_8
+      gp_mass_8 = gp_mass_8 * scale_8
+      gs_mass_8 = gs_mass_8 * scale_8
 
       if (.NOT.F_mixing_L) type_S = "Mass of Density"
       if (     F_mixing_L) type_S = "Mass of Mixing "
@@ -106,14 +249,20 @@
       if( F_time==1) time_S = "TIME T1"
       if (F_time==0) time_S = "TIME T0"
 
-      constant_8 = 0.0d0
-      if (F_name_S=='RHO '.and..NOT.Advection_2D_3D_L) constant_8 = - Cstv_pref_8 
+      if (Lun_out>0.and.F_comment_S/="") then
 
-      if (Lun_out>0.and.F_comment_S/="") write(Lun_out,1000) 'TRACERS: ',type_S,time_S,g_mass_8 + constant_8,F_name_S,F_comment_S
+          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',gc_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
 
-      F_mass_tracer_8 = g_mass_8 
+          if (Grd_yinyang_L) then
+          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' P= ',gp_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
+          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' S= ',gs_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
+          endif
 
- 1000 format(1X,A9,A15,1X,A7,E20.12,1X,A4,1X,A16)
+      endif
+
+      F_mass_tracer_8 = gc_mass_8 
+
+ 1002 format(1X,A9,A15,1X,A7,A4,E19.12,1X,A4,1X,A16,A7,I1)
 
       return
       end

@@ -14,18 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r init_component
-!
 
       subroutine init_component (F_component_S)
+      use iso_c_binding
       implicit none
-!
-      character*(*) F_component_S
 #include <arch_specific.hf>
-!
+
+      character*(*) F_component_S
+
 !author   Michel Desgagne -- Spring 2013 --
 !
 !revision
 ! v4_50 - M. Desgagne       - Initial version
+! v4_80 - M. Desgagne       - remove *bloc*, introduce RPN_COMM_*_io_*
 !
 #include "component.cdk"
 #include "grd.cdk"
@@ -37,20 +38,22 @@
 #include "step.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
-!
+!      include "rpn_comm.inc"
+
       logical, external :: set_dcst_8
-      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, pe_zero_topo, model_timeout_alarm
+      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, rpn_comm_gridpeers,&
+                           pe_zero_topo, model_timeout_alarm
+!      integer, external :: pe_zero_topo, model_timeout_alarm
       external init_ndoms
-!
+
       character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
       character(len=256) :: my_dir
-      logical :: is_official_L
       integer :: ierr,mydomain,ngrids
 !
 !--------------------------------------------------------------------
 !
       call gemtim4 ( 6, '', .false. )
-      ierr= model_timeout_alarm(Step_alarm)
+      ierr= model_timeout_alarm (Step_alarm)
       call rpn_comm_mydomain (init_ndoms, mydomain)
 
       write(my_dir,'(a,i4.4)') 'cfg_',mydomain
@@ -86,19 +89,21 @@
          if (Ptopo_couleur.eq.0) Grd_yinyang_S = 'YIN'
          if (Ptopo_couleur.eq.1) Grd_yinyang_S = 'YAN'
          ierr= clib_chdir(trim(Grd_yinyang_S))
-	 Ptopo_ncolors = 2
+         Ptopo_ncolors = 2
       else
          Ptopo_couleur = 0
          Ptopo_ncolors = 1
       endif
 
+!      call RPN_COMM_size ( RPN_COMM_GRIDPEERS, Ptopo_nodes, ierr )
+
       call msg_set_can_write (Ptopo_myproc == 0)
 
       call pe_all_topo
 
-      ierr = 0
+      ierr= 0
       if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
-                              Lun_out,Ptopo_numproc ) ) ierr=-1
+                              Lun_out,Ptopo_numproc ) ) ierr= -1
       call gem_error (ierr, 'init_component', 'set_dcst_8')
 !
 !--------------------------------------------------------------------

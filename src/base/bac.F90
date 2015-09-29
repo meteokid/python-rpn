@@ -57,7 +57,6 @@
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
 #include "ptopo.cdk"
@@ -68,7 +67,7 @@
       real*8  w1, w2, w3, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
-      real*8, parameter :: zero=0.d0, one=1.d0
+      real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
 !     __________________________________________________________________
 !
       if (Schm_autobar_L.and.Williamson_case.eq.1) return
@@ -108,7 +107,8 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         GP(i,j,l_nk+1)  = Ver_alfas_8 * F_lhs_sol(i,j,l_nk)  &
+         GP(i,j,l_nk+1)  = Ver_alfas_8 * F_lhs_sol(i,j,l_nk)   &
+                         + Ver_betas_8 * F_lhs_sol(i,j,l_nk-1) &
                          - Ver_css_8*(F_rt(i,j,l_nk)-F_nt(i,j,l_nk))
       end do
       end do
@@ -125,10 +125,13 @@
 !        ~~~~~~~~~
 !$omp do
          do k=k0t,l_nk
-            w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstr_8(k)/Dcst_grav_8
+            km = max(k-1,1)
+            w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstar_8%t(k)/Dcst_grav_8
             do j= j0, jn
             do i= i0, in
-               Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
+               Pbar = Ver_wpstar_8(k)*GP(i,j,k+1) &
+                    + Ver_wmstar_8(k)*half*(GP(i,j,k)+GP(i,j,km))
+               Pbar = Ver_wp_8%t(k)*Pbar+Ver_wm_8%t(k)*GP(i,j,k)
                F_w(i,j,k) = w1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
                + Ver_gama_8(k) * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
                                         + Dcst_cappa_8 * Pbar ) )
@@ -158,6 +161,7 @@
 !               due to vertical dependency F_q(i,j,k)
          do k=k0t,l_nk
             kq=max(k,2)
+            km=max(k-1,1)
             w3 = one/(one+Ver_wp_8%t(k)*Ver_dz_8%t(k))
             w2 =  (one-Ver_wm_8%t(k)*Ver_dz_8%t(k))*w3
             w1 = Cstv_tau_8*Ver_igt_8*Ver_dz_8%t(k)*w3
@@ -208,7 +212,7 @@
 
 !     Compute s
 !     ~~~~~~~~~
-      w1 = one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
+      w1 = one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
 !$omp do
       do j= j0, jn
       do i= i0, in
@@ -222,13 +226,18 @@
 !$omp do
       do k=k0t,l_nk-1
          kq=max(k,2)
-         w1=Ver_gama_8(k)*(Ver_idz_8%t(k)-Ver_epsi_8(k)*Ver_wp_8%t(k))
-         w2=Ver_gama_8(k)*(Ver_idz_8%t(k)+Ver_epsi_8(k)*Ver_wm_8%t(k))
+         km=max(k-1,1)
+         w1=Ver_gama_8(k)*Ver_idz_8%t(k)
+         w2=Ver_gama_8(k)*Ver_epsi_8(k)
          w3=Cstv_invT_8*Cstv_bar1_8*Ver_b_8%t(k)
          do j= j0, jn
          do i= i0, in
-            F_xd(i,j,k) = - Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
-                          + w1 * GP(i,j,k+1) - w2 * GP(i,j,k) ) &
+            Pbar = Ver_wpstar_8(k)*GP(i,j,k+1) &
+                 + Ver_wmstar_8(k)*half*(GP(i,j,k)+GP(i,j,km))
+            Pbar = Ver_wp_8%t(k)*Pbar+Ver_wm_8%t(k)*GP(i,j,k)
+            F_xd(i,j,k) = - Cstv_tau_8 * ( F_rt(i,j,k)-F_nt(i,j,k) &
+                                         + w1 * GP(i,j,k+1) - w1 * GP(i,j,k) &
+                                         - w2 * Pbar )  &
                           - F_qd(i,j,k)
             F_zd(i,j,k) = F_xd(i,j,k) - w3 * F_s(i,j) + F_rx(i,j,k) - F_nx(i,j,k)
          enddo
@@ -239,7 +248,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_xd(i,j,l_nk)=w3 * F_s(i,j) - F_rx(i,j,l_nk) + F_nx(i,j,l_nk)
+         F_xd(i,j,l_nk) = w3 * F_s(i,j) - F_rx(i,j,l_nk) + F_nx(i,j,l_nk)
       end do
       end do
 !$omp enddo
@@ -251,7 +260,7 @@
       do k=k0t,l_nk
          km=max(k-1,1)
          kq=max(k,2)
-         w1=Dcst_Rgasd_8*(Ver_wp_8%m(k)*Ver_Tstr_8(k)+Ver_wm_8%m(k)*Ver_Tstr_8(km))
+         w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
             GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+F_q(i,j,kq)*Ver_onezero(k))
@@ -274,7 +283,7 @@
          kq=max(k,2)
          do j= j0, jn
          do i= i0, in
-            qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+            qbar=half*(F_q(i,j,k+1)+F_q(i,j,kq)*Ver_onezero(k))
             ytmp_8(i,j)=-qbar
          enddo
          enddo
@@ -288,7 +297,7 @@
          w1=Ver_idz_8%t(k)/Dcst_rgasd_8
          do j= j0, jn
             do i= i0, in
-               F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstr_8(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))
+               F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstar_8%t(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))
             enddo
          enddo
       enddo

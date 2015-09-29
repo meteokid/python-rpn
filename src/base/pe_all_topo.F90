@@ -58,7 +58,7 @@ use iso_c_binding
 !
 ! Broadcasts processor topology
 !
-      call RPN_COMM_bcast (Ptopo_npex  , 8, "MPI_INTEGER",0,"grid",err)
+      call RPN_COMM_bcast (Ptopo_npex  , 6, "MPI_INTEGER",0,"grid",err)
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
 
       Ptopo_npeOpenMP = OMP_get_max_threads()
@@ -78,9 +78,6 @@ use iso_c_binding
       Path_outcfg_S = trim(Path_work_S)//'/output_settings'
       Path_phyincfg_S = trim(Path_input_S)//'/physics_input_table'
 !
-! Initializes PEs block partitions for the PEs (grouping PEs)
-!
-      Ptopo_numpe_perb = Ptopo_npex/Ptopo_nblocx*Ptopo_npey/Ptopo_nblocy
       err= rpn_comm_mype (Ptopo_myproc, Ptopo_mycol, Ptopo_myrow)
 !
 ! Initializes OpenMP

@@ -36,10 +36,6 @@
 ! Ptopo_smtphy       | number of threads around PHYSICS                |
 ! Ptopo_smtdyn       | number of threads for the global run            |
 ! Ptopo_bind_L       | TRUE for binding, FALSE for no binding          |
-! Ptopo_nblocx       | number of blocks along X                        |
-! Ptopo_nblocy       | number of blocks along Y                        |
-!                    | 0,1,2 ... (Ptopo_nblocx * Ptopo_nblocy-1)       |
-! Ptopo_mybloc       | bloc number after block topology                |
 ! Ptopo_gindx        | contains global indices that represents:        |
 !                    | (1,*)-the minimum I indices on each local PE    |
 !                    | (2,*)-the maximum I indices on each local PE    |
@@ -52,8 +48,6 @@
 ! Ptopo_tag          | tag number within the inter-communicator        |
 ! Ptopo_intracomm    | intra communicator number for Yin, Yan          |
 ! Ptopo_intercomm    | inter-communicator number between Yin and Yan   |
-! Ptopo_ninblocx     | number of input blocks along X                  |
-! Ptopo_ninblocy     | number of input blocks along Y                  |
 !----------------------------------------------------------------------
 !
 #endif
@@ -61,10 +55,8 @@
       integer Ptopo_numproc   , Ptopo_npex     , Ptopo_npey
       integer Ptopo_npeOpenMP
       integer Ptopo_nthreads_dyn   , Ptopo_nthreads_phy
-      integer Ptopo_nblocx    , Ptopo_nblocy   , Ptopo_mybloc
       integer Ptopo_ninblocx  , Ptopo_ninblocy
-      integer Ptopo_myblocx   , Ptopo_myblocy  , Ptopo_blocme
-      integer Ptopo_numpe_perb
+      integer Ptopo_nodes
       integer Ptopo_ncolors   , Ptopo_couleur
       integer Ptopo_intracomm , Ptopo_intercomm
       integer Ptopo_world_myproc, Ptopo_world_numproc
@@ -78,17 +70,14 @@
 !     using the first element Ptopo_npex. HANDLE WITH CARE !!!
 
       common /Ptopo_bcast/ Ptopo_npex        , Ptopo_npey
-      common /Ptopo_bcast/ Ptopo_nblocx      , Ptopo_nblocy
-      common /Ptopo_bcast/ Ptopo_ninblocx    , Ptopo_ninblocy
       common /Ptopo_bcast/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy
+      common /Ptopo_bcast/ Ptopo_ninblocx  , Ptopo_ninblocy
 !
       common  / Ptopo_i / Ptopo_npeOpenMP
       common  / Ptopo_i / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
-      common  / Ptopo_i / Ptopo_numproc 
-      common  / Ptopo_i / Ptopo_mybloc   , Ptopo_myblocx, Ptopo_myblocy
-      common  / Ptopo_i / Ptopo_blocme   , Ptopo_numpe_perb
+      common  / Ptopo_i / Ptopo_numproc  , Ptopo_nodes
       common  / Ptopo_i / Ptopo_ncolors  , Ptopo_couleur
-      common  / Ptopo_i / Ptopo_intracomm,Ptopo_intercomm
+      common  / Ptopo_i / Ptopo_intracomm, Ptopo_intercomm
       common  / Ptopo_i / Ptopo_world_myproc, Ptopo_world_numproc
       common  / Ptopo_i / Ptopo_tag
 
@@ -97,6 +86,5 @@
       common  / Ptopo_p / Ptopo_gindx
 !
       namelist /resources/ Ptopo_npex  , Ptopo_npey, Ptopo_bind_L
-      namelist /resources/ Ptopo_nblocx, Ptopo_nblocy
       namelist /resources/ Ptopo_ninblocx    , Ptopo_ninblocy
       namelist /resources/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy

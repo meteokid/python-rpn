@@ -2,7 +2,7 @@
 (p2) + 0.5 * (x) * ((p3) - (p1) + (x) * (2. * (p1) - 5. * (p2) + 4. * (p3) - (p4) + (x) * (3. * ((p2) - (p3)) + (p4) - (p1))))
 
    do k=k0,F_nk
-      idxk = (k-1)*Adv_lnij
+      idxk = (k-1)*l_ni*l_nj
       do j=j0,jn
          idxjk = idxk + ((j-1)*l_ni)
          do i=i0,in

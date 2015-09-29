@@ -39,14 +39,14 @@
       parameter( two    = 2.0 )
       parameter( alpha1 = -1.d0/16.d0 )
       parameter( alpha2 = 9.d0/16.d0 )
-
+      parameter( three = 3.0 )
+      parameter( one   = 1.0 )
 
       integer  i, j, indx, offi, offj, err
 
 !   * Statement functions
       real*8 hh
       real*8 lag2, lag3, x, x1, x2, x3, x4
-     
       lag2( x, x1, x2, x3 ) = &
        ( ( x  - x2 ) * ( x  - x3 ) )/ &
        ( ( x1 - x2 ) * ( x1 - x3 ) )
@@ -60,12 +60,39 @@
 !
       offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
       offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-!
-      allocate ( inuvl_wyyv3_8(l_miny:l_maxy,4),inuvl_wyvy3_8(l_miny:l_maxy,4))
-      
+
+      allocate (inuvl_wxxu3_8(l_minx:l_maxx,4),inuvl_wxux3_8(l_minx:l_maxx,4),&
+                inuvl_wyyv3_8(l_miny:l_maxy,4),inuvl_wyvy3_8(l_miny:l_maxy,4))
+
+
 !           
 !
-     
+      do i=1-G_halox,l_ni+G_halox
+         indx = offi + i
+!
+         hh = (G_xg_8(indx+1)+ G_xg_8(indx)) * HALF
+         x1 = G_xg_8(indx-1)
+         x2 = G_xg_8(indx)
+         x3 = G_xg_8(indx+1)
+         x4 = G_xg_8(indx+2)
+         inuvl_wxxu3_8(i,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wxxu3_8(i,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wxxu3_8(i,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wxxu3_8(i,4) = lag3( hh, x4, x1, x2, x3 )
+!
+         hh = G_xg_8(indx)
+         x1 = (G_xg_8(indx-1)+ G_xg_8(indx-2)) * HALF
+         x2 = (G_xg_8(indx  )+ G_xg_8(indx-1)) * HALF
+         x3 = (G_xg_8(indx+1)+ G_xg_8(indx  )) * HALF
+         x4 = (G_xg_8(indx+2)+ G_xg_8(indx+1)) * HALF
+         inuvl_wxux3_8(i,1) = lag3( hh, x1, x2, x3, x4 )
+         inuvl_wxux3_8(i,2) = lag3( hh, x2, x1, x3, x4 )
+         inuvl_wxux3_8(i,3) = lag3( hh, x3, x1, x2, x4 )
+         inuvl_wxux3_8(i,4) = lag3( hh, x4, x1, x2, x3 )
+!
+      end do
+!
+!
 !
       do j = 1-G_haloy,l_nj+G_haloy
     
@@ -80,6 +107,7 @@
          inuvl_wyvy3_8(j,4) = alpha1
 !
       end do
+
 
       if (l_north) then
          x2 = geomg_yv_8(l_nj-2)

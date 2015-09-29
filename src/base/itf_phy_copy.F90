@@ -30,22 +30,19 @@
 #include "pw.cdk"
 
       integer istat,k
-      real, pointer, dimension (:,:,:) :: uu_copy,vv_copy,tt_copy  => null()
+      real, pointer, dimension (:,:,:) :: uu_copy,vv_copy  => null()
 !     ________________________________________________________________
 !
       istat = gmm_get(gmmk_pw_uu_plus_s,pw_uu_plus)
       istat = gmm_get(gmmk_pw_uu_copy_s,uu_copy   )
       istat = gmm_get(gmmk_pw_vv_plus_s,pw_vv_plus)
       istat = gmm_get(gmmk_pw_vv_copy_s,vv_copy   )
-      istat = gmm_get(gmmk_pw_tt_plus_s,pw_tt_plus)
-      istat = gmm_get(gmmk_pw_tt_copy_s,tt_copy   )
 
 !$omp parallel
 !$omp do
       do k= 1, G_nk
          uu_copy(:,:,k) = pw_uu_plus(:,:,k)
          vv_copy(:,:,k) = pw_vv_plus(:,:,k)
-         tt_copy(:,:,k) = pw_tt_plus(:,:,k)
       end do
 !$omp enddo
 !$omp end parallel

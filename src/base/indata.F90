@@ -52,20 +52,15 @@
 #include "gmm.hf"
 #include "grd.cdk"
 #include "acq.cdk"
-#include "dcst.cdk"
-#include "cstv.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
-#include "ifd.cdk"
 #include "p_geof.cdk"
 #include "vt1.cdk"
 #include "lun.cdk"
 #include "perturb.cdk"
 #include "step.cdk"
 #include "tr3d.cdk"
-#include "ver.cdk"
 #include "bcsgrds.cdk"
-#include "nest.cdk"
 
       integer i,j,k,istat,dim
       real fistmp(l_minx:l_maxx,l_miny:l_maxy)
@@ -75,45 +70,32 @@
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
 
-      istat = gmm_get(gmmk_ut1_s,ut1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(ut1)'
-      istat = gmm_get(gmmk_vt1_s,vt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(vt1)'
-      istat = gmm_get(gmmk_wt1_s,wt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(wt1)'
-      istat = gmm_get(gmmk_tt1_s,tt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(tt1)'
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(zdt1)'
-      istat = gmm_get(gmmk_xdt1_s,xdt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(xdt1)'
-      istat = gmm_get(gmmk_st1_s,st1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(st1)'
-      istat = gmm_get(gmmk_fis0_s,fis0)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(fis0)'
-      istat = gmm_get(gmmk_qt1_s,qt1)
-      if (GMM_IS_ERROR(istat)) print *,'indata ERROR at gmm_get(qt1)'
-
-      call bcs_ftype2 (ifd_ftype, Step_runstrt_S)
+      istat = gmm_get (gmmk_ut1_s ,ut1 )
+      istat = gmm_get (gmmk_vt1_s ,vt1 )
+      istat = gmm_get (gmmk_wt1_s ,wt1 )
+      istat = gmm_get (gmmk_tt1_s ,tt1 )
+      istat = gmm_get (gmmk_zdt1_s,zdt1)
+      istat = gmm_get (gmmk_xdt1_s,xdt1)
+      istat = gmm_get (gmmk_st1_s ,st1 )
+      istat = gmm_get (gmmk_fis0_s,fis0)
+      istat = gmm_get (gmmk_qt1_s ,qt1 )
 
       zdt1=0. ; wt1=0. ; qt1= 0.
 
       if ( Schm_theoc_L ) then
-         call theo_3D_2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0, &
-                                                    'TR/',':P') 
+         call theo_3D_2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
+                                                  'TR/',':P') 
       elseif ( Schm_autobar_L ) then
-         call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     , &
-                         'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
+         call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     ,&
+                         'TR/',':P',l_minx,l_maxx,l_miny,l_maxy,&
                          G_nk, Step_runstrt_S)
-      elseif ( ifd_ftype.eq.'3DF') then
-         call casc_3df3 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0, &
-                                l_minx,l_maxx,l_miny,l_maxy, &
-                                G_nk,'TR/',':P',Step_runstrt_S )
       else
-         call readdyn4 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     , &
-                         'TR/',':P',l_minx,l_maxx,l_miny,l_maxy, &
-                         G_nk, Step_runstrt_S)
+         call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
+                               l_minx,l_maxx,l_miny,l_maxy,&
+                            G_nk,'TR/',':P',Step_runstrt_S )
       endif
+
+      call adv_check_tracers
 
       dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
       call bitflip (ut1, vt1, tt1, perturb_nbits, perturb_npts, dim)
@@ -141,8 +123,9 @@
          minus = plus
       enddo
 
-      call diag_zd_w2( zdt1,wt1,xdt1, ut1,vt1,tt1,st1, l_minx,l_maxx,&
-               l_miny,l_maxy, G_nk, .not.Ana_zd_L, .not.Ana_w_L )
+      call diag_zd_w2 ( zdt1,wt1,xdt1, ut1,vt1,tt1,st1   ,&
+                        l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                        .not.Ana_zd_L, .not.Ana_w_L )
 
       if ( Grd_yinyang_L ) then
          call yyg_blend (Schm_nblendyy.ge.0)

@@ -29,7 +29,6 @@
    !@objective Extend the grid from model to adw with filled halos
 
 #include "adv_grid.cdk"
-#include "adv_dims.cdk"
 #include "glb_ld.cdk"
     
       integer, parameter :: nrow=0   

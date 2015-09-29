@@ -15,36 +15,19 @@
 
 !**s/r out_uv - output winds
 !
-      subroutine out_uv (F_wlnph_m, Minx,Maxx,Miny,Maxy, nk, levset, set)
+      subroutine out_uv (levset, set)
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,nk,levset,set
-      real F_wlnph_m(Minx:Maxx,Miny:Maxy,nk+1)
+      integer levset,set
 
 !author
-!     james caveen/andre methot - rpn july/nov 1995
+!     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
 !
 !revision
-! v2_00 - Lee V.            - initial MPI version (from out_uv v1_03)
-! v2_21 - J. P. Toviessi    - set dieze (#) slab output and rename
-! v2_21                       truncate model output names to 4 characters
-! v2_30 - Lee V.            - reorganize slab output to be more efficient;
-! v2_30                       there are 3 kinds of grid output here: U,V,PHI
-! v2_32 - Lee V.            - reduce dynamic allocation size
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_00 - Tanguay M.        - true winds adjoint
-! v3_03 - Tanguay M.        - introduce V4dg_imguv_L
-! v3_20 - Lee V.            - output in block topology, standard file
-! v3_21 - Lee V.            - Output Optimization
-! v3_30 - Bilodeau/Tanguay  - Cancel knots conversion when AD
-! v3_30 - Tanguay M.        - Remove lastdt .ne. Lctl_step
-! v4_05 - Lee V.            - adaptation to GMM
-! v4_40 - Lee V.            - change in argument call for this routine & prgen
-! v4_50 - Lee V.            - Exchange winds between Yin and Yang in pilot area
-! v4.7  - Gaudreault S.     - Removing wind images
+! v4_80 - Desgagne M.       - major re-factorization of output
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -52,6 +35,7 @@
 #include "out3.cdk"
 #include "geomg.cdk"
 #include "out.cdk"
+#include "pw.cdk"
 #include "vt1.cdk"
 #include "level.cdk"
 #include "outd.cdk"
@@ -68,7 +52,7 @@
       logical, save :: done_L= .false.
       integer, save :: lastdt = -1
 
-      real uv(l_minx:l_maxx,l_miny:l_maxy,nk+1)
+      real uv(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
       real, dimension(:    ), allocatable::prprlvl,rf
       real, dimension(:    ), pointer :: hybm
       save hybm
@@ -99,8 +83,8 @@
       If (.not.done_L) then
          done_L=.true.
          lastdt=Lctl_step-1
-         allocate ( uu(minx:maxx,miny:maxy,G_nk+1) )
-         allocate ( vv(minx:maxx,miny:maxy,G_nk+1) )
+         allocate ( uu(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
+         allocate ( vv(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
       endif
 
       if (lastdt .ne. Lctl_step) then
@@ -195,26 +179,26 @@
          endif
 
          if (pnuu.ne.0) then
-            call ecris_fst2(uu,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+            call out_fstecr2(uu,l_minx,l_maxx,l_miny,l_maxy,hybm, &
               'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
-              kind,G_nk, indo, nko,Outd_nbit(pnuu,set) )
+              kind,G_nk, indo, nko,Outd_nbit(pnuu,set),.false. )
             if (write_diag_lev) then
-               call ecris_fst2(uu(l_minx,l_miny,G_nk+1), &
+               call out_fstecr2(uu(l_minx,l_miny,G_nk+1), &
                                l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
                 'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set), &
-                Level_kind_diag,1,1,1,Outd_nbit(pnuu,set) )
+                Level_kind_diag,1,1,1,Outd_nbit(pnuu,set),.false. )
             endif
          endif
 
          if (pnvv.ne.0) then
-            call ecris_fst2(vv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+            call out_fstecr2(vv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
               'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set), &
-              kind,G_nk, indo, nko,Outd_nbit(pnvv,set) )
+              kind,G_nk, indo, nko,Outd_nbit(pnvv,set),.false. )
             if (write_diag_lev) then
-               call ecris_fst2(vv(l_minx,l_miny,G_nk+1), &
+               call out_fstecr2(vv(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
                     'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
-                    Level_kind_diag,1,1,1, Outd_nbit(pnvv,set) )
+                    Level_kind_diag,1,1,1, Outd_nbit(pnvv,set),.false. )
             endif
          endif
 
@@ -227,19 +211,21 @@
                   enddo
                enddo
             enddo
-            call ecris_fst2(uv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
+            call out_fstecr2(uv,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                  'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
-                 kind,G_nk, indo, nko, Outd_nbit(pnuv,set) )
+                 kind,G_nk, indo, nko, Outd_nbit(pnuv,set),.false. )
             if (write_diag_lev) then
-               call ecris_fst2(uv(l_minx,l_miny,G_nk+1), &
+               call out_fstecr2(uv(l_minx,l_miny,G_nk+1), &
                     l_minx,l_maxx,l_miny,l_maxy, hybm(G_nk+2),&
                     'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set),&
-                    Level_kind_diag,1,1,1, Outd_nbit(pnuv,set) )
+                    Level_kind_diag,1,1,1, Outd_nbit(pnuv,set),.false. )
             endif
          endif
          deallocate(indo)
 
       else   ! Output on pressure levels
+
+         istat= gmm_get(gmmk_pw_log_pm_s, pw_log_pm)
 
 !       Set kind to 2 for pressure output
          kind=2
@@ -259,10 +245,10 @@
 
 !        Vertical interpolation
 
-         call vertint ( uu_pres,cible,nko, uu,F_wlnph_m, nk_src   ,&
+         call vertint ( uu_pres, cible, nko, uu, pw_log_pm, nk_src,&
                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                         'linear', .false. )
-         call vertint ( vv_pres,cible,nko, vv,F_wlnph_m, nk_src   ,&
+         call vertint ( vv_pres, cible, nko, vv, pw_log_pm, nk_src,&
                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                         'linear', .false. )
 
@@ -280,9 +266,9 @@
                call filter2( uv_pres,Outd_filtpass(pnuv,set),&
                              Outd_filtcoef(pnuv,set), &
                              l_minx,l_maxx,l_miny,l_maxy,nko)
-            call ecris_fst2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr2(uv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'UV  ',Outd_convmult(pnuv,set),Outd_convadd(pnuv,set), &
-                 kind,nko, indo, nko, Outd_nbit(pnuv,set) )
+                 kind,nko, indo, nko, Outd_nbit(pnuv,set),.false. )
          endif
 
          if (pnuu.ne.0) then
@@ -290,9 +276,9 @@
                 call filter2( uu_pres,Outd_filtpass(pnuu,set),&
                               Outd_filtcoef(pnuu,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko)
-            call ecris_fst2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr2(uu_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set), &
-                 kind,nko, indo, nko, Outd_nbit(pnuu,set) )
+                 kind,nko, indo, nko, Outd_nbit(pnuu,set),.false. )
          endif
 
          if (pnvv.ne.0) then
@@ -300,9 +286,9 @@
                  call filter2( vv_pres,Outd_filtpass(pnvv,set),&
                                Outd_filtcoef(pnvv,set), &
                                l_minx,l_maxx,l_miny,l_maxy,nko)
-            call ecris_fst2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
+            call out_fstecr2(vv_pres,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set), &
-                 kind,nko, indo, nko, Outd_nbit(pnvv,set) )
+                 kind,nko, indo, nko, Outd_nbit(pnvv,set),.false. )
          endif
 
          deallocate(indo,rf,prprlvl,uu_pres,vv_pres,uv_pres,cible)

@@ -43,7 +43,7 @@
       integer, external :: newdate
       character*16 pdate
       character*1024 rootfn,filen
-      integer yy,mm,dd,dum
+      integer yy,mm,dd,dum,Ptopo_nblocx,Ptopo_nblocy
       integer is,js,jn,iw,ie,jw,njw,niw,nis,njs,err
 !
 ! ---------------------------------------------------------------------

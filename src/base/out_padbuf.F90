@@ -28,7 +28,7 @@
 !arguments
 ! F   field to be treated
 
-#include "out.cdk"
+#include "glb_ld.cdk"
 
       integer minx,maxx,miny,maxy,lnk
       character*1 grid
@@ -40,8 +40,8 @@
 !
       id   = 1
       jd   = 1
-      iff  = Out_myprocni
-      jf   = Out_myprocnj
+      iff  = l_ni
+      jf   = l_nj
 
       do k=1,lnk
       do j=jf+1,maxy

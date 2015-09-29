@@ -15,40 +15,38 @@
 
 !**s/r out_dq - Compute and output divergence and vorticity
 
-      subroutine out_dq (F_wlnph_m, Minx,Maxx,Miny,Maxy, nk,levset,set)
+      subroutine out_dq (levset,set)
       implicit none
 #include <arch_specific.hf>
 
-      integer Minx,Maxx,Miny,Maxy,nk,levset,set
-      real    F_wlnph_m(Minx:Maxx,Miny:Maxy,nk)
+      integer levset,set
 
 !author
-!    Michel Desgagne   - spring 2014
+!    Michel Desgagne   - summer 2015
 !
 !revision
-! v2_00 - Desgagne M.       - initial MPI version (from caldiv v1_03)
-! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
-! v4.70 - Gaudreault S.     - removing wind images
-! v4.70 - Desgagne M.       - major refactorization
+! v4_80 - Desgagne M.       - initial version
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "grid.cdk"
 #include "out3.cdk"
 #include "outd.cdk"
+#include "pw.cdk"
 #include "vt1.cdk"
 #include "level.cdk"
 #include "ver.cdk"
 
-      logical periodx_L,write_diag_lev
-      integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset,ig2
+      logical write_diag_lev
+      integer i,istat,kind,nko,pndd,pnqq,pnqr,gridset
       integer, dimension(:), allocatable :: indo
       real, dimension(:    ), allocatable:: rf
       real, dimension(:,:,:), allocatable:: uu_pres,vv_pres,cible, &
                                             div,vor,qr
-!_______________________________________________________________________
 !
-      pndd=0 ; pnqq=0 ; pnqr=0
+!----------------------------------------------------------------------
+!
+      pndd=0 ; pnqq=0 ; pnqr=0 ; write_diag_lev = .false.
 
       do i=1,Outd_var_max(set)
         if (Outd_var_S(i,set).eq.'DD') pndd=i
@@ -56,36 +54,68 @@
         if (Outd_var_S(i,set).eq.'QR') pnqr=i
       enddo
 
-      if (pndd+pnqq+pnqr.eq.0)return
+      if (pndd+pnqq+pnqr .eq. 0) return
 
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
 
-      periodx_L = .false.
-      if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
-            Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
-
-      write_diag_lev = .false.
       if (Level_typ_S(levset) .eq. 'M') then
-         kind=Level_kind_ip1
+
+         kind= Level_kind_ip1
          allocate (indo( min(Level_max(levset),Level_momentum) ))
          call out_slev2 ( Level(1,levset), Level_max(levset), &
-              Level_momentum,indo,nko,write_diag_lev)         
+                          Level_momentum , indo,nko,write_diag_lev )         
+         
          call rpn_comm_xch_halo (ut1,l_minx,l_maxx,l_miny,l_maxy,&
             l_niu,l_nj,G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call rpn_comm_xch_halo (vt1,l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_njv,G_nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-         allocate ( div(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
-                    vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
-                     qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+         if (pndd.gt.0) then
+            allocate ( div(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+            call cal_div ( div, ut1, vt1 , Outd_filtpass(pndd,set),&
+                           Outd_filtcoef(pndd,set)                ,&
+                           l_minx,l_maxx,l_miny,l_maxy, G_nk )
+            gridset = Outd_grid(set)
+            call out_href3 ( 'Mass_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+            call out_fstecr2( div, l_minx,l_maxx,l_miny,l_maxy        ,&
+                              Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
+                              Outd_convadd(pndd,set),kind             ,&
+                              G_nk, indo,nko, Outd_nbit(pndd,set),.false.)
+            deallocate (div)
+         endif
 
-         call cal_ddqq (div,qr,vor, ut1, vt1                     ,&
-                        Outd_filtpass(pndd,set),Outd_filtcoef(pndd,set),&
-                        Outd_filtpass(pnqq,set),Outd_filtcoef(pnqq,set),&
-                        (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
-                        l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         if ((pnqq.gt.0).or.(pnqr.gt.0)) then
+            
+            allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
+                        qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+            call cal_vor ( vor, qr, ut1, vt1 , Outd_filtpass(pnqq,set),&
+                           Outd_filtcoef(pnqq,set),(pnqr.gt.0)        ,&
+                           l_minx,l_maxx,l_miny,l_maxy, G_nk )
+            gridset = Outd_grid(set)
+            call out_href3 ( 'F_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+
+            if (pnqq.gt.0) &
+            call out_fstecr2( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
+                              Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
+                              Outd_convadd(pnqq,set),kind             ,&
+                              G_nk, indo,nko, Outd_nbit(pnqq,set),.false.)
+            if (pnqr.gt.0) &
+            call out_fstecr2( qr, l_minx,l_maxx,l_miny,l_maxy         ,&
+                              Ver_hyb%m,'QR  ',Outd_convmult(pnqr,set),&
+                              Outd_convadd(pnqr,set),kind             ,&
+                              G_nk, indo,nko, Outd_nbit(pnqr,set),.false.)
+            deallocate (vor, qr)
+
+          endif
+
       else
+
+         istat= gmm_get(gmmk_pw_log_pm_s, pw_log_pm)
          kind= 2
          nko = Level_max(levset)
          allocate ( indo(nko), rf(nko)                    ,&
@@ -98,11 +128,11 @@
             cible(:,:,i)= log(rf(i) * 100.0)
          enddo
 
-         call vertint ( uu_pres,cible,nko, ut1,F_wlnph_m,G_nk     ,&
-                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+         call vertint ( uu_pres,cible,nko, ut1,pw_log_pm,G_nk      ,&
+                        l_minx,l_maxx,l_miny,l_maxy, 1,l_niu,1,l_nj,&
                         'linear', .false. )
-         call vertint ( vv_pres,cible,nko, vt1,F_wlnph_m,G_nk     ,&
-                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+         call vertint ( vv_pres,cible,nko, vt1,pw_log_pm,G_nk      ,&
+                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_njv,&
                         'linear', .false. )
 
          call rpn_comm_xch_halo (uu_pres,l_minx,l_maxx,l_miny,l_maxy,&
@@ -110,82 +140,56 @@
          call rpn_comm_xch_halo (vv_pres,l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_njv,nko,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-         allocate ( div(l_minx:l_maxx,l_miny:l_maxy,nko),&
-                    vor(l_minx:l_maxx,l_miny:l_maxy,nko),&
-                     qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
-
-         call cal_ddqq (div,qr,vor, uu_pres,vv_pres                ,&
-                        Outd_filtpass(pndd,set),Outd_filtcoef(pndd,set),&
-                        Outd_filtpass(pnqq,set),Outd_filtcoef(pnqq,set),&
-                        (pndd.gt.0),(pnqr.gt.0),(pnqq.gt.0)        ,&
-                        l_minx,l_maxx,l_miny,l_maxy, nko)
-
-         deallocate (uu_pres,vv_pres,cible)
-      endif
-
-      if (pndd.gt.0) then
-
-         if (Level_typ_S(levset) .eq. 'M') then
-            call ecris_fst2 ( div, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
-                              Outd_convadd(pndd,set),kind , &
-                              nk, indo, nko, Outd_nbit(pndd,set) )
-         else
-            call ecris_fst2 ( div, l_minx,l_maxx,l_miny,l_maxy, &
+         if (pndd.gt.0) then
+            allocate ( div(l_minx:l_maxx,l_miny:l_maxy,nko) )
+            call cal_div ( div, uu_pres, vv_pres  ,&
+                           Outd_filtpass(pndd,set),&
+                           Outd_filtcoef(pndd,set),&
+                           l_minx,l_maxx,l_miny,l_maxy, nko )
+            gridset = Outd_grid(set)
+            call out_href3 ( 'Mass_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
+            call out_fstecr2( div, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'DD  ',Outd_convmult(pndd,set),&
-                              Outd_convadd(pndd,set), kind     , &
-                              nko, indo, nko, Outd_nbit(pndd,set) )
+                              Outd_convadd(pndd,set), kind     ,&
+                              nko, indo, nko, Outd_nbit(pndd,set),.false.)
+            deallocate (div)
          endif
 
-      endif
+         if ((pnqq.gt.0).or.(pnqr.gt.0)) then
+            
+            allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,nko),&
+                        qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
+            call cal_vor ( vor, qr, uu_pres, vv_pres          ,&
+                           Outd_filtpass(pnqq,set)            ,&
+                           Outd_filtcoef(pnqq,set),(pnqr.gt.0),&
+                           l_minx,l_maxx,l_miny,l_maxy, nko )
+            gridset = Outd_grid(set)
+            call out_href3 ( 'F_point', &
+                    Grid_x0 (gridset), Grid_x1 (gridset), 1, &
+                    Grid_y0 (gridset), Grid_y1 (gridset), 1 )
 
-      if ((pnqq.gt.0).or.(pnqr.gt.0)) then
-         gridset = Outd_grid(set)
-         ig2     = Grid_ig2(gridset) + 3
-         call out_sgrid2( Grid_x0 (gridset),Grid_x1 (gridset), &
-                          Grid_y0 (gridset),Grid_y1 (gridset), &
-                          Grid_ig1(gridset),ig2              , &
-                          periodx_L, Grid_stride(gridset)    , &
-                          Grid_etikext_s(gridset) )
-         call out_href2  ( 'F_point' )
-
-      endif
-
-      if (pnqq.gt.0) then
-
-         if (Level_typ_S(levset) .eq. 'M') then
-            call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
-                              Outd_convadd(pnqq,set),kind , &
-                              nk, indo, nko, Outd_nbit(pnqq,set) )
-         else
-            call ecris_fst2 ( vor, l_minx,l_maxx,l_miny,l_maxy, &
+            if (pnqq.gt.0) &
+            call out_fstecr2( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QQ  ',Outd_convmult(pnqq,set),&
-                              Outd_convadd(pnqq,set), kind       , &
-                              nko, indo, nko, Outd_nbit(pnqq,set) )
-         endif
-
-      endif
-
-      if (pnqr.gt.0) then
-
-         if (Level_typ_S(levset) .eq. 'M') then
-            call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
-                              Ver_hyb%m,'QR  ',Outd_convmult(pnqr,set),&
-                              Outd_convadd(pnqr,set),kind , &
-                              nk, indo, nko, Outd_nbit(pnqr,set) )
-         else
-            call ecris_fst2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
+                              Outd_convadd(pnqq,set), kind     ,&
+                              nko, indo, nko, Outd_nbit(pnqq,set),.false.)
+            if (pnqr.gt.0) &
+            call out_fstecr2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QR  ',Outd_convmult(pnqr,set),&
-                              Outd_convadd(pnqr,set), kind       , &
-                              nko, indo, nko, Outd_nbit(pnqr,set) )
-         endif
+                              Outd_convadd(pnqr,set), kind     ,&
+                              nko, indo, nko, Outd_nbit(pnqr,set),.false.)
+            deallocate (vor, qr)
+          endif
+
+          deallocate (rf,cible,uu_pres,vv_pres)
 
       endif
 
-      deallocate (div,vor,qr,indo)
-      if (Level_typ_S(levset) .ne. 'M') deallocate (rf)
-! ___________________________________________________________________
+      deallocate (indo)
+!
+!----------------------------------------------------------------------
 !
       return
       end

@@ -43,43 +43,84 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 #include "wil_williamson.cdk"
+#include "schm.cdk"
+#include "adv_tracers.cdk"
 !-----------------------------------------------------------------------------
 
-      real, pointer, dimension(:,:,:)  :: rho
-      real, pointer, dimension(:,:)    :: w2d 
+      real, pointer, dimension(:,:)   :: w2d 
+      real, pointer, dimension(:,:,:) :: rho_w
       integer i,j,k,istat
       real, dimension(Minx:Maxx,Miny:Maxy)         :: pr_p0
       real, dimension(Minx:Maxx,Miny:Maxy,1:F_nk+1):: pr_m,pr_t
-     
-      !Extracted form linoz_o3col (J. de Grandpre) !!! how about cstv.cdk
-      !-------------------------------------------
-      real*8, parameter :: Nav = 6.022142d23 , g0 = 9.80665d0 , air_molmass = 28.9644d0
-      real*8, parameter :: cst = (1e-4/g0)*( Nav / (1.e-3*air_molmass) )* 1.D3 / 2.687D19  ! molec/cm2 -> DU
+      real, dimension(Minx:Maxx,Miny:Maxy,1:F_nk)  :: rho
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk)    :: sumq
+      real, pointer, dimension(:,:,:)              :: tr
+      character*1 timelevel_S
 
 !-----------------------------------------------------------------------------
 
-      !Recuperate GMM variables at appropriate time   
-      !--------------------------------------------
       if (.NOT.Advection_2D_3D_L) then
 
-         nullify (w2d)
-         if (F_time.eq.0) istat = gmm_get(gmmk_st0_s,w2d)
-         if (F_time.eq.1) istat = gmm_get(gmmk_st1_s,w2d)
+         if (.NOT.Schm_autobar_L) then
+
+            !Recuperate GMM variables at appropriate time   
+            !--------------------------------------------
+            nullify (w2d)
+            if (F_time.eq.0) istat = gmm_get(gmmk_st0_s,w2d)
+            if (F_time.eq.1) istat = gmm_get(gmmk_st1_s,w2d)
+
+            !Evaluate Pressure based on pw_update_GPW 
+            !----------------------------------------
+            call calc_pressure ( pr_m, pr_t, pr_p0, w2d, &
+                                 l_minx,l_maxx, l_miny,l_maxy, G_nk )
+            pr_m(:,:,F_nk+1) = pr_p0(:,:)  
+
+         else
+
+            do k=1,F_nk+1
+               pr_m(:,:,k) = Ver_z_8%m(k)
+            enddo 
+
+         endif
+
       else
 
-         nullify (rho)
-         if (F_time.eq.0) istat = gmm_get('TR/HU:'//'M',rho)
-         if (F_time.eq.1) istat = gmm_get('TR/HU:'//'P',rho)
+         if (pseudo_RHO_L) then   
+
+            nullify (rho_w)
+            if (F_time.eq.0) istat = gmm_get('TR/HU:'//'M', rho_w)
+            if (F_time.eq.1) istat = gmm_get('TR/HU:'//'P', rho_w)
+
+            rho(:,:,:) = rho_w(:,:,:)
+
+         else
+
+            rho(:,:,:) = 1.0  
+
+         endif 
 
       endif
 
-      !Evaluate Pressure based on pw_update_GPW 
-      !----------------------------------------
-      if (.NOT.Advection_2D_3D_L) then
+      !Evaluate water tracers if dry mixing ratio  
+      !------------------------------------------
+      sumq = 0.
 
-         call calc_pressure ( pr_m, pr_t, pr_p0, w2d, &
-                              l_minx,l_maxx, l_miny,l_maxy, G_nk )
-         pr_m(:,:,F_nk+1) = pr_p0(:,:)  
+      if (Adv_dry_mixing_ratio_L) then
+
+          if (F_time.eq.1) timelevel_S = 'P'
+          if (F_time.eq.0) timelevel_S = 'M'
+
+          call sumhydro (sumq,l_minx,l_maxx,l_miny,l_maxy,l_nk,timelevel_S)
+
+          istat = gmm_get('TR/HU:'//timelevel_S,tr)
+
+!$omp parallel do shared(sumq,tr)
+          do k=1,l_nk
+             sumq(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)= &
+             sumq(1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)+ &
+             tr  (1+pil_w:l_ni-pil_e,1+pil_s:l_nj-pil_n,k)
+          end do
+!$omp end parallel do
 
       endif
 
@@ -90,12 +131,11 @@
 !$omp parallel do private(i,j) shared(pr_m) 
       do k=k0,F_nk
 
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+         do j=1,l_nj
+         do i=1,l_ni
 
-               F_density(i,j,k) =       (pr_m(i,j,k+1) - pr_m(i,j,k)) * Ver_idz_8%t(k)
-
-               F_mass   (i,j,k) = cst * (pr_m(i,j,k+1) - pr_m(i,j,k)) * Geomg_area_8(i,j)
+            F_density(i,j,k) = (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k)
+            F_mass   (i,j,k) = (pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Geomg_area_8(i,j)
 
          end do
          end do
@@ -108,11 +148,11 @@
 !$omp parallel do private(i,j)
       do k=k0,F_nk
 
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+         do j=1,l_nj
+         do i=1,l_ni
 
-               F_density(i,j,k) = rho(i,j,k)
-               F_mass   (i,j,k) = rho(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k)
+            F_density(i,j,k) = rho(i,j,k) 
+            F_mass   (i,j,k) = Geomg_area_8(i,j) * Ver_dz_8%t(k) * rho(i,j,k)
 
          end do
          end do

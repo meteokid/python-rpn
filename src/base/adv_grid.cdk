@@ -23,18 +23,31 @@
 !______________________________________________________________________|
 #endif
 
-      type :: ADV_TYPE_VER_8
-         sequence
-         real*8, dimension(:), pointer :: t,m
-      end type ADV_TYPE_VER_8
+!     -Global grid      
+      integer :: adv_maxcfl     !Max CFL defined by user    
+      integer :: adv_gminx, adv_gmaxx   !min/max x dims for model global fields
+      integer :: adv_gminy, adv_gmaxy   !min/max y dims for model global fields
+
+      !- Advection grid
+      integer :: adv_halox, adv_haloy !Advection x/y halo size
+      integer :: adv_lminx, adv_lmaxx , adv_lminy, adv_lmaxy !min/max on x/y dims for adv fields
+      integer :: adv_nit, adv_njt, adv_nijag, adv_int_i_off, adv_int_j_off
+      integer :: adv_iimax,adv_jjmax
 
       real*8, pointer :: adv_xg_8(:), adv_yg_8(:) !glb grid x,y coor
       real*8, pointer :: adv_xx_8(:),adv_yy_8(:)  !local grid x,y coor
-      real*8, pointer :: adv_cy_8(:) 
-      type(ADV_TYPE_VER_8) :: adv_verZ_8          !Coor zeta: ln(pistar)
+      real*8, pointer :: adv_cy_8(:)   !  = cos(adv_yy_8)
+
+
+      common /adv_dims_i/ adv_maxcfl
+      common /adv_dims_i/ adv_gminx, adv_gmaxx, adv_gminy, adv_gmaxy
+      common /adv_dims_i/ adv_halox, adv_haloy
+      common /adv_dims_i/ adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy
+      common /adv_dims_i/ adv_nit, adv_njt, adv_nijag
+      common /adv_dims_i/ adv_int_i_off,adv_int_j_off
+      common /adv_dims_i/ adv_iimax,adv_jjmax
 
       common /adv_grid_r8p/ adv_xg_8,adv_yg_8
       common /adv_grid_r8p/ adv_xx_8,adv_yy_8
       common /adv_grid_r8p/ adv_cy_8
-      common /adv_grid_v8/ adv_verZ_8
 #endif

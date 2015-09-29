@@ -14,42 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r set_sor - initialization of all control parameters for output
-!
-      subroutine set_sor()
-use iso_c_binding
+
+      subroutine set_sor ()
+      use iso_c_binding
       use phy_itf, only: phymeta,phy_getmeta
       use timestr_mod
       implicit none
 #include <arch_specific.hf>
-!
+
 !author
-!     J. Caveen - rpn - august 1994 - v0_16
+!     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
 !
 !revision
-! v2_00 - Lee V.            - initial MPI version (from setsor v1_03)
-! v2_10 - Lee V.            - to broadcast Pslab_useit,Slab_xnbits and
-! v2_10                       print tables of both variables requested 
-! v2_10                       for output
-! v2_20 - Lee V.            - enable output of entry bus variables
-! v2_21 - Desgagne M.       - rpn_comm stooge for MPI
-! v2_21 - J. P. Toviessi    - set diez (#) slab output
-! v2_30 - Lee V.            - reduced Level_typ to be 1-D, 
-! v2_30                       save staggered eta levels in Level_stag_ip1
-! v2_31 - Lee V.            - output on Geomg_hyb coordinates, check if
-! v2_31                       file output.cfg before call to srequet
-! v2_31                     - Common blocks of p_busp,p_busv... eliminated
-! v2_31                     - Allocate vectors for chemistry tracer output
-! v2_32 - Lee V.            - output files set to TIMESTEP units if frequency 
-! v2_32                       of output more than unit requested
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_01 - Lee V.            - new ip1 encoding (kind=5 -- unnormalized)
-! v3_20 - Lee V.            - request of physics output via long/short name
-! v3_20 - A. Kallaur        - request chemical var. output (05/2005)
-! v4_03 - Lee V.            - output files set to frequency requested
-! v4_05 - Lee/Lepine        - remove check for GMM output
-! v4_40 - Lee V.            - correct physics idx list to adapt for pressure 
-! v4_40                       output in physics, calulate Outp_multxmosaic
-!
+! v4_80 - Desgagne M.       - major re-factorization of output
 
 #include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
@@ -60,7 +37,6 @@ use iso_c_binding
 #include "out.cdk"
 #include "out3.cdk"
 #include "grd.cdk"
-#include "grid.cdk"
 #include "level.cdk"
 #include "timestep.cdk"
 #include "schm.cdk"
@@ -70,11 +46,10 @@ use iso_c_binding
 #include "outp.cdk"
 #include "outc.cdk"
 #include "hgc.cdk"
-#include "geomg.cdk"
 #include "cstv.cdk"
 #include "path.cdk"
       include "rpn_comm.inc"
-!
+
       integer,external :: srequet
 
       integer,parameter :: NBUS = 3
@@ -86,11 +61,9 @@ use iso_c_binding
       character*256 fn
       character(len=32) :: varname_S,outname_S,bus0_S
       logical iela
-      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic, noutpe
+      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic
       integer, dimension (4,2) :: ixg, ixgall
       integer istat,options,rsti
-      integer outpe_x(Ptopo_nblocx), outpe_y(Ptopo_nblocy)
-      integer, dimension (:,:), allocatable :: comyy
       real, dimension (4,2) :: rot, rotall
       type(phymeta) :: pmeta
 !
@@ -263,47 +236,16 @@ use iso_c_binding
 
       ierr = timestr2step(rsti,Fcst_rstrt_S,Cstv_dt_8)
       if (.not.RMN_IS_OK(ierr)) rsti = Step_total-Lctl_step
-      call out_sblock3(Ptopo_numpe_perb,Ptopo_nblocx,Ptopo_nblocy, &
-           Ptopo_myblocx,Ptopo_myblocy, Ptopo_mycol, Ptopo_myrow, &
-           l_ni,l_nj,Ptopo_blocme, Ptopo_mybloc,Ptopo_gindx,Ptopo_numproc,&
-           Ptopo_myproc,ixgall,rotall,Hgc_gxtyp_s,Out3_unit_S,int(Cstv_dt_8),&
-           Out3_date,Out3_etik_S, Out3_ndigits, Step_runstrt_S, &
-           min(Step_total, Lctl_step+rsti),Out3_flipit_L)
 
-      Out_laststep_S = ' '
+      Out_unf= 0 ; Out_laststep_S = ' '
+      Out_ixg(1:4) = ixgall(:,1)  ;  Out_ixg(5:8) = ixgall(:,2)
+      Out_rot(1:4) = rotall(:,1)  ;  Out_rot(5:8) = rotall(:,2)
+      Out_flipit_L = Out3_flipit_L
+      Out_etik_S   = Out3_etik_s ; Out_gridtyp_S= 'E'
+      Out_endstepno= min(Step_total, Lctl_step+rsti)
+      Out_deet     = int(Cstv_dt_8)
 
       call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
-
-      Out3_nblock= Ptopo_nblocx*Ptopo_nblocy
-      allocate ( Out3_comyy(Ptopo_ncolors,Out3_nblock),&
-                      comyy(Ptopo_ncolors,Out3_nblock),&
-                 Out3_outpe_x(Ptopo_nblocx)           ,&
-                 Out3_outpe_y(Ptopo_nblocy) )
-
-      noutpe= Ptopo_ncolors*Out3_nblock
-      outpe_x= 0 ; outpe_y= 0 ; comyy= 0
-
-      if ((Ptopo_myrow.eq.0).and.(Out_blocme.eq.0)) then
-         outpe_x(Ptopo_myblocx+1)= Ptopo_mycol
-      endif
-      if ((Ptopo_mycol.eq.0).and.(Out_blocme.eq.0)) then
-         outpe_y(Ptopo_myblocy+1)= Ptopo_myrow
-      endif
-
-      if (Out_blocme.eq.0) then
-         comyy(Ptopo_couleur+1,Ptopo_mybloc+1)= Ptopo_world_myproc
-      endif
-
-      call RPN_COMM_allreduce ( outpe_x, Out3_outpe_x, Ptopo_nblocx,&
-                      RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_GRID,ierr )
-      call RPN_COMM_allreduce ( outpe_y, Out3_outpe_y, Ptopo_nblocy,&
-                      RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_GRID,ierr )
-      if (Ptopo_ncolors .gt. 1) then
-         call RPN_COMM_allreduce ( comyy  , Out3_comyy  ,       noutpe,&
-                    RPN_COMM_INTEGER,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
-      else
-         Out3_comyy = comyy
-      endif
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
       istat= wb_put('model/Output/etik', Out3_etik_S, options)      

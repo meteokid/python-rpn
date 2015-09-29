@@ -60,7 +60,6 @@
 #include "geomg.cdk"
 #include "schm.cdk"
 #include "inuvl.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
@@ -68,11 +67,14 @@
 
       logical, save :: done_MU=.false. , done_HDIV=.false.
       integer :: i0,  in,  j0,  jn
-      integer :: i0u, inu, j0v, jnv
+      integer :: i0u, inu, i0v, inv
+      integer :: j0u, jnu, j0v, jnv
+
       integer :: i, j, k, km, kq, kp, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dTstr_8, barz, barzp, &
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
-              w1, delta_8, kdiv_damp_8, kdiv_damp_max
+              w1, w2, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
+      real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)           
       real, dimension(:,:,:), pointer :: BsPq, FI, Afis, MU, HDIV
       save MU, HDIV, kdiv_damp_8
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
@@ -101,6 +103,11 @@
          kdiv_damp_8=kdiv_damp_8/Cstv_bA_8
       endif
 
+!     Common coefficients
+
+      jext = Grd_bsc_ext1
+
+
       delta_8 = zero
       if(Schm_capa_var_L) delta_8 = 0.233d0
 
@@ -123,29 +130,35 @@
 
 !     Indices to compute Rc, Rt, Rf, Rw
       i0 = 1
-      in = l_ni
       j0 = 1
+      in = l_ni
       jn = l_nj
       if (G_lam) then
-         jext = Grd_extension - Grd_maxcfl - 1
-         if (l_west)  i0 = 1   +jext
-         if (l_east)  in = l_ni-jext
-         if (l_south) j0 = 1   +jext
-         if (l_north) jn = l_nj-jext
+         if (l_west)  i0 = 4+jext
+         if (l_east)  in = l_niu-2-jext
+         if (l_south) j0 = 4+jext
+         if (l_north) jn = l_njv-2-jext
       endif
 
 !     Additional indices to compute Ru, Rv
       i0u = 1
+      i0v = 1     
       inu = l_niu
-      j0v = 1
+      inv = l_ni
+      j0u = 1
+      j0v = 1     
+      jnu = l_nj     
       jnv = l_njv
+
       if (G_lam) then
-         jext = 0
-         if(Grd_yinyang_L) jext = 1
-         if (l_west ) i0u = i0 - jext
-         if (l_east ) inu = in + jext-1
-         if (l_south) j0v = j0 - jext
-         if (l_north) jnv = jn + jext-1
+         if (l_west ) i0u = 2+jext
+         if (l_west ) i0v = 3+jext
+         if (l_east ) inu = l_niu-1-jext
+         if (l_east ) inv = l_niu-1-jext
+         if (l_south) j0u = 3+jext
+         if (l_south) j0v = 2+jext
+         if (l_north) jnu = l_njv-1-jext        
+         if (l_north) jnv = l_njv-1-jext
       endif
 
       call diag_fi (FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy, l_nk, &
@@ -177,7 +190,7 @@
          enddo
       endif
 
-!$omp parallel private(km,kq,kp,barz,barzp,w1, &
+!$omp parallel private(km,kq,kp,barz,barzp,w1,w2,wk1,wk2, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
 !$omp     dTstr_8,BsPqbarz,fipbarz,tdiv)
 
@@ -210,7 +223,7 @@
 !$omp enddo
 
 !$omp do
-      do k = 1,l_nk
+   do k = 1,l_nk
       km=max(k-1,1)
       kp=min(k+1,l_nk)
       kq=max(k,2)
@@ -219,7 +232,36 @@
 ! Compute Ru: RHS of U equation *
 !********************************
 
-      do j= j0,  jn
+
+!     Compute V barX in wk2
+!     ~~~~~~~~~~~~~~~~~~~~~
+      if(Schm_cub_Coriolis_L) then
+         do j = j0u, jnu
+         do i = i0u-1, inu+2
+            wk2(i,j)  = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k) &
+                      + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k) &
+                      + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k) &
+                      + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)
+         end do
+         end do
+         do j= j0u, jnu
+         do i= i0u, inu
+            wk1(i,j) = inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
+                     + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
+                     + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
+                     + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
+         end do
+         end do
+      else
+         do j= j0u, jnu
+         do i= i0u, inu
+            wk1(i,j) = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
+         end do
+         end do
+      endif
+
+
+      do j= j0u, jnu
       do i= i0u, inu
 
          barz  = Ver_wp_8%m(k)*MU(i  ,j,k)+Ver_wm_8%m(k)*MU(i  ,j,km)
@@ -230,7 +272,7 @@
          barzp = Ver_wp_8%m(k)*F_t(i+1,j,k)+Ver_wm_8%m(k)*F_t(i+1,j,km)
          t_interp = (barz + barzp)*half
 
-         v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
+         v_interp = wk1(i,j)
 
          F_oru(i,j,k) = Cstv_invT_8  * F_u(i,j,k) - Cstv_Beta_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXMu_8(j)  &
@@ -244,8 +286,36 @@
 ! Compute Rv: RHS of V equation *
 !********************************
 
+!     Compute U barY in wk2
+!     ~~~~~~~~~~~~~~~~~~~~~
+      if(Schm_cub_Coriolis_L) then
+         do j = j0v-1, jnv+2
+         do i = i0v, inv
+            wk2(i,j)  = inuvl_wxux3_8(i,1)*F_u(i-2,j,k) &
+                      + inuvl_wxux3_8(i,2)*F_u(i-1,j,k) &
+                      + inuvl_wxux3_8(i,3)*F_u(i  ,j,k) &
+                      + inuvl_wxux3_8(i,4)*F_u(i+1,j,k)
+         end do
+         end do
+         do j = j0v, jnv
+         do i = i0v, inv
+            wk1(i,j) = inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
+                     + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
+                     + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
+                     + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
+         end do
+         end do
+      else
+         do j = j0v, jnv
+         do i = i0v, inv
+            wk1(i,j) = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
+         end do
+         end do
+      endif
+
+
       do j = j0v, jnv
-      do i = i0,  in
+      do i = i0v, inv
 
          barz  = Ver_wp_8%m(k)*MU(i,j  ,k)+Ver_wm_8%m(k)*MU(i,j  ,km)
          barzp = Ver_wp_8%m(k)*MU(i,j+1,k)+Ver_wm_8%m(k)*MU(i,j+1,km)
@@ -255,7 +325,7 @@
          barzp = Ver_wp_8%m(k)*F_t(i,j+1,k)+Ver_wm_8%m(k)*F_t(i,j+1,km)
          t_interp = ( barz + barzp)*half
 
-         u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
+         u_interp = wk1(i,j)
 
          F_orv(i,j,k) = Cstv_invT_8  * F_v(i,j,k) - Cstv_Beta_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomg_invDYMv_8(j) &
@@ -274,8 +344,9 @@
       do j= j0, jn
       do i= i0, in
          w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-         F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstr_8(k) ) &
-                      + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*(F_xd(i,j,k)+F_qd(i,j,k))
+         w2=Ver_wpstar_8(k)*(F_xd(i,j,k)+F_qd(i,j,k))+Ver_wmstar_8(k)*(F_xd(i,j,km)+F_qd(i,j,km))
+         F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
+                      + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*w2
 
          F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8*Ver_b_8%t(k)*F_s(i,j) &
                       + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
@@ -290,21 +361,26 @@
       end do
       end do
 
-      w1=one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
+      w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
       if(Schm_MTeul.gt.0) then
+         dBdzpBk =Ver_dbdz_8%t(k )+(Ver_dbdz_8%m(kp)-Ver_dbdz_8%m(k ))*Ver_idz_8%t(k )
+         dBdzpBkm=Ver_dbdz_8%t(km)+(Ver_dbdz_8%m(k )-Ver_dbdz_8%m(km))*Ver_idz_8%t(km)
          do j= j0, jn
          do i= i0, in
+            barz  = Cstv_invT_8*(Ver_b_8%m(k)+Ver_dbdz_8%m(k))  &
+                  + Cstv_Beta_8*(Ver_wp_8%m(k)*F_zd(i,j,k )*dBdzpBk &
+                                +Ver_wm_8%m(k)*F_zd(i,j,km)*dBdzpBkm*Ver_onezero(k))
+            barzp = (Ver_b_8%m(k)+Ver_dbdz_8%m(k))*Afis(i,j,k)
             F_orc(i,j,k) = F_orc(i,j,k) &
-                         + w1 * ( Cstv_invT_8 * F_fis(i,j) + Cstv_Beta_8 * Afis(i,j,k) )
-
+                         + w1 * ( barz * F_fis(i,j) + Cstv_Beta_8 * barzp )
          end do
          end do
       endif
       if(Schm_MTeul.gt.1) then
-         kp=min(k+1,l_nk)
          do j= j0, jn
          do i= i0, in
-            barz  = Cstv_invT_8 * Ver_b_8%t(k) + Cstv_Beta_8*F_zd(i,j,k)*Ver_dbdz_8%t(k)
+            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+            barz  = Cstv_invT_8 * Ver_b_8%t(k) + Cstv_Beta_8*w2*Ver_dbdz_8%t(k)
             barzp = ( Ver_wp_8%t(k)*Ver_b_8%m(k+1)*Afis(i,j,kp)+Ver_wm_8%t(k)*Ver_b_8%m(k)*Afis(i,j,k) )
             F_orx(i,j,k) = F_orx(i,j,k) &
                          + w1 * ( barz * F_fis(i,j) + Cstv_Beta_8 * barzp )
@@ -321,10 +397,12 @@
       if(.not.Schm_hydro_L) then
          do j= j0, jn
          do i= i0, in
+            w1=Ver_wpstar_8(k)*FI(i,j,k+1)+Ver_wmstar_8(k)*half*(FI(i,j,k)+FI(i,j,km))
+            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
             F_orw(i,j,k) = Cstv_invT_8 * F_w(i,j,k) &
                          + Cstv_Beta_8 * Dcst_grav_8 * MU(i,j,k)
-            F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*FI(i,j,k+1)+Ver_wm_8%t(k)*FI(i,j,k) )  &
-                         + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstr_8(k) * F_zd(i,j,k) &
+            F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*FI(i,j,k) )  &
+                         + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
                          + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
             F_orq(i,j,k) = Cstv_invT_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
                          + Cstv_Beta_8 * F_qd(i,j,k)
@@ -333,12 +411,11 @@
       endif
 
       if(Cstv_Tstr_8.lt.0.) then
-         barz  = Ver_wp_8%m(k )*Ver_Tstr_8(k )+Ver_wm_8%m(k )*Ver_Tstr_8(km)
-         barzp = Ver_wp_8%m(kp)*Ver_Tstr_8(kp)+Ver_wm_8%m(kp)*Ver_Tstr_8(k )
-         dTstr_8=(barzp-barz)*Ver_idz_8%t(k)
+         dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
          do j = j0, jn
          do i = i0, in
-            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * F_zd(i,j,k) * dTstr_8
+            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
          end do
          end do
       endif

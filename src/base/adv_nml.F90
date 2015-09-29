@@ -42,6 +42,12 @@
       adw_haloy  = -1
       adw_ILMC_sweep_max = 2
       adw_ILMC_min_max_L = .true.
+      Adw_reconstruction = 1
+      Adw_PPM_mono       = 0
+      pil_sub_s = -1
+      pil_sub_n = -1
+      pil_sub_w = -1
+      pil_sub_e = -1
 
       F_stat = -1
       fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')

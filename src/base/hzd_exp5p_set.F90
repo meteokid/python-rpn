@@ -13,70 +13,80 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_exp5p_set
-!
+!**s/r hzd_exp5p_set - Horizontal diffusion delN setup for LAMs
+
       subroutine hzd_exp5p_set
       implicit none
 #include <arch_specific.hf>
-!
+
 !author    
 !    Abdessamad Qaddouri - summer 2015
 !
 !revision
-! v4_80 - Qaddouri, Desgagne, Lee      - Initial version
+! v4_80 - Qaddouri A.      - initial version
+! v4_80 - Lee   - optimization
 !
+
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "hzd.cdk"
-#include "geomg.cdk"
+#include "dcst.cdk"
+#include "cstv.cdk"
+#include "lun.cdk"
 
-      integer i,j
-      real*8  aaa,bbb,ccc,ddd,dx_8
+      integer iter1,iter2,BL_iter,SL_iter,m_eps,dpwr
+      real*8 coef_8,nutop_8,c_8,s_8,deg2rad_8
+      real cdiff
 !
 !     ---------------------------------------------------------------
 !
-      dx_8= Grd_dx * acos( -1.0d0 )/180.0d0
+      deg2rad_8 = acos( -1.0d0 ) / 180.0d0
+      c_8= min(Grd_dx,Grd_dy)
+      c_8= c_8 * deg2rad_8
 
-      allocate ( Hzd_geom_q (l_minx:l_maxx,l_miny:l_maxy,5),&
-                 Hzd_geom_u (l_minx:l_maxx,l_miny:l_maxy,5),&
-                 Hzd_geom_v (l_minx:l_maxx,l_miny:l_maxy,5) )
+      if( Lun_out.gt.0) write(Lun_out,1000)
+      !for U,V,W,Zd
+      if (Hzd_lnR.gt.0) then
+         cdiff    = (4./((Dcst_rayt_8*c_8)**2))
+         coef_8   = (-log(1.- Hzd_lnR   ))/cdiff/Cstv_dt_8/2.
+         nutop_8  = coef_8*Cstv_dt_8/((Dcst_rayt_8*c_8)**2)
+         Hzd_Niter= max(int(8.d0*nutop_8+0.9999999),1)
+         coef_8   = nutop_8/max(1.,float(HZD_niter))*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+         allocate( Hzd_coef_8(G_nk))
+         Hzd_coef_8(1:G_nk) = coef_8/(Dcst_rayt_8**2)
+         if( Lun_out.gt.0) write(Lun_out,1010) &
+           coef_8 ,Hzd_pwr/2,'U,V,W,ZD ',Hzd_Niter
+      endif
 
-      do j= 2-G_haloy, l_nj+G_haloy-1
+      !for Theta
+      if (Hzd_lnR_theta.gt.0) then
+         cdiff    = (4./((Dcst_rayt_8*c_8)**2))
+         coef_8   = (-log(1.- Hzd_lnR_theta   ))/cdiff/Cstv_dt_8/2.
+         nutop_8  = coef_8*Cstv_dt_8/((Dcst_rayt_8*c_8)**2)
+         Hzd_Niter_theta = max(int(8.d0*nutop_8+0.9999999),1)
+         coef_8=nutop_8/max(1.,float(hzd_niter_theta))*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+         allocate( Hzd_coef_8_theta(G_nk))
+         Hzd_coef_8_theta(1:G_nk) = coef_8/(Dcst_rayt_8**2)
+         if( Lun_out.gt.0) write(Lun_out,1010) &
+             coef_8,Hzd_pwr_theta/2,'Theta ',Hzd_Niter_theta
 
-         aaa = (sin(Geomg_yv_8(j))-sin(Geomg_yv_8(j-1))) * Geomg_invcy2_8(j)
-         bbb = (Geomg_sy_8(j  ) - Geomg_sy_8(j-1)) / Geomg_cyv2_8(j-1)
-         ccc = (Geomg_sy_8(j+1) - Geomg_sy_8(j  )) / Geomg_cyv2_8(j  )
-         ddd = 1.0d0 / (dx_8 * (sin(Geomg_yv_8 (j)) - sin(Geomg_yv_8 (j-1))))
+      endif
 
-         do i= 2-G_halox, l_ni+G_halox-1
-            
-            Hzd_geom_q(i,j,2)= ddd*aaa/dx_8
-            Hzd_geom_q(i,j,3)= Hzd_geom_q(i,j,2)
-            Hzd_geom_q(i,j,4)= ddd*dx_8/bbb
-            Hzd_geom_q(i,j,5)= ddd*dx_8/ccc
-            Hzd_geom_q(i,j,1)=-(Hzd_geom_q(i,j,2)+Hzd_geom_q(i,j,3)+ &
-                                Hzd_geom_q(i,j,4)+Hzd_geom_q(i,j,5))
+      !for Tracers
+      if (Hzd_lnR_tr.gt.0) then
+         cdiff    = (4./((Dcst_rayt_8*c_8)**2))
+         coef_8   = (-log(1.- Hzd_lnR_tr   ))/cdiff/Cstv_dt_8/2.
+         nutop_8  = coef_8*Cstv_dt_8/((Dcst_rayt_8*c_8)**2)
+         Hzd_Niter_tr = max(int(8.d0*nutop_8+0.9999999),1)
+         coef_8=nutop_8/max(1.,float(hzd_niter_tr))*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+         allocate( Hzd_coef_8_tr(G_nk))
+         Hzd_coef_8_tr(1:G_nk) = coef_8/(Dcst_rayt_8**2)
+         if( Lun_out.gt.0) write(Lun_out,1010) &
+             coef_8,Hzd_pwr_tr/2,'Tracer',Hzd_Niter_tr
+      endif
 
-         end do
-
-         aaa= (Geomg_sy_8(j+1) - Geomg_sy_8(j)) * Geomg_invcy2_8(j)
-         bbb= Geomg_cy2_8(j  ) / (sin(Geomg_yv_8 (j)) - sin(Geomg_yv_8 (j-1)))
-         ccc= Geomg_cy2_8(j+1) / (sin(Geomg_yv_8 (j+1)) - sin(Geomg_yv_8 (j)))
-         ddd= 1.d0 / ( dx_8 * (Geomg_sy_8(j+1) - Geomg_sy_8(j)) )
-
-         do i= 2-G_halox, l_ni+G_halox-1
-
-            Hzd_geom_v(i,j,2)=ddd*aaa/dx_8
-            Hzd_geom_v(i,j,3)=Hzd_geom_v(i,j,2)
-            Hzd_geom_v(i,j,4)=ddd*dx_8*bbb
-            Hzd_geom_v(i,j,5)=ddd*dx_8*ccc
-            Hzd_geom_v(i,j,1)=-(Hzd_geom_v(i,j,2)+Hzd_geom_v(i,j,3)+ &
-                                Hzd_geom_v(i,j,4)+Hzd_geom_v(i,j,5))
-         enddo
-
-      end do
-
-      Hzd_geom_u = Hzd_geom_q
+1000 format (3X,'For the 5 points diffusion operator:')
+1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a8,' Niter=',i2 )
 !
 !     ---------------------------------------------------------------
 !

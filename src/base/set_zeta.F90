@@ -36,19 +36,19 @@
 !
 ! object
 !    To return A, B parameters for momentum and thermodynamic levels
-!    These levels are used for DYNAMICAL CALCULATIONS in the models !    Some are VIRTUAL levels
+!    These levels are used for DYNAMICAL CALCULATIONS in the models !
 !
 !    Also to return other parameters related to the vertical discretization
 !
 !         Z, dZ, 1/dZ, dBdZ, etc
 !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LEVELS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO **LEVELS** !!!!!!!!!!!!!!!!!!!!!!!!!
 !
-!               ttttttttttttttttt Cstv_ztop_8
+!               ttttttttttttttttt Cstv_ztop_8=Ver_z_8%m(0)=Ver_z_8%t(0)=Ver_z_8%x(0)
 !
 !               - - - - - - - - - Ver_z_8%m(1)
 !
-!               ================= Ver_z_8%t(1) = ( Ver_z_8%m(2) + Ver_z_8%m(1) ) / 2
+!               ================= Ver_z_8%t(1)=Ver_z_8%x(1) = ( Ver_z_8%m(2) + Ver_z_8%m(1) ) / 2
 !
 !               - - - - - - - - - Ver_z_8%m(2)
 !
@@ -56,7 +56,7 @@
 !
 !               - - - - - - - - - Ver_z_8%m(k)
 !
-!               ================= Ver_z_8%t(k) = ( Ver_z_8%m(k+1) + Ver_z_8%m(k) ) / 2
+!               ================= Ver_x_8%t(k)=Ver_z_8%x(k) = ( Ver_z_8%m(k+1) + Ver_z_8%m(k) )/2
 !
 !               - - - - - - - - - Ver_z_8%m(k+1)
 !
@@ -64,12 +64,12 @@
 !
 !               - - - - - - - - - Ver_z_8%m(n)
 !
-!               ================= Ver_a_8%t(n) This level goes to the surface if no phy
+!               ================= Ver_z_8%t(n)
 !               
-!               sssssssssssssssss Cstv_zsrf_8,Ver_z_8%t(n),Ver_a_8%t(n+1)
+!               sssssssssssssssss Cstv_zsrf_8=Ver_z_8%m(n+1)=Ver_z_8%x(n)
 !
 !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO LAYERS !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO **LAYERS** !!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !
 !               Cstv_ztop_8 ttttttttttttttttttttttttttttttttttttttttttt Cstv_ztop_8
@@ -102,7 +102,7 @@
 !                                          /          /
 !    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /  
 !                                          \        / 
-!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Ver_z_8%t(n)
+!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Cstv_zsrf_8
 !
 ! arguments
 ! none
@@ -113,7 +113,6 @@
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "grd.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
 #include "dimout.cdk"
@@ -128,29 +127,26 @@
       real*8, dimension(:), pointer :: wkpt8
 !     __________________________________________________________________
 !
-      allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &                 
+      allocate(   Ver_hyb%m(G_nk+1),       Ver_hyb%t(G_nk+1), &
            Ver_std_p_prof%m(G_nk+1),Ver_std_p_prof%t(G_nk+1), &
                   Ver_ip1%m(G_nk+1),       Ver_ip1%t(G_nk+1), &
                   Ver_a_8%m(G_nk+1),       Ver_a_8%t(G_nk+1), &
                   Ver_b_8%m(G_nk+1),       Ver_b_8%t(G_nk+1), &
-                  Ver_z_8%m(G_nk+1),       Ver_z_8%t(G_nk  ), &
+                Ver_z_8%m(0:G_nk+1),     Ver_z_8%t(0:G_nk  ), &
+                                         Ver_z_8%x(0:G_nk  ), &
                  Ver_dz_8%m(G_nk  ),      Ver_dz_8%t(G_nk  ), &
                 Ver_idz_8%m(G_nk  ),     Ver_idz_8%t(G_nk  ), &
                Ver_dbdz_8%m(G_nk  ),    Ver_dbdz_8%t(G_nk  ), &
                  Ver_wp_8%m(G_nk  ),      Ver_wp_8%t(G_nk  ), &
                  Ver_wm_8%m(G_nk  ),      Ver_wm_8%t(G_nk  ), &
-                 Ver_Tstr_8(G_nk  ),      Ver_gama_8(G_nk  ), &
+              Ver_Tstar_8%m(G_nk+1),   Ver_Tstar_8%t(G_nk  ), &
+                                          Ver_gama_8(G_nk  ), &
                  Ver_epsi_8(G_nk  ),     Ver_FIstr_8(G_nk+1), &
                   Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
-                                                    stat=istat)
-
-      call check_alloc(istat,'set_zeta',1)
+               Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ) )
 
       Cstv_pref_8 = 100000.d0
-
-      Ver_code = 6
-
-      call handle_error_l(Cstv_pref_8.eq.100000.d0, 'set_zeta','Cstv_pref_8 must equal 100000.d0')
+      Ver_code    = 6
 
       ! Construct vertical coordinate
       istat = vgd_new ( vcoord, kind=5, version=Level_version, hyb=F_hybuser    , &
@@ -196,27 +192,40 @@
       call handle_error_l(istat==VGD_OK,'set_zeta','problem getting standard pressure profile for t levels')
       Ver_std_p_prof%t=std_p_prof
 
-!     -------------
-!     Now define Z:
-!     -------------
+!     ----------------------------
+!     Define Z(m/t/x) from A(m/t):
+!     ----------------------------
 
+!     Ver_a_8%m(1:G_nk+1):       G_nk   momentum levels + surface
+!     Ver_a_8%t(1:G_nk+1):       G_nk   thermo   levels + surface
+!     Ver_z_8%m(0:G_nk+1): top + G_nk   momentum levels + surface
+!     Ver_z_8%t(0:G_nk  ): top + G_nk   thermo   levels
+!     Ver_z_8%x(0:G_nk  ): top + G_nk-1 thermo   levels + surface
+
+      Ver_z_8%m(0) = Cstv_Ztop_8
       do k = 1, G_nk+1
          Ver_z_8%m(k) = Ver_a_8%m(k)
       enddo
 
+     !Define the positions of true thermo levels
+      Ver_z_8%t(0) = Cstv_Ztop_8
       do k = 1, G_nk
          Ver_z_8%t(k) = Ver_a_8%t(k)
       enddo      
 
-      Ver_z_8%t(G_nk)=Cstv_Zsrf_8
+     !Define the positions of zeta_dot,ksi_dot,q_dot
+      Ver_z_8%x(0) = Cstv_Ztop_8
+      do k = 1, G_nk-1
+         Ver_z_8%x(k) = Ver_a_8%t(k)
+      enddo      
+      Ver_z_8%x(G_nk)=Cstv_Zsrf_8
 
 !     ----------------------
 !     Compute dZ, 1/dZ, dBdZ
 !     ----------------------
 
-      Ver_dz_8%m(1)      = Ver_z_8%t(1)   - Cstv_Ztop_8
-      do k=2,G_nk
-         Ver_dz_8%m(k)   = Ver_z_8%t(k) - Ver_z_8%t(k-1)
+      do k=1,G_nk
+         Ver_dz_8%m(k)   = Ver_z_8%x(k) - Ver_z_8%x(k-1)
       enddo
 
       do k=1,G_nk
@@ -262,6 +271,15 @@
       enddo
       Ver_wp_8%t(G_nk) = one
       Ver_wm_8%t(G_nk) = zero
+!
+!     SPECIAL WEIGHTS for last thermo level
+!
+      Ver_wpstar_8 = one
+      Ver_wmstar_8 = zero
+      if(Schm_lift_ltl_L) then
+         Ver_wpstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
+         Ver_wmstar_8(G_nk)=one-Ver_wpstar_8(G_nk)
+      endif
 
 !     -------------------------------------------------------
 !     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
@@ -283,33 +301,6 @@
       Ver_onezero=1.
       Ver_onezero(1)=0.
 
-!     ----------------------------------------------------------
-!     Put last thermo a and b at surface if there is non physics
-!     ----------------------------------------------------------
-
-! Doing this will produce an output file that the
-! model cannot read back
-!!$      if (.not.Schm_phyms_L) then
-!!$
-!!$         Ver_a_8%t(G_nk)= Cstv_Zsrf_8
-!!$         Ver_b_8%t(G_nk)= one
-!!$         Ver_hyb%t(G_nk)= one
-!!$         call convip (Ver_ip1%t(G_nk),Ver_hyb%t(G_nk),5,+1,'',.true.)
-!!$
-!!$         nullify (wkpt8)
-!!$         istat= vgd_get(vcoord,'CA_T - vertical A coefficient (t)',wkpt8)
-!!$         wkpt8(G_nk) = Ver_a_8%t(G_nk)
-!!$         istat= vgd_put(vcoord,'CA_T - vertical A coefficient (t)',wkpt8)
-!!$         nullify (wkpt8)
-!!$         istat= vgd_get(vcoord,'CB_T - vertical B coefficient (t)',wkpt8)
-!!$         wkpt8(G_nk) = Ver_b_8%t(G_nk)
-!!$         istat= vgd_put(vcoord,'CB_T - vertical B coefficient (t)',wkpt8)
-!!$         nullify (wkpti)
-!!$         istat= vgd_get(vcoord,'VIPT - level ip1 list (t)' ,wkpti)
-!!$         wkpti(G_nk) = Ver_ip1%t(G_nk)
-!!$         istat= vgd_put(vcoord,'VIPT - level ip1 list (t)' ,wkpti)
-!!$
-!!$      endif
 !     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------

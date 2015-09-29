@@ -21,7 +21,6 @@
 
 #include "constants.h"
 #include "adv_grid.cdk"
-#include "adv_dims.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
@@ -34,16 +33,13 @@
 !     
 !     ---------------------------------------------------------------
 !     
-      allocate( adv_verz_8%m (0:l_nk+1),  adv_verz_8%t(1:l_nk))
- 
       adv_maxcfl = max(1,Grd_maxcfl)
       adv_halox = max(1,adv_maxcfl + 1)
       adv_haloy = adv_halox
       
       adv_int_i_off = l_i0 - 1
       adv_int_j_off = l_j0 - 1
-      adv_trj_i_off = 0
-
+ 
       adv_gminx = 1 - adv_halox
       adv_gmaxx = G_ni + adv_halox
       adv_gminy = 1 - adv_haloy
@@ -59,7 +55,6 @@
       adv_nit = adv_lmaxx - adv_lminx + 1
       adv_njt = adv_lmaxy - adv_lminy + 1
       adv_nijag = adv_nit * adv_njt
-      adv_lnij = l_ni*l_nj
 
       allocate ( adv_xg_8(adv_gminx:adv_gmaxx), &
                  adv_yg_8(adv_gminy:adv_gmaxy), &
@@ -75,13 +70,6 @@
          adv_yg_8(j) = G_yg_8(j)
       enddo
 
-      adv_verz_8%m(0)=Cstv_Ztop_8
-      do k=1,l_nk
-         adv_verz_8%m(k) = Ver_a_8%m(k)
-         adv_verz_8%t(k) = Ver_a_8%t(k)
-      enddo
-      adv_verz_8%m(l_nk+1)=Cstv_Zsrf_8 
-  
       prhxmn =  adv_xg_8(2)-adv_xg_8(1)
       do i = 0,adv_gminx,-1
          adv_xg_8(i) = adv_xg_8(i+1)  - prhxmn     

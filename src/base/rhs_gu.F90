@@ -60,7 +60,6 @@
 #include "geomg.cdk"
 #include "schm.cdk"
 #include "inuvl.cdk"
-#include "type.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
@@ -257,7 +256,7 @@
       do j= j0, jn
       do i= i0, in
          w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-         F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstr_8(k) ) &
+         F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
                       + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*(F_xd(i,j,k)+F_qd(i,j,k))
 
          F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8*Ver_b_8%t(k)*F_s(i,j) &
@@ -273,7 +272,7 @@
       end do
       end do
 
-      w1=one/(Dcst_Rgasd_8*Ver_Tstr_8(l_nk))
+      w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
       if(Schm_MTeul.gt.0) then
          do j= j0, jn
          do i= i0, in
@@ -307,7 +306,7 @@
             F_orw(i,j,k) = Cstv_invT_8 * F_w(i,j,k) &
                          + Cstv_Beta_8 * Dcst_grav_8 * MU(i,j,k)
             F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*FI(i,j,k+1)+Ver_wm_8%t(k)*FI(i,j,k) )  &
-                         + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstr_8(k) * F_zd(i,j,k) &
+                         + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstar_8%t(k) * F_zd(i,j,k) &
                          + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
             F_orq(i,j,k) = Cstv_invT_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
                          + Cstv_Beta_8 * F_qd(i,j,k)
@@ -316,9 +315,7 @@
       endif
 
       if(Cstv_Tstr_8.lt.0.) then
-         barz  = Ver_wp_8%m(k )*Ver_Tstr_8(k )+Ver_wm_8%m(k )*Ver_Tstr_8(km)
-         barzp = Ver_wp_8%m(kp)*Ver_Tstr_8(kp)+Ver_wm_8%m(kp)*Ver_Tstr_8(k )
-         dTstr_8=(barzp-barz)*Ver_idz_8%t(k)
+         dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
          do j = j0, jn
          do i = i0, in
             F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * F_zd(i,j,k) * dTstr_8

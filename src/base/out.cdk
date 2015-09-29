@@ -11,7 +11,6 @@
 !--------------------|-------------------------------------------------|
 ! Out_flipit_L       | .true. to flip field from ni*nj*nk to ni*nk*nj  |
 ! Out_etik_S         | label, etiket                                   |
-! Out_etiket_S       | original label                                  |
 ! Out_runstrt_S      | date and time of start of pilot run             |
 ! Out_endstepno      | last timestep to be included in current output  |
 ! Out_typvar_S       | type of variable 'P'-predicted, 'A'-analysis    |
@@ -20,48 +19,18 @@
 ! Out_ixg(4)         | grid descriptors                                |
 ! Out_ip2            | value for IP2                                   |
 ! Out_ip3            | value for IP3                                   |
-! Out_ndigits        | number of digits in the suffix of filename      |
-!                    | which contains usually the value IP2            |
 ! Out_gridtyp_S      | grid type 'E' or '#' or 'M' or 'G'              |
-! Out_numpe_perb     | number of processors per block                  |
-! Out_blocme         | local block processor id                        |
-! Out_nblocx         | number of blocks along x                        |
-! Out_nblocy         | number of blocks along y                        |
-! Out_mybloc         | local block                                     |
-! Out_myblocx        | local column of block topology                  |
-! Out_myblocy        | local row of block topology                     |
-! Out_bloci0         | global starting I for local block               |
-! Out_blocin         | global ending   I for local block               |
-! Out_blocj0         | global starting J for local block               |
-! Out_blocjn         | global ending   J for local block               |
-! Out_blocni         | total points along NI for local block           |
-! Out_blocnj         | total points along NJ for local block           |
-! Out_myproc         | processor number                                |
-! Out_myprocni       | l_ni                                            |
-! Out_myprocnj       | l_ni                                            |
-! Out_idg            | global starting I for loc. blk within outputgrid|
-! Out_ifg            | global ending   I for loc. blk within outputgrid|
-! Out_idg            | global starting J for loc. blk within outputgrid|
-! Out_ifg            | global ending   J for loc. blk within outputgrid|
-! Out_nisg           | Number of points for ">>" for output grid       |
-! Out_njsg           | Number of points for "^^" for output grid       |
-! Out_nisl           | Number of points along X to output for local blk|
-! Out_njsl           | Number of points along Y to output for local blk|
 ! Out_gridi0         | starting I of entire grid (Grid_x0)             |
 ! Out_gridin         | ending   I of entire grid (Grid_x1)             |
 ! Out_gridj0         | starting J of entire grid (Grid_y0)             |
 ! Out_gridjn         | ending   J of entire grid (Grid_y1)             |
-! Out_rgridi0        | starting I of reduced grid (Grid_x0)            |
-! Out_rgridin        | ending   I of reduced grid (Grid_x1)            |
-! Out_rgridj0        | starting J of reduced grid (Grid_y0)            |
-! Out_rgridjn        | ending   J of reduced grid (Grid_y1)            |
 ! Out_rewrit_L       | .true. to overwrite, .false. to not overwrite   |
 ! ---------------------------------------------------------------------
 #endif
       character*1024 Out_dirname_S
       character*19   Out_laststep_S
-      character*15   Out_runstrt_S
-      character*12   Out_etik_S, Out_etiket_S
+      character*12   Out_etik_S
+      character*6    Out_type_S
       character*1    Out_gridtyp_S, Out_proj_S,Out_unit_S
       character*2    Out_typvar_S,Out_prefix_S
       character*3    Out_ext_S
@@ -69,57 +38,25 @@
       logical        Out_post_L  , Out_diruse_L, Out_reduc_l
       real           Out_rot(8)
 
-      integer Out_date,Out_hour,Out_dateo
+      integer Out_unf,Out_date,Out_hour,Out_dateo
       integer Out_deet,Out_npas,Out_endstepno
-      integer  Out_unf, Out_nisl
-      integer Out_njsl,Out_nisg, Out_njsg
-      integer Out_nblocx,Out_nblocy
-      integer Out_blocme,Out_numpe_perb
-      integer Out_bloci0,Out_blocin
-      integer Out_blocj0,Out_blocjn
-      integer Out_blocni, Out_blocnj
-      integer Out_myblocx, Out_myblocy
       integer Out_gridi0,Out_gridin
-      integer Out_gridj0,Out_gridjn, Out_mybloc
-      integer Out_rgridi0,Out_rgridj0
-      integer Out_stride,Out_ndigits
-      integer Out_idg, Out_ifg, Out_jdg, Out_jfg
-      integer Out_idl, Out_ifl, Out_jdl, Out_jfl
+      integer Out_gridj0,Out_gridjn
+      integer Out_stride
       integer Out_ig1, Out_ig2, Out_ig3, Out_ig4
       integer Out_ixg(8), Out_ip2, Out_ip3
-      integer Out_myproc,Out_myrow,Out_mycol
-      integer Out_myproci0, Out_myprocj0
-      integer Out_myprocni, Out_myprocnj
-      integer Out_halox,Out_haloy
       integer Out_periodx,Out_periody
 
-      common /out_i/ Out_date,Out_hour,Out_dateo
+      common /out_i/ Out_unf,Out_date,Out_hour,Out_dateo
       common /out_i/ Out_deet,Out_npas,Out_endstepno
-      common /out_i/  Out_unf, Out_nisl
-      common /out_i/ Out_njsl,Out_nisg, Out_njsg
-      common /out_i/ Out_nblocx,Out_nblocy
-      common /out_i/ Out_blocme,Out_numpe_perb
-      common /out_i/ Out_bloci0,Out_blocin
-      common /out_i/ Out_blocj0,Out_blocjn
-      common /out_i/ Out_blocni, Out_blocnj
-      common /out_i/ Out_myblocx, Out_myblocy
       common /out_i/ Out_gridi0,Out_gridin
-      common /out_i/ Out_gridj0,Out_gridjn, Out_mybloc
-      common /out_i/ Out_rgridi0,Out_rgridj0
-      common /out_i/ Out_stride,Out_ndigits
-      common /out_i/ Out_idg, Out_ifg, Out_jdg, Out_jfg
-      common /out_i/ Out_idl, Out_ifl, Out_jdl, Out_jfl
+      common /out_i/ Out_gridj0,Out_gridjn
+      common /out_i/ Out_stride
       common /out_i/ Out_ig1, Out_ig2, Out_ig3, Out_ig4
       common /out_i/ Out_ixg, Out_ip2, Out_ip3
-      common /out_i/ Out_myproc,Out_myrow,Out_mycol
-      common /out_i/ Out_myproci0, Out_myprocj0
-      common /out_i/ Out_myprocni, Out_myprocnj
-      common /out_i/ Out_halox,Out_haloy
-      common /out_i/ Out_periodx,Out_periody
 
-      common /out_c/ Out_dirname_S
-      common /out_c/ Out_runstrt_S, Out_laststep_S
-      common /out_c/ Out_etik_S, Out_etiket_S
+      common /out_c/ Out_dirname_S , Out_etik_S
+      common /out_c/ Out_laststep_S, Out_type_S
       common /out_c/ Out_gridtyp_S
       common /out_c/ Out_proj_S,Out_unit_S
       common /out_c/ Out_typvar_S,Out_prefix_S, Out_ext_s

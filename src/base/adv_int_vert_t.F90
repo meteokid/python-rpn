@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !
-      subroutine adv_int_vert_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, &
+      subroutine adv_int_vert_t ( F_xt, F_yt, F_zt, F_xtn, F_ytn, F_ztn, F_xm, F_ym, F_zm, &
                                   F_wat, F_wdm, F_ni,F_nj, F_nk     , &
                                   F_k0, i0,in,j0,jn, F_cubic_L )
       implicit none
@@ -22,6 +22,7 @@
       integer :: F_ni,F_nj, F_nk,F_k0
       integer i0,in,j0,jn,k00
       real, dimension(F_ni,F_nj,F_nk) :: F_xt,F_yt,F_zt
+      real, dimension(F_ni,F_nj)      :: F_xtn,F_ytn,F_ztn
       real, dimension(F_ni,F_nj,F_nk) :: F_xm,F_ym,F_zm
       real, dimension(F_ni,F_nj,F_nk) :: F_wat,F_wdm
       logical :: F_cubic_L
@@ -49,6 +50,7 @@
 
 #include "constants.h"
 #include "adv_grid.cdk"
+#include "ver.cdk"
 #include "cstv.cdk"
 
       integer :: i,j,k
@@ -68,25 +70,21 @@
 !        (Lam_gbpil_t != 0) for coding simplicity
 !***********************************************************************
 !
-      ztop_bound=adv_verZ_8%m(0)
-      zbot_bound=adv_verZ_8%m(F_nk+1)
+      ztop_bound=Ver_z_8%m(0)
+      zbot_bound=Ver_z_8%m(F_nk+1)
 
 ! Prepare parameters for cubic intepolation
       do k=2,F_nk-2
-         hh = adv_verZ_8%t(k)
-         x1 = adv_verZ_8%m(k-1)
-         x2 = adv_verZ_8%m(k  )
-         x3 = adv_verZ_8%m(k+1)
-         x4 = adv_verZ_8%m(k+2)
+         hh = Ver_z_8%t(k)
+         x1 = Ver_z_8%m(k-1)
+         x2 = Ver_z_8%m(k  )
+         x3 = Ver_z_8%m(k+1)
+         x4 = Ver_z_8%m(k+2)
          w1(k) = lag3( hh, x1, x2, x3, x4 )
          w2(k) = lag3( hh, x2, x1, x3, x4 )
          w3(k) = lag3( hh, x3, x1, x2, x4 )
          w4(k) = lag3( hh, x4, x1, x2, x3 )
       enddo
-
-      ww=(adv_verZ_8%m(F_nk+1)-adv_verZ_8%t(F_nk))/(adv_verZ_8%m(F_nk+1)-adv_verZ_8%t(F_nk-1))
-      wp=(adv_verZ_8%t(F_nk)-adv_verZ_8%m(F_nk-1))/(adv_verZ_8%m(F_nk)-adv_verZ_8%m(F_nk-1))
-      wm=(adv_verZ_8%m(F_nk)-adv_verZ_8%t(F_nk))/(adv_verZ_8%m(F_nk)-adv_verZ_8%m(F_nk-1))
 
       k00=max(F_k0-1,1)
 
@@ -133,23 +131,39 @@
          endif
 
          do i=i0,in
-            F_zt(i,j,k)=adv_verZ_8%t(k)-(wdt(i,k)+F_wat(i,j,k))*cstv_dt_8*0.5d0
+            F_zt(i,j,k)=Ver_z_8%t(k) - Cstv_dtD_8*  wdt(i,  k) &
+                                     - Cstv_dtA_8*F_wat(i,j,k)
             F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)
             F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
          enddo
 
       enddo
 
-     !for the last level
+     !for the last level when at the surface
+      wp=(Ver_z_8%m(F_nk+1)-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
+      wm=(Ver_z_8%m(F_nk)  -Ver_z_8%m(F_nk+1))*Ver_idz_8%t(F_nk-1)
       do i=i0,in
-        !extrapolating horizontal positions
+        !extrapolating horizontal positions downward
          F_xt(i,j,F_nk)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
          F_yt(i,j,F_nk)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
 
+        !vertical position
+         F_zt(i,j,F_nk)=zbot_bound
+      enddo
+
+     !for the last level when half way between surface and last momentum level
+      ww=(Ver_z_8%m(F_nk+1)-Ver_z_8%t(F_nk  ))/(Ver_z_8%m(F_nk+1)-Ver_z_8%t(F_nk-1))
+      wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
+      wm=(Ver_z_8%m(F_nk  )-Ver_z_8%t(F_nk  ))*Ver_idz_8%t(F_nk-1)
+      do i=i0,in
+        !extrapolating horizontal positions downward
+         F_xtn(i,j)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
+         F_ytn(i,j)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
+
         !interpolating vertical positions
-         F_zt(i,j,F_nk)= adv_verZ_8%t(F_nk)-ww*(wdt(i,F_nk-1)+&
-                         F_wat(i,j,F_nk-1))*cstv_dt_8*0.5d0
-         F_zt(i,j,F_nk)= min(F_zt(i,j,F_nk),zbot_bound)
+         F_ztn(i,j)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
+                                        +Cstv_dtA_8*F_wat(i,j,F_nk-1))
+         F_ztn(i,j)= min(F_ztn(i,j),zbot_bound)
       enddo
 
       enddo

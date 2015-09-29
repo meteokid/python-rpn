@@ -41,7 +41,7 @@
 
       integer,external :: itf_phy_prefold_opr
 
-      integer err
+      integer err_geom, err_input, err_step
 !
 !     ---------------------------------------------------------------
 !
@@ -51,39 +51,32 @@
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
-      if (F_step_kount == 0) call itf_phy_geom4 (err)
+      if (F_step_kount == 0) call itf_phy_geom4 (err_geom)
 
       !call pw_glbstat('DEBUG')
 
       call itf_phy_copy ()
 
-      call rpn_comm_bloc (Ptopo_ninblocx,Ptopo_ninblocy)
-
-      call timing_start2 ( 45, 'PHY_input', 40)
-      err = phy_input ( itf_phy_prefold_opr,F_step_kount,Path_phyincfg_S,&
-                        Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
-      call handle_error (err,'itf_phy_step','Problem with phy_input') 
+      call timing_start2 ( 45, 'PHY_input', 40 )
+      err_input = phy_input ( itf_phy_prefold_opr, F_step_kount, &
+            Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
       call timing_stop  ( 45 )
-
-      call rpn_comm_bloc ( Ptopo_nblocx  ,Ptopo_nblocy )
 
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0)  )
 
-      call timing_start2 ( 46, 'PHY_step', 40)
-      err = phy_step ( F_step_kount, F_lctl_step )
+      call timing_start2 ( 46, 'PHY_step', 40 )
+      err_step = phy_step ( F_step_kount, F_lctl_step )
       call timing_stop  ( 46 )
-
-      call handle_error (err,'itf_phy_step','Problem with phy_step') 
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0) )
 
-      call timing_start2 ( 47, 'PHY_update', 40)
+      call timing_start2 ( 47, 'PHY_update', 40 )
       call itf_phy_update3 ( F_step_kount > 0 )
       call timing_stop  ( 47 )
 
-      call timing_start2 ( 48, 'PHY_output', 40)
+      call timing_start2 ( 48, 'PHY_output', 40 )
       call itf_phy_output2 ( F_lctl_step )
       call timing_stop  ( 48 )
 

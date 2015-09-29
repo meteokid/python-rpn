@@ -42,8 +42,6 @@
 !
 !     ---------------------------------------------------------------
 !
-      Hzd_type_S = 'NIL'
-
       if (Lun_out.gt.0) write(Lun_out,1002)
 
       Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
@@ -66,7 +64,6 @@
                          .or.(Hzd_lnr_tr.gt.0.)) then
 
          if (G_lam) then
-            Hzd_type_S = 'HO_EXP'
             call hzd_exp_set
          else
             Hzd_type_S = 'HO_IMP'
@@ -75,12 +72,12 @@
 
       else
          if (Lun_out.gt.0) write(Lun_out,1003)
+         Hzd_type_S = 'NIL'
       endif
 
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &
                '(S/R HZD_SET)',/,60('='))
  1003 format(/,'NO HORIZONTAL DIFFUSION REQUIRED',/,32('='))
-!
 !
 !----------------------------------------------------------------------
 !

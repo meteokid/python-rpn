@@ -18,36 +18,23 @@
 ! Grid_sets          | total number of sets of defined output grids    |
 !  The following variables carry values for each defined output grid   |
 ! Grid_id            | Grid_id(i) are the id of each defined grid      |
-! Grid_ig3           | ig3 descriptor (or ip3 of positional record)    |
-! Grid_ig4           | ig4 descriptor                                  |
 ! Grid_x0            | x origin of output grid                         |
 ! Grid_y0            | y origin of output grid                         |
 ! Grid_x1            | x at outermost corner of output grid            |
 ! Grid_y1            | y at outermost corner of output grid            |
 ! Grid_stride        | every ith point to be outputted                 |
-! Grid_etikext_s     | tag extension for specific grid		       |
 !----------------------------------------------------------------------
-! 
 !
 #endif
 
       integer, parameter :: MAXGRID1 = 4
 
-      character*12 Grid_etikext_s(MAXGRID1)
-      logical Grid_reduc(MAXGRID1)
-      integer Grid_ig1(MAXGRID1), Grid_ig2   (MAXGRID1)
       integer Grid_x0 (MAXGRID1), Grid_x1    (MAXGRID1)
       integer Grid_y0 (MAXGRID1), Grid_y1    (MAXGRID1)
       integer Grid_id (MAXGRID1), Grid_stride(MAXGRID1)
-      integer Grid_ig3(MAXGRID1), Grid_ig4   (MAXGRID1)
       integer Grid_sets
-      integer Grid_comm_id, Grid_comm_setno, Grid_iome, Grid_nnodes
 
-      COMMON /Grid_l/ Grid_reduc
-      COMMON /Grid_i/ Grid_ig1,Grid_ig2,Grid_ig3,Grid_ig4
       COMMON /Grid_i/ Grid_x0,Grid_x1,Grid_y0,Grid_y1
-      COMMON /Grid_i/ Grid_id,Grid_stride,Grid_sets,Grid_comm_id
-      COMMON /Grid_i/ Grid_comm_setno, Grid_iome, Grid_nnodes
-      COMMON /Grid_c/ Grid_etikext_s
+      COMMON /Grid_i/ Grid_sets,Grid_id,Grid_stride
 
 

@@ -19,17 +19,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author 
-!     sylvie gravel   -  Apr 2003
-!
-!revision
-! v3_11 - gravel s          - initial version 
-!
-!object
-!     See above id
-!	
-!arguments - none
-
 #include "theonml.cdk"
 #include "cst_lis.cdk"
 #include "path.cdk"
@@ -54,11 +43,11 @@
            goto 9999
       endif
 
-      err = gem_nml   ('')
-      if (Advection_lam_legacy) then
-         err = adx_nml (Path_nml_S)
-      else
+      err = gem_nml ('')
+      if (G_lam) then
          err = adv_nml (Path_nml_S)
+      else
+         err = adx_nml (Path_nml_S)
       endif
 
       Theo_case_S    = 'xxx'
