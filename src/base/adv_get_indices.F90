@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!/**
+!/@*
 !@objective:  pre-compute indices to be used in tricub interp  adx_tricub_lag3d_loop.cdk
 	
 	subroutine adv_get_indices (ii,  F_x, F_y, F_z, F_num, &
@@ -32,7 +32,7 @@ implicit none
    !
 !@ author  RPN-A Model Infrastructure Group  August 2015
    ! 
-!**/
+!*@/
 
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
