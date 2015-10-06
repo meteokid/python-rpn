@@ -31,6 +31,7 @@
 #include "glb_ld.cdk"
 #include "p_geof.cdk"
 #include "vt1.cdk"
+#include "out.cdk"
 #include "out3.cdk"
 #include "schm.cdk"
 #include "grdc.cdk"
@@ -64,6 +65,8 @@
       istat = vgd_get (vcoord,'VCDM - vertical coordinate (m)',hybm)
       istat = vgd_get (vcoord,'VCDT - vertical coordinate (t)',hybt)
       allocate(tr1(l_minx:l_maxx,l_miny:l_maxy))
+
+      Out_reduc_l= .true.
 
       call out_href3 ( 'Mass_point', Grdc_gid, Grdc_gif, 1,&
                                      Grdc_gjd, Grdc_gjf, 1 )

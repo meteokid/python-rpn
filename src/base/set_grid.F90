@@ -155,6 +155,7 @@
 !    Calculate the origin and outer coordinates of the output grid
 !    and set to the maximum/minimum possible
 
+      Grid_reduc (j)= (grdtyp_S.eq.'reduc')
       Grid_stride(j)= 1
 
       if (grdtyp_S.eq.'model') then

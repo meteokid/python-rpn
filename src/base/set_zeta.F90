@@ -72,37 +72,37 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! n staggered MOMENTUM & THERMO **LAYERS** !!!!!!!!!!!!!!!!!!!!!!!!!
 !
 !
-!               Cstv_ztop_8 ttttttttttttttttttttttttttttttttttttttttttt Cstv_ztop_8
+!               Cstv_ztop_8 ttttttttttttttttttttttttttttttttttttttttttt Ver_z_8%x(0)
 !                                                     \
-!               Ver_z_8%m(1)- - - - - - - - - - - - - - Ver_dz_8%m(1)=Ver_z_8%t(1)-Cstv_ztop_8
+!               Ver_z_8%m(1)- - - - - - - - - - - - - - Ver_dz_8%m(1)=Ver_z_8%x(1)-Cstv_ztop_8
 !                                          /          /
-!   Ver_z_8%m(2)-Ver_z_8%m(1)=Ver_dz_8%t(1)    ======================== Ver_z_8%t(1)
+!   Ver_z_8%m(2)-Ver_z_8%m(1)=Ver_dz_8%t(1)    ======================== Ver_z_8%x(1)
 !                                          \          \
-!               Ver_z_8%m(2)- - - - - - - - - - - - - - Ver_dz_8%m(2)=Ver_z_8%t(2)-Ver_z_8%t(1)
+!               Ver_z_8%m(2)- - - - - - - - - - - - - - Ver_dz_8%m(2)=Ver_z_8%x(2)-Ver_z_8%x(1)
 !                                                     /
-!                           =========================================== Ver_z_8%t(2)
+!                           =========================================== Ver_z_8%x(2)
 !
 !                                                     ...
 !
-!                           =========================================== Ver_z_8%t(k-1)
+!                           =========================================== Ver_z_8%x(k-1)
 !                                                     \
-!               Ver_z_8%m(k)- - - - - - - - - - - - - - Ver_dz_8%m(k)=Ver_z_8%t(k)-Ver_z_8%t(k-1)
+!               Ver_z_8%m(k)- - - - - - - - - - - - - - Ver_dz_8%m(k)=Ver_z_8%x(k)-Ver_z_8%x(k-1)
 !                                          /          /
-! Ver_z_8%m(k+1)-Ver_z_8%m(k)=Ver_dz_8%t(k)    ======================== Ver_z_8%t(k)
+! Ver_z_8%m(k+1)-Ver_z_8%m(k)=Ver_dz_8%t(k)    ======================== Ver_z_8%x(k)
 !                                          \
 !             Ver_z_8%m(k+1)- - - - - - - - - - - - - - - - - - - - - -
 !
 !                                                     ...
 !
-!                           =========================================== Ver_z_8%t(n-1)
+!                           =========================================== Ver_z_8%x(n-1)
 !                                                   \  
 !                                                    \ 
 !                                                     \
-!                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Ver_z_8%t(n)-Ver_z_8%t(n-1)
+!                           - - - - - - - - - - - - - - Ver_dz_8%m(n)=Ver_z_8%x(n)-Ver_z_8%x(n-1)
 !                                          /          /
 !    Cstv_zsrf_8-Ver_z_8%m(n)=Ver_dz_8%t(n)          /  
 !                                          \        / 
-!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Cstv_zsrf_8
+!               Cstv_zsrf_8 sssssssssssssssssssssssssssssssssssssssssss Ver_z_8%x(n)
 !
 ! arguments
 ! none
@@ -212,6 +212,7 @@
       do k = 1, G_nk
          Ver_z_8%t(k) = Ver_a_8%t(k)
       enddo      
+      if(.not.Schm_lift_ltl_L) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
 
      !Define the positions of zeta_dot,ksi_dot,q_dot
       Ver_z_8%x(0) = Cstv_Ztop_8
@@ -274,11 +275,11 @@
 !
 !     SPECIAL WEIGHTS for last thermo level
 !
-      Ver_wpstar_8 = one
       Ver_wmstar_8 = zero
+      Ver_wpstar_8 = one
       if(Schm_lift_ltl_L) then
-         Ver_wpstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
-         Ver_wmstar_8(G_nk)=one-Ver_wpstar_8(G_nk)
+         Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
+         Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
       endif
 
 !     -------------------------------------------------------

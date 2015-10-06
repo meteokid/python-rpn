@@ -125,7 +125,6 @@
          !No local conservation: Standard cubic interpolation with MIN/MAX/LIN for Bermejo-Conde/ILMC 
          !-------------------------------------------------------------------------------------------
          if (F_conserv_local==0) then
-   print*,'-----F_conserv_local==0'
 #define ADV_CONSERV
 #define ADV_MONO
 #include "adv_tricub_lag3d_loop.cdk"

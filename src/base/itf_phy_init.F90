@@ -37,7 +37,6 @@
 #include "step.cdk"
 #include "ver.cdk"
 #include "path.cdk"
-#include "tr3d.cdk"
 #include "level.cdk"
 
       type(vgrid_descriptor) :: vcoord
@@ -57,11 +56,6 @@
       err= 0
       err= min(wb_put('itf_phy/VSTAG'       , .true.    ), err)
       err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift), err)
-      if (NTR_Tr3d_ntr > 0) then
-         err= min(wb_put('itf_phy/READ_TRACERS', &
-              NTR_Tr3d_name_S(1:NTR_Tr3d_ntr)), err)
-      endif
-      call gem_error ( err,'itf_phy_init','phy_nml or WB_put' )
       
 ! Complete physics initialization (see phy_init for interface content)
 

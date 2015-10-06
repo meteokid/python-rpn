@@ -35,6 +35,7 @@
            F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 
+#include <WhiteBoard.hf>
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -53,18 +54,20 @@
 #include <rmnlib_basics.hf>
 
 Interface
-      subroutine inp_read ( F_var_S, F_hgrid_S, F_dest, F_ip1, F_nka )
+      integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
+                                  F_ip1, F_nka )
       implicit none
       character*(*)                     , intent(IN)  :: F_var_S,F_hgrid_S
       integer                           , intent(OUT) :: F_nka
       integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
-      End Subroutine inp_read
+      End function inp_read
 End Interface
 
+      integer, external :: inp_get
       character(len=4) vname
       logical initial_data, blend_oro
-      integer fst_handle, i,j,n, nia,nja,nka, istat
+      integer fst_handle, i,j,n, nia,nja,nka, istat, err
       integer, dimension (:), pointer :: ip1_list, ip1_dum
       real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current,&
            p0(1:l_ni,1:l_nj)
@@ -89,7 +92,7 @@ End Interface
       call inp_open ( F_datev, vgd_src  )
 
       nullify (meqr,ip1_list)
-      call inp_read ( 'OROGRAPHY', 'Q', meqr, ip1_list, nka )
+      err= inp_read ( 'OROGRAPHY', 'Q', meqr, ip1_list, nka )
 
       if ( initial_data .and. (Step_kount.eq.0) ) then
          call get_topo2 ( F_topo,l_minx,l_maxx,l_miny,l_maxy,&
@@ -123,11 +126,11 @@ End Interface
       endif
 
       nullify (ssqr,ssur,ssvr,ttr,hur)
-      call inp_read ( 'SFCPRES'    , 'Q', ssqr, ip1_list, nka )
-      call inp_read ( 'SFCPRES'    , 'U', ssur, ip1_list, nka )
-      call inp_read ( 'SFCPRES'    , 'V', ssvr, ip1_list, nka )
-      call inp_read ( 'TEMPERATURE', 'Q', ttr , ip1_list, nka )
-      call inp_read ( 'TR/HU'      , 'Q', hur , ip1_list, nka )
+      err= inp_read ( 'SFCPRES'    , 'Q', ssqr, ip1_list, nka )
+      err= inp_read ( 'SFCPRES'    , 'U', ssur, ip1_list, nka )
+      err= inp_read ( 'SFCPRES'    , 'V', ssvr, ip1_list, nka )
+      err= inp_read ( 'TEMPERATURE', 'Q', ttr , ip1_list, nka )
+      err= inp_read ( 'TR/HU'      , 'Q', hur , ip1_list, nka )
 
       if (Inp_kind /= 105) &
       call mfottv2 ( ttr, ttr, hur, l_minx,l_maxx,l_miny,l_maxy,&
@@ -197,41 +200,46 @@ End Interface
       deallocate (ttr,hur,srclev,dstlev) ; nullify (ttr,hur)
       if (associated(ip1_list)) deallocate (ip1_list)
 
+      NTR_Tr3d_ntr= 0
       do n=1,Tr3d_ntr
          nullify (trp)
          vname= trim(Tr3d_name_S(n))
          if (trim(vname) == 'HU') cycle
          istat= gmm_get (&
                trim(F_trprefix_S)//trim(vname)//trim(F_trsuffix_S),trp)
-         call inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
+         err= inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
                         vgd_src, vgd_dst, ssqr, ssq0, trp,&
                         l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         if (err == 0) then
+            NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
+            NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)
+         endif
       end do
 
-      F_w(1,1,1)= -999.
-      call inp_get ( 'WT1', 'Q', Ver_ip1%t          ,&
-                      vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
-                      l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      ana_w_L = (F_w(1,1,1) > -998.)
+      if (NTR_Tr3d_ntr > 0) err= wb_put('itf_phy/READ_TRACERS',&
+                                NTR_Tr3d_name_S(1:NTR_Tr3d_ntr))
 
-      F_zd(1,1,1)= -999.
-      call inp_get ( 'ZDT1', 'Q', Ver_ip1%t         ,&
-                      vgd_src,vgd_dst,ssqr,ssq0,F_zd,&
-                      l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      ana_zd_L = (F_zd(1,1,1) > -998.)
+      ana_w_L = (inp_get ('WT1',  'Q', Ver_ip1%t     ,&
+                       vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
+                      l_minx,l_maxx,l_miny,l_maxy,G_nk) == 0)
 
-      call inp_get ( &
+      ana_zd_L= (inp_get ('ZDT1', 'Q', Ver_ip1%t     ,&
+                       vgd_src,vgd_dst,ssqr,ssq0,F_zd,&
+                      l_minx,l_maxx,l_miny,l_maxy,G_nk) == 0)
+
+      if (.not.Schm_hydro_L) &
+      err= inp_get ( &
              'QT1', 'Q', Ver_ip1%m(2:G_nk+1)        ,&
                       vgd_src,vgd_dst,ssqr,ssq0,F_q ,&
                       l_minx,l_maxx,l_miny,l_maxy,G_nk )
 
       if (Inp_kind == 105) then
 
-         call inp_get ( 'UT1', 'U', Ver_ip1%m          ,&
+         err= inp_get ( 'UT1', 'U', Ver_ip1%m          ,&
                          vgd_src,vgd_dst,ssur,ssu0,F_u ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
 
-         call inp_get ( 'VT1', 'V', Ver_ip1%m          ,&
+         err= inp_get ( 'VT1', 'V', Ver_ip1%m          ,&
                          vgd_src,vgd_dst,ssvr,ssv0,F_v ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
       else

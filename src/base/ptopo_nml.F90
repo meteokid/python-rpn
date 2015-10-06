@@ -56,18 +56,12 @@
       Ptopo_nthreads_dyn = 0
       Ptopo_nthreads_phy = 0
       Ptopo_bind_L = .false.
-      Ptopo_ninblocx = -1
-      Ptopo_ninblocy = -1
 
       unf=0
       if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
          rewind(unf)
          read (unf, nml=resources, end=7110, err=9110)
-7110    if (Ptopo_ninblocx <= 0 .or. Ptopo_ninblocy <= 0) then
-            Ptopo_ninblocx = Ptopo_npex
-            Ptopo_ninblocy = Ptopo_npey
-         endif
-         call fclos (unf)
+ 7110    call fclos (unf)
          ptopo_nml = 1
          goto 7777
       else

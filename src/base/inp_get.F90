@@ -17,10 +17,10 @@
 !                interpolation to F_hgrid_S hor. grid and perform
 !                vertical interpolation to F_vgrid_S vertical grid
 
-      subroutine inp_get ( F_var_S, F_hgrid_S, F_ver_ip1, &
-                           F_vgd_src, F_vgd_dst, &
-                           F_sfc_src, F_sfc_dst, F_dest,&
-                           Minx,Maxx,Miny,Maxy, F_nk )
+      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1, &
+                                 F_vgd_src, F_vgd_dst, &
+                                 F_sfc_src, F_sfc_dst, F_dest,&
+                                 Minx,Maxx,Miny,Maxy, F_nk )
       use vGrid_Descriptors
       implicit none
 #include <arch_specific.hf>
@@ -34,13 +34,14 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_dest
 
 Interface
-      subroutine inp_read ( F_var_S, F_hgrid_S, F_dest, F_ip1, F_nka )
+      integer function inp_read ( F_var_S, F_hgrid_S, F_dest,&
+                                  F_ip1, F_nka )
       implicit none
       character*(*)                     , intent(IN)  :: F_var_S,F_hgrid_S
       integer                           , intent(OUT) :: F_nka
       integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
-      End Subroutine inp_read
+      End function inp_read
 End Interface
 
 #include "cstv.cdk"
@@ -57,9 +58,9 @@ End Interface
 !
       nullify (ip1_list, wrkr)
 
-      call inp_read ( F_var_S, F_hgrid_S, wrkr, ip1_list, nka )
+      inp_get= inp_read ( F_var_S, F_hgrid_S, wrkr, ip1_list, nka )
 
-      if (nka .lt. 1) then
+      if (inp_get .lt. 0) then
          if (associated(ip1_list)) deallocate (ip1_list)
          if (associated(wrkr    )) deallocate (wrkr    )
          return

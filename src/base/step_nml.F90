@@ -58,7 +58,7 @@
       Fcst_nesdt_S   = ''
       Fcst_gstat_S   = ''
       Fcst_rstrt_S   = ''
-      Fcst_bkup_S    = ''
+      Fcst_bkup_S    = 'NIL'
       Fcst_spinphy_S = ''
       Fcst_alarm_S = ''
 
@@ -102,10 +102,9 @@
       else
          err = timestr_check(Fcst_rstrt_S)
       endif
-      if ( Fcst_bkup_S  == '' ) then
-         write(Fcst_bkup_S,'(a,i6)') 'step,',Step_total+1
-      else
-         err = timestr_check(Fcst_bkup_S)
+
+      if ( Fcst_bkup_S /= 'NIL' ) then
+         err = timestr_check (Fcst_bkup_S)
       endif
 
       if ( Fcst_gstat_S  == '' ) then

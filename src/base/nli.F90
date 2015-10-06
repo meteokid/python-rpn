@@ -132,7 +132,7 @@
       if (l_east )          inu=inu+onept
       if (l_north)          jnv=jnv+onept
 
-      call diag_fi ( FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
+      call diag_fip( FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
                                                l_nk, i0u, inu+1, j0v, jnv+1 )
 
       if (Schm_hydro_L) then
@@ -170,7 +170,6 @@
           do j=j0v,jnv+1
           do i=i0u,inu+1
              BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq)*Ver_onezero(k)
-             FI(i,j,k) = FI(i,j,k) - Ver_FIstr_8(k)
           enddo
           enddo
       enddo
@@ -369,7 +368,8 @@
          if(Schm_opentop_L.and.k.eq.k0t) then
             do j= j0, jn
             do i= i0, in
-               F_nb(i,j)=- Dcst_cappa_8 * (F_t(i,j,k)/Ver_Tstar_8%t(k)-one) * (F_xd(i,j,k)+F_qd(i,j,k))
+               w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
+               F_nb(i,j)= - (w3*F_t(i,j,k)/Ver_Tstar_8%t(k)-Dcst_cappa_8) * (F_xd(i,j,k)+F_qd(i,j,k))
             end do
             end do
          endif

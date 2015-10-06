@@ -23,11 +23,6 @@
       character* (*), intent(in ) :: F_arakawa_S
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
-!author 
-!     Michel Desgagne  -  summer 2015
-!revision
-! v4_8 - Desgagne M.       - initial version
-
 #include "glb_ld.cdk"
 #include "geomn.cdk"
 #include "grd.cdk"
@@ -41,7 +36,7 @@
       integer, external :: out_samegrd
       character*1 familly_uencode_S
       logical old_grid_L
-      integer i,err,nis,njs,niyy,indx,ix1,ix2,ix3,ix4, &
+      integer i,err,ni,nis,njs,niyy,indx,ix1,ix2,ix3,ix4, &
               sindx,i0,in,j0,jn,vesion_uencode
       real wk
       real, dimension(:), pointer     :: posx,posy
@@ -100,14 +95,14 @@
 
 !      if (old_grid_L) return
 
-      nis = in - i0  ;  njs = jn - j0
+      nis = in - i0 + 1  ;  njs = jn - j0 + 1
       if ( (nis .le. 0) .or. (njs .le. 0) ) then
          if (Lun_out.gt.0) write(Lun_out,9000)
          return
       endif
 
-      nis = nis / Out_stride + 1
-      njs = njs / Out_stride + 1
+      nis = (in - i0) / Out_stride + 1
+      njs = (jn - j0) / Out_stride + 1
 
       if ((Out3_iome .ge. 0) .and. (Ptopo_couleur.eq.0)) then
 
@@ -116,74 +111,73 @@
             vesion_uencode    = 1
             familly_uencode_S = 'F'
 
-            if (.not.Out_flipit_L) then
-               niyy=5+2*(10+nis+njs)
-               allocate (yy(niyy))
+            niyy=5+2*(10+nis+njs)
+            allocate (yy(niyy))
 
-               yy(1 ) = iachar(familly_uencode_S)
-               yy(2 ) = vesion_uencode
-               yy(3 ) = 2 ! 2 grids (Yin & Yang)
-               yy(4 ) = 1 ! the 2 grids have same resolution
-               yy(5 ) = 1 ! the 2 grids have same area extension
+            yy(1 ) = iachar(familly_uencode_S)
+            yy(2 ) = vesion_uencode
+            yy(3 ) = 2          ! 2 grids (Yin & Yang)
+            yy(4 ) = 1          ! the 2 grids have same resolution
+            yy(5 ) = 1          ! the 2 grids have same area extension
 
-               !YIN
-               sindx  = 6
-               yy(sindx  ) = nis
-               yy(sindx+1) = njs
-               yy(sindx+2) = posx(Out_gridi0)
-               yy(sindx+3) = posx(Out_gridi0+nis-1)
-               yy(sindx+4) = posy(Out_gridj0)
-               yy(sindx+5) = posy(Out_gridj0+njs-1)
-               yy(sindx+6) = Out_rot(1)
-               yy(sindx+7) = Out_rot(2)
-               yy(sindx+8) = Out_rot(3)
-               yy(sindx+9) = Out_rot(4)
-               yy(sindx+10    :sindx+9+nis    )= &
-                   posx(Out_gridi0:Out_gridi0+nis-1)
-               yy(sindx+10+nis:sindx+9+nis+njs)= &
-                   posy(Out_gridj0:Out_gridj0+njs-1)
+!YIN
+            sindx  = 6
+            yy(sindx  ) = nis
+            yy(sindx+1) = njs
+            yy(sindx+2) = posx(Out_gridi0)
+            yy(sindx+3) = posx(Out_gridi0+nis-1)
+            yy(sindx+4) = posy(Out_gridj0)
+            yy(sindx+5) = posy(Out_gridj0+njs-1)
+            yy(sindx+6) = Out_rot(1)
+            yy(sindx+7) = Out_rot(2)
+            yy(sindx+8) = Out_rot(3)
+            yy(sindx+9) = Out_rot(4)
+            yy(sindx+10    :sindx+9+nis    )= &
+            posx(Out_gridi0:Out_gridi0+nis-1)
+            yy(sindx+10+nis:sindx+9+nis+njs)= &
+            posy(Out_gridj0:Out_gridj0+njs-1)
 
-               !YAN
-               sindx  = sindx+10+nis+njs
-               yy(sindx  ) = nis
-               yy(sindx+1) = njs
-               yy(sindx+2) = posx(Out_gridi0)
-               yy(sindx+3) = posx(Out_gridi0+nis-1)
-               yy(sindx+4) = posy(Out_gridj0)
-               yy(sindx+5) = posy(Out_gridj0+njs-1)
-               yy(sindx+6) = Out_rot(5)
-               yy(sindx+7) = Out_rot(6)
-               yy(sindx+8) = Out_rot(7)
-               yy(sindx+9) = Out_rot(8)
-               yy(sindx+10    :sindx+9+nis    )= &
-                    posx(Out_gridi0:Out_gridi0+nis-1)
-               yy(sindx+10+nis:sindx+9+nis+njs)= &
-                    posy(Out_gridj0:Out_gridj0+njs-1)
+!YAN
+            sindx  = sindx+10+nis+njs
+            yy(sindx  ) = nis
+            yy(sindx+1) = njs
+            yy(sindx+2) = posx(Out_gridi0)
+            yy(sindx+3) = posx(Out_gridi0+nis-1)
+            yy(sindx+4) = posy(Out_gridj0)
+            yy(sindx+5) = posy(Out_gridj0+njs-1)
+            yy(sindx+6) = Out_rot(5)
+            yy(sindx+7) = Out_rot(6)
+            yy(sindx+8) = Out_rot(7)
+            yy(sindx+9) = Out_rot(8)
+            yy(sindx+10    :sindx+9+nis    )= &
+            posx(Out_gridi0:Out_gridi0+nis-1)
+            yy(sindx+10+nis:sindx+9+nis+njs)= &
+            posy(Out_gridj0:Out_gridj0+njs-1)
 
-               err= fstecr(yy,yy, -32, Out_unf,Out_dateo,0,0,niyy,1,1  ,&
-                           Out_ig1,Out_ig2,Out_ig3,'X','^>',Out_etik_S ,&
-                           familly_uencode_S,vesion_uencode,0,0,0      ,&
-                           5, .true.)
-               deallocate (yy, STAT = err)
-            endif
+            err= fstecr(yy,yy, -32, Out_unf,Out_dateo,0,0,niyy,1,1  ,&
+                        Out_ig1,Out_ig2,Out_ig3,'X','^>',Out_etik_S ,&
+                        familly_uencode_S,vesion_uencode,0,0,0      ,&
+                        5, .true.)
+            deallocate (yy, STAT = err)
 
          else
 
-            if (.not.Out_flipit_L) then
             if ( Out_stride .le. 1 ) then
+               ni = nis
+               if ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) ) &
+               ni = G_ni+1
                ix1= Ptopo_couleur*4+1
                ix2= Ptopo_couleur*4+2
                ix3= Ptopo_couleur*4+3
                ix4= Ptopo_couleur*4+4
                err=fstecr(posx(Out_gridi0),wk,-32,Out_unf,Out_dateo   ,&
-                    0,0, nis,1,1, Out_ig1,Out_ig2,Out_ig3,'X', '>>'   ,&
+                    0,0, ni,1,1, Out_ig1,Out_ig2,Out_ig3,'X', '>>'    ,&
                     Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
                     Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
-               err=fstecr(posy(Out_gridj0),wk,-32,Out_unf,Out_dateo    ,&
-                    0,0, 1,njs,1,Out_ig1,Out_ig2,Out_ig3,'X', '^^'     ,&
+               err=fstecr(posy(Out_gridj0),wk,-32,Out_unf,Out_dateo   ,&
+                    0,0, 1,njs,1,Out_ig1,Out_ig2,Out_ig3,'X', '^^'    ,&
                     Out_etik_S,Out_gridtyp_S,Out_ixg(ix1),Out_ixg(ix2),&
                     Out_ixg(ix3), Out_ixg(ix4), 5, .true.)
-            endif
             endif
 
          endif
@@ -205,10 +199,6 @@
       logical,        intent(in ) :: F_init_L
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
-!author 
-!     Michel Desgagne  -  summer 2015
-!revision
-! v4_8 - Desgagne M.       - initial version
 
       integer, external  :: f_crc32
       integer, parameter :: max_grid= 50
@@ -222,11 +212,17 @@
       if ( F_init_L ) then
          id_ara_S= '' ; id_crc= 0 ; cnt= 0 ; out_samegrd= .false.
       else
-         identity_vec(1)= F_x0 ; identity_vec(2)= F_x1 ; identity_vec(3)= F_stridex
-         identity_vec(4)= F_y0 ; identity_vec(5)= F_y1 ; identity_vec(6)= F_stridey
+         identity_vec(1)= F_x0
+         identity_vec(2)= F_x1
+         identity_vec(3)= F_stridex
+         identity_vec(4)= F_y0
+         identity_vec(5)= F_y1
+         identity_vec(6)= F_stridey
+
          crc= f_crc32 (0., identity_vec(1:6), 24)
          
-         if ( any (id_ara_S == trim(F_arakawa_S)) .and. any (id_crc == crc) ) then
+         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
+              any (id_crc == crc) ) then
             out_samegrd= .true.
          else
             cnt=cnt+1

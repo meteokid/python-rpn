@@ -14,19 +14,15 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r itf_phy_step - Apply the physical processes: CMC/RPN package
-!
+
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
+      use iso_c_binding
       use phy_itf, only: phy_input,phy_step
       implicit none
 #include <arch_specific.hf>
 
       integer, intent(IN) :: F_step_kount, F_lctl_step
 
-!authors 
-!     Desgagne, McTaggart-Cowan, Chamberland -- Spring 2014
-!
-!revision
-! v4_70 - authors          - initial version
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -62,12 +58,16 @@
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
       call timing_stop  ( 45 )
 
+      call gem_error (err_input,'itf_phy_step','Problem with phy_input') 
+
       call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0)  )
 
       call timing_start2 ( 46, 'PHY_step', 40 )
       err_step = phy_step ( F_step_kount, F_lctl_step )
       call timing_stop  ( 46 )
+
+      call gem_error (err_step,'itf_phy_step','Problem with phy_step') 
 
       call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
                                          (F_step_kount    .eq.0) )

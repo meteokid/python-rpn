@@ -42,9 +42,9 @@
       call datp2f ( Inp_cmcdate, F_datev )
 
       if (Inp_iome .ge.0) then
-         root=trim(Path_work_S)//'/VALID_'//trim(F_datev)
+         root=trim(Path_input_S)//'/MODEL_INREP/VALID_'//trim(F_datev)
          err= clib_fileexist (trim(root)//'/content')
-         if (err.lt.0) root=trim(Path_work_S)//'/analysis/VALID_'//trim(F_datev)
+         if (err.lt.0) root=trim(Path_input_S)//'/MODEL_ANALYSIS/VALID_'//trim(F_datev)
          fn = trim(root)//'/content'
          unf= 0
          if (fnom( unf,trim(fn),'SEQ+FMT+OLD',0 ) /= 0) unf= 0

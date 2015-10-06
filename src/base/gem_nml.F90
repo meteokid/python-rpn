@@ -80,7 +80,7 @@
       Schm_nblendyy = -1
       Schm_Tlift    = 0
       Schm_MTeul    = 0
-      Schm_advec    = 1
+      Schm_advec    = 2
       Schm_trapeze_L  = .false.
       if (G_lam) Schm_trapeze_L = .true.
       Schm_settls_L   = .false.
@@ -95,7 +95,7 @@
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L  = .false.
-      Schm_lift_ltl_L  = .false.
+      Schm_lift_ltl_L  = .true.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10

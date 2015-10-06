@@ -13,18 +13,14 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/@*
-subroutine itf_phy_geom4 (F_istat)
+   subroutine itf_phy_geom4 (F_istat)
+   use iso_c_binding
    use nest_blending, only: nest_blend
    implicit none
 #include <arch_specific.hf>
-   !@objective
-   !@argument
-   integer,intent(out) :: F_istat
-   !@author Michel Desgagne    -   Spring 2011
-   !@revision
-   !  2012-04, S.Chamberland - no more a callback, data in GMM (not in bus)
-   !*@/
+
+   integer F_istat
+
 #include <rmnlib_basics.hf>
 #include <gmm.hf>
 #include <msg.h>
@@ -36,26 +32,24 @@ subroutine itf_phy_geom4 (F_istat)
 #include "dcst.cdk"
 #include "lam.cdk"
 
-
    logical :: nest_it
    integer :: i,j,istat
    real,pointer :: wrk1(:,:) 
    real(kind=8) :: deg2rad_8
-   real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),w2(l_minx:l_maxx,l_miny:l_maxy,2)
-
+   real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
+           w2(l_minx:l_maxx,l_miny:l_maxy,2)
    type(gmm_metadata) :: mymeta
-   !---------------------------------------------------------------
+!
+!-------------------------------------------------------------------
+!
    F_istat = RMN_OK
 
    mymeta = GMM_NULL_METADATA
    mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
    mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
 
-
    deg2rad_8 = acos(-1.D0)/180.D0
-
   
-
    nullify(wrk1)
    istat = gmm_create('DLAT',wrk1,mymeta)
    if (RMN_IS_OK(istat)) then
@@ -107,7 +101,8 @@ subroutine itf_phy_geom4 (F_istat)
       F_istat= RMN_ERR
       call msg(MSG_ERROR,'(itf_phy_geom) Problem creating TDMASK')
    endif
-
-   !---------------------------------------------------------------
+!
+!-------------------------------------------------------------------
+!
    return
-end subroutine itf_phy_geom4
+   end subroutine itf_phy_geom4

@@ -141,7 +141,7 @@
 
      !for the last level when at the surface
       wp=(Ver_z_8%m(F_nk+1)-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
-      wm=(Ver_z_8%m(F_nk)  -Ver_z_8%m(F_nk+1))*Ver_idz_8%t(F_nk-1)
+      wm=1.d0-wp
       do i=i0,in
         !extrapolating horizontal positions downward
          F_xt(i,j,F_nk)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
@@ -152,9 +152,9 @@
       enddo
 
      !for the last level when half way between surface and last momentum level
-      ww=(Ver_z_8%m(F_nk+1)-Ver_z_8%t(F_nk  ))/(Ver_z_8%m(F_nk+1)-Ver_z_8%t(F_nk-1))
+      ww=Ver_wmstar_8(F_nk)
       wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
-      wm=(Ver_z_8%m(F_nk  )-Ver_z_8%t(F_nk  ))*Ver_idz_8%t(F_nk-1)
+      wm=1.d0-wp
       do i=i0,in
         !extrapolating horizontal positions downward
          F_xtn(i,j)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)

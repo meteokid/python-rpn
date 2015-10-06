@@ -86,9 +86,9 @@
          call theo_3D_2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                                                   'TR/',':P') 
       elseif ( Schm_autobar_L ) then
-         call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0     ,&
-                         'TR/',':P',l_minx,l_maxx,l_miny,l_maxy,&
-                         G_nk, Step_runstrt_S)
+         call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
+                               l_minx,l_maxx,l_miny,l_maxy,&
+                            G_nk,'TR/',':P',Step_runstrt_S )
       else
          call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                                l_minx,l_maxx,l_miny,l_maxy,&

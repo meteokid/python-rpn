@@ -73,6 +73,7 @@
             Out_prefix_S(1:1) = 'd'
             Out_prefix_S(2:2) = Level_typ_S(levset)
             call up2low (Out_prefix_S ,prefix)
+            Out_reduc_l       = Grid_reduc(gridset)
 
             call out_open_file (trim(prefix))
 

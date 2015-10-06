@@ -1,5 +1,0 @@
-
-      real, dimension(:), pointer :: topo
-      common / topo_r / topo
-
-

@@ -161,7 +161,7 @@
          if (l_north) jnv = l_njv-1-jext
       endif
 
-      call diag_fi (FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy, l_nk, &
+      call diag_fip(FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy, l_nk, &
                     i0u,inu+1,j0v,jnv+1)
 
       if (Schm_hydro_L) then
@@ -216,7 +216,6 @@
          do j=j0v,jnv+1
          do i=i0u,inu+1
             BsPq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq) * Ver_onezero(k)
-              FI(i,j,k) = FI(i,j,k) - Ver_FIstr_8(k)
          enddo
          enddo
       enddo

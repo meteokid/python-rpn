@@ -16,7 +16,7 @@
 !**s/r set_world_view
 
       subroutine set_world_view
-use iso_c_binding
+      use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 
@@ -140,8 +140,6 @@ use iso_c_binding
       Inp_comm_setno = RPN_COMM_create_io_set (Inp_npes, 0)
       Inp_iome       = RPN_COMM_is_io_pe ( Inp_comm_setno )
       Inp_comm_io    = RPN_COMM_io_pe_comm (Inp_comm_id)
-
-      err = RPN_COMM_bloc (Ptopo_ninblocx,Ptopo_ninblocy) !for phy_input
 
 ! Initializes GMM
 

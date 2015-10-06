@@ -29,11 +29,13 @@
 
       integer, parameter :: MAXGRID1 = 4
 
+      logical Grid_reduc(MAXGRID1)
       integer Grid_x0 (MAXGRID1), Grid_x1    (MAXGRID1)
       integer Grid_y0 (MAXGRID1), Grid_y1    (MAXGRID1)
       integer Grid_id (MAXGRID1), Grid_stride(MAXGRID1)
       integer Grid_sets
 
+      COMMON /Grid_l/ Grid_reduc
       COMMON /Grid_i/ Grid_x0,Grid_x1,Grid_y0,Grid_y1
       COMMON /Grid_i/ Grid_sets,Grid_id,Grid_stride
 

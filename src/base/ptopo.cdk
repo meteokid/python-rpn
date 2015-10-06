@@ -55,7 +55,6 @@
       integer Ptopo_numproc   , Ptopo_npex     , Ptopo_npey
       integer Ptopo_npeOpenMP
       integer Ptopo_nthreads_dyn   , Ptopo_nthreads_phy
-      integer Ptopo_ninblocx  , Ptopo_ninblocy
       integer Ptopo_nodes
       integer Ptopo_ncolors   , Ptopo_couleur
       integer Ptopo_intracomm , Ptopo_intercomm
@@ -71,8 +70,7 @@
 
       common /Ptopo_bcast/ Ptopo_npex        , Ptopo_npey
       common /Ptopo_bcast/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy
-      common /Ptopo_bcast/ Ptopo_ninblocx  , Ptopo_ninblocy
-!
+
       common  / Ptopo_i / Ptopo_npeOpenMP
       common  / Ptopo_i / Ptopo_myproc   , Ptopo_myrow  , Ptopo_mycol
       common  / Ptopo_i / Ptopo_numproc  , Ptopo_nodes
@@ -80,11 +78,8 @@
       common  / Ptopo_i / Ptopo_intracomm, Ptopo_intercomm
       common  / Ptopo_i / Ptopo_world_myproc, Ptopo_world_numproc
       common  / Ptopo_i / Ptopo_tag
-
       common  / Ptopo_l / Ptopo_bind_L
-!
       common  / Ptopo_p / Ptopo_gindx
-!
+
       namelist /resources/ Ptopo_npex  , Ptopo_npey, Ptopo_bind_L
-      namelist /resources/ Ptopo_ninblocx    , Ptopo_ninblocy
       namelist /resources/ Ptopo_nthreads_dyn, Ptopo_nthreads_phy

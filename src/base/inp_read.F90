@@ -16,7 +16,8 @@
 !**s/r inp_read - Read variable F_var_S valid at F_datev and perform 
 !                 horizontal interpolation on proper Arakawa grid
 
-      subroutine inp_read ( F_var_S, F_hgrid_S, F_dest, F_ip1, F_nka )
+      integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
+                                  F_ip1, F_nka )
       implicit none
 #include <arch_specific.hf>
 
@@ -162,6 +163,7 @@
 
       if (F_nka .gt. 0) then
 
+         inp_read= 0
          if (F_nka .ge. 1) then
             if (Inp_iome .lt.0) allocate ( F_ip1(F_nka) )
             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
@@ -190,6 +192,7 @@
 
       else
 
+         inp_read= -1
          if (Inp_iome .ge.0) write(6,'(7a)') ' FIELD: ',trim(F_var_S),&
                      ':',trim(nomvar),' valid: ',Inp_datev, 'NOT FOUND'
 

@@ -39,7 +39,7 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
-      integer stepf,seconds_since,last_step
+      integer stepf,seconds_since
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -52,10 +52,11 @@
 
       call blocstat (.true.)
 
+      call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
+
       stepf= Step_total
       if (Init_mode_L) stepf= Init_dfnp-1
       F_rstrt_L = .false.
-      last_step = Step_initial + Step_total
       if ( .not. Rstri_rstn_L ) then
          call out_outdir (Step_total)
          if (Step_kount.eq.0) then
@@ -69,16 +70,15 @@
             endif
          endif
          call out_dyn (.true., .true.)
+         if (gem_muststop (stepf)) goto 999
       endif
-
-      call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
       do while (Step_kount .lt. stepf)
 
          seconds_since= model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
-         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,last_step
+         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,stepf
 
          call out_outdir (Step_total)
 
@@ -102,19 +102,24 @@
 
          call blocstat (.false.)
 
+         if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
+
+         call save_restart
+         
          F_rstrt_L= gem_muststop (stepf)
 
          if (F_rstrt_L) exit
 
       end do
 
-      seconds_since= model_timeout_alarm(Step_alarm)
+ 999  seconds_since= model_timeout_alarm(Step_alarm)
 
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
  1001 format(/,'DYNAMICS: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
              /,'=========================================================')
+ 3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'GEM_RUN: END OF THE TIME LOOP AT TIMESTEP',I8, &
              /,'===================================================')
 !

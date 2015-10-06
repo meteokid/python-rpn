@@ -53,10 +53,21 @@
 !
       nis= g_if - g_id + 1
       njs= g_jf - g_jd + 1
-      if ( (nis .le. 1) .or. (njs .le. 1) ) return
+      if ( (nis .lt. 1) .or. (njs .lt. 1) ) return
 
       nz    = (nplans + Out3_npes -1) / Out3_npes
-      allocate ( wk(nis,njs,nz+1), zlist(nz) , wk_glb(G_ni,G_nj,nz+1) )
+!      allocate ( wk(nis,njs,nz+1), zlist(nz) , wk_glb(G_ni,G_nj,nz+1) )
+      if (Out3_iome .ge.0) then
+         allocate (wk_glb(G_ni,G_nj,nz),zlist(nz))
+         if ((Grd_yinyang_L) .and. (Ptopo_couleur.eq.0)) then
+            allocate (wk(nis,njs,nz*2))
+         else
+            allocate (wk(nis,njs,nz))
+         endif
+      else
+         allocate (wk_glb(1,1,1),zlist(1))
+      endif
+      
       zlist= -1
 
       if (out_type_S .eq. 'REGDYN') then
@@ -78,7 +89,7 @@
 
       if (Out3_iome .ge.0) then
 
-         wk(1:nis,1:njs,:) = wk_glb(g_id:g_if,g_jd:g_jf,:)
+         wk(1:nis,1:njs,1:nz) = wk_glb(g_id:g_if,g_jd:g_jf,1:nz)
 
          wrapit_L = ( (Grd_typ_S(1:2) == 'GU') .and. (nis.eq.G_ni) )
          if (wrapit_L) allocate ( guwrap(G_ni+1,njs) )
@@ -118,10 +129,11 @@
          end do
 
          if (wrapit_L) deallocate (guwrap)
+         deallocate (wk)
 
       endif
 
-      deallocate (wk,wk_glb,zlist)
+      deallocate (wk_glb,zlist)
 
       if (out_type_S .eq. 'REGDYN') then
          call timing_stop (84)

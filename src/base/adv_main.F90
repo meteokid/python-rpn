@@ -45,7 +45,6 @@
 #include "adv_grid.cdk"
 #include "adv_tracers.cdk"
       
-      character(len=1) :: lev_type
       logical :: doAdwStat_L
       integer :: i0,j0,in,jn,i0u,inu,j0v,jnv ! advection computational i,j,k domain  (glb_ld.cdk)
       integer :: k0, k0m, k0t, err, jext, ext, i0_e, j0_e, in_e, jn_e
@@ -177,37 +176,27 @@ allocate (ii(nmax*4))
                       nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )    
 
 
-!  RHS Interpolation: thermo levels  
-      if(.not.Schm_lift_ltl_L) then
-         lev_type='t'
-         pxt(:,:,l_nk)=pxtn(:,:)
-         pyt(:,:,l_nk)=pytn(:,:)
-         pzt(:,:,l_nk)=pztn(:,:)
-      else
-         lev_type='x'
-      endif
+!  RHS Interpolation: lnk-1 thermo levels + surface
 
-      call adv_get_indices(ii, pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, lev_type)   
+      call adv_get_indices(ii, pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, 'x')   
       call adv_cubic('RHSX_S', rhsx, orhsx, pxt, pyt, pzt, & 
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )      
+                        nt, ii, i0, in, j0, jn, k0t, 'x', 0, 0 )      
 
       if(.not.Schm_hydro_L) then
          call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt, & 
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
+                        nt, ii, i0, in, j0, jn, k0t, 'x', 0, 0 )
       endif
 
-!  RHS Interpolation: thermo levels       
-      if(Schm_lift_ltl_L) then
-          pxt(:,:,l_nk)=pxtn(:,:)
-          pyt(:,:,l_nk)=pytn(:,:)
-          pzt(:,:,l_nk)=pztn(:,:) 
+!  RHS Interpolation: l_nk thermo levels       
+      pxt(:,:,l_nk)=pxtn(:,:)
+      pyt(:,:,l_nk)=pytn(:,:)
+      pzt(:,:,l_nk)=pztn(:,:) 
      
-        call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, 't')
-      endif
+      call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, 't')
    
       call adv_cubic('RHST_S', rhst, orhst, pxt, pyt, pzt, & 
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &

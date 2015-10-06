@@ -263,10 +263,10 @@
 
       else if ( Theo_case_S.eq.'NOFLOW') then
 
-         Out3_etik_s  ='4000m_hydro'
-         Schm_hydro_L =.true.
+         Out3_etik_s  ='0m_non_hydro'
+         Schm_hydro_L =.false.
 
-         Step_total  = 200
+         Step_total  = 20
          mtn_hwx=1
          Cstv_dt_8=1.0
          Grd_ni=101
@@ -275,8 +275,8 @@
          cstv_tstr_8 = 273.16
          Height_top_8 = 10000.d0
          G_nk      = 80                    ! dz=125m
-         mtn_hght  = 4000.
-         mtn_tzero = 243.16
+         mtn_hght  = 0.
+         mtn_tzero = 273.16
 
          ! Stable for hydro with these values (max mtn slope .gt. 82 deg)
          ! Isotherme tstar-tzero=30
