@@ -30,7 +30,7 @@
       call nml_step()
       call nml_adx()
       call nml_gem()
-      call nml_gement()
+!!$      call nml_gement()
       call nml_theo()
       close(6)
      
@@ -72,13 +72,13 @@
       return
       end
 !
-      subroutine nml_gement()
-      implicit none
-#include <arch_specific.hf>
-#include "e_nml.cdk"
-      write (6  ,nml=gement)
-      return
-      end
+!!$      subroutine nml_gement()
+!!$      implicit none
+!!$#include <arch_specific.hf>
+!!$#include "e_nml.cdk"
+!!$      write (6  ,nml=gement)
+!!$      return
+!!$      end
 !
       subroutine nml_theo()
       implicit none
