@@ -30,14 +30,16 @@
 ! F_lctl_step   I          step number
 !----------------------------------------------------------------
 
+#include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "rstr.cdk"
+#include "tr3d.cdk"
 
       integer,external :: itf_phy_prefold_opr
 
-      integer err_geom, err_input, err_step
+      integer err_geom, err_input, err_step, err
 !
 !     ---------------------------------------------------------------
 !
@@ -47,7 +49,12 @@
 
       if (Lun_out.gt.0) write (Lun_out,1001) F_lctl_step
 
-      if (F_step_kount == 0) call itf_phy_geom4 (err_geom)
+      if (F_step_kount == 0) then
+         call itf_phy_geom4 (err_geom)
+         if (Tr3d_ntr > 0) then
+            err = wb_put('itf_phy/READ_TRACERS', Tr3d_name_S(1:Tr3d_ntr), Tr3d_ntr)
+         endif
+      endif
 
       !call pw_glbstat('DEBUG')
 
