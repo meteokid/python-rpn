@@ -58,9 +58,10 @@
          return
       endif
 
-! Defaults values for ptopo namelist variables
+! Defaults values for grid namelist variables
 
-      Grd_typ_S = 'GU'
+      Grd_deprecated_L = .false.
+      Grd_typ_S = 'GY'
       Grd_ni    = 0
       Grd_nj    = 0 
       Grd_maxcfl= 1
@@ -97,6 +98,16 @@
 
  9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S    = dumc
+
+      if (Grd_typ_S(1:2).eq.'GU') then
+         if (Grd_deprecated_L) then
+            if (Lun_out.ge.0) write (Lun_out, 8000)
+         else
+            if (Lun_out.ge.0) write (Lun_out, 8001)
+            goto 9999
+         endif
+      endif
+
       F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_typ_S(1:2).eq.'GY') 
 
       Grd_bsc_base = 4
@@ -281,6 +292,20 @@
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &grid NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &grid IS INVALID IN FILE: ',A/)
+
+ 8000 format(/ '----------------------------------------------'/, &
+               ' WARNING: You are using a GU grid,'/, &
+               '          GU Grids are not fully supported,'/, &
+               '          use at your own risks'/, &
+               '----------------------------------------------'/)
+ 8001 format(/ '----------------------------------------------'/, &
+               ' ERROR: You are using a GU grid, --- ABORT ---'/, &
+               '        GU Grids are not fully supported,'/, &
+               '        To use a GU grid at your own risks,'/, &
+               '        you must set in the &grid namelist: '/, & 
+               '        Grd_deprecated_L=.true. '/, &
+               '----------------------------------------------'/)
+
 !
 !-------------------------------------------------------------------
 !
