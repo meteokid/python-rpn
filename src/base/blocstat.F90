@@ -90,11 +90,11 @@
 !     Print max courrant numbers if LAM configuration
          if (G_lam) then
          if (Ptopo_myproc==0 .and. Lctl_step>0) then
-            if (G_lam) then
-               call adv_cfl_print()
-            else
-               call adx_cfl_print()
-            endif
+               if(Schm_adxlegacy_L) then
+                 call adx_cfl_print()
+               else
+                 call adv_cfl_print()
+               endif
          endif
          endif
 

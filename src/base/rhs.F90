@@ -73,7 +73,7 @@
       integer :: i, j, k, km, kq, kp, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dTstr_8, barz, barzp, &
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
-              w1, w2, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
+              w1, w2, w3, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
       real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)           
       real, dimension(:,:,:), pointer :: BsPq, FI, Afis, MU, HDIV
       save MU, HDIV, kdiv_damp_8
@@ -190,7 +190,7 @@
          enddo
       endif
 
-!$omp parallel private(km,kq,kp,barz,barzp,w1,w2,wk1,wk2, &
+!$omp parallel private(km,kq,kp,barz,barzp,w1,w2,w3,wk1,wk2, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
 !$omp     dTstr_8,BsPqbarz,fipbarz,tdiv)
 
@@ -340,6 +340,7 @@
 ! Compute Rc: RHS of Continuity equation    *
 !********************************************
 
+      w3=Ver_wp_8%t(k)*Ver_b_8%m(k+1)+Ver_wm_8%t(k)*Ver_b_8%m(k)
       do j= j0, jn
       do i= i0, in
          w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
@@ -347,7 +348,7 @@
          F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
                       + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*w2
 
-         F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8*Ver_b_8%t(k)*F_s(i,j) &
+         F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8 * w3 * F_s(i,j) &
                       + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
 
          tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &

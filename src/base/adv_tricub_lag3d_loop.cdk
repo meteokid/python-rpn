@@ -1,19 +1,23 @@
-!$omp parallel private(o1, o2, o3, o4, a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4,  &
-!$omp                  d1, d2, d3, d4, p1, p2, p3, p4, ra,rb,rc,rd, &
-!$omp                  zcubic_L,capx,capy,capz,prf1,prf2)&
-!$omp          shared (F_mono, F_cub, F_lin, F_min, F_max, F_in, F_x, F_y, F_z,   &
-!$omp                   adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,   adv_xbc_8,adv_ybc_8 , &
-!$omp                   adv_xbacd_8,adv_xcabd_8,adv_xdabc_8, adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,&
-!$omp                   adv_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
-!$omp                   ii,F_nind)
+!$omp parallel private(zcubic_L,n0,nx,ny,nz,m1,o1,o2,o3,o4,&
+!$omp    n, id , iL,&
+!$omp    a1, a2, a3, a4, b1, b2, b3, b4,&
+!$omp    c1, c2, c3, c4, d1, d2, d3, d4,&
+!$omp    p1, p2, p3, p4,&
+!$omp    rri,rrj,rrk,ra,rb,rc,rd,&
+!$omp    prf1,prf2,capx,capy,capz,&
+!$omp    prmin,prmax) &
+!$omp shared (p_bsz_8,p_zbc_8,p_zabcd_8, &
+!$omp    p_zbacd_8,p_zcabd_8,p_zdabc_8,kkmax)
 
-m1=0
 
-!$omp do private(prmin, prmax)
+! m1=0 -> NOT for OMP
+
+!$omp do
 
    do id=1,F_nind
              
-             m1=m1+4
+             !m1=m1+4-> not for OMP
+             m1=id*4
              n0=m1-3
              nx=m1-2
              ny=m1-1

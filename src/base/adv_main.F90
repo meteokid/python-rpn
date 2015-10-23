@@ -38,6 +38,7 @@
 #include <gmm.hf>    
 #include "lam.cdk"
 #include "schm.cdk"
+#include "lun.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
 #include "adv_pos.cdk"
@@ -59,6 +60,7 @@
 !
 !     ---------------------------------------------------------------
 !      
+      if (Lun_debug_L) write (Lun_out,1000)
       doAdwStat_L = .false.
       if (Step_gstat.gt.0) then
          doAdwStat_L = (mod(Lctl_step,Step_gstat) == 0)
@@ -226,7 +228,7 @@ allocate (ii(nmax*4))
       deallocate (ii)
       deallocate (pxm,pym,pzm,ua,va,wa,wat,ud,vd,wd)
 
-
+1000  format(3X,'COMPUTE ADVECTION: (S/R ADV_MAIN)')
 !
 !     ---------------------------------------------------------------
 !     

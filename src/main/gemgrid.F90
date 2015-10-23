@@ -110,7 +110,7 @@
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
-      dxmax = 360. ; dymax = 180. 
+      dxmax = 360. ; dymax = 180. ; nila= Grd_ni ; njla= Grd_nj
       call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,   & 
                            Grd_x0_8, Grd_xl_8, left,                   &
                            Grd_y0_8, Grd_yl_8, belo,                   &

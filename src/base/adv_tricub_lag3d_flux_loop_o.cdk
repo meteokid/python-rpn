@@ -1,11 +1,11 @@
-!$omp parallel private(o1, o2, o3, o4, a1, a2, a3, a4, b1, b2, b3, b4, c1, c2, c3, c4,  &
-!$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
-!$omp                  ii,jj,kk,idxk,idxjk,zcubic_L)                                    &
-!$omp          shared (F_cub_o,F_in_o,F_x,F_y,F_z,adv_y00_8,adv_x00_8,adv_ovdx_8,adv_ovdy_8,    &
-!$omp                  adv_ovdz_8, adv_lcx,adv_lcy, adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,   &
-!$omp                  adv_xbacd_8,adv_xcabd_8,adv_xdabc_8, adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,&
-!$omp                  adv_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
-!$omp                  F_num, i0_o, in_o, j0_o, jn_o, k0, F_nk)
+!$omp parallel private(o1,o2,o3,o4,a1,a2,a3,a4,b1,b2,b3,b4,&
+!$omp   c1,c2,c3,c4,&
+!$omp   d1,d2,d3,d4,p1,p2,p3,p4,rri,rrj,rrk,ra,rb,rc,rd,n,i,j,k,&
+!$omp   ii,jj,kk,idxk,idxjk,zcubic_L)                           &
+!$omp   shared (p_lcz, p_z00_8,&
+!$omp           p_bsz_8,p_zbc_8,p_zabcd_8, &
+!$omp           p_zbacd_8,p_zcabd_8,p_zdabc_8,kkmax, &
+!$omp           i0_o,in_o,j0_o,jn_o,k0)
 !$omp do
 
    do k=k0,F_nk

@@ -141,8 +141,13 @@
       call set_opr
 
       if (G_lam) then
-         call adv_setgrid
-         call adv_param 
+
+	if(Schm_adxlegacy_L ) then 
+           call itf_adx_set
+        else
+           call adv_setgrid
+           call adv_param 
+        endif
       else
          call itf_adx_set
       endif

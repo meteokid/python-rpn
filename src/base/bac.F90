@@ -244,7 +244,7 @@
          enddo
       enddo
 !$omp enddo
-      w3=Cstv_invT_8*Cstv_bar1_8*Ver_b_8%t(l_nk)
+      w3=Cstv_invT_8*Cstv_bar1_8
 !$omp do
       do j= j0, jn
       do i= i0, in
