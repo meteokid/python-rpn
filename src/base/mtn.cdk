@@ -25,9 +25,9 @@
 #endif
 
       real  mtn_hwx,  mtn_hwx1,   mtn_hght,  mtn_nstar
-      real  mtn_tzero,mtn_flo
+      real  mtn_tzero,mtn_flo, mtn_hght_top
 
 !
       common / mtn_r/ mtn_hwx,  mtn_hwx1,   mtn_hght,  mtn_nstar
-      common / mtn_r/ mtn_tzero,mtn_flo
+      common / mtn_r/ mtn_tzero,mtn_flo, mtn_hght_top
 

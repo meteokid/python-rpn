@@ -37,7 +37,7 @@
 
       integer i, j, k, idatx, longueur,istat
       real*8 delta_8, zmt_8(maxhlev)
-      real*8 c1_8,Exner_8,height_8,pres_8,height_top_8,p1000hPa_8
+      real*8 c1_8,Exner_8,height_8,pres_8,p1000hPa_8
       real aa
 !
 !     ---------------------------------------------------------------
@@ -93,6 +93,7 @@
 
       Zblen_L        = .true.
       Zblen_spngtt_L = .true.
+      Zblen_spngthick=0.
 
       Out3_flipit_L  = .true.
       Out3_close_interval_S = '999h'
@@ -105,7 +106,7 @@
          Out3_etik_s  = 'SCHAR'
          Schm_hydro_L = .false.
 
-         Height_top_8 = 19500.d0
+         mtn_hght_top = 19500.d0
 
          mtn_tzero= 288.
          mtn_nstar= 0.01
@@ -123,7 +124,6 @@
          Lam_blend_H = 25
 
          Zblen_spngthick=9000.
-         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
         !FAST INTEGRATION(4hr)      CLASSICAL INTEGRATION
          Step_total  = 450         !Step_total  = 1800
@@ -137,7 +137,7 @@
          Out3_etik_s='SCHAR2'
          Schm_hydro_L = .false.
 
-         Height_top_8 = 19500.d0
+         mtn_hght_top = 19500.d0
 
          mtn_tzero= 273.16
          mtn_nstar= 0.01871
@@ -155,7 +155,6 @@
          Lam_blend_H=25
 
          Zblen_spngthick=9000.
-         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 2400
 
@@ -172,7 +171,7 @@
          Out3_etik_s='PINTY'
          Schm_hydro_L = .true.
 
-         Height_top_8 = 20000.d0
+         mtn_hght_top = 20000.d0
 
          mtn_tzero= 273.16
          mtn_nstar= -1
@@ -189,7 +188,6 @@
          Lam_blend_H=25
 
          Zblen_spngthick=10000.
-         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 800
 
@@ -203,7 +201,7 @@
          Out3_etik_s='PINTY2'
          Schm_hydro_L = .true.
 
-         Height_top_8 = 20000.d0
+         mtn_hght_top = 20000.d0
 
          mtn_tzero=273.16
          mtn_nstar=-1
@@ -220,7 +218,6 @@
          Lam_blend_H=25
 
          Zblen_spngthick=2500.
-         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 1600
 
@@ -234,7 +231,7 @@
          Out3_etik_s='PINTYNL'
          Schm_hydro_L = .true.
 
-         Height_top_8 = 20000.d0
+         mtn_hght_top = 20000.d0
          Cstv_ptop_8  = 9575.000118766453d0
 
          mtn_tzero= 273.16
@@ -252,7 +249,6 @@
          Lam_blend_H=25
 
          Zblen_spngthick=10000.
-         Zblen_hmin = Height_top_8 - Zblen_spngthick
 
          Step_total = 1000
 
@@ -271,10 +267,10 @@
          Cstv_dt_8=1.0
          Grd_ni=101
          Grd_nj = 1
-         Grd_dx = 250.                                 !  in meters
+         Grd_dx = 250.                     ! in meters
          cstv_tstr_8 = 273.16
-         Height_top_8 = 10000.d0
-         G_nk      = 80                    ! dz=125m
+         mtn_hght_top = 20000.d0
+         G_nk      = 80                    ! dz=250m
          mtn_hght  = 0.
          mtn_tzero = 273.16
 
@@ -324,30 +320,37 @@
       Grd_ni   = Grd_ni + 2*Grd_extension
       Grd_nj   = Grd_nj + 2*Grd_extension
       Grd_jref = (Grd_nj+1 )/2
+      Zblen_hmin = mtn_hght_top - Zblen_spngthick
 
-      if(mtn_nstar.lt.0.)            &!  isothermal case
-         mtn_nstar=Dcst_grav_8/sqrt(Dcst_cpd_8*mtn_tzero)
-      if(mtn_nstar.eq.0.0) then     !  isentropic case
-         c1_8=Dcst_grav_8/(Dcst_cpd_8*mtn_tzero)
-         Exner_8=1.d0-c1_8*Height_top_8
-      else
-         c1_8=Dcst_grav_8**2/(Dcst_cpd_8*mtn_tzero*mtn_nstar**2)
-         Exner_8=1.d0-c1_8+c1_8 &
-                    *exp(-mtn_nstar**2/Dcst_grav_8*Height_top_8)
-      endif
-      Cstv_ptop_8 = Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
-!     Uniform distribution of levels in terms of height
-      do k=1,G_nk
-         height_8=Height_top_8*(1.d0-(dble(k)-.5d0)/G_nk)
-         Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/Dcst_grav_8*height_8)
-         pres_8=Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
-         hyb(k)=(pres_8-Cstv_ptop_8)/(p1000hPa_8-Cstv_ptop_8)
-      enddo
+      if(hyb(1).lt.0) then
+         if(mtn_nstar.lt.0.)            &!  isothermal case
+            mtn_nstar=Dcst_grav_8/sqrt(Dcst_cpd_8*mtn_tzero)
+         if(mtn_nstar.eq.0.0) then     !  isentropic case
+            c1_8=Dcst_grav_8/(Dcst_cpd_8*mtn_tzero)
+            Exner_8=1.d0-c1_8*mtn_hght_top
+         else
+            c1_8=Dcst_grav_8**2/(Dcst_cpd_8*mtn_tzero*mtn_nstar**2)
+            Exner_8=1.d0-c1_8+c1_8 &
+                       *exp(-mtn_nstar**2/Dcst_grav_8*mtn_hght_top)
+         endif
+         Cstv_ptop_8 = Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
+!        Uniform distribution of levels in terms of height
+         do k=1,G_nk
+            height_8=mtn_hght_top*(1.d0-(dble(k)-.5d0)/G_nk)
+            Exner_8=1.d0-c1_8+c1_8*exp(-mtn_nstar**2/Dcst_grav_8*height_8)
+            pres_8=Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
+            hyb(k)=(pres_8-Cstv_ptop_8)/(p1000hPa_8-Cstv_ptop_8)
+         enddo
 !
-!     denormalize
-      do k=1,G_nk
-         hyb(k) = hyb(k) + (1.-hyb(k))*Cstv_ptop_8/p1000hPa_8
-      enddo
+!        denormalize
+         do k=1,G_nk
+            hyb(k) = hyb(k) + (1.-hyb(k))*Cstv_ptop_8/p1000hPa_8
+         enddo
+      else
+         do k=1024,1,-1
+         if(hyb(k).lt.0) G_nk=k-1
+         enddo
+      endif
 !
       Grd_dy = Grd_dx
       Grd_x0_8=0.

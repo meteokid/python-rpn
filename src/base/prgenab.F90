@@ -48,37 +48,41 @@
 !
 !
       if (Lun_debug_L) then
-      print *,'prgenab Ver_a_8%m(k),Ver_b_8%m(k),k=1,G_nk+1'
+      print *,'prgenab Ver_a_8%m(k),Ver_a_8%t(k),k=1,G_nk+1'
       do k=1,G_nk+1
-         print *,k,Ver_a_8%m(k),Ver_b_8%m(k)
+         print *,k,Ver_a_8%m(k),Ver_a_8%t(k)
       enddo
-      print *,'prgenab Ver_z_8%m(k),Ver_fistr_8(k),k=1,G_nk+1'
+      print *,'prgenab Ver_b_8%m(k),Ver_b_8%t(k),k=1,G_nk+1'
       do k=1,G_nk+1
-         print *,k,Ver_z_8%m(k),Ver_fistr_8(k)
+         print *,k,Ver_b_8%m(k),Ver_b_8%t(k)
       enddo
-      print *,'prgenab Ver_dz_8%m(k),Ver_idz_8%m(k),Ver_dbdz_8%m(k),k=1,G_nk'
+      print *,'prgenab Ver_z_8%m(k),Ver_z_8%t(k),k=0,G_nk'
+      do k=0,G_nk
+         print *,k,Ver_z_8%m(k),Ver_z_8%t(k)
+      enddo
+      print *,'prgenab Ver_z_8%t(k),Ver_z_8%x(k),k=0,G_nk'
+      do k=0,G_nk
+         print *,k,Ver_z_8%t(k),Ver_z_8%x(k)
+      enddo
+      print *,'prgenab Ver_dz_8%m(k),Ver_dz_8%t(k),k=1,G_nk'
       do k=1,G_nk
-         print *,k,Ver_dz_8%m(k),Ver_idz_8%m(k),Ver_dbdz_8%m(k)
+         print *,k,Ver_dz_8%m(k),Ver_dz_8%t(k)
+      enddo
+      print *,'prgenab Ver_idz_8%m(k),Ver_idz_8%t(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_idz_8%m(k),Ver_idz_8%t(k)
+      enddo
+      print *,'prgenab Ver_dbdz_8%m(k),Ver_dbdz_8%t(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_dbdz_8%m(k),Ver_dbdz_8%t(k)
       enddo
       print *,'prgenab Ver_wp_8%m(k),Ver_wm_8%m(k),k=1,G_nk'
       do k=1,G_nk
          print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
       enddo 
-      print *,'prgenab Ver_a_8%t(k),Ver_b_8%t(k),k=1,G_nk+1'
-      do k=1,G_nk+1
-         print *,k,Ver_a_8%t(k),Ver_b_8%t(k)
-      enddo 
-      print *,'prgenab Ver_z_8%t(k),k=1,G_nk'
-      do k=1,G_nk
-         print *,k,Ver_z_8%t(k)
-      enddo 
-      print *,'prgenab Ver_dz_8%t(k),Ver_idz_8%t(k),Ver_dbdz_8%t(k),k=1,G_nk'
-      do k=1,G_nk
-         print *,k,Ver_dz_8%t(k),Ver_idz_8%t(k),Ver_dbdz_8%t(k)
-      enddo 
       print *,'prgenab Ver_wp_8%t(k),Ver_wm_8%t(k),k=1,G_nk'
       do k=1,G_nk
-         print *,k,Ver_wp_8%t(k),Ver_wm_8%t(k)
+         print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
       enddo 
       print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+1 for Output Levels'
       do k=1,G_nk+1
