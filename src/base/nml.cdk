@@ -109,7 +109,6 @@
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
-      namelist /gem_cfgs/ Schm_cub_traj_L
       namelist /gem_cfgs/ Schm_cub_Coriolis_L  
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
@@ -120,7 +119,6 @@
       namelist /gem_cfgs/ Schm_psadj_L
       namelist /gem_cfgs/ Schm_Tlift
       namelist /gem_cfgs/ Schm_Topo_L
-      namelist /gem_cfgs/ Schm_trapeze_L
       namelist /gem_cfgs/ Schm_settls_L
       namelist /gem_cfgs/ Schm_capa_var_L
       namelist /gem_cfgs/ Schm_MTeul
@@ -129,7 +127,7 @@
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
-      namelist /gem_cfgs/ Schm_lift_ltl_L
+      namelist /gem_cfgs/ Schm_adxlegacy_L
 !Sol
       namelist /gem_cfgs/ Sol_fgm_eps
       namelist /gem_cfgs/ Sol_yyg_eps
@@ -259,6 +257,7 @@
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
       namelist /gem_cfgs_p/ Schm_lift_ltl_L
+      namelist /gem_cfgs_p/ Schm_adxlegacy_L
 !Sol
       namelist /gem_cfgs_p/ Sol_fgm_eps
       namelist /gem_cfgs_p/ Sol_yyg_eps

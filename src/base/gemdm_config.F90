@@ -108,24 +108,20 @@
          Lam_blend_T = 0
       endif
 
-      Schm_adxlegacy_L=.false.
-
-      if (.not.Schm_cub_traj_L .or. .not.Schm_trapeze_L) then
-          Schm_adxlegacy_L=.true.
+      !  Set advection options based on user selection of advection scheme
+      Schm_cub_traj_L = .true.
+      Schm_trapeze_L = .true.
+      Schm_lift_ltl_L = .true.
+      if (Schm_adxlegacy_L) then
+         Schm_cub_traj_L = .false.
+         Schm_trapeze_L = .false.
+         Schm_lift_ltl_L = .false.
+      else
+         if (.not. G_lam) then
+            if (lun_out>0) write (Lun_out, 9203)
+            return
+         endif
       endif
-
-      if (.not. G_lam) then
-          Schm_adxlegacy_L=.true.
-          Schm_cub_traj_L=.false.
-          if (lun_out>0) write (Lun_out, 9203)
-      endif
-
-      if (G_lam.and.Schm_adxlegacy_L) then
-              if (lun_out>0) write (Lun_out, 9202)
-      endif
-
-      if (Schm_adxlegacy_L) Schm_lift_ltl_L = .false.
-
 
       deg_2_rad = Dcst_pi_8/180.
 
@@ -371,11 +367,7 @@
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
- 9202 format (/'WARNING: USING OLD ADVECTION CODE for LAM GRIDS: one of'/&
-               'Schm_trapeze_L or Schm_cub_traj_L is FALSE'/&
-               'The defaults for these keys are TRUE'/)
- 9203 format (/,'WARNING: For GU: USING OLD ADVECTION CODE and'/&
-               'Schm_cub_traj_L is FALSE'/)
+ 9203 format (/,'ABORT: WRONG CHICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 !
