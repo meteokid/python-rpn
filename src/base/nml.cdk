@@ -63,6 +63,8 @@
       namelist /gem_cfgs/ Iau_period
       namelist /gem_cfgs/ Iau_tracers_S
       namelist /gem_cfgs/ Iau_weight_S
+      namelist /gem_cfgs/ Iau_ninblocx
+      namelist /gem_cfgs/ Iau_ninblocy
 !Init
       namelist /gem_cfgs/ Init_balgm_L
       namelist /gem_cfgs/ Init_dfwin_L
@@ -196,6 +198,8 @@
       namelist /gem_cfgs_p/ Iau_interval
       namelist /gem_cfgs_p/ Iau_period
       namelist /gem_cfgs_p/ Iau_weight_S
+      namelist /gem_cfgs_p/ Iau_ninblocx
+      namelist /gem_cfgs_p/ Iau_ninblocy
 !Init
       namelist /gem_cfgs_p/ Init_balgm_L
       namelist /gem_cfgs_p/ Init_dfwin_L

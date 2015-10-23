@@ -264,6 +264,8 @@
          return
       endif
 
+      !#TODO: check for Iau_ninblocx, Iau_ninblocy compat with topology
+
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
          if (lun_out>0) write (Lun_out, 6100)

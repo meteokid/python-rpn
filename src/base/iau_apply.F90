@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 subroutine iau_apply2(F_kount)
+   use iso_c_binding
    use vGrid_Descriptors
    use vgrid_wb
    use input_mod
@@ -27,6 +28,7 @@ subroutine iau_apply2(F_kount)
    !@object
    !  Add an analysis increments to the model state (IAU).
 #include <arch_specific.hf>
+#include "rpn_comm.inc"
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include <gmm.hf>
@@ -66,6 +68,8 @@ subroutine iau_apply2(F_kount)
 
    if (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.) return
    call timing_start2(50, 'IAU', 1)
+
+   istat = rpn_comm_bloc(Iau_ninblocx, Iau_ninblocy)
 
    call datp2f(dateo,Step_runstrt_S)
    iau_vtime = -Step_delay*Cstv_dt_8 + Iau_interval * nint((Lctl_step)*Cstv_dt_8/Iau_interval-epsilon(1.))

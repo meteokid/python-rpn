@@ -64,6 +64,8 @@
       Iau_period    = -1.
       Iau_tracers_S = ''
       Iau_weight_S  = 'constant'
+      Iau_ninblocx  = 1
+      Iau_ninblocy  = 1
 
       Init_balgm_L   = .false.
       Init_dfwin_L   = .true.
