@@ -22,24 +22,28 @@
       logical, intent(IN) :: F_water_tracers_only_L
 
 #include "glb_ld.cdk"
+#include "lun.cdk"
+#include "schm.cdk"
 #include "adv_slice_storage.cdk"
 
 !     _________________________________________________________________
 !
+      if (Lun_debug_L) write (Lun_out,1000) F_water_tracers_only_L
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (1,"BEFORE ADVECTION")
 
       if (.not. F_water_tracers_only_L) &
       Adv_do_only_once_each_timestep_L = .TRUE.
 
-      if (G_lam) then
-         call adv_tracers (F_water_tracers_only_L)    
-      else
+      if (Schm_adxlegacy_L) then
          call adx_tracers_interp (F_water_tracers_only_L)
+      else
+         call adv_tracers (F_water_tracers_only_L)    
       endif
 
       if (.not. F_water_tracers_only_L) &
            call stat_mass_tracers (0,"AFTER ADVECTION")
+1000  format(3X,'ADVECT TRACERS: (S/R TRACERS_STEP) H2O only=',L)
 !     _________________________________________________________________
 !
       return

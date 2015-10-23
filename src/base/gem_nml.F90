@@ -83,12 +83,8 @@
       Schm_Tlift    = 0
       Schm_MTeul    = 0
       Schm_advec    = 2
-      Schm_trapeze_L  = .false.
-      if (G_lam) Schm_trapeze_L = .true.
       Schm_settls_L   = .false.
       Schm_capa_var_L = .false.
-      Schm_cub_traj_L = .false.
-      if (G_lam.and.Schm_trapeze_L) Schm_cub_traj_L = .true.
       Schm_cub_Coriolis_L = .false.
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
@@ -97,7 +93,7 @@
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L  = .false.
-      Schm_lift_ltl_L  = .true.
+      Schm_adxlegacy_L = .false.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10

@@ -78,6 +78,7 @@
 !
 !     ---------------------------------------------------------------
 !  
+      if (Lun_debug_L) write (Lun_out,1000)
       k0t= k0
       if(Schm_opentop_L) k0t= k0-1
 
@@ -341,6 +342,8 @@
       end do
 !$omp enddo
 !$omp end parallel
+
+1000  format(3X,'UPDATE  THE RIGHT-HAND-SIDES: (S/R PRE)')
 !
 !     ---------------------------------------------------------------
 !  

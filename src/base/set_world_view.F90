@@ -90,10 +90,6 @@
       err(1) = step_nml  ('print')
       err(1) = gem_nml   ('print')
 
-      if ( Schm_cub_traj_L .and. (.not.G_lam) ) &
-           call gem_error(-1,'set_world_view',&
-           'Schm_cub_traj_L=.true. cannot be used with non LAM grid')
- 
       if (G_lam) then
          call adv_nml_print ()
       else

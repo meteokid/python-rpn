@@ -149,12 +149,18 @@
       
       call timing_start2 (21, 'ADV_MAIN', 10)
       if (G_lam) then
-         call  adv_main ( F_fnitraj, Orh_icn               ,&
+           
+           if (Schm_adxlegacy_L) then
+               call itf_adx_main (F_fnitraj)
+           else
+               call  adv_main ( F_fnitraj, Orh_icn               ,&
                           ut0, vt0 , zdt0, ut1, vt1 , zdt1 ,&
                           orhsu, rhsu, orhsv, rhsv, orhsc  ,&
                           rhsc, orhst,  rhst, orhsf, rhsf  ,&
                           orhsq, rhsq, orhsw, rhsw, orhsx  ,&
-                      rhsx,l_minx,l_maxx,l_miny,l_maxy,l_nk )
+                       rhsx,l_minx,l_maxx,l_miny,l_maxy,l_nk )        
+           endif
+
       else
          call itf_adx_main (F_fnitraj)
       endif

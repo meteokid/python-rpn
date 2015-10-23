@@ -31,6 +31,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "lun.cdk"
 #include "hzd.cdk"
 #include "tr3d.cdk"
 #include "vspng.cdk"
@@ -45,6 +46,8 @@
 !
 !-------------------------------------------------------------------
 !
+      if (Lun_debug_L) write (Lun_out,1000)
+      
       call timing_start2 ( 60, 'HZD_main', 1 )
 
       switch_on_UVW     = Hzd_lnr      .gt.0.
@@ -146,6 +149,8 @@
          call pw_update_T
 
       call timing_stop ( 60 )
+
+1000  format(3X,'MAIN HORIZONTAL DIFFUSION : (S/R HZD_MAIN)')
 !
 !-------------------------------------------------------------------
 !

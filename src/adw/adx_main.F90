@@ -120,6 +120,8 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
       call adx_pos_angular_t (pxt,pyt,pzt,pxm,pym,pzm,F_wat,wdm, &
                               adx_mlni,adx_mlnj,k0t,adx_lnk , &
                               i0,in,j0,jn, .true.)
+
+
    else
       call adx_pos_m (F_nb_iter, pxm , pym , pzm             , &
                       a_ud, a_vd, a_wd, F_ua, F_va, F_wa, wdm, &
@@ -135,14 +137,14 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    call timing_stop (30)
 
-   if (F_doAdwStat_L .and. adw_stats_L) then
-      call adx_stats('m', a_ud  ,a_vd  ,a_wd                , &
-                     pxm,  pym,  pzm , xth , yth , zth      , &
-                     xcth, ycth, zcth, xct1, yct1, zct1     , &
-                     adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
-                     F_nk_winds,adx_mlni, adx_mlnj, adx_lnk, &
-                     adx_lnk,i0,in,j0,jn,k0,adx_lnk )
-   endif
+!   if (F_doAdwStat_L .and. adw_stats_L) then
+!      call adx_stats('m', a_ud  ,a_vd  ,a_wd                , &
+!                     pxm,  pym,  pzm , xth , yth , zth      , &
+!                     xcth, ycth, zcth, xct1, yct1, zct1     , &
+!                     adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy, &
+!                     F_nk_winds,adx_mlni, adx_mlnj, adx_lnk, &
+!                     adx_lnk,i0,in,j0,jn,k0,adx_lnk )
+!   endif
 
    call timing_start2 (31, 'ADW_INLAG', 21)  ! Interpolate
 
@@ -158,5 +160,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 
    !---------------------------------------------------------------------
    return
+
+
 end subroutine adx_main
 

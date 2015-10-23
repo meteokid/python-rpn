@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!/@*
+!/**
 !@objective:  pre-compute indices to be used in tricub interp  adx_tricub_lag3d_loop.cdk
 	
 	subroutine adv_get_indices (ii,  F_x, F_y, F_z, F_num, &
@@ -32,7 +32,7 @@ implicit none
    !
 !@ author  RPN-A Model Infrastructure Group  August 2015
    ! 
-!*@/
+!**/
 
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
@@ -40,6 +40,7 @@ implicit none
 #include "ver.cdk"
    integer :: kkmax , idxk, idxjk, ii1, jj1,kk1
    integer :: id,i,j,k,n,n0,n1,n2,n3,m,nind 
+   integer :: midxk,midxjk,mni,mnj,mnk,nn
    real*8  :: p_z00_8  
    real*8  :: rri,rrj,rrk
    integer, dimension(4*nind), intent(out) :: ii    ! index, to be used in tricubic lagrangian interpolations
@@ -65,20 +66,30 @@ implicit none
 
 ! pre-compute indices ii
 
+   mni=F_in-F_i0+1
+   mnj=F_jn-F_j0+1
+   mnk=F_nk-F_k0+1
 
-!$omp parallel private(i,j,k,n,ii1,jj1,kk1,idxk,idxjk,rri,rrj,rrk) &
-!$omp          shared(ii)
+!$omp parallel private(idxk, idxjk, ii1, jj1,kk1,&
+!$omp                  id,i,j,k,n,n0,n1,n2,n3,m,nind,&
+!$omp                  midxk,midxjk,nn,&
+!$omp                  rri,rrj,rrk) &
+!$omp          shared(ii,p_lcz,p_bsz_8,kkmax,mni,mnj,mnk)
 
-m=0
+!m=0 -> not for OMP
 !$omp do
 
 do k=F_k0,F_nk
       idxk  = (k-1)*l_ni*l_nj
+      midxk = (k-F_k0)*mni*mnj
       do j=F_j0,F_jn
          idxjk = idxk + ((j-1)*l_ni)
+         midxjk=midxk + ((j-F_j0)*mni)
          do i=F_i0,F_in
             n = idxjk + i  
-            m=m+4    
+            !m=m+4 -> not for OMP
+            nn= midxjk+ (i-F_i0+1)
+            m=nn*4
    
             n0=m-3
             n1=m-2

@@ -108,9 +108,17 @@
          Lam_blend_T = 0
       endif
 
-      if (Schm_cub_traj_L) then
+      !  Set advection options based on user selection of advection scheme
+      Schm_cub_traj_L = .true.
+      Schm_trapeze_L = .true.
+      Schm_lift_ltl_L = .true.
+      if (Schm_adxlegacy_L) then
+         Schm_cub_traj_L = .false.
+         Schm_trapeze_L = .false.
+         Schm_lift_ltl_L = .false.
+      else
          if (.not. G_lam) then
-            if (lun_out>0) write (Lun_out, 9480) 'Schm_cub_traj_L'
+            if (lun_out>0) write (Lun_out, 9203)
             return
          endif
       endif
@@ -361,8 +369,8 @@
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
+ 9203 format (/,'ABORT: WRONG CHICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
- 9480 format (/,'ABORT: ',a,' only available in LAM configuration'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
 !
 !-------------------------------------------------------------------

@@ -83,9 +83,9 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
 
    allocate(uu(l_ni,l_nj,eq_nlev),vv(l_ni,l_nj,eq_nlev))
 
-   ! eq_nlev is generally small (about 10) so we do the parallel section on j.
+! eq_nlev is generally small (about 10) so we do the parallel section on j.
 
-!$omp parallel private(kp,km)
+!$omp parallel private(kp,km,i,k)
 !$omp do
    do j=1,l_nj  
       do k=1,eq_nlev
@@ -106,13 +106,10 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
 
    deallocate(uu,vv)
 
-   !     __________________________________________________________________
-   !
-   if (Lun_debug_L) write (Lun_out,1000)
-   !
+
 1000 format(3X,'APPLY EQUATORIAL SPONGE: (S/R EQUATORIAL_SPONGE)')
-   !
-   !     __________________________________________________________________
-   !
+!
+!__________________________________________________________________
+!
    return
 end subroutine eqspng_drv

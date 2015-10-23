@@ -24,6 +24,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "lun.cdk"
 #include "schm.cdk"
 #include "vt0.cdk"
 #include "grd.cdk"
@@ -34,6 +35,7 @@
 !-------------------------------------------------------------------
 !
       if (Schm_hzdadw_L .and. switch_on_hzd) then
+          if (Lun_debug_L) write (Lun_out,1000)
 
          istat= gmm_get(gmmk_zdt0_s,zdt0)
          istat= gmm_get(gmmk_ut0_s ,ut0 )
@@ -49,6 +51,8 @@
          endif
 
       endif
+
+1000  format(5X,'DIFFUSION ON U,V,ZD: (S/R HZD_MOMENTUM)')
 !
 !-------------------------------------------------------------------
 !
