@@ -216,9 +216,6 @@ End Interface
          endif
       end do
 
-      if (NTR_Tr3d_ntr > 0) err= wb_put('itf_phy/READ_TRACERS',&
-                                NTR_Tr3d_name_S(1:NTR_Tr3d_ntr))
-
       ana_w_L = (inp_get ('WT1',  'Q', Ver_ip1%t     ,&
                        vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
                       l_minx,l_maxx,l_miny,l_maxy,G_nk) == 0)

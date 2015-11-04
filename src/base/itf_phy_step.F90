@@ -51,8 +51,9 @@
 
       if (F_step_kount == 0) then
          call itf_phy_geom4 (err_geom)
-         if (Tr3d_ntr > 0) then
-            err = wb_put('itf_phy/READ_TRACERS', Tr3d_name_S(1:Tr3d_ntr), Tr3d_ntr)
+         if (NTR_Tr3d_ntr > 0) then
+            err = wb_put('itf_phy/READ_TRACERS', &
+                                NTR_Tr3d_name_S(1:NTR_Tr3d_ntr))
          endif
       endif
 
