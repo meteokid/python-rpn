@@ -436,8 +436,8 @@
 !        ~~~~~~~~~~
          km=max(k-1,1)
          kp=min(k+1,l_nk)
-         w1=Ver_igt_8*Ver_wp_8%m(k)
-         w2=Ver_igt_8*Ver_wm_8%m(k)*Ver_onezero(k)
+         w1=Ver_igt_8*Ver_wpA_8(k)
+         w2=Ver_igt_8*Ver_wmA_8(k)*Ver_onezero(k)
          do j = j0, jn
          do i = i0, in
             ndiv = (F_u(i,j,k)-F_u(i-1,j,k)) * geomg_invDXM_8(j) &
@@ -523,8 +523,8 @@
          km=max(k-1,1)
          w1=(Ver_idz_8%m(k) + Ver_wp_8%m(k))
          w2=(Ver_idz_8%m(k) - Ver_wm_8%m(k))*Ver_onezero(k)
-         w3=Ver_epsi_8(k)*Ver_wp_8%m(k)
-         w4=Ver_epsi_8(k)*Ver_wm_8%m(k)*Ver_onezero(k)
+         w3=Ver_wpA_8(k)*Ver_epsi_8(k)
+         w4=Ver_wmA_8(k)*Ver_epsi_8(km)*Ver_onezero(k)
          do j= j0, jn
          do i= i0, in
             F_rhs(i,j,k) =  c1 * ( F_rc(i,j,k) - F_nc(i,j,k) &

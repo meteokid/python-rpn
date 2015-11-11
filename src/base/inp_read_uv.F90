@@ -32,20 +32,31 @@
 #include "inp.cdk"
 #include <rmnlib_basics.hf>
 
-      integer, external :: RPN_COMM_shuf_ezdist
+Interface
+      integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
+                                  F_ip1, F_nka )
+      implicit none
+      character*(*)                     , intent(IN)  :: F_var_S,F_hgrid_S
+      integer                           , intent(OUT) :: F_nka
+      integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
+      real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
+      End function inp_read
+End Interface
+
+      integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
       character*1 typ,grd
       character*4 var
       character*12 lab
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
-      integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
+      integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt,same_rot
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode, nkk
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
       real   , dimension(:,:), allocatable :: u,v,uhr,vhr,uv
       real   , dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
-      common /bcast_i / lislon,nz
+      common /bcast_i / lislon,nz,same_rot
 !
 !---------------------------------------------------------------------
 !
@@ -56,18 +67,22 @@
       nullify (F_ip1, F_u, F_v)
 
       if (Inp_iome .ge.0) then
-         vcode= -1 ; nz= -1
+         vcode= -1 ; nz= -1 ; same_rot= -1
          nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
                        'UU',liste,lislon,nlis)
          if (lislon == 0) goto 999
 
-         nz= (lislon + Inp_npes - 1) / Inp_npes
-         allocate ( F_ip1(lislon), uhr(G_ni*G_nj,nz), &
-                    vhr(G_ni*G_nj,nz), uv(G_ni*G_nj,nz) )
-
          err= fstprm (liste(1), DTE, DET, IPAS, n1, n2, n3,&
                   BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
                   G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
+                  
+         src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
+!         same_rot= samegrid_rot ( src_gid, &
+!                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
+
+         nz= (lislon + Inp_npes - 1) / Inp_npes
+         allocate ( F_ip1(lislon), uhr(G_ni*G_nj,nz), &
+                    vhr(G_ni*G_nj,nz), uv(G_ni*G_nj,nz) )
 
          if (lislon.gt.1) then
             call sort_ip1 (liste,F_ip1,lislon)
@@ -106,8 +121,6 @@
 
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
 
-            src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
-
             write(6,'(3a)') 'Interpolating: UU valid: ',&
                              Inp_datev,' on U grid'
             dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
@@ -115,26 +128,41 @@
                                    posxu, posyu)
             err = ezdefset ( dst_gid , src_gid )
 
-            do i=1,local_nk
-               err = ezuvint  ( uhr(1,i),uv(1,i), u(1,i),v(1,i))
-            end do
+            if (same_rot.gt.0) then
+               do i=1,local_nk
+                  err = ezsint (uhr(1,i), u(1,i))
+               end do
+            else
+               do i=1,local_nk
+                  err = ezuvint  ( uhr(1,i),uv(1,i), u(1,i),v(1,i))
+               end do
+            endif
 
             write(6,'(3a)') 'Interpolating: VV valid: ',&
                              Inp_datev,' on V grid'
+
             dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                    posxv, posyv)
             err = ezdefset ( dst_gid , src_gid )
-            do i=1,local_nk
-               err = ezuvint  ( uv(1,i),vhr(1,i), u(1,i),v(1,i))
-            end do
+
+            if (same_rot.gt.0) then
+               do i=1,local_nk
+                  err = ezsint (vhr(1,i), v(1,i))
+               end do
+            else
+               do i=1,local_nk
+                  err = ezuvint  ( uv(1,i),vhr(1,i), u(1,i),v(1,i))
+               end do
+            endif
+
          endif
          deallocate (u,v,uv)
       else
          allocate (uhr(1,1), vhr(1,1))
       endif
 
- 999  call rpn_comm_bcast (lislon, 2, "MPI_INTEGER", 0, "grid", err)
+ 999  call rpn_comm_bcast (lislon, 3, "MPI_INTEGER", 0, "grid", err)
       F_nka= lislon
 
       if (F_nka .gt. 0) then
@@ -172,6 +200,8 @@
 
          if (Inp_iome .ge.0) write(6,'(3a)') &
                   'Variable: UU,VV valid: ',Inp_datev, 'NOT FOUND'
+         call gem_error ( -1, 'inp_read_uv', &
+          'Missing input data: horizontal winds')
 
       endif
 !

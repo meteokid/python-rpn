@@ -63,7 +63,7 @@
 #include "lam.cdk"
 #include "wil_williamson.cdk"
 !
-      integer i, j, k, km, kq, nij, k0t, istat
+      integer i, j, k, km, kq, kmq, nij, k0t, istat
       real*8  w1, w2, w3, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
@@ -89,7 +89,7 @@
          enddo
       end do
 !
-!$omp parallel private(w1,w2,w3,qbar,Pbar,km,kq,xtmp_8,ytmp_8)
+!$omp parallel private(w1,w2,w3,qbar,Pbar,km,kq,kmq,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -281,9 +281,11 @@
 !$omp do
       do k=k0t,l_nk
          kq=max(k,2)
+         kmq=max(k-1,2)
          do j= j0, jn
          do i= i0, in
-            qbar=half*(F_q(i,j,k+1)+F_q(i,j,kq)*Ver_onezero(k))
+            qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
+            qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
             ytmp_8(i,j)=-qbar
          enddo
          enddo

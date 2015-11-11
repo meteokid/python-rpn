@@ -167,8 +167,9 @@
       Vtopo_start = -1
       Vtopo_ndt   = 0
 
-      Tr3d_list_S = ''
-      Tr3d_ntr    = 0
+      Tr3d_list_S   = ''
+      Tr3d_ntr      = 0
+      Tr3d_anydate_L= .false.
 
 ! The default here is NO modulation (weigh is 1.0 everywhere)
 ! Activation can be done with P_lmvd_weigh_high_lat=0.

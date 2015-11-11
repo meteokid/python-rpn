@@ -13,28 +13,19 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gz2p0 - Compute P0 from GZ from pressure coordinate
+!**s/r gz2p02 - Compute P0 from GZ from pressure coordinate
 !
-
-!
-      subroutine gz2p0(F_ps, F_gz, F_topo,F_rna,NN, Nk)
-!
+      subroutine gz2p02 ( F_ps, F_gz, F_topo, F_rna ,&
+                          Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
+                          F_i0,F_in,F_j0,F_jn )
       implicit none
 #include <arch_specific.hf>
-!
-      integer NN,Nk
-      real F_gz(NN,Nk), F_ps(NN), F_rna(Nk),F_topo(NN)
-!
-!author - Vivian Lee     - Feb   2002 - v0_06 (taken from e_intscl - M.Roch)
-!
-!revision
-! v3_00 - Lee V.               - Initial version
-! v4_03 - Lee V.               - converted to bring back only log p0.
-!
-!
-!object
-!       see id section
-!
+
+      integer Nk,Mminx,Mmaxx,Mminy,Mmaxy,F_i0,F_in,F_j0,F_jn
+      real F_gz  (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
+           F_ps  (Mminx:Mmaxx,Mminy:Mmaxy)   , &
+           F_topo(Mminx:Mmaxx,Mminy:Mmaxy)   , F_rna(Nk)
+
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -44,17 +35,16 @@
 ! F_rna        I    - pressure levels from pressure analyse
 ! NN           I    - number of points on the plane
 ! Nk           I    - number of levels from the pressure analyse
-!
 
 #include "lun.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-!
-!*
-      integer i,k
-      real conv,acc,guess(NN),lna(Nk),sdd(Nk)
-      real zcol(NN,Nk), a(NN),tcol(NN,Nk)
+
+      integer i,j,k,m,NN
+      real, allocatable, dimension(:  ) :: guess,a,topo
+      real, allocatable, dimension(:,:) :: zcol,tcol
+      real lna(Nk),sdd(Nk),conv,acc
 !
 !     ---------------------------------------------------------------
 !
@@ -67,9 +57,25 @@
       do k=1,Nk-1
          sdd(k) = 1./(lna(k+1)-lna(k))
       enddo
+
+      NN=(F_jn-F_j0+1)*(F_in-F_i0+1)
+      allocate(guess(NN),a(NN),topo(NN))
+      allocate(zcol(NN,Nk),tcol(NN,Nk))
+
+      m=0
+      do j=F_j0,F_jn
+      do i=F_i0,F_in
+         m=m+1
+         topo(m)=F_topo(i,j)
+      enddo
+      enddo
       do k=1,Nk
-         do i=1,NN
-            zcol(i,k) = Dcst_grav_8*F_gz(i,k)
+         m=0
+         do j=F_j0,F_jn
+         do i=F_i0,F_in
+            m=m+1
+            zcol(m,k) = Dcst_grav_8*F_gz(i,j,k)
+         enddo
          enddo
       enddo
 !
@@ -106,13 +112,19 @@
 !
 !     Compute pressure at the surface (PS)
       do i=1,NN
-         guess(i) = lna(Nk)-F_topo(i)/(Dcst_rgasd_8*250.)
+         guess(i) = lna(Nk)-topo(i)/(Dcst_rgasd_8*250.)
       enddo
 !
-      call vterp1 (guess,F_topo,zcol,tcol,lna,acc,NN,Nk)
-      do i=1,NN
-         F_ps(i) = guess(i) + conv
+      call vterp1 (guess,topo,zcol,tcol,lna,acc,NN,Nk)
+      m=0
+      do j=F_j0,F_jn
+      do i=F_i0,F_in
+         m=m+1
+         F_ps(i,j) = guess(m) + conv
       enddo
+      enddo
+
+      deallocate(guess,a,topo,zcol,tcol)
 !
 !     ---------------------------------------------------------------
 !

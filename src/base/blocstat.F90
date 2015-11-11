@@ -61,8 +61,8 @@
                stat_varname = stat_liste(n)(indx:)
                inn= 0
                jnn= 0
-               if ( stat_liste(n)(1:2)=='UT' .and. G_lam ) inn=1
-               if ( stat_liste(n)(1:2)=='VT'             ) jnn=1
+               if ( stat_liste(n)(1:3)=='URT' .and. G_lam ) inn=1
+               if ( stat_liste(n)(1:3)=='VRT'             ) jnn=1
                nullify (wk2d,wk3d)
                if (tmp_meta%l(3)%high.eq.tmp_meta%l(3)%low) then
                   istat = gmm_get(stat_liste(n), wk2d, mymeta)
@@ -147,8 +147,8 @@
          
          if ((stat_liste(k) == 'ALL_DYN_T1') .or. (stat_liste(k) == 'ALL')) then
             cnt = cnt + 1
-            tmp_liste(cnt  ) = 'UT1'
-            tmp_liste(cnt+1) = 'VT1'
+            tmp_liste(cnt  ) = 'URT1'
+            tmp_liste(cnt+1) = 'VRT1'
             tmp_liste(cnt+2) = 'ZDT1'
             tmp_liste(cnt+3) = 'WT1'
             tmp_liste(cnt+4) = 'TT1'
@@ -164,8 +164,8 @@
          endif
          if (stat_liste(k) == 'ALL_DYN_T0') then
             cnt = cnt + 1
-            tmp_liste(cnt  ) = 'UT0'
-            tmp_liste(cnt+1) = 'VT0'
+            tmp_liste(cnt  ) = 'URT0'
+            tmp_liste(cnt+1) = 'VRT0'
             tmp_liste(cnt+2) = 'ZDT0'
             tmp_liste(cnt+3) = 'WT0'
             tmp_liste(cnt+4) = 'TT0'

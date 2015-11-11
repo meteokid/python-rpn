@@ -47,13 +47,13 @@
 #include "ver.cdk"
 #include "schm.cdk"
  
-      integer i,j,k,kq
+      integer i,j,k,kq,kmq
       real*8, parameter :: one = 1.d0, half = .5d0
-      real*8  yyy,qbar
+      real*8  qbar,w1
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private(qbar,yyy,kq)
+!$omp parallel private(qbar,w1,kq,kmq)
 
 !$omp do 
       do j=j0,jn
@@ -68,9 +68,9 @@
 !$omp do 
       do j=j0,jn
          do k= G_nk,1,-1
-            yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
+            w1= Dcst_rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
-               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+               F_fi(i,j,k)= F_fi(i,j,k+1)+w1*F_t(i,j,k)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
          end do
       end do
@@ -82,10 +82,12 @@
       do j=j0,jn
          do k= G_nk,1,-1
             kq = max(2,k)
-            yyy= Dcst_rgasd_8*Ver_dz_8%t(k)
+            kmq= max(2,k-1)
+            w1= Dcst_rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
-               qbar=-half*(F_q(i,j,k+1)+F_q(i,j,kq)*Ver_onezero(k))
-               F_fi(i,j,k)= F_fi(i,j,k+1)+yyy*F_t(i,j,k)*exp(qbar)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
+               qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+               F_fi(i,j,k)= F_fi(i,j,k+1)+w1*F_t(i,j,k)*exp(-qbar)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
             end do
          end do
       end do

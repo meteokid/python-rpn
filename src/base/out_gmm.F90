@@ -104,6 +104,8 @@
       class_var(15,1) = 'UD' ; class_var(15,2) = 'QQ' ; class_var(15,3) = 'MM'
       class_var(16,1) = 'VD' ; class_var(16,2) = 'QQ' ; class_var(16,3) = 'MM'
       class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
+      class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
+      class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
 
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
@@ -115,7 +117,7 @@
          if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
-            do cid=1,17
+            do cid=1,19
                if (keylist(i)(1:2) == class_var(cid,1)) id=cid
             end do
             if (id.lt.0) then

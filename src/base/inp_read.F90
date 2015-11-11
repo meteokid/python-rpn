@@ -27,22 +27,26 @@
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
 
 #include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "dcst.cdk"
 #include "geomn.cdk"
 #include "hgc.cdk"
 #include "inp.cdk"
 #include "ptopo.cdk"
+#include "tr3d.cdk"
 #include <rmnlib_basics.hf>
 
-      integer, external :: RPN_COMM_shuf_ezdist
+      integer, external :: RPN_COMM_shuf_ezdist, &
+                           samegrid_gid, samegrid_rot
       character*1 typ,grd
       character*4 nomvar,var
-      character*12 lab
+      character*12 lab,interp_S
       character*54 vcode_S
       logical diag_lvl_L
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
+      integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, nkk, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
@@ -72,28 +76,55 @@
             if (Inp_kind == 2  ) nomvar= '@NUL'
             if (Inp_kind == 5  ) nomvar= 'P0'
             if (Inp_kind == 105) nomvar= 'ST1'
-            if ( nomvar == 'P0' ) mult= 100.
-          case ('TEMPERATURE')
+            if ( nomvar == 'P0' ) mult= 100.d0
+         case ('TEMPERATURE')
             if (Inp_kind == 2  ) nomvar= 'TT'
             if (Inp_kind == 5  ) nomvar= 'TT'
             if (Inp_kind == 105) nomvar= 'TT1'
             if ( nomvar == 'TT' ) add= Dcst_tcdk_8
+         case ('GEOPOTENTIAL')
+            if (Inp_kind == 2  ) nomvar= 'GZ'
+            if (Inp_kind == 5  ) nomvar= '@NUL'
+            if (Inp_kind == 105) nomvar= '@NUL'
+            if ( nomvar == 'GZ' ) mult= 10.d0
+         case ('UU')
+            mult= Dcst_knams_8
+         case ('VV')
+            mult= Dcst_knams_8
       end select
-      if ( F_var_S(1:3) == 'TR/'    ) nomvar= F_var_S(4:)
+
+      datev= Inp_cmcdate
+      if ( F_var_S(1:3) == 'TR/' ) then
+         nomvar= F_var_S(4:)
+         if (Tr3d_anydate_L) datev= -1
+      endif
+
       if ( nomvar == '@NUL' ) return
 
       if (Inp_iome .ge.0) then
          vcode= -1 ; nz= -1
-         nrec= fstinl (Inp_handle, n1,n2,n3, Inp_cmcdate,' ', &
+         nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
                        ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
          if (lislon == 0) goto 999
-
-         nz= (lislon + Inp_npes - 1) / Inp_npes
-         allocate (F_ip1(lislon), wk2(G_ni*G_nj,nz))
 
          err= fstprm (liste(1), DTE, DET, IPAS, n1, n2, n3,&
                   BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
                   G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
+
+         src_gid= ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
+
+         if ((trim(nomvar) == 'URT1').or.(trim(nomvar) == 'VRT1').or.&
+             (trim(nomvar) == 'UT1' ).or.(trim(nomvar) == 'VT1' )) then
+             err= samegrid_rot ( src_gid, &
+                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
+             if (err < 0) then
+                lislon= 0
+                goto 999
+             endif
+         endif
+
+         nz= (lislon + Inp_npes - 1) / Inp_npes
+         allocate (F_ip1(lislon), wk2(G_ni*G_nj,nz+1)) ! Valin???
 
          if (lislon.gt.1) then
             call sort_ip1 (liste,F_ip1,lislon)
@@ -117,7 +148,7 @@
          cnt= 0
          do i= kstart, kstart+local_nk-1
             cnt= cnt+1
-            err= fstlir ( wk1(1,cnt), Inp_handle,n1,n2,n3,Inp_cmcdate,&
+            err= fstlir ( wk1(1,cnt), Inp_handle,n1,n2,n3,datev,&
                           LAB, F_ip1(i), P2, P3,TYP, VAR )
          end do
 
@@ -140,19 +171,38 @@
                posy => Geomn_latgv
             endif
 
-            src_gid  = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
             dstf_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
                                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                     posx, posy)
+            interp_S= 'CUBIC'
+
+            if ( GRD .eq. 'U' ) then
+              nicore = G_ni-Glb_pil_w-Glb_pil_e
+              njcore = G_nj-Glb_pil_s-Glb_pil_n
+              if (n1 >= nicore .and. n2/2 >= njcore) then
+                 subid= samegrid_gid ( &
+                    src_gid, Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro,&
+                    posx(1+Glb_pil_w), posy(1+Glb_pil_s), nicore,njcore )
+              else
+                 subid=-1
+              endif
+              if (subid >= 0) then
+                 interp_S = 'NEAREST'
+                 err = ezsetopt ('USE_1SUBGRID', 'YES')
+                 err = ezsetival('SUBGRIDID', subid)
+              endif
+            endif
+
             err = ezdefset ( dstf_gid , src_gid )
-            err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
+            err = ezsetopt ('INTERP_DEGREE', interp_S)
             write(6,'(7a)') 'Interpolating: ',trim(nomvar),' valid: ',&
-                            Inp_datev,' on ',F_hgrid_S, ' grid'
+                             Inp_datev,' on ',F_hgrid_S, ' grid'
          endif
 
          do i=1,local_nk
             err = ezsint(wk2(1,i), wk1(1,i))
          end do
+         err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
          deallocate (wk1)
       else
          allocate (wk2(1,1))

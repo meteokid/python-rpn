@@ -19,7 +19,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
-      use phy_itf, only: phy_get,phymeta,phy_getmeta
+      use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
       implicit none
 #include <arch_specific.hf>
 
@@ -41,6 +41,7 @@
 #include "level.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
+#include "step.cdk"
 #include "pw.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>
@@ -48,13 +49,15 @@
       type(phymeta) :: pmeta
       type(vgrid_descriptor) :: vcoord
       character*15 prefix
-      integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,ip3,istat,&
-              gridset,ig1,mult,mosaic,bcs_ext,p_li0,p_li1,p_lj0,p_lj1
+      character*8 dumc
+      integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,istat,&
+              gridset,ig1,mult,mosaic, ip2,modeip1,kind ,&
+              bcs_ext,p_li0,p_li1,p_lj0,p_lj1
       integer grille_x0,grille_x1,grille_y0,grille_y1
       integer, dimension(:), allocatable :: indo_pres,indo,irff
       integer, dimension(:), pointer     :: ip1m
       logical flag_clos, write_diag_lev
-      real mul
+      real mul,avgfact,period
       real, dimension (l_ni,l_nj,G_nk+1), target :: wlnpi_m,wlnpi_t
       real, dimension(:), pointer    :: hybm,hybt
       real, dimension(:), allocatable:: prprlvl,rff
@@ -100,6 +103,14 @@
          kk       = outp_sorties(jj,stepno)
          gridset  = Outp_grid(kk)
          levset   = Outp_lev(kk)
+         avgfact  = 1./float(Outp_numstep(kk))
+         ip2      = Out_ip2
+         if (Outp_avg_L(kk).or.Outp_accum_L(kk)) then
+             period = dble(Outp_numstep(kk)) * dble(Step_dt) / 3600.d0
+             kind   = 10
+             !call convip_plus ( ip2, period, kind, 2,dumc,.false. )
+             call convip ( ip2, period, kind, 2,dumc,.false. )
+         endif
 
          allocate ( indo( min(Level_max(levset),Level_momentum ) ) )
          
@@ -156,9 +167,17 @@
                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
                      istat = phy_get ( ptr3d, Outp_var_S(ii,kk), &
                                        F_npath='O', F_bpath='PV')
-                     call out_fstecr2 ( data3d, 1,l_ni, 1,l_nj, 0.0, &
-                         Outp_var_S(ii,kk),Outp_convmult(ii,kk)   , &
-                         Outp_convadd(ii,kk), 2, 1,1,1,Outp_nbit(ii,kk),.false. )
+                     if (Outp_avg_L(kk)) data3d = data3d*avgfact
+                     call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, 0.0, &
+                             Outp_var_S(ii,kk),Outp_convmult(ii,kk), &
+                             Outp_convadd(ii,kk), ip2,2, 1,1,1     , &
+                             Outp_nbit(ii,kk),.false. )
+                     if (Outp_avg_L(kk) .or.Outp_accum_L(kk)) then
+                         data3d = 0.0
+                         ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:1)
+                         istat = phy_put ( ptr3d, Outp_var_S(ii,kk), &
+                                           F_npath='O', F_bpath='PV')
+                     endif
                   else
                      ! 2D (multiple) field - on arbitrary levels, kind=3
 !     multiple 2D fields and mosaic tiles are stored in
@@ -194,42 +213,50 @@
                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
                      istat = phy_get (ptr3d,Outp_var_S(ii,kk), &
                                       F_npath='O',F_bpath='PV')
-                     call out_fstecr2 ( data3d, 1,l_ni, 1,l_nj, rff,&
-                             Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                             Outp_convadd(ii,kk), 3,cnt,irff,cnt   ,&
+                     if (Outp_avg_L(kk)) data3d = data3d*avgfact
+                     call out_fstecr3 ( data3d, 1,l_ni, 1,l_nj, rff ,&
+                             Outp_var_S(ii,kk),Outp_convmult(ii,kk) ,&
+                             Outp_convadd(ii,kk), ip2,3,cnt,irff,cnt,&
                              Outp_nbit(ii,kk),.false. )
+                     if (Outp_avg_L(kk).or.Outp_accum_L(kk)) then
+                         data3d = 0.0
+                         ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,1:cnt)
+                         istat = phy_put (ptr3d,Outp_var_S(ii,kk), &
+                                          F_npath='O',F_bpath='PV')
+                     endif
                   endif
                else
                   ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
                   istat = phy_get (ptr3d,Outp_var_S(ii,kk),F_npath='O', &
                                    F_bpath='PV')
+                  if (Outp_avg_L(kk)) data3d = data3d*avgfact
 
                   if (Level_typ_S(levset).eq.'M') then
 
                      if (pmeta%stag .eq. 1) then ! thermo
-                        call out_fstecr2 (data3d                       ,&
+                        call out_fstecr3 (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybt                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_ip1    ,&
+                                 Outp_convadd(ii,kk),ip2,Level_kind_ip1,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
-                           call out_fstecr2 (data3d(1,1,G_nk+1)        ,&
+                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybt(G_nk+2)          ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_diag   ,&
+                                 Outp_convadd(ii,kk),ip2,Level_kind_diag,&
                                  1,1,1,Outp_nbit(ii,kk),.false. )
                         endif
                      else  ! momentum
-                        call out_fstecr2 (data3d                       ,&
+                        call out_fstecr3 (data3d                       ,&
                                  1,l_ni, 1,l_nj, hybm                  ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_ip1    ,&
+                                 Outp_convadd(ii,kk),ip2,Level_kind_ip1,&
                                  G_nk,indo,nko,Outp_nbit(ii,kk),.false. )
                         if (write_diag_lev) then
-                           call out_fstecr2 (data3d(1,1,G_nk+1)        ,&
+                           call out_fstecr3 (data3d(1,1,G_nk+1)        ,&
                                  1,l_ni, 1,l_nj, hybm(G_nk+2)          ,&
                                  Outp_var_S(ii,kk),Outp_convmult(ii,kk),&
-                                 Outp_convadd(ii,kk),Level_kind_diag   ,&
+                                 Outp_convadd(ii,kk),ip2,Level_kind_diag,&
                                  1,1,1,Outp_nbit(ii,kk),.false. )
                         endif
                      endif
@@ -243,12 +270,18 @@
                                     lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
                                     1,l_ni, 1,l_nj, 'linear', .false. )
 
-                     call out_fstecr2 ( buso_pres, 1,l_ni, 1,l_nj      ,&
+                     call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
                            level(1,levset),Outp_var_S(ii,kk)           ,&
-                           Outp_convmult(ii,kk),Outp_convadd(ii,kk),2  ,&
+                           Outp_convmult(ii,kk),Outp_convadd(ii,kk),ip2,2,&
                            nko_pres,indo_pres,nko_pres,Outp_nbit(ii,kk),&
                            .false. )
 
+                  endif
+                  if (Outp_avg_L(kk).or.Outp_accum_L(kk)) then
+                      data3d = 0.0
+                      ptr3d => data3d(p_li0:p_li1,p_lj0:p_lj1,:)
+                      istat = phy_put (ptr3d,Outp_var_S(ii,kk),F_npath='O', &
+                                       F_bpath='PV')
                   endif
                endif FIELD_SHAPE
             endif WRITE_FIELD

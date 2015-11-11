@@ -55,11 +55,14 @@
 !$omp enddo
 !$omp end parallel
 
+!NOTE, zeroing in halo regions in order to avoid float error when dble(X)
+!  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
+      th(l_minx:0     ,:     ,:) = 273.
+      th(l_ni+1:l_maxx,:     ,:) = 273.
+      th(1:l_ni,l_miny:0     ,:) = 273.
+      th(1:l_ni,l_nj+1:l_maxy,:) = 273.
+
       if (Hzd_type_S.eq.'HO_IMP') then
-         th(l_minx:0     ,:,:) = 273.
-         th(l_ni+1:l_maxx,:,:) = 273.
-         th(1:l_ni,l_miny:0     ,:) = 273.
-         th(1:l_ni,l_nj+1:l_maxy,:) = 273.
          call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
       else
          call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy,G_nk)

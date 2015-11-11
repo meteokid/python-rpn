@@ -28,17 +28,24 @@
 !                    | the Level set to use for Outp_var(*,j)          |
 ! Outp_grid          | Outp_grid(j) contains the index that indicates  |
 !                    | the Grid set to use for Outp_var(*,j)           |
-! Outp_step          | Outp_step(i) contains the index that indicates  |
+! Outp_step          | Outp_step(j) contains the index that indicates  |
 !                    | the Step set to use for Outp_var(*,j)           |
+! Outp_numstep       | Outp_numstep(j) contains the number of steps    |
+!                    | elapsed since the last avg/acc for Outp_var(*,j)|
+! Outp_avg_L         | Outp_avg_L(j)    contains TRUE or FALSE         |
+!                    | for Outp_var(*,j)                               |
+! Outp_accum_L       | Outp_accum_L(j)  contains TRUE or FALSE         |
+!                    | for Outp_var(*,j)                               |
 !----------------------------------------------------------------------
 !
 #endif
 
       character*4 Outp_var_S(MAXELEM,MAXSET)
       character*16 Outp_varnm_S(MAXELEM,MAXSET)
-      logical Outp_dostep_L(MAXSET)
+      logical Outp_avg_L(MAXSET),Outp_accum_L(MAXSET)
       integer Outp_nbit(MAXELEM,MAXSET)
       integer Outp_filtpass(MAXELEM,MAXSET)
+      integer Outp_numstep(MAXSET)
       real    Outp_filtcoef(MAXELEM,MAXSET)
       real    Outp_convmult(MAXELEM,MAXSET)
       real    Outp_convadd (MAXELEM,MAXSET)
@@ -46,8 +53,9 @@
       integer Outp_var_max(MAXSET)
       integer Outp_sets, Outp_multxmosaic
 
-      COMMON /Outp_l/ Outp_dostep_L
+      COMMON /Outp_l/Outp_avg_L,Outp_accum_L
       COMMON /Outp/ Outp_lev,Outp_grid,Outp_step, Outp_multxmosaic
       COMMON /Outp/ Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
+      COMMON /Outp/ Outp_numstep
       COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
       COMMON /Outp_r/ Outp_filtcoef,Outp_convmult,Outp_convadd

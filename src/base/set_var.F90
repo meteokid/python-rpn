@@ -15,16 +15,14 @@
 
 !**s/p set_var - initialize list of variables to output
 !
-
-!
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
-!
+
       implicit none
 #include <arch_specific.hf>
-!
+
       integer F_argc,F_v1,F_v2
       character *(*) F_argv_S(0:F_argc),F_cmdtyp_S
-!
+
 !author Vivian Lee - rpn - April 1999
 !
 !revision
@@ -71,6 +69,9 @@
 !Notes:
 !    ie:   sortie([UU,VV,TT],levels,2,grid,3,steps,1)
 !          sortie([PR,PC,RR],grid,3,steps,2,levels,1)
+!          sortie_p([AFSI,AFSV],grid, 1, levels, 1, steps, 1)
+!          sortie_p([AFSI],grid, 1, levels, 1, steps, 3,average)
+!          sortie_p([AFSV],grid, 1, levels, 1, steps, 3,accum)
 !
 ! sortie([vr1,vr2,vr3,...],levels,[levelset],grid,[gridset],steps,[stepset])
 !
@@ -94,15 +95,14 @@
 #include "level.cdk"
 #include "dcst.cdk"
 #include "timestep.cdk"
-!
-!*
-!
+
       character*5 stuff_S
       character*8 varname_S
       character*4 string4
       character*16 string16
       integer levset,stepset,gridset,varmax
       integer i, j, k, m, pndx, ii, jj, kk
+      logical accum_L,avg_L
 !
 !----------------------------------------------------------------
 !
@@ -127,6 +127,8 @@
       levset=-1
       gridset=-1
       stepset=-1
+      accum_L=.false.
+      avg_L=.false.
       do i=varmax+2, F_argc
          if (F_argv_S(i).eq.'levels') then
             read(F_argv_S(i+1),*) levset
@@ -134,6 +136,10 @@
             read(F_argv_S(i+1),*) gridset
          else if (F_argv_S(i).eq.'steps') then
             read(F_argv_S(i+1),*) stepset
+         else if (F_argv_S(i).eq.'accum') then
+            accum_L=.true.
+         else if (F_argv_S(i).eq.'average') then
+            avg_L=.true.
          endif
       enddo
 
@@ -276,11 +282,14 @@
              if (Outp_varnm_S(jj,j)(1:4).eq.'SD') Outp_convmult(jj,j)=100.
           enddo
           if (jj.gt.0) then
-              Outp_sets       = j
-              Outp_var_max(j) = jj
-              Outp_grid(j)    = gridset
-              Outp_lev(j)     = levset
-              Outp_step(j)    = stepset
+              Outp_sets         = j
+              Outp_var_max(j)   = jj
+              Outp_grid(j)      = gridset
+              Outp_lev(j)       = levset
+              Outp_step(j)      = stepset
+              Outp_accum_L(j)   = accum_L
+              Outp_avg_L  (j)   = avg_L
+              Outp_numstep(j)   = 1 
               if (Lun_out.gt.0) then
                  write(Lun_out,*) '***PHY***Outp_sets=',Outp_sets
                  write(Lun_out,*) 'Outp_var_max=',Outp_var_max(j)
@@ -289,6 +298,8 @@
                  write(Lun_out,*) 'Outp_grid=',Outp_grid(j)
                  write(Lun_out,*) 'Outp_lev=',Outp_lev(j)
                  write(Lun_out,*) 'Outp_step=',Outp_step(j)
+                 if (Outp_accum_L(j))write(Lun_out,*)'Outp_accum_L=',Outp_accum_L(j) 
+                 if (Outp_avg_L  (j))write(Lun_out,*)'Outp_avg_L='  ,Outp_avg_L  (j) 
               endif
           else
               if (Lun_out.gt.0) write(Lun_out,1400)
@@ -334,6 +345,6 @@
 !
 !----------------------------------------------------------------
 !
- 1400    format('SET_VAR - WARNING: NO VARIABLES DEFINED FOR THIS SET')
+ 1400 format('SET_VAR - WARNING: NO VARIABLES DEFINED FOR THIS SET')
       return
       end

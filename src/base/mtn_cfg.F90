@@ -42,8 +42,8 @@
 !
 !     ---------------------------------------------------------------
 
-      stat_liste(1)='UT1'
-      stat_liste(2)='VT1'
+      stat_liste(1)='URT1'
+      stat_liste(2)='VRT1'
       stat_liste(3)='WT1'
       stat_liste(4)='ZDT1'
       stat_liste(5)='TT1'

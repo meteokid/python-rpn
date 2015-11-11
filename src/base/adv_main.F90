@@ -85,6 +85,14 @@
                                        pxmv(l_ni,l_nj,l_nk), &
                                        pymv(l_ni,l_nj,l_nk), &
                                        pzmv(l_ni,l_nj,l_nk)  )
+
+     if (.not.associated(pxmu_s).and.Adv_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), &
+                                                            pymu_s(l_ni,l_nj,l_nk), &
+                                                            pzmu_s(l_ni,l_nj,l_nk), &
+                                                            pxmv_s(l_ni,l_nj,l_nk), &
+                                                            pymv_s(l_ni,l_nj,l_nk), &
+                                                            pzmv_s(l_ni,l_nj,l_nk)  )
+
      nullify (xth, yth, zth)
      err = gmm_get(gmmk_xth_s , xth)
      err = gmm_get(gmmk_yth_s , yth)

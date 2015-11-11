@@ -320,11 +320,11 @@ End Interface
 
       if (Inp_kind == 105) then
 
-         call inp_get ( 'UT1', 'U', Ver_ip1%m          ,&
+         call inp_get ( 'URT1', 'U', Ver_ip1%m          ,&
                          vgd_src,vgd_dst,ssur,ssu0,F_u ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
 
-         call inp_get ( 'VT1', 'V', Ver_ip1%m          ,&
+         call inp_get ( 'VRT1', 'V', Ver_ip1%m          ,&
                          vgd_src,vgd_dst,ssvr,ssv0,F_v ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
       else

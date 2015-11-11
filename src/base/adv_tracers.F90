@@ -84,7 +84,7 @@ count=0
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':M' ,fld_out,mymeta)
 
 
-           if (Tr3d_mass(n)==1.or.Tr3d_mass(n)==2) then
+           if ((Tr3d_mass(n)==1.or.Tr3d_mass(n)==2).and..NOT.Grd_yinyang_L) then
                            
            	     if (count==0) call adv_get_indices(ii_s, pxt, pyt, pzt, num, nind_s, &
                                                  i0_s, in_s, j0_s, jn_s, k0, l_nk, 't')   

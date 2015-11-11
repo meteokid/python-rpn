@@ -61,7 +61,8 @@
           Ens_mc3d_tau,  Ens_mc3d_str,  Ens_skeb_alph, Ens_skeb_alpt,&
           Ens_skeb_bfc,  Ens_skeb_lam,                               &
           Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha, Ens_mc2d_trnl,&
-          Ens_mc2d_trnh, Ens_dim2,      Ens_mc2d_min,  Ens_mc2d_max, &
+          Ens_mc2d_trnh, Ens_dim2_l,    Ens_dim2_m                  ,& 
+          Ens_dim2_lmax ,Ens_dim2_mmax, Ens_mc2d_min,  Ens_mc2d_max, &
           Ens_mc2d_std,  Ens_mc2d_tau,  Ens_mc2d_str,                &
           Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
           Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
@@ -168,8 +169,12 @@
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
          Ens_stat        =  Ens_stat.and.Ens_conf
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
-         Ens_dim2        = (Ens_mc2d_trnh+1)*(Ens_mc2d_trnh+2)/2
-         Ens_dim2_max    =  maxval(Ens_dim2)
+         Ens_dim2_l      =  Ens_mc2d_trnh-Ens_mc2d_trnl+1
+         Ens_dim2_lmax   =  maxval(Ens_dim2_l)
+         Ens_dim2_m      =  Ens_mc2d_trnh+1
+         Ens_dim2_mmax   =  maxval(Ens_dim2_m)
+
+
 
          stochphy_L  = Ens_ptp_conf.and.Ens_conf
 
@@ -180,8 +185,10 @@
             write(F_unout,'(a,l5)' )'Ens_skeb_conf  = ',Ens_skeb_conf
             write(F_unout,'(a,l5)' )'Ens_stat  = ',Ens_stat
             write(F_unout,'(a,l5)' )'Ens_skeb_div   = ',Ens_skeb_div
-            write(F_unout,'(a,9i5)')'Ens_dim2     = ',Ens_dim2
-            write(F_unout,'(a,i5)' )'Ens_dim2_max = ',Ens_dim2_max
+            write(F_unout,'(a,10i5)')'Ens_dim2_l     = ',Ens_dim2_l
+            write(F_unout,'(a,i5)' )'Ens_dim2_lmax = ',Ens_dim2_lmax
+            write(F_unout,'(a,10i5)')'Ens_dim2_m     = ',Ens_dim2_m
+            write(F_unout,'(a,i5)' )'Ens_dim2_mmax = ',Ens_dim2_mmax
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_mc2d_ncha
             write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u

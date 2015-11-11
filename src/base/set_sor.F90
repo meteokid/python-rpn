@@ -17,7 +17,6 @@
 
       subroutine set_sor ()
       use iso_c_binding
-      use phy_itf, only: phymeta,phy_getmeta
       use timestr_mod
       implicit none
 #include <arch_specific.hf>
@@ -61,18 +60,16 @@
       character*256 fn
       character(len=32) :: varname_S,outname_S,bus0_S
       logical iela
-      integer pnerror,i,idx,k,j,levset,kk,cnt,ierr,ibus,multxmosaic
+      integer pnerror,i,idx,k,j,levset,ierr
       integer, dimension (4,2) :: ixg, ixgall
       integer istat,options,rsti
       real, dimension (4,2) :: rot, rotall
-      type(phymeta) :: pmeta
 !
 !-------------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,5200)
 
       pnerror    = 0
-      multxmosaic= 0
 
       fn = trim(Path_outcfg_S)
       inquire (FILE=fn,EXIST=iela)
@@ -86,6 +83,7 @@
          if (Lun_out.gt.0) write(Lun_out,5000) pnerror
       endif
       
+      Out3_accavg_L = .false.
       Out3_ndigits = max(3,Out3_ndigits)
       select case(Out3_unit_s(3:3))
       case('STE') 
@@ -137,6 +135,7 @@
                endif
             enddo
          enddo
+         if (Outp_avg_L(k).or.Outp_accum_L(k)) Out3_accavg_L = .true.
       enddo
       do k=1, Outc_sets
          do j=1,Outc_var_max(k)
@@ -169,52 +168,6 @@
          enddo
          write(Lun_out,1006)
          write(Lun_out,2001)
-      endif
-
-! PHYSICS PACKAGE VARIABLES
-! =========================
-! Save only the short name of the requested physics variables
-! and print table of variables demanded for output
-
-      if (Schm_phyms_L) then
-         cnt = 0
-         Outp_var_S = '!@#$'
-
-         if (Lun_out.gt.0) write(Lun_out,1000)
-
-         DO_BUS: do ibus = 1,NBUS
-            bus0_S = BUS_LIST_S(ibus)
-            if (Lun_out.gt.0)  then
-               write(Lun_out,1006)
-               write(Lun_out,1002) bus0_S
-               write(Lun_out,1006)
-               write(Lun_out,902)
-            endif
-            do k=1, Outp_sets
-               do j=1,Outp_var_max(k)
-                  istat = phy_getmeta(pmeta,Outp_varnm_S(j,k),F_npath='VO', &
-                       F_bpath=bus0_S(1:1),F_quiet=.true.)
-                  if (istat <= 0) then
-                     cycle
-                  endif
-                  varname_S = pmeta%vname
-                  outname_S = pmeta%oname
-                  istat = clib_toupper(varname_S)
-                  istat = clib_toupper(outname_S)
-                  Outp_var_S(j,k) = outname_S
-                  multxmosaic = max(multxmosaic,pmeta%fmul*(pmeta%mosaic+1))
-                  cnt = cnt+1
-                  if (Lun_out.gt.0) write(Lun_out,1007) &
-                       outname_S(1:4),varname_S(1:16),Outp_nbit(j,k), &
-                       Outp_filtpass(j,k),Outp_filtcoef(j,k), &
-                       Level_typ_S(Outp_lev(k))
-               enddo
-            enddo
-         enddo DO_BUS
-
-         if (Lun_out.gt.0)  write(Lun_out,1006)
-!     maximum size of slices with one given field that is multiple+mosaic
-         Outp_multxmosaic = multxmosaic+10
       endif
 
       ixg = 0 ; ixgall = 0 ; rot = 0. ; rotall = 0.
@@ -254,13 +207,11 @@
   900 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| DYNAMIC VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
   901 format('|',1x,'OUTPUT',1x,'|',2x,'   OUTCFG   ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
   902 format('|',1x,'OUTPUT',1x,'|',2x,'PHYSIC NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
-  903 format('|',1x,'OUTPUT',1x,'|',2x,'CHEMCL NAME ',2x,'|',2x,' BITS  |','FILTPASS|FILTCOEF| LEV |')
  1000 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'| PHYSICS VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1001 format(/'+',35('-'),'+',17('-'),'+',5('-'),'+'/'|CHEMICAL VARIABLES REQUESTED FOR OUTPUT              |',5x,'|')
  1002 format('|',5X,a9,' Bus ',40x, '|')
  1006 format('+',8('-'),'+',16('-'),'+',9('-'),'+',8('-'),'+',8('-'),'+',5('-'))
  1007 format('|',2x,a4,2x,'|',a16,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
- 1008 format('|',2x,a4,2x,'|',a4,12x,'|',i5,'    |',i8,'|',f8.3,'|',a4,' |')
  2001 format('* Note: NO filter is applied to 3D fields on M levels')
  3000 format(/,'SET_SOR - OUTPUT FILES will be in ',A8)
  5000 format( &

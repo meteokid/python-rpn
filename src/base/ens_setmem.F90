@@ -49,12 +49,14 @@
                             1,l_nj,0,0,l_nj,     &
                             1,l_nk,0,0,l_nk,     &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta2d_anm,                                     &
-                            1,Ens_mc3d_dim,0,0,Ens_mc3d_dim,                &
-                            -Ens_mc3d_mzt,Ens_mc3d_mzt,0,0,2*Ens_mc3d_mzt+1,&
+       call gmm_build_meta3D(meta3d_anm,                      &
+                            1,Ens_dim2_lmax,0,0,Ens_dim2_lmax,  &
+                            1,Ens_dim2_mmax,0,0,Ens_dim2_mmax,  &
+                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,&
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta2D(meta2d_znm,                       &
-                            1,Ens_dim2_max,0,0,Ens_dim2_max,  &
+      call gmm_build_meta3D(meta3d_bnm,                       &
+                            1,Ens_dim2_lmax,0,0,Ens_dim2_lmax,  &
+                            1,Ens_dim2_mmax,0,0,Ens_dim2_mmax,  &
                             1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,&
                             0,GMM_NULL_FLAGS)
       call gmm_build_meta2D(meta2d_dum,                       &
@@ -69,7 +71,7 @@
       gmmk_ensdiv_s= 'ENSDIV'
       gmmk_ensvor_s= 'ENSVOR'
       gmmk_anm_s   = 'ANMENS'
-      gmmk_znm_s   = 'ZNMENS'
+      gmmk_bnm_s   = 'BNMENS'
       gmmk_dumdum_s= 'DUMDUM'
 
       istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_INAN)
@@ -86,10 +88,10 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'ensdiv'
       istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'ensvor'
-      istat = gmm_create(gmmk_anm_s   ,anm   ,meta2d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_anm_s   ,anm   ,meta3d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'anm'
-      istat = gmm_create(gmmk_znm_s   ,znm   ,meta2d_znm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-      if (GMM_IS_ERROR(istat))write(*,6000)'znm'
+      istat = gmm_create(gmmk_bnm_s   ,bnm   ,meta3d_bnm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      if (GMM_IS_ERROR(istat))write(*,6000)'bnm'
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 

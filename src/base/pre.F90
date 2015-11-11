@@ -216,8 +216,8 @@
          end do
          end do
 
-         w1= Ver_igt_8*Ver_wp_8%m(k)
-         w2= Ver_igt_8*Ver_wm_8%m(k)*Ver_onezero(k)
+         w1= Ver_igt_8*Ver_wpA_8(k)
+         w2= Ver_igt_8*Ver_wmA_8(k)*Ver_onezero(k)
          do j= j0, jn
          do i= i0, in
 
@@ -300,8 +300,8 @@
          km=max(k-1,1)
          w1= Ver_idz_8%m(k) + Ver_wp_8%m(k)
          w2=(Ver_idz_8%m(k) - Ver_wm_8%m(k))*Ver_onezero(k)
-         w3=Ver_wp_8%m(k)*Ver_epsi_8(k)
-         w4=Ver_wm_8%m(k)*Ver_epsi_8(km)*Ver_onezero(k)
+         w3=Ver_wpA_8(k)*Ver_epsi_8(k)
+         w4=Ver_wmA_8(k)*Ver_epsi_8(km)*Ver_onezero(k)
          do j= j0, jn
          do i= i0, in
             F_rc(i,j,k) = F_rc(i,j,k) - Cstv_bar0_8 * F_fis(i,j) &

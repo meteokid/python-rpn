@@ -156,6 +156,7 @@
       namelist /gem_cfgs/ stat_liste
 
       namelist /gem_cfgs/ Tr3d_list_S
+      namelist /gem_cfgs/ Tr3d_anydate_L
 !Vspng
       namelist /gem_cfgs/ Vspng_coeftop
       namelist /gem_cfgs/ Vspng_njpole
@@ -284,6 +285,8 @@
       namelist /gem_cfgs_p/ Spn_step
       namelist /gem_cfgs_p/ Spn_weight_L
       namelist /gem_cfgs_p/ Spn_wt_pwr
+
+      namelist /gem_cfgs_p/ Tr3d_anydate_L
 !Vspng
       namelist /gem_cfgs_p/ Vspng_coeftop
       namelist /gem_cfgs_p/ Vspng_njpole

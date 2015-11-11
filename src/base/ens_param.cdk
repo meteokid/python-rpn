@@ -84,8 +84,9 @@
       integer Ens_mc_seed, Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz
       integer Ens_mc3d_trnl, Ens_mc3d_trnh, Ens_mc3d_mzt, Ens_mc3d_dim
       integer Ens_mc2d_nlon(MAX2DC), Ens_mc2d_nlat(MAX2DC), Ens_mc2d_ncha
-      integer Ens_mc2d_trnl(MAX2DC), Ens_mc2d_trnh(MAX2DC), Ens_dim2(MAX2DC)
-      integer Ens_dim2_max
+      integer Ens_mc2d_trnl(MAX2DC), Ens_mc2d_trnh(MAX2DC)
+      integer Ens_dim2_l(MAX2DC),Ens_dim2_m(MAX2DC)
+      integer Ens_dim2_lmax,Ens_dim2_mmax
       logical Ens_conf, Ens_skeb_conf, Ens_skeb_dif, Ens_skeb_gwd
       logical Ens_stat, Ens_skeb_div, Ens_ptp_conf
       real Ens_mc3d_max, Ens_mc3d_min, Ens_mc3d_std
@@ -101,7 +102,8 @@
       common / Ens_i / Ens_mc_seed, Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz  
       common / Ens_l / Ens_mc3d_trnl, Ens_mc3d_trnh, Ens_mc3d_mzt, Ens_mc3d_dim 
       common / Ens_l / Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha                  
-      common / Ens_l / Ens_mc2d_trnl, Ens_mc2d_trnh, Ens_dim2, Ens_dim2_max
+      common / Ens_l / Ens_mc2d_trnl, Ens_mc2d_trnh, Ens_dim2_l, Ens_dim2_m
+      common / Ens_l / Ens_dim2_lmax, Ens_dim2_mmax
 !
       common / Ens_r / Ens_mc3d_max, Ens_mc3d_min, Ens_mc3d_std
       common / Ens_r / Ens_mc3d_tau, Ens_mc3d_str, Ens_skeb_alph, Ens_skeb_alpt

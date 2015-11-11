@@ -109,9 +109,9 @@
 !     Diffusion backscatter
 !
       if(Ens_stat)then
-         call glbstat2 (F_ut1,'UT1','AT BEG', &
+         call glbstat2 (F_ut1,'URT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_vt1,'VT1','AT BEG', &
+         call glbstat2 (F_vt1,'VRT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_difut1,'DUT1','AT BEG', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
@@ -226,9 +226,9 @@
       enddo
 
       if(Ens_stat)then
-         call glbstat2 (F_ut1,'UT1','AT END', &
+         call glbstat2 (F_ut1,'URT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
-         call glbstat2 (F_vt1,'VT1','AT END', &
+         call glbstat2 (F_vt1,'VRT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)
          call glbstat2 (F_difut1,'DUT1','AT END', &
            l_minx,l_maxx,l_miny,l_maxy,1,E_nk,1,G_ni,1,G_nj,1,E_nk)

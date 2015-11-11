@@ -143,7 +143,8 @@
                                           Ver_gama_8(G_nk  ), &
                  Ver_epsi_8(G_nk  ),     Ver_FIstr_8(G_nk+1), &
                   Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
-               Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ) )
+               Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
+                  Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
 
       Cstv_pref_8 = 100000.d0
       Ver_code    = 6
@@ -247,6 +248,8 @@
             Ver_wp_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
          endif
             Ver_wm_8%m(k) = one-Ver_wp_8%m(k)
+            Ver_wpA_8(k)= Ver_wp_8%m(k)
+            Ver_wmA_8(k)= Ver_wm_8%m(k)
       enddo
 
           Ver_dbdz_8%m(1) = Ver_wp_8%m(1) * Ver_dbdz_8%t(1)  &
@@ -280,6 +283,8 @@
       if(Schm_lift_ltl_L) then
          Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
          Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
+         Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wp_8%m(G_nk)
+         Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
       endif
 
 !     -------------------------------------------------------

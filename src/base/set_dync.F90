@@ -123,7 +123,7 @@
                   + Ver_css_8 * ( w1 + w2 )
       Ver_betas_8 = Ver_css_8 * ( w1 - w2 )
       w1=Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk)*(Ver_idz_8%m(G_nk)+Ver_wp_8%m(G_nk))/Ver_wpstar_8(G_nk)
-      w2=Ver_wp_8%m(G_nk)*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)*(one-Dcst_cappa_8*Ver_wpstar_8(G_nk))
+      w2=Ver_wp_8%m(G_nk)*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)*(one-Dcst_cappa_8)
       Ver_cssp_8  = Ver_css_8 * ( w1 - w2 )
 
       Cstv_bar0_8 = zero

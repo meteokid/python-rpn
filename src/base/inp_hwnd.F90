@@ -55,14 +55,7 @@ End Interface
 
       call inp_read_uv ( ur, vr, ip1_list, nka )
 
-      if (nka .lt. 1) then
-         if (associated(ip1_list)) deallocate (ip1_list)
-         if (associated(ur      )) deallocate (ur      )
-         if (associated(vr      )) deallocate (vr      )
-         return
-      endif
-
-      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka ))
+      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) )
 
       p0    => F_ssur(1:l_ni,1:l_nj)
       ptr3d => srclev(1:l_ni,1:l_nj,1:nka)

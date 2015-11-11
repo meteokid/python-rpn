@@ -13,55 +13,47 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemdm - Main entry point for the GEMDM component
-!
-      subroutine gemdm
-      implicit none
+!**s/r image_to_real_winds - Convert image winds to real winds
+
+   subroutine image_to_real_winds( F_u,F_v,Minx,Maxx,Miny,Maxy,F_nk )
+
+   implicit none
 #include <arch_specific.hf>
-!
-!     ---------------------------------------------------------------
-!
-! Initialize: Domain, MPI, processor topology and the model component
 
-      call init_component ('MOD')
+   integer                                  , intent(IN)     :: Minx,Maxx,Miny,Maxy,F_nk
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(IN OUT) :: F_u, F_v
 
-! Establish model configuration, domain decomposition and main memory
+#include "glb_ld.cdk"
+#include "geomg.cdk"
+#include "dcst.cdk"
 
-      call set_world_view
+   ! Local variables
+   integer :: i,j,k
+   real :: c1
 
-! Initialize geometry of the model
+!$omp parallel private(c1)
+!$omp do
+   do k = 1, F_nk
+      do j = 1, l_nj
+         c1 = Dcst_rayt_8 / Geomg_cy_8(j)
+         do i = 1, l_niu
+            F_u(i,j,k) = c1 * F_u(i,j,k)
+         enddo
+      enddo
+   enddo
+!$omp enddo
+!$omp do
+   do k = 1, F_nk
+      do j = 1, l_njv
+         c1 = Dcst_rayt_8 / Geomg_cyv_8(j)
+         do i = 1, l_ni
+            F_v(i,j,k) = c1 * F_v(i,j,k)
+         enddo
+      enddo
+   enddo
+!$omp enddo
+!$omp end parallel
 
-      call set_geom
+   return
 
-! Initialize commons for output control
-
-      call set_sor
-
-! Initialize the ensemble prevision system
-
-      call itf_ens_init
-
-! Initialize the physics parameterization package
-
-      call itf_phy_init
-
-! Initialize tracers
-
-      call tracers
-
-! Setup commons
-
-      call set_cn1
-
-! Run GEM
-
-      call gem_ctrl
-
-! Terminate
-
-      call stop_world_view
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+end subroutine image_to_real_winds

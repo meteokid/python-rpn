@@ -76,11 +76,9 @@
       real*8 Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8
       real*8 Ver_alfat_8,Ver_cst_8,Ver_cstp_8
       real*8 Ver_igt_8,Ver_igt2_8,Ver_ikt_8
-      real*8 Ver_wm1_8,Ver_wm2_8,Ver_Falfas_8,Ver_Fbetas_8
       common / alphast / Ver_alfas_8,Ver_betas_8,Ver_css_8,Ver_cssp_8
       common / alphast / Ver_alfat_8,Ver_cst_8,Ver_cstp_8
       common / alphast / Ver_igt_8,Ver_igt2_8,Ver_ikt_8
-      common / alphast / Ver_wm1_8,Ver_wm2_8,Ver_Falfas_8,Ver_Fbetas_8
 !
       integer Ver_code
       common /ver_i/ Ver_code
@@ -90,9 +88,10 @@
       real*8, dimension(:)    , pointer :: Ver_gama_8,Ver_epsi_8
       real*8, dimension(:)    , pointer :: Ver_FIstr_8,Ver_bzz_8
       real*8, dimension(:)    , pointer :: Ver_wpstar_8,Ver_wmstar_8
+      real*8, dimension(:)    , pointer :: Ver_wpA_8,Ver_wmA_8
       common /ver_p8/ ver_table_8
       common /ver_p8/ Ver_gama_8,Ver_epsi_8,Ver_FIstr_8,Ver_bzz_8
-      common /ver_p8/ Ver_wpstar_8,Ver_wmstar_8
+      common /ver_p8/ Ver_wpstar_8,Ver_wmstar_8,Ver_wpA_8,Ver_wmA_8
 !
       real, dimension(:), pointer :: Ver_onezero
       common /ver_p/ Ver_onezero

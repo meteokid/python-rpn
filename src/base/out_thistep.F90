@@ -63,6 +63,7 @@
             if (F_step .eq. Timestep(i,j)) then
                do k=1, o_sets
                   if ( o_step(k).eq.j ) then
+                     Outp_numstep(k)= max(1,Timestep(i,j)-Timestep(max(1,i-1),j))
                      if ( Level_typ_S(o_lev(k)) == 'M') then
                         cnt_m= cnt_m+1
                         cnt  = cnt  +1

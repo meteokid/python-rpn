@@ -40,8 +40,8 @@
 #include "vt0.cdk"
 #include "vt1.cdk"
 
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'UT0', 'UT1' /)
-      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VT0', 'VT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'URT0', 'URT1' /)
+      character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VRT0', 'VRT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: tt_list  = (/ 'TT0', 'TT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: st_list  = (/ 'ST0', 'ST1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: wt_list  = (/ 'WT0', 'WT1' /)

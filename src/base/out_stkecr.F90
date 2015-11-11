@@ -105,7 +105,7 @@
                   if (Ptopo_couleur.eq.0) &
                   err = fstecr (wk(1,1,k),wk,-meta(kk)%nbits,Out_unf,Out_dateo ,&
                                 Out_deet,Out_npas,nis,2*njs,1,meta(kk)%ip1     ,&
-                                Out_ip2,Out_ip3,Out_typvar_S,meta(kk)%nv       ,&
+                                meta(kk)%ip2,Out_ip3,Out_typvar_S,meta(kk)%nv  ,&
                                 Out_etik_S,'U',meta(kk)%ig1,meta(kk)%ig2       ,&
                                 meta(kk)%ig3,Out_ig4,meta(kk)%dtyp,Out_rewrit_L)
                else
@@ -119,7 +119,7 @@
 
                   err = fstecr(guwrap,guwrap,-meta(kk)%nbits,Out_unf,Out_dateo,&
                                Out_deet,out_npas,ni,njs,1,meta(kk)%ip1        ,&
-                               Out_ip2,Out_ip3,Out_typvar_S,meta(kk)%nv       ,&
+                               meta(kk)%ip2,Out_ip3,Out_typvar_S,meta(kk)%nv  ,&
                                Out_etik_S,'Z',meta(kk)%ig1,meta(kk)%ig2       ,&
                                meta(kk)%ig3,Out_ig4,meta(kk)%dtyp,Out_rewrit_L)
                endif

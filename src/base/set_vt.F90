@@ -95,8 +95,8 @@
       mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
       mymetasc_p00   = SET_GMMUSR_FLAG(metasc     ,flag_s_f)
 
-      gmmk_ut0_s   =  'UT0'
-      gmmk_vt0_s   =  'VT0'
+      gmmk_ut0_s   =  'URT0'
+      gmmk_vt0_s   =  'VRT0'
       gmmk_tt0_s   =  'TT0'
       gmmk_st0_s   =  'ST0'
       gmmk_wt0_s   =  'WT0'
@@ -106,8 +106,8 @@
       gmmk_qdt0_s  = 'QDT0'
       gmmk_p00_s   =  'P00'
 
-      gmmk_ut1_s   =  'UT1'
-      gmmk_vt1_s   =  'VT1'
+      gmmk_ut1_s   =  'URT1'
+      gmmk_vt1_s   =  'VRT1'
       gmmk_tt1_s   =  'TT1'
       gmmk_st1_s   =  'ST1'
       gmmk_wt1_s   =  'WT1'

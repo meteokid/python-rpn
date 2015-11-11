@@ -44,22 +44,24 @@
 #include "cstv.cdk"
 #include "ver.cdk"
 
-      integer i,j,k,kq
-      real*8  c1, c2
+      integer i,j,k,kq,kmq
+      real*8  w1, qbar
       real*8, parameter :: one = 1.d0, half = .5d0
 !
 !     ---------------------------------------------------------------
 !
-!$omp parallel private (kq,c1,c2)
+!$omp parallel private (kq,kmq,w1,qbar)
 !$omp do
       do k=1,Nk
          kq=max(2,k)
+         kmq=max(2,k-1)
          do j= j0, jn
          do i= i0, in
-            c1= one + ver_dbdz_8%t(k)*F_s(i,j)
-            c2= half*(F_q(i,j,k+1) + F_q(i,j,kq)*Ver_onezero(k))
-            F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))/c1
-            F_mu(i,j,k) = exp(c2)*(F_mu(i,j,k)+one)-one
+            w1= one + ver_dbdz_8%t(k)*F_s(i,j)
+            F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))/w1
+            qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
+            qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+            F_mu(i,j,k) = exp(qbar)*(F_mu(i,j,k)+one)-one
          enddo
          enddo
       enddo

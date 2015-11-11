@@ -109,23 +109,23 @@
      
       call out_href3 ( 'U_point', Grdc_gid, Grdc_gif, 1,&
                                   Grdc_gjd, Grdc_gjf, 1 )
-      call out_fstecr2 ( ut1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'UT1' ,1., &
+      call out_fstecr2 ( ut1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'URT1' ,1., &
                          0.,5,G_nk,indo,G_nk,32,.false. ) 
       if ( out3_sfcdiag_L ) then
          call itf_phy_sfcdiag(tr1(l_minx,l_miny),&
               l_minx,l_maxx,l_miny,l_maxy,'PW_UU:P',istat,.false.)
          call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
-                            'UT1' ,1., 0.,4,1,indo,1,32,.false. ) 
+                            'URT1' ,1., 0.,4,1,indo,1,32,.false. ) 
       endif
       call out_href3 ( 'V_point', Grdc_gid, Grdc_gif, 1,&
                                   Grdc_gjd, Grdc_gjf, 1 )
-      call out_fstecr2 ( vt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'VT1' ,1., &
+      call out_fstecr2 ( vt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'VRT1' ,1., &
                          0.,5,G_nk,indo,G_nk,32,.false. )
       if ( out3_sfcdiag_L ) then
          call itf_phy_sfcdiag(tr1(l_minx,l_miny),&
               l_minx,l_maxx,l_miny,l_maxy,'PW_VV:P',istat,.false.)
          call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
-                            'VT1' ,1., 0.,4,1,indo,1,32,.false. ) 
+                            'VRT1' ,1., 0.,4,1,indo,1,32,.false. ) 
       endif
 
       deallocate (hybm,hybt,tr1)
