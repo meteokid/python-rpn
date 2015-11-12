@@ -70,7 +70,7 @@
 !
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
-      call ens_marfield_cg (mcsph1,E_nk)
+      call ens_marfield (mcsph1,E_nk)
 
       if (.not.Ens_skeb_conf) then
          return
