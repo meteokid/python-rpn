@@ -39,11 +39,13 @@
 !        2 letters
 
 #include <clib_interface_mu.hf>
+#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "tr3d.cdk"
 
       character*512 varname,attributes
-      character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S,basename_S,time_S,ext_S
+      character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
+                                          basename_S,time_S,ext_S
       integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta,err
       type(phymeta), dimension(:), pointer :: pmeta
 !
@@ -113,6 +115,8 @@
             write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i)
          end do
       endif
+
+      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
 
  1001 format (/' Final liste of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass')
  1002 format (4x,a4,2l6,2i6)

@@ -30,7 +30,6 @@
 #include <WhiteBoard.hf>
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
-#include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "out.cdk"
@@ -198,8 +197,6 @@
       Out_etik_S   = Out3_etik_s ; Out_gridtyp_S= 'E'
       Out_endstepno= min(Step_total, Lctl_step+rsti)
       Out_deet     = int(Cstv_dt_8)
-
-      call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
       istat= wb_put('model/Output/etik', Out3_etik_S, options)      

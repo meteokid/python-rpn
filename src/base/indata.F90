@@ -90,9 +90,11 @@
                                l_minx,l_maxx,l_miny,l_maxy,&
                             G_nk,'TR/',':P',Step_runstrt_S )
       else
+         call timing_start2 ( 71, 'INITIAL_input', 2)
          call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                                l_minx,l_maxx,l_miny,l_maxy,&
                             G_nk,'TR/',':P',Step_runstrt_S )
+         call timing_stop  ( 71 )
       endif
 
       call adv_check_tracers

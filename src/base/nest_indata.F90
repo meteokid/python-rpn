@@ -62,10 +62,12 @@
 
       nest_zd_fin=0. ; nest_w_fin=0. ; nest_q_fin= 0.
 
+      call timing_start2 ( 26, 'NEST_input', 10 )
       call inp_data ( nest_u_fin , nest_v_fin, nest_w_fin, nest_t_fin,&
                       nest_zd_fin, nest_s_fin, nest_q_fin, fis0      ,&
                       l_minx,l_maxx,l_miny,l_maxy,G_nk,'NEST/'       ,&
                       ':F', F_datev_S)
+      call timing_stop (26)
 
       call diag_zd_w2( nest_zd_fin, nest_w_fin, nest_xd_fin          ,&
                        nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin,&

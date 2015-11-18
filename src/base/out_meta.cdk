@@ -1,7 +1,7 @@
       type :: meta_fstecr
         sequence
         character*4 nv
-        integer :: ip1,ip2,ig1,ig2,ig3,nbits,dtyp,ni,nj
+        integer :: ip1,ip2,ip3,ig1,ig2,ig3,nbits,dtyp,ni,nj
       end type meta_fstecr
 
       integer out_stk_full, out_stk_cnt, out_stk_part(10000)

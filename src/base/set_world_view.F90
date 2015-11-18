@@ -40,7 +40,7 @@
 
       integer, external :: gem_nml,gemdm_config,grid_nml2, &
                            adv_nml,adv_config,adx_nml,adx_config, &
-                           step_nml
+                           step_nml, set_io_pes
       character*50 LADATE,dumc1_S
       integer err(8),f1,f2,f3,f4
 !
@@ -123,25 +123,25 @@
 
 ! Establish a grid id for RPN_COMM package and obtain Out3_iome,Inp_iome
 
-      Out3_comm_id    = RPN_COMM_create_2dgrid (  G_ni, G_nj, &
-                              l_minx, l_maxx, l_miny, l_maxy  )
       Out3_npes= max(1,min(Out3_npes,min(Ptopo_npex,Ptopo_npey)**2))
-      Out3_comm_setno = RPN_COMM_create_io_set (Out3_npes, 0)
-      Out3_iome       = RPN_COMM_is_io_pe ( Out3_comm_setno )
-      Out3_comm_io    = RPN_COMM_io_pe_comm (Out3_comm_id)
+      Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
 
-      Inp_comm_id    = RPN_COMM_create_2dgrid (  G_ni, G_nj, &
-                              l_minx, l_maxx, l_miny, l_maxy  )
-      Inp_npes= max(1,min(Inp_npes,min(Ptopo_npex,Ptopo_npey)**2))
-      Inp_comm_setno = RPN_COMM_create_io_set (Inp_npes, 0)
-      Inp_iome       = RPN_COMM_is_io_pe ( Inp_comm_setno )
-      Inp_comm_io    = RPN_COMM_io_pe_comm (Inp_comm_id)
+      err= 0
+      if (lun_out.gt.0) write (lun_out,1002) 'Output'
+      err(1)= set_io_pes (Out3_comm_id,Out3_comm_setno,Out3_iome,&
+                          Out3_comm_io,Out3_iobcast,Out3_npes)
+      if (lun_out.gt.0) write (lun_out,1002) 'Input'
+      err(2)= set_io_pes (Inp_comm_id ,Inp_comm_setno ,Inp_iome ,&
+                          Inp_comm_io ,Inp_iobcast ,Inp_npes )
+      call gem_error ( min(err(1),err(2)),'set_world_view', &
+                       'IO pes config is invalid' )
 
 ! Initializes GMM
 
       call set_gmm
 			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
+ 1002 format (/ ' Creating IO pe set for ',a)
 !
 !-------------------------------------------------------------------
 !

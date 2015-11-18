@@ -81,14 +81,15 @@
       call gem_error ( err_code, 'inp_open', &
                        'Problems opening input files' )
 
-      call rpn_comm_bcast ( n123, 3, "MPI_INTEGER", 0, "grid", err)
+      call rpn_comm_bcast ( n123, 3, "MPI_INTEGER", Inp_iobcast, &
+                            "grid", err )
 
       Inp_kind= -1
 
       if (n123(1) > 0) then
          if (Inp_iome .ne. 0) allocate(vtbl_8(n123(1),n123(2),n123(3)))
          call rpn_comm_bcast ( vtbl_8,size(vtbl_8), &
-             "MPI_DOUBLE_PRECISION", 0, "grid", err )
+             "MPI_DOUBLE_PRECISION", Inp_iobcast, "grid", err )
          if (Inp_iome .ne. 0) err= vgd_new ( F_vgd_src, vtbl_8 )
          deallocate (vtbl_8)
          err= vgd_get ( F_vgd_src, key='KIND',value=Inp_kind )
@@ -104,7 +105,8 @@
                        -1,-1,-1,' ','ST1' )
          if (err >= 0) Inp_kind= 105
       endif
-      call rpn_comm_bcast ( Inp_kind, 1, "MPI_INTEGER", 0, "grid", err)
+      call rpn_comm_bcast ( Inp_kind, 1, "MPI_INTEGER", Inp_iobcast, &
+                            "grid", err )
 !
 !-----------------------------------------------------------------------
 !

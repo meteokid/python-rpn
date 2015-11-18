@@ -85,8 +85,6 @@ End Interface
 !
       if (Lun_out.gt.0) write(lun_out,9000) trim(F_datev)
 
-      call timing_start2 ( 71, 'FST_input', 2)
-
       if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',.false.)
 
       initial_data= trim(F_datev).eq.trim(Step_runstrt_S)
@@ -290,8 +288,10 @@ End Interface
                         vgd_src,vgd_dst,ssvr,ssv0,F_v,&
                         l_minx,l_maxx,l_miny,l_maxy,G_nk )
          ut1_L= ( err == 0 )
-         if ( ut1_L ) call image_to_real_winds( F_u,F_v, &
-              l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         ! Remove the .and. part of this test be 2021
+         if ( ut1_L .and. Inp_ut1_is_urt1 == -1 ) &
+              call image_to_real_winds ( F_u,F_v, l_minx,l_maxx,&
+                                         l_miny,l_maxy, G_nk )
 
       endif
 
@@ -304,7 +304,6 @@ End Interface
       call inp_close ()
 
       istat = fstopc ('MSGLVL','INFORM',.false.)
-      call timing_stop  ( 71 )
 
  9000 format(/,' TREATING INPUT DATA VALID AT: ',a,&
              /,' ===============================================')

@@ -162,7 +162,8 @@ End Interface
          allocate (uhr(1,1), vhr(1,1))
       endif
 
- 999  call rpn_comm_bcast (lislon, 3, "MPI_INTEGER", 0, "grid", err)
+ 999  call rpn_comm_bcast (lislon, 3, "MPI_INTEGER", Inp_iobcast, &
+                           "grid", err)
       F_nka= lislon
 
       if (F_nka .gt. 0) then
@@ -170,7 +171,7 @@ End Interface
          if (F_nka .ge. 1) then
             if (Inp_iome .lt.0) allocate ( F_ip1(F_nka) )
             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
-                                  0, "grid", err )
+                                  Inp_iobcast, "grid", err )
          endif
 
          allocate (zlist(nz)) ; zlist= -1

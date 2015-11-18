@@ -34,10 +34,11 @@
 #include "inp.cdk"
 #include "ptopo.cdk"
 #include "tr3d.cdk"
+#include "iau.cdk"
 #include <rmnlib_basics.hf>
 
       integer, external :: RPN_COMM_shuf_ezdist, &
-                           samegrid_gid, samegrid_rot
+                           samegrid_gid, samegrid_rot, inp_is_real_wind
       character*1 typ,grd
       character*4 nomvar,var
       character*12 lab,interp_S
@@ -46,6 +47,8 @@
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
+      ! Remove the following line by 2021
+      integer ut1_is_urt1
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, nkk, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
@@ -60,6 +63,8 @@
 !
       F_nka= -1 ; local_nk= 0
       add= 0.d0 ; mult= 1.d0
+      ! Remove the following line by 2021
+      ut1_is_urt1 = -1
       if (associated(F_ip1 )) deallocate (F_ip1 )
       if (associated(F_dest)) deallocate (F_dest)
       nullify (F_ip1,F_dest)
@@ -150,6 +155,9 @@
             cnt= cnt+1
             err= fstlir ( wk1(1,cnt), Inp_handle,n1,n2,n3,datev,&
                           LAB, F_ip1(i), P2, P3,TYP, VAR )
+            ! Remove the following line by 2021
+            if( ut1_is_urt1 == -1 .and. Iau_period > 0) &
+                 ut1_is_urt1 = inp_is_real_wind(wk1(1,cnt),n1*n2,nomvar)
          end do
 
          if (local_nk.gt.0) then
@@ -208,8 +216,12 @@
          allocate (wk2(1,1))
       endif
 
- 999  call rpn_comm_bcast (lislon, 2, "MPI_INTEGER", 0, "grid", err)
+ 999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
+                            "grid", err )
       F_nka= lislon
+      ! Remove the following line by 2021 
+      call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
+                                "MPI_INTEGER", "MPI_MAX", "grid", err )
 
       if (F_nka .gt. 0) then
 
@@ -217,7 +229,7 @@
          if (F_nka .ge. 1) then
             if (Inp_iome .lt.0) allocate ( F_ip1(F_nka) )
             call rpn_comm_bcast ( F_ip1, F_nka, "MPI_INTEGER", &
-                                  0, "grid", err )
+                                  Inp_iobcast, "grid", err )
          endif
 
          allocate (zlist(nz)) ; zlist= -1

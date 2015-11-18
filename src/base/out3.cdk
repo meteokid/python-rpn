@@ -57,7 +57,8 @@
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
       integer Out3_filtpass_max, Out3_xnbits_max, Out3_ip3
       integer Out3_date, Out3_postproc_fact
-      integer Out3_npes, Out3_comm_id, Out3_comm_setno, Out3_iome, Out3_comm_io
+      integer Out3_npes, Out3_comm_id, Out3_comm_setno, Out3_iome, &
+              Out3_comm_io, Out3_iobcast
       integer Out3_lieb_nk, Out3_lieb_maxite
       real    Out3_filtcoef(MAXELEM)
       real    Out3_lieb_conv, Out3_lieb_levels(MAXELEM)
@@ -72,7 +73,8 @@
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postproc_fact
       common / Out3_i / Out3_nbitg,Out3_linbot,Out3_conv_max
-      common / Out3_i / Out3_npes, Out3_comm_id, Out3_comm_setno, Out3_iome, Out3_comm_io
+      common / Out3_i / Out3_npes, Out3_comm_id, Out3_comm_setno, &
+                        Out3_iome, Out3_comm_io, Out3_iobcast
       common / Out3_i / Out3_ndigits, Out3_close_interval, Out3_ip3
       common / Out3_i / Out3_lieb_nk, Out3_lieb_maxite
       common / out3_r / Out3_filtcoef, Out3_lieb_conv, Out3_lieb_levels

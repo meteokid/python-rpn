@@ -42,7 +42,7 @@
 #include <rmnlib_basics.hf>
       include "rpn_comm.inc"
 
-      integer, external :: RPN_COMM_shuf_ezcoll
+!      integer, external :: RPN_COMM_shuf_ezcoll
       logical wrapit_L
       integer  nz, err, ni, nis, njs, k, kk
       integer, dimension (:)    , allocatable :: zlist
