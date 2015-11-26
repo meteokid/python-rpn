@@ -13,9 +13,8 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
 !**s/r out_thistep
-!
+
       subroutine out_thistep ( F_sorties, F_step, ns, F_component_S )
       implicit none
 #include <arch_specific.hf>
@@ -58,12 +57,14 @@
 
       cnt=0 ; cnt_m=0 ; cnt_p=0 ; cnt_h=0
 
+
       do j=1,Timestep_sets
           do i=1,Timestep_max(j)
             if (F_step .eq. Timestep(i,j)) then
                do k=1, o_sets
                   if ( o_step(k).eq.j ) then
-                     Outp_numstep(k)= max(1,Timestep(i,j)-Timestep(max(1,i-1),j))
+                     if (trim(F_component_S) == 'PHY' ) &
+                     Outp_lasstep(k,F_step)= Timestep(max(1,i-1),j)
                      if ( Level_typ_S(o_lev(k)) == 'M') then
                         cnt_m= cnt_m+1
                         cnt  = cnt  +1

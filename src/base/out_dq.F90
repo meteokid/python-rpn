@@ -80,9 +80,9 @@
             call out_href3 ( 'Mass_point', &
                     Grid_x0 (gridset), Grid_x1 (gridset), 1, &
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )
-            call out_fstecr2( div, l_minx,l_maxx,l_miny,l_maxy        ,&
+            call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'DD  ',Outd_convmult(pndd,set),&
-                              Outd_convadd(pndd,set),kind             ,&
+                              Outd_convadd(pndd,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pndd,set),.false.)
             deallocate (div)
          endif
@@ -100,14 +100,14 @@
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )
 
             if (pnqq.gt.0) &
-            call out_fstecr2( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
+            call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy        ,&
                               Ver_hyb%m,'QQ  ',Outd_convmult(pnqq,set),&
-                              Outd_convadd(pnqq,set),kind             ,&
+                              Outd_convadd(pnqq,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pnqq,set),.false.)
             if (pnqr.gt.0) &
-            call out_fstecr2( qr, l_minx,l_maxx,l_miny,l_maxy         ,&
+            call out_fstecr3( qr, l_minx,l_maxx,l_miny,l_maxy         ,&
                               Ver_hyb%m,'QR  ',Outd_convmult(pnqr,set),&
-                              Outd_convadd(pnqr,set),kind             ,&
+                              Outd_convadd(pnqr,set),kind,-1          ,&
                               G_nk, indo,nko, Outd_nbit(pnqr,set),.false.)
             deallocate (vor, qr)
 
@@ -150,9 +150,9 @@
             call out_href3 ( 'Mass_point', &
                     Grid_x0 (gridset), Grid_x1 (gridset), 1, &
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )
-            call out_fstecr2( div, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr3( div, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'DD  ',Outd_convmult(pndd,set),&
-                              Outd_convadd(pndd,set), kind     ,&
+                              Outd_convadd(pndd,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pndd,set),.false.)
             deallocate (div)
          endif
@@ -171,14 +171,14 @@
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )
 
             if (pnqq.gt.0) &
-            call out_fstecr2( vor, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr3( vor, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QQ  ',Outd_convmult(pnqq,set),&
-                              Outd_convadd(pnqq,set), kind     ,&
+                              Outd_convadd(pnqq,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pnqq,set),.false.)
             if (pnqr.gt.0) &
-            call out_fstecr2 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr3 ( qr, l_minx,l_maxx,l_miny,l_maxy, &
                               rf,'QR  ',Outd_convmult(pnqr,set),&
-                              Outd_convadd(pnqr,set), kind     ,&
+                              Outd_convadd(pnqr,set), kind,-1  ,&
                               nko, indo, nko, Outd_nbit(pnqr,set),.false.)
             deallocate (vor, qr)
           endif

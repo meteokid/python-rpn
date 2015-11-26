@@ -70,6 +70,7 @@
 !--------------------------------------------------------------------
 !
       ens_nml= -1
+      stochphy_L  = .false.
 
       if ((F_namelist_S.eq.'print').or.(F_namelist_S.eq.'PRINT')) then
          ens_nml = 0

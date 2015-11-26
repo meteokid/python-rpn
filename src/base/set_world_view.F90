@@ -65,7 +65,7 @@
          err(1) = grid_nml2   (Path_nml_S,G_lam)
          err(2) = step_nml    (Path_nml_S)
          err(3) = gem_nml     (Path_nml_S)
-         if (G_lam) then
+         if (G_lam .and. .not. Schm_adxlegacy_L ) then
             err(4) = adv_nml  (Path_nml_S)
          else
             err(4) = adx_nml  (Path_nml_S)
@@ -90,7 +90,7 @@
       err(1) = step_nml  ('print')
       err(1) = gem_nml   ('print')
 
-      if (G_lam) then
+      if (G_lam .and. .not. Schm_adxlegacy_L ) then
          call adv_nml_print ()
       else
          call adx_nml_print ()

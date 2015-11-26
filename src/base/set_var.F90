@@ -289,7 +289,6 @@
               Outp_step(j)      = stepset
               Outp_accum_L(j)   = accum_L
               Outp_avg_L  (j)   = avg_L
-              Outp_numstep(j)   = 1 
               if (Lun_out.gt.0) then
                  write(Lun_out,*) '***PHY***Outp_sets=',Outp_sets
                  write(Lun_out,*) 'Outp_var_max=',Outp_var_max(j)

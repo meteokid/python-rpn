@@ -28,6 +28,7 @@
 #include "init.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
+#include "outp.cdk"
 #include "out_listes.cdk"
 
       integer istep,step0,stepf
@@ -37,7 +38,7 @@
 !     ---------------------------------------------------------------
 !
       if (.not. done) then
-         nullify(outd_sorties,outp_sorties,outc_sorties)
+         nullify(outd_sorties,outp_sorties,outc_sorties,outp_lasstep)
          marker= Lctl_step - 1
       endif
 
@@ -53,9 +54,11 @@
       if (associated(outd_sorties)) deallocate (outd_sorties)
       if (associated(outp_sorties)) deallocate (outp_sorties)
       if (associated(outc_sorties)) deallocate (outc_sorties)
+      if (associated(outp_lasstep)) deallocate (outp_lasstep)
       allocate (outd_sorties(0:MAXSET,step0:stepf))
       allocate (outp_sorties(0:MAXSET,step0:stepf))
       allocate (outc_sorties(0:MAXSET,step0:stepf))
+      allocate (outp_lasstep(MAXSET,step0:stepf))
 
       outd_sorties(0,:)= 0 ; outp_sorties(0,:)= 0 ; outc_sorties(0,:)= 0
       do istep = step0, stepf

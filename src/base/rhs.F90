@@ -399,13 +399,13 @@
          do i= i0, in
             w1=Ver_wpstar_8(k)*FI(i,j,k+1)+Ver_wmstar_8(k)*half*(FI(i,j,k)+FI(i,j,km))
             w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-            F_orw(i,j,k) = Cstv_invT_8 * F_w(i,j,k) &
-                         + Cstv_Beta_8 * Dcst_grav_8 * MU(i,j,k)
+            F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) &
+                         + Cstv_Beta_nh_8 * Dcst_grav_8 * MU(i,j,k)
             F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*FI(i,j,k) )  &
                          + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
                          + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
-            F_orq(i,j,k) = Cstv_invT_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
-                         + Cstv_Beta_8 * F_qd(i,j,k)
+            F_orq(i,j,k) = Cstv_invT_nh_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
+                         + Cstv_Beta_nh_8 * F_qd(i,j,k)
          end do
          end do
       endif

@@ -92,14 +92,14 @@
                      enddo
                      enddo
                   enddo
-                  call out_fstecr2(t4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
+                  call out_fstecr3(t4,l_minx,l_maxx,l_miny,l_maxy,hybt,&
                        Outd_var_S(ii,set),Outd_convmult(ii,set)       ,&
-                       Outd_convadd(ii,set),kind,G_nk,indo,nko        ,&
+                       Outd_convadd(ii,set),kind,-1,G_nk,indo,nko     ,&
                        Outd_nbit(ii,set),.false. )
                else
-                  call out_fstecr2 ( tr1,l_minx,l_maxx,l_miny,l_maxy,&
+                  call out_fstecr3 ( tr1,l_minx,l_maxx,l_miny,l_maxy,&
                       hybt, Outd_var_S(ii,set),Outd_convmult(ii,set),&
-                      Outd_convadd(ii,set),kind,G_nk,indo,nko       ,&
+                      Outd_convadd(ii,set),kind,-1,G_nk,indo,nko    ,&
                       Outd_nbit(ii,set),.false. )
                endif
 
@@ -111,11 +111,11 @@
                   if (istat.eq.0) then
                      if (Out3_cliph_L) t4(:,:,G_nk+1)= &
                                  max ( t4(:,:,G_nk+1), 0. )
-                     call out_fstecr2 ( t4(l_minx,l_miny,G_nk+1)      ,&
+                     call out_fstecr3 ( t4(l_minx,l_miny,G_nk+1)      ,&
                             l_minx,l_maxx,l_miny,l_maxy               ,&
                             hybt(G_nk+2),Outd_var_S(ii,set)           ,&
                             Outd_convmult(ii,set),Outd_convadd(ii,set),&
-                            Level_kind_diag,1,1,1,Outd_nbit(ii,set)   ,&
+                            Level_kind_diag,-1,1,1,1,Outd_nbit(ii,set),&
                             .false. )
                   endif
                endif
@@ -186,11 +186,11 @@
                      enddo
                   enddo
                endif
-               call out_fstecr2 ( w4,l_minx,l_maxx,l_miny,l_maxy,rf  , &
+               call out_fstecr3 ( w4,l_minx,l_maxx,l_miny,l_maxy,rf  , &
                              Outd_var_S(ii,set),Outd_convmult(ii,set), &
-                                        Outd_convadd(ii,set),kind,nko, &
-                                        indo, nko, Outd_nbit(ii,set) , &
-                                        .false. )
+                                        Outd_convadd(ii,set),kind,-1 , &
+                                        nko, indo, nko               , &
+                                        Outd_nbit(ii,set) , .false. )
                
             endif
          enddo

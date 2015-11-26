@@ -19,6 +19,7 @@
       implicit none
 #include <arch_specific.hf>
 
+
 #include "glb_ld.cdk"
 #include "hzd.cdk"
 #include "dcst.cdk"
@@ -32,6 +33,9 @@
       real   , dimension(:) , allocatable :: lnr
       real*8 c_8, x1, x2, rr, weight
       real levhyb,coef,coef_tr,coef_theta
+      real*8 pt25,nudif,epsilon
+      parameter (epsilon = 1.0d-12, pt25=0.25d0)
+
 !
 !     ---------------------------------------------------------------
 !
@@ -136,13 +140,38 @@
                     (Dcst_rayt_8**2.)/(Cstv_dt_8*coef),Hzd_del(k)/2
             end do
          else
+            nudif    = log(1.- Hzd_lnR)
+            nudif    = 1.0d0 - exp(nudif)
+
+            nudif= pt25*nudif**(2.d0/Hzd_pwr)
+            nudif  = min ( nudif, pt25-epsilon)
+            nudif= min ( nudif, pt25 )
+
             write(Lun_out,1010)  &
-                 (Dcst_rayt_8**2.)/(Cstv_dt_8*coef),Hzd_pwr/2,'U,V,W,ZD'
+            nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr/2,'U,V,W,ZD'
+!            (Dcst_rayt_8**2.)/(Cstv_dt_8*cc),Hzd_pwr/2,'U,V,W,ZD'
          endif
+            nudif    = log(1.- Hzd_lnR_tr)
+            nudif    = 1.0d0 - exp(nudif)
+
+            nudif= pt25*nudif**(2.d0/Hzd_pwr_tr)
+            nudif  = min ( nudif, pt25-epsilon)
+            nudif= min ( nudif, pt25 )
+
          write(Lun_out,1010)  &
-              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_tr),Hzd_pwr_tr/2,'Tracers'
+        nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_tr/2,'U,V,W,ZD'
+!              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_tr),Hzd_pwr_tr/2,'Tracers'
+
+            nudif    = log(1.- Hzd_lnR_theta)
+            nudif    = 1.0d0 - exp(nudif)
+
+            nudif= pt25*nudif**(2.d0/Hzd_pwr_theta)
+            nudif  = min ( nudif, pt25-epsilon)
+            nudif= min ( nudif, pt25 )
+
          write(Lun_out,1010)  &
-              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
+          nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_theta/2,'U,V,W,ZD'
+!              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
       endif
       endif
       

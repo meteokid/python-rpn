@@ -46,7 +46,10 @@
 
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          step_nml = 0
-         if (Lun_out.gt.0) write (6  ,nml=step)
+         if (Lun_out.gt.0) then
+            write (Lun_out  ,nml=step)
+            write (Lun_out,8000) Step_alarm
+         endif
          return
       endif
 
@@ -142,6 +145,7 @@
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',a/)
+ 8000 format (/,' MODEL ALARM SET TO: ',i,' secondes'/)
 
  9999 err = fclos (unf)
 !

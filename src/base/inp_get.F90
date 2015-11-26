@@ -44,6 +44,7 @@ Interface
       End function inp_read
 End Interface
 
+#include "inp.cdk"
 #include "cstv.cdk"
 #include "glb_ld.cdk"
 
@@ -56,6 +57,10 @@ End Interface
 !
 !---------------------------------------------------------------------
 !
+      inp_get= -1
+      if ( any (Inp_blacklist_S(1:MAX_blacklist) == trim(F_var_S)) ) &
+           return
+
       nullify (ip1_list, wrkr)
 
       inp_get= inp_read ( F_var_S, F_hgrid_S, wrkr, ip1_list, nka )

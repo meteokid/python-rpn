@@ -40,6 +40,8 @@
 #include "lun.cdk"
 #include "tr3d.cdk"
 #include "dcst.cdk"
+#include "psadj.cdk"
+#include "rstr.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n,istat,iteration
@@ -48,92 +50,31 @@
       real*8 l_avg_8,g_avg_ps_dry_0_8
       real*8,parameter :: QUATRO_8 = 4.0d0, ONE_8 = 1.0d0
       character(len= 9) communicate_S
-      real*8, save :: g_avg_ps_dry_initial_8,scale_8
       logical,save :: done_L=.FALSE.
-!     _________________________________________________________________
-
+!
+!     ---------------------------------------------------------------
+!
       if (.not.Schm_psadj_L) return
 
-      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) then
-
+      if (G_lam.and..not.Grd_yinyang_L) then
+         if (Rstri_rstn_L) call gem_error(-1,'psadj','PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
          call psadj_LAM_0
-
          return
-
       endif
 
+! for GU and GY
       if (Lun_out>0) write(Lun_out,*) ''
       if (Lun_out>0) write(Lun_out,*) '----------------------------------'
       if (Lun_out>0) write(Lun_out,*) 'PSADJ is done for DRY AIR (REAL*8)'
       if (Lun_out>0) write(Lun_out,*) '----------------------------------'
       if (Lun_out>0) write(Lun_out,*) ''
 
-      iteration = 1
-
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-      !Estimate area and dry air mass at initial time  
-      !----------------------------------------------
-      if (.NOT.done_L) then
-
-         !Estimate area
-         !-------------
-         if (Grd_yinyang_L) then
-
-            l_avg_8 = 0.0d0 
-
-            do j=1+pil_s,l_nj-pil_n
-            do i=1+pil_w,l_ni-pil_e
-
-               l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-
-            enddo
-            enddo
-
-            call RPN_COMM_allreduce (l_avg_8,scale_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-            scale_8 = 1.0/scale_8
-
-         else
- 
-            scale_8 = 1.0/(QUATRO_8 * Dcst_pi_8)
-
-         endif
-
-         istat = gmm_get(gmmk_st1_s,st1,mymeta)
-
-         !Obtain pressure levels
-         !----------------------
-         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_1_8,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-
-         !Compute dry surface pressure (- Cstv_pref_8)
-         !--------------------------------------------
-         call dry_sfc_pressure_8 (pr_p0_dry_1_8,pr_m_8,pr_p0_1_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'P')
-
-         l_avg_8 = 0.0d0
-
-         !Estimate dry air mass at initial time
-         !-------------------------------------
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-
-            l_avg_8 = l_avg_8 + pr_p0_dry_1_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j) 
-
-         enddo
-         enddo
-
-         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_initial_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-         g_avg_ps_dry_initial_8 = g_avg_ps_dry_initial_8 * scale_8
-
-         done_L = .TRUE.
-
-      endif 
-
-  800 continue 
-
       istat = gmm_get(gmmk_st0_s,st0,mymeta)
+
+      do n= 1, 3
 
       !Obtain pressure levels
       !----------------------
@@ -143,25 +84,22 @@
       !--------------------------------------------
       call dry_sfc_pressure_8 (pr_p0_dry_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
-      l_avg_8 = 0.0d0
-
       !Estimate dry air mass 
       !---------------------
+      l_avg_8 = 0.0d0
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
-
          l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-
       enddo
       enddo
 
       call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * scale_8
+      g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * PSADJ_scale_8
 
       !Correct surface pressure in order to preserve dry air mass    
       !----------------------------------------------------------
-      pr_p0_0_8 = pr_p0_0_8 + (g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+      pr_p0_0_8 = pr_p0_0_8 + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
 
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
@@ -169,9 +107,9 @@
       end do
       end do
 
-      iteration = iteration + 1
-
-      if (iteration<4) goto 800 
-
+      end do
+!
+!     ---------------------------------------------------------------
+!
       return
       end

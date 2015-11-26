@@ -37,6 +37,9 @@
       namelist /gem_cfgs/ Cstv_bA_8
       namelist /gem_cfgs/ Cstv_tstr_8
 
+      namelist /gem_cfgs/ Cstv_bA_nh_8      
+      namelist /gem_cfgs/ Cstv_rEp_8   
+
       namelist /gem_cfgs/ Eq_sponge
 
       namelist /gem_cfgs/ G_halox
@@ -72,7 +75,7 @@
       namelist /gem_cfgs/ Init_dfpl_S
       namelist /gem_cfgs/ Init_dftr_L
 
-      namelist /gem_cfgs/ Inp_npes
+      namelist /gem_cfgs/ Inp_npes,Inp_blacklist_S
 !Lam
       namelist /gem_cfgs/ Lam_gbpil_T
       namelist /gem_cfgs/ Lam_blend_H
@@ -175,6 +178,9 @@
 !
       namelist /gem_cfgs_p/ Cstv_bA_8
       namelist /gem_cfgs_p/ Cstv_tstr_8
+
+      namelist /gem_cfgs_p/ Cstv_bA_nh_8
+      namelist /gem_cfgs_p/ Cstv_rEp_8
 
       namelist /gem_cfgs_p/ G_halox
       namelist /gem_cfgs_p/ G_haloy

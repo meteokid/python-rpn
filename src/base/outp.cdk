@@ -45,7 +45,7 @@
       logical Outp_avg_L(MAXSET),Outp_accum_L(MAXSET)
       integer Outp_nbit(MAXELEM,MAXSET)
       integer Outp_filtpass(MAXELEM,MAXSET)
-      integer Outp_numstep(MAXSET)
+      integer, dimension(:,:), pointer :: Outp_lasstep => null()
       real    Outp_filtcoef(MAXELEM,MAXSET)
       real    Outp_convmult(MAXELEM,MAXSET)
       real    Outp_convadd (MAXELEM,MAXSET)
@@ -56,6 +56,6 @@
       COMMON /Outp_l/Outp_avg_L,Outp_accum_L
       COMMON /Outp/ Outp_lev,Outp_grid,Outp_step, Outp_multxmosaic
       COMMON /Outp/ Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
-      COMMON /Outp/ Outp_numstep
+      COMMON /Outp/ Outp_lasstep
       COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
       COMMON /Outp_r/ Outp_filtcoef,Outp_convmult,Outp_convadd

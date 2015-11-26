@@ -183,7 +183,9 @@
                     
 !     
 !     Begin Markov chains
-!       
+!   
+
+    
 allocate(p( maxval(Ens_mc2d_nlat), Ens_dim2_lmax, 0:maxval(Ens_mc2d_trnh)))
 allocate(cc(2, maxval(Ens_mc2d_trnh)+1 , maxval(Ens_mc2d_nlat)))
 allocate(wrk1( maxval(Ens_mc2d_nlat) * (maxval(Ens_mc2d_nlon)+2)))
@@ -193,8 +195,8 @@ allocate(fgem2_str(l_ni, l_nj, Ens_mc2d_ncha-1))
  
  do nc=1,Ens_mc2d_ncha
           
-        lmin = Ens_mc2d_trnh(nc) ; nlon = Ens_mc2d_nlon(nc)  
-        lmax = Ens_mc2d_trnl(nc) ; nlat = Ens_mc2d_nlat(nc)      
+        lmin = Ens_mc2d_trnl(nc) ; nlon = Ens_mc2d_nlon(nc)  
+        lmax = Ens_mc2d_trnh(nc) ; nlat = Ens_mc2d_nlat(nc)      
         fstd = Ens_mc2d_std(nc)  ; fmin = Ens_mc2d_min(nc)
         fstr = Ens_mc2d_str(nc)  ; fmax = Ens_mc2d_max(nc) 
           

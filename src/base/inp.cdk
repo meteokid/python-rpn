@@ -1,3 +1,6 @@
+      integer, parameter :: MAX_blacklist = 250
+      character*4 Inp_blacklist_S(MAX_blacklist)
+      
       character*16 Inp_datev
       integer Inp_npes  , Inp_nfiles , Inp_comm_id, Inp_comm_setno,&
               Inp_iome  , Inp_comm_io, Inp_iobcast, Inp_kind      ,&
@@ -5,7 +8,7 @@
       integer, dimension(:), pointer :: Inp_list_unf => null()
       real*8 Inp_pref_a_8
 
-      common /inp_c/ Inp_datev
+      common /inp_c/ Inp_datev,Inp_blacklist_S
       common /inp_i/ Inp_npes,Inp_nfiles,Inp_comm_id,Inp_comm_setno,&
                      Inp_iome,Inp_comm_io,Inp_iobcast,Inp_kind     ,&
                      Inp_handle,Inp_cmcdate, Inp_list_unf

@@ -42,6 +42,7 @@
 #include "vt0.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
+#include "psadj.cdk"
 
       type(gmm_metadata) :: mymeta
       real, pointer, dimension(:,:,:) :: tr
@@ -51,8 +52,6 @@
       integer :: err,i,j,k,iteration,istat
       real*8 l_avg_8(2),g_avg_8(2),g_avg_ps_dry_1_8,g_avg_ps_dry_0_8,g_avg_fl_dry_0_8
       character(len= 9) communicate_S
-      real*8, save :: scale_8
-      logical,save :: done_L=.FALSE.
 
       !---------------------------------------------------------------------
 
@@ -64,28 +63,6 @@
       iteration = 1 
 
       communicate_S = "GRID"
-
-      !Estimate CORE area
-      !------------------
-      if (.NOT.done_L) then
-
-         l_avg_8(1) = 0.0d0
-
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-
-            l_avg_8(1) = l_avg_8(1) + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-
-         enddo
-         enddo
-
-         call RPN_COMM_allreduce (l_avg_8,scale_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
-
-         scale_8 = 1.0/scale_8
-
-         done_L = .TRUE.
-
-      endif
 
       !---------------------
       !Treat TIME T1
@@ -141,7 +118,7 @@
 
          call RPN_COMM_allreduce (l_avg_8,g_avg_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-         g_avg_ps_dry_1_8 = g_avg_8(1) * scale_8
+         g_avg_ps_dry_1_8 = g_avg_8(1) * PSADJ_scale_8
 
   800    continue
 
@@ -227,8 +204,8 @@
 
          call RPN_COMM_allreduce (l_avg_8,g_avg_8,2,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-         g_avg_ps_dry_0_8 = g_avg_8(1) * scale_8
-         g_avg_fl_dry_0_8 = g_avg_8(2) * scale_8
+         g_avg_ps_dry_0_8 = g_avg_8(1) * PSADJ_scale_8
+         g_avg_fl_dry_0_8 = g_avg_8(2) * PSADJ_scale_8
 
          !Correct surface pressure in order to preserve dry air mass on CORE when taking mass FLUX into account   
          !-----------------------------------------------------------------------------------------------------

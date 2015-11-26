@@ -46,19 +46,22 @@
 
       real*8 mass_new_8,mass_out_8,ratio_8,mass_deficit_8
 
-      logical limit_i_L
+      logical limit_i_L, verbose_L
       logical,save :: done_L=.false.
 
       !----------------------------------------------------------
 
+      verbose_L = .false.
       time_m = 0
 
       reset  = 0
 
+      if (verbose_L) then
       if (Lun_out>0) then
          write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
          write(Lun_out,*) 'TRACERS: Reset Monotonicity without changing Mass of Cubic: Sorensen et al,ILMC, 2013,GMD'
          write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+      endif
       endif
 
       F_new = F_high
@@ -86,9 +89,11 @@
 
       call mass_tr (mass_new_8,time_m,F_name_S(4:7),F_new,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
 
+      if (verbose_L) then
       if (Lun_out>0) then
          write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',F_ILMC_min_max_L
          write(Lun_out,1000) 'TRACERS: Mass BEFORE ILMC        =',mass_new_8,F_name_S(4:6)
+      endif
       endif
 
       call get_density (l_density,l_mass,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
@@ -307,6 +312,7 @@
          iprod = 1 
       endif
 
+      if (verbose_L) then
       if (Lun_out>0) then
          write(Lun_out,1000) 'TRACERS: Mass  AFTER ILMC        =',mass_out_8,F_name_S(4:6)
          write(Lun_out,*)    'TRACERS: # pts OVER/UNDER SHOOT  =',g_reset(3),'over',G_ni*G_nj*F_nk*iprod
@@ -317,6 +323,7 @@
       endif
 
       if (Lun_out>0) write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+      endif
 
  1000 format(1X,A34,E20.12,1X,A3)
  1001 format(1X,A23,E11.4,'%')

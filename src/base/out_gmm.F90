@@ -69,6 +69,7 @@
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
+      integer, parameter :: numvars = 21
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -78,7 +79,7 @@
       if ( Level_typ_S(levset).eq.'P') return
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
-         hybt_w(1:G_nk-1)=Ver_hyb%t
+         hybt_w(1:G_nk-1)=Ver_hyb%t(1:G_nk-1)
          hybt_w(G_nk)=1.
       endif         
       nkeys     = gmm_keys(keylist)
@@ -106,7 +107,8 @@
       class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
       class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
-
+      class_var(20,1) = 'SMGU' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'MM'
+      class_var(21,1) = 'SMGV' ; class_var(21,2) = 'QQ' ; class_var(21,3) = 'MM'
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
@@ -117,7 +119,7 @@
          if (Outd_varnm_S(ii,set)(1:4).eq.keylist(i)(1:4)) then
             gridset = Outd_grid(set)
             id = -1
-            do cid=1,19
+            do cid=1,numvars
                if (keylist(i)(1:2) == class_var(cid,1)) id=cid
             end do
             if (id.lt.0) then
@@ -148,18 +150,18 @@
             istat = gmm_getmeta(keylist(i),tmp_meta)
             if (tmp_meta%l(3)%high.le.1) then
                istat = gmm_get(trim(keylist(i)),tr2,tmp_meta)
-               call out_fstecr2 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+               call out_fstecr3 (tr2, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                        0,keylist(i),Outd_convmult(ii,set) ,&
                                        Outd_convadd(ii,set),Level_kind_ip1,&
-                                       1,1,1, Outd_nbit(ii,set),.false. )
+                                       -1,1,1,1, Outd_nbit(ii,set),.false. )
             else
                istat = gmm_get(trim(keylist(i)),tr3,tmp_meta)
-               call out_fstecr2 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+               call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
                                       tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
                                level_type,keylist(i),Outd_convmult(ii,set),&
                                       Outd_convadd(ii,set),Level_kind_ip1 ,&
-                                  G_nk,indo,nko, Outd_nbit(ii,set),.false. )
+                               -1,G_nk,indo,nko, Outd_nbit(ii,set),.false. )
             endif
 
             goto 800

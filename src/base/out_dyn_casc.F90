@@ -72,60 +72,60 @@
                                      Grdc_gjd, Grdc_gjf, 1 )
       call out_vref  ( etiket=Out3_etik_S )
 
-      call out_fstecr2 ( tt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT1' ,1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. )
-      call out_fstecr2 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'WT1' ,1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. )
-      call out_fstecr2 ( zdt1,l_minx,l_maxx,l_miny,l_maxy,hybt,'ZDT1',1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. )
+      call out_fstecr3 ( tt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT1' ,1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
+      call out_fstecr3 ( wt1 ,l_minx,l_maxx,l_miny,l_maxy,hybt,'WT1' ,1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
+      call out_fstecr3 ( zdt1,l_minx,l_maxx,l_miny,l_maxy,hybt,'ZDT1',1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
       if (.not.Schm_hydro_L) &
-      call out_fstecr2 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1' ,1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. ) 
-      call out_fstecr2 ( st1 ,l_minx,l_maxx,l_miny,l_maxy,0.  ,'ST1 ',1., &
-                         0.,5,1,indo,1,32,.false. )
-      call out_fstecr2 ( fis0,l_minx,l_maxx,l_miny,l_maxy,0.  ,'FIS0',1., &
-                         0.,5,1,indo,1,32,.false. )
+      call out_fstecr3 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1' ,1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. ) 
+      call out_fstecr3 ( st1 ,l_minx,l_maxx,l_miny,l_maxy,0.  ,'ST1 ',1., &
+                         0.,5,-1,1,indo,1,32,.false. )
+      call out_fstecr3 ( fis0,l_minx,l_maxx,l_miny,l_maxy,0.  ,'FIS0',1., &
+                         0.,5,-1,1,indo,1,32,.false. )
       if ( out3_sfcdiag_L ) then
          call itf_phy_sfcdiag(tr1(l_minx,l_miny),&
               l_minx,l_maxx,l_miny,l_maxy,'PW_TT:P',istat,.false.)
-         call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2),'TT1' ,1., &
-                            0.,4,1,indo,1,32,.false. )
+         call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybt(G_nk+2),'TT1' ,1., &
+                            0.,4,-1,1,indo,1,32,.false. )
       endif
 
       do k=1,Grdc_ntr
          nullify (tr2)
          name = 'TR/'//trim(Grdc_trnm_S(k))//':P'
          istat= gmm_get (name,tr2)
-         call out_fstecr2 ( tr2 ,l_minx,l_maxx,l_miny,l_maxy,hybt, &
-                            Grdc_trnm_S(k),1.,0.,5,G_nk,indo,G_nk,32,.false.)
+         call out_fstecr3 ( tr2 ,l_minx,l_maxx,l_miny,l_maxy,hybt, &
+                            Grdc_trnm_S(k),1.,0.,5,-1,G_nk,indo,G_nk,32,.false.)
          if ( out3_sfcdiag_L ) then
             call itf_phy_sfcdiag ( tr1(l_minx,l_miny),l_minx,l_maxx, &
                                    l_miny,l_maxy,name,istat,.true. )
-            call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy, &
+            call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy, &
                                hybt(G_nk+2),Grdc_trnm_S(k),1.  , &
-                               0.,4,1,indo,1,32,.false. )
+                               0.,4,-1,1,indo,1,32,.false. )
          endif
       end do
      
       call out_href3 ( 'U_point', Grdc_gid, Grdc_gif, 1,&
                                   Grdc_gjd, Grdc_gjf, 1 )
-      call out_fstecr2 ( ut1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'URT1' ,1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. ) 
+      call out_fstecr3 ( ut1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'URT1' ,1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. ) 
       if ( out3_sfcdiag_L ) then
          call itf_phy_sfcdiag(tr1(l_minx,l_miny),&
               l_minx,l_maxx,l_miny,l_maxy,'PW_UU:P',istat,.false.)
-         call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
-                            'URT1' ,1., 0.,4,1,indo,1,32,.false. ) 
+         call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
+                            'URT1' ,1., 0.,4,-1,1,indo,1,32,.false. ) 
       endif
       call out_href3 ( 'V_point', Grdc_gid, Grdc_gif, 1,&
                                   Grdc_gjd, Grdc_gjf, 1 )
-      call out_fstecr2 ( vt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'VRT1' ,1., &
-                         0.,5,G_nk,indo,G_nk,32,.false. )
+      call out_fstecr3 ( vt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'VRT1' ,1., &
+                         0.,5,-1,G_nk,indo,G_nk,32,.false. )
       if ( out3_sfcdiag_L ) then
          call itf_phy_sfcdiag(tr1(l_minx,l_miny),&
               l_minx,l_maxx,l_miny,l_maxy,'PW_VV:P',istat,.false.)
-         call out_fstecr2 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
-                            'VRT1' ,1., 0.,4,1,indo,1,32,.false. ) 
+         call out_fstecr3 ( tr1 ,l_minx,l_maxx,l_miny,l_maxy,hybm(G_nk+2), &
+                            'VRT1' ,1., 0.,4,-1,1,indo,1,32,.false. ) 
       endif
 
       deallocate (hybm,hybt,tr1)

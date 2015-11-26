@@ -50,6 +50,21 @@
       Cstv_invT_8  = one/Cstv_tau_8
       Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
 
+!     Parameters for the nonhydrostatic case
+      Cstv_tau_nh_8   = Cstv_dt_8 * Cstv_bA_nh_8
+      Cstv_invT_nh_8  = one/Cstv_tau_nh_8
+      Cstv_Beta_nh_8  = (one-Cstv_bA_nh_8)/Cstv_bA_nh_8
+      Cstv_rE_8=Cstv_rEp_8*Cstv_tau_nh_8/Cstv_tau_8
+
+      if (Schm_hydro_L .or. & 
+         (abs(one-Cstv_rEp_8).lt.1e-5 .and. abs(Cstv_bA_8-Cstv_bA_nh_8).lt.1e-5)) then
+         Cstv_rE_8=one
+         Cstv_tau_nh_8=Cstv_tau_8
+         Cstv_invT_nh_8=Cstv_invT_8
+         Cstv_Beta_nh_8=Cstv_Beta_8
+      endif
+
+
       if (Schm_advec.eq.1) then ! traditional advection
          Cstv_dtA_8 = Cstv_dt_8 * 0.5d0
       endif
@@ -63,10 +78,11 @@
          Cstv_dtD_8 = 0.d0
       endif
 
-      Ver_igt_8    = Cstv_invT_8/Dcst_grav_8
+      Ver_igt_8    = Cstv_invT_nh_8/Dcst_grav_8
       Ver_ikt_8    = Cstv_invT_8/Dcst_cappa_8
       if(Schm_hydro_L) Ver_igt_8=zero
-      Ver_igt2_8   = Ver_igt_8**2
+      Ver_igt2_8   = Cstv_rE_8*Ver_igt_8**2 ! Modified epsilon
+      Ver_igt_8    = Cstv_rE_8*Ver_igt_8 ! Modified epsilon
 
       if( Cstv_Tstr_8 .lt. 0. ) then
          ! TSTAR variable in the vertical
@@ -140,14 +156,13 @@
 
       call set_opr
 
-      if (G_lam) then
-
-	if(Schm_adxlegacy_L ) then 
-           call itf_adx_set
-        else
-           call adv_setgrid
-           call adv_param 
-        endif
+      if ( G_lam ) then
+         if ( Schm_adxlegacy_L ) then 
+            call itf_adx_set
+         else
+            call adv_setgrid
+            call adv_param 
+         endif
       else
          call itf_adx_set
       endif

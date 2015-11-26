@@ -26,11 +26,17 @@
 #include "schm.cdk"
 #include "adv_slice_storage.cdk"
 
+! local variables
+      logical :: verbose_L
 !     _________________________________________________________________
 !
+      verbose_L = .false.
       if (Lun_debug_L) write (Lun_out,1000) F_water_tracers_only_L
-      if (.not. F_water_tracers_only_L) &
-           call stat_mass_tracers (1,"BEFORE ADVECTION")
+   
+      if ( verbose_L) then
+         if (.not. F_water_tracers_only_L) &
+              call stat_mass_tracers (1,"BEFORE ADVECTION")
+      endif 
 
       if (.not. F_water_tracers_only_L) &
       Adv_do_only_once_each_timestep_L = .TRUE.
@@ -41,8 +47,10 @@
          call adv_tracers (F_water_tracers_only_L)    
       endif
 
-      if (.not. F_water_tracers_only_L) &
-           call stat_mass_tracers (0,"AFTER ADVECTION")
+      if ( verbose_L) then
+         if (.not. F_water_tracers_only_L) &
+              call stat_mass_tracers (0,"AFTER ADVECTION")
+      endif
 1000  format(3X,'ADVECT TRACERS: (S/R TRACERS_STEP) H2O only=',L)
 !     _________________________________________________________________
 !

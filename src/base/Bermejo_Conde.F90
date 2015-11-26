@@ -45,8 +45,10 @@
               mass_deficit_8,lambda_8,correction_8,p_exp_8,H_minus_L_8,ratio_8,mass_flux_o_8,mass_flux_i_8
       real*8, parameter :: ONE_8=1.d0
       real F_new(Minx:Maxx,Miny:Maxy,F_nk),weight(Minx:Maxx,Miny:Maxy,F_nk)
-      logical LAM_L
+      logical LAM_L, verbose_L
       !----------------------------------------------------------
+
+      verbose_L = .false.
 
       LAM_L = G_lam.and..not.Grd_yinyang_L
 
@@ -59,6 +61,7 @@
 
       p_exp_8 = 1.0
 
+      if (verbose_L) then
       if (Lun_out>0) then
                                           write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
          if (F_CLIP_L)                    write(Lun_out,*) 'TRACERS: Restore Mass Conservation of Cubic MONO(CLIPPING): Bermejo and Conde,2002,MWR'
@@ -66,6 +69,7 @@
          if (.NOT.(F_CLIP_L.or.F_ILMC_L)) write(Lun_out,*) 'TRACERS: Restore Mass Conservation of Cubic: Bermejo and Conde,2002,MWR'
          if (LAM_L)                       write(Lun_out,*) 'TRACERS: Bermejo-Conde LAM: Flux calculations based on Aranami et al. (2015)'
                                           write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+      endif
       endif
 
       !Default values if no Mass correction
@@ -105,12 +109,14 @@
       ratio_8 = 0.0d0
       if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
 
+      if (verbose_L) then
       if (Lun_out>0) then
           write(Lun_out,*)    'TRACERS: P_exponent              =',p_exp_8
           write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',F_BC_min_max_L
           write(Lun_out,1000) 'TRACERS: Mass BEFORE Bermejo-Conde',mass_tot_new_8,F_name_S(4:6)
           write(Lun_out,1000) 'TRACERS: Mass to RESTORE         =',mass_tot_old_8,F_name_S(4:6)
           write(Lun_out,1001) 'TRACERS: Ori. Diff. of ',ratio_8
+      endif
       endif
 
       !Impose ZERO nesting values when evaluating FLUX(weight)
@@ -140,6 +146,7 @@
 
       mass_tot_wei_8 = mass_wei_8 - 0.5d0 * mass_bflux_wei_8
 
+      if (verbose_L) then
       if (mass_tot_wei_8==0.d0) then
 
          if (Lun_out>0) write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
@@ -147,10 +154,13 @@
          return
 
       endif
+      endif
 
       lambda_8 = mass_deficit_8/mass_tot_wei_8
 
+      if (verbose_L) then
       if (Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)
+      endif
 
       count = 0
 
@@ -211,6 +221,7 @@
       ratio_8 = 0.0d0
       if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
 
+      if (verbose_L) then
       if (Lun_out>0) then
           write(Lun_out,1000) 'TRACERS: Mass  AFTER Bermejo-Conde',mass_tot_out_8,F_name_S(4:6)
           write(Lun_out,*)    'TRACERS: # pts treated by B.-C.  =', g_count(3),'over',G_ni*G_nj*F_nk*iprod
@@ -220,6 +231,7 @@
           write(Lun_out,1001) 'TRACERS: Rev. Diff. of ',ratio_8
           write(Lun_out,1004) 'TRACERS: Bermejo-Conde STATS: T=',mass_tot_out_8,' C=',mass_out_8,' F=',mass_bflux_out_8,F_name_S(4:6)
           write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
+      endif
       endif
 
  1000 format(1X,A34,E20.12,1X,A3)

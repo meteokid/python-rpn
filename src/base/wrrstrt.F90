@@ -20,37 +20,17 @@ use iso_c_binding
       use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     M. Desgagne - Mars 2000
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Desgagne M.       - introduce WA files
-! v2_21 - Dugas B.          - adapt to climate mode
-! v2_30 - Corbeil L.        - Added writing of pres_surf pres_top
-! v2_31 - Desgagne M.       - Add Tr2d tracers
-! v3_00 - Desgagne & Lee    - Lam configuration
-! v3_21 - Valcke, S.        - Oasis coupling: Removed wawrit of c_cplg_step
-! v3_21 - Lee V.            - Remove Tr2d tracers
-! v3_30 - Desgagne & Winger - Write one global binary restart file if required
-! v3_30 - Desgagne M.       - restart for coupling
-! v3_31 - Desgagne M.       - new coupling interface to OASIS
-! v3_31 - Desgagne M.       - restart with physics BUSPER
-! v4_05 - Lepine M.         - VMM replacement with GMM
 
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
 #include "step.cdk"
 #include "lctl.cdk"
-#include "tr3d.cdk"
-#include "ntr2mod.cdk"
+#include "psadj.cdk"
 
       include "rpn_comm.inc"
 
       integer, external :: fnom,fclos
-
       integer ier,gmmstat,me,howmany,newcomm,i
 !
 !     ---------------------------------------------------------------
@@ -67,9 +47,7 @@ use iso_c_binding
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
-            write(Lun_rstrt)  NTR_runstrt_S, NTR_horzint_L       , &
-                      NTR_Tr3d_name_S,NTR_Tr3d_wload,NTR_Tr3d_hzd, &
-                      NTR_Tr3d_mono,NTR_Tr3d_mass,NTR_Tr3d_ntr
+            write(Lun_rstrt) PSADJ_g_avg_ps_dry_initial_8,PSADJ_scale_8
 
             ier = fclos(Lun_rstrt)  
 

@@ -64,7 +64,7 @@
 #include "wil_williamson.cdk"
 !
       integer i, j, k, km, kq, kmq, nij, k0t, istat
-      real*8  w1, w2, w3, Pbar, qbar
+      real*8  w1, w2, w3, w4, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
       real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
@@ -89,7 +89,7 @@
          enddo
       end do
 !
-!$omp parallel private(w1,w2,w3,qbar,Pbar,km,kq,kmq,xtmp_8,ytmp_8)
+!$omp parallel private(w1,w2,w3,w4,qbar,Pbar,km,kq,kmq,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,16 +161,18 @@
 !               due to vertical dependency F_q(i,j,k)
          do k=k0t,l_nk
             kq=max(k,2)
-            km=max(k-1,1)
-            w3 = one/(one+Ver_wp_8%t(k)*Ver_dz_8%t(k))
-            w2 =  (one-Ver_wm_8%t(k)*Ver_dz_8%t(k))*w3
-            w1 = Cstv_tau_8*Ver_igt_8*Ver_dz_8%t(k)*w3
+            km=max(k-1,2)
+            w4 = one/(one+Ver_wp_8%t(k)*Ver_wpstar_8(k)*Ver_dz_8%t(k))
+            w3 = half*Ver_wp_8%t(k)*Ver_wmstar_8(k)*Ver_dz_8%t(k)*w4
+            w2 = (one-(Ver_wm_8%t(k)+half*Ver_wp_8%t(k)*Ver_wmstar_8(k))*Ver_dz_8%t(k))*w4
+            w1 = Cstv_tau_8*Ver_igt_8*Ver_dz_8%t(k)*w4
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k+1) = w2 * F_q(i,j,kq)*Ver_onezero(k)   &
-                            - w1 * ( F_rw(i,j,k) - F_nw(i,j,k)  &
-                                    - Cstv_invT_8 * F_w(i,j,k)  )
+               F_q(i,j,k+1) = - w3 * F_q(i,j,km)*Ver_onezero(k)   &
+                              + w2 * F_q(i,j,kq)*Ver_onezero(k)   &
+                              - w1 * ( F_rw(i,j,k) - F_nw(i,j,k)  &
+                                 - Cstv_invT_nh_8 * F_w(i,j,k)  )
             end do
             end do
 !$omp enddo
@@ -184,7 +186,7 @@
             do j= j0, jn
             do i= i0, in
                qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
-               F_qd(i,j,k)=Cstv_invT_8*qbar-F_rq(i,j,k)
+               F_qd(i,j,k)=Cstv_invT_nh_8*qbar-F_rq(i,j,k)
             end do
             end do
          end do
@@ -216,7 +218,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-F_q(i,j,l_nk+1)
+         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rEp_8*F_q(i,j,l_nk+1)
       end do
       end do
 !$omp enddo
@@ -238,7 +240,7 @@
             F_xd(i,j,k) = - Cstv_tau_8 * ( F_rt(i,j,k)-F_nt(i,j,k) &
                                          + w1 * GP(i,j,k+1) - w1 * GP(i,j,k) &
                                          - w2 * Pbar )  &
-                          - F_qd(i,j,k)
+                          - Cstv_rE_8*F_qd(i,j,k)
             F_zd(i,j,k) = F_xd(i,j,k) - w3 * F_s(i,j) + F_rx(i,j,k) - F_nx(i,j,k)
          enddo
          enddo
@@ -263,7 +265,7 @@
          w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
-            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+F_q(i,j,kq)*Ver_onezero(k))
+            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+Cstv_rEp_8*F_q(i,j,kq)*Ver_onezero(k))
          enddo
          enddo
       enddo

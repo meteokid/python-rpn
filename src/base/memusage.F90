@@ -72,10 +72,8 @@
 
          do i=1,Ptopo_numproc
             fijk  = memoryt(i)/1000000.
-            if (fijk.gt.(moy+var)) &
-	    write (unf,97) i-1,fijk
+            if (fijk.gt.(moy+var)) write (unf,97) i-1,fijk
          end do
-	print*, memoryt/1000000.
       endif
 
  99   format ('Memory==> Total:',f14.3,' Gb on ',i5,'  MPI processes')

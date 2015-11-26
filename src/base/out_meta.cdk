@@ -4,5 +4,5 @@
         integer :: ip1,ip2,ip3,ig1,ig2,ig3,nbits,dtyp,ni,nj
       end type meta_fstecr
 
-      integer out_stk_full, out_stk_cnt, out_stk_part(10000)
-      common /out_meta_i/ out_stk_full,out_stk_cnt,out_stk_part
+      integer out_stk_full, out_stk_part, out_stk_size
+      common /out_meta_i/ out_stk_full, out_stk_part, out_stk_size

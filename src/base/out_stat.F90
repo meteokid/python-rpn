@@ -28,11 +28,9 @@
 !
 !--------------------------------------------------------------------
 !
+      print*, 'OUTPUT_STAT: stack size: ', out_stk_size
       print*, 'OUTPUT_STAT: full stack called: ',out_stk_full,' times'
-      if (out_stk_cnt .gt. 0) then
-         print*, 'OUTPUT_STAT: partial stack called: ',out_stk_cnt, 'times'
-         print*, 'OUTPUT_STAT: ',out_stk_part(1:out_stk_cnt)
-      endif
+      print*, 'OUTPUT_STAT: partial stack called: ',out_stk_part,' times'
 !
 !--------------------------------------------------------------------
 !

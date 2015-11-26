@@ -50,11 +50,14 @@
 #include "lun.cdk"
 #include "adv_nml.cdk"
 
+      logical :: verbose_L
       logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L, SLICE_L
       real high(Minx:Maxx,Miny:Maxy,F_nk)
 !     
 !---------------------------------------------------------------------
 !     
+      verbose_L       = .false.
+
       CLIP_L          = F_mono_kind == 1
       ILMC_L          = F_mono_kind == 2
       Bermejo_Conde_L = F_mass_kind == 1
@@ -68,6 +71,7 @@
          if (Cubic_L.or.SLICE_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
          if (CLIP_L)             F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
 
+         if(verbose_L) then
          if (Lun_out.gt.0.and..not.CLIP_L.and..not.SLICE_L) then
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
@@ -80,6 +84,7 @@
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
             write(Lun_out,*) 'TRACERS: Local Mass Conserving SL interpolation SLICE Zerroulat et al.(2002): ',F_name_S(4:7)
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+         endif
          endif
 
          return

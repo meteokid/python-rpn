@@ -44,8 +44,8 @@
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr2 ( wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,&
-                         wk,wk, .true. )
+      call out_fstecr3 ( wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,wk,&
+                         wk,wk,wk, .true. )
 
 ! to be completed if at all usefull
 !      old_grid_L= out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&

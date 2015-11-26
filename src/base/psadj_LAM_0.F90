@@ -37,6 +37,8 @@
       real, pointer, dimension(:,:,:) :: cub_o,cub_i,w_cub_o_c,w_cub_i_c,adw_o,adw_i
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: in_o,in_i,mixing
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux, no_advection
+      real,               target :: no_indices_1 
+      real, dimension(1), target :: no_indices_2 
 !     
 !--------------------------------------------------------------------------------
 !
@@ -71,9 +73,9 @@
       !Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015)
       !----------------------------------------------------------------------------------------- 
       call adv_tricub_lag3d (no_advection, no_conserv, no_conserv, no_conserv, no_conserv, no_advection, no_slice, 0, &
-                             w_cub_o_c, adw_o, w_cub_i_c, adw_i, 2, pxt, pyt, pzt,                                    & 
-                             no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, nbpts,                       & 
-                             .false., .false., i_bidon, i_bidon, j_bidon, j_bidon, k0, l_nk, 't')
+                             w_cub_o_c, adw_o, w_cub_i_c, adw_i, 2, pxt, pyt, pzt,                                    &
+                             no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, nbpts,                       &
+                             no_indices_1, no_indices_2,  k0, l_nk, .false., .false., 't')
 
 !$omp parallel
 !$omp do

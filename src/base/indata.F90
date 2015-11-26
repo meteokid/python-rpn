@@ -141,6 +141,8 @@
 
       call frstgss ()
 
+      call psadj_init
+
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )
 !

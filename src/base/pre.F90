@@ -207,11 +207,15 @@
 
 !           Preliminary combinations: Rc', Rt', Rf'
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k )) &
-                                   +w2*(F_rx(i,j,km)+F_rq(i,j,km))
+            F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k ) -   &
+                                       (one -Cstv_rE_8)*F_rq(i,j,k )) &                                      
+                                   +w2*(F_rx(i,j,km)+F_rq(i,j,km) -   &
+                                       (one-Cstv_rE_8)*F_rq(i,j,km))
             F_rt(i,j,k)=F_rt(i,j,k)*w3
-            F_rf(i,j,k)=F_rf(i,j,k)+w4*(F_rx(i,j,k )+F_rq(i,j,k )) &
-                                   +w5*(F_rx(i,j,km)+F_rq(i,j,km))
+            F_rf(i,j,k)=F_rf(i,j,k)+w4*(F_rx(i,j,k ) + F_rq(i,j,k ) -  &
+                                       (one-Cstv_rE_8)*F_rq(i,j,k ))   &
+                                   +w5*(F_rx(i,j,km)+F_rq(i,j,km) -    &
+                                       (one-Cstv_rE_8)*F_rq(i,j,km))
 
          end do
          end do

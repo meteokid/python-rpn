@@ -28,14 +28,19 @@
 !
 !revision
 ! v4_80 - Gaudreault S.    - initial version
+#include "gmm.hf"
 
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
+#include "smago.cdk"
 
-      integer :: i, j, k
+      integer :: i, j, k, istat
       real, dimension(lminx:lmaxx,lminy:lmaxy,nk) :: tension, shear_z, shear, tension_z, smagcoef, smagcoef_z
+
+      istat = gmm_get(gmmk_smagU_s, smagU_p)
+      istat = gmm_get(gmmk_smagV_s, smagV_p)
 
       do k=1,nk
          do j=-1,l_nj+2
@@ -84,6 +89,10 @@
             end do
          end do
       end do
+
+      ! Save coefficients for output
+      smagU_p = smagcoef
+      smagV_p = smagcoef_z
 
       return
       end subroutine hzd_smago

@@ -122,6 +122,8 @@
 
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
+      Cstv_bA_nh_8 = 0.6
+      Cstv_rEp_8   = 1.d0
       Cstv_tstr_8  = 240.0
 
       Lctl_rxstat_S   = 'LCL_4'
@@ -183,6 +185,7 @@
 
       Eq_sponge=0.
 
+      Inp_blacklist_S = ''
       Inp_npes  = 1
       Out3_npes = 1
 

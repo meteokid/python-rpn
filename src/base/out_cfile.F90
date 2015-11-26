@@ -11,9 +11,9 @@
 !
 !----------------------------------------------------------------------
 !
-      call out_fstecr2 ( dummy,dummy,dummy,dummy,dummy,dummy,&
+      call out_fstecr3 ( dummy,dummy,dummy,dummy,dummy,dummy,&
                          dummy,dummy,dummy,dummy,dummy,dummy,&
-                         dummy,dummy, .true. )
+                         dummy,dummy,dummy, .true. )
 
       if ( (Out3_iome .ge. 0) .and. (Out_unf .gt. 0) ) then
          err = fstfrm(Out_unf)

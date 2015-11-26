@@ -14,8 +14,9 @@
 !--------------------|---------------------------------------------------------------------------------- |
 ! Cstv_dt_8          | timestep used by the model                                                        |
 !                                                                                                        |
-! Cstv_bA_8          | off-centering parameter >=.5                                                      |
-! Cstv_Tau_8         | effective timestep: tau=dt*bA                                                 |
+! Cstv_bA_8          | off-centering parameter for hydrostatic part >=.5                                 |
+! Cstv_bA_nh_8       | off-centering parameter for nonhydrostatic part >=.5                              |      
+! Cstv_Tau_8         | effective timestep: tau=dt*bA                                                     |
 ! Cstv_dtA_8         | timestep used by the model:traditional advection =>Cstv_dtA_8 = Cstv_dt_8 * 0.5d0 |
 !                                                 consistent advection =>Cstv_dtA_8 =  Cstv_tau_8        |
 ! Cstv_dtD_8         | Cstv_dtD_8 = Cstv_dt_8 - Cstv_dtA_8                                               |     
@@ -25,27 +26,31 @@
 ! Cstv_pref_8        | a reference pressure : 100000 PASCALS                                             |
 ! Cstv_ptop_8        | pressure at the top                                                               |
 ! Cstv_Ztop_8        | ln(ptop)                                                                          |
-! Cstv_Zsrf_8        | ln(pref)                                                                      |
+! Cstv_Zsrf_8        | ln(pref)                                                                          |
 ! Cstv_hco0_8        | Helmholtz constant                                                                |
 ! Cstv_hco1_8        | Helmholtz constant                                                                |
 ! Cstv_hco2_8        | Helmholtz constant                                                                |
 ! Cstv_bar0_8        | value for barotropic case, ZERO otherwise                                         |
 ! Cstv_bar1_8        | ZERO  for barotropic case, one  otherwise                                         |
+! Cstv_rEp_8         | Parameter controlling modified epsilon (Ver_epsi_8) [hydrostatic part]            |        
+! Cstv_rE_8          | Parameter controlling modified epsilon (Ver_epsi_8) [nonhydrostatic part]         |   
 !--------------------|------------------------------------------------------------------------------------
 !
 #endif
-      real*8    Cstv_dt_8   , Cstv_dtA_8, Cstv_dtD_8
-      real*8    Cstv_bA_8   , Cstv_Tau_8
+      real*8    Cstv_dt_8   , Cstv_dtA_8,   Cstv_dtD_8
+      real*8    Cstv_bA_8   , Cstv_bA_nh_8, Cstv_Tau_8
       real*8    Cstv_Beta_8 , Cstv_invT_8
       real*8    Cstv_Tstr_8 , Cstv_pref_8
       real*8    Cstv_ptop_8 , Cstv_Ztop_8 , Cstv_Zsrf_8
       real*8    Cstv_hco0_8 , Cstv_hco1_8 , Cstv_hco2_8
-      real*8    Cstv_bar0_8 , Cstv_bar1_8
+      real*8    Cstv_bar0_8 , Cstv_bar1_8 , Cstv_rE_8, Cstv_rEp_8
+      real*8    Cstv_invT_nh_8, Cstv_Beta_nh_8, Cstv_tau_nh_8
 !
-      common / Cstv / Cstv_dt_8   , Cstv_dtA_8, Cstv_dtD_8  
-      common / Cstv / Cstv_bA_8   , Cstv_Tau_8
+      common / Cstv / Cstv_dt_8   , Cstv_dtA_8,   Cstv_dtD_8  
+      common / Cstv / Cstv_bA_8   , Cstv_bA_nh_8, Cstv_Tau_8
       common / Cstv / Cstv_Beta_8 , Cstv_invT_8
       common / Cstv / Cstv_Tstr_8 , Cstv_pref_8
       common / Cstv / Cstv_ptop_8 , Cstv_Ztop_8 , Cstv_Zsrf_8
       common / Cstv / Cstv_hco0_8 , Cstv_hco1_8 , Cstv_hco2_8
-      common / Cstv / Cstv_bar0_8 , Cstv_bar1_8
+      common / Cstv / Cstv_bar0_8 , Cstv_bar1_8 , Cstv_rE_8, Cstv_rEp_8
+      common / Cstv / Cstv_invT_nh_8, Cstv_Beta_nh_8, Cstv_tau_nh_8

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,7 +18,7 @@
       implicit none
 #include <arch_specific.hf>
 
-!@objective Initialization of the commons for time-dependent variable. 
+!@objective Initialization of the commons for time-dependent variable.
 !           Virtual Memory manager initialization
 !@author sylvie gravel - rpn - august 1993
 !@ revision
@@ -30,7 +30,7 @@
 ! v3_00 - Desgagne & Lee    - Lam configuration
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! V4_10 - Plante A.         - Thermo upstream positions
-! v4_70 - Tanguay M.        - GEM4 Mass-Conservation 
+! v4_70 - Tanguay M.        - GEM4 Mass-Conservation
 !@description
 !  Notes:
 !	The level at time t0 is not created explicitly in the
@@ -57,6 +57,7 @@
 #include "gmm_gem_flags.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "smago.cdk"
 #include "schm.cdk"
 #include "vt0.cdk"
 #include "vth.cdk"
@@ -116,6 +117,9 @@
       gmmk_xdt1_s  = 'XDT1'
       gmmk_qdt1_s  = 'QDT1'
 
+      gmmk_smagU_s  = 'SMGU'
+      gmmk_smagV_s  = 'SMGV'
+
       istat = GMM_OK
 
       istat = min(gmm_create(gmmk_ut0_s ,  ut0 , mymeta3d_nk_u , flag_r_n),istat)
@@ -138,6 +142,10 @@
       istat = min(gmm_create(gmmk_zdt1_s, zdt1 , mymeta3d_nk_t , flag_r_n),istat)
       istat = min(gmm_create(gmmk_xdt1_s, xdt1 , mymeta3d_nk_t , flag_r_n),istat)
       istat = min(gmm_create(gmmk_qdt1_s, qdt1 , mymeta3d_nk_t , flag_r_n),istat)
+
+      ! Smagorinsky diffusion coefficients
+      istat = min(gmm_create(gmmk_smagU_s,  smagU_p, mymeta3d_nk_u, flag_r_n),istat)
+      istat = min(gmm_create(gmmk_smagV_s,  smagV_p, mymeta3d_nk_u, flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')
