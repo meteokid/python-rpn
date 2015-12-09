@@ -40,6 +40,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    ! V4_30 - Plante A.                - Added Adw_thermopos_S
    ! v4_40 - Tanguay M.               - Revision TL/AD
    ! v4.70 - Girard C., Gaudreault S. - Compute trajectories using angular displacement (optional)
+   ! v4.80 - Tanguay M.               - GEM4 Mass-Conservation and FLUX calculations 
    !@description
    !  adx_main_2_pos: Calculate upstream positions at th and t1
    !  adx_main_3_int: Interpolation of rhs
@@ -52,6 +53,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 #include "glb_ld.cdk"
 #include "orh.cdk"
 #include "schm.cdk"
+#include "adx_tracers.cdk"
 
    logical, parameter :: POLE0_L  = .false.
    logical, parameter :: EXTEND_L = .false.
@@ -105,7 +107,11 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
 
-   call adx_get_ij0n (i0,in,j0,jn)
+   if (Adx_extension_L) then
+      call adx_get_ij0n_ext (i0,in,j0,jn)
+   else
+      call adx_get_ij0n (i0,in,j0,jn)
+   endif
 
    if (G_lam) then
       call adx_pos_angular_m (F_nb_iter, pxm , pym , pzm             , &

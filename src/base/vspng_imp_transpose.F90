@@ -16,17 +16,13 @@
 !**s/r vspng_imp_transpose - Establish layout for the 2 level-transpose 
 !                            used in the vertical sponge
 
-      subroutine vspng_imp_transpose ( F_npex, F_npey, F_checkparti_L )
+      integer function vspng_imp_transpose2 &
+                        ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_checkparti_L
       integer F_npex, F_npey
-!author
-!     M. Desgagne - fall 2013
-!
-!revision
-! v4_70 - Desgagne M.       - initial version
 
 #include "ldnh.cdk"
 #include "lun.cdk"
@@ -39,7 +35,7 @@
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
-      ierr=0
+      vspng_imp_transpose2= 0
 
 !                  Vspng_n_spng top layers NOT distributed
 !                  ldnh_maxy distributed on F_npex PEs
@@ -49,13 +45,14 @@
                 ' ldnh_maxy distributed on F_npex PEs', ldnh_maxy,F_npex
 
       if (.not. decomp3 (ldnh_maxy, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) &
+      vspng_imp_transpose2= -1
 
       trp_12emin = 1
       trp_12emax = maxx
       trp_12en   = n
       trp_12en0  = n0
-!
+
 !                  Vspng_n_spng top layers NOT distributed
 !                  ldnh_maxx distributed on F_npey PEs
 !                  G_nj NOT distributed
@@ -64,24 +61,19 @@
                   ' ldnh_maxx distributed on F_npey', ldnh_maxx,F_npey
 
       if (.not. decomp3 (ldnh_maxx, minx, maxx, n, npartiel, 0, n0, &
-                  .false. , .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
-!
+                  .false. , .true., F_npey, lowest, F_checkparti_L, 0 )) &
+      vspng_imp_transpose2= -1
+
       trp_22emin = 1
       trp_22emax = maxx
       trp_22en   = n
       trp_22en0  = n0
-!
-      if  (Lun_out.gt.0) then
-         if (ierr.lt.0)  then
-            write(lun_out,*) 'VSPNG_IMP_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
-         else
-            write(lun_out,*) 'VSPNG_IMP_TRANSPOSE: PARTITIONING is OK'
-         endif
+
+      if (vspng_imp_transpose2.lt.0) then
+         if  (Lun_out.gt.0) &
+         write(lun_out,*) 'VSPNG_IMP_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
       endif
-!
-      if (.not.F_checkparti_L) &
-      call handle_error(ierr,'VSPNG_IMP_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')
-!
+
  1000 format (/' VSPNG_IMP_TRANSPOSE: checking VSPNG dimension partitionning:')
  1002 format (a/a45,i6,' /',i5)
 !     ---------------------------------------------------------------

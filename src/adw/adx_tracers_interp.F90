@@ -24,12 +24,13 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
    !@author  Michel Desgagne
    !@revisions
    ! v4_70 - Desgagne          - Initial Version
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "adx_dims.cdk"
 #include "adx_poles.cdk"
 #include "adx_pos.cdk"
 #include "tr3d.cdk"
+#include "adx_tracers.cdk"
 
    logical qw_L
    integer  n,i0,j0,in,jn
@@ -40,7 +41,11 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
 
    !---------------------------------------------------------------------
 
+   if (F_water_tracers_only_L.or..not.adx_core_L) then
    call adx_get_ij0n (i0,in,j0,jn)
+   else
+   call adx_get_ij0n_core (i0,in,j0,jn)
+   endif
 
    if (.not.adx_lam_L) then
       call adx_exch_1c ( exch_n1, exch_xgg1, exch_xdd1, exch_c1, &

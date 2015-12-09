@@ -56,7 +56,7 @@
 !     
 !---------------------------------------------------------------------
 !     
-      verbose_L       = .false.
+      verbose_L       = Adw_verbose/=0 
 
       CLIP_L          = F_mono_kind == 1
       ILMC_L          = F_mono_kind == 2

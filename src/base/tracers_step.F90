@@ -30,7 +30,12 @@
       logical :: verbose_L
 !     _________________________________________________________________
 !
-      verbose_L = .false.
+      if (Schm_adxlegacy_L) then
+         call adx_get_verbose (verbose_L)
+      else
+         call adv_get_verbose (verbose_L)
+      endif
+
       if (Lun_debug_L) write (Lun_out,1000) F_water_tracers_only_L
    
       if ( verbose_L) then

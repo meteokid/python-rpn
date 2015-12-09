@@ -67,14 +67,14 @@
  33      if ((Inp_nfiles == 0).or.(i /= Inp_nfiles)) err_code= -1
          if (unf > 0) err= fclos(unf)
          if (err_code == 0) then
-            err= vgd_new ( F_vgd_src, unit=Inp_list_unf(1), &
+           err= fstlnk ( Inp_list_unf, Inp_nfiles )
+           Inp_handle = Inp_list_unf(1)
+            err= vgd_new ( F_vgd_src, unit=Inp_handle, &
                              format='fst', ip1=-1, ip2=-1 )
             if (err == 0) then
               err= vgd_get ( F_vgd_src, 'VTBL', vtbl_8, quiet=.true.)
               n123 = ubound(vtbl_8)
            endif
-           err= fstlnk ( Inp_list_unf, Inp_nfiles )
-           Inp_handle = Inp_list_unf(1)
          endif    
       endif
 

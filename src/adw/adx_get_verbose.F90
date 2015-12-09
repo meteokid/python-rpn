@@ -13,45 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_get_ij0n_ext: Establish scope of extended advection operations
+!**s/p adx_get_verbose (LEGACY)
 
-      subroutine adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
+      subroutine adx_get_verbose (F_verbose_L)
 
       implicit none
 
-#include <arch_specific.hf>
+      logical F_verbose_L
 
-      integer :: i0_e,j0_e,in_e,jn_e
+#include "adx_nml.cdk"
 
-      !@author Monique Tanguay
-
-      !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
-
-#include "glb_ld.cdk"
-#include "adv_grid.cdk"
-#include "grd.cdk"
-
-      !---------------------------------------------------------------------
-      integer :: jext
-      !---------------------------------------------------------------------
-
-      i0_e = 1
-      in_e = l_ni
-      j0_e = 1
-      jn_e = l_nj
-
-      if (G_lam) then
-        !jext=1
-         jext=Grd_maxcfl
-         if (Grd_yinyang_L) jext=2
-         if (l_west)  i0_e =        pil_w - jext
-         if (l_east)  in_e = l_ni - pil_e + jext
-         if (l_south) j0_e =        pil_s - jext
-         if (l_north) jn_e = l_nj - pil_n + jext
-      endif
-
-      !---------------------------------------------------------------------
+      F_verbose_L = adw_verbose/=0 
 
       return
-end subroutine adv_get_ij0n_ext
+end subroutine adx_get_verbose

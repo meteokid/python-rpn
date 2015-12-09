@@ -13,12 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-      subroutine out_fstecr2
-      print*, 'out_fstecr2 is depricated: use out_fstecr3 instead'
-      stop
-      return
-      end
-!**s/r out_fstecr3
+!**s/r out_fstecr
 
       subroutine out_fstecr3 ( fa,lminx,lmaxx,lminy,lmaxy,rf,nomvar,&
                                mul,add,kind,lstep,nkfa,ind_o,nk_o  ,&
@@ -106,7 +101,8 @@ End Interface
             RP1%lo  = rf(ind_o(k))
             RP1%hi  = RP1%lo
             RP1%kind= kind
-            err= encode_ip (meta(istk)%ip1,meta(istk)%ip2,meta(istk)%ip3,RP1,RP2,RP3)
+            err= encode_ip ( meta(istk)%ip1,meta(istk)%ip2,&
+                             meta(istk)%ip3,RP1,RP2,RP3 )
          else
             meta(istk)%ip2= Out_ip2
             meta(istk)%ip3= Out_ip3

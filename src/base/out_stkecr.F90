@@ -59,7 +59,7 @@
       if (Out3_iome .ge.0) then
          allocate (wk_glb(G_ni,G_nj,nz),zlist(nz))
          if ((Grd_yinyang_L) .and. (Ptopo_couleur.eq.0)) then
-            allocate (wk(nis,njs,nz*2))
+            allocate (wk(nis,njs*2,nz))
          else
             allocate (wk(nis,njs,nz))
          endif
@@ -70,7 +70,7 @@
       zlist= -1
 
       if (out_type_S .eq. 'REGDYN') then
-         call timing_start2 ( 82, 'OUT_DUCOL', 80)
+         call timing_start2 ( 81, 'OUT_DUCOL', 80)
       else
          call timing_start2 ( 91, 'OUT_PUCOL', 48)
       endif
@@ -79,8 +79,8 @@
                                  nz, fa, nplans, zlist)
 
       if (out_type_S .eq. 'REGDYN') then
-         call timing_stop (82)
-         call timing_start2 ( 84, 'OUT_DUECR', 80)
+         call timing_stop (81)
+         call timing_start2 ( 82, 'OUT_DUECR', 80)
       else
          call timing_stop (91)
          call timing_start2 ( 92, 'OUT_PUECR', 48)
@@ -101,6 +101,7 @@
                if ( (Grd_yinyang_L) .and. (.not.Out_reduc_l) ) then
 
                   call out_mergeyy (wk(1,1,k), nis*njs)
+
                   if (Ptopo_couleur.eq.0) &
 
                   err = fstecr ( wk(1,1,k),wk,-meta(kk)%nbits,Out_unf, &
@@ -139,7 +140,7 @@
       deallocate (wk_glb,zlist)
 
       if (out_type_S .eq. 'REGDYN') then
-         call timing_stop (84)
+         call timing_stop (82)
       else
          call timing_stop (92)
       endif

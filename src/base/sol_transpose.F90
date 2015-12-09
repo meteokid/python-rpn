@@ -16,20 +16,12 @@
 !**s/r sol_transpose - Establish layout for the 2 level-transpose used
 !                      in the solver and the horizontal diffusion
 
-      subroutine sol_transpose ( F_npex, F_npey, F_checkparti_L )
+      integer function sol_transpose2 ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
 
       logical F_checkparti_L
       integer F_npex, F_npey
-!author
-!     M. Desgagne - fall 2013
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Desgagne M.       - add partitioning checks
-! v2_11 - Desgagne M.       - vertical sponge layer (vsl)
-! v2_21 - Corbeil  L.       - ldnh_maxx and ldnh_maxy for vsl
 
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
@@ -40,12 +32,12 @@
 
       logical, external :: decomp3
       integer,parameter :: lowest = 2
-      integer minx, maxx, n, npartiel, n0, n1, ierr
+      integer minx, maxx, n, npartiel, n0, n1
 !
 !     ---------------------------------------------------------------
 !
+      sol_transpose2= 0
       if (Lun_out.gt.0) write (Lun_out,1000)
-      ierr=0
 
 ! Establishing local dimensions and computing arena (data topology) for:
 !          G_ni distributed on Ptopo_npex PEs and 
@@ -62,7 +54,8 @@
       endif
 
       if (.not. decomp3 (G_ni, ldnh_minx, ldnh_maxx, ldnh_ni, npartiel, 0, n0, &
-                    .true., .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
+                    .true., .true., F_npex, lowest, F_checkparti_L, 0 ))       &
+      sol_transpose2= -1
 
       if (Lun_out.gt.0) then
          if (Sol_type_S.eq.'DIRECT') then
@@ -75,9 +68,10 @@
       endif
 
       if (.not. decomp3 (G_nj, ldnh_miny, ldnh_maxy, ldnh_nj, npartiel, 0, n1, &
-                    .false.,.true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
+                    .false.,.true., F_npey, lowest, F_checkparti_L, 0 ))       &
+      sol_transpose2= -1
 
-      trp_22n = -1
+      trp_22n= -1
 
       if (Sol_type_S.eq.'DIRECT') then
 
@@ -91,7 +85,8 @@
                   ' Schm_nith distributed on F_npex PEs', Schm_nith,F_npex
 
          if (.not. decomp3 (Schm_nith, minx, maxx, n, npartiel, 0, n0, &
-                  .true., .true., F_npex, -1, F_checkparti_L, 3 )) ierr=-1
+                  .true., .true., F_npex, -1, F_checkparti_L, 3 ))     &
+         sol_transpose2= -1
 
          trp_12smin = minx ! most likely = 1 since no halo
          trp_12smax = maxx
@@ -108,7 +103,8 @@
                   ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
          if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
-                  .false., .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
+                  .false., .true., F_npey, lowest, F_checkparti_L, 0 )) &
+         sol_transpose2= -1
 
          trp_22min = minx ! most likely = 1 since no halo
          trp_22max = maxx
@@ -117,19 +113,14 @@
 
       endif
 
-      if  (Lun_out.gt.0) then
-         if (ierr.lt.0)  then
-            write(lun_out,*) 'SOL_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
-         else
-            write(lun_out,*) 'SOL_TRANSPOSE: PARTITIONING is OK'
-         endif
+      if (sol_transpose2.lt.0)  then
+         if  (Lun_out.gt.0) &
+         write(lun_out,*) 'SOL_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
       endif
 
-      if (.not.F_checkparti_L) &
-      call handle_error(ierr,'SOL_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')
-!
  1000 format (/' SOL_TRANSPOSE: checking SOLVER dimension partitionning:')
  1002 format (a/a45,i6,' /',i5)
+!
 !     ---------------------------------------------------------------
 !
       return

@@ -13,10 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
  
-!**s/p psadj_LAM_0 - Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015) and
-!                    call psadj_LAM to adjust surface pressure
+!**s/p adv_psadj_LAM_0 - Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015) and
+!                        call psadj_LAM to adjust surface pressure (NO LEGACY)
 
-      subroutine psadj_LAM_0 ()
+      subroutine adv_psadj_LAM_0 ()
 
       implicit none
 
@@ -25,7 +25,7 @@
 !Author Monique Tanguay
 !
 !revision
-! v4_XX - Tanguay M.        - initial MPI version
+! v4_80 - Tanguay M.        - initial MPI version
 !
 !**/
 #include "glb_ld.cdk"
@@ -36,9 +36,9 @@
       integer :: i, j, k, k0, nbpts, i0_e, in_e, j0_e, jn_e, i_bidon, j_bidon
       real, pointer, dimension(:,:,:) :: cub_o,cub_i,w_cub_o_c,w_cub_i_c,adw_o,adw_i
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) :: in_o,in_i,mixing
-      real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux, no_advection
-      real,               target :: no_indices_1 
-      real, dimension(1), target :: no_indices_2 
+      real,                   target :: no_conserv, no_slice, no_flux, no_advection
+      integer,                target :: no_indices_1 
+      integer,  dimension(1), target :: no_indices_2 
 !     
 !--------------------------------------------------------------------------------
 !
@@ -50,17 +50,25 @@
       !------------------------------------------------
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
-      !Setup for FLUX_out/FLUX_in using MIXING=1 
-      !----------------------------------------- 
-      allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,l_nk),cub_i(l_minx:l_maxx,l_miny:l_maxy,l_nk),                         &
-                adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk),adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk), &
-                w_cub_o_c(l_ni,l_nj,l_nk),w_cub_i_c(l_ni,l_nj,l_nk))
+      allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
+                cub_i(l_minx:l_maxx,l_miny:l_maxy,l_nk))
 
-      cub_o = 0.0 ; cub_i = 0.0 
+      !Initialize F_in_i/F_in_o/F_cub_i/F_cub_o using MIXING=1 
+      !-------------------------------------------------------
+      cub_o = 0.0 ; cub_i = 0.0
 
       mixing = 1.0
 
       call adv_set_flux_in (in_o,in_i,mixing,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0)
+
+      allocate (adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk), &
+                adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,l_nk))
+
+      allocate (w_cub_o_c(l_ni,l_nj,l_nk), &
+                w_cub_i_c(l_ni,l_nj,l_nk))
+
+      adw_o = 0.
+      adw_i = 0.
 
       call rpn_comm_xch_halox( in_o, l_minx, l_maxx, l_miny, l_maxy , &
         l_ni, l_nj, l_nk, adv_halox, adv_haloy, G_periodx, G_periody , &
@@ -71,7 +79,7 @@
         adw_i, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, l_ni, 0)
 
       !Estimate FLUX_out/FLUX_in when LAM using Flux calculations based on Aranami et al. (2015)
-      !----------------------------------------------------------------------------------------- 
+      !-----------------------------------------------------------------------------------------
       call adv_tricub_lag3d (no_advection, no_conserv, no_conserv, no_conserv, no_conserv, no_advection, no_slice, 0, &
                              w_cub_o_c, adw_o, w_cub_i_c, adw_i, 2, pxt, pyt, pzt,                                    &
                              no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, nbpts,                       &
@@ -93,4 +101,4 @@
 !---------------------------------------------------------------------
 !
       return
-      end subroutine psadj_LAM_0
+      end subroutine adv_psadj_LAM_0

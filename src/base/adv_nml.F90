@@ -44,6 +44,7 @@
       adw_ILMC_min_max_L = .true.
       Adw_reconstruction = 1
       Adw_PPM_mono       = 0
+      Adw_verbose        = 0
       pil_sub_s = -1
       pil_sub_n = -1
       pil_sub_w = -1

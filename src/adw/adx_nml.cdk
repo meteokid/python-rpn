@@ -49,6 +49,7 @@
       integer :: adw_halox
       integer :: adw_haloy
       integer :: adw_ILMC_sweep_max
+      integer :: adw_verbose
 
       namelist /adw_cfgs/ adw_stats_L
       namelist /adw_cfgs/ adw_ckbd_L
@@ -59,6 +60,7 @@
       namelist /adw_cfgs/ adw_BC_min_max_L
       namelist /adw_cfgs/ adw_ILMC_sweep_max
       namelist /adw_cfgs/ adw_ILMC_min_max_L
+      namelist /adw_cfgs/ adw_verbose
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_ckbd_L
@@ -75,4 +77,5 @@
       common /adw_nml_i/  adw_haloy
       common /adw_nml_i/  adw_maxcfl
       common /adw_nml_i/  adw_ILMC_sweep_max
+      common /adw_nml_i/  adw_verbose
 

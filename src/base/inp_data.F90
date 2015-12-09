@@ -178,7 +178,7 @@ End Interface
          if (associated(meqr)) then
             pres  => ssqr(1:l_ni,1:l_nj,1)
             ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-            istat= vgd_levels (vgd_src, ip1_list, ptr3d, pres)
+            istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
             srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
             call adj_ss2topo2 ( ssq0, topo_temp, srclev,meqr,ttr, &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
@@ -242,16 +242,18 @@ End Interface
       do n=1,Tr3d_ntr
          nullify (trp)
          vname= trim(Tr3d_name_S(n))
-         if (trim(vname) == 'HU') cycle
          istat= gmm_get (&
                trim(F_trprefix_S)//trim(vname)//trim(F_trsuffix_S),trp)
-         err= inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
-                        vgd_src, vgd_dst, ssqr, ssq0, trp,&
-                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
-         if (err == 0) then
-            NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
-            NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)
+         if (trim(vname) /= 'HU') then
+            err= inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
+                           vgd_src, vgd_dst, ssqr, ssq0, trp,&
+                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
+            if (err == 0) then
+               NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
+               NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)
+            endif
          endif
+         trp= max(trp,Tr3d_vmin(n))
       end do
 
       err= inp_get ('WT1',  'Q', Ver_ip1%t        ,&

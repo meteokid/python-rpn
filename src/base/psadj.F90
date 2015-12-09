@@ -26,7 +26,7 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 ! v4_50 - Qaddouri-PLante   - YY version
 ! v4_70 - Tanguay M.        - dry air pressure conservation
-! v4_XX - Tanguay M.        - REAL*8 with iterations 
+! v4_80 - Tanguay M.        - REAL*8 with iterations and psadj LAM 
 !	
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -58,7 +58,11 @@
 
       if (G_lam.and..not.Grd_yinyang_L) then
          if (Rstri_rstn_L) call gem_error(-1,'psadj','PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
-         call psadj_LAM_0
+         if (.not. Schm_adxlegacy_L) then
+            call adv_psadj_LAM_0
+         else
+            call adx_psadj_LAM_0
+         endif
          return
       endif
 

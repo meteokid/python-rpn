@@ -47,34 +47,11 @@
       character(len=PHY_MAXNAMELENGTH) :: varname_S,prefix_S, &
                                           basename_S,time_S,ext_S
       integer i,j,ind,wload,hzd,monot,massc,dejala,istat,nmeta,err
+      real vmin
       type(phymeta), dimension(:), pointer :: pmeta
 !
 !     __________________________________________________________________
 !
-      do i=1,MAXTR3D
-         if (Tr3d_list_s(i)=='') exit
-         ind= index(Tr3d_list_s(i),",")
-         if (ind .eq. 0) then
-            call low2up(Tr3d_list_s(i), varname)
-            attributes = ''
-         else
-            call low2up(Tr3d_list_s(i)(1:ind-1),varname   )
-            call low2up(Tr3d_list_s(i)(ind+1: ),attributes)
-         endif
-         call tracers_attributes (attributes, wload,hzd,monot,massc)
-         dejala=0
-         do j=1,Tr3d_ntr
-            if (trim(Tr3d_name_S(j))==trim(varname)) dejala=j
-         enddo
-         if (dejala==0) then
-            Tr3d_ntr = Tr3d_ntr + 1
-            dejala   = Tr3d_ntr
-            Tr3d_name_S(dejala)= trim(varname)
-         endif
-         Tr3d_hzd (dejala)= (hzd>0) ; Tr3d_wload(dejala)= (wload>0)
-         Tr3d_mono(dejala)= monot   ; Tr3d_mass (dejala)= massc
-      end do
-
       nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
 
       do i=1,nmeta
@@ -94,7 +71,33 @@
          endif
          Tr3d_hzd (dejala)= pmeta(i)%hzd   ; Tr3d_wload(dejala)= pmeta(i)%wload
          Tr3d_mono(dejala)= pmeta(i)%monot ; Tr3d_mass (dejala)= pmeta(i)%massc
+         Tr3d_vmin(dejala)= pmeta(i)%vmin
       enddo
+
+      do i=1,MAXTR3D
+         if (Tr3d_list_s(i)=='') exit
+         ind= index(Tr3d_list_s(i),",")
+         if (ind .eq. 0) then
+            call low2up(Tr3d_list_s(i), varname)
+            attributes = ''
+         else
+            call low2up(Tr3d_list_s(i)(1:ind-1),varname   )
+            call low2up(Tr3d_list_s(i)(ind+1: ),attributes)
+         endif
+         call tracers_attributes2(attributes, wload,hzd,monot,massc,vmin)
+         dejala=0
+         do j=1,Tr3d_ntr
+            if (trim(Tr3d_name_S(j))==trim(varname)) dejala=j
+         enddo
+         if (dejala==0) then
+            Tr3d_ntr = Tr3d_ntr + 1
+            dejala   = Tr3d_ntr
+            Tr3d_name_S(dejala)= trim(varname)
+         endif
+         Tr3d_hzd (dejala)= (hzd>0) ; Tr3d_wload(dejala)= (wload>0)
+         Tr3d_mono(dejala)= monot   ; Tr3d_mass (dejala)= massc
+         Tr3d_vmin(dejala)= vmin
+      end do
 
       dejala=0
       do j=1,Tr3d_ntr
@@ -105,6 +108,7 @@
          Tr3d_name_S(tr3d_ntr)(1:4) = 'HU  '
          Tr3d_hzd   (Tr3d_ntr)= .false. ; Tr3d_wload(Tr3d_ntr)= .false.
          Tr3d_mono  (Tr3d_ntr)= 0       ; Tr3d_mass (Tr3d_ntr)= 0
+         Tr3d_vmin  (Tr3d_ntr)= 0.
       else
          Tr3d_wload(dejala)= .false.
       endif

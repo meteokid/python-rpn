@@ -39,18 +39,21 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
    !@revisions
    !  2009-12,  Stephane Chamberland: original code from adx_main_3
    !  2012-06,  Stephane Gaudreault: Code optimization, Positivity-preserving advection
-   !  2014-09,  Monique Tanguay    : GEM4 Mass-Conservation 
+   !  2015-11,  Monique Tanguay    : GEM4 Mass-Conservation and FLUX calculations 
 !*@/
 
 #include "gmm.hf"
 #include "adx_nml.cdk"
+#include "adx_dims.cdk"
 #include "vt_tracers.cdk"
 
    type(gmm_metadata) :: mymeta
    logical :: mono_L, clip_positive_L, conserv_L
-   integer :: err
+   integer :: err,flux_n
    real, pointer, dimension (:,:,:) :: fld_in, fld_out
-   real, dimension(1,1,1), target :: no_conserv
+   real, dimension(1,1,1), target :: no_conserv, no_flux
+   real, pointer, dimension(:,:,:) ::cub_o,cub_i,in_o,in_i
+
 
    !---------------------------------------------------------------------
 
@@ -68,9 +71,15 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
 
    endif
 
+   flux_n = 0
+   if (F_mass_kind == 1.and.adx_lam_L.and..not.adx_yinyang_L) flux_n = 1
+
    conserv_L = F_mono_kind/=0.or.F_mass_kind/=0
 
    if (conserv_L) then
+
+      mono_L = .false.
+      clip_positive_L = .false.
 
       nullify(fld_cub,fld_mono,fld_lin,fld_min,fld_max)
 
@@ -80,6 +89,25 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
       err = gmm_get(gmmk_min_s ,fld_min ,mymeta)
       err = gmm_get(gmmk_max_s ,fld_max ,mymeta)
 
+      !To maintain nesting values
+      !--------------------------
+      fld_cub  = fld_out
+      fld_mono = fld_out
+
+      if (flux_n>0) then
+
+         allocate (cub_o(adx_mlminx:adx_mlmaxx,adx_mlminy:adx_mlmaxy,F_nk),cub_i(adx_mlminx:adx_mlmaxx,adx_mlminy:adx_mlmaxy,F_nk), &
+                    in_o(adx_mlminx:adx_mlmaxx,adx_mlminy:adx_mlmaxy,F_nk), in_i(adx_mlminx:adx_mlmaxx,adx_mlminy:adx_mlmaxy,F_nk))
+
+      else 
+
+         cub_o => no_flux
+          in_o => no_flux
+         cub_i => no_flux
+          in_i => no_flux
+
+      endif
+
    else
 
       fld_cub  => no_conserv
@@ -87,6 +115,11 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
       fld_lin  => no_conserv
       fld_min  => no_conserv
       fld_max  => no_conserv
+
+         cub_o => no_flux
+          in_o => no_flux
+         cub_i => no_flux
+          in_i => no_flux
 
    endif
 
@@ -97,6 +130,7 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                      fld_min (mymeta%l(1)%low,mymeta%l(2)%low,1),&
                      fld_max (mymeta%l(1)%low,mymeta%l(2)%low,1),&
                      fld_in  (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                     cub_o,in_o,cub_i,in_i,flux_n,               &
                      F_c1, F_capx1, F_capy1, F_capz1            ,&
                      F_capx2, F_capy2, F_capz2                  ,&
                      mymeta%l(1)%low,mymeta%l(1)%high           ,&
@@ -112,6 +146,7 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                                                fld_min (mymeta%l(1)%low,mymeta%l(2)%low,1),&
                                                fld_max (mymeta%l(1)%low,mymeta%l(2)%low,1),&
                                                fld_in  (mymeta%l(1)%low,mymeta%l(2)%low,1),&
+                                               cub_o,cub_i,                                &
                                                mymeta%l(1)%low,mymeta%l(1)%high           ,&
                                                mymeta%l(2)%low,mymeta%l(2)%high,F_nk      ,&
                                                i0,in,j0,jn,k0,F_mono_kind,F_mass_kind)

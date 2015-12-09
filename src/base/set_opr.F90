@@ -50,6 +50,7 @@
 #include "type.cdk"
 #include "ver.cdk"
 
+      integer, external :: sol_transpose2
       real*8 ZERO_8, ONE_8, HALF_8
       parameter( ZERO_8 = 0.0 )
       parameter( ONE_8  = 1.0 )
@@ -61,7 +62,9 @@
 !
 !     ---------------------------------------------------------------
 !
-      call sol_transpose ( Ptopo_npex, Ptopo_npey, .false. )
+      ierr= sol_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
+      call gem_error ( ierr,'SOL_TRANSPOSE', &
+                       'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
 
 !     Initialize commons for fast fourier transforms
 
@@ -199,11 +202,12 @@
       endif
 
       call set_oprz ()
-      if (Grd_yinyang_L) then
-          call yyg_initstencils ()
-          call yyg_rhs_initscalbc()
-      endif
 
+      if (Grd_yinyang_L) then
+         call yyg_initstencils  ()
+         call yyg_rhs_initscalbc()
+      endif
+      
       if ( Sol_type_S(1:9).eq.'ITERATIVE' ) then
 
          if (Sol_type_S(11:12).eq.'2D') then

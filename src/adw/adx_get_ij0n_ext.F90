@@ -12,47 +12,42 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+!/@*
+!**s/p adx_get_ij0n_ext: Establish scope of extended advection operations if LAM (Based on adx_get_ij0n)
 
-!**s/r surfix - Copy last level dynamical field in diag level. 
-!
+subroutine adx_get_ij0n_ext(i0,in,j0,jn)
 
-!
-      subroutine dummy_diag
-!
-      implicit none
+   implicit none
+
 #include <arch_specific.hf>
-!
-!
-!author
-!         C. Girard & A. Plante, Nov. 2008
-!
-!revision
-! v4_05 - Lepine M.         - VMM replacement with GMM
-!
-!object
-!	
 
-#include "gmm.hf"
-#include "glb_ld.cdk"
-#include "vt1.cdk"
-!
-      real, pointer, dimension(:,:,:) :: hu
-      type(gmm_metadata) :: mymeta
-      integer :: istat
-!
-!     ---------------------------------------------------------------
-!
-      istat = gmm_get(gmmk_ut1_s,ut1,mymeta)
-      istat = gmm_get(gmmk_vt1_s,vt1,mymeta)
-      istat = gmm_get(gmmk_tt1_s,tt1,mymeta)
-      istat = gmm_get('TR/HU:P' ,hu ,mymeta)
-!
-      ut1(1:l_niu,1:l_nj ,l_nk+1) = ut1(1:l_niu,1:l_nj ,l_nk  )
-      vt1(1:l_ni ,1:l_njv,l_nk+1) = vt1(1:l_ni ,1:l_njv,l_nk  )
-      tt1(1:l_ni ,1:l_nj ,l_nk+2) = tt1(1:l_ni ,1:l_nj ,l_nk+1)
-      hu (1:l_ni ,1:l_nj ,l_nk+2) = hu (1:l_ni ,1:l_nj ,l_nk+1)
-!
-!     ---------------------------------------------------------------
-!
-      return
-      end
+   integer :: i0,j0,in,jn
+
+   !@author Monique Tanguay
+
+   !@revisions
+   !v4_80 - Tanguay M.        - GEM4 Mass-Conservation and FLUX calculations
+
+#include "adx_dims.cdk"
+   !*@/
+   !---------------------------------------------------------------------
+   integer :: jext
+
+   i0 = 1
+   in = adx_mlni
+   j0 = 1
+   jn = adx_mlnj
+
+   if (adx_lam_L) then
+     !jext=1
+      jext=adx_maxcfl
+      if (adx_yinyang_L) jext=2
+      if (adx_is_west)  i0 =            adx_pil_w - jext
+      if (adx_is_east)  in = adx_mlni - adx_pil_e + jext
+      if (adx_is_south) j0 =            adx_pil_s - jext
+      if (adx_is_north) jn = adx_mlnj - adx_pil_n + jext
+   endif
+
+   !---------------------------------------------------------------------
+   return
+end subroutine adx_get_ij0n_ext

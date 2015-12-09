@@ -15,7 +15,7 @@
 #include "msg.h"
 
 !*
-subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, &
+subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_cub_o, F_in_o, F_cub_i, F_in_i, F_flux_n, F_c1, &
                          F_capx1, F_capy1, F_capz1, &
                          F_capx2, F_capy2, F_capz2, &
                          Minx,Maxx,Miny,Maxy,F_nk,  &
@@ -35,10 +35,11 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    logical, intent(in) :: F_clip_positive_L !I, .true. positive advection
    logical, intent(in) :: F_conserv_L       !I, .true. conservation
    logical, intent(in) :: F_wind_L          !I, .true. if field is wind like
+   integer, intent(in) :: F_flux_n          ! 0=NO FLUX; 1=TRACER+FLUX; 2=FLUX only
    real, intent(in)    :: F_capx1(*), F_capy1(*), F_capz1(*)
    real, intent(in)    :: F_capx2(*), F_capy2(*), F_capz2(*)
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in) :: F_in
-   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_out, F_cub, F_mono, F_lin, F_min, F_max
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in) :: F_in, F_in_o, F_in_i
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(out) :: F_out, F_cub, F_mono, F_lin, F_min, F_max, F_cub_o, F_cub_i
 !
    !@author alain patoine
    !@revisions
@@ -51,7 +52,7 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    ! v3_30 - McTaggart-Cowan   - Vectorization subroutines *_vec
    ! v3_30 - Tanguay M.        - adjust OPENMP for LAM
    ! v4_06 - Gaudreault S.     - Code optimization, Positivity-preserving advection
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation and FLUX calculations 
 !**/
 
 #include "adx_dims.cdk"
@@ -59,7 +60,7 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
 #include "adx_nml.cdk"
 
    logical, parameter :: EXTEND_L = .true.
-   integer :: i, j, k, istat, nbpts
+   integer :: i, j, k, istat, nbpts, i0_e, in_e, j0_e, jn_e
    real    :: dummy
    real    :: fld_adw(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk)
    real, dimension(:), pointer             :: wrka
@@ -67,7 +68,9 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    real, dimension(:), pointer             :: w_mono_a, w_lin_a, w_min_a, w_max_a
    real, dimension(adx_mlni,adx_mlnj,F_nk) :: w_mono_b, w_lin_b, w_min_b, w_max_b, &
                                               w_mono_c, w_lin_c, w_min_c, w_max_c
-   real, dimension(1), target              :: no_conserv
+   real, dimension(:,:,:), pointer         :: adw_o,adw_i,w_cub_o_c, w_cub_i_c
+   real, dimension(1,1,1), target          :: no_flux
+   real, dimension(1),     target          :: no_conserv
 
    !---------------------------------------------------------------------
    nullify(wrka)
@@ -89,19 +92,59 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
    call adx_grid_scalar (fld_adw, F_in, adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
                                    Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
 
+   if (F_flux_n>0) then
+
+      !Establish scope of extended advection operations
+      !------------------------------------------------
+      call adx_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
+
+      !Initialize F_in_i/F_in_o/F_cub_i/F_cub_o
+      !----------------------------------------
+      F_cub_o = 0.0 ; F_cub_i = 0.0
+
+      call adx_set_flux_in (F_in_o,F_in_i,F_in,Minx,Maxx,Miny,Maxy,F_nk,k0)
+
+      allocate (adw_o(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk), &
+                adw_i(adx_lminx:adx_lmaxx,adx_lminy:adx_lmaxy,F_nk))
+
+      allocate (w_cub_o_c(adx_mlni,adx_mlnj,F_nk), &
+                w_cub_i_c(adx_mlni,adx_mlnj,F_nk))
+
+      adw_o = 0.
+      adw_i = 0.
+
+      call adx_grid_scalar (adw_o,F_in_o,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
+                                   Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
+
+      call adx_grid_scalar (adw_i,F_in_i,adx_lminx,adx_lmaxx,adx_lminy,adx_lmaxy,&
+                                   Minx,Maxx,Miny,Maxy, F_nk, F_wind_L, EXTEND_L)
+
+   else
+ 
+        adw_o   => no_flux
+        adw_i   => no_flux
+      w_cub_o_c => no_flux
+      w_cub_i_c => no_flux
+
+   endif
+
    nbpts = adx_mlni*adx_mlnj*F_nk
 
    if (adw_catmullrom_L) then
       call adx_tricub_catmullrom (wrkc, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
                                   F_mono_L, i0,in,j0,jn,k0, F_nk, F_lev_S)
    else
-      call adx_tricub_lag3d7 (wrkc, w_mono_c, w_lin_c, w_min_c, w_max_c, fld_adw, F_capx1, F_capy1, F_capz1, nbpts, &
+      call adx_tricub_lag3d7 (wrkc, w_mono_c, w_lin_c, w_min_c, w_max_c, fld_adw, &
+                              w_cub_o_c, adw_o, w_cub_i_c, adw_i, F_flux_n,       &
+                              F_capx1, F_capy1, F_capz1, nbpts, &
                               F_mono_L, F_conserv_L, i0,in,j0,jn,k0, F_nk, F_lev_S)
    end if
 
    if (.not. adx_lam_L) then
       if (adx_fro_a > 0 ) then
-         call adx_tricub_lag3d7 (wrka, w_mono_a, w_lin_a, w_min_a, w_max_a, fld_adw, F_capx2, F_capy2, F_capz2, adx_fro_a, &
+         call adx_tricub_lag3d7 (wrka, w_mono_a, w_lin_a, w_min_a, w_max_a, fld_adw,   &
+                                                no_flux, no_flux, no_flux, no_flux, 0, &
+                                                F_capx2, F_capy2, F_capz2, adx_fro_a,  &
                                                 F_mono_L, F_conserv_L, 1,adx_fro_a,1,1,1,1, F_lev_S)
       endif
 
@@ -155,6 +198,11 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
       F_lin (i0:in,j0:jn,k) = w_lin_c (i0:in,j0:jn,k)
       F_min (i0:in,j0:jn,k) = w_min_c (i0:in,j0:jn,k)
       F_max (i0:in,j0:jn,k) = w_max_c (i0:in,j0:jn,k)
+
+      if (F_flux_n>0) then
+      F_cub_o(i0_e:in_e,j0_e:jn_e,k)= w_cub_o_c(i0_e:in_e,j0_e:jn_e,k)
+      F_cub_i(i0_e:in_e,j0_e:jn_e,k)= w_cub_i_c(i0_e:in_e,j0_e:jn_e,k)
+      endif
    enddo
 !$omp enddo
    endif 
@@ -163,6 +211,7 @@ subroutine adx_interp7 ( F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_c1, 
 
    if (.not.adx_lam_L) deallocate(wrka)
    if (.not.adx_lam_L.and.F_conserv_L) deallocate(w_mono_a,w_lin_a,w_min_a,w_max_a)
+   if (F_flux_n>0) deallocate(adw_o,adw_i,w_cub_o_c,w_cub_i_c)
    call msg(MSG_DEBUG,'adx_interp [end]')
 
    !---------------------------------------------------------------------

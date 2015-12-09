@@ -46,7 +46,7 @@
       read (ndomains_S(indx1+1: ),*,end=33,err=33) dom_fin
 
       goto 101
-  33  write (6,1002) ndomains_S
+  33  write (6,1002) 'GEM_NDOMAINS',ndomains_S
       return
 
  101  if (clib_getenv ('DOMAIN_end',last_domain_S).lt.0) then

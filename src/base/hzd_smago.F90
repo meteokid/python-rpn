@@ -42,6 +42,8 @@
       istat = gmm_get(gmmk_smagU_s, smagU_p)
       istat = gmm_get(gmmk_smagV_s, smagV_p)
 
+      ! TODO : remplacer éventuellement delta par dy*rayt
+
       do k=1,nk
          do j=-1,l_nj+2
             do i=-1,l_ni+2
@@ -91,8 +93,8 @@
       end do
 
       ! Save coefficients for output
-      smagU_p = smagcoef
-      smagV_p = smagcoef_z
+      smagU_p = (smagparam * delta)**2 * smagcoef
+      smagV_p = (smagparam * delta)**2 * smagcoef_z
 
       return
       end subroutine hzd_smago

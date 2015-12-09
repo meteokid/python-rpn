@@ -20,9 +20,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     Michel Desgagne
-
 #include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
@@ -38,9 +35,9 @@
 #include "wil_nml.cdk"
       include "rpn_comm.inc"
 
-      integer, external :: gem_nml,gemdm_config,grid_nml2, &
-                           adv_nml,adv_config,adx_nml,adx_config, &
-                           step_nml, set_io_pes
+      integer, external :: gem_nml,gemdm_config,grid_nml2       ,&
+                           adv_nml,adv_config,adx_nml,adx_config,&
+                           step_nml, set_io_pes, domain_decomp3
       character*50 LADATE,dumc1_S
       integer err(8),f1,f2,f3,f4
 !
@@ -101,7 +98,9 @@
 
 ! Establish domain decomposition (mapping subdomains and processors)
 
-      call domain_decomp2 (Ptopo_npex, Ptopo_npey, .false.)
+      err(1)= domain_decomp3 (Ptopo_npex, Ptopo_npey, .false.)
+      call gem_error ( err(1),'DOMAIN_DECOMP', &
+                      'ILLEGAL DOMAIN PARTITIONING' )
 
       if (lun_out.gt.0) then 
          f1 = G_ni/Ptopo_npex + min(1,mod(G_ni,Ptopo_npex))
@@ -111,7 +110,7 @@
          write (lun_out,1001) Grd_typ_S,G_ni,G_nj,G_nk,f1,f3,f2,f4
          LADATE='RUNSTART='//Step_runstrt_S(1:8)//Step_runstrt_S(10:11)
          call write_status_file3 (trim(LADATE))
-         call write_status_file3 ('communications_established=YES' )
+         call write_status_file3 ( 'communications_established=YES' )
          if (Grd_yinyang_L)    &
          call write_status_file3 ('GEM_YINYANG=1')
       endif
@@ -127,10 +126,10 @@
       Inp_npes = max(1,min(Inp_npes ,min(Ptopo_npex,Ptopo_npey)**2))
 
       err= 0
-      if (lun_out.gt.0) write (lun_out,1002) 'Output'
+      if (lun_out.gt.0) write (lun_out,1002) 'Output',Out3_npes
       err(1)= set_io_pes (Out3_comm_id,Out3_comm_setno,Out3_iome,&
                           Out3_comm_io,Out3_iobcast,Out3_npes)
-      if (lun_out.gt.0) write (lun_out,1002) 'Input'
+      if (lun_out.gt.0) write (lun_out,1002) 'Input',Inp_npes
       err(2)= set_io_pes (Inp_comm_id ,Inp_comm_setno ,Inp_iome ,&
                           Inp_comm_io ,Inp_iobcast ,Inp_npes )
       call gem_error ( min(err(1),err(2)),'set_world_view', &
@@ -141,7 +140,7 @@
       call set_gmm
 			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
- 1002 format (/ ' Creating IO pe set for ',a)
+ 1002 format (/ ' Creating IO pe set for ',a,' with ',i4,' Pes')
 !
 !-------------------------------------------------------------------
 !

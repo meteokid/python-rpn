@@ -14,7 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "msg.h"
 !/@*
-subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y, F_z, F_num,&
+subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in,   &
+                              F_cub_o, F_in_o, F_cub_i, F_in_i, F_flux_n, &
+                              F_x, F_y, F_z, F_num,                       &
                               F_mono_L, F_conserv_L, i0, in, j0, jn, k0, F_nk, F_lev_S)
 
    implicit none
@@ -29,17 +31,20 @@ subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y
    integer, intent(in) :: i0,in,j0,jn,k0              ! scope of operator
    logical, intent(in) :: F_mono_L                    ! .true. monotonic interpolation
    logical, intent(in) :: F_conserv_L                 ! .true. conservative interpolation
+   integer, intent(in) :: F_flux_n                    ! 0=NO FLUX; 1=TRACER+FLUX; 2=FLUX only
    real,dimension(F_num), intent(in) :: F_x, F_y, F_z ! interpolation target x,y,z coordinates
-   real,dimension(*), intent(in) :: F_in              ! field to interpolate 
+   real,dimension(*), intent(in) ::F_in,F_in_o,F_in_i ! field to interpolate (F_in_o for FLUX_out;F_in_i for FLUX_in)
    real,dimension(F_num), intent(out) :: F_cub        ! High-order SL solution
    real,dimension(F_num), intent(out) :: F_mono       ! High-order monotone SL solution
    real,dimension(F_num), intent(out) :: F_lin        ! Low-order SL solution
    real,dimension(F_num), intent(out) :: F_min        ! MIN over cell
    real,dimension(F_num), intent(out) :: F_max        ! MAX over cell
+   real,dimension(F_num), intent(out) :: F_cub_o      ! High-order SL solution FLUX_out
+   real,dimension(F_num), intent(out) :: F_cub_i      ! High-order SL solution FLUX_in
    !
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
-   !  2014-XX,  Monique Tanguay    : GEM4 Mass-Conservation
+   !  2015-11,  Monique Tanguay    : GEM4 Mass-Conservation and FLUX calculations
 !*@/
 
 #include "adx_dims.cdk"
@@ -109,6 +114,8 @@ subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y
       ! print*,'ERROR IN ADX_TRICUB_LAG3D'
    endif
 
+   if (F_flux_n == 2) goto 10
+
    if (.NOT.F_conserv_L) then
 
 #undef ADX_CONSERV
@@ -128,6 +135,13 @@ subroutine adx_tricub_lag3d7 (F_cub, F_mono, F_lin, F_min, F_max, F_in, F_x, F_y
 #include "adx_tricub_lag3d_loop.cdk"
 
    endif
+
+10 continue
+
+   !-------------------------
+   !Estimate FLUX_out/FLUX_in
+   !-------------------------
+   if (F_flux_n>0) call adx_tricub_lag3d_flux (F_cub_o, F_in_o, F_cub_i, F_in_i, F_x, F_y, F_z, F_num, k0, F_nk, F_lev_S) 
 
    call timing_stop (33)
 

@@ -15,18 +15,12 @@
 
 !**s/r domain_decomp
 
-      subroutine domain_decomp2 ( F_npex, F_npey, F_checkparti_L )
+      integer function domain_decomp3 ( F_npex, F_npey, F_checkparti_L )
       implicit none
 #include <arch_specific.hf>
 
       logical F_checkparti_L
       integer F_npex, F_npey
-
-!author
-!     Michel Desgagne     Summer 2006
-!
-!revision
-! v3_30 - Desgagne M.       - Initial version
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -77,19 +71,19 @@
          Lam_pil_s = Glb_pil_s
       endif
 
+      domain_decomp3= -1
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
 
-      ierr = -1
-      if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true., &
-                   F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.          &
-          decomp3 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true., &
-                   F_npey, (Grd_extension+1), F_checkparti_L, 0 )) ierr = 0
-      if  (Lun_out.gt.0) then
-         if (ierr.lt.0)  then
-            write(lun_out,*) 'DOMAIN_DECOMP: ILLEGAL DOMAIN PARTITIONING'
-         else
-            write(lun_out,*) 'DOMAIN_DECOMP: PARTITIONING is OK'
-         endif
+      if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true.,&
+                   F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.         &
+          decomp3 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true.,&
+                   F_npey, (Grd_extension+1), F_checkparti_L, 0 ))              &
+      domain_decomp3= 0
+
+      if (domain_decomp3.lt.0)  then
+         if  (Lun_out.gt.0) &
+         write(lun_out,*) 'DECOMP: ILLEGAL DOMAIN PARTITIONING'
+         return
       endif
 
       l_nk = G_nk
@@ -99,7 +93,6 @@
       if ((l_east).and.(G_lam)) l_niu = l_ni - 1
 
       if (.not.F_checkparti_L) then
-         call gem_error(ierr,'DOMAIN_DECOMP','ILLEGAL DOMAIN PARTITIONING')
          call glbpos   
       endif
 

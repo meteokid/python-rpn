@@ -106,7 +106,7 @@
 
       if ( nomvar == '@NUL' ) return
 
-      if (Inp_iome .ge.0) then
+      if (Inp_iome .ge. 0) then
          vcode= -1 ; nz= -1
          nrec= fstinl (Inp_handle, n1,n2,n3, datev,' ', &
                        ip1,-1,-1,' ', nomvar,liste,lislon,nlis)
@@ -128,14 +128,16 @@
              endif
          endif
 
-         nz= (lislon + Inp_npes - 1) / Inp_npes
-         allocate (F_ip1(lislon), wk2(G_ni*G_nj,nz+1)) ! Valin???
-
+         allocate (F_ip1(lislon))
          if (lislon.gt.1) then
             call sort_ip1 (liste,F_ip1,lislon)
          else
             F_ip1(1) = p1
          endif
+
+         nz= (lislon + Inp_npes - 1) / Inp_npes
+
+         allocate (wk2(G_ni*G_nj,nz+1)) ! Valin???
 
          mpx      = mod( Inp_iome, Inp_npes )
          local_nk = lislon / Inp_npes

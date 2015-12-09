@@ -205,7 +205,7 @@
 
       ier= WB_OK
       if (stochphy_L) then
-         ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha    , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha-1    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)

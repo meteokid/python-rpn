@@ -29,8 +29,8 @@
       real,    pointer, dimension (:,:,:)     :: ensdiv  => null()
       real,    pointer, dimension (:,:,:)     :: ensvor  => null()
 ! special shapes for spectral coefficients
-      complex, pointer, dimension (:,:,:)       :: anm     => null()
-      complex, pointer, dimension (:,:,:)       :: bnm     => null()
+      real*8, pointer, dimension (:,:,:)       :: anm     => null()
+      real*8, pointer, dimension (:,:,:)       :: bnm     => null()
 ! special shape for random number generator
       integer, pointer, dimension (:,:)       :: dumdum  => null()
 

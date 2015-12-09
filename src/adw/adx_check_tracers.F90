@@ -13,45 +13,62 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_get_ij0n_ext: Establish scope of extended advection operations
+!**s/p adx_check_tracers: Check if extended advection operations required 
 
-      subroutine adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
+      subroutine adx_check_tracers ()
 
       implicit none
 
 #include <arch_specific.hf>
 
-      integer :: i0_e,j0_e,in_e,jn_e
-
       !@author Monique Tanguay
 
       !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
+#include "tr3d.cdk"
+#include "adx_tracers.cdk"
 #include "glb_ld.cdk"
-#include "adv_grid.cdk"
 #include "grd.cdk"
+#include "schm.cdk"
+#include "lun.cdk"
 
       !---------------------------------------------------------------------
-      integer :: jext
+      integer n
+      logical qw_L
       !---------------------------------------------------------------------
 
-      i0_e = 1
-      in_e = l_ni
-      j0_e = 1
-      jn_e = l_nj
+      adx_flux_L = .FALSE.
+      adx_core_L = .FALSE.
 
-      if (G_lam) then
-        !jext=1
-         jext=Grd_maxcfl
-         if (Grd_yinyang_L) jext=2
-         if (l_west)  i0_e =        pil_w - jext
-         if (l_east)  in_e = l_ni - pil_e + jext
-         if (l_south) j0_e =        pil_s - jext
-         if (l_north) jn_e = l_nj - pil_n + jext
+      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) adx_flux_L = .TRUE. !PSADJ (FLUX) 
+
+      do n=1,Tr3d_ntr
+
+         qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2).eq.'HU'
+
+         if (qw_L) cycle
+
+         if (G_lam.and..not.Grd_yinyang_L) then !LAM
+
+            if (Tr3d_mass(n)==1) adx_flux_L    = .true. !BC (FLUX)   
+
+            if (Tr3d_mass(n)/=0) adx_core_L = .true. 
+            if (Tr3d_mono(n)/=0) adx_core_L = .true. 
+
+         endif
+
+      end do
+
+      adx_extension_L = adx_flux_L
+
+      if (adx_extension_L.and.Lun_out>0) then
+         write(Lun_out,*) ''
+         write(Lun_out,*) 'ADX_CHECK_EXT: EXTENDED ADVECTION OPERATIONS REQUIRED'
+         write(Lun_out,*) ''
       endif
 
       !---------------------------------------------------------------------
 
       return
-end subroutine adv_get_ij0n_ext
+end subroutine adx_check_tracers

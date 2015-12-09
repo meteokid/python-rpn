@@ -38,13 +38,11 @@
 #include "step.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
-!      include "rpn_comm.inc"
+      include "rpn_comm.inc"
 
+      external init_ndoms, pe_zero_topo
       logical, external :: set_dcst_8
-      integer, external :: rpn_comm_init_multi_level, RPN_COMM_comm, rpn_comm_gridpeers,&
-                           pe_zero_topo, model_timeout_alarm
-!      integer, external :: pe_zero_topo, model_timeout_alarm
-      external init_ndoms
+      integer, external :: model_timeout_alarm
 
       character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
       character(len=256) :: my_dir

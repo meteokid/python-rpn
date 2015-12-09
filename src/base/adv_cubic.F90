@@ -71,11 +71,20 @@
       if (F_mass_kind == 1.and.G_lam.and..not.Grd_yinyang_L) flux_n = 1
 
       if (flux_n>0) then
-         allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,F_nk), cub_i(l_minx:l_maxx,l_miny:l_maxy,F_nk),                        & 
-                   adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk),adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk), &
-                   w_cub_o_c(l_ni,l_nj,F_nk),w_cub_i_c(l_ni,l_nj,F_nk))
 
+         !Establish scope of extended advection operations
+         !------------------------------------------------
          call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
+
+         allocate (cub_o(l_minx:l_maxx,l_miny:l_maxy,F_nk), &
+                   cub_i(l_minx:l_maxx,l_miny:l_maxy,F_nk)) 
+
+         allocate (adw_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk), &
+                   adw_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk))
+
+         allocate (w_cub_o_c(l_ni,l_nj,F_nk), &
+                   w_cub_i_c(l_ni,l_nj,F_nk))
+
       else
          w_cub_o_c=> no_flux ; adw_o=> no_flux ; cub_o=> no_flux
          w_cub_i_c=> no_flux ; adw_i=> no_flux ; cub_i=> no_flux

@@ -1,6 +1,6 @@
-!**s/p ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Yin-Yang/LAM 
+!**s/p ILMC_LAM - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Yin-Yang/LAM (LEGACY) 
 
-      subroutine ILMC_LAM (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,F_ILMC_min_max_L,F_ILMC_sweep_max)
+      subroutine adx_ILMC_LAM (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,F_ILMC_min_max_L,F_ILMC_sweep_max)
 
       use array_ILMC
 
@@ -34,7 +34,7 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "grd.cdk"
-#include "adv_nml.cdk"
+#include "adx_nml.cdk"
 
       !----------------------------------------------------------
       integer SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,iprod, &

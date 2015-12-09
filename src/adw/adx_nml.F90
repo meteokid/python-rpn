@@ -43,6 +43,7 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_BC_min_max_L = .TRUE.
    adw_ILMC_sweep_max = 2
    adw_ILMC_min_max_L = .TRUE.
+   adw_verbose        = 0 
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')

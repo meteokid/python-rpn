@@ -158,6 +158,7 @@
       Hzd_smago_L    = .false.
       Hzd_smago_param= -1
       Hzd_smago_delta= -1
+      Hzd_theta_njpole_gu_only= -1
 
       Vspng_nk       = 0
       Vspng_coeftop  = -1.

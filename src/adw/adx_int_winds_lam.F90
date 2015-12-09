@@ -37,14 +37,14 @@ subroutine adx_int_winds_lam(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
    real, dimension(F_ni,F_nj,F_nk), intent(out) :: F_wrkx1,F_wrky1                      ! F_dt * result of interp
 !
    !@revisions
-   !  2014-09,  Monique Tanguay    : GEM4 Mass-Conservation
+   !  2015-11,  Monique Tanguay    : GEM4 Mass-Conservation and FLUX calculations
    !*@/
    !---------------------------------------------------------------------
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 
    integer :: num
-   real, dimension(1,1,1), target :: no_conserv
+   real, dimension(1,1,1), target :: no_conserv,no_flux
 
    call msg(MSG_DEBUG,'adx_int_winds_lam')
    if (F_cliptraj_L) then
@@ -62,10 +62,14 @@ subroutine adx_int_winds_lam(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
                                        .false., F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
          end if
       else
-         call adx_tricub_lag3d7(F_wrkx1, no_conserv, no_conserv, no_conserv, no_conserv, F_u1, F_xth,F_yth,F_zth,num, &
+         call adx_tricub_lag3d7(F_wrkx1, no_conserv, no_conserv, no_conserv, no_conserv, F_u1, &
+                                no_flux, no_flux, no_flux, no_flux, 0,                         &
+                                F_xth,F_yth,F_zth,num,                                         &
                                 .false.,.false.,F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
          if(F_has_u2_L) then
-            call adx_tricub_lag3d7(F_wrky1, no_conserv, no_conserv, no_conserv, no_conserv, F_u2, F_xth,F_yth,F_zth,num, &
+            call adx_tricub_lag3d7(F_wrky1, no_conserv, no_conserv, no_conserv, no_conserv, F_u2, &
+                                   no_flux, no_flux, no_flux, no_flux, 0,                         &
+                                   F_xth,F_yth,F_zth,num,                                         &
                                    .false.,.false.,F_i0,F_in,F_j0,F_jn,F_k0,F_nk, 's')
          end if
       end if

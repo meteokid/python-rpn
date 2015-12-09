@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !/@*
-subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, &
+subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min, F_max, F_in, F_for_flux_o,F_for_flux_i, &
                                    Minx,Maxx,Miny,Maxy,F_nk,i0,in,j0,jn,k0,F_mono_kind,F_mass_kind )
 
    implicit none
@@ -42,12 +42,14 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
    real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_min  !I: MIN over cell
    real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_max  !I: MAX over cell
    real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_in   !I: Field at previous time step
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_for_flux_o !I: Advected mixing ratio with 0 in NEST
+   real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)     :: F_for_flux_i !I: Advected mixing ratio with 0 in CORE
 !
 !   author Monique Tanguay 
 !
    !@revisions
-   ! v4_XX - Tanguay M.        - initial version 
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
+   ! v4_80 - Tanguay M.        - initial version 
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation and FLUX calculations 
 !**/
 
 #include "lun.cdk"
@@ -56,14 +58,13 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 
    logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L
    real high(Minx:Maxx,Miny:Maxy,F_nk)
-   real, dimension(1,1,1), target :: no_flux
 
    !---------------------------------------------------------------------
 
    CLIP_L          = F_mono_kind == 1
    ILMC_L          = F_mono_kind == 2
    Bermejo_Conde_L = F_mass_kind == 1
-   Cubic_L         = F_mono_kind == 0.and.F_mass_kind == 9 
+   Cubic_L         = F_mono_kind == 0.and.F_mass_kind == 9
 
    !Cubic or Mono(CLIPPING) interpolation
    !-------------------------------------
@@ -88,8 +89,8 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 
    !Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
    !-----------------------------------------------------------------------
-   if (ILMC_L.and..not.Adx_lam_L) call ILMC_GU  (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
-   if (ILMC_L.and.     Adx_lam_L) call ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,adw_ILMC_min_max_L,adw_ILMC_sweep_max) 
+   if (ILMC_L.and..not.Adx_lam_L) call adx_ILMC_GU  (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
+   if (ILMC_L.and.     Adx_lam_L) call adx_ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,adw_ILMC_min_max_L,adw_ILMC_sweep_max) 
 
    !Restore Mass-Conservation: Bermejo and Conde,2002,MWR
    !-----------------------------------------------------
@@ -99,8 +100,8 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 
        if (CLIP_L.or.ILMC_L) high = F_mono
 
-       call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,no_flux,no_flux, &
-                           Minx,Maxx,Miny,Maxy,F_nk,k0,adw_BC_min_max_L,CLIP_L,ILMC_L)
+       call adx_Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,F_for_flux_o,F_for_flux_i, &
+                               Minx,Maxx,Miny,Maxy,F_nk,k0,adw_BC_min_max_L,CLIP_L,ILMC_L)
 
    else
 

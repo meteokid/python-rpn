@@ -48,6 +48,7 @@
 ! v4_13 - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
 ! v4_21 - Plante A.         - Call predat4     
 ! v4_40 - Lee/Qaddouri      - Add exchange of ME for Yin-Yang seam
+! v4_80 - Tanguay M.        - Add check_tracers
 
 #include "gmm.hf"
 #include "grd.cdk"
@@ -97,7 +98,11 @@
          call timing_stop  ( 71 )
       endif
 
-      call adv_check_tracers
+      if (.not. Schm_adxlegacy_L) then
+         call adv_check_tracers
+      else
+         call adx_check_tracers
+      endif
 
       dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
       call bitflip (ut1, vt1, tt1, perturb_nbits, perturb_npts, dim)

@@ -1,6 +1,6 @@
-!**s/p ILMC_GU - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Global Uniform
+!**s/p ILMC_GU - Ensures monotonicity of interpolated field while preserving mass (Sorenson et al.,2013) - Global Uniform (LEGACY)
 
-      subroutine ILMC_GU (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0)
+      subroutine adx_ILMC_GU (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
       use array_ILMC
 
@@ -55,7 +55,7 @@
 
       !----------------------------------------------------------
 
-      verbose_L = .false.
+      verbose_L = Adw_verbose/=0 
 
       time_m = 0
 

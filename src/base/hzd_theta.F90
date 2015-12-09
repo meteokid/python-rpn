@@ -28,50 +28,56 @@
 #include "dcst.cdk"
 #include "pw.cdk"
 
-      type(gmm_metadata) :: mymeta
-      integer istat,i,j,k
+      integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5
       real :: pres_t(l_ni,l_nj,G_nk),th(l_minx:l_maxx,l_miny:l_maxy,G_nk)
 !
 !-------------------------------------------------------------------
 !
       if ( (Hzd_type_S.eq.'HO_IMP') .and. &
-          ((Hzd_pwr_theta.ne.Hzd_pwr).or.(abs((Hzd_lnr_theta-Hzd_lnr)/Hzd_lnr).gt.eps)) ) then
+          ((Hzd_pwr_theta.ne.Hzd_pwr).or. &
+          (abs((Hzd_lnr_theta-Hzd_lnr)/Hzd_lnr).gt.eps)) ) then
          if (Lun_out.gt.0) write (Lun_out,1001)
          return
       endif
 
-      istat = gmm_get(gmmk_tt1_s       ,        tt1, mymeta)
-      istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus, mymeta)
+      istat = gmm_get(gmmk_tt1_s       ,        tt1)
+      istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
 
-!$omp parallel private(i,j) shared (pres_t,th)
+!$omp parallel private(k) shared (pres_t,th)
 !$omp do
       do k=1,G_nk
          pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
-         call vspown1 (pres_t(1,1,k),pres_t(1,1,k),real(Dcst_cappa_8),l_ni*l_nj)
-         th(:,:,k)= 273. ! this is wrong
-         th(1:l_ni,1:l_nj,k) = tt1(1:l_ni,1:l_nj,k) * pres_t(1:l_ni,1:l_nj,k)
+         call vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
+                       real(Dcst_cappa_8),l_ni*l_nj)
+         th(1:l_ni,1:l_nj,k) = tt1   (1:l_ni,1:l_nj,k) * &
+                               pres_t(1:l_ni,1:l_nj,k)
+!NOTE, zeroing in halo regions in order to avoid float error when dble(X)
+!  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
+         th(l_minx:0     ,:     ,k) = 273.
+         th(l_ni+1:l_maxx,:     ,k) = 273.
+         th(1:l_ni,l_miny:0     ,k) = 273.
+         th(1:l_ni,l_nj+1:l_maxy,k) = 273.
       end do
 !$omp enddo
 !$omp end parallel
 
-!NOTE, zeroing in halo regions in order to avoid float error when dble(X)
-!  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
-      th(l_minx:0     ,:     ,:) = 273.
-      th(l_ni+1:l_maxx,:     ,:) = 273.
-      th(1:l_ni,l_miny:0     ,:) = 273.
-      th(1:l_ni,l_nj+1:l_maxy,:) = 273.
-
       if (Hzd_type_S.eq.'HO_IMP') then
-         call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         if ((.not. G_lam).and.(Hzd_theta_njpole_gu_only.ge.1)) then
+            call hzd_theta_gu_pole (th,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         else
+            call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk )
+         endif
       else
-         call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy,&
+                          G_nk )
       endif
 
 !$omp parallel shared (pres_t,th)
 !$omp do
       do k=1,G_nk
-         tt1(1:l_ni,1:l_nj,k) = th(1:l_ni,1:l_nj,k) / pres_t(1:l_ni,1:l_nj,k)
+         tt1(1:l_ni,1:l_nj,k) = th    (1:l_ni,1:l_nj,k) / &
+                                pres_t(1:l_ni,1:l_nj,k)
       enddo
 !$omp enddo
 !$omp end parallel

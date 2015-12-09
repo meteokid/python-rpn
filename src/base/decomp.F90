@@ -24,8 +24,8 @@
       integer F_lowestsize, F_relax
 
       logical  check_parti
-      integer  RPN_COMM_limit,rpn_comm_topo_2
-      external RPN_COMM_limit,rpn_comm_topo_2,check_parti
+      integer  RPN_COMM_limit_2,rpn_comm_topo_2
+      external RPN_COMM_limit_2,rpn_comm_topo_2,check_parti
 
       integer istat,my_id 
       integer count(F_npe),depl(F_npe)
@@ -36,16 +36,11 @@
 
       if (F_checkparti_L ) then
 
-         istat= -1
-         do my_id=0,F_npe-1
-           istat= RPN_COMM_limit (my_id, F_npe, 1, F_npts, F_min, F_max, count, depl)
-           if (istat.lt.0) exit
-           F_lni= F_max-F_min+1
-           if (F_lni.lt.F_lowestsize) istat= -1
-           if (istat.lt.0) exit
-         end do
-         decomp3 = .not.(istat.lt.0) 
-         
+         istat= RPN_COMM_limit_2 (0, F_npe, 1, F_npts, F_min, F_max, &
+                                  count, depl, F_relax)
+         if (istat.ge.0) &
+         decomp3 = ( minval(count) .ge. F_lowestsize )
+
       else
 
          istat= rpn_comm_topo_2( F_npts, F_min, F_max, F_lni, F_npartiel, &

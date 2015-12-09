@@ -14,23 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r vspng_set - Vertical sponge setup
-!
+
       subroutine vspng_set
       implicit none
 #include <arch_specific.hf>
-!
-!author    
-!     Michel Desgagne  -  November 2000
-!
-!revision
-! v2_11 - Desgagne M.       - initial version
-! v3_02 - Lee V.            - add setup for LAM vertical sponge
-! v3_22 - Spacek L.         - add Vspng_zmean_L
-! v3_30 - Spacek L./m.Roch  - add zmean for Grd_gauss_L 
-! v3_32 - Lee V.            - stop run if LAM Vspng_nutop is undefined
-! v4_50 = Qaddouri A.       - add setup For Yin-Yang vertical sponge
-! v4_70 - Desgagne M.       - major revision
-! v4_80 - Qaddouri A.       - switch to 5 pts explicit horiz. diffusion for LAMs
 
 #include "glb_ld.cdk"
 #include "cstv.cdk"
@@ -41,7 +28,8 @@
 #include "ver.cdk"
 #include "ptopo.cdk"
 
-      integer i,j,k,istat
+      integer, external :: vspng_imp_transpose2
+      integer i,j,k,istat,err
       real*8, dimension(:), allocatable :: weigh
       real*8 pis2_8,pbot_8,delp_8,c_8,nutop
 !
@@ -60,7 +48,7 @@
          endif
       endif
 
-      call handle_error(istat,'vspng_set','')
+      call gem_error(istat,'vspng_set','')
 
       Vspng_nk = min(G_nk,Vspng_nk)
       pis2_8   = Dcst_pi_8/2.0d0
@@ -97,8 +85,11 @@
                           Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
       end do
 
-      if (.not.G_lam) &
-         call vspng_imp_transpose ( Ptopo_npex, Ptopo_npey, .false. )
+      if (.not.G_lam) then
+         err= vspng_imp_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
+         call gem_error(err,'VSPNG_IMP_TRANSPOSE',&
+                        'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
+      endif
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &
                '(S/R VSPNG_SET)',/,51('='))

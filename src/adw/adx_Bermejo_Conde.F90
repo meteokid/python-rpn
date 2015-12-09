@@ -1,7 +1,7 @@
-!**s/p Bermejo_Conde - Ensures conservation of interpolated field (Bermejo and Conde,2002)
+!**s/p Bermejo_Conde - Ensures conservation of interpolated field (Bermejo and Conde,2002) (LEGACY)
 
-      subroutine Bermejo_Conde (F_name_S,F_out,F_high,F_low,F_min,F_max,F_old,F_for_flux_o,F_for_flux_i, &
-                                Minx,Maxx,Miny,Maxy,F_nk,k0,F_BC_min_max_L,F_CLIP_L,F_ILMC_L)
+      subroutine adx_Bermejo_Conde (F_name_S,F_out,F_high,F_low,F_min,F_max,F_old,F_for_flux_o,F_for_flux_i, &
+                                    Minx,Maxx,Miny,Maxy,F_nk,k0,F_BC_min_max_L,F_CLIP_L,F_ILMC_L)
 
       implicit none
 
@@ -35,7 +35,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
-#include "adv_nml.cdk"
+#include "adx_nml.cdk"
 #include "schm.cdk"
 
       !----------------------------------------------------------

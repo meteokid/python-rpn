@@ -2,14 +2,14 @@
       logical :: adw_mono_L      , adw_catmullrom_L,&
                  adw_BC_min_max_L, adw_ILMC_min_max_L
       integer :: adw_maxcfl, adw_halox, adw_haloy, adw_ILMC_sweep_max,&
-                 Adw_reconstruction, Adw_PPM_mono
+                 Adw_reconstruction, Adw_PPM_mono, Adw_verbose
       integer pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
 
       common /adw_nml_l/ adw_mono_L      , adw_catmullrom_L,&
                          adw_BC_min_max_L, adw_ILMC_min_max_L
       common /adw_nml_i/ adw_maxcfl, adw_halox, adw_haloy,&
                          adw_ILMC_sweep_max              ,&
-                         Adw_reconstruction, Adw_PPM_mono
+                         Adw_reconstruction, Adw_PPM_mono, Adw_verbose
       common /EXTENSION_I/ pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
 
       namelist /adw_cfgs/ adw_mono_L
@@ -19,4 +19,4 @@
       namelist /adw_cfgs/ adw_ILMC_min_max_L
       namelist /adw_cfgs/ Adw_reconstruction
       namelist /adw_cfgs/ Adw_PPM_mono
-
+      namelist /adw_cfgs/ Adw_verbose

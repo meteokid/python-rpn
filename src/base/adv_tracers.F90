@@ -62,16 +62,16 @@
       nind   = (in-i0+1)*(jn-j0+1)*(l_nk-k0+1)
       nind_s = (in_s-i0_s+1)*(jn_s-j0_s+1)*(l_nk-k0+1)
 
-allocate (ii(4*nind), ii_s(4*nind_s))
+      allocate (ii(4*nind), ii_s(4*nind_s))
 
-! Pre-compute indices ii  used in: adv_tricub_lag3d_loop
-
+      !Pre-compute indices ii used in: adv_tricub_lag3d_loop
+      !-----------------------------------------------------
       call adv_get_indices(ii, pxt, pyt, pzt, num ,nind, &
-                         i0, in, j0, jn, k0 , l_nk, 't')
+                           i0, in, j0, jn, k0 , l_nk, 't')
 
-count=0
+      count=0
 
-    do n=1,Tr3d_ntr
+      do n=1,Tr3d_ntr
 
          qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2).eq.'HU'
          if (F_water_tracers_only_L) then
@@ -83,38 +83,33 @@ count=0
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':P' ,fld_in ,mymeta)
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':M' ,fld_out,mymeta)
 
-
-           if ((Tr3d_mass(n)==1.or.Tr3d_mass(n)==2).and..NOT.Grd_yinyang_L) then
+         if ((Tr3d_mass(n)==1.or.Tr3d_mass(n)==2).and..NOT.Grd_yinyang_L) then
                            
-           	     if (count==0) call adv_get_indices(ii_s, pxt, pyt, pzt, num, nind_s, &
-                                                 i0_s, in_s, j0_s, jn_s, k0, l_nk, 't')   
+             !Pre-compute indices ii_s used in: adv_tricub_lag3d_loop when Bermejo-Conde or SLICE when LAM  
+             !--------------------------------------------------------------------------------------------
+             if (count==0) call adv_get_indices(ii_s, pxt, pyt, pzt, num, nind_s, &
+                                                i0_s, in_s, j0_s, jn_s, k0, l_nk, 't')   
        
-				     call adv_cubic ('TR/'//trim(Tr3d_name_S(n))//':M', fld_out , fld_in, pxt, pyt, pzt, &
-                              pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, &
-                              l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                              nind_s, ii_s, i0_s, in_s, j0_s, jn_s, k0,'t', Tr3d_mono(n), Tr3d_mass(n) )      
-                 count=count+1
+             call adv_cubic ('TR/'//trim(Tr3d_name_S(n))//':M', fld_out , fld_in, pxt, pyt, pzt, &
+                             pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, &
+                             l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
+                             nind_s, ii_s, i0_s, in_s, j0_s, jn_s, k0,'t', Tr3d_mono(n), Tr3d_mass(n) )      
 
-           else
+             count=1
+
+         else
                   
-                 call adv_cubic ('TR/'//trim(Tr3d_name_S(n))//':M', fld_out, fld_in, pxt, pyt, pzt, &
+             call adv_cubic ('TR/'//trim(Tr3d_name_S(n))//':M', fld_out, fld_in, pxt, pyt, pzt, &
                               pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, &
                               l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
                               nind, ii, i0, in, j0, jn, k0,'t', Tr3d_mono(n), Tr3d_mass(n) ) 
-           endif
+         endif
 
     end do
 
-
-deallocate(ii,ii_s)
-
+    deallocate(ii,ii_s)
 !     
 !---------------------------------------------------------------------
 !     
       return
       end subroutine adv_tracers
-
-
-
-   
-  

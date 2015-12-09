@@ -14,27 +14,10 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r hzd_imp_set - Compute implicit diffusion operator
-!
+
       subroutine hzd_imp_set
       implicit none
 #include <arch_specific.hf>
-
-!author    
-!     J.P. Toviessi - CMC - Jan 1999
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Qaddouri&Desgagne - higher order diffusion operator
-! v2_11 - Desgagne M.       - remove vertical modulation
-! v2_31 - Qaddouri A.       - remove stkmemw and correction to yp2
-! v3_00 - Qaddouri & Lee    - Lam configuration
-! v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
-! v3_01 - Lee V.            - add setup for horizontal sponge
-! v3_20 - Qaddouri/Toviessi - variable higher order diffusion operator
-! v3_20 - Tanguay M.        - 1d higher order diffusion operator
-! v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
-! v4_40 - Lee V.            - allow matrix setup only when Hzd_type_S="HO_IMP"
-! v4_70 - Desgagne M.       - major revision
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -47,21 +30,24 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 
-      integer i,j,k,dim,dim1,dim2,dpwr1,dpwr2,NSTOR,dimx,dimy
+      integer, external :: hzd_imp_transpose2
+      integer i,j,k,dim,dim1,dim2,dpwr1,dpwr2,NSTOR,dimx,dimy,err
       real*8, dimension(:) , allocatable :: wk1_8,wk2_8
       real*8 c_8
       real*8, parameter :: ZERO_8= 0.d0, ONE_8=1.d0, HALF_8=0.5d0
       real  , parameter :: eps= 1.0e-5
 !
 !     ---------------------------------------------------------------
-
-      call hzd_imp_transpose ( Ptopo_npex, Ptopo_npey, .false. )
+!
+      err= hzd_imp_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
+      call gem_error ( err,'HZD_IMP_TRANSPOSE', &
+                       'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
 
       if (Hzd_lnr_theta.gt.0.) then
          if ( (Hzd_pwr_theta.ne.Hzd_pwr) .or. &
               (abs((Hzd_lnr_theta-Hzd_lnr)/Hzd_lnr).gt.eps)) then
             if (Lun_out.gt.0) write (Lun_out,1001)
-            call handle_error(-1,'hzd_set','PROBLEM WITH THETA DIFFUSION')
+            call gem_error(-1,'hzd_set','PROBLEM WITH THETA DIFFUSION')
          endif
       endif
 

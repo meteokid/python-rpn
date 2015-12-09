@@ -25,15 +25,12 @@
 !                    | Pilot area=Grd_maxcfl +Grd_bsc_base+Grd_bsc_ext1|
 ! Grd_overlap        | # of degrees to overlap along latitude axis for |
 !                    | Yin, Yang grids                                 |
-! Grd_deprecated_L   | Must be true to run a GU (deprecated) grid
-!                    | setting this to true means you accept the risks 
-!                    | of using a not fully supported Grid type
 !______________________________________________________________________|
 #endif
 
       character*2  Grd_typ_S
       character*12 Grd_yinyang_S
-      logical Grd_roule, Grd_uniform_L, Grd_gauss_L, Grd_yinyang_L, Grd_deprecated_L
+      logical Grd_roule, Grd_uniform_L, Grd_gauss_L, Grd_yinyang_L
       integer Grd_ni, Grd_nj
       integer Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       integer Grd_iref, Grd_jref, Grd_maxcfl
@@ -47,7 +44,7 @@
       real*8 Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
 
       common / Grd_c / Grd_typ_S, Grd_yinyang_S
-      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L,Grd_yinyang_L, Grd_deprecated_L
+      common / Grd_l / Grd_roule, Grd_uniform_L, Grd_gauss_L,Grd_yinyang_L
       common / Grd_i / Grd_ni, Grd_nj, Grd_maxcfl, Grd_iref, Grd_jref
       common / Grd_i / Grd_bsc_base, Grd_bsc_adw, Grd_bsc_ext1, Grd_extension
       common / Grd_i / Grd_ndomains, Grd_mydomain
@@ -64,4 +61,4 @@
       namelist /grid/ Grd_dx, Grd_dy
       namelist /grid/ Grd_latr, Grd_lonr, Grd_overlap
       namelist /grid/ Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2
-      namelist /grid/ Grd_gauss_L, Grd_deprecated_L
+      namelist /grid/ Grd_gauss_L

@@ -13,21 +13,15 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_transpose - Establish layout for the 2 level-transpose used
-!                      in the solver and the horizontal diffusion
-!
-      subroutine hzd_imp_transpose ( F_npex, F_npey, F_checkparti_L )
+!**s/r hzd_imp_transpose - Establish layout for the 2 level-transpose used
+!                          in the solver and the horizontal diffusion
+
+      integer function hzd_imp_transpose2 (F_npex,F_npey,F_checkparti_L)
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_checkparti_L
       integer F_npex, F_npey
-!author
-!     M. Desgagne - fall 2013
-!
-!revision
-! v4_70 - Desgagne M.       - initial version
-!
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -40,7 +34,7 @@
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
-      ierr=0
+      hzd_imp_transpose2= 0
 
 ! Transpose 1===>2:G_nk distributed on F_npex PEs (no halo)
 !                  G_nj distributed on F_npey PEs (original layout)
@@ -52,7 +46,8 @@
                   ' G_nk   distributed on F_npex PEs', G_nk,F_npex
 
       if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) &
+      hzd_imp_transpose2= -1
 
       trp_12dmin = minx ! most likely = 1 since no halo
       trp_12dmax = maxx
@@ -69,7 +64,8 @@
                   ' G_nk distributed on F_npex PEs', G_nk,F_npex
 
       if (.not. decomp3 (G_nk, minx, maxx, n, npartiel, 0, n0, &
-                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) ierr=-1
+                  .true. , .true., F_npex, lowest, F_checkparti_L, 0 )) &
+      hzd_imp_transpose2= -1
 
       trp_p12dmin = minx ! most likely = 1 since no halo
       trp_p12dmax = maxx
@@ -88,7 +84,8 @@
                      ' G_ni distributed on F_npey PEs', G_ni,F_npey
 
          if (.not. decomp3 (G_ni, minx, maxx, n, npartiel, 0, n0, &
-                     .false., .true., F_npey, lowest, F_checkparti_L, 0 )) ierr=-1
+                     .false., .true., F_npey, lowest, F_checkparti_L, 0 )) &
+         hzd_imp_transpose2= -1
 
          trp_22min = minx ! most likely = 1 since no halo
          trp_22max = maxx
@@ -96,16 +93,10 @@
          trp_22n0  = n0
       endif
       
-      if  (Lun_out.gt.0) then
-         if (ierr.lt.0)  then
+      if (hzd_imp_transpose2.lt.0) then
+         if  (Lun_out.gt.0) &
             write(lun_out,*) 'HZD_IMP_TRANSPOSE: ILLEGAL DOMAIN PARTITIONING'
-         else
-            write(lun_out,*) 'HZD_IMP_TRANSPOSE: PARTITIONING is OK'
-         endif
       endif
-
-      if (.not.F_checkparti_L) &
-      call handle_error(ierr,'HZD_IMP_TRANSPOSE','ILLEGAL DOMAIN PARTITIONING -- ABORTING')
 
  1000 format (/' HZD_IMP_TRANSPOSE: checking HZD dimension partitionning:')
  1002 format (a/a45,i6,' /',i5)

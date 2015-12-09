@@ -48,8 +48,9 @@
       integer i, j, k, i0, j0, in, jn, nij, inn, trx
       real    pi, err, deltax, cpdi, dummy
       real*8  dpi, aaa
-      real  , dimension(:,:,:), allocatable  :: dsp_local, fgem
+      real  , dimension(:,:,:), allocatable  :: dsp_local
       real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
+      real  , dimension(l_ni,l_nj)  :: fgem
       type(gmm_metadata) :: meta3d
       integer :: gmmstat
 !
@@ -70,7 +71,12 @@
 !
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
-      call ens_marfield (mcsph1,E_nk)
+    
+   call ens_marfield (fgem)
+
+   do k=1,E_nk
+   mcsph1(:,:,k)=fgem(:,:)
+   enddo
 
       if (.not.Ens_skeb_conf) then
          return
@@ -261,7 +267,7 @@
       call cal_vor ( ensvor, dummy, F_difut1, F_difvt1, 0, dummy, .false., &
                      l_minx,l_maxx,l_miny,l_maxy, E_nk )
 
-      call gem_error(-1,'ens_filter','Must check calls to cal_div and cal_vor')
+     ! call gem_error(-1,'ens_filter','Must check calls to cal_div and cal_vor')
 
 
       if(Ens_stat)then

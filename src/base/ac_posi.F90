@@ -41,8 +41,8 @@
 #include "tr3d.cdk"
 #include "lun.cdk"
 
-      integer  stretch_axis2
-      external stretch_axis2
+      integer, external :: stretch_axis2
+      logical flag_hu
       integer i,k,cnt,ierx,dum1,dum2
       integer is,nis,js,njs,iw,ie,niw,jw,jn,njw
       real x0, xl, y0, yl, dum, n1, n2, b1, b2
@@ -132,26 +132,26 @@
       if (Grdc_trnm_S(1).eq.'@#$%') then
          do i=1,Tr3d_ntr
             Grdc_trnm_S(i) = Tr3d_name_S(i)
-	 end do
+         end do
          Grdc_ntr = Tr3d_ntr
       else
          cnt = 0
-         do k=1,max_trnm
+         do 10 k=1,max_trnm
             if (Grdc_trnm_S(k).eq.'@#$%') goto 89
+            flag_hu= (trim(Grdc_trnm_S(k)) == 'HU')
             do i=1,Tr3d_ntr
                if (trim(Grdc_trnm_S(k)).eq.trim(Tr3d_name_S(i))) then
                   cnt=cnt+1
                   Grdc_trnm_S(cnt) = Tr3d_name_S(i)
+                  goto 10
                endif
             end do
-         end do
- 89      Grdc_trnm_S(cnt+2) = '@#$%'
-! And add humidity
-         cnt=cnt+1
-         do i=cnt,2,-1
-            Grdc_trnm_s(i) = Grdc_trnm_s(i-1)
-         enddo
-         Grdc_trnm_s(1) = 'HU  '
+ 10      continue
+
+ 89      if (.not.flag_hu) then
+            cnt=cnt+1
+            Grdc_trnm_S(cnt) = 'HU'
+         endif
          Grdc_ntr = cnt
       endif
 
@@ -160,7 +160,7 @@
           write (6,'(5(x,a))') Grdc_trnm_S(1:Grdc_ntr)
           write (6,1010)
       endif
-!
+
  1001 format ( ' Cascade grid: Tracers to be written for cascade run are: ')
  1004 format (/' Cascade grid: Is too large, NO SELF CASCADE DATA will be produced')
  1006 format (/'################ SELF CASCADE DATA WILL BE PRODUCED ################'/&
