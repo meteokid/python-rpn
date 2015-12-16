@@ -1,3 +1,5 @@
+!COMP_ARCH=intel13sp1u2 ; -suppress=-C
+
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
