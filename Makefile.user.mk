@@ -27,6 +27,13 @@ ifneq (,$(MYSSMINCLUDEMK))
 endif
 
 #------------------------------------
+ifeq (-d,$(RDE_BUILDDIR_SFX))
+ifeq (intel13sp1u2,$(CONST_RDE_COMP_ARCH))
+FFLAGS  = -C -ftrapuv #-warn all -warn nounused 
+else
+FFLAGS  = -C
+endif
+endif
 
 .PHONY: components_vfiles
 components_vfiles: $(COMPONENTS_VFILES)

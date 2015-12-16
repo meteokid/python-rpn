@@ -54,20 +54,29 @@ gemdyn_ssm_arch: gemdyn_ssm_arch_rm $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
-	mkdir -p $@/include/$(EC_ARCH) $@/lib/$(EC_ARCH) $@/bin/$(BASE_ARCH) ; \
-	echo $(BASE_ARCH) > $@/include/$(BASE_ARCH)/.restricted ; \
-	echo $(ORDENV_PLAT) >> $@/include/$(BASE_ARCH)/.restricted ; \
-	echo $(EC_ARCH) > $@/include/$(EC_ARCH)/.restricted ; \
-	echo $(ORDENV_PLAT)/$(COMP_ARCH) >> $@/include/$(EC_ARCH)/.restricted ; \
-	cd $(MODDIR) ; \
-	cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
+	mkdir -p $@/lib/$(EC_ARCH) ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
-	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) f ; \
-	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) c ; \
-	.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) sh ; \
-	cd $(BINDIR) ; \
-	cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
+	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
+		mkdir -p $@/include/$(EC_ARCH) ; \
+		cd $(MODDIR) ; \
+		cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
+	fi ; \
+	if [[ x$(MAKE_SSM_NOINC) != x1 ]] ; then \
+		mkdir -p $@/include/$(EC_ARCH) ; \
+		echo $(BASE_ARCH) > $@/include/$(BASE_ARCH)/.restricted ; \
+		echo $(ORDENV_PLAT) >> $@/include/$(BASE_ARCH)/.restricted ; \
+		echo $(EC_ARCH) > $@/include/$(EC_ARCH)/.restricted ; \
+		echo $(ORDENV_PLAT)/$(COMP_ARCH) >> $@/include/$(EC_ARCH)/.restricted ; \
+		.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) f ; \
+		.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) c ; \
+		.rdemkversionfile gemdyn $(GEMDYN_VERSION) $@/include/$(EC_ARCH) sh ; \
+	fi ; \
+	if [[ x$(MAKE_SSM_NOABS) != x1 ]] ; then \
+		mkdir -p $@/bin/$(BASE_ARCH) ; \
+		cd $(BINDIR) ; \
+		cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
+	fi ; \
 	cp -R $(DIRORIG_gemdyn)/.ssm.d $@/ ; \
 	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) "$(SSMORDARCH) ; $(SSMARCH) ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
 

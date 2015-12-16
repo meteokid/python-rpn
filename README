@@ -30,6 +30,17 @@ make components_ssm
 	  make components_abs 
 	  make components_ssm_arch
 
+#For Debug libs (for each ARCH)
+	  ssh MYMACH
+	  cd /PATH/
+	  . ./.setenv.dot
+	  #./bin/ouv_exp_modelutils #optional if build in same dir as above
+	  export RDE_BUILDDIR_SFX=-d
+	  rdemklink
+	  make -j components_objects
+	  make components_libs
+	  make components_ssm_arch MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+
 ==== Installing ==========================================================
 
 #This will install ssm pkg on all ARCH
