@@ -73,22 +73,27 @@
       select case (F_var_S)
          case ('OROGRAPHY')
             if (Inp_kind == 2  ) nomvar= '@NUL'
+            if (Inp_kind == 1  ) nomvar= 'GZ'
             if (Inp_kind == 5  ) nomvar= 'GZ'
             if (Inp_kind == 105) nomvar= 'FIS0'
             if ( nomvar == 'GZ' ) ip1= 93423264
+            if (( nomvar == 'GZ' ) .and. (Inp_kind == 1  )) ip1= 12000
             if ( nomvar == 'GZ' ) mult= 10.d0 * Dcst_grav_8
          case ('SFCPRES')
             if (Inp_kind == 2  ) nomvar= '@NUL'
+            if (Inp_kind == 1  ) nomvar= 'P0'
             if (Inp_kind == 5  ) nomvar= 'P0'
             if (Inp_kind == 105) nomvar= 'ST1'
             if ( nomvar == 'P0' ) mult= 100.d0
          case ('TEMPERATURE')
             if (Inp_kind == 2  ) nomvar= 'TT'
+            if (Inp_kind == 1  ) nomvar= 'TT'
             if (Inp_kind == 5  ) nomvar= 'TT'
             if (Inp_kind == 105) nomvar= 'TT1'
             if ( nomvar == 'TT' ) add= Dcst_tcdk_8
          case ('GEOPOTENTIAL')
             if (Inp_kind == 2  ) nomvar= 'GZ'
+            if (Inp_kind == 1  ) nomvar= '@NUL'
             if (Inp_kind == 5  ) nomvar= '@NUL'
             if (Inp_kind == 105) nomvar= '@NUL'
             if ( nomvar == 'GZ' ) mult= 10.d0

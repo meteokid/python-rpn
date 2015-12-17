@@ -235,9 +235,9 @@
             return
          end if
 
-         if (Hzd_smago_param <=0 .or. Hzd_smago_delta <= 0) then
+         if (Hzd_smago_param <= 0) then
             if (lun_out>0) then
-               write (Lun_out, *) 'ABORT: Hzd_smago_param and Hzd_smago_delta must be set to a positive value', Hzd_smago_param, Hzd_smago_delta
+               write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
             end if
             return
          end if
@@ -273,15 +273,15 @@
 
          if (Schm_opentop_L) then
             if (lun_out>0) write (Lun_out, 9681) 'Cstv_rEp_8'
-            return      
+            return
          endif
-      endif 
+      endif
 
       if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) then
 	Cstv_bA_nh_8=Cstv_bA_8
       endif
 
- 
+
 !     Check for incompatible use of IAU and DF
       if (Iau_period > 0. .and. Init_balgm_L) then
          if (Lun_out>0) then
@@ -392,7 +392,7 @@
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0 or T*>1000'/)
- 9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)  
+ 9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
 !
 !-------------------------------------------------------------------
 !

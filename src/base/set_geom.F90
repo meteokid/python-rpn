@@ -67,7 +67,7 @@
       real*8 xgi_8(Grd_ni+2), ygi_8(Grd_nj+2),xxgi_8
       real*8 rad2deg_8,deg2rad_8
       real*8 ZERO_8, HALF_8, ONE_8, TWO_8, CLXXX_8
-      real*8 scale_factor, scale_factor_z
+      real*8 scale_factor, scale_factor_v
       real*8 Del_xg , Del_yg 
       parameter( ZERO_8  = 0.0 )
       parameter( HALF_8  = 0.5 )
@@ -198,7 +198,7 @@
                 Geomg_invcy_8  (l_miny:l_maxy),Geomg_invcyv_8 (l_miny:l_maxy),&
                 Geomg_invcy2_8 (l_miny:l_maxy),Geomg_invcyv2_8(l_miny:l_maxy),&
                 Geomg_invDX_8  (l_miny:l_maxy),Geomg_invDXM_8 (l_miny:l_maxy),&
-                Geomg_invDXMu_8(l_miny:l_maxy),Geomg_invDXz_8 (l_miny:l_maxy),&
+                Geomg_invDXMu_8(l_miny:l_maxy),Geomg_invDXv_8 (l_miny:l_maxy),&
                 Geomg_area_8(l_ni,l_nj),Geomg_mask_8(l_ni,l_nj))
          
         offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
@@ -258,9 +258,9 @@
 
       do j=1-G_haloy, l_nj+G_haloy
          scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
-         scale_factor_z = Dcst_rayt_8 * Geomg_cyv_8(j)
+         scale_factor_v = Dcst_rayt_8 * Geomg_cyv_8(j)
          Geomg_invDX_8  (j) = ONE_8/(scale_factor * Del_xg )
-         Geomg_invDXz_8 (j) = ONE_8/(scale_factor_z * Del_xg )
+         Geomg_invDXv_8(j)  = ONE_8/(scale_factor_v * Del_xg )
          Geomg_invDXM_8 (j) = Geomg_invDX_8(j)
          Geomg_invDXMu_8(j) = Geomg_invDX_8(j)  
       end do

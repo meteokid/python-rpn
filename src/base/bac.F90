@@ -95,6 +95,7 @@
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 !
       if ( Schm_opentop_L ) then
+         GP(:,:,1:k0-2) = 0.0
 !$omp do
          do j= j0, jn
          do i= i0, in
@@ -125,7 +126,7 @@
 !        ~~~~~~~~~
 !$omp do
          do k=k0t,l_nk
-            km = max(k-1,1)
+            km = max(k-1,k0t)
             w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstar_8%t(k)/Dcst_grav_8
             do j= j0, jn
             do i= i0, in

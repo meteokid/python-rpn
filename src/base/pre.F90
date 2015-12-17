@@ -208,7 +208,7 @@
 !           Preliminary combinations: Rc', Rt', Rf'
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k ) -   &
-                                       (one -Cstv_rE_8)*F_rq(i,j,k )) &                                      
+                                       (one -Cstv_rE_8)*F_rq(i,j,k )) &
                                    +w2*(F_rx(i,j,km)+F_rq(i,j,km) -   &
                                        (one-Cstv_rE_8)*F_rq(i,j,km))
             F_rt(i,j,k)=F_rt(i,j,k)*w3
@@ -245,9 +245,14 @@
 !$omp enddo
 
       if (Schm_opentop_L) then
+         w3=one/Ver_Tstar_8%t(k0t)
+         w4=Dcst_rgasd_8*Ver_Tstar_8%t(k0t)
 !$omp do
          do j= j0, jn
          do i= i0, in
+            F_rt(i,j,k0t)=F_rt(i,j,k0t)*w3
+            F_rf(i,j,k0t)=F_rf(i,j,k0t)+w4*(F_rx(i,j,k0t)+F_rq(i,j,k0t) &
+                                        - (one-Cstv_rE_8)*F_rq(i,j,k0t))
             F_rb(i,j) = F_rt(i,j,k0t)
          end do
          end do

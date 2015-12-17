@@ -151,6 +151,8 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                                                mymeta%l(2)%low,mymeta%l(2)%high,F_nk      ,&
                                                i0,in,j0,jn,k0,F_mono_kind,F_mass_kind)
 
+   if (flux_n>0) deallocate(cub_o,cub_i,in_o,in_i) 
+
   !---------------------------------------------------------------------
 
    return

@@ -33,7 +33,8 @@
 
       character*2048 dirname_S,cmd
       character*16   datev
-      character*3 mycol_S,myrow_S
+      character*3    mycol_S,myrow_S
+      logical save_additional
       integer err
       real*8 dayfrac
       real*8, parameter :: OV_day = 1.d0/86400.0d0
@@ -43,8 +44,10 @@
       if ( (Init_mode_L .and. (Step_kount.ge.Init_halfspan)) .or. &
            (Fcst_bkup_S == 'NIL') ) return
 
-      if ( timestr_isstep (Fcst_bkup_S, Step_CMCdate0, real(Cstv_dt_8), &
-                           Step_kount) == TIMESTR_MATCH ) then
+      save_additional= (Step_kount == Step_bkup_additional)
+      if ( save_additional .or. &
+           (timestr_isstep (Fcst_bkup_S, Step_CMCdate0, real(Cstv_dt_8),&
+                           Step_kount) == TIMESTR_MATCH ) ) then
          call wrrstrt ()
          dayfrac = dble(Step_kount) * Cstv_dt_8 * OV_day
          call incdatsd (datev,Step_runstrt_S,dayfrac)

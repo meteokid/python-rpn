@@ -39,6 +39,10 @@
 !
 !     ---------------------------------------------------------------
 !
+      if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.) &
+                         .and.(Hzd_lnr_tr   .le.0.)) return
+      Hzd_type_S = 'HO_IMP'
+
       err= hzd_imp_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
       call gem_error ( err,'HZD_IMP_TRANSPOSE', &
                        'ILLEGAL DOMAIN PARTITIONING -- ABORTING')

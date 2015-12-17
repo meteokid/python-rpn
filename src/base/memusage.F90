@@ -26,13 +26,12 @@
 !revision
 ! v4_70 - Desgagne M.   - Initial version
 !
-#if defined (AIX)
 #include "ptopo.cdk"
 
       integer, external :: get_max_rss
       integer i, err, imin,imax
       integer memory(Ptopo_numproc),memoryt(Ptopo_numproc)
-      real*8 sum,sumd2,moy,var,fijk,mind,maxd,moy,var,npt_8
+      real*8 sum,sumd2,moy,var,fijk,mind,maxd,npt_8
 !
 !----------------------------------------------------------------
 !
@@ -83,6 +82,5 @@
 !
 !----------------------------------------------------------------
 !
-#endif
       return
       end

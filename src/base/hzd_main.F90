@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -47,7 +47,7 @@
 !-------------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
-      
+
       call timing_start2 ( 60, 'HZD_main', 1 )
 
       switch_on_UVW     = Hzd_lnr      .gt.0.
@@ -64,7 +64,7 @@
       istat = gmm_get(gmmk_wt1_s,wt1)
 
       call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
-    
+
 !**********************************
 !  Horizontal diffusion on theta  *
 !**********************************
@@ -98,7 +98,7 @@
 
       if (Hzd_smago_L) then
          call timing_start2 ( 64, 'HZD_smago', 60 )
-         call hzd_smago(ut1, vt1, hzd_smago_param, hzd_smago_delta, &
+         call hzd_smago(ut1, vt1, hzd_smago_param, &
                         l_minx, l_maxx, l_miny, l_maxy, G_nk)
          call timing_stop ( 64 )
       end if
@@ -114,7 +114,7 @@
          call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 63 )
       endif
-!     
+!
 !********************
 !  Vertical sponge  *
 !********************

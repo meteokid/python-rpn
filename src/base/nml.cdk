@@ -37,8 +37,8 @@
       namelist /gem_cfgs/ Cstv_bA_8
       namelist /gem_cfgs/ Cstv_tstr_8
 
-      namelist /gem_cfgs/ Cstv_bA_nh_8      
-      namelist /gem_cfgs/ Cstv_rEp_8   
+      namelist /gem_cfgs/ Cstv_bA_nh_8
+      namelist /gem_cfgs/ Cstv_rEp_8
 
       namelist /gem_cfgs/ Eq_sponge
 
@@ -59,7 +59,6 @@
       namelist /gem_cfgs/ Hzd_type_S
       namelist /gem_cfgs/ Hzd_smago_L
       namelist /gem_cfgs/ Hzd_smago_param
-      namelist /gem_cfgs/ Hzd_smago_delta
       namelist /gem_cfgs/ Hzd_theta_njpole_gu_only
 !Iau
       namelist /gem_cfgs/ Iau_cutoff
@@ -115,7 +114,7 @@
 !Schm
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
-      namelist /gem_cfgs/ Schm_cub_Coriolis_L  
+      namelist /gem_cfgs/ Schm_cub_Coriolis_L
       namelist /gem_cfgs/ Schm_hydro_L
       namelist /gem_cfgs/ Schm_hzdadw_L
       namelist /gem_cfgs/ Schm_itcn
@@ -198,7 +197,6 @@
       namelist /gem_cfgs_p/ Hzd_type_S
       namelist /gem_cfgs_p/ Hzd_smago_L
       namelist /gem_cfgs_p/ Hzd_smago_param
-      namelist /gem_cfgs_p/ Hzd_smago_delta
       namelist /gem_cfgs_p/ Hzd_theta_njpole_gu_only
 !Iau
       namelist /gem_cfgs_p/ Iau_cutoff
@@ -252,7 +250,7 @@
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_traj_L
-      namelist /gem_cfgs_p/ Schm_cub_Coriolis_L 
+      namelist /gem_cfgs_p/ Schm_cub_Coriolis_L
       namelist /gem_cfgs_p/ Schm_hydro_L
       namelist /gem_cfgs_p/ Schm_hzdadw_L
       namelist /gem_cfgs_p/ Schm_itcn

@@ -92,8 +92,9 @@
              "MPI_DOUBLE_PRECISION", Inp_iobcast, "grid", err )
          if (Inp_iome .ne. 0) err= vgd_new ( F_vgd_src, vtbl_8 )
          deallocate (vtbl_8)
-         err= vgd_get ( F_vgd_src, key='KIND',value=Inp_kind )
-         if (Inp_kind /= 2) &
+         err= vgd_get ( F_vgd_src, key='KIND',value=Inp_kind    )
+         err= vgd_get ( F_vgd_src, key='VERS',value=Inp_version )
+         if ((Inp_kind == 5) .or. ((Inp_kind == 1).and.(Inp_version == 3)))&
          err= vgd_get ( F_vgd_src, key='PREF',value=Inp_pref_a_8 )
       else
          call gem_error ( -1, 'inp_open', &

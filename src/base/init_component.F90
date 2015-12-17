@@ -15,12 +15,10 @@
 
 !**s/r init_component
 
-      subroutine init_component (F_component_S)
+      subroutine init_component
       use iso_c_binding
       implicit none
 #include <arch_specific.hf>
-
-      character*(*) F_component_S
 
 !author   Michel Desgagne -- Spring 2013 --
 !
@@ -67,7 +65,7 @@
 
       ierr = clib_chdir (trim(Path_work_S))
 
-      COMPONENT= F_component_S
+      COMPONENT= 'MOD'
 
       ngrids=1
       if (Grd_yinyang_L) ngrids=2
@@ -75,7 +73,7 @@
       Ptopo_couleur= RPN_COMM_init_multi_level (pe_zero_topo, Ptopo_myproc,Ptopo_numproc, &
                                                 Ptopo_npex,Ptopo_npey,Grd_ndomains,ngrids )
 
-      call timing_init2 ( Ptopo_myproc, F_component_S)
+      call timing_init2 ( Ptopo_myproc, COMPONENT )
       call timing_start2 ( 1, 'GEMDM', 0)
 
       if (Grd_yinyang_L) then

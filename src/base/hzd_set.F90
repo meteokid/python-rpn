@@ -60,19 +60,16 @@
 
       call hzd_set_base
 
-      if ((Hzd_lnr.gt.0.).or.(Hzd_lnr_theta.gt.0.) &
-                         .or.(Hzd_lnr_tr.gt.0.)) then
-
-         if (G_lam) then
-            call hzd_exp_set
-         else
-            Hzd_type_S = 'HO_IMP'
-            call hzd_imp_set
-         endif
-
-      else
+      if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.)  &
+                         .and.(Hzd_lnr_tr   .le.0.)) then
          if (Lun_out.gt.0) write(Lun_out,1003)
          Hzd_type_S = 'NIL'
+      endif
+
+      if (G_lam) then
+         call hzd_exp_set
+      else
+         call hzd_imp_set
       endif
 
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &

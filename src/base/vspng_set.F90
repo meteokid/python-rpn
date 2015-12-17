@@ -35,6 +35,7 @@
 !
 !     ---------------------------------------------------------------
 !
+      Vspng_niter = 0
       if (Vspng_coeftop.lt.0.) Vspng_nk = 0
       if (Vspng_nk.le.0) return
 

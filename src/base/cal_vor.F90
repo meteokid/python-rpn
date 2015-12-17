@@ -52,7 +52,7 @@
          do j = j0, jn
          do i = i0, in
             F_QR(i,j,k) = &
-            ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXz_8(j)) &
+            ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXv_8(j)) &
           - ( (F_uu(i,j+1,k)*geomg_cy_8(j+1)  &
              - F_uu(i,j  ,k)*geomg_cy_8(j  )) &
              * geomg_invDY_8 * geomg_invcyv_8(j))

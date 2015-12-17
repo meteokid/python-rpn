@@ -35,7 +35,6 @@
       real levhyb,coef,coef_tr,coef_theta
       real*8 pt25,nudif,epsilon
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
-
 !
 !     ---------------------------------------------------------------
 !
@@ -149,7 +148,6 @@
 
             write(Lun_out,1010)  &
             nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr/2,'U,V,W,ZD'
-!            (Dcst_rayt_8**2.)/(Cstv_dt_8*cc),Hzd_pwr/2,'U,V,W,ZD'
          endif
             nudif    = log(1.- Hzd_lnR_tr)
             nudif    = 1.0d0 - exp(nudif)
@@ -160,7 +158,6 @@
 
          write(Lun_out,1010)  &
         nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_tr/2,'U,V,W,ZD'
-!              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_tr),Hzd_pwr_tr/2,'Tracers'
 
             nudif    = log(1.- Hzd_lnR_theta)
             nudif    = 1.0d0 - exp(nudif)
@@ -171,7 +168,7 @@
 
          write(Lun_out,1010)  &
           nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_theta/2,'U,V,W,ZD'
-!              (Dcst_rayt_8**2.)/(Cstv_dt_8*coef_theta),Hzd_pwr_theta/2,'Theta'
+
       endif
       endif
       

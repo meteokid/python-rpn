@@ -383,7 +383,6 @@
 
 !        Compute Nw and Nt' (Nf=0)
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~
-
          if(Schm_opentop_L.and.k.eq.k0t) then
             do j= j0, jn
             do i= i0, in
@@ -413,6 +412,7 @@
                           
             F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
             F_nf(i,j,k) = 0.0
+            F_nx(i,j,k) = 0.
          end do
          end do
 
@@ -469,7 +469,6 @@
             xdot = Ver_wp_8%m(k) * F_xd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_xd(i,j,km)
             F_nc(i,j,k) = Cstv_invT_8  * Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k))*F_s(i,j) &
                         + Ver_dbdz_8%m(k)*F_s(i,j)*(ndiv+xdot)
-            F_nx(i,j,k) = 0.
          end do
          end do
 

@@ -56,7 +56,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 #include "adx_dims.cdk"
 #include "adx_nml.cdk"
 
-   logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L
+   logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L, verbose_L
    real high(Minx:Maxx,Miny:Maxy,F_nk)
 
    !---------------------------------------------------------------------
@@ -65,6 +65,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
    ILMC_L          = F_mono_kind == 2
    Bermejo_Conde_L = F_mass_kind == 1
    Cubic_L         = F_mono_kind == 0.and.F_mass_kind == 9
+   verbose_L       = Adw_verbose/=0
 
    !Cubic or Mono(CLIPPING) interpolation
    !-------------------------------------
@@ -73,6 +74,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
       if (Cubic_L) F_out(i0:in,j0:jn,k0:F_nk) = F_cub (i0:in,j0:jn,k0:F_nk) 
       if (CLIP_L)  F_out(i0:in,j0:jn,k0:F_nk) = F_mono(i0:in,j0:jn,k0:F_nk) 
 
+      if (verbose_L) then
       if (Lun_out.gt.0.and..not.CLIP_L) then
          write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
          write(Lun_out,*) 'TRACERS: Cubic SL Interpolation: ',F_name_S(4:7)
@@ -81,6 +83,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
          write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
          write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
          write(Lun_out,*) 'TRACERS: --------------------------------------------------------------------------------'
+      endif
       endif
 
       return

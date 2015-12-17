@@ -54,26 +54,27 @@ contains
 !
       dpwr = Hzd_pwr
       niter= Hzd_niter
-      coef_8(1:NK) = Hzd_coef_8(1:Nk)
+      if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8(1:Nk)
 
       if (present(F_type_S)) then
          if (F_type_S.eq.'S_THETA') then
             dpwr = Hzd_pwr_theta
             niter= Hzd_niter_theta
-            coef_8(1:NK) = Hzd_coef_8_theta(1:Nk)
+            if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8_theta(1:Nk)
          endif
          if (F_type_S.eq.'S_TR') then
             dpwr = Hzd_pwr_tr
             niter= Hzd_niter_tr
-            coef_8(1:NK) = Hzd_coef_8_tr(1:Nk)
+            if (niter.gt.0) coef_8(1:NK) = Hzd_coef_8_tr(1:Nk)
          endif
          if (F_type_S.eq.'VSPNG') then
             dpwr = 2
             niter= Vspng_niter
-            coef_8(1:NK) = Vspng_coef_8(1:Nk)
+            if (niter.gt.0)coef_8(1:NK) = Vspng_coef_8(1:Nk)
          endif
       endif
 
+      if (niter.le.0) return
       dpwr=dpwr/2
 
 !     Fill all halo regions

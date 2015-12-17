@@ -38,7 +38,7 @@
 ! geomg_invDX_8      | inverse DELTAX = 1/d(lambda)                    |
 ! geomg_invDXM_8  ** | SPECIAL for MODEL core only                     |
 ! geomg_invDXMu_8 ** | SPECIAL for MODEL core only                     |
-! geomg_invDXz_8     | inverse DELTAX for z points (ex: for vorticity) |
+! geomg_invDXv_8     | inverse DELTAX for v points (ex: for vorticity) |
 !----------------------------------------------------------------------
 ! geomg_area_8       |                                                 |
 ! geomg_mask_8       |                                                 |
@@ -53,8 +53,7 @@
           Geomg_invcy_8,Geomg_invcyv_8,Geomg_invcy2_8,Geomg_invcyv2_8,&
           Geomg_tyoa_8 ,Geomg_tyoav_8 ,&
           Geomg_invDYM_8,Geomg_invDYMv_8,&
-          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,&
-          Geomg_invDXz_8
+          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,Geomg_invDXv_8
       real*8, dimension(:,:), pointer :: &
          Geomg_area_8  ,Geomg_mask_8
 
@@ -65,8 +64,8 @@
           Geomg_invcy_8 ,Geomg_invcyv_8,Geomg_invcy2_8,Geomg_invcyv2_8,&
           Geomg_tyoa_8  ,Geomg_tyoav_8 ,&
           Geomg_invDYM_8,Geomg_invDYMv_8,&
-          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,&
-          Geomg_invDXz_8,Geomg_area_8  ,Geomg_mask_8
+          Geomg_invDX_8 ,Geomg_invDXM_8,Geomg_invDXMu_8,Geomg_invDXv_8,&
+          Geomg_area_8  ,Geomg_mask_8
        
       common /Geomg_h/ &         
           Geomg_invDY_8,Geomg_hx_8 ,Geomg_hy_8  

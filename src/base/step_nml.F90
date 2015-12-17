@@ -31,6 +31,7 @@
 !  Default configuration and reading namelist 'step'
 
 #include <rmnlib_basics.hf>
+#include <clib_interface_mu.hf>
 #include "lun.cdk"
 #include "grd.cdk"
 #include "lctl.cdk"
@@ -62,6 +63,7 @@
       Fcst_gstat_S   = ''
       Fcst_rstrt_S   = ''
       Fcst_bkup_S    = 'NIL'
+      Fcst_bkup_additional_S = 'NIL'
       Fcst_spinphy_S = ''
       Fcst_alarm_S = ''
 
@@ -92,8 +94,8 @@
 
       err= 0
 
-      if ( Fcst_start_S  == '' ) Fcst_start_S  = '0H'
-      if ( Fcst_end_S    == '' ) Fcst_end_S    = Fcst_start_S
+      if ( Fcst_start_S  == '' ) Fcst_start_S = '0H'
+      if ( Fcst_end_S    == '' ) Fcst_end_S   = Fcst_start_S
 
       err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
@@ -103,9 +105,22 @@
       if ( Fcst_rstrt_S  == '' ) then
          write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total+1
       else
-         err = timestr_check(Fcst_rstrt_S)
+         err= timestr_check ( Fcst_rstrt_S )
       endif
 
+      Step_bkup_additional= Step_total+1
+      err = clib_toupper ( Fcst_bkup_additional_S )
+      if ( Fcst_bkup_additional_S /= 'NIL' ) then
+         if (Fcst_bkup_additional_S == 'END' ) then
+            Step_bkup_additional= Step_total
+         else
+            err= min( timestr2step (Step_bkup_additional, &
+                      Fcst_bkup_additional_S, Step_dt), err)
+         endif
+      endif
+
+      err = clib_toupper ( Fcst_bkup_S )
+      if ( Fcst_bkup_S == 'END' ) Fcst_bkup_S= Fcst_end_S
       if ( Fcst_bkup_S /= 'NIL' ) then
          err = timestr_check (Fcst_bkup_S)
       endif

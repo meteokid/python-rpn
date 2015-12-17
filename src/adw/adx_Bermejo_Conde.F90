@@ -146,14 +146,14 @@
 
       mass_tot_wei_8 = mass_wei_8 - 0.5d0 * mass_bflux_wei_8
 
-      if (verbose_L) then
       if (mass_tot_wei_8==0.d0) then
 
-         if (Lun_out>0) write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
+         if (verbose_L) then
+          if (Lun_out>0) write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
+         endif
 
          return
 
-      endif
       endif
 
       lambda_8 = mass_deficit_8/mass_tot_wei_8

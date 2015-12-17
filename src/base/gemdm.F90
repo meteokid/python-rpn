@@ -13,7 +13,10 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r gemdm - Main entry point for the GEMDM component
+!**s/r gemdm - Main entry point for the GEMDM model
+!
+! Formal scientific documentation for this version can be found at
+! $gemdyn/share/doc/GEM4.3.pdf
 !
       subroutine gemdm
       implicit none
@@ -23,7 +26,7 @@
 !
 ! Initialize: Domain, MPI, processor topology and the model component
 
-      call init_component ('MOD')
+      call init_component
 
 ! Establish model configuration, domain decomposition and main memory
 

@@ -48,7 +48,7 @@
       
       logical :: doAdwStat_L
       integer :: i0,j0,in,jn,i0u,inu,j0v,jnv ! advection computational i,j,k domain  (glb_ld.cdk)
-      integer :: k0, k0m, k0t, err, jext, ext, i0_e, j0_e, in_e, jn_e, i0u_e, inu_e, j0v_e, jnv_e
+      integer :: k0, k0m, k0t, err, jext, ext, i0_e, j0_e, in_e, jn_e,  i0u_e, inu_e, j0v_e, jnv_e
       real, dimension(:,:,:), allocatable  :: pxm, pym, pzm ! upstream positions valid at time t1
       real, dimension(:,:,:), allocatable  :: ua,va,wa,wat  ! arrival winds
       real, dimension(:,:,:), allocatable  :: ud,vd,wd      ! de-staggered   departure winds 
@@ -73,33 +73,34 @@
       allocate ( ud(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                  vd(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                  wd(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
-      if (.not.associated(pxt)) allocate (pxt(l_ni,l_nj,l_nk), &
-                                          pyt(l_ni,l_nj,l_nk), &
-                                          pzt(l_ni,l_nj,l_nk), &
-                                          pxtn(l_ni,l_nj), &
-                                          pytn(l_ni,l_nj), &
-                                          pztn(l_ni,l_nj), &
-                                          pxmu(l_ni,l_nj,l_nk), &
-                                          pymu(l_ni,l_nj,l_nk), &
-                                          pzmu(l_ni,l_nj,l_nk), &
-                                          pxmv(l_ni,l_nj,l_nk), &
-                                          pymv(l_ni,l_nj,l_nk), &
-                                          pzmv(l_ni,l_nj,l_nk)  )
+ 	   if (.not.associated(pxt)) allocate (pxt(l_ni,l_nj,l_nk), &
+                                       pyt(l_ni,l_nj,l_nk), &
+                                       pzt(l_ni,l_nj,l_nk), &
+                                       pxtn(l_ni,l_nj), &
+                                       pytn(l_ni,l_nj), &
+                                       pztn(l_ni,l_nj), &
+                                       pxmu(l_ni,l_nj,l_nk), &
+                                       pymu(l_ni,l_nj,l_nk), &
+                                       pzmu(l_ni,l_nj,l_nk), &
+                                       pxmv(l_ni,l_nj,l_nk), &
+                                       pymv(l_ni,l_nj,l_nk), &
+                                       pzmv(l_ni,l_nj,l_nk)  )
 
-      if (.not.associated(pxmu_s).and.Adv_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), & 
-                                                             pymu_s(l_ni,l_nj,l_nk), &
-                                                             pzmu_s(l_ni,l_nj,l_nk), &
-                                                             pxmv_s(l_ni,l_nj,l_nk), &
-                                                             pymv_s(l_ni,l_nj,l_nk), &
-                                                             pzmv_s(l_ni,l_nj,l_nk)  )
+     if (.not.associated(pxmu_s).and.Adv_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), &
+                                                            pymu_s(l_ni,l_nj,l_nk), &
+                                                            pzmu_s(l_ni,l_nj,l_nk), &
+                                                            pxmv_s(l_ni,l_nj,l_nk), &
+                                                            pymv_s(l_ni,l_nj,l_nk), &
+                                                            pzmv_s(l_ni,l_nj,l_nk)  )
 
-      nullify (xth, yth, zth)
-      err = gmm_get(gmmk_xth_s , xth)
-      err = gmm_get(gmmk_yth_s , yth)
-      err = gmm_get(gmmk_zth_s , zth)
+     nullify (xth, yth, zth)
+     err = gmm_get(gmmk_xth_s , xth)
+     err = gmm_get(gmmk_yth_s , yth)
+     err = gmm_get(gmmk_zth_s , zth)
+
       
-! Get advection computational i,j,k domain
-! ----------------------------------------
+!Get advection computational i,j,k domain
+      !------------------------------------------
       i0 = 1 ; in = l_ni
       j0 = 1 ; jn = l_nj
 
@@ -119,8 +120,8 @@
       if (l_south) j0v= j0 + jext
       if (l_north) jnv= jn - jext
 
-! Establish scope of extended advection operations
-! ------------------------------------------------
+ !Establish scope of extended advection operations
+      !----------------------------------------------
       if (Adv_extension_L) then
          call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
@@ -133,6 +134,8 @@
          if (l_east)  inu_e= in_e - jext
          if (l_south) j0v_e= j0_e + jext
          if (l_north) jnv_e= jn_e - jext
+      else
+         i0_e=i0; in_e=in; j0_e=j0; jn_e=jn; i0u_e=i0u; inu_e=inu; j0v_e=j0v; jnv_e=jnv
       endif
 
       k0 = Lam_gbpil_t+1
@@ -151,41 +154,29 @@
       call timing_start2 (30, 'ADV_TRAJE', 21) ! Compute trajectories
 
 ! Process winds in preparation for SL advection: unstagger & interpolate from Thermo to Momentum levels
-! -----------------------------------------------------------------------------------------------------
       call adv_prepareWinds ( ud, vd, wd, ua, va, wa, wat    , &
                               ut0, vt0 , zdt0, ut1, vt1, zdt1, &
                               l_minx, l_maxx, l_miny, l_maxy , &
                               l_ni , l_nj , l_nk )
 
 ! Extend the grid from model to adection with filled halos
-! --------------------------------------------------------
+
       call adv_extend_grid (a_ud,a_vd, a_wd, ud, vd, wd            , &
                             adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, &
                             l_minx,l_maxx,l_miny,l_maxy, l_nk)
 
 
 ! Calculate upstream positions at t1 using angular displacement & trapezoidal rule
-! --------------------------------------------------------------------------------
-      if (.NOT.Adv_extension_L) then
-      call adv_trapeze (F_fnitraj, pxm , pym , pzm        ,&
-                        a_ud, a_vd, a_wd, ua, va ,wa , wat,&
-                        xth, yth, zth, i0, in, j0, jn, i0u,&
-                        inu, j0v, jnv, k0, k0m, k0t       ,&
-                        adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
-      else
+
       call adv_trapeze (F_fnitraj, pxm , pym , pzm        ,&
                         a_ud, a_vd, a_wd, ua, va ,wa , wat,&
                         xth, yth, zth, i0_e, in_e, j0_e, jn_e, i0u_e,&
                         inu_e, j0v_e, jnv_e, k0, k0m, k0t ,&
                         adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
-      endif
       call timing_stop (30) 
       call timing_start2 (31, 'ADV_INLAG', 21)
 
-      allocate (ii(nmax*4))
-
-! RHS Interpolation: momentum levels  
-! ----------------------------------
+allocate (ii(nmax*4))
       call adv_get_indices(ii, pxmu, pymu, pzmu, num, nu,  i0u, inu, j0, jn, k0, l_nk, 'm') 
       call adv_cubic('RHSU_S', rhsu, orhsu, pxmu, pymu, pzmu, &
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice,&
@@ -205,28 +196,27 @@
                       nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )    
 
 
-! RHS Interpolation: lnk-1 thermo levels + surface
-! ------------------------------------------------
-      call adv_get_indices(ii, pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, 'x')   
+!  RHS Interpolation: lnk-1 thermo levels + surface
+
+      call adv_get_indices(ii, pxt, pyt, pzt, num, nm, i0, in, j0, jn, k0, l_nk, 'x')   
       call adv_cubic('RHSX_S', rhsx, orhsx, pxt, pyt, pzt, & 
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nt, ii, i0, in, j0, jn, k0t, 'x', 0, 0 )      
+                        nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )      
 
       if(.not.Schm_hydro_L) then
          call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt, & 
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nt, ii, i0, in, j0, jn, k0t, 'x', 0, 0 )
+                        nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )
       endif
 
-! RHS Interpolation: l_nk thermo levels       
-! -------------------------------------
+!  RHS Interpolation: l_nk thermo levels       
       pxt(:,:,l_nk)=pxtn(:,:)
       pyt(:,:,l_nk)=pytn(:,:)
       pzt(:,:,l_nk)=pztn(:,:) 
      
-      call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0, l_nk, 't')
+      call adv_get_indices(ii,  pxt, pyt, pzt, num, nt, i0, in, j0, jn, k0t, l_nk, 't')
    
       call adv_cubic('RHST_S', rhst, orhst, pxt, pyt, pzt, & 
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
@@ -248,7 +238,6 @@
       call timing_stop (31)  
 
 ! Compute Courant numbers (CFL) for stats 
-! --------------------------------------- 
       if ( doAdwStat_L ) then 
          call  adv_cfl_lam3 (pxm, pym, pzm, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'m')
          call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                                        
@@ -263,3 +252,5 @@
 !     
       return
       end subroutine adv_main
+     
+  
