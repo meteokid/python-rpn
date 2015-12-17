@@ -36,12 +36,25 @@
 !                    | for Outp_var(*,j)                               |
 ! Outp_accum_L       | Outp_accum_L(j)  contains TRUE or FALSE         |
 !                    | for Outp_var(*,j)                               |
+! Outp_diag_S        | List of diagnostic level fields to compute (e.g.|
+!                    | 'TT,HU,UU,VV' for all diagnostic calculations)  |
+! gmmk_diag_tt_s     | GMM name for diagnostic level temperature       |
+! gmmk_diag_hu_s     | GMM name for diagnostic level specific humidity |
+! gmmk_diag_uu_s     | GMM name for diagnostic level u-wind            |
+! gmmk_diag_vv_s     | GMM name for diagnostic level v-wind            |
 !----------------------------------------------------------------------
 !
 #endif
 
+#if !defined(GMM_IS_OK)
+#define GMM_IS_OK(errcode) (errcode >= 0)
+      integer, parameter :: GMM_MAXNAMELENGTH = 32
+#endif
+
       character*4 Outp_var_S(MAXELEM,MAXSET)
-      character*16 Outp_varnm_S(MAXELEM,MAXSET)
+      character*16 Outp_varnm_S(MAXELEM,MAXSET),Outp_diag_S
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_diag_tt_s,gmmk_diag_hu_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_diag_uu_s,gmmk_diag_vv_s
       logical Outp_avg_L(MAXSET),Outp_accum_L(MAXSET)
       integer Outp_nbit(MAXELEM,MAXSET)
       integer Outp_filtpass(MAXELEM,MAXSET)
@@ -57,5 +70,7 @@
       COMMON /Outp/ Outp_lev,Outp_grid,Outp_step, Outp_multxmosaic
       COMMON /Outp/ Outp_var_max, Outp_sets,Outp_nbit,Outp_filtpass
       COMMON /Outp/ Outp_lasstep
-      COMMON /Outp_c/ Outp_varnm_S,Outp_var_S
+      COMMON /Outp_c/ Outp_varnm_S,Outp_var_S,Outp_diag_S
+      COMMON /Outp_c/ gmmk_diag_tt_s,gmmk_diag_hu_s
+      COMMON /Outp_c/ gmmk_diag_uu_s,gmmk_diag_vv_s
       COMMON /Outp_r/ Outp_filtcoef,Outp_convmult,Outp_convadd

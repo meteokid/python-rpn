@@ -30,8 +30,11 @@
 
 #include <WhiteBoard.hf>
 #include <clib_interface_mu.hf>
+#include <msg.h>
+#include <gmm.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "var_gmm.cdk"
 #include "schm.cdk"
 #include "out3.cdk"
 #include "outp.cdk"
@@ -45,10 +48,12 @@
       integer err,zuip,ztip
       integer, dimension(:), pointer :: ip1m
       real :: zu,zt
+      real, dimension(:,:), pointer :: ptr2d
 
       integer,parameter :: NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
                   (/'Entry    ', 'Permanent', 'Volatile '/)
+      character(len=GMM_MAXNAMELENGTH) :: diag_prefix
 
 !For sorting the output
       integer istat
@@ -58,7 +63,27 @@
 !
 !     ---------------------------------------------------------------
 !
+! Create space for diagnostic level values
+      diag_prefix = 'diag/'
+      gmmk_diag_tt_s = trim(diag_prefix)//'TT'
+      gmmk_diag_hu_s = trim(diag_prefix)//'HU'
+      gmmk_diag_uu_s = trim(diag_prefix)//'UU'
+      gmmk_diag_vv_s = trim(diag_prefix)//'VV'
+      istat = GMM_OK
+      nullify(ptr2d)
+      istat = min(gmm_create(gmmk_diag_tt_s, ptr2d ,meta2d),istat)
+      nullify(ptr2d)
+      istat = min(gmm_create(gmmk_diag_hu_s, ptr2d ,meta2d),istat)
+      nullify(ptr2d)
+      istat = min(gmm_create(gmmk_diag_uu_s, ptr2d ,meta2d),istat)
+      nullify(ptr2d)
+      istat = min(gmm_create(gmmk_diag_vv_s, ptr2d ,meta2d),istat)
+      if (GMM_IS_ERROR(istat)) &
+           call msg(MSG_ERROR,'itf_phy_init ERROR at gmm_create('//trim(diag_prefix)//'*)')
+
       Out3_sfcdiag_L= .false.
+
+      ! Continue only if the physics is being run
       if (.not.Schm_phyms_L) return
 
       if (Lun_out.gt.0) write(Lun_out,1000)
@@ -136,7 +161,6 @@
          err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
          out3_sfcdiag_L= .true.
       endif
-
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 
 !     ---------------------------------------------------------------

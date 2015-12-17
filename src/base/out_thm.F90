@@ -48,6 +48,7 @@
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "vinterpo.cdk"
+#include "outp.cdk"
 
       type :: stg_i
          integer :: t,m,p
@@ -74,6 +75,7 @@
          ptop(l_minx:l_maxx,l_miny:l_maxy), p0(l_minx:l_maxx,l_miny:l_maxy),&
          deg2rad,zd2etad
 
+      real, dimension(:,:  ), pointer    :: tdiag,qdiag
       real, dimension(:,:,:), pointer    :: hut1, wlnph_m, wlnph_ta
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
                                             tt_pres,vt_pres,w5,w6,cible,&
@@ -132,7 +134,7 @@
       if (pnth.ne.0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
-      nullify (hut1,wlnph_m,wlnph_ta)
+      nullify (hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
       istat= gmm_get('TR/'//'HU'//':P',hut1    )
       istat= gmm_get(gmmk_tt1_s      , tt1     )
       istat= gmm_get(gmmk_wt1_s      , wt1     )
@@ -140,27 +142,24 @@
       istat= gmm_get(gmmk_pw_log_pm_s, wlnph_m )
       istat= gmm_get(gmmk_pw_log_pt_s, wlnph_ta)
       istat= gmm_get(gmmk_st1_s      , st1     )
+      istat= gmm_get(gmmk_diag_tt_s  , tdiag   )
+      istat= gmm_get(gmmk_diag_hu_s  , qdiag   )
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
-!     Obtain HU from HUT1 and physics diag level
+!     Determine number of output levels
       nk_src= l_nk
       if (Out3_sfcdiag_L) nk_src= l_nk+1
 
-      hu(:,:,1:l_nk)= hut1(:,:,1:l_nk)
-      hu(:,:,l_nk+1)= hut1(:,:,  l_nk)
-      if (Out3_sfcdiag_L) &
-           call itf_phy_sfcdiag (hu(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,&
-                                 'TR/HU:P',istat,.false.)
+!     Obtain HU from HUT1 and physics diag level
+      hu(:,:,1:l_nk) = hut1(:,:,1:l_nk)
+      hu(:,:,l_nk+1) = qdiag
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
 !     Compute TT (in tt)
 !         
       call tt2virt2 (tt,.false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      tt(:,:,l_nk+1)= tt(:,:,l_nk)
-      if (Out3_sfcdiag_L) &
-           call itf_phy_sfcdiag (tt(l_minx,l_miny,nk_src),l_minx,l_maxx,l_miny,l_maxy,&
-                                 'PW_TT:P',istat,.false.)
+      tt(:,:,l_nk+1)= tdiag
       call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
 !     Obtain Virtual temperature from TT1 and physics diag level
@@ -171,8 +170,7 @@
       if (Out3_sfcdiag_L) then
          call mfotvt (vt(l_minx,l_miny,nk_src),tt(l_minx,l_miny,nk_src),&
                       hu(l_minx,l_miny,nk_src),l_ninj,1,l_ninj)
-      endif
-      
+      endif 
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
 !     Store PTOP (PT)

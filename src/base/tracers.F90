@@ -116,14 +116,14 @@
       if (Lun_out.gt.0) then
          write (Lun_out,1001)
          do i=1,Tr3d_ntr
-            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i)
+            write(Lun_out,1002) Tr3d_name_S(i),Tr3d_wload(i),Tr3d_hzd(i),Tr3d_mono(i),Tr3d_mass(i),Tr3d_vmin(i)
          end do
       endif
 
       call ac_posi (G_xg_8(1),G_yg_8(1),G_ni,G_nj,Lun_out.gt.0)
 
- 1001 format (/' Final liste of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass')
- 1002 format (4x,a4,2l6,2i6)
+ 1001 format (/' Final list of tracers:'/3x,' Name   Wload  Hzd   Mono  Mass    Min')
+ 1002 format (4x,a4,2l6,2i6,3x,e9.3)
 !
 !     __________________________________________________________________
 !

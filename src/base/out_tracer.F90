@@ -105,7 +105,7 @@
 
                if (write_diag_lev)  then
                   t4(:,:,G_nk+1) = tr1(:,:,G_nk)
-                  call itf_phy_sfcdiag (t4(l_minx,l_miny,G_nk+1), &
+                  call itf_phy_diagtr (t4(l_minx,l_miny,G_nk+1), &
                       l_minx,l_maxx,l_miny,l_maxy,&
                       'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
                   if (istat.eq.0) then
@@ -156,7 +156,7 @@
             if (outvar_L) then
                if (out3_sfcdiag_L) then
                   t5(:,:,G_nk+1) = tr1(:,:,G_nk)
-                  call itf_phy_sfcdiag (t5(l_minx,l_miny,G_nk+1),&
+                  call itf_phy_diagtr (t5(l_minx,l_miny,G_nk+1),&
                      l_minx,l_maxx,l_miny,l_maxy                ,&
                      'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
                else

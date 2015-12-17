@@ -64,6 +64,9 @@
          if (Lun_out.gt.0) write(Lun_out,7001) &
                            Lctl_step,trim(Out_laststep_S)
 
+         ! Precompute diagnostic level values
+         call itf_phy_diag ()
+
          do jj=1, outd_sorties(0,Lctl_step)
 
             kk       = outd_sorties(jj,Lctl_step)

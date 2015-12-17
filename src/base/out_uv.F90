@@ -35,6 +35,7 @@
 #include "out3.cdk"
 #include "geomg.cdk"
 #include "out.cdk"
+#include "outp.cdk"
 #include "pw.cdk"
 #include "vt1.cdk"
 #include "level.cdk"
@@ -56,6 +57,7 @@
       real, dimension(:    ), allocatable::prprlvl,rf
       real, dimension(:    ), pointer :: hybm
       save hybm
+      real, dimension(:,:  ), pointer :: udiag,vdiag
       real, dimension(:,:,:), allocatable:: uv_pres,uu_pres,vv_pres,cible
       real, dimension(:,:,:), pointer, save :: uu,vv
       real*8 c1_8(l_nj)
@@ -89,8 +91,11 @@
 
       if (lastdt .ne. Lctl_step) then
 
+         nullify(udiag,vdiag)
          istat = gmm_get(gmmk_ut1_s,ut1)
          istat = gmm_get(gmmk_vt1_s,vt1)
+         istat = gmm_get(gmmk_diag_uu_s,udiag)
+         istat = gmm_get(gmmk_diag_vv_s,vdiag)
 
          call uv_acg2g (uu ,ut1 ,1,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0 ,in ,j0 ,jn )
          call uv_acg2g (vv ,vt1 ,2,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0v,inv,j0v,jnv)
@@ -141,14 +146,8 @@
             enddo
          endif
 
-         if (Out3_sfcdiag_L) then
-            uu(:,:,G_nk+1) = uu(:,:,G_nk)
-            vv(:,:,G_nk+1) = vv(:,:,G_nk)
-            call itf_phy_sfcdiag (uu(l_minx,l_miny,G_nk+1),l_minx,l_maxx,&
-                                     l_miny,l_maxy,'PW_UU:P',istat,.false.)
-            call itf_phy_sfcdiag (vv(l_minx,l_miny,G_nk+1),l_minx,l_maxx,&
-                                     l_miny,l_maxy,'PW_VV:P',istat,.false.)
-         endif
+         uu(:,:,G_nk+1) = udiag
+         vv(:,:,G_nk+1) = vdiag
 
       endif
 
