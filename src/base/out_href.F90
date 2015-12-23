@@ -33,7 +33,7 @@
 #include "ptopo.cdk"
 #include <rmnlib_basics.hf>
 
-      integer, external :: out_samegrd
+!!$      integer, external :: out_samegrd
       character*1 familly_uencode_S
       logical old_grid_L
       integer i,err,ni,nis,njs,niyy,indx,ix1,ix2,ix3,ix4, &
@@ -190,49 +190,49 @@
       return
       end
 
-      logical function out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
-                                     F_y0, F_y1, F_stridey, F_init_L )
-      implicit none
-#include <arch_specific.hf>
-
-      character* (*), intent(in ) :: F_arakawa_S
-      logical,        intent(in ) :: F_init_L
-      integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
-                                     F_y0,F_y1,F_stridey
-
-      integer, external  :: f_crc32
-      integer, parameter :: max_grid= 50
-      character*20, save :: id_ara_S(max_grid)
-      integer crc
-      integer     , save :: id_crc(max_grid), cnt
-      real, dimension(6) :: identity_vec
-!
-!----------------------------------------------------------------------
-!
-      if ( F_init_L ) then
-         id_ara_S= '' ; id_crc= 0 ; cnt= 0 ; out_samegrd= .false.
-      else
-         identity_vec(1)= F_x0
-         identity_vec(2)= F_x1
-         identity_vec(3)= F_stridex
-         identity_vec(4)= F_y0
-         identity_vec(5)= F_y1
-         identity_vec(6)= F_stridey
-
-         crc= f_crc32 (0., identity_vec(1:6), 24)
-         
-         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
-              any (id_crc == crc) ) then
-            out_samegrd= .true.
-         else
-            cnt=cnt+1
-            id_ara_S(cnt) = F_arakawa_S
-            id_crc  (cnt) = crc
-            out_samegrd   = .false.
-         endif
-      endif
-!
-!----------------------------------------------------------------------
-!
-      return
-      end
+!!$      logical function out_samegrd ( F_arakawa_S ,F_x0, F_x1, F_stridex,&
+!!$                                     F_y0, F_y1, F_stridey, F_init_L )
+!!$      implicit none
+!!$#include <arch_specific.hf>
+!!$
+!!$      character* (*), intent(in ) :: F_arakawa_S
+!!$      logical,        intent(in ) :: F_init_L
+!!$      integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
+!!$                                     F_y0,F_y1,F_stridey
+!!$
+!!$      integer, external  :: f_crc32
+!!$      integer, parameter :: max_grid= 50
+!!$      character*20, save :: id_ara_S(max_grid)
+!!$      integer crc
+!!$      integer     , save :: id_crc(max_grid), cnt
+!!$      real, dimension(6) :: identity_vec
+!!$!
+!!$!----------------------------------------------------------------------
+!!$!
+!!$      if ( F_init_L ) then
+!!$         id_ara_S= '' ; id_crc= 0 ; cnt= 0 ; out_samegrd= .false.
+!!$      else
+!!$         identity_vec(1)= F_x0
+!!$         identity_vec(2)= F_x1
+!!$         identity_vec(3)= F_stridex
+!!$         identity_vec(4)= F_y0
+!!$         identity_vec(5)= F_y1
+!!$         identity_vec(6)= F_stridey
+!!$
+!!$         crc= f_crc32 (0., identity_vec(1:6), 24)
+!!$         
+!!$         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
+!!$              any (id_crc == crc) ) then
+!!$            out_samegrd= .true.
+!!$         else
+!!$            cnt=cnt+1
+!!$            id_ara_S(cnt) = F_arakawa_S
+!!$            id_crc  (cnt) = crc
+!!$            out_samegrd   = .false.
+!!$         endif
+!!$      endif
+!!$!
+!!$!----------------------------------------------------------------------
+!!$!
+!!$      return
+!!$      end
