@@ -190,7 +190,7 @@ def arrayreduce(myarray,imode,luserNotUsage):
     return (mytot,myarray1,myarray2)
 
 
-def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage):
+def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage,ltablelike=False):
     """
     myarray[month][version][user] = usage
     imode = 0 : month version
@@ -206,17 +206,24 @@ def printstats2(mymsg,myarray,ldetails,ufilter,vfilter,imode,luserNotUsage):
 
     onetime = 0
     k1list = sorted(myarray2.keys())
+    k2list = []
+    if ldetails and ltablelike:
+        for k1 in k1list:
+            k2list += myarray2[k1].keys()
+        k2list = sorted(set(k2list))
     for k1 in k1list:
         print '%8s = %6d' % (k1,myarray1[k1]),        
         if  myarray1[k1] == 1:
             onetime += 1
-        if not ldetails:
-            print
-            continue
-        k2list = sorted(myarray2[k1].keys())
-        for k2 in k2list:
-            #print ':%8s @ %-8s = %6d' % (k1,k2,myarray2[k1][k2]),
-            print '[%-6s = %6d]' % (k2,myarray2[k1][k2]),
+        if ldetails:
+            if not ltablelike:
+                k2list = sorted(myarray2[k1].keys())
+            for k2 in k2list:
+                try:
+                    #print ':%8s @ %-8s = %6d' % (k1,k2,myarray2[k1][k2]),
+                    print '[%-6s = %6d]' % (k2,myarray2[k1][k2]),
+                except:
+                    print '[%-6s = %6d]' % (k2,0),
         print
     
     return (mytot,onetime,len(myarray1.keys()),len(myarray2.keys()))
@@ -274,10 +281,10 @@ if __name__ == "__main__":
         (total,onetime1,n1,n1) = printstats2('#==== Per Version User Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['v,u'],True)
 
     if options.lmonths: 
-        (totalusage,onetime1,n1,totalmonth) = printstats2('#==== Per Month Usage Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['m,v'],False)
+        (totalusage,onetime1,n1,totalmonth) = printstats2('#==== Per Month Usage Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['m,v'],False,True)
 
     if options.lusers and options.lmonths:
-        (totaluser,onetime1,n1,totalmonth) = printstats2('#==== Per Month User Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['m,v'],True)
+        (totaluser,onetime1,n1,totalmonth) = printstats2('#==== Per Month User Stats ====',myarray,options.ldetails,options.ufilter,options.vfilter,STATMODS['m,v'],True,True)
 
     print '#==== Stats Summary ===='
     if options.ufilter or options.vfilter:
