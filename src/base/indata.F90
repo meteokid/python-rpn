@@ -98,10 +98,10 @@
          call timing_stop  ( 71 )
       endif
 
-      if (.not. Schm_adxlegacy_L) then
-         call adv_check_tracers
-      else
+      if (Schm_adxlegacy_L) then
          call adx_check_tracers
+      else
+         call adv_check_tracers
       endif
 
       dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk

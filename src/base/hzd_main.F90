@@ -49,10 +49,9 @@
       if (Lun_debug_L) write (Lun_out,1000)
 
       call timing_start2 ( 60, 'HZD_main', 1 )
-
       switch_on_UVW     = Hzd_lnr      .gt.0.
       switch_on_UVW     = switch_on_UVW.or.Hzd_smago_L
-      switch_on_TR      = Hzd_lnr_tr   .gt.0.
+      switch_on_TR      =(Hzd_lnr_tr   .gt.0.).and.any(Tr3d_hzd)
       switch_on_THETA   = Hzd_lnr_theta.gt.0.
       switch_on_vrtspng = Vspng_nk     .ge.1
       switch_on_eqspng  = Eq_nlev      .gt.1
@@ -140,6 +139,7 @@
 
 ! Update pw_* variables
 
+      call timing_start2 ( 69, 'PW_UPDATE', 60)
       if (switch_on_UVW   .or. switch_on_vrtspng .or. &
           switch_on_THETA .or. switch_on_TR ) &
          call pw_update_GPW
@@ -147,6 +147,7 @@
          call pw_update_UV
       if (switch_on_THETA .or. switch_on_TR .or. switch_on_vrtspng  )&
          call pw_update_T
+      call timing_stop ( 69 )
 
       call timing_stop ( 60 )
 

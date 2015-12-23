@@ -119,10 +119,11 @@
                     (mod(Step_kount,Schm_nblendyy).eq.0) )
          call yyg_blend (yyblend)
       else
-         if (G_lam) call nest_gwa ()
+         if (G_lam) then
+            call nest_gwa
+            call spn_main
+         endif
       endif
-
-      if (G_lam) call spn_main
 
       call pw_update_GPW
       call pw_update_UV

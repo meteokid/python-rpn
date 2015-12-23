@@ -49,8 +49,6 @@ implicit none
    
 !---------------------------------------------------------------------
  
-   call timing_start2 (33, 'ADW_GET_INDICES', 31)
-
     p_z00_8 = Ver_z_8%m(0)
     kkmax   = F_nk-1
     if (F_lev_S == 'm') then
@@ -112,6 +110,7 @@ do k=F_k0,F_nk
 
             rrk= F_z(n)
             kk1 = (rrk - p_z00_8) * adv_ovdz_8
+!            kk1 = p_lcz ( min(kk1+1,ubound(p_lcz,1)) )
             kk1 = p_lcz(kk1+1)
             if (rrk < p_bsz_8(kk1)) kk1 = kk1 - 1
             ii(n3) = min(kkmax-1,max(0,kk1))
@@ -121,10 +120,6 @@ do k=F_k0,F_nk
 enddo
 
 !$omp enddo
-!$omp end parallel
-
-
-  call timing_stop (33)
-   
+!$omp end parallel   
    
 end subroutine adv_get_indices

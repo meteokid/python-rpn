@@ -43,6 +43,7 @@
 #include "step.cdk"
 #include "adv_pos.cdk"
 #include "vth.cdk"
+#include "adv.cdk"
 #include "adv_grid.cdk"
 #include "adv_tracers.cdk"
       
@@ -151,9 +152,12 @@
       nmax=max(nm,nt,nu,nv)
       num=l_ni*l_nj*l_nk
 
-      call timing_start2 (30, 'ADV_TRAJE', 21) ! Compute trajectories
+! Compute trajectories
 
+      call timing_start2 (30, 'ADV_TRAJEC', 21)
+      Adv_component_S = 'TRAJ'
 ! Process winds in preparation for SL advection: unstagger & interpolate from Thermo to Momentum levels
+      call timing_start2 (33, 'ADV_PREP', 30) ! Compute trajectories
       call adv_prepareWinds ( ud, vd, wd, ua, va, wa, wat    , &
                               ut0, vt0 , zdt0, ut1, vt1, zdt1, &
                               l_minx, l_maxx, l_miny, l_maxy , &
@@ -164,19 +168,24 @@
       call adv_extend_grid (a_ud,a_vd, a_wd, ud, vd, wd            , &
                             adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, &
                             l_minx,l_maxx,l_miny,l_maxy, l_nk)
+      call timing_stop (33) 
 
 
 ! Calculate upstream positions at t1 using angular displacement & trapezoidal rule
 
+      call timing_start2 (34, 'ADV_TRAP', 30) ! Compute trajectories
       call adv_trapeze (F_fnitraj, pxm , pym , pzm        ,&
                         a_ud, a_vd, a_wd, ua, va ,wa , wat,&
                         xth, yth, zth, i0_e, in_e, j0_e, jn_e, i0u_e,&
                         inu_e, j0v_e, jnv_e, k0, k0m, k0t ,&
                         adv_lminx, adv_lmaxx, adv_lminy, adv_lmaxy, l_ni, l_nj, l_nk )
-      call timing_stop (30) 
-      call timing_start2 (31, 'ADV_INLAG', 21)
+      call timing_stop (34) 
+      call timing_stop (30)
 
-allocate (ii(nmax*4))
+      call timing_start2 (31, 'ADV_INTP_RH', 21)
+      Adv_component_S = 'INTP_RHS'
+
+      allocate (ii(nmax*4))
       call adv_get_indices(ii, pxmu, pymu, pzmu, num, nu,  i0u, inu, j0, jn, k0, l_nk, 'm') 
       call adv_cubic('RHSU_S', rhsu, orhsu, pxmu, pymu, pzmu, &
                       no_slice, no_slice, no_slice, no_slice, no_slice, no_slice,&
@@ -235,16 +244,16 @@ allocate (ii(nmax*4))
                         nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
       endif
 
-      call timing_stop (31)  
-
 ! Compute Courant numbers (CFL) for stats 
       if ( doAdwStat_L ) then 
          call  adv_cfl_lam3 (pxm, pym, pzm, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'m')
-         call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                                        
+         call  adv_cfl_lam3 (pxt, pyt, pzt, i0,in,j0,jn, l_ni,l_nj,k0,l_nk,'t')                      !                  
       endif
 
       deallocate (ii)
       deallocate (pxm,pym,pzm,ua,va,wa,wat,ud,vd,wd)
+
+      call timing_stop (31)  
 
 1000  format(3X,'COMPUTE ADVECTION: (S/R ADV_MAIN)')
 !
