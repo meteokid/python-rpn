@@ -830,7 +830,10 @@ def fstluk(key, dtype=None, rank=None):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
-        FSTDError  on any other error       
+        FSTDError  on any other error
+    See Also
+    --------
+    fstprm
     """
     if type(key) != int:
         raise TypeError("fstluk: Expecting a key of type int, Got %s : %s" %
@@ -1044,6 +1047,9 @@ def fstprm(key):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+    See Also
+    --------
+    fstluk
     """
     if type(key) != int:
         raise TypeError("fstprm: Expecting a key of type int, Got %s : %s" %
@@ -1517,17 +1523,17 @@ def convertPKtoIP(pk1, pk2, pk3):
     (ip1, ip2, ip3) = convertPKtoIP(pk1, pk2, pk3)
 
     Args:
-        rp1    : vertical level, real values & kind (FLOAT_IP)
+        pk1    : vertical level, real values & kind (FLOAT_IP)
                  a level (or a pair of levels) in the atmosphere
-        rp2    : forecast hour, real values & kind (FLOAT_IP)
+        pk2    : forecast hour, real values & kind (FLOAT_IP)
                  a time (or a pair of times)
-        rp3    : user defined identifier, real values & kind (FLOAT_IP)
-                 may contain anything, RP3%hi will be ignored
-                 (if rp1 or rp2 contains a pair, rp3 is ignored)
+        pk3    : user defined identifier, real values & kind (FLOAT_IP)
+                 may contain anything, PK3%hi will be ignored
+                 (if pk1 or pk2 contains a pair, pk3 is ignored)
     Returns:
-        ip1   : encoded rp1, vertical level (int)
-        ip2   : encoded rp2, forecast hour (int)
-        ip3   : encoded rp3, user defined identifier (int)
+        ip1   : encoded pk1, vertical level (int)
+        ip2   : encoded pk2, forecast hour (int)
+        ip3   : encoded pk3, user defined identifier (int)
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
