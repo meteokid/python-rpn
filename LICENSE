@@ -1,4 +1,4 @@
-GNU LESSER GENERAL PUBLIC LICENSE
+                  GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
 
  Copyright (C) 1991, 1999 Free Software Foundation, Inc.
@@ -470,8 +470,8 @@ safest to attach them to the start of each source file to most effectively
 convey the exclusion of warranty; and each file should have at least the
 "copyright" line and a pointer to where the full notice is found.
 
-    rmnlib fortran/C library
-    Copyright (C) 2013  mfvalin
+    RPNpy python bridge to librmn functions
+    Copyright (C) 2015 S.Chamberland, M.Valin, M.Lepine
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -487,17 +487,4 @@ convey the exclusion of warranty; and each file should have at least the
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-Also add information on how to contact you by electronic and paper mail.
-
-You should also get your employer (if you work as a programmer) or your
-school, if any, to sign a "copyright disclaimer" for the library, if
-necessary.  Here is a sample; alter the names:
-
-  Yoyodyne, Inc., hereby disclaims all copyright interest in the
-  library `Frob' (a library for tweaking knobs) written by James Random Hacker.
-
-  {signature of Ty Coon}, 1 April 1990
-  Ty Coon, President of Vice
-
-That's all there is to it!
- 
+    Contact: stephane.chamberland@canada.ca
