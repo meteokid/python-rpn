@@ -30,7 +30,7 @@
       integer err,Ndim,i,j,k,kk,ii,jj,ki,ksend,krecv
       integer imx1,imx2
       integer imy1,imy2
-      integer kkproc,adr
+      integer kkproc,adr, minx,maxx,miny,maxy
       integer, dimension (:), pointer :: recv_len,recvw_len,recve_len,recvs_len,recvn_len
       integer, dimension (:), pointer :: send_len,sendw_len,sende_len,sends_len,sendn_len
       real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
@@ -73,6 +73,10 @@
 !
 ! WEST section
 !
+      minx = lbound(G_xg_8,1)
+      maxx = ubound(G_xg_8,1)
+      miny = lbound(G_yg_8,1)
+      maxy = ubound(G_yg_8,1)
       do j=1+glb_pil_s, G_nj-glb_pil_n
       do i=1+glb_pil_w, G_niu-glb_pil_e
 !        U vector
@@ -81,10 +85,12 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
 
-         call localise(imx1,imy1,x_a,y_a, &
-                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise1(imx1,imy1,x_a,y_a, &
+                          xgu_8,G_yg_8,h1,h2,1,1, &
+                          lbound(xgu_8,1),ubound(xgu_8,1),miny,maxy)
+         call localise1(imx2,imy2,x_a,y_a, &
+                          G_xg_8,ygv_8,h1,h2,1,1, &
+                          minx,maxx,lbound(ygv_8,1),ubound(ygv_8,1))
 
 
 ! check if this point can be found in the other grid
@@ -253,10 +259,12 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx1,imy1,x_a,y_a, &
-                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise1(imx1,imy1,x_a,y_a, &
+                          xgu_8,G_yg_8,h1,h2,1,1, &
+                          lbound(xgu_8,1),ubound(xgu_8,1),miny,maxy)
+         call localise1(imx2,imy2,x_a,y_a, &
+                          G_xg_8,ygv_8,h1,h2,1,1, &
+                          minx,maxx,lbound(ygv_8,1),ubound(ygv_8,1))
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max

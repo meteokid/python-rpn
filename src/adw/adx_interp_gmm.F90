@@ -12,7 +12,6 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
 !/@*
 subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
                              F_capx1, F_capy1, F_capz1 , &
@@ -51,7 +50,7 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
    logical :: mono_L, clip_positive_L, conserv_L
    integer :: err,flux_n
    real, pointer, dimension (:,:,:) :: fld_in, fld_out
-   real, dimension(1,1,1), target :: no_conserv, no_flux
+   real, pointer, dimension (:,:,:) :: no_conserv, no_flux
    real, pointer, dimension(:,:,:) ::cub_o,cub_i,in_o,in_i
 
 
@@ -59,6 +58,9 @@ subroutine adx_interp_gmm7 ( F_out_S, F_in_S , F_wind_L, &
 
    err =     gmm_get(F_in_S ,fld_in ,mymeta)
    err = min(gmm_get(F_out_S,fld_out,mymeta),err)
+
+   no_conserv => fld_in !# Note: dummy pointer, not used
+   no_flux    => fld_in !# Note: dummy pointer, not used
 
    mono_L = .false.
    clip_positive_L = .false.

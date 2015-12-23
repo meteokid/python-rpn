@@ -32,7 +32,7 @@
 
 
       integer err,i,j,k,imx,imy,kk,ii,jj,stencil
-      integer kkproc,ki,ksend,krecv,maxsendlen_per_proc
+      integer kkproc,ki,ksend,krecv,maxsendlen_per_proc, minx,maxx,miny,maxy
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  t,p,s(2,2),h1,h2
@@ -67,14 +67,19 @@
 !
 ! WEST section
 
+      minx = lbound(G_xg_8,1)
+      maxx = ubound(G_xg_8,1)
+      miny = lbound(G_yg_8,1)
+      maxy = ubound(G_yg_8,1)
       do j=1+glb_pil_s,G_nj-glb_pil_n
          i=glb_pil_w
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                       G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                       G_xg_8,G_yg_8,h1,h2,1,1, &
+                       minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -108,8 +113,9 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -143,8 +149,9 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -178,8 +185,9 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 
@@ -318,8 +326,9 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                       G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -366,8 +375,9 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          y_a= y_a
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -414,8 +424,9 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          y_a= y_a
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 ! check to collect from who
@@ -462,8 +473,9 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          y_a= y_a
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise1(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,h1,h2,1,1, &
+                          minx,maxx,miny,maxy)
          imx = min(max(imx-1,1),G_ni-3)
          imy = min(max(imy-1,1),G_nj-3)
 
