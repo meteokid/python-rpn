@@ -36,6 +36,7 @@
 #include "path.cdk"
 #include "rstr.cdk"
 #include "tr3d.cdk"
+      include "rpn_comm.inc"
 
       integer,external :: itf_phy_prefold_opr
 
@@ -64,21 +65,22 @@
       call timing_start2 ( 45, 'PHY_input', 40 )
       err_input = phy_input ( itf_phy_prefold_opr, F_step_kount, &
             Path_phyincfg_S, Path_phy_S, 'GEOPHY/Gem_geophy.fst' )
-      call timing_stop  ( 45 )
 
       call gem_error (err_input,'itf_phy_step','Problem with phy_input') 
+      call timing_stop  ( 45 )
 
-      call pe_rebind (Ptopo_nthreads_phy,(Ptopo_myproc.eq.0).and. &
-                                         (F_step_kount    .eq.0)  )
+      call pe_rebind ( Ptopo_nthreads_phy, &
+                      (Ptopo_myproc.eq.0).and.(F_step_kount.eq.0) )
 
       call timing_start2 ( 46, 'PHY_step', 40 )
       err_step = phy_step ( F_step_kount, F_lctl_step )
+      call rpn_comm_barrier (RPN_COMM_ALLGRIDS, err)
       call timing_stop  ( 46 )
 
-      call gem_error (err_step,'itf_phy_step','Problem with phy_step') 
+!      call gem_error (err_step,'itf_phy_step','Problem with phy_step') 
 
-      call pe_rebind (Ptopo_nthreads_dyn,(Ptopo_myproc.eq.0).and. &
-                                         (F_step_kount    .eq.0) )
+      call pe_rebind ( Ptopo_nthreads_dyn, &
+                      (Ptopo_myproc.eq.0).and.(F_step_kount.eq.0) )
 
       call timing_start2 ( 47, 'PHY_update', 40 )
       call itf_phy_update3 ( F_step_kount > 0 )

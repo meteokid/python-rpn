@@ -13,55 +13,30 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
-!
-      subroutine pe_rebind (F_nthreads,F_prout)
+      subroutine pe_rebind ( F_nthreads, F_prout )
       implicit none
 #include <arch_specific.hf>
-!
+
       logical F_prout
       integer F_nthreads
-!
+
 #include "ptopo.cdk"
-!author
-!     Lee/Valin     Mar 2007
-!
-!revision
-! v3_30 - Lee/Valin       - initial version
-! v3_32 - Lee/Desgagne    - simplification
-! v4_50 - Desgagne        - switch to bindme
-!
-      integer,external ::  omp_get_max_threads
-      logical flag
 !
 !-------------------------------------------------------------------
 !
       if (F_nthreads .ne. Ptopo_npeOpenMP) then
 
          call omp_set_num_threads (F_nthreads)
+
          Ptopo_npeOpenMP = F_nthreads
 
+         if (F_prout) then
+            write (6,9000) Ptopo_npeOpenMP
+         endif
+         
       endif
 
-      flag = .false.
-
-#if defined (AIX_POWERPC7)
-      if (Ptopo_bind_L) then
-!         call bindme ()
-!         if (F_prout) print*, 'after call to rebind'
-!         flag = .true.
-      endif
-#endif
-
-      if (F_prout) then
-         write (6,9000) Ptopo_npeOpenMP,flag
-#if defined (AIX_POWERPC7)
-!         call reporter ()
-!         print*, 'after call to reporter'
-#endif
-      endif
-
- 9000 format (/' Ptopo_npeOpenMP reset to: ',I7,' Rebind: ',L)
+ 9000 format (/' Ptopo_npeOpenMP reset to: ',I7)
 !
 !-------------------------------------------------------------------
 !
