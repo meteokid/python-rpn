@@ -234,7 +234,7 @@ End Interface
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
       call vertint ( trp,dstlev,G_nk, hur,srclev,nka, &
                      l_minx,l_maxx,l_miny,l_maxy    , &
-                     1,l_ni, 1,l_nj, 'cubic', .true. )
+                     1,l_ni, 1,l_nj, 'cubic', .false. )
       deallocate (ttr,hur,srclev,dstlev) ; nullify (ttr,hur)
       if (associated(ip1_list)) deallocate (ip1_list)
 
