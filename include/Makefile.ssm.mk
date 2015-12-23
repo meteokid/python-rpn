@@ -94,7 +94,7 @@ gemdyn_install:
 			--pre=$(gemdyn)/ssmusedep.bndl \
 			--post=$(gemdyn)/ssmusedep_post.bndl \
 			--base=$(SSM_BASE) \
-			gemdyn{_,+*_}$(GEMDYN_VERSION)_*.ssm
+			gemdyn{_,+*_,-d+*_}$(GEMDYN_VERSION)_*.ssm
 
 gemdyn_uninstall:
 	if [[ x$(UNINSTALL_CONFIRM) != xyes ]] ; then \
