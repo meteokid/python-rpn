@@ -32,7 +32,7 @@
 #include "schm.cdk"
 #include "path.cdk"
 
-      integer, parameter :: COMPATIBILITY_LVL = 11
+      integer, parameter :: COMPATIBILITY_LVL = 12
 		integer err,phy_code
 !
 !     ---------------------------------------------------------------
