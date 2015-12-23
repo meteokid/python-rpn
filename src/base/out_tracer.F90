@@ -18,6 +18,7 @@
       subroutine out_tracer (levset, set)
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
+      use phy_itf, only: phy_get
       implicit none
 #include <arch_specific.hf>
 
@@ -30,11 +31,13 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "grd.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "level.cdk"
 #include "outd.cdk"
+#include "outp.cdk"
 #include "pw.cdk"
 #include "tr3d.cdk"
 #include "type.cdk"
@@ -42,16 +45,17 @@
 #include "schm.cdk"
 
       type(vgrid_descriptor) :: vcoord
+      character*512 fullname
       integer i,j,k,ii,n,nko,kind,istat
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1t
       real ,dimension(:), allocatable::prprlvl,rf
       real, dimension(:), pointer :: hybt
       save hybt
-      real ,dimension(:,:,:), allocatable:: w4,cible
-      real t4(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), &
-           t5(l_minx:l_maxx,l_miny:l_maxy,G_nk+1) 
-      real, pointer, dimension(:,:,:) :: tr1
+      real,dimension(:,:,:), allocatable:: w4,cible
+      real,dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk+1), target :: t4 ,t5
+      real, dimension(:,:  ), pointer :: qdiag
+      real, dimension(:,:,:), pointer :: tr1,ptr3d
       logical :: write_diag_lev,near_sfc_L,outvar_L
 !
 !----------------------------------------------------------------------
@@ -78,7 +82,8 @@
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
                   nullify (tr1)
-                  istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr1)
+                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
                   cycle
                endif
@@ -104,10 +109,16 @@
                endif
 
                if (write_diag_lev)  then
-                  t4(:,:,G_nk+1) = tr1(:,:,G_nk)
-                  call itf_phy_diagtr (t4(l_minx,l_miny,G_nk+1), &
-                      l_minx,l_maxx,l_miny,l_maxy,&
-                      'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
+                  if (trim(Tr3d_name_S(n))=='HU') then
+                     istat = gmm_get(gmmk_diag_hu_s,qdiag)
+                     t4(:,:,G_nk+1) = qdiag
+                  else
+                     t4(:,:,G_nk+1) = tr1(:,:,G_nk)
+                     ptr3d => t4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
+                     istat = phy_get (ptr3d, fullname, F_npath='VO', F_bpath='D'      ,&
+                                      F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                                      F_quiet=.true.)
+                  endif
                   if (istat.eq.0) then
                      if (Out3_cliph_L) t4(:,:,G_nk+1)= &
                                  max ( t4(:,:,G_nk+1), 0. )
@@ -155,10 +166,16 @@
             enddo
             if (outvar_L) then
                if (out3_sfcdiag_L) then
-                  t5(:,:,G_nk+1) = tr1(:,:,G_nk)
-                  call itf_phy_diagtr (t5(l_minx,l_miny,G_nk+1),&
-                     l_minx,l_maxx,l_miny,l_maxy                ,&
-                     'TR/'//trim(Outd_var_S(ii,set))//':P',istat,.true.)
+                  if (trim(Tr3d_name_S(n))=='HU') then
+                     istat = gmm_get(gmmk_diag_hu_s,qdiag)
+                     t5(:,:,G_nk+1) = qdiag
+                  else
+                     t5(:,:,G_nk+1) = tr1(:,:,G_nk)
+                     ptr3d => t5(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
+                     istat = phy_get (ptr3d, fullname, F_npath='VO', F_bpath='D'      ,&
+                                      F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
+                                      F_quiet=.true.)
+                  endif
                else
                   istat=-1
                endif
