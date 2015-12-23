@@ -31,6 +31,7 @@
 #include "lam.cdk"
 #include "tr3d.cdk" 
 #include "gmm.hf"
+#include "adv.cdk"
 #include "adv_tracers.cdk"
 
       logical qw_L      
@@ -71,6 +72,9 @@
 
       count=0
 
+      Adv_component_S = 'INTP_TR'
+      call timing_start2 (27, 'ADV_INTP_TR', 10)
+
       do n=1,Tr3d_ntr
 
          qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2).eq.'HU'
@@ -106,6 +110,7 @@
          endif
 
     end do
+    call timing_stop (27)  
 
     deallocate(ii,ii_s)
 !     

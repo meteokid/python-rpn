@@ -33,12 +33,14 @@
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()
 !     ________________________________________________________________
 !
+      call timing_start2 ( 5, 'PW_UPDATE', 0)
       istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt    )
 !
 !     Compute temperature from virtual temperature
 !     --------------------------------------------
 !
       call tt2virt2 (pw_tt, .false., l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call timing_stop (5)  
 !     ________________________________________________________________
 !
       return

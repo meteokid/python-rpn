@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r inp_read - Read variable F_var_S valid at F_datev and perform 
+!**s/r inp_read - Read variable F_var_S valid at Inp_datev and perform 
 !                 horizontal interpolation on proper Arakawa grid
 
       integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
@@ -210,10 +210,9 @@
 
             err = ezdefset ( dstf_gid , src_gid )
             err = ezsetopt ('INTERP_DEGREE', interp_S)
-            write(6,'(7a)') 'Interpolating: ',trim(nomvar),' valid: ',&
-                             Inp_datev,' on ',F_hgrid_S, ' grid'
+            write(6,1001) 'Interpolating: ',trim(nomvar),', nka= ',&
+               lislon,', valid: ',Inp_datev,' on ',F_hgrid_S, ' grid'
          endif
-
          do i=1,local_nk
             err = ezsint(wk2(1,i), wk1(1,i))
          end do
@@ -266,6 +265,8 @@
                      ':',trim(nomvar),' valid: ',Inp_datev, 'NOT FOUND'
 
       endif
+
+ 1001 format (3a,i3,5a)
 !
 !---------------------------------------------------------------------
 !

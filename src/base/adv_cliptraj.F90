@@ -46,6 +46,8 @@
 !     
 !---------------------------------------------------------------------
 !     
+      call timing_start2 (35, 'ADV_CLIP', 34)
+
       BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
       minposx = adv_xx_8(adv_lminx+1) + EPS_8
@@ -89,6 +91,8 @@
          mesg
          call msg(MSG_INFO,msg_S)
       endif
+
+      call timing_stop (35)  
 !     
 !---------------------------------------------------------------------
 !     

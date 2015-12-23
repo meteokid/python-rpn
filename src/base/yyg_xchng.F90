@@ -57,6 +57,7 @@
 !
 !----------------------------------------------------------------------
 !
+      call timing_start2 ( 6, 'YYG_XCHNG', 0)
       tag2=14 ; sendlen=0 ; recvlen=0 ; ireq=0
 
       if (trim(F_interpo_S) == 'CUBIC') then
@@ -192,6 +193,7 @@
 
       if (recvlen.gt.0) deallocate(recv_pil)
       if (sendlen.gt.0) deallocate(send_pil)
+      call timing_stop (6)  
 !
 !----------------------------------------------------------------------
 !

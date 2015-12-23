@@ -45,7 +45,6 @@
       b = f / lt
       b = (cos(pio2 * (one-b) ))**2
       a = one - b
-
       do j= 1, l_nj 
       do i= 1, l_ni
          F_topo (i,j) = a*topo_low(i,j) + b*topo_high(i,j)

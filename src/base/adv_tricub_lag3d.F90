@@ -53,6 +53,7 @@
    !  2014-XX,  Monique Tanguay    : GEM4 Mass-Conservation
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1) (MASS-CONSERVATION)
 
+#include "adv.cdk"
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
 #include "glb_ld.cdk"
@@ -74,8 +75,14 @@
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
 !     
 !---------------------------------------------------------------------
-!     
-      call timing_start2 (33, 'ADV_LAG3D', 31)
+!
+      if ( trim(Adv_component_S) == 'TRAJ' ) then
+         call timing_start2 (37, 'ADV_LAG3D', 34)
+      else if ( trim(Adv_component_S) == 'INTP_RHS' ) then
+         call timing_start2 (38, 'ADV_LAG3D', 31)
+      else
+         call timing_start2 (39, 'ADV_LAG3D', 27)
+      endif
 
       kkmax   = F_nk - 1  
     if (F_lev == 'm') then       
@@ -153,7 +160,13 @@
       if (F_flux_n>0) call adv_tricub_lag3d_flux (F_cub_o, F_in_o, F_cub_i, F_in_i, & 
                                                   F_x, F_y, F_z, F_num, F_k0, F_nk, F_lev)   ! todo:  optimiser
 
-      call timing_stop (33)
+      if ( trim(Adv_component_S) == 'TRAJ' ) then
+         call timing_stop (37)
+      else if ( trim(Adv_component_S) == 'INTP_RHS' ) then
+         call timing_stop (38)
+      else
+         call timing_stop (39)
+      endif
 !     
 !---------------------------------------------------------------------
 !     

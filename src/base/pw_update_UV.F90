@@ -34,6 +34,7 @@
       integer k, istat
 !     ________________________________________________________________
 !
+      call timing_start2 ( 5, 'PW_UPDATE', 0)
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
       istat = gmm_get (gmmk_ut1_s       , ut1       )
@@ -50,6 +51,7 @@
 !
       call itf_phy_uvgridscal ( pw_uu_plus, pw_vv_plus, &
                l_minx,l_maxx,l_miny,l_maxy,l_nk, .true. )
+      call timing_stop (5)  
 !     ________________________________________________________________
 !
       return

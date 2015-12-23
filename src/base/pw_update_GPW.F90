@@ -36,6 +36,8 @@
       real fi(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)
 !     ________________________________________________________________
 !
+      call timing_start2 ( 5, 'PW_UPDATE', 0)
+
       istat = gmm_get(gmmk_pw_wz_plus_s , pw_wz_plus )
       istat = gmm_get(gmmk_pw_gz_plus_s , pw_gz_plus )
       istat = gmm_get(gmmk_pw_pm_plus_s , pw_pm_plus )
@@ -73,6 +75,8 @@
       end do
 !$omp enddo
 !$omp end parallel
+
+      call timing_stop (5)  
 !     ________________________________________________________________
 !
       return

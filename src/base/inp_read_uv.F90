@@ -121,8 +121,8 @@ End Interface
 
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
 
-            write(6,'(3a)') 'Interpolating: UU valid: ',&
-                             Inp_datev,' on U grid'
+            write(6,1001) 'Interpolating: UU, nka= ',&
+                lislon,', valid: ',Inp_datev,' on U grid'
             dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                    posxu, posyu)
@@ -138,8 +138,8 @@ End Interface
                end do
             endif
 
-            write(6,'(3a)') 'Interpolating: VV valid: ',&
-                             Inp_datev,' on V grid'
+            write(6,1001) 'Interpolating: VV, nka= ',&
+                lislon,', valid: ',Inp_datev,' on V grid'
 
             dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
@@ -205,6 +205,8 @@ End Interface
           'Missing input data: horizontal winds')
 
       endif
+
+ 1001 format (a,i3,3a)
 !
 !---------------------------------------------------------------------
 !

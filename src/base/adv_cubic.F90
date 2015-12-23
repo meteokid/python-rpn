@@ -18,6 +18,7 @@
                             F_ni, F_nj, F_nk, F_minx, F_maxx, F_miny, F_maxy, &
                             F_nind, F_ii, F_i0, F_in, F_j0, F_jn, F_k0,       &
                             F_lev_S, F_mono_kind, F_mass_kind)
+      use iso_c_binding
       implicit none
 #include <arch_specific.hf>
        character(len=1) :: F_lev_S
@@ -38,6 +39,7 @@
 !     @arguments
 
 #include "gmm.hf"
+#include "adv.cdk"
 #include "adv_nml.cdk"
 #include "schm.cdk"
 #include "vt_tracers.cdk"
@@ -103,10 +105,22 @@
 
       nbpts = F_ni*F_nj*F_nk
 
+      if ( trim(Adv_component_S) == 'INTP_RHS' ) then
+         call timing_start2 (12, 'ADV_hxchg', 31)
+      else
+         call timing_start2 (13, 'ADV_hxchg', 27)
+      endif
+
       call rpn_comm_xch_halox( fld_in, F_minx, F_maxx,F_miny, F_maxy , &
        F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
        fld_adw, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
-      
+
+       if ( trim(Adv_component_S) == 'INTP_RHS' ) then
+         call timing_stop (12) 
+      else
+         call timing_stop (13) 
+      endif
+     
       if (conserv_L) then
          nullify(fld_cub,fld_mono,fld_lin,fld_min,fld_max)
          err = gmm_get(gmmk_cub_s ,fld_cub ,mymeta)

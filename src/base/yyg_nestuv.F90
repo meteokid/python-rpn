@@ -51,6 +51,8 @@
 
 !----------------------------------------------------------------------
 !
+      call timing_start2 ( 6, 'YYG_XCHNG', 0)
+
       if (Lun_debug_L) write (Lun_out,1001)
 !
       tempu = 0.
@@ -79,10 +81,12 @@
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       call  yyg_vecbc1(F_u,tempu,tempv,l_minx,l_maxx,l_miny,l_maxy,Nk)
       call  yyg_vecbc2(F_v,tempv,tempu,l_minx,l_maxx,l_miny,l_maxy,Nk)
-!
+
+ 1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nestuv)')
+
+      call timing_stop (6)  
 !
 !----------------------------------------------------------------------
- 1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nestuv)')
 !
       return
       end
