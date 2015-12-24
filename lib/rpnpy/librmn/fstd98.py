@@ -184,7 +184,14 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
         return None #TODO: print error msg
     iunitlist = []
     for myfile in filelist:
-        funit = _rb.fnom(myfile, filemode)
+        funit = None
+        try:
+            if isFST(myfile):
+                funit = _rb.fnom(myfile, filemode)
+            elif verbose:
+                print "(fstopenall) Not a RPNSTD file: " + myfile
+        except:
+            pass
         if funit:
             funit2 = fstouv(funit, filemode)
             if funit2 != None: #TODO: else warning/ignore
