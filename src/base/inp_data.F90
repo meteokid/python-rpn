@@ -120,10 +120,8 @@ End Interface
          endif
          call difdatsd (diffd,Step_runstrt_S,F_datev)
          step_current = diffd*86400.d0/dble(step_dt)
-         call var_topo2 ( topo_temp,step_current,&
+         call var_topo2 ( F_topo, step_current, &
                           l_minx,l_maxx,l_miny,l_maxy )
-      else
-         topo_temp(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj)
       endif
 
       nullify (ssqr,ssur,ssvr,ttr,hur)
@@ -158,7 +156,7 @@ End Interface
                do k=1,nka
                   call convip(ip1_list(k),rna(k),kind,-1,' ',.false.)
                enddo
-               call gz2p02 ( ssq0, gzr, topo_temp, rna  ,&
+               call gz2p02 ( ssq0, gzr, F_topo, rna     ,&
                              l_minx,l_maxx,l_miny,l_maxy,&
                              nka,1,l_ni,1,l_nj )
                ssq0(1:l_ni,1:l_nj)= exp(ssq0(1:l_ni,1:l_nj))
@@ -180,7 +178,7 @@ End Interface
             ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
             istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
             srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
-            call adj_ss2topo2 ( ssq0, topo_temp, srclev,meqr,ttr, &
+            call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, ttr , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
                                 1,l_ni,1,l_nj )
             deallocate (meqr) ; nullify (meqr)

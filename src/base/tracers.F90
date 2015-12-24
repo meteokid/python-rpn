@@ -41,6 +41,7 @@
 #include <clib_interface_mu.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
+#include "schm.cdk"
 #include "tr3d.cdk"
 
       character*512 varname,attributes
@@ -52,6 +53,8 @@
 !
 !     __________________________________________________________________
 !
+      nmeta= 0 ; nullify(pmeta)
+      if ( Schm_phyms_L ) &
       nmeta = phy_getmeta(pmeta,' ',F_npath='V',F_bpath='D',F_quiet=.true.)
 
       do i=1,nmeta

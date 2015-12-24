@@ -28,7 +28,7 @@
 #include "ver.cdk"
    
       real*8, parameter :: LARGE_8 = 1.D20 , TWO_8 = 2.D0  , SIX_8 = 6.D0      
-      integer :: i, j, k, i0, j0, k0, pnx, pny, pnz
+      integer :: i, j, k, i0, j0, k0, pnx, pny
       real*8 :: ra,rb,rc,rd
       real*8 :: prhxmn, prhymn, prhzmn, pdfi
       real*8 :: whx(G_ni+2*adv_halox)

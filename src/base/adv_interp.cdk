@@ -62,6 +62,7 @@
          integer, dimension(:), pointer :: t,m,x
       end type ADV_TYPE_SV_I
 
+      integer :: pnz
       integer,dimension(:),pointer :: adv_lcx,adv_lcy
 
       real*8 ::  adv_ovdx_8, adv_ovdy_8, adv_ovdz_8
@@ -80,6 +81,7 @@
       type(ADV_TYPE_SV_R8) :: adv_bsz_8
       type(ADV_TYPE_SV_I)  :: adv_lcz
 
+      common  /adv_lcz/ pnz
       common /adv2_interp_ip/ adv_lcx,adv_lcy
 
       common /adv_interp_r8/ adv_ovdx_8, adv_ovdy_8, adv_ovdz_8

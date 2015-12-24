@@ -40,6 +40,7 @@
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !     __________________________________________________________________
 !
+      call timing_start2 ( 66, 'HZD_visco', 60 )
       rnr = log(1.- Hzd_lnR)
       pwr = Hzd_pwr
 
@@ -90,6 +91,7 @@
               l_ni,l_nj, Nk, G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       end do
+      call timing_stop ( 66 )
 !     __________________________________________________________________
 !
       return
