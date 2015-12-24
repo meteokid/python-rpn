@@ -1,60 +1,71 @@
 #!/usr/bin/env python
-#TODO: should be able to search all rec tags and get the list of recs (handle or RPNMeta)
-#TODO: consistant naming in doc for; rec, data , meta, grid...
-#TODO: class RPNFields (a collection of related rec: levels, #...)
-#TODO: expand RPNGrid to accept multi-grids and work better with #-grids
-#TODO: convert to/from NetCDF
+# -*- coding: utf-8 -*-
+# Author: Mario Lepine <mario.lepine@ec.gc.ca>
+# Author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+# Author: Christopher Subich <Christopher.Subich@ec.gc.ca>
+# Copyright: LGPL 2.1
 
-"""Module RPN contains the classes used to access RPN Standard Files (rev 2000)
+"""@package docstring
+Module RPN contains the classes used to access RPN Standard Files (rev 2000).
 
-    class RPNFile    : a RPN standard file
-    class RPNRec     : a RPN standard file rec data (numpy.ndarray)) & meta (RPNMeta)
-    class RPNGrid    : a RPN standard file grid Description, parameters (RPNParm) and axis data/meta (RPNRec)
-    class RPNMeta    : RPN standard file rec metadata
-    class RPNDate    : RPN STD Date representation; RPNDate(DATESTAMP) or RPNDate(YYYYMMDD, HHMMSShh)
-    class RPNDateRange: Range of RPNData - DateStart, DateEnd, Delta
+See example doc at:
+http://docutils.sourceforge.net/docutils/statemachine.py
 
-    class RPNKeys    : search tags (nom, type, etiket, date, ip1, ip2, ip3)
-    class RPNDesc    : auxiliary tags (grtyp, ig1, ig2, ig3, ig4,  dateo, deet, npas, datyp, nbits)
 
-    @author: Mario Lepine <mario.lepine@ec.gc.ca>
-    @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-    @author: Christopher Subich <Christopher.Subich@ec.gc.ca>
+This module defines the following classes:
+-
+
+Exception classes:
+-
+
+Functions:
+-
+
+How To Use This Module
+======================
+
 """
+
+__docformat__ = 'restructuredtext'
+
 import rpnpy.version as rpn_version
 from rpn_helpers import *
-#from jim import *
-#import scrip
-
-#import sys
 import types
 import datetime
 import pytz
 import numpy
-#from cStringIO import StringIO
 import Fstdc
 
 
-FILE_MODE_RO=Fstdc.FSTDC_FILE_RO
-FILE_MODE_RW=Fstdc.FSTDC_FILE_RW
-FILE_MODE_RW_OLD=Fstdc.FSTDC_FILE_RW_OLD
+FILE_MODE_RO     = Fstdc.FSTDC_FILE_RO
+FILE_MODE_RW     = Fstdc.FSTDC_FILE_RW
+FILE_MODE_RW_OLD = Fstdc.FSTDC_FILE_RW_OLD
 
 
 class RPNFile:
-    """Python Class implementation of the RPN standard file interface
-    instanciating this class actually opens the file
-    deleting the instance close the file
+    r"""Python Class implementation of the RPN standard file interface.
+    
+    Instanciating this class actually opens the file.
+    Deleting the instance close the file.
+            
+    Attributes
+    ==========
+    filename : 
+    lastread :
+    lastwrite : 
+    options :
+    iun :
 
-    myRPNFile = RPNFile(name, mode)
-    @param name file name (string)
-    @param mode Type of file (string, optional), FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
-
-    @exception TypeError if name is not
-    @exception IOError if unable to open file
-
-    Examples of use:
-
-    myRPNFile = RPNFile(name, mode)       #opens the file
+    Raises
+    ------
+    TypeError
+        if name is not
+    IOError
+        if unable to open file
+    
+    Examples
+    --------
+    myRPNFile = RPNFile(name, mode)      #opens the file
     params = myRPNFile.info(seachParams) #get matching record params
     params = myRPNFile.info(FirstRecord) #get params of first rec on file
     params = myRPNFile.info(NextMatch)   #get next matching record params
@@ -64,41 +75,40 @@ class RPNFile:
     myRPNFile[params]   = mydataarray    #append data and tags to file
     myRPNFile[myRPNRec] = myRPNRec.d     #append data and tags to file
     myRPNFile.write(myRPNRec)            #append data and tags to file
-    myRPNFile.write(myRPNRec, rewrite=True) #rewrite data and tags to file
-    myRPNFile.rewrite(myRPNRec)            #rewrite data and tags to file
-    myRPNFile.append(myRPNRec)             #append data and tags to file
-
+    myRPNFile.write(myRPNRec, rewrite=True)  #rewrite data and tags to file
+    myRPNFile.rewrite(myRPNRec)          #rewrite data and tags to file
+    myRPNFile.append(myRPNRec)           #append data and tags to file
     myRPNFile[myRPNRec] = None           #erase record
     myRPNFile[params.handle] = None      #erase record
     del myRPNFile                        #close the file
-
+    
     """
-    def __init__(self, name=None, mode=FILE_MODE_RW) :
+    
+    def __init__(self, name=None, mode=FILE_MODE_RW):
+        r"""Constructor.
+
+        Parameters
+        ----------
+        name : string
+           file name
+        mode : string, optional
+           Type of file, FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
+        
+        """
         if (not name) or type(name) <> type(''):
             raise TypeError, 'RPNFile, need to provide a name for the file'
         self.filename=name
         self.lastread=None
         self.lastwrite=None
         self.options=mode
-        #TODO: catch stdout/stderr - not catching c stderr/stdout!
-        #stderrout = (sys.stderr, sys.stdout)
-        #sys.stdout = sys.stderr = StringIO()
-        #TODO: if FILE_MODE_RO or FILE_MODE_RW_OLD: check is file exist and is readable
-        #TODO: if FILE_MODE_RW_OLD or FILE_MODE_RW_OLD: if file exist, check if can write, if not check if dir can write
-
-        # Set self.iun to None before the call to fstouv, so that the member exists for
-        # the __del__ if fstouv raises an exception
         self.iun = None
-
         self.iun = Fstdc.fstouv(0, self.filename, self.options)
-        #(sys.stderr, sys.stdout) = stderrout
         if (self.iun == None):
           raise IOError, (-1, 'failed to open standard file', self.filename)
-        #else:
-          #print 'R.P.N. Standard File (2000) ', name, ' is open with options:', mode, ' UNIT=', self.iun
 
     def voir(self, options='NEWSTYLE'):
-        """Print the file content listing"""
+        """Print the file content listing.
+        """
         Fstdc.fstvoi(self.iun, options)
 
     def close(self):
@@ -1420,10 +1430,10 @@ class RPNGridRef(RPNGridHelper):
 
 
 class RPNRec(RPNMeta):
-    """Standard file record, with data (ndarray class) and full set of descriptors (RPNMeta class)
+    """Standard file record, with data (ndarray class) and full set of descriptors (RPNMeta class).
 
-    Example of use (and doctest tests):
-
+    Examples
+    --------
     >>> r = RPNRec()
     >>> r.d
     array([], dtype=float64)
