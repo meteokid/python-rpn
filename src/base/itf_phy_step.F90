@@ -17,7 +17,7 @@
 
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
-      use phy_itf, only: phy_input,phy_step
+      use phy_itf, only: phy_input,phy_step,phy_snapshot
       implicit none
 #include <arch_specific.hf>
 
@@ -33,6 +33,7 @@
 #include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
+#include "init.cdk"
 #include "path.cdk"
 #include "rstr.cdk"
 #include "tr3d.cdk"
@@ -89,6 +90,14 @@
       call timing_start2 ( 48, 'PHY_output', 40 )
       call itf_phy_output2 ( F_lctl_step )
       call timing_stop  ( 48 )
+
+      if ( Init_mode_L ) then
+         if (F_step_kount ==   Init_halfspan) then
+            err = phy_snapshot('W')
+         else if (F_step_kount == 2*Init_halfspan) then
+            err = phy_snapshot('R')
+         endif
+      endif
 
       call timing_stop ( 40 )
 
