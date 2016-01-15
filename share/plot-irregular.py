@@ -54,8 +54,8 @@ if __name__ == "__main__":
     #    would work on any RPNSTD grid type (except 'X')
     ## try:
     ##     sst_rec['iunit'] = funit
-    ##     sst_gridid = rmn.ezqkdef(sst_rec)['id']  # use ezscint to retreive full grid
-    ##     gridLatLon = rmn.gdll(gdid)
+    ##     sst_gridid = rmn.ezqkdef(sst_rec)  # use ezscint to retreive full grid
+    ##     gridLatLon = rmn.gdll(sst_gridid)
     ##     lat = gridLatLon['lat']
     ##     lon = gridLatLon['lon']
     ## except:

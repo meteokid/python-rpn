@@ -1,21 +1,18 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Barbara Casati <Barbara.Casati@canada.ca>
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 """
 Export a single RPN STD field to a text file
-
-fst2txt.py -i FSTFILE.fst
-           --varname PN \
-           --ip1 IP1
-           --datev DATEV
-           -o OUTFILE.txt
 """
-import optparse,sys
-import rpnpy.librmn.all as rmn
+import sys
+import optparse
 import numpy as np
 from scipy import interpolate
+import rpnpy.librmn.all as rmn
 
 if __name__ == "__main__":
     
-
     #==== Command line arguments
     desc="Export a single RPN STD field to a text file"
     usage = """
@@ -42,11 +39,12 @@ if __name__ == "__main__":
 
     (options,args) = parser.parse_args()
     if not (options.varname and options.fstfile and options.outfile):
-        print "ERROR: You need to specify a varname, an fst filename, an outfile name"
+        sys.stderr.write('Error: You need to specify a varname, an fst filename, an outfile name.\n')
         parser.print_help()
         sys.exit(1)
 
-    #==== Open and Read RPN STD file        
+    #==== Open and Read RPN STD file
+    print("+ Reading %s from file: %s" %  (options.varname, options.fstfile))
     try:
         #rmn.fstopt(rmn.FSTOP_MSGLVL, rmn.FSTOPI_MSG_CATAST)
         funit = rmn.fstopenall(options.fstfile,rmn.FST_RO)
@@ -75,6 +73,7 @@ if __name__ == "__main__":
         pass
 
     #==== print in text file
+    print("+ Writing %s to file: %s" %  (options.varname, options.outfile))
     (ni,nj) = data.shape
     outfile = open(options.outfile, 'w')
     for jj in xrange(nj):
