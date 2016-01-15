@@ -22,7 +22,7 @@
 !author M.Tanguay
 
 !revision
-! v4_XX - Tanguay M.        - initial MPI version 
+! v4_80 - Tanguay M.        - initial MPI version 
  
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -35,7 +35,7 @@
 #include "dcst.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 #include "ptopo.cdk"
 
       type(gmm_metadata) :: mymeta
@@ -86,8 +86,8 @@
 
       if (Grd_yinyang_L) then
 
-         do j=1+pil_sub_s,l_nj-pil_sub_n
-         do i=1+pil_sub_w,l_ni-pil_sub_e
+         do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
+         do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
             do k=1,l_nk
                l_avg_8(3) = l_avg_8(3) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)                      *(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
                l_avg_8(4) = l_avg_8(4) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)*(1.0d0 - sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
@@ -112,8 +112,8 @@
 
          if (Grd_yinyang_L) then
 
-         do j=1+pil_sub_s,l_nj-pil_sub_n
-         do i=1+pil_sub_w,l_ni-pil_sub_e
+         do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
+         do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
             s_area_8 = s_area_8 + Geomg_area_8(i,j)
          enddo
          enddo

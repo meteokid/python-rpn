@@ -20,7 +20,7 @@
 
 implicit none
 
-!#include <arch_specific.hf>
+#include <arch_specific.hf>
 
 !@arguments
    character(len=*), intent(in) :: F_lev_S                          ! m/t : Momemtum/thermo level
@@ -32,10 +32,9 @@ implicit none
    !
 !@ author  RPN-A Model Infrastructure Group  August 2015
    ! 
-!**/
 
 #include "adv_grid.cdk"
-#include "adv_interp.cdk"
+#include "adv_interp.cdk"newcode_11/adv_get_indices.F90 
 #include "glb_ld.cdk"
 #include "ver.cdk"
    integer :: kkmax , idxk, idxjk, ii1, jj1,kk1
@@ -96,21 +95,17 @@ do k=F_k0,F_nk
 
             ii(n0)=n
 
-            rri= F_x(n)
-            ii1 = (rri- adv_x00_8) * adv_ovdx_8
-            ii1 = adv_lcx(ii1+1) + 1
-            if (rri < adv_bsx_8(ii1)) ii1 = ii1 - 1
+            rri = F_x(n)
+            ii1 = 1 + (rri - adv_x00_8) * adv_ovdx_8
             ii(n1) = max(2,min(ii1,adv_iimax))
 
-            rrj= F_y(n)
-            jj1 = (rrj - adv_y00_8) * adv_ovdy_8
-            jj1 = adv_lcy(jj1+1) + 1
-            if (rrj < adv_bsy_8(jj1)) jj1 = jj1 - 1
+            rrj = F_y(n)
+            jj1 = 1 + (rrj - adv_y00_8) * adv_ovdy_8
             ii(n2) = max(G_haloy,min(jj1,adv_jjmax))
 
-            rrk= F_z(n)
-            kk1 = (rrk - p_z00_8) * adv_ovdz_8
-            kk1 = p_lcz ( min(kk1+1,pnz) )
+            rrk = F_z(n)
+            kk1 = (rrk - p_z00_8) * adv_ovdz_8 
+            kk1 = p_lcz (kk1+1)                        
             if (rrk < p_bsz_8(kk1)) kk1 = kk1 - 1
             ii(n3) = min(kkmax-1,max(0,kk1))
 

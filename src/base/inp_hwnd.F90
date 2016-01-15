@@ -20,6 +20,7 @@
       subroutine inp_hwnd ( F_u, F_v, F_vgd_src, F_vgd_dst,&
                             F_ssur, F_ssvr, F_ssu0, F_ssv0,&
                             Minx,Maxx,Miny,Maxy, F_nk )
+      use vertical_interpolation, only: vertint2
       use vGrid_Descriptors
       implicit none
 #include <arch_specific.hf>
@@ -59,7 +60,8 @@ End Interface
 
       p0    => F_ssur(1:l_ni,1:l_nj)
       ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels (F_vgd_src, ip1_list, ptr3d, p0, in_log=.true.)
+      istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d, &
+                          p0, in_log=.true. )
       nullify (p0, ptr3d)
 
       p0    => F_ssu0(1:l_ni,1:l_nj)
@@ -68,22 +70,21 @@ End Interface
                           in_log=.true. )
       nullify (p0, ptr3d)
 
-      call vertint ( F_u,dstlev,G_nk, ur,srclev,nka, &
-                     l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                     'cubic', .false. )
+      call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka, &
+                      l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
 
       p0    => F_ssvr(1:l_ni,1:l_nj)
       ptr3d =>    srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels (F_vgd_src, ip1_list, ptr3d, p0, in_log=.true.)
+      istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d, &
+                          p0, in_log=.true. )
 
       p0    => F_ssv0(1:l_ni,1:l_nj)
       ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
       istat= vgd_levels ( F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0, &
                           in_log=.true. )
 
-      call vertint ( F_v,dstlev,G_nk, vr,srclev,nka, &
-                     l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                     'cubic', .false. )
+      call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka, &
+                      l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
 
       deallocate (ip1_list,ur,vr,srclev)
       nullify (ip1_list, ur, vr, p0, ptr3d)

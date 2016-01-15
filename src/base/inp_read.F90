@@ -142,8 +142,6 @@
 
          nz= (lislon + Inp_npes - 1) / Inp_npes
 
-         allocate (wk2(G_ni*G_nj,nz+1)) ! Valin???
-
          mpx      = mod( Inp_iome, Inp_npes )
          local_nk = lislon / Inp_npes
          irest  = lislon  - local_nk * Inp_npes
@@ -155,6 +153,7 @@
             kstart = kstart + irest
          endif
 
+         allocate (wk2(G_ni*G_nj,nz+1)) ! Valin???
          allocate (wk1(n1*n2,max(local_nk,1)))
 
          cnt= 0

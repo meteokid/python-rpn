@@ -13,9 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_reconstruction_CW - 1D-Reconstruction based on Piecewise Parabolic Method (Colella and Woodward, 1984)  
+!**s/p adv_rebuild_CW - 1D-Rebuild based on Piecewise Parabolic Method (Colella and Woodward, 1984)  
 
-      subroutine adv_reconstruction_CW (F_psi_8,F_xu_8,F_m_8,F_n,F_mono)
+      subroutine adv_rebuild_CW (F_psi_8,F_xu_8,F_m_8,F_n,F_mono)
 
       implicit none
 #include <arch_specific.hf>
@@ -27,7 +27,7 @@
       !@author Monique Tanguay
 
       !@revisions
-      !v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      !v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
       !arguments
       !---------------------------------------------------------------------
@@ -93,7 +93,7 @@
 
          rhoR_8(i) = rhoA_8(i) + p1_8 + p2_8
 
-         if (rhoR_8(i)<0.0d0) rhoR_8(i) = 0.0d0
+         if (F_mono==4.and.rhoR_8(i)<0.0d0) rhoR_8(i) = 0.0d0
 
          !------------------------------------------------------------------
 
@@ -108,7 +108,7 @@
       !--------------------------------------------------------------------------------------
       !Grid-scale violation: Check for spurious rhoL: Zerroukat et al. (2005) Eqs.(3.1)-(3.7) 
       !--------------------------------------------------------------------------------------
-      if (F_mono/=0) then
+      if (F_mono==3) then
 
          do i=i1,i2
 
@@ -148,7 +148,7 @@
       !Subgrid-scale violation: Check for spurious extrema in [i-1,i]: Zerroukat et al. (2005) Eqs.(3.9)-(3.13) 
       !together with Zerroukat et al. (2006) Eqs.(22)-(23) 
       !---------------------------------------------------------------------------------------------------------
-      if (F_mono/=0) then
+      if (F_mono==3) then
 
          do i=i1,i2
 
@@ -205,8 +205,8 @@
       !----------------------------------------------------------------------------------------------------------
 
       !Use PPM1 (Laprise and Plante 1995) when PPP2 not applicable:
-      !Cubic reconstruction with extrapolation at the boundaries: We resolve a linear system
-      !-------------------------------------------------------------------------------------
+      !Cubic rebuild with extrapolation at the boundaries: We resolve a linear system
+      !------------------------------------------------------------------------------
       do i=1,F_n
 
          if (.NOT.(i<=i1.or.i>=i2)) cycle 

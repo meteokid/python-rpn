@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END --------------------------------- 
  
-      subroutine adv_trapeze ( F_nb_iter, pxm , pym , pzm, &
+      subroutine adv_traj ( F_nb_iter, pxm , pym , pzm, &
                                F_u, F_v, F_w, F_ua, F_va, F_wa, F_wat,&
                                F_xth ,F_yth, F_zth, &
                                i0,in,j0 ,jn,i0u,inu,j0v,jnv,&
@@ -30,7 +30,7 @@
       integer, intent(in) :: F_aminx,F_amaxx,F_aminy, F_amaxy                             ! wind fields array bounds
       real, dimension(F_ni,F_nj,F_nk), intent(out) :: pxm  , pym  , pzm                   ! upstream positions valid at t1   
       real, dimension(F_ni,F_nj,F_nk) :: F_xth  , F_yth  , F_zth                          ! upwind longitudes at time t1
-      real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk), intent(in) :: F_u   , F_v  , F_w      ! destag winds
+      real, dimension(F_aminx:F_amaxx,F_aminy:F_amaxy,F_nk), intent(in), target :: F_u, F_v, F_w      ! destag winds
       real, dimension(F_ni,F_nj,F_nk), intent(in) :: F_ua,   F_va,   F_wa                      ! Arival winds
       real, dimension(F_ni,F_nj,F_nk) :: wdm
       real, dimension(F_ni,F_nj,F_nk),intent(in) :: F_wat
@@ -43,9 +43,12 @@
 #include "adv_gmm.cdk"
 #include "adv_nml.cdk"
 #include "adv_pos.cdk"
-#include "adv_tracers.cdk"
+#include "adv_interp.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
+#include "schm.cdk"
+#include "step.cdk"
+#include "tracers.cdk"
 
       integer :: i , j , k, i0u_e, inu_e, j0v_e, jnv_e
       integer ,  dimension(:), allocatable :: ii
@@ -54,6 +57,8 @@
       real :: ztop_bound, zbot_bound
       real*8 :: inv_cy_8
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
+      real,   dimension(:,:,:), pointer :: dummy3d 
+      real,   parameter :: DTH_1     = 1.
  !     
 !---------------------------------------------------------------------
 !     
@@ -63,26 +68,33 @@
       ztop_bound=Ver_z_8%m(0)
       zbot_bound=Ver_z_8%m(F_nk+1)
 
-      allocate( ii(nind*4) )    
+
+
+
+      if(Schm_cub_traj_L) allocate( ii(nind*4) )    
 
 ! Calculate upstream positions at t1 using angular displacement
 
-      do iter = 1, F_nb_iter
+      do  iter = 1, F_nb_iter
 
     ! 1. INTERPOLATION OF WINDS
 
 ! Clipping trajectories
  
-         call adv_cliptraj (F_xth, F_yth, F_ni, F_nj,F_nk,i0, in, j0, jn, k0m,'')
+       if ( iter .gt. 1) &
+                    call adv_cliptraj (F_xth, F_yth, F_ni, F_nj,F_nk,i0, in, j0, jn, k0m,'')
 
 ! Interpolate with tricubic method
-        if (adw_catmullrom_L) then
+
+     if(Schm_cub_traj_L) then
+        
+          if (adv_catmullrom_L) then
             call adv_tricub_catmullrom(ud, F_u, F_xth, F_yth, F_zth, num, .false. , i0, in, j0, jn, k0m, F_nk, 'm')
             call adv_tricub_catmullrom(vd, F_v, F_xth, F_yth, F_zth, num, .false. , i0, in, j0, jn, k0m, F_nk, 'm')
-         else 
+          else 
             call adv_get_indices(ii, F_xth, F_yth, F_zth , num, nind, i0, in, j0, jn, k0m, F_nk, 'm')           
             	
-			  call adv_tricub_lag3d(ud, no_conserv, no_conserv, no_conserv, no_conserv, F_u, no_slice, 0, & 
+			   call adv_tricub_lag3d(ud, no_conserv, no_conserv, no_conserv, no_conserv, F_u, no_slice, 0, & 
                                   no_flux, no_flux, no_flux, no_flux, 0, &
                                   F_xth, F_yth, F_zth, &
                                   no_slice, no_slice, no_slice, & 
@@ -95,13 +107,19 @@
                                   no_slice, no_slice, no_slice, & 
                                   no_slice, no_slice, no_slice, &
                                   num, nind, ii, k0m ,F_nk , &
-                                  .false. , .false. , 'm')
-           
-         endif
+                                  .false. , .false. , 'm')         
+          endif
+     else
 
-!-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDALE RULE 
+     call adv_trilin(ud,vd,F_u,F_v,F_xth,F_yth,F_zth, &
+                          DTH_1, .true., i0, in, j0, jn, &
+                          F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0m,F_nk)
+     endif
 
-!omp parallel private (inv_cy_8)
+!-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDALE/SETTLS/MIDPOINT RULES
+ 
+           if(Schm_trapeze_L.or.Schm_step_settls_L) then
+!omp parallel private (inv_cy_8,i,j,k)
 !omp do
          do k=k0m,F_nk
             do j=j0,jn
@@ -115,27 +133,49 @@
             end do
          enddo
 !omp enddo
-!omp end parallel
+!omp end parallel 
+          else
+!$omp parallel private(k,i,j)
+!$omp do
+         do k=k0m,F_nk
+            do j=j0,jn
+               do i=i0,in
+                  F_xth(i,j,k) = adv_xx_8(i) - 0.5d0*Cstv_dt_8* ud(i,j,k)/cos(F_yth(i,j,k)) 
+                  F_yth(i,j,k) = adv_yy_8(j) - 0.5d0*Cstv_dt_8* vd(i,j,k) 
+               end do
+            end do
+         enddo
+!$omp enddo
+!$omp end parallel
+           endif
 
- 
 !- 3D interpol of zeta dot and new upstream pos along zeta
       
           call adv_cliptraj (F_xth,F_yth, F_ni, F_nj,F_nk,i0,in,j0,jn,max(k0t-2,1),'')
- 
-         if (adw_catmullrom_L) then
-            call adv_tricub_catmullrom(wd, F_w, F_xth,F_yth,F_zth,num,.false., i0, in, j0, jn, k0m, F_nk,'m')
-         else 
-            call adv_get_indices(ii, F_xth, F_yth, F_zth, num, nind, i0, in, j0, jn, k0m, F_nk, 'm') 
-            call adv_tricub_lag3d(wd, no_conserv, no_conserv, no_conserv, no_conserv, F_w, no_slice, 0, &
+
+     if(Schm_cub_traj_L) then         
+            if (adv_catmullrom_L) then
+               call adv_tricub_catmullrom(wd, F_w, F_xth,F_yth,F_zth,num,.false., i0, in, j0, jn, k0m, F_nk,'m')
+            else 
+               call adv_get_indices(ii, F_xth, F_yth, F_zth, num, nind, i0, in, j0, jn, k0m, F_nk, 'm') 
+               call adv_tricub_lag3d(wd, no_conserv, no_conserv, no_conserv, no_conserv, F_w, no_slice, 0, &
                                   no_flux, no_flux, no_flux, no_flux, 0, &
                                   F_xth,F_yth,F_zth, &
                                   no_slice, no_slice, no_slice, &
                                   no_slice, no_slice, no_slice, &
                                   num, nind, ii, k0m ,F_nk , &
                                   .false. , .false. , 'm')
-         end if
+            end if  
+     else
+            dummy3d => F_w
+            call adv_trilin(wd,vd,F_w,dummy3d, F_xth, F_yth,F_zth, &
+                           DTH_1, .false., i0, in, j0, jn, &
+                           F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0m,F_nk)
+     endif
 
-!$omp parallel
+!$omp parallel private(k,i,j) shared (wd)
+      if(Schm_trapeze_L.or.Schm_step_settls_L) then
+
 !$omp do
          do k = max(1,k0m),F_nk
             do j = j0,jn
@@ -148,19 +188,54 @@
          enddo
 
 !$omp enddo
+      else
+!$omp do
+         do k = max(1,k0m),F_nk
+            do j = j0,jn
+               do i = i0,in
+                  F_zth(i,j,k) =Ver_z_8%m(k)  - Cstv_dt_8* wd(i,j,k)
+                  F_zth(i,j,k) = min(zbot_bound,max(F_zth(i,j,k),ztop_bound))
+                  F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + Ver_z_8%m(k))
+               enddo
+            enddo
+         enddo
+!$omp enddo
+      endif
 !$omp end parallel
-      end do
 
+ enddo
+
+ ! Departure point
+
+   if (Schm_trapeze_L.or.Schm_step_settls_L) then
+      ! nothing to do ...
       pxm = F_xth
       pym = F_yth
       pzm = F_zth
       wdm = wd
+   else
+!$omp parallel private (k,j,i)
+!$omp do
+      do k=k0m,F_nk
+         do j=j0,jn
+            do i=i0,in
+               pxm(i,j,k) = adv_xx_8(i) - Cstv_dt_8* ud(i,j,k)/cos(F_yth(i,j,k)) 
+               pym(i,j,k) = adv_yy_8(j) - Cstv_dt_8* vd(i,j,k) 
+               pzm(i,j,k) = F_zth(i,j,k) - Ver_z_8%m(k)
+               pzm(i,j,k) = Ver_z_8%m(k) + 2.0 * pzm(i,j,k)
+               pzm(i,j,k) = min(zbot_bound,max(pzm(i,j,k),ztop_bound))
+            end do
+         end do
+      enddo
+!$omp enddo
+!$omp end parallel
+   endif
 
-deallocate ( ii )
+if(Schm_cub_traj_L) deallocate ( ii )
 
       call adv_int_horiz_m (pxmu, pymu, pzmu, pxmv, pymv, pzmv, pxm, pym, pzm, &
                             F_ni,F_nj,F_nk,k0, i0, in, j0, jn)
-      if (Adv_slice_L) then  
+      if (Tr_slice_L) then  
       call adv_int_horiz_m_slice (pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, pxm, pym, pzm, &
                             F_ni,F_nj,F_nk,k0, i0, in, j0, jn, i0u_e, inu_e, j0v_e, jnv_e)
       endif
@@ -170,11 +245,10 @@ deallocate ( ii )
 
 !     Clipping trajectories 
       
-      call adv_cliptraj (pxm,pym,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('m'))
       call adv_cliptraj (pxmu,pymu,F_ni,F_nj,F_nk,i0u,inu,j0,jn,k0,'INTERP '//trim('m'))
       call adv_cliptraj (pxmv,pymv,F_ni,F_nj,F_nk,i0,in,j0v,jnv,k0,'INTERP '//trim('m'))
       call adv_cliptraj (pxt,pyt,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('t'))
-      if (Adv_slice_L) then
+      if (Tr_slice_L) then
        call adv_cliptraj (pxmu_s,pymu_s,F_ni,F_nj,F_nk,i0u_e,inu_e,j0,jn,k0,'INTERP '//trim('m'))
        call adv_cliptraj (pxmv_s,pymv_s,F_ni,F_nj,F_nk,i0,in,j0v_e,jnv_e,k0,'INTERP '//trim('m'))
       endif
@@ -184,7 +258,7 @@ deallocate ( ii )
 !---------------------------------------------------------------------
 !     
       return
-      end subroutine adv_trapeze
+      end subroutine adv_traj
 
 
 

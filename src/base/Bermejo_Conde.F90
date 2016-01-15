@@ -35,7 +35,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 #include "schm.cdk"
 
       !----------------------------------------------------------
@@ -48,7 +48,7 @@
       logical LAM_L, verbose_L
       !----------------------------------------------------------
 
-      verbose_L = Adw_verbose/=0 
+      verbose_L = Tr_verbose/=0 
 
       LAM_L = G_lam.and..not.Grd_yinyang_L
 
@@ -176,7 +176,7 @@
 
             F_out(i,j,k) = F_new(i,j,k) - correction_8
 
-            if (Adw_BC_min_max_L) then
+            if (Tr_BC_min_max_L) then
 
                 if (correction_8 > 0.d0 .and. F_out(i,j,k) < F_min(i,j,k)) then
                     count(k,1)   = count(k,1) + 1

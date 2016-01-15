@@ -311,9 +311,10 @@
       if(Schm_hydro_L) then
 !$omp do
          do k=k0t,l_nk
+            km=max(k-1,k0t)
             do j= j0, jn
             do i= i0, in
-               F_w(i,j,k)=-F_xd(i,j,k)*Dcst_rgasd_8*F_t(i,j,k)/Dcst_grav_8
+               F_w(i,j,k)=-(Ver_wpstar_8(k)*F_xd(i,j,k)+Ver_wmstar_8(k)*F_xd(i,j,km))*Dcst_rgasd_8*F_t(i,j,k)/Dcst_grav_8
             end do
             end do
          end do

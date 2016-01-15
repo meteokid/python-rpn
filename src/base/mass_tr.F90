@@ -44,10 +44,9 @@
 #include "dcst.cdk"
 #include "ver.cdk"
 #include "grd.cdk"
-#include "wil_williamson.cdk"
 #include "cstv.cdk"
 #include "ptopo.cdk"
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,i0,in,j0,jn
@@ -107,8 +106,8 @@
             !---------------------------------------
             if (Grd_yinyang_L) then
 
-            do j=1+pil_sub_s,l_nj-pil_sub_n
-            do i=1+pil_sub_w,l_ni-pil_sub_e
+            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
+            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
                s_area_8 = s_area_8 + Geomg_area_8(i,j)
             enddo
             enddo
@@ -170,8 +169,8 @@
          if (Grd_yinyang_L) then
 
          do k=k0,F_nk
-            do j=1+pil_sub_s,l_nj-pil_sub_n
-            do i=1+pil_sub_w,l_ni-pil_sub_e
+            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
+            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
                s_mass_8 = s_mass_8 + F_tracer(i,j,k) * mass(i,j,k)
             enddo
             enddo
@@ -194,8 +193,8 @@
          if (Grd_yinyang_L) then
 
          do k=k0,F_nk
-            do j=1+pil_sub_s,l_nj-pil_sub_n
-            do i=1+pil_sub_w,l_ni-pil_sub_e
+            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
+            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
                s_mass_8 = s_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k)
            enddo
            enddo
@@ -237,7 +236,7 @@
          scale_8 = cst2
       endif
 
-      if (Advection_2D_3D_L.or.F_name_S=='RHO '.or..NOT.F_mixing_L) scale_8 = 1.0d0
+      if (Tr_2D_3D_L.or.F_name_S=='RHO '.or..NOT.F_mixing_L) scale_8 = 1.0d0
 
       gc_mass_8 = gc_mass_8 * scale_8
       gp_mass_8 = gp_mass_8 * scale_8

@@ -3,19 +3,19 @@
 !$omp parallel do                                                   &
 !$omp private(i,j,sweep,ii,o_shoot,u_shoot,s_dif_p,s_dif_m,         &
 !$omp         dif_p,dif_m,ok_p,ok_m,ratio_m,ratio_p,i_rd,j_rd,k_rd) &
-!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c)
+!$omp shared (sweep_rd,shift,a_new,a_max,a_min,a_mass)
 
       do k=k0+shift-1,F_nk,SIDE_max_0
 
-         do j=jl_c,jr_c
-         do i=il_c,ir_c
+         do j=1,adx_mlnj
+         do i=1,adx_lni
 
-            o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
-            u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+            o_shoot = max(0., a_new(i,j,k) - a_max(i,j,k)) * a_mass(i,j,k)
+            u_shoot = max(0., a_min(i,j,k) - a_new(i,j,k)) * a_mass(i,j,k)
 
             if (o_shoot==0..and.u_shoot==0.) cycle
 
-            do sweep = 1,Adw_ILMC_sweep_max
+            do sweep = 1,Tr_ILMC_sweep_max
 
                if (o_shoot==0..and.u_shoot==0.) cycle
 
@@ -29,16 +29,16 @@
                   k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
 
 #ifdef CORE
-                  if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                  if (.NOT.(j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #else
-                  if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                  if (     (j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #endif
 
-                  dif_p(ii) = max(0., F_max(i_rd,j_rd,k_rd) - F_new(i_rd,j_rd,k_rd))
-                  s_dif_p   = dif_p(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_p
+                  dif_p(ii) = max(0., a_max(i_rd,j_rd,k_rd) - a_new(i_rd,j_rd,k_rd))
+                  s_dif_p   = dif_p(ii) * a_mass(i_rd,j_rd,k_rd) + s_dif_p
 
-                  dif_m(ii) = max(0., F_new(i_rd,j_rd,k_rd) - F_min(i_rd,j_rd,k_rd))
-                  s_dif_m   = dif_m(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_m
+                  dif_m(ii) = max(0., a_new(i_rd,j_rd,k_rd) - a_min(i_rd,j_rd,k_rd))
+                  s_dif_m   = dif_m(ii) * a_mass(i_rd,j_rd,k_rd) + s_dif_m
 
                enddo
 
@@ -51,7 +51,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   F_new(i,j,k) = max(F_new(i,j,k) - real(ok_p/l_mass(i,j,k)),F_min(i,j,k))
+                   a_new(i,j,k) = max(a_new(i,j,k) - real(ok_p/a_mass(i,j,k)),a_min(i,j,k))
 
                    ratio_p = ok_p/s_dif_p
 
@@ -61,11 +61,11 @@
                       j_rd = sweep_rd(sweep,i,j,k)%j_rd(ii)
                       k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
 #ifdef CORE
-                      if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                      if (.NOT.(j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #else
-                      if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                      if (     (j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #endif
-                      if (dif_p(ii)>0.) F_new(i_rd,j_rd,k_rd) = min(F_new(i_rd,j_rd,k_rd) + real(dif_p(ii)*ratio_p),F_max(i_rd,j_rd,k_rd))
+                      if (dif_p(ii)>0.) a_new(i_rd,j_rd,k_rd) = min(a_new(i_rd,j_rd,k_rd) + real(dif_p(ii)*ratio_p),a_max(i_rd,j_rd,k_rd))
 
                    enddo
 
@@ -75,7 +75,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   F_new(i,j,k) = min(F_new(i,j,k) + real(ok_m/l_mass(i,j,k)),F_max(i,j,k))
+                   a_new(i,j,k) = min(a_new(i,j,k) + real(ok_m/a_mass(i,j,k)),a_max(i,j,k))
 
                    ratio_m = ok_m/s_dif_m
 
@@ -85,18 +85,18 @@
                       j_rd = sweep_rd(sweep,i,j,k)%j_rd(ii)
                       k_rd = sweep_rd(sweep,i,j,k)%k_rd(ii)
 #ifdef CORE
-                      if (.NOT.( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                      if (.NOT.(j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #else
-                      if (     ( (i_rd>=il_c.and.i_rd<=ir_c) .and. (j_rd>=jl_c.and.j_rd<=jr_c) ) ) cycle
+                      if (     (j_rd>=1.and.j_rd<=adx_mlnj)) cycle
 #endif
-                      if (dif_m(ii)>0.) F_new(i_rd,j_rd,k_rd) = max(F_new(i_rd,j_rd,k_rd) - real(dif_m(ii)*ratio_m),F_min(i_rd,j_rd,k_rd))
+                      if (dif_m(ii)>0.) a_new(i_rd,j_rd,k_rd) = max(a_new(i_rd,j_rd,k_rd) - real(dif_m(ii)*ratio_m),a_min(i_rd,j_rd,k_rd))
 
                    enddo
 
                endif
 
-               o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
-               u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+               o_shoot = max(0., a_new(i,j,k) - a_max(i,j,k)) * a_mass(i,j,k)
+               u_shoot = max(0., a_min(i,j,k) - a_new(i,j,k)) * a_mass(i,j,k)
 
                if (o_shoot==0..and.u_shoot==0.) cycle
 

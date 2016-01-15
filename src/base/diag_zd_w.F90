@@ -59,6 +59,7 @@
 #include "zdot.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
+#include "schm.cdk"
 
       integer i, j, k, kp, i0, in, j0, jn, j00, jnn
       real*8 c1,c2
@@ -248,6 +249,15 @@
             end do
             end do
          end do
+
+         if(Schm_lift_ltl_L) then
+            do j=j0,jn
+            do i=i0,in
+               F_w(i,j,Nk)=-RoverG*F_t(i,j,Nk)*(Ver_wpstar_8(Nk)*F_xd(i,j,Nk) &
+                                               +Ver_wmstar_8(Nk)*F_xd(i,j,Nk-1) )
+            end do
+            end do
+         endif
 
       endif
 

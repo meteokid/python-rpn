@@ -37,7 +37,7 @@
       namelist /mtn_cfgs/ Grd_rcoef,Schm_mteul
       namelist /mtn_cfgs/ Schm_hydro_L,Schm_settls_L
       namelist /mtn_cfgs/ Schm_itcn, Schm_itnlh
-      namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8
+      namelist /mtn_cfgs/ Cstv_dt_8,Cstv_bA_8,Cstv_bA_nh_8,Cstv_rE_8
       namelist /mtn_cfgs/ Cstv_tstr_8,Schm_advec
       namelist /mtn_cfgs/ hdif_pwr, hdif_lnr
       namelist /mtn_cfgs/ mtn_tzero,mtn_nstar,mtn_flo,mtn_hwx

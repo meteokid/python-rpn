@@ -27,7 +27,8 @@
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "tr3d.cdk"
-#include "adx_tracers.cdk"
+#include "tracers.cdk"
+#include "adx_nml.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
@@ -38,10 +39,19 @@
       logical qw_L
       !---------------------------------------------------------------------
 
-      adx_flux_L = .FALSE.
-      adx_core_L = .FALSE.
+      Tr_BC_min_max_L   = Adw_BC_min_max_L
 
-      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) adx_flux_L = .TRUE. !PSADJ (FLUX) 
+      Tr_ILMC_min_max_L = Adw_ILMC_min_max_L
+      Tr_ILMC_sweep_max = Adw_ILMC_sweep_max
+
+      Tr_verbose = Adw_verbose
+
+      Tr_dry_mixing_ratio_L = .false.   
+
+      Tr_flux_L = .false.
+      Tr_core_L = .false.
+
+      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
       do n=1,Tr3d_ntr
 
@@ -51,21 +61,35 @@
 
          if (G_lam.and..not.Grd_yinyang_L) then !LAM
 
-            if (Tr3d_mass(n)==1) adx_flux_L    = .true. !BC (FLUX)   
+            if (Tr3d_mass(n)==1) Tr_flux_L = .true. !BC (FLUX)   
 
-            if (Tr3d_mass(n)/=0) adx_core_L = .true. 
-            if (Tr3d_mono(n)/=0) adx_core_L = .true. 
+            if (Tr3d_mass(n)/=0) Tr_core_L = .true. 
+            if (Tr3d_mono(n)/=0) Tr_core_L = .true. 
 
          endif
 
       end do
 
-      adx_extension_L = adx_flux_L
+      Tr_extension_L = Tr_flux_L
 
-      if (adx_extension_L.and.Lun_out>0) then
+      if (Tr_extension_L.and.Lun_out>0) then
          write(Lun_out,*) ''
          write(Lun_out,*) 'ADX_CHECK_EXT: EXTENDED ADVECTION OPERATIONS REQUIRED'
          write(Lun_out,*) ''
+      endif
+
+      !If not initialized by namelist adw_cfgs
+      !---------------------------------------
+      if (adw_pil_sub_s == -1) then
+         Tr_pil_sub_s = pil_s
+         Tr_pil_sub_n = pil_n
+         Tr_pil_sub_w = pil_w
+         Tr_pil_sub_e = pil_e
+      else
+         Tr_pil_sub_s = adw_pil_sub_s
+         Tr_pil_sub_n = adw_pil_sub_n
+         Tr_pil_sub_w = adw_pil_sub_w
+         Tr_pil_sub_e = adw_pil_sub_e
       endif
 
       !---------------------------------------------------------------------

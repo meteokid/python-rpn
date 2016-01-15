@@ -1,22 +1,57 @@
+#if defined(DOC)
 
-      logical :: adw_mono_L      , adw_catmullrom_L,&
-                 adw_BC_min_max_L, adw_ILMC_min_max_L
-      integer :: adw_maxcfl, adw_halox, adw_haloy, adw_ILMC_sweep_max,&
-                 Adw_reconstruction, Adw_PPM_mono, Adw_verbose
-      integer pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
+!
+!**comdeck adv.cdk
+!________________________________________________________________________
+!                                                                        |
+! VARIABLES FOR ADVECTION                                                |
+!________________________________________________________________________|
+!                |                                                       |
+! NAME           | DESCRIPTION                                           |
+!----------------|-------------------------------------------------------|
+!
+! adv_mono_L     | switch: .true. : advection of tracers is monotonic    |
+! 
+!________________________________________________________________________|
+! MASS-CONSERVATION for Chemical Tracers                                 |
+!________________________________________________________________________|
+! adv_verbose       | Activate conservation diagnostics if /=0           |
+! adv_BC_min_max_L  |switch:.T.:MONO(CLIPPING) after Bermejo-Conde Def.=T|
+! adv_ILMC_min_max_L|switch:.T.:MONO(CLIPPING) after ILMC          Def.=T|
+! adv_ILMC_sweep_max|Number of neighborhood zones in ILMC          Def.=2|
+! adw_SLICE_rebuild |Type of rebuild in SLICE Def.=2 (CW)                |
+!                   |SLICE_rebuild=1 (LP)                                |
+!                   |SLICE_rebuild=2 (CW)                                |
+! adv_pil_sub_s     | South boundary in GY for an embedded LAM           |
+! adv_pil_sub_n     | North boundary in GY for an embedded LAM           |
+! adv_pil_sub_w     |  West boundary in GY for an embedded LAM           |
+! adv_pil_sub_e     |  East boundary in GY for an embedded LAM           |
+!________________________________________________________________________|
+!
+#endif
 
-      common /adw_nml_l/ adw_mono_L      , adw_catmullrom_L,&
-                         adw_BC_min_max_L, adw_ILMC_min_max_L
-      common /adw_nml_i/ adw_maxcfl, adw_halox, adw_haloy,&
-                         adw_ILMC_sweep_max              ,&
-                         Adw_reconstruction, Adw_PPM_mono, Adw_verbose
-      common /EXTENSION_I/ pil_sub_s,pil_sub_n,pil_sub_w,pil_sub_e
 
-      namelist /adw_cfgs/ adw_mono_L
-      namelist /adw_cfgs/ adw_catmullrom_L
-      namelist /adw_cfgs/ adw_BC_min_max_L
-      namelist /adw_cfgs/ adw_ILMC_sweep_max
-      namelist /adw_cfgs/ adw_ILMC_min_max_L
-      namelist /adw_cfgs/ Adw_reconstruction
-      namelist /adw_cfgs/ Adw_PPM_mono
-      namelist /adw_cfgs/ Adw_verbose
+      logical :: adv_mono_L      , adv_catmullrom_L,&
+                 adv_BC_min_max_L, adv_ILMC_min_max_L
+      integer :: adv_ILMC_sweep_max , &
+                 adv_SLICE_rebuild, adv_verbose
+      integer :: adv_pil_sub_s,adv_pil_sub_n,adv_pil_sub_w,adv_pil_sub_e
+
+      common /adv_nml_l/ adv_mono_L      , adv_catmullrom_L,&
+                         adv_BC_min_max_L, adv_ILMC_min_max_L
+
+      common /adv_nml_i/ adv_ILMC_sweep_max, &
+                         adv_SLICE_rebuild, adv_verbose, &
+                         adv_pil_sub_s, adv_pil_sub_n, adv_pil_sub_w, adv_pil_sub_e
+
+      namelist /adv_cfgs/ adv_mono_L
+      namelist /adv_cfgs/ adv_catmullrom_L
+      namelist /adv_cfgs/ adv_BC_min_max_L
+      namelist /adv_cfgs/ adv_ILMC_sweep_max
+      namelist /adv_cfgs/ adv_ILMC_min_max_L
+      namelist /adv_cfgs/ adv_SLICE_rebuild
+      namelist /adv_cfgs/ adv_verbose
+      namelist /adv_cfgs/ adv_pil_sub_s
+      namelist /adv_cfgs/ adv_pil_sub_n
+      namelist /adv_cfgs/ adv_pil_sub_w
+      namelist /adv_cfgs/ adv_pil_sub_e

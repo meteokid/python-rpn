@@ -28,9 +28,14 @@
 !________________________________________________________________________|
 ! MASS-CONSERVATION for Chemical Tracers                                 |
 !________________________________________________________________________|
+! adw_verbose       | Activate conservation diagnostics if /=0           |
 ! adw_BC_min_max_L  |switch:.T.:MONO(CLIPPING) after Bermejo-Conde Def.=T|
 ! adw_ILMC_min_max_L|switch:.T.:MONO(CLIPPING) after ILMC          Def.=T|
 ! adw_ILMC_sweep_max|Number of neighborhood zones in ILMC          Def.=2|
+! adw_pil_sub_s     | South boundary in GY for an embedded LAM           |
+! adw_pil_sub_n     | North boundary in GY for an embedded LAM           |
+! adw_pil_sub_w     |  West boundary in GY for an embedded LAM           |
+! adw_pil_sub_e     |  East boundary in GY for an embedded LAM           |
 !________________________________________________________________________|
 !
 #endif
@@ -50,6 +55,10 @@
       integer :: adw_haloy
       integer :: adw_ILMC_sweep_max
       integer :: adw_verbose
+      integer :: adw_pil_sub_s
+      integer :: adw_pil_sub_n
+      integer :: adw_pil_sub_w
+      integer :: adw_pil_sub_e
 
       namelist /adw_cfgs/ adw_stats_L
       namelist /adw_cfgs/ adw_ckbd_L
@@ -61,6 +70,10 @@
       namelist /adw_cfgs/ adw_ILMC_sweep_max
       namelist /adw_cfgs/ adw_ILMC_min_max_L
       namelist /adw_cfgs/ adw_verbose
+      namelist /adw_cfgs/ adw_pil_sub_s
+      namelist /adw_cfgs/ adw_pil_sub_n
+      namelist /adw_cfgs/ adw_pil_sub_w
+      namelist /adw_cfgs/ adw_pil_sub_e
 
       common /adw_nml_l/  adw_stats_L
       common /adw_nml_l/  adw_ckbd_L
@@ -78,4 +91,7 @@
       common /adw_nml_i/  adw_maxcfl
       common /adw_nml_i/  adw_ILMC_sweep_max
       common /adw_nml_i/  adw_verbose
-
+      common /adw_nml_i/  adw_pil_sub_s
+      common /adw_nml_i/  adw_pil_sub_n
+      common /adw_nml_i/  adw_pil_sub_w
+      common /adw_nml_i/  adw_pil_sub_e

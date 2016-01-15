@@ -32,7 +32,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
 #include "adx_poles.cdk"
 #include "adx_pos.cdk"
 #include "tr3d.cdk"
-#include "adx_tracers.cdk"
+#include "tracers.cdk"
 
    logical qw_L
    integer  n,i0,j0,in,jn
@@ -43,7 +43,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
 
    !---------------------------------------------------------------------
 
-   if (F_water_tracers_only_L.or..not.adx_core_L) then
+   if (F_water_tracers_only_L.or..not.Tr_core_L) then
    call adx_get_ij0n (i0,in,j0,jn)
    else
    call adx_get_ij0n_core (i0,in,j0,jn)

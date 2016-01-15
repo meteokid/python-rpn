@@ -54,7 +54,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
 
 #include "glb_ld.cdk"
 #include "adx_interp.cdk"
-#include "adx_tracers.cdk"
+#include "tracers.cdk"
 
    logical,parameter :: CLIP_TRAJ = .true.
    logical,parameter :: DO_W      = .false.
@@ -81,7 +81,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
    ztop_bound=adx_verZ_8%m(0)
    zbot_bound=adx_verZ_8%m(F_nk+1)
 
-   if (Adx_extension_L) then
+   if (Tr_extension_L) then
       call adx_get_ij0n_ext (i0,in,j0,jn)
    else
       call adx_get_ij0n (i0,in,j0,jn)

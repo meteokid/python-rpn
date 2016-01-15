@@ -63,6 +63,7 @@
          integer, dimension(:), pointer :: t,m,s
       end type ADX_TYPE_SV_I
 
+      integer :: pnz
       integer,dimension(:),pointer :: adx_lcx,adx_lcy
 
       real*8 :: adx_ovdx_8, adx_ovdy_8, adx_ovdz_8

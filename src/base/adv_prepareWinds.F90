@@ -52,7 +52,7 @@
          err = gmm_get(gmmk_zdt2_s, zdt2)
       endif 
       
-      if(.NOT.Schm_step_settls_L) then
+      if(Schm_trapeze_L.and..NOT.Schm_step_settls_L) then
          uh = ut0
          vh = vt0
   
@@ -97,6 +97,10 @@
             enddo
          enddo
 
+      else
+          uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )
+          vh (:,:,:) = .5*( vt1(:,:,:) + vt0(:,:,:) )
+          wh (:,:,:) = .5*(zdt1(:,:,:) +zdt0(:,:,:) )
       endif
 
       call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)

@@ -31,15 +31,17 @@
 !----------------------------------------------------------------
 ! F_ps         O    - ln(pi_s/z_s)
 ! F_gz         I    - geopotential height
-! F_topo       I    - topography
+! F_topo       I/O  - topography
 ! F_rna        I    - pressure levels from pressure analyse
-! NN           I    - number of points on the plane
 ! Nk           I    - number of levels from the pressure analyse
 
 #include "lun.cdk"
+#include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
+#include "schm.cdk"
+#include "ver.cdk"
 
       integer i,j,k,m,NN
       real, allocatable, dimension(:  ) :: guess,a,topo
@@ -48,6 +50,22 @@
 !
 !     ---------------------------------------------------------------
 !
+      if (Schm_autobar_L) then
+         F_topo = 0.
+         do j=1,l_nj
+         do i=1,l_ni
+            F_ps(i,j) =  (Dcst_grav_8*F_gz(i,j,1)-F_topo(i,j)) &
+                        /(Dcst_Rgasd_8*Cstv_Tstr_8) &
+                        +Ver_z_8%m(1)-Cstv_Zsrf_8
+            F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8 
+         enddo
+         enddo
+         return
+      endif
+
+      if (Nk < 2) &
+      call gem_error(-1,'gz2p0','Impossible to proceed: NK < 2')
+
       acc = .1 * Dcst_grav_8
       conv = alog(100.)
 !     Convert millibar to log of pascal unit - Pressure Analysis
@@ -86,41 +104,35 @@
          tcol(i,k+1) = sdd(k)*(zcol(i,k+1)-zcol(i,k))
       enddo
       enddo
-!
+
       do i=1,NN
         a(i) = tcol(i,2)
       enddo
-!
+
       do k=2,Nk-1
       do i=1,NN
          tcol(i,k) = (sdd(k)*tcol(i,k+1)+sdd(k-1)*tcol(i,k)) &
                      /(sdd(k)+sdd(k-1))
       enddo
       enddo
-!
+
 !     BOUNDARIES
       do i=1,NN
-         tcol(i,1) = a(i)
+         tcol(i,1)  = a(i)
          tcol(i,Nk) = tcol(i,Nk)
       enddo
-!     Derived VT can be used here for input if non-existent in the analysis
-!     do k=1,Nk
-!     do i=1,NN
-!        Ind_t(i,k) = -tcol(i,k)/Dcst_rgasd_8
-!     enddo
-!     enddo
-!
+
 !     Compute pressure at the surface (PS)
       do i=1,NN
          guess(i) = lna(Nk)-topo(i)/(Dcst_rgasd_8*250.)
       enddo
-!
+
       call vterp1 (guess,topo,zcol,tcol,lna,acc,NN,Nk)
       m=0
       do j=F_j0,F_jn
       do i=F_i0,F_in
          m=m+1
-         F_ps(i,j) = guess(m) + conv
+         F_ps(i,j) = exp (guess(m) + conv)
       enddo
       enddo
 

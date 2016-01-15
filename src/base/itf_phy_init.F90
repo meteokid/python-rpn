@@ -110,6 +110,20 @@
 
       call gem_error ( err,'itf_phy_init','phy_init or WB_get' )
 
+      err = VGD_OK
+      if ((zu.gt.0.) .and. (zt.gt.0.) ) then
+         nullify(ip1m)
+         Level_kind_diag=4
+         err = min ( vgrid_wb_get('ref-m',vcoord,ip1m), err)
+         deallocate(ip1m)
+         call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
+         call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
+         err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
+         err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+         out3_sfcdiag_L= .true.
+      endif
+      call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
+
 ! Print table of variables requested for output
 
       if (Lun_out.gt.0) write(Lun_out,1001)
@@ -148,20 +162,6 @@
       if (Lun_out.gt.0)  write(Lun_out,1006)
 
 ! Add the diagnostic heights to the vertical coordinate of the model
-
-      err = VGD_OK
-      if ((zu.gt.0.) .and. (zt.gt.0.) ) then
-         nullify(ip1m)
-         Level_kind_diag=4
-         err = min ( vgrid_wb_get('ref-m',vcoord,ip1m), err)
-         deallocate(ip1m)
-         call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
-         call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
-         err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
-         err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
-         out3_sfcdiag_L= .true.
-      endif
-      call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &

@@ -24,46 +24,46 @@
       integer :: F_stat
 !@author Stephane Chamberland, Nov 2009
 !@revisions
-! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
+! v4_80 - Tanguay M.        - GEM4 Mass-Conservation 
 
 #include "msg.h"
 #include "adv_nml.cdk"
 #include "grd.cdk"
+#include "adv_grid.cdk"
 
       integer :: fileUnit
       integer, external :: file_open_existing
 !
 !---------------------------------------------------------------------
 !
-      adw_mono_L       = .true.
-      adw_catmullrom_L = .false.
-      adw_BC_min_max_L = .true.
-      adw_halox  = -1
-      adw_haloy  = -1
-      adw_ILMC_sweep_max = 2
-      adw_ILMC_min_max_L = .true.
-      Adw_reconstruction = 1
-      Adw_PPM_mono       = 0
-      Adw_verbose        = 0
-      pil_sub_s = -1
-      pil_sub_n = -1
-      pil_sub_w = -1
-      pil_sub_e = -1
+      adv_mono_L       = .true.
+      adv_catmullrom_L = .false.
+      adv_BC_min_max_L = .true.
+      adv_halox  = -1
+      adv_haloy  = -1
+      adv_ILMC_sweep_max = 2
+      adv_ILMC_min_max_L = .true.
+      adv_SLICE_rebuild  = 2 
+      adv_verbose        = 0
+      adv_pil_sub_s = -1
+      adv_pil_sub_n = -1
+      adv_pil_sub_w = -1
+      adv_pil_sub_e = -1
 
       F_stat = -1
       fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')
       if (fileUnit >= 0) then
-         read(fileUnit, nml=adw_cfgs, iostat=F_stat)
+         read(fileUnit, nml=adv_cfgs, iostat=F_stat)
          call fclos(fileUnit)
          F_stat = -1 * F_stat
          if (F_stat<0) then
-            call msg(MSG_ERROR,'adw_nml - Probleme reading nml adw_cfgs in file: '//trim(F_nmlFileName_S))
+            call msg(MSG_ERROR,'adv_nml - Probleme reading nml adv_cfgs in file: '//trim(F_nmlFileName_S))
          endif
       endif
 
-      adw_maxcfl= max(1,Grd_maxcfl)
-      adw_halox = max(1,adw_maxcfl + 1)
-      adw_haloy = adw_halox
+      adv_maxcfl= max(1,Grd_maxcfl)
+      adv_halox = max(1,adv_maxcfl + 1)
+      adv_haloy = adv_halox
 !
 !---------------------------------------------------------------------
 !
@@ -79,11 +79,11 @@
 
       integer :: msgUnit
       integer, external :: msg_getUnit
-      namelist /adw_cfgs/ adw_ILMC_min_max_L
+      namelist /adv_cfgs/ adv_ILMC_min_max_L
 
 !---------------------------------------------------------------------
       msgUnit = msg_getUnit(MSG_INFO)
-      if (msgUnit>=0) write(msgUnit,nml=adw_cfgs)
+      if (msgUnit>=0) write(msgUnit,nml=adv_cfgs)
 !---------------------------------------------------------------------
       return
       end subroutine adv_nml_print

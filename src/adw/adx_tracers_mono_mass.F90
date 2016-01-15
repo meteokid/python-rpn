@@ -54,7 +54,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 
 #include "lun.cdk"
 #include "adx_dims.cdk"
-#include "adx_nml.cdk"
+#include "tracers.cdk"
 
    logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L, verbose_L
    real high(Minx:Maxx,Miny:Maxy,F_nk)
@@ -65,7 +65,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
    ILMC_L          = F_mono_kind == 2
    Bermejo_Conde_L = F_mass_kind == 1
    Cubic_L         = F_mono_kind == 0.and.F_mass_kind == 9
-   verbose_L       = Adw_verbose/=0
+   verbose_L       = Tr_verbose/=0
 
    !Cubic or Mono(CLIPPING) interpolation
    !-------------------------------------
@@ -93,7 +93,7 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
    !Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
    !-----------------------------------------------------------------------
    if (ILMC_L.and..not.Adx_lam_L) call adx_ILMC_GU  (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0) 
-   if (ILMC_L.and.     Adx_lam_L) call adx_ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,adw_ILMC_min_max_L,adw_ILMC_sweep_max) 
+   if (ILMC_L.and.     Adx_lam_L) call     ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,Tr_ILMC_min_max_L,Tr_ILMC_sweep_max) 
 
    !Restore Mass-Conservation: Bermejo and Conde,2002,MWR
    !-----------------------------------------------------
@@ -103,8 +103,8 @@ subroutine adx_tracers_mono_mass ( F_name_S, F_out, F_cub, F_mono, F_lin, F_min,
 
        if (CLIP_L.or.ILMC_L) high = F_mono
 
-       call adx_Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,F_for_flux_o,F_for_flux_i, &
-                               Minx,Maxx,Miny,Maxy,F_nk,k0,adw_BC_min_max_L,CLIP_L,ILMC_L)
+       call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,F_for_flux_o,F_for_flux_i, &
+                           Minx,Maxx,Miny,Maxy,F_nk,k0,Tr_BC_min_max_L,CLIP_L,ILMC_L)
 
    else
 

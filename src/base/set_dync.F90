@@ -54,11 +54,11 @@
       Cstv_tau_nh_8   = Cstv_dt_8 * Cstv_bA_nh_8
       Cstv_invT_nh_8  = one/Cstv_tau_nh_8
       Cstv_Beta_nh_8  = (one-Cstv_bA_nh_8)/Cstv_bA_nh_8
-      Cstv_rE_8=Cstv_rEp_8*Cstv_tau_nh_8/Cstv_tau_8
+      Cstv_rEp_8=Cstv_rE_8*Cstv_tau_8/Cstv_tau_nh_8
 
       if (Schm_hydro_L .or. & 
-         (abs(one-Cstv_rEp_8).lt.1e-5 .and. abs(Cstv_bA_8-Cstv_bA_nh_8).lt.1e-5)) then
-         Cstv_rE_8=one
+         (abs(one-Cstv_rE_8).lt.1e-5 .and. abs(Cstv_bA_8-Cstv_bA_nh_8).lt.1e-5)) then
+         Cstv_rEp_8=one
          Cstv_tau_nh_8=Cstv_tau_8
          Cstv_invT_nh_8=Cstv_invT_8
          Cstv_Beta_nh_8=Cstv_Beta_8

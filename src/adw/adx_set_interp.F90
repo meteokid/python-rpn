@@ -33,7 +33,7 @@ subroutine adx_set_interp()
    !     --------------- 2                     --------------- 4
    !                        --------------- 2  --------------- 5
    !     --------------- 3                     --------------- 6
-   !                        --------------- 3  --------------- 7
+   !                        --------------- 3  --------------- 7ERCI
    !     --------------- 4                     --------------- 8
    !                        --------------- 4  --------------- 9
    !     --------------- 5                     --------------- 10
@@ -49,7 +49,7 @@ subroutine adx_set_interp()
    real*8, parameter :: FRAC1OV6_8 = 1.D0/6.D0
 
    integer :: i, j, k, ij, pnerr, trj_i_off, nij, n, istat, istat2, ind
-   integer :: i0, j0, k0, pnx, pny, pnz, nkm, nkt, nks
+   integer :: i0, j0, k0, pnx, pny, nkm, nkt, nks
 
    real*8 :: ra,rb,rc,rd
    real*8 :: prhxmn, prhymn, prhzmn, dummy, pdfi

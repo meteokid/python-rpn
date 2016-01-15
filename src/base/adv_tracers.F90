@@ -22,7 +22,7 @@
    !@author  Michel Desgagne
    !@revisions
    ! v4_70 - Desgagne          - Initial Version
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
    !@objective Perform advection of all tracers
 
 #include "grd.cdk"
@@ -32,7 +32,6 @@
 #include "tr3d.cdk" 
 #include "gmm.hf"
 #include "adv.cdk"
-#include "adv_tracers.cdk"
 
       logical qw_L      
       integer  n, count,jext,err

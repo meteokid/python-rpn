@@ -80,15 +80,14 @@ End Interface
 !         same_rot= samegrid_rot ( src_gid, &
 !                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
 
-         nz= (lislon + Inp_npes - 1) / Inp_npes
-         allocate ( F_ip1(lislon), uhr(G_ni*G_nj,nz), &
-                    vhr(G_ni*G_nj,nz), uv(G_ni*G_nj,nz) )
-
+         allocate (F_ip1(lislon))
          if (lislon.gt.1) then
             call sort_ip1 (liste,F_ip1,lislon)
          else
             F_ip1(1) = p1
          endif
+
+         nz= (lislon + Inp_npes - 1) / Inp_npes
 
          mpx      = mod( Inp_iome, Inp_npes )
          local_nk = lislon / Inp_npes
@@ -101,7 +100,8 @@ End Interface
             kstart = kstart + irest
          endif
 
-         allocate (u(n1*n2,max(local_nk,1)), v(n1*n2,max(local_nk,1)))
+         allocate (u(n1*n2,max(local_nk,1)), v(n1*n2,max(local_nk,1)), &
+                   uhr(G_ni*G_nj,nz), vhr(G_ni*G_nj,nz), uv(G_ni*G_nj,nz))
 
          cnt= 0
          do i= kstart, kstart+local_nk-1
@@ -202,7 +202,7 @@ End Interface
          if (Inp_iome .ge.0) write(6,'(3a)') &
                   'Variable: UU,VV valid: ',Inp_datev, 'NOT FOUND'
          call gem_error ( -1, 'inp_read_uv', &
-          'Missing input data: horizontal winds')
+                  'Missing input data: horizontal winds')
 
       endif
 

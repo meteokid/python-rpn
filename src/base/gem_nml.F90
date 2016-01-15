@@ -92,8 +92,11 @@
       Schm_source_ps_L= .false.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
-      Schm_wload_L  = .false.
+      Schm_wload_L     = .false.
       Schm_adxlegacy_L = .false.
+      Schm_cub_traj_L  = .true.
+      Schm_trapeze_L   = .true.
+      Schm_lift_ltl_L  = .true.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -122,8 +125,8 @@
 
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
-      Cstv_bA_nh_8 = 0.6
-      Cstv_rEp_8   = 1.d0
+      Cstv_bA_nh_8 = 0.5
+      Cstv_rE_8    = 1.d0
       Cstv_tstr_8  = 240.0
 
       Lctl_rxstat_S   = 'LCL_4'

@@ -53,7 +53,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
 #include "glb_ld.cdk"
 #include "orh.cdk"
 #include "schm.cdk"
-#include "adx_tracers.cdk"
+#include "tracers.cdk"
 
    logical, parameter :: POLE0_L  = .false.
    logical, parameter :: EXTEND_L = .false.
@@ -107,7 +107,7 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    ! Note : with lid nesting, we compute momentum pos from k0t-2 to allow for
    !        cubic interpolation in adx_cubicpos
 
-   if (Adx_extension_L) then
+   if (Tr_extension_L) then
       call adx_get_ij0n_ext (i0,in,j0,jn)
    else
       call adx_get_ij0n (i0,in,j0,jn)

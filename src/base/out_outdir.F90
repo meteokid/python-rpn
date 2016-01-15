@@ -57,7 +57,7 @@
 
       call out_steps
 
-      if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
+      if ( Init_mode_L .and. (Step_kount.gt.Init_halfspan) ) return
 
       write (blocxy_S,'(I3.3,"-",I3.3)') Ptopo_mycol, Ptopo_myrow
 

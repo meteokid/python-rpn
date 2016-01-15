@@ -13,9 +13,9 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_reconstruction_LP - 1D-Reconstruction based on Laprise and Plante 1995 (PPM1)  
+!**s/p adv_rebuild_LP - 1D-Rebuild based on Laprise and Plante 1995 (PPM1)  
 
-      subroutine adv_reconstruction_LP (F_psi_8,F_xu_8,F_m_8,F_n)
+      subroutine adv_rebuild_LP (F_psi_8,F_xu_8,F_m_8,F_n)
 
       implicit none
 #include <arch_specific.hf>
@@ -27,7 +27,7 @@
       !@author Monique Tanguay
 
       !@revisions
-      !v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      !v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
       !arguments
       !---------------------------------------------------------------------
@@ -58,8 +58,8 @@
 
       enddo
 
-      !Cubic reconstruction with extrapolation at the boundaries: We resolve a linear system
-      !-------------------------------------------------------------------------------------
+      !Cubic rebuild with extrapolation at the boundaries: We resolve a linear system
+      !------------------------------------------------------------------------------
       do i=1,F_n 
 
          shift = 0

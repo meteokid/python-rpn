@@ -16,6 +16,7 @@
 !**s/r out_uv - output winds
 !
       subroutine out_uv (levset, set)
+      use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       implicit none
@@ -244,12 +245,12 @@
 
 !        Vertical interpolation
 
-         call vertint ( uu_pres, cible, nko, uu, pw_log_pm, nk_src,&
-                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                        'linear', .false. )
-         call vertint ( vv_pres, cible, nko, vv, pw_log_pm, nk_src,&
-                        l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                        'linear', .false. )
+         call vertint2 ( uu_pres, cible, nko, uu, pw_log_pm, nk_src,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         inttype='linear' )
+         call vertint2 ( vv_pres, cible, nko, vv, pw_log_pm, nk_src,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                         inttype='linear' )
 
          if(pnuv.ne.0) then
 !        Compute UV

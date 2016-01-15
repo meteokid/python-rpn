@@ -18,7 +18,6 @@
                             F_ni, F_nj, F_nk, F_minx, F_maxx, F_miny, F_maxy, &
                             F_nind, F_ii, F_i0, F_in, F_j0, F_jn, F_k0,       &
                             F_lev_S, F_mono_kind, F_mass_kind)
-      use iso_c_binding
       implicit none
 #include <arch_specific.hf>
        character(len=1) :: F_lev_S
@@ -39,8 +38,8 @@
 !     @arguments
 
 #include "gmm.hf"
-#include "adv.cdk"
 #include "adv_nml.cdk"
+#include "tracers.cdk"
 #include "schm.cdk"
 #include "vt_tracers.cdk"
 #include "adv_grid.cdk"
@@ -66,7 +65,7 @@
       mono_L = .false.
 
       if (F_name(1:3) == 'TR/') then
-         mono_L = adw_mono_L
+         mono_L = adv_mono_L
       endif
       
       flux_n = 0
@@ -92,7 +91,13 @@
          w_cub_i_c=> no_flux ; adw_i=> no_flux ; cub_i=> no_flux
       endif
 
-      conserv_L = F_mono_kind/=0.or.F_mass_kind/=0
+      conserv_L = F_mono_kind>1.or.F_mass_kind/=0
+
+      Tr_SLICE_mono = F_mono_kind
+      if (F_mass_kind==2) then
+         if (.NOT.(Tr_SLICE_mono==0.or.Tr_SLICE_mono==3.or.Tr_SLICE_mono==4).and.Tr_SLICE_rebuild==2) call handle_error(-1,'adv_cubic','SLICE options NOT available 1')
+         if (                                              Tr_SLICE_mono/=0 .and.Tr_SLICE_rebuild==1) call handle_error(-1,'adv_cubic','SLICE options NOT available 2')
+      endif
 
       conserv_local = 0
       if (F_mass_kind==2) conserv_local = 1
@@ -105,22 +110,10 @@
 
       nbpts = F_ni*F_nj*F_nk
 
-      if ( trim(Adv_component_S) == 'INTP_RHS' ) then
-         call timing_start2 (12, 'ADV_hxchg', 31)
-      else
-         call timing_start2 (13, 'ADV_hxchg', 27)
-      endif
-
       call rpn_comm_xch_halox( fld_in, F_minx, F_maxx,F_miny, F_maxy , &
        F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
        fld_adw, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
-
-       if ( trim(Adv_component_S) == 'INTP_RHS' ) then
-         call timing_stop (12) 
-      else
-         call timing_stop (13) 
-      endif
-     
+      
       if (conserv_L) then
          nullify(fld_cub,fld_mono,fld_lin,fld_min,fld_max)
          err = gmm_get(gmmk_cub_s ,fld_cub ,mymeta)
@@ -161,7 +154,7 @@
          fld_max  => no_conserv
       endif
 
-      if (adw_catmullrom_L) then
+      if (adv_catmullrom_L) then
          call adv_tricub_catmullrom (wrkc, fld_adw, F_capx, F_capy, F_capz, nbpts, &
                                      mono_L, F_i0,F_in,F_j0,F_jn,F_k0, F_nk, F_lev_S)
       else

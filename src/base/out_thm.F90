@@ -16,6 +16,7 @@
 !**s/r out_thm - output  temperature, humidity and mass fields
 
       subroutine out_thm ( levset, set )
+      use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       implicit none
@@ -287,9 +288,8 @@
 
          gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
 
-         call vertint ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
-                        l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj,&
-                        'cubic', .false. )
+         call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
+                         l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
          call out_liebman (ttx, htx, vt, gzt, fis0, wlao, &
                            l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk,nk_src)
          
@@ -357,8 +357,8 @@
             if (vgd_get(vcoord,'VCDT - vertical coordinate (t)',hybt) /= VGD_OK) istat = VGD_ERROR
             allocate(hybt_w(G_nk))
             ! For vertical motion quantities, we place level NK at the surface
-            hybt_w(1:G_nk-1)= hybt(1:G_nk-1)
-            hybt_w(G_nk)= 1.
+            hybt_w(1:G_nk)= hybt(1:G_nk)
+            if (.not. Schm_lift_ltl_L) hybt_w(G_nk)= 1.
          endif
           
          if (pngz.ne.0)then
@@ -580,9 +580,9 @@
 
 ! Compute HU (hu_pres=HU,px_ta=vert.der)
 
-         call vertint ( hu_pres,cible,nko, hu,wlnph_ta,nk_src,&
-                   l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                   'linear', .false. )
+         call vertint2 ( hu_pres,cible,nko, hu,wlnph_ta,nk_src,&
+                         l_minx,l_maxx,l_miny,l_maxy          ,&
+                         1,l_ni,1,l_nj, inttype='linear' )
 
          if ( Out3_cliph_L ) then
             do k= 1, nko
@@ -725,9 +725,9 @@
         endif
 
          if (pnth.ne.0) then
-            call vertint ( w5,cible,nko, th,wlnph_ta,G_nk+1          ,&
-                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                           'linear', .false. )
+            call vertint2 ( w5,cible,nko, th,wlnph_ta,G_nk+1          ,&
+                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                           inttype='linear' )
             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set), &
                  kind,-1,nko, indo, nko, Outd_nbit(pnth,set),.false. )
@@ -743,9 +743,9 @@
         endif
 
         if (pnww.ne.0) then
-            call vertint ( w5,cible,nko, omega,wlnph_ta,G_nk         ,&
-                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                           'linear', .false. )
+            call vertint2 ( w5,cible,nko, omega,wlnph_ta,G_nk         ,&
+                            l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
+                            inttype='linear' )
             if (Outd_filtpass(pnww,set).gt.0) &
                 call filter2( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )

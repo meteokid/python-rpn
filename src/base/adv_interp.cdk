@@ -62,9 +62,10 @@
          integer, dimension(:), pointer :: t,m,x
       end type ADV_TYPE_SV_I
 
-      integer :: pnz
+      
       integer,dimension(:),pointer :: adv_lcx,adv_lcy
-
+      integer :: pnz
+ 
       real*8 ::  adv_ovdx_8, adv_ovdy_8, adv_ovdz_8
       real*8 ::  adv_x00_8,  adv_y00_8   
       real*8 ::  adv_x_8, adv_y_8
@@ -73,7 +74,9 @@
 
       real*8, dimension(:), pointer :: adv_dlx_8 ,adv_dly_8 
       real*8, dimension(:), pointer :: adv_bsx_8, adv_bsy_8
-         
+            
+      real*8, dimension(:),pointer :: adv_diz_8
+     
       type(ADV_TYPE_V_R8) :: adv_dlz_8
       type(ADV_TYPE_SV_R8) :: adv_zbc_8
       type(ADV_TYPE_SV_R8) :: adv_zabcd_8, adv_zbacd_8, adv_zcabd_8, adv_zdabc_8
@@ -81,7 +84,10 @@
       type(ADV_TYPE_SV_R8) :: adv_bsz_8
       type(ADV_TYPE_SV_I)  :: adv_lcz
 
-      common  /adv_lcz/ pnz
+
+  
+
+      common  /adv2_interp_ip/ pnz
       common /adv2_interp_ip/ adv_lcx,adv_lcy
 
       common /adv_interp_r8/ adv_ovdx_8, adv_ovdy_8, adv_ovdz_8
@@ -92,7 +98,7 @@
       common /adv_interp_r8p/ adv_x_8, adv_y_8
       common /adv_interp_r8p/ adv_xabcd_8,adv_xbacd_8,adv_xcabd_8,adv_xdabc_8
       common /adv_interp_r8p/ adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,adv_ydabc_8
-
+      common /adv_interp_vr8/ adv_diz_8
       common /adv_interp_vr8/ adv_dlz_8
       common /adv_interp_vr8/ adv_zbc_8
       common /adv_interp_vr8/ adv_zabcd_8, adv_zbacd_8, adv_zcabd_8,adv_zdabc_8

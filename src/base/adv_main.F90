@@ -45,7 +45,7 @@
 #include "vth.cdk"
 #include "adv.cdk"
 #include "adv_grid.cdk"
-#include "adv_tracers.cdk"
+#include "tracers.cdk"
       
       logical :: doAdwStat_L
       integer :: i0,j0,in,jn,i0u,inu,j0v,jnv ! advection computational i,j,k domain  (glb_ld.cdk)
@@ -87,12 +87,12 @@
                                        pymv(l_ni,l_nj,l_nk), &
                                        pzmv(l_ni,l_nj,l_nk)  )
 
-     if (.not.associated(pxmu_s).and.Adv_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), &
-                                                            pymu_s(l_ni,l_nj,l_nk), &
-                                                            pzmu_s(l_ni,l_nj,l_nk), &
-                                                            pxmv_s(l_ni,l_nj,l_nk), &
-                                                            pymv_s(l_ni,l_nj,l_nk), &
-                                                            pzmv_s(l_ni,l_nj,l_nk)  )
+     if (.not.associated(pxmu_s).and.Tr_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), &
+                                                           pymu_s(l_ni,l_nj,l_nk), &
+                                                           pzmu_s(l_ni,l_nj,l_nk), &
+                                                           pxmv_s(l_ni,l_nj,l_nk), &
+                                                           pymv_s(l_ni,l_nj,l_nk), &
+                                                           pzmv_s(l_ni,l_nj,l_nk)  )
 
      nullify (xth, yth, zth)
      err = gmm_get(gmmk_xth_s , xth)
@@ -123,7 +123,7 @@
 
  !Establish scope of extended advection operations
       !----------------------------------------------
-      if (Adv_extension_L) then
+      if (Tr_extension_L) then
          call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
          i0u_e = i0_e ;  inu_e = in_e
@@ -174,7 +174,7 @@
 ! Calculate upstream positions at t1 using angular displacement & trapezoidal rule
 
       call timing_start2 (34, 'ADV_TRAP', 30) ! Compute trajectories
-      call adv_trapeze (F_fnitraj, pxm , pym , pzm        ,&
+      call adv_traj (F_fnitraj, pxm , pym , pzm        ,&
                         a_ud, a_vd, a_wd, ua, va ,wa , wat,&
                         xth, yth, zth, i0_e, in_e, j0_e, jn_e, i0u_e,&
                         inu_e, j0v_e, jnv_e, k0, k0m, k0t ,&

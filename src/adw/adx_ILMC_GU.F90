@@ -20,7 +20,7 @@
       !Author Monique Tanguay 
       !
       !Revision
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
       !
       !Object
       !     Based on Sorenson et al.,2013: A mass conserving and multi-tracer
@@ -31,7 +31,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
-#include "adx_nml.cdk"
+#include "tracers.cdk"
 #include "adx_poles.cdk"
 #include "adx_dims.cdk"
 
@@ -55,7 +55,7 @@
 
       !----------------------------------------------------------
 
-      verbose_L = Adw_verbose/=0 
+      verbose_L = Tr_verbose/=0 
 
       time_m = 0
 
@@ -79,7 +79,7 @@
 
       if (verbose_L) then
       if (Lun_out>0) then
-         write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',Adw_ILMC_min_max_L
+         write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',Tr_ILMC_min_max_L
          write(Lun_out,1000) 'TRACERS: Mass BEFORE ILMC        =',mass_new_8,F_name_S(4:6)
       endif
       endif
@@ -131,12 +131,12 @@
       !------------------------------------------------------
       if (.NOT.done_L) then
 
-      allocate (sweep_rd(Adw_ILMC_sweep_max,adx_lni,adx_mlnj,F_nk))
+      allocate (sweep_rd(Tr_ILMC_sweep_max,adx_lni,adx_mlnj,F_nk))
 
       do k=1,F_nk
          do j=1,adx_mlnj
          do i=1,adx_lni
-         do n=1,Adw_ILMC_sweep_max
+         do n=1,Tr_ILMC_sweep_max
 
             w1   = 2*n + 1
             w2   = w1-2
@@ -163,7 +163,7 @@
          do j=1,adx_mlnj
          do i=1,adx_lni
 
-            do sweep = 1,Adw_ILMC_sweep_max
+            do sweep = 1,Tr_ILMC_sweep_max
 
                sweep_rd(sweep,i,j,k)%cell = 0
 
@@ -263,10 +263,10 @@
 
       !Evaluate admissible distance between threads
       !--------------------------------------------
-      SIDE_max_0 = (2*Adw_ILMC_sweep_max + 1)*2+1
+      SIDE_max_0 = (2*Tr_ILMC_sweep_max + 1)*2+1
 
 #define CORE
-#include "ilmc_gu_loop.cdk"
+#include "adx_ilmc_gu_loop.cdk"
 
       !********************************************
       endif !ONLY L_WEST DO CALCULATIONS
@@ -309,7 +309,7 @@
       a_copy = a_new
 
 #undef CORE
-#include "ilmc_gu_loop.cdk"
+#include "adx_ilmc_gu_loop.cdk"
 
       !-------------------------------------------------
       !Recover perturbation in North-South halo of a_new
@@ -342,7 +342,7 @@
       !---------------------------------------
       !Reset Min-Max Monotonicity if requested
       !---------------------------------------
-      if (Adw_ILMC_min_max_L) then
+      if (Tr_ILMC_min_max_L) then
 
 !$omp parallel do private(i,j) shared(F_out,F_min,F_max,reset)
       do k=k0,F_nk

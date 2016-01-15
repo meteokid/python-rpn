@@ -27,14 +27,14 @@
       !@author Monique Tanguay
 
       !@revisions
-      !v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      !v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
       !arguments
       !---------------------------------------------------------------------
       !INPUT : F_m_1(i) = mass(F_x_1(i-1),F_x_1(i))
       !OUTPUT: F_m_2(i) = mass(F_x_2(i-1),F_x_2(i)) = INT(psi)(F_x_2(i-1),F_x_2(i)) with INT(psi)(i-1,i) = F_m_1(i)
       !---------------------------------------------------------------------
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 
       !---------------------------------------------------------------------
 
@@ -80,9 +80,8 @@
       !Build psi such that INT(psi)(i,i+1) = F_m_1(i) 
       !----------------------------------------------
 
-      if (Adw_reconstruction==1) call adv_reconstruction_LP (psi_abc_8,F_x1_8,F_m1_8,F_n1) 
-
-      if (Adw_reconstruction==2) call adv_reconstruction_CW (psi_abc_8,F_x1_8,F_m1_8,F_n1,Adw_PPM_mono) 
+      if (Tr_SLICE_rebuild==1) call adv_rebuild_LP (psi_abc_8,F_x1_8,F_m1_8,F_n1) 
+      if (Tr_SLICE_rebuild==2) call adv_rebuild_CW (psi_abc_8,F_x1_8,F_m1_8,F_n1,Tr_SLICE_mono) 
 
       do i = 1,F_n2 
 

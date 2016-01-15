@@ -89,7 +89,7 @@
 !$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
 !$omp                  ii_a,jj_a,kk_a,idxk, idxjk,zcubic_L)                                   &
 !$omp          shared (F_out, F_in, F_x, F_y, F_z, adv_y00_8,adv_x00_8,adv_ovdx_8,adv_ovdy_8,   &
-!$omp                  adv_ovdz_8, adv_lcx,adv_lcy, adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,   &
+!$omp                  adv_ovdz_8, adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,   &
 !$omp                  adv_xbacd_8,adv_xcabd_8,adv_xdabc_8, adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,&
 !$omp                  adv_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
 !$omp                  F_num, i0, in, j0, jn, k0, F_nk)
@@ -107,7 +107,7 @@
 !$omp                  d1, d2, d3, d4, p1, p2, p3, p4, rri,rrj,rrk,ra,rb,rc,rd, n,i,j,k,&
 !$omp                  ii_a,jj_a,kk_a,idxk, idxjk,zcubic_L)                                   &
 !$omp          shared (F_out, F_in, F_x, F_y, F_z, adv_y00_8,adv_x00_8,adv_ovdx_8,adv_ovdy_8,   &
-!$omp                  adv_ovdz_8, adv_lcx,adv_lcy,adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,    &
+!$omp                  adv_ovdz_8,adv_bsx_8,adv_bsy_8,p_bsz_8, adv_xabcd_8,    &
 !$omp                  adv_xbacd_8,adv_xcabd_8,adv_xdabc_8, adv_yabcd_8,adv_ybacd_8,adv_ycabd_8,&
 !$omp                  adv_ydabc_8, p_zabcd_8,p_zbacd_8, p_zcabd_8, p_zdabc_8, p_zbc_8, kkmax,  &
 !$omp                  F_num, i0, in, j0, jn, k0, F_nk)

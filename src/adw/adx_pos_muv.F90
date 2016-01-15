@@ -56,16 +56,23 @@ subroutine adx_pos_muv ( F_xmu, F_ymu, F_zmu, F_xmv, F_ymv, F_zmv, &
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_dyn.cdk"
-#include "inuvl.cdk"
 #include "adx_interp.cdk"
+#include "inuvl.cdk"
+#include "ver.cdk"
 !***********************************************************************
       integer i,j,k,i0u,inu,j0v,jnv
       real*8 aa, bb, cc, dd
+      real :: ztop_bound, zbot_bound
       real, pointer, dimension(:,:,:) :: pxh,pyh,pzh
       logical,save :: done = .false.
+
 !
       nullify (pxh,pyh,pzh)
 !***********************************************************************
+
+      ztop_bound=Ver_z_8%m(0)
+      zbot_bound=Ver_z_8%m(F_nk+1)
+      
       allocate(pxh(-1:adx_mlni+2,-1:adx_mlnj+2,adx_lnk)) 
       allocate(pyh(-1:adx_mlni+2,-1:adx_mlnj+2,adx_lnk))
       allocate(pzh(-1:adx_mlni+2,-1:adx_mlnj+2,adx_lnk)) 
@@ -110,6 +117,7 @@ subroutine adx_pos_muv ( F_xmu, F_ymu, F_zmu, F_xmv, F_ymv, F_zmv, &
                           + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
             F_zmu(i,j,k) =  aa*(pzh(i-1,j,k)+pzh(i+2,j,k)) &
                           + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
+	    F_zmu(i,j,k) =  min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
          end do
          end do
          do j=j0v,jnv
@@ -120,6 +128,7 @@ subroutine adx_pos_muv ( F_xmu, F_ymu, F_zmu, F_xmv, F_ymv, F_zmv, &
                           + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
             F_zmv(i,j,k) =  aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
                           + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
+           F_zmu(i,j,k) =  min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
          enddo
          enddo
 

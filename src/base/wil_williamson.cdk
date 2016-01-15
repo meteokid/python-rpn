@@ -18,7 +18,3 @@
       real Williamson_alpha
 !
       common / Williamson_r / Williamson_alpha 
-!
-      logical Advection_2D_3D_L, pseudo_RHO_L
-!
-      common / Williamson_l / Advection_2D_3D_L, pseudo_RHO_L 

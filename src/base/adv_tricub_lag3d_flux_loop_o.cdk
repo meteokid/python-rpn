@@ -17,14 +17,12 @@
             n = idxjk + i
 
             rri= F_x(n)
-            ii = (rri - adv_x00_8) * adv_ovdx_8
-            ii = adv_lcx(ii+1) + 1
+            ii = 1+ (rri - adv_x00_8) * adv_ovdx_8
             if (rri < adv_bsx_8(ii)) ii = ii - 1
             ii = max(2,min(ii,adv_iimax))
 
             rrj= F_y(n)
-            jj = (rrj - adv_y00_8) * adv_ovdy_8
-            jj = adv_lcy(jj+1) + 1
+            jj = 1+ (rrj - adv_y00_8) * adv_ovdy_8
             if (rrj < adv_bsy_8(jj)) jj = jj - 1
             jj = max(G_haloy,min(jj,adv_jjmax))
 

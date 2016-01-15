@@ -67,11 +67,6 @@
       endif
 
 ! for GU and GY
-      if (Lun_out>0) write(Lun_out,*) ''
-      if (Lun_out>0) write(Lun_out,*) '----------------------------------'
-      if (Lun_out>0) write(Lun_out,*) 'PSADJ is done for DRY AIR (REAL*8)'
-      if (Lun_out>0) write(Lun_out,*) '----------------------------------'
-      if (Lun_out>0) write(Lun_out,*) ''
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
@@ -80,36 +75,36 @@
 
       do n= 1, 3
 
-      !Obtain pressure levels
-      !----------------------
-      call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         !Obtain pressure levels
+         !----------------------
+         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
-      !Compute dry surface pressure (- Cstv_pref_8)
-      !--------------------------------------------
-      call dry_sfc_pressure_8 (pr_p0_dry_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+         !Compute dry surface pressure (- Cstv_pref_8)
+         !--------------------------------------------
+         call dry_sfc_pressure_8 (pr_p0_dry_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
-      !Estimate dry air mass 
-      !---------------------
-      l_avg_8 = 0.0d0
-      do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-      enddo
-      enddo
+         !Estimate dry air mass 
+         !---------------------
+         l_avg_8 = 0.0d0
+         do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+         enddo
+         enddo
 
-      call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * PSADJ_scale_8
+         g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * PSADJ_scale_8
 
-      !Correct surface pressure in order to preserve dry air mass    
-      !----------------------------------------------------------
-      pr_p0_0_8 = pr_p0_0_8 + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+         !Correct surface pressure in order to preserve dry air mass    
+         !----------------------------------------------------------
+         pr_p0_0_8 = pr_p0_0_8 + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
 
-      do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
-      end do
-      end do
+         do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+         end do
+         end do
 
       end do
 !

@@ -25,7 +25,7 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    integer :: F_stat
    !@author Stephane Chamberland, Nov 2009
    !@revisions
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation 
 !*@/
    integer :: fileUnit
    integer, external :: file_open_existing
@@ -40,10 +40,14 @@ function adx_nml(F_nmlFileName_S) result(F_stat)
    adw_halox  = -1
    adw_haloy  = -1
    adw_stats_L = .false.
-   adw_BC_min_max_L = .TRUE.
+   adw_BC_min_max_L   = .true.
    adw_ILMC_sweep_max = 2
-   adw_ILMC_min_max_L = .TRUE.
-   adw_verbose        = 0 
+   adw_ILMC_min_max_L = .true.
+   adw_verbose   = 0 
+   adw_pil_sub_s = -1
+   adw_pil_sub_n = -1
+   adw_pil_sub_w = -1
+   adw_pil_sub_e = -1
 
    F_stat = -1
    fileUnit = file_open_existing(F_nmlFileName_S,'SEQ')

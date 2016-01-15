@@ -16,6 +16,7 @@
 !**s/r out_tracer - output tracer
 
       subroutine out_tracer (levset, set)
+      use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use phy_itf, only: phy_get
@@ -181,13 +182,13 @@
                endif
                if (istat.eq.0) then
                   t5(:,:,1:G_nk  ) = tr1(:,:,1:G_nk)
-                  call vertint ( w4,cible,nko, t5 ,pw_log_pt,G_nk+1,&
-                                 l_minx,l_maxx,l_miny,l_maxy       ,&
-                                 1,l_ni,1,l_nj, 'linear', .false. )
+                  call vertint2 ( w4,cible,nko, t5 ,pw_log_pt,G_nk+1,&
+                                  l_minx,l_maxx,l_miny,l_maxy       ,&
+                                  1,l_ni,1,l_nj, inttype='linear' )
                else
-                  call vertint ( w4,cible,nko, tr1,pw_log_pt,G_nk,&
-                                 l_minx,l_maxx,l_miny,l_maxy     ,&
-                                 1,l_ni,1,l_nj, 'linear', .false. )
+                  call vertint2 ( w4,cible,nko, tr1,pw_log_pt,G_nk,&
+                                  l_minx,l_maxx,l_miny,l_maxy     ,&
+                                  1,l_ni,1,l_nj, inttype='linear' )
                endif
 
                if (Outd_filtpass(ii,set).gt.0) &

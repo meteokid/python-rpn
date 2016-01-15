@@ -41,6 +41,7 @@
 #include "step.cdk"
 #include "ver.cdk"
 #include "out.cdk"
+#include "tracers.cdk"
 
       character*16  dumc_S, datev
       character*256 fln_S
@@ -108,15 +109,13 @@
          Lam_blend_T = 0
       endif
 
-      !  Set advection options based on user selection of advection scheme
-      Schm_cub_traj_L = .true.
-      Schm_trapeze_L = .true.
-      Schm_lift_ltl_L = .true.
+      !  Forcing some options under Schm_adxlegacy_L=.t.
       if (Schm_adxlegacy_L) then
          Schm_cub_traj_L = .false.
          Schm_trapeze_L = .false.
          Schm_lift_ltl_L = .false.
       else
+         ! Schm_adxlegacy_L=.t. is mandatory for GU grids
          if (.not. G_lam) then
             if (lun_out>0) write (Lun_out, 9203)
             return
@@ -313,10 +312,9 @@
          endif
          Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
       endif
-      Advection_2D_3D_L = .FALSE.
-      pseudo_RHO_L      = .FALSE.
+      Tr_2D_3D_L = .FALSE.
       if (Schm_autobar_L.and.Williamson_case==1) then
-          Advection_2D_3D_L = .TRUE.
+          Tr_2D_3D_L = .TRUE.
           if (lun_out>0) write (Lun_out, 7021)
       endif
 
@@ -344,8 +342,6 @@
          Init_mode_L= .false.
          if (Init_balgm_L) Init_mode_L= .true.
       endif
-      err= wb_put('model/Init/mode',    Init_mode_L,   WB_REWRITE_MANY)
-      err= wb_put('model/Init/halfspan',Init_halfspan, WB_REWRITE_NONE)
 
       if (Lctl_debug_L) then
          call msg_set_minMessageLevel(MSG_INFOPLUS)
@@ -380,15 +376,15 @@
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
- 7021 format (//'  ================================================'/&
-                '  Idealized 2D or 3D Advection: Pseudo RHO is used'/&
-                '  ================================================'//)
+ 7021 format (//'  ==========================='/&
+                '  ACADEMIC 2D or 3D Advection'/&
+                '  ==========================='//)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
- 9203 format (/,'ABORT: WRONG CHICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
+ 9203 format (/,'ABORT: WRONG CHOICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0 or T*>1000'/)

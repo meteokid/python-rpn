@@ -135,7 +135,6 @@ use iso_c_binding
            call rdrstrt
          endif
       endif
-      err= wb_put('model/restart', Rstri_rstn_L)
 !
 ! Determine theoretical mode with presence of file ${TASK_WORK}/theoc
 !

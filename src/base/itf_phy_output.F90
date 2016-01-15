@@ -16,6 +16,7 @@
 !**s/r itf_phy_output
 
       subroutine itf_phy_output2 (stepno)
+      use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
@@ -219,9 +220,9 @@
                      lnpres => wlnpi_m
                      if ( pmeta%stag .eq. 1 ) lnpres => wlnpi_t
 
-                     call vertint ( buso_pres, cible, nko_pres, data3d,&
-                                    lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
-                                    1,l_ni, 1,l_nj, 'linear', .false. )
+                     call vertint2 ( buso_pres, cible, nko_pres, data3d,&
+                                     lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
+                                     1,l_ni, 1,l_nj, inttype='linear' )
 
                      call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
                            level(1,levset),Outp_var_S(ii,kk)           ,&

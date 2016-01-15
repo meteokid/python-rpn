@@ -20,6 +20,7 @@
                             F_trprefix_S, F_trsuffix_S, F_datev )
       use vgrid_wb, only: vgrid_wb_get
       use vGrid_Descriptors
+      use vertical_interpolation, only: vertint2
       use nest_blending, only: nest_blend
       implicit none
 #include <arch_specific.hf>
@@ -159,7 +160,6 @@ End Interface
                call gz2p02 ( ssq0, gzr, F_topo, rna     ,&
                              l_minx,l_maxx,l_miny,l_maxy,&
                              nka,1,l_ni,1,l_nj )
-               ssq0(1:l_ni,1:l_nj)= exp(ssq0(1:l_ni,1:l_nj))
                do k=1,nka
                   srclev(1:l_ni,1:l_nj,k)= rna(k)*100.
                enddo
@@ -173,10 +173,10 @@ End Interface
             endif
          endif
       else
+         pres  => ssqr(1:l_ni,1:l_nj,1)
+         ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
+         istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
          if (associated(meqr)) then
-            pres  => ssqr(1:l_ni,1:l_nj,1)
-            ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-            istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
             srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
             call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, ttr , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
@@ -225,14 +225,14 @@ End Interface
       ptr3d => dstlev(1:l_ni,1:l_nj,1:G_nk)
       istat= vgd_levels ( vgd_dst, Ver_ip1%t(1:G_nk), ptr3d, &
                           pres, in_log=.true. )
-      call vertint ( F_t,dstlev,G_nk, ttr,srclev,nka, &
-                     l_minx,l_maxx,l_miny,l_maxy    , &
-                     1,l_ni, 1,l_nj, 'cubic', .true. )
+      call vertint2 ( F_t,dstlev,G_nk, ttr,srclev,nka, &
+                      l_minx,l_maxx,l_miny,l_maxy    , &
+                      1,l_ni, 1,l_nj, varname='TT' )
       nullify (trp)
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
-      call vertint ( trp,dstlev,G_nk, hur,srclev,nka, &
-                     l_minx,l_maxx,l_miny,l_maxy    , &
-                     1,l_ni, 1,l_nj, 'cubic', .false. )
+      call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka, &
+                      l_minx,l_maxx,l_miny,l_maxy    , &
+                      1,l_ni, 1,l_nj )
       deallocate (ttr,hur,srclev,dstlev) ; nullify (ttr,hur)
       if (associated(ip1_list)) deallocate (ip1_list)
 

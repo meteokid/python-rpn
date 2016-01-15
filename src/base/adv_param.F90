@@ -104,7 +104,7 @@
               adv_dlx_8(G_ni+2*adv_halox), adv_bsy_8(G_nj+2*adv_haloy), &
               adv_dly_8(G_nj+2*adv_haloy), adv_lcz%t(pnz), adv_lcz%m(pnz), adv_lcz%x(pnz), &
               adv_bsz_8%t(0:l_nk-1), adv_bsz_8%m(0:l_nk-1), adv_bsz_8%x(0:l_nk-1), &
-              adv_dlz_8%t(-1:l_nk) , adv_dlz_8%m(-1:l_nk) , adv_dlz_8%x(-1:l_nk))
+              adv_dlz_8%t(-1:l_nk) , adv_dlz_8%m(-1:l_nk) , adv_dlz_8%x(-1:l_nk),adv_diz_8(-1:l_nk))
 
       i0 = 1
       do i=1,pnx
@@ -177,9 +177,13 @@
       do k = 1,l_nk
          adv_bsz_8%x(k-1) = Ver_z_8%x(k)
       enddo
-
+     
+      do k = 0,l_nk+1                  !! warning note the shift in k !
+         adv_diz_8(k-1) = 1.0d0/whzm(k)
+      enddo
+     
       allocate( &
-        adv_zbc_8%t(l_nk),   adv_zbc_8%m(l_nk),    adv_zbc_8%x(l_nk), &
+      adv_zbc_8%t(l_nk),   adv_zbc_8%m(l_nk),    adv_zbc_8%x(l_nk), &
       adv_zabcd_8%t(l_nk), adv_zabcd_8%m(l_nk),  adv_zabcd_8%x(l_nk), &
       adv_zbacd_8%t(l_nk), adv_zbacd_8%m(l_nk),  adv_zbacd_8%x(l_nk), &
       adv_zcabd_8%t(l_nk), adv_zcabd_8%m(l_nk),  adv_zcabd_8%x(l_nk), &

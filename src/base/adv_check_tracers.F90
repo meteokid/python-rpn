@@ -24,10 +24,11 @@
       !@author Monique Tanguay
 
       !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "tr3d.cdk"
-#include "adv_tracers.cdk"
+#include "tracers.cdk"
+#include "adv_nml.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "schm.cdk"
@@ -38,12 +39,21 @@
       logical qw_L
       !---------------------------------------------------------------------
 
-      adv_dry_mixing_ratio_L = .FALSE.   
+      Tr_SLICE_rebuild  = Adv_SLICE_rebuild
 
-      adv_slice_L = .FALSE.   
-      adv_flux_L  = .FALSE.   
+      Tr_BC_min_max_L   = Adv_BC_min_max_L
 
-      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) adv_flux_L = .TRUE. !PSADJ (FLUX) 
+      Tr_ILMC_min_max_L = Adv_ILMC_min_max_L
+      Tr_ILMC_sweep_max = Adv_ILMC_sweep_max
+
+      Tr_verbose = Adv_verbose
+
+      Tr_dry_mixing_ratio_L = .false.   
+
+      Tr_flux_L  = .false.
+      Tr_slice_L = .false.
+
+      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
       do n=1,Tr3d_ntr
 
@@ -53,19 +63,37 @@
 
          if (G_lam.and..not.Grd_yinyang_L) then !LAM
 
-            if (Tr3d_mass(n)==1) adv_flux_L  = .TRUE. !BC (FLUX)   
-            if (Tr3d_mass(n)==2) adv_slice_L = .TRUE. !SLICE 
+            if (Tr3d_mass(n)==1) Tr_flux_L  = .true. !BC (FLUX)   
+            if (Tr3d_mass(n)==2) Tr_slice_L = .true. !SLICE 
 
          endif
 
       end do
 
-      adv_extension_L = adv_flux_L.or.adv_slice_L
+      Tr_extension_L = Tr_flux_L.or.Tr_slice_L
 
-      if (adv_extension_L.and.Lun_out>0) then
+      if (Tr_extension_L.and.Lun_out>0) then
          write(Lun_out,*) ''
          write(Lun_out,*) 'ADV_CHECK_EXT: EXTENDED ADVECTION OPERATIONS REQUIRED'
          write(Lun_out,*) ''
+      endif
+ 
+      !If not initialized by namelist adv_cfgs
+      !---------------------------------------
+      if (adv_pil_sub_s == -1) then
+         Tr_pil_sub_s = pil_s
+         Tr_pil_sub_n = pil_n
+         Tr_pil_sub_w = pil_w
+         Tr_pil_sub_e = pil_e
+      else
+         Tr_pil_sub_s = adv_pil_sub_s
+         Tr_pil_sub_n = adv_pil_sub_n
+         Tr_pil_sub_w = adv_pil_sub_w
+         Tr_pil_sub_e = adv_pil_sub_e
+         if (.NOT.l_north) Tr_pil_sub_n = 0
+         if (.NOT.l_south) Tr_pil_sub_s = 0
+         if (.NOT.l_west ) Tr_pil_sub_w = 0
+         if (.NOT.l_east ) Tr_pil_sub_e = 0
       endif
 
       !---------------------------------------------------------------------

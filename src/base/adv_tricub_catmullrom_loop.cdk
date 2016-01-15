@@ -13,7 +13,7 @@
             ii_a   = int(ii_d)
             ii_d = ii_d - ii_a
 
-            ii_a = adv_lcx(ii_a+1) + 1
+            ii_a = ii_a+1
             if (rri < adv_bsx_8(ii_a)) ii_a = ii_a - 1
             ii_a = max(2,min(ii_a,Adv_iimax))
 
@@ -22,7 +22,7 @@
             jj_a   = int(jj_d)
             jj_d = jj_d - jj_a
 
-            jj_a = adv_lcy(jj_a+1) + 1
+            jj_a = jj_a+1
             if (rrj < adv_bsy_8(jj_a)) jj_a = jj_a - 1
             jj_a = max(G_haloy,min(jj_a,Adv_jjmax))
 

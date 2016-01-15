@@ -22,7 +22,7 @@
       !Author Qaddouri/Tanguay
       !
       !Revision
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
       !
       !Object
       !     Based on Sorenson et al.,2013: A mass conserving and multi-tracer
@@ -34,7 +34,7 @@
 #include "lun.cdk"
 #include "schm.cdk"
 #include "grd.cdk"
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 
       !----------------------------------------------------------
       integer SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,iprod, &
@@ -52,7 +52,7 @@
 
       !----------------------------------------------------------
 
-      verbose_L = Adw_verbose/=0 
+      verbose_L = Tr_verbose/=0 
 
       time_m = 0
 

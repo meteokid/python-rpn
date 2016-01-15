@@ -52,14 +52,25 @@
 
 #include "glb_ld.cdk"
 #include "adv_interp.cdk"
+#include "ver.cdk"
+
+
 
       integer i,j,k,i0u,inu,j0v,jnv
       real*8 aa, bb, cc, dd
 	   real, pointer, dimension(:,:,:) :: pxh,pyh,pzh
 	   logical,save :: done = .false.
+      real :: ztop_bound, zbot_bound
+
 !     
 !---------------------------------------------------------------------
 !   
+      
+
+      ztop_bound=Ver_z_8%m(0)
+      zbot_bound=Ver_z_8%m(F_nk+1)
+
+
       nullify (pxh,pyh,pzh)
 
       allocate(pxh(-1:F_ni+2,-1:F_nj+2,F_nk))
@@ -108,6 +119,8 @@
                         + bb*(pyh(i  ,j,k)+pyh(i+1,j,k))
           F_zmu(i,j,k) =  aa*(pzh(i-1,j,k)+pzh(i+2,j,k)) &
                         + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
+          F_zmu(i,j,k) =  min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
+
       end do
       end do
     
@@ -121,6 +134,7 @@
 
           F_zmv(i,j,k) =  aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
                         + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
+          F_zmv(i,j,k) =  min(zbot_bound,max(F_zmv(i,j,k),ztop_bound)) 
       enddo
       enddo
 

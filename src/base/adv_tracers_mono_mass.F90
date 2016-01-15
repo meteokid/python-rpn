@@ -36,19 +36,20 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_in  !Field at previous time step
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_o !I: Advected mixing ratio with 0 in NEST
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)  :: F_for_flux_i !I: Advected mixing ratio with 0 in CORE
+      character*40 kind_S
 !
-!   author Monique Tanguay 
+!  author Monique Tanguay 
 !
    !@revisions
-   ! v4_XX - Tanguay M.        - initial version 
-   ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation 
+   ! v4_80 - Tanguay M.        - initial version 
+   ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation 
 !*@/
    !@objective
    !Apply Shape Preservation/Mass Conservation schemes
    !--------------------------------------------------
 
 #include "lun.cdk"
-#include "adv_nml.cdk"
+#include "tracers.cdk"
 
       logical :: verbose_L
       logical :: CLIP_L, ILMC_L, Bermejo_Conde_L, Cubic_L, SLICE_L
@@ -56,7 +57,7 @@
 !     
 !---------------------------------------------------------------------
 !     
-      verbose_L       = Adw_verbose/=0 
+      verbose_L       = Tr_verbose/=0 
 
       CLIP_L          = F_mono_kind == 1
       ILMC_L          = F_mono_kind == 2
@@ -81,9 +82,16 @@
             write(Lun_out,*) 'TRACERS: Cubic MONO(CLIPPING) SL Interpolation: ',F_name_S(4:7)
             write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
          elseif(Lun_out.gt.0.and.SLICE_L) then
-            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-            write(Lun_out,*) 'TRACERS: Local Mass Conserving SL interpolation SLICE Zerroulat et al.(2002): ',F_name_S(4:7)
-            write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
+            write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
+            write(Lun_out,1000) 'TRACERS: Local SL Mass Conserving Interpolation (SLICE): ',F_name_S(4:7)
+            if (Tr_SLICE_rebuild==1) kind_S = 'Laprise and Plante 1995 (PPM1)          ' 
+            if (Tr_SLICE_rebuild==2) kind_S = 'Colella and Woodward 1984 (PPM2) CW     ' 
+            write(Lun_out,*)    'TRACERS: SLICE_rebuild= ',Tr_SLICE_rebuild,' :',kind_S
+            if (Tr_SLICE_mono==0) kind_S = 'NO MONO' 
+            if (Tr_SLICE_mono==3) kind_S = 'MONO Zerroukat et al. 2005/2006' 
+            if (Tr_SLICE_mono==4) kind_S = 'MONO: RHO_LEFT CLIPPED TO ZERO IF NEGATIVE' 
+            write(Lun_out,*)    'TRACERS: SLICE_mono   = ',Tr_SLICE_mono,   ' :', kind_S
+            write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
          endif
          endif
 
@@ -93,7 +101,7 @@
 
    !Reset Monotonicity without changing Mass: Sorensen et al,ILMC, 2013,GMD
    !-----------------------------------------------------------------------
-      if (ILMC_L) call ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,adw_ILMC_min_max_L,adw_ILMC_sweep_max) 
+      if (ILMC_L) call ILMC_LAM (F_name_S,F_mono,F_cub,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,Tr_ILMC_min_max_L,Tr_ILMC_sweep_max) 
 
    !Restore Mass-Conservation: Bermejo and Conde,2002,MWR
    !-----------------------------------------------------
@@ -103,7 +111,7 @@
          if (CLIP_L.or.ILMC_L) high = F_mono
 
          call Bermejo_Conde (F_name_S,F_out,high,F_lin,F_min,F_max,F_in,F_for_flux_o,F_for_flux_i, &
-                             Minx,Maxx,Miny,Maxy,F_nk,k0,adw_BC_min_max_L,CLIP_L,ILMC_L)
+                             Minx,Maxx,Miny,Maxy,F_nk,k0,Tr_BC_min_max_L,CLIP_L,ILMC_L)
 
       else
 
@@ -115,4 +123,7 @@
 !---------------------------------------------------------------------
 !     
       return
+
+ 1000 format(1X,A57,1X,A3)
+
       end subroutine adv_tracers_mono_mass

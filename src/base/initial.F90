@@ -105,8 +105,10 @@
 
       if ((Step_kount.eq.Init_dfnp-1).and.(.not.F_rstrt_L)) then
          Init_mode_L = .false.
-         err= wb_put('model/Init/mode', Init_mode_L, WB_REWRITE_MANY)
          call ta2t1tx()
+         call pw_update_GPW
+         call pw_update_UV
+         call pw_update_T
          Lctl_step = Lctl_step  - Init_halfspan
          Step_kount= Step_kount - Init_halfspan
          if (Vtopo_start >= 0 .and. Lctl_step-Vtopo_start+1 <= Vtopo_ndt) Vtopo_L = .true.
