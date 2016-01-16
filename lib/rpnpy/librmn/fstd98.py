@@ -1,12 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
 Module librmn.fstd98 contains python wrapper to main librmn's fstd98,
 convip C functions along with helper functions
-
-@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
 
 import os
@@ -23,18 +24,36 @@ from . import RMNError
 #---- helpers -------------------------------------------------------
 
 C_MKSTR = _ct.create_string_buffer
+C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+
 C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
+C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
+
 IS_LIST = lambda x: type(x) in (list, tuple)
+IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
 class FSTDError(RMNError):
-    """General fstd98 module error/exception
+    """
+    General fstd98 module error/exception
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>    #... an fst98 operation ...
+    >>> except(rmn.FSTDError):
+    >>>    pass #ignore the error
+    >>> #...
+    >>> raise rmn.FSTDError()
+
+    See Also:
+       rpnpy.librmn.RMNError
     """
     pass
 
-def dtype_fst2numpy(datyp, nbits=None):
-    """Return the numpy dtype datyp for the given fst datyp
 
-    numpy_dtype = dtype_fst2numpy(fst_datyp)
+def dtype_fst2numpy(datyp, nbits=None):
+    """
+    Return the numpy dtype datyp for the given fst datyp
 
     Args:
         fst_datyp : RPN fst data type code (int)
@@ -58,6 +77,16 @@ def dtype_fst2numpy(datyp, nbits=None):
     Raises:
         TypeError on wrong input arg types
         FSTDError if no corresponding type found
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> fst_datyp   = rmn.FST_DATYP_LIST['float_IEEE_compressed']
+    >>> numpy_dtype = rmn.dtype_fst2numpy(fst_datyp)
+
+    See Also:
+       dtype_numpy2fst
+       rpnpy.librmn.const
+       FSTDError
     """
     if not (type(datyp) == int):
         raise TypeError("dtype_fst2numpy: Expecting arg of type int, Got %s" %
@@ -74,13 +103,10 @@ def dtype_fst2numpy(datyp, nbits=None):
 
 
 def dtype_numpy2fst(npdtype, compress=True, missing=False):
-    """Return the fst datyp for the given numpy dtype
+    """
+    Return the fst datyp for the given numpy dtype
+    
     Optionally specify compression and missing value options.
-
-    fst_datyp = dtype_numpy2fst(numpy_dtype)
-    fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True)
-    fst_datyp = dtype_numpy2fst(numpy_dtype, missing=True)
-    fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True, missing=True)
 
     Args:
         numpy_dtype : numpy data type
@@ -91,6 +117,20 @@ def dtype_numpy2fst(npdtype, compress=True, missing=False):
         0 if no corresponding data type found
     Raises:
         TypeError on wrong input arg types
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> import numpy as np
+    >>> numpy_dtype = np.float32
+    >>> fst_datyp = dtype_numpy2fst(numpy_dtype)
+    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True)
+    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, missing=True)
+    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True, missing=True)
+
+    See Also:
+       dtype_fst2numpy
+       rpnpy.librmn.const
+       FSTDError
     """
     if not (type(npdtype) == _np.dtype or type(npdtype) == type):
         raise TypeError("dtype_numpy2fst: Expecting arg of type %s, Got %s" %
@@ -110,9 +150,8 @@ def dtype_numpy2fst(npdtype, compress=True, missing=False):
 
 
 def isFST(filename):
-    """Return True if file is of RPN STD RND type
-
-    isfst = isFST(filename)
+    """
+    Return True if file is of RPN STD RND type
     
     Args:
         filename : path/name of the file to examine (str)
@@ -121,6 +160,10 @@ def isFST(filename):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> isfst = rmn.isFST(filename)
     """
     if not (type(filename) == str):
         raise TypeError("isFST: Expecting arg of type str, Got %s" %
@@ -131,16 +174,12 @@ def isFST(filename):
         (_rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 89'],
          _rc.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'])
         
-    
 
 def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     """
-    Open all fstfiles found in path
+    Open all fstfiles found in path.
     Shortcut for fnom+fstouv+fstlnk
 
-    funit = fstopenall(paths)
-    funit = fstopenall(paths, filemode)
-    
     Args:
         paths    : path/name of the file to open
                    if paths is a list, open+link all files
@@ -153,7 +192,20 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     Raises:
         TypeError  on wrong input arg types    
         ValueError on invalid input arg value
-        FSTDError  on any other error       
+        FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn    
+    >>> funit = rmn.fstopenall(paths)
+    >>> funit = rmn.fstopenall(paths, rmn.FST_RW)
+    
+    See Also:
+       fstouv
+       fstlnk
+       fstcloseall
+       rpnpy.librmn.base.fnom
+       rpnpy.librmn.const
+       FSTDError
     """
     paths = [paths] if type(paths) == str else paths
     if not (type(paths) in (list, tuple)):
@@ -186,10 +238,16 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     for myfile in filelist:
         funit = None
         try:
-            if isFST(myfile):
+            if os.path.isfile(myfile):
+                if isFST(myfile):
+                    funit = _rb.fnom(myfile, filemode)
+                elif verbose:
+                    print "(fstopenall) Not a RPNSTD file: " + myfile
+            elif filemode in (_rc.FST_RW_OLD, _rc.FST_RO):
+                if verbose:
+                    print "(fstopenall) File not found: " + myfile
+            else:
                 funit = _rb.fnom(myfile, filemode)
-            elif verbose:
-                print "(fstopenall) Not a RPNSTD file: " + myfile
         except:
             pass
         if funit:
@@ -211,10 +269,9 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
 
 
 def fstcloseall(iunit):
-    """Close all files associated with provided file unit number
+    """
+    Close all files associated with provided file unit number.
     Shortcut for fclos+fstfrm
-
-    fstcloseall(iunit)
 
     Args:
         iunit    : unit number associated to the file
@@ -224,7 +281,18 @@ def fstcloseall(iunit):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
-        FSTDError  on any other error 
+        FSTDError  on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn    
+    >>> funit = rmn.fstopenall(paths)
+    >>> rmn.fstcloseall(funit)
+    
+    See Also:
+       fstfrm
+       fstopenall
+       rpnpy.librmn.base.fclos
+       FSTDError
     """
     if not (type(iunit) == int):
         raise TypeError("fstcloseall: Expecting arg of type int, Got %s" %
@@ -242,7 +310,8 @@ def fstcloseall(iunit):
 
 
 def listToFLOATIP(rp1):
-    """Encode values in FLOAT_IP type/struct
+    """
+    Encode values in FLOAT_IP type/struct
     
     floatip = listToFLOATIP(rp1)
 
@@ -838,9 +907,8 @@ def fstluk(key, dtype=None, rank=None):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
-    See Also
-    --------
-    fstprm
+    See Also:
+        fstprm
     """
     if type(key) != int:
         raise TypeError("fstluk: Expecting a key of type int, Got %s : %s" %
