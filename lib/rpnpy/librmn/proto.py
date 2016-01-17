@@ -1,17 +1,16 @@
 #!/usr/bin/env python
-# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
- Module librmn is a ctypes import of librmnshared.so
+Module librmn is a ctypes import of librmnshared.so
  
- The librmn python module includes
- - prototypes for many librmn C functions
-
- @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-
+The librmn.proto python module includes ctypes prototypes for many librmn C functions
  
-EXTERNAL FUNCTIONS in primitive
+ === EXTERNAL FUNCTIONS in primitive ===
 
     c_fclos(iun):
         Close file associated with unit iun.
@@ -21,7 +20,7 @@ EXTERNAL FUNCTIONS in primitive
            iun (int): (I) unit number
         Returns:
            int, zero if the connection is successful, non-zero otherwise
-         
+
     c_fnom(iun, nom, ftype, lrec):
         Open a file and make the connection with a unit number.
         Proto:
@@ -34,7 +33,7 @@ EXTERNAL FUNCTIONS in primitive
                             if type contains D77)
         Returns:
            int, zero if the connection is successful, non-zero otherwise
-         
+
     c_wkoffit(nom, l1):
         Return a code for the file type
         Proto:
@@ -44,7 +43,6 @@ EXTERNAL FUNCTIONS in primitive
            l1   (int) : (I) length of nom
         Returns:
            int, file type code
-
 
     c_crc32():
         Compute the Cyclic Redundancy Check (CRC)
@@ -60,7 +58,7 @@ EXTERNAL FUNCTIONS in primitive
            int, Cyclic Redundancy Check number
 
 
-EXTERNAL FUNCTIONS in base
+ === EXTERNAL FUNCTIONS in base ===
 
     f_cigaxg(cgtyp, xg1, xg2, xg3, xg4, ig1, ig2, ig3, ig4)
         Encode real grid descriptors into ig1, ig2, ig3, ig4
@@ -283,7 +281,7 @@ EXTERNAL FUNCTIONS in base
                 out - dat3 - time of the printable date (hhmmsshh)
                  in - mode - set to -7
 
-EXTERNAL FUNCTIONS in fstd98
+ === EXTERNAL FUNCTIONS in fstd98 ===
 
     c_fstecr(field_in, work, npak, iun, date, deet, npas,
              ni, nj, nk, ip1, ip2, ip3,
@@ -659,7 +657,7 @@ EXTERNAL FUNCTIONS in fstd98
         Returns:
             int, ... TODO ...
         
-EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
+ === EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
 
     c_ConvertIp(ip, p, kind, mode)
         Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
@@ -775,7 +773,7 @@ EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123
             s1 (str): (O) first char
             s2 (str): (O) second char
 
-EXTERNAL FUNCTIONS in fstd98/xdf98
+ === EXTERNAL FUNCTIONS in fstd98/xdf98 ===
 
     c_xdflnk(liste, n)
         Links the list of random files together for record search purpose
@@ -789,7 +787,7 @@ EXTERNAL FUNCTIONS in fstd98/xdf98
         Note:
             Use the first unit id in the list to refer to the linked files list
 
-EXTERNAL FUNCTIONS in interp (ezscint)
+ === EXTERNAL FUNCTIONS in interp (ezscint) ===
 
     c_ezdefset(gdidout, gdidin)
         Defines a set of grids for interpolation
@@ -1256,15 +1254,35 @@ from . import librmn
 
 ## Convert function name with Fortran name mangling
 f77name = lambda x: str(x) + '_'
-"""Convert function name with Fortran name mangling"""
+f77name.__doc__ = "Convert function name with Fortran name mangling"
 
 ## f77name = lambda x: getattr(, '_'+x)()
 ## def callMethod(o, name):
 ##     getattr(o, name)()
 
 class FLOAT_IP(_ct.Structure):
-    """A structure to hold level values and kind with support for
-       a value range"""
+    """
+    A structure to hold level values and kind with support for a value range
+
+    FLOAT_IP(v1, v2, kind)
+
+    Args and Attributes:
+       v1  : (float) 1st value of the IP
+       v2  : (float) 2nd value of the IP
+       kind: (int)   IP kind
+    
+    Examples:
+    >>> p  = FLOAT_IP(100., 100., rpnpy.librmn.const.LEVEL_KIND_PMB)
+    >>> dp = FLOAT_IP(100., 200., rpnpy.librmn.const.LEVEL_KIND_PMB)
+
+    See Also:
+       c_ConvertIp
+       c_ConvertIPtoPK
+       c_ConvertPKtoIP
+       c_EncodeIp
+       c_DecodeIp
+       c_KindToString
+    """
     _fields_ = [("v1", _ct.c_float),
                 ("v2", _ct.c_float),
                 ("kind", _ct.c_int)]
@@ -1275,7 +1293,12 @@ class FLOAT_IP(_ct.Structure):
         return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
 
     def toList(self):
-        """Retrun (v1,v2,kind)"""
+        """
+        Returns a tuple with FLOAT_IP's 3 attributes: v1, v2, kind
+        
+        Returns:
+           (v1,v2,kind)
+        """
         return (self.v1, self.v2, self.kind)
 
 

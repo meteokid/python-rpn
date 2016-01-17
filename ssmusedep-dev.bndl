@@ -3,11 +3,11 @@ Linux_x86-64:/ssm/net/hpcs/201402/02/intel13sp1u2
 Linux_x86-64:/ssm/net/rpn/utils/15.2
 Linux_x86-64:/ssm/net/rpn/libs/15.2
 
-Linux_x86-64:/ssm/net/cmdn/vgrid/5.4.0/intel13sp1u2
-AIX-powerpc7:/ssm/net/cmdn/vgrid/5.4.0/xlf13
+Linux_x86-64:/ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
+AIX-powerpc7:/ssm/net/cmdn/tests/vgrid/6.0.0-a3/xlf13
 
 GEM/d/gem-data/gem-data_4.2.0
 
-ENV/x/rde/1.0.b11
+ENV/x/rde/1.0.rc4
 
 ENV/others/rpnpy-logger

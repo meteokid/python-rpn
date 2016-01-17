@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
- Module librmn_const defines constants for the librmn module
-
- @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+Module librmn_const defines constants for the librmn module
 """
 import numpy  as _np
 
@@ -49,6 +52,7 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'STANDARD SEQUENTIEL 98' : 34,
     'NETCDF' : 35
     }
+#WKOFFIT_TYPE_LIST.__doc__ = 'Python dict with wkoffit file type codes'
 
 #--- base -----------------------------------------------------------
 

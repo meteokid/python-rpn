@@ -1,18 +1,19 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
- Librmn Fstd grid helper functions
-
- @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+Librmn Fstd grid helper functions
 """
-from . import RMNError
 import numpy  as _np
 from math import sqrt
 from . import base as _rb
 from . import interp as _ri
 from . import llacar as _ll
+from . import RMNError
 
 def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
     """Decode encode grid values into a dict with meaningful labels

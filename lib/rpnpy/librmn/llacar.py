@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 ###############################################################################
 #                                                                             #
 # Copyright (C) 2010 Edward d'Auvergne                                        #
@@ -20,7 +22,9 @@
 ###############################################################################
 
 # Module docstring.
-"""Module for transforming between different coordinate systems."""
+"""
+Module for transforming between different coordinate systems.
+"""
 
 # Python module imports.
 import math

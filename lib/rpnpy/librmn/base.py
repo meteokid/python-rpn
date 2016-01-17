@@ -1,12 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
-Module librmn.base contains python wrapper to main librmn,
-base and primitives C functions
- 
-@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+Module librmn.base contains python wrapper to
+main librmn, base and primitives C functions
 """
 
 import ctypes as _ct
@@ -16,30 +17,64 @@ from . import const as _rc
 from . import RMNError
 
 C_MKSTR = _ct.create_string_buffer
+C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+
 C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
+C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
+
 IS_LIST = lambda x: type(x) in (list, tuple)
+IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
 class RMNBaseError(RMNError):
-    """General RMNBase module error/exception
+    """
+    General RMNBase module error/exception
+    
+    To make your code handle errors in an elegant manner,
+    you may want to catch that error with a 'try ... except' block.
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem getting decoded grid values.\n")
+
+    See also:
+        rpnpy.librmn.RMNError
     """
     pass
 
+
 #--- primitives -----------------------------------------------------
 
-def fclos(iunit):
-    """Close file associated with unit through fnom
 
-    fclos(iunit)
+def fclos(iunit):
+    """
+    Close file associated with unit through fnom
 
     Args:
         iunit   : unit number associated to the file
-                  obtained with fnom
+                  obtained with fnom or fstopenall
     Returns:
         None
     Raises:
         TypeError  on wrong input arg types    
         ValueError on invalid input arg value
-        RMNBaseError on any other error       
+        RMNBaseError on any other error
+    
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     filename = 'myfstfile.fst'
+    >>>     iunit = rmn.fnom(filename, rmn.FST_RO)
+    >>>     rmn.fclos(iunit)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
+    
+    See also:
+       fnom
+       rpnpy.librmn.fstd98.fstopenall
+       rpnpy.librmn.fstd98.closeall
     """
     if not (type(iunit) == int):
         raise TypeError("fcols: Expecting arg of type int, Got %s" %
@@ -53,11 +88,8 @@ def fclos(iunit):
 
 
 def fnom(filename, filemode=_rc.FST_RW, iunit=0):
-    """Open a file and make the connection with a unit number.
-
-    iunit = fnom(filename)
-    iunit = fnom(filename, filemode)
-    iunit = fnom(filename, filemode, iunit)
+    """
+    Open a file and make the connection with a unit number.
 
     Args:
         filename : path/name of the file to open
@@ -70,7 +102,23 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
     Raises:
         TypeError  on wrong input arg types    
         ValueError on invalid input arg value
-        RMNBaseError on any other error       
+        RMNBaseError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     filename = 'myfstfile.fst'
+    >>>     iunit = rmn.fnom(filename, rmn.FST_RO)
+    >>>     rmn.fclos(iunit)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
+    
+    See also:
+       fclos
+       rpnpy.librmn.fstd98.isFST
+       rpnpy.librmn.fstd98.fstopenall
+       rpnpy.librmn.fstd98.closeall
+       rpnpy.librmn.const
     """
     if not (type(iunit) == int):
         raise TypeError("fnom: Expecting arg of type int, Got %s" %
@@ -95,9 +143,8 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
 
 
 def wkoffit(filename):
-    """Return type of file (int)
-
-    ftype = wkoffit(filename)
+    """
+    Return code type of file (int)
 
     Args:
         filename : path/name of the file to examine
@@ -144,6 +191,20 @@ def wkoffit(filename):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     filename = 'myfstfile.fst'
+    >>>     type = rmn.wkoffit(filename)
+    >>>     for k in rmn.WKOFFIT_TYPE_LIST.keys():
+    ...         if type == rmn.WKOFFIT_TYPE_LIST[k]: print k
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem getting file type for: %s\n" % (filename))
+
+    See also:
+       rpnpy.librmn.fstd98.isFST
+       rpnpy.librmn.const
     """
     if not (type(filename) == str):
         raise TypeError("wkoffit: Expecting filename arg of type str, " +
@@ -154,10 +215,9 @@ def wkoffit(filename):
 
 
 def crc32(crc, buf):
-    """Compute the Cyclic Redundancy Check (CRC)
-
-    crc = crc32(crc0, buf)
-
+    """
+    Compute the Cyclic Redundancy Check (CRC)
+    
     Args:
        crc0 : initial crc value (int)
        buf  : list of number to compute updated crc (numpy.ndarray of uint32)
@@ -165,7 +225,16 @@ def crc32(crc, buf):
        crc : computed crc value (int)
     Raises:
         TypeError  on wrong input arg types
-        ValueError on invalid input arg value    
+        ValueError on invalid input arg value
+    
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> import numpy as np
+    >>> try:
+    >>>     buf = np.array([4,3,7,1,9],dtype=np.uint32)
+    >>>     crc = rmn.crc32(0,buf)
+    >>> except:
+    >>>     sys.stderr.write("There was a problem computing CRC value.\n")
     """
     if not (buf.dtype == _np.uint32 and buf.flags['F_CONTIGUOUS']):
         buf = _np.asfortranarray(buf, dtype=_np.uint32)
@@ -175,7 +244,8 @@ def crc32(crc, buf):
 
 
 def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
-    """Decode ig1, ig2, ig3, ig4 into real grid descriptors
+    """
+    Decode ig1, ig2, ig3, ig4 into real grid descriptors
 
     (xg1, xg2, xg3, xg4) = cigaxg(grtyp, ig1, ig2, ig3, ig4)
     (xg1, xg2, xg3, xg4) = cigaxg(grtyp, ig1234)
@@ -192,6 +262,22 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNBaseError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem getting decoded grid values.\n")
+    
+    See also:
+       cxgaig
+       rpnpy.librmn.interp.ezgprm
+       rpnpy.librmn.interp.ezgxprm
+       rpnpy.librmn.grids.decodeIG2dict
+       rpnpy.librmn.grids.decodeXG2dict
+       rpnpy.librmn.grids.decodeGrid
+       rpnpy.librmn.grids.encodeGrid
     """
     if not (type(grtyp) == str):
         raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" %
@@ -216,7 +302,8 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
 
 
 def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
-    """Encode real grid descriptors into ig1, ig2, ig3, ig4
+    """
+    Encode real grid descriptors into ig1, ig2, ig3, ig4
 
     (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1, xg2, xg3, xg4)
     (ig1, ig2, ig3, ig4) = cxgaig(grtyp, xg1234)
@@ -233,6 +320,22 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNBaseError on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     ig1234 = rmn.cxgaig('L',-89.5,180.0,0.5,0.5)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write(There was a problem getting encoded grid values.\n")
+    
+    See also:
+       cigaig
+       rpnpy.librmn.interp.ezgprm
+       rpnpy.librmn.interp.ezgxprm
+       rpnpy.librmn.grids.decodeIG2dict
+       rpnpy.librmn.grids.decodeXG2dict
+       rpnpy.librmn.grids.decodeGrid
+       rpnpy.librmn.grids.encodeGrid
     """
     if not (type(grtyp) == str):
         raise TypeError("cigaxg: Expecting grtyp arg of type str, Got %s" %
@@ -255,7 +358,8 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
 
 
 def incdatr(idate, nhours):
-    """Increate idate by nhours
+    """
+    Increate idate by nhours
 
     date2 = incdatr(idate, nhours)
     
@@ -268,6 +372,21 @@ def incdatr(idate, nhours):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNBaseError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
+    >>>     idate2 = rmn.incdatr(idate1,nhours0)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem computing increased date.\n")
+    
+    See also:
+        newdate
+        difdatr
+        rpnpy.librmn.const
+        rpnpy.rpndate
     """
     if type(idate) != int:
         raise TypeError("incdatr: Expecting idate of type int, Got %s : %s" %
@@ -288,7 +407,8 @@ def incdatr(idate, nhours):
 
 
 def difdatr(idate1, idate2):
-    """Compute the diffence between dates in hours (nhours = idate1 - idate2)
+    """
+    Compute the diffence between dates in hours (nhours = idate1 - idate2)
 
     nhours = difdatr(idate1, idate2)
     
@@ -301,6 +421,22 @@ def difdatr(idate1, idate2):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNBaseError on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
+    >>>     idate2 = rmn.incdatr(idate1,nhours0)
+    >>>     nhours = rmn.difdatr(idate2,idate1)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem computing date diff.\n")
+    
+    See also:
+        newdate
+        incdatr
+        rpnpy.librmn.const
+        rpnpy.rpndate
     """
     if type(idate1) != int or type(idate2) != int:
         raise TypeError("difdatr: Expecting idate1, 2 of type int, " +
@@ -317,9 +453,9 @@ def difdatr(idate1, idate2):
 
 
 def newdate_options_set(option):
-    """Set option for newdate, incdatr, difdatr
-
-    newdate_options_set('year=gregorian')
+    """
+    Set option for newdate, incdatr, difdatr
+    
     Args:
         option : 'option=value' to set (str)
                  possible values:
@@ -330,15 +466,24 @@ def newdate_options_set(option):
         None
     Raises:
         TypeError if option not a string
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> rmn.newdate_options_set('year=gregorian')
+
+    See also:
+        newdate_options_get
+        ignore_leapyear
+        accept_leapyear
+        newdate
     """
     cmd = 'set'
     _rp.f_newdate_options(option, cmd, len(option), len(cmd))
 
 
 def newdate_options_get(option):
-    """Get option for newdate, incdatr, difdatr
-
-    value = newdate_options_get('year')
+    """
+    Get option for newdate, incdatr, difdatr
     
     Args:
         option : option name (str)
@@ -348,6 +493,16 @@ def newdate_options_get(option):
         option value (str)
     Raises:
         TypeError if option not a string
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> value = rmn.newdate_options_get('year')
+
+    See also:
+        newdate_options_set
+        ignore_leapyear
+        accept_leapyear
+        newdate
     """
     cmd = C_MKSTR('get ')
     optionv = C_MKSTR(option.strip()+' '*32)
@@ -357,42 +512,75 @@ def newdate_options_get(option):
 
 
 def ignore_leapyear():
-    """Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+    """
+    Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+    
     Equivalent to: NewDate_Options('year=365_day', 'set')
-
-    ignore_leapyear()
     
     Args:
         None
     Returns:
         None
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> rmn.ignore_leapyear()
+
+    See also:
+        accept_leapyear
+        newdate_options_set
+        newdate_options_get
+        incdatr
+        difdatr
     """
     _rp.f_ignore_leapyear()
 
 
 def accept_leapyear():
-    """Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+    """
+    Set the 'no leap years' (365_day) option for newdate, incdatr, difdatr
+    
     Equivalent to: NewDate_Options('year=gregorian', 'set')
-
-    accept_leapyear()
     
     Args:
         None
     Returns:
         None
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> rmn.accept_leapyear()
+
+    See also:
+        ignore_leapyear
+        newdate_options_set
+        newdate_options_get
+        incdatr
+        difdatr
     """
     _rp.f_accept_leapyear()
 
 
 def get_leapyear_status():
-    """Get the leapyear status used in newdate, incdatr, difdatr
-
-    isLeapYear = get_leapyear_status()
+    """
+    Get the leapyear status used in newdate, incdatr, difdatr
     
     Args:
         None
     Returns:
         True is leap year is used
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> isLeapYear = rmn.get_leapyear_status()
+
+    See also:
+        accept_leapyear
+        ignore_leapyear
+        newdate_options_set
+        newdate_options_get
+        incdatr
+        difdatr
     """
     val = newdate_options_get('year')
     if val.strip() in ('365_day', '360_day'):
@@ -401,9 +589,8 @@ def get_leapyear_status():
 
 
 def newdate(imode, idate1, idate2=0):
-    """Convert date format between: printable, CMC date-time stamp, true date
-
-    outdate = newdate(imode, idate1, idate2)
+    """
+    Convert date format between: printable, CMC date-time stamp, true date
     
     Args:
         imode  : Conversion mode see below (int)
@@ -415,77 +602,101 @@ def newdate(imode, idate1, idate2=0):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNBaseError on any other error
-        
-    imode CAN TAKE THE FOLLOWING VALUES:
-        -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7
-    imode=1 : STAMP TO (TRUE_DATE AND RUN_NUMBER)
-        (odate1, odate2) = newdate(imode, idate1)
-        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-        odate1 : THE TRUEDATE CORRESPONDING TO DAT2
-        odate2 : RUN NUMBER OF THE DATE-TIME STAMP
-    imode=-1 : (TRUE_DATE AND RUN_NUMBER) TO STAMP
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : TRUEDATE TO BE CONVERTED
-        idate2 : RUN NUMBER OF THE DATE-TIME STAMP
-        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-    imode=2 : PRINTABLE TO TRUE_DATE
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-        odate1 : TRUE_DATE
-    imode=-2 : TRUE_DATE TO PRINTABLE
-        (odate1, odate2) = newdate(imode, idate1)
-        idate1 : TRUE_DATE
-        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-    imode=3 : PRINTABLE TO STAMP
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-    imode=-3 : STAMP TO PRINTABLE
-        (odate1, odate2) = newdate(imode, idate1)
-        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-    imode=4 : 14 word old style DATE array TO STAMP and array(14)
-        odate1 = newdate(imode, idate1)
-        idate1 : 14 word old style DATE array
-        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-    imode=-4 : STAMP TO 14 word old style DATE array
-        odate1 = newdate(imode, idate1)
-        idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-        odate1 : 14 word old style DATE array
-    imode=5    PRINTABLE TO EXTENDED STAMP (year 0 to 10, 000)
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-        odate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
-    imode=-5   EXTENDED STAMP (year 0 to 10, 000) TO PRINTABLE
-        (odate1, odate2) = newdate(imode, idate1)
-        idate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
-        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-    imode=6 :  EXTENDED STAMP TO EXTENDED TRUE_DATE (in hours)
-        (odate1, odate2) = newdate(imode, idate1)
-        idate2 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-        odate1 : THE TRUEDATE CORRESPONDING TO DAT2
-        odate2 : RUN NUMBER, UNUSED (0)
-    imode=-6 : EXTENDED TRUE_DATE (in hours) TO EXTENDED STAMP
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : TRUEDATE TO BE CONVERTED
-        idate2 : RUN NUMBER, UNUSED
-        odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
-    imode=7  : PRINTABLE TO EXTENDED TRUE_DATE (in hours)
-        odate1 = newdate(imode, idate1, idate2)
-        idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
-        odate1 : EXTENDED TRUE_DATE
-    imode=-7 : EXTENDED TRUE_DATE (in hours) TO PRINTABLE
-        (odate1, odate2) = newdate(imode, idate1)
-        idate1 : EXTENDED TRUE_DATE
-        odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
-        odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+
+    Notes:
+        Options details if 
+           outdate = newdate(imode, idate1, idate2)
+
+       imode CAN TAKE THE FOLLOWING VALUES:
+          -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7
+       imode=1 : STAMP TO (TRUE_DATE AND RUN_NUMBER)
+          (odate1, odate2) = newdate(imode, idate1)
+          idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+          odate1 : THE TRUEDATE CORRESPONDING TO DAT2
+          odate2 : RUN NUMBER OF THE DATE-TIME STAMP
+       imode=-1 : (TRUE_DATE AND RUN_NUMBER) TO STAMP
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : TRUEDATE TO BE CONVERTED
+          idate2 : RUN NUMBER OF THE DATE-TIME STAMP
+          odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+       imode=2 : PRINTABLE TO TRUE_DATE
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+          odate1 : TRUE_DATE
+       imode=-2 : TRUE_DATE TO PRINTABLE
+          (odate1, odate2) = newdate(imode, idate1)
+          idate1 : TRUE_DATE
+          odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+       imode=3 : PRINTABLE TO STAMP
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+          odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+       imode=-3 : STAMP TO PRINTABLE
+          (odate1, odate2) = newdate(imode, idate1)
+          idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+          odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+       imode=4 : 14 word old style DATE array TO STAMP and array(14)
+          odate1 = newdate(imode, idate1)
+          idate1 : 14 word old style DATE array
+          odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+       imode=-4 : STAMP TO 14 word old style DATE array
+          odate1 = newdate(imode, idate1)
+          idate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+          odate1 : 14 word old style DATE array
+       imode=5    PRINTABLE TO EXTENDED STAMP (year 0 to 10, 000)
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+          odate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
+       imode=-5   EXTENDED STAMP (year 0 to 10, 000) TO PRINTABLE
+          (odate1, odate2) = newdate(imode, idate1)
+          idate1 : EXTENDED DATE-TIME STAMP (NEW STYLE only)
+          odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+       imode=6 :  EXTENDED STAMP TO EXTENDED TRUE_DATE (in hours)
+          (odate1, odate2) = newdate(imode, idate1)
+          idate2 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+          odate1 : THE TRUEDATE CORRESPONDING TO DAT2
+          odate2 : RUN NUMBER, UNUSED (0)
+       imode=-6 : EXTENDED TRUE_DATE (in hours) TO EXTENDED STAMP
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : TRUEDATE TO BE CONVERTED
+          idate2 : RUN NUMBER, UNUSED
+          odate1 : CMC DATE-TIME STAMP (OLD OR NEW STYLE)
+       imode=7  : PRINTABLE TO EXTENDED TRUE_DATE (in hours)
+          odate1 = newdate(imode, idate1, idate2)
+          idate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          idate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+          odate1 : EXTENDED TRUE_DATE
+       imode=-7 : EXTENDED TRUE_DATE (in hours) TO PRINTABLE
+          (odate1, odate2) = newdate(imode, idate1)
+          idate1 : EXTENDED TRUE_DATE
+          odate1 : DATE OF THE PRINTABLE DATE (YYYYMMDD)
+          odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>     (yyyymmdd,hhmmsshh) = (20150123,0)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
+    >>>     (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate1)
+    >>> except rmn.RMNBaseError:
+    >>>     sys.stderr.write("There was a problem encoding/decoding the date.\n")
+    
+    See also:
+        accept_leapyear
+        ignore_leapyear
+        get_leapyear_status
+        newdate_options_set
+        newdate_options_get
+        incdatr
+        difdatr
+        rpnpy.librmn.const
+        rpnpy.rpndate
     """
     if type(imode) != int:
         raise TypeError("incdatr: Expecting imode of type int, Got %s : %s" %

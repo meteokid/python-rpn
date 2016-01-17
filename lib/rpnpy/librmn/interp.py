@@ -1,12 +1,13 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
 Module librmn.interp contains python wrapper to
 main librmn's interp (ezscint) C functions
- 
-@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
 
 import ctypes as _ct

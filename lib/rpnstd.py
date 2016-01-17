@@ -1,32 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Author: Mario Lepine <mario.lepine@ec.gc.ca>
-# Author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
-# Author: Christopher Subich <Christopher.Subich@ec.gc.ca>
+# Author: Mario Lepine <mario.lepine@canada.ca>
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Author: Christopher Subich <Christopher.Subich@canada.ca>
 # Copyright: LGPL 2.1
 
-"""@package docstring
+"""
 Module RPN contains the classes used to access RPN Standard Files (rev 2000).
-
-See example doc at:
-http://docutils.sourceforge.net/docutils/statemachine.py
-
-
-This module defines the following classes:
--
-
-Exception classes:
--
-
-Functions:
--
-
-How To Use This Module
-======================
-
 """
 
-__docformat__ = 'restructuredtext'
+#__docformat__ = 'restructuredtext'
 
 import rpnpy.version as rpn_version
 from rpn_helpers import *
@@ -43,28 +26,24 @@ FILE_MODE_RW_OLD = Fstdc.FSTDC_FILE_RW_OLD
 
 
 class RPNFile:
-    r"""Python Class implementation of the RPN standard file interface.
+    """
+    Python Class implementation of the RPN standard file interface.
     
     Instanciating this class actually opens the file.
     Deleting the instance close the file.
             
-    Attributes
-    ==========
-    filename : 
-    lastread :
-    lastwrite : 
-    options :
-    iun :
+    Attributes:
+       filename  : 
+       lastread  :
+       lastwrite : 
+       options   :
+       iun       :
 
-    Raises
-    ------
-    TypeError
-        if name is not
-    IOError
-        if unable to open file
+    Raises:
+       TypeError
+       IOError    if unable to open file
     
-    Examples
-    --------
+    Examples:
     myRPNFile = RPNFile(name, mode)      #opens the file
     params = myRPNFile.info(seachParams) #get matching record params
     params = myRPNFile.info(FirstRecord) #get params of first rec on file
@@ -81,19 +60,20 @@ class RPNFile:
     myRPNFile[myRPNRec] = None           #erase record
     myRPNFile[params.handle] = None      #erase record
     del myRPNFile                        #close the file
-    
+
+    See Also:
+       RPNRec
     """
     
     def __init__(self, name=None, mode=FILE_MODE_RW):
-        r"""Constructor.
+        """
+        Constructor.
 
-        Parameters
-        ----------
-        name : string
-           file name
-        mode : string, optional
-           Type of file, FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
-        
+        Args:
+           name : string
+              file name
+           mode : string, optional
+              Type of file, FILE_MODE_RO, FILE_MODE_RW, FILE_MODE_RW_OLD
         """
         if (not name) or type(name) <> type(''):
             raise TypeError, 'RPNFile, need to provide a name for the file'
@@ -107,7 +87,8 @@ class RPNFile:
           raise IOError, (-1, 'failed to open standard file', self.filename)
 
     def voir(self, options='NEWSTYLE'):
-        """Print the file content listing.
+        """
+        Print the file content listing.
         """
         Fstdc.fstvoi(self.iun, options)
 
@@ -121,7 +102,9 @@ class RPNFile:
         pass
 
     def __del__(self):
-        """Close File"""
+        """
+        Close File
+        """
         self.close()
         del self.filename
         del self.lastread
@@ -130,11 +113,17 @@ class RPNFile:
         del self.iun
 
     def __getitem__(self, key):
-        """Get the record, meta and data (RPNRec), corresponding to the seach keys from file
+        """
+        Get the record, meta and data (RPNRec), corresponding to the seach keys from file
 
         myrec = myRPNfile[mykey]
-        @param mykey search keys for RPNFile.info()
-        @return instance of RPNRec with data and meta of the record; None if rec not found
+
+        Args:
+           mykey:
+               search keys for RPNFile.info()
+        Returns:
+           RPNRec instance, data + meta of the record
+           None if rec not found
         """
         params = self.info(key)         # 1 - get handle
         if params == None:              # oops !! not found
@@ -201,7 +190,8 @@ class RPNFile:
         return RPNRec(array, params)
 
     def __contains__(self, key):
-        """Returns True if 'key' is contained in this RPNFile, 'False' otherwise
+        """
+        Returns True if 'key' is contained in this RPNFile, 'False' otherwise
 
         is_here = mykey in myRPNfile
         @param mykey Search key passed to RPNFile.info() (instance of RPNMeta)
@@ -217,7 +207,8 @@ class RPNFile:
             return False
 
     def edit_dir_entry(self, key):
-      """Edit (zap) directory entry referenced by handle
+      """
+      Edit (zap) directory entry referenced by handle
 
       myRPNdfile.edit_dir_entry(myNewRPNParams)
 
@@ -227,7 +218,9 @@ class RPNFile:
                                 key.type, key.nom, key.etiket, key.grtyp, key.ig1, key.ig2, key.ig3, key.ig4, key.datyp))
 
     def info(self, key, list=False):
-        """Seach file for next record corresponding to search keys
+        """
+        Seach file for next record corresponding to search keys
+        
         Successive calls will go further in the file.
         Search index can be reset to begining of file with myRPNfile.info(FirstRecord)
         If key.handle >=0, return key w/o search and w/o checking the file
@@ -236,10 +229,16 @@ class RPNFile:
         myRPNparms = myRPNfile.info(mykeys)
         myRPNparms = myRPNfile.info(NextMatch)
         myRPNparms = myRPNfile.info(mykeys, list=True)
-        @param mykeys search keys, can be an instance RPNParm or derived classes (RPNKeys, RPNDesc, RPNMeta, RPNRec)
-        @param list if true, return a list of all rec RPNMeta matching the search keys (handle is then ignored)
-        @return a RPNMeta instance of the record with proper handle, return None if not found
-        @exception TypeError if
+
+        Args:
+           mykeys: RPNParm or derived classes (RPNKeys, RPNDesc, RPNMeta, RPNRec)
+              search keys
+           list: bool
+              if true, return a list of all rec RPNMeta matching the search keys (handle is then ignored)
+        Returns:
+           RPNMeta instance of the record with proper handle, return None if not found
+        Raises:
+           TypeError if
 
         Accepted seach keys: nom, type,
                               etiket, ip1, ip2, ip3, datev, handle
@@ -492,6 +491,7 @@ class RPNFile:
 
 class RPNKeys(RPNParm):
     """RPN standard file Primary descriptors class, used to search for a record.
+
     Descriptors are:
     {'nom':'    ', 'type':'  ', 'etiket':'            ', 'date':-1, 'ip1':-1, 'ip2':-1, 'ip3':-1, 'handle':-2, 'nxt':0, 'fileref':None}
     TODO: give examples of instanciation
@@ -513,6 +513,7 @@ class RPNKeys(RPNParm):
 
 class RPNDesc(RPNParm):
     """RPN standard file Auxiliary descriptors class, used when writing a record or getting descriptors from a record.
+
     Descriptors are:
     {'grtyp':'X', 'dateo':0, 'deet':0, 'npas':0, 'ig1':0, 'ig2':0, 'ig3':0, 'ig4':0, 'datyp':-1, 'nbits':0, 'xaxis':None, 'yaxis':None, 'xyref':(None, None, None, None, None), 'griddim':(None, None)}
     TODO: give examples of instanciation
@@ -1343,7 +1344,8 @@ class RPNGridBase(RPNGridHelper):
 
 
 class RPNGridRef(RPNGridHelper):
-    """RPNGrid Helper class for RPNSTD-type grid description for grid reference
+    """RPNGrid Helper class for RPNSTD-type grid description for grid reference.
+    
     Preferably use the generic RPNGrid class to indirectly get an instance
     """
     addAllowedKeysVals = {

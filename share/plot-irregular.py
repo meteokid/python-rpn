@@ -4,25 +4,20 @@
 """
 Use Basemap to plot data from a RPN Standard File not on regular lat-lon grid
 
-Usage
------
-export CMCGRIDF=???
-plot-irregular.py
+Usage: 
+   export CMCGRIDF=???
+   plot-irregular.py
 
-See Also
---------
-https://basemaptutorial.readthedocs.org/en/latest/
+See Also:
+   https://basemaptutorial.readthedocs.org/en/latest/
 """
-
-import datetime
 import os
 import sys
-
+import datetime
 import scipy.constants
 import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.basemap as basemap
-
 import rpnpy.librmn.all as rmn
 
 if __name__ == "__main__":
@@ -40,7 +35,6 @@ if __name__ == "__main__":
     except:
         sys.stderr.write('Error: Unable to open file: '+my_file+'\n')
         sys.exit(1)
-
 
     varname = 'tm2'
     try:

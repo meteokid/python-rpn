@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+
 """
-   Module ftnnml contains the classes used to manipulate fortran namelist files
-   @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+Module ftnnml contains the classes used to manipulate fortran namelist files
 """
 import re, sys
 

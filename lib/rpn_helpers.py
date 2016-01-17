@@ -1,8 +1,12 @@
 #!/usr/bin/env python
-"""Module rpn_helpers contains the helpers functions/classes for the rpn package
-
-    @author: Mario Lepine <mario.lepine@ec.gc.ca>
-    @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Mario Lepine <mario.lepine@ec.gc.ca>
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+"""
+Module rpn_helpers contains the helpers functions/classes for the rpn package
 """
 import rpnpy.version as rpn_version
 import Fstdc

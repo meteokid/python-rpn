@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
-"""Module Fstdc is a backward compatibility layer for rpnpy version 1.3 and older.
-    This Module is deprecated in favor of rpnpy.librmn.all
-
-    @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+"""
+Module Fstdc is a backward compatibility layer for rpnpy version 1.3 and older.
+This Module is deprecated in favor of rpnpy.librmn.all
 """
 import ctypes as _ct
 import numpy  as _np
