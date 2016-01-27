@@ -74,17 +74,21 @@ gemdyn_version.h:
 .PHONY: prgemnml gemgrid checkdmpart split3df toc2nml monitor sometools allbin allbincheck
 
 mainprgemnml=gemprnml_$(BASE_ARCH).Abs
+mainprgemnmldep = prgemnml.o
+mainprgemnmldepfiles = $(foreach item,$(mainprgemnmldep),$(BUILDOBJ)/$(item))
 prgemnml: | prgemnml_rm $(BINDIR)/$(mainprgemnml)
 	ls -l $(BINDIR)/$(mainprgemnml)
 prgemnml_rm:
 	rm -f $(BINDIR)/$(mainprgemnml)
-$(BINDIR)/$(mainprgemnml): | $(GEMDYN_VFILES)
+$(BINDIR)/$(mainprgemnml): $(mainprgemnmldep) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	$(RBUILD4objNOMPI)
+	export RBUILD_EXTRA_OBJ="$(mainprgemnmldepfiles)" ;\
+	$(RBUILD4NOMPI)
+	ls $@
 
 maingemgrid=gemgrid_$(BASE_ARCH).Abs
 gemgrid: | gemgrid_rm $(BINDIR)/$(maingemgrid)
@@ -94,7 +98,7 @@ gemgrid_rm:
 $(BINDIR)/$(maingemgrid): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="gemgrid" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
@@ -107,7 +111,7 @@ checkdmpart_rm:
 $(BINDIR)/$(maincheckdmpart): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="checkdmpart" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -119,7 +123,7 @@ split3df_rm:
 $(BINDIR)/$(mainsplit3df): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="split3df" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -131,7 +135,7 @@ toc2nml_rm:
 $(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
 	export MAINSUBNAME="toc2nml" ;\
 	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
