@@ -15,11 +15,11 @@
 
 !**s/r itf_fft_nextfactor - calcul du prochain entier > 8 qui se factorise en 2, 3, et 5
 !
-      subroutine itf_fft_nextfactor ( F_n )
+      subroutine itf_fft_nextfactor2 ( F_n, F_ndown )
       implicit none
 #include <arch_specific.hf>
 !
-      integer F_n
+      integer F_n, F_ndown
 !
 !author 
 !     Jean Cote - 1990
@@ -35,13 +35,15 @@
 !
       integer n
       parameter ( n = 3 )
-      integer k( n ) , m, i, j
+      integer k( n ) , m, i, j, keep
       data m / 8 /
       data k / 2 , 3 , 5 /
 !
 !     ---------------------------------------------------------------
 !
       if ( F_n.le.m ) F_n = m + 1
+      keep= F_n
+! going up
       F_n = F_n - 1
   10  F_n = F_n + 1
       i = F_n
@@ -54,6 +56,20 @@
   40  i = i/k(j)
 
       if( i .ne. 1 ) go to 20
+
+! going down
+      F_ndown = keep + 1
+ 100  F_ndown = F_ndown - 1
+      i = F_ndown
+
+ 200  do 300 j=1,n
+         if( mod(i,k(j)) .eq. 0 ) go to 400
+ 300  continue
+
+      go to 100
+ 400  i = i/k(j)
+
+      if( i .ne. 1 ) go to 200
 !
 !     ---------------------------------------------------------------
 !

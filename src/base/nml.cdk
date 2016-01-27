@@ -57,6 +57,7 @@
       namelist /gem_cfgs/ Hzd_pwr_tr
       namelist /gem_cfgs/ Hzd_div_damp
       namelist /gem_cfgs/ Hzd_type_S
+      namelist /gem_cfgs/ Hzd_xidot_L
       namelist /gem_cfgs/ Hzd_smago_L
       namelist /gem_cfgs/ Hzd_smago_param
       namelist /gem_cfgs/ Hzd_theta_njpole_gu_only
@@ -198,6 +199,7 @@
       namelist /gem_cfgs_p/ Hzd_pwr_tr
       namelist /gem_cfgs_p/ Hzd_div_damp
       namelist /gem_cfgs_p/ Hzd_type_S
+      namelist /gem_cfgs_p/ Hzd_xidot_L
       namelist /gem_cfgs_p/ Hzd_smago_L
       namelist /gem_cfgs_p/ Hzd_smago_param
       namelist /gem_cfgs_p/ Hzd_theta_njpole_gu_only

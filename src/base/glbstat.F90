@@ -13,28 +13,18 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-
-!**s/r glbstat2 - 
-!
-
-!
-      subroutine glbstat2 (F_field, F_var_S, F_from_S,  &
-                           Minx,Maxx,Miny,Maxy,Mink,Maxk, &
-                           F_i0,F_in,F_j0,F_jn,F_k0,F_kn)
+      subroutine glbstat2 ( F_field, F_var_S, F_from_S   , &
+                            Minx,Maxx,Miny,Maxy,Mink,Maxk, &
+                            F_i0,F_in,F_j0,F_jn,F_k0,F_kn )
+      use stat_mpi, only: statf_dm
       implicit none
 #include <arch_specific.hf>
-!
+
       character * (*) F_var_S,F_from_S
       integer Minx,Maxx,Miny,Maxy,Mink,Maxk
       integer F_i0,F_in,F_j0,F_jn,F_k0,F_kn
-      real F_field(*)
-!
-!author
-!     M. Desgagne
-!
-!revision
-! v3_30 - Lee V. - glbstat with an extra argument to comment the statfld
-!
+      real F_field (Minx:Maxx,Miny:Maxy,Mink:Maxk)
+
 !arguments
 !  Name        I/O                 Description
 !----------------------------------------------------------------
@@ -47,12 +37,11 @@
 !                            on which to perform statistics
 ! F_k0,F_kn     I         Range of levels on which to perform statistics
 !----------------------------------------------------------------
-!
 
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
 #include "lctl.cdk"
-!
+
       integer nk,rx
       real, dimension(:,:), allocatable :: wk1
 !
@@ -75,20 +64,12 @@
 
       else
 
-         call statf_dm3 (F_field,F_var_S,Lctl_step,F_from_S, &
-                              Minx,Maxx,Miny,Maxy,Mink,Maxk, &
-                              F_i0,F_j0,F_k0,F_in,F_jn,F_kn,rx)
+         call statf_dm ( F_field,F_var_S,Lctl_step,F_from_S,&
+                         Minx,Maxx,Miny,Maxy,Mink,Maxk     ,&
+                         F_i0,F_j0,F_k0,F_in,F_jn,F_kn,rx)
       endif
 !
 !----------------------------------------------------------------------
 !
-      return
-      end
-!
-      subroutine glbstat
-      implicit none
-#include <arch_specific.hf>
-#include "stop_mpi.h"
-      call stop_mpi(STOP_ERROR,'glbstat','ABORT - glbstat has been replace by glbstat2')
       return
       end

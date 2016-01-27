@@ -229,6 +229,8 @@
       enddo
 !$omp enddo
 !$omp end parallel
+
+call adv_cliptraj (pxm,pym,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('m'))
    endif
 
 if(Schm_cub_traj_L) deallocate ( ii )
@@ -244,7 +246,8 @@ if(Schm_cub_traj_L) deallocate ( ii )
                            F_ni,F_nj,F_nk,k0t,i0,in,j0,jn, .true.)
 
 !     Clipping trajectories 
-      
+     
+ 
       call adv_cliptraj (pxmu,pymu,F_ni,F_nj,F_nk,i0u,inu,j0,jn,k0,'INTERP '//trim('m'))
       call adv_cliptraj (pxmv,pymv,F_ni,F_nj,F_nk,i0,in,j0v,jnv,k0,'INTERP '//trim('m'))
       call adv_cliptraj (pxt,pyt,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('t'))

@@ -24,16 +24,22 @@
 !revision
 ! v4_50 - Desgagne M.       - Initial version
 
-#include "dimout.cdk"
+#include "cstv.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
 #include "step.cdk"
+#include "out.cdk"
+#include "out3.cdk"
 #include "outp.cdk"
 #include "out_listes.cdk"
 
+      character*16 datev
       integer istep,step0,stepf
       integer, save :: marker
       logical, save :: done = .false., dgflt_L = .true.
+      real,   parameter :: eps=1.e-12
+      real*8, parameter :: OV_day = 1.0d0/86400.0d0
+      real*8  dayfrac
 !
 !     ---------------------------------------------------------------
 !
@@ -45,29 +51,54 @@
       if ( (.not.Init_mode_L) .and. dgflt_L) marker= Lctl_step - 1
       dgflt_L = Init_mode_L
 
-      if (marker .ge. Lctl_step) return
+      if (marker .lt. Lctl_step) then
 
-      step0 = Lctl_step
-      stepf = Lctl_step + 50
-      marker= stepf
-        
-      if (associated(outd_sorties)) deallocate (outd_sorties)
-      if (associated(outp_sorties)) deallocate (outp_sorties)
-      if (associated(outc_sorties)) deallocate (outc_sorties)
-      if (associated(outp_lasstep)) deallocate (outp_lasstep)
-      allocate (outd_sorties(0:MAXSET,step0:stepf))
-      allocate (outp_sorties(0:MAXSET,step0:stepf))
-      allocate (outc_sorties(0:MAXSET,step0:stepf))
-      allocate (outp_lasstep(MAXSET,step0:stepf))
+         step0 = Lctl_step
+         stepf = Lctl_step + 50
+         marker= stepf
+         
+         if (associated(outd_sorties)) deallocate (outd_sorties)
+         if (associated(outp_sorties)) deallocate (outp_sorties)
+         if (associated(outc_sorties)) deallocate (outc_sorties)
+         if (associated(outp_lasstep)) deallocate (outp_lasstep)
+         allocate (outd_sorties(0:MAXSET,step0:stepf))
+         allocate (outp_sorties(0:MAXSET,step0:stepf))
+         allocate (outc_sorties(0:MAXSET,step0:stepf))
+         allocate (outp_lasstep(MAXSET,step0:stepf))
 
-      outd_sorties(0,:)= 0 ; outp_sorties(0,:)= 0 ; outc_sorties(0,:)= 0
-      do istep = step0, stepf
-         if (.not.(Init_mode_L .and. (istep+Step_initial).ge.Init_halfspan)) &
-         call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
-         if (Init_mode_L .and. (istep+Step_initial).ge.Init_halfspan+1) cycle
-         call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
-         call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
-      end do
+         outd_sorties(0,:)= 0
+         outp_sorties(0,:)= 0
+         outc_sorties(0,:)= 0
+
+         do istep = step0, stepf
+            if (.not.( Init_mode_L .and.            &
+            (istep+Step_initial).ge.Init_halfspan)) &
+            call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
+            if (       Init_mode_L .and.            &
+            (istep+Step_initial).ge.Init_halfspan+1) cycle
+            call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
+            call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
+         end do
+
+      endif
+
+      Out_dateo = Out3_date
+      if ( lctl_step .lt. 0 ) then  ! adjust Out_dateo because ip2=npas=0
+         dayfrac = dble(lctl_step-Step_delay) * Cstv_dt_8 * OV_day
+         call incdatsd (datev,Step_runstrt_S,dayfrac)
+         call datp2f   (Out_dateo,datev)
+      endif
+
+      Out_ip2  = int (dble(lctl_step) * Out_deet / 3600. + eps)
+      Out_ip2  = max (0, Out_ip2  )
+      Out_npas = max (0, Lctl_step)
+
+      Out_ip3  = 0
+      if (Out3_ip3.eq.-1) Out_ip3 = max (0, Lctl_step)
+      if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
+
+      Out_typvar_S = 'P'
+      if (Lctl_step.lt.0) Out_typvar_S = 'I'
 
       done = .true.
 !

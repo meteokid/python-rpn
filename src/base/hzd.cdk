@@ -81,6 +81,7 @@
 
        character*12 Hzd_type_S, Hzd_exp5p_S
        character*64 Hzd_prof_S(HZD_MAXPROF)
+       logical      Hzd_xidot_L
        logical      Hzd_hzdadw_L, Hzd_difva_L, Hzd_smago_L
        integer      Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
        integer      Hzd_theta_njpole_gu_only
@@ -92,7 +93,7 @@
        real*8 , dimension(:), pointer :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
 
        common /hzdc/ Hzd_type_S, Hzd_exp5p_S,Hzd_prof_S
-       common /hzdl/ Hzd_hzdadw_L, Hzd_difva_L, Hzd_smago_L
+       common /hzdl/ Hzd_hzdadw_L, Hzd_difva_L, Hzd_smago_L, Hzd_xidot_L
        common /hzdi/ Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
        common /hzdi/ Hzd_niter, Hzd_niter_tr,Hzd_niter_theta
        common /hzdi/ Hzd_del, Hzd_theta_njpole_gu_only

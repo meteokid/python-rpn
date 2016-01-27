@@ -128,7 +128,7 @@ subroutine adx_pos_muv ( F_xmu, F_ymu, F_zmu, F_xmv, F_ymv, F_zmv, &
                           + bb*(pyh(i,j  ,k)+pyh(i,j+1,k)) - cc
             F_zmv(i,j,k) =  aa*(pzh(i,j-1,k)+pzh(i,j+2,k)) &
                           + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
-           F_zmu(i,j,k) =  min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
+            F_zmv(i,j,k) =  min(zbot_bound,max(F_zmv(i,j,k),ztop_bound))
          enddo
          enddo
 

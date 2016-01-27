@@ -19,6 +19,7 @@
 
       integer function gemdm_config ( )
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
+      use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
       implicit none
 #include <arch_specific.hf>
 
@@ -65,6 +66,7 @@
 
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
+         call mu_set_leap_year (MU_JDATE_LEAP_IGNORED)
          if (Lun_out>0) write(Lun_out,6010)
       endif
 
@@ -83,7 +85,8 @@
       Level_version  = 5
 
       if(Schm_Tlift.eq.1)then
-         call gem_error (-1, 'gemdm_config','review for toplev removed and Tlift')
+         call gem_error ( -1, 'gemdm_config', &
+                          'review for toplev removed and Tlift' )
          Level_version  = 3
       endif
 
@@ -264,14 +267,14 @@
 
 
 !     Check for modified epsilon/ super epsilon
-      if ( Cstv_rEp_8 /= 1.0d0 ) then
-         if (Cstv_Tstr_8 .lt. 0. .or. Cstv_Tstr_8.gt.1000. ) then
-             if (lun_out>0) write (Lun_out, 9680) 'Cstv_rEp_8'
+      if ( Cstv_rE_8 /= 1.0d0 ) then
+         if (Cstv_Tstr_8 .lt. 0. ) then
+             if (lun_out>0) write (Lun_out, 9680) 'Cstv_rE_8'
             return
          endif
 
          if (Schm_opentop_L) then
-            if (lun_out>0) write (Lun_out, 9681) 'Cstv_rEp_8'
+            if (lun_out>0) write (Lun_out, 9681) 'Cstv_rE_8'
             return
          endif
       endif
@@ -387,7 +390,7 @@
  9203 format (/,'ABORT: WRONG CHOICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
- 9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0 or T*>1000'/)
+ 9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
  9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
 !
 !-------------------------------------------------------------------

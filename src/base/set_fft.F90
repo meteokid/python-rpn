@@ -37,46 +37,49 @@
 #include "sol.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
+
+      integer npts,onept,next_down
 !
-      integer npts,onept
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
+
       Fft_fast_L = .false.
-      if ((Sol_type_S.ne.'DIRECT').and.(Hzd_type_S.ne.'HO_IMP')) goto 999
-!
-!C       1.    test if grid is uniform in x
-!              ----------------------------
+
+      if ((Sol_type_S.ne.'DIRECT').and.(Hzd_type_S.ne.'HO_IMP')) then
+         if (Lun_out.gt.0) write (Lun_out,*) &
+         'FFT not usefull in this model configuration'
+         return
+      endif
+
       if ( .not. sol_fft_L ) then
-         if (Lun_out.gt.0)  &
-         write(Lun_out,*)'Fft_fast_L = .false. ====> sol_fft_L=.f.'
-         goto 999
+         if (Lun_out.gt.0) write (Lun_out,*) &
+         'FFT not requested: sol_fft_L= .false.'
+         return
+      endif
+
+      onept= 0
+      if (Grd_yinyang_L) onept= 1
+      npts= G_ni-Lam_pil_w-Lam_pil_e+onept
+
+      call itf_fft_nextfactor2 ( npts, next_down )
+
+      if ( npts .ne. G_ni-Lam_pil_w-Lam_pil_e+onept ) then
+         if (Lun_out.gt.0) write (Lun_out,3001) &
+         G_ni-Lam_pil_w-Lam_pil_e+onept,npts,next_down
+         return
       endif
 !
-!        2.    test grid factorization
-!              -----------------------
-      onept = 0
-      if (Grd_yinyang_L) onept = 1
-      npts = G_ni-Lam_pil_w-Lam_pil_e+onept
-
-      call itf_fft_nextfactor ( npts )
-
-      if ( npts.ne.G_ni-Lam_pil_w-Lam_pil_e+onept ) then
-         if (Lun_out.gt.0)  &
-         write(Lun_out,3001) G_ni-Lam_pil_w-Lam_pil_e+onept,npts
-         goto 999
-      endif
-!
-      Fft_fast_L = .true.
+      Fft_fast_L= .true.
       if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
 !
  1000 format( &
       /,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)', &
       /,'===========================================================')
  3001 format ('Fft_fast_L = .false. ====> NI = ',i6,' NOT FACTORIZABLE' &
-              /'NEXT FACTORIZABLE G_NI = ',i6)
+              /'Neighboring factorizable G_NIs are: ',i6,' and',i6)
 !
 !     ---------------------------------------------------------------
 !
- 999  return
+      return
       end

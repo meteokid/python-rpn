@@ -158,6 +158,7 @@
       Hzd_lnr_tr     = -1.
       Hzd_div_damp   = -1.
       Hzd_type_S     = 'HO_EXP9P'
+      Hzd_xidot_L    = .false.
       Hzd_smago_L    = .false.
       Hzd_smago_param= -1
       Hzd_theta_njpole_gu_only= -1

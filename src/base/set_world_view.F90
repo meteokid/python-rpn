@@ -43,15 +43,18 @@
 !
 !-------------------------------------------------------------------
 !
+      err(:) = 0
+      err(1) = wb_put( 'model/Hgrid/is_yinyang',Grd_yinyang_L,&
+                       WB_REWRITE_NONE+WB_IS_LOCAL )
       if (Grd_yinyang_L) then         
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT/'&
                                       //trim(Grd_yinyang_S)
+         err(2) = wb_put( 'model/Hgrid/yysubgrid',Grd_yinyang_S,&
+                          WB_REWRITE_NONE+WB_IS_LOCAL )
       else
          Path_ind_S=trim(Path_input_S)//'/MODEL_INPUT'
       endif
       Path_phy_S=trim(Path_input_S)//'/'
-
-      err(:) = 0
 
       if ( Schm_theoc_L ) then
          call theo_cfg
@@ -59,18 +62,19 @@
 
 ! Read namelists from file Path_nml_S
 
-         err(1) = grid_nml2   (Path_nml_S,G_lam)
-         err(2) = step_nml    (Path_nml_S)
-         err(3) = gem_nml     (Path_nml_S)
+         err(3) = grid_nml2   (Path_nml_S,G_lam)
+         err(4) = step_nml    (Path_nml_S)
+         err(5) = gem_nml     (Path_nml_S)
          if (G_lam .and. .not. Schm_adxlegacy_L ) then
-            err(4) = adv_nml  (Path_nml_S)
+            err(6) = adv_nml  (Path_nml_S)
          else
-            err(4) = adx_nml  (Path_nml_S)
+            err(6) = adx_nml  (Path_nml_S)
          endif
 
       endif
 
-      call gem_error(minval(err(:)),'set_world_view','Error reading nml')
+      call gem_error ( minval(err(:)),'set_world_view',&
+                       'Error reading nml or with wb_put' )
 
 ! Read physics namelist
 

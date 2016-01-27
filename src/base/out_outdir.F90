@@ -40,16 +40,13 @@
       
       character(len=1024),save :: dirstep_S=' ', diryy_S=' ', dirbloc_S=' ', &
                                   FMT=' ', last_S=' '
-      character*16 datev
       character*10 postjob_S
       character*7  blocxy_S
       character*2  digits_S
       integer err,last_step_post,flag_step_post,stepno,timing,ndigits, &
               remainder,prognum,prognum1,upperlimit
       real :: interval
-      real,   parameter :: eps=1.e-12
-      real*8, parameter :: OV_day = 1.0d0/86400.0d0
-      real*8  dayfrac,fatc_8
+      real*8 fatc_8
 !
 !----------------------------------------------------------------------
 !
@@ -57,7 +54,7 @@
 
       call out_steps
 
-      if ( Init_mode_L .and. (Step_kount.gt.Init_halfspan) ) return
+      if ( Init_mode_L .and. (Step_kount.ge.Init_halfspan) ) return
 
       write (blocxy_S,'(I3.3,"-",I3.3)') Ptopo_mycol, Ptopo_myrow
 
@@ -127,24 +124,6 @@
       endif
 
       call gem_error (err,'out_outdir','unable to create output directory structure')
-
-      Out_dateo = Out3_date
-      if ( lctl_step .lt. 0 ) then  ! adjust Out_dateo because ip2=npas=0
-         dayfrac = dble(lctl_step-Step_delay) * Cstv_dt_8 * OV_day
-         call incdatsd (datev,Step_runstrt_S,dayfrac)
-         call datp2f   (Out_dateo,datev)
-      endif
-
-      Out_ip2  = int (dble(lctl_step) * Out_deet / 3600. + eps)
-      Out_ip2  = max (0, Out_ip2  )
-      Out_npas = max (0, Lctl_step)
-
-      Out_ip3  = 0
-      if (Out3_ip3.eq.-1) Out_ip3 = max (0, Lctl_step)
-      if (Out3_ip3.gt.0 ) Out_ip3 = Out3_ip3
-
-      Out_typvar_S = 'P'
-      if (Lctl_step.lt.0) Out_typvar_S = 'I'
       
  1001 format (' OUT_OUTDIR: DIRECTORY output/',a,' was created at timestep: ',i9)
 !
