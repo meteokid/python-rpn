@@ -31,42 +31,45 @@
 #include "glb_pil.cdk"
 #include "grd.cdk"
 #include "lam.cdk"
-#include "dcst.cdk"
-#include "ptopo.cdk"
 #include "cstv.cdk"
 #include "ldnh.cdk"
-#include "geomg.cdk"
 #include "ver.cdk"
 #include "spn.cdk"
 
-      integer i,j,k,err1
+      integer i,j,k,err1,next_down
       real t_turn, b_turn, pi2, nudging_tau
 !
 !----------------------------------------------------------------------
 !
-      if (.not.G_lam) return
+      if ( Grd_yinyang_L .or. (Spn_nudging_S == ' ') ) return
 
-      if(Spn_nudging_S.eq.'') return
+      err1= 0
 
       i = G_ni-Lam_pil_w-Lam_pil_e
-      call itf_fft_nextfactor ( i )
+      call itf_fft_nextfactor2 ( i, next_down )
       if ( i.ne.G_ni-Lam_pil_w-Lam_pil_e ) then
-             call stop_mpi(-1,'spn_init','Error with grid N in X')
+         if (Lun_out.gt.0) write (Lun_out,3001) &
+         'G_ni',G_ni-Lam_pil_w-Lam_pil_e,i,next_down
+         err1= -1
       endif
 
       j = G_nj-Lam_pil_s-Lam_pil_n
-      call itf_fft_nextfactor ( j )
+      call itf_fft_nextfactor2 ( j, next_down )
       if ( j.ne.G_nj-Lam_pil_s-Lam_pil_n ) then
-        call stop_mpi(-1,'spn_init','Error with grid N in Y')
+         if (Lun_out.gt.0) write (Lun_out,3001) &
+         'G_nj',G_nj-Lam_pil_s-Lam_pil_n,j,next_down
+         err1= -1
       endif
-      pi2 = atan( 1.0_8 )*2.
 
+      if (err1 < 0) call gem_error (-1, 'spn_init', &
+            'Grid configuration not suited for spectral nudging')
+
+      pi2 = atan( 1.0_8 )*2.
 
       call up2low( Spn_nudging_S, Spn_nudging_S )
       call low2up( Spn_trans_shape_S, Spn_trans_shape_S )
 
       if (Lun_out > 0) write(Lun_out,1000) Spn_nudging_S
-
 
       ! Allocate once and for all
 
@@ -101,7 +104,6 @@
             prof(k) = prof(k)*prof(k)
          enddo
 
-
       elseif (Spn_trans_shape_S == 'LINEAR' ) then
 
          do k=1,G_nk
@@ -119,7 +121,6 @@
          if (Lun_out > 0) write(Lun_out,1001) Spn_trans_shape_S
          call stop_mpi(-1,'spn_init','Error in spn_init')
 
-
       endif
 
       do k=1,G_nk
@@ -130,6 +131,8 @@
  1001 format(/' In SPN_INIT, unknown Spn_trans_shape_S ',A8/)
  1002 format(/' In SPN_INIT, Cstv_dt_8 =  ',F12.4/)
  1003 format(/' In SPN_INIT, Spn_trans_shape_S ',A8/)
+ 3001 format (' ====> ',a,' = ',i6,' NOT FACTORIZABLE' &
+              /'Neighboring factorizable dimensions are: ',i6,' and',i6)
 !
 !----------------------------------------------------------------------
 !

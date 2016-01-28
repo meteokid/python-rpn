@@ -56,12 +56,13 @@
 
 Interface
       integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
-                                  F_ip1, F_nka )
+                                  F_ip1, F_nka, F_hint_S )
       implicit none
-      character*(*)                     , intent(IN)  :: F_var_S,F_hgrid_S
-      integer                           , intent(OUT) :: F_nka
-      integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
-      real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
+      character*(*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
+      character*(*),            optional,intent(IN)  :: F_hint_S
+      integer                           ,intent(OUT) :: F_nka
+      integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
+      real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
       End function inp_read
 End Interface
 

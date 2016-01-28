@@ -41,7 +41,6 @@
 #include "init.cdk"
 #include "lctl.cdk"
 #include "lun.cdk"
-#include "step.cdk"
 #include "rstr.cdk"
 #include "vtopo.cdk"
 
@@ -51,37 +50,37 @@
 !
       call gemtim4 ( Lun_out, 'GEM_CTRL: START', .false. )
 
-!     Evaluate logical key for Variable Topography
       Vtopo_L = ((Vtopo_start .ge. 0) &
                  .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
 
       if ( .not. Rstri_rstn_L ) then
 
-         call indata()
+         call indata ()
 
       else
 
-         call set_dync()
+         call set_dync ()
 
       endif
 
-      if (.not.G_lam) call glhalo_init()
-
-!     Initializing for spectral nudging
-      if (G_lam) call spn_init()
+      if (G_lam) then
+         call spn_init ()
+      else
+         call glhalo_init ()
+      endif
 
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )
 
-      if ( Init_mode_L ) call initial (rstrt_L)
+      if (  Init_mode_L ) call initial (rstrt_L)
 
-      if (.not.rstrt_L) call gem_run (rstrt_L)
+      if ( .not.rstrt_L ) call gem_run (rstrt_L)
 
       if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 
  3000 format(/,'GEM_CTRL: END OF CURRENT TIME SLICE AT TIMESTEP',I8, &
              /,'===================================================')
-
+!
 !     ---------------------------------------------------------------
 !
       return

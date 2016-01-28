@@ -17,11 +17,12 @@
 !                 horizontal interpolation on proper Arakawa grid
 
       integer function inp_read ( F_var_S, F_hgrid_S, F_dest, &
-                                  F_ip1, F_nka )
+                                  F_ip1, F_nka, F_hint_S )
       implicit none
 #include <arch_specific.hf>
 
       character*(*)                     ,intent(IN)  :: F_var_S,F_hgrid_S
+      character*(*),            optional,intent(IN)  :: F_hint_S
       integer                           ,intent(OUT) :: F_nka
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
@@ -189,6 +190,7 @@
                                     Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                                     posx, posy)
             interp_S= 'CUBIC'
+            if (present(F_hint_S)) interp_S= F_hint_S
 
             if ( GRD .eq. 'U' ) then
               nicore = G_ni-Glb_pil_w-Glb_pil_e
