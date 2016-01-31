@@ -467,7 +467,7 @@ c_vgd_new_read = libvgd.Cvgd_new_read
 ##                  double *ptop_8, double *pref_8, double *ptop_out_8,
 ##                  int ip1, int ip2, float *dhm, float *dht);
 libvgd.Cvgd_new_gen.argtypes = (
-    _ct.POINTER(VGridDescriptor), # vgrid_descriptor **self
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
     _ct.c_int, #int kind
     _ct.c_int, #int version
     _ct.POINTER(_ct.c_float), #float *hyb, #TODO: ndarray?
@@ -485,31 +485,46 @@ libvgd.Cvgd_new_gen.restype = _ct.c_int
 c_vgd_new_gen = libvgd.Cvgd_new_gen
 
 
-       ## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
-       ##                         int nk, int ip1, int ip2, double *ptop_8,
-       ##                         double *pref_8, float *rcoef1, float *rcoef2, 
-       ##                         double *a_m_8, double *b_m_8, double *a_t_8,
-       ##                         double *b_t_8, int *ip1_m, int *ip1_t,
-       ##                         int nl_m, int nl_t);
+## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
+##                         int nk, int ip1, int ip2, double *ptop_8,
+##                         double *pref_8, float *rcoef1, float *rcoef2, 
+##                         double *a_m_8, double *b_m_8, double *a_t_8,
+##                         double *b_t_8, int *ip1_m, int *ip1_t,
+##                         int nl_m, int nl_t);
 
-       ## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
-       ##                         int ni, int nj, int nk);
+## void Cvgd_table_shape(vgrid_descriptor *self, int **tshape);
 
-       ## int Cvgd_write_desc(vgrid_descriptor *self, int unit);
+## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
+##                         int ni, int nj, int nk);
 
-       ## void Cvgd_free(vgrid_descriptor **self);
+## int Cvgd_write_desc(vgrid_descriptor *self, int unit);
+libvgd.Cvgd_write_desc.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int
+    )
+libvgd.Cvgd_write_desc.restype = _ct.c_int
+c_vgd_write_desc = libvgd.Cvgd_write_desc
 
-       ## void Cvgd_table_shape(vgrid_descriptor *self, int **tshape);
+## void Cvgd_free(vgrid_descriptor **self);
+libvgd.Cvgd_free.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)),
+    )
+c_vgd_free = libvgd.Cvgd_free
 
-       ## int Cvgd_vgdcmp(vgrid_descriptor *vgd1, vgrid_descriptor *vgd2);
+## int Cvgd_vgdcmp(vgrid_descriptor *vgd1, vgrid_descriptor *vgd2);
+libvgd.Cvgd_vgdcmp.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.POINTER(VGridDescriptor))
+libvgd.Cvgd_vgdcmp.restype = _ct.c_int
+c_vgd_vgdcmp = libvgd.Cvgd_vgdcmp
 
-       ## int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
-       ##                 int *ip1_list, float *levels, float *sfc_field,
-       ##                 int in_log);
+## int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
+##                 int *ip1_list, float *levels, float *sfc_field,
+##                 int in_log);
 
-       ## int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
-       ##                   int *ip1_list, double *levels_8, double *sfc_field_8,
-       ##                   int in_log);
+## int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
+##                   int *ip1_list, double *levels_8, double *sfc_field_8,
+##                   int in_log);
 
 
 libvgd.Cvgd_get_char.argtypes = (
