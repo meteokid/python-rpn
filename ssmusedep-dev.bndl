@@ -3,8 +3,8 @@ Linux_x86-64:/ssm/net/hpcs/201402/02/intel13sp1u2
 Linux_x86-64:/ssm/net/rpn/utils/15.2
 Linux_x86-64:/ssm/net/rpn/libs/15.2
 
-Linux_x86-64:/ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
-AIX-powerpc7:/ssm/net/cmdn/tests/vgrid/6.0.0-a3/xlf13
+Linux_x86-64:/ssm/net/cmdn/tests/vgrid/6.0.0-a4/intel13sp1u2
+AIX-powerpc7:/ssm/net/cmdn/tests/vgrid/6.0.0-a4/xlf13
 
 GEM/d/gem-data/gem-data_4.2.0
 

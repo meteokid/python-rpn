@@ -1,15 +1,16 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 \
 #                /ssm/net/rpn/libs/15.2 \
-#                /ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
+#                /ssm/net/cmdn/tests/vgrid/6.0.0-a4/intel13sp1u2
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 """
 Module vgd is a ctypes import of vgrid's library (libdescrip.so)
  
 The vgd.proto python module includes ctypes prototypes for many vgrid's libdescrip C functions
-
-@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 
 === Functions C Prototypes ===
 
@@ -401,16 +402,16 @@ class VGridDescriptor(_ct.Structure):
         ("rec", VGD_TFSTD),
         ("ptop_8", _ct.c_double),
         ("pref_8", _ct.c_double),
-        ("table", _npc.ndpointer(dtype=_np.float64)),#_ct.POINTER(_ct.c_double)),
+        ("table", _ct.POINTER(_ct.c_double)),
         ("table_ni", _ct.c_int),
         ("table_nj", _ct.c_int),
         ("table_nk", _ct.c_int),
-        ("a_m_8", _npc.ndpointer(dtype=_np.float64)),#_ct.POINTER(_ct.c_double)),
-        ("b_m_8", _npc.ndpointer(dtype=_np.float64)),#_ct.POINTER(_ct.c_double)),
-        ("a_t_8", _npc.ndpointer(dtype=_np.float64)),#_ct.POINTER(_ct.c_double)),
-        ("b_t_8", _npc.ndpointer(dtype=_np.float64)),#_ct.POINTER(_ct.c_double)),
-        ("ip1_m",_npc.ndpointer(dtype=_np.int32)),# _ct.POINTER(_ct.c_int)),
-        ("ip1_t", _npc.ndpointer(dtype=_np.int32)),#_ct.POINTER(_ct.c_int)),
+        ("a_m_8", _ct.POINTER(_ct.c_double)),
+        ("b_m_8", _ct.POINTER(_ct.c_double)),
+        ("a_t_8", _ct.POINTER(_ct.c_double)),
+        ("b_t_8", _ct.POINTER(_ct.c_double)),
+        ("ip1_m", _ct.POINTER(_ct.c_int)),
+        ("ip1_t", _ct.POINTER(_ct.c_int)),
         ("nl_m", _ct.c_int),
         ("nl_t", _ct.c_int),
         ("dhm", _ct.c_float),
@@ -445,36 +446,74 @@ class VGridDescriptor(_ct.Structure):
 
 
 libvgd.c_vgd_construct.argtypes = ()
-libvgd.c_vgd_construct.restype = VGridDescriptor
+libvgd.c_vgd_construct.restype = _ct.POINTER(VGridDescriptor)
 c_vgd_construct = libvgd.c_vgd_construct
 
-
-libvgd.Cvgd_put_char.argtypes = (
-    _ct.POINTER(VGridDescriptor),
-    _ct.c_char_p,
-    _ct.c_char_p)
-libvgd.Cvgd_put_char.restype = _ct.c_int
-c_vgd_put_char = libvgd.Cvgd_put_char
-
-
-libvgd.Cvgd_put_int.argtypes = (
-    _ct.POINTER(VGridDescriptor),
-    _ct.c_char_p,
-    _ct.c_int)
-libvgd.Cvgd_put_int.restype = _ct.c_int
-c_vgd_put_int = libvgd.Cvgd_put_int
+## int Cvgd_new_read(vgrid_descriptor **self, int unit, int ip1, int ip2,
+##                   int kind, int version);
+libvgd.Cvgd_new_read.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.c_int, #int unit
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.c_int, #int kind
+    _ct.c_int) #int version
+libvgd.Cvgd_new_read.restype = _ct.c_int
+c_vgd_new_read = libvgd.Cvgd_new_read
 
 
-libvgd.Cvgd_put_double.argtypes = (
-    _ct.POINTER(VGridDescriptor),
-    _ct.c_char_p,
-    _ct.c_double)
-libvgd.Cvgd_put_double.restype = _ct.c_int
-c_vgd_put_double = libvgd.Cvgd_put_double
+## int Cvgd_new_gen(vgrid_descriptor **self, int kind, int version,
+##                  float *hyb, int size_hyb, float *rcoef1, float *rcoef2,
+##                  double *ptop_8, double *pref_8, double *ptop_out_8,
+##                  int ip1, int ip2, float *dhm, float *dht);
+libvgd.Cvgd_new_gen.argtypes = (
+    _ct.POINTER(VGridDescriptor), # vgrid_descriptor **self
+    _ct.c_int, #int kind
+    _ct.c_int, #int version
+    _ct.POINTER(_ct.c_float), #float *hyb, #TODO: ndarray?
+    _ct.c_int, #int size_hyb,
+    _ct.POINTER(_ct.c_float), #float *rcoef1,
+    _ct.POINTER(_ct.c_float), #float *rcoef2,
+    _ct.POINTER(_ct.c_double), #double *ptop_8,
+    _ct.POINTER(_ct.c_double), #double *pref_8,
+    _ct.POINTER(_ct.c_double), #double *ptop_out_8
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.POINTER(_ct.c_float), #float *dhm, #TODO: ndarray?
+    _ct.POINTER(_ct.c_float)) #float *dht  #TODO: ndarray?
+libvgd.Cvgd_new_gen.restype = _ct.c_int
+c_vgd_new_gen = libvgd.Cvgd_new_gen
+
+
+       ## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
+       ##                         int nk, int ip1, int ip2, double *ptop_8,
+       ##                         double *pref_8, float *rcoef1, float *rcoef2, 
+       ##                         double *a_m_8, double *b_m_8, double *a_t_8,
+       ##                         double *b_t_8, int *ip1_m, int *ip1_t,
+       ##                         int nl_m, int nl_t);
+
+       ## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
+       ##                         int ni, int nj, int nk);
+
+       ## int Cvgd_write_desc(vgrid_descriptor *self, int unit);
+
+       ## void Cvgd_free(vgrid_descriptor **self);
+
+       ## void Cvgd_table_shape(vgrid_descriptor *self, int **tshape);
+
+       ## int Cvgd_vgdcmp(vgrid_descriptor *vgd1, vgrid_descriptor *vgd2);
+
+       ## int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
+       ##                 int *ip1_list, float *levels, float *sfc_field,
+       ##                 int in_log);
+
+       ## int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
+       ##                   int *ip1_list, double *levels_8, double *sfc_field_8,
+       ##                   int in_log);
 
 
 libvgd.Cvgd_get_char.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
     _ct.c_char_p,
     _ct.c_int)
@@ -483,7 +522,7 @@ c_vgd_get_char = libvgd.Cvgd_get_char
 
 
 libvgd.Cvgd_get_int.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
     _ct.POINTER(_ct.c_int),
     _ct.c_int)
@@ -492,7 +531,7 @@ c_vgd_get_int = libvgd.Cvgd_get_int
 
 
 libvgd.Cvgd_get_float.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
     _ct.POINTER(_ct.c_float),
     _ct.c_int)
@@ -501,7 +540,7 @@ c_vgd_get_float = libvgd.Cvgd_get_float
 
 
 libvgd.Cvgd_get_double.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
     _ct.POINTER(_ct.c_double),
     _ct.c_int)
@@ -510,9 +549,9 @@ c_vgd_get_double = libvgd.Cvgd_get_double
 
 
 libvgd.Cvgd_get_int_1d.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
-    _npc.ndpointer(dtype=_np.intc), #TODO: (dtype=_ct.c_int) check
+    _ct.POINTER(_ct.POINTER(_ct.c_int)),
     _ct.POINTER(_ct.c_int),
     _ct.c_int)
 libvgd.Cvgd_get_int_1d.restype = _ct.c_int
@@ -520,9 +559,9 @@ c_vgd_get_int_1d = libvgd.Cvgd_get_int_1d
 
 
 libvgd.Cvgd_get_float_1d.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
-    _npc.ndpointer(dtype=_np.float32), #TODO: (dtype=_ct.c_float) check
+    _ct.POINTER(_ct.POINTER(_ct.c_float)),
     _ct.POINTER(_ct.c_int),
     _ct.c_int)
 libvgd.Cvgd_get_float_1d.restype = _ct.c_int
@@ -530,9 +569,9 @@ c_vgd_get_float_1d = libvgd.Cvgd_get_float_1d
 
 
 libvgd.Cvgd_get_double_1d.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
-    _npc.ndpointer(dtype=_np.float64), #TODO: (dtype=_ct.c_double) check
+    _ct.POINTER(_ct.POINTER(_ct.c_double)),
     _ct.POINTER(_ct.c_int),
     _ct.c_int)
 libvgd.Cvgd_get_double_1d.restype = _ct.c_int
@@ -540,12 +579,52 @@ c_vgd_get_double_1d = libvgd.Cvgd_get_double_1d
 
 
 libvgd.Cvgd_get_double_3d.argtypes = (
-    VGridDescriptor,
+    _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
-    _npc.ndpointer(dtype=_np.float64), #TODO: (dtype=_ct.c_double) check
+    _ct.POINTER(_ct.POINTER(_ct.c_double)),
     _ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),
     _ct.POINTER(_ct.c_int),
     _ct.c_int)
 libvgd.Cvgd_get_double_3d.restype = _ct.c_int
 c_vgd_get_double_3d = libvgd.Cvgd_get_double_3d
+
+
+libvgd.Cvgd_put_char.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)),
+    _ct.c_char_p,
+    _ct.c_char_p)
+libvgd.Cvgd_put_char.restype = _ct.c_int
+c_vgd_put_char = libvgd.Cvgd_put_char
+
+
+libvgd.Cvgd_put_int.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)),
+    _ct.c_char_p,
+    _ct.c_int)
+libvgd.Cvgd_put_int.restype = _ct.c_int
+c_vgd_put_int = libvgd.Cvgd_put_int
+
+
+libvgd.Cvgd_put_double.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)),
+    _ct.c_char_p,
+    _ct.c_double)
+libvgd.Cvgd_put_double.restype = _ct.c_int
+c_vgd_put_double = libvgd.Cvgd_put_double
+
+
+       ## int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
+
+       ## int Cvgd_print_vcode_description(int vcode);
+
+       ## int Cvgd_set_vcode_i(vgrid_descriptor *VGrid, int Kind, int Version);
+
+       ## int Cvgd_set_vcode(vgrid_descriptor *VGrid);
+
+if __name__ == "__main__":
+    pass #print vgd version 
+    
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
