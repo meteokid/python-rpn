@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/4.8.rc5
+GEMDYN_VERSION0  = x/4.8.rc6
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -82,8 +82,8 @@ prgemnml_rm:
 	rm -f $(BINDIR)/$(mainprgemnml)
 $(BINDIR)/$(mainprgemnml): $(mainprgemnmldep) | $(GEMDYN_VFILES)
 	export MAINSUBNAME="prgemnml" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	export RBUILD_EXTRA_OBJ="$(mainprgemnmldepfiles)" ;\
@@ -97,8 +97,8 @@ gemgrid_rm:
 	rm -f $(BINDIR)/$(maingemgrid)
 $(BINDIR)/$(maingemgrid): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="gemgrid" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
@@ -110,8 +110,8 @@ checkdmpart_rm:
 	rm -f $(BINDIR)/$(maincheckdmpart)
 $(BINDIR)/$(maincheckdmpart): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="checkdmpart" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -122,8 +122,8 @@ split3df_rm:
 	rm -f $(BINDIR)/$(mainsplit3df)
 $(BINDIR)/$(mainsplit3df): | $(GEMDYN_VFILES)
 	export MAINSUBNAME="split3df" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	$(RBUILD4objMPI)
 
@@ -134,8 +134,8 @@ toc2nml_rm:
 	rm -f $(BINDIR)/toc2nml
 $(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
 	export MAINSUBNAME="toc2nml" ;\
-	export ATM_MODEL_NAME="$${MAINSUBNAME}" ;\
-	export ATM_MODEL_VERSION="$(GEMDYN_VERSION) $(BUILDNAME)" ;\
+	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
+	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
 	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
 	$(RBUILD4objNOMPI)
