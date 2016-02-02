@@ -58,7 +58,7 @@ use iso_c_binding
 !
 ! Broadcasts processor topology
 !
-      call RPN_COMM_bcast (Ptopo_npex  , 6, "MPI_INTEGER",0,"grid",err)
+      call RPN_COMM_bcast (Ptopo_npex  , 4, "MPI_INTEGER",0,"grid",err)
       call RPN_COMM_bcast (Ptopo_bind_L, 1, "MPI_LOGICAL",0,"grid",err)
 
       Ptopo_npeOpenMP = OMP_get_max_threads()

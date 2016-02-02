@@ -206,6 +206,8 @@
                  interp_S = 'NEAREST'
                  err = ezsetopt ('USE_1SUBGRID', 'YES')
                  err = ezsetival('SUBGRIDID', subid)
+              else
+                 err = ezsetopt ('USE_1SUBGRID', 'NO')
               endif
             endif
 

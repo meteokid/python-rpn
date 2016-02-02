@@ -16,6 +16,7 @@
 !**s/r rdrstrt - Read the restart file
 
       subroutine rdrstrt ()
+      use phy_itf, only: phy_restart
       implicit none
 #include <arch_specific.hf>
 
@@ -25,6 +26,7 @@
 #include "lctl.cdk"
 #include "psadj.cdk"
 
+      integer ier
 !
 !     ---------------------------------------------------------------
 !
@@ -33,7 +35,9 @@
       read (Lun_rstrt) PSADJ_g_avg_ps_dry_initial_8,PSADJ_scale_8
 
       close(Lun_rstrt)
-      call fclos(Lun_rstrt) 
+      call fclos(Lun_rstrt)
+
+      ier = phy_restart ('R', .false.)
 !
 !     ---------------------------------------------------------------
 !      

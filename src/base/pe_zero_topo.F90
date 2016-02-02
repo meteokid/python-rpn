@@ -39,7 +39,7 @@
 !
       integer,external :: exdb,ptopo_nml
 
-      character(len=50) :: DSTP,name_S,arch_S,compil_S
+      character(len=50) :: DSTP,name_S,arch_S,compil_S,user_S
       logical :: is_official_L
       integer :: err
 !
@@ -50,11 +50,12 @@
       call  open_status_file3 (trim(Path_output_S)//'/status_'//trim(COMPONENT)//'.dot')
       call write_status_file3 ('_status=ABORT' )
 
-      call atm_model_getversion(name_S,Version_number_S,DSTP,arch_S,compil_S,is_official_L)
+      call atm_model_getversion2(name_S,Version_number_S,DSTP,arch_S, &
+           compil_S,user_S,is_official_L)
       if (is_official_L) then
          Version_title_S = trim(name_S)//' --- Release of: '//trim(DSTP)
       else
-         Version_title_S = trim(name_S)//' --- User Build: '//trim(DSTP)
+         Version_title_S = trim(name_S)//' --- '//trim(user_S)//' Build: '//trim(DSTP)
       endif
 
       err = exdb(trim(Version_title_S),trim(Version_number_S),'NON')
