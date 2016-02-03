@@ -412,8 +412,7 @@ class VGDReadTests(unittest.TestCase):
                          [100000, 138425, 176878, 241408, 305980])
 
 
-
-    def testLevels8_prof(self):
+    def testLevels8_3d(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
         fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
         fileId = rmn.fstopenall(fileName, rmn.FST_RO)
@@ -421,25 +420,29 @@ class VGDReadTests(unittest.TestCase):
         vgd0ptr = vgd.c_vgd_construct()
         ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
 
+        rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+
+        rfld = rmn.fstlir(fileId, nomvar=rfld_name.value.strip())['d']
+        MB2PA = 100.
+        rfld = rfld * MB2PA
+        
         rmn.fstcloseall(fileId)
 
         ip1list = _ct.POINTER(_ct.c_int)()
         nip1 = _ct.c_int(0)
         quiet = _ct.c_int(0)
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', _ct.byref(ip1list), _ct.byref(nip1), quiet)
-
-        MB2PA = 100.
-        p0_stn_mb = 1013.
-        p0_stn = np.empty((1,), dtype=np.float64, order='FORTRAN')
-        p0_stn[0] = p0_stn_mb * MB2PA
-
-        prof8 = np.empty((nip1.value,), dtype=np.float64, order='FORTRAN')
-
-        ni = 1 ; nj = 1 ; in_log = 0
-        ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, prof8, p0_stn, in_log);
+        
+        ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
+        levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')
+        rfld8 = np.empty((ni, nj), dtype=np.float64, order='FORTRAN')
+        rfld8[:,:] = rfld[:,:]
+        ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual([int(x) for x in prof8[0:5]*10000.],
-                         [100000, 138426, 176879, 241410, 305984])
+        self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
+                         [100000, 138425, 176878, 241408, 305980])
 
 
     def testDiag_withref_3d(self):
