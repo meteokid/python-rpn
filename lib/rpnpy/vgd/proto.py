@@ -103,16 +103,6 @@ The vgd.proto python module includes ctypes prototypes for many vgrid's libdescr
     Returns:
        None
 
- c_vgd_table_shape(self, tshape):
-    ? Returns shape of table needed to store provided VGridDescriptor (self)
-    Proto:
-       void Cvgd_table_shape(vgrid_descriptor *self, int **tshape);
-    Args:
-       self (VGridDescriptor ref) : (I/O)
-
-    Returns:
-       None
-
  c_vgd_vgdcmp(vgd1, vgd2):
     Test if two vgrid descriptors are equal,
     Returns 0 if they are the same like String function strcmp
@@ -492,10 +482,16 @@ c_vgd_new_gen = libvgd.Cvgd_new_gen
 ##                         double *b_t_8, int *ip1_m, int *ip1_t,
 ##                         int nl_m, int nl_t);
 
-## void Cvgd_table_shape(vgrid_descriptor *self, int **tshape);
-
 ## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
 ##                         int ni, int nj, int nk);
+libvgd.Cvgd_new_from_table.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.POINTER(_ct.c_double), #double *table,
+    _ct.c_int, #int ni
+    _ct.c_int, #int nj
+    _ct.c_int) #int nk
+libvgd.Cvgd_new_from_table.restype = _ct.c_int
+c_vgd_new_from_table = libvgd.Cvgd_new_from_table
 
 ## int Cvgd_write_desc(vgrid_descriptor *self, int unit);
 libvgd.Cvgd_write_desc.argtypes = (

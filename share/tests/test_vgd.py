@@ -133,8 +133,24 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(int(v1[2]*100.),1765)
 
     def testNewReadGetDouble3D(self):
-        self.assertEqual('MISSING_TEST: GetDouble3D','')
-
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+        rmn.fstcloseall(fileId)
+        ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
+        ## print vgd0ptr[0].a_m_8[0]
+        v1 = _ct.POINTER(_ct.c_double)()
+        ni = _ct.c_int(0)
+        nj = _ct.c_int(0)
+        nk = _ct.c_int(0)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_double_3d(vgd0ptr, 'VTBL', _ct.byref(v1), _ct.byref(ni), _ct.byref(nj), _ct.byref(nk), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual([int(x*100.) for x in v1[0:9]],
+                         [500, 100, 300, 1000, 8000000, 160, 0, 0, 0])
+        
     def testNewReadPutChar(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
         fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
@@ -248,10 +264,27 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual('MISSING_TEST: ','')
     def testNewBuildVert(self):
         self.assertEqual('MISSING_TEST: ','')
-    def testNewTableShape(self):
-        self.assertEqual('MISSING_TEST: ','')
+
     def testNewFromTable(self):
-        self.assertEqual('MISSING_TEST: ','')
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+        rmn.fstcloseall(fileId)
+
+        v1 = _ct.POINTER(_ct.c_double)()
+        ni = _ct.c_int(0)
+        nj = _ct.c_int(0)
+        nk = _ct.c_int(0)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_double_3d(vgd0ptr, 'VTBL', _ct.byref(v1), _ct.byref(ni), _ct.byref(nj), _ct.byref(nk), quiet)
+
+        vgd1ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_from_table(vgd1ptr, v1, ni, nj, nk)
+        self.assertEqual(ok,vgd.VGD_OK)
+        ok = vgd.c_vgd_vgdcmp(vgd0ptr,vgd1ptr)
+        self.assertEqual(ok,vgd.VGD_OK)
         
     def testLevels_prof(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
@@ -373,9 +406,6 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
-
-    def testLevels8(self):
-        self.assertEqual('MISSING_TEST: ','')
         
 
 if __name__ == "__main__":
