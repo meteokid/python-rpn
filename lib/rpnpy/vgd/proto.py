@@ -521,10 +521,30 @@ c_vgd_vgdcmp = libvgd.Cvgd_vgdcmp
 ## int Cvgd_levels(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                 int *ip1_list, float *levels, float *sfc_field,
 ##                 int in_log);
+libvgd.Cvgd_levels.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
+libvgd.Cvgd_levels.restype = _ct.c_int
+c_vgd_levels = libvgd.Cvgd_levels
 
 ## int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
 ##                   int *ip1_list, double *levels_8, double *sfc_field_8,
 ##                   int in_log);
+libvgd.Cvgd_levels_8.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _ct.c_int
+    )
+libvgd.Cvgd_levels_8.restype = _ct.c_int
+c_vgd_levels_8 = libvgd.Cvgd_levels_8
 
 
 libvgd.Cvgd_get_char.argtypes = (

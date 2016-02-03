@@ -244,22 +244,117 @@ class VGDReadTests(unittest.TestCase):
         ok = vgd.c_vgd_vgdcmp(vgd0ptr,vgd1ptr)
         self.assertEqual(ok,vgd.VGD_OK)
 
+    def testNewGen(self):
+        self.assertEqual('MISSING_TEST: ','')
     def testNewBuildVert(self):
         self.assertEqual('MISSING_TEST: ','')
     def testNewTableShape(self):
         self.assertEqual('MISSING_TEST: ','')
     def testNewFromTable(self):
         self.assertEqual('MISSING_TEST: ','')
-    def testWriteDesc(self):
+        
+    def testLevels_prof(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+
+        rmn.fstcloseall(fileId)
+
+        ip1list = _ct.POINTER(_ct.c_int)()
+        nip1 = _ct.c_int(0)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', _ct.byref(ip1list), _ct.byref(nip1), quiet)
+
+        MB2PA = 100.
+        p0_stn_mb = 1013.
+        p0_stn = np.empty((1,), dtype=np.float32, order='FORTRAN')
+        p0_stn[0] = p0_stn_mb * MB2PA
+
+        prof = np.empty((nip1.value,), dtype=np.float32, order='FORTRAN')
+
+        ## levels[ijk] = in_log ? log(lvl) : lvl;
+
+        ni = 1 ; nj = 1 ; in_log = 0
+        ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, prof, p0_stn, in_log);
+        print prof
+        ni = 1 ; nj = 1 ; in_log = 1
+        ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, prof, p0_stn, in_log);
+        print prof
+
+    def testLevels8_prof(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+
+        rmn.fstcloseall(fileId)
+
+        ip1list = _ct.POINTER(_ct.c_int)()
+        nip1 = _ct.c_int(0)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', _ct.byref(ip1list), _ct.byref(nip1), quiet)
+
+        MB2PA = 100.
+        p0_stn_mb = 1013.
+        p0_stn = np.empty((1,), dtype=np.float64, order='FORTRAN')
+        p0_stn[0] = p0_stn_mb * MB2PA
+
+        prof = np.empty((nip1.value,), dtype=np.float64, order='FORTRAN')
+
+        ni = _ct.c_int(1) ; nj = _ct.c_int(1) ; in_log = _ct.c_int(-1)
+        ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, prof, p0_stn, in_log);
+        #print prof
+
+
+    def testLevels_3d(self):
         self.assertEqual('MISSING_TEST: ','')
-    def testLevels(self):
-        self.assertEqual('MISSING_TEST: ','')
+        ## ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        ## fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        ## fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        
+        ## vgd0ptr = vgd.c_vgd_construct()
+        ## ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+
+        ## ip1list = _ct.POINTER(_ct.c_int)()
+        ## nip1 = _ct.c_int(0)
+        ## quiet = _ct.c_int(0)
+        ## ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', _ct.byref(ip1list), _ct.byref(nip1), quiet)
+
+        ## rfld_name = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
+        ## quiet = _ct.c_int(0)
+        ## ok = vgd.c_vgd_get_char(vgd0ptr, 'RFLD', rfld_name, quiet)
+        
+        ## rmn.fstcloseall(fileId)
+
+        ## ier = Cvgd_get_int_1d(vgd, "VIPT", &i_val, &nl_t, -1);
+        ##   // Get surface pressure
+        ## key = c_fstinf(iun, &ni, &nj, &nk, -1," ", -1, -1, -1," ","P0");
+        ## p0 = malloc( ni*nj * sizeof(float) );
+        ## ier = c_fstluk(p0, key, &ni, &nj, &nk );
+
+        ## // Convert pressure in Pa
+        ## for( ij=0; ij < ni*nj; ij++){
+        ##   p0[ij] = p0[ij] * 100.;
+        ## }
+
+        ## // Allocate pressure cube
+        ## pres = malloc( ni*nj*nl_t * sizeof(float) );
+
+        ## // Compute pressure for all thermo levels
+        ## ier = Cvgd_levels(vgd, ni, nj, nl_t, i_val, pres, p0, -1);
+
+
     def testLevels8(self):
         self.assertEqual('MISSING_TEST: ','')
         
 
 if __name__ == "__main__":
-    print vgd.VGD_LIBPATH
+    ## print vgd.VGD_LIBPATH
     unittest.main()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
