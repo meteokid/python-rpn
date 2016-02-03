@@ -37,6 +37,9 @@ VGD_HYBT_VER  = 3
 VGD_HYBM_KIND = 5 #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
 VGD_HYBM_VER  = 4
 
+VGD_DIAG_DPI  = _ct.c_int(1) #vgd_diag_withref: output pressure
+VGD_DIAG_DPIS = _ct.c_int(0) #vgd_diag_withref: output hydrostatic pressure partial derivative with respect to surface hydrostatic pressure, default used in vgd_levels
+
 VGD_KIND_VER = {
     'sigm' : (VGD_SIGM_KIND, VGD_SIGM_VER),
     'eta'  : (VGD_ETA_KIND, VGD_ETA_VER),
@@ -47,33 +50,50 @@ VGD_KIND_VER = {
     'hybt' : (VGD_HYBT_KIND, VGD_HYBT_VER),
     'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER)
     }
-     
+
+VGD_OPR_KEYS = {
+    'get_char'      : ["ETIK", "NAME", "RFLD"],
+    'put_char'      : ["ETIK", "NAME", "RFLD"],
+    'get_int'       : ["NL_M", "NL_T", "KIND", "VERS", "DATE", "IG_1", "IG_2",
+                       "IG_3", "IG_4", "IP_1", "IP_2", "DIPM", "DIPT", "MIPG",
+                       "LOGP"],
+    'put_int'       : ["DATE", "IG_1", "IG_2", "IG_3", "IG_4", "IP_1", "IP_2",
+                       "IP_3", "DIPM", "DIPT"],
+    'get_float '    : ["RC_1", "RC_2", "DHM", "DHT"],     
+    'get_int_1d'    : ["VIP1", "VIPM", "VIPT"], 
+    'get_float_1d'  : ["VCDM", "VIPM", "VCDT", "VIPT"], 
+    'put_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
+    'get_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
+    'get_double_1d' : ["CA_M", "COFA", "CB_M", "COFB", "CA_T", "CB_T"],
+    'get_double_3d' : ["VTBL"],
+    }
+
 VGD_KEYS = {
-    'KIND' : (_ct.c_int, 'Kind of the vertical coordinate ip1'),
-    'VERS' : (_ct.c_int, 'Vertical coordinate version. For a given kind there may be many versions, example kind=5 version=2 is hyb staggered GEM4.1'),
-    'NL_M' : (_ct.c_int, 'Number of momentum levels (verison 3.2.0 and up)'),
-    'NL_T' : (_ct.c_int, 'Number of thermodynamic levels (version 3.2.0 and up)'),
-    'CA_M' : (_ct.POINTER(_ct.c_double), 'Values of coefficient A on momentum levels'),
-    'CA_T' : (_ct.POINTER(_ct.c_double), 'Values of coefficient A on thermodynamic levels'),
-    'CB_M' : (_ct.POINTER(_ct.c_double), 'Values of coefficient B on momentum levels'),
-    'CB_T' : (_ct.POINTER(_ct.c_double), 'Values of coefficient B on thermodynamic levels'),
-    'COFA' : (_ct.POINTER(_ct.c_double), 'Values of coefficient A in unstaggered levelling'),
-    'COFB' : (_ct.POINTER(_ct.c_double), 'Values of coefficient B in unstaggered levelling'),
-    'DIPM' : (_ct.c_int, 'The IP1 value of the momentum diagnostic level'),
-    'DIPT' : (_ct.c_int, 'The IP1 value of the thermodynamic diagnostic level'),
-    'DHM'  : (_ct.POINTER(_ct.c_float), 'Height of the momentum diagonstic level (m)'),
-    'DHT'  : (_ct.POINTER(_ct.c_float), 'Height of the thermodynamic diagonstic level (m)'),
-    'PREF' : (_ct.c_double, 'Pressure of the reference level (Pa)'),
-    'PTOP' : (_ct.c_double, 'Pressure of the top level (Pa)'),
-    'RC_1' : (_ct.c_float, 'First coordinate recification R-coefficient'),
-    'RC_2' : (_ct.c_float, 'Second coordinate recification R-coefficient'),
-    'RFLD' : (_ct.c_char_p, 'Name of the reference field for the vertical coordinate in the FST file'),
-    'VCDM' : (_ct.POINTER(_ct.c_float), 'List of momentum coordinate values'),
-    'VCDT' : (_ct.POINTER(_ct.c_float), 'List of thermodynamic coordinate values'),
-    'VIPM' : (_ct.POINTER(_ct.c_int), 'List of IP1 momentum values associated with this coordinate'),
-    'VIPT' : (_ct.POINTER(_ct.c_int), 'List of IP1 thermodynamic values associated with this coordinate'),
-    'VTBL' : (_ct.POINTER(_ct.c_double), 'real*8 Fortran array containing all vgrid_descriptor information'),
-    'LOGP' : (_ct.c_int, 'furmula gives log(p) T/F (version 1.0.3 and greater). True -> Formula with A and B gives log(p), False -> Formula with A and B gives p    ')
+    'KIND' : ('Kind of the vertical coordinate ip1'),
+    'VERS' : ('Vertical coordinate version. For a given kind there may be many versions, example kind=5 version=2 is hyb staggered GEM4.1'),
+    'NL_M' : ('Number of momentum levels (verison 3.2.0 and up)'),
+    'NL_T' : ('Number of thermodynamic levels (version 3.2.0 and up)'),
+    'CA_M' : ('Values of coefficient A on momentum levels'),
+    'CA_T' : ('Values of coefficient A on thermodynamic levels'),
+    'CB_M' : ('Values of coefficient B on momentum levels'),
+    'CB_T' : ('Values of coefficient B on thermodynamic levels'),
+    'COFA' : ('Values of coefficient A in unstaggered levelling'),
+    'COFB' : ('Values of coefficient B in unstaggered levelling'),
+    'DIPM' : ('The IP1 value of the momentum diagnostic level'),
+    'DIPT' : ('The IP1 value of the thermodynamic diagnostic level'),
+    'DHM'  : ('Height of the momentum diagonstic level (m)'),
+    'DHT'  : ('Height of the thermodynamic diagonstic level (m)'),
+    'PREF' : ('Pressure of the reference level (Pa)'),
+    'PTOP' : ('Pressure of the top level (Pa)'),
+    'RC_1' : ('First coordinate recification R-coefficient'),
+    'RC_2' : ('Second coordinate recification R-coefficient'),
+    'RFLD' : ('Name of the reference field for the vertical coordinate in the FST file'),
+    'VCDM' : ('List of momentum coordinate values'),
+    'VCDT' : ('List of thermodynamic coordinate values'),
+    'VIPM' : ('List of IP1 momentum values associated with this coordinate'),
+    'VIPT' : ('List of IP1 thermodynamic values associated with this coordinate'),
+    'VTBL' : ('real*8 Fortran 3d array containing all vgrid_descriptor information'),
+    'LOGP' : ('furmula gives log(p) T/F (version 1.0.3 and greater). True -> Formula with A and B gives log(p), False -> Formula with A and B gives p    ')
     }
 
 

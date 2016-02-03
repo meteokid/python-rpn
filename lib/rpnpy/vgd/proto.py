@@ -12,6 +12,8 @@ Module vgd is a ctypes import of vgrid's library (libdescrip.so)
  
 The vgd.proto python module includes ctypes prototypes for many vgrid's libdescrip C functions
 
+This Module is available from python-rpn version 2.0.b6
+
 === Functions C Prototypes ===
 
  c_vgd_construct():
@@ -132,6 +134,30 @@ The vgd.proto python module includes ctypes prototypes for many vgrid's libdescr
        int Cvgd_levels_8(vgrid_descriptor *self, int ni, int nj, int nk,
                          int *ip1_list, double *levels_8, double *sfc_field_8,
                          int in_log);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int, 
+
+ c_vgd_diag_withref(self, ni, nj, nk, ip1_list, levels, sfc_field, in_log, dpidpis):
+    Compute level positions (pressure) for the given ip1 list and surface field
+    Proto:
+       int Cvgd_diag_withref(vgrid_descriptor *self, int ni, int nj, int nk,
+                       int *ip1_list, float *levels, float *sfc_field,
+                       int in_log, int dpidpis);
+    Args:
+       self (VGridDescriptor ref) : (I/O)
+
+    Returns:
+       int, 
+
+ c_vgd_diag_withref_8(self, ni, nj, nk, ip1_list, levels_8, sfc_field_8, in_log, dpidpis):
+    Compute level positions (pressure) for the given ip1 list and surface field
+    Proto:
+       int Cvgd_diag_withref_8(vgrid_descriptor *self, int ni, int nj, int nk,
+                         int *ip1_list, double *levels_8, double *sfc_field_8,
+                         int in_log, int dpidpis);
     Args:
        self (VGridDescriptor ref) : (I/O)
 
@@ -543,6 +569,35 @@ libvgd.Cvgd_levels_8.restype = _ct.c_int
 c_vgd_levels_8 = libvgd.Cvgd_levels_8
 
 
+## int Cvgd_diag_withref(vgrid_descriptor *self, int ni, int nj, int nk,
+##                       int *ip1_list, float *levels, float *sfc_field,
+##                       int in_log, int dpidpis)
+libvgd.Cvgd_diag_withref.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float32),
+    _npc.ndpointer(dtype=_np.float32),
+    _ct.c_int
+    )
+libvgd.Cvgd_diag_withref.restype = _ct.c_int
+c_vgd_diag_withref = libvgd.Cvgd_diag_withref
+
+## int Cvgd_diag_withref_8(vgrid_descriptor *self, int ni, int nj, int nk,
+##                         int *ip1_list, double *levels_8,
+##                         double *sfc_field_8, int in_log, int dpidpis)
+libvgd.Cvgd_diag_withref_8.argtypes = (
+    _ct.POINTER(VGridDescriptor),
+    _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int),
+    _npc.ndpointer(dtype=_np.float64),
+    _npc.ndpointer(dtype=_np.float64),
+    _ct.c_int
+    )
+libvgd.Cvgd_diag_withref_8.restype = _ct.c_int
+c_vgd_diag_withref_8 = libvgd.Cvgd_diag_withref_8
+
+
 libvgd.Cvgd_get_char.argtypes = (
     _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
@@ -645,13 +700,13 @@ libvgd.Cvgd_put_double.restype = _ct.c_int
 c_vgd_put_double = libvgd.Cvgd_put_double
 
 
-       ## int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
+## int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
 
-       ## int Cvgd_print_vcode_description(int vcode);
+## int Cvgd_print_vcode_description(int vcode);
 
-       ## int Cvgd_set_vcode_i(vgrid_descriptor *VGrid, int Kind, int Version);
+## int Cvgd_set_vcode_i(vgrid_descriptor *VGrid, int Kind, int Version);
 
-       ## int Cvgd_set_vcode(vgrid_descriptor *VGrid);
+## int Cvgd_set_vcode(vgrid_descriptor *VGrid);
 
 if __name__ == "__main__":
     pass #print vgd version 
