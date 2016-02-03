@@ -80,6 +80,11 @@ unittests:
 
 alltests: doctests unittests
 
+alldoc:
+	cd $(ROOT) ;\
+	mkdir doc 2>/dev/null ;\
+	./bin/pydoc2wiki.py
+
 ifneq (,$(DEBUGMAKE))
 $(info ## ==== $$rpnpy/Makefile.user.mk [END] ================================)
 endif

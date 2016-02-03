@@ -479,6 +479,7 @@ if __name__ == "__main__":
     for x in m:
         curFile = x['name']
         filename = docdir+curFile+'.txt'
+        print("Producing doc for: %s" % curFile)
         try:
             fd = open(filename, "wb")
             try:

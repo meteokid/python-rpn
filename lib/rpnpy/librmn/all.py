@@ -1,16 +1,19 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 """
 Short hand to load all librmn submodules in the same namespace
 
  See also:
- help(librmn)
- help(librmn.proto)
- help(librmn.const)
- help(librmn.base)
- help(librmn.fstd98)
- help(librmn.interp)
- help(librmn.llacar)
- help(librmn.grids)
+     rpnpy.librmn
+     rpnpy.librmn.proto
+     rpnpy.librmn.const
+     rpnpy.librmn.base
+     rpnpy.librmn.fstd98
+     rpnpy.librmn.interp
+     rpnpy.librmn.llacar
+     rpnpy.librmn.grids
 
 """
 
