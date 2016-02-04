@@ -304,46 +304,46 @@ This Module is available from python-rpn version 2.0.b6
     Returns:
        int, 
 
- c_vgd_print_desc(self, sout, convip):
-    Print informations on vgrid descriptor
-    Proto:
-       int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
-    Args:
-       self (VGridDescriptor ref) : (I/O)
-
-    Returns:
-       int, 
-
- c_vgd_print_vcode_description(vcode):
-    Print the description of a Vcode e.g. 5005
-    Proto:
-       int Cvgd_print_vcode_description(int vcode);
-    Args:
-
-    Returns:
-       int, 
-
- c_vgd_set_vcode_i(vgrid, kind, version):
-    ?
-    Proto:
-       int Cvgd_set_vcode_i(vgrid_descriptor *VGrid, int Kind, int Version);
-    Args:
-       vgrid (VGridDescriptor ref) : (I/O)
-
-    Returns:
-       int, 
-
- c_vgd_set_vcode(vgrid):
-    ?
-    Proto:
-       int Cvgd_set_vcode(vgrid_descriptor *VGrid);
-    Args:
-       vgrid (VGridDescriptor ref) : (I/O)
-
-    Returns:
-       int, 
-
 """
+ ## c_vgd_print_desc(self, sout, convip):
+ ##    Print informations on vgrid descriptor
+ ##    Proto:
+ ##       int Cvgd_print_desc(vgrid_descriptor *self, int sout, int convip);
+ ##    Args:
+ ##       self (VGridDescriptor ref) : (I/O)
+
+ ##    Returns:
+ ##       int, 
+
+ ## c_vgd_print_vcode_description(vcode):
+ ##    Print the description of a Vcode e.g. 5005
+ ##    Proto:
+ ##       int Cvgd_print_vcode_description(int vcode);
+ ##    Args:
+
+ ##    Returns:
+ ##       int, 
+
+ ## c_vgd_set_vcode_i(vgrid, kind, version):
+ ##    ?
+ ##    Proto:
+ ##       int Cvgd_set_vcode_i(vgrid_descriptor *VGrid, int Kind, int Version);
+ ##    Args:
+ ##       vgrid (VGridDescriptor ref) : (I/O)
+
+ ##    Returns:
+ ##       int, 
+
+ ## c_vgd_set_vcode(vgrid):
+ ##    ?
+ ##    Proto:
+ ##       int Cvgd_set_vcode(vgrid_descriptor *VGrid);
+ ##    Args:
+ ##       vgrid (VGridDescriptor ref) : (I/O)
+
+ ##    Returns:
+ ##       int, 
+
 
 import ctypes as _ct
 import numpy  as _np
