@@ -175,6 +175,17 @@ This Module is available from python-rpn version 2.0.b6
     Returns:
        int, 
 
+ c_vgd_getopt_int(key, value, quiet):
+    Get scalar integer global VGD option 
+    Proto:
+       int Cvgd_getopt_int(char *key, int *value, int quiet);
+    Args:
+       key
+       value
+       quiet
+    Returns:
+       int, 
+
  c_vgd_get_int_1d(self, key, value, nk, quiet):
     Get vector integer attribute of vgrid descriptor
     Proto:
@@ -269,6 +280,17 @@ This Module is available from python-rpn version 2.0.b6
     Args:
        self (VGridDescriptor ref) : (I/O)
 
+    Returns:
+       int, 
+
+ c_vgd_putopt_int(key, value):
+    Set scalar integer global VGD option 
+    Proto:
+       int Cvgd_putopt_int(char *key, int value);
+    Args:
+       key
+       value
+       quiet
     Returns:
        int, 
 
@@ -616,6 +638,14 @@ libvgd.Cvgd_get_int.restype = _ct.c_int
 c_vgd_get_int = libvgd.Cvgd_get_int
 
 
+libvgd.Cvgd_getopt_int.argtypes = (
+    _ct.c_char_p,
+    _ct.POINTER(_ct.c_int),
+    _ct.c_int)
+libvgd.Cvgd_getopt_int.restype = _ct.c_int
+c_vgd_getopt_int = libvgd.Cvgd_getopt_int
+
+
 libvgd.Cvgd_get_float.argtypes = (
     _ct.POINTER(VGridDescriptor),
     _ct.c_char_p,
@@ -690,6 +720,13 @@ libvgd.Cvgd_put_int.argtypes = (
     _ct.c_int)
 libvgd.Cvgd_put_int.restype = _ct.c_int
 c_vgd_put_int = libvgd.Cvgd_put_int
+
+
+libvgd.Cvgd_putopt_int.argtypes = (
+    _ct.c_char_p,
+    _ct.c_int)
+libvgd.Cvgd_putopt_int.restype = _ct.c_int
+c_vgd_putopt_int = libvgd.Cvgd_putopt_int
 
 
 libvgd.Cvgd_put_double.argtypes = (

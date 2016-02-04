@@ -18,7 +18,9 @@ VGD_MAXSTR_TYPVAR = 3
 VGD_MAXSTR_ETIKET = 13
 VGD_MAXSTR_GRTYP  = 2
 
-VGD_ALLOW_RESHAPE = 0
+VGD_ALLOW_RESHAPE  = 0
+VGD_ALLOW_SIGMA    = 1
+VGD_DISALLOW_SIGMA = 0
 
 VGD_SIGM_KIND = 1 #Sigma
 VGD_SIGM_VER  = 1
@@ -66,6 +68,8 @@ VGD_OPR_KEYS = {
     'get_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
     'get_double_1d' : ["CA_M", "COFA", "CB_M", "COFB", "CA_T", "CB_T"],
     'get_double_3d' : ["VTBL"],
+    'getopt_int'    : ["ALLOW_SIGMA"],
+    'putopt_int'    : ["ALLOW_SIGMA"]
     }
 
 VGD_KEYS = {

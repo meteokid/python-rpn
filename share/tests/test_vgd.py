@@ -12,6 +12,18 @@ C_MKSTR = _ct.create_string_buffer
 
 class VGDReadTests(unittest.TestCase):
 
+    def testGetPutOptInt(self):
+        quiet = _ct.c_int(0)
+        v1 = _ct.c_int(0)
+        ok = vgd.c_vgd_getopt_int('ALLOW_SIGMA', _ct.byref(v1), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(v1.value,vgd.VGD_DISALLOW_SIGMA)
+        ok = vgd.c_vgd_putopt_int('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
+        self.assertEqual(ok,vgd.VGD_OK)
+        ok = vgd.c_vgd_getopt_int('ALLOW_SIGMA', _ct.byref(v1), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(v1.value,vgd.VGD_ALLOW_SIGMA)
+
     def testConstruct(self):
         vgd0ptr = vgd.c_vgd_construct()
         self.assertEqual(vgd0ptr[0].rcoef1,-9999.)

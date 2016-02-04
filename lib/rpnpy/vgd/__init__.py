@@ -49,8 +49,7 @@ __SUBMODULES__ = ['proto', 'const']
 __all__ = ['loadVGDlib', 'libvgd', 'VGD_VERSION', 'VGD_LIBPATH',
            'VGDError'] + __SUBMODULES__
 
-VGD_VERSION_DEFAULT = 'shared_6.0.0-a4'
-#VGD_VERSION_DEFAULT = '_6.0.a3-mine'
+VGD_VERSION_DEFAULT = 'shared_6.0.0'
 
 class VGDError(Exception):
     """
