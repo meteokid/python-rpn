@@ -5,6 +5,9 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 
+#TODO: write grid... including # grid special case
+#TODO: add ax, ax optional arg to ZE, dE, ZL, dL, U
+
 """
 Librmn Fstd grid helper functions
 """
@@ -182,7 +185,7 @@ def decodeGrid(gid):
         for k in ('grtyp', 'ig1', 'ig2', 'ig3', 'ig4'):
             del params2[k]
         params.update(params2)
-        if params['grref'] == 'E':
+        if params['grref'] in ('E', 'L'):
             axes = _ri.gdgaxes(gid)
             params.update({
                 'ax'    : axes['ax'],
@@ -193,10 +196,10 @@ def decodeGrid(gid):
             (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
             if params['grtyp'] in ('Z', '#'):
                 params.update({
-                    'lat0' : axes['ay'][0, 0],
-                    'lon0' : axes['ax'][0, 0],
-                    'dlat' : axes['ay'][0, 1] - axes['ay'][0, 0],
-                    'dlon' : axes['ax'][1, 0] - axes['ax'][0, 0]
+                    'lat0' : float(axes['ay'][0, 0]),
+                    'lon0' : float(axes['ax'][0, 0]),
+                    'dlat' : float(axes['ay'][0, 1] - axes['ay'][0, 0]),
+                    'dlon' : float(axes['ax'][1, 0] - axes['ax'][0, 0])
                     })
             if params['grtyp'] in ('#'):
                 (params['i0'], params['j0']) = (1, 1)
@@ -242,6 +245,19 @@ def getIgTags(params):
             'ax'    : grid x-axes (numpy.ndarray)
             'ay'    : grid y-axes (numpy.ndarray)
          }
+         
+         OR
+         
+        params     : grid parameters given as a dictionary (dict)
+          {
+            'lat0' : lat of grid lower-left corner in degrees (float)
+            'lon0' : lon of grid lower-left corner in degrees (float)
+            'dlat' : Grid lat resolution in degrees (float)
+            'dlon' : Grid lon resolution in degrees (float)
+            'ax'    : grid x-axes (numpy.ndarray)
+            'ay'    : grid y-axes (numpy.ndarray)
+         }
+
     Returns:
         (int, int) : 2 grid tags
     Raises:
@@ -250,8 +266,12 @@ def getIgTags(params):
     """
     a = params['ax'][:, 0].tolist()
     a.extend(params['ay'][0, :].tolist())
-    a.extend([params['xlat1'], params['xlon1'],
-              params['xlat2'], params['xlon2']])
+    try:
+        a.extend([params['xlat1'], params['xlon1'],
+                  params['xlat2'], params['xlon2']])
+    except:
+        a.extend([params['lat0'], params['lon0'],
+                  params['dlat'], params['dlon']])
     a = [int(x*1000.) for x in a]
     aa = _np.array(a, dtype=_np.uint32)
     crc = _rb.crc32(0, aa)
@@ -308,6 +328,10 @@ def encodeGrid(params):
         return defGrid_ZE(params)
     elif params['grtyp'] == '#' and  params['grref'] == 'E':
         return defGrid_diezeE(params)
+    elif params['grtyp'] == 'Z' and  params['grref'] == 'L':
+        return defGrid_ZL(params)
+    elif params['grtyp'] == '#' and  params['grref'] == 'L':
+        return defGrid_diezeL(params)
     else:
         raise RMNError('encodeGrid: Grid type not yet supported %s(%s)' %
 (params['grtyp'], params['grref']))
@@ -489,7 +513,7 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                             xlat1, xlon1, xlat2, xlon2, setGridId)
     gridParams = defGrid_ZE(ni, nj, lat0, lon0, dlat, dlon,
                             xlat1, xlon1, xlat2, xlon2)
-    gridParams = defGrid_ZE(params, setGridId)
+    gridParams = defGrid_ZE(params, setGridId=setGridId)
     gridParams = defGrid_ZE(params)
 
     Args:
@@ -628,11 +652,11 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                    lni=None, lnj=None, i0=None, j0=None, setGridId=True):
     """Defines an FSTD LAM, rotated, LatLon (cylindrical equidistant) Grid
 
-    gridParams = defGrid_E(ni, nj, lat0, lon0, dlat, dlon, xlat1, xlon1, 
-                           xlat2, xlon2, lni, lnj, i0, j0, setGridId)
+    gridParams = defGrid_diezeE(ni, nj, lat0, lon0, dlat, dlon, xlat1, xlon1,
+                                xlat2, xlon2, lni, lnj, i0, j0, setGridId)
     gridParams = defGrid_diezeE(ni, nj, lat0, lon0, dlat, dlon, xlat1, xlon1,
                                 xlat2, xlon2, lni, lnj, i0, j0)
-    gridParams = defGrid_diezeE(params, setGridId)
+    gridParams = defGrid_diezeE(params, setGridId=setGridId)
     gridParams = defGrid_diezeE(params)
 
     Args:
@@ -697,6 +721,14 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Notes:
+        Unfortunately, librmn's ezscint does NOT allow defining a # grid
+        from ezgdef_fmem.
+        The grid is thus defined as a Z grid in ezscint and tile info
+        are kept in the python dictionary.
+        Decoding from the grid id or interpolating may not lead to
+        the expected result.
     """
     setGridId0 = setGridId
     if isinstance(ni, dict):
@@ -711,6 +743,217 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         ni['setGridId'] = False
     params = defGrid_ZE(ni, nj, lat0, lon0, dlat, dlon,
                         xlat1, xlon1, xlat2, xlon2, setGridId=False)
+    params.update({
+        'grtyp' : 'Z',  #TODO: actual '#' crashes gdef_fmem
+        'lshape' : (lni, lnj),
+        'lni' : lni,
+        'lnj' : lnj,
+        'i0'  : i0,
+        'j0'  : j0,
+        'ig1' : params['ig1ref'],
+        'ig2' : params['ig2ref'],
+        'ig3' : params['ig3ref'],
+        'ig4' : params['ig4ref']
+        })
+    params['id'] = _ri.ezgdef_fmem(params) if setGridId0 else -1
+    params.update({
+        'grtyp' : '#',
+        'ig1' : params['tag1'],
+        'ig2' : params['tag2'],
+        'ig3' : params['i0'],
+        'ig4' : params['j0']
+        })
+    return params
+
+
+def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
+               setGridId=True):
+    """Defines an FSTD LAM LatLon (cylindrical equidistant) Grid
+
+    gridParams = defGrid_ZL(ni, nj, lat0, lon0, dlat, dlon, setGridId)
+    gridParams = defGrid_ZL(ni, nj, lat0, lon0, dlat, dlon)
+    gridParams = defGrid_ZL(params, setGridId=setGridId)
+    gridParams = defGrid_ZL(params)
+
+    Args:
+        ni, nj      : grid dims (int)
+        lat0, lon0 : lat, lon of SW grid corner in degrees (float)
+        dlat, dlon : grid resolution/spacing along lat, lon on rotated axes
+                     in degrees (float)
+        setGridId   : Flag for creation of gid, ezscint grid id (True or False)
+        params      : above parameters given as a dictionary (dict)
+    Returns:
+        {
+            'shape' : (ni, nj) # dimensions of the grid
+            'ni'    : grid dim along the x-axis (int)
+            'nj'    : grid dim along the y-axis (int)
+            'grtyp' : grid type (Z) (str)
+            'tag1'  : grid tag 1 (int)
+            'tag2'  : grid tag 2 (int)
+            'ig1'   : grid tag 1 (int), =tag1
+            'ig2'   : grid tag 2 (int), =tag2
+            'ig3'   : grid tag 3 (int)
+            'ig4'   : grid tag 4, unused (set to 0) (int)
+            'grref' : ref grid type (L) (str)
+            'ig1ref' : ref grid parameters, encoded (int)
+            'ig2ref' : ref grid parameters, encoded (int)
+            'ig3ref' : ref grid parameters, encoded (int)
+            'ig4ref' : ref grid parameters, encoded (int)
+            'lat0'  : lat of SW grid corner in degrees (float)
+            'lon0'  : lon of SW grid corner in degrees (float)
+            'dlat'  : grid resolution/spacing along lat axe in degrees (float)
+            'dlon'  : grid resolution/spacing along lon axe in degrees (float)
+            'ax'    : points longitude (numpy, ndarray)
+            'ay'    : points latitudes (numpy, ndarray)
+            'id'    : ezscint grid-id if setGridId==True, -1 otherwise (int)
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+    """
+    params = {
+        'ni'    : ni,
+        'nj'    : nj,
+        'lat0' : lat0,
+        'lon0' : lon0,
+        'dlat' : dlat,
+        'dlon' : dlon,
+        }
+    if isinstance(ni, dict):
+        params.update(ni)
+        try:
+            setGridId = ni['setGridId']
+        except:
+            pass
+    params['grtyp'] = 'Z'
+    params['grref'] = 'L'
+    for k in ('ni', 'nj'):
+        v = params[k]
+        if not isinstance(v, int):
+            raise TypeError('defGrid_ZL: wrong input data type for ' +
+                            '%s, expecting int, Got (%s)' % (k, type(v)))
+        if v <= 0:
+            raise ValueError('defGrid_ZL: grid dims must be >= 0, got %s=%d' %
+                             (k, v))
+    for k in ('lat0', 'lon0', 'dlat', 'dlon'):
+        v = params[k]
+        if isinstance(v, int):
+            v = float(v)
+        if not isinstance(v, float):
+            raise TypeError('defGrid_ZL: wrong input data type for ' +
+                            '%s, expecting float, Got (%s)' % (k, type(v)))
+        params[k] = v
+    ig1234 = _rb.cxgaig(params['grref'], params['lat0'], params['lon0'],
+                        params['dlat'], params['dlon'])
+    params['ig1ref'] = ig1234[0]
+    params['ig2ref'] = ig1234[1]
+    params['ig3ref'] = ig1234[2]
+    params['ig4ref'] = ig1234[3]
+
+    params['ax'] = _np.empty((params['ni'], 1), dtype=_np.float32,
+                             order='FORTRAN')
+    params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
+                             order='FORTRAN')
+    for i in xrange(params['ni']):
+        params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
+    for j in xrange(params['nj']):
+        params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+
+    params['ig1'] = ig1234[0]
+    params['ig2'] = ig1234[1]
+    params['ig3'] = ig1234[2]
+    params['ig4'] = ig1234[3]
+    
+    params['id'] = _ri.ezgdef_fmem(params) if setGridId else -1
+
+    (params['tag1'], params['tag2']) = getIgTags(params)
+    params['tag3'] = 0
+    
+    (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
+    (params['ig3'], params['ig4']) = (params['tag3'], 0)
+    params['shape'] = (params['ni'], params['nj'])    
+    return params
+
+
+def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
+                   lni=None, lnj=None, i0=None, j0=None, setGridId=True):
+    """Defines an FSTD LAM  LatLon (cylindrical equidistant) Grid
+
+    gridParams = defGrid_diezeL(ni, nj, lat0, lon0, dlat, dlon,
+                                lni, lnj, i0, j0, setGridId)
+    gridParams = defGrid_diezeL(ni, nj, lat0, lon0, dlat, dlon,
+                                lni, lnj, i0, j0)
+    gridParams = defGrid_diezeL(params, setGridId=setGridId)
+    gridParams = defGrid_diezeL(params)
+
+    Args:
+        lni, lnj   : local grid tile dims (int)
+        i0,   j0   : local tile position of first point in the full grid (int)
+                     (Fotran convention, first point start at index 1)
+        ni,   nj   : Full grid dims (int)
+        lat0, lon0 : lat, lon of SW Full grid corner in degrees (float)
+        dlat, dlon : grid resolution/spacing along lat, lon in degrees (float)
+        setGridId   : Flag for creation of gid, ezscint grid id (True or False)
+        params      : above parameters given as a dictionary (dict)
+    Returns:
+        {
+            'lshape' : (lni, lnj) # dimensions of the local grid tile
+            'lni'   : local grid tile dim along the x-axis (int)
+            'lnj'   : local grid tile dim along the y-axis (int)
+            'i0'    : local tile x-position of first point
+                      in the full grid (int)
+                      (Fotran convention, first point start at index 1)
+            'j0'    : local tile y-position of first point
+                      in the full grid (int)
+                      (Fotran convention, first point start at index 1)
+            'shape' : (ni, nj) # dimensions of the grid
+            'ni'    : Full grid dim along the x-axis (int)
+            'nj'    : Full grid dim along the y-axis (int)
+            'grtyp' : grid type (Z) (str)
+            'tag1'  : grid tag 1 (int)
+            'tag2'  : grid tag 2 (int)
+            'ig1'   : grid tag 1 (int), =tag1
+            'ig2'   : grid tag 2 (int), =tag2
+            'ig3'   : i0
+            'ig4'   : j0
+            'grref' : ref grid type (L) (str)
+            'ig1ref' : ref grid parameters, encoded (int)
+            'ig2ref' : ref grid parameters, encoded (int)
+            'ig3ref' : ref grid parameters, encoded (int)
+            'ig4ref' : ref grid parameters, encoded (int)
+            'lat0'  : lat of SW grid corner in degrees (float)
+            'lon0'  : lon of SW grid corner in degrees (float)
+            'dlat'  : grid resolution/spacing along lat axe in degrees (float)
+            'ax'    : points longitude (numpy, ndarray)
+            'ay'    : points latitudes (numpy, ndarray)
+            'id'    : ezscint grid-id if setGridId==True, -1 otherwise (int)
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+
+    Notes:
+        Unfortunately, librmn's ezscint does NOT allow defining a # grid
+        from ezgdef_fmem.
+        The grid is thus defined as a Z grid in ezscint and tile info
+        are kept in the python dictionary.
+        Decoding from the grid id or interpolating may not lead to
+        the expected result.
+    """
+    setGridId0 = setGridId
+    if isinstance(ni, dict):
+        lni = ni['lni']
+        lnj = ni['lnj']
+        i0 = ni['i0']
+        j0 = ni['j0']
+        try:
+            setGridId0 = ni['setGridId']
+        except:
+            pass
+        ni['setGridId'] = False
+    params = defGrid_ZL(ni, nj, lat0, lon0, dlat, dlon, setGridId=False)
     params.update({
         'grtyp' : 'Z',  #TODO: actual '#' crashes gdef_fmem
         'lshape' : (lni, lnj),

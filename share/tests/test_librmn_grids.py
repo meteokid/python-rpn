@@ -17,13 +17,23 @@ class Librmn_grids_Test(unittest.TestCase):
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
-        
+                    
     def test_degGrid_E(self):
         params = rmn.defGrid_E(90,45,0.,180.,1.,270.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
-            
+
+    def test_degGrid_ZL(self):
+        params = rmn.defGrid_ZL(90,45,10.,11.,1.,0.5)
+        params2 = rmn.decodeGrid(params['id'])
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                self.assertFalse(ok)
+            else:
+                self.assertEqual(params[k],params2[k])
+
     def test_degGrid_ZE(self):
         params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
         params2 = rmn.decodeGrid(params['id'])
@@ -33,17 +43,55 @@ class Librmn_grids_Test(unittest.TestCase):
                 self.assertFalse(ok)
             else:
                 self.assertEqual(params[k],params2[k])
-            
+
     def test_degGrid_diezeE(self):
         params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=90,lnj=45,i0=1,j0=1)
         params2 = rmn.decodeGrid(params['id'])
-    ##     for k in params.keys():
+        for k in params.keys():
+            #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
+            if k not in ('i0','j0','lni','lnj','grtyp','ig3','ig4','lshape'):
+                if isinstance(params[k],np.ndarray):
+                    ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                    ## if ok: print k,params[k],params2[k]
+                    self.assertFalse(ok)
+                else:
+                    ## if params[k] != params2[k]: print k,params[k],params2[k]
+                    self.assertEqual(params[k],params2[k])
+           ## try:
+           ##      i = type(params[k])
+           ##      j = type(params2[k])
+           ##  except:
+           ##      print 'test_degGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
     ##         if isinstance(params[k],np.ndarray):
     ##             ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
     ##             self.assertFalse(ok)
     ##         else:
     ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
-        
+
+    def test_degGrid_diezeL(self):
+        params = rmn.defGrid_diezeL(90,45,11.,12.,1.,0.5,lni=90,lnj=45,i0=1,j0=1)
+        params2 = rmn.decodeGrid(params['id'])
+        for k in params.keys():
+            #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
+            if k not in ('i0','j0','lni','lnj','grtyp','ig3','ig4','lshape'):
+                if isinstance(params[k],np.ndarray):
+                    ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                    ## if ok: print k,params[k],params2[k]
+                    self.assertFalse(ok)
+                else:
+                    ## if params[k] != params2[k]: print k,params[k],params2[k]
+                    self.assertEqual(params[k],params2[k])
+           ## try:
+           ##      i = type(params[k])
+           ##      j = type(params2[k])
+           ##  except:
+           ##      print 'test_degGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
+    ##         if isinstance(params[k],np.ndarray):
+    ##             ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+    ##             self.assertFalse(ok)
+    ##         else:
+    ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
+
     def test_degGrid_G_glb(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=False)
         params2 = rmn.decodeGrid(params['id'])
