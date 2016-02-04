@@ -123,7 +123,21 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v1[0:3],[97642568, 97690568, 97738568])
 
     def testNewReadGetFloat1D(self):
-        self.assertEqual('MISSING_TEST: GetFloat1D','')
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+        rmn.fstcloseall(fileId)
+        ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
+        ## print vgd0ptr[0].ip1_m[0]
+        v1 = _ct.POINTER(_ct.c_float)()
+        nv = _ct.c_int(0)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_get_float_1d(vgd0ptr, 'VCDM', _ct.byref(v1), _ct.byref(nv), quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(nv.value,158)
+        self.assertEqual([int(x*10000000) for x in v1[0:3]],[1250, 1729, 2209])
 
     def testNewReadGetDouble1D(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
@@ -180,21 +194,20 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v2.value.strip(),'PRES')
 
     def testNewReadPutInt(self):
-        self.assertEqual('MISSING_TEST: PutInt','')
-        ## ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        ## fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        ## fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        ## vgd0ptr = vgd.c_vgd_construct()
-        ## ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        ## rmn.fstcloseall(fileId)
-        ## v1 = _ct.c_int(6)
-        ## quiet = _ct.c_int(0)
-        ## ok = vgd.c_vgd_put_int(vgd0ptr, 'DIPM', v1)
-        ## self.assertEqual(ok,vgd.VGD_OK)
-        ## v2 = _ct.c_int(0)
-        ## ok = vgd.c_vgd_get_int(vgd0ptr, 'DIPM', v2, quiet)
-        ## self.assertEqual(ok,vgd.VGD_OK)
-        ## self.assertEqual(v2.value,6)
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+        rmn.fstcloseall(fileId)
+        v1 = _ct.c_int(6)
+        quiet = _ct.c_int(0)
+        ok = vgd.c_vgd_put_int(vgd0ptr, 'IG_1', v1)
+        self.assertEqual(ok,vgd.VGD_OK)
+        v2 = _ct.c_int(0)
+        ok = vgd.c_vgd_get_int(vgd0ptr, 'IG_1', v2, quiet)
+        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertEqual(v1.value,v2.value)
 
     def testNewReadPutDouble(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
