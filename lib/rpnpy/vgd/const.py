@@ -97,7 +97,8 @@ VGD_KEYS = {
     'VIPM' : ('List of IP1 momentum values associated with this coordinate'),
     'VIPT' : ('List of IP1 thermodynamic values associated with this coordinate'),
     'VTBL' : ('real*8 Fortran 3d array containing all vgrid_descriptor information'),
-    'LOGP' : ('furmula gives log(p) T/F (version 1.0.3 and greater). True -> Formula with A and B gives log(p), False -> Formula with A and B gives p    ')
+    'LOGP' : ('furmula gives log(p) T/F (version 1.0.3 and greater). True -> Formula with A and B gives log(p), False -> Formula with A and B gives p'),
+    'ALLOW_SIGMA' : ('Allow definition of sigma coor or not')
     }
 
 

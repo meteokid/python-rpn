@@ -508,7 +508,7 @@ libvgd.Cvgd_new_gen.argtypes = (
     _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
     _ct.c_int, #int kind
     _ct.c_int, #int version
-    _ct.POINTER(_ct.c_float), #float *hyb, #TODO: ndarray?
+    _npc.ndpointer(dtype=_np.float32), #float *hyb
     _ct.c_int, #int size_hyb,
     _ct.POINTER(_ct.c_float), #float *rcoef1,
     _ct.POINTER(_ct.c_float), #float *rcoef2,
@@ -517,8 +517,8 @@ libvgd.Cvgd_new_gen.argtypes = (
     _ct.POINTER(_ct.c_double), #double *ptop_out_8
     _ct.c_int, #int ip1
     _ct.c_int, #int ip2
-    _ct.POINTER(_ct.c_float), #float *dhm, #TODO: ndarray?
-    _ct.POINTER(_ct.c_float)) #float *dht  #TODO: ndarray?
+    _ct.POINTER(_ct.c_float), #float *dhm
+    _ct.POINTER(_ct.c_float)) #float *dht
 libvgd.Cvgd_new_gen.restype = _ct.c_int
 c_vgd_new_gen = libvgd.Cvgd_new_gen
 
@@ -529,6 +529,28 @@ c_vgd_new_gen = libvgd.Cvgd_new_gen
 ##                         double *a_m_8, double *b_m_8, double *a_t_8,
 ##                         double *b_t_8, int *ip1_m, int *ip1_t,
 ##                         int nl_m, int nl_t);
+libvgd.Cvgd_new_build_vert.argtypes = (
+    _ct.POINTER(_ct.POINTER(VGridDescriptor)), # vgrid_descriptor **self
+    _ct.c_int, #int kind
+    _ct.c_int, #int version
+    _ct.c_int, #int nk,
+    _ct.c_int, #int ip1
+    _ct.c_int, #int ip2
+    _ct.POINTER(_ct.c_double), #double *ptop_8,
+    _ct.POINTER(_ct.c_double), #double *pref_8,
+    _ct.POINTER(_ct.c_float), #float *rcoef1,
+    _ct.POINTER(_ct.c_float), #float *rcoef2,
+     _npc.ndpointer(dtype=_np.float64), #a_m_8
+     _npc.ndpointer(dtype=_np.float64), #b_m_8
+     _npc.ndpointer(dtype=_np.float64), #a_t_8
+     _npc.ndpointer(dtype=_np.float64), #b_t_8
+     _npc.ndpointer(dtype=_np.int32), #a_t_8
+     _npc.ndpointer(dtype=_np.int32), #b_t_8
+    _ct.c_int, #int nl_m
+    _ct.c_int) #int nl_t
+
+libvgd.Cvgd_new_build_vert.restype = _ct.c_int
+c_vgd_new_build_vert = libvgd.Cvgd_new_build_vert
 
 ## int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
 ##                         int ni, int nj, int nk);
