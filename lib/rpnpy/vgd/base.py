@@ -16,7 +16,131 @@ import rpnpy.librmn.all as _rmn
 
 _C_MKSTR = _ct.create_string_buffer
 
-def vgd_new():
+def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
+    """
+    """
+    vgd_put_opt('ALLOW_SIGMA', _vc.VGD_ALLOW_SIGMA)
+    (kind, version) = _vc.VGD_KIND_VER['sigm']
+    return vgd_new(kind, version, hyb, ip1=ip1, ip2=ip2)
+vgd_new_1001 = vgd_new_sigm
+
+def vgd_new_pres(pres, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['pres']
+    return vgd_new(kind, version, hyb=pres, ip1=ip1, ip2=ip2)
+vgd_new_2001 = vgd_new_pres
+
+
+def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['eta']
+    return vgd_new(kind, version, hyb=hyb, ptop=ptop, ip1=ip1, ip2=ip2)
+vgd_new_1002 = vgd_new_eta
+
+
+## def vgd_new_hybn(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
+##     """
+##     """
+##     (kind, version) = _vc.VGD_KIND_VER['hybn']
+##     return vgd_new(kind, version, hyb=hyb,
+##                    rcoef1=rcoef1, ptop=ptop, pref=pref, ip1=ip1, ip2=ip2)
+## vgd_new_1003 = vgd_new_hybn
+
+def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['hyb']
+    return vgd_new(kind, version, hyb=hyb,
+                   rcoef1=rcoef1, ptop=ptop, pref=pref, ip1=ip1, ip2=ip2)
+vgd_new_5001 = vgd_new_hyb
+
+
+def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['hybs']
+    return vgd_new(kind, version, hyb=hyb,
+                   rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
+                   ip1=ip1, ip2=ip2)
+vgd_new_5002 = vgd_new_hybs
+
+
+def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['hybt']
+    return vgd_new(kind, version, hyb=hyb,
+                   rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
+                   ip1=ip1, ip2=ip2)
+vgd_new_5003 = vgd_new_hybt
+
+
+def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['hybm']
+    return vgd_new(kind, version, hyb=hyb,
+                   rcoef1=rcoef1, rcoef2=rcoef2, ptop=ptop, pref=pref,
+                   ip1=ip1, ip2=ip2)
+vgd_new_5004 = vgd_new_hybm
+
+
+def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
+                  ip1=-1, ip2=-1):
+    """
+    """
+    (kind, version) = _vc.VGD_KIND_VER['hybmd']
+    return vgd_new(kind, version, hyb=hyb,
+                   rcoef1=rcoef1, rcoef2=rcoef2, pref=pref,
+                   dhm=dhm, dht=dht, ip1=ip1, ip2=ip2)
+vgd_new_5005 = vgd_new_hybmd
+
+
+def vgd_new(kind, version, hyb,
+            rcoef1=None, rcoef2=None, ptop=None, pref=None, dhm=None, dht=None,
+            ip1=-1, ip2=-1):
+    """
+    """
+    if isinstance(hyb,(list,tuple)):
+        hyb = _np.array(hyb, copy=True, dtype=_np.float32, order='FORTRAN')
+    elif isinstance(hyb,_np.ndarray):
+        hyb = _np.array(hyb.flatten(), copy=True, dtype=_np.float32, order='FORTRAN')
+    else:
+        raise TypeError('hyb should be list or ndarray: %s' % str(type(ip1list)))
+    if not rcoef1 is None:
+        rcoef1 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef1))
+    if not rcoef2 is None:
+        rcoef2 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef2))
+    if not ptop   is None:
+        ptop   = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop))
+    if not pref   is None:
+        pref   = _ct.POINTER(_ct.c_double)(_ct.c_double(pref))
+    if not dhm    is None:
+        dhm    = _ct.POINTER(_ct.c_float)(_ct.c_float(dhm))
+    if not dht    is None:
+        dht    = _ct.POINTER(_ct.c_float)(_ct.c_float(dht))
+    vgd_ptr = _vp.c_vgd_construct()
+    p_ptop_out = None
+    if kind == 5 and version in (4,5):
+        if not ptop is None:
+            p_ptop_out = ptop
+        else:
+            ptop_out = 100.
+            p_ptop_out = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop_out))
+    ok = _vp.c_vgd_new_gen(vgd_ptr, kind, version,
+                           hyb, hyb.size, rcoef1, rcoef2, ptop, pref,
+                           p_ptop_out, ip1, ip2, dhm, dht)
+    if ok != _vc.VGD_OK:
+        raise VGDError('Problem building VGD (kind=%d, version=%d): Error=%d)' % (kind, version,ok))
+    return vgd_ptr
+
+
+def vgd_new_vert(kind, version, nk,
+                 rcoef1=1, rcoef2=1, ptop=1., pref=1.,
+                 a_m_8=None, b_m_8=None, a_t_8=None, b_t_8=None,
+                 ip1_m=None, ip1_t=None, ip1=-1, ip2=-1):
     """
     """
     raise VGDError('Not Implemented yet')
@@ -195,7 +319,7 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     elif isinstance(ip1list,(list,tuple)):
         ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
     elif isinstance(ip1list,_np.ndarray):
-        ip1list1 = ip1list.flatten()
+        ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
     else:
         raise TypeError('ip1list should be string, list or int: %s' % str(type(ip1list)))
     nip1    = ip1list1.size

@@ -74,7 +74,6 @@ class VGDBaseTests(unittest.TestCase):
         vgd0ptr = self._newReadBcmk()
         
         v1 = vgd.vgd_get(vgd0ptr, 'VIPM')
-        print 'i',repr(v1[0]),type(v1[0])
         self.assertEqual(len(v1),158)
         self.assertEqual(v1[0:3],[97642568, 97690568, 97738568])
 
@@ -82,7 +81,6 @@ class VGDBaseTests(unittest.TestCase):
         vgd0ptr = self._newReadBcmk()
         
         v1 = vgd.vgd_get(vgd0ptr, 'VCDM')
-        print 'f',repr(v1[0]),type(v1[0])
         self.assertEqual(len(v1),158)
         self.assertEqual([int(x*10000000) for x in v1[0:3]],[1250, 1729, 2209])
 
@@ -90,7 +88,6 @@ class VGDBaseTests(unittest.TestCase):
         vgd0ptr = self._newReadBcmk()
         
         v1 = vgd.vgd_get(vgd0ptr, 'CA_M')
-        print 'd',repr(v1[0]),type(v1[0])
         self.assertEqual(len(v1),158)
         self.assertEqual(int(v1[0]*100.),1000)
         self.assertEqual(int(v1[1]*100.),1383)
@@ -172,47 +169,118 @@ class VGDBaseTests(unittest.TestCase):
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
         self.assertEqual(ok,vgd.VGD_OK)
 
-    ## def testNewGen(self):
-    ##     hyb = (0.0134575, 0.0203980, 0.0333528, 0.0472815, 0.0605295, 0.0720790,
-    ##            0.0815451, 0.0889716, 0.0946203, 0.0990605, 0.1033873, 0.1081924,
-    ##            0.1135445, 0.1195212, 0.1262188, 0.1337473, 0.1422414, 0.1518590,
-    ##            0.1627942, 0.1752782, 0.1895965, 0.2058610, 0.2229843, 0.2409671,
-    ##            0.2598105, 0.2795097, 0.3000605, 0.3214531, 0.3436766, 0.3667171,
-    ##            0.3905587, 0.4151826, 0.4405679, 0.4666930, 0.4935319, 0.5210579,
-    ##            0.5492443, 0.5780612, 0.6074771, 0.6374610, 0.6679783, 0.6989974,
-    ##            0.7299818, 0.7591944, 0.7866292, 0.8123021, 0.8362498, 0.8585219,
-    ##            0.8791828, 0.8983018, 0.9159565, 0.9322280, 0.9471967, 0.9609448,
-    ##            0.9735557, 0.9851275, 0.9950425)
-    ##     nhyb = len(hyb)
-    ##     chyb = np.asarray(hyb, dtype=np.float32)
-    ##     (rcoef1, rcoef2) = (ct.c_float(0.), ct.c_float(1.))
-    ##     ptop  = ct.c_double(805.)
-    ##     pref  = ct.c_double(100000.)
-    ##     p_ptop_out = ct.POINTER(ct.c_double)()
-    ##     (kind, version) = (vgd.VGD_HYBS_KIND, vgd.VGD_HYBS_VER)
-    ##     (ip1, ip2) = (0, 0)
-    ##     dhm = ct.c_float(10.)
-    ##     dht = ct.c_float(2.)
-    ##     (p_dhm, p_dht) = (None, None) #(ct.pointer(dhm), ct.pointer(dht))
-    ##     #TODO: why: (Cvgd) ERROR: dhm,dht is not a required constructor entry
-    ##     vgd0ptr = vgd.c_vgd_construct()
-    ##     ok = vgd.c_vgd_new_gen(vgd0ptr,
-    ##                            kind, version,
-    ##                            chyb, nhyb,
-    ##                            ct.byref(rcoef1), ct.byref(rcoef2),
-    ##                            ct.byref(ptop),   ct.byref(pref),
-    ##                            p_ptop_out,
-    ##                            ip1, ip2, p_dhm, p_dht)
-    ##     self.assertEqual(ok,vgd.VGD_OK)
+    hyblist = (0.0134575, 0.0203980, 0.0333528, 0.0472815, 0.0605295, 0.0720790,
+               0.0815451, 0.0889716, 0.0946203, 0.0990605, 0.1033873, 0.1081924,
+               0.1135445, 0.1195212, 0.1262188, 0.1337473, 0.1422414, 0.1518590,
+               0.1627942, 0.1752782, 0.1895965, 0.2058610, 0.2229843, 0.2409671,
+               0.2598105, 0.2795097, 0.3000605, 0.3214531, 0.3436766, 0.3667171,
+               0.3905587, 0.4151826, 0.4405679, 0.4666930, 0.4935319, 0.5210579,
+               0.5492443, 0.5780612, 0.6074771, 0.6374610, 0.6679783, 0.6989974,
+               0.7299818, 0.7591944, 0.7866292, 0.8123021, 0.8362498, 0.8585219,
+               0.8791828, 0.8983018, 0.9159565, 0.9322280, 0.9471967, 0.9609448,
+               0.9735557, 0.9851275, 0.9950425)
+    MB2PA = 100.
+  
+    def testNewSigm(self):
+        sigma = (0.011000, 0.027000, 0.051000, 0.075000, 0.101000, 0.127000,
+                 0.155000, 0.185000, 0.219000, 0.258000, 0.302000, 0.351000,
+                 0.405000, 0.460000, 0.516000, 0.574000, 0.631000, 0.688000,
+                 0.744000, 0.796000, 0.842000, 0.884000, 0.922000, 0.955000,
+                 0.980000, 0.993000, 1.000000)
+        vgd0ptr = vgd.vgd_new_sigm(sigma)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['sigm'])
+        
+    def testNewPres(self):
+        # pres = [x*self.MB2PA for x in (500.,850.,1000.)]
+        pres = (500.,850.,1000.)
+        vgd0ptr = vgd.vgd_new_pres(pres)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['pres'])
 
-    ##     vkind = ct.c_int(0)
-    ##     vvers = ct.c_int(0)
-    ##     quiet = ct.c_int(0)
-    ##     ok = vgd.c_vgd_get_int(vgd0ptr, 'KIND', ct.byref(vkind), quiet)
-    ##     ok = vgd.c_vgd_get_int(vgd0ptr, 'VERS', ct.byref(vvers), quiet)
-    ##     self.assertEqual(ok,vgd.VGD_OK)
-    ##     self.assertEqual(vkind.value,vgd.VGD_HYBS_KIND)
-    ##     self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
+    def testNewEta(self):
+        hyb = (0.000,   0.011,    0.027,    0.051,    0.075,
+               0.101,   0.127,    0.155,    0.185,    0.219,
+               0.258,   0.302,    0.351,    0.405,    0.460,
+               0.516,   0.574,    0.631,    0.688,    0.744,
+               0.796,   0.842,    0.884,    0.922,    0.955,
+               0.980,   0.993,    1.000)
+        ptop = 10. * self.MB2PA
+        vgd0ptr = vgd.vgd_new_eta(hyb, ptop)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['eta'])
+
+    ## def testNewHybN(self):
+    ##     rcoef1 = 0.
+    ##     ptop = 8.05 * self.MB2PA
+    ##     pref = 1000. * self.MB2PA
+    ##     vgd0ptr = vgd.vgd_new_hybn(self.hyblist, rcoef1, ptop, pref)
+    ##     vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+    ##     vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+    ##     self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybn'])
+
+    def testNewHyb(self):
+        hyb =(0.0125000,0.0233625,0.0391625,0.0628625,0.0865625,
+              0.1122375,0.1379125,0.1655625,0.1951875,0.2287625,
+              0.2672750,0.3107250,0.3591125,0.4124375,0.4667500,
+              0.5220500,0.5793250,0.6356125,0.6919000,0.7472000,
+              0.7985500,0.8439750,0.8854500,0.9229750,0.9555625,
+              0.9802499,0.9930875,1.0000000)
+        rcoef1 = 1.6
+        ptop = 10. * self.MB2PA
+        pref = 800. * self.MB2PA
+        vgd0ptr = vgd.vgd_new_hyb(hyb, rcoef1, ptop, pref)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hyb'])
+
+    def testNewHybS(self):
+        rcoef1 = 0.
+        rcoef2 = 10.
+        ptop = 8.05 * self.MB2PA
+        pref = 1000. * self.MB2PA
+        vgd0ptr = vgd.vgd_new_hybs(self.hyblist, rcoef1, rcoef2, ptop, pref)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybs'])
+
+    def testNewHybT(self):
+        rcoef1 = 0.
+        rcoef2 = 10.
+        ptop = 8.05 * self.MB2PA
+        ptop = 10. * self.MB2PA
+        pref = 1000. * self.MB2PA
+        vgd0ptr = vgd.vgd_new_hybt(self.hyblist, rcoef1, rcoef2, ptop, pref)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybt'])
+
+    def testNewHybM(self):
+        rcoef1 = 0.
+        rcoef2 = 1.
+        pref = 1000. * self.MB2PA
+        ptop = -1. # -2.
+        vgd0ptr = vgd.vgd_new_hybm(self.hyblist, rcoef1, rcoef2, ptop, pref)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybm'])
+
+    def testNewHybMD(self):
+        rcoef1 = 0.
+        rcoef2 = 10.
+        pref = 1000. * self.MB2PA
+        dhm = 10.
+        dht = 2.
+        vgd0ptr = vgd.vgd_new_hybmd(self.hyblist, rcoef1, rcoef2, pref,
+                                dhm, dht)
+        vkind = vgd.vgd_get(vgd0ptr, 'KIND')        
+        vvers = vgd.vgd_get(vgd0ptr, 'VERS')
+        self.assertEqual((vkind,vvers),vgd.VGD_KIND_VER['hybmd'])
+
+
 
     ## def testNewBuildVert(self):
     ##     vgd0ptr = vgd.c_vgd_construct()

@@ -26,7 +26,7 @@ VGD_SIGM_KIND = 1  #Sigma
 VGD_SIGM_VER  = 1
 VGD_ETA_KIND  = 1  #Eta
 VGD_ETA_VER   = 2
-VGD_HYBN_KIND = 1  #Hybrid Normalized
+VGD_HYBN_KIND = 1  #Hybrid Normalized, cannot be generated, use Eta
 VGD_HYBN_VER  = 3
 VGD_PRES_KIND = 2  #pressure
 VGD_PRES_VER  = 1
@@ -38,6 +38,8 @@ VGD_HYBT_KIND = 5  #Hybrid staggered, first level is a thermo level, unstaggered
 VGD_HYBT_VER  = 3
 VGD_HYBM_KIND = 5  #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
 VGD_HYBM_VER  = 4
+VGD_HYBMD_KIND = 5  #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels, Diag level heights (m AGL) encoded
+VGD_HYBMD_VER  = 5
 
 VGD_DIAG_LOGP = 1  #vgd_diag_withref: output log pressure
 VGD_DIAG_PRES = 0  #vgd_diag_withref: output pressure
@@ -45,14 +47,15 @@ VGD_DIAG_DPI  = 1  #vgd_diag_withref: output pressure
 VGD_DIAG_DPIS = 0  #vgd_diag_withref: output hydrostatic pressure partial derivative with respect to surface hydrostatic pressure, default used in vgd_levels
 
 VGD_KIND_VER = {
-    'sigm' : (VGD_SIGM_KIND, VGD_SIGM_VER),
-    'eta'  : (VGD_ETA_KIND, VGD_ETA_VER),
-    'hybn' : (VGD_HYBN_KIND, VGD_HYBN_VER),
-    'pres' : (VGD_PRES_KIND, VGD_PRES_VER),
-    'hyb'  : (VGD_HYB_KIND, VGD_HYB_VER),
-    'hybs' : (VGD_HYBS_KIND, VGD_HYBS_VER),
-    'hybt' : (VGD_HYBT_KIND, VGD_HYBT_VER),
-    'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER)
+    'sigm' : (VGD_SIGM_KIND, VGD_SIGM_VER),    #1,1
+    'eta'  : (VGD_ETA_KIND, VGD_ETA_VER),      #1,2
+    'hybn' : (VGD_HYBN_KIND, VGD_HYBN_VER),    #cannot be generated, use Eta
+    'pres' : (VGD_PRES_KIND, VGD_PRES_VER),    #2,1
+    'hyb'  : (VGD_HYB_KIND, VGD_HYB_VER),      #5,1
+    'hybs' : (VGD_HYBS_KIND, VGD_HYBS_VER),    #5,2
+    'hybt' : (VGD_HYBT_KIND, VGD_HYBT_VER),    #5,3
+    'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER),    #5,4
+    'hybmd' : (VGD_HYBMD_KIND, VGD_HYBMD_VER)  #5,5
     }
 
 VGD_OPR_KEYS = {
