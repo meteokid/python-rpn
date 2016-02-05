@@ -22,25 +22,27 @@ VGD_ALLOW_RESHAPE  = 0
 VGD_ALLOW_SIGMA    = 1
 VGD_DISALLOW_SIGMA = 0
 
-VGD_SIGM_KIND = 1 #Sigma
+VGD_SIGM_KIND = 1  #Sigma
 VGD_SIGM_VER  = 1
-VGD_ETA_KIND = 1 #Eta
-VGD_ETA_VER  = 2
-VGD_HYBN_KIND = 1 #Hybrid Normalized
+VGD_ETA_KIND  = 1  #Eta
+VGD_ETA_VER   = 2
+VGD_HYBN_KIND = 1  #Hybrid Normalized
 VGD_HYBN_VER  = 3
-VGD_PRES_KIND = 2 #pressure
+VGD_PRES_KIND = 2  #pressure
 VGD_PRES_VER  = 1
-VGD_HYB_KIND = 5 #Hybrid Un-staggered
-VGD_HYB_VER  = 1
-VGD_HYBS_KIND = 5 #Hybrid staggered
+VGD_HYB_KIND  = 5  #Hybrid Un-staggered
+VGD_HYB_VER   = 1
+VGD_HYBS_KIND = 5  #Hybrid staggered
 VGD_HYBS_VER  = 2
-VGD_HYBT_KIND = 5 #Hybrid staggered, first level is a thermo level, unstaggered last Thermo level
+VGD_HYBT_KIND = 5  #Hybrid staggered, first level is a thermo level, unstaggered last Thermo level
 VGD_HYBT_VER  = 3
-VGD_HYBM_KIND = 5 #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
+VGD_HYBM_KIND = 5  #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
 VGD_HYBM_VER  = 4
 
-VGD_DIAG_DPI  = _ct.c_int(1) #vgd_diag_withref: output pressure
-VGD_DIAG_DPIS = _ct.c_int(0) #vgd_diag_withref: output hydrostatic pressure partial derivative with respect to surface hydrostatic pressure, default used in vgd_levels
+VGD_DIAG_LOGP = 1  #vgd_diag_withref: output log pressure
+VGD_DIAG_PRES = 0  #vgd_diag_withref: output pressure
+VGD_DIAG_DPI  = 1  #vgd_diag_withref: output pressure
+VGD_DIAG_DPIS = 0  #vgd_diag_withref: output hydrostatic pressure partial derivative with respect to surface hydrostatic pressure, default used in vgd_levels
 
 VGD_KIND_VER = {
     'sigm' : (VGD_SIGM_KIND, VGD_SIGM_VER),
@@ -61,7 +63,7 @@ VGD_OPR_KEYS = {
                        "LOGP"],
     'put_int'       : ["DATE", "IG_1", "IG_2", "IG_3", "IG_4", "IP_1", "IP_2",
                        "IP_3", "DIPM", "DIPT"],
-    'get_float '    : ["RC_1", "RC_2", "DHM", "DHT"],     
+    'get_float'     : ["RC_1", "RC_2", "DHM", "DHT"],     
     'get_int_1d'    : ["VIP1", "VIPM", "VIPT"], 
     'get_float_1d'  : ["VCDM", "VIPM", "VCDT", "VIPT"], 
     'put_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],

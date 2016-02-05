@@ -10,7 +10,16 @@ import rpnpy.librmn.all as rmn
 
 C_MKSTR = ct.create_string_buffer
 
-class VGDReadTests(unittest.TestCase):
+class VGDProtoTests(unittest.TestCase):
+
+    def _newReadBcmk(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
+        vgd0ptr = vgd.c_vgd_construct()
+        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
+        rmn.fstcloseall(fileId)
+        return vgd0ptr
 
     def testGetPutOptInt(self):
         quiet = ct.c_int(0)
@@ -40,12 +49,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(vgd0ptr[0].version,vgd.VGD_HYB_VER)
 
     def testNewReadGetInt(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         vkind = ct.c_int(0)
         vvers = ct.c_int(0)
         quiet = ct.c_int(0)
@@ -58,12 +62,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(ok,vgd.VGD_ERROR)
 
     def testNewReadGetFloat(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         #print vgd0ptr[0].rcoef1,vgd0ptr[0].rcoef2
         v1 = ct.c_float(0)
         v2 = ct.c_float(0)
@@ -75,12 +74,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(int(v2.value),vgd.VGD_MISSING)
 
     def testNewReadGetDouble(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         #print vgd0ptr[0].pref_8,vgd0ptr[0].ptop_8
         v1 = ct.c_double(0)
         v2 = ct.c_double(0)
@@ -92,12 +86,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(int(v2.value*100.),1000)
 
     def testNewReadGetChar(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         #print vgd0ptr[0].ref_name
         v1 = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
@@ -106,12 +95,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v1.value.strip(),'P0')
 
     def testNewReadGetInt1D(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
         ## print vgd0ptr[0].ip1_m[0]
         v1 = ct.POINTER(ct.c_int)()
@@ -123,12 +107,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v1[0:3],[97642568, 97690568, 97738568])
 
     def testNewReadGetFloat1D(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
         ## print vgd0ptr[0].ip1_m[0]
         v1 = ct.POINTER(ct.c_float)()
@@ -140,12 +119,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual([int(x*10000000) for x in v1[0:3]],[1250, 1729, 2209])
 
     def testNewReadGetDouble1D(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
         ## print vgd0ptr[0].a_m_8[0]
         v1 = ct.POINTER(ct.c_double)()
@@ -159,12 +133,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(int(v1[2]*100.),1765)
 
     def testNewReadGetDouble3D(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         ## print vgd0ptr[0].nl_m, vgd0ptr[0].nl_t
         ## print vgd0ptr[0].a_m_8[0]
         v1 = ct.POINTER(ct.c_double)()
@@ -178,12 +147,7 @@ class VGDReadTests(unittest.TestCase):
                          [500, 100, 300, 1000, 8000000, 160, 0, 0, 0])
         
     def testNewReadPutChar(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         v1 = C_MKSTR('PRES')
         quiet = ct.c_int(0)
         ok = vgd.c_vgd_put_char(vgd0ptr, 'RFLD', v1)
@@ -194,12 +158,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v2.value.strip(),'PRES')
 
     def testNewReadPutInt(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         v1 = ct.c_int(6)
         quiet = ct.c_int(0)
         ok = vgd.c_vgd_put_int(vgd0ptr, 'IG_1', v1)
@@ -210,12 +169,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(v1.value,v2.value)
 
     def testNewReadPutDouble(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         #print vgd0ptr[0].pref_8,vgd0ptr[0].ptop_8
         v1 = ct.c_double(70000.)
         ok = vgd.c_vgd_put_double(vgd0ptr, 'PREF', v1)
@@ -227,12 +181,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(int(v2.value*100.),7000000)
 
     def testFree(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
         vgd.c_vgd_free(vgd0ptr)
         v1 = C_MKSTR(' '*vgd.VGD_MAXSTR_NOMVAR)
         quiet = ct.c_int(0)
@@ -240,14 +189,8 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(ok,vgd.VGD_ERROR)
 
     def testCmp(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        vgd1ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd1ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
+        vgd0ptr = self._newReadBcmk()
+        vgd1ptr = self._newReadBcmk()
         ok = vgd.c_vgd_vgdcmp(vgd0ptr,vgd1ptr)
         self.assertEqual(ok,vgd.VGD_OK)
         v1 = C_MKSTR('PRES')
@@ -263,13 +206,7 @@ class VGDReadTests(unittest.TestCase):
             pass
 
     def testWriteDesc(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
-
+        vgd0ptr = self._newReadBcmk()
         self.erase_testfile()
         fileName = self.fname
         fileId = rmn.fstopenall(fileName, rmn.FST_RW)
@@ -382,13 +319,7 @@ class VGDReadTests(unittest.TestCase):
         self.assertEqual(vvers.value,vgd.VGD_HYBS_VER)
 
     def testNewFromTable(self):
-        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-        fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-        fileId = rmn.fstopenall(fileName, rmn.FST_RO)
-        vgd0ptr = vgd.c_vgd_construct()
-        ok = vgd.c_vgd_new_read(vgd0ptr,fileId,-1,-1,-1,-1)
-        rmn.fstcloseall(fileId)
-
+        vgd0ptr = self._newReadBcmk()
         v1 = ct.POINTER(ct.c_double)()
         ni = ct.c_int(0)
         nj = ct.c_int(0)
@@ -547,7 +478,7 @@ class VGDReadTests(unittest.TestCase):
         quiet = ct.c_int(0)
         ok = vgd.c_vgd_get_int_1d(vgd0ptr, 'VIPM', ct.byref(ip1list), ct.byref(nip1), quiet)
         
-        ni = rfld.shape[0] ; nj = rfld.shape[1] ; in_log = 0
+        (ni,nj) = rfld.shape[0:2] ; in_log = 0
         levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
         ok = vgd.c_vgd_diag_withref(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log, vgd.VGD_DIAG_DPIS);
         self.assertEqual(ok,vgd.VGD_OK)
@@ -582,7 +513,7 @@ class VGDReadTests(unittest.TestCase):
         levels8 = np.empty((ni, nj, nip1.value), dtype=np.float64, order='FORTRAN')
         rfld8 = np.empty((ni, nj), dtype=np.float64, order='FORTRAN')
         rfld8[:,:] = rfld[:,:]
-        ok = vgd.c_vgd_diag_withref_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, vgd.VGD_DIAG_DPIS);
+        ok = vgd.c_vgd_diag_withref_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, vgd.VGD_DIAG_DPIS)
         self.assertEqual(ok,vgd.VGD_OK)
         self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])

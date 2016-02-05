@@ -14,6 +14,6 @@ Short hand to load all librmn submodules in the same namespace
 """
 
 from . import *
-from .proto import *
 from .const import *
-#from .base import *
+from .proto import *
+from .base import *
