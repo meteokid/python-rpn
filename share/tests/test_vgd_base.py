@@ -41,10 +41,10 @@ class VGDBaseTests(unittest.TestCase):
 
         try:
             scrap = vgd.vgd_get(vgd0ptr, 'SCRAP')
-        except vgd.VGDError:
+        except KeyError:
             pass
         except:
-            self.assertEqual(0,1,'vgd_get of Unknown key should raise a VGDError')
+            self.assertEqual(0,1,'vgd_get of Unknown key should raise a KeyError')
 
     def testNewReadGetFloat(self):
         vgd0ptr = self._newReadBcmk()
@@ -140,11 +140,11 @@ class VGDBaseTests(unittest.TestCase):
         vgd1ptr = self._newReadBcmk()
         
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertTrue(ok)
         
         vgd.vgd_put(vgd0ptr, 'RFLD', 'PRES')
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertNotEqual(ok,vgd.VGD_OK)
+        self.assertFalse(ok)
 
     fname = '__rpnstd__testfile__.fst'
     def _erase_testfile(self):
@@ -167,7 +167,7 @@ class VGDBaseTests(unittest.TestCase):
         rmn.fstcloseall(fileId)
         self._erase_testfile()
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertTrue(ok)
 
     hyblist = (0.0134575, 0.0203980, 0.0333528, 0.0472815, 0.0605295, 0.0720790,
                0.0815451, 0.0889716, 0.0946203, 0.0990605, 0.1033873, 0.1081924,
@@ -250,7 +250,6 @@ class VGDBaseTests(unittest.TestCase):
     def testNewHybT(self):
         rcoef1 = 0.
         rcoef2 = 10.
-        ptop = 8.05 * self.MB2PA
         ptop = 10. * self.MB2PA
         pref = 1000. * self.MB2PA
         vgd0ptr = vgd.vgd_new_hybt(self.hyblist, rcoef1, rcoef2, ptop, pref)
@@ -341,7 +340,7 @@ class VGDBaseTests(unittest.TestCase):
         vgdtbl  = vgd.vgd_tolist(vgd0ptr)
         vgd1ptr = vgd.vgd_fromlist(vgdtbl)
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
-        self.assertEqual(ok,vgd.VGD_OK)
+        self.assertTrue(ok)
         
     def testLevels_prof(self):
         vgd0ptr = self._newReadBcmk()

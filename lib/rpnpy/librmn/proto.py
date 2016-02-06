@@ -8,8 +8,20 @@
 """
 Module librmn is a ctypes import of librmnshared.so
  
-The librmn.proto python module includes ctypes prototypes for many librmn C functions
- 
+The librmn.proto python module includes ctypes prototypes for many
+librmn C functions
+
+The functions in this module are actual C funtions and must thus be called
+as such with appropriate argument typing and dereferencing.
+It is highly advised in a python program to prefer the use of the python wrapper
+found in rpnpy.librmn.base, rpnpy.librmn.fstd98 and rpnpy.librmn.interp
+
+ See Also:
+    rpnpy.librmn.base
+    rpnpy.librmn.fstd98
+    rpnpy.librmn.interp
+    rpnpy.librmn.const
+
  === EXTERNAL FUNCTIONS in primitive ===
 
     c_fclos(iun):

@@ -10,11 +10,21 @@
 """
 Module vgd is a ctypes import of vgrid's library (libdescrip.so)
  
-The vgd.proto python module includes ctypes prototypes for many vgrid's libdescrip C functions
+The vgd.proto python module includes ctypes prototypes for many
+vgrid's libdescrip C functions.
+
+The functions in this module are actual C funtions and must thus be called
+as such with appropriate argument typing and dereferencing.
+It is highly advised in a python program to prefer the use of the python wrapper
+found in rpnpy.vgd.base
 
 This Module is available from python-rpn version 2.0.b6
 
-=== Functions C Prototypes ===
+ See Also:
+    rpnpy.vgd.base
+    rpnpy.vgd.const
+
+ === Functions C Prototypes ===
 
  c_vgd_construct():
     Returns a not fully initialized VGridDescriptor instance
@@ -23,7 +33,7 @@ This Module is available from python-rpn version 2.0.b6
     Args:
        None
     Returns:
-       VGridDescriptor, 
+       POINTER(VGridDescriptor) : a pointer to a new VGridDescriptor object
 
  c_vgd_new_read(self, unit, ip1, ip2, kind, version):
     Construct a vgrid descriptor from !! in RPN standard file
@@ -31,9 +41,19 @@ This Module is available from python-rpn version 2.0.b6
        int Cvgd_new_read(vgrid_descriptor **self, int unit, int ip1, int ip2,
                          int kind, int version);
     Args:
-
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled with read vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       unit     (int) : Openend RPN Std file unit number (I)
+       ip1      (int) : Ip1 of the vgrid record to find, use -1 for any (I)
+       ip2      (int) : Ip2 of the vgrid record to find, use -1 for any (I)
+       kind     (int) : vgrid kind (I)
+       version  (int) : vgrid version (I)
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_construct
+       c_vgd_free
 
  c_vgd_new_gen(self, kind, version, hyb, rcoef1, rcoef2, ptop_8, pref_8,
                ptop_out_8, ip1, ip2, dhm, dht):
@@ -44,10 +64,12 @@ This Module is available from python-rpn version 2.0.b6
                         double *ptop_8, double *pref_8, double *ptop_out_8,
                         int ip1, int ip2, float *dhm, float *dht);
     Args:
-       self (VGridDescriptor ref) : (O) 
-       kind     (int) : 
-       version  (int) : 
-       hyb      (float array) :
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       kind     (int) : vgrid kind (I)
+       version  (int) : vgrid version (I)
+       hyb      (float array) : 
        size_hyb (int) : 
        rcoef1   (float ptr) :
        rcoef2   (float ptr) :
@@ -59,7 +81,10 @@ This Module is available from python-rpn version 2.0.b6
        dhm      (float ptr) :
        dht      (float ptr) :
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_construct
+       c_vgd_free
 
  c_vgd_new_build_vert(self, kind, version, nk, ip1, ip2, ptop_8, pref_8,
                       rcoef1, rcoef2, a_m_8, b_m_8, a_t_8, b_t_8, ip1_m, ip1_t,
@@ -73,9 +98,15 @@ This Module is available from python-rpn version 2.0.b6
                                double *b_t_8, int *ip1_m, int *ip1_t,
                                int nl_m, int nl_t);
     Args:
-
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled with provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       ...
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_construct
+       c_vgd_free
 
  c_vgd_new_from_table(self, table, ni, nj, nk):
     Build a vgrid descriptor from the a VGridDescriptor stored as a table/array
@@ -83,28 +114,51 @@ This Module is available from python-rpn version 2.0.b6
        int Cvgd_new_from_table(vgrid_descriptor **self, double *table,
                                int ni, int nj, int nk);
     Args:
-       self, table, ni, nj, nk
+       self (POINTER(POINTER(VGridDescriptor))):
+               A VGridDescriptor obj to be filled with provided vgrid values (I/O)
+               This is obtained with c_vgd_construct
+       table   (POINTER(c_double)) : 
+       ni      (int) :
+       nj      (int) :
+       nk      (int) :
     Returns:
-       int, 
-
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_construct
+       c_vgd_free
+       c_vgd_get_double_3d
+ 
  c_vgd_write_desc(self, unit):
     Write vgrid descriptor in a previously opened RPN standard file
     Proto:
        int Cvgd_write_desc(vgrid_descriptor *self, int unit);
     Args:
-       self, unit
+       self (POINTER(VGridDescriptor)): A VGridDescriptor obj (I)
+       unit     (int) : Openend RPN Std file unit number (I)
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
+    See Also:
+       c_vgd_construct
+       c_vgd_new_read
+       c_vgd_new_gen
+       c_vgd_new_build_vert
+       c_vgd_new_from_table
 
  c_vgd_free(self):
     Free memory from previously created vgrid descriptor
     Proto:
        void Cvgd_free(vgrid_descriptor **self);
     Args:
-       self (VGridDescriptor ref) : (I/O) 
+       self (POINTER(POINTER(VGridDescriptor))): A VGridDescriptor obj (I/O)
     Returns:
        None
-
+    See Also:
+       c_vgd_construct
+       c_vgd_new_read
+       c_vgd_new_gen
+       c_vgd_new_build_vert
+       c_vgd_new_from_table
+ 
  c_vgd_vgdcmp(vgd1, vgd2):
     Test if two vgrid descriptors are equal,
     Returns 0 if they are the same like String function strcmp
@@ -126,7 +180,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_levels_8(self, ni, nj, nk, ip1_list, levels_8, sfc_field_8, in_log):
     Compute level positions (pressure) for the given ip1 list and surface field
@@ -138,7 +192,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_diag_withref(self, ni, nj, nk, ip1_list, levels, sfc_field, in_log, dpidpis):
     Compute level positions (pressure) for the given ip1 list and surface field
@@ -150,7 +204,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_diag_withref_8(self, ni, nj, nk, ip1_list, levels_8, sfc_field_8, in_log, dpidpis):
     Compute level positions (pressure) for the given ip1 list and surface field
@@ -162,7 +216,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_int(self, key, value, quiet):
     Get scalar integer attribute of vgrid descriptor
@@ -173,7 +227,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_getopt_int(key, value, quiet):
     Get scalar integer global VGD option 
@@ -184,7 +238,7 @@ This Module is available from python-rpn version 2.0.b6
        value
        quiet
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_int_1d(self, key, value, nk, quiet):
     Get vector integer attribute of vgrid descriptor
@@ -195,7 +249,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_float(self, key, value, quiet):
     Get scalar float attribute of vgrid descriptor
@@ -206,7 +260,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_float_1d(self, key, value, nk, quiet):
     Get vector float attribute of vgrid descriptor
@@ -217,7 +271,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_double(self, key, value_get, quiet):
     Get scalar double attribute of vgrid descriptor
@@ -228,7 +282,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_double_1d(self, key, value, nk, quiet):
     Get vector double attribute of vgrid descriptor
@@ -239,7 +293,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_get_double_3d(self, key, value, ni, nj, nk, quiet):
     Get array double attribute of vgrid descriptor
@@ -250,7 +304,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int,
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_char(self, key, out, quiet):
     Get character attribute of vgrid descriptor
@@ -261,7 +315,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_put_char(self, key, value):
     Set scalar char attribute of vgrid descriptor
@@ -271,7 +325,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_put_int(self, key, value):
     Set scalar int attribute of vgrid descriptor
@@ -281,7 +335,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_putopt_int(key, value):
     Set scalar integer global VGD option 
@@ -292,7 +346,7 @@ This Module is available from python-rpn version 2.0.b6
        value
        quiet
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
  c_vgd_put_double(self, key, value_put):
     Set scalar double attribute of vgrid descriptor   
@@ -302,7 +356,7 @@ This Module is available from python-rpn version 2.0.b6
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int, 
+       int : Status VGD_OK or VGD_ERROR 
 
 """
  ## c_vgd_print_desc(self, sout, convip):
