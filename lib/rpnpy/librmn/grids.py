@@ -19,7 +19,8 @@ from . import llacar as _ll
 from . import RMNError
 
 def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
-    """Decode encode grid values into a dict with meaningful labels
+    """
+    Decode encode grid values into a dict with meaningful labels
     
     params = decodeIG2dict(grtyp, ig1, ig2, ig3, ig4)
     
@@ -49,6 +50,23 @@ def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+    
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> # Encode a LatLon Grid parameters
+    >>> grtyp = 'L'
+    >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
+    >>> (ig1, ig2, ig3, ig4) = rmn.cxgaig(grtyp,lat0, lon0, dlat, dlon)
+    >>> # Decode Grid parameters to generix xg1-4 values
+    >>> params = rmn.decodeIG2dict(grtyp, ig1, ig2, ig3, ig4)
+    >>> if (params['xg1'], params['xg2'], params['xg3'], params['xg4']) !=\
+    >>>    (lat0, lon0, dlat, dlon):
+    >>>    print("Problem decoding grid values.")
+
+    See Also:
+        decodeXG2dict
+        rpnpy.librmn.base.cigaxg
+        rpnpy.librmn.base.cxgaig
     """
     (xg1, xg2, xg3, xg4) = _rb.cigaxg(grtyp, ig1, ig2, ig3, ig4)
     params = decodeXG2dict(grtyp, xg1, xg2, xg3, xg4)
@@ -63,7 +81,8 @@ def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
 
 
 def decodeXG2dict(grtyp, xg1, xg2, xg3, xg4):
-    """Put decode grid values into a dict with meaningful labels
+    """
+    Put decode grid values into a dict with meaningful labels
 
     params = decodeXG2dict(grtyp, xg1, xg2, xg3, xg4)
     
@@ -89,6 +108,25 @@ def decodeXG2dict(grtyp, xg1, xg2, xg3, xg4):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> # Encode a LatLon Grid parameters
+    >>> grtyp = 'L'
+    >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
+    >>> (ig1, ig2, ig3, ig4) = rmn.cxgaig(grtyp,lat0, lon0, dlat, dlon)
+    >>> # Decode Grid parameters to generix xg1-4 values
+    >>> params = rmn.decodeIG2dict(grtyp, ig1, ig2, ig3, ig4)
+    >>> # Decode Grid parameters to grid specific parameters
+    >>> params = rmn.decodeXG2dict(grtyp, params['xg1'], params['xg2'], params['xg3'], params['xg4'])
+    >>> if (params['lat0'], params['lon0'], params['dlat'], params['dlon']) !=\
+    >>>    (lat0, lon0, dlat, dlon):
+    >>>    print("Problem decoding grid values.")
+
+    See Also:
+        decodeIG2dict
+        rpnpy.librmn.base.cigaxg
+        rpnpy.librmn.base.cxgaig
     """
     grtyp = grtyp.strip().upper()
     params = {
@@ -136,8 +174,8 @@ def decodeXG2dict(grtyp, xg1, xg2, xg3, xg4):
 
 
 def decodeGrid(gid):
-    """Produce grid params dict as defGrid* fn,
-    decoded from provided ezscint Id
+    """
+    Produce grid params dict as defGrid* fn, decoded from provided ezscint Id
 
     gridParams = decodeGrid(gid)
     
@@ -168,7 +206,39 @@ def decodeGrid(gid):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
-     """
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> # Define a LatLon Grid
+    >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
+    >>> params  = rmn.defGrid_L(lat0, lon0, dlat, dlon)
+    >>> # Decode grid information
+    >>> params2 = rmn.decodeGrid(params['id'])
+    >>> # Check that decoded values are identical to what we provided
+    >>> for k in params.keys():
+    >>>     if params[k] != params2[k]:
+    >>>        print("Problem decoding grid param[%s] : %s != %s " %
+    >>>              (k,str(params[k]),str(params2[k]))
+
+
+    See Also:
+        encodeGrid
+        defGrid_PS
+        defGrid_G
+        defGrid_L
+        defGrid_E
+        defGrid_ZL
+        defGrid_ZE
+        defGrid_diezeEL
+        defGrid_diezeE
+        defGrid_YY
+        rpnpy.librmn.base.cigaxg
+        rpnpy.librmn.base.cxgaig
+        rpnpy.librmn.interp.ezgprm
+        rpnpy.librmn.interp.ezgxprm
+        rpnpy.librmn.interp.ezget_nsubgrids
+        rpnpy.librmn.interp.ezget_subgridids
+    """
     params = _ri.ezgxprm(gid)
     params['nsubgrids'] = 1
     params['subgridid'] = [gid]
@@ -231,7 +301,8 @@ def decodeGrid(gid):
 
 
 def getIgTags(params):
-    """Use grid params and CRC to define 2 grid tags
+    """
+    Use grid params and CRC to define 2 grid tags
     
     (tag1, tag2) = setIgTags(params)
     
@@ -262,7 +333,21 @@ def getIgTags(params):
         (int, int) : 2 grid tags
     Raises:
         TypeError    on wrong input arg types
-        EzscintError on any other error
+        RMNError     on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> # Define a Rotated LatLon Grid
+    >>> (ni, nj) = (90,45)
+    >>> (lat0, lon0, dlat, dlon)     = (10., 11., 1., 0.5)
+    >>> (xlat1, xlon1, xlat2, xlon2) = (0., 180., 1., 270.)
+    >>> params  = rmn.defGrid_ZE(ni, nj, lat0, lon0, dlat, dlon,
+    >>>                          xlat1, xlon1, xlat2, xlon2)
+    >>> (tag1, tag2) = rmn.getIgTags(params)
+
+    See Also:
+        defGrid_ZE
+        rpnpy.librmn.base.crc32
     """
     a = params['ax'][:, 0].tolist()
     a.extend(params['ay'][0, :].tolist())
@@ -282,7 +367,8 @@ def getIgTags(params):
 
 
 def encodeGrid(params):
-    """Define an FSTD grid with the provided parameters
+    """
+    Define an FSTD grid with the provided parameters
 
     gridParams = encodeGrid(params)
     
@@ -305,6 +391,36 @@ def encodeGrid(params):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = {
+    >>>     'grtyp' : 'Z',
+    >>>     'grref' : 'E',
+    >>>     'ni'    : 90,
+    >>>     'nj'    : 45,
+    >>>     'lat0'  : 10.,
+    >>>     'lon0'  : 11.,
+    >>>     'dlat'  : 1.,
+    >>>     'dlon'  : 0.5,
+    >>>     'xlat1' : 0.,
+    >>>     'xlon1' : 180.,
+    >>>     'xlat2' : 1.,
+    >>>     'xlon2' : 270.
+    >>>     }
+    >>> params  = rmn.encodeGrid(params0)
+
+    See Also:
+        decodeGrid
+        defGrid_PS
+        defGrid_G
+        defGrid_L
+        defGrid_E
+        defGrid_ZL
+        defGrid_ZE
+        defGrid_diezeEL
+        defGrid_diezeE
+        defGrid_YY
     """
     try:
         params['grtyp'] = params['grtyp'].strip().upper()
@@ -339,7 +455,8 @@ def encodeGrid(params):
     
 def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
               setGridId=True):
-    """Defines an FSTD LatLon (cylindrical equidistant) Grid (LAM)
+    """
+    Defines an FSTD LatLon (cylindrical equidistant) Grid (LAM)
 
     gridParams = defGrid_L(ni, nj, lat0, lon0, dlat, dlon, setGridId)
     gridParams = defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
@@ -373,6 +490,15 @@ def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
+    >>> params  = rmn.defGrid_L(lat0, lon0, dlat, dlon)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'   : ni,
@@ -418,7 +544,8 @@ def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
 
 def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
               setGridId=True):
-    """Defines an FSTD Global, rotated, LatLon (cylindrical equidistant) Grid
+    """
+    Defines an FSTD Global, rotated, LatLon (cylindrical equidistant) Grid
 
     gridParams = defGrid_E(ni, nj, xlat1, xlon1, xlat2, xlon2, setGridId)
     gridParams = defGrid_E(ni, nj, xlat1, xlon1, xlat2, xlon2)
@@ -458,6 +585,16 @@ def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (ni, nj) = (90,45)
+    >>> (xlat1, xlon1, xlat2, xlon2) = (0., 180., 1., 270.)
+    >>> params  = rmn.defGrid_E(ni, nj, xlat1, xlon1, xlat2, xlon2)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'    : ni,
@@ -507,7 +644,8 @@ def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
 
 def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                xlat1=None, xlon1=None, xlat2=None, xlon2=None, setGridId=True):
-    """Defines an FSTD LAM, rotated, LatLon (cylindrical equidistant) Grid
+    """
+    Defines an FSTD LAM, rotated, LatLon (cylindrical equidistant) Grid
 
     gridParams = defGrid_ZE(ni, nj, lat0, lon0, dlat, dlon,
                             xlat1, xlon1, xlat2, xlon2, setGridId)
@@ -566,6 +704,26 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = {
+    >>>     'ni'    : 90,
+    >>>     'nj'    : 45,
+    >>>     'lat0'  : 10.,
+    >>>     'lon0'  : 11.,
+    >>>     'dlat'  : 1.,
+    >>>     'dlon'  : 0.5,
+    >>>     'xlat1' : 0.,
+    >>>     'xlon1' : 180.,
+    >>>     'xlat2' : 1.,
+    >>>     'xlon2' : 270.
+    >>>     }
+    >>> params  = rmn.defGrid_ZE(params0)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'    : ni,
@@ -650,7 +808,8 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
 def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                    xlat1=None, xlon1=None, xlat2=None, xlon2=None,
                    lni=None, lnj=None, i0=None, j0=None, setGridId=True):
-    """Defines an FSTD LAM, rotated, LatLon (cylindrical equidistant) Grid
+    """
+    Defines an FSTD LAM, rotated, LatLon (cylindrical equidistant) Grid
 
     gridParams = defGrid_diezeE(ni, nj, lat0, lon0, dlat, dlon, xlat1, xlon1,
                                 xlat2, xlon2, lni, lnj, i0, j0, setGridId)
@@ -722,6 +881,30 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         ValueError on invalid input arg value
         RMNError   on any other error
 
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = {
+    >>>     'lni'   : 180,
+    >>>     'lnj'   : 90,
+    >>>     'i0'    : 1,
+    >>>     'j0'    : 1,
+    >>>     'ni'    : 90,
+    >>>     'nj'    : 45,
+    >>>     'lat0'  : 10.,
+    >>>     'lon0'  : 11.,
+    >>>     'dlat'  : 1.,
+    >>>     'dlon'  : 0.5,
+    >>>     'xlat1' : 0.,
+    >>>     'xlon1' : 180.,
+    >>>     'xlat2' : 1.,
+    >>>     'xlon2' : 270.
+    >>>     }
+    >>> params  = rmn.defGrid_diezeE(params0)
+
+    See Also:
+        decodeGrid
+        encodeGrid
+
     Notes:
         Unfortunately, librmn's ezscint does NOT allow defining a # grid
         from ezgdef_fmem.
@@ -768,7 +951,8 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
 
 def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                setGridId=True):
-    """Defines an FSTD LAM LatLon (cylindrical equidistant) Grid
+    """
+    Defines an FSTD LAM LatLon (cylindrical equidistant) Grid
 
     gridParams = defGrid_ZL(ni, nj, lat0, lon0, dlat, dlon, setGridId)
     gridParams = defGrid_ZL(ni, nj, lat0, lon0, dlat, dlon)
@@ -811,6 +995,22 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = {
+    >>>     'ni'    : 90,
+    >>>     'nj'    : 45,
+    >>>     'lat0'  : 10.,
+    >>>     'lon0'  : 11.,
+    >>>     'dlat'  : 1.,
+    >>>     'dlon'  : 0.5
+    >>>     }
+    >>> params  = rmn.defGrid_Zl(params0)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'    : ni,
@@ -878,7 +1078,8 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
 
 def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                    lni=None, lnj=None, i0=None, j0=None, setGridId=True):
-    """Defines an FSTD LAM  LatLon (cylindrical equidistant) Grid
+    """
+    Defines an FSTD LAM  LatLon (cylindrical equidistant) Grid
 
     gridParams = defGrid_diezeL(ni, nj, lat0, lon0, dlat, dlon,
                                 lni, lnj, i0, j0, setGridId)
@@ -934,6 +1135,26 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         ValueError on invalid input arg value
         RMNError   on any other error
 
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = {
+    >>>     'lni'   : 180,
+    >>>     'lnj'   : 90,
+    >>>     'i0'    : 1,
+    >>>     'j0'    : 1,
+    >>>     'ni'    : 90,
+    >>>     'nj'    : 45,
+    >>>     'lat0'  : 10.,
+    >>>     'lon0'  : 11.,
+    >>>     'dlat'  : 1.,
+    >>>     'dlon'  : 0.5,
+    >>>     }
+    >>> params  = rmn.defGrid_diezeL(params0)
+
+    See Also:
+        decodeGrid
+        encodeGrid
+
     Notes:
         Unfortunately, librmn's ezscint does NOT allow defining a # grid
         from ezgdef_fmem.
@@ -979,7 +1200,8 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
 
 def defGrid_G(ni, nj=None, glb=True, north=True, inverted=False,
               setGridId=True):
-    """Provide grid parameters to define an FSTD Gaussian Grid
+    """
+    Provide grid parameters to define an FSTD Gaussian Grid
 
     gridParams = gridParams_G(ni, nj, lat0, lon0, dlat, dlon, setGridId)
     gridParams = gridParams_G(ni, nj, lat0, lon0, dlat, dlon)
@@ -1018,6 +1240,14 @@ def defGrid_G(ni, nj=None, glb=True, north=True, inverted=False,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params  = rmn.defGrid_G(90, 45, glb=True, north=True, inverted=False)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'   : ni,
@@ -1054,7 +1284,8 @@ def defGrid_G(ni, nj=None, glb=True, north=True, inverted=False,
 
 def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
                dgrw=0., setGridId=True):
-    """Define a Polar stereographic grid for the northern or southern hemisphere
+    """
+    Define a Polar stereographic grid for the northern or southern hemisphere
 
     gridParams = defGrid_PS(ni, nj, north, pi, pj, d60, dgrw, setGridId)
     gridParams = defGrid_PS(ni, nj, north, pi, pj, d60, dgrw)
@@ -1105,6 +1336,14 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params = rmn.defGrid_PS(90, 45, north=True, pi=45, pj=30, d60=5000., dgrw=270.)
+
+    See Also:
+        decodeGrid
+        encodeGrid
     """
     params = {
         'ni'   : ni,
@@ -1155,7 +1394,8 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
 
 def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
                setGridId=True):
-    """Defines a YIN/YAN grid composed of 2 rotated LatLon
+    """
+    Defines a YIN/YAN grid composed of 2 rotated LatLon
        (cylindrical equidistant) Grids
 
     gridParams = defGrid_YY(nj, overlap, xlat1, xlon1, xlat2, xlon2, setGridId)
@@ -1216,6 +1456,17 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params = rmn.defGrid_YY(31, overlap=1.5, xlat1=0., xlon1=180.,
+    >>>                         xlat2=0., xlon2=270.)
+
+    See Also:
+        decodeGrid
+        encodeGrid
+        yyg_yangrot_py
+        yyg_pos_rec
     """
     params = {
         'nj'    : nj,
@@ -1298,7 +1549,8 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
 
 #TODO: write in C (modelutils's C): llacar, cartall, yyg_yangrot, yyg_pos_rec
 def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
-    """Compute the rotation for the Yang grid using the rotation from Yin
+    """
+    Compute the rotation for the Yang grid using the rotation from Yin
 
     (yanlat1, yanlon1, yanlat2, yanlon2) = 
         yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2)
@@ -1309,6 +1561,17 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
         (yanlat1, yanlon1, yanlat2, yanlon2)
     Raises:
         TypeError  on wrong input arg types    
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (xlat1, xlon1, xlat2, xlon2)    = (0., 180., 0., 270.)
+    >>> (xlat1b, xlon1b,xlat2b, xlon2b) = rmn.yyg_yangrot_py(xlat1, xlon1, xlat2, xlon2)
+    >>> 
+
+    See Also:
+        defGrid_YY
+        decodeGrid
+        encodeGrid
     """
     xyz1 = _ll.llacar_py(yinlon1, yinlat1)
     xyz2 = _ll.llacar_py(yinlon2, yinlat2)
@@ -1357,7 +1620,8 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
 
 
 def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
-    """Pack grid description value into the ^> record descriptor of the YY grid
+    """
+    Pack grid description value into the ^> record descriptor of the YY grid
 
     axy = yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, xy)
 
@@ -1375,6 +1639,15 @@ def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
         ay : points latitudes of the YIN grid, in rotated coor.(numpy.ndarray)
     Returns:
         numpy.ndarray, positional record describing the yy-grid
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> 
+
+    See Also:
+        defGrid_YY
+        decodeGrid
+        encodeGrid
     """
     vesion_uencode    = 1
     family_uencode_S = 'F'
