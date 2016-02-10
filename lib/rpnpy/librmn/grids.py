@@ -229,7 +229,7 @@ def decodeGrid(gid):
         defGrid_E
         defGrid_ZL
         defGrid_ZE
-        defGrid_diezeEL
+        defGrid_diezeL
         defGrid_diezeE
         defGrid_YY
         rpnpy.librmn.base.cigaxg
@@ -418,7 +418,7 @@ def encodeGrid(params):
         defGrid_E
         defGrid_ZL
         defGrid_ZE
-        defGrid_diezeEL
+        defGrid_diezeL
         defGrid_diezeE
         defGrid_YY
     """
@@ -1006,7 +1006,7 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     >>>     'dlat'  : 1.,
     >>>     'dlon'  : 0.5
     >>>     }
-    >>> params  = rmn.defGrid_Zl(params0)
+    >>> params  = rmn.defGrid_ZL(params0)
 
     See Also:
         decodeGrid
