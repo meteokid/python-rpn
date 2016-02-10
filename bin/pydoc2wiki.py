@@ -10,6 +10,7 @@ Short
 import sys
 import re
 import pydoc
+import inspect
 
 tmpl = {}
 tmpl['head'] = """
@@ -18,8 +19,8 @@ __NOTITLE__
 {{:Python-RPN/2.0/navbox}} 
 @DESC@ 
 {{roundbox|
-The functions described below are a very close ''port'' from the original [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
-You may want to refer to the [[Librmn/FSTDfunctions|FSTD documentation]] for more details.
+The functions described below are a very close ''port'' from the original [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] packages.<br>
+You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] documentation for more details.
 }}
 __TOC__
 
@@ -61,6 +62,10 @@ tmpl['desc'] = """
 @LONG@
 """
 
+tmpl['funcalias'] = """=== @NAME1@ ===
+Function <tt>@NAME1@</tt> is an alias for function [[#@NAME2@|@NAME2@]]
+"""
+
 tmpl['func'] = """=== @NAME@ ===
 Function <tt>@NAME@</tt>: @SHORT@
 <source lang="python">
@@ -69,6 +74,8 @@ Function <tt>@NAME@</tt>: @SHORT@
 @DESC@
    '''
 </source>
+@EXAMPLE@
+@NOTES@
 @SEEALSO@
 """
 
@@ -80,6 +87,8 @@ Method <tt>@NAME@</tt>: @SHORT@
 @DESC@
    '''
 </source>
+@EXAMPLE@
+@NOTES@
 @SEEALSO@
 """
 
@@ -92,10 +101,21 @@ Child of: @SUPER@
 @DESC@
    '''
 </source>
+@EXAMPLE@
+@NOTES@
 @SEEALSO@
 @ATTR@
 @METH@
 """
+
+def get_example(mystr):
+    if not mystr.strip():
+        return ''
+    s = 'Examples:\n'
+    s += '<source lang="python">\n'
+    s += mystr.strip().replace('>>> ','').replace('>>>','')
+    s += '</source>\n'
+    return s
 
 def get_seealso(mystr, allSymbols=[]):
     if not mystr.strip():
@@ -183,7 +203,9 @@ class MyDocFileDataDesc(dict):
         ##     'seealso'  : 'See Also:'
         ##     }
         self.sections = {
-            'seealso'  : 'See Also'
+            'seealso'  : 'See Also',
+            'example'  : 'Examples:',
+            'notes'    : 'Notes:'
             }
         self[''] = mystr
         self['short'] = mystr.strip()
@@ -233,7 +255,7 @@ class MyDocFileDict(dict):
         if not len(self):
             return ''
         s = ''
-        for x in self.keys():
+        for x in sorted(self.keys()):
             s += self[x].toWiki(allSymbols, inClass=inClass)
         if tmpl:
             return tmpl.replace('@DATA@', s.rstrip(' \n'))
@@ -316,14 +338,24 @@ class MyDocFileFunction(MyDocFileObj):
         self['desc'] = MyDocFileDataDesc(mystr)
 
     def toWiki(self, allSymbols=[], inClass=False):
+        names = self['name'].split('=',1)
+        if len(names) > 1:
+            s = tmpl['funcalias']
+            return s\
+                .replace('@NAME1@', names[0].strip())\
+                .replace('@NAME2@', names[1].strip())
+
         s = tmpl['func']
         if inClass:
             s = tmpl['method']
+        
         return s\
             .replace('@NAME@', self['name'])\
             .replace('@ARGS@', self['args'])\
             .replace('@DESC@', do_indent(self['desc'].toWiki(allSymbols).strip()))\
             .replace('@SHORT@', self['desc']['short'].strip())\
+            .replace('@EXAMPLE@', get_example(self['desc']['example']))\
+            .replace('@NOTES@', self['desc']['notes'])\
             .replace('@SEEALSO@', get_seealso(self['desc']['seealso'], allSymbols))
         ## return "%s(%s)\n%s\n" % (self['name'], self['args'], self['desc'].toWiki(allSymbols))
 
@@ -375,6 +407,8 @@ class MyDocFileClass(MyDocFileObj):
             .replace('@DESC@', do_indent(self['desc'].toWiki(allSymbols).strip(' \n')))\
             .replace('@SHORT@', self['desc']['short'].strip())\
             .replace('@NAME@', self['name'])\
+            .replace('@EXAMPLE@', get_example(self['desc']['example']))\
+            .replace('@NOTES@', self['desc']['notes'])\
             .replace('@SEEALSO@', get_seealso(self['desc']['seealso'], allSymbols))
 
     def symbols(self):
@@ -393,6 +427,7 @@ class MyDocFile(MyDocFileObj):
         self['tree'] = ''
         self['name'] = name
         self['raw'] = re.sub('.\b', '', pydoc.render_doc(name))
+        self['synmols'] = __import__(name,fromlist=[name.split('.')[-1]])
         d = split_sections(self['raw'].split('\n'))
         if 'DATA' in d.keys():
             self['data'] = MyDocFileDataDict('\n'.join(d['DATA']))
@@ -412,6 +447,8 @@ class MyDocFile(MyDocFileObj):
             x = d['NAME'][0].split('-', 1)
             self['name1'] = x[0].strip()
             self['desc'] = MyDocFileDataDesc(x[1].strip())
+        self['desc'] = MyDocFileDataDesc(self['synmols'].__doc__)
+        ## print name, repr(self['synmols'].__doc__)
         self['file'] = d['FILE'][0].strip()
 
     def toWiki(self, allSymbols=[]):
@@ -456,6 +493,7 @@ if __name__ == "__main__":
         'rpnpy.ftnnml',
         'rpnpy.openanything',
         'rpnpy.rpndate',
+        'rpnpy.librmn',
         'rpnpy.librmn.all',
         'rpnpy.librmn.base',
         'rpnpy.librmn.const',
@@ -463,7 +501,12 @@ if __name__ == "__main__":
         'rpnpy.librmn.fstd98',
         'rpnpy.librmn.interp',
         'rpnpy.librmn.llacar',
-        'rpnpy.librmn.proto'
+        'rpnpy.librmn.proto',
+        'rpnpy.vgd',
+        'rpnpy.vgd.all',
+        'rpnpy.vgd.base',
+        'rpnpy.vgd.const',
+        ## 'rpnpy.vgd.proto'
         ]
     docdir = './doc/'
     linkPrefix = 'Python-RPN/2.0/'

@@ -342,6 +342,16 @@ class VGDBaseTests(unittest.TestCase):
         ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
         self.assertTrue(ok)
         
+    def testNewCopy(self):
+        vgd0ptr = self._newReadBcmk()
+        vgd1ptr = vgd.vgd_copy(vgd0ptr)
+        ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
+        self.assertTrue(ok)
+        vgd.vgd_put(vgd1ptr, 'RFLD', 'PRES')
+        ok = vgd.vgd_cmp(vgd0ptr,vgd1ptr)
+        self.assertFalse(ok)
+
+        
     def testLevels_prof(self):
         vgd0ptr = self._newReadBcmk()
         MB2PA = 100.

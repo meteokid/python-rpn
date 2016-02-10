@@ -4,7 +4,14 @@
 # Copyright: LGPL 2.1
 
 """
-Module vgd..base contains python wrapper to main vgrid C functions
+Module vgd.base contains python wrapper to main vgrid C functions
+
+See Also:
+    rpnpy.vgd.proto
+    rpnpy.vgd.const
+
+Notes:
+    This Module is available from python-rpn version 2.0.b6
 """
 import ctypes as _ct
 import numpy  as _np
@@ -18,7 +25,7 @@ _C_MKSTR = _ct.create_string_buffer
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     """
-    Build a Sigma (1001) based VGridDescriptor initialized with provided info
+    Build a Sigma (1001) based VGridDescriptor initialized with provided info.
     
     Args:
         hyb      (list): list of sigma level values
@@ -53,7 +60,7 @@ vgd_new_1001 = vgd_new_sigm
 
 def vgd_new_pres(pres, ip1=-1, ip2=-1):
     """
-    Build a Pressure (2001) based VGridDescriptor initialized with provided info
+    Build a Pressure (2001) based VGridDescriptor initialized with provided info.
     
     Args:
         pres     (list): list of pressure level values [hPa]
@@ -87,7 +94,7 @@ vgd_new_2001 = vgd_new_pres
 
 def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
     """
-    Build an Eta (1002) based VGridDescriptor initialized with provided info
+    Build an Eta (1002) based VGridDescriptor initialized with provided info.
     
     Args:
         hyb      (list) : list of Eta level values
@@ -136,7 +143,7 @@ vgd_new_1002 = vgd_new_eta
 
 def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     """
-    Build an Hybrid Un-staggered (5001) VGridDescriptor initialized with provided info
+    Build an Hybrid Un-staggered (5001) VGridDescriptor initialized with provided info.
     
     Args:
         hyb      (list) : list of hybrid level values
@@ -182,7 +189,7 @@ vgd_new_5001 = vgd_new_hyb
 
 def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
-    Build an Hybrid Staggered (5002) VGridDescriptor initialized with provided info
+    Build an Hybrid Staggered (5002) VGridDescriptor initialized with provided info.
     
     Args:
         hyb      (list) : list of hybrid level values
@@ -231,8 +238,9 @@ vgd_new_5002 = vgd_new_hybs
 
 def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
-    Build an Hybrid Staggered (5003) VGridDescriptor initialized with provided info
-    First level is a thermo level, unstaggered last Thermo level
+    Build an Hybrid Staggered (5003) VGridDescriptor initialized with provided info.
+    
+    First level is a thermo level, unstaggered last Thermo level.
 
     Args:
         hyb      (list) : list of hybrid level values
@@ -281,8 +289,9 @@ vgd_new_5003 = vgd_new_hybt
 
 def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
-    Build an Hybrid Staggered (5004) VGridDescriptor initialized with provided info
-    First level is a momentum level, same number of thermo and momentum levels
+    Build an Hybrid Staggered (5004) VGridDescriptor initialized with provided info.
+    
+    First level is a momentum level, same number of thermo and momentum levels.
 
     Args:
         hyb      (list) : list of hybrid level values
@@ -335,9 +344,10 @@ vgd_new_5004 = vgd_new_hybm
 def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
                   ip1=-1, ip2=-1):
     """
-    Build an Hybrid Staggered (5005) VGridDescriptor initialized with provided info
-    First level is a momentum level, same number of thermo and momentum levels
-    Diag level heights (m AGL) encoded
+    Build an Hybrid Staggered (5005) VGridDescriptor initialized with provided info.
+    
+    First level is a momentum level, same number of thermo and momentum levels.
+    Diag level heights (m AGL) encoded.
 
     Args:
         hyb      (list) : list of hybrid level values
@@ -390,7 +400,7 @@ def vgd_new(kind, version, hyb,
             rcoef1=None, rcoef2=None, ptop=None, pref=None, dhm=None, dht=None,
             ip1=-1, ip2=-1):
     """
-    General function to Build an VGridDescriptor initialized with provided info
+    General function to Build an VGridDescriptor initialized with provided info.
 
     Args:
         kind     (int)  : Kind of vertical coor
@@ -431,7 +441,7 @@ def vgd_new(kind, version, hyb,
     >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
-        rpnpy.vgd.const : VGD_KIND_VER
+        rpnpy.vgd.const.VGD_KIND_VER
         vgd_new_sigm
         vgd_new_pres
         vgd_new_eta
@@ -489,7 +499,7 @@ def vgd_new(kind, version, hyb,
 
 def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     """
-    Construct a vgrid descriptor from the vgrid record in a RPN standard file
+    Construct a vgrid descriptor from the vgrid record in a RPN standard file.
 
     Args:
         fileId   (int)  : Opened RPN Std file unit number
@@ -520,8 +530,8 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     See Also:
         rpnpy.librmn.fstd98.fstopenall
         rpnpy.librmn.fstd98.fstcloseall
-        rpnpy.librmn.const : FST_RO
-        rpnpy.vgd.const : VGD_KIND_VER
+        rpnpy.librmn.const.FST_RO
+        rpnpy.vgd.const.VGD_KIND_VER
         vgd_new
         vgd_write
         vgd_levels
@@ -536,7 +546,7 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
 
 def vgd_write(vgd_ptr, fileId):
     """
-    Write a vgrid descriptor in a previously opened RPN standard file
+    Write a vgrid descriptor in a previously opened RPN standard file.
 
     Args:
         vgd_ptr  (VGridDescriptor ref):
@@ -570,8 +580,8 @@ def vgd_write(vgd_ptr, fileId):
     See Also:
         rpnpy.librmn.fstd98.fstopenall
         rpnpy.librmn.fstd98.fstcloseall
-        rpnpy.librmn.const : FST_RW
-        rpnpy.vgd.const : VGD_KIND_VER
+        rpnpy.librmn.const.FST_RW
+        rpnpy.vgd.const.VGD_KIND_VER
         vgd_new
         vgd_read
         vgd_levels
@@ -585,7 +595,7 @@ def vgd_write(vgd_ptr, fileId):
 
 def vgd_free(vgd_ptr):
     """
-    Free memory from previously created vgrid descriptor
+    Free memory from previously created vgrid descriptor.
 
     Args:
         vgd_ptr (VGridDescriptor ref):
@@ -655,7 +665,7 @@ def vgd_tolist(vgd_ptr):
 
 def vgd_fromlist(vgd_table):
     """
-    Build a VGridDescriptor from previously encoded table values
+    Build a VGridDescriptor from previously encoded table values.
 
     Args:
         vgd_table (list): Encoded VGridDescriptor values in a list
@@ -698,9 +708,48 @@ def vgd_fromlist(vgd_table):
     return vgd_ptr
 
 
+def vgd_copy(vgd_ptr):
+    """
+    Deep copy of a VGridDescriptor ref object.
+    
+    Args:
+        vgd_ptr (VGridDescriptor ref):
+                      Reference/Pointer to the VGridDescriptor
+    Returns:
+        VGridDescriptor ref
+    Raises:
+        TypeError
+        VGDError
+        
+    Examples:
+    >>> import sys
+    >>> import rpnpy.vgd.all as vgd
+    >>> lvls  = (500.,850.,1000.)
+    >>> try:
+    >>>     myvgd = vgd.vgd_new_pres(lvls)
+    >>> except:
+    >>>     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
+    >>>     sys.exit(1)
+    >>> ## ...
+    >>> try:
+    >>>     myvgd2 = vgd.vgd_copy(myvgd)
+    >>> except:
+    >>>     sys.stderr.write("There was a problem copying the VGridDescriptor")
+
+    See Also:
+        vgd_tolist
+        vgd_fromlist
+        vgd_cmp
+        vgd_levels
+        vgd_free
+    """
+    vgdtable = vgd_tolist(vgd_ptr)
+    return vgd_fromlist(vgdtable)
+
+
 def vgd_get_opt(key, quiet=1):
     """
-    Get a vgd package global option value
+    Get a vgd package global option value.
 
     Args:
         key   (int) : Global option name
@@ -723,7 +772,10 @@ def vgd_get_opt(key, quiet=1):
     >>>     sys.stderr.write("There was a problem getting vgd gloabl option")
 
     See Also:
-        rpnpy.vgd.const : VGD_KEYS, VGD_OPR_KEYS, VGD_ALLOW_SIGMA, VGD_DISALLOW_SIGMA
+        rpnpy.vgd.const.VGD_KEYS
+        rpnpy.vgd.const.VGD_OPR_KEYS
+        rpnpy.vgd.const.VGD_ALLOW_SIGMA
+        rpnpy.vgd.const.VGD_DISALLOW_SIGMA
         vgd_put_opt
         vgd_put
         vgd_get
@@ -740,7 +792,7 @@ def vgd_get_opt(key, quiet=1):
 
 def vgd_put_opt(key, value):
     """
-    Set a vgd package global option value
+    Set a vgd package global option value.
 
     Args:
         key   (int)   : Global option name
@@ -763,7 +815,10 @@ def vgd_put_opt(key, value):
     >>>     sys.stderr.write("There was a problem setting vgd gloabl option")
 
     See Also:
-        rpnpy.vgd.const : VGD_KEYS, VGD_OPR_KEYS, VGD_ALLOW_SIGMA, VGD_DISALLOW_SIGMA
+        rpnpy.vgd.const.VGD_KEYS
+        rpnpy.vgd.const.VGD_OPR_KEYS
+        rpnpy.vgd.const.VGD_ALLOW_SIGMA
+        rpnpy.vgd.const.VGD_DISALLOW_SIGMA
         vgd_get_opt
         vgd_put
         vgd_get
@@ -810,7 +865,8 @@ def vgd_get(vgd_ptr, key, quiet=1):
     >>>     sys.stderr.write("There was a problem getting vgd parameter value")
 
     See Also:
-        rpnpy.vgd.const : VGD_KEYS, VGD_OPR_KEYS
+        rpnpy.vgd.const.VGD_KEYS
+        rpnpy.vgd.const.VGD_OPR_KEYS
         vgd_put
         vgd_get_opt
         vgd_put_opt
@@ -882,7 +938,7 @@ def vgd_get(vgd_ptr, key, quiet=1):
 
 def vgd_put(vgd_ptr, key, value):
     """
-    Set a vgd object parameter value
+    Set a vgd object parameter value.
 
     Args:
         vgd_ptr (VGridDescriptor ref):
@@ -913,7 +969,8 @@ def vgd_put(vgd_ptr, key, value):
     >>>     sys.stderr.write("There was a problem setting vgd parameter value")
 
     See Also:
-        rpnpy.vgd.const : VGD_KEYS, VGD_OPR_KEYS
+        rpnpy.vgd.const.VGD_KEYS
+        rpnpy.vgd.const.VGD_OPR_KEYS
         vgd_get
         vgd_get_opt
         vgd_put_opt
@@ -1018,7 +1075,10 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     >>>     sys.stderr.write("There was a problem computing VGridDescriptor levels")
 
     See Also:
-        rpnpy.vgd.const : VGD_DIAG_LOGP, VGD_DIAG_PRES, VGD_DIAG_DPI, VGD_DIAG_DPIS
+        rpnpy.vgd.const.VGD_DIAG_LOGP
+        rpnpy.vgd.const.VGD_DIAG_PRES
+        rpnpy.vgd.const.VGD_DIAG_DPI
+        rpnpy.vgd.const.VGD_DIAG_DPIS
         vgd_new
         vgd_read
         vgd_free

@@ -359,7 +359,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
 
 def incdatr(idate, nhours):
     """
-    Increate idate by nhours
+    Increase idate by nhours
 
     date2 = incdatr(idate, nhours)
     

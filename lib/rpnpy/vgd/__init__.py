@@ -1,46 +1,33 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 \
 #                /ssm/net/rpn/libs/15.2 \
 #                /ssm/net/cmdn/tests/vgrid/6.0.0-a3/intel13sp1u2
 
 """
-Module vgd is a ctypes import of vgrid's library (libdescrip.so)
-
-The libdescrip.so library is provided with the VGrid Descriptor package
-developed at CMC/RPN by R.McTaggartCowan and A.Plante
+ Module vgd is a ctypes import of vgrid's library (libdescrip.so)
  
-The vgd python module includes
-- python wrapper to main libdescrip's C functions
-- helper functions
-- prototypes for many libdescrip's C functions
-- pre-defined constants
-- along with comprenhensive inline documentation
+ The libdescrip.so library is provided with the VGrid Descriptor package
+ developed at CMC/RPN by R.McTaggartCowan and A.Plante
+ 
+ The vgd python module includes
+ - python wrapper to main libdescrip's C functions
+ - helper functions
+ - prototypes for many libdescrip's C functions
+ - pre-defined constants
+ - along with comprenhensive inline documentation
 
-See also:
-help(vgd.proto)
-help(vgd.const)
-help(vgd.vgd)
+ See also:
+    rpnpy.vgd.proto
+    rpnpy.vgd.const
+    rpnpy.vgd.base
 
-Libdescrip 6.0.0.a3 was built w/o -lrmn, need to rebuild it:
-   HPCS_BASE = hpcs/201402/02/base/
-   COMPILER=intel13sp1u2
-   HPCS_COMP = hpcs/201402/02/$(COMPILER)
-   #COMPILER=xlf_13.1.0.10
-   #HPCS_COMP = hpcs/ext/$(COMPILER)
-   RPN_LIB=rpn/libs/15.2
-   . ssmuse-sh -d $(HPCS_BASE) -d $(HPCS_COMP) -d $(RPN_LIB);\
-   if [ $$ORDENV_PLAT = ubuntu-12.04-amd64-64 ]; then \
-      s.f90 -shared -o libdescrip.so *.o \
-            -Wl,-rpath,/ssm/net/hpcs/201311/master/intelcomp_2013sp1_multi/composer_xe_2013_sp1.0.080/mkl/lib/intel64 \
-            -Wl,-rpath,/ssm/net/hpcs/201311/master/intelcomp_2013sp1_multi/composer_xe_2013_sp1.0.080/compiler/lib/intel64 \
-            -lrmn ;\
-   elif [ $$ORDENV_PLAT = aix-7.1-ppc7-64 ]; then \
-      s.f90 -openmp -o libdescrip.so -qmkshrobj *.o ;\
-   fi
+ Notes:
+ This Module is available from python-rpn version 2.0.b6
 
-
-@author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
 """
 
 from rpnpy.version import *
