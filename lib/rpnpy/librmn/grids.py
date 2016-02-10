@@ -12,7 +12,7 @@
 Librmn Fstd grid helper functions
 """
 import numpy  as _np
-from math import sqrt
+from math import sqrt as _sqrt
 from . import base as _rb
 from . import interp as _ri
 from . import llacar as _ll
@@ -1011,6 +1011,9 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     See Also:
         decodeGrid
         encodeGrid
+
+    Notes:
+        ** This funciton is only available from Python-RPn version 2.0.b6 **
     """
     params = {
         'ni'    : ni,
@@ -1156,6 +1159,7 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         encodeGrid
 
     Notes:
+        ** This funciton is only available from Python-RPn version 2.0.b6 **
         Unfortunately, librmn's ezscint does NOT allow defining a # grid
         from ezgdef_fmem.
         The grid is thus defined as a Z grid in ezscint and tile info
@@ -1576,11 +1580,11 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
     xyz1 = _ll.llacar_py(yinlon1, yinlat1)
     xyz2 = _ll.llacar_py(yinlon2, yinlat2)
     a = (xyz1[0]*xyz2[0]) + (xyz1[1]*xyz2[1]) + (xyz1[2]*xyz2[2])
-    b = sqrt(((xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))**2
+    b = _sqrt(((xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))**2
              +  ((xyz2[0]*xyz1[2]) - (xyz1[0]*xyz2[2]))**2
              +  ((xyz1[0]*xyz2[1]) - (xyz2[0]*xyz1[1]))**2)
-    c = sqrt( xyz1[0]**2 + xyz1[1]**2 + xyz1[2]**2 )
-    d = sqrt( ( ( (a*xyz1[0]) - xyz2[0] ) / b )**2 + \
+    c = _sqrt( xyz1[0]**2 + xyz1[1]**2 + xyz1[2]**2 )
+    d = _sqrt( ( ( (a*xyz1[0]) - xyz2[0] ) / b )**2 + \
               ( ( (a*xyz1[1]) - xyz2[1] ) / b )**2 + \
               ( ( (a*xyz1[2]) - xyz2[2] ) / b )**2  )
     rot = _np.empty((3, 3), dtype=_np.float32)
