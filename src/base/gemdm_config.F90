@@ -40,7 +40,6 @@
 #include "dcst.cdk"
 #include "nml.cdk"
 #include "step.cdk"
-#include "ver.cdk"
 #include "out.cdk"
 #include "tracers.cdk"
 
@@ -115,7 +114,7 @@
       !  Forcing some options under Schm_adxlegacy_L=.t.
       if (Schm_adxlegacy_L) then
          Schm_cub_traj_L = .false.
-         Schm_trapeze_L = .false.
+         Schm_trapeze_L  = .false.
          Schm_lift_ltl_L = .false.
       else
          ! Schm_adxlegacy_L=.t. is mandatory for GU grids
@@ -123,6 +122,8 @@
             if (lun_out>0) write (Lun_out, 9203)
             return
          endif
+         Schm_lift_ltl_L = .false.
+         if ( (Schm_trapeze_L .or. Schm_step_settls_L) .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
       endif
 
       deg_2_rad = Dcst_pi_8/180.
@@ -229,20 +230,18 @@
          endif
       end if
 
-      if (Hzd_smago_L) then
-         if (.not.G_lam) then
-            if (lun_out>0) then
-               write (Lun_out, *) 'ABORT: Smagorinksy-type horizontal diffusion only available for LAM/YY'
-            end if
-            return
+      if ((Hzd_smago_param > 0.) .and. (.not. G_lam)) then
+         if (lun_out>0) then
+            write (Lun_out, *) 'ABORT: Smagorinksy-type horizontal diffusion only available for LAM/YY'
          end if
+         return
+      end if
 
-         if (Hzd_smago_param <= 0) then
-            if (lun_out>0) then
-               write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
-            end if
-            return
+      if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
+         if (lun_out>0) then
+            write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
          end if
+         return
       end if
 
       G_ni  = Grd_ni
@@ -251,7 +250,15 @@
       G_niu = G_ni
       G_njv = G_nj - 1
 
-      if (G_lam) G_niu= G_ni - 1
+      if (G_lam) then
+         G_niu= G_ni - 1
+! Additional temporary check for Schm_psadj_L in LAM config. 
+         if ( .not.(Grd_yinyang_L) .and. Schm_psadj_L .and. &
+              .not.(Schm_psadj_lam_L) )then
+            if (lun_out>0) write (Lun_out, 6700) 
+            return
+         endif
+      endif
 
 !     Check for open top (piloting and blending)
       Schm_opentop_L  = .false.
@@ -280,7 +287,7 @@
       endif
 
       if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) then
-	Cstv_bA_nh_8=Cstv_bA_8
+         Cstv_bA_nh_8=Cstv_bA_8
       endif
 
 
@@ -379,6 +386,8 @@
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
+ 6700  format (/'Schm_psadj_L option in LAM config NOT fully tested yet.'&
+               /'To continue using this option confirm your intent with Schm_psadj_lam_L=.true'/)
  7021 format (//'  ==========================='/&
                 '  ACADEMIC 2D or 3D Advection'/&
                 '  ==========================='//)

@@ -35,12 +35,12 @@
 #include "hzd.cdk"
 #include "tr3d.cdk"
 #include "vspng.cdk"
-#include "schm.cdk"
 #include "eq.cdk"
 #include "vt1.cdk"
 
-      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng, &
-              switch_on_eqspng, switch_on_THETA
+      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng    , &
+              switch_on_eqspng, switch_on_THETA, switch_on_smago, &
+              switch_on_smagoTH
       integer i,istat
       real, pointer, dimension(:,:,:) :: tr
 !
@@ -49,12 +49,13 @@
       if (Lun_debug_L) write (Lun_out,1000)
 
       call timing_start2 ( 60, 'HZD_main', 1 )
-      switch_on_UVW     = Hzd_lnr      .gt.0.
-      switch_on_UVW     = switch_on_UVW.or.Hzd_smago_L
-      switch_on_TR      =(Hzd_lnr_tr   .gt.0.).and.any(Tr3d_hzd)
-      switch_on_THETA   = Hzd_lnr_theta.gt.0.
-      switch_on_vrtspng = Vspng_nk     .ge.1
-      switch_on_eqspng  = Eq_nlev      .gt.1
+      switch_on_UVW     = Hzd_lnr       > 0.
+      switch_on_TR      =(Hzd_lnr_tr    > 0.).and.any(Tr3d_hzd)
+      switch_on_THETA   = Hzd_lnr_theta > 0.
+      switch_on_vrtspng = Vspng_nk      >=1
+      switch_on_eqspng  = Eq_nlev       > 1
+      switch_on_smago   = Hzd_smago_param > 0.
+      switch_on_smagoTH = switch_on_smago.and.(Hzd_smago_prandtl > 0.)
 
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
@@ -95,11 +96,11 @@
 ! Smagorinsky diffusion *
 !************************
 
-      if (Hzd_smago_L) then
-         call timing_start2 ( 64, 'HZD_smago', 60 )
-         call hzd_smago(ut1, vt1, hzd_smago_param, &
-                        l_minx, l_maxx, l_miny, l_maxy, G_nk)
-         call timing_stop ( 64 )
+      if (switch_on_smago) then
+         call timing_start2 ( 63, 'HZD_smago', 60 )
+         call hzd_smago ( ut1, vt1, zdt1, tt1, &
+                          l_minx, l_maxx, l_miny, l_maxy, G_nk)
+         call timing_stop ( 63 )
       end if
 
 !************************
@@ -107,7 +108,7 @@
 !************************
 
       if ( switch_on_UVW ) then
-         call timing_start2 ( 63, 'HZD_bkgrnd', 60 )
+         call timing_start2 ( 64, 'HZD_bkgrnd', 60 )
          call hzd_ctrl4 ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 (zdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -115,7 +116,7 @@
             istat = gmm_get(gmmk_xdt1_s,xdt1)
             call hzd_ctrl4 ( xdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          endif
-         call timing_stop ( 63 )
+         call timing_stop ( 64 )
       endif
 !
 !********************
@@ -144,12 +145,14 @@
 ! Update pw_* variables
 
       call timing_start2 ( 69, 'PW_UPDATE', 60)
-      if (switch_on_UVW   .or. switch_on_vrtspng .or. &
-          switch_on_THETA .or. switch_on_TR ) &
+      if (switch_on_UVW   .or. switch_on_vrtspng .or.             &
+          switch_on_THETA .or. switch_on_TR .or. switch_on_smago) &
          call pw_update_GPW
-      if (switch_on_UVW .or. switch_on_vrtspng .or. switch_on_eqspng)&
+      if (switch_on_UVW .or. switch_on_vrtspng .or. &
+          switch_on_eqspng .or. switch_on_smago)    &
          call pw_update_UV
-      if (switch_on_THETA .or. switch_on_TR .or. switch_on_vrtspng  )&
+      if (switch_on_THETA .or. switch_on_smagoTH .or. &
+          switch_on_TR .or. switch_on_vrtspng  )      &
          call pw_update_T
       call timing_stop ( 69 )
 

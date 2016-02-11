@@ -52,9 +52,10 @@
 !----------------------------------------------------------------------
 !
 #endif
-      logical Schm_psadj_L ,Schm_settls_L,Schm_step_settls_L
-      logical Schm_hydro_L ,Schm_nkbz_L , Schm_autobar_L, Schm_wload_L
-      logical Schm_phyms_L ,Schm_adcub_L, Schm_source_ps_L, Schm_opentop_L
+      logical Schm_psadj_L , Schm_psadj_lam_L
+      logical Schm_settls_L, Schm_step_settls_L
+      logical Schm_hydro_L , Schm_nkbz_L , Schm_autobar_L, Schm_wload_L
+      logical Schm_phyms_L , Schm_adcub_L, Schm_source_ps_L, Schm_opentop_L
       logical Schm_trapeze_L, Schm_capa_var_L, Schm_adxlegacy_L
       logical Schm_Topo_L  ,Schm_theoc_L  , Schm_superwinds_L
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
@@ -63,7 +64,8 @@
       integer Schm_itcn , Schm_itnlh, Schm_Tlift   , Schm_MTeul
       integer Schm_itraj, Schm_nith , Schm_nblendyy, Schm_advec
 
-      common / schm_l / Schm_hydro_L  , Schm_psadj_L, Schm_adxlegacy_L
+      common / schm_l / Schm_psadj_L  , Schm_psadj_lam_L
+      common / schm_l / Schm_hydro_L  , Schm_adxlegacy_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L, Schm_wload_L
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
       common / schm_l / Schm_source_ps_L  , Schm_opentop_L

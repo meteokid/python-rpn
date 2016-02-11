@@ -89,6 +89,7 @@
       Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
+      Schm_psadj_lam_L= .false.
       Schm_source_ps_L= .false.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
@@ -96,7 +97,6 @@
       Schm_adxlegacy_L = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
-      Schm_lift_ltl_L  = .true.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -159,8 +159,8 @@
       Hzd_div_damp   = -1.
       Hzd_type_S     = 'HO_EXP9P'
       Hzd_xidot_L    = .false.
-      Hzd_smago_L    = .false.
       Hzd_smago_param= -1
+      Hzd_smago_prandtl = -1.
       Hzd_theta_njpole_gu_only= -1
 
       Vspng_nk       = 0
@@ -206,6 +206,8 @@
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
       Out3_flipit_L  = .false.
+      Out3_npex      = -1
+      Out3_npey      = -1
 !
 !     Williamson's cases section
 !     --------------------------

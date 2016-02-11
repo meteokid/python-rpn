@@ -18,14 +18,15 @@
       subroutine adv_tricub_lag3d_slice (F_cub_rho,F_in_rho,      &
                                          F_x_usm,F_y_usm,F_z_usm, & !POSITIONS USM
                                          F_x_svm,F_y_svm,F_z_svm, & !POSITIONS SVM
-                                         F_num,k0,F_nk,F_lev_S)
+                                         F_num,F_ni,F_nj,k0,F_nk,F_lev_S)
 
       implicit none
 
 #include <arch_specific.hf>
 
       character(len=*), intent(in) :: F_lev_S ! m/t : Momemtum/thermo level
-      integer, intent(in) :: F_num ! number points
+      integer, intent(in) :: F_num     ! number points
+      integer, intent(in) :: F_ni,F_nj ! dimension of horizontal fields
       integer, intent(in) :: F_nk ! number of vertical levels
       integer, intent(in) :: k0   ! scope of operator
       real,dimension(F_num), intent(in)  :: F_x_usm, F_y_usm, F_z_usm ! interpolation target x,y,z coordinates USM
@@ -36,10 +37,11 @@
       !@author Monique Tanguay
 
       !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
 
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
+#include "tracers.cdk"
 #include "adv_slice_storage.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
@@ -54,16 +56,31 @@
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      integer :: n,i,j,k,ii,jj,kk,iL,iR,kkmax,idxk,idxjk,o1,o2,o3,o4, &
+      integer :: n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_c,in_c,j0_c,jn_c
       real*8 :: p_z00_8 
+
+      real*8 :: mass_of_area_8
+      external  mass_of_area_8 
+
+      logical slice_old_L
 !     
 !---------------------------------------------------------------------
 !     
       if (Grd_yinyang_L)       call handle_error (-1,'ADV_TRICUB_LAG3D_SLICE','SLICE not available for GY')
       if (.NOT.Schm_autobar_L) call handle_error (-1,'ADV_TRICUB_LAG3D_SLICE','SLICE not available for BAROCLINE')
 
-      call timing_start2 (33, 'ADV_LAG3D', 31)
+      call timing_start2 (86, 'SLICE', 38)
+
+      slice_old_L = .false.
+
+      if (.NOT.slice_old_L.and.Tr_SLICE_rebuild<3) call handle_error(-1,'ADV_TRICUB_LAG3D_SLICE','SLICE VERSION 2: Tr_SLICE_rebuild not available')
+
+      if (Lun_out>0.and.slice_old_L) then
+         write(Lun_out,901) 
+      elseif(Lun_out>0) then  
+         write(Lun_out,902) 
+      endif
  
       kkmax   = l_nk - 1
       p_z00_8 = Ver_z_8%m(0)
@@ -103,64 +120,64 @@
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
       !------------------------------------- 
-      if (Adv_do_only_once_each_timestep_L) then 
+      if (Tr_do_only_once_each_timestep_L) then 
       !------------------------------------- 
 
-         allocate (x_usm_8(0:l_ni,1:l_nj  ,k0:F_nk+1),y_usm_8(0:l_ni,1:l_nj,k0:F_nk+1),z_usm_8(0:l_ni,1:l_nj,k0:F_nk+1), &
-                   x_svm_8(1:l_ni,0:l_nj  ,k0:F_nk+1),y_svm_8(1:l_ni,0:l_nj,k0:F_nk+1),z_svm_8(1:l_ni,0:l_nj,k0:F_nk+1), &
-                   x_bin_8(0:l_ni,1:l_nj  ,k0:F_nk+1),z_bin_8(0:l_ni,1:l_nj,k0:F_nk+1),                                  &
-                   x_cin_8(1:l_ni,0:l_nj  ,k0:F_nk+1),z_cin_8(1:l_ni,0:l_nj,k0:F_nk+1),                                  &
-                   z_bve_8(0:l_ni,0:l_nj+1,k0:F_nk+1))
+         allocate(  x_LEFT_iecv_8(0:l_ni,1:l_nj,k0:F_nk),  z_LEFT_iecv_8(0:l_ni,1:l_nj,k0:F_nk), &
+                  x_CENTRE_iecv_8(1:l_ni,0:l_nj,k0:F_nk),z_CENTRE_iecv_8(1:l_ni,0:l_nj,k0:F_nk))
+
+         allocate(ys_location(1:l_nj),yv_location(0:l_nj),b_sn_location(0:l_ni))
+
+         !OBSOLETE
+         !--------
+         allocate (x_usm_8(0:l_ni,1:l_nj  ,k0:F_nk),y_usm_8(0:l_ni,1:l_nj,k0:F_nk),z_usm_8(0:l_ni,1:l_nj,k0:F_nk), &
+                   x_svm_8(1:l_ni,0:l_nj  ,k0:F_nk),y_svm_8(1:l_ni,0:l_nj,k0:F_nk),z_svm_8(1:l_ni,0:l_nj,k0:F_nk))
 
          if (Lctl_step==1) &  
-         allocate (sx_b1_8(0:l_ni,l_nj,k0:F_nk+1),sx_b2_8(0:l_ni,l_nj,k0:F_nk+1)) !TO BE REVISED
+         allocate (z_bve_8(0:l_ni,0:l_nj+1,k0:F_nk+1))
 
-         if (Lctl_step==1) &  
-         allocate (c1_w(l_nj,k0:F_nk+1),c1_e(l_nj,k0:F_nk+1), & !TO BE REVISED
-                   c2_w(l_nj,k0:F_nk+1),c2_e(l_nj,k0:F_nk+1))
+         allocate (i_bw(l_nj),i_be(l_nj),j_ps_(k0:F_nk),j_pn_(k0:F_nk))
 
-         if (Lctl_step==1) &
-         allocate (sy_b1_8(0:l_nj,l_ni,k0:F_nk+1),sy_b2_8(0:l_nj,l_ni,k0:F_nk+1)) !TO BE REVISED
+         allocate (c1_w(l_nj,k0:F_nk),c1_e(l_nj,k0:F_nk))
 
-         if (Lctl_step==1) &
-         allocate (c1_s(l_ni,k0:F_nk+1),c1_n(l_ni,k0:F_nk+1), & !TO BE REVISED
-                   c2_s(l_ni,k0:F_nk+1),c2_n(l_ni,k0:F_nk+1))
+         if (Lctl_step==1) then
+
+             allocate (s_LEFT_ecv_8 (0:l_ni),s_LEFT_iecv_8(0:l_ni),rho_LEFT_ecv_8 (0:l_ni), &
+                       s_LEFT_ilcv_8(0:l_nj),s_LEFT_lcv_8 (0:l_nj),rho_LEFT_ilcv_8(0:l_nj), &
+                       m_ecv_X_8    (1:l_ni),ds_ecv_8     (1:l_ni),slope_rho_X_8  (1:l_ni), &
+                       m_ilcv_Y_8   (1:l_nj),ds_ilcv_8    (1:l_nj),slope_rho_Y_8  (1:l_nj), &
+                       m_iecv_X_8   (1:l_ni),m_lcv_Y_8    (1:l_nj),                         &
+                       iecv_location(0:l_ni),lcv_location (0:l_nj))
+
+             allocate (dist_LEFT_ecv_8 (0:l_ni,1:l_nj,k0:F_nk),dist_LEFT_iecv_8(0:l_ni,1:l_nj,k0:F_nk), &
+                       dist_LEFT_ilcv_8(1:l_ni,0:l_nj,k0:F_nk),dist_LEFT_lcv_8 (1:l_ni,0:l_nj,k0:F_nk))
+
+         endif
+
+         if (Lctl_step==1) then 
+
+            allocate (c1_s(l_ni,k0:F_nk),c1_n(l_ni,k0:F_nk))
+
+         endif
 
 #include "adv_tricub_lag3d_slice_loop_1.cdk"
 
-         deallocate (x_usm_8,y_usm_8,z_usm_8,x_svm_8,y_svm_8,z_svm_8,x_bin_8,z_bin_8,x_cin_8,z_cin_8,z_bve_8)
+         deallocate (x_usm_8,y_usm_8,z_usm_8,x_svm_8,y_svm_8,z_svm_8)
+
+         deallocate (x_LEFT_iecv_8,z_LEFT_iecv_8,x_CENTRE_iecv_8,z_CENTRE_iecv_8,ys_location,yv_location,b_sn_location)
+
+         deallocate (j_ps_,j_pn_,c1_w,c1_e)
 
       !-------------------------------------- 
       endif !END do_only_once_each_timestep_L
       !-------------------------------------- 
 
-      Adv_do_only_once_each_timestep_L = .FALSE.
+      Tr_do_only_once_each_timestep_L = .FALSE.
 
-      allocate (m_ijk_8(1:l_ni,1:l_nj,k0:F_nk),m_cew_8(1:l_ni,1:l_nj,k0:F_nk), & !TO BE REVISED
-                m_cns_8(1:l_ni,1:l_nj,k0:F_nk),m_cve_8(1:l_ni,1:l_nj,k0:F_nk))
+      allocate (m_ijk_8 (1:l_ni,1:l_nj,k0:F_nk),m_ecv_8(1:l_ni,1:l_nj,k0:F_nk), &
+                m_iecv_8(1:l_ni,1:l_nj,k0:F_nk),m_lcv_8(1:l_ni,1:l_nj,k0:F_nk))
 
-      m_ijk_8 = 999.
-      m_cew_8 = 999.
-      m_cns_8 = 999.
-      m_cve_8 = 999.
-
-      allocate (w_casc00_8(1:l_nj,k0:F_nk+1)) !TO BE REVISED
-      allocate (w_casc11_8(1:l_ni,k0:F_nk+1)) !TO BE REVISED
-
-      allocate (mi1_8     (1:l_ni),          mi2_8     (1:l_ni), &
-                xi1_8     (0:l_ni),          xi2_8     (0:l_ni), &
-                w_casc2a_8(1:l_nj,k0:F_nk+1),w_casc2b_8(1:l_nj,k0:F_nk+1)) !TO BE REVISED
-
-      allocate (mj1_8     (1:l_nj),          mj2_8     (1:l_nj), &
-                yj1_8     (0:l_nj),          yj2_8     (0:l_nj), &
-                w_casc3a_8(1:l_ni,k0:F_nk+1),w_casc3b_8(1:l_ni,k0:F_nk+1)) !TO BE REVISED
-
-      w_casc00_8 = 0.0d0
-      w_casc2a_8 = 0.0d0
-      w_casc2b_8 = 0.0d0
-      w_casc3a_8 = 0.0d0
-      w_casc3b_8 = 0.0d0
-      w_casc11_8 = 0.0d0
+      m_ijk_8 = 999. ; m_ecv_8  = 999. ; m_iecv_8 = 999. ; m_lcv_8 = 999.0
 
       !NEEDED to compute the initial mass distribution
       !-----------------------------------------------
@@ -169,71 +186,16 @@
 
 #include "adv_tricub_lag3d_slice_loop_2.cdk"
 
-      !-----------  
-      !DIAGNOSTICS
-      !-----------  
-      if (G_lam.and..NOT.Grd_yinyang_L) then
+      deallocate (m_ijk_8,m_ecv_8,m_iecv_8,m_lcv_8)
 
-          c_area_8 = 0.0d0
-          gc_area_8 = 0.0d0
-
-          do j=j0_c,jn_c
-          do i=i0_c,in_c
-             c_area_8 = c_area_8 + Geomg_area_8(i,j)
-          enddo
-          enddo
-
-          call rpn_comm_ALLREDUCE(c_area_8,gc_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
-
-          scale_mass_8 = 1.0d0/gc_area_8
-
-      else
-
-          call handle_error(-1,'TRICUB','TRICUB: SCALING NOT DONE')
-
-      endif
-
-      casc00_8 = 0.0d0
-      casc2a_8 = 0.0d0
-      casc2b_8 = 0.0d0
-      casc3a_8 = 0.0d0
-      casc3b_8 = 0.0d0
-      casc11_8 = 0.0d0
-
-      do k=k0,F_nk
-         do j=j0_c,jn_c
-            casc00_8 = w_casc00_8(j,k) + casc00_8
-            casc2a_8 = w_casc2a_8(j,k) + casc2a_8
-            casc2b_8 = w_casc2b_8(j,k) + casc2b_8
-         enddo
-      enddo
-
-      do k=k0,F_nk
-         do i=i0_c,in_c
-            casc3a_8 = w_casc3a_8(i,k) + casc3a_8
-            casc3b_8 = w_casc3b_8(i,k) + casc3b_8
-            casc11_8 = w_casc11_8(i,k) + casc11_8
-          enddo
-      enddo
-
-      write(Lun_out,910) 'CASC00',casc00_8*scale_mass_8
-      write(Lun_out,910) 'CASC2A',casc2a_8*scale_mass_8
-      write(Lun_out,910) 'CASC2B',casc2b_8*scale_mass_8
-      write(Lun_out,910) 'CASC3A',casc3a_8*scale_mass_8
-      write(Lun_out,910) 'CASC3B',casc3b_8*scale_mass_8
-      write(Lun_out,910) 'CASC11',casc11_8*scale_mass_8
-
-      deallocate (m_ijk_8,m_cew_8,m_cns_8,m_cve_8)
-
-      deallocate (mi1_8,mi2_8,xi1_8,xi2_8,w_casc00_8,w_casc2a_8,w_casc2b_8, &
-                  mj1_8,mj2_8,yj1_8,yj2_8,w_casc3a_8,w_casc3b_8,w_casc11_8)
-
-      call timing_stop (33)
+      call timing_stop (86)
 !     
 !---------------------------------------------------------------------
 !     
       return
 
-910 format(1X,A34,E20.12)
+910 format(2X,A34,E20.12)
+901 format(/,1X,'WE USE SLICE VERSION 1',/)
+902 format(/,1X,'WE USE SLICE VERSION 2',/)
 
       end subroutine adv_tricub_lag3d_slice

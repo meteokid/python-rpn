@@ -86,6 +86,8 @@
             write(Lun_out,1000) 'TRACERS: Local SL Mass Conserving Interpolation (SLICE): ',F_name_S(4:7)
             if (Tr_SLICE_rebuild==1) kind_S = 'Laprise and Plante 1995 (PPM1)          ' 
             if (Tr_SLICE_rebuild==2) kind_S = 'Colella and Woodward 1984 (PPM2) CW     ' 
+            if (Tr_SLICE_rebuild==3) kind_S = 'Colella and Woodward 1984 (PPM2) Z4     '
+            if (Tr_SLICE_rebuild==4) kind_S = 'Colella and Woodward 1984 (PCM)         '
             write(Lun_out,*)    'TRACERS: SLICE_rebuild= ',Tr_SLICE_rebuild,' :',kind_S
             if (Tr_SLICE_mono==0) kind_S = 'NO MONO' 
             if (Tr_SLICE_mono==3) kind_S = 'MONO Zerroukat et al. 2005/2006' 

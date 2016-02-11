@@ -1,41 +1,61 @@
 
       !STORAGE: LOCAL CONSERVATION SLICE Zerroukat et al.(2002) 
       !--------------------------------------------------------
-      logical adv_do_only_once_each_timestep_L
-      integer n_F_nk,ip,jp,offi_,offj_,L1,R1,L2,R2,jL,jR,jX,jY,err,s_bin,n_bin,s_cin,n_cin
-      real*8  slope_8,casc00_8,casc2a_8,casc2b_8,casc3a_8,casc3b_8,casc11_8,scale_mass_8,c_area_8,gc_area_8
 
-      integer j_ps,j_pn
-      common/local_storage_SLICE_i/j_ps,j_pn,adv_do_only_once_each_timestep_L
+      !REVISED
+      !-------
+      real*8,  pointer, dimension(:) :: s_LEFT_ecv_8 =>null(),s_LEFT_iecv_8=>null(),rho_LEFT_ecv_8 =>null(), &
+                                        s_LEFT_ilcv_8=>null(),s_LEFT_lcv_8 =>null(),rho_LEFT_ilcv_8=>null(), &
+                                        m_ecv_X_8    =>null(),ds_ecv_8     =>null(),slope_rho_X_8  =>null(), &
+                                        m_ilcv_Y_8   =>null(),ds_ilcv_8    =>null(),slope_rho_Y_8  =>null(), &
+                                        m_iecv_X_8   =>null(),m_lcv_Y_8    =>null()
 
-      real*8, parameter :: EPS_8 = 1.0D-06
+      integer, pointer, dimension(:) :: iecv_location=>null(),lcv_location=>null(),ys_location=>null(),yv_location=>null(), &
+                                        b_sn_location=>null()
 
-      real*8, pointer, dimension(:,:,:) :: x_usm_8=>null(),y_usm_8=>null(),z_usm_8=>null(), &
-                                           x_svm_8=>null(),y_svm_8=>null(),z_svm_8=>null(), &
-                                           x_bin_8=>null(),z_bin_8=>null(),                 &
-                                           x_cin_8=>null(),z_cin_8=>null(),                 &
-                                           z_bve_8=>null()
+      real*8,  pointer, dimension(:,:,:) :: m_ijk_8,m_ecv_8,m_iecv_8,m_lcv_8
 
-      real*8,       pointer, dimension(:,:)   :: w_casc00_8=>null()
-      real*8,       pointer, dimension(:,:)   :: w_casc11_8=>null()
+      real*8,  pointer, dimension(:,:,:) :: x_LEFT_iecv_8  =>null(),z_LEFT_iecv_8  =>null() 
+      real*8,  pointer, dimension(:,:,:) :: x_CENTRE_iecv_8=>null(),z_CENTRE_iecv_8=>null() 
 
-      real*8, save, pointer, dimension(:,:,:) :: sx_b1_8   =>null(),sx_b2_8   =>null()
-      integer,save, pointer, dimension(:,:)   :: c1_w      =>null(),c1_e      =>null(), &
-                                                 c2_w      =>null(),c2_e      =>null()
-      real*8,       pointer, dimension(:,:)   :: w_casc2a_8=>null(),w_casc2b_8=>null()
+      real*8,save, pointer, dimension(:,:,:) :: dist_LEFT_ecv_8,dist_LEFT_iecv_8,dist_LEFT_ilcv_8,dist_LEFT_lcv_8 
 
-      real*8, save, pointer, dimension(:,:,:) :: sy_b1_8   =>null(),sy_b2_8   =>null()
-      integer,save, pointer, dimension(:,:)   :: c1_s      =>null(),c1_n      =>null(), &
-                                                 c2_s      =>null(),c2_n      =>null()
-      real*8,       pointer, dimension(:,:)   :: w_casc3a_8=>null(),w_casc3b_8=>null()
+      real*8  s_iecv_start_8, s_iecv_finish_8,s_lcv_start_8,s_lcv_finish_8
 
-      real*8, pointer, dimension(:)     :: xi1_8=>null(),xi2_8=>null(), &
-                                           mi1_8=>null(),mi2_8=>null()
+      integer ecv_at_iecv_start,ecv_at_iecv_finish,ilcv_at_lcv_start,ilcv_at_lcv_finish
 
-      real*8, pointer, dimension(:)     :: yj1_8=>null(),yj2_8=>null(), &
-                                           mj1_8=>null(),mj2_8=>null()
+      integer jm,jp
 
-      real*8, pointer, dimension(:,:,:) :: m_ijk_8,m_cew_8,m_cns_8,m_cve_8
+      real*8, pointer,     dimension(:,:,:)   :: x_usm_8=>null(),y_usm_8=>null(),z_usm_8=>null(), &
+                                                 x_svm_8=>null(),y_svm_8=>null(),z_svm_8=>null()
+
+      integer,parameter :: ext = 0 
+
+      real*8 lon_ups_8,lat_ups_8
+
+      !OBSOLETE
+      !--------
+
+      integer j_ps,j_pn,i1,i2
+      integer,pointer,     dimension(:)       :: i_bw   =>null(),i_be   =>null()
+      common/local_storage_SLICE_i/j_ps,j_pn,i_bw,i_be
+
+      integer,pointer,     dimension(:)       :: j_ps_  =>null(),j_pn_  =>null()
+      integer,save, pointer, dimension(:,:)   :: c1_w   =>null(),c1_e   =>null()
+
+      integer,save, pointer, dimension(:,:)   :: c1_s   =>null(),c1_n   =>null()
+      real*8  slope_8,wx_8,wy_8
+
+      integer ip,offi_,offj_,L1,R1,L2,R2,jL,jR,jX,jY,err,i_b1,i_b2,j_b1,j_b2
+
+      real*8, pointer, dimension(:,:,:) :: z_bve_8  =>null() 
+
+      integer,pointer, dimension(:,:,:) :: ibve     =>null(), jbve      =>null()
+
+      real*8 x_8(4),y_8(4),z_8(4),tr_x_8(3),tr_y_8(3),tr_z_8(3), &
+             ax_8,ay_8,az_8,bx_8,by_8,bz_8,n1_8,n2_8,n3_8
+
+      real*8 zk1_8(k0:F_nk+1),zk2_8(k0:F_nk+1),mk1_8(F_nk),mk2_8(F_nk)
 
       real*8   distance_GC_8 
       external distance_GC_8

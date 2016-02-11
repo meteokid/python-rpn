@@ -19,7 +19,7 @@
                                    F_x, F_y, F_z,                              & 
                                    F_x_usm, F_y_usm, F_z_usm,                  &
                                    F_x_svm, F_y_svm, F_z_svm,                  &                                               
-                                   F_num, F_nind, ii, F_k0, F_nk,            & 
+                                   F_num, F_nind, ii, F_k0, F_nk,              & 
                                    F_mono_L,  F_conserv_L, F_lev)
       implicit none
 #include <arch_specific.hf>
@@ -50,7 +50,7 @@
       
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
-   !  2014-XX,  Monique Tanguay    : GEM4 Mass-Conservation
+   !  2016-01,  Monique Tanguay    : GEM4 Mass-Conservation
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1) (MASS-CONSERVATION)
 
 #include "adv.cdk"
@@ -143,7 +143,7 @@
             call adv_tricub_lag3d_slice (F_cub, F_in_rho,           &
                                          F_x_usm, F_y_usm, F_z_usm, & !POSITIONS USM
                                          F_x_svm, F_y_svm, F_z_svm, & !POSITIONS SVM
-                                         F_num, F_k0, F_nk, F_lev)
+                                         F_num, l_ni, l_nj, F_k0, F_nk, F_lev)
          else
 
             call handle_error(-1,'ADV_TRICUB_LAG3D','Current F_conserv_local NOT AVAILABLE')
