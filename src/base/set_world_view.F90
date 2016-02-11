@@ -17,6 +17,7 @@
 
       subroutine set_world_view
       use iso_c_binding
+      use out_collector, only: block_collect_set, Bloc_me
       implicit none
 #include <arch_specific.hf>
 
@@ -138,6 +139,16 @@
                           Inp_comm_io ,Inp_iobcast ,Inp_npes )
       call gem_error ( min(err(1),err(2)),'set_world_view', &
                        'IO pes config is invalid' )
+
+      Out3_ezcoll_L= .true.
+      if ( (Out3_npex > 0) .and. (Out3_npey > 0) ) then
+         Out3_npex= min(Out3_npex,Ptopo_npex)
+         Out3_npey= min(Out3_npey,Ptopo_npey)
+         call block_collect_set ( Out3_npex, Out3_npey )
+         Out3_iome= -1
+         if (Bloc_me == 0) Out3_iome= 0
+         Out3_ezcoll_L= .false.
+      endif
 
 ! Initializes GMM
 

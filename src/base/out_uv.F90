@@ -100,10 +100,12 @@
 
          call uv_acg2g (uu ,ut1 ,1,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0 ,in ,j0 ,jn )
          call uv_acg2g (vv ,vt1 ,2,0,l_minx,l_maxx,l_miny,l_maxy,G_nk ,i0v,inv,j0v,jnv)
+         uu(:,:,G_nk+1) = udiag
+         vv(:,:,G_nk+1) = vdiag
 
          if (G_lam) then
 !         Borders need to be filled for LAM configuration
-            do k=1,G_nk
+            do k=1,G_nk+1
                do i=1,i0-1
                   do j=1,l_nj
                      uu(i,j,k)=uu(i0,j,k)
@@ -146,10 +148,6 @@
                enddo
             enddo
          endif
-
-         uu(:,:,G_nk+1) = udiag
-         vv(:,:,G_nk+1) = vdiag
-
       endif
 
       lastdt = Lctl_step
