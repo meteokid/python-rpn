@@ -186,6 +186,40 @@ class Librmn_fstd98_Test(unittest.TestCase):
 
         rmn.fstcloseall(funit)
 
+    def test_fstlir_fstlirx_fstlir_witharray(self):
+        """fstlir_fstlirx_fstlir_witharray should give known result with known input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
+        funit = rmn.fstopenall(myfile,rmn.FST_RO)
+
+        k = rmn.fstinf(funit)['key']
+        a = rmn.fstprm(k)
+        self.assertEqual(a['nomvar'].strip(),'P0','fstinf/fstprm wrong rec, Got %s expected P0' % (a['nomvar']))
+        k = rmn.fstsui(funit)['key']
+        a = rmn.fstprm(k)
+        self.assertEqual(a['nomvar'].strip(),'TT','fstsui/fstprm wrong rec, Got %s expected TT' % (a['nomvar']))
+
+        k = rmn.fstinf(funit,nomvar='MX')['key']
+        a = rmn.fstlir(funit)
+        a = rmn.fstlir(funit,dataArray=a['d'])
+        self.assertEqual(a['nomvar'].strip(),'P0','fstlir wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),530)
+        self.assertEqual(int(np.amax(a['d'])),1039)
+  
+        k = rmn.fstinf(funit,nomvar='MX')['key']
+        a = rmn.fstlirx(k,funit,dataArray=a['d'])
+        self.assertEqual(a['nomvar'].strip(),'LA','fstlirx wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),-88)
+        self.assertEqual(int(np.amax(a['d'])),88)
+
+        a = rmn.fstlis(funit,dataArray=a['d'])
+        self.assertEqual(a['nomvar'].strip(),'LO','fstlis wrong rec, Got %s expected P0' % (a['nomvar']))
+        self.assertEqual(int(np.amin(a['d'])),-180)
+        self.assertEqual(int(np.amax(a['d'])),178)
+
+        rmn.fstcloseall(funit)
+
     def test_fstecr_fstinf_fstluk(self):
         """fstinf, fstluk should give known result with known input"""
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)

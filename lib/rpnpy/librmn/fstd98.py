@@ -738,7 +738,7 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
 
 def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
-           typvar=' ', nomvar=' ', dtype=None, rank=None):
+           typvar=' ', nomvar=' ', dtype=None, rank=None, dataArray=None):
     """Reads the next record that matches the research keys
     Only provided parameters with value different than default
     are used as selection criteria
@@ -760,6 +760,7 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                   Could be any numpy.ndarray type
                   See: http://docs.scipy.org/doc/numpy/user/basics.types.html
         rank    : try to return an array with the specified rank
+        dataArray (ndarray): (optional) allocated array where to put the data 
     Returns:
         None if no matching record, else:
         {
@@ -773,11 +774,11 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     """
     key = -2
     return fstlirx(key, iunit, datev, etiket, ip1, ip2, ip3,
-                   typvar, nomvar, dtype, rank)
+                   typvar, nomvar, dtype, rank, dataArray)
 
 
 def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
-            typvar=' ', nomvar=' ', dtype=None, rank=None):
+            typvar=' ', nomvar=' ', dtype=None, rank=None, dataArray=None):
     """Reads the next record that matches the research keys
     Only provided parameters with value different than default
     are used as selection criteria
@@ -801,6 +802,7 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                   Could be any numpy.ndarray type
                   See: http://docs.scipy.org/doc/numpy/user/basics.types.html
         rank    : try to return an array with the specified rank
+        dataArray (ndarray): (optional) allocated array where to put the data 
     Returns:
         None if no matching record, else:
         {
@@ -814,11 +816,11 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     """
     key2 = fstinfx(key, iunit, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
     if (key2):
-        return fstluk(key2['key'], dtype, rank)
+        return fstluk(key2['key'], dtype, rank, dataArray)
     return None
 
 
-def fstlis(iunit, dtype=None, rank=None):
+def fstlis(iunit, dtype=None, rank=None, dataArray=None):
     """Reads the next record that matches the research criterias
 
     record = fstlis(iunit, ... )
@@ -831,6 +833,7 @@ def fstlis(iunit, dtype=None, rank=None):
                   Could be any numpy.ndarray type
                   See: http://docs.scipy.org/doc/numpy/user/basics.types.html
         rank    : try to return an array with the specified rank
+        dataArray (ndarray): (optional) allocated array where to put the data 
     Returns:
         None if no matching record, else:
         {
@@ -844,7 +847,7 @@ def fstlis(iunit, dtype=None, rank=None):
     """
     key = fstsui(iunit)
     if (key):
-        return fstluk(key['key'], dtype, rank)
+        return fstluk(key['key'], dtype, rank, dataArray)
     return None
 
 
@@ -883,7 +886,7 @@ def fstlnk(unitList):
     raise FSTDError()
 
 
-def fstluk(key, dtype=None, rank=None):
+def fstluk(key, dtype=None, rank=None, dataArray=None):
     """Read the record at position given by key/handle
 
     record = fstluk(key)
@@ -898,6 +901,7 @@ def fstluk(key, dtype=None, rank=None):
                 Could be any numpy.ndarray type
                 See: http://docs.scipy.org/doc/numpy/user/basics.types.html
         rank  : try to return an array with the specified rank
+        dataArray (ndarray): (optional) allocated array where to put the data 
     Returns:
         {
             'd'   : data,       # record data as a numpy.ndarray, FORTRAN order
@@ -933,13 +937,20 @@ def fstluk(key, dtype=None, rank=None):
     maxrank = min(rank, len(params['shape']))
     myshape[0:maxrank] = params['shape'][0:maxrank]
     params['shape'] = myshape
-    ## raise ValueError("fstluk (%d, %d, %d) r=%d, s=%s" %
-    ##                   (wantrank, minrank, len(params['shape']), rank,
-    ##                   repr(params['shape'][0:rank])))
-    #TODO: if provided data array:
-    ## if not (data.dtype == dtype and data.flags['F_CONTIGUOUS']):
-    ##     data = _np.asfortranarray(data, data.dtype=dtype)    
-    data = _np.empty(params['shape'], dtype=dtype, order='FORTRAN')
+    if dataArray is None:
+        data = _np.empty(params['shape'], dtype=dtype, order='FORTRAN')
+    elif isinstance(dataArray,_np.ndarray):
+        if not dataArray.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided dataArray should be F_CONTIGUOUS')
+        if dtype != dataArray.dtype:
+            raise TypeError('Expecting dataArray of type %s, got: %s' % (repr(dtype),repr(dataArray.dtype)))
+        shape0 = (1,1,1) ; shape0[0:len(params['shape'])] = params['shape'][:]
+        shape1 = (1,1,1) ; shape1[0:len(dataArray.shape)] = dataArray.shape[:]
+        if shape0 != shape1:
+            raise TypeError('Provided have wrong shape, expecting: %s, got: %s' %(repr(params['shape']),repr(dataArray.shape)))
+        data = dataArray
+    else:
+        raise TypeError('Expecting dataArray of type ndarray, got: %s' % repr(type(dataArray)))
     istat = _rp.c_fstluk(data, key, _ct.byref(cni), _ct.byref(cnj),
                          _ct.byref(cnk))
     if istat < 0:
@@ -1122,9 +1133,8 @@ def fstprm(key):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
-    See Also
-    --------
-    fstluk
+    See Also:
+        fstluk
     """
     if type(key) != int:
         raise TypeError("fstprm: Expecting a key of type int, Got %s : %s" %
