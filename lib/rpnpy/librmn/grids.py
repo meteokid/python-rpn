@@ -178,9 +178,11 @@ def decodeGrid(gid):
     Produce grid params dict as defGrid* fn, decoded from provided ezscint Id
 
     gridParams = decodeGrid(gid)
-    
+    gridParams = decodeGrid(params)
+
     Args:
-        gid : ezscint grid-id (int)
+        gid    (int) : ezscint grid-id 
+        params (dict): mandatory dict element: 'id' ezscint grid-id (int)
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -213,7 +215,7 @@ def decodeGrid(gid):
     >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
     >>> params  = rmn.defGrid_L(lat0, lon0, dlat, dlon)
     >>> # Decode grid information
-    >>> params2 = rmn.decodeGrid(params['id'])
+    >>> params2 = rmn.decodeGrid(params)
     >>> # Check that decoded values are identical to what we provided
     >>> for k in params.keys():
     >>>     if params[k] != params2[k]:
@@ -239,6 +241,11 @@ def decodeGrid(gid):
         rpnpy.librmn.interp.ezget_nsubgrids
         rpnpy.librmn.interp.ezget_subgridids
     """
+    if isinstance(gid,dict):
+        try:
+            gid = gid['id']
+        except:
+            raise TypeError("decodeGrid: gid['id'] should be provided")
     params = _ri.ezgxprm(gid)
     params['nsubgrids'] = 1
     params['subgridid'] = [gid]
@@ -364,7 +371,6 @@ def getIgTags(params):
         int(32768 + (crc       & 0xffff)),
         int(32768 + (crc >> 16 & 0xffff))
             )
-
 
 def encodeGrid(params):
     """

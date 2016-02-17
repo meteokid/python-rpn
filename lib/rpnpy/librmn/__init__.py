@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
 #                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 """
  Module librmn is a ctypes import of librmnshared.so
  
@@ -13,19 +15,16 @@
  - along with comprenhensive inline documentation
 
  See also:
- help(librmn.proto)
- help(librmn.const)
- help(librmn.base)
- help(librmn.fstd98)
- help(librmn.interp)
- help(librmn.grids)
-
- @author: Stephane Chamberland <stephane.chamberland@ec.gc.ca>
+     rpnpy.librmn.proto
+     rpnpy.librmn.const
+     rpnpy.librmn.base
+     rpnpy.librmn.fstd98
+     rpnpy.librmn.interp
+     rpnpy.librmn.grids
 """
 
 #TODO: burp
 #TODO: rdiag
-#TODO: vgrid
 #TODO: modelutil's tdpack
 #TODO: modelutil's ???
 

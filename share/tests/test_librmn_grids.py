@@ -17,6 +17,9 @@ class Librmn_grids_Test(unittest.TestCase):
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
+        params3 = rmn.decodeGrid(params)
+        for k in params.keys():
+            self.assertEqual(params[k],params3[k])
                     
     def test_degGrid_E(self):
         params = rmn.defGrid_E(90,45,0.,180.,1.,270.)

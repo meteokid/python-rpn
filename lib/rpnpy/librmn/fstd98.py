@@ -19,8 +19,6 @@ from . import const as _rc
 from . import base as _rb
 from . import RMNError
 
-#TODO: make sure caller can provide allocated array (recycle mem)
-
 #---- helpers -------------------------------------------------------
 
 C_MKSTR = _ct.create_string_buffer
