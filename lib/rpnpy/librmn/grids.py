@@ -241,9 +241,11 @@ def decodeGrid(gid):
         rpnpy.librmn.interp.ezget_nsubgrids
         rpnpy.librmn.interp.ezget_subgridids
     """
+    params0 = {}
     if isinstance(gid,dict):
         try:
-            gid = gid['id']
+            params0 = gid
+            gid = params0['id']
         except:
             raise TypeError("decodeGrid: gid['id'] should be provided")
     params = _ri.ezgxprm(gid)
@@ -251,11 +253,13 @@ def decodeGrid(gid):
     params['subgridid'] = [gid]
     params['grtyp'] = params['grtyp'].strip().upper()
     params['grref'] = params['grref'].strip().upper()
+    if 'grtyp' in params0.keys():
+        params['grtyp'] = params0['grtyp']
     if not params['grtyp'] in ('Z', '#', 'Y', 'U'):
         params.update(decodeIG2dict(params['grtyp'],
                                     params['ig1'], params['ig2'],
                                     params['ig3'], params['ig4']))
-    elif not params['grtyp'] in ('U'):
+    elif params['grtyp'] in ('Z', '#', 'Y'):
         params2 = decodeIG2dict(params['grref'],
                                 params['ig1ref'], params['ig2ref'],
                                 params['ig3ref'], params['ig4ref'])
@@ -268,9 +272,17 @@ def decodeGrid(gid):
                 'ax'    : axes['ax'],
                 'ay'    : axes['ay']
                 })
-            (params['tag1'], params['tag2']) = getIgTags(params)
+            
+            if all([x in params0.keys() for x in ('ig1','ig2')]):
+                params['tag1'] = params0['ig1']
+                params['tag2'] = params0['ig2']
+            else:
+                (params['tag1'], params['tag2']) = getIgTags(params)
             params['tag3'] = 0
+            if 'ig3' in params0.keys() and params['grtyp'] != '#':
+                params['tag3'] = params0['ig3']
             (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
+            
             if params['grtyp'] in ('Z', '#'):
                 params.update({
                     'lat0' : float(axes['ay'][0, 0]),
@@ -278,17 +290,30 @@ def decodeGrid(gid):
                     'dlat' : float(axes['ay'][0, 1] - axes['ay'][0, 0]),
                     'dlon' : float(axes['ax'][1, 0] - axes['ax'][0, 0])
                     })
+                for k in ('lat0','lon0','dlat','dlon'):
+                    if k in params0.keys(): params[k] = params0[k]
+                
             if params['grtyp'] in ('#'):
-                (params['i0'], params['j0']) = (1, 1)
                 (params['ig3'], params['ig4']) = (1, 1)
                 (params['lni'], params['lnj']) = (params['ni'], params['nj'])
                 params['lshape'] = params['shape']
+                for k in ('ig3','ig4'):
+                    if k in params0.keys(): params[k] = params0[k]
+                (params['i0'], params['j0']) = (params['ig3'], params['ig4'])
+                for k in ('i0','j0'):
+                    if k in params0.keys(): params[k] = params0[k]
+                if all([x in params0.keys() for x in ('ni','nj')]):
+                    params['lni'] = params0['ni']
+                    params['lnj'] = params0['nj']
+                    params['lshape'] = (params['lni'],params['lnj'])
             else:
                 (params['ig3'], params['ig4']) = (params['tag3'], 0)
+                if 'ig4' in params0.keys(): params['ig4'] = params0['ig4']
+
         else:
             raise RMNError('decodeGrid: Grid type not yet supported %s(%s)' %
                            (params['grtyp'], params['grref']))
-    else:
+    elif params['grtyp'] in ('U'):
         params['nsubgrids'] = _ri.ezget_nsubgrids(gid)
         params['subgridid'] = _ri.ezget_subgridids(gid)
         params['subgrid'] = []
@@ -304,6 +329,10 @@ def decodeGrid(gid):
                                     params['xlat2'], params['xlon2'],
                                     params['subgrid'][0]['ax'],
                                     params['subgrid'][0]['ay'])
+    else:
+        raise RMNError('decodeGrid: Grid type not yet supported %s(%s)' %
+                       (params['grtyp'], params['grref']))
+        
     return params
 
 
@@ -371,6 +400,7 @@ def getIgTags(params):
         int(32768 + (crc       & 0xffff)),
         int(32768 + (crc >> 16 & 0xffff))
             )
+
 
 def encodeGrid(params):
     """

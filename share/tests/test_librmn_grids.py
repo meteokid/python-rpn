@@ -2,7 +2,7 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.interp"""
 
-import os
+import os, os.path
 import rpnpy.librmn.all as rmn
 import unittest
 ## import ctypes as ct
@@ -11,7 +11,7 @@ import numpy as np
 class Librmn_grids_Test(unittest.TestCase):
 
     epsilon = 0.0005
-
+            
     def test_degGrid_L(self):
         params = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
         params2 = rmn.decodeGrid(params['id'])
@@ -48,7 +48,7 @@ class Librmn_grids_Test(unittest.TestCase):
                 self.assertEqual(params[k],params2[k])
 
     def test_degGrid_diezeE(self):
-        params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=90,lnj=45,i0=1,j0=1)
+        params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=10,lnj=15,i0=12,j0=13)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
@@ -60,6 +60,17 @@ class Librmn_grids_Test(unittest.TestCase):
                 else:
                     ## if params[k] != params2[k]: print k,params[k],params2[k]
                     self.assertEqual(params[k],params2[k])
+        params2 = rmn.decodeGrid(params)
+        for k in params.keys():
+            #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
+            if k not in ('i0','j0','lni','lnj','grtyp','lshape'):
+                if isinstance(params[k],np.ndarray):
+                    ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                    ## if ok: print k,params[k],params2[k]
+                    self.assertFalse(ok)
+                else:
+                    ## if params[k] != params2[k]: print k,params[k],params2[k]
+                    self.assertEqual(params[k],params2[k],'degGrid_diezeE: %s, expected: %s,  got: %s' % (k,str(params[k]),str(params2[k])))
            ## try:
            ##      i = type(params[k])
            ##      j = type(params2[k])
