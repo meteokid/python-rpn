@@ -107,6 +107,14 @@ class Librmn_fstd98_Test(unittest.TestCase):
         a = rmn.fst_version()
         self.assertEqual(a,200001)
 
+    def test_openall_closeall_loop(self):
+        """Test if close all on linked file actually close them all"""
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        mydir = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
+        for i in range(1000):
+            funit = rmn.fstopenall(mydir)
+            rmn.fstcloseall(funit)        
+
     def test_isfst_openall_fstnbr(self):
         """isfst_openall_fstnbr should give known result with known input"""
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)

@@ -30,6 +30,8 @@ C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
 IS_LIST = lambda x: type(x) in (list, tuple)
 IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
+_linkedUnits = {}
+
 class FSTDError(RMNError):
     """
     General fstd98 module error/exception
@@ -263,6 +265,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                         (str(paths)))
     if len(iunitlist) == 1:
         return iunitlist[0]
+    _linkedUnits[str(iunitlist[0])] = iunitlist
     return fstlnk(iunitlist)
 
 
@@ -297,11 +300,21 @@ def fstcloseall(iunit):
                         (type(iunit)))
     if iunit < 0:
         raise ValueError("fstcloseall: must provide a valid iunit: %d" %
-                         (iunit))
-    #TODO: loop on all linked units
-    istat = fstfrm(iunit)
-    if istat >= 0:
-        istat = _rb.fclos(iunit)
+                         (iunit))    
+    try:
+        iunitlist = _linkedUnits[str(iunit)]
+    except:
+        iunitlist = (iunit,)
+    istat = 0
+    for iunit in iunitlist:
+        istat0 = fstfrm(iunit)
+        if istat0 >= 0:
+            istat0 =_rb.fclos(iunit)
+        istat = min(istat, istat0)
+    try:
+        del _linkedUnits[str(iunitlist[0])]
+    except:
+        pass
     if istat >= 0:
         return istat
     raise FSTDError("fstcloseall: Unable to properly close unit %d" % (iunit))
@@ -942,8 +955,8 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
             raise TypeError('Provided dataArray should be F_CONTIGUOUS')
         if dtype != dataArray.dtype:
             raise TypeError('Expecting dataArray of type %s, got: %s' % (repr(dtype),repr(dataArray.dtype)))
-        shape0 = (1,1,1) ; shape0[0:len(params['shape'])] = params['shape'][:]
-        shape1 = (1,1,1) ; shape1[0:len(dataArray.shape)] = dataArray.shape[:]
+        shape0 = [1,1,1] ; shape0[0:len(params['shape'])] = params['shape'][:]
+        shape1 = [1,1,1] ; shape1[0:len(dataArray.shape)] = dataArray.shape[:]
         if shape0 != shape1:
             raise TypeError('Provided have wrong shape, expecting: %s, got: %s' %(repr(params['shape']),repr(dataArray.shape)))
         data = dataArray
