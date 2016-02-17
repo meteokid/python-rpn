@@ -402,6 +402,67 @@ def getIgTags(params):
             )
 
 
+def readGrid(funit, params):
+    """
+    Create a new grid with its parameters from provided params
+    Read grid descriptors from file if need be
+    
+    Args:
+        funit  (int) : 
+        params (dict): grid parameters given as a dictionary (dict)
+            {
+            'grtyp'  : type of geographical projection
+            'ig1'    : first grid descriptor
+            'ig2'    : second grid descriptor
+            'ig3'    : third grid descriptor
+            'ig4'    : fourth grid descriptor
+            }
+    Returns:
+        {
+            'id'    : grid id, same as input arg
+            'shape'  : (ni, nj) # dimensions of the grid
+            'ni'     : first dimension of the grid
+            'nj'     : second dimension of the grid
+            'grtyp'  : type of geographical projection
+                       (one of 'Z', '#', 'Y', 'U')
+            'ig1'    : first grid descriptor
+            'ig2'    : second grid descriptor
+            'ig3'    : third grid descriptor
+            'ig4'    : fourth grid descriptor
+            'grref'  : grid ref type (one of 'A', 'B', 'E', 'G', 'L', 'N', 'S')
+            'ig1ref' : first grid descriptor of grid ref
+            'ig2ref' : second grid descriptor of grid ref
+            'ig3ref' : third grid descriptor of grid ref
+            'ig4ref' : fourth grid descriptor of grid ref
+            ...
+            list of other parameters is grtyp dependent,
+            See defGrid_* specific function for details
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+        
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+    >>> funit = rmn.fstopenall(myfile)
+    >>> rec   = rmn.fstlir(funit, nomvar='ME')
+    >>> grid  = rmn.readGrid(funit, rec)
+
+    See Also:
+        writeGrid
+        decodeGrid
+        rpnpy.librmn.interp.ezqkdef
+    """
+    params['iunit'] = funit
+    params['id'] = _ri.ezqkdef(params)
+    params2 = decodeGrid(params)
+    return params2
+
+
 def encodeGrid(params):
     """
     Define an FSTD grid with the provided parameters

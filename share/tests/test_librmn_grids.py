@@ -11,6 +11,37 @@ import numpy as np
 class Librmn_grids_Test(unittest.TestCase):
 
     epsilon = 0.0005
+
+    def test_readGrid(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+
+        funit = rmn.fstopenall(myfile)
+        rec   = rmn.fstlir(funit, nomvar='ME')
+        grid  = rmn.readGrid(funit,rec)
+        self.assertEqual(grid['grref'],'E')
+        self.assertEqual(grid['grtyp'],'Z')
+        self.assertEqual(grid['ig1'],2002)
+        self.assertEqual(grid['ig2'],1000)
+        self.assertEqual(grid['ig3'],0)
+        self.assertEqual(grid['ig4'],0)
+        self.assertEqual(grid['ig1ref'],900)
+        self.assertEqual(grid['ig2ref'],0)
+        self.assertEqual(grid['ig3ref'],43200)
+        self.assertEqual(grid['ig4ref'],43200)
+        self.assertEqual(grid['ni'],201)
+        self.assertEqual(grid['nj'],100)
+        self.assertEqual(grid['xg1'],0.)
+        self.assertEqual(grid['xg2'],180.)
+        self.assertEqual(grid['xg3'],0.)
+        self.assertEqual(grid['xg4'],270.)
+        self.assertEqual(grid['xlat1'],0.)
+        self.assertEqual(grid['xlon1'],180.)
+        self.assertEqual(grid['xlat2'],0.)
+        self.assertEqual(grid['xlon2'],270.)
+        self.assertEqual(grid['tag1'],2002)
+        self.assertEqual(grid['tag2'],1000)
+        self.assertEqual(grid['tag3'],0)
             
     def test_degGrid_L(self):
         params = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
