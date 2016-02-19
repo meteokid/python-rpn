@@ -5,15 +5,18 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 
-#TODO: write grid... including # grid special case
 #TODO: add ax, ax optional arg to ZE, dE, ZL, dL, U
+#TODO: add fucntions to convert between Z, # and Y grids
+#TODO: add fucntions to define YE, YL grids
 
 """
 Librmn Fstd grid helper functions
 """
 import numpy  as _np
 from math import sqrt as _sqrt
+from . import const as _rc
 from . import base as _rb
+from . import fstd98 as _rf
 from . import interp as _ri
 from . import llacar as _ll
 from . import RMNError
@@ -329,6 +332,17 @@ def decodeGrid(gid):
                                     params['xlat2'], params['xlon2'],
                                     params['subgrid'][0]['ax'],
                                     params['subgrid'][0]['ay'])
+        if all([x in params0.keys() for x in ('ig1','ig2')]):
+            params['tag1'] = params0['ig1']
+            params['tag2'] = params0['ig2']
+        else:
+            (params['tag1'], params['tag2']) = getIgTags(params)
+            params['tag3'] = 0
+        if 'ig3' in params0.keys() and params['grtyp'] != '#':
+            params['tag3'] = params0['ig3']
+        (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
+        (params['ig3'], params['ig4']) = (params['tag3'], 0)
+        if 'ig4' in params0.keys(): params['ig4'] = params0['ig4']
     else:
         raise RMNError('decodeGrid: Grid type not yet supported %s(%s)' %
                        (params['grtyp'], params['grref']))
@@ -385,8 +399,11 @@ def getIgTags(params):
         defGrid_ZE
         rpnpy.librmn.base.crc32
     """
-    a = params['ax'][:, 0].tolist()
-    a.extend(params['ay'][0, :].tolist())
+    try:
+        a = params['ax'][:, 0].tolist()
+        a.extend(params['ay'][0, :].tolist())
+    except:
+        a = params['axy'].tolist()
     try:
         a.extend([params['xlat1'], params['xlon1'],
                   params['xlat2'], params['xlon2']])
@@ -451,16 +468,157 @@ def readGrid(funit, params):
     >>> funit = rmn.fstopenall(myfile)
     >>> rec   = rmn.fstlir(funit, nomvar='ME')
     >>> grid  = rmn.readGrid(funit, rec)
+    >>> rmn.fstcloseall(funit)
 
     See Also:
         writeGrid
         decodeGrid
         rpnpy.librmn.interp.ezqkdef
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstcloseall
     """
     params['iunit'] = funit
     params['id'] = _ri.ezqkdef(params)
     params2 = decodeGrid(params)
     return params2
+
+
+def writeGrid(funit, params):
+    """
+    Write the grid descriptors to file if need be
+    
+    Grid descriptors exists only for reference grids: Z, #, Y, U
+    For other grid types, this function does nothing since the
+    grid is already coded in the record metadata
+
+    Args:
+        funit  (int) : 
+        params (dict): grid parameters given as a dictionary (dict)
+            These grid params are the one returned by:
+                decodeGrid, readGrid, defGrid_*, encodeGrid
+            Minimally it needs (grtyp != Z, #, Y or U):
+            {
+            'grtyp'  : type of geographical projection
+            'ig1'    : first grid descriptor (int)
+            'ig2'    : second grid descriptor (int)
+            'ig3'    : third grid descriptor (int)
+            'ig4'    : fourth grid descriptor (int)
+            }
+            For ref grids (grtyp == Z, #, Y or U) it needs:
+            {
+            'grtyp'  : type of geographical projection
+                       (one of 'Z', '#', 'Y', 'U')
+            'tag1'   : grid tag 1 (int)
+            'tag2'   : grid tag 2 (int)
+            'tag3'   : grid tag 3 (int)
+            'grref'  : grid ref type
+                       (one of 'A', 'B', 'E', 'G', 'L', 'N', 'S')
+            'ig1ref' : first grid descriptor of grid ref (int)
+            'ig2ref' : second grid descriptor of grid ref (int)
+            'ig3ref' : third grid descriptor of grid ref (int)
+            'ig4ref' : fourth grid descriptor of grid ref (int)
+            }
+            Additioannly for grtyp == Z, #, Y:
+            {
+            'ax'     : grid x-axes (numpy.ndarray)
+            'ay'     : grid y-axes (numpy.ndarray)
+            }
+            Additioannly for grtyp == U:
+            {
+            'axy'    : positional record ('^>') (numpy, ndarray)
+            }
+    Returns:
+        None
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+    >>> funit  = rmn.fstopenall(myfile)
+    >>> rec    = rmn.fstlir(funit, nomvar='ME')
+    >>> grid0  = rmn.readGrid(funit, rec)
+    >>> rmn.fstcloseall(funit)
+    >>> grid1  = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
+    >>> grid2  = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
+    >>> grid3  = rmn.defGrid_YY(31,5,0.,180.,1.,270.)
+    >>> myfile = 'myfstfile.fst'
+    >>> funit  = rmn.fstopenall(myfile, rmn.FST_RW)
+    >>> rmn.fstecr(funit,rec['d'],rec)
+    >>> rmn.writeGrid(funit, grid0)
+    >>> rmn.writeGrid(funit, grid1)
+    >>> rmn.writeGrid(funit, grid2)
+    >>> rmn.writeGrid(funit, grid3)
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        readGrid
+        encodeGrid
+        decodeGrid
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstecr
+        rpnpy.librmn.fstd98.fstcloseall
+    """
+    if not params['grtyp'] in ('Z', '#', 'Y', 'U'):
+        return
+    
+    rec = _rc.FST_RDE_META_DEFAULT
+    rec['ip1'] = params['tag1']
+    rec['ip2'] = params['tag2']
+    try:
+        rec['ip3'] = params['tag3']
+    except KeyError:
+        rec['ip3'] = 0
+    rec['grtyp'] = params['grref']
+    rec['ig1'] = params['ig1ref']
+    rec['ig2'] = params['ig2ref']
+    rec['ig3'] = params['ig3ref']
+    rec['ig4'] = params['ig4ref']
+    try:
+        rec['nbits'] = params['nbits']
+    except KeyError:
+        rec['nbits'] = 32
+    try:
+        rec['typvar'] = params['typvar']
+    except KeyError:
+        pass
+    try:
+        rec['etiket'] = params['etiket']
+    except KeyError:
+        pass
+        
+    if params['grtyp'] in ('Z', '#', 'Y'):
+        ni = params['ax'].shape[0]
+        try:
+            nj = params['ay'].shape[1]
+        except IndexError:
+            nj = params['ay'].shape[0]
+        if params['grtyp'] in ('Z', '#'):
+            rec['nomvar'] = '>>'
+            (rec['ni'], rec['nj']) = (ni, 1)
+            _rf.fstecr(funit,params['ax'],rec)
+            rec['nomvar'] = '^^'
+            (rec['ni'], rec['nj']) = (1, nj)
+            _rf.fstecr(funit,params['ay'],rec)
+        else:
+            (rec['ni'], rec['nj']) = (ni, nj)
+            rec['nomvar'] = '>>'
+            _rf.fstecr(funit,params['ax'],rec)
+            rec['nomvar'] = '^^'
+            _rf.fstecr(funit,params['ay'],rec)
+    else:
+        try:
+            rec['nomvar'] = params['axyname']
+        except KeyError:
+            rec['nomvar'] = '^>'
+        shape = [1,1,1] ; shape[0:len(params['axy'].shape)] = params['axy'].shape[:]
+        (rec['ni'], rec['nj'], rec['nk']) = shape[:]
+        _rf.fstecr(funit,params['axy'],rec)
 
 
 def encodeGrid(params):
@@ -1616,6 +1774,7 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
         'ig3ref'    : 0,
         'ig4ref'    : 0,
         'ni'        : ni,
+        'shape'     : (ni, nj),
         'dlat'      : dlat,
         'dlon'      : dlon,
         'lon0'      : lon0,
@@ -1645,6 +1804,11 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
                                 params['subgrid'][0]['ax'],
                                 params['subgrid'][0]['ay'])
     params['axyname'] = '^>'
+    (params['tag1'], params['tag2']) = getIgTags(params)
+    params['tag3'] = 0
+    
+    (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
+    (params['ig3'], params['ig4']) = (params['tag3'], 0)
     return params
 
 

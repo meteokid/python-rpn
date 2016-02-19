@@ -11,11 +11,17 @@ import numpy as np
 class Librmn_grids_Test(unittest.TestCase):
 
     epsilon = 0.0005
+    fname = '__rpnstd__testfile__.fst'
+
+    def erase_testfile(self):
+        try:
+            os.unlink(self.fname)
+        except:
+            pass
 
     def test_readGrid(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
         myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
-
         funit = rmn.fstopenall(myfile)
         rec   = rmn.fstlir(funit, nomvar='ME')
         grid  = rmn.readGrid(funit,rec)
@@ -42,8 +48,42 @@ class Librmn_grids_Test(unittest.TestCase):
         self.assertEqual(grid['tag1'],2002)
         self.assertEqual(grid['tag2'],1000)
         self.assertEqual(grid['tag3'],0)
-            
-    def test_degGrid_L(self):
+
+    def test_writeGrid(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        file0  = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+        funit  = rmn.fstopenall(file0)
+        rec    = rmn.fstlir(funit, nomvar='ME')
+        grid0  = rmn.readGrid(funit, rec)
+        rmn.fstcloseall(funit)
+        grid1  = rmn.defGrid_L(180,60,0.,180.,1.,0.5)
+        grid2  = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
+        grid3  = rmn.defGrid_YY(31,5,0.,180.,1.,270.)
+        
+        self.erase_testfile()
+        myfile = self.fname
+        funit  = rmn.fstopenall(myfile, rmn.FST_RW)
+        rmn.fstecr(funit,rec['d'],rec)
+        rmn.writeGrid(funit, grid0)
+        rmn.writeGrid(funit, grid1)
+        rmn.writeGrid(funit, grid2)
+        rmn.writeGrid(funit, grid3)
+        rmn.fstcloseall(funit)
+        
+        funit  = rmn.fstopenall(myfile, rmn.FST_RO)
+        rec    = rmn.fstlir(funit, nomvar='ME')
+        grid0b = rmn.readGrid(funit, rec)
+        rmn.fstcloseall(funit)
+        self.erase_testfile()
+        for k in grid0.keys():
+            if isinstance(grid0[k],np.ndarray):
+                ok = np.any(np.abs(grid0b[k]-grid0[k]) > self.epsilon)
+                self.assertFalse(ok, 'For k=%s, grid0b - grid0 = %s' % (k,str(np.abs(grid0b[k]-grid0[k]))))
+            else:
+                self.assertEqual(grid0b[k],grid0[k], 'For k=%s, expected:%s, got:%s' % (k, str(grid0[k]), str(grid0b[k])))
+       
+
+    def test_defGrid_L(self):
         params = rmn.defGrid_L(90,45,0.,180.,1.,0.5)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -52,13 +92,13 @@ class Librmn_grids_Test(unittest.TestCase):
         for k in params.keys():
             self.assertEqual(params[k],params3[k])
                     
-    def test_degGrid_E(self):
+    def test_defGrid_E(self):
         params = rmn.defGrid_E(90,45,0.,180.,1.,270.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
 
-    def test_degGrid_ZL(self):
+    def test_defGrid_ZL(self):
         params = rmn.defGrid_ZL(90,45,10.,11.,1.,0.5)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -68,7 +108,7 @@ class Librmn_grids_Test(unittest.TestCase):
             else:
                 self.assertEqual(params[k],params2[k])
 
-    def test_degGrid_ZE(self):
+    def test_defGrid_ZE(self):
         params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -78,7 +118,7 @@ class Librmn_grids_Test(unittest.TestCase):
             else:
                 self.assertEqual(params[k],params2[k])
 
-    def test_degGrid_diezeE(self):
+    def test_defGrid_diezeE(self):
         params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=10,lnj=15,i0=12,j0=13)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -101,19 +141,19 @@ class Librmn_grids_Test(unittest.TestCase):
                     self.assertFalse(ok)
                 else:
                     ## if params[k] != params2[k]: print k,params[k],params2[k]
-                    self.assertEqual(params[k],params2[k],'degGrid_diezeE: %s, expected: %s,  got: %s' % (k,str(params[k]),str(params2[k])))
+                    self.assertEqual(params[k],params2[k],'defGrid_diezeE: %s, expected: %s,  got: %s' % (k,str(params[k]),str(params2[k])))
            ## try:
            ##      i = type(params[k])
            ##      j = type(params2[k])
            ##  except:
-           ##      print 'test_degGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
+           ##      print 'test_defGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
     ##         if isinstance(params[k],np.ndarray):
     ##             ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
     ##             self.assertFalse(ok)
     ##         else:
     ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
 
-    def test_degGrid_diezeL(self):
+    def test_defGrid_diezeL(self):
         params = rmn.defGrid_diezeL(90,45,11.,12.,1.,0.5,lni=90,lnj=45,i0=1,j0=1)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -130,50 +170,50 @@ class Librmn_grids_Test(unittest.TestCase):
            ##      i = type(params[k])
            ##      j = type(params2[k])
            ##  except:
-           ##      print 'test_degGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
+           ##      print 'test_defGrid_dE',k,k in params.keys(),k in params2.keys() , params['grtyp'], params['grref'], params2['grtyp'], params2['grref']
     ##         if isinstance(params[k],np.ndarray):
     ##             ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
     ##             self.assertFalse(ok)
     ##         else:
     ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
 
-    def test_degGrid_G_glb(self):
+    def test_defGrid_G_glb(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=False)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
         
-    def test_degGrid_G_glb_inv(self):
+    def test_defGrid_G_glb_inv(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=True)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
         
-    def test_degGrid_G_N(self):
+    def test_defGrid_G_N(self):
         params = rmn.defGrid_G(90,45,glb=False,north=True,inverted=False)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
         
-    def test_degGrid_G_S(self):
+    def test_defGrid_G_S(self):
         params = rmn.defGrid_G(90,45,glb=False,north=False,inverted=False)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
         
-    def test_degGrid_PS_N(self):
+    def test_defGrid_PS_N(self):
         params = rmn.defGrid_PS(90,45,north=True,pi=45,pj=30,d60=5000.,dgrw=270.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
         
-    def test_degGrid_PS_S(self):
+    def test_defGrid_PS_S(self):
         params = rmn.defGrid_PS(90,45,north=False,pi=45,pj=30,d60=5000.,dgrw=270.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
 
-    def test_degGrid_YY(self):
+    def test_defGrid_YY(self):
         params = rmn.defGrid_YY(31,1.5)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
@@ -185,7 +225,7 @@ class Librmn_grids_Test(unittest.TestCase):
             elif isinstance(params[k],float):
                 self.assertTrue(abs(params[k]-params2[k]) < self.epsilon)
             else:
-                self.assertEqual(params[k],params2[k])
+                self.assertEqual(params[k],params2[k], 'For k=%s, expected:%s, got:%s' % (k, str(params[k]), str(params2[k])))
         for i in (0,1):
             p0 = params['subgrid'][i]
             p2 = params2['subgrid'][i]
@@ -196,7 +236,7 @@ class Librmn_grids_Test(unittest.TestCase):
                 elif isinstance(p0[k],float):
                     self.assertTrue(abs(p0[k]-p2[k]) < self.epsilon)
                 else:
-                    self.assertEqual(p0[k],p2[k])
+                    self.assertEqual(p0[k],p2[k],'sugridid=%d, For k=%s, expected:%s, got:%s' % (i, k, str(p0[k]), str(p2[k])))
             
     def test_yyg_yangrot(self):
         (xlat1,xlon1,xlat2,xlon2) = (0.,180.,0.,270.)

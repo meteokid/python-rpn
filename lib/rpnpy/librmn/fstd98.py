@@ -303,7 +303,7 @@ def fstcloseall(iunit):
                          (iunit))    
     try:
         iunitlist = _linkedUnits[str(iunit)]
-    except:
+    except KeyError:
         iunitlist = (iunit,)
     istat = 0
     for iunit in iunitlist:
