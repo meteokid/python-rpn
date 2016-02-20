@@ -3,9 +3,7 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-   Module ftnnml contains the classes used to manipulate fortran namelist files
-
-   python -m cProfile -- ./bin/getnml2 -l -f phydict.nml
+Module ftnnml contains the classes used to manipulate fortran namelist files
 """
 
 ## Profiling: python -m cProfile -- ./bin/getnml2 -l -f phydict.nml
@@ -18,8 +16,8 @@
 import re
 import sys
 
-__VERSION__     = '1.0.0'
-__LASTUPDATED__ = '2015-02-27'
+__VERSION__     = '1.0.1'
+__LASTUPDATED__ = '2016-02-16'
 
 isListType   = lambda x: type(x) in (type([]),type((1,)))
 isStringType = lambda x: type(x) == type("")
@@ -107,7 +105,7 @@ class FtnNmlObj(object):
         return changeCase(mystr.lstrip() if clean else mystr)
 
     def __init__(self,name):
-        (self.name, self.data) = (name, [])
+        (self.name, self.data) = (cleanName(name), [])
         self.prop = { #Start SepS Sep1 data End SepE
             'strStart' : name,
             'strSepS'  : '',
@@ -309,7 +307,7 @@ class FtnNmlSection(FtnNmlObj):
 
     def __init__(self,name):
         FtnNmlObj.__init__(self,name)
-        self.prop['strStart'] = '&'+self.name
+        self.prop['strStart'] = '&'+name
         self.prop['strSepS']  = '\n'
         self.prop['strEnd']   = '/'
         self.prop['strSepE']  = '\n'

@@ -262,6 +262,11 @@ def decodeGrid(gid):
         params.update(decodeIG2dict(params['grtyp'],
                                     params['ig1'], params['ig2'],
                                     params['ig3'], params['ig4']))
+        params['grref']  = params['grtyp']
+        params['ig1ref'] = params['ig1']
+        params['ig2ref'] = params['ig2']
+        params['ig3ref'] = params['ig3']
+        params['ig4ref'] = params['ig4']
     elif params['grtyp'] in ('Z', '#', 'Y'):
         params2 = decodeIG2dict(params['grref'],
                                 params['ig1ref'], params['ig2ref'],
@@ -460,6 +465,9 @@ def readGrid(funit, params):
         ValueError on invalid input arg value
         RMNError   on any other error
         
+    Notes:
+        readGrid function is only available from python-rpn version 2.0.rc1
+
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
@@ -469,7 +477,7 @@ def readGrid(funit, params):
     >>> rec   = rmn.fstlir(funit, nomvar='ME')
     >>> grid  = rmn.readGrid(funit, rec)
     >>> rmn.fstcloseall(funit)
-
+        
     See Also:
         writeGrid
         decodeGrid
@@ -534,6 +542,9 @@ def writeGrid(funit, params):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
+
+    Notes:
+        writeGrid function is only available from python-rpn version 2.0.rc1
 
     Examples:
     >>> import os, os.path

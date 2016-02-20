@@ -26,7 +26,7 @@
     rpnpy.vgd.base
 
  Notes:
- This Module is available from python-rpn version 2.0.b6
+ This Module is only available from python-rpn version 2.0.b6
 
 """
 

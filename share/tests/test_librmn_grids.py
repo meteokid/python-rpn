@@ -21,6 +21,28 @@ class Librmn_grids_Test(unittest.TestCase):
 
     def test_readGrid(self):
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
+        funit = rmn.fstopenall(myfile)
+        rec   = rmn.fstlir(funit, nomvar='P0')
+        grid  = rmn.readGrid(funit,rec)
+        self.assertEqual(grid['grtyp'],'G')
+        self.assertEqual(grid['ig1'],0)
+        self.assertEqual(grid['ig2'],0)
+        self.assertEqual(grid['ig3'],0)
+        self.assertEqual(grid['ig4'],0)
+        self.assertEqual(grid['xg1'],0.)
+        self.assertEqual(grid['xg2'],0.)
+        self.assertEqual(grid['xg3'],0.)
+        self.assertEqual(grid['xg4'],0.)
+        self.assertEqual(grid['ni'],200)
+        self.assertEqual(grid['nj'],100)
+        self.assertEqual(grid['shape'],(200,100))
+        self.assertEqual(grid['glb'],True)
+        self.assertEqual(grid['north'],True)
+        self.assertEqual(grid['inverted'],False)
+
+    def test_readGridRef(self):
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
         myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
         funit = rmn.fstopenall(myfile)
         rec   = rmn.fstlir(funit, nomvar='ME')

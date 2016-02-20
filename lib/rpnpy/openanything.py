@@ -1,4 +1,7 @@
-'''OpenAnything: a kind and thoughtful library for HTTP web services
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+OpenAnything: a kind and thoughtful library for HTTP web services
 
 This program is part of 'Dive Into Python', a free Python book for
 experienced programmers.  Visit http://diveintopython.org/ for the
