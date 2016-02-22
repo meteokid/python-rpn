@@ -446,10 +446,14 @@ def fstecr(iunit, data, meta=None, rewrite=True):
     >>> funitIn  = rmn.fstopenall(filename)
     >>> funitOut = rmn.fstopenall('newfile.fst', rmn.FST_RW)
     >>> myrec = rmn.fstlir(funitIn, nomvar='P0')
+
     >>> # Write the record specifying data and meta separately
     >>> rmn.fstecr(funitOut, myrec['d'], myrec)
+    
     >>> # Write the record specifying data and meta together
     >>> rmn.fstecr(funitOut, myrec)
+
+    >>> # Properly close files, important when writing to avoid corrupted files
     >>> rmn.fstcloseall(funitOut)
     >>> rmn.fstcloseall(funitIn)
 
@@ -526,7 +530,9 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
           keep_dateo=True
 
     fst_edit_dir(key, ... )
-    
+    fst_edit_dir(rec, ... )
+    fst_edit_dir(keylist, ... )
+  
     Args:
         key   : positioning information to the record,
                 obtained with fstinf or fstinl, ...
@@ -555,6 +561,12 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
                      dateo is specified or
                      keep_dateo=True
                      (keep_dateo must be False is datev is provided)
+
+        From verion 2.0.rc1, this function can be called with a rec meta
+        or keylist instead of a simple key number (int):
+
+        rec     (dict) : dictionary where key = rec['key']
+        keylist (list) : list of keys for records to edit
     Returns:
         None
     Raises:
@@ -566,20 +578,31 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     >>> import os, os.path, stat, shutil
     >>> import rpnpy.librmn.all as rmn
     >>> filename  = 'geophy.fst'
+
     >>> # Copy a file locally to be able to edit it and set write permission
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename0 = os.path.join(ATM_MODEL_DFILES,'bcmk',filename)
     >>> shutil.copyfile(filename0, filename)
     >>> st = os.stat(filename)
     >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
+    
     >>> # Open existing file in Rear/Write mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
+
     >>> # Get the list of all records in file and change the etiket for them all
-    >>> myreclist = rmn.fstinl(funit)
-    >>> for key in myreclist:
+    >>> mykeylist = rmn.fstinl(funit)
+
+    >>> # Iterate explicitely on list of records to change the etiket
+    >>> for key in mykeylist:
     >>>     rmn.fst_edit_dir(key, etiket='MY_NEW_ETK')
+
     >>> # Could also be written as a one liner list comprenhension:
     >>> # [rmn.fst_edit_dir(key, etiket='MY_NEW_ETK') for key in rmn.fstinl(funit)]
+
+    >>> # Iterate implicitely on list of records to change the etiket
+    >>> rmn.fst_edit_dir(mykeylist, etiket='MY_NEW_ETK')
+
+    >>> # Properly close files, important when editing to avoid corrupted files
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -598,9 +621,19 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             raise FSTDError("fst_edit_dir: Cannot change datev while " +
                             "keeping dateo unchanged, try using npas or " +
                             "deet to change datev instead")
+    if isinstance(key, dict):
+       key = key['key']
+    
+    if isinstance(key, (list, tuple)):
+        for key2 in key:
+            fst_edit_dir(key2, datev, dateo, deet, npas, ni, nj, nk,
+                         ip1, ip2, ip3,
+                         typvar, nomvar, etiket, grtyp,
+                         ig1, ig2, ig3, ig4, datyp, keep_dateo)
+        return
+    
     if key < 0:
-        raise ValueError("fst_edit_dir: must provide a valid record key: %d" %
-                         (key))
+        raise ValueError("fst_edit_dir: must provide a valid record key: %d" % (key))
     if dateo != -1:
         recparams = fstprm(key)
         deet1 = recparams['deet'] if deet == -1 else deet
@@ -629,7 +662,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
                  ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
                  ig1, ig2, ig3, ig4, datyp)
     if istat >= 0:
-        return istat
+        return
     raise FSTDError()
 
 

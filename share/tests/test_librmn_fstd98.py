@@ -337,6 +337,27 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertEqual(kla,None,'LA found after delete: '+repr(kla))
         self.assertNotEqual(klo,None,'QW not found after rename: '+repr(klo))
 
+        
+    def test_fsteditdir_list_rec(self):
+        """fst_edit_dir accept list and dict as input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        funit   = rmn.fstopenall(self.fname,rmn.FST_RW)
+        keylist = rmn.fstinl(funit)
+        istat   = rmn.fst_edit_dir(keylist, etiket='MY_NEW_ETK')
+        klo     = rmn.fstinf(funit,nomvar='LO')
+        istat   = rmn.fst_edit_dir(klo, nomvar='QW')
+        rmn.fstcloseall(funit)
+
+        funit = rmn.fstopenall(self.fname,rmn.FST_RO)
+        la = rmn.fstlir(funit,nomvar='LA')
+        lo = rmn.fstlir(funit,nomvar='QW')
+        rmn.fstcloseall(funit)
+        self.erase_testfile()
+        self.assertNotEqual(lo,None,'QW not found after rename: '+repr(klo))
+        self.assertNotEqual(la['etiket'],'MY_NEW_ETK')
+        self.assertNotEqual(lo['etiket'],'MY_NEW_ETK')
+
 
     def test_fstluk_f16_datyp134(self):
         """fstluk of f16 fields (datyp=134) should give known result with known input"""
