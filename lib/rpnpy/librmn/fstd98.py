@@ -577,9 +577,9 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     Examples:
     >>> import os, os.path, stat, shutil
     >>> import rpnpy.librmn.all as rmn
-    >>> filename  = 'geophy.fst'
 
     >>> # Copy a file locally to be able to edit it and set write permission
+    >>> filename  = 'geophy.fst'
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename0 = os.path.join(ATM_MODEL_DFILES,'bcmk',filename)
     >>> shutil.copyfile(filename0, filename)
@@ -670,10 +670,18 @@ def fsteff(key):
     """Deletes the record associated to handle.
 
     fsteff(key)
+    fsteff(rec)
+    fsteff(keylist)
 
     Args:
         key   : positioning information to the record,
                 obtained with fstinf or fstinl, ...
+
+        From verion 2.0.rc1, this function can be called with a rec meta
+        or keylist instead of a simple key number (int):
+
+        rec     (dict) : dictionary where key = rec['key']
+        keylist (list) : list of keys for records to edit
     Returns:
         None
     Raises:
@@ -684,18 +692,34 @@ def fsteff(key):
     Examples:
     >>> import os, os.path, stat, shutil
     >>> import rpnpy.librmn.all as rmn
-    >>> filename  = 'geophy.fst'
+    
     >>> # Copy a file locally to be able to edit it and set write permission
+    >>> filename  = 'geophy.fst'
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename0 = os.path.join(ATM_MODEL_DFILES,'bcmk',filename)
     >>> shutil.copyfile(filename0, filename)
     >>> st = os.stat(filename)
     >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
+    
     >>> # Open existing file in Rear/Write mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
+    
     >>> # Find the record name ME and erase it from the file
     >>> key = rmn.fstinf(funit, nomvar='ME')
     >>> rmn.fsteff(key['key'])
+
+    >>> # Find the record name ME and erase it from the file,
+    >>> # passing directly the dict returned by fstinf
+    >>> key = rmn.fstinf(funit, nomvar='MG')
+    >>> rmn.fsteff(key)
+
+    >>> # Find all record named VF and erase them
+    >>> keylist = rmn.fstinl(funit, nomvar='VF')
+    >>> rmn.fsteff(keylist)
+
+    >>> # Iterate implicitely on list of records to change the etiket
+    >>> rmn.fst_edit_dir(mykeylist, etiket='MY_NEW_ETK')
+
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -705,6 +729,14 @@ def fsteff(key):
         fstinf
         rpnpy.librmn.const
     """
+    if isinstance(key, dict):
+       key = key['key']
+    
+    if isinstance(key, (list, tuple)):
+        for key2 in key:
+            fsteff(key2)
+        return
+    
     if not (type(key) == int):
         raise TypeError("fsteff: Expecting arg of type int, Got %s" %
                         (type(key)))
@@ -713,7 +745,7 @@ def fsteff(key):
                          (key))
     istat = _rp.c_fsteff(key)
     if istat >= 0:
-        return istat
+        return
     raise FSTDError()
 
 

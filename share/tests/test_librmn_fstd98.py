@@ -359,6 +359,34 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertNotEqual(lo['etiket'],'MY_NEW_ETK')
 
 
+    def test_fsteff_list_rec(self):
+        """fsteff accept list and dict as input"""
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        funit   = rmn.fstopenall(self.fname,rmn.FST_RW)
+        keylist = rmn.fstinl(funit)
+        rmn.fsteff(keylist)
+        rmn.fstcloseall(funit)
+        funit = rmn.fstopenall(self.fname,rmn.FST_RO)
+        kla = rmn.fstinf(funit,nomvar='LA')
+        klo = rmn.fstinf(funit,nomvar='LO')
+        rmn.fstcloseall(funit)
+        self.erase_testfile()
+        self.assertEqual(kla,None,'LA found after delete: '+repr(kla))
+        self.assertEqual(klo,None,'LO found after delete: '+repr(klo))
+
+        (la,lo) = self.create_basefile() #wrote 2 recs in that order: la, lo
+        funit   = rmn.fstopenall(self.fname,rmn.FST_RW)
+        klo     = rmn.fstinf(funit,nomvar='LO')
+        rmn.fsteff(klo)
+        rmn.fstcloseall(funit)
+        funit = rmn.fstopenall(self.fname,rmn.FST_RO)
+        klo = rmn.fstinf(funit,nomvar='LO')
+        rmn.fstcloseall(funit)
+        self.erase_testfile()
+        self.assertEqual(klo,None,'LO found after delete: '+repr(klo))
+
+
     def test_fstluk_f16_datyp134(self):
         """fstluk of f16 fields (datyp=134) should give known result with known input"""
         self.assertEqual(0,1,'Need to update test with a new FST file')
