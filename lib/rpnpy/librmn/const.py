@@ -10,7 +10,7 @@ Module librmn_const defines constants for the librmn module
 """
 import numpy  as _np
 
-#--- primitives -----------------------------------------------------
+# === primitives ===
 
 WKOFFIT_TYPE_LIST = { #TODO:
     'INEXISTANT' : -3,
@@ -54,18 +54,20 @@ WKOFFIT_TYPE_LIST = { #TODO:
     }
 #WKOFFIT_TYPE_LIST.__doc__ = 'Python dict with wkoffit file type codes'
 
-#--- base -----------------------------------------------------------
+# === base ===
 
 NEWDATE_PRINT2TRUE  = 2
 NEWDATE_TRUE2PRINT  = -2
 NEWDATE_PRINT2STAMP = 3
 NEWDATE_STAMP2PRINT = -3
 
-NEWDATE_OPT_360DAYS = 'year=360_day'
-NEWDATE_OPT_365DAYS = 'year=365_day'
+NEWDATE_OPT_360DAYS   = 'year=360_day'
+NEWDATE_OPT_365DAYS   = 'year=365_day'
 NEWDATE_OPT_GREGORIAN = 'year=gregorian'
 
-#--- fstd98/fstd98 --------------------------------------------------
+# === fstd98/fstd98 ===
+
+# ==== fstopt (options) ====
 
 FSTOP_GET = 1
 FSTOP_SET = 0
@@ -101,20 +103,58 @@ FSTOPS_MSG_CATAST  = "CATAST"
 FSTOPS_TURBO_FAST  = "FAST"
 FSTOPS_TURBO_BEST  = "BEST"
 
-FST_RW     = "RND+R/W"
-FST_RW_OLD = "RND+R/W+OLD"
-FST_RO     = "RND+R/O"
+# ==== File mode ====
+
+FST_RW           = "RND+R/W"
+FST_RW_OLD       = "RND+R/W+OLD"
+FST_RO           = "RND+R/O"
 FILE_MODE_RO     = FST_RO
 FILE_MODE_RW_OLD = FST_RW_OLD
 FILE_MODE_RW     = FST_RW
 
+# ==== Metadata ====
+
+## Wildcards for search and replace
 FST_FIND_ANY_INT = -1
 FST_FIND_ANY_STR = ' '
 
+## String lenght
 FST_GRTYP_LEN  = 1
 FST_TYPVAR_LEN = 2
 FST_NOMVAR_LEN = 4
 FST_ETIKET_LEN = 12
+
+## Default Metadata to be used as a record metadata "skeleton"
+FST_RDE_META_DEFAULT = {
+    'dateo' : 0,
+    'deet'  : 0,
+    'npas'  : 0,
+    'ni'    : 1,
+    'nj'    : 1,
+    'nk'    : 1,
+    'nbits' : 16,
+    'datyp' : 133,
+    'ip1'   : 0,
+    'ip2'   : 0,
+    'ip3'   : 0,
+    'typvar': 'P',
+    'nomvar': ' ',
+    'etiket': ' ',
+    'grtyp' : 'G',
+    'ig1'   : 0,
+    'ig2'   : 0,
+    'ig3'   : 0,
+    'ig4'   : 0,
+    'swa'   : 0,
+    'lng'   : 0,
+    'dltf'  : 0,
+    'ubc'   : 0,
+    'xtra1' : 0,
+    'xtra2' : 0,
+    'xtra3' : 0
+}
+
+# ==== Data types ====
 
 ##     0: binary, transparent
 ##     1: floating point
@@ -130,6 +170,8 @@ FST_ETIKET_LEN = 12
 ##   134: compressed floating point (128+6)
 ## +128 : second stage packer active
 ## +64  : missing value convention used
+
+## FSTD valid code for data types
 FST_DATYP_LIST = {
     'binary' : 0,
     'float' : 1,
@@ -150,6 +192,7 @@ FST_DATYP_LIST = {
     'complex_compressed' : 136,
     }
 
+## Numpy versus FSTD data type equivalence
 FST_DATYP2NUMPY_LIST = { #TODO: review
     0: _np.uint32  , # binary, transparent
     1: _np.float32 , # floating point
@@ -174,36 +217,7 @@ FST_DATYP2NUMPY_LIST64 = { #TODO: review
     8: _np.complex128 , # complex IEEE
 }
 
-FST_RDE_META_DEFAULT = {
-    'dateo' : 0,
-    'deet'  : 0,
-    'npas'  : 0,
-    'ni'    : 1,
-    'nj'    : 1,
-    'nk'    : 1,
-    'nbits' : 16,
-    'datyp' : FST_DATYP_LIST['float_IEEE_compressed'],
-    'ip1'   : 0,
-    'ip2'   : 0,
-    'ip3'   : 0,
-    'typvar': 'P',
-    'nomvar': ' ',
-    'etiket': ' ',
-    'grtyp' : 'G',
-    'ig1'   : 0,
-    'ig2'   : 0,
-    'ig3'   : 0,
-    'ig4'   : 0,
-    'swa'   : 0,
-    'lng'   : 0,
-    'dltf'  : 0,
-    'ubc'   : 0,
-    'xtra1' : 0,
-    'xtra2' : 0,
-    'xtra3' : 0
-}
-
-#--- fstd98/convip_plus & convert_ip123 ---------------------------------
+# === Convip / Convert IP ===
 
 ## KIND = 0, hauteur (m) par rapport au niveau de la mer (-20, 000 -> 100, 000)
 ## KIND = 1, sigma   (0.0 -> 1.0)
@@ -219,6 +233,7 @@ FST_RDE_META_DEFAULT = {
 ## KIND =21, p est en metres-pression
 ##           (partage avec kind=5 a cause du range exclusif)
 ##           (0 -> 1, 000, 000) fact=1e4
+
 KIND_ABOVE_SEA = 0
 KIND_SIGMA     = 1
 KIND_PRESSURE  = 2
@@ -230,6 +245,7 @@ KIND_HOURS     = 10
 KIND_SAMPLES   = 15
 KIND_MTX_IND   = 17
 KIND_M_PRES    = 21
+
 LEVEL_KIND_MSL = KIND_ABOVE_SEA
 LEVEL_KIND_SIG = KIND_SIGMA
 LEVEL_KIND_PMB = KIND_PRESSURE
@@ -240,18 +256,19 @@ LEVEL_KIND_TH  = KIND_THETA
 LEVEL_KIND_MPR = KIND_M_PRES
 TIME_KIND_HR   = KIND_HOURS
 
+CONVIP_IP2P_31BITS = 0
 
-CONVIP_P2IP = 1 #CONVIP_STYLE_DEFAULT = 1
-CONVIP_P2IP_NEW = 2 #CONVIP_STYLE_NEW     = 2
-CONVIP_P2IP_OLD = 3 #CONVIP_STYLE_OLD     = 3
-CONVIP_IP2P = -1 #CONVIP_IP2P_DEFAULT  = -1
-CONVIP_IP2P_31BITS   = 0
+CONVIP_IP2P        = -1 #CONVIP_IP2P_DEFAULT  = -1
+CONVIP_DECODE      = CONVIP_IP2P
 
-CONVIP_ENCODE     = CONVIP_P2IP_NEW
-CONVIP_ENCODE_OLD = CONVIP_P2IP_OLD
-CONVIP_DECODE     = CONVIP_IP2P
+CONVIP_P2IP        = 1 #CONVIP_STYLE_DEFAULT = 1
+CONVIP_P2IP_NEW    = 2 #CONVIP_STYLE_NEW = 2
+CONVIP_P2IP_OLD    = 3 #CONVIP_STYLE_OLD  = 3
+CONVIP_ENCODE      = CONVIP_P2IP_NEW
+CONVIP_ENCODE_OLD  = CONVIP_P2IP_OLD
 
-#---- interp (ezscint) ----------------------------------------------
+# === Interp (ezscint) ===
+
 EZ_YES = 'YES'
 EZ_NO = 'NO'
 

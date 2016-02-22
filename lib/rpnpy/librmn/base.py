@@ -63,10 +63,11 @@ def fclos(iunit):
         RMNBaseError on any other error
     
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     filename = 'myfstfile.fst'
-    >>>     iunit = rmn.fnom(filename, rmn.FST_RO)
+    >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
     >>>     rmn.fclos(iunit)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
@@ -105,10 +106,11 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
         RMNBaseError on any other error
         
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     filename = 'myfstfile.fst'
-    >>>     iunit = rmn.fnom(filename, rmn.FST_RO)
+    >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
     >>>     rmn.fclos(iunit)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
@@ -193,12 +195,14 @@ def wkoffit(filename):
         ValueError on invalid input arg value
 
     Examples:
+    >>> import os, os.path, sys
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
     >>> try:
-    >>>     filename = 'myfstfile.fst'
     >>>     type = rmn.wkoffit(filename)
     >>>     for k in rmn.WKOFFIT_TYPE_LIST.keys():
-    ...         if type == rmn.WKOFFIT_TYPE_LIST[k]: print k
+    >>>         if type == rmn.WKOFFIT_TYPE_LIST[k]: print k
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem getting file type for: %s\n" % (filename))
 
@@ -228,8 +232,9 @@ def crc32(crc, buf):
         ValueError on invalid input arg value
     
     Examples:
-    >>> import rpnpy.librmn.all as rmn
+    >>> import sys
     >>> import numpy as np
+    >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     buf = np.array([4,3,7,1,9],dtype=np.uint32)
     >>>     crc = rmn.crc32(0,buf)
@@ -264,6 +269,7 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
         RMNBaseError on any other error
         
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
@@ -322,6 +328,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
         RMNBaseError on any other error
 
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     ig1234 = rmn.cxgaig('L',-89.5,180.0,0.5,0.5)
@@ -374,6 +381,7 @@ def incdatr(idate, nhours):
         RMNBaseError on any other error
         
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
@@ -423,6 +431,7 @@ def difdatr(idate1, idate2):
         RMNBaseError on any other error
 
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
@@ -679,6 +688,7 @@ def newdate(imode, idate1, idate2=0):
           odate2 : TIME OF THE PRINTABLE DATE (HHMMSSHH)
 
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     (yyyymmdd,hhmmsshh) = (20150123,0)

@@ -18,12 +18,12 @@ as such with appropriate argument typing and dereferencing.
 It is highly advised in a python program to prefer the use of the python wrapper
 found in rpnpy.vgd.base
 
- See Also:
+See Also:
     rpnpy.vgd.base
     rpnpy.vgd.const
 
- Notes:
- This Module is available from python-rpn version 2.0.b6
+Notes:
+    This Module is available from python-rpn version 2.0.b6
 
  === Functions C Prototypes ===
 

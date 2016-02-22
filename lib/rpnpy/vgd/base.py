@@ -168,7 +168,7 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
                  0.796,   0.842,    0.884,    0.922,    0.955,
                  0.980,   0.993,    1.000)
     >>> rcoef1 = 1.6
-    >>> ptop   = 1000.
+    >>> ptop   = 110.
     >>> pref   = 80000.
     >>> try:
     >>>     myvgd = vgd.vgd_new_hyb(lvls, rcoef1, ptop, pref)
@@ -436,7 +436,7 @@ def vgd_new(kind, version, hyb,
     >>> dhm    = 10.
     >>> dht    = 2.
     >>> try:
-    >>>     myvgd = vgd.vgd_new(kind, version, lvls, rcoef1, rcoef2, pref, dhm, dht)
+    >>>     myvgd = vgd.vgd_new(kind, version, lvls, rcoef1, rcoef2, pref=pref, dhm=dhm, dht=dht)
     >>> except vgd.VGDError:
     >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
@@ -1070,7 +1070,7 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     >>>     sys.stderr.write('There was a problem creating the VGridDescriptor')
     >>>     sys.exit(1)
     >>> try:
-    >>>     levels = vgd_levels(vgd_ptr, rfld=1013.)
+    >>>     levels = vgd.vgd_levels(myvgd, rfld=100130.)
     >>> except vgd.VGDError:
     >>>     sys.stderr.write("There was a problem computing VGridDescriptor levels")
 

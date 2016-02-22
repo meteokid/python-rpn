@@ -13,8 +13,7 @@ import datetime
 import pytz
 
 #import rpnpy_version
-import librmn.base as rmnb
-import librmn.const as rmnc
+import librmn.all as _rmn
 
 class RPNDate(object):
     """RPN STD Date representation
@@ -26,17 +25,20 @@ class RPNDate(object):
     myRPNDate = RPNDate(myDateTime, deet=DEET, nstep=NSTEP)
     ## myRPNDate = RPNDate(myRPNMeta)
 
-    @param DATESTAMP  CMC date stamp or RPNDate object [Int]
-    @param DATESTAMP0 date0 CMC date stamp or RPNDate object [Int]
-    @param DEET       Time step in Sec
-    @param NSTEP      Number of steps
-    @param YYYYMMDD   Visual representation of YYYYMMDD [Int]
-    @param HHMMSShh   Visual representation of HHMMSShh [Int]
-    @param myDateTime Instance of Python DateTime class
-    ## @param myRPNMeta Instance RPNMeta with dateo, deet, npas properly set
-    @exception TypeError if parameters are wrong type
-    ## @exception ValueError if myRPNMeta
+    Args: 
+        DATESTAMP  : CMC date stamp or RPNDate object [Int]
+        DATESTAMP0 : date0 CMC date stamp or RPNDate object [Int]
+        DEET       : Time step in Sec
+        NSTEP      : Number of steps
+        YYYYMMDD   : Visual representation of YYYYMMDD [Int]
+        HHMMSShh   : Visual representation of HHMMSShh [Int]
+        myDateTime : Instance of Python DateTime class
+        myRPNMeta  : Instance RPNMeta with dateo, deet, npas properly set
+    Raises:
+        TypeError  if parameters are wrong type
+        ValueError if myRPNMeta
 
+   Examples:
     >>> d1 = RPNDate(20030423, 11453500)
     >>> d1
     RPNDate(20030423, 11453500)
@@ -59,14 +61,11 @@ class RPNDate(object):
     >>> str(d5)
     '20030423.11453500'
 
-    ## >>> a = RPNMeta(d1.stamp, 1800, 3)
-    ## >>> d3 = RPNDate(a)
-    ## >>> d3
-    ## RPNDate(20030423, 13153500)
-    ## >>> a = RPNMeta(dateo=d1.stamp, deet=1800, npas=3)
-    ## >>> d3 = RPNDate(a)
-    ## >>> d3
-    ## RPNDate(20030423, 13153500)
+    See Also:
+        RPNDateRange
+        rpnpy.librmn.base.newdate
+        rpnpy.librmn.base.incdatr
+        rpnpy.librmn.base.difdatr
     """
     
     def __init__(self, mydate, hms=None, dt=None, nstep=None):
@@ -100,7 +99,7 @@ class RPNDate(object):
                 if not type(hms) == type(0):
                     raise TypeError, 'RPNDate: arguments should be of type int'
                 dummy=0
-                self.dateo = rmnb.newdate(rmnc.NEWDATE_PRINT2STAMP, mydate, hms)
+                self.dateo = _rmn.newdate(_rmn.NEWDATE_PRINT2STAMP, mydate, hms)
         if not dt is None:
             self.dt = dt
         if not nstep is None:
@@ -112,7 +111,7 @@ class RPNDate(object):
         "Update datev if needed"
         if self.__updated == 0 or force == 1:
             nhours = float(self.dt * self.nstep) / 3600.
-            self.__datev = rmnb.incdatr(self.dateo, nhours)
+            self.__datev = _rmn.incdatr(self.dateo, nhours)
             self.__updated = 1
     
     
@@ -153,8 +152,8 @@ class RPNDate(object):
     def __sub__(self, other):
         "Time difference between 2 dates [hours] or Decrease time by nhours"
         if isinstance(other, RPNDate):
-            return(rmnb.difdatr(self.datev, other.datev))
-        elif ((type(other) == type(1)) or (type(other) == type(1.0))):
+            return _rmn.difdatr(self.datev, other.datev)
+        elif type(other) == type(1) or type(other) == type(1.0):
             nhours = -other
             mydate = RPNDate(self)
             mydate += nhours
@@ -191,6 +190,8 @@ class RPNDate(object):
 
     
     def update(self, dateo=None, dt=None, nstep=None):
+        """
+        """
         if not dt is None:
             self.dt = dt
         if not nstep is None:
@@ -201,7 +202,8 @@ class RPNDate(object):
     
     
     def incr(self, nhours):
-        """Increase Date by the specified number of hours
+        """
+        Increase Date by the specified number of hours
 
         @param nhours Number of hours for the RPNDate to be increased
         @return self
@@ -223,7 +225,7 @@ class RPNDate(object):
         #TODO: oups 1 sec diff!!!
         """
         ymd = hms = 0
-        (ymd, hms) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT, self.datev)
+        (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
         d = "%8.8d.%8.8d" % (ymd, hms)
         yyyy = int(d[0:4])
         mo = int(d[4:6])
@@ -250,17 +252,17 @@ class RPNDate(object):
 
     def __repr__(self):
         ymd = hms = 0
-        (ymd, hms) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT, self.datev)
+        (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
         if self.dt == 0:
             return "RPNDate(%8.8d, %8.8d)" % (ymd, hms)
         else:
             ymd0 = hms0 = 0
-            (ymd0, hms0) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT, self.dateo)
+            (ymd0, hms0) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.dateo)
             return "RPNDate(%8.8d, %8.8d) ; RPNDate(%8.8d, %8.8d, dt=%8.1f, nstep=%8.1f)" % (ymd, hms, ymd0, hms0, self.dt, self.nstep)
     
     def __str__(self):
         ymd = hms = 0
-        (ymd, hms) = rmnb.newdate(rmnc.NEWDATE_STAMP2PRINT, self.datev)
+        (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
         return "%8.8d.%8.8d" % (ymd, hms)
 
 
@@ -270,12 +272,15 @@ class RPNDateRange(object):
     """RPN STD Date Range representation
 
     RPNDateRange(DateStart, DateEnd, Delta)
-    @param DateStart RPNDate start of the range
-    @param DateEnd   RPNDate end of the range
-    @param Delta     Increment of the range iterator, hours, real
 
-    @exception TypeError if parameters are wrong type
+    Args:
+        DateStart RPNDate start of the range
+        DateEnd   RPNDate end of the range
+        Delta     Increment of the range iterator, hours, real
+    Raises:
+        TypeError if parameters are wrong type
 
+    Examples:
     >>> d1 = RPNDate(20030423, 11453500)
     >>> d2 = d1 + 48
     >>> [d1, d2] #1
@@ -309,6 +314,12 @@ class RPNDateRange(object):
     [RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0), RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0), RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0), RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> [d4 for d4 in dr] #iterator test 2 (should start over)
     [RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0), RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0), RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0), RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
+
+    See Also:
+        RPNDate
+        rpnpy.librmn.base.newdate
+        rpnpy.librmn.base.incdatr
+        rpnpy.librmn.base.difdatr
     """
     dateDebut=-1
     dateFin=-1

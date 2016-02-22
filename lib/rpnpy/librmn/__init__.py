@@ -38,12 +38,14 @@ __all__ = ['loadRMNlib', 'librmn', 'RMN_VERSION', 'RMN_LIBPATH',
 RMN_VERSION_DEFAULT = '_015.2'
 
 class RMNError(Exception):
-    """General RMN module error/exception
+    """
+    General RMN module error/exception
     """
     pass
 
 def loadRMNlib(rmn_version=None):
-    """Import librmnshared using ctypes
+    """
+    Import librmnshared using ctypes
 
     Args:
        rmn_version (str): librmnshared version number to load

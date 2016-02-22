@@ -3,7 +3,7 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-Short hand to load all librmn submodules in the same namespace
+ Short hand to load all rpnpy.librmn submodules in the same namespace
 
  See also:
      rpnpy.librmn

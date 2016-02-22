@@ -122,10 +122,10 @@ def dtype_numpy2fst(npdtype, compress=True, missing=False):
     >>> import rpnpy.librmn.all as rmn
     >>> import numpy as np
     >>> numpy_dtype = np.float32
-    >>> fst_datyp = dtype_numpy2fst(numpy_dtype)
-    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True)
-    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, missing=True)
-    >>> fst_datyp = dtype_numpy2fst(numpy_dtype, compress=True, missing=True)
+    >>> fst_datyp = rmn.dtype_numpy2fst(numpy_dtype)
+    >>> fst_datyp = rmn.dtype_numpy2fst(numpy_dtype, compress=False)
+    >>> fst_datyp = rmn.dtype_numpy2fst(numpy_dtype, missing=True)
+    >>> fst_datyp = rmn.dtype_numpy2fst(numpy_dtype, compress=True, missing=True)
 
     See Also:
        dtype_fst2numpy
@@ -162,8 +162,14 @@ def isFST(filename):
         ValueError on invalid input arg value
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
     >>> isfst = rmn.isFST(filename)
+
+    See Also:
+       rpnpy.librmn.base.wkoffit
     """
     if not (type(filename) == str):
         raise TypeError("isFST: Expecting arg of type str, Got %s" %
@@ -195,9 +201,15 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
         FSTDError  on any other error
 
     Examples:
-    >>> import rpnpy.librmn.all as rmn    
-    >>> funit = rmn.fstopenall(paths)
-    >>> funit = rmn.fstopenall(paths, rmn.FST_RW)
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+    >>> funit1 = rmn.fstopenall(filename)
+    >>> funit2 = rmn.fstopenall('newfile.fst', rmn.FST_RW)
+    >>> #...
+    >>> rmn.fstcloseall(funit1)
+    >>> rmn.fstcloseall(funit2)
     
     See Also:
        fstouv
@@ -286,13 +298,15 @@ def fstcloseall(iunit):
         
     Examples:
     >>> import rpnpy.librmn.all as rmn    
-    >>> funit = rmn.fstopenall(paths)
+    >>> funit = rmn.fstopenall('mynewfile.fst', rmn.FST_RW)
+    >>> #...
     >>> rmn.fstcloseall(funit)
     
     See Also:
        fstfrm
        fstopenall
        rpnpy.librmn.base.fclos
+       rpnpy.librmn.const
        FSTDError
     """
     if not (type(iunit) == int):
@@ -333,6 +347,19 @@ def listToFLOATIP(rp1):
         FLOAT_IP
     Raises:
         TypeError on wrong input arg types
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn    
+    >>> pk1 = rmn.listToFLOATIP((500., 500., rmn.KIND_PRESSURE))
+    >>> pk2 = rmn.listToFLOATIP((0.,     0., rmn.KIND_HOURS))
+    >>> pk3 = rmn.listToFLOATIP((0.,     0., 0))
+    >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1, pk2, pk3)
+
+    See Also:
+        FLOATIPtoList
+        convertPKtoIP
+        rpnpy.librmn.proto.FLOAT_IP
+        rpnpy.librmn.const
     """
     if isinstance(rp1, _rp.FLOAT_IP):
         return rp1
@@ -357,6 +384,22 @@ def FLOATIPtoList(rp1):
         v2 : level 2nd value (float)
              v2=v1 if not a range
         kind: level kind (int), one of FSTD ip accepted kind
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> pk1 = rmn.listToFLOATIP((500., 500., rmn.KIND_PRESSURE))
+    >>> pk2 = rmn.listToFLOATIP((0.,     0., rmn.KIND_HOURS))
+    >>> pk3 = rmn.listToFLOATIP((0.,     0., 0))
+    >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1, pk2, pk3)
+    >>> (rp1, rp2, rp3) = rmn.convertIPtoPK(ip1, ip2, ip3)
+    >>> (v1, v2, kind) = rmn.FLOATIPtoList(rp1)
+    
+    See Also:
+        listToFLOATIP
+        convertPKtoIP
+        convertIPtoPK
+        rpnpy.librmn.proto.FLOAT_IP
+        rpnpy.librmn.const
     """
     if isinstance(rp1, _rp.FLOAT_IP):
         return (rp1.v1, rp1.v2, rp1.kind)
@@ -389,6 +432,26 @@ def fstecr(iunit, data, meta, rewrite=True):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+    >>> funitIn  = rmn.fstopenall(filename)
+    >>> funitOut = rmn.fstopenall('newfile.fst', rmn.FST_RW)
+    >>> myrec = rmn.fstlir(funitIn, nomvar='P0')
+    >>> rmn.fstecr(funitOut, myrec['d'], myrec)
+    >>> rmn.fstcloseall(funitOut)
+    >>> rmn.fstcloseall(funitIn)
+
+    See Also:
+        fstopenall
+        fstcloseall
+        fstlir
+        fstprm
+        fstluk
+        rpnpy.librmn.const
     """
     if not (type(iunit) == int):
         raise TypeError("fstecr: Expecting arg of type int, Got %s" %
@@ -484,6 +547,33 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+    
+    Examples:
+    >>> import os, os.path, stat, shutil
+    >>> import rpnpy.librmn.all as rmn
+    >>> filename  = 'geophy.fst'
+    >>> # Copy a file locally to be able to edit it and set write permission
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename0 = os.path.join(ATM_MODEL_DFILES,'bcmk',filename)
+    >>> shutil.copyfile(filename0, filename)
+    >>> st = os.stat(filename)
+    >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
+    >>> # Open existing file in Rear/Write mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
+    >>> # Get the list of all records in file and change the etiket for them all
+    >>> myreclist = rmn.fstinl(funit)
+    >>> for key in myreclist:
+    >>>     rmn.fst_edit_dir(key, etiket='MY_NEW_ETK')
+    >>> # Could also be written as a one liner list comprenhension:
+    >>> # [rmn.fst_edit_dir(key, etiket='MY_NEW_ETK') for key in rmn.fstinl(funit)]
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        fstopenall
+        fstcloseall
+        fstinl
+        fstinf
+        rpnpy.librmn.const
     """
     if datev != -1:
         if dateo != -1:
@@ -543,6 +633,30 @@ def fsteff(key):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import os, os.path, stat, shutil
+    >>> import rpnpy.librmn.all as rmn
+    >>> filename  = 'geophy.fst'
+    >>> # Copy a file locally to be able to edit it and set write permission
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename0 = os.path.join(ATM_MODEL_DFILES,'bcmk',filename)
+    >>> shutil.copyfile(filename0, filename)
+    >>> st = os.stat(filename)
+    >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
+    >>> # Open existing file in Rear/Write mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
+    >>> # Find the record name ME and erase it from the file
+    >>> key = rmn.fstinf(funit, nomvar='ME')
+    >>> rmn.fsteff(key['key'])
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        fstopenall
+        fstcloseall
+        fstinl
+        fstinf
+        rpnpy.librmn.const
     """
     if not (type(key) == int):
         raise TypeError("fsteff: Expecting arg of type int, Got %s" %
