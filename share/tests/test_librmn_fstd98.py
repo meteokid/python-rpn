@@ -300,7 +300,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
                 lo['d'][i,j] = 100.+float(i)        
                 la['d'][i,j] = float(j)
         rmn.fstecr(funit,la['d'],la)
-        rmn.fstecr(funit,lo['d'],lo)
+        rmn.fstecr(funit,lo)
         rmn.fstcloseall(funit)
         funit = rmn.fstopenall(fname,rmn.FST_RW)
         kla = rmn.fstinf(funit,nomvar='LA')['key']

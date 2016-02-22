@@ -408,11 +408,12 @@ def FLOATIPtoList(rp1):
     
 #--- fstd98 ---------------------------------------------------------
 
-def fstecr(iunit, data, meta, rewrite=True):
+def fstecr(iunit, data, meta=None, rewrite=True):
     """Writes record to file previously opened with fnom+fstouv
     
     fstecr(iunit, data, meta)
     fstecr(iunit, data, meta, rewrite=True)
+    fstecr(iunit, rec)
     
     Args:
         iunit : file unit number (int)
@@ -425,6 +426,10 @@ def fstecr(iunit, data, meta, rewrite=True):
                 You can force meta['datyp'] but for the 
                 sake of data/meta consistency, it is best not to specify
                 meta['datyp'], data.dtype will be used instead
+        rec   : data + meta in a dict
+                Option to provide data+meta in a single dict
+                where data = rec['d']
+                Note: new option in version 2.0.rc1
         rewrite : force to overwrite any other fields with same meta 
     Returns:
         None
@@ -441,7 +446,10 @@ def fstecr(iunit, data, meta, rewrite=True):
     >>> funitIn  = rmn.fstopenall(filename)
     >>> funitOut = rmn.fstopenall('newfile.fst', rmn.FST_RW)
     >>> myrec = rmn.fstlir(funitIn, nomvar='P0')
+    >>> # Write the record specifying data and meta separately
     >>> rmn.fstecr(funitOut, myrec['d'], myrec)
+    >>> # Write the record specifying data and meta together
+    >>> rmn.fstecr(funitOut, myrec)
     >>> rmn.fstcloseall(funitOut)
     >>> rmn.fstcloseall(funitIn)
 
@@ -458,7 +466,13 @@ def fstecr(iunit, data, meta, rewrite=True):
                         (type(iunit)))
     if iunit < 0:
         raise ValueError("fstecr: must provide a valid iunit: %d" % (iunit))
-    if not (type(data) == _np.ndarray and type(meta) == dict):
+    if isinstance(data, dict):
+        meta0 = data
+        data = meta0['d']
+        if meta:
+            meta0.update(meta)
+        meta = meta0
+    if not (type(data) == _np.ndarray and isinstance(meta, dict)):
         raise TypeError("fstecr: Expecting args of type %s, %s, Got %s, %s" %
                         ('numpy.ndarray', 'dict', type(data), type(meta)))
     if not data.flags['F_CONTIGUOUS']:
