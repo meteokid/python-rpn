@@ -168,7 +168,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
         myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/2009042700_000')
         funit = rmn.fstopenall(myfile,rmn.FST_RO)
 
-        k = rmn.fstinf(funit)['key']
+        k = rmn.fstinf(funit)
         a = rmn.fstprm(k)
         self.assertEqual(a['nomvar'].strip(),'P0','fstinf/fstprm wrong rec, Got %s expected P0' % (a['nomvar']))
         k = rmn.fstsui(funit)['key']
@@ -240,7 +240,7 @@ class Librmn_fstd98_Test(unittest.TestCase):
         kla = rmn.fstinf(funit,nomvar='LA')['key']
         la2prm = rmn.fstprm(kla)#,rank=2)
         la2 = rmn.fstluk(kla)#,rank=2)
-        klo = rmn.fstinf(funit,nomvar='LO')['key']
+        klo = rmn.fstinf(funit,nomvar='LO')
         lo2 = rmn.fstluk(klo)#,rank=2)
         rmn.fstcloseall(funit)
         self.erase_testfile()

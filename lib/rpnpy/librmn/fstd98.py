@@ -263,13 +263,14 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
         except:
             pass
         if funit:
-            funit2 = fstouv(funit, filemode)
-            if funit2 != None: #TODO: else warning/ignore
+            try:
+                fstouv(funit, filemode)
                 iunitlist.append(funit)
                 if verbose:
                     print "(fstopenall) Opening: " + myfile, funit
-            elif verbose:
-                print "(fstopenall) Problem Opening: " + myfile
+            except:
+                if verbose:
+                    print "(fstopenall) Problem Opening: " + myfile
         elif verbose:
             print "(fstopenall) Problem Opening: " + myfile
     if len(iunitlist) == 0:
@@ -321,16 +322,17 @@ def fstcloseall(iunit):
         iunitlist = (iunit,)
     istat = 0
     for iunit in iunitlist:
-        istat0 = fstfrm(iunit)
-        if istat0 >= 0:
-            istat0 =_rb.fclos(iunit)
-        istat = min(istat, istat0)
+        try:
+            fstfrm(iunit)
+            istat =_rb.fclos(iunit)
+        except:
+            istat = -1
     try:
         del _linkedUnits[str(iunitlist[0])]
     except:
         pass
     if istat >= 0:
-        return istat
+        return
     raise FSTDError("fstcloseall: Unable to properly close unit %d" % (iunit))
 
 
@@ -373,7 +375,8 @@ def listToFLOATIP(rp1):
 
     
 def FLOATIPtoList(rp1):
-    """Decode values from FLOAT_IP type/struct
+    """
+    Decode values from FLOAT_IP type/struct
     
     (v1, v2, kind) = FLOATIPtoList(rp1)
     
@@ -409,7 +412,8 @@ def FLOATIPtoList(rp1):
 #--- fstd98 ---------------------------------------------------------
 
 def fstecr(iunit, data, meta=None, rewrite=True):
-    """Writes record to file previously opened with fnom+fstouv
+    """
+    Writes record to file previously opened with fnom+fstouv
     
     fstecr(iunit, data, meta)
     fstecr(iunit, data, meta, rewrite=True)
@@ -514,7 +518,7 @@ def fstecr(iunit, data, meta=None, rewrite=True):
                 meta2['ig1'],   meta2['ig2'],  meta2['ig3'], meta2['ig4'],
                 datyp, irewrite)
     if istat >= 0:
-        return istat
+        return
     raise FSTDError()
 
 
@@ -522,7 +526,8 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
                  ip1=-1, ip2=-1, ip3=-1,
                  typvar=' ', nomvar=' ', etiket=' ', grtyp=' ',
                  ig1=-1, ig2=-1, ig3=-1, ig4=-1, datyp=-1, keep_dateo=False):
-    """Edits the directory content of a RPN standard file
+    """
+    Edits the directory content of a RPN standard file
     Only provided parameters with value different than default are updated
     
     Note: by default datev is kept constant unless
@@ -667,7 +672,8 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
 
 
 def fsteff(key):
-    """Deletes the record associated to handle.
+    """
+    Deletes the record associated to handle.
 
     fsteff(key)
     fsteff(rec)
@@ -750,7 +756,8 @@ def fsteff(key):
 
 
 def fstfrm(iunit):
-    """Close a RPN standard file
+    """
+    Close a RPN standard file
 
     fstfrm(iunit)
 
@@ -763,6 +770,21 @@ def fstfrm(iunit):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> funit = rmn.fnom('myfstfile.fst', rmn.FST_RW)
+    >>> istat = rmn.fstouv(funit, rmn.FST_RW)
+    >>> #...
+    >>> istat = rmn.fstfrm(funit)
+    >>> istat = rmn.fclos(funit)
+    
+    See Also:
+        fstouv
+        fstopenall
+        fstcloseall
+        rpnpy.librmn.base.fnom
+        rpnpy.librmn.base.fclos
     """
     if not (type(iunit) == int):
         raise TypeError("fstfrm: Expecting arg of type int, Got %s" %
@@ -771,18 +793,20 @@ def fstfrm(iunit):
         raise ValueError("fstfrm: must provide a valid iunit: %d" % (iunit))
     istat = _rp.c_fstfrm(iunit)
     if istat >= 0:
-        return istat
+        return
     raise FSTDError()
 
 
 def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
            typvar=' ', nomvar=' '):
-    """Locate the next record that matches the research keys
+    """
+    Locate the next record that matches the research keys
+    
     Only provided parameters with value different than default
     are used as selection criteria
-
+    
     recmatch = fstinf(iunit, ... )
-
+    
     Args:
         iunit   : unit number associated to the file
                   obtained with fnom+fstouv
@@ -803,13 +827,36 @@ def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+        
+    Examples:
+    >>> import os, os.path, stat, shutil
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find the record named P0 and read its metadata
+    >>> key    = rmn.fstinf(funit, nomvar='P0')
+    >>> p0meta = rmn.fstprm(key['key'])
+    
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        fstinfx
+        fstinl
+        fstopenall
+        fstcloseall
     """
     return fstinfx(-2, iunit, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
 
 
 def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             typvar=' ', nomvar=' '):
-    """Locate the next record that matches the research keys
+    """
+    Locate the next record that matches the research keys
+    
     Only provided parameters with value different than default
     are used as selection criteria
     The search begins at the position given by key/handle
@@ -819,6 +866,7 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
     Args:
         key     : record key/handle of the search start position
+                  (int or dict) if dict, must have key['key']
         iunit   : unit number associated to the file
                   obtained with fnom+fstouv
         datev   : valid date
@@ -838,7 +886,16 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
+    if isinstance(key, dict):
+       key = key['key']
+    
     if not (type(iunit) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
                         (type(iunit)))
@@ -863,7 +920,9 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
 def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
            typvar=' ', nomvar=' ', nrecmax=-1):
-    """Locate all the record matching the research keys
+    """
+    Locate all the record matching the research keys
+    
     Only provided parameters with value different than default
     are used as selection criteria
         
@@ -887,6 +946,12 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
     if not (type(iunit) == int):
         raise TypeError("fstinl: Expecting arg of type int, Got %s" %
@@ -943,7 +1008,9 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
 def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
            typvar=' ', nomvar=' ', dtype=None, rank=None, dataArray=None):
-    """Reads the next record that matches the research keys
+    """
+    Reads the next record that matches the research keys
+    
     Only provided parameters with value different than default
     are used as selection criteria
 
@@ -975,6 +1042,12 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
     key = -2
     return fstlirx(key, iunit, datev, etiket, ip1, ip2, ip3,
@@ -983,7 +1056,9 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
 def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             typvar=' ', nomvar=' ', dtype=None, rank=None, dataArray=None):
-    """Reads the next record that matches the research keys
+    """
+    Reads the next record that matches the research keys
+    
     Only provided parameters with value different than default
     are used as selection criteria
     The search begins right after at the position given by record key/handle.
@@ -1017,6 +1092,12 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
     key2 = fstinfx(key, iunit, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
     if (key2):
@@ -1025,7 +1106,8 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 
 
 def fstlis(iunit, dtype=None, rank=None, dataArray=None):
-    """Reads the next record that matches the research criterias
+    """
+    Reads the next record that matches the research criterias
 
     record = fstlis(iunit, ... )
 
@@ -1048,6 +1130,12 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
     key = fstsui(iunit)
     if (key):
@@ -1056,7 +1144,8 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
 
 
 def fstlnk(unitList):
-    """Links a list of files together for search purpose
+    """
+    Links a list of files together for search purpose
 
     funit = fstlnk(unitList)
 
@@ -1069,6 +1158,12 @@ def fstlnk(unitList):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+    
     """
     if type(unitList) == int:
         unitList = [unitList]
@@ -1091,7 +1186,8 @@ def fstlnk(unitList):
 
 
 def fstluk(key, dtype=None, rank=None, dataArray=None):
-    """Read the record at position given by key/handle
+    """
+    Read the record at position given by key/handle
 
     record = fstluk(key)
     record = fstluk(key, dtype)
@@ -1115,9 +1211,15 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
     See Also:
         fstprm
     """
+    if isinstance(key, dict):
+       key = key['key']
     if type(key) != int:
         raise TypeError("fstluk: Expecting a key of type int, Got %s : %s" %
                         (type(key), repr(key)))
@@ -1166,7 +1268,8 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
 #TODO: fstmsq
 
 def fstnbr(iunit):
-    """Returns the number of records of the file associated with unit
+    """
+    Returns the number of records of the file associated with unit
 
     nrec = fstnbr(iunit)
     
@@ -1179,6 +1282,12 @@ def fstnbr(iunit):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(iunit) == int):
         raise TypeError("fstnbr: Expecting arg of type int, Got %s" %
@@ -1192,7 +1301,8 @@ def fstnbr(iunit):
 
 
 def fstnbrv(iunit):
-    """Returns the number of valid records (excluding deleted records)
+    """
+    Returns the number of valid records (excluding deleted records)
     
     nrec = fstnbrv(iunit)
     
@@ -1205,6 +1315,12 @@ def fstnbrv(iunit):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(iunit) == int):
         raise TypeError("fstnbrv: Expecting arg of type int, Got %s" %
@@ -1218,7 +1334,8 @@ def fstnbrv(iunit):
 
 
 def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
-    """Set or print FST option.
+    """
+    Set or print FST option.
 
     fstopt(optName, optValue)
     fstopt(optName, optValue, setOget)
@@ -1247,6 +1364,12 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(optValue) == str:
         istat = _rp.c_fstopc(optName, optValue, setOget)
@@ -1257,11 +1380,12 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
                         (type(optValue), repr(optValue)))
     if istat < 0:
         raise FSTDError()        
-    return istat
+    return
 
 
 def fstouv(iunit, filemode=_rc.FST_RW):
-    """Opens a RPN standard file
+    """
+    Opens a RPN standard file
 
     fstouv(iunit)
     fstouv(iunit, filemode)
@@ -1277,6 +1401,12 @@ def fstouv(iunit, filemode=_rc.FST_RW):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(iunit) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
@@ -1289,11 +1419,12 @@ def fstouv(iunit, filemode=_rc.FST_RW):
     istat = _rp.c_fstouv(iunit, filemode)
     if istat < 0:
         raise FSTDError()        
-    return istat
+    return
  
 
 def fstprm(key):
-    """Get all the description informations of the record.
+    """
+    Get all the description informations of the record.
 
     params = fstprm(key)
 
@@ -1337,9 +1468,15 @@ def fstprm(key):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
     See Also:
         fstluk
     """
+    if isinstance(key, dict):
+       key = key['key']
     if type(key) != int:
         raise TypeError("fstprm: Expecting a key of type int, Got %s : %s" %
                         (type(key), repr(key)))
@@ -1411,7 +1548,8 @@ def fstprm(key):
 
 
 def fstsui(iunit):
-    """Finds the next record that matches the last search criterias
+    """
+    Finds the next record that matches the last search criterias
 
     recmatch = fstsui(iunit)
 
@@ -1428,6 +1566,12 @@ def fstsui(iunit):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(iunit) == int):
         raise TypeError("fstsui: Expecting arg of type int, Got %s" %
@@ -1445,7 +1589,8 @@ def fstsui(iunit):
 
 
 def fstvoi(iunit, options=' '):
-    """Prints out the directory content of a RPN standard file
+    """
+    Prints out the directory content of a RPN standard file
 
     fstvoi(iunit)
     fstvoi(iunit, options)
@@ -1467,6 +1612,12 @@ def fstvoi(iunit, options=' '):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(iunit) == int):
         raise TypeError("fstvoi: Expecting arg of type int, Got %s" %
@@ -1479,22 +1630,30 @@ def fstvoi(iunit, options=' '):
     istat = _rp.c_fstvoi(iunit, options)
     if istat < 0:
         raise FSTDError()  
-    return istat
+    return
 
 
 def fst_version():
-    """Returns package version number
+    """
+    Returns package version number
     
     fstd_version = fst_version()
     
     Returns:
         int, fstd version number
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     return _rp.c_fst_version()
 
 
 def ip1_all(level, kind):
-    """Generates all possible coded ip1 values for a given level
+    """
+    Generates all possible coded ip1 values for a given level
 
     ip1new = ip1_all(level, kind)
 
@@ -1507,6 +1666,12 @@ def ip1_all(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1525,7 +1690,8 @@ def ip1_all(level, kind):
 
 
 def ip2_all(level, kind):
-    """Generates all possible coded ip2 values for a given level
+    """
+    Generates all possible coded ip2 values for a given level
 
     ip2new = ip2_all(level, kind)
 
@@ -1538,6 +1704,12 @@ def ip2_all(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1556,7 +1728,8 @@ def ip2_all(level, kind):
 
 
 def ip3_all(level, kind):
-    """Generates all possible coded ip3 values for a given level
+    """
+    Generates all possible coded ip3 values for a given level
 
     ip3new = ip3_all(level, kind)
 
@@ -1569,6 +1742,12 @@ def ip3_all(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1587,7 +1766,8 @@ def ip3_all(level, kind):
 
 
 def ip1_val(level, kind):
-    """Generates coded ip1 value for a given level (shorthand for convip)
+    """
+    Generates coded ip1 value for a given level (shorthand for convip)
 
     ip1new = ip1_val(level, kind)
 
@@ -1600,6 +1780,12 @@ def ip1_val(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1618,7 +1804,8 @@ def ip1_val(level, kind):
 
 
 def ip2_val(level, kind):
-    """Generates coded ip2 value for a given level (shorthand for convip)
+    """
+Generates coded ip2 value for a given level (shorthand for convip)
 
     ip2new = ip2_val(level, kind)
 
@@ -1631,6 +1818,12 @@ def ip2_val(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1649,7 +1842,8 @@ def ip2_val(level, kind):
 
 
 def ip3_val(level, kind):
-    """Generates coded ip3 value for a given level (shorthand for convip)
+    """
+    Generates coded ip3 value for a given level (shorthand for convip)
 
     ip3new = ip3_val(level, kind)
 
@@ -1662,6 +1856,12 @@ def ip3_val(level, kind):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(level) == int:
         level = float(level)
@@ -1696,7 +1896,8 @@ def ip3_val(level, kind):
 
  
 def convertIp(mode, v, k=0):
-    """Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
+    """
+    Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
     
     ip       = convertIp(mode, p, kind) #if mode > 0
     (p, kind) = convertIp(mode, ip)     #if mode <= 0
@@ -1737,6 +1938,12 @@ def convertIp(mode, v, k=0):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     (cip, cp, ckind) = (_ct.c_int(), _ct.c_float(), _ct.c_int())
     if type(mode) != int:
@@ -1768,7 +1975,8 @@ def convertIp(mode, v, k=0):
 
 
 def convertIPtoPK(ip1, ip2, ip3):
-    """Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
+    """
+Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
 
     (rp1, rp2, rp3) = convertIPtoPK(ip1, ip2, ip3)
 
@@ -1787,6 +1995,12 @@ def convertIPtoPK(ip1, ip2, ip3):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  when provided values cannot be converted
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if type(ip1) != int or type(ip2) != int or type(ip3) != int:
         raise TypeError("convertIPtoPK: Expecting ip123 to be of type int, " +
@@ -1807,7 +2021,8 @@ def convertIPtoPK(ip1, ip2, ip3):
     
 
 def convertPKtoIP(pk1, pk2, pk3):
-    """Convert/encode kind + real value into ip1, ip2, ip3
+    """
+    Convert/encode kind + real value into ip1, ip2, ip3
 
     (ip1, ip2, ip3) = convertPKtoIP(pk1, pk2, pk3)
 
@@ -1827,6 +2042,12 @@ def convertPKtoIP(pk1, pk2, pk3):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  when provided values cannot be converted
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     (cip1, cip2, cip3) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     pk1 = listToFLOATIP(pk1)
@@ -1841,7 +2062,8 @@ def convertPKtoIP(pk1, pk2, pk3):
 
 
 def EncodeIp(rp1, rp2, rp3):
-    """Produce encoded (ip1, ip2, ip3) triplet from (real value, kind) pairs
+    """
+    Produce encoded (ip1, ip2, ip3) triplet from (real value, kind) pairs
 
     (ip1, ip2, ip3) = EncodeIp(rp1, rp2, rp3)
 
@@ -1861,6 +2083,12 @@ def EncodeIp(rp1, rp2, rp3):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  when provided values cannot be converted
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     rp1 = listToFLOATIP(rp1)
     rp2 = listToFLOATIP(rp2)
@@ -1874,8 +2102,9 @@ def EncodeIp(rp1, rp2, rp3):
 
 
 def DecodeIp(ip1, ip2, ip3):
-    """Produce decoded (real value, kind) pairs
-       from (ip1, ip2, ip3) encoded triplet
+    """
+    Produce decoded (real value, kind) pairs
+    from (ip1, ip2, ip3) encoded triplet
 
     (rp1, rp2, rp3) = DecodeIp(ip1, ip2, ip3)
     
@@ -1894,6 +2123,12 @@ def DecodeIp(ip1, ip2, ip3):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  when provided values cannot be converted
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     (rp1, rp2, rp3) = (_rp.FLOAT_IP(0., 0., 0), _rp.FLOAT_IP(0., 0., 0),
                        _rp.FLOAT_IP(0., 0., 0))
@@ -1906,7 +2141,8 @@ def DecodeIp(ip1, ip2, ip3):
 
 
 def kindToString(kind):
-    """Translate kind integer code to 2 character string,
+    """
+    Translate kind integer code to 2 character string,
 
     kind_str = kindToString(kind)
 
@@ -1914,6 +2150,12 @@ def kindToString(kind):
         kind : Level encoding kind/code (int)
     Returns:
         str, str repr of the kind code
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    
+    See Also:
+
     """
     if not (type(kind) == int):
         raise TypeError("kindToString: Expecting arg of type int, Got %s" %
