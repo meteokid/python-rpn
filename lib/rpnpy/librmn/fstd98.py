@@ -829,7 +829,7 @@ def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         FSTDError  on any other error
         
     Examples:
-    >>> import os, os.path, stat, shutil
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
@@ -846,6 +846,8 @@ def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     See Also:
         fstinfx
         fstinl
+        fstprm
+        fstluk
         fstopenall
         fstcloseall
     """
@@ -888,10 +890,29 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         FSTDError  on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find the 1st record named P0 then the one follwoing it
+    >>> # and read its metadata
+    >>> key1   = rmn.fstinf(funit, nomvar='P0')
+    >>> key2   = rmn.fstinfx(key1, funit, nomvar='P0')
+    >>> p0meta = rmn.fstprm(key2)
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-    
+        fstinf
+        fstinl
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall
     """
     if isinstance(key, dict):
        key = key['key']
@@ -948,10 +969,28 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         FSTDError  on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find all records named VF and print their ip1
+    >>> keylist = rmn.fstinl(funit, nomvar='VF')
+    >>> for key in keylist:
+    >>>     print("VF ip1=%s" % rmn.fstprm(key)['ip1'])
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-    
+        fstinf
+        fstinfx
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall    
     """
     if not (type(iunit) == int):
         raise TypeError("fstinl: Expecting arg of type int, Got %s" %
@@ -1044,10 +1083,30 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         FSTDError  on any other error       
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find and read p0 meta and data, then print its min,max,mean values
+    >>> p0rec = rmn.fstlir(funit, nomvar='P0')
+    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-    
+        fstlis
+        fstlirx
+        fstinf
+        fstinl
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall
     """
     key = -2
     return fstlirx(key, iunit, datev, etiket, ip1, ip2, ip3,
@@ -1094,10 +1153,32 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         FSTDError  on any other error       
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find and read the 2nd p0 meta and data,
+    >>> # then print its min,max,mean values
+    >>> key1  = rmn.fstinf(funit, nomvar='P0')
+    >>> p0rec = rmn.fstlirx(key1, funit, nomvar='P0')
+    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-    
+        fstlis
+        fstlir
+        fstinf
+        fstinl
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall
     """
     key2 = fstinfx(key, iunit, datev, etiket, ip1, ip2, ip3, typvar, nomvar)
     if (key2):
@@ -1132,10 +1213,32 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
         FSTDError  on any other error       
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find and read the 2nd p0 meta and data,
+    >>> # then print its min,max,mean values
+    >>> key1  = rmn.fstinf(funit, nomvar='P0')
+    >>> p0rec = rmn.fstlis(funit)
+    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-    
+        fstlir
+        fstlirx
+        fstinf
+        fstinl
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall
     """
     key = fstsui(iunit)
     if (key):
@@ -1160,10 +1263,38 @@ def fstlnk(unitList):
         FSTDError  on any other error       
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+
+    >>> # Open several files
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename1 = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
+    >>> funit1 = rmn.fnom(filename1, rmn.FST_RO)
+    >>> istat  = rmn.fstouv(funit1, rmn.FST_RO)
+    >>> filename2 = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_012')
+    >>> funit2 = rmn.fnom(filename2, rmn.FST_RO)
+    >>> istat  = rmn.fstouv(funit2, rmn.FST_RO)
+
+    >>> # Link the file as one
+    >>> funit = rmn.fstlnk((funit1, funit2))
+
+    >>> # Use the linked files
+    >>> for key in rmn.fstinl(funit, nomvar='P0'):
+    >>>     print("P0 ip2=%s" % rmn.fstprm(key)['ip2'])
+
+    >>> # Close all linked files
+    >>> istat = rmn.fstfrm(funit1)
+    >>> istat = rmn.fclos(funit1)
+    >>> istat = rmn.fstfrm(funit2)
+    >>> istat = rmn.fclos(funit2)
     
     See Also:
-    
+        fstopenall
+        fstcloseall
+        fstouv
+        fstfrm
+        rpnpy.librmn.base.fclos
+        rpnpy.librmn.const
     """
     if type(unitList) == int:
         unitList = [unitList]
@@ -1213,10 +1344,30 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
         FSTDError  on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
     
+    >>> # Find record named P0 and read it meta + data
+    >>> # then print its min,max,mean values
+    >>> key   = rmn.fstinf(funit, nomvar='P0')
+    >>> p0rec = rmn.fstluk(key)
+    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+
+    >>> rmn.fstcloseall(funit)
+
     See Also:
         fstprm
+        fstlir
+        fstinf
+        fstinl
+        fstopenall
+        fstcloseall
     """
     if isinstance(key, dict):
        key = key['key']
@@ -1284,10 +1435,26 @@ def fstnbr(iunit):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Print number of records
+    >>> # then print its min,max,mean values
+    >>> nrec = rmn.fstnbr(funit)
+    >>> print("There is %d records in file %s" %
+              (nrec, filename))
+
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-
+        fstnbrv
+        fstopenall
+        fstcloseall
     """
     if not (type(iunit) == int):
         raise TypeError("fstnbr: Expecting arg of type int, Got %s" %
@@ -1317,9 +1484,26 @@ def fstnbrv(iunit):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Print number of records
+    >>> # then print its min,max,mean values
+    >>> nrec = rmn.fstnbrv(funit)
+    >>> print("There is %d valid records in file %s" %
+              (nrec, filename))
+
+    >>> rmn.fstcloseall(funit)
     
     See Also:
+        fstnbr
+        fstopenall
+        fstcloseall
 
     """
     if not (type(iunit) == int):
@@ -1367,9 +1551,11 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> # Restric to the minimum the number of messages printed by librmn
+    >>> rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
+    See Also:
+       rpnpy.librmn.const
     """
     if type(optValue) == str:
         istat = _rp.c_fstopc(optName, optValue, setOget)
@@ -1404,9 +1590,18 @@ def fstouv(iunit, filemode=_rc.FST_RW):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
+    >>> funit = rmn.fnom('myfstfile.fst', rmn.FST_RW)
+    >>> istat = rmn.fstouv(funit, rmn.FST_RW)
+    >>> #...
+    >>> istat = rmn.fstfrm(funit)
+    >>> istat = rmn.fclos(funit)
     
     See Also:
-
+        fstfrm
+        fstopenall
+        fstcloseall
+        rpnpy.librmn.base.fnom
+        rpnpy.librmn.base.fclos
     """
     if not (type(iunit) == int):
         raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
@@ -1470,10 +1665,27 @@ def fstprm(key):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
     
+    >>> # Print name, ip1, ip2 of all records in file 
+    >>> for key in rmn.fstinl(funit):
+    >>>     meta = rmn.fstprm(key)
+    >>>     print("%s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    
+    >>> rmn.fstcloseall(funit)
+
     See Also:
         fstluk
+        fstinf
+        fstinl
+        fstopenall
+        fstcloseall
     """
     if isinstance(key, dict):
        key = key['key']
@@ -1568,10 +1780,31 @@ def fstsui(iunit):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    
+    >>> # Find the 1st record named P0 then the one follwoing it
+    >>> # and read its metadata
+    >>> key1 = rmn.fstinf(funit, nomvar='P0')
+    >>> key2 = rmn.fstsui(funit)
+    >>> meta = rmn.fstprm(key2)
+    >>> print("%s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-
+        fstinf
+        fstinfx
+        fstinl
+        fstprm
+        fstluk
+        fstopenall
+        fstcloseall
     """
     if not (type(iunit) == int):
         raise TypeError("fstsui: Expecting arg of type int, Got %s" %
@@ -1614,10 +1847,23 @@ def fstvoi(iunit, options=' '):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
+
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+
+    >>> # Print meta of all record in file
+    >>> rmn.fstvoi(funit)
+    >>> rmn.fstvoi(funit,'DATEV+LEVEL+NOTYPV+NOETIQ+NOIP23+NODEET+NONPAS+NODTY')
+
+    >>> rmn.fstcloseall(funit)
     
     See Also:
-
+        fstopenall
+        fstcloseall
     """
     if not (type(iunit) == int):
         raise TypeError("fstvoi: Expecting arg of type int, Got %s" %
@@ -1644,9 +1890,10 @@ def fst_version():
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> print("Using fst_version=%d" % rmn.fst_version())
 
+    See Also:
+        fstopt
     """
     return _rp.c_fst_version()
 
