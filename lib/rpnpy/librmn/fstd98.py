@@ -1902,11 +1902,14 @@ def ip1_all(level, kind):
     """
     Generates all possible coded ip1 values for a given level
 
+    The next search (fstinf, fstinl, fstlir, ...) will look for
+    all prossible alternative encoding
+
     ip1new = ip1_all(level, kind)
 
     Args:
-        level : float, level value
-        kind  : int,   level kind
+        level (float): level value
+        kind  (int)  : level kind
     Returns:
         int, ip1 value newcode style
     Raises:
@@ -1915,10 +1918,32 @@ def ip1_all(level, kind):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
 
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+
+    >>> # Look for TT at 500mb encoded old or new style
+    >>> ip1new = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
+    >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip1=ip1new)
+    >>> print("Looked for TT with ip1=%s, found ip1=%s" % (ip1new,ttrec['ip1']))
+
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        ip1_val
+        ip2_all
+        ip3_all
+        convertIp
+        EncodeIp
+        DecodeIp
+        fstinf
+        fstinl
+        fstlir
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -1940,6 +1965,9 @@ def ip2_all(level, kind):
     """
     Generates all possible coded ip2 values for a given level
 
+    The next search (fstinf, fstinl, fstlir, ...) will look for
+    all prossible alternative encoding
+
     ip2new = ip2_all(level, kind)
 
     Args:
@@ -1953,10 +1981,32 @@ def ip2_all(level, kind):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
 
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+
+    >>> # Look for TT at 500mb encoded old or new style
+    >>> ip2new = rmn.ip2_all(0., rmn.TIME_KIND_HR)
+    >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip2=ip2new)
+    >>> print("Looked for TT with ip2=%s, found ip2=%s" % (ip2new,ttrec['ip2']))
+
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        ip2_val
+        ip1_all
+        ip3_all
+        convertIp
+        EncodeIp
+        DecodeIp
+        fstinf
+        fstinl
+        fstlir
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -1978,6 +2028,9 @@ def ip3_all(level, kind):
     """
     Generates all possible coded ip3 values for a given level
 
+    The next search (fstinf, fstinl, fstlir, ...) will look for
+    all prossible alternative encoding
+
     ip3new = ip3_all(level, kind)
 
     Args:
@@ -1991,10 +2044,32 @@ def ip3_all(level, kind):
         FSTDError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
 
+    >>> # Open existing file in Rear Only mode
+    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+
+    >>> # Look for TT at 500mb encoded old or new style
+    >>> ip3new = rmn.ip3_all(0., rmn.KIND_ARBITRARY)
+    >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip3=ip3new)
+    >>> print("Looked for TT with ip3=%s, found ip3=%s" % (ip3new,ttrec['ip3']))
+
+    >>> rmn.fstcloseall(funit)
+
+    See Also:
+        ip3_val
+        ip1_all
+        ip2_all
+        convertIp
+        EncodeIp
+        DecodeIp
+        fstinf
+        fstinl
+        fstlir
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -2030,9 +2105,16 @@ def ip1_val(level, kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ip1new = rmn.ip1_val(500., rmn.LEVEL_KIND_PMB)
 
+    See Also:
+        ip1_all
+        ip2_val
+        ip3_val
+        convertIp
+        EncodeIp
+        DecodeIp
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -2052,7 +2134,7 @@ def ip1_val(level, kind):
 
 def ip2_val(level, kind):
     """
-Generates coded ip2 value for a given level (shorthand for convip)
+    Generates coded ip2 value for a given level (shorthand for convip)
 
     ip2new = ip2_val(level, kind)
 
@@ -2068,9 +2150,16 @@ Generates coded ip2 value for a given level (shorthand for convip)
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ip2new = rmn.ip2_val(0., rmn.TIME_KIND_HR)
 
+    See Also:
+        ip2_all
+        ip1_val
+        ip3_val
+        convertIp
+        EncodeIp
+        DecodeIp
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -2106,9 +2195,16 @@ def ip3_val(level, kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> ip3new = rmn.ip3_all(0., rmn.KIND_ARBITRARY)
 
+    See Also:
+        ip3_all
+        ip1_val
+        ip2_val
+        convertIp
+        EncodeIp
+        DecodeIp
+        rpnpy.librmn.const
     """
     if type(level) == int:
         level = float(level)
@@ -2141,13 +2237,13 @@ def ip3_val(level, kind):
 
 #--- fstd98/convip_plus & convert_ip123 ---------------------------------
 
- 
+
 def convertIp(mode, v, k=0):
     """
     Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
     
-    ip       = convertIp(mode, p, kind) #if mode > 0
-    (p, kind) = convertIp(mode, ip)     #if mode <= 0
+    ip        = convertIp(mode, p, kind) #if mode > 0
+    (p, kind) = convertIp(mode, ip)      #if mode <= 0
     
     Args:
         ip   : Encoded value (int)
@@ -2190,7 +2286,15 @@ def convertIp(mode, v, k=0):
     >>> import rpnpy.librmn.all as rmn
     
     See Also:
-
+        ip1_val
+        ip2_val
+        ip3_val
+        EncodeIp
+        DecodeIp
+        convertIPtoPK
+        convertPKtoIP
+        kindToString
+        rpnpy.librmn.const
     """
     (cip, cp, ckind) = (_ct.c_int(), _ct.c_float(), _ct.c_int())
     if type(mode) != int:
@@ -2223,7 +2327,7 @@ def convertIp(mode, v, k=0):
 
 def convertIPtoPK(ip1, ip2, ip3):
     """
-Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
+    Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
 
     (rp1, rp2, rp3) = convertIPtoPK(ip1, ip2, ip3)
 
@@ -2245,9 +2349,31 @@ Convert/decode ip1, ip2, ip3 to their kind + real value conterparts
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
 
+    >>> # Encode 500mb at 12h,
+    >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
+    >>> pk1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
+    >>> pk2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
+    >>> pk3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
+    >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1a, pk2a, pk3a)
+
+    >>> # Decode and print
+    >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
+    >>> print("Level v1=%f, v2=%f, type=%s" %
+              (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
+    >>> print("Time v1=%f, v2=%f, type=%s" %
+              (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+
+    See Also:
+        ip1_val
+        ip2_val
+        ip3_val
+        EncodeIp
+        DecodeIp
+        convertIp
+        convertPKtoIP
+        kindToString
+        rpnpy.librmn.const
     """
     if type(ip1) != int or type(ip2) != int or type(ip3) != int:
         raise TypeError("convertIPtoPK: Expecting ip123 to be of type int, " +
@@ -2292,9 +2418,31 @@ def convertPKtoIP(pk1, pk2, pk3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
 
+    >>> # Encode 500mb at 12h,
+    >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
+    >>> pk1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
+    >>> pk2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
+    >>> pk3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
+    >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1a, pk2a, pk3a)
+
+    >>> # Decode and print
+    >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
+    >>> print("Level v1=%f, v2=%f, type=%s" %
+              (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
+    >>> print("Time v1=%f, v2=%f, type=%s" %
+              (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+
+    See Also:
+        ip1_val
+        ip2_val
+        ip3_val
+        EncodeIp
+        DecodeIp
+        convertIPtoPK
+        convertIp
+        kindToString
+        rpnpy.librmn.const
     """
     (cip1, cip2, cip3) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     pk1 = listToFLOATIP(pk1)
@@ -2333,9 +2481,31 @@ def EncodeIp(rp1, rp2, rp3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
 
+    >>> # Encode 500mb at 12h,
+    >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
+    >>> rp1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
+    >>> rp2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
+    >>> rp3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
+    >>> (ip1, ip2, ip3) = rmn.EncodeIp(rp1a, rp2a, rp3a)
+
+    >>> # Decode and print
+    >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
+    >>> print("Level v1=%f, v2=%f, type=%s" %
+              (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
+    >>> print("Time v1=%f, v2=%f, type=%s" %
+              (rp2.v1, rp2.v2, rmn.kindToString(rp2.kind)))
+
+    See Also:
+        DecodeIp
+        ip1_val
+        ip2_val
+        ip3_val
+        convertIp
+        convertIPtoPK
+        convertPKtoIP
+        kindToString
+        rpnpy.librmn.const
     """
     rp1 = listToFLOATIP(rp1)
     rp2 = listToFLOATIP(rp2)
@@ -2373,9 +2543,21 @@ def DecodeIp(ip1, ip2, ip3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
+    >>> (ip1, ip2, ip3) = (6441456, 176280768, 66060288)
+    >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
+    >>> print("Level v1=%f, v2=%f, type=%s" %
+              (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
     
     See Also:
-
+        EncodeIp
+        ip1_val
+        ip2_val
+        ip3_val
+        convertIp
+        convertIPtoPK
+        convertPKtoIP
+        kindToString
+        rpnpy.librmn.const
     """
     (rp1, rp2, rp3) = (_rp.FLOAT_IP(0., 0., 0), _rp.FLOAT_IP(0., 0., 0),
                        _rp.FLOAT_IP(0., 0., 0))
@@ -2400,9 +2582,19 @@ def kindToString(kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
-    See Also:
+    >>> print(rmn.kindToString(rmn.LEVEL_KIND_PMB))
+    >>> print(rmn.kindToString(rmn.TIME_KIND_HR))
 
+    See Also:
+        ip1_val
+        ip2_val
+        ip3_val
+        EncodeIp
+        DecodeIp
+        convertIp
+        convertIPtoPK
+        convertPKtoIP
+        rpnpy.librmn.const
     """
     if not (type(kind) == int):
         raise TypeError("kindToString: Expecting arg of type int, Got %s" %
