@@ -63,7 +63,7 @@ def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
     >>> # Decode Grid parameters to generix xg1-4 values
     >>> params = rmn.decodeIG2dict(grtyp, ig1, ig2, ig3, ig4)
     >>> if (params['xg1'], params['xg2'], params['xg3'], params['xg4']) !=\
-    >>>    (lat0, lon0, dlat, dlon):
+           (lat0, lon0, dlat, dlon):
     >>>    print("Problem decoding grid values.")
 
     See Also:
@@ -123,7 +123,7 @@ def decodeXG2dict(grtyp, xg1, xg2, xg3, xg4):
     >>> # Decode Grid parameters to grid specific parameters
     >>> params = rmn.decodeXG2dict(grtyp, params['xg1'], params['xg2'], params['xg3'], params['xg4'])
     >>> if (params['lat0'], params['lon0'], params['dlat'], params['dlon']) !=\
-    >>>    (lat0, lon0, dlat, dlon):
+           (lat0, lon0, dlat, dlon):
     >>>    print("Problem decoding grid values.")
 
     See Also:
@@ -216,15 +216,15 @@ def decodeGrid(gid):
     >>> import rpnpy.librmn.all as rmn
     >>> # Define a LatLon Grid
     >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
-    >>> params  = rmn.defGrid_L(lat0, lon0, dlat, dlon)
+    >>> (ni, nj) = (180, 60)
+    >>> params  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
     >>> # Decode grid information
     >>> params2 = rmn.decodeGrid(params)
     >>> # Check that decoded values are identical to what we provided
     >>> for k in params.keys():
     >>>     if params[k] != params2[k]:
     >>>        print("Problem decoding grid param[%s] : %s != %s " %
-    >>>              (k,str(params[k]),str(params2[k]))
-
+                     (k,str(params[k]),str(params2[k])))
 
     See Also:
         encodeGrid
@@ -397,7 +397,7 @@ def getIgTags(params):
     >>> (lat0, lon0, dlat, dlon)     = (10., 11., 1., 0.5)
     >>> (xlat1, xlon1, xlat2, xlon2) = (0., 180., 1., 270.)
     >>> params  = rmn.defGrid_ZE(ni, nj, lat0, lon0, dlat, dlon,
-    >>>                          xlat1, xlon1, xlat2, xlon2)
+                                 xlat1, xlon1, xlat2, xlon2)
     >>> (tag1, tag2) = rmn.getIgTags(params)
 
     See Also:
@@ -472,7 +472,7 @@ def readGrid(funit, params):
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
-    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
     >>> funit = rmn.fstopenall(myfile)
     >>> rec   = rmn.fstlir(funit, nomvar='ME')
     >>> grid  = rmn.readGrid(funit, rec)
@@ -550,7 +550,7 @@ def writeGrid(funit, params):
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
-    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/geophy.fst')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
     >>> funit  = rmn.fstopenall(myfile)
     >>> rec    = rmn.fstlir(funit, nomvar='ME')
     >>> grid0  = rmn.readGrid(funit, rec)
@@ -661,19 +661,19 @@ def encodeGrid(params):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params0 = {
-    >>>     'grtyp' : 'Z',
-    >>>     'grref' : 'E',
-    >>>     'ni'    : 90,
-    >>>     'nj'    : 45,
-    >>>     'lat0'  : 10.,
-    >>>     'lon0'  : 11.,
-    >>>     'dlat'  : 1.,
-    >>>     'dlon'  : 0.5,
-    >>>     'xlat1' : 0.,
-    >>>     'xlon1' : 180.,
-    >>>     'xlat2' : 1.,
-    >>>     'xlon2' : 270.
-    >>>     }
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5,
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 1.,
+            'xlon2' : 270.
+            }
     >>> params  = rmn.encodeGrid(params0)
 
     See Also:
@@ -760,7 +760,8 @@ def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> (lat0, lon0, dlat, dlon) = (0.,180.,1.,0.5)
-    >>> params  = rmn.defGrid_L(lat0, lon0, dlat, dlon)
+    >>> (ni, nj) = (180, 90)
+    >>> params  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
 
     See Also:
         decodeGrid
@@ -974,17 +975,17 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params0 = {
-    >>>     'ni'    : 90,
-    >>>     'nj'    : 45,
-    >>>     'lat0'  : 10.,
-    >>>     'lon0'  : 11.,
-    >>>     'dlat'  : 1.,
-    >>>     'dlon'  : 0.5,
-    >>>     'xlat1' : 0.,
-    >>>     'xlon1' : 180.,
-    >>>     'xlat2' : 1.,
-    >>>     'xlon2' : 270.
-    >>>     }
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5,
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 1.,
+            'xlon2' : 270.
+            }
     >>> params  = rmn.defGrid_ZE(params0)
 
     See Also:
@@ -1150,21 +1151,21 @@ def defGrid_diezeE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params0 = {
-    >>>     'lni'   : 180,
-    >>>     'lnj'   : 90,
-    >>>     'i0'    : 1,
-    >>>     'j0'    : 1,
-    >>>     'ni'    : 90,
-    >>>     'nj'    : 45,
-    >>>     'lat0'  : 10.,
-    >>>     'lon0'  : 11.,
-    >>>     'dlat'  : 1.,
-    >>>     'dlon'  : 0.5,
-    >>>     'xlat1' : 0.,
-    >>>     'xlon1' : 180.,
-    >>>     'xlat2' : 1.,
-    >>>     'xlon2' : 270.
-    >>>     }
+            'lni'   : 180,
+            'lnj'   : 90,
+            'i0'    : 1,
+            'j0'    : 1,
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5,
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 1.,
+            'xlon2' : 270.
+            }
     >>> params  = rmn.defGrid_diezeE(params0)
 
     See Also:
@@ -1265,13 +1266,13 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params0 = {
-    >>>     'ni'    : 90,
-    >>>     'nj'    : 45,
-    >>>     'lat0'  : 10.,
-    >>>     'lon0'  : 11.,
-    >>>     'dlat'  : 1.,
-    >>>     'dlon'  : 0.5
-    >>>     }
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5
+            }
     >>> params  = rmn.defGrid_ZL(params0)
 
     See Also:
@@ -1407,17 +1408,17 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params0 = {
-    >>>     'lni'   : 180,
-    >>>     'lnj'   : 90,
-    >>>     'i0'    : 1,
-    >>>     'j0'    : 1,
-    >>>     'ni'    : 90,
-    >>>     'nj'    : 45,
-    >>>     'lat0'  : 10.,
-    >>>     'lon0'  : 11.,
-    >>>     'dlat'  : 1.,
-    >>>     'dlon'  : 0.5,
-    >>>     }
+            'lni'   : 180,
+            'lnj'   : 90,
+            'i0'    : 1,
+            'j0'    : 1,
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5,
+            }
     >>> params  = rmn.defGrid_diezeL(params0)
 
     See Also:
@@ -1730,7 +1731,7 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> params = rmn.defGrid_YY(31, overlap=1.5, xlat1=0., xlon1=180.,
-    >>>                         xlat2=0., xlon2=270.)
+                                xlat2=0., xlon2=270.)
 
     See Also:
         decodeGrid
@@ -1842,7 +1843,6 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
     >>> import rpnpy.librmn.all as rmn
     >>> (xlat1, xlon1, xlat2, xlon2)    = (0., 180., 0., 270.)
     >>> (xlat1b, xlon1b,xlat2b, xlon2b) = rmn.yyg_yangrot_py(xlat1, xlon1, xlat2, xlon2)
-    >>> 
 
     See Also:
         defGrid_YY
@@ -1918,7 +1918,22 @@ def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> 
+    >>> params0 = {
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 10.,
+            'lon0'  : 11.,
+            'dlat'  : 1.,
+            'dlon'  : 0.5,
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 1.,
+            'xlon2' : 270.
+            }
+    >>> params  = rmn.defGrid_ZE(params0)
+    >>> axy = rmn.yyg_pos_rec(params['xlat1'], params['xlon1'],
+                              params['xlat2'], params['xlon2'],
+                              params['ax'],params['ay'])
 
     See Also:
         defGrid_YY
