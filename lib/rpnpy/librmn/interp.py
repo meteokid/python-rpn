@@ -32,7 +32,8 @@ class EzscintError(RMNError):
 #---- Set Functions
 
 def ezsetopt(option, value):
-    """Sets a floating point numerical option from the package
+    """
+    Sets a floating point numerical option from the package
     
     ezsetopt(option, value)
     
@@ -44,6 +45,15 @@ def ezsetopt(option, value):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
+    >>> rmn.ezsetopt(rmn.EZ_OPT_USE_1SUBGRID,  rmn.EZ_YES)
+
+    See Also:
+        ezgetopt
+        rpnpy.librmn.const
     """
     if not (type(option) == str):
         raise TypeError("ezsetopt: expecting args of type str, Got %s" %
@@ -63,7 +73,8 @@ def ezsetopt(option, value):
 #TODO: should we merge ezqkdef et ezgdef_fmem?
 def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
             iunit=0):
-    """Universal grid definition. Applicable to all cases.
+    """
+    Universal grid definition. Applicable to all cases.
     
     gdid = ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
     gdid = ezqkdef(gridParams)
@@ -79,6 +90,18 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> # Define a LatLon grid
+    >>> (grtyp, lat0, lon0, dlat, dlon) = ('L', 45., 273., 0.5, 0.5)
+    >>> (ig1, ig2, ig3, ig4) = rmn.cxgaig(grtyp, lat0, lon0, dlat, dlon)
+    >>> gid = rmn.ezqkdef(90, 45, grtyp, ig1, ig2, ig3, ig4)
+
+    See Also:
+        ezgdef_fmem
+        rpnpy.librmn.base.cxgaig
+        rpnpy.librmn.grids
     """
     if type(ni) == dict:
         gridParams = ni
@@ -113,7 +136,8 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
 
 def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
                 ig3=None, ig4=None, ax=None, ay=None):
-    """Generic grid definition except for 'U' grids (with necessary
+    """
+    Generic grid definition except for 'U' grids (with necessary
     positional parameters taken from the calling arguments)
     
     gdid = ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
@@ -130,6 +154,42 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import numpy as np
+    >>> import rpnpy.librmn.all as rmn
+    >>> (ni,nj) = (90, 45)
+    >>> gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 0.,
+            'xlon2' : 270.,
+            'dlat' : 0.25,
+            'dlon' : 0.25,
+            'lat0' : 45.,
+            'lon0' : 273.
+            }
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
+                            gp['xlat2'], gp['xlon2'])
+    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
+    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
+    >>> for i in xrange(ni):
+    >>>     gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in xrange(nj):
+    >>>     gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
+                              ig1234[0], ig1234[1], ig1234[2], ig1234[3],
+                              gp['ax'], gp['ay'])
+
+    See Also:
+        ezqkdef
+        rpnpy.librmn.base.cxgaig
+        rpnpy.librmn.grids
     """
     if type(ni) == dict:
         gridParams = ni
@@ -180,7 +240,8 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
 
 
 def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
-    """U grid definition
+    """
+    U grid definition
     (which associates to a list of concatenated subgrids in one record)
 
     gdid = ezgdef_supergrid(ni, nj, grtyp, grref, vercode, nsubgrids, subgridid)
@@ -197,6 +258,37 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> nj = 31 ; ni = (nj-1)*3 + 1
+    >>> gp = {
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 0.,
+            'xlon2' : 270.,
+            'dlat' : 0.25,
+            'dlon' : 0.25,
+            'lat0' : 45.,
+            'lon0' : 273.
+            }
+    >>> yin = rmn.encodeGrid(gp)
+    >>> (gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2']) = \
+            rmn.yyg_yangrot_py(gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2'])
+    >>> yan = rmn.encodeGrid(gp)
+    >>> yy_id = rmn.ezgdef_supergrid(ni, nj, 'U', 'F', 1, (yin['id'],yan['id']))
+
+
+    See Also:
+        ezget_nsubgrids
+        ezget_subgridids
+        rpnpy.librmn.grids.encodeGrid
+        rpnpy.librmn.grids.yyg_yangrot_py
+        rpnpy.librmn.grids.defGrid_YY
     """
     if type(ni) == dict:
         gridParams = ni
@@ -228,7 +320,8 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
 
 
 def ezdefset(gdidout, gdidin):
-    """Defines a set of grids for interpolation
+    """
+    Defines a set of grids for interpolation
     
     gridsetid = ezdefset(gdidout, gdidin)
 
@@ -240,6 +333,11 @@ def ezdefset(gdidout, gdidin):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdidout) == int and type(gdidin) == int):
         raise TypeError("ezdefset: Expecting a grid ids of type int, " +
@@ -251,7 +349,8 @@ def ezdefset(gdidout, gdidin):
 
 
 def gdsetmask(gdid, mask):
-    """Associates a permanent mask with grid 'gdid'
+    """
+    Associates a permanent mask with grid 'gdid'
     
     gdsetmask(gdid, mask)
     
@@ -263,6 +362,11 @@ def gdsetmask(gdid, mask):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdid) == int and type(mask) == _np.ndarray):
         raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray " +
@@ -275,14 +379,15 @@ def gdsetmask(gdid, mask):
     istat = _rp.c_gdsetmask(gdid, mask)
     if istat < 0:
         raise EzscintError()
-    return istat
+    return
 
 
 #---- Query Functions
 
 
 def ezgetopt(option, vtype=int):
-    """Gets an option value from the package
+    """
+    Gets an option value from the package
     
     value = ezgetopt(option)
     value = ezgetopt(option, vtype)
@@ -296,6 +401,15 @@ def ezgetopt(option, vtype=int):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> interp_degree = rmn.ezgetopt(rmn.EZ_OPT_INTERP_DEGREE, vtype=str)
+    >>> print("Feild will be interpolated with tpye: %s" % interp_degree)
+
+    See Also:
+        ezsetopt
+        rpnpy.librmn.const
     """
     if not (type(option) == str):
         raise TypeError("ezgetopt: expecting args of type str, Got %s" %
@@ -317,7 +431,8 @@ def ezgetopt(option, vtype=int):
 
 
 def ezget_nsubgrids(super_gdid):
-    """Gets the number of subgrids from the 'U' (super) grid id
+    """
+    Gets the number of subgrids from the 'U' (super) grid id
     
     nsubgrids = ezget_nsubgrids(super_gdid)
     
@@ -328,6 +443,22 @@ def ezget_nsubgrids(super_gdid):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> yy = rmn.defGrid_YY(31)
+    >>> n = rmn.ezget_nsubgrids(yy['id'])
+    >>> print("There are %d subgrids in the YY grid" % n)
+
+    See Also:
+        ezgdef_supergrid
+        ezget_subgridids
+        ezgprm
+        ezgxprm
+        ezgfstp
+        gdgaxes
+        rpnpy.librmn.grids.defGrid_YY
+        rpnpy.librmn.grids.decodeGrid
     """
     if not (type(super_gdid) == int):
         raise TypeError("ezgetival: expecting args of type int, Got %s" %
@@ -339,7 +470,8 @@ def ezget_nsubgrids(super_gdid):
 
 
 def ezget_subgridids(super_gdid):
-    """Gets the list of grid ids for the subgrids in the 'U' grid (super_gdid).
+    """
+    Gets the list of grid ids for the subgrids in the 'U' grid (super_gdid).
     
     subgridids = ezget_subgridids(super_gdid)
     Args:
@@ -349,6 +481,22 @@ def ezget_subgridids(super_gdid):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> yy = rmn.defGrid_YY(31)
+    >>> idlist = rmn.ezget_subgridids(yy['id'])
+    >>> print("The list of grid id in the YY grid is: %s" % str(idlist))
+
+    See Also:
+        ezgdef_supergrid
+        ezget_nsubgrids
+        ezgprm
+        ezgxprm
+        ezgfstp
+        gdgaxes
+        rpnpy.librmn.grids.defGrid_YY
+        rpnpy.librmn.grids.decodeGrid
     """
     nsubgrids = ezget_nsubgrids(super_gdid)
     cgridlist = _np.empty(nsubgrids, dtype=_np.intc, order='FORTRAN')
@@ -359,7 +507,8 @@ def ezget_subgridids(super_gdid):
 
 
 def ezgprm(gdid, doSubGrid=False):
-    """Get grid parameters
+    """
+    Get grid parameters
     
     gridParams = ezgprm(gdid)
     
@@ -382,6 +531,17 @@ def ezgprm(gdid, doSubGrid=False):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
+        ezgxprm
+        ezgfstp
+        gdgaxes
+        ezget_nsubgrids
+        ezget_subgridids
+        rpnpy.librmn.grids.decodeGrid
     """
     if not (type(gdid) == int):
         raise TypeError("ezgprm: expecting args of type int, Got %s" %
@@ -416,7 +576,8 @@ def ezgprm(gdid, doSubGrid=False):
             
 #TODO: merge ezgprm et ezgxprm et gdgaxes (conditional axes)?
 def ezgxprm(gdid, doSubGrid=False):
-    """Get extended grid parameters
+    """
+    Get extended grid parameters
     
     gridParams = ezgxprm(gdid)
     
@@ -444,6 +605,17 @@ def ezgxprm(gdid, doSubGrid=False):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
+        ezgprm
+        ezgfstp
+        gdgaxes
+        ezget_nsubgrids
+        ezget_subgridids
+        rpnpy.librmn.grids.decodeGrid
     """
     if not (type(gdid) == int):
         raise TypeError("ezgxprm: expecting args of type int, Got %s" %
@@ -488,7 +660,8 @@ def ezgxprm(gdid, doSubGrid=False):
 
 
 def ezgfstp(gdid):
-    """Get the standard file attributes of the positional records
+    """
+    Get the standard file attributes of the positional records
 
     recParams = ezgfstp(gdid)
     
@@ -514,6 +687,17 @@ def ezgfstp(gdid):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
+        ezgprm
+        ezgxprm
+        gdgaxes
+        ezget_nsubgrids
+        ezget_subgridids
+        rpnpy.librmn.grids.decodeGrid
     """
     if not (type(gdid) == int):
         raise TypeError("ezgfstp: expecting args of type int, Got %s" %
@@ -551,7 +735,8 @@ def ezgfstp(gdid):
 
 
 def gdgaxes(gdid, ax=None, ay=None):
-    """Gets the deformation axes of the Z, Y, # grids
+    """
+    Gets the deformation axes of the Z, Y, # grids
     
     gridAxes = gdgaxes(gdid)
     gridAxes = gdgaxes(gdid, gridAxes)
@@ -569,6 +754,17 @@ def gdgaxes(gdid, ax=None, ay=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
+        ezgprm
+        ezgxprm
+        ezgfstp        
+        ezget_nsubgrids
+        ezget_subgridids
+        rpnpy.librmn.grids.decodeGrid
     """
     if not (type(gdid) == int):
         raise TypeError("gdgaxes: expecting args of type int, Got %s" %
@@ -621,7 +817,8 @@ def gdgaxes(gdid, ax=None, ay=None):
 
 
 def gdll(gdid, lat=None, lon=None):
-    """Gets the latitude/longitude position of grid 'gdid'
+    """
+    Gets the latitude/longitude position of grid 'gdid'
     
     gridLatLon = gdll(gdid)
     gridLatLon = gdll(gdid, gridLatLon)
@@ -639,6 +836,11 @@ def gdll(gdid, lat=None, lon=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdid) == int):
         raise TypeError("gdll: expecting args of type int, Got %s" %
@@ -680,7 +882,8 @@ def gdll(gdid, lat=None, lon=None):
 
 
 def gdxyfll(gdid, lat, lon):
-    """Returns the x-y positions of lat lon points on grid 'gdid'
+    """
+    Returns the x-y positions of lat lon points on grid 'gdid'
     
     pointXY = gdxyfll(gdid, lat, lon)
     
@@ -696,6 +899,11 @@ def gdxyfll(gdid, lat, lon):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdid) == int):
         raise TypeError("gdxyfll: expecting args of type int, Got %s" %
@@ -732,7 +940,8 @@ def gdxyfll(gdid, lat, lon):
 
 
 def gdllfxy(gdid, xpts, ypts):
-    """Returns the lat-lon coordinates of data
+    """
+    Returns the lat-lon coordinates of data
     located at positions x-y on grid GDID
     
      pointLL = gdllfxy(gdid, xpts, ypts)
@@ -749,6 +958,11 @@ def gdllfxy(gdid, xpts, ypts):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdid) == int):
         raise TypeError("gdllfxy: expecting args of type int, Got %s" %
@@ -786,7 +1000,8 @@ def gdllfxy(gdid, xpts, ypts):
 
 
 def gdgetmask(gdid, mask=None):
-    """Returns the mask associated with grid 'gdid'
+    """
+    Returns the mask associated with grid 'gdid'
 
     mask = gdgetmask(gdid)
     mask = gdgetmask(gdid, mask)
@@ -799,6 +1014,11 @@ def gdgetmask(gdid, mask=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not (type(gdid) == int):
         raise TypeError("gdgetmask: expecting args of type int, Got %s" %
@@ -832,7 +1052,8 @@ def gdgetmask(gdid, mask=None):
 
 
 def ezsint(gdidout, gdidin, zin, zout=None):
-    """Scalar horizontal interpolation
+    """
+    Scalar horizontal interpolation
 
     zout = ezsint(gdidout, gdidin, zin)
     zout = ezsint(gdidout, gdidin, zin, zout)
@@ -847,6 +1068,11 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(zin) == _np.ndarray):
@@ -877,7 +1103,8 @@ def ezsint(gdidout, gdidin, zin, zout=None):
 
     
 def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
-    """Vectorial horizontal interpolation
+    """
+    Vectorial horizontal interpolation
 
     (uuout, vvout) = ezuvint(gdidout, gdidin, uuin, vvin)
     (uuout, vvout) = ezuvint(gdidout, gdidin, uuin, vvin, uuout, vvout)
@@ -894,6 +1121,11 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(uuin) == _np.ndarray and type(vvin) == _np.ndarray):
@@ -929,7 +1161,8 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
 
 
 def gdllsval(gdid, lat, lon, zin, zout=None):
-    """Scalar interpolation to points located at lat-lon coordinates
+    """
+    Scalar interpolation to points located at lat-lon coordinates
 
     zout = gdllsval(gdid, lat, lon, zin)
     zout = gdllsval(gdid, lat, lon, zin, zout)
@@ -946,6 +1179,11 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not isinstance(zin, _np.ndarray):
         raise TypeError("gdllsval: expecting zin arg of type numpy.ndarray, " +
@@ -986,7 +1224,8 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
 
 
 def gdxysval(gdid, xpts, ypts, zin, zout=None):
-    """Scalar intepolation to points located at x-y coordinates
+    """
+    Scalar intepolation to points located at x-y coordinates
 
     zout = gdxysval(gdid, xpts, ypts, zin)
     zout = gdxysval(gdid, xpts, ypts, zin, zout)
@@ -1003,6 +1242,11 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not isinstance(zin, _np.ndarray):
         raise TypeError("gdxysval: expecting zin arg of type numpy.ndarray, " +
@@ -1045,7 +1289,8 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
 
 
 def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
-    """Vectorial interpolation to points located at lat-lon coordinates
+    """
+    Vectorial interpolation to points located at lat-lon coordinates
 
     (uuout, vvout) = gdllsval(gdid, lat, lon, uuin, vvin)
     (uuout, vvout) = gdllsval(gdid, lat, lon, uuin, vvin, uuout, vvout)
@@ -1063,6 +1308,11 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not isinstance(uuin, _np.ndarray):
         raise TypeError("gdllvval: expecting uuin arg of type numpy.ndarray, " +
@@ -1124,7 +1374,8 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
 
 
 def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
-    """Vectorial intepolation to points located at x-y coordinates
+    """
+    Vectorial intepolation to points located at x-y coordinates
 
     (uuout, vvout) = gdxysval(gdid, xpts, ypts, uuin, vvin)
     (uuout, vvout) = gdxysval(gdid, xpts, ypts, uuin, vvin, uuout, vvout)
@@ -1141,6 +1392,11 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not isinstance(uuin, _np.ndarray):
         raise TypeError("dgxyvval: expecting uuin arg of type numpy.ndarray, " +
@@ -1212,7 +1468,8 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
 #---- Other Functions
 
 def gdrls(gdid):
-    """Frees a previously allocated grid
+    """
+    Frees a previously allocated grid
     
     gdrls(gdid)
 
@@ -1223,6 +1480,11 @@ def gdrls(gdid):
     Raises:
         TypeError    on wrong input arg types
         EzscintError on any other error
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+
+    See Also:
     """
     if not isinstance(gdid, (list, tuple)):
         gdid = [gdid]
