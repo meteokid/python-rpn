@@ -1,0 +1,182 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+import optparse,sys,re
+import rpnpy.librmn.all as rmn
+from rpnpy.rpndate import *
+
+def set_vdate(meta):
+    meta['vdateo'] = -1
+    meta['vdatev'] = -1
+    try:
+        if meta['dateo'] != 0:
+            d = RPNDate(meta['dateo'])
+            meta['vdateo'] = str(d)
+            nsec = int(meta['deet']) * int(meta['npas'])
+            meta['vdatev'] = (d.toDateTime() + datetime.timedelta(0,nsec)).strftime('%Y%m%d.%H%M%S')
+    except:
+        pass
+    return meta
+
+
+def set_level(meta):
+    meta['level'] = -1
+    try:
+        (rp1, rp2, rp3) = rmn.DecodeIp(meta['ip1'],meta['ip2'],meta['ip3'])
+        units = rmn.kindToString(rp1.kind)
+        if rp1.v1 == rp1.v2:
+            meta['level'] = str(rp1.v1)+units
+        else:
+            meta['level'] = '['+str(rp1.v1)+' - '+str(rp1.v1)+'] '+units
+    except:
+        pass
+    return meta
+    
+def set_time(meta):
+    meta['time'] = -1
+    try:
+        (rp1, rp2, rp3) = rmn.DecodeIp(meta['ip1'],meta['ip2'],meta['ip3'])
+        units = rmn.kindToString(rp2.kind)
+        if rp2.v1 == rp2.v2:
+            meta['time'] = str(rp2.v1)+units
+        else:
+            meta['time'] = '['+str(rp2.v1)+' - '+str(rp2.v1)+'] '+units
+    except:
+        pass
+    return meta
+
+def set_xg(meta):
+    meta['xg1234'] = '-1 -1 -1 -1'
+    try:
+        if not meta['grtyp'].upper() in ('Z','Y','#','U','X'):
+            meta['xg1234'] = ' '.join([str(x) for x in rmn.cigaxg(meta['grtyp'], meta['ig1'], meta['ig2'], meta['ig3'], meta['ig4'])])
+    except:
+        pass
+    return meta
+
+def print_list(filename, out_format, filt_etiket, 
+               filt_ip1, filt_ip2, filt_ip3, filt_typvar,
+               filt_nomvar, filt_datev, filt_vdatev):
+    try:
+        #rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        iunit = rmn.fstopenall(filename)
+    except:
+        sys.stderr.write('ERROR: Problem opening the file: %s\n' % (filename))
+        raise
+    try:
+        out_format = out_format.lower()
+        vdatev = filt_vdatev
+        if filt_datev != -1:
+            vdatev = str(RPNDate(filt_datev))
+        pattern = None
+        dovdatev = (vdatev != -1 or out_format != out_format.replace('vdatev','').replace('datev',''))
+        dolevel = (out_format != out_format.replace('level',''))
+        dotime  = (out_format != out_format.replace('time',''))
+        doxg = (out_format != out_format.replace('xg1234',''))
+        for k in rmn.fstinl(iunit, datev=-1, etiket=filt_etiket,
+                            ip1=filt_ip1, ip2=filt_ip2,
+                            ip3=filt_ip3, typvar=filt_typvar,
+                            nomvar=filt_nomvar):
+            meta =  rmn.fstprm(k)
+            if dovdatev: meta = set_vdate(meta)
+            if dolevel:  meta = set_level(meta)
+            if dotime:   meta = set_time(meta)
+            if doxg:     meta = set_xg(meta)
+            if pattern is None: pattern = re.compile("|".join(meta.keys()))
+            if vdatev != -1:
+                l = min(len(vdatev.strip()), len(meta['vdatev'].strip()))
+                if vdatev[0:l] == meta['vdatev'][0:l]:
+                    vdatev = -1
+            if vdatev == -1:
+                 print(pattern.sub(lambda m: str(meta[re.escape(m.group(0))]), out_format))
+    except:
+        sys.stderr.write('ERROR: Unknown problem with file: %s\n' % (filename))
+        raise
+    finally:
+        rmn.fstcloseall(iunit)
+
+
+if __name__ == "__main__":
+    
+    # Command line arguments
+    desc="Print list of record Metadata in an RMN Std file"
+    usage = """
+    %prog -i filename [options]
+
+    Accepted values for format:
+        nomvar, typvar, ip1, ip2, ip3, ni, nj, nk, etiket
+        dateo, datev, vdateo, vdatev, deet, npas
+        grtyp, ig1, ig2, ig3, ig4, datyp, nbits
+        level, time, xg1234
+
+   Default format  = 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:grtyp:ig1:ig2:ig3:ig4:datyp:nbits'
+    """
+    default_format = 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:grtyp:ig1:ig2:ig3:ig4:datyp:nbits'
+    valid_keys = ('nomvar', 'typvar', 'ip1', 'ip2', 'ip3', 'ni', 'nj', 'nk',
+                  'etiket', 'dateo', 'datev', 'vdateo', 'vdatev',
+                  'deet', 'npas','grtyp', 'ig1', 'ig2', 'ig3', 'ig4',
+                  'datyp', 'nbits', 'level', 'time', 'xg1234')
+
+    parser = optparse.OptionParser(usage=usage,description=desc)
+    parser.add_option("-i","--izfst",dest="filename",default=None,
+                      help="RPN Std File name")
+    
+    parser.add_option("","--datev",dest="filt_datev",default=-1,
+                      help="Filter records by Valid date (CMC date Stamp")
+    parser.add_option("","--vdatev",dest="filt_vdatev",default=-1,
+                      help="Filter records by Valid date (true-date")
+    parser.add_option("","--etiket",dest="filt_etiket",default='',
+                      help="Filter records by Etiket")
+    parser.add_option("","--ip1",dest="filt_ip1",default=-1,
+                      help="Filter records by ip1")
+    parser.add_option("","--ip2",dest="filt_ip2",default=-1,
+                      help="Filter records by ip2")
+    parser.add_option("","--ip3",dest="filt_ip3",default=-1,
+                      help="Filter records by ip3")
+    parser.add_option("","--typvar",dest="filt_typvar",default='',
+                      help="Filter records by Variable Type")
+    parser.add_option("","--nomvar",dest="filt_nomvar",default='',
+                      help="Filter records by Variable Name")
+    
+    ## parser.add_option("-F","--filter",dest="filter",default=default_format,
+    ##                   help="Filter 'key1=val1 ; key2=val2 ; ...'")
+
+    parser.add_option("-f","--format",dest="format",default=default_format,
+                      help="Output Format")
+    
+    ## parser.add_option("-s","--sort",dest="sort_key",default=None,
+    ##                   help="Sort key")
+    ## parser.add_option("-u","--unique",dest="sort_unique",action="store_true",
+    ##                   help="Remove duplicate")
+    ## parser.add_option("-r","--reverse",dest="sort_reverse",action="store_true",
+    ##                   help="Reverse sorting order")
+
+    parser.add_option("","--champs",dest="champs",action="store_true",
+                      help="List accepted format keys")
+
+    (options, args) = parser.parse_args()
+
+    if options.champs:
+        print(':'.join(valid_keys))
+        sys.exit(0)   
+    
+    if not options.filename:
+        parser.print_help()
+        sys.exit(1)
+        
+    if options.filt_vdatev != -1 and options.filt_datev != -1 :
+        sys.stderr.write('ERROR: cannot filter with both datev and vdatev\n')
+        sys.exit(1)
+
+    try:
+        print_list(options.filename, options.format,
+                   options.filt_etiket, options.filt_ip1, options.filt_ip2, options.filt_ip3,
+                   options.filt_typvar, options.filt_nomvar, options.filt_datev, options.filt_vdatev)
+    except:
+        sys.exit(1)
+        
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

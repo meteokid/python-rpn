@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 import optparse,sys,re
 import rpnpy.librmn.all as rmn
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
 
 if __name__ == "__main__":
     
@@ -46,15 +49,15 @@ if __name__ == "__main__":
     try:
         iunit = rmn.fstopenall(options.filename)
     except:
-        sys.stderr.write('ERROR: Problem opening the file: %s' % (options.filename))
+        sys.stderr.write('ERROR: Problem opening the file: %s\n' % (options.filename))
         sys.exit(1)
     if not iunit:
-        sys.stderr.write('ERROR: File not found or not readable: %s' % (options.filename))
+        sys.stderr.write('ERROR: File not found or not readable: %s\n' % (options.filename))
         sys.exit(1)
     try:
         rmn.fstvoi(iunit,printoptions)
     except:
-        sys.stderr.write('ERROR: Unknown problem while running fstvoi on file: %s' % (options.filename))
+        sys.stderr.write('ERROR: Unknown problem while running fstvoi on file: %s\n' % (options.filename))
     rmn.fstcloseall(iunit)
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
