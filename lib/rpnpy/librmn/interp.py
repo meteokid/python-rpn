@@ -23,7 +23,21 @@ from . import RMNError
 C_MKSTR = _ct.create_string_buffer
 
 class EzscintError(RMNError):
-    """General EzscintError module error/exception
+    """
+    General librmn.interp module error/exception
+    
+    To make your code handle errors in an elegant manner,
+    you may want to catch that error with a 'try ... except' block.
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> try:
+    >>>    #... an librmn.interp operation ...
+    >>> except rmn.EzscintError:
+    >>>    pass #ignore the error
+
+    See also:
+        rpnpy.librmn.RMNError
     """
     pass
 
@@ -55,14 +69,14 @@ def ezsetopt(option, value):
         ezgetopt
         rpnpy.librmn.const
     """
-    if not (type(option) == str):
+    if not isinstance(option, str):
         raise TypeError("ezsetopt: expecting args of type str, Got %s" %
                         (type(option)))
-    if type(value) == int:
+    if isinstance(value, int):
         istat = _rp.c_ezsetival(option, value)
-    elif type(value) == float:
+    elif isinstance(value, float):
         istat = _rp.c_ezsetval(option, value)
-    elif type(value) == str:
+    elif isinstance(value, str):
         istat = _rp.c_ezsetopt(option, value)
     else:
         raise TypeError("ezsetopt: Not a supported type %s" % (type(value)))
@@ -103,7 +117,7 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
         rpnpy.librmn.base.cxgaig
         rpnpy.librmn.grids
     """
-    if type(ni) == dict:
+    if isinstance(ni, dict):
         gridParams = ni
         try:
             (ni, nj) = gridParams['shape']
@@ -191,7 +205,7 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
         rpnpy.librmn.base.cxgaig
         rpnpy.librmn.grids
     """
-    if type(ni) == dict:
+    if isinstance(ni, dict):
         gridParams = ni
         try:
             (ni, nj) = gridParams['shape']
@@ -290,7 +304,7 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
         rpnpy.librmn.grids.yyg_yangrot_py
         rpnpy.librmn.grids.defGrid_YY
     """
-    if type(ni) == dict:
+    if isinstance(ni, dict):
         gridParams = ni
         try:
             (ni, nj) = gridParams['shape']
@@ -326,8 +340,10 @@ def ezdefset(gdidout, gdidin):
     gridsetid = ezdefset(gdidout, gdidin)
 
     Args:
-        gdidout : output grid id (int) 
-        gdidin  : input  grid id (int) 
+        gdidout : output grid id (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
+        gdidin  : input  grid id (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
     Returns:
         int, grid set id
     Raises:
@@ -335,11 +351,50 @@ def ezdefset(gdidout, gdidin):
         EzscintError on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
 
+    >>> # Read source data and define its grid
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
+    >>> funit  = rmn.fstopenall(myfile)
+    >>> meRec  = rmn.fstlir(funit, nomvar='ME')
+    >>> inGrid = rmn.readGrid(funit, meRec)
+    >>> rmn.fstcloseall(funit)
+
+    >>> # Define a destination Grid
+    >>> (lat0, lon0, dlat, dlon) = (35.,265.,0.25,0.25)
+    >>> (ni, nj) = (200, 100)
+    >>> outGrid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
+
+    >>> # Define the grid-set and interpolate data linearly
+    >>> gridsetid = rmn.ezdefset(outGrid, inGrid)
+    >>> rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
+    >>> me2 = rmn.ezsint(outGrid['id'], inGrid['id'], meRec['d'])
+    
     See Also:
+        ezsetopt
+        ezsint
+        ezuvint
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.grids.readGrid
+        rpnpy.librmn.grids.defGrid_L
+        rpnpy.librmn.grids.encodeGrid
+        rpnpy.librmn.const
     """
-    if not (type(gdidout) == int and type(gdidin) == int):
+    if isinstance(gdidout, dict):
+        try:
+            gdidout = gdidout['id']
+        except:
+            pass
+    if isinstance(gdidin, dict):
+        try:
+            gdidin = gdidin['id']
+        except:
+            pass
+    if not (isinstance(gdidout, int) and isinstance(gdidin, int)):
         raise TypeError("ezdefset: Expecting a grid ids of type int, " +
                         "Got %s, %s" % (type(gdidout), type(gdidin)))
     istat = _rp.c_ezdefset(gdidout, gdidin)
@@ -355,7 +410,8 @@ def gdsetmask(gdid, mask):
     gdsetmask(gdid, mask)
     
     Args:
-        gdid : grid id (int)
+        gdid : grid id (int or dict)
+               Dict with key 'id' is accepted from version 2.0.rc1 
         mask : field mask (numpy.ndarray)
     Returns:
         None
@@ -368,7 +424,12 @@ def gdsetmask(gdid, mask):
 
     See Also:
     """
-    if not (type(gdid) == int and type(mask) == _np.ndarray):
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not (isinstance(gdid, int) and type(mask) == _np.ndarray):
         raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray " +
                         "Got %s, %s" % (type(gdid), type(mask)))
     if not mask.dtype in (_np.intc, _np.int32):
@@ -411,7 +472,7 @@ def ezgetopt(option, vtype=int):
         ezsetopt
         rpnpy.librmn.const
     """
-    if not (type(option) == str):
+    if not isinstance(option, str):
         raise TypeError("ezgetopt: expecting args of type str, Got %s" %
                         (type(option)))
     if vtype == int:
@@ -437,7 +498,8 @@ def ezget_nsubgrids(super_gdid):
     nsubgrids = ezget_nsubgrids(super_gdid)
     
     Args:
-        super_gdid (int): id of the super grid
+        super_gdid : id of the super grid (int or dict)
+                     Dict with key 'id' is accepted from version 2.0.rc1
     Returns:
         int, number of sub grids associated with super_gdid
     Raises:
@@ -460,7 +522,12 @@ def ezget_nsubgrids(super_gdid):
         rpnpy.librmn.grids.defGrid_YY
         rpnpy.librmn.grids.decodeGrid
     """
-    if not (type(super_gdid) == int):
+    if isinstance(super_gdid, dict):
+        try:
+            super_gdid = super_gdid['id']
+        except:
+            pass
+    if not isinstance(super_gdid, int):
         raise TypeError("ezgetival: expecting args of type int, Got %s" %
                         (type(super_gdid)))
     nsubgrids = _rp.c_ezget_nsubgrids(super_gdid)
@@ -474,8 +541,10 @@ def ezget_subgridids(super_gdid):
     Gets the list of grid ids for the subgrids in the 'U' grid (super_gdid).
     
     subgridids = ezget_subgridids(super_gdid)
+
     Args:
-        super_gdid (int): id of the super grid
+        super_gdid : id of the super grid (int or dict)
+                     Dict with key 'id' is accepted from version 2.0.rc1 
     Returns:
         int, list of grid ids for the subgrids
     Raises:
@@ -498,6 +567,11 @@ def ezget_subgridids(super_gdid):
         rpnpy.librmn.grids.defGrid_YY
         rpnpy.librmn.grids.decodeGrid
     """
+    if isinstance(super_gdid, dict):
+        try:
+            super_gdid = super_gdid['id']
+        except:
+            pass
     nsubgrids = ezget_nsubgrids(super_gdid)
     cgridlist = _np.empty(nsubgrids, dtype=_np.intc, order='FORTRAN')
     istat = _rp.c_ezget_subgridids(super_gdid, cgridlist)
@@ -513,8 +587,9 @@ def ezgprm(gdid, doSubGrid=False):
     gridParams = ezgprm(gdid)
     
     Args:
-        gdid      : id of the grid (int)
-        doSubGrid : recurse
+        gdid      : id of the grid (int or dict)
+                    Dict with key 'id' is accepted from version 2.0.rc1 
+        doSubGrid : recurse on subgrids if True
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -535,15 +610,32 @@ def ezgprm(gdid, doSubGrid=False):
     Examples:
     >>> import rpnpy.librmn.all as rmn
 
+    >>> # Define a LatLon grid
+    >>> (grtyp, lat0, lon0, dlat, dlon) = ('L', 45., 273., 0.5, 0.5)
+    >>> (ig1, ig2, ig3, ig4) = rmn.cxgaig(grtyp, lat0, lon0, dlat, dlon)
+    >>> gid = rmn.ezqkdef(90, 45, grtyp, ig1, ig2, ig3, ig4)
+
+    >>> # Get grid info from any grid id
+    >>> params = rmn.ezgprm(gid)
+    >>> print("Grid type=%s of size=%d, %d" %
+              (params['grtyp'], params['ni'], params['nj']))
+
     See Also:
         ezgxprm
         ezgfstp
         gdgaxes
         ezget_nsubgrids
         ezget_subgridids
+        ezqkdef
+        rpnpy.librmn.base.cxgaig
         rpnpy.librmn.grids.decodeGrid
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("ezgprm: expecting args of type int, Got %s" %
                         (type(gdid)))
     (cni, cnj) = (_ct.c_int(), _ct.c_int())
@@ -582,7 +674,9 @@ def ezgxprm(gdid, doSubGrid=False):
     gridParams = ezgxprm(gdid)
     
     Args:
-        gdid (int): id of the grid
+        gdid      : id of the grid (int or dict)
+                    Dict with key 'id' is accepted from version 2.0.rc1 
+        doSubGrid : recurse on subgrids if True
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -607,7 +701,42 @@ def ezgxprm(gdid, doSubGrid=False):
         EzscintError on any other error
         
     Examples:
+    >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
+
+    >>> # Define a Z/E grid
+    >>> (ni,nj) = (90, 45)
+    >>> gp = {
+            'shape' : (ni,nj),
+            'ni' : ni,
+            'nj' : nj,
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 0.,
+            'xlon2' : 270.,
+            'dlat' : 0.25,
+            'dlon' : 0.25,
+            'lat0' : 45.,
+            'lon0' : 273.
+            }
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
+                            gp['xlat2'], gp['xlon2'])
+    >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
+    >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
+    >>> for i in xrange(ni):
+    >>>     gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in xrange(nj):
+    >>>     gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
+                              ig1234[0], ig1234[1], ig1234[2], ig1234[3],
+                              gp['ax'], gp['ay'])
+
+    >>> # Get grid info
+    >>> params = rmn.ezgxprm(gid)
+    >>> print("Grid type=%s/%s of size=%d, %d" %
+              (params['grtyp'], params['grref'], params['ni'], params['nj']))
 
     See Also:
         ezgprm
@@ -615,9 +744,17 @@ def ezgxprm(gdid, doSubGrid=False):
         gdgaxes
         ezget_nsubgrids
         ezget_subgridids
+        ezgdef_fmem
+        rpnpy.librmn.base.cxgaig
         rpnpy.librmn.grids.decodeGrid
+        rpnpy.librmn.grids.readGrid
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("ezgxprm: expecting args of type int, Got %s" %
                         (type(gdid)))
     (cni, cnj) = (_ct.c_int(), _ct.c_int())
@@ -666,7 +803,8 @@ def ezgfstp(gdid):
     recParams = ezgfstp(gdid)
     
     Args:
-        gdid (int): id of the grid
+        gdid : grid id (int or dict)
+               Dict with key 'id' is accepted from version 2.0.rc1 
     Returns:
         {
             'id'    : grid id, same as input arg
@@ -689,7 +827,21 @@ def ezgfstp(gdid):
         EzscintError on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+
+    >>> # Read source data and define its grid
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> myfile = os.path.join(ATM_MODEL_DFILES,'bcmk','geophy.fst')
+    >>> funit  = rmn.fstopenall(myfile)
+    >>> meRec  = rmn.fstlir(funit, nomvar='ME')
+    >>> meGrid = rmn.readGrid(funit, meRec)
+    >>> rmn.fstcloseall(funit)
+
+    >>> # Get standard file attributes of the positional records
+    >>> params = rmn.ezgfstp(meGrid['id'])
+    >>> print("%s grid axes are in %s and %s records" %
+              (meRec['nomvar'], params['nomvarx'], params['nomvary']))
 
     See Also:
         ezgprm
@@ -698,8 +850,17 @@ def ezgfstp(gdid):
         ezget_nsubgrids
         ezget_subgridids
         rpnpy.librmn.grids.decodeGrid
+        rpnpy.librmn.grids.readGrid
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstcloseall
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("ezgfstp: expecting args of type int, Got %s" %
                         (type(gdid)))
     (ctypvarx, cnomvarx, cetikx) = (C_MKSTR(' '*_rc.FST_TYPVAR_LEN),
@@ -739,12 +900,18 @@ def gdgaxes(gdid, ax=None, ay=None):
     Gets the deformation axes of the Z, Y, # grids
     
     gridAxes = gdgaxes(gdid)
-    gridAxes = gdgaxes(gdid, gridAxes)
     gridAxes = gdgaxes(gdid, ax, ay)
+    gridAxes = gdgaxes(gdid, gridAxes)
+    gridAxes = gdgaxes(griddict)
+    
     Args:
         gdid     : id of the grid (int)
-        gridAxes : grid axes dictionary, same as return gridAxes (dict)
-        ax, ay   : 2 pre-allocated grid axes arrays (numpy.ndarray)
+        ax, ay   : (optional) 2 pre-allocated grid axes arrays (numpy.ndarray)
+        gridAxes : (optional) gridAxes['ax'] and gridAxes['ay'] are
+                   2 pre-allocated grid axes arrays (numpy.ndarray)
+        griddict : dict with minimally key 'id' as id of the grid
+                   optionnaly keys 'ax' and 'ay' can be provided as
+                   2 pre-allocated grid axes arrays (numpy.ndarray)
     Returns:
         {
             'id' : grid id, same as input arg
@@ -756,20 +923,49 @@ def gdgaxes(gdid, ax=None, ay=None):
         EzscintError on any other error
         
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
+
+    >>> # Get grid for ME record in file
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+    >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
+    >>> funit  = rmn.fstopenall(myfile)
+    >>> rec    = rmn.fstlir(funit, nomvar='ME')
+    >>> rec['iunit'] = funit
+    >>> gridid = rmn.ezqkdef(rec)
+    >>> rmn.fstcloseall(funit)
+
+    >>> # Get axes values for the grid
+    >>> axes = rmn.gdgaxes(gridid)
+    >>> print("Got grid axes of shape: %s, %s" %
+              (str(axes['ax'].shape), str(axes['ay'].shape)))
 
     See Also:
         ezgprm
         ezgxprm
-        ezgfstp        
+        ezgfstp
         ezget_nsubgrids
         ezget_subgridids
+        ezqkdef
         rpnpy.librmn.grids.decodeGrid
+        rpnpy.librmn.grids.readGrid
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstcloseall
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        if ax is None and 'ax' in gdid.keys():
+            ax = gdid['ax']
+        if ay is None and 'ay' in gdid.keys():
+            ay = gdid['ay']
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("gdgaxes: expecting args of type int, Got %s" %
                         (type(gdid)))
-    if type(ax) == dict:
+    if isinstance(ax, dict):
         gridAxes = ax
         try:
             ax = gridAxes['ax']
@@ -821,12 +1017,18 @@ def gdll(gdid, lat=None, lon=None):
     Gets the latitude/longitude position of grid 'gdid'
     
     gridLatLon = gdll(gdid)
-    gridLatLon = gdll(gdid, gridLatLon)
     gridLatLon = gdll(gdid, lat, lon)
+    gridLatLon = gdll(gdid, gridLatLon)
+    gridLatLon = gdll(griddict)
+    
     Args:
         gdid       : id of the grid (int)
-        gridLatLon : grid lat, lon dictionary, same as return gridLatLon (dict)
-        lat, lon    : 2 pre-allocated lat, lon arrays (numpy.ndarray)
+        lat, lon   : (optional) 2 pre-allocated lat, lon arrays (numpy.ndarray)
+        gridLatLon : (optional) gridLatLon['lat'], gridLatLon['lon'] are
+                     2 pre-allocated lat, lon arrays (numpy.ndarray)
+        griddict   : dict with minimally key 'id' as id of the grid
+                     optionnaly keys 'lat' and 'lon' can be provided as
+                     2 pre-allocated lat, lon arrays (numpy.ndarray)
     Returns:
         {
             'id'  : grid id, same as input arg
@@ -842,10 +1044,19 @@ def gdll(gdid, lat=None, lon=None):
 
     See Also:
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        if lat is None and 'lat' in gdid.keys():
+            lat = gdid['lat']
+        if lon is None and 'lon' in gdid.keys():
+            lon = gdid['lon']
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("gdll: expecting args of type int, Got %s" %
                         (type(gdid)))
-    if type(lat) == dict:
+    if isinstance(lat, dict):
         gridLatLon = lat
         try:
             lat = gridLatLon['lat']
@@ -881,15 +1092,21 @@ def gdll(gdid, lat=None, lon=None):
     raise EzscintError()
 
 
-def gdxyfll(gdid, lat, lon):
+def gdxyfll(gdid, lat=None, lon=None):
     """
     Returns the x-y positions of lat lon points on grid 'gdid'
     
     pointXY = gdxyfll(gdid, lat, lon)
+    pointXY = gdxyfll(griddict, lat, lon)
+    pointXY = gdxyfll(griddict)
     
     Args:
         gdid     : id of the grid (int)
-        lat, lon  : list of points lat, lon (list, tuple or numpy.ndarray)
+        lat, lon : list of points lat, lon (list, tuple or numpy.ndarray)
+        griddict : dict with keys
+                   'id'  : id of the grid (int)
+                   'lat' : (optional) list of points lon (list, tuple or numpy.ndarray)
+                   'lon' : (optional) list of points lon (list, tuple or numpy.ndarray)
     Returns:
         {
             'id' : grid id, same as input arg
@@ -905,24 +1122,33 @@ def gdxyfll(gdid, lat, lon):
 
     See Also:
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        if lat is None and 'lat' in gdid.keys():
+            lat = gdid['lat']
+        if lon is None and 'lon' in gdid.keys():
+            lon = gdid['lon']
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("gdxyfll: expecting args of type int, Got %s" %
                         (type(gdid)))
     (clat, clon) = lat, lon
-    if type(lat) in (list, tuple):
+    if isinstance(lat, (list, tuple)):
         clat = _np.asfortranarray(lat, dtype=_np.float32)
     elif type(lat) == _np.ndarray:
         if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
             clat = _np.asfortranarray(lat, dtype=_np.float32)
     else:
-        raise TypeError("y: provided lat must be arrays")
-    if type(lon) in (list, tuple):
+        raise TypeError("lat: provided lat must be arrays")
+    if isinstance(lon, (list, tuple)):
         clon = _np.asfortranarray(lon, dtype=_np.float32)
     elif type(lon) == _np.ndarray:
         if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
             clon = _np.asfortranarray(lon, dtype=_np.float32)
     else:
-        raise TypeError("y: provided lon must be arrays")
+        raise TypeError("lon: provided lon must be arrays")
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat, lon should have the same size")
     cx = _np.empty(clat.shape, dtype=_np.float32, order='FORTRAN')
@@ -939,16 +1165,22 @@ def gdxyfll(gdid, lat, lon):
     raise EzscintError()
 
 
-def gdllfxy(gdid, xpts, ypts):
+def gdllfxy(gdid, xpts=None, ypts=None):
     """
     Returns the lat-lon coordinates of data
     located at positions x-y on grid GDID
     
-     pointLL = gdllfxy(gdid, xpts, ypts)
+    pointLL = gdllfxy(gdid, xpts, ypts)
+    pointLL = gdllfxy(griddict, xpts, ypts)
+    pointLL = gdllfxy(griddict)
      
     Args:
         gdid       : id of the grid (int)
         xpts, ypts : list of points x, y coor (list, tuple or numpy.ndarray)
+        griddict   : dict with keys
+                     'id'   : id of the grid (int)
+                     'xpts' : (optional) list of points x coor (list, tuple or numpy.ndarray)
+                     'ypts' : (optional) list of points y coor (list, tuple or numpy.ndarray)
     Returns:
         {
             'id'  : grid id, same as input arg
@@ -964,18 +1196,27 @@ def gdllfxy(gdid, xpts, ypts):
 
     See Also:
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        if xpts is None and 'xpts' in gdid.keys():
+            xpts = gdid['xpts']
+        if ypts is None and 'ypts' in gdid.keys():
+            ypts = gdid['ypts']
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("gdllfxy: expecting args of type int, Got %s" %
                         (type(gdid)))
     (cx, cy) = (xpts, ypts)
-    if type(cx) in (list, tuple):
+    if  isinstance(cx,  (list, tuple)):
         cx = _np.asfortranarray(xpts, dtype=_np.float32)
     elif type(cx) == _np.ndarray:
         if not (cx.dtype == _np.float32 and cx.flags['F_CONTIGUOUS']):
             cx = _np.asfortranarray(xpts, dtype=_np.float32)
     else:
         raise TypeError("y: provided xpts must be arrays")
-    if type(cy) in (list, tuple):
+    if  isinstance(cy,  (list, tuple)):
         cy = _np.asfortranarray(ypts, dtype=_np.float32)
     elif type(cy) == _np.ndarray:
         if not (cy.dtype == _np.float32 and cy.flags['F_CONTIGUOUS']):
@@ -1005,10 +1246,15 @@ def gdgetmask(gdid, mask=None):
 
     mask = gdgetmask(gdid)
     mask = gdgetmask(gdid, mask)
+    mask = gdgetmask(griddict, mask)
+    mask = gdgetmask(griddict)
     
     Args:
-        gdid : id of the grid (int)
-        mask : mask array (numpy.ndarray)
+        gdid     : id of the grid (int)
+        mask     : mask array (numpy.ndarray)
+        griddict : dict with keys
+                   'id'   : id of the grid (int)
+                   'mask' : (optional) mask array (numpy.ndarray)
     Returns:
         mask array (numpy.ndarray)
     Raises:
@@ -1020,7 +1266,14 @@ def gdgetmask(gdid, mask=None):
 
     See Also:
     """
-    if not (type(gdid) == int):
+    if isinstance(gdid, dict):
+        if mask is None and 'mask' in gdid.keys():
+            mask = gdid['mask']
+        try:
+            gdid = gdid['id']
+        except:
+            pass
+    if not isinstance(gdid, int):
         raise TypeError("gdgetmask: expecting args of type int, Got %s" %
                         (type(gdid)))
     gridParams = ezgxprm(gdid)
@@ -1050,7 +1303,7 @@ def gdgetmask(gdid, mask=None):
 
 #---- Interpolation Functions
 
-
+#TODO: ezsint, when given dict for grids, return dict then?
 def ezsint(gdidout, gdidin, zin, zout=None):
     """
     Scalar horizontal interpolation
@@ -1059,8 +1312,10 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     zout = ezsint(gdidout, gdidin, zin, zout)
 
     Args:
-        gdidout : output grid id
-        gdidid  : grid id describing zin grid
+        gdidout : output grid id (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
+        gdidid  : grid id describing zin grid (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
         zin     : data to interpolate (numpy.ndarray)
         zout    : optional, interp.result array (numpy.ndarray)
     Returns:
@@ -1074,6 +1329,16 @@ def ezsint(gdidout, gdidin, zin, zout=None):
 
     See Also:
     """
+    if isinstance(gdidout, dict):
+        try:
+            gdidout = gdidout['id']
+        except:
+            pass
+    if isinstance(gdidin, dict):
+        try:
+            gdidin = gdidin['id']
+        except:
+            pass
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(zin) == _np.ndarray):
         raise TypeError("ezsint: expecting args of type numpy.ndarray, " +
@@ -1102,6 +1367,7 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     raise EzscintError()
 
     
+#TODO: ezuvint, when given dict for grids, return dict then?
 def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     """
     Vectorial horizontal interpolation
@@ -1110,12 +1376,14 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     (uuout, vvout) = ezuvint(gdidout, gdidin, uuin, vvin, uuout, vvout)
 
     Args:
-        gdidout : output grid id
-        gdidid  : grid id describing uuin grid
-        uuin     : data x-part to interpolate (numpy.ndarray)
-        vvin     : data y-part to interpolate (numpy.ndarray)
-        uuout    : interp.result array x-part (numpy.ndarray)
-        vvout    : interp.result array y-part (numpy.ndarray)
+        gdidout : output grid id (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
+        gdidid  : grid id describing uuin grid (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
+        uuin    : data x-part to interpolate (numpy.ndarray)
+        vvin    : data y-part to interpolate (numpy.ndarray)
+        uuout   : interp.result array x-part (numpy.ndarray)
+        vvout   : interp.result array y-part (numpy.ndarray)
     Returns:
         interpolation result (numpy.ndarray, numpy.ndarray)
     Raises:
@@ -1127,6 +1395,16 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
 
     See Also:
     """
+    if isinstance(gdidout, dict):
+        try:
+            gdidout = gdidout['id']
+        except:
+            pass
+    if isinstance(gdidin, dict):
+        try:
+            gdidin = gdidin['id']
+        except:
+            pass
     gridsetid = ezdefset(gdidout, gdidin)
     if not (type(uuin) == _np.ndarray and type(vvin) == _np.ndarray):
         raise TypeError("ezuvint: expecting args of type numpy.ndarray, " +
@@ -1168,7 +1446,8 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
     zout = gdllsval(gdid, lat, lon, zin, zout)
 
     Args:
-        gdid    : id of the grid (int)
+        gdid    : id of the grid (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
         lat     : list of resquested points lat  (numpy.ndarray)
         lon     : list of resquested points lon  (numpy.ndarray)
         zin     : data to interpolate, on grid gdid (numpy.ndarray)
@@ -1185,6 +1464,11 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
 
     See Also:
     """
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
     if not isinstance(zin, _np.ndarray):
         raise TypeError("gdllsval: expecting zin arg of type numpy.ndarray, " +
                         "Got %s" % (type(zin)))
@@ -1231,9 +1515,10 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
     zout = gdxysval(gdid, xpts, ypts, zin, zout)
 
     Args:
-        gdid    : id of the grid (int)
-        xpts     : list of resquested points x-coor  (numpy.ndarray)
-        ypts     : list of resquested points y-coor  (numpy.ndarray)
+        gdid    : id of the grid (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
+        xpts    : list of resquested points x-coor  (numpy.ndarray)
+        ypts    : list of resquested points y-coor  (numpy.ndarray)
         zin     : data to interpolate, on grid gdid (numpy.ndarray)
         zout    : optional, interp.result array, same shape a xpts, ypts
                   (numpy.ndarray)
@@ -1248,6 +1533,11 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
 
     See Also:
     """
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
     if not isinstance(zin, _np.ndarray):
         raise TypeError("gdxysval: expecting zin arg of type numpy.ndarray, " +
                         "Got %s" % (type(zin)))
@@ -1296,7 +1586,8 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
     (uuout, vvout) = gdllsval(gdid, lat, lon, uuin, vvin, uuout, vvout)
 
     Args:
-        gdid    : id of the grid (int)
+        gdid    : id of the grid (int or dict)
+                  Dict with key 'id' is accepted from version 2.0.rc1 
         lat     : list of resquested points lat  (numpy.ndarray)
         lon     : list of resquested points lon  (numpy.ndarray)
         uuin, vvin   : data to interpolate, on grid gdid (numpy.ndarray)
@@ -1314,6 +1605,11 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
 
     See Also:
     """
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
     if not isinstance(uuin, _np.ndarray):
         raise TypeError("gdllvval: expecting uuin arg of type numpy.ndarray, " +
                         "Got %s" % (type(uuin)))
@@ -1381,7 +1677,8 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
     (uuout, vvout) = gdxysval(gdid, xpts, ypts, uuin, vvin, uuout, vvout)
 
     Args:
-        gdid    : id of the grid (int)
+        gdid     : id of the grid(int or dict)
+                   Dict with key 'id' is accepted from version 2.0.rc1 
         xpts     : list of resquested points x-coor  (numpy.ndarray)
         ypts     : list of resquested points y-coor  (numpy.ndarray)
         uuin     : data to interpolate, on grid gdid (numpy.ndarray)
@@ -1398,6 +1695,11 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
 
     See Also:
     """
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
     if not isinstance(uuin, _np.ndarray):
         raise TypeError("dgxyvval: expecting uuin arg of type numpy.ndarray, " +
                         "Got %s" % (type(uuin)))
@@ -1474,7 +1776,8 @@ def gdrls(gdid):
     gdrls(gdid)
 
     Args:
-        gdid : grid id to free/release
+        gdid : grid id to free/release (int, list or dict)
+               Dict with key 'id' is accepted from version 2.0.rc1 
     Returns:
         None
     Raises:
@@ -1486,10 +1789,15 @@ def gdrls(gdid):
 
     See Also:
     """
+    if isinstance(gdid, dict):
+        try:
+            gdid = gdid['id']
+        except:
+            pass
     if not isinstance(gdid, (list, tuple)):
         gdid = [gdid]
     for id1 in gdid:
-        if not (type(id1) == int):
+        if not isinstance(id1, int):
             raise TypeError("gdrls: Expecting gdid of type int, Got %s" %
                             (type(id1)))
         istat = _rp.c_gdrls(id1)
