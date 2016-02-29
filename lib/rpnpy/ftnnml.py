@@ -3,7 +3,9 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-Module ftnnml contains the classes used to manipulate fortran namelist files
+Module ftnnml contains the classes used to manipulate fortran namelist files,
+extract/get values, get list of namelists and vars, beautify,
+set/rename vat values, create new namelist, delete values or namelists, ... 
 """
 
 ## Profiling: python -m cProfile -- ./bin/getnml2 -l -f phydict.nml
@@ -19,9 +21,9 @@ import sys
 __VERSION__     = '1.0.1'
 __LASTUPDATED__ = '2016-02-16'
 
-isListType   = lambda x: type(x) in (type([]),type((1,)))
-isStringType = lambda x: type(x) == type("")
-cleanName    = lambda x: x.lower().replace('\n',' ').strip()
+_islisttype   = lambda x: isinstance(x, (list, tuple))
+_isstringtype = lambda x: isinstance(x, str)
+_cleanName    = lambda x: x.lower().replace('\n',' ').strip()
 
 class FtnNmlObj(object):
     """
@@ -100,12 +102,12 @@ class FtnNmlObj(object):
         changeCase = lambda x: x
         if uplowcase: 
             changeCase = lambda x: x.lower()
-            if isStringType(uplowcase) and uplowcase[0].lower() == 'u':
+            if _isstringtype(uplowcase) and uplowcase[0].lower() == 'u':
                 changeCase = lambda x: x.upper()                
         return changeCase(mystr.lstrip() if clean else mystr)
 
     def __init__(self,name):
-        (self.name, self.data) = (cleanName(name), [])
+        (self.name, self.data) = (_cleanName(name), [])
         self.prop = { #Start SepS Sep1 data End SepE
             'strStart' : name,
             'strSepS'  : '',
@@ -116,7 +118,7 @@ class FtnNmlObj(object):
 
     def rename(self,name):
         """Properly set name of object (please avoid obj.name = 'name')"""
-        (self.name, self.prop['strStart']) = (cleanName(name), name)
+        (self.name, self.prop['strStart']) = (_cleanName(name), name)
 
     def get(self,name=None):
         """Return sub object with given name
@@ -135,14 +137,14 @@ class FtnNmlObj(object):
         name = (namedata if data else None)
         if not data: data = namedata
         if name: self.get(name).set(data)
-        else:    self.data = (data if isListType(data) else [data])
+        else:    self.data = (data if _islisttype(data) else [data])
 
     def add(self,data=None):
         if not isinstance(data,self.allowedSubClass):
             raise TypeError(" (%s) Oops! add, provided data is of wrong type: %s(accepting: %s)"
                             % (self.__class__.__name__, str(type(data)),
                                str(self.allowedSubClass)))
-        if cleanName(data.name) in self.keys():
+        if _cleanName(data.name) in self.keys():
             raise KeyError(" (%s) Oops! add, Key already exists: %s"
                            % (self.__class__.__name__,data.name))
         self.data.append(data)
@@ -160,7 +162,7 @@ class FtnNmlObj(object):
                                % (self.__class__.__name__,name))
 
     def keyIndex(self,name):
-        (name2, myindex) = (cleanName(name), -1)
+        (name2, myindex) = (_cleanName(name), -1)
         for item in self.data:
             myindex += 1
             if isinstance(item,FtnNmlObj) and item.name == name2:
@@ -205,7 +207,7 @@ class FtnNmlObj(object):
     def toStr(self,clean=False,uplowcase=None,updnsort=None):
         """Return String representation of the FtnNml Object, recursively"""
         if updnsort: clean=True
-        data = (self.data if isListType(self.data) else [self.data])
+        data = (self.data if _islisttype(self.data) else [self.data])
         if clean: data = [s for s in data if type(s) != type(' ')]
         if updnsort:
             datakeys = []
@@ -247,7 +249,7 @@ class FtnNmlVal(FtnNmlObj):
         return "%s(d=%s)" % (self.__class__.__name__,repr(self.data))
 
     def toStr(self,clean=False,uplowcase=None,updnsort=None):
-        data = (self.data[0] if isListType(self.data) else self.data)
+        data = (self.data[0] if _islisttype(self.data) else self.data)
         if clean: return str(data).replace('\n','')
         else:     return str(data)
         
@@ -318,7 +320,7 @@ class FtnNmlSection(FtnNmlObj):
             self.prop['strStart'] = name
         else:
             self.prop['strStart'] = '&'+name.lstrip().replace('\n','')
-        self.name = cleanName(self.prop['strStart'].replace('&',''))
+        self.name = _cleanName(self.prop['strStart'].replace('&',''))
 
 
 class FtnNmlFile(FtnNmlObj):

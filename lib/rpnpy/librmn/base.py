@@ -16,14 +16,14 @@ from . import proto as _rp
 from . import const as _rc
 from . import RMNError
 
-C_MKSTR = _ct.create_string_buffer
-C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+_C_MKSTR = _ct.create_string_buffer
+_C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 
-C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
-C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
+_C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
+_C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
 
-IS_LIST = lambda x: type(x) in (list, tuple)
-IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
+_IS_LIST = lambda x: isinstance(x, (list, tuple))
+_IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
 class RMNBaseError(RMNError):
     """
@@ -38,7 +38,7 @@ class RMNBaseError(RMNError):
     >>> try:
     >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting decoded grid values.\n")
+    >>>     sys.stderr.write("There was a problem getting decoded grid values.")
 
     See also:
         rpnpy.librmn.RMNError
@@ -71,12 +71,12 @@ def fclos(iunit):
     >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
     >>>     rmn.fclos(iunit)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
+    >>>     sys.stderr.write("There was a problem opening/closing the file: %s" % (filename))
     
     See also:
        fnom
        rpnpy.librmn.fstd98.fstopenall
-       rpnpy.librmn.fstd98.closeall
+       rpnpy.librmn.fstd98.fstcloseall
     """
     if not (type(iunit) == int):
         raise TypeError("fcols: Expecting arg of type int, Got %s" %
@@ -120,7 +120,7 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
        fclos
        rpnpy.librmn.fstd98.isFST
        rpnpy.librmn.fstd98.fstopenall
-       rpnpy.librmn.fstd98.closeall
+       rpnpy.librmn.fstd98.fstcloseall
        rpnpy.librmn.const
     """
     if not (type(iunit) == int):
@@ -139,7 +139,7 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
         raise TypeError("fnom: Expecting arg filemode of type str, Got %s" %
                         (type(filemode)))
     istat = _rp.c_fnom(_ct.byref(ciunit), filename, filemode, 0)
-    istat = C_TOINT(istat)
+    istat = _C_TOINT(istat)
     if istat < 0:
         raise RMNBaseError()
     return ciunit.value
@@ -205,7 +205,7 @@ def wkoffit(filename):
     >>>     for k in rmn.WKOFFIT_TYPE_LIST.keys():
     >>>         if type == rmn.WKOFFIT_TYPE_LIST[k]: print k
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting file type for: %s\n" % (filename))
+    >>>     sys.stderr.write("There was a problem getting file type for: %s" % (filename))
 
     See also:
        rpnpy.librmn.fstd98.isFST
@@ -240,7 +240,7 @@ def crc32(crc, buf):
     >>>     buf = np.array([4,3,7,1,9],dtype=np.uint32)
     >>>     crc = rmn.crc32(0,buf)
     >>> except:
-    >>>     sys.stderr.write("There was a problem computing CRC value.\n")
+    >>>     sys.stderr.write("There was a problem computing CRC value.")
     """
     if not (buf.dtype == _np.uint32 and buf.flags['F_CONTIGUOUS']):
         buf = _np.asfortranarray(buf, dtype=_np.uint32)
@@ -275,7 +275,7 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
     >>> try:
     >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting decoded grid values.\n")
+    >>>     sys.stderr.write("There was a problem getting decoded grid values.")
     
     See also:
        cxgaig
@@ -293,7 +293,7 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
         raise ValueError("cigaxg: must provide a valid grtyp")
     (cig1, cig2, cig3, cig4) = (_ct.c_int(ig1), _ct.c_int(ig2),
                                 _ct.c_int(ig3), _ct.c_int(ig4))            
-    if IS_LIST(ig1):
+    if _IS_LIST(ig1):
         (cig1, cig2, cig3, cig4) = (_ct.c_int(ig1[0]), _ct.c_int(ig1[1]),
                                     _ct.c_int(ig1[2]), _ct.c_int(ig1[3]))
     (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(0.), _ct.c_float(0.),
@@ -334,10 +334,10 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     >>> try:
     >>>     ig1234 = rmn.cxgaig('L',-89.5,180.0,0.5,0.5)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write(There was a problem getting encoded grid values.\n")
+    >>>     sys.stderr.write(There was a problem getting encoded grid values.")
     
     See also:
-       cigaig
+       cigaxg
        rpnpy.librmn.interp.ezgprm
        rpnpy.librmn.interp.ezgxprm
        rpnpy.librmn.grids.decodeIG2dict
@@ -352,7 +352,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
         raise ValueError("cigaxg: must provide a valid grtyp")
     (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(xg1), _ct.c_float(xg2),
                                 _ct.c_float(xg3), _ct.c_float(xg4))
-    if IS_LIST(xg1):
+    if _IS_LIST(xg1):
         (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(xg1[0]), _ct.c_float(xg1[1]),
                                     _ct.c_float(xg1[2]), _ct.c_float(xg1[3]))
     (cig1, cig2, cig3, cig4) = (_ct.c_int(0), _ct.c_int(0),
@@ -389,7 +389,7 @@ def incdatr(idate, nhours):
     >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
     >>>     idate2 = rmn.incdatr(idate1,nhours0)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem computing increased date.\n")
+    >>>     sys.stderr.write("There was a problem computing increased date.")
     
     See also:
         newdate
@@ -440,7 +440,7 @@ def difdatr(idate1, idate2):
     >>>     idate2 = rmn.incdatr(idate1,nhours0)
     >>>     nhours = rmn.difdatr(idate2,idate1)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem computing date diff.\n")
+    >>>     sys.stderr.write("There was a problem computing date diff.")
     
     See also:
         newdate
@@ -514,9 +514,9 @@ def newdate_options_get(option):
         accept_leapyear
         newdate
     """
-    cmd = C_MKSTR('get ')
-    optionv = C_MKSTR(option.strip()+' '*32)
-    #optionv = C_MKSTR('year            ')
+    cmd = _C_MKSTR('get ')
+    optionv = _C_MKSTR(option.strip()+' '*32)
+    #optionv = _C_MKSTR('year            ')
     _rp.f_newdate_options(optionv, cmd, len(optionv.value), len(cmd.value))
     return optionv.value.strip()
 
@@ -613,10 +613,10 @@ def newdate(imode, idate1, idate2=0):
         ValueError on invalid input arg value
         RMNBaseError on any other error
 
-    Notes:
-        Options details if 
+    Details:
+       Options details if 
            outdate = newdate(imode, idate1, idate2)
-
+       
        imode CAN TAKE THE FOLLOWING VALUES:
           -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7
        imode=1 : STAMP TO (TRUE_DATE AND RUN_NUMBER)
@@ -696,7 +696,7 @@ def newdate(imode, idate1, idate2=0):
     >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
     >>>     (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate1)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem encoding/decoding the date.\n")
+    >>>     sys.stderr.write("There was a problem encoding/decoding the date.")
     
     See also:
         accept_leapyear

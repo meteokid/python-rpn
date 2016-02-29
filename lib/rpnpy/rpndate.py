@@ -38,28 +38,28 @@ class RPNDate(object):
         TypeError  if parameters are wrong type
         ValueError if myRPNMeta
 
-   Examples:
+    Examples:
     >>> d1 = RPNDate(20030423, 11453500)
-    >>> d1
-    RPNDate(20030423, 11453500)
+    >>> print('# %s' % repr(d1))
+    # RPNDate(20030423, 11453500)
     >>> d2 = RPNDate(d1)
-    >>> d2
-    RPNDate(20030423, 11453500)
+    >>> print('# %s' % repr(d2))
+    # RPNDate(20030423, 11453500)
     >>> d2 += 48
-    >>> d2
-    RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
-    >>> d1-d2
-    -48.0
+    >>> print('# %s' % repr(d2))
+    # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
+    >>> print('# %s' % repr(d1-d2))
+    # -48.0
     >>> utc = pytz.timezone("UTC")
     >>> d4 = datetime.datetime(2003, 04, 23, 11, 45, 35, 0, tzinfo=utc)
     >>> d5 = RPNDate(d4)
-    >>> d5
-    RPNDate(20030423, 11453500)
+    >>> print('# %s' % repr(d5))
+    # RPNDate(20030423, 11453500)
     >>> d6 = d5.toDateTime()
-    >>> d6 == d4
-    True
-    >>> str(d5)
-    '20030423.11453500'
+    >>> print('# %s' % repr(d6 == d4))
+    # True
+    >>> print('# %s' % str(d5))
+    # 20030423.11453500
 
     See Also:
         RPNDateRange
@@ -242,10 +242,11 @@ class RPNDate(object):
         """Return RPNDate updated so that dateo=datev (dt=nstep=0)
 
         >>> d1 = RPNDate(20030423, 11000000, dt=1800, nstep=4)
-        >>> d1
-        RPNDate(20030423, 13000000) ; RPNDate(20030423, 11000000, dt=  1800.0, nstep=     4.0)
-        >>> d1.toDateO()
-        RPNDate(20030423, 13000000)
+        >>> print('# %s' % repr(d1))
+        # RPNDate(20030423, 13000000) ; RPNDate(20030423, 11000000, dt=  1800.0, nstep=     4.0)
+        >>> d2 = d1.toDateO()
+        >>> print('# %s' % repr(d2))
+        # RPNDate(20030423, 13000000)
         """
         RPNDate.update(self, dateo=self.datev, dt=0, nstep=0)
         return self
@@ -283,37 +284,48 @@ class RPNDateRange(object):
     Examples:
     >>> d1 = RPNDate(20030423, 11453500)
     >>> d2 = d1 + 48
-    >>> [d1, d2] #1
-    [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
+    >>> print('# %s' % repr([d1, d2]))
+    # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 6)
-    >>> dr #1
-    RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:6) at (20030423, 11453500)
-    >>> dr.length() #1
-    48.0
-    >>> dr.next() #1
-    RPNDate(20030423, 17453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     6.0)
-    >>> [d1, d2] #2 make sure d1, d2 where not changed
-    [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
+    >>> print('# %s' % repr(dr))
+    # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:6) at (20030423, 11453500)
+    >>> l = dr.length() #1
+    >>> print('# %s' % repr(l))
+    # 48.0
+    >>> x = dr.next() #1
+    >>> print('# %s' % repr(x))
+    # RPNDate(20030423, 17453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     6.0)
+    >>> print('# %s' % repr([d1, d2]))
+    # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 36)
-    >>> dr #2
-    RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:36) at (20030423, 11453500)
-    >>> dr.next() #2
-    RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
+    >>> print('# %s' % repr(dr))
+    # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:36) at (20030423, 11453500)
+    >>> x = dr.next() #2
+    >>> print('# %s' % repr(x))
+    # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
     >>> dr.next() #raise
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-      File "rpndate.py", line 313, in next
-        raise StopIteration
-    StopIteration
-    >>> [d1, d2] #3 make sure d1, d2 where not changed
-    [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
+    # Traceback (most recent call last):
+    #   File "<stdin>", line 1, in <module>
+    #   File "rpndate.py", line 313, in next
+    #     raise StopIteration
+    # StopIteration
+    >>> print('# %s' % repr([d1, d2]))  #3 make sure d1, d2 where not changed
+    # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 12)
-    >>> dr #3
-    RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:12) at (20030423, 11453500)
-    >>> [d4 for d4 in dr] #iterator test 1
-    [RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0), RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0), RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0), RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
-    >>> [d4 for d4 in dr] #iterator test 2 (should start over)
-    [RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0), RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0), RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0), RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
+    >>> print('# %s' % repr(dr)) #3
+    # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:12) at (20030423, 11453500)
+    >>> for d4 in dr: print('# %s' % repr(d4))
+    # RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0)
+    # RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0)
+    # RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0)
+    # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
+    # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
+    >>> for d4 in dr: print('# %s' % repr(d4)) #iterator test 2 (should start over)
+    # RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0)
+    # RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0)
+    # RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0)
+    # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
+    # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
 
     See Also:
         RPNDate

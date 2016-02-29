@@ -6,12 +6,14 @@
 # Copyright: LGPL 2.1
 
 """
-Module librmn_const defines constants for the librmn module
+Module librmn_const defines a set of helper constants to make code
+using the librmn module more readable.
 """
 import numpy  as _np
 
-# === primitives ===
-
+#=== primitives ===
+#<source lang=python>
+## Python dict with wkoffit file type codes
 WKOFFIT_TYPE_LIST = { #TODO:
     'INEXISTANT' : -3,
     'VIDE' : -2,
@@ -52,10 +54,10 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'STANDARD SEQUENTIEL 98' : 34,
     'NETCDF' : 35
     }
-#WKOFFIT_TYPE_LIST.__doc__ = 'Python dict with wkoffit file type codes'
+#</source>
+#=== base ===
 
-# === base ===
-
+#<source lang=python>
 NEWDATE_PRINT2TRUE  = 2
 NEWDATE_TRUE2PRINT  = -2
 NEWDATE_PRINT2STAMP = 3
@@ -64,11 +66,13 @@ NEWDATE_STAMP2PRINT = -3
 NEWDATE_OPT_360DAYS   = 'year=360_day'
 NEWDATE_OPT_365DAYS   = 'year=365_day'
 NEWDATE_OPT_GREGORIAN = 'year=gregorian'
+#</source>
 
-# === fstd98/fstd98 ===
+#=== fstd98/fstd98 ===
 
-# ==== fstopt (options) ====
+#==== fstopt (options) ====
 
+#<source lang=python>
 FSTOP_GET = 1
 FSTOP_SET = 0
 
@@ -102,18 +106,22 @@ FSTOPS_MSG_CATAST  = "CATAST"
 
 FSTOPS_TURBO_FAST  = "FAST"
 FSTOPS_TURBO_BEST  = "BEST"
+#</source>
 
-# ==== File mode ====
+#==== File mode ====
 
+#<source lang=python>
 FST_RW           = "RND+R/W"
 FST_RW_OLD       = "RND+R/W+OLD"
 FST_RO           = "RND+R/O"
 FILE_MODE_RO     = FST_RO
 FILE_MODE_RW_OLD = FST_RW_OLD
 FILE_MODE_RW     = FST_RW
+#</source>
 
-# ==== Metadata ====
+#==== Metadata ====
 
+#<source lang=python>
 ## Wildcards for search and replace
 FST_FIND_ANY_INT = -1
 FST_FIND_ANY_STR = ' '
@@ -153,9 +161,11 @@ FST_RDE_META_DEFAULT = {
     'xtra2' : 0,
     'xtra3' : 0
 }
+#</source>
 
-# ==== Data types ====
+#==== Data types ====
 
+#<source lang=python>
 ##     0: binary, transparent
 ##     1: floating point
 ##     2: unsigned integer
@@ -216,9 +226,11 @@ FST_DATYP2NUMPY_LIST64 = { #TODO: review
     #7: _np.uint8   , # character string
     8: _np.complex128 , # complex IEEE
 }
+#</source>
 
-# === Convip / Convert IP ===
+#=== Convip / Convert IP ===
 
+#<source lang=python>
 ## KIND = 0, hauteur (m) par rapport au niveau de la mer (-20, 000 -> 100, 000)
 ## KIND = 1, sigma   (0.0 -> 1.0)
 ## KIND = 2, p est en pression (mb)  (0 -> 1100)
@@ -266,9 +278,11 @@ CONVIP_P2IP_NEW    = 2 #CONVIP_STYLE_NEW = 2
 CONVIP_P2IP_OLD    = 3 #CONVIP_STYLE_OLD  = 3
 CONVIP_ENCODE      = CONVIP_P2IP_NEW
 CONVIP_ENCODE_OLD  = CONVIP_P2IP_OLD
+#</source>
 
-# === Interp (ezscint) ===
+#=== Interp (ezscint) ===
 
+#<source lang=python>
 EZ_YES = 'YES'
 EZ_NO = 'NO'
 
@@ -313,3 +327,4 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
+#</source>

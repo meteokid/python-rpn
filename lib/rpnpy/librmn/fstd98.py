@@ -21,14 +21,14 @@ from . import RMNError
 
 #---- helpers -------------------------------------------------------
 
-C_MKSTR = _ct.create_string_buffer
-C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
+_C_MKSTR = _ct.create_string_buffer
+_C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 
-C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
-C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
+_C_TOINT = lambda x: (x if (type(x) != type(_ct.c_int())) else x.value)
+_C_TOINT.__doc__ = 'lamda function to convert ctypes.c_int to python int'
 
-IS_LIST = lambda x: type(x) in (list, tuple)
-IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
+_IS_LIST = lambda x: isinstance(x, (list, tuple))
+_IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
 _linkedUnits = {}
 
@@ -365,7 +365,7 @@ def listToFLOATIP(rp1):
     """
     if isinstance(rp1, _rp.FLOAT_IP):
         return rp1
-    if not IS_LIST(rp1):
+    if not _IS_LIST(rp1):
         raise TypeError
     if not len(rp1) in (2, 3):
         raise TypeError()
@@ -929,7 +929,7 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     key2 = _rp.c_fstinfx(key, iunit, _ct.byref(cni), _ct.byref(cnj),
                          _ct.byref(cnk), datev, etiket, ip1, ip2, ip3,
                          typvar, nomvar)
-    ## key2 = C_TOINT(key2)
+    ## key2 = _C_TOINT(key2)
     if key2 < 0:
         return None
     ## fx = lambda x: (x.value if x.value>0 else 1)
@@ -1698,10 +1698,10 @@ def fstprm(key):
     (cdateo, cdeet, cnpas) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     (cnbits, cdatyp)       = (_ct.c_int(), _ct.c_int())
     (cip1, cip2, cip3)     = (_ct.c_int(), _ct.c_int(), _ct.c_int())
-    ctypvar                = C_MKSTR(' '*_rc.FST_TYPVAR_LEN)
-    cnomvar                = C_MKSTR(' '*_rc.FST_NOMVAR_LEN)
-    cetiket                = C_MKSTR(' '*_rc.FST_ETIKET_LEN)
-    cgrtyp                 = C_MKSTR(' '*_rc.FST_GRTYP_LEN)
+    ctypvar                = _C_MKSTR(' '*_rc.FST_TYPVAR_LEN)
+    cnomvar                = _C_MKSTR(' '*_rc.FST_NOMVAR_LEN)
+    cetiket                = _C_MKSTR(' '*_rc.FST_ETIKET_LEN)
+    cgrtyp                 = _C_MKSTR(' '*_rc.FST_GRTYP_LEN)
     (cig1, cig2, cig3, cig4)  = (_ct.c_int(), _ct.c_int(),
                                  _ct.c_int(), _ct.c_int())
     (cswa, clng, cdltf, cubc) = (_ct.c_int(), _ct.c_int(),
@@ -1717,7 +1717,7 @@ def fstprm(key):
         _ct.byref(cig3), _ct.byref(cig4),
         _ct.byref(cswa), _ct.byref(clng), _ct.byref(cdltf), _ct.byref(cubc),
         _ct.byref(cxtra1), _ct.byref(cxtra2), _ct.byref(cxtra3))
-    istat = C_TOINT(istat)
+    istat = _C_TOINT(istat)
     if istat < 0:
         raise FSTDError()
     datev = cdateo.value
@@ -2602,7 +2602,7 @@ def kindToString(kind):
     if kind < 0:
         raise ValueError("kindToString: must provide a valid iunit: %d" %
                          (kind))
-    (str1, str2) = (C_MKSTR(' '), C_MKSTR(' '))
+    (str1, str2) = (_C_MKSTR(' '), _C_MKSTR(' '))
     _rp.c_KindToString(kind, str1, str2)
     str12 = str1[0]+str2[0]
     if str12.strip() == '':

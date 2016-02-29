@@ -7,10 +7,10 @@ import unittest
 
 #--- primitives -----------------------------------------------------
 
-class ftnnmlTests(unittest.TestCase):
+## class ftnnmlTests(unittest.TestCase):
 
-    def testNeedSomeTests(self):
-        self.assertTrue(False)
+##     def testNeedSomeTests(self):
+##         self.assertTrue(False)
 
 def not_a_test():
     # Read the namelist file

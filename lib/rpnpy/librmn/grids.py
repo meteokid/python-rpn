@@ -1667,7 +1667,7 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
                setGridId=True):
     """
     Defines a YIN/YAN grid composed of 2 rotated LatLon
-       (cylindrical equidistant) Grids
+    (cylindrical equidistant) Grids
 
     gridParams = defGrid_YY(nj, overlap, xlat1, xlon1, xlat2, xlon2, setGridId)
     gridParams = defGrid_YY(nj, overlap, xlat1, xlon1, xlat2, xlon2)
