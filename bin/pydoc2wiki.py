@@ -12,24 +12,36 @@ import re
 import pydoc
 import inspect
 
+topnotes="""
+{{roundbox|
+The functions described below are a very close ''port'' from the original [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] packages.<br>
+You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] documentation for more details.
+}}
+"""
+
 tmpl = {}
 tmpl['head'] = """
 __NOTITLE__ 
 = Python RPN: @MODULE@ =
-{{:Python-RPN/2.0/navbox}} 
-@DESC@ 
+{{:Python-RPN/2.0/navbox}}
+{| style='background-color:white; border: 0px #fff solid; width=82%;'>
+|-
+|
+@DESC@
 {{roundbox|
 The functions described below are a very close ''port'' from the original [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] packages.<br>
 You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] and [[Vgrid]] documentation for more details.
 }}
 __TOC__
-
 @CLASS@
 @FUNC@
 @DATA@
 """
 
 tmpl['funclist'] = """== Functions ==
+{| class='wikitable'
+@SUMMARY@
+|}
 @DATA@
 """
 
@@ -184,7 +196,7 @@ def split_sections_title(mylinelist, myheaders={}):
         flag = False
         for k in myheaders.keys():
             v = myheaders[k]
-            if myline[0:len(v)] == v:
+            if myline[0:len(v)].lower() == v.lower():
                 key = k
                 flag = True
         if not flag:
@@ -281,7 +293,13 @@ class MyDocFileFunctionDict(MyDocFileDict):
         super(self.__class__, self).__init__(mystr, MyDocFileFunction)
 
     def toWiki(self, allSymbols=[], tmpl=tmpl['funclist'], inClass=False):
-        return super(self.__class__, self).toWiki(allSymbols, tmpl=tmpl, inClass=inClass)
+        mystr = super(self.__class__, self).toWiki(allSymbols, tmpl=tmpl, inClass=inClass)
+        s = ''
+        for x in sorted(self.keys()):
+            o = self[x]
+            s += '|-\n'
+            s += "| [[#%s|%s]] || %s \n" % (o['name'], o['name'], o['desc']['short'].strip())
+        return mystr.replace('@SUMMARY@', s.rstrip(' \n'))
 
 
 class MyDocFileClassDict(MyDocFileDict):
