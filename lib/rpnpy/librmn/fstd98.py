@@ -34,7 +34,7 @@ _linkedUnits = {}
 
 class FSTDError(RMNError):
     """
-    General fstd98 module error/exception
+    General librmn.fstd98 module error/exception
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
@@ -1006,7 +1006,7 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                          creclist, cnfound, nrecmax)
     ## if istat < 0:
     ##     raise FSTDError('fstinl: Problem searching record list')
-    if cnfound <= 0:
+    if cnfound.value <= 0:
         return []
     return creclist[0:cnfound.value].tolist()
 

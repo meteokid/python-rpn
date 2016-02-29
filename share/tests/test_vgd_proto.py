@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+#from __future__ import division
+
 import os
 import datetime
 import unittest
@@ -418,7 +420,7 @@ class VGDProtoTests(unittest.TestCase):
         levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
         ok = vgd.c_vgd_levels(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual([int(x) for x in levels[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
 
 
@@ -451,7 +453,7 @@ class VGDProtoTests(unittest.TestCase):
         rfld8[:,:] = rfld[:,:]
         ok = vgd.c_vgd_levels_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log);
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels8[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
 
 
@@ -482,7 +484,7 @@ class VGDProtoTests(unittest.TestCase):
         levels = np.empty((ni, nj, nip1.value), dtype=np.float32, order='FORTRAN')
         ok = vgd.c_vgd_diag_withref(vgd0ptr, ni, nj, nip1, ip1list, levels, rfld, in_log, vgd.VGD_DIAG_DPIS);
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual([int(x) for x in levels[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
 
 
@@ -515,7 +517,7 @@ class VGDProtoTests(unittest.TestCase):
         rfld8[:,:] = rfld[:,:]
         ok = vgd.c_vgd_diag_withref_8(vgd0ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, vgd.VGD_DIAG_DPIS)
         self.assertEqual(ok,vgd.VGD_OK)
-        self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels8[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
         
 

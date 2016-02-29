@@ -27,12 +27,13 @@ IS_LIST.__doc__ = 'lambda function to test if x is list or tuple'
 
 class RMNBaseError(RMNError):
     """
-    General RMNBase module error/exception
+    General librmn.base module error/exception
     
     To make your code handle errors in an elegant manner,
     you may want to catch that error with a 'try ... except' block.
 
     Examples:
+    >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
     >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)

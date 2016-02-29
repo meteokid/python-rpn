@@ -77,7 +77,7 @@ class RPNDate(object):
         if isinstance(mydate, datetime.datetime):
             (yyyy, mo, dd, hh, mn, ss, dummy, dummy2, dummy3) = \
                 mydate.utctimetuple()
-            cs = int(mydate.microsecond/10000)
+            cs = int(mydate.microsecond//10000)
             mydate = yyyy*10000+mo*100+dd
             hms = hh*1000000+mn*10000+ss*100+cs
             RPNDate.__init__(self, mydate, hms, dt=dt, nstep=nstep)

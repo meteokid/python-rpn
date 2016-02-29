@@ -381,7 +381,7 @@ class VGDBaseTests(unittest.TestCase):
         levels8 = vgd.vgd_levels(vgd0ptr, fileId)
         rmn.fstcloseall(fileId)
         (ni,nj,nk) = levels8.shape
-        self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels8[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
         self.assertEqual(len(levels8.shape),3)
         self.assertEqual(levels8.dtype,np.float32)
@@ -395,7 +395,7 @@ class VGDBaseTests(unittest.TestCase):
         levels8 = vgd.vgd_levels(vgd0ptr, fileId, double_precision=True)
         rmn.fstcloseall(fileId)
         (ni,nj,nk) = levels8.shape
-        self.assertEqual([int(x) for x in levels8[ni/2,nj/2,0:5]*10000.],
+        self.assertEqual([int(x) for x in levels8[ni//2,nj//2,0:5]*10000.],
                          [100000, 138425, 176878, 241408, 305980])
         self.assertEqual(len(levels8.shape),3)
         self.assertEqual(levels8.dtype,np.float64)
