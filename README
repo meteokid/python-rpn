@@ -18,8 +18,8 @@ make components_vfiles
 make alltests
 
 # Once tested you may send your code/patch 
-#	  (or path to your git clone after you commited your changes) 
-#	  to stephane.chamberland@ec.gc.ca
+#      (or path to your git clone after you commited your changes) 
+#      to stephane.chamberland@ec.gc.ca
 
 ==== Building ============================================================
 
@@ -39,16 +39,16 @@ rdemklink
 make components_ssm
 
 #For additional ARCH
-	  ssh MYMACH
-	  cd /PATH/
-	  . ./.setenv.dot --dev
-     export storage_model=${storage_model:-$TMPDIR}
-	  rdemklink
-	  #./bin/ouv_exp_rpnpy
-	  #make -j 8 components_objects
-	  #make components_libs 
-	  #make components_abs 
-	  make components_ssm_arch
+      ssh MYMACH
+      cd /PATH/
+      . ./.setenv.dot --dev
+      export storage_model=${storage_model:-$TMPDIR}
+      rdemklink
+      #./bin/ouv_exp_rpnpy
+      #make -j 8 components_objects
+      #make components_libs 
+      #make components_abs 
+      make components_ssm_arch
 
 ==== Installing ==========================================================
 
