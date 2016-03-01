@@ -12,15 +12,30 @@ main librmn's interp (ezscint) C functions
 
 import ctypes as _ct
 import numpy  as _np
-from . import proto as _rp
-from . import const as _rc
-from . import RMNError
+from rpnpy.librmn import proto as _rp
+from rpnpy.librmn  import const as _rc
+from rpnpy.librmn  import RMNError
 
 #TODO: make sure caller can provide allocated array (recycle mem)
 
 #---- helpers -------------------------------------------------------
 
-C_MKSTR = _ct.create_string_buffer
+_C_MKSTR = _ct.create_string_buffer
+
+def _getCheckArg(okTypes, value, valueDict, key):
+    if isinstance(valueDict, dict) and (value is None or value is valueDict):
+        if key in valueDict.keys():
+            value = valueDict[key]
+    if (okTypes is not None) and not isinstance(value, okTypes):
+        raise EzscintError('For %s type, Expecting %s, Got %s' % (key,repr(okTypes), type(value)))
+    return value
+
+_isftn = lambda x,t: x.dtype == t and x.flags['F_CONTIGUOUS']
+_ftn   = lambda x,t: x if _isftnf32(x) else _np.asfortranarray(x, dtype=t)
+_isftnf32 = lambda x: _isftn(x, _np.float32)
+_ftnf32   = lambda x: _ftn(x, _np.float32)
+_ftnOrEmpty = lambda x,s,t: _np.empty(s, dtype=t, order='FORTRAN') if x is None else _ftn(x,t)
+_list2ftnf32 = lambda x: x if isinstance(x, _np.ndarray) else _np.asfortranarray(x, dtype=_np.float32)
 
 class EzscintError(RMNError):
     """
@@ -32,10 +47,13 @@ class EzscintError(RMNError):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>    #... an librmn.interp operation ...
+    >>>    rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
     >>> except rmn.EzscintError:
     >>>    pass #ignore the error
-
+    >>> finally:
+    >>>    print("# Whatever happens, error or not, print this.")
+    # Whatever happens, error or not, print this.
+    
     See also:
         rpnpy.librmn.RMNError
     """
@@ -173,31 +191,29 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
     >>> (ni,nj) = (90, 45)
-    >>> gp = {
-            'shape' : (ni,nj),
-            'ni' : ni,
-            'nj' : nj,
-            'grtyp' : 'Z',
-            'grref' : 'E',
-            'xlat1' : 0.,
-            'xlon1' : 180.,
-            'xlat2' : 0.,
-            'xlon2' : 270.,
-            'dlat' : 0.25,
-            'dlon' : 0.25,
-            'lat0' : 45.,
-            'lon0' : 273.
+    >>> gp = { \
+            'shape' : (ni,nj), \
+            'ni' : ni, \
+            'nj' : nj, \
+            'grtyp' : 'Z', \
+            'grref' : 'E', \
+            'xlat1' : 0., \
+            'xlon1' : 180., \
+            'xlat2' : 0., \
+            'xlon2' : 270., \
+            'dlat' : 0.25, \
+            'dlon' : 0.25, \
+            'lat0' : 45., \
+            'lon0' : 273. \
             }
-    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], \
                             gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
-    >>> for i in xrange(ni):
-    >>>     gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-    >>> for j in xrange(nj):
-    >>>     gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
-    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
-                              ig1234[0], ig1234[1], ig1234[2], ig1234[3],
+    >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], \
+                              ig1234[0], ig1234[1], ig1234[2], ig1234[3], \
                               gp['ax'], gp['ay'])
 
     See Also:
@@ -243,10 +259,8 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
         #TODO: check ni, nj ... ax, ay dims consis for U grids
     else:
         raise EzscintError('ezgdef_fmem: Unknown grid type: '+grtyp)
-    if not (ax.dtype == _np.float32 and ax.flags['F_CONTIGUOUS']):
-        ax = _np.asfortranarray(ax, dtype=_np.float32)    
-    if not (ay.dtype == _np.float32 and ay.flags['F_CONTIGUOUS']):
-        ay = _np.asfortranarray(ay, dtype=_np.float32)    
+    ax = _ftnf32(ax)
+    ay = _ftnf32(ay)
     gdid = _rp.c_ezgdef_fmem(ni, nj, grtyp, grref, ig1, ig2, ig3, ig4, ax, ay)
     if gdid >= 0:
         return gdid
@@ -276,19 +290,19 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> nj = 31 ; ni = (nj-1)*3 + 1
-    >>> gp = {
-            'ni' : ni,
-            'nj' : nj,
-            'grtyp' : 'Z',
-            'grref' : 'E',
-            'xlat1' : 0.,
-            'xlon1' : 180.,
-            'xlat2' : 0.,
-            'xlon2' : 270.,
-            'dlat' : 0.25,
-            'dlon' : 0.25,
-            'lat0' : 45.,
-            'lon0' : 273.
+    >>> gp = { \
+            'ni' : ni, \
+            'nj' : nj, \
+            'grtyp' : 'Z', \
+            'grref' : 'E', \
+            'xlat1' : 0., \
+            'xlon1' : 180., \
+            'xlat2' : 0., \
+            'xlon2' : 270., \
+            'dlat' : 0.25, \
+            'dlon' : 0.25, \
+            'lat0' : 45., \
+            'lon0' : 273. \
             }
     >>> yin = rmn.encodeGrid(gp)
     >>> (gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2']) = \
@@ -361,12 +375,12 @@ def ezdefset(gdidout, gdidin):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Define a destination Grid
     >>> (lat0, lon0, dlat, dlon) = (35.,265.,0.25,0.25)
     >>> (ni, nj) = (200, 100)
     >>> outGrid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
-
+    >>> 
     >>> # Define the grid-set and interpolate data linearly
     >>> gridsetid = rmn.ezdefset(outGrid, inGrid)
     >>> rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
@@ -384,19 +398,8 @@ def ezdefset(gdidout, gdidin):
         rpnpy.librmn.grids.encodeGrid
         rpnpy.librmn.const
     """
-    if isinstance(gdidout, dict):
-        try:
-            gdidout = gdidout['id']
-        except:
-            pass
-    if isinstance(gdidin, dict):
-        try:
-            gdidin = gdidin['id']
-        except:
-            pass
-    if not (isinstance(gdidout, int) and isinstance(gdidin, int)):
-        raise TypeError("ezdefset: Expecting a grid ids of type int, " +
-                        "Got %s, %s" % (type(gdidout), type(gdidin)))
+    gdidout = _getCheckArg(int, gdidout, gdidout, 'id')
+    gdidin  = _getCheckArg(int, gdidin,  gdidin , 'id')
     istat = _rp.c_ezdefset(gdidout, gdidin)
     if istat < 0:
         raise EzscintError()
@@ -423,7 +426,7 @@ def gdsetmask(gdid, mask):
     >>> import os, os.path
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -432,12 +435,12 @@ def gdsetmask(gdid, mask):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Define a destination Grid
     >>> (lat0, lon0, dlat, dlon) = (35.,265.,0.25,0.25)
     >>> (ni, nj) = (200, 100)
     >>> outGrid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
-    
+    >>> 
     >>> # Set a masks over land only for input and output grids
     >>> inMask = np.rint(mgRec['d']).astype(np.intc)
     >>> rmn.gdsetmask(inGrid['id'], inMask)
@@ -455,19 +458,10 @@ def gdsetmask(gdid, mask):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not (isinstance(gdid, int) and type(mask) == _np.ndarray):
-        raise TypeError("gdsetmask: Expecting args of type int, _np.ndarray " +
-                        "Got %s, %s" % (type(gdid), type(mask)))
-    if not mask.dtype in (_np.intc, _np.int32):
-        raise TypeError("gdsetmask: Expecting mask arg of type numpy, " +
-                        "intc Got %s" % mask.dtype)
-    if not mask.flags['F_CONTIGUOUS']:
-        mask = _np.asfortranarray(mask, dtype=mask.dtype)
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    if not (isinstance(mask, _np.ndarray) and mask.dtype in (_np.intc, _np.int32)):
+        raise TypeError("Expecting mask type=numpy,intc, Got %s" % mask.dtype)
+    mask  = _ftn(mask, mask.dtype)
     istat = _rp.c_gdsetmask(gdid, mask)
     if istat < 0:
         raise EzscintError()
@@ -497,7 +491,8 @@ def ezgetopt(option, vtype=int):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> interp_degree = rmn.ezgetopt(rmn.EZ_OPT_INTERP_DEGREE, vtype=str)
-    >>> print("Feild will be interpolated with tpye: %s" % interp_degree)
+    >>> print("# Field will be interpolated with type: %s" % interp_degree)
+    # Field will be interpolated with type: linear
 
     See Also:
         ezsetopt
@@ -513,7 +508,7 @@ def ezgetopt(option, vtype=int):
         cvalue = _ct.c_float()
         istat = _rp.c_ezgetval(option, cvalue)
     elif vtype == str:
-        cvalue = C_MKSTR(' '*64)
+        cvalue = _C_MKSTR(' '*64)
         istat = _rp.c_ezgetopt(option, cvalue)
     else:
         raise TypeError("ezgetopt: Not a supported type %s" % (repr(vtype)))
@@ -541,7 +536,8 @@ def ezget_nsubgrids(super_gdid):
     >>> import rpnpy.librmn.all as rmn
     >>> yy = rmn.defGrid_YY(31)
     >>> n = rmn.ezget_nsubgrids(yy['id'])
-    >>> print("There are %d subgrids in the YY grid" % n)
+    >>> print("# There are %d subgrids in the YY grid" % n)
+    # There are 2 subgrids in the YY grid
 
     See Also:
         ezgdef_supergrid
@@ -553,14 +549,7 @@ def ezget_nsubgrids(super_gdid):
         rpnpy.librmn.grids.defGrid_YY
         rpnpy.librmn.grids.decodeGrid
     """
-    if isinstance(super_gdid, dict):
-        try:
-            super_gdid = super_gdid['id']
-        except:
-            pass
-    if not isinstance(super_gdid, int):
-        raise TypeError("ezgetival: expecting args of type int, Got %s" %
-                        (type(super_gdid)))
+    super_gdid = _getCheckArg(int, super_gdid, super_gdid, 'id')
     nsubgrids = _rp.c_ezget_nsubgrids(super_gdid)
     if nsubgrids >= 0:
         return nsubgrids
@@ -586,7 +575,8 @@ def ezget_subgridids(super_gdid):
     >>> import rpnpy.librmn.all as rmn
     >>> yy = rmn.defGrid_YY(31)
     >>> idlist = rmn.ezget_subgridids(yy['id'])
-    >>> print("The list of grid id in the YY grid is: %s" % str(idlist))
+    >>> print("# The list of grid id in the YY grid is: %s" % str(idlist))
+    # The list of grid id in the YY grid is: [8, 9]
 
     See Also:
         ezgdef_supergrid
@@ -598,13 +588,9 @@ def ezget_subgridids(super_gdid):
         rpnpy.librmn.grids.defGrid_YY
         rpnpy.librmn.grids.decodeGrid
     """
-    if isinstance(super_gdid, dict):
-        try:
-            super_gdid = super_gdid['id']
-        except:
-            pass
-    nsubgrids = ezget_nsubgrids(super_gdid)
-    cgridlist = _np.empty(nsubgrids, dtype=_np.intc, order='FORTRAN')
+    super_gdid = _getCheckArg(int, super_gdid, super_gdid, 'id')
+    nsubgrids  = ezget_nsubgrids(super_gdid)
+    cgridlist  = _np.empty(nsubgrids, dtype=_np.intc, order='FORTRAN')
     istat = _rp.c_ezget_subgridids(super_gdid, cgridlist)
     if istat >= 0:
         return cgridlist.tolist()
@@ -640,16 +626,17 @@ def ezgprm(gdid, doSubGrid=False):
         
     Examples:
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Define a LatLon grid
     >>> (grtyp, lat0, lon0, dlat, dlon) = ('L', 45., 273., 0.5, 0.5)
     >>> (ig1, ig2, ig3, ig4) = rmn.cxgaig(grtyp, lat0, lon0, dlat, dlon)
     >>> gid = rmn.ezqkdef(90, 45, grtyp, ig1, ig2, ig3, ig4)
-
+    >>> 
     >>> # Get grid info from any grid id
     >>> params = rmn.ezgprm(gid)
-    >>> print("Grid type=%s of size=%d, %d" %
+    >>> print("# Grid type=%s of size=%d, %d" % \
               (params['grtyp'], params['ni'], params['nj']))
+    # Grid type=L of size=90, 45
 
     See Also:
         ezgxprm
@@ -661,16 +648,9 @@ def ezgprm(gdid, doSubGrid=False):
         rpnpy.librmn.base.cxgaig
         rpnpy.librmn.grids.decodeGrid
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("ezgprm: expecting args of type int, Got %s" %
-                        (type(gdid)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
     (cni, cnj) = (_ct.c_int(), _ct.c_int())
-    (cgrtyp, cig1, cig2, cig3, cig4) = (C_MKSTR(' '*_rc.FST_GRTYP_LEN),
+    (cgrtyp, cig1, cig2, cig3, cig4) = (_C_MKSTR(' '*_rc.FST_GRTYP_LEN),
                                         _ct.c_int(), _ct.c_int(), _ct.c_int(),
                                         _ct.c_int())
     istat = _rp.c_ezgprm(gdid, cgrtyp, cni, cnj, cig1, cig2, cig3, cig4)
@@ -734,40 +714,39 @@ def ezgxprm(gdid, doSubGrid=False):
     Examples:
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Define a Z/E grid
     >>> (ni,nj) = (90, 45)
-    >>> gp = {
-            'shape' : (ni,nj),
-            'ni' : ni,
-            'nj' : nj,
-            'grtyp' : 'Z',
-            'grref' : 'E',
-            'xlat1' : 0.,
-            'xlon1' : 180.,
-            'xlat2' : 0.,
-            'xlon2' : 270.,
-            'dlat' : 0.25,
-            'dlon' : 0.25,
-            'lat0' : 45.,
-            'lon0' : 273.
+    >>> gp = { \
+            'shape' : (ni,nj), \
+            'ni' : ni, \
+            'nj' : nj, \
+            'grtyp' : 'Z', \
+            'grref' : 'E', \
+            'xlat1' : 0., \
+            'xlon1' : 180., \
+            'xlat2' : 0., \
+            'xlon2' : 270., \
+            'dlat' : 0.25, \
+            'dlon' : 0.25, \
+            'lat0' : 45., \
+            'lon0' : 273. \
             }
-    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'],
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], \
                             gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
-    >>> for i in xrange(ni):
-    >>>     gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
-    >>> for j in xrange(nj):
-    >>>     gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
-    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'],
-                              ig1234[0], ig1234[1], ig1234[2], ig1234[3],
+    >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
+    >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], \
+                              ig1234[0], ig1234[1], ig1234[2], ig1234[3], \
                               gp['ax'], gp['ay'])
-
+    >>> 
     >>> # Get grid info
     >>> params = rmn.ezgxprm(gid)
-    >>> print("Grid type=%s/%s of size=%d, %d" %
+    >>> print("# Grid type=%s/%s of size=%d, %d" % \
               (params['grtyp'], params['grref'], params['ni'], params['nj']))
+    # Grid type=Z/E of size=90, 45
 
     See Also:
         ezgprm
@@ -780,19 +759,12 @@ def ezgxprm(gdid, doSubGrid=False):
         rpnpy.librmn.grids.decodeGrid
         rpnpy.librmn.grids.readGrid
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("ezgxprm: expecting args of type int, Got %s" %
-                        (type(gdid)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
     (cni, cnj) = (_ct.c_int(), _ct.c_int())
-    cgrtyp = C_MKSTR(' '*_rc.FST_GRTYP_LEN)
+    cgrtyp = _C_MKSTR(' '*_rc.FST_GRTYP_LEN)
     (cig1, cig2, cig3, cig4) = (_ct.c_int(), _ct.c_int(),
                                 _ct.c_int(), _ct.c_int())
-    cgrref = C_MKSTR(' '*_rc.FST_GRTYP_LEN)
+    cgrref = _C_MKSTR(' '*_rc.FST_GRTYP_LEN)
     (cig1ref, cig2ref, cig3ref, cig4ref) = (_ct.c_int(), _ct.c_int(),
                                             _ct.c_int(), _ct.c_int())
     istat = _rp.c_ezgxprm(gdid, cni, cnj, cgrtyp, cig1, cig2, cig3, cig4,
@@ -860,7 +832,7 @@ def ezgfstp(gdid):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> myfile = os.path.join(ATM_MODEL_DFILES,'bcmk','geophy.fst')
@@ -868,11 +840,12 @@ def ezgfstp(gdid):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> meGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Get standard file attributes of the positional records
     >>> params = rmn.ezgfstp(meGrid['id'])
-    >>> print("%s grid axes are in %s and %s records" %
+    >>> print("# %s grid axes are in %s and %s records" % \
               (meRec['nomvar'], params['nomvarx'], params['nomvary']))
+    # ME   grid axes are in >>   and ^^   records
 
     See Also:
         ezgprm
@@ -886,20 +859,13 @@ def ezgfstp(gdid):
         rpnpy.librmn.fstd98.fstlir
         rpnpy.librmn.fstd98.fstcloseall
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("ezgfstp: expecting args of type int, Got %s" %
-                        (type(gdid)))
-    (ctypvarx, cnomvarx, cetikx) = (C_MKSTR(' '*_rc.FST_TYPVAR_LEN),
-                                    C_MKSTR(' '*_rc.FST_NOMVAR_LEN),
-                                    C_MKSTR(' '*_rc.FST_ETIKET_LEN))
-    (ctypvary, cnomvary, cetiky) = (C_MKSTR(' '*_rc.FST_TYPVAR_LEN),
-                                    C_MKSTR(' '*_rc.FST_NOMVAR_LEN),
-                                    C_MKSTR(' '*_rc.FST_ETIKET_LEN))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    (ctypvarx, cnomvarx, cetikx) = (_C_MKSTR(' '*_rc.FST_TYPVAR_LEN),
+                                    _C_MKSTR(' '*_rc.FST_NOMVAR_LEN),
+                                    _C_MKSTR(' '*_rc.FST_ETIKET_LEN))
+    (ctypvary, cnomvary, cetiky) = (_C_MKSTR(' '*_rc.FST_TYPVAR_LEN),
+                                    _C_MKSTR(' '*_rc.FST_NOMVAR_LEN),
+                                    _C_MKSTR(' '*_rc.FST_ETIKET_LEN))
     (cip1, cip2, cip3) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     (cdateo, cdeet, cnpas, cnbits) = (_ct.c_int(), _ct.c_int(),
                                       _ct.c_int(), _ct.c_int())
@@ -956,7 +922,7 @@ def gdgaxes(gdid, ax=None, ay=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Get grid for ME record in file
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -965,11 +931,12 @@ def gdgaxes(gdid, ax=None, ay=None):
     >>> rec['iunit'] = funit
     >>> gridid = rmn.ezqkdef(rec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Get axes values for the grid
     >>> axes = rmn.gdgaxes(gridid)
-    >>> print("Got grid axes of shape: %s, %s" %
+    >>> print("# Got grid axes of shape: %s, %s" % \
               (str(axes['ax'].shape), str(axes['ay'].shape)))
+    # Got grid axes of shape: (201, 1), (1, 100)
 
     See Also:
         ezgprm
@@ -984,25 +951,11 @@ def gdgaxes(gdid, ax=None, ay=None):
         rpnpy.librmn.fstd98.fstlir
         rpnpy.librmn.fstd98.fstcloseall
     """
-    if isinstance(gdid, dict):
-        if ax is None and 'ax' in gdid.keys():
-            ax = gdid['ax']
-        if ay is None and 'ay' in gdid.keys():
-            ay = gdid['ay']
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("gdgaxes: expecting args of type int, Got %s" %
-                        (type(gdid)))
-    if isinstance(ax, dict):
-        gridAxes = ax
-        try:
-            ax = gridAxes['ax']
-            ay = gridAxes['ay']
-        except:
-            raise TypeError("gdgaxes: Expecting gridAxes = {'ax':ax, 'ay':ay}")
+    ax = _getCheckArg(None, ax, gdid, 'ax')
+    ay = _getCheckArg(None, ay, gdid, 'ay')
+    ax = _getCheckArg(None, ax, ax, 'ax')
+    ay = _getCheckArg(None, ay, ax, 'ay')
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
         raise EzscintError("gdgaxes: supergrids not supported yet, " +
@@ -1021,16 +974,11 @@ def gdgaxes(gdid, ax=None, ay=None):
     else:
         raise EzscintError("gdgaxes: grtyp/grref = %s/%s not supported" %
                            (gridParams['grtyp'], gridParams['grref']))
-    if ax is None:
-        ax = _np.empty(axshape, dtype=_np.float32, order='FORTRAN')
-        ay = _np.empty(ayshape, dtype=_np.float32, order='FORTRAN')
-    elif not(type(ax) == _np.ndarray and type(ay) == _np.ndarray):
+    ax = _ftnOrEmpty(ax, axshape, _np.float32)
+    ay = _ftnOrEmpty(ay, ayshape, _np.float32)
+    if not (isinstance(ax, _np.ndarray) and isinstance(ay, _np.ndarray)):
         raise TypeError("gdgaxes: Expecting ax, ay as 2 numpy.ndarray, " +
                         "Got %s, %s" % (type(ax), type(ay)))
-    if not (ax.dtype == _np.float32 and ax.flags['F_CONTIGUOUS']):
-        ax = _np.asfortranarray(ax, dtype=_np.float32)
-    if not (ay.dtype == _np.float32 and ay.flags['F_CONTIGUOUS']):
-        ay = _np.asfortranarray(ay, dtype=_np.float32)
     if ax.shape != axshape or ay.shape != ayshape:
         raise TypeError("gdgaxes: provided ax, ay have the wrong shape")
     istat = _rp.c_gdgaxes(gdid, ax, ay)
@@ -1075,50 +1023,31 @@ def gdll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> lalo = rmn.gdll(grid['id'])
     >>> (i, j) = (45, 20)
-    >>> print("Lat, Lon of point %d, %d is: %f, %f" %
+    >>> print("# Lat, Lon of point %d, %d is: %f, %f" % \
               (i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
-              
+    # Lat, Lon of point 45, 20 is: -7.911613, 180.000000
+    
     See Also:
         gdxyfll
         gdllfxy
         rpnpy.librmn.grids
     """
-    if isinstance(gdid, dict):
-        if lat is None and 'lat' in gdid.keys():
-            lat = gdid['lat']
-        if lon is None and 'lon' in gdid.keys():
-            lon = gdid['lon']
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("gdll: expecting args of type int, Got %s" %
-                        (type(gdid)))
-    if isinstance(lat, dict):
-        gridLatLon = lat
-        try:
-            lat = gridLatLon['lat']
-            lon = gridLatLon['lon']
-        except:
-            raise TypeError(
-                "gdll: Expecting gridLatLon = {'lat':lat, 'lon':lon}")
+    lat = _getCheckArg(None, lat, gdid, 'lat')
+    lon = _getCheckArg(None, lon, gdid, 'lon')
+    lat = _getCheckArg(None, lat, lat, 'lat')
+    lon = _getCheckArg(None, lon, lat, 'lon')
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
     nsubgrids = ezget_nsubgrids(gdid)
     if nsubgrids > 1:
         raise EzscintError("gdll: supergrids not supported yet, " +
                            "loop through individual grids instead")
         #TODO: automate the process (loop) for super grids
     gridParams = ezgxprm(gdid)
-    if lat is None:
-        lat = _np.empty(gridParams['shape'], dtype=_np.float32, order='FORTRAN')
-        lon = _np.empty(gridParams['shape'], dtype=_np.float32, order='FORTRAN')
-    elif not(type(lat) == _np.ndarray and type(lon) == _np.ndarray):
+    lat = _ftnOrEmpty(lat, gridParams['shape'], _np.float32)
+    lon = _ftnOrEmpty(lon, gridParams['shape'], _np.float32)
+    if not (isinstance(lat, _np.ndarray) and isinstance(lon, _np.ndarray)):
         raise TypeError("gdll: Expecting lat, lon as 2 numpy.ndarray," +
                         "Got %s, %s" % (type(lat), type(lon)))
-    if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
-        lat = _np.asfortranarray(lat, dtype=_np.float32)
-    if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
-        lon = _np.asfortranarray(lon, dtype=_np.float32)
     if lat.shape != gridParams['shape'] or lon.shape != gridParams['shape']:
         raise TypeError("gdll: provided lat, lon have the wrong shape")
     istat = _rp.c_gdll(gdid, lat, lon)
@@ -1141,11 +1070,14 @@ def gdxyfll(gdid, lat=None, lon=None):
 
     pointXY = gdxyfll(gdid, lat, lon)
     pointXY = gdxyfll(griddict, lat, lon)
+    pointXY = gdxyfll(gdid, gridLaLo)
     pointXY = gdxyfll(griddict)
     
     Args:
         gdid     : id of the grid (int)
         lat, lon : list of points lat, lon (list, tuple or numpy.ndarray)
+        gridLaLo : (optional) gridLaLo['lat'], gridLaLo['lon'] are
+                   2 pre-allocated lat, lon arrays (numpy.ndarray)
         griddict : dict with keys
                    'id'  : id of the grid (int)
                    'lat' : (optional) list of points lon (list, tuple or numpy.ndarray)
@@ -1165,41 +1097,24 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (la, lo) = (45., 273.)
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
-    >>> print("x, y pos at lat=%f, lon=%f is: %f, %f" %
+    >>> print("# x, y pos at lat=%f, lon=%f is: %f, %f" % \
               (la, lo, xy['x'][0], xy['y'][0]))
+    # x, y pos at lat=45.000000, lon=273.000000 is: 69.250000, 34.375877
 
     See Also:
         gdllfxy
         gdll
         rpnpy.librmn.grids
     """
-    if isinstance(gdid, dict):
-        if lat is None and 'lat' in gdid.keys():
-            lat = gdid['lat']
-        if lon is None and 'lon' in gdid.keys():
-            lon = gdid['lon']
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("gdxyfll: expecting args of type int, Got %s" %
-                        (type(gdid)))
-    (clat, clon) = lat, lon
-    if isinstance(lat, (list, tuple)):
-        clat = _np.asfortranarray(lat, dtype=_np.float32)
-    elif type(lat) == _np.ndarray:
-        if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
-            clat = _np.asfortranarray(lat, dtype=_np.float32)
-    else:
-        raise TypeError("lat: provided lat must be arrays")
-    if isinstance(lon, (list, tuple)):
-        clon = _np.asfortranarray(lon, dtype=_np.float32)
-    elif type(lon) == _np.ndarray:
-        if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
-            clon = _np.asfortranarray(lon, dtype=_np.float32)
-    else:
-        raise TypeError("lon: provided lon must be arrays")
+    lat = _getCheckArg(None, lat, gdid, 'lat')
+    lon = _getCheckArg(None, lon, gdid, 'lon')
+    lat = _getCheckArg(None, lat, lat, 'lat')
+    lon = _getCheckArg(None, lon, lat, 'lon')
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    clat = _list2ftnf32(lat)
+    clon = _list2ftnf32(lon)
+    if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
+        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat, lon should have the same size")
     cx = _np.empty(clat.shape, dtype=_np.float32, order='FORTRAN')
@@ -1226,12 +1141,15 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     While numpy/C indexing starts from 0
 
     pointLL = gdllfxy(gdid, xpts, ypts)
+    pointLL = gdllfxy(gdid, xypts)
     pointLL = gdllfxy(griddict, xpts, ypts)
     pointLL = gdllfxy(griddict)
      
     Args:
         gdid       : id of the grid (int)
         xpts, ypts : list of points x, y coor (list, tuple or numpy.ndarray)
+        xypts      : xypts['xpts'], xypts['ypts'] are
+                     2 pre-allocated xpts, ypts arrays (numpy.ndarray)
         griddict   : dict with keys
                      'id'   : id of the grid (int)
                      'xpts' : (optional) list of points x coor (list, tuple or numpy.ndarray)
@@ -1251,41 +1169,24 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (i, j) = (69, 34)
     >>> lalo = rmn.gdllfxy(grid['id'], [i], [j])
-    >>> print("Lat, Lon of point %d, %d is: %f, %f" %
+    >>> print("# Lat, Lon of point %d, %d is: %f, %f" % \
               (i, j, lalo['lat'][0], lalo['lon'][0]))
-
+    # Lat, Lon of point 69, 34 is: 43.513199, 272.000000
+    
     See Also:
         gdll
         gdxyfll
         rpnpy.librmn.grids
     """
-    if isinstance(gdid, dict):
-        if xpts is None and 'xpts' in gdid.keys():
-            xpts = gdid['xpts']
-        if ypts is None and 'ypts' in gdid.keys():
-            ypts = gdid['ypts']
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("gdllfxy: expecting args of type int, Got %s" %
-                        (type(gdid)))
-    (cx, cy) = (xpts, ypts)
-    if isinstance(cx,  (list, tuple)):
-        cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    elif type(cx) == _np.ndarray:
-        if not (cx.dtype == _np.float32 and cx.flags['F_CONTIGUOUS']):
-            cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided xpts must be arrays")
-    if  isinstance(cy,  (list, tuple)):
-        cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    elif type(cy) == _np.ndarray:
-        if not (cy.dtype == _np.float32 and cy.flags['F_CONTIGUOUS']):
-            cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided ypts must be arrays")
+    xpts = _getCheckArg(None, xpts, gdid, 'xpts')
+    ypts = _getCheckArg(None, ypts, gdid, 'ypts')
+    xpts = _getCheckArg(None, xpts, xpts, 'xpts')
+    ypts = _getCheckArg(None, ypts, xpts, 'ypts')
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    cx = _list2ftnf32(xpts)
+    cy = _list2ftnf32(ypts)
+    if not (isinstance(cx, _np.ndarray) and isinstance(cy, _np.ndarray)): 
+        raise TypeError("xpts and ypts must be arrays")
     if cx.size != cy.size:
         raise TypeError(
             "gdllfxy: provided xpts, ypts should have the same size")
@@ -1331,7 +1232,7 @@ def gdgetmask(gdid, mask=None):
     >>> import os, os.path
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -1340,12 +1241,12 @@ def gdgetmask(gdid, mask=None):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-    
+    >>> 
     >>> # Set a mask
     >>> mask = np.rint(mgRec['d']).astype(np.intc)
     >>> rmn.gdsetmask(inGrid['id'], mask)
     >>> # ...
-   
+    >>> 
     >>> # Get the mask back
     >>> mask2 = rmn.gdgetmask(inGrid['id'])
 
@@ -1358,31 +1259,14 @@ def gdgetmask(gdid, mask=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        if mask is None and 'mask' in gdid.keys():
-            mask = gdid['mask']
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if not isinstance(gdid, int):
-        raise TypeError("gdgetmask: expecting args of type int, Got %s" %
-                        (type(gdid)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
     gridParams = ezgxprm(gdid)
-    if mask:
-        if type(mask) != _np.ndarray:
-            raise TypeError("gdgetmask: Expecting mask array of type " +
-                            "numpy.ndarray, Got %s" % (type(mask)))
-        if mask.shape != gridParams['shape']:
-            raise TypeError("gdgetmask: Provided mask array have " +
-                            "inconsistent shape compered to the grid")
-        if not mask.dtype in (_np.intc, _np.int32):
-            raise TypeError("gdsetmask: Expecting mask arg of type numpy, " +
-                            "intc Got %s, %s" % (type(mask.dtype)))
-        if not mask.flags['F_CONTIGUOUS']:
-            mask = _np.asfortranarray(mask, dtype=mask.dtype)
-    else:
-        mask = _np.empty(gridParams['shape'], dtype=_np.intc, order='FORTRAN')
+    mask = _ftnOrEmpty(mask, gridParams['shape'], _np.int32)
+    if not (isinstance(mask, _np.ndarray) and
+            mask.shape == gridParams['shape'] and
+            mask.dtype in (_np.intc, _np.int32)):
+            raise TypeError("Wrong mask type,shape numpy.ndarray: %s, %s" %
+                            (type(mask), repr(gridParams['shape'])))
     istat = _rp.c_gdgetmask(gdid, mask)
     if istat < 0:
         raise EzscintError('gdgetmask: Problem getting the mask for grid id=%d' % gdid)
@@ -1421,7 +1305,7 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -1429,11 +1313,11 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Define a destination Grid
     >>> (ni, nj, lat0, lon0, dlat, dlon) = (200, 100, 35.,265.,0.25,0.25)
     >>> outGrid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
-    
+    >>> 
     >>> # Interpolate ME linearly
     >>> rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
     >>> me = rmn.ezsint(outGrid['id'], inGrid['id'], meRec['d'])
@@ -1449,48 +1333,21 @@ def ezsint(gdidout, gdidin, zin, zout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdidout, dict):
-        try:
-            gdidout = gdidout['id']
-        except:
-            pass
-    if isinstance(gdidin, dict):
-        try:
-            gdidin = gdidin['id']
-        except:
-            pass
-    if isinstance(zin, dict):
-        try:
-            zin = zin['d']
-        except:
-            pass
-    if isinstance(zout, dict):
-        try:
-            zout = zout['d']
-        except:
-            pass
+    gdidout = _getCheckArg(int, gdidout, gdidout, 'id')
+    gdidin  = _getCheckArg(int, gdidin,  gdidin , 'id')
+    zin     = _getCheckArg(_np.ndarray, zin, zin, 'd')
+    zout    = _getCheckArg(None, zout, zout, 'd')        
     gridsetid = ezdefset(gdidout, gdidin)
-    if not (type(zin) == _np.ndarray):
-        raise TypeError("ezsint: expecting args of type numpy.ndarray, " +
-                        "Got %s" % (type(zin)))
     gridParams = ezgxprm(gdidin)
+    zin  = _ftnf32(zin)
     if zin.shape != gridParams['shape']:
-        raise TypeError("ezsint: Provided zin array have inconsistent " +
-                        "shape compered to the input grid")
+        raise TypeError("Provided zin array have inconsistent " +
+                        "shape compared to the input grid")
     dshape = ezgprm(gdidout)['shape']
-    if not (zin.dtype == _np.float32 and zin.flags['F_CONTIGUOUS']):
-        zin = _np.asfortranarray(zin, dtype=_np.float32)    
-    if not zout is None:
-        if not (type(zout) == _np.ndarray):
-            raise TypeError("ezsint: Expecting zout of type numpy.ndarray, " +
-                            "Got %s" % (type(zout)))
-        if zout.shape != dshape:
-            raise TypeError("ezsint: Provided zout array have inconsistent " +
-                            "shape compered to the output grid")
-        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
-            zout = _np.asfortranarray(zout, dtype=_np.float32)    
-    else:
-        zout = _np.empty(dshape, dtype=zin.dtype, order='FORTRAN')
+    zout = _ftnOrEmpty(zout, dshape, zin.dtype)
+    if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
+        raise TypeError("Wrong type,shape for zout: %s, %s" %
+                        (type(zout), repr(dshape)))
     istat = _rp.c_ezsint(zout, zin)
     if istat >= 0:
         return zout
@@ -1527,7 +1384,7 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','2009042700_000')
@@ -1536,11 +1393,11 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     >>> vvRec  = rmn.fstlir(funit, nomvar='VV', ip1=uuRec['ip1'], ip2=uuRec['ip2'])
     >>> inGrid = rmn.readGrid(funit, uuRec)
     >>> rmn.fstcloseall(funit)
-
+    >>> 
     >>> # Define a destination Grid
     >>> (ni, nj, lat0, lon0, dlat, dlon) = (200, 100, 35.,265.,0.25,0.25)
     >>> outGrid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
-    
+    >>> 
     >>> # Interpolate U/V vectorially
     >>> (uu, vv) = rmn.ezuvint(outGrid['id'], inGrid['id'], uuRec['d'], vvRec['d'])
 
@@ -1555,63 +1412,29 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdidout, dict):
-        try:
-            gdidout = gdidout['id']
-        except:
-            pass
-    if isinstance(gdidin, dict):
-        try:
-            gdidin = gdidin['id']
-        except:
-            pass
-    if isinstance(uuin, dict):
-        try:
-            uuin = uuin['d']
-        except:
-            pass
-    if isinstance(vvin, dict):
-        try:
-            vvin = vvin['d']
-        except:
-            pass
-    if isinstance(uuout, dict):
-        try:
-            uuout = uuout['d']
-        except:
-            pass
-    if isinstance(vvout, dict):
-        try:
-            vvout = vvout['d']
-        except:
-            pass
+    gdidout = _getCheckArg(int, gdidout, gdidout, 'id')
+    gdidin  = _getCheckArg(int, gdidin,  gdidin , 'id')
+    uuin    = _getCheckArg(_np.ndarray, uuin, uuin, 'd')
+    vvin    = _getCheckArg(_np.ndarray, vvin, vvin, 'd')
+    uuout   = _getCheckArg(None, uuout, uuout, 'd')        
+    vvout   = _getCheckArg(None, vvout, vvout, 'd')        
     gridsetid = ezdefset(gdidout, gdidin)
-    if not (type(uuin) == _np.ndarray and type(vvin) == _np.ndarray):
-        raise TypeError("ezuvint: expecting args of type numpy.ndarray, " +
-                        "Got %s, %s" % (type(uuin), type(vvin)))
     gridParams = ezgxprm(gdidin)
+    uuin  = _ftnf32(uuin)
+    vvin  = _ftnf32(vvin)
     if uuin.shape != gridParams['shape'] or vvin.shape != gridParams['shape']:
         raise TypeError("ezuvint: Provided uuin, vvin array have " +
-                        "inconsistent shape compered to the input grid")
-    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
-        uuin = _np.asfortranarray(uuin, dtype=_np.float32)    
-    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
-        vvin = _np.asfortranarray(vvin, dtype=_np.float32)      
+                        "inconsistent shape compared to the input grid")
     dshape = ezgprm(gdidout)['shape']
-    if not (uuout is None or vvout is None):
-        if not (type(uuout) == _np.ndarray and type(vvout) == _np.ndarray):
-            raise TypeError("ezuvint: Expecting uuout, vvout of type " +
-                            "numpy.ndarray, Got %s" % (type(uuout)))
-        if uuout.shape != dshape or vvout.shape != dshape:
-            raise TypeError("ezuvint: Provided uuout, vvout array have " +
-                            "inconsistent shape compered to the output grid")
-        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
-            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
-        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
-            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
-    else:
-        uuout = _np.empty(dshape, dtype=uuin.dtype, order='FORTRAN')
-        vvout = _np.empty(dshape, dtype=uuin.dtype, order='FORTRAN')
+    uuout = _ftnOrEmpty(uuout, dshape, uuin.dtype)
+    vvout = _ftnOrEmpty(vvout, dshape, uuin.dtype)
+    if not (isinstance(uuout, _np.ndarray) and
+            isinstance(vvout, _np.ndarray)):
+        raise TypeError("ezuvint: Expecting uuout, vvout of type " +
+                        "numpy.ndarray, Got %s" % (type(uuout)))
+    if uuout.shape != dshape or vvout.shape != dshape:
+        raise TypeError("ezuvint: Provided uuout, vvout array have " +
+                        "inconsistent shape compered to the output grid")
     istat = _rp.c_ezuvint(uuout, vvout, uuin, vvin)
     if istat >= 0:
         return (uuout, vvout)
@@ -1643,7 +1466,7 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -1651,7 +1474,7 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-    
+    >>> 
     >>> # Interpolate ME to a specific set of points
     >>> destPoints = ((35.5, 266.), (36., 265.5))
     >>> la = [x[0] for x in destPoints]
@@ -1673,52 +1496,24 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if isinstance(zin, dict):
-        try:
-            zin = zin['d']
-        except:
-            pass
-    if not isinstance(zin, _np.ndarray):
-        raise TypeError("gdllsval: expecting zin arg of type numpy.ndarray, " +
-                        "Got %s" % (type(zin)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    zin  = _getCheckArg(_np.ndarray, zin, zin, 'd')
     gridParams = ezgxprm(gdid)
+    zin  = _ftnf32(zin)
     if zin.shape != gridParams['shape']:
         raise TypeError("gdllsval: Provided zin array have inconsistent " +
                         "shape compered to the input grid")
-    (clat, clon) = lat, lon
-    if isinstance(lat, (list, tuple)):
-        clat = _np.asfortranarray(lat, dtype=_np.float32)
-    elif type(lat) == _np.ndarray:
-        if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
-            clat = _np.asfortranarray(lat, dtype=_np.float32)
-    else:
-        raise TypeError("lat: provided lat must be arrays")
-    if isinstance(lon, (list, tuple)):
-        clon = _np.asfortranarray(lon, dtype=_np.float32)
-    elif type(lon) == _np.ndarray:
-        if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
-            clon = _np.asfortranarray(lon, dtype=_np.float32)
-    else:
-        raise TypeError("lon: provided lon must be arrays")
+    clat = _list2ftnf32(lat)
+    clon = _list2ftnf32(lon)
+    if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
+        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
     if clat.shape != clon.shape:
         raise TypeError("Provided lat, lon arrays have inconsistent shapes")
     dshape = clat.shape
-    if not zout is None:
-        if not (type(zout) == _np.ndarray):
-            raise TypeError("gdllsval: Expecting zout of type numpy.ndarray, " +
-                            "Got %s" % (type(zout)))
-        if zout.shape != dshape:
-            raise TypeError("gdllsval: Provided zout array have " +
-                            "inconsistent shape compered to lat, lon arrays")
-        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
-            zout = _np.asfortranarray(zout, dtype=_np.float32)
-    else:
-        zout = _np.empty(dshape, dtype=zin.dtype, order='FORTRAN')
+    zout = _ftnOrEmpty(zout, dshape, zin.dtype)
+    if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
+        raise TypeError("Wrong type,shape for zout: %s, %s" %
+                        (type(zout), repr(dshape)))
     istat = _rp.c_gdllsval(gdid, zout, zin, clat, clon, clat.size)
     if istat >= 0:
         return zout
@@ -1754,7 +1549,7 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk','geophy.fst')
@@ -1762,7 +1557,7 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
     >>> meRec  = rmn.fstlir(funit, nomvar='ME')
     >>> inGrid = rmn.readGrid(funit, meRec)
     >>> rmn.fstcloseall(funit)
-    
+    >>> 
     >>> # Interpolate ME to a specific set of points
     >>> destPoints = ((148., 70.), (149., 71.))
     >>> xx = [x[0] for x in destPoints]
@@ -1784,54 +1579,25 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if isinstance(zin, dict):
-        try:
-            zin = zin['d']
-        except:
-            pass
-    if not isinstance(zin, _np.ndarray):
-        raise TypeError("gdxysval: expecting zin arg of type numpy.ndarray, " +
-                        "Got %s" % (type(zin)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    zin  = _getCheckArg(_np.ndarray, zin, zin, 'd')
     gridParams = ezgxprm(gdid)
+    zin  = _ftnf32(zin)
     if zin.shape != gridParams['shape']:
         raise TypeError("gdxysval: Provided zin array have inconsistent " +
-                        "shape compered to the input grid")    
-    (cx, cy) = (xpts, ypts)
-    if isinstance(cx,  (list, tuple)):
-        cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    elif type(cx) == _np.ndarray:
-        if not (cx.dtype == _np.float32 and cx.flags['F_CONTIGUOUS']):
-            cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided xpts must be arrays")
-    if  isinstance(cy,  (list, tuple)):
-        cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    elif type(cy) == _np.ndarray:
-        if not (cy.dtype == _np.float32 and cy.flags['F_CONTIGUOUS']):
-            cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided ypts must be arrays")
-    if cx.shape != cx.shape:
-        raise TypeError("Provided xpts, ypts arrays have inconsistent shapes")
+                        "shape compered to the input grid")
+    cx = _list2ftnf32(xpts)
+    cy = _list2ftnf32(ypts)
+    if not (isinstance(cx, _np.ndarray) and isinstance(cy, _np.ndarray)): 
+        raise TypeError("xpts and ypts must be arrays")
+    if cx.size != cy.size:
+        raise TypeError(
+            "provided xpts, ypts should have the same size")
     dshape = cx.shape
-    if not (zin.dtype == _np.float32 and zin.flags['F_CONTIGUOUS']):
-        zin = _np.asfortranarray(zin, dtype=_np.float32)
-    if not zout is None:
-        if not (type(zout) == _np.ndarray):
-            raise TypeError("gdxysval: Expecting zout of type numpy.ndarray, " +
-                            "Got %s" % (type(zout)))
-        if zout.shape != dshape:
-            raise TypeError("gdxysval: Provided zout array have inconsistent " +
-                            "shape compered to xpts, ypts arrays")
-        if not (zout.dtype == _np.float32 and zout.flags['F_CONTIGUOUS']):
-            zout = _np.asfortranarray(zout, dtype=_np.float32)
-    else:
-        zout = _np.empty(dshape, dtype=zin.dtype, order='FORTRAN')
+    zout = _ftnOrEmpty(zout, dshape, zin.dtype)
+    if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
+        raise TypeError("Wrong type,shape for zout: %s, %s" %
+                        (type(zout), repr(dshape)))
     istat = _rp.c_gdxysval(gdid, zout, zin, cx, cy, cx.size)
     if istat >= 0:
         return zout
@@ -1864,7 +1630,7 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk')
@@ -1873,7 +1639,7 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
     >>> vvRec  = rmn.fstlir(funit, nomvar='VV')
     >>> inGrid = rmn.readGrid(funit, uuRec)
     >>> rmn.fstcloseall(funit)
-    
+    >>> 
     >>> # Interpolate UV vectorially to a specific set of points
     >>> destPoints = ((35.5, 266.), (36., 265.5))
     >>> la = [x[0] for x in destPoints]
@@ -1895,78 +1661,33 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if isinstance(uuin, dict):
-        try:
-            uuin = uuin['d']
-        except:
-            pass
-    if isinstance(vvin, dict):
-        try:
-            vvin = vvin['d']
-        except:
-            pass
-    if not isinstance(uuin, _np.ndarray):
-        raise TypeError("gdllvval: expecting uuin arg of type numpy.ndarray, " +
-                        "Got %s" % (type(uuin)))
-    if not isinstance(vvin, _np.ndarray):
-        raise TypeError("gdllvval: expecting vvin arg of type numpy.ndarray," +
-                        "Got %s" % (type(vvin)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    uuin = _getCheckArg(_np.ndarray, uuin, uuin, 'd')
+    vvin = _getCheckArg(_np.ndarray, vvin, vvin, 'd')
     gridParams = ezgxprm(gdid)
+    uuin  = _ftnf32(uuin)
+    vvin  = _ftnf32(vvin)
     if uuin.shape != gridParams['shape']:
         raise TypeError("gdllvval: Provided uuin array have inconsistent " +
                         "shape compered to the input grid")
     if vvin.shape != gridParams['shape']:
         raise TypeError("gdllvval: Provided vvin array have inconsistent " +
                         "shape compered to the input grid")
-    (clat, clon) = lat, lon
-    if isinstance(lat, (list, tuple)):
-        clat = _np.asfortranarray(lat, dtype=_np.float32)
-    elif type(lat) == _np.ndarray:
-        if not (lat.dtype == _np.float32 and lat.flags['F_CONTIGUOUS']):
-            clat = _np.asfortranarray(lat, dtype=_np.float32)
-    else:
-        raise TypeError("lat: provided lat must be arrays")
-    if isinstance(lon, (list, tuple)):
-        clon = _np.asfortranarray(lon, dtype=_np.float32)
-    elif type(lon) == _np.ndarray:
-        if not (lon.dtype == _np.float32 and lon.flags['F_CONTIGUOUS']):
-            clon = _np.asfortranarray(lon, dtype=_np.float32)
-    else:
-        raise TypeError("lon: provided lon must be arrays")
+    clat = _list2ftnf32(lat)
+    clon = _list2ftnf32(lon)
+    if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
+        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
     if clat.shape != clon.shape:
-        raise TypeError("Provided lat, lon arrays have inconsistent shapes")
-    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
-        uuin = _np.asfortranarray(uuin, dtype=_np.float32)
-    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
-        vvin = _np.asfortranarray(vvin, dtype=_np.float32)
+        raise TypeError("Provided lat, lon arrays have inconsistent shapes")  
     dshape = clat.shape
-    if not uuout is None:
-        if not (type(uuout) == _np.ndarray):
-            raise TypeError("gdllvval: Expecting uuout of type " +
-                            "numpy.ndarray, Got %s" % (type(uuout)))
-        if uuout.shape != dshape:
-            raise TypeError("gdllvval: Provided uuout array have " +
-                            "inconsistent shape compered to lat, lon arrays")
-        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
-            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
-    else:
-        uuout = _np.empty(dshape, dtype=uuin.dtype, order='FORTRAN')
-    if not vvout is None:
-        if not (type(vvout) == _np.ndarray):
-            raise TypeError("gdllvval: Expecting vvout of type " +
-                            "numpy.ndarray, Got %s" % (type(vvout)))
-        if vvout.shape != dshape:
-            raise TypeError("gdllvval: Provided vvout array have " +
-                            "inconsistent shape compered to lat, lon arrays")
-        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
-            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
-    else:
-        vvout = _np.empty(dshape, dtype=uuin.dtype, order='FORTRAN')
+    uuout = _ftnOrEmpty(uuout, dshape, uuin.dtype)
+    vvout = _ftnOrEmpty(vvout, dshape, uuin.dtype)
+    if not (isinstance(uuout, _np.ndarray) and uuout.shape == dshape):
+        raise TypeError("Wrong type,shape for uuout: %s, %s" %
+                        (type(uuout), repr(dshape)))
+    if not (isinstance(vvout, _np.ndarray) and vvout.shape == dshape):
+        raise TypeError("Wrong type,shape for uuout: %s, %s" %
+                        (type(vvout), repr(dshape)))
     istat = _rp.c_gdllvval(gdid, uuout, vvout, uuin, vvin, clat, clon, clat.size)
     if istat >= 0:
         return (uuout, vvout)
@@ -2002,7 +1723,7 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Read source data and define its grid
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
     >>> myfile = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk')
@@ -2011,7 +1732,7 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
     >>> vvRec  = rmn.fstlir(funit, nomvar='VV')
     >>> inGrid = rmn.readGrid(funit, uuRec)
     >>> rmn.fstcloseall(funit)
-    
+    >>> 
     >>> # Interpolate UV vectorially to a specific set of points
     >>> destPoints = ((148., 70.), (149., 71.))
     >>> xx = [x[0] for x in destPoints]
@@ -2033,78 +1754,34 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
-    if isinstance(uuin, dict):
-        try:
-            uuin = uuin['d']
-        except:
-            pass
-    if isinstance(vvin, dict):
-        try:
-            vvin = vvin['d']
-        except:
-            pass
-    if not isinstance(uuin, _np.ndarray):
-        raise TypeError("dgxyvval: expecting uuin arg of type numpy.ndarray, " +
-                        "Got %s" % (type(uuin)))
-    if not isinstance(vvin, _np.ndarray):
-        raise TypeError("dgxyvval: expecting vvin arg of type numpy.ndarray, " +
-                        "Got %s" % (type(vvin)))
+    gdid = _getCheckArg(int, gdid, gdid, 'id')
+    uuin = _getCheckArg(_np.ndarray, uuin, uuin, 'd')
+    vvin = _getCheckArg(_np.ndarray, vvin, vvin, 'd')
     gridParams = ezgxprm(gdid)
+    uuin  = _ftnf32(uuin)
+    vvin  = _ftnf32(vvin)
     if uuin.shape != gridParams['shape']:
-        raise TypeError("dgxyvval: Provided uuin array have inconsistent " +
+        raise TypeError("gdllvval: Provided uuin array have inconsistent " +
                         "shape compered to the input grid")
     if vvin.shape != gridParams['shape']:
-        raise TypeError("dgxyvval: Provided vvin array have inconsistent " +
+        raise TypeError("gdllvval: Provided vvin array have inconsistent " +
                         "shape compered to the input grid")
-    (cx, cy) = (xpts, ypts)
-    if isinstance(cx,  (list, tuple)):
-        cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    elif type(cx) == _np.ndarray:
-        if not (cx.dtype == _np.float32 and cx.flags['F_CONTIGUOUS']):
-            cx = _np.asfortranarray(xpts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided xpts must be arrays")
-    if  isinstance(cy,  (list, tuple)):
-        cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    elif type(cy) == _np.ndarray:
-        if not (cy.dtype == _np.float32 and cy.flags['F_CONTIGUOUS']):
-            cy = _np.asfortranarray(ypts, dtype=_np.float32)
-    else:
-        raise TypeError("y: provided ypts must be arrays")
-    if cx.shape != cx.shape:
-        raise TypeError("Provided xpts, ypts arrays have inconsistent shapes")
-    if not (uuin.dtype == _np.float32 and uuin.flags['F_CONTIGUOUS']):
-        uuin = _np.asfortranarray(uuin, dtype=_np.float32)
-    if not (vvin.dtype == _np.float32 and vvin.flags['F_CONTIGUOUS']):
-        vvin = _np.asfortranarray(vvin, dtype=_np.float32)
+    cx = _list2ftnf32(xpts)
+    cy = _list2ftnf32(ypts)
+    if not (isinstance(cx, _np.ndarray) and isinstance(cy, _np.ndarray)): 
+        raise TypeError("xpts and ypts must be arrays")
+    if cx.size != cy.size:
+        raise TypeError(
+            "provided xpts, ypts should have the same size")       
     dshape = cx.shape
-    if not uuout is None:
-        if not (type(uuout) == _np.ndarray):
-            raise TypeError("dgxyvval: Expecting uuout of type " +
-                            "numpy.ndarray, Got %s" % (type(uuout)))
-        if uuout.shape != dshape:
-            raise TypeError("dgxyvval: Provided uuout array have " +
-                            "inconsistent shape compered to xpts, ypts arrays")
-        if not (uuout.dtype == _np.float32 and uuout.flags['F_CONTIGUOUS']):
-            uuout = _np.asfortranarray(uuout, dtype=_np.float32)      
-    else:
-        uuout = _np.empty(dshape, dtype=uuin.dtype, order='FORTRAN')
-    if not vvout is None:
-        if not (type(vvout) == _np.ndarray):
-            raise TypeError("dgxyvval: Expecting vvout of type " +
-                            "numpy.ndarray, Got %s" % (type(vvout)))
-        if vvout.shape != dshape:
-            raise TypeError("dgxyvval: Provided vvout array have " +
-                            "inconsistent shape compered to xpts, ypts arrays")
-        if not (vvout.dtype == _np.float32 and vvout.flags['F_CONTIGUOUS']):
-            vvout = _np.asfortranarray(vvout, dtype=_np.float32)      
-    else:
-        vvout = _np.empty(dshape, dtype=vvin.dtype, order='FORTRAN')
+    uuout = _ftnOrEmpty(uuout, dshape, uuin.dtype)
+    vvout = _ftnOrEmpty(vvout, dshape, uuin.dtype)
+    if not (isinstance(uuout, _np.ndarray) and uuout.shape == dshape):
+        raise TypeError("Wrong type,shape for uuout: %s, %s" %
+                        (type(uuout), repr(dshape)))
+    if not (isinstance(vvout, _np.ndarray) and vvout.shape == dshape):
+        raise TypeError("Wrong type,shape for uuout: %s, %s" %
+                        (type(vvout), repr(dshape)))
     istat = _rp.c_gdxyvval(gdid, uuout, vvout, uuin, vvin,
                            cx, cy, cx.size)
     if istat >= 0:
@@ -2138,11 +1815,11 @@ def gdrls(gdid):
         
     Examples:
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Define a Grid
     >>> (ni, nj, lat0, lon0, dlat, dlon) = (200, 100, 35.,265.,0.25,0.25)
     >>> grid  = rmn.defGrid_L(ni, nj, lat0, lon0, dlat, dlon)
-
+    >>> 
     >>> # Release memory associated with grid info
     >>> rmn.gdrls(grid)
     
@@ -2153,11 +1830,7 @@ def gdrls(gdid):
         rpnpy.librmn.grids.defGrid_L
         rpnpy.librmn.grids.encodeGrid    
     """
-    if isinstance(gdid, dict):
-        try:
-            gdid = gdid['id']
-        except:
-            pass
+    gdid = _getCheckArg(None, gdid, gdid, 'id')
     if not isinstance(gdid, (list, tuple)):
         gdid = [gdid]
     for id1 in gdid:

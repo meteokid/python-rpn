@@ -16,9 +16,9 @@ Notes:
 import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
-from . import proto as _vp
-from . import const as _vc
-from . import VGDError
+from rpnpy.vgd import proto as _vp
+from rpnpy.vgd  import const as _vc
+from rpnpy.vgd  import VGDError
 import rpnpy.librmn.all as _rmn
 
 _C_MKSTR = _ct.create_string_buffer
@@ -110,11 +110,11 @@ def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
@@ -161,11 +161,11 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.011,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.011,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.993,    1.000)
     >>> rcoef1 = 1.6
     >>> ptop   = 110.
@@ -208,11 +208,11 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 10.
@@ -259,11 +259,11 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 10.
@@ -313,11 +313,11 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -367,11 +367,11 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -424,11 +424,11 @@ def vgd_new(kind, version, hyb,
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
     >>> (kind, version) = vgd.VGD_KIND_VER['hybmd']
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -569,7 +569,7 @@ def vgd_write(vgd_ptr, fileId):
     >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
     >>>     sys.exit(1)
     >>> fileName = 'myfstfile.fst'
-    >>> fileId = rmn.fstopenall(fileName, rmn.FST_RW)
+    >>> fileId   = rmn.fstopenall(fileName, rmn.FST_RW)
     >>> try:
     >>>     vgd.vgd_write(myvgd, fileId)
     >>> except:
@@ -681,7 +681,7 @@ def vgd_fromlist(vgd_table):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
+    >>>     myvgd    = vgd.vgd_new_pres(lvls)
     >>>     vgdtable = vgd.vgd_tolist(myvgd)
     >>> except:
     >>>     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
@@ -1057,11 +1057,11 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075,
-                 0.101,   0.127,    0.155,    0.185,    0.219,
-                 0.258,   0.302,    0.351,    0.405,    0.460,
-                 0.516,   0.574,    0.631,    0.688,    0.744,
-                 0.796,   0.842,    0.884,    0.922,    0.955,
+    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075, \
+                 0.101,   0.127,    0.155,    0.185,    0.219, \
+                 0.258,   0.302,    0.351,    0.405,    0.460, \
+                 0.516,   0.574,    0.631,    0.688,    0.744, \
+                 0.796,   0.842,    0.884,    0.922,    0.955, \
                  0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
@@ -1143,6 +1143,10 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
         levels8 = levels8.flatten()
     return levels8
 
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

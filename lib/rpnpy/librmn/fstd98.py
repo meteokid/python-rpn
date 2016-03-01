@@ -14,10 +14,10 @@ import os
 import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
-from . import proto as _rp
-from . import const as _rc
-from . import base as _rb
-from . import RMNError
+from rpnpy.librmn import proto as _rp
+from rpnpy.librmn import const as _rc
+from rpnpy.librmn import base as _rb
+from rpnpy.librmn import RMNError
 
 #---- helpers -------------------------------------------------------
 
@@ -210,6 +210,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     >>> #...
     >>> rmn.fstcloseall(funit1)
     >>> rmn.fstcloseall(funit2)
+    >>> os.unlink('newfile.fst')  # Remove test file
     
     See Also:
        fstouv
@@ -302,7 +303,8 @@ def fstcloseall(iunit):
     >>> funit = rmn.fstopenall('mynewfile.fst', rmn.FST_RW)
     >>> #...
     >>> rmn.fstcloseall(funit)
-    
+    >>> os.unlink('mynewfile.fst')  # Remove test file
+
     See Also:
        fstfrm
        fstopenall
@@ -395,7 +397,7 @@ def FLOATIPtoList(rp1):
     >>> pk3 = rmn.listToFLOATIP((0.,     0., 0))
     >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1, pk2, pk3)
     >>> (rp1, rp2, rp3) = rmn.convertIPtoPK(ip1, ip2, ip3)
-    >>> (v1, v2, kind) = rmn.FLOATIPtoList(rp1)
+    >>> (v1, v2, kind)  = rmn.FLOATIPtoList(rp1)
     
     See Also:
         listToFLOATIP
@@ -450,13 +452,13 @@ def fstecr(iunit, data, meta=None, rewrite=True):
     >>> funitIn  = rmn.fstopenall(filename)
     >>> funitOut = rmn.fstopenall('newfile.fst', rmn.FST_RW)
     >>> myrec = rmn.fstlir(funitIn, nomvar='P0')
-
+    >>> 
     >>> # Write the record specifying data and meta separately
     >>> rmn.fstecr(funitOut, myrec['d'], myrec)
-    
+    >>> 
     >>> # Write the record specifying data and meta together
     >>> rmn.fstecr(funitOut, myrec)
-
+    >>> 
     >>> # Properly close files, important when writing to avoid corrupted files
     >>> rmn.fstcloseall(funitOut)
     >>> rmn.fstcloseall(funitIn)
@@ -582,7 +584,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     Examples:
     >>> import os, os.path, stat, shutil
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Copy a file locally to be able to edit it and set write permission
     >>> filename  = 'geophy.fst'
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
@@ -590,23 +592,22 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     >>> shutil.copyfile(filename0, filename)
     >>> st = os.stat(filename)
     >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
-    
+    >>> 
     >>> # Open existing file in Rear/Write mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
-
+    >>> 
     >>> # Get the list of all records in file and change the etiket for them all
     >>> mykeylist = rmn.fstinl(funit)
-
+    >>> 
     >>> # Iterate explicitely on list of records to change the etiket
-    >>> for key in mykeylist:
-    >>>     rmn.fst_edit_dir(key, etiket='MY_NEW_ETK')
-
+    >>> for key in mykeylist: rmn.fst_edit_dir(key, etiket='MY_NEW_ETK')
+    >>> 
     >>> # Could also be written as a one liner list comprenhension:
     >>> # [rmn.fst_edit_dir(key, etiket='MY_NEW_ETK') for key in rmn.fstinl(funit)]
-
+    >>> 
     >>> # Iterate implicitely on list of records to change the etiket
     >>> rmn.fst_edit_dir(mykeylist, etiket='MY_NEW_ETK')
-
+    >>> 
     >>> # Properly close files, important when editing to avoid corrupted files
     >>> rmn.fstcloseall(funit)
 
@@ -698,7 +699,7 @@ def fsteff(key):
     Examples:
     >>> import os, os.path, stat, shutil
     >>> import rpnpy.librmn.all as rmn
-    
+    >>> 
     >>> # Copy a file locally to be able to edit it and set write permission
     >>> filename  = 'geophy.fst'
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
@@ -706,27 +707,25 @@ def fsteff(key):
     >>> shutil.copyfile(filename0, filename)
     >>> st = os.stat(filename)
     >>> os.chmod(filename, st.st_mode | stat.S_IWRITE)
-    
+    >>> 
     >>> # Open existing file in Rear/Write mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RW_OLD)
-    
+    >>> 
     >>> # Find the record name ME and erase it from the file
     >>> key = rmn.fstinf(funit, nomvar='ME')
     >>> rmn.fsteff(key['key'])
-
+    >>> 
     >>> # Find the record name ME and erase it from the file,
     >>> # passing directly the dict returned by fstinf
     >>> key = rmn.fstinf(funit, nomvar='MG')
     >>> rmn.fsteff(key)
-
+    >>> 
     >>> # Find all record named VF and erase them
     >>> keylist = rmn.fstinl(funit, nomvar='VF')
     >>> rmn.fsteff(keylist)
 
-    >>> # Iterate implicitely on list of records to change the etiket
-    >>> rmn.fst_edit_dir(mykeylist, etiket='MY_NEW_ETK')
-
     >>> rmn.fstcloseall(funit)
+    >>> os.unlink(filename)  #Remove test file
 
     See Also:
         fstopenall
@@ -778,7 +777,8 @@ def fstfrm(iunit):
     >>> #...
     >>> istat = rmn.fstfrm(funit)
     >>> istat = rmn.fclos(funit)
-    
+    >>> os.unlink('myfstfile.fst')  # Remove test file
+
     See Also:
         fstouv
         fstopenall
@@ -833,14 +833,14 @@ def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find the record named P0 and read its metadata
     >>> key    = rmn.fstinf(funit, nomvar='P0')
     >>> p0meta = rmn.fstprm(key['key'])
-    
+    >>> 
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -894,16 +894,16 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find the 1st record named P0 then the one follwoing it
     >>> # and read its metadata
     >>> key1   = rmn.fstinf(funit, nomvar='P0')
     >>> key2   = rmn.fstinfx(key1, funit, nomvar='P0')
     >>> p0meta = rmn.fstprm(key2)
-    
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -973,15 +973,17 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
-    >>> # Find all records named VF and print their ip1
+    >>> 
+    >>> # Find all records named VF and print the ip1 of the first 3
     >>> keylist = rmn.fstinl(funit, nomvar='VF')
-    >>> for key in keylist:
-    >>>     print("VF ip1=%s" % rmn.fstprm(key)['ip1'])
-    
+    >>> for key in keylist[0:3]: print("# VF ip1=%s" % rmn.fstprm(key)['ip1'])
+    # VF ip1=1199
+    # VF ip1=1198
+    # VF ip1=1197
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1087,15 +1089,15 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find and read p0 meta and data, then print its min,max,mean values
     >>> p0rec = rmn.fstlir(funit, nomvar='P0')
-    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
               (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    
+    # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1157,17 +1159,17 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find and read the 2nd p0 meta and data,
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlirx(key1, funit, nomvar='P0')
-    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
               (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    
+    # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1217,17 +1219,18 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find and read the 2nd p0 meta and data,
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlis(funit)
-    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
               (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    
+    # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
+    >>>    
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1265,7 +1268,7 @@ def fstlnk(unitList):
     Examples:
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Open several files
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename1 = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
@@ -1274,14 +1277,15 @@ def fstlnk(unitList):
     >>> filename2 = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_012')
     >>> funit2 = rmn.fnom(filename2, rmn.FST_RO)
     >>> istat  = rmn.fstouv(funit2, rmn.FST_RO)
-
+    >>> 
     >>> # Link the file as one
     >>> funit = rmn.fstlnk((funit1, funit2))
-
+    >>> 
     >>> # Use the linked files
-    >>> for key in rmn.fstinl(funit, nomvar='P0'):
-    >>>     print("P0 ip2=%s" % rmn.fstprm(key)['ip2'])
-
+    >>> for key in rmn.fstinl(funit, nomvar='P0'): print("# P0 ip2=%s" % rmn.fstprm(key)['ip2'])
+    # P0 ip2=0
+    # P0 ip2=12
+    >>> 
     >>> # Close all linked files
     >>> istat = rmn.fstfrm(funit1)
     >>> istat = rmn.fclos(funit1)
@@ -1348,17 +1352,17 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find record named P0 and read it meta + data
     >>> # then print its min,max,mean values
     >>> key   = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstluk(key)
-    >>> print("P0 ip2=%s min=%f max=%f avg=%f" %
+    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
               (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-
+    # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1439,16 +1443,16 @@ def fstnbr(iunit):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Print number of records
     >>> # then print its min,max,mean values
     >>> nrec = rmn.fstnbr(funit)
-    >>> print("There is %d records in file %s" %
-              (nrec, filename))
-
+    >>> print("# There are %d records in the file" % nrec)
+    # There are 1083 records in the file
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1488,16 +1492,16 @@ def fstnbrv(iunit):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Print number of records
     >>> # then print its min,max,mean values
     >>> nrec = rmn.fstnbrv(funit)
-    >>> print("There is %d valid records in file %s" %
-              (nrec, filename))
-
+    >>> print("# There are %d valid records in the file" % nrec)
+    # There are 1083 valid records in the file
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1595,6 +1599,7 @@ def fstouv(iunit, filemode=_rc.FST_RW):
     >>> #...
     >>> istat = rmn.fstfrm(funit)
     >>> istat = rmn.fclos(funit)
+    >>> os.unlink('myfstfile.fst')  # Remove test file
     
     See Also:
         fstfrm
@@ -1669,15 +1674,16 @@ def fstprm(key):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
-    >>> # Print name, ip1, ip2 of all records in file 
-    >>> for key in rmn.fstinl(funit):
-    >>>     meta = rmn.fstprm(key)
-    >>>     print("%s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
-    
+    >>> 
+    >>> # Print name, ip1, ip2 of first record in file
+    >>> key  = rmn.fstinf(funit)
+    >>> meta = rmn.fstprm(key['key'])
+    >>> print("# %s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    # !!   ip1=0 ip2=0
+    >>>
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1784,17 +1790,18 @@ def fstsui(iunit):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-    
+    >>> 
     >>> # Find the 1st record named P0 then the one follwoing it
     >>> # and read its metadata
     >>> key1 = rmn.fstinf(funit, nomvar='P0')
     >>> key2 = rmn.fstsui(funit)
     >>> meta = rmn.fstprm(key2)
-    >>> print("%s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
-    
+    >>> print("# %s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    # P0   ip1=0 ip2=12
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1851,14 +1858,14 @@ def fstvoi(iunit, options=' '):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk','2009042700_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-
+    >>> 
     >>> # Print meta of all record in file
     >>> rmn.fstvoi(funit)
     >>> rmn.fstvoi(funit,'DATEV+LEVEL+NOTYPV+NOETIQ+NOIP23+NODEET+NONPAS+NODTY')
-
+    >>> 
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1890,7 +1897,8 @@ def fst_version():
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> print("Using fst_version=%d" % rmn.fst_version())
+    >>> print("# Using fst_version=%d" % rmn.fst_version())
+    # Using fst_version=200001
 
     See Also:
         fstopt
@@ -1922,15 +1930,16 @@ def ip1_all(level, kind):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-
+    >>> 
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip1new = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip1=ip1new)
-    >>> print("Looked for TT with ip1=%s, found ip1=%s" % (ip1new,ttrec['ip1']))
-
+    >>> print("# Looked for TT with ip1=%s, found ip1=%s" % (ip1new,ttrec['ip1']))
+    # Looked for TT with ip1=41394464, found ip1=500
+    >>> 
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -1984,16 +1993,17 @@ def ip2_all(level, kind):
     >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
-
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-
+    >>> 
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip2new = rmn.ip2_all(0., rmn.TIME_KIND_HR)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip2=ip2new)
-    >>> print("Looked for TT with ip2=%s, found ip2=%s" % (ip2new,ttrec['ip2']))
-
+    >>> print("# Looked for TT with ip2=%s, found ip2=%s" % (ip2new, ttrec['ip2']))
+    # Looked for TT with ip2=183500800, found ip2=0
+    >>> 
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -2048,15 +2058,16 @@ def ip3_all(level, kind):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_p','anlp2015070706_000')
-
+    >>> 
     >>> # Open existing file in Rear Only mode
     >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
-
+    >>> 
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip3new = rmn.ip3_all(0., rmn.KIND_ARBITRARY)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip3=ip3new)
-    >>> print("Looked for TT with ip3=%s, found ip3=%s" % (ip3new,ttrec['ip3']))
-
+    >>> print("# Looked for TT with ip3=%s, found ip3=%s" % (ip3new, ttrec['ip3']))
+    # Looked for TT with ip3=66060288, found ip3=0
+    >>> 
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -2349,20 +2360,22 @@ def convertIPtoPK(ip1, ip2, ip3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Encode 500mb at 12h,
     >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
     >>> pk1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
     >>> pk2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
     >>> pk3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
     >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1a, pk2a, pk3a)
-
+    >>> 
     >>> # Decode and print
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
-    >>> print("Level v1=%f, v2=%f, type=%s" %
+    >>> print("# Level v1=%f, v2=%f, type=%s" % \
               (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
-    >>> print("Time v1=%f, v2=%f, type=%s" %
+    # Level v1=500.000000, v2=500.000000, type=mb
+    >>> print("# Time v1=%f, v2=%f, type=%s" % \
               (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+    # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
         ip1_val
@@ -2418,20 +2431,22 @@ def convertPKtoIP(pk1, pk2, pk3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Encode 500mb at 12h,
     >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
     >>> pk1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
     >>> pk2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
     >>> pk3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
     >>> (ip1, ip2, ip3) = rmn.convertPKtoIP(pk1a, pk2a, pk3a)
-
+    >>> 
     >>> # Decode and print
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
-    >>> print("Level v1=%f, v2=%f, type=%s" %
+    >>> print("# Level v1=%f, v2=%f, type=%s" % \
               (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
-    >>> print("Time v1=%f, v2=%f, type=%s" %
+    # Level v1=500.000000, v2=500.000000, type=mb
+    >>> print("# Time v1=%f, v2=%f, type=%s" % \
               (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+    # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
         ip1_val
@@ -2481,20 +2496,22 @@ def EncodeIp(rp1, rp2, rp3):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-
+    >>> 
     >>> # Encode 500mb at 12h,
     >>> # these ip1, ip2, ip3 can be used as search keys int fstinf, fstlir, ...
     >>> rp1a = rmn.FLOAT_IP(500., 500., rmn.LEVEL_KIND_PMB)
     >>> rp2a = rmn.FLOAT_IP( 12.,  12., rmn.TIME_KIND_HR)
     >>> rp3a = rmn.FLOAT_IP(  0.,   0., rmn.KIND_ARBITRARY)
     >>> (ip1, ip2, ip3) = rmn.EncodeIp(rp1a, rp2a, rp3a)
-
+    >>> 
     >>> # Decode and print
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
-    >>> print("Level v1=%f, v2=%f, type=%s" %
+    >>> print("# Level v1=%f, v2=%f, type=%s" % \
               (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
-    >>> print("Time v1=%f, v2=%f, type=%s" %
+    # Level v1=500.000000, v2=500.000000, type=mb
+    >>> print("# Time v1=%f, v2=%f, type=%s" % \
               (rp2.v1, rp2.v2, rmn.kindToString(rp2.kind)))
+    # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
         DecodeIp
@@ -2545,9 +2562,10 @@ def DecodeIp(ip1, ip2, ip3):
     >>> import rpnpy.librmn.all as rmn
     >>> (ip1, ip2, ip3) = (6441456, 176280768, 66060288)
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
-    >>> print("Level v1=%f, v2=%f, type=%s" %
+    >>> print("# Level v1=%f, v2=%f, type=%s" % \
               (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
-    
+    # Level v1=1500.000000, v2=1500.000000, type= m
+
     See Also:
         EncodeIp
         ip1_val
@@ -2582,8 +2600,10 @@ def kindToString(kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> print(rmn.kindToString(rmn.LEVEL_KIND_PMB))
-    >>> print(rmn.kindToString(rmn.TIME_KIND_HR))
+    >>> print('# '+rmn.kindToString(rmn.LEVEL_KIND_PMB))
+    # mb
+    >>> print('# '+rmn.kindToString(rmn.TIME_KIND_HR))
+    #  H
 
     See Also:
         ip1_val

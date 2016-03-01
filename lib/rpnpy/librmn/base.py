@@ -12,9 +12,9 @@ main librmn, base and primitives C functions
 
 import ctypes as _ct
 import numpy  as _np
-from . import proto as _rp
-from . import const as _rc
-from . import RMNError
+from rpnpy.librmn import proto as _rp
+from rpnpy.librmn import const as _rc
+from rpnpy.librmn import RMNError
 
 _C_MKSTR = _ct.create_string_buffer
 _C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
@@ -64,14 +64,16 @@ def fclos(iunit):
         RMNBaseError on any other error
     
     Examples:
-    >>> import sys
+    >>> import os, sys
     >>> import rpnpy.librmn.all as rmn
+    >>> filename = 'myfstfile.fst'
     >>> try:
-    >>>     filename = 'myfstfile.fst'
     >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
-    >>>     rmn.fclos(iunit)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem opening/closing the file: %s" % (filename))
+    >>>     sys.stderr.write("There was a problem opening the file: %s" % (filename))
+    >>> rmn.fclos(iunit)
+    >>> os.unlink(filename)  # Remove test file
+    
     
     See also:
        fnom
@@ -92,7 +94,7 @@ def fclos(iunit):
 def fnom(filename, filemode=_rc.FST_RW, iunit=0):
     """
     Open a file and make the connection with a unit number.
-
+    
     Args:
         filename : path/name of the file to open
         filemode : a string with the desired filemode (see librmn doc)
@@ -107,14 +109,15 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
         RMNBaseError on any other error
         
     Examples:
-    >>> import sys
+    >>> import os, sys
     >>> import rpnpy.librmn.all as rmn
+    >>> filename = 'myfstfile.fst'
     >>> try:
-    >>>     filename = 'myfstfile.fst'
     >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
-    >>>     rmn.fclos(iunit)
     >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem opening/closing the file: %s\n" % (filename))
+    >>>     sys.stderr.write("There was a problem opening the file: %s" % (filename))
+    >>> rmn.fclos(iunit)
+    >>> os.unlink(filename)  # Remove test file
     
     See also:
        fclos
@@ -200,12 +203,10 @@ def wkoffit(filename):
     >>> import rpnpy.librmn.all as rmn
     >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
-    >>> try:
-    >>>     type = rmn.wkoffit(filename)
-    >>>     for k in rmn.WKOFFIT_TYPE_LIST.keys():
-    >>>         if type == rmn.WKOFFIT_TYPE_LIST[k]: print k
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting file type for: %s" % (filename))
+    >>> itype = rmn.wkoffit(filename)
+    >>> sys.stderr.write("There was a problem getting file type for: %s" % (filename))
+    >>> if itype in rmn.WKOFFIT_TYPE_LIST_INV.keys(): print('# '+rmn.WKOFFIT_TYPE_LIST_INV[itype])
+    # STANDARD RANDOM 98
 
     See also:
        rpnpy.librmn.fstd98.isFST
@@ -236,8 +237,8 @@ def crc32(crc, buf):
     >>> import sys
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
+    >>> buf = np.array([4,3,7,1,9], dtype=np.uint32)
     >>> try:
-    >>>     buf = np.array([4,3,7,1,9],dtype=np.uint32)
     >>>     crc = rmn.crc32(0,buf)
     >>> except:
     >>>     sys.stderr.write("There was a problem computing CRC value.")
@@ -332,7 +333,7 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>     ig1234 = rmn.cxgaig('L',-89.5,180.0,0.5,0.5)
+    >>>     ig1234 = rmn.cxgaig('L', -89.5, 180.0, 0.5, 0.5)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write(There was a problem getting encoded grid values.")
     
@@ -384,10 +385,10 @@ def incdatr(idate, nhours):
     Examples:
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
+    >>> (yyyymmdd, hhmmsshh, nhours0) = (20150123, 0, 6.)
     >>> try:
-    >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
-    >>>     idate2 = rmn.incdatr(idate1,nhours0)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    >>>     idate2 = rmn.incdatr(idate1, nhours0)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem computing increased date.")
     
@@ -434,11 +435,11 @@ def difdatr(idate1, idate2):
     Examples:
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
+    >>> (yyyymmdd, hhmmsshh, nhours0) = (20150123, 0, 6.)
     >>> try:
-    >>>     (yyyymmdd,hhmmsshh,nhours0) = (20150123,0,6.)
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
-    >>>     idate2 = rmn.incdatr(idate1,nhours0)
-    >>>     nhours = rmn.difdatr(idate2,idate1)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    >>>     idate2 = rmn.incdatr(idate1, nhours0)
+    >>>     nhours = rmn.difdatr(idate2, idate1)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem computing date diff.")
     
@@ -691,10 +692,10 @@ def newdate(imode, idate1, idate2=0):
     Examples:
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
+    >>> (yyyymmdd, hhmmsshh) = (20150123, 0)
     >>> try:
-    >>>     (yyyymmdd,hhmmsshh) = (20150123,0)
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP,yyyymmdd,hhmmsshh)
-    >>>     (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT,idate1)
+    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    >>>     (yyyymmdd2, hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, idate1)
     >>> except rmn.RMNBaseError:
     >>>     sys.stderr.write("There was a problem encoding/decoding the date.")
     

@@ -54,6 +54,8 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'STANDARD SEQUENTIEL 98' : 34,
     'NETCDF' : 35
     }
+
+WKOFFIT_TYPE_LIST_INV = dict((v, k) for k, v in WKOFFIT_TYPE_LIST.iteritems())
 #</source>
 #=== base ===
 
