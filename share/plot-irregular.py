@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 # Author: Kristjan Onu <Kristjan.Onu@canada.ca>
 """
-Use Basemap to plot data from a RPN Standard File not on regular lat-lon grid
+Use Basemap to plot data from a RPN Standard File on an X grid-type
 
 Usage: 
-   export CMCGRIDF=???
+   # Define CMCGRIDF
+   . ssmuse-sh -d cmoi/base/20141216
    plot-irregular.py
 
 See Also:
@@ -22,11 +23,12 @@ import rpnpy.librmn.all as rmn
 
 if __name__ == "__main__":
 
-    #forecast_name = datetime.date.today().strftime('%Y%m%d') + '12_040'
-    forecast_name = '2015122312_040'
-    CMCGRIDF = os.environ['CMCGRIDF'].strip()
-    if not CMCGRIDF:
-        sys.stderr.write('Error: Need to define CMCGRIDF env.var. to get the data files.\n')
+    forecast_name = datetime.date.today().strftime('%Y%m%d') + '12_040'
+    try:
+        CMCGRIDF = os.environ['CMCGRIDF'].strip()
+    except KeyError:
+        sys.stderr.write('Error: CMCGRIDF environment variable undefined. Before Python, execute:\n')
+        sys.stderr.write('. ssmuse-sh -d cmoi/base/20141216\n')
         sys.exit(1)        
     my_file = os.path.join(CMCGRIDF, 'prog', 'gsloce', forecast_name)
 
@@ -44,8 +46,8 @@ if __name__ == "__main__":
         sys.stderr.write('Error: Problem reading fields '+varname+' in file: '+my_file+'\n')
         sys.exit(1)
 
-    # Prefered method to get grid lat, lon
-    #    would work on any RPNSTD grid type (except 'X')
+    # Prefered method to get grid lat, lon. Works on any RPNSTD grid
+    # type (except 'X')
     ## try:
     ##     sst_rec['iunit'] = funit
     ##     sst_gridid = rmn.ezqkdef(sst_rec)  # use ezscint to retreive full grid
@@ -56,12 +58,12 @@ if __name__ == "__main__":
     ##     sys.stderr.write('Error: Problem getting grid info for '+varname+' in file: '+my_file+'\n')
     ##     sys.exit(1)
 
-    # Less prefered method to get grid lat, lon
-    #    since it relies on reverse engeneering of grid def and ^^ >> values
-    #    would only work with L grids encoded as a Z grid
-    #    and when only one set of ^^ >> are in the file
-    #    In this case it's the only way since the fields are not
-    #    properly geo-referenced (grtyp='X')
+    # Less prefered method to get grid lat, lon since it relies on
+    # reverse engeneering of grid def and ^^ >> values would only work
+    # with L grids encoded as a Z grid and when only one set of ^^ >>
+    # are in the file In this case it's the only way since the fields
+    # are not properly geo-referenced (grtyp='X')
+
     try:
         lat = rmn.fstlir(funit, nomvar='^^', dtype=np.float32)['d']
         lon = rmn.fstlir(funit, nomvar='>>', dtype=np.float32)['d']
@@ -96,7 +98,7 @@ if __name__ == "__main__":
 
     sst = scipy.constants.K2C(sst)
 
-    sst_a = bmap.pcolor(x.ravel(), y.ravel(), sst.ravel(), tri=True)
+    sst_a = bmap.pcolormesh(x, y, sst)
 
     subsample = 5
     lines = bmap.plot(x.ravel()[::subsample], y.ravel()[::subsample])
@@ -108,5 +110,5 @@ if __name__ == "__main__":
     cbar.set_label(u'°C')
 
     plt.show()
-    plt.savefig('pcolor_demo.png', dpi=300, transparent=True,
-                              bbox_inches='tight')
+    outfile = os.path.basename(os.path.splitext(__file__)[0]) + '.png'
+    plt.savefig(outfile, dpi=300, transparent=True, bbox_inches='tight')
