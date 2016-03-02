@@ -23,11 +23,13 @@ Here we load all the librmn functions and constants into a python object. The na
 
   python
   >>> import rpnpy.librmn.all as rmn
+
+See Also:
+  * RPNpy Cookbook
+  * RPNpy Reference
 """
 
 import unittest
-
-#--- primitives -----------------------------------------------------
 
 class rpnpyTutorial(unittest.TestCase):
 

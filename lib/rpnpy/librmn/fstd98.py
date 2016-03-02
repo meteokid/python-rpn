@@ -2295,7 +2295,10 @@ def convertIp(mode, v, k=0):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    
+    >>> ip1 = rmn.convertIp(rmn.CONVIP_ENCODE_OLD, 500., rmn.KIND_PRESSURE)
+    >>> ip1 = rmn.convertIp(rmn.CONVIP_ENCODE, 500., rmn.KIND_PRESSURE)
+    >>> (val, kind) = rmn.convertIp(rmn.CONVIP_DECODE, ip1)
+
     See Also:
         ip1_val
         ip2_val
