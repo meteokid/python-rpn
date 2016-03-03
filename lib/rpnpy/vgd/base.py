@@ -22,6 +22,7 @@ from rpnpy.vgd  import VGDError
 import rpnpy.librmn.all as _rmn
 
 _C_MKSTR = _ct.create_string_buffer
+_MB2PA   = 100.
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     """
@@ -1115,7 +1116,7 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
         MB2PA = 100.
         rfld = rfld * MB2PA
     elif rfld is None:
-        raise TypeError('Need to check if RFLD is needed')
+        raise TypeError('rfld is None, Not Yet supported, Need to check if RFLD is needed')
     elif not isinstance(rfld,_np.ndarray):
         raise TypeError('rfld should be ndarray, list or float: %s' % str(type(ip1list)))
 
@@ -1130,11 +1131,19 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
         dtype = _np.float32
         rfld8 = rfld
     levels8 = _np.empty((ni, nj, nip1), dtype=dtype, order='FORTRAN')
-        
-    if double_precision:
-        ok = _vp.c_vgd_diag_withref_8(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+
+    ok = _vc.VGD_OK
+    vkind = vgd_get(vgd_ptr, 'KIND')
+    if vkind == 2:  # Workaround for pressure levels
+        for k in xrange(nip1):
+            (value, kind) = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))
+            levels8[:,:,k] = value * _MB2PA
     else:
-        ok = _vp.c_vgd_diag_withref(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        if double_precision:
+            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        else:
+            ok = _vp.c_vgd_diag_withref(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing levels.')
     if (rfld_rank,nj) == (1,1):

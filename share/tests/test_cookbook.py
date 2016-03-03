@@ -842,9 +842,9 @@ class rpnpyCookbook(unittest.TestCase):
         datyp   = rmn.FST_DATYP_LIST['float_IEEE_compressed']
         npdtype = rmn.dtype_fst2numpy(datyp)
         rshape  = (g['ni'], g['nj'], len(ip1list))
-        r = rmn.FST_RDE_META_DEFAULT.copy()
-        r.update(g)
-        r.update({
+        r = rmn.FST_RDE_META_DEFAULT.copy() # Copy default record meta
+        r.update(g)                         # Update with grid info
+        r.update({                          # Update with specific meta and data array
             'nomvar': 'MASK',
             'dateo' : rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20160302, 1800000),
             'nk'    : len(ip1list),
