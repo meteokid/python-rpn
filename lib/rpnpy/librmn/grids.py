@@ -576,7 +576,7 @@ def writeGrid(funit, params):
     if not params['grtyp'] in ('Z', '#', 'Y', 'U'):
         return
     
-    rec = _rc.FST_RDE_META_DEFAULT
+    rec = _rc.FST_RDE_META_DEFAULT.copy()
     rec['ip1'] = params['tag1']
     rec['ip2'] = params['tag2']
     try:

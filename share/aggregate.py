@@ -159,7 +159,7 @@ def aggregateRec(rec, aggFac):
     print("+ Aggregate %s by a factor of %d" % (rec['nomvar'], aggFac))
     
     # Create new record and update its meta data from input rec
-    rec2 = rmn.FST_RDE_META_DEFAULT
+    rec2 = rmn.FST_RDE_META_DEFAULT.copy()
     rec2.update(rec)
     
     # Create aggregated grid and update rec2 grid size meta
@@ -183,7 +183,7 @@ def writeRecGrid(rec, funit, fname=''):
        None
     """
     print("+ Write grid for %s to: %s" % (rec['nomvar'], fname))
-    rec2 = rmn.FST_RDE_META_DEFAULT
+    rec2 = rmn.FST_RDE_META_DEFAULT.copy()
     rec2.update(rec)
     rec2['ip1'] = rec['grid']['tag1']
     rec2['ip2'] = rec['grid']['tag2']

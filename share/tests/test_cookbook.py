@@ -69,6 +69,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             # Get the list of record keys matching nomvar='TT', ip2=12
@@ -139,6 +140,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             #Encode selection criterions
@@ -208,6 +210,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             # Get the list of record keys matching nomvar='TT'
@@ -272,6 +275,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             # Get/read the MG record
@@ -347,6 +351,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             # Get the vgrid definition present in the file
@@ -408,6 +413,7 @@ class rpnpyCookbook(unittest.TestCase):
             fileId = rmn.fstopenall(fileName, rmn.FST_RO)
         except:
             sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
 
         try:
             # Get the vgrid definition present in the file
@@ -447,9 +453,9 @@ class rpnpyCookbook(unittest.TestCase):
                     r3d['d'][:,:,k] = r2d['d'][:,:]
                     k += 1
                 except:
-                    raise
+                    pass
         except:
-            raise
+            pass
         finally:
             # Close file even if an error occured above
             rmn.fstcloseall(fileId)
@@ -509,47 +515,418 @@ class rpnpyCookbook(unittest.TestCase):
 
     def test_21(self):
         """
-        Edit: Selective Record Copy/Manipulation
+        Edit: In-Place Record Meta Edition (a la editfst zap w/o copy)
         
+        This example shows how to
+        * select records in a RPNStd file
+        * edit in place their metadata
+
         See also:
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.fstd98.fst_edit_dir
+        rpnpy.librmn.fstd98.fsteff
+        rpnpy.librmn.const
         """
+        import sys, os, os.path, stat, shutil
         import rpnpy.librmn.all as rmn
+        
+        # Copy a file locally to be able to edit it and set write permission
+        fileName  = 'geophy.fst'
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName0 = os.path.join(ATM_MODEL_DFILES,'bcmk',fileName)
+        shutil.copyfile(fileName0, fileName)
+        st = os.stat(fileName)
+        os.chmod(fileName, st.st_mode | stat.S_IWRITE)
+
+        # Open existing file in Rear/Write mode
+        try:
+            fileId = rmn.fstopenall(fileName, rmn.FST_RW_OLD)
+        except:
+            sys.stderr.write("Problem opening the file: %s\n" % fileName)
+            sys.exit(1)
+
+        try:        
+            # Get the list of all records key in file
+            keylist = rmn.fstinl(fileId)
+
+            # Iterate implicitely on list of records to change the etiket
+            rmn.fst_edit_dir(keylist, etiket='MY_NEW_ETK')
+        except:
+            pass
+        finally:
+            # Properly close files even if an error occured above
+            # This is important when editing to avoid corrupted files
+            rmn.fstcloseall(fileId)
+            os.unlink(fileName)  # Remove test file
+
+    def test_21qd(self):
+        import sys, os, os.path, stat, shutil
+        import rpnpy.librmn.all as rmn
+        fileName  = 'geophy.fst'
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileName0 = os.path.join(ATM_MODEL_DFILES,'bcmk',fileName)
+        shutil.copyfile(fileName0, fileName)
+        st = os.stat(fileName)
+        os.chmod(fileName, st.st_mode | stat.S_IWRITE)
+        fileId = rmn.fstopenall(fileName, rmn.FST_RW_OLD)
+        rmn.fst_edit_dir(rmn.fstinl(fileId), etiket='MY_NEW_ETK')
+        rmn.fstcloseall(fileId)
+        os.unlink(fileName)  # Remove test file
 
 
     def test_22(self):
         """
-        Edit: Inplace Record Manipulation
-        
+        Edit: Copy records (a la editfst desire)
+
+        This example shows how to
+        * select records in a RPNStd file
+        * read the record data + meta
+        * write the record data + meta
+
         See also:
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.fstd98.fsrinl
+        rpnpy.librmn.fstd98.fsrluk
+        rpnpy.librmn.fstd98.fsrecr
+        rpnpy.librmn.const
         """
+        import os, os.path
         import rpnpy.librmn.all as rmn
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileNameIn  = os.path.join(ATM_MODEL_DFILES,'bcmk')
+        fileNameOut = 'myfstfile.fst'
+
+        # Open Files
+        try:
+            fileIdIn  = rmn.fstopenall(fileNameIn)
+            fileIdOut = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        except:
+            sys.stderr.write("Problem opening the files: %s, %s\n" % (fileNameIn, fileNameOut))
+            sys.exit(1)
+
+        try:
+            # Get the list of records to copy
+            keylist1 = rmn.fstinl(fileIdIn, nomvar='UU')
+            keylist2 = rmn.fstinl(fileIdIn, nomvar='VV')
+
+            for k in keylist1+keylist2:
+                # Read record data and meta from fileNameIn
+                r = rmn.fstluk(k)
+                
+                # Write the record to fileNameOut
+                rmn.fstecr(fileIdOut, r)
+
+                print("CB22: Copied %s ip1=%d, ip2=%d, dateo=%s" %
+                      (r['nomvar'], r['ip1'], r['ip2'], r['dateo']))
+        except:
+            pass
+        finally:
+            # Properly close files even if an error occured above
+            # This is important when editing to avoid corrupted files
+            rmn.fstcloseall(fileIdIn)
+            rmn.fstcloseall(fileIdOut)
+            os.unlink(fileNameOut)  # Remove test file
+
+
+    def test_22qd(self):
+        import os, os.path
+        import rpnpy.librmn.all as rmn
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+        fileNameOut = 'myfstfile.fst'
+        fileIdIn  = rmn.fstopenall(ATM_MODEL_DFILES+'/bcmk')
+        fileIdOut = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        for k in rmn.fstinl(fileIdIn, nomvar='UU') + rmn.fstinl(fileIdIn, nomvar='VV'):
+            rmn.fstecr(fileIdOut, rmn.fstluk(k))
+        rmn.fstcloseall(fileIdIn)
+        rmn.fstcloseall(fileIdOut)
+        os.unlink(fileNameOut)  # Remove test file
 
 
     def test_23(self):
         """
-        Edit: New Record
-        
+        Edit: Read, Edit, Write records with meta, grid and vgrid
+
+        This example shows how to
+        * select records in a RPNStd file
+        * read the record data + meta
+        * edit/use record data and meta (compute the wind velocity)
+        * write the recod data + meta
+        * copy (read/write) the record grid descriptors
+        * copy (read/write) the file vgrid descriptor
+
         See also:
+        rpnpy.librmn.fstd98.fstopt
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.fstd98.fsrinl
+        rpnpy.librmn.fstd98.fsrluk
+        rpnpy.librmn.fstd98.fsrlir
+        rpnpy.librmn.fstd98.fsrecr
+        rpnpy.librmn.grids.readGrid
+        rpnpy.librmn.grids.writeGrid
+        rpnpy.vgd.base.vgd_read
+        rpnpy.vgd.base.vgd_write
+        rpnpy.librmn.const
+        rpnpy.vgd.const
         """
+        import os, sys, datetime
+        from scipy.constants import knot as KNOT2MS
+        import numpy as np
         import rpnpy.librmn.all as rmn
+        import rpnpy.vgd.all as vgd
+        fdate       = datetime.date.today().strftime('%Y%m%d') + '00_048'
+        CMCGRIDF    = os.getenv('CMCGRIDF').strip()
+        fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
+        fileNameOut = 'uvfstfile.fst'
+
+        # Restric to the minimum the number of messages printed by librmn
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+
+        # Open Files
+        try:
+            fileIdIn  = rmn.fstopenall(fileNameIn)
+            fileIdOut = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        except:
+            sys.stderr.write("Problem opening the files: %s, %s\n" % (fileNameIn, fileNameOut))
+            sys.exit(1)
+
+        try:
+            # Copy the vgrid descriptor
+            v = vgd.vgd_read(fileIdIn)
+            vgd.vgd_write(v, fileIdOut)
+            print("CB23: Copied the vgrid descriptor")
+            
+            # Loop over the list of UU records to copy 
+            uu = {'d': None}
+            vv = {'d': None}
+            uvarray = None
+            copyGrid = True
+            for k in rmn.fstinl(fileIdIn, nomvar='UU'):
+                # Read the UU record data and meta from fileNameIn
+                # Provide data array to re-use memory
+                uu = rmn.fstluk(k, dataArray=uu['d'])
+                
+                # Read the corresponding VV
+                # Provide data array to re-use memory
+                vv = rmn.fstlir(fileIdIn, nomvar='VV',
+                                ip1=uu['ip1'], ip2=uu['ip2'], datev=uu['datev'],
+                                dataArray=vv['d'])
+
+                # Compute the wind modulus in m/s
+                # Copy metadata from the UU record
+                # Create / re-use memory space for computation results
+                uv = uu.copy()
+                if uvarray is None:
+                    uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='FORTRAN')
+                uv['d'] = uvarray
+                uv['d'][:,:] = np.sqrt(uu['d']**2. + vv['d']**2.)
+                uv['d'] *= KNOT2MS  # Convert from knot to m/s
+
+               # Set new record name and Write it to fileNameOut
+                uv['nomvar'] = 'WSPD'
+                rmn.fstecr(fileIdOut, uv)
+                
+                print("CB23: Wrote %s ip1=%d, ip2=%d, dateo=%s : mean=%f" %
+                      (uv['nomvar'], uv['ip1'], uv['ip2'], uv['dateo'], uv['d'].mean()))
+
+                # Read and Write grid (only once, all rec are on the same grid)
+                if copyGrid:
+                    copyGrid = False
+                    g = rmn.readGrid(fileIdIn, uu)
+                    rmn.writeGrid(fileIdOut, g)
+                    print("CB23: Copied the grid descriptors")
+        except:
+            pass
+        finally:
+            # Properly close files even if an error occured above
+            # This is important when editing to avoid corrupted files
+            rmn.fstcloseall(fileIdIn)
+            rmn.fstcloseall(fileIdOut)
+            os.unlink(fileNameOut)  # Remove test file
+
+    def test_23qd(self):
+        import os, sys, datetime
+        from scipy.constants import knot as KNOT2MS
+        import numpy as np
+        import rpnpy.librmn.all as rmn
+        import rpnpy.vgd.all as vgd
+        fdate       = datetime.date.today().strftime('%Y%m%d') + '00_048'
+        fileNameOut = 'uvfstfile.fst'
+        fileIdIn    = rmn.fstopenall(os.getenv('CMCGRIDF')+'/prog/regeta/'+fdate)
+        fileIdOut   = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        vgd.vgd_write(vgd.vgd_read(fileIdIn), fileIdOut)
+        (uu, vv, uvarray, copyGrid) = ({'d': None}, {'d': None}, None, True)
+        for k in rmn.fstinl(fileIdIn, nomvar='UU'):
+            uu = rmn.fstluk(k, dataArray=uu['d'])
+            vv = rmn.fstlir(fileIdIn, nomvar='VV', ip1=uu['ip1'], ip2=uu['ip2'],
+                            datev=uu['datev'],dataArray=vv['d'])
+            if uvarray is None:
+                uvarray = np.empty(uu['d'].shape, dtype=uu['d'].dtype, order='FORTRAN')
+            uv = uu.copy()
+            uv.update({'d':uvarray, 'nomvar': 'WSPD'})
+            uv['d'][:,:] = np.sqrt(uu['d']**2. + vv['d']**2.) * KNOT2MS
+            rmn.fstecr(fileIdOut, uv)
+            if copyGrid:
+                copyGrid = False
+                rmn.writeGrid(fileIdOut, rmn.readGrid(fileIdIn, uu))
+        rmn.fstcloseall(fileIdIn)
+        rmn.fstcloseall(fileIdOut)
+        os.unlink(fileNameOut)  # Remove test file
 
 
     def test_24(self):
         """
-        Edit: New Horizontal Grid
-        
+        Edit: New file from scratch
+
+        This example shows how to
+        * Create a record meta and data from scratch
+        * Create grid descriptors for the data
+        * Create vgrid descriptor for the data
+        * write the recod data + meta
+        * write the grid descriptors
+        * write the vgrid descriptor
+
         See also:
+        rpnpy.librmn.fstd98.fstopt
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.fstd98.fsrecr
+        rpnpy.librmn.fstd98.dtype_fst2numpy
+        rpnpy.librmn.grids.encodeGrid
+        rpnpy.librmn.grids.defGrid_ZE
+        rpnpy.librmn.grids.writeGrid
+        rpnpy.librmn.base.newdate
+        rpnpy.vgd.base.vgd_new
+        rpnpy.vgd.base.vgd_new_pres
+        rpnpy.vgd.base.vgd_new_get
+        rpnpy.vgd.base.vgd_write
+        rpnpy.librmn.const
+        rpnpy.vgd.const
         """
+        import os, sys
+        import numpy as np
         import rpnpy.librmn.all as rmn
+        import rpnpy.vgd.all as vgd
+        
+        # Restric to the minimum the number of messages printed by librmn
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+
+        # Create Record grid
+        gp = {
+            'grtyp' : 'Z',
+            'grref' : 'E',
+            'ni'    : 90,
+            'nj'    : 45,
+            'lat0'  : 35.,
+            'lon0'  : 250.,
+            'dlat'  : 0.5,
+            'dlon'  : 0.5,
+            'xlat1' : 0.,
+            'xlon1' : 180.,
+            'xlat2' : 1.,
+            'xlon2' : 270.
+        }
+        g = rmn.encodeGrid(gp)
+        print("CB24: Defined a %s/%s grid of shape=%d, %d" %
+              (gp['grtyp'], gp['grref'], gp['ni'], gp['nj']))
+            
+        # Create Record vgrid
+        lvls = (500.,850.,1000.)
+        v = vgd.vgd_new_pres(lvls)
+        ip1list = vgd.vgd_get(v, 'VIPT')
+        print("CB24: Defined a Pres vgrid with lvls=%s" % str(lvls))
+        
+        # Create Record data + meta
+        datyp   = rmn.FST_DATYP_LIST['float_IEEE_compressed']
+        npdtype = rmn.dtype_fst2numpy(datyp)
+        rshape  = (g['ni'], g['nj'], len(ip1list))
+        r = rmn.FST_RDE_META_DEFAULT.copy()
+        r.update(g)
+        r.update({
+            'nomvar': 'MASK',
+            'dateo' : rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20160302, 1800000),
+            'nk'    : len(ip1list),
+            'ip1'   : 0,     # level, will be set later, level by level
+            'ip2'   : 6,     # Forecast of 6h
+            'deet'  : 3600,  # Timestep in sec
+            'npas'  : 6,     # Step number
+            'etiket': 'my_etk',
+            'nbits' : 32,    # Keep full 32 bits precision for that field
+            'datyp' : datyp, # datyp (above) float_IEEE_compressed
+            'd'     : np.empty(rshape, dtype=npdtype, order='FORTRAN')
+            })
+        print("CB24: Defined a new record of shape=%d, %d" % (r['ni'], r['nj']))
+
+        
+        # Compute record values
+        r['d'][:,:,:] = 0.
+        r['d'][10:-11,5:-6,:] = 1.
+        
+        # Open Files
+        fileNameOut = 'newfromscratch.fst'
+        try:
+            fileIdOut = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        except:
+            sys.stderr.write("Problem opening the file: %s, %s\n" % fileNameOut)
+            sys.exit(1)
+
+        # Write record data + meta + grid + vgrid to file
+        try:
+            r2d = r.copy()
+            r2d['nk']  = 1
+            for k in range(len(ip1list)):
+                r2d['ip1'] = ip1list[k]
+                r2d['d'] = np.asfortranarray(r['d'][:,:,k])
+                rmn.fstecr(fileIdOut, r2d['d'], r2d)
+                print("CB24: wrote %s at ip1=%d" % (r2d['nomvar'], r2d['ip1']))
+            rmn.writeGrid(fileIdOut, g)
+            print("CB24: wrote the grid descriptors")
+            vgd.vgd_write(v, fileIdOut)
+            print("CB24: wrote the vgrid descriptor")
+        except:
+            raise
+        finally:
+            # Properly close files even if an error occured above
+            # This is important when editing to avoid corrupted files
+            rmn.fstcloseall(fileIdOut)
+            os.unlink(fileNameOut)  # Remove test file
 
 
-    def test_25(self):
-        """
-        Edit: New Vertical Grid
-        
-        See also:
-        """
+    def test_24qd(self):
+        import os, sys
+        import numpy as np
         import rpnpy.librmn.all as rmn
+        import rpnpy.vgd.all as vgd
+        g = rmn.defGrid_ZE(90, 45, 35., 250., 0.5, 0.5, 0., 180., 1., 270.)
+        lvls = (500.,850.,1000.)
+        v = vgd.vgd_new_pres(lvls)
+        ip1list = vgd.vgd_get(v, 'VIPT')
+        datyp   = rmn.FST_DATYP_LIST['float_IEEE_compressed']
+        npdtype = rmn.dtype_fst2numpy(datyp)
+        rshape  = (g['ni'], g['nj'], len(ip1list))
+        r = rmn.FST_RDE_META_DEFAULT.copy()
+        r.update(g)
+        r.update({
+            'nomvar': 'MASK',   'nk'    : len(ip1list),
+            'dateo' : rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20160302, 1800000),
+            'ip2'   : 6,        'deet'  : 3600, 'npas'  : 6,
+            'etiket': 'my_etk', 'datyp' : datyp,
+            'd'     : np.empty(rshape, dtype=npdtype, order='FORTRAN')
+            })
+        r['d'][:,:,:] = 0.
+        r['d'][10:-11,5:-6,:] = 1.
+        fileNameOut = 'newfromscratch.fst'
+        fileIdOut = rmn.fstopenall(fileNameOut, rmn.FST_RW)
+        r2d = r.copy()
+        for k in range(len(ip1list)):
+            r2d.update({'nk':1, 'ip1':ip1list[k], 'd':np.asfortranarray(r['d'][:,:,k])})
+            rmn.fstecr(fileIdOut, r2d['d'], r2d)
+        rmn.writeGrid(fileIdOut, g)
+        vgd.vgd_write(v, fileIdOut)
+        rmn.fstcloseall(fileIdOut)
+        os.unlink(fileNameOut)  # Remove test file
 
 
     #---- Horizontal Interpolation
@@ -575,7 +952,19 @@ class rpnpyCookbook(unittest.TestCase):
         """
         import rpnpy.librmn.all as rmn
 
+
+    #---- Read + 3D Interpolation + Compute + write
         
+
+    def test_61(self):
+        """
+        Read + 3D Interpolation + Compute + write
+        
+        See also:
+        """
+        import rpnpy.librmn.all as rmn
+
+
 if __name__ == "__main__":
     unittest.main()
 

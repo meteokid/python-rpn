@@ -490,9 +490,12 @@ def fstecr(iunit, data, meta=None, rewrite=True):
                         "numpy.ndarray with FORTRAN order")
     #TODO: check if file is open with write permission
     meta2 = _rc.FST_RDE_META_DEFAULT.copy()
-    for k in meta.keys():
-        if k != 'd' and meta[k] not in ('', ' ', -1):
-            meta2[k] = meta[k]
+    for k in _rc.FST_RDE_META_DEFAULT.keys():
+        try:
+            if k in meta.keys() and meta[k] not in ('', ' ', -1):
+                meta2[k] = meta[k]
+        except:
+            sys.stderr.write("fstecr error, skipping copy of: %s\n" % str(k))
     datyp = dtype_numpy2fst(data.dtype)
     try:
         if meta['datyp'] >= 0:
