@@ -67,51 +67,90 @@ Reference:
 https://wiki.cmc.ec.gc.ca/images/9/9e/RPNPhy_Thermodynamic_functions_brunet.pdf
 https://wiki.cmc.ec.gc.ca/images/4/4c/RPNPhy_Thermodynamic_functions.pdf
 """
-import math as _m
+import numpy as _np
 from rpnpy.utils.thermoconsts import *
 
-DSIGN  = lambda V,S: V if S>=0. else -V
-DABS   = lambda X: abs(X)
-DMIN1  = lambda X,Y: min(X,Y)
-DMAX1  = lambda X,Y: max(X,Y)
-DLOG   = lambda X: _m.log(X)
-DEXP   = lambda X: _m.exp(X)
-DBLE   = lambda X: X
+_DSIGN  = lambda V,S: V * _np.sign(S)
+_DABS   = lambda X: _np.absolute(X)
+_DMIN1  = lambda X,Y: _np.minimum(X,Y)
+_DMAX1  = lambda X,Y: _np.maximum(X,Y)
+_DLOG   = lambda X: _np.log(X)
+_DEXP   = lambda X: _np.exp(X)
+_DBLE   = lambda X: _np.double(X)
 
-# fonction de tension de vapeur saturante (tetens) - ew ou ei selon tt
-FOEWF  = lambda TTT: DMIN1(DSIGN(TTNS3W,DBLE(TTT)-DBLE(TRPL)),DSIGN(TTNS3I,DBLE(TTT)-DBLE(TRPL)))*DABS(DBLE(TTT)-DBLE(TRPL))/(DBLE(TTT)-TTNS4W+DMAX1(0.,DSIGN(TTNS4W-TTNS4I,DBLE(TRPL)-DBLE(TTT))))
+# Fonction de tension de vapeur saturante (tetens) - ew ou ei selon tt
+FOEWF  = lambda TTT: _DMIN1(_DSIGN(TTNS3W,_DBLE(TTT)-_DBLE(TRPL)),_DSIGN(TTNS3I,_DBLE(TTT)-_DBLE(TRPL)))*_DABS(_DBLE(TTT)-_DBLE(TRPL))/(_DBLE(TTT)-TTNS4W+_DMAX1(0.,_DSIGN(TTNS4W-TTNS4I,_DBLE(TRPL)-_DBLE(TTT))))
 FOMULT = lambda DDD: TTNS1*DDD
-FOEW   = lambda TTT: FOMULT(DEXP(FOEWF(TTT)))
+FOEW   = lambda TTT: FOMULT(_DEXP(FOEWF(TTT)))
 
-FODLE  = lambda TTT: (4097.93+DMAX1(0.,DSIGN(1709.88,DBLE(TRPL)-DBLE(TTT))))/((DBLE(TTT)-TTNS4W+DMAX1(0.,DSIGN(TTNS4W-TTNS4I,DBLE(TRPL)-DBLE(TTT))))*(DBLE(TTT)-TTNS4W+DMAX1(0.,DSIGN(TTNS4W-TTNS4I,DBLE(TRPL)-DBLE(TTT)))))
-FOQST  = lambda TTT,PRS: DBLE(EPS1)/(DMAX1(1.,DBLE(PRS)/FOEW(TTT))-DBLE(EPS2))
-FOQSTX = lambda PRS,DDD: DBLE(EPS1)/(DMAX1(1.,DBLE(PRS)/DDD)-DBLE(EPS2))
-FODQS  = lambda QST,TTT: DBLE(QST)*(1.+DBLE(DELTA)*DBLE(QST))*FODLE(TTT)
-FOEFQ  = lambda QQQ,PRS: DMIN1(DBLE(PRS),(DBLE(QQQ)*DBLE(PRS))/(DBLE(EPS1)+DBLE(EPS2)*DBLE(QQQ)))
-FOQFE  = lambda EEE,PRS: DMIN1(1.,DBLE(EPS1)*DBLE(EEE)/(DBLE(PRS)-DBLE(EPS2)*DBLE(EEE)))
-FOTVT  = lambda TTT,QQQ: DBLE(TTT)*(1.0+DBLE(DELTA)*DBLE(QQQ))
-FOTVHT = lambda TTT,QQQ,QQH: DBLE(TTT)*(1.0+DBLE(DELTA)*DBLE(QQQ)-DBLE(QQH))
-FOTTV  = lambda TVI,QQQ: DBLE(TVI)/(1.0+DBLE(DELTA)*DBLE(QQQ))
-FOTTVH = lambda TVI,QQQ,QQH: DBLE(TVI)/(1.0+DBLE(DELTA)*DBLE(QQQ)-DBLE(QQH))
-FOHR   = lambda QQQ,TTT,PRS: DMIN1(DBLE(PRS),FOEFQ(QQQ,PRS))/FOEW(TTT)
-FOHRX  = lambda QQQ,PRS,DDD: DMIN1(DBLE(PRS),FOEFQ(QQQ,PRS))/DDD
-FOLV   = lambda TTT: DBLE(CHLC)-2317.*(DBLE(TTT)-DBLE(TRPL))
-FOLS   = lambda TTT: DBLE(CHLC)+DBLE(CHLF)+(DBLE(CPV)-(7.24*DBLE(TTT)+128.4))*(DBLE(TTT)-DBLE(TRPL))
-FOPOIT = lambda T00,PR0,PF: DBLE(T00)*(DBLE(PR0)/DBLE(PF))**(-DBLE(CAPPA))
-FOPOIP = lambda T00,TF,PR0: DBLE(PR0)*DEXP(-(DLOG(DBLE(T00)/DBLE(TF))/DBLE(CAPPA)))
-FOEWAF = lambda TTT: TTNS3W*(DBLE(TTT)-DBLE(TRPL))/(DBLE(TTT)-TTNS4W)
-FOEWA  = lambda TTT: FOMULT(DEXP(FOEWAF(TTT)))
-FODLA  = lambda TTT: TTNS3W*(DBLE(TRPL)-TTNS4W)/(DBLE(TTT)-TTNS4W)**2
-FOQSA  = lambda TTT,PRS: DBLE(EPS1)/(DMAX1(1.,DBLE(PRS)/FOEWA(TTT))-DBLE(EPS2))
-FODQA  = lambda QST,TTT: DBLE(QST)*(1.+DBLE(DELTA)*DBLE(QST))*FODLA(TTT)
-FOHRA  = lambda QQQ,TTT,PRS: DMIN1(DBLE(PRS),FOEFQ(QQQ,PRS))/FOEWA(TTT)
-FESIF  = lambda TTT: TTNS3I*(DBLE(TTT)-DBLE(TRPL))/(DBLE(TTT)-TTNS4I)
-FESI   = lambda TTT: FOMULT(DEXP(FESIF(TTT)))
-FDLESI = lambda TTT: TTNS3I*(DBLE(TRPL)-TTNS4I)/(DBLE(TTT)-TTNS4I)**2
-FESMX  = lambda TTT,FFF: (1.-DBLE(FFF))*FOEWA(TTT)+DBLE(FFF)*FESI(TTT)
-FESMXX = lambda FFF,FESI8,FOEWA8: (1.-DBLE(FFF))*FOEWA8+DBLE(FFF)*FESI8
-FDLESMX = lambda TTT,FFF,DDFF: ((1.-DBLE(FFF))*FOEWA(TTT)*FODLA(TTT)+DBLE(FFF)*FESI(TTT)*FDLESI(TTT)+DBLE(DDFF)*(FESI(TTT)-FOEWA(TTT)))/FESMX(TTT,FFF)
-FDLESMXX = lambda TTT,FFF,DDFF,FOEWA8,FESI8,FESMX8: ((1.-DBLE(FFF))*FOEWA8*FODLA(TTT)+DBLE(FFF)*FESI8*FDLESI(TTT)+DBLE(DDFF)*(FESI8-FOEWA8))/FESMX8
-FQSMX  = lambda TTT,PRS,FFF: DBLE(EPS1)/(DMAX1(1.,DBLE(PRS)/FESMX(TTT,FFF))-DBLE(EPS2))
-FQSMXX = lambda FESMX8,PRS: DBLE(EPS1)/(DMAX1(1.,DBLE(PRS)/FESMX8)-DBLE(EPS2))
-FDQSMX = lambda QSM,DLEMX: DBLE(QSM)*(1.+DBLE(DELTA)*DBLE(QSM))*DBLE(DLEMX)
+# Fonction calculant la derivee selon t de  ln ew (ou ln ei)
+FODLE  = lambda TTT: (4097.93+_DMAX1(0.,_DSIGN(1709.88,_DBLE(TRPL)-_DBLE(TTT))))/((_DBLE(TTT)-TTNS4W+_DMAX1(0.,_DSIGN(TTNS4W-TTNS4I,_DBLE(TRPL)-_DBLE(TTT))))*(_DBLE(TTT)-TTNS4W+_DMAX1(0.,_DSIGN(TTNS4W-TTNS4I,_DBLE(TRPL)-_DBLE(TTT)))))
+
+# Fonction calculant l'humidite specifique saturante (qsat)
+FOQST  = lambda TTT,PRS: _DBLE(EPS1)/(_DMAX1(1.,_DBLE(PRS)/FOEW(TTT))-_DBLE(EPS2))
+FOQSTX = lambda PRS,DDD: _DBLE(EPS1)/(_DMAX1(1.,_DBLE(PRS)/DDD)-_DBLE(EPS2))
+
+# Fonction calculant la derivee de qsat selon t, qst est la sortie de foqst
+FODQS  = lambda QST,TTT: _DBLE(QST)*(1.+_DBLE(DELTA)*_DBLE(QST))*FODLE(TTT)
+
+# Fonction calculant tension vap (eee) fn de hum sp (qqq) et prs
+FOEFQ  = lambda QQQ,PRS: _DMIN1(_DBLE(PRS),(_DBLE(QQQ)*_DBLE(PRS))/(_DBLE(EPS1)+_DBLE(EPS2)*_DBLE(QQQ)))
+
+# Fonction calculant hum sp (qqq) de tens. vap (eee) et pres (prs)
+FOQFE  = lambda EEE,PRS: _DMIN1(1.,_DBLE(EPS1)*_DBLE(EEE)/(_DBLE(PRS)-_DBLE(EPS2)*_DBLE(EEE)))
+
+# Fonction calculant temp virt. (tvi) de temp (ttt) et hum sp (qqq)
+FOTVT  = lambda TTT,QQQ: _DBLE(TTT)*(1.0+_DBLE(DELTA)*_DBLE(QQQ))
+
+# Fonction calculant temp virt. (tvi) de temp (ttt), hum sp (qqq) et masse sp des hydrometeores.
+FOTVHT = lambda TTT,QQQ,QQH: _DBLE(TTT)*(1.0+_DBLE(DELTA)*_DBLE(QQQ)-_DBLE(QQH))
+
+# Fonction calculant ttt de temp virt. (tvi) et hum sp (qqq)
+FOTTV  = lambda TVI,QQQ: _DBLE(TVI)/(1.0+_DBLE(DELTA)*_DBLE(QQQ))
+
+# Fonction calculant ttt de temp virt. (tvi), hum sp (qqq) et masse sp des hydrometeores (qqh)
+FOTTVH = lambda TVI,QQQ,QQH: _DBLE(TVI)/(1.0+_DBLE(DELTA)*_DBLE(QQQ)-_DBLE(QQH))
+
+# Fonction calculant hum rel de hum sp (qqq), temp (ttt) et pres (prs), hr = e/esat
+FOHR   = lambda QQQ,TTT,PRS: _DMIN1(_DBLE(PRS),FOEFQ(QQQ,PRS))/FOEW(TTT)
+FOHRX  = lambda QQQ,PRS,DDD: _DMIN1(_DBLE(PRS),FOEFQ(QQQ,PRS))/DDD
+
+# Fonction calculant la chaleur latente de condensation
+FOLV   = lambda TTT: _DBLE(CHLC)-2317.*(_DBLE(TTT)-_DBLE(TRPL))
+
+# Fonction calculant la chaleur latente de sublimation
+FOLS   = lambda TTT: _DBLE(CHLC)+_DBLE(CHLF)+(_DBLE(CPV)-(7.24*_DBLE(TTT)+128.4))*(_DBLE(TTT)-_DBLE(TRPL))
+
+# Fonction resolvant l'eqn. de poisson pour la temperature; note: si pf=1000*100, "fopoit" donne le theta standard
+FOPOIT = lambda T00,PR0,PF: _DBLE(T00)*(_DBLE(PR0)/_DBLE(PF))**(-_DBLE(CAPPA))
+
+# Fonction resolvant l'eqn. de poisson pour la pression
+FOPOIP = lambda T00,TF,PR0: _DBLE(PR0)*_DEXP(-(_DLOG(_DBLE(T00)/_DBLE(TF))/_DBLE(CAPPA)))
+
+# Fonction de vapeur saturante (tetens) (No ice)
+FOEWAF = lambda TTT: TTNS3W*(_DBLE(TTT)-_DBLE(TRPL))/(_DBLE(TTT)-TTNS4W)
+FOEWA  = lambda TTT: FOMULT(_DEXP(FOEWAF(TTT)))
+
+# Fonction calculant la derivee selon t de ln ew (No ice)
+FODLA  = lambda TTT: TTNS3W*(_DBLE(TRPL)-TTNS4W)/(_DBLE(TTT)-TTNS4W)**2
+
+# Fonction calculant l'humidite specifique saturante (No ice)
+FOQSA  = lambda TTT,PRS: _DBLE(EPS1)/(_DMAX1(1.,_DBLE(PRS)/FOEWA(TTT))-_DBLE(EPS2))
+
+# Fonction calculant la derivee de qsat selon t (No ice)
+FODQA  = lambda QST,TTT: _DBLE(QST)*(1.+_DBLE(DELTA)*_DBLE(QST))*FODLA(TTT)
+
+# Fonction calculant l'humidite relative (No ice)
+FOHRA  = lambda QQQ,TTT,PRS: _DMIN1(_DBLE(PRS),FOEFQ(QQQ,PRS))/FOEWA(TTT)
+
+# saturation calculations in presence of liquid phase only, function for saturation vapor pressure (tetens) (mixed-phase mode)
+FESIF  = lambda TTT: TTNS3I*(_DBLE(TTT)-_DBLE(TRPL))/(_DBLE(TTT)-TTNS4I)
+FESI   = lambda TTT: FOMULT(_DEXP(FESIF(TTT)))
+FDLESI = lambda TTT: TTNS3I*(_DBLE(TRPL)-TTNS4I)/(_DBLE(TTT)-TTNS4I)**2
+FESMX  = lambda TTT,FFF: (1.-_DBLE(FFF))*FOEWA(TTT)+_DBLE(FFF)*FESI(TTT)
+FESMXX = lambda FFF,FESI8,FOEWA8: (1.-_DBLE(FFF))*FOEWA8+_DBLE(FFF)*FESI8
+FDLESMX = lambda TTT,FFF,DDFF: ((1.-_DBLE(FFF))*FOEWA(TTT)*FODLA(TTT)+_DBLE(FFF)*FESI(TTT)*FDLESI(TTT)+_DBLE(DDFF)*(FESI(TTT)-FOEWA(TTT)))/FESMX(TTT,FFF)
+FDLESMXX = lambda TTT,FFF,DDFF,FOEWA8,FESI8,FESMX8: ((1.-_DBLE(FFF))*FOEWA8*FODLA(TTT)+_DBLE(FFF)*FESI8*FDLESI(TTT)+_DBLE(DDFF)*(FESI8-FOEWA8))/FESMX8
+FQSMX  = lambda TTT,PRS,FFF: _DBLE(EPS1)/(_DMAX1(1.,_DBLE(PRS)/FESMX(TTT,FFF))-_DBLE(EPS2))
+FQSMXX = lambda FESMX8,PRS: _DBLE(EPS1)/(_DMAX1(1.,_DBLE(PRS)/FESMX8)-_DBLE(EPS2))
+FDQSMX = lambda QSM,DLEMX: _DBLE(QSM)*(1.+_DBLE(DELTA)*_DBLE(QSM))*_DBLE(DLEMX)
