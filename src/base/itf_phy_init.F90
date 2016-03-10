@@ -161,7 +161,7 @@
       Outp_multxmosaic = multxmosaic+10
       if (Lun_out.gt.0)  write(Lun_out,1006)
 
-! Add the diagnostic heights to the vertical coordinate of the model
+      call heap_paint
 
 !     ---------------------------------------------------------------
  1000 format(/,'INITIALIZATION OF PHYSICS PACKAGE (S/R itf_phy_init)', &

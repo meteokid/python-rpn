@@ -100,7 +100,7 @@
       gmmstat = gmm_get('TR/HU:M' ,hut1)
       gmmstat = gmm_get('TR/HU:P' ,hut0)
 
-      if (G_lam) then
+      if (G_lam .and. (.not. Grd_yinyang_L)) then
          gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
          gmmstat = gmm_get (gmmk_nest_q_s, nest_q)
       else

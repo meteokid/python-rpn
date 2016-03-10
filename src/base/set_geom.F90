@@ -59,6 +59,8 @@
       integer, external :: ezgdef_fmem,gdll
       character*12 gem_debug
       character*8 dumc
+      logical, parameter :: gauss_L = .false.
+      logical uniform_L
       integer offi,offj,indx,err,ierx,iery,dgid,hgc(4)
       integer i,j,k,dimy,istat,pnip1,lam,ni,nj,offset
       integer nila,njla,belo,left
@@ -97,10 +99,10 @@
                 Geomn_lonij(Geomn_minx:Geomn_maxx,Geomn_miny:Geomn_maxy))
 
       dxmax = 360. ; dymax = 180. ; nila= Grd_ni ; njla= Grd_nj
-      call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy  , &
-                           Grd_x0_8,Grd_xl_8,left,Grd_y0_8,Grd_yl_8, belo, &
-                           nila,njla,dxmax,dymax,Grd_yinyang_L,Grd_gauss_L,&
-                           G_lam, Grd_uniform_L, ierx, iery, Lun_out.gt.0  )
+      call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy  ,&
+                           Grd_x0_8,Grd_xl_8,left,Grd_y0_8,Grd_yl_8, belo,&
+                           nila,njla,dxmax,dymax,Grd_yinyang_L,   gauss_L,&
+                           G_lam, uniform_L, ierx, iery, Lun_out.gt.0  )
 
       if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
              write (Lun_out,*)'ERROR in generating XGI_8 values!'

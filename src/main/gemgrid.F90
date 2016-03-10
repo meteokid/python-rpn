@@ -54,6 +54,8 @@
       DATA LISTE /'splitnml','npex','npey','blocx','blocy'/
       DATA defaut/       '1',   '1',   '1',    '1',    '1'/
       DATA val   /       '0',   '1',   '1',    '1',    '1'/
+      logical, parameter :: gauss_L = .false.
+      logical uniform_L
 
       integer Ptopo_npex,Ptopo_npey,Ptopo_nblocx,Ptopo_nblocy
       integer itile,jtile,i0,j0,i1,j1,ierx, iery, spil3df
@@ -115,7 +117,7 @@
                            Grd_x0_8, Grd_xl_8, left,                   &
                            Grd_y0_8, Grd_yl_8, belo,                   &
                            nila, njla, dxmax, dymax,                   &
-                           Grd_yinyang_L, Grd_gauss_L, lam, Grd_uniform_L, &
+                           Grd_yinyang_L, gauss_L, lam, uniform_L, &
                            ierx, iery, .true. )
 
       if (.not.LAM) Grd_ni= Grd_ni + 1

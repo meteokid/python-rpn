@@ -42,11 +42,9 @@
       if (Lun_out.gt.0) write (Lun_out,1001)
 
       istat = 0
-      if(Vspng_zmean_L.and.(.not.Grd_gauss_L))then
-         if(G_lam.or.Grd_roule.or..not.Grd_uniform_L)then
-            if (Lun_out.gt.0) write (Lun_out,9001)
-            istat = -1
-         endif
+      if ( Vspng_zmean_L .and. (G_lam.or.Grd_roule) ) then
+         if (Lun_out.gt.0) write (Lun_out,9001)
+         istat = -1
       endif
 
       call gem_error(istat,'vspng_set','')
@@ -100,7 +98,7 @@
  2005 format(1pe14.6,1pe14.6,f11.2,i8)
  2007 format('  SPONGE LAYER Vspng_zmean_L =',l2)
  3001 format('     Coef           Nu            Pres      Level')
- 9001 format('Vspng_zmean_L works ONLY with GAUSS or Global Uniform unrotated grid')
+ 9001 format('Vspng_zmean_L works ONLY with GU unrotated grid')
 !
 !     ---------------------------------------------------------------
 !

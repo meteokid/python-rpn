@@ -57,6 +57,11 @@
          vh = vt0
   
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+
+         
+         wm = 0.
+         
+
          call adv_thermo2mom  (wm,zdt0,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
        
 !     Unstaggered arrival winds
@@ -74,7 +79,7 @@
 !-----------------
          uh = ut1 ; vh = vt1
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
-         call adv_thermo2mom  (wm,zdt1,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+         call adv_thermo2mom  (wm,zdt1,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
          F_ua =  uh(1:F_ni,1:F_nj,1:F_nk)
          F_va =  vh(1:F_ni,1:F_nj,1:F_nk)
          F_wa =  wm(1:F_ni,1:F_nj,1:F_nk)
@@ -105,7 +110,7 @@
 
       call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
-      call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+      call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
 
 !     Destag departure winds
       F_ud=uh

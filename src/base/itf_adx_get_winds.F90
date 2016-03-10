@@ -72,6 +72,7 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
               vh(l_minx:l_maxx,l_miny:l_maxy,l_nk  ), &
               wm(l_minx:l_maxx,l_miny:l_maxy,l_nk  ), &
               wh(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
+   ut=0.;uh=0.;vt=0.;vh=0.;wm=0.;wh=0.
 
    if(Schm_trapeze_L.and..NOT.Schm_step_settls_L) then
       uh = ut0 ; vh = vt0

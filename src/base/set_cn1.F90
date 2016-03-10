@@ -48,6 +48,8 @@
 
 !     Initialize the time-dependent variables comdecks
 !     -------------------------------------------------
+      call heap_paint
+
       call set_vt( )
 
       if (Grd_yinyang_L) then
@@ -76,11 +78,11 @@
       gmmk_topo_high_s = 'TOPOHIGH'
 
       nullify (fis0, topo_low, topo_high)
-      istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
 
       if ( Vtopo_start .ge. 0 ) then
-         istat = gmm_create(gmmk_topo_low_s,topo_low,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
-         istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+         istat = gmm_create(gmmk_topo_low_s,topo_low,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+         istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       endif
 
  2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R SET_CN1', &

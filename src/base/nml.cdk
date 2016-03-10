@@ -8,6 +8,7 @@
 #include "lam.cdk"
 #include "lun.cdk"
 #include "path.cdk"
+#include "heap_debug.cdk"
 #include "inp.cdk"
 #include "init.cdk"
 #include "schm.cdk"
@@ -45,6 +46,8 @@
       namelist /gem_cfgs/ G_halox
       namelist /gem_cfgs/ G_haloy
       namelist /gem_cfgs/ Grd_rcoef
+
+      namelist /gem_cfgs/ Heap_nk
 
       namelist /gem_cfgs/ Hyb
       namelist /gem_cfgs/ Hzd_difva_L
@@ -190,6 +193,8 @@
       namelist /gem_cfgs_p/ G_halox
       namelist /gem_cfgs_p/ G_haloy
       namelist /gem_cfgs_p/ Grd_rcoef
+
+      namelist /gem_cfgs_p/ Heap_nk
 !Hzd
       namelist /gem_cfgs_p/ Hzd_difva_L
       namelist /gem_cfgs_p/ Hzd_lnr

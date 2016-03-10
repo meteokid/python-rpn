@@ -74,25 +74,25 @@
       gmmk_bnm_s   = 'BNMENS'
       gmmk_dumdum_s= 'DUMDUM'
 
-      istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcsph1'
-      istat = gmm_create(gmmk_difut1_s,difut1,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_difut1_s,difut1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
-      istat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
-      istat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
-      istat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'vgwdt1'
-      istat = gmm_create(gmmk_ensdiv_s,ensdiv,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_ensdiv_s,ensdiv,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ensdiv'
-      istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ensvor'
-      istat = gmm_create(gmmk_anm_s   ,anm   ,meta3d_anm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_anm_s   ,anm   ,meta3d_anm,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'anm'
-      istat = gmm_create(gmmk_bnm_s   ,bnm   ,meta3d_bnm,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_bnm_s   ,bnm   ,meta3d_bnm,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'bnm'
-      istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_INAN)
+      istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 
  6000 format('ens_set_mem at gmm_create(',A,')')

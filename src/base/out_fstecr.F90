@@ -59,8 +59,6 @@ End Interface
 !
 !----------------------------------------------------------------------
 !
-      out_stk_size= Out3_npes
-
       if (.not.associated(meta)) allocate (meta(out_stk_size))
       if (.not.associated(f2c )) &
          allocate (f2c(l_minx:l_maxx,l_miny:l_maxy,out_stk_size))

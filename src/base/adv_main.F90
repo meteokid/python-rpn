@@ -74,25 +74,23 @@
       allocate ( ud(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                  vd(l_minx:l_maxx,l_miny:l_maxy,l_nk),&
                  wd(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
- 	   if (.not.associated(pxt)) allocate (pxt(l_ni,l_nj,l_nk), &
-                                       pyt(l_ni,l_nj,l_nk), &
-                                       pzt(l_ni,l_nj,l_nk), &
-                                       pxtn(l_ni,l_nj), &
-                                       pytn(l_ni,l_nj), &
-                                       pztn(l_ni,l_nj), &
-                                       pxmu(l_ni,l_nj,l_nk), &
-                                       pymu(l_ni,l_nj,l_nk), &
-                                       pzmu(l_ni,l_nj,l_nk), &
-                                       pxmv(l_ni,l_nj,l_nk), &
-                                       pymv(l_ni,l_nj,l_nk), &
-                                       pzmv(l_ni,l_nj,l_nk)  )
+ 	   if (.not.associated(pxt)) then
+         allocate (pxt(l_ni,l_nj,l_nk), pyt(l_ni,l_nj,l_nk), &
+                   pzt(l_ni,l_nj,l_nk), pxtn(l_ni,l_nj), &
+                   pytn(l_ni,l_nj), pztn(l_ni,l_nj), &
+                   pxmu(l_ni,l_nj,l_nk), pymu(l_ni,l_nj,l_nk), &
+                   pzmu(l_ni,l_nj,l_nk), pxmv(l_ni,l_nj,l_nk), &
+                   pymv(l_ni,l_nj,l_nk), pzmv(l_ni,l_nj,l_nk)  )
+         pxt=0.;pyt=0.;pzt=0.;pxtn=0.;pytn=0.;pztn=0.;pxmu=0.
+         pymu=0.;pzmu=0.;pxmv=0.;pymv=0.;pzmv=0.
+      endif
 
-     if (.not.associated(pxmu_s).and.Tr_slice_L) allocate (pxmu_s(l_ni,l_nj,l_nk), &
-                                                           pymu_s(l_ni,l_nj,l_nk), &
-                                                           pzmu_s(l_ni,l_nj,l_nk), &
-                                                           pxmv_s(l_ni,l_nj,l_nk), &
-                                                           pymv_s(l_ni,l_nj,l_nk), &
-                                                           pzmv_s(l_ni,l_nj,l_nk)  )
+      if (.not.associated(pxmu_s).and.Tr_slice_L) then
+         allocate (pxmu_s(l_ni,l_nj,l_nk), pymu_s(l_ni,l_nj,l_nk), &
+                   pzmu_s(l_ni,l_nj,l_nk), pxmv_s(l_ni,l_nj,l_nk), &
+                   pymv_s(l_ni,l_nj,l_nk), pzmv_s(l_ni,l_nj,l_nk)  )
+         pxmu_s=0.;pymu_s=0.;pzmu_s=0.;pxmv_s=0.;pymv_s=0.;pzmv_s=0.
+      endif
 
      nullify (xth, yth, zth)
      err = gmm_get(gmmk_xth_s , xth)

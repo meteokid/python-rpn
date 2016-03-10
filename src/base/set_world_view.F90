@@ -34,12 +34,14 @@
 #include "out3.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
+      include 'out_meta.cdk'
       include "rpn_comm.inc"
 
       integer, external :: gem_nml,gemdm_config,grid_nml2       ,&
                            adv_nml,adv_config,adx_nml,adx_config,&
                            step_nml, set_io_pes, domain_decomp3
       character*50 LADATE,dumc1_S
+      integer :: istat,options
       integer err(8),f1,f2,f3,f4
 !
 !-------------------------------------------------------------------
@@ -122,8 +124,15 @@
 
 ! Master output PE for all none distributed components
 
+      options = WB_REWRITE_NONE+WB_IS_LOCAL
       f1= 0
-      err(1)= wb_put('model/outout/pe_master', f1)
+      istat = wb_put('model/outout/pe_master', f1,options)
+      istat = min(wb_put('model/l_minx',l_minx,options),istat)
+      istat = min(wb_put('model/l_maxx',l_maxx,options),istat)
+      istat = min(wb_put('model/l_miny',l_miny,options),istat)
+      istat = min(wb_put('model/l_maxy',l_maxy,options),istat)
+      call gem_error ( istat,'set_world_view', &
+                       'Problem with min-max wb_put')
 
 ! Establish a grid id for RPN_COMM package and obtain Out3_iome,Inp_iome
 
@@ -145,12 +154,16 @@
          Out3_npex= min(Out3_npex,Ptopo_npex)
          Out3_npey= min(Out3_npey,Ptopo_npey)
          call block_collect_set ( Out3_npex, Out3_npey )
+         Out3_npes= Out3_npex * Out3_npey
          Out3_iome= -1
          if (Bloc_me == 0) Out3_iome= 0
          Out3_ezcoll_L= .false.
       endif
+      out_stk_size= Out3_npes*2
 
 ! Initializes GMM
+
+      call heap_paint
 
       call set_gmm
 			

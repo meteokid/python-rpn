@@ -233,6 +233,8 @@
 
       stat_liste = ''
 
+      Heap_nk    = -1
+
       if (F_namelistf_S .ne. '') then
 
          unf = 0

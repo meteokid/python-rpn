@@ -61,7 +61,7 @@ subroutine iau_apply2(F_kount)
    real,pointer,dimension(:,:) :: myptr2d
    type(gmm_metadata) :: mymeta
    type(vgrid_descriptor) :: vgridm,vgridt
-   integer,pointer :: ip1list(:)
+   integer,pointer :: ip1list(:),ip1listref(:)
    !--------------------------------------------------------------------------
 !!$   write(msg_S,'(l,i4,a,i7,a,i7)') (Cstv_dt_8*F_kount > Iau_period .or. Iau_interval<=0.),F_kount,'; t=',nint(Cstv_dt_8*F_kount),'; p=',nint(Iau_period)
 !!$   call msg(MSG_INFO,'IAU YES/NO?: '//trim(msg_S))
@@ -168,10 +168,12 @@ subroutine iau_apply2(F_kount)
       !# define a vert coor with ref on l_ni/j
       nullify(ip1list)
       istat = vgrid_wb_get('ref-m',vgridm,ip1list)
-      istat = vgrid_wb_put('iau-m',vgridm,ip1list,'IAUREFP0:P')
+      ip1listref => ip1list(1:G_nk)
+      istat = vgrid_wb_put('iau-m',vgridm,ip1listref,'IAUREFP0:P')
       nullify(ip1list)
       istat = vgrid_wb_get('ref-t',vgridt,ip1list)
-      istat = vgrid_wb_put('iau-t',vgridt,ip1list,'IAUREFP0:P')
+      ip1listref => ip1list(1:G_nk)
+      istat = vgrid_wb_put('iau-t',vgridt,ip1listref,'IAUREFP0:P')
       mymeta = GMM_NULL_METADATA
       mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
       mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)

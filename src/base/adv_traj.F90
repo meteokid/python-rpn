@@ -69,6 +69,9 @@
       zbot_bound=Ver_z_8%m(F_nk+1)
 
 
+      !  This is required to fill the array for the copy marked with 'filled copy here' below.  If
+      !  this initialization is not done, some array elements are not defined before the copy is made.
+      wd = 0.
 
 
       if(Schm_cub_traj_L) allocate( ii(nind*4) )    
@@ -119,6 +122,7 @@
 !-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDALE/SETTLS/MIDPOINT RULES
  
            if(Schm_trapeze_L.or.Schm_step_settls_L) then
+!FIXME: !omp instead of !$omp.... is the what's wanted
 !omp parallel private (inv_cy_8,i,j,k)
 !omp do
          do k=k0m,F_nk
@@ -206,13 +210,12 @@
  enddo
 
  ! Departure point
-
    if (Schm_trapeze_L.or.Schm_step_settls_L) then
       ! nothing to do ...
       pxm = F_xth
       pym = F_yth
       pzm = F_zth
-      wdm = wd
+      wdm = wd   !filled copy here
    else
 !$omp parallel private (k,j,i)
 !$omp do
@@ -254,6 +257,7 @@ if(Schm_cub_traj_L) deallocate ( ii )
       if (Tr_slice_L) then
        call adv_cliptraj (pxmu_s,pymu_s,F_ni,F_nj,F_nk,i0u_e,inu_e,j0,jn,k0,'INTERP '//trim('m'))
        call adv_cliptraj (pxmv_s,pymv_s,F_ni,F_nj,F_nk,i0,in,j0v_e,jnv_e,k0,'INTERP '//trim('m'))
+
       endif
 
 

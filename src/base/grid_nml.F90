@@ -77,7 +77,6 @@
       Grd_xlat1 = 0.
       Grd_xlon2 = 270.
       Grd_xlat2 = 0.
-      Grd_gauss_L = .false.
 
       if (F_namelistf_S .ne. '') then
          unf = 0

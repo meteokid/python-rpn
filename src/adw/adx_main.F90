@@ -68,7 +68,8 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    !---------------------------------------------------------------------
    nullify (xth, yth, zth, xcth, ycth, zcth, xct1, yct1, zct1)
 !  nullify (pxt, pyt, pzt, pxmu, pymu, pzmu, pxmv, pymv, pzmv)
-   if (.not.associated(pxt)) allocate (pxt(adx_mlni,adx_mlnj,adx_lnk), &
+   if (.not.associated(pxt)) then
+      allocate (pxt(adx_mlni,adx_mlnj,adx_lnk), &
                                        pyt(adx_mlni,adx_mlnj,adx_lnk), &
                                        pzt(adx_mlni,adx_mlnj,adx_lnk), &
                                        pxmu(adx_mlni,adx_mlnj,adx_lnk), &
@@ -77,6 +78,8 @@ subroutine adx_main ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
                                        pxmv(adx_mlni,adx_mlnj,adx_lnk), &
                                        pymv(adx_mlni,adx_mlnj,adx_lnk), &
                                        pzmv(adx_mlni,adx_mlnj,adx_lnk)  )
+      pxt=0.; pyt=0.; pzt=0.; pxmu=0.; pymu=0.; pzmu=0.; pxmv=0.; pymv=0.; pzmv=0.
+   endif
 
    k0 = adx_gbpil_t+1
    k0t= k0
