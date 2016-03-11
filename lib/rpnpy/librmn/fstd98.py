@@ -220,6 +220,7 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
        rpnpy.librmn.const
        FSTDError
     """
+    #TODO: accepte pattern, use glob
     paths = [paths] if type(paths) == str else paths
     if not (type(paths) in (list, tuple)):
         raise TypeError("fstopenall: Expecting arg of type list, Got %s" %
@@ -1303,6 +1304,7 @@ def fstlnk(unitList):
         rpnpy.librmn.base.fclos
         rpnpy.librmn.const
     """
+    nfilesmax = 999
     if type(unitList) == int:
         unitList = [unitList]
     if not (type(unitList) in (list, tuple)):
@@ -1311,9 +1313,9 @@ def fstlnk(unitList):
     if len(unitList)<1 or min(unitList)<=0:
         raise ValueError("fstlnk: must provide a valid iunit: %d" %
                          (min(unitList)))
-    if len(unitList) > 40: #TODO: check this limit
-        raise ValueError("fstlnk: Too many files (max 40): %d" %
-                         (len(unitList)))
+    if len(unitList) > nfilesmax: #TODO: check this limit
+        raise ValueError("fstlnk: Too many files (max %d): %d" %
+                         (nfilesmax,len(unitList)))
     cunitList = _np.asfortranarray(unitList, dtype=_np.intc)
     ## istat = _rp.c_xdflnk(cunitList, len(cunitList))
     cnunits = _ct.c_int(len(cunitList))
