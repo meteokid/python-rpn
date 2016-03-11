@@ -28,7 +28,8 @@ Module for transforming between different coordinate systems.
 
 # Python module imports.
 import math as _math
-import rpnpy.utils.thermoconsts as _cst
+_cst_DEG2RAD = _math.pi/180.
+_cst_RAD2DEG = 180./_math.pi
 
 def llacar_py(lon, lat):
     """
@@ -44,8 +45,8 @@ def llacar_py(lon, lat):
     Raises:
         TypeError
     """
-    rlat = _cst.DEG2RAD*lat
-    rlon = _cst.DEG2RAD*lon
+    rlat = _cst_DEG2RAD*lat
+    rlon = _cst_DEG2RAD*lon
     x = _math.cos(rlat) * _math.cos(rlon)
     y = _math.cos(rlat) * _math.sin(rlon)
     z = _math.sin(rlat)
@@ -64,8 +65,8 @@ def cartall_py(xyz):
     Raises:
         TypeError
    """
-    lat = _math.asin(max(-1., min(1., xyz[2]))) * _cst.RAD2DEG
-    lon = _math.atan2(xyz[1], xyz[0]) * _cst.RAD2DEG
+    lat = _math.asin(max(-1., min(1., xyz[2]))) * _cst_RAD2DEG
+    lon = _math.atan2(xyz[1], xyz[0]) * _cst_RAD2DEG
     lon = lon % 360.
     if lon < 0.:
         lon += 360.
