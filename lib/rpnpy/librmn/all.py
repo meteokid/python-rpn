@@ -12,7 +12,6 @@
      rpnpy.librmn.base
      rpnpy.librmn.fstd98
      rpnpy.librmn.interp
-     rpnpy.librmn.llacar
      rpnpy.librmn.grids
 
 """
@@ -23,5 +22,4 @@ from .const import *
 from .base import *
 from .fstd98 import *
 from .interp import *
-from .llacar import *
 from .grids import *

@@ -518,7 +518,7 @@ if __name__ == "__main__":
         'rpnpy.librmn.grids',
         'rpnpy.librmn.fstd98',
         'rpnpy.librmn.interp',
-        'rpnpy.librmn.llacar',
+        'rpnpy.utils.llacar',
         'rpnpy.librmn.proto',
         'rpnpy.vgd',
         'rpnpy.vgd.all',

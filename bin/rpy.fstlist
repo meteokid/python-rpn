@@ -124,9 +124,9 @@ if __name__ == "__main__":
                       help="RPN Std File name")
     
     parser.add_option("","--datev",dest="filt_datev",default=-1,
-                      help="Filter records by Valid date (CMC date Stamp")
+                      help="Filter records by Valid date (CMC date Stamp)")
     parser.add_option("","--vdatev",dest="filt_vdatev",default=-1,
-                      help="Filter records by Valid date (true-date")
+                      help="Filter records by Valid date (true-date)")
     parser.add_option("","--etiket",dest="filt_etiket",default='',
                       help="Filter records by Etiket")
     parser.add_option("","--ip1",dest="filt_ip1",default=-1,
