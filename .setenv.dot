@@ -1,8 +1,8 @@
 #!/bin/ksh
 if [[ x"$1" == x"--dev" ]] ; then
    shift
-   echo 'Loading dev env'
-	. s.ssmuse.dot $(cat ssmusedep-dev.bndl)
+   echo 'Loading dev env: ssmusedep-dev.bndl'
+   . s.ssmuse.dot $(cat ssmusedep-dev.bndl)
 else
    echo 'Loading Run-time env'
 fi
@@ -11,19 +11,14 @@ if [[ -f .setenv_${COMP_ARCH}.dot ]] ; then
    echo ". .setenv_${COMP_ARCH}.dot"
    . .setenv_${COMP_ARCH}.dot
 fi
-if [[ -f ssmusedep_${COMP_ARCH}.bndl ]] ; then
-   echo ". s.ssmuse.dot ssmusedep_${COMP_ARCH}.bndl"
-   . s.ssmuse.dot $(cat ssmusedep_${COMP_ARCH}.bndl)
-fi
-if [[ -f ssmusedep.bndl ]] ; then
-   echo ". s.ssmuse.dot ssmusedep.bndl"
-   . s.ssmuse.dot $(cat ssmusedep.bndl)
-fi
-if [[ -f ssmusedep_post.bndl ]] ; then
-   echo ". s.ssmuse.dot ssmusedep_post.bndl"
-   . s.ssmuse.dot $(cat ssmusedep_post.bndl)
-fi
 
+for _myfile in ssmusedep_${COMP_ARCH}.bndl ssmusedep.bndl ssmusedep_post.bndl ; do
+   if [[ -f ${_myfile} && -s ${_myfile} ]] ; then
+      echo ". s.ssmuse.dot ${_myfile}"
+      . s.ssmuse.dot $(cat ${_myfile})
+   fi
+done
+unset _myfile
 
 . $(pwd)/bin/.env_setup.dot rpnpy dev all $(pwd) $(pwd)
 
