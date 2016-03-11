@@ -30,8 +30,7 @@
 
 from rpnpy.version import *
 
-__SUBMODULES__ = ['proto', 'const', 'base', 'fstd98', 'interp',
-                  'llacar', 'grids']
+__SUBMODULES__ = ['proto', 'const', 'base', 'fstd98', 'interp', 'grids']
 __all__ = ['loadRMNlib', 'librmn', 'RMN_VERSION', 'RMN_LIBPATH',
            'RMNError'] + __SUBMODULES__
 

@@ -18,7 +18,7 @@ from rpnpy.librmn import const as _rc
 from rpnpy.librmn import base as _rb
 from rpnpy.librmn import fstd98 as _rf
 from rpnpy.librmn import interp as _ri
-from rpnpy.librmn import llacar as _ll
+from rpnpy.utils  import llacar as _ll
 from rpnpy.librmn import RMNError
 
 def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
