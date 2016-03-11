@@ -1,0 +1,270 @@
+#!/usr/bin/env python
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+# Author: Stephane Chamberland <stephane.chamberland@canada.ca>
+# Copyright: LGPL 2.1
+import os, sys, glob, datetime, optparse
+import matplotlib.pyplot as plt
+import numpy as np
+
+import rpnpy.librmn.all as rmn
+from rpnpy.rpndate import *
+
+## def get_xmldict(varname):
+##     import xml.etree.ElementTree as ET
+##     AFSISIO = os.getenv('AFSISIO').strip()
+##     xmldict = os.path.join(AFSISIO,'datafiles','constants','ops.variable_dictionary.xml')
+##     tree = ET.parse(xmldict)
+##     root = tree.getroot()
+##     #for child in root: 
+##     for child in root.iter('metvar'):
+##         print child.find('nomvar').text.encode('ascii', 'replace')
+##         for item in child.find('description').findall('short'): #/short lang=en
+##             if item.get('lang') == 'en':
+##                 print item.text.encode('ascii', 'replace')
+##         print child.find('measure').find('real').find('units').text.encode('ascii', 'xmlcharrefreplace') #/real/units
+        
+##         ## for child1 in child:
+##         ##         print child1.tag, child1.attrib
+
+
+def get_data(fileId, xy, ll, varname, ip1, dateo=-1, verbose=False):
+
+    #Get the list of times, sort and filter
+    rlist = {}
+    if ip1 != -1:
+        (v,k) = rmn.convertIp(rmn.CONVIP_DECODE,ip1)
+        ip1 = rmn.ip1_all(v,k)
+    for k in rmn.fstinl(fileId, nomvar=varname, ip1=ip1):
+        r = rmn.fstprm(k)
+        if dateo is None or dateo == -1 or dateo == r['dateo']:
+            dateo = r['dateo']
+            rlist[float(r['npas']*r['deet'])/3600.] = k
+            ip1 = r['ip1']
+
+    if verbose or len(rlist.keys()) == 0:
+        print("Found %d record for %s  ip1=%d dateo=%d" % (len(rlist.keys()), varname, ip1, dateo))
+    if len(rlist.keys()) == 0:
+        return None
+
+    #Allocate and read
+    shape = (len(xy)+len(ll), len(rlist.keys()))
+    data  = np.empty(shape, dtype=np.float32, order='F')
+    itime = 0
+    r['d'] = None
+    g = None
+    xpts = [x[0] for x in xy]
+    ypts = [x[1] for x in xy]
+    lats = [l[0] for l in ll]
+    lons = [l[1] for l in ll]
+    for h in sorted(rlist.keys()):
+        r = rmn.fstluk(rlist[h], dataArray=r['d'])
+        if g is None:
+            g = rmn.readGrid(fileId, r)
+        if len(xpts) > 0:
+            v = rmn.gdxysval(g['id'], xpts, ypts, r['d'])
+            data[0:len(xy),itime] = v[:]
+        if len(lats) > 0:
+            v = rmn.gdllsval(g['id'], lats, lons, r['d'])
+            data[len(xy):len(xy)+len(ll),itime] = v[:]
+        if verbose:
+            (lval, lkind) = rmn.convertIp(rmn.CONVIP_DECODE, r['ip1'])
+            print("Read %s (ip1=%d ; %8f %s) (ip2=%d) v=%s" %
+                  (r['nomvar'], r['ip1'], lval, rmn.kindToString(lkind),
+                   r['ip2'], data[:,itime]))
+        itime +=1
+
+    ts = r
+    ts.update({
+        'd' : data,
+        't' : sorted(rlist.keys()),
+        'xy': xy,
+        'll': ll
+        })
+    return ts
+
+
+def get_level_str(ip1, ip2, ip3):
+    level = -1
+    try:
+        (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
+        units = rmn.kindToString(rp1.kind)
+        if rp1.v1 == rp1.v2:
+            level = "%6f%s" % (rp1.v1,units)
+        else:
+            level = '['+str(rp1.v1)+' - '+str(rp1.v1)+'] '+units
+    except:
+        pass
+    return level
+
+
+def plot_series(varlist, title=None, axename=None):
+    #TODO: get full name and units from dict
+    if title is None:
+        title = 'Time Serie of: %s' % varlist[0]['nomvar']
+    plt.title(title)
+    if axename is None:
+        axename = varlist[0]['nomvar']
+    plt.ylabel(axename)        
+    plt.xlabel('Time: %s + H' % str(RPNDate(varlist[0]['dateo'])))
+
+    font = {'family': 'monospace',#'serif',
+            'weight': 'normal',
+            'size': 'x-small',
+            }
+
+    markers = ('-','-.','--',':')
+    colors = ('-','-.','--',':')
+    imark = 0
+    for var in varlist:
+        (varname, ip1, xy, ll, d, t) = (var['nomvar'], var['ip1'], var['xy'], var['ll'], var['d'], var['t'])
+
+        level = get_level_str(var['ip1'], var['ip2'], var['ip3'])
+        for istat in xrange(len(xy)):
+            (i,j) = xy[istat]
+            y = d[istat,:]
+            x = t
+            plt.plot(x, y, markers[imark], label="%s xy:(%6.1f,%6.1f, %s)" % (varname,i,j, level))        
+        for istat in xrange(len(ll)):
+            (i,j) = ll[istat]
+            y = d[len(xy)+istat,:]
+            x = t
+            plt.plot(x, y, markers[imark], label="%s ll:(%6.1f,%6.1f, %s)" % (varname,i,j, level))
+        imark += 1
+        if imark >= len(markers): imark=0
+
+    # Tweak spacing to prevent clipping of ylabel
+    #plt.subplots_adjust(left=0.15)
+    plt.xticks(np.arange(min(varlist[0]['t']), max(varlist[0]['t'])+1, 6.0))
+    plt.legend(prop=font)
+    plt.grid()
+    plt.show()
+
+
+def xy2list(xy):
+    """
+    Split string with format
+    x1,y1
+    x1,y1,x2,y2
+    (x1,y1),(x2,y2)
+    """
+    if xy is None or xy == '':
+        return []
+    xy2 = xy.replace('(','').replace(')','').split(',')
+    return [(float(xy2[i*2]),float(xy2[i*2+1])) for i in xrange(len(xy2)//2)]
+    
+
+if __name__ == "__main__":
+
+    ## ## fdate       = datetime.date.today().strftime('%Y%m%d') + '00_048'
+    ## fdate       = datetime.date.today().strftime('%Y%m%d') + '00_*'
+    ## CMCGRIDF    = os.getenv('CMCGRIDF').strip()
+    ## fileNameIn  = glob.glob(os.path.join(CMCGRIDF, 'prog', 'regeta', fdate))
+    ## ## ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    ## ## fileNameIn = os.path.join(ATM_MODEL_DFILES, 'bcmk')
+
+    ## varname = 'TT'
+    ## ip1a = rmn.convertIp(rmn.CONVIP_ENCODE,1.0,rmn.KIND_SIGMA)
+    ## ip1b = rmn.convertIp(rmn.CONVIP_ENCODE,0.995,rmn.KIND_SIGMA)
+    ## ## ip1c = 11850
+    ## ## ip1d = 11733
+    ## ## ip1e = 11606
+    ## stations_xy = []#[(2,3),(20,30), (50,70)]
+    ## stations_ll = [(45.,273.5),(46.,274.)]
+    ## ## x1 = get_data(fileNameIn, stations_xy, stations_ll, varname, -1)
+    ## ## ## x2 = get_data(fileNameIn, stations_xy, stations_ll, varname, ip1b)
+    ## ## ## x3 = get_data(fileNameIn, stations_xy, stations_ll, varname, ip1c)
+    ## ## ## x4 = get_data(fileNameIn, stations_xy, stations_ll, varname, ip1d)
+    ## ## ## x5 = get_data(fileNameIn, stations_xy, stations_ll, varname, ip1e)
+    ## ## ## plot_series((x1,x2,x3,x4,x5))
+    ## ## plot_series((x1,))
+    ## ## sys.exit(0)
+
+    # Command line arguments
+    desc="Draw time series"
+    usage = """
+    %prog -n varname [options] FILES
+    """
+    parser = optparse.OptionParser(usage=usage,description=desc)
+
+    parser.add_option("-i","--input",dest="files",default='',
+                      help="List of files or filename pattern")
+
+    parser.add_option("-n","--nomvar",dest="nomvar",default='',
+                      help="Variable Name")
+    parser.add_option("","--ip1",dest="ip1",default=-1,
+                      help="Filter records by ip1: 'v1, v2, v3'")
+
+    parser.add_option("","--dateo",dest="dateo",default=None,
+                      help="Filter records by Valid date (CMC date Stamp")
+    parser.add_option("","--vdateo",dest="vdateo",default=None,
+                      help="Filter records by Valid date (YYYYMMDD.HHMM)")
+
+    parser.add_option("","--xy",dest="xy",default=None,
+                      help="x,y position of stations to plot: '(x1,y1), (x2,y2),...'")
+    parser.add_option("","--ll",dest="ll",default=None,
+                      help="lat,lon of stations to plot: '(la1,lo1), (la2,lo2),...'")
+    
+    parser.add_option("","--title",dest="title",default=None,
+                      help="Figure Title")
+    parser.add_option("","--axe",dest="axename",default=None,
+                      help="Figure Y axe name and utils")
+
+    parser.add_option("-v","--verbose",dest="verbose",action="store_true",
+                      help="Verbose mode")
+
+    (options, args) = parser.parse_args()
+
+    if len(args) == 0:
+        sys.stderr.write("\nError: Need to provided at least an input file.\n\n")
+        parser.print_help()
+        sys.exit(1)
+
+    if not options.nomvar:
+        sys.stderr.write("\nError: Need to specify the varname.\n\n")
+        parser.print_help()
+        sys.exit(1)
+        
+    if not (options.xy or options.ll):
+        sys.stderr.write("\nError: Need to provided at least one station location.\n\n")
+        parser.print_help()
+        sys.exit(1)
+
+    files = args if len(args) > 1 else glob.glob(args[0])
+    xy    = xy2list(options.xy)
+    ll    = xy2list(options.ll)
+    dateo = options.dateo
+    if dateo is None and options.vdateo is not None:
+        (yyyymmdd, hhmmsshh0) = options.vdateo.split('.')
+        hhmmsshh = int(hhmmsshh0) * 10**(8-len(hhmmsshh0))
+        dateo = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, int(yyyymmdd), hhmmsshh)
+    if dateo is None:
+        dateo = -1
+
+    ip1list = [int(x) for x in str(options.ip1).split(',')]
+    
+    try:
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        fileId = rmn.fstopenall(files, verbose=options.verbose)
+    except:
+        sys.stderr.write('ERROR: Problem opening: %s\n' % str(files))
+        raise #sys.exit(1)
+
+    try:
+        varlist = [get_data(fileId, xy, ll, options.nomvar, ip1, dateo, verbose=options.verbose)
+                   for ip1 in ip1list]
+    except:
+        raise #pass
+    finally:
+        rmn.fstcloseall(fileId)
+
+    if None in varlist:
+        sys.stderr.write('ERROR: Problem getting requested fields\n')
+        sys.exit(1)
+
+    plot_series(varlist, options.title, options.axename)
+    
+        
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
