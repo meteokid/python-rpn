@@ -116,7 +116,7 @@ class rpnpyCookbook(unittest.TestCase):
 
         This example shows how to
         * get the list of all records matching selection creterions
-        * encode parameters (ip1, datev) values to use selection criterions
+        * encode parameters (ip1, datev) values to use selection criteria
                 
         See also:
         rpnpy.librmn.fstd98.fstopenall
@@ -143,7 +143,7 @@ class rpnpyCookbook(unittest.TestCase):
             sys.exit(1)
 
         try:
-            #Encode selection criterions
+            #Encode selection criteria
             ip1   = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
             datev = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20150707, 6000000)
 
@@ -842,9 +842,9 @@ class rpnpyCookbook(unittest.TestCase):
         datyp   = rmn.FST_DATYP_LIST['float_IEEE_compressed']
         npdtype = rmn.dtype_fst2numpy(datyp)
         rshape  = (g['ni'], g['nj'], len(ip1list))
-        r = rmn.FST_RDE_META_DEFAULT.copy()
-        r.update(g)
-        r.update({
+        r = rmn.FST_RDE_META_DEFAULT.copy() # Copy default record meta
+        r.update(g)                         # Update with grid info
+        r.update({                          # Update with specific meta and data array
             'nomvar': 'MASK',
             'dateo' : rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20160302, 1800000),
             'nk'    : len(ip1list),
@@ -927,42 +927,6 @@ class rpnpyCookbook(unittest.TestCase):
         vgd.vgd_write(v, fileIdOut)
         rmn.fstcloseall(fileIdOut)
         os.unlink(fileNameOut)  # Remove test file
-
-
-    #---- Horizontal Interpolation
-
-
-    def test_41(self):
-        """
-        Horizontal Interpolation
-        
-        See also:
-        """
-        import rpnpy.librmn.all as rmn
-
-
-    #---- Vertical Interpolation
-
-
-    def test_51(self):
-        """
-        Vertical Interpolation
-        
-        See also:
-        """
-        import rpnpy.librmn.all as rmn
-
-
-    #---- Read + 3D Interpolation + Compute + write
-        
-
-    def test_61(self):
-        """
-        Read + 3D Interpolation + Compute + write
-        
-        See also:
-        """
-        import rpnpy.librmn.all as rmn
 
 
 if __name__ == "__main__":
