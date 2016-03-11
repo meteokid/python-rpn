@@ -22,6 +22,7 @@ from rpnpy.vgd  import VGDError
 import rpnpy.librmn.all as _rmn
 
 _C_MKSTR = _ct.create_string_buffer
+_MB2PA   = 100.
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     """
@@ -1049,7 +1050,10 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
         dpidpis  (int)   : VGD_DIAG_DPI or VGD_DIAG_DPIS
         double_precision (bool) : True for double precision computations
     Returns:
-        ndarray : numpy array with 
+        ndarray : numpy array with shape of...
+                  if type(rfld) == float:   shape = [len(ip11list),]
+                  if type(rfld) == list:    shape = [len(list), len(ip11list)]
+                  if type(rfld) == ndarray: shape = rfld.shape + [len(ip11list)]
     Raises:
         TypeError
         VGDError
@@ -1098,48 +1102,60 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     nip1    = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
 
-    rfld_rank = 0
+    vkind = vgd_get(vgd_ptr, 'KIND')
+    vvers = vgd_get(vgd_ptr, 'VERS')
+    vcode = int(vkind)*1000+int(vvers)
+    
+    rank0 = False
     if isinstance(rfld,float):
         rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
+        rank0 = True
     elif isinstance(rfld,(list,tuple)):
         rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
-        rfld_rank = 1
     elif isinstance(rfld,int):
-        rfld_rank = 2
-        fileId = rfld
-        #TODO: check if rfld is needed for vgd_ptr kind,version
-        rfld_name = vgd_get(vgd_ptr, 'RFLD')
-        if not rfld_name:
-            raise VGDError('Problem getting RFLD to compute levels')
-        rfld = _rmn.fstlir(fileId, nomvar=rfld_name.strip())['d']
-        MB2PA = 100.
-        rfld = rfld * MB2PA
+        if _vc.VGD_VCODE_NEED_RFLD[vcode]:
+            fileId = rfld
+            rfld_name = vgd_get(vgd_ptr, 'RFLD')
+            if not rfld_name:
+                raise VGDError('Problem getting RFLD to compute levels')
+            rfld = _rmn.fstlir(fileId, nomvar=rfld_name.strip())['d']
+            MB2PA = 100.
+            rfld = rfld * MB2PA
+        else:
+            rfld = _np.array([float(fileId)], dtype=_np.float32, order='FORTRAN')
+            rank0 = True            
     elif rfld is None:
-        raise TypeError('Need to check if RFLD is needed')
+        if _vc.VGD_VCODE_NEED_RFLD[vcode]:
+            raise TypeError('RFLD needs to be provided for vcode=%d' % vcode)
+        else:
+            rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
+            rank0 = True
     elif not isinstance(rfld,_np.ndarray):
         raise TypeError('rfld should be ndarray, list or float: %s' % str(type(ip1list)))
 
-    if len(rfld.shape) == 1:
-        (ni,nj) = (rfld.shape[0],1)
-    else:
-        (ni,nj) = rfld.shape[0:2]
     if double_precision:
         dtype = _np.float64
         rfld8 = _np.array(rfld, copy=True, dtype=dtype, order='FORTRAN')
     else:
         dtype = _np.float32
         rfld8 = rfld
-    levels8 = _np.empty((ni, nj, nip1), dtype=dtype, order='FORTRAN')
-        
-    if double_precision:
-        ok = _vp.c_vgd_diag_withref_8(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+    shape = list(rfld.shape) + [nip1]
+    levels8 = _np.empty(shape, dtype=dtype, order='FORTRAN')
+
+    ok = _vc.VGD_OK
+    if vkind == 2:  # Workaround for pressure levels
+        for k in xrange(nip1):
+            (value, kind) = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))
+            levels8[:,:,k] = value * _MB2PA
     else:
-        ok = _vp.c_vgd_diag_withref(vgd_ptr, ni, nj, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        if double_precision:
+            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        else:
+            ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+        
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing levels.')
-    if (rfld_rank,nj) == (1,1):
-        levels8 = levels8.reshape(levels8, (nj, nip1), order='F')
-    elif (rfld_rank,ni,nj) == (0,1,1):
+    if rank0:
         levels8 = levels8.flatten()
     return levels8
 

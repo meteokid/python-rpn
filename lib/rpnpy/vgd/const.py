@@ -64,8 +64,20 @@ VGD_KIND_VER = {
     'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER),    #5,4
     'hybmd' : (VGD_HYBMD_KIND, VGD_HYBMD_VER)  #5,5
     }
-VGD_KIND_VER_INV_VCODE = dict(("%d%d" % (v[0]*100,v[1]), k) for k, v in VGD_KIND_VER.iteritems())
+VGD_KIND_VER_INV_VCODE = dict(("%3.3d%1d" % (v[0]*100,v[1]), k) for k, v in VGD_KIND_VER.iteritems())
 VGD_KIND_VER_INV = dict((v, k) for k, v in VGD_KIND_VER.iteritems())
+
+VGD_VCODE_NEED_RFLD = {
+    1001 : True,
+    1002 : True,
+    1003 : True,
+    2001 : False,
+    5001 : True,
+    5002 : True,
+    5003 : True,
+    5004 : True,
+    5005 : True
+    }
 
 VGD_OPR_KEYS = {
     'get_char'      : ["ETIK", "NAME", "RFLD"],
