@@ -1,44 +1,72 @@
 
-==== Developing code ============================================================
+## Python RPN (RPNpy) is a collection of Python modules and scripts developed
+## at RPN for scientific use.
+## Its main purpose is to act as an augmented interface to Librmn and vgrid
+## functions: read, manipulate, interpolate and write RPN Std files data
+## in Python with a very simple and minimalist interface while also 
+## offering powerful lower level functions for special cases. 
+## The Python RPN package can be used for fast prototyping and full development 
+## of production scripts.
+## It allows to use powerful python data analysis and visualization tools 
+## like numpy, scipy and matplotlib among others.
 
-# Basic setup
-git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
+## Note: In order to use Python RPN, you must have librmn and 
+##       vgrid (6.0 or later) installed along with their shared libraries.
+
+## ==== Developing code ============================================================
+
+## Basic setup
+# git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
+git clone git@github.com:meteokid/python-rpn.git rpnpy
+
 cd rpnpy
+# git checkout -b mybranch python-rpn_VERSION
+## You may want to set the librmn and libdesrip (vgrid) versions
+## These libraries need to be present in your LD_LIBRARY_PATH or PYTHONPATH
+# export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_015.2}
+# export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-shared_6.0.0}
+. ./.setenv.dot
+export storage_model=${storage_model:-$TMPDIR}
+rm -f lib/rpnpy/version.py
+cat >> lib/rpnpy/version.py << EOF
+__VERSION__    = "2.0.dev-${USER:-${LOGNAME}}"
+__LASTUPDATE__ = "$(date '+%Y-%m-%d %H:%M %Z')"
+EOF
+
+## Edit python source in:
+## ./lib/
+## ./share/tests/
+
+## Test your code modificatons with:
+for mytest in share/tests/test_*.py ; do
+    python ${mytest}
+done
+
+## Once tested you may send your code/patch 
+## (or path to your git clone after you commited your changes) 
+## to stephane.chamberland@canada.ca
+
+## ==== Building ============================================================
+
+# git clone ssh://armnenv@localhost/~armnenv/GitDepots/python-rpn.git
+# git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
+git clone git@github.com:meteokid/python-rpn.git rpnpy
+
+cd rpnpy
+# git checkout -b tmp python-rpn_VERSION
+## update version number (including leading 'x/') in ./VERSION
+## update default RMN_VERSION and LIBPATH in: 
+##    ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
 . ./.setenv.dot --dev
 export storage_model=${storage_model:-$TMPDIR}
 rdemklink
 ./bin/ouv_exp_rpnpy
-make components_vfiles
-
-# Edit python source in:
-# ./lib/
-# ./share/tests/
-
-# Test your code modificatons with:
-make alltests
-
-# Once tested you may send your code/patch 
-#      (or path to your git clone after you commited your changes) 
-#      to stephane.chamberland@ec.gc.ca
-
-==== Building ============================================================
-
-#git clone ssh://armnenv@localhost/~armnenv/GitDepots/python-rpn.git
-git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
-cd rpnpy
-#git checkout -b tmp rpnpy_VERSION
-#update version number (including leading 'x/') in ./VERSION
-#update default RMN_VERSION and LIBPATH in: ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
-. ./.setenv.dot --dev
-export storage_model=${storage_model:-$TMPDIR}
-rdemklink
-./bin/ouv_exp_rpnpy
-#make -j 8 components_objects
-#make components_libs 
-#make components_abs 
+# make -j 8 components_objects
+# make components_libs 
+# make components_abs 
 make components_ssm
 
-#For additional ARCH
+## For additional ARCH
       ssh MYMACH
       cd /PATH/
       . ./.setenv.dot --dev
@@ -50,14 +78,14 @@ make components_ssm
       #make components_abs 
       make components_ssm_arch
 
-==== Installing ==========================================================
+## ==== Installing ==========================================================
 
 ssh MY_INSTALL_MACH
 cd /PATH/
 . ./.setenv.dot --dev
 make components_install CONFIRM_INSTALL=yes
 
-==== Uninstalling ========================================================
+## ==== Uninstalling ========================================================
 
 ssh MY_INSTALL_MACH
 cd /PATH/
