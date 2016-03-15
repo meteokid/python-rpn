@@ -1,0 +1,2 @@
+      integer Heap_nk
+      common /Heap_dbg_i/ Heap_nk
