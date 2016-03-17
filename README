@@ -26,7 +26,6 @@ cd rpnpy
 # export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_015.2}
 # export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-shared_6.0.0}
 . ./.setenv.dot
-export storage_model=${storage_model:-$TMPDIR}
 rm -f lib/rpnpy/version.py
 cat >> lib/rpnpy/version.py << EOF
 __VERSION__    = "2.0.dev-${USER:-${LOGNAME}}"

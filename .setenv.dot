@@ -20,7 +20,12 @@ for _myfile in ssmusedep_${COMP_ARCH}.bndl ssmusedep.bndl ssmusedep_post.bndl ; 
 done
 unset _myfile
 
-. $(pwd)/bin/.env_setup.dot rpnpy dev all $(pwd) $(pwd)
+rpnpy_version=dev
+if [[ -f VERSION ]] ; then
+   rpnpy_version="$(cat VERSION)"
+fi
+
+. $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version} all $(pwd) $(pwd)
 
 export PATH=$(pwd)/bin:$PATH
 export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
