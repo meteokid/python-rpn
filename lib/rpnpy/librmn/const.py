@@ -55,7 +55,7 @@ WKOFFIT_TYPE_LIST = { #TODO:
     'NETCDF' : 35
     }
 
-WKOFFIT_TYPE_LIST_INV = dict((v, k) for k, v in WKOFFIT_TYPE_LIST.iteritems())
+WKOFFIT_TYPE_LIST_INV = dict([(v, k) for k, v in WKOFFIT_TYPE_LIST.items()])
 #</source>
 #=== base ===
 

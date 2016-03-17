@@ -255,14 +255,14 @@ class Librmn_fstd98_Test(unittest.TestCase):
         self.assertEqual(lo2['d'].shape,lo['d'].shape)
 
         if np.any(np.fabs(la2['d'] - la['d']) > self.epsilon):
-                print 'la2:',la2['d']
-                print 'la :',la['d']
-                print np.fabs(la2['d'] - la['d'])
+                print('la2:',la2['d'])
+                print('la :',la['d'])
+                print(np.fabs(la2['d'] - la['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
         if np.any(np.fabs(lo2['d'] - lo['d']) > self.epsilon):
-                print 'lo2:',lo2['d']
-                print 'lo :',lo['d']
-                print np.fabs(lo2['d'] - lo['d'])
+                print('lo2:',lo2['d'])
+                print('lo :',lo['d'])
+                print(np.fabs(lo2['d'] - lo['d']))
         self.assertFalse(np.any(np.fabs(la2['d'] - la['d']) > self.epsilon))
 
 

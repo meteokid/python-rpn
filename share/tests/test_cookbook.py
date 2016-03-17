@@ -95,6 +95,7 @@ class rpnpyCookbook(unittest.TestCase):
             # Close file even if an error occured above
             rmn.fstcloseall(fileId)
 
+
     def test_11qd(self):
         import os, sys
         import rpnpy.librmn.all as rmn
@@ -143,7 +144,7 @@ class rpnpyCookbook(unittest.TestCase):
             sys.exit(1)
 
         try:
-            #Encode selection criteria
+            # Encode selection criteria
             ip1   = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
             datev = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, 20150707, 6000000)
 
@@ -560,6 +561,7 @@ class rpnpyCookbook(unittest.TestCase):
             rmn.fstcloseall(fileId)
             os.unlink(fileName)  # Remove test file
 
+
     def test_21qd(self):
         import sys, os, os.path, stat, shutil
         import rpnpy.librmn.all as rmn
@@ -745,6 +747,7 @@ class rpnpyCookbook(unittest.TestCase):
             rmn.fstcloseall(fileIdIn)
             rmn.fstcloseall(fileIdOut)
             os.unlink(fileNameOut)  # Remove test file
+
 
     def test_23qd(self):
         import os, sys, datetime

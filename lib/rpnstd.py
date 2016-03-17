@@ -792,7 +792,7 @@ class RPNGrid(RPNParm):
         grtyp = self.getGrtyp(keys, args)
         if type(grtyp) == type(' '):
             grtyp = grtyp.upper()
-        className = "RPNGrid%s" % grtyp
+        className = "RPNGrid{0}".format(grtyp)
         if grtyp in self.base_grtyp:
             className = "RPNGridBase"
         elif grtyp in self.ref_grtyp:
@@ -1682,7 +1682,7 @@ class RPNDate:
         """
         word1 = word2 = 0
         (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2, Fstdc.NEWDATE_STAMP2PRINT)
-        d = "%8.8d.%8.8d" % (word1, word2)
+        d = "{0:08d}.{1:08d}".format(word1, word2)
         yyyy = int(d[0:4])
         mo = int(d[4:6])
         dd = int(d[6:8])
@@ -1696,7 +1696,7 @@ class RPNDate:
     def __repr__(self):
         word1 = word2 = 0
         (dummy, word1, word2) = Fstdc.newdate(self.stamp, word1, word2, Fstdc.NEWDATE_STAMP2PRINT)
-        return "RPNDate(%8.8d, %8.8d)" % (word1, word2)
+        return "RPNDate({0:08d}, {1:08d})".format(word1, word2)
 
 
 #TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
@@ -1779,7 +1779,7 @@ class RPNDateRange:
         d1 = repr(self.dateDebut)
         d2 = repr(self.dateFin)
         d0 = repr(self.now)
-        return "RPNDateRage(from:%s, to:%s, delta:%d) at %s" % (d1[7:27], d2[7:27], self.delta, d0[7:27])
+        return "RPNDateRage(from:{0}, to:{1}, delta:{2}) at {3}".format(d1[7:27], d2[7:27], self.delta, d0[7:27])
 
 
 FirstRecord=RPNMeta()

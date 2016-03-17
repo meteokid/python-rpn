@@ -1308,9 +1308,9 @@ class FLOAT_IP(_ct.Structure):
                 ("kind", _ct.c_int)]
 
     def __str__(self):
-        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
+        return "FLOAT_IP({0}, {1}, {2})".format(self.v1, self.v2, self.kind)
     def __repr__(self):
-        return "FLOAT_IP(%f, %f, %d)" % (self.v1, self.v2, self.kind)
+        return "FLOAT_IP({0}, {1}, {2})".format(self.v1, self.v2, self.kind)
 
     def toList(self):
         """
@@ -2418,8 +2418,9 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 # =========================================================================
 
 if __name__ == "__main__":
-    print c_fst_version()
+    print(str(c_fst_version()))
     
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
+

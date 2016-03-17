@@ -27,7 +27,7 @@ def _getCheckArg(okTypes, value, valueDict, key):
         if key in valueDict.keys():
             value = valueDict[key]
     if (okTypes is not None) and not isinstance(value, okTypes):
-        raise EzscintError('For %s type, Expecting %s, Got %s' % (key,repr(okTypes), type(value)))
+        raise EzscintError('For {0} type, Expecting {1}, Got {2}'.format(key,repr(okTypes), type(value)))
     return value
 
 _isftn = lambda x,t: x.dtype == t and x.flags['F_CONTIGUOUS']
@@ -88,8 +88,7 @@ def ezsetopt(option, value):
         rpnpy.librmn.const
     """
     if not isinstance(option, str):
-        raise TypeError("ezsetopt: expecting args of type str, Got %s" %
-                        (type(option)))
+        raise TypeError("ezsetopt: expecting args of type str, Got {0}".format(type(option)))
     if isinstance(value, int):
         istat = _rp.c_ezsetival(option, value)
     elif isinstance(value, float):
@@ -97,7 +96,7 @@ def ezsetopt(option, value):
     elif isinstance(value, str):
         istat = _rp.c_ezsetopt(option, value)
     else:
-        raise TypeError("ezsetopt: Not a supported type %s" % (type(value)))
+        raise TypeError("ezsetopt: Not a supported type {0}".format(type(value)))
     if istat >= 0:
         return None
     raise EzscintError()
@@ -460,7 +459,7 @@ def gdsetmask(gdid, mask):
     """
     gdid = _getCheckArg(int, gdid, gdid, 'id')
     if not (isinstance(mask, _np.ndarray) and mask.dtype in (_np.intc, _np.int32)):
-        raise TypeError("Expecting mask type=numpy,intc, Got %s" % mask.dtype)
+        raise TypeError("Expecting mask type=numpy,intc, Got {0}".format(mask.dtype))
     mask  = _ftn(mask, mask.dtype)
     istat = _rp.c_gdsetmask(gdid, mask)
     if istat < 0:
@@ -491,7 +490,7 @@ def ezgetopt(option, vtype=int):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> interp_degree = rmn.ezgetopt(rmn.EZ_OPT_INTERP_DEGREE, vtype=str)
-    >>> print("# Field will be interpolated with type: %s" % interp_degree)
+    >>> print("# Field will be interpolated with type: {0}".format(interp_degree))
     # Field will be interpolated with type: linear
 
     See Also:
@@ -499,8 +498,7 @@ def ezgetopt(option, vtype=int):
         rpnpy.librmn.const
     """
     if not isinstance(option, str):
-        raise TypeError("ezgetopt: expecting args of type str, Got %s" %
-                        (type(option)))
+        raise TypeError("ezgetopt: expecting args of type str, Got {0}".format(type(option)))
     if vtype == int:
         cvalue = _ct.c_int()
         istat = _rp.c_ezgetival(option, cvalue)
@@ -511,7 +509,7 @@ def ezgetopt(option, vtype=int):
         cvalue = _C_MKSTR(' '*64)
         istat = _rp.c_ezgetopt(option, cvalue)
     else:
-        raise TypeError("ezgetopt: Not a supported type %s" % (repr(vtype)))
+        raise TypeError("ezgetopt: Not a supported type {0}".format(repr(vtype)))
     if istat >= 0:
         return cvalue.value
     raise EzscintError()
@@ -536,7 +534,7 @@ def ezget_nsubgrids(super_gdid):
     >>> import rpnpy.librmn.all as rmn
     >>> yy = rmn.defGrid_YY(31)
     >>> n = rmn.ezget_nsubgrids(yy['id'])
-    >>> print("# There are %d subgrids in the YY grid" % n)
+    >>> print("# There are {0} subgrids in the YY grid".format(n))
     # There are 2 subgrids in the YY grid
 
     See Also:
@@ -575,7 +573,7 @@ def ezget_subgridids(super_gdid):
     >>> import rpnpy.librmn.all as rmn
     >>> yy = rmn.defGrid_YY(31)
     >>> idlist = rmn.ezget_subgridids(yy['id'])
-    >>> print("# The list of grid id in the YY grid is: %s" % str(idlist))
+    >>> print("# The list of grid id in the YY grid is: {0}".format(str(idlist)))
     # The list of grid id in the YY grid is: [8, 9]
 
     See Also:
@@ -634,8 +632,7 @@ def ezgprm(gdid, doSubGrid=False):
     >>> 
     >>> # Get grid info from any grid id
     >>> params = rmn.ezgprm(gid)
-    >>> print("# Grid type=%s of size=%d, %d" % \
-              (params['grtyp'], params['ni'], params['nj']))
+    >>> print("# Grid type={grtyp} of size={ni}, {nj}".format(**params))
     # Grid type=L of size=90, 45
 
     See Also:
@@ -744,8 +741,7 @@ def ezgxprm(gdid, doSubGrid=False):
     >>> 
     >>> # Get grid info
     >>> params = rmn.ezgxprm(gid)
-    >>> print("# Grid type=%s/%s of size=%d, %d" % \
-              (params['grtyp'], params['grref'], params['ni'], params['nj']))
+    >>> print("# Grid type={grtyp}/{grref} of size={ni}, {nj}".format(**params))
     # Grid type=Z/E of size=90, 45
 
     See Also:
@@ -843,8 +839,7 @@ def ezgfstp(gdid):
     >>> 
     >>> # Get standard file attributes of the positional records
     >>> params = rmn.ezgfstp(meGrid['id'])
-    >>> print("# %s grid axes are in %s and %s records" % \
-              (meRec['nomvar'], params['nomvarx'], params['nomvary']))
+    >>> print("# {0} grid axes are in {nomvarx} and {nomvary} records".format(meRec['nomvar'], **params))
     # ME   grid axes are in >>   and ^^   records
 
     See Also:
@@ -934,8 +929,8 @@ def gdgaxes(gdid, ax=None, ay=None):
     >>> 
     >>> # Get axes values for the grid
     >>> axes = rmn.gdgaxes(gridid)
-    >>> print("# Got grid axes of shape: %s, %s" % \
-              (str(axes['ax'].shape), str(axes['ay'].shape)))
+    >>> print("# Got grid axes of shape: {0}, {1}"\
+              .format(str(axes['ax'].shape), str(axes['ay'].shape)))
     # Got grid axes of shape: (201, 1), (1, 100)
 
     See Also:
@@ -972,13 +967,12 @@ def gdgaxes(gdid, ax=None, ay=None):
         ayshape = (1, gridParams['shape'][1])
     #elif gridParams['grtyp'].lower() == 'u': #TODO add support of U/F-grids
     else:
-        raise EzscintError("gdgaxes: grtyp/grref = %s/%s not supported" %
-                           (gridParams['grtyp'], gridParams['grref']))
+        raise EzscintError("gdgaxes: grtyp/grref = {grtyp}/{grref} not supported".format(**gridParams))
     ax = _ftnOrEmpty(ax, axshape, _np.float32)
     ay = _ftnOrEmpty(ay, ayshape, _np.float32)
     if not (isinstance(ax, _np.ndarray) and isinstance(ay, _np.ndarray)):
         raise TypeError("gdgaxes: Expecting ax, ay as 2 numpy.ndarray, " +
-                        "Got %s, %s" % (type(ax), type(ay)))
+                        "Got {0}, {1}".format(type(ax), type(ay)))
     if ax.shape != axshape or ay.shape != ayshape:
         raise TypeError("gdgaxes: provided ax, ay have the wrong shape")
     istat = _rp.c_gdgaxes(gdid, ax, ay)
@@ -1023,8 +1017,8 @@ def gdll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> lalo = rmn.gdll(grid['id'])
     >>> (i, j) = (45, 20)
-    >>> print("# Lat, Lon of point %d, %d is: %f, %f" % \
-              (i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
+    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
+              .format(i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
     # Lat, Lon of point 45, 20 is: -7.911613, 180.000000
     
     See Also:
@@ -1047,7 +1041,7 @@ def gdll(gdid, lat=None, lon=None):
     lon = _ftnOrEmpty(lon, gridParams['shape'], _np.float32)
     if not (isinstance(lat, _np.ndarray) and isinstance(lon, _np.ndarray)):
         raise TypeError("gdll: Expecting lat, lon as 2 numpy.ndarray," +
-                        "Got %s, %s" % (type(lat), type(lon)))
+                        "Got {0}, {1}".format(type(lat), type(lon)))
     if lat.shape != gridParams['shape'] or lon.shape != gridParams['shape']:
         raise TypeError("gdll: provided lat, lon have the wrong shape")
     istat = _rp.c_gdll(gdid, lat, lon)
@@ -1097,8 +1091,8 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (la, lo) = (45., 273.)
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
-    >>> print("# x, y pos at lat=%f, lon=%f is: %f, %f" % \
-              (la, lo, xy['x'][0], xy['y'][0]))
+    >>> print("# x, y pos at lat={0}, lon={1} is: {2}, {3}"\
+              .format(la, lo, xy['x'][0], xy['y'][0]))
     # x, y pos at lat=45.000000, lon=273.000000 is: 69.250000, 34.375877
 
     See Also:
@@ -1114,7 +1108,7 @@ def gdxyfll(gdid, lat=None, lon=None):
     clat = _list2ftnf32(lat)
     clon = _list2ftnf32(lon)
     if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
-        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
+        raise TypeError("lat and lon must be arrays: {0}, {1}".format(type(clat), type(clon)))
     if clat.size != clon.size:
         raise TypeError("gdxyfll: provided lat, lon should have the same size")
     cx = _np.empty(clat.shape, dtype=_np.float32, order='FORTRAN')
@@ -1169,8 +1163,8 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (i, j) = (69, 34)
     >>> lalo = rmn.gdllfxy(grid['id'], [i], [j])
-    >>> print("# Lat, Lon of point %d, %d is: %f, %f" % \
-              (i, j, lalo['lat'][0], lalo['lon'][0]))
+    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
+              .format(i, j, lalo['lat'][0], lalo['lon'][0]))
     # Lat, Lon of point 69, 34 is: 43.513199, 272.000000
     
     See Also:
@@ -1265,11 +1259,11 @@ def gdgetmask(gdid, mask=None):
     if not (isinstance(mask, _np.ndarray) and
             mask.shape == gridParams['shape'] and
             mask.dtype in (_np.intc, _np.int32)):
-            raise TypeError("Wrong mask type,shape numpy.ndarray: %s, %s" %
-                            (type(mask), repr(gridParams['shape'])))
+            raise TypeError("Wrong mask type,shape numpy.ndarray: {0}, {1}"\
+                            .format(type(mask), repr(gridParams['shape'])))
     istat = _rp.c_gdgetmask(gdid, mask)
     if istat < 0:
-        raise EzscintError('gdgetmask: Problem getting the mask for grid id=%d' % gdid)
+        raise EzscintError('gdgetmask: Problem getting the mask for grid id={0}'.format(gdid))
     return mask
 
 
@@ -1346,8 +1340,8 @@ def ezsint(gdidout, gdidin, zin, zout=None):
     dshape = ezgprm(gdidout)['shape']
     zout = _ftnOrEmpty(zout, dshape, zin.dtype)
     if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
-        raise TypeError("Wrong type,shape for zout: %s, %s" %
-                        (type(zout), repr(dshape)))
+        raise TypeError("Wrong type,shape for zout: {0}, {1}"\
+                        .format(type(zout), repr(dshape)))
     istat = _rp.c_ezsint(zout, zin)
     if istat >= 0:
         return zout
@@ -1431,7 +1425,7 @@ def ezuvint(gdidout, gdidin, uuin, vvin, uuout=None, vvout=None):
     if not (isinstance(uuout, _np.ndarray) and
             isinstance(vvout, _np.ndarray)):
         raise TypeError("ezuvint: Expecting uuout, vvout of type " +
-                        "numpy.ndarray, Got %s" % (type(uuout)))
+                        "numpy.ndarray, Got {0}".format(type(uuout)))
     if uuout.shape != dshape or vvout.shape != dshape:
         raise TypeError("ezuvint: Provided uuout, vvout array have " +
                         "inconsistent shape compered to the output grid")
@@ -1506,14 +1500,14 @@ def gdllsval(gdid, lat, lon, zin, zout=None):
     clat = _list2ftnf32(lat)
     clon = _list2ftnf32(lon)
     if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
-        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
+        raise TypeError("lat and lon must be arrays: {0}, {1}".format(type(clat), type(clon)))
     if clat.shape != clon.shape:
         raise TypeError("Provided lat, lon arrays have inconsistent shapes")
     dshape = clat.shape
     zout = _ftnOrEmpty(zout, dshape, zin.dtype)
     if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
-        raise TypeError("Wrong type,shape for zout: %s, %s" %
-                        (type(zout), repr(dshape)))
+        raise TypeError("Wrong type,shape for zout: {0}, {1}"\
+                        .format(type(zout), repr(dshape)))
     istat = _rp.c_gdllsval(gdid, zout, zin, clat, clon, clat.size)
     if istat >= 0:
         return zout
@@ -1596,8 +1590,8 @@ def gdxysval(gdid, xpts, ypts, zin, zout=None):
     dshape = cx.shape
     zout = _ftnOrEmpty(zout, dshape, zin.dtype)
     if not (isinstance(zout, _np.ndarray) and zout.shape == dshape):
-        raise TypeError("Wrong type,shape for zout: %s, %s" %
-                        (type(zout), repr(dshape)))
+        raise TypeError("Wrong type,shape for zout: {0}, {1}"\
+                        .format(type(zout), repr(dshape)))
     istat = _rp.c_gdxysval(gdid, zout, zin, cx, cy, cx.size)
     if istat >= 0:
         return zout
@@ -1676,18 +1670,18 @@ def gdllvval(gdid, lat, lon, uuin, vvin, uuout=None, vvout=None):
     clat = _list2ftnf32(lat)
     clon = _list2ftnf32(lon)
     if not (isinstance(clat, _np.ndarray) and isinstance(clon, _np.ndarray)): 
-        raise TypeError("lat and lon must be arrays: %s, %s" % (type(clat), type(clon)))
+        raise TypeError("lat and lon must be arrays: {0}, {1}".format(type(clat), type(clon)))
     if clat.shape != clon.shape:
         raise TypeError("Provided lat, lon arrays have inconsistent shapes")  
     dshape = clat.shape
     uuout = _ftnOrEmpty(uuout, dshape, uuin.dtype)
     vvout = _ftnOrEmpty(vvout, dshape, uuin.dtype)
     if not (isinstance(uuout, _np.ndarray) and uuout.shape == dshape):
-        raise TypeError("Wrong type,shape for uuout: %s, %s" %
-                        (type(uuout), repr(dshape)))
+        raise TypeError("Wrong type,shape for uuout: {0}, {1}"\
+                        .format(type(uuout), repr(dshape)))
     if not (isinstance(vvout, _np.ndarray) and vvout.shape == dshape):
-        raise TypeError("Wrong type,shape for uuout: %s, %s" %
-                        (type(vvout), repr(dshape)))
+        raise TypeError("Wrong type,shape for uuout: {0}, {1}"\
+                        .format(type(vvout), repr(dshape)))
     istat = _rp.c_gdllvval(gdid, uuout, vvout, uuin, vvin, clat, clon, clat.size)
     if istat >= 0:
         return (uuout, vvout)
@@ -1777,11 +1771,11 @@ def gdxyvval(gdid, xpts, ypts, uuin, vvin, uuout=None, vvout=None):
     uuout = _ftnOrEmpty(uuout, dshape, uuin.dtype)
     vvout = _ftnOrEmpty(vvout, dshape, uuin.dtype)
     if not (isinstance(uuout, _np.ndarray) and uuout.shape == dshape):
-        raise TypeError("Wrong type,shape for uuout: %s, %s" %
-                        (type(uuout), repr(dshape)))
+        raise TypeError("Wrong type,shape for uuout: {0}, {1}"\
+                        .format(type(uuout), repr(dshape)))
     if not (isinstance(vvout, _np.ndarray) and vvout.shape == dshape):
-        raise TypeError("Wrong type,shape for uuout: %s, %s" %
-                        (type(vvout), repr(dshape)))
+        raise TypeError("Wrong type,shape for uuout: {0}, {1}"\
+                        .format(type(vvout), repr(dshape)))
     istat = _rp.c_gdxyvval(gdid, uuout, vvout, uuin, vvin,
                            cx, cy, cx.size)
     if istat >= 0:
@@ -1835,8 +1829,8 @@ def gdrls(gdid):
         gdid = [gdid]
     for id1 in gdid:
         if not isinstance(id1, int):
-            raise TypeError("gdrls: Expecting gdid of type int, Got %s" %
-                            (type(id1)))
+            raise TypeError("gdrls: Expecting gdid of type int, Got {0}"\
+                            .format(type(id1)))
         istat = _rp.c_gdrls(id1)
         if istat < 0:
             raise EzscintError()

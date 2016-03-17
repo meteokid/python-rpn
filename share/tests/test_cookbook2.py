@@ -3,7 +3,7 @@
 
 import unittest
 
-class rpnpyCookbook(unittest.TestCase):
+class rpnpyCookbook2(unittest.TestCase):
     
 
     #---- Horizontal Interpolation
@@ -24,7 +24,6 @@ class rpnpyCookbook(unittest.TestCase):
 
         # Restric to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
-
 
         try:
             # Create Destination grid

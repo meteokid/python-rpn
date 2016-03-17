@@ -89,8 +89,8 @@ def dtype_fst2numpy(datyp, nbits=None):
        FSTDError
     """
     if not (type(datyp) == int):
-        raise TypeError("dtype_fst2numpy: Expecting arg of type int, Got %s" %
-                        (type(datyp)))
+        raise TypeError("dtype_fst2numpy: Expecting arg of type int, Got {0}"\
+                        .format(type(datyp)))
     datyp = (datyp-128 if datyp>=128 else datyp)
     datyp = (datyp-64 if datyp>=64 else datyp)
     try:
@@ -98,8 +98,8 @@ def dtype_fst2numpy(datyp, nbits=None):
             return _rc.FST_DATYP2NUMPY_LIST64[datyp]
         else:
             return _rc.FST_DATYP2NUMPY_LIST[datyp]
-    except:
-        raise FSTDError()
+    except Exception as e:
+        raise FSTDError('',e)
 
 
 def dtype_numpy2fst(npdtype, compress=True, missing=False):
@@ -133,8 +133,8 @@ def dtype_numpy2fst(npdtype, compress=True, missing=False):
        FSTDError
     """
     if not (type(npdtype) == _np.dtype or type(npdtype) == type):
-        raise TypeError("dtype_numpy2fst: Expecting arg of type %s, Got %s" %
-                        ('numpy.dtype', type(npdtype)))
+        raise TypeError("dtype_numpy2fst: Expecting arg of type {0}, Got {1}"\
+                        .format('numpy.dtype', type(npdtype)))
     datyp = 0 #default returned type: binary
     for (i, dtype) in _rc.FST_DATYP2NUMPY_LIST.items() + \
         _rc.FST_DATYP2NUMPY_LIST64.items():
@@ -172,8 +172,8 @@ def isFST(filename):
        rpnpy.librmn.base.wkoffit
     """
     if not (type(filename) == str):
-        raise TypeError("isFST: Expecting arg of type str, Got %s" %
-                        (type(filename)))
+        raise TypeError("isFST: Expecting arg of type str, Got {0}"\
+                        .format(type(filename)))
     if filename.strip() == '':
         raise ValueError("isFST: must provide a valid filename")
     return _rb.wkoffit(filename) in \
@@ -223,13 +223,13 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     #TODO: accepte pattern, use glob
     paths = [paths] if type(paths) == str else paths
     if not (type(paths) in (list, tuple)):
-        raise TypeError("fstopenall: Expecting arg of type list, Got %s" %
-                        (type(paths)))
+        raise TypeError("fstopenall: Expecting arg of type list, Got {0}"\
+                        .format(type(paths)))
     filelist = []
     for mypath in paths:
         if not (type(mypath) == str):
-            raise TypeError("fstopenall: Expecting arg of type str, Got %s" %
-                            (type(mypath)))
+            raise TypeError("fstopenall: Expecting arg of type str, Got {0}"\
+                            .format(type(mypath)))
         if mypath.strip() == '':
             raise ValueError("fstopenall: must provide a valid path")
         if os.path.isdir(mypath):
@@ -237,12 +237,12 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                 for myfile in paths_dirs_files[2]:
                     if isFST(os.path.join(mypath, myfile)):
                         if verbose:
-                            print "(fstopenall) Found FST file: %s" % \
-                                (os.path.join(mypath, myfile))
+                            print("(fstopenall) Found FST file: {0}"\
+                                  .format(os.path.join(mypath, myfile)))
                         filelist.append(os.path.join(mypath, myfile))
                     elif verbose:
-                        print "(fstopenall) Ignoring non FST file: %s" % \
-                            (os.path.join(mypath, myfile))
+                        print("(fstopenall) Ignoring non FST file: {0}"\
+                              .format(os.path.join(mypath, myfile)))
                 break
         else:
             filelist.append(mypath)
@@ -256,28 +256,29 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
                 if isFST(myfile):
                     funit = _rb.fnom(myfile, filemode)
                 elif verbose:
-                    print "(fstopenall) Not a RPNSTD file: " + myfile
+                    print("(fstopenall) Not a RPNSTD file: {0}".format(myfile))
             elif filemode in (_rc.FST_RW_OLD, _rc.FST_RO):
                 if verbose:
-                    print "(fstopenall) File not found: " + myfile
+                    print("(fstopenall) File not found: {0}".format(myfile))
             else:
                 funit = _rb.fnom(myfile, filemode)
-        except:
-            pass
+        except Exception as e:
+            if verbose:
+                print("(fstopenall) Ignoring Exception: {0}".format(repr(e)))
         if funit:
             try:
                 fstouv(funit, filemode)
                 iunitlist.append(funit)
                 if verbose:
-                    print "(fstopenall) Opening: " + myfile, funit
-            except:
+                    print("(fstopenall) Opening: {0} {1}".format(myfile, funit))
+            except Exception as e:
                 if verbose:
-                    print "(fstopenall) Problem Opening: " + myfile
+                    print("(fstopenall) Problem Opening: {0} ({1})".format(myfile, e))
         elif verbose:
-            print "(fstopenall) Problem Opening: " + myfile
+            print("(fstopenall) Problem Opening: {0}".format(myfile))
     if len(iunitlist) == 0:
-        raise FSTDError("fstopenall: unable to open any file in path %s" %
-                        (str(paths)))
+        raise FSTDError("fstopenall: unable to open any file in path {0}"\
+                        .format(str(paths)))
     if len(iunitlist) == 1:
         return iunitlist[0]
     _linkedUnits[str(iunitlist[0])] = iunitlist
@@ -314,21 +315,23 @@ def fstcloseall(iunit):
        FSTDError
     """
     if not (type(iunit) == int):
-        raise TypeError("fstcloseall: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstcloseall: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstcloseall: must provide a valid iunit: %d" %
-                         (iunit))    
+        raise ValueError("fstcloseall: must provide a valid iunit: {0}"\
+                         .format(iunit))    
     try:
         iunitlist = _linkedUnits[str(iunit)]
     except KeyError:
         iunitlist = (iunit,)
     istat = 0
+    elist = []
     for iunit in iunitlist:
         try:
             fstfrm(iunit)
             istat =_rb.fclos(iunit)
-        except:
+        except Exception as e:
+            elist.append(e)
             istat = -1
     try:
         del _linkedUnits[str(iunitlist[0])]
@@ -336,7 +339,7 @@ def fstcloseall(iunit):
         pass
     if istat >= 0:
         return
-    raise FSTDError("fstcloseall: Unable to properly close unit %d" % (iunit))
+    raise FSTDError("fstcloseall: Unable to properly close unit {0} ({1})".format(iunit, repr(elist)))
 
 
 def listToFLOATIP(rp1):
@@ -473,10 +476,10 @@ def fstecr(iunit, data, meta=None, rewrite=True):
         rpnpy.librmn.const
     """
     if not (type(iunit) == int):
-        raise TypeError("fstecr: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstecr: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstecr: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstecr: must provide a valid iunit: {0}".format(iunit))
     if isinstance(data, dict):
         meta0 = data
         data = meta0['d']
@@ -484,8 +487,8 @@ def fstecr(iunit, data, meta=None, rewrite=True):
             meta0.update(meta)
         meta = meta0
     if not (type(data) == _np.ndarray and isinstance(meta, dict)):
-        raise TypeError("fstecr: Expecting args of type %s, %s, Got %s, %s" %
-                        ('numpy.ndarray', 'dict', type(data), type(meta)))
+        raise TypeError("fstecr: Expecting args of type {0}, {1}, Got {2}, {3}"\
+                        .format('numpy.ndarray', 'dict', type(data), type(meta)))
     if not data.flags['F_CONTIGUOUS']:
         raise TypeError("fstecr: Expecting data type " +
                         "numpy.ndarray with FORTRAN order")
@@ -495,8 +498,8 @@ def fstecr(iunit, data, meta=None, rewrite=True):
         try:
             if k in meta.keys() and meta[k] not in ('', ' ', -1):
                 meta2[k] = meta[k]
-        except:
-            sys.stderr.write("fstecr error, skipping copy of: %s\n" % str(k))
+        except Exception as e:
+            sys.stderr.write("fstecr error, skipping copy of: {0} ({1})\n".format(str(k), repr(e)))
     datyp = dtype_numpy2fst(data.dtype)
     try:
         if meta['datyp'] >= 0:
@@ -643,7 +646,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         return
     
     if key < 0:
-        raise ValueError("fst_edit_dir: must provide a valid record key: %d" % (key))
+        raise ValueError("fst_edit_dir: must provide a valid record key: {0}".format(key))
     if dateo != -1:
         recparams = fstprm(key)
         deet1 = recparams['deet'] if deet == -1 else deet
@@ -653,9 +656,8 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         else:
             try: 
                 datev = _rb.incdatr(dateo, deet1*npas1/3600.)
-            except:
-                raise FSTDError('fst_edit_dir: ' +
-                                'error computing datev to set dateo')
+            except Exception as e:
+                raise FSTDError('fst_edit_dir: error computing datev to set dateo ({0})'.format(repr(e)))
     elif keep_dateo and (npas != -1 or deet != -1):
         recparams = fstprm(key)
         if recparams['dateo'] == 0:
@@ -666,8 +668,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
             try:
                 datev = _rb.incdatr(recparams['dateo'], deet1*npas1/3600.)
             except:
-                raise FSTDError('fst_edit_dir: ' +
-                                'error computing datev to keep_dateo')
+                raise FSTDError('fst_edit_dir: error computing datev to keep_dateo ({0})'.format(repr(e)))
     istat = _rp.c_fst_edit_dir(key, datev, deet, npas, ni, nj, nk,
                  ip1, ip2, ip3, typvar, nomvar, etiket, grtyp,
                  ig1, ig2, ig3, ig4, datyp)
@@ -747,11 +748,11 @@ def fsteff(key):
         return
     
     if not (type(key) == int):
-        raise TypeError("fsteff: Expecting arg of type int, Got %s" %
-                        (type(key)))
+        raise TypeError("fsteff: Expecting arg of type int, Got {0}"\
+                        .format(type(key)))
     if key < 0:
-        raise ValueError("fsteff: must provide a valid record key: %d" %
-                         (key))
+        raise ValueError("fsteff: must provide a valid record key: {0}"\
+                         .format(key))
     istat = _rp.c_fsteff(key)
     if istat >= 0:
         return
@@ -791,10 +792,10 @@ def fstfrm(iunit):
         rpnpy.librmn.base.fclos
     """
     if not (type(iunit) == int):
-        raise TypeError("fstfrm: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstfrm: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstfrm: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstfrm: must provide a valid iunit: {0}".format(iunit))
     istat = _rp.c_fstfrm(iunit)
     if istat >= 0:
         return
@@ -922,13 +923,13 @@ def fstinfx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
        key = key['key']
     
     if not (type(iunit) == int):
-        raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstinfx: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinfx: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstinfx: must provide a valid iunit: {0}".format(iunit))
     if not (type(key) == int):
-        raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
-                        (type(key)))
+        raise TypeError("fstinfx: Expecting arg of type int, Got {0}"\
+                        .format(type(key)))
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     key2 = _rp.c_fstinfx(key, iunit, _ct.byref(cni), _ct.byref(cnj),
                          _ct.byref(cnk), datev, etiket, ip1, ip2, ip3,
@@ -983,7 +984,7 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> 
     >>> # Find all records named VF and print the ip1 of the first 3
     >>> keylist = rmn.fstinl(funit, nomvar='VF')
-    >>> for key in keylist[0:3]: print("# VF ip1=%s" % rmn.fstprm(key)['ip1'])
+    >>> for key in keylist[0:3]: print("# VF ip1={0}".format(rmn.fstprm(key)['ip1']))
     # VF ip1=1199
     # VF ip1=1198
     # VF ip1=1197
@@ -999,10 +1000,10 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         fstcloseall    
     """
     if not (type(iunit) == int):
-        raise TypeError("fstinl: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstinl: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinl: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstinl: must provide a valid iunit: {0}".format(iunit))
     if nrecmax <= 0: nrecmax = _rp.c_fstnbrv(iunit)
     creclist = _np.empty(nrecmax, dtype=_np.intc)
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
@@ -1048,7 +1049,7 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
 ##     """
 ##     if type(iunit) != int:
 ##        raise TypeError("fstluk: Expecting a iunit of type int, " +
-##                        "Got %s : %s" % (type(iunit), repr(iunit)))
+##                        "Got {0} : {1}".format(type(iunit), repr(iunit)))
 
 
 def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
@@ -1099,8 +1100,8 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> 
     >>> # Find and read p0 meta and data, then print its min,max,mean values
     >>> p0rec = rmn.fstlir(funit, nomvar='P0')
-    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
-              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
+              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
     # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
     >>> rmn.fstcloseall(funit)
     
@@ -1171,8 +1172,8 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlirx(key1, funit, nomvar='P0')
-    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
-              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
+              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
     # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
     >>> rmn.fstcloseall(funit)
     
@@ -1231,8 +1232,8 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlis(funit)
-    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
-              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
+              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
     # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
     >>>    
     >>> rmn.fstcloseall(funit)
@@ -1286,7 +1287,7 @@ def fstlnk(unitList):
     >>> funit = rmn.fstlnk((funit1, funit2))
     >>> 
     >>> # Use the linked files
-    >>> for key in rmn.fstinl(funit, nomvar='P0'): print("# P0 ip2=%s" % rmn.fstprm(key)['ip2'])
+    >>> for key in rmn.fstinl(funit, nomvar='P0'): print("# P0 ip2={0}".format(rmn.fstprm(key)['ip2']))
     # P0 ip2=0
     # P0 ip2=12
     >>> 
@@ -1308,14 +1309,14 @@ def fstlnk(unitList):
     if type(unitList) == int:
         unitList = [unitList]
     if not (type(unitList) in (list, tuple)):
-        raise TypeError("fstlnk: Expecting arg of type list, Got %s" %
-                        (type(unitList)))
+        raise TypeError("fstlnk: Expecting arg of type list, Got {0}"\
+                        .format(type(unitList)))
     if len(unitList)<1 or min(unitList)<=0:
-        raise ValueError("fstlnk: must provide a valid iunit: %d" %
-                         (min(unitList)))
+        raise ValueError("fstlnk: must provide a valid iunit: {0}"\
+                         .format(min(unitList)))
     if len(unitList) > nfilesmax: #TODO: check this limit
-        raise ValueError("fstlnk: Too many files (max %d): %d" %
-                         (nfilesmax,len(unitList)))
+        raise ValueError("fstlnk: Too many files (max {0}): {1}"\
+                         .format(nfilesmax,len(unitList)))
     cunitList = _np.asfortranarray(unitList, dtype=_np.intc)
     ## istat = _rp.c_xdflnk(cunitList, len(cunitList))
     cnunits = _ct.c_int(len(cunitList))
@@ -1365,8 +1366,8 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key   = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstluk(key)
-    >>> print("# P0 ip2=%s min=%f max=%f avg=%f" % \
-              (p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
+    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
+              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
     # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
     >>> rmn.fstcloseall(funit)
 
@@ -1381,10 +1382,10 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     if isinstance(key, dict):
        key = key['key']
     if type(key) != int:
-        raise TypeError("fstluk: Expecting a key of type int, Got %s : %s" %
-                        (type(key), repr(key)))
+        raise TypeError("fstluk: Expecting a key of type int, Got {0} : {1}"\
+                        .format(type(key), repr(key)))
     if key < 0:
-        raise ValueError("fstluk: must provide a valid key: %d" % (key))
+        raise ValueError("fstluk: must provide a valid key: {0}".format(key))
     params = fstprm(key)
     if params is None:
         raise FSTDError()
@@ -1409,14 +1410,14 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
         if not dataArray.flags['F_CONTIGUOUS']:
             raise TypeError('Provided dataArray should be F_CONTIGUOUS')
         if dtype != dataArray.dtype:
-            raise TypeError('Expecting dataArray of type %s, got: %s' % (repr(dtype),repr(dataArray.dtype)))
+            raise TypeError('Expecting dataArray of type {0}, got: {1}'.format(repr(dtype),repr(dataArray.dtype)))
         shape0 = [1,1,1] ; shape0[0:len(params['shape'])] = params['shape'][:]
         shape1 = [1,1,1] ; shape1[0:len(dataArray.shape)] = dataArray.shape[:]
         if shape0 != shape1:
-            raise TypeError('Provided have wrong shape, expecting: %s, got: %s' %(repr(params['shape']),repr(dataArray.shape)))
+            raise TypeError('Provided have wrong shape, expecting: {0}, got: {1}'.format(repr(params['shape']),repr(dataArray.shape)))
         data = dataArray
     else:
-        raise TypeError('Expecting dataArray of type ndarray, got: %s' % repr(type(dataArray)))
+        raise TypeError('Expecting dataArray of type ndarray, got: {0}'.format(repr(type(dataArray))))
     istat = _rp.c_fstluk(data, key, _ct.byref(cni), _ct.byref(cnj),
                          _ct.byref(cnk))
     if istat < 0:
@@ -1455,7 +1456,7 @@ def fstnbr(iunit):
     >>> # Print number of records
     >>> # then print its min,max,mean values
     >>> nrec = rmn.fstnbr(funit)
-    >>> print("# There are %d records in the file" % nrec)
+    >>> print("# There are {0} records in the file".format(nrec))
     # There are 1083 records in the file
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -1466,10 +1467,10 @@ def fstnbr(iunit):
         fstcloseall
     """
     if not (type(iunit) == int):
-        raise TypeError("fstnbr: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstnbr: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstnbr: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstnbr: must provide a valid iunit: {0}".format(iunit))
     nrec = _rp.c_fstnbr(iunit)
     if nrec < 0:
         raise FSTDError()        
@@ -1504,7 +1505,7 @@ def fstnbrv(iunit):
     >>> # Print number of records
     >>> # then print its min,max,mean values
     >>> nrec = rmn.fstnbrv(funit)
-    >>> print("# There are %d valid records in the file" % nrec)
+    >>> print("# There are {0} valid records in the file".format(nrec))
     # There are 1083 valid records in the file
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -1516,10 +1517,10 @@ def fstnbrv(iunit):
 
     """
     if not (type(iunit) == int):
-        raise TypeError("fstnbrv: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstnbrv: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstnbrv: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstnbrv: must provide a valid iunit: {0}".format(iunit))
     nrec = _rp.c_fstnbrv(iunit)
     if nrec < 0:
         raise FSTDError()        
@@ -1571,8 +1572,8 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
     elif type(optValue) == int:
         istat = _rp.c_fstopi(optName, optValue, setOget)
     else:
-        raise TypeError("fstopt: cannot set optValue of type: %s %s" %
-                        (type(optValue), repr(optValue)))
+        raise TypeError("fstopt: cannot set optValue of type: {0} {1}"\
+                        .format(type(optValue), repr(optValue)))
     if istat < 0:
         raise FSTDError()        
     return
@@ -1614,13 +1615,13 @@ def fstouv(iunit, filemode=_rc.FST_RW):
         rpnpy.librmn.base.fclos
     """
     if not (type(iunit) == int):
-        raise TypeError("fstinfx: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstinfx: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstinfx: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstinfx: must provide a valid iunit: {0}".format(iunit))
     if not (type(filemode) == str):
-        raise TypeError("fstinfx: Expecting arg filemode of type str, Got %s" %
-                        (type(filemode)))
+        raise TypeError("fstinfx: Expecting arg filemode of type str, Got {0}"\
+                        .format(type(filemode)))
     istat = _rp.c_fstouv(iunit, filemode)
     if istat < 0:
         raise FSTDError()        
@@ -1686,7 +1687,7 @@ def fstprm(key):
     >>> # Print name, ip1, ip2 of first record in file
     >>> key  = rmn.fstinf(funit)
     >>> meta = rmn.fstprm(key['key'])
-    >>> print("# %s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    >>> print("# {nomvar} ip1={ip1} ip2={ip2}".format(**meta))
     # !!   ip1=0 ip2=0
     >>>
     >>> rmn.fstcloseall(funit)
@@ -1701,10 +1702,10 @@ def fstprm(key):
     if isinstance(key, dict):
        key = key['key']
     if type(key) != int:
-        raise TypeError("fstprm: Expecting a key of type int, Got %s : %s" %
-                        (type(key), repr(key)))
+        raise TypeError("fstprm: Expecting a key of type int, Got {0} : {1}"\
+                        .format(type(key), repr(key)))
     if key < 0:
-        raise ValueError("fstprm: must provide a valid key: %d" % (key))
+        raise ValueError("fstprm: must provide a valid key: {0}".format(key))
     (cni, cnj, cnk)        = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     (cdateo, cdeet, cnpas) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     (cnbits, cdatyp)       = (_ct.c_int(), _ct.c_int())
@@ -1735,7 +1736,8 @@ def fstprm(key):
     if cdateo.value != 0 and cdeet.value != 0 and cnpas.value != 0:
         try:
             datev = _rb.incdatr(cdateo.value, (cdeet.value*cnpas.value)/3600.)
-        except:
+        except Exception as e:
+            sys.stderr.write("(fstprm) Problem computing datev ({0})".format(repr(e)))
             datev = -1
     return {
         'key'   : key ,
@@ -1804,7 +1806,7 @@ def fstsui(iunit):
     >>> key1 = rmn.fstinf(funit, nomvar='P0')
     >>> key2 = rmn.fstsui(funit)
     >>> meta = rmn.fstprm(key2)
-    >>> print("# %s ip1=%s ip2=%s" % (meta['nomvar'], meta['ip1'], meta['ip2']))
+    >>> print("# {nomvar} ip1={ip1} ip2={ip2}".format(**meta))
     # P0   ip1=0 ip2=12
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -1819,10 +1821,10 @@ def fstsui(iunit):
         fstcloseall
     """
     if not (type(iunit) == int):
-        raise TypeError("fstsui: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstsui: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstsui: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstsui: must provide a valid iunit: {0}".format(iunit))
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     key = _rp.c_fstsui(iunit, _ct.byref(cni), _ct.byref(cnj), _ct.byref(cnk))
     if key < 0:
@@ -1878,13 +1880,13 @@ def fstvoi(iunit, options=' '):
         fstcloseall
     """
     if not (type(iunit) == int):
-        raise TypeError("fstvoi: Expecting arg of type int, Got %s" %
-                        (type(iunit)))
+        raise TypeError("fstvoi: Expecting arg of type int, Got {0}"\
+                        .format(type(iunit)))
     if iunit < 0:
-        raise ValueError("fstvoi: must provide a valid iunit: %d" % (iunit))
+        raise ValueError("fstvoi: must provide a valid iunit: {0}".format(iunit))
     if not (type(options) == str):
-        raise TypeError("fstvoi: Expecting options arg of type str, Got %s" %
-                        (type(options)))
+        raise TypeError("fstvoi: Expecting options arg of type str, Got {0}"\
+                        .format(type(options)))
     istat = _rp.c_fstvoi(iunit, options)
     if istat < 0:
         raise FSTDError()  
@@ -1902,7 +1904,7 @@ def fst_version():
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> print("# Using fst_version=%d" % rmn.fst_version())
+    >>> print("# Using fst_version={0}".format(rmn.fst_version()))
     # Using fst_version=200001
 
     See Also:
@@ -1942,7 +1944,7 @@ def ip1_all(level, kind):
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip1new = rmn.ip1_all(500., rmn.LEVEL_KIND_PMB)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip1=ip1new)
-    >>> print("# Looked for TT with ip1=%s, found ip1=%s" % (ip1new,ttrec['ip1']))
+    >>> print("# Looked for TT with ip1={0}, found ip1={1}".format(ip1new,ttrec['ip1']))
     # Looked for TT with ip1=41394464, found ip1=500
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -1962,13 +1964,13 @@ def ip1_all(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip1_all: Expecting arg of type float, Got %s" %
-                        (type(level)))
+        raise TypeError("ip1_all: Expecting arg of type float, Got {0}"\
+                        .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip1_all: Expecting arg of type int, Got %s" %
-                         (type(kind)))
+        raise TypeError("ip1_all: Expecting arg of type int, Got {0}"\
+                         .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip1_all: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip1_all: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip1_all(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2006,7 +2008,7 @@ def ip2_all(level, kind):
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip2new = rmn.ip2_all(0., rmn.TIME_KIND_HR)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip2=ip2new)
-    >>> print("# Looked for TT with ip2=%s, found ip2=%s" % (ip2new, ttrec['ip2']))
+    >>> print("# Looked for TT with ip2={0}, found ip2={1}".format(ip2new, ttrec['ip2']))
     # Looked for TT with ip2=183500800, found ip2=0
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -2026,13 +2028,13 @@ def ip2_all(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip2_all: Expecting arg of type float, Got %s" %
-                         (type(level)))
+        raise TypeError("ip2_all: Expecting arg of type float, Got {0}"\
+                         .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip2_all: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("ip2_all: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip2_all: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip2_all: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip2_all(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2070,7 +2072,7 @@ def ip3_all(level, kind):
     >>> # Look for TT at 500mb encoded old or new style
     >>> ip3new = rmn.ip3_all(0., rmn.KIND_ARBITRARY)
     >>> ttrec  = rmn.fstlir(funit, nomvar='TT', ip3=ip3new)
-    >>> print("# Looked for TT with ip3=%s, found ip3=%s" % (ip3new, ttrec['ip3']))
+    >>> print("# Looked for TT with ip3={0}, found ip3={1}".format(ip3new, ttrec['ip3']))
     # Looked for TT with ip3=66060288, found ip3=0
     >>> 
     >>> rmn.fstcloseall(funit)
@@ -2090,13 +2092,13 @@ def ip3_all(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip3_all: Expecting arg of type float, Got %s" %
-                        (type(level)))
+        raise TypeError("ip3_all: Expecting arg of type float, Got {0}"\
+                        .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip3_all: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("ip3_all: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip3_all: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip3_all: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip3_all(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2135,13 +2137,13 @@ def ip1_val(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip1_val: Expecting arg of type float, Got %s" %
-                        (type(level)))
+        raise TypeError("ip1_val: Expecting arg of type float, Got {0}"\
+                        .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip1_val: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("ip1_val: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip1_val: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip1_val: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip1_val(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2180,13 +2182,13 @@ def ip2_val(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip2_val: Expecting arg of type float, Got %s" %
-                        (type(level)))
+        raise TypeError("ip2_val: Expecting arg of type float, Got {0}"\
+                        .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip2_val: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("ip2_val: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip2_val: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip2_val: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip2_val(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2225,13 +2227,13 @@ def ip3_val(level, kind):
     if type(level) == int:
         level = float(level)
     if not (type(level) == float):
-        raise TypeError("ip3_val: Expecting arg of type float, Got %s" %
-                        (type(level)))
+        raise TypeError("ip3_val: Expecting arg of type float, Got {0}"\
+                        .format(type(level)))
     if not (type(kind) == int):
-        raise TypeError("ip3_val: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("ip3_val: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("ip3_val: must provide a valid iunit: %d" % (kind))
+        raise ValueError("ip3_val: must provide a valid iunit: {0}".format(kind))
     ip = _rp.c_ip3_val(level, kind)
     if ip < 0:
         raise FSTDError()
@@ -2318,24 +2320,24 @@ def convertIp(mode, v, k=0):
     (cip, cp, ckind) = (_ct.c_int(), _ct.c_float(), _ct.c_int())
     if type(mode) != int:
         raise TypeError("convertIp: " +
-                        "Expecting mode to be of type int, Got %s : %s" %
-                        (type(mode), repr(mode)))
+                        "Expecting mode to be of type int, Got {0} : {1}"\
+                        .format(type(mode), repr(mode)))
     if mode < -1 or mode > 3:
-        raise ValueError("convertIp: must provide a valid mode: %d" % (mode))
+        raise ValueError("convertIp: must provide a valid mode: {0}".format(mode))
     if mode > 0:
         if type(v) == int:
             v = float(v)
         if type(v) !=  float:
             raise TypeError("convertIp: Expecting value to be of type float, " +
-                            "Got %s : %s" % (type(v), repr(v)))
+                            "Got {0} : {1}".format(type(v), repr(v)))
         if type(k) !=  int:
             raise TypeError("convertIp: Expecting kind to be of type int, " +
-                            "Got %s : %s" % (type(k), repr(k)))
+                            "Got {0} : {1}".format(type(k), repr(k)))
         (cp, ckind) = (_ct.c_float(v), _ct.c_int(k))
     else:
         if type(v) !=  int:
             raise TypeError("convertIp: Expecting value to be of type int, " +
-                            "Got %s : %s" % (type(v), repr(v)))
+                            "Got {0} : {1}".format(type(v), repr(v)))
         cip = _ct.c_int(v)
     _rp.c_ConvertIp(_ct.byref(cip), _ct.byref(cp), _ct.byref(ckind), mode)
     if mode > 0:
@@ -2378,11 +2380,11 @@ def convertIPtoPK(ip1, ip2, ip3):
     >>> 
     >>> # Decode and print
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
-    >>> print("# Level v1=%f, v2=%f, type=%s" % \
-              (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
+    >>> print("# Level v1={0}, v2={1}, type={2}"\
+              .format(pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
     # Level v1=500.000000, v2=500.000000, type=mb
-    >>> print("# Time v1=%f, v2=%f, type=%s" % \
-              (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+    >>> print("# Time v1={0}, v2={1}, type={2}"\
+              .format(pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
     # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
@@ -2398,10 +2400,10 @@ def convertIPtoPK(ip1, ip2, ip3):
     """
     if type(ip1) != int or type(ip2) != int or type(ip3) != int:
         raise TypeError("convertIPtoPK: Expecting ip123 to be of type int, " +
-                        "Got %s, %s, %s" % (type(ip1), type(ip2), type(ip3)))
+                        "Got {0}, {1}, {2}".format(type(ip1), type(ip2), type(ip3)))
     if ip1 < 0 or ip2 < 0 or ip3 < 0:
         raise ValueError("convertIPtoPK: Expecting invalid ip123, " +
-                         "Got %d, %d, %d" % (ip1, ip2, ip3))
+                         "Got {0}, {1}, {2}".format(ip1, ip2, ip3))
     (cp1, cp2, cp3) = (_ct.c_float(), _ct.c_float(), _ct.c_float())
     (ck1, ck2, ck3) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     istat = _rp.c_ConvertIPtoPK(_ct.byref(cp1), _ct.byref(ck1),
@@ -2426,7 +2428,7 @@ def convertPKtoIP(pk1, pk2, pk3):
         pk2    : forecast hour, real values & kind (FLOAT_IP)
                  a time (or a pair of times)
         pk3    : user defined identifier, real values & kind (FLOAT_IP)
-                 may contain anything, PK3%hi will be ignored
+                 may contain anything, PK3.hi will be ignored
                  (if pk1 or pk2 contains a pair, pk3 is ignored)
     Returns:
         ip1   : encoded pk1, vertical level (int)
@@ -2449,11 +2451,11 @@ def convertPKtoIP(pk1, pk2, pk3):
     >>> 
     >>> # Decode and print
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
-    >>> print("# Level v1=%f, v2=%f, type=%s" % \
-              (pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
+    >>> print("# Level v1={0}, v2={1}, type={2}"\
+              .format(pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
     # Level v1=500.000000, v2=500.000000, type=mb
-    >>> print("# Time v1=%f, v2=%f, type=%s" % \
-              (pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
+    >>> print("# Time v1={0}, v2={1}, type={2}"\
+              .format(pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
     # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
@@ -2491,7 +2493,7 @@ def EncodeIp(rp1, rp2, rp3):
         rp2    : forecast hour, real values & kind (FLOAT_IP)
                  a time (or a pair of times)
         rp3    : user defined identifier, real values & kind (FLOAT_IP)
-                 may contain anything, RP3%hi will be ignored
+                 may contain anything, RP3.hi will be ignored
                  (if rp1 or rp2 contains a pair, rp3 is ignored)
     Returns:
         ip1   : encoded rp1, vertical level (int)
@@ -2514,11 +2516,11 @@ def EncodeIp(rp1, rp2, rp3):
     >>> 
     >>> # Decode and print
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
-    >>> print("# Level v1=%f, v2=%f, type=%s" % \
-              (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
+    >>> print("# Level v1={0}, v2={1}, type={2}"\
+              .format(rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
     # Level v1=500.000000, v2=500.000000, type=mb
-    >>> print("# Time v1=%f, v2=%f, type=%s" % \
-              (rp2.v1, rp2.v2, rmn.kindToString(rp2.kind)))
+    >>> print("# Time v1={0}, v2={1}, type={2}"\
+              .format(rp2.v1, rp2.v2, rmn.kindToString(rp2.kind)))
     # Time v1=12.000000, v2=12.000000, type= H
 
     See Also:
@@ -2570,8 +2572,8 @@ def DecodeIp(ip1, ip2, ip3):
     >>> import rpnpy.librmn.all as rmn
     >>> (ip1, ip2, ip3) = (6441456, 176280768, 66060288)
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
-    >>> print("# Level v1=%f, v2=%f, type=%s" % \
-              (rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
+    >>> print("# Level v1={0}, v2={1}, type={2}"\
+              .format(rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
     # Level v1=1500.000000, v2=1500.000000, type= m
 
     See Also:
@@ -2625,11 +2627,11 @@ def kindToString(kind):
         rpnpy.librmn.const
     """
     if not (type(kind) == int):
-        raise TypeError("kindToString: Expecting arg of type int, Got %s" %
-                        (type(kind)))
+        raise TypeError("kindToString: Expecting arg of type int, Got {0}"\
+                        .format(type(kind)))
     if kind < 0:
-        raise ValueError("kindToString: must provide a valid iunit: %d" %
-                         (kind))
+        raise ValueError("kindToString: must provide a valid iunit: {0}"\
+                         .format(kind))
     (str1, str2) = (_C_MKSTR(' '), _C_MKSTR(' '))
     _rp.c_KindToString(kind, str1, str2)
     str12 = str1[0]+str2[0]

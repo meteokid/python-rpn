@@ -40,25 +40,25 @@ class RPNDate(object):
 
     Examples:
     >>> d1 = RPNDate(20030423, 11453500)
-    >>> print('# %s' % repr(d1))
+    >>> print('# {0}'.format(repr(d1)))
     # RPNDate(20030423, 11453500)
     >>> d2 = RPNDate(d1)
-    >>> print('# %s' % repr(d2))
+    >>> print('# {0}'.format(repr(d2)))
     # RPNDate(20030423, 11453500)
     >>> d2 += 48
-    >>> print('# %s' % repr(d2))
+    >>> print('# {0}'.format(repr(d2)))
     # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
-    >>> print('# %s' % repr(d1-d2))
+    >>> print('# {0}'.format(repr(d1-d2)))
     # -48.0
     >>> utc = pytz.timezone("UTC")
     >>> d4 = datetime.datetime(2003, 04, 23, 11, 45, 35, 0, tzinfo=utc)
     >>> d5 = RPNDate(d4)
-    >>> print('# %s' % repr(d5))
+    >>> print('# {0}'.format(repr(d5)))
     # RPNDate(20030423, 11453500)
     >>> d6 = d5.toDateTime()
-    >>> print('# %s' % repr(d6 == d4))
+    >>> print('# {0}'.format(repr(d6 == d4)))
     # True
-    >>> print('# %s' % str(d5))
+    >>> print('# {0}'.format(str(d5)))
     # 20030423.11453500
 
     See Also:
@@ -226,7 +226,7 @@ class RPNDate(object):
         """
         ymd = hms = 0
         (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
-        d = "%8.8d.%8.8d" % (ymd, hms)
+        d = "{0:08d}.{1:08d}".format(ymd, hms)
         yyyy = int(d[0:4])
         mo = int(d[4:6])
         dd = int(d[6:8])
@@ -242,10 +242,10 @@ class RPNDate(object):
         """Return RPNDate updated so that dateo=datev (dt=nstep=0)
 
         >>> d1 = RPNDate(20030423, 11000000, dt=1800, nstep=4)
-        >>> print('# %s' % repr(d1))
+        >>> print('# {0}'.format(repr(d1)))
         # RPNDate(20030423, 13000000) ; RPNDate(20030423, 11000000, dt=  1800.0, nstep=     4.0)
         >>> d2 = d1.toDateO()
-        >>> print('# %s' % repr(d2))
+        >>> print('# {0}'.format(repr(d2)))
         # RPNDate(20030423, 13000000)
         """
         RPNDate.update(self, dateo=self.datev, dt=0, nstep=0)
@@ -255,16 +255,16 @@ class RPNDate(object):
         ymd = hms = 0
         (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
         if self.dt == 0:
-            return "RPNDate(%8.8d, %8.8d)" % (ymd, hms)
+            return "RPNDate({0:08d}, {1:08d}".format(ymd, hms)
         else:
             ymd0 = hms0 = 0
             (ymd0, hms0) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.dateo)
-            return "RPNDate(%8.8d, %8.8d) ; RPNDate(%8.8d, %8.8d, dt=%8.1f, nstep=%8.1f)" % (ymd, hms, ymd0, hms0, self.dt, self.nstep)
+            return "RPNDate({0:08d}, {1:08d}) ; RPNDate({2:08d}, {3:08d}, dt={4:8.1f}, nstep={5:8.1f})".format(ymd, hms, ymd0, hms0, self.dt, self.nstep)
     
     def __str__(self):
         ymd = hms = 0
         (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
-        return "%8.8d.%8.8d" % (ymd, hms)
+        return "{0:08d}.{1:08d}".format(ymd, hms)
 
 
 #TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
@@ -284,24 +284,24 @@ class RPNDateRange(object):
     Examples:
     >>> d1 = RPNDate(20030423, 11453500)
     >>> d2 = d1 + 48
-    >>> print('# %s' % repr([d1, d2]))
+    >>> print('# {0}'.format(repr([d1, d2])))
     # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 6)
-    >>> print('# %s' % repr(dr))
+    >>> print('# {0}'.format(repr(dr)))
     # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:6) at (20030423, 11453500)
     >>> l = dr.length() #1
-    >>> print('# %s' % repr(l))
+    >>> print('# {0}'.format(repr(l)))
     # 48.0
     >>> x = dr.next() #1
-    >>> print('# %s' % repr(x))
+    >>> print('# {0}'.format(repr(x)))
     # RPNDate(20030423, 17453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     6.0)
-    >>> print('# %s' % repr([d1, d2]))
+    >>> print('# {0}'.format(repr([d1, d2])))
     # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 36)
-    >>> print('# %s' % repr(dr))
+    >>> print('# {0}'.format(repr(dr)))
     # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:36) at (20030423, 11453500)
     >>> x = dr.next() #2
-    >>> print('# %s' % repr(x))
+    >>> print('# {0}'.format(repr(x)))
     # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
     >>> dr.next() #raise
     # Traceback (most recent call last):
@@ -309,18 +309,18 @@ class RPNDateRange(object):
     #   File "rpndate.py", line 313, in next
     #     raise StopIteration
     # StopIteration
-    >>> print('# %s' % repr([d1, d2]))  #3 make sure d1, d2 where not changed
+    >>> print('# {0}'.format(repr([d1, d2])))  #3 make sure d1, d2 where not changed
     # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 12)
-    >>> print('# %s' % repr(dr)) #3
+    >>> print('# {0}'.format(repr(dr))) #3
     # RPNDateRage(from:(20030423, 11453500), to:(20030425, 11453500), delta:12) at (20030423, 11453500)
-    >>> for d4 in dr: print('# %s' % repr(d4))
+    >>> for d4 in dr: print('# {0}'.format(repr(d4)))
     # RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0)
     # RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0)
     # RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0)
     # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
     # RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)
-    >>> for d4 in dr: print('# %s' % repr(d4)) #iterator test 2 (should start over)
+    >>> for d4 in dr: print('# {0}'.format(repr(d4))) #iterator test 2 (should start over)
     # RPNDate(20030423, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=     0.0)
     # RPNDate(20030423, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    12.0)
     # RPNDate(20030424, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    24.0)
@@ -382,7 +382,7 @@ class RPNDateRange(object):
         d1 = str(self.dateDebut).replace('.', ', ')
         d2 = str(self.dateFin).replace('.', ', ')
         d0 = str(self.now).replace('.', ', ')
-        return "RPNDateRage(from:(%s), to:(%s), delta:%d) at (%s)" % (d1, d2, self.delta, d0)
+        return "RPNDateRage(from:({0}), to:({1}), delta:{2}) at ({3})".format(d1, d2, self.delta, d0)
   
     def __iter__(self):
         tmp = RPNDateRange(self.dateDebut, self.dateFin, self.delta)

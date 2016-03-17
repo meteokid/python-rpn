@@ -2,10 +2,14 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.base"""
 
+import sys
 import rpnpy.librmn.all as rmn
 import unittest
 import ctypes as ct
 import numpy as np
+
+if sys.version_info > (3,):
+    long = int
 
 #--- primitives -----------------------------------------------------
 
@@ -33,7 +37,7 @@ class LibrmnFilesKnownValues(unittest.TestCase):
     def testcrc32(self):
         a = np.array([3,7,5],dtype=np.uint32)
         crc = rmn.crc32(0,a)
-        self.assertEqual(827387316L,crc)
+        self.assertEqual(long(827387316),crc)
         
 #--- base/cxgaix ----------------------------------------------------
 

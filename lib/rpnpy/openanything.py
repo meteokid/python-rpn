@@ -17,7 +17,7 @@ __license__ = 'Python'
 import urllib2, urlparse, gzip
 from StringIO import StringIO
 
-USER_AGENT = 'OpenAnything/%s +http://diveintopython.org/http_web_services/' % __version__
+USER_AGENT = 'OpenAnything/{0} +http://diveintopython.org/http_web_services/'.format(__version__)
 
 class SmartRedirectHandler(urllib2.HTTPRedirectHandler):
     def http_error_301(self, req, fp, code, msg, headers):

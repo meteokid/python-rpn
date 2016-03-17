@@ -64,8 +64,8 @@ VGD_KIND_VER = {
     'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER),    #5,4
     'hybmd' : (VGD_HYBMD_KIND, VGD_HYBMD_VER)  #5,5
     }
-VGD_KIND_VER_INV_VCODE = dict(("%3.3d%1d" % (v[0]*100,v[1]), k) for k, v in VGD_KIND_VER.iteritems())
-VGD_KIND_VER_INV = dict((v, k) for k, v in VGD_KIND_VER.iteritems())
+VGD_KIND_VER_INV_VCODE = dict([("{0:03d}{1:1d}".format(v[0]*100,v[1]), k) for k, v in VGD_KIND_VER.items()])
+VGD_KIND_VER_INV = dict([(v, k) for k, v in VGD_KIND_VER.items()])
 
 VGD_VCODE_NEED_RFLD = {
     1001 : True,

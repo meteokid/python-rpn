@@ -85,15 +85,15 @@ def loadRMNlib(rmn_version=None):
                 RMN_LIBPATH = None
 
     if not RMN_LIBPATH:
-        raise IOError, (-1, 'Failed to find librmn.so: ', rmn_libfile)
+        raise IOError(-1, 'Failed to find librmn.so: ', rmn_libfile)
 
     librmn = None
     try:
         librmn = ct.cdll.LoadLibrary(RMN_LIBPATH)
         #librmn = np.ctypeslib.load_library(rmn_libfile, RMN_LIBPATH)
-    except IOError:
+    except IOError as e:
         raise IOError('ERROR: cannot load librmn shared version: ' +
-                      RMN_VERSION)
+                      RMN_VERSION, e)
     return (RMN_VERSION, RMN_LIBPATH, librmn)
 
 (RMN_VERSION, RMN_LIBPATH, librmn) = loadRMNlib()

@@ -169,8 +169,7 @@ def decodeXG2dict(grtyp, xg1, xg2, xg3, xg4):
             'north' : (params['grtyp'] == 'N')
             })        
     else:
-        raise RMNError('decodeXG2dict: Grid type not yet supported %s' %
-                       (params['grtyp']))
+        raise RMNError('decodeXG2dict: Grid type not yet supported {grtyp}'.format(**params))
     return params
 
 
@@ -220,8 +219,8 @@ def decodeGrid(gid):
     >>> params2 = rmn.decodeGrid(params)
     >>> # Check that decoded values are identical to what we provided
     >>> x = [params[k] == params2[k] for k in params.keys()]
-    >>> if not all(x): print("Problem decoding grid param[%s] : %s != %s " % \
-                             (k,str(params[k]),str(params2[k])))
+    >>> if not all(x): print("Problem decoding grid param[{0}] : {1} != {2} "\
+                             .format(k,str(params[k]),str(params2[k])))
 
     See Also:
         encodeGrid
@@ -316,8 +315,7 @@ def decodeGrid(gid):
                 if 'ig4' in params0.keys(): params['ig4'] = params0['ig4']
 
         else:
-            raise RMNError('decodeGrid: Grid type not yet supported %s(%s)' %
-                           (params['grtyp'], params['grref']))
+            raise RMNError('decodeGrid: Grid type not yet supported {grtyp}({grref})'.format(**params))
     elif params['grtyp'] in ('U'):
         params['nsubgrids'] = _ri.ezget_nsubgrids(gid)
         params['subgridid'] = _ri.ezget_subgridids(gid)
@@ -346,8 +344,7 @@ def decodeGrid(gid):
         (params['ig3'], params['ig4']) = (params['tag3'], 0)
         if 'ig4' in params0.keys(): params['ig4'] = params0['ig4']
     else:
-        raise RMNError('decodeGrid: Grid type not yet supported %s(%s)' %
-                       (params['grtyp'], params['grref']))
+        raise RMNError('decodeGrid: Grid type not yet supported {grtyp}({grref})'.format(**params))
         
     return params
 
@@ -713,8 +710,7 @@ def encodeGrid(params):
     elif params['grtyp'] == '#' and  params['grref'] == 'L':
         return defGrid_diezeL(params)
     else:
-        raise RMNError('encodeGrid: Grid type not yet supported %s(%s)' %
-(params['grtyp'], params['grref']))
+        raise RMNError('encodeGrid: Grid type not yet supported {grtyp}({grref})'.format(**params))
         
     
 def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
@@ -783,17 +779,16 @@ def defGrid_L(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_L: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_L: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_L: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('lat0', 'lon0', 'dlat', 'dlon'):
         v = params[k]
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_L: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     params['grtyp'] = 'L'
     ig1234 = _rb.cxgaig(params['grtyp'], params['lat0'], params['lon0'],
@@ -879,21 +874,20 @@ def defGrid_E(ni, nj=None, xlat1=None, xlon1=None, xlat2=None, xlon2=None,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_E: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_E: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_E: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('xlat1', 'xlon1', 'xlat2', 'xlon2'):
         try:
             v = params[k]
         except:
             raise TypeError('defGrid_E: provided incomplete grid ' +
-                            'description, missing: %s' % k)
+                            'description, missing: {0}'.format(k))
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_E: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     params['grtyp'] = 'E'
     ig1234 = _rb.cxgaig(params['grtyp'], params['xlat1'], params['xlon1'],
@@ -1014,29 +1008,28 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_ZE: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_ZE: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('lat0', 'lon0', 'dlat', 'dlon'):
         v = params[k]
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     for k in ('xlat1', 'xlon1', 'xlat2', 'xlon2'):
         try:
             v = params[k]
         except:
             raise TypeError('defGrid_ZE: provided incomplete grid ' +
-                            'description, missing: %s' % k)
+                            'description, missing: {0}'.format(k))
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     ig1234 = _rb.cxgaig(params['grref'], params['xlat1'], params['xlon1'],
                         params['xlat2'], params['xlon2'])
@@ -1300,17 +1293,16 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_ZL: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_ZL: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_ZL: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('lat0', 'lon0', 'dlat', 'dlon'):
         v = params[k]
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_ZL: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     ig1234 = _rb.cxgaig(params['grref'], params['lat0'], params['lon0'],
                         params['dlat'], params['dlon'])
@@ -1535,10 +1527,9 @@ def defGrid_G(ni, nj=None, glb=True, north=True, inverted=False,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_G: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_G: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_G: grid dims must be >= 0, got {0}={1}'.format(k, v))
     params['grtyp'] = 'G'
     params['ig1'] = 0
     if not params['glb']:
@@ -1633,21 +1624,20 @@ def defGrid_PS(ni, nj=None, north=True, pi=None, pj=None, d60=None,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_PS: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_PS: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_PS: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('pi', 'pj', 'd60', 'dgrw'):
         try:
             v = params[k]
         except:
             raise TypeError('defGrid_PS: provided incomplete grid ' +
-                            'description, missing: %s' % k)
+                            'description, missing: {0}'.format(k))
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_PS: wrong input data type for' +
-                            ' %s, expecting float, Got (%s)' % (k, type(v)))
+                            ' {0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     params['grtyp'] = 'N' if params['north'] else 'S'
     ig1234 = _rb.cxgaig(params['grtyp'], params['pi'], params['pj'],
@@ -1755,17 +1745,16 @@ def defGrid_YY(nj, overlap=0., xlat1=0., xlon1=180., xlat2=0., xlon2=270.,
         v = params[k]
         if not isinstance(v, int):
             raise TypeError('defGrid_YY: wrong input data type for ' +
-                            '%s, expecting int, Got (%s)' % (k, type(v)))
+                            '{0}, expecting int, Got ({1})'.format(k, type(v)))
         if v <= 0:
-            raise ValueError('defGrid_YY: grid dims must be >= 0, got %s=%d' %
-                             (k, v))
+            raise ValueError('defGrid_YY: grid dims must be >= 0, got {0}={1}'.format(k, v))
     for k in ('xlat1', 'xlon1', 'xlat2', 'xlon2', 'overlap'):
         v = params[k]
         if isinstance(v, int):
             v = float(v)
         if not isinstance(v, float):
             raise TypeError('defGrid_YY: wrong input data type for ' +
-                            '%s, expecting float, Got (%s)' % (k, type(v)))
+                            '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
     ni = (params['nj']-1)*3 + 1
     lon0 =  45. - 3.*params['overlap']

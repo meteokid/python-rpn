@@ -18,9 +18,6 @@ set/rename vat values, create new namelist, delete values or namelists, ...
 import re
 import sys
 
-__VERSION__     = '1.0.1'
-__LASTUPDATED__ = '2016-02-16'
-
 _islisttype   = lambda x: isinstance(x, (list, tuple))
 _isstringtype = lambda x: isinstance(x, str)
 _cleanName    = lambda x: x.lower().replace('\n',' ').strip()
@@ -128,8 +125,8 @@ class FtnNmlObj(object):
             return self.data[self.keyIndex(name)]
         except:
             ## sys.stderr.write('Known Keys:'+repr(self.keys()))
-            raise KeyError(" (%s) Oops! get, Key not found: %s"
-                           % (self.__class__.__name__,name))
+            raise KeyError(" ({0}) Oops! get, Key not found: {1}"\
+                           .format(self.__class__.__name__, name))
 
     def set(self,namedata,data=None):
         """Set sub object data with given name
@@ -141,12 +138,11 @@ class FtnNmlObj(object):
 
     def add(self,data=None):
         if not isinstance(data,self.allowedSubClass):
-            raise TypeError(" (%s) Oops! add, provided data is of wrong type: %s(accepting: %s)"
-                            % (self.__class__.__name__, str(type(data)),
-                               str(self.allowedSubClass)))
+            raise TypeError(" ({0}) Oops! add, provided data is of wrong type: {1} (accepting: {2})"\
+                            .format(self.__class__.__name__, str(type(data)), str(self.allowedSubClass)))
         if _cleanName(data.name) in self.keys():
-            raise KeyError(" (%s) Oops! add, Key already exists: %s"
-                           % (self.__class__.__name__,data.name))
+            raise KeyError(" ({0}) Oops! add, Key already exists: {1}"\
+                           .format(self.__class__.__name__, data.name))
         self.data.append(data)
     
     def rm(self,name=None):
@@ -158,8 +154,8 @@ class FtnNmlObj(object):
             try:
                 del self.data[self.keyIndex(name)]
             except:
-                raise KeyError(" (%s) Oops! rm, Key not found: %s"
-                               % (self.__class__.__name__,name))
+                raise KeyError(" ({0}) Oops! rm, Key not found: {1}"\
+                               .format(self.__class__.__name__, name))
 
     def keyIndex(self,name):
         (name2, myindex) = (_cleanName(name), -1)
@@ -167,8 +163,8 @@ class FtnNmlObj(object):
             myindex += 1
             if isinstance(item,FtnNmlObj) and item.name == name2:
                 return myindex
-        raise KeyError(" (%s) Oops! keyIndex, Key not found: %s"
-                       % (self.__class__.__name__,name))
+        raise KeyError(" ({0}) Oops! keyIndex, Key not found: {1}"\
+                       .format(self.__class__.__name__, name))
        
     def keys(self):
         """Return list of keys (contained objects names)"""
@@ -176,15 +172,15 @@ class FtnNmlObj(object):
                 if isinstance(item,FtnNmlObj) and item.name]
 
     def __repr__(self):
-        return "%s(%s,%s,%s,%s,d=%s,%s,%s)" % \
-            (self.__class__.__name__,repr(self.name),\
-             repr(self.prop['strStart']),\
-             repr(self.prop['strSepS']),\
-             repr(self.prop['strSep1']),\
-             repr(self.data),\
-             repr(self.prop['strEnd']),
-             repr(self.prop['strSepE'])\
-                )
+        return "{0}({1},{2},{3},{4},d={5},{6},{7})"\
+                .format(self.__class__.__name__, repr(self.name),
+                        repr(self.prop['strStart']),
+                        repr(self.prop['strSepS']),
+                        repr(self.prop['strSep1']),
+                        repr(self.data),
+                        repr(self.prop['strEnd']),
+                        repr(self.prop['strSepE'])
+                    )
 
     def __str__(self):
         return self.toStr()
@@ -246,7 +242,7 @@ class FtnNmlVal(FtnNmlObj):
         self.data = value
 
     def __repr__(self):
-        return "%s(d=%s)" % (self.__class__.__name__,repr(self.data))
+        return "{0}(d={1})".format(self.__class__.__name__,repr(self.data))
 
     def toStr(self,clean=False,uplowcase=None,updnsort=None):
         data = (self.data[0] if _islisttype(self.data) else self.data)
@@ -350,7 +346,7 @@ class FtnNmlFile(FtnNmlObj):
             try:     rawdata = "".join(fd.readlines())
             finally: fd.close()
         except IOError:
-            raise IOError(" Oops! File does not exist or is not readable: %s" % (filename))
+            raise IOError(" Oops! File does not exist or is not readable: {0}".format(filename))
         self.parse(rawdata.replace("\x00",""))
 
     def write(self,filename,clean=False,uplowcase=None,updnsort=None):
@@ -360,101 +356,102 @@ class FtnNmlFile(FtnNmlObj):
             try:
                 fd.write(self.toStr(clean,uplowcase,updnsort))
             except IOError:
-                raise IOError(" Oops! Cannot wrtie to file: %s" % (filename))
+                raise IOError(" Oops! Cannot wrtie to file: {0}".format(filename))
             finally:
                 fd.close()
         except IOError:
-            raise IOError(" Oops! Cannot open file: %s" % (filename))
+            raise IOError(" Oops! Cannot open file: {0}".format(filename))
         
         
 
 if __name__ == '__main__':
+    pass
     #TODO: base class on list or dict
     #TODO: itf consistenncy (name,data) in set,get,rename,rm,add,__init__
     #TODO: data should be converted to list if not already
     #TODO: implement sort
     #TODO: doctests
 
-    import pprint
-    pp = pprint.PrettyPrinter(indent=4)
-    filename = 'gem_settings.nml'
-    b = FtnNmlFile(filename)
-    print b
-    print repr(b)
+    ## import pprint
+    ## pp = pprint.PrettyPrinter(indent=4)
+    ## filename = 'gem_settings.nml'
+    ## b = FtnNmlFile(filename)
+    ## print b
+    ## print repr(b)
 
-    #T: get
-    print '---- List of nml'
-    mynmls = b.keys()
-    print filename+': ',', '.join(mynmls)
-    print '---- List of var per nml'
-    for nmlkey in mynmls:
-        nml = b.get(nmlkey)
-        mykeys = nml.keys()
-        print '&'+nml.name+': '+', '.join(mykeys)
-    print '---- List of values'
-    for nmlkey in mynmls:
-        nml = b.get(nmlkey)
-        mykeys = nml.keys()
-        for varkey in mykeys:
-            kv = nml.get(varkey)
-            val = kv.get('v')
-            #valstr = str(val) #equivalent to: val.toStr()
-            valstr = val.toStr(clean=True)
-            print '&'+nml.name+'/'+varkey+'='+valstr
+    ## #T: get
+    ## print '---- List of nml'
+    ## mynmls = b.keys()
+    ## print filename+': ',', '.join(mynmls)
+    ## print '---- List of var per nml'
+    ## for nmlkey in mynmls:
+    ##     nml = b.get(nmlkey)
+    ##     mykeys = nml.keys()
+    ##     print '&'+nml.name+': '+', '.join(mykeys)
+    ## print '---- List of values'
+    ## for nmlkey in mynmls:
+    ##     nml = b.get(nmlkey)
+    ##     mykeys = nml.keys()
+    ##     for varkey in mykeys:
+    ##         kv = nml.get(varkey)
+    ##         val = kv.get('v')
+    ##         #valstr = str(val) #equivalent to: val.toStr()
+    ##         valstr = val.toStr(clean=True)
+    ##         print '&'+nml.name+'/'+varkey+'='+valstr
     
-    #T: set 
-    print '---- Change value'
-    val = b.get('gem_cfgs').get('lctl_debug_l').get('v')
-    print '&gem_cfgs/lctl_debug_l= '+str(val)
-    val.set('.T.')
-    print '&gem_cfgs/lctl_debug_l= '+str(val)
-    print '---- Change var name'
-    kv = b.get('gem_cfgs').get('hyb')
-    print [kv.name,kv.prop['strStart']]
-    kv.rename('levels')
-    print [kv.name,kv.prop['strStart']]
-    print '---- Change nml name'
-    nml = b.get('gem_cfgs')
-    print [nml.name,nml.prop['strStart']]
-    nml.rename('sps_cfgs')
-    print [nml.name,nml.prop['strStart']]
+    ## #T: set 
+    ## print '---- Change value'
+    ## val = b.get('gem_cfgs').get('lctl_debug_l').get('v')
+    ## print '&gem_cfgs/lctl_debug_l= '+str(val)
+    ## val.set('.T.')
+    ## print '&gem_cfgs/lctl_debug_l= '+str(val)
+    ## print '---- Change var name'
+    ## kv = b.get('gem_cfgs').get('hyb')
+    ## print [kv.name,kv.prop['strStart']]
+    ## kv.rename('levels')
+    ## print [kv.name,kv.prop['strStart']]
+    ## print '---- Change nml name'
+    ## nml = b.get('gem_cfgs')
+    ## print [nml.name,nml.prop['strStart']]
+    ## nml.rename('sps_cfgs')
+    ## print [nml.name,nml.prop['strStart']]
     
-    #T: del
-    print '---- Delete nml var'
-    nml = b.get('sps_cfgs')
-    print '&'+nml.name+': '+', '.join(nml.keys())
-    nml.rm('sol_type2_s')
-    nml.rm('etiket')
-    print '&'+nml.name+': '+', '.join(nml.keys())
-    print '---- Delete nml'
-    print filename+': ',', '.join(b.keys())
-    b.rm('grid_gu')
-    print filename+': ',', '.join(b.keys())
+    ## #T: del
+    ## print '---- Delete nml var'
+    ## nml = b.get('sps_cfgs')
+    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## nml.rm('sol_type2_s')
+    ## nml.rm('etiket')
+    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '---- Delete nml'
+    ## print filename+': ',', '.join(b.keys())
+    ## b.rm('grid_gu')
+    ## print filename+': ',', '.join(b.keys())
         
-    #T: add
-    print repr(b)
-    print '---- Add nml var'
-    nml = b.get('sps_cfgs')
-    print '&'+nml.name+': '+', '.join(nml.keys())
-    nml.add(FtnNmlKeyVal('newvar',FtnNmlVal(1)))
-    nml.add(FtnNmlKeyVal('n2',FtnNmlVal(4)))
-    print '&'+nml.name+': '+', '.join(nml.keys())
-    print '---- Add nml'
-    print filename+': ',', '.join(b.keys())
-    b.add(FtnNmlSection('mytoto'))
-    print filename+': ',', '.join(b.keys())
-    nml = b.get('mytoto')
-    nml.add(FtnNmlKeyVal('totavar',FtnNmlVal('w')))
+    ## #T: add
+    ## print repr(b)
+    ## print '---- Add nml var'
+    ## nml = b.get('sps_cfgs')
+    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## nml.add(FtnNmlKeyVal('newvar',FtnNmlVal(1)))
+    ## nml.add(FtnNmlKeyVal('n2',FtnNmlVal(4)))
+    ## print '&'+nml.name+': '+', '.join(nml.keys())
+    ## print '---- Add nml'
+    ## print filename+': ',', '.join(b.keys())
+    ## b.add(FtnNmlSection('mytoto'))
+    ## print filename+': ',', '.join(b.keys())
+    ## nml = b.get('mytoto')
+    ## nml.add(FtnNmlKeyVal('totavar',FtnNmlVal('w')))
     
-    print '----'
-    print b
-    print b.toStr(clean=True)
-    print repr(b)
+    ## print '----'
+    ## print b
+    ## print b.toStr(clean=True)
+    ## print repr(b)
     
-    ## ## import doctest
-    ## ## doctest.testmod()
-    ## ## verbose = 0
-    ## ## a = FtnNmlFile('gem_settings.nml')
+    ## ## ## import doctest
+    ## ## ## doctest.testmod()
+    ## ## ## verbose = 0
+    ## ## ## a = FtnNmlFile('gem_settings.nml')
 
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-

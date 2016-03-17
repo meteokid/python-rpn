@@ -21,6 +21,8 @@ from rpnpy.vgd  import const as _vc
 from rpnpy.vgd  import VGDError
 import rpnpy.librmn.all as _rmn
 
+from rpnpy import integer_types as _integer_types
+
 _C_MKSTR = _ct.create_string_buffer
 _MB2PA   = 100.
 
@@ -460,7 +462,7 @@ def vgd_new(kind, version, hyb,
     elif isinstance(hyb,_np.ndarray):
         hyb = _np.array(hyb.flatten(), copy=True, dtype=_np.float32, order='FORTRAN')
     else:
-        raise TypeError('hyb should be list or ndarray: %s' % str(type(ip1list)))
+        raise TypeError('hyb should be list or ndarray: {0}'.format(str(type(ip1list))))
     if not rcoef1 is None:
         rcoef1 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef1))
     if not rcoef2 is None:
@@ -485,7 +487,7 @@ def vgd_new(kind, version, hyb,
                            hyb, hyb.size, rcoef1, rcoef2, ptop, pref,
                            p_ptop_out, ip1, ip2, dhm, dht)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem building VGD (kind=%d, version=%d): Error=%d)' % (kind, version,ok))
+        raise VGDError('Problem building VGD (kind={0}, version={1}): Error={2})'.format(kind, version, ok))
     return vgd_ptr
 
 
@@ -541,7 +543,7 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     vgd_ptr = _vp.c_vgd_construct()
     ok = _vp.c_vgd_new_read(vgd_ptr, fileId, ip1, ip2, kind, version)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem getting vgd from file (id=%d, ip1=%d, ip2=%d, kind=%d, version=%d)' % (fileId, ip1, ip2, kind, version))
+        raise VGDError('Problem getting vgd from file (id={0}, ip1={1}, ip2={2}, kind={3}, version={4})'.format(fileId, ip1, ip2, kind, version))
     return vgd_ptr
 
 
@@ -590,7 +592,7 @@ def vgd_write(vgd_ptr, fileId):
     """
     ok = _vp.c_vgd_write_desc(vgd_ptr, fileId)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem writing vgd to file (id=%d)' % fileId)
+        raise VGDError('Problem writing vgd to file (id={0})'.format(fileId))
     return
     
 
@@ -783,11 +785,11 @@ def vgd_get_opt(key, quiet=1):
     """
     key2 = key.upper()
     if not key2 in _vc.VGD_OPR_KEYS['getopt_int']:
-        raise KeyError('Problem getting opt, invalid key (key=%s)' % key)
+        raise KeyError('Problem getting opt, invalid key (key={0})'.format(key))
     v1 = _ct.c_int(0)
     ok = _vp.c_vgd_getopt_int(key2, _ct.byref(v1), quiet)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem getting opt (key=%s)' % key)
+        raise VGDError('Problem getting opt (key={0})'.format(key))
     return v1.value
     
 
@@ -826,10 +828,10 @@ def vgd_put_opt(key, value):
     """
     key2 = key.upper()
     if not key2 in _vc.VGD_OPR_KEYS['putopt_int']:
-        raise VGDError('Problem setting opt, invalid key (key=%s)' % key)
+        raise VGDError('Problem setting opt, invalid key (key={0})'.format(key))
     ok = _vp.c_vgd_putopt_int(key2, value)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem setting opt (key=%s, value=%s)' % (key, repr(value)))
+        raise VGDError('Problem setting opt (key={0}, value={1})'.format(key, repr(value)))
     return
 
 
@@ -930,10 +932,10 @@ def vgd_get(vgd_ptr, key, quiet=1):
             v1 = _np.reshape(v1, (ni.value, nj.value, nk.value), order='F')
 
     else:
-        raise KeyError('Problem getting val, invalid key (key=%s)' % key)
+        raise KeyError('Problem getting val, invalid key (key={0})'.format(key))
 
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem getting val (key=%s)' % key)
+        raise VGDError('Problem getting val (key={0})'.format(key))
     return v1
 
 
@@ -985,10 +987,10 @@ def vgd_put(vgd_ptr, key, value):
     elif key2 in _vc.VGD_OPR_KEYS['put_double']:
         ok = _vp.c_vgd_put_double(vgd_ptr, key2, value)
     else:
-        raise KeyError('Problem setting val, invalid key (key=%s)' % key)
+        raise KeyError('Problem setting val, invalid key (key={0})'.format(key))
     
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem setting val (key=%s, value=%s)' % (key, repr(value)))
+        raise VGDError('Problem setting val (key={0}, value={1})'.format(key, repr(value)))
     return
 
 
@@ -1091,14 +1093,14 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     if isinstance(ip1list,str):
         ip1list0 = vgd_get(vgd_ptr, ip1list)
         ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='FORTRAN')
-    elif isinstance(ip1list,(int,long)):
+    elif isinstance(ip1list,_integer_types):
         ip1list1 = _np.array([ip1list], dtype=_np.int32, order='FORTRAN')
     elif isinstance(ip1list,(list,tuple)):
         ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
     elif isinstance(ip1list,_np.ndarray):
         ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
     else:
-        raise TypeError('ip1list should be string, list or int: %s' % str(type(ip1list)))
+        raise TypeError('ip1list should be string, list or int: {0}'.format(str(type(ip1list))))
     nip1    = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
 
@@ -1126,12 +1128,12 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
             rank0 = True            
     elif rfld is None:
         if _vc.VGD_VCODE_NEED_RFLD[vcode]:
-            raise TypeError('RFLD needs to be provided for vcode=%d' % vcode)
+            raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
         else:
             rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
             rank0 = True
     elif not isinstance(rfld,_np.ndarray):
-        raise TypeError('rfld should be ndarray, list or float: %s' % str(type(ip1list)))
+        raise TypeError('rfld should be ndarray, list or float: {0}'.format(str(type(ip1list))))
 
     if double_precision:
         dtype = _np.float64

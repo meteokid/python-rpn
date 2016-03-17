@@ -87,7 +87,7 @@ def loadVGDlib(vgd_version=None):
                 VGD_LIBPATH = None
 
     if not VGD_LIBPATH:
-        raise IOError, (-1, 'Failed to find libdescrip.so: ', vgd_libfile)
+        raise IOError(-1, 'Failed to find libdescrip.so: ', vgd_libfile)
 
     VGD_LIBPATH = os.path.abspath(VGD_LIBPATH)
     libvgd = None
