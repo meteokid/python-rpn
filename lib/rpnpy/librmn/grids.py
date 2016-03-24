@@ -289,6 +289,8 @@ def decodeGrid(gid):
             (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
             
             if params['grtyp'] in ('Z', '#'):
+                #TODO: if E grid, need to rotate the coor sys
+                #TODO: if L grid, account for lat0,lon0!=0, dlat,dlon!=1
                 params.update({
                     'lat0' : float(axes['ay'][0, 0]),
                     'lon0' : float(axes['ax'][0, 0]),
@@ -1049,10 +1051,13 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                              order='FORTRAN')
     params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
                              order='FORTRAN')
+    #TODO: should it be rotated coor?
+    lon0 = params['lon0']
+    lat0 = params['lat0']
     for i in xrange(params['ni']):
-        params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
+        params['ax'][i, 0] = lon0 + float(i)*params['dlon']
     for j in xrange(params['nj']):
-        params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+        params['ay'][0, j] = lat0 + float(j)*params['dlat']
 
     params['ig1'] = ig1234[0]
     params['ig2'] = ig1234[1]
@@ -1312,8 +1317,8 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
             raise TypeError('defGrid_ZL: wrong input data type for ' +
                             '%s, expecting float, Got (%s)' % (k, type(v)))
         params[k] = v
-    ig1234 = _rb.cxgaig(params['grref'], params['lat0'], params['lon0'],
-                        params['dlat'], params['dlon'])
+    #TODO: adjust lat0,lon0 to avoid out or range?
+    ig1234 = _rb.cxgaig(params['grref'], 0., 0., 1., 1.)
     params['ig1ref'] = ig1234[0]
     params['ig2ref'] = ig1234[1]
     params['ig3ref'] = ig1234[2]
@@ -1327,6 +1332,8 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
     for j in xrange(params['nj']):
         params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+    ## if params['ax'][:, 0].max() > 360.:
+    ##     params['ax'][:, 0] -= 360.
 
     params['ig1'] = ig1234[0]
     params['ig2'] = ig1234[1]
