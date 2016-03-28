@@ -3,7 +3,7 @@
 
 import unittest
 
-class rpnpyCookbook(unittest.TestCase):
+class rpnpyCookbook2(unittest.TestCase):
     
 
     #---- Horizontal Interpolation

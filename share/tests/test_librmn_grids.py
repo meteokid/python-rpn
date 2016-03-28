@@ -126,22 +126,62 @@ class Librmn_grids_Test(unittest.TestCase):
         for k in params.keys():
             if isinstance(params[k],np.ndarray):
                 ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
                 self.assertFalse(ok)
             else:
+                ## print k,params[k] == params2[k],params[k],params2[k]
+                self.assertEqual(params[k],params2[k])
+
+                
+    def test_defGrid_ZL2(self):
+        params = rmn.defGrid_ZL(90,45,10.,11.,1.,0.5)
+        params2 = rmn.decodeGrid(params)
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
+                self.assertFalse(ok)
+            else:
+                ## print k,params[k] == params2[k],params[k],params2[k]
                 self.assertEqual(params[k],params2[k])
 
     def test_defGrid_ZE(self):
-        params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
+        ## params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
+        params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,35.,230.,0.,320.)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             if isinstance(params[k],np.ndarray):
                 ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
-                self.assertFalse(ok)
+                #print k,not ok,np.max(np.abs(params[k]-params2[k])),np.min(params[k]),np.max(params[k])
+                self.assertFalse(ok,(k,np.max(np.abs(params[k]-params2[k]))))
+            elif isinstance(params[k],float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok,(k,params[k]-params2[k]))
             else:
+                #print k,params[k] == params2[k],params[k],params2[k]
                 self.assertEqual(params[k],params2[k])
 
+                
+    def test_defGrid_ZE2(self):
+        ## params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,0.,180.,1.,270.)
+        params = rmn.defGrid_ZE(90,45,10.,11.,1.,0.5,35.,230.,0.,320.)
+        params2 = rmn.decodeGrid(params)
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                #print k,not ok,np.max(np.abs(params[k]-params2[k])),np.min(params[k]),np.max(params[k])
+                self.assertFalse(ok,(k,np.max(np.abs(params[k]-params2[k]))))
+            elif isinstance(params[k],float):
+                ok = abs(params[k]-params2[k]) > self.epsilon
+                self.assertFalse(ok,(k,params[k]-params2[k]))
+            else:
+                #print k,params[k] == params2[k],params[k],params2[k]
+                self.assertEqual(params[k],params2[k])
+
+
     def test_defGrid_diezeE(self):
-        params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=10,lnj=15,i0=12,j0=13)
+        ## params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=10,lnj=15,i0=12,j0=13)
+        params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,35.,230.,0.,320.,lni=10,lnj=15,i0=12,j0=13)
         params2 = rmn.decodeGrid(params['id'])
         for k in params.keys():
             #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
@@ -149,10 +189,18 @@ class Librmn_grids_Test(unittest.TestCase):
                 if isinstance(params[k],np.ndarray):
                     ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
                     ## if ok: print k,params[k],params2[k]
-                    self.assertFalse(ok)
+                    self.assertFalse(ok,(k,np.max(np.abs(params[k]-params2[k]))))
+                elif isinstance(params[k],float):
+                    ok = abs(params[k]-params2[k]) > self.epsilon
+                    self.assertFalse(ok,(k,params[k]-params2[k]))
                 else:
                     ## if params[k] != params2[k]: print k,params[k],params2[k]
                     self.assertEqual(params[k],params2[k])
+
+
+    def test_defGrid_diezeE2(self):
+        ## params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,0.,180.,1.,270.,lni=10,lnj=15,i0=12,j0=13)
+        params = rmn.defGrid_diezeE(90,45,11.,12.,1.,0.5,35.,230.,0.,320.,lni=10,lnj=15,i0=12,j0=13)
         params2 = rmn.decodeGrid(params)
         for k in params.keys():
             #Note: gdef_fmem ceash with #... faked as Z grid until fix in librmn
@@ -235,6 +283,7 @@ class Librmn_grids_Test(unittest.TestCase):
         for k in params.keys():
             self.assertEqual(params[k],params2[k])
 
+
     def test_defGrid_YY(self):
         params = rmn.defGrid_YY(31,1.5)
         params2 = rmn.decodeGrid(params['id'])
@@ -266,7 +315,72 @@ class Librmn_grids_Test(unittest.TestCase):
         (xlat1c,xlon1c,xlat2c,xlon2c) = rmn.yyg_yangrot_py(xlat1b,xlon1b,xlat2b,xlon2b)
         self.assertEqual((xlat1,xlon1,xlat2,xlon2),(xlat1c,xlon1c,xlat2c,xlon2c))
 
+    def test_ll2rll_norot(self):
+        epsilon = self.epsilon
+        (xlat1, xlon1, xlat2, xlon2) = (0.,180.,0.,270.)
+        ok = True
+        for j in range(178):
+            for i in range(358):
+                (lat0,lon0) = (float(j+1-90), float(i+1))
+                (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
+                (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
+                (rlat1, rlon1) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat1, lon1)
+                dlon  = abs(lon1-lon0)
+                if dlon > 180.: dlon =- 360.
+                drlon = abs(rlon1-rlon)
+                if drlon > 180.: drlon =- 360.
+                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
+                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
+                    print 'n',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon
+                    ok = False
+        self.assertTrue(ok)
 
+                    
+    def test_ll2rll_rot(self):
+        epsilon = self.epsilon
+        (xlat1, xlon1, xlat2, xlon2) = (35.,230.,0.,320.)
+        ok = True
+        for j in range(178):
+            for i in range(358):
+                (lat0,lon0) = (float(j+1-90), float(i+1))
+                (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
+                (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
+                (rlat1, rlon1) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat1, lon1)
+                dlon  = abs(lon1-lon0)
+                if dlon > 180.: dlon =- 360.
+                drlon = abs(rlon1-rlon)
+                if drlon > 180.: drlon =- 360.
+                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
+                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
+                    print 'r',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon
+                    ok = False
+        self.assertTrue(ok)
+
+                    
+    def test_ll2rll_rot2(self):
+        epsilon = 0.05#self.epsilon
+        (xlat1, xlon1, xlat2, xlon2) = (0.,180.,1.,270.)
+        ok = True
+        for j in range(178):
+            for i in range(358):
+                (lat0,lon0) = (float(j+1-90), float(i+1))
+                (rlat, rlon) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat0, lon0)
+                (lat1, lon1) = rmn.egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon)
+                (rlat1, rlon1) = rmn.egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat1, lon1)
+                dlon  = abs(lon1-lon0)
+                if dlon > 180.: dlon =- 360.
+                drlon = abs(rlon1-rlon)
+                if drlon > 180.: drlon =- 360.
+                if False in (abs(lat1-lat0)<epsilon, dlon<epsilon,
+                             abs(rlat1-rlat)<epsilon, drlon<epsilon):
+                    print 'r2',i,j,abs(lat1-lat0), dlon, \
+                        abs(rlat1-rlat), drlon
+                    ok = False
+        self.assertTrue(ok)
+
+              
 if __name__ == "__main__":
     unittest.main()
 
