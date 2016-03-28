@@ -268,7 +268,6 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
-        RMNBaseError on any other error
         
     Examples:
     >>> import sys
@@ -299,13 +298,11 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
                                     _ct.c_int(ig1[2]), _ct.c_int(ig1[3]))
     (cxg1, cxg2, cxg3, cxg4) = (_ct.c_float(0.), _ct.c_float(0.),
                                 _ct.c_float(0.), _ct.c_float(0.))
-    istat = _rp.f_cigaxg(grtyp,
+    _rp.f_cigaxg(grtyp,
                 _ct.byref(cxg1), _ct.byref(cxg2),
                 _ct.byref(cxg3), _ct.byref(cxg4),
                 _ct.byref(cig1), _ct.byref(cig2),
                 _ct.byref(cig3), _ct.byref(cig4))
-    if istat < 0:
-        raise RMNBaseError()
     return (cxg1.value, cxg2.value, cxg3.value, cxg4.value)
 
 
@@ -327,7 +324,6 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
-        RMNBaseError on any other error
 
     Examples:
     >>> import sys
@@ -358,11 +354,9 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
                                     _ct.c_float(xg1[2]), _ct.c_float(xg1[3]))
     (cig1, cig2, cig3, cig4) = (_ct.c_int(0), _ct.c_int(0),
                                 _ct.c_int(0), _ct.c_int(0))
-    istat = _rp.f_cxgaig(grtyp,
+    _rp.f_cxgaig(grtyp,
             _ct.byref(cig1), _ct.byref(cig2), _ct.byref(cig3), _ct.byref(cig4),
             _ct.byref(cxg1), _ct.byref(cxg2), _ct.byref(cxg3), _ct.byref(cxg4))
-    if istat < 0:
-        raise RMNBaseError()
     return (cig1.value, cig2.value, cig3.value, cig4.value)
 
 

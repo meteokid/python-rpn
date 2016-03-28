@@ -277,6 +277,24 @@ def decodeGrid(gid):
                 'ay'    : axes['ay']
                 })
             
+            if params['grtyp'] in ('Z', '#'):
+                #TODO: if L grid, account for lat0,lon0!=0, dlat,dlon!=1
+                (ni, nj) = (params['ni']-1, params['nj']-1)
+                params.update({
+                    'lat0' : float(axes['ay'][0, 0]),
+                    'lon0' : float(axes['ax'][0, 0]),
+                    'dlat' : float(axes['ay'][0, nj] - axes['ay'][0, 0])/float(nj),
+                    'dlon' : float(axes['ax'][ni, 0] - axes['ax'][0, 0])/float(ni)
+                    })
+                if params['grref'] == 'E':
+                    (rlat0,rlon0) = (params['lat0'], params['lon0'])
+                    (params['lat0'], params['lon0']) = \
+                        egrid_rll2ll(params['xlat1'], params['xlon1'],
+                                     params['xlat2'], params['xlon2'],
+                                     rlat0, rlon0)
+                for k in ('lat0','lon0','dlat','dlon'):
+                    if k in params0.keys(): params[k] = params0[k]
+
             if all([x in params0.keys() for x in ('ig1','ig2')]):
                 params['tag1'] = params0['ig1']
                 params['tag2'] = params0['ig2']
@@ -287,16 +305,6 @@ def decodeGrid(gid):
                 params['tag3'] = params0['ig3']
             (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
             
-            if params['grtyp'] in ('Z', '#'):
-                params.update({
-                    'lat0' : float(axes['ay'][0, 0]),
-                    'lon0' : float(axes['ax'][0, 0]),
-                    'dlat' : float(axes['ay'][0, 1] - axes['ay'][0, 0]),
-                    'dlon' : float(axes['ax'][1, 0] - axes['ax'][0, 0])
-                    })
-                for k in ('lat0','lon0','dlat','dlon'):
-                    if k in params0.keys(): params[k] = params0[k]
-                
             if params['grtyp'] in ('#'):
                 (params['ig3'], params['ig4']) = (1, 1)
                 (params['lni'], params['lnj']) = (params['ni'], params['nj'])
@@ -1015,7 +1023,7 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         v = params[k]
         if isinstance(v, int):
             v = float(v)
-        if not isinstance(v, float):
+        if not isinstance(v, (float, _np.float32)):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
@@ -1027,7 +1035,7 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                             'description, missing: {0}'.format(k))
         if isinstance(v, int):
             v = float(v)
-        if not isinstance(v, float):
+        if not isinstance(v, (float, _np.float32)):
             raise TypeError('defGrid_ZE: wrong input data type for ' +
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
@@ -1042,10 +1050,13 @@ def defGrid_ZE(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
                              order='FORTRAN')
     params['ay'] = _np.empty((1, params['nj']), dtype=_np.float32,
                              order='FORTRAN')
+    (rlat0, rlon0) = egrid_ll2rll(params['xlat1'], params['xlon1'],
+                                  params['xlat2'], params['xlon2'],
+                                  params['lat0'],  params['lon0'])
     for i in xrange(params['ni']):
-        params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
+        params['ax'][i, 0] = rlon0 + float(i)*params['dlon']
     for j in xrange(params['nj']):
-        params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+        params['ay'][0, j] = rlat0 + float(j)*params['dlat']
 
     params['ig1'] = ig1234[0]
     params['ig2'] = ig1234[1]
@@ -1304,8 +1315,8 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
             raise TypeError('defGrid_ZL: wrong input data type for ' +
                             '{0}, expecting float, Got ({1})'.format(k, type(v)))
         params[k] = v
-    ig1234 = _rb.cxgaig(params['grref'], params['lat0'], params['lon0'],
-                        params['dlat'], params['dlon'])
+    #TODO: adjust lat0,lon0 to avoid out or range?
+    ig1234 = _rb.cxgaig(params['grref'], 0., 0., 1., 1.)
     params['ig1ref'] = ig1234[0]
     params['ig2ref'] = ig1234[1]
     params['ig3ref'] = ig1234[2]
@@ -1319,6 +1330,8 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         params['ax'][i, 0] = params['lon0'] + float(i)*params['dlon']
     for j in xrange(params['nj']):
         params['ay'][0, j] = params['lat0'] + float(j)*params['dlat']
+    ## if params['ax'][:, 0].max() > 360.:
+    ##     params['ax'][:, 0] -= 360.
 
     params['ig1'] = ig1234[0]
     params['ig2'] = ig1234[1]
@@ -1836,26 +1849,7 @@ def yyg_yangrot_py(yinlat1, yinlon1, yinlat2, yinlon2):
         decodeGrid
         encodeGrid
     """
-    xyz1 = _ll.llacar_py(yinlon1, yinlat1)
-    xyz2 = _ll.llacar_py(yinlon2, yinlat2)
-    a = (xyz1[0]*xyz2[0]) + (xyz1[1]*xyz2[1]) + (xyz1[2]*xyz2[2])
-    b = _sqrt(((xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))**2
-             +  ((xyz2[0]*xyz1[2]) - (xyz1[0]*xyz2[2]))**2
-             +  ((xyz1[0]*xyz2[1]) - (xyz2[0]*xyz1[1]))**2)
-    c = _sqrt( xyz1[0]**2 + xyz1[1]**2 + xyz1[2]**2 )
-    d = _sqrt( ( ( (a*xyz1[0]) - xyz2[0] ) / b )**2 + \
-              ( ( (a*xyz1[1]) - xyz2[1] ) / b )**2 + \
-              ( ( (a*xyz1[2]) - xyz2[2] ) / b )**2  )
-    rot = _np.empty((3, 3), dtype=_np.float32)
-    rot[0, 0] =  -xyz1[0]/c
-    rot[0, 1] =  -xyz1[1]/c
-    rot[0, 2] =  -xyz1[2]/c
-    rot[1, 0] = ( ((a*xyz1[0]) - xyz2[0]) / b)/d
-    rot[1, 1] = ( ((a*xyz1[1]) - xyz2[1]) / b)/d
-    rot[1, 2] = ( ((a*xyz1[2]) - xyz2[2]) / b)/d
-    rot[2, 0] = ( (xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))/b
-    rot[2, 1] = ( (xyz2[0]*xyz1[2]) - (xyz1[0]*xyz2[2]))/b
-    rot[2, 2] = ( (xyz1[0]*xyz2[1]) - (xyz2[0]*xyz1[1]))/b
+    rot = egrid_rot_matrix(yinlat1, yinlon1, yinlat2, yinlon2)
     #Get transpose of rotation
     invrot = rot.T
     #Find the centre of Yang grid through Yin by setting
@@ -1970,6 +1964,84 @@ def yyg_pos_rec(yinlat1, yinlon1, yinlat2, yinlon2, ax, ay):
     axy[sindx+10+ni:sindx+10+ni+nj] = ay[0   , 0:nj]
     return axy
 
+#TODO: write in C (modelutils's C): llacar, cartall, yyg_yangrot, yyg_pos_rec
+def egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2):
+    """
+    Compute the rotation for the Yang grid using the rotation from Yin
+
+    (yanlat1, yanlon1, yanlat2, yanlon2) = 
+        yyg_yangrot_py(xlat1, xlon1, xlat2, xlon2)
+        
+    Args:
+        xlat1, xlon1, xlat2, xlon2
+    Returns:
+        (yanlat1, yanlon1, yanlat2, yanlon2)
+    Raises:
+        TypeError  on wrong input arg types    
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> (xlat1, xlon1, xlat2, xlon2)    = (0., 180., 0., 270.)
+    >>> (xlat1b, xlon1b,xlat2b, xlon2b) = rmn.yyg_yangrot_py(xlat1, xlon1, xlat2, xlon2)
+
+    See Also:
+        defGrid_YY
+        decodeGrid
+        encodeGrid
+    """
+    xyz1 = _ll.llacar_py(xlon1, xlat1)
+    xyz2 = _ll.llacar_py(xlon2, xlat2)
+    a = (xyz1[0]*xyz2[0]) + (xyz1[1]*xyz2[1]) + (xyz1[2]*xyz2[2])
+    b = _sqrt(((xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))**2
+             +  ((xyz2[0]*xyz1[2]) - (xyz1[0]*xyz2[2]))**2
+             +  ((xyz1[0]*xyz2[1]) - (xyz2[0]*xyz1[1]))**2)
+    c = _sqrt( xyz1[0]**2 + xyz1[1]**2 + xyz1[2]**2 )
+    d = _sqrt( ( ( (a*xyz1[0]) - xyz2[0] ) / b )**2 + \
+              ( ( (a*xyz1[1]) - xyz2[1] ) / b )**2 + \
+              ( ( (a*xyz1[2]) - xyz2[2] ) / b )**2  )
+    rot = _np.empty((3, 3), dtype=_np.float32)
+    rot[0, 0] =  -xyz1[0]/c
+    rot[0, 1] =  -xyz1[1]/c
+    rot[0, 2] =  -xyz1[2]/c
+    rot[1, 0] = ( ((a*xyz1[0]) - xyz2[0]) / b)/d
+    rot[1, 1] = ( ((a*xyz1[1]) - xyz2[1]) / b)/d
+    rot[1, 2] = ( ((a*xyz1[2]) - xyz2[2]) / b)/d
+    rot[2, 0] = ( (xyz1[1]*xyz2[2]) - (xyz2[1]*xyz1[2]))/b
+    rot[2, 1] = ( (xyz2[0]*xyz1[2]) - (xyz1[0]*xyz2[2]))/b
+    rot[2, 2] = ( (xyz1[0]*xyz2[1]) - (xyz2[0]*xyz1[1]))/b
+    return rot
+
+def egrid_rll2ll(xlat1, xlon1, xlat2, xlon2, rlat, rlon):
+    rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
+    #Get transpose of rotation
+    invrot = rot.T
+    #Obtain the cartesian coordinates
+    xyz1 = _ll.llacar_py(rlon, rlat)
+    xyz3 = [0., 0., 0.]
+    for i in xrange(3):
+        xyz3[i] = 0.
+        for j in xrange(3):
+            xyz3[i] = xyz3[i] + invrot[i, j]*xyz1[j]
+    #Obtain the real geographic coordinates
+    (lon, lat) = _ll.cartall_py(xyz3)
+    if (lon >= 360.):
+        lon -= 360.
+    return (lat, lon)
+    
+def egrid_ll2rll(xlat1, xlon1, xlat2, xlon2, lat, lon):
+    rot = egrid_rot_matrix(xlat1, xlon1, xlat2, xlon2)
+    #Obtain the cartesian coordinates
+    xyz1 = _ll.llacar_py(lon, lat)
+    xyz3 = [0., 0., 0.]
+    for i in xrange(3):
+        xyz3[i] = 0.
+        for j in xrange(3):
+            xyz3[i] = xyz3[i] + rot[i, j]*xyz1[j]
+    #Obtain the real geographic coordinates
+    (lon, lat) = _ll.cartall_py(xyz3)
+    if (lon >= 360.):
+        lon -= 360.
+    return (lat, lon)
 
 # =========================================================================
 
