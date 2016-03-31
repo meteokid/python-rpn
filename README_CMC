@@ -16,6 +16,7 @@
 ## ==== Developing code ============================================================
 
 ## Basic setup
+# git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
 git clone git@github.com:meteokid/python-rpn.git rpnpy
 
 cd rpnpy
@@ -44,6 +45,49 @@ done
 ## Once tested you may send your code/patch 
 ## (or path to your git clone after you commited your changes) 
 ## to stephane.chamberland@canada.ca
-## 
-## or do a fork of the project on github and issue a pull request
 
+## ==== Building ============================================================
+
+# git clone ssh://armnenv@localhost/~armnenv/GitDepots/python-rpn.git
+# git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
+git clone git@github.com:meteokid/python-rpn.git rpnpy
+
+cd rpnpy
+# git checkout -b tmp python-rpn_VERSION
+## update version number (including leading 'x/') in ./VERSION
+## update default RMN_VERSION and LIBPATH in: 
+##    ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
+. ./.setenv.dot --dev
+export storage_model=${storage_model:-$TMPDIR}
+rdemklink
+./bin/ouv_exp_rpnpy
+# make -j 8 components_objects
+# make components_libs 
+# make components_abs 
+make components_ssm
+
+## For additional ARCH
+      ssh MYMACH
+      cd /PATH/
+      . ./.setenv.dot --dev
+      export storage_model=${storage_model:-$TMPDIR}
+      rdemklink
+      #./bin/ouv_exp_rpnpy
+      #make -j 8 components_objects
+      #make components_libs 
+      #make components_abs 
+      make components_ssm_arch
+
+## ==== Installing ==========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --dev
+make components_install CONFIRM_INSTALL=yes
+
+## ==== Uninstalling ========================================================
+
+ssh MY_INSTALL_MACH
+cd /PATH/
+. ./.setenv.dot --dev
+make components_uninstall UNINSTALL_CONFIRM=yes
