@@ -3,9 +3,67 @@
 # -*- coding: utf-8 -*-
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
-import optparse,sys,re
+import sys
+import re
+import argparse
 import rpnpy.librmn.all as rmn
 from rpnpy.rpndate import *
+"""
+List selected records in RPNStd file(s) along with requested meta and stats
+
+Examples:
+    rpy.fstlist -i /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst -k --stats \
+                --nomvar '^^' '>>'
+"""
+
+def compare_meta(meta, matchIn, matchOut, verbose):
+    """
+    """
+    keylist = ('nomvar', 'typvar', 'etiket', 'ip1', 'ip2', 'ip3', 'datev')
+    for key in keylist:
+        ## val = getattr(args,'f_'+key)
+        val = matchIn[key] if key in matchIn.keys() else []
+        metaval = meta[key].strip() if isinstance(meta[key], str) else meta[key]
+        if not (len(val) == 0 or val[0] in (-1,' ') or metaval in val):
+            if verbose > 1:
+                print('{0} : No match for key {1}: {2} not in {3}'.\
+                      format(meta['nomvar'],key,metaval,val))
+            return False
+        ## val = getattr(args,'e_'+key)
+        val = matchOut[key] if key in matchOut.keys() else []
+        metaval = meta[key].strip() if isinstance(meta[key], str) else meta[key]
+        if len(val) > 0 and meta[key] in val:
+            if verbose > 1:
+                print('{0} : Matching exclude  key {1}: {2} in {3}'.\
+                      format(meta['nomvar'],key,meta[key],val))
+            return False
+    return True
+
+
+def select_meta(inFile, matchIn, matchOut, verbose):
+    """
+    """
+    klist = []
+    nomvarlist = matchIn['nomvar'] if 'nomvar' in matchIn.keys() else [' ']
+    if len(nomvarlist) == 0: nomvarlist = [' ']
+    for nomvar in nomvarlist:
+        klist0 = rmn.fstinl(inFile, nomvar=nomvar)
+        if verbose > 1:
+            print('Found {0} records matching "{1}"'.\
+                  format(len(klist0),nomvar))
+        for key in klist0:
+            meta = rmn.fstprm(key)
+            if compare_meta(meta, matchIn, matchOut, verbose):
+                klist.append(key)
+    if len(klist) == 0:
+        if verbose > 0:
+            sys.stdout.write('No Matching records.\n')
+        else:
+            klist = sorted(list(set(klist)))
+            if verbose > 0:
+                sys.stdout.write('Found {0} matching records.\n'.format(len(klist)))
+    return klist
+
 
 def set_vdate(meta):
     meta['vdateo'] = -1
@@ -47,104 +105,163 @@ def set_time(meta):
         pass
     return meta
 
-def set_xg(meta):
+def set_xg(inFileId, meta):
     meta['xg1234'] = '-1 -1 -1 -1'
     try:
-        if not meta['grtyp'].upper() in ('Z','Y','#','U','X'):
-            meta['xg1234'] = ' '.join([str(x) for x in rmn.cigaxg(meta['grtyp'], meta['ig1'], meta['ig2'], meta['ig3'], meta['ig4'])])
+        grid = rmn.readGrid(inFileId, meta)
+        if not grid['grtyp'].upper() in ('Z','Y','#','U','X'):
+            meta['xg1234'] = ','.join([str(x) for x in (grid['grtyp'], grid['xg1'], grid['xg2'], grid['xg3'], grid['xg4'])])
+        else:
+            meta['xg1234'] = ','.join([str(x) for x in (grid['grtyp'], grid['grref'], grid['xg1'], grid['xg2'], grid['xg3'], grid['xg4'])])
     except:
         pass
     return meta
 
-def print_list(filename, out_format, filt_etiket, 
-               filt_ip1, filt_ip2, filt_ip3, filt_typvar,
-               filt_nomvar, filt_datev, filt_vdatev):
+
+## def print_list0(filename, out_format, filt_etiket, 
+##                filt_ip1, filt_ip2, filt_ip3, filt_typvar,
+##                filt_nomvar, filt_datev, filt_vdatev):
+##     try:
+##         #rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+##         iunit = rmn.fstopenall(filename)
+##     except:
+##         sys.stderr.write('ERROR: Problem opening the file: %s\n' % (filename))
+##         raise
+##     try:
+##         out_format = out_format.lower()
+##         vdatev = filt_vdatev
+##         if filt_datev != -1:
+##             vdatev = str(RPNDate(filt_datev))
+##         pattern = None
+##         dovdatev = (vdatev != -1 or out_format != out_format.replace('vdatev','').replace('datev',''))
+##         dolevel = (out_format != out_format.replace('level',''))
+##         dotime  = (out_format != out_format.replace('time',''))
+##         doxg = (out_format != out_format.replace('xg1234',''))
+##         for k in rmn.fstinl(iunit, datev=-1, etiket=filt_etiket,
+##                             ip1=filt_ip1, ip2=filt_ip2,
+##                             ip3=filt_ip3, typvar=filt_typvar,
+##                             nomvar=filt_nomvar):
+##             meta =  rmn.fstprm(k)
+##             if dovdatev: meta = set_vdate(meta)
+##             if dolevel:  meta = set_level(meta)
+##             if dotime:   meta = set_time(meta)
+##             if doxg:     meta = set_xg(meta)
+##             if pattern is None: pattern = re.compile("|".join(meta.keys()))
+##             if vdatev != -1:
+##                 l = min(len(vdatev.strip()), len(meta['vdatev'].strip()))
+##                 if vdatev[0:l] == meta['vdatev'][0:l]:
+##                     vdatev = -1
+##             if vdatev == -1:
+##                  print(pattern.sub(lambda m: str(meta[re.escape(m.group(0))]), out_format))
+##     except:
+##         sys.stderr.write('ERROR: Unknown problem with file: %s\n' % (filename))
+##         raise
+##     finally:
+##         rmn.fstcloseall(iunit)
+
+
+def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
+    """
+    """
     try:
-        #rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
-        iunit = rmn.fstopenall(filename)
+        inFileId = rmn.fstopenall(inputFile, rmn.FST_RO)
     except:
-        sys.stderr.write('ERROR: Problem opening the file: %s\n' % (filename))
+        sys.stderr.write('ERROR: Problem opening the file: {0}\n'.\
+                         format(str(inputFile)))
         raise
+
+    out_format = out_format.lower()
+    pattern = None
+    dovdatev = (out_format != out_format.replace('vdatev','').replace('datev',''))
+    dolevel = (out_format != out_format.replace('level',''))
+    dotime  = (out_format != out_format.replace('time',''))
+    doxg    = (out_format != out_format.replace('xg1234',''))
+    
+    domin  = (out_format != out_format.replace('min',''))
+    domax  = (out_format != out_format.replace('max',''))
+    domean = (out_format != out_format.replace('mean',''))
+    dostd  = (out_format != out_format.replace('std',''))
+    dostats= (domin or domax or domean or dostd)
+    
+    if dostats:
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+        
     try:
-        out_format = out_format.lower()
-        vdatev = filt_vdatev
-        if filt_datev != -1:
-            vdatev = str(RPNDate(filt_datev))
-        pattern = None
-        dovdatev = (vdatev != -1 or out_format != out_format.replace('vdatev','').replace('datev',''))
-        dolevel = (out_format != out_format.replace('level',''))
-        dotime  = (out_format != out_format.replace('time',''))
-        doxg = (out_format != out_format.replace('xg1234',''))
-        for k in rmn.fstinl(iunit, datev=-1, etiket=filt_etiket,
-                            ip1=filt_ip1, ip2=filt_ip2,
-                            ip3=filt_ip3, typvar=filt_typvar,
-                            nomvar=filt_nomvar):
-            meta =  rmn.fstprm(k)
-            if dovdatev: meta = set_vdate(meta)
-            if dolevel:  meta = set_level(meta)
-            if dotime:   meta = set_time(meta)
-            if doxg:     meta = set_xg(meta)
-            if pattern is None: pattern = re.compile("|".join(meta.keys()))
-            if vdatev != -1:
-                l = min(len(vdatev.strip()), len(meta['vdatev'].strip()))
-                if vdatev[0:l] == meta['vdatev'][0:l]:
-                    vdatev = -1
-            if vdatev == -1:
-                 print(pattern.sub(lambda m: str(meta[re.escape(m.group(0))]), out_format))
+        verbose = 0
+        klist = select_meta(inFileId, matchIn, matchOut, verbose)
+        for key in klist:
+            if dostats:
+                rec =  rmn.fstluk(key)
+            else:
+                rec =  rmn.fstprm(key)
+            if dovdatev: rec = set_vdate(rec)
+            if dolevel:  rec = set_level(rec)
+            if dotime:   rec = set_time(rec)
+            if doxg:     rec = set_xg(inFileId, rec)
+            if domin:    rec['min']  = str(rec['d'].min())
+            if domax:    rec['max']  = str(rec['d'].max())
+            if domean:   rec['mean'] = str(rec['d'].mean())
+            if dostd:    rec['std']  = str(rec['d'].std())
+            if dostats:
+                del(rec['d'])
+
+            if pattern is None: pattern = re.compile("|".join(rec.keys()))
+ 
+ 
+            if withkeys:
+                print(pattern.sub(lambda m: m.group(0)+'='+str(rec[re.escape(m.group(0))]), out_format))
+            else:
+                print(pattern.sub(lambda m: str(rec[re.escape(m.group(0))]), out_format))
     except:
-        sys.stderr.write('ERROR: Unknown problem with file: %s\n' % (filename))
+        sys.stderr.write('ERROR: Unknown problem getting record info.\n')
         raise
     finally:
-        rmn.fstcloseall(iunit)
+        rmn.fstcloseall(inFileId)
 
-
+    
 if __name__ == "__main__":
     
     # Command line arguments
     desc="Print list of record Metadata in an RMN Std file"
     usage = """
-    %prog -i filename [options]
+    %(prog)s -i filename [options]
 
     Accepted values for format:
         nomvar, typvar, ip1, ip2, ip3, ni, nj, nk, etiket
         dateo, datev, vdateo, vdatev, deet, npas
         grtyp, ig1, ig2, ig3, ig4, datyp, nbits
         level, time, xg1234
+        min, max, mean, std
 
-   Default format  = 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:grtyp:ig1:ig2:ig3:ig4:datyp:nbits'
+   Default formats
+       basic: 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:time:level:grtyp:ig1:ig2:ig3:ig4:xg1234:datyp:nbits'
+       stats: 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:time:level:grtyp:ig1:ig2:ig3:ig4:xg1234:datyp:nbits:mean:std:min:max'
     """
-    default_format = 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:grtyp:ig1:ig2:ig3:ig4:datyp:nbits'
+    epilog="-- Options are excluding records according the provided value(s).\n++ Options are selecting records according the provided value(s).\n\nThe default selection critera for all keys is a 'wildcard',\ni.e. all records are selected."
+
+    default_format = 'nomvar:typvar:ip1:ip2:ip3:ni:nj:nk:etiket:vdateo:vdatev:deet:npas:time:level:grtyp:ig1:ig2:ig3:ig4:xg1234:datyp:nbits'
     valid_keys = ('nomvar', 'typvar', 'ip1', 'ip2', 'ip3', 'ni', 'nj', 'nk',
                   'etiket', 'dateo', 'datev', 'vdateo', 'vdatev',
                   'deet', 'npas','grtyp', 'ig1', 'ig2', 'ig3', 'ig4',
-                  'datyp', 'nbits', 'level', 'time', 'xg1234')
+                  'datyp', 'nbits', 'level', 'time', 'xg1234',
+                  'min', 'max', 'mean', 'std')
 
-    parser = optparse.OptionParser(usage=usage,description=desc)
-    parser.add_option("-i","--izfst",dest="filename",default=None,
-                      help="RPN Std File name")
-    
-    parser.add_option("","--datev",dest="filt_datev",default=-1,
-                      help="Filter records by Valid date (CMC date Stamp)")
-    parser.add_option("","--vdatev",dest="filt_vdatev",default=-1,
-                      help="Filter records by Valid date (true-date)")
-    parser.add_option("","--etiket",dest="filt_etiket",default='',
-                      help="Filter records by Etiket")
-    parser.add_option("","--ip1",dest="filt_ip1",default=-1,
-                      help="Filter records by ip1")
-    parser.add_option("","--ip2",dest="filt_ip2",default=-1,
-                      help="Filter records by ip2")
-    parser.add_option("","--ip3",dest="filt_ip3",default=-1,
-                      help="Filter records by ip3")
-    parser.add_option("","--typvar",dest="filt_typvar",default='',
-                      help="Filter records by Variable Type")
-    parser.add_option("","--nomvar",dest="filt_nomvar",default='',
-                      help="Filter records by Variable Name")
-    
-    ## parser.add_option("-F","--filter",dest="filter",default=default_format,
-    ##                   help="Filter 'key1=val1 ; key2=val2 ; ...'")
+    parser = argparse.ArgumentParser(
+        description=desc, usage=usage, epilog=epilog,
+        prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-i", "--input", dest="inputFile",
+                        nargs='+', required=True, type=str, default=[],
+                        help="Input RPN Std File name")
 
-    parser.add_option("-f","--format",dest="format",default=default_format,
-                      help="Output Format")
+    parser.add_argument("-f", "--format", dest="format",
+                        type=str, default=default_format,
+                        help="Output Format")
+    parser.add_argument("-k", "--addkeys", dest="addkeys",
+                        action="store_true",
+                        help="Change format to have key=value")
+    parser.add_argument("--stats", dest="dostats",
+                        action="store_true",
+                        help="Add Statistics to the base format")
     
     ## parser.add_option("-s","--sort",dest="sort_key",default=None,
     ##                   help="Sort key")
@@ -153,28 +270,107 @@ if __name__ == "__main__":
     ## parser.add_option("-r","--reverse",dest="sort_reverse",action="store_true",
     ##                   help="Reverse sorting order")
 
-    parser.add_option("","--champs",dest="champs",action="store_true",
-                      help="List accepted format keys")
+    parser.add_argument("--champs", dest="champs",
+                        action="store_true",
+                        help="List accepted format keys")
 
-    (options, args) = parser.parse_args()
+    parser.add_argument("++nomvar",  dest="f_nomvar",
+                        nargs='*', type=str, default=[],
+                        metavar='NOMVAR',
+                        help="Filter records by nomvar values")
+    parser.add_argument("++typvar",  dest="f_typvar",
+                        nargs='*', type=str, default=[],
+                        metavar='TYPVAR',
+                        help="Filter records by typvar values")
+    parser.add_argument("++etiket",  dest="f_etiket",
+                        nargs='*', type=str, default=[],
+                        metavar='ETIKET',
+                        help="Filter records by etiket values")
 
-    if options.champs:
+    parser.add_argument("++ip1",  dest="f_ip1",
+                        nargs='*', type=int, default=[],
+                        metavar='IP1',
+                        help="Filter records by ip1 values")
+    parser.add_argument("++ip2",  dest="f_ip2",
+                        nargs='*', type=int, default=[],
+                        metavar='IP2',
+                        help="Filter records by ip2 values")
+    parser.add_argument("++ip3",  dest="f_ip3",
+                        nargs='*', type=int, default=[],
+                        metavar='IP3',
+                        help="Filter records by ip3 values")
+
+    parser.add_argument("++datev",  dest="f_datev",
+                        nargs='*', type=int, default=[],
+                        metavar='DATEV',
+                        help="Filter records by Valid date (CMC date Stamp)")
+    ## parser.add_argument("++vdatev", dest="f_vdatev",
+    ##                     nargs='*', type=str, default=[],
+    ##                     metavar='YYYYMMDD.hhmmss',
+    ##                     help="Filter records by Valid date (YYYYMMDD.hhmmss)")
+
+    parser.add_argument("--nomvar",  dest="e_nomvar",
+                        nargs='*', type=str, default=[],
+                        metavar='NOMVAR',
+                        help="Filter out records by nomvar values")
+    parser.add_argument("--typvar",  dest="e_typvar",
+                        nargs='*', type=str, default=[],
+                        metavar='TYPVAR',
+                        help="Filter out records by typvar values")
+    parser.add_argument("--etiket",  dest="e_etiket",
+                        nargs='*', type=str, default=[],
+                        metavar='ETIKET',
+                        help="Filter out records by etiket values")
+    
+    parser.add_argument("--ip1",  dest="e_ip1",
+                        nargs='*', type=int, default=[],
+                        metavar='IP1',
+                        help="Filter out records by ip1 values")
+    parser.add_argument("--ip2",  dest="e_ip2",
+                        nargs='*', type=int, default=[],
+                        metavar='IP2',
+                        help="Filter out records by ip2 values")
+    parser.add_argument("--ip3",  dest="e_ip3",
+                        nargs='*', type=int, default=[],
+                        metavar='IP3',
+                        help="Filter out records by ip3 values")
+    
+    parser.add_argument("--datev",  dest="e_datev",
+                        nargs='*', type=int, default=[],
+                        metavar='DATEV',
+                        help="Filter out records by Valid date (CMC date Stamp)")
+    ## parser.add_argument("--vdatev", dest="e_vdatev",
+    ##                     nargs='*', type=str, default=[],
+    ##                     metavar='YYYYMMDD.hhmmss',
+    ##                     help="Filter out records by Valid date (YYYYMMDD.hhmmss)")
+
+    args = parser.parse_args()
+
+    if args.dostats:
+        args.format += ':mean:std:min:max'
+        
+    if args.champs:
         print(':'.join(valid_keys))
         sys.exit(0)   
-    
-    if not options.filename:
-        parser.print_help()
-        sys.exit(1)
         
-    if options.filt_vdatev != -1 and options.filt_datev != -1 :
-        sys.stderr.write('ERROR: cannot filter with both datev and vdatev\n')
-        sys.exit(1)
+    keylist = ('nomvar', 'typvar', 'etiket', 'ip1', 'ip2', 'ip3', 'datev')
+    (matchIn, matchOut) = ({}, {})
+    for key in keylist:
+        try:
+            matchIn[key] = getattr(args,'f_'+key)
+        except:
+            matchIn[key] = []
+        try:
+            matchOut[key] = getattr(args,'e_'+key)
+        except:
+            matchOut[key] = []
+        ## if args.verbose > 1:
+        ##     print('Selecting {0:6s} in:{1:10s}, out:{2}'.format(key,str(matchIn[key]),str(matchOut[key])))
 
     try:
-        print_list(options.filename, options.format,
-                   options.filt_etiket, options.filt_ip1, options.filt_ip2, options.filt_ip3,
-                   options.filt_typvar, options.filt_nomvar, options.filt_datev, options.filt_vdatev)
+        print_list(args.inputFile, args.format, args.addkeys,  matchIn, matchOut)
     except:
+        raise
         sys.exit(1)
         
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
