@@ -4,13 +4,13 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-Copy selected records from one RPNStd file to another
+Change Value (Zap), inplace, of selected records metadata from RPNStd file(s).
 
 Examples:
-    rpy.fstcopy -i /home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst \
-                -o toto.fst \
+    rpy.fstzap -i myfile.fst \
                 ++nomvar '^^' '>>' ++ip1 2002 ++ip2 1001 \
                 --zap ip1=2003 ip2=1002
+
 """
 import sys
 import argparse
@@ -65,108 +65,41 @@ def select_meta(inFile, matchIn, matchOut, verbose):
                 sys.stdout.write('Found {0} matching records.\n'.format(len(klist)))
     return klist
 
-
-def zap_meta(rec, zap, verbose):
+    
+def zap_rec(inputFile, matchIn, matchOut, zap, verbose):
     """
     """
-    zaptrimed = [x+'='+str(zap[x]) for x in zap.keys() if zap[x] is not None]
-    if len(zaptrimed) <= 1:
-        return rec
-    if not zap['datev'] is None:
-        if not zap['dateo'] is None:
-            sys.stderr.write("ERROR: Cannot zap dateo and datev " +
-                             "simultaneously, try using npas or deet to " +
-                             "change the other value.\n")
-            raise
-        if zap['keep_dateo']:
-            sys.stderr.write("ERROR: Cannot zap datev while " +
-                             "keeping dateo unchanged, try using npas " +
-                             "or deet to change datev instead.\n")
-            raise
-
     try:
         if verbose > 0:
-            print('{0} Zapping: {1}'.format(rec['nomvar'],str(zaptrimed)))
-        for key in zap.keys():
-            val = zap[key]
-            if not (key in ('deet', 'npas', 'dateo', 'datev') or val is None):
-                rec[key] = val
-
-        deet1  = rec['deet']  if zap['deet']  is None else zap['deet']
-        npas1  = rec['npas']  if zap['npas']  is None else zap['npas']
-        dateo1 = rec['dateo'] if zap['dateo'] is None else zap['dateo']
-        datev1 = rec['datev'] if zap['datev'] is None else zap['datev']
-        if (not zap['keep_dateo']) and deet1 > 0 and npas1 > 0 and datev1 > 0:
-            nhours = float(deet1) * float(npas1) / -3600.
-            dateo1 = rmn.incdatr(datev1, nhours)
-        rec['deet']  = deet1
-        rec['npas1'] = npas1
-        rec['dateo'] = dateo1
-        rec['datev'] = datev1 #irrelevent for writing
-    except:
-        sys.stderr.write('ERROR: Unknown problem zapping records.\n')
-        raise
-    return rec
-
-    
-def copy_rec(inFileId, outFileId, overwrite, matchIn, matchOut,
-             zapValues, verbose):
-    """
-    """
-    try:
-        klist = select_meta(inFileId, matchIn, matchOut, verbose)
-        for key in klist:
-            rec = rmn.fstluk(key)
-            rec = zap_meta(rec, zapValues, verbose)
-            rmn.fstecr(outFileId, rec['d'], rec, rewrite=overwrite)
-    except:
-        sys.stderr.write('ERROR: Unknown problem copying records.\n')
-        raise
-
-    
-def copy_rec_fname(inputFile, outputFile, overwrite, matchIn, matchOut,
-                   zapValues, verbose):
-    """
-    """
-    if verbose == 0:
-        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
-        
-    try:
-        if verbose > 0:
-            sys.stdout.write('Opening Input File(s): {0}.\n'.\
-                             format(str(inputFile)))
-        inFileId = rmn.fstopenall(inputFile, rmn.FST_RO)
+            sys.stdout.write('Opening File: {0}.\n'.format(str(inputFile)))
+        inFileId = rmn.fstopenall(inputFile, rmn.FST_RW_OLD)
     except:
         sys.stderr.write('ERROR: Problem opening the file: {0}\n'.\
                          format(str(inputFile)))
         raise
-    try:
-        if verbose > 0:
-            sys.stdout.write('Opening Output File: {0}.\n'.format(outputFile))
-        outFileId = rmn.fstopenall(outputFile, rmn.FST_RW)
-    except:
-        sys.stderr.write('ERROR: Problem opening the file: {0}\n'.\
-                         format(outputFile))
-        raise
             
     try:
-        copy_rec(inFileId, outFileId, overwrite, matchIn, matchOut,
-                 zapValues, verbose)
+        klist = select_meta(inFileId, matchIn, matchOut, verbose)
+        rmn.fst_edit_dir(klist, zap['datev'], zap['dateo'], zap['deet'],
+                         zap['npas'], zap['ni'], zap['nj'], zap['nk'],
+                         zap['ip1'], zap['ip2'], zap['ip3'],
+                         zap['typvar'], zap['nomvar'], zap['etiket'],
+                         zap['grtyp'], zap['ig1'], zap['ig2'], zap['ig3'],
+                         zap['ig4'], zap['datyp'], zap['keep_dateo'])        
     except:
-        sys.stderr.write('ERROR: Unknown problem copying records.\n')
+        sys.stderr.write('ERROR: Unknown problem zapping records.\n')
         raise
     finally:
         if verbose > 0:
-            sys.stdout.write('Closing Files.\n')
-        rmn.fstcloseall(outFileId)
+            sys.stdout.write('Closing File.\n')
         rmn.fstcloseall(inFileId)
 
 
 if __name__ == "__main__":
 
-    desc="Copy selected records from RPNStd file(s) to another."
+    desc="Change Value (Zap), inplace, of selected records metadata from RPNStd file(s)."
     epilog="-- Options are excluding records according the provided value(s).\n++ Options are selecting records according the provided value(s).\n\nThe default selection critera for all keys is a 'wildcard',\ni.e. all records are selected."
-    usage = "%(prog)s -i inputFile -o outputFile [options]"
+    usage = "%(prog)s -i inputFile [options]"
     parser = argparse.ArgumentParser(
         description=desc, usage=usage, epilog=epilog,
         prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -184,15 +117,6 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--input", dest="inputFile",
                         nargs='+', required=True, type=str, default=[],
                         help="Input RPN Std File name")
-    parser.add_argument("-o", "--output", dest="outputFile",
-                        type=str, default='',
-                        help="Output RPN Std File name")
-
-    parser.add_argument("--no-overwrite", action="store_false",
-                        dest="overwrite",
-                        help="Do not overrite existing rec in out put file"+
-                             " with same meta if any, default is to overwrite")
-
    
     parser.add_argument("++nomvar",  dest="f_nomvar",
                         nargs='*', type=str, default=[],
@@ -265,7 +189,7 @@ if __name__ == "__main__":
     ##                     help="Filter out records by Valid date (YYYYMMDD.hhmmss)")
 
     parser.add_argument("-z", "--zap", dest="zap",
-                        nargs='*', type=str, default=[],
+                        nargs='+', required=True, type=str, default=[],
                         metavar='KEY=VAL',
                         help="Zap key=value (e.g. ip1=123)")
 
@@ -285,7 +209,7 @@ if __name__ == "__main__":
         if args.verbose > 1:
             print('Selecting {0:6s} in:{1:10s}, out:{2}'.format(key,str(matchIn[key]),str(matchOut[key])))
 
-    zapValues0 = {
+    zapValues = {
         'datev' : -1, 'dateo' : -1, 'deet' : -1, 'npas' : -1,
         'ni' : -1, 'nj' : -1, 'nk' : -1,
         'ip1' : -1, 'ip2' : -1, 'ip3' : -1,
@@ -293,8 +217,6 @@ if __name__ == "__main__":
         'grtyp' : ' ', 'ig1' : -1, 'ig2' : -1, 'ig3' : -1, 'ig4' : -1,
         'datyp' : -1, 'keep_dateo' : False
         }
-    zapValues = zapValues0.copy()
-
     for zap in args.zap:
         keyval    = zap.split('=',1)
         keyval[0] = keyval[0].lower().strip()
@@ -316,13 +238,13 @@ if __name__ == "__main__":
             if args.verbose > 1:
                 print('Zapping {0:6s} = {1}'.format(keyval[0], val))
             zapValues[keyval[0]] = val
-    for key in zapValues.keys():
-        if zapValues[key] == zapValues0[key] and key != 'keep_dateo':
-            zapValues[key] = None
-    
+            
+    if args.verbose == 0:
+        rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
+
     try:
-        copy_rec_fname(args.inputFile, args.outputFile, args.overwrite,
-                       matchIn, matchOut, zapValues, args.verbose)
+        for inputFile in args.inputFile:
+            zap_rec(inputFile, matchIn, matchOut, zapValues, args.verbose)
     except:
         raise
         sys.exit(1)
