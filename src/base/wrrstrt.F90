@@ -21,6 +21,7 @@ use iso_c_binding
       implicit none
 #include <arch_specific.hf>
 
+#include <WhiteBoard.hf>
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
@@ -54,6 +55,7 @@ use iso_c_binding
             !        Write Gmm-files
 
             gmmstat = gmm_checkpoint_all(GMM_WRIT_CKPT)
+            ier = wb_checkpoint()
 
             ier = phy_restart ('W', .false.)
 

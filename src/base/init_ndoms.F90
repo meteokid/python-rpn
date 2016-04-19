@@ -20,8 +20,8 @@
       integer ndomains,dom_deb,err
 
 #include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include "grd.cdk"
+#include "ptopo.cdk"
 
       character*16 ndomains_S, last_domain_S
       integer indx1, dom_fin, last, istat
@@ -67,7 +67,7 @@
          return
       endif
 
-      istat = wb_put('model/last_domain',(dom_fin.eq.last),WB_REWRITE_NONE)
+      Ptopo_last_domain_L = (dom_fin.eq.last)
 
       Grd_yinyang_L = .false.
       Grd_yinyang_S = ''

@@ -23,7 +23,6 @@
       integer F_finalstep
 
 #include <clib_interface_mu.hf>
-#include <WhiteBoard.hf>
 #include "lctl.cdk"
 #include "step.cdk"
 #include "lun.cdk"
@@ -36,7 +35,6 @@
 
       character*2048 filen,filen_link,append
       logical flag,pe0_master_L,output_L,finalstep_L,end_of_run_L
-      logical, save :: done=.false. , last_domain_L
       integer err,unf
       real*8 timeleft,hugetype
 !
@@ -49,16 +47,12 @@
       output_L= .false. ; unf= 474
       finalstep_L = Step_kount.eq.F_finalstep
       end_of_run_L= (finalstep_L.and.(.not.Init_mode_L))
-      if (.not.done) then
-         err= wb_get('model/last_domain',last_domain_L)
-         done= .true.
-      endif
 
       if ( Out_post_L .or. end_of_run_L ) then
          output_L= .true.
          if (pe0_master_L) then
             append=''
-            if (finalstep_L .and. last_domain_L) append='^last'
+            if (finalstep_L .and. Ptopo_last_domain_L) append='^last'
             open  ( unf,file=filen,access='SEQUENTIAL',&
                     form='FORMATTED',position='APPEND' )
             write (unf,'(3(a))') 'NORMAL_OUTPUT ','NA ',trim(Out_laststep_S)//trim(append)

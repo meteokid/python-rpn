@@ -60,7 +60,7 @@
       integer Ptopo_intracomm , Ptopo_intercomm
       integer Ptopo_world_myproc, Ptopo_world_numproc
       integer Ptopo_tag 
-      logical Ptopo_bind_L
+      logical Ptopo_bind_L, Ptopo_last_domain_L
       
       integer, dimension(:,:), pointer :: Ptopo_gindx
 !
@@ -78,7 +78,7 @@
       common  / Ptopo_i / Ptopo_intracomm, Ptopo_intercomm
       common  / Ptopo_i / Ptopo_world_myproc, Ptopo_world_numproc
       common  / Ptopo_i / Ptopo_tag
-      common  / Ptopo_l / Ptopo_bind_L
+      common  / Ptopo_l / Ptopo_bind_L, Ptopo_last_domain_L
       common  / Ptopo_p / Ptopo_gindx
 
       namelist /resources/ Ptopo_npex  , Ptopo_npey, Ptopo_bind_L

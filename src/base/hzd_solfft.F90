@@ -32,7 +32,7 @@
                   F_a_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
                   F_c_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
              F_deltai_8(1:F_pwr,1:F_pwr,minx2:maxx2,nx3), &
-             F_Rhs_8
+             F_Rhs_8(minx:maxx,miny:maxy,gnk)
       real   F_cdiff, F_sol(minx:maxx,miny:maxy,gnk)
 !
 !author
@@ -123,8 +123,8 @@
 !$omp enddo
 !$omp do
       do k = 1, Nkl
-         fwft_8(1:(Maxy-Miny+1), k,     2) = fwft_8(1:(Maxy-Miny+1), k, 1)
-         fwft_8(1:(Maxy-Miny+1), k, Gni+2) = ZERO_8
+         fwft_8(Miny:Maxy, k,     2) = fwft_8(Miny:Maxy, k, 1)
+         fwft_8(Miny:Maxy, k, Gni+2) = ZERO_8
       enddo
 !$omp enddo
 !$omp single
@@ -265,9 +265,9 @@
 !$omp enddo
 !$omp do
       do k = 1, nkl
-         fwft_8(1:(Maxy-Miny+1),k,1)     = fwft_8(1:(Maxy-Miny+1),k,2)
-         fwft_8(1:(Maxy-Miny+1),k,2)     = ZERO_8
-         fwft_8(1:(Maxy-Miny+1),k,Gni+2) = ZERO_8
+         fwft_8(Miny:Maxy,k,1)     = fwft_8(Miny:Maxy,k,2)
+         fwft_8(Miny:Maxy,k,2)     = ZERO_8
+         fwft_8(Miny:Maxy,k,Gni+2) = ZERO_8
       enddo
 !$omp enddo
 !

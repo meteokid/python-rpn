@@ -269,19 +269,19 @@
       istat = min(gmm_create(gmmk_pw_log_pm_s   ,pw_log_pm   ,meta3d_nk1,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_log_pt_s   ,pw_log_pt   ,meta3d_nk1,flag_r_n),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk ,flag_n  ),istat)
+      istat = min(gmm_create(gmmk_pw_uu_moins_s ,pw_uu_moins ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_vv_moins_s ,pw_vv_moins ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_tt_moins_s ,pw_tt_moins ,meta3d_nk ,flag_r_n),istat)
 
-      istat = min(gmm_create(gmmk_pw_pt_moins_s ,pw_pt_moins ,meta3d_nk ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk ,flag_n  ),istat)
+      istat = min(gmm_create(gmmk_pw_pt_moins_s ,pw_pt_moins ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_gz_moins_s ,pw_gz_moins ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_pm_moins_s ,pw_pm_moins ,meta3d_nk ,flag_r_n),istat)
 
-      istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ,flag_n  ),istat)
+      istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ,flag_r_n),istat)
 
-      istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk ,flag_n  ),istat)
-      istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk ,flag_n  ),istat)
+      istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk ,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')

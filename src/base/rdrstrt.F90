@@ -20,6 +20,7 @@
       implicit none
 #include <arch_specific.hf>
 
+#include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "init.cdk"
 #include "step.cdk"
@@ -30,6 +31,8 @@
 !
 !     ---------------------------------------------------------------
 !
+      ier= wb_reload()
+
       rewind (Lun_rstrt)
       read (Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
       read (Lun_rstrt) PSADJ_g_avg_ps_dry_initial_8,PSADJ_scale_8

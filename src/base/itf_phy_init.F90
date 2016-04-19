@@ -16,8 +16,8 @@
 !**s/r itf_phy_init - Initializes physics parameterization package
 !
       subroutine itf_phy_init
-      use vGrid_Descriptors, only: vgrid_descriptor,vgd_put,VGD_OK,VGD_ERROR
-      use vgrid_wb, only: vgrid_wb_get
+      use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,VGD_OK,VGD_ERROR
+      use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use phy_itf, only: phy_init, phymeta,phy_getmeta
       implicit none
 #include <arch_specific.hf>
@@ -44,9 +44,9 @@
 #include "path.cdk"
 #include "level.cdk"
 
-      type(vgrid_descriptor) :: vcoord
+      type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip
-      integer, dimension(:), pointer :: ip1m
+      integer, dimension(:), pointer :: ip1m, ip1t
       real :: zu,zt
       real, dimension(:,:), pointer :: ptr2d
 
@@ -91,9 +91,9 @@
 ! We put mandatory variables in the WhiteBoard
 
       err= 0
-      err= min(wb_put('itf_phy/VSTAG'       , .true.       ), err)
-      err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift   ), err)
-      err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L), err)
+      err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift   , WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
       
 ! Complete physics initialization (see phy_init for interface content)
 
@@ -114,12 +114,19 @@
       if ((zu.gt.0.) .and. (zt.gt.0.) ) then
          nullify(ip1m)
          Level_kind_diag=4
-         err = min ( vgrid_wb_get('ref-m',vcoord,ip1m), err)
-         deallocate(ip1m)
+         err = min ( vgrid_wb_get('ref-m',vcoord, ip1m), err)
+         err = min ( vgrid_wb_get('ref-t',vcoordt,ip1t), err)
+         deallocate(ip1m, ip1t) ; nullify(ip1m, ip1t)
          call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
          call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
-         err = min(vgd_put(vcoord,'DIPM - IP1 of diagnostic level (m)',zuip), err)
-         err = min(vgd_put(vcoord,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+         err = min(vgd_put(vcoord, 'DIPM - IP1 of diagnostic level (m)',zuip), err)
+         err = min(vgd_put(vcoord, 'DIPT - IP1 of diagnostic level (t)',ztip), err)
+         err = min(vgd_put(vcoordt,'DIPM - IP1 of diagnostic level (m)',zuip), err)
+         err = min(vgd_put(vcoordt,'DIPT - IP1 of diagnostic level (t)',ztip), err)
+         if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
+         if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
+         err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
          out3_sfcdiag_L= .true.
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )

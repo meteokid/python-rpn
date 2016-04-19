@@ -314,15 +314,15 @@
                       xfi(Grd_lphy_i0), yfi(Grd_lphy_j0) )
 
       istat= hgrid_wb_put ('model/Hgrid/global' ,Grd_global_gid  , &
-                            F_lni=G_ni,F_lnj=G_nj)
+                            F_lni=G_ni,F_lnj=G_nj,F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/local'  ,Grd_local_gid   , &
-                            F_lni=l_ni,F_lnj=l_nj)
+                            F_lni=l_ni,F_lnj=l_nj,F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/lclcore',Grd_lclcore_gid , &
                   F_lni=l_ni-pil_w-pil_e, F_lnj=l_nj-pil_s-pil_n , &
-                  F_i0=1+pil_w, F_j0=1+pil_s)
+                  F_i0=1+pil_w, F_j0=1+pil_s,F_rewrite_L=.true.)
       istat= hgrid_wb_put ('model/Hgrid/lclphy' ,Grd_lphy_gid    , &
                   F_lni=Grd_lphy_ni, F_lnj=Grd_lphy_nj           , &
-                  F_i0=Grd_lphy_i0, F_j0=Grd_lphy_j0)
+                  F_i0=Grd_lphy_i0, F_j0=Grd_lphy_j0,F_rewrite_L=.true.)
 
       hgc(1)= Hgc_ig1ro
       hgc(2)= Hgc_ig2ro

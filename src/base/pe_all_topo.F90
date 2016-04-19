@@ -23,12 +23,6 @@ use iso_c_binding
 !author
 !     Michel Desgagne - Summer 2006
 
-!revision
-! v3_30 - Desgagne M.       - initial version
-! v4_03 - Desgagne/Lee      - adaptation to new scripts
-! v4_40 - Tanguay M.        - Revision TL/AD
-
-#include <WhiteBoard.hf>
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "lun.cdk"
