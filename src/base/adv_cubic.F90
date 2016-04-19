@@ -67,7 +67,9 @@
       if (F_name(1:3) == 'TR/') then
          mono_L = adv_mono_L
       endif
-      
+   
+      if ( adv_rhst_mono_L .and. (F_name=='RHST_S')) mono_L=.true.
+
       flux_n = 0
       if (F_mass_kind == 1.and.G_lam.and..not.Grd_yinyang_L) flux_n = 1
 

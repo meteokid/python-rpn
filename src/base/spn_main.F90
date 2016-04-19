@@ -24,6 +24,7 @@
 !
 !revision
 ! v4_80 - Qian, Dugas, Hussain            - initial version
+! v4_80 - Baek - correction in calls to spn_fld for FFT transpose
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -35,8 +36,9 @@
 #include "cstv.cdk"
 #include "step.cdk"
 #include "spn.cdk"
+#include "sol.cdk"
 
-      integer offseti, no_steps, tmdt
+      integer offseti, no_steps, tmdt, Nkl
 !
 !----------------------------------------------------------------------
 !
@@ -54,27 +56,28 @@
             if (Lun_out > 0) write(Lun_out,1001) Lctl_step
 
             offseti = trp_22n0-1
+            Nkl = sol_nk
 
             if (Lun_debug_L) write(Lun_out,1000)
 
             if ( index( Spn_nudging_S,'t' ) > 0 )        &
                 call spn_fld( ldnh_minx,ldnh_maxx,           &
-                ldnh_miny,  ldnh_maxy,ldnh_ni,ldnh_nj,       &
-                trp_12smin, trp_12smax, G_nk-1,    trp_12sn, &
+                ldnh_miny,  ldnh_maxy, ldnh_nj,              &
+                trp_12smin, trp_12smax, G_nk,    Nkl, &
                  G_ni, G_nj, trp_22min , trp_22max, trp_22n, &
                  offseti,    Ptopo_npex, Ptopo_npey, 't' )
 
             if ( index( Spn_nudging_S,'u' ) > 0 )          &
                 call spn_fld( ldnh_minx,ldnh_maxx,             &
-                  ldnh_miny,  ldnh_maxy,ldnh_ni,ldnh_nj,       &
-                  trp_12smin, trp_12smax, G_nk-1,    trp_12sn, &
+                  ldnh_miny,  ldnh_maxy, ldnh_nj,              &
+                  trp_12smin, trp_12smax, G_nk,    Nkl, &
                   G_ni, G_nj, trp_22min , trp_22max, trp_22n,  &
                   offseti,    Ptopo_npex, Ptopo_npey, 'u' )
 
             if ( index( Spn_nudging_S,'v' ) > 0 )           &
                  call spn_fld( ldnh_minx,ldnh_maxx,             &
-                   ldnh_miny,  ldnh_maxy, ldnh_ni,ldnh_nj,      &
-                   trp_12smin, trp_12smax, G_nk-1,    trp_12sn, &
+                   ldnh_miny,  ldnh_maxy, ldnh_nj,              &
+                   trp_12smin, trp_12smax, G_nk,    Nkl, &
                    G_ni, G_nj, trp_22min , trp_22max, trp_22n,  &
                    offseti,    Ptopo_npex, Ptopo_npey, 'v' )
          endif

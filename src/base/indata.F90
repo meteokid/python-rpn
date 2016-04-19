@@ -34,7 +34,6 @@
 ! v3_02 - Buehner M.        - leave winds as images for 4dvar or SV jobs
 ! v3_03 - Tanguay M.        - Adjoint Lam configuration 
 ! v3_11 - Gravel S.         - Adapt for theoretical cases and varying topo
-! v3_11 - Tanguay M.        - Abort when V4dg_conf.ne.0 and Vtopo_L  
 ! v3_30 - Desgagne M.       - re-organize code to eliminate v4d controls
 ! v3_30 - Lee V.            - new LAM I/O interface
 ! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
@@ -64,7 +63,6 @@
 #include "bcsgrds.cdk"
 
       integer i,j,k,istat,dim
-      real fistmp(l_minx:l_maxx,l_miny:l_maxy)
       real, dimension(:,:,:), pointer :: plus,minus
 !
 !     ---------------------------------------------------------------
@@ -92,6 +90,11 @@
                             G_nk,'TR/',':P',Step_runstrt_S )
       else
          call timing_start2 ( 71, 'INITIAL_input', 2)
+         istat= gmm_get (gmmk_topo_low_s , topo_low )
+         istat= gmm_get (gmmk_topo_high_s, topo_high)
+         call get_topo2 ( topo_high, l_minx,l_maxx,l_miny,l_maxy, &
+                          1,l_ni,1,l_nj )
+         topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                                l_minx,l_maxx,l_miny,l_maxy,&
                             G_nk,'TR/',':P',Step_runstrt_S )
@@ -112,7 +115,6 @@
       call set_dync
 
       if (Grd_yinyang_L) then
-         fistmp(:,:)=fis0(:,:)
          call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
                          1, .false., 'CUBIC')
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&

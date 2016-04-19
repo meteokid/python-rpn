@@ -28,22 +28,26 @@
 !
 !author
 !           Abdessamad Qaddouri - October 2009
+!  PLEASE consult Abdessamad or Vivian before modifying this routine.
+!
+!
+!revision
+!  v4_8    V.Lee correction in interpolation (MPI precision sensitive)
+!
+#include "geomg.cdk"
 !
        integer i,j,k,Im,Jm
-       real*8  FF_8,betax,betax1,betay,betay1,h1,h2
+       real*8  FF_8,betax,betax1,betay,betay1
 !
-       h1=Geomgx(2)-Geomgx(1)
-       h2=Geomgy(2)-Geomgy(1)
 
 !$omp parallel private (i,j,k,im,jm,       &
-!$omp      FF_8,betax,betax1,betay,betay1) &
-!$omp shared (h1,h2)
+!$omp      FF_8,betax,betax1,betay,betay1) 
 !$omp do
    Do 200 i=1,NLEN
        Im = imx(i)
        Jm = imy(i)
 
-       betax= ( Xi(i) - Geomgx(Im))/h1
+       betax= ( Xi(i) - Geomgx(Im))/Geomg_hx_8
        betax1= (1.0-betax)
        if (betax.le.betax1) then
            betax=0.0d0
@@ -53,7 +57,7 @@
            betax1=0.0d0
        endif
 
-       betay=(Yi(i) - Geomgy(Jm))/h2
+       betay=(Yi(i) - Geomgy(Jm))/Geomg_hy_8
        betay1=1.0-betay
        if (betay.le.betay1) then
            betay=0.0d0
@@ -81,17 +85,16 @@
 !author
 !           Abdessamad Qaddouri - October 2009
 !
+#include "geomg.cdk"
        integer Ni,Nj,Imx,Imy,Minx,Maxx,Miny,Maxy
        integer Im, Jm
        real*8 F(Minx:Maxx,Miny:Maxy),geomgx(Minx:Maxx),geomgy(Miny:Maxy)
-       real*8 FF,Xi,Yi,h1,h2
+       real*8 FF,Xi,Yi
        real*8 betax,betax1,betay,betay1
 !
        Im = imx
        Jm = imy
-       h1=Geomgx(2)-Geomgx(1)
-       h2=Geomgy(2)-Geomgy(1)
-	   betax= ( Xi-Geomgx(Im))/h1
+	   betax= ( Xi-Geomgx(Im))/Geomg_hx_8
            betax1= (1.0-betax)
            if (betax.le.betax1) then
              betax=0.0d0
@@ -100,7 +103,7 @@
              betax=1.0d0
              betax1=0.0d0
            endif
-           betay=(Yi-Geomgy(Jm))/h2
+           betay=(Yi-Geomgy(Jm))/Geomg_hy_8
            betay1=1.0-betay
            if (betay.le.betay1) then
              betay=0.0d0
@@ -121,6 +124,7 @@
 !author
 !           Abdessamad Qaddouri - October 2009
 !
+#include "geomg.cdk"
        integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
        integer k,i,j,Mx(Ni,Nj),My(Ni,Nj)
        real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
@@ -134,7 +138,7 @@
 	Do i = 1, Ni
 	   Im = imx(i,j)
 	   Jm = imy(i,j)
-	   betax= ( Xi(i,j)-x(Im))/h1
+	   betax= ( Xi(i,j)-x(Im))/Geomg_hx_8
            betax1= (1.0-betax)
            if (betax.le.betax1) then
              betax=0.0d0
@@ -143,7 +147,7 @@
              betax=1.0d0
              betax1=0.0d0
            endif
-           betay=(Yi(i,j)-y(Jm))/h2
+           betay=(Yi(i,j)-y(Jm))/Geomg_hy_8
            betay1=1.0-betay
            if (betay.le.betay1) then
              betay=0.0d0

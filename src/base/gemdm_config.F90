@@ -361,13 +361,18 @@
          call handle_error_setdebug(Lctl_debug_L)
       endif
 
-      if (Hzd_lnr_theta .le. 0.) then
+      if (Hzd_lnr_theta .lt. 0.) then
          if (lun_out>0) write (Lun_out, 6200)
          Hzd_lnr_theta = Hzd_lnr
+      endif
+      if (Hzd_pwr_theta .lt. 0 ) then
+         if (lun_out>0) write (Lun_out, 6201)
          Hzd_pwr_theta = Hzd_pwr
       endif
 
       gemdm_config = 1
+
+      Vtopo_L = (Vtopo_ndt .gt. 0)
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
  6007 format (/X,48('#'),/,2X,'STARTING DATE OF THIS RUN IS : ',a16,/ &
@@ -380,8 +385,8 @@
                '  AUTO-BAROTROPIC RUN:          '/&
                 '  Schm_topo_L set to .false. '/&
                 '  =============================='//)
- 6200 format ( ' DEFAULT FOR THETA HOR. DIFFUSION IS:'/&
-               ' Hzd_lnr_theta = Hzd_lnr, Hzd_pwr_theta = Hzd_pwr'/)
+ 6200 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_lnr_theta= Hzd_lnr')
+ 6201 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_pwr_theta= Hzd_pwr')
  6300 format (/' Williamson case 3 and 4 are not available'/)
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)

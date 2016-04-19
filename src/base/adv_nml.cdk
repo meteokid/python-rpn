@@ -31,13 +31,13 @@
 #endif
 
 
-      logical :: adv_mono_L      , adv_catmullrom_L,&
+      logical :: adv_mono_L  ,adv_rhst_mono_L  , adv_catmullrom_L,&
                  adv_BC_min_max_L, adv_ILMC_min_max_L
       integer :: adv_ILMC_sweep_max , &
                  adv_SLICE_rebuild, adv_verbose
       integer :: adv_pil_sub_s,adv_pil_sub_n,adv_pil_sub_w,adv_pil_sub_e
 
-      common /adv_nml_l/ adv_mono_L      , adv_catmullrom_L,&
+      common /adv_nml_l/ adv_mono_L ,  adv_rhst_mono_L  , adv_catmullrom_L,&
                          adv_BC_min_max_L, adv_ILMC_min_max_L
 
       common /adv_nml_i/ adv_ILMC_sweep_max, &
@@ -45,6 +45,7 @@
                          adv_pil_sub_s, adv_pil_sub_n, adv_pil_sub_w, adv_pil_sub_e
 
       namelist /adv_cfgs/ adv_mono_L
+      namelist /adv_cfgs/ adv_rhst_mono_L 
       namelist /adv_cfgs/ adv_catmullrom_L
       namelist /adv_cfgs/ adv_BC_min_max_L
       namelist /adv_cfgs/ adv_ILMC_sweep_max

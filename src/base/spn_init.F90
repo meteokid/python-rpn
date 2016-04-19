@@ -25,6 +25,7 @@
 !
 !revision
 ! v4_80 - Qian, Dugas, Hussain            - initial version
+! v4_80 - Baek - correction for NK
 
 #include "lun.cdk"
 #include "glb_ld.cdk"
@@ -75,7 +76,7 @@
 
       allocate( prof(G_nk), &
                 fxy(G_ni+2,G_nj+2), &
-                Ldiff3D(ldnh_minx:ldnh_maxx,ldnh_miny:ldnh_maxy,G_nk-1), stat=err1 )
+                Ldiff3D(ldnh_minx:ldnh_maxx,ldnh_miny:ldnh_maxy,G_nk), stat=err1 )
 
       if (err1 > 0) call stop_mpi(-1,'spn_init','Error in spn_init')
 
@@ -87,8 +88,8 @@
       ! nudging_tau is nudging time scale in hours
       ! t_turn and b_turn are top and bottom turnning points
 
-      t_turn= max( Spn_up_const_lev,Ver_hyb%m(   1  ) )
-      b_turn= min( Spn_start_lev   ,Ver_hyb%m(G_nk-1) )
+      t_turn= max( Spn_up_const_lev,Ver_hyb%m(  1 ) )
+      b_turn= min( Spn_start_lev   ,Ver_hyb%m(G_nk) )
       nudging_tau = Spn_relax_hours
 
       if (Spn_trans_shape_S == 'COS2' ) then

@@ -15,6 +15,7 @@
 
 !**s/r gemgrid - grille program
       subroutine gemgrid
+      use nest_blending
       implicit none
 #include <arch_specific.hf>
 !
@@ -23,15 +24,6 @@
 !object
 !     to create a file containing all 3 pairs of tic tacs for the
 !     GEM grid using functions from GEM
-!     to create gfilemap txt file to go with file created by genphysX
-!     code derived originally from gengeo/genesis(S. Chamberlain/A. Zadra)
-!     Now the program genphysX is maintained by L.Chardon
-!
-! In order for function geodata to read geophy file, there must be
-! the same prefix for both files:
-!
-! blabla_0000001-0000001 (RPN standard file for geophysical fields)
-! blabla_gfilemap.txt    (Text file with coverage info)
 !
 !     Computes positional parameters (>>=lat ^^=lon)
 !
@@ -41,59 +33,45 @@
 #include "hgc.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
+#include "step.cdk"
+#include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include <clib_interface_mu.hf>
 
-      character*120 outfile,gfile,dumc,fn,etk,etk_ext,dum1
+      integer, external :: gemdm_config,domain_decomp3
+      character*120 outfile,dumc,fn,etk,etk_ext,dum1
       logical lam,radians
-      integer uout,err,npack,i,j,k
+      integer unf1,unf2,err,npack,i,j,k
 
-      integer narguments,npos
-      parameter(narguments=5)
-      character*256 defaut(narguments),liste(narguments),val(narguments)
-      DATA LISTE /'splitnml','npex','npey','blocx','blocy'/
-      DATA defaut/       '1',   '1',   '1',    '1',    '1'/
-      DATA val   /       '0',   '1',   '1',    '1',    '1'/
       logical, parameter :: gauss_L = .false.
       logical uniform_L
-
-      integer Ptopo_npex,Ptopo_npey,Ptopo_nblocx,Ptopo_nblocy
-      integer itile,jtile,i0,j0,i1,j1,ierx, iery, spil3df
-      integer Grd_ip1,Grd_ip2,Grd_ip3,G_ni,G_nj, ni,nj, in,jn
-      integer nila,njla,belo,left
-      real    xlim_1,xlim_n,ylim_1,ylim_n,dxmax, dymax
+      integer itile,jtile,i0,j0,i1,j1,ierx, iery
+      integer Grd_ip1,Grd_ip2,Grd_ip3,ni,nj, in,jn
+      integer nila,njla,belo,left,ip1,ip2
+      real    dxmax, dymax
       real  , dimension(:), allocatable :: xpos, ypos
+      real  , dimension(:,:), allocatable :: mask,wrk1,wrk2
       real*8, dimension(:), allocatable :: x_8, y_8
-
-      namelist /split3df_out/ G_ni,G_nj,Ptopo_npex,Ptopo_npey,Ptopo_nblocx,&
-                              Ptopo_nblocy,xlim_1,xlim_n,ylim_1,ylim_n,radians
 !
 !----------------------------------------------------------------------
 !
-      err = exdb ('GEMGRID','4.5.0','NON')
+      err = exdb ('GEMGRID','4.8.0','NON')
 
-      call ccard(liste,defaut,val,narguments,npos)
-
-      lun_out = 6
-      read(val(1),*) spil3df
-      read(val(2),*) Ptopo_npex
-      read(val(3),*) Ptopo_npey
-      read(val(4),*) Ptopo_nblocx
-      read(val(5),*) Ptopo_nblocy
+      call init_component
 
       etk = 'PARPOS'
-      fn  = 'gem_settings.nml'
+      fn  = '../model_settings.nml'
+      Step_runstrt_S='20160415.000000'
+      Step_dt= 1.
       radians= .false.
 
       outfile       = 'tape1'
-      gfile         = 'gfilemap.txt'
       Grd_yinyang_S = 'YIN'
       Grd_yinyang_L = .false.
       if (clib_getenv ('GEM_YINYANG',dum1).ge.0) &
       Grd_yinyang_L = .true.
-!     Read grid namelist using grid_nml
 
- 88   if (grid_nml2(fn,lam).lt.0) then
+ 88   if (grid_nml2(fn,G_lam).lt.0) then
          print *,'STOP: problem with NAMELIST GRID'
          print *,"Use checknml to verify: \'checknml grid\'"
          stop
@@ -103,74 +81,63 @@
          print *,"Use checknml to verify: \'checknml gem_cfgs\'"
          stop
       endif
-      err= grid_nml2('print',lam)
-      err= gem_nml  ('print'    )
 
-!     Setup before calling e_grid
-!      Grd_yinyang_L = Grd_typ_S(1:1).eq.'G'.and.Grd_typ_S(2:2).eq.'Y'
-      LAM = Grd_typ_S(1:1).eq.'L'.or.Grd_yinyang_L
+      err= grid_nml2 ('print',G_lam)
+      err= gem_nml   ('print'    )
+
+      err= gemdm_config ()
+
+      G_ni= Grd_ni ; G_nj= Grd_nj
+
+      err= domain_decomp3 (1, 1, .false.)
+
+      call set_gmm
+      call nest_set_gmmvar
+
+      LAM = Grd_typ_S(1:1).eq.'L' .or. Grd_yinyang_L
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
-      dxmax = 360. ; dymax = 180. ; nila= Grd_ni ; njla= Grd_nj
-      call set_gemHgrid3 ( x_8, y_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy,   & 
-                           Grd_x0_8, Grd_xl_8, left,                   &
-                           Grd_y0_8, Grd_yl_8, belo,                   &
-                           nila, njla, dxmax, dymax,                   &
+      dxmax = 360. ; dymax = 180. ; nila= G_ni ; njla= G_nj
+      call set_gemHgrid3 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy,   & 
+                           Grd_x0_8, Grd_xl_8, left,               &
+                           Grd_y0_8, Grd_yl_8, belo,               &
+                           nila, njla, dxmax, dymax,               &
                            Grd_yinyang_L, gauss_L, lam, uniform_L, &
                            ierx, iery, .true. )
 
-      if (.not.LAM) Grd_ni= Grd_ni + 1
+      if (.not.LAM) G_ni= G_ni + 1
 
-      xpos(1:Grd_ni) = x_8(1:Grd_ni)
-      ypos(1:Grd_nj) = y_8(1:Grd_nj)
+      xpos(1:G_ni) = x_8(1:G_ni)
+      ypos(1:G_nj) = y_8(1:G_nj)
 
-      call set_igs2 ( Grd_ip1,Grd_ip2, &
-                      xpos,ypos,Grd_ni,Grd_nj,&
-                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                      1,Grd_ni,1,1,Grd_nj,1)
+      call set_igs2 ( ip1,ip2, xpos,ypos,G_ni,G_nj             ,&
+                      Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
+                      1,G_ni,1,1,G_nj,1)
 
       Grd_ip3= 0
 
-      xlim_1= xpos(1) ; xlim_n= xpos(Grd_ni)
-      ylim_1= ypos(1) ; ylim_n= ypos(Grd_nj)
-      G_ni= Grd_ni
-      G_nj= Grd_nj
-
-      if (spil3df.gt.0) then
-         open  (51,file='split3df.nml',access='SEQUENTIAL',form='FORMATTED',iostat=err)
-         write (51,nml=split3df_out)
-         close (51)
-      else
-
-      err = clib_remove(gfile)
       err = clib_remove(outfile)
 
-      uout=0
-      if (fnom(uout,outfile,'RND',0).ge.0) then
-          err= fstouv (uout, 'RND')
+      unf1= 0
+      if (fnom(unf1,outfile,'RND',0).ge.0) then
+         err= fstouv (unf1, 'RND')
       else
-          print *,'problem opening', trim(outfile)
-          stop
+         print *,'problem opening', trim(outfile)
+         stop
       endif  
-
-      open(51,file=gfile,access='SEQUENTIAL',form='FORMATTED',iostat=err)
 
       i0=1
       j0=1
-      i1=grd_ni
-      j1=grd_nj
+      i1=G_ni
+      j1=G_nj
       itile=1
       jtile=1
 
-      write(51,777) i0,j0,xpos(i0),xpos(i1),ypos(j0),ypos(j1),i1,j1, &
-                                                        itile,jtile
-      close (51)
-
       write(6,*) 'LONGITUDE'
-      write(6,778)(i,xpos(i),i=1,grd_ni)
+      write(6,778)(i,xpos(i),i=1,G_ni)
       write(6,*) 'LATITUDE'
-      write(6,778)(i,ypos(i),i=1,grd_nj)
+      write(6,778)(i,ypos(i),i=1,G_nj)
 
  777  format(2i8,4e15.7,2i10,x,2I5)
  778  format(4(i5,e15.7))
@@ -183,61 +150,71 @@
 
       npack = -32
 
-      err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, grd_ni, 1, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
+      err= fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, G_ni, 1, 1 , &
+                    ip1,ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-      err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, grd_nj, 1, &
-                    Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
+      err= fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, G_nj, 1 , &
+                    ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
    
-      err= fstfrm(uout)
-      err= fclos (uout)
-
       if (LAM) then
-         uout=0
-         if (fnom(uout,trim(outfile)//'_core','RND',0).ge.0) then
-            err= fstouv (uout, 'RND')
+         unf2=0
+         if (fnom(unf2,trim(outfile)//'_core','RND',0).ge.0) then
+            err= fstouv (unf2, 'RND')
          else
             print *,'problem opening', trim(outfile//'_core')
             stop
          endif
 
          i0= 1      + Grd_extension 
-         in= Grd_ni - Grd_extension
+         in= G_ni - Grd_extension
          j0= 1      + Grd_extension
-         jn= Grd_nj - Grd_extension
+         jn= G_nj - Grd_extension
          ni = in-i0+1
          nj = jn-j0+1
 
          xpos(1:ni) = x_8(i0:in)
          ypos(1:nj) = y_8(j0:jn)
          
-         call set_igs2 ( Grd_ip1,Grd_ip2, &
-                         xpos,ypos,ni,nj, &
+         call set_igs2 ( Grd_ip1,Grd_ip2, xpos,ypos,ni,nj, &
                          Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                          1,ni,1,1,nj,1)
-         err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, ni, 1, 1, &
+         err= fstecr ( xpos,xpos, npack, unf2, 0, 0, 0, ni, 1, 1, &
                        Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-         err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, nj, 1, &
+         err= fstecr ( ypos,ypos, npack, unf2, 0, 0, 0, 1, nj, 1, &
                        Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-         err= fstfrm(uout)
-         err= fclos (uout)
+         allocate (mask(G_ni, G_nj))
+         allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
+         allocate (wrk2(l_minx:l_maxx,l_miny:l_maxy))
+         wrk2=1. ; wrk1=0.
+         call nest_blend (wrk2,wrk1,l_minx,l_maxx,l_miny,l_maxy,'M',level=G_nk+1)
+         mask(1:G_ni,1:G_nj) = wrk2(1:G_ni,1:G_nj)
+
+         err= fstecr ( mask,mask, npack, unf1, 0, 0, 0, G_ni, G_nj, 1, &
+                       0,0,0,'X','MSKC',etk_ext,'Z'    , &
+                       ip1,ip2,Grd_ip3,0, 5, .true. )
+         deallocate (mask,wrk1,wrk2)
+
+         err= fstfrm(unf1)
+         err= fclos (unf1)
+         err= fstfrm(unf2)
+         err= fclos (unf2)
         
-         uout=0
-         if (fnom(uout,trim(outfile)//'_free','RND',0).ge.0) then
-            err= fstouv (uout, 'RND')
+         unf1=0
+         if (fnom(unf1,trim(outfile)//'_free','RND',0).ge.0) then
+            err= fstouv (unf1, 'RND')
          else
             print *,'problem opening', trim(outfile//'_core')
             stop
          endif
 
          i0= 1      + Grd_extension + Lam_blend_H
-         in= Grd_ni - Grd_extension - Lam_blend_H
+         in= G_ni - Grd_extension - Lam_blend_H
          j0= 1      + Grd_extension + Lam_blend_H
-         jn= Grd_nj - Grd_extension - Lam_blend_H
+         jn= G_nj - Grd_extension - Lam_blend_H
          ni = in-i0+1
          nj = jn-j0+1
 
@@ -248,24 +225,21 @@
                          xpos,ypos,ni,nj, &
                          Hgc_ig1ro,Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                          1,ni,1,1,nj,1)
-         err= fstecr ( xpos,xpos, npack, uout, 0, 0, 0, ni, 1, 1, &
+         err= fstecr ( xpos,xpos, npack, unf1, 0, 0, 0, ni, 1, 1, &
                        Grd_ip1,Grd_ip2,Grd_ip3,'X','>>',etk_ext,Hgc_gxtyp_s, &
                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
-         err= fstecr ( ypos,ypos, npack, uout, 0, 0, 0, 1, nj, 1, &
+         err= fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, nj, 1, &
                        Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
-         err= fstfrm(uout)
-         err= fclos (uout)         
-      endif
-
+         err= fstfrm(unf1)
+         err= fclos (unf1)         
       endif
 
       deallocate (x_8, y_8, xpos, ypos)
 
       if ((Grd_yinyang_L) .and. (trim(Grd_yinyang_S).eq.'YIN')) then
          outfile       = 'tape2'
-         gfile         = 'gfilemap2.txt'
          Grd_yinyang_S = 'YAN'
          goto 88
       endif

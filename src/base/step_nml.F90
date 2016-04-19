@@ -40,6 +40,7 @@
 
       integer nrec,unf,err
       real :: sec
+      real*8 nesdt,nsteps
 !
 !-------------------------------------------------------------------
 !
@@ -99,7 +100,10 @@
 
       err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
-      err= min( timestr2step (Step_nesdt  , Fcst_nesdt_S, Step_dt), err)
+      nesdt= 1.d0
+      err= min( timestr2step (nsteps, Fcst_nesdt_S, nesdt), err)
+      Step_nesdt= dble(nsteps)
+
       Step_total= Step_total - Step_initial
 
       if ( Fcst_rstrt_S  == '' ) then
@@ -151,8 +155,6 @@
          if (Lun_out.gt.0) write(Lun_out,*)  &
                     ' Step_nesdt must be specified in namelist &step'
          goto 9999
-      else
-         Step_nesdt= Step_nesdt * Step_dt
       endif
 
       step_nml = 1

@@ -15,18 +15,19 @@
 
 !*s/r spn_calfiltre - compute a filter for spectral nudging
 
-      subroutine spn_calfiltre ( nis, njs )
+      subroutine spn_calfiltre ( F_nis, F_njs )
       use spn_work_mod
       implicit none
 #include <arch_specific.hf>
 
-      integer nis,njs
+      integer F_nis,F_njs
 !
 !author
 !     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015
 !
 !revision
 ! v4_80 - Qian, Dugas, Hussain            - initial version
+! v4_80 - Baek - clarification
 
 #include "lun.cdk"
 #include "grd.cdk"
@@ -35,10 +36,10 @@
 #include "lam.cdk"
 #include "spn.cdk"
 
-      integer i,j,ii
+      integer i,j
       integer ni_trunc, ni_truncx, nj_trunc
-      real(8) spreadd, nix, njx, nkx, nk_cut
-      real(8) WXL, WXS, DX, DY
+      real*8 nix, njx, nkx, nk_cut
+      real*8 WXL, WXS, DX, DY
 !
 !----------------------------------------------------------------------
 !
@@ -50,22 +51,26 @@
       if (Lun_out > 0) write(Lun_out,1000) WXL
       if (Lun_out > 0) write(Lun_out,1001) WXS
 
-      ni_trunc = int(DX*nis/WXL)
-      nj_trunc = int(DY*njs/WXL)
-      ni_truncx= int(DX*nis/WXS)
+      ni_trunc = int(DX*F_nis/WXL)
+      nj_trunc = int(DY*F_njs/WXL)
+      ni_truncx= int(DX*F_nis/WXS)
 
-      spreadd=float(ni_truncx)/float(ni_trunc) - 1.0_8
+      nk_cut = float(ni_truncx)/float(ni_trunc)
+
+      ! BAEK debug
+      if (Lun_out > 0) write(Lun_out,*) "ni_trunc: ",ni_trunc
+      if (Lun_out > 0) write(Lun_out,*) "ni_truncx: ",ni_truncx
+      if (Lun_out > 0) write(Lun_out,*) "nj_trunc: ",nj_trunc
+      if (Lun_out > 0) write(Lun_out,*) "nk_cut: ",nk_cut
 
       fxy = 0.
 
-      do j=0,njs-1
-         do i=0,nis-1
-            nix=dble(i)/dble(ni_trunc)
-            njx=dble(j)/dble(nj_trunc)
+      do j=0,F_njs-1
+         do i=0,F_nis-1
+            nix = dble(i)/dble(ni_trunc)
+            njx = dble(j)/dble(nj_trunc)
 
-            nkx=sqrt(nix*nix + njx*njx)
-
-            nk_cut=1.0+spreadd
+            nkx = sqrt(nix*nix + njx*njx)
 
             if ( nkx > nk_cut ) then
 

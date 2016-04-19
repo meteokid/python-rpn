@@ -21,6 +21,7 @@
 !
 !author
 !           Abdessamad Qaddouri/ V.lee - September 2011
+!  PLEASE consult Abdessamad or Vivian before modifying this routine.
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
@@ -29,7 +30,7 @@
 #include "yyg_bln.cdk"
 
       integer err,Ndim,i,j,k,imx,imy,kk,ii,jj,ki,ksend,krecv
-      integer kkproc, minx,maxx,miny,maxy
+      integer kkproc
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  t,p,s(2,2),h1,h2
@@ -46,6 +47,10 @@
          yy_8(i,j)=G_yg_8(j)
       enddo
       enddo
+
+!Delta xg, yg is not identical between xg(i) and xg(i+1)
+!h1, h2 used in this routine is ok as it is a close estimate for
+!creating YY pattern exchange and it works on the global tile
       h1=G_xg_8(2)-G_xg_8(1)
       h2=G_yg_8(2)-G_yg_8(1)
 !
@@ -63,19 +68,14 @@
 ! processor before allocating the vectors
 !
 
-      minx = lbound(G_xg_8,1)
-      maxx = ubound(G_xg_8,1)
-      miny = lbound(G_yg_8,1)
-      maxy = ubound(G_yg_8,1)
       do j=1+glb_pil_s, G_nj-glb_pil_n
       do i=1+glb_pil_w, G_ni-glb_pil_e
          x_d=xx_8(i,j)-acos(-1.D0)
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise1(imx,imy,x_a,y_a, &
-                          G_xg_8,G_yg_8,h1,h2,1,1, &
-                          minx,maxx,miny,maxy)
+         call localise(imx,imy,x_a,y_a, &
+                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
 
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &
@@ -226,9 +226,8 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise1(imx,imy,x_a,y_a, &
-                          G_xg_8,G_yg_8,h1,h2,1,1, &
-                          minx,maxx,miny,maxy)
+         call localise(imx,imy,x_a,y_a, &
+                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
 
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &

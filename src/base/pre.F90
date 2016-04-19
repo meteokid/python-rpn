@@ -54,6 +54,7 @@
 ! v4_05 - Girard C.         - Open top
 ! v4_40 - Qaddouri/Lee      - expand range of calculation for Yin-Yang only
 ! v4.70 - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
+! v4.80 - Lee V.            - correction in range for xch halo on Ru, Rv
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -181,9 +182,9 @@
 
       else
 
-         call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
+         call rpn_comm_xch_halo( F_ru, l_minx,l_maxx,l_miny,l_maxy, l_niu, l_nj,G_nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_nj,G_nk, &
+         call rpn_comm_xch_halo( F_rv, l_minx,l_maxx,l_miny,l_maxy, l_ni, l_njv,G_nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
       endif

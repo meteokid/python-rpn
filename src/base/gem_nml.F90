@@ -170,7 +170,7 @@
 
       Zdot_divHLM_L  = .false.
 
-      Vtopo_start = -1
+      Vtopo_start = -99999
       Vtopo_ndt   = 0
 
       Tr3d_list_S   = ''
@@ -190,6 +190,7 @@
       Eq_sponge=0.
 
       Inp_blacklist_S = ''
+      Inp_vertintype_tracers_S='cubic'
       Inp_npes  = 1
       Out3_npes = 1
 

@@ -65,6 +65,7 @@
       istat = gmm_get(gmmk_nest_zd_deb_s,nest_zd_deb)
       istat = gmm_get(gmmk_nest_xd_deb_s,nest_xd_deb)
       istat = gmm_get(gmmk_nest_qd_deb_s,nest_qd_deb)
+      istat = gmm_get(gmmk_nest_fullme_deb_s,nest_fullme_deb)
 
       istat = gmm_get(gmmk_nest_u_s ,nest_u )
       istat = gmm_get(gmmk_nest_v_s ,nest_v )
@@ -75,6 +76,7 @@
       istat = gmm_get(gmmk_nest_zd_s,nest_zd)
       istat = gmm_get(gmmk_nest_xd_s,nest_xd)
       istat = gmm_get(gmmk_nest_qd_s,nest_qd)
+      istat = gmm_get(gmmk_nest_fullme_s,nest_fullme)
 
       istat = gmm_get(gmmk_nest_u_fin_s ,nest_u_fin )
       istat = gmm_get(gmmk_nest_v_fin_s ,nest_v_fin )
@@ -85,8 +87,9 @@
       istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
       istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
       istat = gmm_get(gmmk_nest_qd_fin_s,nest_qd_fin)
+      istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
 
-      dayfrac = dble(Step_nesdt)*rsid
+      dayfrac = Step_nesdt*rsid
 
       if (tx .lt. Lam_tdeb) then
 
@@ -112,7 +115,6 @@
 
       dtf = 1.0d0
       if (tx.gt.Lam_tfin) then
-
          dtf = (tx-Lam_tfin) * sid / Cstv_dt_8
          Lam_previous_S = Lam_current_S
          Lam_tdeb       = Lam_tfin
@@ -131,6 +133,7 @@
          nest_zd_deb = nest_zd_fin
          nest_xd_deb = nest_xd_fin
          nest_qd_deb = nest_qd_fin
+         nest_fullme_deb = nest_fullme_fin
          do n=1,Tr3d_ntr
             tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'
       	    istat = gmm_get(tr_name,tr_fin)
@@ -161,6 +164,7 @@
       nest_zd(1:l_ni,1:l_nj,1:G_nk) = a*nest_zd_deb(1:l_ni,1:l_nj,1:G_nk) + b*nest_zd_fin(1:l_ni,1:l_nj,1:G_nk)
       nest_xd(1:l_ni,1:l_nj,1:G_nk) = a*nest_xd_deb(1:l_ni,1:l_nj,1:G_nk) + b*nest_xd_fin(1:l_ni,1:l_nj,1:G_nk)
       nest_qd(1:l_ni,1:l_nj,1:G_nk) = a*nest_qd_deb(1:l_ni,1:l_nj,1:G_nk) + b*nest_qd_fin(1:l_ni,1:l_nj,1:G_nk)
+      nest_fullme(1:l_ni,1:l_nj       ) = a*nest_fullme_deb(1:l_ni,1:l_nj       ) + b*nest_fullme_fin (1:l_ni,1:l_nj      )
 
       do n=1,Tr3d_ntr
          tr_name = 'NEST/'//trim(Tr3d_name_S(n))//':F'

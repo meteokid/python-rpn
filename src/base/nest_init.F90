@@ -13,19 +13,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r nest_init -- Initializes nesting data for LAM configuration
-!
+
       subroutine nest_init ()
       implicit none
 #include <arch_specific.hf>
 
 !author   M. Desgagne - April 2002
-!
-!revision
-! v3_00 - Desgagne M.  - initial version
-! v3_03 - Tanguay M.   - Adjoint Lam configuration
-! v3_30 - Tanguay M.   - adapt to bcs
-! v4_05 - Plante A.    - Top nesting
-! v4_05 - Lepine M.    - VMM replacement with GMM
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -38,6 +31,7 @@
 #include "schm.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
+#include "p_geof.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum,istat
@@ -56,9 +50,10 @@
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       istat = gmm_get(gmmk_xdt1_s,xdt1)
       istat = gmm_get(gmmk_qdt1_s,qdt1)
-!
+      istat = gmm_get(gmmk_fis0_s,fis0)
+
 !     copying values from UT1 to nest_u variables
-!
+
       if (Lam_ctebcs_L) then
 !     LAM with same (constant) pilot conditions
          istat = gmm_get(gmmk_nest_u_s ,nest_u )
@@ -70,6 +65,7 @@
          istat = gmm_get(gmmk_nest_zd_s,nest_zd)
          istat = gmm_get(gmmk_nest_xd_s,nest_xd)
          istat = gmm_get(gmmk_nest_qd_s,nest_qd)
+         istat = gmm_get(gmmk_nest_fullme_s,nest_fullme)
          nest_u  = ut1
          nest_v  = vt1
          nest_t  = tt1
@@ -79,6 +75,7 @@
          nest_zd = zdt1
          nest_xd = xdt1
          nest_qd = qdt1
+         nest_fullme = fis0
 
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
@@ -99,6 +96,7 @@
          istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
          istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
          istat = gmm_get(gmmk_nest_qd_fin_s,nest_qd_fin)
+         istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
          nest_u_fin  = ut1
          nest_v_fin  = vt1
          nest_t_fin  = tt1
@@ -108,6 +106,7 @@
          nest_zd_fin = zdt1
          nest_xd_fin = xdt1
          nest_qd_fin = qdt1
+         nest_fullme_fin = fis0
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
             istat = gmm_get(tr_name,tr1)
@@ -117,7 +116,7 @@
          end do
 
       endif
-!
+
       Lam_previous_S= ''
       Lam_current_S = Step_runstrt_S
       call prsdate   (yy,mo,dd,hh,mm,ss,dum,Lam_current_S)

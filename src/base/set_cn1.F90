@@ -36,7 +36,6 @@
 #include "init.cdk"
 #include "lun.cdk"
 #include "p_geof.cdk"
-#include "vtopo.cdk"
 
       integer :: istat
 !
@@ -57,7 +56,6 @@
          call yyg_initscalbc()
          call yyg_initvecbc1()
          call yyg_initvecbc2()
-         !call yyg_rhs_initscalbc()
          call yyg_initblenbc2()
          call yyg_initblenu()
          call yyg_initblenv()
@@ -80,10 +78,8 @@
       nullify (fis0, topo_low, topo_high)
       istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
 
-      if ( Vtopo_start .ge. 0 ) then
-         istat = gmm_create(gmmk_topo_low_s,topo_low,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-         istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      endif
+      istat = gmm_create(gmmk_topo_low_s ,topo_low ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
 
  2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R SET_CN1', &
               /,'====================================================')

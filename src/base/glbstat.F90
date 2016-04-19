@@ -52,15 +52,19 @@
       if (Lctl_rxstat_S(1:3)=='GLB') then
 
          nk = Maxk-Mink+1
-         if (Ptopo_myproc.eq.0) allocate (wk1(G_ni*G_nj,Mink:Maxk))
+         if (Ptopo_myproc.eq.0) then
+            allocate (wk1(G_ni*G_nj,Mink:Maxk))
+         else
+            allocate (wk1(1,1))
+         endif
          call glbcolc (wk1,G_ni,G_nj,F_field,Minx,Maxx,Miny,Maxy,nk)
 
          if (Ptopo_myproc.eq.0)  then
             call statfld3 (wk1 ,F_var_S, Lctl_step, F_from_S, &
                            1,G_ni, 1,G_nj, Mink,Maxk, &
                            F_i0,F_j0,F_k0, F_in,F_jn,F_kn,rx)
-            deallocate (wk1)
          endif
+         deallocate (wk1)
 
       else
 

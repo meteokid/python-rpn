@@ -12,18 +12,20 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r yyg_scaluv - to interpolate and exchange scalar winds for Yin-Yan 
+!**s/r yyg_scaluv - to interpolate and exchange scalar winds for Yin-Yang
 !
-
-
-      Subroutine yyg_scaluv(tabu_dst,tabu_src,tabv_dst,tabv_src,Minx,Maxx,Miny,Maxy,NK)
+      Subroutine yyg_scaluv(tabu_src,tabv_src,Minx,Maxx,Miny,Maxy,NK)
       implicit none
 #include <arch_specific.hf>
 !
 !author
 !           Abdessamad Qaddouri/V.Lee - October 2009
 !
-!     include 'mpif.h'
+!  PLEASE consult Abdessamad or Vivian before modifying this routine.
+!
+!revision
+!  v4.8  V.Lee - Added NK to arguments for call to int_cubuv_lag
+!
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "geomn.cdk"
@@ -33,9 +35,7 @@
 
       integer Minx,Maxx,Miny,Maxy,Ni,Nj,NK,numproc
       real  tabu_src (Minx:Maxx,Miny:Maxy,Nk)
-      real  tabu_dst (Minx:Maxx,Miny:Maxy,Nk)
       real  tabv_src (Minx:Maxx,Miny:Maxy,Nk)
-      real  tabv_dst (Minx:Maxx,Miny:Maxy,Nk)
       real*8  tabu_src_8(Minx:Maxx,Miny:Maxy,NK)
       real*8  tabv_src_8(Minx:Maxx,Miny:Maxy,NK)
       integer ierr,i,j,k,kk,kk_proc,m,mm,adr
@@ -60,9 +60,13 @@
          recvlen=max(recvlen,Pil_recv_len(kk))
       enddo
       
+!     Will not assume rpn_comm_xch_halo is already done on tab_src
+      call rpn_comm_xch_halo(tabu_src,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      call rpn_comm_xch_halo(tabv_src,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk, &
+                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (sendlen.gt.0) then
           allocate(send_pil(sendlen*NK*2,Pil_sendmaxproc))
-!         assume rpn_comm_xch_halo already done on tab_src
           tabu_src_8(:,:,:)=dble(tabu_src(:,:,:))
           tabv_src_8(:,:,:)=dble(tabv_src(:,:,:))
       endif
@@ -84,14 +88,14 @@
          if (Pil_send_len(kk).gt.0) then
 !            prepare something to send
 
-                adr=Pil_send_adr(kk)+1
+             adr=Pil_send_adr(kk)+1
 
-                   call int_cubuv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
-                        Pil_send_imx(adr),Pil_send_imy(adr),          &
-                        Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy, &
-                        Pil_send_xxr(adr),Pil_send_yyr(adr),Pil_send_len(kk),&
-                        Pil_send_s1(adr),Pil_send_s2(adr),            &
-                        Pil_send_s3(adr),Pil_send_s4(adr)            )
+             call int_cubuv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8,  &
+                  Pil_send_imx(adr),Pil_send_imy(adr),                 &
+                  Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,NK,  &
+                  Pil_send_xxr(adr),Pil_send_yyr(adr),Pil_send_len(kk),&
+                  Pil_send_s1(adr),Pil_send_s2(adr),                   &
+                  Pil_send_s3(adr),Pil_send_s4(adr)            )
 
              ireq = ireq+1
 !            print *,'scaluv: sending',Pil_send_len(kk)*NK*2,' to ',kk_proc
@@ -143,9 +147,9 @@
              adr=Pil_recv_adr(kk)+m
              do k=1,NK
                 mm=mm+1
-                tabu_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+                tabu_src(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
                 mm=mm+1
-                tabv_dst(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
+                tabv_src(Pil_recv_i(adr),Pil_recv_j(adr),k)=recv_pil(mm,KK)
              enddo
              enddo
  300  continue

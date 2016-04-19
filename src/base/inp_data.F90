@@ -51,7 +51,7 @@
 #include "step.cdk"
 #include "p_geof.cdk"
 #include "vtopo.cdk"
-#include "ptopo.cdk"
+#include "grd.cdk"
 #include <rmnlib_basics.hf>
 
 Interface
@@ -63,10 +63,26 @@ Interface
       integer                           ,intent(OUT) :: F_nka
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
-      End function inp_read
+      end function inp_read
+
+      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1,&
+                                 F_vgd_src, F_vgd_dst         ,&
+                                 F_sfc_src, F_sfc_dst, F_dest ,&
+                                 Minx,Maxx,Miny,Maxy, F_nk    ,&
+                                 F_inttype_S )
+      use vGrid_Descriptors
+      implicit none
+      character(len=*)          , intent(IN) :: F_var_S,F_hgrid_S
+      character(len=*), optional, intent(IN) :: F_inttype_S
+      integer                , intent(IN)  :: Minx,Maxx,Miny,Maxy, F_nk
+      integer                , intent(IN)  :: F_ver_ip1(F_nk)
+      type(vgrid_descriptor) , intent(IN)  :: F_vgd_src, F_vgd_dst
+      real, dimension(Minx:Maxx,Miny:Maxy     ), target, &
+                                   intent(IN) :: F_sfc_src, F_sfc_dst
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_dest
+      end function inp_get
 End Interface
 
-      integer, external :: inp_get
       character(len=4) vname
       logical initial_data, blend_oro, urt1_l, ut1_l
       integer fst_handle, i,j,k,n, nia,nja,nka, istat, err, kind
@@ -89,41 +105,31 @@ End Interface
 
       if (.not.Lun_debug_L) istat= fstopc ('MSGLVL','SYSTEM',.false.)
 
-      initial_data= trim(F_datev).eq.trim(Step_runstrt_S)
+      initial_data= ( trim(F_datev) .eq. trim(Step_runstrt_S) )
 
       call inp_open ( F_datev, vgd_src )
 
-      nullify (meqr,ip1_list)
+      nullify (meqr, ip1_list)
       err= inp_read ( 'OROGRAPHY', 'Q', meqr, ip1_list, nka )
 
-      if ( initial_data .and. (Step_kount.eq.0) ) then
-         call get_topo2 ( F_topo,l_minx,l_maxx,l_miny,l_maxy,&
-                          1,l_ni,1,l_nj )
-         blend_oro= Lam_blendoro_L
-         if ( .not. associated(meqr) ) then
-            blend_oro= .false. ; Vtopo_L= .false.
+      if ( initial_data ) then
+         if ( associated(meqr) ) then
+            istat= gmm_get(gmmk_topo_low_s , topo_low )
+            topo_low(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
+         else
+            Vtopo_L= .false.
          endif
-         if (G_lam .and. blend_oro) then
-            topo_temp(1:l_ni,1:l_nj) = meqr(1:l_ni,1:l_nj,1)
-            call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-                              l_miny,l_maxy, 'M', level=G_nk+1 )
-         endif
-         call rpn_comm_xch_halo ( F_topo, l_minx,l_maxx,l_miny,l_maxy,&
-                l_ni,l_nj,1, G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
-      if ( .not. associated(meqr) ) Vtopo_L= .false.
-      if (Vtopo_L) then
-         if ( initial_data .and. (Step_kount.eq.0) ) then
-            istat = gmm_get(gmmk_topo_low_s , topo_low )
-            istat = gmm_get(gmmk_topo_high_s, topo_high)
-            topo_low (1:l_ni,1:l_nj) = meqr  (1:l_ni,1:l_nj,1)
-            topo_high(1:l_ni,1:l_nj) = F_topo(1:l_ni,1:l_nj)
-         endif
-         call difdatsd (diffd,Step_runstrt_S,F_datev)
-         step_current = diffd*86400.d0/dble(step_dt)
-         call var_topo2 ( F_topo, step_current, &
-                          l_minx,l_maxx,l_miny,l_maxy )
+      call difdatsd (diffd,Step_runstrt_S,F_datev)
+      step_current = diffd*86400.d0 / Step_dt
+      call var_topo2 ( F_topo, step_current, &
+                       l_minx,l_maxx,l_miny,l_maxy )
+
+      if ( associated(meqr) .and. G_lam .and. .not. Grd_yinyang_L ) then
+         topo_temp(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
+         call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
+                           l_miny,l_maxy, 'M', level=G_nk+1 )
       endif
 
       nullify (ssqr,ssur,ssvr,ttr,hur)
@@ -177,7 +183,7 @@ End Interface
          pres  => ssqr(1:l_ni,1:l_nj,1)
          ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
          istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
-         if (associated(meqr)) then
+         if ( associated(meqr) ) then
             srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
             call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, ttr , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
@@ -233,7 +239,7 @@ End Interface
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
       call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka, &
                       l_minx,l_maxx,l_miny,l_maxy    , &
-                      1,l_ni, 1,l_nj )
+                      1,l_ni, 1,l_nj, inttype=Inp_vertintype_tracers_S )
       deallocate (ttr,hur,srclev,dstlev) ; nullify (ttr,hur)
       if (associated(ip1_list)) deallocate (ip1_list)
 
@@ -246,7 +252,8 @@ End Interface
          if (trim(vname) /= 'HU') then
             err= inp_get ( 'TR/'//trim(vname),'Q', Ver_ip1%t,&
                            vgd_src, vgd_dst, ssqr, ssq0, trp,&
-                           l_minx,l_maxx,l_miny,l_maxy,G_nk )
+                           l_minx,l_maxx,l_miny,l_maxy,G_nk ,&
+                           F_inttype_S=Inp_vertintype_tracers_S )
             if (err == 0) then
                NTR_Tr3d_ntr= NTR_Tr3d_ntr + 1
                NTR_Tr3d_name_S(NTR_Tr3d_ntr) = trim(vname)

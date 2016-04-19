@@ -79,7 +79,9 @@
       namelist /gem_cfgs/ Init_dfpl_S
       namelist /gem_cfgs/ Init_dftr_L
 
-      namelist /gem_cfgs/ Inp_npes,Inp_blacklist_S
+      namelist /gem_cfgs/ Inp_npes
+      namelist /gem_cfgs/ Inp_blacklist_S
+      namelist /gem_cfgs/ Inp_vertintype_tracers_S
 !Lam
       namelist /gem_cfgs/ Lam_gbpil_T
       namelist /gem_cfgs/ Lam_blend_H
@@ -224,6 +226,8 @@
       namelist /gem_cfgs_p/ Init_dftr_L
 
       namelist /gem_cfgs_p/ Inp_npes
+      namelist /gem_cfgs_p/ Inp_blacklist_S
+      namelist /gem_cfgs_p/ Inp_vertintype_tracers_S
 !Lam
       namelist /gem_cfgs_p/ Lam_gbpil_T
       namelist /gem_cfgs_p/ Lam_blend_H

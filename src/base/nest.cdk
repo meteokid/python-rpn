@@ -35,6 +35,7 @@
       real, pointer, dimension (:,:,:) :: nest_zd_deb => null()
       real, pointer, dimension (:,:,:) :: nest_xd_deb => null()
       real, pointer, dimension (:,:,:) :: nest_qd_deb => null()
+      real, pointer, dimension (:,:  ) :: nest_fullme_deb => null()
 
       real, pointer, dimension (:,:,:) :: nest_u      => null()
       real, pointer, dimension (:,:,:) :: nest_v      => null()
@@ -45,6 +46,7 @@
       real, pointer, dimension (:,:,:) :: nest_zd     => null()
       real, pointer, dimension (:,:,:) :: nest_xd     => null()
       real, pointer, dimension (:,:,:) :: nest_qd     => null()
+      real, pointer, dimension (:,:  ) :: nest_fullme     => null()
 
       real, pointer, dimension (:,:,:) :: nest_u_fin  => null()
       real, pointer, dimension (:,:,:) :: nest_v_fin  => null()
@@ -55,6 +57,7 @@
       real, pointer, dimension (:,:,:) :: nest_zd_fin => null()
       real, pointer, dimension (:,:,:) :: nest_xd_fin => null()
       real, pointer, dimension (:,:,:) :: nest_qd_fin => null()
+      real, pointer, dimension (:,:  ) :: nest_fullme_fin => null()
 
       real, pointer, dimension (:,:,:) :: nest_weightm=> null()
       real, pointer, dimension (:,:,:) :: nest_weightq=> null()
@@ -69,14 +72,17 @@
       character(len=GMM_MAXNAMELENGTH) :: gmmk_nest_u_deb_s , gmmk_nest_v_deb_s , gmmk_nest_t_deb_s ,&
                                           gmmk_nest_s_deb_s , gmmk_nest_w_deb_s , gmmk_nest_q_deb_s ,&
                                           gmmk_nest_zd_deb_s, gmmk_nest_xd_deb_s, gmmk_nest_qd_deb_s,&
+                                          gmmk_nest_fullme_deb_s, &
 
                                           gmmk_nest_u_s , gmmk_nest_v_s , gmmk_nest_t_s ,&
                                           gmmk_nest_s_s , gmmk_nest_w_s , gmmk_nest_q_s ,&
                                           gmmk_nest_zd_s, gmmk_nest_xd_s, gmmk_nest_qd_s,&
+                                          gmmk_nest_fullme_s, &
 
                                           gmmk_nest_u_fin_s , gmmk_nest_v_fin_s , gmmk_nest_t_fin_s ,&
                                           gmmk_nest_s_fin_s , gmmk_nest_w_fin_s , gmmk_nest_q_fin_s ,&
                                           gmmk_nest_zd_fin_s, gmmk_nest_xd_fin_s, gmmk_nest_qd_fin_s,&
+                                          gmmk_nest_fullme_fin_s, &
 
                                           gmmk_nest_weightm_s, gmmk_nest_weightu_s, &
                                           gmmk_nest_weightv_s, gmmk_nest_weightq_s
@@ -84,15 +90,17 @@
       common /nest_n_gmm/ gmmk_nest_u_deb_s , gmmk_nest_v_deb_s , gmmk_nest_t_deb_s ,&
                           gmmk_nest_s_deb_s , gmmk_nest_w_deb_s , gmmk_nest_q_deb_s ,&
                           gmmk_nest_zd_deb_s, gmmk_nest_xd_deb_s, gmmk_nest_qd_deb_s,&
-                          
+                          gmmk_nest_fullme_deb_s, &
                           
                           gmmk_nest_u_s , gmmk_nest_v_s , gmmk_nest_t_s ,&
                           gmmk_nest_s_s , gmmk_nest_w_s , gmmk_nest_q_s ,&
                           gmmk_nest_zd_s, gmmk_nest_xd_s, gmmk_nest_qd_s,& 
+                          gmmk_nest_fullme_s, &
 
                           gmmk_nest_u_fin_s , gmmk_nest_v_fin_s , gmmk_nest_t_fin_s ,&
                           gmmk_nest_s_fin_s , gmmk_nest_w_fin_s , gmmk_nest_q_fin_s ,&
                           gmmk_nest_zd_fin_s, gmmk_nest_xd_fin_s, gmmk_nest_qd_fin_s,&
+                          gmmk_nest_fullme_fin_s, &
 
                           gmmk_nest_weightm_s, gmmk_nest_weightu_s, &
                           gmmk_nest_weightv_s, gmmk_nest_weightq_s

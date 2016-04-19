@@ -32,22 +32,34 @@
       integer i,j, gmmstat
       real*8, parameter :: one = 1.0d0
       real*8, parameter :: two = 2.0d0
-      real*8  lt, pio2, f, a, b
+      real*8  lt, pio2, f, b
 !     __________________________________________________________________
 !
       gmmstat = gmm_get(gmmk_topo_low_s , topo_low )
       gmmstat = gmm_get(gmmk_topo_high_s, topo_high)
 
-      lt   = Vtopo_ndt
-      pio2 = Dcst_pi_8 / two
+      if ( .not. Vtopo_L ) then
+         F_topo (1:l_ni,1:l_nj) =  topo_high(1:l_ni,1:l_nj)
+         return
+      endif
 
-      f = max(0.,min(F_step-Vtopo_start,real(Vtopo_ndt)))
-      b = f / lt
+      lt  = Vtopo_ndt
+      pio2= Dcst_pi_8 / two
+
+      f= max(0.,min(F_step-Vtopo_start,real(Vtopo_ndt)))
+
+      if ( Vtopo_ndt <= 0 ) then
+         b= 1
+         if (F_step < Vtopo_start) b= 0
+      else
+         b = f / lt
+      endif
+
       b = (cos(pio2 * (one-b) ))**2
-      a = one - b
+
       do j= 1, l_nj 
       do i= 1, l_ni
-         F_topo (i,j) = a*topo_low(i,j) + b*topo_high(i,j)
+         F_topo (i,j) = (one - b)*topo_low(i,j) + b*topo_high(i,j)
       end do
       end do
 !     __________________________________________________________________

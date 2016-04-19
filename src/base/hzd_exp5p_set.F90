@@ -34,7 +34,7 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 
-      real*8 coef_8,nutop_8,c_8,deg2rad_8
+      real*8 coef_8,coef_theta_8,coef_tr_8,nutop_8,c_8,deg2rad_8
 !
 !     ---------------------------------------------------------------
 !
@@ -42,10 +42,9 @@
       c_8= min(Grd_dx,Grd_dy)
       c_8= c_8 * deg2rad_8
 
-      if( Lun_out.gt.0) write(Lun_out,1000)
-
+      Hzd_Niter= 0 ; Hzd_Niter_theta= 0 ; Hzd_Niter_tr= 0
+      coef_8= 0. ; coef_theta_8= 0. ; coef_tr_8= 0.
       !for U,V,W,Zd
-      Hzd_Niter = 0
       if ( (Hzd_lnR.gt.0.) .and. (Hzd_pwr.gt.0) ) then
          nutop_8 = 1./4. * Hzd_lnR**(2./Hzd_pwr)
          Hzd_Niter= max(int(8.d0*nutop_8+0.9999999),1)
@@ -53,37 +52,35 @@
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8(G_nk))
          Hzd_coef_8(1:G_nk) = coef_8/(Dcst_rayt_8**2)*Cstv_dt_8
-         if( Lun_out.gt.0) write(Lun_out,1010) &
-           coef_8 ,Hzd_pwr/2,'U,V,W,ZD ',Hzd_Niter
       endif
 
       !for Theta
-      Hzd_Niter_theta = 0
       if ( (Hzd_lnR_theta.gt.0) .and. (Hzd_pwr_theta.gt.0) )  then
          nutop_8 = 1./4. * Hzd_lnR_theta**(2./Hzd_pwr_theta)
          Hzd_Niter_theta = max(int(8.d0*nutop_8+0.9999999),1)
-         coef_8=nutop_8/max(1.,float(hzd_niter_theta))* &
+         coef_theta_8=nutop_8/max(1.,float(hzd_niter_theta))* &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_theta(G_nk))
-         Hzd_coef_8_theta(1:G_nk) = coef_8/(Dcst_rayt_8**2)*Cstv_dt_8
-         if( Lun_out.gt.0) write(Lun_out,1010) &
-             coef_8,Hzd_pwr_theta/2,'Theta ',Hzd_Niter_theta
+         Hzd_coef_8_theta(1:G_nk) = coef_theta_8/(Dcst_rayt_8**2)*Cstv_dt_8
       endif
 
-
       !for Tracers
-      Hzd_Niter_tr = 0
       if ( (Hzd_lnR_tr.gt.0) .and. (Hzd_pwr_tr.gt.0) )  then
          nutop_8 = 1./4. * Hzd_lnR_tr**(2./Hzd_pwr_tr)
          Hzd_Niter_tr = max(int(8.d0*nutop_8+0.9999999),1)
-         coef_8=nutop_8/max(1.,float(hzd_niter_tr))* &
+         coef_tr_8=nutop_8/max(1.,float(hzd_niter_tr))* &
                                   ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_tr(G_nk))
-         Hzd_coef_8_tr(1:G_nk) = coef_8/(Dcst_rayt_8**2)*Cstv_dt_8
-         if( Lun_out.gt.0) write(Lun_out,1010) &
-             coef_8,Hzd_pwr_tr/2,'Tracer',Hzd_Niter_tr
+         Hzd_coef_8_tr(1:G_nk) = coef_tr_8/(Dcst_rayt_8**2)*Cstv_dt_8
       endif
 
+!      if ( (Lun_out.gt.0) .and. (Hzd_type_S=='HO_EXP5P'))  then
+      if (Lun_out.gt.0) then
+         write(Lun_out,1000)
+         write(Lun_out,1010) coef_8      ,Hzd_pwr/2      ,'U,V,W,ZD ',Hzd_Niter
+         write(Lun_out,1010) coef_theta_8,Hzd_pwr_theta/2,'Theta '   ,Hzd_Niter_theta
+         write(Lun_out,1010) coef_tr_8   ,Hzd_pwr_tr/2   ,'Tracer'   ,Hzd_Niter_tr
+      endif
 
 1000 format (3X,'For the 5 points diffusion operator:')
 1005 format (3X,a,' lnR=',e18.7,' pwr=',i1,' nutop=', e18.7)

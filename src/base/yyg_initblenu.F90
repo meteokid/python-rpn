@@ -20,6 +20,10 @@
 !
 !author
 !     Abdessamad Qaddouri/V.Lee - October 2009
+!  PLEASE consult Abdessamad or Vivian before modifying this routine.
+!
+!revision
+!  v4.8  V.Lee - Correction for limiting range in point found on other grid
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
@@ -30,9 +34,8 @@
       integer err,Ndim,i,j,k,kk,ii,jj,ki,ksend,krecv
       integer imx1,imx2
       integer imy1,imy2
-      integer kkproc,adr, minx,maxx,miny,maxy
-      integer, dimension (:), pointer :: recv_len,recvw_len,recve_len,recvs_len,recvn_len
-      integer, dimension (:), pointer :: send_len,sendw_len,sende_len,sends_len,sendn_len
+      integer kkproc,adr
+      integer, dimension (:), pointer :: recv_len, send_len
       real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
       real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
@@ -55,6 +58,11 @@
          yy_8(i,j)=G_yg_8(j)
       enddo
       enddo
+
+!Delta xg, yg is not identical between xg(i) and xg(i+1)
+!h1, h2 used in this routine is ok as it is a close estimate for
+!creating YY pattern exchange and it works on the global tile
+
       h1=G_xg_8(2)-G_xg_8(1)
       h2=G_yg_8(2)-G_yg_8(1)
 !
@@ -71,12 +79,7 @@
 ! processor before allocating the vectors
 !
 !
-! WEST section
 !
-      minx = lbound(G_xg_8,1)
-      maxx = ubound(G_xg_8,1)
-      miny = lbound(G_yg_8,1)
-      maxy = ubound(G_yg_8,1)
       do j=1+glb_pil_s, G_nj-glb_pil_n
       do i=1+glb_pil_w, G_niu-glb_pil_e
 !        U vector
@@ -85,12 +88,10 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
 
-         call localise1(imx1,imy1,x_a,y_a, &
-                          xgu_8,G_yg_8,h1,h2,1,1, &
-                          lbound(xgu_8,1),ubound(xgu_8,1),miny,maxy)
-         call localise1(imx2,imy2,x_a,y_a, &
-                          G_xg_8,ygv_8,h1,h2,1,1, &
-                          minx,maxx,lbound(ygv_8,1),ubound(ygv_8,1))
+         call localise(imx1,imy1,x_a,y_a, &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
 
 ! check if this point can be found in the other grid
@@ -98,14 +99,14 @@
 !   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
 
          if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_niu-glb_pil_e .and. &
-             imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj-glb_pil_n  .and. &
-             imx2.gt.1+glb_pil_w .and. imx2.lt.G_niu-glb_pil_e .and. &
-             imy2.gt.1+glb_pil_s .and. imy2.lt.G_nj-glb_pil_n) then
+             imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj -glb_pil_n  .and. &
+             imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni -glb_pil_e .and. &
+             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n) then
 
              imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
-             imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-             imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
-             imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+             imy1 = min(max(imy1-1,glb_pil_s+1),G_nj -glb_pil_n-3)
+             imx2 = min(max(imx2-1,glb_pil_w+1),G_ni -glb_pil_e-3)
+             imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 
 !
 
@@ -206,13 +207,6 @@
 !    print *,'krecv=',krecv,'Bln_urecvmaxproc=',Bln_urecvmaxproc
 !    print *,'ksend=',ksend,'Bln_usendmaxproc=',Bln_usendmaxproc
 
-!     print *,'Summary of comm procs'
-!     do kk=1,Bln_urecvmaxproc
-!       print *,'From proc:',Bln_urecvproc(kk),'Bln_urecv_len',Bln_urecvw_len(kk),Bln_urecve_len(kk),Bln_urecvs_len(kk),Bln_urecvn_len(kk),'adr',Bln_urecvw_adr(kk),Bln_urecve_adr(kk),Bln_urecvs_adr(kk),Bln_urecvn_adr(kk)
-!     enddo
-!     do kk=1,Bln_usendmaxproc
-!       print *,'To proc:',Bln_usendproc(kk),'Bln_usend_len',Bln_usendw_len(kk),Bln_usende_len(kk),Bln_usends_len(kk),Bln_usendn_len(kk),'adr',Bln_usendw_adr(kk),Bln_usende_adr(kk),Bln_usends_adr(kk),Bln_usendn_adr(kk)
-!     enddo
 !     print *,'Bln_urecv_all=',Bln_urecv_all, 'Bln_usend_all=',Bln_usend_all
 
 !
@@ -250,7 +244,6 @@
 !
 ! SECOND PASS is to initialize the vectors with information for communication
 !
-! WEST section
 !
       do j=1+glb_pil_s, G_nj-glb_pil_n
       do i=1+glb_pil_w, G_niu-glb_pil_e
@@ -259,26 +252,24 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise1(imx1,imy1,x_a,y_a, &
-                          xgu_8,G_yg_8,h1,h2,1,1, &
-                          lbound(xgu_8,1),ubound(xgu_8,1),miny,maxy)
-         call localise1(imx2,imy2,x_a,y_a, &
-                          G_xg_8,ygv_8,h1,h2,1,1, &
-                          minx,maxx,lbound(ygv_8,1),ubound(ygv_8,1))
+         call localise(imx1,imy1,x_a,y_a, &
+                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise(imx2,imy2,x_a,y_a, &
+                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max
 !   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
 
          if (imx1.gt.1+glb_pil_w .and. imx1.lt.G_niu-glb_pil_e .and. &
-             imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj-glb_pil_n  .and. &
-             imx2.gt.1+glb_pil_w .and. imx2.lt.G_niu-glb_pil_e .and. &
-             imy2.gt.1+glb_pil_s .and. imy2.lt.G_nj-glb_pil_n) then
+             imy1.gt.1+glb_pil_s .and. imy1.lt.G_nj -glb_pil_n  .and. &
+             imx2.gt.1+glb_pil_w .and. imx2.lt.G_ni -glb_pil_e .and. &
+             imy2.gt.1+glb_pil_s .and. imy2.lt.G_njv-glb_pil_n) then
 
              imx1 = min(max(imx1-1,glb_pil_w+1),G_niu-glb_pil_e-3)
-             imy1 = min(max(imy1-1,glb_pil_s+1),G_nj-glb_pil_n-3)
-             imx2 = min(max(imx2-1,glb_pil_w+1),G_niu-glb_pil_e-3)
-             imy2 = min(max(imy2-1,glb_pil_s+1),G_nj-glb_pil_n-3)
+             imy1 = min(max(imy1-1,glb_pil_s+1),G_nj -glb_pil_n-3)
+             imx2 = min(max(imx2-1,glb_pil_w+1),G_ni -glb_pil_e-3)
+             imy2 = min(max(imy2-1,glb_pil_s+1),G_njv-glb_pil_n-3)
 
 !
 

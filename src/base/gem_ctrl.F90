@@ -42,16 +42,12 @@
 #include "lctl.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
-#include "vtopo.cdk"
 
       logical :: rstrt_L= .false.
 !
 !     ---------------------------------------------------------------
 !
       call gemtim4 ( Lun_out, 'GEM_CTRL: START', .false. )
-
-      Vtopo_L = ((Vtopo_start .ge. 0) &
-                 .and. (Lctl_step-Vtopo_start .le. Vtopo_ndt))
 
       if ( .not. Rstri_rstn_L ) then
 

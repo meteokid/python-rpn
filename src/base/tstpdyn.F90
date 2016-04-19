@@ -101,8 +101,9 @@
       gmmstat = gmm_get('TR/HU:P' ,hut0)
 
       if (G_lam .and. (.not. Grd_yinyang_L)) then
-         gmmstat = gmm_get (gmmk_nest_t_s, nest_t)
-         gmmstat = gmm_get (gmmk_nest_q_s, nest_q)
+         gmmstat = gmm_get (gmmk_nest_t_s, nest_t )
+         gmmstat = gmm_get (gmmk_nest_q_s, nest_q )
+         gmmstat = gmm_get (gmmk_nest_fullme_s,nest_fullme)
       else
          nest_t => ut1
          nest_q => ut1
@@ -169,12 +170,18 @@
       call timing_start2 (22, 'PRE', 10)
 
       if ( Orh_icn.eq.1 ) then
-         if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
-            gmmstat = gmm_get(gmmk_fis0_s,fis0)
-            call var_topo2 (fis0, real(Lctl_step),&
-                       l_minx,l_maxx,l_miny,l_maxy)
+         if ( G_lam .and. .not. Grd_yinyang_L ) then
+            fis0(1:l_ni,1:l_nj)= nest_fullme(1:l_ni,1:l_nj)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
-                 l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+               l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         else
+            if (Vtopo_L .and. (Lctl_step .ge. Vtopo_start)) then
+               gmmstat = gmm_get(gmmk_fis0_s,fis0)
+               call var_topo2 (fis0, real(Lctl_step),&
+                               l_minx,l_maxx,l_miny,l_maxy)
+               call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
+                  l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+            endif
          endif
       endif
 
