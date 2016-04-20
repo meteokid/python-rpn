@@ -101,8 +101,7 @@ $(BINDIR)/$(maingemgrid): | $(GEMDYN_VFILES)
 	export ATM_MODEL_NAME="$${MAINSUBNAME} $(BUILDNAME)" ;\
 	export ATM_MODEL_VERSION="$(GEMDYN_VERSION)" ;\
 	export RBUILD_LIBAPPL="$(GEMDYN_LIBS_V) $(GEMDYN_LIBS_DEP)" ;\
-	export RBUILD_COMM_STUBS=$(LIBCOMM_STUBS) ;\
-	$(RBUILD4objNOMPI)
+	$(RBUILD4objMPI)
 
 maincheckdmpart=checkdmpart_$(BASE_ARCH).Abs
 checkdmpart: | checkdmpart_rm $(BINDIR)/$(maincheckdmpart)
