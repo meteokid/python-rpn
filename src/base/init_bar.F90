@@ -43,6 +43,7 @@
 #include "tr3d.cdk"
 #include "ver.cdk"
 #include "wil_williamson.cdk"
+#include "bcsgrds.cdk"
 
       character(len=4) vname
       integer i,j,n,istat,k
@@ -138,6 +139,11 @@
       endif
 
       deallocate (gz_temp,u_temp,v_temp,topo_abdes)
+
+      !Prescribed d(Zeta)dot and dz/dt
+      !-------------------------------
+      Ana_zd_L = .TRUE.
+      Ana_w_L  = .TRUE.
 !
 !-----------------------------------------------------------------------
 !

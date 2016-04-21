@@ -226,7 +226,6 @@
       namelist /gem_cfgs_p/ Init_dftr_L
 
       namelist /gem_cfgs_p/ Inp_npes
-      namelist /gem_cfgs_p/ Inp_blacklist_S
       namelist /gem_cfgs_p/ Inp_vertintype_tracers_S
 !Lam
       namelist /gem_cfgs_p/ Lam_gbpil_T

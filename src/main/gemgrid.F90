@@ -33,6 +33,7 @@
 #include "hgc.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
+#include "path.cdk"
 #include "step.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -40,6 +41,7 @@
 
       integer, external :: gemdm_config,domain_decomp3
       character*120 outfile,dumc,fn,etk,etk_ext,dum1
+      character*2024 st
       logical lam,radians
       integer unf1,unf2,err,npack,i,j,k
 
@@ -55,21 +57,16 @@
 !
 !----------------------------------------------------------------------
 !
-      err = exdb ('GEMGRID','4.8.0','NON')
-
       call init_component
 
       etk = 'PARPOS'
-      fn  = '../model_settings.nml'
+      fn  = trim(Path_input_S)//'/model_settings.nml'
       Step_runstrt_S='20160415.000000'
       Step_dt= 1.
       radians= .false.
 
-      outfile       = 'tape1'
-      Grd_yinyang_S = 'YIN'
-      Grd_yinyang_L = .false.
-      if (clib_getenv ('GEM_YINYANG',dum1).ge.0) &
-      Grd_yinyang_L = .true.
+      outfile= 'tape1'
+      if (Grd_yinyang_L .and. Grd_yinyang_S == 'YAN') outfile= 'tape2'
 
  88   if (grid_nml2(fn,G_lam).lt.0) then
          print *,'STOP: problem with NAMELIST GRID'
@@ -89,24 +86,18 @@
 
       G_ni= Grd_ni ; G_nj= Grd_nj
 
-      err= domain_decomp3 (1, 1, .false.)
-
-      call set_gmm
-      call nest_set_gmmvar
-
-      LAM = Grd_typ_S(1:1).eq.'L' .or. Grd_yinyang_L
-
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
       dxmax = 360. ; dymax = 180. ; nila= G_ni ; njla= G_nj
+
       call set_gemHgrid3 ( x_8, y_8, G_ni, G_nj, Grd_dx, Grd_dy,   & 
                            Grd_x0_8, Grd_xl_8, left,               &
                            Grd_y0_8, Grd_yl_8, belo,               &
                            nila, njla, dxmax, dymax,               &
-                           Grd_yinyang_L, gauss_L, lam, uniform_L, &
+                           Grd_yinyang_L,gauss_L,G_lam, uniform_L, &
                            ierx, iery, .true. )
 
-      if (.not.LAM) G_ni= G_ni + 1
+      if (.not.G_lam) G_ni= G_ni + 1
 
       xpos(1:G_ni) = x_8(1:G_ni)
       ypos(1:G_nj) = y_8(1:G_nj)
@@ -127,12 +118,9 @@
          stop
       endif  
 
-      i0=1
-      j0=1
-      i1=G_ni
-      j1=G_nj
-      itile=1
-      jtile=1
+      i0=1    ; j0=1
+      i1=G_ni ; j1=G_nj
+      itile=1 ; jtile=1
 
       write(6,*) 'LONGITUDE'
       write(6,778)(i,xpos(i),i=1,G_ni)
@@ -156,8 +144,14 @@
       err= fstecr ( ypos,ypos, npack, unf1, 0, 0, 0, 1, G_nj, 1 , &
                     ip1,ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                     Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
+
+      err= fstfrm(unf1)
+      err= fclos (unf1)
    
-      if (LAM) then
+      if (G_lam) then
+         err= domain_decomp3 (1, 1, .false.)
+         call set_gmm
+         call nest_set_gmmvar
          unf2=0
          if (fnom(unf2,trim(outfile)//'_core','RND',0).ge.0) then
             err= fstouv (unf2, 'RND')
@@ -186,6 +180,10 @@
                        Grd_ip1,Grd_ip2,Grd_ip3,'X','^^',etk_ext,Hgc_gxtyp_s, &
                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro, 5, .true. )
 
+         unf1= 0
+         err= fnom(unf1,outfile,'RND',0)
+         err= fstouv (unf1, 'RND')
+
          allocate (mask(G_ni, G_nj))
          allocate (wrk1(l_minx:l_maxx,l_miny:l_maxy))
          allocate (wrk2(l_minx:l_maxx,l_miny:l_maxy))
@@ -211,9 +209,9 @@
             stop
          endif
 
-         i0= 1      + Grd_extension + Lam_blend_H
+         i0= 1    + Grd_extension + Lam_blend_H
          in= G_ni - Grd_extension - Lam_blend_H
-         j0= 1      + Grd_extension + Lam_blend_H
+         j0= 1    + Grd_extension + Lam_blend_H
          jn= G_nj - Grd_extension - Lam_blend_H
          ni = in-i0+1
          nj = jn-j0+1
@@ -238,11 +236,7 @@
 
       deallocate (x_8, y_8, xpos, ypos)
 
-      if ((Grd_yinyang_L) .and. (trim(Grd_yinyang_S).eq.'YIN')) then
-         outfile       = 'tape2'
-         Grd_yinyang_S = 'YAN'
-         goto 88
-      endif
+      call rpn_comm_FINALIZE(err)
 !      
 !-------------------------------------------------------------------
 !
