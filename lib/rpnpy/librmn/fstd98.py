@@ -1004,7 +1004,14 @@ def fstinl(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
                         .format(type(iunit)))
     if iunit < 0:
         raise ValueError("fstinl: must provide a valid iunit: {0}".format(iunit))
-    if nrecmax <= 0: nrecmax = _rp.c_fstnbrv(iunit)
+    if nrecmax <= 0:
+        try:
+            iunitlist = _linkedUnits[str(iunit)]
+        except KeyError:
+            iunitlist = (iunit,)
+        nrecmax = 0
+        for iunit1 in iunitlist:
+            nrecmax += _rp.c_fstnbrv(iunit1)
     creclist = _np.empty(nrecmax, dtype=_np.intc)
     (cni, cnj, cnk) = (_ct.c_int(), _ct.c_int(), _ct.c_int())
     cnfound         = _ct.c_int()
