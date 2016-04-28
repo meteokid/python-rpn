@@ -4,7 +4,7 @@
 # Author: Stephane Chamberland <stephane.chamberland@canada.ca>
 # Copyright: LGPL 2.1
 """
-List selected records in RPNStd file(s) along with requested meta and stats
+Print a list of selected records in RPNStd file(s) along with requested meta and stats.
 
 Examples:
     rpy.fstlist2 -k --stats \
@@ -181,7 +181,7 @@ def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
 if __name__ == "__main__":
     
     # Command line arguments
-    desc="Print list of record Metadata in an RMN Std file"
+    desc="Print a list of selected records in RPNStd file(s) along with requested meta and stats."
     usage = """
     %(prog)s -i filename [options]
 

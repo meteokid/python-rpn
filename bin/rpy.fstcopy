@@ -164,7 +164,7 @@ def copy_rec_fname(inputFile, outputFile, overwrite, matchIn, matchOut,
 
 if __name__ == "__main__":
 
-    desc="Copy selected records from RPNStd file(s) to another."
+    desc="Copy selected records from RPNStd file(s) to another with metadata zapping option."
     epilog="-- Options are excluding records according the provided value(s).\n++ Options are selecting records according the provided value(s).\n\nThe default selection critera for all keys is a 'wildcard',\ni.e. all records are selected."
     usage = "%(prog)s -i inputFile -o outputFile [options]"
     parser = argparse.ArgumentParser(

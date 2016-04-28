@@ -9,6 +9,8 @@ Example:
    rpy.series  -v \
         --var 'nomvar=tt, ip1=11733' 'nomvar=tt, ip1=8034' \
         --ll '45.,273.5' '46.,274.' \
+        --title "TT for levels: 0.9733 sg and 0.6034 sg"\
+        --axe "TT [C]"\
         -i $CMCGRIDF/prog/regeta/$(date '+%Y%m%d')00_*
 """
 
