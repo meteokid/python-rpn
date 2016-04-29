@@ -8,6 +8,7 @@ Example:
    rpy.profile  -v --inlog \
         --var 'nomvar=tt, ip2=0' 'nomvar=tt, ip2=48' \
         --ll '45.,273.5' '46.,274.' \
+        --axe 'TT [C]' \
         -i $CMCGRIDF/prog/regeta/$(date '+%Y%m%d')00_*
 """
 

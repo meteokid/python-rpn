@@ -159,6 +159,8 @@ def ezqkdef(ni, nj=None, grtyp=None, ig1=None, ig2=None, ig3=None, ig4=None,
     if (type(ni), type(nj), type(grtyp), type(ig1), type(ig2), type(ig3),
         type(ig4), type(iunit)) != (int, int, str, int, int, int, int, int):
         raise TypeError('ezqkdef: wrong input data type')
+    if grtyp.strip() in ('', 'X'):
+        raise EzscintError('ezqkdef: Grid type {0} Not supported'.format(grtyp))
     gdid = _rp.c_ezqkdef(ni, nj, grtyp, ig1, ig2, ig3, ig4, iunit)
     if gdid >= 0:
         return gdid

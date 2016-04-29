@@ -24,7 +24,7 @@ def compare_meta(meta, matchIn, matchOut, verbose):
     for key in keylist:
         ## val = getattr(args,'f_'+key)
         val = matchIn[key] if key in matchIn.keys() else []
-        metaval = meta[key].strip() if isinstance(meta[key], str) else meta[key]
+        metaval = meta[key].strip().lower() if isinstance(meta[key], str) else meta[key]
         if not (len(val) == 0 or val[0] in (-1,' ') or metaval in val):
             if verbose > 1:
                 print('{0} : No match for key {1}: {2} not in {3}'.\
@@ -32,8 +32,8 @@ def compare_meta(meta, matchIn, matchOut, verbose):
             return False
         ## val = getattr(args,'e_'+key)
         val = matchOut[key] if key in matchOut.keys() else []
-        metaval = meta[key].strip() if isinstance(meta[key], str) else meta[key]
-        if len(val) > 0 and meta[key] in val:
+        metaval = meta[key].strip().lower() if isinstance(meta[key], str) else meta[key]
+        if len(val) > 0 and metaval in val:
             if verbose > 1:
                 print('{0} : Matching exclude  key {1}: {2} in {3}'.\
                       format(meta['nomvar'],key,meta[key],val))
@@ -164,7 +164,7 @@ def copy_rec_fname(inputFile, outputFile, overwrite, matchIn, matchOut,
 
 if __name__ == "__main__":
 
-    desc="Copy selected records from RPNStd file(s) to another."
+    desc="Copy selected records from RPNStd file(s) to another with metadata zapping option."
     epilog="-- Options are excluding records according the provided value(s).\n++ Options are selecting records according the provided value(s).\n\nThe default selection critera for all keys is a 'wildcard',\ni.e. all records are selected."
     usage = "%(prog)s -i inputFile -o outputFile [options]"
     parser = argparse.ArgumentParser(
@@ -275,11 +275,17 @@ if __name__ == "__main__":
     (matchIn, matchOut) = ({}, {})
     for key in keylist:
         try:
-            matchIn[key] = getattr(args,'f_'+key)
+            if key in ('nomvar', 'typvar', 'etiket'):
+                matchIn[key] = [x.strip().lower() for x in getattr(args,'f_'+key)]
+            else:
+                matchIn[key] = getattr(args,'f_'+key)
         except:
             matchIn[key] = []
         try:
-            matchOut[key] = getattr(args,'e_'+key)
+            if key in ('nomvar', 'typvar', 'etiket'):
+                matchOut[key] = [x.strip().lower() for x in getattr(args,'e_'+key)]
+            else:
+                matchOut[key] = getattr(args,'e_'+key)
         except:
             matchOut[key] = []
         if args.verbose > 1:
