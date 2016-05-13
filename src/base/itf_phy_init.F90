@@ -43,6 +43,7 @@
 #include "ver.cdk"
 #include "path.cdk"
 #include "level.cdk"
+#include "rstr.cdk"
 
       type(vgrid_descriptor) :: vcoord, vcoordt
       integer err,zuip,ztip
