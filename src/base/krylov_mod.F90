@@ -1,3 +1,18 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+!
 module krylov_mod
    ! Common Krylov methods.
    !
@@ -72,6 +87,9 @@ contains
       real*8, dimension(minx:maxx, miny:maxy, nk) :: residual, hatr0 ,res_matvec
       real*8, dimension(minx:maxx, miny:maxy, nk) :: vv, pp, pp_prec, ss, ss_prec, tt
 
+      logical almost_zero
+      real*8 dist_dotproduct
+
       ! Here we go !
 
       retval = 0
@@ -100,7 +118,7 @@ contains
       rho_old = 1.d0
       alpha = 1.d0
       omega = 1.d0
-      rho = dist_dot_product(hatr0, residual, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
+      rho = dist_dotproduct(hatr0, residual, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
       norm_residual = sqrt(rho)
       r0 = norm_residual
 
@@ -111,7 +129,7 @@ contains
       do while ((norm_residual > relative_tolerance) .and. (iter < maxiter))
          iter = iter + 1
 
-         if (almost_zero_d(omega)) then
+         if (almost_zero(omega)) then
             write(lun_out, *) 'WARNING : BiCGSTAB breakdown (omega=0)'
             force_restart = .true.
 
@@ -143,9 +161,9 @@ contains
 
          ! Compute search direction
          call matvec(pp_prec, vv)
-         tau = dist_dot_product(hatr0, vv, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
+         tau = dist_dotproduct(hatr0, vv, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
 
-         if (almost_zero_d(tau)) then
+         if (almost_zero(tau)) then
             write(lun_out, *) 'WARNING : BiCGSTAB breakdown (tau=0)'
             force_restart = .true.
 
@@ -176,19 +194,19 @@ contains
          end select
 
          call matvec(ss_prec, tt)
-         tau = dist_dot_product(tt, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
+         tau = dist_dotproduct(tt, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
 
-         if (almost_zero_d(tau)) then
+         if (almost_zero(tau)) then
             write(lun_out, *) 'WARNING : BiCGSTAB breakdown (tt=0)'
             force_restart = .true.
 
             omega = 0.0d0
          else
-            omega = dist_dot_product(tt, ss, minx, maxx, miny, maxy, i0, il, j0, jl, nk) / tau
+            omega = dist_dotproduct(tt, ss, minx, maxx, miny, maxy, i0, il, j0, jl, nk) / tau
          end if
 
          rho_old = rho
-         rho = -omega * (dist_dot_product(hatr0, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk))
+         rho = -omega * (dist_dotproduct(hatr0, tt, minx, maxx, miny, maxy, i0, il, j0, jl, nk))
 
 !$omp end single
 !$omp do private (i,j,k)
@@ -203,7 +221,7 @@ contains
          end do
 !$omp enddo
 !$omp end parallel
-         norm_residual = sqrt(dist_dot_product(residual, residual, minx, maxx, miny, maxy, &
+         norm_residual = sqrt(dist_dotproduct(residual, residual, minx, maxx, miny, maxy, &
                                                i0, il, j0, jl, nk))
 
          if (force_restart) then
@@ -221,7 +239,7 @@ contains
             rho_old = 1.d0
             alpha = 1.d0
             omega = 1.d0
-            rho = dist_dot_product(hatr0, residual, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
+            rho = dist_dotproduct(hatr0, residual, minx, maxx, miny, maxy, i0, il, j0, jl, nk)
             norm_residual = sqrt(rho)
 
             vv(:, :, :) = 0.d0
@@ -235,9 +253,6 @@ contains
       retval = iter
 
    end function krylov_fbicgstab
-
-
-
 
 
    integer function krylov_fgmres(x, matvec, b, x0, ni, nj, nk, &
@@ -296,6 +311,9 @@ contains
 
       real*8, dimension(maxinner) :: dotprod_local
 
+      logical almost_zero
+      real*8 dist_dotproduct
+
       ! Here we go !
 
       retval = 0
@@ -316,7 +334,7 @@ contains
             end do
          end do
 
-         norm_residual = sqrt(dist_dot_product(residual, residual, minx, maxx, miny, maxy, &
+         norm_residual = sqrt(dist_dotproduct(residual, residual, minx, maxx, miny, maxy, &
                                                i0, il, j0, jl, nk))
 
          if (outiter == 1) then
@@ -400,10 +418,10 @@ contains
 !$omp enddo
 !$omp end parallel
 
-            hessenberg(nextit,initer) = sqrt(dist_dot_product(vv(:,:,:,nextit), vv(:,:,:,nextit), minx, maxx, miny, maxy, i0, il, j0, jl, nk))
+            hessenberg(nextit,initer) = sqrt(dist_dotproduct(vv(:,:,:,nextit), vv(:,:,:,nextit), minx, maxx, miny, maxy, i0, il, j0, jl, nk))
 
             ! Watch out for happy breakdown
-            if (.not. almost_zero_d( hessenberg(nextit,initer) )) then
+            if (.not. almost_zero( hessenberg(nextit,initer) )) then
                nu = 1.d0 / hessenberg(nextit,initer)
 !$omp parallel private (i,j,k)
 !$omp do
@@ -426,7 +444,7 @@ contains
             end if
 
             nu = sqrt(dot_product(hessenberg(initer:nextit,initer), hessenberg(initer:nextit,initer)))
-            if (.not. almost_zero_d( nu ) ) then
+            if (.not. almost_zero( nu ) ) then
                rot_cos(initer) =  hessenberg(initer,initer) / nu
                rot_sin(initer) = -hessenberg(nextit,initer) / nu
                hessenberg(initer,initer) = rot_cos(initer) * hessenberg(initer,initer) - rot_sin(initer) * hessenberg(nextit,initer)
@@ -485,38 +503,5 @@ contains
          vrot(i+1) = rot2
       end do
    end subroutine givens_rotations
-
-   real*8 function dist_dot_product(x, y, minx, maxx, miny, maxy, i0, il, j0, jl, nk) result(dotprod)
-      integer, intent(in) :: minx, maxx, miny, maxy, i0, il, j0, jl, nk
-      real*8, dimension(minx:maxx, miny:maxy, nk), intent(in) :: x, y
-
-      real*8 :: local_dot
-      integer :: i, j, k, ierr
-
-      local_dot = 0.0d0
-      do k=1,nk
-         do j=j0,jl
-            do i=i0,il
-               local_dot = local_dot + (x(i, j, k) * y(i, j, k))
-            end do
-         end do
-      end do
-
-      call RPN_COMM_allreduce(local_dot, dotprod, 1, "MPI_double_precision", "MPI_sum", "grid", ierr)
-   end function dist_dot_product
-
-   logical function almost_zero_d(A) result(retval)
-      real*8, intent(in) :: A
-
-      integer*8 :: aBit
-      aBit = 0
-
-      aBit = transfer(A, aBit)
-      if (aBit < 0) then
-         aBit = x'80000000' - aBit
-      end if
-      ! lexicographic order test with a tolerance of 1 adjacent float
-      retval = (abs(aBit) <= 1)
-   end function almost_zero_d
 
 end module krylov_mod

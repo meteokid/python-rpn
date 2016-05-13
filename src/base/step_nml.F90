@@ -100,11 +100,10 @@
 
       err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
+
       nesdt= 1.d0
       err= min( timestr2step (nsteps, Fcst_nesdt_S, nesdt), err)
       Step_nesdt= dble(nsteps)
-
-      Step_total= Step_total - Step_initial
 
       if ( Fcst_rstrt_S  == '' ) then
          write(Fcst_rstrt_S,'(a,i6)') 'step,',Step_total+1

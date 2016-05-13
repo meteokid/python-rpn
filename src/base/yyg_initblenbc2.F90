@@ -30,7 +30,7 @@
 #include "yyg_bln.cdk"
 
       integer err,Ndim,i,j,k,imx,imy,kk,ii,jj,ki,ksend,krecv
-      integer kkproc
+      integer kkproc,xmin,xmax,ymin,ymax
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  t,p,s(2,2),h1,h2
@@ -47,6 +47,10 @@
          yy_8(i,j)=G_yg_8(j)
       enddo
       enddo
+      xmin=1-G_ni
+      xmax=2*G_ni
+      ymin=1-G_nj
+      ymax=2*G_nj
 
 !Delta xg, yg is not identical between xg(i) and xg(i+1)
 !h1, h2 used in this routine is ok as it is a close estimate for
@@ -74,8 +78,8 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise_blend(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,xmin,xmax,ymin,ymax,h1,h2)
 
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &
@@ -226,8 +230,8 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+         call localise_blend(imx,imy,x_a,y_a, &
+                          G_xg_8,G_yg_8,xmin,xmax,ymin,ymax,h1,h2)
 
 ! check if this point can be found in the other grid
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -39,7 +39,7 @@
 ! - - - - - -3        X                              -
 !
 ! ===========4        -                              X
-!  
+!
 !    ...             ...                            ...
 !
 !
@@ -70,7 +70,7 @@
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 21
+      integer, parameter :: numvars = 19
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -82,7 +82,7 @@
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
          if (.not. Schm_lift_ltl_L) hybt_w(G_nk)=1.
-      endif         
+      endif
       nkeys     = gmm_keys(keylist)
 
       periodx_L = .false.
@@ -108,8 +108,6 @@
       class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
       class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
-      class_var(20,1) = 'SMGU' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'MM'
-      class_var(21,1) = 'SMGV' ; class_var(21,2) = 'QQ' ; class_var(21,3) = 'MM'
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)
@@ -133,11 +131,11 @@
             if (class_var(id,3) == 'TW') level_type => hybt_w
 
             select case (class_var(id,2))
-            case('UU') 
+            case('UU')
                call out_href3 ( 'U_point', &
                     Grid_x0 (gridset), Grid_x1 (gridset), 1, &
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )
-            case('VV') 
+            case('VV')
                call out_href3 ( 'V_point', &
                     Grid_x0 (gridset), Grid_x1 (gridset), 1, &
                     Grid_y0 (gridset), Grid_y1 (gridset), 1 )

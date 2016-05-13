@@ -62,6 +62,7 @@
 !
 !---------------------------------------------------------------------
 !
+      inp_read= -1
       F_nka= -1 ; local_nk= 0
       add= 0.d0 ; mult= 1.d0
       ! Remove the following line by 2021

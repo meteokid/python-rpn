@@ -39,7 +39,7 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
-      integer stepf,seconds_since
+      integer stepf,seconds_since,last_step
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -56,6 +56,8 @@
 
       stepf= Step_total
       if (Init_mode_L) stepf= Init_dfnp-1
+      last_step= Step_initial + stepf
+
       F_rstrt_L = .false.
       if ( .not. Rstri_rstn_L ) then
          call out_outdir (Step_total)
@@ -78,7 +80,7 @@
          seconds_since= model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
-         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,stepf
+         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,last_step
 
          call out_outdir (Step_total)
 

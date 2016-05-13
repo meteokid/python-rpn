@@ -126,10 +126,12 @@ End Interface
       call var_topo2 ( F_topo, step_current, &
                        l_minx,l_maxx,l_miny,l_maxy )
 
-      if ( associated(meqr) .and. G_lam .and. .not. Grd_yinyang_L ) then
+      if ( associated(meqr) .and. G_lam .and. .not. Grd_yinyang_L) then
+      if ( Lam_blendoro_L ) then
          topo_temp(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
          call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-                           l_miny,l_maxy, 'M', level=G_nk+1 )
+              l_miny,l_maxy, 'M', level=G_nk+1 ) 
+      endif
       endif
 
       nullify (ssqr,ssur,ssvr,ttr,hur)

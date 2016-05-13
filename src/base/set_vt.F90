@@ -57,7 +57,6 @@
 #include "gmm_gem_flags.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "smago.cdk"
 #include "schm.cdk"
 #include "vt0.cdk"
 #include "vth.cdk"
@@ -117,9 +116,6 @@
       gmmk_xdt1_s  = 'XDT1'
       gmmk_qdt1_s  = 'QDT1'
 
-      gmmk_smagU_s  = 'SMGU'
-      gmmk_smagV_s  = 'SMGV'
-
       istat = GMM_OK
 
       istat = min(gmm_create(gmmk_ut0_s ,  ut0 , mymeta3d_nk_u , flag_r_n),istat)
@@ -142,10 +138,6 @@
       istat = min(gmm_create(gmmk_zdt1_s, zdt1 , mymeta3d_nk_t , flag_r_n),istat)
       istat = min(gmm_create(gmmk_xdt1_s, xdt1 , mymeta3d_nk_t , flag_r_n),istat)
       istat = min(gmm_create(gmmk_qdt1_s, qdt1 , mymeta3d_nk_t , flag_r_n),istat)
-
-      ! Smagorinsky diffusion coefficients
-      istat = min(gmm_create(gmmk_smagU_s,  smagU_p, mymeta3d_nk_u, flag_r_n),istat)
-      istat = min(gmm_create(gmmk_smagV_s,  smagV_p, mymeta3d_nk_u, flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t0)')

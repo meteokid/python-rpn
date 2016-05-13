@@ -112,7 +112,7 @@
 
       err = VGD_OK
       if ((zu.gt.0.) .and. (zt.gt.0.) ) then
-         nullify(ip1m)
+         nullify(ip1m, ip1t)
          Level_kind_diag=4
          err = min ( vgrid_wb_get('ref-m',vcoord, ip1m), err)
          err = min ( vgrid_wb_get('ref-t',vcoordt,ip1t), err)
@@ -125,9 +125,11 @@
          err = min(vgd_put(vcoordt,'DIPT - IP1 of diagnostic level (t)',ztip), err)
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
-         err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
-         err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
          out3_sfcdiag_L= .true.
+         if (.not.Rstri_rstn_L) then
+            err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
+            err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
+         endif
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 

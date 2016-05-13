@@ -34,6 +34,7 @@
       integer err,Ndim,i,j,k,kk,ii,jj,ki,ksend,krecv
       integer imx1,imx2
       integer imy1,imy2
+      integer xmin,xmax,xmaxu,ymin,ymax,ymaxv
       integer kkproc,adr
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_njv),yy_8(G_ni,G_njv)
@@ -58,6 +59,12 @@
          yy_8(i,j)=ygv_8(j)
       enddo
       enddo
+      xmin=1-G_ni
+      xmax=2*G_ni
+      xmaxu=2*G_ni-1
+      ymin=1-G_nj
+      ymax=2*G_nj
+      ymaxv=2*G_nj-1
 
 !Delta xg, yg is not identical between xg(i) and xg(i+1)
 !h1, h2 used in this routine is ok as it is a close estimate for
@@ -87,10 +94,10 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx1,imy1,x_a,y_a, &
-                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise_blend(imx1,imy1,x_a,y_a, &
+                          xgu_8,G_yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
+         call localise_blend(imx2,imy2,x_a,y_a, &
+                          G_xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
 
 
 ! check if this point can be found in the other grid
@@ -251,10 +258,10 @@
          y_d=yy_8(i,j)
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
-         call localise(imx1,imy1,x_a,y_a, &
-                          xgu_8(1),G_yg_8(1),h1,h2,1,1)
-         call localise(imx2,imy2,x_a,y_a, &
-                          G_xg_8(1),ygv_8(1),h1,h2,1,1)
+         call localise_blend(imx1,imy1,x_a,y_a, &
+                          xgu_8,G_yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
+         call localise_blend(imx2,imy2,x_a,y_a, &
+                          G_xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max

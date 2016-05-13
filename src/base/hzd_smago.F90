@@ -27,30 +27,26 @@
 !
 !revision
 ! v4_80 - Gaudreault S.    - initial version
-#include "gmm.hf"
 #include "hzd.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
-#include "smago.cdk"
 
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy,nk) :: smagcoef_theta_u, smagcoef_theta_v, smagcoef, smagcoef_u, smagcoef_v, du, dv
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
-      real cdelta2, kmax, smagcoef_z, tension_z, shear, tension_u, shear_u, tension_v, shear_v, smagparam, smagprandtl
+      real :: cdelta2, smagcoef_z, tension_z, shear, tension_u, shear_u, tension_v, shear_v, smagparam, smagprandtl
+!      real :: kmax
       logical :: switch_on_THETA
 
       smagparam= hzd_smago_param ;  smagprandtl= Hzd_smago_prandtl
       switch_on_THETA = smagprandtl > 0.
 
       cdelta2 = (smagparam * Dcst_rayt_8 * Geomg_hy_8)**2
-      kmax= (Dcst_rayt_8 * Geomg_hy_8)**2 / (8.0d0 * cstv_dt_8)
-      print*,'kmax=',kmax,'0.04*kmax=',0.04d0*kmax,'cdelta2=',cdelta2
-
-      istat = gmm_get(gmmk_smagU_s, smagU_p)
-      istat = gmm_get(gmmk_smagV_s, smagV_p)
+!      kmax= (Dcst_rayt_8 * Geomg_hy_8)**2 / (8.0d0 * cstv_dt_8)
+!      print*,'kmax=',kmax,'0.04*kmax=',0.04d0*kmax,'cdelta2=',cdelta2
 
       if (Grd_yinyang_L) then
          call yyg_nestuv(ut1, vt1, l_minx, l_maxx, l_miny, l_maxy, G_nk)
@@ -164,10 +160,6 @@
          end do
 
       end if
-
-     ! Save coefficients for output
-      smagU_p = smagcoef
-      smagV_p = smagcoef
 
       return
       end subroutine hzd_smago
