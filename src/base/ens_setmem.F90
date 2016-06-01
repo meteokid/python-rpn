@@ -49,19 +49,53 @@
                             1,l_nj,0,0,l_nj,     &
                             1,l_nk,0,0,l_nk,     &
                             0,GMM_NULL_FLAGS)
-       call gmm_build_meta3D(meta3d_anm,                      &
-                            1,Ens_dim2_lmax,0,0,Ens_dim2_lmax,  &
-                            1,Ens_dim2_mmax,0,0,Ens_dim2_mmax,  &
-                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,&
+       call gmm_build_meta3D(meta3d_ar_p,                      &
+                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
+                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
+                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_bnm,                       &
-                            1,Ens_dim2_lmax,0,0,Ens_dim2_lmax,  &
-                            1,Ens_dim2_mmax,0,0,Ens_dim2_mmax,  &
-                            1,Ens_mc2d_ncha,0,0,Ens_mc2d_ncha,&
+      call gmm_build_meta3D(meta3d_br_p,                       &
+                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
+                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
+                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
                             0,GMM_NULL_FLAGS)
+     call gmm_build_meta3D(meta3d_ai_p,                      &
+                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
+                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
+                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_bi_p,                       &
+                            1,Ens_ptp_lmax,0,0,Ens_ptp_lmax,  &
+                            1,Ens_ptp_mmax,0,0,Ens_ptp_mmax,  &
+                            1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
+                            0,GMM_NULL_FLAGS)
+
+      call gmm_build_meta3D(meta3d_ar_s,                      &
+                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
+                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
+                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_br_s,                       &
+                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
+                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
+                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_ai_s,                      &
+                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
+                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
+                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+                            0,GMM_NULL_FLAGS)
+      call gmm_build_meta3D(meta3d_bi_s,                       &
+                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
+                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
+                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+                            0,GMM_NULL_FLAGS)
+
+
+
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &
-                            1,MAX2DC+MAX3DC,0,0,MAX2DC+MAX3DC,&
+                            1,2*MAX2DC,0,0,2*MAX2DC,&
                             0,GMM_NULL_FLAGS)
       gmmk_mcsph1_s= 'MCSPH1'
       gmmk_difut1_s= 'DIFUT1'
@@ -70,8 +104,14 @@
       gmmk_vgwdt1_s= 'VGWDT1'
       gmmk_ensdiv_s= 'ENSDIV'
       gmmk_ensvor_s= 'ENSVOR'
-      gmmk_anm_s   = 'ANMENS'
-      gmmk_bnm_s   = 'BNMENS'
+      gmmk_ar_s   = 'ARENS_S'
+      gmmk_ai_s   = 'AIENS_S'
+      gmmk_ar_p   = 'ARENS_P'
+      gmmk_ai_p   = 'AIENS_P'
+      gmmk_br_s   = 'BRENS_S'
+      gmmk_bi_s   = 'BIENS_S'
+      gmmk_br_p   = 'BRENS_P'
+      gmmk_bi_p   = 'BIENS_P'
       gmmk_dumdum_s= 'DUMDUM'
 
       istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_IZER)
@@ -88,10 +128,25 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'ensdiv'
       istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ensvor'
-      istat = gmm_create(gmmk_anm_s   ,anm   ,meta3d_anm,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'anm'
-      istat = gmm_create(gmmk_bnm_s   ,bnm   ,meta3d_bnm,GMM_FLAG_RSTR+GMM_FLAG_IZER)
-      if (GMM_IS_ERROR(istat))write(*,6000)'bnm'
+
+      istat = gmm_create(gmmk_ar_s   ,ar_s   ,meta3d_ar_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ar_s'
+      istat = gmm_create(gmmk_br_s   ,br_s   ,meta3d_br_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'br_s'
+      istat = gmm_create(gmmk_ai_s   ,ai_s   ,meta3d_ai_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ai_s'
+      istat = gmm_create(gmmk_bi_s   ,bi_s   ,meta3d_bi_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'bi_s'
+      istat = gmm_create(gmmk_ar_p   ,ar_p   ,meta3d_ar_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ar_p'
+      istat = gmm_create(gmmk_br_p   ,br_p   ,meta3d_br_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'br_p'
+      istat = gmm_create(gmmk_ai_p   ,ai_p   ,meta3d_ai_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'ai_p'
+      istat = gmm_create(gmmk_bi_p   ,bi_p   ,meta3d_bi_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'bi_p'
+
+
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'
 

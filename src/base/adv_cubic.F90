@@ -65,7 +65,7 @@
       mono_L = .false.
 
       if (F_name(1:3) == 'TR/') then
-         mono_L = adv_mono_L
+         mono_L = (F_mono_kind==1)
       endif
    
       if ( adv_rhst_mono_L .and. (F_name=='RHST_S')) mono_L=.true.

@@ -44,6 +44,12 @@
           write(Lun_out,*)'===================================='
       endif
 
+      if (Schm_adxlegacy_L) then
+         call adx_check_tracers
+      else
+         call adv_check_tracers
+      endif
+
       k0=1+Lam_gbpil_T
 
       Cstv_tau_8   = Cstv_dt_8 * Cstv_bA_8

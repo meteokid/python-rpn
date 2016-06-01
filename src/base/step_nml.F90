@@ -100,6 +100,8 @@
 
       err= min( timestr2step (Step_initial, Fcst_start_S, Step_dt), err)
       err= min( timestr2step (Step_total  , Fcst_end_S  , Step_dt), err)
+! transforming the Step_total into actual number of timesteps
+      Step_total= Step_total - Step_initial
 
       nesdt= 1.d0
       err= min( timestr2step (nsteps, Fcst_nesdt_S, nesdt), err)

@@ -169,11 +169,13 @@ subroutine iau_apply2(F_kount)
       nullify(ip1list)
       istat = vgrid_wb_get('ref-m',vgridm,ip1list)
       ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put('iau-m',vgridm,ip1listref,'IAUREFP0:P')
+      istat = vgrid_wb_put('iau-m',vgridm,ip1listref,'IAUREFP0:P', &
+              F_overwrite_L=.true.)
       nullify(ip1list)
       istat = vgrid_wb_get('ref-t',vgridt,ip1list)
       ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put('iau-t',vgridt,ip1listref,'IAUREFP0:P')
+      istat = vgrid_wb_put('iau-t',vgridt,ip1listref,'IAUREFP0:P', &
+              F_overwrite_L=.true.)
       mymeta = GMM_NULL_METADATA
       mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
       mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)

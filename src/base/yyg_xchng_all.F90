@@ -42,6 +42,7 @@
       istat = gmm_get(gmmk_tt1_s , tt1)
       istat = gmm_get(gmmk_zdt1_s,zdt1)
       istat = gmm_get(gmmk_st1_s , st1)
+      if(Schm_nologT_L) &
       istat = gmm_get(gmmk_xdt1_s,xdt1)
 
       call yyg_nestuv(ut1,vt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
@@ -54,16 +55,19 @@
       call yyg_xchng (st1    , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
                       .false., 'CUBIC')
 
+      if(Schm_nologT_L) &
       call yyg_xchng (xdt1   , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                       .false., 'CUBIC')
 
       if (.not.Schm_hydro_L) then
-         istat = gmm_get(gmmk_qdt1_s,qdt1)
          istat = gmm_get(gmmk_qt1_s,  qt1)
-         call yyg_xchng (qdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
          call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .false., 'CUBIC')
+         if(Schm_nologT_L) then
+         istat = gmm_get(gmmk_qdt1_s,qdt1)
+         call yyg_xchng (qdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                         .false., 'CUBIC')
+         endif
       endif
 
       do n= 1, Tr3d_ntr

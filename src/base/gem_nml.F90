@@ -73,15 +73,15 @@
       Init_dfpl_S    = '6h'
       Init_dftr_L    = .false.
 
-      Schm_hydro_L  = .false.
-      Schm_hzdadw_L = .false.
-      Schm_topo_L   = .true.
+      Schm_nolog_L   = .false.
+      Schm_hydro_L   = .false.
+      Schm_hzdadw_L  = .false.
+      Schm_topo_L    = .true.
       Schm_itcn     = 2
       Schm_itnlh    = 2
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_Tlift    = 0
-      Schm_MTeul    = 0
       Schm_advec    = 2
       Schm_settls_L   = .false.
       Schm_capa_var_L = .false.
@@ -174,6 +174,7 @@
       Vtopo_ndt   = 0
 
       Tr3d_list_S   = ''
+      Tr3d_default_s= ''
       Tr3d_ntr      = 0
       Tr3d_anydate_L= .false.
 
@@ -206,7 +207,6 @@
       Out3_nbitg     = 16
       Out3_linbot    = 0
       Out3_cliph_L   = .false.
-      Out3_flipit_L  = .false.
       Out3_npex      = -1
       Out3_npey      = -1
 !

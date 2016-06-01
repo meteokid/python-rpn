@@ -95,7 +95,6 @@
       Zblen_spngtt_L = .true.
       Zblen_spngthick=0.
 
-      Out3_flipit_L  = .true.
       Out3_close_interval_S = '999h'
       Out3_close_interval = 999
       Out3_unit_S = 'HOU'
@@ -163,7 +162,7 @@
 !        attention: dernierement fraction de secondes non disponibles
          Cstv_tstr_8 = mtn_tzero
 
-         Vtopo_start = -1
+         Vtopo_start = -99999
          Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTY') then
@@ -193,7 +192,7 @@
 
          Cstv_dt_8   = 50.
          Cstv_tstr_8 = mtn_tzero
-         Vtopo_start = -1
+         Vtopo_start = -99999
          Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTY2') then
@@ -223,7 +222,7 @@
 
          Cstv_dt_8   = 200.
          Cstv_tstr_8 = mtn_tzero
-         Vtopo_start = -1
+         Vtopo_start = -99999
          Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTYNL') then
@@ -291,7 +290,7 @@
          zblen_L = .false.
          Lam_blend_H=0
 
-         Vtopo_start = -1
+         Vtopo_start = -99999
          Vtopo_ndt   = 0
 
       else

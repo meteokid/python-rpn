@@ -57,7 +57,7 @@
       character(len=GMM_MAXNAMELENGTH) :: diag_prefix
 
 !For sorting the output
-      integer istat
+      integer istat, iverb
       character(len=32) :: varname_S,outname_S,bus0_S
       integer pnerror,i,k,j,ibus,multxmosaic
       type(phymeta) :: pmeta
@@ -106,8 +106,10 @@
 ! Retrieve the heights of the diagnostic levels (thermodynamic
 ! and momentum) from the physics ( zero means NO diagnostic level)
 
+      iverb = wb_verbosity(WB_MSG_FATAL)
       err= min(wb_get('phy/zu', zu), err)
       err= min(wb_get('phy/zt', zt), err)
+      iverb = wb_verbosity(iverb)
 
       call gem_error ( err,'itf_phy_init','phy_init or WB_get' )
 
@@ -127,10 +129,8 @@
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
-         if (.not.Rstri_rstn_L) then
-            err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
-            err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
-         endif
+         err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 

@@ -72,15 +72,20 @@
 !     Markov chain step and if Ens_skeb_conf=.false. return
 !
 
-   call ens_marfield (fgem)
 
-   do k=1,E_nk
-   mcsph1(:,:,k)=fgem(:,:)
-   enddo
+    call ens_marfield_ptp
 
-      if (.not.Ens_skeb_conf) then
-         return
-      endif
+   if (Ens_skeb_conf) then
+     call ens_marfield_skeb (fgem)
+
+     do k=1,E_nk
+     mcsph1(:,:,k)=fgem(:,:)
+     enddo
+
+   else 
+     return
+   endif
+  
 
       allocate( dsp_local(l_minx:l_maxx,l_miny:l_maxy,E_nk))
       allocate( dsp_dif(l_minx:l_maxx,l_miny:l_maxy,E_nk))

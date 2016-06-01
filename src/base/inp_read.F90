@@ -164,8 +164,7 @@
             err= fstlir ( wk1(1,cnt), Inp_handle,n1,n2,n3,datev,&
                           LAB, F_ip1(i), P2, P3,TYP, VAR )
             ! Remove the following line by 2021
-            if( ut1_is_urt1 == -1 .and. Iau_period > 0) &
-                 ut1_is_urt1 = inp_is_real_wind(wk1(1,cnt),n1*n2,nomvar)
+            ut1_is_urt1 = inp_is_real_wind (wk1(1,cnt),n1*n2,nomvar)
          end do
 
          if (local_nk.gt.0) then

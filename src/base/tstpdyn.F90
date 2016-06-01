@@ -170,7 +170,7 @@
       call timing_start2 (22, 'PRE', 10)
 
       if ( Orh_icn.eq.1 ) then
-         if ( G_lam .and. .not. Grd_yinyang_L ) then
+         if ( G_lam .and. .not. Grd_yinyang_L .and. .not. Lam_ctebcs_L) then
             fis0(1:l_ni,1:l_nj)= nest_fullme(1:l_ni,1:l_nj)
             call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
                l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
@@ -179,6 +179,9 @@
                gmmstat = gmm_get(gmmk_fis0_s,fis0)
                call var_topo2 (fis0, real(Lctl_step),&
                                l_minx,l_maxx,l_miny,l_maxy)
+               if (Grd_yinyang_L) &
+                  call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
+                                  1, .false., 'CUBIC')
                call rpn_comm_xch_halo (fis0,l_minx,l_maxx,l_miny,l_maxy,&
                   l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
             endif

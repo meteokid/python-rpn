@@ -84,7 +84,7 @@
 
       err= gemdm_config ()
 
-      G_ni= Grd_ni ; G_nj= Grd_nj
+      G_ni= Grd_ni ; G_nj= Grd_nj ; G_nk= 2
 
       allocate (x_8(Grd_ni+1), y_8(Grd_nj), xpos(Grd_ni+1), ypos(Grd_nj))
 
@@ -147,7 +147,7 @@
 
       err= fstfrm(unf1)
       err= fclos (unf1)
-   
+
       if (G_lam) then
          err= domain_decomp3 (1, 1, .false.)
          call set_gmm
@@ -235,6 +235,8 @@
       endif
 
       deallocate (x_8, y_8, xpos, ypos)
+
+      call memusage (6)
 
       call rpn_comm_FINALIZE(err)
 !      

@@ -72,17 +72,16 @@
       real*8  tdiv, BsPqbarz, fipbarz, dTstr_8, barz, barzp, &
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
               w1, delta_8, kdiv_damp_8, kdiv_damp_max
-      real, dimension(:,:,:), pointer :: BsPq, FI, Afis, MU, HDIV
+      real, dimension(:,:,:), pointer :: BsPq, FI, MU, HDIV
       save MU, HDIV, kdiv_damp_8
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
 !
 !     ---------------------------------------------------------------
 !      
-      nullify  ( BsPq, FI, Afis )
+      nullify  ( BsPq, FI )
       allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                   FI(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                 Afis(Minx:Maxx,Miny:Maxy,l_nk) )
+                   FI(Minx:Maxx,Miny:Maxy,l_nk+1) )
 
       if (.not.done_MU) then
          nullify  ( MU )
@@ -162,22 +161,6 @@
 !$omp parallel private(km,kq,kp,barz,barzp,w1, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
 !$omp     dTstr_8,BsPqbarz,fipbarz,tdiv)
-
-      if(Schm_MTeul.ne.0) then
-!$omp do
-         do k=1,l_nk
-            do j=j0,jn
-            do i=i0,in
-               Afis(i,j,k)=0.5d0 * (       &
-                  F_u(i  ,j,k) * ( F_fis(i+1,j) - F_fis(i  ,j) ) * geomg_invDXMu_8(j)   &
-                + F_u(i-1,j,k) * ( F_fis(i  ,j) - F_fis(i-1,j) ) * geomg_invDXMu_8(j)   &
-                + F_v(i,j  ,k) * ( F_fis(i,j+1) - F_fis(i,j  ) ) * geomg_invDYMv_8(j)   &
-                + F_v(i,j-1,k) * ( F_fis(i,j  ) - f_fis(i,j-1) ) * geomg_invDYMv_8(j-1) )
-            enddo
-            enddo
-         enddo
-!$omp enddo
-      endif
 
 !$omp do
       do k=1,l_nk+1
@@ -272,28 +255,6 @@
       end do
       end do
 
-      w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
-      if(Schm_MTeul.gt.0) then
-         do j= j0, jn
-         do i= i0, in
-            F_orc(i,j,k) = F_orc(i,j,k) &
-                         + w1 * ( Cstv_invT_8 * F_fis(i,j) + Cstv_Beta_8 * Afis(i,j,k) )
-
-         end do
-         end do
-      endif
-      if(Schm_MTeul.gt.1) then
-         kp=min(k+1,l_nk)
-         do j= j0, jn
-         do i= i0, in
-            barz  = Cstv_invT_8 * Ver_b_8%t(k) + Cstv_Beta_8*F_zd(i,j,k)*Ver_dbdz_8%t(k)
-            barzp = ( Ver_wp_8%t(k)*Ver_b_8%m(k+1)*Afis(i,j,kp)+Ver_wm_8%t(k)*Ver_b_8%m(k)*Afis(i,j,k) )
-            F_orx(i,j,k) = F_orx(i,j,k) &
-                         + w1 * ( barz * F_fis(i,j) + Cstv_Beta_8 * barzp )
-         end do
-         end do
-      endif
-
 !********************************************
 ! Compute Rw: RHS of  w equation            *
 ! Compute Rf: RHS of  FI equation           *
@@ -355,7 +316,7 @@
 !$omp  end parallel
 
 
-      deallocate ( BsPq, FI, Afis )
+      deallocate ( BsPq, FI )
       if (.not.Schm_hydro_L) deallocate ( MU )
       if (kdiv_damp_8.gt.0.) deallocate ( HDIV )
 

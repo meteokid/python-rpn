@@ -32,6 +32,7 @@
 #include "step.cdk"
 #include "path.cdk"
 #include "out3.cdk"
+#include "tr3d.cdk"
 #include "wil_williamson.cdk"
 #include "wil_nml.cdk"
       include 'out_meta.cdk'
@@ -41,8 +42,9 @@
                            adv_nml,adv_config,adx_nml,adx_config,&
                            step_nml, set_io_pes, domain_decomp3
       character*50 LADATE,dumc1_S
-      integer :: istat,options
+      integer :: istat,options,wload,hzd,monot,massc
       integer err(8),f1,f2,f3,f4
+      real vmin
 !
 !-------------------------------------------------------------------
 !
@@ -161,6 +163,21 @@
       endif
       out_stk_size= Out3_npes*2
 
+      call tracers_attributes2 ( 'DEFAULT,'//trim(Tr3d_default_s), &
+                                 wload, hzd, monot, massc, vmin )
+
+      if (Lun_out.gt.0) then
+         if (trim(Tr3d_default_s)=='') then
+            write (Lun_out,'(/a)') &
+            ' SYSTEM DEFAULTS FOR TRACERS ATTRIBUTES:'
+         else
+            write (Lun_out,'(/a)') &
+            ' USER DEFAULTS FOR TRACERS ATTRIBUTES:'
+         endif
+         write (Lun_out,2001)
+         write (Lun_out,2002) wload,hzd,monot,massc,vmin
+      endif
+
 ! Initializes GMM
 
       call heap_paint
@@ -169,6 +186,8 @@
 			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
  1002 format (/ ' Creating IO pe set for ',a,' with ',i4,' Pes')
+ 2001 format ( ' DEFAULT tracers attributes:'/3x,'Wload  Hzd   Mono  Mass    Min')
+ 2002 format (4i6,3x,e9.3)
 !
 !-------------------------------------------------------------------
 !

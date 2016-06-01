@@ -122,7 +122,7 @@ End Interface
       endif
 
       call difdatsd (diffd,Step_runstrt_S,F_datev)
-      step_current = diffd*86400.d0 / Step_dt
+      step_current = diffd*86400.d0 / Step_dt + Step_initial
       call var_topo2 ( F_topo, step_current, &
                        l_minx,l_maxx,l_miny,l_maxy )
 

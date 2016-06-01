@@ -101,12 +101,6 @@
          call timing_stop  ( 71 )
       endif
 
-      if (Schm_adxlegacy_L) then
-         call adx_check_tracers
-      else
-         call adv_check_tracers
-      endif
-
       dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
       call bitflip (ut1, vt1, tt1, perturb_nbits, perturb_npts, dim)
 
@@ -147,8 +141,6 @@
       call pw_update_GPW
 
       call frstgss ()
-
-      call psadj_init
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )

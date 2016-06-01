@@ -198,28 +198,33 @@
 !$omp do
       do k=k0, l_nk
          km=max(k-1,1)
-         w1= Ver_idz_8%m(k)+Ver_wp_8%m(k)
-         w2=(Ver_idz_8%m(k)-Ver_wm_8%m(k))*Ver_onezero(k)
-         w3=one/Ver_Tstar_8%t(k)
-         w4=Dcst_rgasd_8*Ver_Tstar_8%t(k)*Ver_wpstar_8(k)
-         w5=Dcst_rgasd_8*Ver_Tstar_8%t(k)*Ver_wmstar_8(k)
-         do j= j0, jn
-         do i= i0, in
 
-!           Preliminary combinations: Rc', Rt', Rf'
-!           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k ) -   &
-                                       (one -Cstv_rE_8)*F_rq(i,j,k )) &
-                                   +w2*(F_rx(i,j,km)+F_rq(i,j,km) -   &
-                                       (one-Cstv_rE_8)*F_rq(i,j,km))
-            F_rt(i,j,k)=F_rt(i,j,k)*w3
-            F_rf(i,j,k)=F_rf(i,j,k)+w4*(F_rx(i,j,k ) + F_rq(i,j,k ) -  &
-                                       (one-Cstv_rE_8)*F_rq(i,j,k ))   &
-                                   +w5*(F_rx(i,j,km)+F_rq(i,j,km) -    &
-                                       (one-Cstv_rE_8)*F_rq(i,j,km))
+         if(Schm_nologT_L) then
 
-         end do
-         end do
+            w1= Ver_idz_8%m(k)+Ver_wp_8%m(k)
+            w2=(Ver_idz_8%m(k)-Ver_wm_8%m(k))*Ver_onezero(k)
+            w3=one/Ver_Tstar_8%t(k)
+            w4=Dcst_rgasd_8*Ver_Tstar_8%t(k)*Ver_wpstar_8(k)
+            w5=Dcst_rgasd_8*Ver_Tstar_8%t(k)*Ver_wmstar_8(k)
+            do j= j0, jn
+            do i= i0, in
+
+!              Preliminary combinations: Rc', Rt', Rf'
+!              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+               F_rc(i,j,k)=F_rc(i,j,k)-w1*(F_rx(i,j,k )+F_rq(i,j,k ) -   &
+                                          (one -Cstv_rE_8)*F_rq(i,j,k )) &
+                                      +w2*(F_rx(i,j,km)+F_rq(i,j,km) -   &
+                                          (one-Cstv_rE_8)*F_rq(i,j,km))
+               F_rt(i,j,k)=F_rt(i,j,k)*w3
+               F_rf(i,j,k)=F_rf(i,j,k)+w4*(F_rx(i,j,k ) + F_rq(i,j,k ) -  &
+                                          (one-Cstv_rE_8)*F_rq(i,j,k ))   &
+                                      +w5*(F_rx(i,j,km)+F_rq(i,j,km) -    &
+                                          (one-Cstv_rE_8)*F_rq(i,j,km))
+
+            end do
+            end do
+
+         endif
 
          w1= Ver_igt_8*Ver_wpA_8(k)
          w2= Ver_igt_8*Ver_wmA_8(k)*Ver_onezero(k)
@@ -246,18 +251,27 @@
 !$omp enddo
 
       if (Schm_opentop_L) then
-         w3=one/Ver_Tstar_8%t(k0t)
+         w3=one
+         if(Schm_nologT_L) w3=one/Ver_Tstar_8%t(k0t)
          w4=Dcst_rgasd_8*Ver_Tstar_8%t(k0t)
 !$omp do
          do j= j0, jn
          do i= i0, in
             F_rt(i,j,k0t)=F_rt(i,j,k0t)*w3
-            F_rf(i,j,k0t)=F_rf(i,j,k0t)+w4*(F_rx(i,j,k0t)+F_rq(i,j,k0t) &
-                                        - (one-Cstv_rE_8)*F_rq(i,j,k0t))
             F_rb(i,j) = F_rt(i,j,k0t)
          end do
          end do
 !$omp enddo
+         if(Schm_nologT_L) then
+!$omp do
+            do j= j0, jn
+            do i= i0, in
+               F_rf(i,j,k0t)=F_rf(i,j,k0t)+w4*(F_rx(i,j,k0t)+F_rq(i,j,k0t) &
+                                           - (one-Cstv_rE_8)*F_rq(i,j,k0t))
+            end do
+            end do
+!$omp enddo
+         endif
       endif
 
 !$omp do
@@ -340,11 +354,20 @@
 
 !     Apply lower boundary conditions
 !
+     if(Schm_nologT_L) then
+!$omp do
+         do j= j0, jn
+         do i= i0, in
+            F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - Cstv_invT_8 * (F_rx(i,j,l_nk)+F_rq(i,j,l_nk))
+         end do
+         end do
+!$omp enddo
+      endif
+
       w1 = Cstv_invT_8**2 / ( Dcst_Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - Cstv_invT_8 * (F_rx(i,j,l_nk)+F_rq(i,j,l_nk))
          F_rt(i,j,l_nk) = F_rt(i,j,l_nk) - w1 * F_fis(i,j)
          F_rt(i,j,l_nk) = Ver_wpstar_8(l_nk) * F_rt(i,j,l_nk)
          F_rc(i,j,l_nk) = F_rc(i,j,l_nk) + Ver_cssp_8 * F_rt(i,j,l_nk)

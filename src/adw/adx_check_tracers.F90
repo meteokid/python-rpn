@@ -36,7 +36,6 @@
 
       !---------------------------------------------------------------------
       integer n
-      logical qw_L
       !---------------------------------------------------------------------
 
       Tr_BC_min_max_L   = Adw_BC_min_max_L
@@ -54,10 +53,6 @@
       if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
       do n=1,Tr3d_ntr
-
-         qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2).eq.'HU'
-
-         if (qw_L) cycle
 
          if (G_lam.and..not.Grd_yinyang_L) then !LAM
 

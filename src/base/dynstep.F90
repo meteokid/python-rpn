@@ -74,6 +74,8 @@
     
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
+      call psadj_init
+
       do Orh_icn = 1,Schm_itcn-1
     
          call tstpdyn (itraj)
@@ -115,9 +117,9 @@
          istat = gmm_get(gmmk_wt1_s , tr1)
          call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .true., 'CUBIC')
-         yyblend= ( (Schm_nblendyy.gt.0) .and. &
-                    (mod(Step_kount,Schm_nblendyy).eq.0) )
-         call yyg_blend (yyblend)
+         yyblend= (Schm_nblendyy .gt. 0)
+         if (yyblend) &
+         call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
       else
          if (G_lam) then
             call nest_gwa

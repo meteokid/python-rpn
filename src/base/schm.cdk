@@ -40,19 +40,20 @@
 ! Schm_settls_L      | .true. -> activating SETTLS scheme              |
 ! Schm_step_settls_L | .true. -> actually a SETTLS step                |
 ! Schm_capa_var_L    | .true. -> variable cappa in thermod. eqn.       |
-! Schm_MTeul         |    0   ->    NO Eulerian mountain treatment     |
-!                    |    1   -> Eulerian mountain treatment in 1 eqn  |
-!                    |    2   -> Eulerian mountain treatment in 2 eqns |
 ! Schm_cub_Coriolis_L| Use cubic interpolation for Coriolis winds.     |      
 ! Schm_lift_ltl_L    | .true. -> lifting last thermo level.            |      
 ! Schm_advec         |    0   ->          NO advection                 |
 !                    |    1   -> traditional advection                 |
 !                    |    2   ->  consistant advection with respect    |
 !                    |                 to off-centering                |
+! Schm_nologT_L      | .true. -> NO-LOG of Temperature                 |
+! Schm_nologinC_L    | .true. -> NO-LOG on Continuity equation         |
 !----------------------------------------------------------------------
 !
 #endif
       logical Schm_psadj_L , Schm_psadj_lam_L
+      logical Schm_nolog_L
+      logical Schm_nologT_L, Schm_nologinC_L
       logical Schm_settls_L, Schm_step_settls_L
       logical Schm_hydro_L , Schm_nkbz_L , Schm_autobar_L, Schm_wload_L
       logical Schm_phyms_L , Schm_adcub_L, Schm_source_ps_L, Schm_opentop_L
@@ -61,10 +62,11 @@
       logical Schm_hzdadw_L,Schm_bitpattern_L, Schm_cub_traj_L
       logical Schm_lift_ltl_L, Schm_cub_Coriolis_L      
 
-      integer Schm_itcn , Schm_itnlh, Schm_Tlift   , Schm_MTeul
+      integer Schm_itcn , Schm_itnlh, Schm_Tlift
       integer Schm_itraj, Schm_nith , Schm_nblendyy, Schm_advec
 
       common / schm_l / Schm_psadj_L  , Schm_psadj_lam_L
+      common / schm_l / Schm_nolog_L  , Schm_nologT_L , Schm_nologinC_L
       common / schm_l / Schm_hydro_L  , Schm_adxlegacy_L
       common / schm_l / Schm_nkbz_L   , Schm_autobar_L, Schm_wload_L
       common / schm_l / Schm_phyms_L  , Schm_adcub_L
@@ -76,6 +78,6 @@
       common / schm_l / Schm_bitpattern_L, Schm_cub_Coriolis_L
       common / schm_l / Schm_settls_L , Schm_step_settls_L
 
-      common / schm_i / Schm_itcn , Schm_itnlh, Schm_Tlift, Schm_Mteul
+      common / schm_i / Schm_itcn , Schm_itnlh, Schm_Tlift
       common / schm_i / Schm_itraj, Schm_nith , Schm_nblendyy, Schm_advec
 

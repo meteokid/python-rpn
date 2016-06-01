@@ -99,7 +99,6 @@
       namelist /gem_cfgs/ Out3_cliph_L
       namelist /gem_cfgs/ Out3_close_interval_S
       namelist /gem_cfgs/ Out3_etik_S
-      namelist /gem_cfgs/ Out3_flipit_L
       namelist /gem_cfgs/ Out3_ip3
       namelist /gem_cfgs/ Out3_linbot
       namelist /gem_cfgs/ Out3_nbitg
@@ -119,6 +118,7 @@
       namelist /gem_cfgs/ perturb_npts
 
 !Schm
+      namelist /gem_cfgs/ Schm_nolog_L
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_cub_Coriolis_L
@@ -134,7 +134,6 @@
       namelist /gem_cfgs/ Schm_Topo_L
       namelist /gem_cfgs/ Schm_settls_L
       namelist /gem_cfgs/ Schm_capa_var_L
-      namelist /gem_cfgs/ Schm_MTeul
       namelist /gem_cfgs/ Schm_advec
       namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
@@ -168,7 +167,7 @@
 
       namelist /gem_cfgs/ stat_liste
 
-      namelist /gem_cfgs/ Tr3d_list_S
+      namelist /gem_cfgs/ Tr3d_list_S, Tr3d_default_s
       namelist /gem_cfgs/ Tr3d_anydate_L
 !Vspng
       namelist /gem_cfgs/ Vspng_coeftop
@@ -243,7 +242,6 @@
       namelist /gem_cfgs_p/ Out3_cliph_L
       namelist /gem_cfgs_p/ Out3_close_interval_S
       namelist /gem_cfgs_p/ Out3_etik_S
-      namelist /gem_cfgs_p/ Out3_flipit_L
       namelist /gem_cfgs_p/ Out3_ip3
       namelist /gem_cfgs_p/ Out3_linbot
       namelist /gem_cfgs_p/ Out3_nbitg
@@ -262,6 +260,7 @@
       namelist /gem_cfgs_p/ perturb_npts
 
 !Schm
+      namelist /gem_cfgs_p/ Schm_nolog_L
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_Coriolis_L
@@ -276,7 +275,6 @@
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_settls_L
       namelist /gem_cfgs_p/ Schm_capa_var_L
-      namelist /gem_cfgs_p/ Schm_MTeul
       namelist /gem_cfgs_p/ Schm_advec
       namelist /gem_cfgs_p/ Schm_superwinds_L
       namelist /gem_cfgs_p/ Schm_source_ps_L

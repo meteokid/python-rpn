@@ -310,8 +310,8 @@
 !     ----------------------------------------------------------
 !     Save vcoord and ip1m/t for output
 !     ----------------------------------------------------------
-      istat = vgrid_wb_put('ref-m',vcoord,Ver_ip1%m,'PW_P0:P')
-      istat = vgrid_wb_put('ref-t',vcoord,Ver_ip1%t,'PW_P0:P')
+      istat = vgrid_wb_put('ref-m',vcoord,Ver_ip1%m,'PW_P0:P',F_overwrite_L=.true.)
+      istat = vgrid_wb_put('ref-t',vcoord,Ver_ip1%t,'PW_P0:P',F_overwrite_L=.true.)
 
       options_readwrite = WB_IS_LOCAL
       options_readonly = options_readwrite + WB_REWRITE_NONE

@@ -37,6 +37,7 @@
 #include "vspng.cdk"
 #include "eq.cdk"
 #include "vt1.cdk"
+#include "schm.cdk"
 
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng    , &
               switch_on_eqspng, switch_on_THETA, switch_on_smago, &
@@ -112,7 +113,7 @@
          call hzd_ctrl4 ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 (zdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         if (Hzd_xidot_L) then
+         if (Schm_nologT_L.and.Hzd_xidot_L) then
             istat = gmm_get(gmmk_xdt1_s,xdt1)
             call hzd_ctrl4 ( xdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          endif

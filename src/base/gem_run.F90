@@ -39,7 +39,7 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
-      integer stepf,seconds_since,last_step
+      integer stepf,last_step,seconds_since
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -55,8 +55,11 @@
       call gemtim4 ( Lun_out, 'STARTING TIME LOOP', .false. )
 
       stepf= Step_total
-      if (Init_mode_L) stepf= Init_dfnp-1
-      last_step= Step_initial + stepf
+      last_step = Step_total + Step_initial
+      if (Init_mode_L) then
+         stepf     = Init_dfnp-1
+         last_step = stepf
+      endif
 
       F_rstrt_L = .false.
       if ( .not. Rstri_rstn_L ) then

@@ -25,7 +25,6 @@
 ! Out3_cliph_L       | .true. to clip humidity variables on output          |
 ! Out3_ip3           | integer value for IP3 in the FST records             |
 !                    |  default: 0, >0 : given value, -1:uses timestep      |
-! Out3_flipit_L      | .true. to flip field from ni*nj*nk to ni*nk*nj       |
 ! Out3_sfcdiag_L     ! to output physics surface diagnostic level           |
 !                    |        water/ice phase for saturation                |
 !                    | .false. for water phase only for saturation          |
@@ -52,7 +51,7 @@
                    Out3_close_interval_S, Out3_conv_S(MAXELEM)
       character*12 Out3_etik_S
       character*4  Out3_unit_S
-      logical Out3_cliph_L, Out3_accavg_L, Out3_flipit_L, Out3_sfcdiag_L
+      logical Out3_cliph_L, Out3_accavg_L, Out3_sfcdiag_L
       logical Out3_ezcoll_L
       integer Out3_nbitg, Out3_linbot, Out3_conv_max
       integer Out3_filtpass(MAXELEM),Out3_xnbits(MAXELEM),Out3_ndigits
@@ -69,7 +68,7 @@
       common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
       common / out3_c / Out3_conv_S, Out3_unit_S
       common / out3_c / Out3_close_interval_S
-      common / Out3_l / Out3_cliph_L, Out3_flipit_L
+      common / Out3_l / Out3_cliph_L
       common / Out3_l / Out3_accavg_L,Out3_sfcdiag_L,Out3_ezcoll_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass
       common / out3_i / Out3_filtpass_max,Out3_date,Out3_postproc_fact

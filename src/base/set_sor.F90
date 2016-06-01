@@ -28,7 +28,6 @@
 ! v4_80 - Desgagne M.       - major re-factorization of output
 
 #include <WhiteBoard.hf>
-#include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
@@ -187,15 +186,13 @@
            RPN_COMM_REAL   ,"MPI_SUM",RPN_COMM_MULTIGRID,ierr )
 
       ierr = timestr2step(rsti,Fcst_rstrt_S,Cstv_dt_8)
-      if (.not.RMN_IS_OK(ierr)) rsti = Step_total-Lctl_step
 
       Out_unf= 0 ; Out_laststep_S = ' '
       Out_ixg(1:4) = ixgall(:,1)  ;  Out_ixg(5:8) = ixgall(:,2)
       Out_rot(1:4) = rotall(:,1)  ;  Out_rot(5:8) = rotall(:,2)
-!      Out_flipit_L = Out3_flipit_L
-      Out_flipit_L = .false.
       Out_etik_S   = Out3_etik_s ; Out_gridtyp_S= 'E'
-      Out_endstepno= min(Step_total, Lctl_step+rsti)
+      Out_endstepno= min(Step_total+Step_initial, Lctl_step+rsti)
+      Out_endstepno= Out_endstepno - Step_initial !in step_kount space
       Out_deet     = int(Cstv_dt_8)
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL

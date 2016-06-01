@@ -50,20 +50,20 @@
 
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
-      integer i, ier,err,err_open,unf,nrec,ios
+      integer i, ier,err,err_open,unf,nrec,ios,ncha
 
       namelist /ensembles/                                           &
           Ens_conf,      Ens_skeb_conf,                              &
           Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd, &
-          Ens_mc_seed,   Ens_mc3d_nlon, Ens_mc3d_nlat, Ens_mc3d_trnz,&
-          Ens_mc3d_trnl, Ens_mc3d_trnh,                              &
-          Ens_mc3d_max,  Ens_mc3d_min,  Ens_mc3d_std,                &
-          Ens_mc3d_tau,  Ens_mc3d_str,  Ens_skeb_alph, Ens_skeb_alpt,&
+          Ens_mc_seed,   Ens_skeb_nlon, Ens_skeb_nlat, Ens_skeb_ncha,&
+          Ens_skeb_trnl, Ens_skeb_trnh,                              &
+          Ens_skeb_max,  Ens_skeb_min,  Ens_skeb_std,                &
+          Ens_skeb_tau,  Ens_skeb_str,  Ens_skeb_alph, Ens_skeb_alpt,&
           Ens_skeb_bfc,  Ens_skeb_lam,                               &
-          Ens_mc2d_nlon, Ens_mc2d_nlat, Ens_mc2d_ncha, Ens_mc2d_trnl,&
-          Ens_mc2d_trnh, Ens_dim2_l,    Ens_dim2_m                  ,& 
-          Ens_dim2_lmax ,Ens_dim2_mmax, Ens_mc2d_min,  Ens_mc2d_max, &
-          Ens_mc2d_std,  Ens_mc2d_tau,  Ens_mc2d_str,                &
+          Ens_ptp_nlon, Ens_ptp_nlat, Ens_ptp_ncha, Ens_ptp_trnl,    &
+          Ens_ptp_trnh, Ens_ptp_l,    Ens_ptp_m,                     & 
+          Ens_ptp_lmax ,Ens_ptp_mmax, Ens_ptp_min,  Ens_ptp_max,     &
+          Ens_ptp_std,  Ens_ptp_tau,  Ens_ptp_str,                   &
           Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
           Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
 !
@@ -85,33 +85,32 @@
       Ens_skeb_gwd    = .false.
       Ens_stat        = .false.
       Ens_skeb_div    = .false.
-      Ens_mc3d_nlon   = 16 
-      Ens_mc3d_nlat   =  8
-      Ens_mc3d_trnz   =  3
-      Ens_mc3d_trnl   =  2
-      Ens_mc3d_trnh   =  8
-      Ens_mc3d_min    = 0.0
-      Ens_mc3d_max    = 0.0
-      Ens_mc3d_std    = 0.0
-      Ens_mc3d_tau    = 0.0
-      Ens_mc3d_str    = 0.0
-
+      Ens_skeb_ncha   =  1
+      Ens_skeb_nlon   = 16 
+      Ens_skeb_nlat   =  8
+      Ens_skeb_trnl   =  2
+      Ens_skeb_trnh   =  8
+      Ens_skeb_min    = 0.0
+      Ens_skeb_max    = 0.0
+      Ens_skeb_std    = 0.0
+      Ens_skeb_tau    = 0.0
+      Ens_skeb_str    = 0.0
       Ens_skeb_bfc    = 1.0e-01
       Ens_skeb_lam    = 2.0e+05
       Ens_skeb_alph   = 0.0
       Ens_skeb_alpt   = 0.0
 
       Ens_ptp_conf    = .false.
-      Ens_mc2d_nlon   = 16
-      Ens_mc2d_nlat   =  8
-      Ens_mc2d_ncha   =  1
-      Ens_mc2d_trnl   =  1
-      Ens_mc2d_trnh   =  8
-      Ens_mc2d_min    = 0.0
-      Ens_mc2d_max    = 0.0
-      Ens_mc2d_std    = 0.0
-      Ens_mc2d_tau    = 0.0
-      Ens_mc2d_str    = 0.0
+      Ens_ptp_nlon   = 16
+      Ens_ptp_nlat   =  8
+      Ens_ptp_ncha   =  1
+      Ens_ptp_trnl   =  1
+      Ens_ptp_trnh   =  8
+      Ens_ptp_min    = 0.0
+      Ens_ptp_max    = 0.0
+      Ens_ptp_std    = 0.0
+      Ens_ptp_tau    = 0.0
+      Ens_ptp_str    = 0.0
       Ens_ptp_env_u   = 1.0
       Ens_ptp_env_b   = 1.0
       Ens_ptp_cape    = 0.0
@@ -146,18 +145,20 @@
             ens_nml = -1
          endif
 
-         if (Ens_mc3d_nlon.ne.2*Ens_mc3d_nlat)then
-            if(F_unout.ge.0)write(F_unout,*)'Nlon must equal 2*nlat'
+         do ncha=1,Ens_skeb_ncha
+           if (Ens_skeb_nlon(ncha).ne.2*Ens_skeb_nlat(ncha))then
+              if(F_unout.ge.0)write(F_unout,*)'skeb_ncha=',ncha,' Nlon must equal 2*nlat'
+              ens_nml = -1
+           endif
+         enddo
+  
+         if (Ens_ptp_ncha.gt.MAX2DC) then
+            if(F_unout.ge.0)write(F_unout,*)'Ens_ptp_ncha must be <=9'
             ens_nml = -1
          endif
 
-         if (Ens_mc2d_ncha.gt.MAX2DC) then
-            if(F_unout.ge.0)write(F_unout,*)'Ens_mc2d_ncha must be <=9'
-            ens_nml = -1
-         endif
-
-         do i=1,Ens_mc2d_ncha
-            if (Ens_mc2d_nlon(i).ne.2*Ens_mc2d_nlat(i))then
+         do i=1,Ens_ptp_ncha
+            if (Ens_ptp_nlon(i).ne.2*Ens_ptp_nlat(i))then
                 if(F_unout.ge.0)write(F_unout,*)'Nlon2 must equal 2*nlat2'
                 ens_nml = -1
             endif
@@ -165,33 +166,35 @@
 
          if (ens_nml.lt.0) return
 
-         Ens_mc3d_dim    = (Ens_mc3d_trnh+1)*(Ens_mc3d_trnh+2)/2
-         Ens_mc3d_mzt    = (Ens_mc3d_trnz-1)/2
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
-         Ens_stat        =  Ens_stat.and.Ens_conf
+	 Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
+         Ens_skeb_lmax   =  maxval(Ens_skeb_l)
+         Ens_skeb_m      =  Ens_skeb_trnh+1
+         Ens_skeb_mmax   =  maxval(Ens_skeb_m)
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
-         Ens_dim2_l      =  Ens_mc2d_trnh-Ens_mc2d_trnl+1
-         Ens_dim2_lmax   =  maxval(Ens_dim2_l)
-         Ens_dim2_m      =  Ens_mc2d_trnh+1
-         Ens_dim2_mmax   =  maxval(Ens_dim2_m)
-
-
-
+         Ens_stat        =  Ens_stat.and.Ens_conf
+         Ens_ptp_l      =  Ens_ptp_trnh-Ens_ptp_trnl+1
+         Ens_ptp_lmax   =  maxval(Ens_ptp_l)
+         Ens_ptp_m      =  Ens_ptp_trnh+1
+         Ens_ptp_mmax   =  maxval(Ens_ptp_m)
+         
          stochphy_L  = Ens_ptp_conf.and.Ens_conf
 
          if(F_unout.ge.0)then
             write(F_unout,"(a,i8)" )'Ens_mc_seed   = ',Ens_mc_seed
-            write(F_unout,"(a,i5)" )'Ens_mc3d_dim   = ',Ens_mc3d_dim
-            write(F_unout,'(a,i5)' )'Ens_mc3d_mzt   = ',Ens_mc3d_mzt
             write(F_unout,'(a,l5)' )'Ens_skeb_conf  = ',Ens_skeb_conf
             write(F_unout,'(a,l5)' )'Ens_stat  = ',Ens_stat
             write(F_unout,'(a,l5)' )'Ens_skeb_div   = ',Ens_skeb_div
-            write(F_unout,'(a,10i5)')'Ens_dim2_l     = ',Ens_dim2_l
-            write(F_unout,'(a,i5)' )'Ens_dim2_lmax = ',Ens_dim2_lmax
-            write(F_unout,'(a,10i5)')'Ens_dim2_m     = ',Ens_dim2_m
-            write(F_unout,'(a,i5)' )'Ens_dim2_mmax = ',Ens_dim2_mmax
+            write(F_unout,'(a,10i5)')'Ens_ptp_l     = ',Ens_ptp_l
+            write(F_unout,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
+            write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
+            write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
+	    write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
+            write(F_unout,'(a,i5)' )'Ens_skeb_lmax = ',Ens_skeb_lmax
+            write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
+            write(F_unout,'(a,i5)' )'Ens_skeb_mmax = ',Ens_skeb_mmax
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
-            write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_mc2d_ncha
+            write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha
             write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u
             write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_b = ',Ens_ptp_env_b
             write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_cape = ',Ens_ptp_cape
@@ -205,7 +208,7 @@
 
       ier= WB_OK
       if (stochphy_L) then
-         ier= min(wb_put('ens/IMRKV2'     , Ens_mc2d_ncha-1    , WB_REWRITE_MANY),ier)
+         ier= min(wb_put('ens/IMRKV2'     , Ens_ptp_ncha     , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/STOCHPHY'   , stochphy_L       , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVU'    , Ens_ptp_env_u    , WB_REWRITE_MANY),ier)
          ier= min(wb_put('ens/PTPENVB'    , Ens_ptp_env_b    , WB_REWRITE_MANY),ier)

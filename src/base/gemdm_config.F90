@@ -126,6 +126,9 @@
          if ( (Schm_trapeze_L .or. Schm_step_settls_L) .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
       endif
 
+      Schm_nologinC_L= Schm_nolog_L
+      Schm_nologT_L  = Schm_nolog_L
+
       deg_2_rad = Dcst_pi_8/180.
 
       P_lmvd_high_lat = min(90.,abs(P_lmvd_high_lat))
@@ -280,6 +283,11 @@
             return
          endif
 
+         if (.not. Schm_nologT_L) then
+            if (lun_out>0) write (Lun_out, 9682) 'Cstv_rE_8'
+            return      
+         endif
+
          if (Schm_opentop_L) then
             if (lun_out>0) write (Lun_out, 9681) 'Cstv_rE_8'
             return
@@ -406,6 +414,7 @@
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
  9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
+ 9682 format (/,'ABORT: ',a,' cannot be less than 1.0 for LOG formulation'/)             
 !
 !-------------------------------------------------------------------
 !

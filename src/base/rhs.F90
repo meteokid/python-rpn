@@ -75,7 +75,8 @@
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
               w1, w2, w3, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
       real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)           
-      real, dimension(:,:,:), pointer :: BsPq, FI, Afis, MU, HDIV
+      real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
+      real, dimension(:,:,:), pointer :: BsPq, FI, MU, HDIV
       save MU, HDIV, kdiv_damp_8
       real*8, parameter :: one=1.d0, zero=0.d0, half=0.5d0 , &
                            alpha1= -1.d0/16.d0 , alpha2 =9.d0/16.d0
@@ -84,10 +85,9 @@
 !      
       if (Lun_debug_L) write (Lun_out,1000)
 
-      nullify  ( BsPq, FI, Afis )
+      nullify  ( BsPq, FI )
       allocate ( BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                   FI(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                 Afis(Minx:Maxx,Miny:Maxy,l_nk) )
+                   FI(Minx:Maxx,Miny:Maxy,l_nk+1) )
 
       if (.not.done_MU) then
          nullify  ( MU )
@@ -192,23 +192,7 @@
 
 !$omp parallel private(km,kq,kp,barz,barzp,w1,w2,w3,wk1,wk2, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
-!$omp     dTstr_8,BsPqbarz,fipbarz,tdiv)
-
-      if(Schm_MTeul.ne.0) then
-!$omp do
-         do k=1,l_nk
-            do j=j0,jn
-            do i=i0,in
-               Afis(i,j,k)=0.5d0 * (       &
-                  F_u(i  ,j,k) * ( F_fis(i+1,j) - F_fis(i  ,j) ) * geomg_invDXMu_8(j)   &
-                + F_u(i-1,j,k) * ( F_fis(i  ,j) - F_fis(i-1,j) ) * geomg_invDXMu_8(j)   &
-                + F_v(i,j  ,k) * ( F_fis(i,j+1) - F_fis(i,j  ) ) * geomg_invDYMv_8(j)   &
-                + F_v(i,j-1,k) * ( F_fis(i,j  ) - f_fis(i,j-1) ) * geomg_invDYMv_8(j-1) )
-            enddo
-            enddo
-         enddo
-!$omp enddo
-      endif
+!$omp     dTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
 
 !$omp do
       do k=1,l_nk+1
@@ -340,50 +324,69 @@
 ! Compute Rc: RHS of Continuity equation    *
 !********************************************
 
-      w3=Ver_wp_8%t(k)*Ver_b_8%m(k+1)+Ver_wm_8%t(k)*Ver_b_8%m(k)
-      do j= j0, jn
-      do i= i0, in
-         w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-         w2=Ver_wpstar_8(k)*(F_xd(i,j,k)+F_qd(i,j,k))+Ver_wmstar_8(k)*(F_xd(i,j,km)+F_qd(i,j,km))
-         F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
-                      + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*w2
-
-         F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8 * w3 * F_s(i,j) &
-                      + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
-
-         tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
-              + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
-              + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)
-         zdot = Ver_wp_8%m(k) * F_zd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
-         xdot = Ver_wp_8%m(k) * F_xd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_xd(i,j,km)
-         F_orc(i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*Ver_b_8%m(k) + Ver_dbdz_8%m(k) ) * F_s(i,j) &
-                      - Cstv_Beta_8 * ( tdiv + zdot + Ver_dbdz_8%m(k)*F_s(i,j)*(tdiv+xdot) )
-      end do
-      end do
-
-      w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
-      if(Schm_MTeul.gt.0) then
-         dBdzpBk =Ver_dbdz_8%t(k )+(Ver_dbdz_8%m(kp)-Ver_dbdz_8%m(k ))*Ver_idz_8%t(k )
-         dBdzpBkm=Ver_dbdz_8%t(km)+(Ver_dbdz_8%m(k )-Ver_dbdz_8%m(km))*Ver_idz_8%t(km)
+      if(Schm_nologT_L) then
+         w3=Ver_wp_8%t(k)*Ver_b_8%m(k+1)+Ver_wm_8%t(k)*Ver_b_8%m(k)
          do j= j0, jn
          do i= i0, in
-            barz  = Cstv_invT_8*(Ver_b_8%m(k)+Ver_dbdz_8%m(k))  &
-                  + Cstv_Beta_8*(Ver_wp_8%m(k)*F_zd(i,j,k )*dBdzpBk &
-                                +Ver_wm_8%m(k)*F_zd(i,j,km)*dBdzpBkm*Ver_onezero(k))
-            barzp = (Ver_b_8%m(k)+Ver_dbdz_8%m(k))*Afis(i,j,k)
-            F_orc(i,j,k) = F_orc(i,j,k) &
-                         + w1 * ( barz * F_fis(i,j) + Cstv_Beta_8 * barzp )
+            w1=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
+            w2=Ver_wpstar_8(k)*(F_xd(i,j,k)+F_qd(i,j,k))+Ver_wmstar_8(k)*(F_xd(i,j,km)+F_qd(i,j,km))
+            F_ort(i,j,k) = Cstv_invT_8 * ( F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
+                         + Cstv_Beta_8 * Cstv_bar1_8 * w1 * F_t(i,j,k)*w2
+
+            F_orx(i,j,k) = Cstv_invT_8 * Cstv_bar1_8 * w3 * F_s(i,j) &
+                         + Cstv_Beta_8 * (F_xd(i,j,k)-F_zd(i,j,k))
+         end do
+         end do
+      else
+         if (G_lam) then
+            xtmp_8(:,:) = one
+         endif
+         do j = j0, jn
+         do i = i0, in
+            xtmp_8(i,j) = F_t(i,j,k) / Ver_Tstar_8%t(k)
+         end do
+         end do
+         call vlog( ytmp_8, xtmp_8, nij )
+         do j= j0, jn
+         do i= i0, in
+            w1=Ver_wpstar_8(k)*BsPq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPq(i,j,k)+BsPq(i,j,km))
+            BsPqbarz = Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*BsPq(i,j,k)
+            F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
+                         + Cstv_Beta_8 * Dcst_cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))
          end do
          end do
       endif
-      if(Schm_MTeul.gt.1) then
+      if(Schm_nologinC_L) then
          do j= j0, jn
          do i= i0, in
-            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-            barz  = Cstv_invT_8 * Ver_b_8%t(k) + Cstv_Beta_8*w2*Ver_dbdz_8%t(k)
-            barzp = ( Ver_wp_8%t(k)*Ver_b_8%m(k+1)*Afis(i,j,kp)+Ver_wm_8%t(k)*Ver_b_8%m(k)*Afis(i,j,k) )
-            F_orx(i,j,k) = F_orx(i,j,k) &
-                         + w1 * ( barz * F_fis(i,j) + Cstv_Beta_8 * barzp )
+            tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
+                 + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
+                 + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)
+            zdot = Ver_wp_8%m(k) * F_zd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+            xdot = Ver_wp_8%m(k) * F_xd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_xd(i,j,km)
+            F_orc(i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*Ver_b_8%m(k) + Ver_dbdz_8%m(k) ) * F_s(i,j) &
+                         - Cstv_Beta_8 * ( tdiv + zdot + Ver_dbdz_8%m(k)*F_s(i,j)*(tdiv+xdot) )
+         end do
+         end do
+      else
+         if (G_lam) then
+            xtmp_8(:,:) = one
+         endif
+         do j = j0, jn
+         do i = i0, in
+            xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
+         end do
+         end do
+         call vlog( ytmp_8, xtmp_8, nij)
+         do j = j0, jn
+         do i = i0, in
+            tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
+                 + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
+                 + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
+                 + Ver_wp_8%m(k) * F_zd(i,j,k) &
+                 + Ver_wm_8%m(k) * Ver_onezero(k) * F_zd(i,j,km)
+            F_orc (i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*Ver_b_8%m(k)*F_s(i,j) + ytmp_8(i,j) ) &
+                          - Cstv_Beta_8 * tdiv
          end do
          end do
       endif
@@ -401,23 +404,47 @@
             w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
             F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) &
                          + Cstv_Beta_nh_8 * Dcst_grav_8 * MU(i,j,k)
+         end do
+         end do
+         if(Schm_nologT_L) then
+            do j= j0, jn
+            do i= i0, in
+               F_orq(i,j,k) = Cstv_invT_nh_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
+                            + Cstv_Beta_nh_8 * F_qd(i,j,k)
+            end do
+            end do
+         endif
+      endif
+      if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nologT_L))) then
+         do j= j0, jn
+         do i= i0, in
+            w1=Ver_wpstar_8(k)*FI(i,j,k+1)+Ver_wmstar_8(k)*half*(FI(i,j,k)+FI(i,j,km))
+            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
             F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*FI(i,j,k) )  &
                          + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
                          + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
-            F_orq(i,j,k) = Cstv_invT_nh_8 * (Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)) &
-                         + Cstv_Beta_nh_8 * F_qd(i,j,k)
          end do
          end do
       endif
 
       if(Cstv_Tstr_8.lt.0.) then
-         dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
-         do j = j0, jn
-         do i = i0, in
-            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
-         end do
-         end do
+         if(Schm_nologT_L) then
+            dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
+            do j = j0, jn
+            do i = i0, in
+               w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+               F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
+            end do
+            end do
+         else
+            dTstr_8=(log(Ver_Tstar_8%m(k+1))-log(Ver_Tstar_8%m(k)))*Ver_idz_8%t(k)
+            do j= j0, jn
+            do i= i0, in
+               w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+               F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
+            end do
+            end do
+         endif
       endif
 
    end do
@@ -454,7 +481,7 @@
 
       endif
 
-      deallocate ( BsPq, FI, Afis )
+      deallocate ( BsPq, FI )
       if (.not.Schm_hydro_L) deallocate ( MU )
       if (kdiv_damp_8.gt.0.) deallocate ( HDIV )
 

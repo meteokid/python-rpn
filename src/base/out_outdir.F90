@@ -50,7 +50,7 @@
 !
 !----------------------------------------------------------------------
 !
-      upperlimit = Step_total
+      upperlimit = Step_total + Step_initial
 
       call out_steps
 
@@ -79,6 +79,7 @@
             last_step_post = min(last_step_post+Step_delay,upperlimit)
          endif
       endif
+! last_step_post is in lctl_step space
 
 ! These next few lines will serve soon in establishing
 ! a self adjustable lenght for last_S which will replace postjob_S
@@ -100,7 +101,6 @@
 
       Out_laststep_S = 'laststep_'//postjob_S
       Out_dirname_S  = trim(Path_output_S)//'/'//Out_laststep_S
-
       ! PE0 is responsible for creating shared subdir structure
       if (dirstep_S /= Out_dirname_S) then
          dirstep_S = Out_dirname_S        

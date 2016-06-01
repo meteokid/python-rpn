@@ -29,8 +29,15 @@
       real,    pointer, dimension (:,:,:)     :: ensdiv  => null()
       real,    pointer, dimension (:,:,:)     :: ensvor  => null()
 ! special shapes for spectral coefficients
-      real*8, pointer, dimension (:,:,:)       :: anm     => null()
-      real*8, pointer, dimension (:,:,:)       :: bnm     => null()
+      real, pointer, dimension (:,:,:)       :: ar_p     => null()
+      real, pointer, dimension (:,:,:)       :: ai_p     => null()
+      real, pointer, dimension (:,:,:)       :: ar_s     => null()
+      real, pointer, dimension (:,:,:)       :: ai_s     => null()
+      real, pointer, dimension (:,:,:)       :: br_p     => null()
+      real, pointer, dimension (:,:,:)       :: bi_p     => null()
+      real, pointer, dimension (:,:,:)       :: br_s     => null()
+      real, pointer, dimension (:,:,:)       :: bi_s     => null()
+
 ! special shape for random number generator
       integer, pointer, dimension (:,:)       :: dumdum  => null()
 
@@ -43,11 +50,16 @@
       character(len=GMM_MAXNAMELENGTH) :: gmmk_difut1_s,gmmk_difvt1_s
       character(len=GMM_MAXNAMELENGTH) :: gmmk_ugwdt1_s,gmmk_vgwdt1_s
       character(len=GMM_MAXNAMELENGTH) :: gmmk_ensdiv_s,gmmk_ensvor_s
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_anm_s,gmmk_bnm_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ar_s,gmmk_ai_s,gmmk_br_s,gmmk_bi_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_ar_p,gmmk_ai_p,gmmk_br_p,gmmk_bi_p
+       
+
+
       character(len=GMM_MAXNAMELENGTH) :: gmmk_dumdum_s
       common /ens_n_gmm/ gmmk_mcsph1_s
       common /ens_n_gmm/ gmmk_difut1_s,gmmk_difvt1_s
       common /ens_n_gmm/ gmmk_ugwdt1_s,gmmk_vgwdt1_s
       common /ens_n_gmm/ gmmk_ensdiv_s,gmmk_ensvor_s
-      common /ens_n_gmm/ gmmk_anm_s,gmmk_bnm_s
+      common /ens_n_gmm/ gmmk_ar_s,gmmk_ai_s,gmmk_br_s,gmmk_bi_s
+      common /ens_n_gmm/ gmmk_ar_p,gmmk_ai_p,gmmk_br_p,gmmk_bi_p
       common /ens_n_gmm/ gmmk_dumdum_s

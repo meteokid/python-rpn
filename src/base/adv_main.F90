@@ -205,17 +205,19 @@
 
 !  RHS Interpolation: lnk-1 thermo levels + surface
 
-      call adv_get_indices(ii, pxt, pyt, pzt, num, nm, i0, in, j0, jn, k0, l_nk, 'x')   
-      call adv_cubic('RHSX_S', rhsx, orhsx, pxt, pyt, pzt, & 
-                        no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
-                        l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )      
+      if(Schm_nologT_L) then
+         call adv_get_indices(ii, pxt, pyt, pzt, num, nm, i0, in, j0, jn, k0, l_nk, 'x')   
+         call adv_cubic('RHSX_S', rhsx, orhsx, pxt, pyt, pzt, & 
+                           no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
+                           l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
+                           nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )      
 
-      if(.not.Schm_hydro_L) then
-         call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt, & 
-                        no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
-                        l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )
+         if(.not.Schm_hydro_L) then
+            call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt, & 
+                           no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
+                           l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
+                           nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )
+         endif
       endif
 
 !  RHS Interpolation: l_nk thermo levels       
@@ -230,12 +232,14 @@
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
                       nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
 
-      if(.not.Schm_hydro_L) then
+      if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nologT_L))) then
          call adv_cubic('RHSF_S', rhsf, orhsf, pxt, pyt, pzt, & 
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
                         nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )  
   
+      endif
+      if(.not.Schm_hydro_L) then
          call adv_cubic('RHSW_S', rhsw ,orhsw , pxt, pyt, pzt, &
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
                         l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
