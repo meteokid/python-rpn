@@ -519,6 +519,8 @@ if __name__ == "__main__":
         'rpnpy.librmn.fstd98',
         'rpnpy.librmn.interp',
         'rpnpy.utils.llacar',
+        'rpnpy.utils.thermoconsts',
+        'rpnpy.utils.thermofunc',
         'rpnpy.librmn.proto',
         'rpnpy.vgd',
         'rpnpy.vgd.all',

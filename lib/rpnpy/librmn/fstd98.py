@@ -624,6 +624,11 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
         fstinl
         fstinf
         rpnpy.librmn.const
+
+    Notes:
+        librmn_15.2 fst_edit_dir ignores ni,nj,nk,grtyp
+        These parameters cannot thus be zapped.
+        librmn_16 will allow the edition of grtyp
     """
     if datev != -1:
         if dateo != -1:
