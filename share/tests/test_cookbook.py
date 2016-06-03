@@ -594,7 +594,7 @@ class rpnpyCookbook(unittest.TestCase):
         rpnpy.librmn.fstd98.fsrecr
         rpnpy.librmn.const
         """
-        import os, os.path
+        import os, os.path, sys
         import rpnpy.librmn.all as rmn
         ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
         fileNameIn  = os.path.join(ATM_MODEL_DFILES,'bcmk')
