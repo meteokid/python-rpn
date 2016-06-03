@@ -8,6 +8,7 @@
  See also:
      rpnpy.librmn
      rpnpy.librmn.proto
+     rpnpy.librmn.proto_burp
      rpnpy.librmn.const
      rpnpy.librmn.base
      rpnpy.librmn.fstd98
@@ -18,6 +19,7 @@
 
 from . import *
 from .proto import *
+from .proto_burp import *
 from .const import *
 from .base import *
 from .fstd98 import *

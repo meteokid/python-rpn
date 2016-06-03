@@ -3832,7 +3832,7 @@ Write(999) >>   P                  90     1     1  000000000       38802   45849
 Write(999) ^^   P                   1    45     1  000000000       38802   45849     0        0        0  E 32  E   900    10 43200 43200
 Write(999) ^>   P                 269     1     1  000000000       37212   57719     0        0        0  E 32  F     1     0     0     0
 echo -e "\n======= PY-UnitTest List ========\n" ; \
-	for i in /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_cookbook.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_cookbook2.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_fst_edit_dir.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_fstdc.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_ftnnml.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_base.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_convertip.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_fstd98.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_interp.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_rpnstd.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_tutorial.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_utils_fst3d.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_utils_thermofunc.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_vgd_base.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_vgd_proto.py; \
+	for i in /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_cookbook.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_cookbook2.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_fst_edit_dir.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_fstdc.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_ftnnml.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_base.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_burp.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_convertip.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_fstd98.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_interp.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_rpnstd.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_tutorial.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_utils_fst3d.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_utils_thermofunc.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_vgd_base.py /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_vgd_proto.py; \
 	do echo -e "\n==== PY-UnitTest: " $i "====\n"; python $i ;\
 	done
 
@@ -4881,7 +4881,7 @@ Traceback (most recent call last):
 FSTDError: fstopenall: unable to open any file in path ['uvfstfile.fst']
 
 ----------------------------------------------------------------------
-Ran 19 tests in 8.146s
+Ran 19 tests in 7.441s
 
 FAILED (errors=2)
 0, dateo=354514400
@@ -5018,7 +5018,7 @@ CB24: wrote the vgrid descriptor
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 ...
 ----------------------------------------------------------------------
-Ran 4 tests in 1.346s
+Ran 4 tests in 1.082s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5160,7 +5160,7 @@ CB51: Computed output pressure cube, k0:[min=  50000, max=  50000],  nk:[min= 10
 
 ....
 ----------------------------------------------------------------------
-Ran 4 tests in 0.814s
+Ran 4 tests in 0.693s
 
 OK
 
@@ -5184,7 +5184,7 @@ OK
 
 ..................
 ----------------------------------------------------------------------
-Ran 18 tests in 0.009s
+Ran 18 tests in 0.008s
 
 OK
 
@@ -5204,11 +5204,19 @@ Ran 16 tests in 0.014s
 
 OK
 
+==== PY-UnitTest:  /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_burp.py ====
+
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 63.413s
+
+OK
+
 ==== PY-UnitTest:  /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_convertip.py ====
 
 ........
 ----------------------------------------------------------------------
-Ran 8 tests in 0.002s
+Ran 8 tests in 0.003s
 
 OK
 
@@ -5228,7 +5236,7 @@ OK
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 ....
 ----------------------------------------------------------------------
-Ran 11 tests in 1.385s
+Ran 11 tests in 1.393s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5317,7 +5325,7 @@ Traceback (most recent call last):
 AssertionError: False is not true
 
 ----------------------------------------------------------------------
-Ran 25 tests in 53.916s
+Ran 25 tests in 52.316s
 
 FAILED (failures=2)
 r 229 34 1.28679823774e-06 4.08900575621e-08 0.0 9.01252913005
@@ -5346,7 +5354,7 @@ Read(997) ME   C                 201   100     1  000000000        1200       0 
 
 .................
 ----------------------------------------------------------------------
-Ran 17 tests in 0.262s
+Ran 17 tests in 0.267s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5406,7 +5414,7 @@ Read(999) LA   C                   3     3     1  000000000           0       0 
 
 ..............
 ----------------------------------------------------------------------
-Ran 14 tests in 0.239s
+Ran 14 tests in 0.248s
 
 OK
 Read(998) P0   P  G133K80P       200   100     1  354514400           0       0     0      900        0  R 12  G     0     0     0     0
@@ -5519,7 +5527,7 @@ Found TT   at level 1.000000 hy
 
 .
 ----------------------------------------------------------------------
-Ran 1 test in 1.383s
+Ran 1 test in 1.375s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5606,7 +5614,7 @@ Traceback (most recent call last):
 AssertionError: Need some thermofunc tests
 
 ----------------------------------------------------------------------
-Ran 1 test in 0.134s
+Ran 1 test in 0.142s
 
 FAILED (failures=1)
 
@@ -5614,7 +5622,7 @@ FAILED (failures=1)
 
 ..............................
 ----------------------------------------------------------------------
-Ran 30 tests in 0.055s
+Ran 30 tests in 0.054s
 
 OK
 Read(999) !!   X  HYB_GEMV3        3   161     1  000000000           0       0     0        0        0  E 64  X  5001   100   160     0
@@ -5677,7 +5685,7 @@ Read(999) !!   X  HYB_GEMV3        3   161     1  000000000           0       0 
 (Cvgd) ERROR in Cvgd_get_int, invalid key SCRAP
 ......
 ----------------------------------------------------------------------
-Ran 26 tests in 0.077s
+Ran 26 tests in 0.080s
 
 OK
 Read(999) !!   X  HYB_GEMV3        3   161     1  000000000           0       0     0        0        0  E 64  X  5001   100   160     0
