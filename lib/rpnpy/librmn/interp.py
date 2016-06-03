@@ -1021,7 +1021,7 @@ def gdll(gdid, lat=None, lon=None):
     >>> (i, j) = (45, 20)
     >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
               .format(i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
-    # Lat, Lon of point 45, 20 is: -7.911613, 180.000000
+    # Lat, Lon of point 45, 20 is: -7.91161, 180.0
     
     See Also:
         gdxyfll
@@ -1095,7 +1095,7 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
     >>> print("# x, y pos at lat={0}, lon={1} is: {2}, {3}"\
               .format(la, lo, xy['x'][0], xy['y'][0]))
-    # x, y pos at lat=45.000000, lon=273.000000 is: 69.250000, 34.375877
+    # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.3759
 
     See Also:
         gdllfxy
@@ -1167,7 +1167,7 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     >>> lalo = rmn.gdllfxy(grid['id'], [i], [j])
     >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
               .format(i, j, lalo['lat'][0], lalo['lon'][0]))
-    # Lat, Lon of point 69, 34 is: 43.513199, 272.000000
+    # Lat, Lon of point 69, 34 is: 43.5132, 272.0
     
     See Also:
         gdll

@@ -255,7 +255,7 @@ class RPNDate(object):
         ymd = hms = 0
         (ymd, hms) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.datev)
         if self.dt == 0:
-            return "RPNDate({0:08d}, {1:08d}".format(ymd, hms)
+            return "RPNDate({0:08d}, {1:08d})".format(ymd, hms)
         else:
             ymd0 = hms0 = 0
             (ymd0, hms0) = _rmn.newdate(_rmn.NEWDATE_STAMP2PRINT, self.dateo)

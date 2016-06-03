@@ -1380,7 +1380,7 @@ def fstluk(key, dtype=None, rank=None, dataArray=None):
     >>> p0rec = rmn.fstluk(key)
     >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
               .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
+    # P0 ip2=0 min=530.641 max=1039.64 avg=966.5
     >>> rmn.fstcloseall(funit)
 
     See Also:
@@ -2394,10 +2394,10 @@ def convertIPtoPK(ip1, ip2, ip3):
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
     >>> print("# Level v1={0}, v2={1}, type={2}"\
               .format(pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
-    # Level v1=500.000000, v2=500.000000, type=mb
+    # Level v1=500.0, v2=500.0, type=mb
     >>> print("# Time v1={0}, v2={1}, type={2}"\
               .format(pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
-    # Time v1=12.000000, v2=12.000000, type= H
+    # Time v1=12.0, v2=12.0, type= H
 
     See Also:
         ip1_val
@@ -2465,10 +2465,10 @@ def convertPKtoIP(pk1, pk2, pk3):
     >>> (pk1, pk2, pk3) = rmn.convertIPtoPK(ip1, ip2, ip3)
     >>> print("# Level v1={0}, v2={1}, type={2}"\
               .format(pk1.v1, pk1.v2, rmn.kindToString(pk1.kind)))
-    # Level v1=500.000000, v2=500.000000, type=mb
+    # Level v1=500.0, v2=500.0, type=mb
     >>> print("# Time v1={0}, v2={1}, type={2}"\
               .format(pk2.v1, pk2.v2, rmn.kindToString(pk2.kind)))
-    # Time v1=12.000000, v2=12.000000, type= H
+    # Time v1=12.0, v2=12.0, type= H
 
     See Also:
         ip1_val
@@ -2530,10 +2530,10 @@ def EncodeIp(rp1, rp2, rp3):
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
     >>> print("# Level v1={0}, v2={1}, type={2}"\
               .format(rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
-    # Level v1=500.000000, v2=500.000000, type=mb
+    # Level v1=500.0, v2=500.0, type=mb
     >>> print("# Time v1={0}, v2={1}, type={2}"\
               .format(rp2.v1, rp2.v2, rmn.kindToString(rp2.kind)))
-    # Time v1=12.000000, v2=12.000000, type= H
+    # Time v1=12.0, v2=12.0, type= H
 
     See Also:
         DecodeIp
@@ -2586,7 +2586,7 @@ def DecodeIp(ip1, ip2, ip3):
     >>> (rp1, rp2, rp3) = rmn.DecodeIp(ip1, ip2, ip3)
     >>> print("# Level v1={0}, v2={1}, type={2}"\
               .format(rp1.v1, rp1.v2, rmn.kindToString(rp1.kind)))
-    # Level v1=1500.000000, v2=1500.000000, type= m
+    # Level v1=1500.0, v2=1500.0, type= m
 
     See Also:
         EncodeIp
