@@ -21,6 +21,8 @@ from rpnpy.librmn import interp as _ri
 from rpnpy.utils  import llacar as _ll
 from rpnpy.librmn import RMNError
 
+_list2ftnf32 = lambda x: x if isinstance(x, _np.ndarray) else _np.asfortranarray(x, dtype=_np.float32)
+
 def decodeIG2dict(grtyp, ig1, ig2, ig3, ig4):
     """
     Decode encode grid values into a dict with meaningful labels
@@ -407,8 +409,12 @@ def getIgTags(params):
         rpnpy.librmn.base.crc32
     """
     try:
-        a = params['ax'][:, 0].tolist()
-        a.extend(params['ay'][0, :].tolist())
+        if params['ax'].shape == params['ay'].shape:
+            a = params['ax'].ravel().tolist()
+            a.extend(params['ay'].ravel().tolist())            
+        else:
+            a = params['ax'][:, 0].tolist()
+            a.extend(params['ay'][0, :].tolist())
     except:
         a = params['axy'].tolist()
     try:
@@ -689,6 +695,7 @@ def encodeGrid(params):
         defGrid_ZE
         defGrid_diezeL
         defGrid_diezeE
+        defGrid_YL
         defGrid_YY
     """
     try:
@@ -717,6 +724,8 @@ def encodeGrid(params):
         return defGrid_ZL(params)
     elif params['grtyp'] == '#' and  params['grref'] == 'L':
         return defGrid_diezeL(params)
+    elif params['grtyp'] == 'Y' and  params['grref'] == 'L':
+        return defGrid_YL(params)
     else:
         raise RMNError('encodeGrid: Grid type not yet supported {grtyp}({grref})'.format(**params))
         
@@ -1282,7 +1291,7 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         encodeGrid
 
     Notes:
-        ** This funciton is only available from Python-RPn version 2.0.b6 **
+        ** This funciton is only available from Python-RPN version 2.0.b6 **
     """
     params = {
         'ni'    : ni,
@@ -1429,7 +1438,7 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         encodeGrid
 
     Notes:
-        ** This funciton is only available from Python-RPn version 2.0.b6 **
+        ** This funciton is only available from Python-RPN version 2.0.b6 **
         Unfortunately, librmn's ezscint does NOT allow defining a # grid
         from ezgdef_fmem.
         The grid is thus defined as a Z grid in ezscint and tile info
@@ -1469,6 +1478,112 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         'ig3' : params['i0'],
         'ig4' : params['j0']
         })
+    return params
+
+
+def defGrid_YL(ax, ay=None, setGridId=True):
+    """
+    Defines a non uniform grid made of a cloud of points on
+    a FSTD LatLon (cylindrical equidistant) Grid projection
+
+    gridParams = defGrid_YL(ax, ay, setGridId)
+    gridParams = defGrid_YL(ax, ay)
+    gridParams = defGrid_YL(params, setGridId=setGridId)
+    gridParams = defGrid_YL(params)
+
+    Args:
+        ax          : lon of the grid points in degrees (list, numpy.ndarray)
+        ay          : lat of the grid points in degrees (list, numpy.ndarray)
+        setGridId   : Flag for creation of gid, ezscint grid id (True or False)
+        params      : above parameters given as a dictionary (dict)
+    Returns:
+        {
+            'shape' : (ni, nj) # dimensions of the grid
+            'ni'    : grid dim along the x-axis (int)
+            'nj'    : grid dim along the y-axis (int)
+            'grtyp' : grid type (Y) (str)
+            'tag1'  : grid tag 1 (int)
+            'tag2'  : grid tag 2 (int)
+            'ig1'   : grid tag 1 (int), =tag1
+            'ig2'   : grid tag 2 (int), =tag2
+            'ig3'   : grid tag 3 (int)
+            'ig4'   : grid tag 4, unused (set to 0) (int)
+            'grref' : ref grid type (L) (str)
+            'ig1ref' : ref grid parameters, encoded (int)
+            'ig2ref' : ref grid parameters, encoded (int)
+            'ig3ref' : ref grid parameters, encoded (int)
+            'ig4ref' : ref grid parameters, encoded (int)
+            'ax'    : points longitude (numpy, ndarray)
+            'ay'    : points latitudes (numpy, ndarray)
+            'id'    : ezscint grid-id if setGridId==True, -1 otherwise (int)
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        RMNError   on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> params0 = { \
+            'ax'    : ( 45.,  46.5),\
+            'ay'    : (273., 273. )\
+            }
+    >>> params = rmn.defGrid_YL(params0, setGridId=True)
+
+    See Also:
+        decodeGrid
+        encodeGrid
+
+    Notes:
+        ** This funciton is only available from Python-RPN version 2.1.b1 **
+    """
+    params = {
+        'ax'    : ax,
+        'ay'    : ay
+        }
+    if isinstance(ax, dict):
+        params.update(ax)
+        try:
+            setGridId = ax['setGridId']
+        except:
+            pass
+    params['ax'] = _list2ftnf32(params['ax'])
+    params['ay'] = _list2ftnf32(params['ay'])
+    params['grtyp'] = 'Y'
+    params['grref'] = 'L'
+
+    ## assert(params['ay'].shape == params['ax'].shape)
+    if params['ay'].shape != params['ax'].shape:
+        raise TypeError("Provided ax, ay arrays have inconsistent shapes")
+
+    if len(params['ax'].shape) != 2:
+        params['ax'] = params['ax'].reshape((params['ax'].size,1))
+        params['ay'] = params['ay'].reshape((params['ay'].size,1))
+
+    (params['ni'], params['nj']) = params['ax'].shape
+
+    ig1234 = _rb.cxgaig(params['grref'], 0., 0., 1., 1.)
+    params['ig1ref'] = ig1234[0]
+    params['ig2ref'] = ig1234[1]
+    params['ig3ref'] = ig1234[2]
+    params['ig4ref'] = ig1234[3]
+    params['ig1'] = ig1234[0]
+    params['ig2'] = ig1234[1]
+    params['ig3'] = ig1234[2]
+    params['ig4'] = ig1234[3]
+    params['lat0'] = 0.
+    params['lon0'] = 0.
+    params['dlat'] = 1.
+    params['dlon'] = 1.
+    
+    params['id'] = _ri.ezgdef_fmem(params) if setGridId else -1
+    
+    (params['tag1'], params['tag2']) = getIgTags(params)
+    params['tag3'] = 0
+    
+    (params['ig1'], params['ig2']) = (params['tag1'], params['tag2'])
+    (params['ig3'], params['ig4']) = (params['tag3'], 0)
+    params['shape'] = (params['ni'], params['nj'])
     return params
 
 

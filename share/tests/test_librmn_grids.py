@@ -247,6 +247,39 @@ class Librmn_grids_Test(unittest.TestCase):
     ##         else:
     ##             self.assertEqual(params[k],params2[k],'p[%s] : %s != %s' % (k,str(params[k]),str(params2[k])))
 
+    def test_defGrid_YL(self):
+        params0 = { \
+            'ax'    : ( 45.,  46.5),\
+            'ay'    : (273., 273. )\
+            }
+        params = rmn.defGrid_YL(params0)
+        params2 = rmn.decodeGrid(params['id'])
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
+                self.assertFalse(ok)
+            else:
+                ## print k,params[k] == params2[k],params[k],params2[k]
+                self.assertEqual(params[k],params2[k])
+
+                
+    def test_defGrid_YL2(self):
+        params0 = { \
+            'ax'    : ( 45.,  46.5),\
+            'ay'    : (273., 273. )\
+            }
+        params = rmn.defGrid_YL(params0)
+        params2 = rmn.decodeGrid(params)
+        for k in params.keys():
+            if isinstance(params[k],np.ndarray):
+                ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
+                ## print k,not ok,np.max(np.abs(params[k]-params2[k])),np.max(params[k])
+                self.assertFalse(ok)
+            else:
+                ## print k,params[k] == params2[k],params[k],params2[k]
+                self.assertEqual(params[k],params2[k])
+
     def test_defGrid_G_glb(self):
         params = rmn.defGrid_G(90,45,glb=True,north=True,inverted=False)
         params2 = rmn.decodeGrid(params['id'])

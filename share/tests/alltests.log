@@ -4881,7 +4881,7 @@ Traceback (most recent call last):
 FSTDError: fstopenall: unable to open any file in path ['uvfstfile.fst']
 
 ----------------------------------------------------------------------
-Ran 19 tests in 8.049s
+Ran 19 tests in 8.146s
 
 FAILED (errors=2)
 0, dateo=354514400
@@ -5018,7 +5018,7 @@ CB24: wrote the vgrid descriptor
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 ...
 ----------------------------------------------------------------------
-Ran 4 tests in 1.341s
+Ran 4 tests in 1.346s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5160,7 +5160,7 @@ CB51: Computed output pressure cube, k0:[min=  50000, max=  50000],  nk:[min= 10
 
 ....
 ----------------------------------------------------------------------
-Ran 4 tests in 0.767s
+Ran 4 tests in 0.814s
 
 OK
 
@@ -5208,7 +5208,7 @@ OK
 
 ........
 ----------------------------------------------------------------------
-Ran 8 tests in 0.003s
+Ran 8 tests in 0.002s
 
 OK
 
@@ -5228,7 +5228,7 @@ OK
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 ....
 ----------------------------------------------------------------------
-Ran 11 tests in 1.398s
+Ran 11 tests in 1.385s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5294,7 +5294,7 @@ c_fstopi option MSGLVL set to 10
 
 ==== PY-UnitTest:  /users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py ====
 
-.................FF..*** <armn_compress32> : The dimensions of NI and NJ have to be > 16
+...................FF..*** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
 *** <armn_compress32> : The dimensions of NI and NJ have to be > 16
@@ -5304,7 +5304,7 @@ c_fstopi option MSGLVL set to 10
 FAIL: test_ll2rll_rot (__main__.Librmn_grids_Test)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py", line 359, in test_ll2rll_rot
+  File "/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py", line 392, in test_ll2rll_rot
     self.assertTrue(ok)
 AssertionError: False is not true
 
@@ -5312,12 +5312,12 @@ AssertionError: False is not true
 FAIL: test_ll2rll_rot2 (__main__.Librmn_grids_Test)
 ----------------------------------------------------------------------
 Traceback (most recent call last):
-  File "/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py", line 381, in test_ll2rll_rot2
+  File "/users/dor/armn/sch/_Code_Depot_/work/python-rpn-tmp/python-rpn/share/tests/test_librmn_grids.py", line 414, in test_ll2rll_rot2
     self.assertTrue(ok)
 AssertionError: False is not true
 
 ----------------------------------------------------------------------
-Ran 23 tests in 47.359s
+Ran 25 tests in 53.916s
 
 FAILED (failures=2)
 r 229 34 1.28679823774e-06 4.08900575621e-08 0.0 9.01252913005
@@ -5346,7 +5346,7 @@ Read(997) ME   C                 201   100     1  000000000        1200       0 
 
 .................
 ----------------------------------------------------------------------
-Ran 17 tests in 0.269s
+Ran 17 tests in 0.262s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5376,7 +5376,7 @@ Compressed field is larger than original... Returning original
 .c_fnom error: file __do__not__exist__.fst should exist and does not
 ...............
 ----------------------------------------------------------------------
-Ran 25 tests in 0.027s
+Ran 25 tests in 0.029s
 
 OK
 Write(999) LA   C                   3     3     1  000000000           0       0     0        0        0  R 16  L    50    50    50 18000
@@ -5406,7 +5406,7 @@ Read(999) LA   C                   3     3     1  000000000           0       0 
 
 ..............
 ----------------------------------------------------------------------
-Ran 14 tests in 0.244s
+Ran 14 tests in 0.239s
 
 OK
 Read(998) P0   P  G133K80P       200   100     1  354514400           0       0     0      900        0  R 12  G     0     0     0     0
@@ -5519,7 +5519,7 @@ Found TT   at level 1.000000 hy
 
 .
 ----------------------------------------------------------------------
-Ran 1 test in 1.365s
+Ran 1 test in 1.383s
 
 OK
 c_fstopi option MSGLVL set to 10
@@ -5606,7 +5606,7 @@ Traceback (most recent call last):
 AssertionError: Need some thermofunc tests
 
 ----------------------------------------------------------------------
-Ran 1 test in 0.132s
+Ran 1 test in 0.134s
 
 FAILED (failures=1)
 
@@ -5677,7 +5677,7 @@ Read(999) !!   X  HYB_GEMV3        3   161     1  000000000           0       0 
 (Cvgd) ERROR in Cvgd_get_int, invalid key SCRAP
 ......
 ----------------------------------------------------------------------
-Ran 26 tests in 0.076s
+Ran 26 tests in 0.077s
 
 OK
 Read(999) !!   X  HYB_GEMV3        3   161     1  000000000           0       0     0        0        0  E 64  X  5001   100   160     0
