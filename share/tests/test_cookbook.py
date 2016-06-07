@@ -201,7 +201,7 @@ class rpnpyCookbook(unittest.TestCase):
         import os, sys
         import rpnpy.librmn.all as rmn
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open all RPNStd files in the $ATM_MODEL_DFILES/bcmk/ directory
@@ -266,7 +266,7 @@ class rpnpyCookbook(unittest.TestCase):
         import os, sys
         import rpnpy.librmn.all as rmn
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
@@ -341,7 +341,7 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
@@ -403,7 +403,7 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open file
@@ -683,7 +683,7 @@ class rpnpyCookbook(unittest.TestCase):
         fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         fileNameOut = 'uvfstfile.fst'
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open Files
@@ -813,7 +813,7 @@ class rpnpyCookbook(unittest.TestCase):
         import rpnpy.librmn.all as rmn
         import rpnpy.vgd.all as vgd
         
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Create Record grid

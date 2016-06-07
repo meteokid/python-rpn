@@ -19,7 +19,7 @@ class RpnPyUtilsFstd3D(unittest.TestCase):
         CMCGRIDF    = os.getenv('CMCGRIDF').strip()
         fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         try:

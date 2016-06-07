@@ -1573,7 +1573,7 @@ def fstopt(optName, optValue, setOget=_rc.FSTOP_SET):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> # Restric to the minimum the number of messages printed by librmn
+    >>> # Restrict to the minimum the number of messages printed by librmn
     >>> rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
     See Also:

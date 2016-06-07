@@ -22,7 +22,7 @@ class rpnpyCookbook2(unittest.TestCase):
         fileNameIn  = os.path.join(CMCGRIDF, 'prog', 'regeta', fdate)
         fileNameOut = 'p0fstfile.fst'
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         try:
@@ -131,7 +131,7 @@ class rpnpyCookbook2(unittest.TestCase):
 
         MB2PA = 100.
 
-        # Restric to the minimum the number of messages printed by librmn
+        # Restrict to the minimum the number of messages printed by librmn
         rmn.fstopt(rmn.FSTOP_MSGLVL,rmn.FSTOPI_MSG_CATAST)
 
         # Open Input file
