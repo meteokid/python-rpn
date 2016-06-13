@@ -21,7 +21,6 @@
                                F_aminy, F_amaxy, F_ni,F_nj,F_nk )
       implicit none
 #include <arch_specific.hf>
-
       integer  F_nb_iter                                                                  ! total number of iterations for traj
       integer, intent(in) :: k0 , k0m,  k0t                                               ! scope of the operation F_k0 to F_nk
       integer, intent(in) :: i0, j0 , in, jn 		            	                        !0 , scope of advection operations
@@ -122,9 +121,8 @@
 !-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDALE/SETTLS/MIDPOINT RULES
  
            if(Schm_trapeze_L.or.Schm_step_settls_L) then
-!FIXME: !omp instead of !$omp.... is the what's wanted
-!omp parallel private (inv_cy_8,i,j,k)
-!omp do
+!$omp parallel private (inv_cy_8,i,j,k)
+!$omp do
          do k=k0m,F_nk
             do j=j0,jn
                inv_cy_8 = 1.d0 / adv_cy_8(j)
@@ -136,8 +134,8 @@
                end do
             end do
          enddo
-!omp enddo
-!omp end parallel 
+!$omp enddo
+!$omp end parallel 
           else
 !$omp parallel private(k,i,j)
 !$omp do

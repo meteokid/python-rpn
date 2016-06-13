@@ -16,7 +16,7 @@
 !**s/r gemdm - Main entry point for the GEMDM model
 !
 ! Formal scientific documentation for this version can be found at
-! $gemdyn/share/doc/GEM4.3.pdf
+! $gemdyn/share/doc/GEM4.4.pdf
 !
       subroutine gemdm
       implicit none

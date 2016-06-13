@@ -82,7 +82,7 @@
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_Tlift    = 0
-      Schm_advec    = 2
+      Schm_advec    = 1
       Schm_settls_L   = .false.
       Schm_capa_var_L = .false.
       Schm_cub_Coriolis_L = .false.

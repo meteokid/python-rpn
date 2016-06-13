@@ -428,23 +428,13 @@
       endif
 
       if(Cstv_Tstr_8.lt.0.) then
-         if(Schm_nologT_L) then
-            dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
-            do j = j0, jn
-            do i = i0, in
-               w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-               F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
-            end do
-            end do
-         else
-            dTstr_8=(log(Ver_Tstar_8%m(k+1))-log(Ver_Tstar_8%m(k)))*Ver_idz_8%t(k)
-            do j= j0, jn
-            do i= i0, in
-               w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-               F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
-            end do
-            end do
-         endif
+         dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
+         do j = j0, jn
+         do i = i0, in
+            w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
+         end do
+         end do
       endif
 
    end do

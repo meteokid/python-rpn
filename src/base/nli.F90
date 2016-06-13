@@ -421,44 +421,36 @@
             do j= j0, jn
             do i= i0, in
                w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-            
+               w4=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
                qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
                qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+               w5=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,kq)+BsPrq(i,j,kmq))
+               w5=Ver_wp_8%t(k)*w5+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)               
                MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
                F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
                F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j) - w3*(one - Cstv_rEp_8)*qbar &
                                     + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
                                      - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
-                                         -Cstv_rEp_8*MUlin)
+                                         -Cstv_rEp_8*MUlin + (Dcst_cappa_8-w3)*(w5+w4*Cstv_tau_8))
                F_nf(i,j,k) = 0.0
             end do
             end do
          endif
 
-         if(Cstv_Tstr_8.lt.0.) then
-            if(Schm_nologT_L) then           
-               dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k) 
-               do j= j0, jn
-               do i= i0, in
-                  w2=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,kq)+BsPrq(i,j,kmq))
-                  w2=Ver_wp_8%t(k)*w2+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
-                  w3=Ver_wpstar_8(k)*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half* &
-                     (Ver_Tstar_8%m(k)*BsPrq(i,j,kq)+Ver_Tstar_8%m(km)*BsPrq(i,j,kmq))
-                  w3=Ver_wp_8%t(k)*w3+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
-                  w1=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-                  F_nt(i,j,k) = F_nt(i,j,k) + w1*dlnTstr_8
-                  F_nf(i,j,k) = Dcst_Rgasd_8 * Cstv_invT_8 * ( w2 - w3 )
-               end do
-               end do
-            else            
-               dlnTstr_8=(log(Ver_Tstar_8%m(k+1))-log(Ver_Tstar_8%m(k)))*Ver_idz_8%t(k)
-               do j= j0, jn
-               do i= i0, in
-                  w1=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-                  F_nt(i,j,k) = F_nt(i,j,k) + w1*dlnTstr_8
-               end do
-               end do
-            endif
+         if(Cstv_Tstr_8.lt.0.) then        
+            dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k) 
+            do j= j0, jn
+            do i= i0, in
+               w2=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,kq)+BsPrq(i,j,kmq))
+               w2=Ver_wp_8%t(k)*w2+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
+               w3=Ver_wpstar_8(k)*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half* &
+                  (Ver_Tstar_8%m(k)*BsPrq(i,j,kq)+Ver_Tstar_8%m(km)*BsPrq(i,j,kmq))
+               w3=Ver_wp_8%t(k)*w3+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
+               w1=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+               F_nt(i,j,k) = F_nt(i,j,k) + w1*dlnTstr_8
+               F_nf(i,j,k) = Dcst_Rgasd_8 * Cstv_invT_8 * ( w2 - w3 )
+            end do
+            end do
          endif
 
 !        Compute Nt" and Nf"
