@@ -8,15 +8,16 @@ import rpnpy.librmn.all as rmn
 import os
 import numpy as _np
 import ctypes as _ct
-#from misc import dt2unix
+import warnings
+from datetime import datetime
+import re
+from calendar import timegm
+
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
-#from datetime import datetime
-#import re
 #import subprocess
 #from copy import deepcopy
-import warnings
 #try:
 #    from mpl_toolkits.basemap import Basemap
 #except ImportError:
@@ -32,7 +33,6 @@ class BurpFile:
         -fname:     burp file name
         -mode:      mode of file ('r'=read, 'w'=write)
         -nrep:      number of reports in file
-        -nblk_max:  max number of blocks per report in the file
 
     Report attributes, indexed by (rep)
         -nblk       number of blocks
@@ -61,7 +61,7 @@ class BurpFile:
 
     """
 
-    file_attr = ('nrep','nblk_max','nbuf')
+    file_attr = ('nrep',)
     rep_attr = ('nblk','year','month','day','hour','minute','codtyp','flgs','dx','dy','alt','delay','rs','runn','sup','xaux','lat','lon','stnids')
     blk_attr = ('nelements','nlev','nt','bfam','bdesc','btyp','nbit','bit0','data_type')
     ele_attr = ('elements','rval')
@@ -89,16 +89,23 @@ class BurpFile:
             if not os.path.isfile(fname):
                 raise IOError("Burp file not found: %s" % fname)
             
-            self.nrep,self.nbuf = self._get_fileinfo()
+            self.nrep,nbuf = self._get_fileinfo()
 
             # nbuf will be used to set the buffer length in the Fortran subroutines
             # more space than the longest report itself is needed here, hence the multiplication
-            self.nbuf *= 10  
+            nbuf *= 10  
 
             if self.nrep>0:                
-                self._read_data()
+                self._read_data(nbuf)
 
         return
+
+
+    def __str__(self):
+        return "<BurpFile instance>\n" + \
+            "file name: \n  %s \n" % self.fname + \
+            "IO mode: \n  \'%s\' \n" % self.mode + \
+            "number of reports: \n  %i" % self.nrep
 
 
     def _get_fileinfo(self):
@@ -123,10 +130,14 @@ class BurpFile:
         return nrep,rep_max
 
 
-    def _read_data(self):
+    def _read_data(self,nbuf):
         """
         Reads all the the BURP file data and puts the file data in the
         rep_attr, blk_attr, and ele_attr arrays.
+
+        Parameters
+        ----------
+          nbuf      buffer length for reading of BURP file
         """
 
         MRBCVT_DECODE = 0
@@ -143,8 +154,8 @@ class BurpFile:
         handle = 0
 
         # buffer for report data
-        buf = _np.empty((self.nbuf,), dtype=_np.int32)
-        buf[0] = self.nbuf
+        buf = _np.empty((nbuf,), dtype=_np.int32)
+        buf[0] = nbuf
 
         # report header data
         itime = _ct.c_int(0)
@@ -422,7 +433,68 @@ class BurpFile:
 
         return outdata
 
+
+    def get_datetimes(self,fmt='datetime'):
+        """
+        Returns the datetimes of the reports.
+
+        Parameters
+        ----------
+          fmt      datetime return type:
+                     'datetime' - datetime object
+                     'string'   - string in YYYY-MM-DD HH:MM format
+                     'int'      - integer list in [YYYYMMDD, HHMM] format
+                     'unix'     - Unix timestamp
+        """
+
+        assert fmt in ('datetime','string','int','unix'), "Invalid format \'%s\'" % fmt
+
+        dts = []
+        for i in xrange(self.nrep):
+            
+            d = datetime(self.year[i],self.month[i],self.day[i],self.hour[i],self.minute[i])
+                
+            if fmt in ('string','int'):
+                d = d.isoformat().replace('T',' ')
+                d = d[:[x.start() for x in re.finditer(':', d)][-1]]
+                if fmt=='int':
+                    d = [ int(i) for i in d.replace('-','').replace(':','').split() ]
+            elif fmt=='unix':
+                d = timegm(d.timetuple())
+
+            dts.append(d)
+
+        return dts
         
+
+    def get_stnids_unique(self):
+        """ Returns unique list of station IDs. """
+        return list(set(self.stnids)) if not self.stnids is None else []
+
+
+##### burppy functions #####
+
+def print_btyp(btyp):
+    """ Prints BTYP decomposed into BKNAT, BKTYP, and BKSTP. """
+    b = bin(btyp)[2:].zfill(15)
+    bknat = b[:4]
+    bktyp = b[4:11]
+    bkstp = b[11:]
+    print "BKNAT  BKTYP    BKSTP" 
+    print "-----  -----    -----"
+    print "%s   %s  %s" % (bknat,bktyp,bkstp)
+    return
+    
+
+def copy_burp(brp_in,brp_out):
+    """
+    Copies all file, report, block, and code information from the
+    input BurpFile to the output BurpFile, except does not copy over
+    filename or mode.
+    """
+    for attr in BurpFile.burp_attr:
+        setattr(brp_out, attr, deepcopy(getattr(brp_in,attr)))
+    return
 
 
 if __name__ == "__main__":
