@@ -23,7 +23,6 @@ from calendar import timegm
 #except ImportError:
 #    warnings.warn("Basemap not loaded. Plotting functions require basemap.")
 
-### STNIDS not being read properly!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class BurpFile:
     """
@@ -70,7 +69,7 @@ class BurpFile:
 
     def __init__(self,fname, mode='r'):
         """
-        Initializes BurpFile, checks if file exists and reads headers.
+        Initializes BurpFile, checks if file exists and reads BURP data.
 
         Parameters
         ----------
@@ -102,6 +101,7 @@ class BurpFile:
 
 
     def __str__(self):
+        """ Print BURP file attributes. """
         return "<BurpFile instance>\n" + \
             "file name: \n  %s \n" % self.fname + \
             "IO mode: \n  \'%s\' \n" % self.mode + \
@@ -160,7 +160,7 @@ class BurpFile:
         # report header data
         itime = _ct.c_int(0)
         iflgs = _ct.c_int(0)
-        stnids = ''
+        stnids = '         '
         idburp = _ct.c_int(0)
         ilat  = _ct.c_int(0)
         ilon  = _ct.c_int(0)
@@ -272,7 +272,6 @@ class BurpFile:
                 lstele = _np.empty((nele.value,), dtype=_np.int32)
                 nmax = nele.value*nval.value*nt.value
                 tblval = _np.empty((nmax,), dtype=_np.int32)
-                rval   = _np.empty((nmax,), dtype=_np.float32)
 
                 # get block elements and values
                 ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
@@ -282,16 +281,17 @@ class BurpFile:
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
                 
                 self.elements[irep][iblk] = codes
-                
+
                 # convert integer table values if needed
+                rval = tblval.astype(_np.float32) 
                 if datyp.value in (2,4):
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
-                elif datyp.value == 6:
+                elif datyp.value==6:
                     rval = tblval #??transfer???
                     ## rval(j)=transfer(tblval(j),z4val)
                 else:
                     pass #raise
-        
+
                 self.rval[irep][iblk] = _np.resize(rval, (nval.value,nele.value)).T
 
 
