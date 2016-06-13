@@ -13,6 +13,7 @@ GEMDYN_SSMARCH_FILES = $(GEMDYN_SSMARCH_NAME).ssm
 
 SSM_DEPOT_DIR := $(HOME)/SsmDepot
 SSM_BASE      := $(HOME)/SsmBundles
+SSM_BASE2     := $(HOME)/SsmBundles
 GEMDYN_SSM_BASE_DOM  = $(SSM_BASE)/GEM/d/$(GEMDYN_VERSION_X)gemdyn
 GEMDYN_SSM_BASE_BNDL = $(SSM_BASE)/GEM/$(GEMDYN_VERSION_X)gemdyn
 GEMDYN_INSTALL   = gemdyn_install
@@ -93,7 +94,7 @@ gemdyn_install:
 			--bndl=$(GEMDYN_SSM_BASE_BNDL)/$(GEMDYN_VERSION).bndl \
 			--pre=$(gemdyn)/ssmusedep.bndl \
 			--post=$(gemdyn)/ssmusedep_post.bndl \
-			--base=$(SSM_BASE) \
+			--base=$(SSM_BASE2) \
 			gemdyn{_,+*_,-d+*_}$(GEMDYN_VERSION)_*.ssm
 
 gemdyn_uninstall:
@@ -105,7 +106,7 @@ gemdyn_uninstall:
 	rdessm-install -v \
 			--dest=$(GEMDYN_SSM_BASE_DOM)/gemdyn_$(GEMDYN_VERSION) \
 			--bndl=$(GEMDYN_SSM_BASE_BNDL)/$(GEMDYN_VERSION).bndl \
-			--base=$(SSM_BASE) \
+			--base=$(SSM_BASE2) \
 			--uninstall
 
 ifneq (,$(DEBUGMAKE))

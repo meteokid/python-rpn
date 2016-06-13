@@ -1,2 +1,3 @@
-ENV/x/modelutils/1.4.rc11
-ENV/d/x/rpnphy/rpnphy_5.8.rc11
+/ssm/net/rpn/MIG/ENV/modelutils/1.4.0
+/ssm/net/rpn/MIG/ENV/d/rpnphy/rpnphy_5.8.0
+
