@@ -7,6 +7,7 @@ Python BURP interface
 import rpnpy.librmn.all as rmn
 import os
 import numpy as _np
+import numpy.ctypeslib as _npc
 import ctypes as _ct
 import warnings
 from datetime import datetime
@@ -271,26 +272,23 @@ class BurpFile:
                 lstele = _np.empty((nele.value,), dtype=_np.int32)
                 nmax = nele.value*nval.value*nt.value
                 tblval = _np.empty((nmax,), dtype=_np.int32)
+                rval = tblval.astype(_np.float32)
 
                 # get block elements and values
-                ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
+                if datyp.value < 5:
+                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
+                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE) # convert integer table values
+                elif datyp.value < 7:
+                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,rval)
+                else:
+                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value) 
+                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
 
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
                 
                 self.elements[irep][iblk] = codes
-                
-                # convert integer table values if needed
-                rval = tblval.astype(_np.float32) 
-                if datyp.value in (2,4):
-                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
-                elif datyp.value==6:
-                    pass
-                    ## rval(j)=transfer(tblval(j),z4val)
-                else:
-                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value) 
-                
                 self.rval[irep][iblk] = _np.resize(rval, (nval.value,nele.value)).T
 
 
@@ -360,9 +358,9 @@ class BurpFile:
                 # convert real values to table values
                 rval = _np.hstack([ self.rval[irep][iblk][iele] for iele in xrange(nele) ])
                 tblval = _np.round(rval).astype(_np.int32)
-                if self.datyp[irep][iblk] in (2,4):
+                if self.datyp[irep][iblk] < 5:
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
-                elif self.datyp[irep][iblk]==6:
+                elif self.datyp[irep][iblk] < 7:
                     #TBLVAL(J)=TRANSFER(PVAL(J),IC)
                     pass
                 else:
