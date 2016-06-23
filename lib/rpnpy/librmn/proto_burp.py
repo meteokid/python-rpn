@@ -583,6 +583,28 @@ librmn.c_mrbcvt.argtypes = (
 librmn.c_mrbcvt.restype  = _ct.c_int
 c_mrbcvt = librmn.c_mrbcvt
 
+
+librmn.c_mrbini.argtypes = ( _ct.c_int, _npc.ndpointer(dtype=_np.int32),
+    _ct.c_int, _ct.c_int, _ct.c_char_p, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int )
+librmn.c_mrbini.restype = _ct.c_int
+c_mrbini = librmn.c_mrbini
+
+
+librmn.c_mrbcol.argtypes = ( _npc.ndpointer(dtype=_np.int32), 
+    _npc.ndpointer(dtype=_np.int32), _ct.c_int )
+librmn.c_mrbcol.restype = _ct.c_int
+c_mrbcol = librmn.c_mrbcol
+
+
+librmn.c_mrbadd.argtypes = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
+    _npc.ndpointer(dtype=_np.int32) )
+librmn.c_mrbadd.restype = _ct.c_int
+c_mrbadd = librmn.c_mrbadd
+
 # =========================================================================
 
 if __name__ == "__main__":

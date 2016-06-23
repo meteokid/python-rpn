@@ -12,17 +12,17 @@ import warnings
 from datetime import datetime
 import re
 from calendar import timegm
+from copy import deepcopy
 
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
-#import subprocess
-#from copy import deepcopy
 #try:
 #    from mpl_toolkits.basemap import Basemap
 #except ImportError:
 #    warnings.warn("Basemap not loaded. Plotting functions require basemap.")
 
+warnings.filterwarnings('once')
 
 class BurpFile:
     """
@@ -49,7 +49,7 @@ class BurpFile:
         -btyp       btyp values
         -nlev       number of levels
         -nelements  number of code elements
-        -data_typ   data type
+        -datyp      data type
         -bfam       bfam values
 
     Code attributes, indexed by (rep,blk,code)
@@ -62,7 +62,7 @@ class BurpFile:
 
     file_attr = ('nrep',)
     rep_attr = ('nblk','year','month','day','hour','minute','codtyp','flgs','dx','dy','alt','delay','rs','runn','sup','xaux','lat','lon','stnids')
-    blk_attr = ('nelements','nlev','nt','bfam','bdesc','btyp','nbit','bit0','data_type')
+    blk_attr = ('nelements','nlev','nt','bfam','bdesc','btyp','nbit','bit0','datyp')
     ele_attr = ('elements','rval')
     burp_attr = file_attr + rep_attr + blk_attr + ele_attr
 
@@ -141,7 +141,6 @@ class BurpFile:
         """
 
         MRBCVT_DECODE = 0
-        MRBCVT_ENCODE = 1
 
         # open BURP file
         ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
@@ -267,7 +266,7 @@ class BurpFile:
                 self.btyp[irep][iblk]      = btyp.value
                 self.nbit[irep][iblk]      = nbit.value
                 self.bit0[irep][iblk]      = bit0.value
-                self.data_type[irep][iblk] = datyp.value
+                self.datyp[irep][iblk]     = datyp.value
                 
                 lstele = _np.empty((nele.value,), dtype=_np.int32)
                 nmax = nele.value*nval.value*nt.value
@@ -281,17 +280,17 @@ class BurpFile:
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
                 
                 self.elements[irep][iblk] = codes
-
+                
                 # convert integer table values if needed
                 rval = tblval.astype(_np.float32) 
                 if datyp.value in (2,4):
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
                 elif datyp.value==6:
-                    rval = tblval #??transfer???
+                    pass
                     ## rval(j)=transfer(tblval(j),z4val)
                 else:
-                    pass #raise
-
+                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value) 
+                
                 self.rval[irep][iblk] = _np.resize(rval, (nval.value,nele.value)).T
 
 
@@ -299,11 +298,89 @@ class BurpFile:
         ier = rmn.c_mrfcls(unit)
         ier = rmn.fclos(unit)
 
-        # change lon to be between -180 and 180 degrees
+        # change longitude to be between -180 and 180 degrees
         self.lon = self.lon % 360.
         self.lon[self.lon>180] = self.lon[self.lon>180] - 360.
 
         return 
+
+    
+    def write_burpfile(self):
+        """ Writes BurpFile instance to a BURP file.  """
+
+        assert self.mode=='w', "BurpFile must be in write mode to use this function."
+
+        print "Writing BURP file to \'%s\'" % self.fname
+
+        MRBCVT_ENCODE = 1
+        handle = 0
+        nsup = 0
+        nxaux = 0
+
+        # convert lat,lon back into integers
+        ilon = _np.round(100*self.lon).astype(int)
+        ilat = _np.round(100*self.lat+9000).astype(int)
+        ilon[ilon<0] = ilon[ilon<0]+36000
+
+        idate = self.year*10000 + self.month*100 + self.day
+        itime = self.month*100 + self.day
+
+        # buffer for report data
+        nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
+        nele_max = _np.max([ nele.max() if len(nele)>0 else 0 for nele in self.nelements ])
+        nt_max = _np.max([ nt.max() if len(nt)>0 else 0 for nt in self.nt ])
+        nbuf = 10 * nlev_max * nele_max * nt_max
+        buf = _np.empty((nbuf,), dtype=_np.int32)
+        buf[0] = nbuf
+
+        # open BURP file
+        ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+        unit = rmn.fnom(self.fname, rmn.FST_RW)
+        nrep = rmn.c_mrfopn(unit, 'CREATE') # put in rmn
+
+        # loop over reports
+        for irep in xrange(self.nrep):
+
+            # write report header
+            rmn.c_mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
+                         ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
+                         self.delay[irep],idate[irep],self.rs[irep],self.runn[irep],self.sup[irep],
+                         nsup,self.xaux[irep],nxaux)
+
+            for iblk in xrange(self.nblk[irep]):
+                
+                nele = self.nelements[irep][iblk]
+                nlev = self.nlev[irep][iblk]
+                nt = self.nt[irep][iblk]
+
+                # convert BUFR codes to CMC codes
+                lstele = _np.empty((nele,), dtype=_np.int32)
+                rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
+                
+                # convert real values to table values
+                rval = _np.hstack([ self.rval[irep][iblk][iele] for iele in xrange(nele) ])
+                tblval = _np.round(rval).astype(_np.int32)
+                if self.datyp[irep][iblk] in (2,4):
+                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
+                elif self.datyp[irep][iblk]==6:
+                    #TBLVAL(J)=TRANSFER(PVAL(J),IC)
+                    pass
+                else:
+                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk]) 
+
+
+                # add block to report
+                rmn.c_mrbadd(buf,iblk+1,nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
+                             self.nbit[irep][iblk],self.bit0[irep][iblk],self.datyp[irep][iblk],lstele,tblval)
+
+            # write report
+            rmn.c_mrfput(unit,handle,buf)
+
+        # close BURP file
+        ier = rmn.c_mrfcls(unit)
+        ier = rmn.fclos(unit)
+
+        return
 
 
     def get_rval(self,code=None,block=None,element=None,fmt=float,flatten=True,**kwargs):
@@ -347,7 +424,6 @@ class BurpFile:
                 raise Exception("Unknown parameter \'%s\'" % k)
 
         fill_val = _np.nan if fmt==float else -999
-        mult_codes = False
         nlev_max = 0
 
 
@@ -406,8 +482,7 @@ class BurpFile:
                     iele.append(i[0])
 
 
-                if len(iblk)>1 and not mult_codes:
-                    mult_codes = True
+                if len(iblk)>1:
                     warnings.warn("More than one code in report. Returning first found value.")
 
                 if len(iblk)>0:
@@ -418,7 +493,7 @@ class BurpFile:
                     outdata.append(_np.array([]))
  
 
-        # create array of dimension (nrep,nlev_max) with _np.nan padded values
+        # create array of dimension (nrep,nlev_max) with values padded with fill_val
         outdata = _np.array([ _np.hstack([i,_np.repeat(fill_val,nlev_max-len(i))]) for i in outdata ])
 
         # change data format if specified
@@ -472,6 +547,7 @@ class BurpFile:
         return list(set(self.stnids)) if not self.stnids is None else []
 
 
+
 ##### burppy functions #####
 
 def print_btyp(btyp):
@@ -492,6 +568,7 @@ def copy_burp(brp_in,brp_out):
     input BurpFile to the output BurpFile, except does not copy over
     filename or mode.
     """
+    assert isinstance(brp_in,BurpFile) and isinstance(brp_out,BurpFile), "Input object must be an instance of BurpFile."
     for attr in BurpFile.burp_attr:
         setattr(brp_out, attr, deepcopy(getattr(brp_in,attr)))
     return
@@ -500,3 +577,8 @@ def copy_burp(brp_in,brp_out):
 if __name__ == "__main__":
     
     f = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp')
+    #f = BurpFile('/users/tor/arpx/msi/data/arcout/s3e8cns1/posv/posv2008070100_')
+    
+    #f_out = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp_testout','w')
+    #copy_burp(f,f_out)
+    #f_out.write_burpfile()
