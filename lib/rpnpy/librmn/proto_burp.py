@@ -548,7 +548,6 @@ librmn.c_mrbprm.restype  = _ct.c_int
 c_mrbprm = librmn.c_mrbprm
 
 ## int c_mrbxtr(void *buffer, int bkno, word *lstele, word *tblval)
-librmn.c_mrbxtr.restype  = _ct.c_int
 c_mrbxtr_argtypes_int = (
     ## void *buffer, int bkno,
     _npc.ndpointer(dtype=_np.int32),#float32),
@@ -565,6 +564,7 @@ c_mrbxtr_argtypes_float = (
     _npc.ndpointer(dtype=_np.int32),#float32),
     _npc.ndpointer(dtype=_np.float32)
     )
+librmn.c_mrbxtr.restype  = _ct.c_int
 def c_mrbxtr(buf,bkno,lstele,tblval):
     if tblval.dtype == _np.dtype('int32'):
         librmn.c_mrbxtr.argtypes = c_mrbxtr_argtypes_int
@@ -612,12 +612,21 @@ librmn.c_mrbcol.restype = _ct.c_int
 c_mrbcol = librmn.c_mrbcol
 
 
-librmn.c_mrbadd.argtypes = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
+c_mrbadd_argtypes_int = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
     _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
     _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
     _npc.ndpointer(dtype=_np.int32) )
+c_mrbadd_argtypes_float = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
+    _npc.ndpointer(dtype=_np.float32) )
 librmn.c_mrbadd.restype = _ct.c_int
-c_mrbadd = librmn.c_mrbadd
+def c_mrbadd(buf,bkno,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp,lstele,tblval):
+    if tblval.dtype == _np.dtype('int32'):
+        librmn.c_mrbadd.argtypes = c_mrbadd_argtypes_int
+    elif tblval.dtype == _np.dtype('float32'):
+        librmn.c_mrbadd.argtypes = c_mrbadd_argtypes_float
+    return librmn.c_mrbadd(buf,bkno,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp,lstele,tblval)
 
 # =========================================================================
 

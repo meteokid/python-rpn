@@ -164,20 +164,20 @@ class BurpFile:
         buf[0] = nbuf
 
         # report header data
-        itime = _ct.c_int(0)
-        iflgs = _ct.c_int(0)
-        stnids = '         '
+        itime  = _ct.c_int(0)
+        iflgs  = _ct.c_int(0)
         idburp = _ct.c_int(0)
-        ilat  = _ct.c_int(0)
-        ilon  = _ct.c_int(0)
-        idx   = _ct.c_int(0)
-        idy   = _ct.c_int(0)
-        ialt  = _ct.c_int(0)
+        ilat   = _ct.c_int(0)
+        ilon   = _ct.c_int(0)
+        idx    = _ct.c_int(0)
+        idy    = _ct.c_int(0)
+        ialt   = _ct.c_int(0)
         idelay = _ct.c_int(0)
-        idate = _ct.c_int(0)
-        irs   = _ct.c_int(0)
-        irunn = _ct.c_int(0)
-        nblk  = _ct.c_int(0)
+        idate  = _ct.c_int(0)
+        irs    = _ct.c_int(0)
+        irunn  = _ct.c_int(0)
+        nblk   = _ct.c_int(0)
+        stnids = '         '
 
         self.nblk   = _np.empty((self.nrep,), dtype=_np.int)
         self.year   = _np.empty((self.nrep,), dtype=_np.int)
@@ -275,23 +275,24 @@ class BurpFile:
                 self.bit0[irep][iblk]      = bit0.value
                 self.datyp[irep][iblk]     = datyp.value
                 
-                lstele = _np.empty((nele.value,), dtype=_np.int32)
                 nmax = nele.value*nval.value*nt.value
-                tblval = _np.zeros((nmax,), dtype=_np.int32)
-                rval = _np.zeros((nmax,), dtype=_np.float32)
+                lstele = _np.empty((nele.value,), dtype=_np.int32) 
 
-                # get block elements and values
+                # get block elements and values and convert integer table values to real values
                 if datyp.value < 5:
+                    tblval = _np.zeros((nmax,), dtype=_np.int32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
-                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE) # convert integer table values to real values
+                    rval = tblval.astype(_np.float32)
+                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
                 elif datyp.value < 7:
+                    rval = _np.zeros((nmax,), dtype=_np.float32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,rval)
                 else:
-                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value) 
+                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
+                    tblval = _np.zeros((nmax,), dtype=_np.int32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
 
-                
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
@@ -368,15 +369,17 @@ class BurpFile:
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
+                    tbl_out = tblval
                 elif self.datyp[irep][iblk] < 7:
-                    #TBLVAL(J)=TRANSFER(PVAL(J),IC)
-                    pass
+                    tbl_out = rval
                 else:
-                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk]) 
+                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
+                    tbl_out = tblval
                 
                 # add block to report
-                rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
-                             self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),self.datyp[irep][iblk],lstele,tblval)
+                rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
+                             self.btyp[irep][iblk],self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
+                             self.datyp[irep][iblk],lstele,tbl_out)
                 
 
             # write report
@@ -579,11 +582,3 @@ def copy_burp(brp_in,brp_out):
     return
 
 
-if __name__ == "__main__":
-    
-    f = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp')
-    #f = BurpFile('/users/tor/arpx/msi/data/arcout/s3e8cns1/posv/posv2008070100_')
-    
-    f_out = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp_testout','w')
-    copy_burp(f,f_out)
-    f_out.write_burpfile()
