@@ -612,10 +612,10 @@ librmn.c_mrbcol.restype = _ct.c_int
 c_mrbcol = librmn.c_mrbcol
 
 
-#librmn.c_mrbadd.argtypes = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
-#    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
-#    _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
-#    _npc.ndpointer(dtype=_np.int32) )
+librmn.c_mrbadd.argtypes = ( _npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),
+    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int,
+    _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
+    _npc.ndpointer(dtype=_np.int32) )
 librmn.c_mrbadd.restype = _ct.c_int
 c_mrbadd = librmn.c_mrbadd
 

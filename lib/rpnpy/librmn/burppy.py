@@ -291,7 +291,7 @@ class BurpFile:
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
 
-
+                
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
@@ -363,10 +363,8 @@ class BurpFile:
                 lstele = _np.empty((nele,), dtype=_np.int32)
                 rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
                 
-                # convert real values to table values
-                #rval = _np.hstack([ self.rval[irep][iblk][iele] for iele in xrange(nele) ])
+                # convert real values to integer table values
                 rval = _np.ravel(self.rval[irep][iblk], order='F')
-                
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
@@ -375,14 +373,11 @@ class BurpFile:
                     pass
                 else:
                     warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk]) 
-
+                
                 # add block to report
-                #rmn.c_mrbadd(buf,iblk+1,nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
-                #             self.nbit[irep][iblk],self.bit0[irep][iblk],self.datyp[irep][iblk],lstele,tblval)
-                rmn.c_mrbadd(buf.ctypes.data_as(_ct.POINTER(_ct.c_int)), _ct.pointer(_ct.c_int(iblk+1)), _ct.c_int(nele), _ct.c_int(nlev), _ct.c_int(nt),
-                             _ct.c_int(self.bfam[irep][iblk]), _ct.c_int(self.bdesc[irep][iblk]), _ct.c_int(self.btyp[irep][iblk]), _ct.c_int(self.nbit[irep][iblk]),
-                             _ct.pointer(_ct.c_int(self.bit0[irep][iblk])), _ct.c_int(self.datyp[irep][iblk]), lstele.ctypes.data_as(_ct.POINTER(_ct.c_int)),
-                             tblval.ctypes.data_as(_ct.POINTER(_ct.c_int)) )
+                rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
+                             self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),self.datyp[irep][iblk],lstele,tblval)
+                
 
             # write report
             rmn.c_mrfput(unit,handle,buf)
