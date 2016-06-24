@@ -15,6 +15,8 @@ import re
 from calendar import timegm
 from copy import deepcopy
 
+## TODO: Add rw mode
+
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
 #from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -120,6 +122,8 @@ class BurpFile:
           rep_max    length of longest report in the file
         """
 
+        assert self.mode=='r', "BurpFile must be in read mode to use this function."
+
         ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
         unit = rmn.fnom(self.fname, rmn.FST_RO)
 
@@ -140,6 +144,8 @@ class BurpFile:
         ----------
           nbuf      buffer length for reading of BURP file
         """
+
+        assert self.mode=='r', "BurpFile must be in read mode to use this function."
 
         MRBCVT_DECODE = 0
 
@@ -271,18 +277,20 @@ class BurpFile:
                 
                 lstele = _np.empty((nele.value,), dtype=_np.int32)
                 nmax = nele.value*nval.value*nt.value
-                tblval = _np.empty((nmax,), dtype=_np.int32)
-                rval = tblval.astype(_np.float32)
+                tblval = _np.zeros((nmax,), dtype=_np.int32)
+                rval = _np.zeros((nmax,), dtype=_np.float32)
 
                 # get block elements and values
                 if datyp.value < 5:
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
-                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE) # convert integer table values
+                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE) # convert integer table values to real values
                 elif datyp.value < 7:
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,rval)
                 else:
                     warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value) 
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
+                    rval = tblval.astype(_np.float32)
+
 
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
@@ -321,7 +329,7 @@ class BurpFile:
         ilon[ilon<0] = ilon[ilon<0]+36000
 
         idate = self.year*10000 + self.month*100 + self.day
-        itime = self.month*100 + self.day
+        itime = self.hour*100 + self.minute
 
         # buffer for report data
         nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
@@ -338,7 +346,7 @@ class BurpFile:
 
         # loop over reports
         for irep in xrange(self.nrep):
-
+            
             # write report header
             rmn.c_mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
                          ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
@@ -356,7 +364,9 @@ class BurpFile:
                 rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
                 
                 # convert real values to table values
-                rval = _np.hstack([ self.rval[irep][iblk][iele] for iele in xrange(nele) ])
+                #rval = _np.hstack([ self.rval[irep][iblk][iele] for iele in xrange(nele) ])
+                rval = _np.ravel(self.rval[irep][iblk], order='F')
+                
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
@@ -366,10 +376,13 @@ class BurpFile:
                 else:
                     warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk]) 
 
-
                 # add block to report
-                rmn.c_mrbadd(buf,iblk+1,nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
-                             self.nbit[irep][iblk],self.bit0[irep][iblk],self.datyp[irep][iblk],lstele,tblval)
+                #rmn.c_mrbadd(buf,iblk+1,nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],self.btyp[irep][iblk],
+                #             self.nbit[irep][iblk],self.bit0[irep][iblk],self.datyp[irep][iblk],lstele,tblval)
+                rmn.c_mrbadd(buf.ctypes.data_as(_ct.POINTER(_ct.c_int)), _ct.pointer(_ct.c_int(iblk+1)), _ct.c_int(nele), _ct.c_int(nlev), _ct.c_int(nt),
+                             _ct.c_int(self.bfam[irep][iblk]), _ct.c_int(self.bdesc[irep][iblk]), _ct.c_int(self.btyp[irep][iblk]), _ct.c_int(self.nbit[irep][iblk]),
+                             _ct.pointer(_ct.c_int(self.bit0[irep][iblk])), _ct.c_int(self.datyp[irep][iblk]), lstele.ctypes.data_as(_ct.POINTER(_ct.c_int)),
+                             tblval.ctypes.data_as(_ct.POINTER(_ct.c_int)) )
 
             # write report
             rmn.c_mrfput(unit,handle,buf)
@@ -406,7 +419,6 @@ class BurpFile:
           outdata   BURP data from query
         """
 
-        assert self.mode=='r', "BurpFile must be in read mode to use this function."
         assert code is not None or (block is not None and element is not None), "Either code or block and element have to be supplied to find BURP values."
         assert code is None or isinstance(code,int), "If specified, code must be an integer."
         assert block is None or isinstance(block,int), "If specified, block must be an integer."
@@ -577,6 +589,6 @@ if __name__ == "__main__":
     f = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp')
     #f = BurpFile('/users/tor/arpx/msi/data/arcout/s3e8cns1/posv/posv2008070100_')
     
-    #f_out = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp_testout','w')
-    #copy_burp(f,f_out)
-    #f_out.write_burpfile()
+    f_out = BurpFile('/users/tor/arpx/msi/data/observations/test/derialt/2014070200_ompsnp_testout','w')
+    copy_burp(f,f_out)
+    f_out.write_burpfile()
