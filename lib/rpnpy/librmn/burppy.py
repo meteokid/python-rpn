@@ -15,7 +15,7 @@ import re
 from calendar import timegm
 from copy import deepcopy
 
-## TODO: Add rw mode, add __iter__
+## TODO: add __iter__
 
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class BurpFile:
 
     File attributes
         -fname:     burp file name
-        -mode:      mode of file ('r'=read, 'w'=write)
+        -mode:      mode of file ('r'=read, 'w'=write, 'rw'=read or write)
         -nrep:      number of reports in file
 
     Report attributes, indexed by (rep)
@@ -77,7 +77,7 @@ class BurpFile:
         Parameters
         ----------
           fname      BURP file name
-          mode       IO mode, 'r' (read) or 'w' (write)
+          mode       IO mode, 'r' (read), 'w' (write), or 'rw' (read or write)
         """
 
         self.fname = fname
@@ -87,7 +87,7 @@ class BurpFile:
             setattr(self, attr, None)
 
         # read mode
-        if mode=='r':
+        if 'r' in mode:
             if not os.path.isfile(fname): raise IOError("Burp file not found: %s" % fname)
             
             self.nrep,nbuf = self._get_fileinfo()
@@ -121,7 +121,7 @@ class BurpFile:
           rep_max    length of longest report in the file
         """
 
-        assert self.mode=='r', "BurpFile must be in read mode to use this function."
+        assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
         ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
         unit = rmn.fnom(self.fname, rmn.FST_RO)
@@ -144,7 +144,7 @@ class BurpFile:
           nbuf      buffer length for reading of BURP file
         """
 
-        assert self.mode=='r', "BurpFile must be in read mode to use this function."
+        assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
         MRBCVT_DECODE = 0
         
@@ -325,7 +325,7 @@ class BurpFile:
     def write_burpfile(self):
         """ Writes BurpFile instance to a BURP file.  """
 
-        assert self.mode=='w', "BurpFile must be in write mode to use this function."
+        assert 'w' in self.mode, "BurpFile must be in write mode to use this function."
 
         print "Writing BURP file to \'%s\'" % self.fname
 
