@@ -15,7 +15,7 @@ import re
 from calendar import timegm
 from copy import deepcopy
 
-## TODO: Add rw mode
+## TODO: Add rw mode, add __iter__
 
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
@@ -64,9 +64,9 @@ class BurpFile:
     """
 
     file_attr = ('nrep',)
-    rep_attr = ('nblk','year','month','day','hour','minute','codtyp','flgs','dx','dy','alt','delay','rs','runn','sup','xaux','lat','lon','stnids')
-    blk_attr = ('nelements','nlev','nt','bfam','bdesc','btyp','nbit','bit0','datyp')
-    ele_attr = ('elements','rval')
+    rep_attr =  ('nblk','year','month','day','hour','minute','codtyp','flgs','dx','dy','alt','delay','rs','runn','sup','xaux','lat','lon','stnids')
+    blk_attr =  ('nelements','nlev','nt','bfam','bdesc','btyp','nbit','bit0','datyp')
+    ele_attr =  ('elements','rval')
     burp_attr = file_attr + rep_attr + blk_attr + ele_attr
 
 
@@ -88,8 +88,7 @@ class BurpFile:
 
         # read mode
         if mode=='r':
-            if not os.path.isfile(fname):
-                raise IOError("Burp file not found: %s" % fname)
+            if not os.path.isfile(fname): raise IOError("Burp file not found: %s" % fname)
             
             self.nrep,nbuf = self._get_fileinfo()
 
@@ -148,13 +147,14 @@ class BurpFile:
         assert self.mode=='r', "BurpFile must be in read mode to use this function."
 
         MRBCVT_DECODE = 0
-
+        
         # open BURP file
         ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+        if ier!=0: raise IOError('Problem opening BURP file, error code %i' % ier)
         unit = rmn.fnom(self.fname, rmn.FST_RO)
         nrep = rmn.c_mrfopn(unit, rmn.FST_RO)
 
-        # report serach information
+        # report search information
         (stnid,idtyp,lat,lon,date,temps,nsup,nxaux) = ('*********',-1,-1,-1,-1,-1,0,0)
         sup = _np.empty((1,), dtype=_np.int32)
         handle = 0
@@ -178,6 +178,7 @@ class BurpFile:
         irunn  = _ct.c_int(0)
         nblk   = _ct.c_int(0)
         stnids = '         '
+        xaux   = _np.empty((1,), dtype=_np.int32)
 
         self.nblk   = _np.empty((self.nrep,), dtype=_np.int)
         self.year   = _np.empty((self.nrep,), dtype=_np.int)
@@ -217,7 +218,6 @@ class BurpFile:
         self.elements = _np.empty((self.nrep,), dtype=object)
         self.rval     = _np.empty((self.nrep,), dtype=object)
 
-        xaux = _np.empty((1,), dtype=_np.int32)
 
         # loop over reports
         for irep in xrange(nrep):
@@ -225,10 +225,12 @@ class BurpFile:
             # get next report and load data into buffer
             handle = rmn.c_mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps,sup,nsup)
             ier = rmn.c_mrfget(handle,buf)
+            if ier!=0: raise Exception('Problem executing c_mrfget, error code %i' % ier)
 
             # get report header
             ier = rmn.c_mrbhdr(buf,itime,iflgs,stnids,idburp,ilat,ilon,idx,idy,ialt,
                                idelay,idate,irs,irunn,nblk,sup,nsup,xaux,nxaux)
+            if ier!=0: raise Exception('Problem executing c_mrbhdr, error code %i' % ier)
             
             self.flgs[irep]   = iflgs.value
             self.codtyp[irep] = idburp.value
@@ -264,7 +266,8 @@ class BurpFile:
 
                 # get block header
                 ier = rmn.c_mrbprm(buf,iblk+1,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp)
-                
+                if ier!=0: raise Exception('Problem executing c_mrbprm, error code %i' % ier)
+
                 self.nelements[irep][iblk] = nele.value
                 self.nlev[irep][iblk]      = nval.value
                 self.nt[irep][iblk]        = nt.value
@@ -282,28 +285,35 @@ class BurpFile:
                 if datyp.value < 5:
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
+                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
                     rval = tblval.astype(_np.float32)
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
+                    if ier!=0: raise Exception('Problem executing c_mrbcvt, error code %i' % ier)
                 elif datyp.value < 7:
                     rval = _np.zeros((nmax,), dtype=_np.float32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,rval)
+                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
                 else:
                     warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
                     ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
+                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
                     rval = tblval.astype(_np.float32)
 
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
                 ier = rmn.c_mrbdcl(lstele,codes,nele)
-                
+                if ier!=0: raise Exception('Problem executing c_mrbdcl, error code %i' % ier)
+
                 self.elements[irep][iblk] = codes
                 self.rval[irep][iblk] = _np.resize(rval, (nval.value,nele.value)).T
 
 
         # close BURP file
         ier = rmn.c_mrfcls(unit)
+        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
         ier = rmn.fclos(unit)
+        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
 
         # change longitude to be between -180 and 180 degrees
         self.lon = self.lon % 360.
@@ -342,6 +352,7 @@ class BurpFile:
 
         # open BURP file
         ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+        if ier!=0: raise IOError('Problem opening BURP file, error code %i' % ier)
         unit = rmn.fnom(self.fname, rmn.FST_RW)
         nrep = rmn.c_mrfopn(unit, 'CREATE') # put in rmn
 
@@ -349,10 +360,11 @@ class BurpFile:
         for irep in xrange(self.nrep):
             
             # write report header
-            rmn.c_mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
+            ier = rmn.c_mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
                          ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
                          self.delay[irep],idate[irep],self.rs[irep],self.runn[irep],self.sup[irep],
                          nsup,self.xaux[irep],nxaux)
+            if ier!=0: raise Exception('Problem executing c_mrbini, error code %i' % ier)
 
             for iblk in xrange(self.nblk[irep]):
                 
@@ -362,13 +374,15 @@ class BurpFile:
 
                 # convert BUFR codes to CMC codes
                 lstele = _np.empty((nele,), dtype=_np.int32)
-                rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
-                
+                ier = rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
+                if ier!=0: raise Exception('Problem executing c_mrbcol, error code %i' % ier)
+
                 # convert real values to integer table values
                 rval = _np.ravel(self.rval[irep][iblk], order='F')
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
                     ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
+                    if ier!=0: raise Exception('Problem executing c_mrbcvt, error code %i' % ier)
                     tbl_out = tblval
                 elif self.datyp[irep][iblk] < 7:
                     tbl_out = rval
@@ -377,17 +391,21 @@ class BurpFile:
                     tbl_out = tblval
                 
                 # add block to report
-                rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
+                ier = rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
                              self.btyp[irep][iblk],self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
                              self.datyp[irep][iblk],lstele,tbl_out)
-                
+                if ier!=0: raise Exception('Problem executing c_mrbadd, error code %i' % ier)
+
 
             # write report
-            rmn.c_mrfput(unit,handle,buf)
+            ier = rmn.c_mrfput(unit,handle,buf)
+            if ier!=0: raise Exception('Problem executing c_mrfput, error code %i' % ier)
 
         # close BURP file
         ier = rmn.c_mrfcls(unit)
+        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
         ier = rmn.fclos(unit)
+        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
 
         return
 
