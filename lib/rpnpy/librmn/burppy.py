@@ -4,22 +4,24 @@
 Python BURP interface
 """
 
-import rpnpy.librmn.all as rmn
-import os
+from rpnpy.librmn import burp as _brp
+from rpnpy.librmn import base as _rb
+from rpnpy.librmn import const as _rc
 import numpy as _np
 import numpy.ctypeslib as _npc
 import ctypes as _ct
-import warnings
-from datetime import datetime
-import re
 from calendar import timegm
 from copy import deepcopy
+from datetime import datetime
+import warnings
+import os
+import re
 
 warnings.filterwarnings('once')
 
 try:
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as _plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
     warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.")
@@ -124,21 +126,19 @@ class BurpFile:
 
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
-        ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
-        unit = rmn.fnom(self.fname, rmn.FST_RO)
+        ier  = _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        unit = _rb.fnom(self.fname, _rc.FST_RO)
 
-        nrep    = rmn.c_mrfnbr(unit)
-        rep_max = rmn.c_mrfmxl(unit)
+        nrep    = _brp.mrfnbr(unit)
+        rep_max = _brp.mrfmxl(unit)
         
-        ier = rmn.fclos(unit)
+        ier = _rb.fclos(unit)
 
         return nrep,rep_max
 
 
     def _calc_nbuf(self):
-        """
-        Calculates the minimum buffer length required for the longest report.
-        """
+        """ Calculates the minimum buffer length required for the longest report. """
 
         nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
         nele_max = _np.max([ nele.max() if len(nele)>0 else 0 for nele in self.nelements ])
@@ -167,10 +167,9 @@ class BurpFile:
         MRBCVT_DECODE = 0
         
         # open BURP file
-        ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
-        if ier!=0: raise IOError('Problem opening BURP file, error code %i' % ier)
-        unit = rmn.fnom(self.fname, rmn.FST_RO)
-        nrep = rmn.c_mrfopn(unit, rmn.FST_RO)
+        _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        unit = _rb.fnom(self.fname, _rc.FST_RO)
+        nrep = _brp.mrfopn(unit, _rc.FST_RO)
 
         # report search information
         (stnid,idtyp,lat,lon,date,temps,nsup,nxaux) = ('*********',-1,-1,-1,-1,-1,0,0)
@@ -241,14 +240,12 @@ class BurpFile:
         for irep in xrange(nrep):
             
             # get next report and load data into buffer
-            handle = rmn.c_mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps,sup,nsup)
-            ier = rmn.c_mrfget(handle,buf)
-            if ier!=0: raise Exception('Problem executing c_mrfget, error code %i' % ier)
+            handle = _brp.mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps,sup,nsup)
+            _brp.mrfget(handle,buf)
 
             # get report header
-            ier = rmn.c_mrbhdr(buf,itime,iflgs,stnids,idburp,ilat,ilon,idx,idy,ialt,
-                               idelay,idate,irs,irunn,nblk,sup,nsup,xaux,nxaux)
-            if ier!=0: raise Exception('Problem executing c_mrbhdr, error code %i' % ier)
+            _brp.mrbhdr(buf,itime,iflgs,stnids,idburp,ilat,ilon,idx,idy,ialt,
+                        idelay,idate,irs,irunn,nblk,sup,nsup,xaux,nxaux)
             
             self.flgs[irep]   = iflgs.value
             self.codtyp[irep] = idburp.value
@@ -283,8 +280,7 @@ class BurpFile:
             for iblk in xrange(nblk.value):
 
                 # get block header
-                ier = rmn.c_mrbprm(buf,iblk+1,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp)
-                if ier!=0: raise Exception('Problem executing c_mrbprm, error code %i' % ier)
+                _brp.mrbprm(buf,iblk+1,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp)
 
                 self.nelements[irep][iblk] = nele.value
                 self.nlev[irep][iblk]      = nval.value
@@ -302,36 +298,29 @@ class BurpFile:
                 # get block elements and values and convert integer table values to real values
                 if datyp.value < 5:
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
-                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
-                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
+                    _brp.mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
-                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
-                    if ier!=0: raise Exception('Problem executing c_mrbcvt, error code %i' % ier)
+                    _brp.mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
                 elif datyp.value < 7:
                     rval = _np.zeros((nmax,), dtype=_np.float32)
-                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,rval)
-                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
+                    _brp.mrbxtr(buf,iblk+1,lstele,rval)
                 else:
                     warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
-                    ier = rmn.c_mrbxtr(buf,iblk+1,lstele,tblval)
-                    if ier!=0: raise Exception('Problem executing c_mrbxtr, error code %i' % ier)
+                    _brp.mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
 
                 # convert CMC codes to BUFR codes
                 codes = _np.empty((nele.value,), dtype=_np.int32)
-                ier = rmn.c_mrbdcl(lstele,codes,nele)
-                if ier!=0: raise Exception('Problem executing c_mrbdcl, error code %i' % ier)
+                _brp.mrbdcl(lstele,codes,nele)
 
                 self.elements[irep][iblk] = codes
                 self.rval[irep][iblk] = _np.resize(rval, (nval.value,nele.value)).T
 
 
         # close BURP file
-        ier = rmn.c_mrfcls(unit)
-        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
-        ier = rmn.fclos(unit)
-        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
+        _brp.mrfcls(unit)
+        _rb.fclos(unit)
 
         # change longitude to be between -180 and 180 degrees
         self.lon = self.lon % 360.
@@ -366,20 +355,18 @@ class BurpFile:
         buf[0] = nbuf
 
         # open BURP file
-        ier  = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
-        if ier!=0: raise IOError('Problem opening BURP file, error code %i' % ier)
-        unit = rmn.fnom(self.fname, rmn.FST_RW)
-        nrep = rmn.c_mrfopn(unit, 'CREATE') # put in rmn
+        _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        unit = _rb.fnom(self.fname, _rc.FST_RW)
+        nrep = _brp.mrfopn(unit, 'CREATE')
 
         # loop over reports
         for irep in xrange(self.nrep):
             
             # write report header
-            ier = rmn.c_mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
-                         ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
-                         self.delay[irep],idate[irep],self.rs[irep],self.runn[irep],self.sup[irep],
-                         nsup,self.xaux[irep],nxaux)
-            if ier!=0: raise Exception('Problem executing c_mrbini, error code %i' % ier)
+            _brp.mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
+                        ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
+                        self.delay[irep],idate[irep],self.rs[irep],self.runn[irep],self.sup[irep],
+                        nsup,self.xaux[irep],nxaux)
 
             for iblk in xrange(self.nblk[irep]):
                 
@@ -389,15 +376,13 @@ class BurpFile:
 
                 # convert BUFR codes to CMC codes
                 lstele = _np.empty((nele,), dtype=_np.int32)
-                ier = rmn.c_mrbcol(self.elements[irep][iblk],lstele,nele)
-                if ier!=0: raise Exception('Problem executing c_mrbcol, error code %i' % ier)
+                _brp.mrbcol(self.elements[irep][iblk],lstele,nele)
 
                 # convert real values to integer table values
                 rval = _np.ravel(self.rval[irep][iblk], order='F')
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
-                    ier = rmn.c_mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
-                    if ier!=0: raise Exception('Problem executing c_mrbcvt, error code %i' % ier)
+                    _brp.mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
                     tbl_out = tblval
                 elif self.datyp[irep][iblk] < 7:
                     tbl_out = rval
@@ -406,21 +391,17 @@ class BurpFile:
                     tbl_out = tblval
                 
                 # add block to report
-                ier = rmn.c_mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
-                             self.btyp[irep][iblk],self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
-                             self.datyp[irep][iblk],lstele,tbl_out)
-                if ier!=0: raise Exception('Problem executing c_mrbadd, error code %i' % ier)
+                _brp.mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
+                            self.btyp[irep][iblk],self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
+                            self.datyp[irep][iblk],lstele,tbl_out)
 
 
             # write report
-            ier = rmn.c_mrfput(unit,handle,buf)
-            if ier!=0: raise Exception('Problem executing c_mrfput, error code %i' % ier)
+            _brp.mrfput(unit,handle,buf)
 
         # close BURP file
-        ier = rmn.c_mrfcls(unit)
-        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
-        ier = rmn.fclos(unit)
-        if ier!=0: raise IOError('Problem closing BURP file, error code %i' % ier)
+        _brp.mrfcls(unit)
+        _rb.fclos(unit)
 
         return
 
@@ -589,6 +570,9 @@ class BurpFile:
 
 
 
+
+
+
 ##### burppy functions #####
 
 def print_btyp(btyp):
@@ -647,7 +631,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     assert code is None or cval is None, "Only one of code, cval should be supplied as an argument"
 
     if ax is None:
-        fig = plt.figure(figsize=(18,11))
+        fig = _plt.figure(figsize=(18,11))
         ax = fig.add_subplot(111)
     else:
         fig = ax.get_figure()
@@ -661,7 +645,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     if not 'edgecolors' in opt.keys():
         opt['edgecolors'] = 'None'
     if not 'cmap' in opt.keys() and (code is not None or cval is not None):
-        opt['cmap'] = plt.cm.jet
+        opt['cmap'] = _plt.cm.jet
 
     if code is not None:
         vals = bf.get_rval(code,**vals_opt)
@@ -671,10 +655,10 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     elif cval is not None:
         opt['c'] = cval
         
-    msk = np.array([ stn[:2] for stn in bf.stnids ]) != '>>'  # don't plot resumes
+    msk = _np.array([ stn[:2] for stn in bf.stnids ]) != '>>'  # don't plot resumes
 
     if not mask is None:
-        msk = np.logical_and(msk, mask)
+        msk = _np.logical_and(msk, mask)
 
     lon = bf.lon[msk]
     lat = bf.lat[msk]
@@ -699,9 +683,9 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     sctr = m.scatter(xpt, ypt, **opt)
 
     if dparallel is not None:
-        m.drawparallels(np.arange(-90,91,dparallel), labels=[1,0,0,0], color='grey', fontsize=fontsize)
+        m.drawparallels(_np.arange(-90,91,dparallel), labels=[1,0,0,0], color='grey', fontsize=fontsize)
     if dmeridian is not None:
-        m.drawmeridians(np.arange(-180,180,dmeridian), labels=[0,0,0,1], color='grey', fontsize=fontsize)
+        m.drawmeridians(_np.arange(-180,180,dmeridian), labels=[0,0,0,1], color='grey', fontsize=fontsize)
 
     output = {'m':m}
 
