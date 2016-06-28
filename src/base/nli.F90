@@ -360,6 +360,7 @@
          kp=min(k+1,l_nk)
          kq=max(2,k)
          kmq=max(2,k-1)
+         kmq=max(kmq,k0t)
 
 !**********************************
 !   The nonlinear deviation of    *

@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = 4.8.0
+GEMDYN_VERSION0  = 4.8.1
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
