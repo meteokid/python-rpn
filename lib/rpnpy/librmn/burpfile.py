@@ -10,26 +10,26 @@ from rpnpy.librmn import const as _rc
 import numpy as _np
 import numpy.ctypeslib as _npc
 import ctypes as _ct
-from calendar import timegm
-from copy import deepcopy
-from datetime import datetime
-import warnings
-import os
-import re
+from calendar import timegm as _timegm
+from copy import deepcopy as _deepcopy
+from datetime import datetime as _datetime
+import warnings as _warnings
+import os as _os
+import re as _re
 
-warnings.filterwarnings('once')
+_warnings.filterwarnings('once')
 
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as _plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
-    warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.")
+    _warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.")
 
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
-    warnings.warn("Basemap not loaded. Plotting functions require basemap.")
+    _warnings.warn("Basemap not loaded. Plotting functions require basemap.")
 
 
 class BurpFile:
@@ -93,7 +93,7 @@ class BurpFile:
 
         # read mode
         if 'r' in mode:
-            if not os.path.isfile(fname): raise IOError("Burp file not found: %s" % fname)
+            if not _os.path.isfile(fname): raise IOError("Burp file not found: %s" % fname)
             
             self.nrep,nbuf = self._get_fileinfo()
 
@@ -305,7 +305,7 @@ class BurpFile:
                     rval = _np.zeros((nmax,), dtype=_np.float32)
                     _brp.mrbxtr(buf,iblk+1,lstele,rval)
                 else:
-                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
+                    _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
                     _brp.mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
@@ -387,7 +387,7 @@ class BurpFile:
                 elif self.datyp[irep][iblk] < 7:
                     tbl_out = rval
                 else:
-                    warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
+                    _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
                     tbl_out = tblval
                 
                 # add block to report
@@ -441,7 +441,7 @@ class BurpFile:
             if k in BurpFile.blk_attr:
                 assert isinstance(kwargs[k],int), "If specified, %s must be an integer." % k
                 if (block is not None and element is not None):
-                    warnings.warn("Option \'%s\' is not used when both the block and element are specified." % k)
+                    _warnings.warn("Option \'%s\' is not used when both the block and element are specified." % k)
             else:
                 raise Exception("Unknown parameter \'%s\'" % k)
 
@@ -505,7 +505,7 @@ class BurpFile:
 
 
                 if len(iblk)>1:
-                    warnings.warn("More than one code in report. Returning first found value.")
+                    _warnings.warn("More than one code in report. Returning first found value.")
 
                 if len(iblk)>0:
                     outdata.append( self.rval[irep][iblk[0]][iele[0]] )
@@ -549,15 +549,15 @@ class BurpFile:
         dts = []
         for i in xrange(self.nrep):
             
-            d = datetime(self.year[i],self.month[i],self.day[i],self.hour[i],self.minute[i])
+            d = _datetime(self.year[i],self.month[i],self.day[i],self.hour[i],self.minute[i])
                 
             if fmt in ('string','int'):
                 d = d.isoformat().replace('T',' ')
-                d = d[:[x.start() for x in re.finditer(':', d)][-1]]
+                d = d[:[x.start() for x in _re.finditer(':', d)][-1]]
                 if fmt=='int':
                     d = [ int(i) for i in d.replace('-','').replace(':','').split() ]
             elif fmt=='unix':
-                d = timegm(d.timetuple())
+                d = _timegm(d.timetuple())
 
             dts.append(d)
 
@@ -570,10 +570,7 @@ class BurpFile:
 
 
 
-
-
-
-##### burppy functions #####
+##### functions related to BurpFile #####
 
 def print_btyp(btyp):
     """ Prints BTYP decomposed into BKNAT, BKTYP, and BKSTP. """
@@ -595,7 +592,7 @@ def copy_burp(brp_in,brp_out):
     """
     assert isinstance(brp_in,BurpFile) and isinstance(brp_out,BurpFile), "Input object must be an instance of BurpFile."
     for attr in BurpFile.burp_attr:
-        setattr(brp_out, attr, deepcopy(getattr(brp_in,attr)))
+        setattr(brp_out, attr, _deepcopy(getattr(brp_in,attr)))
     return
 
 
