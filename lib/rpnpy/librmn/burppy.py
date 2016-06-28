@@ -15,17 +15,20 @@ import re
 from calendar import timegm
 from copy import deepcopy
 
-## TODO: add __iter__
-
-#import matplotlib as mpl
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.axes_grid1 import make_axes_locatable
-#try:
-#    from mpl_toolkits.basemap import Basemap
-#except ImportError:
-#    warnings.warn("Basemap not loaded. Plotting functions require basemap.")
-
 warnings.filterwarnings('once')
+
+try:
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError:
+    warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.")
+
+try:
+    from mpl_toolkits.basemap import Basemap
+except ImportError:
+    warnings.warn("Basemap not loaded. Plotting functions require basemap.")
+
 
 class BurpFile:
     """
@@ -59,7 +62,7 @@ class BurpFile:
         -elements   BURP code value
 
     Data values, indexed by (rep,blk,code,lev)
-        -rval       real number data values (only defined after read_all is called) 
+        -rval       real number data values
 
     """
 
@@ -598,5 +601,104 @@ def copy_burp(brp_in,brp_out):
     for attr in BurpFile.burp_attr:
         setattr(brp_out, attr, deepcopy(getattr(brp_in,attr)))
     return
+
+
+def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',cbar_opt={},vals_opt={},dparallel=30.,dmeridian=60.,fontsize=20,**kwargs):
+    """
+    Plots a BURP file. Will plot BUFR code if specified. Only plots a single level,
+    which can be specified by the optional argument. Additional arguments not listed
+    below will be passes to Basemap.scatter.
+
+    Parameters
+    ----------
+      bf           BurpFile instance
+      code         code to be plotted, if not set the observation locations will be plotted
+      level        level to be plotted
+      mask         mask to apply to data
+      cval         directly supply plotted values instead of using code argument
+      ax           subplot object
+      projection   projection used by Basemap for plotting
+      cbar_opt     dictionary for colorbar options
+      vals_opt     dictionary for get_rval options if code is supplied
+      dparallel    spacing of parallels, if None will not plot parallels
+      dmeridian    spacing of meridians, if None will not plot meridians
+      fontsize     font size for labels of parallels and meridians
+
+    Returns
+    -------
+      dictionary with keys:
+        m          Basemap.scatter object used for plotting
+        cbar       colorbar object if used
+    """
+    
+    assert isinstance(bf,BurpFile), "First argument must be an instance of BurpFile"
+    assert code is None or cval is None, "Only one of code, cval should be supplied as an argument"
+
+    if ax is None:
+        fig = plt.figure(figsize=(18,11))
+        ax = fig.add_subplot(111)
+    else:
+        fig = ax.get_figure()
+
+    if bf.nrep==0:
+        return
+
+    opt = kwargs.copy()
+    if not 's' in opt.keys():
+        opt['s'] = 10
+    if not 'edgecolors' in opt.keys():
+        opt['edgecolors'] = 'None'
+    if not 'cmap' in opt.keys() and (code is not None or cval is not None):
+        opt['cmap'] = plt.cm.jet
+
+    if code is not None:
+        vals = bf.get_rval(code,**vals_opt)
+        if len(vals.shape)>1:
+            vals = vals[:,level]
+        opt['c'] = vals 
+    elif cval is not None:
+        opt['c'] = cval
+        
+    msk = np.array([ stn[:2] for stn in bf.stnids ]) != '>>'  # don't plot resumes
+
+    if not mask is None:
+        msk = np.logical_and(msk, mask)
+
+    lon = bf.lon[msk]
+    lat = bf.lat[msk]
+    if code is not None or cval is not None:
+        opt['c'] = opt['c'][msk]
+
+    basemap_opt = {'projection':projection, 'resolution':'c'}
+
+    if projection=='cyl':
+        basemap_opt.update({'llcrnrlat':-90, 'urcrnrlat':90, 'llcrnrlon':-180, 'urcrnrlon':180})
+    elif projection=='npstere':
+        basemap_opt.update({'boundinglat':10., 'lon_0':0.})
+    elif projection=='spstere':
+        basemap_opt.update({'boundinglat':-10., 'lon_0':270.})
+
+    m = Basemap(ax=ax,**basemap_opt)
+
+    m.drawcoastlines()
+
+    xpt,ypt = m(lon,lat)
+    
+    sctr = m.scatter(xpt, ypt, **opt)
+
+    if dparallel is not None:
+        m.drawparallels(np.arange(-90,91,dparallel), labels=[1,0,0,0], color='grey', fontsize=fontsize)
+    if dmeridian is not None:
+        m.drawmeridians(np.arange(-180,180,dmeridian), labels=[0,0,0,1], color='grey', fontsize=fontsize)
+
+    output = {'m':m}
+
+    if code is not None or cval is not None:
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="2%", pad=0.5)
+        cbar = fig.colorbar(sctr, ax=ax, cax=cax, **cbar_opt)
+        output['cbar'] = cbar
+
+    return output
 
 
