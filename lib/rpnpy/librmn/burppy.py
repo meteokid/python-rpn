@@ -95,9 +95,7 @@ class BurpFile:
             
             self.nrep,nbuf = self._get_fileinfo()
 
-            # nbuf will be used to set the buffer length in the Fortran subroutines
-            # more space than the longest report itself is needed here, hence the multiplication
-            nbuf *= 10  
+            nbuf *= 2  # increase the buffer length as a precaution
 
             if self.nrep>0:                
                 self._read_data(nbuf)
@@ -135,6 +133,23 @@ class BurpFile:
         ier = rmn.fclos(unit)
 
         return nrep,rep_max
+
+
+    def _calc_nbuf(self):
+        """
+        Calculates the minimum buffer length required for the longest report.
+        """
+
+        nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
+        nele_max = _np.max([ nele.max() if len(nele)>0 else 0 for nele in self.nelements ])
+        nt_max   = _np.max([ nt.max() if len(nt)>0 else 0 for nt in self.nt ])
+        nbit_max = _np.max([ nbit.max() if len(nbit)>0 else 0 for nbit in self.nbit ])
+        nblk_max = self.nblk.max()
+
+        M64 = lambda x: int(_np.floor((x+63)/64)*64)
+        nbuf_blk = 128 + M64((nele_max-3)*16) + M64(nele_max*nlev_max*nt_max*nbit_max)
+
+        return 2 * (330 + nblk_max * nbuf_blk)
 
 
     def _read_data(self,nbuf):
@@ -346,10 +361,7 @@ class BurpFile:
         itime = self.hour*100 + self.minute
 
         # buffer for report data
-        nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
-        nele_max = _np.max([ nele.max() if len(nele)>0 else 0 for nele in self.nelements ])
-        nt_max = _np.max([ nt.max() if len(nt)>0 else 0 for nt in self.nt ])
-        nbuf = 10 * nlev_max * nele_max * nt_max
+        nbuf = self._calc_nbuf()
         buf = _np.empty((nbuf,), dtype=_np.int32)
         buf[0] = nbuf
 
