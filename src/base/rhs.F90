@@ -71,7 +71,7 @@
       integer :: j0u, jnu, j0v, jnv
 
       integer :: i, j, k, km, kq, kp, nij, jext
-      real*8  tdiv, BsPqbarz, fipbarz, dTstr_8, barz, barzp, &
+      real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, barz, barzp, &
               u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
               w1, w2, w3, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
       real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)           
@@ -192,7 +192,7 @@
 
 !$omp parallel private(km,kq,kp,barz,barzp,w1,w2,w3,wk1,wk2, &
 !$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
-!$omp     dTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
+!$omp     dlnTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
 
 !$omp do
       do k=1,l_nk+1
@@ -428,11 +428,11 @@
       endif
 
       if(Cstv_Tstr_8.lt.0.) then
-         dTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)
+         dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k)
          do j = j0, jn
          do i = i0, in
             w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dTstr_8
+            F_ort(i,j,k) = F_ort(i,j,k) - Cstv_Beta_8 * w2 * dlnTstr_8
          end do
          end do
       endif

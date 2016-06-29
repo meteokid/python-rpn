@@ -446,10 +446,10 @@
                w2=Ver_wp_8%t(k)*w2+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
                w3=Ver_wpstar_8(k)*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half* &
                   (Ver_Tstar_8%m(k)*BsPrq(i,j,kq)+Ver_Tstar_8%m(km)*BsPrq(i,j,kmq))
-               w3=Ver_wp_8%t(k)*w3+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)
+               w3=Ver_wp_8%t(k)*w3+Ver_wm_8%t(k)*Ver_Tstar_8%m(k)*BsPrq(i,j,kq)*Ver_onezero(k)
                w1=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
                F_nt(i,j,k) = F_nt(i,j,k) + w1*dlnTstr_8
-               F_nf(i,j,k) = Dcst_Rgasd_8 * Cstv_invT_8 * ( w2 - w3 )
+               F_nf(i,j,k) = Dcst_Rgasd_8 * Cstv_invT_8 * ( Ver_Tstar_8%t(k)*w2 - w3 )
             end do
             end do
          endif
