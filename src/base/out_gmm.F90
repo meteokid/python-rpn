@@ -64,8 +64,9 @@
 #include "level.cdk"
 #include "schm.cdk"
 
+      integer, external :: gmm_nkeys
       type(gmm_metadata) :: tmp_meta
-      character(len=GMM_MAXNAMELENGTH), dimension(256) :: keylist
+      character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
       character(len=2) class_var(100,3)
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
@@ -78,12 +79,16 @@
 !_______________________________________________________________________
 !
       if ( Level_typ_S(levset).eq.'P') return
+
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
          if (.not. Schm_lift_ltl_L) hybt_w(G_nk)=1.
       endif
-      nkeys     = gmm_keys(keylist)
+
+      nkeys= gmm_nkeys()
+      allocate (keylist(nkeys))
+      nkeys= gmm_keys(keylist)
 
       periodx_L = .false.
       if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
@@ -169,7 +174,7 @@
       end do
  800  end do
 
-      deallocate(indo)
+      deallocate(indo,keylist)
 
  1001 format(/' ===> In out_gmm: table class_var is incomplete for variable: ',a/)
 
