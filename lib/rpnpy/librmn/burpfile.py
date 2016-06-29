@@ -17,19 +17,20 @@ import warnings as _warnings
 import os as _os
 import re as _re
 
-_warnings.filterwarnings('once')
+_warnings.simplefilter('always', ImportWarning)
+_warnings.simplefilter('always', UserWarning)
 
 try:
     import matplotlib as mpl
     import matplotlib.pyplot as _plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
 except ImportError:
-    _warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.")
+    _warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.", ImportWarning)
 
 try:
     from mpl_toolkits.basemap import Basemap
 except ImportError:
-    _warnings.warn("Basemap not loaded. Plotting functions require basemap.")
+    _warnings.warn("Basemap not loaded. Plotting functions require basemap.", ImportWarning)
 
 
 class BurpFile:
@@ -163,9 +164,9 @@ class BurpFile:
         """
 
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
-
-        MRBCVT_DECODE = 0
         
+        warn = True
+
         # open BURP file
         _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
         unit = _rb.fnom(self.fname, _rc.FST_RO)
@@ -300,12 +301,14 @@ class BurpFile:
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
                     _brp.mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
-                    _brp.mrbcvt(lstele,tblval,rval,nele,nval,nt,MRBCVT_DECODE)
+                    _brp.mrbcvt(lstele,tblval,rval,nele,nval,nt,_rc.MRBCVT_DECODE)
                 elif datyp.value < 7:
                     rval = _np.zeros((nmax,), dtype=_np.float32)
                     _brp.mrbxtr(buf,iblk+1,lstele,rval)
                 else:
-                    _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
+                    if warn:
+                        _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % datyp.value)
+                        warn = False
                     tblval = _np.zeros((nmax,), dtype=_np.int32)
                     _brp.mrbxtr(buf,iblk+1,lstele,tblval)
                     rval = tblval.astype(_np.float32)
@@ -336,10 +339,10 @@ class BurpFile:
 
         print "Writing BURP file to \'%s\'" % self.fname
 
-        MRBCVT_ENCODE = 1
         handle = 0
         nsup = 0
         nxaux = 0
+        warn = True
 
         # convert lat,lon back into integers
         ilon = _np.round(100*self.lon).astype(int)
@@ -382,12 +385,14 @@ class BurpFile:
                 rval = _np.ravel(self.rval[irep][iblk], order='F')
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
-                    _brp.mrbcvt(lstele,tblval,rval,nele,nlev,nt,MRBCVT_ENCODE)
+                    _brp.mrbcvt(lstele,tblval,rval,nele,nlev,nt,_rc.MRBCVT_ENCODE)
                     tbl_out = tblval
                 elif self.datyp[irep][iblk] < 7:
                     tbl_out = rval
                 else:
-                    _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
+                    if warn:
+                        _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
+                        warn = False
                     tbl_out = tblval
                 
                 # add block to report
@@ -416,12 +421,14 @@ class BurpFile:
         Values that are either not found or that are in reports smaller than nlev_max
         will be set to np.nan, unless fmt=int, in which case values not found set to -999.
 
+        Any block attribute can be provided as an argument to filter the query.
+
         Parameters
         ----------
           code      BURP code
-          btyp      select code from block with specified btyp
           block     block number to select codes from (starting from 1)
           element   element number to select (starting from 1)
+          btyp      select code from block with specified btyp
           bfam      selects codes specified BFAM value 
           fmt       data type to be outputted
           flatten   if true will remove degenerate axis from the output array
@@ -447,7 +454,7 @@ class BurpFile:
 
         fill_val = _np.nan if fmt==float else -999
         nlev_max = 0
-
+        warn = True
 
         if block is not None and element is not None:
             # block and element positions are already known
@@ -476,7 +483,7 @@ class BurpFile:
             for irep in xrange(self.nrep):
 
                 # find all block,element pairs for the BURP code
-                iele_code = [ _np.where(elem==code)[0] for elem in f.elements[irep] ]
+                iele_code = [ _np.where(elem==code)[0] for elem in self.elements[irep] ]
 
                 iblk = []
                 iele = []
@@ -504,8 +511,9 @@ class BurpFile:
                     iele.append(i[0])
 
 
-                if len(iblk)>1:
+                if warn and len(iblk)>1:
                     _warnings.warn("More than one code in report. Returning first found value.")
+                    warn = False
 
                 if len(iblk)>0:
                     outdata.append( self.rval[irep][iblk[0]][iele[0]] )
@@ -519,9 +527,7 @@ class BurpFile:
         outdata = _np.array([ _np.hstack([i,_np.repeat(fill_val,nlev_max-len(i))]) for i in outdata ])
 
         # change data format if specified
-        # automatically convert flags to integers
-        flag_code = False if code is None else code/100000==2
-        if fmt==int or flag_code:
+        if fmt==int:
             outdata = _np.array([[ int(round(i)) for i in line ] for line in outdata ])
         
         # if only one level, return 1D output array
