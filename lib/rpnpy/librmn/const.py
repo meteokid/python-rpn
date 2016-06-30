@@ -330,3 +330,12 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
 #</source>
+
+#==== BURP  ====
+
+#<source lang=python>
+
+MRBCVT_DECODE = 0
+MRBCVT_ENCODE = 1
+
+#</source>
