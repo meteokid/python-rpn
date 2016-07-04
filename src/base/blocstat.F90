@@ -160,6 +160,7 @@
             endif
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
+               cnt = cnt + 1
                if(Schm_nologT_L) then
                   tmp_liste(cnt+1) = 'QDT1'
                   cnt = cnt + 1

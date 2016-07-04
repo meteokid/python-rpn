@@ -49,6 +49,7 @@ subroutine itf_phy_diag ()
 !
 !----------------------------------------------------------------------
 !
+   if (.not. Schm_phyms_L) return
    if (.not. init_L) then
       istat = wb_get('phy/zu', zu)
       istat = wb_get('phy/zt', zt)
