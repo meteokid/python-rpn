@@ -1,4 +1,5 @@
 !COMP_ARCH=intel13sp1u2 ; -suppress=-C
+!COMP_ARCH=intel-2016.1.156; -suppress=-C
 
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model

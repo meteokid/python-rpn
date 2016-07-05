@@ -1,4 +1,5 @@
 !COMP_ARCH=intel13sp1u2 ; -suppress=-C
+!COMP_ARCH=intel-2016.1.156; -suppress=-C
 
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
@@ -16,7 +17,6 @@
 !---------------------------------- LICENCE END ---------------------------------
 #include "constants.h"
 #include "msg.h"
-#include "model_macros_f.h"
 
 !/@*
 subroutine adx_int_winds_glb(F_wrkx1,F_wrky1,F_u1,F_u2,F_xth,F_yth,F_zth, &
