@@ -21,14 +21,13 @@ _warnings.simplefilter('always', ImportWarning)
 _warnings.simplefilter('always', UserWarning)
 
 try:
-    import matplotlib as mpl
     import matplotlib.pyplot as _plt
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from mpl_toolkits.axes_grid1 import make_axes_locatable as _make_axes_locatable
 except ImportError:
     _warnings.warn("matplotlib not loaded. Plotting functions require matplotlib.", ImportWarning)
 
 try:
-    from mpl_toolkits.basemap import Basemap
+    from mpl_toolkits.basemap import Basemap as _Basemap
 except ImportError:
     _warnings.warn("Basemap not loaded. Plotting functions require basemap.", ImportWarning)
 
@@ -677,7 +676,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     elif projection=='spstere':
         basemap_opt.update({'boundinglat':-10., 'lon_0':270.})
 
-    m = Basemap(ax=ax,**basemap_opt)
+    m = _Basemap(ax=ax,**basemap_opt)
 
     m.drawcoastlines()
 
@@ -693,7 +692,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     output = {'m':m}
 
     if code is not None or cval is not None:
-        divider = make_axes_locatable(ax)
+        divider = _make_axes_locatable(ax)
         cax = divider.append_axes("right", size="2%", pad=0.5)
         cbar = fig.colorbar(sctr, ax=ax, cax=cax, **cbar_opt)
         output['cbar'] = cbar
