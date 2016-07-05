@@ -78,6 +78,7 @@ $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	fi ; \
 	if [[ x$(MAKE_SSM_NOABS) != x1 ]] ; then \
 		mkdir -p $@/bin/$(BASE_ARCH) ; \
+		touch $@/bin/dummybin.bin ; \
 		cd $(BINDIR) ; \
 		cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
