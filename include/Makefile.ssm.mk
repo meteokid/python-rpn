@@ -41,7 +41,7 @@ $(BUILDSSM)/$(GEMDYN_SSMALL_NAME):
 	rsync -av --exclude-from=$(DIRORIG_gemdyn)/.ssm.d/exclude $(DIRORIG_gemdyn)/ $@/ ; \
 	echo "Dependencies (s.ssmuse.dot): " > $@/BUILDINFO ; \
 	cat $@/ssmusedep.bndl >> $@/BUILDINFO ; \
-	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) "all ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
+	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) all $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control
 
 gemdyn_ssm_arch.ssm: $(GEMDYN_SSMARCH_FILES)
 $(GEMDYN_SSMARCH_FILES): gemdyn_ssm_arch rm_gemdyn_ssm_arch.ssm $(SSM_DEPOT_DIR)/$(GEMDYN_SSMARCH_NAME).ssm
@@ -56,15 +56,18 @@ gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/lib/$(EC_ARCH) ; \
+	touch $@/lib/libdummy.a ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
+		touch $@/include/dummyinc.inc ; \
 		cd $(MODDIR) ; \
 		cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
 	fi ; \
 	if [[ x$(MAKE_SSM_NOINC) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
+		touch $@/include/dummymod.inc ; \
 		echo $(BASE_ARCH) > $@/include/$(BASE_ARCH)/.restricted ; \
 		echo $(ORDENV_PLAT) >> $@/include/$(BASE_ARCH)/.restricted ; \
 		echo $(EC_ARCH) > $@/include/$(EC_ARCH)/.restricted ; \
@@ -79,7 +82,7 @@ $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 		cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
 	cp -R $(DIRORIG_gemdyn)/.ssm.d $@/ ; \
-	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) "$(SSMORDARCH) ; $(SSMARCH) ; $(BASE_ARCH)" $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
+	.rdemk_ssm_control gemdyn $(GEMDYN_VERSION) $(SSMORDARCH) $@/BUILDINFO $@/DESCRIPTION > $@/.ssm.d/control 
 
 
 .PHONY: gemdyn_install gemdyn_uninstall
