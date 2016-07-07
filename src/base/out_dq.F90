@@ -93,7 +93,7 @@
             allocate ( vor(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                         qr(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
             call cal_vor ( qr, vor, ut1, vt1 , Outd_filtpass(pnqq,set),&
-                           Outd_filtcoef(pnqq,set),(pnqr.gt.0)        ,&
+                           Outd_filtcoef(pnqq,set),(pnqq.gt.0)        ,&
                            l_minx,l_maxx,l_miny,l_maxy, G_nk )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
@@ -164,7 +164,7 @@
                         qr(l_minx:l_maxx,l_miny:l_maxy,nko) )
             call cal_vor ( qr, vor, uu_pres, vv_pres          ,&
                            Outd_filtpass(pnqq,set)            ,&
-                           Outd_filtcoef(pnqq,set),(pnqr.gt.0),&
+                           Outd_filtcoef(pnqq,set),(pnqq.gt.0),&
                            l_minx,l_maxx,l_miny,l_maxy, nko )
             gridset = Outd_grid(set)
             call out_href3 ( 'F_point', &
