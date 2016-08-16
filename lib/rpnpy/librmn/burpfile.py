@@ -131,7 +131,7 @@ class BurpFile:
 
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
-        ier  = _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        ier  = _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
         unit = _rb.fnom(self.fname, _rc.FST_RO)
 
         nrep    = _brp.mrfnbr(unit)
@@ -172,7 +172,7 @@ class BurpFile:
         warn = True
 
         # open BURP file
-        _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
         unit = _rb.fnom(self.fname, _rc.FST_RO)
         nrep = _brp.mrfopn(unit, _rc.FST_RO)
 
@@ -245,7 +245,7 @@ class BurpFile:
         for irep in xrange(nrep):
 
             # get next report and load data into buffer
-            handle = _brp.mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps,sup,nsup)
+            handle = _brp.mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps)
             _brp.mrfget(handle,buf)
 
             # get report header
@@ -362,9 +362,9 @@ class BurpFile:
         buf[0] = nbuf
 
         # open BURP file
-        _brp.mrfopc(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
         unit = _rb.fnom(self.fname, _rc.FST_RW)
-        nrep = _brp.mrfopn(unit, 'CREATE')
+        nrep = _brp.mrfopn(unit, _rc.BURP_MODE_CREATE)
 
         # loop over reports
         for irep in xrange(self.nrep):

@@ -97,7 +97,7 @@ FSTOPI_TOL_INFO    = 4
 FSTOPI_TOL_WARNING = 6
 FSTOPI_TOL_ERROR   = 8
 FSTOPI_TOL_FATAL   = 10
- 
+
 FSTOPS_MSG_DEBUG   = "DEBUG"
 FSTOPS_MSG_INFO    = "INFORM"
 FSTOPS_MSG_WARNING = "WARNIN"
@@ -241,7 +241,7 @@ FST_DATYP2NUMPY_LIST64 = { #TODO: review
 ## KIND = 5, coordonnee hybride        (0.0 -> 1.0)
 ## KIND = 6, coordonnee theta (1 -> 200, 000)
 ## KIND =10, temps en heure    (0.0 -> 200, 000.0)
-## KIND =15, reserve (entiers)        
+## KIND =15, reserve (entiers)
 ## KIND =17, indice x de la matrice de conversion (1.0 -> 1.0e10)
 ##           (partage avec kind=1 a cause du range exclusif
 ## KIND =21, p est en metres-pression
@@ -331,11 +331,27 @@ EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
 #</source>
 
-#==== BURP  ====
+#=== BURP  ===
 
 #<source lang=python>
-
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
 
+BURP_MODE_READ   = 'READ'
+BURP_MODE_CREATE = 'CREATE'
+BURP_MODE_APPEND = 'APPEND'
+#</source>
+
+#==== mrfopt (options) ====
+
+#<source lang=python>
+BURPOP_MISSING = 'MISSING'
+BURPOP_MSGLVL  = 'MSGLVL'
+
+BURPOP_MSG_TRIVIAL = 'TRIVIAL'
+BURPOP_MSG_INFO    = 'INFORMATIF'
+BURPOP_MSG_WARNING = 'WARNING'
+BURPOP_MSG_ERROR   = 'ERROR'
+BURPOP_MSG_FATAL   = 'FATAL'
+BURPOP_MSG_SYSTEM  = 'SYSTEM'
 #</source>
