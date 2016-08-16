@@ -14,6 +14,8 @@
      rpnpy.librmn.fstd98
      rpnpy.librmn.interp
      rpnpy.librmn.grids
+     rpnpy.librmn.burp
+     rpnpy.librmn.burpfile
 
 """
 
@@ -25,3 +27,5 @@ from .base import *
 from .fstd98 import *
 from .interp import *
 from .grids import *
+from .burp import *
+from .burpfile import *

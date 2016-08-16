@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Michael Sitwell <michael.sitwell@canada.ca>
+# Copyright: LGPL 2.1
 
 """
 Python interface for BUPR files. Contains wrappers for ctypes functions in
@@ -165,3 +171,13 @@ def mrbadd(buf,bkno,nele,nval,nt,bfam,bdesc,btyp,nbit,bit0,datyp,lstele,tblval):
     if istat!=0:
         raise BurpError('c_mrbadd',istat)
     return istat
+
+# =========================================================================
+
+if __name__ == "__main__":
+    print("Python interface for BUPR files.")
+    
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
+

@@ -1,7 +1,12 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# . s.ssmuse.dot /ssm/net/hpcs/201402/02/base \
+#                /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
+# Author: Michael Sitwell <michael.sitwell@canada.ca>
+# Copyright: LGPL 2.1
 
 """
-Python BURP interface
+Python BURP High Level Interface
 """
 
 from rpnpy.librmn import burp as _brp
@@ -699,4 +704,13 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
 
     return output
 
+
+# =========================================================================
+
+if __name__ == "__main__":
+    print("Python BURP High Level Interface")
+    
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
 
