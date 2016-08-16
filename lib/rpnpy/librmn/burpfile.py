@@ -99,12 +99,12 @@ class BurpFile:
         # read mode
         if 'r' in mode:
             if not _os.path.isfile(fname): raise IOError("Burp file not found: %s" % fname)
-            
+
             self.nrep,nbuf = self._get_fileinfo()
 
             nbuf *= 2  # increase the buffer length as a precaution
 
-            if self.nrep>0:                
+            if self.nrep>0:
                 self._read_data(nbuf)
 
         return
@@ -136,7 +136,7 @@ class BurpFile:
 
         nrep    = _brp.mrfnbr(unit)
         rep_max = _brp.mrfmxl(unit)
-        
+
         ier = _rb.fclos(unit)
 
         return nrep,rep_max
@@ -168,7 +168,7 @@ class BurpFile:
         """
 
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
-        
+
         warn = True
 
         # open BURP file
@@ -243,7 +243,7 @@ class BurpFile:
 
         # loop over reports
         for irep in xrange(nrep):
-            
+
             # get next report and load data into buffer
             handle = _brp.mrfloc(unit,handle,stnid,idtyp,lat,lon,date,temps,sup,nsup)
             _brp.mrfget(handle,buf)
@@ -251,7 +251,7 @@ class BurpFile:
             # get report header
             _brp.mrbhdr(buf,itime,iflgs,stnids,idburp,ilat,ilon,idx,idy,ialt,
                         idelay,idate,irs,irunn,nblk,sup,nsup,xaux,nxaux)
-            
+
             self.flgs[irep]   = iflgs.value
             self.codtyp[irep] = idburp.value
             self.dx[irep]     = idx.value
@@ -259,8 +259,8 @@ class BurpFile:
             self.alt[irep]    = ialt.value
             self.delay[irep]  = idelay.value
             self.rs[irep]     = irs.value
-            self.runn[irep]   = irunn.value         
-            self.nblk[irep]   = nblk.value            
+            self.runn[irep]   = irunn.value
+            self.nblk[irep]   = nblk.value
             self.sup[irep]    = sup[0]
             self.xaux[irep]   = xaux[0]
 
@@ -269,15 +269,15 @@ class BurpFile:
             self.day[irep]    = idate.value%100
             self.hour[irep]   = itime.value/100
             self.minute[irep] = itime.value%100
-  
+
             self.lon[irep] = ilon.value/100.
             self.lat[irep] = (ilat.value-9000.)/100.
-            
+
             self.stnids[irep] = stnids
-            
+
             for attr in BurpFile.blk_attr:
                 getattr(self, attr)[irep] = _np.empty((nblk.value,), dtype=int)
-                
+
             self.elements[irep] = _np.empty((nblk.value,), dtype=object)
             self.rval[irep]     = _np.empty((nblk.value,), dtype=object)
 
@@ -296,9 +296,9 @@ class BurpFile:
                 self.nbit[irep][iblk]      = nbit.value
                 self.bit0[irep][iblk]      = bit0.value
                 self.datyp[irep][iblk]     = datyp.value
-                
+
                 nmax = nele.value*nval.value*nt.value
-                lstele = _np.empty((nele.value,), dtype=_np.int32) 
+                lstele = _np.empty((nele.value,), dtype=_np.int32)
 
                 # get block elements and values and convert integer table values to real values
                 if datyp.value < 5:
@@ -333,9 +333,9 @@ class BurpFile:
         self.lon = self.lon % 360.
         self.lon[self.lon>180] = self.lon[self.lon>180] - 360.
 
-        return 
+        return
 
-    
+
     def write_burpfile(self):
         """ Writes BurpFile instance to a BURP file.  """
 
@@ -368,7 +368,7 @@ class BurpFile:
 
         # loop over reports
         for irep in xrange(self.nrep):
-            
+
             # write report header
             _brp.mrbini(unit,buf,itime[irep],self.flgs[irep],self.stnids[irep],self.codtyp[irep],
                         ilat[irep],ilon[irep],self.dx[irep],self.dy[irep],self.alt[irep],
@@ -376,7 +376,7 @@ class BurpFile:
                         nsup,self.xaux[irep],nxaux)
 
             for iblk in xrange(self.nblk[irep]):
-                
+
                 nele = self.nelements[irep][iblk]
                 nlev = self.nlev[irep][iblk]
                 nt = self.nt[irep][iblk]
@@ -398,7 +398,7 @@ class BurpFile:
                         _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
                         warn = False
                     tbl_out = tblval
-                
+
                 # add block to report
                 _brp.mrbadd(buf,_ct.pointer(_ct.c_int(iblk+1)),nele,nlev,nt,self.bfam[irep][iblk],self.bdesc[irep][iblk],
                             self.btyp[irep][iblk],self.nbit[irep][iblk],_ct.pointer(_ct.c_int(self.bit0[irep][iblk])),
@@ -420,7 +420,7 @@ class BurpFile:
         Returns an array of values for a single element from the burp file.
 
         The returned array will have dimensions of (nrep,nlev_max) where
-        nlev_max is the largest nlev value found in the query. 
+        nlev_max is the largest nlev value found in the query.
 
         Values that are either not found or that are in reports smaller than nlev_max
         will be set to np.nan, unless fmt=int, in which case values not found set to -999.
@@ -433,7 +433,7 @@ class BurpFile:
           block     block number to select codes from (starting from 1)
           element   element number to select (starting from 1)
           btyp      select code from block with specified btyp
-          bfam      selects codes specified BFAM value 
+          bfam      selects codes specified BFAM value
           fmt       data type to be outputted
           flatten   if true will remove degenerate axis from the output array
 
@@ -478,7 +478,7 @@ class BurpFile:
                         outdata.append(_np.array([]))
                 else:
                     outdata.append(_np.array([]))
-            
+
         else:
             # get block and element positions from search criteria
 
@@ -522,10 +522,10 @@ class BurpFile:
                 if len(iblk)>0:
                     outdata.append( self.rval[irep][iblk[0]][iele[0]] )
                     if self.nlev[irep][iblk[0]]>nlev_max:
-                            nlev_max = self.nlev[irep][iblk[0]]
+                        nlev_max = self.nlev[irep][iblk[0]]
                 else:
                     outdata.append(_np.array([]))
- 
+
 
         # create array of dimension (nrep,nlev_max) with values padded with fill_val
         outdata = _np.array([ _np.hstack([i,_np.repeat(fill_val,nlev_max-len(i))]) for i in outdata ])
@@ -533,7 +533,7 @@ class BurpFile:
         # change data format if specified
         if fmt==int:
             outdata = _np.array([[ int(round(i)) for i in line ] for line in outdata ])
-        
+
         # if only one level, return 1D output array
         if flatten and nlev_max==1:
             outdata = outdata[:,0]
@@ -558,9 +558,9 @@ class BurpFile:
 
         dts = []
         for i in xrange(self.nrep):
-            
+
             d = _datetime(self.year[i],self.month[i],self.day[i],self.hour[i],self.minute[i])
-                
+
             if fmt in ('string','int'):
                 d = d.isoformat().replace('T',' ')
                 d = d[:[x.start() for x in _re.finditer(':', d)][-1]]
@@ -572,7 +572,7 @@ class BurpFile:
             dts.append(d)
 
         return dts
-        
+
 
     def get_stnids_unique(self):
         """ Returns unique list of station IDs. """
@@ -588,11 +588,11 @@ def print_btyp(btyp):
     bknat = b[:4]
     bktyp = b[4:11]
     bkstp = b[11:]
-    print "BKNAT  BKTYP    BKSTP" 
+    print "BKNAT  BKTYP    BKSTP"
     print "-----  -----    -----"
     print "%s   %s  %s" % (bknat,bktyp,bkstp)
     return
-    
+
 
 def copy_burp(brp_in,brp_out):
     """
@@ -633,7 +633,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
         m          Basemap.scatter object used for plotting
         cbar       colorbar object if used
     """
-    
+
     assert isinstance(bf,BurpFile), "First argument must be an instance of BurpFile"
     assert code is None or cval is None, "Only one of code, cval should be supplied as an argument"
 
@@ -658,10 +658,10 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
         vals = bf.get_rval(code,**vals_opt)
         if len(vals.shape)>1:
             vals = vals[:,level]
-        opt['c'] = vals 
+        opt['c'] = vals
     elif cval is not None:
         opt['c'] = cval
-        
+
     msk = _np.array([ stn[:2] for stn in bf.stnids ]) != '>>'  # don't plot resumes
 
     if not mask is None:
@@ -686,7 +686,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
     m.drawcoastlines()
 
     xpt,ypt = m(lon,lat)
-    
+
     sctr = m.scatter(xpt, ypt, **opt)
 
     if dparallel is not None:
@@ -709,8 +709,7 @@ def plot_burp(bf,code=None,cval=None,ax=None,level=0,mask=None,projection='cyl',
 
 if __name__ == "__main__":
     print("Python BURP High Level Interface")
-    
+
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;
-

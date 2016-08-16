@@ -1611,6 +1611,7 @@ def fstouv(iunit, filemode=_rc.FST_RW):
         FSTDError  on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myfstfile.fst', rmn.FST_RW)
     >>> istat = rmn.fstouv(funit, rmn.FST_RW)
