@@ -39,6 +39,7 @@
 #include "adx_dims.cdk"
 #include "adx_grid.cdk"
 #include "adx_interp.cdk"
+#include "clipping.cdk"
 
       logical :: zcubic_L
 
@@ -99,6 +100,10 @@
       !Establish scope of extended advection operations
       !------------------------------------------------
       call adx_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
+
+      if (clipping_L) call adx_cliptraj3 ( F_x, F_y, i0_e, in_e, j0_e, jn_e, adx_mlni, adx_mlnj, adx_gbpil_t+1, adx_lnk, 'FLUX') 
+
+      clipping_L = .FALSE.
 
       !-----------------
       !Estimate FLUX_out

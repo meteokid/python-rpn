@@ -34,6 +34,7 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
 #include "adx_pos.cdk"
 #include "tr3d.cdk"
 #include "tracers.cdk"
+#include "clipping.cdk"
 
    logical qw_L
    integer  n,i0,j0,in,jn
@@ -63,6 +64,8 @@ subroutine adx_tracers_interp (F_water_tracers_only_L)
                         adx_fro_n, adx_fro_s, adx_fro_a, &
                         adx_for_n, adx_for_s, adx_for_a, 3)
    endif
+
+   if (.NOT.F_water_tracers_only_L) clipping_L = .TRUE. 
 
    do n=1,Tr3d_ntr
       qw_L= Tr3d_wload(n) .or. Tr3d_name_S(n)(1:2).eq.'HU'
