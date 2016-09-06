@@ -50,8 +50,8 @@
 
       !----------------------------------------------------------
       integer i,j,k,err,i0,in,j0,jn
-      real*8   c_mass_8, s_mass_8, c_area_8, s_area_8, & 
-              gc_mass_8,gs_mass_8,gp_mass_8,scale_8
+      real*8   c_mass_8, c_area_8, s_area_8, c_level_8(F_nk), & 
+              gc_mass_8, scale_8
       real, dimension(:,:,:), allocatable, save :: density,mass
       character(len=15) type_S
       character(len= 7) time_S
@@ -137,97 +137,69 @@
 
       !Evaluate Local Mass  
       !-------------------
-      c_mass_8 = 0.0d0
-      s_mass_8 = 0.0d0
-
       if (F_mixing_L) then
 
          if (Grd_yinyang_L) then
 
+!$omp parallel do private(i,j) shared(c_level_8,mass)
          do k=k0,F_nk
+            c_level_8(k) = 0.0d0
             do j=j0,jn
             do i=i0,in
-               c_mass_8 = c_mass_8 + F_tracer(i,j,k) * mass(i,j,k) * Geomg_mask_8(i,j) 
+               c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * mass(i,j,k) * Geomg_mask_8(i,j) 
             enddo
             enddo
          enddo
+!$omp end parallel do
 
          else 
 
+!$omp parallel do private(i,j) shared(c_level_8,mass)
          do k=k0,F_nk
+            c_level_8(k) = 0.0d0
             do j=j0,jn
             do i=i0,in
-               c_mass_8 = c_mass_8 + F_tracer(i,j,k) * mass(i,j,k)
+               c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * mass(i,j,k)
             enddo
             enddo
          enddo
+!$omp end parallel do
 
          endif
-
-         !Evaluate mass on a subset of Yin or Yan
-         !---------------------------------------
-         if (Grd_yinyang_L) then
-
-         do k=k0,F_nk
-            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
-            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
-               s_mass_8 = s_mass_8 + F_tracer(i,j,k) * mass(i,j,k)
-            enddo
-            enddo
-         enddo
-
-         endif 
 
       else
 
+!$omp parallel do private(i,j) shared(c_level_8,density)
          do k=k0,F_nk
+            c_level_8(k) = 0.0d0
             do j=j0,jn
             do i=i0,in
-               c_mass_8 = c_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
+               c_level_8(k) = c_level_8(k) + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
            enddo
            enddo
          enddo
-
-         !Evaluate mass on a subset of Yin or Yan
-         !---------------------------------------
-         if (Grd_yinyang_L) then
-
-         do k=k0,F_nk
-            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
-            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
-               s_mass_8 = s_mass_8 + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k)
-           enddo
-           enddo
-         enddo
-
-         endif
+!$omp end parallel do
 
       endif
 
+      c_mass_8 = 0.0d0 
+
+      do k=k0,F_nk
+         c_mass_8 = c_mass_8 + c_level_8(k) 
+      enddo
+
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
-
-      gp_mass_8 = 0.0d0
-      gs_mass_8 = 0.0d0
 
       !----------------------------------------
       !Evaluate Global Mass using MPI_ALLREDUCE
       !----------------------------------------
       call rpn_comm_ALLREDUCE(c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
-      if (Grd_yinyang_L) then 
-      call rpn_comm_ALLREDUCE(s_mass_8,gs_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID"       ,err )
-      call rpn_comm_ALLREDUCE(c_mass_8,gp_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID"       ,err )
-      endif
 
       if ((G_lam.or.F_name_S=='RHO ').or..NOT.SAROJA_L) then
          gc_mass_8 = gc_mass_8 / gc_area_8
       else
          gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
-      endif
-
-      if (Grd_yinyang_L) then
-          gp_mass_8 = gp_mass_8 / gc_area_8 * 2.0d0
-          gs_mass_8 = gs_mass_8 / gs_area_8
       endif
 
       if (G_lam.or..NOT.SAROJA_L) then
@@ -239,8 +211,6 @@
       if (Tr_2D_3D_L.or.F_name_S=='RHO '.or..NOT.F_mixing_L) scale_8 = 1.0d0
 
       gc_mass_8 = gc_mass_8 * scale_8
-      gp_mass_8 = gp_mass_8 * scale_8
-      gs_mass_8 = gs_mass_8 * scale_8
 
       if (.NOT.F_mixing_L) type_S = "Mass of Density"
       if (     F_mixing_L) type_S = "Mass of Mixing "
@@ -251,11 +221,6 @@
       if (Lun_out>0.and.F_comment_S/="") then
 
           write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',gc_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
-
-          if (Grd_yinyang_L) then
-          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' P= ',gp_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
-          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' S= ',gs_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
-          endif
 
       endif
 

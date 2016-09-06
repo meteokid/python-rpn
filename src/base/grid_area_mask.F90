@@ -27,30 +27,27 @@
 !
 !revision
 ! v4_70 - Qaddouri/Tanguay     - initial version
+! v4_73 - Lee V.  - optimization for MPI
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+#include "geomg.cdk"
 #include "ptopo.cdk"
 #include "grd.cdk"
 
       real*8, external :: yyg_weight
-      integer i,j,k,offi,offj,np_subd,ii,jj
+      integer i,j,k,np_subd,ierr
       real*8, parameter :: HALF_8 = 0.5
-      real*8 poids(G_ni,G_nj), area_4(G_ni,G_nj), &
-             dx,dy,x_a_4,y_a_4,sp,sf,sp1,sf1
+      real*8 poids(l_ni,l_nj), area_4(l_ni,l_nj), &
+             dx,dy,x_a_4,y_a_4,sf(2),sp(2)
 !
 !     ---------------------------------------------------------------
 !
-      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-
       do j = 1,l_nj
-         jj = offj+j
          do i = 1,l_ni
-            ii = offi+i
-            F_area_8(i,j)= ( G_xg_8(ii+1)-G_xg_8(ii-1) )   * HALF_8 * &
-                           (sin((G_yg_8(jj+1)+G_yg_8(jj  ))* HALF_8)- &
-                            sin((G_yg_8(jj  )+G_yg_8(jj-1))* HALF_8))
+            F_area_8(i,j)= ( Geomg_x_8(i+1)-Geomg_x_8(i-1) )   * HALF_8 * &
+                           (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8)- &
+                            sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
          enddo
       enddo
 
@@ -72,16 +69,16 @@
          sp    = 0.d0
          sf    = 0.d0
 
-         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
+         do j = 1+pil_s, l_nj-pil_n
 
-            y_a_4 = G_yg_8(j)
+            y_a_4 = Geomg_y_8(j)
 
-            do i = 1+Lam_pil_w, G_ni-Lam_pil_e
+            do i = 1+pil_w, l_ni-pil_e
 
-               x_a_4 = G_xg_8(i)-acos(-1.d0)
-               dx    = ( G_xg_8(i+1)-G_xg_8(i-1) ) * HALF_8
-               dy    = (sin((G_yg_8(j+1)+G_yg_8(j  ))* HALF_8) -  &
-                        sin((G_yg_8(j  )+G_yg_8(j-1))* HALF_8))
+               x_a_4 = Geomg_x_8(i)-acos(-1.d0)
+               dx    = ( Geomg_x_8(i+1)-Geomg_x_8(i-1) ) * HALF_8
+               dy    = (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8) -  &
+                        sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
 
                area_4(i,j) = dx*dy
                poids (i,j) = yyg_weight (x_a_4,y_a_4,dx,dy,np_subd)
@@ -89,42 +86,47 @@
                !Check if poids <0
                !-----------------
                if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
-                   sp = sp + poids(i,j)*area_4(i,j)
+                   sp(1) = sp(1) + poids(i,j)*area_4(i,j)
                elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
-                   sf = sf + poids(i,j)*area_4(i,j)
+                   sp(2) = sp(2) + poids(i,j)*area_4(i,j)
                endif
 
             enddo
 
          enddo
 
+!MPI reduce to get the global value for sp into sf
+         call RPN_COMM_allreduce(sp,sf,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",ierr)
+
          !Correct and scale poids
          !-----------------------
-         sp1 = 0.d0
-         sf1 = 0.d0
+         sp = 0.d0
 
-         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
-         do i = 1+Lam_pil_w, G_ni-Lam_pil_e
+         do j = 1+pil_s, l_nj-pil_n
+         do i = 1+pil_w, l_ni-pil_e
 
-            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf)/sp
+            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
 
             if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
                 poids(i,j) = min( 1.0d0, x_a_4 )
             endif
             if (poids(i,j)*(1.0-poids(i,j)) .gt. 0.d0) then
-                sp1 = sp1 + poids(i,j)*area_4(i,j)
+                sp(1) = sp(1) + poids(i,j)*area_4(i,j)
             elseif (abs(poids(i,j)-1.d0) .lt. 1.d-14) then
-                sf1 = sf1 + poids(i,j)*area_4(i,j)
+                sp(2) = sp(2) + poids(i,j)*area_4(i,j)
             endif
 
          enddo
          enddo
 
+!MPI reduce to get the global value for sp into sf
+         call RPN_COMM_allreduce(sp,sf,2,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",ierr)
+
          !Correct
          !-------
-         do j = 1+Lam_pil_s, G_nj-Lam_pil_n
-         do i = 1+Lam_pil_w, G_ni-Lam_pil_e
-            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf1)/sp1
+         do j = 1+pil_s, l_nj-pil_n
+         do i = 1+pil_w, l_ni-pil_e
+            x_a_4 = poids(i,j)*(2.d0*acos(-1.d0) - sf(2))/sf(1)
 
             if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
                 poids(i,j) = min( 1.d0, x_a_4 )
@@ -135,10 +137,8 @@
 
          F_mask_8 = 0.d0
          do j=1+pil_s,l_nj-pil_n
-            jj = offj+j
             do i = 1+pil_w,l_ni-pil_e
-               ii = offi+i
-               F_mask_8(i,j) = poids(ii,jj)
+               F_mask_8(i,j) = poids(i,j)
             enddo
          enddo
 

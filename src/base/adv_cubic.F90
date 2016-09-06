@@ -45,6 +45,7 @@
 #include "adv_grid.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
+#include "adv_mask_flux.cdk"
 
       logical :: mono_L, conserv_L    
       integer :: n,flux_n     
@@ -55,10 +56,11 @@
       real, dimension(F_ni,F_nj,F_nk) :: wrkc, w_mono_c, w_lin_c, w_min_c, w_max_c
       real, dimension(F_minx:F_maxx, F_miny:F_maxy ,F_nk), intent(in)  :: Fld_in
       real, dimension(F_minx:F_maxx, F_miny:F_maxy ,F_nk), intent(out) :: Fld_out
-      real, dimension(F_minx:F_maxx, F_miny:F_maxy ,F_nk) :: in_rho,in_o,in_i
+      real, dimension(F_minx:F_maxx, F_miny:F_maxy ,F_nk) :: in_rho,in_o,in_i,fld_ONE
       type(gmm_metadata) :: mymeta
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
       integer :: err, conserv_local
+      logical,save :: done_mask_L=.FALSE.
 !     
 !---------------------------------------------------------------------
 ! 
@@ -72,6 +74,13 @@
 
       flux_n = 0
       if (F_mass_kind == 1.and.G_lam.and..not.Grd_yinyang_L) flux_n = 1
+
+      if (flux_n>0.and..NOT.done_mask_L) then
+
+          allocate (adw_mask_o(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk), &
+                    adw_mask_i(adv_lminx:adv_lmaxx,adv_lminy:adv_lmaxy,F_nk))
+
+      endif
 
       if (flux_n>0) then
 
@@ -112,6 +121,14 @@
 
       nbpts = F_ni*F_nj*F_nk
 
+      if (flux_n>0) then
+!$omp parallel do
+      do k = 1,F_nk
+         fld_adw(:,:,k)= 0.0 
+      enddo
+!$omp end parallel do
+      endif
+
       call rpn_comm_xch_halox( fld_in, F_minx, F_maxx,F_miny, F_maxy , &
        F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
        fld_adw, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
@@ -124,20 +141,66 @@
          err = gmm_get(gmmk_min_s ,fld_min ,mymeta)
          err = gmm_get(gmmk_max_s ,fld_max ,mymeta)
 
-         fld_cub  = fld_out ; fld_mono = fld_out
+!$omp parallel do
+         do k = 1,F_nk
+            fld_cub (:,:,k)= fld_out(:,:,k) 
+            fld_mono(:,:,k)= fld_out(:,:,k) 
+         enddo
+!$omp end parallel do
 
          if (flux_n>0) then
-            cub_o = 0.0 ; cub_i = 0.0 
 
-            call adv_set_flux_in (in_o,in_i,fld_in,l_minx,l_maxx,l_miny,l_maxy,F_nk,F_k0)
+!$omp parallel do
+            do k = 1,F_nk
+               cub_o(:,:,k)= 0.0 
+               cub_i(:,:,k)= 0.0 
+            enddo
+!$omp end parallel do
 
-            call rpn_comm_xch_halox( in_o, F_minx, F_maxx,F_miny, F_maxy , &
-             F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
-             adw_o, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
+            if (.NOT.done_mask_L) then
 
-            call rpn_comm_xch_halox( in_i, F_minx, F_maxx,F_miny, F_maxy , &
-             F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
-             adw_i, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
+!$omp parallel
+!$omp do
+               do k = 1,F_nk
+                  fld_ONE(:,:,k)= 0.0 
+               enddo
+!$omp enddo
+!$omp do
+               do k=1,F_nk
+               do j=1,F_nj
+               do i=1,F_ni
+                  fld_ONE(i,j,k) = 1.0
+               enddo
+               enddo
+               enddo
+!$omp enddo
+!$omp end parallel
+
+               call adv_set_flux_in (in_o,in_i,fld_ONE,l_minx,l_maxx,l_miny,l_maxy,F_nk,F_k0)
+
+               call rpn_comm_xch_halox( in_o, F_minx, F_maxx,F_miny, F_maxy , &
+                F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
+                adw_mask_o, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
+
+               call rpn_comm_xch_halox( in_i, F_minx, F_maxx,F_miny, F_maxy , &
+                F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
+                adw_mask_i, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
+
+            endif
+
+            done_mask_L = .TRUE.
+
+!$omp parallel do
+            do k=1,F_nk
+            do j=adv_lminy,adv_lmaxy
+            do i=adv_lminx,adv_lmaxx
+               adw_o(i,j,k) = adw_mask_o(i,j,k) * fld_adw(i,j,k)
+               adw_i(i,j,k) = adw_mask_i(i,j,k) * fld_adw(i,j,k)
+            enddo 
+            enddo 
+            enddo 
+!$omp end parallel do
+
          endif
 
          if (conserv_local>0) then

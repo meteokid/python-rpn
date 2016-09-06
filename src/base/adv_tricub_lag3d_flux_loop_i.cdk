@@ -1,50 +1,41 @@
-!$omp parallel private(o1,o2,o3,o4,a1,a2,a3,a4,b1,b2,b3,b4,&
-!$omp  c1,c2,c3,c4, &
-!$omp  d1,d2,d3,d4,p1,p2,p3,p4,rri,rrj,rrk,ra,rb,rc,rd,n,i,j,k,&
-!$omp  ii,jj,kk,idxk,idxjk,zcubic_L)              &
-!$omp  shared (p_lcz,p_z00_8,&
-!$omp          p_bsz_8, p_zbc_8, p_zabcd_8, &
-!$omp          p_zbacd_8,p_zcabd_8, p_zdabc_8, kkmax,&
-!$omp          i0_i,in_i,j0_i,jn_i,k0)
+!$omp parallel private(zcubic_L,n0,nx,ny,nz,m1,o1,o2,o3,o4,&
+!$omp    n, id,&
+!$omp    a1, a2, a3, a4, b1, b2, b3, b4,&
+!$omp    c1, c2, c3, c4, d1, d2, d3, d4,&
+!$omp    p1, p2, p3, p4,&
+!$omp    ra,rb,rc,rd) &
+!$omp shared (p_bsz_8,p_zbc_8,p_zabcd_8, &
+!$omp    p_zbacd_8,p_zcabd_8,p_zdabc_8,kkmax)
+
+
+! m1=0 -> NOT for OMP
+
 !$omp do
 
-   do k=k0,F_nk
-      idxk = (k-1)*l_ni*l_nj
-      do j=j0_i,jn_i
-         idxjk = idxk + ((j-1)*l_ni)
-         do i=i0_i,in_i
+   do id=1,nind_i
 
-            n = idxjk + i
+            !m1=m1+4-> not for OMP
+            m1=id*4
+            n0=m1-3
+            nx=m1-2
+            ny=m1-1
+            nz=m1
 
-            rri= F_x(n)
-            ii =1+ (rri - adv_x00_8) * adv_ovdx_8
-            if (rri < adv_bsx_8(ii)) ii = ii - 1
-            ii = max(2,min(ii,adv_iimax))
+            n=ii_i(n0)
 
-            rrj= F_y(n)
-            jj =1 +  (rrj - adv_y00_8) * adv_ovdy_8
-            if (rrj < adv_bsy_8(jj)) jj = jj - 1
-            jj = max(G_haloy,min(jj,adv_jjmax))
-
-            rrk= F_z(n)
-            kk = (rrk - p_z00_8) * adv_ovdz_8
-            kk = p_lcz(kk+1)
-            if (rrk < p_bsz_8(kk)) kk = kk - 1
-            kk = min(kkmax-1,max(0,kk))
-
-            zcubic_L = (kk > 0) .and. (kk < kkmax-1)
+            zcubic_L = (ii_i(nz) > 0) .and. (ii_i(nz) < kkmax-1)
 
             !- x interpolation
-            ra = adv_bsx_8(ii-1)
-            rb = adv_bsx_8(ii  )
-            rc = adv_bsx_8(ii+1)
-            rd = adv_bsx_8(ii+2)
-            p1 = triprd(rri,rb,rc,rd)*adv_xabcd_8
-            p2 = triprd(rri,ra,rc,rd)*adv_xbacd_8
-            p3 = triprd(rri,ra,rb,rd)*adv_xcabd_8
-            p4 = triprd(rri,ra,rb,rc)*adv_xdabc_8
+            ra = adv_bsx_8(ii_i(nx)-1)
+            rb = adv_bsx_8(ii_i(nx)  )
+            rc = adv_bsx_8(ii_i(nx)+1)
+            rd = adv_bsx_8(ii_i(nx)+2)
+            p1 = triprd(F_x(n),rb,rc,rd)*adv_xabcd_8
+            p2 = triprd(F_x(n),ra,rc,rd)*adv_xbacd_8
+            p3 = triprd(F_x(n),ra,rb,rd)*adv_xcabd_8
+            p4 = triprd(F_x(n),ra,rb,rc)*adv_xdabc_8
 
-            o2 = (kk-1)*adv_nijag + (jj-adv_int_j_off-1)*adv_nit + (ii-adv_int_i_off)
+            o2 = (ii_i(nz)-1)*adv_nijag + (ii_i(ny)-adv_int_j_off-1)*adv_nit + (ii_i(nx)-adv_int_i_off)
             o1 = o2-adv_nit
             o3 = o2+adv_nit
             o4 = o3+adv_nit
@@ -89,14 +80,14 @@
             endif
 
             !- y interpolation
-            ra = adv_bsy_8(jj-1)
-            rb = adv_bsy_8(jj  )
-            rc = adv_bsy_8(jj+1)
-            rd = adv_bsy_8(jj+2)
-            p1 = triprd(rrj,rb,rc,rd)*adv_yabcd_8
-            p2 = triprd(rrj,ra,rc,rd)*adv_ybacd_8
-            p3 = triprd(rrj,ra,rb,rd)*adv_ycabd_8
-            p4 = triprd(rrj,ra,rb,rc)*adv_ydabc_8
+            ra = adv_bsy_8(ii_i(ny)-1)
+            rb = adv_bsy_8(ii_i(ny)  )
+            rc = adv_bsy_8(ii_i(ny)+1)
+            rd = adv_bsy_8(ii_i(ny)+2)
+            p1 = triprd(F_y(n),rb,rc,rd)*adv_yabcd_8
+            p2 = triprd(F_y(n),ra,rc,rd)*adv_ybacd_8
+            p3 = triprd(F_y(n),ra,rb,rd)*adv_ycabd_8
+            p4 = triprd(F_y(n),ra,rb,rc)*adv_ydabc_8
 
             b1 = p1 * b1 + p2 * b2 + p3 * b3 + p4 * b4
             c1 = p1 * c1 + p2 * c2 + p3 * c3 + p4 * c4
@@ -105,26 +96,24 @@
             if (zcubic_L) then
                a1 = p1 * a1 + p2 * a2 + p3 * a3 + p4 * a4
                d1 = p1 * d1 + p2 * d2 + p3 * d3 + p4 * d4
-               ra = p_bsz_8(kk-1)
-               rb = p_bsz_8(kk  )
-               rc = p_bsz_8(kk+1)
-               rd = p_bsz_8(kk+2)
-               p1 = triprd(rrk,rb,rc,rd)*p_zabcd_8(kk+1)
-               p2 = triprd(rrk,ra,rc,rd)*p_zbacd_8(kk+1)
-               p3 = triprd(rrk,ra,rb,rd)*p_zcabd_8(kk+1)
-               p4 = triprd(rrk,ra,rb,rc)*p_zdabc_8(kk+1)
+               ra = p_bsz_8(ii_i(nz)-1)
+               rb = p_bsz_8(ii_i(nz)  )
+               rc = p_bsz_8(ii_i(nz)+1)
+               rd = p_bsz_8(ii_i(nz)+2)
+               p1 = triprd(F_z(n),rb,rc,rd)*p_zabcd_8(ii_i(nz)+1)
+               p2 = triprd(F_z(n),ra,rc,rd)*p_zbacd_8(ii_i(nz)+1)
+               p3 = triprd(F_z(n),ra,rb,rd)*p_zcabd_8(ii_i(nz)+1)
+               p4 = triprd(F_z(n),ra,rb,rc)*p_zdabc_8(ii_i(nz)+1)
 
                F_cub_i(n) = p1 * a1 + p2 * b1 + p3 * c1 + p4 * d1
             else
-               p3 = (rrk-p_bsz_8(kk))*p_zbc_8(kk+1)
+               p3 = (F_z(n)-p_bsz_8(ii_i(nz)))*p_zbc_8(ii_i(nz)+1)
                p2 = 1. - p3
 
                F_cub_i(n) = p2 * b1 + p3 * c1
             endif
 
-         enddo 
-      enddo 
-   enddo 
+   enddo
 
 !$omp enddo
 !$omp end parallel

@@ -1,0 +1,14 @@
+      logical done_precompute_L
+
+      integer nind_o,nind_i
+
+      integer nind_w_o,nind_s_o,nind_e_o,nind_n_o,nind_w_i,nind_s_i,nind_e_i,nind_n_i
+
+      integer,save,pointer,dimension(:) :: ii_w_o =>null(), ii_s_o =>null(), ii_e_o =>null(), ii_n_o =>null(), &
+                                           ii_w_i =>null(), ii_s_i =>null(), ii_e_i =>null(), ii_n_i =>null()
+
+      integer,     pointer,dimension(:) :: ii_o   =>null(), ii_i   =>null()
+
+      common /precompute_I/ nind_w_o,nind_s_o,nind_e_o,nind_n_o,nind_w_i,nind_s_i,nind_e_i,nind_n_i 
+
+      common /precompute_L/ done_precompute_L 

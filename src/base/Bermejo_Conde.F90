@@ -57,19 +57,21 @@
       time_p = 1
       time_m = 0
 
-      F_new = F_high
+!$omp parallel do 
+      do k=1,F_nk
+         F_new(:,:,k) = F_high(:,:,k)
+      enddo
+!$omp end parallel do
 
       p_exp_8 = 1.0
 
-      if (verbose_L) then
-      if (Lun_out>0) then
+      if (verbose_L.and.Lun_out>0) then
                                           write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
          if (F_CLIP_L)                    write(Lun_out,*) 'TRACERS: Restore Mass Conservation of Cubic MONO(CLIPPING): Bermejo and Conde,2002,MWR'
          if (F_ILMC_L)                    write(Lun_out,*) 'TRACERS: Restore Mass Conservation of Cubic MONO(ILMC): Bermejo and Conde,2002,MWR'
          if (.NOT.(F_CLIP_L.or.F_ILMC_L)) write(Lun_out,*) 'TRACERS: Restore Mass Conservation of Cubic: Bermejo and Conde,2002,MWR'
          if (LAM_L)                       write(Lun_out,*) 'TRACERS: Bermejo-Conde LAM: Flux calculations based on Aranami et al. (2015)'
                                           write(Lun_out,*) 'TRACERS: ----------------------------------------------------------------------'
-      endif
       endif
 
       !Default values if no Mass correction
@@ -88,8 +90,8 @@
       !---------------------------------------------
       if (LAM_L) then
 
-         call mass_tr (mass_flux_o_8,time_p,'FLUX',F_for_flux_o,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
-         call mass_tr (mass_flux_i_8,time_p,'FLUX',F_for_flux_i,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
+         call mass_tr (mass_flux_o_8,time_p,'FLUX',F_for_flux_o,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE. )
+         call mass_tr (mass_flux_i_8,time_p,'FLUX',F_for_flux_i,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
 
          mass_bflux_old_8 = mass_flux_i_8 - mass_flux_o_8
          mass_bflux_new_8 = mass_flux_i_8 - mass_flux_o_8
@@ -106,17 +108,19 @@
 
       mass_deficit_8 = mass_tot_new_8 - mass_tot_old_8
 
-      ratio_8 = 0.0d0
-      if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
-
       if (verbose_L) then
-      if (Lun_out>0) then
-          write(Lun_out,*)    'TRACERS: P_exponent              =',p_exp_8
-          write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',F_BC_min_max_L
-          write(Lun_out,1000) 'TRACERS: Mass BEFORE Bermejo-Conde',mass_tot_new_8,F_name_S(4:6)
-          write(Lun_out,1000) 'TRACERS: Mass to RESTORE         =',mass_tot_old_8,F_name_S(4:6)
-          write(Lun_out,1001) 'TRACERS: Ori. Diff. of ',ratio_8
-      endif
+
+         ratio_8 = 0.0d0
+         if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
+
+         if (Lun_out>0) then
+             write(Lun_out,*)    'TRACERS: P_exponent              =',p_exp_8
+             write(Lun_out,*)    'TRACERS: Do MONO (CLIPPING)      =',F_BC_min_max_L
+             write(Lun_out,1000) 'TRACERS: Mass BEFORE Bermejo-Conde',mass_tot_new_8,F_name_S(4:6)
+             write(Lun_out,1000) 'TRACERS: Mass to RESTORE         =',mass_tot_old_8,F_name_S(4:6)
+             write(Lun_out,1001) 'TRACERS: Ori. Diff. of ',ratio_8
+         endif
+
       endif
 
       !Impose ZERO nesting values when evaluating FLUX(weight)
@@ -143,14 +147,14 @@
 !$omp end parallel do
 
       call mass_tr (mass_wei_8,time_m,F_name_S(4:7),weight,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
+   !!!call mass_tr (mass_wei_8,time_m,F_name_S(4:7),weight,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE. ) !SHOULD BE TRUE when LAM 
 
       mass_tot_wei_8 = mass_wei_8 - 0.5d0 * mass_bflux_wei_8
 
       if (mass_tot_wei_8==0.d0) then
 
-         if (verbose_L) then
-         if (Lun_out>0) write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
-         endif
+         if (verbose_L.and.Lun_out>0) & 
+         write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
 
          return
 
@@ -158,14 +162,63 @@
 
       lambda_8 = mass_deficit_8/mass_tot_wei_8
 
-      if (verbose_L) then
-      if (Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)
-      endif
+      if (verbose_L.and.Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)  
 
-      count = 0
+      if (.NOT.verbose_L) then
 
-!$omp parallel do private(i,j,correction_8) shared(weight,count,lambda_8) 
+         if (.NOT.Tr_BC_min_max_L) then
+
+!$omp parallel do private(i,j,correction_8) shared(weight,lambda_8)
+         do k=k0,F_nk
+
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+
+               correction_8 = lambda_8 * weight(i,j,k)
+
+               F_out(i,j,k) = F_new(i,j,k) - correction_8
+
+            enddo
+            enddo
+
+         enddo
+!$omp end parallel do
+
+         else
+
+!$omp parallel do private(i,j,correction_8) shared(weight,lambda_8)
+         do k=k0,F_nk
+
+            do j=1+pil_s,l_nj-pil_n
+            do i=1+pil_w,l_ni-pil_e
+
+               correction_8 = lambda_8 * weight(i,j,k)
+
+               F_out(i,j,k) = F_new(i,j,k) - correction_8
+
+               if (correction_8 > 0.d0 .and. F_out(i,j,k) < F_min(i,j,k)) then
+                   F_out(i,j,k) = F_min(i,j,k)
+               endif
+               if (correction_8 < 0.d0 .and. F_out(i,j,k) > F_max(i,j,k)) then
+                   F_out(i,j,k) = F_max(i,j,k)
+               endif
+
+            enddo
+            enddo
+
+         enddo
+!$omp end parallel do
+
+        endif
+
+      else
+
+!$omp parallel do private(i,j,correction_8) shared(weight,count,lambda_8)
       do k=k0,F_nk
+
+         count(k,1) = 0.
+         count(k,2) = 0.
+         count(k,3) = 0.
 
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
@@ -195,43 +248,47 @@
       enddo
 !$omp end parallel do
 
-      l_count = 0
-      g_count = 0
-
-      do k=k0,F_nk
-         l_count(1) = count(k,1) + l_count(1)
-         l_count(2) = count(k,2) + l_count(2)
-         l_count(3) = count(k,3) + l_count(3)
-      enddo
-
-      if (Grd_yinyang_L) then
-         call rpn_comm_Allreduce (l_count,g_count,3,"MPI_INTEGER","MPI_SUM","MULTIGRID",err)
-         iprod = 2
-      else
-         call rpn_comm_Allreduce (l_count,g_count,3,"MPI_INTEGER","MPI_SUM","GRID",err)
-         iprod = 1
       endif
-
-      call mass_tr (mass_out_8,time_m,F_name_S(4:7),F_out,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
-
-      mass_tot_out_8 = mass_out_8 - 0.5d0 * mass_bflux_out_8
-
-      mass_deficit_8 = mass_tot_out_8 - mass_tot_old_8
-
-      ratio_8 = 0.0d0
-      if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
 
       if (verbose_L) then
-      if (Lun_out>0) then
-          write(Lun_out,1000) 'TRACERS: Mass  AFTER Bermejo-Conde',mass_tot_out_8,F_name_S(4:6)
-          write(Lun_out,*)    'TRACERS: # pts treated by B.-C.  =', g_count(3),'over',G_ni*G_nj*F_nk*iprod
-          write(Lun_out,*)    'TRACERS: # pts CLIPPED           =', g_count(1) + g_count(2)
-          write(Lun_out,*)    'TRACERS: RESET_MIN_BC            =', g_count(1)
-          write(Lun_out,*)    'TRACERS: RESET_MAX_BC            =', g_count(2)
-          write(Lun_out,1001) 'TRACERS: Rev. Diff. of ',ratio_8
-          write(Lun_out,1004) 'TRACERS: Bermejo-Conde STATS: T=',mass_tot_out_8,' C=',mass_out_8,' F=',mass_bflux_out_8,F_name_S(4:6)
-          write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
-      endif
+
+         l_count = 0
+         g_count = 0
+
+         do k=k0,F_nk
+            l_count(1) = count(k,1) + l_count(1)
+            l_count(2) = count(k,2) + l_count(2)
+            l_count(3) = count(k,3) + l_count(3)
+         enddo
+
+         if (Grd_yinyang_L) then
+            call rpn_comm_Allreduce (l_count,g_count,3,"MPI_INTEGER","MPI_SUM","MULTIGRID",err)
+            iprod = 2
+         else
+            call rpn_comm_Allreduce (l_count,g_count,3,"MPI_INTEGER","MPI_SUM","GRID",err)
+            iprod = 1
+         endif
+
+         call mass_tr (mass_out_8,time_p,F_name_S(4:7),F_out,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
+
+         mass_tot_out_8 = mass_out_8 - 0.5d0 * mass_bflux_out_8
+
+         mass_deficit_8 = mass_tot_out_8 - mass_tot_old_8
+
+         ratio_8 = 0.0d0
+         if (mass_tot_old_8/=0.d0) ratio_8 = mass_deficit_8/mass_tot_old_8*100.
+
+         if (Lun_out>0) then
+             write(Lun_out,1000) 'TRACERS: Mass  AFTER Bermejo-Conde',mass_tot_out_8,F_name_S(4:6)
+             write(Lun_out,*)    'TRACERS: # pts treated by B.-C.  =', g_count(3),'over',G_ni*G_nj*F_nk*iprod
+             write(Lun_out,*)    'TRACERS: # pts CLIPPED           =', g_count(1) + g_count(2)
+             write(Lun_out,*)    'TRACERS: RESET_MIN_BC            =', g_count(1)
+             write(Lun_out,*)    'TRACERS: RESET_MAX_BC            =', g_count(2)
+             write(Lun_out,1001) 'TRACERS: Rev. Diff. of ',ratio_8
+             write(Lun_out,1004) 'TRACERS: Bermejo-Conde STATS: T=',mass_tot_out_8,' C=',mass_out_8,' F=',mass_bflux_out_8,F_name_S(4:6)
+             write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
+         endif
+
       endif
 
  1000 format(1X,A34,E20.12,1X,A3)

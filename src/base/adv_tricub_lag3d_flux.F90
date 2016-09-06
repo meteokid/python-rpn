@@ -42,6 +42,7 @@
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "ver.cdk"
+#include "adv_precompute_flux.cdk"
 
       logical :: zcubic_L
 
@@ -51,7 +52,7 @@
 
       integer, parameter :: CFL = 5.0
 
-      integer :: n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
+      integer :: n0,nx,ny,nz,m1,id,n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_o,in_o,j0_o,jn_o,i0_i,in_i,j0_i,jn_i
       real*8 :: a1, a2, a3, a4, &
               b1, b2, b3, b4, c1, c2, c3, c4, &
@@ -60,11 +61,24 @@
               triprd,za,zb,zc,zd,p_z00_8
 
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+
+      logical,save :: done_L=.FALSE.
+
+      integer i0_w_i,in_w_i,j0_w_i,jn_w_i,i0_w_o,in_w_o,j0_w_o,jn_w_o, &
+              i0_s_i,in_s_i,j0_s_i,jn_s_i,i0_s_o,in_s_o,j0_s_o,jn_s_o, &
+              i0_e_i,in_e_i,j0_e_i,jn_e_i,i0_e_o,in_e_o,j0_e_o,jn_e_o, &
+              i0_n_i,in_n_i,j0_n_i,jn_n_i,i0_n_o,in_n_o,j0_n_o,jn_n_o
+
+      common/storage/ i0_w_i,in_w_i,j0_w_i,jn_w_i,i0_w_o,in_w_o,j0_w_o,jn_w_o, &
+                      i0_s_i,in_s_i,j0_s_i,jn_s_i,i0_s_o,in_s_o,j0_s_o,jn_s_o, &
+                      i0_e_i,in_e_i,j0_e_i,jn_e_i,i0_e_o,in_e_o,j0_e_o,jn_e_o, &
+                      i0_n_i,in_n_i,j0_n_i,jn_n_i,i0_n_o,in_n_o,j0_n_o,jn_n_o
+
 !     
 !---------------------------------------------------------------------
 !     
-      call timing_start2 (33, 'ADV_LAG3D', 31)
-      
+      call timing_start2 (77, 'ADV_FLUX_', 39)
+
       kkmax   = l_nk - 1
       p_z00_8 = Ver_z_8%m(0)
       if (F_lev_S == 'm') then       
@@ -93,82 +107,224 @@
          p_zbc_8   => adv_zbc_8%x
       endif
 
-
-
-
       !Establish scope of extended advection operations
       !------------------------------------------------
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
-      !-----------------
-      !Estimate FLUX_out
-      !-----------------
+      if (.NOT.done_L) then
+
+         if (l_west) then
+
+            i0_w_o = i0_e
+            in_w_o = pil_w
+            j0_w_o = j0_e
+            jn_w_o = jn_e
+
+            nind_w_o = (in_w_o-i0_w_o+1)*(jn_w_o-j0_w_o+1)*(l_nk-k0+1)
+
+            allocate (ii_w_o(4*nind_w_o))
+
+            i0_w_i = 1+pil_w
+            in_w_i = 1+pil_w+CFL
+            j0_w_i = 1+pil_s
+            jn_w_i = l_nj-pil_n
+
+            nind_w_i = (in_w_i-i0_w_i+1)*(jn_w_i-j0_w_i+1)*(l_nk-k0+1)
+
+            allocate (ii_w_i(4*nind_w_i))
+
+         endif
+
+         if (l_south) then
+
+           i0_s_o = i0_e
+           in_s_o = in_e
+           j0_s_o = j0_e
+           jn_s_o = pil_s
+
+           nind_s_o = (in_s_o-i0_s_o+1)*(jn_s_o-j0_s_o+1)*(l_nk-k0+1)
+
+           allocate (ii_s_o(4*nind_s_o))
+
+           i0_s_i = 1+pil_w
+           in_s_i = l_ni-pil_e
+           j0_s_i = 1+pil_s
+           jn_s_i = 1+pil_s+CFL
+
+           nind_s_i = (in_s_i-i0_s_i+1)*(jn_s_i-j0_s_i+1)*(l_nk-k0+1)
+
+           allocate (ii_s_i(4*nind_s_i))
+
+         endif
+
+         if (l_east) then
+
+            i0_e_o = l_ni-pil_e+1
+            in_e_o = in_e
+            j0_e_o = j0_e
+            jn_e_o = jn_e
+
+            nind_e_o = (in_e_o-i0_e_o+1)*(jn_e_o-j0_e_o+1)*(l_nk-k0+1)
+
+            allocate (ii_e_o(4*nind_e_o))
+
+            i0_e_i = l_ni-pil_e-CFL
+            in_e_i = l_ni-pil_e
+            j0_e_i = 1+pil_s
+            jn_e_i = l_nj-pil_n
+
+            nind_e_i = (in_e_i-i0_e_i+1)*(jn_e_i-j0_e_i+1)*(l_nk-k0+1)
+
+            allocate (ii_e_i(4*nind_e_i))
+
+         endif
+
+         if (l_north) then
+
+            i0_n_o = i0_e
+            in_n_o = in_e
+            j0_n_o = l_nj-pil_n+1
+            jn_n_o = jn_e
+
+            nind_n_o = (in_n_o-i0_n_o+1)*(jn_n_o-j0_n_o+1)*(l_nk-k0+1)
+
+            allocate (ii_n_o(4*nind_n_o))
+
+            i0_n_i = 1+pil_w
+            in_n_i = l_ni-pil_e
+            j0_n_i = l_nj-pil_n-CFL
+            jn_n_i = l_nj-pil_n
+
+            nind_n_i = (in_n_i-i0_n_i+1)*(jn_n_i-j0_n_i+1)*(l_nk-k0+1)
+
+            allocate (ii_n_i(4*nind_n_i))
+
+         endif
+
+      endif
+
+      done_L = .TRUE.
+
+      !Pre-compute indices ii used in: adv_tricub_lag3d_loop
+      !-----------------------------------------------------
+      if (.NOT.done_precompute_L) then
+
+         if (l_west) then
+
+            call adv_get_indices (ii_w_o, F_x, F_y, F_z, F_num , nind_w_o, &
+                                  i0_w_o, in_w_o, j0_w_o, jn_w_o, k0 , l_nk, 't')
+
+
+            call adv_get_indices (ii_w_i, F_x, F_y, F_z, F_num , nind_w_i, &
+                                  i0_w_i, in_w_i, j0_w_i, jn_w_i, k0 , l_nk, 't')
+
+         endif
+
+         if (l_south) then
+
+            call adv_get_indices (ii_s_o, F_x, F_y, F_z, F_num , nind_s_o, &
+                                  i0_s_o, in_s_o, j0_s_o, jn_s_o, k0 , l_nk, 't')
+
+            call adv_get_indices (ii_s_i, F_x, F_y, F_z, F_num , nind_s_i, &
+                                  i0_s_i, in_s_i, j0_s_i, jn_s_i, k0 , l_nk, 't')
+
+         endif
+
+         if (l_east) then
+
+            call adv_get_indices (ii_e_o, F_x, F_y, F_z, F_num , nind_e_o, &
+                                  i0_e_o, in_e_o, j0_e_o, jn_e_o, k0 , l_nk, 't')
+
+            call adv_get_indices (ii_e_i, F_x, F_y, F_z, F_num , nind_e_i, &
+                                  i0_e_i, in_e_i, j0_e_i, jn_e_i, k0 , l_nk, 't')
+
+         endif
+
+         if (l_north) then
+
+            call adv_get_indices (ii_n_o, F_x, F_y, F_z, F_num , nind_n_o, &
+                                  i0_n_o, in_n_o, j0_n_o, jn_n_o, k0 , l_nk, 't')
+
+            call adv_get_indices (ii_n_i, F_x, F_y, F_z, F_num , nind_n_i, &
+                                  i0_n_i, in_n_i, j0_n_i, jn_n_i, k0 , l_nk, 't')
+
+         endif
+
+      endif
+
+      done_precompute_L = .TRUE.
+
+      !-------------------------
+      !Estimate FLUX_out/FLUX_in
+      !-------------------------
       F_cub_o = 0.0
-
-      if (l_west) then
-         i0_o = i0_e
-         in_o = pil_w
-         j0_o = j0_e
-         jn_o = jn_e
-#include "adv_tricub_lag3d_flux_loop_o.cdk"
-      endif
-      if (l_south) then
-         i0_o = i0_e
-         in_o = in_e
-         j0_o = j0_e
-         jn_o = pil_s
-#include "adv_tricub_lag3d_flux_loop_o.cdk"
-      endif
-      if (l_east) then
-         i0_o = l_ni-pil_e+1
-         in_o = in_e
-         j0_o = j0_e
-         jn_o = jn_e
-#include "adv_tricub_lag3d_flux_loop_o.cdk"
-      endif
-      if (l_north) then
-         i0_o = i0_e
-         in_o = in_e
-         j0_o = l_nj-pil_n+1
-         jn_o = jn_e
-#include "adv_tricub_lag3d_flux_loop_o.cdk"
-      endif
-
-      !----------------
-      !Estimate FLUX_in
-      !----------------
       F_cub_i = 0.0
 
+      nind_o = -1 
+      nind_i = -1 
+
       if (l_west) then
-         i0_i = 1+pil_w
-         in_i = 1+pil_w+CFL
-         j0_i = 1+pil_s
-         jn_i = l_nj-pil_n
-#include "adv_tricub_lag3d_flux_loop_i.cdk"
-      endif
-      if (l_south) then
-         i0_i = 1+pil_w
-         in_i = l_ni-pil_e
-         j0_i = 1+pil_s
-         jn_i = 1+pil_s+CFL
-#include "adv_tricub_lag3d_flux_loop_i.cdk"
-      endif
-      if (l_east) then
-         i0_i = l_ni-pil_e-CFL
-         in_i = l_ni-pil_e
-         j0_i = 1+pil_s
-         jn_i = l_nj-pil_n
-#include "adv_tricub_lag3d_flux_loop_i.cdk"
-      endif
-      if (l_north) then
-         i0_i = 1+pil_w
-         in_i = l_ni-pil_e
-         j0_i = l_nj-pil_n-CFL
-         jn_i = l_nj-pil_n
-#include "adv_tricub_lag3d_flux_loop_i.cdk"
+
+         nind_o = nind_w_o
+         nind_i = nind_w_i
+
+         ii_o => ii_w_o
+         ii_i => ii_w_i
+
       endif
 
-      call timing_stop (33)
+#include "adv_tricub_lag3d_flux_loop_o.cdk"
+#include "adv_tricub_lag3d_flux_loop_i.cdk"
+
+      nind_o = -1 
+      nind_i = -1 
+
+      if (l_south) then
+
+         nind_o = nind_s_o
+         nind_i = nind_s_i
+
+         ii_o => ii_s_o
+         ii_i => ii_s_i
+
+      endif
+
+#include "adv_tricub_lag3d_flux_loop_o.cdk"
+#include "adv_tricub_lag3d_flux_loop_i.cdk"
+
+      nind_o = -1 
+      nind_i = -1 
+
+      if (l_east) then
+
+         nind_o = nind_e_o
+         nind_i = nind_e_i
+
+         ii_o => ii_e_o
+         ii_i => ii_e_i
+
+      endif
+
+#include "adv_tricub_lag3d_flux_loop_o.cdk"
+#include "adv_tricub_lag3d_flux_loop_i.cdk"
+
+      nind_o = -1 
+      nind_i = -1 
+
+      if (l_north) then
+
+         nind_o = nind_n_o
+         nind_i = nind_n_i
+
+         ii_o => ii_n_o
+         ii_i => ii_n_i
+
+      endif
+
+#include "adv_tricub_lag3d_flux_loop_o.cdk"
+#include "adv_tricub_lag3d_flux_loop_i.cdk"
+
+      call timing_stop (77)
 !     
 !---------------------------------------------------------------------
 !     
