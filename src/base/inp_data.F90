@@ -84,12 +84,12 @@ Interface
 End Interface
 
       character(len=4) vname
-      logical initial_data, blend_oro, urt1_l, ut1_l
+      logical initial_data, blend_oro, urt1_l, ut1_l, sfcTT_L
       integer fst_handle, i,j,k,n, nia,nja,nka, istat, err, kind
-      integer nka_gz, nka_tt, nka_hu
+      integer nka_gz, nka_tt, nka_hu, ip1_w(G_nk)
       integer, dimension (:), pointer :: ip1_list, ip1_dum
       real topo_temp(l_minx:l_maxx,l_miny:l_maxy),step_current,&
-           p0(1:l_ni,1:l_nj)
+           p0(1:l_ni,1:l_nj), lev
       real, dimension (:    ), allocatable :: rna
       real, dimension (:,:  ), allocatable :: ssu0,ssv0
       real, dimension (:,:  ), pointer     :: ssq0,pres
@@ -150,6 +150,9 @@ End Interface
       call mfottv2 ( ttr, ttr, hur, l_minx,l_maxx,l_miny,l_maxy,&
                      nka, 1,l_ni,1,l_nj, .true. )
 
+      call convip (ip1_list(nka), lev, i,-1, vname, .false.)
+      sfcTT_L = (i == 4) .or. ( (i /= 2) .and. (abs(lev-1.) <= 1.e-5) )
+
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                  ssq0  (l_minx:l_maxx,l_miny:l_maxy)     ,&
@@ -185,8 +188,10 @@ End Interface
          pres  => ssqr(1:l_ni,1:l_nj,1)
          ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
          istat= vgd_levels (vgd_src, ip1_list(1:nka), ptr3d, pres)
-         if ( associated(meqr) ) then
+         if ( associated(meqr) .and. sfcTT_L ) then
             srclev(1:l_ni,1:l_nj,nka)= ssqr(1:l_ni,1:l_nj,1)
+            if (lun_out.gt.0) &
+            write(lun_out,'(" PERFORMING surface pressure adjustment")')
             call adj_ss2topo2 ( ssq0, F_topo, srclev, meqr, ttr , &
                                 l_minx,l_maxx,l_miny,l_maxy, nka, &
                                 1,l_ni,1,l_nj )
@@ -225,10 +230,10 @@ End Interface
       istat= vgrid_wb_get ('ref-m', vgd_dst, ip1_dum )
       deallocate (ip1_dum); nullify (ip1_dum)
 
-      do n= 1, nka-1
-         srclev(1:l_ni,1:l_nj,n) = log(srclev(1:l_ni,1:l_nj,n))
-      end do
-      srclev(1:l_ni,1:l_nj,nka) = log(ssqr(1:l_ni,1:l_nj,1))
+      pres  => ssqr(1:l_ni,1:l_nj,1)
+      ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
+      istat= vgd_levels ( vgd_src, ip1_list(1:nka), ptr3d, &
+                          pres, in_log=.true. )
 
       pres  => ssq0  (1:l_ni,1:l_nj)
       ptr3d => dstlev(1:l_ni,1:l_nj,1:G_nk)
@@ -264,14 +269,16 @@ End Interface
          trp= max(trp,Tr3d_vmin(n))
       end do
 
-      err= inp_get ('WT1',  'Q', Ver_ip1%t        ,&
+      ip1_w(1:G_nk)= Ver_ip1%t(1:G_nk)
+      if (.not. Schm_lift_ltl_L) ip1_w(G_nk)=Ver_ip1%t(G_nk+1)
+      err= inp_get ('WT1',  'Q', ip1_w            ,&
                     vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
-                    l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                    l_minx,l_maxx,l_miny,l_maxy,G_nk )
       ana_w_L= ( err == 0 )
 
       err= inp_get ('ZDT1', 'Q', Ver_ip1%t        ,&
                     vgd_src,vgd_dst,ssqr,ssq0,F_zd,&
-                    l_minx,l_maxx,l_miny,l_maxy,G_nk)
+                    l_minx,l_maxx,l_miny,l_maxy,G_nk )
       ana_zd_L= ( err == 0 )
 
       if (.not.Schm_hydro_L) &
