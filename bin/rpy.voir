@@ -17,7 +17,7 @@ if __name__ == "__main__":
     %prog -i filename -s "NINJNK+DATEV+LEVEL+IP1+GRIDINFO"
     %prog -i filename --style="NINJNK+DATEV+LEVEL+IP1+GRIDINFO"
 
-    Accepted values for style ('+' spearated):
+    Accepted values for style ('+' separated):
         NONOMV, NOTYPV, NOETIQ,
         NINJNK, DATEO, DATESTAMPO,
         DATEV, LEVEL, IPALL, IP1,
