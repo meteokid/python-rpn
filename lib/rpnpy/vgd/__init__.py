@@ -36,13 +36,27 @@ __SUBMODULES__ = ['proto', 'const', 'base']
 __all__ = ['loadVGDlib', 'libvgd', 'VGD_VERSION', 'VGD_LIBPATH',
            'VGDError'] + __SUBMODULES__
 
-VGD_VERSION_DEFAULT = 'shared_6.0.0'
+## VGD_VERSION_DEFAULT = '_rpnpy'
+VGD_VERSION_DEFAULT = '*'
 
 class VGDError(Exception):
     """
     General VGD module error/exception
     """
     pass
+
+def checkVGDlibPath(rmn_libfile):
+    """
+    Return first matched filename for rmn_libfile wildcard
+    Return None if no match
+    """
+    import os
+    import glob
+    RMN_LIBPATH_ALL = glob.glob(rmn_libfile)
+    if len(RMN_LIBPATH_ALL) > 0:
+        if os.path.isfile(RMN_LIBPATH_ALL[0]):
+            return RMN_LIBPATH_ALL[0]
+    return None
 
 def loadVGDlib(vgd_version=None):
     """
@@ -72,19 +86,17 @@ def loadVGDlib(vgd_version=None):
                                 VGD_VERSION_DEFAULT).strip()
     else:
         VGD_VERSION = vgd_version
-    vgd_libfile = 'libdescrip' + VGD_VERSION.strip() + '.so'
+    vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.so'
 
     pylibpath   = os.getenv('PYTHONPATH').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH').split(':')
     eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
-    VGD_LIBPATH = vgd_libfile
-    if not os.path.exists(VGD_LIBPATH):
+    VGD_LIBPATH = checkVGDlibPath(vgd_libfile)
+    if not VGD_LIBPATH:
         for path in pylibpath + ldlibpath + eclibpath:
-            VGD_LIBPATH = os.path.join(path.strip(), vgd_libfile)
-            if os.path.exists(VGD_LIBPATH):
+            VGD_LIBPATH = checkVGDlibPath(os.path.join(path.strip(), vgd_libfile))
+            if VGD_LIBPATH:
                 break
-            else:
-                VGD_LIBPATH = None
 
     if not VGD_LIBPATH:
         raise IOError, (-1, 'Failed to find libdescrip.so: ', vgd_libfile)

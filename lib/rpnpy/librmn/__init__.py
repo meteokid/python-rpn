@@ -34,13 +34,27 @@ __SUBMODULES__ = ['proto', 'const', 'base', 'fstd98', 'interp', 'grids']
 __all__ = ['loadRMNlib', 'librmn', 'RMN_VERSION', 'RMN_LIBPATH',
            'RMNError'] + __SUBMODULES__
 
-RMN_VERSION_DEFAULT = '_015.2'
+## RMN_VERSION_DEFAULT = '_rpnpy'
+RMN_VERSION_DEFAULT = '*'
 
 class RMNError(Exception):
     """
     General RMN module error/exception
     """
     pass
+
+def checkRMNlibPath(rmn_libfile):
+    """
+    Return first matched filename for rmn_libfile wildcard
+    Return None if no match
+    """
+    import os
+    import glob
+    RMN_LIBPATH_ALL = glob.glob(rmn_libfile)
+    if len(RMN_LIBPATH_ALL) > 0:
+        if os.path.isfile(RMN_LIBPATH_ALL[0]):
+            return RMN_LIBPATH_ALL[0]
+    return None
 
 def loadRMNlib(rmn_version=None):
     """
@@ -75,14 +89,12 @@ def loadRMNlib(rmn_version=None):
     pylibpath   = os.getenv('PYTHONPATH').split(':')
     ldlibpath   = os.getenv('LD_LIBRARY_PATH').split(':')
     eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
-    RMN_LIBPATH = rmn_libfile
-    if not os.path.exists(RMN_LIBPATH):
+    RMN_LIBPATH = checkRMNlibPath(rmn_libfile)
+    if not RMN_LIBPATH:
         for path in pylibpath + ldlibpath + eclibpath:
-            RMN_LIBPATH = os.path.join(path.strip(), rmn_libfile)
-            if os.path.exists(RMN_LIBPATH):
+            RMN_LIBPATH = checkRMNlibPath(os.path.join(path.strip(), rmn_libfile))
+            if RMN_LIBPATH:
                 break
-            else:
-                RMN_LIBPATH = None
 
     if not RMN_LIBPATH:
         raise IOError, (-1, 'Failed to find librmn.so: ', rmn_libfile)
