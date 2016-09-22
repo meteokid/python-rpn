@@ -74,9 +74,9 @@ sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
 extlibdotfile: $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
 
 $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
-	librmnpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
+	librmnpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | sort -r | head -1`;\
 	librmnname=`echo $${librmnpath##*/} | cut -c13-`;\
-	libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | head -1`;\
+	libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | sort -r | head -1`;\
 	libvgdname=`echo $${libvgdpath##*/} | cut -c17-`;\
 	echo "export RPNPY_RMN_LIBPATH=$${librmnpath%/*}" >> $@ ;\
 	echo "export RPNPY_RMN_VERSION=$${librmnname%.*}" >> $@ ;\

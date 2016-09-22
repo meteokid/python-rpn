@@ -92,6 +92,7 @@ ssh MY_INSTALL_MACH
 cd /PATH/
 . ./.setenv.dot --dev
 make components_install CONFIRM_INSTALL=yes
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=/fs/ssm
 
 ## ==== Uninstalling ========================================================
 
