@@ -1,15 +1,11 @@
 #!/bin/ksh
-if [[ x"$1" == x"--dev" ]] ; then
+_rpnpy_dev_mode_="$1"
+if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
    shift
    echo 'Loading dev env: ssmusedep-dev.bndl'
    . s.ssmuse.dot $(cat ssmusedep-dev.bndl)
 else
    echo 'Loading Run-time env'
-fi
-
-if [[ -f .setenv_${COMP_ARCH}.dot ]] ; then
-   echo ". .setenv_${COMP_ARCH}.dot"
-   . .setenv_${COMP_ARCH}.dot
 fi
 
 for _myfile in ssmusedep_${COMP_ARCH}.bndl ssmusedep.bndl ssmusedep_post.bndl ; do
@@ -27,6 +23,17 @@ fi
 
 . $(pwd)/bin/.env_setup.dot rpnpy ${rpnpy_version} all $(pwd) $(pwd)
 
+if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
+   _rpnpy_rde_libdir_=$(rdevar build/lib)
+   _rpnpy_rde_libdir0_=build-${ORDENV_PLAT}/lib/${COMP_ARCH}
+fi
+
 export PATH=$(pwd)/bin:$PATH
 export PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
-export PYTHONPATH=$(pwd):$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$(pwd)/lib:${RMN_LIBPATH}:$PYTHONPATH
+export PYTHONPATH=$(pwd):$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$PYTHONPATH
+export LD_LIBRARY_PATH=$(pwd)/build/lib.$(uname -s | tr 'A-Z' 'a-z')-$(uname -m)-${PYVERSION}:$(pwd)/${_rpnpy_rde_libdir_:-${_rpnpy_rde_libdir0_}}:$LD_LIBRARY_PATH
+
+if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
+   unset _rpnpy_rde_libdir_ _rpnpy_rde_libdir0_
+fi
+unset _rpnpy_dev_mode_

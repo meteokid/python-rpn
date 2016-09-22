@@ -28,7 +28,7 @@ Notes:
  === Functions C Prototypes ===
 
  c_vgd_construct():
-    Returns a not fully initialized VGridDescriptor instance
+    Returns a NOT fully initialized VGridDescriptor instance
     Proto:
        vgrid_descriptor* c_vgd_construct();
     Args:
@@ -408,119 +408,25 @@ from . import libvgd
 from . import const as _cst
 
 
-class VGD_TFSTD(_ct.Structure):
-    """
-    Python Class equivalenet of the vgrid's C structure to hold RPN file header
-
-    typedef struct VGD_TFSTD {
-    int   dateo;                 // date d'origine du champs
-    int   deet;                  // duree d'un pas de temps
-    int   npas;                  // pas de temps
-    int   nbits;                 // nombre de bits du champs
-    int   datyp;                 // type de donnees
-    int   ip1,ip2,ip3;           // specificateur du champs
-    int   ig1,ig2,ig3,ig4;       // descripteur de grille
-    char  typvar[VGD_MAXSTR_TYPVAR]; // type de variable
-    char  nomvar[VGD_MAXSTR_NOMVAR]; // nom de la variable
-    char  etiket[VGD_MAXSTR_ETIKET]; // etiquette du champs
-    char  grtyp[VGD_MAXSTR_GRTYP];   // type de grilles
-    char  fstd_initialized;      // if the fstd struct is initialized
-    } VGD_TFSTD;
-    """
-    _fields_ = [
-        ("dateo", _ct.c_int),
-        ("deet",  _ct.c_int),
-        ("npas",  _ct.c_int),
-        ("nbits", _ct.c_int),
-        ("datyp", _ct.c_int),
-        ("ip1", _ct.c_int),
-        ("ip2", _ct.c_int),
-        ("ip3", _ct.c_int),
-        ("ig1", _ct.c_int),
-        ("ig2", _ct.c_int),
-        ("ig3", _ct.c_int),
-        ("ig4", _ct.c_int),
-        ("typevar", _ct.c_char * _cst.VGD_MAXSTR_TYPVAR),
-        ("nomvar",  _ct.c_char * _cst.VGD_MAXSTR_NOMVAR),
-        ("etiket",  _ct.c_char * _cst.VGD_MAXSTR_ETIKET),
-        ("grtyp",   _ct.c_char * _cst.VGD_MAXSTR_GRTYP),
-        ("fstd_initialized", _ct.c_char)
-        ]
-
-    def __str__(self):
-       return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
-
-    def __repr__(self):
-       #return self.__class__.__name__ + str(self)
-       return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
-
-
 class VGridDescriptor(_ct.Structure):
     """
     Python Class equivalenet of the vgrid's C structure to hold the vgrid data
 
-    typedef struct vgrid_descriptor {
-    VGD_TFSTD rec;          // RPN standard file header
-    double   ptop_8;        // Top level pressure (Pa)
-    double   pref_8;        // Reference pressure (Pa)
-    double   *table;        // Complete grid descriptor record
-    int      table_ni;      //    ni size of table
-    int      table_nj;      //    nj size of table
-    int      table_nk;      //    nk size of table
-    double   *a_m_8;        // A-coefficients for momentum levels  
-    double   *b_m_8;        // B-coefficients for momentum levels
-    double   *a_t_8;        // A-coefficients for thermodynamic levels
-    double   *b_t_8;        // B-coefficients for thermodynamic levels
-    int      *ip1_m;        // ip1 values for momentum levels
-    int      *ip1_t;        // ip1 values for momentum levels
-    int      nl_m;          // Number of momentum      level (size of a_m_8, b_m_8 and ip1_m)
-    int      nl_t;          // Number ot thermodynamic level (size of a_t_8, b_t_8 and ip1_t)
-    float    dhm;           // Diag level Height (m) for Momentum variables UU,VV
-    float    dht;           // Diag level Height (t) for Thermo variables TT,HU, etc
-    char*    ref_name;      // Reference field name
-    float    rcoef1;        // Rectification coefficient
-    float    rcoef2;        // Rectification coefficient
-    int      nk;            // Number of momentum levels
-    int      ip1;           // ip1 value given to the 3D descriptor
-    int      ip2;           // ip2 value given to the 3D descriptor
-    int      unit;          // file unit associated with this 3D descriptor
-    int      vcode;         // Vertical coordinate code
-    int      kind;          // Vertical coordinate code
-    int      version;       // Vertical coordinate code
-    char     match_ipig;    // do ip/ig matching for records
-    char     valid;         // Validity of structure
-    } vgrid_descriptor;
+    This class has a private internal representation.
+    You should only hold a pointer to it.
+    Getting and setting values should be done throught
+    vgd_get and vgd_put functions.
+
+    To get an instance of a pointer to this class you may use the
+    provided functions:
+
+    myVGDptr = rpnpy.vgd.propo.c_vgd_construct()
+
+    See Also:
+       c_vgd_construct
     """
     _fields_ = [
-        ("rec", VGD_TFSTD),
-        ("ptop_8", _ct.c_double),
-        ("pref_8", _ct.c_double),
-        ("table", _ct.POINTER(_ct.c_double)),
-        ("table_ni", _ct.c_int),
-        ("table_nj", _ct.c_int),
-        ("table_nk", _ct.c_int),
-        ("a_m_8", _ct.POINTER(_ct.c_double)),
-        ("b_m_8", _ct.POINTER(_ct.c_double)),
-        ("a_t_8", _ct.POINTER(_ct.c_double)),
-        ("b_t_8", _ct.POINTER(_ct.c_double)),
-        ("ip1_m", _ct.POINTER(_ct.c_int)),
-        ("ip1_t", _ct.POINTER(_ct.c_int)),
-        ("nl_m", _ct.c_int),
-        ("nl_t", _ct.c_int),
-        ("dhm", _ct.c_float),
-        ("dht", _ct.c_float),
-        ("ref_name", _ct.c_char_p),#_ct.POINTER(_ct.c_char)),
-        ("rcoef1", _ct.c_float),
-        ("rcoef2", _ct.c_float),
-        ("nk", _ct.c_int),
-        ("ip1", _ct.c_int),
-        ("ip2", _ct.c_int),
-        ("unit", _ct.c_int),
-        ("vcode", _ct.c_int),
-        ("kind", _ct.c_int),
-        ("version", _ct.c_int),
-        ("match_ipig", _ct.c_char),
-        ("valid", _ct.c_char)
+        ("dummy", _ct.c_int),
         ]
     
     def __str__(self):
@@ -537,10 +443,7 @@ class VGridDescriptor(_ct.Structure):
        #return self.__class__.__name__ + str(self)
        return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
 
-
-libvgd.c_vgd_construct.argtypes = ()
-libvgd.c_vgd_construct.restype = _ct.POINTER(VGridDescriptor)
-c_vgd_construct = libvgd.c_vgd_construct
+c_vgd_construct = _ct.POINTER(VGridDescriptor)
 
 ## int Cvgd_new_read(vgrid_descriptor **self, int unit, int ip1, int ip2,
 ##                   int kind, int version);

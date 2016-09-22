@@ -1,4 +1,4 @@
-
+#!/bin/ksh
 ## Python RPN (RPNpy) is a collection of Python modules and scripts developed
 ## at RPN for scientific use.
 ## Its main purpose is to act as an augmented interface to Librmn and vgrid
@@ -25,6 +25,7 @@ cd rpnpy
 ## These libraries need to be present in your LD_LIBRARY_PATH or PYTHONPATH
 # export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_015.2}
 # export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-shared_6.0.0}
+# . ./.setenv.dot --dev
 . ./.setenv.dot
 export storage_model=${storage_model:-$TMPDIR}
 rm -f lib/rpnpy/version.py
@@ -55,8 +56,8 @@ git clone git@github.com:meteokid/python-rpn.git rpnpy
 cd rpnpy
 # git checkout -b tmp python-rpn_VERSION
 ## update version number (including leading 'x/') in ./VERSION
-## update default RMN_VERSION and LIBPATH in: 
-##    ./bin/.env_setup.dot, ./lib/rpnpy/librmn/__init__.py, ./ssmusedep-dev.bndl
+## update default rmn and vgrid dependencies in: 
+##    ./ssmusedep-dev.bndl
 . ./.setenv.dot --dev
 export storage_model=${storage_model:-$TMPDIR}
 rdemklink
@@ -64,7 +65,12 @@ rdemklink
 # make -j 8 components_objects
 # make components_libs 
 # make components_abs 
-make components_ssm
+make extlibdotfile
+# make sharedlibs
+# make sharedlibs_cp
+## Note: Need to do "make extlibdotfile" on other arch before the next step
+make components_ssm_all
+# make components_ssm
 
 ## For additional ARCH
       ssh MYMACH
@@ -76,6 +82,8 @@ make components_ssm
       #make -j 8 components_objects
       #make components_libs 
       #make components_abs 
+      #make sharedlibs
+      #make sharedlibs_cp
       make components_ssm_arch
 
 ## ==== Installing ==========================================================
@@ -84,6 +92,7 @@ ssh MY_INSTALL_MACH
 cd /PATH/
 . ./.setenv.dot --dev
 make components_install CONFIRM_INSTALL=yes
+## make components_install CONFIRM_INSTALL=yes SSM_BASE=/fs/ssm/eccc/mrd/rpn/MIG SSM_BASE2=/fs/ssm
 
 ## ==== Uninstalling ========================================================
 

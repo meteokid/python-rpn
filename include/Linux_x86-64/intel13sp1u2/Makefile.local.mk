@@ -5,7 +5,7 @@ CCOPT  = -Wtrigraphs -fpic
 LAPACK     = 
 BLAS       = 
 EC_MKL     = -mkl -fp-model precise
-LDFLAGS = -static-intel $(EC_MKL)
+LDFLAGS = -static -static-intel $(EC_MKL)
 
 # $CC ${SourceFile} $CC_options ${CFLAGS} \
 # 	$(s.prefix "" ${DEFINES} ) \
