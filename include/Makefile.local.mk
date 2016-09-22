@@ -74,14 +74,20 @@ sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
 extlibdotfile: $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
 
 $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
-	librmnpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | sort -r | head -1`;\
+	librmnpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared_*.so | head -1`;\
+	if [[ x$${librmnpath##*/} == x ]] ; then \
+		librmnpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
+	fi ;\
 	librmnname=`echo $${librmnpath##*/} | cut -c13-`;\
-	libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | sort -r | head -1`;\
+	libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared_*.so | head -1`;\
+	if [[ x$${libvgdpath##*/} == x ]] ; then \
+		libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | head -1`;\
+	fi ;\
 	libvgdname=`echo $${libvgdpath##*/} | cut -c17-`;\
 	echo "export RPNPY_RMN_LIBPATH=$${librmnpath%/*}" >> $@ ;\
-	echo "export RPNPY_RMN_VERSION=$${librmnname%.*}" >> $@ ;\
+	echo "export RPNPY_RMN_VERSION=$${librmnname%.so}" >> $@ ;\
 	echo "export RPNPY_VGD_LIBPATH=$${libvgdpath%/*}" >> $@ ;\
-	echo "export RPNPY_VGD_VERSION=$${libvgdname%.*}" >> $@
+	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@
 
 $(LIBDIR)/librmnshared_rpnpy_cp.so:
 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
