@@ -805,9 +805,15 @@ def fstinf(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
            typvar=' ', nomvar=' '):
     """
     Locate the next record that matches the research keys
+
+    Returns the key of the first record (only one) match the
+    selection criteria.
     
     Only provided parameters with value different than default
-    are used as selection criteria
+    are used as selection criteria.
+    
+    Thus if you do not provide any other parameter that iunit, fstinf
+    will return the key to the first record in the file.
     
     recmatch = fstinf(iunit, ... )
     
