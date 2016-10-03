@@ -88,9 +88,9 @@ def loadVGDlib(vgd_version=None):
         VGD_VERSION = vgd_version
     vgd_libfile = 'libdescripshared' + VGD_VERSION.strip() + '.so'
 
-    pylibpath   = os.getenv('PYTHONPATH').split(':')
-    ldlibpath   = os.getenv('LD_LIBRARY_PATH').split(':')
-    eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
+    pylibpath   = os.getenv('PYTHONPATH','').split(':')
+    ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
+    eclibpath   = os.getenv('EC_LD_LIBRARY_PATH','').split()
     VGD_LIBPATH = checkVGDlibPath(vgd_libfile)
     if not VGD_LIBPATH:
         for path in pylibpath + ldlibpath + eclibpath:
