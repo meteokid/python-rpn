@@ -1,5 +1,5 @@
 #!/bin/ksh
-export RPNPY_LOGDIR=${RPNPY_LOGDIR:/home/sgem000/log}
+export RPNPY_LOGDIR=${RPNPY_LOGDIR:-/home/sgem000/log}
 
 if [[ -d /fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles ]] ; then
    export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
