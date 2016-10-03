@@ -86,9 +86,9 @@ def loadRMNlib(rmn_version=None):
         RMN_VERSION = rmn_version
     rmn_libfile = 'librmnshared' + RMN_VERSION.strip() + '.so'
 
-    pylibpath   = os.getenv('PYTHONPATH').split(':')
-    ldlibpath   = os.getenv('LD_LIBRARY_PATH').split(':')
-    eclibpath   = os.getenv('EC_LD_LIBRARY_PATH').split()
+    pylibpath   = os.getenv('PYTHONPATH','').split(':')
+    ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
+    eclibpath   = os.getenv('EC_LD_LIBRARY_PATH','').split()
     RMN_LIBPATH = checkRMNlibPath(rmn_libfile)
     if not RMN_LIBPATH:
         for path in pylibpath + ldlibpath + eclibpath:
