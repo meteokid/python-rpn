@@ -98,11 +98,16 @@
 
          !Correct surface pressure in order to preserve dry air mass    
          !----------------------------------------------------------
-         pr_p0_0_8 = pr_p0_0_8 + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+!         do j=1+pil_s,l_nj-pil_n
+!         do i=1+pil_w,l_ni-pil_e
+!            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+!         enddo
+!         enddo
 
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            st0(i,j)= log(pr_p0_0_8(i,j)/Cstv_pref_8)
+            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+            st0      (i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
          end do
          end do
 

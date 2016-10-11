@@ -56,18 +56,20 @@ gemdyn_ssm_arch_rm:
 	rm -rf $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME)
 $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	mkdir -p $@/lib/$(EC_ARCH) ; \
-	touch $@/lib/libdummy.a ; \
+	ln -s $(EC_ARCH) $@/lib/$(COMP_ARCH)/. ; \
+	touch $@/lib/libdummy_$(GEMDYN_SSMARCH_NAME).a ; \
 	cd $(LIBDIR) ; \
 	rsync -av `ls libgemdyn*.a libgemdyn*.a.fl libgemdyn*.so 2>/dev/null` $@/lib/$(EC_ARCH)/ ; \
 	if [[ x$(MAKE_SSM_NOMOD) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
-		touch $@/include/dummyinc.inc ; \
+		ln -s $(EC_ARCH) $@/include/$(COMP_ARCH)/. ; \
+		touch $@/include/dummy_$(GEMDYN_SSMARCH_NAME).inc ; \
 		cd $(MODDIR) ; \
 		cp $(GEMDYN_MOD_FILES) $@/include/$(EC_ARCH) ; \
 	fi ; \
 	if [[ x$(MAKE_SSM_NOINC) != x1 ]] ; then \
 		mkdir -p $@/include/$(EC_ARCH) ; \
-		touch $@/include/dummymod.inc ; \
+		touch $@/include/dummy_$(GEMDYN_SSMARCH_NAME).mod ; \
 		echo $(BASE_ARCH) > $@/include/$(BASE_ARCH)/.restricted ; \
 		echo $(ORDENV_PLAT) >> $@/include/$(BASE_ARCH)/.restricted ; \
 		echo $(EC_ARCH) > $@/include/$(EC_ARCH)/.restricted ; \
@@ -78,7 +80,7 @@ $(BUILDSSM)/$(GEMDYN_SSMARCH_NAME):
 	fi ; \
 	if [[ x$(MAKE_SSM_NOABS) != x1 ]] ; then \
 		mkdir -p $@/bin/$(BASE_ARCH) ; \
-		touch $@/bin/dummybin.bin ; \
+		touch $@/bin/dummy_$(GEMDYN_SSMARCH_NAME).bin ; \
 		cd $(BINDIR) ; \
 		cp $(GEMDYN_ABS_FILES) $@/bin/$(BASE_ARCH) ; \
 	fi ; \
