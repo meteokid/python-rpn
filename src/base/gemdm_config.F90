@@ -365,11 +365,11 @@
       endif
 
       if (Hzd_lnr_theta .lt. 0.) then
-         if (lun_out>0) write (Lun_out, 6200)
          Hzd_lnr_theta = Hzd_lnr
+         if (lun_out>0) write (Lun_out, 6200)
       endif
       if (Hzd_pwr_theta .lt. 0 ) then
-         if (lun_out>0) write (Lun_out, 6201)
+         if ((lun_out>0).and.(Hzd_lnr_theta .gt. 0.)) write (Lun_out, 6201)
          Hzd_pwr_theta = Hzd_pwr
       endif
 
