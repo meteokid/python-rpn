@@ -13,7 +13,8 @@ COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS_UC),$($(item)_VFILES))
 
 MODULES_DOCTESTS := $(ROOT)/lib/Fstdc.py $(ROOT)/lib/rpnstd.py $(ROOT)/lib/rpnpy/rpndate.py $(ROOT)/lib/rpnpy/librmn/base.py $(ROOT)/lib/rpnpy/librmn/fstd98.py  $(ROOT)/lib/rpnpy/librmn/interp.py $(ROOT)/lib/rpnpy/librmn/grids.py
-MODULES_TESTS    := $(wildcard $(ROOT)/share/tests/test_*.py)
+#MODULES_TESTS    := $(wildcard $(ROOT)/share/tests/test_*.py)
+MODULES_TESTSKSH := $(wildcard $(ROOT)/share/tests/test_*.ksh)
 
 #------------------------------------
 
@@ -64,7 +65,6 @@ COMPONENTS_UNINSTALL_ALL := $(foreach item,$(COMPONENTS_UC),$($(item)_UNINSTALL)
 components_install: $(COMPONENTS_INSTALL_ALL)
 components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 
-
 #------------------------------------
 doctests:
 	echo -e "\n======= PY-DocTest List ========\n" ; \
@@ -76,6 +76,10 @@ unittests:
 	echo -e "\n======= PY-UnitTest List ========\n" ; \
 	for i in $(MODULES_TESTS); \
 	do echo -e "\n==== PY-UnitTest: " $$i "====\n"; python $$i ;\
+	done
+	echo -e "\n======= KSH-UnitTest List ========\n" ; \
+	for i in $(MODULES_TESTSKSH); \
+	do echo -e "\n==== KSH-UnitTest: " $$i "====\n"; $$i ;\
 	done
 
 alltests: doctests unittests
