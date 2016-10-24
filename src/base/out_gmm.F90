@@ -64,7 +64,6 @@
 #include "level.cdk"
 #include "schm.cdk"
 
-      integer, external :: gmm_nkeys
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
       character(len=2) class_var(100,3)
