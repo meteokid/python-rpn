@@ -4,6 +4,8 @@ from rpnpy.ftnnml import *
 
 if __name__ == "__main__":
     
+    cleanName    = lambda x: x.lower().replace('\n',' ').strip()
+
     # Command line arguments
     desc="Set a value, rename variable name or namelists, create new variable or namelist in a Fortran namelist file"
     usage = """

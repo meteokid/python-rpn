@@ -11,6 +11,8 @@ import optparse
 from rpnpy.ftnnml import *
 
 if __name__ == "__main__":
+
+    cleanName    = lambda x: x.lower().replace('\n',' ').strip()
     
     # Command line arguments
     desc="Get list of values, variable names and namelists names from a Fortran namelist file"
