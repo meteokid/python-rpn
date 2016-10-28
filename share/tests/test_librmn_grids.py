@@ -209,6 +209,9 @@ class Librmn_grids_Test(unittest.TestCase):
                     ok = np.any(np.abs(params[k]-params2[k]) > self.epsilon)
                     ## if ok: print k,params[k],params2[k]
                     self.assertFalse(ok)
+                elif isinstance(params[k],float):
+                    ok = (abs(params[k]-params2[k]) > self.epsilon)
+                    self.assertFalse(ok,'defGrid_diezeE: %s, expected: %s,  got: %s' % (k,str(params[k]),str(params2[k])))
                 else:
                     ## if params[k] != params2[k]: print k,params[k],params2[k]
                     self.assertEqual(params[k],params2[k],'defGrid_diezeE: %s, expected: %s,  got: %s' % (k,str(params[k]),str(params2[k])))
