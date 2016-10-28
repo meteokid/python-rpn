@@ -586,6 +586,7 @@ def writeGrid(funit, params):
         return
     
     rec = _rc.FST_RDE_META_DEFAULT.copy()
+    rec['typvar'] = 'X'
     rec['ip1'] = params['tag1']
     rec['ip2'] = params['tag2']
     try:
@@ -601,10 +602,10 @@ def writeGrid(funit, params):
         rec['nbits'] = params['nbits']
     except KeyError:
         rec['nbits'] = 32
-    try:
-        rec['typvar'] = params['typvar']
-    except KeyError:
-        pass
+    ## try:
+    ##     rec['typvar'] = params['typvar']
+    ## except KeyError:
+    ##     pass
     try:
         rec['etiket'] = params['etiket']
     except KeyError:
