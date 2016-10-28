@@ -6,7 +6,7 @@ Use Basemap to plot data from a RPN Standard File on an X grid-type
 
 Usage: 
    # Define CMCGRIDF
-   . ssmuse-sh -d cmoi/base/20141216
+   . ssmuse-sh -d cmoi/base/20160901
    plot-irregular.py
 
 See Also:
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         CMCGRIDF = os.environ['CMCGRIDF'].strip()
     except KeyError:
         sys.stderr.write('Error: CMCGRIDF environment variable undefined. Before Python, execute:\n')
-        sys.stderr.write('. ssmuse-sh -d cmoi/base/20141216\n')
+        sys.stderr.write('. ssmuse-sh -d cmoi/base/20160901\n')
         sys.exit(1)        
     my_file = os.path.join(CMCGRIDF, 'prog', 'gsloce', forecast_name)
 
