@@ -338,7 +338,7 @@ def mrfloc(funit, handle=0, stnid='*', idtyp=-1, lati=-1, long=-1, date=-1, temp
             sup = _np.empty((1,), dtype=_np.int32)
         else:
             sup = _np._np.asfortranarray(sup, dtype=_np.int32)
-    elif isinstance(sup, _np.ndarray)
+    elif isinstance(sup, _np.ndarray):
         nsup = sup.size
     else:
         raise TypeError('sup should be a None, list, tuple or ndarray')
@@ -396,7 +396,7 @@ def mrfget(handle, buf=None, funit=None):
         nbuf *= 2
         buf = _np.empty((nbuf,), dtype=_np.int32)
         buf[0] = nbuf
-    elif not isinstance(buf, _np.ndarray)
+    elif not isinstance(buf, _np.ndarray):
         raise TypeError('buf should be an ndarray')
     istat = _rp.c_mrfget(handle, buf)
     if istat != 0:
