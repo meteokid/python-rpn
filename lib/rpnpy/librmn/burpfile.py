@@ -6,7 +6,7 @@
 # Copyright: LGPL 2.1
 
 """
-Python BURP High Level Interface
+Python High Level Interface for BUPR files.
 """
 
 from rpnpy.librmn import burp as _brp
