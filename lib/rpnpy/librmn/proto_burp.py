@@ -195,9 +195,9 @@ librmn burp C functions
             run    (int)   : (O) identificateur de la passe operationnelle
             nblk   (int)   : (O) number of blocks
             sup    (array) : (O) clefs primaires supplementaires
-            nsup   (int)   : (O) number of sup
+            nsup   (int)   : (I) number of sup
             xaux   (array) : (O) clefs auxiliaires supplementaires
-            nxaux  (int)   : (O) number of xaux
+            nxaux  (int)   : (I) number of xaux
         Returns:
             int, zero if successful, non-zero otherwise
 
