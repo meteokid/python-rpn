@@ -15,6 +15,7 @@ import ctypes as _ct
 import numpy as _np
 from rpnpy.librmn import proto_burp as _rp
 from rpnpy.librmn import const as _rc
+from rpnpy.librmn import base as _rb
 from rpnpy.librmn import RMNError
 
 _C_MKSTR = _ct.create_string_buffer
@@ -69,10 +70,148 @@ class BurpError(RMNError):
         istat = abs(ier)
         self.msg = "Error occured while executing {0}".format(fnc_name)
         if istat in BurpError.error_codes.keys():
-            self.msg += " - {0} (ISTAT={1})".format(BurpError.error_codes[istat], istat)
+            self.msg += " - {0} (ISTAT={1})" \
+                .format(BurpError.error_codes[istat], istat)
 
     def __str__(self):
         return repr(self.msg)
+
+
+def isBURP(filename):
+    """
+    Return True if file is of BURP type
+
+    isburp = isBURP(filename)
+    
+    Args:
+        filename : path/name of the file to examine (str)
+    Returns:
+        True or False
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> isburp = rmn.isBURP(filename)
+
+    See Also:
+       rpnpy.librmn.base.wkoffit
+    """
+    if not (type(filename) == str):
+        raise TypeError("isBURP: Expecting arg of type str, Got {0}"\
+                        .format(type(filename)))
+    if filename.strip() == '':
+        raise ValueError("isBURP: must provide a valid filename")
+    return _rb.wkoffit(filename) in \
+        (_rc.WKOFFIT_TYPE_LIST['BURP'], )
+    #TODO: should we also accept 'BUFR', 'BLOK'... ?
+
+
+def burp_open(filename, filemode=_rc.BURP_MODE_READ):
+    """
+    Open the specified burp file
+    Shortcut for fnom+mrfopn
+
+    iunit = burp_open(filename)
+    iunit = burp_open(filename, FST_RO)
+
+    Args:
+        paths    : path/name of the file to open
+                   if paths is a list, open+link all files
+                   if path is a dir, open+link all fst files in dir
+        filemode : a string with the desired filemode (see librmn doc)
+                   or one of these constants:
+                   BURP_MODE_READ, BURP_MODE_CREATE, BURP_MODE_APPEND
+    Returns:
+        int, file unit number associated with provided path
+        None in ReadOnly mode if no burp file was found in path
+    Raises:
+        TypeError  on wrong input arg types    
+        ValueError on invalid input arg value
+        BurpError  on any other error
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit1 = rmn.burp_open(filename)
+    >>> funit2 = rmn.burp_open('newfile.brp', rmn.BURP_MODE_CREATE)
+    >>> #...
+    >>> rmn.burp_close(funit1)
+    >>> rmn.burp_close(funit2)
+    >>> os.unlink('newfile.fst')  # Remove test file
+    
+    See Also:
+       mrfopn
+       mrfcls
+       burp_close
+       rpnpy.librmn.base.fnom
+       rpnpy.librmn.const
+       BurpError
+    """
+    if not isinstance(filename, str):
+        raise TypeError("burp_open: Expecting arg of type str, Got {0}"\
+                        .format(type(filename)))
+    if filename.strip() == '':
+        raise ValueError("burp_open: must provide a valid filename")
+    if filemode == _rc.BURP_MODE_CREATE:
+        fstmode = _rc.FST_RW
+    elif filemode == _rc.BURP_MODE_APPEND:
+        fstmode = _rc.FST_RW_OLD
+    elif filemode == _rc.BURP_MODE_READ:
+        fstmode = _rc.FST_RO
+    else:
+        raise ValueError('filemode should be one of BURP_MODE_READ, BURP_MODE_CREATE, BURP_MODE_APPEND')
+    if filemode != _rc.BURP_MODE_CREATE:
+        if not isBURP(filename):
+            raise BurpError('Not a burp file: {0}'.format(filename))
+    funit = _rb.fnom(filename, fstmode)
+    if not funit:
+        raise BurpError('Problem associating a unit with the file: {0}'
+                        .format(filename))
+    nrep = mrfopn(funit, filemode)
+    return funit
+
+
+def burp_close(iunit):
+    """
+    Close the burp file associated with provided file unit number.
+    Shortcut for fclos+mrfcls
+    
+    Args:
+        iunit    : unit number associated to the file
+                   obtained with fnom or burp_open
+    Returns:
+        None
+    Raises:
+        TypeError  on wrong input arg types
+        FSTDError  on any other error
+        
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit1 = rmn.burp_open(filename)
+    >>> #...
+    >>> rmn.burp_close(funit1)
+
+    See Also:
+       mrfopn
+       mrfcls
+       burp_open
+       rpnpy.librmn.base.fnom
+       rpnpy.librmn.base.fclos
+       rpnpy.librmn.const
+       BurpError
+    """
+    mrfcls(iunit)
+    _rb.fclos(iunit)
 
 
 def mrfopt(optName, optValue):
@@ -147,6 +286,7 @@ def mrfopn(funit, mode=_rc.FILE_MODE_RW):
 
     See Also:
         mrfcls
+        burp_open
         rpnpy.librmn.base.fnom
         rpnpy.librmn.base.fclos
         rpnpy.librmn.const
@@ -183,6 +323,8 @@ def mrfcls(funit):
 
     See Also:
         mrfopn
+        burp_open
+        burp_close
         rpnpy.librmn.base.fnom
         rpnpy.librmn.base.fclos
         rpnpy.librmn.const
@@ -298,7 +440,8 @@ def mrfbfl(funit):
 ##TODO: mrfrwd
 ##TODO: mrfapp
 
-def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1, date=-1, temps=-1, sup=None):
+def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1,
+           date=-1, temps=-1, sup=None):
     """
     Locate position of report in file.
 
@@ -325,19 +468,15 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1, date=
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> funit = rmn.fnom('myburfile.brp', rmn.FILE_MODE_RW)
-    >>> rmn.mrfopn(funit, rmn.BURP_MODE_READ)
-    >>> handle = mrfloc(funit)
-    >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrfget
         mrfput
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
+        burp_open
+        burp_close
         rpnpy.librmn.const
     """
     #TODO: should accept handle as a dict with all agrs as keys/val
@@ -356,8 +495,10 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1, date=
     else:
         raise TypeError('sup should be a None, list, tuple or ndarray')
     if nsup > 0: ##TODO: remove this condition when implemented/fixed
-        raise TypeError('sup is not supported in this version of librmn, should prived None or empty list')
-    handle = _rp.c_mrfloc(funit, handle, stnid, idtyp, lati, long, date, temps, sup, nsup)
+        raise TypeError('sup is not supported in this version of librmn, ' +
+                        'should prived None or empty list')
+    handle = _rp.c_mrfloc(funit, handle, stnid, idtyp, lati, long, date, temps,
+                          sup, nsup)
     if handle < 0:
         raise BurpError('c_mrfloc', handle)
     return handle
@@ -383,13 +524,11 @@ def mrfget(handle, buf=None, funit=None):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.fnom('myburfile.brp', rmn.FILE_MODE_RW)
-    >>> nbrp   = rmn.mrfopn(funit, rmn.BURP_MODE_READ)
-    >>> handle = mrfloc(funit)
-    >>> buf    = mrfget(handle, funit=funit)
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
     >>> #TODO: describe what tools can be used to get info from buf
-    >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrfmxl
@@ -398,10 +537,8 @@ def mrfget(handle, buf=None, funit=None):
         mrbhdr
         mrbprm
         mrbxtr
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
+        burp_open
+        burp_close
         rpnpy.librmn.const
     """
     if buf is None or isinstance(buf, int):
@@ -420,47 +557,47 @@ def mrfget(handle, buf=None, funit=None):
     return buf
 
 
-def mrfput(funit, handle, buf):
-    """
-    Write a report.
+## def mrfput(funit, handle, buf):
+##     """
+##     Write a report.
 
-    mrfput(funit, handle, buf)
+##     mrfput(funit, handle, buf)
 
-    Args:
-        funit  : File unit number
-        handle : Report handle
-        buf    : Report data
-    Returns:
-       array, Report data buffer
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
+##     Args:
+##         funit  : File unit number
+##         handle : Report handle
+##         buf    : Report data
+##     Returns:
+##        array, Report data buffer
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
 
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    >>> funit = rmn.fnom('myburfile.brp', rmn.FILE_MODE_RW)
-    >>> rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
-    >>> nbuf  = 1024 ## Set nbuf to appropriate size
-    >>> buf   =_np.empty((nbuf,), dtype=_np.int32)
-    >>> ## Fill buf with relevant info
-    >>> #TODO: describe what tools can be used to fill buf
-    >>> handle = 0
-    >>> mrfput(funit, handle, buf)
-    >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     >>> funit = rmn.fnom('myburfile.brp', rmn.FILE_MODE_RW)
+##     >>> rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
+##     >>> nbuf  = 1024 ## Set nbuf to appropriate size
+##     >>> buf   =_np.empty((nbuf,), dtype=_np.int32)
+##     >>> ## Fill buf with relevant info
+##     >>> #TODO: describe what tools can be used to fill buf
+##     >>> handle = 0
+##     >>> rmn.mrfput(funit, handle, buf)
+##     >>> rmn.mrfcls(funit)
+##     >>> rmn.fclos(funit)
 
-    See Also:
-        mrfget
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
-        rpnpy.librmn.const
-    """
-    istat = _rp.c_mrfput(funit, handle, buf)
-    if istat != 0:
-        raise BurpError('c_mrfput', istat)
-    return
+##     See Also:
+##         mrfget
+##         mrfopn
+##         mrfcls
+##         rpnpy.librmn.base.fnom
+##         rpnpy.librmn.base.fclos
+##         rpnpy.librmn.const
+##     """
+##     istat = _rp.c_mrfput(funit, handle, buf)
+##     if istat != 0:
+##         raise BurpError('c_mrfput', istat)
+##     return
 
 
 ##TODO: provide set/get function for flag bits with flag consts
@@ -537,26 +674,21 @@ def mrbhdr(buf):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.fnom('myburfile.brp', rmn.FILE_MODE_RW)
-    >>> nbrp   = rmn.mrfopn(funit, rmn.BURP_MODE_READ)
-    >>> handle = mrfloc(funit)
-    >>> buf    = mrfget(handle, funit=funit)
-    >>> params = mrfhdr(buf)
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(buf)
     >>> #TODO: describe what tools can be used to decode info from params
-    >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrfmxl
         mrfloc
-        mrfput
         mrfget
         mrbprm
         mrbxtr
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
+        burp_open
+        burp_close
         rpnpy.librmn.const
     """
     itime  = _ct.c_int()
@@ -642,7 +774,9 @@ def mrbprm(buf, bkno):
             'bit0'  : (int) Number of the first right bit from block,
                             calculated automatically by the software.  
                             (0-->2**26-1) (always a multiple of 64 minus 1)
-            'datyp' : (int) Data type (for packing/unpacking).  
+            'datyp' : (int) Data type (for packing/unpacking).
+                            See rpnpy.librmn.const BURP_DATYP_LIST
+                                               and BURP_DATYP2NUMPY_LIST
                             0 = string of bits (bit string)  
                             2 = unsigned integers  
                             3 = characters (NBIT must be equal to 8)  
@@ -665,19 +799,23 @@ def mrbprm(buf, bkno):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(buf)
+    >>> for iblk in xrange(params['nblk']):
+    >>>     blkparams = rmn.mrbprm(buf, iblk+1)
+    >>> #TODO: describe what tools can be used to decode info from blkparams
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrfmxl
         mrfloc
-        mrfput
         mrfget
         mrbhdr
         mrbxtr
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
+        burp_open
+        burp_close
         rpnpy.librmn.const
     """
     if bkno <= 0:
@@ -748,21 +886,25 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(buf)
+    >>> for iblk in xrange(params['nblk']):
+    >>>     blkdata = rmn.mrbxtr(buf, iblk+1)
+    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrfmxl
         mrfloc
-        mrfput
         mrfget
         mrbhdr
         mrbprm
         mrbdcl
         mrbcvt
-        mrfopn
-        mrfcls
-        rpnpy.librmn.base.fnom
-        rpnpy.librmn.base.fclos
+        burp_open
+        burp_close
         rpnpy.librmn.const
     """
     dtype = _np.int32  ##TODO: should this take another value?
@@ -780,7 +922,8 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
         if not tblval.flags['F_CONTIGUOUS']:
             raise TypeError('Provided tblval should be F_CONTIGUOUS')
         if dtype != tblval.dtype:
-            raise TypeError('Expecting tblval of type {0}, got: {1}'.format(repr(dtype),repr(tblval.dtype)))
+            raise TypeError('Expecting tblval of type {0}, got: {1}'
+                            .format(repr(dtype),repr(tblval.dtype)))
         if len(tblval.shape) != 3:
             raise TypeError('tblval should be a ndarray of rank 3')
         if tblval.shape != (nele, nval, nt):
@@ -793,7 +936,8 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
         if not lstele.flags['F_CONTIGUOUS']:
             raise TypeError('Provided lstele should be F_CONTIGUOUS')
         if dtype != lstele.dtype:
-            raise TypeError('Expecting lstele of type {0}, got: {1}'.format(repr(dtype),repr(lstele.dtype)))
+            raise TypeError('Expecting lstele of type {0}, got: {1}'
+                            .format(repr(dtype),repr(lstele.dtype)))
         if len(lstele.shape) != 1 or lstele.size != nele:
             raise TypeError('lstele should be a ndarray of rank 1 (nele)')
     elif lstele is None:
@@ -808,181 +952,305 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
     return bparams     
 
 
-def mrbdcl(liste, dliste, nele):
+def mrbdcl(lstele):
     """
     Convert CMC codes to BUFR codes.
-    #TODO: mrbdcl(liste)  return dliste
+
+    lstelebufr = mrbdcl(lstele)
     
     Args:
-        #TODO: 
+        lstele : List of element names in the report in numeric BUFR codes.
+                 ##TODO: See the code repr in the FM 94 BUFR man
     Returns
-        #TODO: 
+        array, list of  lstele converted to BUFR codes
     Raises:
         TypeError  on wrong input arg types
         BurpError  on any other error
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> funit  = rmn.burp_open('myburfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(buf)
+    >>> for iblk in xrange(params['nblk']):
+    >>>     blkdata    = rmn.mrbxtr(buf, iblk+1)
+    >>>     lstelebufr = rmn.mrbdcl(blkdata['lstele'])
+    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>> rmn.burp_close(funit)
 
     See Also:
-        #TODO: 
+        mrbcol
+        mrfloc
+        mrfget
+        mrbhdr
+        mrbprm
+        mrbxtr
+        mrbcvt
+        burp_open
+        burp_close
+        rpnpy.librmn.const
     """
-    istat = _rp.c_mrbdcl(liste, dliste, nele)
+    dtype = _np.int32  ##TODO: should this take another value?
+    if isinstance(lstele, _np.ndarray):
+        if not lstele.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided lstele should be F_CONTIGUOUS')
+        if dtype != lstele.dtype:
+            raise TypeError('Expecting lstele of type {0}, got: {1}'
+                            .format(repr(dtype),repr(lstele.dtype)))
+    elif isinstance(lstele, (tuple, list)):
+        lstele = _np.array(lstele, dtype=dtype)
+    elif isinstance(lstele, (int, long)):
+        lstele = _np.array([lstele], dtype=dtype)
+    else:
+        raise TypeError('lstele should be a ndarray of rank 1')
+    lstelebufr = _np.empty(lstele.size, dtype=dtype, order='FORTRAN')
+    istat = _rp.c_mrbdcl(lstele, lstelebufr, lstele.size)
     if istat != 0:
         raise BurpError('c_mrbdcl', istat)
-    return istat
+    return lstelebufr
 
 
-def mrbcvt(liste, tblval, rval, nele, nval, nt, mode):
-    """
-    Convert real values to table values.
-    #TODO: mrbcvt should have only input args, output args should be returned
+## def _mrbcvt(lstele, tblval_or_rval, mode): ##TODO: datyp, nbits?
+##     """
+##     Convert real values to/from table/BURF values.
+
+##     rval   = mrbcvt(lstele, tblval, MRBCVT_DECODE):
+##     tblval = mrbcvt(lstele, rval,   MRBCVT_ENCODE):
+
+##     Args:
+##         lstele : List of element names in the report in numeric BUFR codes.
+##                  ##TODO: See the code repr in the FM 94 BUFR man
+##         tblval_or_rval:
+##             if mode == MRBCVT_DECODE: BURF code values (array of int or float)
+##             if mode == MRBCVT_ENCODE: Real values (array of float)
+##         mode   : MRBCVT_DECODE or MRBCVT_ENCODE
+##     Returns
+##         array
+##         if mode == MRBCVT_DECODE: Real values (array of float)
+##         if mode == MRBCVT_ENCODE: BURF code values (array of int or float)
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
+
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
+
+##     See Also:
+##         mrbcvt_decode
+##         mrbcvt_encode
+##         mrfloc
+##         mrfget
+##         mrbhdr
+##         mrbprm
+##         mrbxtr
+##         mrbdcl
+##         mrfopn
+##         mrfcls
+##         rpnpy.librmn.base.fnom
+##         rpnpy.librmn.base.fclos
+##         rpnpy.librmn.const
+##     """
+##     if isinstance(tblval_or_rval, _np.ndarray):
+##         if not tblval_or_rval.flags['F_CONTIGUOUS']:
+##             raise TypeError('Provided tblval_or_rval should be F_CONTIGUOUS')
+##         if len(tblval_or_rval.shape) != 3:
+##             raise TypeError('Provided tblval_or_rval should be en ndarray of rank 3')
+##     else:
+##         raise TypeError('Provided tblval_or_rval should be an ndarray of rank 3')
+##     (nele, nval, nt) = tblval_or_rval.shape
+##     dtype = _np.int32
+##     if isinstance(lstele, _np.ndarray):
+##         if not lstele.flags['F_CONTIGUOUS']:
+##             raise TypeError('Provided lstele should be F_CONTIGUOUS')
+##         if dtype != lstele.dtype:
+##             raise TypeError('Expecting lstele of type {0}, got: {1}'
+##                             .format(repr(dtype),repr(lstele.dtype)))
+##         if len(lstele.shape) != 1 or lstele.size != nele:
+##             raise TypeError('lstele should be a ndarray of rank 1 (nele)')
+##     else:
+##         raise TypeError('lstele should be a ndarray of rank 1 (nele)')
+##     dtype = ##TODO: 
+##     if mode == MRBCVT_DECODE:
+##         tblval = tblval_or_rval
+##         rval   = _np.empty(tblval.shape, dtype=dtype, order='FORTRAN')
+##     else:
+##         rval   = tblval_or_rval
+##         tblval = _np.empty(rval.shape, dtype=dtype, order='FORTRAN')
+##     istat = _rp.c_mrbcvt(lstele, tblval, rval, nele, nval, nt, mode)
+##     if istat != 0:
+##         raise BurpError('c_mrbcvt', istat)
+##     if mode == MRBCVT_DECODE:
+##         return rval
+##     else:
+##         return tblval
+
+
+## def mrbcvt_decode(lstele, tblval): ##TODO: datyp, nbits?
+##     """
+##     Convert table/BURF values to real values.
+
+##     rval = mrbcvt_decode(lstele, tblval)
+
+##     Args:
+##         lstele : List of element names in the report in numeric BUFR codes.
+##                  ##TODO: See the code repr in the FM 94 BUFR man
+##         tblval_or_rval: BURF code values (array of int or float)
+##     Returns
+##         array, Real values (array of float)
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
+
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
+
+##     See Also:
+##         mrbcvt_encode
+##         mrfloc
+##         mrfget
+##         mrbhdr
+##         mrbprm
+##         mrbxtr
+##         mrbdcl
+##         mrfopn
+##         mrfcls
+##         rpnpy.librmn.base.fnom
+##         rpnpy.librmn.base.fclos
+##         rpnpy.librmn.const
+##     """
+##     return _mrbcvt(lstele, tblval, _rc.MRBCVT_DECODE)
+
+
+## def mrbcvt_encode(lstele, rval): ##TODO:
+
+
+## def mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon, dx, dy, elev, drnd,
+##            date, oars, runn, sup, nsup, xaux, nxaux):
+##     """
+##     Writes report header.
+##     #TODO: should accept a dict as input for all args
     
-    Args:
-        #TODO: 
-    Returns
-        #TODO: 
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
+##     Args:
+##         #TODO: 
+##     Returns
+##         #TODO: 
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
 
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
 
-    See Also:
-        #TODO: 
-    """
-    istat = _rp.c_mrbcvt(liste, tblval, rval, nele, nval, nt, mode)
-    if istat != 0:
-        raise BurpError('c_mrbcvt', istat)
-    return istat
+##     See Also:
+##         #TODO: 
+##     """
+##     istat = _rp.c_mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon,  
+##                          dx, dy, elev, drnd, date, oars, runn, sup, nsup,
+##                          xaux, nxaux)
+##     if istat != 0:
+##         raise BurpError('c_mrbini', istat)
+##     return istat
 
 
-def mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon, dx, dy, elev, drnd,
-           date, oars, runn, sup, nsup, xaux, nxaux):
-    """
-    Writes report header.
-    #TODO: should accept a dict as input for all args
+## def mrbcol(dliste, liste, nele):
+##     """
+##     Convert BUFR codes to CMC codes.
+##     #TODO: mrbcol(dliste) returns liste
     
-    Args:
-        #TODO: 
-    Returns
-        #TODO: 
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
+##     Args:
+##         #TODO: 
+##     Returns
+##         #TODO: 
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
 
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
 
-    See Also:
-        #TODO: 
-    """
-    istat = _rp.c_mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon, dx, dy,
-                         elev, drnd, date, oars, runn, sup, nsup, xaux, nxaux)
-    if istat != 0:
-        raise BurpError('c_mrbini', istat)
-    return istat
+##     See Also:
+##         #TODO: 
+##     """
+##     istat = _rp.c_mrbcol(dliste, liste, nele)
+##     if istat != 0:
+##         raise BurpError('c_mrbcol', istat)
+##     return istat
 
 
-def mrbcol(dliste, liste, nele):
-    """
-    Convert BUFR codes to CMC codes.
-    #TODO: mrbcol(dliste) returns liste
+## def mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
+##            lstele, tblval):
+##     """
+##     Adds a block to a report.
+##     #TODO: should accept a dict as input for all args
     
-    Args:
-        #TODO: 
-    Returns
-        #TODO: 
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
+##     Args:
+##         #TODO: 
+##         buf    (array) : vector to contain the report
+##         nele   (int)   : number of meteorogical elements in block
+##         nval   (int)   : number of data per elements
+##         nt     (int)   : number of group of nelenval values in block
+##         bfam   (int)   : block family (12 bits, bdesc no more used)
+##         bdesc  (int)   : kept for backward compatibility
+##         btyp   (int)   : block type
+##         nbit   (int)   : number of bit to keep per values
+##         datyp  (int)   : data type for packing
+##         lstele (array) : list of nele meteorogical elements
+##         tblval (array) : array of values to write (nele*nval*nt)
+##     Returns
+##         #TODO: 
+##         buf    (array) : vector to contain the report
+##         bkno   (int)   : number of blocks in buf
+##         bit0   (int)   : position of first bit of the report
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
 
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
 
-    See Also:
-        #TODO: 
-    """
-    istat = _rp.c_mrbcol(dliste, liste, nele)
-    if istat != 0:
-        raise BurpError('c_mrbcol', istat)
-    return istat
-
-
-def mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
-           lstele, tblval):
-    """
-    Adds a block to a report.
-    #TODO: should accept a dict as input for all args
-    
-    Args:
-        #TODO: 
-        buf    (array) : vector to contain the report
-        nele   (int)   : number of meteorogical elements in block
-        nval   (int)   : number of data per elements
-        nt     (int)   : number of group of nelenval values in block
-        bfam   (int)   : block family (12 bits, bdesc no more used)
-        bdesc  (int)   : kept for backward compatibility
-        btyp   (int)   : block type
-        nbit   (int)   : number of bit to keep per values
-        datyp  (int)   : data type for packing
-        lstele (array) : list of nele meteorogical elements
-        tblval (array) : array of values to write (nele*nval*nt)
-    Returns
-        #TODO: 
-        buf    (array) : vector to contain the report
-        bkno   (int)   : number of blocks in buf
-        bit0   (int)   : position of first bit of the report
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
-
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
-
-    See Also:
-        #TODO: 
-    """
-    istat = _rp.c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit,
-                         bit0, datyp, lstele, tblval)
-    if istat != 0:
-        raise BurpError('c_mrbadd', istat)
-    return buf
+##     See Also:
+##         #TODO: 
+##     """
+##     istat = _rp.c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit,
+##                          bit0, datyp, lstele, tblval)
+##     if istat != 0:
+##         raise BurpError('c_mrbadd', istat)
+##     return buf
 
 
-def mrbdel(buf, bkno):
-    """
-    Delete a particular block of the report.
+## def mrbdel(buf, bkno):
+##     """
+##     Delete a particular block of the report.
 
-    mrbdel(buf, bkno)
+##     mrbdel(buf, bkno)
 
-    Args:
-        buf  : report data (array) 
-        bkno : number of blocks in buf (int)
-    Returns
-        array, modified report data
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
+##     Args:
+##         buf  : report data (array) 
+##         bkno : number of blocks in buf (int)
+##     Returns
+##         array, modified report data
+##     Raises:
+##         TypeError  on wrong input arg types
+##         BurpError  on any other error
 
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+##     Examples:
+##     >>> import rpnpy.librmn.all as rmn
+##     #TODO: 
 
-    See Also:
-        mrbadd
-        #TODO: 
-    """
-    istat = _rp.c_mrbdel(buf, bkno)
-    if istat != 0:
-        raise BurpError('c_mrbdel', istat)
-    return buf
+##     See Also:
+##         mrbadd
+##         #TODO: 
+##     """
+##     istat = _rp.c_mrbdel(buf, bkno)
+##     if istat != 0:
+##         raise BurpError('c_mrbdel', istat)
+##     return buf
 
 # =========================================================================
 

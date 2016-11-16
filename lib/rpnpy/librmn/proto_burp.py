@@ -260,7 +260,7 @@ librmn burp C functions
             int liste[], tblval[], nele, nval, nt, mode;
             float rval[];
         Args:
-            liste  (array) : (O)   Elements to convert (array of int)
+            liste  (array) : (I)   Elements to convert (array of int)
             tblval (array) : (I/O) BURF code values (array of int or float)
             rval   (array) : (I/O) Real values (array of float)
             nele   (int)   : (I)   Number of elemets to convert

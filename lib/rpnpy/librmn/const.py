@@ -206,27 +206,27 @@ FST_DATYP_LIST = {
 
 ## Numpy versus FSTD data type equivalence
 FST_DATYP2NUMPY_LIST = { #TODO: review
-    0: _np.uint32  , # binary, transparent
-    1: _np.float32 , # floating point
-    2: _np.uint32  , # unsigned integer
-    3: _np.uint32  , # character (R4A in an integer)
-    4: _np.int32   , # signed integer
-    5: _np.float32 , # IEEE floating point
-    6: _np.float32 , # floating point (16 bit, made for compressor)
-    7: _np.uint8   , # character string
-    8: _np.complex64 , # complex IEEE
+    0: _np.uint32,   # binary, transparent
+    1: _np.float32,  # floating point
+    2: _np.uint32,   # unsigned integer
+    3: _np.uint32,   # character (R4A in an integer)
+    4: _np.int32,    # signed integer
+    5: _np.float32,  # IEEE floating point
+    6: _np.float32,  # floating point (16 bit, made for compressor)
+    7: _np.uint8,    # character string
+    8: _np.complex64 # complex IEEE
 }
 
 FST_DATYP2NUMPY_LIST64 = { #TODO: review
-    0: _np.uint64  , # binary, transparent
-    1: _np.float64 , # floating point
-    2: _np.uint64  , # unsigned integer
-    3: _np.uint64  , # character (R4A in an integer)
-    4: _np.int64   , # signed integer
-    5: _np.float64 , # IEEE floating point
-    6: _np.float64 , # floating point (16 bit, made for compressor)
-    #7: _np.uint8   , # character string
-    8: _np.complex128 , # complex IEEE
+    0: _np.uint64,  # binary, transparent
+    1: _np.float64, # floating point
+    2: _np.uint64,  # unsigned integer
+    3: _np.uint64,  # character (R4A in an integer)
+    4: _np.int64,   # signed integer
+    5: _np.float64, # IEEE floating point
+    6: _np.float64, # floating point (16 bit, made for compressor)
+    #7: _np.uint8,  # character string
+    8: _np.complex128  # complex IEEE
 }
 #</source>
 
@@ -340,6 +340,33 @@ MRBCVT_ENCODE = 1
 BURP_MODE_READ   = 'READ'
 BURP_MODE_CREATE = 'CREATE'
 BURP_MODE_APPEND = 'APPEND'
+
+BURP_DATYP_LIST = {
+    'binary'  : 0,  # 0 = string of bits (bit string)  
+    'uint'    : 2,  # 2 = unsigned integers  
+    'char'    : 3,  # 3 = characters (NBIT must be equal to 8)  
+    'int'     : 4,  # 4 = signed integers  
+    'upchar'  : 5,  # 5 = uppercase characters (the lowercase characters
+                    #     will be converted to uppercase during the read)
+                    #     (NBIT must be equal to 8)  
+    'float'   : 6,  # 6 = real*4 (ie: 32bits)  
+    'double'  : 7,  # 7 = real*8 (ie: 64bits)  
+    'complex' : 8,  # 8 = complex*4 (ie: 2 times 32bits)  
+    'dcomplex': 9   # 9 = complex*8 (ie: 2 times 64bits)  
+}
+
+BURP_DATYP2NUMPY_LIST = { #TODO: review
+    0: _np.uint32,    # binary, transparent
+    2: _np.uint32,    # unsigned integer
+    3: _np.uint8,     # character string
+    4: _np.int32,     # signed integer
+    5: _np.uint8,     # character string (uppercase)
+    6: _np.float32,   # floating point
+    7: _np.float64,   # double precision 
+    8: _np.complex64, # complex IEEE
+    9: _np.complex128 # double complex IEEE
+}
+
 #</source>
 
 #==== mrfopt (options) ====
