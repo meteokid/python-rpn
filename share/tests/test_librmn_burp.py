@@ -171,11 +171,17 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = rmn.mrfloc(funit, handle)
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
+            ## for k,v in rmn.BURP_FLAGS_IDX_NAME.items():
+            ##     print k, params['flgsl'][k], v
             params0 = {'flgs': 72706, 'xaux': None, 'nxaux': 0, 'elev': 457,
                        'nblk': 12, 'dy': 0, 'lati ': 15420, 'long': 27663,
                        'nsup': 0, 'temps': 0, 'idtyp': 138, 'oars': 518,
                        'dx': 0, 'stnid': '71915    ', 'date': 20070219,
-                       'drnd': 0, 'sup': None, 'runn': 8}
+                       'drnd': 0, 'sup': None, 'runn': 8,
+                       'flgsl': [False, True, False, False, False, False,
+                                 False, False, False, False, True, True,
+                                 True, False, False, False, True, False,
+                                 False, False, False, False, False, False]}
             for k in params.keys():
                 self.assertEqual(params0[k], params[k],
                                  'For {0}, expected {1}, got {2}'
@@ -205,6 +211,26 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                  'For {0}, expected {1}, got {2}'
                                  .format(k, blkparams0[k], blkparams[k]))
             rmn.burp_close(funit)
+
+    ## def testmrbprm2KnownValues(self):
+    ##     """mrbprm should give known result with known input"""
+    ##     for mypath, itype, iunit in self.knownValues:
+    ##         rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+    ##         funit  = rmn.burp_open(self.getFN(mypath))
+    ##         nbrp   = rmn.mrfnbr(funit)
+    ##         maxlen = max(64, rmn.mrfmxl(funit))+10
+
+    ##         handle = 0
+    ##         buf = None
+    ##         for irep in xrange(nbrp):
+    ##             handle = rmn.mrfloc(funit, handle)
+    ##             buf = rmn.mrfget(handle, buf, funit)
+    ##             rparams = rmn.mrbhdr(buf)
+    ##             for iblk in xrange(rparams['nblk']):
+    ##                 bparams = rmn.mrbprm(buf, iblk+1)
+    ##                 ## print irep, handle, iblk+1, bparams['datyp']
+    ##                 print bparams['datyp']
+    ##         rmn.burp_close(funit)
 
     def testmrbxtrKnownValues(self):
         """mrbprm should give known result with known input"""
@@ -267,6 +293,32 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             
             rmn.burp_close(funit)
 
+    def testmrbcvtdecodeKnownValues(self):
+        """mrbprm should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            funit  = rmn.burp_open(self.getFN(mypath))
+            nbrp   = rmn.mrfnbr(funit)
+            maxlen = max(64, rmn.mrfmxl(funit))+10
+
+            buf = None
+            handle = 0
+            handle = rmn.mrfloc(funit, handle)
+            buf    = rmn.mrfget(handle, buf, funit)
+            params = rmn.mrbhdr(buf)
+            for iblk in xrange(params['nblk']):
+                blkparams = rmn.mrbprm(buf, iblk+1)
+                blkdata   = rmn.mrbxtr(buf, iblk+1)
+                rval      = rmn.mrbcvt_decode(blkdata['lstele'],
+                                              blkdata['tblval'],
+                                              blkparams['datyp'])
+                #TODO: check results
+            ## lstelebufr0 = _np.array([7004, 11001, 11002, 12001, 12192, 10194,
+            ##                          8001, 11003, 11004, 13210],
+            ##                          dtype=_np.int32)
+            ## self.assertFalse(_np.any(lstelebufr0 - lstelebufr != 0))
+            
+            rmn.burp_close(funit)
     ## def testmrbxtrcvtKnownValues(self):
     ##     """fnomfclos should give known result with known input"""
     ##     for mypath, itype, iunit in self.knownValues:

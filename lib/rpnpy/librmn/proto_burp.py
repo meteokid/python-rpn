@@ -531,28 +531,16 @@ librmn.c_mrbprm.argtypes = (
 librmn.c_mrbprm.restype  = _ct.c_int
 c_mrbprm = librmn.c_mrbprm
 
-c_mrbxtr_argtypes_int = (
-    ## void *buffer, int bkno,
-    _npc.ndpointer(dtype=_np.int32),
-    _ct.c_int,
-    ## word *lstele, word *tblval
-    _npc.ndpointer(dtype=_np.int32),
-    _npc.ndpointer(dtype=_np.int32)
-    )
-c_mrbxtr_argtypes_float = (
-    ## void *buffer, int bkno,
-    _npc.ndpointer(dtype=_np.int32),
-    _ct.c_int,
-    ## word *lstele, word *tblval
-    _npc.ndpointer(dtype=_np.int32),
-    _npc.ndpointer(dtype=_np.float32)
-    )
 librmn.c_mrbxtr.restype  = _ct.c_int
 def c_mrbxtr(buf, bkno, lstele, tblval):
-    if tblval.dtype == _np.dtype('int32'):
-        librmn.c_mrbxtr.argtypes = c_mrbxtr_argtypes_int
-    elif tblval.dtype == _np.dtype('float32'):
-        librmn.c_mrbxtr.argtypes = c_mrbxtr_argtypes_float
+    if not isinstance(tblval, _np.ndarray):
+        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".format(repr(type(tblval))))
+    librmn.c_mrbxtr.argtypes = (
+        _npc.ndpointer(dtype=_np.int32),   ## void *buffer,
+        _ct.c_int,                         ## int bkno,
+        _npc.ndpointer(dtype=_np.int32),   ## word *lstele, word *tblval
+        _npc.ndpointer(dtype=tblval.dtype) ## word *lstele, word *tblval
+        )
     return librmn.c_mrbxtr(buf, bkno, lstele, tblval)
 
 
@@ -564,16 +552,20 @@ librmn.c_mrbdcl.restype  = _ct.c_int
 c_mrbdcl = librmn.c_mrbdcl
 
 
-librmn.c_mrbcvt.argtypes = (
-    ## int liste[], tblval[]
-    _npc.ndpointer(dtype=_np.int32), _npc.ndpointer(dtype=_np.int32),
-    ## float rval[];
-    _npc.ndpointer(dtype=_np.float32),
-    ## int nele, nval, nt, mode;
-    _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int
-    )
 librmn.c_mrbcvt.restype  = _ct.c_int
-c_mrbcvt = librmn.c_mrbcvt
+## c_mrbcvt = librmn.c_mrbcvt
+def c_mrbcvt(lstele, tblval, rval, nele, nval, nt, mode):
+    if not isinstance(tblval, _np.ndarray):
+        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".format(repr(type(tblval))))
+    if not isinstance(rval, _np.ndarray):
+        raise TypeError("rval, expecting type numpy.ndarray, got {0}".format(repr(type(rval))))
+    librmn.c_mrbcvt.argtypes = (
+        _npc.ndpointer(dtype=_np.int32),    ## int lstele[]
+        _npc.ndpointer(dtype=tblval.dtype), ## int tblval[]
+        _npc.ndpointer(dtype=rval.dtype),   ## float rval[];
+        _ct.c_int, _ct.c_int, _ct.c_int, _ct.c_int  ## int nele, nval, nt, mode;
+        )
+    return librmn.c_mrbcvt(lstele, tblval, rval, nele, nval, nt, mode)
 
 
 librmn.c_mrbini.argtypes = (_ct.c_int, _npc.ndpointer(dtype=_np.int32),

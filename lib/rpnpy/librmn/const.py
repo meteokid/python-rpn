@@ -336,11 +336,78 @@ EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 #<source lang=python>
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
+#</source>
 
+#==== File mode ====
+
+#<source lang=python>
 BURP_MODE_READ   = 'READ'
 BURP_MODE_CREATE = 'CREATE'
 BURP_MODE_APPEND = 'APPEND'
+#</source>
 
+#==== Report Header Flags ====
+
+#<source lang=python>
+BURP_FLAGS_IDX_NAME = {
+    0  : 'assembled stations',
+    1  : 'surface wind used',
+    2  : 'message unreliable (p/t)',
+    3  : 'incorrect coordinates',
+    4  : 'message corrected',
+    5  : 'message amended',
+    6  : 'station rejected by AO',
+    7  : 'station on black list',
+    8  : 'station to evaluate',
+    9  : 'superobservation',
+    10 : 'data observed',
+    11 : 'data derived',
+    12 : 'residues',
+    13 : 'verifications',
+    14 : 'TEMP, part RADAT',
+    15 : 'TEMP, part A',
+    16 : 'TEMP, part B',
+    17 : 'TEMP, part C',
+    18 : 'TEMP, part D',
+    19 : 'reserved1',
+    20 : 'reserved2',
+    21 : 'reserved3',
+    22 : 'reserved4',
+    23 : 'reserved5'
+}
+## Doc 2005:
+## Bit Signification
+## ?? 0 1= observations au-dessus de la terre (masque terre/mer)
+## 1 1= vent de surface utilisé (stations terrestres)
+## ?? 2 1= enregistrement contient des données sur la correction de radiation (stations aérologiques)
+## ?? 3 1= enregistrement contient correction de la position des bateaux, provenant du CQ des bateaux.
+## ?? * 4 en réserve
+## ?? 5 1= station hors du domaine d'intérêt
+## 6 1= station avec élément rejeté par le contrôle de qualité de AO (analyse objective)
+## 7 1= station avec élément(s) sur liste noire
+## 8 1= station à évaluer mais non utilisée par AO
+## ?? 9 1= décodeur rapporte position de station douteuse
+## 10 1= enregistrement contient des données observées
+## 11 1= enregistrement contient des données dérivées d'entrée
+## ?? 12 1= enregistrement contient des données vues par l'AO
+## ?? 13 1= enregistrement contient des résidus
+## 14 1= partie RADAT de TEMP ou présence de Ts de SATOB
+## 15 1= partie A de TEMP, PILOT, SATEM ou SATOB
+## 16 1= partie B de TEMP, PILOT, SATEM
+## 17 1= partie C de TEMP, PILOT ou SATEM
+## 18 1= partie D de TEMP, PILOT ou SATEM
+## ?? 19 1= enregistrement contient des données analysées5
+## ?? 20 1= enregistrement contient des données prévues
+## ?? 21 1= enregistrement contient des données de vérification
+BURP_FLAGS_IDX = dict([(v, k) for k, v in BURP_FLAGS_IDX_NAME.items()])
+
+#==== Data types ====
+
+#<source lang=python>
+## String lenght
+BURP_STNID_STRLEN = 9
+
+## BURP valid code for data types
 BURP_DATYP_LIST = {
     'binary'  : 0,  # 0 = string of bits (bit string)  
     'uint'    : 2,  # 2 = unsigned integers  
@@ -354,7 +421,9 @@ BURP_DATYP_LIST = {
     'complex' : 8,  # 8 = complex*4 (ie: 2 times 32bits)  
     'dcomplex': 9   # 9 = complex*8 (ie: 2 times 64bits)  
 }
+BURP_DATYP_NAMES = dict([(v, k) for k, v in BURP_DATYP_LIST.items()])
 
+## Numpy versus BURP data type equivalence
 BURP_DATYP2NUMPY_LIST = { #TODO: review
     0: _np.uint32,    # binary, transparent
     2: _np.uint32,    # unsigned integer
@@ -366,7 +435,19 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
     8: _np.complex64, # complex IEEE
     9: _np.complex128 # double complex IEEE
 }
+## Note: Type 3 and 5 are processed like strings of bits thus,
+##       the user should do the data compression himself.
 
+## Doc 2005:
+## 0 chaîne de bits
+## 2 entiers sans signe
+## 3 caractères, NBIT doit être égal à 8
+## 4 entiers avec signe
+## 5 tous les caractères en majuscules, NBIT doit être égal à 8.
+## 6 nombres complexes, partie réelle, simple précision (R4)
+## 7 nombres complexes, partie réelle, double précision (R8)
+## 8 nombres complexes, partie imaginaire, simple précision (I4)
+## 9 nombres complexes, partie imaginaire, simple précision (I8)
 #</source>
 
 #==== mrfopt (options) ====
