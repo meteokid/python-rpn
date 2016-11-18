@@ -53,7 +53,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         for mypath, itype, iunit in self.knownValues:
             funit = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
             rmn.fclos(funit)
-            self.assertEqual(funit, iunit,
+            self.assertTrue(funit > 900 and funit <= 999,
                              mypath+':'+repr(funit)+' != '+repr(iunit))
 
     def testmrfnbrKnownValues(self):
@@ -97,13 +97,13 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             handle = 0
             handle = rmn.mrfloc(funit, handle)
             self.assertNotEqual(handle, 0)
-            (stnid, idtyp, lat, lon, date, temps, sup) = \
+            (stnid, idtyp, lat, lon, date, time, sup) = \
                 ('*********', -1, -1, -1, -1, -1, None)
             handle = 0
             nbrp2 = 0
             for irep in xrange(nbrp):
                 handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
-                                    date, temps, sup)
+                                    date, time, sup)
                 ## sys.stderr.write(repr(handle)+'\n')
                 self.assertNotEqual(handle, 0)
                 nbrp2 += 1
@@ -111,7 +111,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             sup = []
             for irep in xrange(nbrp):
                 handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
-                                    date, temps, sup)
+                                    date, time, sup)
                 self.assertNotEqual(handle, 0)
             rmn.burp_close(funit)
             self.assertEqual(nbrp2, nbrp)
@@ -174,8 +174,8 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             ## for k,v in rmn.BURP_FLAGS_IDX_NAME.items():
             ##     print k, params['flgsl'][k], v
             params0 = {'flgs': 72706, 'xaux': None, 'nxaux': 0, 'elev': 457,
-                       'nblk': 12, 'dy': 0, 'lati ': 15420, 'long': 27663,
-                       'nsup': 0, 'temps': 0, 'idtyp': 138, 'oars': 518,
+                       'nblk': 12, 'dy': 0, 'lat': 15420, 'lon': 27663,
+                       'nsup': 0, 'time': 0, 'idtyp': 138, 'oars': 518,
                        'dx': 0, 'stnid': '71915    ', 'date': 20070219,
                        'drnd': 0, 'sup': None, 'runn': 8,
                        'flgsl': [False, True, False, False, False, False,
@@ -312,13 +312,17 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 rval      = rmn.mrbcvt_decode(blkdata['lstele'],
                                               blkdata['tblval'],
                                               blkparams['datyp'])
-                #TODO: check results
-            ## lstelebufr0 = _np.array([7004, 11001, 11002, 12001, 12192, 10194,
-            ##                          8001, 11003, 11004, 13210],
-            ##                          dtype=_np.int32)
-            ## self.assertFalse(_np.any(lstelebufr0 - lstelebufr != 0))
-            
+                #TODO: check results            
             rmn.burp_close(funit)
+
+    def testburpfilereadKnownValues(self):
+        """mrbprm should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            bfile = rmn.BurpFile(self.getFN(mypath),'r')
+            #TODO: check results
+
+
+
     ## def testmrbxtrcvtKnownValues(self):
     ##     """fnomfclos should give known result with known input"""
     ##     for mypath, itype, iunit in self.knownValues:
@@ -327,7 +331,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ##         nbrp   = rmn.mrfnbr(funit)
     ##         maxlen = max(64, rmn.c_mrfmxl(funit))+10
 
-    ##         (stnid, idtyp, lat, lon, date, temps, nsup, nxaux) = \
+    ##         (stnid, idtyp, lat, lon, date, time, nsup, nxaux) = \
     ##             ('*********', -1, -1, -1, -1, -1, 0, 0)
     ##         sup  = _np.empty((1, ), dtype=_np.int32)
     ##         xaux = _np.empty((1, ), dtype=_np.int32)
@@ -364,7 +368,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ##         MRBCVT_ENCODE = 1
 
     ##         for irep in xrange(nbrp):
-    ##             handle = rmn.c_mrfloc(funit, handle, stnid, idtyp, lat, lon, date, temps, sup, nsup)
+    ##             handle = rmn.c_mrfloc(funit, handle, stnid, idtyp, lat, lon, date, time, sup, nsup)
     ##             ier = rmn.c_mrfget(handle, buf)
     ##             ier = rmn.c_mrbhdr(buf, 
     ##                     itime, iflgs, stnids, idburp, 

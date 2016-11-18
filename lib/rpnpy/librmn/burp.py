@@ -436,12 +436,12 @@ def mrfbfl(funit):
 ##TODO: mrfrwd
 ##TODO: mrfapp
 
-def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1,
-           date=-1, temps=-1, sup=None):
+def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lat=-1, lon=-1,
+           date=-1, time=-1, sup=None):
     """
     Locate position of report in file.
 
-    handle = mrfloc(funit, handle, stnid, idtyp, lati, long, date, temps, sup)
+    handle = mrfloc(funit, handle, stnid, idtyp, lat, lon, date, time, sup)
     handle = mrfloc(funit, handle, stnid)
 
     Args:
@@ -454,7 +454,7 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1,
         lat    : Station latitude (1/100 of degrees)  (-1 as wildcard)
         lon    : Station longitude (1/100 of degrees) (-1 as wildcard)
         date   : Report valid date (-1 as wildcard)
-        temps  : Observation time/hour (-1 as wildcard)
+        time   : Observation time/hour (-1 as wildcard)
         sup    : Additional search keys (array of int)
     Returns:
         int, report handle
@@ -493,7 +493,7 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lati=-1, long=-1,
     if nsup > 0: ##TODO: remove this condition when implemented/fixed
         raise TypeError('sup is not supported in this version of librmn, ' +
                         'should prived None or empty list')
-    handle = _rp.c_mrfloc(funit, handle, stnid, idtyp, lati, long, date, temps,
+    handle = _rp.c_mrfloc(funit, handle, stnid, idtyp, lat, lon, date, time,
                           sup, nsup)
     if handle < 0:
         raise BurpError('c_mrfloc', handle)
@@ -606,7 +606,7 @@ def mrbhdr(buf):
         buf : Report data (array)
     Returns:
         {
-            'temps' : (int)   Observation time/hour (HHMM)
+            'time' : (int)   Observation time/hour (HHMM)
             'flgs'  : (int)   Global flags
                               (24 bits, Bit 0 is the right most bit of the word)
                               See BURP_FLAGS_IDX_NAME for Bits/flags desc.
@@ -618,11 +618,11 @@ def mrbhdr(buf):
                               spaces. In the case of regrouped data,
                               STNID contains blanks.
             'idtyp' : (int)   Report Type
-            'lati ' : (int)   Station latitude (1/100 of degrees)
+            'lat'   : (int)   Station latitude (1/100 of degrees)
                               with respect to the south pole. (0 to 1800)
                               (100+(latitude+90)) of a station or the
                               lower left corner of a box.
-            'long'  : (int)   Station longitude (1/100 of degrees)
+            'lon'   : (int)   Station longitude (1/100 of degrees)
                               (0 to 36000) of a station or lower left corner
                               of a box.
             'dx'    : (int)   Width of a box for regrouped data
@@ -632,7 +632,7 @@ def mrbhdr(buf):
             'elev'  : (int)   Station altitude (metres + 400.) (0 to 8191)
             'drnd'  : (int)   Reception delay: difference between the
                               reception time at CMC and the time of observation
-                              (TEMPS). For the regrouped data, DRND indicates
+                              (TIME). For the regrouped data, DRND indicates
                               the amount of data. DRND = 0 in other cases.
             'date'  : (int)   Report valid date (YYYYMMDD)
             'oars'  : (int)   Reserved for the Objective Analysis. (0-->65535)
@@ -672,39 +672,39 @@ def mrbhdr(buf):
     iflgs  = _ct.c_int()
     stnids = _C_MKSTR(' '*_rc.BURP_STNID_STRLEN)
     idburp = _ct.c_int()
-    ilat = _ct.c_int()
-    ilon = _ct.c_int()
-    idx  = _ct.c_int()
-    idy  = _ct.c_int()
-    ialt = _ct.c_int()
+    ilat   = _ct.c_int()
+    ilon   = _ct.c_int()
+    idx    = _ct.c_int()
+    idy    = _ct.c_int()
+    ialt   = _ct.c_int()
     idelay = _ct.c_int()
-    idate = _ct.c_int()
-    irs   = _ct.c_int()
-    irunn = _ct.c_int()
-    nblk  = _ct.c_int()
-    nsup  = _ct.c_int(0)
-    nxaux = _ct.c_int(0)
-    sup   = _np.empty((1, ), dtype=_np.int32)
-    xaux  = _np.empty((1, ), dtype=_np.int32)
-    istat = _rp.c_mrbhdr(buf, _ct.byref(itime), _ct.byref(iflgs),
-                         stnids, _ct.byref(idburp),
-                         _ct.byref(ilat), _ct.byref(ilon),
-                         _ct.byref(idx), _ct.byref(idy), _ct.byref(ialt), 
-                         _ct.byref(idelay), _ct.byref(idate), _ct.byref(irs),
-                         _ct.byref(irunn), _ct.byref(nblk), 
-                         sup, nsup, xaux, nxaux)
+    idate  = _ct.c_int()
+    irs    = _ct.c_int()
+    irunn  = _ct.c_int()
+    nblk   = _ct.c_int()
+    nsup   = _ct.c_int(0)
+    nxaux  = _ct.c_int(0)
+    sup    = _np.empty((1, ), dtype=_np.int32)
+    xaux   = _np.empty((1, ), dtype=_np.int32)
+    istat  = _rp.c_mrbhdr(buf, _ct.byref(itime), _ct.byref(iflgs),
+                          stnids, _ct.byref(idburp),
+                          _ct.byref(ilat), _ct.byref(ilon),
+                          _ct.byref(idx), _ct.byref(idy), _ct.byref(ialt), 
+                          _ct.byref(idelay), _ct.byref(idate), _ct.byref(irs),
+                          _ct.byref(irunn), _ct.byref(nblk), 
+                          sup, nsup, xaux, nxaux)
     if istat != 0:
         raise BurpError('c_mrbhdr', istat)
     flgsl = [i == '1' for i in list("{0:024b}".format(iflgs.value))]
     flgsl.reverse()
     return {
-            'temps' : itime.value,
+            'time'  : itime.value,
             'flgs'  : iflgs.value,
             'flgsl' : flgsl,
             'stnid' : stnids.value,
             'idtyp' : idburp.value,
-            'lati ' : ilat.value,
-            'long'  : ilon.value,
+            'lat'   : ilat.value,
+            'lon'   : ilon.value,
             'dx'    : idx.value,
             'dy'    : idy.value,
             'elev'  : ialt.value,
@@ -833,7 +833,9 @@ def mrbprm(buf, bkno):
         }
 
 
-def mrbxtr(buf, bkno, lstele=None, tblval=None):
+#TODO: function for mrbxtr+cvt (and maybe hrd,prm)
+
+def mrbxtr(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
     """
     Extract block of data from the buffer.
     
@@ -844,6 +846,7 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
         buf  : Report data  (array)
         bkno : block number (int > 0)
         lstele, tblval: (optional) return data arrays
+        dtype: (optional) numpy type for tblval creation, if tblval is None
     Returns
         {
             'lstele' : (array) List of element names in the report in numeric
@@ -886,7 +889,6 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
         burp_close
         rpnpy.librmn.const
     """
-    dtype = _np.int32  ##TODO: should this take another value?
     if bkno <= 0:
         raise ValueError('Provided bkno must be > 0')
     try:
@@ -900,9 +902,9 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
     if isinstance(tblval, _np.ndarray):
         if not tblval.flags['F_CONTIGUOUS']:
             raise TypeError('Provided tblval should be F_CONTIGUOUS')
-        if dtype != tblval.dtype:
-            raise TypeError('Expecting tblval of type {0}, got: {1}'
-                            .format(repr(dtype),repr(tblval.dtype)))
+        ## if dtype != tblval.dtype:
+        ##     raise TypeError('Expecting tblval of type {0}, got: {1}'
+        ##                     .format(repr(dtype),repr(tblval.dtype)))
         if len(tblval.shape) != 3:
             raise TypeError('tblval should be a ndarray of rank 3')
         if tblval.shape != (nele, nval, nt):
@@ -911,16 +913,17 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None):
         tblval = _np.empty((nele, nval, nt), dtype=dtype, order='FORTRAN')
     else:
         raise TypeError('tblval should be a ndarray of rank 3')
+    dtype0 = _np.int32
     if isinstance(lstele, _np.ndarray):
         if not lstele.flags['F_CONTIGUOUS']:
             raise TypeError('Provided lstele should be F_CONTIGUOUS')
-        if dtype != lstele.dtype:
+        if dtype0 != lstele.dtype:
             raise TypeError('Expecting lstele of type {0}, got: {1}'
-                            .format(repr(dtype),repr(lstele.dtype)))
+                            .format(repr(dtype0), repr(lstele.dtype)))
         if len(lstele.shape) != 1 or lstele.size != nele:
             raise TypeError('lstele should be a ndarray of rank 1 (nele)')
     elif lstele is None:
-        lstele = _np.empty(nele, dtype=dtype, order='FORTRAN')
+        lstele = _np.empty(nele, dtype=dtype0, order='FORTRAN')
     else:
         raise TypeError('lstele should be a ndarray of rank 1 (nele)')
     istat = _rp.c_mrbxtr(buf, bkno, lstele, tblval)
@@ -1170,7 +1173,7 @@ def mrbcvt_decode(lstele, tblval, datyp):  ##TODO: rval=None, nbits?
 ## def mrbcvt_encode(lstele, rval): ##TODO:
 
 
-## def mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon, dx, dy, elev, drnd,
+## def mrbini(funit, buf, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
 ##            date, oars, runn, sup, nsup, xaux, nxaux):
 ##     """
 ##     Writes report header.
@@ -1191,7 +1194,7 @@ def mrbcvt_decode(lstele, tblval, datyp):  ##TODO: rval=None, nbits?
 ##     See Also:
 ##         #TODO: 
 ##     """
-##     istat = _rp.c_mrbini(funit, buf, temps, flgs, stnid, idtp, lati, lon,  
+##     istat = _rp.c_mrbini(funit, buf, time, flgs, stnid, idtp, lat, lon,  
 ##                          dx, dy, elev, drnd, date, oars, runn, sup, nsup,
 ##                          xaux, nxaux)
 ##     if istat != 0:
