@@ -444,10 +444,10 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
 ## 3 caractères, NBIT doit être égal à 8
 ## 4 entiers avec signe
 ## 5 tous les caractères en majuscules, NBIT doit être égal à 8.
-## 6 nombres complexes, partie réelle, simple précision (R4)
-## 7 nombres complexes, partie réelle, double précision (R8)
-## 8 nombres complexes, partie imaginaire, simple précision (I4)
-## 9 nombres complexes, partie imaginaire, simple précision (I8)
+## ?? 6 nombres complexes, partie réelle, simple précision (R4)
+## ?? 7 nombres complexes, partie réelle, double précision (R8)
+## ?? 8 nombres complexes, partie imaginaire, simple précision (I4)
+## ?? 9 nombres complexes, partie imaginaire, simple précision (I8)
 #</source>
 
 #==== mrfopt (options) ====
