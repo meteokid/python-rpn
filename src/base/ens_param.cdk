@@ -80,17 +80,17 @@
       parameter (MAX2DC=6)
 
       integer Ens_mc_seed,Ens_skeb_ncha, Ens_ptp_ncha
-      integer Ens_skeb_nlon(MAX2DC), Ens_skeb_nlat(MAX2DC)
-      integer Ens_skeb_trnl(MAX2DC), Ens_skeb_trnh(MAX2DC)
+      integer Ens_skeb_nlon, Ens_skeb_nlat
+      integer Ens_skeb_trnl, Ens_skeb_trnh
       integer Ens_ptp_nlon(MAX2DC), Ens_ptp_nlat(MAX2DC)
       integer Ens_ptp_trnl(MAX2DC), Ens_ptp_trnh(MAX2DC)
       integer Ens_ptp_l(MAX2DC),Ens_ptp_m(MAX2DC)
-      integer Ens_skeb_l(MAX2DC),Ens_skeb_m(MAX2DC)
-      integer Ens_ptp_lmax,Ens_ptp_mmax,Ens_skeb_lmax,Ens_skeb_mmax
+      integer Ens_skeb_l,Ens_skeb_m
+      integer Ens_ptp_lmax,Ens_ptp_mmax
       logical Ens_conf, Ens_skeb_conf, Ens_skeb_dif, Ens_skeb_gwd
       logical Ens_stat, Ens_skeb_div, Ens_ptp_conf
-      real Ens_skeb_max(MAX2DC), Ens_skeb_min(MAX2DC), Ens_skeb_std(MAX2DC)
-      real Ens_skeb_tau(MAX2DC), Ens_skeb_str(MAX2DC)    
+      real Ens_skeb_max, Ens_skeb_min, Ens_skeb_std
+      real Ens_skeb_tau, Ens_skeb_str    
       real Ens_skeb_bfc, Ens_skeb_lam, Ens_skeb_alph, Ens_skeb_alpt, &
            Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, Ens_ptp_tlc
       real Ens_ptp_crit_w, Ens_ptp_fac_reduc
@@ -107,7 +107,7 @@
       common / Ens_i / Ens_ptp_nlon, Ens_ptp_nlat              
       common / Ens_i / Ens_ptp_trnl, Ens_ptp_trnh
       common / Ens_i / Ens_ptp_l, Ens_ptp_m,Ens_skeb_l, Ens_skeb_m
-      common / Ens_i / Ens_ptp_lmax, Ens_ptp_mmax,Ens_skeb_lmax, Ens_skeb_mmax
+      common / Ens_i / Ens_ptp_lmax, Ens_ptp_mmax
 !
       common / Ens_r / Ens_skeb_min, Ens_skeb_max
       common / Ens_r / Ens_skeb_std, Ens_skeb_tau, Ens_skeb_str

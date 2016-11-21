@@ -72,10 +72,10 @@
 
          do istep = step0, stepf
             if (.not.( Init_mode_L .and.            &
-            (istep+Step_initial).ge.Init_halfspan)) &
+            (istep-Step_initial).ge.Init_halfspan)) &
             call out_thistep (outd_sorties(0,istep),istep,MAXSET,'DYN')
             if (       Init_mode_L .and.            &
-            (istep+Step_initial).ge.Init_halfspan+1) cycle
+            (istep-Step_initial).ge.Init_halfspan+1) cycle
             call out_thistep (outp_sorties(0,istep),istep,MAXSET,'PHY')
             call out_thistep (outc_sorties(0,istep),istep,MAXSET,'CHM')
          end do

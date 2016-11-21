@@ -70,28 +70,28 @@
                             1,Ens_ptp_ncha,0,0,Ens_ptp_ncha,&
                             0,GMM_NULL_FLAGS)
 
-      call gmm_build_meta3D(meta3d_ar_s,                      &
-                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
-                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
-                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+      call gmm_build_meta2D(meta2d_ar_s,                      &
+                            1,Ens_skeb_l,0,0,Ens_skeb_l,  &
+                            1,Ens_skeb_m,0,0,Ens_skeb_m,  &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_br_s,                       &
-                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
-                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
-                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+      call gmm_build_meta2D(meta2d_br_s,                       &
+                            1,Ens_skeb_l,0,0,Ens_skeb_l,  &
+                            1,Ens_skeb_m,0,0,Ens_skeb_m,  &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_ai_s,                      &
-                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
-                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
-                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+      call gmm_build_meta2D(meta2d_ai_s,                      &
+                            1,Ens_skeb_l,0,0,Ens_skeb_l,  &
+                            1,Ens_skeb_m,0,0,Ens_skeb_m,  &
                             0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_bi_s,                       &
-                            1,Ens_skeb_lmax,0,0,Ens_skeb_lmax,  &
-                            1,Ens_skeb_mmax,0,0,Ens_skeb_mmax,  &
-                            1,Ens_skeb_ncha,0,0,Ens_skeb_ncha,&
+      call gmm_build_meta2D(meta2d_bi_s,                       &
+                            1,Ens_skeb_l,0,0,Ens_skeb_l,  &
+                            1,Ens_skeb_m,0,0,Ens_skeb_m,  &
                             0,GMM_NULL_FLAGS)
 
-
+      call gmm_build_meta3D(meta3d_plg,                       &
+                            1,Ens_skeb_nlat,0,0,Ens_skeb_nlat,  &
+                            1,Ens_skeb_l,0,0,Ens_skeb_l,  &
+                            1,Ens_skeb_m,0,0,Ens_skeb_m,&
+                            0,GMM_NULL_FLAGS)
 
       call gmm_build_meta2D(meta2d_dum,                       &
                             1,36,0,0,36,                      &
@@ -100,6 +100,8 @@
       gmmk_mcsph1_s= 'MCSPH1'
       gmmk_difut1_s= 'DIFUT1'
       gmmk_difvt1_s= 'DIFVT1'
+      gmmk_diout1_s= 'DIOUT1'
+      gmmk_diovt1_s= 'DIOVT1'
       gmmk_ugwdt1_s= 'UGWDT1'
       gmmk_vgwdt1_s= 'VGWDT1'
       gmmk_ensdiv_s= 'ENSDIV'
@@ -113,6 +115,7 @@
       gmmk_br_p   = 'BRENS_P'
       gmmk_bi_p   = 'BIENS_P'
       gmmk_dumdum_s= 'DUMDUM'
+      gmmk_plg_s  = 'P_LEGEN'
 
       istat = gmm_create(gmmk_mcsph1_s,mcsph1,meta3d_sh2,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'mcsph1'
@@ -120,6 +123,10 @@
       if (GMM_IS_ERROR(istat))write(*,6000)'difut1'
       istat = gmm_create(gmmk_difvt1_s,difvt1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'difvt1'
+      istat = gmm_create(gmmk_diout1_s,diout1,meta3d_nk,GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'diout1'
+      istat = gmm_create(gmmk_diovt1_s,diovt1,meta3d_nk,GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'diovt1'
       istat = gmm_create(gmmk_ugwdt1_s,ugwdt1,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ugwdt1'
       istat = gmm_create(gmmk_vgwdt1_s,vgwdt1,meta3d_nk,GMM_FLAG_IZER)
@@ -129,13 +136,13 @@
       istat = gmm_create(gmmk_ensvor_s,ensvor,meta3d_nk,GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ensvor'
 
-      istat = gmm_create(gmmk_ar_s   ,ar_s   ,meta3d_ar_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_ar_s   ,ar_s   ,meta2d_ar_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ar_s'
-      istat = gmm_create(gmmk_br_s   ,br_s   ,meta3d_br_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_br_s   ,br_s   ,meta2d_br_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'br_s'
-      istat = gmm_create(gmmk_ai_s   ,ai_s   ,meta3d_ai_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_ai_s   ,ai_s   ,meta2d_ai_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ai_s'
-      istat = gmm_create(gmmk_bi_s   ,bi_s   ,meta3d_bi_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_bi_s   ,bi_s   ,meta2d_bi_s,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'bi_s'
       istat = gmm_create(gmmk_ar_p   ,ar_p   ,meta3d_ar_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'ar_p'
@@ -146,6 +153,8 @@
       istat = gmm_create(gmmk_bi_p   ,bi_p   ,meta3d_bi_p,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'bi_p'
 
+      istat = gmm_create(gmmk_plg_s,plg,meta3d_plg,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      if (GMM_IS_ERROR(istat))write(*,6000)'plg'
 
       istat = gmm_create(gmmk_dumdum_s,dumdum,meta2d_dum,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat))write(*,6000)'dum'

@@ -58,7 +58,7 @@
       last_step = Step_total + Step_initial
       if (Init_mode_L) then
          stepf     = Init_dfnp-1
-         last_step = stepf
+         last_step = stepf + Step_initial
       endif
 
       F_rstrt_L = .false.

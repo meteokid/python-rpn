@@ -1,6 +1,5 @@
 !COMP_ARCH=intel13sp1u2 ; -suppress=-C
 !COMP_ARCH=intel-2016.1.156; -suppress=-C
-!COMP_ARCH=PrgEnv-intel-5.2.82 ; -suppress=-C
 
 !---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
@@ -60,6 +59,8 @@
 
          istat = gmm_get(gmmk_difut1_s,difut1)
          istat = gmm_get(gmmk_difvt1_s,difvt1)
+         istat = gmm_get(gmmk_diout1_s,diout1)
+         istat = gmm_get(gmmk_diovt1_s,diovt1)
          istat = gmm_get(gmmk_ugwdt1_s,ugwdt1)
          istat = gmm_get(gmmk_vgwdt1_s,vgwdt1)
 
@@ -82,6 +83,14 @@
 
             difut1 = F_ut1 - difut1
             difvt1 = F_vt1 - difvt1
+
+            diout1 = difut1           
+            diovt1 = difvt1           
+
+
+!NG         Multiplication of gravity wave drag tendencies by the time step to convert to wind units as in GEM4.6
+            ugwdt1 = ugwdt1 * Cstv_dt_8
+            vgwdt1 = vgwdt1 * Cstv_dt_8
 
             call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1,&
                              l_minx,l_maxx,l_miny,l_maxy, Nk)
