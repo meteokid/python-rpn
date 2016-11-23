@@ -15,8 +15,8 @@ import rpnpy.librmn.all as rmn
 ## from rpnpy.rpndate import *
 
 
-#def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
-def print_list(inputFile, out_format, matchIn, matchOut):
+#def print_list(inputFile, formatReport, withkeys, matchIn, matchOut):
+def print_list(inputFile, formatReport, matchIn, matchOut, formatBlock):
     """
     """
     funit  = rmn.burp_open(inputFile)
@@ -28,12 +28,15 @@ def print_list(inputFile, out_format, matchIn, matchOut):
         for idtyp in matchIn['idtyp']:
             for date in matchIn['date']:
                 for time in matchIn['time']:
-                    print_list1(funit, inputFile, out_format, stnid, idtyp, lat, lon, date, time)
+                    print_list1(funit, inputFile, formatReport, stnid, idtyp,
+                                lat, lon, date, time, formatBlock,
+                                matchIn, matchOut)
                     
     rmn.burp_close(funit)
 
 
-def print_list1(funit, inputFile, out_format, stnid, idtyp, lat, lon, date, time):
+def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
+                date, time, formatBlock, matchIn, matchOut):
     """
     """        
     nbrp   = rmn.mrfnbr(funit)
@@ -46,7 +49,8 @@ def print_list1(funit, inputFile, out_format, stnid, idtyp, lat, lon, date, time
     ## print('0  STATION   LATI   LONG     DX     DY   FLGS(HEX)   DATE    TIME   IDTYP   NB_BLOCK   HANDLE')
     for irep in xrange(nbrp):
         try:
-            handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon, date, time)
+            handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
+                                date, time)
         except:
             break
         buf    = rmn.mrfget(handle, buf, funit)
@@ -54,9 +58,25 @@ def print_list1(funit, inputFile, out_format, stnid, idtyp, lat, lon, date, time
         params['handle'] = handle
         params['flgshex'] = hex(params['flgs'])
         params['flgsbin'] = ''.join(['1' if i else '0' for i in params['flgsl']])
-        ## print(' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {time:>6} {idtyp:>6} {nblk:>10} {handle:>10}'.format(**params))
-        print(out_format.format(**params))
+        if formatReport:
+            print(formatReport.format(**params))
 
+        if formatBlock:
+            for iblk in xrange(params['nblk']):
+                bparams = rmn.mrbprm(buf, iblk+1)
+                bparams['iblk'] = iblk+1
+                bparams.update(params)
+                isOk = True
+                for k in matchIn.keys():
+                    if (not k in ('stnid',)) and len(matchIn[k]) > 0 \
+                        and matchIn[k] != [-1]:
+                        if not bparams[k] in matchIn[k]:
+                            isOk = False
+                            break
+                if isOk:
+                    print(formatBlock.format(**bparams))
+
+            
 if __name__ == "__main__":
     desc = "Show list of selected reports in a BURP file along with requested meta and stats."
     usage = """
@@ -64,6 +84,7 @@ if __name__ == "__main__":
     """
     epilog = ""
     default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {time:>6} {idtyp:>6} {nblk:>10} {handle:>10}'
+    default_format_blk = ' '*10+'{iblk:<6} {bfam:>6} {bdesc:>6} {btyp:>6} {nbit:>6} {bit0:>6} {datyp:>6} {nele:>3}x{nval:>2}x{nt}'
     parser = argparse.ArgumentParser(
         description=desc, usage=usage, epilog=epilog,
         prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -79,8 +100,9 @@ if __name__ == "__main__":
                         metavar='FILENAME',
                         help="Input RPN Std File name")
 
-    parser.add_argument("-f", "--format", dest="format",
+    parser.add_argument("-f", "--format", dest="formatReport",
                         type=str, default=default_format,
+                        metavar="'"+default_format+"'",
                         help="Output Format")
     
     parser.add_argument("++stnid",  dest="f_stnid",
@@ -98,12 +120,43 @@ if __name__ == "__main__":
     parser.add_argument("++idtyp",  dest="f_idtyp",
                         nargs='*', type=int, default=[-1],
                         metavar='IDTYP',
-                        help="Filter records by idtyp [HHMM]")
+                        help="Filter records by idtyp [int]")
+
+    pgroup = parser.add_argument_group(title="Report's Block related options") #description='')
+    pgroup.add_argument("-b", "--blocks", dest="listBlocks",
+                        action="store_true",
+                        help="List blocks for matching reports")
+    pgroup.add_argument("--format_blk", dest="formatBlock",
+                        type=str, default=default_format_blk,
+                        metavar="'"+default_format_blk+"'",
+                        help="Output Format for blocks")
+
+    pgroup.add_argument("++datyp",  dest="f_datyp",
+                        nargs='*', type=int, default=[-1],
+                        metavar='DATYP',
+                        help="Filter records by Data type [int]")
+    pgroup.add_argument("++bfam",  dest="f_bfam",
+                        nargs='*', type=int, default=[-1],
+                        metavar='BFAM',
+                        help="Filter records by Family block descriptor. (0-31) [int]")
+    pgroup.add_argument("++bdesc",  dest="f_bdesc",
+                        nargs='*', type=int, default=[-1],
+                        metavar='BDESC',
+                        help="Filter records by Block descriptor. (0-2047) [int]")
+    #TODO: split btyp in 3: BKNAT, BKTYP, BKSTP
+    pgroup.add_argument("++btyp",  dest="f_btyp",
+                        nargs='*', type=int, default=[-1],
+                        metavar='BTYP',
+                        help="Filter records by Block type (0-2047) [int]")
+
     #TODO: lon, lat min/max filter
 
     args = parser.parse_args()
-    keylist = ('stnid', 'date', 'time', 'idtyp')
+    keylist = ('stnid', 'date', 'time', 'idtyp',
+               'datyp', 'bfam', 'bdesc', 'btyp')
     (matchIn, matchOut) = ({}, {})
+    formatBlock = args.formatBlock if args.listBlocks else ""
+    
     for key in keylist:
         try:
             v = getattr(args,'f_'+key)
@@ -124,7 +177,7 @@ if __name__ == "__main__":
 
     rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
     for myfile in args.inputFile:
-        print_list(myfile, args.format, matchIn, matchOut)
+        print_list(myfile, args.formatReport, matchIn, matchOut, formatBlock)
     
         
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
