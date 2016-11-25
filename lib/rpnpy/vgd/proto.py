@@ -424,6 +424,8 @@ class VGridDescriptor(_ct.Structure):
 
     See Also:
        c_vgd_construct
+       rpnpy.vgd.base.vgd_get
+       rpnpy.vgd.base.vgd_put
     """
     _fields_ = [
         ("dummy", _ct.c_int),

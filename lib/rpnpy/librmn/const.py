@@ -206,27 +206,27 @@ FST_DATYP_LIST = {
 
 ## Numpy versus FSTD data type equivalence
 FST_DATYP2NUMPY_LIST = { #TODO: review
-    0: _np.uint32  , # binary, transparent
-    1: _np.float32 , # floating point
-    2: _np.uint32  , # unsigned integer
-    3: _np.uint32  , # character (R4A in an integer)
-    4: _np.int32   , # signed integer
-    5: _np.float32 , # IEEE floating point
-    6: _np.float32 , # floating point (16 bit, made for compressor)
-    7: _np.uint8   , # character string
-    8: _np.complex64 , # complex IEEE
+    0: _np.uint32,   # binary, transparent
+    1: _np.float32,  # floating point
+    2: _np.uint32,   # unsigned integer
+    3: _np.uint32,   # character (R4A in an integer)
+    4: _np.int32,    # signed integer
+    5: _np.float32,  # IEEE floating point
+    6: _np.float32,  # floating point (16 bit, made for compressor)
+    7: _np.uint8,    # character string
+    8: _np.complex64 # complex IEEE
 }
 
 FST_DATYP2NUMPY_LIST64 = { #TODO: review
-    0: _np.uint64  , # binary, transparent
-    1: _np.float64 , # floating point
-    2: _np.uint64  , # unsigned integer
-    3: _np.uint64  , # character (R4A in an integer)
-    4: _np.int64   , # signed integer
-    5: _np.float64 , # IEEE floating point
-    6: _np.float64 , # floating point (16 bit, made for compressor)
-    #7: _np.uint8   , # character string
-    8: _np.complex128 , # complex IEEE
+    0: _np.uint64,  # binary, transparent
+    1: _np.float64, # floating point
+    2: _np.uint64,  # unsigned integer
+    3: _np.uint64,  # character (R4A in an integer)
+    4: _np.int64,   # signed integer
+    5: _np.float64, # IEEE floating point
+    6: _np.float64, # floating point (16 bit, made for compressor)
+    #7: _np.uint8,  # character string
+    8: _np.complex128  # complex IEEE
 }
 #</source>
 
@@ -329,29 +329,4 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
-#</source>
-
-#=== BURP  ===
-
-#<source lang=python>
-MRBCVT_DECODE = 0
-MRBCVT_ENCODE = 1
-
-BURP_MODE_READ   = 'READ'
-BURP_MODE_CREATE = 'CREATE'
-BURP_MODE_APPEND = 'APPEND'
-#</source>
-
-#==== mrfopt (options) ====
-
-#<source lang=python>
-BURPOP_MISSING = 'MISSING'
-BURPOP_MSGLVL  = 'MSGLVL'
-
-BURPOP_MSG_TRIVIAL = 'TRIVIAL'
-BURPOP_MSG_INFO    = 'INFORMATIF'
-BURPOP_MSG_WARNING = 'WARNING'
-BURPOP_MSG_ERROR   = 'ERROR'
-BURPOP_MSG_FATAL   = 'FATAL'
-BURPOP_MSG_SYSTEM  = 'SYSTEM'
 #</source>
