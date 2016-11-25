@@ -312,6 +312,8 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 rval      = rmn.mrbcvt_decode(blkdata['lstele'],
                                               blkdata['tblval'],
                                               blkparams['datyp'])
+                rval      = rmn.mrbcvt_decode(blkdata,
+                                              datyp=blkparams['datyp'])
                 #TODO: check results            
             rmn.burp_close(funit)
 

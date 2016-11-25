@@ -13,6 +13,7 @@ from rpnpy.librmn import proto_burp as _rpb
 from rpnpy.librmn import burp as _brp
 from rpnpy.librmn import base as _rb
 from rpnpy.librmn import const as _rc
+from rpnpy.librmn import burp_const as _rbc
 import numpy as _np
 import numpy.ctypeslib as _npc
 import ctypes as _ct
@@ -136,7 +137,7 @@ class BurpFile:
         """
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
-        ier  = _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        ier  = _brp.mrfopt(_rbc.BURPOP_MSGLVL, _rbc.BURPOP_MSG_FATAL)
         unit = _rb.fnom(self.fname, _rc.FST_RO)
 
         nrep    = _brp.mrfnbr(unit)
@@ -177,7 +178,7 @@ class BurpFile:
         warn = True
 
         # open BURP file
-        _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
+        _brp.mrfopt(_rbc.BURPOP_MSGLVL, _rbc.BURPOP_MSG_FATAL)
         unit = _brp.burp_open(self.fname)
         nrep = _brp.mrfnbr(unit)
 
@@ -269,11 +270,7 @@ class BurpFile:
                 # convert integer table values to real value
                 if bhp['datyp'] < 5:
                     bdata = _brp.mrbxtr(buf, iblk+1)
-                    rval  = bdata['tblval'].astype(_np.float32)
-                    #TODO: use _brp.mrbcvt_decode
-                    _rpb.c_mrbcvt(bdata['lstele'], bdata['tblval'], rval,
-                                  bhp['nele'], bhp['nval'], bhp['nt'],
-                                  _rc.MRBCVT_DECODE)
+                    rval  = _brp.mrbcvt_decode(bdata)
                 elif bhp['datyp'] < 7:
                     bdata = _brp.mrbxtr(buf, iblk+1, dtype=_np.float32)
                     rval = bdata['tblval']
@@ -330,8 +327,8 @@ class BurpFile:
         buf[0] = nbuf
 
         # open BURP file
-        _brp.mrfopt(_rc.FSTOP_MSGLVL, _rc.FSTOPS_MSG_FATAL)
-        unit = _brp.burp_open(self.fname, _rc.BURP_MODE_CREATE)
+        _brp.mrfopt(_rbc.BURPOP_MSGLVL, _rbc.BURPOP_MSG_FATAL)
+        unit = _brp.burp_open(self.fname, _rbc.BURP_MODE_CREATE)
 
         # loop over reports
         for irep in xrange(self.nrep):
@@ -356,7 +353,7 @@ class BurpFile:
                 rval = _np.ravel(self.rval[irep][iblk], order='F')
                 tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
-                    _brp.mrbcvt(lstele, tblval, rval, nele, nlev, nt, _rc.MRBCVT_ENCODE)
+                    _brp.mrbcvt(lstele, tblval, rval, nele, nlev, nt, _rbc.MRBCVT_ENCODE)
                     tbl_out = tblval
                 elif self.datyp[irep][iblk] < 7:
                     tbl_out = rval
