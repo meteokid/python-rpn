@@ -12,10 +12,8 @@ Examples:
 import sys
 import argparse
 import rpnpy.librmn.all as rmn
-## from rpnpy.rpndate import *
 
 
-#def print_list(inputFile, formatReport, withkeys, matchIn, matchOut):
 def print_list(inputFile, formatReport, matchIn, matchOut, formatBlock):
     """
     """
@@ -78,13 +76,52 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
 
             
 if __name__ == "__main__":
+    default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {timehh:>2}h{timemm:>2} {idtyp:>6} {nblk:>10} {handle:>10}'
+    default_format_blk = ' '*10+'{iblk:<6} {bfam:>6} {bdesc:>6} {btyp:>6} {nbit:>6} {bit0:>6} {datyp:>6} {nele:>3}x{nval:>2}x{nt}'
+    #TODO: valid_keys desc
+    valid_rep_keys = (
+        'handle', 'stnid', 'time', 'timehh', 'timemm',
+        'flgs', 'flgsl', 'flgshex', 'flgsbin', 'flgs_desc',
+        'idtyp', 'idtyp_desc',
+        'ilat', 'ilon', 'idx', 'idy', 'lat', 'lon', 'dx', 'dy', 
+        'ielev', 'elev', 'drnd', 'date', 'dateyy', 'datemm', 'datedd',
+        'oars', 'runn', 'nblk', 'sup', 'nsup', 'xaux', 'nxaux'
+        )
+    valid_blk_keys = (
+        'iblk', 'nele', 'nval', 'nt', 'bfam', 'bdesc', 'btyp', 'nbit',
+        'bit0', 'datyp', 'datyp_name'
+        )
+        
     desc = "Show list of selected reports in a BURP file along with requested meta and stats."
     usage = """
     %(prog)s -i filename [options]
     """
-    epilog = ""
-    default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {time:>6} {idtyp:>6} {nblk:>10} {handle:>10}'
-    default_format_blk = ' '*10+'{iblk:<6} {bfam:>6} {bdesc:>6} {btyp:>6} {nbit:>6} {bit0:>6} {datyp:>6} {nele:>3}x{nval:>2}x{nt}'
+    epilog = """-----\n
+    --* Options are excluding records matching the provided value(s).
+    ++* Options are selecting records matching the provided value(s).
+
+    The default selection critera for all keys is a 'wildcard',
+    i.e. all records are selected.
+
+    Accepted format:
+        Any python string.format() accepted string
+        e.g: '{keyname:format}'
+        warning: to print an actual '{' or '}' char
+                 you'll need to specify '{{' or '}}' respectively
+
+    Accepted keynames for reports and blocks:
+        {}
+
+    Accepted additional keynames for blocks only:
+        {}
+
+    Default formats:
+        reports: '{}'
+        blocks : '{}'
+    """.replace('{','{{').replace('}','}}').replace('{{}}','{}')\
+       .format('{'+'}  {'.join(valid_rep_keys)+'}',
+               '{'+'}  {'.join(valid_blk_keys)+'}',
+               default_format, default_format_blk)
     parser = argparse.ArgumentParser(
         description=desc, usage=usage, epilog=epilog,
         prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -100,29 +137,35 @@ if __name__ == "__main__":
                         metavar='FILENAME',
                         help="Input RPN Std File name")
 
-    parser.add_argument("-f", "--format", dest="formatReport",
+    parser.add_argument("-V", "--voir", dest="voir",
+                        action="store_true",
+                        help="Print BURP file the 'canonical' way with mrfvoi, ignore selectors and format")
+
+    rgroup = parser.add_argument_group(title="Reports related options") #description='')
+
+    rgroup.add_argument("-f", "--format", dest="formatReport",
                         type=str, default=default_format,
                         metavar="'"+default_format+"'",
                         help="Output Format")
     
-    parser.add_argument("++stnid",  dest="f_stnid",
+    rgroup.add_argument("++stnid",  dest="f_stnid",
                         nargs='*', type=str, default=['*********'],
                         metavar='STNID',
                         help="Filter records by stnid values (9 char, use wildcad '*' for each char)")
-    parser.add_argument("++date",  dest="f_date",
+    rgroup.add_argument("++date",  dest="f_date",
                         nargs='*', type=int, default=[-1],
                         metavar='YYYYMMDD',
                         help="Filter records by date [YYYYMMDD]")
-    parser.add_argument("++time",  dest="f_time",
+    rgroup.add_argument("++time",  dest="f_time",
                         nargs='*', type=int, default=[-1],
                         metavar='HHMM',
                         help="Filter records by time [HHMM]")
-    parser.add_argument("++idtyp",  dest="f_idtyp",
+    rgroup.add_argument("++idtyp",  dest="f_idtyp",
                         nargs='*', type=int, default=[-1],
                         metavar='IDTYP',
                         help="Filter records by idtyp [int]")
 
-    pgroup = parser.add_argument_group(title="Report's Block related options") #description='')
+    pgroup = parser.add_argument_group(title="Blocks related options") #description='')
     pgroup.add_argument("-b", "--blocks", dest="listBlocks",
                         action="store_true",
                         help="List blocks for matching reports")
@@ -152,6 +195,16 @@ if __name__ == "__main__":
     #TODO: lon, lat min/max filter
 
     args = parser.parse_args()
+
+    rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+
+    if args.voir:
+        for myfile in args.inputFile:
+            funit = rmn.fnom(myfile, rmn.FST_RO)
+            rmn.mrfvoi(funit)
+            rmn.fclos(funit)
+        sys.exit(0)
+        
     keylist = ('stnid', 'date', 'time', 'idtyp',
                'datyp', 'bfam', 'bdesc', 'btyp')
     (matchIn, matchOut) = ({}, {})
@@ -175,7 +228,6 @@ if __name__ == "__main__":
         except:
             matchOut[key] = []
 
-    rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
     for myfile in args.inputFile:
         print_list(myfile, args.formatReport, matchIn, matchOut, formatBlock)
     

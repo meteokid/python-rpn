@@ -37,13 +37,12 @@ librmn burp C functions
     c_mrfopc(option, value)
         Set a character option
         Proto:
-            int c_mrfopc(option, value)
-            char option[], value[];
+            int c_mrfopc(char *option, char *value)
         Args:
             option (str): (I) option name to be set
             value  (str): (I) option value
         Returns:
-           int, zero if the connection is successful, non-zero otherwise
+            int, zero if the connection is successful, non-zero otherwise
 
     c_mrfopr(option, value)
         Set a real value option
@@ -53,14 +52,12 @@ librmn burp C functions
             option (str)  : (I) option name to be set
             value  (float): (I) option value
         Returns:
-           int, zero if the connection is successful, non-zero otherwise
+            int, zero if the connection is successful, non-zero otherwise
 
     c_mrfopn(iun, mode)
         Open a BURP file
         Proto:
-            int c_mrfopn(iun, mode)
-            int iun;
-            char mode[];
+            int c_mrfopn(int iun, char *mode)
         Args:
             iun  (int): (I) file unit number
             mode (str): (I) file open mode, one of: ['READ', 'CREATE', 'APPEND']
@@ -70,28 +67,34 @@ librmn burp C functions
     c_mrfcls(iun)
         Close a previously opened BURP file
         Proto:
-            int c_mrfcls(iun)
-            int iun;
+            int c_mrfcls(int iun)
         Args:
             iun  (int): (I) file unit number
         Returns:
-           int, zero if successful, non-zero otherwise
+            int, zero if successful, non-zero otherwise
+
+    c_mrfvoi(iun)
+        Print the content of a previously opened BURP file
+        Proto:
+            int c_mrfvoi(int iun)
+        Args:
+            iun  (int): (I) file unit number
+        Returns:
+            int, zero if successful, non-zero otherwise
 
     c_mrfnbr(iun)
         Return then number of active records in the file before opening it
         Proto:
-            int c_mrfnbr(iun)
-            int iun;
+            int c_mrfnbr(int iun)
         Args:
             iun  (int): (I) file unit number
         Returns:
-           int, number of active records in the file
+            int, number of active records in the file
 
     c_mrfmxl(iun)
         Return the lenght of the longest record in the file
         Proto:
-            int c_mrfmxl(iun)
-            int iun;
+            int c_mrfmxl(int iun)
         Args:
             iun  (int): (I) file unit number
         Returns:
@@ -244,14 +247,14 @@ librmn burp C functions
         bb       "    des bits 8 a 13 de l'element
         ccc      "    des bits 0 a 7  de l'element
         Proto:
-            int c_mrbdcl(cliste, liste, nele)
-            int liste[], cliste[], nele;
+            int c_mrbdcl(int *cliste, int *liste, int nele)
         Args:
             cliste (array) : (I) Elements to be decoded (array of int)
             liste  (array) : (O) Decoded elements (array of int)
             nele   (int)   : (I) Number of elemets to decode
         Returns:
             int, zero if successful, non-zero otherwise
+
 
     c_mrbcvt(liste, tblval, rval, nele, nval, nt, mode)
         Perform a unit conversion to/from BUFR code to/from real values
@@ -313,14 +316,14 @@ librmn burp C functions
         on retourne un entier contenant a sur deux bits, bb sur six bits
         et ccc sur huit bits
         Proto:
-            int c_mrbcol(liste, cliste, nele)
-            int liste[], cliste[], nele;
+            int c_mrbcol(int *liste, int *cliste, int nele)
         Args:
             liste  (array) : (I) Elements to be encoded (array of int)
             cliste (array) : (O) Encoded Elements (array of int)
             nele   (int)   : (I) Number of elemets to encode
         Returns:
             int, zero if successful, non-zero otherwise
+
 
     c_mrbadd(buffer, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0,
              datyp, lstele,tblval)
@@ -355,6 +358,52 @@ librmn burp C functions
             bkno   (int)   : (O)   number of blocks in buf
         Returns:
             int, zero if successful, non-zero otherwise
+"""
+
+#TODO: c_mrbdcv
+## int c_mrbdcv(int elem) {
+##    int lelem;
+##    lelem = elem;
+##    return(f77name(mrbdcv)(&lelem));
+##    }
+## ***S/P MRBDCV - RETOURNER LA VALEUR DECODEE D'UN ELEMENT
+##       FUNCTION MRBDCV( ELEM )
+##       IMPLICIT NONE
+##       INTEGER  MRBDCV, ELEM
+## *AUTEUR:  J. CAVEEN   FEVRIER 1991
+## *REV 001  Y. BOURASSA MARS    1995 RATFOR @ FTN77
+## *
+## *OBJET( MRBDCV )
+## *     FONCTION RETOURNANT LA VALEUR DECODEE D'UN ELEMENT QUI A ETE CODE
+## *     DE TELLE SORTE QU'IL PUISSE TENIR EN SEIZE BITS.
+## *
+## *     POUR UN ELEMENT, ON RETOURNE SA VALEUR SOUS FORMAT DECIMAL  ABBCCC,
+## *                                                        (A,B,C DE 0 A 9)
+## *     OU A    PROVIENT DES BITS 14 ET 15 DE L'ELEMENT
+## *        BB       "    DES BITS 8 A 13 DE L'ELEMENT
+## *        CCC      "    DES BITS 0 A 7  DE L'ELEMENT
+
+
+#TODO: c_mrbcov
+## int c_mrbcov(int elem) {
+##    int lelem;
+##    lelem = elem;
+##    return(f77name(mrbcov)(&lelem));
+##    }
+## ***S/P MRBCOV - RETOURNER LA VALEUR D'UN ELEMENT EN SEIZE BITS
+##       FUNCTION MRBCOV( ELEM )
+##       IMPLICIT NONE
+##       INTEGER  MRBCOV, ELEM
+## *AUTEUR: J. CAVEEN   FEVRIER 1991
+## *REV 001 Y. BOURASSA MARS    1995 RATFOR @ FTN77
+## *
+## *OBJET( MRBCOV )
+## *     FONCTION RETOURNANT LA VALEUR D'UN ELEMENT DE TELLE SORTE
+## *     QU'IL PUISSE TENIR EN SEIZE BITS.
+## *     POUR UN ELEMENT AYANT LE FORMAT DECIMAL  ABBCCC, (A,B,C DE 0 A 9)
+## *     ON RETOURNE UN ENTIER CONTENANT A SUR DEUX BITS, BB SUR SIX BITS
+## *     ET CCC SUR HUIT BITS
+
 
 ##TODO: MRBPRML
 ## ***S/P MRBPRML - EXTRAIRE LES PARAMETRES DESCRIPTEURS DE TOUS LES BLOCS
@@ -383,58 +432,258 @@ librmn burp C functions
 
 
 ##TODO: c_mrblen
-## /*****************************************************************************
-##  *                             C _ M R B L E N                               *
-##  *                                                                           *
-##  *Object                                                                     *
-##  *   Return the number of bits used in buf and the number of bits left.      *
-##  *                                                                           *
-##  *Arguments                                                                  *
-##  *                                                                           *
-##  *    IN   buffer   vector that contains the report                          *
-##  *   OUT   lbits    number of bits used                                      *
-##  *   OUT   left     number of bits left                                      *
-##  *                                                                           *
-##  *****************************************************************************/
+##  *   Return the number of bits used in buf and the number of bits left.
+##  *    IN   buffer   vector that contains the report
+##  *   OUT   lbits    number of bits used
+##  *   OUT   left     number of bits left
 ## int c_mrblen(void *buffer, int *lbits, int *left)
 
+
 ##TODO: c_mrbloc
-## /*****************************************************************************
-##  *                             C _ M R B L O C                               *
-##  *                                                                           *
-##  *Object                                                                     *
-##  *   Search for a specific block in the buffer. Search starts at block       *
-##  *   blkno. If blkno = 0 search starts from the beginning.                   *
-##  *                                                                           *
-##  *Arguments                                                                  *
-##  *                                                                           *
-##  *  IN   buffer vector to contain the report                                 *
-##  *  IN   bfam   block family (12 bits, bdesc no more used)                   *
-##  *  IN   bdesc  kept for backward compatibility                              *
-##  *  IN   btyp   block type                                                   *
-##  *  in   bkno   number of blocks in buf                                      *
-##  *                                                                           *
-##  *****************************************************************************/
+##  *   Search for a specific block in the buffer. Search starts at block
+##  *   blkno. If blkno = 0 search starts from the beginning.
+##  *  IN   buffer vector to contain the report
+##  *  IN   bfam   block family (12 bits, bdesc no more used)
+##  *  IN   bdesc  kept for backward compatibility 
+##  *  IN   btyp   block type
+##  *  in   bkno   number of blocks in buf
 ## int c_mrbloc(void *buffer, int bfam, int bdesc, int btyp, int blkno)
 
+
+##TODO: c_mrblocx
+## ***S/P MRBLOCX - TROUVER UN BLOC DANS UN RAPPORT
+##       FUNCTION MRBLOCX( BUF,   BFAM, BDESC, BKNAT, BKTYP, BKSTP, BLKNO)
+##       INTEGER  MRBLOCX, BUF(*),BFAM, BDESC, BKNAT, BKTYP, BKSTP, BLKNO
+## *     FONCTION SERVANT A BATIR UNE CLEF DE RECHERCHE BTYP A
+## *     PARTIR DE BKNAT, BKTYP ET BKSTP POUR L'APPEL SUBSEQUENT A MRBLOC
+## *     POUR CHAQUE CLEF D'ENTREE, ON TRANSPOSE LA VALEUR DU BIT
+## *     28, 29 OU 30 RESPECTIVEMENT DANS INBTYP (CES BITS NE SONT ALLUMES
+## *     QUE SI LES CLEFS D'ENTREE SON MISE A -1)
+## *     BUF     ENTREE  VECTEUR C ONTENANT LE RAPPORT
+## *     BFAM       "    FAMILLE DU BLOC RECHERCHE
+## *     BDESC      "    DESCRIPTION DU BLOC RECHERCHE
+## *     BKNAT      "    PORTION NATURE DU BTYP DE BLOC RECHERCHE
+## *     BKTYP      "    PORTION TYPE DU BTYP DE BLOC RECHERCHE
+## *     BKSTP      "    PORTION SOUS-TYPE DU BTYP DE BLOC RECHERCHE
+## *     BLKNO      "    BLOC D'OU PART LA RECHERCHE
+## int c_mrblocx(buf,bfam,bdesc,bknat,bktyp,bkstp,blk0)
+## int buf[],bfam,bdesc,bknat,bktyp,bkstp,blk0;
+##   {
+##   int lbfam,lbdesc,lbknat,lbktyp,lbkstp,lblk0;
+##   lbfam = bfam; lbdesc = bdesc; lblk0 = blk0;
+##   lbknat = bknat; lbktyp = bktyp; lbkstp = bkstp;
+##   return(f77name(mrblocx)(buf,&lbfam,&lbdesc,&lbknat,&lbktyp,&lbkstp,&lblk0));
+##   }
+
+
 ##TODO: c_mrbrep
-## /*****************************************************************************
-##  *                             C _ M R B R E P                               *
-##  *                                                                           *
-##  *Object                                                                     *
-##  *   Replace a data block by an other one with the same variables and        *
-##  *   dimensions.                                                             *
-##  *                                                                           *
-##  *Arguments                                                                  *
-##  *                                                                           *
-##  *  IN/OUT buffer vector that contains the report                            *
-##  *    IN   bkno   block number to be replaced                                *
-##  *    IN   tblval array of values to write (nele*nval*nt)                    *
-##  *                                                                           *
-##  *****************************************************************************/
+##  *   Replace a data block by an other one with the same variables and
+##  *   dimensions.
+##  *  IN/OUT buffer vector that contains the report
+##  *    IN   bkno   block number to be replaced
+##  *    IN   tblval array of values to write (nele*nval*nt)
 ## int c_mrbrep(void *buffer, int blkno, word *tblval)
 
-"""
+
+#TODO: c_mrbrpt
+## ***S/P  MRBRPT - VERIFIER SI UN ELEMENT EST REPETITIF OU NON
+##       FUNCTION MRBRPT( ELEMENT )
+##       INTEGER  MRBRPT, ELEMENT
+## *     FONCTION SERVANT A VERIFIER SI UN ELEMENT EST REPETITIF OU NON.
+## *     LA FONCTION RETOURNE:
+## *        1 - ELEMENT REPETITIF
+## *        0 - ELEMENT NON REPETITIF
+## *       <0 - CODE D'ELEMENT NON VALABLE
+## *            (PLUS PETIT QUE UN OU PLUS GRAND QUE MAXREP)
+## *     ELEMENT  ENTREE  CODE DE L'ELEMENT A VERIFIER
+## int c_mrbrpt(int elem) {
+##    int lelem;
+##    lelem = elem;
+##    return(f77name(mrbrpt)(&lelem));
+##    }
+
+
+#TODO: c_mrbsct
+## ***S/P - MRBSCT - INITIALISER LE TABLEAU DE CONVERSION DE L'USAGER
+##       ENTRY MRBSCT(TBLUSR, NELEUSR)
+## *     SOUS-PROGRAMME SERVANT A AJOUTER AU TABLEAU DE
+## *     CONVERSION STANDARD, UNE LISTE D'ELEMENTS QUE
+## *     L'USAGER A DEFINIE LUI-MEME.
+## *     SI LE TABLEAU STANDARD N'A PAS ETE INITIALISE,
+## *     ON APPELLE QRBSCT POUR EN FAIRE L'INITIALISATION.
+## *     ON AJOUTE LE TABLEAU DE L'USAGER A LA FIN.
+## *     TBLBURP   ENTREE CONTIENT LES CODES D'ELEMENTS
+## *     NELEUSR   ENTREE        - NOMBRE D'ELEMENTS
+## int c_mrbsct(int *tablusr, int neleusr)
+
+
+#TODO: c_mrbtbl
+## ***S/P - MRBTBL - REMPLIR UN TABLEAU A PARTIR DE TABLEBURP
+## *     SOUS-PROGRAMME SERVANT A REMPLIR LE TABLEAU TBLBURP
+## *     A PARTIR DES DESCRIPTIONS D'ELEMENTS TROUVEES DANS
+## *     LE FICHIER TABLEBURP.  POUR CHAQUE ELEMENT, 
+## *     ON RETOURNE:
+## *        - FACTEUR D'ECHELLE
+## *        - VALEUR DE REFERENCE
+## *        - SI L'ELEMENT EST CONVERTISSABLE OU NON
+## *          0 - non convertissable
+## *          1 - convertissable
+## *     NELE      ENTREE        - NOMBRE D'ELEMENTS A TRAITER
+## *     TBLBURP   ENTREE CONTIENT LES CODES D'ELEMENTS
+## *        "      SORTIE CONTIENT LES PARAMETRES DE CHAQUE ELEMENT
+## *     ARANGEMENT DE TBLBURP:
+## *     ----------------------------------------------------------
+## *     | code elem 16 bits | echelle | reference | convertissable |
+## *     |                   |         |           |                |
+## *              .               .          .             .
+## int c_mrbtbl(int *tablusr,int nslots,int neleusr)
+
+
+#TODO:c_mrbtyp
+## ***S/P MRBTYP - CONVERTIR BKNAT, BKTYP ET BKSTP A BTYP OU L'INVERSE
+##       FUNCTION MRBTYP(BKNAT, BKTYP, BKSTP, BTYP)
+##       IMPLICIT NONE
+##       INTEGER  MRBTYP, BTYP, BKNAT, BKTYP, BKSTP
+## *OBJET( MRBTYP )
+## *     FONCTION SERVANT A BATIR UNE CLEF DE RECHERCHE BTYP A
+## *     PARTIR DE BKNAT, BKTYP ET BKSTP OU A EXTRAIRE 
+## *     BKNAT, BKTYP ET BKSTP DE BTYP
+## *ARGUMENTS
+## *     BTYP    ENT/SRT  CLEF COMPOSITE INDIQUANT LE TYPE DE BLOC
+## *     BKNAT      "     PORTION NATURE DU BTYP DE BLOC RECHERCHE
+## *     BKTYP      "     PORTION TYPE DU BTYP DE BLOC RECHERCHE
+## *     BKSTP      "     PORTION SOUS-TYPE DU BTYP DE BLOC RECHERCHE
+## *                      BTYP=0 - DE BKNAT, BKTYP, BKSTP -> BTYP
+## *                               FONCTION RETOURNE BTYP
+## *                      BTYP>0 - DE BTYP -> BKNAT, BKTYP, BKSTP
+## *                               FONCTION RETOURNE 0
+## int c_mrbtyp(hbknat,hbktyp,hbkstp,hbtyp)
+## int hbtyp, *hbknat, *hbktyp, *hbkstp;
+
+
+#TODO: c_mrbupd
+## ***S/P MRBUPD - DONNER UNE VALEUR AUX CLEFS D'UN RAPPORT
+##       FUNCTION MRBUPD(IUN, BUF, TEMPS, FLGS, STNID, IDTYP, LATI, LONG,
+##      X                DX, DY, ELEV, DRCV, DATEin, OARS, RUN, SUP, NSUP,
+##      X                XAUX, NXAUX)
+##       IMPLICIT NONE
+##       INTEGER  MRBUPD, NSUP, NXAUX, IUN, BUF(*), TEMPS, FLGS, IDTYP,
+##      X         LATI,   LONG, ELEV,  DX,  DY,     DRCV,  DATEin, OARS,
+##      X         RUN,    SUP(*), XAUX(*)
+##       CHARACTER*(*) STNID
+## *OBJET( MRBUPD )
+## *     MISE A JOUR DE L'ENTETE D'UN RAPPORT. SEULES LES CLEFS QUI
+## *     N'ONT PAS POUR VALEUR -1 SERONT MISE A JOUR.  IL EN VA DE MEME
+## *     POUR CHAQUE CARACTERE DE STNID S'IL EST DIFFERENT DE '*'.
+## *ARGUMENTS
+## *     IUN     ENTREE  NUMERO D'UNITE ASSOCIE AU FICHIER
+## *     TYPREC    "     TYPE D'ENREGISTREMENT
+## *     TEMPS     "     DIFF DE TEMPS ENTRE T VALIDITE ET T SYNOPTIQUE
+## *     FLGS      "     MARQUEURS GLOBAUX
+## *     STNID     "     IDENTIFICATEUR DE LA STATION
+## *     IDTYP     "     TYPE DE RAPPORT
+## *     LATI      "     LATITUDE DE LA STATION EN CENTIDEGRES
+## *     LONG      "     LONGITUDE DE LA STATION EN CENTIDEGRES
+## *     DX        "     DIMENSION X D'UNE BOITE
+## *     DY        "     DIMENSION Y D'UNE BOITE
+## *     ELEV      "     ALTITUDE DE LA STATION EN METRES
+## *     DRCV      "     DELAI DE RECEPTION
+## *     DATE      "     DATE SYNOPTIQUE DE VALIDITE (AAMMJJHH)
+## *     OARS      "     RESERVE POUR ANALYSE OBJECTIVE
+## *     RUN       "     IDENTIFICATEUR DE LA PASSE OPERATIONNELLE
+## *     SUP       "     CLEFS PRIMAIRES SUPPLEMENTAIRES (AUCUNE POUR
+## *                     LA VERSION 1990)
+## *     NSUP      "     NOMBRE DE CLEFS PRIMAIRES SUPPLEMENTAIRES (DOIT
+## *                     ETRE ZERO POUR LA VERSION 1990)
+## *     XAUX      "     CLEFS AUXILIAIRES SUPPLEMENTAIRES (=0 VRSN 1990)
+## *     NXAUX     "     NOMBRE DE CLEFS AUXILIAIRES SUPPLEMENTAIRES(=0)
+## *     BUF       "     VECTEUR QUI CONTIENDRA LES ENREGISTREMENTS
+## int c_mrbupd(iun,buf,temps,flgs,stnid,idtp,lati,longi,dx,dy,elev,drcv,date,
+##          oars,runn,sup,nsup,xaux,nxaux)
+## int buf[],temps,flgs,idtp,lati,longi,elev,drcv,date,oars,runn,sup[],nsup;
+## int dx, dy;
+## int xaux[],nxaux;
+## char stnid[];
+
+
+#TODO: c_mrfgoc
+## ***S/P MRFGOC - INITIALISER LA VALEUR D'UNE OPTION DE TYPE CARACTERE
+##         FUNCTION MRFGOC(OPTNOM,OPVALC)
+##         implicit none
+##         INTEGER MRFGOC
+##         CHARACTER*(*) OPTNOM,OPVALC
+## *OBJET(MRFGOC)
+## *     FONCTION SERVANT A OBTENIR LA VALEUR D'UNE OPTION DE TYPE CARACTERE
+## *     LA VALEUR DE L'OPTION EST CONSERVEE DANS LE COMMON XDFTLR
+## *ARGUMENTS
+## *     OPTNOM     ENTREE     NOM DE L'OPTION A INITIALISER
+## *     OPVALR     SORTIE     VALEUR  DONNEE A L'OPTION
+## int c_mrfgoc(optnom,opvalc)
+## char optnom[],opvalc[9];
+
+
+#TODO: c_mrfgor
+## ***S/P MRFGOR - OBTENIR LA VALEUR D'UNE OPTION DE TYPE REEL
+##       FUNCTION MRFGOR(OPTNOM, OPVALR)
+##       IMPLICIT NONE
+##       INTEGER  MRFGOR
+##       CHARACTER*(*)  OPTNOM
+##       REAL                   OPVALR
+## *OBJET( MRFGOR )
+## *     FONCTION SERVANT A OBTENIR LA VALEUR D'UNE OPTION DE TYPE REEL
+## *     LA VALEUR DE L'OPTION EST CONSERVEE DANS LE COMMON BURPUSR
+## *ARGUMENTS
+## *     OPTNOM     ENTREE     NOM DE L'OPTION A INITIALISER
+## *     OPVALR     SORTIE     VALEUR  DONNEE A L'OPTION
+## int c_mrfgor(optnom,opvalr)
+## char optnom[];
+## float *opvalr;
+
+
+#TODO: c_mrfprm
+## ***S/P MRFPRM - OBTENIR LES PARAMETRES PRINCIPAUX D'UN RAPPORT
+##       FUNCTION MRFPRM(HANDLE, STNID, IDTYP, LAT, LON, DX, DY, DATE,
+##      X                TEMPS,  FLGS,  SUP,   NSUP,     LONENR)
+##       IMPLICIT NONE
+##       INTEGER  MRFPRM, NSUP, IDTYP, LAT, DX, DATE, SUP(*), LONENR,
+##      X         HANDLE, FLGS, TEMPS, LON, DY 
+##       CHARACTER*9 STNID
+## *OBJET( MRFPRM )
+## *     ALLER CHERCHER LES PARAMETRES PRINCIPAUX DE L'ENREGISTREMENT
+## *     DONT LE POINTEUR EST HANDLE.
+## *ARGUMENTS
+## *     HANDLE   ENTREE  POINTEUR A L'ENREGISTREMENT
+## *     NSUP        "    NOMBRE DE DESCRIPTEURS SUPPLEMENTAIRES 
+## *                      (DOIT ETRE EGAL A ZERO POUR VERSION 1990)
+## *     STNID    SORTIE  IDENTIFICATEUR DE LA STATION
+## *     IDTYP       "    TYPE DE RAPPORT
+## *     LAT         "    LATITUDE EN CENTIDEGRES PAR RAPPORT AU POLE SUD
+## *     LON         "    LONGITUDE EN CENTIDEGRES (0-35999)
+## *     DX          "    DIMENSION X D'UNE BOITE
+## *     DY          "    DIMENSION Y D'UNE BOITE
+## *     DATE        "    DATE DE VALIDITE (AAMMJJHH)
+## *     TEMPS       "    HEURE DE L'OBSERVATION
+## *     FLGS        "    MARQUEURS GLOBAUX
+## *     SUP         "    LISTE DE DESCRIPTEURS SUPPLEMENTAIRES (AUCUN)
+## *     LONENR      "    LONGUEUR DE L'ENREGISTREMENT EN MOTS HOTE
+## int c_mrfprm(handle,stnid,idtyp,lat,lon,dx,dy,date,temps,flgs,sup,nsup,lng)
+## int handle,*idtyp,*lat,*lon,*date,*temps,*flgs,sup[],nsup,*lng;
+## int *dx, *dy;
+## char stnid[10];
+
+
+#TODO: c_mrfdel
+## ***S/P MRFDEL - EFFACER UN ENREGISTREMENT D'UN FICHIER BURP
+##       FUNCTION MRFDEL( HANDLE )
+##       IMPLICIT NONE
+##       INTEGER  MRFDEL, HANDLE
+## *OBJET( MRFDEL )
+## *     EFFACER L'ENREGISTREMENT CONTENU DANS UN FICHIER BURP DONT
+## *     LE POINTEUR EST HANDLE.
+## *ARGUMENT
+## *     HANDLE  ENTREE  POINTEUR A L'ENREGISTREMENT A EFFACER
+## int c_mrfdel(int handle)
+
 import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
@@ -457,6 +706,10 @@ c_mrfopn = librmn.c_mrfopn
 librmn.c_mrfcls.argtypes = (_ct.c_int,)
 librmn.c_mrfcls.restype  = _ct.c_int
 c_mrfcls = librmn.c_mrfcls
+
+librmn.c_mrfvoi.argtypes = (_ct.c_int,)
+librmn.c_mrfvoi.restype  = _ct.c_int
+c_mrfvoi = librmn.c_mrfvoi
 
 librmn.c_mrfnbr.argtypes = (_ct.c_int,)
 librmn.c_mrfnbr.restype  = _ct.c_int

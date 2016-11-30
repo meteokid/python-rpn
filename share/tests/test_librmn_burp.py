@@ -56,6 +56,13 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             self.assertTrue(funit > 900 and funit <= 999,
                              mypath+':'+repr(funit)+' != '+repr(iunit))
 
+    def testmrfvoiKnownValues(self):
+        """mrfvoi should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            funit = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
+            rmn.mrfvoi(funit)
+            rmn.fclos(funit)
+
     def testmrfnbrKnownValues(self):
         """mrfnbr mrfmxl mrfbfl should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
@@ -173,15 +180,22 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             params = rmn.mrbhdr(buf)
             ## for k,v in rmn.BURP_FLAGS_IDX_NAME.items():
             ##     print k, params['flgsl'][k], v
-            params0 = {'flgs': 72706, 'xaux': None, 'nxaux': 0, 'elev': 457,
-                       'nblk': 12, 'dy': 0, 'lat': 15420, 'lon': 27663,
-                       'nsup': 0, 'time': 0, 'idtyp': 138, 'oars': 518,
-                       'dx': 0, 'stnid': '71915    ', 'date': 20070219,
-                       'drnd': 0, 'sup': None, 'runn': 8,
+            params0 = {'datemm': 2, 'dy': 0.0, 'nxaux': 0,
+                       'lat': 64.19999999999999, 'xaux': None,
                        'flgsl': [False, True, False, False, False, False,
-                                 False, False, False, False, True, True,
-                                 True, False, False, False, True, False,
-                                 False, False, False, False, False, False]}
+                                 False, False, False, False, True, True, True,
+                                 False, False, False, True, False, False,
+                                 False, False, False, False, False],
+                        'idtyp_desc': 'TEMP + PILOT + SYNOP', 'lon': 276.63,
+                        'nsup': 0, 'datedd': 19, 'timemm': 0, 'drnd': 0,
+                        'flgs': 72706,
+                        'flgs_desc': 'surface wind used, data observed, data derived, residues, TEMP part B',
+                        'sup': None, 'nblk': 12, 'ilon': 27663, 'oars': 518,
+                        'dx': 0.0, 'stnid': '71915    ', 'date': 20070219,
+                        'ilat': 15420, 'ielev': 457, 'idx': 0, 'idy': 0,
+                        'idtyp': 138, 'elev': 57.0, 'time': 0, 'dateyy': 2007,
+                        'timehh': 0, 'runn': 8}
+            ## print 0,params
             for k in params.keys():
                 self.assertEqual(params0[k], params[k],
                                  'For {0}, expected {1}, got {2}'
@@ -203,9 +217,10 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             params = rmn.mrbhdr(buf)
             for iblk in xrange(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
-            blkparams0 = {'nele': 10, 'nbit': 20, 'datyp': 2, 'nval': 17,
-                          'bdesc': 0, 'btyp': 9326, 'bfam': 10, 'nt': 1,
-                          'bit0': 288}
+            blkparams0 = {'datyp_name': 'uint', 'nele': 10, 'nbit': 20,
+                          'datyp': 2, 'nval': 17, 'bdesc': 0, 'btyp': 9326,
+                          'bfam': 10, 'nt': 1, 'bit0': 288}
+            ## print 1,blkparams
             for k in blkparams.keys():
                 self.assertEqual(blkparams0[k], blkparams[k],
                                  'For {0}, expected {1}, got {2}'

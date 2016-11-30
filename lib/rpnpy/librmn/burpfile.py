@@ -223,9 +223,9 @@ class BurpFile:
 
             self.flgs[irep]   = rhp['flgs']
             self.codtyp[irep] = rhp['idtyp']
-            self.dx[irep]     = rhp['dx']
-            self.dy[irep]     = rhp['dy']
-            self.alt[irep]    = rhp['elev']
+            self.dx[irep]     = rhp['idx']
+            self.dy[irep]     = rhp['idy']
+            self.alt[irep]    = rhp['ielev']
             self.delay[irep]  = rhp['drnd']
             self.rs[irep]     = rhp['oars']
             self.runn[irep]   = rhp['runn']
@@ -239,8 +239,8 @@ class BurpFile:
             self.hour[irep]   = rhp['time']/100
             self.minute[irep] = rhp['time']%100
 
-            self.lon[irep] = rhp['lon']/100.
-            self.lat[irep] = (rhp['lat']-9000.)/100.
+            self.lon[irep] = rhp['ilon']/100.
+            self.lat[irep] = (rhp['ilat']-9000.)/100.
 
             self.stnids[irep] = rhp['stnid']
 

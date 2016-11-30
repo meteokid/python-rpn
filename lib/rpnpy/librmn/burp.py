@@ -336,6 +336,37 @@ def mrfcls(funit):
     return
 
 
+def mrfvoi(funit):
+    """
+    Print the content of a previously opened BURP file
+
+    mrfvoi(funit)
+
+    Args:
+        funit : file unit number (int)
+    Returns:
+        None
+    Raises:
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
+    >>> nrep  = rmn.mrfvoi(funit)
+    >>> rmn.fclos(funit)
+
+    See Also:
+        mrfopn
+        rpnpy.librmn.base.fnom
+        rpnpy.librmn.base.fclos
+    """
+    istat = _rp.c_mrfvoi(funit)
+    if istat < 0:
+        raise BurpError('c_mrfvoi', istat)
+    return
+
+
 def mrfnbr(funit):
     """
     Returns number of reports in file.
@@ -608,36 +639,50 @@ def mrbhdr(buf):
     Returns:
         {
             'time'  : (int)   Observation time/hour (HHMM)
+            'timehh': (int)   Observation time hour part (HH)
+            'timemm': (int)   Observation time minutes part (MM)
             'flgs'  : (int)   Global flags
                               (24 bits, Bit 0 is the right most bit of the word)
                               See BURP_FLAGS_IDX_NAME for Bits/flags desc.
             'flgsl' : (list)  Global flags as a list of bool
                               See BURP_FLAGS_IDX for Bits/flags desc.
+            'flgs_desc' :     List of set falg desc (str)
             'stnid' : (str)   Station ID
                               If it is a surface station, STNID = WMO number.
                               The name is aligned at left and filled with
                               spaces. In the case of regrouped data,
                               STNID contains blanks.
             'idtyp' : (int)   Report Type
-            'lat'   : (int)   Station latitude (1/100 of degrees)
+            'idtyp_desc' :    Report Type description (str)
+            'ilat'  : (int)   Station latitude (1/100 of degrees)
                               with respect to the south pole. (0 to 1800)
-                              (100+(latitude+90)) of a station or the
+                              (100*(latitude+90)) of a station or the
                               lower left corner of a box.
-            'lon'   : (int)   Station longitude (1/100 of degrees)
+                              #TODO: check ilat desc 
+            'lat'   : (float) Station latitude (degrees)
+            'ilon'  : (int)   Station longitude (1/100 of degrees)
                               (0 to 36000) of a station or lower left corner
                               of a box.
-            'dx'    : (int)   Width of a box for regrouped data
+            'lon'   : (float) Station longitude (degrees)
+            'idx'   : (int)   Width of a box for regrouped data
                               (delta lon, 1/10 of degrees)
-            'dy'    : (int)   Height of a box for regrouped data
+            'dx'    : (float) Width of a box for regrouped data (degrees)
+            'idy'   : (int)   Height of a box for regrouped data
                               (delta lat, 1/10 of degrees)
-            'elev'  : (int)   Station altitude (metres + 400.) (0 to 8191)
+            'dy'    : (float) Height of a box for regrouped data (degrees)
+            'ielev' : (int)   Station altitude (metres + 400.) (0 to 8191)
+            'elev'  : (float) Station altitude (metres)
             'drnd'  : (int)   Reception delay: difference between the
                               reception time at CMC and the time of observation
                               (TIME). For the regrouped data, DRND indicates
                               the amount of data. DRND = 0 in other cases.
             'date'  : (int)   Report valid date (YYYYMMDD)
+            'dateyy': (int)   Report valid date (YYYY)
+            'datemm': (int)   Report valid date (MM)
+            'datedd': (int)   Report valid date (DD)
             'oars'  : (int)   Reserved for the Objective Analysis. (0-->65535)
             'runn'  : (int)   Operational pass identification.
+                              #TODO: provide decoded runn?
             'nblk'  : (int)   number of blocks
             'sup'   : (array) supplementary primary keys array
                               (reserved for future expansion).
@@ -672,7 +717,7 @@ def mrbhdr(buf):
     itime  = _ct.c_int()
     iflgs  = _ct.c_int()
     stnids = _C_MKSTR(' '*_rbc.BURP_STNID_STRLEN)
-    idburp = _ct.c_int()
+    idtyp  = _ct.c_int()
     ilat   = _ct.c_int()
     ilon   = _ct.c_int()
     idx    = _ct.c_int()
@@ -688,7 +733,7 @@ def mrbhdr(buf):
     sup    = _np.empty((1, ), dtype=_np.int32)
     xaux   = _np.empty((1, ), dtype=_np.int32)
     istat  = _rp.c_mrbhdr(buf, _ct.byref(itime), _ct.byref(iflgs),
-                          stnids, _ct.byref(idburp),
+                          stnids, _ct.byref(idtyp),
                           _ct.byref(ilat), _ct.byref(ilon),
                           _ct.byref(idx), _ct.byref(idy), _ct.byref(ialt), 
                           _ct.byref(idelay), _ct.byref(idate), _ct.byref(irs),
@@ -698,19 +743,39 @@ def mrbhdr(buf):
         raise BurpError('c_mrbhdr', istat)
     flgsl = [i == '1' for i in list("{0:024b}".format(iflgs.value))]
     flgsl.reverse()
+    try:
+        idtyp_desc = _rbc.BURP_IDTYP_DESC[str(idtyp.value)]
+    except KeyError:
+        idtyp_desc = ''
+    flgs_desc = "".join([_rbc.BURP_FLAGS_IDX_NAME[i]+", " if flgsl[i] else "" for i in range(len(flgsl))])
+    if flgs_desc:
+        if flgs_desc[-2:] == ', ':
+            flgs_desc = flgs_desc[-2:]
     return {
             'time'  : itime.value,
+            'timehh': itime.value // 100,
+            'timemm': itime.value % 100,
             'flgs'  : iflgs.value,
             'flgsl' : flgsl,
+            'flgs_desc' : flgs_desc,
             'stnid' : stnids.value,
-            'idtyp' : idburp.value,
-            'lat'   : ilat.value,
-            'lon'   : ilon.value,
-            'dx'    : idx.value,
-            'dy'    : idy.value,
-            'elev'  : ialt.value,
+            'idtyp' : idtyp.value,
+            'idtyp_desc' : idtyp_desc,
+            'ilat'  : ilat.value,
+            'lat'   : (float(ilat.value)/100.) - 90.,
+            'ilon'  : ilon.value,
+            'lon'   : float(ilon.value)/100.,
+            'idx'   : idx.value,
+            'dx'    : float(idx.value)/10.,
+            'idy'   : idy.value,
+            'dy'    : float(idy.value)/10.,
+            'ielev' : ialt.value,
+            'elev'  : float(ialt.value) - 400.,
             'drnd'  : idelay.value,
             'date'  : idate.value,
+            'dateyy': idate.value // 10000,
+            'datemm': (idate.value % 10000) // 100,
+            'datedd': (idate.value % 10000) % 100,
             'oars'  : irs.value,
             'runn'  : irunn.value,
             'nblk'  : nblk.value,
@@ -740,11 +805,15 @@ def mrbprm(buf, bkno):
                             3rd dimension of TBLVAL(block).
                             (ie: time-series). (0- 255)
             'bfam'  : (int) Family block descriptor. (0-31)
+                            #TODO: provide decoded bfam?
             'bdesc' : (int) Block descriptor. (0-2047)
+                            #TODO: provide decoded bdesc?
             'btyp'  : (int) Block type (0-2047), made from 3 components:
                             BKNAT: kind component of Block type
                             BKTYP: Data-type component of Block type
                             BKSTP: Sub data-type component of Block type
+                            #TODO: extract BKNAT, BKTYP, BKSTP
+                            #TODO: provide decoded BKNAT, BKTYP, BKSTP?
             'nbit'  : (int) Number of bits per value.
                             When we add a block, we should insure that the
                             number of bits specified is large enough to
@@ -771,6 +840,7 @@ def mrbprm(buf, bkno):
                             Note: Type 3 and 5 are processed like strings of
                                   bits thus, the user should do the data
                                   compression himself.
+            'datyp_name' : (str) Data type name
         }        
     Raises:
         TypeError  on wrong input arg types
@@ -830,7 +900,8 @@ def mrbprm(buf, bkno):
             'btyp'  : btyp.value,
             'nbit'  : nbit.value,
             'bit0'  : bit0.value,
-            'datyp' : datyp.value
+            'datyp' : datyp.value,
+            'datyp_name' : _rbc.BURP_DATYP_NAMES[datyp.value]
         }
 
 
