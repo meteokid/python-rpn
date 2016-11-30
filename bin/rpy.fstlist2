@@ -12,8 +12,8 @@ Examples:
         --nomvar '^^' '>>' '!!' HY  ## Excludes these nomvar
 """
 import sys
-import re
 import argparse
+import logging
 import rpnpy.librmn.all as rmn
 from rpnpy.rpndate import *
 
@@ -27,16 +27,16 @@ def compare_meta(meta, matchIn, matchOut, verbose):
         metaval = meta[key].strip().lower() if isinstance(meta[key], str) else meta[key]
         if not (len(val) == 0 or val[0] in (-1,' ') or metaval in val):
             if verbose > 1:
-                print('{0} : No match for key {1}: {2} not in {3}'.\
-                      format(meta['nomvar'],key,metaval,val))
+                logging.info('{0} : No match for key {1}: {2} not in {3}' \
+                             .format(meta['nomvar'],key,metaval,val))
             return False
         ## val = getattr(args,'e_'+key)
         val = matchOut[key] if key in matchOut.keys() else []
         metaval = meta[key].strip().lower() if isinstance(meta[key], str) else meta[key]
         if len(val) > 0 and metaval in val:
             if verbose > 1:
-                print('{0} : Matching exclude  key {1}: {2} in {3}'.\
-                      format(meta['nomvar'],key,meta[key],val))
+                logging.info('{0} : Matching exclude  key {1}: {2} in {3}' \
+                      .format(meta['nomvar'],key,meta[key],val))
             return False
     return True
 
@@ -50,19 +50,19 @@ def select_meta(inFile, matchIn, matchOut, verbose):
     for nomvar in nomvarlist:
         klist0 = rmn.fstinl(inFile, nomvar=nomvar)
         if verbose > 1:
-            print('Found {0} records matching "{1}"'.\
-                  format(len(klist0),nomvar))
+            logging.info('Found {0} records matching "{1}"' \
+                         .format(len(klist0),nomvar))
         for key in klist0:
             meta = rmn.fstprm(key)
             if compare_meta(meta, matchIn, matchOut, verbose):
                 klist.append(key)
     if len(klist) == 0:
         if verbose > 0:
-            sys.stdout.write('No Matching records.\n')
+            logging.info('No Matching records.\n')
         else:
             klist = sorted(list(set(klist)))
             if verbose > 0:
-                sys.stdout.write('Found {0} matching records.\n'.format(len(klist)))
+                logging.info('Found {0} matching records.\n'.format(len(klist)))
     return klist
 
 
@@ -125,8 +125,8 @@ def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
     try:
         inFileId = rmn.fstopenall(inputFile, rmn.FST_RO)
     except:
-        sys.stderr.write('ERROR: Problem opening the file: {0}\n'.\
-                         format(str(inputFile)))
+        logging.error('Problem opening the file: {0}\n'\
+                      .format(str(inputFile)))
         raise
 
     tmpstr = out_format.lower()
@@ -172,17 +172,19 @@ def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
             
             print(out_format.format(**rec))
     except:
-        sys.stderr.write('ERROR: Unknown problem getting record info or printing formated string.\n')
+        logging.error('Unknown problem getting record info or printing formated string.\n')
         raise
     finally:
         rmn.fstcloseall(inFileId)
 
     
 if __name__ == "__main__":
+    logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
     
     default_format = '{nomvar}:{typvar}:{ip1}:{ip2}:{ip3}:{ni}:{nj}:{nk}:{etiket}:{vdateo}:{vdatev}:{deet}:{npas}:{time}:{level}:{grtyp}:{ig1}:{ig2}:{ig3}:{ig4}:{xg1234}:{datyp}:{nbits}'
     stats_format_add = ':{mean}:{std}:{min}:{max}'
     stats_format     = default_format + stats_format_add
+    #TODO: valid_keys desc
     valid_keys = ('nomvar', 'typvar', 'ip1', 'ip2', 'ip3', 'ni', 'nj', 'nk',
                   'etiket', 'dateo', 'datev', 'vdateo', 'vdatev',
                   'deet', 'npas','grtyp', 'ig1', 'ig2', 'ig3', 'ig4',
@@ -202,9 +204,9 @@ if __name__ == "__main__":
 
     Accepted format:
         Any python string.format() accepted string
+        e.g: '{keyname:format}'
         warning: to print an actual '{' or '}' char
                  you'll need to specify '{{' or '}}' respectively
-        e.g: '{keyname:format}'
 
     Accepted keynames:
         {}
@@ -338,7 +340,7 @@ if __name__ == "__main__":
         
 
     if len(args.inputFile) == 0:
-        sys.stderr.write("\nERROR: you need to provied at least one file name [-i FILENAME]\n\n")
+        logging.error("You need to provied at least one file name [-i FILENAME]\n\n")
         sys.exit(1)
 
     keylist = ('nomvar', 'typvar', 'etiket', 'ip1', 'ip2', 'ip3', 'datev')
@@ -364,7 +366,7 @@ if __name__ == "__main__":
     try:
         print_list(args.inputFile, args.format, args.addkeys,  matchIn, matchOut)
     except:
-        raise
+        logging.warning('{}\n'.format(str(sys.exc_info()[1])))        
         sys.exit(1)
         
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
