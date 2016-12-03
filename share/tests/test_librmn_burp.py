@@ -35,6 +35,27 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         return os.path.join(ATM_MODEL_DFILES.strip(), name)
         
 
+    def testmrfoptKnownValues(self):
+        """mrfopn mrfcls should give known result with known input"""
+        for k in (rmn.BURPOP_MSG_TRIVIAL, rmn.BURPOP_MSG_INFO,
+                  rmn.BURPOP_MSG_WARNING, rmn.BURPOP_MSG_ERROR,
+                  rmn.BURPOP_MSG_FATAL, rmn.BURPOP_MSG_SYSTEM):
+            optValue = rmn.mrfopt(rmn.BURPOP_MSGLVL, k)
+            self.assertEqual(optValue[0:6], k[0:6])
+            optValue = rmn.mrfopt(rmn.BURPOP_MSGLVL)
+            self.assertEqual(optValue[0:5], k[0:5])
+
+        optValue0 = 1.0000000150474662e+30
+        optValue = rmn.mrfopt(rmn.BURPOP_MISSING)
+        self.assertEqual(optValue, optValue0)
+        
+        optValue0 = 99.
+        optValue = rmn.mrfopt(rmn.BURPOP_MISSING, optValue0)
+        self.assertEqual(optValue, optValue0)
+        optValue = rmn.mrfopt(rmn.BURPOP_MISSING)
+        self.assertEqual(optValue, optValue0)
+
+
     def testWkoffitKnownValues(self):
         """wkoffit should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
@@ -56,13 +77,6 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             self.assertTrue(funit > 900 and funit <= 999,
                              mypath+':'+repr(funit)+' != '+repr(iunit))
 
-    def testmrfvoiKnownValues(self):
-        """mrfvoi should give known result with known input"""
-        for mypath, itype, iunit in self.knownValues:
-            funit = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
-            rmn.mrfvoi(funit)
-            rmn.fclos(funit)
-
     def testmrfnbrKnownValues(self):
         """mrfnbr mrfmxl mrfbfl should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
@@ -80,7 +94,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrfopnclsKnownValues(self):
         """mrfopn mrfcls should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
             nbrp   = rmn.mrfopn(funit, rmn.BURP_MODE_READ)
             rmn.mrfcls(funit)
@@ -90,7 +104,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testburpopencloseKnownValues(self):
         """mrfopn mrfcls should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit = rmn.burp_open(self.getFN(mypath), rmn.BURP_MODE_READ)
             rmn.burp_close(funit)
             # self.assertEqual(nbrp, 47544)
@@ -98,7 +112,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrflocKnownValues(self):
         """mrfloc should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             handle = 0
@@ -126,7 +140,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrfgetKnownValues(self):
         """mrfget should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit = rmn.burp_open(self.getFN(mypath))
             nbrp  = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -168,7 +182,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrbhdrKnownValues(self):
         """mrbhdr should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -195,7 +209,6 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                         'ilat': 15420, 'ielev': 457, 'idx': 0, 'idy': 0,
                         'idtyp': 138, 'elev': 57.0, 'time': 0, 'dateyy': 2007,
                         'timehh': 0, 'runn': 8}
-            ## print 0,params
             for k in params.keys():
                 self.assertEqual(params0[k], params[k],
                                  'For {0}, expected {1}, got {2}'
@@ -205,7 +218,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrbprmKnownValues(self):
         """mrbprm should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -230,7 +243,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ## def testmrbprm2KnownValues(self):
     ##     """mrbprm should give known result with known input"""
     ##     for mypath, itype, iunit in self.knownValues:
-    ##         rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+    ##         rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
     ##         funit  = rmn.burp_open(self.getFN(mypath))
     ##         nbrp   = rmn.mrfnbr(funit)
     ##         maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -250,7 +263,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrbxtrKnownValues(self):
         """mrbprm should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -287,7 +300,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrbdclKnownValues(self):
         """mrbprm should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -311,7 +324,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     def testmrbcvtdecodeKnownValues(self):
         """mrbprm should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
-            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
             nbrp   = rmn.mrfnbr(funit)
             maxlen = max(64, rmn.mrfmxl(funit))+10
@@ -332,6 +345,13 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                 #TODO: check results            
             rmn.burp_close(funit)
 
+    def testmrfvoiKnownValues(self):
+        """mrfvoi should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            funit = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
+            rmn.mrfvoi(funit)
+            rmn.fclos(funit)
+
     def testburpfilereadKnownValues(self):
         """mrbprm should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
@@ -343,7 +363,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ## def testmrbxtrcvtKnownValues(self):
     ##     """fnomfclos should give known result with known input"""
     ##     for mypath, itype, iunit in self.knownValues:
-    ##         ier    = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.FSTOPS_MSG_FATAL)
+    ##         ier    = rmn.c_mrfopc(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
     ##         funit  = rmn.burp_open(self.getFN(mypath))
     ##         nbrp   = rmn.mrfnbr(funit)
     ##         maxlen = max(64, rmn.c_mrfmxl(funit))+10

@@ -13,6 +13,23 @@ import numpy as _np
 
 #=== BURP Constants ===
 
+## See:
+## * ls -lL $AFSISIO/datafiles/constants/ | grep -i burp
+## ** $AFSISIO/datafiles/constants/tableburp_[ef].val 
+##    table_b_bufr_[ef]_opsvalid_v23
+## ** $AFSISIO/datafiles/constants/tableburp [fr]
+##    $AFSISIO/datafiles/constants/table_b_bufr_e [en]
+## * ls -lL $AFSISIO/datafiles/constants/ | grep -i bufr
+##
+## * 3 types of files:
+## ** table_b_bufr_master, table_b_bufr_[ef], table_b_bufr_[ef]_opsvalid_v23
+## ** table_d_bufr_[ef]
+## ** tabloc_bufr_[ef]
+##
+## Also:
+## * ade*bufr*
+## * libecbufr_tables/*
+
 #<source lang=python>
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
@@ -186,6 +203,7 @@ BURP_IDTYP_IDX = dict([(v, int(k)) for k, v in BURP_IDTYP_DESC.items()])
 #<source lang=python>
 ## String lenght
 BURP_STNID_STRLEN = 9
+BURP_OPTC_STRLEN = 9
 
 ## BURP valid code for data types
 BURP_DATYP_LIST = { #TODO: review
@@ -229,10 +247,10 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
 BURPOP_MISSING = 'MISSING'
 BURPOP_MSGLVL  = 'MSGLVL'
 
-BURPOP_MSG_TRIVIAL = 'TRIVIAL'
+BURPOP_MSG_TRIVIAL = 'TRIVIAL  '
 BURPOP_MSG_INFO    = 'INFORMATIF'
-BURPOP_MSG_WARNING = 'WARNING'
-BURPOP_MSG_ERROR   = 'ERROR'
-BURPOP_MSG_FATAL   = 'FATAL'
-BURPOP_MSG_SYSTEM  = 'SYSTEM'
+BURPOP_MSG_WARNING = 'WARNING  '
+BURPOP_MSG_ERROR   = 'ERROR    '
+BURPOP_MSG_FATAL   = 'ERRFATAL '
+BURPOP_MSG_SYSTEM  = 'SYSTEM   '
 #</source>

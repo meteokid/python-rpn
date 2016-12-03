@@ -34,6 +34,26 @@ librmn burp C functions
 
  === EXTERNAL FUNCTIONS ===
 
+    c_mrfgoc(option, value)
+        Get a character option
+        Proto:
+            int c_mrfgoc(char *option, char *value)
+        Args:
+            option (str): (I) option name to be set
+            value  (str): (O) option value
+        Returns:
+            int, zero if successful, non-zero otherwise
+
+    c_mrfgor(option, value)
+        Get a real value option
+        Proto:
+            int c_mrfgor(char *option, float value)
+        Args:
+            option (str)  : (I) option name to be set
+            value  (float): (O) option value
+        Returns:
+            int, zero if successful, non-zero otherwise
+
     c_mrfopc(option, value)
         Set a character option
         Proto:
@@ -42,7 +62,7 @@ librmn burp C functions
             option (str): (I) option name to be set
             value  (str): (I) option value
         Returns:
-            int, zero if the connection is successful, non-zero otherwise
+            int, zero if successful, non-zero otherwise
 
     c_mrfopr(option, value)
         Set a real value option
@@ -52,7 +72,7 @@ librmn burp C functions
             option (str)  : (I) option name to be set
             value  (float): (I) option value
         Returns:
-            int, zero if the connection is successful, non-zero otherwise
+            int, zero if successful, non-zero otherwise
 
     c_mrfopn(iun, mode)
         Open a BURP file
@@ -606,40 +626,6 @@ librmn burp C functions
 ## char stnid[];
 
 
-#TODO: c_mrfgoc
-## ***S/P MRFGOC - INITIALISER LA VALEUR D'UNE OPTION DE TYPE CARACTERE
-##         FUNCTION MRFGOC(OPTNOM,OPVALC)
-##         implicit none
-##         INTEGER MRFGOC
-##         CHARACTER*(*) OPTNOM,OPVALC
-## *OBJET(MRFGOC)
-## *     FONCTION SERVANT A OBTENIR LA VALEUR D'UNE OPTION DE TYPE CARACTERE
-## *     LA VALEUR DE L'OPTION EST CONSERVEE DANS LE COMMON XDFTLR
-## *ARGUMENTS
-## *     OPTNOM     ENTREE     NOM DE L'OPTION A INITIALISER
-## *     OPVALR     SORTIE     VALEUR  DONNEE A L'OPTION
-## int c_mrfgoc(optnom,opvalc)
-## char optnom[],opvalc[9];
-
-
-#TODO: c_mrfgor
-## ***S/P MRFGOR - OBTENIR LA VALEUR D'UNE OPTION DE TYPE REEL
-##       FUNCTION MRFGOR(OPTNOM, OPVALR)
-##       IMPLICIT NONE
-##       INTEGER  MRFGOR
-##       CHARACTER*(*)  OPTNOM
-##       REAL                   OPVALR
-## *OBJET( MRFGOR )
-## *     FONCTION SERVANT A OBTENIR LA VALEUR D'UNE OPTION DE TYPE REEL
-## *     LA VALEUR DE L'OPTION EST CONSERVEE DANS LE COMMON BURPUSR
-## *ARGUMENTS
-## *     OPTNOM     ENTREE     NOM DE L'OPTION A INITIALISER
-## *     OPVALR     SORTIE     VALEUR  DONNEE A L'OPTION
-## int c_mrfgor(optnom,opvalr)
-## char optnom[];
-## float *opvalr;
-
-
 #TODO: c_mrfprm
 ## ***S/P MRFPRM - OBTENIR LES PARAMETRES PRINCIPAUX D'UN RAPPORT
 ##       FUNCTION MRFPRM(HANDLE, STNID, IDTYP, LAT, LON, DX, DY, DATE,
@@ -690,6 +676,14 @@ import numpy.ctypeslib as _npc
 
 from . import librmn
 from rpnpy.librmn import proto as _rp
+
+librmn.c_mrfgoc.argtypes = (_ct.c_char_p, _ct.c_char_p)
+librmn.c_mrfgoc.restype  = _ct.c_int
+c_mrfgoc = librmn.c_mrfgoc
+
+librmn.c_mrfgor.argtypes = (_ct.c_char_p, _ct.POINTER(_ct.c_float))
+librmn.c_mrfgor.restype  = _ct.c_int
+c_mrfgor = librmn.c_mrfgor
 
 librmn.c_mrfopc.argtypes = (_ct.c_char_p, _ct.c_char_p)
 librmn.c_mrfopc.restype  = _ct.c_int

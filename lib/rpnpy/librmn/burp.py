@@ -40,7 +40,6 @@ class BurpError(RMNError):
     See Also:
        rpnpy.librmn.RMNError
     """
-
     error_codes = {
         1:  "Trivial Error",
         2:  "Informative messages for the user",
@@ -67,7 +66,7 @@ class BurpError(RMNError):
         44: "Element code invalid for DATYP=(7 to 9)"
         }
 
-    def __init__(self, fnc_name, ier=0):
+    def __init__(self, fnc_name='', ier=0):
         istat = abs(ier)
         self.msg = "Error occured while executing; {0}".format(fnc_name)
         if istat in BurpError.error_codes.keys():
@@ -215,9 +214,9 @@ def burp_close(iunit):
     _rb.fclos(iunit)
 
 
-def mrfopt(optName, optValue):
+def mrfopt(optName, optValue=None):
     """
-    Set BURP file options
+    Set/Get BURP file options
 
     mrfopt(optName, optValue)
 
@@ -225,15 +224,18 @@ def mrfopt(optName, optValue):
         optName  : name of option to be set or printed
                    or one of these constants:
                    BURPOP_MISSING, BURPOP_MSGLVL
-        optValue : value to be set (float or string)
+        optValue : value to be set (float or string) (optional)
+                   If not set or is None mrfopt will get the value
+                   otherwise mrfopt will set to the provided value
                    for optName=BURPOP_MISSING:
                       a real value for missing data
                    for optName=BURPOP_MSGLVL, one of these constants:
                       BURPOP_MSG_TRIVIAL,   BURPOP_MSG_INFO,  BURPOP_MSG_WARNING,
                       BURPOP_MSG_ERROR,     BURPOP_MSG_FATAL, BURPOP_MSG_SYSTEM
     Returns:
-        None
+        str or float, optValue
     Raises:
+        KeyError   on unknown optName
         TypeError  on wrong input arg types
         BurpError  on any other error
 
@@ -245,18 +247,33 @@ def mrfopt(optName, optValue):
     See Also:
         rpnpy.librmn.burp_const
     """
+    if not optName in (_rbc.BURPOP_MISSING, _rbc.BURPOP_MSGLVL):
+        raise KeyError("mrfopt: uknown optName: {}".format(optName))
+    
+    if optValue is None:
+        if optName == _rbc.BURPOP_MSGLVL:
+            optValue = _C_MKSTR(' '*_rbc.BURP_OPTC_STRLEN)
+            istat = _rp.c_mrfgoc(optName, optValue)
+        else:
+            optValue = _ct.c_float(0.)
+            istat = _rp.c_mrfgor(optName, _ct.byref(optValue))
+        if istat != 0:
+            raise BurpError('c_mrfgocr:'+optName, istat)
+        return optValue.value
+        
     if isinstance(optValue, str):
         istat = _rp.c_mrfopc(optName, optValue)
         if istat != 0:
-            raise BurpError('c_mrfopc', istat)
+            raise BurpError('c_mrfopc:{}={}'.format(optName,optValue), istat)
     elif isinstance(optValue, float):
+        #TODO: check c_mrfopr, not working, set value to 0. apparently
         istat = _rp.c_mrfopr(optName, optValue)
         if istat != 0:
-            raise BurpError('c_mrfopr', istat)
+            raise BurpError('c_mrfopr:{}={}'.format(optName,optValue), istat)
     else:
         raise TypeError("mrfopt: cannot set optValue of type: {0} {1}"\
                         .format(type(optValue), repr(optValue)))
-    return
+    return optValue
 
 
 def mrfopn(funit, mode=_rc.FILE_MODE_RW):
@@ -750,7 +767,7 @@ def mrbhdr(buf):
     flgs_desc = "".join([_rbc.BURP_FLAGS_IDX_NAME[i]+", " if flgsl[i] else "" for i in range(len(flgsl))])
     if flgs_desc:
         if flgs_desc[-2:] == ', ':
-            flgs_desc = flgs_desc[-2:]
+            flgs_desc = flgs_desc[:-2]
     return {
             'time'  : itime.value,
             'timehh': itime.value // 100,
