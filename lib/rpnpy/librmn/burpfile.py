@@ -26,7 +26,7 @@ import re as _re
 
 ## _warnings.simplefilter('always', ImportWarning)
 ## _warnings.simplefilter('always', UserWarning)
-_warnings.simplefilter('ignore', UserWarning)
+#_warnings.simplefilter('ignore', UserWarning)
 
 try:
     import matplotlib.pyplot as _plt
@@ -49,7 +49,7 @@ class BurpFile:
         -mode:      mode of file ('r'=read, 'w'=write, 'rw'=read or write)
         -nrep:      number of reports in file
 
-    Report attributes, indexed by (rep)
+    Report attributes, indexed by (report), length (nrep)
         -nblk       number of blocks
         -stnids     station IDs
         -year       year of report
@@ -61,17 +61,17 @@ class BurpFile:
         -lat        latitude (degrees)
         -lon        longitude (degrees between -180 and 180)
 
-    Block attributes, indexed by (rep, blk)
+    Block attributes, indexed by (report, block), length (nrep, nblk)
         -btyp       btyp values
         -nlev       number of levels
         -nelements  number of code elements
         -datyp      data type
         -bfam       bfam values
 
-    Code attributes, indexed by (rep, blk, code)
+    Code attributes, indexed by (report, block, element), length (nrep, nblk, nelements)
         -elements   BURP code value
 
-    Data values, indexed by (rep, blk, code, lev)
+    Data values, indexed by (report, block, element, level, group), length (nrep, nblk, nelements, nlev, nt)
         -rval       real number data values
 
     """
@@ -202,12 +202,8 @@ class BurpFile:
         self.lat    = _np.empty((self.nrep, ), dtype=_np.float)
         self.stnids = _np.empty((self.nrep, ), dtype='|S9')
 
-        for attr in BurpFile.blk_attr:
+        for attr in BurpFile.blk_attr + BurpFile.ele_attr:
             setattr(self, attr, _np.empty((self.nrep, ), dtype=object))
-
-        # block data
-        self.elements = _np.empty((self.nrep, ), dtype=object)
-        self.rval     = _np.empty((self.nrep, ), dtype=object)
 
         # loop over reports
         handle = 0
@@ -247,8 +243,8 @@ class BurpFile:
             for attr in BurpFile.blk_attr:
                 getattr(self, attr)[irep] = _np.empty((rhp['nblk'], ), dtype=int)
 
-            self.elements[irep] = _np.empty((rhp['nblk'], ), dtype=object)
-            self.rval[irep]     = _np.empty((rhp['nblk'], ), dtype=object)
+            for attr in BurpFile.ele_attr:
+                getattr(self, attr)[irep] = _np.empty((rhp['nblk'], ), dtype=object)
 
             # loop over blocks
             for iblk in xrange(rhp['nblk']):
@@ -280,15 +276,20 @@ class BurpFile:
                     if warn:
                         _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be returned." % bhp['datyp'])
                         warn = False
-
+                
                 # convert CMC codes to BUFR codes
                 self.elements[irep][iblk] = _brp.mrbdcl(bdata['lstele'])
                 
                 #TODO: since arrays are now allocated Fortran style,
                 #      should we do a transpose?
-                ## self.rval[irep][iblk] = _np.resize(rval, (bhp['nval'], bhp['nele'])).T
-                rval.resize((bhp['nval'], bhp['nele']))
                 self.rval[irep][iblk] = rval
+
+                # check that the element arrays are the correct dimensions
+                if _np.any(self.elements[irep][iblk].shape != (self.nelements[irep][iblk])):
+                    raise Exception("elements array does not have the correct dimensions.")
+                if _np.any(self.rval[irep][iblk].shape != (self.nelements[irep][iblk], self.nlev[irep][iblk], self.nt[irep][iblk])):
+                    raise Exception("rval array does not have the correct dimensions.")
+
 
         # close BURP file
         _brp.burp_close(unit)
@@ -379,7 +380,7 @@ class BurpFile:
         return
 
 
-    def get_rval(self, code=None, block=None, element=None, fmt=float, flatten=True, **kwargs):
+    def get_rval(self, code=None, block=None, element=None, group=1, fmt=float, flatten=True, **kwargs):
         """
         Returns an array of values for a single element from the burp file.
 
@@ -396,6 +397,7 @@ class BurpFile:
           code      BURP code
           block     block number to select codes from (starting from 1)
           element   element number to select (starting from 1)
+          group     group number to select (starting from 1)
           btyp      select code from block with specified btyp
           bfam      selects codes specified BFAM value
           fmt       data type to be outputted
@@ -421,6 +423,7 @@ class BurpFile:
 
         fill_val = _np.nan if fmt==float else -999
         nlev_max = 0
+        it = group-1
         warn = True
 
         if block is not None and element is not None:
@@ -433,8 +436,8 @@ class BurpFile:
             for irep in xrange(self.nrep):
 
                 if self.nblk[irep]>iblk:
-                    if self.nelements[irep][block-1]>iele:
-                        outdata.append( self.rval[irep][iblk][iele] )
+                    if self.nelements[irep][block-1]>iele and self.nt[irep][iblk]>it:
+                        outdata.append( self.rval[irep][iblk][iele][it] )
                         if self.nlev[irep][iblk]>nlev_max:
                             nlev_max = self.nlev[irep][iblk]
                     else:
@@ -483,9 +486,12 @@ class BurpFile:
                     warn = False
 
                 if len(iblk)>0:
-                    outdata.append( self.rval[irep][iblk[0]][iele[0]] )
-                    if self.nlev[irep][iblk[0]]>nlev_max:
-                        nlev_max = self.nlev[irep][iblk[0]]
+                    if self.nt[irep][iblk[0]]>it:
+                        outdata.append( self.rval[irep][iblk[0]][iele[0]][it] )
+                        if self.nlev[irep][iblk[0]]>nlev_max:
+                            nlev_max = self.nlev[irep][iblk[0]]
+                    else:
+                        outdata.append(_np.array([]))
                 else:
                     outdata.append(_np.array([]))
 
