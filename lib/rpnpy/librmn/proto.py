@@ -300,6 +300,17 @@ librmn C functions
                 out - dat2 - date of the printable date (yyyymmdd)
                 out - dat3 - time of the printable date (hhmmsshh)
                  in - mode - set to -7
+                 
+            Old Style Date Array is composed of 14 elements:
+                0 : Day of the week (1=Sunday, ..., 7=Saturday
+                1 : Month (1=Jan, ..., 12=Dec)
+                2 : Day of the Month
+                3 : Year
+                4 : Hour of the Day
+                5 : Minutes  * 60 * 100
+                ...
+                13: CMC Date-Time Stamp
+
 
  === EXTERNAL FUNCTIONS in fstd98 ===
 
@@ -1416,8 +1427,32 @@ librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int),
                             _ct.POINTER(_ct.c_int), _ct.POINTER(_ct.c_int))
 librmn.newdate_.restype  = _ct.c_int
 ## f_newdate = f77name(librmn.newdate)
-f_newdate = librmn.newdate_
-
+## f_newdate = librmn.newdate_
+def f_newdate(dat1, dat2, dat3, mode):
+    arraymode = False
+    if isinstance(mode, _ct.c_int):
+       arraymode = (mode.value in (4, -4))
+    elif isinstance(mode, int):
+       arraymode = (mode in (4, -4))
+    #else: #TODO: mode is a byref()... need to be dereferenced...
+    if arraymode: 
+        if not isinstance(dat2, _np.ndarray):
+            raise TypeError('f_newdate: with mode==4, dat2 must be a numpy.ndarray, got {}'.format(type(dat2)))
+        if dat2.size != 14:
+            raise TypeError('f_newdate: with mode==4, dat2 must be of size 14, got {}'.format(dat2.size))
+        librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),
+                                    _npc.ndpointer(dtype=_np.int32),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int))
+    else:
+        librmn.newdate_.argtypes = (_ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int),
+                                    _ct.POINTER(_ct.c_int))
+    if isinstance(mode, _ct.c_int):
+       return librmn.newdate_(dat1, dat2, dat3, _ct.byref(mode))
+    else:
+       return librmn.newdate_(dat1, dat2, dat3, mode)
 
 #--- fstd98/fstd98 --------------------------------------------------
 

@@ -133,6 +133,43 @@ class LibrmnCigaxgKnownValues(unittest.TestCase):
 
 class LibrmnNewdateOptKnownValues(unittest.TestCase):
 
+    def testnewdatestampKnownValues(self):
+        """newdate with stamp should give knwon results with known values"""
+        yyyymmdd = 20120628
+        hhmmsshh = 11121000 #Precision is not to seconds cannot test full sshh
+        
+        idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+        (yyyymmdd2,hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, idate1)
+        self.assertEqual(yyyymmdd, yyyymmdd2)
+        self.assertEqual(hhmmsshh, hhmmsshh2)
+
+
+    def testnewdateArrayKnownValues(self):
+        """newdate mode 4 and -4 should give knwon results with known values"""
+        yyyymmdd = 20160728
+        hhmmsshh = 11121000 #Precision is not to seconds cannot test full sshh
+        datearray0 = [5,    # ??? 5th day of the week (Thu) ???
+                      7,    # month
+                      28,   # day of the month
+                      2016, # year
+                      11,   # hour
+                      73000,# minutes * 60 * 100
+                      1430803488,
+                      1280657952,
+                      540553760,
+                      909193266,
+                      1513173280,
+                      825897521,
+                      808463920,
+                      411742882] #STAMP
+        
+        idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+        datearray = rmn.newdate(rmn.NEWDATE_STAMP2ARRAY, idate1)
+        self.assertEqual(datearray, datearray0)
+
+        idate2 = rmn.newdate(rmn.NEWDATE_ARRAY2STAMP, datearray)
+        self.assertEqual(idate2, idate2)
+
     def testLeapYearKnownValues(self):
         """ignore_leapyear option should give known result with known input"""
         yyyymmdd = 20120228
