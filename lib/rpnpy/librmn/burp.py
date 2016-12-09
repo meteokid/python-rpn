@@ -11,6 +11,7 @@ Python interface for BUPR files. Contains wrappers for ctypes functions in
 proto_burp and the BurpError class.
 """
 
+import os
 import ctypes as _ct
 import numpy as _np
 from rpnpy.librmn import proto_burp as _rp
@@ -23,6 +24,8 @@ _C_MKSTR = _ct.create_string_buffer
 _C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 
 _ERR_INV_DATYP = 16
+
+_mrbcvt_dict_full = {}
 
 class BurpError(RMNError):
     """
@@ -1236,7 +1239,7 @@ def mrbdcl(lstele):
     lstelebufr = mrbdcl(lstele)
     
     Args:
-        lstele : List of element names in the report in numeric BUFR codes.
+        lstele : List of element names in the report in numeric CMC codes.
                  ##TODO: See the code repr in the FM 94 BUFR man
     Returns
         array, list of  lstele converted to BUFR codes
@@ -1268,7 +1271,7 @@ def mrbdcl(lstele):
         burp_close
         rpnpy.librmn.burp_const
     """
-    dtype = _np.int32  ##TODO: should this take another value?
+    dtype = _np.int32
     if isinstance(lstele, _np.ndarray):
         if not lstele.flags['F_CONTIGUOUS']:
             raise TypeError('Provided lstele should be F_CONTIGUOUS')
@@ -1288,6 +1291,128 @@ def mrbdcl(lstele):
     return lstelebufr
 
 
+def mrbcol(lstele):
+    """
+    Convert BUFR codes to CMC codes.
+    
+    lstelecmc = mrbcol(lstele)
+
+    Args:
+        lstele : List of element names in the report in numeric BUFR codes.
+    Returns
+        array, list of  lstele converted to CMC codes
+    Raises:
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    #TODO: 
+
+    See Also:
+        mrbdcl
+        #TODO: 
+    """
+    dtype = _np.int32
+    if isinstance(lstele, _np.ndarray):
+        if not lstele.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided lstele should be F_CONTIGUOUS')
+        if dtype != lstele.dtype:
+            raise TypeError('Expecting lstele of type {0}, got: {1}'
+                            .format(repr(dtype),repr(lstele.dtype)))
+    elif isinstance(lstele, (tuple, list)):
+        lstele = _np.array(lstele, dtype=dtype)
+    elif isinstance(lstele, (int, long)):
+        lstele = _np.array([lstele], dtype=dtype)
+    else:
+        raise TypeError('lstele should be a ndarray of rank 1')
+    lstelecmc = _np.empty(lstele.size, dtype=dtype, order='FORTRAN')
+    istat = _rp.c_mrbcol(lstele, lstelecmc, lstele.size)
+    if istat != 0:
+        raise BurpError('c_mrbcol', istat)
+    return lstelecmc
+
+
+def mrbcvt_dict(code):
+    """
+    Convert CMC codes to BUFR codes.
+
+    cvtdict = mrbcvt_dict(code)
+    
+    Args:
+        code : Element code name in the report  #TODO: CMC or BUFR?
+    Returns
+        {
+        'code' : (int) Element code #TODO: CMC or BUFR?
+        'desc' : (str) Element description
+        'cvt'  : (int) Flag for conversion (1=need units conversion)
+        'unit' : (str) Units desciption
+        '' : (int)  #TODO:
+        '' : (int)  #TODO:
+        '' : (int)  #TODO:
+        'multi' : (int) 1 means descriptor is of the "multi" or 
+                        repeatable type (layer, level, etc.) and
+                        it can only appear in a "multi" block of data
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> buf    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(buf)
+    >>> for iblk in xrange(params['nblk']):
+    >>>     blkdata = rmn.mrbxtr(buf, iblk+1)
+    >>>     for code in blkdata['lstele']:
+    >>>         cvtdict = rmn.mrbcvt_dict(code)
+    >>>         print('{code} {desc} {units}'.format(**cvtdict))
+    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>> rmn.burp_close(funit)
+
+    See Also:
+        mrfget
+        mrbcvt
+    """
+    if not len(_mrbcvt_dict_full.keys()):
+        AFSISIO = os.getenv('AFSISIO', '')
+        if not AFSISIO:
+            AFSISIO = os.getenv('rpnpy', '/')
+            mypath = os.path.join(AFSISIO.strip(), 'share',
+                                  _rbc.BURP_TABLE_B_FILENAME)
+        else:
+            mypath = os.path.join(AFSISIO.strip(), 'datafiles/constants',
+                                  _rbc.BURP_TABLE_B_FILENAME)
+        try:
+            fd = open(mypath, "r")
+            try:     rawdata = fd.readlines()
+            finally: fd.close()
+        except IOError:
+            raise IOError(" Oops! File does not exist or is not readable: {0}".format(mypath))
+        for item in rawdata:
+            if item[0] != '*':
+                id = int(item[0:6])
+                d = {'code': id}
+                if item[50] == '*':
+                    d['cvt'] = 1
+                    d['desc'] = item[8:50].strip()
+                else:
+                    d['cvt'] = 0
+                    d['desc'] = item[8:51].strip()
+                d['unit'] = item[52:63].strip()
+                d['?1?'] = int(item[63:66]) #TODO
+                d['?2?'] = int(item[66:77]) #TODO
+                d['?3?'] = int(item[77:83]) #TODO
+                if len(item) > 84 and item[84] == 'M':
+                    d['multi'] = 1
+                else:
+                    d['multi'] = 0
+                _mrbcvt_dict_full[id] = d
+    return _mrbcvt_dict_full[code]
+        
+                
 def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##TODO: rval=None, nbits?
     """
     Convert table/BURF values to 'real' values.
@@ -1409,7 +1534,6 @@ def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##
                          _rbc.MRBCVT_DECODE)
     if istat != 0:
         raise BurpError('c_mrbcvt', istat)
-    
     return rval
 
 #TODO: function for mrbxtr+cvt+dcl (and maybe hrd,prm)
@@ -1499,33 +1623,6 @@ def mrbini(funit, buf, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
                          xaux, nxaux)
     if istat != 0:
         raise BurpError('c_mrbini', istat)
-    return istat
-
-
-#TODO: review
-def mrbcol(dliste, liste, nele):
-    """
-    Convert BUFR codes to CMC codes.
-    #TODO: mrbcol(dliste) returns liste
-    
-    Args:
-        #TODO: 
-    Returns
-        #TODO: 
-    Raises:
-        TypeError  on wrong input arg types
-        BurpError  on any other error
-
-    Examples:
-    >>> import rpnpy.librmn.all as rmn
-    #TODO: 
-
-    See Also:
-        #TODO: 
-    """
-    istat = _rp.c_mrbcol(dliste, liste, nele)
-    if istat != 0:
-        raise BurpError('c_mrbcol', istat)
     return istat
 
 

@@ -39,6 +39,8 @@ BURP2BIN2LIST = lambda v,l=32: BURP2BIN2LIST_BUFR(v,l)[::-1]
 
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
+
+BURP_TABLE_B_FILENAME = 'table_b_bufr_e'
 #</source>
 
 #<source lang=python>

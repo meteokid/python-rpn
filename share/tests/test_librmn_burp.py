@@ -329,8 +329,8 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                      != 0))
             rmn.burp_close(funit)
 
-    def testmrbdclKnownValues(self):
-        """mrbprm should give known result with known input"""
+    def testmrbdclcovKnownValues(self):
+        """mrbdcl/cov should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
             funit  = rmn.burp_open(self.getFN(mypath))
@@ -350,8 +350,26 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                      8001, 11003, 11004, 13210],
                                      dtype=_np.int32)
             self.assertFalse(_np.any(lstelebufr0 - lstelebufr != 0))
-            
+            lstelecmc = rmn.mrbcol(lstelebufr)
+            self.assertFalse(_np.any(lstelecmc - blkdata['lstele'] != 0))
             rmn.burp_close(funit)
+
+    def testmrbcvtdictKnownValues(self):
+        """mrbcvt_dict should give known result with known input"""
+        d  = rmn.mrbcvt_dict(1041)
+        d0 = {'multi': 0, 'code': 1041, 'cvt': 0, '?2?': -1073741824, '?3?': 31, '?1?': 5, 'unit': 'M/S', 'desc': 'ABSOL. PLATFORM VELOCITY, FIRST COMPONENT'}
+        ## print 'mrbcvt_dict',d
+        for k in d.keys():
+            self.assertEqual(d0[k], d[k],
+                             'For {0}, expected {1}, got {2}'
+                             .format(k, d0[k], d[k]))
+        d  = rmn.mrbcvt_dict(10031)
+        d0 = {'multi': 0, 'code': 10031, 'cvt': 0, '?2?': -1073741824, '?3?': 31, '?1?': 2, 'unit': 'M', 'desc': "IN DIR. N. POLE, DIST. FM EARTH'S CENTRE"}
+        ## print 'mrbcvt_dict',d
+        for k in d.keys():
+            self.assertEqual(d0[k], d[k],
+                             'For {0}, expected {1}, got {2}'
+                             .format(k, d0[k], d[k]))
 
     def testmrbcvtdecodeKnownValues(self):
         """mrbprm should give known result with known input"""
