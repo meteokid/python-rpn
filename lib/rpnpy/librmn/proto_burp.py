@@ -245,6 +245,20 @@ librmn burp C functions
         Returns:
             int, zero if successful, non-zero otherwise
 
+    c_mrbtyp(bknat, bktyp, bkstp, btyp)
+        Convert btyp to/from bknat, bktyp, bkstp
+        If btyp=0, Convert bknat, bktyp, bkstp to btyp
+        If btyp>0, Convert btyp to bknat, bktyp, bkstp
+        Proto:
+            int c_mrbtyp(int *bknat, int *bktyp, int *bkstp, int btyp)
+        Args:
+            bknat  (int)   : (I/O) block type
+            bktyp  (int)   : (I/O) block type, kind component
+            bkstp  (int)   : (I/O) block type, Data-type component
+            btyp   (int)   : (I)   block type, Sub data-type component
+        Returns:
+            int, encoded btyp (if input btype=0), zero otherwise
+
     c_mrbxtr(buf, bkno, lstele, tblval)
         Extract list of element and values from buffer.
         Proto:
@@ -378,6 +392,16 @@ librmn burp C functions
             bkno   (int)   : (O)   number of blocks in buf
         Returns:
             int, zero if successful, non-zero otherwise
+
+    c_mrfdel(handle)
+        Delete a particular report from a burp file.
+        Proto:
+            int c_mrfdel(int handle)
+        Args:
+            handle (int) : (I) Report handle
+        Returns:
+            int, zero if successful, non-zero otherwise
+
 """
 
 #TODO: c_mrbdcv
@@ -559,28 +583,6 @@ librmn burp C functions
 ## int c_mrbtbl(int *tablusr,int nslots,int neleusr)
 
 
-#TODO:c_mrbtyp
-## ***S/P MRBTYP - CONVERTIR BKNAT, BKTYP ET BKSTP A BTYP OU L'INVERSE
-##       FUNCTION MRBTYP(BKNAT, BKTYP, BKSTP, BTYP)
-##       IMPLICIT NONE
-##       INTEGER  MRBTYP, BTYP, BKNAT, BKTYP, BKSTP
-## *OBJET( MRBTYP )
-## *     FONCTION SERVANT A BATIR UNE CLEF DE RECHERCHE BTYP A
-## *     PARTIR DE BKNAT, BKTYP ET BKSTP OU A EXTRAIRE 
-## *     BKNAT, BKTYP ET BKSTP DE BTYP
-## *ARGUMENTS
-## *     BTYP    ENT/SRT  CLEF COMPOSITE INDIQUANT LE TYPE DE BLOC
-## *     BKNAT      "     PORTION NATURE DU BTYP DE BLOC RECHERCHE
-## *     BKTYP      "     PORTION TYPE DU BTYP DE BLOC RECHERCHE
-## *     BKSTP      "     PORTION SOUS-TYPE DU BTYP DE BLOC RECHERCHE
-## *                      BTYP=0 - DE BKNAT, BKTYP, BKSTP -> BTYP
-## *                               FONCTION RETOURNE BTYP
-## *                      BTYP>0 - DE BTYP -> BKNAT, BKTYP, BKSTP
-## *                               FONCTION RETOURNE 0
-## int c_mrbtyp(hbknat,hbktyp,hbkstp,hbtyp)
-## int hbtyp, *hbknat, *hbktyp, *hbkstp;
-
-
 #TODO: c_mrbupd
 ## ***S/P MRBUPD - DONNER UNE VALEUR AUX CLEFS D'UN RAPPORT
 ##       FUNCTION MRBUPD(IUN, BUF, TEMPS, FLGS, STNID, IDTYP, LATI, LONG,
@@ -656,19 +658,6 @@ librmn burp C functions
 ## int handle,*idtyp,*lat,*lon,*date,*temps,*flgs,sup[],nsup,*lng;
 ## int *dx, *dy;
 ## char stnid[10];
-
-
-#TODO: c_mrfdel
-## ***S/P MRFDEL - EFFACER UN ENREGISTREMENT D'UN FICHIER BURP
-##       FUNCTION MRFDEL( HANDLE )
-##       IMPLICIT NONE
-##       INTEGER  MRFDEL, HANDLE
-## *OBJET( MRFDEL )
-## *     EFFACER L'ENREGISTREMENT CONTENU DANS UN FICHIER BURP DONT
-## *     LE POINTEUR EST HANDLE.
-## *ARGUMENT
-## *     HANDLE  ENTREE  POINTEUR A L'ENREGISTREMENT A EFFACER
-## int c_mrfdel(int handle)
 
 import ctypes as _ct
 import numpy  as _np
@@ -778,6 +767,15 @@ librmn.c_mrbprm.argtypes = (
 librmn.c_mrbprm.restype  = _ct.c_int
 c_mrbprm = librmn.c_mrbprm
 
+librmn.c_mrbtyp.argtypes = (
+    _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int),
+    _ct.POINTER(_ct.c_int),
+    _ct.c_int
+    )
+librmn.c_mrbtyp.restype  = _ct.c_int
+c_mrbtyp = librmn.c_mrbtyp
+
 librmn.c_mrbxtr.restype  = _ct.c_int
 def c_mrbxtr(buf, bkno, lstele, tblval):
     if not isinstance(tblval, _np.ndarray):
@@ -785,8 +783,8 @@ def c_mrbxtr(buf, bkno, lstele, tblval):
     librmn.c_mrbxtr.argtypes = (
         _npc.ndpointer(dtype=_np.int32),   ## void *buffer,
         _ct.c_int,                         ## int bkno,
-        _npc.ndpointer(dtype=_np.int32),   ## word *lstele, word *tblval
-        _npc.ndpointer(dtype=tblval.dtype) ## word *lstele, word *tblval
+        _npc.ndpointer(dtype=_np.int32),   ## word *lstele
+        _npc.ndpointer(dtype=tblval.dtype) ## word *tblval
         )
     return librmn.c_mrbxtr(buf, bkno, lstele, tblval)
 
@@ -848,6 +846,10 @@ def c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp, ls
 librmn.c_mrbdel.argtypes = (_npc.ndpointer(dtype=_np.int32), _ct.c_int)
 librmn.c_mrbdel.restype = _ct.c_int
 c_mrbdel = librmn.c_mrbdel
+
+librmn.c_mrfdel.argtypes = (_ct.c_int, )
+librmn.c_mrfdel.restype = _ct.c_int
+c_mrfdel = librmn.c_mrfdel
 
 # =========================================================================
 

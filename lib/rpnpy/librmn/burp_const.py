@@ -13,6 +13,7 @@ import numpy as _np
 
 #=== BURP Constants ===
 
+#TODO: cleanup
 ## See:
 ## * ls -lL $AFSISIO/datafiles/constants/ | grep -i burp
 ## ** $AFSISIO/datafiles/constants/tableburp_[ef].val 
@@ -30,9 +31,34 @@ import numpy as _np
 ## * ade*bufr*
 ## * libecbufr_tables/*
 
+#NOTE: BUFR numérote les bits de 1 à 7, le bit 1 étant celui de poids le plus élevé
 #<source lang=python>
+BURP2BIN = lambda v,l=32: "{{0:0{}b}}".format(l).format(v)
+BURP2BIN2LIST_BUFR = lambda v,l=32: [int(i) for i in list(BURP2BIN(v,l))]
+BURP2BIN2LIST = lambda v,l=32: BURP2BIN2LIST_BUFR(v,l)[::-1]
+
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
+#</source>
+
+#<source lang=python>
+BURP_STNID_STRLEN = 9
+#</source>
+
+#==== mrfopt (options) ====
+
+#<source lang=python>
+BURP_OPTC_STRLEN = 9
+
+BURPOP_MISSING = 'MISSING'
+BURPOP_MSGLVL  = 'MSGLVL'
+
+BURPOP_MSG_TRIVIAL = 'TRIVIAL  '
+BURPOP_MSG_INFO    = 'INFORMATIF'
+BURPOP_MSG_WARNING = 'WARNING  '
+BURPOP_MSG_ERROR   = 'ERROR    '
+BURPOP_MSG_FATAL   = 'ERRFATAL '
+BURPOP_MSG_SYSTEM  = 'SYSTEM   '
 #</source>
 
 #==== File mode ====
@@ -44,6 +70,7 @@ BURP_MODE_APPEND = 'APPEND'
 #</source>
 
 #==== Report Header Flags ====
+#NOTE: BUFR numérote les bits de 1 à 7, le bit 1 étant celui de poids le plus élevé, soit «64» dans cet exemple.
 
 #<source lang=python>
 BURP_FLAGS_IDX_NAME = { #TODO: review
@@ -81,8 +108,10 @@ BURP_FLAGS_IDX_NAME = { #TODO: review
     23 : 'reserved5'
 }
 BURP_FLAGS_IDX = dict([(v, k) for k, v in BURP_FLAGS_IDX_NAME.items()])
+#</source>
 
 
+#<source lang=python>
 BURP_IDTYP_DESC = { 
     '12' : 'SYNOP, NON AUTOMATIQUE',
     '13' : 'SHIP, NON AUTOMATIQUE',
@@ -197,15 +226,12 @@ BURP_IDTYP_DESC = {
 }
 
 BURP_IDTYP_IDX = dict([(v, int(k)) for k, v in BURP_IDTYP_DESC.items()])
+#</source>
 
 #==== Data types ====
 
-#<source lang=python>
-## String lenght
-BURP_STNID_STRLEN = 9
-BURP_OPTC_STRLEN = 9
-
 ## BURP valid code for data types
+#<source lang=python>
 BURP_DATYP_LIST = { #TODO: review
     'binary'  : 0,  # 0 = string of bits (bit string)  
     'uint'    : 2,  # 2 = unsigned integers  
@@ -224,8 +250,10 @@ BURP_DATYP_LIST = { #TODO: review
                     # ?? nombres complexes, partie imaginaire, simple précision (I8)
 }
 BURP_DATYP_NAMES = dict([(v, k) for k, v in BURP_DATYP_LIST.items()])
+#</source>
 
 ## Numpy versus BURP data type equivalence
+#<source lang=python>
 BURP_DATYP2NUMPY_LIST = { #TODO: review
     0: _np.uint32,    # binary, transparent
     2: _np.uint32,    # unsigned integer
@@ -241,16 +269,202 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
 ##       the user should do the data compression himself.
 #</source>
 
-#==== mrfopt (options) ====
-
+#==== Data types ====
 #<source lang=python>
-BURPOP_MISSING = 'MISSING'
-BURPOP_MSGLVL  = 'MSGLVL'
+BURP_BKNAT_MULTI_DESC = {
+    0 : 'uni',
+    0 : 'multi'
+    }
+BURP_BKNAT_KIND_DESC = {
+    0 : 'data',
+    1 : 'info',
+    2 : 'desc3d',
+    3 : 'flags'
+    }
 
-BURPOP_MSG_TRIVIAL = 'TRIVIAL  '
-BURPOP_MSG_INFO    = 'INFORMATIF'
-BURPOP_MSG_WARNING = 'WARNING  '
-BURPOP_MSG_ERROR   = 'ERROR    '
-BURPOP_MSG_FATAL   = 'ERRFATAL '
-BURPOP_MSG_SYSTEM  = 'SYSTEM   '
+BURP_BKTYP_ALT_DESC = {
+    0 : 'surf',
+    1 : 'alt'
+    }
+
+BURP_BKTYP_KIND_DESC = {
+    0 : 'observations (ADE)',
+    1 : 'row observations (not decoded)',
+    2 : 'derived data, entry to the OA at altitude, global model',
+    3 : 'derived data, entry to the OA at altitude, regional model',
+    4 : 'derived data, entry to the OA at surface, global model',
+    5 : 'derived data, entry to the OA at surface, regional model',
+    6 : 'data seen by OA at altitude, global model',
+    7 : 'data seen by OA at altitude, regional model',
+    8 : 'data seen by OA at surface, global model',
+    9 : 'data seen by OA at surface, regional model',
+    10 : 'vertical profils, AO at altitude, global model',
+    11 : 'vertical profils, AO at altitude, regional model',
+    12 : 'reserved',
+    13 : 'reserved',
+    14 : 'analysed value (incuding residues) by OA at altitude, global model',
+    15 : 'analysed value (incuding residues) by OA at altitude, regional model',
+    16 : 'analysed value (incuding residues) by OA at surface, global model',
+    17 : 'analysed value (incuding residues) by OA at surface, regional model',
+    18 : 'forecast, global model',
+    19 : 'forecast, regional model',
+    20 : 'statistics of weather elements (PENSE project)',
+    21 : 'statistics of weather elements (Kalman filter, PENSE project)',
+    22 : 'SSMI data',
+    23 : 'forecast, GEPS',
+    24 : 'forecast, REPS',
+    }
+
+## (bktyp_alt, bktyp_kind, bkstp) : description
+BURP_BKSTP_DESC = { #TODO
+    (0, 0, 0) : 'observed value',
+    (0, 1, 0) : 'observed value',
+    (0, 0, 1) : 'correction to position and/or identificator',
+    (0, 1, 1) : 'correction to position and/or identificator',
+    (1, 0, 1) : 'RADAT (TEMP) ou Ts de SATOB ou SATEM ou TOVS/temperature',
+    (1, 1, 1) : 'RADAT (TEMP) ou Ts de SATOB ou SATEM ou TOVS/temperature',
+    (1, 0, 2) : "partie A (SATEM, TEMP, PILOT, SATOB) ouTOVS/luminance",
+    (1, 1, 2) : "partie A (SATEM, TEMP, PILOT, SATOB) ou TOVS/luminance",
+    (1, 0, 3) : "partie B (SATEM, TEMP, PILOT)",
+    (1, 1, 3) : "partie B (SATEM, TEMP, PILOT)",
+    (1, 0, 4) : "partie C (SATEM, TEMP, PILOT)",
+    (1, 4, 4) : "partie C (SATEM, TEMP, PILOT)",
+    (1, 0, 5) : "partie D (SATEM, TEMP, PILOT)",
+    (1, 1, 5) : "partie D (SATEM, TEMP, PILOT)",
+    (1, 0, 6) : "délais de réception pour messages à parties multiples (ex. SATEM, TEMP, PILOT et SATOB)",
+    (1, 1, 6) : "délais de réception pour messages à parties multiples (ex. SATEM, TEMP, PILOT et SATOB)",
+    (1, 0, 8) : "statistiques de champs",
+    (1, 1, 8) : "statistiques de champs",
+    (1, 0, 9) : "statistiques NN de champs",
+    (1, 1, 9) : "statistiques NN de champs",
+    (1, 0, 10) : "statistiques de différences",
+    (1, 1, 10) : "statistiques de différences",
+    (1, 0, 11) : "Bloc A, SSMI, (19H, 19V, 22V, 37H, 37V) *64",
+    (1, 1, 11) : "Bloc A, SSMI, (19H, 19V, 22V, 37H, 37V) *64",
+    (1, 0, 12) : "Bloc B, SSMI, (85H, 85V) *128 points, 1/2",
+    (1, 1, 12) : "Bloc B, SSMI, (85H, 85V) *128 points, 1/2",
+    (1, 0, 13) : "Bloc C, SSMI, (85H, 85V) *128 points, 2/2",
+    (1, 1, 13) : "Bloc C, SSMI, (85H, 85V) *128 points, 2/2",
+    (0, 2, 0) : "niveau de surface d’origine indéterminé ** (TEMP et PILOT only)",
+    (0, 3, 0) : "niveau de surface d’origine indéterminé **  (TEMP et PILOT only)",
+    (0, 2, 1) : "surface provenant d'un SYNOP **",
+    (0, 3, 1) : "surface provenant d'un SYNOP **",
+    (0, 2, 2) : "surface provenant d'un TEMP **",
+    (0, 3, 2) : "surface provenant d'un TEMP **",
+    (0, 2, 3) : "statistiques de champs **",
+    (0, 3, 3) : "statistiques de champs **",
+    (0, 2, 8) : "statistiques de champs",
+    (0, 3, 8) : "statistiques de champs",
+    (0, 2, 9) : "statistiques NN de champs",
+    (0, 3, 9) : "statistiques NN de champs",
+    (0, 2, 10) : "statistiques de différences",
+    (0, 3, 10) : "statistiques de différences",
+    (1, 2, 8) : "statistiques de champs",
+    (1, 3, 8) : "statistiques de champs",
+    (1, 2, 9) : "statistiques NN de champs",
+    (1, 3, 9) : "statistiques NN de champs",
+    (1, 2, 10) : "statistiques de différences",
+    (1, 3, 10) : "statistiques de différences",
+    (0, 4, 8) : "statistiques de champs",
+    (0, 5, 8) : "statistiques de champs",
+    (0, 4, 9) : "statistiques NN de champs",
+    (0, 5, 9) : "statistiques NN de champs",
+    (0, 4, 10) : "statistiques de différences",
+    (0, 5, 10) : "statistiques de différences",
+    (0, 6, 8) : "statistiques de champs",
+    (0, 7, 8) : "statistiques de champs",
+    (0, 6, 9) : "statistiques NN de champs",
+    (0, 7, 9) : "statistiques NN de champs",
+    (0, 6, 10) : "statistiques de différences (résidus)",
+    (0, 7, 10) : "statistiques de différences (résidus)",
+    (0, 6, 11) : "statistiques de résidus",
+    (0, 7, 11) : "statistiques de résidus",
+    (0, 6, 12) : "statistiques NN de résidus",
+    (0, 7, 12) : "statistiques NN de résidus",
+    (0, 6, 14) : "statistiques d'erreur d'observation",
+    (0, 7, 14) : "statistiques d'erreur d'observation",
+    (0, 6, 15) : "statistiques d'erreur de prévision",
+    (0, 7, 15) : "statistiques d'erreur de prévision",
+    (1, 6, 8) : "statistiques de champs",
+    (1, 7, 8) : "statistiques de champs",
+    (1, 6, 9) : "statistiques NN de champs",
+    (1, 7, 9) : "statistiques NN de champs",
+    (1, 6, 10) : "statistiques de différences (résidus)",
+    (1, 7, 10) : "statistiques de différences (résidus)",
+    (1, 6, 11) : "statistiques de résidus",
+    (1, 7, 11) : "statistiques de résidus",
+    (1, 6, 12) : "statistiques NN de résidus",
+    (1, 7, 12) : "statistiques NN de résidus",
+    (1, 6, 14) : "statistiques d'erreur d'observation",
+    (1, 7, 14) : "statistiques d'erreur d'observation",
+    (1, 6, 15) : "statistiques d'erreur de prévision",
+    (1, 7, 15) : "statistiques d'erreur de prévision",
+    (0, 8, 8) : 'statistiques de champs',
+    (0, 9, 8) : 'statistiques de champs',
+    (0, 8, 9) : 'statistiques NN de champs',
+    (0, 9, 9) : 'statistiques NN de champs',
+    (0, 8, 10) : 'statistiques de différences (résidus)',
+    (0, 9, 10) : 'statistiques de différences (résidus)',
+    (0, 8, 11) : 'statistiques de résidus',
+    (0, 9, 11) : 'statistiques de résidus',
+    (0, 8, 12) : 'statistiques NN de résidus',
+    (0, 9, 12) : 'statistiques NN de résidus',
+    (0, 8, 14) : "statistiques d'erreur d'observation",
+    (0, 9, 14) : "statistiques d'erreur d'observation",
+    (0, 8, 15) : "statistiques d'erreur de prévision",
+    (0, 9, 15) : "statistiques d'erreur de prévision",
+    (1, 10, 1) : "prévu par champ d’essai",
+    (1, 11, 1) : "prévu par champ d’essai",
+    (1, 10, 2) : 'prévu par modèle',
+    (1, 11, 2) : 'prévu par modèle',
+    (1, 10, 3) : 'analysé',
+    (1, 11, 3) : 'analysé',
+    (0, 14, 0) : 'O-A',
+    (0, 15, 0) : 'O-A',
+    (0, 16, 0) : 'O-A',
+    (0, 17, 0) : 'O-A',
+    (0, 14, 1) : 'O-F',
+    (0, 15, 1) : 'O-F',
+    (0, 16, 1) : 'O-F',
+    (0, 17, 1) : 'O-F',
+    (0, 14, 2) : 'O-I',
+    (0, 15, 2) : 'O-I',
+    (0, 16, 2) : 'O-I',
+    (0, 17, 2) : 'O-I',
+    (0, 14, 8) : 'statistiques de champs',
+    (0, 15, 8) : 'statistiques de champs',
+    (0, 16, 8) : 'statistiques de champs',
+    (0, 17, 8) : 'statistiques de champs',
+    (0, 14, 9) : 'statistiques NN de champs',
+    (0, 15, 9) : 'statistiques NN de champs',
+    (0, 16, 9) : 'statistiques NN de champs',
+    (0, 17, 9) : 'statistiques NN de champs',
+    (0, 14, 10) : 'statistiques de différences',
+    (0, 15, 10) : 'statistiques de différences',
+    (0, 16, 10) : 'statistiques de différences',
+    (0, 17, 10) : 'statistiques de différences',
+    (0, 18, 0) : "champs d'essai de AO",
+    (0, 19, 0) : "champs d'essai de AO",
+    (0, 18, 1) : 'sortie de modèle de prévisions',
+    (0, 19, 1) : 'sortie de modèle de prévisions',
+    (0, 18, 2) : 'statistiques',
+    (0, 19, 2) : 'statistiques',
+    (0, 18, 8) : 'statistiques de champs',
+    (0, 19, 8) : 'statistiques de champs',
+    (0, 18, 9) : 'statistiques NN de champs',
+    (0, 19, 9) : 'statistiques NN de champs',
+    (0, 18, 10) : 'statistiques de différences',
+    (0, 19, 10) : 'statistiques de différences',
+    (1, 22, 1) : 'A (données, Multi), basse densité',
+    (1, 22, 2) : 'B (données, Multi), haute densité',
+    (1, 22, 3) : 'C (3-D, Multi), basse densité',
+    (1, 22, 4) : 'D (3-D, Multi), haute densité',
+    (1, 22, 5) : 'E (données, Multi), type de surface, basse densité',
+    (1, 22, 6) : 'F (données, Multi), type de surface, haute densité',
+    }
 #</source>
+
+#TODO: BFAM desc list
+#TODO: fst, use dict to provide var desc and units, tool rpy.dict
+
+

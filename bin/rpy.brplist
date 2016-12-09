@@ -81,15 +81,18 @@ if __name__ == "__main__":
     #TODO: valid_keys desc
     valid_rep_keys = (
         'handle', 'stnid', 'time', 'timehh', 'timemm',
-        'flgs', 'flgsl', 'flgshex', 'flgsbin', 'flgs_desc',
-        'idtyp', 'idtyp_desc',
+        'flgs', 'flgsl', 'flgshex', 'flgsbin', 'flgsd',
+        'idtyp', 'idtypd',
         'ilat', 'ilon', 'idx', 'idy', 'lat', 'lon', 'dx', 'dy', 
         'ielev', 'elev', 'drnd', 'date', 'dateyy', 'datemm', 'datedd',
         'oars', 'runn', 'nblk', 'sup', 'nsup', 'xaux', 'nxaux'
         )
     valid_blk_keys = (
         'iblk', 'nele', 'nval', 'nt', 'bfam', 'bdesc', 'btyp', 'nbit',
-        'bit0', 'datyp', 'datyp_name'
+        'bit0', 'datyp', 'datypd',
+        'bknat', 'bknat_multi', 'bknat_kind', 'bknat_kindd',
+        'bktyp', 'bktyp_alt', 'bktyp_kind', 'bktyp_kindd',
+        'bkstp', 'bkstpd'
         )
         
     desc = "Show list of selected reports in a BURP file along with requested meta and stats."

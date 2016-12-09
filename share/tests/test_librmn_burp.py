@@ -36,7 +36,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         
 
     def testmrfoptKnownValues(self):
-        """mrfopn mrfcls should give known result with known input"""
+        """mrfopt should give known result with known input"""
         for k in (rmn.BURPOP_MSG_TRIVIAL, rmn.BURPOP_MSG_INFO,
                   rmn.BURPOP_MSG_WARNING, rmn.BURPOP_MSG_ERROR,
                   rmn.BURPOP_MSG_FATAL, rmn.BURPOP_MSG_SYSTEM):
@@ -196,14 +196,12 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             ##     print k, params['flgsl'][k], v
             params0 = {'datemm': 2, 'dy': 0.0, 'nxaux': 0,
                        'lat': 64.19999999999999, 'xaux': None,
-                       'flgsl': [False, True, False, False, False, False,
-                                 False, False, False, False, True, True, True,
-                                 False, False, False, True, False, False,
-                                 False, False, False, False, False],
-                        'idtyp_desc': 'TEMP + PILOT + SYNOP', 'lon': 276.63,
+                       'flgsl': [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+                                 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                        'idtypd': 'TEMP + PILOT + SYNOP', 'lon': 276.63,
                         'nsup': 0, 'datedd': 19, 'timemm': 0, 'drnd': 0,
                         'flgs': 72706,
-                        'flgs_desc': 'surface wind used, data observed, data derived, residues, TEMP part B',
+                        'flgsd': 'surface wind used, data observed, data derived, residues, TEMP part B',
                         'sup': None, 'nblk': 12, 'ilon': 27663, 'oars': 518,
                         'dx': 0.0, 'stnid': '71915    ', 'date': 20070219,
                         'ilat': 15420, 'ielev': 457, 'idx': 0, 'idy': 0,
@@ -230,14 +228,48 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             params = rmn.mrbhdr(buf)
             for iblk in xrange(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
-            blkparams0 = {'datyp_name': 'uint', 'nele': 10, 'nbit': 20,
-                          'datyp': 2, 'nval': 17, 'bdesc': 0, 'btyp': 9326,
-                          'bfam': 10, 'nt': 1, 'bit0': 288}
+            blkparams0 = {'datypd': 'uint', 'nele': 10, 'nbit': 20,
+                          'datyp': 2, 'nval': 17,   'bdesc': 0, 'btyp': 9326,
+                          'bfam': 10, 'nt': 1, 'bit0': 288,
+                          'bktyp': 70, 'bkstp': 14, 'bknat': 4,
+                          'bknat_multi': 1, 'bknat_kind': 0,
+                          'bknat_kindd': 'data', 'bktyp_alt': 1,
+                          'bktyp_kind': 6,
+                          'bktyp_kindd': 'data seen by OA at altitude, global model',
+                          'bkstpd': "statistiques d'erreur d'observation"}
             ## print 1,blkparams
             for k in blkparams.keys():
                 self.assertEqual(blkparams0[k], blkparams[k],
                                  'For {0}, expected {1}, got {2}'
                                  .format(k, blkparams0[k], blkparams[k]))
+            rmn.burp_close(funit)
+
+    def testmrbtypKnownValues(self):
+        """mrbtyp should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
+            funit  = rmn.burp_open(self.getFN(mypath))
+            buf = None
+            handle = 0
+            handle = rmn.mrfloc(funit, handle)
+            buf    = rmn.mrfget(handle, buf, funit)
+            params = rmn.mrbhdr(buf)
+            for iblk in xrange(params['nblk']):
+                blkparams = rmn.mrbprm(buf, iblk+1)
+                blktypdict = rmn.mrbtyp_decode(blkparams['btyp'])
+                btyp1 = rmn.mrbtyp_encode(blktypdict)
+                btyp2 = rmn.mrbtyp_encode(blktypdict['bknat'], blktypdict['bktyp'], blktypdict['bkstp'])
+                bknat = rmn.mrbtyp_encode_bknat(blkparams['bknat_multi'],
+                                                blkparams['bknat_kind'])
+                bktyp = rmn.mrbtyp_encode_bktyp(blkparams['bktyp_alt'],
+                                                blkparams['bktyp_kind'])
+                btyp3 = rmn.mrbtyp_encode(bknat, bktyp, blkparams['bkstp'])
+                self.assertEqual(btyp1, blkparams['btyp'])
+                self.assertEqual(btyp2, blkparams['btyp'])
+                self.assertEqual(blkparams['bknat'], bknat)
+                self.assertEqual(blkparams['bktyp'], bktyp)
+                self.assertEqual(btyp3, blkparams['btyp'])
+
             rmn.burp_close(funit)
 
     ## def testmrbprm2KnownValues(self):
@@ -347,6 +379,9 @@ class RpnPyLibrmnBurp(unittest.TestCase):
 
     def testmrfvoiKnownValues(self):
         """mrfvoi should give known result with known input"""
+        RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
+        if RPNPY_NOLONGTEST:
+            return
         for mypath, itype, iunit in self.knownValues:
             funit = rmn.fnom(self.getFN(mypath), rmn.FST_RO)
             rmn.mrfvoi(funit)
@@ -354,6 +389,9 @@ class RpnPyLibrmnBurp(unittest.TestCase):
 
     def testburpfilereadKnownValues(self):
         """mrbprm should give known result with known input"""
+        RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
+        if RPNPY_NOLONGTEST:
+            return
         for mypath, itype, iunit in self.knownValues:
             bfile = rmn.BurpFile(self.getFN(mypath),'r')
             #TODO: check results
@@ -438,6 +476,20 @@ class RpnPyLibrmnBurp(unittest.TestCase):
     ##                     pass #raise
     ##                 #print irep, iblk, ier, datyp.value, pval
     ##        rmn.burp_close(funit)
+
+    ## def testmrfdelKnownValues(self):
+    ##     """mrfdel should give known result with known input"""
+    ##     for mypath, itype, iunit in self.knownValues:
+    ##         #TODO: Copy test file
+    ##         rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
+    ##         funit  = rmn.burp_open(self.getFN(mypath), rmn.BURP_MODE_APPEND)
+    ##         handle = 0
+    ##         handle = rmn.mrfloc(funit, handle)
+    ##         rmn.mrfdel(handle)
+    ##         #TODO: check if record is deleted
+    ##         rmn.burp_close(funit)
+    ##         #TODO: rm test file
+
 
 if __name__ == "__main__":
     unittest.main()

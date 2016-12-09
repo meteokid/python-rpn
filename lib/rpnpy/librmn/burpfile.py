@@ -26,7 +26,7 @@ import re as _re
 
 ## _warnings.simplefilter('always', ImportWarning)
 ## _warnings.simplefilter('always', UserWarning)
-#_warnings.simplefilter('ignore', UserWarning)
+_warnings.simplefilter('ignore', UserWarning)
 
 try:
     import matplotlib.pyplot as _plt
