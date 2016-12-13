@@ -14,7 +14,8 @@ import argparse
 import rpnpy.librmn.all as rmn
 
 
-def print_list(inputFile, formatReport, matchIn, matchOut, formatBlock):
+def print_list(inputFile, formatReport, matchIn, matchOut,
+               formatBlock, formatElements):
     """
     """
     funit  = rmn.burp_open(inputFile)
@@ -27,14 +28,15 @@ def print_list(inputFile, formatReport, matchIn, matchOut, formatBlock):
             for date in matchIn['date']:
                 for time in matchIn['time']:
                     print_list1(funit, inputFile, formatReport, stnid, idtyp,
-                                lat, lon, date, time, formatBlock,
+                                lat, lon, date, time,
+                                formatBlock, formatElements,
                                 matchIn, matchOut)
                     
     rmn.burp_close(funit)
 
 
 def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
-                date, time, formatBlock, matchIn, matchOut):
+                date, time, formatBlock, formatElements, matchIn, matchOut):
     """
     """        
     nbrp   = rmn.mrfnbr(funit)
@@ -61,23 +63,39 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
 
         if formatBlock:
             for iblk in xrange(params['nblk']):
-                bparams = rmn.mrbprm(buf, iblk+1)
-                bparams['iblk'] = iblk+1
-                bparams.update(params)
+                params.update(rmn.mrbprm(buf, iblk+1))
+                params['iblk'] = iblk+1
                 isOk = True
                 for k in matchIn.keys():
                     if (not k in ('stnid',)) and len(matchIn[k]) > 0 \
                         and matchIn[k] != [-1]:
-                        if not bparams[k] in matchIn[k]:
+                        if not params[k] in matchIn[k]:
                             isOk = False
                             break
                 if isOk:
-                    print(formatBlock.format(**bparams))
-
+                    print(formatBlock.format(**params))
+                    if formatElements:
+                        blkdata = rmn.mrbxtr(buf, iblk+1)
+                        cmcids  = blkdata['cmcids']
+                        bufrids = rmn.mrbdcl(blkdata['cmcids'])
+                        tblval  = blkdata['tblval'][:,:,:]
+                        rval    = rmn.mrbcvt_decode(cmcids, blkdata['tblval'])
+                        for iele in xrange(len(bufrids)):
+                            params.update(rmn.mrbcvt_dict(cmcids[iele], False))
+                            params['iele']       = iele
+                            params['e_tblval']   = tblval[iele,:,:].T
+                            if params['e_cvt']:
+                                params['e_rval'] = rval[iele,:,:].T
+                            else:
+                                params['e_rval'] = params['e_tblval']
+                            print(formatElements.format(**params))
             
 if __name__ == "__main__":
-    default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {timehh:>2}h{timemm:>2} {idtyp:>6} {nblk:>10} {handle:>10}'
-    default_format_blk = ' '*10+'{iblk:<6} {bfam:>6} {bdesc:>6} {btyp:>6} {nbit:>6} {bit0:>6} {datyp:>6} {nele:>3}x{nval:>2}x{nt}'
+    ## default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {timehh:>2}h{timemm:>2} {idtyp:>6} {nblk:>10} {handle:>10}'
+    default_format = 's:{stnid:<9}: {lat:>6} {lon:>6} {elev:>6} : {dx:>6} {dy:>6} : {date:>8} {timehh:>2}h{timemm:>2} : {idtyp:>6} ({idtypd}) : {flgsbin:>24} : {nblk:>10}'
+    default_format_blk = 'b:{stnid:<9}[{iblk:>3}] {bknat_kindd:>6}({datypd:>6}) (mul={bknat_multi}, alt={bktyp_alt}, fam={bfam:<3}) {bktyp_kindd} : {bkstpd} : ({nele:>3}x{nval:>2}x{nt})'
+    ## default_format_ele = 'e:{stnid:<9}[{iblk:>3}][{e_code:0>6}:{e_cmcid:>6}] ({e_desc} [{e_units}]) : {e_tblval} => (v + {e_bias})*10^{e_scale}  => {e_rval}'
+    default_format_ele = 'e:{stnid:<9}[{iblk:>3}][{e_bufrid:0>6}:{e_cmcid:>6}] ({e_desc} [{e_units}]) : {e_rval}'
     #TODO: valid_keys desc
     valid_rep_keys = (
         'handle', 'stnid', 'time', 'timehh', 'timemm',
@@ -94,7 +112,10 @@ if __name__ == "__main__":
         'bktyp', 'bktyp_alt', 'bktyp_kind', 'bktyp_kindd',
         'bkstp', 'bkstpd'
         )
-        
+    valid_ele_keys = {
+        'iele', 'e_bufrid', 'e_cmcid', 'e_cvt', 'e_desc', 'e_units', 
+        'e_scale', 'e_bias', 'e_nbits', 'e_multi', 'e_tblval', 'e_rval'
+        }
     desc = "Show list of selected reports in a BURP file along with requested meta and stats."
     usage = """
     %(prog)s -i filename [options]
@@ -117,14 +138,19 @@ if __name__ == "__main__":
 
     Accepted additional keynames for blocks only:
         {}
+        
+    Accepted additional keynames for blocks' elemets only:
+        {}
 
     Default formats:
-        reports: '{}'
-        blocks : '{}'
+        reports  : '{}'
+        blocks   : '{}'
+        elements : '{}'
     """.replace('{','{{').replace('}','}}').replace('{{}}','{}')\
        .format('{'+'}  {'.join(valid_rep_keys)+'}',
                '{'+'}  {'.join(valid_blk_keys)+'}',
-               default_format, default_format_blk)
+               '{'+'}  {'.join(valid_ele_keys)+'}',
+               default_format, default_format_blk, default_format_ele)
     parser = argparse.ArgumentParser(
         description=desc, usage=usage, epilog=epilog,
         prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -168,32 +194,42 @@ if __name__ == "__main__":
                         metavar='IDTYP',
                         help="Filter records by idtyp [int]")
 
-    pgroup = parser.add_argument_group(title="Blocks related options") #description='')
-    pgroup.add_argument("-b", "--blocks", dest="listBlocks",
+    bgroup = parser.add_argument_group(title="Blocks related options") #description='')
+    bgroup.add_argument("-b", "--blocks", dest="listBlocks",
                         action="store_true",
                         help="List blocks for matching reports")
-    pgroup.add_argument("--format_blk", dest="formatBlock",
+    bgroup.add_argument("--format_blk", dest="formatBlock",
                         type=str, default=default_format_blk,
                         metavar="'"+default_format_blk+"'",
                         help="Output Format for blocks")
 
-    pgroup.add_argument("++datyp",  dest="f_datyp",
+    bgroup.add_argument("++datyp",  dest="f_datyp",
                         nargs='*', type=int, default=[-1],
                         metavar='DATYP',
                         help="Filter records by Data type [int]")
-    pgroup.add_argument("++bfam",  dest="f_bfam",
+    bgroup.add_argument("++bfam",  dest="f_bfam",
                         nargs='*', type=int, default=[-1],
                         metavar='BFAM',
                         help="Filter records by Family block descriptor. (0-31) [int]")
-    pgroup.add_argument("++bdesc",  dest="f_bdesc",
+    bgroup.add_argument("++bdesc",  dest="f_bdesc",
                         nargs='*', type=int, default=[-1],
                         metavar='BDESC',
                         help="Filter records by Block descriptor. (0-2047) [int]")
     #TODO: split btyp in 3: BKNAT, BKTYP, BKSTP
-    pgroup.add_argument("++btyp",  dest="f_btyp",
+    bgroup.add_argument("++btyp",  dest="f_btyp",
                         nargs='*', type=int, default=[-1],
                         metavar='BTYP',
                         help="Filter records by Block type (0-2047) [int]")
+
+
+    egroup = parser.add_argument_group(title="Element's Blocks related options") #description='')
+    egroup.add_argument("-e", "--elements", dest="listElements",
+                        action="store_true",
+                        help="List elements in blocks for matching reports")
+    egroup.add_argument("--format_ele", dest="formatElements",
+                        type=str, default=default_format_ele,
+                        metavar="'"+default_format_ele+"'",
+                        help="Output Format for blocks' Elements")
 
     #TODO: lon, lat min/max filter
 
@@ -212,7 +248,8 @@ if __name__ == "__main__":
                'datyp', 'bfam', 'bdesc', 'btyp')
     (matchIn, matchOut) = ({}, {})
     formatBlock = args.formatBlock if args.listBlocks else ""
-    
+    formatElements = args.formatElements if args.listElements else ""
+
     for key in keylist:
         try:
             v = getattr(args,'f_'+key)
@@ -232,7 +269,8 @@ if __name__ == "__main__":
             matchOut[key] = []
 
     for myfile in args.inputFile:
-        print_list(myfile, args.formatReport, matchIn, matchOut, formatBlock)
+        print_list(myfile, args.formatReport, matchIn, matchOut,
+                   formatBlock, formatElements)
     
         
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
