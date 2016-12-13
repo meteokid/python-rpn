@@ -266,14 +266,14 @@ librmn burp C functions
         Args:
             buf    (array) : (I) vector containing the report data
             bkno   (int)   : (I) block number
-            lstele (array) : (O) list of nele meteorogical elements (array of int)
+            lstele (array) : (O) list of nele meteorogical elements (array of int) #TODO: CMC or BUFR codes?
             tblval (array) : (O) array of values to write (nele*nval*nt)
                                  (array of int or float)
         Returns:
             int, zero if successful, non-zero otherwise
 
     c_mrbdcl(cliste, liste, nele)
-        Decode List of Elements
+        Decode List of Elements from CMC to BUFR format
         pour un element, on retourne sa valeur sous format decimal
         abbccc, (a,b,c de 0 a 9)
         ou
@@ -283,12 +283,20 @@ librmn burp C functions
         Proto:
             int c_mrbdcl(int *cliste, int *liste, int nele)
         Args:
-            cliste (array) : (I) Elements to be decoded (array of int)
-            liste  (array) : (O) Decoded elements (array of int)
+            cliste (array) : (I) Elements to be decoded, CMC format (array of int)
+            liste  (array) : (O) Decoded elements, BUFR format (array of int)
             nele   (int)   : (I) Number of elemets to decode
         Returns:
             int, zero if successful, non-zero otherwise
 
+    c_mrbdcv(elem)
+        Convert Element from CMC to BUFR format
+        Proto:
+            int c_mrbdcv(int elem)
+        Args:
+            elem (int) : (I) Element to be converted, CMC format (int)
+        Returns:
+            int, converted element, BUFR format
 
     c_mrbcvt(liste, tblval, rval, nele, nval, nt, mode)
         Perform a unit conversion to/from BUFR code to/from real values
@@ -297,15 +305,15 @@ librmn burp C functions
             int liste[], tblval[], nele, nval, nt, mode;
             float rval[];
         Args:
-            liste  (array) : (I)   Elements to convert (array of int)
-            tblval (array) : (I/O) BURF code values (array of int or float)
+            liste  (array) : (I)   CMC codes of Elements to convert (array of int)
+            tblval (array) : (I/O) Coded values (array of int or float)
             rval   (array) : (I/O) Real values (array of float)
             nele   (int)   : (I)   Number of elemets to convert
             nval   (int)   : (I)   Number of values per elemet
             nt     (int)   : (I)   Number of ensembles nele*nval
             mode   (int)   : (I)   Conversion mode,
-                                   0 = RVAL to TBLVAL (BUFR Codes)
-                                   1 = TBLVAL (BUFR Codes) to RVAL
+                                   0 = RVAL to TBLVAL (BUFR format)
+                                   1 = TBLVAL (BUFR format) to RVAL
         Returns:
             int, zero if successful, non-zero otherwise
 
@@ -358,6 +366,14 @@ librmn burp C functions
         Returns:
             int, zero if successful, non-zero otherwise
 
+    c_mrbcov(delem)
+        Convert Element from BUFR to CMC format
+        Proto:
+            int c_mrbcov(int delem)
+        Args:
+            delem (int) : (I) Element to be converted, BUFR format (int)
+        Returns:
+            int, converted element, CMC format
 
     c_mrbadd(buffer, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0,
              datyp, lstele,tblval)
@@ -403,51 +419,6 @@ librmn burp C functions
             int, zero if successful, non-zero otherwise
 
 """
-
-#TODO: c_mrbdcv
-## int c_mrbdcv(int elem) {
-##    int lelem;
-##    lelem = elem;
-##    return(f77name(mrbdcv)(&lelem));
-##    }
-## ***S/P MRBDCV - RETOURNER LA VALEUR DECODEE D'UN ELEMENT
-##       FUNCTION MRBDCV( ELEM )
-##       IMPLICIT NONE
-##       INTEGER  MRBDCV, ELEM
-## *AUTEUR:  J. CAVEEN   FEVRIER 1991
-## *REV 001  Y. BOURASSA MARS    1995 RATFOR @ FTN77
-## *
-## *OBJET( MRBDCV )
-## *     FONCTION RETOURNANT LA VALEUR DECODEE D'UN ELEMENT QUI A ETE CODE
-## *     DE TELLE SORTE QU'IL PUISSE TENIR EN SEIZE BITS.
-## *
-## *     POUR UN ELEMENT, ON RETOURNE SA VALEUR SOUS FORMAT DECIMAL  ABBCCC,
-## *                                                        (A,B,C DE 0 A 9)
-## *     OU A    PROVIENT DES BITS 14 ET 15 DE L'ELEMENT
-## *        BB       "    DES BITS 8 A 13 DE L'ELEMENT
-## *        CCC      "    DES BITS 0 A 7  DE L'ELEMENT
-
-
-#TODO: c_mrbcov
-## int c_mrbcov(int elem) {
-##    int lelem;
-##    lelem = elem;
-##    return(f77name(mrbcov)(&lelem));
-##    }
-## ***S/P MRBCOV - RETOURNER LA VALEUR D'UN ELEMENT EN SEIZE BITS
-##       FUNCTION MRBCOV( ELEM )
-##       IMPLICIT NONE
-##       INTEGER  MRBCOV, ELEM
-## *AUTEUR: J. CAVEEN   FEVRIER 1991
-## *REV 001 Y. BOURASSA MARS    1995 RATFOR @ FTN77
-## *
-## *OBJET( MRBCOV )
-## *     FONCTION RETOURNANT LA VALEUR D'UN ELEMENT DE TELLE SORTE
-## *     QU'IL PUISSE TENIR EN SEIZE BITS.
-## *     POUR UN ELEMENT AYANT LE FORMAT DECIMAL  ABBCCC, (A,B,C DE 0 A 9)
-## *     ON RETOURNE UN ENTIER CONTENANT A SUR DEUX BITS, BB SUR SIX BITS
-## *     ET CCC SUR HUIT BITS
-
 
 ##TODO: MRBPRML
 ## ***S/P MRBPRML - EXTRAIRE LES PARAMETRES DESCRIPTEURS DE TOUS LES BLOCS
@@ -797,6 +768,11 @@ librmn.c_mrbdcl.restype  = _ct.c_int
 c_mrbdcl = librmn.c_mrbdcl
 
 
+librmn.c_mrbdcv.argtypes = (_ct.c_int,)
+librmn.c_mrbdcv.restype  = _ct.c_int
+c_mrbdcv = librmn.c_mrbdcv
+
+
 librmn.c_mrbcvt.restype  = _ct.c_int
 ## c_mrbcvt = librmn.c_mrbcvt
 def c_mrbcvt(lstele, tblval, rval, nele, nval, nt, mode):
@@ -825,6 +801,11 @@ librmn.c_mrbcol.argtypes = (_npc.ndpointer(dtype=_np.int32),
     _npc.ndpointer(dtype=_np.int32), _ct.c_int)
 librmn.c_mrbcol.restype = _ct.c_int
 c_mrbcol = librmn.c_mrbcol
+
+
+librmn.c_mrbcov.argtypes = (_ct.c_int,)
+librmn.c_mrbcov.restype  = _ct.c_int
+c_mrbcov = librmn.c_mrbcov
 
 
 c_mrbadd_argtypes_int = (_npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_int),

@@ -278,7 +278,7 @@ class BurpFile:
                         warn = False
                 
                 # convert CMC codes to BUFR codes
-                self.elements[irep][iblk] = _brp.mrbdcl(bdata['lstele'])
+                self.elements[irep][iblk] = _brp.mrbdcl(bdata['cmcids'])
                 
                 #TODO: since arrays are now allocated Fortran style,
                 #      should we do a transpose?

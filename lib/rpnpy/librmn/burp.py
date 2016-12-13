@@ -9,6 +9,20 @@
 """
 Python interface for BUPR files. Contains wrappers for ctypes functions in
 proto_burp and the BurpError class.
+
+BURP: Binary Universal Report Protocol.
+
+BURP est depuis juin 1992 le format des bases de donnees operationnelles du CMC pour tous les fichiers de type 'observations', au sens large du terme.
+
+On peut voir BURP comme un complement du format Standard de RPN.
+
+Un enregistrement de fichier standard RPN contient un ensemble de valeurs
+d'une variable donnee, reparties sur une grille geo-referencee dont les
+points sont espaces selon des specifications mathematiques.
+
+Par opposition (ou complementarite), BURP est concu pour emmagasiner un
+ensemble de variables a une 'station', ce dernier terme representant un
+point geographique de latitude et longitude determinees.
 """
 
 import os
@@ -26,6 +40,7 @@ _C_MKSTR.__doc__ = 'alias to ctypes.create_string_buffer'
 _ERR_INV_DATYP = 16
 
 _mrbcvt_dict_full = {}
+#_mrbcvt_dict_full.__doc__ = 'Parsed BUFR table B into a python dict, see mrbcvt_dict function'
 
 class BurpError(RMNError):
     """
@@ -484,10 +499,7 @@ def mrfbfl(funit):
         raise BurpError('c_mrfmxl', nmax)
     return nmax + 10  ## +10 comes from librmn source code
 
-
-##TODO: mrfrwd
-##TODO: mrfapp
-
+#TODO: review args names, should be ilat, inlon, ... see mrbhdr
 def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, lat=-1, lon=-1,
            date=-1, time=-1, sup=None):
     """
@@ -897,6 +909,7 @@ def mrbprm(buf, bkno):
         mrfget
         mrbhdr
         mrbxtr
+        mrbtyp_decode
         burp_open
         burp_close
         rpnpy.librmn.burp_const
@@ -989,6 +1002,9 @@ def mrbtyp_decode(btyp):
     >>> rmn.burp_close(funit)
 
     See Also:
+        mrbtyp_encode_bknat
+        mrbtyp_encode_bktyp
+        mrbtyp_encode
         #TODO: 
     """
     if btyp <= 0:
@@ -1133,26 +1149,27 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
     return int("{0:04b}{1:07b}{2:04b}".format(bknat, bktyp, bkstp), 2)
 
 
-def mrbxtr(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
+def mrbxtr(buf, bkno, cmcids=None, tblval=None, dtype=_np.int32):
     """
     Extract block of data from the buffer.
     
     blockdata = mrbxtr(buf, bkno)
-    blockdata = mrbxtr(buf, bkno, lstele, tblval)
+    blockdata = mrbxtr(buf, bkno, cmcids, tblval)
 
     Args:
-        buf  : Report data  (array)
-        bkno : block number (int > 0)
-        lstele, tblval: (optional) return data arrays
-        dtype: (optional) numpy type for tblval creation, if tblval is None
+        buf    : Report data  (array)
+        bkno   : block number (int > 0)
+        cmcids : (optional) return data arrays for cmcids
+        tblval : (optional) return data arrays for tblval
+        dtype  : (optional) numpy type for tblval creation, if tblval is None
     Returns
         {
-            'lstele' : (array) List of element names in the report in numeric
-                               BUFR codes. (Size: NELE; type: int)
+            'cmcids' : (array) List of element names in the report in numeric
+                               CMC codes. (Size: NELE; type: int)
                                NELE: Number of meteorological elements in a
                                      block. 1st dimension of the array
                                      TBLVAL(block). (0-127)
-                               ##TODO: See the code repr in the FM 94 BUFR man
+                               #TODO: check if cmcids are CMC or BUFR codes (most probable CMC codes)... make name consistent across all fn
             'tblval' : (array) Block data
                                (Shape: NELE, NVAL, NT; type: int)
                                NELE: Number of meteorological elements in block
@@ -1182,6 +1199,7 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
         mrbhdr
         mrbprm
         mrbdcl
+        mrbcvt_dict
         mrbcvt
         burp_open
         burp_close
@@ -1212,35 +1230,35 @@ def mrbxtr(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
     else:
         raise TypeError('tblval should be a ndarray of rank 3')
     dtype0 = _np.int32
-    if isinstance(lstele, _np.ndarray):
-        if not lstele.flags['F_CONTIGUOUS']:
-            raise TypeError('Provided lstele should be F_CONTIGUOUS')
-        if dtype0 != lstele.dtype:
-            raise TypeError('Expecting lstele of type {0}, got: {1}'
-                            .format(repr(dtype0), repr(lstele.dtype)))
-        if len(lstele.shape) != 1 or lstele.size != nele:
-            raise TypeError('lstele should be a ndarray of rank 1 (nele)')
-    elif lstele is None:
-        lstele = _np.empty(nele, dtype=dtype0, order='FORTRAN')
+    if isinstance(cmcids, _np.ndarray):
+        if not cmcids.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided cmcids should be F_CONTIGUOUS')
+        if dtype0 != cmcids.dtype:
+            raise TypeError('Expecting cmcids of type {0}, got: {1}'
+                            .format(repr(dtype0), repr(cmcids.dtype)))
+        if len(cmcids.shape) != 1 or cmcids.size != nele:
+            raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+    elif cmcids is None:
+        cmcids = _np.empty(nele, dtype=dtype0, order='FORTRAN')
     else:
-        raise TypeError('lstele should be a ndarray of rank 1 (nele)')
-    istat = _rp.c_mrbxtr(buf, bkno, lstele, tblval)
+        raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+    istat = _rp.c_mrbxtr(buf, bkno, cmcids, tblval)
     if istat != 0:
         raise BurpError('c_mrbxtr', istat)
-    bparams['lstele'] = lstele
+    bparams['cmcids'] = cmcids
     bparams['tblval'] = tblval
     return bparams     
 
 
-def mrbdcl(lstele):
+def mrbdcl(cmcids):
     """
     Convert CMC codes to BUFR codes.
 
-    lstelebufr = mrbdcl(lstele)
+    bufrids = mrbdcl(cmcids)
     
     Args:
-        lstele : List of element names in the report in numeric CMC codes.
-                 ##TODO: See the code repr in the FM 94 BUFR man
+        cmcids : List of element names in the report in numeric CMC codes.
+                 See the code desc in the FM 94 BUFR man
     Returns
         array, list of  lstele converted to BUFR codes
     Raises:
@@ -1254,8 +1272,8 @@ def mrbdcl(lstele):
     >>> buf    = rmn.mrfget(handle, funit=funit)
     >>> params = rmn.mrfhdr(buf)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata    = rmn.mrbxtr(buf, iblk+1)
-    >>>     lstelebufr = rmn.mrbdcl(blkdata['lstele'])
+    >>>     blkdata = rmn.mrbxtr(buf, iblk+1)
+    >>>     bufrids = rmn.mrbdcl(blkdata['cmcids'])
     >>> #TODO: describe what tools can be used to decode info from blkdata
     >>> rmn.burp_close(funit)
 
@@ -1266,41 +1284,45 @@ def mrbdcl(lstele):
         mrbhdr
         mrbprm
         mrbxtr
+        mrbcvt_dict
         mrbcvt
         burp_open
         burp_close
         rpnpy.librmn.burp_const
     """
+    if isinstance(cmcids, (int, _np.int32)):
+        v = _rp.c_mrbdcv(cmcids)
+        return v
     dtype = _np.int32
-    if isinstance(lstele, _np.ndarray):
-        if not lstele.flags['F_CONTIGUOUS']:
-            raise TypeError('Provided lstele should be F_CONTIGUOUS')
-        if dtype != lstele.dtype:
-            raise TypeError('Expecting lstele of type {0}, got: {1}'
-                            .format(repr(dtype),repr(lstele.dtype)))
-    elif isinstance(lstele, (tuple, list)):
-        lstele = _np.array(lstele, dtype=dtype)
-    elif isinstance(lstele, (int, long)):
-        lstele = _np.array([lstele], dtype=dtype)
+    if isinstance(cmcids, _np.ndarray):
+        if not cmcids.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided cmcids should be F_CONTIGUOUS')
+        if dtype != cmcids.dtype:
+            raise TypeError('Expecting cmcids of type {0}, got: {1}'
+                            .format(repr(dtype),repr(cmcids.dtype)))
+    elif isinstance(cmcids, (tuple, list)):
+        cmcids = _np.array(cmcids, dtype=dtype)
+    elif isinstance(cmcids, (int, long)):
+        cmcids = _np.array([cmcids], dtype=dtype)
     else:
-        raise TypeError('lstele should be a ndarray of rank 1')
-    lstelebufr = _np.empty(lstele.size, dtype=dtype, order='FORTRAN')
-    istat = _rp.c_mrbdcl(lstele, lstelebufr, lstele.size)
+        raise TypeError('cmcids should be a ndarray of rank 1')
+    bufrids = _np.empty(cmcids.size, dtype=dtype, order='FORTRAN')
+    istat = _rp.c_mrbdcl(cmcids, bufrids, cmcids.size)
     if istat != 0:
         raise BurpError('c_mrbdcl', istat)
-    return lstelebufr
+    return bufrids
 
 
-def mrbcol(lstele):
+def mrbcol(bufrids):
     """
     Convert BUFR codes to CMC codes.
     
-    lstelecmc = mrbcol(lstele)
+    cmcids = mrbcol(bufrids)
 
     Args:
-        lstele : List of element names in the report in numeric BUFR codes.
+        bufrids : List of element names in the report in numeric BUFR codes.
     Returns
-        array, list of  lstele converted to CMC codes
+        array, list of bufrids converted to CMC codes
     Raises:
         TypeError  on wrong input arg types
         BurpError  on any other error
@@ -1311,50 +1333,64 @@ def mrbcol(lstele):
 
     See Also:
         mrbdcl
+        mrbcvt_dict
         #TODO: 
     """
+    if isinstance(bufrids, (int, _np.int32)):
+        v = _rp.c_mrbcov(bufrids)
+        return v
     dtype = _np.int32
-    if isinstance(lstele, _np.ndarray):
-        if not lstele.flags['F_CONTIGUOUS']:
-            raise TypeError('Provided lstele should be F_CONTIGUOUS')
-        if dtype != lstele.dtype:
-            raise TypeError('Expecting lstele of type {0}, got: {1}'
-                            .format(repr(dtype),repr(lstele.dtype)))
-    elif isinstance(lstele, (tuple, list)):
-        lstele = _np.array(lstele, dtype=dtype)
-    elif isinstance(lstele, (int, long)):
-        lstele = _np.array([lstele], dtype=dtype)
+    if isinstance(bufrids, _np.ndarray):
+        if not bufrids.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided bufrids should be F_CONTIGUOUS')
+        if dtype != bufrids.dtype:
+            raise TypeError('Expecting bufrids of type {0}, got: {1}'
+                            .format(repr(dtype),repr(bufrids.dtype)))
+    elif isinstance(bufrids, (tuple, list)):
+        bufrids = _np.array(bufrids, dtype=dtype)
+    elif isinstance(bufrids, (int, long)):
+        bufrids = _np.array([bufrids], dtype=dtype)
     else:
-        raise TypeError('lstele should be a ndarray of rank 1')
-    lstelecmc = _np.empty(lstele.size, dtype=dtype, order='FORTRAN')
-    istat = _rp.c_mrbcol(lstele, lstelecmc, lstele.size)
+        raise TypeError('bufrids should be a ndarray of rank 1')
+    cmcids = _np.empty(bufrids.size, dtype=dtype, order='FORTRAN')
+    istat = _rp.c_mrbcol(bufrids, cmcids, bufrids.size)
     if istat != 0:
         raise BurpError('c_mrbcol', istat)
-    return lstelecmc
+    return cmcids
 
 
-def mrbcvt_dict(code):
+def mrbcvt_dict(cmcid, raise_error=True):
     """
-    Convert CMC codes to BUFR codes.
+    Extract BUFR table B info for cmcid
 
-    cvtdict = mrbcvt_dict(code)
+    cvtdict = mrbcvt_dict(bufrid)
     
     Args:
-        code : Element code name in the report  #TODO: CMC or BUFR?
+        cmcid       : Element CMC code name
+        raise_error : Specify what to do when bufrid is not found in BURP table B
+                      if True,  raise an error 
+                      if False, return an empty dict with key error=-1
+                      (optional, default=True)
     Returns
         {
-        'code' : (int) Element code #TODO: CMC or BUFR?
-        'desc' : (str) Element description
-        'cvt'  : (int) Flag for conversion (1=need units conversion)
-        'unit' : (str) Units desciption
-        '' : (int)  #TODO:
-        '' : (int)  #TODO:
-        '' : (int)  #TODO:
-        'multi' : (int) 1 means descriptor is of the "multi" or 
-                        repeatable type (layer, level, etc.) and
-                        it can only appear in a "multi" block of data
+        'e_cmcid'   : (int) Element CMC code
+        'e_bufrid'  : (int) Element BUFR code
+        'e_bufrid_F': (int) Tpe part of Element code (e.g. F=0 for observations)
+        'e_bufrid_X': (int) Class part of Element code 
+        'e_bufrid_Y': (int) Class specific Element code part of Element code 
+        'e_desc'    : (str) Element description
+        'e_cvt'     : (int) Flag for conversion (1=need units conversion)
+        'e_unit'      : (str) Units desciption
+        'e_scale'   : (int) Scaling factor for element value conversion
+        'e_bias'    : (int) Bias for element value conversion
+        'e_nbits'   : (int) nb of bits for encoding value
+        'e_multi'   : (int) 1 means descriptor is of the "multi" or 
+                          repeatable type (layer, level, etc.) and
+                          it can only appear in a "multi" block of data
+        'e_error' : (int) 0 if bufrid found in BURP table B, -1 otherwise
         }
     Raises:
+        KeyError   on key not found in burp table b dict
         TypeError  on wrong input arg types
         BurpError  on any other error
 
@@ -1366,15 +1402,17 @@ def mrbcvt_dict(code):
     >>> params = rmn.mrfhdr(buf)
     >>> for iblk in xrange(params['nblk']):
     >>>     blkdata = rmn.mrbxtr(buf, iblk+1)
-    >>>     for code in blkdata['lstele']:
-    >>>         cvtdict = rmn.mrbcvt_dict(code)
-    >>>         print('{code} {desc} {units}'.format(**cvtdict))
+    >>>     for cmcid in blkdata['cmcids']:
+    >>>         cvtdict = rmn.mrbcvt_dict(cmcid)
+    >>>         print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
     >>> #TODO: describe what tools can be used to decode info from blkdata
     >>> rmn.burp_close(funit)
 
     See Also:
         mrfget
         mrbcvt
+        mrbdcl
+        mrbcol
     """
     if not len(_mrbcvt_dict_full.keys()):
         AFSISIO = os.getenv('AFSISIO', '')
@@ -1394,44 +1432,70 @@ def mrbcvt_dict(code):
         for item in rawdata:
             if item[0] != '*':
                 id = int(item[0:6])
-                d = {'code': id}
+                d = {
+                    'e_error'   : 0,
+                    'e_cmcid'   : mrbcol(id),
+                    'e_bufrid'  : id,
+                    'e_bufrid_F': int(item[0]),
+                    'e_bufrid_X': int(item[1:3]),
+                    'e_bufrid_Y': int(item[3:6]),
+                    'e_cvt'     : 1,
+                    'e_desc'    : item[8:51].strip(),
+                    'e_units'   : item[52:63].strip(),
+                    'e_scale'   : int(item[63:66]),
+                    'e_bias'    : int(item[66:77]),
+                    'e_nbits'   : int(item[77:83]),
+                    'e_multi'   : 0
+                    }
                 if item[50] == '*':
-                    d['cvt'] = 1
-                    d['desc'] = item[8:50].strip()
-                else:
-                    d['cvt'] = 0
-                    d['desc'] = item[8:51].strip()
-                d['unit'] = item[52:63].strip()
-                d['?1?'] = int(item[63:66]) #TODO
-                d['?2?'] = int(item[66:77]) #TODO
-                d['?3?'] = int(item[77:83]) #TODO
+                    d['e_cvt']  = 0
+                    d['e_desc'] = item[8:50].strip()
                 if len(item) > 84 and item[84] == 'M':
-                    d['multi'] = 1
-                else:
-                    d['multi'] = 0
+                    d['e_multi'] = 1
                 _mrbcvt_dict_full[id] = d
-    return _mrbcvt_dict_full[code]
-        
-                
-def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##TODO: rval=None, nbits?
+    bufrid =  mrbdcl(cmcid)
+    try:
+        return _mrbcvt_dict_full[bufrid]
+    except:
+        if raise_error:
+            raise
+        else:
+            id = "{0:0>6}".format(bufrid)
+            return {
+                'e_error'   : -1, 
+                'e_cmcid'   : cmcid,
+                'e_bufrid'  : bufrid,
+                'e_bufrid_F': int(id[0]),
+                'e_bufrid_X': int(id[1:3]),
+                'e_bufrid_Y': int(id[3:6]),
+                'e_cvt'     : 0,
+                'e_desc'      : '',
+                'e_units'   : '',
+                'e_scale'   : 0,
+                'e_bias'    : 0,
+                'e_nbits'   : 0,
+                'e_multi'   : 0
+                }
+ 
+def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     """
-    Convert table/BURF values to 'real' values.
+    Convert table/BURF values to real values.
 
-    rval = mrbcvt_decode(lstele, tblval)
-    rval = mrbcvt_decode(lstele, tblval, datyp)
+    rval = mrbcvt_decode(cmcids, tblval)
+    rval = mrbcvt_decode(cmcids, tblval, datyp)
     rval = mrbcvt_decode(blockdata)
     rval = mrbcvt_decode(blockdata, datyp)
 
     Args:
-        lstele : List of element names in the report in numeric BUFR codes.
-                 ##TODO: See the code repr in the FM 94 BUFR man
+        cmcids : List of element names in the report in numeric BUFR codes.
+                 See the code desc in the FM 94 BUFR man
         tblval : BURF code values (array of int or float)
         datyp' : (optional) Data type as obtained from mrbprm (int)
                  See rpnpy.librmn.burp_const BURP_DATYP_LIST
                                          and BURP_DATYP2NUMPY_LIST
                  Default: 6 (float)
         blockdata : (dict) Block data as returned by mrbxtr,
-                           must contains 2 keys: 'lstele', 'tblval'
+                           must contains 2 keys: 'cmcids', 'tblval'
     Returns
         array, Real values (array of float)
     Raises:
@@ -1461,18 +1525,19 @@ def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##
         mrbprm
         mrbxtr
         mrbdcl
+        mrbcvt_dict
         mrfopn
         mrfcls
         rpnpy.librmn.base.fnom
         rpnpy.librmn.base.fclos
         rpnpy.librmn.burp_const
     """
-    if isinstance(lstele, dict):
+    if isinstance(cmcids, dict):
         try:
-            tblval = lstele['tblval']
-            lstele = lstele['lstele']
+            tblval = cmcids['tblval']
+            cmcids = cmcids['cmcids']
         except:
-            raise KeyError('Provided blockdata should have these 2 keys: lstele, tblval')
+            raise KeyError('Provided blockdata should have these 2 keys: cmcids, tblval')
     if isinstance(tblval, _np.ndarray):
         if not tblval.flags['F_CONTIGUOUS']:
             raise TypeError('Provided tblval should be F_CONTIGUOUS')
@@ -1482,16 +1547,16 @@ def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##
         raise TypeError('Provided tblval should be an ndarray of rank 3')
     (nele, nval, nt) = tblval.shape
     dtype = _np.int32
-    if isinstance(lstele, _np.ndarray):
-        if not lstele.flags['F_CONTIGUOUS']:
-            raise TypeError('Provided lstele should be F_CONTIGUOUS')
-        if dtype != lstele.dtype:
-            raise TypeError('Expecting lstele of type {0}, got: {1}'
-                            .format(repr(dtype),repr(lstele.dtype)))
-        if len(lstele.shape) != 1 or lstele.size != nele:
-            raise TypeError('lstele should be a ndarray of rank 1 (nele)')
+    if isinstance(cmcids, _np.ndarray):
+        if not cmcids.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided cmcids should be F_CONTIGUOUS')
+        if dtype != cmcids.dtype:
+            raise TypeError('Expecting cmcids of type {0}, got: {1}'
+                            .format(repr(dtype),repr(cmcids.dtype)))
+        if len(cmcids.shape) != 1 or cmcids.size != nele:
+            raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
     else:
-        raise TypeError('lstele should be a ndarray of rank 1 (nele)')
+        raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
             
     ## Conversion of values from RVAL (real) to TBLVAL (integer) or the inverse
     ## depending on the MODE.
@@ -1530,33 +1595,33 @@ def mrbcvt_decode(lstele, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):  ##
 
     dtype = _rbc.BURP_DATYP2NUMPY_LIST[datyp]
     rval   = tblval.astype(dtype)    
-    istat = _rp.c_mrbcvt(lstele, tblval, rval, nele, nval, nt,
+    istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt,
                          _rbc.MRBCVT_DECODE)
     if istat != 0:
         raise BurpError('c_mrbcvt', istat)
     return rval
 
 #TODO: function for mrbxtr+cvt+dcl (and maybe hrd,prm)
-def mrbxtr_dcl_cvt(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
+def mrbxtr_dcl_cvt(buf, bkno, cmcids=None, tblval=None, dtype=_np.int32):
     """
     Extract block of data from the buffer and decode its values
     
     blockdata = mrbxtr(buf, bkno)
-    blockdata = mrbxtr(buf, bkno, lstele, tblval)
+    blockdata = mrbxtr(buf, bkno, cmcids, tblval)
 
     Args:
         buf  : Report data  (array)
         bkno : block number (int > 0)
-        lstele, tblval: (optional) return data arrays
+        cmcids, tblval: (optional) return data arrays
         dtype: (optional) numpy type for tblval creation, if tblval is None
     Returns
         {
-            'lstele' : (array) List of element names in the report in numeric
+            'cmcids' : (array) List of element names in the report in numeric
                                BUFR codes. (Size: NELE; type: int)
                                NELE: Number of meteorological elements in a
                                      block. 1st dimension of the array
                                      TBLVAL(block). (0-127)
-                               ##TODO: See the code repr in the FM 94 BUFR man
+                               See the code desc in the FM 94 BUFR man
             'tblval' : (array) Block data
                                (Shape: NELE, NVAL, NT; type: int)
                                NELE: Number of meteorological elements in block
@@ -1594,7 +1659,7 @@ def mrbxtr_dcl_cvt(buf, bkno, lstele=None, tblval=None, dtype=_np.int32):
     raise BurpError('mrbxtr_dcl_cvt not yet implemented')
 
 #TODO: mrbcvt_encode
-## def mrbcvt_encode(lstele, rval): ##TODO:
+## def mrbcvt_encode(cmcids, rval): ##TODO:
 
 #TODO: review
 def mrbini(funit, buf, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
@@ -1628,7 +1693,7 @@ def mrbini(funit, buf, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
 
 #TODO: review
 def mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
-           lstele, tblval):
+           cmcids, tblval): #TODO change cmcids for consistency (more explict name)
     """
     Adds a block to a report.
     #TODO: should accept a dict as input for all args
@@ -1644,7 +1709,7 @@ def mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
         btyp   (int)   : block type
         nbit   (int)   : number of bit to keep per values
         datyp  (int)   : data type for packing
-        lstele (array) : list of nele meteorogical elements
+        cmcids (array) : list of nele meteorogical elements
         tblval (array) : array of values to write (nele*nval*nt)
     Returns
         #TODO: 
@@ -1663,7 +1728,7 @@ def mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
         #TODO: 
     """
     istat = _rp.c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit,
-                         bit0, datyp, lstele, tblval)
+                         bit0, datyp, cmcids, tblval)
     if istat != 0:
         raise BurpError('c_mrbadd', istat)
     return buf
@@ -1726,6 +1791,9 @@ def mrfdel(handle):
     if istat != 0:
         raise BurpError('c_mrfdel', istat)
     return
+
+##TODO: mrfrwd
+##TODO: mrfapp
 
 # =========================================================================
 

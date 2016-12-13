@@ -306,12 +306,12 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             buf    = rmn.mrfget(handle, buf, funit)
             params = rmn.mrbhdr(buf)
             ## blkdata = {
-            ##     'lstele' : None,
+            ##     'cmcids' : None,
             ##     'tblval' : None
             ##     }
             for iblk in xrange(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
-                ## blkdata   = rmn.mrbxtr(buf, iblk+1, blkdata['lstele'], blkdata['tblval'])
+                ## blkdata   = rmn.mrbxtr(buf, iblk+1, blkdata['cmcids'], blkdata['tblval'])
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
                 for k in blkparams.keys():
                     self.assertEqual(blkparams[k], blkdata[k],
@@ -321,7 +321,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                  2819, 2820, 3538], dtype=_np.int32)
             tblval0 = _np.array([10000, -1, -1, -1, -1, 405, -1, -1, -1,
                                  1029000], dtype=_np.int32)
-            self.assertFalse(_np.any(lstele0 - blkdata['lstele'] != 0))
+            self.assertFalse(_np.any(lstele0 - blkdata['cmcids'] != 0))
             self.assertEqual((blkparams['nele'], blkparams['nval'],
                               blkparams['nt']), blkdata['tblval'].shape)
             self.assertFalse(_np.any(tblval0 -
@@ -345,26 +345,59 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             for iblk in xrange(params['nblk']):
                 blkparams  = rmn.mrbprm(buf, iblk+1)
                 blkdata    = rmn.mrbxtr(buf, iblk+1)
-                lstelebufr = rmn.mrbdcl(blkdata['lstele'])
+                lstelebufr = rmn.mrbdcl(blkdata['cmcids'])
+            rmn.burp_close(funit)
             lstelebufr0 = _np.array([7004, 11001, 11002, 12001, 12192, 10194,
                                      8001, 11003, 11004, 13210],
                                      dtype=_np.int32)
             self.assertFalse(_np.any(lstelebufr0 - lstelebufr != 0))
             lstelecmc = rmn.mrbcol(lstelebufr)
-            self.assertFalse(_np.any(lstelecmc - blkdata['lstele'] != 0))
-            rmn.burp_close(funit)
+            self.assertFalse(_np.any(lstelecmc - blkdata['cmcids'] != 0))
+            v1 = rmn.mrbdcl(blkdata['cmcids'][0])
+            v2 = rmn.mrbcol(v1)
+            self.assertEqual(lstelebufr0[0], v1)
+            self.assertEqual(blkdata['cmcids'][0], v2)
+
 
     def testmrbcvtdictKnownValues(self):
         """mrbcvt_dict should give known result with known input"""
-        d  = rmn.mrbcvt_dict(1041)
-        d0 = {'multi': 0, 'code': 1041, 'cvt': 0, '?2?': -1073741824, '?3?': 31, '?1?': 5, 'unit': 'M/S', 'desc': 'ABSOL. PLATFORM VELOCITY, FIRST COMPONENT'}
+        d  = rmn.mrbcvt_dict(297)
+        d0 = {
+            'e_error'   : 0,
+            'e_cmcid'   : 297,
+            'e_bufrid'  : 1041,
+            'e_bufrid_F': 0,
+            'e_bufrid_X': 1,
+            'e_bufrid_Y': 41,
+            'e_cvt'     : 1,
+            'e_desc'    : 'ABSOL. PLATFORM VELOCITY, FIRST COMPONENT',
+            'e_units'   : 'M/S',
+            'e_scale'   : 5,
+            'e_bias'    : -1073741824,
+            'e_nbits'   : 31,
+            'e_multi'   : 0
+            }
         ## print 'mrbcvt_dict',d
         for k in d.keys():
             self.assertEqual(d0[k], d[k],
                              'For {0}, expected {1}, got {2}'
                              .format(k, d0[k], d[k]))
-        d  = rmn.mrbcvt_dict(10031)
-        d0 = {'multi': 0, 'code': 10031, 'cvt': 0, '?2?': -1073741824, '?3?': 31, '?1?': 2, 'unit': 'M', 'desc': "IN DIR. N. POLE, DIST. FM EARTH'S CENTRE"}
+        d  = rmn.mrbcvt_dict(2591)
+        d0 = {
+            'e_error'   : 0,
+            'e_cmcid'   : 2591,
+            'e_bufrid'  : 10031,
+            'e_bufrid_F': 0,
+            'e_bufrid_X': 10,
+            'e_bufrid_Y': 31,
+            'e_cvt'     : 1,
+            'e_desc'    : "IN DIR. N. POLE, DIST. FM EARTH'S CENTRE",
+            'e_units'   : 'M',
+            'e_scale'   : 2,
+            'e_bias'    : -1073741824,
+            'e_nbits'   : 31,
+            'e_multi'   : 0
+            }
         ## print 'mrbcvt_dict',d
         for k in d.keys():
             self.assertEqual(d0[k], d[k],
@@ -387,7 +420,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             for iblk in xrange(params['nblk']):
                 blkparams = rmn.mrbprm(buf, iblk+1)
                 blkdata   = rmn.mrbxtr(buf, iblk+1)
-                rval      = rmn.mrbcvt_decode(blkdata['lstele'],
+                rval      = rmn.mrbcvt_decode(blkdata['cmcids'],
                                               blkdata['tblval'],
                                               blkparams['datyp'])
                 rval      = rmn.mrbcvt_decode(blkdata,

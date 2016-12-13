@@ -315,6 +315,10 @@ BURP_BKTYP_KIND_DESC = {
     22 : 'SSMI data',
     23 : 'forecast, GEPS',
     24 : 'forecast, REPS',
+    25 : 'probabilistic forecast',
+    25 : 'deterministic forecast',
+    27 : 'QC weather elements (QCOBS)',
+    28 : 'QA of DMSobservations'
     }
 
 ## (bktyp_alt, bktyp_kind, bkstp) : description
@@ -466,7 +470,38 @@ BURP_BKSTP_DESC = { #TODO
     }
 #</source>
 
+#TODO: BURP_BKNAT_KIND_DESC flags:
+## Voici les MARQUEURS que l'on nomment primaires.
+## Bits	Décimal	Type de données	REF	Description
+## 12	4096	AO	1	Élément assimilé (c'est-à-dire ayant influencé l'analyse)
+## 11	2048	AO	2	Élément rejeté par un processus de sélection (thinning ou canal)
+## 10	1024	AO	3	Élément généré par l'AO
+## 9	512	AO	4	Élément rejeté par le contrôle de la qualité de l'AO (Background Check ou QC-Var)
+## 8	256	AO	5	Élément rejeté parce qu'il est sur une liste noire
+## 7	128	DERIV	6	En réserve
+## 6	64	DERIV	7	Élément corrigé par la séquence DERIVATE ou correction de biais
+## 5	32	DERIV	8	Élément interpolé, généré par DERIVATE
+## 4	16	DERIV	9	Élément douteux
+## 3	8	ADE	10	Élément peut-être erroné
+## 2	4	ADE	11	Élément erroné
+## 1	2	ADE	12	Élément qui excède un extrême climatologique (ou) qui ne passe pas le test de consistance
+## 0	1	ADE	13	Élément modifié ou généré par l'ADE
+## Pour répondre à de nouveaux besoins, nous avons dû étendre le nombre de marqueurs avec une nouvelle liste qui constituera les marqueurs qu'on dira « secondaires » car ceux-ci seront utilisés en conjonction avec les marqueurs dits « primaires ». Nous avons la possibilité d'étendre jusqu'au bit 32.
+
+## Voici les MARQUEURS que l'on nomment secondaires.
+## Bits	Décimal	Type de données	REF	Description
+## 13	8192	AO	0	Comparaison contre le champ d'essai, niveau 1
+## 14	16384	AO	-1	Comparaison contre le champ d'essai, niveau 2
+## 15	32768	AO	-2	Comparaison contre le champ d'essai, niveau 3
+## 16	65536	AO	-3	Élément rejeté par la comparaison contre le champ d'essai (Background Check)
+## 17	131072	AO	-4	Élément rejeté par le QC-Var
+## 18	262144	DERIV	-5	Élément non-utilisé à cause de l'orographie
+## 19	524288	DERIV	-6	Élément non-utilisé à cause du masque terre-mer
+## 20	1048576	DERIV	-7	Erreur de position d'avion décelée par TrackQc
+## 21	2097152	QC	-8	Inconsistance détectée par un processus de CQ
+
 #TODO: BFAM desc list
 #TODO: fst, use dict to provide var desc and units, tool rpy.dict
 
-
+#TODO: stnid=^******* = regrouped data record
+#TODO: stnid=^^****** = summary record
