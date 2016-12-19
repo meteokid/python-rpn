@@ -24,12 +24,6 @@
 
       integer levset,set
 
-!author
-!     V. Lee    - rpn - July  2004 (from dynout2 v3_12)
-!
-!revision
-! v4_80 - Desgagne M.       - major re-factorization of output
-
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
@@ -136,15 +130,17 @@
 
 !     Obtain humidity HUT1 and other GMM variables
       nullify (hut1,wlnph_m,wlnph_ta,tdiag,qdiag)
-      istat= gmm_get('TR/'//'HU'//':P',hut1    )
-      istat= gmm_get(gmmk_tt1_s      , tt1     )
-      istat= gmm_get(gmmk_wt1_s      , wt1     )
-      istat= gmm_get(gmmk_fis0_s     , fis0    )
-      istat= gmm_get(gmmk_pw_log_pm_s, wlnph_m )
-      istat= gmm_get(gmmk_pw_log_pt_s, wlnph_ta)
-      istat= gmm_get(gmmk_st1_s      , st1     )
-      istat= gmm_get(gmmk_diag_tt_s  , tdiag   )
-      istat= gmm_get(gmmk_diag_hu_s  , qdiag   )
+      istat= gmm_get('TR/'//'HU'//':P', hut1      )
+      istat= gmm_get(gmmk_tt1_s       , tt1       )
+      istat= gmm_get(gmmk_wt1_s       , wt1       )
+      istat= gmm_get(gmmk_fis0_s      , fis0      )
+      istat= gmm_get(gmmk_pw_log_pm_s , wlnph_m   )
+      istat= gmm_get(gmmk_pw_log_pt_s , wlnph_ta  )
+      istat= gmm_get(gmmk_pw_tt_plus_s, pw_tt_plus)
+      istat= gmm_get(gmmk_pw_p0_plus_s, pw_p0_plus)
+      istat= gmm_get(gmmk_st1_s       , st1       )
+      istat= gmm_get(gmmk_diag_tt_s   , tdiag     )
+      istat= gmm_get(gmmk_diag_hu_s   , qdiag     )
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
@@ -157,67 +153,28 @@
       hu(:,:,l_nk+1) = qdiag
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
-!     Compute TT (in tt)
+!     Store temperature TT (in tt)
 !         
-      call tt2virt2 (tt,.false.,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      tt(:,:,l_nk+1)= tdiag
+      tt(1:l_ni,1:l_nj,1:G_nk) = pw_tt_plus(1:l_ni,1:l_nj,1:G_nk)
+      tt(:,:,G_nk+1)= tdiag
       call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
 !     Obtain Virtual temperature from TT1 and physics diag level
 !     On diag level there is no hydrometeor.
 
-      vt(:,:,1:l_nk)= tt1(:,:,1:l_nk  )
-      vt(:,:,l_nk+1)= tt1(:,:,l_nk)
+      vt(:,:,1:l_nk)= tt1(:,:,1:l_nk)
+      vt(:,:,l_nk+1)= tt1(:,:,l_nk  )
       if (Out3_sfcdiag_L) then
          call mfotvt (vt(l_minx,l_miny,nk_src),tt(l_minx,l_miny,nk_src),&
                       hu(l_minx,l_miny,nk_src),l_ninj,1,l_ninj)
       endif 
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
-!     Store PTOP (PT)
+!     Store PTOP and p0
       ptop (:,:) = Cstv_ptop_8
-      l_ninj=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)
+      p0= pw_p0_plus
+      call out_padbuf(p0,l_minx,l_maxx,l_miny,l_maxy,1)
 
-!     Compute and store P0
-      w1(:,:)= st1(:,:)
-      call vsexp (w2,w1,l_ninj)
-      do j=l_miny,l_maxy
-      do i=l_minx,l_maxx
-         p0(i,j) = w2(i,j)*Cstv_pref_8
-      end do
-      end do
-
-      if(pnwe.ne.0)then
-         !
-         ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
-         !
-         ! ZETA = ZETAs + ln(hyb)
-         ! 
-         ! Taking the total time derivative
-         !  .      .
-         ! ZETA = hyb/hyb
-         !  .     .
-         ! hyb = ZETA*hyb
-         ! 
-         ! Normalizing by domain height
-         !       .
-         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )     
-         !
-         istat = gmm_get(gmmk_zdt1_s,zdt1)
-         ! Note: put WE=0 at first thermo level to close the domain
-         !       Do not write we for thermo level nk+3/4 since zdt is at surface
-         !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
-         allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
-         ffwe(:,:,G_nk)= 0.
-         do k=1,G_nk-1
-            zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
-            do j=l_miny,l_maxy
-            do i=l_minx,l_maxx
-               ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
-            end do
-            end do
-         end do
-      endif
 !_________________________________________________________________
 !
 !     2.0    Output 2D variables 
@@ -538,9 +495,40 @@
          endif
 
          if (pnwe.ne.0) then
+         !
+         ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
+         !
+         ! ZETA = ZETAs + ln(hyb)
+         ! 
+         ! Taking the total time derivative
+         !  .      .
+         ! ZETA = hyb/hyb
+         !  .     .
+         ! hyb = ZETA*hyb
+         ! 
+         ! Normalizing by domain height
+         !       .
+         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )     
+         !
+         ! Note: put WE=0 at first thermo level to close the domain
+         !       Do not write we for thermo level nk+3/4 since zdt is at surface
+         !       I user wants data at nk_3/4 us 0.5*ffwe(nk-1) (liniar interpolation)
+
+            istat = gmm_get(gmmk_zdt1_s,zdt1)
+            allocate(ffwe(l_minx:l_maxx,l_miny:l_maxy,G_nk))
+            ffwe(:,:,G_nk)= 0.
+            do k=1,G_nk-1
+               zd2etad=Ver_hyb%t(k)/(1.-Cstv_ptop_8/Cstv_pref_8)
+               do j= 1, l_nj
+               do i= 1, l_ni
+                  ffwe(i,j,k)=zdt1(i,j,k)*zd2etad
+               end do
+               end do
+            end do
             call out_fstecr3(  ffwe,l_minx,l_maxx,l_miny,l_maxy,hybt_w,&
                  'WE  ',Outd_convmult(pnwe,set),Outd_convadd(pnwe,set),&
                  kind,-1,G_nk,indo,min(nko,G_nk),Outd_nbit(pnwe,set),.false.)
+            deallocate (ffwe)
          endif
 
          if (pnzz.ne.0) then
@@ -582,7 +570,7 @@
 
          call vertint2 ( hu_pres,cible,nko, hu,wlnph_ta,nk_src,&
                          l_minx,l_maxx,l_miny,l_maxy          ,&
-                         1,l_ni,1,l_nj, inttype='linear' )
+                    1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
 
          if ( Out3_cliph_L ) then
             do k= 1, nko
@@ -727,7 +715,7 @@
          if (pnth.ne.0) then
             call vertint2 ( w5,cible,nko, th,wlnph_ta,G_nk+1          ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                           inttype='linear' )
+                           inttype=Out3_vinterp_type_S )
             call out_fstecr3(w5,l_minx,l_maxx,l_miny,l_maxy,rf, &
                  'TH  ',Outd_convmult(pnth,set),Outd_convadd(pnth,set), &
                  kind,-1,nko, indo, nko, Outd_nbit(pnth,set),.false. )
@@ -745,7 +733,7 @@
         if (pnww.ne.0) then
             call vertint2 ( w5,cible,nko, omega,wlnph_ta,G_nk         ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
-                            inttype='linear' )
+                            inttype=Out3_vinterp_type_S )
             if (Outd_filtpass(pnww,set).gt.0) &
                 call filter2( w5,Outd_filtpass(pnww,set),Outd_filtcoef(pnww,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
@@ -759,8 +747,7 @@
       endif
 
       if (pnww.ne.0) deallocate (omega)
-      if (pnwe.ne.0) deallocate (ffwe )
-      if (pnth.ne.0) deallocate (th   )
+      if (pnth.ne.0) deallocate (th)
 !
 !-------------------------------------------------------------------
 !

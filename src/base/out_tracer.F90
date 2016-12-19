@@ -184,11 +184,11 @@
                   t5(:,:,1:G_nk  ) = tr1(:,:,1:G_nk)
                   call vertint2 ( w4,cible,nko, t5 ,pw_log_pt,G_nk+1,&
                                   l_minx,l_maxx,l_miny,l_maxy       ,&
-                                  1,l_ni,1,l_nj, inttype='linear' )
+                          1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
                else
                   call vertint2 ( w4,cible,nko, tr1,pw_log_pt,G_nk,&
                                   l_minx,l_maxx,l_miny,l_maxy     ,&
-                                  1,l_ni,1,l_nj, inttype='linear' )
+                          1,l_ni,1,l_nj, inttype=Out3_vinterp_type_S )
                endif
 
                if (Outd_filtpass(ii,set).gt.0) &

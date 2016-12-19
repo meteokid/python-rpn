@@ -40,7 +40,7 @@
 
       integer i,j,k,i0,in,j0,jn
       real*8 wk_8 (Minx:Maxx,Miny:Maxy,Nk)
-      real*8, dimension(:,:,:), pointer :: stencils => null()
+      real*8, dimension(:,:), pointer :: stencils => null()
 !
 !---------------------------------------------------------------------
 !     
@@ -61,9 +61,7 @@
       end select
 
       if (mm.eq.1) then
-          F_champ(:,:,1:NK) = F_temp(:,:,1:NK)
-      else if (mm.eq.2) then
-          F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
       else
           F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
       endif
@@ -74,11 +72,11 @@
        do k=1,NK
           do j= j0, jn
           do i= i0, in
-             wk_8(i,j,k)= stencils(i,j,1)*F_temp(i  ,j  ,k) + &
-                          stencils(i,j,2)*F_temp(i-1,j  ,k) + &
-                          stencils(i,j,3)*F_temp(i+1,j  ,k) + &
-                          stencils(i,j,4)*F_temp(i  ,j-1,k) + &
-                          stencils(i,j,5)*F_temp(i  ,j+1,k)
+             wk_8(i,j,k)= stencils(j,1)*F_temp(i  ,j  ,k) + &
+                          stencils(j,2)*F_temp(i-1,j  ,k) + &
+                          stencils(j,3)*F_temp(i+1,j  ,k) + &
+                          stencils(j,4)*F_temp(i  ,j-1,k) + &
+                          stencils(j,5)*F_temp(i  ,j+1,k)
           enddo
           enddo
        enddo
@@ -99,7 +97,6 @@
           enddo
 !$omp end do
 !$omp end parallel
-          F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
 
       else
 !$omp parallel private(i,j) shared(wk_8) 

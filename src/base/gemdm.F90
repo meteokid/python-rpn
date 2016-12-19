@@ -24,21 +24,14 @@
 !
 !     ---------------------------------------------------------------
 !
-! Initialize: Domain, MPI, processor topology and the model component
+! Initialize: Domain, MPI, processor topology and ptopo.cdk
 
       call init_component
 
-! Establish model configuration, domain decomposition and main memory
+! Establish: model configuration, domain decomposition
+!            and model geometry
 
       call set_world_view
-
-! Initialize geometry of the model
-
-      call set_geom
-
-! Initialize commons for output control
-
-      call set_sor
 
 ! Initialize the ensemble prevision system
 
@@ -52,9 +45,11 @@
 
       call tracers
 
-! Setup commons
+! Setup main memory
 
-      call set_cn1
+      call main_gmm_storage
+
+      call set_dyn_opr
 
 ! Run GEM
 

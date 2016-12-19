@@ -128,7 +128,7 @@
          endif
       enddo
   
-   if(Schm_trapeze_L.or.Schm_step_settls_L) then
+   if(Schm_trapeze_L) then
          !working with displacements for the vertical position
  
        do k=k00,F_nk-1            
@@ -145,8 +145,8 @@
                   wdt(i,k) = (F_wdm(i,j,k)+F_wdm(i,j,k+1))*0.5d0
            endif
 
-            F_zt(i,j,k)=Ver_z_8%t(k) - Cstv_dtD_8*  wdt(i,  k) &
-                                     - Cstv_dtA_8*F_wat(i,j,k)
+            F_zt(i,j,k)=Ver_z_8%t(k) - Cstv_dtzD_8*  wdt(i,  k) &
+                                     - Cstv_dtzA_8*F_wat(i,j,k)
             F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)
             F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
          enddo

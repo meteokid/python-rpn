@@ -44,6 +44,7 @@
 #include "rstr.cdk"
 
       logical :: rstrt_L= .false.
+      integer err
 !
 !     ---------------------------------------------------------------
 !
@@ -51,11 +52,11 @@
 
       if ( .not. Rstri_rstn_L ) then
 
-         call indata ()
+         call indata
 
       else
 
-         call set_dync ()
+         call set_dync ( .true., err )
 
       endif
 

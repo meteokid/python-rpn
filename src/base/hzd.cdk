@@ -60,9 +60,9 @@
                                         Hzd_wevec_8, Hzd_wuevec_8           ,&
                                         Hzd_xp2_8, Hzd_yp2_8, Hzd_yp2su_8   ,&
                                         Hzd_xevec_8, Hzd_xeval_8
-       real*8, dimension(:,:,:), pointer :: Hzd_geom_q => null()
-       real*8, dimension(:,:,:), pointer :: Hzd_geom_u => null()
-       real*8, dimension(:,:,:), pointer :: Hzd_geom_v => null()
+       real*8, dimension(:,:), pointer :: Hzd_geom_q => null()
+       real*8, dimension(:,:), pointer :: Hzd_geom_u => null()
+       real*8, dimension(:,:), pointer :: Hzd_geom_v => null()
 
        common /Hzd_pntr/ Hzd_au_8  ,Hzd_cu_8  ,Hzd_deltau_8  ,&
                          Hzd_av_8  ,Hzd_cv_8  ,Hzd_deltav_8  ,&
@@ -87,7 +87,7 @@
        integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
        integer, dimension(:), pointer :: Hzd_del
        real         Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
-       real         Hzd_smago_param, Hzd_smago_prandtl
+       real         Hzd_smago_param, Hzd_smago_prandtl, Hzd_smago_lnr
        real*8 , dimension(:), pointer :: Hzd_visco_8
        real*8 , dimension(:), pointer :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
 
@@ -97,5 +97,5 @@
        common /hzdi/ Hzd_niter, Hzd_niter_tr,Hzd_niter_theta
        common /hzdi/ Hzd_del, Hzd_theta_njpole_gu_only
        common /hzdr/ Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
-       common /hzdr/ Hzd_smago_param, Hzd_smago_prandtl
+       common /hzdr/ Hzd_smago_param, Hzd_smago_prandtl, Hzd_smago_lnr
        common /hzdr8/Hzd_visco_8,Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta

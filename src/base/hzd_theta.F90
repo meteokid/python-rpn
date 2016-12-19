@@ -54,10 +54,10 @@
                                pres_t(1:l_ni,1:l_nj,k)
 !NOTE, zeroing in halo regions in order to avoid float error when dble(X)
 !  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
-         th(l_minx:0     ,:     ,k) = 273.
-         th(l_ni+1:l_maxx,:     ,k) = 273.
-         th(1:l_ni,l_miny:0     ,k) = 273.
-         th(1:l_ni,l_nj+1:l_maxy,k) = 273.
+         th(l_minx:0     ,:     ,k) = Dcst_tcdk_8
+         th(l_ni+1:l_maxx,:     ,k) = Dcst_tcdk_8
+         th(1:l_ni,l_miny:0     ,k) = Dcst_tcdk_8
+         th(1:l_ni,l_nj+1:l_maxy,k) = Dcst_tcdk_8
       end do
 !$omp enddo
 !$omp end parallel

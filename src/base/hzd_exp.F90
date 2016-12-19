@@ -89,11 +89,9 @@ contains
       endif
       call rpn_comm_xch_halo(F_c1,l_minx,l_maxx,l_miny,l_maxy,&
                l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-      c1 = F_c1
       if (present(F_vv)) then
          call rpn_comm_xch_halo(F_vv,l_minx,l_maxx,l_miny,l_maxy,&
                l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
-         c2 = F_vv
       endif
 
       itercnt=0
@@ -110,21 +108,22 @@ contains
 
             itercnt = itercnt + 1
 
-            if (itercnt.eq.G_halox .and. Grd_yinyang_L) then
-               if (present(F_vv)) then
-                  call yyg_nestuv(c1, c2, l_minx,l_maxx,l_miny,l_maxy,Nk)
-               else
-                  call yyg_xchng (c1,l_minx,l_maxx,l_miny,l_maxy, Nk,&
+            if (itercnt.eq.G_halox) then
+               if (Grd_yinyang_L) then
+                  if (present(F_vv)) then
+                     call yyg_nestuv(F_c1, F_vv, l_minx,l_maxx,l_miny,l_maxy,Nk)
+                  else
+                     call yyg_xchng (F_c1,l_minx,l_maxx,l_miny,l_maxy, Nk,&
                                                      .false., 'CUBIC')
+                  endif
                endif
+               call rpn_comm_xch_halo(F_c1,l_minx,l_maxx,l_miny,l_maxy,&
+                    l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+               if (present(F_vv)) &
+               call rpn_comm_xch_halo(F_vv,l_minx,l_maxx,l_miny,l_maxy,&
+                    l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
                itercnt=0
             endif
-
-            call rpn_comm_xch_halo(c1,l_minx,l_maxx,l_miny,l_maxy,&
-                 l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
-            if (present(F_vv)) &
-            call rpn_comm_xch_halo(c2,l_minx,l_maxx,l_miny,l_maxy,&
-                 l_ni,l_nj,Nk,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
          enddo
 

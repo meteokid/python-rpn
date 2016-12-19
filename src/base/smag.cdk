@@ -1,0 +1,3 @@
+      real, pointer, dimension (:,:,:) ::  smag => null()
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_smag_s
+      common /smag_n_gmm/ gmmk_smag_s

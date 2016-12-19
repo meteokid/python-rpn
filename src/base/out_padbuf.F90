@@ -17,21 +17,9 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     M. Desgagne - rpn - July  2004 (from MC2)
-!
-!revision
-! v3_20 - Lee V.            - initial GEMDM version
-!
-!object
-!     To fill non-initialized values in halo area.
-!arguments
-! F   field to be treated
-
 #include "glb_ld.cdk"
 
       integer minx,maxx,miny,maxy,lnk
-      character*1 grid
       real f(minx:maxx,miny:maxy,lnk)
 
       integer i,j,k,iff,id,jd,jf
@@ -44,35 +32,21 @@
       jf   = l_nj
 
       do k=1,lnk
-      do j=jf+1,maxy
-      do i=id,iff
-         f(i,j,k) = f(i,jf,k)
-      end do
-      end do
-      end do
-
-      do k=1,lnk
-      do j=jd-1,miny,-1
-      do i=id,iff
-         f(i,j,k) = f(i,jd,k)
-      end do
-      end do
+         do i= minx , id-1
+            f(i,jd:jf,k)= f(id  ,jd:jf,k)
+         end do
+         do i= iff+1, maxx
+            f(i,jd:jf,k)= f(iff ,jd:jf,k)
+         end do
       end do
 
       do k=1,lnk
-      do i=iff+1,maxx
-      do j=miny,maxy
-         f(i,j,k) = f(iff,j,k)
-      end do
-      end do
-      end do
-
-      do k=1,lnk
-      do i=id-1,minx,-1
-      do j=miny,maxy
-         f(i,j,k) = f(id,j,k)
-      end do
-      end do
+         do j= miny, jd-1
+            f(minx:maxx,j,k)= f(minx:maxx,jd,k)
+         end do
+         do j= jf+1, maxy
+            f(minx:maxx,j,k)= f(minx:maxx,jf,k)
+         end do
       end do
 !
 !----------------------------------------------------------------------

@@ -54,7 +54,6 @@
       common / Grd_r8/ Grd_xlon1_8, Grd_xlat1_8, Grd_xlon2_8, Grd_xlat2_8
 
       namelist /grid/ Grd_typ_S, Grd_ni, Grd_nj, Grd_maxcfl
-      namelist /grid/ Grd_iref, Grd_jref
       namelist /grid/ Grd_dx, Grd_dy
       namelist /grid/ Grd_latr, Grd_lonr, Grd_overlap
       namelist /grid/ Grd_xlon1, Grd_xlat1, Grd_xlon2, Grd_xlat2

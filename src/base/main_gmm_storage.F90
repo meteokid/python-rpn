@@ -13,21 +13,11 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r set_cn1 - initialization of the commons at level one
+!**s/r main_gmm_storage - Allocate model gmm storage
 !
-      subroutine set_cn1
+      subroutine main_gmm_storage
       implicit none
 #include <arch_specific.hf>
-
-!author
-!     michel roch - rpn - june 1993
-!
-!revision
-! v2_00 - Desgagne/Lee      - initial MPI version (from setcn1 v1_03)
-! v2_31 - Desgagne/Lee      - introduce tracers, output of sliced tracers
-! v3_11 - Gravel S.         - modify for theoretical cases
-! v3_21 - Lee V.            - remove Tr2d
-! v3_30 - Desgagne & Winger - call glb_restart
 
 #include "gmm.hf"
 #include "var_gmm.cdk"
@@ -42,8 +32,6 @@
 !-------------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,2000)
-
-      call var_dict
 
 !     Initialize the time-dependent variables comdecks
 !     -------------------------------------------------
@@ -81,7 +69,7 @@
       istat = gmm_create(gmmk_topo_low_s ,topo_low ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
 
- 2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R SET_CN1', &
+ 2000 format( /,'INITIALIZATION OF MAIN GMM VARIABLES S/R MAIN_GMM_STORAGE', &
               /,'====================================================')
 !
 !     ---------------------------------------------------------------

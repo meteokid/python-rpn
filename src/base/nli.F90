@@ -157,7 +157,7 @@
           do j=j0v,jnv+1
           do i=i0u,inu+1
              BsPq(i,j,k)  = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq)*Ver_onezero(k)
-             BsPrq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + Cstv_rEp_8*F_q(i,j,kq)*Ver_onezero(k)
+             BsPrq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k)
              frq(i,j,k)   = F_q(i,j,kq)*Ver_onezero(k)
 
           enddo
@@ -205,25 +205,25 @@
 
 !        mu barXZ
 !        ~~~~~~~~
-         barz  = Ver_wp_8%m(k)*MU(i  ,j,k)+Ver_wm_8%m(k)*MU(i  ,j,km)
-         barzp = Ver_wp_8%m(k)*MU(i+1,j,k)+Ver_wm_8%m(k)*MU(i+1,j,km)
+         barz  = Ver_wpM_8(k)*MU(i  ,j,k)+Ver_wmM_8(k)*MU(i  ,j,km)
+         barzp = Ver_wpM_8(k)*MU(i+1,j,k)+Ver_wmM_8(k)*MU(i+1,j,km)
          mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and mu terms: RT barXZ * dBsPq/dX + mu barXZ * dfi'/dX
 !                                        - RTstr barZ * dBsPrq/dX         
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         barz  = Ver_wp_8%m(k)*(F_t(i  ,j,k)-Ver_Tstar_8%t(k))+Ver_wm_8%m(k)*(F_t(i  ,j,km)-Ver_Tstar_8%t(km))
-         barzp = Ver_wp_8%m(k)*(F_t(i+1,j,k)-Ver_Tstar_8%t(k))+Ver_wm_8%m(k)*(F_t(i+1,j,km)-Ver_Tstar_8%t(km))
+         barz  = Ver_wpM_8(k)*(F_t(i  ,j,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i  ,j,km)-Ver_Tstar_8%t(km))
+         barzp = Ver_wpM_8(k)*(F_t(i+1,j,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i+1,j,km)-Ver_Tstar_8%t(km))
          t_interp = (barz+barzp)*half 
 
-         barz  = Ver_wp_8%m(k)*Ver_Tstar_8%t(k)+Ver_wm_8%m(k)*Ver_Tstar_8%t(km)
+         barz  = Ver_wpM_8(k)*Ver_Tstar_8%t(k)+Ver_wmM_8(k)*Ver_Tstar_8%t(km)
 
          w1 = ( BsPq(i+1,j,k)  - BsPq(i,j,k)  ) * Geomg_invDXMu_8(j)
          w2 = (   FI(i+1,j,k)  -   FI(i,j,k)  ) * Geomg_invDXMu_8(j)
          w3 = (  frq(i+1,j,k)  -  frq(i,j,k)  ) * Geomg_invDXMu_8(j)
 
          F_nu(i,j,k) = Dcst_rgasd_8 * t_interp * w1 + mu_interp * w2 &
-                     + (one-Cstv_rEp_8)*Dcst_rgasd_8 * barz * w3
+                     + (one-Cstv_rE_8)*Dcst_rgasd_8 * barz * w3
          
 
 !        Coriolis term & metric terms: - (f + tan(phi)/a * U ) * V barXY
@@ -271,25 +271,25 @@
 
 !        mu barYZ
 !        ~~~~~~~~
-         barz  = Ver_wp_8%m(k)*MU(i,j  ,k)+Ver_wm_8%m(k)*MU(i,j  ,km)
-         barzp = Ver_wp_8%m(k)*MU(i,j+1,k)+Ver_wm_8%m(k)*MU(i,j+1,km)
+         barz  = Ver_wpM_8(k)*MU(i,j  ,k)+Ver_wmM_8(k)*MU(i,j  ,km)
+         barzp = Ver_wpM_8(k)*MU(i,j+1,k)+Ver_wmM_8(k)*MU(i,j+1,km)
          mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and Mu term: RT' barYZ * dBsPq/dY + mu barYZ * dfi'/dY
 !                                     - RTstr barZ * dBsPrq/dY        
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         barz  = Ver_wp_8%m(k)*(F_t(i,j  ,k)-Ver_Tstar_8%t(k))+Ver_wm_8%m(k)*(F_t(i,j  ,km)-Ver_Tstar_8%t(km))
-         barzp = Ver_wp_8%m(k)*(F_t(i,j+1,k)-Ver_Tstar_8%t(k))+Ver_wm_8%m(k)*(F_t(i,j+1,km)-Ver_Tstar_8%t(km))
+         barz  = Ver_wpM_8(k)*(F_t(i,j  ,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i,j  ,km)-Ver_Tstar_8%t(km))
+         barzp = Ver_wpM_8(k)*(F_t(i,j+1,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i,j+1,km)-Ver_Tstar_8%t(km))
          t_interp = (barz+barzp)*half
 
-         barz  = Ver_wp_8%m(k)*Ver_Tstar_8%t(k)+Ver_wm_8%m(k)*Ver_Tstar_8%t(km)
+         barz  = Ver_wpM_8(k)*Ver_Tstar_8%t(k)+Ver_wmM_8(k)*Ver_Tstar_8%t(km)
 
          w1 = (  BsPq(i,j+1,k) -  BsPq(i,j,k) ) * Geomg_invDYMv_8(j)
          w2 = (    FI(i,j+1,k) -    FI(i,j,k) ) * Geomg_invDYMv_8(j)
          w3 = (   frq(i,j+1,k) -   frq(i,j,k) ) * Geomg_invDYMv_8(j)
 
          F_nv(i,j,k) = Dcst_rgasd_8 * t_interp * w1 + mu_interp * w2 &
-                     + (one-Cstv_rEp_8)*Dcst_rgasd_8 * barz * w3
+                     + (one-Cstv_rE_8)*Dcst_rgasd_8 * barz * w3
 
 !        Coriolis term & metric terms: + f * U barXY + tan(phi)/a * (U barXY)^2
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -390,7 +390,7 @@
                qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
                MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
 
-               F_nt(i,j,k) = - Cstv_rEp_8*Cstv_invT_8*MUlin &
+               F_nt(i,j,k) = - Cstv_rE_8*Cstv_invT_8*MUlin &
                              + w1*(F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
                              + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
                                   - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
@@ -429,10 +429,10 @@
                w5=Ver_wp_8%t(k)*w5+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)               
                MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
                F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
-               F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j) - w3*(one - Cstv_rEp_8)*qbar &
+               F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j) - w3*(one - Cstv_rE_8)*qbar &
                                     + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
                                      - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
-                                         -Cstv_rEp_8*MUlin + (Dcst_cappa_8-w3)*(w5+w4*Cstv_tau_8))
+                                         -Cstv_rE_8*MUlin + (Dcst_cappa_8-w3)*(w5+w4*Cstv_tau_8))
                F_nf(i,j,k) = 0.0
             end do
             end do
@@ -457,7 +457,7 @@
 !        Compute Nt" and Nf"
 !        ~~~~~~~~~~~~~~~~~~~
          w1 = Dcst_cappa_8/ ( Dcst_Rgasd_8 * Ver_Tstar_8%t(k) )
-         w2 = Cstv_invT_8 / ( Dcst_cappa_8 + Ver_epsi_8(k) )
+         w2 = Cstv_invT_m_8 / ( Dcst_cappa_8 + Ver_epsi_8(k) )
          do j= j0, jn
          do i= i0, in
             w_nt = F_nt(i,j,k) + Ver_igt_8 * F_nw(i,j,k)
@@ -505,7 +505,9 @@
             do i = i0, in
                F_nc(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) +  &
                              ( Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k)) &
-                             - Ver_dbdz_8%m(k) )*F_s(i,j) )
+                             - Ver_dbdz_8%m(k) )*F_s(i,j) ) &
+                                      + (Ver_wpM_8(k)-Ver_wp_8%m(k)) * F_zd(i,j,k) &
+                                      + (Ver_wmM_8(k)-Ver_wm_8%m(k)) * Ver_onezero(k) * F_zd(i,j,km)
             end do
             end do
          endif
@@ -527,7 +529,7 @@
          do i = i0, in
             ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDXM_8(j) &
                + (F_nv(i,j,k)*geomg_cyM_8(j)-F_nv(i,j-1,k)*geomg_cyM_8(j-1))*Geomg_invDYM_8(j)
-            F_nc(i,j,k) = ndiv  - Cstv_invT_8 * ( F_nc(i,j,k) - w1*F_nw(i,j,k) - w2*F_nw(i,j,km) )
+            F_nc(i,j,k) = ndiv  - Cstv_invT_m_8 * ( F_nc(i,j,k) - w1*F_nw(i,j,k) - w2*F_nw(i,j,km) )
          end do
          end do
 

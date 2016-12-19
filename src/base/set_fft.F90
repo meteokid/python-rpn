@@ -14,9 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r set_fft - determine if fast fourier transforms is needed
 !
-
-!
-      subroutine set_fft
+      integer function set_fft ()
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,24 +36,17 @@
 #include "grd.cdk"
 #include "lun.cdk"
 
-      integer npts,onept,next_down
+      integer npts,onept,next_down,err
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write(Lun_out,1000)
 
+      set_fft    = -1
       Fft_fast_L = .false.
 
-      if ((Sol_type_S.ne.'DIRECT').and.(Hzd_type_S.ne.'HO_IMP')) then
-         if (Lun_out.gt.0) write (Lun_out,*) &
-         'FFT not usefull in this model configuration'
-         return
-      endif
-
-      if ( .not. sol_fft_L ) then
-         if (Lun_out.gt.0) write (Lun_out,*) &
-         'FFT not requested: sol_fft_L= .false.'
-         return
+      if (( Sol_type_S.ne.'DIRECT' ) .or. ( .not. sol_fft_L )) then
+         set_fft = 0
       endif
 
       onept= 0
@@ -63,16 +54,18 @@
       npts= G_ni-Lam_pil_w-Lam_pil_e+onept
 
       call itf_fft_nextfactor2 ( npts, next_down )
-
+      
       if ( npts .ne. G_ni-Lam_pil_w-Lam_pil_e+onept ) then
          if (Lun_out.gt.0) write (Lun_out,3001) &
          G_ni-Lam_pil_w-Lam_pil_e+onept,npts,next_down
          return
+      else
+         set_fft = 0
       endif
-!
+
       Fft_fast_L= .true.
       if (Lun_out.gt.0) write(Lun_out,*) 'Fft_fast_L = ',Fft_fast_L
-!
+
  1000 format( &
       /,'COMMON INITIALIZATION AND PREPARATION FOR FFT (S/R SET_FFT)', &
       /,'===========================================================')

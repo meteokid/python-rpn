@@ -83,7 +83,6 @@
       Schm_nblendyy = -1
       Schm_Tlift    = 0
       Schm_advec    = 1
-      Schm_settls_L   = .false.
       Schm_capa_var_L = .false.
       Schm_cub_Coriolis_L = .false.
       Schm_superwinds_L  = .true.
@@ -97,6 +96,7 @@
       Schm_adxlegacy_L = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
+      Schm_predictor   = 1
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -125,7 +125,9 @@
 
       Cstv_dt_8    = 900
       Cstv_bA_8    = 0.6
+      Cstv_bA_m_8  = 0.6
       Cstv_bA_nh_8 = 0.5
+
       Cstv_rE_8    = 1.d0
       Cstv_tstr_8  = 240.0
 
@@ -159,19 +161,29 @@
       Hzd_div_damp   = -1.
       Hzd_type_S     = 'HO_EXP9P'
       Hzd_xidot_L    = .false.
-      Hzd_smago_param= -1
+      Hzd_smago_param   = -1
       Hzd_smago_prandtl = -1.
+      Hzd_smago_lnr     = 0.
       Hzd_theta_njpole_gu_only= -1
+
+      Hzd_in_rhs_L     = .false.
+      top_spng_in_rhs_L= .false.
+      eqspng_in_rhs_L  = .false.
+      smago_in_rhs_L   = .true.
+      Hzd_before_phy_L = .false.
+      stag_destag_L    = .true.
+      imp_pgradw_L     = .false.
 
       Vspng_nk       = 0
       Vspng_coeftop  = -1.
       Vspng_njpole   = 3
+      Vspng_riley_L  = .false.
       Vspng_zmean_L  = .false.
 
       Zdot_divHLM_L  = .false.
 
-      Vtopo_start = -99999
-      Vtopo_ndt   = 0
+      Vtopo_start_S  = ''
+      Vtopo_length_S = ''
 
       Tr3d_list_S   = ''
       Tr3d_default_s= ''
@@ -202,6 +214,7 @@
       Out3_etik_S    = 'GEMDM'
       Out3_close_interval_S= "" !# Out3_closestep_S= ""
       Out3_postproc_fact = 0    !# Out3_postfreq_S= ''
+      Out3_vinterp_type_S= 'linear'
       Out3_ndigits   = 3
       Out3_ip3       = 0
       Out3_nbitg     = 16

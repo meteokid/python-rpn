@@ -15,60 +15,36 @@
 
 !**s/r indata - Read and process the input data at 
 !               beginning of integration
-!
+
       subroutine indata
       implicit none
 #include <arch_specific.hf>
 
-!author 
-!     Michel Roch - rpn - apr 1994
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version (from indata v1_03)
-! v2_10 - Tanguay M.        - introduce partition of preprocessing when 4D-Var 
-! v2_20 - Pellerin P.       - read geophysical fields depending on schemes
-! v2_20 - Lee V.            - eliminated p_slicgeo, output of geophysical fields
-! v2_20 -                     will be from the entry or permanent physics bus
-! v2_30 - Desgagne M.       - entry vertical interpolator in gemdm
-! v2_31 - Tanguay M.        - adapt for vertical hybrid coordinate 
-! v3_02 - Buehner M.        - leave winds as images for 4dvar or SV jobs
-! v3_03 - Tanguay M.        - Adjoint Lam configuration 
-! v3_11 - Gravel S.         - Adapt for theoretical cases and varying topo
-! v3_30 - Desgagne M.       - re-organize code to eliminate v4d controls
-! v3_30 - Lee V.            - new LAM I/O interface
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_03 - Tanguay M.        - Williamson's cases
-! v4_03 - Lee/Desgagne - ISST
-! v4_06 - Lepine M.         - VMM replacement with GMM
-! v4_06 - Lee V.            - predat is called after readdyn, casc_3df_dynp
-! v4_10 - Tanguay M.        - VMM replacement with GMM for (TL/AD)
-! v4_12 - Tanguay M.        - Adapt to revised predat
-! v4_13 - Spacek L.         - Delete call to readgeo, add Path_phy_S
-! v4_13 - Tanguay M.        - Adjustments GEM413 .not. Schm_hydro_L
-! v4_21 - Plante A.         - Call predat4     
-! v4_40 - Lee/Qaddouri      - Add exchange of ME for Yin-Yang seam
-! v4_80 - Tanguay M.        - Add check_tracers
-
 #include "gmm.hf"
 #include "grd.cdk"
-#include "acq.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "p_geof.cdk"
+#include "crg.cdk"
+#include "lctl.cdk"
 #include "vt1.cdk"
 #include "lun.cdk"
 #include "perturb.cdk"
 #include "step.cdk"
 #include "tr3d.cdk"
-#include "bcsgrds.cdk"
+#include "inp.cdk"
+#include "pw.cdk"
 
-      integer i,j,k,istat,dim
+      integer i,j,k,istat,dim,err
       real, dimension(:,:,:), pointer :: plus,minus
 !
 !     ---------------------------------------------------------------
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
 
+      istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
+      istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
+      istat = gmm_get (gmmk_pw_tt_plus_s, pw_tt_plus)
       istat = gmm_get (gmmk_ut1_s ,ut1 )
       istat = gmm_get (gmmk_vt1_s ,vt1 )
       istat = gmm_get (gmmk_wt1_s ,wt1 )
@@ -95,18 +71,27 @@
          call get_topo2 ( topo_high, l_minx,l_maxx,l_miny,l_maxy, &
                           1,l_ni,1,l_nj )
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
-         call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                               l_minx,l_maxx,l_miny,l_maxy,&
-                            G_nk,'TR/',':P',Step_runstrt_S )
+         dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+         if (stag_destag_L) then
+            call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
+                             l_minx,l_maxx,l_miny,l_maxy,G_nk,&
+                      stag_destag_L,'TR/',':P',Step_runstrt_S )
+            call bitflip ( ut1, vt1, tt1, &
+                           perturb_nbits, perturb_npts, dim )
+         else
+            call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
+                            zdt1,st1,qt1,fis0                   ,&
+                            l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
+                         stag_destag_L,'TR/',':P',Step_runstrt_S )
+            call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
+                           perturb_nbits, perturb_npts, dim )
+         endif
          call timing_stop  ( 71 )
       endif
 
-      dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
-      call bitflip (ut1, vt1, tt1, perturb_nbits, perturb_npts, dim)
-
       call gemtim4 ( Lun_out, 'AFTER INITIAL INPUT', .false. )
 
-      call set_dync
+      call set_dync ( .true., err )
 
       if (Grd_yinyang_L) then
          call yyg_xchng (fis0, l_minx,l_maxx,l_miny,l_maxy, &
@@ -126,21 +111,30 @@
          minus = plus
       enddo
 
+      if (stag_destag_L) then
+         call pw_update_T
+         call pw_update_UV
+      else
+         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
+      endif
+
       call diag_zd_w2 ( zdt1,wt1,xdt1, ut1,vt1,tt1,st1   ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                        .not.Ana_zd_L, .not.Ana_w_L )
+                        .not.Inp_zd_L, .not.Inp_w_L )
 
-      if ( Grd_yinyang_L ) then
-         call yyg_blend (Schm_nblendyy.ge.0)
-      else
-         if ( G_lam ) call nest_init ()
-      endif
-         
-      if (.not.Acql_pwuv) call pw_update_UV
-      if (.not.Acql_pwtt) call pw_update_T
+      if (.not. Grd_yinyang_L) call nest_init ()
+
       call pw_update_GPW
+      call pw_init
 
-      call frstgss ()
+      call out_outdir (Step_total)
+      call iau_apply2 (0)
+
+      if ( Schm_phyms_L ) call itf_phy_step (0,Lctl_step)
+
+      call frstgss
 
       call glbstat2 ( fis0,'ME',"indata",l_minx,l_maxx,l_miny,l_maxy, &
                       1,1, 1,G_ni,1,G_nj,1,1 )

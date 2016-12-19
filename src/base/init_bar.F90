@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r init_bar - prepare data for autobarotropic runs (Williamson cases)
-!
+
       subroutine init_bar ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                             Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
                             F_trprefix_S, F_trsuffix_S, F_datev )
@@ -43,7 +43,7 @@
 #include "tr3d.cdk"
 #include "ver.cdk"
 #include "wil_williamson.cdk"
-#include "bcsgrds.cdk"
+#include "inp.cdk"
 
       character(len=4) vname
       integer i,j,n,istat,k
@@ -54,7 +54,7 @@
 !-----------------------------------------------------------------------
 !
       call inp_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
-                      Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
+                      Mminx,Mmaxx,Mminy,Mmaxy, Nk, .true.       ,&
                       F_trprefix_S, F_trsuffix_S, F_datev )
 
       allocate ( gz_temp(l_ni,l_nj ,G_nk),u_temp(l_niu,l_nj,G_nk),&
@@ -142,8 +142,8 @@
 
       !Prescribed d(Zeta)dot and dz/dt
       !-------------------------------
-      Ana_zd_L = .TRUE.
-      Ana_w_L  = .TRUE.
+      Inp_zd_L = .TRUE.
+      Inp_w_L  = .TRUE.
 !
 !-----------------------------------------------------------------------
 !

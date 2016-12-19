@@ -39,6 +39,7 @@
 #include "grd.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
+#include "crg.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L, yyblend
@@ -56,10 +57,7 @@
       first_L = (Step_kount.eq.1).or.(.not.Init_mode_L .and.  &
                  Step_kount.eq.(Init_dfnp+1)/2)
 
-      Schm_step_settls_L = Schm_settls_L.and..NOT.first_L
-
       keep_itcn = Schm_itcn
-      if (Schm_step_settls_L) Schm_itcn = 1
 
       itraj = Schm_itraj
 
@@ -78,6 +76,8 @@
 
       do Orh_icn = 1,Schm_itcn-1
     
+         case="predictor"
+         if(first_L.or.(Schm_predictor.eq.1)) case="corrector"
          call tstpdyn (itraj)
          itraj = Schm_itraj
          
@@ -88,6 +88,7 @@
       if (Lun_debug_L) write(Lun_out,1006)
   
       Orh_icn=Schm_itcn
+      case="corrector"
  
       call tstpdyn ( Schm_itraj )
 
@@ -103,8 +104,6 @@
 !     C        variables at time level t0 -> t1 for the next timestep
 !     ------------------------------------------------------------
 
-      if (Schm_settls_L) call t2et1_wnd ()
-
       call t02t1 ()
 
       if (Grd_yinyang_L) then
@@ -114,8 +113,8 @@
             call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                             .true., 'CUBIC')
          end do
-         istat = gmm_get(gmmk_wt1_s , tr1)
-         call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+         istat = gmm_get(gmmk_wt1_s , wt1)
+         call yyg_xchng (wt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .true., 'CUBIC')
          yyblend= (Schm_nblendyy .gt. 0)
          if (yyblend) &
@@ -126,6 +125,8 @@
             call spn_main
          endif
       endif
+
+      if (.not. stag_destag_L) call hzd_main_stag
 
       call pw_update_GPW
       call pw_update_UV

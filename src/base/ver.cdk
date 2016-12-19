@@ -89,9 +89,11 @@
       real*8, dimension(:)    , pointer :: Ver_FIstr_8,Ver_bzz_8
       real*8, dimension(:)    , pointer :: Ver_wpstar_8,Ver_wmstar_8
       real*8, dimension(:)    , pointer :: Ver_wpA_8,Ver_wmA_8
+      real*8, dimension(:)    , pointer :: Ver_wpM_8,Ver_wmM_8
       common /ver_p8/ ver_table_8
       common /ver_p8/ Ver_gama_8,Ver_epsi_8,Ver_FIstr_8,Ver_bzz_8
-      common /ver_p8/ Ver_wpstar_8,Ver_wmstar_8,Ver_wpA_8,Ver_wmA_8
+      common /ver_p8/ Ver_wpstar_8,Ver_wmstar_8
+      common /ver_p8/ Ver_wpA_8,Ver_wmA_8,Ver_wpM_8,Ver_wmM_8
 !
       real, dimension(:), pointer :: Ver_onezero
       common /ver_p/ Ver_onezero

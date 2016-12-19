@@ -131,10 +131,10 @@
 
          call vertint2 ( uu_pres,cible,nko, ut1,pw_log_pm,G_nk      ,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_niu,1,l_nj,&
-                         inttype='linear' )
+                         inttype=Out3_vinterp_type_S )
          call vertint2 ( vv_pres,cible,nko, vt1,pw_log_pm,G_nk      ,&
                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_njv,&
-                         inttype='linear' )
+                         inttype=Out3_vinterp_type_S )
 
          call rpn_comm_xch_halo (uu_pres,l_minx,l_maxx,l_miny,l_maxy,&
             l_niu,l_nj,nko,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)

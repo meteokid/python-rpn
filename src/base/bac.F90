@@ -127,7 +127,7 @@
 !$omp do
          do k=k0t,l_nk
             km = max(k-1,k0t)
-            w1 = Cstv_tau_8*Dcst_Rgasd_8*Ver_Tstar_8%t(k)/Dcst_grav_8
+            w1 = Cstv_tau_m_8*Dcst_Rgasd_8*Ver_Tstar_8%t(k)/Dcst_grav_8
             do j= j0, jn
             do i= i0, in
                Pbar = Ver_wpstar_8(k)*GP(i,j,k+1) &
@@ -170,7 +170,7 @@
             w4 = one/(one+Ver_wp_8%t(k)*Ver_wpstar_8(k)*Ver_dz_8%t(k))
             w3 = half*Ver_wp_8%t(k)*Ver_wmstar_8(k)*Ver_dz_8%t(k)*w4
             w2 = (one-(Ver_wm_8%t(k)+half*Ver_wp_8%t(k)*Ver_wmstar_8(k))*Ver_dz_8%t(k))*w4
-            w1 = Cstv_tau_8*Ver_igt_8*Ver_dz_8%t(k)*w4
+            w1 = Ver_dz_8%t(k)/Dcst_grav_8*w4
 !$omp do
             do j= j0, jn
             do i= i0, in
@@ -209,13 +209,13 @@
       do k=k0,l_nk
          do j= j0, jn
          do i= i0, l_niu-pil_e
-            F_u(i,j,k) = Cstv_tau_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
+            F_u(i,j,k) = Cstv_tau_m_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
          end do
          end do
 
          do j= j0, l_njv-pil_n
          do i= i0, in
-            F_v(i,j,k) = Cstv_tau_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomg_invDYMv_8(j))
+            F_v(i,j,k) = Cstv_tau_m_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomg_invDYMv_8(j))
          end do
          end do
       enddo
@@ -227,7 +227,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rEp_8*F_q(i,j,l_nk+1)
+         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rE_8*F_q(i,j,l_nk+1)
       end do
       end do
 !$omp enddo
@@ -246,7 +246,7 @@
             do j= j0, jn
             do i= i0, in
                Pbar = Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
-               F_xd(i,j,k) = - Cstv_tau_8 * ( F_rt(i,j,k)-F_nt(i,j,k) &
+               F_xd(i,j,k) = - Cstv_tau_m_8 * ( F_rt(i,j,k)-F_nt(i,j,k) &
                                             + w1 * GP(i,j,k+1) - w1 * GP(i,j,k) &
                                             - w2 * Pbar )  &
                              - Cstv_rE_8*F_qd(i,j,k)
@@ -284,9 +284,9 @@
             do i= i0, in
                Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
                qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
-               F_zd(i,j,k)=-Cstv_tau_8*( F_rt(i,j,k)- F_nt(i,j,k) &
+               F_zd(i,j,k)=-Cstv_tau_m_8*( F_rt(i,j,k)- F_nt(i,j,k) &
                           + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
-                          - w3 * ( Ver_b_8%t(k)*F_s(i,j)+Cstv_rEp_8*qbar )
+                          - w3 * ( Ver_b_8%t(k)*F_s(i,j)+Cstv_rE_8*qbar )
             enddo
             enddo
          enddo
@@ -304,7 +304,7 @@
          w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
-            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+Cstv_rEp_8*F_q(i,j,kq)*Ver_onezero(k))
+            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k))
          enddo
          enddo
       enddo
@@ -366,19 +366,6 @@
 !$omp end parallel
 !
       deallocate (GP)
-
-      if (Grd_yinyang_L) then
-         call yyg_nestuv(F_u,F_v, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call yyg_xchng (F_t , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-         call yyg_xchng (F_zd, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-         call yyg_xchng (F_s , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
-                         .false., 'CUBIC')
-         if (.not.Schm_hydro_L) &
-         call yyg_xchng (F_q , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-      endif
 
 1000  format (5X,'BACK SUBSTITUTION: (S/R BAC)')
 !     __________________________________________________________________

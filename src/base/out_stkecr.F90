@@ -86,6 +86,11 @@
             allocate (wk(nis,njs,nz))
          endif
          wk(1:nis,1:njs,1:nz) = wk_glb(g_id:g_if,g_jd:g_jf,1:nz)
+         do k= 1, nz
+            if (zlist(k).gt.0) then
+!               call low_pass_dwt2d_r4 (wk(1,1,k),nis,njs,nis,njs)
+            endif
+         end do
          deallocate (wk_glb)
       endif
 

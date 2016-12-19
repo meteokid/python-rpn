@@ -14,7 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r gem_run - Performs the integration of the model
-!
+
       subroutine gem_run (F_rstrt_L)
       implicit none
 #include <arch_specific.hf>
@@ -27,6 +27,8 @@
 ! F_rstrt_L     O         Is a restart required
 !----------------------------------------------------------------
 
+#include "gmm.hf"
+#include "glb_ld.cdk"
 #include "init.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -35,11 +37,13 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "grd.cdk"
+#include "crg.cdk"
+#include "vt1.cdk"
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
-      integer stepf,last_step,seconds_since
+      integer stepf,last_step,seconds_since,istat
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
@@ -63,17 +67,7 @@
 
       F_rstrt_L = .false.
       if ( .not. Rstri_rstn_L ) then
-         call out_outdir (Step_total)
-         if (Step_kount.eq.0) then
-            call iau_apply2 (Step_kount)
-            if ( Schm_phyms_L ) then
-               call pw_shuffle
-               call pw_update_GPW
-               call pw_update_UV
-               call pw_update_T
-               call itf_phy_step (0,Lctl_step)
-            endif
-         endif
+         call out_outdir
          call out_dyn (.true., .true.)
          if (gem_muststop (stepf)) goto 999
       endif
@@ -85,7 +79,7 @@
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
          if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,last_step
 
-         call out_outdir (Step_total)
+         call out_outdir
 
          call pw_shuffle
 
@@ -93,13 +87,42 @@
 
          call out_dyn (.false., .true.) ! casc output
 
-         if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
+         if (stag_destag_L) then
 
-         call hzd_main
+            if ( hzd_before_phy_L ) call hzd_main
 
-         call iau_apply2 (Step_kount)
+            if ( Schm_phyms_L ) then
+               call itf_phy_step (Step_kount, Lctl_step)
+               istat = gmm_get (gmmk_tt1_s, tt1)
+               call tt2virt2 (tt1, .true., &
+                              l_minx,l_maxx,l_miny,l_maxy, G_nk)
+               call itf_phy_UVupdate
+               call pw_update_GPW
+            endif
 
-         if (Grd_yinyang_L) call yyg_xchng_all
+            if( .not.hzd_before_phy_L ) call hzd_main
+
+            call iau_apply2 (Step_kount)
+
+            if (Grd_yinyang_L) call yyg_xchng_all
+            
+         else
+
+            if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
+
+            call iau_apply2 (Step_kount)
+
+            if (Grd_yinyang_L) call yyg_xchng_all
+
+            if ( Schm_phyms_L ) then
+               istat = gmm_get (gmmk_tt1_s, tt1)
+               call tt2virt2 (tt1, .true., &
+                              l_minx,l_maxx,l_miny,l_maxy, G_nk)
+               call itf_phy_UVupdate
+               call pw_update_GPW
+            endif
+
+         endif
 
          if ( Init_mode_L ) call digflt ! digital filter
 

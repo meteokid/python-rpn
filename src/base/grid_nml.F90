@@ -66,8 +66,6 @@
       Grd_maxcfl= 1
       Grd_dx    = 0.
       Grd_dy    = 0.
-      Grd_iref  = 1
-      Grd_jref  = 1
       Grd_latr  = 0.
       Grd_lonr  = 180.
       Grd_overlap=0.0
@@ -108,7 +106,20 @@
 
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
-      if (Grd_typ_S(1:2).eq.'GY') Grd_ni=(Grd_nj-1)*3 + 1
+      if (Grd_typ_S(1:2).eq.'GY') then
+         if ((Grd_ni.gt.0).and.(Grd_nj.gt.0)) then
+            if (Lun_out.gt.0) write(Lun_out,'(/2(2x,a/))')  &
+               'CONFLICTING Grd_NI & Grd_NJ IN NAMELIST grid',&
+               '            only one of them can be > 0'
+            goto 9999
+         endif
+         if (Grd_ni.le.0) then
+            if (Grd_nj.gt.0) Grd_ni= (Grd_nj-1)*3 + 1
+         endif
+         if (Grd_nj.le.0) then
+            if (Grd_ni.gt.0) Grd_nj= nint ( real(Grd_ni-1)/3. + 1. )
+         endif
+      endif
 
       if (Grd_ni*Grd_nj.eq.0) then
          if (Lun_out.gt.0) write(Lun_out,*)  &
@@ -126,8 +137,9 @@
          select case (Grd_typ_S(2:2))
 
          case ('U')             ! Uniform
-            Grd_dx   = 360./Grd_ni
-            Grd_dy   = 180./Grd_nj
+            if (Lun_out.gt.0) write(Lun_out,*)  &
+                           'GU grid configuration NO LONGER supported'
+            goto 9999            
 
          case ('Y')             ! Yin-Yang
             if (yyg_checkrot().lt.0) goto 9999
@@ -140,7 +152,6 @@
                Grd_xlat1  = yan_xlat1_8 ; Grd_xlon1  = yan_xlon1_8
                Grd_xlat2  = yan_xlat2_8 ; Grd_xlon2  = yan_xlon2_8
             endif
-            if (Lun_out.gt.0) write(Lun_out,1003) Grd_ni,Grd_nj
 
             Grd_x0_8 =   45.0 - 3.0*Grd_overlap
             Grd_xl_8 =  315.0 + 3.0*Grd_overlap
@@ -169,20 +180,14 @@
                              'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             goto 9999
          endif
+         Grd_iref = Grd_ni / 2 + Grd_extension
+         Grd_jref = Grd_nj / 2 + Grd_extension
          Grd_ni   = Grd_ni   + 2*Grd_extension
          Grd_nj   = Grd_nj   + 2*Grd_extension
-         Grd_iref = Grd_iref +   Grd_extension
-         Grd_jref = Grd_jref +   Grd_extension
-         if (Grd_iref.lt.1.or.Grd_iref.gt.Grd_ni.or. &
-             Grd_jref.lt.1.or.Grd_jref.gt.Grd_nj) then
-            if (Lun_out.gt.0) write(Lun_out,1002) &
-                              Grd_ni,Grd_nj,Grd_iref,Grd_jref
-            goto 9999
-         endif
-         Grd_x0_8   = Grd_lonr - (Grd_iref-1) * Grd_dx
-         Grd_y0_8   = Grd_latr - (Grd_jref-1) * Grd_dy
-         Grd_xl_8   = Grd_x0_8 + (Grd_ni  -1) * Grd_dx
-         Grd_yl_8   = Grd_y0_8 + (Grd_nj  -1) * Grd_dy
+         Grd_x0_8 = Grd_lonr - (Grd_iref-1) * Grd_dx
+         Grd_y0_8 = Grd_latr - (Grd_jref-1) * Grd_dy
+         Grd_xl_8 = Grd_x0_8 + (Grd_ni  -1) * Grd_dx
+         Grd_yl_8 = Grd_y0_8 + (Grd_nj  -1) * Grd_dy
          if (Grd_x0_8.lt.0.) Grd_x0_8=Grd_x0_8+360.
          if (Grd_xl_8.lt.0.) Grd_xl_8=Grd_xl_8+360.
          if ( (Grd_x0_8.lt.  0.).or.(Grd_y0_8.lt.-90.).or. &
@@ -205,7 +210,8 @@
       if (Lun_out.gt.0) write(6,1100) trim(Grd_yinyang_S)       , &
                                       Grd_ni, Grd_x0_8, Grd_xl_8, &
                                       Grd_nj, Grd_y0_8, Grd_yl_8, &
-                                      Grd_typ_S, Grd_dx ,Grd_dx
+                                      Grd_typ_S, Grd_dx ,Grd_dy , &
+                                      Grd_dx*40000./360.,Grd_dy*40000./360.
 
       if (Lun_out.gt.0) write (Lun_out,1004) Grd_xlat1,Grd_xlon1,Grd_xlat2,Grd_xlon2,&
                                              Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro
@@ -264,20 +270,13 @@
 
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
- 1002 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
-               ' Grd_ni,Grd_nj,Grd_iref,Grd_jref:'/4I8/)
- 1003 format(/, '-----------------------------------'/,&
-            /1X,' GY uses GRD_NJ to compute GRD_NI  '/, &
-                'WILL IGNORE GRD_NI in NAMELIST grid'/, &
-            /1X,' YIN-YANG (CORE) GRID WILL BE: '/, &
-            /1X,' GRD_NI=',I5,' GRD_NJ=',I5,/, &
-            /,  '-----------------------------------')
  1004 format (1x,'Numerical equator: ',2('(',f9.4,',',f9.4,') ')/&
                 21x,'IG1-4: ',4i8)
  1100 FORMAT (1X,'FINAL HORIZONTAL GRID CONFIGURATION: UNIFORM RESOLUTION: ',a, &
         /1X,' NI=',I5,' FROM x0=',F11.5,' TO xl=',F11.5,' DEGREES' &
         /1X,' NJ=',I5,' FROM y0=',F11.5,' TO yl=',F11.5,' DEGREES' &
-        /1X,' GRIDTYPE= ',a,'     DX= ',F11.5,'   DY= ',F11.5/)
+        /1X,' GRIDTYPE= ',a,'     DX= ',F11.5,'   DY= ',F11.5,' degrees' &
+        /14X,               '     DX= ',F11.5,'   DY= ',F11.5 ' km'/)
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &grid NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &grid IS INVALID IN FILE: ',A/)

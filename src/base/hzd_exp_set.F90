@@ -169,10 +169,10 @@
       endif
 
  1000 format (3X,'For the 9 points diffusion operator:')
- 1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a )
+ 1010 format (3X,'Diffusion Coefficient =  (',e17.10,' m**2)**',i1,'/sec ',a )
  1011 format (/' VERTICAL PROFILE OF HORIZONTAL DIFFUSION PWR/LNR: '/, &
                2x,'level',3x,'PWR',7x,'LNR',10x,'COEFFICIENT')
- 1012 format (1x,i4,3x,i4,6x,f7.5,3x,'(',e15.10,' m**2)**',i1,'/sec ')
+ 1012 format (1x,i4,3x,i4,6x,f8.5,3x,'(',e17.10,' m**2)**',i1,'/sec ')
 !
 !     ---------------------------------------------------------------
       return

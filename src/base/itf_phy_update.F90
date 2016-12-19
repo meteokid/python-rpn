@@ -88,11 +88,6 @@
          enddo
       endif
 
-      istat = gmm_get (gmmk_ut1_s, ut1)
-      istat = gmm_get (gmmk_vt1_s, vt1)
-      istat = gmm_get (gmmk_tt1_s, tt1)
-      istat = gmm_get (gmmk_pw_uu_copy_s,pw_uu_copy)
-      istat = gmm_get (gmmk_pw_vv_copy_s,pw_vv_copy)
       istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
       istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
@@ -106,31 +101,6 @@
       ptr3d => pw_tt_plus(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,1:l_nk)
       istat = phy_get(ptr3d,gmmk_pw_tt_plus_s,F_npath='V',F_bpath='D',F_end=(/-1,-1,l_nk/))
 
-!$omp parallel
-!$omp do
-      do k= 1, G_nk
-         tdu(l_minx:l_maxx,l_miny:0,k) = 0. ; tdu(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
-         tdv(l_minx:l_maxx,l_miny:0,k) = 0. ; tdv(l_minx:l_maxx,l_nj+1:l_maxy,k) = 0.
-         tdu(l_minx:0,l_miny:l_maxy,k) = 0. ; tdu(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
-         tdv(l_minx:0,l_miny:l_maxy,k) = 0. ; tdv(l_ni+1:l_maxx,l_miny:l_maxy,k) = 0.
-         tdu(1:l_ni,1:l_nj,k) = (pw_uu_plus(1:l_ni,1:l_nj,k)- &
-                                 pw_uu_copy(1:l_ni,1:l_nj,k))
-         tdv(1:l_ni,1:l_nj,k) = (pw_VV_plus(1:l_ni,1:l_nj,k)- &
-                                 pw_VV_copy(1:l_ni,1:l_nj,k))
-      end do
-!$omp enddo
-!$omp end parallel
-
-      call itf_phy_uvgridscal ( tdu, tdv, l_minx,l_maxx,l_miny,l_maxy, G_nk, .false. )
-
-!$omp parallel do
-      do k= 1, G_nk
-         ut1(1:l_niu,:,k) = ut1(1:l_niu,:,k) + tdu(1:l_niu,:,k+1-1)
-         vt1(:,1:l_njv,k) = vt1(:,1:l_njv,k) + tdv(:,1:l_njv,k+1-1)
-      end do
-!$omp end parallel do
-
-      call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
 
       if (Schm_source_ps_L) then
 

@@ -74,17 +74,13 @@
          Hzd_coef_8_tr(1:G_nk) = coef_tr_8/(Dcst_rayt_8**2)*Cstv_dt_8
       endif
 
-!      if ( (Lun_out.gt.0) .and. (Hzd_type_S=='HO_EXP5P'))  then
       if (Lun_out.gt.0) then
-         write(Lun_out,1000)
-         write(Lun_out,1010) coef_8      ,Hzd_pwr/2      ,'U,V,W,ZD ',Hzd_Niter
-         write(Lun_out,1010) coef_theta_8,Hzd_pwr_theta/2,'Theta '   ,Hzd_Niter_theta
-         write(Lun_out,1010) coef_tr_8   ,Hzd_pwr_tr/2   ,'Tracer'   ,Hzd_Niter_tr
+         write(Lun_out,1010) coef_8      ,Hzd_pwr/2      ,'Winds ',Hzd_Niter
+         write(Lun_out,1010) coef_theta_8,Hzd_pwr_theta/2,'Theta ',Hzd_Niter_theta
+         write(Lun_out,1010) coef_tr_8   ,Hzd_pwr_tr/2   ,'Tracer',Hzd_Niter_tr, ' if specified'
       endif
 
-1000 format (3X,'For the 5 points diffusion operator:')
-1005 format (3X,a,' lnR=',e18.7,' pwr=',i1,' nutop=', e18.7)
-1010 format (3X,'Diffusion Coefficient =  (',e15.10,' m**2)**',i1,'/sec ',a,' Niter=',i2 )
+1010 format (3X,'Diffusion Coefficient =  (',e17.10,' m**2)**',i1,'/sec ',a,' Niter=',i2,a )
 !
 !     ---------------------------------------------------------------
 !

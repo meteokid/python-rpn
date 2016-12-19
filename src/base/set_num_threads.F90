@@ -13,42 +13,32 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r var_dict
-
-      subroutine var_dict
+      subroutine set_num_threads ( F_nthreads, kount )
       implicit none
 #include <arch_specific.hf>
-!
-!author
-!     Michel Desgagne  -- fall 2013
-!
-!revision
-! v4_70 - Desgagne M.   -   Initial version
 
-#include "vardict.cdk"
+      integer F_nthreads, kount
+
+#include "lun.cdk"
+#include "ptopo.cdk"
 !
 !-------------------------------------------------------------------
 !
-      allocate (vardict(500))
+      if (F_nthreads .ne. Ptopo_npeOpenMP) then
 
-      vardict%out_name = '@#$%'
-      vardict%gmm_name = '@#$%'
-      vardict%hor_stag = ''
-      vardict%ver_stag = ''
-      var_cnt          = 0
-      vardict%fact_mult= 1.
-      vardict%fact_add = 0.
+         call omp_set_num_threads (F_nthreads)
 
-! 9.80616
-! KNAMS      0.514791
+         Ptopo_npeOpenMP = F_nthreads
 
-      call var_gestdic ('GMMNAME=PW_UU:P ; OUTNAME=UU ;HSTAG=U ; VSTAG=M ; fact_Mul=1.942536 ; fact_Add= 0.    ')
-      call var_gestdic ('GMMNAME=PW_VV:P ; OUTNAME=VV ;HSTAG=V ; VSTAG=M ; fact_Mul=1.942536 ; fact_Add= 0.    ')
-      call var_gestdic ('GMMNAME=PW_TT:P ; OUTNAME=TT ;HSTAG=Q ; VSTAG=T ; fact_Mul=1.       ; fact_Add=-273.15')
-      call var_gestdic ('GMMNAME=PW_GZ:P ; OUTNAME=GZ ;HSTAG=Q ; VSTAG=M ; fact_Mul=1.       ; fact_Add= 0.    ')
+         if ((Lun_out.gt.0).and.(kount.eq.0)) then
+            write (Lun_out,9000) Ptopo_npeOpenMP
+         endif
+         
+      endif
 
+ 9000 format (/' Ptopo_npeOpenMP reset to: ',I7)
 !
-!     ---------------------------------------------------------------
+!-------------------------------------------------------------------
 !
       return
       end

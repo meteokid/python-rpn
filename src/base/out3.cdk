@@ -49,7 +49,7 @@
 #include "dimout.cdk"
       character*16 Out3_xnbits_S(MAXELEM),Out3_filt_S(MAXELEM),&
                    Out3_close_interval_S, Out3_conv_S(MAXELEM)
-      character*12 Out3_etik_S
+      character*12 Out3_etik_S, Out3_vinterp_type_S
       character*4  Out3_unit_S
       logical Out3_cliph_L, Out3_accavg_L, Out3_sfcdiag_L
       logical Out3_ezcoll_L
@@ -65,9 +65,10 @@
       real    Out3_close_interval
       real    Out3_convmult(MAXELEM),Out3_convadd(MAXELEM)
 
-      common / out3_c / Out3_xnbits_S, Out3_filt_S, Out3_etik_S
-      common / out3_c / Out3_conv_S, Out3_unit_S
-      common / out3_c / Out3_close_interval_S
+      common / out3_c16 / Out3_xnbits_S, Out3_filt_S, &
+                          Out3_close_interval_S, Out3_conv_S
+      common / out3_c12 / Out3_etik_S, Out3_vinterp_type_S
+      common / out3_c4  / Out3_unit_S
       common / Out3_l / Out3_cliph_L
       common / Out3_l / Out3_accavg_L,Out3_sfcdiag_L,Out3_ezcoll_L
       common / out3_i / Out3_xnbits,Out3_xnbits_max,Out3_filtpass

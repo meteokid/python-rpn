@@ -60,10 +60,10 @@ use iso_c_binding
       if (Ptopo_nthreads_dyn.lt.1) Ptopo_nthreads_dyn=Ptopo_npeOpenMP
       if (Ptopo_nthreads_phy.lt.1) Ptopo_nthreads_phy=Ptopo_npeOpenMP
 
-      if (Ptopo_myproc.eq.0) then
-         write (6, 8255) Ptopo_npex, Ptopo_npey, &
+      if (Lun_out.gt.0) then
+         write (Lun_out, 8255) Ptopo_npex, Ptopo_npey, &
              Ptopo_npeOpenMP,Ptopo_nthreads_dyn, Ptopo_nthreads_phy
-         write (6, 8256) trim(Path_work_S)
+         write (Lun_out, 8256) trim(Path_work_S)
       endif
 !
 ! Initializes Path_nml_S and Path_outcfg_S
@@ -76,7 +76,7 @@ use iso_c_binding
 !
 ! Initializes OpenMP
 !
-      call pe_rebind (Ptopo_nthreads_dyn,Ptopo_myproc.eq.0)
+      call set_num_threads ( Ptopo_nthreads_dyn, 0 )
 !
 ! Reading namelist file Path_nml_S (blind read)
 !

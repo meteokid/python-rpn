@@ -13,44 +13,31 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r pw_update_UV - Update physical quantities UU and VV
-!
+!**s/r pw_update_UV - Update physical unstaggered horizonal wind 
+!                     components pw_uu_plus and pw_vv_plus
+
       subroutine pw_update_UV
       implicit none
 #include <arch_specific.hf>
-
-!author
-!     Michel Desgagne - May 2010
-!
-!revision
-! v4_14 - Desgagne, M.     - Initial revision
-! v4.7  - Gaudreault S.    - Removing wind images
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt1.cdk"
 #include "pw.cdk"
 
-      integer k, istat
+      integer istat
 !     ________________________________________________________________
 !
       call timing_start2 ( 5, 'PW_UPDATE', 0)
+
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
       istat = gmm_get (gmmk_ut1_s       , ut1       )
       istat = gmm_get (gmmk_vt1_s       , vt1       )
 
-!$omp parallel
-!$omp do
-      do k= 1, l_nk
-         pw_uu_plus (1:l_ni,1:l_nj,k) = ut1(1:l_ni,1:l_nj,k)
-         pw_vv_plus (1:l_ni,1:l_nj,k) = vt1(1:l_ni,1:l_nj,k)
-      enddo
-!$omp enddo
-!$omp end parallel
-!
-      call itf_phy_uvgridscal ( pw_uu_plus, pw_vv_plus, &
-               l_minx,l_maxx,l_miny,l_maxy,l_nk, .true. )
+      call hwnd_stag ( pw_uu_plus,pw_vv_plus, ut1,vt1, &
+                       l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
+
       call timing_stop (5)  
 !     ________________________________________________________________
 !

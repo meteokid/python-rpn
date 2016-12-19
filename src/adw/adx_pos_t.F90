@@ -243,7 +243,7 @@ subroutine adx_pos_t ( F_xt, F_yt, F_zt, F_xm, F_ym, F_zm, F_wat, F_wdm, &
 ! polar coordinates of upstream position for intermediate thermo levels*
 !***********************************************************************
 
-      if(adx_trapeze_L.or.Schm_step_settls_L) then
+      if(adx_trapeze_L) then
    !  if(.false.) then
          do k=k00,adx_lnk-1
             do i=i0,in

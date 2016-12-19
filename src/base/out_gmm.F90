@@ -64,13 +64,14 @@
 #include "level.cdk"
 #include "schm.cdk"
 
+!      integer, external :: gmm_nkeys
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
       character(len=2) class_var(100,3)
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 19
+      integer, parameter :: numvars = 20
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -112,6 +113,8 @@
       class_var(17,1) = 'TD' ; class_var(17,2) = 'QQ' ; class_var(17,3) = 'TT'
       class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
+      class_var(20,1) = 'SM' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'TT'
+      
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
       call out_slev2 ( Level(1,levset), Level_max(levset),G_nk,indo,nko,write_diag_lev)

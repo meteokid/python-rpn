@@ -58,6 +58,7 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include "smag.cdk"
 #include "vt0.cdk"
 #include "vth.cdk"
 #include "vt1.cdk"
@@ -274,6 +275,10 @@
 
       istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk ,flag_r_n),istat)
+
+      gmmk_smag_s = 'SMAG'
+      nullify(smag)
+      istat = min(gmm_create(gmmk_smag_s   ,smag  ,meta3d_nk ,flag_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')

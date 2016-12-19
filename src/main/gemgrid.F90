@@ -28,7 +28,7 @@
 !     Computes positional parameters (>>=lat ^^=lon)
 !
       integer, external :: fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,&
-                           grid_nml2,gem_nml,exdb
+                           grid_nml2,gem_nml,exdb,step_nml
 #include "grd.cdk"
 #include "hgc.cdk"
 #include "lam.cdk"
@@ -61,7 +61,6 @@
 
       etk = 'PARPOS'
       fn  = trim(Path_input_S)//'/model_settings.nml'
-      Step_runstrt_S='20160415.000000'
       Step_dt= 1.
       radians= .false.
 
@@ -73,13 +72,20 @@
          print *,"Use checknml to verify: \'checknml grid\'"
          stop
       endif
+!!$      if (step_nml(fn).lt.0) then
+!!$         print *,'STOP: problem with NAMELIST STEP'
+!!$         print *,"Use checknml to verify: \'checknml step\'"
+!!$         stop
+!!$      endif
       if (gem_nml(fn).lt.0) then
          print *,'STOP: problem with NAMELIST GEM_CFGS'
          print *,"Use checknml to verify: \'checknml gem_cfgs\'"
          stop
       endif
 
+      Step_runstrt_S='20160825.000000'
       err= grid_nml2 ('print',G_lam)
+!      err= step_nml  ('print'    )
       err= gem_nml   ('print'    )
 
       err= gemdm_config ()
@@ -235,6 +241,12 @@
       endif
 
       deallocate (x_8, y_8, xpos, ypos)
+
+!!$      call set_geom
+!!$      call set_opr
+!!$      call set_oprz
+
+      call gemtim4 ( Lun_out, 'AFTER set_opr', .false. )
 
       call memusage (6)
 

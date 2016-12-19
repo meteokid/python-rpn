@@ -60,12 +60,6 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
    err = gmm_get(gmmk_vt1_s ,  vt1)
    err = gmm_get(gmmk_zdt1_s, zdt1)
 
-   if(Schm_step_settls_L) then
-      err = gmm_get(gmmk_ut2_s ,  ut2)
-      err = gmm_get(gmmk_vt2_s ,  vt2)
-      err = gmm_get(gmmk_zdt2_s, zdt2)
-   endif
-
    allocate ( ut(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
               uh(l_minx:l_maxx,l_miny:l_maxy,l_nk  ), &
               vt(l_minx:l_maxx,l_miny:l_maxy,l_nk+1), &
@@ -74,7 +68,7 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
               wh(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
    ut=0.;uh=0.;vt=0.;vh=0.;wm=0.;wh=0.
 
-   if(Schm_trapeze_L.and..NOT.Schm_step_settls_L) then
+   if(Schm_trapeze_L) then
       uh = ut0 ; vh = vt0
       call itf_adx_destag_winds2 (uh,vh,l_minx,l_maxx,l_miny,l_maxy,l_nk)
       call itf_adx_interp_thermo2mom2 (wm,zdt0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
@@ -83,35 +77,6 @@ subroutine itf_adx_get_winds2 ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat, &
       F_wa =  wm(1:l_ni,1:l_nj,1:l_nk)
       F_wat=zdt0(1:l_ni,1:l_nj,1:l_nk)
       uh = ut1 ; vh = vt1 ; wh = zdt1
-   elseif(Schm_step_settls_L) then
-
-      !Set V_a = V(r,t1)
-      !-----------------
-      uh = ut1 ; vh = vt1
-      call itf_adx_destag_winds2 (uh,vh,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      call itf_adx_interp_thermo2mom2 (wm,zdt1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
-      F_ua =  uh(1:l_ni,1:l_nj,1:l_nk)
-      F_va =  vh(1:l_ni,1:l_nj,1:l_nk)
-      F_wa =  wm(1:l_ni,1:l_nj,1:l_nk)
-      F_wat=zdt1(1:l_ni,1:l_nj,1:l_nk)
-       
-      !Set V_d = 2*V(r,t1)-V(r,t2)
-      !---------------------------
-
-      beta=1.9
-      do k=1,l_nk
-         do j=1,l_nj
-         do i=1,l_ni
-            uh(i,j,k) = 2.0* ut1(i,j,k) - ut2(i,j,k)
-            vh(i,j,k) = 2.0* vt1(i,j,k) - vt2(i,j,k)
-            wh(i,j,k) = 2.0*zdt1(i,j,k) -zdt2(i,j,k)
-           !SETTLS limiter according to Diamantakis
-            if(abs(zdt1(i,j,k)-zdt2(i,j,k)).gt.beta*0.5*(abs(zdt1(i,j,k))+abs(zdt2(i,j,k)))) then
-               wh(i,j,k)=zdt1(i,j,k)
-            endif
-         enddo
-         enddo
-      enddo
 
    else
       uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )

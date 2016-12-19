@@ -20,18 +20,6 @@
 #include <arch_specific.hf>
       integer unf
 
-!author
-!     sylvie gravel   -  Apr 2003
-!
-!revision
-! v3_20 - gravel s        - initial version
-! v3_30 - Lee V.          - New control parameters added
-!
-!object
-!     See above id
-!
-!arguments - none
-
 #include "theonml.cdk"
 #include "stat.cdk"
 
@@ -41,7 +29,7 @@
       real aa
 !
 !     ---------------------------------------------------------------
-
+!
       stat_liste(1)='URT1'
       stat_liste(2)='VRT1'
       stat_liste(3)='WT1'
@@ -74,11 +62,12 @@
       Grd_xlon1=180.
       Grd_xlat2=0.
       Grd_xlon2=270.
-!
+
       Cstv_bA_8 = 0.5
-!
+      Cstv_bA_m_8 = 0.5
+
       Grd_rcoef = 1.0
-!
+
       Lam_ctebcs_L=.true.
 
       hdif_lnr = 0.
@@ -138,7 +127,7 @@
 
          mtn_hght_top = 19500.d0
 
-         mtn_tzero= 273.16
+         mtn_tzero= Dcst_tcdk_8
          mtn_nstar= 0.01871
          mtn_flo  = 18.71
          mtn_hwx  = 10
@@ -172,7 +161,7 @@
 
          mtn_hght_top = 20000.d0
 
-         mtn_tzero= 273.16
+         mtn_tzero= Dcst_tcdk_8
          mtn_nstar= -1
          mtn_flo  = 32.
          mtn_hwx  = 5
@@ -202,7 +191,7 @@
 
          mtn_hght_top = 20000.d0
 
-         mtn_tzero=273.16
+         mtn_tzero=Dcst_tcdk_8
          mtn_nstar=-1
          mtn_flo  = 8.
          mtn_hwx  =5
@@ -233,7 +222,7 @@
          mtn_hght_top = 20000.d0
          Cstv_ptop_8  = 9575.000118766453d0
 
-         mtn_tzero= 273.16
+         mtn_tzero= Dcst_tcdk_8
          mtn_nstar= 0.02
          mtn_flo  = 32.
          mtn_hwx  = 5
@@ -267,11 +256,11 @@
          Grd_ni=101
          Grd_nj = 1
          Grd_dx = 250.                     ! in meters
-         cstv_tstr_8 = 273.16
+         cstv_tstr_8 = Dcst_tcdk_8
          mtn_hght_top = 20000.d0
          G_nk      = 80                    ! dz=250m
          mtn_hght  = 0.
-         mtn_tzero = 273.16
+         mtn_tzero = Dcst_tcdk_8
 
          ! Stable for hydro with these values (max mtn slope .gt. 82 deg)
          ! Isotherme tstar-tzero=30
@@ -283,7 +272,7 @@
          !  Schm_hydro_L   = .false.
          !  Schm_trapeze_L = .true.
          !  mtn_hght  = 800.
-         !  mtn_tzero = 273.16
+         !  mtn_tzero = Dcst_tcdk_8
 
          mtn_nstar= -1
 
@@ -340,7 +329,7 @@
             pres_8=Exner_8**(1.d0/Dcst_cappa_8)*p1000hPa_8
             hyb(k)=(pres_8-Cstv_ptop_8)/(p1000hPa_8-Cstv_ptop_8)
          enddo
-!
+
 !        denormalize
          do k=1,G_nk
             hyb(k) = hyb(k) + (1.-hyb(k))*Cstv_ptop_8/p1000hPa_8
@@ -350,7 +339,7 @@
          if(hyb(k).lt.0) G_nk=k-1
          enddo
       endif
-!
+
       Grd_dy = Grd_dx
       Grd_x0_8=0.
       Grd_xl_8=Grd_x0_8 + (Grd_ni -1) * Grd_dx
@@ -369,14 +358,14 @@
       G_haloy = G_halox
 
       mtn_cfg = 1
-!
+
       step_dt=cstv_dt_8
 !!$      Step_rsti=9999999
 !!$      Step_bkup=9999999
       Fcst_rstrt_S = 'step,9999999'
       Fcst_bkup_S  = 'step,9999999'
       return
-!
+
  9000 write (Lun_out, 9100)
 !     ---------------------------------------------------------------
  9100 format (/,' NAMELIST mtn_cfgs INVALID FROM FILE: model_settings'/)
@@ -386,4 +375,4 @@
  9600 format (/1x,'From subroutine mtn_cfg:', &
               /1x,'wrong lam grid configuration  ')
       end
-!
+

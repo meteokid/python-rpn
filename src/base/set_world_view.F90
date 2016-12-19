@@ -27,6 +27,8 @@
 #include "inp.cdk"
 #include "grd.cdk"
 #include "grid.cdk"
+#include "geomg.cdk"
+#include "cori.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "step.cdk"
@@ -40,7 +42,8 @@
 
       integer, external :: gem_nml,gemdm_config,grid_nml2       ,&
                            adv_nml,adv_config,adx_nml,adx_config,&
-                           step_nml, set_io_pes, domain_decomp3
+                           step_nml, set_io_pes, domain_decomp3 ,&
+                           sol_transpose2, set_fft
       character*50 LADATE,dumc1_S
       integer :: istat,options,wload,hzd,monot,massc
       integer err(8),f1,f2,f3,f4
@@ -183,6 +186,31 @@
       call heap_paint
 
       call set_gmm
+
+! Initialize geometry of the model
+
+      call set_geom
+
+      err(1)= sol_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
+      call gem_error ( err(1),'SOL_TRANSPOSE', &
+                       'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
+
+      err= set_fft ()
+
+      allocate (cori_fcoru_8(l_minx:l_maxx,l_miny:l_maxy),&
+                cori_fcorv_8(l_minx:l_maxx,l_miny:l_maxy))
+
+      call coriolis ( cori_fcoru_8, cori_fcorv_8, geomg_x_8, geomg_y_8,&
+                      geomg_xu_8, geomg_yv_8, Grd_rot_8, &
+                      l_minx,l_maxx,l_miny,l_maxy)
+
+      call set_intuv
+
+      call set_opr2 (' ')
+
+      call set_params
+
+      call set_sor
 			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
  1002 format (/ ' Creating IO pe set for ',a,' with ',i4,' Pes')

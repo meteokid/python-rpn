@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-subroutine iau_apply2(F_kount)
+subroutine iau_apply2 (F_kount)
    use iso_c_binding
    use vGrid_Descriptors
    use vgrid_wb
@@ -27,6 +27,7 @@ subroutine iau_apply2(F_kount)
    !       S.Chamberland, 2014-07: use input_mod, allow vinterp
    !@object
    !  Add an analysis increments to the model state (IAU).
+
 #include <arch_specific.hf>
 #include "rpn_comm.inc"
 #include <rmnlib_basics.hf>
@@ -42,8 +43,10 @@ subroutine iau_apply2(F_kount)
 #include "path.cdk"
 #include "var_gmm.cdk"
 #include "vt1.cdk"
+#include "crg.cdk"
 #include "pw.cdk"
 #include "iau.cdk"
+
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'
    logical,parameter :: UVSCAL2WGRID = .false.
@@ -239,23 +242,25 @@ subroutine iau_apply2(F_kount)
          if (iname0_S == 'uu') then
             data0 = data0 * Dcst_knams_8
             data1 = data1 * Dcst_knams_8
-            nullify(myptr0,myptr1)
-            allocate(myptr0(l_minx:l_maxx,l_miny:l_maxy,uijk(3)),myptr1(l_minx:l_maxx,l_miny:l_maxy,uijk(3)))
-            myptr0 = 0.; myptr1 = 0.
-            myptr0(1:l_ni,1:l_nj,:) = data0(1:l_ni,1:l_nj,:)
-            myptr1(1:l_ni,1:l_nj,:) = data1(1:l_ni,1:l_nj,:)
-            call itf_phy_uvgridscal(myptr0,myptr1,l_minx,l_maxx,l_miny,l_maxy,uijk(3),UVSCAL2WGRID)
-            data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
-            data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
-            deallocate(myptr0,myptr1,stat=istat); nullify(myptr0,myptr1)
+            if(stag_destag_L) then
+               nullify(myptr0,myptr1)
+               allocate(myptr0(l_minx:l_maxx,l_miny:l_maxy,uijk(3)),myptr1(l_minx:l_maxx,l_miny:l_maxy,uijk(3)))
+               call hwnd_stag ( myptr0,myptr1, data0,data1, &
+                                l_minx,l_maxx,l_miny,l_maxy,l_nk,.true. )
+               data0(1:l_ni,1:l_nj,:) = myptr0(1:l_ni,1:l_nj,:)
+               data1(1:l_ni,1:l_nj,:) = myptr1(1:l_ni,1:l_nj,:)
+               deallocate(myptr0,myptr1,stat=istat); nullify(myptr0,myptr1)
+            endif
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
 
          IF_YY: if (Grd_yinyang_L .and. &
               (iname0_S == 'hu' .or. .not.any(iname0_S == Iau_tracers_S))) then
             if (iname1_S /= ' ' .and. associated(data1)) then
-               call yyg_nestuv(data0,data1,lijk(1),uijk(1), &
-                    lijk(2),uijk(2),uijk(3))
+               if(stag_destag_L) then
+                  call yyg_nestuv(data0,data1,lijk(1),uijk(1), &
+                       lijk(2),uijk(2),uijk(3))
+               endif
             else
                call yyg_xchng (data0 ,lijk(1),uijk(1),lijk(2),uijk(2),uijk(3), &
                     .false., 'CUBIC')
@@ -277,9 +282,15 @@ subroutine iau_apply2(F_kount)
             istat = gmm_get(gmmk_pw_tt_plus_s,myptr0)
 !!$            print '(a,i4," : ",f10.5," : ",f10.5," < ",f10.5)','[iau_apply] ',F_kount,data0(l_ni/2,l_nj/2,l_nk/2),minval(data0),maxval(data0)
          case('uu')
-            ni1 = l_niu ; nj1 = l_njv
-            istat = gmm_get(gmmk_ut1_s,myptr0)
-            istat = gmm_get(gmmk_vt1_s,myptr1)
+            if(stag_destag_L) then
+               ni1 = l_niu ; nj1 = l_njv
+               istat = gmm_get(gmmk_ut1_s,myptr0)
+               istat = gmm_get(gmmk_vt1_s,myptr1)
+            else
+               ni1 = l_ni ; nj1 = l_nj
+               istat = gmm_get(gmmk_pw_uu_plus_s,myptr0)
+               istat = gmm_get(gmmk_pw_vv_plus_s,myptr1)
+            endif
          case('p0')
             istat = gmm_get(gmmk_st1_s,myptr2d)
          case default
@@ -310,12 +321,14 @@ subroutine iau_apply2(F_kount)
    enddo DO_IVAR
 
    if (F_kount > 0) then
-      nullify(myptr0)
-      istat = gmm_get(gmmk_tt1_s,myptr0)
-      call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
-      call pw_update_GPW
-      call pw_update_UV
-      call pw_update_T
+      if(stag_destag_L) then
+         nullify(myptr0)
+         istat = gmm_get(gmmk_tt1_s,myptr0)
+         call tt2virt2(myptr0, DO_TT2TV, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         call pw_update_GPW
+         call pw_update_UV
+         call pw_update_T
+      endif
 
       call msg(MSG_INFO,' IAU_APPLY - APPLIED ANALYSIS INCREMENTS VALID AT '//trim(datev_S))
    endif

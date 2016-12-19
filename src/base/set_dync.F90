@@ -15,18 +15,22 @@
 
 !**   s/r set_dync - initialize the dynamics model configuration
 
-      subroutine set_dync
+      subroutine set_dync (F_check_and_stop_L, F_errcode)
       use matvec_mod, only: matvec_init
       implicit none
 #include <arch_specific.hf>
+
+      logical F_check_and_stop_L
+      integer F_errcode
 
 #include "gmm.hf"
 #include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
+#include "grd.cdk"
 #include "lam.cdk"
 #include "lun.cdk"
+#include "opr.cdk"
 #include "schm.cdk"
 #include "sol.cdk"
 #include "ver.cdk"
@@ -38,57 +42,6 @@
       real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
 !
 !     ---------------------------------------------------------------
-
-      if (lun_out.gt.0) then
-          write(Lun_out,*)'SETTING up OPR,ADW,...(S/R SET_DYNC)'
-          write(Lun_out,*)'===================================='
-      endif
-
-      if (Schm_adxlegacy_L) then
-         call adx_check_tracers
-      else
-         call adv_check_tracers
-      endif
-
-      k0=1+Lam_gbpil_T
-
-      Cstv_tau_8   = Cstv_dt_8 * Cstv_bA_8
-      Cstv_invT_8  = one/Cstv_tau_8
-      Cstv_Beta_8  = (one-Cstv_bA_8)/Cstv_bA_8
-
-!     Parameters for the nonhydrostatic case
-      Cstv_tau_nh_8   = Cstv_dt_8 * Cstv_bA_nh_8
-      Cstv_invT_nh_8  = one/Cstv_tau_nh_8
-      Cstv_Beta_nh_8  = (one-Cstv_bA_nh_8)/Cstv_bA_nh_8
-      Cstv_rEp_8=Cstv_rE_8*Cstv_tau_8/Cstv_tau_nh_8
-
-      if (Schm_hydro_L .or. & 
-         (abs(one-Cstv_rE_8).lt.1e-5 .and. abs(Cstv_bA_8-Cstv_bA_nh_8).lt.1e-5)) then
-         Cstv_rEp_8=one
-         Cstv_tau_nh_8=Cstv_tau_8
-         Cstv_invT_nh_8=Cstv_invT_8
-         Cstv_Beta_nh_8=Cstv_Beta_8
-      endif
-
-
-      if (Schm_advec.eq.1) then ! traditional advection
-         Cstv_dtA_8 = Cstv_dt_8 * 0.5d0
-      endif
-      if (Schm_advec.eq.2) then ! consistant advection
-         Cstv_dtA_8 = Cstv_tau_8
-      endif
-      Cstv_dtD_8 = Cstv_dt_8 - Cstv_dtA_8
-
-      if (Schm_advec.eq.0) then ! no advection
-         Cstv_dtA_8 = 0.d0
-         Cstv_dtD_8 = 0.d0
-      endif
-
-      Ver_igt_8    = Cstv_invT_nh_8/Dcst_grav_8
-      Ver_ikt_8    = Cstv_invT_8/Dcst_cappa_8
-      if(Schm_hydro_L) Ver_igt_8=zero
-      Ver_igt2_8   = Cstv_rE_8*Ver_igt_8**2 ! Modified epsilon
-      Ver_igt_8    = Cstv_rE_8*Ver_igt_8 ! Modified epsilon
 
       if( Cstv_Tstr_8 .lt. 0. ) then
          ! TSTAR variable in the vertical
@@ -103,19 +56,21 @@
 
       Ver_Tstar_8%m(1) = Ver_Tstar_8%t(1)
       do k=2,G_nk
-         Ver_Tstar_8%m(k) = Ver_wp_8%m(k)*Ver_Tstar_8%t(k) + Ver_wm_8%m(k)*Ver_Tstar_8%t(k-1)
+         Ver_Tstar_8%m(k) = Ver_wp_8%m(k)*Ver_Tstar_8%t(k) + &
+                            Ver_wm_8%m(k)*Ver_Tstar_8%t(k-1)
       enddo
       Ver_Tstar_8%m(G_nk+1) = Ver_Tstar_8%t(G_nk)
 
       Ver_fistr_8(G_nk+1)= 0.d0
       do k = G_nk, 1, -1
-         Ver_fistr_8(k) = Ver_fistr_8(k+1)-Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Ver_z_8%m(k)-Ver_z_8%m(k+1))
+         Ver_fistr_8(k) = Ver_fistr_8(k+1) - &
+           Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Ver_z_8%m(k)-Ver_z_8%m(k+1))
       enddo
 
       do k=1,G_nk
          Ver_epsi_8(k)=Dcst_Rgasd_8*Ver_Tstar_8%t(k)*Ver_igt2_8
-         Ver_gama_8(k)=Cstv_invT_8**2/ &
-              (Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Dcst_cappa_8+Ver_epsi_8(k)))
+         Ver_gama_8(k)=Cstv_invT_8*Cstv_invT_m_8/ &
+             (Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Dcst_cappa_8+Ver_epsi_8(k)))
       enddo
 
       Cstv_hco0_8 = Dcst_rayt_8**2
@@ -126,6 +81,7 @@
       Ver_cst_8   = zero
       Ver_cstp_8  = zero
 
+      k0=1+Lam_gbpil_T
       if(Schm_opentop_L) then
          w1 = Ver_wm_8%m(k0)*(Ver_idz_8%t(k0-1) &
                  +(one-Dcst_cappa_8)*Ver_epsi_8(k0-1)*Ver_wm_8%t(k0-1))
@@ -138,14 +94,16 @@
 
       Ver_css_8   = one/Ver_gama_8(G_nk) &
                    /(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wpstar_8(G_nk))
-      w1 = Ver_wmstar_8(G_nk)*half*(Ver_gama_8(G_nk  )*Ver_epsi_8(G_nk) &
-                                   -Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1))
+      w1= Ver_wmstar_8(G_nk)*half*(Ver_gama_8(G_nk  )*Ver_epsi_8(G_nk) &
+                                  -Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1))
       w2 = Ver_wmstar_8(G_nk)*Ver_gama_8(G_nk-1)*Ver_idz_8%t(G_nk-1)
       Ver_alfas_8 = Ver_css_8*Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk) &
                   + Ver_css_8 * ( w1 + w2 )
       Ver_betas_8 = Ver_css_8 * ( w1 - w2 )
-      w1=Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk)*(Ver_idz_8%m(G_nk)+Ver_wp_8%m(G_nk))/Ver_wpstar_8(G_nk)
-      w2=Ver_wp_8%m(G_nk)*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)*(one-Dcst_cappa_8)
+      w1=Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk)*(Ver_idz_8%m(G_nk) + &
+         Ver_wp_8%m(G_nk))/Ver_wpstar_8(G_nk)
+      w2=Ver_wp_8%m(G_nk)*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk) * &
+         (one-Dcst_cappa_8)
       Ver_cssp_8  = Ver_css_8 * ( w1 - w2 )
 
       Cstv_bar0_8 = zero
@@ -160,22 +118,15 @@
          Cstv_hco2_8 = zero
       endif
 
-      call set_opr
+      call set_oprz2 (F_errcode)
 
-      if ( G_lam ) then
-         if ( Schm_adxlegacy_L ) then 
-            call itf_adx_set
-         else
-            call adv_setgrid
-            call adv_param 
-         endif
-      else
-         call itf_adx_set
-      endif
+      if (F_check_and_stop_L) &
+         call gem_error (F_errcode,'set_dync',&
+              'VERTICAL LAYERING and TIMESTEP INCOMPATIBILITY')
 
-      call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
+      if (F_errcode == 0) call set_sol
 
-      if (Sol_type_S == 'ITERATIVE_3D') call matvec_init()
+      if (Sol_type_S == 'ITERATIVE_3D') call matvec_init
 !
 !     ---------------------------------------------------------------
 !

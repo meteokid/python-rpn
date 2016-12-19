@@ -1,6 +1,0 @@
-      logical USER_busper_L
-      integer lcore_phy_gid, l_phy_gid, g_phy_gid
-
-      common /physics_i/ lcore_phy_gid, l_phy_gid, g_phy_gid
-      common /physics_l/ USER_busper_L
-

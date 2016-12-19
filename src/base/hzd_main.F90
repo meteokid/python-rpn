@@ -13,21 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r hzd_main - applies horizontal diffusion on a given set of fields
-!
+!**s/r hzd_main - Main controler for horizontal diffusion
+
       subroutine hzd_main
       use hzd_ctrl
+      use hzd_exp
       implicit none
 #include <arch_specific.hf>
-
-!author
-!     Joseph-Pierre Toviessi ( after version v1_03 of dif )
-!
-!revision
-! v4_40 - Plante A.         - Equatorial_sponge
-! v4_50 - Desgagne M.       - New control switches
-! v4_80 - Lee&Qaddouri      - Add DEL N horizontal diffusion
-! v4_80 - Gaudreault S.     - Nonlinear Smagorinsky diffusion
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -38,25 +30,37 @@
 #include "eq.cdk"
 #include "vt1.cdk"
 #include "schm.cdk"
+#include "crg.cdk"
 
-      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng    , &
-              switch_on_eqspng, switch_on_THETA, switch_on_smago, &
-              switch_on_smagoTH
-      integer i,istat
-      real, pointer, dimension(:,:,:) :: tr
+      logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &
+              switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA, &
+              switch_on_smago, switch_on_smagoTH
+      integer i,j,k,istat
+      integer, save :: depth
+      real*8 pis2,fract
+      real, dimension(:)    , pointer, save :: weight=> null()
+      real, dimension(:,:,:), pointer       :: tr
 !
 !-------------------------------------------------------------------
 !
       if (Lun_debug_L) write (Lun_out,1000)
 
       call timing_start2 ( 60, 'HZD_main', 1 )
-      switch_on_UVW     = Hzd_lnr       > 0.
-      switch_on_TR      =(Hzd_lnr_tr    > 0.).and.any(Tr3d_hzd)
-      switch_on_THETA   = Hzd_lnr_theta > 0.
-      switch_on_vrtspng = Vspng_nk      >=1
-      switch_on_eqspng  = Eq_nlev       > 1
-      switch_on_smago   = Hzd_smago_param > 0.
-      switch_on_smagoTH = switch_on_smago.and.(Hzd_smago_prandtl > 0.)
+      switch_on_UVW         = Hzd_lnr       > 0.
+      switch_on_TR          =(Hzd_lnr_tr    > 0.).and.any(Tr3d_hzd)
+      switch_on_THETA       = Hzd_lnr_theta > 0.
+      switch_on_vrtspng_UVT = Vspng_nk      >=1
+      switch_on_vrtspng_W   = Vspng_nk      >=1
+      switch_on_eqspng      = Eq_nlev       > 1
+      switch_on_smago       = Hzd_smago_param > 0.
+      switch_on_smagoTH     = switch_on_smago .and. &
+                              (Hzd_smago_prandtl > 0.)
+
+      if(hzd_in_rhs_L)      switch_on_THETA       =.false.
+      if(hzd_in_rhs_L)      switch_on_UVW         =.false.
+      if(top_spng_in_rhs_L) switch_on_vrtspng_UVT =.false.
+      if(eqspng_in_rhs_L)   switch_on_eqspng      =.false.
+      if(smago_in_rhs_L)    switch_on_smago       =.false.
 
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
@@ -64,7 +68,7 @@
       istat = gmm_get(gmmk_tt1_s,tt1)
       istat = gmm_get(gmmk_wt1_s,wt1)
 
-      call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
+      call itf_ens_hzd (ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
 
 !**********************************
 !  Horizontal diffusion on theta  *
@@ -119,15 +123,46 @@
          endif
          call timing_stop ( 64 )
       endif
-!
+
 !********************
 !  Vertical sponge  *
 !********************
-!
-      if ( switch_on_vrtspng ) then
+
+      if ( switch_on_vrtspng_UVT ) then
          call timing_start2 ( 65, 'V_SPNG', 60 )
-         call vspng_drv3 (ut1, vt1, zdt1, wt1, tt1, &
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_exp_deln ( ut1,  'U', l_minx,l_maxx,l_miny,l_maxy,&
+                             Vspng_nk, F_VV=vt1, F_type_S='VSPNG' )
+         call hzd_exp_deln ( tt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                             Vspng_nk, F_type_S='VSPNG' )
+         call timing_stop ( 65 )
+      endif
+      if ( switch_on_vrtspng_W ) then
+         call timing_start2 ( 65, 'V_SPNG', 60 )
+         if (Vspng_riley_L) then
+            if (.not. associated(weight)) then
+               pis2 = acos(0.0d0)
+               depth= Vspng_nk+1
+               allocate (weight(depth-1))
+               weight(1)= 0.
+               do k=2, depth-1
+                  fract= (dble(k) - dble(depth))/ dble(depth-1)
+                  weight(k)= cos(pis2*fract)**2
+               end do
+            endif
+            do k=1, depth-1
+               do j=1, l_nj
+                  do i=1, l_ni
+                     zdt1(i,j,k) = zdt1(i,j,k)*weight(k)
+                      wt1(i,j,k) =  wt1(i,j,k)*weight(k)
+                  end do
+               end do
+            end do
+         else
+            call hzd_exp_deln ( zdt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                                Vspng_nk, F_type_S='VSPNG' )
+            call hzd_exp_deln ( wt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                                Vspng_nk, F_type_S='VSPNG' )
+         endif
          call timing_stop ( 65 )
       endif
 
@@ -146,20 +181,20 @@
 ! Update pw_* variables
 
       call timing_start2 ( 69, 'PW_UPDATE', 60)
-      if (switch_on_UVW   .or. switch_on_vrtspng .or.             &
+      if (switch_on_UVW   .or. switch_on_vrtspng_W .or.           &
           switch_on_THETA .or. switch_on_TR .or. switch_on_smago) &
          call pw_update_GPW
-      if (switch_on_UVW .or. switch_on_vrtspng .or. &
-          switch_on_eqspng .or. switch_on_smago)    &
+      if (switch_on_UVW .or. switch_on_vrtspng_UVT .or. &
+          switch_on_eqspng .or. switch_on_smago)        &
          call pw_update_UV
       if (switch_on_THETA .or. switch_on_smagoTH .or. &
-          switch_on_TR .or. switch_on_vrtspng  )      &
+          switch_on_TR .or. switch_on_vrtspng_UVT  )  &
          call pw_update_T
       call timing_stop ( 69 )
 
       call timing_stop ( 60 )
 
-1000  format(3X,'MAIN HORIZONTAL DIFFUSION : (S/R HZD_MAIN)')
+ 1000 format(3X,'MAIN HORIZONTAL DIFFUSION : (S/R HZD_MAIN)')
 !
 !-------------------------------------------------------------------
 !

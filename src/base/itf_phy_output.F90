@@ -222,7 +222,7 @@
 
                      call vertint2 ( buso_pres, cible, nko_pres, data3d,&
                                      lnpres, G_nk, 1,l_ni, 1,l_nj      ,&
-                                     1,l_ni, 1,l_nj, inttype='linear' )
+                             1,l_ni, 1,l_nj, inttype=Out3_vinterp_type_S)
 
                      call out_fstecr3 ( buso_pres, 1,l_ni, 1,l_nj      ,&
                            level(1,levset),Outp_var_S(ii,kk)           ,&

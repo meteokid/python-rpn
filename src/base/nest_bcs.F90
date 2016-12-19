@@ -55,7 +55,7 @@
 !$omp do
          do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n
-               rhsu (pil_w,j,k) = Cstv_invT_8 * nest_u(pil_w,j,k)
+               rhsu (pil_w,j,k) = Cstv_invT_m_8 * nest_u(pil_w,j,k)
          enddo
          enddo
 !$omp enddo
@@ -65,7 +65,7 @@
 !$omp do
          do k=1,l_nk
          do j= 1+pil_s, l_nj-pil_n
-            rhsu (l_ni-pil_e,j,k) = Cstv_invT_8 * nest_u(l_ni-pil_e,j,k)
+            rhsu (l_ni-pil_e,j,k) = Cstv_invT_m_8 * nest_u(l_ni-pil_e,j,k)
          enddo
          enddo
 !$omp enddo
@@ -75,7 +75,7 @@
 !$omp do
          do k=1,l_nk
          do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,pil_s,k) = Cstv_invT_8 * nest_v(i,pil_s,k)
+            rhsv (i,pil_s,k) = Cstv_invT_m_8 * nest_v(i,pil_s,k)
          enddo
          enddo
 !$omp enddo
@@ -85,7 +85,7 @@
 !$omp do
          do k=1,l_nk
          do i= 1+pil_w, l_ni-pil_e
-            rhsv (i,l_nj-pil_n,k) = Cstv_invT_8 * nest_v(i,l_nj-pil_n,k)
+            rhsv (i,l_nj-pil_n,k) = Cstv_invT_m_8 * nest_v(i,l_nj-pil_n,k)
          enddo
          enddo
 !$omp enddo

@@ -14,10 +14,11 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r set_opr - initialize the commons containing model operators
-!
-      subroutine set_opr
+
+      subroutine set_opr2 (F_eigen_filename_S)
       implicit none
 #include <arch_specific.hf>
+      character*(*) F_eigen_filename_S
 !
 !author
 !     michel roch - rpn - june 1993
@@ -31,45 +32,28 @@
 !       - Qaddouri A.       - add call for setting of preconditioning variables
 ! v4_40 - Qaddouri A.       - setup operators for Yin-Yang
 !
-!object
-!	This subroutine initializes the commons containing the
-!	matrices used by the operators of the model
+
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "grd.cdk"
 #include "dcst.cdk"
 #include "fft.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
-#include "cstv.cdk"
 #include "trp.cdk"
-#include "prec.cdk"
-#include "ptopo.cdk"
-#include "type.cdk"
-#include "ver.cdk"
 
-      integer, external :: sol_transpose2
       real*8 ZERO_8, ONE_8, HALF_8
       parameter( ZERO_8 = 0.0 )
       parameter( ONE_8  = 1.0 )
       parameter( HALF_8 = 0.5 )
 
-      integer i, j, k, k0, l, dim, err,Gni,Gnj,NSTOR,ierr,jj
+      integer i, j, k, k0, l, dim, err,Gni,Gnj,NSTOR,jj
       real*8  sc_8, gdx_8, aab_8, wk(G_nk)
       real*8, dimension(:)  ,allocatable :: wk_8, wk2_8
 !
 !     ---------------------------------------------------------------
 !
-      ierr= sol_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
-      call gem_error ( ierr,'SOL_TRANSPOSE', &
-                       'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
-
-!     Initialize commons for fast fourier transforms
-
-      call set_fft ()
-
       dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
       allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))
 
@@ -123,8 +107,10 @@
          Opr_opsxp2_8(G_ni*2+i+Lam_pil_w)=wk2_8(Gni*2+i)
       enddo
       if (Grd_yinyang_L) then
-         Opr_opsxp2_8(G_ni+1+Lam_pil_w)=2*Opr_opsxp2_8(G_ni+1+Lam_pil_w)
-         Opr_opsxp2_8(G_ni+Gni+Lam_pil_w)=2*Opr_opsxp2_8(G_ni+Gni+Lam_pil_w)
+         Opr_opsxp2_8(G_ni  +1+Lam_pil_w)=&
+                   2*Opr_opsxp2_8(G_ni  +1+Lam_pil_w)
+         Opr_opsxp2_8(G_ni+Gni+Lam_pil_w)=&
+                   2*Opr_opsxp2_8(G_ni+Gni+Lam_pil_w)
       endif
       deallocate ( wk2_8 )
 
@@ -149,15 +135,15 @@
          j=Lam_pil_s
          aab_8=     (sin (G_yg_8(j+1))-sin(G_yg_8(j))) / &
                     (cos ((G_yg_8(j+1)+G_yg_8(j))*HALF_8)**2)
-         Opr_opsyp2_8(G_nj+jj+Lam_pil_s)=Opr_opsyp2_8(G_nj+jj+Lam_pil_s) &
-                                        -1.0D0/aab_8
+         Opr_opsyp2_8(G_nj+jj+Lam_pil_s)=Opr_opsyp2_8(G_nj+jj+Lam_pil_s)&
+                                         -1.0D0/aab_8
          jj=Gnj
          j=G_nj-1-Lam_pil_n+1
          aab_8=     (sin (G_yg_8(j+1))-sin(G_yg_8(j))) / &
                     (cos ((G_yg_8(j+1)+G_yg_8(j))*HALF_8)**2)
 
-         Opr_opsyp2_8(G_nj+jj+Lam_pil_s)=Opr_opsyp2_8(G_nj+jj+Lam_pil_s)- &
-                                         1.d0/aab_8
+         Opr_opsyp2_8(G_nj+jj+Lam_pil_s)=Opr_opsyp2_8(G_nj+jj+Lam_pil_s)&
+                                         -1.d0/aab_8
       endif
 
       deallocate ( wk_8, wk2_8 )
@@ -167,98 +153,33 @@
 
       if ( .not. Fft_fast_L ) then
 
-         call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
-                                           Opr_opsxp2_8, Gni, G_ni )
+         call set_poic2 (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
+                         Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
 
       else
 
          sc_8 = Dcst_pi_8 / dble( Gni )
-         if (G_lam) then
-             gdx_8 = (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )/dble(Gni)
-             if (Lun_debug_L) print *,'gdx=',gdx_8
-             do i=1,1+Lam_pil_w
-                Opr_xeval_8(i)    = ZERO_8
-             enddo
-             do i=G_ni-Lam_pil_e+1,G_ni
-                Opr_xeval_8(i)    = ZERO_8
-             enddo
-             do i = 2+Lam_pil_w, G_ni-Lam_pil_e
-                Opr_xeval_8(i) = - (2*sin(float(i-Lam_pil_w-1)*sc_8/2)/gdx_8)**2
-             enddo
-             if (Grd_yinyang_L) then
-                allocate (Opr_xevec_8(G_ni*G_ni))
-                call set_poic  ( Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,&
-                                             Opr_opsxp2_8, Gni, G_ni )
-             endif
-         else
-             Opr_xeval_8(1)    = ZERO_8
-             Opr_xeval_8(G_ni) = - ONE_8 / ( sc_8 ** 2. )
-             do i = 1, (G_ni-1)/2
-                Opr_xeval_8(2*i+1)= - (sin( dble(i) * sc_8 ) / sc_8 ) **2.
-                Opr_xeval_8(2*i)  =  Opr_xeval_8(2*i+1)
-             end do
-         endif
-
-      endif
-
-      call set_oprz ()
-
-      if (Grd_yinyang_L) then
-         call yyg_initstencils  ()
-         call yyg_rhs_initscalbc()
-      endif
-      
-      if ( Sol_type_S(1:9).eq.'ITERATIVE' ) then
-
-         if (Sol_type_S(11:12).eq.'2D') then
-            if (Lun_out.gt.0) write (Lun_out,1001) trim(sol2D_precond_S)
-         else
-            if (Lun_out.gt.0) write (Lun_out,1002) trim(Sol3D_krylov_S), trim(sol3D_precond_S)
-         end if
-
-         sol_pil_w= pil_w ; sol_pil_e= pil_e
-         sol_pil_s= pil_s ; sol_pil_n= pil_n
-         sol_niloc= (l_ni-pil_e)-(1+pil_w)+1
-         sol_njloc= (l_nj-pil_n)-(1+pil_s)+1
-         sol_nloc = sol_niloc*sol_njloc*Schm_nith
-
-         allocate (Prec_xevec_8(sol_niloc*sol_niloc)          ,&
-                   Prec_xeval_8(sol_niloc),Prec_ai_8(sol_nloc),&
-                   Prec_bi_8(sol_nloc),Prec_ci_8(sol_nloc))
-
-         do k =1,G_nk
-            do k0=1,G_nk
-               wk(k) = Opr_zevec_8 ((k-1)*G_nk+k0)
-            end do
-            if ( k .le. Schm_nith ) &
-                 wk(k)= (Cstv_hco1_8+Cstv_hco0_8*Opr_zeval_8(k))
+         gdx_8 = (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )/dble(Gni)
+         if (Lun_debug_L) print *,'gdx=',gdx_8
+         do i=1,1+Lam_pil_w
+            Opr_xeval_8(i)    = ZERO_8
          enddo
-
-         call eigenabc_local (Prec_xeval_8,Prec_xevec_8,Prec_ai_8,&
-                              Prec_bi_8,Prec_ci_8,l_ni,l_nj      ,&
-                        sol_niloc,sol_njloc,Schm_nith,l_i0,l_j0,wk)
-
+         do i=G_ni-Lam_pil_e+1,G_ni
+            Opr_xeval_8(i)    = ZERO_8
+         enddo
+         do i = 2+Lam_pil_w, G_ni-Lam_pil_e
+            Opr_xeval_8(i) = - (2*sin(float(i-Lam_pil_w-1)*sc_8/2)/&
+                                gdx_8)**2
+         enddo
+         if (Grd_yinyang_L) then
+            allocate (Opr_xevec_8(G_ni*G_ni))
+            call set_poic2  (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,&
+                             Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+         endif
+         
       endif
-
-!     Initialize horizontal diffusion package
-
-      call hzd_set ()
-
-!     Initialize common block for vertical sponge
-
-      call vspng_set ()
-
-!     Initialize common block for equatorial sponge
-
-      call eqspng_set ()
 
  1000 format(/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)', &
-             /,'=============================================')
- 1001 format(/,'WILL USE FGMRES 2D ITERATIVE SOLVER WITH ',a, &
-               ' PRECONDITIONNER' &
-             /,'=============================================')
- 1002 format(/,'WILL USE ',a,' 3D ITERATIVE SOLVER WITH ',a, &
-               ' PRECONDITIONNER' &
              /,'=============================================')
 !
 !     ---------------------------------------------------------------

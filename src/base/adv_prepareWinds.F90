@@ -33,26 +33,34 @@
 #include "glb_ld.cdk"
 #include "schm.cdk"
 #include "vt2.cdk"
+#include "pw.cdk"
+#include "dcst.cdk"
+#include "crg.cdk"
 
       real, dimension(:,:,:), allocatable :: uh,vh,wm,wh
       real ::  beta, err
       integer :: i,j,k
+      real*8  :: inv_rayt_8
 !
 !     ---------------------------------------------------------------
 !      
+    inv_rayt_8 = 1.D0 / Dcst_rayt_8
+
       allocate ( uh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
                  vh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
                  wm(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
                  wh(F_minx:F_maxx,F_miny:F_maxy,F_nk) )
 
 
-      if(Schm_step_settls_L) then
+      if(Schm_predictor.eq.2) then
          err = gmm_get(gmmk_ut2_s ,  ut2)
          err = gmm_get(gmmk_vt2_s ,  vt2)
          err = gmm_get(gmmk_zdt2_s, zdt2)
       endif 
       
-      if(Schm_trapeze_L.and..NOT.Schm_step_settls_L) then
+      if(Schm_trapeze_L) then
+         if(case.eq."corrector") then
+        
          uh = ut0
          vh = vt0
   
@@ -70,15 +78,45 @@
          F_wa = wm(1:F_ni,1:F_nj,1:F_nk)
          F_wat= zdt0(1:F_ni,1:F_nj,1:F_nk)
 
-         uh = ut1
-         vh = vt1
-         wh = zdt1
-      elseif(Schm_step_settls_L) then
+! DEPARTURE WINDS: NO DESTAGRING         
+         err = gmm_get (gmmk_pw_uu_moins_s, pw_uu_moins)
+         err = gmm_get (gmmk_pw_vv_moins_s, pw_vv_moins)
 
+         do k = 1,l_nk
+            do j = 1,l_nj
+            do i = 1,l_ni
+               uh(i,j,k) = inv_rayt_8 * pw_uu_moins(i,j,k)
+               vh(i,j,k) = inv_rayt_8 * pw_vv_moins(i,j,k)
+            enddo
+            enddo
+         enddo
+
+         wh = zdt1
+
+         if(Schm_predictor.eq.2) then
+            ut2=pw_uu_moins
+            vt2=pw_vv_moins
+           zdt2=zdt1
+         endif
+
+         endif
+
+         if(case.eq."predictor") then
 !Set V_a = V(r,t1)
 !-----------------
-         uh = ut1 ; vh = vt1
-         call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+
+         err = gmm_get (gmmk_pw_uu_moins_s, pw_uu_moins)
+         err = gmm_get (gmmk_pw_vv_moins_s, pw_vv_moins)
+
+         do k = 1,l_nk
+            do j = 1,l_nj
+            do i = 1,l_ni
+               uh(i,j,k) = inv_rayt_8 * pw_uu_moins(i,j,k)
+               vh(i,j,k) = inv_rayt_8 * pw_vv_moins(i,j,k)
+            enddo
+            enddo
+         enddo
+
          call adv_thermo2mom  (wm,zdt1,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
          F_ua =  uh(1:F_ni,1:F_nj,1:F_nk)
          F_va =  vh(1:F_ni,1:F_nj,1:F_nk)
@@ -87,29 +125,30 @@
          
 !Set V_d = 2*V(r,t1)-V(r,t2)
 !---------------------------
-         beta=1.9
          do k=1,l_nk
             do j=1,l_nj
-               do i=1,l_ni
-                  uh(i,j,k) = 2.0* ut1(i,j,k) - ut2(i,j,k)
-                  vh(i,j,k) = 2.0* vt1(i,j,k) - vt2(i,j,k)
-                  wh(i,j,k) = 2.0*zdt1(i,j,k) -zdt2(i,j,k)
-!SETTLS limiter according to Diamantakis
-                  if(abs(zdt1(i,j,k)-zdt2(i,j,k)).gt.beta*0.5*(abs(zdt1(i,j,k))+abs(zdt2(i,j,k)))) then
-                     wh(i,j,k)=zdt1(i,j,k)
-                  endif
-               enddo
+            do i=1,l_ni
+               uh(i,j,k) = inv_rayt_8 * ( 2.0* pw_uu_moins(i,j,k) - ut2(i,j,k) )
+               vh(i,j,k) = inv_rayt_8 * ( 2.0* pw_vv_moins(i,j,k) - vt2(i,j,k) )
+               wh(i,j,k) = 2.0*zdt1(i,j,k) -zdt2(i,j,k)
+            enddo
             enddo
          enddo
 
-      else
-          uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )
-          vh (:,:,:) = .5*( vt1(:,:,:) + vt0(:,:,:) )
-          wh (:,:,:) = .5*(zdt1(:,:,:) +zdt0(:,:,:) )
+    !    wh = zdt1
+
       endif
 
-      call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+      else
 
+         uh (:,:,:) = .5*( ut1(:,:,:) + ut0(:,:,:) )
+         vh (:,:,:) = .5*( vt1(:,:,:) + vt0(:,:,:) )
+         wh (:,:,:) = .5*(zdt1(:,:,:) +zdt0(:,:,:) )
+
+         call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
+
+      endif
+  
       call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
 
 !     Destag departure winds

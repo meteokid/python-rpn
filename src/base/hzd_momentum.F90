@@ -28,12 +28,15 @@
 #include "schm.cdk"
 #include "vt0.cdk"
 #include "grd.cdk"
+#include "crg.cdk"
 
       logical, save :: switch_on_hzd= .true.
       integer istat
 !
 !-------------------------------------------------------------------
 !
+      if(hzd_in_rhs_L) return
+
       if (Schm_hzdadw_L .and. switch_on_hzd) then
           if (Lun_debug_L) write (Lun_out,1000)
 

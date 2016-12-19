@@ -2,27 +2,44 @@
       use iso_c_binding
       implicit none
 
-      integer, external ::  grid_nml2 , gem_nml , gemdm_config
-
 #include <clib_interface_mu.hf>
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-#include "cstv.cdk"
 #include "step.cdk"
-#include "hzd.cdk"
+#include "path.cdk"
+#include "ptopo.cdk"
+#include "version.cdk"
       include "rpn_comm.inc"
 
       external dummy_checkdm
-      integer, external :: domain_decomp3,sol_transpose2, &
-                 hzd_imp_transpose2,vspng_imp_transpose2
+      logical, external :: set_dcst_8
+      integer, external :: domain_decomp3,sol_transpose2   , &
+                           fnom, set_fft, exfin, grid_nml2 , &
+                           gem_nml , gemdm_config
 
-      integer pe_xcoord(1000), pe_ycoord(1000)
       character*16 ndomains_S,npex_S,npey_S
+      character*2048 cdm_eigen_S,fn
+      logical cdm_grid_L
+      integer cdm_npex(2), cdm_npey(2), unf, nrec, cnt, k
+      integer pe_xcoord(1000), pe_ycoord(1000)
       integer err,ierr(4),Pelocal,Petotal,npex,npey,i,max_io_pes
 
-      npex=1 ; npey=1
-      call RPN_COMM_init(dummy_checkdm,Pelocal,Petotal,npex,npey)
+      namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_grid_L,cdm_eigen_S
+!
+!-------------------------------------------------------------------
+!      
+      call init_component
+
+      if (Ptopo_couleur.eq.0) then
+         call  open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
+         call write_status_file3 ('checkdmpart_status=ABORT')
+      endif
+
+      cdm_npex   = 0
+      cdm_npey   = 0
+      cdm_grid_L = .false.
+      cdm_eigen_S= 'NONE@#$%'
 
       Step_runstrt_S='2011020300'
       Step_dt=5
@@ -33,67 +50,118 @@
       Grd_yinyang_L = .true.
       Lun_out=6
 
-      err = grid_nml2 ('./gem_settings.nml',G_lam)
-      if (err .lt. 0) goto 987
+      unf = 0
+      if (fnom (unf,'./checkdm.nml', 'SEQ+OLD', nrec) .ne. 0) goto 9110
+      rewind(unf)
+      read (unf, nml=cdm_cfgs, end = 9120, err = 9120)
+      call fclos (unf) ; goto 8888
+ 9110 if (Lun_out.gt.0) then
+         write (Lun_out, 9050) 'checkdm.nml'
+         write (Lun_out, 8000)
+      endif
+      goto 9999
+
+ 9120 call fclos (unf)
+      if (Lun_out.ge.0) then
+         write (Lun_out, 9150) 'cdm_cfgs','checkdm.nml'
+         write (Lun_out, 8000)
+      endif
+      goto 9999
+ 8888 write (Lun_out,nml=cdm_cfgs)
+
+      fn  = trim(Path_input_S)//'/model_settings.nml'
+      err = grid_nml2 (fn,G_lam)
+      if (err .lt. 0) goto 9999
       err = grid_nml2 ('print',G_lam)
 
-      err = gem_nml   ('./gem_settings.nml')
-      if (err .lt. 0) goto 987
+      err = gem_nml   (fn)
+      if (err .lt. 0) goto 9999
       err = gemdm_config ()
-      if (err .lt. 0) goto 987
+      if (err .lt. 0) goto 9999
 
-      if (clib_getenv ('Ptopo_npex',npex_S).lt.0) then
-         write (6,1001) 'Ptopo_npex'
-         goto 987
-      else
-         read (npex_S,*,end=33,err=33) npex
-         goto 201
-  33     write (6,1002) 'Ptopo_npex',npex_S
-         goto 987
+      cnt=0
+      if ((cdm_npex(1).gt.0) .and. (cdm_npey(1).gt.0)) then
+         if (cdm_npex(2)==0) cdm_npex(2)=cdm_npex(1)
+         if (cdm_npey(2)==0) cdm_npey(2)=cdm_npey(1)
+         do npey=cdm_npey(1), cdm_npey(2)
+         do npex=cdm_npex(1), cdm_npex(2)
+            cnt=cnt+1
+            ierr=0
+            ierr(1)= domain_decomp3 ( npex, npey, .true. )
+            ierr(2)= sol_transpose2 ( npex, npey, .true. )
+            if (minval(ierr) .ge. 0 ) then
+               write(npex_S,'(i6)') npex
+               write(npey_S,'(i6)') npey
+               if (Ptopo_couleur.eq.0) &
+               call write_status_file3 ('topo_allowed="'//trim(npex_S)//'x'//trim(npey_S)//'"')
+            endif
+         end do
+         end do
       endif
- 201  if (clib_getenv ('Ptopo_npey',npey_S).lt.0) then
-         write (6,1001) 'Ptopo_npey'
-         goto 987
-      else
-         read (npey_S,*,end=43,err=43) npey
-         goto 301
-  43     write (6,1002) 'Ptopo_npey',npey_S
-         goto 987
+      
+      if (cnt == 1) then
+         npex= cdm_npex(1) ; npey=cdm_npey(1)
+         max_io_pes=npex*npey
+         do i= 1, npex*npey
+            err= RPN_COMM_io_pe_valid_set (pe_xcoord,pe_ycoord,i,&
+            npex,npey,.false.,0)
+            if (err.ne.0) then
+               max_io_pes= i-1
+               exit
+            endif
+         end do
+         write(npex_S,'(i6.6)') max_io_pes
+         if (Ptopo_couleur.eq.0) call write_status_file3 ('MAX_PES_IO='//trim(npex_S))
       endif
 
- 301  ierr=0
-      ierr(1)= domain_decomp3 ( npex, npey, .true. )
-      ierr(2)= sol_transpose2 ( npex, npey, .true. )
-
-      if (.not. G_lam) then
-         if ((Hzd_lnr.gt.0.).or.(Hzd_lnr_theta.gt.0.) &
-                            .or.(Hzd_lnr_tr   .gt.0.))& 
-         ierr(3)= hzd_imp_transpose2   ( npex, npey, .true. )
-         ierr(4)= vspng_imp_transpose2 ( npex, npey, .true. )
-      endif
-
-      if (minval(ierr) .lt. 0 ) goto 987
-
-      write (6,'(/a//a,i6,a)') '  ====> CHECKDMPART IS OK',&
-      ' Looping RPN_COMM_io_pe_valid_set over ',npex*npey,' Pes'
-
- 987  max_io_pes=npex*npey
-      do i= 1, npex*npey
-         err= RPN_COMM_io_pe_valid_set (pe_xcoord,pe_ycoord,i,&
-                                        npex,npey,.false.,0)
-         if (err.ne.0) then
-            max_io_pes= i-1
-            exit
+      if ( (cdm_grid_L) .or. (cdm_eigen_S /= 'NONE@#$%') ) then
+         err= domain_decomp3 ( 1, 1, .false. )
+         err= sol_transpose2 ( 1, 1, .false. )
+         call glbpos
+         call set_geom
+         err= set_fft ()
+         if (Ptopo_couleur.eq.0) then
+         if (err == 0) then
+            call write_status_file3 ('Fft_fast_L=OK')
+         else
+            call write_status_file3 ('Fft_fast_L=ABORT')
          endif
-      end do
+         endif
 
-      write (6,'(/a,i9/)') '  ====> MAX_PES_IO= ',max_io_pes
+         if (cdm_eigen_S /= 'NONE@#$%') then
+            call set_opr2 (cdm_eigen_S)
+         endif
 
-      call rpn_comm_FINALIZE(err)
+         if (cdm_grid_L) then
+            call set_params
+            call set_dync ( .false., err )
+            if (Ptopo_couleur.eq.0) then
+               if (err == 0) then
+                  call write_status_file3 ('SOLVER=OK')
+               else
+                  call write_status_file3 ('SOLVER=ABORT')
+               endif
+            endif
+         endif
 
- 1001 format (/' =====> Error: Env variable ',a,' is undefined'/)
- 1002 format (/' =====> Error: Env variable ',a,' is incorrectly defined ',a/)
+      endif
 
+      if (Ptopo_couleur.eq.0) then
+         call write_status_file3 ('checkdmpart_status=OK')
+         call close_status_file3 ()
+      endif
+
+      if (Lun_out.gt.0) &
+      err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')
+
+ 9999 call rpn_comm_FINALIZE(err)
+
+ 8000 format (/,'========= ABORT ============='/)
+ 9050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
+ 9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
+!
+!-------------------------------------------------------------------
+!      
       return
       end
 

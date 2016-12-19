@@ -246,6 +246,19 @@
 
          call timing_stop (25)
 
+        if (Grd_yinyang_L) then
+            call yyg_nestuv(ut0,vt0, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+            call yyg_xchng (tt0 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+            call yyg_xchng (zdt0, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+            call yyg_xchng (st0 , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
+                            .false., 'CUBIC')
+            if (.not.Schm_hydro_L) &
+            call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+         endif
+
       end do
 
       if (Grd_yinyang_L) &

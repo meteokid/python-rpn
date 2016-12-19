@@ -117,6 +117,7 @@
 #include "schm.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
+#include "crg.cdk"
 
       type(vgrid_descriptor) :: vcoord
       integer k,istat,options_readwrite,options_readonly
@@ -144,7 +145,8 @@
                  Ver_epsi_8(G_nk  ),     Ver_FIstr_8(G_nk+1), &
                   Ver_bzz_8(G_nk  ),     Ver_onezero(G_nk+1), &
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
-                  Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ) )
+                  Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ), &
+                  Ver_wpM_8(G_nk  ),       Ver_wmM_8(G_nk  ) )
 
       Cstv_pref_8 = 100000.d0
       Ver_code    = 6
@@ -252,6 +254,15 @@
             Ver_wmA_8(k)= Ver_wm_8%m(k)
       enddo
 
+      do k=1,G_nk
+         if(k.eq.1) then
+            Ver_wmM_8(k) = zero
+         else
+            Ver_wmM_8(k) = (Ver_z_8%t(k)-Ver_z_8%m(k))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
+         endif
+         Ver_wpM_8(k) = one - Ver_wmM_8(k)
+      enddo
+
           Ver_dbdz_8%m(1) = Ver_wp_8%m(1) * Ver_dbdz_8%t(1)  &
                           + Ver_wm_8%m(1) * (Ver_b_8%m(1)-zero)/(Ver_z_8%m(1)-Cstv_Ztop_8)
       do k=2,G_nk
@@ -287,6 +298,12 @@
          Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
       endif
 
+      if(.not.imp_pgradw_L) then
+         do k=1,G_nk
+            Ver_wpM_8(k)=Ver_wp_8%m(k)
+            Ver_wmM_8(k)=Ver_wm_8%m(k)
+         enddo
+      endif
 !     -------------------------------------------------------
 !     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
 !     -------------------------------------------------------

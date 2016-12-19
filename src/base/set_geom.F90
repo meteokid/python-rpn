@@ -20,26 +20,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author
-!     M. Desgagne - V. Lee ( after version v1_03 of setgeom )
-!
-!revision
-! v2_00 - Desgagne/Lee     - initial MPI version
-! v2_20 - Lee V.           - convert xgi,ygi to real*8
-! v2_30 - Edouard S.       - adapt for vertical hybrid coordinate
-! v2_30 - A. Methot        - introduction of a new stretch grid design
-! v2_30                        with upper limits on grid point spacing
-! v2_30 - Desgagne M.      - entry vertical interpolator in gemdm
-! v3_00 - Desgagne & Lee   - Lam configuration
-! v3_01 - Desgagne M.      - Introduce Geomn_latrx,Geomn_lonrx
-! v3_11 - Tanguay M.       - Introduce Grd_gauss_L
-! v3_21 - Desgagne M.      - Optimization
-! v3_30 - Dugas B.         - Corriger l'allocation de Geomg*
-! v3_30 - Desgagne M.      - Add calls to: set_cori, set_intuv
-!                                          and itf_phy_vlsp
-! v4_40 - Lee V.           - add reciprocal vectors for Geomg_invcy_8,invcyv_8
-! v4.7  - Gaudreault S.    - Reformulation in terms of real winds (removing wind images)
-
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -62,7 +42,7 @@
       logical, parameter :: gauss_L = .false.
       logical uniform_L
       integer offi,offj,indx,err,ierx,iery,dgid,hgc(4)
-      integer i,j,k,dimy,istat,pnip1,lam,ni,nj,offset
+      integer i,j,k,dimy,istat,pnip1,ni,nj,offset
       integer nila,njla,belo,left
       real xfi(0:l_ni+1),yfi(0:l_nj+1),height,heightp1
       real gxfi(g_ni),gyfi(g_nj), dxmax, dymax
@@ -84,12 +64,10 @@
       rad2deg_8 = CLXXX_8/Dcst_pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 
-      lam=0
-      if (G_lam) lam=1
       Geomn_minx= west
       Geomn_miny= south
-      Geomn_maxx= l_ni + (1-east *lam)
-      Geomn_maxy= l_nj + (1-north*lam)
+      Geomn_maxx= l_ni + 1 - east 
+      Geomn_maxy= l_nj + 1 - north
 
       allocate (G_xg_8(1-G_ni:2*G_ni) , G_yg_8(1-G_nj:2*G_nj) )
       allocate (Geomn_latrx(l_ni,l_nj), Geomn_lonrx(l_ni,l_nj))
@@ -102,14 +80,10 @@
       call set_gemHgrid3 ( xgi_8, ygi_8, Grd_ni, Grd_nj, Grd_dx, Grd_dy  ,&
                            Grd_x0_8,Grd_xl_8,left,Grd_y0_8,Grd_yl_8, belo,&
                            nila,njla,dxmax,dymax,Grd_yinyang_L,   gauss_L,&
-                           G_lam, uniform_L, ierx, iery, Lun_out.gt.0  )
+                           .true., uniform_L, ierx, iery, Lun_out.gt.0  )
 
-      if ( (ierx.ne.0) .and. (Lun_out.gt.0) ) &
-             write (Lun_out,*)'ERROR in generating XGI_8 values!'
-      if ( (iery.ne.0) .and. (Lun_out.gt.0) ) &
-             write (Lun_out,*)'ERROR in generating YGI_8 values!'
-      call handle_error(ierx,'set_geom','set_geom')
-      call handle_error(iery,'set_geom','set_geom')
+      if ( (ierx.ne.0) .or. (iery.ne.0) ) &
+      call gem_error (-1,'set_geom','ERROR in generating XGI_8 or YGI_8 values')
 
       if (Lun_out.gt.0) then
          write (Lun_out,1005) G_nk,Grd_rcoef
@@ -133,29 +107,7 @@
          gyfi  (j) = ygi_8(j)
       enddo
 
-      if (G_lam.and.(.not.Grd_yinyang_L)) then
-         G_xg_8(-1)     = 3.d0*G_xg_8(1  )  - 2.d0*G_xg_8(2     )
-         G_xg_8( 0)     = 2.d0*G_xg_8(1  )  -      G_xg_8(2     )
-         G_xg_8(G_ni+1) = 2.d0*G_xg_8(G_ni) -      G_xg_8(G_ni-1)
-         G_xg_8(G_ni+2) = 3.d0*G_xg_8(G_ni) - 2.d0*G_xg_8(G_ni-1)
-         G_yg_8(-1)     = 3.d0*G_yg_8(1  )  - 2.d0*G_yg_8(2     )
-         G_yg_8( 0)     = 2.d0*G_yg_8(1  )  -      G_yg_8(2     )
-         G_yg_8(G_nj+1) = 2.d0*G_yg_8(G_nj) -      G_yg_8(G_nj-1)
-         G_yg_8(G_nj+2) = 3.d0*G_yg_8(G_nj) - 2.d0*G_yg_8(G_nj-1)
-         ! temporary kludge (should NOT be necessary in LAM configs)
-         do j=-2,-G_ni+1,-1
-            G_xg_8(j) = 1.01*G_xg_8(j+1)
-         end do
-         do j=G_ni+3,2*G_ni
-            G_xg_8(j) = 1.01*G_xg_8(j-1)
-         end do
-         do j=-2,-G_nj+1,-1
-            G_yg_8(j) = 1.01*G_yg_8(j+1)
-         end do
-         do j=G_nj+3,2*G_nj
-            G_yg_8(j) = 1.01*G_yg_8(j-1)
-         end do
-      else
+      if (Grd_yinyang_L) then
          do i=-G_ni+1,0
             G_xg_8(i) = G_xg_8(i+G_ni) - TWO_8*Dcst_pi_8
          end do
@@ -169,6 +121,28 @@
          G_yg_8(G_nj+1) =  Dcst_pi_8 - G_yg_8(G_nj)
          G_yg_8(G_nj+2) =  TWO_8*Dcst_pi_8 - &
               (G_yg_8(G_nj+1)+G_yg_8(G_nj)+G_yg_8(G_nj-1))
+         do j=-2,-G_nj+1,-1
+            G_yg_8(j) = 1.01*G_yg_8(j+1)
+         end do
+         do j=G_nj+3,2*G_nj
+            G_yg_8(j) = 1.01*G_yg_8(j-1)
+         end do
+      else
+         G_xg_8(-1)     = 3.d0*G_xg_8(1  )  - 2.d0*G_xg_8(2     )
+         G_xg_8( 0)     = 2.d0*G_xg_8(1  )  -      G_xg_8(2     )
+         G_xg_8(G_ni+1) = 2.d0*G_xg_8(G_ni) -      G_xg_8(G_ni-1)
+         G_xg_8(G_ni+2) = 3.d0*G_xg_8(G_ni) - 2.d0*G_xg_8(G_ni-1)
+         G_yg_8(-1)     = 3.d0*G_yg_8(1  )  - 2.d0*G_yg_8(2     )
+         G_yg_8( 0)     = 2.d0*G_yg_8(1  )  -      G_yg_8(2     )
+         G_yg_8(G_nj+1) = 2.d0*G_yg_8(G_nj) -      G_yg_8(G_nj-1)
+         G_yg_8(G_nj+2) = 3.d0*G_yg_8(G_nj) - 2.d0*G_yg_8(G_nj-1)
+         ! temporary kludge (should NOT be necessary in LAM configs - see set_intuv)
+         do j=-2,-G_ni+1,-1
+            G_xg_8(j) = 1.01*G_xg_8(j+1)
+         end do
+         do j=G_ni+3,2*G_ni
+            G_xg_8(j) = 1.01*G_xg_8(j-1)
+         end do
          do j=-2,-G_nj+1,-1
             G_yg_8(j) = 1.01*G_yg_8(j+1)
          end do
@@ -203,22 +177,21 @@
                 Geomg_invDXMu_8(l_miny:l_maxy),Geomg_invDXv_8 (l_miny:l_maxy),&
                 Geomg_area_8(l_ni,l_nj),Geomg_mask_8(l_ni,l_nj))
          
-        offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
-        offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
-  
-
-         Del_xg=G_xg_8(2)-G_xg_8(1)
-         Del_yg=G_yg_8(2)-G_yg_8(1)
-        
-         Geomg_hx_8  = Del_xg   
-         Geomg_hy_8  = Del_yg
-  
-         Geomg_invDY_8  = ONE_8/(Dcst_rayt_8 *Del_yg )
+      offi = Ptopo_gindx(1,Ptopo_myproc+1)-1
+      offj = Ptopo_gindx(3,Ptopo_myproc+1)-1
+      
+      Del_xg= G_xg_8(2) - G_xg_8(1)
+      Del_yg= G_yg_8(2) - G_yg_8(1)
+      
+      Geomg_hx_8 = Del_xg   
+      Geomg_hy_8 = Del_yg
+      
+      Geomg_invDY_8  = ONE_8 / ( Dcst_rayt_8 * Del_yg )
 
       do i=1-G_halox, l_ni+G_halox
          indx = offi + i
-         Geomg_x_8  (i) =  G_xg_8(indx)
-         Geomg_xu_8 (i) = (G_xg_8(indx+1)+ G_xg_8(indx)) * HALF_8
+         Geomg_x_8 (i) =  G_xg_8(indx)
+         Geomg_xu_8(i) = (G_xg_8(indx+1) + G_xg_8(indx)) * HALF_8
          Geomg_sx_8(i) = sin( Geomg_x_8(i) )
          Geomg_cx_8(i) = cos( Geomg_x_8(i) )
       end do
@@ -226,7 +199,7 @@
       do j=1-G_haloy, l_nj+G_haloy
          indx = offj + j   
          Geomg_y_8  (j) =  G_yg_8(indx)
-         Geomg_yv_8 (j) = (G_yg_8(indx+1)+ G_yg_8(indx)) * HALF_8
+         Geomg_yv_8 (j) = (G_yg_8(indx+1) + G_yg_8(indx)) * HALF_8
          Geomg_sy_8  (j)= sin( Geomg_y_8 (j) )
          Geomg_cy_8  (j)= cos( Geomg_y_8 (j) )
          Geomg_cy2_8 (j)= cos( Geomg_y_8 (j) )**2
@@ -236,12 +209,10 @@
       end do
 
       dimy = l_nj+2*G_haloy
-      call vrec (geomg_invcy2_8  , geomg_cy2_8 , dimy )
-      call vrec (geomg_invcyv2_8 , geomg_cyv2_8, dimy )
-      call vrec (geomg_invcy_8   , geomg_cy_8, dimy )
-      call vrec (geomg_invcyv_8  , geomg_cyv_8, dimy )
-
-
+      call vrec ( geomg_invcy2_8  , geomg_cy2_8 , dimy )
+      call vrec ( geomg_invcyv2_8 , geomg_cyv2_8, dimy )
+      call vrec ( geomg_invcy_8   , geomg_cy_8  , dimy )
+      call vrec ( geomg_invcyv_8  , geomg_cyv_8 , dimy )
              
       do j=1-G_haloy, l_nj+G_haloy
          indx = offj + j
@@ -251,31 +222,19 @@
          Geomg_tyoav_8  (j)= 0.d0
       end do
  
-      if (G_lam) then
-         do j=1-G_haloy, l_nj+G_haloy
-            Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
-            Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
-         enddo
-      endif
+      do j=1-G_haloy, l_nj+G_haloy
+         Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
+         Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
+      enddo
 
       do j=1-G_haloy, l_nj+G_haloy
          scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
          scale_factor_v = Dcst_rayt_8 * Geomg_cyv_8(j)
-         Geomg_invDX_8  (j) = ONE_8/(scale_factor * Del_xg )
+         Geomg_invDX_8  (j) = ONE_8/(scale_factor   * Del_xg )
          Geomg_invDXv_8(j)  = ONE_8/(scale_factor_v * Del_xg )
          Geomg_invDXM_8 (j) = Geomg_invDX_8(j)
          Geomg_invDXMu_8(j) = Geomg_invDX_8(j)  
       end do
-
-      if (.not.G_lam) then 
-         do j=1-G_haloy, l_nj+G_haloy
-            Geomg_cyM_8    (j) = ONE_8
-            Geomg_invDYM_8 (j) = Geomg_invDY_8   *geomg_invcy_8(j) *Dcst_rayt_8
-            Geomg_invDYMv_8(j) = Geomg_invDY_8   *Geomg_cyv_8  (j) /Dcst_rayt_8
-            Geomg_invDXM_8 (j) = Geomg_invDX_8(j)*geomg_invcy_8(j) *Dcst_rayt_8
-            Geomg_invDXMu_8(j) = Geomg_invDX_8(j)*geomg_cy_8   (j) /Dcst_rayt_8
-         end do
-      endif
 
       do i=1,l_ni
          indx = offi + i
@@ -285,15 +244,6 @@
          indx = offj + i
          yfi(i) = ygi_8(indx)
       end do
-
-      if (Lun_debug_L) then
-         do i=1,l_ni
-            print *,'PE_xpos:',Ptopo_myproc,i,xfi(i)
-         enddo
-         do i=1,l_nj
-            print *,'PE_ypos:',Ptopo_myproc,i,yfi(i)
-         enddo
-      endif
 
       Grd_global_gid = ezgdef_fmem (G_ni , G_nj , 'Z', 'E', Hgc_ig1ro, &
                        Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, gxfi(1) , gyfi(1))
@@ -351,15 +301,6 @@
       dgid = ezgdef_fmem (ni , nj , 'Z', 'E', Hgc_ig1ro, &
                 Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi(Geomn_minx) , yfi(Geomn_miny) )
       err = gdll (dgid,Geomn_latij,Geomn_lonij)
-
-!     Computes coriolis factor
-!		------------------------
-      call set_cori()
-
-!     Computes (u,v) interpolation coefficients for coriolis
-!		and right hand side computations
-!		------------------------------------------------------
-      call set_intuv()
 
  1000 format(/,'INITIALIZATION OF MODEL GEOMETRY (S/R SET_GEOM)', &
              /'===============================================')

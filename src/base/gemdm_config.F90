@@ -89,6 +89,8 @@
          Level_version  = 3
       endif
 
+      if ( Schm_autobar_L ) stag_destag_L= .true.
+
       if (G_lam) then
          Glb_pil_n = Grd_extension
          Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
@@ -123,9 +125,13 @@
             return
          endif
          Schm_lift_ltl_L = .false.
-         if ( (Schm_trapeze_L .or. Schm_step_settls_L) .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
+         if ( Schm_trapeze_L .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
       endif
 
+      if(Hzd_in_rhs_L.and.(Hzd_type_S.ne.'HO_EXP5P')) then
+         if (lun_out>0) write (Lun_out, 9204)
+         return
+      endif
       Schm_nologinC_L= Schm_nolog_L
       Schm_nologT_L  = Schm_nolog_L
 
@@ -188,10 +194,10 @@
 
       Grdc_maxcfl = max(1,Grdc_maxcfl)
       Grdc_pil    = Grdc_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+      Grdc_iref   = Grdc_ni / 2 + Grdc_pil
+      Grdc_jref   = Grdc_nj / 2 + Grdc_pil
       Grdc_ni     = Grdc_ni   + 2*Grdc_pil
       Grdc_nj     = Grdc_nj   + 2*Grdc_pil
-      Grdc_iref   = Grdc_iref +   Grdc_pil
-      Grdc_jref   = Grdc_jref +   Grdc_pil
 
       call low2up  (Lam_hint_S ,dumc_S)
       Lam_hint_S= dumc_S
@@ -289,10 +295,8 @@
          endif
       endif
 
-      if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) then
-         Cstv_bA_nh_8=Cstv_bA_8
-      endif
-
+      if ( Cstv_bA_8 .lt. Cstv_bA_m_8)  Cstv_bA_m_8=Cstv_bA_8
+      if ( Cstv_bA_nh_8 .lt. Cstv_bA_8) Cstv_bA_nh_8=Cstv_bA_8
 
 !     Check for incompatible use of IAU and DF
       if (Iau_period > 0. .and. Init_balgm_L) then
@@ -377,6 +381,16 @@
 
       gemdm_config = 1
 
+      if ( Vtopo_start_S  == '' ) then
+         Vtopo_start = -99999
+      else
+         err= min( timestr2step (Vtopo_start,Vtopo_start_S,Step_dt),err)
+      endif
+      if ( Vtopo_length_S  == '' ) then
+         Vtopo_ndt = 0
+      else
+         err= min( timestr2step (Vtopo_ndt,Vtopo_length_S,Step_dt),err)
+      endif
       Vtopo_L = (Vtopo_ndt .gt. 0)
 
  6005 format (/' Starting time Step_runstrt_S not specified'/)
@@ -407,6 +421,7 @@
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
  9203 format (/,'ABORT: WRONG CHOICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
+ 9204 format (/,'ABORT: WRONG CHOICE OF DIFFUSION TYPE FOR HZD_in_RHS = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)

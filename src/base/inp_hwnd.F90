@@ -17,28 +17,21 @@
 !                 and perform vectorial horizontal interpolation
 !                 and  vertical interpolation to momentum levels
 
-      subroutine inp_hwnd ( F_u, F_v, F_vgd_src, F_vgd_dst,&
-                            F_ssur, F_ssvr, F_ssu0, F_ssv0,&
+      subroutine inp_hwnd ( F_u,F_v, F_vgd_src,F_vgd_dst, F_stag_L    ,&
+                            F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
                             Minx,Maxx,Miny,Maxy, F_nk )
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors
+      use inp_base, only: inp_read_uv
       implicit none
 #include <arch_specific.hf>
 
+      logical                , intent(IN)  :: F_stag_L
       integer                , intent(IN)  :: Minx,Maxx,Miny,Maxy, F_nk
       type(vgrid_descriptor) , intent(IN)  :: F_vgd_src, F_vgd_dst
-      real, dimension(Minx:Maxx,Miny:Maxy     ), target, &
-                          intent(IN) :: F_ssur, F_ssvr, F_ssu0, F_ssv0
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_u, F_v
-
-Interface
-      subroutine inp_read_uv ( F_u, F_v, F_ip1, F_nka )
-      implicit none
-      integer                           , intent(OUT) :: F_nka
-      integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
-      real   , dimension(:,:,:), pointer, intent(OUT) :: F_u, F_v
-      End Subroutine inp_read_uv
-End Interface
+      real, dimension(Minx:Maxx,Miny:Maxy     ), target, intent(IN) :: &
+                             F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT) :: F_u, F_v
 
 #include "glb_ld.cdk"
 #include "ver.cdk"
@@ -54,37 +47,64 @@ End Interface
 !
       nullify (ip1_list, ur, vr, p0, ptr3d)
 
-      call inp_read_uv ( ur, vr, ip1_list, nka )
+      if (F_stag_L) then
+         call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka )
+      else
+         call inp_read_uv ( ur, vr, 'Q ' , ip1_list, nka )
+      endif
 
       allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) )
 
-      p0    => F_ssur(1:l_ni,1:l_nj)
-      ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d, &
-                          p0, in_log=.true. )
-      nullify (p0, ptr3d)
+      if (F_stag_L) then
 
-      p0    => F_ssu0(1:l_ni,1:l_nj)
-      ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
-      istat= vgd_levels  (F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0, &
-                          in_log=.true. )
-      nullify (p0, ptr3d)
+         p0    => F_ssur(1:l_ni,1:l_nj)
+         ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
+         istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d,&
+                             p0, in_log=.true. )
+         nullify (p0, ptr3d)
 
-      call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka, &
-                      l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         p0    => F_ssu0(1:l_ni,1:l_nj)
+         ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
+         istat= vgd_levels  (F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0,&
+                             in_log=.true. )
+         nullify (p0, ptr3d)
 
-      p0    => F_ssvr(1:l_ni,1:l_nj)
-      ptr3d =>    srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d, &
-                          p0, in_log=.true. )
+         call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
 
-      p0    => F_ssv0(1:l_ni,1:l_nj)
-      ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
-      istat= vgd_levels ( F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0, &
-                          in_log=.true. )
+         p0    => F_ssvr(1:l_ni,1:l_nj)
+         ptr3d =>    srclev(1:l_ni,1:l_nj,1:nka)
+         istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d,&
+                             p0, in_log=.true. )
 
-      call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka, &
-                      l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         p0    => F_ssv0(1:l_ni,1:l_nj)
+         ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
+         istat= vgd_levels ( F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0,&
+                             in_log=.true. )
+
+         call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+
+      else
+
+         p0    => F_ssqr(1:l_ni,1:l_nj)
+         ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
+         istat= vgd_levels ( F_vgd_src, ip1_list(1:nka), ptr3d,&
+                             p0, in_log=.true. )
+         nullify (p0, ptr3d)
+
+         p0    => F_ssq0(1:l_ni,1:l_nj)
+         ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
+         istat= vgd_levels  (F_vgd_dst, Ver_ip1%m(1:G_nk), ptr3d, p0,&
+                            in_log=.true. )
+         nullify (p0, ptr3d)
+
+         call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+
+      endif
 
       deallocate (ip1_list,ur,vr,srclev)
       nullify (ip1_list, ur, vr, p0, ptr3d)

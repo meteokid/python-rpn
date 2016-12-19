@@ -62,8 +62,12 @@
 
       if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.)  &
                          .and.(Hzd_lnr_tr   .le.0.)) then
-         if (Lun_out.gt.0) write(Lun_out,1003)
          Hzd_type_S = 'NIL'
+         if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr.eq.0.)) then
+            if (Lun_out.gt.0) write(Lun_out,1003)
+         else
+            if (Lun_out.gt.0) write(Lun_out,1004) Hzd_smago_param,100*Hzd_smago_lnr
+         endif
       endif
 
       if (G_lam) then
@@ -74,7 +78,9 @@
 
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &
                '(S/R HZD_SET)',/,60('='))
- 1003 format(/,'NO HORIZONTAL DIFFUSION REQUIRED',/,32('='))
+ 1003 format(/,'NO HORIZONTAL DIFFUSION REQUESTED',/,33('='))
+ 1004 format(/,'  HORIZONTAL DIFFUSION A LA SMAGORINSKY',/,2x,37('=')// &
+              ,'  PARAMETER =',f5.2,'  BACKGROUND =',f4.1,' %/TIMESTEP')
 !
 !----------------------------------------------------------------------
 !

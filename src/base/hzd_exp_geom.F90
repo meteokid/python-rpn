@@ -37,9 +37,9 @@
 !
       dx_8= Grd_dx * acos( -1.0d0 )/180.0d0
 
-      allocate ( Hzd_geom_q (l_minx:l_maxx,l_miny:l_maxy,5),&
-                 Hzd_geom_u (l_minx:l_maxx,l_miny:l_maxy,5),&
-                 Hzd_geom_v (l_minx:l_maxx,l_miny:l_maxy,5) )
+      allocate ( Hzd_geom_q (l_miny:l_maxy,5),&
+                 Hzd_geom_u (l_miny:l_maxy,5),&
+                 Hzd_geom_v (l_miny:l_maxy,5) )
 
       do j= 2-G_haloy, l_nj+G_haloy-1
 
@@ -48,31 +48,24 @@
          ccc = (Geomg_sy_8(j+1) - Geomg_sy_8(j  )) / Geomg_cyv2_8(j  )
          ddd = 1.0d0 / (dx_8 * (sin(Geomg_yv_8 (j)) - sin(Geomg_yv_8 (j-1))))
 
-         do i= 2-G_halox, l_ni+G_halox-1
-            
-            Hzd_geom_q(i,j,2)= ddd*aaa/dx_8
-            Hzd_geom_q(i,j,3)= Hzd_geom_q(i,j,2)
-            Hzd_geom_q(i,j,4)= ddd*dx_8/bbb
-            Hzd_geom_q(i,j,5)= ddd*dx_8/ccc
-            Hzd_geom_q(i,j,1)=-(Hzd_geom_q(i,j,2)+Hzd_geom_q(i,j,3)+ &
-                                Hzd_geom_q(i,j,4)+Hzd_geom_q(i,j,5))
-
-         end do
+         Hzd_geom_q(j,2)= ddd*aaa/dx_8
+         Hzd_geom_q(j,3)= Hzd_geom_q(j,2)
+         Hzd_geom_q(j,4)= ddd*dx_8/bbb
+         Hzd_geom_q(j,5)= ddd*dx_8/ccc
+         Hzd_geom_q(j,1)=-(Hzd_geom_q(j,2)+Hzd_geom_q(j,3)+ &
+                             Hzd_geom_q(j,4)+Hzd_geom_q(j,5))
 
          aaa= (Geomg_sy_8(j+1) - Geomg_sy_8(j)) * Geomg_invcy2_8(j)
          bbb= Geomg_cy2_8(j  ) / (sin(Geomg_yv_8 (j)) - sin(Geomg_yv_8 (j-1)))
          ccc= Geomg_cy2_8(j+1) / (sin(Geomg_yv_8 (j+1)) - sin(Geomg_yv_8 (j)))
          ddd= 1.d0 / ( dx_8 * (Geomg_sy_8(j+1) - Geomg_sy_8(j)) )
 
-         do i= 2-G_halox, l_ni+G_halox-1
-
-            Hzd_geom_v(i,j,2)=ddd*aaa/dx_8
-            Hzd_geom_v(i,j,3)=Hzd_geom_v(i,j,2)
-            Hzd_geom_v(i,j,4)=ddd*dx_8*bbb
-            Hzd_geom_v(i,j,5)=ddd*dx_8*ccc
-            Hzd_geom_v(i,j,1)=-(Hzd_geom_v(i,j,2)+Hzd_geom_v(i,j,3)+ &
-                                Hzd_geom_v(i,j,4)+Hzd_geom_v(i,j,5))
-         enddo
+         Hzd_geom_v(j,2)=ddd*aaa/dx_8
+         Hzd_geom_v(j,3)=Hzd_geom_v(j,2)
+         Hzd_geom_v(j,4)=ddd*dx_8*bbb
+         Hzd_geom_v(j,5)=ddd*dx_8*ccc
+         Hzd_geom_v(j,1)=-(Hzd_geom_v(j,2)+Hzd_geom_v(j,3)+ &
+                             Hzd_geom_v(j,4)+Hzd_geom_v(j,5))
 
       end do
 

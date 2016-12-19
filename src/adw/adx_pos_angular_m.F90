@@ -94,7 +94,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
                               F_ni,F_nj,F_aminx, F_amaxx, F_aminy, &
                               F_amaxy,k0,F_nk,F_nk_winds)
 
-      if(adx_trapeze_L.or.Schm_step_settls_L) then
+      if(adx_trapeze_L) then
 !$omp parallel private (inv_cy_8)
 !$omp do
          do k=k0,F_nk
@@ -131,7 +131,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
                               F_amaxy,k0,F_nk,F_nk_winds)
 
 !$omp parallel
-      if(adx_trapeze_L.or.Schm_step_settls_L) then
+      if(adx_trapeze_L) then
 !$omp do
          do k = max(1,k0),F_nk
             do j = j0,jn
@@ -161,7 +161,7 @@ subroutine adx_pos_angular_m (F_nb_iter    ,        &
 
    ! Departure point
 
-   if (adx_trapeze_L.or.Schm_step_settls_L) then
+   if (adx_trapeze_L) then
       ! nothing to do ...
       F_px = F_xth
       F_py = F_yth

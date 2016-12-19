@@ -61,7 +61,7 @@
  !     
 !---------------------------------------------------------------------
 !     
-      num=F_ni*F_nj*F_nk  
+      num=F_ni*F_nj*F_nk
       nind=(in-i0+1)*(jn-j0+1)*(F_nk-k0m+1)
 
       ztop_bound=Ver_z_8%m(0)
@@ -118,9 +118,9 @@
                           F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0m,F_nk)
      endif
 
-!-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDALE/SETTLS/MIDPOINT RULES
+!-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDAL/MIDPOINT RULES
  
-           if(Schm_trapeze_L.or.Schm_step_settls_L) then
+           if(Schm_trapeze_L) then
 !$omp parallel private (inv_cy_8,i,j,k)
 !$omp do
          do k=k0m,F_nk
@@ -176,14 +176,14 @@
      endif
 
 !$omp parallel private(k,i,j) shared (wd)
-      if(Schm_trapeze_L.or.Schm_step_settls_L) then
+      if(Schm_trapeze_L) then
 
 !$omp do
          do k = max(1,k0m),F_nk
             do j = j0,jn
                do i = i0,in
-                  F_zth(i,j,k) = Ver_z_8%m(k) - Cstv_dtD_8*  wd(i,j,k) &
-                                              - Cstv_dtA_8*F_wa(i,j,k)
+                  F_zth(i,j,k) = Ver_z_8%m(k) - Cstv_dtzD_8*  wd(i,j,k) &
+                                              - Cstv_dtzA_8*F_wa(i,j,k)
                   F_zth(i,j,k) = min(zbot_bound,max(F_zth(i,j,k),ztop_bound))
                enddo
             enddo
@@ -208,7 +208,7 @@
  enddo
 
  ! Departure point
-   if (Schm_trapeze_L.or.Schm_step_settls_L) then
+   if (Schm_trapeze_L) then
       ! nothing to do ...
       pxm = F_xth
       pym = F_yth

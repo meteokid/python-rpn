@@ -242,7 +242,7 @@
 
 !           Combine divergence & continuity equations : Rc"
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_8
+            F_rc(i,j,k) = rdiv - F_rc(i,j,k) / Cstv_tau_m_8
 
          end do
          end do
@@ -281,7 +281,7 @@
 !        ~~~~~~~~~~~~~~~~~
 
          w1 = Dcst_cappa_8 /( Dcst_Rgasd_8 * Ver_Tstar_8%t(k) )
-         w2 = Cstv_invT_8 / ( Dcst_cappa_8 + Ver_epsi_8(k) )
+         w2 = Cstv_invT_m_8 / ( Dcst_cappa_8 + Ver_epsi_8(k) )
          do j= j0, jn
          do i= i0, in
 !           Combine Rt and Rw
@@ -364,7 +364,7 @@
 !$omp enddo
       endif
 
-      w1 = Cstv_invT_8**2 / ( Dcst_Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
+      w1 = Cstv_invT_8*Cstv_invT_m_8 / ( Dcst_Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
 !$omp do
       do j= j0, jn
       do i= i0, in
