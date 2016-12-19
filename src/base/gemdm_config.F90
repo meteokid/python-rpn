@@ -347,8 +347,10 @@
          Init_dfnp   = max(2,Init_dfnp)
          if ( mod(Init_dfnp,2) /= 1 ) Init_dfnp= Init_dfnp+1
          Init_halfspan = (Init_dfnp - 1) / 2
-      else
-         Init_dfnp   = -9999
+         if (Step_total<Init_halfspan) Init_balgm_L= .false.
+      endif
+      if (.not.Init_balgm_L) then
+         Init_dfnp     = -9999
          Init_halfspan = -9999
       endif
       if (.not.Rstri_rstn_L) then

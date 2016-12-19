@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = 4.8-LTS.7
+GEMDYN_VERSION0  = x/5.0.a1
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -36,15 +36,18 @@ GEMDYN_LIBS_0      = gemdyn$(GEMDYN_SFX)
 GEMDYN_LIBS        = $(GEMDYN_LIBS_0) $(GEMDYN_LIBS_OTHER) 
 GEMDYN_LIBS_V      = $(GEMDYN_LIBS_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
 
+ifeq (,$(MAKE_NO_LIBSO))
 GEMDYN_LIBS_SHARED_ALL = $(foreach item,$(GEMDYN_LIBS_ALL),$(item)-shared)
 GEMDYN_LIBS_SHARED_0   = $(GEMDYN_LIBS_0)-shared
 GEMDYN_LIBS_SHARED     = $(GEMDYN_LIBS_SHARED_0) $(GEMDYN_LIBS_OTHER) 
 GEMDYN_LIBS_SHARED_V   = $(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
+endif
 
 GEMDYN_LIBS_OTHER_FILES = $(foreach item,$(GEMDYN_LIBS_OTHER),$(LIBDIR)/lib$(item).a) 
 GEMDYN_LIBS_ALL_FILES   = $(foreach item,$(GEMDYN_LIBS_ALL),$(LIBDIR)/lib$(item).a)
-                        # $(foreach item,$(GEMDYN_LIBS_SHARED_ALL),$(LIBDIR)/lib$(item).so)
+ifeq (,$(MAKE_NO_LIBSO))
 GEMDYN_LIBS_SHARED_FILES   = $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so
+endif
 GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIBS_0).a $(GEMDYN_LIBS_SHARED_FILES) $(GEMDYN_LIBS_ALL_FILES) 
 
 OBJECTS_MERGED_gemdyn = $(foreach item,$(GEMDYN_LIBS_MERGED_0),$(OBJECTS_$(item)))

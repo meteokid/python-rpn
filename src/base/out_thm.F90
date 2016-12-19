@@ -759,7 +759,8 @@
       endif
 
       if (pnww.ne.0) deallocate (omega)
-      if (pnth.ne.0) deallocate (th)
+      if (pnwe.ne.0) deallocate (ffwe )
+      if (pnth.ne.0) deallocate (th   )
 !
 !-------------------------------------------------------------------
 !

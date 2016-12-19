@@ -14,8 +14,8 @@ cd gemdyn
 . ./.setenv.dot
 ./bin/ouv_exp_gemdyn
 rdemklink
-make -j components_objects
-make components_libs 
+make components_objects -j 6
+make components_libs  MAKE_NO_LIBSO=1
 make components_abs 
 make components_ssm
 
@@ -25,8 +25,8 @@ make components_ssm
       . ./.setenv.dot
       #./bin/ouv_exp_gemdyn #optional if build in same dir as above
       rdemklink
-      make -j 6 components_objects
-      make components_libs
+      make components_objects -j 6
+      make components_libs  MAKE_NO_LIBSO=1
       make components_abs 
       make components_ssm_arch
 
@@ -37,9 +37,9 @@ make components_ssm
       #./bin/ouv_exp_modelutils #optional if build in same dir as above
       export RDE_BUILDDIR_SFX=-d
       rdemklink
-      make -j components_objects
-      make components_libs
-      make components_ssm_arch MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
+      make components_objects -j 6
+      make components_libs  MAKE_NO_LIBSO=1
+      make components_ssm_arch  MAKE_SSM_NOMOD=1 MAKE_SSM_NOABS=1 MAKE_SSM_NOINC=1
 
 #==== Installing ==========================================================
 

@@ -55,7 +55,7 @@
       namelist /ensembles/                                           &
           Ens_conf,      Ens_skeb_conf,                              &
           Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd, &
-          Ens_mc_seed,   Ens_skeb_nlon, Ens_skeb_nlat, Ens_skeb_ncha,&
+          Ens_mc_seed,   Ens_skeb_nlon, Ens_skeb_nlat,               &
           Ens_skeb_trnl, Ens_skeb_trnh,                              &
           Ens_skeb_max,  Ens_skeb_min,  Ens_skeb_std,                &
           Ens_skeb_tau,  Ens_skeb_str,  Ens_skeb_alph, Ens_skeb_alpt,&
@@ -85,7 +85,6 @@
       Ens_skeb_gwd    = .false.
       Ens_stat        = .false.
       Ens_skeb_div    = .false.
-      Ens_skeb_ncha   =  1
       Ens_skeb_nlon   = 16 
       Ens_skeb_nlat   =  8
       Ens_skeb_trnl   =  2
@@ -143,14 +142,12 @@
          if ((Ens_mc_seed.lt.0))then
             if(F_unout.ge.0)write(F_unout,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
             ens_nml = -1
-         endif
-
-         do ncha=1,Ens_skeb_ncha
-           if (Ens_skeb_nlon(ncha).ne.2*Ens_skeb_nlat(ncha))then
-              if(F_unout.ge.0)write(F_unout,*)'skeb_ncha=',ncha,' Nlon must equal 2*nlat'
+          endif
+         
+            if (Ens_skeb_nlon.ne.2*Ens_skeb_nlat)then
+              if(F_unout.ge.0)write(F_unout,*)' Nlon must equal 2*nlat'
               ens_nml = -1
-           endif
-         enddo
+            endif
   
          if (Ens_ptp_ncha.gt.MAX2DC) then
             if(F_unout.ge.0)write(F_unout,*)'Ens_ptp_ncha must be <=9'
@@ -168,9 +165,7 @@
 
          Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
 	 Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
-         Ens_skeb_lmax   =  maxval(Ens_skeb_l)
          Ens_skeb_m      =  Ens_skeb_trnh+1
-         Ens_skeb_mmax   =  maxval(Ens_skeb_m)
          Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
          Ens_stat        =  Ens_stat.and.Ens_conf
          Ens_ptp_l      =  Ens_ptp_trnh-Ens_ptp_trnl+1
@@ -190,9 +185,7 @@
             write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
 	    write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
-            write(F_unout,'(a,i5)' )'Ens_skeb_lmax = ',Ens_skeb_lmax
             write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
-            write(F_unout,'(a,i5)' )'Ens_skeb_mmax = ',Ens_skeb_mmax
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha
             write(F_unout,'(a,f8.5)' )'Ens_ens_ptp_env_u = ',Ens_ptp_env_u

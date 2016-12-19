@@ -16,7 +16,6 @@
 !**   s/r ens_marfield_ptp - define a markov chain field for PTP
 !     
 
-!     /cnfs/dev/mrb2/armn/armnrai
       subroutine ens_marfield_ptp
 !
       use phy_itf, only : phy_put
@@ -25,12 +24,9 @@
 #include <arch_specific.hf>
 
       integer                               :: E_nk
-      real ,    dimension(l_ni,l_nj)        :: fgem
 !     
-!author: *Model Infrastructure Group*  R.P.N-A
+!author: Rabah Aider R.P.N.-A  (from ens_marfield_cg.ftn90)
 !     
-!object
-!	ens_marfield_ptp.ftn90
 !arguments     none
 !
 
@@ -50,24 +46,19 @@
 #include "step.cdk"
 #include "grd.cdk"
 !
-
-
        integer p_ni,p_nj,p_offi,p_offj
-       integer, external :: read_db_file,write_db_file
        real,    external ::  gasdev
-       real*8 :: plg
-!       integer, external :: fnom,fstouv,fstfrm,fclos
-!       integer, external :: ezgdef_fmem,ezqkdef,ezsint,ezdefset,ezsetopt
+       real*8 :: polg
 
 !
 ! nlat, nlon                 dimension of the Gaussian grid
 ! idum                       Semence du générateur de nombres aléatoires
 !
-      integer :: nlat, nlon,  ndim_tot, dgid_myp
+      integer :: nlat, nlon, dgid_myp
       integer :: l ,m, nc, i, j, k, indx, ier
       integer lmin,lmax 
       integer ::  gmmstat, istat
-      integer :: gdgem,gdgauss, keys(5), nmstrt, n
+      integer :: gdgem,gdgauss, keys(5), n
       real    ::  fstd, fstr, tau,  Ens_ptp_mean
       real    :: sumsp , fact,fact2
       real    :: xf,offi,offj
@@ -76,25 +67,22 @@
       logical, save :: init_done=.false.
 !
 ! placer les chaines de Markov dans perbus
-      character*3 bus
-      integer, save :: mrkv,mrk2
+      integer, save :: mrk2
 !
-! pabusper pointer vers le bus permanent busper (busper2)
 ! paidum   pointer vers l'etat du generateur sauvegarde idum
       type(gmm_metadata) :: meta
       integer, pointer :: paiv,paiy,paiset,pagset,paidum
-      real rand
 !
 !      variables et champs auxiliaires reels
 ! dt   Pas de temps du modèle (secondes)
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
-! eps  EXP(-dt/tau)
+! eps  EXP(-dt/tau/2.146)
       real*8    :: pi, dt, eps  
       real*8    :: fmax, fmin , fmean 
       real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real*8,    dimension(:), allocatable  :: wrk1
       real*8,    dimension(:,:,:),allocatable :: wrk2, p,cc
-      real,    dimension(:,:),allocatable :: fgau, fgau_str
+      real  ,    dimension(:,:),allocatable :: f, f_str
       real,    dimension(:,:,:),pointer   ::  ptr3d, fgem_str
       integer, dimension(:,:) , allocatable :: sig
        
@@ -140,9 +128,11 @@
          lmin = Ens_ptp_trnl(nc)
          lmax = Ens_ptp_trnh(nc)
          nlon = Ens_ptp_nlon(nc)
-         nlat =Ens_ptp_nlat(nc)         
-         fstd=Ens_ptp_std(nc)
-         eps=exp(-dt/Ens_ptp_tau(nc))
+         nlat = Ens_ptp_nlat(nc)         
+         fstd = Ens_ptp_std(nc)
+         tau  = Ens_ptp_tau(nc)/2.146
+ 
+         eps  = exp(-dt/tau)
 
         allocate ( pspectrum(lmin:lmax) , fact1(lmin:lmax) )                         
 !Bruit blanc en nombre d'ondes   
@@ -167,6 +157,8 @@
          pagset=> dumdum(35,nc)
          paidum=> dumdum(36,nc)
          paidum=-Ens_mc_seed
+
+
 ! Valeurs initiales des coefficients spectraux
               ar_p=0.d0
               br_p=0.d0
@@ -199,8 +191,9 @@
         lmax = Ens_ptp_trnh(nc) ; nlat = Ens_ptp_nlat(nc)      
         fstd = Ens_ptp_std(nc)  ; fmin = Ens_ptp_min(nc)
         fstr = Ens_ptp_str(nc)  ; fmax = Ens_ptp_max(nc) 
-        
-        eps  = exp(-dt/Ens_ptp_tau(nc))
+        tau  =  Ens_ptp_tau(nc)/2.146
+     
+        eps  = exp(-dt/tau)
 
 ! Spectrum choice   
 
@@ -221,7 +214,7 @@
          paiv  => dumdum( 1,nc) ; paiy  => dumdum(33,nc)
          paiset=> dumdum(34,nc) ; pagset=> dumdum(35,nc)
          paidum=> dumdum(36,nc)
-      
+ 
        do l=lmin,lmax      
           fact1n(l)=fstd*SQRT(4.*pi/real((2*l+1)) &
                    *pspectrum(l))*SQRT((1.-eps*eps)) 
@@ -243,11 +236,9 @@ deallocate (pspectrum, fact1, fact1n)
 allocate(p( nlat, lmax-lmin+1, 0:lmax))
 allocate(cc(2 , nlat, lmax+1))
 allocate(wrk1( nlat * (nlon+2)))
-allocate(fgau(nlon, nlat) )
-allocate(fgau_str(nlon, nlat))
+allocate(f(nlon, nlat) )
+allocate(f_str(nlon, nlat))
 allocate(sig(lmax-lmin+1, 0:lmax))
-
-
 
 ! Associated Legendre polynomials
        p=0.D0
@@ -256,20 +247,18 @@ allocate(sig(lmax-lmin+1, 0:lmax))
           do m=0,l
             sig(lmax-l+1,m)=(-1.D0)**(l+m)
             do j=1,nlat/2
-             call pleg (l, m, j, nlat, plg)
-              p(j,lmax-l+1,m)=plg*fact
-              p(nlat-j+1,lmax-l+1,m)=plg*fact*sig(lmax-l+1,m)
+             call pleg (l, m, j, nlat, polg)
+              p(j,lmax-l+1,m)=polg*fact
+              p(nlat-j+1,lmax-l+1,m)=polg*fact*sig(lmax-l+1,m)
             enddo
           enddo
        enddo
      cc=0.D0 
 
-
 !$omp parallel
 !$omp do
-do m=1,lmax+1
-
-          do j=1,nlat/2
+    do m=1,lmax+1
+        do j=1,nlat/2
               cc(1,j,m)=0.d0
               cc(1,nlat-j+1,m)=0.d0
               cc(2,j,m)=0.d0
@@ -281,12 +270,11 @@ do m=1,lmax+1
               cc(2,j,m)=cc(2,j,m) + Dot_product(p(j,1:lmax-lmin+1,m-1),ai_p(1:lmax-lmin+1,m,nc))
               cc(2,nlat-j+1,m)=cc(2,nlat-j+1,m) &
                                   + Dot_product(p(j,1:lmax-lmin+1,m-1),ai_p(1:lmax-lmin+1,m,nc)*sig(1:lmax-lmin+1,m-1))
-           enddo
-enddo 
+        enddo
+    enddo 
 
 !$omp enddo
 !$omp end parallel
-
 
 ! Fourier Transform (inverse)
       
@@ -297,10 +285,8 @@ enddo
                  n = n + 2                         
                  wrk1(n)   = cc(1,i,j) 
                  wrk1(n+1) = cc(2,i,j)
-  
                enddo
               n=n+nlon-2*lmax
-
             enddo
 
         call itf_fft_set(nlon,'PERIODIC',pri_8)
@@ -311,7 +297,7 @@ enddo
                do i=1,nlon+2  
                   n = n + 1              
                   if (i .le. nlon) then
-                     fgau(i,j) = wrk1(n)
+                     f(i,j) = wrk1(n)
                   end if
                enddo
             enddo 
@@ -331,26 +317,19 @@ enddo
          yfi(i) = G_yg_8(indx)*rad2deg_8
        end do
 
-       dgid_myp = ezgdef_fmem (l_ni , l_nj , 'Z', 'E', Hgc_ig1ro, &
-                Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, xfi , yfi )
+        gdgauss = ezqkdef(nlon,nlat,'A', 0,0,0,0,0)
 
-        gdgauss = ezqkdef(nlon,nlat,'G', 0,0,0,0,0)
-
-        ier = ezdefset(dgid_myp, gdgauss)
+        ier = ezdefset(Grd_local_gid, gdgauss)
         ier = ezsetopt('INTERP_DEGREE', 'LINEAR')
-!       ier = ezsetopt('VERBOSE', 'YES')
 
 !    Check the limits, stretch, and add mean if stretching asked
 !    for the physics perturbation
 !
-        where (abs(fgau) > 1.)
-          fgau=sign(1.,fgau)
-        end where
 
         if(Ens_ptp_str(nc)/=0.0)then
           fmean=(fmin+fmax)/2.
-          fgau_str=ERF(fgau/(fstr*fstd)/SQRT(2.)) *(fmax-fmin)/2. + fmean  
-          ier = ezsint(fgem_str(:,:,nc),fgau_str)
+          f_str=ERF(f/(fstr*fstd)/SQRT(2.)) *(fmax-fmin)/2. + fmean  
+          ier = ezsint(fgem_str(:,:,nc),f_str)
         else
             fgem_str(:,:,nc)=1.0
         endif
@@ -360,7 +339,7 @@ enddo
            1,l_ni,1,l_nj,1,1,1,G_ni,1,G_nj,1,1)
         endif
      
-    deallocate(fgau,fgau_str)
+    deallocate(f,f_str)
  
  enddo
 
@@ -427,7 +406,6 @@ contains
      
   end subroutine pleg
       
-
       subroutine stat(field,nx,ny,nz,msg1,msg2)
         implicit none
         integer :: nx,ny,nz
@@ -444,6 +422,5 @@ contains
               e14.7,']',a6)
       end subroutine stat
  
-
 END subroutine ens_marfield_ptp
 
