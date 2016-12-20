@@ -1,3 +1,3 @@
-ENV/x/modelutils/1.4.5
-ENV/d/x/rpnphy/rpnphy_5.8.4
+ENV/modelutils/1.4-LTS.5
+ENV/d/rpnphy/rpnphy_5.8-LTS.6
 
