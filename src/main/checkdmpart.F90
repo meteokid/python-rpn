@@ -41,9 +41,6 @@
       cdm_grid_L = .false.
       cdm_eigen_S= 'NONE@#$%'
 
-      Step_runstrt_S='2011020300'
-      Step_dt=5
-
       Grd_yinyang_L = .false.
       Grd_yinyang_S = ''
       if (clib_getenv ('GEM_YINYANG',ndomains_S).ge.0) &
@@ -77,6 +74,7 @@
       err = step_nml  (fn)
       if (err .lt. 0) goto 9999
       err = step_nml  ('print')
+      Step_runstrt_S='2011020300'
 
       err = gem_nml   (fn)
       if (err .lt. 0) goto 9999
@@ -172,7 +170,4 @@
 subroutine dummy_checkdm
 return
 end
-
-! export Ptopo_npex=4 ; export Ptopo_npey=3
-! r.run_in_parallel -pgm checkdmpart_${BASE_ARCH}.Abs -npex 1
 
