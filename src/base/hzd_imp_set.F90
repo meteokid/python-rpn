@@ -39,6 +39,10 @@
 !
 !     ---------------------------------------------------------------
 !
+#include "stop_mpi.h"
+      call stop_mpi(STOP_ERROR,'hzd_imp_set','called a stub')
+
+
       if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.) &
                          .and.(Hzd_lnr_tr   .le.0.)) return
       Hzd_type_S = 'HO_IMP'
@@ -67,8 +71,8 @@
       if ( .not. Fft_fast_L ) then
 
          allocate ( Hzd_xevec_8 (G_ni*G_ni*2) )
-         call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8, &
-                          Hzd_xp2_8, G_ni, G_ni )
+!!$         call set_poic  ( Hzd_xeval_8, Hzd_xevec_8 , Hzd_xp0_8, &
+!!$                          Hzd_xp2_8, G_ni, G_ni )
          allocate ( Hzd_wevec_8(G_ni*G_ni), Hzd_wuevec_8(G_ni*G_ni) )
          do j=1,G_ni
             do i=1,G_ni

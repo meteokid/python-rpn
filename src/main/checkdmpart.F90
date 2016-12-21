@@ -16,7 +16,7 @@
       logical, external :: set_dcst_8
       integer, external :: domain_decomp3,sol_transpose2   , &
                            fnom, set_fft, exfin, grid_nml2 , &
-                           gem_nml , gemdm_config
+                           gem_nml , gemdm_config, step_nml
 
       character*16 ndomains_S,npex_S,npey_S
       character*2048 cdm_eigen_S,fn
@@ -73,6 +73,10 @@
       err = grid_nml2 (fn,G_lam)
       if (err .lt. 0) goto 9999
       err = grid_nml2 ('print',G_lam)
+
+      err = step_nml  (fn)
+      if (err .lt. 0) goto 9999
+      err = step_nml  ('print')
 
       err = gem_nml   (fn)
       if (err .lt. 0) goto 9999
