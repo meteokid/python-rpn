@@ -43,11 +43,7 @@
       if (.not. F_water_tracers_only_L) &
       Tr_do_only_once_each_timestep_L = .TRUE.
 
-      if (Schm_adxlegacy_L) then
-         call adx_tracers_interp (F_water_tracers_only_L)
-      else
-         call adv_tracers (F_water_tracers_only_L)    
-      endif
+      call adv_tracers (F_water_tracers_only_L)    
 
       if ( verbose_L) then
          if (.not. F_water_tracers_only_L) &

@@ -57,6 +57,8 @@
 !
       if (ens_skeb_conf) then
 
+         call stop_mpi(-1,'itf_ens_hzd','itf_ens_hzd needs updating')
+
          istat = gmm_get(gmmk_difut1_s,difut1)
          istat = gmm_get(gmmk_difvt1_s,difvt1)
          istat = gmm_get(gmmk_diout1_s,diout1)
@@ -78,7 +80,7 @@
                ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
                istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
                if (.not.RMN_IS_OK(istat))write(*,6000)'vgwdt1-s'
-               call itf_phy_uvgridscal (ugwdt1,vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
+!!$               call itf_phy_uvgridscal (ugwdt1,vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
             endif
 
             difut1 = F_ut1 - difut1

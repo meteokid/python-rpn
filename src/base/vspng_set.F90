@@ -42,7 +42,7 @@
       if (Lun_out.gt.0) write (Lun_out,1001)
 
       istat = 0
-      if ( Vspng_zmean_L .and. (G_lam.or.Grd_roule) ) then
+      if ( Vspng_zmean_L .and. (Grd_roule) ) then
          if (Lun_out.gt.0) write (Lun_out,9001)
          istat = -1
       endif
@@ -83,12 +83,6 @@
          Vspng_coef_8(k)= Vspng_coef_8(k) * & 
                           Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
       end do
-
-      if (.not.G_lam) then
-         err= vspng_imp_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
-         call gem_error(err,'VSPNG_IMP_TRANSPOSE',&
-                        'ILLEGAL DOMAIN PARTITIONING -- ABORTING')
-      endif
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &
                '(S/R VSPNG_SET)',/,51('='))

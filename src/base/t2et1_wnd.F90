@@ -14,34 +14,21 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r t2et1_wnd - T2 = T1 (Winds only)   
-!
+
       subroutine t2et1_wnd
-!
       implicit none
-!
-!author M.Tanguay
-!
-! v4_XX - Tanguay M.        - initial MPI version
-!
-!object 
-!     see id section
-!	
-!arguments
-!	none
-!
-!implicits
+
 #include "gmm.hf"
 #include "vt1.cdk"
 #include "vt2.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
-!   
+   
    type(gmm_metadata) :: dummy_gmm_meta
    integer :: istat,j
 !
 !  __________________________________________________________________
-!
 !
    istat = GMM_OK
    istat = min(gmm_get(gmmk_ut1_s ,ut1 ,dummy_gmm_meta),istat)
@@ -55,13 +42,6 @@
     ut2 =  ut1 
     vt2 =  vt1 
    zdt2 = zdt1 
-
-   if (.not. G_lam) then
-       do j = 1, l_nj
-         ut2(:,j,:) = ut2(:,j,:) * Geomg_cy_8 (j) / Dcst_rayt_8
-         vt2(:,j,:) = vt2(:,j,:) * Geomg_cyv_8(j) / Dcst_rayt_8
-       end do
-   end if
 
    return
    end

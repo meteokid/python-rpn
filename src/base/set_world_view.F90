@@ -40,8 +40,8 @@
       include 'out_meta.cdk'
       include "rpn_comm.inc"
 
-      integer, external :: gem_nml,gemdm_config,grid_nml2       ,&
-                           adv_nml,adv_config,adx_nml,adx_config,&
+      integer, external :: gem_nml,gemdm_config,grid_nml3       ,&
+                           adv_nml,adv_config,&
                            step_nml, set_io_pes, domain_decomp3 ,&
                            sol_transpose2, set_fft
       character*50 LADATE,dumc1_S
@@ -70,14 +70,10 @@
 
 ! Read namelists from file Path_nml_S
 
-         err(3) = grid_nml2   (Path_nml_S,G_lam)
-         err(4) = step_nml    (Path_nml_S)
-         err(5) = gem_nml     (Path_nml_S)
-         if (G_lam .and. .not. Schm_adxlegacy_L ) then
-            err(6) = adv_nml  (Path_nml_S)
-         else
-            err(6) = adx_nml  (Path_nml_S)
-         endif
+         err(3) = grid_nml3 (Path_nml_S)
+         err(4) = step_nml  (Path_nml_S)
+         err(5) = gem_nml   (Path_nml_S)
+         err(6) = adv_nml   (Path_nml_S)
 
       endif
 
@@ -91,19 +87,14 @@
 ! Establish final configuration
 
       err(1) = gemdm_config ()
-      if (.not.G_lam) err(2) = adx_config ()
 
-      call gem_error(min(err(1),err(2)),'set_world_view','config')
+      call gem_error(err(1),'set_world_view','gemdm_config')
 
-      err(1) = grid_nml2 ('print',G_lam)
+      err(1) = grid_nml3 ('print')
       err(1) = step_nml  ('print')
       err(1) = gem_nml   ('print')
 
-      if (G_lam .and. .not. Schm_adxlegacy_L ) then
-         call adv_nml_print ()
-      else
-         call adx_nml_print ()
-      endif
+      call adv_nml_print ()
 
       if (Williamson_case.ne.0.and.Lun_out.gt.0) &
                    write (Lun_out, nml=williamson) 

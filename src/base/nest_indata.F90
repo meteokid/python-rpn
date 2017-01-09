@@ -55,7 +55,6 @@
       istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
       istat = gmm_get(gmmk_nest_t_fin_s ,nest_t_fin )
       istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
-      istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
       istat = gmm_get(gmmk_nest_s_fin_s ,nest_s_fin )
       istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
       istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
@@ -69,7 +68,7 @@
                       G_nk, .true., 'NEST/', ':F', F_datev_S)
       call timing_stop (26)
 
-      call diag_zd_w2( nest_zd_fin, nest_w_fin, nest_xd_fin          ,&
+      call diag_zd_w2( nest_zd_fin, nest_w_fin                       ,&
                        nest_u_fin, nest_v_fin, nest_t_fin, nest_s_fin,&
                        l_minx,l_maxx,l_miny,l_maxy, G_nk             ,&
                        .not.Inp_zd_L, .not.Inp_w_L )

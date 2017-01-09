@@ -34,13 +34,6 @@
 !
 !-------------------------------------------------------------------
 !
-      if ( (Hzd_type_S.eq.'HO_IMP') .and. &
-          ((Hzd_pwr_theta.ne.Hzd_pwr).or. &
-          (abs((Hzd_lnr_theta-Hzd_lnr)/Hzd_lnr).gt.eps)) ) then
-         if (Lun_out.gt.0) write (Lun_out,1001)
-         return
-      endif
-
       istat = gmm_get(gmmk_tt1_s       ,        tt1)
       istat = gmm_get(gmmk_pw_pt_plus_s, pw_pt_plus)
 
@@ -63,11 +56,7 @@
 !$omp end parallel
 
       if (Hzd_type_S.eq.'HO_IMP') then
-         if ((.not. G_lam).and.(Hzd_theta_njpole_gu_only.ge.1)) then
-            call hzd_theta_gu_pole (th,l_minx,l_maxx,l_miny,l_maxy,G_nk)
-         else
-            call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk )
-         endif
+         call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk )
       else
          call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy,&
                           G_nk )
@@ -81,8 +70,6 @@
       enddo
 !$omp enddo
 !$omp end parallel
-
- 1001 format(/,'Horizontal Diffusion of THETA with HO_IMP only available if (Hzd_pwr_theta=Hzd_pwr).and.(Hzd_lnr_theta=Hzd_lnr)')
 !
 !-------------------------------------------------------------------
 !

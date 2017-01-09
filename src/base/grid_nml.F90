@@ -13,27 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r grid_nml
+!**s/r grid_nml - Default configuration and reading namelist grid
 !
-      integer function grid_nml2 (F_namelistf_S, F_lam)
+      integer function grid_nml3 (F_namelistf_S)
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
-      logical F_lam
-
-!author
-!     M. Desgagne    - Summer  2006
-!
-!revision
-! v3_30 - Desgagne M.       - initial version
-! v3_31 - Lee V.            - added extra CHECK for LAM grid
-! v4_04 - Plante            - Remove offline mode
-! v4_40 - Qaddouri/Lee      - Add Yin/Yang grid
-! v4_60 - Lee V.            - GY grids need only Grd_nj (Y points)
-!
-!object
-!  Default configuration and reading namelist grid
 
 #include "grd.cdk"
 #include "hgc.cdk"
@@ -50,10 +36,10 @@
 !
 !-------------------------------------------------------------------
 !
-      grid_nml2 = -1
+      grid_nml3 = -1
 
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
-         grid_nml2 = 0
+         grid_nml3 = 0
          if (Lun_out.gt.0) write (Lun_out  ,nml=grid) 
          return
       endif
@@ -95,14 +81,11 @@
  9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S    = dumc
 
-      F_lam = (Grd_typ_S(1:1).eq.'L') .or. (Grd_typ_S(1:2).eq.'GY') 
-
       Grd_bsc_base = 4
       if(Grd_yinyang_L) Grd_bsc_base=Grd_bsc_base+1
       Grd_bsc_ext1 = 3
       Grd_maxcfl   = max(1,Grd_maxcfl)
-      Grd_extension= 0
-      if (F_lam) Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+      Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
 
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
@@ -266,7 +249,7 @@
 
       endif
 
-      grid_nml2 = 1
+      grid_nml3 = 1
 
  1001 format(/,' WRONG LAM GRID CONFIGURATION --- ABORT ---'/, &
                ' Grd_x0,Grd_y0,Grd_xl,Grd_yl:'/4f10.3/)
@@ -286,3 +269,16 @@
  9999 call fclos (unf)
       return
       end
+
+      integer function grid_nml2 (F_namelistf_S, F_lam)
+      implicit none
+#include <arch_specific.hf>
+
+      character* (*) F_namelistf_S
+      logical F_lam
+      grid_nml2=-1
+      print*, 'grid_nml2 replaced by grid_nml3'
+      stop
+      return
+      end
+

@@ -120,13 +120,12 @@
 
       call set_oprz2 (F_errcode)
 
-      if (F_check_and_stop_L) &
+      if (F_check_and_stop_L) then
          call gem_error (F_errcode,'set_dync',&
               'VERTICAL LAYERING and TIMESTEP INCOMPATIBILITY')
-
-      if (F_errcode == 0) call set_sol
-
-      if (Sol_type_S == 'ITERATIVE_3D') call matvec_init
+         call set_sol
+         if (Sol_type_S == 'ITERATIVE_3D') call matvec_init
+      endif
 !
 !     ---------------------------------------------------------------
 !

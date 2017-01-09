@@ -17,9 +17,9 @@
 !
 !**********************************************************************
 !
-      subroutine nli ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , F_nx , &
+      subroutine nli ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
                        F_u  , F_v  , F_t    , F_s  , F_zd , F_q   , &
-                       F_rhs, F_rc , F_fis  , F_nb , F_xd , F_qd  , F_hu , &
+                       F_rhs, F_rc , F_fis  , F_nb , F_hu , &
                        Minx,Maxx,Miny,Maxy, Nk , ni,nj, i0,j0,in,jn,k0, icln )
       implicit none
 #include <arch_specific.hf>
@@ -28,12 +28,10 @@
       real    F_nu   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nv   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_nt   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nc   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_nw   (Minx:Maxx,Miny:Maxy,Nk)    ,F_nf   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_nx   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_u    (Minx:Maxx,Miny:Maxy,Nk)    ,F_v    (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_t    (Minx:Maxx,Miny:Maxy,Nk)    ,F_s    (Minx:Maxx,Miny:Maxy)       , &
               F_zd   (Minx:Maxx,Miny:Maxy,Nk)    ,F_hu   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_q    (Minx:Maxx,Miny:Maxy,2:Nk+1),F_rc   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_xd   (Minx:Maxx,Miny:Maxy,Nk)    ,F_qd   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_fis  (Minx:Maxx,Miny:Maxy)       ,F_nb   (Minx:Maxx,Miny:Maxy)
       real*8  F_rhs  (ni,nj,Nk)
 
@@ -130,10 +128,10 @@
       inu = l_niu-pil_e
       jnv = l_njv-pil_n
 
-      if (l_west.and.G_lam) i0u=i0 -onept
-      if (l_south)          j0v=j0 -onept
-      if (l_east )          inu=inu+onept
-      if (l_north)          jnv=jnv+onept
+      if (l_west ) i0u=i0 -onept
+      if (l_south) j0v=j0 -onept
+      if (l_east ) inu=inu+onept
+      if (l_north) jnv=jnv+onept
 
       call diag_fip( FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
                                                l_nk, i0u, inu+1, j0v, jnv+1 )
@@ -308,25 +306,23 @@
 
       if (.not.Grd_yinyang_L) then
 
-         if (G_lam) then
-            if (l_west) then
+         if (l_west) then
 !$omp do
-               do k=1,l_nk
+            do k=1,l_nk
                do j=j0,jn
                   F_nu(pil_w,j,k) = 0.
                end do
-               enddo
+            enddo
 !$omp enddo
-            endif
-            if (l_east) then
+         endif
+         if (l_east) then
 !$omp do
-               do k=1,l_nk
+            do k=1,l_nk
                do j=j0,jn
                   F_nu(l_ni-pil_e,j,k) = 0.
                end do
-               enddo
+            enddo
 !$omp enddo
-            endif
          endif
 
 !     Set  Nv=0  on the north and south boundaries  of the LAM grid
@@ -369,74 +365,39 @@
 
 !        Compute Nw and Nt' (Nf=0)
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~
-         if(Schm_nologT_L) then
-            if(Schm_opentop_L.and.k.eq.k0t) then
-               do j= j0, jn
-               do i= i0, in
-                  w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-                  F_nb(i,j)= - (w3*F_t(i,j,k)/Ver_Tstar_8%t(k)-Dcst_cappa_8) * (F_xd(i,j,k)+F_qd(i,j,k))
-               end do
-               end do
-            endif
-            w1 = Cstv_invT_8 / Ver_Tstar_8%t(k)
-            w2 = Cstv_invT_8 / Ver_Tstar_8%t(k) * Ver_idz_8%t(k) / Dcst_Rgasd_8
+         w1 = one / Ver_Tstar_8%t(k)
+         do j= j0, jn
+         do i= i0, in
+            xtmp_8(i,j) = F_t(i,j,k) * w1
+         end do
+         end do
+         call vlog ( ytmp_8, xtmp_8, nij )
+         if(Schm_opentop_L.and.k.eq.k0t) then
             do j= j0, jn
             do i= i0, in
-               w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-               w4=Ver_wpstar_8(k)*(F_xd(i,j,k)+F_qd(i,j,k))+Ver_wmstar_8(k)*(F_xd(i,j,km)+F_qd(i,j,km))
-               w5=Ver_wpstar_8(k)*F_qd(i,j,k) + Ver_wmstar_8(k)*F_qd(i,j,km)
-
-               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
-               qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
-               MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
-
-               F_nt(i,j,k) = - Cstv_rE_8*Cstv_invT_8*MUlin &
-                             + w1*(F_t(i,j,k)-Ver_Tstar_8%t(k) ) &
-                             + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
-                                  - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
-                             - (w3*F_t(i,j,k)/Ver_Tstar_8%t(k)-Dcst_cappa_8)*w4 &
-                             + (Cstv_rE_8 - one)*Dcst_cappa_8*w5
-                          
-               F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
-               F_nf(i,j,k) = 0.0
-               F_nx(i,j,k) = 0.
-            end do
-            end do
-         else
-            w1 = one / Ver_Tstar_8%t(k)
-            do j= j0, jn
-            do i= i0, in
-               xtmp_8(i,j) = F_t(i,j,k) * w1
-            end do
-            end do
-            call vlog ( ytmp_8, xtmp_8, nij )
-            if(Schm_opentop_L.and.k.eq.k0t) then
-               do j= j0, jn
-               do i= i0, in
-                  F_nb(i,j) = Cstv_invT_8*(ytmp_8(i,j)-xtmp_8(i,j)+one)
-               end do
-               end do
-            endif
-            w1 = Ver_idz_8%t(k) / Dcst_Rgasd_8 / Ver_Tstar_8%t(k)
-            w2 = one / Ver_Tstar_8%t(k) * Ver_idz_8%t(k) / Dcst_Rgasd_8
-            do j= j0, jn
-            do i= i0, in
-               w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
-               w4=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
-               qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
-               qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
-               w5=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,kq)+BsPrq(i,j,kmq))
-               w5=Ver_wp_8%t(k)*w5+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)               
-               MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
-               F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
-               F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j) - w3*(one - Cstv_rE_8)*qbar &
-                                    + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
-                                     - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
-                                         -Cstv_rE_8*MUlin + (Dcst_cappa_8-w3)*(w5+w4*Cstv_tau_8))
-               F_nf(i,j,k) = 0.0
+               F_nb(i,j) = Cstv_invT_8*(ytmp_8(i,j)-xtmp_8(i,j)+one)
             end do
             end do
          endif
+         w1 = Ver_idz_8%t(k) / Dcst_Rgasd_8 / Ver_Tstar_8%t(k)
+         w2 = one / Ver_Tstar_8%t(k) * Ver_idz_8%t(k) / Dcst_Rgasd_8
+         do j= j0, jn
+         do i= i0, in
+            w3=Dcst_cappa_8 * ( one - delta_8 * F_hu(i,j,k) )
+            w4=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
+            qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
+            qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+            w5=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,kq)+BsPrq(i,j,kmq))
+            w5=Ver_wp_8%t(k)*w5+Ver_wm_8%t(k)*BsPrq(i,j,kq)*Ver_onezero(k)               
+            MUlin=Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k)) + qbar
+            F_nw(i,j,k) = - Dcst_grav_8 * ( MU(i,j,k) - MUlin )
+            F_nt(i,j,k) = Cstv_invT_8*(ytmp_8(i,j) - w3*(one - Cstv_rE_8)*qbar &
+                                 + w2*( FI(i,j,k+1)+Dcst_Rgasd_8*Ver_Tstar_8%m(k+1)*BsPrq(i,j,k+1) &
+                                  - FI(i,j,k  )-Dcst_Rgasd_8*Ver_Tstar_8%m(k  )*BsPrq(i,j,k  ) ) &
+                                      -Cstv_rE_8*MUlin + (Dcst_cappa_8-w3)*(w5+w4*Cstv_tau_8))
+            F_nf(i,j,k) = 0.0
+         end do
+         end do
 
          if(Cstv_Tstr_8.lt.0.) then        
             dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k) 
@@ -483,34 +444,21 @@
 !        ~~~~~~~~~~
          km=max(k-1,1)
          kp=min(k+1,l_nk)
-         if(Schm_nologinC_L) then
-            do j = j0, jn
-            do i = i0, in
-               ndiv = (F_u(i,j,k)-F_u(i-1,j,k)) * geomg_invDXM_8(j) &
-                    + (F_v(i,j,k)*geomg_cyM_8(j)-F_v(i,j-1,k)*geomg_cyM_8(j-1))*Geomg_invDYM_8(j) &
-                    + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k)
-               xdot = Ver_wp_8%m(k) * F_xd(i,j,k) + Ver_wm_8%m(k) * Ver_onezero(k) * F_xd(i,j,km)
-               F_nc(i,j,k) = Cstv_invT_8  * Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k))*F_s(i,j) &
-                           + Ver_dbdz_8%m(k)*F_s(i,j)*(ndiv+xdot)
-            end do
-            end do
-         else
-            do j = j0, jn
-            do i = i0, in
-               xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
-            end do
-            end do
-            call vlog(ytmp_8, xtmp_8, nij)
-            do j = j0, jn
-            do i = i0, in
-               F_nc(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) +  &
-                             ( Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k)) &
-                             - Ver_dbdz_8%m(k) )*F_s(i,j) ) &
-                                      + (Ver_wpM_8(k)-Ver_wp_8%m(k)) * F_zd(i,j,k) &
-                                      + (Ver_wmM_8(k)-Ver_wm_8%m(k)) * Ver_onezero(k) * F_zd(i,j,km)
-            end do
-            end do
-         endif
+         do j = j0, jn
+         do i = i0, in
+            xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
+         end do
+         end do
+         call vlog(ytmp_8, xtmp_8, nij)
+         do j = j0, jn
+         do i = i0, in
+            F_nc(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) +  &
+                          ( Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k)) &
+                          - Ver_dbdz_8%m(k) )*F_s(i,j) ) &
+                                   + (Ver_wpM_8(k)-Ver_wp_8%m(k)) * F_zd(i,j,k) &
+                                   + (Ver_wmM_8(k)-Ver_wm_8%m(k)) * Ver_onezero(k) * F_zd(i,j,km)
+         end do
+         end do
 
       end do
 !$omp enddo
@@ -584,15 +532,6 @@
 !$omp enddo
       endif
 
-      if(Schm_nologT_L) then
-!$omp do
-         do j= j0, jn
-         do i= i0, in
-             F_nt(i,j,l_nk) =  F_nt(i,j,l_nk) - Cstv_invT_8 * F_nx(i,j,l_nk)
-         end do
-         end do
-!$omp enddo
-      endif
 !$omp do
       do j= j0, jn
       do i= i0, in

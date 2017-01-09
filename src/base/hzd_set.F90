@@ -18,23 +18,6 @@
       subroutine hzd_set
       implicit none
 #include <arch_specific.hf>
-!
-!author    
-!     J.P. Toviessi - CMC - Jan 1999
-!
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v2_10 - Qaddouri&Desgagne - higher order diffusion operator
-! v2_11 - Desgagne M.       - remove vertical modulation
-! v2_31 - Qaddouri A.       - remove stkmemw and correction to yp2
-! v3_00 - Qaddouri & Lee    - Lam configuration
-! v3_01 - Toviessi J. P.    - add eigenmodes with definite parity
-! v3_01 - Lee V.            - add setup for horizontal sponge
-! v3_20 - Qaddouri/Toviessi - variable higher order diffusion operator
-! v3_20 - Tanguay M.        - 1d higher order diffusion operator
-! v3_30 - Tanguay M.        - activate Hzd_type_S='HO_EXP' 
-! v4_40 - Lee V.            - allow matrix setup only when Hzd_type_S="HO_IMP"
-! v4_70 - Desgagne M.       - major revision
 
 #include "glb_ld.cdk"
 #include "hzd.cdk"
@@ -66,15 +49,12 @@
          if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr.eq.0.)) then
             if (Lun_out.gt.0) write(Lun_out,1003)
          else
-            if (Lun_out.gt.0) write(Lun_out,1004) Hzd_smago_param,100*Hzd_smago_lnr
+            if (Lun_out.gt.0) write(Lun_out,1004) &
+                              Hzd_smago_param,100*Hzd_smago_lnr
          endif
       endif
 
-      if (G_lam) then
-         call hzd_exp_set
-      else
-         call hzd_imp_set
-      endif
+      call hzd_exp_set
 
  1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &
                '(S/R HZD_SET)',/,60('='))

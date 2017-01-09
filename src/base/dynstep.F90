@@ -120,10 +120,8 @@
          if (yyblend) &
          call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
       else
-         if (G_lam) then
-            call nest_gwa
-            call spn_main
-         endif
+         call nest_gwa
+         call spn_main
       endif
 
       if (.not. stag_destag_L) call hzd_main_stag

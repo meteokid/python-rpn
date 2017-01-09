@@ -65,7 +65,7 @@
          posx => Geomn_longu
          posy => Geomn_latgs
          Out_ig3  = 2
-         if (G_lam) in = min( G_ni-1, F_x1)
+         in = min( G_ni-1, F_x1)
       endif
       if (F_arakawa_S =='V_point') then
          posx => Geomn_longs
@@ -77,7 +77,7 @@
          posx => Geomn_longu
          posy => Geomn_latgv
          Out_ig3  = 4
-         if (G_lam) in = min( G_ni-1, F_x1)
+         in = min( G_ni-1, F_x1)
          jn = min( G_nj-1, F_y1)
       endif
 

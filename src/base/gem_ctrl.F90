@@ -60,11 +60,7 @@
 
       endif
 
-      if (G_lam) then
-         call spn_init ()
-      else
-         call glhalo_init ()
-      endif
+      call spn_init ()
 
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )

@@ -21,77 +21,26 @@
 #include <arch_specific.hf>
 !
       integer  Minx,Maxx,Miny,Maxy, Nk
-      real     F_duv(Minx:Maxx,Miny:Maxy,Nk), F_uu  (Minx:Maxx,Miny:Maxy,Nk), &
+      real     F_duv(Minx:Maxx,Miny:Maxy,Nk), &
+               F_uu (Minx:Maxx,Miny:Maxy,Nk), &
                F_vv (Minx:Maxx,Miny:Maxy,Nk)
-!
-!authors
-!      Lubos Spacek - apr 2005
-!
-!revision
-! 001 pacek L.   - correct the factor in F_duv (now 1/2)
-!
-!
-!object
-!     see id section 
-!
-!arguments
-!  Name        I/O                 Description
-!----------------------------------------------------------------
-! F_duv         O        the resulted (u*du +v*dv)
-! F_uu          I        wind-like field on U-grid
-! F_vv          I        wind-like field on V-grid
-!----------------------------------------------------------------
-!
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "dcst.cdk"
-      integer i, j, k, i0, in, j0, jn
-!*
+      integer i, j, k
+!
 !     __________________________________________________________________
 !
-      i0 = 0
-      in = l_ni
-      j0 = 0
-      jn = l_nj
-!      i0 = 1
-!      in = l_niu
-!      j0 = 1
-!      jn = l_njv
-!      if ((G_lam).and.(l_west)) i0 = 2
-!      if (l_south) j0 = 2
-!
-      do k=1,Nk
-         do j = j0, jn
-         do i = i0, in
-!
-! avant on a filtre le champ radical D chapeau
-!
-!            F_duv(i,j,k) = sqrt(sqrt(( F_uu(i,j,k)*coni +
-!     $                                 F_uu(i,j-1,k)*coni1 )**2 
-!     $                 + (conj*(F_vv(i,j-1,k)+F_vv(i-1,j-1,k)))**2))
-!
-! maintenant on filtre le champ D chapeau
-!
-            F_duv(i,j,k) = 0.5*sqrt(( F_uu(i,j,k) + &
-                                       F_uu(i,j-1,k) )**2  &
-                       + (F_vv(i,j-1,k)+F_vv(i-1,j-1,k))**2)
-         end do
-         end do
-!
-!         if (.not.G_lam) then
-!            if (l_south) then
-!            do i = i0, in
-!               F_duv(i,1,k) = 0.0
-!            end do
-!            endif
-!            if (l_north) then
-!            do i = i0, in
-!               F_duv(i,l_nj,k) = 0.0
-!            end do
-!            endif
-!         endif
+! this routine is not usefull and should be inlined in the caller ens_filter.F90 ; same also with ens_uvgdw.F90
+      do k = 1, Nk
+      do j = 0, l_nj
+      do i = 0, l_ni
+         F_duv(i,j,k) = 0.5*sqrt( (F_uu(i,j  ,k)+F_uu(i,j-1  ,k))**2 &
+                                + (F_vv(i,j-1,k)+F_vv(i-1,j-1,k))**2 )
       end do
+      end do
+      end do
+!
+!     __________________________________________________________________
 !
       return
       end

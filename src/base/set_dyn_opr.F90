@@ -26,11 +26,7 @@
 !
 !     ---------------------------------------------------------------
 
-      if (Schm_adxlegacy_L) then
-         call adx_check_tracers
-      else
          call adv_check_tracers
-      endif
 
       if (Grd_yinyang_L) then
          call yyg_initstencils  
@@ -49,12 +45,8 @@
 
       call eqspng_set
 
-      if ( Schm_adxlegacy_L ) then 
-         call itf_adx_set
-      else
-         call adv_setgrid
-         call adv_param 
-      endif
+      call adv_setgrid
+      call adv_param 
 
       call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
 !

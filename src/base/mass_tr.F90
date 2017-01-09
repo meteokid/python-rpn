@@ -70,7 +70,7 @@
       real*8, parameter :: cst2= (1e-21/g0) !SAROJA
       !----------------------------------------------------------
 
-      LAM_L = G_lam.and..not.Grd_yinyang_L
+      LAM_L = .not.Grd_yinyang_L
 
       i0 = 1+pil_w
       in = l_ni-pil_e
@@ -196,13 +196,13 @@
       !----------------------------------------
       call rpn_comm_ALLREDUCE(c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
 
-      if ((G_lam.or.F_name_S=='RHO ').or..NOT.SAROJA_L) then
+      if ((F_name_S=='RHO ').or..NOT.SAROJA_L) then
          gc_mass_8 = gc_mass_8 / gc_area_8
       else
          gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
       endif
 
-      if (G_lam.or..NOT.SAROJA_L) then
+      if (.NOT.SAROJA_L) then
          scale_8 = cst
       else
          scale_8 = cst2

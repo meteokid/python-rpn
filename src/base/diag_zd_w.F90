@@ -17,7 +17,7 @@
 !
 
 !
-      subroutine diag_zd_w2( F_zd, F_w, F_xd, F_u, F_v, F_t, F_s, &
+      subroutine diag_zd_w2( F_zd, F_w, F_u, F_v, F_t, F_s, &
                              Minx,Maxx,Miny,Maxy, Nk, F_zd_L, F_w_L )
       implicit none
 #include <arch_specific.hf>
@@ -25,8 +25,7 @@
       integer Minx,Maxx,Miny,Maxy, Nk
       real    F_zd(Minx:Maxx,Miny:Maxy,Nk), F_w(Minx:Maxx,Miny:Maxy,Nk), &
               F_u (Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk), &
-              F_t (Minx:Maxx,Miny:Maxy,Nk), F_s(Minx:Maxx,Miny:Maxy)   , &
-              F_xd(Minx:Maxx,Miny:Maxy,Nk)
+              F_t (Minx:Maxx,Miny:Maxy,Nk), F_s(Minx:Maxx,Miny:Maxy)
       logical ::  F_zd_L,F_w_L
 !
 !authors
@@ -61,11 +60,12 @@
 #include "lun.cdk"
 #include "schm.cdk"
 
-      integer i, j, k, kp, i0, in, j0, jn, j00, jnn
+      integer i, j, k, kp, i0, in, j0, jn
       real*8 c1,c2
       real roverg
       real div (Minx:Maxx,Miny:Maxy,Nk),adv,div_i(Minx:Maxx,Miny:Maxy,0:Nk)
       real pi_t(Minx:Maxx,Miny:Maxy,Nk),lnpi_t(Minx:Maxx,Miny:Maxy,Nk),pidot
+      real xd(Minx:Maxx,Miny:Maxy,Nk)
       real lnpi,pbX,pbY
       real sbX (Minx:Maxx,Miny:Maxy),sbY(Minx:Maxx,Miny:Maxy),pi_s(Minx:Maxx,Miny:Maxy)
       real UdpX(Minx:Maxx,Miny:Maxy),    VdpY(Minx:Maxx,Miny:Maxy)
@@ -96,27 +96,10 @@
       in = l_ni
       j0 = 1
       jn = l_nj
-      if (G_lam) then ! peripheral points will be zeroed
-         if(l_west)  i0 = 2
-         if(l_east)  in = l_niu
-         if(l_south) j0 = 2
-         if(l_north) jn = l_njv
-      endif
-
-      j00=j0-1
-      jnn=jn
-      if (.not.G_lam) then
-         if(l_south) then
-             sbY(i0:in,j0-1)=0.
-             F_v(i0:in,j0-1,1:Nk)=0.
-            j00=j0
-         endif
-         if(l_north) then
-             sbY(i0:in,jn)=0.
-             F_v(i0:in,jn,1:Nk)=0.
-            jnn=jn-1
-         endif
-      endif
+      if(l_west)  i0 = 2
+      if(l_east)  in = l_niu
+      if(l_south) j0 = 2
+      if(l_north) jn = l_njv
 
 !     CALCULATION of sbX, sbY, i.e. F_s on U and V points
 
@@ -126,7 +109,7 @@
       end do
       end do
 
-      do j=j00,jnn
+      do j=j0-1,jn
       do i=i0,in
          sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half
       end do
@@ -245,7 +228,7 @@
                pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
               !ksidot=omega/pi
-               F_xd(i,j,k)=pidot/pi_t(i,j,k)
+               xd(i,j,k)=pidot/pi_t(i,j,k)
             end do
             end do
          end do
@@ -253,8 +236,8 @@
          if(Schm_lift_ltl_L) then
             do j=j0,jn
             do i=i0,in
-               F_w(i,j,Nk)=-RoverG*F_t(i,j,Nk)*(Ver_wpstar_8(Nk)*F_xd(i,j,Nk) &
-                                               +Ver_wmstar_8(Nk)*F_xd(i,j,Nk-1) )
+               F_w(i,j,Nk)=-RoverG*F_t(i,j,Nk)*(Ver_wpstar_8(Nk)*xd(i,j,Nk) &
+                                               +Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
             end do
             end do
          endif

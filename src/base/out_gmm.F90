@@ -91,8 +91,6 @@
       nkeys= gmm_keys(keylist)
 
       periodx_L = .false.
-      if (.not.G_lam .and. (Grid_x1(Outd_grid(set))- &
-            Grid_x0(Outd_grid(set))+1).eq. G_ni ) periodx_L=.true.
 
       class_var( 1,1) = 'UT' ; class_var( 1,2) = 'UU' ; class_var( 1,3) = 'MM'
       class_var( 2,1) = 'VT' ; class_var( 2,2) = 'VV' ; class_var( 2,3) = 'MM'

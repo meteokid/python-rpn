@@ -48,7 +48,7 @@
       character*8 dumc
       integer i,ii,jj,k,kk,levset,nko,nko_pres,cnt,istat,&
               gridset,ig1,mult,mosaic, ip2,modeip1,kind ,&
-              bcs_ext,p_li0,p_li1,p_lj0,p_lj1,last_timestep
+              p_li0,p_li1,p_lj0,p_lj1,last_timestep
       integer grille_x0,grille_x1,grille_y0,grille_y1
       integer, dimension(:), allocatable :: indo_pres,indo,irff
       integer, dimension(:), pointer     :: ip1m
@@ -129,12 +129,10 @@
 
          call out_open_file (trim(prefix))
 
-         bcs_ext = 0
-         if (G_lam) bcs_ext = Grd_bsc_ext1
-         grille_x0 = max( 1   +bcs_ext, Grid_x0(gridset) )
-         grille_x1 = min( G_ni-bcs_ext, Grid_x1(gridset) )
-         grille_y0 = max( 1   +bcs_ext, Grid_y0(gridset) )
-         grille_y1 = min( G_nj-bcs_ext, Grid_y1(gridset) )
+         grille_x0 = max( 1   +Grd_bsc_ext1, Grid_x0(gridset) )
+         grille_x1 = min( G_ni-Grd_bsc_ext1, Grid_x1(gridset) )
+         grille_y0 = max( 1   +Grd_bsc_ext1, Grid_y0(gridset) )
+         grille_y1 = min( G_nj-Grd_bsc_ext1, Grid_y1(gridset) )
 
          call out_href3 ( 'Mass_point',grille_x0,grille_x1,1,&
                                        grille_y0,grille_y1,1 )

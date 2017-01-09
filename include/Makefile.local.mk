@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.a1
+GEMDYN_VERSION0  = x/5.0.a2
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -22,7 +22,7 @@ GEMDYN_LIBS_SHARED_DEP = $(RPNPHY_LIBS_SHARED_V) $(MODELUTILS_LIBS_SHARED_V) $(M
 LIBCPLPATH  = 
 LIBCPL      =
 
-GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base gemdyn_adw
+GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base
 GEMDYN_LIBS_OTHER_0  = $(LIBCPL)
 
 GEMDYN_SFX=$(RDE_BUILDDIR_SFX)

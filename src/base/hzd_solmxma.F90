@@ -39,7 +39,7 @@
 !
 !revision
 ! v2_10 - Qaddouri A.        - initial version
-! v3_00 - Desgagne & Lee    - Lam configuration
+! v3_00 - Desgagne & Lee     - Lam configuration
 ! v3_10 - Corbeil & Desgagne & Lee - AIXport+Opti+OpenMP
 ! v3_11 - Corbeil L.        - new RPNCOMM transpose
 !
@@ -97,22 +97,16 @@
       if (l_north) l_pil_e= Lam_pil_e
 
       kilon = ( maxx2-l_pil_e-minx2+l_pil_w+1 + Ptopo_npeOpenMP)/Ptopo_npeOpenMP
-      if (G_lam) then
-          do k = 1, Gnk
-          do j = 1+pil_s, njl-pil_n
-          do i = 1+pil_w,nil-pil_e
-             F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
-          enddo
-          enddo
-          enddo
-          call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1), &
+
+      do k = 1, Gnk
+      do j = 1+pil_s, njl-pil_n
+      do i = 1+pil_w, nil-pil_e
+         F_Rhs_8(i,j,k)=  ((-1)**F_pwr)*dble(F_cdiff)*dble(F_sol(i,j,k))
+      enddo
+      enddo
+      enddo
+      call rpn_comm_transpose ( F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                 minx1, maxx1, Gnk, fdg1_8, 1,2 )
-      else
-          fact_8=((-1)**F_pwr)*dble(F_cdiff)
-          call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1), &
-                                (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8,1, &
-                                   fact_8,0.d0)
-      endif
 
 !$omp parallel private(kkii,ki0,kin,pin) shared(kilon)
 !$omp do
@@ -124,11 +118,10 @@
       enddo
       enddo
 !$omp enddo
-!
 !$omp do
       do i = 1, Gni
          do k = minx1, maxx1 
-         do j = Miny, 0+pil_s
+         do j = Miny , 0+pil_s
             fdg1_8(j,k,i)= ZERO_8
          enddo
          do j = njl+1-pil_n, Maxy
@@ -352,7 +345,7 @@
        enddo
 !$omp enddo
 !$omp end parallel
-      if (G_lam) then
+
       call rpn_comm_transpose(F_Rhs_8, Minx, Maxx, Gni, (Maxy-Miny+1), &
                                      minx1, maxx1, Gnk, fdg1_8, -1,2 )
       do k= 1, Gnk
@@ -362,11 +355,6 @@
       enddo
       enddo
       enddo
-      else
-      call rpn_comm_transpose48 ( F_sol, Minx, Maxx, Gni,1, (Maxy-Miny+1), &
-                                (Maxy-Miny+1),minx1, maxx1, Gnk, fdg1_8, -1, &
-                                   1.0d0,0.d0)
-      endif
 !     __________________________________________________________________
 !
       return

@@ -52,18 +52,14 @@
       Tr_flux_L  = .false.
       Tr_slice_L = .false.
 
-      if (Schm_psadj_L.and.G_lam.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
+      if (Schm_psadj_L.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
-      do n=1,Tr3d_ntr
-
-         if (G_lam.and..not.Grd_yinyang_L) then !LAM
-
+      if (.not.Grd_yinyang_L) then
+         do n=1,Tr3d_ntr
             if (Tr3d_mass(n)==1) Tr_flux_L  = .true. !BC (FLUX)   
             if (Tr3d_mass(n)==2) Tr_slice_L = .true. !SLICE 
-
-         endif
-
-      end do
+         end do
+      endif
 
       Tr_extension_L = Tr_flux_L.or.Tr_slice_L
 

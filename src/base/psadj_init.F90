@@ -56,13 +56,9 @@
       call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
         "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      if (G_lam) then
-         PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
-      else
-         PSADJ_scale_8 = 1.0d0/(QUATRO_8 * Dcst_pi_8)
-      endif
+      PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
 
-      if (.not.G_lam.or.Grd_yinyang_L) then
+      if (Grd_yinyang_L) then
          istat = gmm_get(gmmk_st1_s,st1)
 
          !Obtain pressure levels

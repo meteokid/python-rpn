@@ -50,7 +50,7 @@
       logical LAM_L
 !     _________________________________________________________________
 
-      LAM_L = G_lam.and..not.Grd_yinyang_L
+      LAM_L = .not.Grd_yinyang_L
 
       type_S = "GRID"
       if (Grd_yinyang_L) type_S = "MULTIGRID"

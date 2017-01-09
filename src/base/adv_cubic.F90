@@ -73,7 +73,7 @@
       if ( adv_rhst_mono_L .and. (F_name=='RHST_S')) mono_L=.true.
 
       flux_n = 0
-      if (F_mass_kind == 1.and.G_lam.and..not.Grd_yinyang_L) flux_n = 1
+      if (F_mass_kind == 1 .and. .not.Grd_yinyang_L) flux_n = 1
 
       if (flux_n>0.and..NOT.done_mask_L) then
 
@@ -219,10 +219,6 @@
          fld_max  => no_conserv
       endif
 
-      if (adv_catmullrom_L) then
-         call adv_tricub_catmullrom (wrkc, fld_adw, F_capx, F_capy, F_capz, nbpts, &
-                                     mono_L, F_i0,F_in,F_j0,F_jn,F_k0, F_nk, F_lev_S)
-      else
          call adv_tricub_lag3d (wrkc, w_mono_c, w_lin_c, w_min_c, w_max_c, &
                                    fld_adw, adw_rho, conserv_local,        & 
                                    w_cub_o_c,adw_o,w_cub_i_c,adw_i,flux_n, & 
@@ -231,7 +227,6 @@
                                    F_svmx, F_svmy, F_svmz,                 &
                                    nbpts, F_nind, F_ii, F_k0, F_nk,        &
                                    mono_L, conserv_L, F_lev_S)
-      end if
 
 !$omp parallel
       if (.NOT. conserv_L) then

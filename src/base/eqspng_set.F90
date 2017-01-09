@@ -13,18 +13,17 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r eqspng_set -
-!
+!**s/r eqspng_set
+
        subroutine eqspng_set
        implicit none
 #include <arch_specific.hf>
-!
+
 !author
 !     Michel Desgagne  -  Winter 2013
 !
 !revision
 ! v4_50 - Desgagne M.       - Initial version
-!
 
 #include "glb_ld.cdk"
 #include "eq.cdk"
@@ -77,21 +76,7 @@
 
        allocate ( eponmod(l_ni,l_nj) )
 
-       if (G_lam) then
-          eponmod = 1.
-       else
-          pdb = P_lmvd_high_lat - P_lmvd_low_lat
-          do j= 1, l_nj
-          do i= 1, l_ni
-             pdtmp = abs(Geomn_latrx(i,j))
-             pda   = min(1.0d0,max(0.0d0,(pdtmp-P_lmvd_low_lat)/pdb))
-             pdc   = (3.-2.*pda)*pda*pda
-             eponmod(i,j) = pdc        * P_lmvd_weigh_high_lat + &
-                            (1. - pdc) * P_lmvd_weigh_low_lat
-             eponmod(i,j) = max(0.0,min(1.0,eponmod(i,j)))
-          enddo
-          enddo
-       endif
+       eponmod = 1.
 !
 !     ---------------------------------------------------------------
 !

@@ -50,7 +50,7 @@
 
       verbose_L = Tr_verbose/=0 
 
-      LAM_L = G_lam.and..not.Grd_yinyang_L
+      LAM_L = .not.Grd_yinyang_L
 
       if (.NOT.Schm_psadj_L.and..NOT.LAM_L.and..NOT.Schm_autobar_L) call handle_error(-1,'BERMEJO-CONDE','Schm_psadj_L should be TRUE when NOT LAM')
 

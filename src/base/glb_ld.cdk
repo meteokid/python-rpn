@@ -6,7 +6,6 @@
 !                    |                                                 |
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
-! G_lam              | .true.  for Limited Area Grid (LAM)             |
 ! G_periodx          | .true. if periodic on X                         |
 ! G_periody          | .true. if periodic on Y                         |
 ! G_ni               | global # of grid points along X  (scalar grid)  |
@@ -43,13 +42,13 @@
 ! pil_s              | # of points on global south boundary for pilot  |
 ! pil_w              | # of points on global west  boundary for pilot  |
 ! pil_e              | # of points on global east  boundary for pilot  |
-! north              | =1 if touching north boundary for LAM           |
-! south              | =1 if touching south boundary for LAM           |
-! east               | =1 if touching east  boundary for LAM           |
-! west               | =1 if touching west  boundary for LAM           |
+! north              | =1 if touching north boundary                   |
+! south              | =1 if touching south boundary                   |
+! east               | =1 if touching east  boundary                   |
+! west               | =1 if touching west  boundary                   |
 !----------------------------------------------------------------------
 
-      logical G_lam, G_periodx, G_periody
+      logical G_periodx, G_periody
       integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       integer G_halox, G_haloy
       real*8, dimension(:), pointer :: G_xg_8, G_yg_8
@@ -57,7 +56,7 @@
 
       common / G / G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
       common / G / G_halox, G_haloy
-      common / G_l / G_lam,G_periodx,G_periody
+      common / G_l / G_periodx,G_periody
 
       logical l_north, l_south, l_east, l_west, l_mesg_proc
       integer l_ni, l_nj, l_nk, l_niu, l_njv, l_i0, l_j0

@@ -73,7 +73,6 @@
       Init_dfpl_S    = '6h'
       Init_dftr_L    = .false.
 
-      Schm_nolog_L   = .false.
       Schm_hydro_L   = .false.
       Schm_hzdadw_L  = .false.
       Schm_topo_L    = .true.
@@ -85,7 +84,6 @@
       Schm_advec    = 1
       Schm_capa_var_L = .false.
       Schm_cub_Coriolis_L = .false.
-      Schm_superwinds_L  = .true.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_psadj_lam_L= .false.
@@ -93,7 +91,6 @@
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L     = .false.
-      Schm_adxlegacy_L = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
       Schm_predictor   = 1

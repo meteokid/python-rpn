@@ -90,10 +90,6 @@
 
      if(Schm_cub_traj_L) then
         
-          if (adv_catmullrom_L) then
-            call adv_tricub_catmullrom(ud, F_u, F_xth, F_yth, F_zth, num, .false. , i0, in, j0, jn, k0m, F_nk, 'm')
-            call adv_tricub_catmullrom(vd, F_v, F_xth, F_yth, F_zth, num, .false. , i0, in, j0, jn, k0m, F_nk, 'm')
-          else 
             call adv_get_indices(ii, F_xth, F_yth, F_zth , num, nind, i0, in, j0, jn, k0m, F_nk, 'm')           
             	
 			   call adv_tricub_lag3d(ud, no_conserv, no_conserv, no_conserv, no_conserv, F_u, no_slice, 0, & 
@@ -110,7 +106,6 @@
                                   no_slice, no_slice, no_slice, &
                                   num, nind, ii, k0m ,F_nk , &
                                   .false. , .false. , 'm')         
-          endif
      else
 
      call adv_trilin(ud,vd,F_u,F_v,F_xth,F_yth,F_zth, &
@@ -156,9 +151,6 @@
           call adv_cliptraj (F_xth,F_yth, F_ni, F_nj,F_nk,i0,in,j0,jn,max(k0t-2,1),'')
 
      if(Schm_cub_traj_L) then         
-            if (adv_catmullrom_L) then
-               call adv_tricub_catmullrom(wd, F_w, F_xth,F_yth,F_zth,num,.false., i0, in, j0, jn, k0m, F_nk,'m')
-            else 
                call adv_get_indices(ii, F_xth, F_yth, F_zth, num, nind, i0, in, j0, jn, k0m, F_nk, 'm') 
                call adv_tricub_lag3d(wd, no_conserv, no_conserv, no_conserv, no_conserv, F_w, no_slice, 0, &
                                   no_flux, no_flux, no_flux, no_flux, 0, &
@@ -167,7 +159,6 @@
                                   no_slice, no_slice, no_slice, &
                                   num, nind, ii, k0m ,F_nk , &
                                   .false. , .false. , 'm')
-            end if  
      else
             dummy3d => F_w
             call adv_trilin(wd,vd,F_w,dummy3d, F_xth, F_yth,F_zth, &

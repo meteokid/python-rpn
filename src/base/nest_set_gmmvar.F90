@@ -61,8 +61,6 @@
       gmmk_nest_w_deb_s  = 'NEST_WA'
       gmmk_nest_q_deb_s  = 'NEST_QA'
       gmmk_nest_zd_deb_s = 'NEST_ZDA'
-      gmmk_nest_xd_deb_s = 'NEST_XDA'
-      gmmk_nest_qd_deb_s = 'NEST_QDA'
       gmmk_nest_fullme_deb_s = 'NEST_MEA'
 
       gmmk_nest_u_s      = 'NEST_U'
@@ -72,8 +70,6 @@
       gmmk_nest_w_s      = 'NEST_W'
       gmmk_nest_q_s      = 'NEST_Q'
       gmmk_nest_zd_s     = 'NEST_ZD'
-      gmmk_nest_xd_s     = 'NEST_XD'
-      gmmk_nest_qd_s     = 'NEST_QD'
       gmmk_nest_fullme_s     = 'NEST_ME'
 
       gmmk_nest_u_fin_s  = 'NEST_UF'
@@ -83,8 +79,6 @@
       gmmk_nest_w_fin_s  = 'NEST_WF'
       gmmk_nest_q_fin_s  = 'NEST_QF'
       gmmk_nest_zd_fin_s = 'NEST_ZDF'
-      gmmk_nest_xd_fin_s = 'NEST_XDF'
-      gmmk_nest_qd_fin_s = 'NEST_QDF'
       gmmk_nest_fullme_fin_s = 'NEST_MEF'
 
       istat = gmm_create(gmmk_nest_u_s , nest_u , meta3d_nk)
@@ -94,8 +88,6 @@
       istat = gmm_create(gmmk_nest_w_s , nest_w , meta3d_nk)
       istat = gmm_create(gmmk_nest_q_s , nest_q , meta3d_2nk1)
       istat = gmm_create(gmmk_nest_zd_s, nest_zd, meta3d_nk)
-      istat = gmm_create(gmmk_nest_xd_s, nest_xd, meta3d_nk)
-      istat = gmm_create(gmmk_nest_qd_s, nest_qd, meta3d_nk)
       istat = gmm_create(gmmk_nest_fullme_s, nest_fullme, meta2d   )
 
       if (.not. Lam_ctebcs_L) then
@@ -106,8 +98,6 @@
          istat = gmm_create(gmmk_nest_w_deb_s , nest_w_deb , meta3d_nk)
          istat = gmm_create(gmmk_nest_q_deb_s , nest_q_deb , meta3d_2nk1)
          istat = gmm_create(gmmk_nest_zd_deb_s, nest_zd_deb, meta3d_nk)
-         istat = gmm_create(gmmk_nest_xd_deb_s, nest_xd_deb, meta3d_nk)
-         istat = gmm_create(gmmk_nest_qd_deb_s, nest_qd_deb, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_deb_s, nest_fullme_deb, meta2d   )
 
          istat = gmm_create(gmmk_nest_u_fin_s , nest_u_fin , meta3d_nk)
@@ -117,8 +107,6 @@
          istat = gmm_create(gmmk_nest_w_fin_s , nest_w_fin , meta3d_nk)
          istat = gmm_create(gmmk_nest_q_fin_s , nest_q_fin , meta3d_2nk1)
          istat = gmm_create(gmmk_nest_zd_fin_s, nest_zd_fin, meta3d_nk)
-         istat = gmm_create(gmmk_nest_xd_fin_s, nest_xd_fin, meta3d_nk)
-         istat = gmm_create(gmmk_nest_qd_fin_s, nest_qd_fin, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_fin_s, nest_fullme_fin, meta2d   )
       endif
 

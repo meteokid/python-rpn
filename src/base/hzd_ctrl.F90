@@ -41,9 +41,6 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_IMP') &
-         call hzd_imp_ctrl  (F_f2hzd, F_type_S, Nk)
-
       if (Hzd_type_S.eq.'HO_EXP5P') &
          call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                              Nk, F_type_S=F_type_S )
@@ -67,11 +64,6 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_IMP') then
-         call hzd_imp_ctrl  (F_u, 'U', Nk)
-         call hzd_imp_ctrl  (F_v, 'V', Nk)
-      endif
-
       if (Hzd_type_S.eq.'HO_EXP5P') &
          call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
                              Nk, F_VV=F_v )

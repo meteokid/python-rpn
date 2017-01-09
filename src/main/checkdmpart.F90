@@ -15,7 +15,7 @@
       external dummy_checkdm
       logical, external :: set_dcst_8
       integer, external :: domain_decomp3,sol_transpose2   , &
-                           fnom, set_fft, exfin, grid_nml2 , &
+                           fnom, set_fft, exfin, grid_nml3 , &
                            gem_nml , gemdm_config, step_nml
 
       character*16 ndomains_S,npex_S,npey_S
@@ -67,9 +67,9 @@
  8888 write (Lun_out,nml=cdm_cfgs)
 
       fn  = trim(Path_input_S)//'/model_settings.nml'
-      err = grid_nml2 (fn,G_lam)
+      err = grid_nml3 (fn)
       if (err .lt. 0) goto 9999
-      err = grid_nml2 ('print',G_lam)
+      err = grid_nml3 ('print')
 
       err = step_nml  (fn)
       if (err .lt. 0) goto 9999
@@ -99,6 +99,7 @@
             endif
          end do
          end do
+         call gemtim4 ( Lun_out, 'AFTER domain_decomp', .false. )
       endif
       
       if (cnt == 1) then
@@ -114,6 +115,7 @@
          end do
          write(npex_S,'(i6.6)') max_io_pes
          if (Ptopo_couleur.eq.0) call write_status_file3 ('MAX_PES_IO='//trim(npex_S))
+         call gemtim4 ( Lun_out, 'AFTER io_pe_valid', .false. )
       endif
 
       if ( (cdm_grid_L) .or. (cdm_eigen_S /= 'NONE@#$%') ) then
@@ -122,6 +124,7 @@
          call glbpos
          call set_geom
          err= set_fft ()
+         call gemtim4 ( Lun_out, 'AFTER set_fft', .false. )
          if (Ptopo_couleur.eq.0) then
          if (err == 0) then
             call write_status_file3 ('Fft_fast_L=OK')
@@ -132,11 +135,13 @@
 
          if (cdm_eigen_S /= 'NONE@#$%') then
             call set_opr2 (cdm_eigen_S)
+            call gemtim4 ( Lun_out, 'AFTER set_opr2', .false. )
          endif
 
          if (cdm_grid_L) then
             call set_params
             call set_dync ( .false., err )
+            call gemtim4 ( Lun_out, 'AFTER set_dync', .false. )
             if (Ptopo_couleur.eq.0) then
                if (err == 0) then
                   call write_status_file3 ('SOLVER=OK')
@@ -152,6 +157,9 @@
          call write_status_file3 ('checkdmpart_status=OK')
          call close_status_file3 ()
       endif
+
+      call gemtim4 ( Lun_out, 'END OF CHECKDMPART', .true. )
+      call memusage (Lun_out)
 
       if (Lun_out.gt.0) &
       err = exfin (trim(Version_title_S),trim(Version_number_S), 'OK')

@@ -45,8 +45,10 @@
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k,n,istat,iteration
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_0_8,pr_p0_dry_1_8,pr_p0_dry_0_8 
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: &
+                                                         pr_m_8,pr_t_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: &
+                       pr_p0_1_8,pr_p0_0_8,pr_p0_dry_1_8,pr_p0_dry_0_8 
       real*8 l_avg_8,g_avg_ps_dry_0_8
       real*8,parameter :: QUATRO_8 = 4.0d0, ONE_8 = 1.0d0
       character(len= 9) communicate_S
@@ -56,17 +58,12 @@
 !
       if (.not.Schm_psadj_L) return
 
-      if (G_lam.and..not.Grd_yinyang_L) then
-         if (Rstri_rstn_L) call gem_error(-1,'psadj','PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
-         if (.not. Schm_adxlegacy_L) then
-            call adv_psadj_LAM_0
-         else
-            call adx_psadj_LAM_0
-         endif
+      if (.not.Grd_yinyang_L) then
+         if (Rstri_rstn_L) call gem_error(-1,'psadj',&
+                          'PSADJ NOT AVAILABLE FOR LAMs in RESTART mode')
+         call adv_psadj_LAM_0
          return
       endif
-
-! for GU and GY
 
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
@@ -77,36 +74,36 @@
 
          !Obtain pressure levels
          !----------------------
-         call calc_pressure_8 (pr_m_8,pr_t_8,pr_p0_0_8,st0,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+         call calc_pressure_8 (pr_m_8, pr_t_8, pr_p0_0_8, st0,&
+                               l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
          !Compute dry surface pressure (- Cstv_pref_8)
          !--------------------------------------------
-         call dry_sfc_pressure_8 (pr_p0_dry_0_8,pr_m_8,pr_p0_0_8,l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
+         call dry_sfc_pressure_8 (pr_p0_dry_0_8, pr_m_8, pr_p0_0_8,&
+                                  l_minx,l_maxx,l_miny,l_maxy,l_nk,'M')
 
          !Estimate dry air mass 
          !---------------------
          l_avg_8 = 0.0d0
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+            l_avg_8 = l_avg_8 + pr_p0_dry_0_8(i,j) * &
+                      Geomg_area_8(i,j) * Geomg_mask_8(i,j)
          enddo
          enddo
 
-         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         call RPN_COMM_allreduce (l_avg_8,g_avg_ps_dry_0_8,1,&
+                      "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
          g_avg_ps_dry_0_8 = g_avg_ps_dry_0_8 * PSADJ_scale_8
 
          !Correct surface pressure in order to preserve dry air mass    
          !----------------------------------------------------------
-!         do j=1+pil_s,l_nj-pil_n
-!         do i=1+pil_w,l_ni-pil_e
-!            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
-!         enddo
-!         enddo
 
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
+            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
+                        (PSADJ_g_avg_ps_dry_initial_8 - g_avg_ps_dry_0_8)
             st0      (i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
          end do
          end do

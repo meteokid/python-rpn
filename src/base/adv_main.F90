@@ -17,8 +17,7 @@
                          ut0, vt0, zdt0, ut1, vt1, zdt1  ,&
                          orhsu, rhsu, orhsv, rhsv, orhsc ,&
                          rhsc, orhst,  rhst, orhsf, rhsf ,&
-                         orhsq, rhsq, orhsw, rhsw, orhsx ,&
-                         rhsx, Minx,Maxx,Miny,Maxy, Nk )
+                         orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
       implicit none
 #include <arch_specific.hf>
 
@@ -27,9 +26,9 @@
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: ut0, vt0, zdt0 ! winds at time t0
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: ut1, vt1, zdt1 ! winds at time t1
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(in) :: orhsu, orhsv, orhsc, orhst, &
-                                                            orhsf, orhsq, orhsw, orhsx                                              
+                                                            orhsf, orhsw
       real, dimension(Minx:Maxx,Miny:Maxy,NK),intent(inout) :: rhsu, rhsv, rhsc,  rhst, &
-                                                               rhsf, rhsq, rhsw, rhsx
+                                                               rhsf, rhsw
 !@objective perform semi-lagrangian advection
 !@author RPN-A  Model Infrastructure Group  (based on : adx_main , adx_interp_gmm  )  June 2015
 
@@ -202,24 +201,6 @@
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy,&
                       nm, ii, i0, in, j0, jn, k0, 'm', 0, 0 )    
 
-
-!  RHS Interpolation: lnk-1 thermo levels + surface
-
-      if(Schm_nologT_L) then
-         call adv_get_indices(ii, pxt, pyt, pzt, num, nm, i0, in, j0, jn, k0, l_nk, 'x')   
-         call adv_cubic('RHSX_S', rhsx, orhsx, pxt, pyt, pzt, & 
-                           no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
-                           l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                           nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )      
-
-         if(.not.Schm_hydro_L) then
-            call adv_cubic('RHSQ_S', rhsq ,orhsq , pxt, pyt, pzt, & 
-                           no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
-                           l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                           nm, ii, i0, in, j0, jn, k0, 'x', 0, 0 )
-         endif
-      endif
-
 !  RHS Interpolation: l_nk thermo levels       
       pxt(:,:,l_nk)=pxtn(:,:)
       pyt(:,:,l_nk)=pytn(:,:)
@@ -232,13 +213,11 @@
                       l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
                       nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )
 
-      if(.not.Schm_hydro_L.or.(Schm_hydro_L.and.(.not.Schm_nologT_L))) then
-         call adv_cubic('RHSF_S', rhsf, orhsf, pxt, pyt, pzt, & 
-                        no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
-                        l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
-                        nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )  
+      call adv_cubic('RHSF_S', rhsf, orhsf, pxt, pyt, pzt, & 
+                     no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &
+                     l_ni, l_nj, l_nk, l_minx, l_maxx, l_miny, l_maxy, &
+                     nt, ii, i0, in, j0, jn, k0t, 't', 0, 0 )  
   
-      endif
       if(.not.Schm_hydro_L) then
          call adv_cubic('RHSW_S', rhsw ,orhsw , pxt, pyt, pzt, &
                         no_slice, no_slice, no_slice, no_slice, no_slice, no_slice, &

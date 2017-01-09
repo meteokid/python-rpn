@@ -90,7 +90,7 @@
    istat = gmm_create('TDMASK',wrk1,mymeta)
    if (RMN_IS_OK(istat)) then
       w1 = 1.
-      nest_it = ( Lam_0ptend_L .and. G_lam .and. &
+      nest_it = ( Lam_0ptend_L .and. &
                 ((Lam_blend_Hx.gt.0).or.(Lam_blend_Hy.gt.0)) )
       if ( nest_it ) then
          w2 = 0.

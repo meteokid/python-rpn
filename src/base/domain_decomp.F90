@@ -34,42 +34,31 @@
 !
 !-------------------------------------------------------------------
 !
-!     Establishing data topology
+      G_periodx = .false.
+      G_periody = .false.
 
       l_west  = (0            .eq. Ptopo_mycol)
       l_east  = (Ptopo_npex-1 .eq. Ptopo_mycol)
       l_south = (0            .eq. Ptopo_myrow)
       l_north = (Ptopo_npey-1 .eq. Ptopo_myrow)
-      north   = 0
-      south   = 0
-      east    = 0
-      west    = 0
+
+      north= 0 ; south= 0 ; east= 0 ; west= 0
       if (l_north) north = 1
       if (l_south) south = 1
       if (l_east ) east  = 1
       if (l_west ) west  = 1
-      pil_w     = 0
-      pil_n     = 0
-      pil_e     = 0
-      pil_s     = 0
-      Lam_pil_w = 0
-      Lam_pil_n = 0
-      Lam_pil_e = 0
-      Lam_pil_s = 0
-      G_periodx = .true.
-      G_periody = .false.
 
-      if (G_lam) then
-         if (l_west ) pil_w = Glb_pil_w
-         if (l_north) pil_n = Glb_pil_n
-         if (l_east ) pil_e = Glb_pil_e
-         if (l_south) pil_s = Glb_pil_s
-         G_periodx = .false.
-         Lam_pil_w = Glb_pil_w
-         Lam_pil_n = Glb_pil_n
-         Lam_pil_e = Glb_pil_e
-         Lam_pil_s = Glb_pil_s
-      endif
+
+      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
+      if (l_west ) pil_w= Glb_pil_w
+      if (l_north) pil_n= Glb_pil_n
+      if (l_east ) pil_e= Glb_pil_e
+      if (l_south) pil_s= Glb_pil_s
+
+      Lam_pil_w= Glb_pil_w
+      Lam_pil_n= Glb_pil_n
+      Lam_pil_e= Glb_pil_e
+      Lam_pil_s= Glb_pil_s
 
       domain_decomp3= -1
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
@@ -90,11 +79,9 @@
       l_njv= l_nj
       l_niu= l_ni
       if (l_north) l_njv= l_nj - 1
-      if ((l_east).and.(G_lam)) l_niu = l_ni - 1
+      if (l_east ) l_niu= l_ni - 1
 
-      if (.not.F_checkparti_L) then
-         call glbpos   
-      endif
+      if (.not.F_checkparti_L) call glbpos   
 
  1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
                2(i6,' in ',i6,' subdomains',5x)/)

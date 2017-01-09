@@ -18,8 +18,6 @@
 !  qt0               | q: log of non-hydrostatic perturbation pressure |
 !--------------------|-------------------------------------------------|
 ! zdt0               | Zetadot:dZeta/dt: generalized vertical velocity |
-! xdt0               | ksidot: dlnpi/dt                                |
-! qdt0               | qdot:   dq/dt                                   |
 !--------------------|-------------------------------------------------|
 ! trt0               | passive tracer(s)                               |
 !----------------------------------------------------------------------
@@ -33,8 +31,6 @@
       real, pointer, dimension (:,:,:) ::  wt0 => null()
       real, pointer, dimension (:,:,:) ::  qt0 => null()
       real, pointer, dimension (:,:,:) :: zdt0 => null()
-      real, pointer, dimension (:,:,:) :: xdt0 => null()
-      real, pointer, dimension (:,:,:) :: qdt0 => null()
       real*8,pointer,dimension (:)     ::  p00 => null()
 
 #if !defined(GMM_IS_OK)
@@ -43,9 +39,7 @@
 #endif
 
       character(len=GMM_MAXNAMELENGTH) :: gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, &
-                   gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s, gmmk_vt0_s, gmmk_p00_s, &
-                   gmmk_xdt0_s, gmmk_qdt0_s
+                   gmmk_st0_s, gmmk_qt0_s, gmmk_ut0_s, gmmk_vt0_s, gmmk_p00_s
 
       common /vt0_n_gmm/ gmmk_wt0_s, gmmk_tt0_s, gmmk_zdt0_s, gmmk_st0_s, &
-                   gmmk_qt0_s, gmmk_ut0_s, gmmk_vt0_s, gmmk_p00_s, &
-                   gmmk_xdt0_s, gmmk_qdt0_s
+                   gmmk_qt0_s, gmmk_ut0_s, gmmk_vt0_s, gmmk_p00_s

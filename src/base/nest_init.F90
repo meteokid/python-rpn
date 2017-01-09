@@ -48,8 +48,6 @@
       istat = gmm_get(gmmk_wt1_s ,wt1 )
       istat = gmm_get(gmmk_qt1_s ,qt1 )
       istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_xdt1_s,xdt1)
-      istat = gmm_get(gmmk_qdt1_s,qdt1)
       istat = gmm_get(gmmk_fis0_s,fis0)
 
 !     copying values from UT1 to nest_u variables
@@ -63,8 +61,6 @@
          istat = gmm_get(gmmk_nest_w_s ,nest_w )
          istat = gmm_get(gmmk_nest_q_s ,nest_q )
          istat = gmm_get(gmmk_nest_zd_s,nest_zd)
-         istat = gmm_get(gmmk_nest_xd_s,nest_xd)
-         istat = gmm_get(gmmk_nest_qd_s,nest_qd)
          istat = gmm_get(gmmk_nest_fullme_s,nest_fullme)
          nest_u  = ut1
          nest_v  = vt1
@@ -73,8 +69,6 @@
          nest_w  = wt1
          nest_q  = qt1
          nest_zd = zdt1
-         nest_xd = xdt1
-         nest_qd = qdt1
          nest_fullme = fis0
 
          do n=1,Tr3d_ntr
@@ -94,8 +88,6 @@
          istat = gmm_get(gmmk_nest_w_fin_s ,nest_w_fin )
          istat = gmm_get(gmmk_nest_q_fin_s ,nest_q_fin )
          istat = gmm_get(gmmk_nest_zd_fin_s,nest_zd_fin)
-         istat = gmm_get(gmmk_nest_xd_fin_s,nest_xd_fin)
-         istat = gmm_get(gmmk_nest_qd_fin_s,nest_qd_fin)
          istat = gmm_get(gmmk_nest_fullme_fin_s,nest_fullme_fin)
          nest_u_fin  = ut1
          nest_v_fin  = vt1
@@ -104,8 +96,6 @@
          nest_w_fin  = wt1
          nest_q_fin  = qt1
          nest_zd_fin = zdt1
-         nest_xd_fin = xdt1
-         nest_qd_fin = qdt1
          nest_fullme_fin = fis0
          do n=1,Tr3d_ntr
             tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'

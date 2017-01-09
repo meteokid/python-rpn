@@ -45,7 +45,7 @@
 
       integer ix,iy,iz,iz_local,kx,ky,kz, E_nk
       integer np, rank, ierr, keys(8), npartiel
-      integer i, j, k, i0, j0, in, jn, nij, inn, trx
+      integer i, j, k, i0, j0, in, jn, nij, trx
       real    pi, err, deltax, cpdi, dummy
       real*8  dpi, aaa
       real  , dimension(:,:,:), allocatable  :: dsp_local
@@ -112,10 +112,6 @@
       in = G_ni
       j0 = 1
       jn = G_nj
-      inn= 0
-      if (G_lam) then
-           inn=1
-      endif
 !
 !     Diffusion backscatter
 !

@@ -57,7 +57,6 @@
       Grd_bsc_adw  = Grd_maxcfl  + Grd_bsc_base
       Grd_extension= Grd_bsc_adw + Grd_bsc_ext1
 !
-      G_lam=.true.
       Grd_xlat1=0.
       Grd_xlon1=180.
       Grd_xlat2=0.

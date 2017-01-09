@@ -41,15 +41,12 @@
       j0_e = 1
       jn_e = l_nj
 
-      if (G_lam) then
-        !jext=1
-         jext=Grd_maxcfl
-         if (Grd_yinyang_L) jext=2
-         if (l_west)  i0_e =        pil_w - jext
-         if (l_east)  in_e = l_ni - pil_e + jext
-         if (l_south) j0_e =        pil_s - jext
-         if (l_north) jn_e = l_nj - pil_n + jext
-      endif
+      jext=Grd_maxcfl
+      if (Grd_yinyang_L) jext=2
+      if (l_west)  i0_e =        pil_w - jext
+      if (l_east)  in_e = l_ni - pil_e + jext
+      if (l_south) j0_e =        pil_s - jext
+      if (l_north) jn_e = l_nj - pil_n + jext
 
       !---------------------------------------------------------------------
 

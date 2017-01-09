@@ -43,7 +43,7 @@
       in = F_ni
       j0 = 1
       jn = F_nj
-      if (G_lam .and. .not. Grd_yinyang_L) then
+      if (.not. Grd_yinyang_L) then
          if (l_west)  i0 = 3
          if (l_east)  in = F_ni - 1
          if (l_south) j0 = 3

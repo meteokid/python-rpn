@@ -50,7 +50,6 @@
       istat = gmm_get (gmmk_wt1_s ,wt1 )
       istat = gmm_get (gmmk_tt1_s ,tt1 )
       istat = gmm_get (gmmk_zdt1_s,zdt1)
-      istat = gmm_get (gmmk_xdt1_s,xdt1)
       istat = gmm_get (gmmk_st1_s ,st1 )
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_qt1_s ,qt1 )
@@ -120,7 +119,7 @@
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
       endif
 
-      call diag_zd_w2 ( zdt1,wt1,xdt1, ut1,vt1,tt1,st1   ,&
+      call diag_zd_w2 ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                         .not.Inp_zd_L, .not.Inp_w_L )
 

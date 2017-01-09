@@ -129,7 +129,6 @@
       namelist /gem_cfgs/ perturb_npts
 
 !Schm
-      namelist /gem_cfgs/ Schm_nolog_L
       namelist /gem_cfgs/ Schm_adcub_L
       namelist /gem_cfgs/ Schm_autobar_L
       namelist /gem_cfgs/ Schm_cub_Coriolis_L
@@ -145,11 +144,9 @@
       namelist /gem_cfgs/ Schm_Topo_L
       namelist /gem_cfgs/ Schm_capa_var_L
       namelist /gem_cfgs/ Schm_advec
-      namelist /gem_cfgs/ Schm_superwinds_L
       namelist /gem_cfgs/ Schm_bitpattern_L
       namelist /gem_cfgs/ Schm_source_ps_L
       namelist /gem_cfgs/ Schm_wload_L
-      namelist /gem_cfgs/ Schm_adxlegacy_L
       namelist /gem_cfgs/ Schm_cub_traj_L
       namelist /gem_cfgs/ Schm_trapeze_L
       namelist /gem_cfgs/ Schm_predictor
@@ -282,7 +279,6 @@
       namelist /gem_cfgs_p/ perturb_npts
 
 !Schm
-      namelist /gem_cfgs_p/ Schm_nolog_L
       namelist /gem_cfgs_p/ Schm_adcub_L
       namelist /gem_cfgs_p/ Schm_autobar_L
       namelist /gem_cfgs_p/ Schm_cub_Coriolis_L
@@ -297,10 +293,8 @@
       namelist /gem_cfgs_p/ Schm_Tlift
       namelist /gem_cfgs_p/ Schm_capa_var_L
       namelist /gem_cfgs_p/ Schm_advec
-      namelist /gem_cfgs_p/ Schm_superwinds_L
       namelist /gem_cfgs_p/ Schm_source_ps_L
       namelist /gem_cfgs_p/ Schm_wload_L
-      namelist /gem_cfgs_p/ Schm_adxlegacy_L
       namelist /gem_cfgs_p/ Schm_cub_traj_L
       namelist /gem_cfgs_p/ Schm_trapeze_L
       namelist /gem_cfgs_p/ Schm_predictor

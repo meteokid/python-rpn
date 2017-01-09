@@ -34,7 +34,7 @@
          
          coef = 1. - F_coef
          i0 = 1 + pil_w
-         if ((l_west).and.(G_lam)) i0 = i0+1
+         if (l_west ) i0 = i0+1
          in = l_niu - pil_e
          j0 = 1 + pil_s
          if (l_south) j0 = j0+1
@@ -53,21 +53,19 @@
                end do
                end do
             end do
-            if (G_lam) then
-               if (l_west) then
-                  do k=1,Nk
-                     do j= 1+pil_s, l_nj-pil_n 
-                        w1(i0-1,j,k) = F_fd(i0-1,j,k)
-                     end do
+            if (l_west) then
+               do k=1,Nk
+                  do j= 1+pil_s, l_nj-pil_n 
+                     w1(i0-1,j,k) = F_fd(i0-1,j,k)
                   end do
-               endif
-               if (l_east) then
-                  do k=1,Nk
-                     do j= 1+pil_s, l_nj-pil_n 
-                        w1(in+1,j,k) = F_fd(in+1,j,k)
-                     end do
+               end do
+            endif
+            if (l_east) then
+               do k=1,Nk
+                  do j= 1+pil_s, l_nj-pil_n 
+                     w1(in+1,j,k) = F_fd(in+1,j,k)
                   end do
-               endif
+               end do
             endif
 
             call rpn_comm_xch_halo (w1,  l_minx,l_maxx,l_miny,l_maxy, &

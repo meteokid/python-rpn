@@ -48,7 +48,7 @@
          call yyg_initblenu()
          call yyg_initblenv()
       else
-         if (G_lam) call nest_set_gmmvar
+         call nest_set_gmmvar
       endif
 
 !     Initialize right hand sides comdeck

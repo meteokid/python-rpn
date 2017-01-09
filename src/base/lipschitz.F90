@@ -14,19 +14,16 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p lipschitz - compute lipschitz stability criterion
-!
 
-!
       subroutine lipschitz(F_u, F_v, F_w, Minx,Maxx,Miny,Maxy, Nk, &
                                       F_i0,F_in,F_j0,F_jn)
-!
       implicit none
 #include <arch_specific.hf>
-!
+
       integer Minx,Maxx,Miny,Maxy, Nk
       integer F_i0,F_in,F_j0,F_jn
-      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), F_v(Minx:Maxx,Miny:Maxy,Nk)
-!
+      real F_w(Minx:Maxx,Miny:Maxy,Nk), F_u(Minx:Maxx,Miny:Maxy,Nk), &
+           F_v(Minx:Maxx,Miny:Maxy,Nk)
 !author
 !     Claude Girard & Andre Plante - oct 2006
 !
@@ -49,24 +46,22 @@
 ! F_in         I    - ending point of calculation on W-E axis
 ! F_j0         I    - starting point of calculation on N-S axis
 ! F_jn         I    - ending point of calculation on N-S axis
-!
 
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
-!
-!*
+
       integer i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
       real pr1, pr2, dudx, dvdy, dwdy,dwdz, LipNOu, LipNOv, LipNOw
 !     __________________________________________________________________
 !
       i0=F_i0
       j0=F_j0
-      if ((G_lam).and.(l_west)) i0 = max(2,F_i0)
-      if (l_south) j0 =  max(2,F_j0)
-!
+      if (l_west ) i0 = max(2,F_i0)
+      if (l_south) j0 = max(2,F_j0)
+
       iu=-99
       ju=-99
       ku=-99
@@ -79,7 +74,7 @@
       LipNOu=0.0
       LipNOv=0.0
       LipNOw=0.0
-!
+
 !$omp do
       do k=1,l_nk
          km=max(k-1,1)
@@ -110,11 +105,11 @@
          end do
       end do
 !$omp enddo
-!
+
       LipNOu=Cstv_dt_8*LipNOu
       LipNOv=Cstv_dt_8*LipNOv
       LipNOw=Cstv_dt_8*LipNOw
-!
+
       write(6,101) LipNOu,iu,ju,ku
       write(6,102) LipNOv,iv,jv,kv
       write(6,103) LipNOw,iw,jw,kw

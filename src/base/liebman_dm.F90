@@ -49,58 +49,6 @@
 !$omp parallel shared (i0,in,ic,j0,jn,jc,prmax,prmaxall,prfact, &
 !$omp                  count,sum0,sumall,mask,maskall) private (i,j,k,ite,prmod)
 
-      if (.not.G_lam) then
-!$omp do
-         do k=1,Nk
-            sum0 (:,k) = 0.0
-            mask(:,k) = 0.0
-         end do
-!$omp enddo
-         if (Ptopo_myrow.eq.0) then
-!$omp do
-            do k=1,Nk
-            do i=1,L_ni
-               sum0 (1,k) = sum0(1,k) + F_field(i,1,k)
-               mask(1,k) = max( mask(1,k), F_mask(i,1,k) )
-            end do
-            end do
-!$omp enddo
-         endif
-         if (Ptopo_myrow.eq.(Ptopo_npey-1)) then
-!$omp do
-            do k=1,Nk
-            do i=1,L_ni
-               sum0 (2,k) = sum0(2,k) + F_field(i,l_nj,k)
-               mask(2,k) = max( mask(2,k), F_mask(i,l_nj,k) )
-            end do
-            end do
-!$omp enddo
-         endif
-!$omp single
-         call rpn_comm_ALLREDUCE (sum0,sumall  ,2*Nk,"MPI_double_precision","MPI_SUM","grid",ier)
-         call rpn_comm_ALLREDUCE (mask,maskall,2*nk,"MPI_REAL"            ,"MPI_MAX","grid",ier)
-!$omp end single
-
-         if (Ptopo_myrow.eq.0             ) then
-!$omp do
-            do k=1,Nk
-            do i=1,L_ni
-               F_field(i,0,k) = sumall(1,k) / G_ni
-            end do
-            end do
-!$omp enddo
-         endif
-         if (Ptopo_myrow.eq.(Ptopo_npey-1)) then
-!$omp do
-            do k=1,Nk
-            do i=1,L_ni
-               F_field(i,l_nj+1,k) = sumall(2,k) / G_ni
-            end do
-            end do
-!$omp enddo
-         endif
-      endif
-
 !$omp single         
       i0 = 1 ; in = l_ni ; ic = 1
       j0 = 1 ; jn = l_nj ; jc = 1
@@ -112,33 +60,6 @@
             prmax(k) = 0.0
          end do
 !$omp enddo
-
-         if (.not.G_lam) then
-            if (Ptopo_myrow.eq.0) then
-!$omp do
-               do k=1,Nk
-                  if ( prmaxall(k) .gt. F_conv ) then
-                     prmod = prfact * ( sumall(1,k) - G_ni * F_field(1,     0,k) ) * maskall(1,k)
-                     prmod = prmod * 4.0 / G_ni    
-                     prmax(k) = max ( prmax(k), abs(prmod) )
-                     F_field (:,     0,k) = F_field (:,     0,k) + prmod
-                  endif
-               end do
-!$omp enddo
-            endif
-            if (Ptopo_myrow.eq.(Ptopo_npey-1)) then
-!$omp do
-               do k=1,Nk
-                  if ( prmaxall(k) .gt. F_conv ) then
-                     prmod = prfact * ( sumall(2,k) - G_ni * F_field(1,l_nj+1,k) ) * maskall(2,k)
-                     prmod = prmod * 4.0 / G_ni    
-                     prmax(k) = max ( prmax(k), abs(prmod) )
-                     F_field (:,l_nj+1,k) = F_field (:,l_nj+1,k) + prmod
-                  endif
-               end do
-!$omp enddo
-            endif
-         endif
          
 !$omp do
          do k=1,Nk
@@ -188,38 +109,6 @@
          call rpn_comm_xch_halo( F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single
-         if (.not.G_lam) then
-!$omp do
-            do k=1,Nk
-               sum0(:,k) = 0.0
-            end do
-!$omp enddo
-            if (Ptopo_myrow.eq.0) then
-!$omp do
-               do k=1,Nk
-                  if ( prmaxall(k) .gt. F_conv ) then
-                     do i=1,L_ni
-                        sum0 (1,k) = sum0(1,k) + F_field(i,   1,k)
-                     end do
-                  endif
-               end do
-!$omp enddo
-            endif
-            if (Ptopo_myrow.eq.(Ptopo_npey-1)) then
-!$omp do
-               do k=1,Nk
-                  if ( prmaxall(k) .gt. F_conv ) then
-                     do i=1,L_ni
-                        sum0 (2,k) = sum0(2,k) + F_field(i,l_nj,k)
-                     end do
-                  endif
-               end do
-!$omp enddo
-            endif
-!$omp single
-            call rpn_comm_ALLREDUCE (sum0,sumall,2*nk,"MPI_double_precision","MPI_SUM","grid",ier)
-!$omp end single
-         endif
 
       end do
 !$omp end parallel

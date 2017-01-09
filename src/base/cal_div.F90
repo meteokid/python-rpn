@@ -42,8 +42,8 @@
       in = l_niu
       j0 = 1
       jn = l_njv
-      if ((G_lam).and.(l_west)) i0 = 2
-      if (l_south)              j0 = 2
+      if (l_west ) i0 = 2
+      if (l_south) j0 = 2
 
       do k = 1 , Nk
          do j = j0, jn

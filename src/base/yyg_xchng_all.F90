@@ -76,21 +76,10 @@
       call yyg_xchng (st1    , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
                       .false., 'CUBIC')
 
-      if(Schm_nologT_L) then
-         istat = gmm_get(gmmk_xdt1_s,xdt1)
-         call yyg_xchng (xdt1   , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-      endif
-
       if (.not.Schm_hydro_L) then
          istat = gmm_get(gmmk_qt1_s,  qt1)
          call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                          .false., 'CUBIC')
-         if(Schm_nologT_L) then
-         istat = gmm_get(gmmk_qdt1_s,qdt1)
-         call yyg_xchng (qdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .false., 'CUBIC')
-         endif
       endif
 
 !

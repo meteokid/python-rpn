@@ -63,26 +63,14 @@
       gmmstat = gmm_get (gmmk_nest_zd_s, fld_nest3d)
       call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
 
-      if(Schm_nologT_L) then
-         gmmstat = gmm_get (gmmk_xdt1_s   , fld3d     )
-         gmmstat = gmm_get (gmmk_nest_xd_s, fld_nest3d)
-         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
-      endif
-
-         gmmstat = gmm_get (gmmk_wt1_s   , fld3d     )
-         gmmstat = gmm_get (gmmk_nest_w_s, fld_nest3d)
-         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
+      gmmstat = gmm_get (gmmk_wt1_s   , fld3d     )
+      gmmstat = gmm_get (gmmk_nest_w_s, fld_nest3d)
+      call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
 
       if ( .not.Schm_hydro_L ) then
          gmmstat = gmm_get (gmmk_qt1_s   , fld3d     )
          gmmstat = gmm_get (gmmk_nest_q_s, fld_nest3d)
          call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'Q')
-
-         if(Schm_nologT_L) then
-            gmmstat = gmm_get (gmmk_qdt1_s   , fld3d     )
-            gmmstat = gmm_get (gmmk_nest_qd_s, fld_nest3d)
-            call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'M')
-         endif
       endif
 
       

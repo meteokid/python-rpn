@@ -48,4 +48,4 @@
       namelist /mtn_cfgs/ Vtopo_start, Vtopo_ndt
       namelist /mtn_cfgs/ G_periodx, G_periody
       namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L
-      namelist /mtn_cfgs/ Sol_type_S,Schm_lift_ltl_L, Schm_nolog_L
+      namelist /mtn_cfgs/ Sol_type_S,Schm_lift_ltl_L

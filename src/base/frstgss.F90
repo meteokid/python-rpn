@@ -59,13 +59,9 @@
       istat = gmm_get(gmmk_qt1_s , qt1)
       istat = gmm_get(gmmk_zdt0_s,zdt0)
       istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_xdt0_s,xdt0)
-      istat = gmm_get(gmmk_xdt1_s,xdt1)
-      istat = gmm_get(gmmk_qdt0_s,qdt0)
-      istat = gmm_get(gmmk_qdt1_s,qdt1)
 
-      tt0 = tt1 ; zdt0 = zdt1 ; wt0 = wt1 ; xdt0 = xdt1
-      ut0 = ut1 ; vt0  = vt1  ; qt0 = qt1 ; qdt0 = qdt1
+      tt0 = tt1 ; zdt0 = zdt1 ; wt0 = wt1
+      ut0 = ut1 ; vt0  = vt1  ; qt0 = qt1
       st0 = st1
 !
 !     ---------------------------------------------------------------

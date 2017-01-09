@@ -24,11 +24,6 @@
 #include <arch_specific.hf>
 
       integer levset,set
-!author
-!     Lee V.                    - rpn May 2004
-!
-!revision
-! v4_80 - Desgagne M.       - major re-factorization of output
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
@@ -44,10 +39,11 @@
 #include "type.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
+#include "ptopo.cdk"
 
       type(vgrid_descriptor) :: vcoord
       character*512 fullname
-      integer i,j,k,ii,n,nko,kind,istat
+      integer i,j,k,ii,n,nko,kind,istat,indxtr
       integer, dimension(:), allocatable::indo
       integer, dimension(:), pointer :: ip1t
       real ,dimension(:), allocatable::prprlvl,rf
@@ -64,7 +60,7 @@
       if (Level_typ_S(levset) .eq. 'M') then  ! output tracers on model levels
 
          kind=Level_kind_ip1
-!       Setup the indexing for output
+!        Setup the indexing for output
          allocate (indo( min(Level_max(levset),Level_thermo) ))
          call out_slev2(Level(1,levset), Level_max(levset), &
                        Level_thermo,indo,nko,near_sfc_L)
@@ -81,15 +77,16 @@
          do ii=1,Outd_var_max(set)
             outvar_L=.false.
             do n=1,Tr3d_ntr
-               if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
+               if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
                   nullify (tr1)
                   fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  indxtr=n
                   istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
-                  cycle
+                  goto 55
                endif
             enddo
-            if (outvar_L) then
+ 55         if (outvar_L) then
                if (Out3_cliph_L) then
                   do k=1,G_nk
                      do j=1,l_nj
@@ -110,13 +107,13 @@
                endif
 
                if (write_diag_lev)  then
-                  if (trim(Tr3d_name_S(n))=='HU') then
+                  if (trim(Tr3d_name_S(indxtr))=='HU') then
                      istat = gmm_get(gmmk_diag_hu_s,qdiag)
                      t4(:,:,G_nk+1) = qdiag
                   else
                      t4(:,:,G_nk+1) = tr1(:,:,G_nk)
                      ptr3d => t4(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
-                     istat = phy_get (ptr3d, fullname, F_npath='VO', F_bpath='D'      ,&
+                     istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
                                       F_quiet=.true.)
                   endif
@@ -140,7 +137,7 @@
 
          kind=2
 
-!       Setup the indexing for output
+!        Setup the indexing for output
          nko=Level_max(levset)
          allocate ( indo(nko), rf(nko) , prprlvl(nko), &
                   w4(l_minx:l_maxx,l_miny:l_maxy,nko), &
@@ -156,24 +153,28 @@
          enddo
 
          do ii=1,Outd_var_max(set)
+
             outvar_L=.false.
             do n=1,Tr3d_ntr
-               if (Outd_var_S(ii,set).eq.Tr3d_name_S(n)) then
+               if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
                   nullify (tr1)
-                  istat = gmm_get('TR/'//trim(Tr3d_name_S(n))//':P',tr1)
+                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  indxtr=n
+                  istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
-                  cycle
+                  goto 66
                endif
             enddo
-            if (outvar_L) then
+
+ 66         if (outvar_L) then
                if (out3_sfcdiag_L) then
-                  if (trim(Tr3d_name_S(n))=='HU') then
+                  if (trim(Tr3d_name_S(indxtr))=='HU') then
                      istat = gmm_get(gmmk_diag_hu_s,qdiag)
                      t5(:,:,G_nk+1) = qdiag
                   else
                      t5(:,:,G_nk+1) = tr1(:,:,G_nk)
                      ptr3d => t5(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk+1:G_nk+1)
-                     istat = phy_get (ptr3d, fullname, F_npath='VO', F_bpath='D'      ,&
+                     istat = phy_get (ptr3d, trim(fullname), F_npath='VO', F_bpath='D',&
                                       F_start=(/-1,-1,l_nk+1/), F_end=(/-1,-1,l_nk+1/),&
                                       F_quiet=.true.)
                   endif
@@ -204,6 +205,7 @@
                      enddo
                   enddo
                endif
+
                call out_fstecr3 ( w4,l_minx,l_maxx,l_miny,l_maxy,rf  , &
                              Outd_var_S(ii,set),Outd_convmult(ii,set), &
                                         Outd_convadd(ii,set),kind,-1 , &
@@ -211,7 +213,9 @@
                                         Outd_nbit(ii,set) , .false. )
                
             endif
+
          enddo
+
          deallocate(indo,rf,prprlvl,w4,cible)
 
       endif

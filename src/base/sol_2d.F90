@@ -68,34 +68,26 @@
 !$omp enddo
 !$omp end parallel 
 
-      if (G_lam) then
-
-         if (Grd_yinyang_L) then
-            wk3 = wk1
-            do iter=1, Sol_yyg_maxits
-               call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, F_iln,&
-                                    Lun_debug_L, F_ni, F_nj, F_nk )
-               wk1 = wk3
-               call yyg_rhs_scalbc(wk1, wk2, ldnh_minx, ldnh_maxx,&
-                         ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
-               if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
-               if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) goto 999
-            end do
-999         if (F_print_L) then
-               write(Lun_out,1002) linfini,iter
-               if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
-            endif
-         else
+      if (Grd_yinyang_L) then
+         wk3 = wk1
+         do iter=1, Sol_yyg_maxits
             call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, F_iln,&
-                                   F_print_L, F_ni, F_nj, F_nk )
+                           Lun_debug_L, F_ni, F_nj, F_nk )
+            wk1 = wk3
+            call yyg_rhs_scalbc(wk1, wk2, ldnh_minx, ldnh_maxx,&
+                                ldnh_miny, ldnh_maxy, l_nk, iter, linfini)
+            if (Lun_debug_L.and.F_print_L) write(Lun_out,1001) linfini,iter
+            if ((iter.gt.1).and.(linfini.lt.Sol_yyg_eps)) goto 999
+         end do
+ 999     if (F_print_L) then
+            write(Lun_out,1002) linfini,iter
+            if (linfini.gt.Sol_yyg_eps) write(Lun_out,9001) Sol_yyg_eps
          endif
-
       else
-
-         call sol_global (wk2, wk1, fdg1, fdg2, fdwfft, F_ni, F_nj, F_nk)
-
+         call sol_lam ( wk2, wk1, fdg1, fdg2, fdwfft, F_iln,&
+                         F_print_L, F_ni, F_nj, F_nk )
       endif
-
+      
 !$omp parallel private (j) shared ( g_nk )
 !$omp do
       do j=1+pil_s,ldnh_nj-pil_n

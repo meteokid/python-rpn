@@ -12,81 +12,68 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
+!TODO: opening unit 6 may be unsafe, better to pass unit to printing functions
+#define FILEID 6
 
-!**s/r prgemnml
-      subroutine prgemnml()
-      implicit none
+subroutine prgemnml()
+   implicit none
 #include <arch_specific.hf>
-!
-!author V.Lee - October 20,2008
-!
-!object
-!
-!----------------------------------------------------------------------
+   print *,'creating gemdict.nml'
+   open(FILEID, file="gemdict.nml", access='SEQUENTIAL', form='FORMATTED')
+   call nml_grid()
+   call nml_step()
+   call nml_adv()
+   call nml_gem()
+   call nml_theo()
+   close(FILEID)
+   return
+end subroutine prgemnml
 
-      print *,'creating gemdict.nml'
-      open (6,file="gemdict.nml",access='SEQUENTIAL',form='FORMATTED')
-      call nml_grid()
-      call nml_step()
-      call nml_adx()
-      call nml_gem()
-!!$      call nml_gement()
-      call nml_theo()
-      close(6)
-     
-      return
-!      
-!-------------------------------------------------------------------
-      end
-!
-      subroutine nml_grid()
-      implicit none
+
+subroutine nml_grid()
+   implicit none
 #include <arch_specific.hf>
 #include "grd.cdk"
-      write (6  ,nml=grid)
-      return
-      end
+   write(FILEID, nml=grid)
+   return
+end subroutine nml_grid
 
-      subroutine nml_step()
-      implicit none
+
+subroutine nml_step()
+   implicit none
 #include <arch_specific.hf>
 #include "step.cdk"
-      write (6  ,nml=step)
-      return
-      end
-!
-      subroutine nml_adx()
-      implicit none
+   write(FILEID, nml=step)
+   return
+end subroutine nml_step
+
+
+subroutine nml_adv()
+   implicit none
 #include <arch_specific.hf>
-      call adx_nml_print()
-      return
-      end
-!
-      subroutine nml_gem()
-      implicit none
+   call adv_nml_print()
+   return
+end subroutine nml_adv
+
+
+subroutine nml_gem()
+   implicit none
 #include <arch_specific.hf>
 #include "nml.cdk"
-      write (6  ,nml=gem_cfgs)
-      write (6  ,nml=grdc)
-      write (6  ,nml=williamson)
-      return
-      end
-!
-!!$      subroutine nml_gement()
-!!$      implicit none
-!!$#include <arch_specific.hf>
-!!$#include "e_nml.cdk"
-!!$      write (6  ,nml=gement)
-!!$      return
-!!$      end
-!
-      subroutine nml_theo()
-      implicit none
+   write(FILEID, nml=gem_cfgs)
+   write(FILEID, nml=grdc)
+   write(FILEID, nml=williamson)
+   return
+end subroutine nml_gem
+
+
+subroutine nml_theo()
+   implicit none
 #include <arch_specific.hf>
 #undef TYPE_CDK
 #undef GMM_IS_OK
 #include "theonml.cdk"
-      write (6  ,nml=theo_cfgs)
-      write (6  ,nml=mtn_cfgs)
-      return
-      end
+   write(FILEID, nml=theo_cfgs)
+   write(FILEID, nml=mtn_cfgs)
+   return
+end subroutine nml_theo

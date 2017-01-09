@@ -253,7 +253,7 @@
                        'Z', 'E', Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro,&
                        xfi(1+pil_w), yfi(1+pil_s) )
 
-      offset= 0 ; if (G_lam) offset= 2
+      offset= 2
       Grd_lphy_i0 = 1 + offset*west  ; Grd_lphy_in = l_ni-offset*east
       Grd_lphy_j0 = 1 + offset*south ; Grd_lphy_jn = l_nj-offset*north
       Grd_lphy_ni = Grd_lphy_in - Grd_lphy_i0 + 1

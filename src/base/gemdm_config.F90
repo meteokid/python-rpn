@@ -91,21 +91,20 @@
 
       if ( Schm_autobar_L ) stag_destag_L= .true.
 
-      if (G_lam) then
-         Glb_pil_n = Grd_extension
-         Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
-         if (Grd_yinyang_L) then
-            Lam_blend_H  = 0
-            Lam_ctebcs_L = .true.
-            Lam_blendoro_L = .false.
-         else
-            Lam_blend_H = max(0,Lam_blend_H)
-         endif
-         Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
-         if (Schm_theoc_L) Lam_blend_Hy = 0
-         Lam_tdeb = 999999.0
+      Glb_pil_n = Grd_extension
+      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+      if (Grd_yinyang_L) then
+         Lam_blend_H  = 0
+         Lam_ctebcs_L = .true.
+         Lam_blendoro_L = .false.
+      else
+         Lam_blend_H = max(0,Lam_blend_H)
       endif
-      if ((G_lam).and.(.not.Grd_yinyang_L)) then
+      Lam_blend_Hx = Lam_blend_H ; Lam_blend_Hy = Lam_blend_H
+      if (Schm_theoc_L) Lam_blend_Hy = 0
+      Lam_tdeb = 999999.0
+
+      if (.not.Grd_yinyang_L) then
          Lam_gbpil_T = max(0,Lam_gbpil_T)
          Lam_blend_T = max(0,Lam_blend_T)
       else
@@ -113,27 +112,13 @@
          Lam_blend_T = 0
       endif
 
-      !  Forcing some options under Schm_adxlegacy_L=.t.
-      if (Schm_adxlegacy_L) then
-         Schm_cub_traj_L = .false.
-         Schm_trapeze_L  = .false.
-         Schm_lift_ltl_L = .false.
-      else
-         ! Schm_adxlegacy_L=.t. is mandatory for GU grids
-         if (.not. G_lam) then
-            if (lun_out>0) write (Lun_out, 9203)
-            return
-         endif
-         Schm_lift_ltl_L = .false.
-         if ( Schm_trapeze_L .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
-      endif
-
+      Schm_lift_ltl_L = .false.
+      if ( Schm_trapeze_L .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
+      
       if(Hzd_in_rhs_L.and.(Hzd_type_S.ne.'HO_EXP5P')) then
          if (lun_out>0) write (Lun_out, 9204)
          return
       endif
-      Schm_nologinC_L= Schm_nolog_L
-      Schm_nologT_L  = Schm_nolog_L
 
       deg_2_rad = Dcst_pi_8/180.
 
@@ -239,13 +224,6 @@
          endif
       end if
 
-      if ((Hzd_smago_param > 0.) .and. (.not. G_lam)) then
-         if (lun_out>0) then
-            write (Lun_out, *) 'ABORT: Smagorinksy-type horizontal diffusion only available for LAM/YY'
-         end if
-         return
-      end if
-
       if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
          if (lun_out>0) then
             write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
@@ -259,14 +237,12 @@
       G_niu = G_ni
       G_njv = G_nj - 1
 
-      if (G_lam) then
-         G_niu= G_ni - 1
-! Additional temporary check for Schm_psadj_L in LAM config. 
-         if ( .not.(Grd_yinyang_L) .and. Schm_psadj_L .and. &
-              .not.(Schm_psadj_lam_L) )then
-            if (lun_out>0) write (Lun_out, 6700) 
-            return
-         endif
+      G_niu= G_ni - 1
+! Additional temporary check for Schm_psadj_L in ordinary LAM config. 
+      if ( .not.(Grd_yinyang_L) .and. Schm_psadj_L .and. &
+           .not.(Schm_psadj_lam_L) ) then
+         if (lun_out>0) write (Lun_out, 6700) 
+         return
       endif
 
 !     Check for open top (piloting and blending)
@@ -420,7 +396,6 @@
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
- 9203 format (/,'ABORT: WRONG CHOICE OF ADVECTION FOR GU: set Schm_adxlegacy_L = .true.'/)
  9204 format (/,'ABORT: WRONG CHOICE OF DIFFUSION TYPE FOR HZD_in_RHS = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)

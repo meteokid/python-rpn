@@ -38,7 +38,6 @@
 !
       
       adv_rhst_mono_L  = .false.
-      adv_catmullrom_L = .false.
       adv_BC_min_max_L = .true.
       adv_halox  = -1
       adv_haloy  = -1

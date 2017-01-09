@@ -61,8 +61,8 @@
                stat_varname = stat_liste(n)(indx:)
                inn= 0
                jnn= 0
-               if ( stat_liste(n)(1:3)=='URT' .and. G_lam ) inn=1
-               if ( stat_liste(n)(1:3)=='VRT'             ) jnn=1
+               if ( stat_liste(n)(1:3)=='URT' ) inn=1
+               if ( stat_liste(n)(1:3)=='VRT' ) jnn=1
                nullify (wk2d,wk3d)
                if (tmp_meta%l(3)%high.eq.tmp_meta%l(3)%low) then
                   istat = gmm_get(stat_liste(n), wk2d, mymeta)
@@ -87,16 +87,8 @@
 !            call lipschitz(u, v, zd, LDIST_DIM, G_Nk, i0,in,j0,jn)
 !         endif
 
-!     Print max courrant numbers if LAM configuration
-         if (G_lam) then
-         if (Ptopo_myproc==0 .and. Lctl_step>0) then
-               if(Schm_adxlegacy_L) then
-                 call adx_cfl_print()
-               else
-                 call adv_cfl_print()
-               endif
-         endif
-         endif
+!     Print max courrant numbers
+         if (Ptopo_myproc==0 .and. Lctl_step>0) call adv_cfl_print()
 
          if (Ptopo_myproc.eq.0) write(6,1001)
 
@@ -154,17 +146,9 @@
             tmp_liste(cnt+4) = 'TT1'
             tmp_liste(cnt+5) = 'ST1'
             cnt = cnt + 5
-            if(Schm_nologT_L) then
-               tmp_liste(cnt+1) = 'XDT1'
-               cnt = cnt + 1
-            endif
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT1'
                cnt = cnt + 1
-               if(Schm_nologT_L) then
-                  tmp_liste(cnt+1) = 'QDT1'
-                  cnt = cnt + 1
-               endif
             endif
             if (stat_liste(k) .ne. 'ALL') cycle
          endif
@@ -177,17 +161,9 @@
             tmp_liste(cnt+4) = 'TT0'
             tmp_liste(cnt+5) = 'ST0'
             cnt = cnt + 5
-            if(Schm_nologT_L) then
-               tmp_liste(cnt+1) = 'XDT0'
-               cnt = cnt + 1
-            endif
             if(.not.Schm_hydro_L)then
                tmp_liste(cnt+1) = 'QT0'
                cnt = cnt + 1
-               if(Schm_nologT_L) then
-                  tmp_liste(cnt+1) = 'QDT0'
-                  cnt = cnt + 1
-               endif
             endif
             cycle
          endif

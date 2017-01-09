@@ -90,8 +90,7 @@
 !$omp enddo
 !$omp end parallel
 
-      if (G_lam) call out_padbuf &
-                  (ttx,l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
+      call out_padbuf (ttx,l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
 
       call liebman_dm (ttx,w2,Out3_lieb_conv,Out3_lieb_maxite,&
                        l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk)
