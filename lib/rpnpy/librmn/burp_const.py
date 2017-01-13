@@ -275,7 +275,7 @@ BURP_DATYP2NUMPY_LIST = { #TODO: review
 #<source lang=python>
 BURP_BKNAT_MULTI_DESC = {
     0 : 'uni',
-    0 : 'multi'
+    1 : 'multi'
     }
 BURP_BKNAT_KIND_DESC = {
     0 : 'data',

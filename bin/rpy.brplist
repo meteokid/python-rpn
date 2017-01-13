@@ -9,13 +9,14 @@ Show list of reports in a BURP file
 Examples:
      rpy.brplist -i $ATM_MODEL_DFILES/bcmk_burp/2007021900.brp
 """
+import os
 import sys
 import argparse
 import rpnpy.librmn.all as rmn
 
 
 def print_list(inputFile, formatReport, matchIn, matchOut,
-               formatBlock, formatElements):
+               formatBlock, formatElements, isliburp):
     """
     """
     funit  = rmn.burp_open(inputFile)
@@ -30,13 +31,14 @@ def print_list(inputFile, formatReport, matchIn, matchOut,
                     print_list1(funit, inputFile, formatReport, stnid, idtyp,
                                 lat, lon, date, time,
                                 formatBlock, formatElements,
-                                matchIn, matchOut)
+                                matchIn, matchOut, isliburp)
                     
     rmn.burp_close(funit)
 
 
 def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
-                date, time, formatBlock, formatElements, matchIn, matchOut):
+                date, time, formatBlock, formatElements, matchIn, matchOut,
+                isliburp):
     """
     """        
     nbrp   = rmn.mrfnbr(funit)
@@ -47,6 +49,7 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
     ## print('0  MRFVOI  UNITE {0: >4}  NOM {1}'.format(funit, inputFile))
     ## #TODO: adjust with desired info
     ## print('0  STATION   LATI   LONG     DX     DY   FLGS(HEX)   DATE    TIME   IDTYP   NB_BLOCK   HANDLE')
+    print('File: {}'.format(inputFile))
     for irep in xrange(nbrp):
         try:
             handle = rmn.mrfloc(funit, handle, stnid, idtyp, lat, lon,
@@ -75,27 +78,49 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
                 if isOk:
                     print(formatBlock.format(**params))
                     if formatElements:
-                        blkdata = rmn.mrbxtr(buf, iblk+1)
-                        cmcids  = blkdata['cmcids']
-                        bufrids = rmn.mrbdcl(blkdata['cmcids'])
-                        tblval  = blkdata['tblval'][:,:,:]
-                        rval    = rmn.mrbcvt_decode(cmcids, blkdata['tblval'])
-                        for iele in xrange(len(bufrids)):
-                            params.update(rmn.mrbcvt_dict(cmcids[iele], False))
-                            params['iele']       = iele
-                            params['e_tblval']   = tblval[iele,:,:].T
+                        blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
+                        params.update(blkdata)
+                        params['tblval'] = params['tblval'][:,:,:].T
+                        params['rval'] = params['rval'][:,:,:].T
+                        for iele in xrange(len(blkdata['cmcids'])):
+                            params.update(rmn.mrbcvt_dict(blkdata['cmcids'][iele], False))
+                            params['iele']     = iele
+                            params['e_tblval'] = blkdata['tblval'][iele,:,:].T
                             if params['e_cvt']:
-                                params['e_rval'] = rval[iele,:,:].T
+                                params['e_rval'] = blkdata['rval'][iele,:,:].T
                             else:
                                 params['e_rval'] = params['e_tblval']
-                            print(formatElements.format(**params))
-            
+                            if not isliburp:
+                                print(formatElements.format(**params))
+                        if isliburp:
+                            sys.stdout.write("\nlstele =")
+                            for k in xrange(len(blkdata['bufrids'])):
+                                sys.stdout.write("    {:0>6}".format(blkdata['bufrids'][k]))
+                            for n1 in xrange(params['tblval'].shape[0]):
+                                for n2 in xrange(params['tblval'].shape[1]):
+                                    sys.stdout.write("\ntblval =")
+                                    for k in xrange(params['tblval'].shape[2]):
+                                        ## sys.stdout.write("    {:>6}".format(params['tblval'][n1,n2,k]))
+                                        sys.stdout.write(" {:>9}".format(params['rval'][n1,n2,k]))
+                            sys.stdout.write("\n")
+                            ## print(formatElements.format(**params))
+                        
 if __name__ == "__main__":
     ## default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {timehh:>2}h{timemm:>2} {idtyp:>6} {nblk:>10} {handle:>10}'
-    default_format = 's:{stnid:<9}: {lat:>6} {lon:>6} {elev:>6} : {dx:>6} {dy:>6} : {date:>8} {timehh:>2}h{timemm:>2} : {idtyp:>6} ({idtypd}) : {flgsbin:>24} : {nblk:>10}'
+    default_format = 'r:{stnid:<9}: {lat:>6} {lon:>6} {elev:>6} : {dx:>6} {dy:>6} : {date:>8} {timehh:>2}h{timemm:>2} : {idtyp:>6} ({idtypd}) : {flgsbin:>24} : {nblk:>10}'
+    liburp_format = """
+hhmm   = {time:>7} flgs   =  {flgs:>5}  codtyp = {idtyp:>5}  stnids ={stnid}     
+blat   = {ilat:>7} blon   = {ilon:>5}  dx     = {idx:>5}  dy     = {idy:>5}  stnhgt = {ielev:>5}
+yymmdd ={date:>8} oars   = {oars:>5}  runn   = {runn:>5}  nblk   = {nblk:>5}  dlay   = {drnd:>5}"""
     default_format_blk = 'b:{stnid:<9}[{iblk:>3}] {bknat_kindd:>6}({datypd:>6}) (mul={bknat_multi}, alt={bktyp_alt}, fam={bfam:<3}) {bktyp_kindd} : {bkstpd} : ({nele:>3}x{nval:>2}x{nt})'
+    liburp_format_blk = """
+blkno  = {iblk:>5}  nele   = {nele:>5}  nval   = {nval:>5}  nt     = {nt:>5}  bfam   = {bfam:>5}
+bdesc  = {bdesc:>5}  btyp   = {btyp:>5}  nbit   = {nbit:>5}  bit0   = {bit0:>5}  datyp  = {datyp:>5}"""
     ## default_format_ele = 'e:{stnid:<9}[{iblk:>3}][{e_code:0>6}:{e_cmcid:>6}] ({e_desc} [{e_units}]) : {e_tblval} => (v + {e_bias})*10^{e_scale}  => {e_rval}'
     default_format_ele = 'e:{stnid:<9}[{iblk:>3}][{e_bufrid:0>6}:{e_cmcid:>6}] ({e_desc} [{e_units}]) : {e_rval}'
+    liburp_format_ele = """
+lstele = {bufrids}
+tblval = {tblval}"""
     #TODO: valid_keys desc
     valid_rep_keys = (
         'handle', 'stnid', 'time', 'timehh', 'timemm',
@@ -146,11 +171,17 @@ if __name__ == "__main__":
         reports  : '{}'
         blocks   : '{}'
         elements : '{}'
+        
+    liburp formats:
+        reports  : '{}'
+        blocks   : '{}'
+        elements : '{}'
     """.replace('{','{{').replace('}','}}').replace('{{}}','{}')\
        .format('{'+'}  {'.join(valid_rep_keys)+'}',
                '{'+'}  {'.join(valid_blk_keys)+'}',
                '{'+'}  {'.join(valid_ele_keys)+'}',
-               default_format, default_format_blk, default_format_ele)
+               default_format, default_format_blk, default_format_ele,
+               liburp_format, liburp_format_blk, liburp_format_ele)
     parser = argparse.ArgumentParser(
         description=desc, usage=usage, epilog=epilog,
         prefix_chars='-+', formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -171,6 +202,11 @@ if __name__ == "__main__":
                         help="Print BURP file the 'canonical' way with mrfvoi, ignore selectors and format")
 
     rgroup = parser.add_argument_group(title="Reports related options") #description='')
+
+    ## liburp -wide -irdtb /data/ade_ops/dbase/surface/metar/2017011200_ -stn CYUL -conv
+    parser.add_argument("--liburp", dest="liburp",
+                        action="store_true",
+                        help="Use liburp utility output format")
 
     rgroup.add_argument("-f", "--format", dest="formatReport",
                         type=str, default=default_format,
@@ -247,6 +283,12 @@ if __name__ == "__main__":
     keylist = ('stnid', 'date', 'time', 'idtyp',
                'datyp', 'bfam', 'bdesc', 'btyp')
     (matchIn, matchOut) = ({}, {})
+
+    if args.liburp:
+        args.formatReport = liburp_format
+        args.formatBlock = liburp_format_blk
+        args.formatElements = liburp_format_ele
+
     formatBlock = args.formatBlock if args.listBlocks else ""
     formatElements = args.formatElements if args.listElements else ""
 
@@ -268,9 +310,18 @@ if __name__ == "__main__":
         except:
             matchOut[key] = []
 
+    status = 0
     for myfile in args.inputFile:
-        print_list(myfile, args.formatReport, matchIn, matchOut,
-                   formatBlock, formatElements)
+        if not os.path.isfile(myfile):
+            sys.stderr.write('WARNING: No such file (skipping): {}\n'.format(myfile))
+            status = 1
+        elif not rmn.isBURP(myfile):
+            sys.stderr.write('WARNING: Not a BURP file (skipping): {}\n'.format(myfile))
+            status = 1
+        else:
+            print_list(myfile, args.formatReport, matchIn, matchOut,
+                       formatBlock, formatElements, args.liburp)
+        sys.exit(status)
     
         
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-

@@ -195,7 +195,7 @@ librmn burp C functions
 
     c_mrbhdr(buf, temps, flgs, stnid, idtyp, lati, lon, dx, dy, elev,
              drcv, date, oars, run, nblk, sup, nsup, xaux, nxaux)
-        Return the description parameters of the data block of order bkno
+        Return the description parameters of ?the data block of order bkno? TODO: review
         Proto:
             int c_mrbhdr(word *buf, int *temps, int *flgs, char *stnid,
                 int *idtyp, int *lati, int *lon, int *dx, int *dy, int *elev,
