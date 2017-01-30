@@ -57,7 +57,7 @@
       integer :: l ,m, i, j, k, indx, ier
       integer lmin,lmax 
       integer ::  gmmstat, istat
-      integer :: gdgem,gdgauss, keys(5), n
+      integer :: gdgem,gdyy, keys(5), n
       real    ::  fstd, fstr, tau,  Ens_skeb_mean
       real    :: sumsp , fact,fact2
       real    :: xf,offi,offj
@@ -85,6 +85,9 @@
 !
 ! Initialise les variables de Ens_nml.cdk
 !
+
+
+
 
       dt=real(Cstv_dt_8)
       pi=real(Dcst_pi_8)
@@ -312,9 +315,9 @@ allocate(f(nlon, nlat) )
          yfi(i) = G_yg_8(indx)*rad2deg_8
        end do
 
-        gdgauss = ezqkdef(nlon,nlat,'A', 0,0,0,0,0)
+        gdyy = ezqkdef(nlon,nlat,'A', 0,0,0,0,0)
 
-        ier = ezdefset(Grd_local_gid, gdgauss)
+        ier = ezdefset(Grd_local_gid, gdyy)
         ier = ezsetopt('INTERP_DEGREE', 'LINEAR')
  
         ier = ezsint(fgem,f)

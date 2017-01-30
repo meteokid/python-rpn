@@ -155,16 +155,10 @@
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
 
-      gmmk_xct1_s  = 'XCT1'
-      gmmk_yct1_s  = 'YCT1'
-      gmmk_zct1_s  = 'ZCT1'
 
       istat = GMM_OK
 
       mymeta = SET_GMMUSR_FLAG(meta1d,flag_m_f)
-      istat = min(gmm_create(gmmk_xct1_s,  xct1,  mymeta       ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_yct1_s,  yct1,  mymeta       ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zct1_s,  zct1,  mymeta       ,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*t1)')

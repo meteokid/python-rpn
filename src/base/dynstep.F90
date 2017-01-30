@@ -39,7 +39,6 @@
 #include "grd.cdk"
 #include "tr3d.cdk"
 #include "vt1.cdk"
-#include "crg.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L, yyblend
@@ -76,8 +75,6 @@
 
       do Orh_icn = 1,Schm_itcn-1
     
-         case="predictor"
-         if(first_L.or.(Schm_predictor.eq.1)) case="corrector"
          call tstpdyn (itraj)
          itraj = Schm_itraj
          
@@ -88,7 +85,6 @@
       if (Lun_debug_L) write(Lun_out,1006)
   
       Orh_icn=Schm_itcn
-      case="corrector"
  
       call tstpdyn ( Schm_itraj )
 
@@ -124,7 +120,7 @@
          call spn_main
       endif
 
-      if (.not. stag_destag_L) call hzd_main_stag
+      call hzd_main_stag
 
       call pw_update_GPW
       call pw_update_UV

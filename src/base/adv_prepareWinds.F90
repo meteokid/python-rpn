@@ -35,7 +35,6 @@
 #include "vt2.cdk"
 #include "pw.cdk"
 #include "dcst.cdk"
-#include "crg.cdk"
 
       real, dimension(:,:,:), allocatable :: uh,vh,wm,wh
       real ::  beta, err
@@ -51,15 +50,7 @@
                  wm(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
                  wh(F_minx:F_maxx,F_miny:F_maxy,F_nk) )
 
-
-      if(Schm_predictor.eq.2) then
-         err = gmm_get(gmmk_ut2_s ,  ut2)
-         err = gmm_get(gmmk_vt2_s ,  vt2)
-         err = gmm_get(gmmk_zdt2_s, zdt2)
-      endif 
-      
       if(Schm_trapeze_L) then
-         if(case.eq."corrector") then
         
          uh = ut0
          vh = vt0
@@ -92,52 +83,6 @@
          enddo
 
          wh = zdt1
-
-         if(Schm_predictor.eq.2) then
-            ut2=pw_uu_moins
-            vt2=pw_vv_moins
-           zdt2=zdt1
-         endif
-
-         endif
-
-         if(case.eq."predictor") then
-!Set V_a = V(r,t1)
-!-----------------
-
-         err = gmm_get (gmmk_pw_uu_moins_s, pw_uu_moins)
-         err = gmm_get (gmmk_pw_vv_moins_s, pw_vv_moins)
-
-         do k = 1,l_nk
-            do j = 1,l_nj
-            do i = 1,l_ni
-               uh(i,j,k) = inv_rayt_8 * pw_uu_moins(i,j,k)
-               vh(i,j,k) = inv_rayt_8 * pw_vv_moins(i,j,k)
-            enddo
-            enddo
-         enddo
-
-         call adv_thermo2mom  (wm,zdt1,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
-         F_ua =  uh(1:F_ni,1:F_nj,1:F_nk)
-         F_va =  vh(1:F_ni,1:F_nj,1:F_nk)
-         F_wa =  wm(1:F_ni,1:F_nj,1:F_nk)
-         F_wat=zdt1(1:F_ni,1:F_nj,1:F_nk)
-         
-!Set V_d = 2*V(r,t1)-V(r,t2)
-!---------------------------
-         do k=1,l_nk
-            do j=1,l_nj
-            do i=1,l_ni
-               uh(i,j,k) = inv_rayt_8 * ( 2.0* pw_uu_moins(i,j,k) - ut2(i,j,k) )
-               vh(i,j,k) = inv_rayt_8 * ( 2.0* pw_vv_moins(i,j,k) - vt2(i,j,k) )
-               wh(i,j,k) = 2.0*zdt1(i,j,k) -zdt2(i,j,k)
-            enddo
-            enddo
-         enddo
-
-    !    wh = zdt1
-
-      endif
 
       else
 

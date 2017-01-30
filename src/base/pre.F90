@@ -22,7 +22,7 @@
 !               contributions to the rhs of Helmholtz equation
 !
       subroutine pre ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
-                       F_xct1,F_yct1,F_zct1 ,F_fis  ,F_rc   ,F_rt  , &
+                       F_fis  ,F_rc   ,F_rt  , &
                        F_rw  ,F_rf  ,F_oru  ,F_orv , &
                        F_rb,F_nest_t, Minx,Maxx,Miny,Maxy, &
                        i0, j0, in, jn, k0, ni, nj, Nk )
@@ -37,8 +37,7 @@
            F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_fis   (Minx:Maxx,Miny:Maxy)                                        , &
-           F_xct1  (ni,nj,Nk), F_yct1 (ni,nj,Nk), F_zct1 (ni,nj,Nk)
+           F_fis   (Minx:Maxx,Miny:Maxy)                                        
 
 !author
 !     Alain Patoine

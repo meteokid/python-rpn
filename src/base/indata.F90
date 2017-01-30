@@ -25,7 +25,6 @@
 #include "schm.cdk"
 #include "glb_ld.cdk"
 #include "p_geof.cdk"
-#include "crg.cdk"
 #include "lctl.cdk"
 #include "vt1.cdk"
 #include "lun.cdk"
@@ -71,20 +70,12 @@
                           1,l_ni,1,l_nj )
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
-         if (stag_destag_L) then
-            call inp_data ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk,&
-                      stag_destag_L,'TR/',':P',Step_runstrt_S )
-            call bitflip ( ut1, vt1, tt1, &
-                           perturb_nbits, perturb_npts, dim )
-         else
-            call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
-                            zdt1,st1,qt1,fis0                   ,&
-                            l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
-                         stag_destag_L,'TR/',':P',Step_runstrt_S )
-            call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
-                           perturb_nbits, perturb_npts, dim )
-         endif
+         call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
+                         zdt1,st1,qt1,fis0                   ,&
+                         l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
+                         .false. ,'TR/',':P',Step_runstrt_S )
+         call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
+                        perturb_nbits, perturb_npts, dim )
          call timing_stop  ( 71 )
       endif
 
@@ -110,14 +101,9 @@
          minus = plus
       enddo
 
-      if (stag_destag_L) then
-         call pw_update_T
-         call pw_update_UV
-      else
-         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
-                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
-      endif
+      call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
+                       l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
 
       call diag_zd_w2 ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk,&
@@ -148,15 +134,10 @@
 
       subroutine bitflip (u,v,t,nbits,npts,n)
       implicit none
-!
+
       integer n,nbits,npts
       integer u(n),v(n),t(n)
-!
-!author   Michel Desgagne -- summer 2012
-!
-!revision
-! v4.50 - M. Desgagne       - initial version
-!
+
       integer stride,i
 !
 ! ---------------------------------------------------------------------

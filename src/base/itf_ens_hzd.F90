@@ -49,15 +49,16 @@
       integer i,j,k,istat
       real dummy
       real, dimension(:,:,:), pointer :: ptr3d
+      real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk) ::ugwt,vgwt
+      real, allocatable, dimension(:,:,:) :: ug, vg
 !     _________________________________________________________________
+
 
       if (.not.Ens_conf) return
 
 ! Case I: ens_skeb_conf = .true.
 !
       if (ens_skeb_conf) then
-
-         call stop_mpi(-1,'itf_ens_hzd','itf_ens_hzd needs updating')
 
          istat = gmm_get(gmmk_difut1_s,difut1)
          istat = gmm_get(gmmk_difvt1_s,difvt1)
@@ -73,14 +74,32 @@
          endif
 
          if (mode == "CENS") then
+
             if(Ens_skeb_gwd)then
+
+            allocate(ug(l_minx:l_maxx,l_miny:l_maxy,l_nk) , vg(l_minx:l_maxx,l_miny:l_maxy,l_nk) )
+            
                ptr3d => ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
                istat = phy_get(ptr3d,'phytd_ugwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
                if (.not.RMN_IS_OK(istat))write(*,6000)'ugwdt1-s'
-               ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
-               istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
+                ptr3d => vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,:)
+                istat = phy_get(ptr3d,'phytd_vgwd',F_npath='V',F_bpath='V',F_end=(/-1,-1,l_nk/))
+
+             do k= 1, G_nk    
+              ug(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; ug(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
+              vg(l_minx:l_maxx, l_miny:Grd_lphy_j0-1, k) = 0. ; vg(l_minx:l_maxx,Grd_lphy_jn+1:l_maxy,k) = 0.
+              ug(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; ug(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
+              vg(l_minx:Grd_lphy_i0-1,  l_miny:l_maxy,k) = 0. ; vg(Grd_lphy_in+1:l_maxx,l_miny:l_maxy,k) = 0.
+              ug(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = ugwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)
+              vg(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k) = vgwdt1(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,k)  
+             end do
+               ugwt= 0.d0 ; vgwt=0.d9
+
+              call hwnd_stag ( ugwt, vgwt, ug, vg ,     &
+                       l_minx,l_maxx,l_miny,l_maxy,l_nk,.true. )
+
                if (.not.RMN_IS_OK(istat))write(*,6000)'vgwdt1-s'
-!!$               call itf_phy_uvgridscal (ugwdt1,vgwdt1,l_minx,l_maxx,l_miny,l_maxy,l_nk,.false.)
+           deallocate (ug,vg) 
             endif
 
             difut1 = F_ut1 - difut1
@@ -91,10 +110,10 @@
 
 
 !NG         Multiplication of gravity wave drag tendencies by the time step to convert to wind units as in GEM4.6
-            ugwdt1 = ugwdt1 * Cstv_dt_8
-            vgwdt1 = vgwdt1 * Cstv_dt_8
+            ugwt = ugwt * Cstv_dt_8
+            vgwt = vgwt * Cstv_dt_8
 
-            call ens_filter (ugwdt1,vgwdt1,difut1,difvt1, F_ut1,F_vt1,F_tt1,&
+            call ens_filter (ugwt,vgwt,difut1,difvt1, F_ut1,F_vt1,F_tt1,&
                              l_minx,l_maxx,l_miny,l_maxy, Nk)
          endif
 !
@@ -122,6 +141,5 @@
 !     _________________________________________________________________
 !
  6000 format('itf_ens_hzd at gmm_get(',A,')')
-
       return
       end

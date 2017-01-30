@@ -69,9 +69,7 @@
       integer i, j, k, km,kmq,kq,kp, i0u, inu, j0v, jnv, nij, k0t, onept
       real    w_nt
       real*8  c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
-              t_interp, mu_interp, u_interp, v_interp, xdot, delta_8, &
-              dBdzpBk,dBdzpBkm
-      real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)
+              t_interp, mu_interp, u_interp, v_interp, delta_8
       real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real*8, parameter :: one=1.d0, half=0.5d0
       real, dimension(:,:,:), pointer :: BsPq, BsPrq, frq, FI, MU
@@ -146,7 +144,7 @@
                                                  i0u, inu+1, j0v, jnv+1 )
       endif
 
-!$omp parallel private(km,kmq,kq,kp,w_nt,barz,barzp,ndiv,xdot,wk1,wk2, &
+!$omp parallel private(km,kmq,kq,kp,w_nt,barz,barzp,ndiv, &
 !$omp dlnTstr_8,w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
 
 !$omp do
@@ -172,31 +170,6 @@
 
 !     V barY stored in wk2
 !     ~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0, jn
-         do i = i0u-1, inu+2
-            wk2(i,j) = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k) &
-                     + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k) &
-                     + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k) &
-                     + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)
-         end do
-         end do
-         do j= j0, jn
-         do i= i0u, inu
-            wk1(i,j) = inuvl_wxxu3_8(i,1) * wk2(i-1,j) &
-                     + inuvl_wxxu3_8(i,2) * wk2(i  ,j) &
-                     + inuvl_wxxu3_8(i,3) * wk2(i+1,j) &
-                     + inuvl_wxxu3_8(i,4) * wk2(i+2,j)
-         end do
-         end do
-      else
-         do j= j0, jn
-         do i= i0u, inu
-            wk1(i,j) = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
-         end do
-         end do
-      endif
-
       
       do j= j0, jn
       do i= i0u, inu
@@ -226,7 +199,7 @@
 
 !        Coriolis term & metric terms: - (f + tan(phi)/a * U ) * V barXY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         v_interp = wk1(i,j)
+         v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
          F_nu(i,j,k) = F_nu(i,j,k) - ( Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp
 
@@ -235,35 +208,6 @@
 
 !     Compute Nv
 !     ~~~~~~~~~~
-
-!     U barX stored in wk2
-!     ~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0v-1, jnv+2
-         do i = i0, in
-            wk2(i,j) = inuvl_wxux3_8(i,1)*F_u(i-2,j,k) &
-                     + inuvl_wxux3_8(i,2)*F_u(i-1,j,k) &
-                     + inuvl_wxux3_8(i,3)*F_u(i  ,j,k) &
-                     + inuvl_wxux3_8(i,4)*F_u(i+1,j,k)
-         end do
-         end do
-         do j = j0v, jnv
-         do i = i0, in
-            wk1(i,j) = inuvl_wyyv3_8(j,1) * wk2(i,j-1) &
-                     + inuvl_wyyv3_8(j,2) * wk2(i,j  ) &
-                     + inuvl_wyyv3_8(j,3) * wk2(i,j+1) &
-                     + inuvl_wyyv3_8(j,4) * wk2(i,j+2)
-         end do
-         end do
-      else
-         do j = j0v, jnv
-         do i = i0, in
-            wk1(i,j) = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
-         end do
-         end do
-      endif
-
-
       do j = j0v, jnv
       do i = i0, in
 
@@ -291,7 +235,7 @@
 
 !        Coriolis term & metric terms: + f * U barXY + tan(phi)/a * (U barXY)^2
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         u_interp = wk1(i,j)
+         u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
          F_nv(i,j,k) = F_nv(i,j,k) + ( Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp
 

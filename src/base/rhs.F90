@@ -61,8 +61,7 @@
 #include "ver.cdk"
 #include "lun.cdk"
 #include "grd.cdk"
-#include "div_damp.cdk"
-#include "crg.cdk"
+#include "hzd.cdk"
 
       logical, save :: done_MU=.false.
       integer :: i0,  in,  j0,  jn
@@ -71,9 +70,8 @@
 
       integer :: i, j, k, km, kq, kp, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, barz, barzp, &
-              u_interp, v_interp, t_interp, mu_interp, zdot, xdot, &
-              w1, w2, w3, delta_8, dBdzpBk,dBdzpBkm,kdiv_damp_8, kdiv_damp_max
-      real*8  wk1(Minx:Maxx,Miny:Maxy), wk2(Minx:Maxx,Miny:Maxy)           
+              u_interp, v_interp, t_interp, mu_interp, zdot, &
+              w1, w2, w3, delta_8
       real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), pointer :: BsPq, FI, MU
       save MU
@@ -160,8 +158,8 @@
                     i0u,inu+1,j0v,jnv+1)
       endif
 
-!$omp parallel private(km,kq,kp,barz,barzp,w1,w2,w3,wk1,wk2, &
-!$omp     u_interp,v_interp,t_interp,mu_interp,zdot,xdot, &
+!$omp parallel private(km,kq,kp,barz,barzp,w1,w2,w3, &
+!$omp     u_interp,v_interp,t_interp,mu_interp,zdot, &
 !$omp     dlnTstr_8,BsPqbarz,fipbarz,tdiv,xtmp_8,ytmp_8)
 
 !$omp do
@@ -188,32 +186,6 @@
 
 !     Compute V barX in wk2
 !     ~~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0u, jnu
-         do i = i0u-1, inu+2
-            wk2(i,j)  = inuvl_wyvy3_8(j,1) * F_v(i,j-2,k) &
-                      + inuvl_wyvy3_8(j,2) * F_v(i,j-1,k) &
-                      + inuvl_wyvy3_8(j,3) * F_v(i,j  ,k) &
-                      + inuvl_wyvy3_8(j,4) * F_v(i,j+1,k)
-         end do
-         end do
-         do j= j0u, jnu
-         do i= i0u, inu
-            wk1(i,j) = inuvl_wxxu3_8(i,1)*wk2(i-1,j) &
-                     + inuvl_wxxu3_8(i,2)*wk2(i  ,j) &
-                     + inuvl_wxxu3_8(i,3)*wk2(i+1,j) &
-                     + inuvl_wxxu3_8(i,4)*wk2(i+2,j)
-         end do
-         end do
-      else
-         do j= j0u, jnu
-         do i= i0u, inu
-            wk1(i,j) = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
-         end do
-         end do
-      endif
-
-
       do j= j0u, jnu
       do i= i0u, inu
 
@@ -225,7 +197,7 @@
          barzp = Ver_wpM_8(k)*F_t(i+1,j,k)+Ver_wmM_8(k)*F_t(i+1,j,km)
          t_interp = (barz + barzp)*half
 
-         v_interp = wk1(i,j)
+         v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
          F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXMu_8(j)  &
@@ -240,32 +212,6 @@
 
 !     Compute U barY in wk2
 !     ~~~~~~~~~~~~~~~~~~~~~
-      if(Schm_cub_Coriolis_L) then
-         do j = j0v-1, jnv+2
-         do i = i0v, inv
-            wk2(i,j)  = inuvl_wxux3_8(i,1)*F_u(i-2,j,k) &
-                      + inuvl_wxux3_8(i,2)*F_u(i-1,j,k) &
-                      + inuvl_wxux3_8(i,3)*F_u(i  ,j,k) &
-                      + inuvl_wxux3_8(i,4)*F_u(i+1,j,k)
-         end do
-         end do
-         do j = j0v, jnv
-         do i = i0v, inv
-            wk1(i,j) = inuvl_wyyv3_8(j,1)*wk2(i,j-1) &
-                     + inuvl_wyyv3_8(j,2)*wk2(i,j  ) &
-                     + inuvl_wyyv3_8(j,3)*wk2(i,j+1) &
-                     + inuvl_wyyv3_8(j,4)*wk2(i,j+2)
-         end do
-         end do
-      else
-         do j = j0v, jnv
-         do i = i0v, inv
-            wk1(i,j) = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
-         end do
-         end do
-      endif
-
-
       do j = j0v, jnv
       do i = i0v, inv
 
@@ -277,7 +223,7 @@
          barzp = Ver_wpM_8(k)*F_t(i,j+1,k)+Ver_wmM_8(k)*F_t(i,j+1,km)
          t_interp = ( barz + barzp)*half
 
-         u_interp = wk1(i,j)
+         u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
          F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
                         Dcst_rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomg_invDYMv_8(j) &
@@ -378,19 +324,9 @@
                            i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                            i0,in,j0,jn,l_minx,l_maxx,l_miny,l_maxy,G_nk )
       endif
-      if(top_spng_in_rhs_L) then
-         call top_spng_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
-                                i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
-                                i0,in,j0,jn,l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      endif
-      if(eqspng_in_rhs_L) then
-         call eqspng_in_rhs ( F_oru, F_orv, F_u, F_v, &
-                              l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      endif
-      if(smago_in_rhs_L) then
-         call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
-                             l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      endif
+
+      call smago_in_rhs ( F_oru, F_orv, F_orw, F_ort, F_u, F_v, F_w, F_t, F_s, &
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk )
 
       deallocate ( BsPq, FI )
       if (.not.Schm_hydro_L) deallocate ( MU )

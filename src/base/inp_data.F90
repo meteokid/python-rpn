@@ -269,7 +269,6 @@
       end do
 
       ip1_w(1:G_nk)= Ver_ip1%t(1:G_nk)
-      if (.not. Schm_lift_ltl_L) ip1_w(G_nk)=Ver_ip1%t(G_nk+1)
       err= inp_get ('WT1',  'Q', ip1_w            ,&
                     vgd_src,vgd_dst,ssqr,ssq0,F_w ,&
                     l_minx,l_maxx,l_miny,l_maxy,G_nk)

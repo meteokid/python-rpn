@@ -85,9 +85,6 @@
       gmmstat = gmm_get (gmmk_rvw1_s, rvw1)
       gmmstat = gmm_get (gmmk_ruw2_s, ruw2)
       gmmstat = gmm_get (gmmk_rvw2_s, rvw2)
-      gmmstat = gmm_get (gmmk_xct1_s, xct1)
-      gmmstat = gmm_get (gmmk_yct1_s, yct1)
-      gmmstat = gmm_get (gmmk_zct1_s, zct1)
 
       gmmstat = gmm_get('TR/HU:M' ,hut1)
       gmmstat = gmm_get('TR/HU:P' ,hut0)
@@ -164,7 +161,7 @@
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
       call pre (rhsu, rhsv, ruw1, ruw2, rvw1, rvw2, &
-                xct1, yct1, zct1, fis0, rhsc, rhst, &
+                fis0, rhsc, rhst, &
                 rhsw, rhsf, orhsu, orhsv, rhsb, &
                 nest_t, l_minx,l_maxx,l_miny,l_maxy,&
                 i0, j0, in, jn, k0, l_ni, l_nj, l_nk)

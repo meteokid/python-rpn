@@ -30,11 +30,9 @@
 #include "eq.cdk"
 #include "vt1.cdk"
 #include "schm.cdk"
-#include "crg.cdk"
 
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &
-              switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA, &
-              switch_on_smago, switch_on_smagoTH
+              switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA
       integer i,j,k,istat
       integer, save :: depth
       real*8 pis2,fract
@@ -52,15 +50,9 @@
       switch_on_vrtspng_UVT = Vspng_nk      >=1
       switch_on_vrtspng_W   = Vspng_nk      >=1
       switch_on_eqspng      = Eq_nlev       > 1
-      switch_on_smago       = Hzd_smago_param > 0.
-      switch_on_smagoTH     = switch_on_smago .and. &
-                              (Hzd_smago_prandtl > 0.)
 
       if(hzd_in_rhs_L)      switch_on_THETA       =.false.
       if(hzd_in_rhs_L)      switch_on_UVW         =.false.
-      if(top_spng_in_rhs_L) switch_on_vrtspng_UVT =.false.
-      if(eqspng_in_rhs_L)   switch_on_eqspng      =.false.
-      if(smago_in_rhs_L)    switch_on_smago       =.false.
 
       istat = gmm_get(gmmk_ut1_s,ut1)
       istat = gmm_get(gmmk_vt1_s,vt1)
@@ -97,17 +89,6 @@
          end do
          call timing_stop  ( 62 )
       endif
-
-!************************
-! Smagorinsky diffusion *
-!************************
-
-      if (switch_on_smago) then
-         call timing_start2 ( 63, 'HZD_smago', 60 )
-         call hzd_smago ( ut1, vt1, zdt1, tt1, &
-                          l_minx, l_maxx, l_miny, l_maxy, G_nk)
-         call timing_stop ( 63 )
-      end if
 
 !************************
 !  Horizontal diffusion *

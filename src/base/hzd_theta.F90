@@ -55,12 +55,7 @@
 !$omp enddo
 !$omp end parallel
 
-      if (Hzd_type_S.eq.'HO_IMP') then
-         call hzd_ctrl4 ( th, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk )
-      else
-         call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy,&
-                          G_nk )
-      endif
+      call hzd_ctrl4 ( th, 'S_THETA', l_minx,l_maxx,l_miny,l_maxy, G_nk )
 
 !$omp parallel shared (pres_t,th)
 !$omp do

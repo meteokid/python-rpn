@@ -38,154 +38,55 @@
 !
 !     ---------------------------------------------------------------
 !
-      call hzd_exp_geom
+      if (Lun_out.gt.0) write(Lun_out,1002)
 
-      if ( Hzd_type_S .eq. 'HO_EXP5P' ) call hzd_exp5p_set
+      Hzd_lnr = min(max(0.,Hzd_lnr),0.9999999)
+      Hzd_pwr = Hzd_pwr / 2
+      Hzd_pwr = min(max(2,Hzd_pwr*2),8)
+      
+      Hzd_lnr_theta= min(max(0.,Hzd_lnr_theta),0.9999999)
+      Hzd_pwr_theta= Hzd_pwr_theta / 2
+      Hzd_pwr_theta= min(max(2,Hzd_pwr_theta*2),8)
+      
+      if (Hzd_lnr_tr.lt.0.) Hzd_lnr_tr = Hzd_lnr
+      if (Hzd_pwr_tr.lt.0 ) Hzd_pwr_tr = Hzd_pwr
+      Hzd_lnr_tr = min(max(0.,Hzd_lnr_tr),0.9999999)
+      Hzd_pwr_tr = Hzd_pwr_tr / 2
+      Hzd_pwr_tr = min(max(2,Hzd_pwr_tr*2),8)
 
-      if ( Hzd_type_S .eq. 'HO_EXP9P' ) then
-
-         npin= 0
-         do i=1,HZD_MAXPROF
-            if ( Hzd_prof_S(i) .ne. "NIL") npin= npin+1
-         end do
-
-         allocate (lnr(npin+2), lvl(npin+2), pwr(npin+2))
-         allocate (Hzd_del(G_nk+1), Hzd_visco_8(G_nk+1))
-
-         if (npin.gt.0) then
-            nvalid= 1
-            do i=1,npin
-               call low2up (Hzd_prof_S(i),str1)
-               ind1 = index(str1,'DEL')
-               ind2 = index(str1,'.')
-               if ((ind1.ne.1).or.(ind2.ne.5)) cycle
-               str1=str1(4:)
-               ind1 = index(str1,'@')
-               if (ind1.eq.0) cycle
-               
-               nvalid= nvalid+1
-               read(str1(1:1     ),*) pwr(nvalid)
-               read(str1(2:ind1-1),*) lnr(nvalid)
-               read(str1(ind1+1: ),*) levhyb
-               do k=1,G_nk+1
-                  lvl(nvalid)=k
-                  if (Ver_hyb%m(k) .gt. levhyb) exit
-               end do
-               if (lvl(nvalid).lt.G_nk+1) lvl(nvalid)=lvl(nvalid)-1
-            end do
-            call sorthzdexp (lvl(2),pwr(2),lnr(2),nvalid-1)
-            pwr(1) = pwr(2)
-            lnr(1) = lnr(2)
-            lvl(1) = 1
-            pwr(nvalid+1) = pwr(nvalid)
-            lnr(nvalid+1) = lnr(nvalid)
-            lvl(nvalid+1) = G_nk+1
-            nvalid = nvalid+1
+      if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.)  &
+                         .and.(Hzd_lnr_tr   .le.0.)) then
+         if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr.eq.0.)) then
+            if (Lun_out.gt.0) write(Lun_out,1003)
          else
-            pwr(1) = Hzd_pwr
-            lnr(1) = Hzd_lnR
-            lvl(1) = 1
-            pwr(2) = Hzd_pwr
-            lnr(2) = Hzd_lnR
-            lvl(2) = G_nk+1
-            nvalid = 2
+            if (Lun_out.gt.0) write(Lun_out,1004) &
+                              Hzd_smago_param,100*Hzd_smago_lnr
          endif
-
-         Hzd_del(1) = pwr(1)
-         do i=1,nvalid-1
-            Hzd_del(lvl(i)+1:lvl(i+1)) = pwr(i+1)
-            if (lvl(i+1).eq.lvl(i)) then
-               Hzd_visco_8(lvl(i):lvl(i+1)) = lnr(i)
-            else
-               x2 = lvl(i+1)
-               x1 = lvl(i)
-               rr = x2-x1
-               do k=lvl(i),lvl(i+1)
-                  weight = (k-x1)/rr
-                  Hzd_visco_8(k) = weight*lnr(i+1) + (1.0d0-weight)*lnr(i)
-               end do
-            endif
-         end do
-
-         do k=1,G_nk+1
-            Hzd_visco_8(k)= min(max(0.d0,Hzd_visco_8(k)),0.9999999d0)
-            Hzd_del(k) = Hzd_del(k) / 2
-            Hzd_del(k) = min(max(2,Hzd_del(k)*2),8)
-         end do
-
-! Vertical variation of Hzd_del will be implemented later
-! For now we set it to minval(Hzd_del(1:G_nk+1))
-
-         ind1   = minval(Hzd_del(1:G_nk+1))
-         Hzd_del= ind1
-
-         i=G_ni/2
-         j=G_nj/2
-         c_8= min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
-
-         if (Lun_out.gt.0) then
-            write(Lun_out,1000)
-            if (npin.gt.0) then
-               write (Lun_out,1011)
-               do k=1,G_nk+1
-                  coef= (2./c_8)**Hzd_del(k) / (-log(1.- Hzd_visco_8(k)))
-                  write (Lun_out,1012) k,Hzd_del(k),Hzd_visco_8(k),&
-                  (Dcst_rayt_8**2.)/(Cstv_dt_8*coef),Hzd_del(k)/2
-               end do
-            else
-               nudif= log(1.- Hzd_lnR)
-               nudif= 1.0d0 - exp(nudif)
-
-               nudif= pt25*nudif**(2.d0/Hzd_pwr)
-               nudif= min ( nudif, pt25-epsilon)
-               nudif= min ( nudif, pt25 )
-
-               write(Lun_out,1010)  &
-               nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr/2,'U,V,W,ZD'
-            endif
-
-            nudif= log(1.- Hzd_lnR_tr)
-            nudif= 1.0d0 - exp(nudif)
-
-            nudif= pt25*nudif**(2.d0/Hzd_pwr_tr)
-            nudif= min ( nudif, pt25-epsilon)
-            nudif= min ( nudif, pt25 )
-            
-            write(Lun_out,1010)  &
-            nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_tr/2,'tracers'
-
-            nudif= log(1.- Hzd_lnR_theta)
-            nudif= 1.0d0 - exp(nudif)
-            
-            nudif= pt25*nudif**(2.d0/Hzd_pwr_theta)
-            nudif= min ( nudif, pt25-epsilon)
-            nudif= min ( nudif, pt25 )
-            
-            write(Lun_out,1010)  &
-            nudif*((Dcst_rayt_8*c_8)**2)/Cstv_dt_8 ,Hzd_pwr_theta/2,'theta'
-            
-         endif
-
       endif
 
- 1000 format (3X,'For the 9 points diffusion operator:')
- 1010 format (3X,'Diffusion Coefficient =  (',e17.10,' m**2)**',i1,'/sec ',a )
- 1011 format (/' VERTICAL PROFILE OF HORIZONTAL DIFFUSION PWR/LNR: '/, &
-               2x,'level',3x,'PWR',7x,'LNR',10x,'COEFFICIENT')
- 1012 format (1x,i4,3x,i4,6x,f8.5,3x,'(',e17.10,' m**2)**',i1,'/sec ')
+      call hzd_exp_geom
+
+      call hzd_exp5p_set
+
+ 1002 format(/,'INITIALIZATING HIGH ORDER HORIZONTAL DIFFUSION ',  &
+               '(S/R HZD_SET)',/,60('='))
+ 1003 format(/,'NO HORIZONTAL DIFFUSION REQUESTED',/,33('='))
+ 1004 format(/,'  HORIZONTAL DIFFUSION A LA SMAGORINSKY',/,2x,37('=')// &
+              ,'  PARAMETER =',f5.2,'  BACKGROUND =',f4.1,' %/TIMESTEP')
 !
 !     ---------------------------------------------------------------
+!
       return
       end
 
       subroutine sorthzdexp (F_lvl,F_pwr,F_lnr,nk)
       implicit none
 #include <arch_specific.hf>
-!
+
       integer nk
       integer F_lvl(nk),F_pwr(nk)
       real    F_lnr(nk)
-!
+
       integer k,i,m,j,n,x1
       real x2
 !

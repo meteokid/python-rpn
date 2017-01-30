@@ -37,7 +37,6 @@
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "grd.cdk"
-#include "crg.cdk"
 #include "vt1.cdk"
 
       logical, external :: gem_muststop
@@ -87,41 +86,18 @@
 
          call out_dyn (.false., .true.) ! casc output
 
-         if (stag_destag_L) then
+         if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
 
-            if ( hzd_before_phy_L ) call hzd_main
+         call iau_apply2 (Step_kount)
 
-            if ( Schm_phyms_L ) then
-               call itf_phy_step (Step_kount, Lctl_step)
-               istat = gmm_get (gmmk_tt1_s, tt1)
-               call tt2virt2 (tt1, .true., &
-                              l_minx,l_maxx,l_miny,l_maxy, G_nk)
-               call itf_phy_UVupdate
-               call pw_update_GPW
-            endif
+         if (Grd_yinyang_L) call yyg_xchng_all
 
-            if( .not.hzd_before_phy_L ) call hzd_main
-
-            call iau_apply2 (Step_kount)
-
-            if (Grd_yinyang_L) call yyg_xchng_all
-            
-         else
-
-            if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
-
-            call iau_apply2 (Step_kount)
-
-            if (Grd_yinyang_L) call yyg_xchng_all
-
-            if ( Schm_phyms_L ) then
-               istat = gmm_get (gmmk_tt1_s, tt1)
-               call tt2virt2 (tt1, .true., &
-                              l_minx,l_maxx,l_miny,l_maxy, G_nk)
-               call itf_phy_UVupdate
-               call pw_update_GPW
-            endif
-
+         if ( Schm_phyms_L ) then
+            istat = gmm_get (gmmk_tt1_s, tt1)
+            call tt2virt2 (tt1, .true., &
+            l_minx,l_maxx,l_miny,l_maxy, G_nk)
+            call itf_phy_UVupdate
+            call pw_update_GPW
          endif
 
          if ( Init_mode_L ) call digflt ! digital filter

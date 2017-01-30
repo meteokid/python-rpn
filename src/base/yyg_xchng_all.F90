@@ -29,7 +29,6 @@
 #include "vt1.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
-#include "crg.cdk"
 #include "pw.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
@@ -45,29 +44,17 @@
                          .true., 'CUBIC')
       end do
 
-      istat = gmm_get(gmmk_wt1_s , wt1)
-      istat = gmm_get(gmmk_zdt1_s,zdt1)
-      istat = gmm_get(gmmk_st1_s , st1)
+      istat = gmm_get (gmmk_wt1_s , wt1)
+      istat = gmm_get (gmmk_zdt1_s,zdt1)
+      istat = gmm_get (gmmk_st1_s , st1)
+      istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
+      istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
+      istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
 
-      if (stag_destag_L) then
-         istat = gmm_get(gmmk_tt1_s , tt1)
-         istat = gmm_get(gmmk_ut1_s , ut1)
-         istat = gmm_get(gmmk_vt1_s , vt1)
-         call yyg_xchng ( tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                          .false., 'CUBIC' )
-         call yyg_nestuv ( ut1,vt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
-         call pw_update_T
-         call pw_update_UV
-         call pw_update_GPW
-      else
-         istat = gmm_get (gmmk_pw_uu_plus_s,pw_uu_plus)
-         istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
-         istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
-         call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
-                          l_minx,l_maxx,l_miny,l_maxy, G_nk)
-         call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                          .false., 'CUBIC' )
-      endif
+      call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
+                       l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                       .false., 'CUBIC' )
 
       call yyg_xchng (wt1    , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                       .false., 'CUBIC')

@@ -28,7 +28,6 @@
 #include "ver.cdk"
 #include "ptopo.cdk"
 
-      integer, external :: vspng_imp_transpose2
       integer i,j,k,istat,err
       real*8, dimension(:), allocatable :: weigh
       real*8 pis2_8,pbot_8,delp_8,c_8,nutop
@@ -40,14 +39,6 @@
       if (Vspng_nk.le.0) return
 
       if (Lun_out.gt.0) write (Lun_out,1001)
-
-      istat = 0
-      if ( Vspng_zmean_L .and. (Grd_roule) ) then
-         if (Lun_out.gt.0) write (Lun_out,9001)
-         istat = -1
-      endif
-
-      call gem_error(istat,'vspng_set','')
 
       Vspng_nk = min(G_nk,Vspng_nk)
       pis2_8   = Dcst_pi_8/2.0d0
@@ -90,9 +81,7 @@
              '  m**2 AND Vspng_nk=',i3/'  Nu_top=',1pe14.6, &
              '  Vspng_niter=',i8)
  2005 format(1pe14.6,1pe14.6,f11.2,i8)
- 2007 format('  SPONGE LAYER Vspng_zmean_L =',l2)
  3001 format('     Coef           Nu            Pres      Level')
- 9001 format('Vspng_zmean_L works ONLY with GU unrotated grid')
 !
 !     ---------------------------------------------------------------
 !

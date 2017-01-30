@@ -31,7 +31,7 @@
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "dcst.cdk"
-#include "div_damp.cdk"
+#include "hzd.cdk"
 
       integer i,j,k
       real div(Minx:Maxx,Miny:Maxy,Nk)

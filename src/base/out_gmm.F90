@@ -83,7 +83,6 @@
       if ( .not. associated (hybt_w) ) then
          allocate(hybt_w(G_nk))
          hybt_w(1:G_nk)= Ver_hyb%t(1:G_nk)
-         if (.not. Schm_lift_ltl_L) hybt_w(G_nk)=1.
       endif
 
       nkeys= gmm_nkeys()

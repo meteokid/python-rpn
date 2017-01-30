@@ -25,8 +25,8 @@
 #include "schm.cdk"
 !
 !     ---------------------------------------------------------------
-
-         call adv_check_tracers
+!
+      call adv_check_tracers
 
       if (Grd_yinyang_L) then
          call yyg_initstencils  
@@ -35,7 +35,7 @@
 
 !     Initialize horizontal diffusion package
 
-      call hzd_set
+      call hzd_exp_set
 
 !     Initialize common block for vertical sponge
 

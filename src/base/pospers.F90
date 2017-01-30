@@ -59,19 +59,7 @@
       istat = gmm_get(gmmk_zth_s,zth,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zth)'
 !
-      istat = gmm_get(gmmk_xcth_s,xcth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(xcth)'
-      istat = gmm_get(gmmk_ycth_s,ycth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(ycth)'
-      istat = gmm_get(gmmk_zcth_s,zcth,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zcth)'
 !
-      istat = gmm_get(gmmk_xct1_s,xct1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(xct1)'
-      istat = gmm_get(gmmk_yct1_s,yct1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(yct1)'
-      istat = gmm_get(gmmk_zct1_s,zct1,mymeta)
-      if (GMM_IS_ERROR(istat)) print *,'pospers ERROR at gmm_get(zct1)'
 !
       do k = 1, l_nk
       do j = 1, l_nj 
@@ -80,16 +68,6 @@
          xth(ijk)  = Geomg_x_8(i)
          yth(ijk)  = Geomg_y_8(j)
          zth(ijk)  = Ver_z_8%m(k)
-!
-         pr1         = cos(yth(ijk))
-!
-         zcth(ijk) = sin(yth(ijk))
-         xcth(ijk) = cos(xth(ijk)) * pr1
-         ycth(ijk) = sin(xth(ijk)) * pr1
-
-         zct1(ijk) = sin(yth(ijk))
-         xct1(ijk) = cos(xth(ijk)) * pr1
-         yct1(ijk) = sin(xth(ijk)) * pr1
       enddo
       enddo
       enddo

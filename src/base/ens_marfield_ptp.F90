@@ -58,7 +58,7 @@
       integer :: l ,m, nc, i, j, k, indx, ier
       integer lmin,lmax 
       integer ::  gmmstat, istat
-      integer :: gdgem,gdgauss, keys(5), n
+      integer :: gdgem,gdyy, keys(5), n
       real    ::  fstd, fstr, tau,  Ens_ptp_mean
       real    :: sumsp , fact,fact2
       real    :: xf,offi,offj
@@ -317,9 +317,9 @@ allocate(sig(lmax-lmin+1, 0:lmax))
          yfi(i) = G_yg_8(indx)*rad2deg_8
        end do
 
-        gdgauss = ezqkdef(nlon,nlat,'A', 0,0,0,0,0)
+        gdyy = ezqkdef(nlon,nlat,'A', 0,0,0,0,0)
 
-        ier = ezdefset(Grd_local_gid, gdgauss)
+        ier = ezdefset(Grd_local_gid, gdyy)
         ier = ezsetopt('INTERP_DEGREE', 'LINEAR')
 
 !    Check the limits, stretch, and add mean if stretching asked

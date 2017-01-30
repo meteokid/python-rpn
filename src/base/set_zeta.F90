@@ -117,7 +117,6 @@
 #include "schm.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
-#include "crg.cdk"
 
       type(vgrid_descriptor) :: vcoord
       integer k,istat,options_readwrite,options_readonly
@@ -215,7 +214,7 @@
       do k = 1, G_nk
          Ver_z_8%t(k) = Ver_a_8%t(k)
       enddo      
-      if(.not.Schm_lift_ltl_L) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
+      if(Schm_autobar_L) Ver_z_8%t(G_nk)=Cstv_Zsrf_8
 
      !Define the positions of zeta_dot,ksi_dot,q_dot
       Ver_z_8%x(0) = Cstv_Ztop_8
@@ -291,19 +290,14 @@
 !
       Ver_wmstar_8 = zero
       Ver_wpstar_8 = one
-      if(Schm_lift_ltl_L) then
+
+      if(.not.Schm_autobar_L) then
          Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
          Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
          Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wp_8%m(G_nk)
          Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
       endif
 
-      if(.not.imp_pgradw_L) then
-         do k=1,G_nk
-            Ver_wpM_8(k)=Ver_wp_8%m(k)
-            Ver_wmM_8(k)=Ver_wm_8%m(k)
-         enddo
-      endif
 !     -------------------------------------------------------
 !     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
 !     -------------------------------------------------------

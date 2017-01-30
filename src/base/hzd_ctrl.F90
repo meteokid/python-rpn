@@ -41,13 +41,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_EXP5P') &
-         call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
-                             Nk, F_type_S=F_type_S )
-
-      if (Hzd_type_S.eq.'HO_EXP9P') &
-         call hzd_exp_visco2( F_f2hzd, F_type_S, &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
+      call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+                          Nk, F_type_S=F_type_S )
 !
 !-------------------------------------------------------------------
 !
@@ -64,16 +59,8 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      if (Hzd_type_S.eq.'HO_EXP5P') &
-         call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
-                             Nk, F_VV=F_v )
-
-      if (Hzd_type_S.eq.'HO_EXP9P') then
-         call hzd_exp_visco2( F_u, 'U', &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
-         call hzd_exp_visco2( F_v, 'V', &
-	             l_minx,l_maxx,l_miny,l_maxy, Nk )
-      endif
+      call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
+                          Nk, F_VV=F_v )
 !
 !-------------------------------------------------------------------
 !

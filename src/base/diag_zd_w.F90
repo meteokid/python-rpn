@@ -233,14 +233,12 @@
             end do
          end do
 
-         if(Schm_lift_ltl_L) then
-            do j=j0,jn
-            do i=i0,in
-               F_w(i,j,Nk)=-RoverG*F_t(i,j,Nk)*(Ver_wpstar_8(Nk)*xd(i,j,Nk) &
-                                               +Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
-            end do
-            end do
-         endif
+         do j=j0,jn
+         do i=i0,in
+            F_w(i,j,Nk)=-RoverG*F_t(i,j,Nk)*(Ver_wpstar_8(Nk)*xd(i,j,Nk) &
+                                            +Ver_wmstar_8(Nk)*xd(i,j,Nk-1) )
+         end do
+         end do
 
       endif
 

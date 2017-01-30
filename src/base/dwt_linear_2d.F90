@@ -10,6 +10,71 @@ subroutine low_pass_dwt2d_r4(z,ni,nj,nx,ny)
   call inv_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! inverse transform
 end subroutine low_pass_dwt2d_r4
 
+subroutine low_pass_dwt2d_r4_4x4(z,ni,nj,nx,ny)
+! 2D low pass filter using 53 dwt linear prediction wavelet
+  implicit none
+  integer, intent(IN) :: ni, nj, nx, ny
+  ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
+  integer :: ni2, nj2
+
+  ni2 = (ni+1)/2
+  nj2 = (nj+1)/2
+  call fwd_linear53_dwt2d_r4(z,ni,nj,ni,nj)   ! forward transform
+  call zero_high_dwt2d_r4(z,ni,nj,ni,nj)      ! get rid of high frequency terms
+  call fwd_linear53_dwt2d_r4(z,ni/2,nj/2,ni*2,nj/2)
+  call zero_high_dwt2d_r4(z,ni/2,nj/2,ni*2,nj/2)      ! get rid of high frequency terms
+  call inv_linear53_dwt2d_r4(z,ni2,nj2,ni*2,nj2)
+  call inv_linear53_dwt2d_r4(z,ni,nj,ni,nj)   ! inverse transform
+end subroutine low_pass_dwt2d_r4_4x4
+
+subroutine low_pass_quant_dwt2d_r4(z,ni,nj,nx,ny)
+! 2D low pass filter using 53 dwt linear prediction wavelet
+  implicit none
+  integer, intent(IN) :: ni, nj, nx, ny
+  ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
+
+  call fwd_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! forward transform
+  call zero_high_dwt2d_r4(z,ni,nj,nx,ny)      ! get rid of high frequency terms
+  call quant_low_r4(z,ni,nj,nx,ny)            ! quantize by 2**16 non zero terms
+  call inv_linear53_dwt2d_r4(z,ni,nj,nx,ny)   ! inverse transform
+end subroutine low_pass_quant_dwt2d_r4
+
+subroutine quant_low_r4(z,ni,nj,nx,ny)
+! quantize (2**16 intervals) non zero terms terms in dwt transformed data
+! this routine assumes the transform layout used by fwd_linear53_dwt2d_r4 / inv_linear53_dwt2d_r4
+  implicit none
+  integer, intent(IN) :: ni, nj, nx, ny
+  ARGUMENT_TYPE, intent(INOUT), dimension(0:nx-1,0:ny-1) :: z
+
+  integer :: j, neven
+  ARGUMENT_TYPE :: the_min, the_max, the_range, delta
+
+  the_min = z(0,0)
+  the_max = z(0,0)
+  neven = (ni+1)/2            ! number of even (low frequency) terms in a row
+  do j = 1 , nj-1 , 2         ! min and max loop over odd/even row pairs
+    ! ignore odd rows
+    the_max = max(the_max,maxval(z(0:neven-1,j-1))) ! lower half of even rows
+    the_min = min(the_max,minval(z(0:neven-1,j-1))) ! lower half of even rows
+  enddo
+  if(iand(nj,1) == 1) then  ! last row is an even row (odd number of rows)
+    the_max = max(the_max,maxval(z(0:neven-1,nj-1))) ! lower half of even rows
+    the_min = min(the_max,minval(z(0:neven-1,nj-1))) ! lower half of even rows
+  endif
+
+  the_range = the_max - the_min
+  if(the_range == 0) the_range = 1.0
+  delta = the_range / 65535.0      ! quantification interval
+  print *,'DEBUG: the_min, the_max, the_range, delta', the_min, the_max, the_range, delta
+
+  do j = 1 , nj-1 , 2              ! quantize loop over odd/even row pairs
+    z(0:neven-1,j-1) = the_min + (delta * nint( (z(0:neven-1,j-1)-the_min) / delta) )
+  enddo
+  if(iand(nj,1) == 1) z(0:neven-1,nj-1) = the_min + (delta * nint( (z(0:neven-1,nj-1)-the_min) / delta) )
+!   print *,'DEBUG: end of quant_low_r4'
+  return
+end subroutine quant_low_r4
+
 subroutine zero_high_dwt2d_r4(z,ni,nj,nx,ny)
 ! zero out all odd (high frequency) terms in dwt transformed data
 ! this routine assumes the transform layout used by fwd_linear53_dwt2d_r4 / inv_linear53_dwt2d_r4
@@ -263,7 +328,7 @@ end subroutine fwd_linear53_dwt2d_r4
 #define NJ 8000
 #define NREP 1
 program test
-  ARGUMENT_TYPE, dimension(0:NI-1,0:NJ-1) :: z, z0
+  ARGUMENT_TYPE, dimension(0:NI-1,0:NJ-1) :: z, z0, z1
   integer :: i, j, ni, nj, ni2, nj2, ni4, nj4, ni8, nj8
   real*8, dimension(NREP) :: T0,T1,T2,T3
   real*8, external :: MPI_WTIME
@@ -321,14 +386,28 @@ program test
   print *,'max transform time:',maxval(t1),maxval(t3),maxval(t1)/ni/nj,maxval(t3)/ni/nj
   print *,'min,max z0',minval(z0),maxval(z0)
   print *,'min,max z',minval(z),maxval(z)
-  z0 = (z0-z)/z0
-  print *,'average,max,min per point relative error:',sum(z0)/ni/nj,maxval(z0),minval(z0)
+  z1 = abs(z0-z)/z0
+  print *,'average,max,min per point relative error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
+  z1 = (z0-z)
+  print *,'average,max,min per point absolute error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
   print *,'=========================================================='
   print *,'after linear filtering'
-  z0 = z
+
   call low_pass_dwt2d_r4(z,ni,nj,ni,nj)
-  z0 = (z0-z)/z0
-  print *,'average,max,min per point relative error:',sum(z0)/ni/nj,maxval(z0),minval(z0)
+  z1 = abs(z0-z)/z0
+  print *,'average,max,min per point relative error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
+  z1 = (z0-z)
+  print *,'average,max,min per point absolute error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
+
+  print *,'=========================================================='
+  print *,'after linear filtering and quantification'
+  z = z0
+  call low_pass_quant_dwt2d_r4(z,ni,nj,ni,nj)
+  z1 = abs(z0-z)/z0
+  print *,'z0 average:',sum(z0)/ni/nj
+  print *,'average,max,min per point relative error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
+  z1 = (z0-z)
+  print *,'average,max,min per point absolute error:',sum(z1)/ni/nj,maxval(z1),minval(z1)
   stop
 end program test
 #endif

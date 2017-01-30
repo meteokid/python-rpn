@@ -51,6 +51,7 @@
       real :: zu,zt
       real, dimension(:,:), pointer :: ptr2d
 
+      integer,parameter :: tlift= 0
       integer,parameter :: NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
                   (/'Entry    ', 'Permanent', 'Volatile '/)
@@ -93,7 +94,7 @@
 
       err= 0
       err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
-      err= min(wb_put('itf_phy/TLIFT'       , Schm_Tlift   , WB_REWRITE_AT_RESTART), err)
+      err= min(wb_put('itf_phy/TLIFT'       , tlift        , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
       
 ! Complete physics initialization (see phy_init for interface content)

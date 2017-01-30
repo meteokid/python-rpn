@@ -315,7 +315,6 @@
             allocate(hybt_w(G_nk))
             ! For vertical motion quantities, we place level NK at the surface
             hybt_w(1:G_nk)= hybt(1:G_nk)
-            if (.not. Schm_lift_ltl_L) hybt_w(G_nk)= 1.
          endif
           
          if (pngz.ne.0)then

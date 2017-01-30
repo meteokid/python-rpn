@@ -80,10 +80,8 @@
       Schm_itnlh    = 2
       Schm_itraj    = 2
       Schm_nblendyy = -1
-      Schm_Tlift    = 0
       Schm_advec    = 1
       Schm_capa_var_L = .false.
-      Schm_cub_Coriolis_L = .false.
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_psadj_lam_L= .false.
@@ -93,7 +91,6 @@
       Schm_wload_L     = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
-      Schm_predictor   = 1
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -156,26 +153,16 @@
       Hzd_pwr_tr     = -1
       Hzd_lnr_tr     = -1.
       Hzd_div_damp   = -1.
-      Hzd_type_S     = 'HO_EXP9P'
-      Hzd_xidot_L    = .false.
       Hzd_smago_param   = -1
       Hzd_smago_prandtl = -1.
+      Hzd_smago_prandtl_hu = -1.
       Hzd_smago_lnr     = 0.
-      Hzd_theta_njpole_gu_only= -1
 
       Hzd_in_rhs_L     = .false.
-      top_spng_in_rhs_L= .false.
-      eqspng_in_rhs_L  = .false.
-      smago_in_rhs_L   = .true.
-      Hzd_before_phy_L = .false.
-      stag_destag_L    = .true.
-      imp_pgradw_L     = .false.
 
       Vspng_nk       = 0
       Vspng_coeftop  = -1.
-      Vspng_njpole   = 3
       Vspng_riley_L  = .false.
-      Vspng_zmean_L  = .false.
 
       Zdot_divHLM_L  = .false.
 

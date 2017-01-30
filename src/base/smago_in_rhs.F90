@@ -1,4 +1,4 @@
-!---------------------------------- LICENCE BEGIN -------------------------------
+!i---------------------------------- LICENCE BEGIN -------------------------------
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
@@ -29,7 +29,7 @@
 !     Claude Girard
 !
 !revision
-! v5_0 - Girard C.    - initial version based on hzd_smago
+! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
 #include "gmm.hf"
 #include "hzd.cdk"
 #include "cstv.cdk"
@@ -40,20 +40,26 @@
 #include "smag.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
+#include "tr3d.cdk"
 
       integer :: i, j, k, istat, i0, in, j0, jn
-!      real, dimension(lminx:lmaxx,lminy:lmaxy,nk) :: smagcoef
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: pi, th
+      real, pointer, dimension (:,:,:) :: hu
       real :: cdelta2, tension_z, shear, tension_u, shear_u, tension_v, shear_v
-      real :: fact, smagparam, ismagprandtl, base_coef, max_coef, crit_coef
-      logical :: switch_on_THETA
+      real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
+      real :: base_coef, max_coef, crit_coef
+      logical :: switch_on_THETA, switch_on_hu
 
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr <=0.) ) return
 
-      smagparam= hzd_smago_param ; ismagprandtl= 1./Hzd_smago_prandtl
+      smagparam= hzd_smago_param
+      ismagprandtl    = 1./Hzd_smago_prandtl
+      ismagprandtl_hu = 1./Hzd_smago_prandtl_hu
       switch_on_THETA = Hzd_smago_prandtl > 0.
+      switch_on_hu    = (Hzd_smago_prandtl_hu > 0.)
+     !switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. (Tr3d_name_S(1)(1:2)'.eq.'HU')
 
       cdelta2 = (smagparam * Dcst_rayt_8 * Geomg_hy_8)**2
       crit_coef = 0.25*(Dcst_rayt_8*Geomg_hy_8)**2/Cstv_dt_8
@@ -66,8 +72,11 @@
       jn  = l_nj - pil_n
 
       istat = gmm_get (gmmk_smag_s, smag)
+      istat = gmm_get('TR/'//trim(Tr3d_name_S(1))//':P' ,hu)
 
-     !max_coef=base_coef
+      call rpn_comm_xch_halo( hu , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
+                              G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+
       do k=1,nk
 
          do j=j0-2, jn+2
@@ -117,7 +126,6 @@
                kt(i,j) = geomg_cy2_8(j)  * smag(i,j,k) * tension(i,j)
                kz(i,j) = geomg_cyv2_8(j) * smagcoef_z(i,j) * shear_z(i,j)
 
-              !max_coef=max(max_coef,smag(i,j,k))
             end do
             end do
          endif
@@ -178,9 +186,27 @@
 
          end if
 
-      end do
+         if (switch_on_hu) then
+            fact=Cstv_dt_8*ismagprandtl_hu        
+            do j=j0, jn
+            do i=i0, in
+            th(i,j)=fact * ( &
+                    geomg_invDXMu_8(j)*((smagcoef_u(i,j)   * (hu(i+1,j,k) - hu(i,j,k))) - &
+                                        (smagcoef_u(i-1,j) * (hu(i,j,k) - hu(i-1,j,k))) ) &
+                  + geomg_invcy_8(j)*Geomg_invDYMv_8(j) &
+                                      *((smagcoef_v(i,j)   * (hu(i,j+1,k) - hu(i,j,k))) - &
+                                        (smagcoef_v(i,j-1) * (hu(i,j,k) - hu(i,j-1,k))) ) )
+            end do
+            end do
+            do j=j0, jn
+            do i=i0, in
+            hu(i,j,k)=hu(i,j,k)+th(i,j)
+            end do
+            end do
+           !print*,'k=',k,'hu=',hu(i0,j0,k),'dhu=',th(i0,j0)
+         endif
 
-     !print*,'max_coef/crit_coef=',max_coef/crit_coef
+      end do
 
       return
       end subroutine smago_in_rhs

@@ -83,14 +83,6 @@
       Level_kind_ip1 = 5
       Level_version  = 5
 
-      if(Schm_Tlift.eq.1)then
-         call gem_error ( -1, 'gemdm_config', &
-                          'review for toplev removed and Tlift' )
-         Level_version  = 3
-      endif
-
-      if ( Schm_autobar_L ) stag_destag_L= .true.
-
       Glb_pil_n = Grd_extension
       Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
       if (Grd_yinyang_L) then
@@ -110,14 +102,6 @@
       else
          Lam_gbpil_T = 0
          Lam_blend_T = 0
-      endif
-
-      Schm_lift_ltl_L = .false.
-      if ( Schm_trapeze_L .and. .not.Schm_autobar_L ) Schm_lift_ltl_L = .true.
-      
-      if(Hzd_in_rhs_L.and.(Hzd_type_S.ne.'HO_EXP5P')) then
-         if (lun_out>0) write (Lun_out, 9204)
-         return
       endif
 
       deg_2_rad = Dcst_pi_8/180.
@@ -222,13 +206,6 @@
             end if
             return
          endif
-      end if
-
-      if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
-         if (lun_out>0) then
-            write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
-         end if
-         return
       end if
 
       G_ni  = Grd_ni
@@ -396,7 +373,6 @@
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)
  9200 format (/'ABORT: WRONG CHOICE OF SOLVER for Helmholtz problem: Sol_type_S =',a/)
  9201 format (/'ABORT: WRONG CHOICE OF PRE-CONDITIONNER FOR 2D ITERATIVE SOLVER: Sol2D_precond_S =',a/)
- 9204 format (/,'ABORT: WRONG CHOICE OF DIFFUSION TYPE FOR HZD_in_RHS = .true.'/)
  9570 format (/,'WARNING: Vspng_nk set to zero since top piloting is used'/)
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
