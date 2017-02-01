@@ -78,7 +78,7 @@
          call tstpdyn (itraj)
          itraj = Schm_itraj
          
-         call hzd_momentum
+!!$         call hzd_momentum
          
       end do
       
