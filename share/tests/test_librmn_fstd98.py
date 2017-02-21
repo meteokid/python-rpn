@@ -113,7 +113,16 @@ class Librmn_fstd98_Test(unittest.TestCase):
         mydir = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
         for i in range(1000):
             funit = rmn.fstopenall(mydir)
-            rmn.fstcloseall(funit)        
+            rmn.fstcloseall(funit)
+            
+    def test_openall_closeall_list(self):
+        """Test if close all on linked file actually close them all"""
+        ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES')
+        mydir1 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk/')
+        mydir2 = os.path.join(ATM_MODEL_DFILES.strip(),'bcmk_p/')
+        funit1 = rmn.fstopenall(mydir1)
+        funit2 = rmn.fstopenall(mydir2)
+        rmn.fstcloseall((funit1,funit2))        
 
     def test_isfst_openall_fstnbr(self):
         """isfst_openall_fstnbr should give known result with known input"""

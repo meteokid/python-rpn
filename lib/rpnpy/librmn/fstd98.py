@@ -285,14 +285,14 @@ def fstopenall(paths, filemode=_rc.FST_RO, verbose=None):
     return fstlnk(iunitlist)
 
 
-def fstcloseall(iunit):
+def fstcloseall(iunit, verbose=None):
     """
     Close all files associated with provided file unit number.
     Shortcut for fclos+fstfrm
 
     Args:
-        iunit    : unit number associated to the file
-                   obtained with fnom or fstopenall
+        iunit    : unit number(s) associated to the file
+                   obtained with fnom or fstopenall (int or list of int)
     Returns:
         None
     Raises:
@@ -314,7 +314,20 @@ def fstcloseall(iunit):
        rpnpy.librmn.const
        FSTDError
     """
-    if not (type(iunit) == int):
+    if isinstance(iunit, (list, tuple)):
+        istat = 0
+        elist = []
+        for i in iunit:
+            try:
+                fstcloseall(i, verbose=verbose)
+            except Exception as e:
+                elist.append(e)
+                istat = -1
+        if istat >= 0:
+            return
+        raise FSTDError("fstcloseall: Unable to properly close units {0} ({1})".format(repr(iunit), repr(elist)))
+        
+    if not isinstance(iunit, int):
         raise TypeError("fstcloseall: Expecting arg of type int, Got {0}"\
                         .format(type(iunit)))
     if iunit < 0:
@@ -326,13 +339,17 @@ def fstcloseall(iunit):
         iunitlist = (iunit,)
     istat = 0
     elist = []
-    for iunit in iunitlist:
+    for iunit1 in iunitlist:
         try:
-            fstfrm(iunit)
-            istat =_rb.fclos(iunit)
+            fstfrm(iunit1)
+            istat =_rb.fclos(iunit1)
+            if verbose:
+                print("(fstcloseall) Closing: {0}".format(iunit1))
         except Exception as e:
             elist.append(e)
             istat = -1
+            if verbose:
+                print("(fstcloseall) Problem Closing: {0}".format(iunit1))
     try:
         del _linkedUnits[str(iunitlist[0])]
     except:
