@@ -9,6 +9,8 @@ Show list of reports in a BURP file
 Examples:
      rpy.brplist -i $ATM_MODEL_DFILES/bcmk_burp/2007021900.brp
 """
+## TODO: need to optimize in liburp mode
+## Profiling: python -m cProfile -- ./bin/rpy.brplist -i $ATM_MODEL_DFILES/bcmk_burp/2007021900.brp -b -e
 import os
 import sys
 import argparse
@@ -80,29 +82,34 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
                     if formatElements:
                         blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
                         params.update(blkdata)
-                        params['tblval'] = params['tblval'][:,:,:].T
-                        params['rval'] = params['rval'][:,:,:].T
-                        for iele in xrange(len(blkdata['cmcids'])):
-                            params.update(rmn.mrbcvt_dict(blkdata['cmcids'][iele], False))
-                            params['iele']     = iele
-                            params['e_tblval'] = blkdata['tblval'][iele,:,:].T
-                            if params['e_cvt']:
-                                params['e_rval'] = blkdata['rval'][iele,:,:].T
-                            else:
-                                params['e_rval'] = params['e_tblval']
-                            if not isliburp:
-                                print(formatElements.format(**params))
+                        params['tblval'] = params['tblval'].T
+                        params['rval'] = params['rval'].T
                         if isliburp:
-                            sys.stdout.write("\nlstele =")
-                            for k in xrange(len(blkdata['bufrids'])):
-                                sys.stdout.write("    {:0>6}".format(blkdata['bufrids'][k]))
-                            for n1 in xrange(params['tblval'].shape[0]):
-                                for n2 in xrange(params['tblval'].shape[1]):
-                                    sys.stdout.write("\ntblval =")
-                                    for k in xrange(params['tblval'].shape[2]):
-                                        ## sys.stdout.write("    {:>6}".format(params['tblval'][n1,n2,k]))
-                                        sys.stdout.write(" {:>9}".format(params['rval'][n1,n2,k]))
+                            lstelestr = ["    {:0>6}".format(blkdata['bufrids'][k]) for k in xrange(blkdata['bufrids'].size)]
+                            sys.stdout.write("\nlstele =" +
+                                             "".join(lstelestr))
+                            (nv, nl, ne) = params['tblval'].shape
+                            for n1 in xrange(nv):
+                                for n2 in xrange(nl):
+                                    ## rvalstr = [" {:>9.2f}".format(float(params['rval'][n1,n2,k])) for k in xrange(ne)]
+                                    rvalstr = [" {:>9.2f}".format(float(params['rval'][n1,n2,k])) if rmn.mrbcvt_dict(blkdata['cmcids'][k], False)['e_cvt'] else
+                                               " {:>9d}".format(int(params['rval'][n1,n2,k]))
+                                               for k in xrange(ne)]
+                                    sys.stdout.write("\ntblval =" +
+                                                     "".join(rvalstr))
                             sys.stdout.write("\n")
+                        else:
+                            for iele in xrange(len(blkdata['cmcids'])):
+                                params.update(rmn.mrbcvt_dict(blkdata['cmcids'][iele], False))
+                                params['iele']     = iele
+                                params['e_tblval'] = blkdata['tblval'][iele,:,:].T
+                                if params['e_cvt']:
+                                    params['e_rval'] = blkdata['rval'][iele,:,:].T
+                                else:
+                                    params['e_rval'] = params['e_tblval']
+                                if not isliburp:
+                                    print(formatElements.format(**params))
+                            
                             ## print(formatElements.format(**params))
                         
 if __name__ == "__main__":
@@ -203,7 +210,9 @@ tblval = {tblval}"""
 
     rgroup = parser.add_argument_group(title="Reports related options") #description='')
 
-    ## liburp -wide -irdtb /data/ade_ops/dbase/surface/metar/2017011200_ -stn CYUL -conv
+    ## . ssmuse-sh -d cmda/utils/15.2-2
+    ## liburp -wide -conv -irdtb ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ #-stn CYUL
+    ## rpy.brplist --liburp -i ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ -b -e #++stnid CYUL
     parser.add_argument("--liburp", dest="liburp",
                         action="store_true",
                         help="Use liburp utility output format")

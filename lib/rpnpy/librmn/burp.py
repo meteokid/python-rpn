@@ -1397,12 +1397,12 @@ def mrbcvt_dict(cmcid, raise_error=True):
         {
         'e_cmcid'   : (int) Element CMC code
         'e_bufrid'  : (int) Element BUFR code
-        'e_bufrid_F': (int) Tpe part of Element code (e.g. F=0 for observations)
+        'e_bufrid_F': (int) Type part of Element code (e.g. F=0 for obs)
         'e_bufrid_X': (int) Class part of Element code 
         'e_bufrid_Y': (int) Class specific Element code part of Element code 
         'e_desc'    : (str) Element description
         'e_cvt'     : (int) Flag for conversion (1=need units conversion)
-        'e_unit'      : (str) Units desciption
+        'e_unit'    : (str) Units desciption
         'e_scale'   : (int) Scaling factor for element value conversion
         'e_bias'    : (int) Bias for element value conversion
         'e_nbits'   : (int) nb of bits for encoding value
