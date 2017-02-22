@@ -541,6 +541,7 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, ilat=-1, ilon=-1,
     >>> import rpnpy.librmn.all as rmn
     >>> funit  = rmn.burp_open('myburpfile.brp')
     >>> handle = rmn.mrfloc(funit)
+    >>> ## See mrfget, mrbhdr, mrbprm, mrbxtr for how to get the meta + data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -612,7 +613,7 @@ def mrfget(handle, rpt=None, funit=None):
     >>> funit  = rmn.burp_open('myburpfile.brp')
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> #TODO: describe what tools can be used to get info from rpt
+    >>> ## See mrbhdr, mrbprm, mrbxtr for how to get the meta + data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -630,8 +631,8 @@ def mrfget(handle, rpt=None, funit=None):
         nrpt = rpt
         if rpt is None:
             nrpt = mrfmxl(funit)
-            ##TODO: nrpt = max(64, rmn.mrfmxl(funit))+10
-        nrpt *= 2 ##TODO: should we remove this?
+            #TODO: nrpt = max(64, rmn.mrfmxl(funit))+10
+        nrpt *= 2  #TODO: should we remove this?
         rpt = _np.empty((nrpt,), dtype=_np.int32)
         rpt[0] = nrpt
     elif not isinstance(rpt, _np.ndarray):
@@ -756,7 +757,7 @@ def mrbhdr(rpt):
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
     >>> params = rmn.mrfhdr(rpt)
-    >>> #TODO: describe what tools can be used to decode info from params
+    >>> ## See mrbprm, mrbxtr for how to get the meta + data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -922,7 +923,7 @@ def mrbprm(rpt, blkno):
     >>> params = rmn.mrfhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
     >>>     blkparams = rmn.mrbprm(rpt, iblk+1)
-    >>> #TODO: describe what tools can be used to decode info from blkparams
+    >>> ## See mrbxtr for how to get the data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -939,7 +940,7 @@ def mrbprm(rpt, blkno):
     if blkno <= 0:
         raise ValueError('Provided blkno must be > 0')
     try:
-        maxblkno  = mrbhdr(rpt)['nblk']  ##TODO should we do this?
+        maxblkno  = mrbhdr(rpt)['nblk']  #TODO: should we do this?
     except:
         maxblkno = -1
     if maxblkno > 0 and blkno > maxblkno:
@@ -967,7 +968,7 @@ def mrbprm(rpt, blkno):
             'nele'  : nele.value,
             'nval'  : nval.value,
             'nt'    : nt.value,
-            'bfam'  : bfam.value, #TODO: provide decoded bfam?
+            'bfam'  : bfam.value,  #TODO: provide decoded bfam?
             'bdesc' : bdesc.value,
             'btyp'  : btyp.value,
             'nbit'  : nbit.value,
@@ -1019,15 +1020,19 @@ def mrbtyp_decode(btyp):
     >>> rpt    = rmn.mrfget(handle, funit=funit)
     >>> params = rmn.mrfhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkparams = rmn.mrbtyp(rpt, iblk+1)
-    >>>     params    = mrbtyp(blkparams['btyp'])
+    >>>     blkparams = rmn.mrbprm(rpt, iblk+1)
+    >>>     params    = rmn.mrbtyp_decode(blkparams['btyp'])
     >>> rmn.burp_close(funit)
 
     See Also:
         mrbtyp_encode_bknat
         mrbtyp_encode_bktyp
         mrbtyp_encode
-        #TODO: 
+        burp_open
+        mrfloc
+        mrfget
+        mrfhdr
+        mrbprm
     """
     if btyp < 0:
         raise ValueError('Provided btyp must be >= 0: {}'.format(btyp))    
@@ -1211,7 +1216,7 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
     >>> params = rmn.mrfhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
     >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>> ## See mrbdcl, mrbcvt_decode, mrb_prm_xtr_dcl_cvt for how to decode the data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1222,7 +1227,8 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         mrbprm
         mrbdcl
         mrbcvt_dict
-        mrbcvt
+        mrbcvt_decode
+        mrb_prm_xtr_dcl_cvt
         burp_open
         burp_close
         rpnpy.librmn.burp_const
@@ -1296,7 +1302,7 @@ def mrbdcl(cmcids):
     >>> for iblk in xrange(params['nblk']):
     >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
     >>>     bufrids = rmn.mrbdcl(blkdata['cmcids'])
-    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>> ## See mrbcvt_decode, mrb_prm_xtr_dcl_cvt for how to decode the data
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1307,7 +1313,8 @@ def mrbdcl(cmcids):
         mrbprm
         mrbxtr
         mrbcvt_dict
-        mrbcvt
+        mrbcvt_decode
+        mrb_prm_xtr_dcl_cvt
         burp_open
         burp_close
         rpnpy.librmn.burp_const
@@ -1351,12 +1358,21 @@ def mrbcol(bufrids):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> handle = rmn.mrfloc(funit)
+    >>> rpt    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrfhdr(rpt)
+    >>> for iblk in xrange(params['nblk']):
+    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    >>>     bufrids = rmn.mrbdcl(blkdata['cmcids'])
+    >>>     cmcids  = rmn.mrbcol(bufrids)
+    >>> rmn.burp_close(funit)
 
     See Also:
         mrbdcl
         mrbcvt_dict
-        #TODO: 
+        mrfhdr
+        mrbxtr
     """
     if isinstance(bufrids, (int, _np.int32)):
         v = _rp.c_mrbcov(bufrids)
@@ -1409,7 +1425,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
         'e_multi'   : (int) 1 means descriptor is of the "multi" or 
                           repeatable type (layer, level, etc.) and
                           it can only appear in a "multi" block of data
-        'e_error' : (int) 0 if bufrid found in BURP table B, -1 otherwise
+        'e_error'   : (int) 0 if bufrid found in BURP table B, -1 otherwise
         }
     Raises:
         KeyError   on key not found in burp table b dict
@@ -1427,14 +1443,18 @@ def mrbcvt_dict(cmcid, raise_error=True):
     >>>     for cmcid in blkdata['cmcids']:
     >>>         cvtdict = rmn.mrbcvt_dict(cmcid)
     >>>         print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
-    >>> #TODO: describe what tools can be used to decode info from blkdata
     >>> rmn.burp_close(funit)
 
     See Also:
         mrfget
-        mrbcvt
+        mrbcvt_dict
         mrbdcl
         mrbcol
+        mrbxtr
+        mrfhdr
+        mrfget
+        mrfloc
+        burp_open
     """
     if not len(_mrbcvt_dict_full.keys()):
         AFSISIO = os.getenv('AFSISIO', '')
@@ -1538,9 +1558,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     >>> for iblk in xrange(params['nblk']):
     >>>     blkdata  = rmn.mrbxtr(rpt, iblk+1)
     >>>     rval     = rmn.mrbcvt_decode(blkdata)
-    >>> #TODO: describe what tools can be used to decode info from blkdata
     >>> rmn.burp_close(funit)
-    #TODO: 
 
     See Also:
         mrbcvt_encode
@@ -1599,7 +1617,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     if not datyp in _rbc.BURP_DATYP_NAMES.keys():
         raise ValueError('Out of range datyp={0}'.format(datyp))
 
-    #TODO: review c_mrbcvt
+    #TODO: complete dtype support for mrbcvt_decode
     
     if _rbc.BURP_DATYP_NAMES[datyp] in ('complex', 'dcomplex'):
         raise BurpError('Conversion not Yet implemented for datyp={0} ({1})'
@@ -1652,6 +1670,7 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
         blkno : block number (int > 0)
     Returns
         {
+            #TODO: full list of returned parameters
             'cmcids' : (array) List of element names in the report in numeric
                                BUFR codes. (Size: NELE; type: int)
                                NELE: Number of meteorological elements in a
@@ -1663,6 +1682,8 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
                                NELE: Number of meteorological elements in block
                                NVAL: Number of values per element.
                                NT  : Nb of groups of NELE x NVAL vals in block.
+            'rval'   : (array) Decoded Block data
+
         }        
     Raises:
         TypeError  on wrong input arg types
@@ -1676,8 +1697,7 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
     >>> rpt    = rmn.mrfget(handle, funit=funit)
     >>> params = rmn.mrfhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    >>> #TODO: describe what tools can be used to decode info from blkdata
+    >>>     blkdata = rmn.mrb_prm_xtr_dcl_cvt(rpt, iblk+1)
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1687,7 +1707,8 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
         mrbhdr
         mrbprm
         mrbdcl
-        mrbcvt
+        mrbcvt_decode
+        mrbcvt_dict
         burp_open
         burp_close
         rpnpy.librmn.burp_const
@@ -1700,7 +1721,7 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
     else:
         blkdata['rval'] = blkdata['tblval'][:,:,:]
     return blkdata
-    ## raise BurpError('mrbxtr_dcl_cvt not yet implemented')
+
 
 #TODO: mrbcvt_encode
 ## def mrbcvt_encode(cmcids, rval): ##TODO:
