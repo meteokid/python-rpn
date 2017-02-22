@@ -41,6 +41,21 @@ MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
 
 BURP_TABLE_B_FILENAME = 'table_b_bufr_e'
+
+BURP_TBLVAL_MISSING = -1
+BURP_RVAL_MISSING0 = -99.99
+BURP_RVAL_MISSING = { #TODO: review
+    ## 0: _np.uint32,      # binary, transparent
+    ## 2: _np.uint32,      # unsigned integer
+    ## 3: _np.uint8,       # character string
+    ## 4: _np.int32,       # signed integer
+    ## 5: _np.uint8,       # character string (uppercase)
+    6: BURP_RVAL_MISSING0, # floating point 
+    7: BURP_RVAL_MISSING0, # double precision
+    ## 8: _np.complex64,   # complex IEEE        #TODO: review
+    ## 9: _np.complex128   # double complex IEEE #TODO: review
+}
+
 #</source>
 
 #<source lang=python>

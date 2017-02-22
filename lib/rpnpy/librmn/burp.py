@@ -1472,7 +1472,8 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 if item[50] == '*':
                     d['e_cvt']  = 0
                     d['e_desc'] = item[8:50].strip()
-                elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE', 'NUMERIC'):
+                ## elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE', 'NUMERIC'):
+                elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE'):  #TODO: check if NUMERIC should be included
                     d['e_cvt']  = 0
                 if len(item) > 84 and item[84] == 'M':
                     d['e_multi'] = 1
@@ -1626,6 +1627,13 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
                          _rbc.MRBCVT_DECODE)
     if istat != 0:
         raise BurpError('c_mrbcvt', istat)
+    try:
+        rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
+    except:
+        rval_missing = _rbc.BURP_TBLVAL_MISSING
+    rval[tblval == _rbc.BURP_TBLVAL_MISSING] = rval_missing
+    #TODO: ie e_cvt == 0: put tblval
+
     return rval
 
 
@@ -1637,8 +1645,7 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
     """
     Extract block of data from the buffer and decode its values
     
-    blkdata = mrbxtr(rpt, blkno)
-    blkdata = mrbxtr(rpt, blkno, cmcids, tblval)
+    blkdata = mrb_prm_xtr_dcl_cvt(rpt, blkno)
 
     Args:
         rpt   : Report data  (array)
