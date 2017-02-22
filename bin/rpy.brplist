@@ -15,7 +15,8 @@ import os
 import sys
 import argparse
 import rpnpy.librmn.all as rmn
-
+## import pprint
+## pp = pprint.PrettyPrinter(indent=4)
 
 def print_list(inputFile, formatReport, matchIn, matchOut,
                formatBlock, formatElements, isliburp):
@@ -92,8 +93,9 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
                             for n1 in xrange(nv):
                                 for n2 in xrange(nl):
                                     ## rvalstr = [" {:>9.2f}".format(float(params['rval'][n1,n2,k])) for k in xrange(ne)]
-                                    rvalstr = [" {:>9.2f}".format(float(params['rval'][n1,n2,k])) if rmn.mrbcvt_dict(blkdata['cmcids'][k], False)['e_cvt'] else
-                                               " {:>9d}".format(int(params['rval'][n1,n2,k]))
+                                    rvalstr = [" {:>9.2f}".format(float(params['rval'][n1,n2,k]))
+                                               if (rmn.mrbcvt_dict(blkdata['cmcids'][k], False)['e_cvt'] and params['bknat_kindd'] != 'flags') else
+                                               " {:>9d}".format(int(params['tblval'][n1,n2,k]))
                                                for k in xrange(ne)]
                                     sys.stdout.write("\ntblval =" +
                                                      "".join(rvalstr))
@@ -107,16 +109,14 @@ def print_list1(funit, inputFile, formatReport, stnid, idtyp, lat, lon,
                                     params['e_rval'] = blkdata['rval'][iele,:,:].T
                                 else:
                                     params['e_rval'] = params['e_tblval']
-                                if not isliburp:
-                                    print(formatElements.format(**params))
-                            
-                            ## print(formatElements.format(**params))
+                                print(formatElements.format(**params))
+                                ## pp.pprint(params)
                         
 if __name__ == "__main__":
     ## default_format = ' {stnid:<9} {lat:>6} {lon:>6} {dx:>6} {dy:>6}  {flgshex:>8} {date:>8} {timehh:>2}h{timemm:>2} {idtyp:>6} {nblk:>10} {handle:>10}'
     default_format = 'r:{stnid:<9}: {lat:>6} {lon:>6} {elev:>6} : {dx:>6} {dy:>6} : {date:>8} {timehh:>2}h{timemm:>2} : {idtyp:>6} ({idtypd}) : {flgsbin:>24} : {nblk:>10}'
     liburp_format = """
-hhmm   = {time:>7} flgs   =  {flgs:>5}  codtyp = {idtyp:>5}  stnids ={stnid}     
+hhmm   = {time:>7} flgs   = {flgs:>5}  codtyp = {idtyp:>5}  stnids ={stnid}
 blat   = {ilat:>7} blon   = {ilon:>5}  dx     = {idx:>5}  dy     = {idy:>5}  stnhgt = {ielev:>5}
 yymmdd ={date:>8} oars   = {oars:>5}  runn   = {runn:>5}  nblk   = {nblk:>5}  dlay   = {drnd:>5}"""
     default_format_blk = 'b:{stnid:<9}[{iblk:>3}] {bknat_kindd:>6}({datypd:>6}) (mul={bknat_multi}, alt={bktyp_alt}, fam={bfam:<3}) {bktyp_kindd} : {bkstpd} : ({nele:>3}x{nval:>2}x{nt})'

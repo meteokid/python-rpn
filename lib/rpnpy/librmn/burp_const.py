@@ -471,7 +471,7 @@ BURP_BKSTP_DESC = { #TODO
 #</source>
 
 #TODO: BURP_BKNAT_KIND_DESC flags:
-## Voici les MARQUEURS que l'on nomment primaires.
+## Voici les MARQUEURS que l'on nomme primaires.
 ## Bits	Décimal	Type de données	REF	Description
 ## 12	4096	AO	1	Élément assimilé (c'est-à-dire ayant influencé l'analyse)
 ## 11	2048	AO	2	Élément rejeté par un processus de sélection (thinning ou canal)

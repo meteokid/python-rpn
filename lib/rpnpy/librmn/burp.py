@@ -1402,7 +1402,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
         'e_bufrid_Y': (int) Class specific Element code part of Element code 
         'e_desc'    : (str) Element description
         'e_cvt'     : (int) Flag for conversion (1=need units conversion)
-        'e_unit'    : (str) Units desciption
+        'e_units'   : (str) Units desciption
         'e_scale'   : (int) Scaling factor for element value conversion
         'e_bias'    : (int) Bias for element value conversion
         'e_nbits'   : (int) nb of bits for encoding value
@@ -1472,6 +1472,8 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 if item[50] == '*':
                     d['e_cvt']  = 0
                     d['e_desc'] = item[8:50].strip()
+                elif d['e_units'] in ('CODE TABLE', 'FLAG TABLE', 'NUMERIC'):
+                    d['e_cvt']  = 0
                 if len(item) > 84 and item[84] == 'M':
                     d['e_multi'] = 1
                 _mrbcvt_dict_full[id] = d
