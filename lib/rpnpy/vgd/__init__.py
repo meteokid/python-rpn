@@ -25,9 +25,6 @@
     rpnpy.vgd.const
     rpnpy.vgd.base
 
- Notes:
- The rpnpy.vgd module is only available from python-rpn version 2.0.b6
-
 """
 
 from rpnpy.version import *
