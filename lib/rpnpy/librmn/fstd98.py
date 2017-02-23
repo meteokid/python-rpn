@@ -463,7 +463,6 @@ def fstecr(iunit, data, meta=None, rewrite=True):
         rec   : data + meta in a dict
                 Option to provide data+meta in a single dict
                 where data = rec['d']
-                Note: new option in version 2.0.rc1
         rewrite : force to overwrite any other fields with same meta 
     Returns:
         None
@@ -652,7 +651,7 @@ def fst_edit_dir(key, datev=-1, dateo=-1, deet=-1, npas=-1, ni=-1, nj=-1, nk=-1,
     Notes:
         librmn_15.2 fst_edit_dir ignores ni,nj,nk,grtyp
         These parameters cannot thus be zapped.
-        librmn_16 will allow the edition of grtyp
+        librmn_16 allows the edition of grtyp
     """
     if datev != -1:
         if dateo != -1:

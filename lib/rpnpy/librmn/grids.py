@@ -473,9 +473,6 @@ def readGrid(funit, params):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
-        
-    Notes:
-        readGrid function is only available from python-rpn version 2.0.rc1
 
     Examples:
     >>> import os, os.path
@@ -551,9 +548,6 @@ def writeGrid(funit, params):
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         RMNError   on any other error
-
-    Notes:
-        writeGrid function is only available from python-rpn version 2.0.rc1
 
     Examples:
     >>> import os, os.path
@@ -1418,9 +1412,6 @@ def defGrid_ZL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
     See Also:
         decodeGrid
         encodeGrid
-
-    Notes:
-        ** This funciton is only available from Python-RPN version 2.0.b6 **
     """
     params = {
         'ni'    : ni,
@@ -1567,7 +1558,6 @@ def defGrid_diezeL(ni, nj=None, lat0=None, lon0=None, dlat=None, dlon=None,
         encodeGrid
 
     Notes:
-        ** This funciton is only available from Python-RPN version 2.0.b6 **
         Unfortunately, librmn's ezscint does NOT allow defining a # grid
         from ezgdef_fmem.
         The grid is thus defined as a Z grid in ezscint and tile info
@@ -1662,9 +1652,6 @@ def defGrid_YL(ax, ay=None, setGridId=True):
     See Also:
         decodeGrid
         encodeGrid
-
-    Notes:
-        ** This funciton is only available from Python-RPN version 2.1.b1 **
     """
     params = {
         'ax'    : ax,

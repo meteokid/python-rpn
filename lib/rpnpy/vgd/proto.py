@@ -22,9 +22,6 @@ See Also:
     rpnpy.vgd.base
     rpnpy.vgd.const
 
-Notes:
-    This Module is available from python-rpn version 2.0.b6
-
  === Functions C Prototypes ===
 
  c_vgd_construct():

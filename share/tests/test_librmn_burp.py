@@ -9,6 +9,7 @@ See: https://wiki.cmc.ec.gc.ca/wiki/Exemples_d%27utilisation_des_programmes_BURP
 import os
 import sys
 import rpnpy.librmn.all as rmn
+import rpnpy.utils.all as rutils
 import unittest
 import ctypes as _ct
 import numpy as _np
@@ -444,7 +445,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         if RPNPY_NOLONGTEST:
             return
         for mypath, itype, iunit in self.knownValues:
-            bfile = rmn.BurpFile(self.getFN(mypath),'r')
+            bfile = rutils.BurpFile(self.getFN(mypath),'r')
             #TODO: check results
 
 

@@ -9,9 +9,6 @@ Module vgd.base contains python wrapper to main vgrid C functions
 See Also:
     rpnpy.vgd.proto
     rpnpy.vgd.const
-
-Notes:
-    This Module is available from python-rpn version 2.0.b6
 """
 import ctypes as _ct
 import numpy  as _np
