@@ -24,7 +24,8 @@ librmn burp C functions
 
  See Also:
     rpnpy.librmn.burp
-    rpnpy.librmn.burpfile
+    rpnpy.librmn.burp_const
+    rpnpy.utils.burpfile
     rpnpy.librmn.proto
     rpnpy.librmn.base
     rpnpy.librmn.fstd98

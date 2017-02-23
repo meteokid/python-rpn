@@ -27,6 +27,11 @@ point geographique de latitude et longitude determinees.
 Un fichier BURP est constitues de plusieurs "reports".
 Chaque "report" est constitues de plusieurs "blocks".
 Chaque "block"  est constitues de plusieurs "elements".
+
+ See Also:
+    rpnpy.librmn.burp_const
+    rpnpy.utils.burpfile
+    rpnpy.librmn.proto_burp
 """
 
 import os

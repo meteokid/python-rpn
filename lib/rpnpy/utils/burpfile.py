@@ -7,6 +7,14 @@
 
 """
 Python High Level Interface for BUPR files.
+
+ See Also:
+    rpnpy.librmn.burp
+    rpnpy.librmn.burp_const
+    rpnpy.librmn.proto_burp
+    rpnpy.librmn.base
+    rpnpy.librmn.fstd98
+    rpnpy.librmn.const
 """
 
 from rpnpy.librmn import burp as _brp

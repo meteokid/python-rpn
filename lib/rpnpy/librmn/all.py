@@ -16,7 +16,6 @@
      rpnpy.librmn.grids
      rpnpy.librmn.burp
      rpnpy.librmn.burp_const
-     rpnpy.librmn.burpfile
 
 """
 
@@ -30,4 +29,3 @@ from .interp import *
 from .grids import *
 from .burp import *
 from .burp_const import *
-from .burpfile import *
