@@ -6,7 +6,7 @@
 # Copyright: LGPL 2.1
 
 """
-
+Utility functions to read and write 3d RPNSTD fields
 """
 
 import numpy  as _np
@@ -24,6 +24,62 @@ def get_levels_press(fileId, vGrid, shape, ip1list,
                      datev=-1, ip2=-1, ip3=-1, typvar=' ', etiket=' ',
                      verbose=False):
     """
+    Read the reference surface field and computer the pressure cube
+
+    press = get_levels_press(fileId, vGrid, shape, ip1list)
+    press = get_levels_press(fileId, vGrid, shape, ip1list,
+                             datev, ip2, ip3, typvar, etiket)
+    
+    Args:
+        fileId  : unit number associated to the file
+                  obtained with fnom+fstouv
+        vGrid   : vertical grid descriptor
+        shape   : shape of the field
+        ip1list : vertical levels ip lists
+        datev   : valid date
+        ip2     : forecast hour
+        ip3     : user defined identifier
+        typvar  : type of field
+        etiket  : label
+        verbose : Print some info when true
+    Returns:
+        {
+            'rfld' : rfld,  # 2d field reference value
+            'phPa' : phPa   # 3d pressure values
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        FSTDError  on any other error       
+        
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.utils.fstd3d as fstd3d
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+    >>> 
+    >>> # Open existing file in Rear Only mode
+    >>> fileId = rmn.fstopenall(filename, rmn.FST_RO)
+    >>> 
+    >>> # Get the pressure cube
+    >>> ipkeys  = fstd3d.get_levels_keys(fileId, 'TT', thermoMom='VIPT')
+    >>> ip1list = [ip1 for ip1,key in ipkeys['ip1keys']]
+    >>> shape   = rmn.fstinf(fileId, nomvar='TT')['shape'][0:2]
+    >>> press   = fstd3d.get_levels_press(fileId, ipkeys['v'], shape, ip1list)
+    >>> print('# {} {} {}'.format(shape, press['rfld'].shape, press['phPa'].shape))
+    # (200, 100) (200, 100) (200, 100, 80)
+    >>> rmn.fstcloseall(fileId)
+    
+    See Also:
+        get_levels_keys
+        fst_read_3d
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstprm
+        rpnpy.librmn.fstd98.fstluk
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.vgd.vgd_levels
     """
     rfldName = _vgd.vgd_get(vGrid, 'RFLD')
     rfld     = _np.empty(shape, dtype=_np.float32, order='F')
@@ -66,6 +122,65 @@ def get_levels_keys(fileId, nomvar, datev=-1, ip2=-1, ip3=-1,
                     typvar=' ', etiket=' ',
                     vGrid=None, thermoMom='VIPT', verbose=False):
     """
+    Get from file the list of ip1 and fstd-record-key matching provided filters
+
+    ipkeys = get_levels_keys(fileId, nomvar)
+    
+    Args:
+        fileId  : unit number associated to the file
+                  obtained with fnom+fstouv
+        nomvar  : variable name
+        datev   : valid date
+        ip2     : forecast hour
+        ip3     : user defined identifier
+        typvar  : type of field
+        etiket  : label
+        vGrid   : vertical grid descriptor
+        thermoMom : 'VIPT' to get Thermo levels, 'VIPT' for momentum levels
+        verbose : Print some info when true
+    Returns:
+        {
+        'nomvar' : nomvar,  # variable name
+        'datev'  : datev,   # valid date
+        'ip2'    : ip2,     # forecast hour
+        'ip3'    : ip3,     # user defined identifier
+        'typvar' : typvar,  # type of field
+        'etiket' : etiket,  # label
+        'v'      : vGrid,   # vertical grid descriptor as returned by vgd_read
+        'ip1keys': vipkeys  # list of ip1 and corresponding FSTD rec key as
+                            # ((ip1,key1), (ip1b, key2), ...)
+        }
+    Raises:
+        TypeError  on wrong input arg types
+        ValueError on invalid input arg value
+        FSTDError  on any other error       
+        
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> import rpnpy.utils.fstd3d as fstd3d
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
+    >>> 
+    >>> # Open existing file in Rear Only mode
+    >>> fileId = rmn.fstopenall(filename, rmn.FST_RO)
+    >>> 
+    >>> # Find ip1, key for all TT in file
+    >>> ipkeys = fstd3d.get_levels_keys(fileId, 'TT', thermoMom='VIPT', verbose=True)
+    Getting vertical grid description
+    Found 158 VIPT levels of type hyb
+    >>> print('# Found {} levels for TT'.format(len(ipkeys['ip1keys'])))
+    # Found 80 levels for TT
+    >>> rmn.fstcloseall(fileId)
+    
+    See Also:
+        get_levels_press
+        fst_read_3d
+        rpnpy.librmn.fstd98.fstinf
+        rpnpy.librmn.fstd98.fstprm
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.vgd.base.vgd_read
     """
     #TODO: try to get the sorted ip1 list w/o vgrid, because vgrid doesn;t support 2 different vertical coor in the same file (or list of linked files)
     
@@ -123,11 +238,11 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     Only provided parameters with value different than default
     are used as selection criteria
     
-    field3d = fst_read_3d(iunit, ... )
+    field3d = fst_read_3d(fileId, ... )
     
     Args:
-        iunit   : unit number associated to the file
-                  obtained with fnom+fstouv
+        fileId  : unit number associated to the file
+                  obtained with fnom+fstouv or fstopenall
         datev   : valid date
         etiket  : label
         ip1     : vertical levels lists
@@ -135,14 +250,14 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
         ip3     : user defined identifier
         typvar  : type of field
         nomvar  : variable name
-        getPress:
+        getPress: if true, get the ref. surface field and compute pressure cube
         dtype   : array type of the returned data
                   Default is determined from records' datyp
                   Could be any numpy.ndarray type
                   See: http://docs.scipy.org/doc/numpy/user/basics.types.html
         rank    : try to return an array with the specified rank
         dataArray (ndarray): (optional) allocated array where to put the data
-        verbose : 
+        verbose :  Print some info when true
     Returns:
         None if no matching record, else:
         {
@@ -151,8 +266,10 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             'v'    : vGridInfo,  # vertical grid info as returned by vgd_read
             'ip1s' : ip1List     # List of ip1 of each level (tuple of int)
             ...                  # same params list as fstprm (less ip1)
+            'rfld' : rfld,       # (if getPress) 2d reference field value
+            'phPa' : phPa        # (if getPress) 3d pressure values
         }
-     Raises:
+    Raises:
         TypeError  on wrong input arg types
         ValueError on invalid input arg value
         FSTDError  on any other error       
@@ -165,25 +282,33 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk')
     >>> 
     >>> # Open existing file in Rear Only mode
-    >>> funit = rmn.fstopenall(filename, rmn.FST_RO)
+    >>> fileId = rmn.fstopenall(filename, rmn.FST_RO)
     >>> 
     >>> # Find and read p0 meta and data, then print its min,max,mean values
-    >>> tt3d = fstd3d.fst_read_3d(funit, nomvar='TT')
+    >>> tt3d = fstd3d.fst_read_3d(fileId, nomvar='TT')
+    Read TT   ip1=97642568 ip2=0 ip3=0 typv=P  etk=G133K80P    
+    Read the horizontal grid descriptors for TT  
+    Read TT   ip1=97738568 ip2=0 ip3=0 typv=P  etk=G133K80P    
+    Read TT   ip1=97899568 ip2=0 ip3=0 typv=P  etk=G133K80P    
+    Read TT   ip1=98152568 ip2=0 ip3=0 typv=P  etk=G133K80P
+    # ...
     >>> print("# TT ip2={0} min={1} max={2} avg={3}"\
               .format(tt3d['ip2'], tt3d['d'].min(), tt3d['d'].max(), tt3d['d'].mean()))
-    # TT ip2=0 min=530.641418 max=1039.641479 avg=966.500000
-    >>> rmn.fstcloseall(funit)
+    # TT ip2=0 min=-88.4168 max=40.3293 avg=-36.29
+    >>> rmn.fstcloseall(fileId)
     
     See Also:
-    get_levels_keys
-    fst_write_3d
-    rpnpy.librmn.fstd98.fstlir
-    rpnpy.librmn.fstd98.fstprm
-    rpnpy.librmn.fstd98.fstluk
-    rpnpy.librmn.fstd98.fstopenall
-    rpnpy.librmn.fstd98.fstcloseall
-    rpnpy.librmn.grids.readGrid
-    rpnpy.vgd.base.vgd_read
+        get_levels_keys
+        get_levels_press
+        fst_write_3d
+        rpnpy.librmn.fstd98.fstlir
+        rpnpy.librmn.fstd98.fstprm
+        rpnpy.librmn.fstd98.fstluk
+        rpnpy.librmn.fstd98.fstopenall
+        rpnpy.librmn.fstd98.fstcloseall
+        rpnpy.librmn.grids.readGrid
+        rpnpy.vgd.base.vgd_read
+        rpnpy.vgd.base.vgd_levels
     """
     # Get the list of ip1 on thermo, momentum levels in this file
     #TODO: if ip1 is provided get the keys for these ip1
@@ -256,3 +381,14 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
             })
 
     return r3d
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

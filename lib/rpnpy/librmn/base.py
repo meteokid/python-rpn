@@ -36,9 +36,9 @@ class RMNBaseError(RMNError):
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting decoded grid values.")
+    ...     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem getting decoded grid values.")
 
     See also:
         rpnpy.librmn.RMNError
@@ -57,7 +57,7 @@ def fclos(iunit):
         iunit   : unit number associated to the file
                   obtained with fnom or fstopenall
     Returns:
-        None
+        0 on succes
     Raises:
         TypeError  on wrong input arg types    
         ValueError on invalid input arg value
@@ -68,10 +68,10 @@ def fclos(iunit):
     >>> import rpnpy.librmn.all as rmn
     >>> filename = 'myfstfile.fst'
     >>> try:
-    >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem opening the file: {0}".format(filename))
-    >>> rmn.fclos(iunit)
+    ...     iunit = rmn.fnom(filename, rmn.FST_RW)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem opening the file: {0}".format(filename))
+    >>> istat = rmn.fclos(iunit)
     >>> os.unlink(filename)  # Remove test file
     
     
@@ -113,10 +113,10 @@ def fnom(filename, filemode=_rc.FST_RW, iunit=0):
     >>> import rpnpy.librmn.all as rmn
     >>> filename = 'myfstfile.fst'
     >>> try:
-    >>>     iunit = rmn.fnom(filename, rmn.FST_RW)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem opening the file: {0}".format(filename))
-    >>> rmn.fclos(iunit)
+    ...     iunit = rmn.fnom(filename, rmn.FST_RW)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem opening the file: {0}".format(filename))
+    >>> istat = rmn.fclos(iunit)
     >>> os.unlink(filename)  # Remove test file
     
     See also:
@@ -239,9 +239,9 @@ def crc32(crc, buf):
     >>> import rpnpy.librmn.all as rmn
     >>> buf = np.array([4,3,7,1,9], dtype=np.uint32)
     >>> try:
-    >>>     crc = rmn.crc32(0,buf)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem computing CRC value.")
+    ...     crc = rmn.crc32(0,buf)
+    ... except:
+    ...     sys.stderr.write("There was a problem computing CRC value.")
     """
     if not (buf.dtype == _np.uint32 and buf.flags['F_CONTIGUOUS']):
         buf = _np.asfortranarray(buf, dtype=_np.uint32)
@@ -273,9 +273,9 @@ def cigaxg(grtyp, ig1, ig2=0, ig3=0, ig4=0):
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem getting decoded grid values.")
+    ...     xg1234 = rmn.cigaxg('E', 0, 0, 0, 0)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem getting decoded grid values.")
     
     See also:
        cxgaig
@@ -329,9 +329,9 @@ def cxgaig(grtyp, xg1, xg2=0., xg3=0., xg4=0.):
     >>> import sys
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>     ig1234 = rmn.cxgaig('L', -89.5, 180.0, 0.5, 0.5)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write(There was a problem getting encoded grid values.")
+    ...     ig1234 = rmn.cxgaig('L', -89.5, 180.0, 0.5, 0.5)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem getting encoded grid values.")
     
     See also:
        cigaxg
@@ -381,10 +381,10 @@ def incdatr(idate, nhours):
     >>> import rpnpy.librmn.all as rmn
     >>> (yyyymmdd, hhmmsshh, nhours0) = (20150123, 0, 6.)
     >>> try:
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
-    >>>     idate2 = rmn.incdatr(idate1, nhours0)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem computing increased date.")
+    ...     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    ...     idate2 = rmn.incdatr(idate1, nhours0)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem computing increased date.")
     
     See also:
         newdate
@@ -431,11 +431,11 @@ def difdatr(idate1, idate2):
     >>> import rpnpy.librmn.all as rmn
     >>> (yyyymmdd, hhmmsshh, nhours0) = (20150123, 0, 6.)
     >>> try:
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
-    >>>     idate2 = rmn.incdatr(idate1, nhours0)
-    >>>     nhours = rmn.difdatr(idate2, idate1)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem computing date diff.")
+    ...     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    ...     idate2 = rmn.incdatr(idate1, nhours0)
+    ...     nhours = rmn.difdatr(idate2, idate1)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem computing date diff.")
     
     See also:
         newdate
@@ -699,10 +699,10 @@ def newdate(imode, idate1, idate2=0):
     >>> import rpnpy.librmn.all as rmn
     >>> (yyyymmdd, hhmmsshh) = (20150123, 0)
     >>> try:
-    >>>     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
-    >>>     (yyyymmdd2, hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, idate1)
-    >>> except rmn.RMNBaseError:
-    >>>     sys.stderr.write("There was a problem encoding/decoding the date.")
+    ...     idate1 = rmn.newdate(rmn.NEWDATE_PRINT2STAMP, yyyymmdd, hhmmsshh)
+    ...     (yyyymmdd2, hhmmsshh2) = rmn.newdate(rmn.NEWDATE_STAMP2PRINT, idate1)
+    ... except rmn.RMNBaseError:
+    ...     sys.stderr.write("There was a problem encoding/decoding the date.")
     
     See also:
         accept_leapyear

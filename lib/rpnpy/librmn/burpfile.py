@@ -9,13 +9,11 @@
 Python High Level Interface for BUPR files.
 """
 
-from rpnpy.librmn import proto_burp as _rpb
 from rpnpy.librmn import burp as _brp
 from rpnpy.librmn import base as _rb
 from rpnpy.librmn import const as _rc
 from rpnpy.librmn import burp_const as _rbc
 import numpy as _np
-import numpy.ctypeslib as _npc
 import ctypes as _ct
 from calendar import timegm as _timegm
 from copy import deepcopy as _deepcopy
@@ -677,7 +675,9 @@ def plot_burp(bf, code=None, cval=None, ax=None, level=0, mask=None, projection=
 # =========================================================================
 
 if __name__ == "__main__":
-    print("Python BURP High Level Interface")
+    import doctest
+    doctest.testmod()
+
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

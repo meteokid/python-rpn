@@ -87,7 +87,9 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 	echo "export RPNPY_RMN_LIBPATH=$${librmnpath%/*}" >> $@ ;\
 	echo "export RPNPY_RMN_VERSION=$${librmnname%.so}" >> $@ ;\
 	echo "export RPNPY_VGD_LIBPATH=$${libvgdpath%/*}" >> $@ ;\
-	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@
+	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@ ;\
+	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
+	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@
 
 $(LIBDIR)/librmnshared_rpnpy_cp.so:
 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\

@@ -520,3 +520,14 @@ BURP_BKSTP_DESC = { #TODO
 
 #TODO: stnid=^******* = regrouped data record
 #TODO: stnid=^^****** = summary record
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

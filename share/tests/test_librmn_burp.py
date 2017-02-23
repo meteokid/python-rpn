@@ -427,7 +427,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                               datyp=blkparams['datyp'])
                 #TODO: check results            
             rmn.burp_close(funit)
-
+            
     def testmrfvoiKnownValues(self):
         """mrfvoi should give known result with known input"""
         RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
@@ -447,6 +447,24 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             bfile = rmn.BurpFile(self.getFN(mypath),'r')
             #TODO: check results
 
+
+    def testmrbxtrdclcvtKnownValues(self):
+        """mrbxtrdclcvt should give known result with known input"""
+        for mypath, itype, iunit in self.knownValues:
+            rmn.mrfopt(rmn.FSTOP_MSGLVL, rmn.BURPOP_MSG_FATAL)
+            funit  = rmn.burp_open(self.getFN(mypath))
+            nbrp   = rmn.mrfnbr(funit)
+            maxlen = max(64, rmn.mrfmxl(funit))+10
+
+            buf = None
+            handle = 0
+            handle = rmn.mrfloc(funit, handle)
+            buf    = rmn.mrfget(handle, buf, funit)
+            params = rmn.mrbhdr(buf)
+            for iblk in xrange(params['nblk']):
+                blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
+                #TODO: check results            
+            rmn.burp_close(funit)
 
 
     ## def testmrbxtrcvtKnownValues(self):

@@ -47,11 +47,11 @@ class EzscintError(RMNError):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>    rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
-    >>> except rmn.EzscintError:
-    >>>    pass #ignore the error
-    >>> finally:
-    >>>    print("# Whatever happens, error or not, print this.")
+    ...    rmn.ezsetopt(rmn.EZ_OPT_INTERP_DEGREE, rmn.EZ_INTERP_LINEAR)
+    ... except rmn.EzscintError:
+    ...    pass #ignore the error
+    ... finally:
+    ...    print("# Whatever happens, error or not, print this.")
     # Whatever happens, error or not, print this.
     
     See also:

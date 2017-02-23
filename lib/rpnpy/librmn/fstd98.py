@@ -39,11 +39,18 @@ class FSTDError(RMNError):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>    #... an fst98 operation ...
-    >>> except(rmn.FSTDError):
-    >>>    pass #ignore the error
+    ...    pass #... an fst98 operation ...
+    ... except(rmn.FSTDError):
+    ...    pass #ignore the error
     >>> #...
     >>> raise rmn.FSTDError()
+    Traceback (most recent call last):
+      File "/usr/lib/python2.7/doctest.py", line 1289, in __run
+        compileflags, 1) in test.globs
+      File "<doctest __main__.FSTDError[2]>", line 1, in <module>
+        raise rmn.FSTDError()
+    FSTDError
+
 
     See Also:
        rpnpy.librmn.RMNError
@@ -1135,9 +1142,9 @@ def fstlir(iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> 
     >>> # Find and read p0 meta and data, then print its min,max,mean values
     >>> p0rec = rmn.fstlir(funit, nomvar='P0')
-    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
-              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=0 min=530.641418 max=1039.641479 avg=966.500000
+    >>> print("# P0 ip2={0} min={1:7.3f} max={2:7.2f} avg={3:5.1f}"\
+              .format(p0rec['ip2'], float(p0rec['d'].min()), float(p0rec['d'].max()), float(p0rec['d'].mean())))
+    # P0 ip2=0 min=530.641 max=1039.64 avg=966.5
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1207,9 +1214,9 @@ def fstlirx(key, iunit, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlirx(key1, funit, nomvar='P0')
-    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
-              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
+    >>> print("# P0 ip2={0} min={1:7.3f} max={2:7.2f} avg={3:8.4f}"\
+              .format(p0rec['ip2'], float(p0rec['d'].min()), float(p0rec['d'].max()), float(p0rec['d'].mean())))
+    # P0 ip2=12 min=530.958 max=1037.96 avg=966.3736
     >>> rmn.fstcloseall(funit)
     
     See Also:
@@ -1267,9 +1274,9 @@ def fstlis(iunit, dtype=None, rank=None, dataArray=None):
     >>> # then print its min,max,mean values
     >>> key1  = rmn.fstinf(funit, nomvar='P0')
     >>> p0rec = rmn.fstlis(funit)
-    >>> print("# P0 ip2={0} min={1} max={2} avg={3}"\
-              .format(p0rec['ip2'], p0rec['d'].min(), p0rec['d'].max(), p0rec['d'].mean()))
-    # P0 ip2=12 min=530.958008 max=1037.958008 avg=966.373600
+    >>> print("# P0 ip2={0} min={1:7.3f} max={2:7.2f} avg={3:8.4f}"\
+              .format(p0rec['ip2'], float(p0rec['d'].min()), float(p0rec['d'].max()), float(p0rec['d'].mean())))
+    # P0 ip2=12 min=530.958 max=1037.96 avg=966.3736
     >>>    
     >>> rmn.fstcloseall(funit)
     

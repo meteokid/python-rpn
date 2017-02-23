@@ -332,3 +332,13 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
 #</source>
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

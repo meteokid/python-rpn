@@ -12,7 +12,8 @@ COMPONENTS        := rpnpy
 COMPONENTS_UC     := $(foreach item,$(COMPONENTS),$(call rdeuc,$(item)))
 COMPONENTS_VFILES := $(foreach item,$(COMPONENTS_UC),$($(item)_VFILES))
 
-MODULES_DOCTESTS := $(ROOT)/lib/Fstdc.py $(ROOT)/lib/rpnstd.py $(ROOT)/lib/rpnpy/rpndate.py $(ROOT)/lib/rpnpy/librmn/base.py $(ROOT)/lib/rpnpy/librmn/fstd98.py  $(ROOT)/lib/rpnpy/librmn/interp.py $(ROOT)/lib/rpnpy/librmn/grids.py
+#MODULES_DOCTESTS := $(ROOT)/lib/Fstdc.py $(ROOT)/lib/rpnstd.py $(ROOT)/lib/rpnpy/rpndate.py $(ROOT)/lib/rpnpy/librmn/base.py $(ROOT)/lib/rpnpy/librmn/fstd98.py  $(ROOT)/lib/rpnpy/librmn/interp.py $(ROOT)/lib/rpnpy/librmn/grids.py
+MODULES_DOCTESTS := $(wildcard $(ROOT)/lib/*.py) $(wildcard $(ROOT)/lib/rpnpy/*.py) $(wildcard $(ROOT)/lib/rpnpy/librmn/*.py) $(wildcard $(ROOT)/lib/rpnpy/utils/*.py) $(wildcard $(ROOT)/lib/rpnpy/vgd/*.py)
 MODULES_TESTS    := $(wildcard $(ROOT)/share/tests/test_*.py)
 MODULES_TESTSKSH := $(wildcard $(ROOT)/share/tests/test_*.ksh)
 
@@ -68,8 +69,10 @@ components_uninstall: $(COMPONENTS_UNINSTALL_ALL)
 #------------------------------------
 doctests:
 	echo -e "\n======= PY-DocTest List ========\n" ; \
-	for i in $(MODULES_DOCTESTS); \
-	do echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
+	for i in $(MODULES_DOCTESTS); do \
+	if [[ x$${i##*/} != xall.py && x$${i##*/} != xproto.py  && x$${i##*/} != xproto_burp.py ]] ; then \
+	echo -e "\n==== PY-DocTest: " $$i "====\n"; python $$i ;\
+	fi ; \
 	done
 
 unittests: 

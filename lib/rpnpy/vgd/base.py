@@ -45,9 +45,9 @@ def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls = (0.980000, 0.993000, 1.000000)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_sigm(lvls)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_sigm(lvls)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -80,9 +80,9 @@ def vgd_new_pres(pres, ip1=-1, ip2=-1):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -121,9 +121,9 @@ def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
                  0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_eta(lvls, ptop)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_eta(lvls, ptop)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -174,9 +174,9 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     >>> ptop   = 110.
     >>> pref   = 80000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_hyb(lvls, rcoef1, ptop, pref)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_hyb(lvls, rcoef1, ptop, pref)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -222,9 +222,9 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     >>> ptop   = 805.
     >>> pref   = 100000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_hybs(lvls, rcoef1, rcoef2, ptop, pref)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_hybs(lvls, rcoef1, rcoef2, ptop, pref)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -273,9 +273,9 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     >>> ptop   = 1000.
     >>> pref   = 100000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_hybt(lvls, rcoef1, rcoef2, ptop, pref)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_hybt(lvls, rcoef1, rcoef2, ptop, pref)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -327,9 +327,9 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     >>> ptop   = -1.
     >>> pref   = 100000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_hybm(lvls, rcoef1, rcoef2, ptop, pref)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_hybm(lvls, rcoef1, rcoef2, ptop, pref)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -382,9 +382,9 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     >>> dhm    = 10.
     >>> dht    = 2.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         vgd_new
@@ -439,9 +439,9 @@ def vgd_new(kind, version, hyb,
     >>> dhm    = 10.
     >>> dht    = 2.
     >>> try:
-    >>>     myvgd = vgd.vgd_new(kind, version, lvls, rcoef1, rcoef2, pref=pref, dhm=dhm, dht=dht)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     myvgd = vgd.vgd_new(kind, version, lvls, rcoef1, rcoef2, pref=pref, dhm=dhm, dht=dht)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
     
     See Also:
         rpnpy.vgd.const.VGD_KIND_VER
@@ -524,11 +524,11 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     >>> fileName = os.path.join(ATM_MODEL_DFILES,'bcmk_toctoc','2009042700_000')
     >>> fileId = rmn.fstopenall(fileName, rmn.FST_RO)
     >>> try:
-    >>>     myvgd = vgd.vgd_read(fileId)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem reading the VGridDescriptor")
-    >>> finally:
-    >>>     rmn.fstcloseall(fileId)
+    ...     myvgd = vgd.vgd_read(fileId)
+    ... except:
+    ...     sys.stderr.write("There was a problem reading the VGridDescriptor")
+    ... finally:
+    ...     rmn.fstcloseall(fileId)
 
     See Also:
         rpnpy.librmn.fstd98.fstopenall
@@ -567,18 +567,18 @@ def vgd_write(vgd_ptr, fileId):
     >>> import rpnpy.librmn.all as rmn
     >>> lvls = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> fileName = 'myfstfile.fst'
     >>> fileId   = rmn.fstopenall(fileName, rmn.FST_RW)
     >>> try:
-    >>>     vgd.vgd_write(myvgd, fileId)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem writing the VGridDescriptor")
-    >>> finally:
-    >>>     rmn.fstcloseall(fileId)
+    ...     vgd.vgd_write(myvgd, fileId)
+    ... except:
+    ...     sys.stderr.write("There was a problem writing the VGridDescriptor")
+    ... finally:
+    ...     rmn.fstcloseall(fileId)
 
     See Also:
         rpnpy.librmn.fstd98.fstopenall
@@ -614,10 +614,10 @@ def vgd_free(vgd_ptr):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> ## Do some work with myvgd
     >>> vgd.vgd_free(myvgd)
 
@@ -647,14 +647,14 @@ def vgd_tolist(vgd_ptr):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> try:
-    >>>     vgdtable = vgd.vgd_tolist(myvgd)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem encoding the VGridDescriptor in a list")
+    ...     vgdtable = vgd.vgd_tolist(myvgd)
+    ... except:
+    ...     sys.stderr.write("There was a problem encoding the VGridDescriptor in a list")
 
     See Also:
         vgd_fromlist
@@ -684,16 +684,16 @@ def vgd_fromlist(vgd_table):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd    = vgd.vgd_new_pres(lvls)
-    >>>     vgdtable = vgd.vgd_tolist(myvgd)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd    = vgd.vgd_new_pres(lvls)
+    ...     vgdtable = vgd.vgd_tolist(myvgd)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
+    ...     sys.exit(1)
     >>> ## ...
     >>> try:
-    >>>     myvgd2 = vgd.vgd_fromlist(vgdtable)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor in a list")
+    ...     myvgd2 = vgd.vgd_fromlist(vgdtable)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor in a list")
 
     See Also:
         vgd_tolist
@@ -729,15 +729,15 @@ def vgd_copy(vgd_ptr):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating/encoding the VGridDescriptor")
+    ...     sys.exit(1)
     >>> ## ...
     >>> try:
-    >>>     myvgd2 = vgd.vgd_copy(myvgd)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem copying the VGridDescriptor")
+    ...     myvgd2 = vgd.vgd_copy(myvgd)
+    ... except:
+    ...     sys.stderr.write("There was a problem copying the VGridDescriptor")
 
     See Also:
         vgd_tolist
@@ -770,9 +770,9 @@ def vgd_get_opt(key, quiet=1):
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
     >>> try:
-    >>>     allow_signma = vgd.vgd_get_opt('ALLOW_SIGMA')
-    >>> except:
-    >>>     sys.stderr.write("There was a problem getting vgd gloabl option")
+    ...     allow_signma = vgd.vgd_get_opt('ALLOW_SIGMA')
+    ... except:
+    ...     sys.stderr.write("There was a problem getting vgd gloabl option")
 
     See Also:
         rpnpy.vgd.const.VGD_KEYS
@@ -813,9 +813,9 @@ def vgd_put_opt(key, value):
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
     >>> try:
-    >>>     vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem setting vgd gloabl option")
+    ...     vgd.vgd_put_opt('ALLOW_SIGMA', vgd.VGD_ALLOW_SIGMA)
+    ... except:
+    ...     sys.stderr.write("There was a problem setting vgd gloabl option")
 
     See Also:
         rpnpy.vgd.const.VGD_KEYS
@@ -858,14 +858,14 @@ def vgd_get(vgd_ptr, key, quiet=1):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> try:
-    >>>     vkind = vgd.vgd_get(myvgd, 'KIND')
-    >>> except:
-    >>>     sys.stderr.write("There was a problem getting vgd parameter value")
+    ...     vkind = vgd.vgd_get(myvgd, 'KIND')
+    ... except:
+    ...     sys.stderr.write("There was a problem getting vgd parameter value")
 
     See Also:
         rpnpy.vgd.const.VGD_KEYS
@@ -962,14 +962,14 @@ def vgd_put(vgd_ptr, key, value):
     >>> import rpnpy.vgd.all as vgd
     >>> lvls  = (500.,850.,1000.)
     >>> try:
-    >>>     myvgd = vgd.vgd_new_pres(lvls)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_pres(lvls)
+    ... except:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> try:
-    >>>     vgd.vgd_put(myvgd, 'IP_1', 2)
-    >>> except:
-    >>>     sys.stderr.write("There was a problem setting vgd parameter value")
+    ...     vgd.vgd_put(myvgd, 'IP_1', 2)
+    ... except:
+    ...     sys.stderr.write("There was a problem setting vgd parameter value")
 
     See Also:
         rpnpy.vgd.const.VGD_KEYS
@@ -1012,15 +1012,16 @@ def vgd_cmp(vgd0ptr, vgd1ptr):
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
     >>> try:
-    >>>     myvgd0 = vgd.vgd_new_pres((500.,850.,1000.))
-    >>>     myvgd1 = vgd.vgd_new_pres((550.,900.,1013.))
-    >>> except:
-    >>>     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    >>>     sys.exit(1)
+    ...     myvgd0 = vgd.vgd_new_pres((500.,850.,1000.))
+    ...     myvgd1 = vgd.vgd_new_pres((550.,900.,1013.))
+    ... except:
+    ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
+    ...     sys.exit(1)
     >>> if vgd.vgd_cmp(myvgd0, myvgd1):
-    >>>     print("The 2 VGridDescriptors are identical.")
-    >>> else:
-    >>>     print("The 2 VGridDescriptors differ.")
+    ...     print("# The 2 VGridDescriptors are identical.")
+    ... else:
+    ...     print("# The 2 VGridDescriptors differ.")
+    # The 2 VGridDescriptors differ.
 
     See Also:
         vgd_new
@@ -1071,14 +1072,14 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
                  0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
-    >>>     myvgd = vgd.vgd_new_eta(lvls, ptop)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write('There was a problem creating the VGridDescriptor')
-    >>>     sys.exit(1)
+    ...     myvgd = vgd.vgd_new_eta(lvls, ptop)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write('There was a problem creating the VGridDescriptor')
+    ...     sys.exit(1)
     >>> try:
-    >>>     levels = vgd.vgd_levels(myvgd, rfld=100130.)
-    >>> except vgd.VGDError:
-    >>>     sys.stderr.write("There was a problem computing VGridDescriptor levels")
+    ...     levels = vgd.vgd_levels(myvgd, rfld=100130.)
+    ... except vgd.VGDError:
+    ...     sys.stderr.write("There was a problem computing VGridDescriptor levels")
 
     See Also:
         rpnpy.vgd.const.VGD_DIAG_LOGP

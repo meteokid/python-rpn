@@ -127,3 +127,13 @@ def spherical_to_cartesian(spherical_vect, cart_vect):
     cart_vect[0] = spherical_vect[0] * _math.cos(spherical_vect[2]) * sin_theta
     cart_vect[1] = spherical_vect[0] * _math.sin(spherical_vect[2]) * sin_theta
     cart_vect[2] = spherical_vect[0] * _math.cos(spherical_vect[1])
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+
+
+# -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
+# vim: set expandtab ts=4 sw=4:
+# kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

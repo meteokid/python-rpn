@@ -53,11 +53,17 @@ class BurpError(RMNError):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> try:
-    >>>    #... a burpfile operation ...
-    >>> except(rmn.BurpError):
-    >>>    pass #ignore the error
-    >>> #...
+    ...    pass #... a burpfile operation ...
+    ... except(rmn.BurpError):
+    ...    pass #ignore the error
+    ... #...
     >>> raise rmn.BurpError()
+    Traceback (most recent call last):
+      File "/usr/lib/python2.7/doctest.py", line 1289, in __run
+        compileflags, 1) in test.globs
+      File "<doctest __main__.BurpError[4]>", line 1, in <module>
+        raise rmn.BurpError()
+    BurpError: 'Error occured while executing; '
 
     See Also:
        rpnpy.librmn.RMNError
@@ -166,7 +172,7 @@ def burp_open(filename, filemode=_rbc.BURP_MODE_READ):
     >>> #...
     >>> rmn.burp_close(funit1)
     >>> rmn.burp_close(funit2)
-    >>> os.unlink('newfile.fst')  # Remove test file
+    >>> os.unlink('newfile.brp')  # Remove test file
     
     See Also:
        mrfopn
@@ -265,6 +271,7 @@ def mrfopt(optName, optValue=None):
     >>> import rpnpy.librmn.all as rmn
     >>> # Restrict to the minimum the number of messages printed by librmn
     >>> rmn.mrfopt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    'SYSTEM   '
 
     See Also:
         rpnpy.librmn.burp_const
@@ -318,10 +325,10 @@ def mrfopn(funit, mode=_rc.FILE_MODE_RW):
     >>> import os
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RW)
-    >>> rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
+    >>> n = rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
     >>> # ...
     >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
     >>> os.unlink('myburpfile.brp')  # Remove test file
 
     See Also:
@@ -355,10 +362,10 @@ def mrfcls(funit):
     >>> import os
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RW)
-    >>> rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
+    >>> n = rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
     >>> # ...
     >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
     >>> os.unlink('myburpfile.brp')  # Remove test file
 
     See Also:
@@ -393,7 +400,7 @@ def mrfvoi(funit):
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
     >>> nrep  = rmn.mrfvoi(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
 
     See Also:
         mrfopn
@@ -421,10 +428,13 @@ def mrfnbr(funit):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit = rmn.fnom(filename, rmn.FILE_MODE_RO)
     >>> nrep  = rmn.mrfnbr(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
 
     See Also:
         mrfopn
@@ -453,10 +463,13 @@ def mrfmxl(funit):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit = rmn.fnom(filename, rmn.FILE_MODE_RO)
     >>> maxlen = rmn.mrfmxl(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
 
     See Also:
         mrfbfl
@@ -489,7 +502,7 @@ def mrfbfl(funit):
     >>> import rpnpy.librmn.all as rmn
     >>> funit  = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
     >>> maxlen = rmn.mrfbfl(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
 
     See Also:
         mrfmxl
@@ -538,8 +551,11 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, ilat=-1, ilon=-1,
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> ## See mrfget, mrbhdr, mrbprm, mrbxtr for how to get the meta + data
     >>> rmn.burp_close(funit)
@@ -573,11 +589,13 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, ilat=-1, ilon=-1,
             params['sup'] = _np.empty((1,), dtype=_np.int32)
         else:
             params['sup'] = _np._np.asfortranarray(params['sup'], dtype=_np.int32)
+    else:
+        raise TypeError('sup should be a None, list, tuple')
     #NOTE: providing sup as ndarray of size > 0 with value zero cause a seg fault, apparently sup is not supported by the librmn api
     ## elif isinstance(sup, _np.ndarray):
     ##     nsup = sup.size
-    else:
-        raise TypeError('sup should be a None, list, tuple or ndarray')
+    ## else:
+    ##     raise TypeError('sup should be a None, list, tuple or ndarray')
     if nsup > 0:
         raise TypeError('sup is not supported in this version of librmn, ' +
                         'should prived None or empty list')
@@ -609,8 +627,11 @@ def mrfget(handle, rpt=None, funit=None):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
     >>> ## See mrbhdr, mrbprm, mrbxtr for how to get the meta + data
@@ -662,7 +683,7 @@ def mrfput(funit, handle, rpt):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RW)
-    >>> rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
+    >>> n = rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
     >>> nrpt  = 1024 ## Set nrpt to appropriate size
     >>> rpt   =_np.empty((nrpt,), dtype=_np.int32)
     >>> ## Fill rpt with relevant info
@@ -670,7 +691,7 @@ def mrfput(funit, handle, rpt):
     >>> handle = 0
     >>> rmn.mrfput(funit, handle, rpt)
     >>> rmn.mrfcls(funit)
-    >>> rmn.fclos(funit)
+    >>> istat = rmn.fclos(funit)
 
     See Also:
         mrfget
@@ -752,11 +773,14 @@ def mrbhdr(rpt):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> ## See mrbprm, mrbxtr for how to get the meta + data
     >>> rmn.burp_close(funit)
 
@@ -916,13 +940,16 @@ def mrbprm(rpt, blkno):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkparams = rmn.mrbprm(rpt, iblk+1)
+    ...     blkparams = rmn.mrbprm(rpt, iblk+1)
     >>> ## See mrbxtr for how to get the data
     >>> rmn.burp_close(funit)
 
@@ -1014,14 +1041,17 @@ def mrbtyp_decode(btyp):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkparams = rmn.mrbprm(rpt, iblk+1)
-    >>>     params    = rmn.mrbtyp_decode(blkparams['btyp'])
+    ...     blkparams = rmn.mrbprm(rpt, iblk+1)
+    ...     params    = rmn.mrbtyp_decode(blkparams['btyp'])
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1031,7 +1061,7 @@ def mrbtyp_decode(btyp):
         burp_open
         mrfloc
         mrfget
-        mrfhdr
+        mrbhdr
         mrbprm
     """
     if btyp < 0:
@@ -1072,6 +1102,7 @@ def mrbtyp_decode(btyp):
         'bkstpd'      : bkstpd
         }
 
+
 def mrbtyp_encode_bknat(bknat_multi, bknat_kind):
     """
     Encode bknat_multi, bknat_kind into bknat
@@ -1088,6 +1119,7 @@ def mrbtyp_encode_bknat(bknat_multi, bknat_kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
+    >>> #TODO
 
     See Also:
         mrbtyp_decode
@@ -1113,6 +1145,7 @@ def mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
+    >>> #TODO
 
     See Also:
         mrbtyp_decode
@@ -1145,6 +1178,7 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
         BurpError  on any other error
 
     Examples:
+    >>> import rpnpy.librmn.all as rmn
     >>> #TODO
 
     See Also:
@@ -1161,7 +1195,8 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
             bknat = bknat['bknat']
         except:
             raise BurpError('mrbtyp_encode: must provied all 3 sub values: bknat, bktyp, bkstp',)
-    if bknat < 0 or bktyp < 0 or bkstp < 0:
+    if (bknat < 0 or bktyp < 0 or bkstp < 0 or
+        bknat is None or bktyp is None or bkstp is None):
         raise ValueError('Provided bknat, bktyp, bkstp must all be > 0')
     #TODO: use librmn c funtion (investigate why it does not work as expected)
     ## c_bknat = _ct.c_int(bknat)
@@ -1196,7 +1231,6 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
                                NELE: Number of meteorological elements in a
                                      block. 1st dimension of the array
                                      TBLVAL(block). (0-127)
-                               #TODO: check if cmcids are CMC or BUFR codes (most probable CMC codes)... make name consistent across all fn
             'tblval' : (array) Block data
                                (Shape: NELE, NVAL, NT; type: int)
                                NELE: Number of meteorological elements in block
@@ -1209,17 +1243,21 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
     >>> ## See mrbdcl, mrbcvt_decode, mrb_prm_xtr_dcl_cvt for how to decode the data
     >>> rmn.burp_close(funit)
 
     See Also:
+        mrb_prm_xtr_dcl_cvt
         mrfmxl
         mrfloc
         mrfget
@@ -1228,7 +1266,6 @@ def mrbxtr(rpt, blkno, cmcids=None, tblval=None, dtype=_np.int32):
         mrbdcl
         mrbcvt_dict
         mrbcvt_decode
-        mrb_prm_xtr_dcl_cvt
         burp_open
         burp_close
         rpnpy.librmn.burp_const
@@ -1294,14 +1331,17 @@ def mrbdcl(cmcids):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    >>>     bufrids = rmn.mrbdcl(blkdata['cmcids'])
+    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    ...     bufrids = rmn.mrbdcl(blkdata['cmcids'])
     >>> ## See mrbcvt_decode, mrb_prm_xtr_dcl_cvt for how to decode the data
     >>> rmn.burp_close(funit)
 
@@ -1357,21 +1397,24 @@ def mrbcol(bufrids):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    >>>     bufrids = rmn.mrbdcl(blkdata['cmcids'])
-    >>>     cmcids  = rmn.mrbcol(bufrids)
+    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    ...     bufrids = rmn.mrbdcl(blkdata['cmcids'])
+    ...     cmcids  = rmn.mrbcol(bufrids)
     >>> rmn.burp_close(funit)
 
     See Also:
         mrbdcl
         mrbcvt_dict
-        mrfhdr
+        mrbhdr
         mrbxtr
     """
     if isinstance(bufrids, (int, _np.int32)):
@@ -1433,16 +1476,22 @@ def mrbcvt_dict(cmcid, raise_error=True):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    >>>     for cmcid in blkdata['cmcids']:
-    >>>         cvtdict = rmn.mrbcvt_dict(cmcid)
-    >>>         print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
+    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    ...     for cmcid in blkdata['cmcids']:
+    ...         try:
+    ...             cvtdict = rmn.mrbcvt_dict(cmcid)
+    ...             # print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
+    ...         except:
+    ...             pass  # Description not found
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1451,7 +1500,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
         mrbdcl
         mrbcol
         mrbxtr
-        mrfhdr
+        mrbhdr
         mrfget
         mrfloc
         burp_open
@@ -1521,6 +1570,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 'e_nbits'   : 0,
                 'e_multi'   : 0
                 }
+
  
 def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     """
@@ -1550,14 +1600,17 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata  = rmn.mrbxtr(rpt, iblk+1)
-    >>>     rval     = rmn.mrbcvt_decode(blkdata)
+    ...     blkdata  = rmn.mrbxtr(rpt, iblk+1)
+    ...     rval     = rmn.mrbcvt_decode(blkdata)
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1655,7 +1708,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     return rval
 
 
-#TODO: function for mrbprm+xtr+cvt+dcl (and maybe hrd,prm)
+#TODO: add optional args?
 ## def mrb_hdr_prm_xtr_dcl_cvt(rpt, blkno, cmcids=None, tblval=None, rval=None, dtype=_np.int32):
         ## cmcids, tblval: (optional) return data arrays
         ## dtype : (optional) numpy type for tblval creation, if tblval is None
@@ -1691,13 +1744,16 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.burp_open('myburpfile.brp')
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
     >>> handle = rmn.mrfloc(funit)
     >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrfhdr(rpt)
+    >>> params = rmn.mrbhdr(rpt)
     >>> for iblk in xrange(params['nblk']):
-    >>>     blkdata = rmn.mrb_prm_xtr_dcl_cvt(rpt, iblk+1)
+    ...     blkdata = rmn.mrb_prm_xtr_dcl_cvt(rpt, iblk+1)
     >>> rmn.burp_close(funit)
 
     See Also:
@@ -1743,7 +1799,7 @@ def mrbini(funit, rpt, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> #TODO: 
 
     See Also:
         #TODO: 
@@ -1787,7 +1843,7 @@ def mrbadd(rpt, blkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp,
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> #TODO: 
 
     See Also:
         #TODO: 
@@ -1817,7 +1873,7 @@ def mrbdel(rpt, blkno):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> #TODO: 
 
     See Also:
         mrbadd
@@ -1846,7 +1902,7 @@ def mrfdel(handle):
 
     Examples:
     >>> import rpnpy.librmn.all as rmn
-    #TODO: 
+    >>> #TODO: 
 
     See Also:
         mrbadd
@@ -1863,7 +1919,9 @@ def mrfdel(handle):
 # =========================================================================
 
 if __name__ == "__main__":
-    print("Python interface for BUPR files.")
+    import doctest
+    doctest.testmod()
+
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

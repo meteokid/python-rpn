@@ -365,6 +365,8 @@ class FtnNmlFile(FtnNmlObj):
         
 
 if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
     pass
     #TODO: base class on list or dict
     #TODO: itf consistenncy (name,data) in set,get,rename,rm,add,__init__

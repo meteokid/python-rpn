@@ -23,7 +23,7 @@ tmpl = {}
 tmpl['head'] = """
 __NOTITLE__ 
 = Python RPN: @MODULE@ =
-{{:Python-RPN/2.0/navbox}}
+{{:Python-RPN/2.1/navbox}}
 {| style='background-color:white; border: 0px #fff solid; width=82%;'>
 |-
 |
@@ -518,18 +518,23 @@ if __name__ == "__main__":
         'rpnpy.librmn.grids',
         'rpnpy.librmn.fstd98',
         'rpnpy.librmn.interp',
+        'rpnpy.librmn.burp',
+        'rpnpy.librmn.burpfile',
+        'rpnpy.librmn.burp_const',
+        'rpnpy.utils.fstd3d',
         'rpnpy.utils.llacar',
         'rpnpy.utils.thermoconsts',
         'rpnpy.utils.thermofunc',
         'rpnpy.librmn.proto',
+        'rpnpy.librmn.proto_burp',
         'rpnpy.vgd',
         'rpnpy.vgd.all',
         'rpnpy.vgd.base',
         'rpnpy.vgd.const',
-        ## 'rpnpy.vgd.proto'
+        'rpnpy.vgd.proto'
         ]
     docdir = './doc/'
-    linkPrefix = 'Python-RPN/2.0/'
+    linkPrefix = 'Python-RPN/2.1/'
     m = []
     allSymbolsDict = {}
     for x in moduleNames:
@@ -548,7 +553,7 @@ if __name__ == "__main__":
             try:
                 fd.write(x.toWiki(allSymbolsDictKeys))
             except IOError:
-                raise IOError(" Oops! Cannot wrtie to file: %s" % (filename))
+                raise IOError(" Oops! Cannot write to file: %s" % (filename))
             finally:
                 fd.close()
         except IOError:

@@ -304,11 +304,11 @@ class RPNDateRange(object):
     >>> print('# {0}'.format(repr(x)))
     # RPNDate(20030424, 23453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    36.0)
     >>> dr.next() #raise
-    # Traceback (most recent call last):
-    #   File "<stdin>", line 1, in <module>
-    #   File "rpndate.py", line 313, in next
-    #     raise StopIteration
-    # StopIteration
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File "rpndate.py", line 313, in next
+        raise StopIteration
+    StopIteration
     >>> print('# {0}'.format(repr([d1, d2])))  #3 make sure d1, d2 where not changed
     # [RPNDate(20030423, 11453500), RPNDate(20030425, 11453500) ; RPNDate(20030423, 11453500, dt=  3600.0, nstep=    48.0)]
     >>> dr = RPNDateRange(d1, d2, 12)
