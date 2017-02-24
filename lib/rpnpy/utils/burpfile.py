@@ -48,14 +48,21 @@ except ImportError:
 
 class BurpFile:
     """
-    Class for reading a burp file.
+    Class for reading entirely a burp file into one object.
 
-    File attributes
-        -fname:     burp file name
-        -mode:      mode of file ('r'=read, 'w'=write, 'rw'=read or write)
-        -nrep:      number of reports in file
+    myburpfile = BurpFile(fname, mode)
 
-    Report attributes, indexed by (report), length (nrep)
+    Args: 
+        fname : burp file name
+        mode  : I/O mode of file ('r'=read, 'w'=write, 'rw'=read or write)
+    Raises:
+        IOError if file not found, readable or writebale
+        BurpError
+    See Also:
+        rpnpy.librmn.burp
+
+    Notes:
+      Report attributes, indexed by (report), length (nrep)
         -nblk       number of blocks
         -stnids     station IDs
         -year       year of report
@@ -67,17 +74,17 @@ class BurpFile:
         -lat        latitude (degrees)
         -lon        longitude (degrees between -180 and 180)
 
-    Block attributes, indexed by (report, block), length (nrep, nblk)
+      Block attributes, indexed by (report, block), length (nrep, nblk)
         -btyp       btyp values
         -nlev       number of levels
         -nelements  number of code elements
         -datyp      data type
         -bfam       bfam values
 
-    Code attributes, indexed by (report, block, element), length (nrep, nblk, nelements)
+      Code attributes, indexed by (report, block, element), length (nrep, nblk, nelements)
         -elements   BURP code value
 
-    Data values, indexed by (report, block, element, level, group), length (nrep, nblk, nelements, nlev, nt)
+      Data values, indexed by (report, block, element, level, group), length (nrep, nblk, nelements, nlev, nt)
         -rval       real number data values
 
     """
@@ -95,10 +102,12 @@ class BurpFile:
         """
         Initializes BurpFile, checks if file exists and reads BURP data.
 
-        Parameters
-        ----------
-          fname      BURP file name
-          mode       IO mode, 'r' (read), 'w' (write), or 'rw' (read or write)
+        Args: 
+            fname : burp file name
+            mode  : I/O mode of file ('r'=read, 'w'=write, 'rw'=read or write)
+        Raises:
+            IOError if file not found, readable or writebale
+            BurpError
         """
         self.fname = fname
         self.mode = mode
@@ -123,7 +132,10 @@ class BurpFile:
 
     def __str__(self):
         """
-        Print BURP file attributes.
+        Return BURP file attributes representation.
+
+        Returns:
+            str, class instance attributes representation
         """
         return "<BurpFile instance>\n" + \
             "file name: \n  %s \n" % self.fname + \
@@ -136,10 +148,10 @@ class BurpFile:
         Reads some basic general information from the burp file
         without having to fully open the file.
 
-        Returns
-        -------
-          nrep       number of reports in the file
-          rep_max    length of longest report in the file
+        Returns:
+            (nrep, rep_max), tuple where: 
+               nrep    : number of reports in the file
+               rep_max : length of longest report in the file
         """
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
@@ -157,6 +169,9 @@ class BurpFile:
     def _calc_nbuf(self):
         """
         Calculates the minimum buffer length required for the longest report.
+
+        Returns:
+            int, minimum buffer length required for the longest report
         """
         nlev_max = _np.max([ nlev.max() if len(nlev)>0 else 0 for nlev in self.nlev ])
         nele_max = _np.max([ nele.max() if len(nele)>0 else 0 for nele in self.nelements ])
@@ -175,9 +190,12 @@ class BurpFile:
         Reads all the the BURP file data and puts the file data in the
         rep_attr, blk_attr, and ele_attr arrays.
 
-        Parameters
-        ----------
-          nbuf      buffer length for reading of BURP file
+        Args:
+            nbuf : buffer length for reading of BURP file
+        Returns:
+            None
+        Raises:
+            BurpError
         """
         assert 'r' in self.mode, "BurpFile must be in read mode to use this function."
 
@@ -292,9 +310,9 @@ class BurpFile:
 
                 # check that the element arrays are the correct dimensions
                 if _np.any(self.elements[irep][iblk].shape != (self.nelements[irep][iblk])):
-                    raise Exception("elements array does not have the correct dimensions.")
+                    raise _brp.BurpError("elements array does not have the correct dimensions.")
                 if _np.any(self.rval[irep][iblk].shape != (self.nelements[irep][iblk], self.nlev[irep][iblk], self.nt[irep][iblk])):
-                    raise Exception("rval array does not have the correct dimensions.")
+                    raise _brp.BurpError("rval array does not have the correct dimensions.")
 
 
         # close BURP file
@@ -310,10 +328,15 @@ class BurpFile:
     def write_burpfile(self):
         """
         Writes BurpFile instance to a BURP file.
+        
+        Returns:
+            None
+        Raises:
+            BurpError
         """
         assert 'w' in self.mode, "BurpFile must be in write mode to use this function."
 
-        print "Writing BURP file to \'%s\'" % self.fname
+        print("Writing BURP file to \'{}\'".format(self.fname))
 
         handle = 0
         nsup = 0
@@ -398,20 +421,19 @@ class BurpFile:
 
         Any block attribute can be provided as an argument to filter the query.
 
-        Parameters
-        ----------
-          code      BURP code
-          block     block number to select codes from (starting from 1)
-          element   element number to select (starting from 1)
-          group     group number to select (starting from 1)
-          btyp      select code from block with specified btyp
-          bfam      selects codes specified BFAM value
-          fmt       data type to be outputted
-          flatten   if true will remove degenerate axis from the output array
-
-        Returns
-        -------
-          outdata   BURP data from query
+        Args:
+            code    : BURP code
+            block   : block number to select codes from (starting from 1)
+            element : element number to select (starting from 1)
+            group   : group number to select (starting from 1)
+            btyp    : select code from block with specified btyp
+            bfam    : selects codes specified BFAM value
+            fmt     : data type to be outputted
+            flatten : if true will remove degenerate axis from the output array
+        Returns:
+            list, outdata - BURP data from query
+        Raises:
+            BurpError
         """
         assert code is not None or (block is not None and element is not None), "Either code or block and element have to be supplied to find BURP values."
         assert code is None or isinstance(code, int), "If specified, code must be an integer."
@@ -425,7 +447,7 @@ class BurpFile:
                 if (block is not None and element is not None):
                     _warnings.warn("Option \'%s\' is not used when both the block and element are specified." % k)
             else:
-                raise Exception("Unknown parameter \'%s\'" % k)
+                raise _brp.BurpError("Unknown parameter \'%s\'" % k)
 
         fill_val = _np.nan if fmt==float else -999
         nlev_max = 0
@@ -520,13 +542,14 @@ class BurpFile:
         """
         Returns the datetimes of the reports.
 
-        Parameters
-        ----------
-          fmt      datetime return type:
-                     'datetime' - datetime object
-                     'string'   - string in YYYY-MM-DD HH:MM format
-                     'int'      - integer list in [YYYYMMDD, HHMM] format
-                     'unix'     - Unix timestamp
+        Args:
+            fmt : datetime return type:
+                  'datetime' - datetime object
+                  'string'   - string in YYYY-MM-DD HH:MM format
+                  'int'      - integer list in [YYYYMMDD, HHMM] format
+                  'unix'     - Unix timestamp
+        Returns:
+            list, datetimes of the reports
         """
         assert fmt in ('datetime', 'string', 'int', 'unix'), "Invalid format \'%s\'" % fmt
 
@@ -549,7 +572,12 @@ class BurpFile:
 
 
     def get_stnids_unique(self):
-        """ Returns unique list of station IDs. """
+        """
+        Returns unique list of station IDs.
+
+        Returns:
+            list, station IDs
+        """
         return list(set(self.stnids)) if not self.stnids is None else []
 
 
@@ -559,14 +587,19 @@ class BurpFile:
 def print_btyp(btyp):
     """
     Prints BTYP decomposed into BKNAT, BKTYP, and BKSTP.
+
+    Args:
+        btyp : BTYP (int)
+    Returns:
+        None
     """
     b = bin(btyp)[2:].zfill(15)
     bknat = b[:4]
     bktyp = b[4:11]
     bkstp = b[11:]
-    print "BKNAT  BKTYP    BKSTP"
-    print "-----  -----    -----"
-    print "%s   %s  %s" % (bknat, bktyp, bkstp)
+    print("BKNAT  BKTYP    BKSTP")
+    print("-----  -----    -----")
+    print("{}   {}  {}".format(bknat, bktyp, bkstp))
     return
 
 
@@ -575,6 +608,12 @@ def copy_burp(brp_in, brp_out):
     Copies all file, report, block, and code information from the
     input BurpFile to the output BurpFile, except does not copy over
     filename or mode.
+    
+    Args:
+        brp_in  : BurpFile instance to copy data from
+        brp_out : BurpFile instance to copy data to
+    Returns:
+        None
     """
     assert isinstance(brp_in, BurpFile) and isinstance(brp_out, BurpFile), "Input object must be an instance of BurpFile."
     for attr in BurpFile.burp_attr:
@@ -588,26 +627,25 @@ def plot_burp(bf, code=None, cval=None, ax=None, level=0, mask=None, projection=
     which can be specified by the optional argument. Additional arguments not listed
     below will be passes to Basemap.scatter.
 
-    Parameters
-    ----------
-      bf           BurpFile instance
-      code         code to be plotted, if not set the observation locations will be plotted
-      level        level to be plotted
-      mask         mask to apply to data
-      cval         directly supply plotted values instead of using code argument
-      ax           subplot object
-      projection   projection used by Basemap for plotting
-      cbar_opt     dictionary for colorbar options
-      vals_opt     dictionary for get_rval options if code is supplied
-      dparallel    spacing of parallels, if None will not plot parallels
-      dmeridian    spacing of meridians, if None will not plot meridians
-      fontsize     font size for labels of parallels and meridians
+    Args:
+        bf         : BurpFile instance
+        code       : code to be plotted, if not set the observation locations will be plotted
+        level      : level to be plotted
+        mask       : mask to apply to data
+        cval       : directly supply plotted values instead of using code argument
+        ax         : subplot object
+        projection : projection used by Basemap for plotting
+        cbar_opt   : dictionary for colorbar options
+        vals_opt   : dictionary for get_rval options if code is supplied
+        dparallel  : spacing of parallels, if None will not plot parallels
+        dmeridian  : spacing of meridians, if None will not plot meridians
+        fontsize   : font size for labels of parallels and meridians
 
-    Returns
-    -------
-      dictionary with keys:
-        m          Basemap.scatter object used for plotting
-        cbar       colorbar object if used
+    Returns:
+        {
+            'm'    : Basemap.scatter object used for plotting
+            'cbar' : colorbar object if used
+        }
     """
     assert isinstance(bf, BurpFile), "First argument must be an instance of BurpFile"
     assert code is None or cval is None, "Only one of code, cval should be supplied as an argument"
