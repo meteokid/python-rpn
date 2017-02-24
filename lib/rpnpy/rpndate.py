@@ -16,7 +16,8 @@ import pytz
 import librmn.all as _rmn
 
 class RPNDate(object):
-    """RPN STD Date representation
+    """
+    RPN STD Date representation
     
     myRPNDate = RPNDate(DATESTAMP)
     myRPNDate = RPNDate(DATESTAMP0, deet=DEET, nstep=NSTEP)
@@ -191,6 +192,14 @@ class RPNDate(object):
     
     def update(self, dateo=None, dt=None, nstep=None):
         """
+        Update the RPNDate instance attributes
+        
+        Args:
+            dateo : date0 CMC date stamp or RPNDate object [Int]
+            dt    : Time step in Sec
+            nstep : Number of steps        
+        Returns:
+            None
         """
         if not dt is None:
             self.dt = dt
@@ -205,18 +214,25 @@ class RPNDate(object):
         """
         Increase Date by the specified number of hours
 
-        @param nhours Number of hours for the RPNDate to be increased
-        @return self
-
-        @exception TypeError if nhours is not of int or real type
+        Args:
+            nhours : Number of hours for the RPNDate to be increased
+        Returns:
+            self
+        Raises:
+            TypeError if nhours is not of int or real type
         """
         self += nhours
         return(self)
     
     
     def toDateTime(self):
-        """Return the DateTime obj representing the RPNDate
+        """
+        Return the DateTime obj representing the RPNDate
 
+        Returns:
+            DateTime obj representing the RPNDate
+
+        Examples:
         >>> myRPNDate = RPNDate(20030423, 11453600)
         >>> myDateTime = myRPNDate.toDateTime()
         >>> myDateTime
@@ -239,8 +255,13 @@ class RPNDate(object):
 
 
     def toDateO(self):
-        """Return RPNDate updated so that dateo=datev (dt=nstep=0)
+        """
+        Return RPNDate updated so that dateo=datev (dt=nstep=0)
 
+        Returns:
+            Self
+
+        Examples:
         >>> d1 = RPNDate(20030423, 11000000, dt=1800, nstep=4)
         >>> print('# {0}'.format(repr(d1)))
         # RPNDate(20030423, 13000000) ; RPNDate(20030423, 11000000, dt=  1800.0, nstep=     4.0)
@@ -270,7 +291,8 @@ class RPNDate(object):
 #TODO: make dateRange a sequence obj with .iter() methode to be ableto use it in a for statement
 
 class RPNDateRange(object):
-    """RPN STD Date Range representation
+    """
+    RPN STD Date Range representation
 
     RPNDateRange(DateStart, DateEnd, Delta)
 
@@ -348,26 +370,39 @@ class RPNDateRange(object):
             raise TypeError, 'RPNDateRange: arguments type error RPNDateRange(RPNDate, RPNDate, Real)'
 
     def length(self):
-        """Provide the duration of the date range
-        @return Number of hours
+        """
+        Returns the duration of the date range
+        
+        Returns:
+            Number of hours
         """
         return abs(self.dateFin-self.dateDebut)
 
     def lenght(self):
-        """(deprecated, use length) Provide the duration of the date range
+        """
+        (deprecated, use length) Provide the duration of the date range
         Kept for backward compatibility, please use length()
+        
+        Returns:
+            Number of hours
         """
         return self.length()
 
-    def remains():
-        """Provide the number of hours left in the date range
-        @return Number of hours left in the range
+    def remains(self):
+        """
+        Provide the number of hours left in the date range
+        
+        Returns:
+            Number of hours left in the range
         """
         return abs(self.dateFin-self.now)
 
     def next(self):
-        """Return the next date/time in the range (step of delta hours)
-        @return next RPNDate, None if next date is beyond range
+        """
+        Return the next date/time in the range (step of delta hours)
+        
+        Returns:
+            next RPNDate, None if next date is beyond range
         """
         self.now.incr(self.delta)
         if (self.dateFin-self.now)*self.delta < 0.:
@@ -375,7 +410,12 @@ class RPNDateRange(object):
         return RPNDate(self.now)
 
     def reset(self):
-        """Reset the RPNDateRange iterator to the range start date"""
+        """
+        Reset the RPNDateRange iterator to the range start date
+        
+        Returns:
+            None
+        """
         self.now=self.dateDebut
 
     def __repr__(self):
