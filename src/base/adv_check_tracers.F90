@@ -25,6 +25,7 @@
 
       !@revisions
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
+      ! v5_00 - Tanguay M.        - Add Tr_scaling and Schm_dry_mixing_ratio
 
 #include "tr3d.cdk"
 #include "tracers.cdk"
@@ -47,21 +48,29 @@
 
       Tr_verbose = Adv_verbose
 
-      Tr_dry_mixing_ratio_L = .false.   
-
       Tr_flux_L  = .false.
       Tr_slice_L = .false.
 
       if (Schm_psadj_L.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
-      if (.not.Grd_yinyang_L) then
-         do n=1,Tr3d_ntr
+      Tr_scaling = Adv_scaling
+
+      if (Tr_scaling<0.or.Tr_scaling>2) call handle_error(-1,'ADV_CHECK_TRACERS','TR_SCALING not defined')
+
+      do n=1,Tr3d_ntr
+
+         if (.not.Grd_yinyang_L) then !LAM
+
             if (Tr3d_mass(n)==1) Tr_flux_L  = .true. !BC (FLUX)   
             if (Tr3d_mass(n)==2) Tr_slice_L = .true. !SLICE 
-         end do
-      endif
+
+         endif
+
+      end do
 
       Tr_extension_L = Tr_flux_L.or.Tr_slice_L
+
+      if (Tr_extension_L.and.Grd_yinyang_L) call handle_error(-1,'ADV_CHECK_TRACERS','TR_EXTENSION YIN-YANG not defined')
 
       if (Tr_extension_L.and.Lun_out>0) then
          write(Lun_out,*) ''

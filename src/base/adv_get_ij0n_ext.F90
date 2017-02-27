@@ -26,7 +26,8 @@
       !@author Monique Tanguay
 
       !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
+      ! v5_00 - Tanguay M.        - Adjust extension
 
 #include "glb_ld.cdk"
 #include "adv_grid.cdk"
@@ -41,11 +42,11 @@
       j0_e = 1
       jn_e = l_nj
 
-      jext=Grd_maxcfl
-      if (Grd_yinyang_L) jext=2
-      if (l_west)  i0_e =        pil_w - jext
+      jext = Grd_maxcfl + 1
+
+      if (l_west)  i0_e =    1 + pil_w - jext
       if (l_east)  in_e = l_ni - pil_e + jext
-      if (l_south) j0_e =        pil_s - jext
+      if (l_south) j0_e =    1 + pil_s - jext
       if (l_north) jn_e = l_nj - pil_n + jext
 
       !---------------------------------------------------------------------

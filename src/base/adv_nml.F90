@@ -38,13 +38,15 @@
 !
       
       adv_rhst_mono_L  = .false.
+      adv_catmullrom_L = .false.
       adv_BC_min_max_L = .true.
       adv_halox  = -1
       adv_haloy  = -1
       adv_ILMC_sweep_max = 2
       adv_ILMC_min_max_L = .true.
-      adv_SLICE_rebuild  = 2 
-      adv_verbose        = 0
+      adv_verbose = 0
+      adv_scaling = 1 
+      adv_SLICE_rebuild = 2 
       adv_pil_sub_s = -1
       adv_pil_sub_n = -1
       adv_pil_sub_w = -1

@@ -51,6 +51,7 @@
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
    !  2016-01,  Monique Tanguay    : GEM4 Mass-Conservation
+   !  2017-01,  A. Qaddouri        : Correction F_lin
    !@objective Tri-cubic interp: Lagrange 3d (Based on adx_tricub v3.1.1) (MASS-CONSERVATION)
 
 #include "adv.cdk"
@@ -60,7 +61,7 @@
 
       logical :: zcubic_L
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4 , &
-                 kkmax, n, id , iL
+                 kkmax, n, id
   
       real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
               c1, c2, c3, c4, d1, d2, d3, d4, &

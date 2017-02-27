@@ -19,14 +19,6 @@
       implicit none
 #include <arch_specific.hf>
 
-!author 
-!     Michel Roch - rpn - nov 1993
-
-!revision
-! v2_00 - Desgagne M.       - initial MPI version
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_60 - Lee V.            - call yyg_nest_tracers before t02t1
-
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
@@ -78,7 +70,7 @@
          call tstpdyn (itraj)
          itraj = Schm_itraj
          
-!!$         call hzd_momentum
+         call hzd_momentum
          
       end do
       

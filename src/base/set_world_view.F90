@@ -195,8 +195,6 @@
                       geomg_xu_8, geomg_yv_8, Grd_rot_8, &
                       l_minx,l_maxx,l_miny,l_maxy)
 
-      call set_intuv
-
       call set_opr2 (' ')
 
       call set_params

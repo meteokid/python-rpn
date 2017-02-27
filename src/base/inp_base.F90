@@ -130,13 +130,13 @@ contains
       integer, parameter :: nlis = 1024
       integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
       ! Remove the following line by 2021
-      integer ut1_is_urt1
+      integer ni_dest,nj_dest,ut1_is_urt1
       integer subid,nicore,njcore,datev
       integer mpx,local_nk,irest,kstart, src_gid, vcode, nkk, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
-      real   , dimension(:,:), allocatable :: wk1,wk2
+      real   , dimension(:,:), allocatable :: wk1,wk2,wk3
       real   , dimension(:  ), pointer     :: posx,posy
       real*8 add, mult
       common /bcast_i / lislon,nz
@@ -236,40 +236,61 @@ contains
             kstart = kstart + irest
          endif
 
-         allocate (wk2(G_ni*G_nj,nz+1)) ! Valin???
+         ni_dest= G_ni+2*G_halox
+         nj_dest= G_nj+2*G_haloy
+         allocate (wk3(ni_dest*nj_dest,nz+1))
+         allocate (wk2(G_ni*G_nj,nz+1))
          allocate (wk1(n1*n2,max(local_nk,1)))
 
          cnt= 0
          do i= kstart, kstart+local_nk-1
             cnt= cnt+1
-            err= fstlir ( wk1(1,cnt), Inp_handle,n1,n2,n3,datev,&
-                          LAB, F_ip1(i), P2, P3,TYP, VAR )
+            err= fstluk (wk1(1,cnt), liste(i), n1,n2,n3)
             ! Remove the following line by 2021
             ut1_is_urt1 = inp_is_real_wind (wk1(1,cnt),n1*n2,nomvar)
          end do
 
          if (local_nk.gt.0) then
 
+!!$            if (F_hgrid_S == 'Q') then
+!!$               posx => Geomn_longs
+!!$               posy => Geomn_latgs
+!!$            endif
+!!$            if (F_hgrid_S == 'U') then
+!!$               posx => Geomn_longu
+!!$               posy => Geomn_latgs
+!!$            endif
+!!$            if (F_hgrid_S == 'V') then
+!!$               posx => Geomn_longs
+!!$               posy => Geomn_latgv
+!!$            endif
+!!$            if (F_hgrid_S == 'F') then
+!!$               posx => Geomn_longu
+!!$               posy => Geomn_latgv
+!!$            endif
             if (F_hgrid_S == 'Q') then
-               posx => Geomn_longs
-               posy => Geomn_latgs
+               posx => Geomn_lonQ
+               posy => Geomn_latQ
             endif
             if (F_hgrid_S == 'U') then
-               posx => Geomn_longu
-               posy => Geomn_latgs
+               posx => Geomn_lonF
+               posy => Geomn_latQ
             endif
             if (F_hgrid_S == 'V') then
-               posx => Geomn_longs
-               posy => Geomn_latgv
+               posx => Geomn_lonQ
+               posy => Geomn_latF
             endif
             if (F_hgrid_S == 'F') then
-               posx => Geomn_longu
-               posy => Geomn_latgv
+               posx => Geomn_lonF
+               posy => Geomn_latF
             endif
 
-            dstf_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
-                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                                    posx, posy)
+            dstf_gid = ezgdef_fmem (ni_dest, nj_dest, 'Z', 'E', &
+                    Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                    posx, posy)
+!            dstf_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
+!                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+!                                    posx, posy)
             interp_S= 'CUBIC'
             if (present(F_hint_S)) interp_S= F_hint_S
 
@@ -298,14 +319,15 @@ contains
                lislon,', valid: ',Inp_datev,' on ',F_hgrid_S, ' grid'
          endif
          do i=1,local_nk
-            err = ezsint(wk2(1,i), wk1(1,i))
+!            err = ezsint(wk2(1,i), wk1(1,i))
+            err = ezsint(wk3(1,i), wk1(1,i))
+            call reshape_wk (wk3(1,i),wk2(1,i),G_ni+2*G_halox,G_nj+2*G_haloy,G_ni,G_nj,G_halox,G_haloy)
          end do
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
-         deallocate (wk1)
+         deallocate (wk1,wk3)
       else
          allocate (wk2(1,1))
       endif
-
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err )
       F_nka= lislon
@@ -331,6 +353,12 @@ contains
                     zlist_o(lislon) )
 
          zlist_o= .FALSE.
+
+!!$         do i=1, local_nk
+!!$         call statfld3 (wk2(1,i) ,nomvar, zlist(i), 'inp_read', &
+!!$                           1,G_ni, 1,G_nj, 1,1, &
+!!$                           1,1,1,G_ni,G_nj,1,8)
+!!$         end do
 
          err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id, &
                            wk2, nz, F_dest, lislon, zlist, zlist_o )
@@ -381,7 +409,7 @@ contains
       character*12 lab
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
-      integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt,same_rot
+      integer i,err, nz, n1,n2,n3, nrec, liste_u(nlis),liste_v(nlis),lislon,cnt,same_rot
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode, nkk
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
@@ -401,10 +429,12 @@ contains
       if (Inp_iome .ge.0) then
          vcode= -1 ; nz= -1 ; same_rot= -1
          nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
-                       'UU',liste,lislon,nlis)
+                       'UU',liste_u,lislon,nlis)
+         nrec= fstinl (Inp_handle,n1,n2,n3,Inp_cmcdate,' ',-1,-1,-1,' ',&
+                       'VV',liste_v,lislon,nlis)
          if (lislon == 0) goto 999
 
-         err= fstprm (liste(1), DTE, DET, IPAS, n1, n2, n3,&
+         err= fstprm (liste_u(1), DTE, DET, IPAS, n1, n2, n3,&
                   BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
                   G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
                   
@@ -414,7 +444,8 @@ contains
 
          allocate (F_ip1(lislon))
          if (lislon.gt.1) then
-            call sort_ip1 (liste,F_ip1,lislon)
+            call sort_ip1 (liste_u,F_ip1,lislon)
+            call sort_ip1 (liste_v,F_ip1,lislon)
          else
             F_ip1(1) = p1
          endif
@@ -438,10 +469,8 @@ contains
          cnt= 0
          do i= kstart, kstart+local_nk-1
             cnt= cnt+1
-            err= fstlir ( u(1,cnt), Inp_handle,n1,n2,n3,Inp_cmcdate,&
-                          LAB, F_ip1(i), P2, P3,TYP, 'UU' )
-            err= fstlir ( v(1,cnt), Inp_handle,n1,n2,n3,Inp_cmcdate,&
-                          LAB, F_ip1(i), P2, P3,TYP, 'VV' )
+            err= fstluk ( u(1,cnt), liste_u(i), n1,n2,n3)
+            err= fstluk ( v(1,cnt), liste_v(i), n1,n2,n3)
          end do
 
          if (local_nk.gt.0) then
@@ -570,3 +599,15 @@ contains
       end subroutine inp_read_uv
 
 end module inp_base
+      subroutine reshape_wk (src,dst,nix,njx,ni,nj,hx,hy)
+      implicit none
+      integer nix,njx,ni,nj,hx,hy
+      real src(nix,njx), dst(ni,nj)
+      integer i,j
+      do j=1,nj
+      do i=1,ni
+         dst(i,j) = src(i+hx,j+hy)
+      end do
+      end do
+      return
+      end

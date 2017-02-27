@@ -12,63 +12,58 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/p mass_tr - Evaluate Mass of Tracer. F_tracer is Mixing Ratio if F_mixing_L=T 
-!                (otherwise F_tracer is Tracer's Density)
+!
+!**s/p mass_tr - Evaluate Mass of Tracer (assuming in Mixing Ratio)
 
-      subroutine mass_tr (F_mass_tracer_8,F_time,F_name_S,F_tracer,F_mixing_L,  &
-                          Minx,Maxx,Miny,Maxy,F_nk,k0,F_comment_S,F_reset_RHO_L)
+      subroutine mass_tr (F_mass_tracer_8,F_name_S,F_tracer,F_air_mass,Minx,Maxx,Miny,Maxy,F_nk,F_k0)
+
       implicit none
 
       !Arguments
       !---------
-      real*8           , intent(out):: F_mass_tracer_8                    !O, Mass of Tracer 
-      integer          , intent(in) :: F_time                             !I, Time 0 or Time 1
-      character (len=4), intent(in) :: F_name_S                           !I, Name of Tracer
-      logical          , intent(in) :: F_mixing_L                         !I, T if F_tracer is Mixing Ratio
-      integer,           intent(in) :: Minx,Maxx,Miny,Maxy                !I, Dimension H
-      integer,           intent(in) :: k0                                 !I, scope of operator
-      integer,           intent(in) :: F_nk                               !I, number of vertical levels
-      character (len=*), intent(in) :: F_comment_S                        !I, Comment (If="", not print is done)  
-      logical          , intent(in) :: F_reset_RHO_L                      !I, call get_density if T  
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),   intent(in) :: F_tracer !I: Current Tracer (Density or Mixing Ratio)  
+      real*8           , intent(out):: F_mass_tracer_8                      !O, Mass of Tracer 
+      character (len=4), intent(in) :: F_name_S                             !I, Name of Tracer
+      integer,           intent(in) :: Minx,Maxx,Miny,Maxy                  !I, Dimension H
+      integer,           intent(in) :: F_k0                                 !I, scope of operator
+      integer,           intent(in) :: F_nk                                 !I, number of vertical levels
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),   intent(in) :: F_tracer   !I: Current Tracer (Mixing Ratio)  
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk),   intent(in) :: F_air_mass !I: Air mass   
  
       !@author  Monique Tanguay
       !@revisions
       ! v4_70 - Tanguay,M.        - Initial Version
       ! v4_70 - Qaddouri,A.       - Version for Yin-Yang Grid
+      ! v5_00 - Tanguay M.        - Air mass provided/Efficiency/Scaling/Mixing Ratio 
 
 !*@/
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "ver.cdk"
 #include "grd.cdk"
-#include "cstv.cdk"
-#include "ptopo.cdk"
 #include "tracers.cdk"
+#include "cstv.cdk"
+#include "schm.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,i0,in,j0,jn
-      real*8   c_mass_8, c_area_8, s_area_8, c_level_8(F_nk), & 
-              gc_mass_8, scale_8
-      real, dimension(:,:,:), allocatable, save :: density,mass
-      character(len=15) type_S
-      character(len= 7) time_S
+      real*8   c_mass_8, c_area_8, c_level_8(F_nk), gc_mass_8, scale_8 
       character(len= 9) communicate_S
       real*8, parameter :: QUATRO_8 = 4.0
-      logical,parameter :: SAROJA_L=.TRUE. 
       logical LAM_L
       logical,save :: done_L=.FALSE.
-      real*8 ,save :: gc_area_8,gs_area_8 
+      real*8 ,save :: gc_area_8
 
-      !Extracted form linoz_o3col (J. de Grandpre)
+      !----------------------------------------------------------
+      !Extracted from linoz_o3col (J.de Grandpre)
       !----------------------------------------------------------
       real*8, parameter :: Nav = 6.022142d23 , g0 = 9.80665d0 , air_molmass = 28.9644d0
-      real*8, parameter :: cst = (1e-4/g0)*( Nav / (1.e-3*air_molmass) )* 1.D3 / 2.687D19  ! molec/cm2 -> DU
+      real*8, parameter :: cst = (1e-4/g0)*( Nav / (1.e-3*air_molmass) )* 1.D3 / 2.687D19  ! molec/cm2 -> DU !Ozone (De Grandpre)
 
-      real*8, parameter :: cst2= (1e-21/g0) !SAROJA
       !----------------------------------------------------------
+      !Extracted from CO2 (S.Polavarapu)
+      !----------------------------------------------------------
+      real*8, parameter :: cst2= (1e-21/g0)
 
       LAM_L = .not.Grd_yinyang_L
 
@@ -84,37 +79,14 @@
          jn = l_nj
       endif
 
-      if (.not. allocated(density)) allocate(density(Minx:Maxx,Miny:Maxy,F_nk))
-      if (.not. allocated(   mass)) allocate(   mass(Minx:Maxx,Miny:Maxy,F_nk))
-
-      if (F_reset_RHO_L) call get_density (density,mass,F_time,Minx,Maxx,Miny,Maxy,F_nk,k0)
-
-      if (.NOT.F_mixing_L.and.F_name_S/='RHO ') density = F_tracer
-
-      !Evaluate Area(s)  
-      !----------------
+      !-------------
+      !Evaluate Area  
+      !-------------
       if (.NOT.done_L) then
 
          if (.NOT.LAM_L) then
 
             gc_area_8 = QUATRO_8 * Dcst_pi_8
-
-             s_area_8 = 0.0d0
-            gs_area_8 = 0.0d0
-
-            !Evaluate area on a subset of Yin or Yan
-            !---------------------------------------
-            if (Grd_yinyang_L) then
-
-            do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
-            do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
-               s_area_8 = s_area_8 + Geomg_area_8(i,j)
-            enddo
-            enddo
-
-            call rpn_comm_ALLREDUCE(s_area_8,gs_area_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM","GRID",err )
-
-            endif
 
          else
 
@@ -135,56 +107,23 @@
 
       endif
 
+      !-------------------
       !Evaluate Local Mass  
       !-------------------
-      if (F_mixing_L) then
-
-         if (Grd_yinyang_L) then
-
-!$omp parallel do private(i,j) shared(c_level_8,mass)
-         do k=k0,F_nk
-            c_level_8(k) = 0.0d0
-            do j=j0,jn
-            do i=i0,in
-               c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * mass(i,j,k) * Geomg_mask_8(i,j) 
-            enddo
-            enddo
+!$omp parallel do private(i,j) shared(c_level_8)
+      do k=F_k0,F_nk
+         c_level_8(k) = 0.0d0
+         do j=j0,jn
+         do i=i0,in
+            c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * F_air_mass(i,j,k) * Geomg_mask_8(i,j) 
          enddo
-!$omp end parallel do
-
-         else 
-
-!$omp parallel do private(i,j) shared(c_level_8,mass)
-         do k=k0,F_nk
-            c_level_8(k) = 0.0d0
-            do j=j0,jn
-            do i=i0,in
-               c_level_8(k) = c_level_8(k) + F_tracer(i,j,k) * mass(i,j,k)
-            enddo
-            enddo
          enddo
+      enddo
 !$omp end parallel do
-
-         endif
-
-      else
-
-!$omp parallel do private(i,j) shared(c_level_8,density)
-         do k=k0,F_nk
-            c_level_8(k) = 0.0d0
-            do j=j0,jn
-            do i=i0,in
-               c_level_8(k) = c_level_8(k) + density(i,j,k) * Geomg_area_8(i,j) * Ver_dz_8%t(k) * Geomg_mask_8(i,j)
-           enddo
-           enddo
-         enddo
-!$omp end parallel do
-
-      endif
 
       c_mass_8 = 0.0d0 
 
-      do k=k0,F_nk
+      do k=F_k0,F_nk
          c_mass_8 = c_mass_8 + c_level_8(k) 
       enddo
 
@@ -196,37 +135,24 @@
       !----------------------------------------
       call rpn_comm_ALLREDUCE(c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
 
-      if ((F_name_S=='RHO ').or..NOT.SAROJA_L) then
+      if (Tr_scaling==0.or.Tr_scaling==2.or.Tr_2D_3D_L) then
          gc_mass_8 = gc_mass_8 / gc_area_8
-      else
+         if (Schm_autobar_L) gc_mass_8 = gc_mass_8 / (Cstv_pref_8-Cstv_ptop_8) * Dcst_grav_8
+      elseif (Tr_scaling==1) then
          gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
       endif
 
-      if (.NOT.SAROJA_L) then
-         scale_8 = cst
-      else
+      if (Tr_scaling==0.or.Tr_2D_3D_L) then
+         scale_8 = 1.0d0 
+      elseif (Tr_scaling==1) then
          scale_8 = cst2
+      elseif (Tr_scaling==2) then
+         scale_8 = cst
       endif
-
-      if (Tr_2D_3D_L.or.F_name_S=='RHO '.or..NOT.F_mixing_L) scale_8 = 1.0d0
 
       gc_mass_8 = gc_mass_8 * scale_8
 
-      if (.NOT.F_mixing_L) type_S = "Mass of Density"
-      if (     F_mixing_L) type_S = "Mass of Mixing "
-
-      if( F_time==1) time_S = "TIME T1"
-      if (F_time==0) time_S = "TIME T0"
-
-      if (Lun_out>0.and.F_comment_S/="") then
-
-          write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',gc_mass_8,F_name_S,F_comment_S,' COLOR=',Ptopo_couleur
-
-      endif
-
       F_mass_tracer_8 = gc_mass_8 
-
- 1002 format(1X,A9,A15,1X,A7,A4,E19.12,1X,A4,1X,A16,A7,I1)
 
       return
       end

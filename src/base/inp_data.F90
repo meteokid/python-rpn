@@ -100,7 +100,7 @@
       if ( Lam_blendoro_L ) then
          topo_temp(1:l_ni,1:l_nj)= meqr(1:l_ni,1:l_nj,1)
          call nest_blend ( F_topo, topo_temp, l_minx,l_maxx, &
-              l_miny,l_maxy, 'M', level=G_nk+1 ) 
+                           l_miny,l_maxy, 'M', level=G_nk+1 ) 
       endif
       endif
 
@@ -134,7 +134,7 @@
       call convip (ip1_list(nka), lev, i,-1, vname, .false.)
       sfcTT_L = (i == 4) .or. ( (i /= 2) .and. (abs(lev-1.) <= 1.e-5) )
 
-      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
+      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,max(nka,nka_hu)) ,&
                  dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk),&
                  ssq0  (l_minx:l_maxx,l_miny:l_maxy)     ,&
                  ssu0  (l_minx:l_maxx,l_miny:l_maxy)     ,&
@@ -234,9 +234,9 @@
       nullify (trp)
       istat= gmm_get (trim(F_trprefix_S)//'HU'//trim(F_trsuffix_S),trp)
       if ( nka_hu > 1 ) then
-      err= inp_read ( 'TR/HU'      , 'Q', hur , HU_ip1_list, nka_hu )
+         err= inp_read ( 'TR/HU', 'Q', hur, HU_ip1_list, nka_hu )
          pres  => ssqr(1:l_ni,1:l_nj,1)
-         ptr3d => srclev(1:l_ni,1:l_nj,1:nka)
+         ptr3d => srclev(1:l_ni,1:l_nj,1:nka_hu)
          istat= vgd_levels ( vgd_src, HU_ip1_list(1:nka_hu), ptr3d, &
                              pres, in_log=.true. )
          call vertint2 ( trp,dstlev,G_nk, hur,srclev,nka_hu         ,&

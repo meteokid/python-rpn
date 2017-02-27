@@ -45,5 +45,5 @@
       namelist /mtn_cfgs/ Zblen_L, Zblen_spngthick, Zblen_spngtt_L
       namelist /mtn_cfgs/ Vtopo_start, Vtopo_ndt
       namelist /mtn_cfgs/ G_periodx, G_periody
-      namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L
+      namelist /mtn_cfgs/ Schm_trapeze_L, Schm_cub_traj_L,Schm_wlint_L
       namelist /mtn_cfgs/ Sol_type_S

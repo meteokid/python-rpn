@@ -178,9 +178,13 @@
 
                call adv_set_flux_in (in_o,in_i,fld_ONE,l_minx,l_maxx,l_miny,l_maxy,F_nk,F_k0)
 
+               adw_mask_o = 0. 
+
                call rpn_comm_xch_halox( in_o, F_minx, F_maxx,F_miny, F_maxy , &
                 F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &
                 adw_mask_o, adv_lminx,adv_lmaxx,adv_lminy,adv_lmaxy, F_ni, 0)
+
+               adw_mask_i = 0. 
 
                call rpn_comm_xch_halox( in_i, F_minx, F_maxx,F_miny, F_maxy , &
                 F_ni, F_nj, F_nk, adv_halox, adv_haloy, G_periodx, G_periody  , &

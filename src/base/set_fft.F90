@@ -40,6 +40,11 @@
 !
 !     ---------------------------------------------------------------
 !
+! imposing local fft will be done later
+!      npts= l_ni - pil_w - pil_e
+!      call itf_fft_nextfactor2 ( npts, next_down )
+!      print*, 'hola1: ',l_ni,l_ni - pil_w - pil_e,npts
+      
       if (Lun_out.gt.0) write(Lun_out,1000)
 
       set_fft    = -1

@@ -13,52 +13,51 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r domain_decomp
+!**s/r hzd_momentum - applies horizontal diffusion on zdt and possibly on u and v
+!                     to smooth momentum components for trajectory calculations after 
+!                     a Crank-Nicholson step avoiding pole problems
 
-      integer function domain_decomp3 ( F_npex, F_npey, F_checkparti_L )
+      subroutine hzd_momentum
+      use hzd_ctrl
       implicit none
 #include <arch_specific.hf>
 
-      logical F_checkparti_L
-      integer F_npex, F_npey
-
+#include "gmm.hf"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "lun.cdk"
+#include "schm.cdk"
+#include "vt0.cdk"
+#include "grd.cdk"
+#include "hzd.cdk"
 
-      logical, external :: decomp3
-
+      logical, save :: switch_on_hzd= .true.
+      integer istat
+!
 !-------------------------------------------------------------------
 !
-      domain_decomp3= -1
-      if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
+      if(hzd_in_rhs_L) return
 
-      if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true.,&
-                   F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.         &
-          decomp3 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true.,&
-                   F_npey, (Grd_extension+1), F_checkparti_L, 0 ))              &
-      domain_decomp3= 0
+      if (Schm_hzdadw_L .and. switch_on_hzd) then
+          if (Lun_debug_L) write (Lun_out,1000)
 
-      if (domain_decomp3.lt.0)  then
-         if  (Lun_out.gt.0) &
-         write(lun_out,*) 'DECOMP: ILLEGAL DOMAIN PARTITIONING'
-         return
+         istat= gmm_get(gmmk_zdt0_s,zdt0)
+         istat= gmm_get(gmmk_ut0_s ,ut0 )
+         istat= gmm_get(gmmk_vt0_s ,vt0 )
+
+         call hzd_ctrl4 ( ut0, vt0, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call hzd_ctrl4 (zdt0, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
+
+         if (Grd_yinyang_L) then
+            call yyg_xchng (zdt0, l_minx,l_maxx,l_miny,l_maxy, &
+                            G_nk, .false., 'CUBIC')
+            call yyg_nestuv(ut0 , vt0, l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         endif
+
       endif
 
-      l_nk = G_nk
-      l_njv= l_nj
-      l_niu= l_ni
-      if (l_north) l_njv= l_nj - 1
-      if (l_east ) l_niu= l_ni - 1
-
-      if (.not.F_checkparti_L) call glbpos   
-
- 1000 format (/' DOMAIN_DECOMP: checking partitionning of G_ni and G_nj'/&
-               2(i6,' in ',i6,' subdomains',5x)/)
+1000  format(5X,'DIFFUSION ON U,V,ZD: (S/R HZD_MOMENTUM)')
 !
 !-------------------------------------------------------------------
 !
       return
       end
-
-

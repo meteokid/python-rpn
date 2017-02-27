@@ -85,12 +85,14 @@
       Schm_adcub_L    = .true.
       Schm_psadj_L    = .false.
       Schm_psadj_lam_L= .false.
+      Schm_dry_mixing_ratio_L= .false.
       Schm_source_ps_L= .false.
       Schm_autobar_L  = .false.
       Schm_bitpattern_L = .false.
       Schm_wload_L     = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
+      Schm_wlint_L     = .false.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -184,7 +186,8 @@
       perturb_nbits=0
       perturb_npts=10
 
-      Eq_sponge=0.
+      Eq_sponge= 0.
+      Eq_ramp_L= .false.
 
       Inp_blacklist_S = ''
       Inp_vertintype_tracers_S='cubic'

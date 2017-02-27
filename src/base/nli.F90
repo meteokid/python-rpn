@@ -60,7 +60,6 @@
 #include "geomg.cdk"
 #include "cori.cdk"
 #include "schm.cdk"
-#include "inuvl.cdk"
 #include "ptopo.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
@@ -403,6 +402,16 @@
                                    + (Ver_wmM_8(k)-Ver_wm_8%m(k)) * Ver_onezero(k) * F_zd(i,j,km)
          end do
          end do
+         if(.not.Schm_hydro_L.and.Schm_wlint_L) then
+            do j = j0, jn
+            do i = i0, in
+            F_nc(i,j,k) = F_nc(i,j,k) + &
+                          Cstv_invT_8 * Cstv_rE_8 * (Ver_wpA_8(k)-Ver_wmM_8(k)) * &
+                              ( (F_q(i,j,k+1)-Ver_onezero(k)*F_q(i,j,kq))*Ver_idz_8%t(k) &
+                              -Ver_onezero(k)*(F_q(i,j,kq)-Ver_onezero(km)*F_q(i,j,kmq))*Ver_idz_8%t(km) )
+            end do
+            end do
+         endif
 
       end do
 !$omp enddo

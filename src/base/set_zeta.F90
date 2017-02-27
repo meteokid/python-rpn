@@ -243,23 +243,31 @@
 !     -------------------------------------------------------
 
       do k=1,G_nk
-         if(k.eq.G_nk) then
-            Ver_wp_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
-         else
-            Ver_wp_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
-         endif
+         if(.not.Schm_wlint_L) then
+            if(k.eq.G_nk) then
+               Ver_wp_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
+            else
+               Ver_wp_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
+            endif
             Ver_wm_8%m(k) = one-Ver_wp_8%m(k)
+            if(k.eq.1) then
+               Ver_wmM_8(k) = zero
+            else
+               Ver_wmM_8(k) = (Ver_z_8%t(k)-Ver_z_8%m(k))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
+            endif
+            Ver_wpM_8(k) = one - Ver_wmM_8(k)
+         else
+            if(k.eq.G_nk) then
+               Ver_wm_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
+            else
+               Ver_wm_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
+            endif
+            Ver_wp_8%m(k) = one-Ver_wm_8%m(k)
+            Ver_wpM_8(k)= Ver_wp_8%m(k)
+            Ver_wmM_8(k)= Ver_wm_8%m(k)
+         endif
             Ver_wpA_8(k)= Ver_wp_8%m(k)
             Ver_wmA_8(k)= Ver_wm_8%m(k)
-      enddo
-
-      do k=1,G_nk
-         if(k.eq.1) then
-            Ver_wmM_8(k) = zero
-         else
-            Ver_wmM_8(k) = (Ver_z_8%t(k)-Ver_z_8%m(k))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-         endif
-         Ver_wpM_8(k) = one - Ver_wmM_8(k)
       enddo
 
           Ver_dbdz_8%m(1) = Ver_wp_8%m(1) * Ver_dbdz_8%t(1)  &
@@ -294,10 +302,17 @@
       if(.not.Schm_autobar_L) then
          Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
          Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
-         Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wp_8%m(G_nk)
-         Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
       endif
 
+      if(.not.Schm_wlint_L) then
+        !redefine last momentum weight
+         Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wp_8%m(G_nk)
+         Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
+      else
+        !redefine last special weight
+         Ver_wpA_8(G_nk) = Ver_wp_8%m(G_nk)/Ver_wpstar_8(G_nk)
+         Ver_wmA_8(G_nk) = one - Ver_wpA_8(G_nk)
+      endif
 !     -------------------------------------------------------
 !     Compute DOUBLE VERTICAL AVERGING OF B (B bar zz) 
 !     -------------------------------------------------------

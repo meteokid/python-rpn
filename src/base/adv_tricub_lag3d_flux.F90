@@ -34,7 +34,8 @@
       !@author Monique Tanguay
 
       !@revisions
-      ! v4_XX - Tanguay M.        - GEM4 Mass-Conservation
+      ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
+      ! v5_00 - Tanguay M.        - Adjust extension 
 
 
 #include "adv_grid.cdk"
@@ -50,7 +51,7 @@
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      integer, parameter :: CFL = 5.0
+      integer jext 
 
       integer :: n0,nx,ny,nz,m1,id,n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_o,in_o,j0_o,jn_o,i0_i,in_i,j0_i,jn_i
@@ -111,6 +112,8 @@
       !------------------------------------------------
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
+      jext = Grd_maxcfl
+
       if (.NOT.done_L) then
 
          if (l_west) then
@@ -125,7 +128,7 @@
             allocate (ii_w_o(4*nind_w_o))
 
             i0_w_i = 1+pil_w
-            in_w_i = 1+pil_w+CFL
+            in_w_i = 1+pil_w+jext
             j0_w_i = 1+pil_s
             jn_w_i = l_nj-pil_n
 
@@ -149,7 +152,7 @@
            i0_s_i = 1+pil_w
            in_s_i = l_ni-pil_e
            j0_s_i = 1+pil_s
-           jn_s_i = 1+pil_s+CFL
+           jn_s_i = 1+pil_s+jext
 
            nind_s_i = (in_s_i-i0_s_i+1)*(jn_s_i-j0_s_i+1)*(l_nk-k0+1)
 
@@ -168,7 +171,7 @@
 
             allocate (ii_e_o(4*nind_e_o))
 
-            i0_e_i = l_ni-pil_e-CFL
+            i0_e_i = l_ni-pil_e-jext
             in_e_i = l_ni-pil_e
             j0_e_i = 1+pil_s
             jn_e_i = l_nj-pil_n
@@ -192,7 +195,7 @@
 
             i0_n_i = 1+pil_w
             in_n_i = l_ni-pil_e
-            j0_n_i = l_nj-pil_n-CFL
+            j0_n_i = l_nj-pil_n-jext
             jn_n_i = l_nj-pil_n
 
             nind_n_i = (in_n_i-i0_n_i+1)*(jn_n_i-j0_n_i+1)*(l_nk-k0+1)

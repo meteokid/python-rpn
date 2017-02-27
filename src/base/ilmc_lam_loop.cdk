@@ -3,15 +3,15 @@
 !$omp parallel do                                                   &
 !$omp private(i,j,sweep,ii,o_shoot,u_shoot,s_dif_p,s_dif_m,         &
 !$omp         dif_p,dif_m,ok_p,ok_m,ratio_m,ratio_p,i_rd,j_rd,k_rd) &
-!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,F_new,F_max,F_min,l_mass)
+!$omp shared (sweep_rd,shift,il_c,ir_c,jl_c,jr_c,F_new,F_max,F_min,mass_m)
 
       do k=k0+shift-1,F_nk,SIDE_max_0
 
          do j=jl_c,jr_c
          do i=il_c,ir_c
 
-            o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
-            u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+            o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * mass_m(i,j,k)
+            u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * mass_m(i,j,k)
 
             if (o_shoot==0..and.u_shoot==0.) cycle
 
@@ -35,10 +35,10 @@
 #endif
 
                   dif_p(ii) = max(0., F_max(i_rd,j_rd,k_rd) - F_new(i_rd,j_rd,k_rd))
-                  s_dif_p   = dif_p(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_p
+                  s_dif_p   = dif_p(ii) * mass_m(i_rd,j_rd,k_rd) + s_dif_p
 
                   dif_m(ii) = max(0., F_new(i_rd,j_rd,k_rd) - F_min(i_rd,j_rd,k_rd))
-                  s_dif_m   = dif_m(ii) * l_mass(i_rd,j_rd,k_rd) + s_dif_m
+                  s_dif_m   = dif_m(ii) * mass_m(i_rd,j_rd,k_rd) + s_dif_m
 
                enddo
 
@@ -51,7 +51,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   F_new(i,j,k) = max(F_new(i,j,k) - real(ok_p/l_mass(i,j,k)),F_min(i,j,k))
+                   F_new(i,j,k) = max(F_new(i,j,k) - real(ok_p/mass_m(i,j,k)),F_min(i,j,k))
 
                    ratio_p = ok_p/s_dif_p
 
@@ -75,7 +75,7 @@
 
                    reset(k,3) = reset(k,3) + 1
 
-                   F_new(i,j,k) = min(F_new(i,j,k) + real(ok_m/l_mass(i,j,k)),F_max(i,j,k))
+                   F_new(i,j,k) = min(F_new(i,j,k) + real(ok_m/mass_m(i,j,k)),F_max(i,j,k))
 
                    ratio_m = ok_m/s_dif_m
 
@@ -95,8 +95,8 @@
 
                endif
 
-               o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * l_mass(i,j,k)
-               u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * l_mass(i,j,k)
+               o_shoot = max(0., F_new(i,j,k) - F_max(i,j,k)) * mass_m(i,j,k)
+               u_shoot = max(0., F_min(i,j,k) - F_new(i,j,k)) * mass_m(i,j,k)
 
                if (o_shoot==0..and.u_shoot==0.) cycle
 

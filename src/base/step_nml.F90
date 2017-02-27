@@ -66,8 +66,7 @@
       Fcst_bkup_S    = 'NIL'
       Fcst_bkup_additional_S = 'NIL'
       Fcst_spinphy_S = ''
-      Fcst_alarm_S = ''
-
+      Step_alarm     = 600
       Step_dt          = -1.0
       Step_leapyears_L = .true.
 
@@ -139,11 +138,6 @@
          Step_spinphy= Step_total-Step_initial+1
       else
          err= min( timestr2step (Step_spinphy, Fcst_spinphy_S, Step_dt), err)
-      endif
-      if ( Fcst_alarm_S  == '' ) then
-         Step_alarm= 600
-      else
-         err= min( timestr2step (Step_alarm, Fcst_alarm_S, Step_dt), err)
       endif
 
       if (err.lt.0) goto 9999

@@ -83,13 +83,14 @@
 
       k0=1+Lam_gbpil_T
       if(Schm_opentop_L) then
-         w1 = Ver_wm_8%m(k0)*(Ver_idz_8%t(k0-1) &
-                 +(one-Dcst_cappa_8)*Ver_epsi_8(k0-1)*Ver_wm_8%t(k0-1))
-         w2 = one/(Ver_idz_8%t(k0-1)+Ver_epsi_8(k0-1)*Ver_wm_8%t(k0-1))
-         Ver_alfat_8 = (Ver_idz_8%t(k0-1) &
-                         - Ver_epsi_8(k0-1)*Ver_wp_8%t(k0-1)) * w2
-         Ver_cst_8   =                 one / Ver_gama_8(k0-1) * w2
-         Ver_cstp_8  = (Ver_idz_8%t(k0-1)*Ver_idz_8%m(k0)-w1) * w2
+         w1 = Ver_idz_8%t(k0-1)* &
+               (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one+Ver_epsi_8(k0-1))) &
+            + half*Ver_epsi_8(k0-1)* &
+               (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one-Dcst_cappa_8))
+         w2 = one/(Ver_idz_8%t(k0-1)+Ver_epsi_8(k0-1)*half)
+         Ver_alfat_8 = (Ver_idz_8%t(k0-1) - Ver_epsi_8(k0-1)*half) * w2
+         Ver_cst_8   =                      one / Ver_gama_8(k0-1) * w2
+         Ver_cstp_8  =                                          w1 * w2
       endif
 
       Ver_css_8   = one/Ver_gama_8(G_nk) &
@@ -102,8 +103,9 @@
       Ver_betas_8 = Ver_css_8 * ( w1 - w2 )
       w1=Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk)*(Ver_idz_8%m(G_nk) + &
          Ver_wp_8%m(G_nk))/Ver_wpstar_8(G_nk)
-      w2=Ver_wp_8%m(G_nk)*Ver_gama_8(G_nk)*Ver_epsi_8(G_nk) * &
-         (one-Dcst_cappa_8)
+      w2=((one-Dcst_cappa_8)*Ver_wp_8%m(G_nk) + Ver_idz_8%m(G_nk) - &
+         Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)) &
+        *Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)
       Ver_cssp_8  = Ver_css_8 * ( w1 - w2 )
 
       Cstv_bar0_8 = zero

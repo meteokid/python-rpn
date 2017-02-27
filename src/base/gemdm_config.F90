@@ -83,8 +83,6 @@
       Level_kind_ip1 = 5
       Level_version  = 5
 
-      Glb_pil_n = Grd_extension
-      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
       if (Grd_yinyang_L) then
          Lam_blend_H  = 0
          Lam_ctebcs_L = .true.

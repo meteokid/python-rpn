@@ -28,7 +28,6 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "grd.cdk"
-#include "inuvl.cdk"
 
       !- CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids
       !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid
@@ -82,14 +81,16 @@
 
          do j = j0v, jnv
             do i = i0, in
-               vv(i,j,k) = inuvl_wyvy3_8(j,1)*F_vth(i,j-2,k) + inuvl_wyvy3_8(j,2)*F_vth(i,j-1,k) &
-                         + inuvl_wyvy3_8(j,3)*F_vth(i,j  ,k) + inuvl_wyvy3_8(j,4)*F_vth(i,j+1,k)
+!               print*, inuvl_wyvy3_8(j,1),inuvl_wyvy3_8(j,2),inuvl_wyvy3_8(j,3),inuvl_wyvy3_8(j,4),j
+!               vv(i,j,k) = inuvl_wyvy3_8(j,1)*F_vth(i,j-2,k) + inuvl_wyvy3_8(j,2)*F_vth(i,j-1,k) &
+!                         + inuvl_wyvy3_8(j,3)*F_vth(i,j  ,k) + inuvl_wyvy3_8(j,4)*F_vth(i,j+1,k)
+               vv(i,j,k) = ( F_vth(i,j-2,k) + F_vth(i,j+1,k) )*alpha1 &
+                          +( F_vth(i  ,j,k) + F_vth(i,j-1,k) )*alpha2
             enddo
          enddo
 
      enddo 
 !$omp enddo
-
       
 !$omp do
          do k = 1,l_nk

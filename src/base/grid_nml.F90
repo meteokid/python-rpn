@@ -22,14 +22,17 @@
       character* (*) F_namelistf_S
 
 #include "grd.cdk"
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
 #include "hgc.cdk"
 #include "lun.cdk"
+#include "ptopo.cdk"
 #include "schm.cdk"
 
       integer, external ::  fnom, yyg_checkrot
 
       character*120 dumc
-      integer unf,nrec,err
+      integer unf,nrec,npts,next_down,lcl_ni,maxcfl,err,ni
       real*8 epsilon,a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3), delta_8
       real*8 yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
       parameter (epsilon = 1.0d-5)
@@ -79,17 +82,27 @@
       goto 9999
 
  9000 call low2up (Grd_typ_S,dumc)
-      Grd_typ_S    = dumc
+      Grd_typ_S= dumc
 
       Grd_bsc_base = 4
       if(Grd_yinyang_L) Grd_bsc_base=Grd_bsc_base+1
       Grd_bsc_ext1 = 3
       Grd_maxcfl   = max(1,Grd_maxcfl)
       Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+      Glb_pil_n = Grd_extension
+      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+      
+      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
+      if (l_west ) pil_w= Glb_pil_w
+      if (l_north) pil_n= Glb_pil_n
+      if (l_east ) pil_e= Glb_pil_e
+      if (l_south) pil_s= Glb_pil_s
 
       Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
       Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
+
       if (Grd_typ_S(1:2).eq.'GY') then
+
          if ((Grd_ni.gt.0).and.(Grd_nj.gt.0)) then
             if (Lun_out.gt.0) write(Lun_out,'(/2(2x,a/))')  &
                'CONFLICTING Grd_NI & Grd_NJ IN NAMELIST grid',&
@@ -102,6 +115,31 @@
          if (Grd_nj.le.0) then
             if (Grd_ni.gt.0) Grd_nj= nint ( real(Grd_ni-1)/3. + 1. )
          endif
+
+! imposing local fft will be done later
+!!$         if ( Ptopo_npex .gt. 1) then
+!!$         lcl_ni= Grd_ni / Ptopo_npex
+!!$         if ( (lcl_ni*Ptopo_npex) .lt. Grd_ni ) lcl_ni= lcl_ni + 1
+!!$         npts= lcl_ni
+!!$         call itf_fft_nextfactor2 ( npts, next_down )
+!!$         if ( npts.ne.lcl_ni ) then
+!!$            if ((npts-lcl_ni) .le. (lcl_ni-next_down)) then
+!!$               lcl_ni= npts
+!!$            else
+!!$               lcl_ni= next_down
+!!$            endif
+!!$         endif
+!!$         Grd_ni= lcl_ni*ptopo_npex
+!!$         Grd_nj= nint ( real(Grd_ni-1)/3. + 1. )
+!!$
+!!$         npts= lcl_ni - pil_w - pil_e
+!!$         call itf_fft_nextfactor2 ( npts, next_down )
+!!$         maxcfl= Grd_maxcfl + npts - lcl_ni + pil_w + pil_e
+!!$         call RPN_COMM_allreduce ( maxcfl, Grd_maxcfl, 1, "MPI_INTEGER",&
+!!$                                   "MPI_MAX", "GRID", err)
+!!$         Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+!!$         endif
+
       endif
 
       if (Grd_ni*Grd_nj.eq.0) then
@@ -128,8 +166,9 @@
             if (yyg_checkrot().lt.0) goto 9999
 
             if (trim(Grd_yinyang_S) .eq. 'YAN') then
-               call yyg_yangrot ( Grd_xlat1_8, Grd_xlon1_8, Grd_xlat2_8, Grd_xlon2_8,&
-                                  yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8 )
+               call yyg_yangrot (                                   &
+                 Grd_xlat1_8, Grd_xlon1_8, Grd_xlat2_8, Grd_xlon2_8,&
+                 yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8 )
                Grd_xlat1_8= yan_xlat1_8 ; Grd_xlon1_8= yan_xlon1_8
                Grd_xlat2_8= yan_xlat2_8 ; Grd_xlon2_8= yan_xlon2_8
                Grd_xlat1  = yan_xlat1_8 ; Grd_xlon1  = yan_xlon1_8
@@ -163,6 +202,29 @@
                              'VERIFY Grd_DX & Grd_DY IN NAMELIST grid'
             goto 9999
          endif
+
+! imposing local fft will be done later
+!!$         if ( Ptopo_npex .gt. 1) then
+!!$         lcl_ni= Grd_ni / Ptopo_npex
+!!$         if ( (lcl_ni*Ptopo_npex) .lt. Grd_ni ) lcl_ni= lcl_ni + 1
+!!$         npts= lcl_ni
+!!$         call itf_fft_nextfactor2 ( npts, next_down )
+!!$         if ( npts.ne.lcl_ni ) then
+!!$            if ((npts-lcl_ni) .le. (lcl_ni-next_down)) then
+!!$               lcl_ni= npts
+!!$            else
+!!$               lcl_ni= next_down
+!!$            endif
+!!$         endif
+!!$         Grd_ni= lcl_ni*ptopo_npex
+!!$         npts= lcl_ni - pil_w - pil_e
+!!$         call itf_fft_nextfactor2 ( npts, next_down )
+!!$         maxcfl= Grd_maxcfl + npts - lcl_ni + pil_w + pil_e
+!!$         call RPN_COMM_allreduce ( maxcfl, Grd_maxcfl, 1, "MPI_INTEGER",&
+!!$                                   "MPI_MAX", "GRID", err)
+!!$         Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+!!$         endif
+
          Grd_iref = Grd_ni / 2 + Grd_extension
          Grd_jref = Grd_nj / 2 + Grd_extension
          Grd_ni   = Grd_ni   + 2*Grd_extension
@@ -181,6 +243,23 @@
          endif
 
       end select
+
+! imposing local fft will be done later
+!!$      Glb_pil_n = Grd_extension
+!!$      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+!!$      
+!!$      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
+!!$      if (l_west ) pil_w= Glb_pil_w
+!!$      if (l_north) pil_n= Glb_pil_n
+!!$      if (l_east ) pil_e= Glb_pil_e
+!!$      if (l_south) pil_s= Glb_pil_s
+      
+      Lam_pil_w= Glb_pil_w
+      Lam_pil_n= Glb_pil_n
+      Lam_pil_e= Glb_pil_e
+      Lam_pil_s= Glb_pil_s
+
+!call gem_error(-1,'','')
 
 !     compute RPN/FST grid descriptors
 !

@@ -23,6 +23,7 @@
       !
       !Revision
       ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
+      ! v5_00 - Tanguay M.        - Provide air mass to mass_tr
       !
       !Object
       !     Based on Sorenson et al.,2013: A mass conserving and multi-tracer
@@ -40,7 +41,7 @@
       integer SIDE_max_0,i,j,k,err,sweep,i_rd,j_rd,k_rd,ii,ix,jx,kx,kx_m,kx_p,iprod, &
               istat,shift,j1,j2,reset(k0:F_nk,3),l_reset(3),g_reset(3),time_m,w1,w2,size,n,il,ir,jl,jr,il_c,ir_c,jl_c,jr_c
 
-      real F_new(Minx:Maxx,Miny:Maxy,F_nk),l_density(Minx:Maxx,Miny:Maxy,F_nk),l_mass(Minx:Maxx,Miny:Maxy,F_nk), &
+      real F_new(Minx:Maxx,Miny:Maxy,F_nk),bidon(Minx:Maxx,Miny:Maxy,F_nk),mass_m(Minx:Maxx,Miny:Maxy,F_nk), &
            dif_p(400),dif_m(400),ok_p,s_dif_p,ok_m,s_dif_m,o_shoot,u_shoot,ratio_p,ratio_m
 
       real F_copy(Minx:Maxx,Miny:Maxy,F_nk)
@@ -55,6 +56,8 @@
       verbose_L = Tr_verbose/=0 
 
       time_m = 0
+
+      call get_density (bidon,mass_m,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
       reset  = 0
 
@@ -89,7 +92,7 @@
       !------------------------------------
       F_out = F_high 
 
-      call mass_tr (mass_new_8,time_m,F_name_S(4:7),F_new,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
+      call mass_tr (mass_new_8,F_name_S(4:7),F_new,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
       if (verbose_L) then
       if (Lun_out>0) then
@@ -97,8 +100,6 @@
          write(Lun_out,1000) 'TRACERS: Mass BEFORE ILMC        =',mass_new_8,F_name_S(4:6)
       endif
       endif
-
-      call get_density (l_density,l_mass,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
       !-------------------------------
       !Fill East-West/North-South Halo
@@ -109,7 +110,7 @@
       call rpn_comm_xch_halo (F_max, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,F_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
-      call rpn_comm_xch_halo (l_mass,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,F_nk, &
+      call rpn_comm_xch_halo (mass_m,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,F_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
       !------------------------------------------------------
@@ -287,7 +288,7 @@
 
       endif
 
-      call mass_tr (mass_out_8,time_m,F_name_S(4:7),F_out,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
+      call mass_tr (mass_out_8,F_name_S(4:7),F_out,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
       mass_deficit_8 = mass_out_8 - mass_new_8
 

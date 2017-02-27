@@ -49,7 +49,7 @@
          if (.not. F_water_tracers_only_L) &
               call stat_mass_tracers (0,"AFTER ADVECTION")
       endif
-1000  format(3X,'ADVECT TRACERS: (S/R TRACERS_STEP) H2O only=',L)
+1000  format(3X,'ADVECT TRACERS: (S/R TRACERS_STEP) H2O only=',L2)
 !     _________________________________________________________________
 !
       return

@@ -53,17 +53,27 @@
 #include "ver.cdk"
 #include "cstv.cdk"
 #include "schm.cdk"
+#include "glb_ld.cdk"
+#include "grd.cdk"
+#include "ptopo.cdk"
+
       integer :: i,j,k
-      real*8  two, half
+      integer :: BCS_BASE
+      integer :: n,cnt,nc,nc1,nc2,sum_cnt,totaln,err
+      real*8  two, half, EPS_8
+      real  :: xpos,ypos
       real*8, dimension(2:F_nk-2) :: w1, w2, w3, w4
       real*8, dimension(i0:in,F_nk) :: wdt
       real*8 :: lag3, hh, x, x1, x2, x3, x4, ww, wp, wm
       real :: ztop_bound, zbot_bound
-      parameter (two = 2.0, half=0.5)
-
+      real :: minposx,maxposx,minposy,maxposy
+      real :: prct
+      parameter (two = 2.0, half=0.5, EPS_8 = 1.D-5)
+     
       lag3( x, x1, x2, x3, x4 ) = &
         ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
         ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
+ 
 !     
 !---------------------------------------------------------------------
 !     
@@ -72,13 +82,23 @@
 !        (Lam_gbpil_t != 0) for coding simplicity
 !***********************************************************************
 !
+
       ztop_bound=Ver_z_8%m(0)
       zbot_bound=Ver_z_8%m(F_nk+1)
 
-
+       BCS_BASE= 4
+      if (Grd_yinyang_L) BCS_BASE = 3
+      minposx = adv_xx_8(adv_lminx+1) + EPS_8
+      if (l_west)  minposx = adv_xx_8(1+BCS_BASE) + EPS_8
+      maxposx = adv_xx_8(adv_lmaxx-1) - EPS_8
+      if (l_east)  maxposx = adv_xx_8(F_ni-BCS_BASE) - EPS_8
+      minposy = adv_yy_8(adv_lminy+1) + EPS_8
+      if (l_south) minposy = adv_yy_8(1+BCS_BASE) + EPS_8
+      maxposy = adv_yy_8(adv_lmaxy-1) - EPS_8
+      if (l_north) maxposy = adv_yy_8(F_nj-BCS_BASE) - EPS_8
 
 ! Prepare parameters for cubic intepolation
-      do k=2,F_nk-2
+     do k=2,F_nk-2
          hh = Ver_z_8%t(k)
          x1 = Ver_z_8%m(k-1)
          x2 = Ver_z_8%m(k  )
@@ -89,10 +109,13 @@
          w3(k) = lag3( hh, x3, x1, x2, x4 )
          w4(k) = lag3( hh, x4, x1, x2, x3 )
       enddo
-
+      
       k00=max(F_k0-1,1)
 
-!$omp parallel private(i,j,k,wdt,ww,wp,wm)
+cnt=0
+
+!$omp parallel private(i,j,k,wdt,ww,wp,wm,nc,nc1,nc2)  
+nc = 0
 !$omp do
     do j=j0,jn
 
@@ -110,20 +133,28 @@
          if(F_cubic_L.and.k.ge.2.and.k.le.F_nk-2)then
            !Cubic
             do i=i0,in
-               F_xt(i,j,k) = w1(k)*F_xm(i,j,k-1)+ &
+               xpos = w1(k)*F_xm(i,j,k-1)+ &
                              w2(k)*F_xm(i,j,k  )+ &
                              w3(k)*F_xm(i,j,k+1)+ &
                              w4(k)*F_xm(i,j,k+2)
-               F_yt(i,j,k) = w1(k)*F_ym(i,j,k-1)+ &
+               ypos = w1(k)*F_ym(i,j,k-1)+ &
                              w2(k)*F_ym(i,j,k  )+ &
                              w3(k)*F_ym(i,j,k+1)+ &
                              w4(k)*F_ym(i,j,k+2)
+              F_xt(i,j,k) = min(max(xpos,minposx),maxposx)
+              F_yt(i,j,k) = min(max(ypos,minposy),maxposy)
+              ! Clipp traj stat
+              nc=nc+min(1,max(0,ceiling(abs(F_xt(i,j,k)-xpos)+abs(F_yt(i,j,k)-ypos))))
             enddo
          else
            !Linear
             do i=i0,in
-               F_xt(i,j,k) = (F_xm(i,j,k )+F_xm (i,j,k+1))*half
-               F_yt(i,j,k) = (F_ym(i,j,k )+F_ym (i,j,k+1))*half
+               xpos = (F_xm(i,j,k )+F_xm (i,j,k+1))*half
+               ypos = (F_ym(i,j,k )+F_ym (i,j,k+1))*half
+               F_xt(i,j,k) = min(max(xpos,minposx),maxposx)
+               F_yt(i,j,k) = min(max(ypos,minposy),maxposy)
+               ! Clipp traj stat
+              nc=nc+min(1,max(0,ceiling(abs(F_xt(i,j,k)-xpos)+abs(F_yt(i,j,k)-ypos))))
             enddo
          endif
       enddo
@@ -157,8 +188,12 @@
          wm=1.d0-wp
           do i=i0,in
            !extrapolating horizontal positions downward
-           F_xt(i,j,F_nk)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
-           F_yt(i,j,F_nk)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
+           xpos = wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
+           ypos = wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
+           F_xt(i,j,F_nk) = min(max(xpos,minposx),maxposx)
+           F_yt(i,j,F_nk) = min(max(ypos,minposy),maxposy)
+           ! Clipp traj stat
+           nc=nc+min(1,max(0,ceiling(abs(F_xt(i,j,F_nk)-xpos)+abs(F_yt(i,j,F_nk)-ypos))))
 
            !vertical position
            F_zt(i,j,F_nk)=zbot_bound
@@ -172,6 +207,8 @@
            !extrapolating horizontal positions downward
            F_xtn(i,j)=wp*F_xm(i,j,F_nk)+wm*F_xm(i,j,F_nk-1)
            F_ytn(i,j)=wp*F_ym(i,j,F_nk)+wm*F_ym(i,j,F_nk-1)
+           F_xtn(i,j) = min(max(F_xtn(i,j),minposx),maxposx)
+           F_ytn(i,j) = min(max(F_ytn(i,j),minposy),maxposy)
 
            !interpolating vertical positions     
            F_ztn(i,j)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
@@ -216,9 +253,16 @@
 
 enddo
 !$omp enddo
+!$omp atomic
+cnt=cnt+nc
 !$omp end parallel
-!     
-!---------------------------------------------------------------------
-! 
-      return
-      end subroutine adv_int_vert_t
+     
+! Trajectory Clipping stat   
+  call adv_print_cliptrj_s (cnt,F_ni,F_nj,F_nk,k00,'INTERP '//trim('t'))
+
+
+!
+!--------------------------------------------------------------
+!
+   return
+   end subroutine adv_int_vert_t

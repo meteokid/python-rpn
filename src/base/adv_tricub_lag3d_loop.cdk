@@ -1,5 +1,5 @@
 !$omp parallel private(zcubic_L,n0,nx,ny,nz,m1,o1,o2,o3,o4,&
-!$omp    n, id , iL,&
+!$omp    n, id ,&
 !$omp    a1, a2, a3, a4, b1, b2, b3, b4,&
 !$omp    c1, c2, c3, c4, d1, d2, d3, d4,&
 !$omp    p1, p2, p3, p4,&
@@ -132,16 +132,25 @@
              endif
 
 #ifdef ADV_CONSERV
-            iL = max(1,min(ii(nx),adv_iimax+1)) !As in adv_trilin_ijk
-            capx = (F_x(n)-adv_bsx_8(iL)) *adv_xbc_8 !As in adv_trilin_turbo
-            capy = (F_y(n)-adv_bsy_8(ii(ny))) *adv_ybc_8 !As in adv_trilin_turbo
-            capz = (F_z(n)-p_bsz_8(ii(nz)))*p_zbc_8(ii(nz)+1) !As in adv_tricub_lag3d_loop
+
+            capx = (F_x(n)-adv_bsx_8(ii(nx))) * adv_xbc_8
+            capy = (F_y(n)-adv_bsy_8(ii(ny))) * adv_ybc_8
+            capz = (F_z(n)-  p_bsz_8(ii(nz))) *   p_zbc_8(ii(nz)+1)
+
+            o2 = (ii(nz))*adv_nijag + (ii(ny)-adv_int_j_off-1)*adv_nit + (ii(nx)-adv_int_i_off)
+            o3 = o2 + adv_nit
 
             prf1 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
-                   capy        * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
+            o2 = o2 + adv_nijag
+            o3 = o3 + adv_nijag
+
             prf2 = (1. - capy) * ( (1. - capx) * F_in(o2) + capx * F_in(o2+1) ) + &
-                   capy        * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+                         capy  * ( (1. - capx) * F_in(o3) + capx * F_in(o3+1) )
+
             F_lin (n) = max((1. - capz) * prf1 + capz * prf2,0.0d0)
+
 #ifdef ADV_MONO
             F_mono(n) = max(prmin , min(prmax,F_cub(n)))
             F_min (n) = prmin

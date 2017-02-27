@@ -33,9 +33,10 @@
 #include "gmm.hf"
 #include "adv.cdk"
 #include "adv_precompute_flux.cdk"
+#include "tracers.cdk"
 
       logical qw_L      
-      integer  n, count,jext,err
+      integer  n,count,jext,err
       integer nind, nind_s , num
       integer i0,j0,in,jn,k0        ! scope of advection operations
       integer i0_s,j0_s,in_s,jn_s   ! scope of advection operations on CORE		 
@@ -89,7 +90,7 @@
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':P' ,fld_in ,mymeta)
          err= gmm_get('TR/'//trim(Tr3d_name_S(n))//':M' ,fld_out,mymeta)
 
-         if ((Tr3d_mass(n)==1.or.Tr3d_mass(n)==2).and..NOT.Grd_yinyang_L) then
+         if (Tr_extension_L) then
                            
              !Pre-compute indices ii_s used in: adv_tricub_lag3d_loop when Bermejo-Conde or SLICE when LAM  
              !--------------------------------------------------------------------------------------------

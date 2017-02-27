@@ -23,7 +23,7 @@
 !
       character*16 Step_runstrt_S  , Fcst_start_S  , &
          Fcst_end_S  , Fcst_nesdt_S, Fcst_gstat_S  , &
-         Fcst_rstrt_S, Fcst_spinphy_S, Fcst_alarm_S, &
+         Fcst_rstrt_S, Fcst_spinphy_S              , &
          Fcst_bkup_S , Fcst_bkup_additional_S
 
       logical Step_leapyears_L
@@ -36,7 +36,7 @@
 
       common / Step_S / Step_runstrt_S    , Fcst_start_S, &
               Fcst_end_S  , Fcst_nesdt_S  , Fcst_gstat_S, &
-              Fcst_rstrt_S, Fcst_spinphy_S, Fcst_alarm_S, &
+              Fcst_rstrt_S, Fcst_spinphy_S              , &
               Fcst_bkup_S , Fcst_bkup_additional_S
 
       common / Step_L / Step_leapyears_L
@@ -51,5 +51,5 @@
       namelist /step/ Step_runstrt_S , Fcst_start_S                ,&
                       Fcst_end_S     , Fcst_nesdt_S, Fcst_gstat_S  ,&
                       Fcst_rstrt_S   , Fcst_bkup_S , Fcst_spinphy_S,&
-                      Fcst_bkup_additional_S, Fcst_alarm_S         ,&
+                      Fcst_bkup_additional_S, Step_alarm           ,&
                       Step_leapyears_L, Step_dt

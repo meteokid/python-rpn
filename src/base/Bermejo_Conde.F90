@@ -25,7 +25,8 @@
 
       !Author Monique Tanguay 
       ! Revision
-      ! v4_XX - Qaddouri A.       - Version for Yin-Yang Grid
+      ! v4_80 - Qaddouri A.       - Version for Yin-Yang Grid
+      ! v5_00 - Tanguay M.        - Provide air mass to mass_tr
       !Object
       !     Based on Bermejo and Conde,2002, A conservative quasi-monotone
       !     semi-Lagrangian scheme. MWR,130,423-430
@@ -40,12 +41,16 @@
 
       !----------------------------------------------------------
       integer i,j,k,err,count(k0:F_nk,3),l_count(3),g_count(3),time_p,time_m,iprod
-      real*8  mass_old_8,mass_bflux_old_8,mass_tot_old_8,mass_new_8,mass_bflux_new_8,mass_tot_new_8, &
-              mass_wei_8,mass_bflux_wei_8,mass_tot_wei_8,mass_out_8,mass_bflux_out_8,mass_tot_out_8, &
-              mass_deficit_8,lambda_8,correction_8,p_exp_8,H_minus_L_8,ratio_8,mass_flux_o_8,mass_flux_i_8
+      real*8  mass_old_8,mass_tot_old_8,mass_new_8,mass_tot_new_8, &
+              mass_out_8,mass_tot_out_8,mass_wei_8, &  
+              mass_deficit_8,lambda_8,correction_8,p_exp_8,H_minus_L_8,ratio_8, &
+              mass_flux_o_8,mass_flux_i_8,mass_bflux_8
       real*8, parameter :: ONE_8=1.d0
-      real F_new(Minx:Maxx,Miny:Maxy,F_nk),weight(Minx:Maxx,Miny:Maxy,F_nk)
+      real F_new(Minx:Maxx,Miny:Maxy,F_nk),weight(Minx:Maxx,Miny:Maxy,F_nk), &
+          mass_p(Minx:Maxx,Miny:Maxy,F_nk),mass_m(Minx:Maxx,Miny:Maxy,F_nk), &
+           bidon(Minx:Maxx,Miny:Maxy,F_nk)
       logical LAM_L, verbose_L
+
       !----------------------------------------------------------
 
       verbose_L = Tr_verbose/=0 
@@ -56,6 +61,9 @@
 
       time_p = 1
       time_m = 0
+
+      call get_density (bidon,mass_p,time_p,Minx,Maxx,Miny,Maxy,F_nk,k0)
+      call get_density (bidon,mass_m,time_m,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
 !$omp parallel do 
       do k=1,F_nk
@@ -78,33 +86,24 @@
       !------------------------------------
       F_out = F_new 
 
-      call mass_tr (mass_old_8,time_p,F_name_S(4:7),F_old,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
-      call mass_tr (mass_new_8,time_m,F_name_S(4:7),F_new,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE.)
+      call mass_tr (mass_old_8,F_name_S(4:7),F_old,mass_p,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
+      call mass_tr (mass_new_8,F_name_S(4:7),F_new,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-      mass_bflux_old_8 = 0.0d0 
-      mass_bflux_new_8 = 0.0d0 
-      mass_bflux_wei_8 = 0.0d0 
-      mass_bflux_out_8 = 0.0d0 
+      mass_bflux_8 = 0.0d0 
 
       !Estimate mass of FLUX_out and mass of FLUX_in
       !---------------------------------------------
       if (LAM_L) then
 
-         call mass_tr (mass_flux_o_8,time_p,'FLUX',F_for_flux_o,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE. )
-         call mass_tr (mass_flux_i_8,time_p,'FLUX',F_for_flux_i,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
+         call mass_tr (mass_flux_o_8,'FLUX',F_for_flux_o,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
+         call mass_tr (mass_flux_i_8,'FLUX',F_for_flux_i,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-         mass_bflux_old_8 = mass_flux_i_8 - mass_flux_o_8
-         mass_bflux_new_8 = mass_flux_i_8 - mass_flux_o_8
-
-         !We assume no change in FLUX
-         !---------------------------
-         mass_bflux_wei_8 = 0.0d0 
-         mass_bflux_out_8 = mass_bflux_new_8 
+         mass_bflux_8 = mass_flux_i_8 - mass_flux_o_8
 
       endif
 
-      mass_tot_old_8= mass_old_8 + 0.5d0 * mass_bflux_old_8
-      mass_tot_new_8= mass_new_8 - 0.5d0 * mass_bflux_new_8
+      mass_tot_old_8= mass_old_8 + mass_bflux_8
+      mass_tot_new_8= mass_new_8
 
       mass_deficit_8 = mass_tot_new_8 - mass_tot_old_8
 
@@ -146,12 +145,9 @@
       enddo
 !$omp end parallel do
 
-      call mass_tr (mass_wei_8,time_m,F_name_S(4:7),weight,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
-   !!!call mass_tr (mass_wei_8,time_m,F_name_S(4:7),weight,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.TRUE. ) !SHOULD BE TRUE when LAM 
+      call mass_tr (mass_wei_8,F_name_S(4:7),weight,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-      mass_tot_wei_8 = mass_wei_8 - 0.5d0 * mass_bflux_wei_8
-
-      if (mass_tot_wei_8==0.d0) then
+      if (mass_wei_8==0.d0) then
 
          if (verbose_L.and.Lun_out>0) & 
          write(Lun_out,1002) 'TRACERS: Diff. too small             =',mass_tot_new_8,mass_tot_old_8,mass_tot_new_8-mass_tot_old_8
@@ -160,7 +156,7 @@
 
       endif
 
-      lambda_8 = mass_deficit_8/mass_tot_wei_8
+      lambda_8 = mass_deficit_8/mass_wei_8
 
       if (verbose_L.and.Lun_out>0) write(Lun_out,1003) 'TRACERS: LAMBDA                  = ',lambda_8,F_name_S(4:6)  
 
@@ -269,9 +265,9 @@
             iprod = 1
          endif
 
-         call mass_tr (mass_out_8,time_p,F_name_S(4:7),F_out,.TRUE.,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0,"",.FALSE.)
+         call mass_tr (mass_out_8,F_name_S(4:7),F_out,mass_m,Minx,Maxx,Miny,Maxy,F_nk-k0+1,k0)
 
-         mass_tot_out_8 = mass_out_8 - 0.5d0 * mass_bflux_out_8
+         mass_tot_out_8 = mass_out_8
 
          mass_deficit_8 = mass_tot_out_8 - mass_tot_old_8
 
@@ -285,7 +281,11 @@
              write(Lun_out,*)    'TRACERS: RESET_MIN_BC            =', g_count(1)
              write(Lun_out,*)    'TRACERS: RESET_MAX_BC            =', g_count(2)
              write(Lun_out,1001) 'TRACERS: Rev. Diff. of ',ratio_8
-             write(Lun_out,1004) 'TRACERS: Bermejo-Conde STATS: T=',mass_tot_out_8,' C=',mass_out_8,' F=',mass_bflux_out_8,F_name_S(4:6)
+             if (LAM_L) then
+             write(Lun_out,1004) 'TRACERS: Bermejo-Conde STATS: N=',mass_out_8,' O=',mass_old_8,' FI=',mass_flux_i_8,' FO=',mass_flux_o_8,F_name_S(4:6)
+             else
+             write(Lun_out,1005) 'TRACERS: Bermejo-Conde STATS: N=',mass_out_8,' O=',mass_old_8,F_name_S(4:6)
+             endif
              write(Lun_out,*)    'TRACERS: ----------------------------------------------------------------------'
          endif
 
@@ -295,7 +295,8 @@
  1001 format(1X,A23,E11.4,'%')
  1002 format(1X,A34,3(E20.12,1X))
  1003 format(1X,A34,F20.2,1X,A3)
- 1004 format(1X,A32,E19.12,A3,E19.12,A3,E19.12,1X,A3)
+ 1004 format(1X,A32,E19.12,A3,E19.12,A3,E19.12,A3,E19.12,1X,A3)
+ 1005 format(1X,A32,E19.12,A3,E19.12,1X,A3)
 
       return
       end

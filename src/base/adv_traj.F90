@@ -37,7 +37,6 @@
 !@Objectives computes trajectories using trapezoidal rule
 !@ Author RPN-A Model Infrastructure Group (base on adx_pos_angular_m, adx_pos_angular_t, adx_pos_muv) june 2015 
 
-#include "msg.h"   
 #include "adv_grid.cdk"
 #include "adv_gmm.cdk"
 #include "adv_nml.cdk"
@@ -48,16 +47,20 @@
 #include "schm.cdk"
 #include "step.cdk"
 #include "tracers.cdk"
+#include "glb_ld.cdk"
+#include "grd.cdk"
 
       integer :: i , j , k, i0u_e, inu_e, j0v_e, jnv_e
       integer ,  dimension(:), allocatable :: ii
       real, dimension(F_ni, F_nj, F_nk) :: ud , vd ,wd
       integer ::  iter,  num , nind
+      integer :: BCS_BASE ,n,cnt,nc, sum_cnt,totaln,err  ! BCS points for Yin-Yang, normal LAM
       real :: ztop_bound, zbot_bound
       real*8 :: inv_cy_8
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
       real,   dimension(:,:,:), pointer :: dummy3d 
-      real,   parameter :: DTH_1     = 1.
+      real,   parameter :: DTH_1     = 1.  , EPS_8 = 1.D-5
+      real :: xpos,ypos,minposx,maxposx,minposy,maxposy
  !     
 !---------------------------------------------------------------------
 !     
@@ -67,7 +70,18 @@
       ztop_bound=Ver_z_8%m(0)
       zbot_bound=Ver_z_8%m(F_nk+1)
 
-
+!Horizontal  Clipping  to processor  boundaries
+       BCS_BASE= 4
+      if (Grd_yinyang_L) BCS_BASE = 3
+      minposx = adv_xx_8(adv_lminx+1) + EPS_8
+      if (l_west)  minposx = adv_xx_8(1+BCS_BASE) + EPS_8
+      maxposx = adv_xx_8(adv_lmaxx-1) - EPS_8
+      if (l_east)  maxposx = adv_xx_8(F_ni-BCS_BASE) - EPS_8
+      minposy = adv_yy_8(adv_lminy+1) + EPS_8
+      if (l_south) minposy = adv_yy_8(1+BCS_BASE) + EPS_8
+      maxposy = adv_yy_8(adv_lmaxy-1) - EPS_8
+      if (l_north) maxposy = adv_yy_8(F_nj-BCS_BASE) - EPS_8
+     
       !  This is required to fill the array for the copy marked with 'filled copy here' below.  If
       !  this initialization is not done, some array elements are not defined before the copy is made.
       wd = 0.
@@ -80,11 +94,6 @@
       do  iter = 1, F_nb_iter
 
     ! 1. INTERPOLATION OF WINDS
-
-! Clipping trajectories
- 
-       if ( iter .gt. 1) &
-                    call adv_cliptraj (F_xth, F_yth, F_ni, F_nj,F_nk,i0, in, j0, jn, k0m,'')
 
 ! Interpolate with tricubic method
 
@@ -107,29 +116,38 @@
                                   num, nind, ii, k0m ,F_nk , &
                                   .false. , .false. , 'm')         
      else
-
      call adv_trilin(ud,vd,F_u,F_v,F_xth,F_yth,F_zth, &
                           DTH_1, .true., i0, in, j0, jn, &
                           F_ni,F_nj,F_aminx, F_amaxx, F_aminy, F_amaxy,k0m,F_nk)
      endif
 
 !-  CALCULATION OF DEPARTURE POSITIONS  WITH THE TRAPEZOIDAL/MIDPOINT RULES
- 
+
+
+ cnt=0 
            if(Schm_trapeze_L) then
-!$omp parallel private (inv_cy_8,i,j,k)
+
+!$omp parallel private (inv_cy_8,i,j,k,nc)
+ nc = 0
 !$omp do
          do k=k0m,F_nk
             do j=j0,jn
                inv_cy_8 = 1.d0 / adv_cy_8(j)
                do i=i0,in
-                  F_xth(i,j,k) = adv_xx_8(i) - Cstv_dtD_8*  ud(i,j,k)/cos(F_yth(i,j,k)) &
+                  xpos = adv_xx_8(i) - Cstv_dtD_8*  ud(i,j,k)/cos(F_yth(i,j,k)) &
                                              - Cstv_dtA_8*F_ua(i,j,k)*inv_cy_8
-                  F_yth(i,j,k) = adv_yy_8(j) - Cstv_dtD_8*  vd(i,j,k) &
+                  ypos = adv_yy_8(j) - Cstv_dtD_8*  vd(i,j,k) &
                                              - Cstv_dtA_8*F_va(i,j,k)
+		  F_xth(i,j,k) = min(max(xpos,minposx),maxposx)
+                  F_yth(i,j,k) = min(max(ypos,minposy),maxposy)
+                ! Traj trunc  stat
+                  nc=nc+min(1,max(0,ceiling(abs(F_xth(i,j,k)-xpos)+abs(F_yth(i,j,k)-ypos))))
                end do
             end do
          enddo
 !$omp enddo
+!$omp atomic
+ cnt=cnt+nc
 !$omp end parallel 
           else
 !$omp parallel private(k,i,j)
@@ -138,18 +156,17 @@
             do j=j0,jn
                do i=i0,in
                   F_xth(i,j,k) = adv_xx_8(i) - 0.5d0*Cstv_dt_8* ud(i,j,k)/cos(F_yth(i,j,k)) 
-                  F_yth(i,j,k) = adv_yy_8(j) - 0.5d0*Cstv_dt_8* vd(i,j,k) 
+                  F_yth(i,j,k) = adv_yy_8(j) - 0.5d0*Cstv_dt_8* vd(i,j,k)
+                  F_xth(i,j,k) = min(max(F_xth(i,j,k),minposx),maxposx)
+                  F_yth(i,j,k) = min(max(F_yth(i,j,k),minposy),maxposy)
                end do
             end do
          enddo
 !$omp enddo
 !$omp end parallel
            endif
-
 !- 3D interpol of zeta dot and new upstream pos along zeta
       
-          call adv_cliptraj (F_xth,F_yth, F_ni, F_nj,F_nk,i0,in,j0,jn,max(k0t-2,1),'')
-
      if(Schm_cub_traj_L) then         
                call adv_get_indices(ii, F_xth, F_yth, F_zth, num, nind, i0, in, j0, jn, k0m, F_nk, 'm') 
                call adv_tricub_lag3d(wd, no_conserv, no_conserv, no_conserv, no_conserv, F_w, no_slice, 0, &
@@ -196,6 +213,9 @@
       endif
 !$omp end parallel
 
+! Print trajectory clipping stat
+  call adv_print_cliptrj_s (cnt,F_ni,F_nj,F_nk,k0,'m')
+
  enddo
 
  ! Departure point
@@ -206,26 +226,41 @@
       pzm = F_zth
       wdm = wd   !filled copy here
    else
-!$omp parallel private (k,j,i)
+
+   cnt=0
+!$omp parallel private (k,j,i,nc)
+   nc=0
 !$omp do
       do k=k0m,F_nk
          do j=j0,jn
             do i=i0,in
-               pxm(i,j,k) = adv_xx_8(i) - Cstv_dt_8* ud(i,j,k)/cos(F_yth(i,j,k)) 
-               pym(i,j,k) = adv_yy_8(j) - Cstv_dt_8* vd(i,j,k) 
+               xpos = adv_xx_8(i) - Cstv_dt_8* ud(i,j,k)/cos(F_yth(i,j,k)) 
+               ypos = adv_yy_8(j) - Cstv_dt_8* vd(i,j,k) 
                pzm(i,j,k) = F_zth(i,j,k) - Ver_z_8%m(k)
                pzm(i,j,k) = Ver_z_8%m(k) + 2.0 * pzm(i,j,k)
+	       pxm(i,j,k) = min(max(xpos,minposx),maxposx)
+               pym(i,j,k) = min(max(ypos,minposy),maxposy)
                pzm(i,j,k) = min(zbot_bound,max(pzm(i,j,k),ztop_bound))
+             
+              ! Horizontal positions trunc stat
+               nc=nc+min(1,max(0,ceiling(abs(pxm(i,j,k)-xpos)+abs(pym(i,j,k)-ypos))))
             end do
          end do
       enddo
 !$omp enddo
+!$omp atomic
+ cnt=cnt+nc
 !$omp end parallel
 
-call adv_cliptraj (pxm,pym,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('m'))
-   endif
+! Print  Trajectory clipping stat 
+  call adv_print_cliptrj_s (cnt,F_ni,F_nj,F_nk,k0,'m')
+
+ endif
 
 if(Schm_cub_traj_L) deallocate ( ii )
+
+!
+! Interpolate Momentun positions on Thermo Level and U V  grid
 
       call adv_int_horiz_m (pxmu, pymu, pzmu, pxmv, pymv, pzmv, pxm, pym, pzm, &
                             F_ni,F_nj,F_nk,k0, i0, in, j0, jn)
@@ -233,36 +268,21 @@ if(Schm_cub_traj_L) deallocate ( ii )
       call adv_int_horiz_m_slice (pxmu_s, pymu_s, pzmu_s, pxmv_s, pymv_s, pzmv_s, pxm, pym, pzm, &
                             F_ni,F_nj,F_nk,k0, i0, in, j0, jn, i0u_e, inu_e, j0v_e, jnv_e)
       endif
-
       call adv_int_vert_t (pxt,pyt,pzt,pxtn,pytn,pztn,pxm,pym,pzm,F_wat,wdm, &
                            F_ni,F_nj,F_nk,k0t,i0,in,j0,jn, .true.)
-
-!     Clipping trajectories 
      
- 
-      call adv_cliptraj (pxmu,pymu,F_ni,F_nj,F_nk,i0u,inu,j0,jn,k0,'INTERP '//trim('m'))
-      call adv_cliptraj (pxmv,pymv,F_ni,F_nj,F_nk,i0,in,j0v,jnv,k0,'INTERP '//trim('m'))
-      call adv_cliptraj (pxt,pyt,F_ni,F_nj,F_nk,i0,in,j0,jn,k0,'INTERP '//trim('t'))
       if (Tr_slice_L) then
        call adv_cliptraj (pxmu_s,pymu_s,F_ni,F_nj,F_nk,i0u_e,inu_e,j0,jn,k0,'INTERP '//trim('m'))
        call adv_cliptraj (pxmv_s,pymv_s,F_ni,F_nj,F_nk,i0,in,j0v_e,jnv_e,k0,'INTERP '//trim('m'))
-
       endif
-
-
+    
 !     
 !---------------------------------------------------------------------
 !     
       return
       end subroutine adv_traj
 
-
-
-   
-     
-   
-
-
+    
 
 
  
