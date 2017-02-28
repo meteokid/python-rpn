@@ -79,7 +79,7 @@ def get_levels_press(fileId, vGrid, shape, ip1list,
         rpnpy.librmn.fstd98.fstluk
         rpnpy.librmn.fstd98.fstopenall
         rpnpy.librmn.fstd98.fstcloseall
-        rpnpy.vgd.vgd_levels
+        rpnpy.vgd.base.vgd_levels
     """
     rfldName = _vgd.vgd_get(vGrid, 'RFLD')
     rfld     = _np.empty(shape, dtype=_np.float32, order='F')
@@ -292,8 +292,8 @@ def fst_read_3d(fileId, datev=-1, etiket=' ', ip1=-1, ip2=-1, ip3=-1,
     Read TT   ip1=97899568 ip2=0 ip3=0 typv=P  etk=G133K80P    
     Read TT   ip1=98152568 ip2=0 ip3=0 typv=P  etk=G133K80P
     # ...
-    >>> print("# TT ip2={0} min={1} max={2} avg={3}"\
-              .format(tt3d['ip2'], tt3d['d'].min(), tt3d['d'].max(), tt3d['d'].mean()))
+    >>> print("# TT ip2={0} min={1} max={2} avg={3}"
+    ...       .format(tt3d['ip2'], tt3d['d'].min(), tt3d['d'].max(), tt3d['d'].mean()))
     # TT ip2=0 min=-88.4168 max=40.3293 avg=-36.29
     >>> rmn.fstcloseall(fileId)
     

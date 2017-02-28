@@ -11,7 +11,7 @@ Module librmn is a ctypes import of librmnshared.so
 The librmn.proto python module includes ctypes prototypes for many
 librmn C functions
 
- Warning:
+Warning:
     Please use with caution.
     The functions in this module are actual C funtions and
     must thus be called as such with appropriate argument typing and
@@ -23,15 +23,28 @@ librmn C functions
     * rpnpy.librmn.interp
     * rpnpy.librmn.grids
 
- See Also:
+Notes:
+    The functions described below are a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] 
+    documentation for more details.
+
+See Also:
     rpnpy.librmn.base
     rpnpy.librmn.fstd98
     rpnpy.librmn.interp
     rpnpy.librmn.grids
     rpnpy.librmn.const
 
- === EXTERNAL FUNCTIONS in primitive ===
+Details:
+    See Source Code
 
+##DETAILS_START
+== Ecternal C Functions ==
+
+=== EXTERNAL FUNCTIONS in primitive ===
+
+<source lang="python">
     c_fclos(iun):
         Close file associated with unit iun.
         Proto:
@@ -76,10 +89,12 @@ librmn C functions
            lbuf (int) : (I) length of buf*4
         Returns:
            int, Cyclic Redundancy Check number
+</source>
 
 
- === EXTERNAL FUNCTIONS in base ===
+=== EXTERNAL FUNCTIONS in base ===
 
+<source lang="python">
     f_cigaxg(cgtyp, xg1, xg2, xg3, xg4, ig1, ig2, ig3, ig4)
         Encode real grid descriptors into ig1, ig2, ig3, ig4
         Proto:
@@ -312,8 +327,9 @@ librmn C functions
                 13: CMC Date-Time Stamp
 
 
- === EXTERNAL FUNCTIONS in fstd98 ===
+=== EXTERNAL FUNCTIONS in fstd98 ===
 
+<source lang="python">
     c_fstecr(field_in, work, npak, iun, date, deet, npas,
              ni, nj, nk, ip1, ip2, ip3,
              in_typvar, in_nomvar, in_etiket,
@@ -687,9 +703,11 @@ librmn C functions
                        representing ip1, ip2 or ip3 comparaisons
         Returns:
             int, ... TODO ...
+</source>
         
- === EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
+=== EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
 
+<source lang="python">
     c_ConvertIp(ip, p, kind, mode)
         Codage/Decodage P, kind <-> IP pour IP1, IP2, IP3
         Args:
@@ -804,8 +822,9 @@ librmn C functions
             s1 (str): (O) first char
             s2 (str): (O) second char
 
- === EXTERNAL FUNCTIONS in fstd98/xdf98 ===
+=== EXTERNAL FUNCTIONS in fstd98/xdf98 ===
 
+<source lang="python">
     c_xdflnk(liste, n)
         Links the list of random files together for record search purpose
         Proto:
@@ -817,9 +836,11 @@ librmn C functions
             int, 0 on success, -1 on error
         Note:
             Use the first unit id in the list to refer to the linked files list
+</source>
 
- === EXTERNAL FUNCTIONS in interp (ezscint) ===
+=== EXTERNAL FUNCTIONS in interp (ezscint) ===
 
+<source lang="python">
     c_ezdefset(gdidout, gdidin)
         Defines a set of grids for interpolation
         gdid = c_ezdefset(gdidout, gdidin)
@@ -1272,8 +1293,8 @@ librmn C functions
         gid (int) : grid id to be released
         Returns:
         int, 0 on success, -1 on error
-
-   ... TODO ...
+</source>
+##DETAILS_END
 
 """
 

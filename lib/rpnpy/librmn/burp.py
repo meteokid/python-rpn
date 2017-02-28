@@ -7,10 +7,8 @@
 # Copyright: LGPL 2.1
 
 """
-Python interface for BUPR files. Contains wrappers for ctypes functions in
-proto_burp and the BurpError class.
-
-BURP: Binary Universal Report Protocol.
+Python interface for [[BUPR]] (Binary Universal Report Protocol) files.
+It Contains wrappers for ctypes functions in proto_burp and the BurpError class.
 
 BURP est depuis juin 1992 le format des bases de donnees operationnelles du CMC pour tous les fichiers de type 'observations', au sens large du terme.
 
@@ -24,11 +22,16 @@ Par opposition (ou complementarite), BURP est concu pour emmagasiner un
 ensemble de variables a une 'station', ce dernier terme representant un
 point geographique de latitude et longitude determinees.
 
-Un fichier BURP est constitues de plusieurs "reports".
-Chaque "report" est constitues de plusieurs "blocks".
-Chaque "block"  est constitues de plusieurs "elements".
+* Un fichier BURP est constitues de plusieurs "reports".
+* Chaque "report" est constitues de plusieurs "blocks".
+* Chaque "block"  est constitues de plusieurs "elements".
 
- See Also:
+Notes:
+    The functions described below are a very close ''port'' from the
+    original [[librmn]]'s [[BURP]] package.
+    You may want to refer to the  [[BURP]] documentation for more details.
+
+See Also:
     rpnpy.librmn.burp_const
     rpnpy.utils.burpfile
     rpnpy.librmn.proto_burp
@@ -61,7 +64,7 @@ class BurpError(RMNError):
     ...    pass #... a burpfile operation ...
     ... except(rmn.BurpError):
     ...    pass #ignore the error
-    ... #...
+    >>> #...
     >>> raise rmn.BurpError()
     Traceback (most recent call last):
       File "/usr/lib/python2.7/doctest.py", line 1289, in __run
@@ -402,8 +405,11 @@ def mrfvoi(funit):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit = rmn.fnom(filename, rmn.FILE_MODE_RO)
     >>> nrep  = rmn.mrfvoi(funit)
     >>> istat = rmn.fclos(funit)
 
@@ -504,8 +510,11 @@ def mrfbfl(funit):
         BurpError  on any other error
 
     Examples:
+    >>> import os, os.path
     >>> import rpnpy.librmn.all as rmn
-    >>> funit  = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RO)
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit = rmn.fnom(filename, rmn.FILE_MODE_RO)
     >>> maxlen = rmn.mrfbfl(funit)
     >>> istat = rmn.fclos(funit)
 
@@ -686,6 +695,7 @@ def mrfput(funit, handle, rpt):
         BurpError  on any other error
 
     Examples:
+    >>> import os
     >>> import rpnpy.librmn.all as rmn
     >>> funit = rmn.fnom('myburpfile.brp', rmn.FILE_MODE_RW)
     >>> n = rmn.mrfopn(funit, rmn.BURP_MODE_CREATE)
@@ -697,6 +707,7 @@ def mrfput(funit, handle, rpt):
     >>> rmn.mrfput(funit, handle, rpt)
     >>> rmn.mrfcls(funit)
     >>> istat = rmn.fclos(funit)
+    >>> os.unlink('myburpfile.brp')  # Remove test file
 
     See Also:
         mrfget

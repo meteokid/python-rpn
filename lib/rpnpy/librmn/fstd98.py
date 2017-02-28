@@ -8,6 +8,18 @@
 """
 Module librmn.fstd98 contains python wrapper to main librmn's fstd98,
 convip C functions along with helper functions
+
+Notes:
+    The functions described below are a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]]
+    documentation for more details.
+
+See Also:
+    rpnpy.librmn.base
+    rpnpy.librmn.interp
+    rpnpy.librmn.grids
+    rpnpy.librmn.const
 """
 
 import os

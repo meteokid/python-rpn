@@ -8,8 +8,26 @@
 """
 Module librmn_const defines a set of helper constants to make code
 using the librmn module more readable.
+
+Notes:
+    This module is a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]]
+    documentation for more details.
+
+See Also:
+    rpnpy.librmn.base
+    rpnpy.librmn.fstd98
+    rpnpy.librmn.interp
+    rpnpy.librmn.grids
+
+Details:
+    See Source Code
 """
 import numpy  as _np
+
+##DETAILS_START
+#== Constants Details ==
 
 #=== primitives ===
 #<source lang=python>
@@ -332,6 +350,7 @@ EZ_CLOUD_INTERP_LINEAR = 'LINEAR'
 EZ_OPT_USE_1SUBGRID = 'USE_1SUBGRID'
 ## YES or NO
 #</source>
+##DETAILS_END
 
 
 if __name__ == "__main__":

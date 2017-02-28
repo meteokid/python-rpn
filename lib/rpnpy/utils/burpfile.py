@@ -8,7 +8,7 @@
 """
 Python High Level Interface for BUPR files.
 
- See Also:
+See Also:
     rpnpy.librmn.burp
     rpnpy.librmn.burp_const
     rpnpy.librmn.proto_burp
@@ -62,6 +62,7 @@ class BurpFile:
         rpnpy.librmn.burp
 
     Notes:
+      <pre>
       Report attributes, indexed by (report), length (nrep)
         -nblk       number of blocks
         -stnids     station IDs
@@ -86,6 +87,7 @@ class BurpFile:
 
       Data values, indexed by (report, block, element, level, group), length (nrep, nblk, nelements, nlev, nt)
         -rval       real number data values
+      </pre>
 
     """
     file_attr = ('nrep', )

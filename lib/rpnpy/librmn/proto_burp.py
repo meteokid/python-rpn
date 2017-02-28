@@ -12,7 +12,12 @@ Module librmn is a ctypes import of librmnshared.so
 The librmn.proto_burp python module includes ctypes prototypes for many
 librmn burp C functions
 
- Warning:
+Notes:
+    The functions described below are a very close ''port'' from the
+    original [[librmn]]'s [[BURP]] package.
+    You may want to refer to the  [[BURP]] documentation for more details.
+
+Warning:
     Please use with caution.
     The functions in this module are actual C funtions and
     must thus be called as such with appropriate argument typing and
@@ -22,7 +27,7 @@ librmn burp C functions
     * rpnpy.librmn.burp
     * rpnpy.librmn.const
 
- See Also:
+See Also:
     rpnpy.librmn.burp
     rpnpy.librmn.burp_const
     rpnpy.utils.burpfile
@@ -33,8 +38,13 @@ librmn burp C functions
     rpnpy.librmn.grids
     rpnpy.librmn.const
 
- === EXTERNAL FUNCTIONS ===
+Details:
+    See Source Code
 
+##DETAILS_START
+== External C Functions ==
+
+<source lang="python">
     c_mrfgoc(option, value)
         Get a character option
         Proto:
@@ -418,7 +428,8 @@ librmn burp C functions
             handle (int) : (I) Report handle
         Returns:
             int, zero if successful, non-zero otherwise
-
+</source>
+##DETAILS_END
 """
 
 ##TODO: MRBPRML

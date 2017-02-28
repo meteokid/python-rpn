@@ -4,15 +4,27 @@
 # Copyright: LGPL 2.1
 
 """
- Module vgd.const defines constants for the vgd module
+Module vgd.const defines constants for the vgd module
 
- See Also:
+Notes:
+    This module is a very close ''port'' from the original
+    [[librmn]]'s [[Vgrid]] package.<br>
+    You may want to refer to the [[Vgrid]] documentation for more details.
+
+See Also:
+    rpnpy.vgd.proto
     rpnpy.vgd.base
-    rpnpy.vgd.const
+
+Details:
+    See Source Code
 """
 import ctypes as _ct
 ## import numpy  as _np
 ## import numpy.ctypeslib as _npc
+
+##DETAILS_START
+#== Constants Details ==
+#<source lang="python">
 
 VGD_OK       = 0
 VGD_ERROR    = -1
@@ -26,29 +38,35 @@ VGD_ALLOW_RESHAPE  = 0
 VGD_ALLOW_SIGMA    = 1
 VGD_DISALLOW_SIGMA = 0
 
-VGD_SIGM_KIND = 1  #Sigma
+VGD_SIGM_KIND = 1  # Sigma
 VGD_SIGM_VER  = 1
-VGD_ETA_KIND  = 1  #Eta
+VGD_ETA_KIND  = 1  # Eta
 VGD_ETA_VER   = 2
-VGD_HYBN_KIND = 1  #Hybrid Normalized, cannot be generated, use Eta
+VGD_HYBN_KIND = 1  # Hybrid Normalized, cannot be generated, use Eta
 VGD_HYBN_VER  = 3
-VGD_PRES_KIND = 2  #pressure
+VGD_PRES_KIND = 2  # pressure
 VGD_PRES_VER  = 1
-VGD_HYB_KIND  = 5  #Hybrid Un-staggered
+VGD_HYB_KIND  = 5  # Hybrid Un-staggered
 VGD_HYB_VER   = 1
-VGD_HYBS_KIND = 5  #Hybrid staggered
+VGD_HYBS_KIND = 5  # Hybrid staggered
 VGD_HYBS_VER  = 2
-VGD_HYBT_KIND = 5  #Hybrid staggered, first level is a thermo level, unstaggered last Thermo level
+VGD_HYBT_KIND = 5  # Hybrid staggered, first level is a thermo level,
+                   # unstaggered last Thermo level
 VGD_HYBT_VER  = 3
-VGD_HYBM_KIND = 5  #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels
+VGD_HYBM_KIND = 5  # Hybrid staggered, first level is a momentum level,
+                   # same number of thermo and momentum levels
 VGD_HYBM_VER  = 4
-VGD_HYBMD_KIND = 5  #Hybrid staggered, first level is a momentum level, same number of thermo and momentum levels, Diag level heights (m AGL) encoded
-VGD_HYBMD_VER  = 5
+VGD_HYBMD_KIND= 5  # Hybrid staggered, first level is a momentum level,
+                   # same number of thermo and momentum levels,
+                   # Diag level heights (m AGL) encoded
+VGD_HYBMD_VER = 5
 
-VGD_DIAG_LOGP = 1  #vgd_diag_withref: output log pressure
-VGD_DIAG_PRES = 0  #vgd_diag_withref: output pressure
-VGD_DIAG_DPI  = 1  #vgd_diag_withref: output pressure
-VGD_DIAG_DPIS = 0  #vgd_diag_withref: output hydrostatic pressure partial derivative with respect to surface hydrostatic pressure, default used in vgd_levels
+VGD_DIAG_LOGP = 1  # vgd_diag_withref: output log pressure
+VGD_DIAG_PRES = 0  # vgd_diag_withref: output pressure
+VGD_DIAG_DPI  = 1  # vgd_diag_withref: output pressure
+VGD_DIAG_DPIS = 0  # vgd_diag_withref: output hydrostatic pressure partial
+                   # derivative with respect to surface hydrostatic pressure,
+                   # default used in vgd_levels
 
 VGD_KIND_VER = {
     'sigm' : (VGD_SIGM_KIND, VGD_SIGM_VER),    #1,1
@@ -97,7 +115,8 @@ VGD_OPR_KEYS = {
 
 VGD_KEYS = {
     'KIND' : ('Kind of the vertical coordinate ip1'),
-    'VERS' : ('Vertical coordinate version. For a given kind there may be many versions, example kind=5 version=2 is hyb staggered GEM4.1'),
+    'VERS' : ('Vertical coordinate version. For a given kind there may be ' +
+              'many versions, example kind=5 version=2 is hyb staggered GEM4.1'),
     'NL_M' : ('Number of momentum levels (verison 3.2.0 and up)'),
     'NL_T' : ('Number of thermodynamic levels (version 3.2.0 and up)'),
     'CA_M' : ('Values of coefficient A on momentum levels'),
@@ -120,9 +139,14 @@ VGD_KEYS = {
     'VIPM' : ('List of IP1 momentum values associated with this coordinate'),
     'VIPT' : ('List of IP1 thermodynamic values associated with this coordinate'),
     'VTBL' : ('real*8 Fortran 3d array containing all vgrid_descriptor information'),
-    'LOGP' : ('furmula gives log(p) T/F (version 1.0.3 and greater). True -> Formula with A and B gives log(p), False -> Formula with A and B gives p'),
+    'LOGP' : ('furmula gives log(p) T/F (version 1.0.3 and greater). ' +
+              'True -> Formula with A and B gives log(p), ' +
+              'False -> Formula with A and B gives p'),
     'ALLOW_SIGMA' : ('Allow definition of sigma coor or not')
     }
+
+#</source>
+##DETAILS_END
 
 
 if __name__ == "__main__":

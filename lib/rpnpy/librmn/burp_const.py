@@ -8,10 +8,21 @@
 """
 Module librmn_burp_const defines a set of helper constants to make code
 using the librmn burp module more readable.
+
+Notes:
+    This module is a very close ''port'' from the
+    original [[librmn]]'s [[BURP]] package.
+    You may want to refer to the  [[BURP]] documentation for more details.
+
+See Also:
+    rpnpy.librmn.burp
+    rpnpy.utils.burpfile
+    rpnpy.librmn.proto_burp
+
+Details:
+    See Source Code
 """
 import numpy as _np
-
-#=== BURP Constants ===
 
 #TODO: cleanup
 ## See:
@@ -30,6 +41,10 @@ import numpy as _np
 ## Also:
 ## * ade*bufr*
 ## * libecbufr_tables/*
+
+##DETAILS_START
+#== Constants Details ==
+#=== BURP Constants ===
 
 #NOTE: BUFR numérote les bits de 1 à 7, le bit 1 étant celui de poids le plus élevé
 #<source lang=python>
@@ -484,6 +499,7 @@ BURP_BKSTP_DESC = { #TODO
     (1, 22, 6) : 'F (données, Multi), type de surface, haute densité',
     }
 #</source>
+##DETAILS_END
 
 #TODO: BURP_BKNAT_KIND_DESC flags:
 ## Voici les MARQUEURS que l'on nomme primaires.

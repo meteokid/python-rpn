@@ -81,11 +81,10 @@ def cartesian_to_spherical(vector):
     The parameter r is the radial distance, theta is the polar angle,
     and phi is the azimuth.
 
-
-    @param vector:  The Cartesian vector [x, y, z].
-    @type vector:   numpy rank-1, 3D array
-    @return:        The spherical coordinate vector [r, theta, phi].
-    @rtype:         numpy rank-1, 3D array
+    Args:
+        vector:  The Cartesian vector [x, y, z]. [numpy rank-1, 3D array]
+    Returns:
+        numpy rank-1, 3D array, The spherical coordinate vector [r, theta, phi].
     """
     from numpy import array, float64
     from numpy.linalg import norm
@@ -114,14 +113,15 @@ def spherical_to_cartesian(spherical_vect, cart_vect):
     The parameter r is the radial distance,
     theta is the polar angle, and phi is the azimuth.
 
-    @param spherical_vect:  The spherical coordinate vector [r, theta, phi].
-    @type spherical_vect:   3D array or list
-    @param cart_vect:       The Cartesian vector [x, y, z].
-    @type cart_vect:        3D array or list
+    Args:
+       spherical_vect : The spherical coordinate vector [r, theta, phi],
+                        [numpy rank-1, 3D array]
+    Returns:
+        numpy rank-1, 3D array, The Cartesian vector [x, y, z].
     """
 
     # Trig alias.
-    sin_theta = sin(spherical_vect[1])
+    sin_theta = _math.sin(spherical_vect[1])
 
     # The vector.
     cart_vect[0] = spherical_vect[0] * _math.cos(spherical_vect[2]) * sin_theta

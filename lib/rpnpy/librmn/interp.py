@@ -8,6 +8,18 @@
 """
 Module librmn.interp contains python wrapper to
 main librmn's interp (ezscint) C functions
+
+Notes:
+    The functions described below are a very close ''port'' from the original
+    [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] 
+    documentation for more details.
+
+See Also:
+    rpnpy.librmn.base
+    rpnpy.librmn.fstd98
+    rpnpy.librmn.grids
+    rpnpy.librmn.const
 """
 
 import ctypes as _ct
@@ -192,30 +204,30 @@ def ezgdef_fmem(ni, nj=None, grtyp=None, grref=None, ig1=None, ig2=None,
     >>> import numpy as np
     >>> import rpnpy.librmn.all as rmn
     >>> (ni,nj) = (90, 45)
-    >>> gp = { \
-            'shape' : (ni,nj), \
-            'ni' : ni, \
-            'nj' : nj, \
-            'grtyp' : 'Z', \
-            'grref' : 'E', \
-            'xlat1' : 0., \
-            'xlon1' : 180., \
-            'xlat2' : 0., \
-            'xlon2' : 270., \
-            'dlat' : 0.25, \
-            'dlon' : 0.25, \
-            'lat0' : 45., \
-            'lon0' : 273. \
-            }
-    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], \
-                            gp['xlat2'], gp['xlon2'])
+    >>> gp = { 
+    ...     'shape' : (ni,nj), 
+    ...     'ni' : ni, 
+    ...     'nj' : nj, 
+    ...     'grtyp' : 'Z', 
+    ...     'grref' : 'E', 
+    ...     'xlat1' : 0., 
+    ...     'xlon1' : 180.,
+    ...     'xlat2' : 0., 
+    ...     'xlon2' : 270., 
+    ...     'dlat' : 0.25, 
+    ...     'dlon' : 0.25, 
+    ...     'lat0' : 45., 
+    ...     'lon0' : 273. 
+    ...     }
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], 
+    ...                     gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
     >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
     >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
-    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], \
-                              ig1234[0], ig1234[1], ig1234[2], ig1234[3], \
-                              gp['ax'], gp['ay'])
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], 
+    ...                       ig1234[0], ig1234[1], ig1234[2], ig1234[3], 
+    ...                       gp['ax'], gp['ay'])
 
     See Also:
         ezqkdef
@@ -291,23 +303,23 @@ def ezgdef_supergrid(ni, nj, grtyp, grref, vercode, subgridid):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> nj = 31 ; ni = (nj-1)*3 + 1
-    >>> gp = { \
-            'ni' : ni, \
-            'nj' : nj, \
-            'grtyp' : 'Z', \
-            'grref' : 'E', \
-            'xlat1' : 0., \
-            'xlon1' : 180., \
-            'xlat2' : 0., \
-            'xlon2' : 270., \
-            'dlat' : 0.25, \
-            'dlon' : 0.25, \
-            'lat0' : 45., \
-            'lon0' : 273. \
-            }
+    >>> gp = { 
+    ...     'ni' : ni, 
+    ...     'nj' : nj, 
+    ...     'grtyp' : 'Z', 
+    ...     'grref' : 'E', 
+    ...     'xlat1' : 0., 
+    ...     'xlon1' : 180., 
+    ...     'xlat2' : 0., 
+    ...     'xlon2' : 270., 
+    ...     'dlat' : 0.25, 
+    ...     'dlon' : 0.25, 
+    ...     'lat0' : 45., 
+    ...     'lon0' : 273. 
+    ...     }
     >>> yin = rmn.encodeGrid(gp)
-    >>> (gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2']) = \
-            rmn.yyg_yangrot_py(gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2'])
+    >>> (gp['xlat1'], gp['xlon1'], gp['xlat2'], gp['xlon2']) = (
+    ...     rmn.yyg_yangrot_py(gp['xlat1'],gp['xlon1'],gp['xlat2'],gp['xlon2']))
     >>> yan = rmn.encodeGrid(gp)
     >>> yy_id = rmn.ezgdef_supergrid(ni, nj, 'U', 'F', 1, (yin['id'],yan['id']))
 
@@ -716,30 +728,30 @@ def ezgxprm(gdid, doSubGrid=False):
     >>> 
     >>> # Define a Z/E grid
     >>> (ni,nj) = (90, 45)
-    >>> gp = { \
-            'shape' : (ni,nj), \
-            'ni' : ni, \
-            'nj' : nj, \
-            'grtyp' : 'Z', \
-            'grref' : 'E', \
-            'xlat1' : 0., \
-            'xlon1' : 180., \
-            'xlat2' : 0., \
-            'xlon2' : 270., \
-            'dlat' : 0.25, \
-            'dlon' : 0.25, \
-            'lat0' : 45., \
-            'lon0' : 273. \
-            }
-    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], \
-                            gp['xlat2'], gp['xlon2'])
+    >>> gp = { 
+    ...     'shape' : (ni,nj), 
+    ...     'ni' : ni, 
+    ...     'nj' : nj, 
+    ...     'grtyp' : 'Z', 
+    ...     'grref' : 'E', 
+    ...     'xlat1' : 0., 
+    ...     'xlon1' : 180., 
+    ...     'xlat2' : 0., 
+    ...     'xlon2' : 270., 
+    ...     'dlat' : 0.25, 
+    ...     'dlon' : 0.25, 
+    ...     'lat0' : 45., 
+    ...     'lon0' : 273. 
+    ...     }
+    >>> ig1234 = rmn.cxgaig(gp['grref'], gp['xlat1'], gp['xlon1'], 
+    ...                     gp['xlat2'], gp['xlon2'])
     >>> gp['ax'] = np.empty((ni,1), dtype=np.float32, order='FORTRAN')
     >>> gp['ay'] = np.empty((1,nj), dtype=np.float32, order='FORTRAN')
     >>> for i in xrange(ni): gp['ax'][i,0] = gp['lon0']+float(i)*gp['dlon']
     >>> for j in xrange(nj): gp['ay'][0,j] = gp['lat0']+float(j)*gp['dlat']
-    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], \
-                              ig1234[0], ig1234[1], ig1234[2], ig1234[3], \
-                              gp['ax'], gp['ay'])
+    >>> gid = rmn.ezgdef_fmem(ni, nj, gp['grtyp'], gp['grref'], 
+    ...                       ig1234[0], ig1234[1], ig1234[2], ig1234[3], 
+    ...                       gp['ax'], gp['ay'])
     >>> 
     >>> # Get grid info
     >>> params = rmn.ezgxprm(gid)
@@ -931,8 +943,8 @@ def gdgaxes(gdid, ax=None, ay=None):
     >>> 
     >>> # Get axes values for the grid
     >>> axes = rmn.gdgaxes(gridid)
-    >>> print("# Got grid axes of shape: {0}, {1}"\
-              .format(str(axes['ax'].shape), str(axes['ay'].shape)))
+    >>> print("# Got grid axes of shape: {0}, {1}"
+    ...       .format(str(axes['ax'].shape), str(axes['ay'].shape)))
     # Got grid axes of shape: (201, 1), (1, 100)
 
     See Also:
@@ -1019,8 +1031,8 @@ def gdll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> lalo = rmn.gdll(grid['id'])
     >>> (i, j) = (45, 20)
-    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
-              .format(i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
+    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"
+    ...       .format(i, j, lalo['lat'][i,j], lalo['lon'][i,j]))
     # Lat, Lon of point 45, 20 is: -7.91161, 180.0
     
     See Also:
@@ -1093,8 +1105,8 @@ def gdxyfll(gdid, lat=None, lon=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (la, lo) = (45., 273.)
     >>> xy = rmn.gdxyfll(grid['id'], [la], [lo])
-    >>> print("# x, y pos at lat={0}, lon={1} is: {2}, {3}"\
-              .format(la, lo, xy['x'][0], xy['y'][0]))
+    >>> print("# x, y pos at lat={0}, lon={1} is: {2}, {3}"
+    ...       .format(la, lo, xy['x'][0], xy['y'][0]))
     # x, y pos at lat=45.0, lon=273.0 is: 69.25, 34.3759
 
     See Also:
@@ -1165,8 +1177,8 @@ def gdllfxy(gdid, xpts=None, ypts=None):
     >>> grid = rmn.defGrid_G(90, 45)
     >>> (i, j) = (69, 34)
     >>> lalo = rmn.gdllfxy(grid['id'], [i], [j])
-    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"\
-              .format(i, j, lalo['lat'][0], lalo['lon'][0]))
+    >>> print("# Lat, Lon of point {0}, {1} is: {2}, {3}"
+    ...       .format(i, j, lalo['lat'][0], lalo['lon'][0]))
     # Lat, Lon of point 69, 34 is: 43.5132, 272.0
     
     See Also:
