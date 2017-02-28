@@ -10,7 +10,19 @@ Examples:
     rpy.fstlist2 -k --stats \
         -i $ATM_MODEL_DFILES/bcmk/2009042700_000 \
         --nomvar '^^' '>>' '!!' HY  ## Excludes these nomvar
+
+    rpy.fstlist2 -k \
+       --format '{nomvar}; {vdatev}; {level:<19}; {mean:<16}; {std:<15}; {min:<9}; {max:<9}' \
+       -i $ATM_MODEL_DFILES/bcmk/2009042700_000 \
+       --nomvar '^^' '>>' '!!' HY  ## Excludes these nomvar
+       
+    rpy.fstlist2 \
+       --format '{nomvar}; {vdatev}; lvl={levelval:8.4f} {levelunit:<4}; mean={mean:10.3e}; std={std:10.3e}; min={min:10.3e}; max={max:<10.3e}' \
+       -i $ATM_MODEL_DFILES/bcmk/2009042700_000 \
+       --nomvar '^^' '>>' '!!' HY  ## Excludes these nomvar
+
 """
+
 import sys
 import argparse
 import logging
@@ -87,8 +99,12 @@ def set_level(meta):
         units = rmn.kindToString(rp1.kind)
         if rp1.v1 == rp1.v2:
             meta['level'] = str(rp1.v1)+units
+            meta['levelval'] = rp1.v1
+            meta['levelunit'] = units
         else:
             meta['level'] = '['+str(rp1.v1)+' - '+str(rp1.v1)+'] '+units
+            meta['levelval'] = '['+str(rp1.v1)+' - '+str(rp1.v1)+'] '
+            meta['levelunit'] = units
     except:
         pass
     return meta
@@ -100,8 +116,12 @@ def set_time(meta):
         units = rmn.kindToString(rp2.kind)
         if rp2.v1 == rp2.v2:
             meta['time'] = str(rp2.v1)+units
+            meta['timeval'] = rp2.v1
+            meta['timeunit'] = units
         else:
             meta['time'] = '['+str(rp2.v1)+' - '+str(rp2.v1)+'] '+units
+            meta['timeval'] = '['+str(rp2.v1)+' - '+str(rp2.v1)+'] '
+            meta['timeunit'] = units
     except:
         pass
     return meta
@@ -133,9 +153,19 @@ def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
     dovdatev = (tmpstr != tmpstr.replace('{vdatev}','')
                                 .replace('{vdatev:',''))
     dolevel  = (tmpstr != tmpstr.replace('{level}','')
-                                .replace('{level:',''))
+                                .replace('{level:','')
+                                .replace('{levelval}','')
+                                .replace('{levelval:','')
+                                .replace('{levelunit}','')
+                                .replace('{levelunit:','')
+        )
     dotime   = (tmpstr != tmpstr.replace('{time}','')
-                                .replace('{time:',''))
+                                .replace('{time:','')
+                                .replace('{timeval}','')
+                                .replace('{timeval:','')
+                                .replace('{timeunit}','')
+                                .replace('{timeunit:','')
+        )
     doxg     = (tmpstr != tmpstr.replace('{xg1234}','')
                                 .replace('{xg1234:',''))
     domin    = (tmpstr != tmpstr.replace('{min}','')
@@ -163,13 +193,13 @@ def print_list(inputFile, out_format, withkeys, matchIn, matchOut):
             if dolevel:  rec = set_level(rec)
             if dotime:   rec = set_time(rec)
             if doxg:     rec = set_xg(inFileId, rec)
-            if domin:    rec['min']  = str(rec['d'].min())
-            if domax:    rec['max']  = str(rec['d'].max())
-            if domean:   rec['mean'] = str(rec['d'].mean())
-            if dostd:    rec['std']  = str(rec['d'].std())
+            if domin:    rec['min']  = float(rec['d'].min())
+            if domax:    rec['max']  = float(rec['d'].max())
+            if domean:   rec['mean'] = float(rec['d'].mean())
+            if dostd:    rec['std']  = float(rec['d'].std())
             if dostats:
                 del(rec['d'])
-            
+
             print(out_format.format(**rec))
     except:
         logging.error('Unknown problem getting record info or printing formated string.\n')
@@ -188,7 +218,8 @@ if __name__ == "__main__":
     valid_keys = ('nomvar', 'typvar', 'ip1', 'ip2', 'ip3', 'ni', 'nj', 'nk',
                   'etiket', 'dateo', 'datev', 'vdateo', 'vdatev',
                   'deet', 'npas','grtyp', 'ig1', 'ig2', 'ig3', 'ig4',
-                  'datyp', 'nbits', 'level', 'time', 'xg1234',
+                  'datyp', 'nbits', 'level', 'levelval', 'levelunit',
+                  'time', 'timeval', 'timeunit', 'xg1234',
                   'min', 'max', 'mean', 'std')
     
     # Command line arguments
