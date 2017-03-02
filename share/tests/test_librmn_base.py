@@ -2,10 +2,14 @@
 # . s.ssmuse.dot /ssm/net/hpcs/201402/02/base /ssm/net/hpcs/201402/02/intel13sp1u2 /ssm/net/rpn/libs/15.2
 """Unit tests for librmn.base"""
 
+import os, os.path
 import rpnpy.librmn.all as rmn
 import unittest
 import ctypes as ct
 import numpy as np
+
+
+ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
 
 #--- primitives -----------------------------------------------------
 
@@ -14,7 +18,7 @@ class LibrmnFilesKnownValues(unittest.TestCase):
     #(path,itype,iunit)
     knownValues = (
         (rmn.RMN_LIBPATH,-1,999),
-        ('/users/dor/armn/env/SsmBundles/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst',rmn.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'],999),
+        (os.path.join(ATM_MODEL_DFILES,'bcmk/geophy.fst'),rmn.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'],999),
         )
 
     def testWkoffitKnownValues(self):
