@@ -1,12 +1,61 @@
 #!/bin/ksh
-_rpnpy_dev_mode_="$1"
+
+DESC='Load package dependencies'
+USAGE="USAGE: ${MYSELF} [-v] [--dev [--cmc|--science]]"
+
+usage_long() {
+   toto=$(echo -e $USAGE)
+   more <<EOF
+$DESC
+
+$toto
+
+Options:
+    -h, --help         : print this help
+    -v, --verbose      : verbose mode
+        --cmc          : set dependencies for CMC network
+        --science      : set dependencies for Sience network
+EOF
+}
+
+RDENETWORK=${RDENETWORK:-science}
+verbose=0
+_rpnpy_dev_mode_=""
+while [[ $# -gt 0 ]] ; do
+   case $1 in
+      (-h|--help) usage_long; exit 0;;
+      (-v|--verbose) ((verbose=verbose+1));;
+      (--dev) _rpnpy_dev_mode_="$1" ;;
+      (--cmc) RDENETWORK=cmc ;;
+      (--science) RDENETWORK=science ;;
+      (savehist*) ;;
+      # (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
+      (*) echo "IGNORED: $1" ;;
+    esac
+    shift
+done
+
 if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
-   shift
+   if [[ "x$RDENETWORK" == "xcmc" ]] ; then
+      echo "LINKING for CMC NETWORK"
+      for item in $(ls *-cmc .*-cmc); do
+         echo "+ ln -sf ${item} ${item%-*}"
+         ln -sf ${item} ${item%-*}
+      done
+   else
+      echo "LINKING for Science NETWORK"
+      for item in $(ls *-science); do
+         ln -sf ${item} ${item%-*}
+         echo "+ ln -sf ${item} ${item%-*}"
+      done
+   fi
+
    echo 'Loading dev env: ssmusedep-dev.bndl'
    . s.ssmuse.dot $(cat ssmusedep-dev.bndl)
 else
    echo 'Loading Run-time env'
 fi
+
 
 for _myfile in ssmusedep_${COMP_ARCH}.bndl ssmusedep.bndl ssmusedep_post.bndl ; do
    if [[ -f ${_myfile} && -s ${_myfile} ]] ; then

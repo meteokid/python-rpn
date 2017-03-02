@@ -71,6 +71,10 @@ RDE_MKL=
 sharedlibs_cp: $(LIBDIR)/librmnshared_rpnpy_cp.so $(LIBDIR)/libdescripshared_rpnpy.so
 sharedlibs: $(LIBDIR)/librmnshared_rpnpy.so $(LIBDIR)/libdescripshared_rpnpy.so
 
+forced_extlibdotfile: 
+	rm -f $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
+	$(MAKE) extlibdotfile
+
 extlibdotfile: $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot
 
 $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:

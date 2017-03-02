@@ -3,6 +3,7 @@
 """Unit tests for librmn.base"""
 
 import sys
+import os, os.path
 import rpnpy.librmn.all as rmn
 import unittest
 import ctypes as ct
@@ -11,6 +12,8 @@ import numpy as np
 if sys.version_info > (3,):
     long = int
 
+ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+
 #--- primitives -----------------------------------------------------
 
 class LibrmnFilesKnownValues(unittest.TestCase):
@@ -18,7 +21,7 @@ class LibrmnFilesKnownValues(unittest.TestCase):
     #(path,itype,iunit)
     knownValues = (
         (rmn.RMN_LIBPATH,-1,999),
-        ('/users/dor/armn/env/SsmBundles/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles/bcmk/geophy.fst',rmn.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'],999),
+        (os.path.join(ATM_MODEL_DFILES,'bcmk/geophy.fst'),rmn.WKOFFIT_TYPE_LIST['STANDARD RANDOM 98'],999),
         )
 
     def testWkoffitKnownValues(self):
