@@ -1,8 +1,0 @@
-#!/bin/ksh
-export RPNPY_LOGDIR=${RPNPY_LOGDIR:-/home/sgem000/log}
-
-if [[ -d /fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles ]] ; then
-   export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/fs/ssm/eccc/mrd/rpn/MIG/GEM/d/gem-data/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
-fi
-
-#export AFSISIO_ENV_HOME=${AFSISIO_ENV_HOME:-/ssm/net/cmoi/base/master/afsisio-env_1.3b1_all/lib/afsisio-env}
