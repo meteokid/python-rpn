@@ -93,7 +93,19 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 	echo "export RPNPY_VGD_LIBPATH=$${libvgdpath%/*}" >> $@ ;\
 	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@ ;\
 	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
-	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@
+	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@ ;\
+	echo "export AFSISIO=\$${AFSISIO:-${AFSISIO}}" >> $@ ;\
+	echo "export CMCGRIDF=\$${CMCGRIDF:-${CMCGRIDF}}" >> $@ ;\
+	echo "export ATM_MODEL_DFILE=\$${ATM_MODEL_DFILES:-${ATM_MODEL_DFILES}}" >> $@
+
+#CMCGRIDP
+#CMCPROD
+#CMCADE
+#CMCTRANS
+#CMCSAT
+#CMCCONST
+
+
 
 $(LIBDIR)/librmnshared_rpnpy_cp.so:
 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
