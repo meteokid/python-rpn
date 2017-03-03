@@ -23,6 +23,11 @@ Module utils.thermofunc (TDpack) defines basic thermodynamic functions used in R
 
 Note: All functions uses SI units (e.g. ttt  [k], prs [pa], qqq [kg/kg])
 
+See Also:
+    rpnpy.utils.thermoconst
+
+Details:
+
 * FOEW(ttt):
     calcule la tension de vapeur saturante (formule de Tetens);
     on obtient ew (tension de vapeur par rapport à l’eau) ou ei

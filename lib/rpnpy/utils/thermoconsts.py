@@ -4,12 +4,19 @@
 # Copyright: LGPL 2.1
 
 """
- Module utils.thermoconsts (TDpack) defines constants used in RPN Physics
+Module utils.thermoconsts (TDpack) defines constants used in RPN Physics
+ 
+See Also:
+    rpnpy.utils.thermofunc
+
+Details:
+    See Source Code    
 """
 from math import pi as _pi
 import scipy.constants as _scipy_cst
 
-#=== TDpack thermodynamic Constants ===
+##DETAILS_START
+#== TDpack thermodynamic Constants ==
 #<source lang=python>
 AI     = 0.2864887713087e+04  # pour fn htvocp
 AW     = 0.3135012829948e+04  # pour fn htvocp
@@ -66,6 +73,7 @@ MS2KT_LEGACY = 1./KT2MS_LEGACY # Number of knot per m/s [kt]
 PA2MB   = 0.01                # Number of millibar per Pascal [mb]
 RAD2DEG = 180./_pi            # Number of degree per radian [deg]
 #</source>
+##DETAILS_END
 
 if __name__ == "__main__":
     import doctest

@@ -44,7 +44,7 @@ if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
       done
    else
       echo "LINKING for Science NETWORK"
-      for item in $(ls *-science); do
+      for item in $(ls *-science .*-science); do
          ln -sf ${item} ${item%-*}
          echo "+ ln -sf ${item} ${item%-*}"
       done
