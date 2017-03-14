@@ -27,6 +27,7 @@ while [[ $# -gt 0 ]] ; do
       (-v|--verbose) ((verbose=verbose+1));;
       (--dev) _rpnpy_dev_mode_="$1" ;;
       (--cmc) RDENETWORK=cmc ;;
+      (--cmc_u12) RDENETWORK=cmc_u12 ;;
       (--science) RDENETWORK=science ;;
       (savehist*) ;;
       # (*) if [[ x$1 != x ]] ; then myerror "Option Not recognized: $1";fi;;
@@ -39,6 +40,12 @@ if [[ x"$_rpnpy_dev_mode_" == x"--dev" ]] ; then
    if [[ "x$RDENETWORK" == "xcmc" ]] ; then
       echo "LINKING for CMC NETWORK"
       for item in $(ls *-cmc .*-cmc); do
+         echo "+ ln -sf ${item} ${item%-*}"
+         ln -sf ${item} ${item%-*}
+      done
+   elif [[ "x$RDENETWORK" == "xcmc_u12" ]] ; then
+      echo "LINKING for CMC NETWORK for Ubuntu 12"
+      for item in $(ls *-cmc_u12 .*-cmc_u12); do
          echo "+ ln -sf ${item} ${item%-*}"
          ln -sf ${item} ${item%-*}
       done

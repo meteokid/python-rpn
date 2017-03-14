@@ -24,6 +24,7 @@ topnotes=""
 linkPrefix = 'Python-RPN/2.1/'
 tmpl = {}
 tmpl['head'] = """
+[[Category:python]]
 __NOTITLE__ 
 = Python RPN: @MODULE@ =
 {{:Python-RPN/2.1/navbox}}
@@ -595,6 +596,11 @@ if __name__ == "__main__":
         'rpnpy.vgd.base',
         'rpnpy.vgd.const',
         'rpnpy.vgd.proto'
+        'rpnpy.burpc',
+        'rpnpy.burpc.all',
+        'rpnpy.burpc.base',
+        'rpnpy.burpc.const',
+        'rpnpy.burpc.proto'
         ]
     docdir = './doc/'
     m = []

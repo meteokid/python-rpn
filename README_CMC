@@ -60,6 +60,7 @@ cd rpnpy
 ##    ./ssmusedep-dev.bndl-*
 
 export RDENETWORK=cmc
+# export RDENETWORK=cmc_u12
 # export RDENETWORK=science
 . ./.setenv.dot --dev
 
@@ -69,7 +70,7 @@ rdemklink -v
 # make -j 8 components_objects
 # make components_libs 
 # make components_abs 
-make forced_extlibdotfile
+make -s forced_extlibdotfile
 # make sharedlibs
 # make sharedlibs_cp
 ## Note: Need to do "make extlibdotfile" on other arch before the next step
@@ -80,6 +81,7 @@ make components_ssm_all
       ssh MYMACH
       cd /PATH/
       export RDENETWORK=cmc
+      # export RDENETWORK=cmc_u12
       # export RDENETWORK=science
       . ./.setenv.dot --dev
       export storage_model=${storage_model:-$TMPDIR}
@@ -88,7 +90,7 @@ make components_ssm_all
       #make -j 8 components_objects
       #make components_libs 
       #make components_abs 
-      make forced_extlibdotfile
+      make -s forced_extlibdotfile
       #make sharedlibs
       #make sharedlibs_cp
       make components_ssm_arch
@@ -98,6 +100,7 @@ make components_ssm_all
 ssh MY_INSTALL_MACH
 cd /PATH/
 export RDENETWORK=cmc
+# export RDENETWORK=cmc_u12
 # export RDENETWORK=science
 . ./.setenv.dot --dev
 make components_install CONFIRM_INSTALL=yes
@@ -108,6 +111,7 @@ make components_install CONFIRM_INSTALL=yes
 ssh MY_INSTALL_MACH
 cd /PATH/
 export RDENETWORK=cmc
+# export RDENETWORK=cmc_u12
 # export RDENETWORK=science
 . ./.setenv.dot --dev
 make components_uninstall UNINSTALL_CONFIRM=yes

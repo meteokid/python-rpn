@@ -88,12 +88,20 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 		libvgdpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libdescripshared*.so | head -1`;\
 	fi ;\
 	libvgdname=`echo $${libvgdpath##*/} | cut -c17-`;\
-	echo "export RPNPY_RMN_LIBPATH=$${librmnpath%/*}" >> $@ ;\
-	echo "export RPNPY_RMN_VERSION=$${librmnname%.so}" >> $@ ;\
-	echo "export RPNPY_VGD_LIBPATH=$${libvgdpath%/*}" >> $@ ;\
-	echo "export RPNPY_VGD_VERSION=$${libvgdname%.so}" >> $@ ;\
+	libburpcpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libburp_c_shared_*.so | head -1`;\
+	if [[ x$${libburpcpath##*/} == x ]] ; then \
+		libburpcpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libburp_c_shared*.so | head -1`;\
+	fi ;\
+	libburpcname=*;\
+	echo "export RPNPY_RMN_LIBPATH=\$${RPNPY_RMN_LIBPATH:-$${librmnpath%/*}}" >> $@ ;\
+	echo "export RPNPY_RMN_VERSION=\$${RPNPY_RMN_VERSION:-$${librmnname%.so}}" >> $@ ;\
+	echo "export RPNPY_VGD_LIBPATH=\$${RPNPY_VGD_LIBPATH:-$${libvgdpath%/*}}" >> $@ ;\
+	echo "export RPNPY_VGD_VERSION=\$${RPNPY_VGD_VERSION:-$${libvgdname%.so}}" >> $@ ;\
+	echo "export RPNPY_BURPC_LIBPATH=\$${RPNPY_BURPC_LIBPATH:-$${libburpcpath%/*}}" >> $@ ;\
+	echo "export RPNPY_BURPC_VERSION=\$${RPNPY_BURPC_VERSION:-$${libburpcname%.so}}" >> $@ ;\
 	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
 	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@
+	cat $@
 
 $(LIBDIR)/librmnshared_rpnpy_cp.so:
 	libfullpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name librmnshared*.so | head -1`;\
@@ -130,6 +138,9 @@ $(LIBDIR)/libdescripshared_rpnpy.so: $(LIBDIR)/librmnshared_rpnpy.so
 	#rde.f90_ld $(VERBOSEVL) -shared -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o
 	#$(BUILDFC_NOMPI) -shared -openmp -static -static-intel -lrmnshared_rpnpy -o $@ *.o
 	#$(BUILDFC_NOMPI) -shared -openmp $(STATIC_COMPILER) -L$(LIBDIR) -lrmnshared_rpnpy -o $@ *.o ;\
+
+#TODO: $(LIBDIR)/libburp_c_shared_rpnpy.so:
+
 
 #---- Lib target - automated ------------------------------------------
 

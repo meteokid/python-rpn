@@ -42,17 +42,18 @@ class VGDError(Exception):
     """
     pass
 
-def checkVGDlibPath(rmn_libfile):
+def checkVGDlibPath(libfile):
     """
-    Return first matched filename for rmn_libfile wildcard
+    Return first matched filename for libfile wildcard
     Return None if no match
     """
     import os
     import glob
-    RMN_LIBPATH_ALL = glob.glob(rmn_libfile)
-    if len(RMN_LIBPATH_ALL) > 0:
-        if os.path.isfile(RMN_LIBPATH_ALL[0]):
-            return RMN_LIBPATH_ALL[0]
+    LIBPATH_ALL = glob.glob(libfile)
+    print libfile,LIBPATH_ALL
+    if len(LIBPATH_ALL) > 0:
+        if os.path.isfile(LIBPATH_ALL[0]):
+            return LIBPATH_ALL[0]
     return None
 
 def loadVGDlib(vgd_version=None):
