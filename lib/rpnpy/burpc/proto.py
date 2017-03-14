@@ -19,7 +19,7 @@ Warning:
     as such with appropriate argument typing and dereferencing.
     It is highly advised in a python program to prefer the use of the
     python wrapper found in
-    * rpnpy.burp.base
+    * rpnpy.burpc.base
 
 Notes:
     The functions described below are a very close ''port'' from the original
@@ -94,11 +94,11 @@ class BURP_RPT(_ct.Structure):
     To get an instance of a pointer to this class you may use the
     provided functions:
 
-    myBURP_RPTptr = rpnpy.burpc.propo.c_burp_rpt_construct()
+    myBURP_RPTptr = rpnpy.burpc.proto.c_brp_newrpt()
 
     See Also:
-       c_burp_rpt_construct
-       c_burp_blk_construct
+       c_brp_newrpt
+       c_brp_newblk
        BURP_BLK
    """
     _fields_ = [
@@ -119,9 +119,9 @@ class BURP_RPT(_ct.Structure):
         ("oars",   _ct.c_int),
         ("runn",   _ct.c_int),
         ("nblk",   _ct.c_int),
-        ("*sup",   _ct.POINTER(_ct.c_int)),
+        ("sup",   _ct.POINTER(_ct.c_int)),
         ("nsup",   _ct.c_int),
-        ("*xaux",  _ct.POINTER(_ct.c_int)),
+        ("xaux",  _ct.POINTER(_ct.c_int)),
         ("nxaux",  _ct.c_int),
         ("lngr",   _ct.c_int),
         ("init_hdr", _ct.c_int)  ## for internal use only
@@ -176,11 +176,11 @@ class BURP_BLK(_ct.Structure):
     To get an instance of a pointer to this class you may use the
     provided functions:
 
-    myBURP_BLKptr = rpnpy.burpc.propo.c_burp_blk_construct()
+    myBURP_BLKptr = rpnpy.burpc.propo.c_brp_newblk()
 
     See Also:
-       c_burp_rpt_construct
-       c_burp_blk_construct
+       c_brp_newrpt
+       c_brp_newblk
        BURP_RPT
    """
     _fields_ = [
@@ -225,11 +225,6 @@ class BURP_BLK(_ct.Structure):
        return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
 
 
-c_burp_rpt_construct = _ct.POINTER(BURP_RPT)
-
-c_burp_blk_construct = _ct.POINTER(BURP_BLK)
-
-
 ## /*
 ##  * Macros for getting values of a Report
 ##  * acces to field in the BURP_RPT structure should be accessed
@@ -238,23 +233,23 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ##  * current definition do not cover all available field
 ##  * since they are not used by anyone yet.
 ##  */
-## #define  RPT_HANDLE(rpt)        ((rpt)/**/->handle)
-## #define  RPT_NSIZE(rpt)         ((rpt)/**/->nsize)
-## #define  RPT_TEMPS(rpt)         ((rpt)/**/->temps)
-## #define  RPT_FLGS(rpt)          ((rpt)/**/->flgs)
-## #define  RPT_STNID(rpt)         ((rpt)/**/->stnid)
-## #define  RPT_IDTYP(rpt)         ((rpt)/**/->idtype)
-## #define  RPT_LATI(rpt)          ((rpt)/**/->lati)
-## #define  RPT_LONG(rpt)          ((rpt)/**/->longi)
-## #define  RPT_DX(rpt)            ((rpt)/**/->dx)
-## #define  RPT_DY(rpt)            ((rpt)/**/->dy)
-## #define  RPT_ELEV(rpt)          ((rpt)/**/->elev)
-## #define  RPT_DRND(rpt)          ((rpt)/**/->drnd)
-## #define  RPT_DATE(rpt)          ((rpt)/**/->date)
-## #define  RPT_OARS(rpt)          ((rpt)/**/->oars)
-## #define  RPT_RUNN(rpt)          ((rpt)/**/->runn)
-## #define  RPT_NBLK(rpt)          ((rpt)/**/->nblk)
-## #define  RPT_LNGR(rpt)          ((rpt)/**/->lngr)
+RPT_HANDLE = lambda rpt: rpt[0].handle
+RPT_NSIZE  = lambda rpt: rpt[0].nsize
+RPT_TEMPS  = lambda rpt: rpt[0].temps
+RPT_FLGS   = lambda rpt: rpt[0].flgs
+RPT_STNID  = lambda rpt: rpt[0].stnid
+RPT_IDTYP  = lambda rpt: rpt[0].idtype
+RPT_LATI   = lambda rpt: rpt[0].lati
+RPT_LONG   = lambda rpt: rpt[0].longi
+RPT_DX     = lambda rpt: rpt[0].dx
+RPT_DY     = lambda rpt: rpt[0].dy
+RPT_ELEV   = lambda rpt: rpt[0].elev
+RPT_DRND   = lambda rpt: rpt[0].drnd
+RPT_DATE   = lambda rpt: rpt[0].date
+RPT_OARS   = lambda rpt: rpt[0].oars
+RPT_RUNN   = lambda rpt: rpt[0].runn
+RPT_NBLK   = lambda rpt: rpt[0].nblk
+RPT_LNGR   = lambda rpt: rpt[0].lngr
 
 
 ## /*
@@ -267,21 +262,24 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ##  */
 ## /* for internal use only */
 ## extern  void       brp_setstnid( BURP_RPT *rpt, const char *stnid );
+libburpc.brp_setstnid.argtypes = (_ct.POINTER(BURP_RPT), _ct.c_char_p)
+libburpc.brp_setstnid.restype = None
+c_brp_setstnid = libburpc.brp_setstnid
 
-## #define  RPT_SetHANDLE(rpt,val)    (rpt)/**/->handle=val
-## #define  RPT_SetTEMPS(rpt,val)     (rpt)/**/->temps=val
-## #define  RPT_SetFLGS(rpt,val)      (rpt)/**/->flgs=val
-## #define  RPT_SetSTNID(rpt,val)     brp_setstnid(rpt,val)
-## #define  RPT_SetIDTYP(rpt,val)     (rpt)/**/->idtype=val
-## #define  RPT_SetLATI(rpt,val)      (rpt)/**/->lati=val
-## #define  RPT_SetLONG(rpt,val)      (rpt)/**/->longi=val
-## #define  RPT_SetDX(rpt,val)        (rpt)/**/->dx=val
-## #define  RPT_SetDY(rpt,val)        (rpt)/**/->dy=val
-## #define  RPT_SetELEV(rpt,val)      (rpt)/**/->elev=val
-## #define  RPT_SetDRND(rpt,val)      (rpt)/**/->drnd=val
-## #define  RPT_SetDATE(rpt,val)      (rpt)/**/->date=val
-## #define  RPT_SetOARS(rpt,val)      (rpt)/**/->oars=val
-## #define  RPT_SetRUNN(rpt,val)      (rpt)/**/->runn=val
+def RPT_SetHANDLE(rpt, val): rpt[0].handle = val
+def RPT_SetTEMPS (rpt, val): rpt[0].temps = val
+def RPT_SetFLGS  (rpt, val): rpt[0].flgs
+def RPT_SetSTNID (rpt, val): c_brp_setstnid(rpt, val)
+def RPT_SetIDTYP (rpt, val): rpt[0].idtype = val
+def RPT_SetLATI  (rpt, val): rpt[0].lati = val
+def RPT_SetLONG  (rpt, val): rpt[0].longi = val
+def RPT_SetDX    (rpt, val): rpt[0].dx = val
+def RPT_SetDY    (rpt, val): rpt[0].dy = val
+def RPT_SetELEV  (rpt, val): rpt[0].elev = val
+def RPT_SetDRND  (rpt, val): rpt[0].drnd = val
+def RPT_SetDATE  (rpt, val): rpt[0].date = val
+def RPT_SetOARS  (rpt, val): rpt[0].oars = val
+def RPT_SetRUNN  (rpt, val): rpt[0].runn = val
 
 
 ## /*
@@ -291,27 +289,28 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ##  * access without these macros would be at your own risk
 ##  */
 
-## #define  BLK_BKNO(blk)             ((blk)/**/->bkno)
-## #define  BLK_NELE(blk)             ((blk)/**/->nele)
-## #define  BLK_NVAL(blk)             ((blk)/**/->nval)
-## #define  BLK_NT(blk)               ((blk)/**/->nt)
-## #define  BLK_BFAM(blk)             ((blk)/**/->bfam)
-## #define  BLK_BDESC(blk)            ((blk)/**/->bdesc)
-## #define  BLK_BTYP(blk)             ((blk)/**/->btyp)
-## #define  BLK_BKNAT(blk)            ((blk)/**/->bknat)
-## #define  BLK_BKTYP(blk)            ((blk)/**/->bktyp)
-## #define  BLK_BKSTP(blk)            ((blk)/**/->bkstp)
-## #define  BLK_NBIT(blk)             ((blk)/**/->nbit)
-## #define  BLK_BIT0(blk)             ((blk)/**/->bit0)
-## #define  BLK_DATYP(blk)            ((blk)/**/->datyp)
-## #define  BLK_Data(blk)             ((blk)/**/->data)
-## #define  BLK_DLSTELE(blk,e)        ((blk)->dlstele[e])
-## #define  BLK_LSTELE(blk,e)         ((blk)->lstele[e])
-## #define  BLK_TBLVAL(blk,e,v,t)     (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## #define  BLK_RVAL(blk,e,v,t)       (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## #define  BLK_DVAL(blk,e,v,t)       (blk)->drval[ (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## #define  BLK_CVAL(blk,l,c)         ((blk)->charval[ (l)*((blk)->nt)+(c)  ])
-## #define  BLK_STORE_TYPE(blk)       ((blk)->store_type)
+BLK_BKNO  = lambda blk: blk[0].bkno
+BLK_NELE  = lambda blk: blk[0].nele
+BLK_NVAL  = lambda blk: blk[0].nval
+BLK_NT    = lambda blk: blk[0].nt
+BLK_BFAM  = lambda blk: blk[0].bfam
+BLK_BDESC = lambda blk: blk[0].bdesc
+BLK_BTYP  = lambda blk: blk[0].btyp
+BLK_BKNAT = lambda blk: blk[0].bknat
+BLK_BKTYP = lambda blk: blk[0].bktyp
+BLK_BKSTP = lambda blk: blk[0].bkstp
+BLK_NBIT  = lambda blk: blk[0].nbit
+BLK_BIT0  = lambda blk: blk[0].bit0
+BLK_DATYP = lambda blk: blk[0].datyp
+BLK_Data  = lambda blk: blk[0].data
+
+## BLK_DLSTELE(blk,e)        ((blk)->dlstele[e])
+## BLK_LSTELE(blk,e)         ((blk)->lstele[e])
+## BLK_TBLVAL(blk,e,v,t)     (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
+## BLK_RVAL(blk,e,v,t)       (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
+## BLK_DVAL(blk,e,v,t)       (blk)->drval[ (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
+## BLK_CVAL(blk,l,c)         ((blk)->charval[ (l)*((blk)->nt)+(c)  ])
+## BLK_STORE_TYPE(blk)       ((blk)->store_type)
 
 ## /*
 ##  * Macros for setting values of a Block
@@ -319,48 +318,77 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ##  * through these Macros Only
 ##  * access without these macros would be at your own risk
 ##  */
-## #define  BLK_SetNELE(blk,val)           (blk)->nele=val
-## #define  BLK_SetNVAL(blk,val)           (blk)->nval=val
-## #define  BLK_SetNT(blk,val)             (blk)->nt=val
+## BLK_SetNELE(blk,val)           (blk)->nele=val
+## BLK_SetNVAL(blk,val)           (blk)->nval=val
+## BLK_SetNT(blk,val)             (blk)->nt=val
 
-## #define  BLK_SetBKNO(blk,val)           (blk)/**/->bkno=val
-## #define  BLK_SetBFAM(blk,val)           (blk)/**/->bfam=val
-## #define  BLK_SetBDESC(blk,val)          (blk)/**/->bdesc=val
-## #define  BLK_SetBTYP(blk,val)           (blk)/**/->btyp=val
-## #define  BLK_SetBKNAT(blk,val)          (blk)/**/->bknat=val
-## #define  BLK_SetBKTYP(blk,val)          (blk)/**/->bktyp=val
-## #define  BLK_SetBKSTP(blk,val)          (blk)/**/->bkstp=val
-## #define  BLK_SetNBIT(blk,val)           (blk)/**/->nbit=val
-## #define  BLK_SetDATYP(blk,val)          (blk)/**/->datyp=val
-## #define  BLK_SetDVAL(blk,e,v,t,val)     (blk)->drval [(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## #define  BLK_SetTBLVAL(blk,e,v,t,val)   (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## #define  BLK_SetRVAL(blk,e,v,t,val)     (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## #define  BLK_SetCVAL(blk,l,c,val)       (blk)->charval[ (l)*((blk)->nt)+(c)  ]=val;
-## #define  BLK_SetLSTELE(blk,i,val)       (blk)->lstele[i]=val
-## #define  BLK_SetDLSTELE(blk,i,val)      (blk)->dlstele[i]=val
-## #define  BLK_SetSTORE_TYPE(blk,val)     (blk)->store_type=val
+def BLK_SetBKNO (blk, val): blk[0].bkno = val
+def BLK_SetBFAM (blk, val): blk[0].bfam = val
+def BLK_SetBDESC(blk, val): blk[0].bdesc = val
+def BLK_SetBTYP (blk, val): blk[0].btyp = val
+def BLK_SetBKNAT(blk, val): blk[0].bknat = val
+def BLK_SetBKTYP(blk, val): blk[0].bktyp = val
+def BLK_SetBKSTP(blk, val): blk[0].bkstp = val
+def BLK_SetNBIT (blk, val): blk[0].nbit = val
+def BLK_SetDATYP(blk, val): blk[0].datyp = val
+
+## BLK_SetDVAL(blk,e,v,t,val)     (blk)->drval [(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
+## BLK_SetTBLVAL(blk,e,v,t,val)   (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
+## BLK_SetRVAL(blk,e,v,t,val)     (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
+## BLK_SetCVAL(blk,l,c,val)       (blk)->charval[ (l)*((blk)->nt)+(c)  ]=val;
+## BLK_SetLSTELE(blk,i,val)       (blk)->lstele[i]=val
+## BLK_SetDLSTELE(blk,i,val)      (blk)->dlstele[i]=val
+## BLK_SetSTORE_TYPE(blk,val)     (blk)->store_type=val
 
 ## /*
 ##  * allocators and constructors
 ##  */
+    
 ## extern  BURP_BLK  *brp_newblk( void );
+libburpc.brp_newblk.argtypes = None
+libburpc.brp_newblk.restype = _ct.POINTER(BURP_BLK)
+c_brp_newblk = libburpc.brp_newblk
+
 ## extern  BURP_RPT  *brp_newrpt( void );
+libburpc.brp_newrpt.argtypes = None
+libburpc.brp_newrpt.restype = _ct.POINTER(BURP_RPT)
+c_brp_newrpt = libburpc.brp_newrpt
+
 ## extern  void       brp_allocrpt( BURP_RPT *rpt, int  nsize );
+libburpc.brp_allocrpt.argtypes = (_ct.POINTER(BURP_RPT), _ct.c_int)
+libburpc.brp_allocrpt.restype = None
+c_brp_allocrpt = libburpc.brp_allocrpt
+
 ## extern  void       brp_allocblk( BURP_BLK *blk, int  nele, int nval, int nt );
+libburpc.brp_allocblk.argtypes = (_ct.POINTER(BURP_BLK),
+                                  _ct.c_int, _ct.c_int, _ct.c_int)
+libburpc.brp_allocblk.restype = None
+c_brp_allocblk = libburpc.brp_allocblk
 
 ## /*
 ##  *  find elements
 ##  */
+
 ## extern  int        brp_searchdlste( int  code, BURP_BLK *blk );
+
 ## /*
 ##  * destructors and deallocators
 ##  */
+
 ## extern  void       brp_freeblk( BURP_BLK *blk );
+libburpc.brp_freeblk.argtypes = (_ct.POINTER(BURP_BLK), )
+libburpc.brp_freeblk.restype = None
+c_brp_freeblk = libburpc.brp_freeblk
+
 ## extern  void       brp_freerpt( BURP_RPT *rpt );
+libburpc.brp_freerpt.argtypes = (_ct.POINTER(BURP_RPT), )
+libburpc.brp_freerpt.restype = None
+c_brp_freerpt = libburpc.brp_freerpt
 
 ## /* for internal use only */
 ## extern  void       brp_freebuf(BURP_RPT *rpt);
 ## extern  void       brp_freedata( BURP_BLK *blk );
+
 ## /*
 ##  * reinitializers
 ##  */
@@ -380,23 +408,49 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ## extern  int        brp_encodeblk( BURP_BLK  *blk );
 ## extern  int        brp_safe_convertblk( BURP_BLK  *blk, int mode );
 ## extern  int        brp_convertblk( BURP_BLK  *blk, int mode );
+
 ## /*
 ##  * find report and block before reading them
 ##  */
+
 ## extern  int        brp_findblk( BURP_BLK  *blk, BURP_RPT  *rpt );
+libburpc.brp_findblk.argtypes = (_ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_findblk.restype = _ct.c_int
+c_brp_findblk = libburpc.brp_findblk
+
 ## extern  int        brp_findrpt( int iun, BURP_RPT *rpt );
+libburpc.brp_findrpt.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_findrpt.restype = _ct.c_int
+c_brp_findrpt = libburpc.brp_findrpt
+
 ## /*
 ##  * read in data
 ##  */
+
 ## extern  int        brp_getrpt( int iun, int handle, BURP_RPT  *rpt );
+libburpc.brp_getrpt.argtypes = (_ct.c_int, _ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_getrpt.restype = _ct.c_int
+c_brp_getrpt = libburpc.brp_getrpt
+
 ## extern  int        brp_safe_getblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
+libburpc.brp_safe_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_safe_getblk.restype = _ct.c_int
+c_brp_safe_getblk = libburpc.brp_safe_getblk
+
 ## extern  int        brp_getblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
+libburpc.brp_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_getblk.restype = _ct.c_int
+c_brp_getblk = libburpc.brp_getblk
 
 ## /* brp_readblk same as brp_getblk() but the BLK_RVAL(blk,e,v,t) values
 ##    are not available as conversion are not done. function to use when readig burp and
 ##    there is no need to work with real values
 ## */
 ## extern  int        brp_readblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt, int);
+libburpc.brp_readblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT), _ct.c_int)
+libburpc.brp_readblk.restype = _ct.c_int
+c_brp_readblk = libburpc.brp_readblk
+
 
 ## /*
 ##  * read only header
@@ -440,21 +494,41 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 ##  */
 
 ## extern  int        brp_open(int  iun, const char *filename, char *op);
+libburpc.brp_open.argtypes = (_ct.c_int, _ct.c_char_p, _ct.c_char_p)
+libburpc.brp_open.restype = _ct.c_int
+c_brp_open = libburpc.brp_open
+
 ## extern  int        brp_close(int iun);
+libburpc.brp_close.argtypes = (_ct.c_int, )
+libburpc.brp_close.restype = _ct.c_int
+c_brp_close = libburpc.brp_close
 
 ## /*
 ##  * deleting reports and blocks
 ##  */
 
 ## extern  int        brp_delblk(BURP_RPT *rpt, const BURP_BLK * blk);
-## extern  int        brp_delrpt(BURP_RPT * rpt);
+## extern  int        brp_delrpt(BURP_RPT *rpt);
 
 ## /*
 ##  * burp rpn option functions
 ##  */
+
 ## extern  int        brp_SetOptFloat(char* opt, float val);
+libburpc.brp_SetOptFloat.argtypes = (_ct.c_char_p, _ct.c_float)
+libburpc.brp_SetOptFloat.restype = _ct.c_int
+c_brp_SetOptFloat = libburpc.brp_SetOptFloat
+
 ## extern  int        brp_SetOptChar (char* opt, char * val);
+libburpc.brp_SetOptChar.argtypes = (_ct.c_char_p, _ct.c_char_p)
+libburpc.brp_SetOptChar.restype = _ct.c_int
+c_brp_SetOptChar = libburpc.brp_SetOptChar
+
 ## extern  float      brp_msngval (void);
+libburpc.brp_msngval.argtypes = None
+libburpc.brp_msngval.restype = _ct.c_float
+c_brp_msngval = libburpc.brp_msngval
+
 ## /*
 ##  * burp rpn functions
 ##  */
@@ -464,7 +538,7 @@ c_burp_blk_construct = _ct.POINTER(BURP_BLK)
 
 
 if __name__ == "__main__":
-    pass #print vgd version 
+    pass #print burpc version 
     
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:

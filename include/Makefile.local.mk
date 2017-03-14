@@ -15,7 +15,7 @@ RPNPY_VERSION_X = $(dir $(RPNPY_VERSION0))
 ## Some Shortcut/Alias to Lib Names
 
 # ifeq (,$(RPNPY_RMN_VERSION))
-#    $(error RPNPY_RMN_VERSION not defined; export RPNPY_RMN_VERSION=_015.2)
+#    $(error RPNPY_RMN_VERSION not defined; export RPNPY_RMN_VERSION=_016.2)
 # endif
 
 # RMN_VERSION    = rmn$(RPNPY_RMN_VERSION)# RPNPY_LIBS_MERGED = rpnpy_main rpnpy_driver rpnpy_utils rpnpy_tdpack rpnpy_base
