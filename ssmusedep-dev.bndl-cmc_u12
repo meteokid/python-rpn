@@ -8,5 +8,6 @@ Linux_x86-64:/ssm/net/cmda/libs/15.2-3/intel13sp1u2
 AIX-powerpc7:/ssm/net/cmda/libs/15.2-3/xlf13
 
 /ssm/net/cmoi/base/20160901/
+GEM/d/gem-data/gem-data_4.2.0
 
 ENV/rde/1.0.6

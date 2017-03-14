@@ -595,12 +595,12 @@ if __name__ == "__main__":
         'rpnpy.vgd.all',
         'rpnpy.vgd.base',
         'rpnpy.vgd.const',
-        'rpnpy.vgd.proto'
+        'rpnpy.vgd.proto',
         'rpnpy.burpc',
         'rpnpy.burpc.all',
         'rpnpy.burpc.base',
         'rpnpy.burpc.const',
-        'rpnpy.burpc.proto'
+        'rpnpy.burpc.proto',
         ]
     docdir = './doc/'
     m = []
