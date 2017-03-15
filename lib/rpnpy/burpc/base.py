@@ -18,19 +18,36 @@ See Also:
 import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
-from rpnpy.burpc import proto as _vp
-from rpnpy.burpc  import const as _vc
+from rpnpy.burpc import proto as _bp
+from rpnpy.burpc  import const as _bc
 from rpnpy.burpc  import BURPCError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
 
-_C_MKSTR = _ct.create_string_buffer
-_MB2PA   = 100.
+## _C_MKSTR = _ct.create_string_buffer
 
+def brpc_free(*args):
+    """
+    Free pointer intances to BURP_RPT and BURP_BLK
 
-#TODO:
+    brpc_free(myBURP_RPTptr)
+    brpc_free(myBURP_BLKptr, myBURP_RPTptr)
 
+    Args:
+
+    Return:
+        None
+    Raises:
+        TypeError on not supported types or args
+    """
+    for x in args:
+        if isinstance(x, _ct.POINTER(_bp.BURP_RPT)):
+            _bp.c_brp_freerpt(x)
+        elif isinstance(x, _ct.POINTER(_bp.BURP_BLK)):
+            _bp.c_brp_freeblk(x)
+        else:
+            raise TypeError("Not Supported Type: "+str(type(x)))
 
 if __name__ == "__main__":
     import doctest

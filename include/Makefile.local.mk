@@ -93,17 +93,17 @@ $(rpnpy)/.setenv.__extlib__.${ORDENV_PLAT}.dot:
 		libburpcpath=`rdefind $(EC_LD_LIBRARY_PATH)  --maxdepth 0 --name libburp_c_shared*.so | head -1`;\
 	fi ;\
 	libburpcname=*;\
-	echo "export RPNPY_RMN_LIBPATH=\$${RPNPY_RMN_LIBPATH:-$${librmnpath%/*}}" >> $@ ;\
-	echo "export RPNPY_RMN_VERSION=\$${RPNPY_RMN_VERSION:-$${librmnname%.so}}" >> $@ ;\
-	echo "export RPNPY_VGD_LIBPATH=\$${RPNPY_VGD_LIBPATH:-$${libvgdpath%/*}}" >> $@ ;\
-	echo "export RPNPY_VGD_VERSION=\$${RPNPY_VGD_VERSION:-$${libvgdname%.so}}" >> $@ ;\
-	echo "export RPNPY_BURPC_LIBPATH=\$${RPNPY_BURPC_LIBPATH:-$${libburpcpath%/*}}" >> $@ ;\
-	echo "export RPNPY_BURPC_VERSION=\$${RPNPY_BURPC_VERSION:-$${libburpcname%.so}}" >> $@ ;\
+	echo "export RPNPY_RMN_LIBPATH=\$${RPNPY_RMN_LIBPATH_FORCED:-\$${RPNPY_RMN_LIBPATH:-$${librmnpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_RMN_VERSION=\$${RPNPY_RMN_VERSION_FORCED:-\$${RPNPY_RMN_VERSION:-$${librmnname%.so}}}" >> $@ ;\
+	echo "export RPNPY_VGD_LIBPATH=\$${RPNPY_VGD_LIBPATH_FORCED:-\$${RPNPY_VGD_LIBPATH:-$${libvgdpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_VGD_VERSION=\$${RPNPY_VGD_VERSION_FORCED:-\$${RPNPY_VGD_VERSION:-$${libvgdname%.so}}}" >> $@ ;\
+	echo "export RPNPY_BURPC_LIBPATH=\$${RPNPY_BURPC_LIBPATH_FORCED:-\$${RPNPY_BURPC_LIBPATH:-$${libburpcpath%/*}}}" >> $@ ;\
+	echo "export RPNPY_BURPC_VERSION=\$${RPNPY_BURPC_VERSION_FORCED:-\$${RPNPY_BURPC_VERSION:-$${libburpcname%.so}}}" >> $@ ;\
 	echo "export LD_LIBRARY_PATH=\$${RPNPY_RMN_LIBPATH}:\$${LD_LIBRARY_PATH}" >> $@ ;\
 	echo "export LIBPATH=\$${RPNPY_RMN_LIBPATH}:\$${LIBPATH}" >> $@ ;\
 	echo "export AFSISIO=\$${AFSISIO:-${AFSISIO}}" >> $@ ;\
 	echo "export CMCGRIDF=\$${CMCGRIDF:-${CMCGRIDF}}" >> $@ ;\
-	echo "export ATM_MODEL_DFILE=\$${ATM_MODEL_DFILES:-${ATM_MODEL_DFILES}}" >> $@
+	echo "export ATM_MODEL_DFILES=\$${ATM_MODEL_DFILES:-${ATM_MODEL_DFILES}}" >> $@
 	cat $@
 
 #CMCGRIDP

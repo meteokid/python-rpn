@@ -303,14 +303,13 @@ BLK_NBIT  = lambda blk: blk[0].nbit
 BLK_BIT0  = lambda blk: blk[0].bit0
 BLK_DATYP = lambda blk: blk[0].datyp
 BLK_Data  = lambda blk: blk[0].data
-
-## BLK_DLSTELE(blk,e)        ((blk)->dlstele[e])
-## BLK_LSTELE(blk,e)         ((blk)->lstele[e])
-## BLK_TBLVAL(blk,e,v,t)     (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## BLK_RVAL(blk,e,v,t)       (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## BLK_DVAL(blk,e,v,t)       (blk)->drval[ (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]
-## BLK_CVAL(blk,l,c)         ((blk)->charval[ (l)*((blk)->nt)+(c)  ])
-## BLK_STORE_TYPE(blk)       ((blk)->store_type)
+BLK_DLSTELE= lambda blk,e : blk[0].dlstele[e]
+BLK_LSTELE = lambda blk,e : blk[0].lstele[e]
+BLK_TBLVAL = lambda blk,e,v,t: blk[0].tblval[e + blk[0].nele*(v + (blk[0].nval)*t)]
+BLK_RVAL   = lambda blk,e,v,t: blk[0].rval[e + blk[0].nele*(v + (blk[0].nval)*t)]
+BLK_DVAL   = lambda blk,e,v,t: blk[0].drval[e + blk[0].nele*(v + (blk[0].nval)*t)]
+BLK_DVAL   = lambda blk,l,c: blk[0].charval[l * blk[0].nt + c]
+BLK_STORE_TYPE = lambda blk: blk[0].store_type
 
 ## /*
 ##  * Macros for setting values of a Block
@@ -318,10 +317,9 @@ BLK_Data  = lambda blk: blk[0].data
 ##  * through these Macros Only
 ##  * access without these macros would be at your own risk
 ##  */
-## BLK_SetNELE(blk,val)           (blk)->nele=val
-## BLK_SetNVAL(blk,val)           (blk)->nval=val
-## BLK_SetNT(blk,val)             (blk)->nt=val
-
+def BLK_SetNELE (blk, val): blk[0].nele = val
+def BLK_SetNVAL (blk, val): blk[0].nval = val
+def BLK_SetNT   (blk, val): blk[0].nt = val
 def BLK_SetBKNO (blk, val): blk[0].bkno = val
 def BLK_SetBFAM (blk, val): blk[0].bfam = val
 def BLK_SetBDESC(blk, val): blk[0].bdesc = val
@@ -331,14 +329,20 @@ def BLK_SetBKTYP(blk, val): blk[0].bktyp = val
 def BLK_SetBKSTP(blk, val): blk[0].bkstp = val
 def BLK_SetNBIT (blk, val): blk[0].nbit = val
 def BLK_SetDATYP(blk, val): blk[0].datyp = val
-
-## BLK_SetDVAL(blk,e,v,t,val)     (blk)->drval [(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## BLK_SetTBLVAL(blk,e,v,t,val)   (blk)->tblval[(e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## BLK_SetRVAL(blk,e,v,t,val)     (blk)->rval[  (e) + ((blk)->nele)*((v)+((blk)->nval)*(t))]=val
-## BLK_SetCVAL(blk,l,c,val)       (blk)->charval[ (l)*((blk)->nt)+(c)  ]=val;
-## BLK_SetLSTELE(blk,i,val)       (blk)->lstele[i]=val
-## BLK_SetDLSTELE(blk,i,val)      (blk)->dlstele[i]=val
-## BLK_SetSTORE_TYPE(blk,val)     (blk)->store_type=val
+def BLK_SetDVAL(blk,e,v,t,val):
+    blk[0].drval [e + blk[0].nele * (v + blk[0].nval * t)] = val
+def BLK_SetTBLVAL(blk,e,v,t,val):
+    blk[0].tblval[e + blk[0].nele * (v + blk[0].nval * t)] = val
+def BLK_SetRVAL(blk,e,v,t,val):
+    blk[0].rval[e + blk[0].nele * (v + blk[0].nval * t)] = val
+def BLK_SetCVAL(blk,l,c,val):
+    blk[0].charval[ l * blk[0].nt + c] = val;
+def BLK_SetLSTELE(blk,i,val):
+    blk[0].lstele[i] = val
+def BLK_SetDLSTELE(blk,i,val):
+    blk[0].dlstele[i] = val
+def BLK_SetSTORE_TYPE(blk,val):
+    blk[0].store_type = val
 
 ## /*
 ##  * allocators and constructors
