@@ -127,19 +127,20 @@ class BURP_RPT(_ct.Structure):
         ("init_hdr", _ct.c_int)  ## for internal use only
         ]
     
-    def __str__(self):
-       return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
-       ## s = self.__class__.__name__ + '('
-       ## l = [y[0] for y in self._fields_]
-       ## l.sort()
-       ## for x in l:
-       ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
-       ## s += ')'
-       ## return s
+    ## def __str__(self):
+    ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
+    ##    ## s = self.__class__.__name__ + '('
+    ##    ## l = [y[0] for y in self._fields_]
+    ##    ## l.sort()
+    ##    ## for x in l:
+    ##    ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
+    ##    ## s += ')'
+    ##    ## return s
 
     def __repr__(self):
-       #return self.__class__.__name__ + str(self)
-       return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+       ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+       return self.__class__.__name__ + '(' + \
+           repr(dict([(x[0], self.__getattribute__(x[0])) for x in self._fields_])) + ')'
 
 
 class BURP_BLK(_ct.Structure):
@@ -210,19 +211,20 @@ class BURP_BLK(_ct.Structure):
         ("max_len", _ct.c_int),
         ]
     
-    def __str__(self):
-       return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
-       ## s = self.__class__.__name__ + '('
-       ## l = [y[0] for y in self._fields_]
-       ## l.sort()
-       ## for x in l:
-       ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
-       ## s += ')'
-       ## return s
+    ## def __str__(self):
+    ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
+    ##    ## s = self.__class__.__name__ + '('
+    ##    ## l = [y[0] for y in self._fields_]
+    ##    ## l.sort()
+    ##    ## for x in l:
+    ##    ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
+    ##    ## s += ')'
+    ##    ## return s
 
     def __repr__(self):
-       #return self.__class__.__name__ + str(self)
-       return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+       ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+       return self.__class__.__name__ + '(' + \
+           repr(dict([(x[0], self.__getattribute__(x[0])) for x in self._fields_])) + ')'
 
 
 ## /*

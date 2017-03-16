@@ -38,24 +38,93 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_ex1_read1(self):
         """burplib_c iweb doc example 1"""
-        bs, br = brpc.c_brp_newblk(), brpc.c_brp_newblk()
-        rs, rr = brpc.c_brp_newrpt(), brpc.c_brp_newrpt()
+        mypath, itype, iunit = self.knownValues[0]
         istat = brpc.c_brp_SetOptChar("MSGLVL", "FATAL" )
-        for mypath, itype, iunit in self.knownValues:
-            istat = brpc.c_brp_open(iunit, self.getFN(mypath), "r")
-            print("enreg {}".format(istat))
-            brpc.RPT_SetHANDLE(rs,0)
-            while brpc.c_brp_findrpt(iunit, rs) >= 0:
-                if brpc.c_brp_getrpt(iunit, brpc.RPT_HANDLE(rs), rr) >= 0:
-                    print("stnid = {}".format(brpc.RPT_STNID(rr)))
-                    brpc.BLK_SetBKNO(bs, 0)
-                    while brpc.c_brp_findblk(bs, rr) >= 0:
-                        if brpc.c_brp_getblk(brpc.BLK_BKNO(bs), br, rr) >= 0:
-                            print("block btyp = {}".format(brpc.BLK_BTYP(br)))
-            istat = brpc.c_brp_close(iunit)
-            ## self.assertEqual(funit, itype,
-            ##                  mypath+':'+repr(funit)+' != '+repr(itype))
-        brpc.brpc_free(bs, br, rs, rr)
+        istat = brpc.c_brp_open(iunit, self.getFN(mypath), "r")
+        print("enreg {}".format(istat))
+        bs = brpc.c_brp_newblk()
+        br = brpc.c_brp_newblk()
+        rs = brpc.c_brp_newrpt()
+        rr = brpc.c_brp_newrpt()
+        brpc.RPT_SetHANDLE(rs,0)
+        while brpc.c_brp_findrpt(iunit, rs) >= 0:
+            if brpc.c_brp_getrpt(iunit, brpc.RPT_HANDLE(rs), rr) >= 0:
+                print("stnid = {}".format(brpc.RPT_STNID(rr)))
+                brpc.BLK_SetBKNO(bs, 0)
+                while brpc.c_brp_findblk(bs, rr) >= 0:
+                    if brpc.c_brp_getblk(brpc.BLK_BKNO(bs), br, rr) >= 0:
+                        print("block btyp = {}".format(brpc.BLK_BTYP(br)))
+        istat = brpc.c_brp_close(iunit)
+        brpc.c_brp_freeblk(bs)
+        brpc.c_brp_freeblk(br)
+        brpc.c_brp_freerpt(rs)
+        brpc.c_brp_freerpt(rr)
+
+
+    def test_ex1_read1_b(self):
+        """burplib_c iweb doc example 1"""
+        mypath = self.knownValues[0][0]
+        brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        bfile = brpc.BURP_FILE(self.getFN(mypath))
+        print("enreg {}".format(len(bfile)))
+        rs, rr, br = 0, None, None
+        while rs is not None:
+            rs = brpc.brp_findrpt(bfile.funit, rs)
+            if not rs: break
+            rr = brpc.brp_getrpt(bfile.funit, rs.handle, rr)
+            print("stnid = {}".format(rr.stnid))
+            bs = 0
+            while bs is not None:
+                bs = brpc.brp_findblk(bs, rr)
+                if not bs: break
+                br = brpc.brp_getblk(bs.bkno, br, rr)
+                print("block btyp = {}".format(br.btyp))
+        del bfile
+
+
+    def test_ex1_read1_c(self):
+        """burplib_c iweb doc example 1"""
+        mypath = self.knownValues[0][0]
+        brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        bfile = brpc.BURP_FILE(self.getFN(mypath))
+        print("enreg {}".format(len(bfile)))
+        rs = brpc.BURP_RPT_PTR()
+        rs.handle, rr, br = 0, None, None
+        while True:
+            rr = bfile.getrpt(rs, rr)
+            if not rr: break
+            rs.handle = rr.handle
+            print("stnid = {}".format(rr.stnid))
+            ## bkno = 0
+            ## while True:
+            for bkno in range(rr.nblk):
+                br = rr.getblk(bkno, rr, br)
+                if not br: break
+                ## bkno = br.bkno
+                print("block btyp = {}".format(br.btyp))
+        del bfile
+
+       
+    def test_misc(self):
+        return
+        a = brpc.BURP_RPT_PTR()
+        print(a)
+        a.handle = 1
+        print(a)
+        a['stnid'] = '12334567'
+        print(a)
+        print '---'
+        a = a.get_ptr()
+        print(a)
+        print(a[0])
+        print '---'
+        a = brpc.BURP_BLK_PTR()
+        print(a)
+        print '---'
+        a = a.get_ptr()
+        print(a)
+        print(a[0])
+        return
 
 
     def test_ex2_readburp(self):
@@ -108,7 +177,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
             istat = brpc.c_brp_close(iunit)
             ## self.assertEqual(funit, itype,
             ##                  mypath+':'+repr(funit)+' != '+repr(itype))
-        brpc.brpc_free(bs, br, rs, rr)
+        brpc.brp_free(bs, br, rs, rr)
 
 if __name__ == "__main__":
     unittest.main()
