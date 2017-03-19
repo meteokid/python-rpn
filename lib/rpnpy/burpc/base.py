@@ -111,24 +111,28 @@ class BURP_RPT_PTR(object):
     def __getattr__(self, name):
         if name in self.__class__.__attrlist:
             #TODO: special case for arrays
-            return getattr(self.__ptr[0], name)
+            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
         else:
-            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
-            return super(self.__class__, self).__getattr__(name)
+            raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
+            ## return super(self.__class__, self).__getattr__(name)
+        
 
     def __setattr__(self, name, value):
         if name == 'stnid':
             _bp.c_brp_setstnid(self.__ptr, value)
         elif name in self.__class__.__attrlist:
             #TODO: special case for arrays
-            return setattr(self.__ptr[0], name, value)
+            return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
         else:
             return super(self.__class__, self).__setattr__(name, value)
+            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
     def __getitem__(self, name):
+        #TODO: should getitem access the ith block?
         return self.__getattr__(name)
     
     def __setitem__(self, name, value):
+        #TODO: should setitem set the ith block?
         return self.__setattr__(name, value)
 
     #TODO: def __delattr__(self, name):
@@ -171,6 +175,8 @@ class BURP_BLK_PTR(object):
         TODO:
     """    
     __attrlist = ()
+    __attrlist_np_1d = ()
+    __attrlist_np_3d = ()
     
     def __init__(self, blk=None):
         ## self.__ptr = _bp.c_brp_newblk()
@@ -188,7 +194,10 @@ class BURP_BLK_PTR(object):
             raise TypeError("Type not supported for blk: "+str(type(blk)))
         if len(self.__class__.__attrlist) == 0:
             self.__class__.__attrlist = [v[0] for v in self.__ptr[0]._fields_]
-
+            self.__class__.__attrlist_np_1d = ["lstele", "dlstele"]
+            self.__class__.__attrlist_np_3d = ["tblval", "rval", "drval", "charval"]
+        self.reset_arrays()
+                    
     #TODO: __enter__, __exit__ to use with statement
 
     def __del__(self):
@@ -199,24 +208,51 @@ class BURP_BLK_PTR(object):
         return self.__class__.__name__+'('+ repr(self.to_dict())+')'
         
     def __getattr__(self, name):
-        if name in self.__class__.__attrlist:
-            #TODO: special case for arrays
-            return getattr(self.__ptr[0], name)
+        ## print 'getattr:', name
+        if name in self.__class__.__attrlist_np_1d:
+            if self.__arr[name] is None:
+                v = getattr(self.__ptr[0], name)
+                self.__arr[name] = _np.ctypeslib.as_array(v, (self.nele,))
+            return self.__arr[name]
+        elif name in self.__class__.__attrlist_np_3d:
+            if self.__arr[name] is None:
+                v = getattr(self.__ptr[0], name)
+                ## self.__arr[name] = _np.ctypeslib.as_array(v,
+                ##                         (self.nele, self.nval, self.nt)) #TODO: fortran order?
+                ## self.__arr[name].flags['F_CONTIGUOUS'] = True
+                ## self.__arr[name] = _np.asfortranarray(_np.ctypeslib.as_array(v,
+                ##                         (self.nele, self.nval, self.nt)))
+            ##     self.__arr[name] = _np.asfortranarray(_np.ctypeslib.as_array(v,
+            ##                             (self.nt, self.nval, self.nele)))
+            ## return self.__arr[name]
+                self.__arr[name] = _np.ctypeslib.as_array(v,
+                                        (self.nt, self.nval, self.nele)) #TODO: fix annoying indexd reversal
+            return self.__arr[name]
+            ## if self.__arr[name] is None:
+            ##     self.__arr[name] = numpy.ctypeslib.as_array(
+            ##         getattr(self.__ptr[0], 'np_'+name),
+            ##         (self.nele,))
+            return self.__arr[name]
+        elif name in self.__class__.__attrlist:
+            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
         else:
-            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
-            return super(self.__class__, self).__getattr__(name)
+            raise AttributeError(self.__class__.__name__+" 0object has not attribute '"+name+"'")
 
     def __setattr__(self, name, value):
+        ## print 'setattr:', name
         if name in self.__class__.__attrlist:
             #TODO: special case for arrays
-            return setattr(self.__ptr[0], name, value)
+            return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
         else:
             return super(self.__class__, self).__setattr__(name, value)
+            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
     def __getitem__(self, name):
+        #TODO: should getitem access the ith element?
         return self.__getattr__(name)
     
     def __setitem__(self, name, value):
+        #TODO: should setitem set the ith element?
         return self.__setattr__(name, value)
 
     #TODO: def __delattr__(self, name):
@@ -227,6 +263,17 @@ class BURP_BLK_PTR(object):
     #TODO: def __isub__(self, other):
     #TODO: def __iadd__(self, nhours):
     #TODO: def update(mydict):
+
+    def reset_arrays(self):
+        ## print "reset array"
+        self.__arr = {
+            "lstele"  : None,
+            "dlstele" : None,
+            "tblval"  : None,
+            "rval"    : None,
+            "drval"   : None,
+            "charval" : None
+            }
 
     def get_ptr(self):
         return self.__ptr  #TODO: should it be a copy?
@@ -341,7 +388,9 @@ def brp_getblk(bkno, blk, rpt):
     if not isinstance(rpt, BURP_RPT_PTR):
         rpt = BURP_RPT_PTR(rpt)
     if not isinstance(blk, BURP_BLK_PTR):
-        blk = BURP_BLK_PTR(blk)    
+        blk = BURP_BLK_PTR(blk)
+    else:
+        blk.reset_arrays()
     if _bp.c_brp_getblk(bkno, blk.get_ptr(), rpt.get_ptr()) < 0:
         raise BRUPCError('Problem in c_brp_getblk')
     return blk

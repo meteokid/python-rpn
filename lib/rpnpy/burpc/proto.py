@@ -399,8 +399,19 @@ c_brp_freerpt = libburpc.brp_freerpt
 ##  * reinitializers
 ##  */
 ## extern  void       brp_clrblk( BURP_BLK  *blk );
+libburpc.brp_clrblk.argtypes = (_ct.POINTER(BURP_BLK), )
+libburpc.brp_clrblk.restype = None
+c_brp_clrblk = libburpc.brp_clrblk
+
 ## extern  void       brp_clrblkv(BURP_BLK  *bblk, float val);
+libburpc.brp_clrblkv.argtypes = (_ct.POINTER(BURP_BLK), _ct.c_int)
+libburpc.brp_clrblkv.restype = None
+c_brp_clrblkv = libburpc.brp_clrblkv
+
 ## extern  void       brp_clrrpt( BURP_RPT *rpt );
+libburpc.brp_clrrpt.argtypes = (_ct.POINTER(BURP_RPT), )
+libburpc.brp_clrrpt.restype = None
+c_brp_clrrpt = libburpc.brp_clrrpt
 
 
 ## /* reset blk and rpt headers to default as initialised

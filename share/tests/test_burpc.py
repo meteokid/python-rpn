@@ -124,6 +124,28 @@ class RpnPyBurpc(unittest.TestCase):
         a = a.get_ptr()
         print(a)
         print(a[0])
+                ## print '-----0'
+                ## print br.dlstele[0], br.dlstele[1]
+                ## print brpc.BLK_DLSTELE(br.get_ptr(),0), brpc.BLK_DLSTELE(br.get_ptr(),1)
+                ## print '-----1'
+                ## br.dlstele[0] = 999
+                ## print br.dlstele[0], br.dlstele[1]
+                ## print brpc.BLK_DLSTELE(br.get_ptr(),0), brpc.BLK_DLSTELE(br.get_ptr(),1)
+                ## print '-----2'
+                ## brpc.BLK_SetDLSTELE(br.get_ptr(),0,998)
+                ## print br.dlstele[0], br.dlstele[1]
+                ## print brpc.BLK_DLSTELE(br.get_ptr(),0), brpc.BLK_DLSTELE(br.get_ptr(),1)
+                ## print '-----3'
+                ## print rr.idtype, rr.stnid, brpc.RPT_IDTYP(rr.get_ptr()), brpc.RPT_STNID(rr.get_ptr())
+                ## print '-----4'
+                ## rr.idtype = 123
+                ## rr.stnid  = '1234567890'
+                ## print rr.idtype, rr.stnid, brpc.RPT_IDTYP(rr.get_ptr()), brpc.RPT_STNID(rr.get_ptr())
+                ## print '-----5'
+                ## brpc.RPT_SetIDTYP(rr.get_ptr(), 456)
+                ## brpc.RPT_SetSTNID(rr.get_ptr(), 'abcdefghij')
+                ## print rr.idtype, rr.stnid, brpc.RPT_IDTYP(rr.get_ptr()), brpc.RPT_STNID(rr.get_ptr())
+                ## sys.exit(0)
         return
 
 
@@ -178,6 +200,53 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
             ## self.assertEqual(funit, itype,
             ##                  mypath+':'+repr(funit)+' != '+repr(itype))
         brpc.brp_free(bs, br, rs, rr)
+
+
+    def test_ex2_readburp_c(self):
+        """burplib_c iweb doc example 2"""
+        mypath = self.knownValues[0][0]
+        brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        bfile = brpc.BURP_FILE(self.getFN(mypath))
+        print("Nombre Enreg = {}".format(len(bfile)))
+        rs = brpc.BURP_RPT_PTR()
+        rs.handle, rr, br = 0, None, None
+        while True:
+            rr = bfile.getrpt(rs, rr)
+            if not rr: break
+            rs.handle = rr.handle
+            print("""
+hhmm   ={:8d} flgs   ={:6d}  codtyp ={:6d}  stnids ={:9s}
+blat   ={:8d} blon   ={:6d}  dx     ={:6d}  dy     ={:6d}  stnhgt ={:6d}
+yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}
+""".format(rr.temps, rr.flgs, rr.idtype, rr.stnid,
+           rr.lati, rr.longi, rr.dx, rr.dy, rr.elev,
+           rr.date, rr.oars, rr.runn, rr.nblk, rr.drnd))
+            ## bkno = 0
+            ## while True:
+            for bkno in range(rr.nblk):
+                br = rr.getblk(bkno, rr, br)
+                if not br: break
+                ## bkno = br.bkno
+                print("""
+blkno  ={:6d}  nele   ={:6d}  nval   ={:6d}  nt     ={:6d}  bit0   ={:6d}
+bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
+""".format(br.bkno, br.nele, br.nval, br.nt, br.bit0,
+           br.bdesc, br.btyp, br.nbit, br.datyp, br.bfam))
+                for k in range(br.nt):
+                    if br.bkno != 1:
+                        print("\nobservation {}/{}".format(k+1, br.nt))
+                    mystr = "lstele ="
+                    for i in range(br.nele):
+                        mystr += "    {:0>6d}".format(_np.asscalar(br.dlstele[i]))
+                    print(mystr)
+                    for j in range(br.nval):
+                        mystr = "tblval ="
+                        for i in range(br.nele):
+                            ## mystr += "{:10d}".format(_np.asscalar(br.tblval[i,j,k]))
+                            mystr += "{:10d}".format(_np.asscalar(br.tblval[k,j,i]))
+                        print(mystr)
+
+        del bfile
 
 if __name__ == "__main__":
     unittest.main()
