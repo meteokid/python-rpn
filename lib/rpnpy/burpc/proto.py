@@ -417,14 +417,35 @@ c_brp_clrrpt = libburpc.brp_clrrpt
 ## /* reset blk and rpt headers to default as initialised
 ##  * in brp_newblk and brp_newblk
 ##  */
+
 ## extern  void       brp_resetrpthdr( BURP_RPT *rpt );
+libburpc.brp_resetrpthdr.argtypes = (_ct.POINTER(BURP_RPT), )
+libburpc.brp_resetrpthdr.restype = None
+c_brp_resetrpthdr = libburpc.brp_resetrpthdr
+
 ## extern  void       brp_resetblkhdr( BURP_BLK *blk );
+libburpc.brp_resetblkhdr.argtypes = (_ct.POINTER(BURP_BLK), )
+libburpc.brp_resetblkhdr.restype = None
+c_brp_resetblkhdr = libburpc.brp_resetblkhdr
+
 ## /*
 ##  * converters
 ##  */
+
 ## extern  int        brp_encodeblk( BURP_BLK  *blk );
+libburpc.brp_encodeblk.argtypes = (_ct.POINTER(BURP_BLK), )
+libburpc.brp_encodeblk.restype = _ct.c_int
+c_brp_encodeblk = libburpc.brp_encodeblk
+
 ## extern  int        brp_safe_convertblk( BURP_BLK  *blk, int mode );
+libburpc.brp_safe_convertblk.argtypes = (_ct.POINTER(BURP_BLK), _ct.c_int)
+libburpc.brp_safe_convertblk.restype = _ct.c_int
+c_brp_safe_convertblk = libburpc.brp_safe_convertblk
+
 ## extern  int        brp_convertblk( BURP_BLK  *blk, int mode );
+libburpc.brp_convertblk.argtypes = (_ct.POINTER(BURP_BLK), _ct.c_int)
+libburpc.brp_convertblk.restype = _ct.c_int
+c_brp_convertblk = libburpc.brp_convertblk
 
 ## /*
 ##  * find report and block before reading them
@@ -463,6 +484,7 @@ c_brp_getblk = libburpc.brp_getblk
 ##    are not available as conversion are not done. function to use when readig burp and
 ##    there is no need to work with real values
 ## */
+
 ## extern  int        brp_readblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt, int);
 libburpc.brp_readblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT), _ct.c_int)
 libburpc.brp_readblk.restype = _ct.c_int
@@ -472,39 +494,90 @@ c_brp_readblk = libburpc.brp_readblk
 ## /*
 ##  * read only header
 ##  */
+
 ## extern  int        brp_rdrpthdr(int handle, BURP_RPT *rpt);
+libburpc.brp_rdrpthdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_rdrpthdr.restype = _ct.c_int
+c_brp_rdrpthdr = libburpc.brp_rdrpthdr
+
 ## extern  int        brp_rdblkhdr(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
+libburpc.brp_rdblkhdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_rdblkhdr.restype = _ct.c_int
+c_brp_rdblkhdr = libburpc.brp_rdblkhdr
 
 ## /* prepare a report for writing */
 ## extern  int        brp_initrpthdr( int iun, BURP_RPT *rpt );
+libburpc.brp_initrpthdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_initrpthdr.restype = _ct.c_int
+c_brp_initrpthdr = libburpc.brp_initrpthdr
+
 ## /* prepare a report for writing alias of brp_initrpthdr */
 ## extern  int        brp_putrpthdr( int iun, BURP_RPT *rpt );
+libburpc.brp_putrpthdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_putrpthdr.restype = _ct.c_int
+c_brp_putrpthdr = libburpc.brp_putrpthdr
+
 ## /* add new blocks into a report */
 ## extern  int        brp_putblk( BURP_RPT *rpt, BURP_BLK *blk );
+libburpc.brp_putblk.argtypes = (_ct.POINTER(BURP_RPT), _ct.POINTER(BURP_BLK))
+libburpc.brp_putblk.restype = _ct.c_int
+c_brp_putblk = libburpc.brp_putblk
+
 ## /* write out to a file */
 ## extern  int        brp_writerpt( int iun, BURP_RPT *rpt, int where );
+libburpc.brp_writerpt.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT), _ct.c_int)
+libburpc.brp_writerpt.restype = _ct.c_int
+c_brp_writerpt = libburpc.brp_writerpt
+
 ## /* modify only the header of a report */
 ## extern  int        brp_updrpthdr( int iun, BURP_RPT *rpt );
+libburpc.brp_updrpthdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
+libburpc.brp_updrpthdr.restype = _ct.c_int
+c_brp_updrpthdr = libburpc.brp_updrpthdr
 
 ## /*
 ##  * return the floating point constant used for missing values
 ##  */
 ## extern  float      brp_msngval(void);
+## libburpc.brp_msngval.argtypes = None
+libburpc.brp_msngval.restype = _ct.c_float
+c_brp_msngval = libburpc.brp_msngval
 
 ## /*
 ##  * utilities
 ##  */
+
 ## /*  copy rpt header */
 ## extern void        brp_copyrpthdr( BURP_RPT * dest, const BURP_RPT *source);
+libburpc.brp_copyrpthdr.argtypes = (_ct.POINTER(BURP_RPT), _ct.POINTER(BURP_RPT))
+c_brp_copyrpthdr = libburpc.brp_copyrpthdr
+
 ## /*  copy the whole rpt  */
 ## extern void        brp_copyrpt( BURP_RPT * dest, const BURP_RPT *source);
+libburpc.brp_copyrpt.argtypes = (_ct.POINTER(BURP_RPT), _ct.POINTER(BURP_RPT))
+c_brp_copyrpt = libburpc.brp_copyrpt
+
 ## /*  resize the  rpt with newsize to add blocks  */
 ## extern void        brp_resizerpt( BURP_RPT * dest, int NewSize);
+libburpc.brp_resizerpt.argtypes = (_ct.POINTER(BURP_RPT), _ct.c_int)
+c_brp_resizerpt = libburpc.brp_resizerpt
+
 ## /* duplicate block */
 ## extern void        brp_copyblk( BURP_BLK *dest, const BURP_BLK *source);
+libburpc.brp_copyblk.argtypes = (_ct.POINTER(BURP_BLK), _ct.POINTER(BURP_BLK))
+c_brp_copyblk = libburpc.brp_copyblk
+
 ## /* resize  block */
 ## extern void        brp_resizeblk( BURP_BLK *source,int NEW_ele, int NEW_nval, int NEW_nt);
+libburpc.brp_resizeblk.argtypes = (_ct.POINTER(BURP_BLK),
+                                   _ct.c_int, _ct.c_int, _ct.c_int)
+c_brp_resizeblk = libburpc.brp_resizeblk
+
 ## extern void        brp_resizeblk_v2( BURP_BLK **source ,int nele, int nval, int nt);
+#TODO: brp_resizeblk_v2
+## libburpc.brp_resizeblk_v2.argtypes = (_ct.POINTER(_ct.POINTER(BURP_BLK)),
+##                                       _ct.c_int, _ct.c_int, _ct.c_int)
+## c_brp_resizeblk_v2 = libburpc.brp_resizeblk_v2
 
 ## /*
 ##  * Opening files
@@ -525,7 +598,14 @@ c_brp_close = libburpc.brp_close
 ##  */
 
 ## extern  int        brp_delblk(BURP_RPT *rpt, const BURP_BLK * blk);
+libburpc.brp_delblk.argtypes = (_ct.POINTER(BURP_RPT), _ct.POINTER(BURP_BLK))
+libburpc.brp_delblk.restype = _ct.c_int
+c_brp_delblk = libburpc.brp_delblk
+
 ## extern  int        brp_delrpt(BURP_RPT *rpt);
+libburpc.brp_delrpt.argtypes = (_ct.POINTER(BURP_RPT), )
+libburpc.brp_delrpt.restype = _ct.c_int
+c_brp_delrpt = libburpc.brp_delrpt
 
 ## /*
 ##  * burp rpn option functions
@@ -549,6 +629,7 @@ c_brp_msngval = libburpc.brp_msngval
 ## /*
 ##  * burp rpn functions
 ##  */
+#Note: these are avail in librmn... should we add them here too? Will there be an SQL version for these too?
 ## extern  int        c_mrfmxl ( int iun );
 ## extern  int        c_mrfnbr ( int iun );
 ## extern  int        c_mrbdel ( int *buf, int bkno);
