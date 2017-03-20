@@ -208,6 +208,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 
     def test_ex2_readburp_c(self):
         """burplib_c iweb doc example 2"""
+        return
         mypath = self.knownValues[0][0]
         brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         bfile = brpc.BURP_FILE(self.getFN(mypath))
@@ -251,6 +252,95 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
                         print(mystr)
 
         del bfile
+
+
+    def test_ex3_obs(self):
+        """burplib_c iweb doc example 3"""
+        return
+        mypath, itype, iunit = self.knownValues[0]
+        istat = brpc.c_brp_SetOptChar("MSGLVL", "FATAL" )
+        istat = brpc.c_brp_open(iunit, self.getFN(mypath), "r")
+        print("Nombre Enreg = {}".format(istat))
+        bs, br = brpc.c_brp_newblk(), brpc.c_brp_newblk()
+        rs, rr = brpc.c_brp_newrpt(), brpc.c_brp_newrpt()
+        counters = {} #TODO: preserve order? then store info in list, index in dict
+        while brpc.c_brp_findrpt(iunit, rs) >= 0:
+            if brpc.c_brp_getrpt(iunit, brpc.RPT_HANDLE(rs), rr) < 0:
+                continue
+            if brpc.RPT_STNID(rr)[0] != '^':
+                try:
+                    counters[brpc.RPT_STNID(rr)] += 1
+                except:
+                    counters[brpc.RPT_STNID(rr)] = 1
+                continue
+
+            brpc.BLK_SetBKNO(bs, 0)
+            trouve = False
+            while brpc.c_brp_findblk(bs, rr) >= 0:
+                if brpc.c_brp_getblk(brpc.BLK_BKNO(bs), br, rr) < 0:
+                    continue
+                if (brpc.BLK_BKNAT(br) & 3) == 2:
+                    try:
+                        counters[brpc.RPT_STNID(rr)] += brpc.BLK_NT(br)
+                    except:
+                        counters[brpc.RPT_STNID(rr)] = brpc.BLK_NT(br)
+                    trouve = True
+                    break
+            if trouve:
+                counters[brpc.RPT_STNID(rr)] += 1
+        istat = brpc.c_brp_close(iunit)
+        brpc.brp_free(bs, br, rs, rr)
+        i, total =  0, 0
+        for k in counters.keys():
+            print("{})\t{}\t{}".format(i,k,counters[k]))
+            i += 1
+            total += counters[k]
+        print("-----\t--------\t--------")
+        print("     \tTotal   \t{}".format(total))
+
+
+    def test_ex3_obs_c(self):
+        """burplib_c iweb doc example 3"""
+        mypath, itype, iunit = self.knownValues[0]
+        istat = brpc.c_brp_SetOptChar("MSGLVL", "FATAL" )
+        bfile = brpc.BURP_FILE(self.getFN(mypath))
+        print("Nombre Enreg = {}".format(len(bfile)))
+        rs = brpc.BURP_RPT_PTR()
+        rr, br = None, None
+        counters = {} #TODO: preserve order? then store info in list, index in dict
+        while True:
+            rr = bfile.getrpt(rs, rr)
+            if not rr: break
+            rs.handle = rr.handle
+            if rr.stnid[0] != '^':
+                try:
+                    counters[rr.stnid] += 1
+                except:
+                    counters[rr.stnid] = 1
+                continue
+            trouve = False
+            for bkno in range(rr.nblk):
+                br = rr.getblk(bkno, rr, br)
+                if not br: break
+                    
+                if (br.bknat & 3) == 2:
+                    try:
+                        counters[rr.stnid] += br.nt
+                    except:
+                        counters[rr.stnid] = br.nt
+                    trouve = True
+                    break
+            if trouve:
+                counters[rr.stnid] += 1
+        del bfile
+        i, total =  0, 0
+        for k in counters.keys():
+            print("{})\t{}\t{}".format(i,k,counters[k]))
+            i += 1
+            total += counters[k]
+        print("-----\t--------\t--------")
+        print("     \tTotal   \t{}".format(total))
+
 
 if __name__ == "__main__":
     unittest.main()
