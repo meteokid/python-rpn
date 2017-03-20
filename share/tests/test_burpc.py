@@ -38,6 +38,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_ex1_read1(self):
         """burplib_c iweb doc example 1"""
+        return
         mypath, itype, iunit = self.knownValues[0]
         istat = brpc.c_brp_SetOptChar("MSGLVL", "FATAL" )
         istat = brpc.c_brp_open(iunit, self.getFN(mypath), "r")
@@ -63,6 +64,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_ex1_read1_b(self):
         """burplib_c iweb doc example 1"""
+        return
         mypath = self.knownValues[0][0]
         brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         bfile = brpc.BURP_FILE(self.getFN(mypath))
@@ -84,6 +86,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_ex1_read1_c(self):
         """burplib_c iweb doc example 1"""
+        return
         mypath = self.knownValues[0][0]
         brpc.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         bfile = brpc.BURP_FILE(self.getFN(mypath))
@@ -151,6 +154,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_ex2_readburp(self):
         """burplib_c iweb doc example 2"""
+        return
         bs, br = brpc.c_brp_newblk(), brpc.c_brp_newblk()
         rs, rr = brpc.c_brp_newrpt(), brpc.c_brp_newrpt()
         istat = brpc.c_brp_SetOptChar("MSGLVL", "FATAL" )
@@ -243,7 +247,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
                         mystr = "tblval ="
                         for i in range(br.nele):
                             ## mystr += "{:10d}".format(_np.asscalar(br.tblval[i,j,k]))
-                            mystr += "{:10d}".format(_np.asscalar(br.tblval[k,j,i]))
+                            mystr += "{:10d}".format(_np.asscalar(br.tblval[i,j,k]))
                         print(mystr)
 
         del bfile

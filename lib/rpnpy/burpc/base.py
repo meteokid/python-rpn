@@ -36,7 +36,7 @@ _filemodelist_inv = dict([
     (v[1], k) for k, v in _filemodelist.items()
     ])
 
-
+#TODO: name convention BurpFile? BURPfile?
 class BURP_FILE(object):
     """
     """
@@ -60,6 +60,7 @@ class BURP_FILE(object):
             istat = _bp.c_brp_close(self.funit)
         self.funit = None
 
+    #TODO: name convention get_rpt
     def getrpt(self, search=None, rpt=None):
         """Find a report and get its meta + data"""
         search = brp_findrpt(self.funit, search)
@@ -68,6 +69,7 @@ class BURP_FILE(object):
         return None
 
         
+#TODO: name convention BurpRpt? BURPrpt
 class BURP_RPT_PTR(object):
     """
     Python Class equivalenet of the burp_c's BURP_RPT C structure to hold
@@ -150,6 +152,7 @@ class BURP_RPT_PTR(object):
     def to_dict(self):
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
+    #TODO: name convention get_blk
     def getblk(self, search=None, rpt=None, blk=None):
         """Find a block and get its meta + data"""
         search = brp_findblk(search, rpt)
@@ -217,35 +220,21 @@ class BURP_BLK_PTR(object):
         elif name in self.__class__.__attrlist_np_3d:
             if self.__arr[name] is None:
                 v = getattr(self.__ptr[0], name)
-                ## self.__arr[name] = _np.ctypeslib.as_array(v,
-                ##                         (self.nele, self.nval, self.nt)) #TODO: fortran order?
-                ## self.__arr[name].flags['F_CONTIGUOUS'] = True
-                ## self.__arr[name] = _np.asfortranarray(_np.ctypeslib.as_array(v,
-                ##                         (self.nele, self.nval, self.nt)))
-            ##     self.__arr[name] = _np.asfortranarray(_np.ctypeslib.as_array(v,
-            ##                             (self.nt, self.nval, self.nele)))
-            ## return self.__arr[name]
                 self.__arr[name] = _np.ctypeslib.as_array(v,
-                                        (self.nt, self.nval, self.nele)) #TODO: fix annoying indexd reversal
-            return self.__arr[name]
-            ## if self.__arr[name] is None:
-            ##     self.__arr[name] = numpy.ctypeslib.as_array(
-            ##         getattr(self.__ptr[0], 'np_'+name),
-            ##         (self.nele,))
+                                        (self.nt, self.nval, self.nele)).T
+                ## self.__arr[name].flags['F_CONTIGUOUS'] = True
             return self.__arr[name]
         elif name in self.__class__.__attrlist:
             return getattr(self.__ptr[0], name)  #TODO: use proto fn?
         else:
-            raise AttributeError(self.__class__.__name__+" 0object has not attribute '"+name+"'")
+            raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
     def __setattr__(self, name, value):
         ## print 'setattr:', name
         if name in self.__class__.__attrlist:
-            #TODO: special case for arrays
             return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
         else:
             return super(self.__class__, self).__setattr__(name, value)
-            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
     def __getitem__(self, name):
         #TODO: should getitem access the ith element?
