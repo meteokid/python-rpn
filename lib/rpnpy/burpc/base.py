@@ -19,8 +19,8 @@ import ctypes as _ct
 import numpy  as _np
 import numpy.ctypeslib as _npc
 from rpnpy.burpc import proto as _bp
-from rpnpy.burpc  import const as _bc
-from rpnpy.burpc  import BURPCError
+from rpnpy.burpc import const as _bc
+from rpnpy.burpc import BURPCError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
@@ -40,13 +40,22 @@ _filemodelist_inv = dict([
 class BURP_FILE(object):
     """
     """
-    def __init__(self,filename, filemode='r'):
+    def __init__(self,filename, filemode='r', funit=None):
         self.filename = filename
         self.filemode = filemode
-        self.funit, self.nrep = brp_open(self.filename, self.filemode, getnbr=True)
+        self.__search = BURP_RPT_PTR()
+        self.__rpt    = BURP_RPT_PTR()
+        self.funit, self.nrep = brp_open(self.filename, self.filemode, funit=funit, getnbr=True)
 
     def __del__(self):
-        self._close()
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+        
 
     def __repr__(self):
         return "{}({}, {})".format(self.__class__.__name__, self.filename, self.filemode)
@@ -55,7 +64,39 @@ class BURP_FILE(object):
         ## return _rmn.mrfnbr(self.funit)  #TODO: only use libburp_c API
         return self.nrep
 
-    def _close(self):
+    def __iter__(self):
+        return self
+
+    def __next__(self): # Python 3
+        self.__search = brp_findrpt(self.funit, self.__search)
+        if not self.__search:
+            self.__search = BURP_RPT_PTR()
+            raise StopIteration
+        ## return self.__search
+        ## return brp_getrpt(self.funit, self.__search.handle, self.__rpt)
+        return brp_getrpt(self.funit, self.__search.handle)
+
+    def next(self): # Python 2:
+        return self.__next__()
+
+        
+    #TODO: __delitem__?
+
+    ## def __getitem__(self, name):
+    ##     if isinstance(name, (int, long)):
+    ##         #TODO return ith report
+    ##     elif isinstance(name, BURP_RPT_PTR):
+    ##         #TODO return report matching search
+    ##     elif isinstance(name, dict):
+    ##         #TODO: create BURP_RPT_PTR with dict
+    ##         #TODO return report matching search
+    ##     else:
+    ##         raise KeyError("No Such Key: "+repr(name))
+ 
+    ## def __setitem__(self, name, value):
+    ##     #TODO: should setitem set the ith block?
+        
+    def close(self):
         if self.funit:
             istat = _bp.c_brp_close(self.funit)
         self.funit = None
@@ -85,19 +126,19 @@ class BURP_RPT_PTR(object):
                   "drnd", "date", "oars", "runn", "nblk", "lngr")
     
     def __init__(self, rpt=None):
+        self.__bkno = 0
+        self.__blk  = BURP_BLK_PTR()
         if rpt is None:
             ## print 'NEW:',self.__class__.__name__
             self.__ptr = _bp.c_brp_newrpt()            
         elif isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
             ## print 'NEW:',self.__class__.__name__,'ptr'
             self.__ptr = rpt
-        ## if isinstance(rpt, BURP_RPT_PTR):  #TODO: copy fn instead?
-        ##     print 'NEW:',self.__class__.__name__,'alias'
-        ##     self.__ptr = rpt.get_ptr()
-        ## elif isinstance(rpt, dict):  #TODO:
         else:
-            raise TypeError("Type not supported for rpt: "+str(type(rpt)))
-    
+            ## print 'NEW:',self.__class__.__name__,'update'
+            self.__ptr = _bp.c_brp_newrpt()            
+            self.update(rpt)
+            
     def __del__(self):
         ## print 'DEL:',self.__class__.__name__
         _bp.c_brp_freerpt(self.__ptr) #TODO
@@ -109,34 +150,61 @@ class BURP_RPT_PTR(object):
     ##     if self.nblk:
     ##         return self.nblk
     ##     return 0
-    
+
+    def __iter__(self):
+        return self
+
+    def __next__(self): # Python 3
+        if self.__bkno >= self.nblk:
+            self.__bkno = 0
+            raise StopIteration
+        ## return brp_getblk(self.__bkno, self.__blk, self)
+        self.__bkno += 1
+        ## self.__blk = brp_getblk(self.__bkno, None, self)
+        self.__blk = brp_getblk(self.__bkno, self.__blk, self)
+        return self.__blk
+
+    def next(self): # Python 2:
+        return self.__next__()
+
     def __getattr__(self, name):
         if name in self.__class__.__attrlist:
-            #TODO: special case for arrays
             return getattr(self.__ptr[0], name)  #TODO: use proto fn?
+        #TODO: decode other items on the fly
         else:
             raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
             ## return super(self.__class__, self).__getattr__(name)
         
-
     def __setattr__(self, name, value):
         if name == 'stnid':
             _bp.c_brp_setstnid(self.__ptr, value)
         elif name in self.__class__.__attrlist:
-            #TODO: special case for arrays
             return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
+        #TODO: encode other items on the fly
         else:
             return super(self.__class__, self).__setattr__(name, value)
             ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
-
+    
     def __getitem__(self, name):
-        #TODO: should getitem access the ith block?
-        return self.__getattr__(name)
+        if name in self.__class__.__attrlist:
+            return self.__getattr__(name)
+        elif isinstance(name, (int, long)):
+            if name < 1 or name > self.nblk:
+                raise IndexError('Index out of range: 1:'+str(self.nblk))
+            return brp_getblk(name, self.__blk, self) #TODO: self.getblk()?
+        ## elif isinstance(name, BURP_RPT_PTR):
+        ##     #TODO return report matching search
+        ## elif isinstance(name, dict):
+        ##     #TODO: create BURP_RPT_PTR with dict
+        ##     #TODO return report matching search
+        else:
+            raise KeyError("No Such Key: "+repr(name))
     
     def __setitem__(self, name, value):
         #TODO: should setitem set the ith block?
         return self.__setattr__(name, value)
 
+    #TODO: def __delitem__(self, name):
     #TODO: def __delattr__(self, name):
     #TODO: def __coerce__(self, other):
     #TODO: def __cmp__(self, other):
@@ -144,26 +212,33 @@ class BURP_RPT_PTR(object):
     #TODO: def __add__(self, nhours):
     #TODO: def __isub__(self, other):
     #TODO: def __iadd__(self, nhours):
-    #TODO: def update(mydict):
-    
+    #TODO: def update(self, mydict_or_BURPRPT):
+
+    def update(self, rpt):
+        """ """
+        if not isinstance(rpt, (dict, BURP_RPT_PTR)):
+            raise TypeError("Type not supported for rpt: "+str(type(rpt)))
+        for k in self.__class__.__attrlist:
+            try:
+                self.__setitem__(k, rpt[k])
+            except:
+                pass
+        
     def get_ptr(self):
-        return self.__ptr  #TODO: should it be a copy?
+        """ """
+        return self.__ptr
     
     def to_dict(self):
+        """ """
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
     #TODO: name convention get_blk
-    def getblk(self, search=None, rpt=None, blk=None):
+    def getblk(self, search=None, blk=None):
         """Find a block and get its meta + data"""
-        search = brp_findblk(search, rpt)
-        bkno = search.bkno
-        ## if isinstance(search, (int, long)):
-        ##     bkno = search
-        ## else:
-        ##     search = brp_findblk(search, rpt)
-        ##     bkno = search.bkno
+        search = brp_findblk(search, self)
         if search:
-            return brp_getblk(bkno, blk=blk, rpt=rpt)
+            bkno = search.bkno
+            return brp_getblk(bkno, blk=blk, rpt=self)
         return None
 
 
@@ -177,35 +252,38 @@ class BURP_BLK_PTR(object):
     Attibutes:
         TODO:
     """    
-    __attrlist = ()
-    __attrlist_np_1d = ()
-    __attrlist_np_3d = ()
+    __attrlist = ("bkno", "nele", "nval", "nt", "bfam", "bdesc", "btyp",
+                  "bknat", "bktyp", "bkstp", "nbit", "bit0", "datyp",
+                  "store_type",
+                  ## "lstele", "dlstele", "tblval", "rval","drval", "charval",
+                  "max_nval", "max_nele", "max_nt", "max_len")
+    __attrlist_np_1d = ("lstele", "dlstele")
+    __attrlist_np_3d = ("tblval", "rval", "drval", "charval")
     
     def __init__(self, blk=None):
-        ## self.__ptr = _bp.c_brp_newblk()
+        to_update = False
         if blk is None:
             ## print 'NEW:',self.__class__.__name__
             self.__ptr = _bp.c_brp_newblk()
         elif isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
             ## print 'NEW:',self.__class__.__name__,'ptr'
             self.__ptr = blk
-        ## if isinstance(blk, BURP_BLK_PTR):  #TODO: copy fn instead?
-        ##     print 'NEW:',self.__class__.__name__,'alias'
-        ##     self.__ptr = blk.get_ptr()
-        ## elif isinstance(blk, dict): #TODO
         else:
-            raise TypeError("Type not supported for blk: "+str(type(blk)))
-        if len(self.__class__.__attrlist) == 0:
-            self.__class__.__attrlist = [v[0] for v in self.__ptr[0]._fields_]
-            self.__class__.__attrlist_np_1d = ["lstele", "dlstele"]
-            self.__class__.__attrlist_np_3d = ["tblval", "rval", "drval", "charval"]
+            ## print 'NEW:',self.__class__.__name__,'update'
+            self.__ptr = _bp.c_brp_newblk()
+            to_update = True
+        ## if len(self.__class__.__attrlist) == 0:
+        ##     self.__class__.__attrlist = [v[0] for v in self.__ptr[0]._fields_]
+        ##     self.__class__.__attrlist_np_1d = ["lstele", "dlstele"]
+        ##     self.__class__.__attrlist_np_3d = ["tblval", "rval", "drval", "charval"]
+        if to_update:
+            self.update(blk)
         self.reset_arrays()
-                    
-    #TODO: __enter__, __exit__ to use with statement
 
+                    
     def __del__(self):
         ## print 'DEL:',self.__class__.__name__
-        _bp.c_brp_freeblk(self.__ptr) #TODO
+        _bp.c_brp_freeblk(self.__ptr)
 
     def __repr__(self):
         return self.__class__.__name__+'('+ repr(self.to_dict())+')'
@@ -226,6 +304,7 @@ class BURP_BLK_PTR(object):
             return self.__arr[name]
         elif name in self.__class__.__attrlist:
             return getattr(self.__ptr[0], name)  #TODO: use proto fn?
+        #TODO: decode other items on the fly
         else:
             raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
@@ -233,17 +312,25 @@ class BURP_BLK_PTR(object):
         ## print 'setattr:', name
         if name in self.__class__.__attrlist:
             return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
+        #TODO: encode other items on the fly
         else:
             return super(self.__class__, self).__setattr__(name, value)
 
     def __getitem__(self, name):
         #TODO: should getitem access the ith element?
-        return self.__getattr__(name)
-    
+        try:
+            return self.__getattr__(name)
+        except:
+            raise KeyError("No Such Key: "+repr(name))
+
     def __setitem__(self, name, value):
         #TODO: should setitem set the ith element?
-        return self.__setattr__(name, value)
+        if name in self.__class__.__attrlist:
+            return self.__setattr__(name, value)
+        else:
+            raise KeyError("No Such Key: "+repr(name))
 
+    #TODO: def __delitem__(self, name):
     #TODO: def __delattr__(self, name):
     #TODO: def __coerce__(self, other):
     #TODO: def __cmp__(self, other):
@@ -251,7 +338,16 @@ class BURP_BLK_PTR(object):
     #TODO: def __add__(self, nhours):
     #TODO: def __isub__(self, other):
     #TODO: def __iadd__(self, nhours):
-    #TODO: def update(mydict):
+
+    def update(self, blk):
+        """ """
+        if not isinstance(blk, (dict, BURP_BLK_PTR)):
+            raise TypeError("Type not supported for blk: "+str(type(blk)))
+        for k in self.__class__.__attrlist:
+            try:
+                self.__setitem__(k, blk[k])
+            except:
+                pass
 
     def reset_arrays(self):
         ## print "reset array"
@@ -265,18 +361,72 @@ class BURP_BLK_PTR(object):
             }
 
     def get_ptr(self):
-        return self.__ptr  #TODO: should it be a copy?
+        return self.__ptr
     
     def to_dict(self):
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
 
-    #TODO: to numpy array
         
-#TODO: desc
-brp_opt  = _rmn.mrfopt  #TODO: only use libburp_c API to be ready for burp-sql api
+def brp_opt(optName, optValue=None):
+    """
+    Set/Get BURP file options
 
-def brp_open(filename, filemode, getnbr=False):
+    brp_opt(optName, optValue)
+
+    Args:
+        optName  : name of option to be set or printed
+                   or one of these constants:
+                   BURPOP_MISSING, BURPOP_MSGLVL
+        optValue : value to be set (float or string) (optional)
+                   If not set or is None mrfopt will get the value
+                   otherwise mrfopt will set to the provided value
+                   for optName=BURPOP_MISSING:
+                      a real value for missing data
+                   for optName=BURPOP_MSGLVL, one of these constants:
+                      BURPOP_MSG_TRIVIAL,   BURPOP_MSG_INFO,  BURPOP_MSG_WARNING,
+                      BURPOP_MSG_ERROR,     BURPOP_MSG_FATAL, BURPOP_MSG_SYSTEM
+    Returns:
+        str or float, optValue
+    Raises:
+        KeyError   on unknown optName
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.burpc.all as brp
+    >>> # Restrict to the minimum the number of messages printed by librmn
+    >>> brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    'SYSTEM   '
+
+    See Also:
+        rpnpy.librmn.burp.mrfopt
+        rpnpy.librmn.burp_const
+    """
+    if not optName in (_rmn.BURPOP_MISSING, _rmn.BURPOP_MSGLVL):
+        raise KeyError("Uknown optName: {}".format(optName))
+    
+    if optValue is None:
+        if optName == _rmn.BURPOP_MISSING:
+            return _bp.c_brp_msngval() #TODO: should it be option.value?
+        else:
+            raise KeyError("Cannot get value for optName: {}".format(optName))
+    
+    if isinstance(optValue, str):
+        istat = _bp.c_brp_SetOptChar(optName, optValue)
+        if istat != 0:
+            raise BURPCError('c_brp_SetOptChar: {}={}'.format(optName,optValue))
+    elif isinstance(optValue, float):
+        istat = _bp.c_brp_SetOptFloat(optName, optValue)
+        if istat != 0:
+            raise BURPCError('c_mrfopr:{}={}'.format(optName,optValue), istat)
+    else:
+        raise TypeError("Cannot set optValue of type: {0} {1}"\
+                        .format(type(optValue), repr(optValue)))
+    return optValue
+
+
+def brp_open(filename, filemode='r', funit=None, getnbr=False):
     """
     #TODO: desc
     """
@@ -285,20 +435,39 @@ def brp_open(filename, filemode, getnbr=False):
     try:
         fstmode, brpmode = _filemodelist[filemode]
     except:
-        raise BURPCError('Unknown filemode: "{}", should be one of: {}'
+        raise ValueError('Unknown filemode: "{}", should be one of: {}'
                         .format(filemode, repr(_filemodelist.keys())))
-    ## return _rmn.burp_open(filename, filemode) #TODO: only use libburp_c API to be ready for burp-sql api
     #TODO: Check format/existence of file depending on mode as in burp_open
-    funit = _rmn.fnom(filename, fstmode)
-    _rmn.fclos(funit)  #TODO: too hacky... any way to reserve a unit w/o double open?
     if not funit:
-        raise BurpError('Problem associating a unit with the file: {0}'
-                        .format(filename))
+        try:
+            funit = _rmn.fnom(filename, fstmode)
+            _rmn.fclos(funit)  #TODO: too hacky... any way to reserve a unit w/o double open?
+        except _rmn.RMNBaseError:
+            funit = None
+    if not funit:
+        raise BURPCError('Problem associating a unit with file: {} (mode={})'
+                        .format(filename, filemode))
     nrep = _bp.c_brp_open(funit, filename, filemode)
     if getnbr:
         return (funit, nrep)
     return funit
 
+
+def brp_close(funit):
+    """
+    #TODO: desc
+    """
+    if isinstance(funit, BURP_FILE):
+         funit.close()
+    elif isinstance(funit, (long, int)):
+        istat = _bp.c_brp_close(funit)
+        if istat < 0:
+            raise BURPCError('Problem closing burp file unit: "{}"'
+                             .format(funit))
+    else:
+        raise TypeError('funit is type="{}"'.format(str(type(funit))) +
+                        ', should be an "int" or a "BURP_FILE"')
+        
 
 def brp_free(*args):
     """
@@ -325,9 +494,11 @@ def brp_free(*args):
             raise TypeError("Not Supported Type: "+str(type(x)))
 
 
-def brp_findrpt(iunit, rpt=None): #TODO: rpt are search keys, change name
+def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
     """
     """
+    if isinstance(funit, BURP_FILE):
+         funit = funit.funit
     if not rpt:
         rpt = BURP_RPT_PTR()
         rpt.handle = 0
@@ -337,17 +508,23 @@ def brp_findrpt(iunit, rpt=None): #TODO: rpt are search keys, change name
         rpt.handle = handle
     elif not isinstance(rpt, BURP_RPT_PTR):
         rpt = BURP_RPT_PTR(rpt)
-    if _bp.c_brp_findrpt(iunit, rpt.get_ptr()) >= 0:
+    if _bp.c_brp_findrpt(funit, rpt.get_ptr()) >= 0:
         return rpt
     return None
 
     
-def brp_getrpt(iunit, handle, rpt):
+def brp_getrpt(funit, handle=0, rpt=None):
     """
     """
+    if isinstance(funit, BURP_FILE):
+         funit = funit.funit
+    if isinstance(handle, BURP_RPT_PTR):
+        if not rpt:
+            rpt = handle
+        handle = handle.handle
     if not isinstance(rpt, BURP_RPT_PTR):
         rpt = BURP_RPT_PTR(rpt)
-    if _bp.c_brp_getrpt(iunit, handle, rpt.get_ptr()) < 0:
+    if _bp.c_brp_getrpt(funit, handle, rpt.get_ptr()) < 0:
         raise BRUPCError('Problem in c_brp_getrpt')
     return rpt
 
@@ -355,8 +532,10 @@ def brp_getrpt(iunit, handle, rpt):
 def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
     """
     """
-    if not isinstance(rpt, BURP_RPT_PTR):
+    if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
         rpt = BURP_RPT_PTR(rpt)
+    if not isinstance(rpt, BURP_RPT_PTR):
+        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
     if not blk:
         blk = BURP_BLK_PTR()
         blk.bkno = 0
@@ -365,17 +544,20 @@ def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
         blk = BURP_BLK_PTR()
         blk.bkno = bkno
     elif not isinstance(blk, BURP_BLK_PTR):
-        blk = BURP_BLK_PTR(blk)    
+        blk = BURP_BLK_PTR(blk)
     if _bp.c_brp_findblk(blk.get_ptr(), rpt.get_ptr()) >= 0:
         return blk
     return None
 
     
-def brp_getblk(bkno, blk, rpt):
+def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an empty report?
     """
     """
-    if not isinstance(rpt, BURP_RPT_PTR):
+    if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
         rpt = BURP_RPT_PTR(rpt)
+    if not isinstance(rpt, BURP_RPT_PTR):
+        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
+
     if not isinstance(blk, BURP_BLK_PTR):
         blk = BURP_BLK_PTR(blk)
     else:

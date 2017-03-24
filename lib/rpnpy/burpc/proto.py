@@ -338,7 +338,7 @@ def BLK_SetTBLVAL(blk,e,v,t,val):
 def BLK_SetRVAL(blk,e,v,t,val):
     blk[0].rval[e + blk[0].nele * (v + blk[0].nval * t)] = val
 def BLK_SetCVAL(blk,l,c,val):
-    blk[0].charval[ l * blk[0].nt + c] = val;
+    blk[0].charval[l * blk[0].nt + c] = val;
 def BLK_SetLSTELE(blk,i,val):
     blk[0].lstele[i] = val
 def BLK_SetDLSTELE(blk,i,val):

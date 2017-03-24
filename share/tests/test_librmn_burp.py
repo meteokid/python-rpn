@@ -68,7 +68,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         """isburp should give known result with known input"""
         for mypath, itype, iunit in self.knownValues:
             isburp = rmn.isBURP(self.getFN(mypath))
-            self.assertTrue(isburp, 'isBRUP should return Ture for '+mypath)
+            self.assertTrue(isburp, 'isBRUP should return True for '+mypath)
 
     def testfnomfclosKnownValues(self):
         """fnom fclos should give known result with known input"""
