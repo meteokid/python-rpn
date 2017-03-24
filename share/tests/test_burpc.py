@@ -92,16 +92,16 @@ class RpnPyBurpc(unittest.TestCase):
         mypath = self.getFN(mypath)
         try:
             brp.brp_open(mypath, 'w')
-            self.assertTrue(False, 'brp_open should raise BURPCError wrong permission')
-        except brp.BURPCError:
+            self.assertTrue(False, 'brp_open should raise BurpcError wrong permission')
+        except brp.BurpcError:
             pass
         
     def test_brp_open_no_such_file(self):
         """brp_open no_such_file"""
         try:
             brp.brp_open('__no_such_file__', 'r')
-            self.assertTrue(False, 'brp_open should raise BURPCError file not found')
-        except brp.BURPCError:
+            self.assertTrue(False, 'brp_open should raise BurpcError file not found')
+        except brp.BurpcError:
             pass
 
     def test_brp_open_close(self):
@@ -124,37 +124,37 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(nrec, 47544)
 
 
-    def test_brp_BURP_FILE(self):
-        """brp_BURP_FILE_open  """
+    def test_brp_BurpFile(self):
+        """brp_BurpFile_open  """
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         del bfile
-        bfile = brp.BURP_FILE(mypath, 'r')
+        bfile = brp.BurpFile(mypath, 'r')
         del bfile
-        bfile = brp.BURP_FILE(mypath, rmn.BURP_MODE_READ)
+        bfile = brp.BurpFile(mypath, rmn.BURP_MODE_READ)
         del bfile
         bfile0 = 10
-        bfile = brp.BURP_FILE(mypath, rmn.BURP_MODE_READ, funit=bfile0)
+        bfile = brp.BurpFile(mypath, rmn.BURP_MODE_READ, funit=bfile0)
         self.assertEqual(bfile.funit, bfile0)
         self.assertEqual(len(bfile), 47544)
         del bfile
 
-    def test_brp_BURP_FILE_with(self):
-        """brp_BURP_FILE_with  """
+    def test_brp_BurpFile_with(self):
+        """brp_BurpFile_with  """
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             self.assertEqual(len(bfile), 47544)
             
-    def test_brp_BURP_FILE_iter(self):
-        """brp_BURP_FILE_iter  """
+    def test_brp_BurpFile_iter(self):
+        """brp_BurpFile_iter  """
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             i = 0
             for rpt in bfile:
                 i += 1
@@ -162,7 +162,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_RPT(self):
         """brp_BURP_RPT  """
-        rpt = brp.BURP_RPT_PTR()
+        rpt = brp.BurpRpt()
         rpt.stnid = '012345678'
         self.assertEqual(rpt.stnid, '012345678')
         del rpt
@@ -170,14 +170,14 @@ class RpnPyBurpc(unittest.TestCase):
     def test_BURP_RPT_error(self):
         """brp_BURP_RPT  error"""
         try:
-            rpt = brp.BURP_RPT_PTR(1)
+            rpt = brp.BurpRpt(1)
             self.assertTrue(False, 'BURP_RPT should raise TypeError when init with int')
         except TypeError:
             pass
         
     def test_BURP_RPT_keyerror(self):
         """brp_BURP_RPT  keyerror"""
-        rpt = brp.BURP_RPT_PTR()
+        rpt = brp.BurpRpt()
         try:
             a = rpt.no_such_attr
             self.assertTrue(False, 'BURP_RPT.attr should raise AttrError when init with int')
@@ -192,7 +192,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_RPT_dict(self):
         """brp_BURP_RPT  dict"""
-        rpt = brp.BURP_RPT_PTR({
+        rpt = brp.BurpRpt({
             'stnid' : '012345678',
             'date'  : 20170101
             })
@@ -201,10 +201,10 @@ class RpnPyBurpc(unittest.TestCase):
         
     def test_BURP_RPT_rpt(self):
         """brp_BURP_RPT  rpt"""
-        rpt0 = brp.BURP_RPT_PTR()
+        rpt0 = brp.BurpRpt()
         rpt0.stnid = '012345678'
         rpt0.date = 20170101
-        rpt = brp.BURP_RPT_PTR(rpt0)
+        rpt = brp.BurpRpt(rpt0)
         self.assertEqual(rpt.stnid, '012345678')
         self.assertEqual(rpt.date, 20170101)
         self.assertEqual(rpt['stnid'], '012345678')
@@ -217,7 +217,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_RPT_update_error(self):
         """brp_BURP_RPT  update error"""
-        rpt = brp.BURP_RPT_PTR()
+        rpt = brp.BurpRpt()
         try:
             rpt.update(1)
             self.assertTrue(False, 'BURP_RPT_update should raise TypeError when init with int')
@@ -226,7 +226,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_RPT_update_dict(self):
         """brp_BURP_RPT  update_dict"""
-        rpt = brp.BURP_RPT_PTR()
+        rpt = brp.BurpRpt()
         rpt.update({
             'stnid' : '012345678',
             'date'  : 20170101
@@ -236,8 +236,8 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_RPT_update_rpt(self):
         """brp_BURP_RPT  update_rpt"""
-        rpt  = brp.BURP_RPT_PTR()
-        rpt2 = brp.BURP_RPT_PTR()
+        rpt  = brp.BurpRpt()
+        rpt2 = brp.BurpRpt()
         rpt2.stnid = '012345678'
         rpt2.date = 20170101
         rpt.update(rpt2)
@@ -249,7 +249,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         self.assertEqual(rpt.handle, 1)
 
@@ -258,16 +258,16 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile)
         self.assertEqual(rpt.handle, 1)
         
     def test_brp_find_rpt1b(self):
-        """with BURP_FILE getrpt"""
+        """with BurpFile getrpt"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
         self.assertEqual(rpt.handle, 1)
 
@@ -276,27 +276,27 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile)
         rpt = brp.brp_findrpt(bfile, rpt)
         self.assertEqual(rpt.handle, 1025)
         
     def test_brp_find_rpt2b(self):
-        """with BURP_FILE getrpt 2nd"""
+        """with BurpFile getrpt 2nd"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             rpt = bfile.getrpt(rpt.handle)
         self.assertEqual(rpt.handle, 1025)
 
     def test_brp_find_rpt2c(self):
-        """with BURP_FILE getrpt 2nd + recycle mem"""
+        """with BurpFile getrpt 2nd + recycle mem"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             rpt = bfile.getrpt(rpt.handle, rpt)
         self.assertEqual(rpt.handle, 1025)
@@ -306,19 +306,19 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
-        rpt = brp.BURP_RPT_PTR()
+        bfile = brp.BurpFile(mypath)
+        rpt = brp.BurpRpt()
         rpt.stnid = '123456789'
         rpt = brp.brp_findrpt(bfile, rpt)
         self.assertEqual(rpt, None)
 
     def test_brp_find_rpt_not_found2(self):
-        """with BURP_FILE getrpt not_found"""
+        """with BurpFile getrpt not_found"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
-            rpt = brp.BURP_RPT_PTR()
+        with brp.BurpFile(mypath) as bfile:
+            rpt = brp.BurpRpt()
             rpt.stnid = '123456789'
             rpt = bfile.getrpt(rpt)
         self.assertEqual(rpt, None)
@@ -328,7 +328,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile, 1)
         self.assertEqual(rpt.handle, 1025)
 
@@ -337,8 +337,8 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
-        rpt = brp.BURP_RPT_PTR()
+        bfile = brp.BurpFile(mypath)
+        rpt = brp.BurpRpt()
         rpt.stnid = 'S********'
         rpt = brp.brp_findrpt(bfile, rpt)
         self.assertEqual(rpt.handle, 1227777)
@@ -348,8 +348,8 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
-            rpt = brp.BURP_RPT_PTR()
+        with brp.BurpFile(mypath) as bfile:
+            rpt = brp.BurpRpt()
             rpt.stnid = 'S********'
             rpt = bfile.getrpt(rpt)
         self.assertEqual(rpt.handle, 1227777)
@@ -359,7 +359,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile)
         rpt = brp.brp_getrpt(bfile, rpt.handle)
         self.assertEqual(rpt.handle, 1)
@@ -371,7 +371,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile)
         rpt = brp.brp_getrpt(bfile, rpt.handle, rpt)
         self.assertEqual(rpt.handle, 1)
@@ -383,7 +383,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile)
         rpt = brp.brp_getrpt(bfile, rpt)
         self.assertEqual(rpt.handle, 1)
@@ -392,7 +392,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_BLK(self):
         """brp_BURP_BLK  """
-        blk = brp.BURP_BLK_PTR()
+        blk = brp.BurpBlk()
         blk.btyp = 8
         self.assertEqual(blk.btyp, 8)
         self.assertEqual(blk['btyp'], 8)
@@ -400,7 +400,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_BLK_keyerror(self):
         """brp_BURP_BLK  keyerror"""
-        blk = brp.BURP_BLK_PTR()
+        blk = brp.BurpBlk()
         try:
             a = blk.no_such_attr
             self.assertTrue(False, 'BURP_BLK.attr should raise AttrError when init with int')
@@ -416,14 +416,14 @@ class RpnPyBurpc(unittest.TestCase):
     def test_BURP_BLK_error(self):
         """brp_BURP_BLK  error"""
         try:
-            blk = brp.BURP_BLK_PTR(1)
+            blk = brp.BurpBlk(1)
             self.assertTrue(False, 'BURP_BLK should raise TypeError when init with int')
         except TypeError:
             pass
 
     def test_BURP_BLK_dict(self):
         """brp_BURP_BLK  dict"""
-        blk = brp.BURP_BLK_PTR({
+        blk = brp.BurpBlk({
             'btyp'  : 8,
             'datyp' : 1
             })
@@ -432,10 +432,10 @@ class RpnPyBurpc(unittest.TestCase):
         
     def test_BURP_BLK_blk(self):
         """brp_BURP_BLK  blk"""
-        blk0 = brp.BURP_BLK_PTR()
+        blk0 = brp.BurpBlk()
         blk0.btyp = 8
         blk0.datyp = 1
-        blk = brp.BURP_BLK_PTR(blk0)
+        blk = brp.BurpBlk(blk0)
         self.assertEqual(blk.btyp, 8)
         self.assertEqual(blk.datyp, 1)
         # Should have taken a copy
@@ -446,7 +446,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_BLK_update_error(self):
         """brp_BURP_BLK  update error"""
-        blk = brp.BURP_BLK_PTR()
+        blk = brp.BurpBlk()
         try:
             blk.update(1)
             self.assertTrue(False, 'BURP_BLK_update should raise TypeError when init with int')
@@ -455,7 +455,7 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_BLK_update_dict(self):
         """brp_BURP_BLK  update_dict"""
-        blk = brp.BURP_BLK_PTR()
+        blk = brp.BurpBlk()
         blk.update({
             'btyp'  : 8,
             'datyp' : 1
@@ -465,8 +465,8 @@ class RpnPyBurpc(unittest.TestCase):
 
     def test_BURP_BLK_update_blk(self):
         """brp_BURP_BLK  update_blk"""
-        blk  = brp.BURP_BLK_PTR()
-        blk2 = brp.BURP_BLK_PTR()
+        blk  = brp.BurpBlk()
+        blk2 = brp.BurpBlk()
         blk2.btyp = 8
         blk2.datyp = 1
         blk.update(blk2)
@@ -478,7 +478,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         rpt = brp.brp_getrpt(bfile, rpt)
         self.assertEqual(rpt.nblk, 12)
@@ -496,11 +496,11 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(blk.datyp, 4)
 
     def test_brp_find_blk0b(self):
-        """BURP_RPT_PTR getblk"""
+        """BurpRpt getblk"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             self.assertEqual(rpt.nblk, 12)
             blk = rpt.getblk()
@@ -524,7 +524,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         rpt = brp.brp_getrpt(bfile, rpt)
         self.assertEqual(rpt.nblk, 12)
@@ -532,11 +532,11 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(blk, None)
 
     def test_brp_find_blk_err1b(self):
-        """BURP_RPT_PTR getblk bkno not found"""
+        """BurpRpt getblk bkno not found"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             self.assertEqual(rpt.nblk, 12)
             blk = rpt.getblk(12)
@@ -547,21 +547,21 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         rpt = brp.brp_getrpt(bfile, rpt)
-        blk = brp.BURP_BLK_PTR({'bkno':0, 'btyp':999})
+        blk = brp.BurpBlk({'bkno':0, 'btyp':999})
         blk = brp.brp_findblk(blk, rpt)
         self.assertEqual(blk, None)
 
     def test_brp_find_blk_err2b(self):
-        """BURP_RPT_PTR getblk search keys not found"""
+        """BurpRpt getblk search keys not found"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
-            blk = brp.BURP_BLK_PTR({'bkno':0, 'btyp':999})
+            blk = brp.BurpBlk({'bkno':0, 'btyp':999})
             blk = rpt.getblk(blk)
             self.assertEqual(blk, None)
             blk = rpt.getblk({'bkno':0, 'btyp':999})
@@ -572,10 +572,10 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         rpt = brp.brp_getrpt(bfile, rpt)
-        blk = brp.BURP_BLK_PTR({'bkno':0, 'btyp':15456})
+        blk = brp.BurpBlk({'bkno':0, 'btyp':15456})
         blk = brp.brp_findblk(blk, rpt)
         blk = brp.brp_getblk(blk.bkno, blk, rpt)
         self.assertEqual(blk.bkno, 6)
@@ -583,13 +583,13 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(blk.btyp, 15456)
 
     def test_brp_find_blk_blk1b(self):
-        """BURP_RPT_PTR getblk search keys"""
+        """BurpRpt getblk search keys"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
-            blk = brp.BURP_BLK_PTR({'bkno':0, 'btyp':15456})
+            blk = brp.BurpBlk({'bkno':0, 'btyp':15456})
             blk = rpt.getblk(blk)
             self.assertEqual(blk.bkno, 6)
             self.assertEqual(blk.datyp, 2)
@@ -604,7 +604,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             i = 0
             for blk in rpt:
@@ -618,7 +618,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        bfile = brp.BURP_FILE(mypath)
+        bfile = brp.BurpFile(mypath)
         rpt = brp.brp_findrpt(bfile.funit)
         rpt = brp.brp_getrpt(bfile, rpt)
         blk = brp.brp_findblk(None, rpt)
@@ -635,7 +635,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         mypath, itype, iunit = self.knownValues[0]
         mypath = self.getFN(mypath)
-        with brp.BURP_FILE(mypath) as bfile:
+        with brp.BurpFile(mypath) as bfile:
             rpt = bfile.getrpt()
             blk = rpt.getblk()
             self.assertEqual(blk.lstele.shape, (8, ))

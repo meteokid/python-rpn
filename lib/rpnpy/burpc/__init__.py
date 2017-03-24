@@ -31,12 +31,12 @@ from rpnpy.version import *
 
 __SUBMODULES__ = ['proto', 'const', 'base']
 __all__ = ['loadBURPClib', 'libburpc', 'BURPC_VERSION', 'BURPC_LIBPATH',
-           'BURPCError'] + __SUBMODULES__
+           'BurpcError'] + __SUBMODULES__
 
 ## BURPC_VERSION_DEFAULT = '_rpnpy'
 BURPC_VERSION_DEFAULT = '*'
 
-class BURPCError(Exception):
+class BurpcError(Exception):
     """
     General BURPC module error/exception
     """

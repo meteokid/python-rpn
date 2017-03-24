@@ -58,7 +58,7 @@ class RpnPyBurpc(unittest.TestCase):
         """burplib_c iweb doc example 1"""
         mypath = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        bfile = brp.BURP_FILE(self.getFN(mypath))
+        bfile = brp.BurpFile(self.getFN(mypath))
         print("enreg {}".format(len(bfile)))
         rs, rr, br = 0, None, None
         while rs is not None:
@@ -79,9 +79,9 @@ class RpnPyBurpc(unittest.TestCase):
         """burplib_c iweb doc example 1"""
         mypath = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        bfile = brp.BURP_FILE(self.getFN(mypath))
+        bfile = brp.BurpFile(self.getFN(mypath))
         print("enreg {}".format(len(bfile)))
-        rs = brp.BURP_RPT_PTR()
+        rs = brp.BurpRpt()
         rs.handle, rr, br = 0, None, None
         while True:
             rr = bfile.getrpt(rs, rr)
@@ -100,7 +100,7 @@ class RpnPyBurpc(unittest.TestCase):
         """burplib_c iweb doc example 1"""
         mypath = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        bfile = brp.BURP_FILE(self.getFN(mypath))
+        bfile = brp.BurpFile(self.getFN(mypath))
         print("enreg {}".format(len(bfile)))
         for rr in bfile:
             print("stnid = {}".format(rr.stnid))
@@ -113,7 +113,7 @@ class RpnPyBurpc(unittest.TestCase):
         """burplib_c iweb doc example 1"""
         mypath = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        with brp.BURP_FILE(self.getFN(mypath)) as bfile:
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
             print("enreg {}".format(len(bfile)))
             for rr in bfile:
                 print("stnid = {}".format(rr.stnid))
@@ -122,46 +122,46 @@ class RpnPyBurpc(unittest.TestCase):
 
       
     def _test_misc(self):
-        a = brp.BURP_RPT_PTR()
+        a = brp.BurpRpt()
         print(a)
         a.handle = 1
         print(a)
         a['stnid'] = '12334567'
         print(a)
         print '---'
-        a = a.get_ptr()
+        a = a.getptr()
         print(a)
         print(a[0])
         print '---'
-        a = brp.BURP_BLK_PTR()
+        a = brp.BurpBlk()
         print(a)
         print '---'
-        a = a.get_ptr()
+        a = a.getptr()
         print(a)
         print(a[0])
         #TODO: test iter
         #TODO: test indexing FILE, RPT with int
                 ## print '-----0'
                 ## print br.dlstele[0], br.dlstele[1]
-                ## print brp.BLK_DLSTELE(br.get_ptr(),0), brp.BLK_DLSTELE(br.get_ptr(),1)
+                ## print brp.BLK_DLSTELE(br.getptr(),0), brp.BLK_DLSTELE(br.getptr(),1)
                 ## print '-----1'
                 ## br.dlstele[0] = 999
                 ## print br.dlstele[0], br.dlstele[1]
-                ## print brp.BLK_DLSTELE(br.get_ptr(),0), brp.BLK_DLSTELE(br.get_ptr(),1)
+                ## print brp.BLK_DLSTELE(br.getptr(),0), brp.BLK_DLSTELE(br.getptr(),1)
                 ## print '-----2'
-                ## brp.BLK_SetDLSTELE(br.get_ptr(),0,998)
+                ## brp.BLK_SetDLSTELE(br.getptr(),0,998)
                 ## print br.dlstele[0], br.dlstele[1]
-                ## print brp.BLK_DLSTELE(br.get_ptr(),0), brp.BLK_DLSTELE(br.get_ptr(),1)
+                ## print brp.BLK_DLSTELE(br.getptr(),0), brp.BLK_DLSTELE(br.getptr(),1)
                 ## print '-----3'
-                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.get_ptr()), brp.RPT_STNID(rr.get_ptr())
+                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.getptr()), brp.RPT_STNID(rr.getptr())
                 ## print '-----4'
                 ## rr.idtype = 123
                 ## rr.stnid  = '1234567890'
-                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.get_ptr()), brp.RPT_STNID(rr.get_ptr())
+                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.getptr()), brp.RPT_STNID(rr.getptr())
                 ## print '-----5'
-                ## brp.RPT_SetIDTYP(rr.get_ptr(), 456)
-                ## brp.RPT_SetSTNID(rr.get_ptr(), 'abcdefghij')
-                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.get_ptr()), brp.RPT_STNID(rr.get_ptr())
+                ## brp.RPT_SetIDTYP(rr.getptr(), 456)
+                ## brp.RPT_SetSTNID(rr.getptr(), 'abcdefghij')
+                ## print rr.idtype, rr.stnid, brp.RPT_IDTYP(rr.getptr()), brp.RPT_STNID(rr.getptr())
                 ## sys.exit(0)
         return
 
@@ -223,9 +223,9 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         """burplib_c iweb doc example 2"""
         mypath = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        bfile = brp.BURP_FILE(self.getFN(mypath))
+        bfile = brp.BurpFile(self.getFN(mypath))
         print("Nombre Enreg = {}".format(len(bfile)))
-        rs = brp.BURP_RPT_PTR()
+        rs = brp.BurpRpt()
         rs.handle, rr, br = 0, None, None
         while True:
             rr = bfile.getrpt(rs, rr)
@@ -269,7 +269,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 ##         """burplib_c iweb doc example 2"""
 ##         mypath = self.knownValues[0][0]
 ##         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-##         with brp.BURP_FILE(self.getFN(mypath)) as bfile:
+##         with brp.BurpFile(self.getFN(mypath)) as bfile:
 ##             print("Nombre Enreg = {}".format(len(bfile)))
 ##             for rr in bfile:
 ##                 print("""
@@ -332,9 +332,9 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         """burplib_c iweb doc example 3"""
         mypath, itype, iunit = self.knownValues[0]
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL" )
-        bfile = brp.BURP_FILE(self.getFN(mypath))
+        bfile = brp.BurpFile(self.getFN(mypath))
         print("Nombre Enreg = {}".format(len(bfile)))
-        rs = brp.BURP_RPT_PTR()
+        rs = brp.BurpRpt()
         rr, br = None, None
         counters = {} #TODO: preserve order? then store info in list, index in dict
         while True:
