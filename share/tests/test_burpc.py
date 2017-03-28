@@ -795,10 +795,103 @@ class RpnPyBurpc(unittest.TestCase):
             self.assertEqual(blk.bknat_kindd, a['bknat_kindd'])
 
 
-    #TODO: blk.getelem()
-    #TODO: blk[i]
-    #TODO: get_blk_items
-    #TODO: block iter on elem
+    def test_brp_blk_getele(self):
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile[0]
+            blk = rpt[1]
+            ## for k,v in rmn.mrbcvt_dict(blk.lstele[0], raise_error=False).items():
+            ##     print "{} : {},".format(repr(k),repr(v))
+            ele = blk.getelem(0)
+            ## for k,v in ele.items():
+            ##     print "{} : {},".format(repr(k),repr(v))
+            a = {
+                'e_ele_no' : 0,
+                'e_scale' : -1,
+                'e_multi' : 0,
+                'e_cmcid' : 2564,
+                'e_bias' : 0,
+                'e_error' : 0,
+                'e_bufrid_F' : 0,
+                'e_units' : 'PA',
+                'e_desc' : 'PRESSURE',
+                'e_bufrid' : 10004,
+                'e_nbits' : 14,
+                'e_bufrid_Y' : 4,
+                'e_bufrid_X' : 10,
+                'e_cvt' : 1,
+                'bktyp' : 6,
+                'nele' : 8,
+                'nbit' : 14,
+                'store_type' : 'F',
+                'e_bias' : 0,
+                'e_rval' : np.array([[ 100.]], dtype=np.float32),
+                'bfam' : 14,
+                'e_charval' : None,
+                'e_desc' : 'PRESSURE',
+                'e_val' : np.array([[ 100.]], dtype=np.float32),
+                'max_len' : 8,
+                'e_cmcid' : 2564,
+                'e_tblval' : np.array([[10]], dtype=np.int32),
+                'e_drval' : None,
+                'nval' : 1,
+                'btyp' : 106,
+                'e_cvt' : 1,
+                'bknat' : 0,
+                'e_multi' : 0,
+                'e_error' : 0,
+                'e_scale' : -1,
+                'bdesc' : 0,
+                'e_bufrid_F' : 0,
+                'e_units' : 'PA',
+                'bkstp' : 10,
+                'bkno' : 1,
+                'e_nbits' : 14,
+                'max_nval' : 1,
+                'max_nele' : 8,
+                'datyp' : 4,
+                'e_bufrid_Y' : 4,
+                'e_bufrid_X' : 10,
+                'e_bufrid' : 10004,
+                'bit0' : 0,
+                'nt' : 1,
+                'max_nt' : 1
+                }
+            for k in a.keys():
+                self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
+            ele = blk[0]
+            for k in a.keys():
+                self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))           
+            try:
+                ele = blk[-1]
+                self.assertTrue(False, 'BurpBlk.getelem() out of range should raise an error')
+            except IndexError:
+                pass
+            try:
+                ele = blk[blk.nele]
+                self.assertTrue(False, 'BurpBlk.getelem() out of range should raise an error')
+            except IndexError:
+                pass
+            print
+            print blk.lstele
+            ele = blk[1]
+            self.assertEqual(ele['e_cmcid'], blk.lstele[1])
+
+    def test_brp_blk_getele_iter(self):
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile[0]
+            blk = rpt[1]
+            n = 0
+            for ele in blk:
+                self.assertEqual(n, ele['e_ele_no'])
+                self.assertEqual(ele['e_cmcid'], blk.lstele[n])
+                self.assertEqual(ele['e_tblval'], blk.tblval[n,:,:])
+                n += 1
+            self.assertEqual(n, blk.nele)
+
 
     #TODO: tests for writing burp
 

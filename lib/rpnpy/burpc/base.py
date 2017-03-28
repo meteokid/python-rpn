@@ -322,6 +322,7 @@ class BurpBlk(object):
                    'bkstp', 'bkstpd', 'nbit', 'bit0', 'datyp', 'datypd')
             
     def __init__(self, blk=None):
+        self.__eleno = 0
         self.__derived = None
         to_update = False
         if blk is None:
@@ -381,7 +382,8 @@ class BurpBlk(object):
             return super(self.__class__, self).__setattr__(name, value)
 
     def __getitem__(self, name):
-        #TODO: should getitem access the ith element?
+        if isinstance(name, (long, int)):
+            return self.getelem(name)
         try:
             return self.__getattr__(name)
         except:
@@ -393,6 +395,20 @@ class BurpBlk(object):
             return self.__setattr__(name, value)
         else:
             raise KeyError("No Such Key: "+repr(name))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self): # Python 3
+        if self.__eleno >= self.nele:
+            self.__eleno = 0
+            raise StopIteration
+        ele = self.getelem(self.__eleno)
+        self.__eleno += 1
+        return ele
+
+    def next(self): # Python 2:
+        return self.__next__()
 
     #TODO: def __delitem__(self, name):
     #TODO: def __delattr__(self, name):
@@ -454,7 +470,38 @@ class BurpBlk(object):
         params.update(_rmn.mrbtyp_decode(btyp))
         return params
 
-        
+    def getelem(self, index):
+        """indexing from 0 to nele-1"""
+        if index < 0 or index >= self.nele:
+            raise IndexError
+        params = self.todict()
+        params.update(_rmn.mrbcvt_dict(self.lstele[index]))
+        params.update({
+            'e_ele_no' : index,
+            'e_tblval' : self.tblval[index,:,:],
+            'e_val'    : None,            
+            'e_rval'   : None,
+            'e_drval'  : None,
+            'e_charval': None,
+            })
+        try:
+            params['e_val'] = self.rval[index,:,:]
+            params['e_rval'] = params['e_val']
+        except:
+            pass
+        try:
+            params['e_val'] = self.drval[index,:,:]
+            params['e_drval'] = params['e_val']
+        except:
+            pass
+        try:
+            params['e_val'] = self.charval[index,:,:]
+            params['e_charval'] = params['e_val']
+        except:
+            pass
+        return params
+
+
 def brp_opt(optName, optValue=None):
     """
     Set/Get BURP file options
