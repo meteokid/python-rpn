@@ -933,6 +933,7 @@ def mrbprm(rpt, blkno):
         blkno : block number (int > 0)
     Returns:
         {
+            'bkno'  : (int) block number
             'nele'  : (int) Number of meteorological elements in a block.
                             1st dimension of the array TBLVAL(block). (0-127)
             'nval'  : (int) Number of values per element.
@@ -1046,6 +1047,7 @@ def mrbprm(rpt, blkno):
     except:
         datypd = ''
     params =  {
+            'bkno'  : blkno,
             'nele'  : nele.value,
             'nval'  : nval.value,
             'nt'    : nt.value,

@@ -291,7 +291,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                           'bktyp': 70, 'bkstp': 14, 'bknat': 4,
                           'bknat_multi': 1, 'bknat_kind': 0,
                           'bknat_kindd': 'data', 'bktyp_alt': 1,
-                          'bktyp_kind': 6,
+                          'bktyp_kind': 6, 'bkno': iblk+1,
                           'bktyp_kindd': 'data seen by OA at altitude, global model',
                           'bkstpd': "statistiques d'erreur d'observation"}
             ## print 1,blkparams

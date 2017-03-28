@@ -65,7 +65,7 @@ class BurpFile(object):
     def __iter__(self):
         return self
 
-    def __next__(self): # Python 3
+    def __next__(self):  # Python 3
         self.__search = brp_findrpt(self.funit, self.__search)
         if not self.__search:
             self.__search = BurpRpt()
@@ -74,25 +74,20 @@ class BurpFile(object):
         ## return brp_getrpt(self.funit, self.__search.handle, self.__rpt)
         return brp_getrpt(self.funit, self.__search.handle)
 
-    def next(self): # Python 2:
+    def next(self):  # Python 2:
         return self.__next__()
 
-        
     #TODO: __delitem__?
 
-    ## def __getitem__(self, name): #TODO: should call getrpt
-    ##     if isinstance(name, (int, long)):
-    ##         #TODO return ith report
-    ##     elif isinstance(name, BurpRpt):
-    ##         #TODO return report matching search
-    ##     elif isinstance(name, dict):
-    ##         #TODO: create BurpRpt with dict
-    ##         #TODO return report matching search
-    ##     else:
-    ##         raise KeyError("No Such Key: "+repr(name))
+    def __getitem__(self, name): #TODO: should call getrpt
+        if isinstance(name, (BurpRpt, dict, long, int)):
+            #TODO: if int or long, should we return the ith report?
+            return self.getrpt(name)
+        else:
+            raise TypeError("Not Supported Type: "+str(type(name)))          
  
     ## def __setitem__(self, name, value):
-    ##     #TODO: should setitem set the ith block?
+    ##     #TODO: Should replace the rpt found with getitem(name)
         
     def close(self):
         if self.funit:
@@ -120,10 +115,20 @@ class BurpRpt(object):
     __attrlist = ("handle", "nsize", "temps", "flgs", "stnid",
                   "idtype", "lati", "longi", "dx", "dy", "elev", 
                   "drnd", "date", "oars", "runn", "nblk", "lngr")
-    
+    __attrlist2 = ('time', 'timehh', 'timemm', 'flgsl', 'flgsd',
+                   'idtyp', 'idtypd', 'ilat', 'lat', 'ilon', 'lon',
+                   'idx', 'rdx', 'idy', 'rdy', 'ielev', 'relev',
+                   'dateyy', 'datemm', 'datedd',
+                   'sup', 'nsup', 'xaux', 'nxaux')
+    __attrlist2names = {
+        'rdx'   : 'dx',
+        'rdy'   : 'dy',
+        'relev' : 'elev'
+        }
     def __init__(self, rpt=None):
         self.__bkno = 0
         self.__blk  = BurpBlk()
+        self.__derived = None
         if rpt is None:
             ## print 'NEW:',self.__class__.__name__
             self.__ptr = _bp.c_brp_newrpt()            
@@ -166,33 +171,41 @@ class BurpRpt(object):
     def __getattr__(self, name):
         if name in self.__class__.__attrlist:
             return getattr(self.__ptr[0], name)  #TODO: use proto fn?
-        #TODO: decode other items on the fly
+        elif name in self.__class__.__attrlist2:
+            try:
+                name = self.__attrlist2names[name]
+            except KeyError:
+                pass
+            if not self.__derived:
+                self.__derived = self.derived_attr()
+            return self.__derived[name]
         else:
             raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
             ## return super(self.__class__, self).__getattr__(name)
         
     def __setattr__(self, name, value):
         if name == 'stnid':
+            self.__derived = None
             _bp.c_brp_setstnid(self.__ptr, value)
         elif name in self.__class__.__attrlist:
+            self.__derived = None
             return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
         #TODO: encode other items on the fly
+        elif name in self.__class__.__attrlist2:
+            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
         else:
             return super(self.__class__, self).__setattr__(name, value)
             ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
     
     def __getitem__(self, name):
-        if name in self.__class__.__attrlist:
+        if name in (self.__class__.__attrlist + self.__class__.__attrlist2):
             return self.__getattr__(name)
         elif isinstance(name, (int, long)):
             if name < 1 or name > self.nblk:
                 raise IndexError('Index out of range: 1:'+str(self.nblk))
             return brp_getblk(name, self.__blk, self) #TODO: self.getblk()?
-        ## elif isinstance(name, BurpRpt):
-        ##     #TODO return report matching search
-        ## elif isinstance(name, dict):
-        ##     #TODO: create BurpRpt with dict
-        ##     #TODO return report matching search
+        elif isinstance(name, (BurpBlk, dict)):
+            return self.getblk(name)
         else:
             raise KeyError("No Such Key: "+repr(name))
     
@@ -208,7 +221,6 @@ class BurpRpt(object):
     #TODO: def __add__(self, nhours):
     #TODO: def __isub__(self, other):
     #TODO: def __iadd__(self, nhours):
-    #TODO: def update(self, mydict_or_BURPRPT):
 
     def update(self, rpt):
         """ """
@@ -228,7 +240,6 @@ class BurpRpt(object):
         """ """
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
-    #TODO: name convention get_blk
     def getblk(self, search=None, blk=None):
         """Find a block and get its meta + data"""
         search = brp_findblk(search, self)
@@ -237,6 +248,56 @@ class BurpRpt(object):
             return brp_getblk(bkno, blk=blk, rpt=self)
         return None
 
+    def derived_attr(self):
+        """ """
+        itime = getattr(self.__ptr[0], 'temps')
+        iflgs = getattr(self.__ptr[0], 'flgs')
+        flgs_dict = _rmn.flags_decode(iflgs)
+        idtyp = getattr(self.__ptr[0], 'idtype')
+        ilat  = getattr(self.__ptr[0], 'lati')
+        ilon  = getattr(self.__ptr[0], 'longi')
+        idx   = getattr(self.__ptr[0], 'dx')
+        idy   = getattr(self.__ptr[0], 'dy')
+        ialt  = getattr(self.__ptr[0], 'elev')
+        idate = getattr(self.__ptr[0], 'date')
+        try:
+            idtyp_desc = _rmn.BURP_IDTYP_DESC[str(idtyp)]
+        except KeyError:
+            idtyp_desc = ''
+        return {
+            'time'  : itime,
+            'timehh': itime // 100,
+            'timemm': itime % 100,
+            'flgs'  : flgs_dict['flgs'],
+            'flgsl' : flgs_dict['flgsl'],
+            'flgsd' : flgs_dict['flgsd'],
+            'stnid' : getattr(self.__ptr[0], 'stnid'),
+            'idtyp' : idtyp,
+            'idtypd': idtyp_desc,
+            'ilat'  : ilat,
+            'lat'   : (float(ilat)/100.) - 90.,
+            'ilon'  : ilon,
+            'lon'   : float(ilon)/100.,
+            'idx'   : idx,
+            'dx'    : float(idx)/10.,
+            'idy'   : idy,
+            'dy'    : float(idy)/10.,
+            'ielev' : ialt,
+            'elev'  : float(ialt) - 400.,
+            'drnd'  : getattr(self.__ptr[0], 'drnd'),
+            'date'  : idate,
+            'dateyy': idate // 10000,
+            'datemm': (idate % 10000) // 100,
+            'datedd': (idate % 10000) % 100,
+            'oars'  : getattr(self.__ptr[0], 'oars'),
+            'runn'  : getattr(self.__ptr[0], 'runn'),  #TODO: provide decoded runn?
+            'nblk'  : getattr(self.__ptr[0], 'nblk'),
+            'sup'   : None,
+            'nsup'  : 0,
+            'xaux'  : None,
+            'nxaux' : 0
+            }
+        
 
 class BurpBlk(object):
     """
@@ -255,8 +316,13 @@ class BurpBlk(object):
                   "max_nval", "max_nele", "max_nt", "max_len")
     __attrlist_np_1d = ("lstele", "dlstele")
     __attrlist_np_3d = ("tblval", "rval", "drval", "charval")
-    
+    __attrlist2 = ('bkno', 'nele', 'nval', 'nt', 'bfam', 'bdesc', 'btyp',
+                   'bknat', 'bknat_multi', 'bknat_kind', 'bknat_kindd',
+                   'bktyp', 'bktyp_alt', 'bktyp_kind', 'bktyp_kindd',
+                   'bkstp', 'bkstpd', 'nbit', 'bit0', 'datyp', 'datypd')
+            
     def __init__(self, blk=None):
+        self.__derived = None
         to_update = False
         if blk is None:
             ## print 'NEW:',self.__class__.__name__
@@ -268,10 +334,6 @@ class BurpBlk(object):
             ## print 'NEW:',self.__class__.__name__,'update'
             self.__ptr = _bp.c_brp_newblk()
             to_update = True
-        ## if len(self.__class__.__attrlist) == 0:
-        ##     self.__class__.__attrlist = [v[0] for v in self.__ptr[0]._fields_]
-        ##     self.__class__.__attrlist_np_1d = ["lstele", "dlstele"]
-        ##     self.__class__.__attrlist_np_3d = ["tblval", "rval", "drval", "charval"]
         if to_update:
             self.update(blk)
         self.reset_arrays()
@@ -300,15 +362,21 @@ class BurpBlk(object):
             return self.__arr[name]
         elif name in self.__class__.__attrlist:
             return getattr(self.__ptr[0], name)  #TODO: use proto fn?
-        #TODO: decode other items on the fly
+        elif name in self.__class__.__attrlist2:
+            if not self.__derived:
+                self.__derived = self.derived_attr()
+            return self.__derived[name]            
         else:
             raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
 
     def __setattr__(self, name, value):
         ## print 'setattr:', name
         if name in self.__class__.__attrlist:
+            self.__derived = None
             return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
         #TODO: encode other items on the fly
+        elif name in self.__class__.__attrlist2:
+            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
         else:
             return super(self.__class__, self).__setattr__(name, value)
 
@@ -362,6 +430,29 @@ class BurpBlk(object):
     def todict(self):
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
+    def derived_attr(self):
+        """ """
+        btyp  = getattr(self.__ptr[0], 'btyp')
+        datyp = getattr(self.__ptr[0], 'datyp')
+        try:
+            datypd = _rmn.BURP_DATYP_NAMES[datyp]
+        except:
+            datypd = ''
+        params = {
+            'bkno'  : getattr(self.__ptr[0], 'bkno'),
+            'nele'  : getattr(self.__ptr[0], 'nele'),
+            'nval'  : getattr(self.__ptr[0], 'nval'),
+            'nt'    : getattr(self.__ptr[0], 'nt'),
+            'bfam'  : getattr(self.__ptr[0], 'bfam'),  #TODO: provide decoded bfam?
+            'bdesc' : getattr(self.__ptr[0], 'bdesc'),
+            'btyp'  : btyp,
+            'nbit'  : getattr(self.__ptr[0], 'nbit'),
+            'bit0'  : getattr(self.__ptr[0], 'bit0'),
+            'datyp' : datyp,
+            'datypd': datypd
+            }
+        params.update(_rmn.mrbtyp_decode(btyp))
+        return params
 
         
 def brp_opt(optName, optValue=None):

@@ -158,8 +158,8 @@ class RpnPyBurpc(unittest.TestCase):
             i = 0
             for rpt in bfile:
                 i += 1
-            self.assertEqual(len(bfile), i)
-
+            self.assertEqual(len(bfile), i)        
+        
     def test_BURP_RPT(self):
         """brp_BURP_RPT  """
         rpt = brp.BurpRpt()
@@ -301,6 +301,15 @@ class RpnPyBurpc(unittest.TestCase):
             rpt = bfile.getrpt(rpt.handle, rpt)
         self.assertEqual(rpt.handle, 1025)
 
+    def test_brp_find_rpt2d(self):
+        """brp_BurpFile_item  """
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile[0]
+            rpt = bfile[rpt.handle]
+        self.assertEqual(rpt.handle, 1025)
+
     def test_brp_find_rpt_not_found(self):
         """brp_find_rpt  not_found"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -320,6 +329,15 @@ class RpnPyBurpc(unittest.TestCase):
         with brp.BurpFile(mypath) as bfile:
             rpt = brp.BurpRpt()
             rpt.stnid = '123456789'
+            rpt = bfile.getrpt(rpt)
+        self.assertEqual(rpt, None)
+
+    def test_brp_find_rpt_not_found2d(self):
+        """with BurpFile getrpt not_found"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = brp.BurpRpt({'stnid' : '123456789'})
             rpt = bfile.getrpt(rpt)
         self.assertEqual(rpt, None)
 
@@ -352,6 +370,15 @@ class RpnPyBurpc(unittest.TestCase):
             rpt = brp.BurpRpt()
             rpt.stnid = 'S********'
             rpt = bfile.getrpt(rpt)
+        self.assertEqual(rpt.handle, 1227777)
+
+    def test_brp_find_rpt_stnid2d(self):
+        """brp_BurpFile_item  """
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = brp.BurpRpt({'stnid' : 'S********'})
+            rpt = bfile[rpt]
         self.assertEqual(rpt.handle, 1227777)
 
     def test_brp_get_rpt1(self):
@@ -567,6 +594,18 @@ class RpnPyBurpc(unittest.TestCase):
             blk = rpt.getblk({'bkno':0, 'btyp':999})
             self.assertEqual(blk, None)
 
+    def test_brp_find_blk_err2d(self):
+        """BurpRpt getblk search keys not found"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile.getrpt()
+            blk = brp.BurpBlk({'bkno':0, 'btyp':999})
+            blk = rpt[blk]
+            self.assertEqual(blk, None)
+            blk = rpt[{'bkno':0, 'btyp':999}]
+            self.assertEqual(blk, None)
+
     def test_brp_find_get_blk1(self):
         """brp_find_blk search keys"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -595,6 +634,22 @@ class RpnPyBurpc(unittest.TestCase):
             self.assertEqual(blk.datyp, 2)
             self.assertEqual(blk.btyp, 15456)
             blk = rpt.getblk({'bkno':0, 'btyp':15456})
+            self.assertEqual(blk.bkno, 6)
+            self.assertEqual(blk.datyp, 2)
+            self.assertEqual(blk.btyp, 15456)
+
+    def test_brp_find_blk_blk1d(self):
+        """BurpRpt getblk search keys"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile.getrpt()
+            blk = brp.BurpBlk({'bkno':0, 'btyp':15456})
+            blk = rpt[blk]
+            self.assertEqual(blk.bkno, 6)
+            self.assertEqual(blk.datyp, 2)
+            self.assertEqual(blk.btyp, 15456)
+            blk = rpt[{'bkno':0, 'btyp':15456}]
             self.assertEqual(blk.bkno, 6)
             self.assertEqual(blk.datyp, 2)
             self.assertEqual(blk.btyp, 15456)
@@ -645,18 +700,105 @@ class RpnPyBurpc(unittest.TestCase):
             self.assertEqual(blk.tblval[0,0,0], 10)
             self.assertEqual(blk.tblval[2,0,0], -1)
 
-    #TODO: get_blk_items
-    #TODO: block iter on elem
-    #TODO: bfile[i]
-        
-    #TODO: rpt....derived_attribute....
+    def test_brp_rpt_derived(self):
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile[0]
+            rpt2 = rpt.derived_attr()
+            a = {
+                'idtypd' : 'TEMP + PILOT + SYNOP' ,
+                'datemm' : 2 ,
+                'dy' : 0.0 ,
+                'nxaux' : 0 ,
+                'lat' : 64.19999999999999 ,
+                'flgsl' : [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0] ,
+                'lon' : 276.63 ,
+                'flgsd' : 'surface wind used, data observed, data derived, residues, TEMP part B' ,
+                'nsup' : 0 ,
+                'datedd' : 19 ,
+                'timemm' : 0 ,
+                'drnd' : 0 ,
+                'flgs' : 72706 ,
+                'xaux' : None ,
+                'sup' : None ,
+                'nblk' : 12 ,
+                'ilon' : 27663 ,
+                'oars' : 518 ,
+                'dx' : 0.0 ,
+                'stnid' : '71915    ' ,
+                'date' : 20070219 ,
+                'ilat' : 15420 ,
+                'ielev' : 457 ,
+                'idx' : 0 ,
+                'idy' : 0 ,
+                'idtyp' : 138 ,
+                'elev' : 57.0 ,
+                'time' : 0 ,
+                'dateyy' : 2007 ,
+                'timehh' : 0 ,
+                'runn' : 8
+                }
+            for k in a.keys():
+                self.assertEqual(rpt2[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(rpt2[k])))
+            a.update({
+                'rdx' : 0.0 ,
+                'rdy' : 0.0 ,
+                'relev' : 57.0 ,
+                })
+            del a['dx'], a['dy'], a['elev']
+            for k in a.keys():
+                self.assertEqual(rpt[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(rpt[k])))
+            self.assertEqual(rpt.rdx, a['rdx'])
+            self.assertEqual(rpt.rdy, a['rdy'])
+            self.assertEqual(rpt.relev, a['relev'])
+            self.assertEqual(rpt.ilon, a['ilon'])
+            self.assertEqual(rpt.ilon, rpt.loni)
 
-    #TODO: rpt[i]
-        
+    def test_brp_rpt_derived(self):
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        with brp.BurpFile(self.getFN(mypath)) as bfile:
+            rpt = bfile[0]
+            blk = rpt[1]
+            blk2 = blk.derived_attr()
+            ## for k,v in blk2.items():
+            ##     print "{} : {},".format(repr(k),repr(v))
+            a = {
+                'bktyp' : 6,
+                'nele' : 8,
+                'nbit' : 14,
+                'bktyp_kindd' : 'data seen by OA at altitude, global model',
+                'bknat_kind' : 0,
+                'bfam' : 14,
+                'nval' : 1,
+                'btyp' : 106,
+                'bkstpd' : 'statistiques de diff\xc3\xa9rences (r\xc3\xa9sidus)',
+                'bknat' : 0,
+                'bktyp_alt' : 0,
+                'bknat_kindd' : 'data',
+                'bknat_multi' : 0,
+                'bdesc' : 0,
+                'bkstp' : 10,
+                'bkno' : 1,
+                'datypd' : 'int',
+                'bktyp_kind' : 6,
+                'datyp' : 4,
+                'nt' : 1,
+                'bit0' : 0                
+                }
+            for k in a.keys():
+                self.assertEqual(blk2[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(blk2[k])))
+            for k in a.keys():
+                self.assertEqual(blk[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(blk[k])))
+            self.assertEqual(blk.bfam, a['bfam'])
+            self.assertEqual(blk.bknat_kindd, a['bknat_kindd'])
+
+
     #TODO: blk.getelem()
     #TODO: blk[i]
-        
-    #TODO: blk....derived_attribute....
+    #TODO: get_blk_items
+    #TODO: block iter on elem
 
     #TODO: tests for writing burp
 
