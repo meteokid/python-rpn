@@ -605,7 +605,7 @@ def mrfloc(funit, handle=0, stnid='*********', idtyp=-1, ilat=-1, ilon=-1,
             params['sup'] = _np._np.asfortranarray(params['sup'], dtype=_np.int32)
     else:
         raise TypeError('sup should be a None, list, tuple')
-    #NOTE: providing sup as ndarray of size > 0 with value zero cause a seg fault, apparently sup is not supported by the librmn api
+    #NOTES: providing sup as ndarray of size > 0 with value zero cause a seg fault, apparently sup is not supported by the librmn api
     ## elif isinstance(sup, _np.ndarray):
     ##     nsup = sup.size
     ## else:
@@ -837,25 +837,18 @@ def mrbhdr(rpt):
                           sup, nsup, xaux, nxaux)
     if istat != 0:
         raise BurpError('c_mrbhdr', istat)
-    flgsl = _rbc.BURP2BIN2LIST(iflgs.value,len(_rbc.BURP_FLAGS_IDX_NAME))
+    flgs_dict = flags_decode(iflgs.value)
     try:
         idtyp_desc = _rbc.BURP_IDTYP_DESC[str(idtyp.value)]
     except KeyError:
         idtyp_desc = ''
-    try:
-        flgs_desc = "".join([_rbc.BURP_FLAGS_IDX_NAME[i]+", " if flgsl[i] else "" for i in range(len(flgsl))])
-    except KeyError:
-        flgs_desc = ''
-    if flgs_desc:
-        if flgs_desc[-2:] == ', ':
-            flgs_desc = flgs_desc[:-2]
     return {
             'time'  : itime.value,
             'timehh': itime.value // 100,
             'timemm': itime.value % 100,
-            'flgs'  : iflgs.value,
-            'flgsl' : flgsl,
-            'flgsd' : flgs_desc,
+            'flgs'  : flgs_dict['flgs'],
+            'flgsl' : flgs_dict['flgsl'],
+            'flgsd' : flgs_dict['flgsd'],
             'stnid' : stnids.value,
             'idtyp' : idtyp.value,
             'idtypd': idtyp_desc,
@@ -882,6 +875,51 @@ def mrbhdr(rpt):
             'xaux'  : None,
             'nxaux' : 0
         }
+
+
+def flags_decode(iflgs):
+    """
+    Decode report header flags information.
+
+    flags_dict = flags_decode(flgs)
+
+    Args:
+        flgs : integer value of the flags
+    Returns:
+        {
+            'flgs'  : (int)   Global flags
+                              (24 bits, Bit 0 is the right most bit of the word)
+                              See BURP_FLAGS_IDX_NAME for Bits/flags desc.
+            'flgsl' : (list)  Global flags as a list of int
+                              See BURP_FLAGS_IDX for Bits/flags desc.
+            'flgsd' : (str)   Description of set flgs, comma separated
+        }
+        
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> print('# ' + rmn.flags_decode(1024)['flgsd'])
+    # data observed
+
+    Notes:
+        This is a new function in version 2.1.b2
+
+    See Also:
+        mrfhdr
+        rpnpy.librmn.burp_const
+    """
+    flgsl = _rbc.BURP2BIN2LIST(iflgs,len(_rbc.BURP_FLAGS_IDX_NAME))
+    try:
+        flgs_desc = "".join([_rbc.BURP_FLAGS_IDX_NAME[i]+", " if flgsl[i] else "" for i in range(len(flgsl))])
+    except KeyError:
+        flgs_desc = ''
+    if flgs_desc:
+        if flgs_desc[-2:] == ', ':
+            flgs_desc = flgs_desc[:-2]
+    return {
+            'flgs'  : iflgs,
+            'flgsl' : flgsl,
+            'flgsd' : flgs_desc,
+            }
 
 
 def mrbprm(rpt, blkno):
@@ -1049,7 +1087,7 @@ def mrbtyp_decode(btyp):
                                   See BURP_BKTYP_KIND_DESC
             'bktyp_kindd' : (str) desc of bktyp_kind
             'bkstp'       : (int) block type, Sub data-type component
-            'bkstpd'      : (str)  desc of bktyp_kindd
+            'bkstpd'      : (str) desc of bktyp_kindd
         }        
     Raises:
         TypeError  on wrong input arg types
@@ -1089,33 +1127,60 @@ def mrbtyp_decode(btyp):
                          _ct.byref(bkstp), btyp)
     if istat != 0:
         raise BurpError('c_mrbtyp', istat)
-    bknat_multi = int(_rbc.BURP2BIN(bknat.value,4)[0:2],2)
-    bknat_kind  = int(_rbc.BURP2BIN(bknat.value,4)[2:],2)
-    bktyp_alt   = int(_rbc.BURP2BIN(bktyp.value,4)[0],2)
-    bktyp_kind  = int(_rbc.BURP2BIN(bktyp.value,4)[1:],2)
+    params = mrbtyp_decode_bknat(bknat)
+    params.update(mrbtyp_decode_bktyp(bktyp))
+    params['bkstp'] = bkstp.value
+    try:
+        params['bkstpd'] = _rbc.BURP_BKSTP_DESC[(params['bktyp_alt'], params['bktyp_kind'], params['bkstp'])]
+    except:
+        params['bkstpd'] = ''
+    return params
+
+
+def mrbtyp_decode_bknat(bknat):
+    """
+    Decode bknat intp bknat_multi, bknat_kind
+
+    bknat_dict = mrbtyp_decode_bknat(bknat)
+
+    Args:
+        bknat : (int) encoded block type, kind component
+    Returns:
+        {
+            'bknat'       : (int) block type, kind component
+            'bknat_multi' : (int) block type, kind component, uni/multi bit
+                                  0=uni, 1=multi
+            'bknat_kind'  : (int) block type, kind component, kind value
+                                  See BURP_BKNAT_KIND_DESC
+            'bknat_kindd' : (str) desc of bknat_kind
+        }
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> bknatdict = rmn.mrbtyp_decode_bknat(7)
+    >>> print('# {} {}'.format(bknatdict['bknat_multi'], bknatdict['bknat_kindd']))
+    # 1 flags
+
+    Notes:
+        This is a new function in version 2.1.b2
+    
+    See Also:
+        mrbtyp_decode
+        mrbtyp_encode_bknat        
+        rpnpy.librmn.burp_const
+    """
+    if isinstance(bknat, _ct.c_int):
+         bknat = bknat.value
+    bknat_multi = int(_rbc.BURP2BIN(bknat,4)[0:2],2)
+    bknat_kind  = int(_rbc.BURP2BIN(bknat,4)[2:],2)
     try:
         bknat_kindd = _rbc.BURP_BKNAT_KIND_DESC[bknat_kind]
     except:
         bknat_kindd = ''
-    try:
-        bktyp_kindd = _rbc.BURP_BKTYP_KIND_DESC[bktyp_kind]
-    except:
-        bktyp_kindd = ''
-    try:
-        bkstpd = _rbc.BURP_BKSTP_DESC[(bktyp_alt,bktyp_kind,bkstp.value)]
-    except:
-        bkstpd = ''
     return {
-        'bknat'       : bknat.value,
+        'bknat'       : bknat,
         'bknat_multi' : bknat_multi,
         'bknat_kind'  : bknat_kind,
         'bknat_kindd' : bknat_kindd,
-        'bktyp'       : bktyp.value,
-        'bktyp_alt'   : bktyp_alt, 
-        'bktyp_kind'  : bktyp_kind,
-        'bktyp_kindd' : bktyp_kindd,
-        'bkstp'       : bkstp.value,
-        'bkstpd'      : bkstpd
         }
 
 
@@ -1139,10 +1204,61 @@ def mrbtyp_encode_bknat(bknat_multi, bknat_kind):
 
     See Also:
         mrbtyp_decode
+        mrbtyp_decode_bknat
         mrbtyp_encode_bktyp        
         rpnpy.librmn.burp_const
     """
+    #TODO: check bit order
     return int(_rbc.BURP2BIN(bknat_multi,2)+_rbc.BURP2BIN(bknat_kind,2),2)
+
+
+def mrbtyp_decode_bktyp(bktyp):
+    """
+    Decode bktyp into bktyp_alt, bktyp_kind
+
+    bktyp_dict = mrbtyp_decode_bktyp(bktyp)
+
+    Args:
+        bktyp : (int) block type, Data-type component
+    Returns:
+        {
+            'bktyp'       : (int) block type, Data-type component
+            'bktyp_alt'   : (int) block type, Data-type component, surf/alt bit
+                                  0=surf, 1=alt
+            'bktyp_kind'  : (int) block type, Data-type component, flags
+                                  See BURP_BKTYP_KIND_DESC
+            'bktyp_kindd' : (str) desc of bktyp_kind
+        }                
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> bktypdict = rmn.mrbtyp_decode_bktyp(0)
+    >>> print('# {} {}'.format(bktypdict['bktyp_alt'], bktypdict['bktyp_kindd']))
+    # 0 observations (ADE)
+
+    Notes:
+        This is a new function in version 2.1.b2
+
+    See Also:
+        mrbtyp_decode
+        mrbtyp_encode_bktyp
+        mrbtyp_encode_bknat
+        rpnpy.librmn.burp_const
+    """
+    if isinstance(bktyp, _ct.c_int):
+         bktyp = bktyp.value
+    bktyp_alt   = int(_rbc.BURP2BIN(bktyp,4)[0],2)
+    bktyp_kind  = int(_rbc.BURP2BIN(bktyp,4)[1:],2)
+    try:
+        bktyp_kindd = _rbc.BURP_BKTYP_KIND_DESC[bktyp_kind]
+    except:
+        bktyp_kindd = ''
+    return {
+        'bktyp'       : bktyp,
+        'bktyp_alt'   : bktyp_alt, 
+        'bktyp_kind'  : bktyp_kind,
+        'bktyp_kindd' : bktyp_kindd
+        }
 
     
 def mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind):
@@ -1168,6 +1284,7 @@ def mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind):
         mrbtyp_encode_bknat
         rpnpy.librmn.burp_const
     """
+    #TODO: check bit order
     return int(_rbc.BURP2BIN(bktyp_alt,1)+_rbc.BURP2BIN(bktyp_kind,6),2)
 
     
@@ -1224,6 +1341,7 @@ def mrbtyp_encode(bknat, bktyp=None, bkstp=None):
     ## if istat <= 0:
     ##     raise BurpError('c_mrbtyp', istat)
     ## return istat
+    #TODO: check bit order
     return int("{0:04b}{1:07b}{2:04b}".format(bknat, bktyp, bkstp), 2)
 
 
@@ -1680,8 +1798,8 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     ## A missing data is indicated by putting all the bits ON of the
     ## corresponding element in the array TBLVAL while for the RVAL array,
     ## we insert the attributed value to the option 'MISSING'.
-    ## Note: Type 3 (char) and 5 (upchar) are processed like strings of bits
-    ##       thus, the user should do the data compression himself.
+    ## Notes: Type 3 (char) and 5 (upchar) are processed like strings of bits
+    ##        thus, the user should do the data compression himself.
 
     if not datyp in _rbc.BURP_DATYP_NAMES.keys():
         raise ValueError('Out of range datyp={0}'.format(datyp))

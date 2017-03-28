@@ -231,8 +231,8 @@ tblval = {tblval}"""
     rgroup = parser.add_argument_group(title="Reports related options") #description='')
 
     ## . ssmuse-sh -d cmda/utils/15.2-2
-    ## liburp -wide -conv -irdtb ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ #-stn CYUL
-    ## rpy.brplist --liburp -i ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ -b -e #++stnid CYUL
+    ## liburp -wide -conv -irdtb ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ #-stn CYUL -heure 2100
+    ## rpy.brplist --liburp -i ${CMCADE}/dbase/surface/metar/$(date "+%Y%m%d")00_ -b -e #++stnid CYUL ++time 2100
     parser.add_argument("--liburp", dest="liburp",
                         action="store_true",
                         help="Use liburp utility output format")

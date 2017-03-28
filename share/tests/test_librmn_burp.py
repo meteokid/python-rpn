@@ -56,6 +56,62 @@ class RpnPyLibrmnBurp(unittest.TestCase):
         optValue = rmn.mrfopt(rmn.BURPOP_MISSING)
         self.assertEqual(optValue, optValue0)
 
+    def test_flags_decode(self):
+        flgsdict = rmn.flags_decode(1024)
+        self.assertEqual(flgsdict['flgs'], 1024)
+        self.assertEqual(flgsdict['flgsl'], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        self.assertEqual(flgsdict['flgsd'], 'data observed')
+
+    def test_mrbtyp_decode(self):
+        # From official btyp tool
+        ## btyp 0     : 00:00:0:000000:0000 uni,data,sfc,observations (ADE), valeur observee
+        ## btyp 6144  : 00:11:0:000000:0000 uni,mrqr,sfc,observations (ADE), valeur observee
+        ## btyp 8192  : 01:00:0:000000:0000 multi,data,sfc,observations (ADE), valeur observee
+        ## btyp 14336 : 01:11:0:000000:0000 multi,mrqr,sfc,observations (ADE), valeur observee
+        btypdict = rmn.mrbtyp_decode(0)
+        self.assertEqual(btypdict['bknat'], 0)
+        self.assertEqual(btypdict['bknat_multi'], 0)
+        self.assertEqual(btypdict['bknat_kind'], 0)
+        self.assertEqual(btypdict['bknat_kindd'], 'data')
+        self.assertEqual(btypdict['bktyp'], 0)
+        self.assertEqual(btypdict['bktyp_alt'], 0)
+        self.assertEqual(btypdict['bktyp_kind'], 0)
+        self.assertEqual(btypdict['bktyp_kindd'], 'observations (ADE)')
+        self.assertEqual(btypdict['bkstp'], 0)
+        self.assertEqual(btypdict['bkstpd'], 'observed value')
+        btypdict = rmn.mrbtyp_decode(6144)
+        self.assertEqual(btypdict['bknat'], 3)
+        self.assertEqual(btypdict['bknat_multi'], 0)
+        self.assertEqual(btypdict['bknat_kind'], 3)
+        self.assertEqual(btypdict['bktyp_kindd'], 'observations (ADE)')
+        self.assertEqual(btypdict['bktyp'], 0)
+        self.assertEqual(btypdict['bktyp_alt'], 0)
+        self.assertEqual(btypdict['bktyp_kind'], 0)
+        self.assertEqual(btypdict['bknat_kindd'], 'flags')
+        self.assertEqual(btypdict['bkstp'], 0)
+        self.assertEqual(btypdict['bkstpd'], 'observed value')
+        btypdict = rmn.mrbtyp_decode(8192)
+        self.assertEqual(btypdict['bknat'], 4)
+        self.assertEqual(btypdict['bknat_multi'], 1)
+        self.assertEqual(btypdict['bknat_kind'], 0)
+        self.assertEqual(btypdict['bknat_kindd'], 'data')
+        self.assertEqual(btypdict['bktyp'], 0)
+        self.assertEqual(btypdict['bktyp_alt'], 0)
+        self.assertEqual(btypdict['bktyp_kind'], 0)
+        self.assertEqual(btypdict['bktyp_kindd'], 'observations (ADE)')
+        self.assertEqual(btypdict['bkstp'], 0)
+        self.assertEqual(btypdict['bkstpd'], 'observed value')
+        btypdict = rmn.mrbtyp_decode(14336)
+        self.assertEqual(btypdict['bknat'], 7)
+        self.assertEqual(btypdict['bknat_multi'], 1)
+        self.assertEqual(btypdict['bknat_kind'], 3)
+        self.assertEqual(btypdict['bknat_kindd'], 'flags')
+        self.assertEqual(btypdict['bktyp'], 0)
+        self.assertEqual(btypdict['bktyp_alt'], 0)
+        self.assertEqual(btypdict['bktyp_kind'], 0)
+        self.assertEqual(btypdict['bktyp_kindd'], 'observations (ADE)')
+        self.assertEqual(btypdict['bkstp'], 0)
+        self.assertEqual(btypdict['bkstpd'], 'observed value')
 
     def testWkoffitKnownValues(self):
         """wkoffit should give known result with known input"""
