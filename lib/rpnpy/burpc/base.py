@@ -36,14 +36,24 @@ _filemodelist_inv = dict([
     (v[1], k) for k, v in _filemodelist.items()
     ])
 
-class BurpFile(object):
+
+class BurpcFile(object):
     """
+    Python Class to refer to, interact with a BURP file using the burp_c lib
+
+    TODO: constructor examples
+
+    Attributes:
+        filename : 
+        filemode : 
+        funit    : 
+        TODO
     """
-    def __init__(self,filename, filemode='r', funit=None):
+    def __init__(self, filename, filemode='r', funit=None):
         self.filename = filename
         self.filemode = filemode
-        self.__search = BurpRpt()
-        self.__rpt    = BurpRpt()
+        self.__search = BurpcRpt()
+        self.__rpt    = BurpcRpt()
         self.funit, self.nrep = brp_open(self.filename, self.filemode, funit=funit, getnbr=True)
 
     def __del__(self):
@@ -68,28 +78,31 @@ class BurpFile(object):
     def __next__(self):  # Python 3
         self.__search = brp_findrpt(self.funit, self.__search)
         if not self.__search:
-            self.__search = BurpRpt()
+            self.__search = BurpcRpt()
             raise StopIteration
         ## return self.__search
         ## return brp_getrpt(self.funit, self.__search.handle, self.__rpt)
         return brp_getrpt(self.funit, self.__search.handle)
 
     def next(self):  # Python 2:
+        """ """
         return self.__next__()
 
-    #TODO: __delitem__?
-
     def __getitem__(self, name): #TODO: should call getrpt
-        if isinstance(name, (BurpRpt, dict, long, int)):
+        if isinstance(name, (BurpcRpt, dict, long, int)):
             #TODO: if int or long, should we return the ith report?
             return self.getrpt(name)
         else:
             raise TypeError("Not Supported Type: "+str(type(name)))          
  
     ## def __setitem__(self, name, value):
-    ##     #TODO: Should replace the rpt found with getitem(name)
+    ##     #TODO: Should replace the rpt found with getitem(name) or add a new one
         
+    ## def __delitem__(self, name):
+    ##     #TODO: Should delete the rpt found with getitem(name)
+
     def close(self):
+        """ """
         if self.funit:
             istat = _bp.c_brp_close(self.funit)
         self.funit = None
@@ -101,15 +114,23 @@ class BurpFile(object):
             return brp_getrpt(self.funit, search.handle, rpt)
         return None
 
+    #TODO: should we name it add/update/replace?
+    def putrpt(self, rpt, where=_bc.BRP_END_BURP_FILE):
+        """ """
+        #TODO: conditional brp_updrpthdr
+        brp_updrpthdr(self.funit, rpt)
+        brp_writerpt(self.funit, rpt, where)
         
-class BurpRpt(object):
+
+
+class BurpcRpt(object):
     """
     Python Class equivalenet of the burp_c's BURP_RPT C structure to hold
     the BURP report data
 
     TODO: constructor examples
 
-    Attibutes:
+    Attributes:
         TODO
     """    
     __attrlist = ("handle", "nsize", "temps", "flgs", "stnid",
@@ -127,7 +148,7 @@ class BurpRpt(object):
         }
     def __init__(self, rpt=None):
         self.__bkno = 0
-        self.__blk  = BurpBlk()
+        self.__blk  = BurpcBlk()
         self.__derived = None
         if rpt is None:
             ## print 'NEW:',self.__class__.__name__
@@ -147,7 +168,7 @@ class BurpRpt(object):
     def __repr__(self):
         return self.__class__.__name__+'('+ repr(self.todict())+')'
         
-    ## def __len__(self): #TODO: not working with this def
+    ## def __len__(self): #TODO: not working with this def... find out why and fix it?
     ##     if self.nblk:
     ##         return self.nblk
     ##     return 0
@@ -190,8 +211,8 @@ class BurpRpt(object):
         elif name in self.__class__.__attrlist:
             self.__derived = None
             return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
-        #TODO: encode other items on the fly
         elif name in self.__class__.__attrlist2:
+            #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
         else:
             return super(self.__class__, self).__setattr__(name, value)
@@ -204,7 +225,7 @@ class BurpRpt(object):
             if name < 1 or name > self.nblk:
                 raise IndexError('Index out of range: 1:'+str(self.nblk))
             return brp_getblk(name, self.__blk, self) #TODO: self.getblk()?
-        elif isinstance(name, (BurpBlk, dict)):
+        elif isinstance(name, (BurpcBlk, dict)):
             return self.getblk(name)
         else:
             raise KeyError("No Such Key: "+repr(name))
@@ -224,7 +245,7 @@ class BurpRpt(object):
 
     def update(self, rpt):
         """ """
-        if not isinstance(rpt, (dict, BurpRpt)):
+        if not isinstance(rpt, (dict, BurpcRpt)):
             raise TypeError("Type not supported for rpt: "+str(type(rpt)))
         for k in self.__class__.__attrlist:
             try:
@@ -249,6 +270,11 @@ class BurpRpt(object):
         return None
 
     def derived_attr(self):
+        if not self.__derived:
+            self.__derived = self.__derived_attr()
+        return self.__derived.copy()       
+
+    def __derived_attr(self):
         """ """
         itime = getattr(self.__ptr[0], 'temps')
         iflgs = getattr(self.__ptr[0], 'flgs')
@@ -299,14 +325,14 @@ class BurpRpt(object):
             }
         
 
-class BurpBlk(object):
+class BurpcBlk(object):
     """
     Python Class equivalenet of the burp_c's BURP_BLK C structure to hold
     the BURP block data
 
     TODO: constructor examples
 
-    Attibutes:
+    Attributes:
         TODO:
     """    
     __attrlist = ("bkno", "nele", "nval", "nt", "bfam", "bdesc", "btyp",
@@ -347,6 +373,13 @@ class BurpBlk(object):
     def __repr__(self):
         return self.__class__.__name__+'('+ repr(self.todict())+')'
         
+    ## def __len__(self): #TODO: not working with this def... find out why and fix it?
+    ##     l = self.nele  # getattr(self.__ptr[0], 'nele')
+    ##     print '\nblklen=',self.nele, self.nval, self.nt
+    ##     if l >= 0:
+    ##         return l
+    ##     return 0
+
     def __getattr__(self, name):
         ## print 'getattr:', name
         if name in self.__class__.__attrlist_np_1d:
@@ -355,10 +388,29 @@ class BurpBlk(object):
                 self.__arr[name] = _np.ctypeslib.as_array(v, (self.nele,))
             return self.__arr[name]
         elif name in self.__class__.__attrlist_np_3d:
+            ## BLK_TBLVAL_i = lambda e,v,t: e + self.nele*(v + (self.nval)*t)
+            ## BLK_TBLVAL = lambda blk,e,v,t: blk[BLK_TBLVAL_i(e,v,t)]
+            ## BLK_TBLVAL2 = lambda blk,e,v,t: blk[0].tblval[e + blk[0].nele*(v + (blk[0].nval)*t)]
             if self.__arr[name] is None:
                 v = getattr(self.__ptr[0], name)
                 self.__arr[name] = _np.ctypeslib.as_array(v,
+                                        ## (self.nele, self.nval, self.nt))
+                                        ## (self.nele, self.nval, self.nt)).T
                                         (self.nt, self.nval, self.nele)).T
+                ## print self.__arr[name].shape,(self.nt, self.nval, self.nele)
+                ## print self.__arr[name].flags
+                ## print self.__arr[name].dtype
+                
+                ## for k in (0,1):
+                ##     for j in (0,1):
+                ##         print((0,j,k), BLK_TBLVAL_i(0,j,k),
+                ##               BLK_TBLVAL(v,0,j,k),
+                ##               BLK_TBLVAL2(self.__ptr,0,j,k),
+                ##               self.__arr[name][0,j,k])
+                
+                ## print self.__arr[name][0,0,0], v[0]
+                ## print self.__arr[name][0,0,1], self.__arr[name][0,1,0], v[1]
+                ## t
                 ## self.__arr[name].flags['F_CONTIGUOUS'] = True
             return self.__arr[name]
         elif name in self.__class__.__attrlist:
@@ -375,8 +427,8 @@ class BurpBlk(object):
         if name in self.__class__.__attrlist:
             self.__derived = None
             return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
-        #TODO: encode other items on the fly
         elif name in self.__class__.__attrlist2:
+            #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
         else:
             return super(self.__class__, self).__setattr__(name, value)
@@ -421,7 +473,7 @@ class BurpBlk(object):
 
     def update(self, blk):
         """ """
-        if not isinstance(blk, (dict, BurpBlk)):
+        if not isinstance(blk, (dict, BurpcBlk)):
             raise TypeError("Type not supported for blk: "+str(type(blk)))
         for k in self.__class__.__attrlist:
             try:
@@ -447,6 +499,12 @@ class BurpBlk(object):
         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
 
     def derived_attr(self):
+        """ """
+        if not self.__derived:
+            self.__derived = self.__derived_attr()
+        return self.__derived.copy()           
+
+    def __derived_attr(self):
         """ """
         btyp  = getattr(self.__ptr[0], 'btyp')
         datyp = getattr(self.__ptr[0], 'datyp')
@@ -475,7 +533,7 @@ class BurpBlk(object):
         if index < 0 or index >= self.nele:
             raise IndexError
         params = self.todict()
-        params.update(_rmn.mrbcvt_dict(self.lstele[index]))
+        params.update(_rmn.mrbcvt_dict(self.lstele[index], False))
         params.update({
             'e_ele_no' : index,
             'e_tblval' : self.tblval[index,:,:],
@@ -591,7 +649,7 @@ def brp_close(funit):
     """
     #TODO: desc
     """
-    if isinstance(funit, BurpFile):
+    if isinstance(funit, BurpcFile):
          funit.close()
     elif isinstance(funit, (long, int)):
         istat = _bp.c_brp_close(funit)
@@ -600,7 +658,7 @@ def brp_close(funit):
                              .format(funit))
     else:
         raise TypeError('funit is type="{}"'.format(str(type(funit))) +
-                        ', should be an "int" or a "BurpFile"')
+                        ', should be an "int" or a "BurpcFile"')
         
 
 def brp_free(*args):
@@ -622,7 +680,7 @@ def brp_free(*args):
             _bp.c_brp_freerpt(x)
         elif isinstance(x, _ct.POINTER(_bp.BURP_BLK)):
             _bp.c_brp_freeblk(x)
-        ## elif isinstance(x, BurpRpt, BurpBlk):
+        ## elif isinstance(x, BurpcRpt, BurpcBlk):
         ##     x.__del__()
         else:
             raise TypeError("Not Supported Type: "+str(type(x)))
@@ -631,17 +689,17 @@ def brp_free(*args):
 def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
     """
     """
-    if isinstance(funit, BurpFile):
+    if isinstance(funit, BurpcFile):
          funit = funit.funit
     if not rpt:
-        rpt = BurpRpt()
+        rpt = BurpcRpt()
         rpt.handle = 0
     elif isinstance(rpt, (int, long)):
         handle = rpt
-        rpt = BurpRpt()
+        rpt = BurpcRpt()
         rpt.handle = handle
-    elif not isinstance(rpt, BurpRpt):
-        rpt = BurpRpt(rpt)
+    elif not isinstance(rpt, BurpcRpt):
+        rpt = BurpcRpt(rpt)
     if _bp.c_brp_findrpt(funit, rpt.getptr()) >= 0:
         return rpt
     return None
@@ -650,16 +708,16 @@ def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
 def brp_getrpt(funit, handle=0, rpt=None):
     """
     """
-    if isinstance(funit, BurpFile):
+    if isinstance(funit, BurpcFile):
          funit = funit.funit
-    if isinstance(handle, BurpRpt):
+    if isinstance(handle, BurpcRpt):
         if not rpt:
             rpt = handle
         handle = handle.handle
-    if not isinstance(rpt, BurpRpt):
-        rpt = BurpRpt(rpt)
+    if not isinstance(rpt, BurpcRpt):
+        rpt = BurpcRpt(rpt)
     if _bp.c_brp_getrpt(funit, handle, rpt.getptr()) < 0:
-        raise BRUPCError('Problem in c_brp_getrpt')
+        raise BurpcError('Problem in c_brp_getrpt')
     return rpt
 
 
@@ -667,18 +725,18 @@ def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
     """
     """
     if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
-        rpt = BurpRpt(rpt)
-    if not isinstance(rpt, BurpRpt):
+        rpt = BurpcRpt(rpt)
+    if not isinstance(rpt, BurpcRpt):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
     if not blk:
-        blk = BurpBlk()
+        blk = BurpcBlk()
         blk.bkno = 0
     elif isinstance(blk, (int, long)):
         bkno = blk
-        blk = BurpBlk()
+        blk = BurpcBlk()
         blk.bkno = bkno
-    elif not isinstance(blk, BurpBlk):
-        blk = BurpBlk(blk)
+    elif not isinstance(blk, BurpcBlk):
+        blk = BurpcBlk(blk)
     if _bp.c_brp_findblk(blk.getptr(), rpt.getptr()) >= 0:
         return blk
     return None
@@ -688,18 +746,43 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
     """
     """
     if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
-        rpt = BurpRpt(rpt)
-    if not isinstance(rpt, BurpRpt):
+        rpt = BurpcRpt(rpt)
+    if not isinstance(rpt, BurpcRpt):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
-
-    if not isinstance(blk, BurpBlk):
-        blk = BurpBlk(blk)
+    if not isinstance(blk, BurpcBlk):
+        blk = BurpcBlk(blk)
     else:
         blk.reset_arrays()
     if _bp.c_brp_getblk(bkno, blk.getptr(), rpt.getptr()) < 0:
-        raise BRUPCError('Problem in c_brp_getblk')
+        raise BurpcError('Problem in c_brp_getblk')
     return blk
 
+
+def brp_updrpthdr(funit, rpt):
+    """
+    """
+    if isinstance(funit, BurpcFile):
+         funit = funit.funit
+    if isinstance(rpt, BurpcRpt):
+        rpt = rpt.getptr()
+    if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
+        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
+    if _bp.c_brp_updrpthdr(funit, rpt) < 0:
+        raise BurpcError('Problem inc_brp_updrpthdr')
+    
+def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
+    """
+    """
+    if isinstance(funit, BurpcFile):
+         funit = funit.funit
+    if isinstance(rpt, BurpcRpt):
+        rpt = rpt.getptr()
+    if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
+        raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
+    if _bp.c_brp_writerpt(funit, rpt, where) < 0:
+        raise BurpcError('Problem in c_brp_updrpthdr')
+
+    
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

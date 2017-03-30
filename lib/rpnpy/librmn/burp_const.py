@@ -43,15 +43,54 @@ import numpy as _np
 ## * libecbufr_tables/*
 
 ##DETAILS_START
+
+#== Macros ==
+#<source lang=python>
+# BURP2BIN(x)  converts a int into its binary string representation, burp bit order
+BURP2BIN = lambda v,l=32: "{{0:0{}b}}".format(l).format(v)
+
+# BURP2BIN2LIST_BUFR(x)  converts a int into a list of bit values, bufr bit order
+BURP2BIN2LIST_BUFR = lambda v,l=32: [int(i) for i in list(BURP2BIN(v,l))]
+
+# BURP2BIN_BUFR(x)  converts a int into a list of bit values, burp bit order
+BURP2BIN2LIST = lambda v,l=32: BURP2BIN2LIST_BUFR(v,l)[::-1]
+
+# BRP_ILAT2RLAT(x)  decodes lat from burp code
+BRP_ILAT2RLAT = lambda x: (float(x)/100.) - 90.
+
+# BRP_RLAT2ILAT(x)  encodes lat to burp code
+BRP_RLAT2ILAT = lambda x: int(round(((x + 90.) * 100.)))
+
+# BRP_ILON2RLON(x)  decodes lon from burp code
+BRP_ILON2RLON = lambda x: float(x)/100.
+
+# BRP_RLON2ILON(x)  encodes lon to burp code
+BRP_RLON2ILON = lambda x: int(round(x * 100.))
+
+# BRP_IELEV2RELEV(x)  decodes elev from burp code
+BRP_IELEV2RELEV = lambda x: float(x) - 400.  #TODO: Special case for x=0?
+
+# BRP_RELEV2IELEV(x)  encodes elev to burp code
+BRP_RELEV2IELEV = lambda x: int(round(x + 400.))  #TODO: Special case for x=0?
+
+# BRP_IDX2RDX(x)  decodes dx from burp code
+BRP_IDX2RDX = lambda x: float(x)/10.
+
+# BRP_RDX2IDX(x)  encodes dx to burp code
+BRP_RDX2IDX = lambda x: int(round(x * 10.))
+
+# BRP_IDY2RDY(x)  decodes dy from burp co
+BRP_IDY2RDY = lambda x: float(x)/10.
+
+# BRP_RDY2IDY(x)  encodes dy to burp code
+BRP_RDY2IDY = lambda x: int(round(x * 10.))
+#</source>
+
 #== Constants Details ==
 #=== BURP Constants ===
 
 #NOTE: BUFR numérote les bits de 1 à 7, le bit 1 étant celui de poids le plus élevé
 #<source lang=python>
-BURP2BIN = lambda v,l=32: "{{0:0{}b}}".format(l).format(v)
-BURP2BIN2LIST_BUFR = lambda v,l=32: [int(i) for i in list(BURP2BIN(v,l))]
-BURP2BIN2LIST = lambda v,l=32: BURP2BIN2LIST_BUFR(v,l)[::-1]
-
 MRBCVT_DECODE = 0
 MRBCVT_ENCODE = 1
 

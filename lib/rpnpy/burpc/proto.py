@@ -310,7 +310,7 @@ BLK_LSTELE = lambda blk,e : blk[0].lstele[e]
 BLK_TBLVAL = lambda blk,e,v,t: blk[0].tblval[e + blk[0].nele*(v + (blk[0].nval)*t)]
 BLK_RVAL   = lambda blk,e,v,t: blk[0].rval[e + blk[0].nele*(v + (blk[0].nval)*t)]
 BLK_DVAL   = lambda blk,e,v,t: blk[0].drval[e + blk[0].nele*(v + (blk[0].nval)*t)]
-BLK_DVAL   = lambda blk,l,c: blk[0].charval[l * blk[0].nt + c]
+BLK_CHARVAL= lambda blk,l,c: blk[0].charval[l * blk[0].nt + c]
 BLK_STORE_TYPE = lambda blk: blk[0].store_type
 
 ## /*

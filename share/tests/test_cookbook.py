@@ -26,6 +26,7 @@ Here we load all the librmn functions and constants into a python object. The na
 
   python
   >>> import rpnpy.librmn.all as rmn
+  >>> import rpnpy.vgd.all as vgd
 
 See Also:
   * RPNpy Tutorial
