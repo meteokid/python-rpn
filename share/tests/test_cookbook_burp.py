@@ -20,7 +20,7 @@ The rest of the tutorial will assume you already did this.
 
   PYVERSION="$(python -V 2>&1 | cut -d' ' -f2 | cut -d'.' -f1-2)"
   . s.ssmuse.dot ENV/py/${PYVERSION}/rpnpy/???
-  
+
 Every script should start by importing the needed classes and functions.
 Here we load all the librmn functions and constants into a python object. The name rmn is given to imported objects as a shortcut.
 
@@ -41,7 +41,7 @@ if sys.version_info > (3, ):
     long = int
 
 class RpnPyBurpc(unittest.TestCase):
-    
+
     #==== Example 1 =============================================
 
     def test_ex1_read1(self):
@@ -112,8 +112,8 @@ class RpnPyBurpc(unittest.TestCase):
                 continue
             ## if  brp.RPT_STNID(rr) == '>>POSTALT':
             ##     continue
-            if  brp.RPT_STNID(rr) != '>>POSTALT': #TODO: check problem with postalt
-                continue
+            ## if  brp.RPT_STNID(rr) != '>>POSTALT': #TODO: check problem with postalt, tblval are different from one run to another
+            ##     continue
             print("""
 hhmm   ={:8d} flgs   ={:6d}  codtyp ={:6d}  stnids ={:9s}
 blat   ={:8d} blon   ={:6d}  dx     ={:6d}  dy     ={:6d}  stnhgt ={:6d}
@@ -130,10 +130,10 @@ yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}
                 print("""
 blkno  ={:6d}  nele   ={:6d}  nval   ={:6d}  nt     ={:6d}  bit0   ={:6d}
 bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
-""".format(brp.BLK_BKNO(br), brp.BLK_NELE(br), brp.BLK_NVAL(br), 
-           brp.BLK_NT(br), brp.BLK_BIT0(br), brp.BLK_BDESC(br), 
+""".format(brp.BLK_BKNO(br), brp.BLK_NELE(br), brp.BLK_NVAL(br),
+           brp.BLK_NT(br), brp.BLK_BIT0(br), brp.BLK_BDESC(br),
            brp.BLK_BTYP(br), brp.BLK_NBIT(br), brp.BLK_DATYP(br),
-           brp.BLK_BFAM(br))) 
+           brp.BLK_BFAM(br)))
                 for k in range(brp.BLK_NT(br)):
                     if brp.BLK_NT(br) != 1:
                         print("\nobservation {}/{}".
@@ -143,7 +143,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
                         mystr += "    {:0>6d}".format(brp.BLK_DLSTELE(br,i))
                     print(mystr)
                     for j in range(brp.BLK_NVAL(br)):
-                        mystr = "tblval ="
+                        mystr = "tblval = {} {} {}".format(brp.RPT_STNID(rr),k,j)
                         for i in range(brp.BLK_NELE(br)):
                             mystr += "{:10d}".format(brp.BLK_TBLVAL(br,i,j,k))
                         print(mystr)
@@ -166,18 +166,20 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
             for rr in bfile:
                 ## if  rr.stnid == '>>POSTALT':
                 ##     continue
-                if  rr.stnid != '>>POSTALT':
-                    continue
+                ## if  rr.stnid != '>>POSTALT':
+                ##     continue
                 print("""
 hhmm   ={temps:8d} flgs   ={flgs:6d}  codtyp ={idtype:6d}  stnids ={stnid:9s}
 blat   ={lati:8d} blon   ={longi:6d}  dx     ={dx:6d}  dy     ={dy:6d}  stnhgt ={elev:6d}
 yymmdd ={date:8d} oars   ={oars:6d}  runn   ={runn:6d}  nblk   ={nblk:6d}  dlay   ={drnd:6d}
 """.format(**rr.todict()))
                 for br in rr:
+                    ## brptr = br.getptr()
                     print("""
 blkno  ={bkno:6d}  nele   ={nele:6d}  nval   ={nval:6d}  nt     ={nt:6d}  bit0   ={bit0:6d}
 bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bfam   ={bfam:6d}
 """.format(**br.todict()))
+                    n=0
                     for k in range(br.nt):
                         if br.nt != 1:
                             print("\nobservation {}/{}".format(k+1, br.nt))
@@ -186,13 +188,26 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                             mystr += "    {:0>6d}".format(np.asscalar(br.dlstele[i]))
                         print(mystr)
                         for j in range(br.nval):
-                            mystr = "tblval ="
+                            mystr = "tblval = {} {} {}".format(rr.stnid,k,j)
                             for i in range(br.nele):
                                 mystr += "{:10d}".format(np.asscalar(br.tblval[i,j,k]))
+                                ## a = brp.BLK_TBLVAL(brptr,i,j,k)
+                                ## b = np.asscalar(br.tblval[i,j,k])
+                                ## mystr += "{:10d}".format(a)
+                                ## mystr += "{:10d}".format(b)
+                                ## mystr += "[{}]".format(a==b)
+                                ## brp.BLK_SetTBLVAL(br.getptr(),i,j,k,n)
+                                ## a = brp.BLK_TBLVAL(brptr,i,j,k)
+                                ## b = np.asscalar(br.tblval[i,j,k])
+                                ## mystr += "{:10d}".format(a)
+                                ## mystr += "{:10d}".format(b)
+                                ## mystr += "[{}]".format(a==b)
+                                ## n += 1
                             print(mystr)
+                ## break
 
     #==== Example 3 =============================================
-                            
+
     def test_ex3_obs(self):
         """burplib_c iweb doc example 3"""
         import os, sys
@@ -206,7 +221,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         print("Nombre Enreg = {}".format(istat))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
-        counters = {} #TODO: preserve order? then store info in list, index in dict
+        counters = {}
         while brp.c_brp_findrpt(iunit, rs) >= 0:
             if brp.c_brp_getrpt(iunit, brp.RPT_HANDLE(rs), rr) < 0:
                 continue
@@ -241,7 +256,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         print("-----\t--------\t--------")
         print("     \tTotal   \t{}".format(total))
 
-      
+
     def test_ex3_obs_py(self):
         """burplib_c iweb doc example 3"""
         import os, sys
@@ -251,7 +266,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
-        counters = {} #TODO: preserve order? then store info in list, index in dict
+        counters = {}
         with brp.BurpcFile(infile) as bfile:
             print("Nombre Enreg = {}".format(len(bfile)))
             for rr in bfile:
@@ -281,7 +296,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         print("     \tTotal   \t{}".format(total))
 
     #==== Example 4 =============================================
-                            
+
     def test_ex4_elemets(self):
         """burplib_c iweb doc example 4"""
         import os, sys
@@ -386,12 +401,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
             rs = brp.BurpcRpt({'handle' : 0, 'temps' : 2300, 'idtype': idtyp})
             rr = None
             while True:
-                rr = bfilei.getrpt(rs, rr)
+                rr = bfilei.get(rs, rr)
                 if not rr:
                     break
                 rs.handle = rr.handle
                 rr.temps  = 2200
-                bfileo.putrpt(rr)
+                bfileo.put(rr)
 
     #==== Example 6 =============================================
 
@@ -404,10 +419,10 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ounit = 20
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
         istat = brp.c_brp_open(ounit, outfile, "a")
-        
+
         rr, tmp = brp.c_brp_newrpt(), brp.c_brp_newblk()
         br, br2 = brp.c_brp_newblk(), brp.c_brp_newblk()
-        
+
         # remplir entete enregistrement
         brp.RPT_SetTEMPS(rr , 1200    )
         brp.RPT_SetFLGS( rr , 0       )
@@ -429,7 +444,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
         # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
         brp.c_brp_clrrpt(rr)
-   
+
         # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
         brp.c_brp_putrpthdr(ounit, rr)
 
@@ -459,7 +474,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         brp.BLK_SetRVAL(br, 0, 0, 0, 10.0)  # pour 7004
         brp.BLK_SetRVAL(br, 1, 0, 0, 20.0)  # pour 11001
 
-        # on a rempli les valeurs reelles alors les convertir selon la 
+        # on a rempli les valeurs reelles alors les convertir selon la
         # table burp en entiers qui seront enregistres dans le fichier burp
         ## if brp.c_brp_convertblk(br) < 0:
         if brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR) < 0:
@@ -477,9 +492,9 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         if brp.c_brp_putblk(rr, br2) < 0:
             sys.exit(1)
 
-        # on peut redimensionner le bloc br pour contenir 5 elements, 
+        # on peut redimensionner le bloc br pour contenir 5 elements,
         # 10 valeurs par element et aussi 2 tuiles de 5 X 10
-        # comme ici c'est une expansion du bloc donc on retrouvera les 
+        # comme ici c'est une expansion du bloc donc on retrouvera les
         # elements et leurs valeures (precedentes aux memes indices)
         brp.c_brp_resizeblk(br, 5, 10, 2)
 
@@ -532,31 +547,127 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
     ##         'temps'  : 1200,
     ##         'flgs'   : 0,        #todo
     ##         'stnid'  : '74724',
-    ##         'idtype' : rpn.BURP_IDTYP_IDX['PILOT'],  ## 32
-    ##         'lati'   : rpn.BRP_RLAT2ILAT(50.23),     ## 14023
-    ##         'longi'  : rpn.BRP_RLON2ILON(270.23),    ## 27023
-    ##         'dx'     : rpn.BRP_RDX2IDX(0.),  ## 0
-    ##         'dy'     : rpn.BRP_RDY2IDY(0.),  ## 0
-    ##         'elev'   : 0,  #todo: rpn.BRP_RELEV2IELEV(0.)
+    ##         'idtype' : rmn.BURP_IDTYP_IDX['PILOT'],  ## 32
+    ##         'lati'   : rmn.BRP_RLAT2ILAT(50.23),     ## 14023
+    ##         'longi'  : rmn.BRP_RLON2ILON(270.23),    ## 27023
+    ##         'dx'     : rmn.BRP_RDX2IDX(0.),  ## 0
+    ##         'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
+    ##         'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
     ##         'drnd'   : 0,
     ##         'date'   : 20050317,
     ##         'oars'   : 0,
     ##         })
 
+    ##     bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+    ##     bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+    ##     bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+    ##     bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+    ##     bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+    ##     bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+    ##     bkstp       = 0  ## See BURP_BKSTP_DESC
+    ##     btyp  = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
     ##     blk = brp.BurpcBlk({
     ##         'store_type' : brp.BRP_STORE_FLOAT,
-    ##         'bfam'   : 0,  #todo
-    ##         'bdesc'  : 0,  #todo
-    ##         'btyp'   : 64,  #todo
-    ##         ''   : ,
-    ##         ''   : ,
-    ##         ''   : ,
-    ##         ''   : ,
+    ##         'bfam'   : 0,
+    ##         'bdesc'  : 0,
+    ##         'btyp'   : btyp,  ## 64
+    ##         ## 'bknat'  : bknat,
+    ##         ## 'bktyp'  : bktyp,
+    ##         ## 'bkstp'  : bkstp,
+    ##         ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
     ##         })
-        
+
+    ##     blk.putele({
+            
+    ##         })
+
+    ##     #TODO: add elements
+    ##     #TODO: add blk to rpt
+    ##     #TODO: add rpt to file
+
     ##     with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
     ##         pass
-          
+
+
+    ##     # allouer espace pour l'enregistremen pour ajouter des blocs
+    ##     brp.c_brp_allocrpt(rr, 10000)
+    ##     brp.c_brp_resizerpt(rr, 20000) # on peut reallouer + espace
+    ##     print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
+
+    ##     # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
+    ##     brp.c_brp_clrrpt(rr)
+
+    ##     # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
+    ##     brp.c_brp_putrpthdr(ounit, rr)
+
+    ##     # allouer espace pour remplir le bloc
+    ##     # ici pour 2 elements et 1 valeur par element et 1 groupe nelem X nval
+    ##     brp.c_brp_allocblk(br, 2, 1, 1)
+
+    ##     # Les indices en C commencent par 0,
+    ##     # on remplit les elements: 7004 et 11001
+    ##     brp.BLK_SetDLSTELE(br, 0, 7004)
+    ##     brp.BLK_SetDLSTELE(br, 1, 11001)
+
+    ##     # Compacter les elements
+    ##     brp.c_brp_encodeblk(br)
+
+    ##     # remplir les valeures pour chacun des elements
+    ##     brp.BLK_SetRVAL(br, 0, 0, 0, 10.0)  # pour 7004
+    ##     brp.BLK_SetRVAL(br, 1, 0, 0, 20.0)  # pour 11001
+
+    ##     # on a rempli les valeurs reelles alors les convertir selon la
+    ##     # table burp en entiers qui seront enregistres dans le fichier burp
+    ##     ## if brp.c_brp_convertblk(br) < 0:
+    ##     if brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR) < 0:
+    ##         sys.exit(1)
+
+    ##     # on met le bloc br dans l'enrgistrement rr
+    ##     if brp.c_brp_putblk(rr, br) < 0:
+    ##         sys.exit(1)
+
+    ##     # on peut faire une copie du bloc br, br2 est une copie de br
+    ##     # tous les attributs de br le seront pour br2
+    ##     brp.c_brp_copyblk(br2, br)
+
+    ##     # on met le bloc br2 dans l'enrgistrement rr
+    ##     if brp.c_brp_putblk(rr, br2) < 0:
+    ##         sys.exit(1)
+
+    ##     # on peut redimensionner le bloc br pour contenir 5 elements,
+    ##     # 10 valeurs par element et aussi 2 tuiles de 5 X 10
+    ##     # comme ici c'est une expansion du bloc donc on retrouvera les
+    ##     # elements et leurs valeures (precedentes aux memes indices)
+    ##     brp.c_brp_resizeblk(br, 5, 10, 2)
+
+    ##     # on ajoute ce bloc a l'enregistrement
+    ##     brp.c_brp_putblk(rr, br)
+
+    ##     # ici on fait une copie de br, tmp est une copie de br
+    ##     brp.c_brp_copyblk(tmp, br)
+
+    ##     # redimensionner le bloc tmp, ici il s'agit d'une reduction
+    ##     # 3 elements, 2 valeures par element et 1 tuile de 3 x 2
+    ##     brp.c_brp_resizeblk(tmp, 3, 2, 1)
+
+    ##     # Ici on indique que l'on desire remplir, le bloc br de val entieres
+    ##     brp.BLK_SetSTORE_TYPE(tmp, brp.BRP_STORE_INTEGER)
+
+    ##     # setter l'element 3 a 11003
+    ##     brp.BLK_SetDLSTELE(tmp, 2, 11003)
+    ##     # et ses valeures entieres
+    ##     brp.BLK_SetTBLVAL(tmp, 2, 0, 0, 15)
+    ##     brp.BLK_SetTBLVAL(tmp, 2, 1, 0, 30)
+
+    ##     # compacter les elements du bloc
+    ##     brp.c_brp_encodeblk(tmp)
+
+    ##     # ajouter le bloc tmp a l'enrgistrement rr
+    ##     brp.c_brp_putblk(rr, tmp)
+
+    ##     # ajouter l'enrgistrement dans le fichier
+    ##     if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
+    ##         sys.exit(1)
 
     #==== Example 7 =============================================
 
@@ -564,175 +675,175 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     #TODO: examples for most burp utils
 
-## brptotxt	Afficher sous format texte particulier le contenu de nos fichier BURP dbase des METAR pour les besoins de AWWS.	brptotxt -usage
-        
-## btyp	Pour afficher la signification d'un btyp	btyp -h
-        
-## burpcmp	Comparaison de fichiers BURP	burpcmp -usage
-        
-## burpdiff	Ordonne les enregistrements BURP dans le même ordre puis les compare à l'aide de xxdiff	burpdiff -usage
-        
-## burpmatch	Match BURP reports 
+## brptotxt     Afficher sous format texte particulier le contenu de nos fichier BURP dbase des METAR pour les besoins de AWWS. brptotxt -usage
+
+## btyp Pour afficher la signification d'un btyp        btyp -h
+
+## burpcmp      Comparaison de fichiers BURP    burpcmp -usage
+
+## burpdiff     Ordonne les enregistrements BURP dans le même ordre puis les compare à l'aide de xxdiff       burpdiff -usage
+
+## burpmatch    Match BURP reports
 ## (without replacement == once 2 reports are matched subsequent reports that share the same match criteria will not be matched with the original 2 reports)
-## (see selectbrp for "with replacement")	burpmatch -usage
-        
-## bvoir	S.V.P. utilisez "liburp fileburp -enrgs"
-## Pour afficher le contenu des cles d'en-tete d'un fichier BURP	man bvoir
-        
-## codbuf	Obtenir rapidement la signification d'un element BUFR	codbuf <noelembufr>
-        
-## codltr	Permet d'afficher a l'ecran la signification d'un code lettre (ex: MiMi, dd, fff) et si sa signification refere a un no.table, affiche la signification de la table.	codltr <LETTRES A RECHERCHER>
-        
-## codtbl	Permet d'afficher a l'ecran la signification d'un element bufr ou un element local et s'il s'agit d'un "code table", affiche la signification du "code table"	Documentation 
+## (see selectbrp for "with replacement")       burpmatch -usage
 
-## codtyp	Permet d'afficher a l'ecran la definition du codtyp	codtyp <code>
+## bvoir        S.V.P. utilisez "liburp fileburp -enrgs"
+## Pour afficher le contenu des cles d'en-tete d'un fichier BURP        man bvoir
 
-## completebrp	Effectuer une operation "complete" avec 2 fichiers BURP.	completebrp -usage
+## codbuf       Obtenir rapidement la signification d'un element BUFR   codbuf <noelembufr>
 
-## degrup	Dégroupe les fichiers BURP	degrup -usage
+## codltr       Permet d'afficher a l'ecran la signification d'un code lettre (ex: MiMi, dd, fff) et si sa signification refere a un no.table, affiche la signification de la table.    codltr <LETTRES A RECHERCHER>
 
-## extrait/extract	Extrait les en-tetes des bulletins de rawdata que nous recevons ou un bulletin complet avec l'en-tete 
-## (extract extrait en plus l'heure de reception du bulletin)	max extrait
+## codtbl       Permet d'afficher a l'ecran la signification d'un element bufr ou un element local et s'il s'agit d'un "code table", affiche la signification du "code table"   Documentation
+
+## codtyp       Permet d'afficher a l'ecran la definition du codtyp     codtyp <code>
+
+## completebrp  Effectuer une operation "complete" avec 2 fichiers BURP.        completebrp -usage
+
+## degrup       Dégroupe les fichiers BURP     degrup -usage
+
+## extrait/extract      Extrait les en-tetes des bulletins de rawdata que nous recevons ou un bulletin complet avec l'en-tete
+## (extract extrait en plus l'heure de reception du bulletin)   max extrait
 ## extrait -h
 
-## filtburp	Pour filtrer le contenu d'un fichier BURP (complement de EDITBRP)	man filtburp
+## filtburp     Pour filtrer le contenu d'un fichier BURP (complement de EDITBRP)       man filtburp
 
-## flgs24	Pour afficher la signification du flag de 24 bits de l'en-tete	flgs24 <code>
+## flgs24       Pour afficher la signification du flag de 24 bits de l'en-tete  flgs24 <code>
 
-## flgsbm	Pour afficher la signification d'une valeur trouvée dans un bloc marqueur	flgsbm <code>
+## flgsbm       Pour afficher la signification d'une valeur trouvée dans un bloc marqueur      flgsbm <code>
 
-## flgtbl	Pour afficher la signification des bits allumés des flag-tables (CREX/BUFR Table B)	flgtbl -usage 
+## flgtbl       Pour afficher la signification des bits allumés des flag-tables (CREX/BUFR Table B)    flgtbl -usage
 
-## kprmk	Permet de garder uniquement la partie RMK d'un bulletin ASCII METAR et d'éliminer la partie principale.	Documentation
+## kprmk        Permet de garder uniquement la partie RMK d'un bulletin ASCII METAR et d'éliminer la partie principale.        Documentation
 
-## liburp	Pour lire un fichier BURP et en voir une sortie ASCII (differente de Rdburp)	liburp -usage
+## liburp       Pour lire un fichier BURP et en voir une sortie ASCII (differente de Rdburp)    liburp -usage
 
-## reflex	Pour fusionner ou recuperer l'espace perdu des fichiers BURP	man reflex
+## reflex       Pour fusionner ou recuperer l'espace perdu des fichiers BURP    man reflex
 
-## rmv_rmk	Permet de garder uniquement la partie principale d'un bulletin ASCII METAR et d'éliminer la partie RMK.	Documentation
+## rmv_rmk      Permet de garder uniquement la partie principale d'un bulletin ASCII METAR et d'éliminer la partie RMK.        Documentation
 
-## runn	Pour afficher la signification de runn	runn <code>
+## runn Pour afficher la signification de runn  runn <code>
 
-## sa_sm_mtr	Lire 2 ou 3 fichiers BURP de type SA, SM ou METAR et afficher les valeurs de éléments demandés où il y a plus qu'un rapport avec les même lat/lon/date/heure.	sa_sm_mtr -usage
+## sa_sm_mtr    Lire 2 ou 3 fichiers BURP de type SA, SM ou METAR et afficher les valeurs de éléments demandés où il y a plus qu'un rapport avec les même lat/lon/date/heure.      sa_sm_mtr -usage
 
-## selectbrp	Select BURP reports 
+## selectbrp    Select BURP reports
 ## (with replacement == once 2 reports are matched the program will continue to match them against subsequent reports that share the same match criteria)
-## (see burpmatch for "without replacement")	selectbrp -usage
+## (see burpmatch for "without replacement")    selectbrp -usage
 
-## stationlist	Affiche les stations, par codtyp, contenues dans un fichier burp.	stationlist -h
+## stationlist  Affiche les stations, par codtyp, contenues dans un fichier burp.       stationlist -h
 
-## tmoinstd	Calculer T-Td (écart du point de rosée) pour chacun des enregistrements du fichier BURP specifie.	tmoinstd -usage
+## tmoinstd     Calculer T-Td (écart du point de rosée) pour chacun des enregistrements du fichier BURP specifie.     tmoinstd -usage
 
 ## Xdatamon
-    
-## editbrp	Pour manipuler des fichiers BURP (selection d'enregistrements)	. ssmuse-sh -d rpn/utils/15.2
-        
-## nbgen	Genere le nom d'un fichier BURP en suivant la nomenclature operationnelle	CMDS
+
+## editbrp      Pour manipuler des fichiers BURP (selection d'enregistrements)  . ssmuse-sh -d rpn/utils/15.2
+
+## nbgen        Genere le nom d'un fichier BURP en suivant la nomenclature operationnelle       CMDS
 ## . ssmuse-sh -d cmoi/base/20141216/
-        
-## reflex	Pour fusionner ou recuperer l'espace perdu des fichiers BURP	. ssmuse-sh -d rpn/utils/15.2
-        
-## SATPLOT	Satellite Data Plotting and Analysis Tool	ARMA
+
+## reflex       Pour fusionner ou recuperer l'espace perdu des fichiers BURP    . ssmuse-sh -d rpn/utils/15.2
+
+## SATPLOT      Satellite Data Plotting and Analysis Tool       ARMA
 ## stephen.macpherson@ec.gc.ca
-        
-## sigma	Permet de tracer des cartes de contours ou de coupes d'éléments météorologiques grave a partir d'un fichier standard à accèss direct. Les fichiers produits sont metacod et segfile et peuvent êtres visualisés à l'aide de metaview ou xmetaview.	. ssmuse-sh -d rpn/utils/15.2
+
+## sigma        Permet de tracer des cartes de contours ou de coupes d'éléments météorologiques grave a partir d'un fichier standard à accèss direct. Les fichiers produits sont metacod et segfile et peuvent êtres visualisés à l'aide de metaview ou xmetaview.     . ssmuse-sh -d rpn/utils/15.2
 
 
-## ade.regrup 	on utilise ade.regrup pour traiter les donnees satwinds dans evalalt	 
+## ade.regrup   on utilise ade.regrup pour traiter les donnees satwinds dans evalalt
 
-## deri.bextrep	Gardant pour chaque stn le rapport le plus pres de la date donnee et se trouvant dans la fenetre donnee	 
+## deri.bextrep Gardant pour chaque stn le rapport le plus pres de la date donnee et se trouvant dans la fenetre donnee
 
-## deri.blcklst	Flag observations according to blacklist rules	
+## deri.blcklst Flag observations according to blacklist rules
 
-## deris.bmrgsasm	Combine les rapports SM (synop) avec les rapports SA	
+## deris.bmrgsasm       Combine les rapports SM (synop) avec les rapports SA
 
-## deris.bsfderiv	Surface Derivate	
+## deris.bsfderiv       Surface Derivate
 
-## deris.cleanburp	Enlever les blocs avec dimension de 0 ou des elements BUFR invalides	
+## deris.cleanburp      Enlever les blocs avec dimension de 0 ou des elements BUFR invalides
 
-## deris.lndmask	Screen out observations over land	
+## deris.lndmask        Screen out observations over land
 
-## deris.ssmidbretr	Retrieve data from satellite database according to user directives	
+## deris.ssmidbretr     Retrieve data from satellite database according to user directives
 
-## deriv.aircraftcorr	Aircraft temperature bias correction	
+## deriv.aircraftcorr   Aircraft temperature bias correction
 
-## deriv.blacklistgbgps	Blacklister Ground-Based GPS selon les parametres de monitoring	
+## deriv.blacklistgbgps Blacklister Ground-Based GPS selon les parametres de monitoring
 
-## deriv.bmrguasm	Fusionne les rapports concernant la meme station (ASCII)	
+## deriv.bmrguasm       Fusionne les rapports concernant la meme station (ASCII)
 
-## deriv.bmrguasmb	Fusionne les rapports concernant la meme station (BUFR)	
+## deriv.bmrguasmb      Fusionne les rapports concernant la meme station (BUFR)
 
-## deriv.buaderiv	Upper Air Derivate	
+## deriv.buaderiv       Upper Air Derivate
 
-## deriv.degrupsatwinds	Sauver en donnees degroupees	
+## deriv.degrupsatwinds Sauver en donnees degroupees
 
-## deriv.fuaderiv	Fake Upper Air Derivate (simulate derivate flags)	
+## deriv.fuaderiv       Fake Upper Air Derivate (simulate derivate flags)
 
-## deriv.llglob	Ajouter la hauteur de la surface	
+## deriv.llglob Ajouter la hauteur de la surface
 
-## deriv.nodups	Eliminer les observations considerees des duplications	
+## deriv.nodups Eliminer les observations considerees des duplications
 
-## deriv.prepareua	Interpolate missing pressure values, sort levels, eliminate duplicates (ASCII)	
+## deriv.prepareua      Interpolate missing pressure values, sort levels, eliminate duplicates (ASCII)
 
-## deriv.prepareuab	Interpolate missing pressure values, sort levels, eliminate duplicates (BUFR)	
+## deriv.prepareuab     Interpolate missing pressure values, sort levels, eliminate duplicates (BUFR)
 
-## deriv.resume	Generate a summary record (>>DERIALT)	
+## deriv.resume Generate a summary record (>>DERIALT)
 
-## deriv.satqcssmis	Lire les coefficients de correction de biais	
+## deriv.satqcssmis     Lire les coefficients de correction de biais
 
-## deriv.thinning0aircrafts	Select aircraft observations according to thinning rules	
+## deriv.thinning0aircrafts     Select aircraft observations according to thinning rules
 
-## deriv.thinning0amsua	Enlever les donnees corrompues (AMSUA)	
+## deriv.thinning0amsua Enlever les donnees corrompues (AMSUA)
 
-## deriv.thinning0amsub	Enlever les donnees corrompues (AMSUB)	
+## deriv.thinning0amsub Enlever les donnees corrompues (AMSUB)
 
-## deriv.thinning0blackua	Apply blacklisting to raobs data (ASCII)	
+## deriv.thinning0blackua       Apply blacklisting to raobs data (ASCII)
 
-## deriv.thinning0blackuab	Apply blacklisting to raobs data (BUFR)	
+## deriv.thinning0blackuab      Apply blacklisting to raobs data (BUFR)
 
-## deriv.thinning0csr	Apply selection rules to CSR observations	
+## deriv.thinning0csr   Apply selection rules to CSR observations
 
-## deriv.thinning0gbgps	Selectionner GBGPS selon la proximite au surface (SYNOP)	
+## deriv.thinning0gbgps Selectionner GBGPS selon la proximite au surface (SYNOP)
 
-## deriv.thinning0satwinds	Read atmospheric motion wind observations and select according to thinning0 rules	
+## deriv.thinning0satwinds      Read atmospheric motion wind observations and select according to thinning0 rules
 
-## deriv.thinning0scat	Programme principal de degroupage/selection des Quikscat/ASCAT (KNMI)	
+## deriv.thinning0scat  Programme principal de degroupage/selection des Quikscat/ASCAT (KNMI)
 
-## deriv.tovsreducer	Reduire le nombre de tovs d'un fichier burp	
+## deriv.tovsreducer    Reduire le nombre de tovs d'un fichier burp
 
-## deriv.trackqc	Controle de la qualite des donnees regroupees	
+## deriv.trackqc        Controle de la qualite des donnees regroupees
 
-## deriv.trajraobs	Adds trajectory of the balloon (ASCII)	
+## deriv.trajraobs      Adds trajectory of the balloon (ASCII)
 
-## deriv.trajraobsb	Adds trajectory of the balloon (BUFR)	
+## deriv.trajraobsb     Adds trajectory of the balloon (BUFR)
 
-## deriv.ua4dprecedence	Give precedence to 4d reports (with trajectory elements)	
+## deriv.ua4dprecedence Give precedence to 4d reports (with trajectory elements)
 
-## deriv.uabcor	Ajouter la correction de biais dans un fichier d'observations de raobs	
+## deriv.uabcor Ajouter la correction de biais dans un fichier d'observations de raobs
 
-## deriv.uaconvertelem	Rearrange and calculate elements to the order expected by the derivate system
+## deriv.uaconvertelem  Rearrange and calculate elements to the order expected by the derivate system
 
-## cdict	Outil pour comparer les dictionnaires de stations du CMC et du WMO 
-## (Avant de s'en servir l'utilisateur doit s'assurer d'avoir les bonnes informations dans la base de données cdict, ie: le dictionnaire de stations du CMC et celui de l'OMM. Ainsi que de maintenir à jour ces informations. Sinon cdict retourne de l'information qui peut être obsolète)	Installation sur demande	cdict -h
+## cdict        Outil pour comparer les dictionnaires de stations du CMC et du WMO
+## (Avant de s'en servir l'utilisateur doit s'assurer d'avoir les bonnes informations dans la base de données cdict, ie: le dictionnaire de stations du CMC et celui de l'OMM. Ainsi que de maintenir à jour ces informations. Sinon cdict retourne de l'information qui peut être obsolète)        Installation sur demande        cdict -h
 
-## genprof	Produit un fichier burp en interpolant aux niveaux et aux temps demandés (Profiles)	. ssmuse-sh -d cmoi/base/20141216/
-## genprof	Documentation
-        
-## hdecode	Page web pour décoder les headers du GTS (T1T2A1A2ii decoder)	hdecode
-        
-## monitoring	Meteorological observation quality and availability monitoring web page	monitoring
-        
-## msc-adas	Reception de données AMDAR canadiennes en format ARINC-620, monitoring et contrôle de qualité de celles-ci, et génération de bulletins BUFR pour envoi sur le GTS	msc-adas	Documentation
-        
-## r.arcad	Outil diagnostic pour évaluer les résultats de cycles d'assimilation de données	. ssmuse-sh -d rpn/utils/15.2/
-## r.arcad	Documentation
+## genprof      Produit un fichier burp en interpolant aux niveaux et aux temps demandés (Profiles)    . ssmuse-sh -d cmoi/base/20141216/
+## genprof      Documentation
+
+## hdecode      Page web pour décoder les headers du GTS (T1T2A1A2ii decoder)  hdecode
+
+## monitoring   Meteorological observation quality and availability monitoring web page monitoring
+
+## msc-adas     Reception de données AMDAR canadiennes en format ARINC-620, monitoring et contrôle de qualité de celles-ci, et génération de bulletins BUFR pour envoi sur le GTS  msc-adas        Documentation
+
+## r.arcad      Outil diagnostic pour évaluer les résultats de cycles d'assimilation de données      . ssmuse-sh -d rpn/utils/15.2/
+## r.arcad      Documentation
 ## Josée Morneau
-        
+
 ## qc3fuzzy
-## gc3fuzzy2	Contôle de qualité des observations de surface
+## gc3fuzzy2    Contôle de qualité des observations de surface
 
     #==== Example ? =============================================
-                            
+
     def _test_misc(self):
         a = brp.BurpcRpt()
         print(a)
@@ -788,7 +899,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         rs = brp.BurpcRpt()
         rs.handle, rr, br = 0, None, None
         while True:
-            rr = bfile.getrpt(rs, rr)
+            rr = bfile.get(rs, rr)
             if not rr: break
             rs.handle = rr.handle
             print("""
@@ -801,7 +912,7 @@ yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}
             ## bkno = 0
             ## while True:
             for bkno in range(rr.nblk):
-                br = rr.getblk(bkno, rr, br)
+                br = rr.get(bkno, rr, br)
                 if not br: break
                 ## bkno = br.bkno
                 print("""
@@ -840,7 +951,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 ##            rr.lati, rr.longi, rr.dx, rr.dy, rr.elev,
 ##            rr.date, rr.oars, rr.runn, rr.nblk, rr.drnd))
 ##                 for br in rr:
-        
+
 
     #TODO: def _test_ex2_readburp_e(self):
 
@@ -898,7 +1009,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         rr, br = None, None
         counters = {} #TODO: preserve order? then store info in list, index in dict
         while True:
-            rr = bfile.getrpt(rs, rr)
+            rr = bfile.get(rs, rr)
             if not rr: break
             rs.handle = rr.handle
             if rr.stnid[0] != '^':
@@ -909,7 +1020,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
                 continue
             trouve = False
             for bkno in range(rr.nblk):
-                br = rr.getblk(bkno, rr, br)
+                br = rr.get(bkno, rr, br)
                 if not br: break
                 if (br.bknat & 3) == 2:  #TODO: use const with decoded bknat
                     print 'bknat_multi', br.bknat & 3, rmn.mrbtyp_decode_bknat(br.bknat), rmn.BURP2BIN(br.bknat,8), rmn.BURP2BIN2LIST(br.bknat,8), rmn.BURP2BIN2LIST_BUFR(br.bknat,8)

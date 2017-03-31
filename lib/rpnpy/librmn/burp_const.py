@@ -27,7 +27,7 @@ import numpy as _np
 #TODO: cleanup
 ## See:
 ## * ls -lL $AFSISIO/datafiles/constants/ | grep -i burp
-## ** $AFSISIO/datafiles/constants/tableburp_[ef].val 
+## ** $AFSISIO/datafiles/constants/tableburp_[ef].val
 ##    table_b_bufr_[ef]_opsvalid_v23
 ## ** $AFSISIO/datafiles/constants/tableburp [fr]
 ##    $AFSISIO/datafiles/constants/table_b_bufr_e [en]
@@ -104,7 +104,7 @@ BURP_RVAL_MISSING = { #TODO: review
     ## 3: _np.uint8,       # character string
     ## 4: _np.int32,       # signed integer
     ## 5: _np.uint8,       # character string (uppercase)
-    6: BURP_RVAL_MISSING0, # floating point 
+    6: BURP_RVAL_MISSING0, # floating point
     7: BURP_RVAL_MISSING0, # double precision
     ## 8: _np.complex64,   # complex IEEE        #TODO: review
     ## 9: _np.complex128   # double complex IEEE #TODO: review
@@ -183,7 +183,7 @@ BURP_FLAGS_IDX = dict([(v, k) for k, v in BURP_FLAGS_IDX_NAME.items()])
 
 
 #<source lang=python>
-BURP_IDTYP_DESC = { 
+BURP_IDTYP_DESC = {
     '12' : 'SYNOP, NON AUTOMATIQUE',
     '13' : 'SHIP, NON AUTOMATIQUE',
     '14' : 'SYNOP MOBIL',
@@ -304,13 +304,13 @@ BURP_IDTYP_IDX = dict([(v, int(k)) for k, v in BURP_IDTYP_DESC.items()])
 ## BURP valid code for data types
 #<source lang=python>
 BURP_DATYP_LIST = { #TODO: review
-    'binary'  : 0,  # 0 = string of bits (bit string)  
-    'uint'    : 2,  # 2 = unsigned integers  
-    'char'    : 3,  # 3 = characters (NBIT must be equal to 8)  
-    'int'     : 4,  # 4 = signed integers  
+    'binary'  : 0,  # 0 = string of bits (bit string)
+    'uint'    : 2,  # 2 = unsigned integers
+    'char'    : 3,  # 3 = characters (NBIT must be equal to 8)
+    'int'     : 4,  # 4 = signed integers
     'upchar'  : 5,  # 5 = uppercase characters (the lowercase characters
                     #     will be converted to uppercase during the read)
-                    #     (NBIT must be equal to 8)  
+                    #     (NBIT must be equal to 8)
     'float'   : 6,  # 6 = real*4 (ie: 32bits)  #TODO: review
                     # ?? nombres complexes, partie réelle, simple précision (R4)
     'double'  : 7,  # 7 = real*8 (ie: 64bits)  #TODO: review
@@ -346,17 +346,21 @@ BURP_BKNAT_MULTI_DESC = {
     0 : 'uni',
     1 : 'multi'
     }
+BURP_BKNAT_MULTI_IDX = dict([(v, int(k)) for k, v in BURP_BKNAT_MULTI_DESC.items()])
+
 BURP_BKNAT_KIND_DESC = {
     0 : 'data',
     1 : 'info',
     2 : 'desc3d',
     3 : 'flags'
     }
+BURP_BKNAT_KIND_IDX = dict([(v, int(k)) for k, v in BURP_BKNAT_KIND_DESC.items()])
 
 BURP_BKTYP_ALT_DESC = {
     0 : 'surf',
     1 : 'alt'
     }
+BURP_BKTYP_ALT_IDX = dict([(v, int(k)) for k, v in BURP_BKTYP_ALT_DESC.items()])
 
 BURP_BKTYP_KIND_DESC = {
     0 : 'observations (ADE)',
@@ -389,9 +393,10 @@ BURP_BKTYP_KIND_DESC = {
     27 : 'QC weather elements (QCOBS)',
     28 : 'QA of DMSobservations'
     }
+BURP_BKTYP_KIND_IDX = dict([(v, int(k)) for k, v in BURP_BKTYP_KIND_DESC.items()])
 
 ## (bktyp_alt, bktyp_kind, bkstp) : description
-BURP_BKSTP_DESC = { #TODO
+BURP_BKSTP_DESC = {
     (0, 0, 0) : 'observed value',
     (0, 1, 0) : 'observed value',
     (0, 0, 1) : 'correction to position and/or identificator',
@@ -537,6 +542,9 @@ BURP_BKSTP_DESC = { #TODO
     (1, 22, 5) : 'E (données, Multi), type de surface, basse densité',
     (1, 22, 6) : 'F (données, Multi), type de surface, haute densité',
     }
+## (bktyp_alt, bktyp_kind, bkstp_desc) : bkstp
+BURP_BKSTP_IDX  = dict([((k[0], k[1], v), int(k[2])) for k, v in BURP_BKSTP_DESC.items()])
+
 #</source>
 ##DETAILS_END
 
