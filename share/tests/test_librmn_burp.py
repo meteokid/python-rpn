@@ -460,6 +460,13 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             self.assertEqual(d0[k], d[k],
                              'For {0}, expected {1}, got {2}'
                              .format(k, d0[k], d[k]))
+        d  = rmn.mrbcvt_dict_bufr(10031)
+        for k in d.keys():
+            self.assertEqual(d0[k], d[k],
+                             'For {0}, expected {1}, got {2}'
+                             .format(k, d0[k], d[k]))
+        bufridlist = rmn.mrbcvt_dict_find_id('.*ground\s+temperature.*')
+        self.assertEqual(bufridlist[0], 12120)
 
     def testmrbcvtdecodeKnownValues(self):
         """mrbprm should give known result with known input"""
@@ -482,9 +489,9 @@ class RpnPyLibrmnBurp(unittest.TestCase):
                                               blkparams['datyp'])
                 rval      = rmn.mrbcvt_decode(blkdata,
                                               datyp=blkparams['datyp'])
-                #TODO: check results            
+                #TODO: check results
             rmn.burp_close(funit)
-            
+
     def testmrfvoiKnownValues(self):
         """mrfvoi should give known result with known input"""
         RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
@@ -520,7 +527,7 @@ class RpnPyLibrmnBurp(unittest.TestCase):
             params = rmn.mrbhdr(buf)
             for iblk in xrange(params['nblk']):
                 blkdata = rmn.mrb_prm_xtr_dcl_cvt(buf, iblk+1)
-                #TODO: check results            
+                #TODO: check results
             rmn.burp_close(funit)
 
 

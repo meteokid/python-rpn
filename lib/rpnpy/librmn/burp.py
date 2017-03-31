@@ -38,6 +38,7 @@ See Also:
 """
 
 import os
+import re as _re
 import ctypes as _ct
 import numpy as _np
 from rpnpy.librmn import proto_burp as _rp
@@ -1576,70 +1577,10 @@ def mrbcol(bufrids):
     return cmcids
 
 
-def mrbcvt_dict(cmcid, raise_error=True):
+def _mrbcvt_dict_full_init():
     """
-    Extract BUFR table B info for cmcid
-
-    cvtdict = mrbcvt_dict(bufrid)
-    
-    Args:
-        cmcid       : Element CMC code name
-        raise_error : Specify what to do when bufrid is not found in BURP table B
-                      if True,  raise an error 
-                      if False, return an empty dict with key error=-1
-                      (optional, default=True)
-    Returns
-        {
-        'e_cmcid'   : (int) Element CMC code
-        'e_bufrid'  : (int) Element BUFR code
-        'e_bufrid_F': (int) Type part of Element code (e.g. F=0 for obs)
-        'e_bufrid_X': (int) Class part of Element code 
-        'e_bufrid_Y': (int) Class specific Element code part of Element code 
-        'e_desc'    : (str) Element description
-        'e_cvt'     : (int) Flag for conversion (1=need units conversion)
-        'e_units'   : (str) Units desciption
-        'e_scale'   : (int) Scaling factor for element value conversion
-        'e_bias'    : (int) Bias for element value conversion
-        'e_nbits'   : (int) nb of bits for encoding value
-        'e_multi'   : (int) 1 means descriptor is of the "multi" or 
-                          repeatable type (layer, level, etc.) and
-                          it can only appear in a "multi" block of data
-        'e_error'   : (int) 0 if bufrid found in BURP table B, -1 otherwise
-        }
-    Raises:
-        KeyError   on key not found in burp table b dict
-        TypeError  on wrong input arg types
-        BurpError  on any other error
-
-    Examples:
-    >>> import os, os.path
-    >>> import rpnpy.librmn.all as rmn
-    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
-    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
-    >>> funit  = rmn.burp_open(filename)
-    >>> handle = rmn.mrfloc(funit)
-    >>> rpt    = rmn.mrfget(handle, funit=funit)
-    >>> params = rmn.mrbhdr(rpt)
-    >>> for iblk in xrange(params['nblk']):
-    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
-    ...     for cmcid in blkdata['cmcids']:
-    ...         try:
-    ...             cvtdict = rmn.mrbcvt_dict(cmcid)
-    ...             # print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
-    ...         except:
-    ...             pass  # Description not found
-    >>> rmn.burp_close(funit)
-
-    See Also:
-        mrfget
-        mrbcvt_dict
-        mrbdcl
-        mrbcol
-        mrbxtr
-        mrbhdr
-        mrfget
-        mrfloc
-        burp_open
+    Read BUFR table B and parse into a dict
+    in preparation for use in other functions
     """
     if not len(_mrbcvt_dict_full.keys()):
         AFSISIO = os.getenv('AFSISIO', '')
@@ -1683,7 +1624,95 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 if len(item) > 84 and item[84] == 'M':
                     d['e_multi'] = 1
                 _mrbcvt_dict_full[id] = d
-    bufrid =  mrbdcl(cmcid)
+ 
+def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
+    """
+    Find bufrid matching description in BUFR table B
+
+    bufrid = mrbcvt_dict_find_id(desc, nmax=1, flags=None)
+
+    Args:
+        desc : (str) Description of the BUFR elem, can use a regexp
+        nmax : (int) Max number of matching desc (default=999)
+        flags: re.match flags (default=re.IGNORECASE)
+    Returns
+        e_bufrid  : (list of int) Element BUFR code as found in BUFR table B
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> bufridlist = rmn.mrbcvt_dict_find_id('.*ground\s+temperature.*')
+
+    See Also:
+        mrbcvt_dict
+        mrbcvt_dict_bufr
+    """
+    if not len(_mrbcvt_dict_full.keys()):
+        _mrbcvt_dict_full_init()
+    e_bufrid = []
+    for k,v in _mrbcvt_dict_full.items():
+        if _re.match(desc, v['e_desc'], flags):
+            e_bufrid.append(v['e_bufrid'])
+        if len(e_bufrid) >= nmax:
+            break
+    return e_bufrid
+
+def mrbcvt_dict_bufr(bufrid, raise_error=True, cmcid=None):
+    """
+    Extract BUFR table B info for bufrid
+
+    cvtdict = mrbcvt_dict_bufr(bufrid)
+
+    Args:
+        bufrid      : Element BUFR code name
+        raise_error : Specify what to do when bufrid is not found in BURP table B
+                      if True,  raise an error
+                      if False, return an empty dict with key error=-1
+                      (optional, default=True)
+    Returns
+        {
+        'e_cmcid'   : (int) Element CMC code
+        'e_bufrid'  : (int) Element BUFR code
+        'e_bufrid_F': (int) Type part of Element code (e.g. F=0 for obs)
+        'e_bufrid_X': (int) Class part of Element code
+        'e_bufrid_Y': (int) Class specific Element code part of Element code
+        'e_desc'    : (str) Element description
+        'e_cvt'     : (int) Flag for conversion (1=need units conversion)
+        'e_units'   : (str) Units desciption
+        'e_scale'   : (int) Scaling factor for element value conversion
+        'e_bias'    : (int) Bias for element value conversion
+        'e_nbits'   : (int) nb of bits for encoding value
+        'e_multi'   : (int) 1 means descriptor is of the "multi" or
+                          repeatable type (layer, level, etc.) and
+                          it can only appear in a "multi" block of data
+        'e_error'   : (int) 0 if bufrid found in BURP table B, -1 otherwise
+        }
+    Raises:
+        KeyError   on key not found in burp table b dict
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import rpnpy.librmn.all as rmn
+    >>> bufrid = 10031
+    >>> cvtdict = rmn.mrbcvt_dict_bufr(bufrid, raise_error=False)
+    >>> # print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
+
+    See Also:
+        mrbcvt_dict
+        mrbcvt_dict_find_id
+        mrfget
+        mrbdcl
+        mrbcol
+        mrbxtr
+        mrbhdr
+        mrfget
+        mrfloc
+        burp_open
+    """
+    if not len(_mrbcvt_dict_full.keys()):
+        _mrbcvt_dict_full_init()
+    if not cmcid:
+        cmcid = mrbcol(bufrid)
     try:
         return _mrbcvt_dict_full[bufrid]
     except:
@@ -1699,7 +1728,7 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 'e_bufrid_X': int(id[1:3]),
                 'e_bufrid_Y': int(id[3:6]),
                 'e_cvt'     : 0,
-                'e_desc'      : '',
+                'e_desc'    : '',
                 'e_units'   : '',
                 'e_scale'   : 0,
                 'e_bias'    : 0,
@@ -1707,10 +1736,79 @@ def mrbcvt_dict(cmcid, raise_error=True):
                 'e_multi'   : 0
                 }
 
+def mrbcvt_dict(cmcid, raise_error=True):
+    """
+    Extract BUFR table B info for cmcid
+
+    cvtdict = mrbcvt_dict(bufrid)
+
+    Args:
+        cmcid       : Element CMC code name
+        raise_error : Specify what to do when bufrid is not found in BURP table B
+                      if True,  raise an error
+                      if False, return an empty dict with key error=-1
+                      (optional, default=True)
+    Returns
+        {
+        'e_cmcid'   : (int) Element CMC code
+        'e_bufrid'  : (int) Element BUFR code
+        'e_bufrid_F': (int) Type part of Element code (e.g. F=0 for obs)
+        'e_bufrid_X': (int) Class part of Element code
+        'e_bufrid_Y': (int) Class specific Element code part of Element code
+        'e_desc'    : (str) Element description
+        'e_cvt'     : (int) Flag for conversion (1=need units conversion)
+        'e_units'   : (str) Units desciption
+        'e_scale'   : (int) Scaling factor for element value conversion
+        'e_bias'    : (int) Bias for element value conversion
+        'e_nbits'   : (int) nb of bits for encoding value
+        'e_multi'   : (int) 1 means descriptor is of the "multi" or
+                          repeatable type (layer, level, etc.) and
+                          it can only appear in a "multi" block of data
+        'e_error'   : (int) 0 if bufrid found in BURP table B, -1 otherwise
+        }
+    Raises:
+        KeyError   on key not found in burp table b dict
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+
+    Examples:
+    >>> import os, os.path
+    >>> import rpnpy.librmn.all as rmn
+    >>> ATM_MODEL_DFILES = os.getenv('ATM_MODEL_DFILES').strip()
+    >>> filename = os.path.join(ATM_MODEL_DFILES,'bcmk_burp','2007021900.brp')
+    >>> funit  = rmn.burp_open(filename)
+    >>> handle = rmn.mrfloc(funit)
+    >>> rpt    = rmn.mrfget(handle, funit=funit)
+    >>> params = rmn.mrbhdr(rpt)
+    >>> for iblk in xrange(params['nblk']):
+    ...     blkdata = rmn.mrbxtr(rpt, iblk+1)
+    ...     for cmcid in blkdata['cmcids']:
+    ...         try:
+    ...             cvtdict = rmn.mrbcvt_dict(cmcid)
+    ...             # print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
+    ...         except:
+    ...             pass  # Description not found
+    >>> rmn.burp_close(funit)
+
+    See Also:
+        mrbcvt_dict_bufr
+        mrbcvt_dict_find_id
+        mrfget
+        mrbdcl
+        mrbcol
+        mrbxtr
+        mrbhdr
+        mrfget
+        mrfloc
+        burp_open
+    """
+    bufrid =  mrbdcl(cmcid)
+    return mrbcvt_dict_bufr(bufrid, raise_error, cmcid)
+
  
 def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     """
-    Convert table/BURF values to real values.
+    Convert table/BUFR values to real values.
 
     rval = mrbcvt_decode(cmcids, tblval)
     rval = mrbcvt_decode(cmcids, tblval, datyp)
@@ -1720,7 +1818,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     Args:
         cmcids : List of element names in the report in numeric BUFR codes.
                  See the code desc in the FM 94 BUFR man
-        tblval : BURF code values (array of int or float)
+        tblval : BUFR code values (array of int or float)
         datyp' : (optional) Data type as obtained from mrbprm (int)
                  See rpnpy.librmn.burp_const BURP_DATYP_LIST
                                          and BURP_DATYP2NUMPY_LIST
