@@ -160,6 +160,34 @@ class RpnPyBurpc(unittest.TestCase):
                 i += 1
             self.assertEqual(len(bfile), i)
 
+    def test_brp_BurpcFile_iter2(self):
+        """brp_BurpcFile_iter  """
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        with brp.BurpcFile(mypath) as bfile:
+            for i in range(len(bfile)):
+                rpt = bfile[i]
+                i += 1
+            self.assertEqual(len(bfile), i)
+
+    def test_brp_BurpcFile_indexError(self):
+        """brp_BurpcFile_iter  """
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        with brp.BurpcFile(mypath) as bfile:
+            try:
+                rpt = bfile[-1]
+                self.assertTrue(False, 'BurpFile[-1] should raise index error')
+            except IndexError:
+                pass
+            try:
+                rpt = bfile[len(bfile)]
+                self.assertTrue(False, 'BurpFile[len(bfile)] should raise index error')
+            except IndexError:
+                pass
+
     def test_BURP_RPT(self):
         """brp_BURP_RPT  """
         rpt = brp.BurpcRpt()
@@ -293,8 +321,10 @@ class RpnPyBurpc(unittest.TestCase):
         mypath = self.getFN(mypath)
         with brp.BurpcFile(mypath) as bfile:
             rpt = bfile.get()
-            rpt = bfile.get(rpt.handle)
-        self.assertEqual(rpt.handle, 1025)
+            rpt = bfile.get({'handle' : rpt.handle})
+            self.assertEqual(rpt.handle, 1025)
+            rpt = bfile.get(1)
+            self.assertEqual(rpt.handle, 1025)
 
     def test_brp_find_rpt2c(self):
         """with BurpcFile getrpt 2nd + recycle mem"""
@@ -303,8 +333,10 @@ class RpnPyBurpc(unittest.TestCase):
         mypath = self.getFN(mypath)
         with brp.BurpcFile(mypath) as bfile:
             rpt = bfile.get()
-            rpt = bfile.get(rpt.handle, rpt)
-        self.assertEqual(rpt.handle, 1025)
+            rpt = bfile.get({'handle' : rpt.handle}, rpt)
+            self.assertEqual(rpt.handle, 1025)
+            rpt = bfile.get(1, rpt)
+            self.assertEqual(rpt.handle, 1025)
 
     def test_brp_find_rpt2d(self):
         """brp_BurpcFile_item  """
@@ -312,8 +344,10 @@ class RpnPyBurpc(unittest.TestCase):
         mypath, itype, iunit = self.knownValues[0]
         with brp.BurpcFile(self.getFN(mypath)) as bfile:
             rpt = bfile[0]
-            rpt = bfile[rpt.handle]
-        self.assertEqual(rpt.handle, 1025)
+            rpt = bfile[{'handle' : rpt.handle}]
+            self.assertEqual(rpt.handle, 1025)
+            rpt = bfile[1]
+            self.assertEqual(rpt.handle, 1025)
 
     def test_brp_find_rpt_not_found(self):
         """brp_find_rpt  not_found"""
@@ -541,13 +575,13 @@ class RpnPyBurpc(unittest.TestCase):
             blk = rpt.get(None)
             self.assertEqual(blk.bkno, 1)
             self.assertEqual(blk.datyp, 4)
-            blk = rpt.get(blk.bkno+1)
-            self.assertEqual(blk.bkno, 2)
-            self.assertEqual(blk.datyp, 4)
-            blk = rpt.get(7)
+            blk = rpt.get(3)
+            self.assertEqual(blk.bkno, 4)
+            self.assertEqual(blk.datyp, 2)
+            blk = rpt[6]
             self.assertEqual(blk.bkno, 7)
             self.assertEqual(blk.datyp, 4)
-            blk = rpt.get(7, blk)
+            blk = rpt.get(6, blk)
             self.assertEqual(blk.bkno, 7)
             self.assertEqual(blk.datyp, 4)
 
@@ -571,10 +605,15 @@ class RpnPyBurpc(unittest.TestCase):
         with brp.BurpcFile(mypath) as bfile:
             rpt = bfile.get()
             self.assertEqual(rpt.nblk, 12)
-            ## blk = rpt.get(12)
-            ## self.assertEqual(blk, None)
+            blk = rpt[0]
+            blk = rpt[11]
             try:
-                blk = rpt.get(13)
+                blk = rpt[12]
+                self.assertTrue(False, "gpt.get should raise IndexError")
+            except:
+                pass
+            try:
+                blk = rpt[-1]
                 self.assertTrue(False, "gpt.get should raise IndexError")
             except:
                 pass
@@ -675,6 +714,19 @@ class RpnPyBurpc(unittest.TestCase):
             for blk in rpt:
                 i += 1
                 self.assertEqual(blk.bkno, i)
+                self.assertTrue(i <= rpt.nblk)
+            self.assertEqual(blk.bkno, rpt.nblk)
+
+    def test_brp_get_blk_iter2(self):
+        """Report iter on block"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        with brp.BurpcFile(mypath) as bfile:
+            rpt = bfile.get()
+            for i in range(rpt.nblk):
+                blk = rpt[i]
+                self.assertEqual(blk.bkno, i+1)
                 self.assertTrue(i <= rpt.nblk)
             self.assertEqual(blk.bkno, rpt.nblk)
 
@@ -780,7 +832,7 @@ class RpnPyBurpc(unittest.TestCase):
         mypath, itype, iunit = self.knownValues[0]
         with brp.BurpcFile(self.getFN(mypath)) as bfile:
             rpt = bfile[0]
-            blk = rpt[1]
+            blk = rpt[0]
             blk2 = blk.derived_attr()
             ## for k,v in blk2.items():
             ##     print "{} : {},".format(repr(k),repr(v))
@@ -831,7 +883,7 @@ class RpnPyBurpc(unittest.TestCase):
         mypath, itype, iunit = self.knownValues[0]
         with brp.BurpcFile(self.getFN(mypath)) as bfile:
             rpt = bfile[0]
-            blk = rpt[1]
+            blk = rpt[0]
             ## for k,v in rmn.mrbcvt_dict(blk.lstele[0], raise_error=False).items():
             ##     print "{} : {},".format(repr(k),repr(v))
             ele = blk.get(0)
@@ -919,7 +971,7 @@ class RpnPyBurpc(unittest.TestCase):
             for ele in blk:
                 self.assertEqual(n, ele['e_ele_no'])
                 self.assertEqual(ele['e_cmcid'], blk.lstele[n])
-                self.assertEqual(ele['e_tblval'], blk.tblval[n,:,:])
+                self.assertTrue(np.all(ele['e_tblval'][:,:]==blk.tblval[n,:,:]))
                 n += 1
             self.assertEqual(n, blk.nele)
 

@@ -111,6 +111,7 @@ class _BurpcObjBase(object):
     ## def put(self, name, value):  #to be defined by child class
     ## def next(self):  #to be defined by child class
 
+    #TODO: add list/dict type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) help({}) for other __?__ operators
 
 class BurpcFile(_BurpcObjBase):
     """
@@ -137,8 +138,9 @@ class BurpcFile(_BurpcObjBase):
                 self.filemode = filename['filemode']
             if 'funit' in filename.keys():
                 self.funit = filename['funit']
-        self.__search = BurpcRpt()
-        self.__rpt    = BurpcRpt()
+        self.__search  = BurpcRpt()
+        self.__handles = []
+        self.__rpt     = BurpcRpt()
         self.funit, self.nrep = brp_open(self.filename, self.filemode, funit=self.funit, getnbr=True)
         self.__ptr = self.funit
 
@@ -155,6 +157,7 @@ class BurpcFile(_BurpcObjBase):
         return self.nrep
 
     def next(self):  # Python 2:
+        #TODO: should we use indexing instead of search?
         self.__search = brp_findrpt(self.funit, self.__search)
         if not self.__search:
             self.__search = BurpcRpt()
@@ -175,21 +178,50 @@ class BurpcFile(_BurpcObjBase):
 
     def get(self, search=None, rpt=None):
         """Find a report and get its meta + data"""
-        #TODO: if int, get the i'th report... find rt from start to the ith, cache handle for later faster lookup
-        if not (search is None or
-                isinstance(search, (BurpcRpt, dict, long, int))):
+        if search is None or isinstance(search, (BurpcRpt, dict)):
+            search = brp_findrpt(self.funit, search)
+            if search:
+                return brp_getrpt(self.funit, search.handle, rpt)
+            return None
+        elif isinstance(search, (long, int)):
+            if search < 0 or search >= self.nrep:
+                raise IndexError('Index out of range: [0:{}['.format(self.nrep))
+            if search >= len(self.__handles):
+                i0 = len(self.__handles)
+                search1 = None
+                if i0 > 0:
+                    search1 = self.__handles[-1]
+                for i in range(i0, search+1):
+                    search1 = brp_findrpt(self.funit, search1)
+                    if search1:
+                        self.__handles.append(search1.handle)
+                    else:
+                        break
+            return brp_getrpt(self.funit, self.__handles[search], rpt)
+        else:
             raise TypeError("For Name: {}, Not Supported Type: {}".format(repr(search), str(type(search))))
-        search = brp_findrpt(self.funit, search)
-        if search:
-            return brp_getrpt(self.funit, search.handle, rpt)
-        return None
 
-    def put(self, rpt, where=_bc.BRP_END_BURP_FILE):
+    def put(self, where, rpt):
         """ """
-        #TODO: handle put(rpt), put(where, rpt) ala __setitem__ where where can also be a handle or a rpt
+        if not isinstance(rpt, BurpcRpt):
+            raise TypeError("rpt should be of type BurpcRpt, got: {}, ".format(str(type(rpt))))
+        append = where is None
+        if append:
+            where = _bc.BRP_END_BURP_FILE
+        ## elif isinstance(where, (BurpcRpt, dict)): #TODO:
+        ## elif isinstance(where, (long, int)): #TODO:
+        else:
+            raise TypeError("For where: {}, Not Supported Type: {}".format(repr(where), str(type(where))))
+
+        self.__handles = [] #TODO: is it the best place to invalidate the cache?
         #TODO: conditional brp_updrpthdr
         brp_updrpthdr(self.funit, rpt)
         brp_writerpt(self.funit, rpt, where)
+        if append: #TODO: only if writeok
+            self.nrep += 1
+
+    def append(self, value):
+        self.put(None, value)
 
 
 class BurpcRpt(_BurpcObjBase):
@@ -261,10 +293,9 @@ class BurpcRpt(_BurpcObjBase):
                 name2 = name
             return self.derived_attr()[name2]
         elif isinstance(name, (int, long)):
-            #TODO: should we keep python's convention of 0:nblk-1?
+            name += 1
             if name < 1 or name > self.nblk:
-                raise IndexError('Index out of range: 1:'+str(self.nblk))
-            ## return brp_getblk(name, blk=self.__blk, rpt=self)
+                raise IndexError('Index out of range: [0:{}['.format(self.nblk))
             return brp_getblk(name, blk=blk, rpt=self)
         elif name is None or isinstance(name, (BurpcBlk, dict)):
             name2 = brp_findblk(name, self)
@@ -293,6 +324,9 @@ class BurpcRpt(_BurpcObjBase):
         else:
             return super(self.__class__, self).__setattr__(name, value)
             ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
+
+    def append(self, value):
+        self.put(None, value)
 
     def derived_attr(self):
         if not self.__derived:
@@ -451,6 +485,10 @@ class BurpcBlk(_BurpcObjBase):
         else:
             return super(self.__class__, self).__setattr__(name, value)
 
+    def append(self, value):
+        self.put(None, value)
+    #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
+
     def reset_arrays(self):
         ## print "reset array"
         self.__arr = {
@@ -524,17 +562,23 @@ class BurpcBlk(_BurpcObjBase):
             pass
         return params
 
+    def putelem(self, index, values):
+        """indexing from 0 to nele-1"""
+        if not instance(values, dict):
+            raise TypeError
+        #TODO: check if all needed params are provided
+        #TODO: check if dims match
 
 ## class BurpcEle(object):
 ##     """
-##     Python Class to hold a BURP block's element data et meta
+##     Python Class to hold a BURP block element's data and meta
 
 ##     TODO: constructor examples
 
 ##     Attributes:
 ##         TODO:
 ##     """
-##     __attrlist = ("nval", "nt", "datyp", "store_type",
+##     __attrlist = ("id", "nval", "nt", "datyp", "store_type",
 ##                   "tblval", "rval","drval", "charval")
 ##             ## 'e_ele_no' : index,
 ##             ## 'e_tblval' : self.tblval[index,:,:],
@@ -542,10 +586,28 @@ class BurpcBlk(_BurpcObjBase):
 ##             ## 'e_rval'   : None,
 ##             ## 'e_drval'  : None,
 ##             ## 'e_charval': None,
-##     __attrlist2 = ()
+##     __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
+##                    'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
+##                    'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi')
 
 ##     def __init__(self, ele=None):
-##         pass
+##         self.__derived = None
+##         if ele is None:
+##             pass #TODO: allow?
+##         elif isinstance(ele, BurpcEle):
+##             #TODO: copy?
+##         elif isinstance(ele, dict):
+##             #TODO: defaults
+##             #TODO: Check that minimal stuff provided: id, values and/or shape
+##         else:
+##             raise TypeError
+
+##     def update(self, ele):
+##         self.__derived = None
+##         if isinstance(ele, BurpcEle):
+##         elif isinstance(ele, dict):
+##         else:
+##             raise TypeError
 
 ##     ## def __del__(self):
 ##     ##     ## print 'DEL:',self.__class__.__name__

@@ -1629,7 +1629,7 @@ def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
     """
     Find bufrid matching description in BUFR table B
 
-    bufrid = mrbcvt_dict_find_id(desc, nmax=1, flags=None)
+    bufrid = mrbcvt_dict_find_id(desc)
 
     Args:
         desc : (str) Description of the BUFR elem, can use a regexp
@@ -1641,6 +1641,9 @@ def mrbcvt_dict_find_id(desc, nmax=999, flags=_re.IGNORECASE):
     Examples:
     >>> import rpnpy.librmn.all as rmn
     >>> bufridlist = rmn.mrbcvt_dict_find_id('.*ground\s+temperature.*')
+
+    Notes:
+        This is a new function in version 2.1.b2
 
     See Also:
         mrbcvt_dict
@@ -1696,6 +1699,9 @@ def mrbcvt_dict_bufr(bufrid, raise_error=True, cmcid=None):
     >>> bufrid = 10031
     >>> cvtdict = rmn.mrbcvt_dict_bufr(bufrid, raise_error=False)
     >>> # print('{e_bufrid:0>6} {e_desc} [{e_units}]'.format(**cvtdict))
+
+    Notes:
+        This is a new function in version 2.1.b2
 
     See Also:
         mrbcvt_dict

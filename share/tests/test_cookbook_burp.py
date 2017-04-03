@@ -406,7 +406,8 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                     break
                 rs.handle = rr.handle
                 rr.temps  = 2200
-                bfileo.put(rr)
+                bfileo.append(rr)
+                ## print 'len bfileo=', len(bfileo)
 
     #==== Example 6 =============================================
 
@@ -535,139 +536,148 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         brp.brp_free(rr, br, br2, tmp)
 
 
-    ## def _test_ex6_write2_py(self):
-    ##     """burplib_c iweb doc example 6"""
-    ##     import os, sys
-    ##     import rpnpy.librmn.all as rmn
-    ##     import rpnpy.burpc.all as brp
-    ##     outfile = 'test_ex6_write2_py.brp'
-    ##     brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    def test_ex6_write2_py(self):
+        """burplib_c iweb doc example 6"""
+        ## import os, sys
+        ## import rpnpy.librmn.all as rmn
+        ## import rpnpy.burpc.all as brp
+        ## outfile = 'test_ex6_write2_py.brp'
+        ## brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
-    ##     rpt = brp.BurpcRpt({
-    ##         'temps'  : 1200,
-    ##         'flgs'   : 0,        #todo
-    ##         'stnid'  : '74724',
-    ##         'idtype' : rmn.BURP_IDTYP_IDX['PILOT'],  ## 32
-    ##         'lati'   : rmn.BRP_RLAT2ILAT(50.23),     ## 14023
-    ##         'longi'  : rmn.BRP_RLON2ILON(270.23),    ## 27023
-    ##         'dx'     : rmn.BRP_RDX2IDX(0.),  ## 0
-    ##         'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
-    ##         'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
-    ##         'drnd'   : 0,
-    ##         'date'   : 20050317,
-    ##         'oars'   : 0,
-    ##         })
+        ## rpt = brp.BurpcRpt({
+        ##     'temps'  : 1200,
+        ##     'flgs'   : 0,        #todo
+        ##     'stnid'  : '74724',
+        ##     'idtype' : rmn.BURP_IDTYP_IDX['PILOT'],  ## 32
+        ##     'lati'   : rmn.BRP_RLAT2ILAT(50.23),     ## 14023
+        ##     'longi'  : rmn.BRP_RLON2ILON(270.23),    ## 27023
+        ##     'dx'     : rmn.BRP_RDX2IDX(0.),  ## 0
+        ##     'dy'     : rmn.BRP_RDY2IDY(0.),  ## 0
+        ##     'elev'   : 0,  #todo: rmn.BRP_RELEV2IELEV(0.)
+        ##     'drnd'   : 0,
+        ##     'date'   : 20050317,
+        ##     'oars'   : 0,
+        ##     })
 
-    ##     bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
-    ##     bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
-    ##     bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
-    ##     bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
-    ##     bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
-    ##     bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
-    ##     bkstp       = 0  ## See BURP_BKSTP_DESC
-    ##     btyp  = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
-    ##     blk = brp.BurpcBlk({
-    ##         'store_type' : brp.BRP_STORE_FLOAT,
-    ##         'bfam'   : 0,
-    ##         'bdesc'  : 0,
-    ##         'btyp'   : btyp,  ## 64
-    ##         ## 'bknat'  : bknat,
-    ##         ## 'bktyp'  : bktyp,
-    ##         ## 'bkstp'  : bkstp,
-    ##         ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
-    ##         })
+        ## bknat_multi = rmn.BURP_BKNAT_MULTI_IDX['uni']
+        ## bknat_kind  = rmn.BURP_BKNAT_KIND_IDX['data']
+        ## bknat       = rmn.mrbtyp_encode_bknat(bknat_multi, bknat_kind)
+        ## bktyp_alt   = rmn.BURP_BKTYP_ALT_IDX['surf']
+        ## bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
+        ## bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
+        ## bkstp       = 0  ## See BURP_BKSTP_DESC
+        ## btyp  = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
-    ##     blk.putele({
-            
-    ##         })
+        ## blk = brp.BurpcBlk({
+        ##     'store_type' : brp.BRP_STORE_FLOAT,
+        ##     'bfam'   : 0,
+        ##     'bdesc'  : 0,
+        ##     'btyp'   : btyp,  ## 64
+        ##     ## 'bknat'  : bknat,
+        ##     ## 'bktyp'  : bktyp,
+        ##     ## 'bkstp'  : bkstp,
+        ##     ## 'datyp'  : rmn.BURP_DATYP_LIST['float'], #TODO: link to BRP_STORE_FLOAT
+        ##     })
 
-    ##     #TODO: add elements
-    ##     #TODO: add blk to rpt
-    ##     #TODO: add rpt to file
+        ## #TODO: add elements
+        ## blk.putele({
+        ##     'e_burpid' : 7004,
+        ##     'e_rval'   : 10.
+        ##     })
+        ## blk.putele({
+        ##     'e_burpid' : 11001,
+        ##     'e_rval'   : 20.
+        ##     })
 
-    ##     with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
-    ##         pass
+        ## #TODO: add blk to rpt
+        ## rpt.put(blk)
+
+        ## rpt2 = rpt.copy()
+
+        ## with brp.BurpcFile(outfile, rmn.BURP_MODE_APPEND) as bfileo:
+        ##     #TODO: add rpt to file
+        ##     bfileo.put(rpt)
 
 
-    ##     # allouer espace pour l'enregistremen pour ajouter des blocs
-    ##     brp.c_brp_allocrpt(rr, 10000)
-    ##     brp.c_brp_resizerpt(rr, 20000) # on peut reallouer + espace
-    ##     print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
+        ## # allouer espace pour l'enregistremen pour ajouter des blocs
+        ## brp.c_brp_allocrpt(rr, 10000)
+        ## brp.c_brp_resizerpt(rr, 20000) # on peut reallouer + espace
+        ## print("rr apres resize: "+ str(brp.RPT_NSIZE(rr)))
 
-    ##     # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
-    ##     brp.c_brp_clrrpt(rr)
+        ## # on peut mettre le contenu du rapport a 0, cela n'affecte pas le header
+        ## brp.c_brp_clrrpt(rr)
 
-    ##     # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
-    ##     brp.c_brp_putrpthdr(ounit, rr)
+        ## # ici c'est preparer l'ecriture de l'enrgistrement dans le fichier
+        ## brp.c_brp_putrpthdr(ounit, rr)
 
-    ##     # allouer espace pour remplir le bloc
-    ##     # ici pour 2 elements et 1 valeur par element et 1 groupe nelem X nval
-    ##     brp.c_brp_allocblk(br, 2, 1, 1)
+        ## # allouer espace pour remplir le bloc
+        ## # ici pour 2 elements et 1 valeur par element et 1 groupe nelem X nval
+        ## brp.c_brp_allocblk(br, 2, 1, 1)
 
-    ##     # Les indices en C commencent par 0,
-    ##     # on remplit les elements: 7004 et 11001
-    ##     brp.BLK_SetDLSTELE(br, 0, 7004)
-    ##     brp.BLK_SetDLSTELE(br, 1, 11001)
+        ## # Les indices en C commencent par 0,
+        ## # on remplit les elements: 7004 et 11001
+        ## brp.BLK_SetDLSTELE(br, 0, 7004)
+        ## brp.BLK_SetDLSTELE(br, 1, 11001)
 
-    ##     # Compacter les elements
-    ##     brp.c_brp_encodeblk(br)
+        ## # Compacter les elements
+        ## brp.c_brp_encodeblk(br)
 
-    ##     # remplir les valeures pour chacun des elements
-    ##     brp.BLK_SetRVAL(br, 0, 0, 0, 10.0)  # pour 7004
-    ##     brp.BLK_SetRVAL(br, 1, 0, 0, 20.0)  # pour 11001
+        ## # remplir les valeures pour chacun des elements
+        ## brp.BLK_SetRVAL(br, 0, 0, 0, 10.0)  # pour 7004
+        ## brp.BLK_SetRVAL(br, 1, 0, 0, 20.0)  # pour 11001
 
-    ##     # on a rempli les valeurs reelles alors les convertir selon la
-    ##     # table burp en entiers qui seront enregistres dans le fichier burp
-    ##     ## if brp.c_brp_convertblk(br) < 0:
-    ##     if brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR) < 0:
-    ##         sys.exit(1)
+        ## # on a rempli les valeurs reelles alors les convertir selon la
+        ## # table burp en entiers qui seront enregistres dans le fichier burp
+        ## ## if brp.c_brp_convertblk(br) < 0:
+        ## if brp.c_brp_convertblk(br, brp.BRP_MKSA_to_BUFR) < 0:
+        ##     sys.exit(1)
 
-    ##     # on met le bloc br dans l'enrgistrement rr
-    ##     if brp.c_brp_putblk(rr, br) < 0:
-    ##         sys.exit(1)
+        ## # on met le bloc br dans l'enrgistrement rr
+        ## if brp.c_brp_putblk(rr, br) < 0:
+        ##     sys.exit(1)
 
-    ##     # on peut faire une copie du bloc br, br2 est une copie de br
-    ##     # tous les attributs de br le seront pour br2
-    ##     brp.c_brp_copyblk(br2, br)
+        ## # on peut faire une copie du bloc br, br2 est une copie de br
+        ## # tous les attributs de br le seront pour br2
+        ## brp.c_brp_copyblk(br2, br)
 
-    ##     # on met le bloc br2 dans l'enrgistrement rr
-    ##     if brp.c_brp_putblk(rr, br2) < 0:
-    ##         sys.exit(1)
+        ## # on met le bloc br2 dans l'enrgistrement rr
+        ## if brp.c_brp_putblk(rr, br2) < 0:
+        ##     sys.exit(1)
 
-    ##     # on peut redimensionner le bloc br pour contenir 5 elements,
-    ##     # 10 valeurs par element et aussi 2 tuiles de 5 X 10
-    ##     # comme ici c'est une expansion du bloc donc on retrouvera les
-    ##     # elements et leurs valeures (precedentes aux memes indices)
-    ##     brp.c_brp_resizeblk(br, 5, 10, 2)
+        ## # on peut redimensionner le bloc br pour contenir 5 elements,
+        ## # 10 valeurs par element et aussi 2 tuiles de 5 X 10
+        ## # comme ici c'est une expansion du bloc donc on retrouvera les
+        ## # elements et leurs valeures (precedentes aux memes indices)
+        ## brp.c_brp_resizeblk(br, 5, 10, 2)
 
-    ##     # on ajoute ce bloc a l'enregistrement
-    ##     brp.c_brp_putblk(rr, br)
+        ## # on ajoute ce bloc a l'enregistrement
+        ## brp.c_brp_putblk(rr, br)
 
-    ##     # ici on fait une copie de br, tmp est une copie de br
-    ##     brp.c_brp_copyblk(tmp, br)
+        ## # ici on fait une copie de br, tmp est une copie de br
+        ## brp.c_brp_copyblk(tmp, br)
 
-    ##     # redimensionner le bloc tmp, ici il s'agit d'une reduction
-    ##     # 3 elements, 2 valeures par element et 1 tuile de 3 x 2
-    ##     brp.c_brp_resizeblk(tmp, 3, 2, 1)
+        ## # redimensionner le bloc tmp, ici il s'agit d'une reduction
+        ## # 3 elements, 2 valeures par element et 1 tuile de 3 x 2
+        ## brp.c_brp_resizeblk(tmp, 3, 2, 1)
 
-    ##     # Ici on indique que l'on desire remplir, le bloc br de val entieres
-    ##     brp.BLK_SetSTORE_TYPE(tmp, brp.BRP_STORE_INTEGER)
+        ## # Ici on indique que l'on desire remplir, le bloc br de val entieres
+        ## brp.BLK_SetSTORE_TYPE(tmp, brp.BRP_STORE_INTEGER)
 
-    ##     # setter l'element 3 a 11003
-    ##     brp.BLK_SetDLSTELE(tmp, 2, 11003)
-    ##     # et ses valeures entieres
-    ##     brp.BLK_SetTBLVAL(tmp, 2, 0, 0, 15)
-    ##     brp.BLK_SetTBLVAL(tmp, 2, 1, 0, 30)
+        ## # setter l'element 3 a 11003
+        ## brp.BLK_SetDLSTELE(tmp, 2, 11003)
+        ## # et ses valeures entieres
+        ## brp.BLK_SetTBLVAL(tmp, 2, 0, 0, 15)
+        ## brp.BLK_SetTBLVAL(tmp, 2, 1, 0, 30)
 
-    ##     # compacter les elements du bloc
-    ##     brp.c_brp_encodeblk(tmp)
+        ## # compacter les elements du bloc
+        ## brp.c_brp_encodeblk(tmp)
 
-    ##     # ajouter le bloc tmp a l'enrgistrement rr
-    ##     brp.c_brp_putblk(rr, tmp)
+        ## # ajouter le bloc tmp a l'enrgistrement rr
+        ## brp.c_brp_putblk(rr, tmp)
 
-    ##     # ajouter l'enrgistrement dans le fichier
-    ##     if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
-    ##         sys.exit(1)
+        ## # ajouter l'enrgistrement dans le fichier
+        ## if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
+        ##     sys.exit(1)
 
     #==== Example 7 =============================================
 
