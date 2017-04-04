@@ -890,57 +890,28 @@ class RpnPyBurpc(unittest.TestCase):
             ## for k,v in ele.items():
             ##     print "{} : {},".format(repr(k),repr(v))
             a = {
-                'e_ele_no' : 0,
-                'e_scale' : -1,
-                'e_multi' : 0,
-                'e_cmcid' : 2564,
-                'e_bias' : 0,
-                'e_error' : 0,
-                'e_bufrid_F' : 0,
-                'e_units' : 'PA',
-                'e_desc' : 'PRESSURE',
-                'e_bufrid' : 10004,
-                'e_nbits' : 14,
-                'e_bufrid_Y' : 4,
-                'e_bufrid_X' : 10,
-                'e_cvt' : 1,
-                'bktyp' : 6,
-                'nele' : 8,
-                'nbit' : 14,
-                'store_type' : 'F',
-                'e_bias' : 0,
-                'e_rval' : np.array([[ 100.]], dtype=np.float32),
-                'bfam' : 14,
-                'e_charval' : None,
-                'e_desc' : 'PRESSURE',
-                'e_val' : np.array([[ 100.]], dtype=np.float32),
-                'max_len' : 8,
-                'e_cmcid' : 2564,
-                'e_tblval' : np.array([[10]], dtype=np.int32),
-                'e_drval' : None,
-                'nval' : 1,
-                'btyp' : 106,
-                'e_cvt' : 1,
-                'bknat' : 0,
-                'e_multi' : 0,
-                'e_error' : 0,
-                'e_scale' : -1,
-                'bdesc' : 0,
-                'e_bufrid_F' : 0,
-                'e_units' : 'PA',
-                'bkstp' : 10,
-                'bkno' : 1,
-                'e_nbits' : 14,
-                'max_nval' : 1,
-                'max_nele' : 8,
-                'datyp' : 4,
-                'e_bufrid_Y' : 4,
-                'e_bufrid_X' : 10,
-                'e_bufrid' : 10004,
-                'bit0' : 0,
-                'nt' : 1,
-                'max_nt' : 1
-                }
+                'store_type': 'F',
+                'shape': (1, 1),
+                'e_drval': None,
+                'e_rval': np.array([[ 100.]], dtype=np.float32),
+                'e_bias': 0,
+                'e_error': 0,
+                'e_charval': None,
+                'e_bufrid_F': 0,
+                'e_desc': 'PRESSURE',
+                'e_nbits': 14,
+                'e_bufrid_Y': 4,
+                'e_bufrid_X': 10,
+                'nt': 1,
+                'e_tblval': None,
+                'e_scale': -1,
+                'pname': 'e_rval',
+                'nval': 1,
+                'e_multi': 0,
+                'e_cmcid': 2564,
+                'e_units': 'PA',
+                'e_bufrid': 10004,
+                'e_cvt': 1}
             for k in a.keys():
                 self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
             ele = blk[0]
@@ -969,11 +940,173 @@ class RpnPyBurpc(unittest.TestCase):
             blk = rpt[1]
             n = 0
             for ele in blk:
-                self.assertEqual(n, ele['e_ele_no'])
                 self.assertEqual(ele['e_cmcid'], blk.lstele[n])
-                self.assertTrue(np.all(ele['e_tblval'][:,:]==blk.tblval[n,:,:]))
+                self.assertEqual(ele['pname'], 'e_rval')
+                self.assertTrue(np.all(ele['e_rval'][:,:]==blk.rval[n,:,:]))
                 n += 1
             self.assertEqual(n, blk.nele)
+
+    def test_BurpcEle_init_args(self):
+        e = brp.BurpcEle(7004, [10])
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.e_tblval[0], 10)
+
+    def test_BurpcEle_init_dict(self):
+        e = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.store_type, None)
+        self.assertEqual(e.e_tblval[0], 10)
+        self.assertEqual(e.pname, 'e_tblval')
+
+    def test_BurpcEle_init_dict2(self):
+        e = brp.BurpcEle({'e_bufrid' : 7004,
+                          'store_type' : 'I',
+                          'e_tblval' : [10, 2]})
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.store_type, 'I')
+        self.assertEqual(e.e_tblval[0, 0], 10)
+        self.assertEqual(e.e_tblval[1, 0], 2)
+        self.assertEqual(e.shape, (2, 1))
+        self.assertEqual(e.nval, 2)
+        self.assertEqual(e.nt, 1)
+
+    def test_BurpcEle_init_dict3(self):
+        e = brp.BurpcEle({'e_bufrid' : 7004,
+                          'shape' : (1,2),
+                          'e_tblval' : [10, 2]})
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.e_tblval[0, 0], 10)
+        self.assertEqual(e.e_tblval[0, 1],  2)
+        self.assertEqual(e.shape, (1, 2))
+        self.assertEqual(e.nval, 1)
+        self.assertEqual(e.nt, 2)
+
+    def test_BurpcEle_init_derived(self):
+        e = brp.BurpcEle({'e_cmcid' : 1796, 'e_rval' : [10.]})
+        self.assertEqual(e.e_bufrid, 7004)
+        ## self.assertEqual(e.e_tblval[0], 10)
+        self.assertEqual(e.e_rval[0], 10.)
+        self.assertEqual(e.store_type, 'F')
+        self.assertEqual(e.pname, 'e_rval')
+
+    def test_BurpcEle_init_copy(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
+        e2 = brp.BurpcEle(e)
+        self.assertEqual(e2.e_bufrid, e.e_bufrid)
+        self.assertEqual(e2.e_tblval[0], e.e_tblval[0])
+
+    def test_BurpcEle_init_copy_inegrity(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
+        e2 = brp.BurpcEle(e)
+        e2.e_bufrid = 1234
+        e2.e_tblval[0] = 9876
+        self.assertNotEqual(e2.e_bufrid, e.e_bufrid)
+        self.assertNotEqual(e2.e_tblval[0], e.e_tblval[0])
+
+    def test_BurpcEle_init_err(self):
+        try:
+            e = brp.BurpcEle()
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle(7004)
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle('7004')
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle({'e_bufrid' : 7004})
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle({'bufrid' : 7004, 'e_tblval' : [10]})
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle({'e_bufrid' : 7004,
+                              'e_tblval' : [10],
+                              'e_rval' : [10.]})
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+        try:
+            e = brp.BurpcEle({'e_bufrid' : 7004,
+                              'store_type' : 'I',
+                              'e_rval' : [10.]})
+            self.assertTrue(False, 'should cause an init error')
+        except:
+            pass
+
+    def test_BurpcEle_get(self):
+        e = brp.BurpcEle(7004, [10])
+        self.assertEqual(e.e_bufrid, 7004)
+        self.assertEqual(e.e_tblval[0], 10)
+
+    def test_BurpcEle_get_derived(self):
+        e = brp.BurpcEle(7004, [10])
+        self.assertEqual(e.e_cmcid, 1796)
+        ## self.assertEqual(e.store_type, 'I')
+
+    ## def test_BurpcEle_get_derived_inegrity(self):
+    ##     pass
+    ## def test_BurpcEle_get_error(self):
+    ##     pass
+
+    def test_BurpcEle_set(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
+        e.e_bufrid = 1234
+        self.assertEqual(e.e_bufrid, 1234)
+
+    def test_BurpcEle_set_derived(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7006, 'e_tblval' : [10]})
+        self.assertEqual(e.e_bufrid, 7006)
+        self.assertEqual(e.e_cmcid, 1798)
+        e.e_cmcid = 1796 #TODO: no going through put()!!!
+        self.assertEqual(e.e_cmcid, 1796)
+        self.assertEqual(e.e_bufrid, 7004)
+
+    def test_BurpcEle_set_derived2(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7006, 'e_tblval' : [10]})
+        self.assertEqual(e.e_bufrid, 7006)
+        self.assertEqual(e.e_cmcid, 1798)
+        e['e_cmcid'] = 1796
+        self.assertEqual(e.e_cmcid, 1796)
+        self.assertEqual(e.e_bufrid, 7004)
+
+    def test_BurpcEle_set_error_key(self):
+        e  = brp.BurpcEle({'e_bufrid' : 7006, 'e_tblval' : [10]})
+        try:
+            e.pname = 'toto'
+            self.assertTrue(False, 'should cause a set error')
+        except KeyError:
+            pass
+
+    ## def test_BurpcEle_set_error_type(self):
+    ##     pass
+
+    def test_BurpcBlk_add_BurpcEle(self):
+        blk = brp.BurpcBlk({
+            'btyp'  : 8,
+            'datyp' : 1
+            })
+        self.assertEqual(blk.btyp, 8)
+        self.assertEqual(blk.datyp, 1)
+        for k,v in brp.BurpcBlk().todict().items():
+            print k,':',repr(v)
+        ## print blk
+
+    def test_BurpcBlk_add_BurpcEle_err_shape(self):
+        pass
+
+    def test_BurpcBlk_add_BurpcEle_err_type(self):
+        pass
 
 
     #TODO: tests for writing burp

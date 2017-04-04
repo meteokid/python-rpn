@@ -19,7 +19,7 @@ Details:
     See Source Code
 """
 import ctypes as _ct
-## import numpy  as _np
+import numpy  as _np
 ## import numpy.ctypeslib as _npc
 
 ##DETAILS_START
@@ -40,6 +40,16 @@ BRP_STORE_INTEGER     = 'I'
 BRP_STORE_FLOAT       = 'F'
 BRP_STORE_DOUBLE      = 'D'
 BRP_STORE_CHAR        = 'C'
+
+## numpy dtype equivalent to BRP_STORE_TYPE
+BRP_STORE_TYPE2NUMPY = {
+    BRP_STORE_INTEGER : _np.int32,
+    BRP_STORE_FLOAT   : _np.float32,
+    BRP_STORE_DOUBLE  : _np.float64,
+    BRP_STORE_CHAR    : _np.uint8   #TODO: check this
+    }
+## BRP_STORE_TYPE equivalent to numpy dtype
+BRP_STORE_NUMPY2TYPE = dict([(v, k) for k, v in BRP_STORE_TYPE2NUMPY.items()])
 
 ## constants for specifying datyp
 BRP_DATYP_BITSTREAM    = 0
@@ -83,7 +93,7 @@ BRP_ERR_OPTNAME          = -34
 ## some usefull constants
 BRP_VAR_NON_INIT  = -1
 BRP_ALL_STATION   = "*********"
-BRP_STNID_STRLEN  = 10     
+BRP_STNID_STRLEN  = 10
 
 #</source>
 ##DETAILS_END

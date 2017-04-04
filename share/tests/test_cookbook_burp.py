@@ -541,6 +541,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## import os, sys
         ## import rpnpy.librmn.all as rmn
         ## import rpnpy.burpc.all as brp
+        ## sys.stdout = open("tmp/test_ex6_write2_py.log", "w")
         ## outfile = 'test_ex6_write2_py.brp'
         ## brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
@@ -566,7 +567,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## bktyp_kind  = 4  ## See BURP_BKTYP_KIND_DESC, 'derived data, entry to the OA at surface, global model',
         ## bktyp       = rmn.mrbtyp_encode_bktyp(bktyp_alt, bktyp_kind)
         ## bkstp       = 0  ## See BURP_BKSTP_DESC
-        ## btyp  = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
+        ## btyp        = rmn. mrbtyp_encode(bknat, bktyp, bkstp)
 
         ## blk = brp.BurpcBlk({
         ##     'store_type' : brp.BRP_STORE_FLOAT,
@@ -582,11 +583,11 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## #TODO: add elements
         ## blk.putele({
         ##     'e_burpid' : 7004,
-        ##     'e_rval'   : 10.
+        ##     'e_rval'   : [10.]
         ##     })
         ## blk.putele({
         ##     'e_burpid' : 11001,
-        ##     'e_rval'   : 20.
+        ##     'e_rval'   : [20.]
         ##     })
 
         ## #TODO: add blk to rpt

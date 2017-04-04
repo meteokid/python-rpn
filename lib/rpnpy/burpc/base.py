@@ -87,14 +87,14 @@ class _BurpcObjBase(object):
     #TODO: def __isub__(self, other):
     #TODO: def __iadd__(self, nhours):
 
-    def update(self, rpt):
+    def update(self, values):
         """ """
-        if not isinstance(rpt, (dict, self.__class__)):
-            raise TypeError("Type not supported for rpt: "+str(type(rpt)))
+        if not isinstance(values, (dict, self.__class__)):
+            raise TypeError("Type not supported for values: "+str(type(values)))
         for k in self._getattr0('__attrlist'):
             try:
-                self.__setitem__(k, rpt[k])
-            except:
+                self.__setitem__(k, values[k])
+            except (KeyError, AttributeError):
                 pass
 
     def getptr(self):
@@ -104,7 +104,8 @@ class _BurpcObjBase(object):
     def todict(self):
         """ """
         return dict([(k, getattr(self,k)) for k in
-                     self._getattr0('__attrlist')])
+                     self._getattr0('__attrlist') +
+                     self._getattr0('__attrlist2')])
 
     ## def get(self, name):  #to be defined by child class
     ## def delete(self, name):  #to be defined by child class
@@ -112,6 +113,7 @@ class _BurpcObjBase(object):
     ## def next(self):  #to be defined by child class
 
     #TODO: add list/dict type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) help({}) for other __?__ operators
+
 
 class BurpcFile(_BurpcObjBase):
     """
@@ -125,7 +127,8 @@ class BurpcFile(_BurpcObjBase):
         funit    :
         TODO
     """
-    __attrlist = ("filename", "filemode", "funit")
+    __attrlist  = ("filename", "filemode", "funit")
+    __attrlist2 = ()
 
     def __init__(self, filename, filemode='r', funit=None):
         self.filename = filename
@@ -375,7 +378,7 @@ class BurpcRpt(_BurpcObjBase):
             'datemm': (idate % 10000) // 100,
             'datedd': (idate % 10000) % 100,
             'oars'  : getattr(self.__ptr[0], 'oars'),
-            'runn'  : getattr(self.__ptr[0], 'runn'),  #TODO: provide decoded runn?
+            'runn'  : getattr(self.__ptr[0], 'runn'), 
             'nblk'  : getattr(self.__ptr[0], 'nblk'),
             'sup'   : None,
             'nsup'  : 0,
@@ -527,114 +530,242 @@ class BurpcBlk(_BurpcObjBase):
             'datyp' : datyp,
             'datypd': datypd
             }
-        params.update(_rmn.mrbtyp_decode(btyp))
+        if btyp >= 0:
+            params.update(_rmn.mrbtyp_decode(btyp))
+        else:
+            params.update({
+                'bknat'       : -1,
+                'bknat_multi' : -1,
+                'bknat_kind'  : -1,
+                'bknat_kindd' : -1,
+                'bktyp'       : -1,
+                'bktyp_alt'   : -1, 
+                'bktyp_kind'  : -1,
+                'bktyp_kindd' : -1,
+                'bkstpd'      : -1
+                })
         return params
 
     def _getelem(self, index):
         """indexing from 0 to nele-1"""
-        #TODO: return BurpcEle object
         if index < 0 or index >= self.nele:
             raise IndexError
-        params = self.todict()
-        params.update(_rmn.mrbcvt_dict(self.lstele[index], False))
-        params.update({
-            'e_ele_no' : index,
-            'e_tblval' : self.tblval[index,:,:],
-            'e_val'    : None,
-            'e_rval'   : None,
-            'e_drval'  : None,
-            'e_charval': None,
-            })
+        params = {'e_cmcid' : self.lstele[index]}
+        hasValues = False
         try:
-            params['e_val'] = self.rval[index,:,:]
-            params['e_rval'] = params['e_val']
+            params['e_rval'] = self.rval[index,:,:]
+            hasValues = True
         except:
             pass
         try:
-            params['e_val'] = self.drval[index,:,:]
-            params['e_drval'] = params['e_val']
+            params['e_drval'] = self.drval[index,:,:]
+            hasValues = True
         except:
             pass
         try:
-            params['e_val'] = self.charval[index,:,:]
-            params['e_charval'] = params['e_val']
+            params['e_charval'] = self.charval[index,:]
+            hasValues = True
         except:
             pass
-        return params
+        if not hasValues:
+            params['e_tblval'] = self.tblval[index,:,:]
+        return BurpcEle(params)
 
-    def putelem(self, index, values):
+    def putelem(self, index, values): #TODO: merge into put()
         """indexing from 0 to nele-1"""
-        if not instance(values, dict):
-            raise TypeError
-        #TODO: check if all needed params are provided
+        if not instance(index, {}):
+            raise TypeError('Provided index should be of type int')
+        if not instance(values, BurpcEle):
+            try:
+                values = BurpcEle(values)
+            except:
+                raise TypeError('Provided value should be of type BurpcEle')
+        raise BurpcError('Not yet implemented')
+        #TODO: check if type match
         #TODO: check if dims match
 
-## class BurpcEle(object):
-##     """
-##     Python Class to hold a BURP block element's data and meta
 
-##     TODO: constructor examples
+class BurpcEle(_BurpcObjBase):
+    """
+    Python Class to hold a BURP block element's data and meta
 
-##     Attributes:
-##         TODO:
-##     """
-##     __attrlist = ("id", "nval", "nt", "datyp", "store_type",
-##                   "tblval", "rval","drval", "charval")
-##             ## 'e_ele_no' : index,
-##             ## 'e_tblval' : self.tblval[index,:,:],
-##             ## 'e_val'    : None,
-##             ## 'e_rval'   : None,
-##             ## 'e_drval'  : None,
-##             ## 'e_charval': None,
-##     __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
-##                    'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
-##                    'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi')
+    TODO: constructor examples
 
-##     def __init__(self, ele=None):
-##         self.__derived = None
-##         if ele is None:
-##             pass #TODO: allow?
-##         elif isinstance(ele, BurpcEle):
-##             #TODO: copy?
-##         elif isinstance(ele, dict):
-##             #TODO: defaults
-##             #TODO: Check that minimal stuff provided: id, values and/or shape
-##         else:
-##             raise TypeError
+    Attributes:
+        TODO:
+    """
+    __attrlist = ('e_bufrid', 'e_cmcid', 'store_type', 'shape', 'pname',
+                  'e_tblval','e_rval', 'e_drval', 'e_charval')
+    __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
+                   'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
+                   'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi',
+                   'nval', 'nt', 'shape')
+    __PNAME2NUMPY = {
+        'e_tblval'  : _np.int32,
+        'e_rval'    : _np.float32,
+        'e_drval'   : _np.float64,
+        'e_charval' : _np.uint8
+        }
+    __PNAME2STORE_TYPE = {
+        'e_tblval'  : 'I',
+        'e_rval'    : 'F',
+        'e_drval'   : 'D',
+        'e_charval' : 'C'
+        }
 
-##     def update(self, ele):
-##         self.__derived = None
-##         if isinstance(ele, BurpcEle):
-##         elif isinstance(ele, dict):
-##         else:
-##             raise TypeError
+    def __init__(self, bufrid, tblval=None, shape=None): #TODO: use shape
+        if isinstance(bufrid, (long, int)):
+            bufrid = {
+                'e_bufrid' : bufrid,
+                'e_tblval' : tblval
+                }
+        elif not isinstance(bufrid, (dict, self.__class__)):
+            raise TypeError('bufrid should be of type int')
+        self.__derived = None
+        self.__ptr     = dict([(k, None) for k in self.__attrlist])
+        self.update(bufrid) #TODO: update should check type
+        if (self.__ptr['e_bufrid'] is None or
+            self.__ptr['pname'] is None or
+            self.__ptr[self.__ptr['pname']] is None):
+            raise BurpcError('{}: incomplete initialization'
+                             .format(self.__class__.__name__))
 
-##     ## def __del__(self):
-##     ##     ## print 'DEL:',self.__class__.__name__
+    def __setattr__(self, name, value): #TODO: move to super class
+        return self.put(name, value)
 
-##     def __repr__(self):
-##         return self.__class__.__name__+'('+ repr(self.todict())+')'
+    ## def next(self):
+    ##     raise Error #TODO
 
-##     ## def __getattr__(self, name):
-##     ## def __setattr__(self, name, value):
-##     ## def __getitem__(self, name):
-##     ## def __setitem__(self, name, value):
+    def get(self, name): #TODO: if int (or slice any indexing, refer to tblval)
+        """Get Burpc Element meta or data"""
+        ## if name == 'e_tblval' :
+        ## elif name == 'e_rval' :
+        ## elif name == 'e_drval' :
+        ## elif name == 'e_charval':
+        if name in self.__class__.__attrlist:
+            return self.__ptr[name]
+        elif name in self.__class__.__attrlist2:
+            return self.derived_attr()[name]
+        ## elif isinstance(name, (int, long)):
+        raise KeyError("{} object has no such key: {}"
+                       .format(self.__class__.__name__, repr(name)))
 
-##     def size():
-##         """ """
-##         return self.nval * self.nt
+    def reshape(self, shape=None):
+        if shape is None:
+            self.__ptr['shape'] = None
+            return
+        if isinstance(shape, (long, int)):
+            shape = (shape, )
+        if not isinstance(shape, (list, tuple)):
+            raise TypeError('Provided shape must be a list')
+        if len(shape) == 1:
+            shape = (shape[0], 1)
+        elif len(shape) > 2:
+            raise BurpcError('{}: Array shape must be 2d: {}'
+                             .format(self.__class__.__name__,
+                                     repr(self.__ptr[name].shape)))
+        if self.__ptr['pname'] is not None:
+            if self.__ptr[self.__ptr['pname']].size != shape[0] * shape[1]:
+                raise BurpcError('{}: array size and provided shape does not match: {}'
+                                 .format(self.__class__.__name__,
+                                         repr(self.__ptr[self.__ptr['pname']].shape)))
+            self.__ptr[self.__ptr['pname']] = _np.reshape(self.__ptr[self.__ptr['pname']],
+                                                   shape, order='F')
+        self.__ptr['shape'] = shape
 
-##     def shape():
-##         """ """
-##         return self.nval, self.nt
+    def put(self, name, value):
+        if name == 'pname':
+            raise KeyError('{}: Cannot set: {}'
+                             .format(self.__class__.__name__,
+                                     repr(name)))
+        elif name == 'e_bufrid':
+            self.__derived = None
+            self.__ptr[name] = value
+            self.__ptr['e_cmcid'] = _rmn.mrbcol(value)
+        elif name == 'e_cmcid':
+            self.__derived = None
+            self.__ptr[name] = value
+            self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
+        elif name == 'store_type':
+            if value is None:
+                return
+            if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
+                if (self.__ptr[name] is None or
+                    ## self.__ptr[name] == _bc.BRP_STORE_INTEGER or
+                    self.__ptr[name] == value):
+                    self.__ptr[name] = value
+                else:
+                    raise BurpcError('{}: Cannot change: {}'
+                                     .format(self.__class__.__name__,
+                                             repr(name)))
+            else:
+                raise ValueError('Store type ({}) can only be one of: {}'
+                                 .format(repr(value),
+                                         repr(_bc.BRP_STORE_TYPE2NUMPY.keys())))
+        elif name == 'shape':
+            if value is None:
+                self.__ptr['shape'] = None
+            else:
+                self.reshape(value)
+        elif name in ('e_tblval', 'e_rval', 'e_drval', 'e_charval'):
+            self.__derived = None
+            if value is None:
+                return
+            if not (self.__ptr['pname'] is None or self.__ptr['pname'] == name):
+                raise BurpcError('{}: Cannot change store type'
+                                 .format(self.__class__.__name__))
+            self.__ptr['pname'] = name
+            if name != 'e_tblval':
+                self.__ptr['store_type'] = self.__PNAME2STORE_TYPE[name]
+            dtype = self.__PNAME2NUMPY[name]
+            self.__ptr[name] = _np.array(value, order='F', dtype=dtype)
+            if len(self.__ptr[name].shape) == 1:
+                self.__ptr[name] = _np.reshape(self.__ptr[name],
+                            (self.__ptr[name].shape[0], 1), order='F')
+            elif len(self.__ptr[name].shape) > 2:
+                raise BurpcError('{}: Array shape must be 2d: {}'
+                                 .format(self.__class__.__name__,
+                                         repr(self.__ptr[name].shape)))
+            if self.__ptr['shape'] != self.__ptr[name].shape:
+                self.reshape(self.__ptr['shape'])
+            self.__ptr['shape'] = self.__ptr[name].shape
+        elif name in self.__class__.__attrlist:
+            self.__derived = None
+            #TODO: check type
+            self.__ptr[name] = value
+            ## return setattr(self.__ptr, name, value) #TODO: use proto fn?
+        else:
+            return super(self.__class__, self).__setattr__(name, value)
+        ## else:
+        ##     raise KeyError #TODO
 
-##     def todict(self):
-##         """ """
-##         return dict([(k, getattr(self,k)) for k in self.__class__.__attrlist])
+    def delete(self, name):
+        raise BurpcError('{}: Cannot delete: {}'
+                         .format(self.__class__.__name__, repr(name)))
 
-##     def update(self, blk):
-##         """ """
+    def derived_attr(self):
+        """ """
+        if not self.__derived:
+            self.__derived = self.__derived_attr()
+        return self.__derived.copy()
 
+    def __derived_attr(self):
+        """ """
+        #TODO: rval, drval, charval...
+        params = _rmn.mrbcvt_dict_bufr(self.__ptr['e_bufrid'], False)
+        nval, nt = 0, 0
+        if self.__ptr['pname'] is not None:
+            nval = self.__ptr[self.__ptr['pname']].shape[0]
+            try:
+                nt = self.__ptr[self.__ptr['pname']].shape[1]
+            except IndexError:
+                nt = 1
+        params.update({
+            'nval'  : nval,
+            'nt'    : nt,
+            'shape' : (nval, nt)
+            })
+        return params
 
 def brp_opt(optName, optValue=None):
     """
