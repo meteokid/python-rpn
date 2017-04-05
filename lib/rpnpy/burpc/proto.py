@@ -10,7 +10,7 @@
 """
 Module burpc is a ctypes import of burp_c's library (libburp_c_shared.so)
  
-The burpc.proto python module includes ctypes prototypes for 
+The burpc.proto python module includes ctypes prototypes for
 burp_c's libburp_c C functions.
 
 Warning:
@@ -140,7 +140,7 @@ class BURP_RPT(_ct.Structure):
         ("lngr",   _ct.c_int),
         ("init_hdr", _ct.c_int)  ## for internal use only
         ]
-    
+
     ## def __str__(self):
     ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
     ##    ## s = self.__class__.__name__ + '('
@@ -224,7 +224,7 @@ class BURP_BLK(_ct.Structure):
         ("max_nt", _ct.c_int),
         ("max_len", _ct.c_int),
         ]
-    
+
     ## def __str__(self):
     ##    return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
     ##    ## s = self.__class__.__name__ + '('
@@ -363,7 +363,7 @@ def BLK_SetSTORE_TYPE(blk,val):
 ## /*
 ##  * allocators and constructors
 ##  */
-    
+
 ## extern  BURP_BLK  *brp_newblk( void );
 libburpc.brp_newblk.argtypes = None
 libburpc.brp_newblk.restype = _ct.POINTER(BURP_BLK)
@@ -654,8 +654,8 @@ c_brp_msngval = libburpc.brp_msngval
 
 
 if __name__ == "__main__":
-    pass #print burpc version 
-    
+    pass #print burpc version
+
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

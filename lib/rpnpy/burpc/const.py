@@ -28,6 +28,10 @@ import rpnpy.librmn.all as _rmn
 #== Constants Details ==
 #<source lang="python">
 
+BRP_FILE_READ   = 'r'
+BRP_FILE_WRITE  = 'w'
+BRP_FILE_APPEND = 'a'
+
 BRP_FILEMODE2FST = {
     'r' : (_rmn.FST_RO,     _rmn.BURP_MODE_READ),
     'w' : (_rmn.FST_RW,     _rmn.BURP_MODE_CREATE),
