@@ -11,7 +11,7 @@ import sys
 import rpnpy.librmn.all as rmn
 import rpnpy.burpc.all as brp
 import unittest
-## import ctypes as ct
+import ctypes as ct
 import numpy as np
 
 if sys.version_info > (3, ):
@@ -66,6 +66,11 @@ class RpnPyBurpc(unittest.TestCase):
 
         optValue0 = 99.
         optValue = brp.brp_opt(rmn.BURPOP_MISSING, optValue0)
+        self.assertEqual(optValue, optValue0)
+
+    def test_brp_msngval(self):
+        optValue0 = 1.0000000150474662e+30
+        optValue = brp.brp_msngval()
         self.assertEqual(optValue, optValue0)
 
     ## def test_brp_opt_set_get_missing(self):
@@ -123,6 +128,148 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_close(funit)
         self.assertEqual(nrec, 47544)
 
+    def test_brp_newrpt(self):
+        rpt = brp.brp_newrpt()
+        self.assertTrue(isinstance(rpt, ct.POINTER(brp.BURP_RPT)))
+        brp.RPT_SetSTNID(rpt, '012345678')
+        self.assertEqual(brp.RPT_STNID(rpt), '012345678')
+
+    def test_brp_newblk(self):
+        blk = brp.brp_newblk()
+        self.assertTrue(isinstance(blk, ct.POINTER(brp.BURP_BLK)))
+        brp.BLK_SetBTYP(blk, 8)
+        self.assertEqual(brp.BLK_BTYP(blk), 8)
+
+    def test_brp_allocrpt(self):
+        rpt = brp.brp_newrpt()
+        brp.brp_allocrpt(rpt, 999)
+        self.assertEqual(brp.RPT_NSIZE(rpt), 999)
+
+    def test_brp_resizerpt(self):
+        rpt = brp.brp_newrpt()
+        brp.brp_allocrpt(rpt, 99)
+        self.assertEqual(brp.RPT_NSIZE(rpt), 99)
+        brp.brp_resizerpt(rpt, 888)
+        self.assertEqual(brp.RPT_NSIZE(rpt), 888)
+
+    def test_brp_allocblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 3,2,1)
+        self.assertEqual((brp.BLK_NELE(blk), brp.BLK_NVAL(blk), brp.BLK_NT(blk)), (3,2,1))
+
+    def test_brp_resizeblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 3,2,1)
+        self.assertEqual((brp.BLK_NELE(blk), brp.BLK_NVAL(blk), brp.BLK_NT(blk)), (3,2,1))
+        brp.brp_resizeblk(blk, 7,5,3)
+        self.assertEqual((brp.BLK_NELE(blk), brp.BLK_NVAL(blk), brp.BLK_NT(blk)), (7,5,3))
+
+    def test_brp_free(self):
+        rpt = brp.brp_newrpt()
+        brp.brp_allocrpt(rpt, 99)
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 3,2,1)
+        brp.brp_free(blk, rpt)
+        self.assertEqual(brp.RPT_NSIZE(rpt), 0)
+        self.assertEqual((brp.BLK_NELE(blk), brp.BLK_NVAL(blk), brp.BLK_NT(blk)), (0,0,0))
+
+    def test_brp_clrrpt(self):
+        rpt = brp.brp_newrpt()
+        brp.brp_allocrpt(rpt, 99)
+        brp.brp_clrrpt(rpt)
+        #TODO: self.assert
+
+    def test_brp_clrblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 3,2,1)
+        brp.brp_clrblk(blk)
+        #TODO: self.assert
+
+    def test_brp_clrblkv(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 3,2,1)
+        brp.brp_clrblkv(blk, 9.)
+        #TODO: self.assert
+
+    def test_brp_resetrpthdr(self):
+        rpt = brp.brp_newrpt()
+        brp.brp_resetrpthdr(rpt)
+        #TODO: self.assert
+
+    def test_brp_resetblkhdr(self):
+        blk = brp.brp_newblk()
+        brp.brp_resetblkhdr(blk)
+        #TODO: self.assert
+
+    def test_brp_encodeblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 1,1,1)
+        brp.brp_clrblk(blk)
+        brp.BLK_SetDLSTELE(blk, 0, 10004)
+        brp.brp_encodeblk(blk)
+        self.assertEqual(brp.BLK_LSTELE(blk, 0), 2564)
+
+    def test_brp_convertblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 1,1,1)
+        brp.brp_clrblk(blk)
+        brp.BLK_SetDLSTELE(blk, 0, 10004)
+        brp.BLK_SetRVAL(blk, 0, 0, 0, 100.)
+        brp.brp_encodeblk(blk)
+        brp.brp_convertblk(blk)
+        self.assertEqual(brp.BLK_TBLVAL(blk, 0, 0, 0), 10)
+
+    def test_brp_safe_convertblk(self):
+        blk = brp.brp_newblk()
+        brp.brp_allocblk(blk, 1,1,1)
+        brp.brp_clrblk(blk)
+        brp.BLK_SetDLSTELE(blk, 0, 10004)
+        brp.BLK_SetRVAL(blk, 0, 0, 0, 100.)
+        brp.brp_encodeblk(blk)
+        brp.brp_safe_convertblk(blk)
+        self.assertEqual(brp.BLK_TBLVAL(blk, 0, 0, 0), 10)
+
+    ## def test_brp_initrpthdr(self): #TODO
+    ## def test_brp_putrpthdr(self): #TODO
+        
+    ## def test_brp_updrpthdr(self): #TODO
+    ## def test_brp_writerpt(self): #TODO
+    ## def test_brp_putblk(self): #TODO
+        
+    def test_brp_copyrpthdr(self):
+        rpt = brp.brp_newrpt()
+        brp.RPT_SetSTNID(rpt, '012345678')
+        self.assertEqual(brp.RPT_STNID(rpt), '012345678')
+        rpt2 = brp.brp_newrpt()
+        brp.brp_copyrpthdr(rpt2, rpt)
+        brp.RPT_SetSTNID(rpt2, '987654321')
+        self.assertEqual(brp.RPT_STNID(rpt),  '012345678')
+        self.assertEqual(brp.RPT_STNID(rpt2), '987654321')
+
+    def test_brp_copyrpt(self):
+        rpt = brp.brp_newrpt()
+        brp.RPT_SetSTNID(rpt, '012345678')
+        self.assertEqual(brp.RPT_STNID(rpt), '012345678')
+        rpt2 = brp.brp_newrpt()
+        brp.brp_copyrpt(rpt2, rpt)
+        brp.RPT_SetSTNID(rpt2, '987654321')
+        self.assertEqual(brp.RPT_STNID(rpt),  '012345678')
+        self.assertEqual(brp.RPT_STNID(rpt2), '987654321')
+
+    def test_brp_copyblk(self):
+        blk = brp.brp_newblk()
+        brp.BLK_SetBTYP(blk, 8)
+        self.assertEqual(brp.BLK_BTYP(blk), 8)
+        blk2 = brp.brp_newblk()
+        brp.brp_copyblk(blk2, blk)
+        brp.BLK_SetBTYP(blk2, 9)
+        self.assertEqual(brp.BLK_BTYP(blk),  8)
+        self.assertEqual(brp.BLK_BTYP(blk2), 9)
+
+    ## def test_brp_delblk(self): #TODO
+    ## def test_brp_delrpt(self): #TODO
+        
+    ## def test_brp_searchdlste(self): #TODO
 
     def test_brp_BurpcFile(self):
         """brp_BurpcFile_open  """
@@ -432,6 +579,18 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(rpt.stnid, '71915    ')
         self.assertEqual(rpt.date, 20070219)
 
+    def test_brp_get_rpt1hdr(self):
+        """brp_get_rpt handle"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        bfile = brp.BurpcFile(mypath)
+        rpt = brp.brp_findrpt(bfile)
+        rpt = brp.brp_rdrpthdr(rpt.handle, rpt)
+        self.assertEqual(rpt.handle, 1)
+        self.assertEqual(rpt.stnid, '71915    ')
+        self.assertEqual(rpt.date, 20070219)
+
     def test_brp_get_rpt2(self):
         """brp_get_rpt handle + rpt"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -666,6 +825,51 @@ class RpnPyBurpc(unittest.TestCase):
         blk = brp.BurpcBlk({'bkno':0, 'btyp':15456})
         blk = brp.brp_findblk(blk, rpt)
         blk = brp.brp_getblk(blk.bkno, blk, rpt)
+        self.assertEqual(blk.bkno, 6)
+        self.assertEqual(blk.datyp, 2)
+        self.assertEqual(blk.btyp, 15456)
+
+    def test_brp_find_get_blk1safe(self):
+        """brp_find_blk search keys"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        bfile = brp.BurpcFile(mypath)
+        rpt = brp.brp_findrpt(bfile.funit)
+        rpt = brp.brp_getrpt(bfile, rpt)
+        blk = brp.BurpcBlk({'bkno':0, 'btyp':15456})
+        blk = brp.brp_findblk(blk, rpt)
+        blk = brp.brp_safe_getblk(blk.bkno, blk, rpt)
+        self.assertEqual(blk.bkno, 6)
+        self.assertEqual(blk.datyp, 2)
+        self.assertEqual(blk.btyp, 15456)
+
+    def test_brp_find_get_blk1read(self):
+        """brp_find_blk search keys"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        bfile = brp.BurpcFile(mypath)
+        rpt = brp.brp_findrpt(bfile.funit)
+        rpt = brp.brp_getrpt(bfile, rpt)
+        blk = brp.BurpcBlk({'bkno':0, 'btyp':15456})
+        blk = brp.brp_findblk(blk, rpt)
+        blk = brp.brp_readblk(blk.bkno, blk, rpt)
+        self.assertEqual(blk.bkno, 6)
+        self.assertEqual(blk.datyp, 2)
+        self.assertEqual(blk.btyp, 15456)
+
+    def test_brp_find_get_blk1hdr(self):
+        """brp_find_blk search keys"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        bfile = brp.BurpcFile(mypath)
+        rpt = brp.brp_findrpt(bfile.funit)
+        rpt = brp.brp_getrpt(bfile, rpt)
+        blk = brp.BurpcBlk({'bkno':0, 'btyp':15456})
+        blk = brp.brp_findblk(blk, rpt)
+        blk = brp.brp_rdblkhdr(blk.bkno, blk, rpt)
         self.assertEqual(blk.bkno, 6)
         self.assertEqual(blk.datyp, 2)
         self.assertEqual(blk.btyp, 15456)

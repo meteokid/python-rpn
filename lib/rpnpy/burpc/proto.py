@@ -390,6 +390,9 @@ c_brp_allocblk = libburpc.brp_allocblk
 ##  */
 
 ## extern  int        brp_searchdlste( int  code, BURP_BLK *blk );
+libburpc.brp_searchdlste.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK))
+libburpc.brp_searchdlste.restype = _ct.c_int
+c_brp_searchdlste = libburpc.brp_searchdlste
 
 ## /*
 ##  * destructors and deallocators
@@ -418,7 +421,7 @@ libburpc.brp_clrblk.restype = None
 c_brp_clrblk = libburpc.brp_clrblk
 
 ## extern  void       brp_clrblkv(BURP_BLK  *bblk, float val);
-libburpc.brp_clrblkv.argtypes = (_ct.POINTER(BURP_BLK), _ct.c_int)
+libburpc.brp_clrblkv.argtypes = (_ct.POINTER(BURP_BLK), _ct.c_float)
 libburpc.brp_clrblkv.restype = None
 c_brp_clrblkv = libburpc.brp_clrblkv
 
@@ -499,7 +502,7 @@ c_brp_getblk = libburpc.brp_getblk
 ##    there is no need to work with real values
 ## */
 
-## extern  int        brp_readblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt, int);
+## extern  int        brp_readblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt, int cvt);
 libburpc.brp_readblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT), _ct.c_int)
 libburpc.brp_readblk.restype = _ct.c_int
 c_brp_readblk = libburpc.brp_readblk
@@ -518,6 +521,11 @@ c_brp_rdrpthdr = libburpc.brp_rdrpthdr
 libburpc.brp_rdblkhdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
 libburpc.brp_rdblkhdr.restype = _ct.c_int
 c_brp_rdblkhdr = libburpc.brp_rdblkhdr
+
+
+## /*
+##  * writing
+##  */
 
 ## /* prepare a report for writing */
 ## extern  int        brp_initrpthdr( int iun, BURP_RPT *rpt );
@@ -548,14 +556,6 @@ c_brp_writerpt = libburpc.brp_writerpt
 libburpc.brp_updrpthdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_RPT))
 libburpc.brp_updrpthdr.restype = _ct.c_int
 c_brp_updrpthdr = libburpc.brp_updrpthdr
-
-## /*
-##  * return the floating point constant used for missing values
-##  */
-## extern  float      brp_msngval(void);
-## libburpc.brp_msngval.argtypes = None
-libburpc.brp_msngval.restype = _ct.c_float
-c_brp_msngval = libburpc.brp_msngval
 
 ## /*
 ##  * utilities
@@ -635,7 +635,11 @@ libburpc.brp_SetOptChar.argtypes = (_ct.c_char_p, _ct.c_char_p)
 libburpc.brp_SetOptChar.restype = _ct.c_int
 c_brp_SetOptChar = libburpc.brp_SetOptChar
 
-## extern  float      brp_msngval (void);
+
+## /*
+##  * return the floating point constant used for missing values
+##  */
+## extern  float      brp_msngval(void);
 libburpc.brp_msngval.argtypes = None
 libburpc.brp_msngval.restype = _ct.c_float
 c_brp_msngval = libburpc.brp_msngval
