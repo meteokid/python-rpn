@@ -27,6 +27,7 @@ Notes:
     You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
 
 See Also:
+    rpnpy.burpc.brpobj
     rpnpy.burpc.base
     rpnpy.burpc.const
 
@@ -56,7 +57,20 @@ import numpy  as _np
 import numpy.ctypeslib as _npc
 
 from . import libburpc
-from . import const as _cst
+from rpnpy.burpc import const as _cst
+
+def brp_filemode(filemode='r'):
+    """
+    #TODO: desc
+    """
+    if filemode in _cst.BRP_FILEMODE2FST_INV.keys():
+        filemode = _cst.BRP_FILEMODE2FST_INV[filemode]
+    try:
+        fstmode, brpmode = _cst.BRP_FILEMODE2FST[filemode]
+    except:
+        raise ValueError('Unknown filemode: "{}", should be one of: {}'
+                        .format(filemode, repr(_cst.BRP_FILEMODE2FST.keys())))
+    return fstmode, brpmode, _cst.BRP_FILEMODE2FST_INV[brpmode]
 
 
 class BURP_RPT(_ct.Structure):

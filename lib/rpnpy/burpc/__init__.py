@@ -21,15 +21,16 @@
  - along with comprenhensive inline documentation
 
  See also:
-    rpnpy.burpc.proto
-    rpnpy.burpc.const
+    rpnpy.burpc.brpobj
     rpnpy.burpc.base
+    rpnpy.burpc.const
+    rpnpy.burpc.proto
 
 """
 
 from rpnpy.version import *
 
-__SUBMODULES__ = ['proto', 'const', 'base']
+__SUBMODULES__ = ['proto', 'const', 'base', 'brpobj']
 __all__ = ['loadBURPClib', 'libburpc', 'BURPC_VERSION', 'BURPC_LIBPATH',
            'BurpcError'] + __SUBMODULES__
 

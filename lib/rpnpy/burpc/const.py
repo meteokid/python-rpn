@@ -12,8 +12,9 @@ Notes:
     You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
 
 See Also:
-    rpnpy.burpc.proto
+    rpnpy.burpc.brpobj
     rpnpy.burpc.base
+    rpnpy.burpc.proto
 
 Details:
     See Source Code
@@ -21,10 +22,20 @@ Details:
 import ctypes as _ct
 import numpy  as _np
 ## import numpy.ctypeslib as _npc
+import rpnpy.librmn.all as _rmn
 
 ##DETAILS_START
 #== Constants Details ==
 #<source lang="python">
+
+BRP_FILEMODE2FST = {
+    'r' : (_rmn.FST_RO,     _rmn.BURP_MODE_READ),
+    'w' : (_rmn.FST_RW,     _rmn.BURP_MODE_CREATE),
+    'a' : (_rmn.FST_RW_OLD, _rmn.BURP_MODE_APPEND)
+    }
+BRP_FILEMODE2FST_INV = dict([
+    (v[1], k) for k, v in BRP_FILEMODE2FST.items()
+    ])
 
 ## units conversion mode to be used with brp_convertblk,
 ## actually, it is to and from floating points with bufr integers

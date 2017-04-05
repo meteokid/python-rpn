@@ -905,7 +905,7 @@ class RpnPyBurpc(unittest.TestCase):
                 'nt': 1,
                 'e_tblval': None,
                 'e_scale': -1,
-                'pname': 'e_rval',
+                'ptrkey': 'e_rval',
                 'nval': 1,
                 'e_multi': 0,
                 'e_cmcid': 2564,
@@ -941,7 +941,7 @@ class RpnPyBurpc(unittest.TestCase):
             n = 0
             for ele in blk:
                 self.assertEqual(ele['e_cmcid'], blk.lstele[n])
-                self.assertEqual(ele['pname'], 'e_rval')
+                self.assertEqual(ele['ptrkey'], 'e_rval')
                 self.assertTrue(np.all(ele['e_rval'][:,:]==blk.rval[n,:,:]))
                 n += 1
             self.assertEqual(n, blk.nele)
@@ -956,7 +956,7 @@ class RpnPyBurpc(unittest.TestCase):
         self.assertEqual(e.e_bufrid, 7004)
         self.assertEqual(e.store_type, None)
         self.assertEqual(e.e_tblval[0], 10)
-        self.assertEqual(e.pname, 'e_tblval')
+        self.assertEqual(e.ptrkey, 'e_tblval')
 
     def test_BurpcEle_init_dict2(self):
         e = brp.BurpcEle({'e_bufrid' : 7004,
@@ -987,7 +987,7 @@ class RpnPyBurpc(unittest.TestCase):
         ## self.assertEqual(e.e_tblval[0], 10)
         self.assertEqual(e.e_rval[0], 10.)
         self.assertEqual(e.store_type, 'F')
-        self.assertEqual(e.pname, 'e_rval')
+        self.assertEqual(e.ptrkey, 'e_rval')
 
     def test_BurpcEle_init_copy(self):
         e  = brp.BurpcEle({'e_bufrid' : 7004, 'e_tblval' : [10]})
@@ -1083,7 +1083,7 @@ class RpnPyBurpc(unittest.TestCase):
     def test_BurpcEle_set_error_key(self):
         e  = brp.BurpcEle({'e_bufrid' : 7006, 'e_tblval' : [10]})
         try:
-            e.pname = 'toto'
+            e.ptrkey = 'toto'
             self.assertTrue(False, 'should cause a set error')
         except KeyError:
             pass
@@ -1098,9 +1098,17 @@ class RpnPyBurpc(unittest.TestCase):
             })
         self.assertEqual(blk.btyp, 8)
         self.assertEqual(blk.datyp, 1)
-        for k,v in brp.BurpcBlk().todict().items():
-            print k,':',repr(v)
-        ## print blk
+
+        blk = brp.BurpcBlk()
+        ## blk.store_type  = brp.BRP_STORE_FLOAT
+        ## blk.bfam  = 0
+        ## blk.bdesc = 0
+        ## blk.btyp  = 64
+        ## brp.brp_resizeblk(blk, blk.max_nele+2, blk.max_nval, blk.max_nt)
+        brp.brp_resizeblk(blk, blk.max_nele+1)
+        ## for k,v in blk.todict().items():
+        ##     print k,':',repr(v)
+
 
     def test_BurpcBlk_add_BurpcEle_err_shape(self):
         pass

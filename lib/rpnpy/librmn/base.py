@@ -60,6 +60,37 @@ class RMNBaseError(RMNError):
 
 #--- primitives -----------------------------------------------------
 
+def get_funit(filename, filemode=_rc.FST_RW, iunit=0):
+    """
+    Get a semi-reserved file unit to open with another function
+
+    funit = get_unit(filename, filemode, iunit=0)
+    
+     Args:
+        filename : path/name of the file to open
+        filemode : a string with the desired filemode (see librmn doc)
+                   or one of these constants: FST_RW, FST_RW_OLD, FST_RO
+        iunit    : forced unit number to conect to
+                   if zero, will select a free unit
+    Returns:
+        int, Associated file unit number
+    Raises:
+        TypeError  on wrong input arg types    
+        ValueError on invalid input arg value
+        RMNBaseError on any other error
+
+    Notes:
+       New function in version 2.1.b2
+       
+    See also:
+       fnom
+       fclos
+    """
+    iunit = 0 if iunit is None else iunit
+    funit = fnom(filename, filemode, iunit)
+    fclos(funit)  #TODO: too hacky... any way to reserve a unit w/o double open?
+    return funit
+    
 
 def fclos(iunit):
     """
@@ -85,7 +116,6 @@ def fclos(iunit):
     ...     sys.stderr.write("There was a problem opening the file: {0}".format(filename))
     >>> istat = rmn.fclos(iunit)
     >>> os.unlink(filename)  # Remove test file
-    
     
     See also:
        fnom

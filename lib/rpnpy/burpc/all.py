@@ -10,10 +10,12 @@ See also:
      rpnpy.burpc.proto
      rpnpy.burpc.const
      rpnpy.burpc.base
+     rpnpy.burpc.brpobj
 
 """
 
 from . import *
-from .const import *
-from .proto import *
-from .base import *
+from .const  import *
+from .proto  import *
+from .base   import *
+from .brpobj import *

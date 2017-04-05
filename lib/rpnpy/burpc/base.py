@@ -12,6 +12,7 @@ Notes:
     You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
 
 See Also:
+    rpnpy.burpc.brpobj
     rpnpy.burpc.proto
     rpnpy.burpc.const
 """
@@ -20,752 +21,13 @@ import numpy  as _np
 import numpy.ctypeslib as _npc
 from rpnpy.burpc import proto as _bp
 from rpnpy.burpc import const as _bc
+from rpnpy.burpc import brpobj as _bo
 from rpnpy.burpc import BurpcError
 import rpnpy.librmn.all as _rmn
 
 from rpnpy import integer_types as _integer_types
 
 ## _C_MKSTR = _ct.create_string_buffer
-
-_filemodelist = {
-    'r' : (_rmn.FST_RO,     _rmn.BURP_MODE_READ),
-    'w' : (_rmn.FST_RW,     _rmn.BURP_MODE_CREATE),
-    'a' : (_rmn.FST_RW_OLD, _rmn.BURP_MODE_APPEND)
-    }
-_filemodelist_inv = dict([
-    (v[1], k) for k, v in _filemodelist.items()
-    ])
-
-
-class _BurpcObjBase(object):
-    """
-    """
-    def __repr__(self):
-        return self.__class__.__name__+'('+ repr(self.todict())+')'
-
-    def __iter__(self):
-        return self
-
-    def __next__(self): # Python 3
-        return self.next()
-
-    def _getattr0(self, name):
-        return getattr(self,'_'+self.__class__.__name__+name)
-
-    def __getattr__(self, name):
-        try:
-            return self.get(name)
-        except KeyError as e:
-            raise AttributeError(e)
-            ## return super(self.__class__, self).__getattr__(name)
-            ## return super(_BurpcObjBase, self).__getattr__(name)
-
-    def __getitem__(self, name):
-        return self.get(name)
-
-    def __delitem__(self, name):
-        return self.delete(name)
-        ## try:
-        ##     return self.delete(name)
-        ## except KeyError:
-        ##     return super(_BurpcObjBase, self).__delitem__(name)
-
-    ## def __setattr__(self, name, value):
-    ##     try:
-    ##         return self.put(name, value)
-    ##     except AttributeError:
-    ##         return super(_BurpcObjBase, self).__setattr__(name, value)
-
-    def __setitem__(self, name, value):
-        return self.put(name, value)
-
-    #TODO: def __delattr__(self, name):
-    #TODO: def __coerce__(self, other):
-    #TODO: def __cmp__(self, other):
-    #TODO: def __sub__(self, other):
-    #TODO: def __add__(self, nhours):
-    #TODO: def __isub__(self, other):
-    #TODO: def __iadd__(self, nhours):
-
-    def update(self, values):
-        """ """
-        if not isinstance(values, (dict, self.__class__)):
-            raise TypeError("Type not supported for values: "+str(type(values)))
-        for k in self._getattr0('__attrlist'):
-            try:
-                self.__setitem__(k, values[k])
-            except (KeyError, AttributeError):
-                pass
-
-    def getptr(self):
-        """ """
-        return  self._getattr0('__ptr')
-
-    def todict(self):
-        """ """
-        return dict([(k, getattr(self,k)) for k in
-                     self._getattr0('__attrlist') +
-                     self._getattr0('__attrlist2')])
-
-    ## def get(self, name):  #to be defined by child class
-    ## def delete(self, name):  #to be defined by child class
-    ## def put(self, name, value):  #to be defined by child class
-    ## def next(self):  #to be defined by child class
-
-    #TODO: add list/dict type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) help({}) for other __?__ operators
-
-
-class BurpcFile(_BurpcObjBase):
-    """
-    Python Class to refer to, interact with a BURP file using the burp_c lib
-
-    TODO: constructor examples
-
-    Attributes:
-        filename :
-        filemode :
-        funit    :
-        TODO
-    """
-    __attrlist  = ("filename", "filemode", "funit")
-    __attrlist2 = ()
-
-    def __init__(self, filename, filemode='r', funit=None):
-        self.filename = filename
-        self.filemode = filemode
-        self.funit    = funit
-        if isinstance(filename, dict):
-            if 'filename' in filename.keys():
-                self.filename = filename['filename']
-            if 'filemode' in filename.keys():
-                self.filemode = filename['filemode']
-            if 'funit' in filename.keys():
-                self.funit = filename['funit']
-        self.__search  = BurpcRpt()
-        self.__handles = []
-        self.__rpt     = BurpcRpt()
-        self.funit, self.nrep = brp_open(self.filename, self.filemode, funit=self.funit, getnbr=True)
-        self.__ptr = self.funit
-
-    def __del__(self):
-        self._close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self._close()
-
-    def __len__(self):
-        return self.nrep
-
-    def next(self):  # Python 2:
-        #TODO: should we use indexing instead of search?
-        self.__search = brp_findrpt(self.funit, self.__search)
-        if not self.__search:
-            self.__search = BurpcRpt()
-            raise StopIteration
-        return brp_getrpt(self.funit, self.__search.handle)
-
-    ## def __setitem__(self, name, value):
-    ##     #TODO: Should replace the rpt found with getitem(name) or add a new one
-
-    def _close(self):
-        """ """
-        if self.funit:
-            istat = _bp.c_brp_close(self.funit)
-        self.funit = None
-
-    ## def del(self, search): #TODO: __delitem__
-    ##     raise Error
-
-    def get(self, search=None, rpt=None):
-        """Find a report and get its meta + data"""
-        if search is None or isinstance(search, (BurpcRpt, dict)):
-            search = brp_findrpt(self.funit, search)
-            if search:
-                return brp_getrpt(self.funit, search.handle, rpt)
-            return None
-        elif isinstance(search, (long, int)):
-            if search < 0 or search >= self.nrep:
-                raise IndexError('Index out of range: [0:{}['.format(self.nrep))
-            if search >= len(self.__handles):
-                i0 = len(self.__handles)
-                search1 = None
-                if i0 > 0:
-                    search1 = self.__handles[-1]
-                for i in range(i0, search+1):
-                    search1 = brp_findrpt(self.funit, search1)
-                    if search1:
-                        self.__handles.append(search1.handle)
-                    else:
-                        break
-            return brp_getrpt(self.funit, self.__handles[search], rpt)
-        else:
-            raise TypeError("For Name: {}, Not Supported Type: {}".format(repr(search), str(type(search))))
-
-    def put(self, where, rpt):
-        """ """
-        if not isinstance(rpt, BurpcRpt):
-            raise TypeError("rpt should be of type BurpcRpt, got: {}, ".format(str(type(rpt))))
-        append = where is None
-        if append:
-            where = _bc.BRP_END_BURP_FILE
-        ## elif isinstance(where, (BurpcRpt, dict)): #TODO:
-        ## elif isinstance(where, (long, int)): #TODO:
-        else:
-            raise TypeError("For where: {}, Not Supported Type: {}".format(repr(where), str(type(where))))
-
-        self.__handles = [] #TODO: is it the best place to invalidate the cache?
-        #TODO: conditional brp_updrpthdr
-        brp_updrpthdr(self.funit, rpt)
-        brp_writerpt(self.funit, rpt, where)
-        if append: #TODO: only if writeok
-            self.nrep += 1
-
-    def append(self, value):
-        self.put(None, value)
-
-
-class BurpcRpt(_BurpcObjBase):
-    """
-    Python Class equivalent of the burp_c's BURP_RPT C structure to hold
-    the BURP report data
-
-    TODO: constructor examples
-
-    Attributes:
-        TODO
-    """
-    __attrlist = ("handle", "nsize", "temps", "flgs", "stnid",
-                  "idtype", "lati", "longi", "dx", "dy", "elev",
-                  "drnd", "date", "oars", "runn", "nblk", "lngr")
-    __attrlist2 = ('time', 'timehh', 'timemm', 'flgsl', 'flgsd',
-                   'idtyp', 'idtypd', 'ilat', 'lat', 'ilon', 'lon',
-                   'idx', 'rdx', 'idy', 'rdy', 'ielev', 'relev',
-                   'dateyy', 'datemm', 'datedd',
-                   'sup', 'nsup', 'xaux', 'nxaux')
-    __attrlist2names = {
-        'rdx'   : 'dx',
-        'rdy'   : 'dy',
-        'relev' : 'elev'
-        }
-    def __init__(self, rpt=None):
-        self.__bkno = 0
-        self.__blk  = BurpcBlk()
-        self.__derived = None
-        self.__attrlist2names_keys = self.__attrlist2names.keys()
-        if rpt is None:
-            ## print 'NEW:',self.__class__.__name__
-            self.__ptr = _bp.c_brp_newrpt()
-        elif isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
-            ## print 'NEW:',self.__class__.__name__,'ptr'
-            self.__ptr = rpt
-        else:
-            ## print 'NEW:',self.__class__.__name__,'update'
-            self.__ptr = _bp.c_brp_newrpt()
-            self.update(rpt)
-
-    def __del__(self):
-        ## print 'DEL:',self.__class__.__name__
-        _bp.c_brp_freerpt(self.__ptr) #TODO
-
-    ## def __len__(self): #TODO: not working with this def... find out why and fix it?
-    ##     if self.nblk:
-    ##         return self.nblk
-    ##     return 0
-
-    def next(self): # Python 2:
-        if self.__bkno >= self.nblk:
-            self.__bkno = 0
-            raise StopIteration
-        ## return brp_getblk(self.__bkno, self.__blk, self)
-        self.__bkno += 1
-        ## self.__blk = brp_getblk(self.__bkno, None, self)
-        self.__blk = brp_getblk(self.__bkno, self.__blk, self)
-        return self.__blk
-
-    def get(self, name=None, blk=None):
-        """Find a block and get its meta + data"""
-        if name in self.__class__.__attrlist:
-            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
-            try:
-                name2 = self.__attrlist2names[name]
-            except KeyError:
-                name2 = name
-            return self.derived_attr()[name2]
-        elif isinstance(name, (int, long)):
-            name += 1
-            if name < 1 or name > self.nblk:
-                raise IndexError('Index out of range: [0:{}['.format(self.nblk))
-            return brp_getblk(name, blk=blk, rpt=self)
-        elif name is None or isinstance(name, (BurpcBlk, dict)):
-            name2 = brp_findblk(name, self)
-            if name2:
-                bkno = name2.bkno
-                return brp_getblk(bkno, blk=blk, rpt=self)
-            return None
-        raise KeyError("{} object has no such key: {}"
-                       .format(self.__class__.__name__, repr(name)))
-
-    def __setattr__(self, name, value): #TODO: move to super class
-        return self.put(name, value)
-
-    def put(self, name, value):
-        if name == 'stnid':
-            self.__derived = None
-            _bp.c_brp_setstnid(self.__ptr, value)
-        elif name in self.__class__.__attrlist:
-            self.__derived = None
-            return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
-            #TODO: encode other items on the fly
-            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
-        ## elif isinstance(name, (int, long)): #TODO:
-        ## elif name is None or isinstance(name, (BurpcBlk, dict)): #TODO:
-        else:
-            return super(self.__class__, self).__setattr__(name, value)
-            ## raise AttributeError(self.__class__.__name__+" object has not attribute '"+name+"'")
-
-    def append(self, value):
-        self.put(None, value)
-
-    def derived_attr(self):
-        if not self.__derived:
-            self.__derived = self.__derived_attr()
-        return self.__derived.copy()
-
-    def __derived_attr(self):
-        """ """
-        itime = getattr(self.__ptr[0], 'temps')
-        iflgs = getattr(self.__ptr[0], 'flgs')
-        flgs_dict = _rmn.flags_decode(iflgs)
-        idtyp = getattr(self.__ptr[0], 'idtype')
-        ilat  = getattr(self.__ptr[0], 'lati')
-        ilon  = getattr(self.__ptr[0], 'longi')
-        idx   = getattr(self.__ptr[0], 'dx')
-        idy   = getattr(self.__ptr[0], 'dy')
-        ialt  = getattr(self.__ptr[0], 'elev')
-        idate = getattr(self.__ptr[0], 'date')
-        try:
-            idtyp_desc = _rmn.BURP_IDTYP_DESC[str(idtyp)]
-        except KeyError:
-            idtyp_desc = ''
-        return {
-            'time'  : itime,
-            'timehh': itime // 100,
-            'timemm': itime % 100,
-            'flgs'  : flgs_dict['flgs'],
-            'flgsl' : flgs_dict['flgsl'],
-            'flgsd' : flgs_dict['flgsd'],
-            'stnid' : getattr(self.__ptr[0], 'stnid'),
-            'idtyp' : idtyp,
-            'idtypd': idtyp_desc,
-            'ilat'  : ilat,
-            'lat'   : (float(ilat)/100.) - 90.,
-            'ilon'  : ilon,
-            'lon'   : float(ilon)/100.,
-            'idx'   : idx,
-            'dx'    : float(idx)/10.,
-            'idy'   : idy,
-            'dy'    : float(idy)/10.,
-            'ielev' : ialt,
-            'elev'  : float(ialt) - 400.,
-            'drnd'  : getattr(self.__ptr[0], 'drnd'),
-            'date'  : idate,
-            'dateyy': idate // 10000,
-            'datemm': (idate % 10000) // 100,
-            'datedd': (idate % 10000) % 100,
-            'oars'  : getattr(self.__ptr[0], 'oars'),
-            'runn'  : getattr(self.__ptr[0], 'runn'), 
-            'nblk'  : getattr(self.__ptr[0], 'nblk'),
-            'sup'   : None,
-            'nsup'  : 0,
-            'xaux'  : None,
-            'nxaux' : 0
-            }
-
-
-class BurpcBlk(_BurpcObjBase):
-    """
-    Python Class equivalent of the burp_c's BURP_BLK C structure to hold
-    the BURP block data
-
-    TODO: constructor examples
-
-    Attributes:
-        TODO:
-    """
-    __attrlist = ("bkno", "nele", "nval", "nt", "bfam", "bdesc", "btyp",
-                  "bknat", "bktyp", "bkstp", "nbit", "bit0", "datyp",
-                  "store_type",
-                  ## "lstele", "dlstele", "tblval", "rval","drval", "charval",
-                  "max_nval", "max_nele", "max_nt", "max_len")
-    __attrlist_np_1d = ("lstele", "dlstele")
-    __attrlist_np_3d = ("tblval", "rval", "drval", "charval")
-    __attrlist2 = ('bkno', 'nele', 'nval', 'nt', 'bfam', 'bdesc', 'btyp',
-                   'bknat', 'bknat_multi', 'bknat_kind', 'bknat_kindd',
-                   'bktyp', 'bktyp_alt', 'bktyp_kind', 'bktyp_kindd',
-                   'bkstp', 'bkstpd', 'nbit', 'bit0', 'datyp', 'datypd')
-
-    def __init__(self, blk=None):
-        self.__eleno = 0
-        self.__derived = None
-        to_update = False
-        if blk is None:
-            ## print 'NEW:',self.__class__.__name__
-            self.__ptr = _bp.c_brp_newblk()
-        elif isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
-            ## print 'NEW:',self.__class__.__name__,'ptr'
-            self.__ptr = blk
-        else:
-            ## print 'NEW:',self.__class__.__name__,'update'
-            self.__ptr = _bp.c_brp_newblk()
-            to_update = True
-        if to_update:
-            self.update(blk)
-        self.reset_arrays()
-
-
-    def __del__(self):
-        ## print 'DEL:',self.__class__.__name__
-        _bp.c_brp_freeblk(self.__ptr)
-
-    ## def __len__(self): #TODO: not working with this def... find out why and fix it?
-    ##     l = self.nele  # getattr(self.__ptr[0], 'nele')
-    ##     print '\nblklen=',self.nele, self.nval, self.nt
-    ##     if l >= 0:
-    ##         return l
-    ##     return 0
-
-    def next(self): # Python 2
-        if self.__eleno >= self.nele:
-            self.__eleno = 0
-            raise StopIteration
-        ele = self._getelem(self.__eleno)
-        self.__eleno += 1
-        return ele
-
-    def get(self, name):
-        ## print 'getattr:', name
-        if name in self.__class__.__attrlist_np_1d:
-            if self.__arr[name] is None:
-                v = getattr(self.__ptr[0], name)
-                self.__arr[name] = _np.ctypeslib.as_array(v, (self.nele,))
-            return self.__arr[name]
-        elif name in self.__class__.__attrlist_np_3d:
-            if self.__arr[name] is None:
-                v = getattr(self.__ptr[0], name)
-                self.__arr[name] = _np.ctypeslib.as_array(v,
-                                        (self.nt, self.nval, self.nele)).T
-            return self.__arr[name]
-        elif name in self.__class__.__attrlist:
-            return getattr(self.__ptr[0], name)  #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
-            if not self.__derived:
-                self.__derived = self.derived_attr()
-            return self.__derived[name]
-        elif isinstance(name, (long, int)):
-            return self._getelem(name)
-        else:
-            raise KeyError("{} object has no such key: {}"
-                           .format(self.__class__.__name__, repr(name)))
-
-    def __setattr__(self, name, value): #TODO: move to super class
-        return self.put(name, value)
-
-    def put(self, name, value):
-        ## print 'setattr:', name
-        if name in self.__class__.__attrlist:
-            self.__derived = None
-            return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
-        elif name in self.__class__.__attrlist2:
-            #TODO: encode other items on the fly
-            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
-        ## elif isinstance(name, (long, int)): #TODO:
-        ## elif name is None or isinstance(name, (BurpcEle, dict)): #TODO:
-        else:
-            return super(self.__class__, self).__setattr__(name, value)
-
-    def append(self, value):
-        self.put(None, value)
-    #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
-
-    def reset_arrays(self):
-        ## print "reset array"
-        self.__arr = {
-            "lstele"  : None,
-            "dlstele" : None,
-            "tblval"  : None,
-            "rval"    : None,
-            "drval"   : None,
-            "charval" : None
-            }
-
-    def derived_attr(self):
-        """ """
-        if not self.__derived:
-            self.__derived = self.__derived_attr()
-        return self.__derived.copy()
-
-    def __derived_attr(self):
-        """ """
-        btyp  = getattr(self.__ptr[0], 'btyp')
-        datyp = getattr(self.__ptr[0], 'datyp')
-        try:
-            datypd = _rmn.BURP_DATYP_NAMES[datyp]
-        except:
-            datypd = ''
-        params = {
-            'bkno'  : getattr(self.__ptr[0], 'bkno'),
-            'nele'  : getattr(self.__ptr[0], 'nele'),
-            'nval'  : getattr(self.__ptr[0], 'nval'),
-            'nt'    : getattr(self.__ptr[0], 'nt'),
-            'bfam'  : getattr(self.__ptr[0], 'bfam'),  #TODO: provide decoded bfam?
-            'bdesc' : getattr(self.__ptr[0], 'bdesc'),
-            'btyp'  : btyp,
-            'nbit'  : getattr(self.__ptr[0], 'nbit'),
-            'bit0'  : getattr(self.__ptr[0], 'bit0'),
-            'datyp' : datyp,
-            'datypd': datypd
-            }
-        if btyp >= 0:
-            params.update(_rmn.mrbtyp_decode(btyp))
-        else:
-            params.update({
-                'bknat'       : -1,
-                'bknat_multi' : -1,
-                'bknat_kind'  : -1,
-                'bknat_kindd' : -1,
-                'bktyp'       : -1,
-                'bktyp_alt'   : -1, 
-                'bktyp_kind'  : -1,
-                'bktyp_kindd' : -1,
-                'bkstpd'      : -1
-                })
-        return params
-
-    def _getelem(self, index):
-        """indexing from 0 to nele-1"""
-        if index < 0 or index >= self.nele:
-            raise IndexError
-        params = {'e_cmcid' : self.lstele[index]}
-        hasValues = False
-        try:
-            params['e_rval'] = self.rval[index,:,:]
-            hasValues = True
-        except:
-            pass
-        try:
-            params['e_drval'] = self.drval[index,:,:]
-            hasValues = True
-        except:
-            pass
-        try:
-            params['e_charval'] = self.charval[index,:]
-            hasValues = True
-        except:
-            pass
-        if not hasValues:
-            params['e_tblval'] = self.tblval[index,:,:]
-        return BurpcEle(params)
-
-    def putelem(self, index, values): #TODO: merge into put()
-        """indexing from 0 to nele-1"""
-        if not instance(index, {}):
-            raise TypeError('Provided index should be of type int')
-        if not instance(values, BurpcEle):
-            try:
-                values = BurpcEle(values)
-            except:
-                raise TypeError('Provided value should be of type BurpcEle')
-        raise BurpcError('Not yet implemented')
-        #TODO: check if type match
-        #TODO: check if dims match
-
-
-class BurpcEle(_BurpcObjBase):
-    """
-    Python Class to hold a BURP block element's data and meta
-
-    TODO: constructor examples
-
-    Attributes:
-        TODO:
-    """
-    __attrlist = ('e_bufrid', 'e_cmcid', 'store_type', 'shape', 'pname',
-                  'e_tblval','e_rval', 'e_drval', 'e_charval')
-    __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
-                   'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
-                   'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi',
-                   'nval', 'nt', 'shape')
-    __PNAME2NUMPY = {
-        'e_tblval'  : _np.int32,
-        'e_rval'    : _np.float32,
-        'e_drval'   : _np.float64,
-        'e_charval' : _np.uint8
-        }
-    __PNAME2STORE_TYPE = {
-        'e_tblval'  : 'I',
-        'e_rval'    : 'F',
-        'e_drval'   : 'D',
-        'e_charval' : 'C'
-        }
-
-    def __init__(self, bufrid, tblval=None, shape=None): #TODO: use shape
-        if isinstance(bufrid, (long, int)):
-            bufrid = {
-                'e_bufrid' : bufrid,
-                'e_tblval' : tblval
-                }
-        elif not isinstance(bufrid, (dict, self.__class__)):
-            raise TypeError('bufrid should be of type int')
-        self.__derived = None
-        self.__ptr     = dict([(k, None) for k in self.__attrlist])
-        self.update(bufrid) #TODO: update should check type
-        if (self.__ptr['e_bufrid'] is None or
-            self.__ptr['pname'] is None or
-            self.__ptr[self.__ptr['pname']] is None):
-            raise BurpcError('{}: incomplete initialization'
-                             .format(self.__class__.__name__))
-
-    def __setattr__(self, name, value): #TODO: move to super class
-        return self.put(name, value)
-
-    ## def next(self):
-    ##     raise Error #TODO
-
-    def get(self, name): #TODO: if int (or slice any indexing, refer to tblval)
-        """Get Burpc Element meta or data"""
-        ## if name == 'e_tblval' :
-        ## elif name == 'e_rval' :
-        ## elif name == 'e_drval' :
-        ## elif name == 'e_charval':
-        if name in self.__class__.__attrlist:
-            return self.__ptr[name]
-        elif name in self.__class__.__attrlist2:
-            return self.derived_attr()[name]
-        ## elif isinstance(name, (int, long)):
-        raise KeyError("{} object has no such key: {}"
-                       .format(self.__class__.__name__, repr(name)))
-
-    def reshape(self, shape=None):
-        if shape is None:
-            self.__ptr['shape'] = None
-            return
-        if isinstance(shape, (long, int)):
-            shape = (shape, )
-        if not isinstance(shape, (list, tuple)):
-            raise TypeError('Provided shape must be a list')
-        if len(shape) == 1:
-            shape = (shape[0], 1)
-        elif len(shape) > 2:
-            raise BurpcError('{}: Array shape must be 2d: {}'
-                             .format(self.__class__.__name__,
-                                     repr(self.__ptr[name].shape)))
-        if self.__ptr['pname'] is not None:
-            if self.__ptr[self.__ptr['pname']].size != shape[0] * shape[1]:
-                raise BurpcError('{}: array size and provided shape does not match: {}'
-                                 .format(self.__class__.__name__,
-                                         repr(self.__ptr[self.__ptr['pname']].shape)))
-            self.__ptr[self.__ptr['pname']] = _np.reshape(self.__ptr[self.__ptr['pname']],
-                                                   shape, order='F')
-        self.__ptr['shape'] = shape
-
-    def put(self, name, value):
-        if name == 'pname':
-            raise KeyError('{}: Cannot set: {}'
-                             .format(self.__class__.__name__,
-                                     repr(name)))
-        elif name == 'e_bufrid':
-            self.__derived = None
-            self.__ptr[name] = value
-            self.__ptr['e_cmcid'] = _rmn.mrbcol(value)
-        elif name == 'e_cmcid':
-            self.__derived = None
-            self.__ptr[name] = value
-            self.__ptr['e_bufrid'] = _rmn.mrbdcl(value)
-        elif name == 'store_type':
-            if value is None:
-                return
-            if value in _bc.BRP_STORE_TYPE2NUMPY.keys():
-                if (self.__ptr[name] is None or
-                    ## self.__ptr[name] == _bc.BRP_STORE_INTEGER or
-                    self.__ptr[name] == value):
-                    self.__ptr[name] = value
-                else:
-                    raise BurpcError('{}: Cannot change: {}'
-                                     .format(self.__class__.__name__,
-                                             repr(name)))
-            else:
-                raise ValueError('Store type ({}) can only be one of: {}'
-                                 .format(repr(value),
-                                         repr(_bc.BRP_STORE_TYPE2NUMPY.keys())))
-        elif name == 'shape':
-            if value is None:
-                self.__ptr['shape'] = None
-            else:
-                self.reshape(value)
-        elif name in ('e_tblval', 'e_rval', 'e_drval', 'e_charval'):
-            self.__derived = None
-            if value is None:
-                return
-            if not (self.__ptr['pname'] is None or self.__ptr['pname'] == name):
-                raise BurpcError('{}: Cannot change store type'
-                                 .format(self.__class__.__name__))
-            self.__ptr['pname'] = name
-            if name != 'e_tblval':
-                self.__ptr['store_type'] = self.__PNAME2STORE_TYPE[name]
-            dtype = self.__PNAME2NUMPY[name]
-            self.__ptr[name] = _np.array(value, order='F', dtype=dtype)
-            if len(self.__ptr[name].shape) == 1:
-                self.__ptr[name] = _np.reshape(self.__ptr[name],
-                            (self.__ptr[name].shape[0], 1), order='F')
-            elif len(self.__ptr[name].shape) > 2:
-                raise BurpcError('{}: Array shape must be 2d: {}'
-                                 .format(self.__class__.__name__,
-                                         repr(self.__ptr[name].shape)))
-            if self.__ptr['shape'] != self.__ptr[name].shape:
-                self.reshape(self.__ptr['shape'])
-            self.__ptr['shape'] = self.__ptr[name].shape
-        elif name in self.__class__.__attrlist:
-            self.__derived = None
-            #TODO: check type
-            self.__ptr[name] = value
-            ## return setattr(self.__ptr, name, value) #TODO: use proto fn?
-        else:
-            return super(self.__class__, self).__setattr__(name, value)
-        ## else:
-        ##     raise KeyError #TODO
-
-    def delete(self, name):
-        raise BurpcError('{}: Cannot delete: {}'
-                         .format(self.__class__.__name__, repr(name)))
-
-    def derived_attr(self):
-        """ """
-        if not self.__derived:
-            self.__derived = self.__derived_attr()
-        return self.__derived.copy()
-
-    def __derived_attr(self):
-        """ """
-        #TODO: rval, drval, charval...
-        params = _rmn.mrbcvt_dict_bufr(self.__ptr['e_bufrid'], False)
-        nval, nt = 0, 0
-        if self.__ptr['pname'] is not None:
-            nval = self.__ptr[self.__ptr['pname']].shape[0]
-            try:
-                nt = self.__ptr[self.__ptr['pname']].shape[1]
-            except IndexError:
-                nt = 1
-        params.update({
-            'nval'  : nval,
-            'nt'    : nt,
-            'shape' : (nval, nt)
-            })
-        return params
 
 def brp_opt(optName, optValue=None):
     """
@@ -825,28 +87,21 @@ def brp_opt(optName, optValue=None):
     return optValue
 
 
-def brp_open(filename, filemode='r', funit=None, getnbr=False):
+def brp_open(filename, filemode='r', funit=0, getnbr=False):
     """
     #TODO: desc
     """
-    if filemode in _filemodelist_inv.keys():
-        filemode = _filemodelist_inv[filemode]
-    try:
-        fstmode, brpmode = _filemodelist[filemode]
-    except:
-        raise ValueError('Unknown filemode: "{}", should be one of: {}'
-                        .format(filemode, repr(_filemodelist.keys())))
+    fstmode, brpmode, brpcmode = _bp.brp_filemode(filemode)
     #TODO: Check format/existence of file depending on mode as in burp_open
     if not funit:
         try:
-            funit = _rmn.fnom(filename, fstmode)
-            _rmn.fclos(funit)  #TODO: too hacky... any way to reserve a unit w/o double open?
+            funit = _rmn.get_funit(filename, fstmode)
         except _rmn.RMNBaseError:
-            funit = None
+            funit = 0
     if not funit:
         raise BurpcError('Problem associating a unit with file: {} (mode={})'
                         .format(filename, filemode))
-    nrep = _bp.c_brp_open(funit, filename, filemode)
+    nrep = _bp.c_brp_open(funit, filename, brpcmode)
     if getnbr:
         return (funit, nrep)
     return funit
@@ -856,9 +111,9 @@ def brp_close(funit):
     """
     #TODO: desc
     """
-    if isinstance(funit, BurpcFile):
+    if isinstance(funit, _bo.BurpcFile):
         funit.close()
-    elif isinstance(funit, (long, int)):
+    elif isinstance(funit, _integer_types):
         istat = _bp.c_brp_close(funit)
         if istat < 0:
             raise BurpcError('Problem closing burp file unit: "{}"'
@@ -887,7 +142,7 @@ def brp_free(*args):
             _bp.c_brp_freerpt(x)
         elif isinstance(x, _ct.POINTER(_bp.BURP_BLK)):
             _bp.c_brp_freeblk(x)
-        ## elif isinstance(x, BurpcRpt, BurpcBlk):
+        ## elif isinstance(x, _bo.BurpcRpt, _bo.BurpcBlk):
         ##     x.__del__()
         else:
             raise TypeError("Not Supported Type: "+str(type(x)))
@@ -896,17 +151,17 @@ def brp_free(*args):
 def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
     """
     """
-    if isinstance(funit, BurpcFile):
+    if isinstance(funit, _bo.BurpcFile):
         funit = funit.funit
     if not rpt:
-        rpt = BurpcRpt()
+        rpt = _bo.BurpcRpt()
         rpt.handle = 0
-    elif isinstance(rpt, (int, long)):
+    elif isinstance(rpt, _integer_types):
         handle = rpt
-        rpt = BurpcRpt()
+        rpt = _bo.BurpcRpt()
         rpt.handle = handle
-    elif not isinstance(rpt, BurpcRpt):
-        rpt = BurpcRpt(rpt)
+    elif not isinstance(rpt, _bo.BurpcRpt):
+        rpt = _bo.BurpcRpt(rpt)
     if _bp.c_brp_findrpt(funit, rpt.getptr()) >= 0:
         return rpt
     return None
@@ -915,14 +170,14 @@ def brp_findrpt(funit, rpt=None): #TODO: rpt are search keys, change name
 def brp_getrpt(funit, handle=0, rpt=None):
     """
     """
-    if isinstance(funit, BurpcFile):
+    if isinstance(funit, _bo.BurpcFile):
         funit = funit.funit
-    if isinstance(handle, BurpcRpt):
+    if isinstance(handle, _bo.BurpcRpt):
         if not rpt:
             rpt = handle
         handle = handle.handle
-    if not isinstance(rpt, BurpcRpt):
-        rpt = BurpcRpt(rpt)
+    if not isinstance(rpt, _bo.BurpcRpt):
+        rpt = _bo.BurpcRpt(rpt)
     if _bp.c_brp_getrpt(funit, handle, rpt.getptr()) < 0:
         raise BurpcError('Problem in c_brp_getrpt')
     return rpt
@@ -932,18 +187,18 @@ def brp_findblk(blk, rpt): #TODO: blk are search keys, change name
     """
     """
     if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
-        rpt = BurpcRpt(rpt)
-    if not isinstance(rpt, BurpcRpt):
+        rpt = _bo.BurpcRpt(rpt)
+    if not isinstance(rpt, _bo.BurpcRpt):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
     if not blk:
-        blk = BurpcBlk()
+        blk = _bo.BurpcBlk()
         blk.bkno = 0
-    elif isinstance(blk, (int, long)):
+    elif isinstance(blk, _integer_types):
         bkno = blk
-        blk = BurpcBlk()
+        blk = _bo.BurpcBlk()
         blk.bkno = bkno
-    elif not isinstance(blk, BurpcBlk):
-        blk = BurpcBlk(blk)
+    elif not isinstance(blk, _bo.BurpcBlk):
+        blk = _bo.BurpcBlk(blk)
     if _bp.c_brp_findblk(blk.getptr(), rpt.getptr()) >= 0:
         return blk
     return None
@@ -953,11 +208,11 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
     """
     """
     if isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
-        rpt = BurpcRpt(rpt)
-    if not isinstance(rpt, BurpcRpt):
+        rpt = _bo.BurpcRpt(rpt)
+    if not isinstance(rpt, _bo.BurpcRpt):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
-    if not isinstance(blk, BurpcBlk):
-        blk = BurpcBlk(blk)
+    if not isinstance(blk, _bo.BurpcBlk):
+        blk = _bo.BurpcBlk(blk)
     else:
         blk.reset_arrays()
     if _bp.c_brp_getblk(bkno, blk.getptr(), rpt.getptr()) < 0:
@@ -968,7 +223,7 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
 ## def brp_allocrpt(rpt, size):
 ##     """
 ##     """
-##     if isinstance(rpt, BurpcRpt):
+##     if isinstance(rpt, _bo.BurpcRpt):
 ##         rpt = rpt.getptr()
 ##     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
 ##         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
@@ -978,7 +233,7 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
 ## def brp_resizerpt(rpt, size):
 ##     """
 ##     """
-##     if isinstance(rpt, BurpcRpt):
+##     if isinstance(rpt, _bo.BurpcRpt):
 ##         rpt = rpt.getptr()
 ##     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
 ##         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
@@ -988,7 +243,7 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
 ## def brp_clrrpt(rpt):
 ##     """
 ##     """
-##     if isinstance(rpt, BurpcRpt):
+##     if isinstance(rpt, _bo.BurpcRpt):
 ##         rpt = rpt.getptr()
 ##     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
 ##         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
@@ -998,9 +253,9 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
 ## def brp_putrpthdr(funit, rpt):
 ##     """
 ##     """
-##     if isinstance(funit, BurpcFile):
+##     if isinstance(funit, _bo.BurpcFile):
 ##         funit = funit.funit
-##     if isinstance(rpt, BurpcRpt):
+##     if isinstance(rpt, _bo.BurpcRpt):
 ##         rpt = rpt.getptr()
 ##     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
 ##         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
@@ -1010,9 +265,9 @@ def brp_getblk(bkno, blk=None, rpt=None): #TODO: how can we get a block in an em
 def brp_updrpthdr(funit, rpt):
     """
     """
-    if isinstance(funit, BurpcFile):
+    if isinstance(funit, _bo.BurpcFile):
         funit = funit.funit
-    if isinstance(rpt, BurpcRpt):
+    if isinstance(rpt, _bo.BurpcRpt):
         rpt = rpt.getptr()
     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
@@ -1022,41 +277,40 @@ def brp_updrpthdr(funit, rpt):
 def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
     """
     """
-    if isinstance(funit, BurpcFile):
+    if isinstance(funit, _bo.BurpcFile):
         funit = funit.funit
-    if isinstance(rpt, BurpcRpt):
+    if isinstance(rpt, _bo.BurpcRpt):
         rpt = rpt.getptr()
     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
     if _bp.c_brp_writerpt(funit, rpt, where) < 0:
         raise BurpcError('Problem in c_brp_updrpthdr')
 
-## def brp_allocblk(blk, nele=1, nval=1, nt=1):
-##     """
-##     """
-##     #TODO: should we take nele, nval, nt from blk if not provided
-##     if isinstance(blk, BurpcBlk):
-##         blk = blk.getptr()
-##     if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
-##         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
-##     if _bp.c_brp_allocblk(blk, nele, nval, nt) < 0:
-##         raise BurpcError('Problem in c_brp_allocblk')
+def brp_allocblk(blk, nele=None, nval=None, nt=None):
+    """
+    """
+    brp_resizeblk(blk, nele, nval, nt)
 
-## def brp_resizeblk(blk, nele=1, nval=1, nt=1):
-##     """
-##     """
-##     #TODO: should we take nele, nval, nt from blk if not provided
-##     if isinstance(blk, BurpcBlk):
-##         blk = blk.getptr()
-##     if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
-##         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
-##     if _bp.c_brp_resizeblk(blk, nele, nval, nt) < 0:
-##         raise BurpcError('Problem in c_brp_resizeblk')
+def brp_resizeblk(blk, nele=None, nval=None, nt=None):
+    """
+    """
+    if isinstance(blk, _bo.BurpcBlk):
+        blk = blk.getptr()
+    if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
+        raise TypeError('Cannot use blk or type={}'+str(type(blk)))
+    if nele is None: nele = blk[0].max_nele
+    if nval is None: nval = blk[0].max_nval
+    if nt   is None: nt   = blk[0].max_nt
+    nele, nval, nt = int(max(1, nele)), int(max(1, nval)), int(max(1, nt))
+    if blk[0].max_nele == 0:
+        _bp.c_brp_allocblk(blk, nele, nval, nt)
+    else:
+        _bp.c_brp_resizeblk(blk, nele, nval, nt)
 
 ## def brp_encodeblk(blk):
 ##     """
 ##     """
-##     if isinstance(blk, BurpcBlk):
+##     if isinstance(blk, _bo.BurpcBlk):
 ##         blk = blk.getptr()
 ##     if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
 ##         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
@@ -1066,7 +320,7 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
 ## def brp_convertblk(blk, mode=_bc.BRP_MKSA_to_BUFR):
 ##     """
 ##     """
-##     if isinstance(blk, BurpcBlk):
+##     if isinstance(blk, _bo.BurpcBlk):
 ##         blk = blk.getptr()
 ##     if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
 ##         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
@@ -1076,11 +330,11 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
 ## def brp_putblk(rpt, blk):
 ##     """
 ##     """
-##     if isinstance(rpt, BurpcRpt):
+##     if isinstance(rpt, _bo.BurpcRpt):
 ##         rpt = rpt.getptr()
 ##     if not isinstance(rpt, _ct.POINTER(_bp.BURP_RPT)):
 ##         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
-##     if isinstance(blk, BurpcBlk):
+##     if isinstance(blk, _bo.BurpcBlk):
 ##         blk = blk.getptr()
 ##     if not isinstance(blk, _ct.POINTER(_bp.BURP_BLK)):
 ##         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
@@ -1090,11 +344,11 @@ def brp_writerpt(funit, rpt, where=_bc.BRP_END_BURP_FILE):
 ## def c_brp_copyblk(dst_blk, src_blk):
 ##     """
 ##     """
-##     if isinstance(dst_blk, BurpcBlk):
+##     if isinstance(dst_blk, _bo.BurpcBlk):
 ##         dst_blk = dst_blk.getptr()
 ##     if not isinstance(dst_blk, _ct.POINTER(_bp.BURP_BLK)):
 ##         raise TypeError('Cannot use dst_blk or type={}'+str(type(dst_blk)))
-##     if isinstance(src_blk, BurpcBlk):
+##     if isinstance(src_blk, _bo.BurpcBlk):
 ##         src_blk = src_blk.getptr()
 ##     if not isinstance(src_blk, _ct.POINTER(_bp.BURP_BLK)):
 ##         raise TypeError('Cannot use src_blk or type={}'+str(type(src_blk)))
