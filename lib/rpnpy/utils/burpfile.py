@@ -310,7 +310,7 @@ class BurpFile:
                 #      should we do a transpose?
                 self.rval[irep][iblk] = rval
 
-                # check that the element arrays are the correct dimensions
+                # check that the element arrays have the correct dimensions
                 if _np.any(self.elements[irep][iblk].shape != (self.nelements[irep][iblk])):
                     raise _brp.BurpError("elements array does not have the correct dimensions.")
                 if _np.any(self.rval[irep][iblk].shape != (self.nelements[irep][iblk], self.nlev[irep][iblk], self.nt[irep][iblk])):
@@ -467,7 +467,7 @@ class BurpFile:
 
                 if self.nblk[irep]>iblk:
                     if self.nelements[irep][block-1]>iele and self.nt[irep][iblk]>it:
-                        outdata.append( self.rval[irep][iblk][iele][it] )
+                        outdata.append( self.rval[irep][iblk][iele,:,it] )
                         if self.nlev[irep][iblk]>nlev_max:
                             nlev_max = self.nlev[irep][iblk]
                     else:
@@ -517,7 +517,7 @@ class BurpFile:
 
                 if len(iblk)>0:
                     if self.nt[irep][iblk[0]]>it:
-                        outdata.append( self.rval[irep][iblk[0]][iele[0]][it] )
+                        outdata.append( self.rval[irep][iblk[0]][iele[0],:,it] )
                         if self.nlev[irep][iblk[0]]>nlev_max:
                             nlev_max = self.nlev[irep][iblk[0]]
                     else:
