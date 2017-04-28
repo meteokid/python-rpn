@@ -28,6 +28,7 @@ from rpnpy import integer_types as _integer_types
 
 class _BurpcObjBase(object):
     """
+    Base class for BurpFiles, BurpRpt, BurpBlk, BurpEle
     """
     def __repr__(self):
         return self.__class__.__name__+'('+ repr(self.todict())+')'
@@ -261,6 +262,8 @@ class BurpcFile(_BurpcObjBase):
             IndexError on out of range index
             BurpcError on any other error
         """
+        #TODO: review rpt recycling
+        ## rpt = BurpcRpt()
         rpt = rpt if isinstance(rpt, BurpcRpt) else BurpcRpt(rpt)
         if search is None or isinstance(search, (BurpcRpt, dict)):
             search = search if isinstance(search, BurpcRpt) else BurpcRpt(search)
@@ -338,7 +341,7 @@ class BurpcFile(_BurpcObjBase):
         """
         self.put(None, rpt)
 
-        
+
 class BurpcRpt(_BurpcObjBase):
     """
     Python Class equivalent of the burp_c's BURP_RPT C structure to hold
@@ -407,6 +410,10 @@ class BurpcRpt(_BurpcObjBase):
     ##         return self.nblk
     ##     return 0
 
+    def __iter__(self):
+        self.__bkno = 0
+        return self
+
     def next(self): # Python 2:
         """
         Get the next item in the iterator, Internal function for python 2 iter
@@ -458,14 +465,18 @@ class BurpcRpt(_BurpcObjBase):
             name += 1
             if name < 1 or name > self.nblk:
                 raise IndexError('Index out of range: [0:{}['.format(self.nblk))
-            blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
+            #TODO: review blk recycling
+            ## blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
+            blk = BurpcBlk()
             if _bp.c_brp_getblk(name, blk.getptr(), self.getptr()) < 0:
                 raise BurpcError('Problem in c_brp_getblk')
             return blk
         elif name is None or isinstance(name, (BurpcBlk, dict)):
             search = name if isinstance(name, BurpcBlk) else BurpcBlk(name)
             if _bp.c_brp_findblk(search.getptr(), self.getptr()) >= 0:
-                blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
+                #TODO: review blk recycling
+                ## blk = blk if isinstance(blk, BurpcBlk) else BurpcBlk(blk)
+                blk = BurpcBlk()
                 if _bp.c_brp_getblk(search.bkno, blk.getptr(),
                                     self.getptr()) >= 0:
                     return blk
@@ -556,7 +567,10 @@ class BurpcRpt(_BurpcObjBase):
 
 
 #TODO: class BurpcBlkPlus(BurpcBlk): BurpcBlk + BurpcRpt attributes
-        
+## class BurpcRptBlk(BurpcBlk):
+##     """
+##     """
+
 class BurpcBlk(_BurpcObjBase):
     """
     Python Class equivalent of the burp_c's BURP_BLK C structure to hold
@@ -608,6 +622,10 @@ class BurpcBlk(_BurpcObjBase):
     ##     if l >= 0:
     ##         return l
     ##     return 0
+
+    def __iter__(self):
+        self.__eleno = 0
+        return self
 
     def next(self): # Python 2
         """
@@ -767,6 +785,9 @@ class BurpcBlk(_BurpcObjBase):
 
 
 #TODO: class BurpcElePlus(BurpcEle): BurpcEle + BurpcBlk + BurpcRpt attributes
+## class BurpcRptBlkEle(BurpcBlk):
+##     """
+##     """
 
 class BurpcEle(_BurpcObjBase):
     """

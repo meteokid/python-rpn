@@ -84,6 +84,12 @@ BRP_IDY2RDY = lambda x: float(x)/10.
 
 # BRP_RDY2IDY(x)  encodes dy to burp code
 BRP_RDY2IDY = lambda x: int(round(x * 10.))
+
+# Minimum size for report and block buffers
+_BITMOT = 32  #Note: this is platform dependent
+_M64  = lambda A: int((A+63)/64)*64
+LBLK = lambda NELE, NVAL, NT, NBIT: 128 + _M64((NELE-3)*16) + _M64(NELE*NVAL*NT*NBIT)
+LRPT = lambda LBLOCS: 10 + (320 + LBLOCS)/_BITMOT
 #</source>
 
 #== Constants Details ==

@@ -17,6 +17,10 @@ import numpy as np
 if sys.version_info > (3, ):
     long = int
 
+_GETPTR = lambda o, t: o.getptr() if (isinstance(o, t)) else o
+_RPTPTR = lambda rpt: _GETPTR(rpt, brp.BurpcRpt)
+_BLKPTR = lambda blk: _GETPTR(blk, brp.BurpcBlk)
+
 #--- primitives -----------------------------------------------------
 
 class RpnPyBurpc(unittest.TestCase):
@@ -307,6 +311,22 @@ class RpnPyBurpc(unittest.TestCase):
                 i += 1
             self.assertEqual(len(bfile), i)
 
+    def test_brp_BurpcFile_iter_break(self):
+        """brp_BurpcFile_iter  """
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        with brp.BurpcFile(mypath) as bfile:
+            i = 0
+            for rpt in bfile:
+                i += 1
+                if i == 10:
+                    break
+            i = 0
+            for rpt in bfile:
+                i += 1
+            self.assertEqual(len(bfile), i)
+
     def test_brp_BurpcFile_iter2(self):
         """brp_BurpcFile_iter  """
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -366,7 +386,7 @@ class RpnPyBurpc(unittest.TestCase):
         #TODO: should we prevent setting a unknown param?
         ## try:
         ##     rpt.no_such_attr = 1
-        ##     self.assertTrue(False, 'BURP_RPT.attr should raise AttrError when init with int')
+        ##     self.assertTrue(False, 'BURP_RPT.attr should raise AttrError setting an unknown param')
         ## except AttributeError:
         ##     pass
 
@@ -907,6 +927,32 @@ class RpnPyBurpc(unittest.TestCase):
             self.assertEqual(blk.datyp, 2)
             self.assertEqual(blk.btyp, 15456)
 
+    ## def test_min_rpt_buf_size(self):
+    ##     brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+    ##     mypath = self.getFN(self.knownValues[0][0])
+    ##     ## print '\nFile:', mypath
+    ##     with brp.BurpcFile(mypath) as bfile:
+    ##         i=0
+    ##         for rpt in bfile:
+    ##             m = 0
+    ##             l = 0
+    ##             s = 0
+    ##             x = 0
+    ##             for blk in rpt:
+    ##                 max_len = blk.getptr()[0].max_len
+    ##                 m = max(m, max_len)
+    ##                 s += max_len
+    ##                 l += blk.nele*blk.nval*blk.nt
+    ##                 x += rmn.LBLK(blk.nele, blk.nval, blk.nt, blk.nbit)
+    ##             ##     print 'b', blk.bkno, blk.nbit, blk.bit0,\
+    ##             ##         ':nijk', blk.nele*blk.nval*blk.nt,\
+    ##             ##         ':maxl', max_len,\
+    ##             ##         ':LBLK', rmn.LBLK(blk.nele, blk.nval, blk.nt, blk.nbit)
+    ##             ## print 'r', rpt.stnid, rpt.lngr, rpt.nsize, ':n', rmn.LRPT(x)
+    ##             ## i += 1
+    ##             ## if i == 2: break
+    ##             self.assertEqual(rmn.LRPT(x), rpt.lngr + 10)
+
     def test_brp_get_blk_iter(self):
         """Report iter on block"""
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -920,6 +966,27 @@ class RpnPyBurpc(unittest.TestCase):
                 self.assertEqual(blk.bkno, i)
                 self.assertTrue(i <= rpt.nblk)
             self.assertEqual(blk.bkno, rpt.nblk)
+            self.assertEqual(i, rpt.nblk)
+
+    def test_brp_get_blk_iter_break(self):
+        """Report iter on block"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+        with brp.BurpcFile(mypath) as bfile:
+            rpt = bfile.get()
+            i = 0
+            for blk in rpt:
+                i += 1
+                if i == 2:
+                    break
+            i = 0
+            for blk in rpt:
+                i += 1
+                self.assertEqual(blk.bkno, i)
+                self.assertTrue(i <= rpt.nblk)
+            self.assertEqual(blk.bkno, rpt.nblk)
+            self.assertEqual(i, rpt.nblk)
 
     def test_brp_get_blk_iter2(self):
         """Report iter on block"""
@@ -933,6 +1000,43 @@ class RpnPyBurpc(unittest.TestCase):
                 self.assertEqual(blk.bkno, i+1)
                 self.assertTrue(i <= rpt.nblk)
             self.assertEqual(blk.bkno, rpt.nblk)
+
+    def test_brp_get_blk_cmp(self):
+        """Report iter on block cmp proto and obj"""
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        mypath, itype, iunit = self.knownValues[0]
+        mypath = self.getFN(mypath)
+
+        x = []
+        with brp.BurpcFile(mypath) as bfile:
+            bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
+            rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
+            while brp.c_brp_findrpt(bfile.funit, rs) >= 0:
+                if brp.c_brp_getrpt(bfile.funit, brp.RPT_HANDLE(rs), rr) < 0:
+                    continue
+                if  brp.RPT_STNID(rr) == '>>POSTALT':
+                    continue
+                brp.BLK_SetBKNO(bs, 0)
+                while brp.c_brp_findblk(bs, rr) >= 0:
+                    if brp.c_brp_getblk(brp.BLK_BKNO(bs), br, rr) < 0:
+                        continue
+                    x1 = (brp.RPT_STNID(rr), brp.BLK_BKNO(br),
+                          brp.BLK_NELE(br), brp.BLK_NVAL(br), brp.BLK_NT(br),
+                          brp.BLK_NELE(br),
+                          brp.BLK_NELE(br) * brp.BLK_NVAL(br) * brp.BLK_NT(br))
+                    x.append(x1)
+
+        with brp.BurpcFile(mypath) as bfile:
+            i = 0
+            for rr in bfile:
+                if  rr.stnid == '>>POSTALT':
+                    continue
+                for br in rr:
+                    x1 = (rr.stnid, br.bkno, br.nele, br.nval, br.nt,
+                          br.dlstele.size, br.tblval.size)
+                    self.assertEqual(x[i], x1)
+                    i += 1
+
 
     def test_brp_get_blk_data(self):
         """Report iter on block"""
@@ -1313,7 +1417,7 @@ class RpnPyBurpc(unittest.TestCase):
         brp.brp_resizeblk(blk, blk.max_nele+1)
         ## for k,v in blk.todict().items():
         ##     print k,':',repr(v)
-
+        #TODO
 
     def test_BurpcBlk_add_BurpcEle_err_shape(self):
         pass

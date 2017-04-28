@@ -33,9 +33,11 @@ from rpnpy import integer_types as _integer_types
 
 ## _C_MKSTR = _ct.create_string_buffer
 
-
-_RPTPTR = lambda rpt: rpt.getptr() if (isinstance(rpt, _bo.BurpcRpt)) else rpt
-_BLKPTR = lambda blk: blk.getptr() if (isinstance(blk, _bo.BurpcBlk)) else blk
+# Ternary assignment operator equivalent to C's "(cond) ? vTrue : vFalse"
+## _GETCOND = lambda c, vT, vF: vT if (c) else vF
+_GETPTR = lambda o, t: o.getptr() if (isinstance(o, t)) else o
+_RPTPTR = lambda rpt: _GETPTR(rpt, _bo.BurpcRpt)
+_BLKPTR = lambda blk: _GETPTR(blk, _bo.BurpcBlk)
 
 ## /*
 ##  * Macros for getting values of a Report
@@ -206,7 +208,7 @@ def BLK_SetNBIT (blk, val): _BLKPTR(blk)[0].nbit = val
 def BLK_SetDATYP(blk, val): _BLKPTR(blk)[0].datyp = val
 # Set burp block DVAL
 def BLK_SetDVAL(blk,e,v,t,val):
-    _BLKPTR(blk)[0].drval [e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
+    _BLKPTR(blk)[0].drval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
 # Set burp block TBLVAL
 def BLK_SetTBLVAL(blk,e,v,t,val):
     _BLKPTR(blk)[0].tblval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
@@ -215,16 +217,13 @@ def BLK_SetRVAL(blk,e,v,t,val):
     _BLKPTR(blk)[0].rval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
 # Set burp block CVAL
 def BLK_SetCVAL(blk,l,c,val):
-    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c] = val;
+    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c] = val
 # Set burp block LSTELE
-def BLK_SetLSTELE(blk,i,val):
-    _BLKPTR(blk)[0].lstele[i] = val
+def BLK_SetLSTELE(blk,i,val): _BLKPTR(blk)[0].lstele[i] = val
 # Set burp block DLSTELE
-def BLK_SetDLSTELE(blk,i,val):
-    _BLKPTR(blk)[0].dlstele[i] = val
+def BLK_SetDLSTELE(blk,i,val): _BLKPTR(blk)[0].dlstele[i] = val
 # Set burp block STORE_TYPE
-def BLK_SetSTORE_TYPE(blk,val):
-    _BLKPTR(blk)[0].store_type = val
+def BLK_SetSTORE_TYPE(blk,val): _BLKPTR(blk)[0].store_type = val
 
 
 def brp_SetOptFloat(optName, optValue):
@@ -461,7 +460,7 @@ def brp_newrpt():
         brp_free
         rpnpy.burpc.brpobj.BurpcRpt
     """
-    return _bp.c_brp_newrpt() #TODO: should it return BurpcRpt?
+    return _bp.c_brp_newrpt()
 
 
 def brp_newblk():
@@ -479,7 +478,7 @@ def brp_newblk():
         brp_free
         rpnpy.burpc.brpobj.BurpcBlk
     """
-    return _bp.c_brp_newblk() #TODO: should it return BurpcBlk?
+    return _bp.c_brp_newblk()
 
 
 def brp_allocrpt(rpt, size):

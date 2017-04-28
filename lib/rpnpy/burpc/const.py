@@ -28,6 +28,7 @@ import rpnpy.librmn.all as _rmn
 #== Constants Details ==
 #<source lang="python">
 
+## File access mode specifiers
 BRP_FILE_READ   = 'r'
 BRP_FILE_WRITE  = 'w'
 BRP_FILE_APPEND = 'a'

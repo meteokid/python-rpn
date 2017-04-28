@@ -110,8 +110,8 @@ class RpnPyBurpc(unittest.TestCase):
         while brp.c_brp_findrpt(iunit, rs) >= 0:
             if brp.c_brp_getrpt(iunit, brp.RPT_HANDLE(rs), rr) < 0:
                 continue
-            ## if  brp.RPT_STNID(rr) == '>>POSTALT':
-            ##     continue
+            if  brp.RPT_STNID(rr) == '>>POSTALT':
+                continue
             ## if  brp.RPT_STNID(rr) != '>>POSTALT': #TODO: check problem with postalt, tblval are different from one run to another
             ##     continue
             print("""
@@ -164,8 +164,8 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         with brp.BurpcFile(infile) as bfile:
             print("Nombre Enreg = {}".format(len(bfile)))
             for rr in bfile:
-                ## if  rr.stnid == '>>POSTALT':
-                ##     continue
+                if  rr.stnid == '>>POSTALT':
+                    continue
                 ## if  rr.stnid != '>>POSTALT':
                 ##     continue
                 print("""
@@ -249,6 +249,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         istat = brp.c_brp_close(iunit)
         brp.brp_free(bs, br, rs, rr)
         i, total =  0, 0
+        ## for k in sorted(counters.keys()):
         for k in counters.keys():
             print("{})\t{}\t{}".format(i,k,counters[k]))
             i += 1
@@ -278,6 +279,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                     continue
                 trouve = False
                 for br in rr:
+                    ## if (br.bknat & 3) == 2:
                     if br.bknat_kindd == 'desc3d':
                         try:
                             counters[rr.stnid] += br.nt
@@ -288,6 +290,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                 if trouve:
                     counters[rr.stnid] += 1
         i, total =  0, 0
+        ## for k in sorted(counters.keys()):
         for k in counters.keys():
             print("{})\t{}\t{}".format(i,k,counters[k]))
             i += 1
