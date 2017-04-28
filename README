@@ -1,8 +1,9 @@
 
 ## Python RPN (RPNpy) is a collection of Python modules and scripts developed
 ## at RPN for scientific use.
-## Its main purpose is to act as an augmented interface to Librmn and vgrid
-## functions: read, manipulate, interpolate and write RPN Std files data
+## Its main purpose is to act as an augmented interface to functions in: 
+## * librmn, vgrid: read, manipulate, interpolate and write RPN Std files data
+## * burpc: read, manipulate and write BURP files
 ## in Python with a very simple and minimalist interface while also 
 ## offering powerful lower level functions for special cases. 
 ## The Python RPN package can be used for fast prototyping and full development 
@@ -10,8 +11,10 @@
 ## It allows to use powerful python data analysis and visualization tools 
 ## like numpy, scipy and matplotlib among others.
 
-## Note: In order to use Python RPN, you must have librmn and 
-##       vgrid (6.0 or later) installed along with their shared libraries.
+## Note: In order to use Python RPN, you must have 
+##       the following shared libraries installed and 
+##       their paths set in LD_LIBRARY_PATH, LIBPATH or PYTHONPATH
+##       librmn, vgrid (6.0 or later) and burpc 
 
 ## ==== Developing code ============================================================
 
@@ -24,6 +27,10 @@ cd rpnpy
 ## These libraries need to be present in your LD_LIBRARY_PATH or PYTHONPATH
 # export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_015.2}
 # export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-shared_6.0.0}
+# export RPNPY_BURPC_VERSION=${RPNPY_BURPC_VERSION:-*}
+# export AFSISIO=${AFSISIO:-/home/binops/afsi/sio/env_ubuntu-12.04-amd64-64/afsisio}
+# export CMCGRIDF=${CMCGRIDF:-/fs/cetusops/fs1/prod/hubs/gridpt/dbase}
+# export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
 . ./.setenv.dot
 rm -f lib/rpnpy/version.py
 cat >> lib/rpnpy/version.py << EOF

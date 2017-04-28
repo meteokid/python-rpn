@@ -1,8 +1,9 @@
 #!/bin/ksh
 ## Python RPN (RPNpy) is a collection of Python modules and scripts developed
 ## at RPN for scientific use.
-## Its main purpose is to act as an augmented interface to Librmn and vgrid
-## functions: read, manipulate, interpolate and write RPN Std files data
+## Its main purpose is to act as an augmented interface to functions in: 
+## * librmn, vgrid: read, manipulate, interpolate and write RPN Std files data
+## * burpc: read, manipulate and write BURP files
 ## in Python with a very simple and minimalist interface while also 
 ## offering powerful lower level functions for special cases. 
 ## The Python RPN package can be used for fast prototyping and full development 
@@ -10,10 +11,12 @@
 ## It allows to use powerful python data analysis and visualization tools 
 ## like numpy, scipy and matplotlib among others.
 
-## Note: In order to use Python RPN, you must have librmn and 
-##       vgrid (6.0 or later) installed along with their shared libraries.
+## Note: In order to use Python RPN, you must have 
+##       the following shared libraries installed and 
+##       their paths set in LD_LIBRARY_PATH, LIBPATH or PYTHONPATH
+##       librmn, vgrid (6.0 or later) and burpc 
 
-## ==== Developing code ============================================================
+## ==== Developing code ======================================================
 
 ## Basic setup
 # git clone ssh://localhost/~armnenv/GitDepots/python-rpn.git rpnpy
@@ -25,6 +28,10 @@ cd rpnpy
 ## These libraries need to be present in your LD_LIBRARY_PATH or PYTHONPATH
 # export RPNPY_RMN_VERSION=${RPNPY_RMN_VERSION:-_015.2}
 # export RPNPY_VGD_VERSION=${RPNPY_VGD_VERSION:-shared_6.0.0}
+# export RPNPY_BURPC_VERSION=${RPNPY_BURPC_VERSION:-*}
+# export AFSISIO=${AFSISIO:-/home/binops/afsi/sio/env_ubuntu-12.04-amd64-64/afsisio}
+# export CMCGRIDF=${CMCGRIDF:-/fs/cetusops/fs1/prod/hubs/gridpt/dbase}
+# export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
 # . ./.setenv.dot --dev
 . ./.setenv.dot
 export storage_model=${storage_model:-$TMPDIR}
@@ -59,13 +66,14 @@ cd rpnpy
 ## update default rmn and vgrid dependencies in: 
 ##    ./ssmusedep-dev.bndl-*
 
-export RDENETWORK=cmc
-# export RDENETWORK=cmc_u12
-# export RDENETWORK=science
+## Choose one of the following export
+export RDENETWORK=cmc        ## CMC Network, ubuntu 14
+# export RDENETWORK=cmc_u12  ## CMC Network, ubuntu 12
+# export RDENETWORK=science  ## Science Network, ubuntu 14
 . ./.setenv.dot --dev
 
 export storage_model=${storage_model:-$TMPDIR}
-rdemklink -v
+rdemklink -v -f
 ./bin/ouv_exp_rpnpy -v
 # make -j 8 components_objects
 # make components_libs 
@@ -74,26 +82,27 @@ make -s forced_extlibdotfile
 # make sharedlibs
 # make sharedlibs_cp
 ## Note: Need to do "make extlibdotfile" on other arch before the next step
-make components_ssm_all
+# make components_ssm_all
 # make components_ssm
 
 ## For additional ARCH
       ssh MYMACH
       cd /PATH/
-      export RDENETWORK=cmc
-      # export RDENETWORK=cmc_u12
-      # export RDENETWORK=science
+      ## Choose one of the following export
+      export RDENETWORK=cmc        ## CMC Network, ubuntu 14
+      # export RDENETWORK=cmc_u12  ## CMC Network, ubuntu 12
+      # export RDENETWORK=science  ## Science Network, ubuntu 14
       . ./.setenv.dot --dev
       export storage_model=${storage_model:-$TMPDIR}
       rdemklink
       #./bin/ouv_exp_rpnpy
-      #make -j 8 components_objects
-      #make components_libs 
-      #make components_abs 
+      # make -j 8 components_objects
+      # make components_libs 
+      # make components_abs 
       make -s forced_extlibdotfile
-      #make sharedlibs
-      #make sharedlibs_cp
-      make components_ssm_arch
+      # make sharedlibs
+      # make sharedlibs_cp
+      # make components_ssm_arch
 
 ## ==== Installing ==========================================================
 
