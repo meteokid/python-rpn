@@ -318,9 +318,9 @@ class BurpcFile(_BurpcObjBase):
             raise TypeError("For where: {}, Not Supported Type: {}".format(repr(where), str(type(where))))
 
         self.__handles = [] #TODO: is it the best place to invalidate the cache?
-        #TODO: conditional _bb.brp_updrpthdr
-        ## _bb.brp_updrpthdr(self.funit, rpt)
         prpt = rpt.getptr() if isinstance(rpt, BurpcRpt) else rpt
+        #TODO: conditional _bb.brp_updrpthdr?
+        _bp.c_brp_updrpthdr(self.funit, prpt)
         if _bp.c_brp_writerpt(self.funit, prpt, where) < 0:
             raise BurpcError('Problem in brp_writerpt')
         if append: #TODO: only if writeok
@@ -495,7 +495,8 @@ class BurpcRpt(_BurpcObjBase):
             _bp.c_brp_setstnid(self.__ptr, value)
         elif name in self.__class__.__attrlist:
             self.__derived = None
-            return setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
+            setattr(self.__ptr[0], name, value)  #TODO: use proto fn?
+            return
         elif name in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
             raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")

@@ -36,26 +36,52 @@ See Also:
 
 import unittest
 
+import os
 import sys
 if sys.version_info > (3, ):
     long = int
 
-class RpnPyBurpc(unittest.TestCase):
+RPNPY_NOLONGTEST = os.getenv('RPNPY_NOLONGTEST', None)
+
+class RpnPyBurpcTests(unittest.TestCase):
+
+    def _filecmp(self, file1name, file2name):
+        import os
+        import time
+        import difflib
+        with open(file1name, 'r') as f:
+            file1lines = f.readlines()
+        with open(file2name, 'r') as f:
+            file2lines = f.readlines()
+        file1time = time.ctime(os.stat(file1name).st_mtime)
+        file2time = time.ctime(os.stat(file2name).st_mtime)
+        result = list(difflib.unified_diff(file1lines, file2lines,
+                                           file1name,  file2name,
+                                           file1time,  file2time, n=0))
+        if len(result) > 0:
+            return False
+        return True
+        ## d = difflib.Differ()
+        ## result = d.compare(file1lines, file2lines)
+        ## result = list(result)
+        ## print len(file1lines), len(file2lines), len(result)
+        ## from pprint import pprint
+        ## pprint(result)
 
     #==== Example 1 =============================================
 
-    def test_ex1_read1(self):
+    def _test_ex1_read1(self, logfile="tmp/test_ex1_read1.log"):
         """burplib_c iweb doc example 1"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex1_read1.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
         istat = brp.c_brp_open(iunit, infile, "r")
-        print("enreg {}".format(istat))
+        logfid.write("enreg {}\n".format(istat))
         bs = brp.c_brp_newblk()
         br = brp.c_brp_newblk()
         rs = brp.c_brp_newrpt()
@@ -63,49 +89,65 @@ class RpnPyBurpc(unittest.TestCase):
         brp.RPT_SetHANDLE(rs,0)
         while brp.c_brp_findrpt(iunit, rs) >= 0:
             if brp.c_brp_getrpt(iunit, brp.RPT_HANDLE(rs), rr) >= 0:
-                print("stnid = {}".format(brp.RPT_STNID(rr)))
+                logfid.write("stnid = {}\n".format(brp.RPT_STNID(rr)))
                 brp.BLK_SetBKNO(bs, 0)
                 while brp.c_brp_findblk(bs, rr) >= 0:
                     if brp.c_brp_getblk(brp.BLK_BKNO(bs), br, rr) >= 0:
-                        print("block btyp = {}".format(brp.BLK_BTYP(br)))
+                        logfid.write("block btyp = {}\n".format(brp.BLK_BTYP(br)))
         istat = brp.c_brp_close(iunit)
         brp.c_brp_freeblk(bs)
         brp.c_brp_freeblk(br)
         brp.c_brp_freerpt(rs)
         brp.c_brp_freerpt(rr)
+        if logfid != sys.stdout: logfid.close()
 
 
-    def test_ex1_read1_py(self):
+    def _test_ex1_read1_py(self, logfile="tmp/test_ex1_read1_py.log"):
         """burplib_c iweb doc example 1"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex1_read1_py.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         with brp.BurpcFile(infile) as bfile:
-            print("enreg {}".format(len(bfile)))
+            logfid.write("enreg {}\n".format(len(bfile)))
             for rr in bfile:
-                print("stnid = {}".format(rr.stnid))
+                logfid.write("stnid = {}\n".format(rr.stnid))
                 for br in rr:
-                    print("block btyp = {}".format(br.btyp))
+                    logfid.write("block btyp = {}\n".format(br.btyp))
+        if logfid != sys.stdout: logfid.close()
+
+
+    def test_ex1_read1_cmp(self):
+        """burplib_c iweb doc example 1, compare results from 2 itf"""
+        import sys
+        if len(testlist) > 0 and not '1' in testlist:
+            return
+        logfile1 = "tmp/test_ex1_read1.log"
+        logfile2 = "tmp/test_ex1_read1_py.log"
+        self._test_ex1_read1(logfile=logfile1)
+        self._test_ex1_read1_py(logfile=logfile2)
+        self.assertTrue(self._filecmp(logfile1, logfile2))
 
     #==== Example 2 =============================================
 
-    def test_ex2_readburp(self):
+    def _test_ex2_readburp(self, infile=None,
+                          logfile="tmp/test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex2_readburp.log", "w")
-        infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
-                              'bcmk_burp/2007021900.brp')
+        logfid = open(logfile, "w") if logfile else sys.stdout
+        if not infile:
+            infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
+                                  'bcmk_burp/2007021900.brp')
         iunit = 999
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
         istat = brp.c_brp_open(iunit, infile, "r")
-        print("Nombre Enreg = {}".format(istat))
+        logfid.write("Nombre Enreg = {}\n".format(istat))
         brp.RPT_SetHANDLE(rs,0)
         while brp.c_brp_findrpt(iunit, rs) >= 0:
             if brp.c_brp_getrpt(iunit, brp.RPT_HANDLE(rs), rr) < 0:
@@ -114,10 +156,10 @@ class RpnPyBurpc(unittest.TestCase):
                 continue
             ## if  brp.RPT_STNID(rr) != '>>POSTALT': #TODO: check problem with postalt, tblval are different from one run to another
             ##     continue
-            print("""
+            logfid.write("""
 hhmm   ={:8d} flgs   ={:6d}  codtyp ={:6d}  stnids ={:9s}
 blat   ={:8d} blon   ={:6d}  dx     ={:6d}  dy     ={:6d}  stnhgt ={:6d}
-yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}
+yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}\n
 """.format(brp.RPT_TEMPS(rr), brp.RPT_FLGS(rr), brp.RPT_IDTYP(rr),
            brp.RPT_STNID(rr), brp.RPT_LATI(rr), brp.RPT_LONG(rr),
            brp.RPT_DX(rr), brp.RPT_DY(rr), brp.RPT_ELEV(rr),
@@ -127,66 +169,70 @@ yymmdd ={:8d} oars   ={:6d}  runn   ={:6d}  nblk   ={:6d}  dlay   ={:6d}
             while brp.c_brp_findblk(bs, rr) >= 0:
                 if brp.c_brp_getblk(brp.BLK_BKNO(bs), br, rr) < 0:
                     continue
-                print("""
+                logfid.write("""
 blkno  ={:6d}  nele   ={:6d}  nval   ={:6d}  nt     ={:6d}  bit0   ={:6d}
-bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
+bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}\n
 """.format(brp.BLK_BKNO(br), brp.BLK_NELE(br), brp.BLK_NVAL(br),
            brp.BLK_NT(br), brp.BLK_BIT0(br), brp.BLK_BDESC(br),
            brp.BLK_BTYP(br), brp.BLK_NBIT(br), brp.BLK_DATYP(br),
            brp.BLK_BFAM(br)))
                 for k in range(brp.BLK_NT(br)):
                     if brp.BLK_NT(br) != 1:
-                        print("\nobservation {}/{}".
-                                format(k+1, brp.BLK_NT(br)))
+                        logfid.write("\nobservation {}/{}\n".
+                                      format(k+1, brp.BLK_NT(br)))
                     mystr = "lstele ="
                     for i in range(brp.BLK_NELE(br)):
                         mystr += "    {:0>6d}".format(brp.BLK_DLSTELE(br,i))
-                    print(mystr)
+                    logfid.write(mystr+"\n")
                     for j in range(brp.BLK_NVAL(br)):
                         mystr = "tblval = {} {} {}".format(brp.RPT_STNID(rr),k,j)
                         for i in range(brp.BLK_NELE(br)):
                             mystr += "{:10d}".format(brp.BLK_TBLVAL(br,i,j,k))
-                        print(mystr)
+                        logfid.write(mystr+"\n")
         istat = brp.c_brp_close(iunit)
         brp.brp_free(bs, br, rs, rr)
+        if logfid != sys.stdout: logfid.close()
 
 
-    def test_ex2_readburp_py(self):
+    def _test_ex2_readburp_py(self, infile=None,
+                             logfile="tmp/test_ex2_readburp.log"):
         """burplib_c iweb doc example 2"""
         import os, sys
         import numpy as np
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex2_readburp_py.log", "w")
-        infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
-                              'bcmk_burp/2007021900.brp')
+        logfid = open(logfile, "w") if logfile else sys.stdout
+        if not infile:
+            infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
+                                  'bcmk_burp/2007021900.brp')
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         with brp.BurpcFile(infile) as bfile:
-            print("Nombre Enreg = {}".format(len(bfile)))
+            logfid.write("Nombre Enreg = {}\n".format(len(bfile)))
             for rr in bfile:
                 if  rr.stnid == '>>POSTALT':
                     continue
                 ## if  rr.stnid != '>>POSTALT':
                 ##     continue
-                print("""
+                logfid.write("""
 hhmm   ={temps:8d} flgs   ={flgs:6d}  codtyp ={idtype:6d}  stnids ={stnid:9s}
 blat   ={lati:8d} blon   ={longi:6d}  dx     ={dx:6d}  dy     ={dy:6d}  stnhgt ={elev:6d}
-yymmdd ={date:8d} oars   ={oars:6d}  runn   ={runn:6d}  nblk   ={nblk:6d}  dlay   ={drnd:6d}
+yymmdd ={date:8d} oars   ={oars:6d}  runn   ={runn:6d}  nblk   ={nblk:6d}  dlay   ={drnd:6d}\n
 """.format(**rr.todict()))
                 for br in rr:
                     ## brptr = br.getptr()
-                    print("""
+                    logfid.write("""
 blkno  ={bkno:6d}  nele   ={nele:6d}  nval   ={nval:6d}  nt     ={nt:6d}  bit0   ={bit0:6d}
-bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bfam   ={bfam:6d}
+bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bfam   ={bfam:6d}\n
 """.format(**br.todict()))
                     n=0
                     for k in range(br.nt):
                         if br.nt != 1:
-                            print("\nobservation {}/{}".format(k+1, br.nt))
+                            logfid.write("\nobservation {}/{}\n".
+                                         format(k+1, br.nt))
                         mystr = "lstele ="
                         for i in range(br.nele):
                             mystr += "    {:0>6d}".format(np.asscalar(br.dlstele[i]))
-                        print(mystr)
+                        logfid.write(mystr+"\n")
                         for j in range(br.nval):
                             mystr = "tblval = {} {} {}".format(rr.stnid,k,j)
                             for i in range(br.nele):
@@ -203,22 +249,37 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                                 ## mystr += "{:10d}".format(b)
                                 ## mystr += "[{}]".format(a==b)
                                 ## n += 1
-                            print(mystr)
+                            logfid.write(mystr+"\n")
                 ## break
+        if logfid != sys.stdout: logfid.close()
+
+
+    def test_ex2_readburp_cmp(self):
+        """burplib_c iweb doc example 1, compare results from 2 itf"""
+        import sys
+        if len(testlist) > 0 and not '2' in testlist:
+            return
+        if RPNPY_NOLONGTEST:
+            return
+        logfile1 = "tmp/test_ex2_readburp.log"
+        logfile2 = "tmp/test_ex2_readburp_py.log"
+        self._test_ex2_readburp(logfile=logfile1)
+        self._test_ex2_readburp_py(logfile=logfile2)
+        self.assertTrue(self._filecmp(logfile1, logfile2))
 
     #==== Example 3 =============================================
 
-    def test_ex3_obs(self):
+    def _test_ex3_obs(self, logfile="tmp/test_ex3_obs.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex3_obs.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
         istat = brp.c_brp_open(iunit, infile, "r")
-        print("Nombre Enreg = {}".format(istat))
+        logfid.write("Nombre Enreg = {}\n".format(istat))
         bs, br = brp.c_brp_newblk(), brp.c_brp_newblk()
         rs, rr = brp.c_brp_newrpt(), brp.c_brp_newrpt()
         counters = {}
@@ -251,25 +312,26 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         i, total =  0, 0
         ## for k in sorted(counters.keys()):
         for k in counters.keys():
-            print("{})\t{}\t{}".format(i,k,counters[k]))
+            logfid.write("{})\t{}\t{}\n".format(i,k,counters[k]))
             i += 1
             total += counters[k]
-        print("-----\t--------\t--------")
-        print("     \tTotal   \t{}".format(total))
+        logfid.write("-----\t--------\t--------\n")
+        logfid.write("     \tTotal   \t{}\n".format(total))
+        if logfid != sys.stdout: logfid.close()
 
 
-    def test_ex3_obs_py(self):
+    def _test_ex3_obs_py(self, logfile="tmp/test_ex3_obs_py.log"):
         """burplib_c iweb doc example 3"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex3_obs_py.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         counters = {}
         with brp.BurpcFile(infile) as bfile:
-            print("Nombre Enreg = {}".format(len(bfile)))
+            logfid.write("Nombre Enreg = {}\n".format(len(bfile)))
             for rr in bfile:
                 if  rr.stnid[0] != '^':
                     try:
@@ -292,20 +354,33 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         i, total =  0, 0
         ## for k in sorted(counters.keys()):
         for k in counters.keys():
-            print("{})\t{}\t{}".format(i,k,counters[k]))
+            logfid.write("{})\t{}\t{}\n".format(i,k,counters[k]))
             i += 1
             total += counters[k]
-        print("-----\t--------\t--------")
-        print("     \tTotal   \t{}".format(total))
+        logfid.write("-----\t--------\t--------\n")
+        logfid.write("     \tTotal   \t{}\n".format(total))
+        if logfid != sys.stdout: logfid.close()
+
+
+    def test_ex3_obs_cmp(self):
+        """burplib_c iweb doc example 3, compare results from 2 itf"""
+        import filecmp
+        if len(testlist) > 0 and not '3' in testlist:
+            return
+        logfile1 = "tmp/test_ex3_obs.log"
+        logfile2 = "tmp/test_ex3_obs_py.log"
+        self._test_ex3_obs(logfile=logfile1)
+        self._test_ex3_obs_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 4 =============================================
 
-    def test_ex4_elemets(self):
+    def _test_ex4_elements(self, logfile="tmp/test_ex4_elements.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex4_elemets.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         iunit = 999
@@ -328,14 +403,15 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         istat = brp.c_brp_close(iunit)
         brp.brp_free(bs, br, rs, rr)
         for v in elems:
-            print v, rmn.mrbcvt_dict(v, False)
+            logfid.write("{} {}\n".format(v, repr(rmn.mrbcvt_dict(v, False))))
+        if logfid != sys.stdout: logfid.close()
 
-    def test_ex4_elemets_py(self):
+    def _test_ex4_elements_py(self, logfile="tmp/test_ex4_elements_py.log"):
         """burplib_c iweb doc example 4"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex4_elemets_py.log", "w")
+        logfid = open(logfile, "w") if logfile else sys.stdout
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -355,18 +431,30 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                     ## for i in range(br.dlstele.size):
                     ##      elems.add(br.dlstele[i])
         for v in elems:
-            print v, rmn.mrbcvt_dict(v, False)
+            logfid.write("{} {}\n".format(v, repr(rmn.mrbcvt_dict(v, False))))
+        if logfid != sys.stdout: logfid.close()
+
+
+    def test_ex4_elements_cmp(self):
+        """burplib_c iweb doc example 4, compare results from 2 itf"""
+        import filecmp
+        if len(testlist) > 0 and not '4' in testlist:
+            return
+        logfile1 = "tmp/test_ex4_elements.log"
+        logfile2 = "tmp/test_ex4_elements_py.log"
+        self._test_ex4_elements(logfile=logfile1)
+        self._test_ex4_elements_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2))
 
     #==== Example 5 =============================================
 
-    def test_ex5_write1(self):
+    def _test_ex5_write1(self, logfile="tmp/test_ex5_write1.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex5_write1.log", "w")
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = 'tmp/test_ex5_write1.brp'
+        outfile = "tmp/test_ex5_write1.brp"
         iunit, ounit = 999, 998
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
         istat = brp.c_brp_open(iunit, infile, "r")
@@ -385,17 +473,18 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         istat = brp.c_brp_close(iunit)
         istat = brp.c_brp_close(ounit)
         brp.brp_free(bs, br, rs, rr)
+        # Print out content of created file for camparison
+        self._test_ex2_readburp(infile=outfile, logfile=logfile)
 
 
-    def test_ex5_write1_py(self):
+    def _test_ex5_write1_py(self, logfile="tmp/test_ex5_write1_py.log"):
         """burplib_c iweb doc example 5"""
         import os, sys
         import rpnpy.librmn.all as rmn
         import rpnpy.burpc.all as brp
-        sys.stdout = open("tmp/test_ex5_write1_py.log", "w")
         infile = os.path.join(os.getenv('ATM_MODEL_DFILES').strip(),
                               'bcmk_burp/2007021900.brp')
-        outfile = 'tmp/test_ex5_write1_py.brp'
+        outfile = "tmp/test_ex5_write1_py.brp"
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
         elems = set()
         idtyp = rmn.BURP_IDTYP_IDX['PILOT']  ## 32
@@ -411,10 +500,24 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
                 rr.temps  = 2200
                 bfileo.append(rr)
                 ## print 'len bfileo=', len(bfileo)
+        # Print out content of created file for camparison
+        self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
+
+
+    def test_ex5_write1_cmp(self):
+        """burplib_c iweb doc example 5, compare results from 2 itf"""
+        import filecmp
+        if len(testlist) > 0 and not '5' in testlist:
+            return
+        logfile1 = "tmp/test_ex5_write1.log"
+        logfile2 = "tmp/test_ex5_write1_py.log"
+        self._test_ex5_write1(logfile=logfile1)
+        self._test_ex5_write1_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 6 =============================================
 
-    def test_ex6_write2(self):
+    def _test_ex6_write2(self, logfile="tmp/test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
         import os, sys
         import rpnpy.burpc.all as brp
@@ -538,15 +641,17 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         # liberer ressources
         brp.brp_free(rr, br, br2, tmp)
 
+        self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
 
-    def test_ex6_write2_py(self):
+
+    def _test_ex6_write2_py(self, logfile="tmp/test_ex6_write2_py.log"):
         """burplib_c iweb doc example 6"""
-        ## import os, sys
-        ## import rpnpy.librmn.all as rmn
-        ## import rpnpy.burpc.all as brp
-        ## sys.stdout = open("tmp/test_ex6_write2_py.log", "w")
-        ## outfile = 'test_ex6_write2_py.brp'
-        ## brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
+        import os, sys
+        import rpnpy.librmn.all as rmn
+        import rpnpy.burpc.all as brp
+        sys.stdout = open("tmp/test_ex6_write2_py.log", "w")
+        outfile = 'test_ex6_write2_py.brp'
+        brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
 
         ## rpt = brp.BurpcRpt({
         ##     'temps'  : 1200,
@@ -682,6 +787,20 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
         ## # ajouter l'enrgistrement dans le fichier
         ## if brp.c_brp_writerpt(ounit, rr, brp.BRP_END_BURP_FILE) < 0:
         ##     sys.exit(1)
+
+        ## self._test_ex2_readburp_py(infile=outfile, logfile=logfile)
+
+
+    def test_ex6_write2_cmp(self):
+        """burplib_c iweb doc example 6, compare results from 2 itf"""
+        import filecmp
+        if len(testlist) > 0 and not '6' in testlist:
+            return
+        logfile1 = "tmp/test_ex6_write2.log"
+        logfile2 = "tmp/test_ex6_write2_py.log"
+        self._test_ex6_write2(logfile=logfile1)
+        self._test_ex6_write2_py(logfile=logfile2)
+        self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 7 =============================================
 
@@ -904,7 +1023,7 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
 
 
-    def _test_ex2_readburp_c(self):
+    def toto_test_ex2_readburp_c(self):
         """burplib_c iweb doc example 2"""
         infile = self.knownValues[0][0]
         brp.brp_opt(rmn.BURPOP_MSGLVL, rmn.BURPOP_MSG_SYSTEM)
@@ -969,7 +1088,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
 
     #TODO: def _test_ex2_readburp_e(self):
 
-    def _test_ex3_obs(self):
+    def todo_test_ex3_obs(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
@@ -1013,7 +1132,7 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
         print("     \tTotal   \t{}".format(total))
 
 
-    def _test_ex3_obs_c(self):
+    def todo_test_ex3_obs_c(self):
         """burplib_c iweb doc example 3"""
         infile, itype, iunit = self.knownValues[0]
         istat = brp.c_brp_SetOptChar("MSGLVL", "FATAL")
@@ -1059,7 +1178,10 @@ bdesc  ={:6d}  btyp   ={:6d}  nbit   ={:6d}  datyp  ={:6d}  bfam   ={:6d}
     #TODO: def _test_ex3_obs_e(self):
 
 
+testlist = []
 if __name__ == "__main__":
+    while len(sys.argv) > 1:
+        testlist.append(sys.argv.pop())
     unittest.main()
 
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
