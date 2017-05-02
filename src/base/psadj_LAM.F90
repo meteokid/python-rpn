@@ -17,6 +17,7 @@
 
       subroutine psadj_LAM (F_cub_o,F_cub_i,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
+      use gmm_vt1
       implicit none
 
 #include <arch_specific.hf>
@@ -38,7 +39,6 @@
 #include "glb_ld.cdk"
 #include "gmm.hf"
 #include "geomg.cdk"
-#include "vt1.cdk"
 #include "vt0.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"

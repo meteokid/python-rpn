@@ -15,6 +15,7 @@
 
 !**s/r gemgrid - grille program
       subroutine gemgrid
+      use step_options
       use nest_blending
       implicit none
 #include <arch_specific.hf>
@@ -34,14 +35,13 @@
 #include "lam.cdk"
 #include "lun.cdk"
 #include "path.cdk"
-#include "step.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include <clib_interface_mu.hf>
 
       integer, external :: gemdm_config,domain_decomp3,grid_nml3
-      character*120 outfile,dumc,fn,etk,etk_ext,dum1
-      character*2024 st
+      character*120 outfile,dumc,etk,etk_ext,dum1
+      character*2024 fn
       logical lam,radians
       integer unf1,unf2,err,npack,i,j,k
 

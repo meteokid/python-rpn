@@ -17,6 +17,7 @@
 !                first guess at time level t0
 
       subroutine frstgss ()
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
 
 #include "gmm.hf"
 #include "vt0.cdk"
-#include "vt1.cdk"
 #include "tr3d.cdk"
       integer :: istat, k
       character(len=GMM_MAXNAMELENGTH) :: tr_name

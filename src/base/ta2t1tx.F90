@@ -16,6 +16,7 @@
 !**s/r ta2t1tx -  Transfer variables ta into t1
 !
       subroutine ta2t1tx
+      use gmm_vt1
       implicit none
 
 !author
@@ -36,7 +37,6 @@
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "vta.cdk"
-#include "vt1.cdk"
 #include "tr3d.cdk"
 
       integer n,istat

@@ -16,6 +16,7 @@
 !**s/r blocstat  - Performs 2D-3D statistics on model fields
 
       subroutine blocstat (F_forceit_L)
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -23,7 +24,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "step.cdk"
 #include "lctl.cdk"
 #include "ptopo.cdk"
 #include "schm.cdk"

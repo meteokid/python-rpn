@@ -16,6 +16,7 @@
 !**s/r initial - Performs initialisation
 
       subroutine initial (F_rstrt_L)
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -45,7 +46,6 @@
 #include "lun.cdk"
 #include "p_geof.cdk" 
 #include "vtopo.cdk"
-#include "step.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
 

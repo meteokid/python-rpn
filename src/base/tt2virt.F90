@@ -18,6 +18,7 @@
 
 !
       subroutine tt2virt2 (F_t, F_tt2tv, Minx,Maxx,Miny,Maxy,Nk)
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,7 +35,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "vt0.cdk"
-#include "vt1.cdk"
 #include "pw.cdk"
 
       integer i, j, k, n,istat

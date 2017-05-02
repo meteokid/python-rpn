@@ -81,9 +81,13 @@
       Schm_itraj    = 2
       Schm_nblendyy = -1
       Schm_advec    = 1
+      Schm_sleve_L  = .false.
+      Schm_bcavg_L  = .true.
+      Schm_eulmtn_L = .false.
       Schm_capa_var_L = .false.
       Schm_adcub_L    = .true.
-      Schm_psadj_L    = .false.
+      Schm_psadj      = 0 
+      Schm_psadj_print_L = .false.
       Schm_psadj_lam_L= .false.
       Schm_dry_mixing_ratio_L= .false.
       Schm_source_ps_L= .false.
@@ -92,7 +96,7 @@
       Schm_wload_L     = .false.
       Schm_cub_traj_L  = .true.
       Schm_trapeze_L   = .true.
-      Schm_wlint_L     = .false.
+      Schm_wlint_L     = .true.
 
       Lam_blend_H_func_S = 'COS2'
       Lam_blend_H   = 10
@@ -125,6 +129,8 @@
       Cstv_bA_nh_8 = 0.5
 
       Cstv_rE_8    = 1.d0
+      Cstv_psadj_8 = 1.d0
+      Cstv_pSref_8 = 1.d5
       Cstv_tstr_8  = 240.0
 
       Lctl_rxstat_S   = 'LCL_4'
@@ -158,7 +164,12 @@
       Hzd_smago_param   = -1
       Hzd_smago_prandtl = -1.
       Hzd_smago_prandtl_hu = -1.
+      Hzd_smago_fric_heat  = 0.
       Hzd_smago_lnr     = 0.
+      Hzd_smago_min_lnr = -1.
+      Hzd_smago_top_lev = 0.4
+      Hzd_smago_bot_lev = 0.7
+      Hzd_smago_theta_nobase_L = .false.
 
       Hzd_in_rhs_L     = .false.
 

@@ -15,6 +15,8 @@
 !**s/r nest_init -- Initializes nesting data for LAM configuration
 
       subroutine nest_init ()
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -22,12 +24,10 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "tr3d.cdk"
 #include "nest.cdk"
 #include "geomg.cdk"
 #include "lam.cdk"
-#include "step.cdk"
 #include "schm.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"

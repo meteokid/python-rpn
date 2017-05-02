@@ -58,7 +58,7 @@
          i = i+1
          fn= trim(root)//'/'//trim(fn)
          
-         if (fnom (Inp_list_unf(i),trim(fn),'RND+OLD+R',0) == 0) then
+         if (fnom (Inp_list_unf(i),trim(fn),'RND+OLD+R/O',0) == 0) then
             if (fstouv(Inp_list_unf(i) ,'RND').lt.0) err_code= -1
          else
             err_code= -1

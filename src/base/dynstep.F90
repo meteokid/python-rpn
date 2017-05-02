@@ -16,6 +16,8 @@
 !**s/r dynstep -  Control of the dynamical timestep of the model
 
       subroutine dynstep
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -25,12 +27,10 @@
 #include "orh.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "schm.cdk"
 #include "vtopo.cdk"
 #include "grd.cdk"
 #include "tr3d.cdk"
-#include "vt1.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       logical first_L, yyblend
@@ -63,7 +63,7 @@
     
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
-      call psadj_init
+      call psadj_init ( Step_kount )
 
       do Orh_icn = 1,Schm_itcn-1
     
@@ -82,7 +82,7 @@
 
       call tracers_step (.true. )
 
-      call psadj
+      call psadj ( Step_kount )
 
       call tracers_step (.false.)
 

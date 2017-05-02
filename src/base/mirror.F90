@@ -17,6 +17,7 @@
 !               case
 !
       subroutine mirror ()
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "tr3d.cdk"
 #include "schm.cdk"
 #include "lun.cdk"

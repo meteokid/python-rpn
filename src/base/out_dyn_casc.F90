@@ -19,6 +19,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "p_geof.cdk"
-#include "vt1.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"

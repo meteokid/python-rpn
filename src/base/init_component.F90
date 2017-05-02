@@ -17,6 +17,7 @@
 
       subroutine init_component
       use iso_c_binding
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "lun.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-#include "step.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"

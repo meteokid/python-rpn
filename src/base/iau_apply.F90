@@ -18,6 +18,8 @@ subroutine iau_apply2 (F_kount)
    use vGrid_Descriptors
    use vgrid_wb
    use input_mod
+      use step_options
+      use gmm_vt1
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -37,17 +39,21 @@ subroutine iau_apply2 (F_kount)
 #include "dcst.cdk"
 #include "cstv.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "path.cdk"
 #include "var_gmm.cdk"
-#include "vt1.cdk"
 #include "pw.cdk"
 #include "iau.cdk"
 
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'
+   character(len=32),parameter  :: VGRID_M_S = 'ref-m'
+   character(len=32),parameter  :: VGRID_T_S = 'ref-t'
+   character(len=32),parameter  :: IAU_VGRID_M_S = 'iau-m'
+   character(len=32),parameter  :: IAU_VGRID_T_S = 'iau-t'
+   character(len=32),parameter  :: IAU_REFP0_S = 'IAUREFP0:P'
+   character(len=32),parameter  :: IAU_REFP0_LS_S = 'IAUREFP0LS:P'
    logical,parameter :: UVSCAL2WGRID = .false.
    logical,parameter :: ALLOWDIR = .true.
    logical,parameter :: DO_TT2TV = .true.
@@ -56,6 +62,7 @@ subroutine iau_apply2 (F_kount)
    real,pointer,save :: weight(:)
    real, pointer, dimension(:,:) :: refp0,pw_p0
    character(len=256) :: incfg_S,vgrid_S,msg_S
+   character(len=32)  :: refp0_S, refp0ls_S
    character(len=16)  :: iname0_S,iname1_S,datev_S
    integer :: istat,dateo,datev,iau_vtime,step_freq,ivar,ni1,nj1,i,j,n,nw,add,&
         lijk(3),uijk(3),step_0
@@ -169,31 +176,47 @@ subroutine iau_apply2 (F_kount)
 
       !# define a vert coor with ref on l_ni/j
       nullify(ip1list)
-      istat = vgrid_wb_get('ref-m',vgridm,ip1list)
+      istat = vgrid_wb_get(VGRID_M_S,vgridm,ip1list, F_sfcfld2_S=refp0ls_S)
+      if (refp0ls_S /= '') refp0ls_S = IAU_REFP0_LS_S
       ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put('iau-m',vgridm,ip1listref,'IAUREFP0:P', &
-              F_overwrite_L=.true.)
+      istat = vgrid_wb_put(IAU_VGRID_M_S,vgridm,ip1listref,IAU_REFP0_S, &
+              refp0ls_S, F_overwrite_L=.true.)
       nullify(ip1list)
-      istat = vgrid_wb_get('ref-t',vgridt,ip1list)
+      istat = vgrid_wb_get(VGRID_T_S,vgridt,ip1list, F_sfcfld2_S=refp0ls_S)
+      if (refp0ls_S /= '') refp0ls_S = IAU_REFP0_LS_S
       ip1listref => ip1list(1:G_nk)
-      istat = vgrid_wb_put('iau-t',vgridt,ip1listref,'IAUREFP0:P', &
-              F_overwrite_L=.true.)
+      istat = vgrid_wb_put(IAU_VGRID_T_S,vgridt,ip1listref,IAU_REFP0_S, &
+              refp0ls_S, F_overwrite_L=.true.)
       mymeta = GMM_NULL_METADATA
       mymeta%l(1) = gmm_layout(1,l_ni,0,0,l_ni)
       mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
       nullify(refp0)
-      istat = gmm_create('IAUREFP0:P',refp0,mymeta)
- 
+      istat = gmm_create(IAU_REFP0_S,refp0,mymeta)
+      if (refp0ls_S /= '') then
+         nullify(refp0)
+         istat = gmm_create(IAU_REFP0_LS_S, refp0, mymeta)
+      endif
+
    endif IF_INIT
 
    !# Update reference surface field for vgrid
+   istat = vgrid_wb_get(VGRID_M_S, vgridm, F_sfcfld_S=refp0_S, F_sfcfld2_S=refp0ls_S)
+
    nullify(pw_p0,refp0)
-   istat = gmm_get('PW_P0:P',pw_p0)
-   istat = gmm_get('IAUREFP0:P',refp0)
+   istat = gmm_get(refp0_S, pw_p0)
+   istat = gmm_get(IAU_REFP0_S,refp0)
    if (associated(refp0) .and. associated(pw_p0)) then
       refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
    endif
 
+   if (refp0ls_S /= '') then
+      nullify(pw_p0, refp0)
+      istat = gmm_get(refp0ls_S, pw_p0)
+      istat = gmm_get(IAU_REFP0_LS_S, refp0)
+      if (associated(refp0) .and. associated(pw_p0)) then
+         refp0(:,:) = pw_p0(1:l_ni,1:l_nj)
+      endif
+   endif
 
    if (F_kount > 0) kount = F_kount+step_freq2-1
    DO_IVAR: do ivar = 1,nbvar
@@ -214,8 +237,8 @@ subroutine iau_apply2 (F_kount)
          call msg(MSG_INFO,'(iau_apply) Reading: '//trim(iname0_S)//' at t0+'//trim(msg_S)//'s')
 
          !# Get interpolted data from file
-         vgrid_S = 'iau-t'
-         if (iname0_S == 'uu') vgrid_S = 'iau-m'
+         vgrid_S = IAU_VGRID_T_S
+         if (iname0_S == 'uu') vgrid_S = IAU_VGRID_M_S
          nullify(myptr0,myptr1,myptr2d)
          istat = input_get(inputid,ivar,kount,Grd_local_gid,vgrid_S, &
               myptr0,myptr1)

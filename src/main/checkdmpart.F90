@@ -1,4 +1,5 @@
       subroutine checkdmpart
+      use step_options
       use iso_c_binding
       implicit none
 
@@ -6,7 +7,6 @@
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "lun.cdk"
-#include "step.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "version.cdk"

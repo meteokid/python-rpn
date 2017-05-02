@@ -17,6 +17,7 @@
 !
       subroutine hzd_theta
       use hzd_ctrl
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -24,7 +25,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "hzd.cdk"
-#include "vt1.cdk"
 #include "dcst.cdk"
 #include "pw.cdk"
 

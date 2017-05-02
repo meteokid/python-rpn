@@ -15,6 +15,7 @@
 !/@*
       subroutine itf_phy_update3 (F_apply_L)
       use phy_itf, only: phy_get
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +32,6 @@
 #include "glb_ld.cdk"
 #include "grd.cdk"
 #include "cstv.cdk"
-#include "vt1.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"

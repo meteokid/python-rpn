@@ -19,6 +19,7 @@
 !
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
 !
+      use step_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -95,7 +96,6 @@
 #include "dimout.cdk"
 #include "timestep.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "lun.cdk"
 
 

@@ -16,6 +16,7 @@
 !**s/r theo_cfg - reads parameters from namelist theo_cfgs
 !
       subroutine theo_cfg
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -26,8 +27,8 @@
       integer cte_ok,istat
       logical set_dcst_8
       external set_dcst_8
-      integer  fnom,gem_nml,mtn_cfg,adv_nml
-      external fnom,gem_nml,mtn_cfg,adv_nml
+      integer  fnom,gem_nml,mtn_cfg,bubble_cfg,adv_nml
+      external fnom,gem_nml,mtn_cfg,bubble_cfg,adv_nml
 
       integer k, unf, status, err, nrec
 !
@@ -67,6 +68,10 @@
          print *,'Theo_case_S=',Theo_case_S
          err = mtn_cfg (unf)
          print *,'after mtn_cfg err=',err
+      else if (  Theo_case_S .eq. 'BUBBLE' ) then
+         print *,'Theo_case_S=',Theo_case_S
+         err = bubble_cfg (unf)
+         print *,'after bubble_cfg err=',err
       else
          if (Lun_out.gt.0) then
             write (Lun_out, 9200) Theo_case_S

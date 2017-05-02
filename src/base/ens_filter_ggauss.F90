@@ -16,6 +16,8 @@
 !**s/r ens_filter_ggauss - Gaussian grid space filter
 !
       subroutine ens_filter_ggauss(bfact,lambda,dsp_local)
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 !
@@ -42,9 +44,7 @@
 #include "glb_ld.cdk"
 #include "trp.cdk"
 #include "ldnh.cdk"
-#include "vt1.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"

@@ -16,6 +16,7 @@
       subroutine out_outdir
       use iso_c_binding
       use timestr_mod, only: timestr_prognum,timestr_unitfact
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "path.cdk"
-#include "step.cdk"
 #include "init.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"

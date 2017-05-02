@@ -1,8 +1,22 @@
+!---------------------------------- LICENCE BEGIN -------------------------------
+! GEM - Library of kernel routines for the GEM numerical atmospheric model
+! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
+!                       Environnement Canada
+! This library is free software; you can redistribute it and/or modify it 
+! under the terms of the GNU Lesser General Public License as published by
+! the Free Software Foundation, version 2.1 of the License. This library is
+! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+! You should have received a copy of the GNU Lesser General Public License
+! along with this library; if not, write to the Free Software Foundation, Inc.,
+! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+!---------------------------------- LICENCE END ---------------------------------
+module gmm_vt1
+   implicit none
+   public
+   save
 
-#if defined (DOC)
-!
-!**comdeck vt1.cdk
-!
 !______________________________________________________________________
 !                                                                      |
 !  GMM variables at TIME t1 (t0-dt)                                    |
@@ -19,10 +33,6 @@
 !--------------------|-------------------------------------------------|
 ! zdt1               | Zetadot:dZeta/dt: generalized vertical velocity |
 !--------------------|-------------------------------------------------|
-! trt1               | passive tracer(s)                               |
-!----------------------------------------------------------------------|
-!
-#endif
 
       real, pointer, dimension (:,:,:) ::  ut1 => null()
       real, pointer, dimension (:,:,:) ::  vt1 => null()
@@ -32,14 +42,10 @@
       real, pointer, dimension (:,:,:) ::  qt1 => null()
       real, pointer, dimension (:,:,:) :: zdt1 => null()
 
-#if !defined(GMM_IS_OK)
-#define GMM_IS_OK(errcode) (errcode >= 0)
-      integer, parameter :: GMM_MAXNAMELENGTH = 32
-#endif
+      integer, parameter :: MAXNAMELENGTH = 32
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s , &
-                              gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
-
-      common /vt1_n_gmm/ gmmk_wt1_s , gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s, &
-                              gmmk_qt1_s , gmmk_ut1_s, gmmk_vt1_s
+      character(len=MAXNAMELENGTH) :: &
+            gmmk_wt1_s, gmmk_tt1_s, gmmk_zdt1_s, gmmk_st1_s , &
+            gmmk_qt1_s, gmmk_ut1_s, gmmk_vt1_s
       
+end module gmm_vt1

@@ -20,6 +20,7 @@
       integer function gemdm_config ( )
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -39,7 +40,6 @@
 #include <WhiteBoard.hf>
 #include "dcst.cdk"
 #include "nml.cdk"
-#include "step.cdk"
 #include "out.cdk"
 #include "tracers.cdk"
 
@@ -81,7 +81,12 @@
       call convip ( ipcode, pcode, ipkind, 0, ' ', .false. )
 
       Level_kind_ip1 = 5
-      Level_version  = 5
+
+      if(Schm_sleve_L)then
+         Level_version  = 100
+      else
+         Level_version  = 5
+      endif
 
       if (Grd_yinyang_L) then
          Lam_blend_H  = 0
@@ -206,6 +211,18 @@
          endif
       end if
 
+      if ((Hzd_smago_prandtl > 0.) .and. (Hzd_smago_param <= 0.)) then
+         if (lun_out>0) then
+            write (Lun_out, *) 'ABORT: Hzd_smago_param must be set to a positive value', Hzd_smago_param
+         end if
+         return
+      end if
+
+      if (Hzd_smago_param > 0. .or. Hzd_smago_lnr > 0.) then
+         if (Hzd_smago_min_lnr > Hzd_smago_lnr .or. Hzd_smago_min_lnr<0.) &
+            Hzd_smago_min_lnr=Hzd_smago_lnr
+      endif
+
       G_ni  = Grd_ni
       G_nj  = Grd_nj
 
@@ -213,8 +230,18 @@
       G_njv = G_nj - 1
 
       G_niu= G_ni - 1
-! Additional temporary check for Schm_psadj_L in ordinary LAM config. 
-      if ( .not.(Grd_yinyang_L) .and. Schm_psadj_L .and. &
+
+      if (Schm_psadj<0.and.Schm_psadj>3) then
+         if (lun_out>0) write (Lun_out, 9700)
+         return
+      endif
+      if (Schm_psadj==2.and..not.Schm_source_ps_L) then
+         if (lun_out>0) write (Lun_out, 9701)
+         return
+      endif
+
+! Additional temporary check for Schm_psadj>0 in ordinary LAM config. 
+      if ( .not.(Grd_yinyang_L) .and. Schm_psadj>0 .and. &
            .not.(Schm_psadj_lam_L) ) then
          if (lun_out>0) write (Lun_out, 6700) 
          return
@@ -333,7 +360,7 @@
       gemdm_config = 1
 
       if ( Vtopo_start_S  == '' ) then
-         Vtopo_start = -99999
+         Vtopo_start = Step_initial
       else
          err= min( timestr2step (Vtopo_start,Vtopo_start_S,Step_dt),err)
       endif
@@ -361,7 +388,7 @@
  6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
  6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
- 6700  format (/'Schm_psadj_L option in LAM config NOT fully tested yet.'&
+ 6700  format (/'Schm_psadj>0 option in LAM config NOT fully tested yet.'&
                /'To continue using this option confirm your intent with Schm_psadj_lam_L=.true'/)
  7021 format (//'  ==========================='/&
                 '  ACADEMIC 2D or 3D Advection'/&
@@ -375,6 +402,8 @@
  9580 format (/,'ABORT: Non zero Lam_blend_T cannot be used without top piloting'/)
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
  9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
+ 9700 format (/,'ABORT: Schm_psadj not valid'/)
+ 9701 format (/,'ABORT: Schm_psadj=2 should be combined with Schm_source_ps_L=T'/)
 !
 !-------------------------------------------------------------------
 !

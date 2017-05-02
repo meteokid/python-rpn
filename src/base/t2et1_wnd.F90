@@ -16,10 +16,10 @@
 !**s/r t2et1_wnd - T2 = T1 (Winds only)   
 
       subroutine t2et1_wnd
+      use gmm_vt1
       implicit none
 
 #include "gmm.hf"
-#include "vt1.cdk"
 #include "vt2.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"

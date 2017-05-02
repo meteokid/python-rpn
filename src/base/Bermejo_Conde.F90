@@ -57,7 +57,7 @@
 
       LAM_L = .not.Grd_yinyang_L
 
-      if (.NOT.Schm_psadj_L.and..NOT.LAM_L.and..NOT.Schm_autobar_L) call handle_error(-1,'BERMEJO-CONDE','Schm_psadj_L should be TRUE when NOT LAM')
+      if (Schm_psadj==0.and..NOT.LAM_L.and..NOT.Schm_autobar_L) call handle_error(-1,'BERMEJO-CONDE','Schm_psadj_L should be TRUE when NOT LAM')
 
       time_p = 1
       time_m = 0

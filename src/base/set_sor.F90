@@ -18,6 +18,7 @@
       subroutine set_sor ()
       use iso_c_binding
       use timestr_mod
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 #include "level.cdk"
 #include "timestep.cdk"
 #include "schm.cdk"
-#include "step.cdk"
 #include "lctl.cdk"
 #include "outd.cdk"
 #include "outp.cdk"

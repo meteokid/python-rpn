@@ -21,6 +21,8 @@
                            F_Minij, F_Maxij, F_nij, F_nij0,      &
                            F_npex1, F_npey1, Fld_S )
       use spn_work_mod
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -63,12 +65,10 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "vt1.cdk"
 #include "nest.cdk"
 #include "lctl.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
-#include "step.cdk"
 #include "lam.cdk"
 #include "spn.cdk"
 

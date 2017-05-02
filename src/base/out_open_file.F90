@@ -17,6 +17,7 @@
 
       subroutine out_open_file ( F_prefix_S )
       use timestr_mod, only: timestr_prognum
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 #include "lctl.cdk"
 #include "out.cdk"
 #include "out3.cdk"
-#include "step.cdk"
 #include "ptopo.cdk"
 
       character*4    unit_ext

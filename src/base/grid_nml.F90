@@ -84,11 +84,16 @@
  9000 call low2up (Grd_typ_S,dumc)
       Grd_typ_S= dumc
 
-      Grd_bsc_base = 4
+      ! basic global lateral boundary conditions depth
+      Grd_bsc_base = 5
       if(Grd_yinyang_L) Grd_bsc_base=Grd_bsc_base+1
-      Grd_bsc_ext1 = 3
+      ! added points for proper de-staggering of u,v at physics interface
+      Grd_bsc_ext1 = 2
+      ! added points for user specified Grd_maxcfl
       Grd_maxcfl   = max(1,Grd_maxcfl)
+      ! total extension to user specified grid configuration
       Grd_extension= Grd_maxcfl + Grd_bsc_base + Grd_bsc_ext1
+
       Glb_pil_n = Grd_extension
       Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
       

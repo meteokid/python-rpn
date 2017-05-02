@@ -17,12 +17,12 @@
 !                     components pw_uu_plus and pw_vv_plus
 
       subroutine pw_update_UV
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "pw.cdk"
 
       integer istat

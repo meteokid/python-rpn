@@ -16,6 +16,7 @@
 !**s/r nest_intt -- Linear interpolation in time of nesting data
 !
       subroutine nest_intt
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,6 @@
 #include "lctl.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
-#include "step.cdk"
 
       integer,external ::  newdate
 !

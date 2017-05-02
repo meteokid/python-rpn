@@ -17,6 +17,7 @@
 
       subroutine out_dyn ( F_reg_out, F_casc_L )
       use out_vref_mod, only: out_vref
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,6 @@
 #include "grdc.cdk"
 #include "lctl.cdk"
 #include "out_listes.cdk"
-#include "step.cdk"
 #include <rmnlib_basics.hf>
 
       character*15 prefix

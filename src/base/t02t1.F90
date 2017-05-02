@@ -16,6 +16,7 @@
 !**s/r t02t1 -  Rename time level t0 -> t1
 !
       subroutine t02t1
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,6 @@
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "vt0.cdk"
-#include "vt1.cdk"
 
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'URT0', 'URT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VRT0', 'VRT1' /)

@@ -15,7 +15,7 @@
 
 
 
-      subroutine set_betav(betav_m,betav_t,F_s, Minx,Maxx,Miny,Maxy, Nk)
+      subroutine set_betav_2(betav_m,betav_t,F_s,F_sl, Minx,Maxx,Miny,Maxy, Nk)
 
       implicit none
 #include <arch_specific.hf>
@@ -35,7 +35,7 @@
 #include "theo.cdk"
 
       real betav_m(Minx:Maxx,Miny:Maxy,Nk),betav_t(Minx:Maxx,Miny:Maxy,Nk)
-      real F_s(Minx:Maxx,Miny:Maxy)
+      real F_s(Minx:Maxx,Miny:Maxy),F_sl(Minx:Maxx,Miny:Maxy)
 !
       real Zblen_max,Zblen_top
 
@@ -62,11 +62,11 @@
       do k=1,l_nk
          do j=j0,jn
             do i=i0,in
-               work1=zblen_max-(Ver_z_8%m(k)+Ver_b_8%m(k)*F_s(i,j))
+               work1=zblen_max-(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j)+Ver_c_8%m(k)*F_sl(i,j))
                work2=zblen_max-zblen_top
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_m(i,j,k)=work1*work1*min(1.d0,fact)
-               work1=zblen_max-(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               work1=zblen_max-(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)+Ver_c_8%t(k)*F_sl(i,j))
                work1=min(1.d0,max(0.d0,work1/work2))
                betav_t(i,j,k)=work1*work1*min(1.d0,fact)
             enddo
@@ -77,3 +77,7 @@
 
       end
 
+subroutine set_betav
+   print*,'Called a stub, please update to set_betav_2'
+   stop
+end subroutine set_betav

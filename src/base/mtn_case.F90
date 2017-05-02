@@ -15,9 +15,10 @@
 
 !**s/r mtn_case - generates initial condition for mountain wave
 !                 experiment (Schar et al. 2002 or Pinty et al. 1995)
-!
-      subroutine mtn_case2(F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
-                           F_q, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy)
+
+      subroutine mtn_case ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
+                            F_q, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy )
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -46,7 +47,6 @@
 #include "grd.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
-#include "vt1.cdk"
 #include "theo.cdk"
 #include "vtopo.cdk"
 #include "mtn.cdk"
@@ -60,19 +60,19 @@
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,l,i00,err,istat
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
-      real, allocatable, dimension(:,:) :: psurf
+      real, allocatable, dimension(:,:) :: psurf, topo_ls
       real hauteur, tempo, dx, slp, slpmax
       real*8 temp1, temp2
       real, pointer    , dimension(:,:,:) :: tr
 !
 !     ---------------------------------------------------------------
 !
-      allocate(psurf (l_minx:l_maxx,l_miny:l_maxy))
+      allocate(psurf (l_minx:l_maxx,l_miny:l_maxy),topo_ls(l_minx:l_maxx,l_miny:l_maxy))
 
 !---------------------------------------------------------------------
 !     Initialize orography
 !---------------------------------------------------------------------
-
+      
       xcntr = int(float(Grd_ni-1)*0.5)+1
       do j=1,l_nj
       do i=1,l_ni
@@ -83,11 +83,17 @@
              .or.  Theo_case_S .eq. 'MTN_SCHAR2' ) then
             zfac1= Dcst_pi_8 * zdi / mtn_hwx1
             F_topo(i,j) = mtn_hght* exp(-zfac) * cos(zfac1)**2
+            ! Note : get_s_large_scale takes topo_ls in m2/s2
+            topo_ls(i,j)= mtn_hght/2.* exp(-zfac)*Dcst_grav_8
          else
             F_topo(i,j) = mtn_hght/(zfac + 1.)
+            topo_ls(i,j)= mtn_hght/2./(zfac + 1.)*Dcst_grav_8
          endif
       enddo
       enddo
+
+      call get_s_large_scale ( topo_ls, Mminx,Mmaxx,Mminy,Mmaxy )
+      istat = gmm_get (gmmk_sls_s     ,   sls )
 
 !---------------------------------------------------------------------
 !     If time-dependant topography
@@ -140,11 +146,11 @@
        do k=1,g_nk
          do j=1,l_nj
             do i=1,l_ni
-               tempo = exp(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j))
+               tempo = exp(Ver_a_8%m(k)+Ver_b_8%m(k)*F_s(i,j)+Ver_c_8%m(k)*sls(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                temp1=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
-               tempo = exp(Ver_a_8%m(k+1)+Ver_b_8%m(k+1)*F_s(i,j))
+               tempo = exp(Ver_a_8%m(k+1)+Ver_b_8%m(k+1)*F_s(i,j)+Ver_c_8%m(k+1)*sls(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                temp2=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
@@ -159,7 +165,6 @@
 !     Generate corresponding geopotential for isothermal atmosphere
 !     Set wind and temperature
 !-----------------------------------------------------------------------
-
       do k=1,g_nk
       do j=1,l_nj
       do i=1,l_ni
@@ -213,6 +218,9 @@
 !
       call rpn_comm_xch_halo ( F_topo, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
                     G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
+      if(schm_sleve_L)&
+           call rpn_comm_xch_halo ( sls, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,1, &
+           G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
 !-----------------------------------------------------------------------
 !     create tracers (humidity and MTN)

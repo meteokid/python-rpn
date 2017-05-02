@@ -19,6 +19,7 @@
                                mul,add,kind,lstep,nkfa,ind_o,nk_o  ,&
                                nbit,F_empty_stk_L )
       use ISO_C_BINDING
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"
-#include "step.cdk"
       include 'convert_ip123.inc'
       include 'out_meta.cdk'
 

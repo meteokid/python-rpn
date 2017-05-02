@@ -19,7 +19,7 @@
 !
       subroutine nli ( F_nu , F_nv , F_nt   , F_nc , F_nw , F_nf  , &
                        F_u  , F_v  , F_t    , F_s  , F_zd , F_q   , &
-                       F_rhs, F_rc , F_fis  , F_nb , F_hu , &
+                       F_rhs, F_rc , F_sl   , F_fis, F_nb , F_hu  , &
                        Minx,Maxx,Miny,Maxy, Nk , ni,nj, i0,j0,in,jn,k0, icln )
       implicit none
 #include <arch_specific.hf>
@@ -32,7 +32,8 @@
               F_t    (Minx:Maxx,Miny:Maxy,Nk)    ,F_s    (Minx:Maxx,Miny:Maxy)       , &
               F_zd   (Minx:Maxx,Miny:Maxy,Nk)    ,F_hu   (Minx:Maxx,Miny:Maxy,Nk)    , &
               F_q    (Minx:Maxx,Miny:Maxy,2:Nk+1),F_rc   (Minx:Maxx,Miny:Maxy,Nk)    , &
-              F_fis  (Minx:Maxx,Miny:Maxy)       ,F_nb   (Minx:Maxx,Miny:Maxy)
+              F_fis  (Minx:Maxx,Miny:Maxy)       ,F_nb   (Minx:Maxx,Miny:Maxy)       , &
+              F_sl   (Minx:Maxx,Miny:Maxy)
       real*8  F_rhs  (ni,nj,Nk)
 
 !author
@@ -65,23 +66,26 @@
 #include "lun.cdk"
 
       logical, save :: done=.false.
-      integer i, j, k, km,kmq,kq,kp, i0u, inu, j0v, jnv, nij, k0t, onept
+      integer i, j, k, km,kmq,kq, i0u, inu, j0v, jnv, nij, k0t, onept
       real    w_nt
       real*8  c1,qbar,ndiv,w1,w2,w3,w4,w5,barz,barzp,MUlin,dlnTstr_8, &
               t_interp, mu_interp, u_interp, v_interp, delta_8
       real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
-      real*8, parameter :: one=1.d0, half=0.5d0
+      real*8, parameter :: one=1.d0, half=0.5d0, &
+                           alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0  
       real, dimension(:,:,:), pointer :: BsPq, BsPrq, frq, FI, MU
+      real*8, dimension(:,:,:), pointer :: Afis
       save MU
 !     __________________________________________________________________
 !
       if (Lun_debug_L)  write(Lun_out,1000)
 
-      nullify  ( BsPq, BsPrq, frq, FI )
+      nullify  ( BsPq, BsPrq, frq, FI, Afis )
       allocate (  BsPq(Minx:Maxx,Miny:Maxy,l_nk+1), &
                  BsPrq(Minx:Maxx,Miny:Maxy,l_nk+1), &
                    frq(Minx:Maxx,Miny:Maxy,l_nk+1), &
-                    FI(Minx:Maxx,Miny:Maxy,l_nk+1))
+                    FI(Minx:Maxx,Miny:Maxy,l_nk+1), &
+                  Afis(Minx:Maxx,Miny:Maxy,l_nk) )
 
       if (.not.done) then
          nullify  ( MU )
@@ -130,7 +134,7 @@
       if (l_east ) inu=inu+onept
       if (l_north) jnv=jnv+onept
 
-      call diag_fip( FI, F_s, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
+      call diag_fip( FI, F_s, F_sl, F_t, F_q, F_fis, l_minx,l_maxx,l_miny,l_maxy,&
                                                l_nk, i0u, inu+1, j0v, jnv+1 )
 
       if (Schm_hydro_L) then
@@ -139,20 +143,40 @@
             done= .true.
          endif
       else
-         call diag_mu ( MU, F_q, F_s, l_minx,l_maxx,l_miny,l_maxy, l_nk,&
+         call diag_mu ( MU, F_q, F_s, F_sl, l_minx,l_maxx,l_miny,l_maxy, l_nk,&
                                                  i0u, inu+1, j0v, jnv+1 )
       endif
 
-!$omp parallel private(km,kmq,kq,kp,w_nt,barz,barzp,ndiv, &
+!$omp parallel private(km,kmq,kq,w_nt,barz,barzp,ndiv, &
 !$omp dlnTstr_8,w1,w2,w3,w4,w5,qbar,t_interp,u_interp,v_interp,xtmp_8,ytmp_8)
+      if(Schm_eulmtn_L) then
+!$omp do
+         do k=1,l_nk
+            do j=j0,jn
+            do i=i0,in
+                  Afis(i,j,k)= (alpha1*F_u(i-2,j,k) + alpha2*F_u(i-1,j,k) +     &
+                                alpha2*F_u(i,j,k)   + alpha1*F_u(i+1,j,k) ) *     &
+                              (  F_fis(i-2,j)/12.0d0        - 2.0d0*F_fis(i-1,j)/3.0d0                    &
+                               + 2.0d0*F_fis(i+1,j)/3.0d0   - F_fis(i+2,j)/12.0d0 ) * geomg_invDXMu_8(j)  &
+                            +  (alpha1*F_v(i,j-2,k) + alpha2*F_v(i,j-1,k)   +     &
+                                alpha2*F_v(i,j  ,k) + alpha1*F_v(i,j+1,k))  *     &
+                              (  F_fis(i,j-2)/12.0d0        - 2.0d0*F_fis(i,j-1)/3.0d0                    &
+                               + 2.0d0*F_fis(i,j+1)/3.0d0   - F_fis(i,j+2)/12.0d0 ) * geomg_invDYMv_8(j)  
+            enddo
+            enddo
+         enddo
+!$omp enddo
+      endif        
 
 !$omp do
        do k=k0t,l_nk+1
           kq=max(2,k)
           do j=j0v,jnv+1
           do i=i0u,inu+1
-             BsPq(i,j,k)  = Ver_b_8%m(k) * F_s(i,j) + F_q(i,j,kq)*Ver_onezero(k)
-             BsPrq(i,j,k) = Ver_b_8%m(k) * F_s(i,j) + Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k)
+             BsPq(i,j,k)  = Ver_b_8%m(k) *(F_s(i,j) +Cstv_Sstar_8) &
+                          + Ver_c_8%m(k) *(F_sl(i,j)+Cstv_Sstar_8) + F_q(i,j,kq)*Ver_onezero(k)
+             BsPrq(i,j,k) = Ver_b_8%m(k) *(F_s(i,j) +Cstv_Sstar_8) &
+                          + Ver_c_8%m(k) *(F_sl(i,j)+Cstv_Sstar_8) + Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k)
              frq(i,j,k)   = F_q(i,j,kq)*Ver_onezero(k)
 
           enddo
@@ -296,7 +320,6 @@
 !$omp do
       do k=k0t,l_nk
          km=max(k-1,1)
-         kp=min(k+1,l_nk)
          kq=max(2,k)
          kmq=max(2,k-1)
          kmq=max(kmq,k0t)
@@ -386,23 +409,37 @@
 !        Compute Nc
 !        ~~~~~~~~~~
          km=max(k-1,1)
-         kp=min(k+1,l_nk)
          do j = j0, jn
          do i = i0, in
-            xtmp_8(i,j) = one + Ver_dbdz_8%m(k) * F_s(i,j)
+            xtmp_8(i,j) = one + Ver_dbdz_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                              + Ver_dcdz_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8)
          end do
          end do
          call vlog(ytmp_8, xtmp_8, nij)
          do j = j0, jn
          do i = i0, in
             F_nc(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) +  &
-                          ( Cstv_bar1_8 * (Ver_b_8%m(k)-Ver_bzz_8(k)) &
-                          - Ver_dbdz_8%m(k) )*F_s(i,j) ) &
+                          ( Cstv_bar1_8*(Ver_b_8%m(k)-Ver_bzz_8(k)) - Ver_dbdz_8%m(k) )*(F_s(i,j) +Cstv_Sstar_8) + &
+                          ( Cstv_bar1_8*(Ver_c_8%m(k)-Ver_czz_8(k)) - Ver_dcdz_8%m(k) )*(F_sl(i,j)+Cstv_Sstar_8) ) &
                                    + (Ver_wpM_8(k)-Ver_wp_8%m(k)) * F_zd(i,j,k) &
                                    + (Ver_wmM_8(k)-Ver_wm_8%m(k)) * Ver_onezero(k) * F_zd(i,j,km)
          end do
          end do
+
+         if(Schm_eulmtn_L) then
+            w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk))
+            do j = j0, jn
+            do i = i0, in
+               F_nc(i,j,k) = F_nc(i,j,k) - w1*(Afis(i,j,k) &
+                              - Cstv_invT_8*F_fis(i,j))
+            end do
+            end do
+         endif 
+
          if(.not.Schm_hydro_L.and.Schm_wlint_L) then
+            kq=max(k,2)
+            kmq=max(k-1,2)
+            kmq=max(kmq,k0t)
             do j = j0, jn
             do i = i0, in
             F_nc(i,j,k) = F_nc(i,j,k) + &
@@ -424,8 +461,6 @@
          km=max(k-1,1)
          w1=Ver_igt_8*Ver_wpA_8(k)
          w2=Ver_igt_8*Ver_wmA_8(k)*Ver_onezero(k)
-         w3= Ver_idz_8%m(k) + Ver_wp_8%m(k)
-         w4=(Ver_idz_8%m(k) - Ver_wm_8%m(k))*Ver_onezero(k)
          do j = j0, jn
          do i = i0, in
             ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDXM_8(j) &
@@ -496,7 +531,7 @@
 
 !$omp end parallel
 
-      deallocate ( BsPq, BsPrq, frq, FI)
+      deallocate ( BsPq, BsPrq, frq, FI, Afis)
       if (.not.Schm_hydro_L) deallocate ( MU )
 
 1000 format(/,5X,'COMPUTE NON-LINEAR RHS: (S/R NLI)')

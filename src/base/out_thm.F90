@@ -19,6 +19,7 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@
 #include "dcst.cdk"
 #include "geomn.cdk"
 #include "schm.cdk"
-#include "vt1.cdk"
 #include "p_geof.cdk"
 #include "out.cdk"
 #include "out3.cdk"
@@ -141,6 +141,7 @@
       istat= gmm_get(gmmk_st1_s       , st1       )
       istat= gmm_get(gmmk_diag_tt_s   , tdiag     )
       istat= gmm_get(gmmk_diag_hu_s   , qdiag     )
+      istat= gmm_get(gmmk_sls_s       , sls       )
       call out_padbuf (wlnph_m ,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
       call out_padbuf (wlnph_ta,l_minx,l_maxx,l_miny,l_maxy,G_nk+1)
 
@@ -240,15 +241,15 @@
       if ( lastdt .ne. Lctl_step ) then
 
          istat = gmm_get(gmmk_qt1_s,qt1)
-         call diag_fi (gzm, st1, tt1, qt1, fis0, &
-                       l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)         
+         call diag_fi (gzm, st1, tt1, qt1, &
+                     l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
          gzt(:,:,l_nk+1)= gzm(:,:,l_nk+1)
 
          call vertint2 ( gzt, wlnph_ta,G_nk, gzm, wlnph_m,G_nk+1  ,&
-                         l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
+                        l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
          call out_liebman (ttx, htx, vt, gzt, fis0, wlao, &
-                           l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk,nk_src)
+                        l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk,nk_src)
          
       endif
 
@@ -280,10 +281,25 @@
          call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
               'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
               kind,-1,1, 1, 1, Outd_nbit(pnp0,set),.false.) 
+         if(Schm_sleve_L)then
+            ! This is constant during the integration. This could be done just once and saved, is it worthwile??
+            istat = gmm_get (gmmk_sls_s ,sls )
+            ! Pourquoi faire cette copie??
+            w1(:,:)= sls(:,:)
+            call vsexp (w2,w1,l_ninj)
+            do j=l_miny,l_maxy
+               do i=l_minx,l_maxx
+                  w1(i,j) = w2(i,j)*Cstv_pref_8
+               end do
+            end do
+            call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
+              'P0LS',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
+              kind,-1,1, 1, 1,32,.false.)
+         endif
       endif
 
       if (pnww.ne.0) then
-         call calomeg_w (omega,st1,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call calomeg_w2(omega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
       endif
 
       if (pnth.ne.0) then

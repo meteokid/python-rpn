@@ -17,6 +17,7 @@
 !
       subroutine nest_HOR_gwa
       use nest_blending
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "lam.cdk"
 #include "nest.cdk"
 #include "tr3d.cdk"

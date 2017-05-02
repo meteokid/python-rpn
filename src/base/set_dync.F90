@@ -17,6 +17,7 @@
 
       subroutine set_dync (F_check_and_stop_L, F_errcode)
       use matvec_mod, only: matvec_init
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "schm.cdk"
 #include "sol.cdk"
 #include "ver.cdk"
-#include "vt1.cdk"
 
       integer k,err,istat,k0,i,j
       real tmean(G_nk)

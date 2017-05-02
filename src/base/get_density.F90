@@ -17,6 +17,7 @@
 
       subroutine get_density (F_density,F_mass,F_time,Minx,Maxx,Miny,Maxy,F_nk,F_k0)
 
+      use gmm_vt1
       implicit none
 
       !Arguments
@@ -41,7 +42,6 @@
 #include "geomg.cdk"
 #include "ver.cdk"
 #include "vt0.cdk"
-#include "vt1.cdk"
 #include "schm.cdk"
 #include "wil_williamson.cdk"
 #include "dcst.cdk"

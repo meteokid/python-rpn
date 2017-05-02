@@ -18,6 +18,7 @@
       subroutine set_world_view
       use iso_c_binding
       use out_collector, only: block_collect_set, Bloc_me
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -28,10 +29,10 @@
 #include "grd.cdk"
 #include "grid.cdk"
 #include "geomg.cdk"
+#include "dynkernel.cdk"
 #include "cori.cdk"
 #include "schm.cdk"
 #include "glb_ld.cdk"
-#include "step.cdk"
 #include "path.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
@@ -41,7 +42,7 @@
       include "rpn_comm.inc"
 
       integer, external :: gem_nml,gemdm_config,grid_nml3       ,&
-                           adv_nml,adv_config,&
+                           adv_nml,adv_config,dynKernel_nml         ,&
                            step_nml, set_io_pes, domain_decomp3 ,&
                            sol_transpose2, set_fft
       character*50 LADATE,dumc1_S
@@ -70,10 +71,17 @@
 
 ! Read namelists from file Path_nml_S
 
-         err(3) = grid_nml3 (Path_nml_S)
-         err(4) = step_nml  (Path_nml_S)
-         err(5) = gem_nml   (Path_nml_S)
-         err(6) = adv_nml   (Path_nml_S)
+         err(3) = grid_nml3     (Path_nml_S)
+         err(4) = step_nml      (Path_nml_S)
+         err(5) = dynKernel_nml (Path_nml_S)
+         if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
+            err(6) = gem_nml   (Path_nml_S)
+            err(7) = adv_nml   (Path_nml_S)
+         else
+            if (lun_out.gt.0) &
+            write (lun_out,1010) trim(Dynamics_Kernel_S)
+            call gem_error ( -1,'set_world_view','' )
+         endif
 
       endif
 
@@ -90,9 +98,10 @@
 
       call gem_error(err(1),'set_world_view','gemdm_config')
 
-      err(1) = grid_nml3 ('print')
-      err(1) = step_nml  ('print')
-      err(1) = gem_nml   ('print')
+      err(1) = grid_nml3     ('print')
+      err(1) = step_nml      ('print')
+      err(1) = dynKernel_nml ('print')
+      err(1) = gem_nml       ('print')
 
       call adv_nml_print ()
 
@@ -203,6 +212,7 @@
 			
  1001 format (' GRID CONFIG: GRTYP=',a,5x,'GLB=(',i5,',',i5,',',i5,')    maxLCL(',i4,',',i4,')    minLCL(',i4,',',i4,')')
  1002 format (/ ' Creating IO pe set for ',a,' with ',i4,' Pes')
+ 1010 format (/' Invalid choice of dynamic kernel: ',a,/)
  2001 format ( ' DEFAULT tracers attributes:'/3x,'Wload  Hzd   Mono  Mass    Min')
  2002 format (4i6,3x,e9.3)
 !

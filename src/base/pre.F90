@@ -21,9 +21,8 @@
 !               Combine some rhs obtaining Rt", Rf" and Rc", the linear
 !               contributions to the rhs of Helmholtz equation
 !
-      subroutine pre ( F_ru  ,F_rv  ,F_ruw1 ,F_ruw2 ,F_rvw1 ,F_rvw2, &
-                       F_fis  ,F_rc   ,F_rt  , &
-                       F_rw  ,F_rf  ,F_oru  ,F_orv , &
+      subroutine pre ( F_ru  ,F_rv  , F_fis ,F_rc   ,F_rt, &
+                       F_rw  ,F_rf  ,F_oru  ,F_orv       , &
                        F_rb,F_nest_t, Minx,Maxx,Miny,Maxy, &
                        i0, j0, in, jn, k0, ni, nj, Nk )
       implicit none
@@ -31,8 +30,6 @@
 
       integer Minx,Maxx,Miny,Maxy, i0, j0, in, jn, k0, ni, nj, Nk
       real F_ru    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rv    (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_ruw1  (Minx:Maxx,Miny:Maxy,Nk)  ,F_ruw2  (Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_rvw1  (Minx:Maxx,Miny:Maxy,Nk)  ,F_rvw2  (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rc    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rt    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
@@ -120,12 +117,9 @@
 !$omp enddo
 
       if (Schm_opentop_L) then
-         w3=one
-         w4=Dcst_rgasd_8*Ver_Tstar_8%t(k0t)
 !$omp do
          do j= j0, jn
          do i= i0, in
-            F_rt(i,j,k0t)=F_rt(i,j,k0t)*w3
             F_rb(i,j) = F_rt(i,j,k0t)
          end do
          end do

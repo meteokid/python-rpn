@@ -19,6 +19,7 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +32,6 @@
 #include "out.cdk"
 #include "outp.cdk"
 #include "pw.cdk"
-#include "vt1.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 

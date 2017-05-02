@@ -53,6 +53,9 @@
 !
 !-----------------------------------------------------------------------
 !
+      print*,'TODO FOR SLEVE init_bar'
+      stop
+
       call inp_data ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                       Mminx,Mmaxx,Mminy,Mmaxy, Nk, .true.       ,&
                       F_trprefix_S, F_trsuffix_S, F_datev )

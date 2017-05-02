@@ -18,6 +18,7 @@
       subroutine hzd_main_stag
       use hzd_ctrl
       use hzd_exp
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,6 @@
 #include "tr3d.cdk"
 #include "vspng.cdk"
 #include "eq.cdk"
-#include "vt1.cdk"
 #include "schm.cdk"
 
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &

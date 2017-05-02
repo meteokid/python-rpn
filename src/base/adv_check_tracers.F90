@@ -51,7 +51,7 @@
       Tr_flux_L  = .false.
       Tr_slice_L = .false.
 
-      if (Schm_psadj_L.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
+      if (Schm_psadj>0.and..not.Grd_yinyang_L) Tr_flux_L = .true. !PSADJ (FLUX) 
 
       Tr_scaling = Adv_scaling
 

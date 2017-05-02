@@ -15,6 +15,7 @@
 !**s/r yyg_blend - for blending Yin-Yang wind boundary conditions
 !
       subroutine yyg_blend (F_apply_L)
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "lun.cdk"
 
       integer istat

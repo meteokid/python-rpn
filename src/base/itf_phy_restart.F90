@@ -16,6 +16,7 @@
 !s/r itf_phy_restart
 !
       subroutine itf_phy_restart (F_WorR_S, F_spin_L)
+      use step_options
       implicit none
 
       character*(*) F_WorR_S
@@ -41,7 +42,6 @@
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "cfld.cdk"
-#include "step.cdk"
 
       integer,external :: fnom,fclos
 

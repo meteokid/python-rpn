@@ -16,6 +16,8 @@
 !**s/r gem_run - Performs the integration of the model
 
       subroutine gem_run (F_rstrt_L)
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -32,12 +34,10 @@
 #include "init.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
-#include "step.cdk"
 #include "rstr.cdk"
 #include "schm.cdk"
 #include "lctl.cdk"
 #include "grd.cdk"
-#include "vt1.cdk"
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm

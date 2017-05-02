@@ -18,6 +18,7 @@
                          orhsu, rhsu, orhsv, rhsv, orhsc ,&
                          rhsc, orhst,  rhst, orhsf, rhsf ,&
                          orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -39,7 +40,6 @@
 #include "schm.cdk"
 #include "lun.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "adv_pos.cdk"
 #include "vth.cdk"
 #include "adv.cdk"

@@ -18,29 +18,32 @@
        real*8, dimension(:,:), pointer :: Hzd_geom_q => null()
        real*8, dimension(:,:), pointer :: Hzd_geom_u => null()
        real*8, dimension(:,:), pointer :: Hzd_geom_v => null()
-
-       common /Hzd_pntr/ Hzd_geom_q, Hzd_geom_u, Hzd_geom_v
+       real*8, dimension(:), pointer   :: Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
+       common /Hzd_pntr/ Hzd_geom_q, Hzd_geom_u, Hzd_geom_v, &
+                        Hzd_smago_lnrM_8, Hzd_smago_lnrT_8
 
        integer, parameter :: HZD_MAXTR   = 500
        integer, parameter :: HZD_MAXPROF = 500
 
        character*64 Hzd_prof_S(HZD_MAXPROF)
-       logical      Hzd_hzdadw_L, Hzd_difva_L, Hzd_in_rhs_L
+       logical      Hzd_hzdadw_L, Hzd_difva_L, Hzd_in_rhs_L, Hzd_smago_theta_nobase_L
        integer      Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
        integer      Hzd_niter,Hzd_niter_tr,Hzd_niter_theta
        integer, dimension(:), pointer :: Hzd_del
        real         Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
        real         Hzd_smago_param, Hzd_smago_prandtl, Hzd_smago_lnr
-       real         Hzd_smago_prandtl_hu, Hzd_div_damp
+       real         Hzd_smago_prandtl_hu, Hzd_smago_fric_heat, Hzd_div_damp
+       real         Hzd_smago_min_lnr, Hzd_smago_top_lev, Hzd_smago_bot_lev
        real*8 , dimension(:), pointer :: Hzd_visco_8
        real*8 , dimension(:), pointer :: Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta
 
        common /hzdc/ Hzd_prof_S
-       common /hzdl/ Hzd_hzdadw_L, Hzd_difva_L, Hzd_in_rhs_L
+       common /hzdl/ Hzd_hzdadw_L, Hzd_difva_L, Hzd_in_rhs_L, Hzd_smago_theta_nobase_L
        common /hzdi/ Hzd_pwr, Hzd_pwr_tr, Hzd_pwr_theta
        common /hzdi/ Hzd_niter, Hzd_niter_tr,Hzd_niter_theta
        common /hzdi/ Hzd_del
        common /hzdr/ Hzd_lnR,Hzd_cdiff,Hzd_lnR_tr,Hzd_lnR_theta,Hzd_cdiff_tr
        common /hzdr/ Hzd_smago_param, Hzd_smago_prandtl, Hzd_smago_lnr
-       common /hzdr/ Hzd_smago_prandtl_hu, Hzd_div_damp
+       common /hzdr/ Hzd_smago_prandtl_hu, Hzd_smago_fric_heat, Hzd_div_damp
+       common /hzdr/ Hzd_smago_min_lnr, Hzd_smago_top_lev, Hzd_smago_bot_lev
        common /hzdr8/Hzd_visco_8,Hzd_coef_8,Hzd_coef_8_tr,Hzd_coef_8_theta

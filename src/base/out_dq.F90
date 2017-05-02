@@ -17,6 +17,7 @@
 
       subroutine out_dq (levset,set)
       use vertical_interpolation, only: vertint2
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "out3.cdk"
 #include "outd.cdk"
 #include "pw.cdk"
-#include "vt1.cdk"
 #include "level.cdk"
 #include "ver.cdk"
 

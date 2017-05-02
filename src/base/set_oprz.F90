@@ -93,27 +93,27 @@
       Opr_opszp2_8(CC+G_nk) = 0.d0
 
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-!     First Derivative Operator (non symetric)
+!     First Derivative Operator (non symetric) Average of gamma*(1+epsi) X Derivative
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       Opr_opszpl_8(AA+k0)   = 0.d0
-      Opr_opszpl_8(BB+k0)   =-Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)
-      Opr_opszpl_8(CC+k0)   =+Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)
+      Opr_opszpl_8(BB+k0)   =-Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)*(one+Ver_epsi_8(k0))
+      Opr_opszpl_8(CC+k0)   =+Ver_wp_8%m(k0)*Ver_idz_8%t(k0)*Ver_gama_8(k0)*(one+Ver_epsi_8(k0))
       do k = k0+1, G_nk-1
-         Opr_opszpl_8(AA+k) =-Ver_wm_8%m(k)*Ver_idz_8%t(k-1)*Ver_gama_8(k-1)
-         Opr_opszpl_8(BB+k) =+Ver_wm_8%m(k)*Ver_idz_8%t(k-1)*Ver_gama_8(k-1) &
-                             -Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)
-         Opr_opszpl_8(CC+k) =+Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)
+         Opr_opszpl_8(AA+k) =-Ver_wm_8%m(k)*Ver_idz_8%t(k-1)*Ver_gama_8(k-1)*(one+Ver_epsi_8(k-1))
+         Opr_opszpl_8(BB+k) =+Ver_wm_8%m(k)*Ver_idz_8%t(k-1)*Ver_gama_8(k-1)*(one+Ver_epsi_8(k-1)) &
+                             -Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)*(one+Ver_epsi_8(k))
+         Opr_opszpl_8(CC+k) =+Ver_wp_8%m(k)*Ver_idz_8%t(k)*Ver_gama_8(k)*(one+Ver_epsi_8(k))
       end do
-      Opr_opszpl_8(AA+G_nk) =-Ver_wmA_8(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+      Opr_opszpl_8(AA+G_nk) =-Ver_wmA_8(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*(one+Ver_epsi_8(G_nk-1)) &
                              +Ver_betas_8 &
-                             *Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)
-      Opr_opszpl_8(BB+G_nk) =+Ver_wmA_8(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1) &
+                             *Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)*(one+Ver_epsi_8(G_nk))
+      Opr_opszpl_8(BB+G_nk) =+Ver_wmA_8(G_nk)*Ver_idz_8%t(G_nk-1)*Ver_gama_8(G_nk-1)*(one+Ver_epsi_8(G_nk-1)) &
                              -(one-Ver_alfas_8) &
-                             *Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)
+                             *Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)*Ver_gama_8(G_nk)*(one+Ver_epsi_8(G_nk))
       Opr_opszpl_8(CC+G_nk) = 0.d0
 !
-!     substracting derivative of gamma*epsi X average
+!     substracting Derivative of gamma*epsi X Average
       Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) - .5d0*Ver_idz_8%m(k0)*Ver_gama_8(k0)*Ver_epsi_8(k0)
       Opr_opszpl_8(CC+k0) = Opr_opszpl_8(CC+k0) - .5d0*Ver_idz_8%m(k0)*Ver_gama_8(k0)*Ver_epsi_8(k0)
       do k = k0+1, G_nk-1
@@ -153,8 +153,9 @@
       if(Schm_opentop_L) then
          Opr_opszp2_8(BB+k0) = Opr_opszp2_8(BB+k0) - Ver_idz_8%t(k0-1)*Ver_gama_8(k0-1)*Ver_idz_8%m(k0)*(one-Ver_alfat_8)
          Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) &
-                             + Ver_wm_8%m(k0)*Ver_idz_8%t(k0-1)*Ver_gama_8(k0-1)*(one-Ver_alfat_8)
-         Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) + .5d0*Ver_idz_8%m(k0)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)
+                             + Ver_wm_8%m(k0)*Ver_idz_8%t(k0-1)*Ver_gama_8(k0-1)*(one+Ver_epsi_8(k0-1))*(one-Ver_alfat_8)
+         Opr_opszpl_8(BB+k0) = Opr_opszpl_8(BB+k0) &
+                             + .5d0*Ver_idz_8%m(k0)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)*(one+Ver_alfat_8)
          Opr_opszpm_8(BB+k0) = Opr_opszpm_8(BB+k0) + Ver_wm_8%m(k0) &
             		     *(Ver_wp_8%t(k0-1)+Ver_wm_8%t(k0-1)*Ver_alfat_8)*Ver_gama_8(k0-1)*Ver_epsi_8(k0-1)
       endif

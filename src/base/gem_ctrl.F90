@@ -61,6 +61,7 @@
       endif
 
       call spn_init ()
+      call set_smago ()
 
       call gemtim4 ( Lun_out, 'GEM_CTRL: INIT COMPLETED', .false. )
       call timing_stop ( 2 )

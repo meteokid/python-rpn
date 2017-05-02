@@ -19,7 +19,7 @@
 
 
 !
-      subroutine calomeg_w (F_ww,F_st1,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
+      subroutine calomeg_w2 (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
 !
       implicit none
 #include <arch_specific.hf>
@@ -27,6 +27,7 @@
       integer Minx,Maxx,Miny,Maxy, Nk
       real F_ww(Minx:Maxx,Miny:Maxy,Nk),F_st1(Minx:Maxx,Miny:Maxy)
       real F_wt1(Minx:Maxx,Miny:Maxy,Nk),F_tt1(Minx:Maxx,Miny:Maxy,Nk)
+      real F_sl(Minx:Maxx,Miny:Maxy)
 !
 !author
 !     Claude Girard et Andre Plante avril 2008.
@@ -69,7 +70,7 @@
       do k=1,l_nk
          do j=1,l_nj
             do i=1,l_ni
-               t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j)
+               t1(i,j)= Ver_a_8%t(k) + Ver_b_8%t(k)*F_st1(i,j) + Ver_c_8%t(k)*F_sl(i,j)
             end do
          end do
          call vsexp(t2,t1,l_ni*l_nj)
@@ -86,3 +87,8 @@
 !
       return
       end
+
+subroutine calomeg_w
+   print*,'Called stub calomeg_w, please update to calomeg_w_2'
+   stop
+end subroutine calomeg_w

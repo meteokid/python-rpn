@@ -15,7 +15,7 @@
 
 !**s/r diag_fip - Computes geopotential perturbation
 
-      subroutine diag_fip( F_fip, F_s, F_t, F_q, F_fis, &
+      subroutine diag_fip( F_fip, F_s, F_sl, F_t, F_q, F_fis, &
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       implicit none
 #include <arch_specific.hf>
@@ -23,7 +23,7 @@
       integer Minx,Maxx,Miny,Maxy,Nk,i0,in,j0,jn
       real F_fip(Minx:Maxx,Miny:Maxy,Nk+1),F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
       real F_s  (Minx:Maxx,Miny:Maxy)     ,F_t(Minx:Maxx,Miny:Maxy,Nk  )
-      real F_fis(Minx:Maxx,Miny:Maxy)
+      real F_fis(Minx:Maxx,Miny:Maxy)     ,F_sl(Minx:Maxx,Miny:Maxy)   
 
 !author
 !
@@ -41,6 +41,7 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
  
@@ -67,7 +68,9 @@
          do k= G_nk,1,-1
             w1= Dcst_rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
-               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one+Ver_dbdz_8%t(k)*F_s(i,j))-Ver_Tstar_8%t(k))
+               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
+                            +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                            +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
             end do
          end do
       end do
@@ -84,7 +87,9 @@
             do i= i0,in
                qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
                qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
-               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one+Ver_dbdz_8%t(k)*F_s(i,j))-Ver_Tstar_8%t(k))
+               F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*exp(-qbar)*(one &
+                            +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                            +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))-Ver_Tstar_8%t(k))
             end do
          end do
       end do

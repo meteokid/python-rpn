@@ -17,6 +17,7 @@
 !
       subroutine stat_ps
 
+      use gmm_vt1
       implicit none
 
 !author M.Tanguay
@@ -29,7 +30,6 @@
 #include "cstv.cdk"
 #include "geomg.cdk"
 #include "lun.cdk"
-#include "vt1.cdk"
 #include "glb_pil.cdk"
 #include "grd.cdk"
 #include "dcst.cdk"

@@ -17,6 +17,8 @@
 !               beginning of integration
 
       subroutine indata
+      use step_options
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -26,19 +28,20 @@
 #include "glb_ld.cdk"
 #include "p_geof.cdk"
 #include "lctl.cdk"
-#include "vt1.cdk"
 #include "lun.cdk"
 #include "perturb.cdk"
-#include "step.cdk"
 #include "tr3d.cdk"
 #include "inp.cdk"
 #include "pw.cdk"
 
       integer i,j,k,istat,dim,err
+      real, dimension(:,:), pointer :: topo_large_scale
       real, dimension(:,:,:), pointer :: plus,minus
 !
 !     ---------------------------------------------------------------
 !
+      nullify(topo_large_scale)
+
       if (Lun_out.gt.0) write (Lun_out,1000)
 
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
@@ -50,14 +53,15 @@
       istat = gmm_get (gmmk_tt1_s ,tt1 )
       istat = gmm_get (gmmk_zdt1_s,zdt1)
       istat = gmm_get (gmmk_st1_s ,st1 )
+      istat = gmm_get (gmmk_sls_s ,sls )
       istat = gmm_get (gmmk_fis0_s,fis0)
       istat = gmm_get (gmmk_qt1_s ,qt1 )
 
       zdt1=0. ; wt1=0. ; qt1= 0.
 
       if ( Schm_theoc_L ) then
-         call theo_3D_2 ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                                                  'TR/',':P') 
+         call theo_3D ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
+                        zdt1,st1,qt1,fis0,'TR/',':P') 
       elseif ( Schm_autobar_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                                l_minx,l_maxx,l_miny,l_maxy,&
@@ -66,12 +70,16 @@
          call timing_start2 ( 71, 'INITIAL_input', 2)
          istat= gmm_get (gmmk_topo_low_s , topo_low )
          istat= gmm_get (gmmk_topo_high_s, topo_high)
-         call get_topo2 ( topo_high, l_minx,l_maxx,l_miny,l_maxy, &
-                          1,l_ni,1,l_nj )
+         allocate(topo_large_scale(l_minx:l_maxx,l_miny:l_maxy))
+         call get_topo3 ( topo_high, topo_large_scale, &
+                          l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         
+         call get_s_large_scale (topo_large_scale,l_minx,l_maxx,l_miny,l_maxy)
+
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
          call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
-                         zdt1,st1,qt1,fis0                   ,&
+                         zdt1,st1,qt1,fis0               ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
                          .false. ,'TR/',':P',Step_runstrt_S )
          call bitflip ( pw_uu_plus, pw_vv_plus, pw_tt_plus, &
@@ -88,9 +96,15 @@
                          1, .false., 'CUBIC')
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         call yyg_xchng (sls, l_minx,l_maxx,l_miny,l_maxy, &
+                         1, .false., 'CUBIC')
+         call rpn_comm_xch_halo(sls, l_minx,l_maxx,l_miny,l_maxy,&
+            l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
          call yyg_xchng_all
       else
          call rpn_comm_xch_halo(fis0, l_minx,l_maxx,l_miny,l_maxy,&
+            l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
+         call rpn_comm_xch_halo(sls, l_minx,l_maxx,l_miny,l_maxy,&
             l_ni,l_nj,1,G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
       endif
 

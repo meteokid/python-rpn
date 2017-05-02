@@ -16,14 +16,13 @@
 !**s/r gemtim4 - Timing routine
 
       subroutine gemtim4 ( unf, from, last )
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
       character*(*) from
       logical last
       integer unf
-
-      include 'step.cdk'
 
       integer, external :: get_max_rss
 

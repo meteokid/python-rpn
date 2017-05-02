@@ -15,12 +15,12 @@
 
 !**s/r get_topo - Obtain topography from geophysical file
 
-      subroutine get_topo2 ( F_topo, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
+      subroutine get_topo3 ( F_topo, F_topo_ls, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
       implicit none
 #include <arch_specific.hf>
 
       integer Minx,Maxx,Miny,Maxy, i0,in,j0,jn
-      real F_topo (Minx:Maxx,Miny:Maxy)
+      real :: F_topo (Minx:Maxx,Miny:Maxy), F_topo_ls (Minx:Maxx,Miny:Maxy)
 
 !author   
 !     M. Desgagne  -   Spring 2010
@@ -48,30 +48,42 @@
 
       if (.not.Schm_topo_L) then
          F_topo   = 0.0
+         F_topo_ls = 0.0
          return
       endif
 
       If (Ptopo_myproc==0) Then
-
          inttyp      = 'LINEAR'
          rad2deg_8   = 180.0d0/Acos(-1.d0)
          xfi(1:G_ni) = G_xg_8(1:G_ni)*rad2deg_8
          yfi(1:G_nj) = G_yg_8(1:G_nj)*rad2deg_8
-
          fn = trim(Path_input_S)//'/GEOPHY/Gem_geophy.fst'
-
          call get_field ( topo_destination, G_ni, G_nj, 'ME', trim(fn), &
                           inttyp, xfi, yfi, status)
       endif
-
-      call handle_error (status,'GET_TOPO','Topography NOT specified')
-
+      call handle_error (status,'GET_TOPO','Topography "ME" NOT specified')
       call glbdist (topo_destination,G_ni,G_nj,F_topo,Minx,Maxx,Miny,Maxy,1,0,0)
-
       F_topo(i0:in,j0:jn) = F_topo(i0:in,j0:jn) * Dcst_grav_8
+
+      if(Schm_sleve_L)then
+         If (Ptopo_myproc==0) Then
+            call get_field ( topo_destination, G_ni, G_nj, 'MELS', trim(fn), &
+                 inttyp, xfi, yfi, status)
+         endif
+         call handle_error (status,'GET_TOPO','Topography large scale "MESL" NOT specified')
+         call glbdist (topo_destination,G_ni,G_nj,F_topo_ls,Minx,Maxx,Miny,Maxy,1,0,0)
+         F_topo_ls(i0:in,j0:jn) = F_topo_ls(i0:in,j0:jn) * Dcst_grav_8
+      else
+         F_topo_ls = 0.0
+      endif
+
 !
 !-----------------------------------------------------------------------
 !
       return
       end
 
+subroutine get_topo2
+   print*,'Called a stub, please update to get_topo3'
+   stop
+end subroutine get_topo2

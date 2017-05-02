@@ -17,6 +17,7 @@
       logical function gem_muststop (F_finalstep)
       use iso_c_binding
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -24,7 +25,6 @@
 
 #include <clib_interface_mu.hf>
 #include "lctl.cdk"
-#include "step.cdk"
 #include "lun.cdk"
 #include "init.cdk"
 #include "path.cdk"

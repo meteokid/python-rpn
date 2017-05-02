@@ -16,6 +16,7 @@
 !**s/r yyg_xchng_all - Exchanges all Yin-Yang boundary conditions
 
       subroutine yyg_xchng_all
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "schm.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"

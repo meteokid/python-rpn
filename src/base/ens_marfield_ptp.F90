@@ -20,6 +20,7 @@
 !
       use phy_itf, only : phy_put
  
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -43,7 +44,6 @@
 #include "ptopo.cdk"
 #include "hgc.cdk"
 #include "ens_param.cdk"
-#include "step.cdk"
 #include "grd.cdk"
 !
        integer p_ni,p_nj,p_offi,p_offj

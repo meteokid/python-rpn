@@ -16,6 +16,7 @@
 !*s/r spn_main - spectral nudging driver
  
       subroutine spn_main
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "trp.cdk"
 #include "ptopo.cdk"
 #include "cstv.cdk"
-#include "step.cdk"
 #include "spn.cdk"
 #include "sol.cdk"
 

@@ -40,9 +40,9 @@ end subroutine nml_grid
 
 
 subroutine nml_step()
+   use step_options
    implicit none
 #include <arch_specific.hf>
-#include "step.cdk"
    write(FILEID, nml=step)
    return
 end subroutine nml_step
@@ -68,6 +68,7 @@ end subroutine nml_gem
 
 
 subroutine nml_theo()
+   use step_options
    implicit none
 #include <arch_specific.hf>
 #undef TYPE_CDK

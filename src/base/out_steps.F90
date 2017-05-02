@@ -15,6 +15,7 @@
 !**s/r out_steps -
 
       subroutine out_steps
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 #include "cstv.cdk"
 #include "init.cdk"
 #include "lctl.cdk"
-#include "step.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"

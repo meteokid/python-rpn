@@ -21,6 +21,7 @@
       use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
       use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 #include "level.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
-#include "step.cdk"
 #include "pw.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>

@@ -18,6 +18,7 @@
       subroutine wrrstrt ()
 use iso_c_binding
       use phy_itf, only: phy_restart
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,6 @@ use iso_c_binding
 #include "gmm.hf"
 #include "lun.cdk"
 #include "init.cdk"
-#include "step.cdk"
 #include "lctl.cdk"
 #include "psadj.cdk"
 
@@ -48,7 +48,7 @@ use iso_c_binding
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
-            write(Lun_rstrt) PSADJ_g_avg_ps_dry_initial_8,PSADJ_scale_8
+            write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8
 
             ier = fclos(Lun_rstrt)  
 

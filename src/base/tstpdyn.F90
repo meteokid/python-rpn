@@ -16,6 +16,7 @@
 !**s/r tstpdyn -  Performs a dynamical timestep of the model
 
       subroutine tstpdyn ( F_fnitraj )
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 #include "schm.cdk"
 #include "vtopo.cdk"
 #include "vt0.cdk"
-#include "vt1.cdk"
 
 !TODO : remove the following when removing GU
 #include "dcst.cdk"
@@ -57,6 +57,8 @@
       gmmstat = gmm_get (gmmk_qt0_s, qt0)
       gmmstat = gmm_get (gmmk_zdt0_s, zdt0)
       gmmstat = gmm_get (gmmk_fis0_s, fis0)
+
+      gmmstat = gmm_get (gmmk_sls_s ,sls )
 
       gmmstat = gmm_get (gmmk_ut1_s, ut1)
       gmmstat = gmm_get (gmmk_vt1_s, vt1)
@@ -80,11 +82,6 @@
       gmmstat = gmm_get (gmmk_rhsf_s, rhsf)
       gmmstat = gmm_get (gmmk_rhsw_s, rhsw)
       gmmstat = gmm_get (gmmk_rhsb_s, rhsb)
-
-      gmmstat = gmm_get (gmmk_ruw1_s, ruw1)
-      gmmstat = gmm_get (gmmk_rvw1_s, rvw1)
-      gmmstat = gmm_get (gmmk_ruw2_s, ruw2)
-      gmmstat = gmm_get (gmmk_rvw2_s, rvw2)
 
       gmmstat = gmm_get('TR/HU:M' ,hut1)
       gmmstat = gmm_get('TR/HU:P' ,hut0)
@@ -112,8 +109,8 @@
 
 !        Compute the right-hand sides of the governing equations
          call rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
-                    ruw1, rvw1, ut1, vt1, wt1               ,&
-                    tt1, st1, zdt1, qt1, hut1,fis0          ,&
+                    ut1, vt1, wt1               ,&
+                    tt1, st1, zdt1, qt1, hut1,sls, fis0     ,&
                     l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
          call timing_stop (20)
@@ -160,8 +157,7 @@
 
 !     Combine some rhs to obtain the linear part
 !     of the right-hand side of the elliptic problem
-      call pre (rhsu, rhsv, ruw1, ruw2, rvw1, rvw2, &
-                fis0, rhsc, rhst, &
+      call pre (rhsu, rhsv,  fis0,  rhsc, rhst, &
                 rhsw, rhsf, orhsu, orhsv, rhsb, &
                 nest_t, l_minx,l_maxx,l_miny,l_maxy,&
                 i0, j0, in, jn, k0, l_ni, l_nj, l_nk)
@@ -190,7 +186,7 @@
          if ( .not. Grd_yinyang_L ) icln=icln+1
          call nli (nl_u, nl_v, nl_t, nl_c, nl_w, nl_f          ,&
                    ut0, vt0, tt0, st0, zdt0, qt0, rhs_sol, rhsc,&
-                   fis0, nl_b, hut0                            ,&
+                   sls, fis0, nl_b, hut0                       ,&
                    l_minx,l_maxx,l_miny,l_maxy                 ,&
                    l_nk, ni, nj, i0, j0, in, jn, k0, icln)
 
@@ -206,7 +202,7 @@
          call timing_start2 ( 25, 'BAC', 10 )
 
 !        Back subtitution
-         call  bac (lhs_sol, fis0                             ,&
+         call  bac (lhs_sol, sls, fis0                        ,&
                     ut0, vt0, wt0, tt0, st0, zdt0, qt0, nest_q,&
                     rhsu, rhsv, rhst, rhsw, rhsf, rhsb        ,&
                     nl_u, nl_v, nl_t, nl_w, nl_f, nl_b        ,&

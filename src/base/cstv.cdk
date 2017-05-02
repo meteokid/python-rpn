@@ -31,16 +31,19 @@
 ! Cstv_Beta_m_8      | ratio Beta=(1-bA_m)/bA_m                                                          |
 ! Cstv_Beta_nh_8     | ratio Beta=(1-bA_nh)/bA_nh                                                        |
 ! Cstv_Tstr_8        | T*  (basic state temperature)                                                     |
+! Cstv_Sstar_8       | S*                                                                                |
 ! Cstv_pref_8        | a reference pressure : 100000 PASCALS                                             |
+! Cstv_pSref_8       | another reference pressure : 100000 PASCALS                                       |
 ! Cstv_ptop_8        | pressure at the top                                                               |
 ! Cstv_Ztop_8        | ln(ptop)                                                                          |
-! Cstv_Zsrf_8        | ln(pref)                                                                          |
+! Cstv_Zsrf_8        | ln(pSref)                                                                         |
 ! Cstv_hco0_8        | Helmholtz constant                                                                |
 ! Cstv_hco1_8        | Helmholtz constant                                                                |
 ! Cstv_hco2_8        | Helmholtz constant                                                                |
 ! Cstv_bar0_8        | value for barotropic case, ZERO otherwise                                         |
 ! Cstv_bar1_8        | ZERO  for barotropic case, one  otherwise                                         |
 ! Cstv_rE_8          | Parameter controlling modified epsilon (Ver_epsi_8)                               |   
+! Cstv_psadj_8       | Fraction of adjustment to be given to the ocean                                   |   
 !--------------------|------------------------------------------------------------------------------------
 !
 #endif
@@ -49,17 +52,17 @@
       real*8    Cstv_bA_8   ,Cstv_Tau_8   ,Cstv_invT_8   ,Cstv_Beta_8
       real*8    Cstv_bA_m_8 ,Cstv_tau_m_8 ,Cstv_invT_m_8 ,Cstv_Beta_m_8
       real*8    Cstv_bA_nh_8,Cstv_tau_nh_8,Cstv_invT_nh_8,Cstv_Beta_nh_8
-      real*8    Cstv_Tstr_8 ,Cstv_pref_8
+      real*8    Cstv_Tstr_8 ,Cstv_Sstar_8 ,Cstv_pref_8   ,Cstv_pSref_8
       real*8    Cstv_ptop_8 ,Cstv_Ztop_8  ,Cstv_Zsrf_8
       real*8    Cstv_hco0_8 ,Cstv_hco1_8  ,Cstv_hco2_8
-      real*8    Cstv_bar0_8 ,Cstv_bar1_8  ,Cstv_rE_8
+      real*8    Cstv_bar0_8 ,Cstv_bar1_8  ,Cstv_rE_8     ,Cstv_psadj_8
 !
       common / Cstv / Cstv_dt_8
       common / Cstv / Cstv_dtA_8  ,Cstv_dtD_8   ,Cstv_dtzA_8   ,Cstv_dtzD_8
       common / Cstv / Cstv_bA_8   ,Cstv_Tau_8   ,Cstv_invT_8   ,Cstv_Beta_8
       common / Cstv / Cstv_bA_m_8 ,Cstv_tau_m_8 ,Cstv_invT_m_8 ,Cstv_Beta_m_8
       common / Cstv / Cstv_bA_nh_8,Cstv_tau_nh_8,Cstv_invT_nh_8,Cstv_Beta_nh_8
-      common / Cstv / Cstv_Tstr_8 ,Cstv_pref_8
+      common / Cstv / Cstv_Tstr_8 ,Cstv_Sstar_8 ,Cstv_pref_8   ,Cstv_pSref_8
       common / Cstv / Cstv_ptop_8 ,Cstv_Ztop_8  ,Cstv_Zsrf_8
       common / Cstv / Cstv_hco0_8 ,Cstv_hco1_8  ,Cstv_hco2_8
-      common / Cstv / Cstv_bar0_8 ,Cstv_bar1_8  ,Cstv_rE_8
+      common / Cstv / Cstv_bar0_8 ,Cstv_bar1_8  ,Cstv_rE_8     ,Cstv_psadj_8

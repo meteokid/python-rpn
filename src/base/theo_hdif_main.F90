@@ -16,6 +16,7 @@
 !**s/r theo_hdif_main - applies horizontal diffusion on a given set of fields
 !
       subroutine theo_hdif_main 
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "schm.cdk"
-#include "vt1.cdk"
 
       integer i,istat
 !     _________________________________________________________________

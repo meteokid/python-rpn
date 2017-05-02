@@ -76,14 +76,40 @@
       do k=1,G_nk
          print *,k,Ver_dbdz_8%m(k),Ver_dbdz_8%t(k)
       enddo
-      print *,'prgenab Ver_wp_8%m(k),Ver_wm_8%m(k),k=1,G_nk'
-      do k=1,G_nk
-         print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
-      enddo 
+      if(Schm_wlint_L) then
+         print *,'prgenab Ver_wm_8%m(k),Ver_wp_8%m(k),k=1,G_nk'
+         do k=1,G_nk
+            print *,k,Ver_wm_8%m(k),Ver_wp_8%m(k)
+         enddo 
+      else
+         print *,'prgenab Ver_wp_8%m(k),Ver_wm_8%m(k),k=1,G_nk'
+         do k=1,G_nk
+            print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
+         enddo 
+      endif
       print *,'prgenab Ver_wp_8%t(k),Ver_wm_8%t(k),k=1,G_nk'
       do k=1,G_nk
-         print *,k,Ver_wp_8%m(k),Ver_wm_8%m(k)
+         print *,k,Ver_wp_8%t(k),Ver_wm_8%t(k)
       enddo 
+      print *,'prgenab Ver_wpM_8(k),Ver_wmM_8(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_wpM_8(k),Ver_wmM_8(k)
+      enddo 
+      if(Schm_wlint_L) then
+         print *,'prgenab Ver_wmA_8(k),Ver_wpA_8(k),k=1,G_nk'
+         do k=1,G_nk
+            print *,k,Ver_wmA_8(k),Ver_wpA_8(k)
+         enddo 
+      else
+         print *,'prgenab Ver_wpA_8(k),Ver_wmA_8(k),k=1,G_nk'
+         do k=1,G_nk
+            print *,k,Ver_wpA_8(k),Ver_wmA_8(k)
+         enddo 
+      endif
+      print *,'prgenab Ver_bzz_8(k),Ver_wpstar_8(k),k=1,G_nk'
+      do k=1,G_nk
+         print *,k,Ver_bzz_8(k),Ver_wpstar_8(k)
+      enddo
       print *,'prgenab Ver_hyb%m(k),Ver_hyb_%t(k),k=1,G_nk+1 for Output Levels'
       do k=1,G_nk+1
          print *,k,Ver_hyb%m(k),Ver_hyb%t(k)

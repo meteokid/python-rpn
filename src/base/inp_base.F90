@@ -14,11 +14,20 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module inp_base
+  use iso_c_binding
   use vertical_interpolation, only: vertint2
   use vGrid_Descriptors
 
   implicit none
 #include <arch_specific.hf>
+#include <rmnlib_basics.hf>
+#include "glb_ld.cdk"
+#include "glb_pil.cdk"
+#include "dcst.cdk"
+#include "geomn.cdk"
+#include "hgc.cdk"
+#include "inp.cdk"
+#include "ver.cdk"
 
   public
 
@@ -28,32 +37,27 @@ contains
 !                interpolation to F_hgrid_S hor. grid and perform
 !                vertical interpolation to F_vgrid_S vertical grid
 
-      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1,&
-                                 F_vgd_src, F_vgd_dst         ,&
-                                 F_sfc_src, F_sfc_dst, F_dest ,&
-                                 Minx,Maxx,Miny,Maxy, F_nk    ,&
-                                 F_inttype_S )
+      integer function inp_get ( F_var_S, F_hgrid_S, F_ver_ip1    ,&
+                                 F_vgd_src, F_vgd_dst             ,&
+                                 F_sfc_src, F_sfc_dst, F_sfcLS_dst,&
+                                 F_dest , Minx,Maxx,Miny,Maxy     ,&
+                                 F_nk   , F_inttype_S )
 
       character(len=*)          , intent(IN) :: F_var_S,F_hgrid_S
       character(len=*), optional, intent(IN) :: F_inttype_S
-      integer                , intent(IN)  :: Minx,Maxx,Miny,Maxy, F_nk
-      integer                , intent(IN)  :: F_ver_ip1(F_nk)
-      type(vgrid_descriptor) , intent(IN)  :: F_vgd_src, F_vgd_dst
-      real, dimension(Minx:Maxx,Miny:Maxy     ), target, &
-                                   intent(IN) :: F_sfc_src, F_sfc_dst
+      integer                   , intent(IN) :: Minx,Maxx,Miny,Maxy, F_nk
+      integer, dimension(:)  , pointer, intent(IN) :: F_ver_ip1
+      type(vgrid_descriptor) , intent(IN) :: F_vgd_src, F_vgd_dst
+      real, dimension (:,:), pointer, intent(IN) :: &
+                                      F_sfc_src,F_sfc_dst,F_sfcLS_dst
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT):: F_dest
 
-#include "inp.cdk"
-#include "cstv.cdk"
-#include "glb_ld.cdk"
-
+!     local variables
       character*12 inttype
-      integer nka,istat
+      integer nka
       integer, dimension (:    ), pointer :: ip1_list
-      real   , dimension (:,:,:), allocatable, target :: srclev
-      real   , dimension (:,:,:), pointer :: wrkr,ptr3d
-      real   , dimension (:,:  ), pointer :: p0
-      real, target :: dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk)
+      real   , dimension (:,:  ), pointer :: dummy
+      real   , dimension (:,:,:), pointer :: wrkr,srclev,dstlev
 !
 !---------------------------------------------------------------------
 !
@@ -61,7 +65,7 @@ contains
       if ( any (Inp_blacklist_S(1:MAX_blacklist) == trim(F_var_S)) ) &
            return
 
-      nullify (ip1_list, wrkr)
+      nullify (ip1_list, wrkr, dummy)
 
       inp_get= inp_read ( F_var_S, F_hgrid_S, wrkr, ip1_list, nka )
 
@@ -71,25 +75,21 @@ contains
          return
       endif
 
-      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka ))
+      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
+                 dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
 
-      p0    => F_sfc_src(1:l_ni,1:l_nj)
-      ptr3d =>    srclev(1:l_ni,1:l_nj,1:nka)
-      istat= vgd_levels ( F_vgd_src, ip1_list(1:nka)  , ptr3d, &
-                          p0, in_log=.true. )
-
-      p0    => F_sfc_dst(1:l_ni,1:l_nj)
-      ptr3d =>    dstlev(1:l_ni,1:l_nj,1:G_nk)
-      istat= vgd_levels ( F_vgd_dst, F_ver_ip1(1:G_nk), ptr3d, &
-                          p0, in_log=.true. )
+      call inp_3dpres ( F_vgd_src,  ip1_list, F_sfc_src, dummy      ,&
+                        srclev, 1,  nka, F_inlog_S='in_log')
+      call inp_3dpres ( F_vgd_dst, F_ver_ip1, F_sfc_dst, F_sfcLS_dst,&
+                        dstlev, 1, G_nk, F_inlog_S='in_log')
 
       inttype= 'cubic'
       if (present(F_inttype_S)) inttype= F_inttype_S
-      call vertint2 ( F_dest,dstlev,G_nk, wrkr,srclev,nka, &
+      call vertint2 ( F_dest,dstlev,G_nk, wrkr,srclev,nka       ,&
                       l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                       varname=F_var_S, inttype= inttype)
 
-      deallocate (ip1_list,wrkr,srclev)
+      deallocate (ip1_list,wrkr,srclev,dstlev)
 !
 !---------------------------------------------------------------------
 !
@@ -108,17 +108,9 @@ contains
       integer, dimension(:    ), pointer,intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer,intent(OUT) :: F_dest
 
-#include "glb_ld.cdk"
-#include "glb_pil.cdk"
-#include "dcst.cdk"
-#include "geomn.cdk"
-#include "hgc.cdk"
-#include "inp.cdk"
-#include "ptopo.cdk"
 #include "tr3d.cdk"
-#include "iau.cdk"
-#include <rmnlib_basics.hf>
 
+!     local variables
       integer, external :: RPN_COMM_shuf_ezdist, &
                            samegrid_gid, samegrid_rot, inp_is_real_wind
       character*1 typ,grd
@@ -252,22 +244,6 @@ contains
 
          if (local_nk.gt.0) then
 
-!!$            if (F_hgrid_S == 'Q') then
-!!$               posx => Geomn_longs
-!!$               posy => Geomn_latgs
-!!$            endif
-!!$            if (F_hgrid_S == 'U') then
-!!$               posx => Geomn_longu
-!!$               posy => Geomn_latgs
-!!$            endif
-!!$            if (F_hgrid_S == 'V') then
-!!$               posx => Geomn_longs
-!!$               posy => Geomn_latgv
-!!$            endif
-!!$            if (F_hgrid_S == 'F') then
-!!$               posx => Geomn_longu
-!!$               posy => Geomn_latgv
-!!$            endif
             if (F_hgrid_S == 'Q') then
                posx => Geomn_lonQ
                posy => Geomn_latQ
@@ -288,9 +264,7 @@ contains
             dstf_gid = ezgdef_fmem (ni_dest, nj_dest, 'Z', 'E', &
                     Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
                     posx, posy)
-!            dstf_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
-!                                    Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-!                                    posx, posy)
+
             interp_S= 'CUBIC'
             if (present(F_hint_S)) interp_S= F_hint_S
 
@@ -318,18 +292,20 @@ contains
             write(6,1001) 'Interpolating: ',trim(nomvar),', nka= ',&
                lislon,', valid: ',Inp_datev,' on ',F_hgrid_S, ' grid'
          endif
+
          do i=1,local_nk
-!            err = ezsint(wk2(1,i), wk1(1,i))
             err = ezsint(wk3(1,i), wk1(1,i))
-            call reshape_wk (wk3(1,i),wk2(1,i),G_ni+2*G_halox,G_nj+2*G_haloy,G_ni,G_nj,G_halox,G_haloy)
+            call reshape_wk ( wk3(1,i),wk2(1,i),ni_dest,nj_dest,&
+                              G_ni,G_nj,G_halox,G_haloy )
          end do
          err = ezsetopt ( 'USE_1SUBGRID', 'NO' )
          deallocate (wk1,wk3)
       else
          allocate (wk2(1,1))
       endif
+
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
-                            "grid", err )
+                            "grid", err ) !NOTE: bcas listlon AND nz
       F_nka= lislon
       ! Remove the following line by 2021 
       call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
@@ -353,12 +329,6 @@ contains
                     zlist_o(lislon) )
 
          zlist_o= .FALSE.
-
-!!$         do i=1, local_nk
-!!$         call statfld3 (wk2(1,i) ,nomvar, zlist(i), 'inp_read', &
-!!$                           1,G_ni, 1,G_nj, 1,1, &
-!!$                           1,1,1,G_ni,G_nj,1,8)
-!!$         end do
 
          err = RPN_COMM_shuf_ezdist ( Inp_comm_setno, Inp_comm_id, &
                            wk2, nz, F_dest, lislon, zlist, zlist_o )
@@ -396,27 +366,22 @@ contains
       integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
       real   , dimension(:,:,:), pointer, intent(OUT) :: F_u, F_v
 
-#include "glb_ld.cdk"
-#include "dcst.cdk"
-#include "geomn.cdk"
-#include "hgc.cdk"
-#include "inp.cdk"
-#include <rmnlib_basics.hf>
-
+!     local variables
       integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
       character*1 typ,grd
       character*4 var
       character*12 lab
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
-      integer i,err, nz, n1,n2,n3, nrec, liste_u(nlis),liste_v(nlis),lislon,cnt,same_rot
+      integer liste_u(nlis),liste_v(nlis),lislon
+      integer i,err, nz, n1,n2,n3, nrec, cnt, same_rot, ni_dest, nj_dest
       integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode, nkk
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
-      real   , dimension(:,:), allocatable :: u,v,uhr,vhr,uv
+      real   , dimension(:,:), allocatable :: u,v,uhr,vhr,uv,wku,wkv
       real   , dimension(:  ), pointer     :: posxu,posyu,posxv,posyv
-      common /bcast_i / lislon,nz,same_rot
+      common /bcast_i_uv / lislon,nz,same_rot
 !
 !---------------------------------------------------------------------
 !
@@ -463,8 +428,11 @@ contains
             kstart = kstart + irest
          endif
 
-         allocate (u(n1*n2,max(local_nk,1)), v(n1*n2,max(local_nk,1)), &
-                   uhr(G_ni*G_nj,nz),vhr(G_ni*G_nj,nz),uv(G_ni*G_nj,nz))
+         ni_dest= G_ni+2*G_halox
+         nj_dest= G_nj+2*G_haloy
+         allocate (uhr(G_ni*G_nj,nz),vhr(G_ni*G_nj,nz),&
+                   wku(ni_dest*nj_dest,nz),wkv(ni_dest*nj_dest,nz))
+         allocate (u(n1*n2,max(local_nk,1)), v(n1*n2,max(local_nk,1)))
 
          cnt= 0
          do i= kstart, kstart+local_nk-1
@@ -478,77 +446,89 @@ contains
             err = ezsetopt ('INTERP_DEGREE', 'CUBIC')
 
             if (trim(F_target_S) == 'UV') then
-            posxu => Geomn_longu
-            posyu => Geomn_latgs
-            posxv => Geomn_longs
-            posyv => Geomn_latgv
 
-            write(6,1001) 'Interpolating: UU, nka= ',&
-                lislon,', valid: ',Inp_datev,' on U grid'
-            dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
-                                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                                   posxu, posyu)
-            err = ezdefset ( dst_gid , src_gid )
+               posxu => Geomn_lonF
+               posyu => Geomn_latQ
+               posxv => Geomn_lonQ
+               posyv => Geomn_latF
 
-            if (same_rot.gt.0) then
-               do i=1,local_nk
-                  err = ezsint (uhr(1,i), u(1,i))
-               end do
+               write(6,1001) 'Interpolating: UU, nka= ',&
+                             lislon,', valid: ',Inp_datev,' on U grid'
+               dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
+                       Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                                                      posxu, posyu )
+               err = ezdefset ( dst_gid , src_gid )
+               allocate (uv(ni_dest*nj_dest,nz))
+               if (same_rot.gt.0) then
+                  do i=1,local_nk
+                     err = ezsint (wku(1,i), u(1,i))
+                  end do
+               else
+                  do i=1,local_nk
+                     err = ezuvint  ( wku(1,i),uv(1,i), u(1,i),v(1,i))
+                  end do
+               endif
+
+               write(6,1001) 'Interpolating: VV, nka= ',&
+                             lislon,', valid: ',Inp_datev,' on V grid'
+
+               dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
+                       Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                                                      posxv, posyv )
+               err = ezdefset ( dst_gid , src_gid )
+
+               if (same_rot.gt.0) then
+                  do i=1,local_nk
+                     err = ezsint (wkv(1,i), v(1,i))
+                  end do
+               else
+                  do i=1,local_nk
+                     err = ezuvint  ( uv(1,i),wkv(1,i), u(1,i),v(1,i))
+                  end do
+               endif
+               deallocate (uv)
+
             else
-               do i=1,local_nk
-                  err = ezuvint  ( uhr(1,i),uv(1,i), u(1,i),v(1,i))
-               end do
+
+               posxu => Geomn_lonQ
+               posyu => Geomn_latQ
+
+               write(6,1001) 'Interpolating: UV, nka= ',&
+                              lislon,', valid: ',Inp_datev,' on Q grid'
+               dst_gid = ezgdef_fmem ( ni_dest, nj_dest, 'Z', 'E', &
+                       Hgc_ig1ro, Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
+                                                      posxu, posyu )
+               err = ezdefset ( dst_gid , src_gid )
+               if (same_rot.gt.0) then
+                  do i=1,local_nk
+                     err = ezsint (wku(1,i), u(1,i))
+                     err = ezsint (wkv(1,i), v(1,i))
+                  end do
+               else
+                  do i=1,local_nk
+                     err = ezuvint  ( wku(1,i),wkv(1,i), u(1,i),v(1,i))
+                  end do
+               endif
+
             endif
 
-            write(6,1001) 'Interpolating: VV, nka= ',&
-                lislon,', valid: ',Inp_datev,' on V grid'
-
-            dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
-                                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                                   posxv, posyv)
-            err = ezdefset ( dst_gid , src_gid )
-
-            if (same_rot.gt.0) then
-               do i=1,local_nk
-                  err = ezsint (vhr(1,i), v(1,i))
-               end do
-            else
-               do i=1,local_nk
-                  err = ezuvint  ( uv(1,i),vhr(1,i), u(1,i),v(1,i))
-               end do
-            endif
-
-            else
-
-            posxu => Geomn_longs
-            posyu => Geomn_latgs
-            write(6,1001) 'Interpolating: UV, nka= ',&
-                lislon,', valid: ',Inp_datev,' on Q grid'
-            dst_gid = ezgdef_fmem (G_ni, G_nj, 'Z', 'E', Hgc_ig1ro, &
-                                   Hgc_ig2ro, Hgc_ig3ro, Hgc_ig4ro, &
-                                   posxu, posyu)
-            err = ezdefset ( dst_gid , src_gid )
-            if (same_rot.gt.0) then
-               do i=1,local_nk
-                  err = ezsint (uhr(1,i), u(1,i))
-                  err = ezsint (vhr(1,i), v(1,i))
-               end do
-            else
-               do i=1,local_nk
-                  err = ezuvint  ( uhr(1,i),vhr(1,i), u(1,i),v(1,i))
-               end do
-            endif
-
-            endif
+            do i=1,local_nk
+               call reshape_wk ( wku(1,i),uhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+               call reshape_wk ( wkv(1,i),vhr(1,i),ni_dest,nj_dest, &
+                                 G_ni,G_nj,G_halox,G_haloy )
+            end do
 
          endif
-         deallocate (u,v,uv)
+
+         deallocate (u,v,wku,wkv)
+
       else
          allocate (uhr(1,1), vhr(1,1))
       endif
 
  999  call rpn_comm_bcast (lislon, 3, "MPI_INTEGER", Inp_iobcast, &
-                           "grid", err)
+                           "grid", err) !NOTE: bcast lislon AND nz, samerot
       F_nka= lislon
 
       if (F_nka .gt. 0) then
@@ -597,6 +577,126 @@ contains
 !
       return
       end subroutine inp_read_uv
+
+      subroutine inp_3dpres ( F_vgd, F_ip1, F_sfc, F_sfcL, &
+                              F_dest, k0, kn, F_inlog_S)
+
+      character*(*), optional, intent(IN) :: F_inlog_S
+      type(vgrid_descriptor) , intent(IN) :: F_vgd
+      integer                , intent(IN) :: k0,kn
+      integer, dimension(:)    , pointer, intent(IN ) :: F_ip1
+      real   , dimension(:,:  ), pointer, intent(IN ) :: F_sfc,F_sfcL
+      real   , dimension(:,:,:), pointer, intent(OUT) :: F_dest
+
+!     local variables
+      integer istat
+      logical inlog
+      real, dimension (:,:  ), pointer :: pres,presl
+      real, dimension (:,:,:), pointer :: ptr3d
+!
+!---------------------------------------------------------------------
+!
+      inlog= .false.
+      if ( present(F_inlog_S) ) then
+         if (F_inlog_S == 'in_log') inlog= .true.
+      endif
+
+      pres  => F_sfc (1:l_ni,1:l_nj      )
+      ptr3d => F_dest(1:l_ni,1:l_nj,k0:kn)
+
+      if ( associated (F_sfcL) ) then
+         presl=> F_sfcL (1:l_ni,1:l_nj)
+         istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, sfc_field=pres, &
+                            sfc_field_ls=presl, in_log=inlog)
+      else
+         istat= vgd_levels (F_vgd, F_ip1(k0:kn), ptr3d, pres, &
+                            in_log=inlog)
+      endif
+!
+!---------------------------------------------------------------------
+!
+      return
+      end subroutine inp_3dpres
+
+!**s/r inp_hwnd - Read horizontal winds UU,VV F valid at F_datev
+!                 and perform vectorial horizontal interpolation
+!                 and  vertical interpolation to momentum levels
+
+      subroutine inp_hwnd2 ( F_u,F_v, F_vgd_src,F_vgd_dst, F_stag_L    ,&
+                             F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
+                             F_ssq0LS,F_ssu0LS,F_ssv0LS                ,&
+                             Minx,Maxx,Miny,Maxy, F_nk )
+      implicit none
+
+      logical                , intent(IN)  :: F_stag_L
+      integer                , intent(IN)  :: Minx,Maxx,Miny,Maxy, F_nk
+      type(vgrid_descriptor) , intent(IN)  :: F_vgd_src, F_vgd_dst
+      real, dimension (:,:), pointer, intent(IN) :: &
+                             F_ssqr,F_ssur,F_ssvr, F_ssq0,F_ssu0,F_ssv0,&
+                             F_ssq0LS,F_ssu0LS,F_ssv0LS
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(OUT) :: F_u, F_v
+
+!     local variables
+      integer nka
+      integer, dimension (:    ), pointer :: ip1_list, ip1_target
+      real   , dimension (:,:  ), pointer :: dummy
+      real   , dimension (:,:,:), pointer :: srclev,dstlev
+      real   , dimension (:,:,:), pointer :: ur,vr
+!
+!---------------------------------------------------------------------
+!
+      nullify (ip1_list, ur, vr, dummy)
+
+      if (F_stag_L) then
+         call inp_read_uv ( ur, vr, 'UV' , ip1_list, nka )
+      else
+         call inp_read_uv ( ur, vr, 'Q ' , ip1_list, nka )
+      endif
+
+      allocate ( srclev(l_minx:l_maxx,l_miny:l_maxy,nka) ,&
+                 dstlev(l_minx:l_maxx,l_miny:l_maxy,G_nk) )
+      allocate (ip1_target(1:G_nk))
+      ip1_target(1:G_nk)= Ver_ip1%m(1:G_nk)
+
+      if (F_stag_L) then
+
+         call inp_3dpres ( F_vgd_src,  ip1_list, F_ssur, dummy    ,&
+                           srclev, 1,  nka, F_inlog_S='in_log')
+         call inp_3dpres ( F_vgd_dst, ip1_target, F_ssu0, F_ssu0Ls,&
+                           dstlev, 1, G_nk, F_inlog_S='in_log')
+
+         call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+
+         call inp_3dpres ( F_vgd_src,  ip1_list, F_ssvr, dummy    ,&
+                           srclev, 1,  nka, F_inlog_S='in_log')
+         call inp_3dpres ( F_vgd_dst, ip1_target, F_ssv0, F_ssv0Ls,&
+                           dstlev, 1, G_nk, F_inlog_S='in_log')
+
+         call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+
+      else
+
+         call inp_3dpres ( F_vgd_src,  ip1_list, F_ssqr, dummy    ,&
+                           srclev, 1,  nka, F_inlog_S='in_log')
+         call inp_3dpres ( F_vgd_dst, ip1_target, F_ssq0, F_ssq0Ls,&
+                           dstlev, 1, G_nk, F_inlog_S='in_log')
+
+         call vertint2 ( F_u,dstlev,G_nk, ur,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+         call vertint2 ( F_v,dstlev,G_nk, vr,srclev,nka,&
+                         l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
+
+      endif
+
+      deallocate (ip1_list,ip1_target,ur,vr,srclev,dstlev)
+      nullify    (ip1_list,ip1_target,ur,vr,srclev,dstlev)
+!
+!---------------------------------------------------------------------
+!
+      return
+      end subroutine inp_hwnd2
 
 end module inp_base
       subroutine reshape_wk (src,dst,nix,njx,ni,nj,hx,hy)

@@ -12,9 +12,8 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-
-!/@*
       subroutine set_vt()
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -61,7 +60,6 @@
 #include "smag.cdk"
 #include "vt0.cdk"
 #include "vth.cdk"
-#include "vt1.cdk"
 #include "vt2.cdk"
 #include "tr3d.cdk"
 #include "pw.cdk"
@@ -75,6 +73,7 @@
       integer :: flag_n, flag_r_n,flag_r_z
       integer*8 :: flag_m_t,flag_m_u,flag_m_v,flag_m_f,flag_t_f,flag_s_f, flag_m_z
       real, pointer, dimension(:,:,:) :: tr
+!
 !     ---------------------------------------------------------------
 
       !- Note: gmm_create does NOT keep flags other than GMM_FLAG_IZER+GMM_FLAG_INAN+GMM_FLAG_RSTR
@@ -228,6 +227,8 @@
       gmmk_pw_uu_copy_s  = 'PW_UU_COPY'
       gmmk_pw_vv_copy_s  = 'PW_VV_COPY'
 
+      gmmk_pw_p0_ls_s    = 'PW_P0_LS'
+
       nullify(pw_uu_plus ,pw_vv_plus ,pw_wz_plus ,pw_tt_plus ,pw_pm_plus,pw_pt_plus,pw_gz_plus)
       nullify(pw_uu_moins,pw_vv_moins,            pw_tt_moins,pw_pm_moins,pw_gz_moins)
       nullify(pw_uu_copy ,pw_vv_copy, pw_log_pm, pw_log_pt)
@@ -258,6 +259,7 @@
 
       istat = min(gmm_create(gmmk_pw_me_moins_s ,pw_me_moins ,meta2d    ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_p0_moins_s ,pw_p0_moins ,meta2d    ,flag_r_n),istat)
+      istat = min(gmm_create(gmmk_pw_p0_ls_s    ,pw_p0_ls    ,meta2d    ,flag_n  ),istat)
 
       istat = min(gmm_create(gmmk_pw_uu_copy_s  ,pw_uu_copy  ,meta3d_nk ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_pw_vv_copy_s  ,pw_vv_copy  ,meta3d_nk ,flag_r_n),istat)

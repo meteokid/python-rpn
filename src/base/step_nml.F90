@@ -16,7 +16,9 @@
 !**s/r step_nml - Read namelist time
 
       integer function step_nml (F_namelistf_S)
+      use step_options
       use timestr_mod
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +38,6 @@
 #include "grd.cdk"
 #include "lctl.cdk"
 #include "rstr.cdk"
-#include "step.cdk"
 
       integer nrec,unf,err
       real :: sec
@@ -57,18 +58,18 @@
 
 ! Defaults values for ptopo namelist variables
 
-      Step_runstrt_S = 'NIL'
-      Fcst_start_S   = ''
-      Fcst_end_S     = ''
-      Fcst_nesdt_S   = ''
-      Fcst_gstat_S   = ''
-      Fcst_rstrt_S   = ''
-      Fcst_bkup_S    = 'NIL'
-      Fcst_bkup_additional_S = 'NIL'
-      Fcst_spinphy_S = ''
-      Step_alarm     = 600
-      Step_dt          = -1.0
-      Step_leapyears_L = .true.
+!!$      Step_runstrt_S = 'NIL'
+!!$      Fcst_start_S   = ''
+!!$      Fcst_end_S     = ''
+!!$      Fcst_nesdt_S   = ''
+!!$      Fcst_gstat_S   = ''
+!!$      Fcst_rstrt_S   = ''
+!!$      Fcst_bkup_S    = 'NIL'
+!!$      Fcst_bkup_additional_S = 'NIL'
+!!$      Fcst_spinphy_S = ''
+!!$      Step_alarm     = 600
+!!$      Step_dt          = -1.0
+!!$      Step_leapyears_L = .true.
 
       if (F_namelistf_S .ne. '') then
          unf = 0

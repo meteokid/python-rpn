@@ -16,6 +16,7 @@
 !**s/r pw_glbstat - Global statistics on physical (PW) quantities
 !
       subroutine pw_glbstat (name_S)
+      use step_options
       implicit none
 
       character * (*) name_S
@@ -31,7 +32,6 @@
 #include "glb_ld.cdk"
 #include "pw.cdk"
 #include "tr3d.cdk"
-#include "step.cdk"
 !
       type(gmm_metadata) :: meta
       integer istat,fld,i,k,err

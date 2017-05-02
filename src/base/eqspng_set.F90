@@ -16,12 +16,12 @@
 !**s/r eqspng_set
        
        subroutine eqspng_set
+      use step_options
        implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
 #include "eq.cdk"
-#include "step.cdk"
 #include "ver.cdk"
 #include "geomn.cdk"
 

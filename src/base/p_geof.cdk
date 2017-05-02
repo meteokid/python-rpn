@@ -16,6 +16,7 @@
 ! NAME               | DESCRIPTION                                     |
 !--------------------|-------------------------------------------------|
 ! fis0               | Phi srf at current timestep                     |
+! sls                | large scale s (SLEVE)                           |
 ! topo_low           | Low resolution analysis orography before growth |
 ! topo_high          | High resolution target orography after growth   |
 !-----------------------------------------------------------------------
@@ -23,6 +24,7 @@
 #endif
 !
       real, pointer, dimension (:,:) :: fis0      => null()
+      real, pointer, dimension (:,:) :: sls       => null()
       real, pointer, dimension (:,:) :: topo_low  => null()
       real, pointer, dimension (:,:) :: topo_high => null()
  
@@ -31,6 +33,6 @@
       integer, parameter :: GMM_MAXNAMELENGTH = 32
 #endif
 
-      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s
+      character(len=GMM_MAXNAMELENGTH) :: gmmk_fis0_s, gmmk_sls_s, gmmk_topo_low_s, gmmk_topo_high_s
 
-      common /geof_n_gmm/ gmmk_fis0_s, gmmk_topo_low_s, gmmk_topo_high_s
+      common /geof_n_gmm/ gmmk_fis0_s, gmmk_sls_s, gmmk_topo_low_s, gmmk_topo_high_s

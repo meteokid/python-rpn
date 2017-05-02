@@ -15,14 +15,14 @@
 
 !**s/r diag_mu calculate mu: ratio of vertical to gravitational accelerations
 !
-      subroutine diag_mu( F_mu, F_q, F_s, &
+      subroutine diag_mu( F_mu, F_q, F_s, F_sl, &
                           Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )   
       implicit none
 #include <arch_specific.hf>
     
       integer Minx,Maxx,Miny,Maxy,i0,in,j0,jn,k0,Nk
       real F_mu(Minx:Maxx,Miny:Maxy,Nk), F_q(Minx:Maxx,Miny:Maxy,2:Nk+1)
-      real  F_s(Minx:Maxx,Miny:Maxy)
+      real  F_s(Minx:Maxx,Miny:Maxy), F_sl(Minx:Maxx,Miny:Maxy)
 
 !author
 !
@@ -57,7 +57,8 @@
          kmq=max(2,k-1)
          do j= j0, jn
          do i= i0, in
-            w1= one + ver_dbdz_8%t(k)*F_s(i,j)
+            w1= one + Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                    + Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8)
             F_mu(i,j,k) = Ver_idz_8%t(k)*(F_q(i,j,k+1)-F_q(i,j,kq)*Ver_onezero(k))/w1
             qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
             qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)

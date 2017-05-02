@@ -19,6 +19,7 @@
                                i0,in,j0 ,jn,i0u,inu,j0v,jnv,&
                                k0, k0m,k0t, F_aminx, F_amaxx,&
                                F_aminy, F_amaxy, F_ni,F_nj,F_nk )
+      use step_options
       implicit none
 #include <arch_specific.hf>
       integer  F_nb_iter                                                                  ! total number of iterations for traj
@@ -45,7 +46,6 @@
 #include "cstv.cdk"
 #include "ver.cdk"
 #include "schm.cdk"
-#include "step.cdk"
 #include "tracers.cdk"
 #include "glb_ld.cdk"
 #include "grd.cdk"

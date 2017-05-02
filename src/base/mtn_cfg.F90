@@ -16,6 +16,7 @@
 !**s/r mtn_cfg - reads parameters from namelist mtn_cfgs
 !
       integer function mtn_cfg (unf)
+      use step_options
       implicit none
 #include <arch_specific.hf>
       integer unf
@@ -41,9 +42,7 @@
       p1000hPa_8=100000.d0
       mtn_cfg = -1
       Step_gstat = 1
-      do k = 1, maxhlev
-         hyb(k) = -1.
-      end do
+      hyb = -1.
 
       Grd_typ_S='GU'
       Grd_rot_8 = 0.0
@@ -75,7 +74,7 @@
       Schm_trapeze_L=.true.
       Schm_cub_traj_L=.true.
       Schm_phyms_L = .false.
-      Schm_psadj_L=.false.
+      Schm_psadj=0
 
       G_halox=3
 
@@ -116,8 +115,8 @@
          Step_total  = 450         !Step_total  = 1800
          Cstv_dt_8   = 32.         !Cstv_dt_8   = 8.
         !GROWING MOUNTAIN
-         Vtopo_start = 0
-         Vtopo_ndt   = 75          !Vtopo_ndt   = 300
+         Vtopo_start_S='0s'
+         Vtopo_length_S='2400s'
 
       else if ( Theo_case_S.eq.'MTN_SCHAR2') then
 
@@ -150,9 +149,6 @@
 !        attention: dernierement fraction de secondes non disponibles
          Cstv_tstr_8 = mtn_tzero
 
-         Vtopo_start = -99999
-         Vtopo_ndt   = 0
-
       else if ( Theo_case_S.eq.'MTN_PINTY') then
 
          Out3_etik_s='PINTY'
@@ -180,8 +176,6 @@
 
          Cstv_dt_8   = 50.
          Cstv_tstr_8 = mtn_tzero
-         Vtopo_start = -99999
-         Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTY2') then
 
@@ -210,8 +204,6 @@
 
          Cstv_dt_8   = 200.
          Cstv_tstr_8 = mtn_tzero
-         Vtopo_start = -99999
-         Vtopo_ndt   = 0
 
       else if ( Theo_case_S.eq.'MTN_PINTYNL') then
 
@@ -241,8 +233,9 @@
 
          Cstv_dt_8   = 50.
          Cstv_tstr_8 = 2.946394714296820e+02
-         Vtopo_start = 0
-         Vtopo_ndt   = 60
+
+         Vtopo_start_S='0s'
+         Vtopo_length_S='3000s'
 
       else if ( Theo_case_S.eq.'NOFLOW') then
 
@@ -278,9 +271,6 @@
          zblen_L = .false.
          Lam_blend_H=0
 
-         Vtopo_start = -99999
-         Vtopo_ndt   = 0
-
       else
          istat = -1
       endif
@@ -298,11 +288,20 @@
 
       Grd_dx = (Grd_dx/Dcst_rayt_8)*(180./Dcst_pi_8)  ! in degrees
 
-
 !   adjust dimensions to include piloted area (pil_n, s, w, e)
 
       Glb_pil_n = Grd_extension
       Glb_pil_s = Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
+
+      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
+      if (l_west ) pil_w= Glb_pil_w
+      if (l_north) pil_n= Glb_pil_n
+      if (l_east ) pil_e= Glb_pil_e
+      if (l_south) pil_s= Glb_pil_s
+      Lam_pil_w= Glb_pil_w
+      Lam_pil_n= Glb_pil_n
+      Lam_pil_e= Glb_pil_e
+      Lam_pil_s= Glb_pil_s
 !
       Grd_ni   = Grd_ni + 2*Grd_extension
       Grd_nj   = Grd_nj + 2*Grd_extension

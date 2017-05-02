@@ -30,6 +30,8 @@
 !
 !revision
 ! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
+! v5_0 - Husain S.    - added vertically variable background diffusion      
+
 #include "gmm.hf"
 #include "hzd.cdk"
 #include "cstv.cdk"
@@ -47,10 +49,11 @@
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: pi, th
       real, pointer, dimension (:,:,:) :: hu
+      real, dimension(nk) :: base_coefM, base_coefT      
       real :: cdelta2, tension_z, shear, tension_u, shear_u, tension_v, shear_v
       real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
-      real :: base_coef, max_coef, crit_coef
-      logical :: switch_on_THETA, switch_on_hu
+      real :: max_coef, crit_coef
+      logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
 
       if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr <=0.) ) return
 
@@ -59,11 +62,10 @@
       ismagprandtl_hu = 1./Hzd_smago_prandtl_hu
       switch_on_THETA = Hzd_smago_prandtl > 0.
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0.)
-     !switch_on_hu    = (Hzd_smago_prandtl_hu > 0.) .and. (Tr3d_name_S(1)(1:2)'.eq.'HU')
+      switch_on_fric_heat = (Hzd_smago_fric_heat > 0.)
 
       cdelta2 = (smagparam * Dcst_rayt_8 * Geomg_hy_8)**2
       crit_coef = 0.25*(Dcst_rayt_8*Geomg_hy_8)**2/Cstv_dt_8
-      base_coef = hzd_smago_lnr*crit_coef
 
       i0  = 1    + pil_w
       in  = l_ni - pil_e
@@ -77,6 +79,18 @@
       call rpn_comm_xch_halo( hu , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,G_nk, &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
+!$omp parallel private(tension_z,shear,tension_u,shear_u,&
+!$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
+!$omp tension_v, shear_v, smagcoef_z, pi, th)                           
+
+!$omp do   
+      do k=1,nk
+         base_coefM(k)=Hzd_smago_lnrM_8(k)*crit_coef
+         base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
+      end do
+!$omp enddo
+
+!$omp do  
       do k=1,nk
 
          do j=j0-2, jn+2
@@ -96,11 +110,11 @@
             do j=j0-1, jn+1
             do i=i0-1, in+1
 
-               smagcoef_u(i,j) = base_coef * geomg_invDX_8(j)
-               smagcoef_v(i,j) = base_coef * geomg_cyv_8(j) * geomg_invDY_8
+               smagcoef_u(i,j) = base_coefM(k) * geomg_invDX_8(j)
+               smagcoef_v(i,j) = base_coefM(k) * geomg_cyv_8(j) * geomg_invDY_8
 
-               kt(i,j) = geomg_cy2_8(j)  * base_coef * tension(i,j)
-               kz(i,j) = geomg_cyv2_8(j) * base_coef * shear_z(i,j)
+               kt(i,j) = geomg_cy2_8(j)  * base_coefM(k) * tension(i,j)
+               kz(i,j) = geomg_cyv2_8(j) * base_coefM(k) * shear_z(i,j)
 
             end do
             end do
@@ -115,10 +129,10 @@
                tension_v = 0.5d0 * (tension(i,j+1) + tension(i,j))
                shear_v   = 0.5d0 * (shear_z(i,j) + shear_z(i-1,j))
 
-               smag(i,j,k) = min(max(cdelta2 * sqrt(tension(i,j)**2 + shear**2)    ,base_coef),crit_coef)
-               smagcoef_z(i,j) = min(max(cdelta2 * sqrt(tension_z**2 + shear_z(i,j)**2),base_coef),crit_coef)
-               smagcoef_u(i,j) = min(max(cdelta2 * sqrt(tension_u**2 + shear_u**2)     ,base_coef),crit_coef)
-               smagcoef_v(i,j) = min(max(cdelta2 * sqrt(tension_v**2 + shear_v**2)     ,base_coef),crit_coef)
+               smag(i,j,k) = min(cdelta2 * sqrt(tension(i,j)**2 + shear**2) + base_coefM(k), crit_coef)
+               smagcoef_z(i,j) = min(cdelta2 * sqrt(tension_z**2 + shear_z(i,j)**2) + base_coefM(k), crit_coef)
+               smagcoef_u(i,j) = min(cdelta2 * sqrt(tension_u**2 + shear_u**2) + base_coefT(k), crit_coef)
+               smagcoef_v(i,j) = min(cdelta2 * sqrt(tension_v**2 + shear_v**2) + base_coefT(k), crit_coef)
 
                smagcoef_u(i,j) = smagcoef_u(i,j) * geomg_invDX_8(j)
                smagcoef_v(i,j) = smagcoef_v(i,j) * geomg_cyv_8(j) * geomg_invDY_8
@@ -166,7 +180,7 @@
 
             do j=j0-1, jn+1
             do i=i0-1, in+1
-               pi(i,j)=exp(Dcst_cappa_8*(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(i,j)))
+               pi(i,j)=exp(Dcst_cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)))
                th(i,j)=F_t(i,j,k)/pi(i,j)
             end do
             end do
@@ -203,10 +217,34 @@
             hu(i,j,k)=hu(i,j,k)+th(i,j)
             end do
             end do
-           !print*,'k=',k,'hu=',hu(i0,j0,k),'dhu=',th(i0,j0)
          endif
 
       end do
+!$omp enddo
 
+      if (switch_on_fric_heat) then
+         fact=0.5d0*Cstv_dt_8*Cstv_invT_8/cdelta2**2/Dcst_cpd_8
+!$omp do
+         do k=1, nk
+            if(k.ne.nk) then
+               do j=j0, jn
+               do i=i0, in
+                 F_dlth(i,j,k)=F_dlth(i,j,k) &
+                      +fact/F_t(i,j,k)*(smag(i,j,k+1)**3+smag(i,j,k)**3)
+               end do
+               end do
+            else
+               do j=j0, jn
+               do i=i0, in
+                 F_dlth(i,j,k)=F_dlth(i,j,k) &
+                      +fact/F_t(i,j,k)*smag(i,j,k)**3
+               end do
+               end do
+            endif
+         end do
+!$omp enddo
+      endif
+
+!$omp end parallel
       return
       end subroutine smago_in_rhs

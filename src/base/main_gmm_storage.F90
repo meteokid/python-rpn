@@ -60,11 +60,13 @@
       if ( Init_mode_L ) call set_vta( )
 
       gmmk_fis0_s      = 'FIS0'
+      gmmk_sls_s       = 'SLS'
       gmmk_topo_low_s  = 'TOPOLOW'
       gmmk_topo_high_s = 'TOPOHIGH'
 
-      nullify (fis0, topo_low, topo_high)
+      nullify (fis0, sls, topo_low, topo_high)
       istat = gmm_create(gmmk_fis0_s,fis0,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_sls_s,sls,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
 
       istat = gmm_create(gmmk_topo_low_s ,topo_low ,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       istat = gmm_create(gmmk_topo_high_s,topo_high,meta2d,GMM_FLAG_RSTR+GMM_FLAG_IZER)

@@ -15,6 +15,7 @@
 
 !**s/r pdfjdate2 - number of days since "Step_runstrt_S(year) - 1"
       subroutine pdfjdate2 (jdate,yyyy,mo,dd,hh,mm,ss)
+      use step_options
       implicit none
 #include <arch_specific.hf>
       real*8 jdate
@@ -35,7 +36,6 @@
 !  can be turned ON or OFF via calls to ACCEPT_LeapYear() and
 !  Ignore_LeapYear(), respectively
 !!
-#include "step.cdk"
 
       integer, save :: stamp0
       integer ier, TIM1, stamp1

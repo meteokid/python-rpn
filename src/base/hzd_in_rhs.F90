@@ -104,7 +104,7 @@
 
          !theta=t/pi; pi=(p/p0)**cappa; p=exp(a+b*s); p0=1.
          do k=1,Nk
-            ppinv(:,:,k)=exp(-Dcst_cappa_8*(Ver_z_8%t(k)+Ver_b_8%t(k)*F_s(:,:)))
+            ppinv(:,:,k)=exp(-Dcst_cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(:,:)))
          enddo
          u0=F_t*ppinv
 

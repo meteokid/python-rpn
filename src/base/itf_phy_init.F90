@@ -19,6 +19,7 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,vgd_put,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use phy_itf, only: phy_init, phymeta,phy_getmeta
+      use step_options
       implicit none
 #include <arch_specific.hf>
 
@@ -39,14 +40,16 @@
 #include "out3.cdk"
 #include "outp.cdk"
 #include "cstv.cdk"
-#include "step.cdk"
 #include "ver.cdk"
 #include "path.cdk"
 #include "level.cdk"
 #include "rstr.cdk"
 
+      character(len=32), parameter  :: VGRID_M_S = 'ref-m'
+      character(len=32), parameter  :: VGRID_T_S = 'ref-t'
+
       type(vgrid_descriptor) :: vcoord, vcoordt
-      integer err,zuip,ztip
+      integer err,zuip,ztip,vtype
       integer, dimension(:), pointer :: ip1m, ip1t
       real :: zu,zt
       real, dimension(:,:), pointer :: ptr2d
@@ -59,7 +62,7 @@
 
 !For sorting the output
       integer istat, iverb
-      character(len=32) :: varname_S,outname_S,bus0_S
+      character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
       integer pnerror,i,k,j,ibus,multxmosaic
       type(phymeta) :: pmeta
 !
@@ -96,7 +99,7 @@
       err= min(wb_put('itf_phy/VSTAG'       , .true.       , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/TLIFT'       , tlift        , WB_REWRITE_AT_RESTART), err)
       err= min(wb_put('itf_phy/DYNOUT'      , Out3_accavg_L, WB_REWRITE_AT_RESTART), err)
-      
+
 ! Complete physics initialization (see phy_init for interface content)
 
       err= phy_init ( Path_phy_S, Step_CMCdate0, real(Cstv_dt_8), &
@@ -118,8 +121,8 @@
       if ((zu.gt.0.) .and. (zt.gt.0.) ) then
          nullify(ip1m, ip1t)
          Level_kind_diag=4
-         err = min ( vgrid_wb_get('ref-m',vcoord, ip1m), err)
-         err = min ( vgrid_wb_get('ref-t',vcoordt,ip1t), err)
+         err = min ( vgrid_wb_get(VGRID_M_S,vcoord, ip1m,vtype,refp0_S,refp0ls_S), err)
+         err = min ( vgrid_wb_get(VGRID_T_S,vcoordt,ip1t), err)
          deallocate(ip1m, ip1t) ; nullify(ip1m, ip1t)
          call convip(zuip,zu,Level_kind_diag,+2,'',.true.)
          call convip(ztip,zt,Level_kind_diag,+2,'',.true.)
@@ -130,8 +133,8 @@
          if (vgd_get(vcoord ,'VIPM - level ip1 list (m)',ip1m) /= VGD_OK) err = -1
          if (vgd_get(vcoordt,'VIPT - level ip1 list (t)',ip1t) /= VGD_OK) err = -1
          out3_sfcdiag_L= .true.
-         err = min(vgrid_wb_put('ref-m',vcoord, ip1m,'PW_P0:P',F_overwrite_L=.true.), err)
-         err = min(vgrid_wb_put('ref-t',vcoordt,ip1t,'PW_P0:P',F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put(VGRID_M_S,vcoord, ip1m,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
+         err = min(vgrid_wb_put(VGRID_T_S,vcoordt,ip1t,refp0_S,refp0ls_S,F_overwrite_L=.true.), err)
       endif
       call gem_error ( err,'itf_phy_init','setting diagnostic level in vertical descriptor' )
 

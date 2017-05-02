@@ -14,10 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/r theo_3D
-!
 
-!
-      subroutine theo_3D_2( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo, &
+      subroutine theo_3D ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                            pref_tr, suff_tr )
       implicit none
 #include <arch_specific.hf>
@@ -31,15 +29,22 @@
 !
 !---------------------------------------------------------------------
 !
-      if ( Theo_case_S.eq.'MTN_SCHAR'  &
-           .or. Theo_case_S.eq.'MTN_SCHAR2' &
-           .or. Theo_case_S.eq.'MTN_PINTY' &
-           .or. Theo_case_S.eq.'MTN_PINTY2' &
+      if (      Theo_case_S.eq.'MTN_SCHAR'   &
+           .or. Theo_case_S.eq.'MTN_SCHAR2'  &
+           .or. Theo_case_S.eq.'MTN_PINTY'   &
+           .or. Theo_case_S.eq.'MTN_PINTY2'  &
            .or. Theo_case_S.eq.'MTN_PINTYNL' &
            .or. Theo_case_S.eq.'NOFLOW' ) then
-         call mtn_case2( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
+
+         call mtn_case ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
                          F_q, pref_tr, suff_tr, &
                          l_minx, l_maxx, l_miny, l_maxy )
+
+      elseif ( Theo_case_S.eq.'BUBBLE' ) then
+
+         call bubble_2D ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
+                          F_q, pref_tr, suff_tr, &
+                          l_minx, l_maxx, l_miny, l_maxy, G_nk )
       else
          call abort
       endif

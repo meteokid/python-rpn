@@ -16,6 +16,7 @@
 !**s/r pw_update - Update physical quantities WZ, GZ, PM and PT
 !
       subroutine pw_update_GPW
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "p_geof.cdk"
 #include "ver.cdk"
 #include "pw.cdk"
@@ -53,7 +53,7 @@
       istat = gmm_get(gmmk_fis0_s ,  fis0)
       istat = gmm_get(gmmk_qt1_s  ,   qt1)
 
-      call diag_fi (fi, st1, tt1, qt1, fis0, &
+      call diag_fi (fi, st1, tt1, qt1, &
                     l_minx,l_maxx,l_miny,l_maxy,G_nk, 1, l_ni, 1, l_nj)
 
       call calc_pressure ( pw_pm_plus, pw_pt_plus, pw_p0_plus, st1, &

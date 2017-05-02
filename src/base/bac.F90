@@ -23,7 +23,7 @@
 !
 
 
-      subroutine bac ( F_lhs_sol, F_fis , &
+      subroutine bac ( F_lhs_sol       , F_sl ,F_fis      , &
                        F_u   , F_v     , F_w  , F_t       , &
                        F_s   , F_zd    , F_q  , F_nest_q  , &
                        F_ru  , F_rv    , F_rt , F_rw , F_rf , F_rb, &
@@ -34,7 +34,7 @@
 !
       integer  Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
       real*8   F_lhs_sol (ni,nj,Nk)
-      real     F_fis (Minx:Maxx,Miny:Maxy)                                    , &
+      real     F_fis (Minx:Maxx,Miny:Maxy)       , F_sl    (Minx:Maxx,Miny:Maxy)       , &
                F_u   (Minx:Maxx,Miny:Maxy,  Nk)  , F_v     (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_w   (Minx:Maxx,Miny:Maxy,  Nk)  , F_t     (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_s   (Minx:Maxx,Miny:Maxy)       , F_zd    (Minx:Maxx,Miny:Maxy,  Nk)  , &
@@ -202,7 +202,7 @@
 !$omp do
       do j= j0, jn
       do i= i0, in
-         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rE_8*F_q(i,j,l_nk+1)
+         F_s(i,j) = w1*(GP(i,j,l_nk+1)-F_fis(i,j))-Cstv_rE_8*F_q(i,j,l_nk+1)-Cstv_Sstar_8
       end do
       end do
 !$omp enddo
@@ -227,7 +227,8 @@
             qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
             F_zd(i,j,k)=-Cstv_tau_m_8*( F_rt(i,j,k)- F_nt(i,j,k) &
                        + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
-                       - w3 * ( Ver_b_8%t(k)*F_s(i,j)+Cstv_rE_8*qbar )
+                       - w3 * ( Ver_b_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                               +Ver_c_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8)+Cstv_rE_8*qbar )
          enddo
          enddo
       enddo
@@ -244,7 +245,9 @@
          w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
-            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*F_s(i,j)+Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k))
+            GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                                   +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) &
+                                   +Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k) )
          enddo
          enddo
       enddo
@@ -273,7 +276,8 @@
          call vexp( xtmp_8, ytmp_8, nij )
          do j= j0, jn
          do i= i0, in
-            xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*F_s(i,j))
+            xtmp_8(i,j)=xtmp_8(i,j)*(one+Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
+                                        +Ver_dcdz_8%t(k)*(F_sl(i,j)+Cstv_Sstar_8))
          enddo
          enddo
          call vrec ( ytmp_8, xtmp_8, nij )

@@ -19,6 +19,7 @@
 
 !
       subroutine height_sponge ()
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 !author 
@@ -28,11 +29,11 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "zblen.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"
 #include "theo.cdk"
+#include "p_geof.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k
@@ -53,8 +54,10 @@
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(st1)'
       istat = gmm_get(gmmk_qt1_s,qt1,mymeta)
       if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(qt1)'
+      istat = gmm_get(gmmk_sls_s,sls,mymeta)
+      if (GMM_IS_ERROR(istat)) print *,'height_sponge ERROR at gmm_get(sls)'
  
-      call set_betav(betav_m,betav_t,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+      call set_betav_2(betav_m,betav_t,st1,sls,l_minx,l_maxx,l_miny,l_maxy,l_nk)
 
       ubar= mtn_flo
 
@@ -63,7 +66,7 @@
          call apply (vt1, 0.  , betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
          call apply (qt1, 0.  , betav_m, l_minx,l_maxx,l_miny,l_maxy, l_nk)
          if(Zblen_spngtt_L)then
-            call apply_tt(tt1,betav_t,st1,l_minx,l_maxx,l_miny,l_maxy,l_nk)
+            call apply_tt(tt1,betav_t,st1,sls,l_minx,l_maxx,l_miny,l_maxy,l_nk)
          endif
       endif
 
@@ -112,7 +115,7 @@
 !=======================================================================
 
 
-      subroutine apply_tt(tt,betav_t, F_s,Minx,Maxx,Miny,Maxy, Nk)
+      subroutine apply_tt(tt,betav_t, F_s, F_sl,Minx,Maxx,Miny,Maxy, Nk)
 
       implicit none
 #include <arch_specific.hf>
@@ -128,6 +131,7 @@
 
       real tt(Minx:Maxx,Miny:Maxy,Nk),F_s(Minx:Maxx,Miny:Maxy)
       real betav_t(Minx:Maxx,Miny:Maxy,Nk)
+      real F_sl(Minx:Maxx,Miny:Maxy)
 
       real capc1,my_tt,a00,a02,tempo,hauteur
 
@@ -148,7 +152,7 @@
       do k=1,Nk
          do j=j0,jn
             do i=i0,in
-               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j))
+               tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)+Ver_c_8%t(k)*F_sl(i,j))
                a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)

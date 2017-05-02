@@ -51,6 +51,7 @@
 ! F_w_L  | true to compute w                           | scal      | i |
 !________|_____________________________________________|___________|___|
 !
+#include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
@@ -59,15 +60,17 @@
 #include "cstv.cdk"
 #include "lun.cdk"
 #include "schm.cdk"
+#include "p_geof.cdk"
 
-      integer i, j, k, kp, i0, in, j0, jn
+      integer i, j, k, kp, i0, in, j0, jn, istat
       real*8 c1,c2
       real roverg
-      real div (Minx:Maxx,Miny:Maxy,Nk),adv,div_i(Minx:Maxx,Miny:Maxy,0:Nk)
+      real div (Minx:Maxx,Miny:Maxy,Nk),adv,advl,div_i(Minx:Maxx,Miny:Maxy,0:Nk)
       real pi_t(Minx:Maxx,Miny:Maxy,Nk),lnpi_t(Minx:Maxx,Miny:Maxy,Nk),pidot
       real xd(Minx:Maxx,Miny:Maxy,Nk)
       real lnpi,pbX,pbY
       real sbX (Minx:Maxx,Miny:Maxy),sbY(Minx:Maxx,Miny:Maxy),pi_s(Minx:Maxx,Miny:Maxy)
+      real slbX (Minx:Maxx,Miny:Maxy),slbY(Minx:Maxx,Miny:Maxy)
       real UdpX(Minx:Maxx,Miny:Maxy),    VdpY(Minx:Maxx,Miny:Maxy)
       real lapse(Minx:Maxx,Miny:Maxy,Nk)
       real*8, parameter :: half=0.5d0
@@ -89,6 +92,8 @@
       call rpn_comm_xch_halo (F_v,  l_minx,l_maxx,l_miny,l_maxy, l_ni,l_njv, Nk,   &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 
+      istat = gmm_get (gmmk_sls_s ,sls )
+
 !     Initializations
 
 !     local grid setup for final results
@@ -105,13 +110,15 @@
 
       do j=j0,jn
       do i=i0-1,in
-         sbX(i,j)=F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half
+         sbX(i,j) =(F_s(i,j)+(F_s(i+1,j)-F_s(i,j))*half+Cstv_Sstar_8)
+         slbX(i,j)=(sls(i,j)+(sls(i+1,j)-sls(i,j))*half+Cstv_Sstar_8)
       end do
       end do
 
       do j=j0-1,jn
       do i=i0,in
-         sbY(i,j)=F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half
+         sbY(i,j) =(F_s(i,j)+(F_s(i,j+1)-F_s(i,j))*half+Cstv_Sstar_8)
+         slbY(i,j)=(sls(i,j)+(sls(i,j+1)-sls(i,j))*half+Cstv_Sstar_8)
       end do
       end do
 
@@ -119,7 +126,7 @@
 
       do j=j0,jn
       do i=i0,in
-         pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+F_s(i,j))
+         pi_s(i,j) = exp(Ver_z_8%m(Nk+1)+(F_s(i,j)+Cstv_Sstar_8))
       end do
       end do
 
@@ -129,16 +136,16 @@
 
          do j=j0,jn
          do i=i0-1,in
-            lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)
+            lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbX(i,j)+Ver_c_8%m(k)*slbX(i,j)
              pbX=exp(lnpi)
-            UdpX(i,j)=F_u(i,j,k)*pbX*(1.d0+Ver_dbdz_8%m(k)*sbX(i,j))
+            UdpX(i,j)=F_u(i,j,k)*pbX*(1.d0+Ver_dbdz_8%m(k)*sbX(i,j)+Ver_dcdz_8%m(k)*slbX(i,j))
          end do
          end do
          do j=j0-1,jn
          do i=i0,in
-            lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)
+            lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)+Ver_c_8%m(k)*slbY(i,j)
              pbY=exp(lnpi)
-            VdpY(i,j)=F_v(i,j,k)*geomg_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j))
+            VdpY(i,j)=F_v(i,j,k)*geomg_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j)+Ver_dcdz_8%m(k)*slbY(i,j))
          end do
          end do
 
@@ -155,7 +162,8 @@
 
          do j=j0,jn
          do i=i0,in
-             lnpi_t(i,j,k) = Ver_a_8%t(k) + Ver_b_8%t(k) * F_s(i,j)
+             lnpi_t(i,j,k) = Ver_z_8%t(k) + Ver_b_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
+                                          + Ver_c_8%t(k)*(sls(i,j)+Cstv_Sstar_8)
                pi_t(i,j,k) = exp(lnpi_t(i,j,k))
          end do
          end do
@@ -195,9 +203,12 @@
          do k=1,Nk-1
             do j=j0,jn
             do i=i0,in
+               ! Note that Ver_b_8%t(k) comes from the time tendency of ln(pi),
+               ! therefore Ver_c_8 is not present since this part of ln(pi) Bl*sl is constant.
                F_zd(i,j,k) = ( Ver_b_8%t(k)*div_i(i,j,Nk)/pi_s(i,j) &
                              - div_i(i,j,k)/pi_t(i,j,k) ) /           &
-                              (1.+Ver_dbdz_8%t(k)*F_s(i,j))
+                              (1.+Ver_dbdz_8%t(k)*(F_s(i,j)+Cstv_Sstar_8) &
+                                 +Ver_dcdz_8%t(k)*(sls(i,j)+Cstv_Sstar_8) )
             end do
             end do
          end do
@@ -219,13 +230,19 @@
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
                 adv= 0.5 * ( geomg_invDX_8(j) *  &
-                    ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-F_s(i,j))   &
-                     -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-F_s(i,j)) ) &
+                    ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-(F_s(i,j)+Cstv_Sstar_8))   &
+                     -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-(F_s(i,j)+Cstv_Sstar_8)) ) &
                   + geomg_invcy_8(j) * geomg_invDY_8 *  &
-                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-F_s(i,j))   &
-                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-F_s(i,j)) ) )
+                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-(F_s(i,j)+Cstv_Sstar_8))   &
+                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-(F_s(i,j)+Cstv_Sstar_8)) ) )
+                advl= 0.5 * ( geomg_invDX_8(j) *  &
+                    ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(slbX(i  ,j)-(sls(i,j)+Cstv_Sstar_8))   &
+                     -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(slbX(i-1,j)-(sls(i,j)+Cstv_Sstar_8)) ) &
+                  + geomg_invcy_8(j) * geomg_invDY_8 *  &
+                    ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(slbY(i,j  )-(sls(i,j)+Cstv_Sstar_8))   &
+                     -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(slbY(i,j-1)-(sls(i,j)+Cstv_Sstar_8)) ) )
               !pidot=omega
-               pidot=pi_t(i,j,k)*Ver_b_8%t(k)*adv - div_i(i,j,k)
+               pidot=pi_t(i,j,k)*(Ver_b_8%t(k)*adv + Ver_c_8%t(k)*advl) - div_i(i,j,k)
                F_w(i,j,k)= -RoverG*F_t(i,j,k)/pi_t(i,j,k)*pidot
               !ksidot=omega/pi
                xd(i,j,k)=pidot/pi_t(i,j,k)

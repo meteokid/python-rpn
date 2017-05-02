@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine itf_phy_UVupdate
+      use gmm_vt1
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,6 @@
    
 #include <gmm.hf>
 #include "glb_ld.cdk"
-#include "vt1.cdk"
 #include "pw.cdk"
 
       integer istat,k

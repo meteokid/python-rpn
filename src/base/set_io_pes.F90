@@ -42,7 +42,7 @@
                               l_minx, l_maxx, l_miny, l_maxy )
       F_comm_setno = RPN_COMM_create_io_set ( F_npes, 0 )
       F_iome       = RPN_COMM_is_io_pe      ( F_comm_setno )
-      F_comm_io    = RPN_COMM_io_pe_comm    ( F_comm_id )
+      F_comm_io    = RPN_COMM_io_pe_comm    ( F_comm_setno )
       F_iobcast    = RPN_COMM_io_pe_gridid  ( F_comm_setno, 0 )
 
       set_io_pes= 0

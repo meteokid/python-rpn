@@ -71,7 +71,7 @@
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 20
+      integer, parameter :: numvars = 21
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -111,6 +111,7 @@
       class_var(18,1) = 'UR' ; class_var(18,2) = 'UU' ; class_var(18,3) = 'MM'
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
       class_var(20,1) = 'SM' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'TT'
+      class_var(21,1) = 'SL' ; class_var(21,2) = 'QQ' ; class_var(21,3) = 'SF'
       
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))

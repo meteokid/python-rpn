@@ -16,6 +16,8 @@
 !**s/r digflt -  Compute digitally filtered fields
 !
      subroutine digflt
+      use step_options
+      use gmm_vt1
       implicit none
 
 !author
@@ -37,9 +39,7 @@
 #include <gmm.hf>
 #include "glb_ld.cdk"
 #include "init.cdk"
-#include "step.cdk"
 #include "vta.cdk"
-#include "vt1.cdk"
 #include "tr3d.cdk"
 
       integer i, j, k, n, err,istat
