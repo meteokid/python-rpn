@@ -1931,7 +1931,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
     ## else:  ## ('uint', 'int'):
     ##     raise BurpError('Conversion not Yet implemented for datyp={0} ({1})'
     ##                     .format(datyp, _rbc.BURP_DATYP_NAMES[datyp]))
-
+    
     dtype = _rbc.BURP_DATYP2NUMPY_LIST[datyp]
     rval  = tblval.astype(dtype)    
     istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt,
@@ -1942,7 +1942,7 @@ def mrbcvt_decode(cmcids, tblval=None, datyp=_rbc.BURP_DATYP_LIST['float']):
         rval_missing = _rbc.BURP_RVAL_MISSING[datyp]
     except:
         rval_missing = _rbc.BURP_TBLVAL_MISSING
-    rval[tblval == _rbc.BURP_TBLVAL_MISSING] = rval_missing
+    rval[tblval == _rbc.BURP_TBLVAL_MISSING] = _rbc.BURP_RVAL_MISSING0
     #TODO: ie e_cvt == 0: put tblval
 
     return rval
@@ -2020,7 +2020,54 @@ def mrb_prm_xtr_dcl_cvt(rpt, blkno):
 
 
 #TODO: mrbcvt_encode
-## def mrbcvt_encode(cmcids, rval): ##TODO:
+def mrbcvt_encode(cmcids, rval):
+    """
+    Convert real values to table/BUFR values.
+
+    tblval = mrbcvt_encode(cmcids, rval)
+
+    Args:
+        cmcids : List of element names in the report in numeric BUFR codes.
+                 See the code desc in the FM 94 BUFR man
+        rval   : Real-valued table data
+    Returns
+        integer table data
+    Raises:
+        TypeError  on wrong input arg types
+        BurpError  on any other error
+    """
+    if isinstance(rval, _np.ndarray):
+        if len(rval.shape) != 3:
+            raise TypeError('Provided rval should be an ndarray of rank 3')
+    else:
+        raise TypeError('Provided rval should be an ndarray of rank 3')
+    (nele, nval, nt) = rval.shape
+    dtype = _np.int32
+    if isinstance(cmcids, _np.ndarray):
+        if not cmcids.flags['F_CONTIGUOUS']:
+            raise TypeError('Provided cmcids should be F_CONTIGUOUS')
+        if dtype != cmcids.dtype:
+            raise TypeError('Expecting cmcids of type {0}, got: {1}'
+                            .format(repr(dtype),repr(cmcids.dtype)))
+        if len(cmcids.shape) != 1 or cmcids.size != nele:
+            raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+    else:
+        raise TypeError('cmcids should be a ndarray of rank 1 (nele)')
+
+    rval = _np.ravel(rval, order='F')
+    tblval = _np.round(rval).astype(_np.int32)
+
+    #rval[_np.isnan(rval)] = 1.00000002e+30
+
+    istat = _rp.c_mrbcvt(cmcids, tblval, rval, nele, nval, nt, _rbc.MRBCVT_ENCODE)
+
+    if istat != 0:
+        raise BurpError('c_mrbcvt', istat)
+
+    #tblval[_np.isnan(rval)] = _rbc.BURP_TBLVAL_MISSING
+    
+    return tblval
+
 
 #TODO: review
 def mrbini(funit, rpt, time, flgs, stnid, idtp, lat, lon, dx, dy, elev, drnd,

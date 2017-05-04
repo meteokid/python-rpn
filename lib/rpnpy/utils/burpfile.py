@@ -287,7 +287,7 @@ class BurpFile:
                 self.nbit[irep][iblk]      = bhp['nbit']
                 self.bit0[irep][iblk]      = bhp['bit0']
                 self.datyp[irep][iblk]     = bhp['datyp']
-
+                
                 # get block elements and values and
                 # convert integer table values to real value
                 if bhp['datyp'] < 5:
@@ -310,7 +310,7 @@ class BurpFile:
                 #      should we do a transpose?
                 self.rval[irep][iblk] = rval
 
-                # check that the element arrays are the correct dimensions
+                # check that the element arrays have the correct dimensions
                 if _np.any(self.elements[irep][iblk].shape != (self.nelements[irep][iblk])):
                     raise _brp.BurpError("elements array does not have the correct dimensions.")
                 if _np.any(self.rval[irep][iblk].shape != (self.nelements[irep][iblk], self.nlev[irep][iblk], self.nt[irep][iblk])):
@@ -378,27 +378,22 @@ class BurpFile:
                 nt = self.nt[irep][iblk]
 
                 # convert BUFR codes to CMC codes
-                lstele = _np.empty((nele, ), dtype=_np.int32)
-                _brp.mrbcol(self.elements[irep][iblk], lstele, nele)
-
+                cmcids = _brp.mrbcol(self.elements[irep][iblk])
+                
                 # convert real values to integer table values
-                rval = _np.ravel(self.rval[irep][iblk], order='F')
-                tblval = _np.round(rval).astype(_np.int32)
                 if self.datyp[irep][iblk] < 5:
-                    _brp.mrbcvt(lstele, tblval, rval, nele, nlev, nt, _rbc.MRBCVT_ENCODE)
-                    tbl_out = tblval
-                elif self.datyp[irep][iblk] < 7:
-                    tbl_out = rval
+                    tblval = _brp.mrbcvt_encode(cmcids, self.rval[irep][iblk])
                 else:
-                    if warn:
+                    rval = _np.ravel(self.rval[irep][iblk], order='F')
+                    tblval = _np.round(rval).astype(_np.int32)
+                    if self.datyp[irep][iblk] > 6 and warn:
                         _warnings.warn("Unrecognized data type value of %i. Unconverted table values will be written." %  self.datyp[irep][iblk])
                         warn = False
-                    tbl_out = tblval
-
+                
                 # add block to report
                 _brp.mrbadd(buf, _ct.pointer(_ct.c_int(iblk+1)), nele, nlev, nt, self.bfam[irep][iblk], self.bdesc[irep][iblk], 
                             self.btyp[irep][iblk], self.nbit[irep][iblk], _ct.pointer(_ct.c_int(self.bit0[irep][iblk])), 
-                            self.datyp[irep][iblk], lstele, tbl_out)
+                            self.datyp[irep][iblk], cmcids, tblval)
 
 
             # write report
@@ -467,7 +462,7 @@ class BurpFile:
 
                 if self.nblk[irep]>iblk:
                     if self.nelements[irep][block-1]>iele and self.nt[irep][iblk]>it:
-                        outdata.append( self.rval[irep][iblk][iele][it] )
+                        outdata.append( self.rval[irep][iblk][iele,:,it] )
                         if self.nlev[irep][iblk]>nlev_max:
                             nlev_max = self.nlev[irep][iblk]
                     else:
@@ -517,7 +512,7 @@ class BurpFile:
 
                 if len(iblk)>0:
                     if self.nt[irep][iblk[0]]>it:
-                        outdata.append( self.rval[irep][iblk[0]][iele[0]][it] )
+                        outdata.append( self.rval[irep][iblk[0]][iele[0],:,it] )
                         if self.nlev[irep][iblk[0]]>nlev_max:
                             nlev_max = self.nlev[irep][iblk[0]]
                     else:
