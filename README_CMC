@@ -32,6 +32,7 @@ cd rpnpy
 # export AFSISIO=${AFSISIO:-/home/binops/afsi/sio/env_ubuntu-12.04-amd64-64/afsisio}
 # export CMCGRIDF=${CMCGRIDF:-/fs/cetusops/fs1/prod/hubs/gridpt/dbase}
 # export ATM_MODEL_DFILES=${ATM_MODEL_DFILES:-/home/ordenv/ssm-domains9/release/gem-data_4.2.0/gem-data_4.2.0_all/share/data/dfiles}
+# rm -f .setenv.__extlib__.${ORDENV_PLAT}.dot
 # . ./.setenv.dot --dev
 . ./.setenv.dot
 export storage_model=${storage_model:-$TMPDIR}
@@ -70,6 +71,7 @@ cd rpnpy
 export RDENETWORK=cmc        ## CMC Network, ubuntu 14
 # export RDENETWORK=cmc_u12  ## CMC Network, ubuntu 12
 # export RDENETWORK=science  ## Science Network, ubuntu 14
+rm -f .setenv.__extlib__.${ORDENV_PLAT}.dot
 . ./.setenv.dot --dev
 
 export storage_model=${storage_model:-$TMPDIR}
@@ -79,6 +81,7 @@ rdemklink -v -f
 # make components_libs 
 # make components_abs 
 make -s forced_extlibdotfile
+. ./.setenv.dot
 # make sharedlibs
 # make sharedlibs_cp
 ## Note: Need to do "make extlibdotfile" on other arch before the next step
