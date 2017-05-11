@@ -50,7 +50,6 @@ def checkVGDlibPath(libfile):
     import os
     import glob
     LIBPATH_ALL = glob.glob(libfile)
-    print libfile,LIBPATH_ALL
     if len(LIBPATH_ALL) > 0:
         if os.path.isfile(LIBPATH_ALL[0]):
             return LIBPATH_ALL[0]

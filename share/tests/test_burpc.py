@@ -1221,11 +1221,25 @@ class RpnPyBurpc(unittest.TestCase):
                 'e_units': 'PA',
                 'e_bufrid': 10004,
                 'e_cvt': 1}
+            ok = True
             for k in a.keys():
-                self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
+                try:
+                    self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
+                except AssertionError:
+                    ok = False
+                    print('Should be equal {}: expected={}, got={}'.
+                          format(k, repr(a[k]), repr(ele[k])))
+            self.assertTrue(ok)
             ele = blk[0]
+            ok = True
             for k in a.keys():
-                self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
+                try:
+                    self.assertEqual(ele[k], a[k], 'Should be equal {}: expected={}, got={}'.format(k, repr(a[k]), repr(ele[k])))
+                except AssertionError:
+                    ok = False
+                    print('Should be equal {}: expected={}, got={}'.
+                          format(k, repr(a[k]), repr(ele[k])))
+            self.assertTrue(ok)
             try:
                 ele = blk[-1]
                 self.assertTrue(False, 'BurpcBlk.getelem() out of range should raise an error')

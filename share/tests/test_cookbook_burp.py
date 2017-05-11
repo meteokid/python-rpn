@@ -122,14 +122,15 @@ class RpnPyBurpcTests(unittest.TestCase):
 
     def test_ex1_read1_cmp(self):
         """burplib_c iweb doc example 1, compare results from 2 itf"""
-        import sys
+        import os, filecmp
         if len(testlist) > 0 and not '1' in testlist:
             return
-        logfile1 = "tmp/test_ex1_read1.log"
-        logfile2 = "tmp/test_ex1_read1_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex1_read1.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex1_read1_py.log")
         self._test_ex1_read1(logfile=logfile1)
         self._test_ex1_read1_py(logfile=logfile2)
-        self.assertTrue(self._filecmp(logfile1, logfile2))
+        self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 2 =============================================
 
@@ -256,16 +257,17 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     def test_ex2_readburp_cmp(self):
         """burplib_c iweb doc example 1, compare results from 2 itf"""
-        import sys
+        import os, filecmp
         if len(testlist) > 0 and not '2' in testlist:
             return
         if RPNPY_NOLONGTEST:
             return
-        logfile1 = "tmp/test_ex2_readburp.log"
-        logfile2 = "tmp/test_ex2_readburp_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex2_readburp.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex2_readburp_py.log")
         self._test_ex2_readburp(logfile=logfile1)
         self._test_ex2_readburp_py(logfile=logfile2)
-        self.assertTrue(self._filecmp(logfile1, logfile2))
+        self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
 
     #==== Example 3 =============================================
 
@@ -364,11 +366,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     def test_ex3_obs_cmp(self):
         """burplib_c iweb doc example 3, compare results from 2 itf"""
-        import filecmp
+        import os, filecmp
         if len(testlist) > 0 and not '3' in testlist:
             return
-        logfile1 = "tmp/test_ex3_obs.log"
-        logfile2 = "tmp/test_ex3_obs_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex3_obs.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex3_obs_py.log")
         self._test_ex3_obs(logfile=logfile1)
         self._test_ex3_obs_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
@@ -437,11 +440,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     def test_ex4_elements_cmp(self):
         """burplib_c iweb doc example 4, compare results from 2 itf"""
-        import filecmp
+        import os, filecmp
         if len(testlist) > 0 and not '4' in testlist:
             return
-        logfile1 = "tmp/test_ex4_elements.log"
-        logfile2 = "tmp/test_ex4_elements_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex4_elements.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex4_elements_py.log")
         self._test_ex4_elements(logfile=logfile1)
         self._test_ex4_elements_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2))
@@ -506,11 +510,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     def test_ex5_write1_cmp(self):
         """burplib_c iweb doc example 5, compare results from 2 itf"""
-        import filecmp
+        import os, filecmp
         if len(testlist) > 0 and not '5' in testlist:
             return
-        logfile1 = "tmp/test_ex5_write1.log"
-        logfile2 = "tmp/test_ex5_write1_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex5_write1.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex5_write1_py.log")
         self._test_ex5_write1(logfile=logfile1)
         self._test_ex5_write1_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))
@@ -793,11 +798,12 @@ bdesc  ={bdesc:6d}  btyp   ={btyp:6d}  nbit   ={nbit:6d}  datyp  ={datyp:6d}  bf
 
     def test_ex6_write2_cmp(self):
         """burplib_c iweb doc example 6, compare results from 2 itf"""
-        import filecmp
+        import os, filecmp
         if len(testlist) > 0 and not '6' in testlist:
             return
-        logfile1 = "tmp/test_ex6_write2.log"
-        logfile2 = "tmp/test_ex6_write2_py.log"
+        TMPDIR = os.getenv('TMPDIR', '/tmp')
+        logfile1 = os.path.join(TRMPDIR, "test_ex6_write2.log")
+        logfile2 = os.path.join(TRMPDIR, "test_ex6_write2_py.log")
         self._test_ex6_write2(logfile=logfile1)
         self._test_ex6_write2_py(logfile=logfile2)
         self.assertTrue(filecmp.cmp(logfile1, logfile2, shallow=False))

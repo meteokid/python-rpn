@@ -9,10 +9,10 @@
 
 """
  Module burpc is a ctypes import of burp_c's library (libburp_c_shared.so)
- 
+
  The burp_c_shared library is provided with the CMDA Libraries
  developed at CMC/CMDA
- 
+
  The burpc python module includes
  - python wrapper to main burp_c's C functions
  - helper functions
@@ -31,7 +31,7 @@
 from rpnpy.version import *
 
 __SUBMODULES__ = ['proto', 'const', 'base', 'brpobj']
-__all__ = ['loadBURPClib', 'libburpc', 'BURPC_VERSION', 'BURPC_LIBPATH',
+__all__ = ['load_burpc_lib', 'libburpc', 'BURPC_VERSION', 'BURPC_LIBPATH',
            'BurpcError'] + __SUBMODULES__
 
 ## BURPC_VERSION_DEFAULT = '_rpnpy'
@@ -43,7 +43,7 @@ class BurpcError(Exception):
     """
     pass
 
-def checkBURPClibPath(libfile):
+def check_burpc_libpath(libfile):
     """
     Return first matched filename for libfile wildcard
     Return None if no match
@@ -56,7 +56,7 @@ def checkBURPClibPath(libfile):
             return LIBPATH_ALL[0]
     return None
 
-def loadBURPClib(burpc_version=None):
+def load_burpc_lib(burpc_version=None):
     """
     Import libburp_c_shared.so using ctypes
 
@@ -70,7 +70,7 @@ def loadBURPClib(burpc_version=None):
        BURPC_VERSION (str)  : loaded libburp_c version
        BURPC_LIBPATH (str)  : path to loaded libburpc shared lib
        libburpc      (CDLL) : ctypes library object for libburpc.so
-       
+
     Library 'libburp_c_sharedVERSION.so' is searched into the Env.Var. paths:
        PYTHONPATH, EC_LD_LIBRARY_PATH, LD_LIBRARY_PATH
     """
@@ -86,13 +86,14 @@ def loadBURPClib(burpc_version=None):
         BURPC_VERSION = burpc_version
     burpc_libfile = 'libburp_c_shared' + BURPC_VERSION.strip() + '.so'
 
-    pylibpath   = os.getenv('PYTHONPATH','').split(':')
-    ldlibpath   = os.getenv('LD_LIBRARY_PATH','').split(':')
-    eclibpath   = os.getenv('EC_LD_LIBRARY_PATH','').split()
-    BURPC_LIBPATH = checkBURPClibPath(burpc_libfile)
+    pylibpath = os.getenv('PYTHONPATH', '').split(':')
+    ldlibpath = os.getenv('LD_LIBRARY_PATH', '').split(':')
+    eclibpath = os.getenv('EC_LD_LIBRARY_PATH', '').split()
+    BURPC_LIBPATH = check_burpc_libpath(burpc_libfile)
     if not BURPC_LIBPATH:
         for path in pylibpath + ldlibpath + eclibpath:
-            BURPC_LIBPATH = checkBURPClibPath(os.path.join(path.strip(), burpc_libfile))
+            BURPC_LIBPATH = check_burpc_libpath(os.path.join(path.strip(),
+                                                           burpc_libfile))
             if BURPC_LIBPATH:
                 break
 
@@ -109,8 +110,8 @@ def loadBURPClib(burpc_version=None):
                       BURPC_VERSION)
     return (BURPC_VERSION, BURPC_LIBPATH, libburpc)
 
-(BURPC_VERSION, BURPC_LIBPATH, libburpc) = loadBURPClib()
-    
+(BURPC_VERSION, BURPC_LIBPATH, libburpc) = load_burpc_lib()
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()

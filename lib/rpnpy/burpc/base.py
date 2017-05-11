@@ -9,7 +9,8 @@ Module burpc.base contains python wrapper to main burp_c C functions
 Notes:
     The functions described below are a very close ''port'' from the original
     [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] package.<br>
-    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
+    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]]
+    documentation for more details.
 
     For an OO API to burp files, see: rpnpy.burpc.brpobj
 
@@ -21,8 +22,8 @@ See Also:
     rpnpy.burpc.const
 """
 import ctypes as _ct
-import numpy  as _np
-import numpy.ctypeslib as _npc
+#import numpy  as _np
+#import numpy.ctypeslib as _npc
 from rpnpy.burpc import proto as _bp
 from rpnpy.burpc import const as _bc
 from rpnpy.burpc import brpobj as _bo
@@ -95,34 +96,62 @@ RPT_LNGR   = lambda rpt: _RPTPTR(rpt)[0].lngr
 ##  * since they are not used by anyone yet.
 ##  */
 
-# Set burp report handle
-def RPT_SetHANDLE(rpt, val): _RPTPTR(rpt)[0].handle = val
-# Set burp report temps
-def RPT_SetTEMPS (rpt, val): _RPTPTR(rpt)[0].temps = val
-# Set burp report flgs
-def RPT_SetFLGS  (rpt, val): _RPTPTR(rpt)[0].flgs
-# Set burp report stnid
-def RPT_SetSTNID (rpt, val): _bp.c_brp_setstnid(_RPTPTR(rpt), val)
-# Set burp report idtyp
-def RPT_SetIDTYP (rpt, val): _RPTPTR(rpt)[0].idtype = val
-# Set burp report lati
-def RPT_SetLATI  (rpt, val): _RPTPTR(rpt)[0].lati = val
-# Set burp report long
-def RPT_SetLONG  (rpt, val): _RPTPTR(rpt)[0].longi = val
-# Set burp report dx
-def RPT_SetDX    (rpt, val): _RPTPTR(rpt)[0].dx = val
-# Set burp report dy
-def RPT_SetDY    (rpt, val): _RPTPTR(rpt)[0].dy = val
-# Set burp report evel
-def RPT_SetELEV  (rpt, val): _RPTPTR(rpt)[0].elev = val
-# Set burp report drnd
-def RPT_SetDRND  (rpt, val): _RPTPTR(rpt)[0].drnd = val
-# Set burp report date
-def RPT_SetDATE  (rpt, val): _RPTPTR(rpt)[0].date = val
-# Set burp report oars
-def RPT_SetOARS  (rpt, val): _RPTPTR(rpt)[0].oars = val
-# Set burp report runn
-def RPT_SetRUNN  (rpt, val): _RPTPTR(rpt)[0].runn = val
+
+def RPT_SetHANDLE(rpt, val):
+    """Set burp report handle"""
+    _RPTPTR(rpt)[0].handle = val
+
+def RPT_SetTEMPS(rpt, val):
+    """Set burp report temps"""
+    _RPTPTR(rpt)[0].temps = val
+
+def RPT_SetFLGS(rpt, val):
+    """Set burp report flgs"""
+    _RPTPTR(rpt)[0].flgs = val
+
+def RPT_SetSTNID(rpt, val):
+    """Set burp report stnid"""
+    _bp.c_brp_setstnid(_RPTPTR(rpt), val)
+
+def RPT_SetIDTYP(rpt, val):
+    """Set burp report idtyp"""
+    _RPTPTR(rpt)[0].idtype = val
+
+def RPT_SetLATI(rpt, val):
+    """Set burp report lati"""
+    _RPTPTR(rpt)[0].lati = val
+
+def RPT_SetLONG(rpt, val):
+    """Set burp report long"""
+    _RPTPTR(rpt)[0].longi = val
+
+def RPT_SetDX(rpt, val):
+    """Set burp report dx"""
+    _RPTPTR(rpt)[0].dx = val
+
+def RPT_SetDY(rpt, val):
+    """Set burp report dy"""
+    _RPTPTR(rpt)[0].dy = val
+
+def RPT_SetELEV(rpt, val):
+    """Set burp report evel"""
+    _RPTPTR(rpt)[0].elev = val
+
+def RPT_SetDRND(rpt, val):
+    """Set burp report drnd"""
+    _RPTPTR(rpt)[0].drnd = val
+
+def RPT_SetDATE(rpt, val):
+    """Set burp report date"""
+    _RPTPTR(rpt)[0].date = val
+
+def RPT_SetOARS(rpt, val):
+    """Set burp report oars"""
+    _RPTPTR(rpt)[0].oars = val
+
+def RPT_SetRUNN(rpt, val):
+    """Set burp report runn"""
+    _RPTPTR(rpt)[0].runn = val
 
 
 ## /*
@@ -161,84 +190,124 @@ BLK_DATYP = lambda blk: _BLKPTR(blk)[0].datyp
 # Get burp block Data
 BLK_Data  = lambda blk: _BLKPTR(blk)[0].data
 # Get burp block DLSTELE
-BLK_DLSTELE= lambda blk,e : _BLKPTR(blk)[0].dlstele[e]
+BLK_DLSTELE= lambda blk, e: _BLKPTR(blk)[0].dlstele[e]
 # Get burp block LSTELE
-BLK_LSTELE = lambda blk,e : _BLKPTR(blk)[0].lstele[e]
+BLK_LSTELE = lambda blk, e: _BLKPTR(blk)[0].lstele[e]
 # Get burp block TBLVAL
-BLK_TBLVAL = lambda blk,e,v,t: _BLKPTR(blk)[0].tblval[e + _BLKPTR(blk)[0].nele*(v + (_BLKPTR(blk)[0].nval)*t)]
+BLK_TBLVAL = lambda blk, e, v, t: \
+    _BLKPTR(blk)[0].tblval[e + _BLKPTR(blk)[0].nele*(v+(_BLKPTR(blk)[0].nval)*t)]
 # Get burp block RVAL
-BLK_RVAL   = lambda blk,e,v,t: _BLKPTR(blk)[0].rval[e + _BLKPTR(blk)[0].nele*(v + (_BLKPTR(blk)[0].nval)*t)]
+BLK_RVAL   = lambda blk, e, v, t: \
+    _BLKPTR(blk)[0].rval[e + _BLKPTR(blk)[0].nele*(v+(_BLKPTR(blk)[0].nval)*t)]
 # Get burp block DVAL
-BLK_DVAL   = lambda blk,e,v,t: _BLKPTR(blk)[0].drval[e + _BLKPTR(blk)[0].nele*(v + (_BLKPTR(blk)[0].nval)*t)]
+BLK_DVAL   = lambda blk, e, v, t: \
+    _BLKPTR(blk)[0].drval[e + _BLKPTR(blk)[0].nele*(v+(_BLKPTR(blk)[0].nval)*t)]
 # Get burp block CHARVAL
-BLK_CHARVAL= lambda blk,l,c: _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c]
+BLK_CHARVAL= lambda blk, l, c: \
+    _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c]
 # Get burp block STORE_TYPE
 BLK_STORE_TYPE = lambda blk: _BLKPTR(blk)[0].store_type
 
 ## /*
 ##  * Macros for setting values of a Block
-##  * acces to field in the BURP_BLK structure should be accessed
+##  * acces to field in the BURP_BLK str = valucture should be accessed
 ##  * through these Macros Only
 ##  * access without these macros would be at your own risk
 ##  */
 
-# Set burp block NELE
-def BLK_SetNELE (blk, val): _BLKPTR(blk)[0].nele = val
+def BLK_SetNELE(blk, val):
+    """Set burp block NELE"""
+    _BLKPTR(blk)[0].nele = val
 # Set burp block NVAL
-def BLK_SetNVAL (blk, val): _BLKPTR(blk)[0].nval = val
+def BLK_SetNVAL(blk, val):
+    """ """
+    _BLKPTR(blk)[0].nval = val
 # Set burp block NT
-def BLK_SetNT   (blk, val): _BLKPTR(blk)[0].nt = val
-# Set burp block BKNO
-def BLK_SetBKNO (blk, val): _BLKPTR(blk)[0].bkno = val
-# Set burp block BFAM
-def BLK_SetBFAM (blk, val): _BLKPTR(blk)[0].bfam = val
-# Set burp block BDESC
-def BLK_SetBDESC(blk, val): _BLKPTR(blk)[0].bdesc = val
-# Set burp block BTYP
-def BLK_SetBTYP (blk, val): _BLKPTR(blk)[0].btyp = val
-# Set burp block BKNAT
-def BLK_SetBKNAT(blk, val): _BLKPTR(blk)[0].bknat = val
-# Set burp block BKTYP
-def BLK_SetBKTYP(blk, val): _BLKPTR(blk)[0].bktyp = val
-# Set burp block BKSTP
-def BLK_SetBKSTP(blk, val): _BLKPTR(blk)[0].bkstp = val
-# Set burp block NBIT
-def BLK_SetNBIT (blk, val): _BLKPTR(blk)[0].nbit = val
-# Set burp block DATYP
-def BLK_SetDATYP(blk, val): _BLKPTR(blk)[0].datyp = val
-# Set burp block DVAL
-def BLK_SetDVAL(blk,e,v,t,val):
-    _BLKPTR(blk)[0].drval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
-# Set burp block TBLVAL
-def BLK_SetTBLVAL(blk,e,v,t,val):
-    _BLKPTR(blk)[0].tblval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
-# Set burp block RVAL
-def BLK_SetRVAL(blk,e,v,t,val):
-    _BLKPTR(blk)[0].rval[e + _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
-# Set burp block CVAL
-def BLK_SetCVAL(blk,l,c,val):
+def BLK_SetNT(blk, val):
+    """ """
+    _BLKPTR(blk)[0].nt = val
+
+def BLK_SetBKNO(blk, val):
+    """Set burp block BKNO"""
+    _BLKPTR(blk)[0].bkno = val
+
+def BLK_SetBFAM(blk, val):
+    """Set burp block BFAM"""
+    _BLKPTR(blk)[0].bfam = val
+
+def BLK_SetBDESC(blk, val):
+    """Set burp block BDESC"""
+    _BLKPTR(blk)[0].bdesc = val
+
+def BLK_SetBTYP(blk, val):
+    """Set burp block BTYP"""
+    _BLKPTR(blk)[0].btyp = val
+
+def BLK_SetBKNAT(blk, val):
+    """Set burp block BKNAT"""
+    _BLKPTR(blk)[0].bknat = val
+
+def BLK_SetBKTYP(blk, val):
+    """Set burp block BKTYP"""
+    _BLKPTR(blk)[0].bktyp = val
+
+def BLK_SetBKSTP(blk, val):
+    """Set burp block BKSTP"""
+    _BLKPTR(blk)[0].bkstp = val
+
+def BLK_SetNBIT(blk, val):
+    """Set burp block NBIT"""
+    _BLKPTR(blk)[0].nbit = val
+
+def BLK_SetDATYP(blk, val):
+    """Set burp block DATYP"""
+    _BLKPTR(blk)[0].datyp = val
+
+def BLK_SetDVAL(blk, e, v, t, val):
+    """Set burp block DVAL"""
+    _BLKPTR(blk)[0].drval[e + \
+            _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
+
+def BLK_SetTBLVAL(blk, e, v, t, val):
+    """Set burp block TBLVAL"""
+    _BLKPTR(blk)[0].tblval[e + \
+            _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
+
+def BLK_SetRVAL(blk, e, v, t, val):
+    """Set burp block RVAL"""
+    _BLKPTR(blk)[0].rval[e + \
+            _BLKPTR(blk)[0].nele * (v + _BLKPTR(blk)[0].nval * t)] = val
+
+def BLK_SetCVAL(blk, l, c, val):
+    """Set burp block CVAL"""
     _BLKPTR(blk)[0].charval[l * _BLKPTR(blk)[0].nt + c] = val
-# Set burp block LSTELE
-def BLK_SetLSTELE(blk,i,val): _BLKPTR(blk)[0].lstele[i] = val
-# Set burp block DLSTELE
-def BLK_SetDLSTELE(blk,i,val): _BLKPTR(blk)[0].dlstele[i] = val
-# Set burp block STORE_TYPE
-def BLK_SetSTORE_TYPE(blk,val): _BLKPTR(blk)[0].store_type = val
+
+def BLK_SetLSTELE(blk, i, val):
+    """Set burp block LSTELE"""
+    _BLKPTR(blk)[0].lstele[i] = val
+
+def BLK_SetDLSTELE(blk, i, val):
+    """Set burp block DLSTELE"""
+    _BLKPTR(blk)[0].dlstele[i] = val
+
+def BLK_SetSTORE_TYPE(blk, val):
+    """Set burp block STORE_TYPE"""
+    _BLKPTR(blk)[0].store_type = val
 
 
-def brp_SetOptFloat(optName, optValue):
+def brp_SetOptFloat(name, value):
     """
     Set BURP file float option (alias to brp_opt)
 
-    brp_SetOptFloat(optName, optValue)
+    brp_SetOptFloat(name, value)
 
     Args:
-        optName  : name of option to be set
-        optValue : value to be set (float)
+        name  : name of option to be set
+        value : value to be set (float)
     Returns:
         None
     Raises:
-        KeyError   on unknown optName
+        KeyError   on unknown name
         TypeError  on wrong input arg types
         BurpError  on any other error
 
@@ -248,22 +317,22 @@ def brp_SetOptFloat(optName, optValue):
         rpnpy.librmn.burp_const
         rpnpy.burpc.const
     """
-    brp_opt(optName, optValue)
+    brp_opt(name, value)
 
 
-def brp_SetOptChar(optName, optValue):
+def brp_SetOptChar(name, value):
     """
     Set BURP file char option (alias to brp_opt)
 
-    brp_SetOptChar(optName, optValue)
+    brp_SetOptChar(name, value)
 
     Args:
-        optName  : name of option to be set
-        optValue : value to be set (char)
+        name  : name of option to be set
+        value : value to be set (char)
     Returns:
         None
     Raises:
-        KeyError   on unknown optName
+        KeyError   on unknown name
         TypeError  on wrong input arg types
         BurpError  on any other error
 
@@ -273,7 +342,7 @@ def brp_SetOptChar(optName, optValue):
         rpnpy.librmn.burp_const
         rpnpy.burpc.const
     """
-    brp_opt(optName, optValue)
+    brp_opt(name, value)
 
 
 def brp_msngval():
@@ -293,28 +362,28 @@ def brp_msngval():
     return _bp.c_brp_msngval()
 
 
-def brp_opt(optName, optValue=None):
+def brp_opt(name, value=None):
     """
     Set/Get BURP file options
 
-    brp_opt(optName, optValue)
+    brp_opt(name, value)
 
     Args:
-        optName  : name of option to be set or printed
-                   or one of these constants:
-                   BURPOP_MISSING, BURPOP_MSGLVL
-        optValue : value to be set (float or string) (optional)
-                   If not set or is None mrfopt will get the value
-                   otherwise mrfopt will set to the provided value
-                   for optName=BURPOP_MISSING:
-                      a real value for missing data
-                   for optName=BURPOP_MSGLVL, one of these constants:
-                      BURPOP_MSG_TRIVIAL,   BURPOP_MSG_INFO,  BURPOP_MSG_WARNING,
-                      BURPOP_MSG_ERROR,     BURPOP_MSG_FATAL, BURPOP_MSG_SYSTEM
+        name  : name of option to be set or printed
+                or one of these constants:
+                BURPOP_MISSING, BURPOP_MSGLVL
+        value : value to be set (float or string) (optional)
+                If not set or is None mrfopt will get the value
+                otherwise mrfopt will set to the provided value
+                for name=BURPOP_MISSING:
+                   a real value for missing data
+                for name=BURPOP_MSGLVL, one of these constants:
+                   BURPOP_MSG_TRIVIAL,   BURPOP_MSG_INFO,  BURPOP_MSG_WARNING,
+                   BURPOP_MSG_ERROR,     BURPOP_MSG_FATAL, BURPOP_MSG_SYSTEM
     Returns:
-        str or float, optValue
+        str or float, value
     Raises:
-        KeyError   on unknown optName
+        KeyError   on unknown name
         TypeError  on wrong input arg types
         BurpError  on any other error
 
@@ -330,27 +399,27 @@ def brp_opt(optName, optValue=None):
         rpnpy.librmn.burp_const
         rpnpy.burpc.const
     """
-    if not optName in (_rmn.BURPOP_MISSING, _rmn.BURPOP_MSGLVL):
-        raise KeyError("Uknown optName: {}".format(optName))
+    if not name in (_rmn.BURPOP_MISSING, _rmn.BURPOP_MSGLVL):
+        raise KeyError("Uknown name: {}".format(name))
 
-    if optValue is None:
-        if optName == _rmn.BURPOP_MISSING:
+    if value is None:
+        if name == _rmn.BURPOP_MISSING:
             return _bp.c_brp_msngval()
         else:
-            raise KeyError("Cannot get value for optName: {}".format(optName))
+            raise KeyError("Cannot get value for name: {}".format(name))
 
-    if isinstance(optValue, str):
-        istat = _bp.c_brp_SetOptChar(optName, optValue)
+    if isinstance(value, str):
+        istat = _bp.c_brp_SetOptChar(name, value)
         if istat != 0:
-            raise BurpcError('c_brp_SetOptChar: {}={}'.format(optName,optValue))
-    elif isinstance(optValue, float):
-        istat = _bp.c_brp_SetOptFloat(optName, optValue)
+            raise BurpcError('c_brp_SetOptChar: {}={}'.format(name, value))
+    elif isinstance(value, float):
+        istat = _bp.c_brp_SetOptFloat(name, value)
         if istat != 0:
-            raise BurpcError('c_mrfopr:{}={}'.format(optName,optValue), istat)
+            raise BurpcError('c_mrfopr:{}={}'.format(name, value), istat)
     else:
-        raise TypeError("Cannot set optValue of type: {0} {1}"\
-                        .format(type(optValue), repr(optValue)))
-    return optValue
+        raise TypeError("Cannot set value of type: {0} {1}"\
+                        .format(type(value), repr(value)))
+    return value
 
 
 def brp_open(filename, filemode=_bc.BRP_FILE_READ, funit=0, getnbr=False):
@@ -943,8 +1012,8 @@ def brp_safe_convertblk(blk, mode=_bc.BRP_MKSA_to_BUFR):
               as obtained from brp_newblk()
         mode: one of MKSA_to_BUFR, BUFR_to_MKSA
               if BLK_STORE_TYPE == STORE_FLOAT then
-              MKSA_to_BUFR would convert from rval to tblval 
-              BUFR_to_MKSA would convert from tblval to rval 
+              MKSA_to_BUFR would convert from rval to tblval
+              BUFR_to_MKSA would convert from tblval to rval
     Return:
         Converted blk provided as input [ctypes.POINTER(BURP_RPT)]
     Raises:
@@ -1101,7 +1170,7 @@ def brp_searchdlste(code, blk):
     pblk = _BLKPTR(blk)
     if not isinstance(pblk, _ct.POINTER(_bp.BURP_BLK)):
         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
-    return c_brp_searchdlste(code, pblk)
+    return _bp.c_brp_searchdlste(code, pblk)
 
 ##---- read in data -----------------------------------------------------
 
@@ -1754,7 +1823,7 @@ def brp_delrpt(rpt):
     prpt = _RPTPTR(rpt)
     if not isinstance(prpt, _ct.POINTER(_bp.BURP_RPT)):
         raise TypeError('Cannot use rpt or type={}'+str(type(rpt)))
-    if _bp.c_brp_delrpt(prpt) <0:
+    if _bp.c_brp_delrpt(prpt) < 0:
         raise BurpcError('Problem in c_brp_delrpt')
 
 
@@ -1793,7 +1862,7 @@ def brp_delblk(rpt, blk):
     pblk = _BLKPTR(blk)
     if not isinstance(pblk, _ct.POINTER(_bp.BURP_BLK)):
         raise TypeError('Cannot use blk or type={}'+str(type(blk)))
-    if _bp.c_brp_delblk(prpt, pblk) <0:
+    if _bp.c_brp_delblk(prpt, pblk) < 0:
         raise BurpcError('Problem in c_brp_delblk')
     return rpt
 

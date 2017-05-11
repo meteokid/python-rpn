@@ -7,7 +7,7 @@
 
 """
 Module librmn is a ctypes import of librmnshared.so
- 
+
 The librmn.proto python module includes ctypes prototypes for many
 librmn C functions
 
@@ -26,7 +26,7 @@ Warning:
 Notes:
     The functions described below are a very close ''port'' from the original
     [[librmn]]'s [[Librmn/FSTDfunctions|FSTD]] package.<br>
-    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]] 
+    You may want to refer to the [[Librmn/FSTDfunctions|FSTD]]
     documentation for more details.
 
 See Also:
@@ -70,7 +70,7 @@ Details:
     c_wkoffit(nom, l1):
         Return a code for the file type
         Proto:
-           wordint c_wkoffit(char *nom, int l1) 
+           wordint c_wkoffit(char *nom, int l1)
         Args:
            nom  (str) : (I) file path/name
            l1   (int) : (I) length of nom
@@ -315,7 +315,7 @@ Details:
                 out - dat2 - date of the printable date (yyyymmdd)
                 out - dat3 - time of the printable date (hhmmsshh)
                  in - mode - set to -7
-                 
+
             Old Style Date Array is composed of 14 elements:
                 0 : Day of the week (1=Sunday, ..., 7=Saturday
                 1 : Month (1=Jan, ..., 12=Dec)
@@ -428,7 +428,7 @@ Details:
              liste, infon, nmax)
         Locates all the records that matches the research keys
         Proto:
-            int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev, 
+            int c_fstinl(int iun, int *ni, int *nj, int *nk, int datev,
                          char *etiket, int ip1, int ip2, int ip3,
                          char *typvar, char *nomvar,
                          word *liste, int *infon, int nmax)
@@ -503,7 +503,7 @@ Details:
             n     : (I) size of liste (int)
         Returns:
             int, zero successful, non-zero otherwise
-    
+
     c_fstluk(field, handle, ni, nj, nk)
         Read the record at position given by handle.
         Proto:
@@ -584,7 +584,7 @@ Details:
            int, zero successful, non-zero otherwise
 
     c_fstprm(handle, dateo, deet, npas, ni, nj, nk, nbits, datyp,
-             ip1, ip2, ip3, typvar, nomvar, etiket, 
+             ip1, ip2, ip3, typvar, nomvar, etiket,
              grtyp, ig1, ig2, ig3, ig4,
              swa, lng, dltf, ubc, extra1, extra2, extra3)
         Get all the description informations of the record.
@@ -640,7 +640,7 @@ Details:
             IN  kind           level kind as defined in convip
         Returns:
             int, ip1new on success, -1 on error
-            
+
     c_ip2_all(level, kind)
         Generates all possible coded ip2 values for a given level
         Proto:
@@ -667,7 +667,7 @@ Details:
             int c_ip1_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip1new on success, -1 on error
 
@@ -677,7 +677,7 @@ Details:
             int c_ip2_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip2new on success, -1 on error
 
@@ -687,7 +687,7 @@ Details:
             int c_ip3_val(float level, int kind)
         Args:
             IN  level          ip level (float value)
-            IN  kind           level kind as defined in convip   
+            IN  kind           level kind as defined in convip
         Returns:
             int, ip3new on success, -1 on error
 
@@ -704,7 +704,7 @@ Details:
         Returns:
             int, ... TODO ...
 </source>
-        
+
 === EXTERNAL FUNCTIONS in fstd98/convip_plus and fstd98/convert_ip123 ===
 
 <source lang="python">
@@ -725,7 +725,7 @@ Details:
                 5, p est en coordonnee hybride          (0.0 -> 1.0)
                 6, p est en coordonnee theta            (1 -> 200, 000)
                 10, p represente le temps en heure      (0.0 -> 1.0e10)
-                15, reserve (entiers)                                   
+                15, reserve (entiers)
                 17, p indice x de la matrice de conversion
                                                         (1.0 -> 1.0e10)
                     (partage avec kind=1 a cause du range exclusif
@@ -754,7 +754,7 @@ Details:
             rp2, kind2  : result of ip2v decoding
             rp3, kind3  : result of ip3v decoding
         Returns:
-            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
+            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error
 
     c_ConvertPKtoIP(IP1, IP2, IP3, P1, kkind1, P2, kkind2, P3, kkind3)
         Convert/encode kind + real value into ip1, ip2, ip3
@@ -773,7 +773,7 @@ Details:
             ip1, ip2, ip3 : will contain the encoded values in case of success,
                           and are undefined otherwise
         Returns:
-            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error 
+            int, 0 if ok, >0 on guessed the value, 32 on warning, 64 on error
 
     c_EncodeIp(ip1, ip2, ip3, rp1, rp2, rp3)
         Produce a valid (ip1, ip2, ip3) triplet from (real value, kind) pairs
@@ -847,7 +847,7 @@ Details:
         Proto:
         wordint c_ezdefset(wordint gdout, wordint gdin)
         Args:
-        
+
         Returns:
         int, gdid on success, -1 on error
 
@@ -918,7 +918,7 @@ Details:
         Proto:
             ... TODO ...
         Args:
-            ... TODO ...   
+            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -929,7 +929,7 @@ Details:
            wordint c_gdxyfll_s(wordint gdid, ftnfloat *x, ftnfloat *y,
                                ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...   
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -941,7 +941,7 @@ Details:
            wordint c_gdllfxy(wordint gdid, ftnfloat *lat, ftnfloat *lon,
                              ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -965,7 +965,7 @@ Details:
            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
-   
+
     c_gdllsval(gdid, zout, zin, lat, lon, n)
         Scalar interpolation of points located at lat-lon coordinates.
         ier = c_gdllsval(gdid, zout, zin, lat, lon, n)
@@ -973,7 +973,7 @@ Details:
             wordint c_gdllsval(wordint gdid, ftnfloat *zout, ftnfloat *zin,
                                ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-            ... TODO ...  
+            ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -984,7 +984,7 @@ Details:
            wordint c_gdxysval(wordint gdin, ftnfloat *zout, ftnfloat *zin,
                               ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -994,10 +994,10 @@ Details:
         ier = c_gdllvval(gdid, uuout, vvout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllvval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
-                       ftnfloat *uuin, ftnfloat *vvin, 
+                       ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1010,7 +1010,7 @@ Details:
                        ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1020,10 +1020,10 @@ Details:
         ier = c_gdllwdval(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
         Proto:
            wordint c_gdllwdval(wordint gdid, ftnfloat *uuout, ftnfloat *vvout,
-                       ftnfloat *uuin, ftnfloat *vvin, 
+                       ftnfloat *uuin, ftnfloat *vvin,
                        ftnfloat *lat, ftnfloat *lon, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1036,7 +1036,7 @@ Details:
                                 ftnfloat *uuin, ftnfloat *vvin,
                                 ftnfloat *x, ftnfloat *y, wordint n)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1050,7 +1050,7 @@ Details:
                                ftnfloat *uullin, ftnfloat *vvllin,
                                ftnfloat *latin, ftnfloat *lonin, wordint npts)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1059,10 +1059,10 @@ Details:
         ier = c_gdwdfuv(gdid, spdout, wdout, uuin, vvin, lat, lon, n)
         Proto:
             wordint c_gdwdfuv(wordint gdid, ftnfloat *spd_out, ftnfloat *wd_out,
-                              ftnfloat *uuin, ftnfloat *vvin, 
+                              ftnfloat *uuin, ftnfloat *vvin,
                               ftnfloat *latin, ftnfloat *lonin, wordint npts)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1072,9 +1072,9 @@ Details:
         Proto:
             int c_gdsetmask(int gdid, int *mask)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
-           int, 0 on success, -1 on error   
+           int, 0 on success, -1 on error
 
     c_gdgetmask(gdid, mask)
         Returns the mask associated with grid 'gdid'
@@ -1082,9 +1082,9 @@ Details:
         Proto:
             int c_gdgetmask(int gdid, int *mask)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
-           int, 0 on success, -1 on error   
+           int, 0 on success, -1 on error
 
     c_ezsint_mdm(zout, mask_out, zin, mask_in)
         Scalar interpolation, using the source field and an associated mask.
@@ -1094,7 +1094,7 @@ Details:
             int c_ezsint_mdm(float *zout, int *mask_out, float *zin,
                              int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1106,7 +1106,7 @@ Details:
             int c_ezuvint_mdm(float *uuout, float *vvout, int *mask_out,
                               float *uuin, float *vvin, int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1117,7 +1117,7 @@ Details:
         Proto:
             int c_ezsint_mask(int *mask_out, int *mask_in)
         Args:
-           ... TODO ...  
+           ... TODO ...
         Returns:
            int, 0 on success, -1 on error
 
@@ -1129,7 +1129,7 @@ Details:
                  wordint ig1, wordint ig2, wordint ig3, wordint ig4,
                  wordint iunit)
         Args:
-           ... TODO ... 
+           ... TODO ...
         Returns:
            int, gdid on success, <0 on error
 
@@ -1186,14 +1186,14 @@ Details:
         Returns:
            int, 0 on success, -1 on error
 
-    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref, 
+    c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref,
               ig1ref, ig2ref, ig3ref, ig4ref)
         Get extended grid parameters
         ier = c_ezgxprm(gdid, ni, nj, grtyp, ig1, ig2, ig3, ig4, grref,
                         ig1ref, ig2ref, ig3ref, ig4ref)
         Proto:
-           wordint c_ezgxprm(wordint gdid, wordint *ni, wordint *nj, 
-                char *grtyp, wordint *ig1, wordint *ig2, 
+           wordint c_ezgxprm(wordint gdid, wordint *ni, wordint *nj,
+                char *grtyp, wordint *ig1, wordint *ig2,
                 wordint *ig3, wordint *ig4,
                 char *grref, wordint *ig1ref, wordint *ig2ref,
                 wordint *ig3ref, wordint *ig4ref);
@@ -1272,7 +1272,7 @@ Details:
            value  (str) :
         Returns:
         int, 0 on success, -1 on error
-    
+
     c_ezsetval(option, value)
         Sets a floating point numerical option for the package
         ier = c_ezsetval('option', value)
@@ -1283,7 +1283,7 @@ Details:
            value  (float) :
         Returns:
            int, 0 on success, -1 on error
-    
+
     c_gdrls(gdid)
         Frees a previously allocated grid
         ier = c_gdrls(gdid)
@@ -1322,7 +1322,7 @@ class FLOAT_IP(_ct.Structure):
        v1  : (float) 1st value of the IP
        v2  : (float) 2nd value of the IP
        kind: (int)   IP kind
-    
+
     Examples:
     >>> p  = FLOAT_IP(100., 100., rpnpy.librmn.const.LEVEL_KIND_PMB)
     >>> dp = FLOAT_IP(100., 200., rpnpy.librmn.const.LEVEL_KIND_PMB)
@@ -1347,7 +1347,7 @@ class FLOAT_IP(_ct.Structure):
     def toList(self):
         """
         Returns a tuple with FLOAT_IP's 3 attributes: v1, v2, kind
-        
+
         Returns:
            (v1,v2,kind)
         """
@@ -1452,11 +1452,11 @@ librmn.newdate_.restype  = _ct.c_int
 def f_newdate(dat1, dat2, dat3, mode):
     arraymode = False
     if isinstance(mode, _ct.c_int):
-       arraymode = (mode.value in (4, -4))
+        arraymode = (mode.value in (4, -4))
     elif isinstance(mode, int):
-       arraymode = (mode in (4, -4))
+        arraymode = (mode in (4, -4))
     #else: #TODO: mode is a byref()... need to be dereferenced...
-    if arraymode: 
+    if arraymode:
         if not isinstance(dat2, _np.ndarray):
             raise TypeError('f_newdate: with mode==4, dat2 must be a numpy.ndarray, got {}'.format(type(dat2)))
         if dat2.size != 14:
@@ -1471,9 +1471,9 @@ def f_newdate(dat1, dat2, dat3, mode):
                                     _ct.POINTER(_ct.c_int),
                                     _ct.POINTER(_ct.c_int))
     if isinstance(mode, _ct.c_int):
-       return librmn.newdate_(dat1, dat2, dat3, _ct.byref(mode))
+        return librmn.newdate_(dat1, dat2, dat3, _ct.byref(mode))
     else:
-       return librmn.newdate_(dat1, dat2, dat3, mode)
+        return librmn.newdate_(dat1, dat2, dat3, mode)
 
 #--- fstd98/fstd98 --------------------------------------------------
 
@@ -2156,7 +2156,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ##    int, 0 on success, -1 on error
 ## """
 
- 
+
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
@@ -2206,7 +2206,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ##    int, 0 on success, -1 on error
 ## """
 
- 
+
 ## librmn..argtypes = ()
 ## librmn..restype  = _ct.c_int
 ##  = librmn.
@@ -2379,7 +2379,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 ## int c_wb_free(WhiteBoard *WB) {
 
 ## /*
-##   get the data associated with a whiteboard entry 
+##   get the data associated with a whiteboard entry
 ##   name   : pointer to character string containing name of key
 ##            (length MUST be supplied in Lname)
 ##   Type   : character value R/I/L/C , key type  real/inetger/logical/character
@@ -2475,7 +2475,7 @@ c_gdgxpndaxes = librmn.c_gdgxpndaxes
 
 if __name__ == "__main__":
     print(str(c_fst_version()))
-    
+
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

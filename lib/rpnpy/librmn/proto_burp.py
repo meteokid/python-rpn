@@ -471,7 +471,7 @@ Details:
 ##  *   blkno. If blkno = 0 search starts from the beginning.
 ##  *  IN   buffer vector to contain the report
 ##  *  IN   bfam   block family (12 bits, bdesc no more used)
-##  *  IN   bdesc  kept for backward compatibility 
+##  *  IN   bdesc  kept for backward compatibility
 ##  *  IN   btyp   block type
 ##  *  in   bkno   number of blocks in buf
 ## int c_mrbloc(void *buffer, int bfam, int bdesc, int btyp, int blkno)
@@ -548,7 +548,7 @@ Details:
 ## ***S/P - MRBTBL - REMPLIR UN TABLEAU A PARTIR DE TABLEBURP
 ## *     SOUS-PROGRAMME SERVANT A REMPLIR LE TABLEAU TBLBURP
 ## *     A PARTIR DES DESCRIPTIONS D'ELEMENTS TROUVEES DANS
-## *     LE FICHIER TABLEBURP.  POUR CHAQUE ELEMENT, 
+## *     LE FICHIER TABLEBURP.  POUR CHAQUE ELEMENT,
 ## *     ON RETOURNE:
 ## *        - FACTEUR D'ECHELLE
 ## *        - VALEUR DE REFERENCE
@@ -617,14 +617,14 @@ Details:
 ##      X                TEMPS,  FLGS,  SUP,   NSUP,     LONENR)
 ##       IMPLICIT NONE
 ##       INTEGER  MRFPRM, NSUP, IDTYP, LAT, DX, DATE, SUP(*), LONENR,
-##      X         HANDLE, FLGS, TEMPS, LON, DY 
+##      X         HANDLE, FLGS, TEMPS, LON, DY
 ##       CHARACTER*9 STNID
 ## *OBJET( MRFPRM )
 ## *     ALLER CHERCHER LES PARAMETRES PRINCIPAUX DE L'ENREGISTREMENT
 ## *     DONT LE POINTEUR EST HANDLE.
 ## *ARGUMENTS
 ## *     HANDLE   ENTREE  POINTEUR A L'ENREGISTREMENT
-## *     NSUP        "    NOMBRE DE DESCRIPTEURS SUPPLEMENTAIRES 
+## *     NSUP        "    NOMBRE DE DESCRIPTEURS SUPPLEMENTAIRES
 ## *                      (DOIT ETRE EGAL A ZERO POUR VERSION 1990)
 ## *     STNID    SORTIE  IDENTIFICATEUR DE LA STATION
 ## *     IDTYP       "    TYPE DE RAPPORT
@@ -647,7 +647,7 @@ import numpy  as _np
 import numpy.ctypeslib as _npc
 
 from . import librmn
-from rpnpy.librmn import proto as _rp
+# from rpnpy.librmn import proto as _rp
 
 librmn.c_mrfgoc.argtypes = (_ct.c_char_p, _ct.c_char_p)
 librmn.c_mrfgoc.restype  = _ct.c_int
@@ -762,7 +762,8 @@ c_mrbtyp = librmn.c_mrbtyp
 librmn.c_mrbxtr.restype  = _ct.c_int
 def c_mrbxtr(buf, bkno, lstele, tblval):
     if not isinstance(tblval, _np.ndarray):
-        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".format(repr(type(tblval))))
+        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".
+                        format(repr(type(tblval))))
     librmn.c_mrbxtr.argtypes = (
         _npc.ndpointer(dtype=_np.int32),   ## void *buffer,
         _ct.c_int,                         ## int bkno,
@@ -789,9 +790,11 @@ librmn.c_mrbcvt.restype  = _ct.c_int
 ## c_mrbcvt = librmn.c_mrbcvt
 def c_mrbcvt(lstele, tblval, rval, nele, nval, nt, mode):
     if not isinstance(tblval, _np.ndarray):
-        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".format(repr(type(tblval))))
+        raise TypeError("tblval, expecting type numpy.ndarray, got {0}".
+                        format(repr(type(tblval))))
     if not isinstance(rval, _np.ndarray):
-        raise TypeError("rval, expecting type numpy.ndarray, got {0}".format(repr(type(rval))))
+        raise TypeError("rval, expecting type numpy.ndarray, got {0}".
+                        format(repr(type(rval))))
     librmn.c_mrbcvt.argtypes = (
         _npc.ndpointer(dtype=_np.int32),    ## int lstele[]
         _npc.ndpointer(dtype=tblval.dtype), ## int tblval[]
@@ -829,12 +832,14 @@ c_mrbadd_argtypes_float = (_npc.ndpointer(dtype=_np.int32), _ct.POINTER(_ct.c_in
     _ct.POINTER(_ct.c_int), _ct.c_int, _npc.ndpointer(dtype=_np.int32),
     _npc.ndpointer(dtype=_np.float32))
 librmn.c_mrbadd.restype = _ct.c_int
-def c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp, lstele, tblval):
+def c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0,
+             datyp, lstele, tblval):
     if tblval.dtype == _np.dtype('int32'):
         librmn.c_mrbadd.argtypes = c_mrbadd_argtypes_int
     elif tblval.dtype == _np.dtype('float32'):
         librmn.c_mrbadd.argtypes = c_mrbadd_argtypes_float
-    return librmn.c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit, bit0, datyp, lstele, tblval)
+    return librmn.c_mrbadd(buf, bkno, nele, nval, nt, bfam, bdesc, btyp, nbit,
+                           bit0, datyp, lstele, tblval)
 
 librmn.c_mrbdel.argtypes = (_npc.ndpointer(dtype=_np.int32), _ct.c_int)
 librmn.c_mrbdel.restype = _ct.c_int

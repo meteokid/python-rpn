@@ -9,7 +9,7 @@
 
 """
 Module vgd is a ctypes import of vgrid's library (libdescrip.so)
- 
+
 The vgd.proto python module includes ctypes prototypes for many
 vgrid's libdescrip C functions.
 
@@ -68,7 +68,7 @@ Details:
 
  c_vgd_new_gen(self, kind, version, hyb, rcoef1, rcoef2, ptop_8, pref_8,
                ptop_out_8, ip1, ip2, dhm, dht):
-    Build a VGridDescriptor instance initialized with provided info 
+    Build a VGridDescriptor instance initialized with provided info
     Proto:
        int Cvgd_new_gen(vgrid_descriptor **self, int kind, int version,
                         float *hyb, int size_hyb, float *rcoef1, float *rcoef2,
@@ -80,15 +80,15 @@ Details:
                This is obtained with c_vgd_construct
        kind     (int) : vgrid kind (I)
        version  (int) : vgrid version (I)
-       hyb      (float array) : 
-       size_hyb (int) : 
+       hyb      (float array) :
+       size_hyb (int) :
        rcoef1   (float ptr) :
        rcoef2   (float ptr) :
        ptop_8   (double ptr) :
        pref_8   (double ptr) :
        ptop_out_8 (double ptr) :
-       ip1      (int) : 
-       ip2      (int) : 
+       ip1      (int) :
+       ip2      (int) :
        dhm      (float ptr) :
        dht      (float ptr) :
     Returns:
@@ -104,7 +104,7 @@ Details:
     Proto:
        int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
                                int nk, int ip1, int ip2, double *ptop_8,
-                               double *pref_8, float *rcoef1, float *rcoef2, 
+                               double *pref_8, float *rcoef1, float *rcoef2,
                                double *a_m_8, double *b_m_8, double *a_t_8,
                                double *b_t_8, int *ip1_m, int *ip1_t,
                                int nl_m, int nl_t);
@@ -128,7 +128,7 @@ Details:
        self (POINTER(POINTER(VGridDescriptor))):
                A VGridDescriptor obj to be filled with provided vgrid values (I/O)
                This is obtained with c_vgd_construct
-       table   (POINTER(c_double)) : 
+       table   (POINTER(c_double)) :
        ni      (int) :
        nj      (int) :
        nk      (int) :
@@ -138,7 +138,7 @@ Details:
        c_vgd_construct
        c_vgd_free
        c_vgd_get_double_3d
- 
+
  c_vgd_write_desc(self, unit):
     Write vgrid descriptor in a previously opened RPN standard file
     Proto:
@@ -169,15 +169,15 @@ Details:
        c_vgd_new_gen
        c_vgd_new_build_vert
        c_vgd_new_from_table
- 
+
  c_vgd_vgdcmp(vgd1, vgd2):
     Test if two vgrid descriptors are equal,
     Returns 0 if they are the same like String function strcmp
     Proto:
        int Cvgd_vgdcmp(vgrid_descriptor *vgd1, vgrid_descriptor *vgd2);
     Args:
-       vgd1 (VGridDescriptor ref) : (I) 
-       vgd2 (VGridDescriptor ref) : (I) 
+       vgd1 (VGridDescriptor ref) : (I)
+       vgd2 (VGridDescriptor ref) : (I)
     Returns:
        int, 0 if the 2 VGridDescriptor are the same
 
@@ -227,7 +227,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_int(self, key, value, quiet):
     Get scalar integer attribute of vgrid descriptor
@@ -238,10 +238,10 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_getopt_int(key, value, quiet):
-    Get scalar integer global VGD option 
+    Get scalar integer global VGD option
     Proto:
        int Cvgd_getopt_int(char *key, int *value, int quiet);
     Args:
@@ -249,7 +249,7 @@ Details:
        value
        quiet
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_int_1d(self, key, value, nk, quiet):
     Get vector integer attribute of vgrid descriptor
@@ -260,7 +260,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_float(self, key, value, quiet):
     Get scalar float attribute of vgrid descriptor
@@ -271,7 +271,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_float_1d(self, key, value, nk, quiet):
     Get vector float attribute of vgrid descriptor
@@ -282,7 +282,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_double(self, key, value_get, quiet):
     Get scalar double attribute of vgrid descriptor
@@ -293,7 +293,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_double_1d(self, key, value, nk, quiet):
     Get vector double attribute of vgrid descriptor
@@ -304,7 +304,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_get_double_3d(self, key, value, ni, nj, nk, quiet):
     Get array double attribute of vgrid descriptor
@@ -326,7 +326,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_put_char(self, key, value):
     Set scalar char attribute of vgrid descriptor
@@ -336,7 +336,7 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_put_int(self, key, value):
     Set scalar int attribute of vgrid descriptor
@@ -346,10 +346,10 @@ Details:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_putopt_int(key, value):
-    Set scalar integer global VGD option 
+    Set scalar integer global VGD option
     Proto:
        int Cvgd_putopt_int(char *key, int value);
     Args:
@@ -357,17 +357,17 @@ Details:
        value
        quiet
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 
  c_vgd_put_double(self, key, value_put):
-    Set scalar double attribute of vgrid descriptor   
+    Set scalar double attribute of vgrid descriptor
     Proto:
        int Cvgd_put_double(vgrid_descriptor **self, char *key, double value_put);
     Args:
        self (VGridDescriptor ref) : (I/O)
 
     Returns:
-       int : Status VGD_OK or VGD_ERROR 
+       int : Status VGD_OK or VGD_ERROR
 </source>
 ##DETAILS_END
 """
@@ -379,7 +379,7 @@ Details:
  ##       self (VGridDescriptor ref) : (I/O)
 
  ##    Returns:
- ##       int, 
+ ##       int,
 
  ## c_vgd_print_vcode_description(vcode):
  ##    Print the description of a Vcode e.g. 5005
@@ -388,7 +388,7 @@ Details:
  ##    Args:
 
  ##    Returns:
- ##       int, 
+ ##       int,
 
  ## c_vgd_set_vcode_i(vgrid, kind, version):
  ##    ?
@@ -398,7 +398,7 @@ Details:
  ##       vgrid (VGridDescriptor ref) : (I/O)
 
  ##    Returns:
- ##       int, 
+ ##       int,
 
  ## c_vgd_set_vcode(vgrid):
  ##    ?
@@ -408,7 +408,7 @@ Details:
  ##       vgrid (VGridDescriptor ref) : (I/O)
 
  ##    Returns:
- ##       int, 
+ ##       int,
 
 
 import ctypes as _ct
@@ -416,7 +416,7 @@ import numpy  as _np
 import numpy.ctypeslib as _npc
 
 from . import libvgd
-from . import const as _cst
+#from . import const as _cst
 
 
 class VGridDescriptor(_ct.Structure):
@@ -441,20 +441,22 @@ class VGridDescriptor(_ct.Structure):
     _fields_ = [
         ("dummy", _ct.c_int),
         ]
-    
+
     def __str__(self):
-       return self.__class__.__name__ + str([x[0] + '=' + str(self.__getattribute__(x[0])) for x in self._fields_])
-       ## s = self.__class__.__name__ + '('
-       ## l = [y[0] for y in self._fields_]
-       ## l.sort()
-       ## for x in l:
-       ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
-       ## s += ')'
-       ## return s
+        return self.__class__.__name__ + str([x[0] + '=' + \
+            str(self.__getattribute__(x[0])) for x in self._fields_])
+        ## s = self.__class__.__name__ + '('
+        ## l = [y[0] for y in self._fields_]
+        ## l.sort()
+        ## for x in l:
+        ##     s += x + '=' + str(self.__getattribute__(x)) + ', '
+        ## s += ')'
+        ## return s
 
     def __repr__(self):
-       #return self.__class__.__name__ + str(self)
-       return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+        #return self.__class__.__name__ + str(self)
+        return self.__class__.__name__ + repr([x[0] + '=' + \
+                repr(self.__getattribute__(x[0])) for x in self._fields_])
 
 c_vgd_construct = _ct.POINTER(VGridDescriptor)
 
@@ -496,7 +498,7 @@ c_vgd_new_gen = libvgd.Cvgd_new_gen
 
 ## int Cvgd_new_build_vert(vgrid_descriptor **self, int kind, int version,
 ##                         int nk, int ip1, int ip2, double *ptop_8,
-##                         double *pref_8, float *rcoef1, float *rcoef2, 
+##                         double *pref_8, float *rcoef1, float *rcoef2,
 ##                         double *a_m_8, double *b_m_8, double *a_t_8,
 ##                         double *b_t_8, int *ip1_m, int *ip1_t,
 ##                         int nl_m, int nl_t);
@@ -739,8 +741,8 @@ c_vgd_put_double = libvgd.Cvgd_put_double
 ## int Cvgd_set_vcode(vgrid_descriptor *VGrid);
 
 if __name__ == "__main__":
-    pass #print vgd version 
-    
+    pass #print vgd version
+
 # -*- Mode: C; tab-width: 4; indent-tabs-mode: nil -*-
 # vim: set expandtab ts=4 sw=4:
 # kate: space-indent on; indent-mode cstyle; indent-width 4; mixedindent off;

@@ -18,7 +18,7 @@ See Also:
 Details:
     See Source Code
 """
-import ctypes as _ct
+#import ctypes as _ct
 ## import numpy  as _np
 ## import numpy.ctypeslib as _npc
 
@@ -79,7 +79,8 @@ VGD_KIND_VER = {
     'hybm' : (VGD_HYBM_KIND, VGD_HYBM_VER),    #5,4
     'hybmd' : (VGD_HYBMD_KIND, VGD_HYBMD_VER)  #5,5
     }
-VGD_KIND_VER_INV_VCODE = dict([("{0:03d}{1:1d}".format(v[0]*100,v[1]), k) for k, v in VGD_KIND_VER.items()])
+VGD_KIND_VER_INV_VCODE = dict([("{0:03d}{1:1d}".format(v[0]*100, v[1]), k)
+                                for k, v in VGD_KIND_VER.items()])
 VGD_KIND_VER_INV = dict([(v, k) for k, v in VGD_KIND_VER.items()])
 
 VGD_VCODE_NEED_RFLD = {
@@ -102,9 +103,9 @@ VGD_OPR_KEYS = {
                        "LOGP"],
     'put_int'       : ["DATE", "IG_1", "IG_2", "IG_3", "IG_4", "IP_1", "IP_2",
                        "IP_3", "DIPM", "DIPT"],
-    'get_float'     : ["RC_1", "RC_2", "DHM", "DHT"],     
-    'get_int_1d'    : ["VIP1", "VIPM", "VIPT"], 
-    'get_float_1d'  : ["VCDM", "VIPM", "VCDT", "VIPT"], 
+    'get_float'     : ["RC_1", "RC_2", "DHM", "DHT"],
+    'get_int_1d'    : ["VIP1", "VIPM", "VIPT"],
+    'get_float_1d'  : ["VCDM", "VIPM", "VCDT", "VIPT"],
     'put_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
     'get_double'    : ["PTOP", "PREF", "RC_1", "RC_2"],
     'get_double_1d' : ["CA_M", "COFA", "CB_M", "COFB", "CA_T", "CB_T"],

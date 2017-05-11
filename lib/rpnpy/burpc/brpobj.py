@@ -9,7 +9,8 @@ Module burpc.burpc contains the wrapper classes to main burp_c C functions
 Notes:
     The functions described below are a very close ''port'' from the original
     [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] package.<br>
-    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
+    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]]
+    documentation for more details.
 
 See Also:
     rpnpy.burpc.base
@@ -18,7 +19,7 @@ See Also:
 """
 import ctypes as _ct
 import numpy  as _np
-import numpy.ctypeslib as _npc
+# import numpy.ctypeslib as _npc
 from rpnpy.burpc import proto as _bp
 from rpnpy.burpc import const as _bc
 from rpnpy.burpc import BurpcError
@@ -40,7 +41,7 @@ class _BurpcObjBase(object):
         return self.next()
 
     def _getattr0(self, name):
-        return getattr(self,'_'+self.__class__.__name__+name)
+        return getattr(self, '_'+self.__class__.__name__+name)
 
     def __getattr__(self, name):
         try:
@@ -99,7 +100,7 @@ class _BurpcObjBase(object):
         """
         Return the list of {attributes : values} as a dict
         """
-        return dict([(k, getattr(self,k)) for k in
+        return dict([(k, getattr(self, k)) for k in
                      self._getattr0('__attrlist') +
                      self._getattr0('__attrlist2')])
 
@@ -213,7 +214,7 @@ class BurpcFile(_BurpcObjBase):
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, mytype, myvalue, mytraceback):
         self._close()
 
     def __len__(self):
@@ -228,12 +229,12 @@ class BurpcFile(_BurpcObjBase):
         Get the next item in the iterator, Internal function for python 2 iter
         """
         if _bp.c_brp_findrpt(self.funit, self.__iteridx.getptr()) >= 0:
-                if _bp.c_brp_getrpt(self.funit, self.__iteridx.handle,
-                                    self.__rpt.getptr()) >= 0:
-                    return self.__rpt
+            if _bp.c_brp_getrpt(self.funit, self.__iteridx.handle,
+                                self.__rpt.getptr()) >= 0:
+                return self.__rpt
         self.__iteridx = BurpcRpt()
         raise StopIteration
- 
+
     ## def __setitem__(self, name, value):
     ##     #TODO: Should replace the rpt found with getitem(name) or add a new one
 
@@ -289,7 +290,8 @@ class BurpcFile(_BurpcObjBase):
                                 rpt.getptr()) >= 0:
                 return rpt
         else:
-            raise TypeError("For Name: {}, Not Supported Type: {}".format(repr(search), str(type(search))))
+            raise TypeError("For Name: {}, Not Supported Type: {}".
+                            format(repr(search), str(type(search))))
 
     def put(self, where, rpt):
         """
@@ -308,14 +310,16 @@ class BurpcFile(_BurpcObjBase):
             BurpcError on any other error
         """
         if not isinstance(rpt, BurpcRpt):
-            raise TypeError("rpt should be of type BurpcRpt, got: {}, ".format(str(type(rpt))))
+            raise TypeError("rpt should be of type BurpcRpt, got: {}, ".
+                            format(str(type(rpt))))
         append = where is None
         if append:
             where = _bc.BRP_END_BURP_FILE
         ## elif isinstance(where, (BurpcRpt, dict)): #TODO:
         ## elif isinstance(where, _integer_types): #TODO: same indexing as get, how to specify a handle?
         else:
-            raise TypeError("For where: {}, Not Supported Type: {}".format(repr(where), str(type(where))))
+            raise TypeError("For where: {}, Not Supported Type: {}".
+                            format(repr(where), str(type(where))))
 
         self.__handles = [] #TODO: is it the best place to invalidate the cache?
         prpt = rpt.getptr() if isinstance(rpt, BurpcRpt) else rpt
@@ -499,7 +503,9 @@ class BurpcRpt(_BurpcObjBase):
             return
         elif name in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
-            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
+            raise AttributeError(self.__class__.__name__+
+                                 " object cannot set derived attribute '"+
+                                 name+"'")
         ## elif isinstance(name, _integer_types): #TODO:
         ## elif name is None or isinstance(name, (BurpcBlk, dict)): #TODO:
         else:
@@ -558,7 +564,7 @@ class BurpcRpt(_BurpcObjBase):
             'datemm': (idate % 10000) // 100,
             'datedd': (idate % 10000) % 100,
             'oars'  : getattr(self.__ptr[0], 'oars'),
-            'runn'  : getattr(self.__ptr[0], 'runn'), 
+            'runn'  : getattr(self.__ptr[0], 'runn'),
             'nblk'  : getattr(self.__ptr[0], 'nblk'),
             'sup'   : None,
             'nsup'  : 0,
@@ -640,6 +646,8 @@ class BurpcBlk(_BurpcObjBase):
         return ele
 
     def get(self, name):
+        """
+        """
         ## print 'getattr:', name
         if name in self.__class__.__attrlist_np_1d:
             if self.__arr[name] is None:
@@ -668,23 +676,31 @@ class BurpcBlk(_BurpcObjBase):
         return self.put(name, value)
 
     def put(self, name, value):
+        """
+        """
         ## print 'setattr:', name
         if name in self.__class__.__attrlist:
             self.__derived = None
             return setattr(self.__ptr[0], name, value) #TODO: use proto fn?
         elif name in self.__class__.__attrlist2:
             #TODO: encode other items on the fly
-            raise AttributeError(self.__class__.__name__+" object cannot set derived attribute '"+name+"'")
+            raise AttributeError(self.__class__.__name__+
+                                 " object cannot set derived attribute '"+
+                                 name+"'")
         ## elif isinstance(name, _integer_types): #TODO:
         ## elif name is None or isinstance(name, (BurpcEle, dict)): #TODO:
         else:
             return super(self.__class__, self).__setattr__(name, value)
 
     def append(self, value):
+        """
+        """
         self.put(None, value)
     #TODO: add list type operators: count?, extend?, index?, insert?, pop?, remove?, reverse?, sort?... see help([]) for other __?__ operators
 
     def reset_arrays(self):
+        """
+        """
         ## print "reset array"
         self.__arr = {
             "lstele"  : None,
@@ -707,7 +723,7 @@ class BurpcBlk(_BurpcObjBase):
         datyp = getattr(self.__ptr[0], 'datyp')
         try:
             datypd = _rmn.BURP_DATYP_NAMES[datyp]
-        except:
+        except KeyError:
             datypd = ''
         params = {
             'bkno'  : getattr(self.__ptr[0], 'bkno'),
@@ -731,7 +747,7 @@ class BurpcBlk(_BurpcObjBase):
                 'bknat_kind'  : -1,
                 'bknat_kindd' : -1,
                 'bktyp'       : -1,
-                'bktyp_alt'   : -1, 
+                'bktyp_alt'   : -1,
                 'bktyp_kind'  : -1,
                 'bktyp_kindd' : -1,
                 'bkstpd'      : -1
@@ -743,36 +759,36 @@ class BurpcBlk(_BurpcObjBase):
         if index < 0 or index >= self.nele:
             raise IndexError
         params = {'e_cmcid' : self.lstele[index]}
-        hasValues = False
+        has_value = False
         try:
-            params['e_rval'] = self.rval[index,:,:]
-            hasValues = True
+            params['e_rval'] = self.rval[index, :, :]
+            has_value = True
         except:
             pass
         try:
-            params['e_drval'] = self.drval[index,:,:]
-            hasValues = True
+            params['e_drval'] = self.drval[index, :, :]
+            has_value = True
         except:
             pass
         try:
-            params['e_charval'] = self.charval[index,:]
-            hasValues = True
+            params['e_charval'] = self.charval[index, :]
+            has_value = True
         except:
             pass
-        if not hasValues: #TODO: also provide tblval?
-            params['e_tblval'] = self.tblval[index,:,:]
+        if not has_value: #TODO: also provide tblval?
+            params['e_tblval'] = self.tblval[index, :, :]
         return BurpcEle(params)
 
     def putelem(self, index, values): #TODO: merge into put()
         """indexing from 0 to nele-1"""
-        if not(index is None or instance(index, _integer_types)):
+        if not(index is None or isinstance(index, _integer_types)):
             raise TypeError('Provided index should be of type int')
-        if (instance(index, _integer_types) and 
+        if (isinstance(index, _integer_types) and
             index < 0 or index >= self.nele):
             raise IndexError
         else:
             pass #TODO increase size, adjust nele?
-        if not instance(values, BurpcEle):
+        if not isinstance(values, BurpcEle):
             try:
                 values = BurpcEle(values)
             except:
@@ -800,7 +816,7 @@ class BurpcEle(_BurpcObjBase):
         TODO:
     """
     __attrlist = ('e_bufrid', 'e_cmcid', 'store_type', 'shape', 'ptrkey',
-                  'e_tblval','e_rval', 'e_drval', 'e_charval')
+                  'e_tblval', 'e_rval', 'e_drval', 'e_charval')
     __attrlist2 = ('e_error', 'e_cmcid', 'e_bufrid', 'e_bufrid_F',
                    'e_bufrid_X', 'e_bufrid_Y', 'e_cvt', 'e_desc',
                    'e_units', 'e_scale', 'e_bias', 'e_nbits', 'e_multi',
@@ -818,7 +834,7 @@ class BurpcEle(_BurpcObjBase):
         'e_charval' : _bc.BRP_STORE_CHAR
         }
 
-    def __init__(self, bufrid, tblval=None, shape=None): #TODO: use shape
+    def __init__(self, bufrid, tblval=None): #TODO:, shape=None):
         if isinstance(bufrid, _integer_types):
             bufrid = {
                 'e_bufrid' : bufrid,
@@ -859,6 +875,8 @@ class BurpcEle(_BurpcObjBase):
                        .format(self.__class__.__name__, repr(name)))
 
     def reshape(self, shape=None):
+        """
+        """
         if shape is None:
             self.__ptr['shape'] = None
             return
@@ -871,17 +889,20 @@ class BurpcEle(_BurpcObjBase):
         elif len(shape) > 2:
             raise BurpcError('{}: Array shape must be 2d: {}'
                              .format(self.__class__.__name__,
-                                     repr(self.__ptr[name].shape)))
+                                     repr(shape)))
         if self.__ptr['ptrkey'] is not None:
             if self.__ptr[self.__ptr['ptrkey']].size != shape[0] * shape[1]:
                 raise BurpcError('{}: array size and provided shape does not match: {}'
                                  .format(self.__class__.__name__,
                                          repr(self.__ptr[self.__ptr['ptrkey']].shape)))
-            self.__ptr[self.__ptr['ptrkey']] = _np.reshape(self.__ptr[self.__ptr['ptrkey']],
-                                                   shape, order='F')
+            self.__ptr[self.__ptr['ptrkey']] = \
+                _np.reshape(self.__ptr[self.__ptr['ptrkey']],
+                            shape, order='F')
         self.__ptr['shape'] = shape
 
     def put(self, name, value):
+        """
+        """
         if name == 'ptrkey':
             raise KeyError('{}: Cannot set: {}'
                              .format(self.__class__.__name__,

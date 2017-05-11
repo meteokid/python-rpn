@@ -9,7 +9,7 @@
 
 """
 Module burpc is a ctypes import of burp_c's library (libburp_c_shared.so)
- 
+
 The burpc.proto python module includes ctypes prototypes for
 burp_c's libburp_c C functions.
 
@@ -24,7 +24,8 @@ Warning:
 Notes:
     The functions described below are a very close ''port'' from the original
     [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] package.<br>
-    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]] documentation for more details.
+    You may want to refer to the [[Cmda_tools#Librairies.2FAPI_BURP_CMDA|burp_c]]
+    documentation for more details.
 
 See Also:
     rpnpy.burpc.brpobj
@@ -53,8 +54,8 @@ Details:
 """
 
 import ctypes as _ct
-import numpy  as _np
-import numpy.ctypeslib as _npc
+#import numpy  as _np
+#import numpy.ctypeslib as _npc
 
 from . import libburpc
 from rpnpy.burpc import const as _cst
@@ -133,9 +134,9 @@ class BURP_RPT(_ct.Structure):
         ("oars",   _ct.c_int),
         ("runn",   _ct.c_int),
         ("nblk",   _ct.c_int),
-        ("sup",   _ct.POINTER(_ct.c_int)),
+        ("sup",    _ct.POINTER(_ct.c_int)),
         ("nsup",   _ct.c_int),
-        ("xaux",  _ct.POINTER(_ct.c_int)),
+        ("xaux",   _ct.POINTER(_ct.c_int)),
         ("nxaux",  _ct.c_int),
         ("lngr",   _ct.c_int),
         ("init_hdr", _ct.c_int)  ## for internal use only
@@ -152,9 +153,10 @@ class BURP_RPT(_ct.Structure):
     ##    ## return s
 
     def __repr__(self):
-       ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
-       return self.__class__.__name__ + '(' + \
-           repr(dict([(x[0], self.__getattribute__(x[0])) for x in self._fields_])) + ')'
+        ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+        return self.__class__.__name__ + '(' + repr(dict(
+               [(x[0], self.__getattribute__(x[0])) for x in self._fields_]
+               )) + ')'
 
 
 class BURP_BLK(_ct.Structure):
@@ -236,9 +238,10 @@ class BURP_BLK(_ct.Structure):
     ##    ## return s
 
     def __repr__(self):
-       ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
-       return self.__class__.__name__ + '(' + \
-           repr(dict([(x[0], self.__getattribute__(x[0])) for x in self._fields_])) + ')'
+        ## return self.__class__.__name__ + repr([x[0] + '=' + repr(self.__getattribute__(x[0])) for x in self._fields_])
+        return self.__class__.__name__ + '(' + repr(dict(
+               [(x[0], self.__getattribute__(x[0])) for x in self._fields_]
+               )) + ')'
 
 
 ## /* for internal use only */
@@ -375,12 +378,14 @@ libburpc.brp_getrpt.restype = _ct.c_int
 c_brp_getrpt = libburpc.brp_getrpt
 
 ## extern  int        brp_safe_getblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
-libburpc.brp_safe_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_safe_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK),
+                                     _ct.POINTER(BURP_RPT))
 libburpc.brp_safe_getblk.restype = _ct.c_int
 c_brp_safe_getblk = libburpc.brp_safe_getblk
 
 ## extern  int        brp_getblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
-libburpc.brp_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_getblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK),
+                                _ct.POINTER(BURP_RPT))
 libburpc.brp_getblk.restype = _ct.c_int
 c_brp_getblk = libburpc.brp_getblk
 
@@ -390,7 +395,8 @@ c_brp_getblk = libburpc.brp_getblk
 ## */
 
 ## extern  int        brp_readblk(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt, int cvt);
-libburpc.brp_readblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT), _ct.c_int)
+libburpc.brp_readblk.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK),
+                                 _ct.POINTER(BURP_RPT), _ct.c_int)
 libburpc.brp_readblk.restype = _ct.c_int
 c_brp_readblk = libburpc.brp_readblk
 
@@ -405,7 +411,8 @@ libburpc.brp_rdrpthdr.restype = _ct.c_int
 c_brp_rdrpthdr = libburpc.brp_rdrpthdr
 
 ## extern  int        brp_rdblkhdr(int bkno, BURP_BLK  *blk, BURP_RPT  *rpt);
-libburpc.brp_rdblkhdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK), _ct.POINTER(BURP_RPT))
+libburpc.brp_rdblkhdr.argtypes = (_ct.c_int, _ct.POINTER(BURP_BLK),
+                                  _ct.POINTER(BURP_RPT))
 libburpc.brp_rdblkhdr.restype = _ct.c_int
 c_brp_rdblkhdr = libburpc.brp_rdblkhdr
 

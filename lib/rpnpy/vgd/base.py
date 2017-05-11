@@ -17,7 +17,7 @@ See Also:
 """
 import ctypes as _ct
 import numpy  as _np
-import numpy.ctypeslib as _npc
+#import numpy.ctypeslib as _npc
 from rpnpy.vgd import proto as _vp
 from rpnpy.vgd  import const as _vc
 from rpnpy.vgd  import VGDError
@@ -26,12 +26,12 @@ import rpnpy.librmn.all as _rmn
 from rpnpy import integer_types as _integer_types
 
 _C_MKSTR = _ct.create_string_buffer
-_MB2PA   = 100.
+_MB2PA = 100.
 
 def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     """
     Build a Sigma (1001) based VGridDescriptor initialized with provided info.
-    
+
     Args:
         hyb      (list): list of sigma level values
         ip1      (int) : Ip1 of the vgrid record
@@ -41,7 +41,7 @@ def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     Raises:
         TypeError
         VGDError
-        
+
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
@@ -50,7 +50,7 @@ def vgd_new_sigm(hyb, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_sigm(lvls)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -66,7 +66,7 @@ vgd_new_1001 = vgd_new_sigm
 def vgd_new_pres(pres, ip1=-1, ip2=-1):
     """
     Build a Pressure (2001) based VGridDescriptor initialized with provided info.
-    
+
     Args:
         pres     (list): list of pressure level values [hPa]
         ip1      (int) : Ip1 of the vgrid record
@@ -85,7 +85,7 @@ def vgd_new_pres(pres, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_pres(lvls)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -100,7 +100,7 @@ vgd_new_2001 = vgd_new_pres
 def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
     """
     Build an Eta (1002) based VGridDescriptor initialized with provided info.
-    
+
     Args:
         hyb      (list) : list of Eta level values
         ptop     (float): Top level pressure [Pa]
@@ -115,18 +115,18 @@ def vgd_new_eta(hyb, ptop, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
     ...     myvgd = vgd.vgd_new_eta(lvls, ptop)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -149,7 +149,7 @@ vgd_new_1002 = vgd_new_eta
 def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     """
     Build an Hybrid Un-staggered (5001) VGridDescriptor initialized with provided info.
-    
+
     Args:
         hyb      (list) : list of hybrid level values
         rcoef1   (float): Coordinate recification R-coefficient
@@ -166,11 +166,11 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.011,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.011,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.993,    1.000)
     >>> rcoef1 = 1.6
     >>> ptop   = 110.
@@ -179,7 +179,7 @@ def vgd_new_hyb(hyb, rcoef1, ptop, pref, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_hyb(lvls, rcoef1, ptop, pref)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -195,7 +195,7 @@ vgd_new_5001 = vgd_new_hyb
 def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
     Build an Hybrid Staggered (5002) VGridDescriptor initialized with provided info.
-    
+
     Args:
         hyb      (list) : list of hybrid level values
         rcoef1   (float): 1st Coordinate recification R-coefficient
@@ -213,11 +213,11 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 10.
@@ -227,7 +227,7 @@ def vgd_new_hybs(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_hybs(lvls, rcoef1, rcoef2, ptop, pref)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -244,7 +244,7 @@ vgd_new_5002 = vgd_new_hybs
 def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
     Build an Hybrid Staggered (5003) VGridDescriptor initialized with provided info.
-    
+
     First level is a thermo level, unstaggered last Thermo level.
 
     Args:
@@ -264,11 +264,11 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 10.
@@ -278,7 +278,7 @@ def vgd_new_hybt(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_hybt(lvls, rcoef1, rcoef2, ptop, pref)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -295,7 +295,7 @@ vgd_new_5003 = vgd_new_hybt
 def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     """
     Build an Hybrid Staggered (5004) VGridDescriptor initialized with provided info.
-    
+
     First level is a momentum level, same number of thermo and momentum levels.
 
     Args:
@@ -318,11 +318,11 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -332,7 +332,7 @@ def vgd_new_hybm(hyb, rcoef1, rcoef2, ptop, pref, ip1=-1, ip2=-1):
     ...     myvgd = vgd.vgd_new_hybm(lvls, rcoef1, rcoef2, ptop, pref)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -350,7 +350,7 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
                   ip1=-1, ip2=-1):
     """
     Build an Hybrid Staggered (5005) VGridDescriptor initialized with provided info.
-    
+
     First level is a momentum level, same number of thermo and momentum levels.
     Diag level heights (m AGL) encoded.
 
@@ -372,11 +372,11 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -387,7 +387,7 @@ def vgd_new_hybmd(hyb, rcoef1, rcoef2, pref, dhm, dht,
     ...     myvgd = vgd.vgd_new_hybmd(lvls, rcoef1, rcoef2, pref, dhm, dht)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         vgd_new
         vgd_write
@@ -429,11 +429,11 @@ def vgd_new(kind, version, hyb,
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
     >>> (kind, version) = vgd.VGD_KIND_VER['hybmd']
-    >>> lvls  = (0.013,   0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.013,   0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.995)
     >>> rcoef1 = 0.
     >>> rcoef2 = 1.
@@ -444,7 +444,7 @@ def vgd_new(kind, version, hyb,
     ...     myvgd = vgd.vgd_new(kind, version, lvls, rcoef1, rcoef2, pref=pref, dhm=dhm, dht=dht)
     ... except vgd.VGDError:
     ...     sys.stderr.write("There was a problem creating the VGridDescriptor")
-    
+
     See Also:
         rpnpy.vgd.const.VGD_KIND_VER
         vgd_new_sigm
@@ -459,27 +459,29 @@ def vgd_new(kind, version, hyb,
         vgd_levels
         vgd_free
     """
-    if isinstance(hyb,(list,tuple)):
+    if isinstance(hyb, (list, tuple)):
         hyb = _np.array(hyb, copy=True, dtype=_np.float32, order='FORTRAN')
-    elif isinstance(hyb,_np.ndarray):
-        hyb = _np.array(hyb.flatten(), copy=True, dtype=_np.float32, order='FORTRAN')
+    elif isinstance(hyb, _np.ndarray):
+        hyb = _np.array(hyb.flatten(), copy=True, dtype=_np.float32,
+                        order='FORTRAN')
     else:
-        raise TypeError('hyb should be list or ndarray: {0}'.format(str(type(ip1list))))
+        raise TypeError('hyb should be list or ndarray: {0}'.
+                        format(str(type(hyb))))
     if not rcoef1 is None:
         rcoef1 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef1))
     if not rcoef2 is None:
         rcoef2 = _ct.POINTER(_ct.c_float)(_ct.c_float(rcoef2))
-    if not ptop   is None:
-        ptop   = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop))
-    if not pref   is None:
-        pref   = _ct.POINTER(_ct.c_double)(_ct.c_double(pref))
-    if not dhm    is None:
-        dhm    = _ct.POINTER(_ct.c_float)(_ct.c_float(dhm))
-    if not dht    is None:
-        dht    = _ct.POINTER(_ct.c_float)(_ct.c_float(dht))
+    if not ptop is None:
+        ptop = _ct.POINTER(_ct.c_double)(_ct.c_double(ptop))
+    if not pref is None:
+        pref = _ct.POINTER(_ct.c_double)(_ct.c_double(pref))
+    if not dhm is None:
+        dhm = _ct.POINTER(_ct.c_float)(_ct.c_float(dhm))
+    if not dht is None:
+        dht = _ct.POINTER(_ct.c_float)(_ct.c_float(dht))
     vgd_ptr = _vp.c_vgd_construct()
     p_ptop_out = None
-    if kind == 5 and version in (4,5):
+    if kind == 5 and version in (4, 5):
         if not ptop is None:
             p_ptop_out = ptop
         else:
@@ -489,7 +491,8 @@ def vgd_new(kind, version, hyb,
                            hyb, hyb.size, rcoef1, rcoef2, ptop, pref,
                            p_ptop_out, ip1, ip2, dhm, dht)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem building VGD (kind={0}, version={1}): Error={2})'.format(kind, version, ok))
+        raise VGDError('Problem building VGD (kind={0}, version={1}): Error={2})'.
+                       format(kind, version, ok))
     return vgd_ptr
 
 
@@ -545,7 +548,9 @@ def vgd_read(fileId, ip1=-1, ip2=-1, kind=-1, version=-1):
     vgd_ptr = _vp.c_vgd_construct()
     ok = _vp.c_vgd_new_read(vgd_ptr, fileId, ip1, ip2, kind, version)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem getting vgd from file (id={0}, ip1={1}, ip2={2}, kind={3}, version={4})'.format(fileId, ip1, ip2, kind, version))
+        raise VGDError('Problem getting vgd from file ' +
+                        '(id={0}, ip1={1}, ip2={2}, kind={3}, version={4})'.
+                        format(fileId, ip1, ip2, kind, version))
     return vgd_ptr
 
 
@@ -596,7 +601,7 @@ def vgd_write(vgd_ptr, fileId):
     if ok != _vc.VGD_OK:
         raise VGDError('Problem writing vgd to file (id={0})'.format(fileId))
     return
-    
+
 
 def vgd_free(vgd_ptr):
     """
@@ -716,7 +721,7 @@ def vgd_fromlist(vgd_table):
 def vgd_copy(vgd_ptr):
     """
     Deep copy of a VGridDescriptor ref object.
-    
+
     Args:
         vgd_ptr (VGridDescriptor ref):
                       Reference/Pointer to the VGridDescriptor
@@ -725,7 +730,7 @@ def vgd_copy(vgd_ptr):
     Raises:
         TypeError
         VGDError
-        
+
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
@@ -793,7 +798,7 @@ def vgd_get_opt(key, quiet=1):
     if ok != _vc.VGD_OK:
         raise VGDError('Problem getting opt (key={0})'.format(key))
     return v1.value
-    
+
 
 def vgd_put_opt(key, value):
     """
@@ -833,7 +838,8 @@ def vgd_put_opt(key, value):
         raise VGDError('Problem setting opt, invalid key (key={0})'.format(key))
     ok = _vp.c_vgd_putopt_int(key2, value)
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem setting opt (key={0}, value={1})'.format(key, repr(value)))
+        raise VGDError('Problem setting opt (key={0}, value={1})'.
+                        format(key, repr(value)))
     return
 
 
@@ -989,17 +995,19 @@ def vgd_put(vgd_ptr, key, value):
     elif key2 in _vc.VGD_OPR_KEYS['put_double']:
         ok = _vp.c_vgd_put_double(vgd_ptr, key2, value)
     else:
-        raise KeyError('Problem setting val, invalid key (key={0})'.format(key))
-    
+        raise KeyError('Problem setting val, invalid key (key={0})'.
+                        format(key))
+
     if ok != _vc.VGD_OK:
-        raise VGDError('Problem setting val (key={0}, value={1})'.format(key, repr(value)))
+        raise VGDError('Problem setting val (key={0}, value={1})'.
+                        format(key, repr(value)))
     return
 
 
 def vgd_cmp(vgd0ptr, vgd1ptr):
     """
     Compate 2 VGridDescriptors, return (vgd0ptr == vgd1ptr)
-    
+
     Args:
         vgd0ptr (VGridDescriptor ref):
                           Reference/Pointer to a VGridDescriptor
@@ -1034,7 +1042,8 @@ def vgd_cmp(vgd0ptr, vgd1ptr):
     return ok == _vc.VGD_OK
 
 
-def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dpidpis=_vc.VGD_DIAG_DPIS, double_precision=False):
+def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM', in_log=_vc.VGD_DIAG_PRES,
+               dpidpis=_vc.VGD_DIAG_DPIS, double_precision=False):
     """
     Compute level positions (pressure or log(p)) for the given ip1 list and surface field
 
@@ -1066,11 +1075,11 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     Examples:
     >>> import sys
     >>> import rpnpy.vgd.all as vgd
-    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075, 
-    ...          0.101,   0.127,    0.155,    0.185,    0.219, 
-    ...          0.258,   0.302,    0.351,    0.405,    0.460, 
-    ...          0.516,   0.574,    0.631,    0.688,    0.744, 
-    ...          0.796,   0.842,    0.884,    0.922,    0.955, 
+    >>> lvls  = (0.000,   0.011,    0.027,    0.051,    0.075,
+    ...          0.101,   0.127,    0.155,    0.185,    0.219,
+    ...          0.258,   0.302,    0.351,    0.405,    0.460,
+    ...          0.516,   0.574,    0.631,    0.688,    0.744,
+    ...          0.796,   0.842,    0.884,    0.922,    0.955,
     ...          0.980,   0.993,    1.000)
     >>> ptop  = 1000.
     >>> try:
@@ -1093,31 +1102,32 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
         vgd_free
         vgd_get
     """
-    if isinstance(ip1list,str):
+    if isinstance(ip1list, str):
         ip1list0 = vgd_get(vgd_ptr, ip1list)
         ip1list1 = _np.array(ip1list0, dtype=_np.int32, order='FORTRAN')
-    elif isinstance(ip1list,_integer_types):
+    elif isinstance(ip1list, _integer_types):
         ip1list1 = _np.array([ip1list], dtype=_np.int32, order='FORTRAN')
-    elif isinstance(ip1list,(list,tuple)):
+    elif isinstance(ip1list, (list, tuple)):
         ip1list1 = _np.array(ip1list, dtype=_np.int32, order='FORTRAN')
-    elif isinstance(ip1list,_np.ndarray):
+    elif isinstance(ip1list, _np.ndarray):
         ip1list1 = _np.array(ip1list.flatten(), dtype=_np.int32, order='FORTRAN')
     else:
-        raise TypeError('ip1list should be string, list or int: {0}'.format(str(type(ip1list))))
+        raise TypeError('ip1list should be string, list or int: {0}'.
+                        format(str(type(ip1list))))
     nip1    = ip1list1.size
     ip1list = ip1list1.ctypes.data_as(_ct.POINTER(_ct.c_int))
 
     vkind = vgd_get(vgd_ptr, 'KIND')
     vvers = vgd_get(vgd_ptr, 'VERS')
     vcode = int(vkind)*1000+int(vvers)
-    
+
     rank0 = False
-    if isinstance(rfld,float):
+    if isinstance(rfld, float):
         rfld = _np.array([rfld], dtype=_np.float32, order='FORTRAN')
         rank0 = True
-    elif isinstance(rfld,(list,tuple)):
+    elif isinstance(rfld, (list, tuple)):
         rfld = _np.array(rfld, dtype=_np.float32, order='FORTRAN')
-    elif isinstance(rfld,int):
+    elif isinstance(rfld, int):
         if _vc.VGD_VCODE_NEED_RFLD[vcode]:
             fileId = rfld
             rfld_name = vgd_get(vgd_ptr, 'RFLD')
@@ -1128,15 +1138,16 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
             rfld = rfld * MB2PA
         else:
             rfld = _np.array([float(fileId)], dtype=_np.float32, order='FORTRAN')
-            rank0 = True            
+            rank0 = True
     elif rfld is None:
         if _vc.VGD_VCODE_NEED_RFLD[vcode]:
             raise TypeError('RFLD needs to be provided for vcode={0}'.format(vcode))
         else:
             rfld = _np.array([1000.], dtype=_np.float32, order='FORTRAN')
             rank0 = True
-    elif not isinstance(rfld,_np.ndarray):
-        raise TypeError('rfld should be ndarray, list or float: {0}'.format(str(type(ip1list))))
+    elif not isinstance(rfld, _np.ndarray):
+        raise TypeError('rfld should be ndarray, list or float: {0}'.
+                        format(str(type(ip1list))))
 
     if double_precision:
         dtype = _np.float64
@@ -1150,14 +1161,17 @@ def vgd_levels(vgd_ptr, rfld=None, ip1list='VIPM',  in_log=_vc.VGD_DIAG_PRES, dp
     ok = _vc.VGD_OK
     if vkind == 2:  # Workaround for pressure levels
         for k in xrange(nip1):
-            (value, kind) = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))
-            levels8[:,:,k] = value * _MB2PA
+            value = _rmn.convertIp(_rmn.CONVIP_DECODE, int(ip1list1[k]))[0]
+            levels8[:, :, k] = value * _MB2PA
     else:
         if double_precision:
-            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
+            ok = _vp.c_vgd_diag_withref_8(vgd_ptr, rfld8.size, 1, nip1,
+                                          ip1list, levels8, rfld8, in_log,
+                                          dpidpis)
         else:
-            ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1, ip1list, levels8, rfld8, in_log, dpidpis)
-        
+            ok = _vp.c_vgd_diag_withref(vgd_ptr, rfld8.size, 1, nip1, ip1list,
+                                        levels8, rfld8, in_log, dpidpis)
+
     if ok != _vc.VGD_OK:
         raise VGDError('Problem computing levels.')
     if rank0:
