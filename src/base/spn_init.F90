@@ -17,10 +17,10 @@
 
       subroutine spn_init
       use spn_work_mod
-#include <arch_specific.hf>
       use grid_options
       use gem_options
       implicit none
+#include <arch_specific.hf>
 
 !author
 !     Minwei Qian (CCRD) & Bernard Dugas, Syed Husain  (MRB)  - summer 2015

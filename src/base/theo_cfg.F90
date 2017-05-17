@@ -21,8 +21,8 @@
       use grid_options
       implicit none
 #include <arch_specific.hf>
-#include "cstv.cdk"
-#include "out3.cdk"
+!!$#include "cstv.cdk" !#This is already included in theonml.cdk
+!!$#include "out3.cdk" !#This is already included in theonml.cdk
 #include "theonml.cdk"
 #include "cst_lis.cdk"
 #include "path.cdk"

@@ -22,8 +22,8 @@
       implicit none
 #include <arch_specific.hf>
       integer unf
-#include "cstv.cdk"
-#include "out3.cdk"
+!!$#include "cstv.cdk" !#This is already included in theonml.cdk
+!!$#include "out3.cdk" !#This is already included in theonml.cdk
 #include "theonml.cdk"
 
       integer i, j, k, idatx, longueur
