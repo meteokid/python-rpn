@@ -7,12 +7,12 @@ module matvec_mod
    ! Revision
    !     v4_70 - Gaudreault/Qaddouri      - initial version
    !
+      use gem_options
    implicit none
    private
 
 #include <arch_specific.hf>
 
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
@@ -33,6 +33,7 @@ contains
       real*8  :: di_8
       real*8  :: xxx, yyy
       integer :: i, j, k, jj, ii
+#include "cstv.cdk"
 #include "geomg.cdk"
 
       allocate (matrix(7,ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk))

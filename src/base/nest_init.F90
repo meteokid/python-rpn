@@ -17,6 +17,9 @@
       subroutine nest_init ()
       use step_options
       use gmm_vt1
+      use gmm_nest
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,13 +28,9 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "tr3d.cdk"
-#include "nest.cdk"
 #include "geomg.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "p_geof.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,j,k,n,id,yy,mo,dd,hh,mm,ss,dum,istat

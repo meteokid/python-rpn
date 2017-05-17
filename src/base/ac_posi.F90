@@ -17,6 +17,9 @@
 !                from the current model grid configuration
 
       subroutine ac_posi (xp,yp,dimgx,dimgy,prout)
+      use grid_options
+      use grdc_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,8 +36,6 @@
 !
 
 #include "dcst.cdk"
-#include "grd.cdk"
-#include "grdc.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "rstr.cdk"

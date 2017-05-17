@@ -17,6 +17,8 @@
 !
       subroutine t02t1
       use gmm_vt1
+      use gmm_vt0
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,9 +38,7 @@
 	
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
-#include "vt0.cdk"
 
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: ut_list  = (/ 'URT0', 'URT1' /)
       character(len=GMM_MAXNAMELENGTH) , dimension(2), parameter :: vt_list  = (/ 'VRT0', 'VRT1' /)

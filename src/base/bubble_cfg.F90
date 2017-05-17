@@ -17,12 +17,14 @@
 !
       integer function bubble_cfg (unf)
       use step_options
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
       integer unf
-
+#include "cstv.cdk"
+#include "out3.cdk"
 #include "theonml.cdk"
-#include "stat.cdk"
 
       integer i, j, k, idatx, longueur
       real*8 delta_8, zmt_8(maxhlev)
@@ -70,7 +72,7 @@
       Cstv_dt_8 = 5.0
       Step_total=120
 
-      Grd_rcoef = 1.0
+      Hyb_rcoef = 1.0
 
       Lam_ctebcs_L=.true.
 

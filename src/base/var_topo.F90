@@ -17,6 +17,8 @@
 !                 topography to target topography
 
       subroutine var_topo2 (F_topo, F_step, Minx,Maxx,Miny,Maxy)
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,9 +27,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "p_geof.cdk" 
 #include "dcst.cdk"
-#include "vtopo.cdk"
 
       integer i,j, gmmstat
       real*8, parameter :: one = 1.0d0

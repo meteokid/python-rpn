@@ -20,6 +20,8 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use gmm_vt1
+      use gmm_pw
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +33,6 @@
 #include "out3.cdk"
 #include "out.cdk"
 #include "outp.cdk"
-#include "pw.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 

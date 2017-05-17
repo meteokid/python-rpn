@@ -50,12 +50,12 @@
 
       logical G_periodx, G_periody
       integer G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
-      integer G_halox, G_haloy
+!      integer G_halox, G_haloy
       real*8, dimension(:), pointer :: G_xg_8, G_yg_8
       common / G_p / G_xg_8, G_yg_8
 
       common / G / G_ni, G_nj, G_nk, G_niu, G_njv, G_lnimax, G_lnjmax
-      common / G / G_halox, G_haloy
+!      common / G / G_halox, G_haloy
       common / G_l / G_periodx,G_periody
 
       logical l_north, l_south, l_east, l_west, l_mesg_proc

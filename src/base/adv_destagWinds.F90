@@ -14,6 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine adv_destagWinds (F_uth, F_vth, minx,maxx,miny,maxy,nk)
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
       
@@ -27,7 +29,6 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
 
       !- CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids
       !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid

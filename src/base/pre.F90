@@ -25,6 +25,9 @@
                        F_rw  ,F_rf  ,F_oru  ,F_orv       , &
                        F_rb,F_nest_t, Minx,Maxx,Miny,Maxy, &
                        i0, j0, in, jn, k0, ni, nj, Nk )
+      use gmm_nest
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -54,13 +57,9 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "lam.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
 #include "geomg.cdk"
-#include "schm.cdk"
-#include "nest.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       integer :: i0u, inu, j0v, jnv

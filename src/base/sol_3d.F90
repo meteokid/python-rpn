@@ -21,6 +21,8 @@
       use matvec_mod, only: matvec_3d
       use krylov_mod, only: krylov_fgmres, krylov_fbicgstab
 
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -37,10 +39,8 @@
 ! v4-70 - Gaudreault S.    - new Krylov solvers
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
 

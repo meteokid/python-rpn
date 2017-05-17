@@ -17,6 +17,8 @@
 
       subroutine coriolis ( F_u_8, F_v_8, F_x_8, F_y_8,  &
                             F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -40,17 +42,14 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
-#include "schm.cdk"
-#include "wil_williamson.cdk"
 
       real*8 ZERO, ONE, TWO
       parameter( ZERO = 0.0 )
       parameter( ONE  = 1.0 )
       parameter( TWO  = 2.0 )
 
-      integer i, j, pn
-      real*8  c0, sa, ca, s0, ang, coef_8, s(2,2), Y_lat,Y_lon
+      integer i, j
+      real*8  s0, ang, c0, sa, ca
 !
 !-------------------------------------------------------------------
 !
@@ -59,109 +58,44 @@
          return
       endif
 
-!     Set rotation parameters (standard mode)
-!     ---------------------------------------
-      if ( .not.Schm_autobar_L .or. &
+      if ( Schm_canonical_williamson_L ) then
+         call canonical_coriolis ( F_u_8, F_v_8, F_x_8, F_y_8,  &
+                                   F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
+         return
+      endif
 
-       (Schm_autobar_L .and. Williamson_alpha.eq.0.0)) then
+      s0 = F_rot_8(3,3)
 
-         s0 = F_rot_8(3,3)
-
-         if ( abs( (abs(s0)-ONE) ).gt.1.0e-10 ) then
-            ang = atan2( F_rot_8(2,3), F_rot_8(1,3) )
-         else
-            s0 = sign( ONE, s0 )
-            ang = ZERO
-         endif
-
-         c0 = sqrt( max( ZERO, ONE - s0 ** 2 ) )
+      if ( abs( (abs(s0)-ONE) ).gt.1.0e-10 ) then
+         ang = atan2( F_rot_8(2,3), F_rot_8(1,3) )
+      else
+         s0 = sign( ONE, s0 )
+         ang = ZERO
+      endif
+      
+      c0 = sqrt( max( ZERO, ONE - s0 ** 2 ) )
 
 !	processing coriolis FACTOR on V grid
 !       ____________________________________
 
-         do j=1-G_haloy,l_nj+G_haloy
-            sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_yv_8(j))
-            ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_yv_8(j))
-            do i=1-G_halox,l_ni+G_halox
-               F_v_8(i,j) = ca * cos(F_x_8(i)-ang) + sa
-            enddo
+      do j=1-G_haloy,l_nj+G_haloy
+         sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_yv_8(j))
+         ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_yv_8(j))
+         do i=1-G_halox,l_ni+G_halox
+            F_v_8(i,j) = ca * cos(F_x_8(i)-ang) + sa
          enddo
+      enddo
 
 !	processing coriolis FACTOR on U grid
 !       ____________________________________
 
-         do j=1-G_haloy,l_nj+G_haloy
-            sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_y_8(j))
-            ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_y_8(j))
-            do i=1-G_halox,l_ni+G_halox
-               F_u_8(i,j) = ca * cos(F_xu_8(i) - ang) + sa
-            enddo
+      do j=1-G_haloy,l_nj+G_haloy
+         sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_y_8(j))
+         ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_y_8(j))
+         do i=1-G_halox,l_ni+G_halox
+            F_u_8(i,j) = ca * cos(F_xu_8(i) - ang) + sa
          enddo
-
-      else
-
-!     -----------------------------------------------------------------
-!     Use Coriolis based on alpha when 
-!     AUTOBAROTROPE and Williamson's cases 2 and 3
-!     -----------------------------------------------------------------
-
-         coef_8 = TWO * Dcst_omega_8
-
-         if (trim(Grd_yinyang_S) .eq. 'YAN') then
-
-!       processing coriolis FACTOR on V grid
-!       ____________________________________
-
-            do j=1-G_haloy,l_nj+G_haloy
-            do i=1-G_halox,l_ni+G_halox
-               call smat (S,Y_lon,Y_lat,F_x_8(i),F_yv_8(j))
-               F_v_8(i,j) = coef_8 *   &
-                    (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
-                            sin(Y_lat)* cos(Williamson_alpha))
-            enddo
-            enddo
-
-!       processing coriolis FACTOR on U grid
-!       ____________________________________
-
-            do j=1-G_haloy,l_nj+G_haloy
-            do i=1-G_halox,l_ni+G_halox
-               call smat (S,Y_lon,Y_lat,F_xu_8(i),F_y_8(j))
-               F_u_8(i,j) = coef_8 *   &
-                    (-cos( Y_lon)*cos(Y_lat)*sin(Williamson_alpha)+ &
-                            sin(Y_lat)* cos(Williamson_alpha))
-            enddo
-            enddo
-
-         else
-            write(Lun_out,*) ''
-            write(Lun_out,*) 'Coriolis evaluation using alpha when Williamson cases 2 and 3 '
-            write(Lun_out,*) ''
-
-!       processing coriolis FACTOR on V grid
-!       ____________________________________
-
-            do j=1-G_haloy,l_nj+G_haloy
-            do i=1-G_halox,l_ni+G_halox
-               F_v_8(i,j) = coef_8*   &
-                    (-cos( F_x_8(i))* cos(F_yv_8(j))*sin(Williamson_alpha)+ &
-                            sin(F_yv_8(j))* cos(Williamson_alpha))
-            enddo
-            enddo
-
-!       processing coriolis FACTOR on U grid
-!       ____________________________________
-
-            do j=1-G_haloy,l_nj+G_haloy
-            do i=1-G_halox,l_ni+G_halox
-               F_u_8(i,j) = coef_8*   &
-                    (-cos( F_xu_8(i))* cos(F_y_8(j))*sin(Williamson_alpha)+ &
-                            sin(F_y_8(j))* cos(Williamson_alpha))
-            enddo
-            enddo
-         endif
-
-      endif
+      enddo      
 !
 !-------------------------------------------------------------------
 !

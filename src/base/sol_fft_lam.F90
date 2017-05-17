@@ -21,6 +21,8 @@
                                F_gni, F_gnj, F_gnk, F_nk       , &
                                F_npex1, F_npey1                , &
                                F_ai, F_bi, F_ci  , F_dg2,F_dwfft )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -73,8 +75,6 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
 
       character*4 type_fft
       integer i, j, k, jr, l_pil_w, l_pil_e

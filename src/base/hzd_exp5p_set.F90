@@ -16,6 +16,9 @@
 !**s/r hzd_exp5p_set - Horizontal diffusion delN setup for LAMs
 
       subroutine hzd_exp5p_set
+      use hzd_mod
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -28,11 +31,9 @@
 !
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
 #include "lun.cdk"
+#include "cstv.cdk"
 
       real*8 coef_8,coef_theta_8,coef_tr_8,nutop_8,c_8,deg2rad_8
 !

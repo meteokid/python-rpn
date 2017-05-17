@@ -17,6 +17,9 @@
 
       subroutine adv_check_tracers ()
 
+      use adv_options
+      use grid_options
+      use gem_options
       implicit none
 
 #include <arch_specific.hf>
@@ -29,10 +32,7 @@
 
 #include "tr3d.cdk"
 #include "tracers.cdk"
-#include "adv_nml.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 
       !---------------------------------------------------------------------

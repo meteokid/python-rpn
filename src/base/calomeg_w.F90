@@ -21,6 +21,7 @@
 !
       subroutine calomeg_w2 (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
 !
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,9 +56,8 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
-#include "lctl.cdk"
 #include "type.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       integer i,j,k

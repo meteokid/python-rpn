@@ -16,6 +16,7 @@
 !**s/r itf_phy_copy
 
       subroutine itf_phy_copy
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 
 #include <gmm.hf>
 #include "glb_ld.cdk"
-#include "pw.cdk"
 
       integer istat,k
       real, pointer, dimension (:,:,:) :: uu_copy,vv_copy  => null()

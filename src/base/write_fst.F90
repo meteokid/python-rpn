@@ -19,6 +19,7 @@
 !
       SUBROUTINE write_fst (buf,nx,ny,nz,varname,maxrange, &
                               ig1,ig2,ig3,grdtype,filename)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -42,7 +43,6 @@
 #include "hgc.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
-#include "lctl.cdk"
 !
       integer  fnom,fstinl,fstecr,fclos,longueur
       external fnom,fstinl,fstecr,fclos,longueur

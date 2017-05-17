@@ -18,6 +18,7 @@
       subroutine gz2p02 ( F_ps, F_gz, F_topo, F_rna ,&
                           Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
                           F_i0,F_in,F_j0,F_jn )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,11 +37,10 @@
 ! Nk           I    - number of levels from the pressure analyse
 
 #include "lun.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "schm.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       integer i,j,k,m,NN

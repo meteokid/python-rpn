@@ -18,6 +18,8 @@
       subroutine spn_init
       use spn_work_mod
 #include <arch_specific.hf>
+      use grid_options
+      use gem_options
       implicit none
 
 !author
@@ -30,12 +32,9 @@
 #include "lun.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
-#include "cstv.cdk"
 #include "ldnh.cdk"
 #include "ver.cdk"
-#include "spn.cdk"
+#include "cstv.cdk"
 
       integer i,j,k,err1,next_down
       real t_turn, b_turn, pi2, nudging_tau

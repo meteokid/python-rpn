@@ -19,6 +19,8 @@
       subroutine rhs ( F_oru, F_orv, F_orc, F_ort, F_orw, F_orf, &
                        F_u,F_v,F_w,F_t,F_s,F_zd,F_q, &
                        F_hu,  F_sl,  F_fis, Minx,Maxx,Miny,Maxy, Nk )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +31,7 @@
            F_u     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_v     (Minx:Maxx,Miny:Maxy,  Nk), &
            F_w     (Minx:Maxx,Miny:Maxy,  Nk)  ,F_t     (Minx:Maxx,Miny:Maxy,  Nk), &
            F_s     (Minx:Maxx,Miny:Maxy)       ,F_zd    (Minx:Maxx,Miny:Maxy,  Nk), &
-           F_q     (Minx:Maxx,Miny:Maxy,2:Nk+1),F_hu    (Minx:Maxx,Miny:Maxy,  Nk), &
+           F_q     (Minx:Maxx,Miny:Maxy,  Nk+1),F_hu    (Minx:Maxx,Miny:Maxy,  Nk), &
            F_fis   (Minx:Maxx,Miny:Maxy)       ,F_sl    (Minx:Maxx,Miny:Maxy)
 
 !author
@@ -52,14 +54,11 @@
 
 #include "glb_ld.cdk"
 #include "cori.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
-#include "schm.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
+#include "cstv.cdk"
 
       logical, save :: done_MU=.false.
       integer :: i0,  in,  j0,  jn
@@ -109,7 +108,7 @@
       call rpn_comm_xch_halo( F_s , l_minx,l_maxx,l_miny,l_maxy,l_ni ,l_nj ,1   , &
                               G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       if (.not.Schm_hydro_L) then
-         call rpn_comm_xch_halo(  F_q, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk,&
+         call rpn_comm_xch_halo(  F_q, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,G_nk+1,&
                                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
@@ -186,7 +185,7 @@
          do j=j0v,jnv+1
          do i=i0u,inu+1
             BsPq(i,j,k) = Ver_b_8%m(k)*(F_s(i,j)+Cstv_Sstar_8) &
-                         +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) + F_q(i,j,kq) * Ver_onezero(k)
+                         +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) + F_q(i,j,k)
          enddo
          enddo
       enddo

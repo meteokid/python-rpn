@@ -18,6 +18,7 @@
 
 !
       subroutine set_vta
+      use gmm_vta
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,7 +37,6 @@
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "vta.cdk"
 
       integer :: istat
 !     ---------------------------------------------------------------
@@ -65,7 +65,7 @@
       istat = gmm_create(gmmk_tta_s,tta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(tta)'
 
-      istat = gmm_create(gmmk_qta_s,qta,meta3d_2nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
+      istat = gmm_create(gmmk_qta_s,qta,meta3d_nk1,GMM_FLAG_RSTR+GMM_FLAG_IZER)
       if (GMM_IS_ERROR(istat)) print *,'set_vta ERROR at gmm_create(qta)'
 
       istat = gmm_create(gmmk_zdta_s,zdta,meta3d_nk,GMM_FLAG_RSTR+GMM_FLAG_IZER)

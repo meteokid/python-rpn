@@ -16,6 +16,7 @@
 !**s/r eqspng_drv - apply vertical diffusion at and near the model top on u and v
 
 subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
+      use gem_options
    implicit none
 #include <arch_specific.hf>
    
@@ -72,7 +73,6 @@ subroutine eqspng_drv (F_u,F_v,Minx,Maxx,Miny,Maxy,Nk)
 
 #include "lun.cdk"
 #include "glb_ld.cdk"
-#include "eq.cdk"
 
    ! Local variables
 

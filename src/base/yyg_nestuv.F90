@@ -14,9 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r yyg_nestuv -for interpolating and nesting Yin-Yang UV boundary conditions
 !
-
-!
       subroutine yyg_nestuv (F_u, F_v, Minx,Maxx,Miny,Maxy, Nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
       integer  Minx,Maxx,Miny,Maxy, Nk
@@ -35,10 +34,8 @@
 !arguments
 !       none
 !
-
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 #include "geomg.cdk"
 !

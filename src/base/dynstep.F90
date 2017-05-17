@@ -18,18 +18,15 @@
       subroutine dynstep
       use step_options
       use gmm_vt1
+      use gmm_orh
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "orh.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
-#include "schm.cdk"
-#include "vtopo.cdk"
-#include "grd.cdk"
 #include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
@@ -111,6 +108,8 @@
          call nest_gwa
          call spn_main
       endif
+
+      call canonical_cases ("RAYLEIGH")
 
       call hzd_main_stag
 

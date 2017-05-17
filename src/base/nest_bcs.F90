@@ -16,6 +16,9 @@
 !**s/r nest_bcs
 
       subroutine nest_bcs
+      use gmm_nest
+      use gmm_rhsc
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -27,12 +30,8 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
-#include "theo.cdk"
-#include "nest.cdk"
-#include "rhsc.cdk"
 #include "cstv.cdk"
+#include "theo.cdk"
 
       integer i,j,k,gmmstat
 !

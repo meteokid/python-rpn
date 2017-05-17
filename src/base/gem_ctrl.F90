@@ -16,6 +16,7 @@
 !**s/r gem_ctrl - initiate the forward integration of the model
 !
       subroutine gem_ctrl
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -38,8 +39,6 @@
 !     It then initiates the forward intergration of the model.
 
 #include "glb_ld.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
 

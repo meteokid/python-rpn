@@ -17,6 +17,8 @@
 !
       subroutine pw_update_GPW
       use gmm_vt1
+      use gmm_pw
+      use gmm_geof
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +30,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "p_geof.cdk"
 #include "ver.cdk"
-#include "pw.cdk"
 
       integer i, j, k, istat
       real fi(l_minx:l_maxx,l_miny:l_maxy,G_nk+1)

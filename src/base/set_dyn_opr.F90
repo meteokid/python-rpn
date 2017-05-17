@@ -16,13 +16,12 @@
 !**   s/r set_dyn_opr - initialize operators and some constant parameters
 
       subroutine set_dyn_opr
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "grd.cdk"
-#include "schm.cdk"
 !
 !     ---------------------------------------------------------------
 !
@@ -36,6 +35,10 @@
 !     Initialize horizontal diffusion package
 
       call hzd_exp_set
+
+!     Initialize DCMIP vertical diffusion package
+
+      call dcmip_vrd_set ()
 
 !     Initialize common block for vertical sponge
 

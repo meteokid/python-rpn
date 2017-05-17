@@ -15,9 +15,8 @@
 
 !**s/r set_gmm
 !
-
-!
       subroutine set_gmm
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -67,11 +66,6 @@
                             l_minx,l_maxx,G_halox,G_halox,l_ni, &
                             l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
                             0,l_nk+1,0,0,l_nk+2, &
-                            0,GMM_NULL_FLAGS)
-      call gmm_build_meta3D(meta3d_2nk1, &
-                            l_minx,l_maxx,G_halox,G_halox,l_ni, &
-                            l_miny,l_maxy,G_haloy,G_haloy,l_nj, &
-                            2,l_nk+1,0,0,l_nk, &
                             0,GMM_NULL_FLAGS)
 
       if (Rstri_rstn_L) istat = gmm_checkpoint_all(GMM_READ_CKPT)

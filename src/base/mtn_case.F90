@@ -19,6 +19,9 @@
       subroutine mtn_case ( F_u, F_v, F_w, F_t, F_zd, F_s, F_topo, &
                             F_q, pref_tr, suff_tr, Mminx,Mmaxx,Mminy,Mmaxy )
       use gmm_vt1
+      use gmm_geof
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -42,19 +45,14 @@
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "cstv.cdk" 
 #include "geomg.cdk"
-#include "grd.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
 #include "theo.cdk"
-#include "vtopo.cdk"
 #include "mtn.cdk"
-#include "zblen.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
-#include "p_geof.cdk"
+#include "cstv.cdk"
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name

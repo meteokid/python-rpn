@@ -18,6 +18,7 @@
 
       subroutine  mat_vecs3D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil, &
                      njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )   
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -33,10 +34,10 @@
 
 #include "glb_ld.cdk"
 #include "opr.cdk"
-#include "cstv.cdk"
 #include "geomg.cdk"
 #include "sol.cdk"
 #include "ver.cdk"
+#include "cstv.cdk"
 #include "dcst.cdk"
 
       integer j,i,k,ii,jj,halox,haloy

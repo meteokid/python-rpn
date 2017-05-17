@@ -20,6 +20,8 @@
 
 !
       subroutine set_rhs
+      use gmm_rhsc
+      use gmm_orh
       implicit none
 #include <arch_specific.hf>
 !
@@ -42,8 +44,6 @@
 #include "lun.cdk"
 #include "gmm.hf"
 #include "var_gmm.cdk"
-#include "rhsc.cdk"
-#include "orh.cdk"
 !
       integer :: istat
 !     ---------------------------------------------------------------

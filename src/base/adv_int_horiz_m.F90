@@ -18,6 +18,7 @@
                                    F_xmv, F_ymv, F_zmv, &
                                    F_xm , F_ym , F_zm , &
                                    F_ni,F_nj, F_nk,F_k0,i0,in,j0,jn)
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -54,7 +55,6 @@
 #include "adv_interp.cdk"
 #include "ver.cdk"
 #include "adv_grid.cdk"
-#include "grd.cdk"
 #include "ptopo.cdk"
 
       integer i,j,k,i0u,inu,j0v,jnv

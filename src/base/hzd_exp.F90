@@ -14,6 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module hzd_exp
+      use hzd_mod
+      use gem_options
+      use grid_options
   implicit none
 #include <arch_specific.hf>
   private
@@ -42,9 +45,6 @@ contains
 ! v4_80 - Lee   - optimization
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
-#include "vspng.cdk"
 
       integer iter1,iter2,mm,dpwr,itercnt,Niter,Pwr
       real c1(Minx:Maxx,Miny:Maxy,Nk), c2(Minx:Maxx,Miny:Maxy,Nk)

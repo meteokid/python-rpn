@@ -16,6 +16,8 @@
 !**s/r sol_main - Main driver for the elliptic solver
 !
       subroutine sol_main ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, F_iln )
+      use gmm_orh
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,9 +32,6 @@
 
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "schm.cdk"
-#include "wil_williamson.cdk"
-#include "orh.cdk"
 #include "sol.cdk"
 
       logical print_conv
@@ -40,7 +39,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      if (Schm_autobar_L.and.Williamson_case.eq.1) return
+      if (Schm_testcases_adv_L) return
 
       if (Lun_debug_L) write(Lun_out,1000)
 

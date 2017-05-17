@@ -19,6 +19,9 @@
 
       subroutine itf_ens_hzd ( F_ut1, F_vt1, F_tt1, Minx,Maxx,Miny,Maxy, Nk )
       use phy_itf, only: phy_get
+      use ens_gmm_var
+      use ens_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,11 +42,8 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
-#include "ens_param.cdk"
-#include "ens_gmm_var.cdk"
-#include "grd.cdk"
+#include "dcst.cdk"
 
       character*4, save :: mode= "SAVE"
       integer i,j,k,istat

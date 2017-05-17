@@ -18,6 +18,7 @@
 !
       subroutine slabsym ()
       use gmm_vt1
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "tr3d.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 
       type(gmm_metadata) :: mymeta
@@ -74,7 +74,7 @@
                tt1 (i,jj,k) = tt1 (i,jin,k)
                wt1 (i,jj,k) = wt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -85,7 +85,8 @@
          do j=1,pil_n
          jj  = l_nj-pil_n+j
          do i=1,l_ni
-            st1 (i,jj)        = st1 (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif
@@ -100,7 +101,7 @@
                wt1 (i,jj,k) = wt1 (i,jin,k)
                tt1 (i,jj,k) = tt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
-               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1 (i,jj,k) = ut1 (i,jin,k)
@@ -111,7 +112,8 @@
          do j=1,pil_s
          jj  = pil_s-j+1
          do i=1,l_ni
-            st1 (i,jj)        = st1 (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif

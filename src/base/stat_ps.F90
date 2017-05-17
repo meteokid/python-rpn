@@ -18,6 +18,8 @@
       subroutine stat_ps
 
       use gmm_vt1
+      use grid_options
+      use gem_options
       implicit none
 
 !author M.Tanguay
@@ -27,15 +29,13 @@
  
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "geomg.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
 #include "dcst.cdk"
 #include "tr3d.cdk"
-#include "schm.cdk"
 #include "tracers.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
 
       type(gmm_metadata) :: mymeta

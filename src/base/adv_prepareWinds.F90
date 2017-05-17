@@ -16,6 +16,9 @@
       subroutine adv_prepareWinds ( F_ud, F_vd, F_wd, F_ua, F_va, F_wa, F_wat , &
                                      ut0, vt0, zdt0, ut1, vt1 , zdt1          , &
                                      F_minx, F_maxx, F_miny, F_maxy , F_ni ,F_nj, F_nk )
+      use gmm_vt2
+      use gmm_pw
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,9 +34,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
-#include "vt2.cdk"
-#include "pw.cdk"
 #include "dcst.cdk"
 
       real, dimension(:,:,:), allocatable :: uh,vh,wm,wh

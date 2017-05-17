@@ -15,10 +15,9 @@
 
 !**s/r yyg_xchng - Interpolate and exchange scalars 
 
-
-
       subroutine yyg_xchng ( F_src, Minx,Maxx,Miny,Maxy, Nk, &
                              mono_L, F_interpo_S )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 

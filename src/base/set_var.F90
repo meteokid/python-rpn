@@ -17,6 +17,7 @@
 !
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 

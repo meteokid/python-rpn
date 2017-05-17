@@ -19,7 +19,7 @@
 !
       subroutine pospers
 !
-      use gmm_vt1
+      use gmm_vth
       implicit none
 #include <arch_specific.hf>
 !
@@ -39,7 +39,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "vth.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 !

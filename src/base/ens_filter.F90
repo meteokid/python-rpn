@@ -17,6 +17,10 @@
 !
       subroutine ens_filter (F_ugwdt1,F_vgwdt1,F_difut1,F_difvt1, &
                              F_ut1,F_vt1,F_tt1, Minx,Maxx,Miny,Maxy, Nk)
+      use ens_gmm_var
+      use ens_options
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,10 +42,7 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
 
-#include "ens_gmm_var.cdk"
-#include "ens_param.cdk"
 
       integer  E_nk
       integer i, j, k, i0, j0, in, jn

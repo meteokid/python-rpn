@@ -15,6 +15,7 @@
 
 module nest_blending
 
+      use gmm_nest
   implicit none
 #include <arch_specific.hf>
   private
@@ -180,7 +181,6 @@ contains
     integer, intent(out), optional :: F_ni,F_nj         !i,j dimensions of the weight field
     integer :: my_ni,my_nj
 #include "glb_ld.cdk"
-#include "nest.cdk"
 
     select case (trim(F_grid))
     case ('M')

@@ -1,3 +1,0 @@
-      character(len=32) :: Dynamics_Kernel_S
-      common / dynKernel_S / Dynamics_Kernel_S
-      namelist /dyn_kernel/ Dynamics_Kernel_S

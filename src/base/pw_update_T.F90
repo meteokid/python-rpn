@@ -16,6 +16,7 @@
 !**s/r pw_update_T - Update physical quantities TT
 
       subroutine pw_update_T
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "pw.cdk"
 
       integer istat
       real, pointer, dimension (:,:,:)  :: pw_tt  => null()

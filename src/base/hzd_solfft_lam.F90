@@ -23,6 +23,7 @@
                    minx,maxx,miny,maxy,gnk,Gni,nil,njl,nkl         , &
                    F_opsxp0_8, F_opsyp0_8,F_cdiff,F_npex,F_npey)
 !
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -59,7 +60,6 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
 
       character*4 type_fft
       integer o1,o2,i,j,k,l_pil_w,l_pil_e

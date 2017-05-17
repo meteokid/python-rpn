@@ -16,14 +16,15 @@
 !**s/r hzd_exp_set
 
       subroutine hzd_exp_set
+      use hzd_mod
+      use gem_options
       implicit none
+#include "cstv.cdk"
 #include <arch_specific.hf>
 
 
 #include "glb_ld.cdk"
-#include "hzd.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
 #include "lun.cdk"
 #include "ver.cdk"
 
@@ -32,7 +33,7 @@
       integer, dimension(:) , allocatable :: pwr, lvl
       real   , dimension(:) , allocatable :: lnr
       real*8 c_8, x1, x2, rr, weight
-      real levhyb,coef
+      real levhyb
       real*8 pt25,nudif,epsilon
       parameter (epsilon = 1.0d-12, pt25=0.25d0)
 !

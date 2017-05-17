@@ -16,6 +16,7 @@
 !/@*
 function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
              F_minx,F_maxx,F_miny,F_maxy,F_k0,F_kn) result(F_istat)
+      use grid_options
    implicit none
 
    !@objective - Pre-folding operations for data on the physics grid
@@ -32,7 +33,6 @@ function itf_phy_prefold_opr (F_data, F_name_S, F_horiz_interp_S, &
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include <msg.h>
-#include "grd.cdk"
 #include "glb_ld.cdk"
 
    real, dimension(l_ni,l_nj,F_k0:F_kn) :: data_dyngrid

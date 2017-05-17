@@ -17,6 +17,7 @@
 !
       subroutine hzd_theta
       use hzd_ctrl
+      use gmm_pw
       use gmm_vt1
       implicit none
 #include <arch_specific.hf>
@@ -24,9 +25,7 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "hzd.cdk"
 #include "dcst.cdk"
-#include "pw.cdk"
 
       integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5

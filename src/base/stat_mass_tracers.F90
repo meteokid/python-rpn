@@ -13,45 +13,43 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!/@*
-subroutine stat_mass_tracers (F_time,F_comment_S) 
+!**s/r stat_mass_tracers - Calculate and print the mass of each tracer 
 
+   subroutine stat_mass_tracers (F_time,F_comment_S) 
+      use gem_options
    implicit none
  
-   !@arguments
+   !arguments
    integer,          intent(in) :: F_time       !I, Time 0 or Time 1 
    character(len=*), intent(in) :: F_comment_S  !I, Comment
 
-   !@author  Monique Tanguay
-   !@revisions
-   ! v4_70 - Tanguay,M.        - Initial Version
-   ! v5_00 - Tanguay M.        - Provide air mass to mass_tr
-
-!*@/
+   !object
+   !================================================
+   !     Calculate and print the mass of each tracer 
+   !================================================
 
 #include "glb_ld.cdk"
 #include "gmm.hf"
 #include "tr3d.cdk"
-#include "lam.cdk"
 #include "lun.cdk"
-#include "tracers.cdk"
-#include "schm.cdk"
 #include "ptopo.cdk"
+#include "tracers.cdk"
 
-   type(gmm_metadata) :: mymeta
+   !---------------------------------------------------------------------
 
-   integer :: err,n,k0,scaling_KEEP
-
+   integer :: err,n,k0,scaling_KEEP,count
    real, pointer, dimension (:,:,:) :: fld_tr
    real*8 tracer_8
-   real air_mass(l_minx:l_maxx,l_miny:l_maxy,l_nk),bidon(l_minx:l_maxx,l_miny:l_maxy,l_nk), &
-        fld_ONE(l_minx:l_maxx,l_miny:l_maxy,l_nk)
-
+   real, dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk):: air_mass,bidon,fld_ONE
    character(len=21) type_S
    character(len= 7) time_S
    character(len=GMM_MAXNAMELENGTH) in_S
+   logical,save :: done_L=.false.
+   real*8, save :: KEEP_tracer_8(MAXTR3D)
 
    !---------------------------------------------------------------------
+
+   call canonical_terminator_0 (count)
 
    k0 = Lam_gbpil_T+1 
 
@@ -65,17 +63,22 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
 
    do n=1,Tr3d_ntr
 
-      if (Tr3d_mass(n) <= 0) cycle
+      if (Tr3d_mass(n)==0) cycle
 
       if (F_time==1) in_S = 'TR/'//trim(Tr3d_name_S(n))//':P'
       if (F_time==0) in_S = 'TR/'//trim(Tr3d_name_S(n))//':M'
 
-      err = gmm_get(in_S,fld_tr,mymeta)
+      err = gmm_get(in_S, fld_tr)
+      
+      call canonical_terminator_1 (fld_tr,in_S,count,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,l_nk)
 
-      call mass_tr (tracer_8,Tr3d_name_S(n)(1:4),fld_tr,air_mass, &
-                    mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk-k0+1,k0)
+      call mass_tr (tracer_8,Tr3d_name_S(n)(1:4),fld_tr,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk-k0+1,k0)
 
-      if (Lun_out>0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8,Tr3d_name_S(n)(1:4),F_comment_S,'PANEL=',Ptopo_couleur
+      if (.not.done_L) KEEP_tracer_8(n) = tracer_8
+
+      if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8/KEEP_tracer_8(n),Tr3d_name_S(n)(1:4),F_comment_S
+
+      call canonical_terminator_2 (air_mass,tracer_8,count,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0,Lun_out,type_S,time_S,F_comment_S)
 
    enddo
 
@@ -87,15 +90,18 @@ subroutine stat_mass_tracers (F_time,F_comment_S)
    scaling_KEEP = Tr_scaling
    Tr_scaling   = 0
 
-   call mass_tr (tracer_8,'RHO ',fld_ONE,air_mass, &
-                 mymeta%l(1)%low,mymeta%l(1)%high,mymeta%l(2)%low,mymeta%l(2)%high,l_nk-k0+1,k0)
+   call mass_tr (tracer_8,'RHO ',fld_ONE,air_mass,l_minx,l_maxx,l_miny,l_maxy,l_nk-k0+1,k0)
 
-   if (Lun_out>0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8,'RHO ',F_comment_S,'PANEL=',Ptopo_couleur
+   if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8,'RHO ',F_comment_S
 
    Tr_scaling = scaling_KEEP
 
+   done_L = .true.
+
+   !---------------------------------------------------------------------
+
    return
 
-1002 format(1X,A9,A21,1X,A7,A4,E19.12,1X,A4,1X,A16,1X,A6,I1)
+1002 format(1X,A9,A21,1X,A7,A4,E19.12,1X,A4,1X,A16)
 
 end subroutine stat_mass_tracers 

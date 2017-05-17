@@ -16,6 +16,8 @@
 !**s/r set_opr - initialize the commons containing model operators
 
       subroutine set_opr2 (F_eigen_filename_S)
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
       character*(*) F_eigen_filename_S
@@ -35,7 +37,6 @@
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
 #include "dcst.cdk"
 #include "fft.cdk"
 #include "lun.cdk"

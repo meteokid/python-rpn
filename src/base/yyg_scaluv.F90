@@ -15,6 +15,7 @@
 !**s/r yyg_scaluv - to interpolate and exchange scalar winds for Yin-Yang
 !
       Subroutine yyg_scaluv(tabu_src,tabv_src,Minx,Maxx,Miny,Maxy,NK)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !

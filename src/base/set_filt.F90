@@ -14,11 +14,8 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 !**s/p set_filt - initialize list of variables for filtering before output
-!
-
-!
       integer function set_filt (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
-!
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -58,19 +55,15 @@
 ! F_v1         I    - integer parameter 1 - not used
 ! F_v2         I    - integer parameter 2 - not used
 !----------------------------------------------------------------
-!
-!
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
-!
-!*
-!
+
       character*5 stuff_S
       character*16 varname_S
       integer pass, varmax
-      real coef
+      real coefficient
       integer i, j, k, m, pndx, ii, jj, kk
 !
 !----------------------------------------------------------------
@@ -97,13 +90,13 @@
         return
       endif
 !
-!     Obtain coef,npass values for filter
+!     Obtain coefficient,npass values for filter
 !
       pass=0
-      coef=0.0
+      coefficient=0.0
       do i=varmax+2, F_argc
          if (F_argv_S(i).eq.'coef') then
-            read(F_argv_S(i+1),*) coef
+            read(F_argv_S(i+1),*) coefficient
          else if (F_argv_S(i).eq.'pass') then
             read(F_argv_S(i+1),*) pass
          endif
@@ -116,7 +109,7 @@
          return
       endif
 
-      if (coef.eq.0.0) then
+      if (coefficient.eq.0.0) then
           if (Lun_out.gt.0) write(Lun_out,*) 'set_filt WARNING: Filtering coefficient=0.0'
          set_filt=1
           Out3_filtpass_max = Out3_filtpass_max - 1
@@ -138,7 +131,7 @@
          jj = jj+1
          Out3_filt_S(jj)    = F_argv_S(ii+1)
          Out3_filtpass(jj)  = pass
-         Out3_filtcoef(jj)  = coef
+         Out3_filtcoef(jj)  = coefficient
       enddo
       Out3_filtpass_max = jj
 !

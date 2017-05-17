@@ -16,6 +16,7 @@
       subroutine itf_phy_sfcdiag (F_dest, minx, maxx, miny, maxy, &
                                   F_var_S, F_status, F_quiet_L)
       use phy_itf, only: phy_get
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,6 @@
    !@author  Michel Desgagne  -  Summer 2013
    !*@/
 
-#include "grd.cdk"
 #include "glb_ld.cdk"
 
       real, dimension(:,:,:), pointer :: ptr3d

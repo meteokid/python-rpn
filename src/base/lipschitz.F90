@@ -50,8 +50,8 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "type.cdk"
-#include "ver.cdk"
 #include "cstv.cdk"
+#include "ver.cdk"
 
       integer i,j,k,i0,j0,km, iu,iv,iw, ju,jv,jw, ku,kv,kw
       real pr1, pr2, dudx, dvdy, dwdy,dwdz, LipNOu, LipNOv, LipNOw

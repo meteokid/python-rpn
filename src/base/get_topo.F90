@@ -16,6 +16,8 @@
 !**s/r get_topo - Obtain topography from geophysical file
 
       subroutine get_topo3 ( F_topo, F_topo_ls, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,8 +35,6 @@
 #include "ptopo.cdk"
 #include "path.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
-#include "grd.cdk"
 
       character*8    inttyp
       character*1024 fn

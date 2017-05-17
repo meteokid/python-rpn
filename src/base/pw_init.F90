@@ -16,11 +16,11 @@
 !**s/r pw_init - Initialization of pw_*_moins variables
 
       subroutine pw_init
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
-#include "pw.cdk"
 
       integer istat
 

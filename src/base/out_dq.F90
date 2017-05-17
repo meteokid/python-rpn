@@ -18,6 +18,8 @@
       subroutine out_dq (levset,set)
       use vertical_interpolation, only: vertint2
       use gmm_vt1
+      use gmm_pw
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +36,6 @@
 #include "grid.cdk"
 #include "out3.cdk"
 #include "outd.cdk"
-#include "pw.cdk"
 #include "level.cdk"
 #include "ver.cdk"
 

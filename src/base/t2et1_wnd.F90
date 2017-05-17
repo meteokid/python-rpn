@@ -17,10 +17,10 @@
 
       subroutine t2et1_wnd
       use gmm_vt1
+      use gmm_vt2
       implicit none
 
 #include "gmm.hf"
-#include "vt2.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"

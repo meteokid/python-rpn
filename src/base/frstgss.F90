@@ -18,6 +18,8 @@
 
       subroutine frstgss ()
       use gmm_vt1
+      use gmm_vt0
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +32,6 @@
 ! v4_05 - Lepine M.         - VMM replacement with GMM
 
 #include "gmm.hf"
-#include "vt0.cdk"
 #include "tr3d.cdk"
       integer :: istat, k
       character(len=GMM_MAXNAMELENGTH) :: tr_name

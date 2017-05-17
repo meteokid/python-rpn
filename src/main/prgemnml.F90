@@ -29,50 +29,40 @@ subroutine prgemnml()
    return
 end subroutine prgemnml
 
-
 subroutine nml_grid()
+   use grid_options
    implicit none
-#include <arch_specific.hf>
-#include "grd.cdk"
    write(FILEID, nml=grid)
    return
 end subroutine nml_grid
 
-
 subroutine nml_step()
    use step_options
    implicit none
-#include <arch_specific.hf>
    write(FILEID, nml=step)
    return
 end subroutine nml_step
 
-
 subroutine nml_adv()
    implicit none
-#include <arch_specific.hf>
    call adv_nml_print()
    return
 end subroutine nml_adv
 
-
 subroutine nml_gem()
+   use gem_options
+   use grdc_options
    implicit none
-#include <arch_specific.hf>
-#include "nml.cdk"
    write(FILEID, nml=gem_cfgs)
    write(FILEID, nml=grdc)
-   write(FILEID, nml=williamson)
    return
 end subroutine nml_gem
 
-
 subroutine nml_theo()
+   use gem_options
+   use grid_options
    use step_options
    implicit none
-#include <arch_specific.hf>
-#undef TYPE_CDK
-#undef GMM_IS_OK
 #include "theonml.cdk"
    write(FILEID, nml=theo_cfgs)
    write(FILEID, nml=mtn_cfgs)

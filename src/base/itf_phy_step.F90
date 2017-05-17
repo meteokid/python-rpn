@@ -18,6 +18,7 @@
       subroutine itf_phy_step ( F_step_kount, F_lctl_step )
       use iso_c_binding
       use phy_itf, only: phy_input,phy_step,phy_snapshot
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 #include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "init.cdk"
 #include "path.cdk"
 #include "rstr.cdk"
 #include "tr3d.cdk"

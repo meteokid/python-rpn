@@ -15,6 +15,7 @@
 
       subroutine adv_thermo2mom (F_fld_m, F_fld_t, F_ni,F_nj,F_nk, &
                                  F_minx, F_maxx, F_miny, F_maxy)
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 !@objective interpolate from thermodynamic to momentum levels
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 

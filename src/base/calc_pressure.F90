@@ -18,6 +18,7 @@
 !
       subroutine calc_pressure (F_pm, F_pt, F_p0, F_s, Minx,Maxx,Miny,Maxy,Nk)
       use gmm_vt1
+      use gmm_geof
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "p_geof.cdk"
 #include "ver.cdk"
 
       integer i, j, k, istat

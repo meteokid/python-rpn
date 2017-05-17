@@ -17,6 +17,9 @@
 
       subroutine psadj_init (F_kount)
       use gmm_vt1
+      use gmm_geof
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,13 +28,9 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "schm.cdk"
-#include "grd.cdk"
 #include "dcst.cdk"
 #include "psadj.cdk"
 #include "cstv.cdk"
-#include "iau.cdk"
-#include "p_geof.cdk"
 
       integer err,i,j,istat
       logical, save :: done = .false.
@@ -89,7 +88,7 @@
 
       !Compute dry surface pressure at initial time (- Cstv_pref_8)
       !------------------------------------------------------------
-      if (Schm_psadj>=2) then
+      if (Schm_psadj==2) then
 
          call dry_sfc_pressure_8 ( pr_p0_w_1_8, pr_m_8, pr_p0_1_8, &
                                    l_minx,l_maxx,l_miny,l_maxy,l_nk,'P' )

@@ -20,19 +20,19 @@
       use vgrid_wb, only: vgrid_wb_get
       use out_vref_mod, only: out_vref
       use gmm_vt1
+      use gmm_pw
+      use gmm_geof
+      use grdc_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "p_geof.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"
-#include "pw.cdk"
-#include "schm.cdk"
-#include "grdc.cdk"
 #include "tr3d.cdk"
 
       character* 512 name
@@ -94,7 +94,7 @@
                          0.,5,-1,G_nk,indo,G_nk,32,.false. )
       if (.not.Schm_hydro_L) &
       call out_fstecr3 ( qt1 ,l_minx,l_maxx,l_miny,l_maxy,hybm,'QT1 ' ,1., &
-                         0.,5,-1,G_nk,indo,G_nk,32,.false. ) 
+                         0.,5,-1,G_nk+1,indo,G_nk+1,32,.false. ) 
       call out_fstecr3 ( fis0,l_minx,l_maxx,l_miny,l_maxy,0.  ,'FIS0',1., &
                          0.,5,-1,1,indo,1,32,.false. )
 

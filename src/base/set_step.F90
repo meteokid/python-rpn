@@ -15,11 +15,9 @@
 
 !**s/r set_step - initialization of common block TIMESTEP
 !
-
-!
       integer function set_step(F_argc,F_argv_S,F_cmdtyp,F_v1,F_v2)
-!
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -92,15 +90,11 @@
 !
 
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "dimout.cdk"
 #include "timestep.cdk"
-#include "lctl.cdk"
+#include "cstv.cdk"
 #include "lun.cdk"
 
-
-!*
-!
       integer i,j,k,ii,num,istep
       logical month_flag,day_flag,hour_flag,step_flag,found_L
       real frarg,month,day,hour,rstep
@@ -109,6 +103,7 @@
       transtep2(frarg) = nint(86400.0 * frarg / Cstv_dt_8)
 !
       integer,external ::  transtep3
+      integer,external ::  dcmip_div_X 
 !
       argc_out=min(F_argc,6)
       if (Lun_out.gt.0) then
@@ -181,6 +176,8 @@
              i = i+1
              read(F_argv_S(ii),*)hour
              Timestep(i,j)=transtep(hour) 
+             if ( Schm_canonical_dcmip_L ) &
+             Timestep(i,j)= dcmip_div_X(transtep(hour))
          else if (day_flag) then
              i = i+1
              read(F_argv_S(ii),*)day
@@ -253,9 +250,9 @@
 ! be shorter than expected.
 !
 
-#include "cstv.cdk"
 #include "out3.cdk"
 #include "lun.cdk"
+#include "cstv.cdk"
 
 
 !*

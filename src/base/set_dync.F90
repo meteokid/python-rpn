@@ -18,6 +18,8 @@
       subroutine set_dync (F_check_and_stop_L, F_errcode)
       use matvec_mod, only: matvec_init
       use gmm_vt1
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,15 +27,12 @@
       integer F_errcode
 
 #include "gmm.hf"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
 #include "lun.cdk"
 #include "opr.cdk"
-#include "schm.cdk"
 #include "sol.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       integer k,err,istat,k0,i,j

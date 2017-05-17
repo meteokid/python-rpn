@@ -15,6 +15,7 @@
 
       subroutine out_liebman ( ttx, htx, vt, gz, fis0, wlao,&
                                Minx,Maxx,Miny,Maxy,nkund,nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !

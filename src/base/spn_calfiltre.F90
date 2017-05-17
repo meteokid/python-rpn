@@ -17,6 +17,8 @@
 
       subroutine spn_calfiltre ( F_nis, F_njs )
       use spn_work_mod
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,11 +32,8 @@
 ! v4_80 - Baek - clarification
 
 #include "lun.cdk"
-#include "grd.cdk"
 #include "dcst.cdk"
 #include "glb_pil.cdk"
-#include "lam.cdk"
-#include "spn.cdk"
 
       integer i,j
       integer ni_trunc, ni_truncx, nj_trunc

@@ -17,6 +17,7 @@
 
       subroutine hwnd_stag ( F_du,F_dv, F_su,F_sv, Minx,Maxx,Miny,Maxy, &
                              NK, F_stag_L )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 

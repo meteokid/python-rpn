@@ -16,6 +16,9 @@
 subroutine itf_phy_diag ()
    use phy_itf, only: phy_get
 !!$   use sfclayer_mod, only: sl_prelim,sl_sfclayer,SL_OK
+      use gmm_pw
+      use grid_options
+      use gem_options
    implicit none
 #include <arch_specific.hf>
 
@@ -29,13 +32,10 @@ subroutine itf_phy_diag ()
 #include <msg.h>
 #include <gmm.hf>
 #include <WhiteBoard.hf>
-#include "grd.cdk"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "dimout.cdk"
 #include "outp.cdk"
 #include "dcst.cdk"
-#include "pw.cdk"
 
    logical, save :: init_L = .false., dodiag_L = .true.
 

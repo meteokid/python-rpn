@@ -18,6 +18,7 @@
 !
       subroutine mirror ()
       use gmm_vt1
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "tr3d.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
 
       type(gmm_metadata) :: mymeta
@@ -75,7 +75,7 @@
                tt1 (i,jj,k) = tt1 (i,jin,k)
                zdt1(i,jj,k) = zdt1(i,jin,k)
                wt1 (i,jj,k) = wt1 (i,jin,k)
-               qt1 (i,jj,k+1)=qt1 (i,jin,k+1)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1   (i,jj,k) = ut1   (i,jin,k)
@@ -86,7 +86,8 @@
          jin = max(pil_s+1,l_nj-pil_n-j+1)
          jj  = l_nj-pil_n+j
          do i=1,l_ni
-            st1  (i,jj) = st1  (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif
@@ -107,10 +108,10 @@
             do i=1,pil_e
                iin = max(pil_w+1,l_ni-pil_e-i+1)
                ii  = l_ni-pil_e+i
-               tt1   (ii,j,k) = tt1   (iin,j,k)
-               zdt1 (ii,j,k) = zdt1 (iin,j,k)
+               tt1 (ii,j,k) = tt1 (iin,j,k)
+               zdt1(ii,j,k) = zdt1(iin,j,k)
                wt1 (ii,j,k) = wt1 (iin,j,k)
-               qt1 (ii,j,k+1)=qt1 (iin,j,k+1)
+               qt1 (ii,j,k) = qt1 (iin,j,k)
             end do
             end do
             do j=1,l_njv
@@ -125,7 +126,8 @@
          do i=1,pil_e
             iin = max(pil_w+1,l_ni-pil_e-i+1)
             ii  = l_ni-pil_e+i
-            st1  (ii,j) = st1  (iin,j)
+            st1(ii,j)        = st1(iin,j)
+            qt1(ii,j,G_nk+1) = qt1(iin,j,G_nk+1)
          end do
          end do
       endif
@@ -146,10 +148,10 @@
             jin = min(l_nj-pil_n,pil_s+j)
             jj  = pil_s-j+1
             do i=1,l_ni
-               tt1   (i,jj,k) = tt1   (i,jin,k)
-               zdt1 (i,jj,k) = zdt1 (i,jin,k)
-               wt1(i,jj,k)  = wt1(i,jin,k)
-               qt1(i,jj,k+1)= qt1(i,jin,k+1)
+               tt1 (i,jj,k) = tt1 (i,jin,k)
+               zdt1(i,jj,k) = zdt1(i,jin,k)
+               wt1 (i,jj,k) = wt1 (i,jin,k)
+               qt1 (i,jj,k) = qt1 (i,jin,k)
             end do
             do i=1,l_niu
                ut1  (i,jj,k) = ut1  (i,jin,k)
@@ -160,7 +162,8 @@
          jin = min(l_nj-pil_n,pil_s+j)
          jj  = pil_s-j+1
          do i=1,l_ni
-            st1  (i,jj) = st1  (i,jin)
+            st1(i,jj)        = st1(i,jin)
+            qt1(i,jj,G_nk+1) = qt1(i,jin,G_nk+1)
          end do
          end do
       endif
@@ -181,10 +184,10 @@
             do i=1,pil_w
                iin = min(l_ni-pil_e,pil_w+i)
                ii  = pil_w-i+1
-               tt1   (ii,j,k) = tt1   (iin,j,k)
-               zdt1 (ii,j,k) = zdt1 (iin,j,k)
-               wt1(ii,j,k)  = wt1(iin,j,k)
-               qt1(ii,j,k+1)= qt1(iin,j,k+1)
+               tt1 (ii,j,k) = tt1 (iin,j,k)
+               zdt1(ii,j,k) = zdt1(iin,j,k)
+               wt1 (ii,j,k) = wt1 (iin,j,k)
+               qt1 (ii,j,k) = qt1 (iin,j,k)
             end do
             end do
             do j=1,l_njv
@@ -199,7 +202,8 @@
          do i=1,pil_w
             iin = min(l_ni-pil_e,pil_w+i)
             ii  = pil_w-i+1
-            st1  (ii,j) = st1  (iin,j)
+            st1(ii,j)        = st1(iin,j)
+            qt1(ii,j,G_nk+1) = qt1(iin,j,G_nk+1)
          end do
          end do
       endif

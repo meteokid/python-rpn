@@ -17,6 +17,13 @@
 
       subroutine tstpdyn ( F_fnitraj )
       use gmm_vt1
+      use gmm_vt0
+      use gmm_nest
+      use gmm_rhsc
+      use gmm_orh
+      use gmm_geof
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,19 +32,9 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
-#include "lctl.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
-#include "nest.cdk"
 #include "nl.cdk"
-#include "orh.cdk"
-#include "p_geof.cdk"
-#include "rhsc.cdk"
-#include "schm.cdk"
-#include "vtopo.cdk"
-#include "vt0.cdk"
 
 !TODO : remove the following when removing GU
 #include "dcst.cdk"
@@ -220,7 +217,7 @@
             call yyg_xchng (st0 , l_minx,l_maxx,l_miny,l_maxy, 1   ,&
                             .false., 'CUBIC')
             if (.not.Schm_hydro_L) &
-            call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+            call yyg_xchng (qt0 , l_minx,l_maxx,l_miny,l_maxy, G_nk+1,&
                             .false., 'CUBIC')
          endif
 

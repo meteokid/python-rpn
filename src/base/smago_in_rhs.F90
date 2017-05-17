@@ -17,6 +17,10 @@
 !
       subroutine smago_in_rhs (F_du, F_dv, F_dw, F_dlth, F_u, F_v, F_w, F_t, F_s, &
                                lminx, lmaxx, lminy, lmaxy, nk)
+      use gmm_smag
+      use hzd_mod
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,16 +37,12 @@
 ! v5_0 - Husain S.    - added vertically variable background diffusion      
 
 #include "gmm.hf"
-#include "hzd.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "smag.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
+#include "cstv.cdk"
 
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz

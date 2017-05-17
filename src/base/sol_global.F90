@@ -15,6 +15,7 @@
 !*s/r sol_global - Solution of the elliptic problem for global grids 'G'
 !
       subroutine sol_global (F_sol_8, F_rhs_8, F_dg1, F_dg2, F_dwfft, F_ni, F_nj, F_nk)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +37,6 @@
 #include "opr.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
-#include "schm.cdk"
 #include "trp.cdk"
 
       integer Gni, i, j, nev, NSTOR, dim

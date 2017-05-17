@@ -19,20 +19,18 @@
       subroutine indata
       use step_options
       use gmm_vt1
+      use gmm_pw
+      use gmm_geof
+      use inp_mod
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
-#include "grd.cdk"
-#include "schm.cdk"
 #include "glb_ld.cdk"
-#include "p_geof.cdk"
-#include "lctl.cdk"
 #include "lun.cdk"
-#include "perturb.cdk"
 #include "tr3d.cdk"
-#include "inp.cdk"
-#include "pw.cdk"
 
       integer i,j,k,istat,dim,err
       real, dimension(:,:), pointer :: topo_large_scale
@@ -62,10 +60,14 @@
       if ( Schm_theoc_L ) then
          call theo_3D ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
                         zdt1,st1,qt1,fis0,'TR/',':P') 
-      elseif ( Schm_autobar_L ) then
+      elseif ( Schm_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
-                               l_minx,l_maxx,l_miny,l_maxy,&
-                            G_nk,'TR/',':P',Step_runstrt_S )
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk,&
+                         'TR/',':P',Step_runstrt_S )
+      elseif ( Schm_canonical_dcmip_L ) then
+         call dcmip_init( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
+                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
+                         'TR/',':P',Step_runstrt_S )
       else
          call timing_start2 ( 71, 'INITIAL_input', 2)
          istat= gmm_get (gmmk_topo_low_s , topo_low )
@@ -78,6 +80,7 @@
 
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
          dim=(l_maxx-l_minx+1)*(l_maxy-l_miny+1)*G_nk
+
          call inp_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus,&
                          zdt1,st1,qt1,fis0               ,&
                          l_minx,l_maxx,l_miny,l_maxy,G_nk    ,&
@@ -115,9 +118,11 @@
          minus = plus
       enddo
 
-      call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
-      call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
-                       l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
+      if (.not. Schm_testcases_L) then
+         call tt2virt2 (tt1, .true., l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         call hwnd_stag ( ut1,vt1, pw_uu_plus,pw_vv_plus,&
+                          l_minx,l_maxx,l_miny,l_maxy,G_nk,.true. )
+      endif
 
       call diag_zd_w2 ( zdt1,wt1, ut1,vt1,tt1,st1   ,&
                         l_minx,l_maxx,l_miny,l_maxy, G_nk,&
@@ -129,7 +134,9 @@
       call pw_init
 
       call out_outdir (Step_total)
+
       call iau_apply2 (0)
+
 
       if ( Schm_phyms_L ) call itf_phy_step (0,Lctl_step)
 

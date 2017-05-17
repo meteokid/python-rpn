@@ -20,6 +20,7 @@
       subroutine  sol_pre_multicol ( wk22, wk11,niloc,njloc, &
                              Minx, Maxx, Miny, Maxy,nil,njl, &
                               minx1, maxx1, minx2, maxx2,Nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -33,7 +34,6 @@
 !revision
 ! v3_30 - Qaddouri A.       - initial version
 !
-#include "schm.cdk"
 #include "ptopo.cdk"
 #include "sol.cdk"
 #include "prec.cdk"

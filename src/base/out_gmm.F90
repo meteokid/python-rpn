@@ -16,6 +16,7 @@
 !**s/r out_gmm - output GMM fields
 !
       subroutine out_gmm2 (levset,set)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -62,16 +63,14 @@
 #include "lun.cdk"
 #include "ver.cdk"
 #include "level.cdk"
-#include "schm.cdk"
 
-!      integer, external :: gmm_nkeys
       type(gmm_metadata) :: tmp_meta
       character(len=GMM_MAXNAMELENGTH), dimension(:), pointer :: keylist
       character(len=2) class_var(100,3)
       logical periodx_L,write_diag_lev
       integer nkeys,nko,i,ii,gridset,istat,id,cid
       integer, dimension(:), allocatable::indo
-      integer, parameter :: numvars = 21
+      integer, parameter :: numvars = 31 
       real, pointer, dimension(:,:,:) :: tr3
       real, pointer, dimension(:,:  ) :: tr2
       real, pointer, dimension(:    ) :: level_type
@@ -112,6 +111,16 @@
       class_var(19,1) = 'VR' ; class_var(19,2) = 'VV' ; class_var(19,3) = 'MM'
       class_var(20,1) = 'SM' ; class_var(20,2) = 'QQ' ; class_var(20,3) = 'TT'
       class_var(21,1) = 'SL' ; class_var(21,2) = 'QQ' ; class_var(21,3) = 'SF'
+      class_var(22,1) = 'PTH'; class_var(22,2) = 'QQ' ; class_var(22,3) = 'TT'
+      class_var(23,1) = 'DTV'; class_var(23,2) = 'QQ' ; class_var(23,3) = 'TT'
+      class_var(24,1) = 'CLY'; class_var(24,2) = 'QQ' ; class_var(24,3) = 'TT'
+      class_var(25,1) = 'AC' ; class_var(25,2) = 'QQ' ; class_var(25,3) = 'SF'
+      class_var(26,1) = 'IRT'; class_var(26,2) = 'QQ' ; class_var(26,3) = 'SF'
+      class_var(27,1) = 'ART'; class_var(27,2) = 'QQ' ; class_var(27,3) = 'SF'
+      class_var(28,1) = 'WRT'; class_var(28,2) = 'QQ' ; class_var(28,3) = 'SF'
+      class_var(29,1) = 'RWR'; class_var(29,2) = 'QQ' ; class_var(29,3) = 'TT'
+      class_var(30,1) = 'QR' ; class_var(30,2) = 'QQ' ; class_var(30,3) = 'TT'
+      class_var(31,1) = 'QE' ; class_var(31,2) = 'QQ' ; class_var(31,3) = 'TT'
       
 !     Setup the indexing for output
       allocate (indo   ( min(Level_max(levset),G_nk) ))
@@ -132,7 +141,7 @@
             endif
             level_type => Ver_hyb%t
             if (class_var(id,3) == 'MM') level_type => Ver_hyb%m
-            if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m(2:G_nk+1)
+            if (class_var(id,3) == 'MQ') level_type => Ver_hyb%m
             if (class_var(id,3) == 'TW') level_type => hybt_w
 
             select case (class_var(id,2))
@@ -166,6 +175,15 @@
                                level_type,keylist(i),Outd_convmult(ii,set),&
                                       Outd_convadd(ii,set),Level_kind_ip1 ,&
                                -1,G_nk,indo,nko, Outd_nbit(ii,set),.false. )
+               ! Special treatment for QT1 which is now scoping 1:G_nk+1
+               if ( (trim(keylist(i)) == 'QT1') .and. (G_nk.eq.nko) ) then
+                  indo(1) = G_nk+1
+                  call out_fstecr3 (tr3, tmp_meta%l(1)%low,tmp_meta%l(1)%high,&
+                                         tmp_meta%l(2)%low,tmp_meta%l(2)%high,&
+                                  level_type,keylist(i),Outd_convmult(ii,set),&
+                                         Outd_convadd(ii,set),Level_kind_ip1 ,&
+                                  -1,G_nk+1,indo,1, Outd_nbit(ii,set),.false. )
+               endif
             endif
 
             goto 800

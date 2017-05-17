@@ -32,8 +32,8 @@
 ! v4_70 - M. Desgagne      - Initial version
 
 #include "gmm.hf"
-#include "glb_ld.cdk"
 #include "cstv.cdk"
+#include "glb_ld.cdk"
 
       integer i,j,k,istat
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumq

@@ -17,6 +17,8 @@
 !
       subroutine ens_filter_gauss(bfact,lambda,dsp_local)
       use gmm_vt1
+      use ens_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,12 +37,10 @@
 #include "glb_ld.cdk"
 #include "trp.cdk"
 #include "ldnh.cdk"
-#include "lctl.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"
 #include "dcst.cdk"
-#include "ens_param.cdk"
 
 !
 

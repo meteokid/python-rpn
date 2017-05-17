@@ -22,6 +22,9 @@
       use out_vref_mod, only: out_vref
       use phy_itf, only: phy_get,phymeta,phy_getmeta,phy_put
       use step_options
+      use gmm_pw
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -29,16 +32,13 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lctl.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
 #include "out.cdk"
-#include "grd.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "outp.cdk"
 #include "ptopo.cdk"
-#include "pw.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 

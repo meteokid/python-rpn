@@ -18,6 +18,10 @@
                             F_ni, F_nj, F_nk, F_minx, F_maxx, F_miny, F_maxy, &
                             F_nind, F_ii, F_i0, F_in, F_j0, F_jn, F_k0,       &
                             F_lev_S, F_mono_kind, F_mass_kind)
+      use gmm_tracers
+      use adv_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
        character(len=1) :: F_lev_S
@@ -38,15 +42,11 @@
 !     @arguments
 
 #include "gmm.hf"
-#include "adv_nml.cdk"
 #include "tracers.cdk"
-#include "schm.cdk"
-#include "vt_tracers.cdk"
 #include "adv_grid.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "adv_mask_flux.cdk"
 
+      real,save,pointer,dimension(:,:,:) :: adw_mask_o =>null(), adw_mask_i =>null()
       logical :: mono_L, conserv_L    
       integer :: n,flux_n     
       logical, parameter :: EXTEND_L = .true.

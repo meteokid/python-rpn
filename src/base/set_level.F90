@@ -19,6 +19,7 @@
 !
       integer function set_level (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 !
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -85,7 +86,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "dimout.cdk"
 #include "level.cdk"
 #include "lun.cdk"

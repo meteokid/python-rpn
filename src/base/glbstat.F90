@@ -17,6 +17,7 @@
                             Minx,Maxx,Miny,Maxy,Mink,Maxk, &
                             F_i0,F_in,F_j0,F_jn,F_k0,F_kn )
       use stat_mpi, only: statf_dm
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -40,7 +41,6 @@
 
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
-#include "lctl.cdk"
 
       integer nk,rx
       real, dimension(:,:), allocatable :: wk1

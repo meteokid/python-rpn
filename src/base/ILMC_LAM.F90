@@ -3,7 +3,8 @@
       subroutine ILMC_LAM (F_name_S,F_out,F_high,F_min,F_max,Minx,Maxx,Miny,Maxy,F_nk,k0,F_ILMC_min_max_L,F_ILMC_sweep_max)
 
       use array_ILMC
-
+      use gem_options
+      use grid_options
       implicit none
 
       !Arguments
@@ -33,8 +34,6 @@
 !**/
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
-#include "grd.cdk"
 #include "tracers.cdk"
 
       !----------------------------------------------------------

@@ -22,6 +22,9 @@
 !                        there is a blending between piloting field and original field
 !
 subroutine nest_init_weight (F_grid)
+      use gmm_nest
+      use gem_options
+      use grdc_options
   implicit none
 #include <arch_specific.hf>
 
@@ -30,11 +33,8 @@ subroutine nest_init_weight (F_grid)
 
 #include "gmm.hf"
 #include "var_gmm.cdk"
-#include "grdc.cdk"
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
-#include "lam.cdk"
-#include "nest.cdk"
 #include "ptopo.cdk"
 
   ! Local variables

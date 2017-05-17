@@ -15,6 +15,8 @@
 !**s/r set_fft - determine if fast fourier transforms is needed
 !
       integer function set_fft ()
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,9 +33,7 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "fft.cdk"
-#include "hzd.cdk"
 #include "sol.cdk"
-#include "grd.cdk"
 #include "lun.cdk"
 
       integer npts,onept,next_down,err

@@ -16,24 +16,24 @@
 !
       subroutine set_geom
       use hgrid_wb, only: hgrid_wb_put
-      
+      use gmm_geof
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
+!#include "hybdim.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
-#include "cstv.cdk"
 #include "geomn.cdk"
-#include "grd.cdk"
 #include "geomg.cdk"
-#include "p_geof.cdk"
 #include "hgc.cdk"
 #include "ptopo.cdk"
 #include "type.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       integer, external :: ezgdef_fmem,gdll
@@ -85,7 +85,7 @@
                            Grd_dx, Grd_dy, x0,xl,y0,yl, Grd_yinyang_L )
 
       if (Lun_out.gt.0) then
-         write (Lun_out,1005) G_nk,Grd_rcoef
+         write (Lun_out,1005) G_nk,Hyb_rcoef
          do k=1,G_nk
             height  =-16000./alog(10.)*alog(Ver_hyb%m(k))
             if (k.lt.G_nk)&
@@ -96,6 +96,8 @@
                                  height-heightp1,pnip1
          end do
       endif
+
+      call canonical_cases ("SET_GEOM")
 
       G_xg_8(1-G_halox:G_ni+G_halox+1) = posx_8(1-G_halox:G_ni+G_halox+1)*deg2rad_8
       G_yg_8(1-G_haloy:G_nj+G_haloy+1) = posy_8(1-G_haloy:G_nj+G_haloy+1)*deg2rad_8

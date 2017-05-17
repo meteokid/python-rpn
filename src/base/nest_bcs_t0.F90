@@ -16,6 +16,9 @@
 !**s/r nest_bcs_t0 -
 !
       subroutine nest_bcs_t0 ()
+      use gmm_vt0
+      use gmm_nest
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,11 +33,7 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt0.cdk"
-#include "nest.cdk"
 #include "tr3d.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer err,i,j,k,nvar,n,istat
@@ -70,7 +69,7 @@
          wt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_w (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
          zdt0(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk) = nest_zd(1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk)
          if (.not. Schm_hydro_L) then
-            qt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1) = nest_q (1:l_ni ,l_nj-pil_n+1:l_nj ,2:G_nk+1)
+            qt0 (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk+1) = nest_q (1:l_ni ,l_nj-pil_n+1:l_nj ,1:G_nk+1)
          endif
       endif
 
@@ -82,7 +81,7 @@
          wt0 (1:l_ni ,1:pil_s ,1:G_nk) = nest_w (1:l_ni ,1:pil_s ,1:G_nk)
          zdt0(1:l_ni ,1:pil_s ,1:G_nk) = nest_zd(1:l_ni ,1:pil_s ,1:G_nk)
          if (.not. Schm_hydro_L) then
-            qt0 (1:l_ni ,1:pil_s ,2:G_nk+1) = nest_q (1:l_ni ,1:pil_s ,2:G_nk+1)
+            qt0 (1:l_ni ,1:pil_s ,1:G_nk+1) = nest_q (1:l_ni ,1:pil_s ,1:G_nk+1)
          endif
       endif
 
@@ -94,7 +93,7 @@
          wt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_w (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
          zdt0(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk) = nest_zd(l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk)
          if (.not. Schm_hydro_L) then
-            qt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1) = nest_q (l_ni-pil_e+1:l_ni ,1:l_nj ,2:G_nk+1)
+            qt0 (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk+1) = nest_q (l_ni-pil_e+1:l_ni ,1:l_nj ,1:G_nk+1)
          endif
       endif
 
@@ -106,7 +105,7 @@
          wt0 (1:pil_w, 1:l_nj , 1:G_nk) = nest_w (1:pil_w, 1:l_nj , 1:G_nk)
          zdt0(1:pil_w, 1:l_nj , 1:G_nk) = nest_zd(1:pil_w, 1:l_nj , 1:G_nk)
          if (.not. Schm_hydro_L) then
-            qt0 (1:pil_w, 1:l_nj, 2:G_nk+1) = nest_q (1:pil_w, 1:l_nj, 2:G_nk+1)
+            qt0 (1:pil_w, 1:l_nj, 1:G_nk+1) = nest_q (1:pil_w, 1:l_nj, 1:G_nk+1)
          endif
       endif
 
@@ -117,7 +116,7 @@
          wt0 (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_w (1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
          zdt0(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1) = nest_zd(1:l_ni ,1:l_nj ,1:Lam_gbpil_t-1)
          if (.not. Schm_hydro_L) then
-            qt0 (1:l_ni,1:l_nj,2:Lam_gbpil_t)     = nest_q (1:l_ni,1:l_nj,2:Lam_gbpil_t)
+            qt0 (1:l_ni,1:l_nj,1:Lam_gbpil_t)     = nest_q (1:l_ni,1:l_nj,1:Lam_gbpil_t)
          endif
       endif
 

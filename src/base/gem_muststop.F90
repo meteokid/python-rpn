@@ -18,18 +18,17 @@
       use iso_c_binding
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
       integer F_finalstep
 
 #include <clib_interface_mu.hf>
-#include "lctl.cdk"
 #include "lun.cdk"
-#include "init.cdk"
 #include "path.cdk"
-#include "cstv.cdk"
 #include "out.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
       include "rpn_comm.inc"
 
@@ -78,7 +77,7 @@
          open (unf,file=trim(filen),access='SEQUENTIAL',&
                status='OLD',iostat=err,form='FORMATTED')
          if (err.eq.0) then
-            read (unf,'(e)',end=33,err=33) timeleft
+            read (unf,*,end=33,err=33) timeleft
 33          close(unf)
          else
             timeleft= huge(hugetype)

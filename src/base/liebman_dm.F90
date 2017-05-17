@@ -15,9 +15,9 @@
 
 !**s/r liebman_dm - modifiy a portion of input field by overrelaxation with del**2=0.
 !
-
       subroutine liebman_dm (F_field,  F_mask, F_conv, F_maxite, &
                                      Minx, Maxx, Miny, Maxy, Nk)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !

@@ -14,6 +14,9 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
       subroutine adv_tracers (F_water_tracers_only_L)
+      use adv_pos
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,14 +28,10 @@
    ! v4_80 - Tanguay M.        - GEM4 Mass-Conservation
    !@objective Perform advection of all tracers
 
-#include "grd.cdk"
 #include "glb_ld.cdk"
-#include "adv_pos.cdk"
-#include "lam.cdk"
 #include "tr3d.cdk" 
 #include "gmm.hf"
 #include "adv.cdk"
-#include "adv_precompute_flux.cdk"
 #include "tracers.cdk"
 
       logical qw_L      
@@ -76,7 +75,7 @@
       Adv_component_S = 'INTP_TR'
       call timing_start2 (27, 'ADV_INTP_TR', 10)
 
-      if (.NOT.F_water_tracers_only_L) done_precompute_L = .FALSE.
+      if (.NOT.F_water_tracers_only_L) Adv_done_precompute_L = .FALSE.
 
       do n=1,Tr3d_ntr
 

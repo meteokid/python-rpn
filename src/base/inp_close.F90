@@ -16,10 +16,10 @@
 !**s/r inp_close - Close all fst input files already opened
 
       subroutine inp_close ()
+      use inp_mod
       implicit none
 #include <arch_specific.hf>
 
-#include "inp.cdk"
 #include <rmnlib_basics.hf>
 
       integer i, err_code

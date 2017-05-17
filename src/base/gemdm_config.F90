@@ -21,27 +21,23 @@
       use timestr_mod, only: timestr_parse,timestr2step,timestr2sec
       use mu_jdate_mod, only: mu_set_leap_year, MU_JDATE_LEAP_IGNORED
       use step_options
+      use grid_options
+      use gem_options
+      use grdc_options
       implicit none
+
 #include <arch_specific.hf>
-
-!author
-!     M. Desgagne    - Summer 2006
-!
-!revision
-! v3_30 - Desgagne M.       - initial version
-! v4_00 - Plante & Girard   - Log-hydro-pressure coord on Charney-Phillips grid
-! v4_03 - Lee/Desgagne      - ISST, add Grdc_maxcfl, Step_maxcfl, elim Grdc_pil
-! v4_04 - Plante A.         - Remove offline mode
-! v4_05 - Desgagne M.       - Throw warning and return for digital filter in LAM
-! v4_05 - McTaggart-Cowan R.- Set Lun_sortie_s and Schm_opentop_L
-! v4_10 - Tanguay M.        - Adjust digital filter when LAM
-
 #include <rmnlib_basics.hf>
 #include <WhiteBoard.hf>
+#include "glb_ld.cdk"
+#include "out3.cdk"
 #include "dcst.cdk"
-#include "nml.cdk"
+#include "level.cdk"
+#include "lun.cdk"
+#include "cstv.cdk"
 #include "out.cdk"
-#include "tracers.cdk"
+#include "ptopo.cdk"
+#include "rstr.cdk"
 
       character*16  dumc_S, datev
       character*256 fln_S
@@ -231,7 +227,7 @@
 
       G_niu= G_ni - 1
 
-      if (Schm_psadj<0.and.Schm_psadj>3) then
+      if ( Schm_psadj<0 .and. Schm_psadj>2 ) then
          if (lun_out>0) write (Lun_out, 9700)
          return
       endif
@@ -285,32 +281,15 @@
          return
       endif
 
-      !#TODO: check for Iau_ninblocx, Iau_ninblocy compat with topology
+      Schm_testcases_L = Schm_canonical_dcmip_L .or. &
+                         Schm_canonical_williamson_L
 
 !     Some common setups for AUTOBAROTROPIC runs
       if (Schm_autobar_L) then
-         if (lun_out>0) write (Lun_out, 6100)
-         Schm_hydro_L   = .true.
-         if(Williamson_case/=7) Schm_topo_L = .false.
-         if (Williamson_case.eq.3.or.Williamson_case.eq.4) then
-             if (lun_out>0) write (Lun_out, 6300)
-             return
-         endif
-         if (Williamson_case>2.and.Williamson_alpha/=0.) then
-            if (lun_out>0) write (Lun_out, 6400)
-            return
-         endif
-         if (Williamson_case.eq.2.and. Grd_yinyang_L .and. &
-             Williamson_alpha/=0.0 .and. Williamson_alpha/=90.0 ) then
-            if (lun_out>0) write (Lun_out, 6500)
-            return
-         endif
-         Williamson_alpha=Williamson_alpha*(Dcst_pi_8/180.0)
-      endif
-      Tr_2D_3D_L = .FALSE.
-      if (Schm_autobar_L.and.Williamson_case==1) then
-          Tr_2D_3D_L = .TRUE.
-          if (lun_out>0) write (Lun_out, 7021)
+         Schm_hydro_L = .true.
+         call wil_set (Schm_topo_L,Schm_testcases_adv_L,Lun_out,err)
+         if (err.lt.0) return
+         if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L 
       endif
 
       err= 0
@@ -378,21 +357,14 @@
  6010 format (//'  =============================='/&
                 '  = Leap Years will be ignored ='/&
                 '  =============================='//)
- 6100 format (//'  =============================='/&
-               '  AUTO-BAROTROPIC RUN:          '/&
-                '  Schm_topo_L set to .false. '/&
-                '  =============================='//)
+ 6100 format (//'  =================================='/&
+                '  AUTO-BAROTROPIC RUN: Schm_topo = ',L1,/&
+                '  =================================='//)
  6200 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_lnr_theta= Hzd_lnr')
  6201 format ( ' Applying DEFAULT FOR THETA HOR. DIFFUSION Hzd_pwr_theta= Hzd_pwr')
- 6300 format (/' Williamson case 3 and 4 are not available'/)
- 6400 format (/' Williamson Alpha(in deg) must be 0.0 for cases greater than 2 '/)
- 6500 format (/' Williamson case 2: Alpha(in deg) must be 0.0 or 90.0 for Grd_yinyang '/)
  6602 format (/' WARNING: Init_dfnp is <= 0; Settings Init_balgm_L=.F.'/)
  6700  format (/'Schm_psadj>0 option in LAM config NOT fully tested yet.'&
                /'To continue using this option confirm your intent with Schm_psadj_lam_L=.true'/)
- 7021 format (//'  ==========================='/&
-                '  ACADEMIC 2D or 3D Advection'/&
-                '  ==========================='//)
  7040 format (/' OPTION Init_balgm_L=.true. NOT AVAILABLE if applying IAU (Iau_period>0)'/)
  8000 format (/,'========= ABORT IN S/R GEMDM_CONFIG ============='/)
  9154 format (/,' Out3_nbitg IS NEGATIVE, VALUE will be set to 16'/)

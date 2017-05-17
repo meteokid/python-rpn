@@ -18,6 +18,8 @@
      subroutine digflt
       use step_options
       use gmm_vt1
+      use gmm_vta
+      use gem_options
       implicit none
 
 !author
@@ -38,8 +40,6 @@
 #include <arch_specific.hf>
 #include <gmm.hf>
 #include "glb_ld.cdk"
-#include "init.cdk"
-#include "vta.cdk"
 #include "tr3d.cdk"
 
       integer i, j, k, n, err,istat
@@ -86,14 +86,15 @@
          vta (i,j,k)   =  vta(i,j,k)   + dfcoef *  vt1(i,j,k)
          zdta(i,j,k)   = zdta(i,j,k)   + dfcoef * zdt1(i,j,k)
          wta (i,j,k)   =  wta(i,j,k)   + dfcoef *  wt1(i,j,k)
-         qta (i,j,k+1) =  qta(i,j,k+1) + dfcoef *  qt1(i,j,k+1)
+         qta (i,j,k)   =  qta(i,j,k)   + dfcoef *  qt1(i,j,k)
       end do
       end do
       end do
 
       do j= 1, l_nj
       do i= 1, l_ni
-         sta (i,j)     = sta(i,j)      + dfcoef * st1(i,j)
+         sta (i,j)        = sta(i,j)        + dfcoef * st1(i,j)
+         qta (i,j,l_nk+1) = qta(i,j,l_nk+1) + dfcoef * qt1(i,j,l_nk+1)
       end do
       end do
 

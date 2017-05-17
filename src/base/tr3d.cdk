@@ -1,15 +1,13 @@
       integer, parameter :: MAXTR3D = 250
 
       character*4   Tr3d_name_S(MAXTR3D), NTR_Tr3d_name_S(MAXTR3D)
-      character*512 Tr3d_list_s(MAXTR3D), Tr3d_default_s
-      logical Tr3d_wload(MAXTR3D), Tr3d_hzd (MAXTR3D), &
-              Tr3d_anydate_L
+      logical Tr3d_wload(MAXTR3D), Tr3d_hzd (MAXTR3D)
       integer Tr3d_mono (MAXTR3D), Tr3d_mass(MAXTR3D)
       integer Tr3d_ntr, NTR_Tr3d_ntr
       real    Tr3d_vmin(MAXTR3D)
 
-      common /Tr3d_C/ Tr3d_list_s, Tr3d_name_S, NTR_Tr3d_name_S, Tr3d_default_s
-      common /Tr3d_L/ Tr3d_wload,  Tr3d_hzd, Tr3d_anydate_L
+      common /Tr3d_C/ Tr3d_name_S, NTR_Tr3d_name_S
+      common /Tr3d_L/ Tr3d_wload,  Tr3d_hzd
       common /Tr3d_I/ Tr3d_mono,   Tr3d_mass, Tr3d_ntr, NTR_Tr3d_ntr
       common /Tr3d_R/ Tr3d_vmin
 

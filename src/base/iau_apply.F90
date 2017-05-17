@@ -20,6 +20,9 @@ subroutine iau_apply2 (F_kount)
    use input_mod
       use step_options
       use gmm_vt1
+      use gmm_pw
+      use grid_options
+      use gem_options
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -37,14 +40,10 @@ subroutine iau_apply2 (F_kount)
 #include <gmm.hf>
 #include <msg.h>
 #include "dcst.cdk"
-#include "cstv.cdk"
-#include "lctl.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "path.cdk"
 #include "var_gmm.cdk"
-#include "pw.cdk"
-#include "iau.cdk"
+#include "cstv.cdk"
 
    character(len=2),parameter :: IAU_PREFIX='I_'
    character(len=6),parameter :: IAU_FILE = 'IAUREP'

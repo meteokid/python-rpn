@@ -19,6 +19,8 @@
 !#define SPY_VMM_CREATE spy_vmm_create
 
       subroutine nest_set_gmmvar
+      use gmm_nest
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -41,10 +43,7 @@
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "nest.cdk" 
 #include "tr3d.cdk"
-#include "lam.cdk"
-#include "init.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer i,istat
@@ -86,7 +85,7 @@
       istat = gmm_create(gmmk_nest_t_s , nest_t , meta3d_nk)
       istat = gmm_create(gmmk_nest_s_s , nest_s , meta2d   )
       istat = gmm_create(gmmk_nest_w_s , nest_w , meta3d_nk)
-      istat = gmm_create(gmmk_nest_q_s , nest_q , meta3d_2nk1)
+      istat = gmm_create(gmmk_nest_q_s , nest_q , meta3d_nk1)
       istat = gmm_create(gmmk_nest_zd_s, nest_zd, meta3d_nk)
       istat = gmm_create(gmmk_nest_fullme_s, nest_fullme, meta2d   )
 
@@ -96,7 +95,7 @@
          istat = gmm_create(gmmk_nest_t_deb_s , nest_t_deb , meta3d_nk)
          istat = gmm_create(gmmk_nest_s_deb_s , nest_s_deb , meta2d   )
          istat = gmm_create(gmmk_nest_w_deb_s , nest_w_deb , meta3d_nk)
-         istat = gmm_create(gmmk_nest_q_deb_s , nest_q_deb , meta3d_2nk1)
+         istat = gmm_create(gmmk_nest_q_deb_s , nest_q_deb , meta3d_nk1)
          istat = gmm_create(gmmk_nest_zd_deb_s, nest_zd_deb, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_deb_s, nest_fullme_deb, meta2d   )
 
@@ -105,7 +104,7 @@
          istat = gmm_create(gmmk_nest_t_fin_s , nest_t_fin , meta3d_nk)
          istat = gmm_create(gmmk_nest_s_fin_s , nest_s_fin , meta2d   )
          istat = gmm_create(gmmk_nest_w_fin_s , nest_w_fin , meta3d_nk)
-         istat = gmm_create(gmmk_nest_q_fin_s , nest_q_fin , meta3d_2nk1)
+         istat = gmm_create(gmmk_nest_q_fin_s , nest_q_fin , meta3d_nk1)
          istat = gmm_create(gmmk_nest_zd_fin_s, nest_zd_fin, meta3d_nk)
          istat = gmm_create(gmmk_nest_fullme_fin_s, nest_fullme_fin, meta2d   )
       endif

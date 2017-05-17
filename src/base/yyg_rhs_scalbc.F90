@@ -18,6 +18,7 @@
 
       Subroutine yyg_rhs_scalbc(rhs_dst1,sol_src1,minx,maxx,miny,maxy, &
                                 NK,iter,Linfini)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +32,6 @@
 #include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "sol.cdk"
-#include "lctl.cdk"
 #include "yyg_rhs.cdk"
 
       integer minx,maxx,miny,maxy,Ni,Nj,NK,numproc

@@ -16,6 +16,8 @@
       subroutine adv_int_vert_t ( F_xt, F_yt, F_zt, F_xtn, F_ytn, F_ztn, F_xm, F_ym, F_zm, &
                                   F_wat, F_wdm, F_ni,F_nj, F_nk     , &
                                   F_k0, i0,in,j0,jn, F_cubic_L )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -51,10 +53,8 @@
 #include "constants.h"
 #include "adv_grid.cdk"
 #include "ver.cdk"
-#include "cstv.cdk"
-#include "schm.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
 
       integer :: i,j,k

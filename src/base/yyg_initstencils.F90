@@ -18,6 +18,7 @@
 !
       subroutine yyg_initstencils
 !
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,7 +37,6 @@
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "lam.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
 !

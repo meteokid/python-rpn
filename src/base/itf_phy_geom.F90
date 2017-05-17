@@ -16,6 +16,8 @@
    subroutine itf_phy_geom4 (F_istat)
    use iso_c_binding
    use nest_blending, only: nest_blend
+      use gmm_geof
+      use gem_options
    implicit none
 #include <arch_specific.hf>
 
@@ -25,12 +27,10 @@
 #include <gmm.hf>
 #include <msg.h>
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
-#include "p_geof.cdk"
 #include "dcst.cdk"
-#include "lam.cdk"
+#include "cstv.cdk"
 
    logical :: nest_it
    integer :: i,j,istat

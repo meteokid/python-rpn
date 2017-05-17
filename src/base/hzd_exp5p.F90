@@ -18,6 +18,8 @@
  
       subroutine hzd_exp5p ( F_champ, F_temp, Minx,Maxx,Miny,Maxy, NK,&
                                         F_coef_8, F_arakawa_S,mm,dpwr )
+      use gem_options
+      use hzd_mod
       implicit none
 #include <arch_specific.hf>
  
@@ -36,7 +38,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "hzd.cdk"
 
       integer i,j,k,i0,in,j0,jn
       real*8 wk_8 (Minx:Maxx,Miny:Maxy,Nk)

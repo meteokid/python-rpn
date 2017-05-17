@@ -18,6 +18,7 @@
       subroutine stop_world_view
       use phy_itf, only: phy_terminate
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -39,8 +40,6 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
-#include "lctl.cdk"
-#include "schm.cdk"
 #include "version.cdk"
 #include <clib_interface_mu.hf>
 

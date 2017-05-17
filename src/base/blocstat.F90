@@ -17,6 +17,7 @@
 
       subroutine blocstat (F_forceit_L)
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -24,10 +25,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lctl.cdk"
 #include "ptopo.cdk"
-#include "schm.cdk"
-#include "stat.cdk"
 
       logical,save :: done = .false.
       logical :: flag
@@ -108,6 +106,7 @@
 !**s/r set_statliste
 !
       subroutine set_statliste
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -118,9 +117,7 @@
 ! v4_10 - Desgagne M.       - initial version
 !
 #include "gmm.hf"
-#include "stat.cdk"
 #include "tr3d.cdk"
-#include "schm.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tmp_liste (1000), dumc_S
       integer k,n,cnt

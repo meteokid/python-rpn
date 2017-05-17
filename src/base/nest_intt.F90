@@ -17,6 +17,8 @@
 !
       subroutine nest_intt
       use step_options
+      use gmm_nest
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,10 +35,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lam.cdk"
-#include "nest.cdk"
 #include "tr3d.cdk"
-#include "lctl.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
 
@@ -152,7 +151,7 @@
       nest_t (1:l_ni,1:l_nj,1:G_nk) = a*nest_t_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_t_fin (1:l_ni,1:l_nj,1:G_nk)
       nest_s (1:l_ni,1:l_nj       ) = a*nest_s_deb (1:l_ni,1:l_nj       ) + b*nest_s_fin (1:l_ni,1:l_nj       )
       nest_w (1:l_ni,1:l_nj,1:G_nk) = a*nest_w_deb (1:l_ni,1:l_nj,1:G_nk) + b*nest_w_fin (1:l_ni,1:l_nj,1:G_nk)
-      nest_q (1:l_ni,1:l_nj,2:G_nk+1) = a*nest_q_deb (1:l_ni,1:l_nj,2:G_nk+1) + b*nest_q_fin (1:l_ni,1:l_nj,2:G_nk+1)
+      nest_q (1:l_ni,1:l_nj,1:G_nk+1) = a*nest_q_deb (1:l_ni,1:l_nj,1:G_nk+1) + b*nest_q_fin (1:l_ni,1:l_nj,1:G_nk+1)
       nest_zd(1:l_ni,1:l_nj,1:G_nk) = a*nest_zd_deb(1:l_ni,1:l_nj,1:G_nk) + b*nest_zd_fin(1:l_ni,1:l_nj,1:G_nk)
       nest_fullme(1:l_ni,1:l_nj       ) = a*nest_fullme_deb(1:l_ni,1:l_nj       ) + b*nest_fullme_fin (1:l_ni,1:l_nj      )
 

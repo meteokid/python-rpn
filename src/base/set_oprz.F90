@@ -16,6 +16,7 @@
 !**s/r set_oprz - Computes vertical operators
 
       subroutine set_oprz2 (F_errcode)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -23,9 +24,7 @@
 
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
-#include "lam.cdk"
 #include "opr.cdk"
 #include "ver.cdk"
 

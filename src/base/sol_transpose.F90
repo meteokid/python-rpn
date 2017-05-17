@@ -17,6 +17,7 @@
 !                      in the solver and the horizontal diffusion
 
       integer function sol_transpose2 ( F_npex, F_npey, F_checkparti_L )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "trp.cdk"
 #include "sol.cdk"
 

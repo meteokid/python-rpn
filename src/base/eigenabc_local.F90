@@ -20,6 +20,8 @@
 !
       subroutine eigenabc_local ( eval_local, evec_local, ai_local, &
                        bi_local,ci_local,nil,njl,Ni,Nj,Nk,i0,j0,wk)
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,7 +37,6 @@
 !                             instead of "Neumann" (boundary conditions)
 !
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
 !

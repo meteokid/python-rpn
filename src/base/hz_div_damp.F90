@@ -18,6 +18,7 @@
       subroutine hz_div_damp ( F_du,F_dv, F_u, F_v, &
                               i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                               i0,in,j0,jn,Minx,Maxx,Miny,Maxy,Nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -29,9 +30,8 @@
 !   Claude Girard
 !
 #include "geomg.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
-#include "hzd.cdk"
+#include "cstv.cdk"
 
       integer i,j,k
       real div(Minx:Maxx,Miny:Maxy,Nk)

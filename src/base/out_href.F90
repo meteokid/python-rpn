@@ -17,6 +17,8 @@
 
       subroutine out_href3 (F_arakawa_S ,F_x0, F_x1, F_stridex,&
                                          F_y0, F_y1, F_stridey )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +27,6 @@
                                      F_y0,F_y1,F_stridey
 #include "glb_ld.cdk"
 #include "geomn.cdk"
-#include "grd.cdk"
 #include "hgc.cdk"
 #include "out.cdk"
 #include "out3.cdk"

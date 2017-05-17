@@ -17,21 +17,20 @@
 
       subroutine set_betav_2(betav_m,betav_t,F_s,F_sl, Minx,Maxx,Miny,Maxy, Nk)
 
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
       integer  Minx,Maxx,Miny,Maxy, Nk
 
 #include "glb_pil.cdk"
-#include "cstv.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "zblen.cdk"
-#include "grd.cdk"
 #include "mtn.cdk"
+#include "cstv.cdk"
 #include "theo.cdk"
 
       real betav_m(Minx:Maxx,Miny:Maxy,Nk),betav_t(Minx:Maxx,Miny:Maxy,Nk)

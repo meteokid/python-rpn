@@ -16,16 +16,16 @@
 !**s/r main_gmm_storage - Allocate model gmm storage
 !
       subroutine main_gmm_storage
+      use gmm_geof
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "init.cdk"
 #include "lun.cdk"
-#include "p_geof.cdk"
 
       integer :: istat
 !

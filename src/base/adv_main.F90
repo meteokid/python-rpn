@@ -19,6 +19,10 @@
                          rhsc, orhst,  rhst, orhsf, rhsf ,&
                          orhsw, rhsw, Minx,Maxx,Miny,Maxy, Nk )
       use step_options
+      use gmm_vth
+      use adv_pos
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,14 +38,8 @@
 !@author RPN-A  Model Infrastructure Group  (based on : adx_main , adx_interp_gmm  )  June 2015
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include <gmm.hf>    
-#include "lam.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
-#include "lctl.cdk"
-#include "adv_pos.cdk"
-#include "vth.cdk"
 #include "adv.cdk"
 #include "adv_grid.cdk"
 #include "tracers.cdk"

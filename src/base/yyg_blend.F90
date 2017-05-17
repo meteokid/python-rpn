@@ -15,6 +15,7 @@
 !**s/r yyg_blend - for blending Yin-Yang wind boundary conditions
 !
       subroutine yyg_blend (F_apply_L)
+      use gem_options
       use gmm_vt1
       implicit none
 #include <arch_specific.hf>

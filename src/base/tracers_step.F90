@@ -16,6 +16,7 @@
 !**s/r tracers_step
 
       subroutine tracers_step (F_water_tracers_only_L)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -23,7 +24,6 @@
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "tracers.cdk"
 
 ! local variables

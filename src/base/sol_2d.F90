@@ -17,6 +17,8 @@
 !
       subroutine sol_2d ( F_rhs_sol, F_lhs_sol, F_ni, F_nj, F_nk, &
                           F_iln, F_print_L, F_offi, F_offj )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,12 +33,10 @@
 ! v4_70 - Desgagne/Qaddouri  - initial version
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "ldnh.cdk"
 #include "lun.cdk"
 #include "trp.cdk"
 #include "ptopo.cdk"
-#include "schm.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
 

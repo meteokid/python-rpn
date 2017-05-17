@@ -17,6 +17,8 @@
 !
       subroutine itf_phy_restart (F_WorR_S, F_spin_L)
       use step_options
+      use grid_options
+      use gem_options
       implicit none
 
       character*(*) F_WorR_S
@@ -33,14 +35,10 @@
 #include <clib_interface_mu.hf>
 #include <gmm.hf>
 #include "lun.cdk"
-#include "lctl.cdk"
-#include "grd.cdk"
-#include "cstv.cdk"
-#include "init.cdk"
-#include "schm.cdk"
 #include "rstr.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
+#include "cstv.cdk"
 #include "cfld.cdk"
 
       integer,external :: fnom,fclos

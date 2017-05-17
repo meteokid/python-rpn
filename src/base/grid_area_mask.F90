@@ -15,6 +15,7 @@
 !**s/r grid_area_mask - Evaluate area and mask 
 
       subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj) 
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 #include "glb_pil.cdk"
 #include "geomg.cdk"
 #include "ptopo.cdk"
-#include "grd.cdk"
 
       real*8, external :: yyg_weight
       integer i,j,k,np_subd,ierr

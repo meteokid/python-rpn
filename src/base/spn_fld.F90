@@ -23,6 +23,8 @@
       use spn_work_mod
       use step_options
       use gmm_vt1
+      use gmm_nest
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -65,12 +67,8 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "nest.cdk"
-#include "lctl.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
-#include "lam.cdk"
-#include "spn.cdk"
 
       external ffft8, rpn_comm_transpose
 

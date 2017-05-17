@@ -19,6 +19,8 @@
       use step_options
       use timestr_mod
       use step_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -35,8 +37,6 @@
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include "lun.cdk"
-#include "grd.cdk"
-#include "lctl.cdk"
 #include "rstr.cdk"
 
       integer nrec,unf,err
@@ -158,7 +158,7 @@
  7050 format (/,' FILE: ',A,' NOT AVAILABLE'/)
  7060 format (/,' Namelist &step NOT AVAILABLE in FILE: ',a/)
  7070 format (/,' NAMELIST &step IS INVALID IN FILE: ',a/)
- 8000 format (/,' MODEL ALARM SET TO: ',i,' secondes'/)
+ 8000 format (/,' MODEL ALARM SET TO: ',i8,' secondes'/)
 
  9999 err = fclos (unf)
 !

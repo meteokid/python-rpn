@@ -17,6 +17,9 @@
 !                    integration for LBC.
 !
       subroutine nest_indata (F_datev_S)
+      use gmm_nest
+      use gmm_geof
+      use inp_mod
       implicit none
 #include <arch_specific.hf>
 
@@ -38,10 +41,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "nest.cdk"
-#include "p_geof.cdk"
 #include "lun.cdk"
-#include "inp.cdk"
 
       integer istat
       real, pointer, dimension(:,:,:) :: tr1

@@ -3,6 +3,8 @@
       subroutine Bermejo_Conde (F_name_S,F_out,F_high,F_low,F_min,F_max,F_old,F_for_flux_o,F_for_flux_i, &
                                 Minx,Maxx,Miny,Maxy,F_nk,k0,F_BC_min_max_L,F_CLIP_L,F_ILMC_L)
 
+      use grid_options
+      use gem_options
       implicit none
 
       !Arguments
@@ -35,9 +37,7 @@
 !*@/
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "grd.cdk"
 #include "tracers.cdk"
-#include "schm.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,count(k0:F_nk,3),l_count(3),g_count(3),time_p,time_m,iprod

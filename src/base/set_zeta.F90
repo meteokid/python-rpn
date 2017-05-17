@@ -20,6 +20,9 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_new,vgd_get,vgd_put,&
                                    vgd_levels,VGD_OK,VGD_ERROR,vgd_print
       use vgrid_wb, only: vgrid_wb_put
+      use gmm_pw
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -109,15 +112,13 @@
 !
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
+!#include "hybdim.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "dimout.cdk"
+#include "cstv.cdk"
 #include "level.cdk"
-#include "pw.cdk"
 
       character(len=32), parameter  :: VGRID_M_S  = 'ref-m'
       character(len=32), parameter  :: VGRID_T_S  = 'ref-t'
@@ -160,7 +161,7 @@
 
       ! Construct vertical coordinate
       istat = vgd_new ( vcoord, kind=5, version=Level_version, hyb=F_hybuser    , &
-                        rcoef1=Grd_rcoef(1), rcoef2=Grd_rcoef(2)                , &
+                        rcoef1=Hyb_rcoef(1), rcoef2=Hyb_rcoef(2)                , &
                         ptop_out_8=wk_8, pref_8=Cstv_pref_8, stdout_unit=Lun_out, &
                         dhm=0., dht=0. , avg_L=Schm_bcavg_L)
       Cstv_ptop_8=wk_8
@@ -433,7 +434,7 @@
       istat= wb_put('model/Vgrid/bm'       ,Ver_b_8%m      ,options_readonly)
       istat= wb_put('model/Vgrid/at'       ,Ver_a_8%t      ,options_readonly)
       istat= wb_put('model/Vgrid/bt'       ,Ver_b_8%t      ,options_readonly)
-      istat= wb_put('model/Vgrid/rcoef'    ,Grd_rcoef      ,options_readonly)
+      istat= wb_put('model/Vgrid/rcoef'    ,Hyb_rcoef      ,options_readonly)
       istat= wb_put('model/Vgrid/ptop'     ,Cstv_ptop_8    ,options_readonly)
       istat= wb_put('model/Vgrid/pref'     ,Cstv_pref_8    ,options_readonly)
       istat= wb_put('model/Vgrid/vcode'    ,Ver_code       ,options_readonly)

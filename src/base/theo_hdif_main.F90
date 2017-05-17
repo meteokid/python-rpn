@@ -17,6 +17,7 @@
 !
       subroutine theo_hdif_main 
       use gmm_vt1
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 
       integer i,istat
 !     _________________________________________________________________
@@ -52,6 +52,7 @@
 !**s/r theo_hdif_ctl - applies horizontal explicit diffusion
 !
       subroutine theo_hdif_ctl(F_f2dif, Minx,Maxx,Miny,Maxy, NK)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -99,6 +100,7 @@
 !**s/r theo_hdif
 
       subroutine theo_hdif(rfd,sfd,Minx,Maxx,Miny,Maxy,lnk,nu_dif,m,n)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -112,7 +114,6 @@
 !revision
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 
       integer i,j,k,id,jd,iff,jf,i0,in,j0,jn
       real wk(l_minx:l_maxx,l_miny:l_maxy)

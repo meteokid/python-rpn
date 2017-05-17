@@ -16,6 +16,9 @@
       subroutine itf_phy_update3 (F_apply_L)
       use phy_itf, only: phy_get
       use gmm_vt1
+      use gmm_pw
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,11 +33,8 @@
    
 #include <gmm.hf>
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "cstv.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
-#include "pw.cdk"
+#include "cstv.cdk"
 #include "lun.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: trname_S

@@ -18,6 +18,9 @@
       subroutine hzd_in_rhs ( F_du,F_dv, F_dw, F_dlnT, F_u, F_v , F_w, F_t, F_s, &
                               i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                               i0,in,j0,jn,Minx,Maxx,Miny,Maxy,Nk )
+      use hzd_mod
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,12 +33,8 @@
 !   Claude Girard
 !
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
-#include "vspng.cdk"
 #include "dcst.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "cstv.cdk"
 
       integer mm,dpwr,iter,niter,i,j,k, itercnt

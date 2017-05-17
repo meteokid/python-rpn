@@ -16,6 +16,8 @@
 !**s/r itf_ens_init - initialize ensemble prevision system
 !
       subroutine itf_ens_init
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +34,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "path.cdk"
-#include "grd.cdk"
 
       integer, external :: ens_nml
       integer err

@@ -17,6 +17,7 @@
 
       subroutine nest_gwa
       use nest_blending, only: nest_blend
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -29,9 +30,7 @@
 ! v4_05 - Lepine M.       - VMM replacement with GMM
 ! v4_40 - Lee V.          - no blending for Yin-Yang
 
-#include "schm.cdk"
 #include "theo.cdk"
-#include "zblen.cdk"
 #include "theo_dif.cdk"
 
 !

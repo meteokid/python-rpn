@@ -17,7 +17,9 @@ module inp_base
   use iso_c_binding
   use vertical_interpolation, only: vertint2
   use vGrid_Descriptors
+  use gem_options
 
+      use inp_mod
   implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
@@ -26,7 +28,6 @@ module inp_base
 #include "dcst.cdk"
 #include "geomn.cdk"
 #include "hgc.cdk"
-#include "inp.cdk"
 #include "ver.cdk"
 
   public

@@ -16,6 +16,7 @@
 !**s/r yyg_checkrot
 !
       integer function yyg_checkrot ()
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,7 +27,6 @@
 ! v4_40 - Qaddouri/Lee     - initial version
 ! v4_50 - Desgagne M.      - only retain test on grid rotation
 !
-#include "grd.cdk"
 #include "lun.cdk"
 !
 !-------------------------------------------------------------------

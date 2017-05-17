@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module stat_mpi
+  use gem_options
   implicit none
 #include <arch_specific.hf>
   private

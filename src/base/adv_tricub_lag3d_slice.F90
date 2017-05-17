@@ -20,6 +20,8 @@
                                          F_x_svm,F_y_svm,F_z_svm, & !POSITIONS SVM
                                          F_num,F_ni,F_nj,k0,F_nk,F_lev_S)
 
+      use grid_options
+      use gem_options
       implicit none
 
 #include <arch_specific.hf>
@@ -45,12 +47,9 @@
 #include "adv_slice_storage.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
-#include "lctl.cdk"
 
       integer,dimension(:),pointer :: p_lcz
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8

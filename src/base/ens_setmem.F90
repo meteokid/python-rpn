@@ -17,6 +17,8 @@
 !
       subroutine ens_setmem (l_minx,l_maxx,G_halox,l_ni,     &
                                  l_miny,l_maxy,G_haloy,l_nj,l_nk,Lun_out)
+      use ens_gmm_var
+      use ens_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,7 +36,6 @@
 #include "gmm.hf"
 #include "var_gmm.cdk"
 #include "ens_gmm_dim.cdk"
-#include "ens_gmm_var.cdk"
 #include "ens_param.cdk"
 
       integer :: istat

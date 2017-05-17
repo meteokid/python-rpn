@@ -17,6 +17,8 @@
 !
       subroutine pw_glbstat (name_S)
       use step_options
+      use gmm_pw
+      use gem_options
       implicit none
 
       character * (*) name_S
@@ -30,7 +32,6 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "pw.cdk"
 #include "tr3d.cdk"
 !
       type(gmm_metadata) :: meta

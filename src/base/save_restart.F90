@@ -18,17 +18,16 @@
       use iso_c_binding
       use timestr_mod, only: timestr_isstep, TIMESTR_MATCH
       use step_options
+      use grid_options
+      use gem_options
       implicit none
 
 #include <arch_specific.hf>
 #include <clib_interface_mu.hf>
-#include "cstv.cdk"
-#include "grd.cdk"
-#include "lctl.cdk"
 #include "out.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
-#include "init.cdk"
+#include "cstv.cdk"
 #include "lun.cdk"
 
       character*2048 dirname_S,cmd

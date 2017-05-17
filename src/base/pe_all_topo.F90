@@ -18,6 +18,7 @@
       subroutine pe_all_topo
 use iso_c_binding
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,6 @@ use iso_c_binding
 #include "path.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
-#include "schm.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
 

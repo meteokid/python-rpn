@@ -17,6 +17,9 @@
 
       subroutine set_smago
 
+      use hzd_mod
+      use grid_options
+      use gem_options
       implicit none      
 #include <arch_specific.hf>
 
@@ -26,13 +29,11 @@
 !
 !revision
 ! v5_0 - Husain S.    - initial version based on hzd_smago
-#include "hzd.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
+#include "cstv.cdk"
 
       integer k
       real*8 top_m, bot_m, top_t, bot_t, pi2

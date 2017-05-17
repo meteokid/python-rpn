@@ -16,12 +16,12 @@
 !**   s/r set_params - initialize some constant parameters
 
       subroutine set_params
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
-#include "cstv.cdk"
 #include "dcst.cdk"
-#include "schm.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       real*8, parameter :: zero=0.d0, one=1.d0

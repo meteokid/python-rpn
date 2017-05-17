@@ -17,6 +17,7 @@
       subroutine sol_fgmres ( F_w2_8, F_w1_8, iln, nil, njl,&
                               Minx, Maxx, Miny, Maxy, F_gnk,&
                               F_nk, print_conv_L, conv, its )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 

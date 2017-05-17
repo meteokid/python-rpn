@@ -26,7 +26,6 @@ module hzd_ctrl
   end interface
 
 #include "glb_ld.cdk"
-#include "hzd.cdk"
 
 contains
 

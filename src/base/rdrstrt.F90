@@ -18,13 +18,12 @@
       subroutine rdrstrt ()
       use phy_itf, only: phy_restart
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include <WhiteBoard.hf>
 #include "lun.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
 #include "psadj.cdk"
 
       integer ier

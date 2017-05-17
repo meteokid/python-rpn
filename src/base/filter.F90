@@ -16,6 +16,7 @@
 !**s/r filter - 2-delta x filter
 
       subroutine filter2 (F_fd, F_lx, F_coef, Minx,Maxx,Miny,Maxy,Nk)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -25,14 +26,14 @@
 #include "glb_ld.cdk"
 
       integer i, j, k, i0, in, j0, jn, n
-      real w1(l_minx:l_maxx,l_miny:l_maxy,nk),coef
+      real w1(l_minx:l_maxx,l_miny:l_maxy,nk),coefficient
       real*8, parameter :: half=0.5d0
 !
 !-------------------------------------------------------------------
 !
       if ( ( F_coef .ge. 0.0001 ) .and. ( F_coef .le. 0.5 ) ) then
          
-         coef = 1. - F_coef
+         coefficient = 1. - F_coef
          i0 = 1 + pil_w
          if (l_west ) i0 = i0+1
          in = l_niu - pil_e
@@ -49,7 +50,7 @@
                do j= 1+pil_s, l_nj-pil_n 
                do i=i0,in
                   w1(i,j,k)= F_coef* (F_fd(i-1,j,k)+F_fd(i+1,j,k))*half &
-                             + coef* F_fd (i,j,k)
+                             + coefficient* F_fd (i,j,k)
                end do
                end do
             end do
@@ -75,7 +76,7 @@
                do j=j0,jn
                do i= 1+pil_w, l_ni-pil_e 
                   F_fd(i,j,k)= F_coef * (w1(i,j-1,k)+w1(i,j+1,k))*half &
-                               + coef * w1(i,j,k)
+                               + coefficient * w1(i,j,k)
                   end do
                end do
             end do

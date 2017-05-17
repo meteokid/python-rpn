@@ -17,6 +17,7 @@
  
       subroutine spn_main
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -29,13 +30,10 @@
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "lctl.cdk"
-#include "lam.cdk"
 #include "ldnh.cdk"
 #include "trp.cdk"
 #include "ptopo.cdk"
 #include "cstv.cdk"
-#include "spn.cdk"
 #include "sol.cdk"
 
       integer offseti, no_steps, tmdt, Nkl
@@ -87,7 +85,7 @@
  1000 format( &
            /,'CONTROL OF SPECTRAL NUDGING: (S/R SPN_MAIN)', &
            /,'==========================================='/)
- 1001 format(/' In SPN_MAIN, Applying spectral nudging at STEP NO ',I/)
+ 1001 format(/' In SPN_MAIN, Applying spectral nudging at STEP NO ',I10/)
 !
 !----------------------------------------------------------------------
 !

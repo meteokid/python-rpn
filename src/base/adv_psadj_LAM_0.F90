@@ -18,6 +18,8 @@
 
       subroutine adv_psadj_LAM_0 ()
 
+      use adv_pos
+      use gem_options
       implicit none
 
 #include <arch_specific.hf>
@@ -30,8 +32,6 @@
 !**/
 #include "glb_ld.cdk"
 #include "adv_grid.cdk"
-#include "adv_pos.cdk"
-#include "lam.cdk"
 
       integer :: i, j, k, k0, nbpts, i0_e, in_e, j0_e, jn_e, i_bidon, j_bidon
       real, pointer, dimension(:,:,:) :: cub_o,cub_i,w_cub_o_c,w_cub_i_c,adw_o,adw_i

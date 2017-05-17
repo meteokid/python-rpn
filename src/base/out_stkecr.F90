@@ -19,6 +19,8 @@
                                meta,nplans, g_id,g_if,g_jd,g_jf )
       use iso_c_binding
       use out_collector, only: block_collect_fullp, Bloc_me
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +38,6 @@
 ! v4_80 - Desgagne M. - switch to RPN_COMM_shuf_ezcoll
 
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "ptopo.cdk"

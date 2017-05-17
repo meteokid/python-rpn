@@ -16,6 +16,7 @@
 !**s/r set_sol - Computes matrices a,b,c for the elliptic solver
 
       subroutine set_sol
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -23,13 +24,11 @@
 !     M. Desgagne - initial MPI version (from setoprz v4.8.2)
 
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
-#include "lam.cdk"
 #include "opr.cdk"
 #include "sol.cdk"
-#include "cstv.cdk"
 #include "trp.cdk"
+#include "cstv.cdk"
 #include "prec.cdk"
 
       integer k,k1,k0

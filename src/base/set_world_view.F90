@@ -19,25 +19,23 @@
       use iso_c_binding
       use out_collector, only: block_collect_set, Bloc_me
       use step_options
+      use inp_mod
+      use gem_options
+      use grid_options
+      use dynkernel_options
       implicit none
 #include <arch_specific.hf>
 
 #include <WhiteBoard.hf>
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "inp.cdk"
-#include "grd.cdk"
 #include "grid.cdk"
 #include "geomg.cdk"
-#include "dynkernel.cdk"
 #include "cori.cdk"
-#include "schm.cdk"
 #include "glb_ld.cdk"
 #include "path.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
-#include "wil_williamson.cdk"
-#include "wil_nml.cdk"
       include 'out_meta.cdk'
       include "rpn_comm.inc"
 
@@ -92,6 +90,10 @@
 
       call itf_phy_nml
 
+!     Setup for parameters DCMIP
+!     --------------------------
+      call dcmip_set
+
 ! Establish final configuration
 
       err(1) = gemdm_config ()
@@ -104,9 +106,6 @@
       err(1) = gem_nml       ('print')
 
       call adv_nml_print ()
-
-      if (Williamson_case.ne.0.and.Lun_out.gt.0) &
-                   write (Lun_out, nml=williamson) 
 
 ! Establish domain decomposition (mapping subdomains and processors)
 

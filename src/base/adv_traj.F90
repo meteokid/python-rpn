@@ -20,6 +20,10 @@
                                k0, k0m,k0t, F_aminx, F_amaxx,&
                                F_aminy, F_amaxy, F_ni,F_nj,F_nk )
       use step_options
+      use adv_pos
+      use adv_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
       integer  F_nb_iter                                                                  ! total number of iterations for traj
@@ -40,15 +44,11 @@
 
 #include "adv_grid.cdk"
 #include "adv_gmm.cdk"
-#include "adv_nml.cdk"
-#include "adv_pos.cdk"
 #include "adv_interp.cdk"
-#include "cstv.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "tracers.cdk"
+#include "cstv.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 
       integer :: i , j , k, i0u_e, inu_e, j0v_e, jnv_e
       integer ,  dimension(:), allocatable :: ii

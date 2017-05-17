@@ -19,6 +19,8 @@
 !
       subroutine diag_zd_w2( F_zd, F_w, F_u, F_v, F_t, F_s, &
                              Minx,Maxx,Miny,Maxy, Nk, F_zd_L, F_w_L )
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -56,11 +58,8 @@
 #include "geomg.cdk"
 #include "ver.cdk"
 #include "dcst.cdk"
-#include "zdot.cdk"
-#include "cstv.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
-#include "p_geof.cdk"
+#include "cstv.cdk"
 
       integer i, j, k, kp, i0, in, j0, jn, istat
       real*8 c1,c2

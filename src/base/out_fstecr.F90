@@ -20,6 +20,7 @@
                                nbit,F_empty_stk_L )
       use ISO_C_BINDING
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
       real fa (lminx:lmaxx,lminy:lmaxy,nkfa), rf(nkfa), mul,add
 
 #include "glb_ld.cdk"
-#include "lctl.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"

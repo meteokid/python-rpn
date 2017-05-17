@@ -15,7 +15,8 @@
 
 !**s/r ens_nml - read parametres for ensemble forecast
 !
-      integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout) 
+      integer function ens_nml (F_namelist_S, F_Grdtyp_S, F_unout)
+      use ens_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -51,21 +52,6 @@
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
       integer i, ier,err,err_open,unf,nrec,ios,ncha
-
-      namelist /ensembles/                                           &
-          Ens_conf,      Ens_skeb_conf,                              &
-          Ens_stat,      Ens_skeb_div,  Ens_skeb_dif,  Ens_skeb_gwd, &
-          Ens_mc_seed,   Ens_skeb_nlon, Ens_skeb_nlat,               &
-          Ens_skeb_trnl, Ens_skeb_trnh,                              &
-          Ens_skeb_max,  Ens_skeb_min,  Ens_skeb_std,                &
-          Ens_skeb_tau,  Ens_skeb_str,  Ens_skeb_alph, Ens_skeb_alpt,&
-          Ens_skeb_bfc,  Ens_skeb_lam,                               &
-          Ens_ptp_nlon, Ens_ptp_nlat, Ens_ptp_ncha, Ens_ptp_trnl,    &
-          Ens_ptp_trnh, Ens_ptp_l,    Ens_ptp_m,                     & 
-          Ens_ptp_lmax ,Ens_ptp_mmax, Ens_ptp_min,  Ens_ptp_max,     &
-          Ens_ptp_std,  Ens_ptp_tau,  Ens_ptp_str,                   &
-          Ens_ptp_conf,  Ens_ptp_env_u, Ens_ptp_env_b, Ens_ptp_cape, &
-          Ens_ptp_tlc,   Ens_ptp_crit_w,Ens_ptp_fac_reduc
 !
 !--------------------------------------------------------------------
 !
@@ -77,45 +63,6 @@
          if (F_unout.ge.0) write (F_unout,nml=ensembles)
          return
       endif
-
-      Ens_conf        = .false.
-      Ens_mc_seed     = -1
-      Ens_skeb_conf   = .false.
-      Ens_skeb_dif    = .false.
-      Ens_skeb_gwd    = .false.
-      Ens_stat        = .false.
-      Ens_skeb_div    = .false.
-      Ens_skeb_nlon   = 16 
-      Ens_skeb_nlat   =  8
-      Ens_skeb_trnl   =  2
-      Ens_skeb_trnh   =  8
-      Ens_skeb_min    = 0.0
-      Ens_skeb_max    = 0.0
-      Ens_skeb_std    = 0.0
-      Ens_skeb_tau    = 0.0
-      Ens_skeb_str    = 0.0
-      Ens_skeb_bfc    = 1.0e-01
-      Ens_skeb_lam    = 2.0e+05
-      Ens_skeb_alph   = 0.0
-      Ens_skeb_alpt   = 0.0
-
-      Ens_ptp_conf    = .false.
-      Ens_ptp_nlon   = 16
-      Ens_ptp_nlat   =  8
-      Ens_ptp_ncha   =  1
-      Ens_ptp_trnl   =  1
-      Ens_ptp_trnh   =  8
-      Ens_ptp_min    = 0.0
-      Ens_ptp_max    = 0.0
-      Ens_ptp_std    = 0.0
-      Ens_ptp_tau    = 0.0
-      Ens_ptp_str    = 0.0
-      Ens_ptp_env_u   = 1.0
-      Ens_ptp_env_b   = 1.0
-      Ens_ptp_cape    = 0.0
-      Ens_ptp_tlc     = 0.0
-      Ens_ptp_crit_w  = 100.0
-      Ens_ptp_fac_reduc = 0.0
 
       unf = 0
       found_namelist_ok = .false.
@@ -144,7 +91,7 @@
             ens_nml = -1
           endif
          
-            if (Ens_skeb_nlon.ne.2*Ens_skeb_nlat)then
+            if (Ens_skeb_nlon .ne. 2*Ens_skeb_nlat)then
               if(F_unout.ge.0)write(F_unout,*)' Nlon must equal 2*nlat'
               ens_nml = -1
             endif
@@ -163,11 +110,11 @@
 
          if (ens_nml.lt.0) return
 
-         Ens_skeb_conf   =  Ens_skeb_conf.and.Ens_conf
-	 Ens_skeb_l      =  Ens_skeb_trnh-Ens_skeb_trnl+1
-         Ens_skeb_m      =  Ens_skeb_trnh+1
-         Ens_skeb_div    =  Ens_skeb_div .and.Ens_conf
-         Ens_stat        =  Ens_stat.and.Ens_conf
+         Ens_skeb_conf  =  Ens_skeb_conf.and.Ens_conf
+         Ens_skeb_l     =  Ens_skeb_trnh-Ens_skeb_trnl+1
+         Ens_skeb_m     =  Ens_skeb_trnh+1
+         Ens_skeb_div   =  Ens_skeb_div .and.Ens_conf
+         Ens_stat       =  Ens_stat.and.Ens_conf
          Ens_ptp_l      =  Ens_ptp_trnh-Ens_ptp_trnl+1
          Ens_ptp_lmax   =  maxval(Ens_ptp_l)
          Ens_ptp_m      =  Ens_ptp_trnh+1
@@ -184,7 +131,7 @@
             write(F_unout,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
             write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
-	    write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
+	         write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
             write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha

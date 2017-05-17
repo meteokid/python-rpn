@@ -18,6 +18,8 @@
       subroutine get_density (F_density,F_mass,F_time,Minx,Maxx,Miny,Maxy,F_nk,F_k0)
 
       use gmm_vt1
+      use gmm_vt0
+      use gem_options
       implicit none
 
       !Arguments
@@ -30,23 +32,18 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_density           !O, Fluid's density 
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk),  intent(out):: F_mass              !O, Fluid's mass 
 
-      !@author  Monique Tanguay 
-      !@revisions
-      ! v4_70 - Tanguay,M.        - Initial Version
-      ! v4_70 - Qaddouri,A.       - Version for Yin-Yang Grid 
-      ! v5_00 - Tanguay M.        - Adjust density
+      !object
+      !======================================
+      !     Evaluate Fluid's density and mass 
+      !======================================
 
-!*@/
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
-#include "vt0.cdk"
-#include "schm.cdk"
-#include "wil_williamson.cdk"
 #include "dcst.cdk"
-#include "tracers.cdk"
-!-----------------------------------------------------------------------------
+
+      !-----------------------------------------------------------------------------
 
       real, pointer, dimension(:,:)   :: w2d 
       integer i,j,k,istat
@@ -55,15 +52,11 @@
       real, dimension(Minx:Maxx,Miny:Maxy,F_nk)    :: sumq
       real, pointer, dimension(:,:,:)              :: tr
       character*1 timelevel_S
-      logical Analytical_Density_L
 
-!-----------------------------------------------------------------------------
-
-      Analytical_Density_L = Williamson_case>0
+      !-----------------------------------------------------------------------------
 
       !Recuperate GMM variables at appropriate time   
       !--------------------------------------------
-      nullify (w2d)
       if (F_time.eq.0) istat = gmm_get(gmmk_st0_s,w2d)
       if (F_time.eq.1) istat = gmm_get(gmmk_st1_s,w2d)
 
@@ -71,7 +64,7 @@
       !----------------------------------------
       call calc_pressure ( pr_m, pr_t, pr_p0, w2d, l_minx, l_maxx, l_miny, l_maxy, F_nk ) 
 
-      pr_m(:,:,F_nk+1) = pr_p0(:,:)  
+      pr_m(1:l_ni,1:l_nj,F_nk+1) = pr_p0(1:l_ni,1:l_nj)  
 
       !Evaluate water tracers if dry mixing ratio
       !------------------------------------------
@@ -98,7 +91,7 @@
 
       !Evaluate Fluid's density and mass
       !---------------------------------
-      if (.NOT.Analytical_Density_L) then
+      if (.NOT.Schm_testcases_L) then
 
 !$omp    parallel do private(i,j) shared(pr_m,sumq)
          do k=F_k0,F_nk
@@ -133,6 +126,8 @@
          end do
       end do
 !$omp end parallel do
+
+      !---------------------------------------------------------------
 
       return
       end

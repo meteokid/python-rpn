@@ -20,6 +20,8 @@
 !
       integer function srequet()
 !
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -79,7 +81,6 @@
 #include "lun.cdk"
 #include "out3.cdk"
 #include "geomn.cdk"
-#include "grd.cdk"
 #include "grid.cdk"
 #include "timestep.cdk"
 #include "hgc.cdk"

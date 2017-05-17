@@ -42,9 +42,9 @@
 !
 
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "opr.cdk"
 #include "ptopo.cdk"
+#include "cstv.cdk"
 #include "lun.cdk"
 
       integer i, j, err

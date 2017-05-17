@@ -20,29 +20,29 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use gmm_vt1
+      use gmm_pw
+      use gmm_geof
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
       integer levset,set
 
 #include "gmm.hf"
+!#include "hybdim.cdk"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "geomn.cdk"
-#include "schm.cdk"
-#include "p_geof.cdk"
 #include "out.cdk"
 #include "out3.cdk"
-#include "grd.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "ptopo.cdk"
-#include "lctl.cdk"
-#include "pw.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "cstv.cdk"
 #include "vinterpo.cdk"
+#include "cstv.cdk"
 #include "outp.cdk"
 
       type :: stg_i
@@ -116,7 +116,7 @@
          if (Outd_var_S(ii,set).eq.'TH') pnth=ii
       enddo
 
-      if (pnpt.ne.0.and.Grd_rcoef(2).ne.1.0) pnpt=0
+      if (pnpt.ne.0.and.Hyb_rcoef(2).ne.1.0) pnpt=0
 
       psum=pnpn+pnp0+pnpt+pnla+pnlo+pnme+pnmx
       psum=psum +  &

@@ -18,6 +18,8 @@
       subroutine gem_run (F_rstrt_L)
       use step_options
       use gmm_vt1
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,13 +33,9 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "init.cdk"
 #include "lun.cdk"
-#include "cstv.cdk"
 #include "rstr.cdk"
-#include "schm.cdk"
-#include "lctl.cdk"
-#include "grd.cdk"
+#include "cstv.cdk"
 
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
@@ -71,6 +69,8 @@
          if (gem_muststop (stepf)) goto 999
       endif
 
+      call canonical_cases ("ERR")
+
       do while (Step_kount .lt. stepf)
 
          seconds_since= model_timeout_alarm(Step_alarm)
@@ -87,6 +87,10 @@
          call out_dyn (.false., .true.) ! casc output
 
          if ( Schm_phyms_L ) call itf_phy_step (Step_kount, Lctl_step)
+
+         call canonical_cases ("PHY")
+
+         call canonical_cases ("ERR")
 
          call iau_apply2 (Step_kount)
 

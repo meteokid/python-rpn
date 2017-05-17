@@ -17,6 +17,8 @@
 
       subroutine stat_psadj (F_time,F_comment_S)
       use gmm_vt1
+      use gmm_vt0
+      use grid_options
       implicit none
 
       integer,          intent(in) :: F_time       !I, Time 0 or Time 1
@@ -25,11 +27,8 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-!#include "vt1.cdk"
-#include "vt0.cdk"
-#include "grd.cdk"
-#include "cstv.cdk"
 #include "lun.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
 
       real, pointer, dimension (:,:) :: w2d 

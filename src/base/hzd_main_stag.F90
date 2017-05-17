@@ -19,17 +19,14 @@
       use hzd_ctrl
       use hzd_exp
       use gmm_vt1
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "hzd.cdk"
 #include "tr3d.cdk"
-#include "vspng.cdk"
-#include "eq.cdk"
-#include "schm.cdk"
 
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &
               switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA

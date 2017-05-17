@@ -33,8 +33,8 @@
 ! v4_XX - M. Tanguay       - REAL*8 
 
 #include "gmm.hf"
-#include "glb_ld.cdk"
 #include "cstv.cdk"
+#include "glb_ld.cdk"
 
       integer i,j,k,istat
       real, dimension(Minx:Maxx,Miny:Maxy,Nk) :: sumq

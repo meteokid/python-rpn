@@ -20,6 +20,7 @@
       use vgrid_wb, only: vgrid_wb_get, vgrid_wb_put
       use phy_itf, only: phy_init, phymeta,phy_getmeta
       use step_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,13 +37,12 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "var_gmm.cdk"
-#include "schm.cdk"
 #include "out3.cdk"
 #include "outp.cdk"
-#include "cstv.cdk"
 #include "ver.cdk"
 #include "path.cdk"
 #include "level.cdk"
+#include "cstv.cdk"
 #include "rstr.cdk"
 
       character(len=32), parameter  :: VGRID_M_S = 'ref-m'

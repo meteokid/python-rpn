@@ -19,6 +19,8 @@
 !
       subroutine tt2virt2 (F_t, F_tt2tv, Minx,Maxx,Miny,Maxy,Nk)
       use gmm_vt1
+      use gmm_vt0
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 !
@@ -34,8 +36,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "vt0.cdk"
-#include "pw.cdk"
 
       integer i, j, k, n,istat
       real, pointer, dimension(:,:,:)     :: tvirt,tt,hu

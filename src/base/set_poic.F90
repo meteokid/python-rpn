@@ -17,6 +17,7 @@
 
       subroutine set_poic2 ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8, &
                              F_npts, NSTOR, F_eigen_filename_S )
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,6 @@
 #include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "grd.cdk"
 
       integer i, j
       real*8 a_8(F_npts,F_npts), b_8(F_npts,F_npts), r_8(F_npts)

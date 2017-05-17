@@ -18,17 +18,16 @@
 !                     a Crank-Nicholson step avoiding pole problems
 
       subroutine hzd_momentum
+      use gmm_vt0
       use hzd_ctrl
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
-#include "vt0.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
 
       logical, save :: switch_on_hzd= .true.
       integer istat

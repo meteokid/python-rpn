@@ -16,6 +16,7 @@
 !**s/p estimate_tmean - Estimate mean temperature on Momentum levels  
 
       subroutine estimate_tmean (F_tmean,F_t,Minx,Maxx,Miny,Maxy,F_nk)
+      use grid_options
       implicit none
 
       !Arguments
@@ -32,9 +33,8 @@
 !*@/
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "grd.cdk"
-#include "ver.cdk"
 #include "cstv.cdk"
+#include "ver.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err

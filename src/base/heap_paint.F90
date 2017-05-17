@@ -17,11 +17,11 @@
 !**s/r heap_paint - Paint a heap region with Nan (AIX only for now)
 
       subroutine heap_paint
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
-#include "heap_debug.cdk"
 
       integer i,j,k
       real*4, dimension (:,:,:), pointer :: wrk01

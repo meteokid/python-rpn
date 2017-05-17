@@ -13,27 +13,18 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r dynkernel_nml - Read namelist time
+!**s/r dynkernel_nml - Read namelist dyn_kernel
 
       integer function dynkernel_nml (F_namelistf_S)
-!      use timestr_mod
+      use dynkernel_options
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
 
-!authors    Michel Desgagne - Spring 2011
-! 
-!revision
-! v4_40 - Desgagne M.       - initial MPI version
-!
-!object
-!  Default configuration and reading namelist 'step'
-
 #include <rmnlib_basics.hf>
 #include <clib_interface_mu.hf>
 #include "lun.cdk"
-#include "dynkernel.cdk"
 
       integer nrec,unf,err
       real :: sec
@@ -50,10 +41,6 @@
          endif
          return
       endif
-
-! Defaults values
-
-      Dynamics_Kernel_S = 'DYNAMICS_FISL_P'
 
       if (F_namelistf_S .ne. '') then
          unf = 0

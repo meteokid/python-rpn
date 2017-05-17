@@ -17,12 +17,14 @@
 !
       integer function mtn_cfg (unf)
       use step_options
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
       integer unf
-
+#include "cstv.cdk"
+#include "out3.cdk"
 #include "theonml.cdk"
-#include "stat.cdk"
 
       integer i, j, k, idatx, longueur,istat
       real*8 delta_8, zmt_8(maxhlev)
@@ -64,7 +66,7 @@
       Cstv_bA_8 = 0.5
       Cstv_bA_m_8 = 0.5
 
-      Grd_rcoef = 1.0
+      hyb_rcoef = 1.0
 
       Lam_ctebcs_L=.true.
 

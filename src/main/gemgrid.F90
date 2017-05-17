@@ -17,6 +17,8 @@
       subroutine gemgrid
       use step_options
       use nest_blending
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,9 +32,7 @@
 !
       integer, external :: fnom,fstouv,fstecr,fstfrm,fclos,wkoffit,&
                            grid_nml2,gem_nml,exdb,step_nml
-#include "grd.cdk"
 #include "hgc.cdk"
-#include "lam.cdk"
 #include "lun.cdk"
 #include "path.cdk"
 #include "glb_ld.cdk"

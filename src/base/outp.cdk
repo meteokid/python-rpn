@@ -58,7 +58,7 @@
       logical Outp_avg_L(MAXSET),Outp_accum_L(MAXSET)
       integer Outp_nbit(MAXELEM,MAXSET)
       integer Outp_filtpass(MAXELEM,MAXSET)
-      integer, dimension(:,:), pointer :: Outp_lasstep => null()
+      integer, dimension(:,:), pointer :: Outp_lasstep
       real    Outp_filtcoef(MAXELEM,MAXSET)
       real    Outp_convmult(MAXELEM,MAXSET)
       real    Outp_convadd (MAXELEM,MAXSET)

@@ -21,6 +21,10 @@
       use phy_itf, only : phy_put
  
       use step_options
+      use ens_gmm_var
+      use ens_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,17 +38,13 @@
 #include <rmnlib_basics.hf>
 #include "gmm.hf"
 #include "ens_gmm_dim.cdk"
-#include "ens_gmm_var.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
 #include "mem.cdk"
-#include "lctl.cdk"
-#include "cstv.cdk"
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
+#include "cstv.cdk"
 #include "hgc.cdk"
-#include "ens_param.cdk"
-#include "grd.cdk"
 !
        integer p_ni,p_nj,p_offi,p_offj
        real,    external :: gasdev

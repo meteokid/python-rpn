@@ -17,6 +17,8 @@
 
       subroutine mass_tr (F_mass_tracer_8,F_name_S,F_tracer,F_air_mass,Minx,Maxx,Miny,Maxy,F_nk,F_k0)
 
+      use grid_options
+      use gem_options
       implicit none
 
       !Arguments
@@ -40,10 +42,8 @@
 #include "geomg.cdk"
 #include "lun.cdk"
 #include "dcst.cdk"
-#include "grd.cdk"
 #include "tracers.cdk"
 #include "cstv.cdk"
-#include "schm.cdk"
 
       !----------------------------------------------------------
       integer i,j,k,err,i0,in,j0,jn
@@ -135,14 +135,14 @@
       !----------------------------------------
       call rpn_comm_ALLREDUCE(c_mass_8,gc_mass_8,1,"MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err )
 
-      if (Tr_scaling==0.or.Tr_scaling==2.or.Tr_2D_3D_L) then
+      if (Tr_scaling==0.or.Tr_scaling==2.or.Schm_testcases_adv_L) then
          gc_mass_8 = gc_mass_8 / gc_area_8
          if (Schm_autobar_L) gc_mass_8 = gc_mass_8 / (Cstv_pref_8-Cstv_ptop_8) * Dcst_grav_8
       elseif (Tr_scaling==1) then
          gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
       endif
 
-      if (Tr_scaling==0.or.Tr_2D_3D_L) then
+      if (Tr_scaling==0.or.Schm_testcases_adv_L) then
          scale_8 = 1.0d0 
       elseif (Tr_scaling==1) then
          scale_8 = cst2

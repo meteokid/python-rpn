@@ -15,6 +15,7 @@
 
       subroutine itf_phy_UVupdate
       use gmm_vt1
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
    
 #include <gmm.hf>
 #include "glb_ld.cdk"
-#include "pw.cdk"
 
       integer istat,k
       real, dimension(l_minx:l_maxx,l_miny:l_maxy,G_nk), target :: tdu,tdv

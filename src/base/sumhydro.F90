@@ -16,6 +16,7 @@
 !**s/r sumhydrom - Sum over Hydrometeors (GMM)
 !
       subroutine sumhydro (F_qh,minx,maxx,miny,maxy,nk,F_timelevel_S)
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
 
       integer i, j, k, n,istat

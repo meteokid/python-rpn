@@ -18,12 +18,12 @@
 
       subroutine pw_update_UV
       use gmm_vt1
+      use gmm_pw
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "pw.cdk"
 
       integer istat
 !     ________________________________________________________________

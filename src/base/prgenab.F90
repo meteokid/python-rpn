@@ -19,6 +19,8 @@
 
 !
       subroutine prgenab ()
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -36,11 +38,9 @@
 #include "lun.cdk"
 #include "dcst.cdk"
 #include "pres.cdk"
-#include "cstv.cdk"
-#include "grd.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
+#include "cstv.cdk"
 !
 
       integer k

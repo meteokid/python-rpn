@@ -16,16 +16,16 @@
 !**s/r vspng_set - Vertical sponge setup
 
       subroutine vspng_set
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "lun.cdk"
-#include "vspng.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
+#include "cstv.cdk"
 #include "ptopo.cdk"
 
       integer i,j,k,istat,err

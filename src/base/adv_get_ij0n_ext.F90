@@ -17,6 +17,7 @@
 
       subroutine adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
+      use grid_options
       implicit none
 
 #include <arch_specific.hf>
@@ -31,7 +32,6 @@
 
 #include "glb_ld.cdk"
 #include "adv_grid.cdk"
-#include "grd.cdk"
 
       !---------------------------------------------------------------------
       integer :: jext

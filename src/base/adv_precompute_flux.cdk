@@ -1,4 +1,3 @@
-      logical done_precompute_L
 
       integer nind_o,nind_i
 
@@ -11,4 +10,3 @@
 
       common /precompute_I/ nind_w_o,nind_s_o,nind_e_o,nind_n_o,nind_w_i,nind_s_i,nind_e_i,nind_n_i 
 
-      common /precompute_L/ done_precompute_L 

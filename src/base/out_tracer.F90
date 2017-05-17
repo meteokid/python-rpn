@@ -20,6 +20,9 @@
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
       use phy_itf, only: phy_get
+      use gmm_pw
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -27,18 +30,15 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "level.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
-#include "pw.cdk"
 #include "tr3d.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "ptopo.cdk"
 
       type(vgrid_descriptor) :: vcoord

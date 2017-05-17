@@ -14,13 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine init_ndoms (ndomains,dom_deb,err)
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
       integer ndomains,dom_deb,err
 
 #include <clib_interface_mu.hf>
-#include "grd.cdk"
 #include "ptopo.cdk"
 
       character*16 ndomains_S, last_domain_S

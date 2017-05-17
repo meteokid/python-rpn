@@ -17,6 +17,8 @@
 
       subroutine initial (F_rstrt_L)
       use step_options
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -39,15 +41,10 @@
 #include "gmm.hf"
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
-#include "init.cdk"
-#include "lctl.cdk"
 #include "lun.cdk"
-#include "p_geof.cdk" 
-#include "vtopo.cdk"
 #include "rstr.cdk"
-#include "schm.cdk"
+#include "cstv.cdk"
 
       type(gmm_metadata) :: meta2d
       integer n, pndfnph, err, pnlkey1(2), pnfirst, pnlast, gmmstat

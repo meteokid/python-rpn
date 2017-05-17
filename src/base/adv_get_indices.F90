@@ -17,8 +17,8 @@
 	
 	subroutine adv_get_indices (ii,  F_x, F_y, F_z, F_num, &
                                  nind, F_i0, F_in, F_j0, F_jn, F_k0, F_nk, F_lev_S)
-
-implicit none
+   use gem_options
+   implicit none
 
 #include <arch_specific.hf>
 

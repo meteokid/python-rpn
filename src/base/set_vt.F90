@@ -14,6 +14,13 @@
 !---------------------------------- LICENCE END ---------------------------------
       subroutine set_vt()
       use gmm_vt1
+      use gmm_vt0
+      use gmm_vt2
+      use gmm_vth
+      use gmm_tracers
+      use gmm_pw
+      use gmm_smag
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -56,14 +63,7 @@
 #include "gmm_gem_flags.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
-#include "smag.cdk"
-#include "vt0.cdk"
-#include "vth.cdk"
-#include "vt2.cdk"
 #include "tr3d.cdk"
-#include "pw.cdk"
-#include "vt_tracers.cdk"
 
 #define SET_GMMUSR_FLAG(MYMETA,MYFLAG) gmm_metadata(MYMETA%l,gmm_attributes(MYMETA%a%key,ior(MYMETA%a%uuid1,MYFLAG),MYMETA%a%uuid2,MYMETA%a%initmode,MYMETA%a%flags))
 
@@ -91,7 +91,7 @@
       mymeta3d_nk_u  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_u)
       mymeta3d_nk_v  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_v)
       mymeta3d_nk_t  = SET_GMMUSR_FLAG(meta3d_nk  ,flag_m_t)
-      mymeta3d_nk_q  = SET_GMMUSR_FLAG(meta3d_2nk1,flag_m_f)
+      mymeta3d_nk_q  = SET_GMMUSR_FLAG(meta3d_nk1 ,flag_m_f)
       mymeta2d_s     = SET_GMMUSR_FLAG(meta2d     ,flag_s_f)
       mymetasc_p00   = SET_GMMUSR_FLAG(metasc     ,flag_s_f)
 
@@ -137,9 +137,6 @@
       gmmk_xth_s = 'XTH'
       gmmk_yth_s = 'YTH'
       gmmk_zth_s = 'ZTH'
-      gmmk_xcth_s= 'XCTH'
-      gmmk_ycth_s= 'YCTH'
-      gmmk_zcth_s= 'ZCTH'
 
       istat = GMM_OK
 
@@ -147,9 +144,6 @@
       istat = min(gmm_create(gmmk_xth_s ,xth , mymeta        ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_yth_s ,yth , mymeta        ,flag_r_n),istat)
       istat = min(gmm_create(gmmk_zth_s ,zth , mymeta        ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_xcth_s,xcth, mymeta        ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_ycth_s,ycth, mymeta        ,flag_r_n),istat)
-      istat = min(gmm_create(gmmk_zcth_s,zcth, mymeta        ,flag_r_n),istat)
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(*th)')
@@ -270,6 +264,9 @@
 
       if (GMM_IS_ERROR(istat)) &
            call msg(MSG_ERROR,'set_vt ERROR at gmm_create(PW_*)')
+
+      call canonical_cases ("SET_VT")
+
 !
 !     ---------------------------------------------------------------
       return

@@ -4,7 +4,6 @@
 !                              |                                                   |
 ! NAME                         | DESCRIPTION                                       |
 !------------------------------|---------------------------------------------------|
-! 2D_3D_L                      | IF .T. do academic 2D 3D advection cases          | 
 ! extension_L                  | IF .T. do extended advection operations           | 
 ! core_L                       | IF .T. TR3D_MASS/=0 and TR3D_MONO/=0 LAM (LEGACY) |
 ! flux_L                       | IF .T. PSADJ LAM or Bermejo-Conde LAM             | 
@@ -24,11 +23,11 @@
 ! ----------------------------------------------------------------------------------
 #endif
 
-      logical Tr_2D_3D_L,Tr_extension_L,Tr_core_L,Tr_flux_L, &
+      logical Tr_extension_L,Tr_core_L,Tr_flux_L, &
               Tr_do_only_once_each_timestep_L,Tr_slice_L, &
               Tr_BC_min_max_L,Tr_ILMC_min_max_L
 
-      common /tr_l/ Tr_2D_3D_L,Tr_extension_L,Tr_core_L,Tr_flux_L, &
+      common /tr_l/ Tr_extension_L,Tr_core_L,Tr_flux_L, &
                     Tr_do_only_once_each_timestep_L,Tr_slice_L, &
                     Tr_BC_min_max_L,Tr_ILMC_min_max_L
 

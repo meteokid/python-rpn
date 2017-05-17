@@ -24,6 +24,11 @@
       use nest_blending, only: nest_blend
       use inp_base, only: inp_get, inp_read, inp_3dpres, inp_hwnd2
       use step_options
+      use gmm_pw
+      use gmm_geof
+      use inp_mod
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +41,7 @@
            F_t (Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_zd(Mminx:Mmaxx,Mminy:Mmaxy,Nk), &
            F_s (Mminx:Mmaxx,Mminy:Mmaxy   ), &
-           F_q (Mminx:Mmaxx,Mminy:Mmaxy,2:Nk+1), &
+           F_q (Mminx:Mmaxx,Mminy:Mmaxy,Nk+1), &
            F_topo(Mminx:Mmaxx,Mminy:Mmaxy)
 
 #include <WhiteBoard.hf>
@@ -44,17 +49,10 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "dcst.cdk"
-#include "cstv.cdk"
-#include "lam.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
-#include "inp.cdk"
 #include "lun.cdk"
-#include "pw.cdk"
 #include "ver.cdk"
-#include "p_geof.cdk"
-#include "vtopo.cdk"
-#include "grd.cdk"
+#include "cstv.cdk"
 
       character(len=4) vname
       logical urt1_l, ut1_l, sfcTT_L
@@ -307,11 +305,11 @@
       Inp_zd_L= ( err == 0 )
 
       if (.not.Schm_hydro_L) then
-         allocate (ip1_w(1:G_nk))
-         ip1_w(1:G_nk)=Ver_ip1%m(2:G_nk+1)
+         allocate (ip1_w(1:G_nk+1))
+         ip1_w(1:G_nk+1)=Ver_ip1%m(1:G_nk+1)
          err= inp_get ( 'QT1', 'Q', ip1_w,&
                         vgd_src,vgd_dst,S_q,ssq0,p0lsq0,F_q ,&
-                        l_minx,l_maxx,l_miny,l_maxy,G_nk )
+                        l_minx,l_maxx,l_miny,l_maxy,G_nk+1 )
          deallocate (ip1_w) ; nullify(ip1_w)
       endif
 

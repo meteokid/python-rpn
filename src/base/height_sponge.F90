@@ -16,10 +16,10 @@
 
 !**s/r  pressure_sponge -  Performs vertical blending
 !
-
-!
       subroutine height_sponge ()
       use gmm_vt1
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !author 
@@ -29,11 +29,9 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "zblen.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"
 #include "theo.cdk"
-#include "p_geof.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k
@@ -80,7 +78,6 @@
 
 
       subroutine apply(ff,value,betav, Minx,Maxx,Miny,Maxy, Nk)
-
       implicit none
 #include <arch_specific.hf>
 
@@ -116,7 +113,6 @@
 
 
       subroutine apply_tt(tt,betav_t, F_s, F_sl,Minx,Maxx,Miny,Maxy, Nk)
-
       implicit none
 #include <arch_specific.hf>
 
@@ -125,8 +121,8 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "mtn.cdk"
-#include "cstv.cdk"
 #include "type.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       real tt(Minx:Maxx,Miny:Maxy,Nk),F_s(Minx:Maxx,Miny:Maxy)

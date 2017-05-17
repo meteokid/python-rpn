@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
       subroutine adv_setgrid ( )
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -21,9 +22,8 @@
 
 #include "constants.h"
 #include "adv_grid.cdk"
-#include "cstv.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
+#include "cstv.cdk"
 #include "ver.cdk"
 
       character(len=40) :: label

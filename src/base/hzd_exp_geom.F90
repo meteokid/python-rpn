@@ -16,6 +16,9 @@
 !**s/r hzd_exp_geom
 !
       subroutine hzd_exp_geom
+      use hzd_mod
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,8 +29,6 @@
 ! v4_80 - Qaddouri, Desgagne, Lee      - Initial version
 !
 #include "glb_ld.cdk"
-#include "grd.cdk"
-#include "hzd.cdk"
 #include "geomg.cdk"
 
       integer i,j

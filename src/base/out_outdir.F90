@@ -17,6 +17,8 @@
       use iso_c_binding
       use timestr_mod, only: timestr_prognum,timestr_unitfact
       use step_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -26,15 +28,12 @@
 ! v4_80 - Desgagne M.      - Initial version
 
 #include <rmnlib_basics.hf>
-#include "cstv.cdk"
-#include "grd.cdk"
-#include "lctl.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
 #include "path.cdk"
-#include "init.cdk"
+#include "cstv.cdk"
 #include <clib_interface_mu.hf>
       include "rpn_comm.inc"
       

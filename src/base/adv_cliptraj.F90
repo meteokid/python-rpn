@@ -14,6 +14,7 @@
 !---------------------------------- LICENCE END ---------------------------------
 !
       subroutine adv_cliptraj (F_x, F_y, F_ni,F_nj,F_nk,i0, in, j0, jn, k0,mesg)
+      use grid_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "msg.h"
 #include "adv_grid.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 
       real*8,  parameter :: EPS_8 = 1.D-5
 !     integer, parameter :: BCS_BASE = 4

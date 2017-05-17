@@ -17,6 +17,8 @@
 !
       subroutine ta2t1tx
       use gmm_vt1
+      use gmm_vta
+      use gem_options
       implicit none
 
 !author
@@ -36,7 +38,6 @@
 	
 #include <arch_specific.hf>
 #include <gmm.hf>
-#include "vta.cdk"
 #include "tr3d.cdk"
 
       integer n,istat

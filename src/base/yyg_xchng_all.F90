@@ -17,6 +17,8 @@
 
       subroutine yyg_xchng_all
       use gmm_vt1
+      use gmm_pw
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -27,9 +29,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
-#include "pw.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
       integer istat,n
@@ -51,8 +51,13 @@
       istat = gmm_get (gmmk_pw_vv_plus_s,pw_vv_plus)
       istat = gmm_get (gmmk_pw_tt_plus_s,pw_tt_plus)
 
-      call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
-                       l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      if (.not. Schm_testcases_L) then
+         call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
+                          l_minx,l_maxx,l_miny,l_maxy, G_nk)
+      else
+         call canonical_cases ("XCHNG") 
+      endif
+
       call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                        .false., 'CUBIC' )
 
@@ -65,7 +70,7 @@
 
       if (.not.Schm_hydro_L) then
          istat = gmm_get(gmmk_qt1_s,  qt1)
-         call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+         call yyg_xchng (qt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk+1,&
                          .false., 'CUBIC')
       endif
 

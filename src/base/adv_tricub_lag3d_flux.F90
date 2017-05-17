@@ -18,6 +18,7 @@
       subroutine adv_tricub_lag3d_flux (F_cub_o,F_in_o,F_cub_i,F_in_i, & 
                                          F_x,F_y,F_z,F_num,k0,F_nk,F_lev_S) 
 
+      use grid_options
       implicit none
 
 #include <arch_specific.hf>
@@ -41,8 +42,8 @@
 #include "adv_grid.cdk"
 #include "adv_interp.cdk"
 #include "glb_ld.cdk"
-#include "grd.cdk"
 #include "ver.cdk"
+#include "adv.cdk"
 #include "adv_precompute_flux.cdk"
 
       logical :: zcubic_L
@@ -55,13 +56,14 @@
 
       integer :: n0,nx,ny,nz,m1,id,n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_o,in_o,j0_o,jn_o,i0_i,in_i,j0_i,jn_i
+      real   :: za
       real*8 :: a1, a2, a3, a4, &
               b1, b2, b3, b4, c1, c2, c3, c4, &
               d1, d2, d3, d4, p1, p2, p3, p4, &
               rri,rrj,rrk,ra,rb,rc,rd, &
-              triprd,za,zb,zc,zd,p_z00_8
+              triprd,zb,zc,zd,p_z00_8
 
-      triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
+      triprd(za,zb,zc,zd)=(dble(za)-zb)*(za-zc)*(za-zd)
 
       logical,save :: done_L=.FALSE.
 
@@ -210,7 +212,7 @@
 
       !Pre-compute indices ii used in: adv_tricub_lag3d_loop
       !-----------------------------------------------------
-      if (.NOT.done_precompute_L) then
+      if (.NOT.Adv_done_precompute_L) then
 
          if (l_west) then
 
@@ -255,7 +257,7 @@
 
       endif
 
-      done_precompute_L = .TRUE.
+      Adv_done_precompute_L = .TRUE.
 
       !-------------------------
       !Estimate FLUX_out/FLUX_in

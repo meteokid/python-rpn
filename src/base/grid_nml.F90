@@ -16,18 +16,18 @@
 !**s/r grid_nml - Default configuration and reading namelist grid
 !
       integer function grid_nml3 (F_namelistf_S)
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
       character* (*) F_namelistf_S
 
-#include "grd.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "hgc.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "schm.cdk"
 
       integer, external ::  fnom, yyg_checkrot
 
@@ -46,24 +46,6 @@
          if (Lun_out.gt.0) write (Lun_out  ,nml=grid) 
          return
       endif
-
-! Defaults values for grid namelist variables
-
-      Grd_typ_S = 'GY'
-      Grd_ni    = 0
-      Grd_nj    = 0 
-      Grd_maxcfl= 1
-      Grd_dx    = 0.
-      Grd_dy    = 0.
-      Grd_latr  = 0.
-      Grd_lonr  = 180.
-      Grd_overlap=0.0
-!Orientation of Global and Yin grid
-!xlon1,xlat1 is centre of grid
-      Grd_xlon1 = 180.
-      Grd_xlat1 = 0.
-      Grd_xlon2 = 270.
-      Grd_xlat2 = 0.
 
       if (F_namelistf_S .ne. '') then
          unf = 0
@@ -102,9 +84,6 @@
       if (l_north) pil_n= Glb_pil_n
       if (l_east ) pil_e= Glb_pil_e
       if (l_south) pil_s= Glb_pil_s
-
-      Grd_xlon1_8= Grd_xlon1 ; Grd_xlat1_8= Grd_xlat1
-      Grd_xlon2_8= Grd_xlon2 ; Grd_xlat2_8= Grd_xlat2
 
       if (Grd_typ_S(1:2).eq.'GY') then
 
@@ -171,11 +150,9 @@
             if (yyg_checkrot().lt.0) goto 9999
 
             if (trim(Grd_yinyang_S) .eq. 'YAN') then
-               call yyg_yangrot (                                   &
-                 Grd_xlat1_8, Grd_xlon1_8, Grd_xlat2_8, Grd_xlon2_8,&
+               call yyg_yangrot ( dble(Grd_xlat1), dble(Grd_xlon1), &
+                                  dble(Grd_xlat2), dble(Grd_xlon2), &
                  yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8 )
-               Grd_xlat1_8= yan_xlat1_8 ; Grd_xlon1_8= yan_xlon1_8
-               Grd_xlat2_8= yan_xlat2_8 ; Grd_xlon2_8= yan_xlon2_8
                Grd_xlat1  = yan_xlat1_8 ; Grd_xlon1  = yan_xlon1_8
                Grd_xlat2  = yan_xlat2_8 ; Grd_xlon2  = yan_xlon2_8
             endif

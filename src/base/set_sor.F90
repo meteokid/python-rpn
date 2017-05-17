@@ -19,6 +19,8 @@
       use iso_c_binding
       use timestr_mod
       use step_options
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -34,11 +36,8 @@
 #include "ptopo.cdk"
 #include "out.cdk"
 #include "out3.cdk"
-#include "grd.cdk"
 #include "level.cdk"
 #include "timestep.cdk"
-#include "schm.cdk"
-#include "lctl.cdk"
 #include "outd.cdk"
 #include "outp.cdk"
 #include "outc.cdk"
@@ -48,6 +47,7 @@
       include "rpn_comm.inc"
 
       integer,external :: srequet
+      real*8, external :: dcmip_mult_X 
 
       integer,parameter :: NBUS = 3
       character(len=9) :: BUS_LIST_S(NBUS) = &
@@ -194,6 +194,8 @@
       Out_endstepno= min(Step_total+Step_initial, Lctl_step+rsti)
       Out_endstepno= Out_endstepno - Step_initial !in step_kount space
       Out_deet     = int(Cstv_dt_8)
+      if ( Schm_canonical_dcmip_L ) &
+      Out_deet= int(dcmip_mult_X(Cstv_dt_8))
 
       options = WB_REWRITE_NONE+WB_IS_LOCAL
       istat= wb_put('model/Output/etik', Out3_etik_S, options)      

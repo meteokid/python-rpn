@@ -17,6 +17,7 @@
 
       subroutine tracers ()
       use phy_itf, only: PHY_MAXNAMELENGTH,phymeta,phy_getmeta
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -41,7 +42,6 @@
 #include <clib_interface_mu.hf>
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "schm.cdk"
 #include "tr3d.cdk"
 
       character*512 varname,attributes

@@ -17,11 +17,6 @@
 !                                                   u,v,w,t,q,s,zd
 !                from new P , the right-hand sides (Ru,Rv,Rt,Rw,Rf)
 !                             and non-linear terms (Nu,Nv,Nt,Nw,Nf)
-!revision
-! v4_50 - Qaddouri/Lee      - Yin-Yang, to exchange ZD, winds,T,S,Q
-! v4.7  - Gaudreault S.     - Reformulation in terms of real winds (removing wind images)
-!
-
 
       subroutine bac ( F_lhs_sol       , F_sl ,F_fis      , &
                        F_u   , F_v     , F_w  , F_t       , &
@@ -29,44 +24,45 @@
                        F_ru  , F_rv    , F_rt , F_rw , F_rf , F_rb, &
                        F_nu  , F_nv    , F_nt , F_nw , F_nf , F_nb, &
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
-!
+
       integer  Minx,Maxx,Miny,Maxy, ni,nj,Nk , i0, j0, k0, in, jn
       real*8   F_lhs_sol (ni,nj,Nk)
       real     F_fis (Minx:Maxx,Miny:Maxy)       , F_sl    (Minx:Maxx,Miny:Maxy)       , &
                F_u   (Minx:Maxx,Miny:Maxy,  Nk)  , F_v     (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_w   (Minx:Maxx,Miny:Maxy,  Nk)  , F_t     (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_s   (Minx:Maxx,Miny:Maxy)       , F_zd    (Minx:Maxx,Miny:Maxy,  Nk)  , &
-               F_q   (Minx:Maxx,Miny:Maxy,2:Nk+1), F_nest_q(Minx:Maxx,Miny:Maxy,2:Nk+1), &
+               F_q   (Minx:Maxx,Miny:Maxy,  Nk+1), F_nest_q(Minx:Maxx,Miny:Maxy,  Nk+1), &
                F_ru  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_rt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_rf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_rb    (Minx:Maxx,Miny:Maxy)       , &
                F_nu  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nv    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nt  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nw    (Minx:Maxx,Miny:Maxy,  Nk)  , &
                F_nf  (Minx:Maxx,Miny:Maxy,  Nk)  , F_nb    (Minx:Maxx,Miny:Maxy)
-!
+
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "grd.cdk"
-#include "cstv.cdk"
 #include "dcst.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
-#include "schm.cdk"
 #include "ptopo.cdk"
-#include "lam.cdk"
-#include "wil_williamson.cdk"
-!
-      integer i, j, k, km, kq, kmq, nij, k0t, istat
+#include "cstv.cdk"
+
+      integer i, j, k, km, nij, k0t, istat
       real*8  w1, w2, w3, w4, Pbar, qbar
       real*8, dimension(i0:in,j0:jn):: xtmp_8, ytmp_8
       real  , dimension(:,:,:), allocatable :: GP
       real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
 !     __________________________________________________________________
 !
-      if (Schm_autobar_L.and.Williamson_case.eq.1) return
+      if (Schm_testcases_adv_L) then
+         call canonical_cases ("BAC")
+         return
+      endif
 
       if (Lun_debug_L) write(Lun_out,1000)
 
@@ -85,7 +81,7 @@
          enddo
       end do
 !
-!$omp parallel private(w1,w2,w3,w4,qbar,Pbar,km,kq,kmq,xtmp_8,ytmp_8)
+!$omp parallel private(w1,w2,w3,w4,qbar,Pbar,km,xtmp_8,ytmp_8)
 !
 !     Compute P at top and bottom
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,8 +154,7 @@
 !        Note : we cannot use omp on loop k
 !               due to vertical dependency F_q(i,j,k)
          do k=k0t,l_nk
-            kq=max(k,2)
-            km=max(k-1,2)
+            km=max(k-1,1)
             w4 = one/(one+Ver_wp_8%t(k)*Ver_wpstar_8(k)*Ver_dz_8%t(k))
             w3 = half*Ver_wp_8%t(k)*Ver_wmstar_8(k)*Ver_dz_8%t(k)*w4
             w2 = (one-(Ver_wm_8%t(k)+half*Ver_wp_8%t(k)*Ver_wmstar_8(k))*Ver_dz_8%t(k))*w4
@@ -167,8 +162,8 @@
 !$omp do
             do j= j0, jn
             do i= i0, in
-               F_q(i,j,k+1) = - w3 * F_q(i,j,km)*Ver_onezero(k)   &
-                              + w2 * F_q(i,j,kq)*Ver_onezero(k)   &
+               F_q(i,j,k+1) = - w3 * F_q(i,j,km)   &
+                              + w2 * F_q(i,j,k)    &
                               - w1 * ( F_rw(i,j,k) - F_nw(i,j,k)  &
                                  - Cstv_invT_nh_8 * F_w(i,j,k)  )
             end do
@@ -217,14 +212,13 @@
 
 !$omp do
       do k=k0t,l_nk-1
-         kq=max(k,2)
          w1=Ver_gama_8(k)*Ver_idz_8%t(k)
          w2=Ver_gama_8(k)*Ver_epsi_8(k)
          w3=Cstv_invT_8*Cstv_bar1_8
          do j= j0, jn
          do i= i0, in
             Pbar= Ver_wp_8%t(k)*GP(i,j,k+1)+Ver_wm_8%t(k)*GP(i,j,k)
-            qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k))
+            qbar=(Ver_wp_8%t(k)*F_q(i,j,k+1)+Ver_wm_8%t(k)*F_q(i,j,k))
             F_zd(i,j,k)=-Cstv_tau_m_8*( F_rt(i,j,k)- F_nt(i,j,k) &
                        + w1 * ( GP(i,j,k+1)-GP(i,j,k) ) - w2 * Pbar ) &
                        - w3 * ( Ver_b_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
@@ -241,13 +235,12 @@
 !$omp do
       do k=k0t,l_nk
          km=max(k-1,1)
-         kq=max(k,2)
          w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
             GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
                                    +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8) &
-                                   +Cstv_rE_8*F_q(i,j,kq)*Ver_onezero(k) )
+                                   +Cstv_rE_8*F_q(i,j,k) )
          enddo
          enddo
       enddo
@@ -264,12 +257,11 @@
 
 !$omp do
       do k=k0t,l_nk
-         kq=max(k,2)
-         kmq=max(k-1,2)
+         km=max(k-1,1)
          do j= j0, jn
          do i= i0, in
-            qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,kq)+F_q(i,j,kmq))
-            qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,kq)*Ver_onezero(k)
+            qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
+            qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)
             ytmp_8(i,j)=-qbar
          enddo
          enddo

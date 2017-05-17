@@ -16,6 +16,9 @@
 !**s/r get_s_large_scale - Obtain sls for large scale topography from SLEVE
 
       subroutine get_s_large_scale (F_topo_ls, Minx,Maxx,Miny,Maxy)
+      use gmm_pw
+      use gmm_geof
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,10 +34,7 @@
 #include "glb_ld.cdk"
 #include "dcst.cdk"
 #include "cstv.cdk"
-#include "schm.cdk"
 #include "lun.cdk"
-#include "p_geof.cdk"
-#include "pw.cdk"
 
 ! Local varibales
 

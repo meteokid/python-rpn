@@ -16,6 +16,7 @@
 !
       subroutine sol_lam ( F_sol_8, F_rhs_8, F_dg1, F_dg2, F_dwfft, &
                            F_iln, F_prout, F_ni, F_nj, F_nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,14 +33,12 @@
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "lam.cdk"
 #include "lun.cdk"
 #include "ldnh.cdk"
 #include "sol.cdk"
 #include "opr.cdk"
 #include "ptopo.cdk"
 #include "fft.cdk"
-#include "schm.cdk"
 #include "trp.cdk"
 
       integer Gni, NK, i, j, nev, NSTOR, its, dim

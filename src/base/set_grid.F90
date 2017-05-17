@@ -16,6 +16,8 @@
 !**s/p set_grid - initialization of common block GRID
 
       integer function set_grid (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
+      use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -96,8 +98,6 @@
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "lun.cdk"
-#include "grd.cdk"
-#include "lam.cdk"
 #include "grid.cdk"
 #include "out3.cdk"
 

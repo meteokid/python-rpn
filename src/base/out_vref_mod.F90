@@ -16,6 +16,9 @@
 !*module out_vref_mod - output vertical coordinate tags
 !
 module out_vref_mod
+      use grid_options
+      use grid_options
+      use gem_options
   implicit none
   private
 
@@ -52,9 +55,8 @@ contains
 #include "glb_ld.cdk"
 #include "type.cdk"
 #include "ver.cdk"
-#include "cstv.cdk"
 #include "dimout.cdk"
-#include "grd.cdk"
+#include "cstv.cdk"
 #include "level.cdk"
 #include "lun.cdk"
 #include "out.cdk"
@@ -113,7 +115,6 @@ contains
     !implicits
 #include "out.cdk"
 #include "dimout.cdk"
-#include "grd.cdk"
 #include "level.cdk"
 #include "lun.cdk"
 

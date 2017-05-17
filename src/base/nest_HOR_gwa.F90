@@ -18,6 +18,8 @@
       subroutine nest_HOR_gwa
       use nest_blending
       use gmm_vt1
+      use gmm_nest
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -31,10 +33,7 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "lam.cdk"
-#include "nest.cdk"
 #include "tr3d.cdk"
-#include "schm.cdk"
 
       integer n, gmmstat
       real, dimension(:,:,:), pointer :: fld3d=>null(), fld_nest3d=>null()
@@ -70,7 +69,7 @@
       if ( .not.Schm_hydro_L ) then
          gmmstat = gmm_get (gmmk_qt1_s   , fld3d     )
          gmmstat = gmm_get (gmmk_nest_q_s, fld_nest3d)
-         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk, 'Q')
+         call nest_blend (fld3d, fld_nest3d, l_minx,l_maxx,l_miny,l_maxy, 1,G_nk+1, 'Q')
       endif
 
       

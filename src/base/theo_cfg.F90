@@ -17,9 +17,12 @@
 !
       subroutine theo_cfg
       use step_options
+      use gem_options
+      use grid_options
       implicit none
 #include <arch_specific.hf>
-
+#include "cstv.cdk"
+#include "out3.cdk"
 #include "theonml.cdk"
 #include "cst_lis.cdk"
 #include "path.cdk"

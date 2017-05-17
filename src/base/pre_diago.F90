@@ -18,6 +18,7 @@
 
       subroutine pre_diago( Sol, Rhs, Minx, Maxx, Miny, Maxy, &
                             nil,njl, minx1, maxx1, minx2, maxx2, Nk )
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 !

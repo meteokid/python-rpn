@@ -18,6 +18,8 @@
       subroutine out_dyn ( F_reg_out, F_casc_L )
       use out_vref_mod, only: out_vref
       use step_options
+      use grdc_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -32,12 +34,9 @@
 #include "out3.cdk"
 #include "out.cdk"
 #include "lun.cdk"
-#include "init.cdk"
 #include "grid.cdk"
 #include "level.cdk"
 #include "outd.cdk"
-#include "grdc.cdk"
-#include "lctl.cdk"
 #include "out_listes.cdk"
 #include <rmnlib_basics.hf>
 
@@ -63,6 +62,8 @@
 
          if (Lun_out.gt.0) write(Lun_out,7001) &
                            Lctl_step,trim(Out_laststep_S)
+
+         call canonical_cases ("OUT")
 
          ! Precompute diagnostic level values
          call itf_phy_diag ()
