@@ -118,11 +118,11 @@ contains
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
 
  9999 return
-      end
+      end function mtn_nml
 !
 !-------------------------------------------------------------------
 !
-      integer function mtn_cfg
+      integer function mtn_cfg()
       implicit none
 #include <arch_specific.hf>
 

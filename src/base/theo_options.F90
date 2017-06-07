@@ -115,7 +115,7 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      subroutine theo_cfg
+      subroutine theo_cfg()
       implicit none
 
 #include "lun.cdk"
@@ -191,7 +191,7 @@ contains
 !
 !---------------------------------------------------------------------
       return
-      end
+      end subroutine theo_data
 
 
 

@@ -121,7 +121,7 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      integer function bubble_cfg
+      integer function bubble_cfg()
       implicit none
 #include <arch_specific.hf>
 
