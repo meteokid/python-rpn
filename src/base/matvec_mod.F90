@@ -8,12 +8,12 @@ module matvec_mod
    !     v4_70 - Gaudreault/Qaddouri      - initial version
    !
       use gem_options
+      use tdpack
    implicit none
    private
 
 #include <arch_specific.hf>
 
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "ldnh.cdk"
 #include "opr.cdk"

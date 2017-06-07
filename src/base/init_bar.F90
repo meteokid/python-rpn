@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -18,6 +18,7 @@
       subroutine init_bar ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, F_topo,&
                             Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
                             F_trprefix_S, F_trsuffix_S, F_datev )
+      use dynkernel_options
       use gmm_geof
       use inp_mod
       use gmm_pw
@@ -37,7 +38,7 @@
 
       !object
       !============================================================
-      !     prepare data for autobarotropic runs (Williamson cases) 
+      !     prepare data for autobarotropic runs (Williamson cases)
       !============================================================
 
 #include "gmm.hf"
@@ -47,7 +48,7 @@
 
       !---------------------------------------------------------------
 
-      integer i,j,k,istat
+      integer istat
       real, dimension (:,:,:), pointer :: hu
       real, dimension (Mminx:Mmaxx,Mminy:Mmaxy,Nk) :: gz_t
 
@@ -63,11 +64,11 @@
                       Mminx,Mmaxx,Mminy,Mmaxy, Nk, .true.       ,&
                       F_trprefix_S, F_trsuffix_S, F_datev )
 
-      !Initialize T/ZD/W/Q 
+      !Initialize T/ZD/W/Q
       !-------------------
       F_t = Cstv_Tstr_8 ; F_zd = 0. ; F_w = 0. ; F_q = 0.
 
-      !Initialize HU 
+      !Initialize HU
       !-------------
       istat = gmm_get ('TR/HU:P',hu)
 
@@ -90,7 +91,7 @@
       topo_high(1:l_ni,1:l_nj) =    F_topo(1:l_ni,1:l_nj)
       topo_low (1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
 
-      !Estimate U-V and T on scalar grids 
+      !Estimate U-V and T on scalar grids
       !----------------------------------
       istat = gmm_get (gmmk_pw_uu_plus_s, pw_uu_plus)
       istat = gmm_get (gmmk_pw_vv_plus_s, pw_vv_plus)
@@ -99,7 +100,13 @@
       call hwnd_stag ( pw_uu_plus,pw_vv_plus,F_u,F_v, &
                        Mminx,Mmaxx,Mminy,Mmaxy,Nk,.false. )
 
-      pw_tt_plus = F_t 
+      pw_tt_plus = F_t
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         call exp_init_bar ( F_u, F_v, F_w, F_t, F_zd, F_s, F_q, gz_t, F_topo,&
+                             Mminx,Mmaxx,Mminy,Mmaxy, Nk               ,&
+                             F_trprefix_S, F_trsuffix_S, F_datev )
+      end if
 
       return
 

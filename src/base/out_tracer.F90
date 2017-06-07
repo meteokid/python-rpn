@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,7 @@
 !**s/r out_tracer - output tracer
 
       subroutine out_tracer (levset, set)
+      use dynkernel_options
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
@@ -79,7 +80,11 @@
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
                   nullify (tr1)
-                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
+                  else
+                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  end if
                   indxtr=n
                   istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
@@ -128,7 +133,7 @@
                             .false. )
                   endif
                endif
-                  
+
             endif
          enddo
          deallocate(indo)
@@ -144,7 +149,7 @@
                cible(l_minx:l_maxx,l_miny:l_maxy,nko))
 
          istat= gmm_get(gmmk_pw_log_pt_s  , pw_log_pt)
-      
+
          do i = 1, nko
             indo(i)=i
             rf(i)= Level(i,levset)
@@ -157,8 +162,12 @@
             outvar_L=.false.
             do n=1,Tr3d_ntr
                if (Outd_var_S(ii,set).eq.trim(Tr3d_name_S(n))) then
-                  nullify (tr1)
-                  fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                nullify (tr1)
+                if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':M'
+                  else
+                     fullname= 'TR/'//trim(Tr3d_name_S(n))//':P'
+                  end if
                   indxtr=n
                   istat = gmm_get(fullname,tr1)
                   if (.not.GMM_IS_ERROR(istat)) outvar_L=.true.
@@ -211,7 +220,7 @@
                                         Outd_convadd(ii,set),kind,-1 , &
                                         nko, indo, nko               , &
                                         Outd_nbit(ii,set) , .false. )
-               
+
             endif
 
          enddo

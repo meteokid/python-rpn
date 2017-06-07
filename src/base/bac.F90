@@ -26,6 +26,7 @@
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -46,7 +47,6 @@
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
@@ -118,7 +118,7 @@
 !$omp do
       do k=k0t,l_nk
          km = max(k-1,k0t)
-         w1 = Cstv_tau_m_8*Dcst_Rgasd_8*Ver_Tstar_8%t(k)/Dcst_grav_8
+         w1 = Cstv_tau_m_8*Rgasd_8*Ver_Tstar_8%t(k)/grav_8
          do j= j0, jn
          do i= i0, in
             Pbar = Ver_wpstar_8(k)*GP(i,j,k+1) &
@@ -126,7 +126,7 @@
             Pbar = Ver_wp_8%t(k)*Pbar+Ver_wm_8%t(k)*GP(i,j,k)
             F_w(i,j,k) = w1 * ( F_rf(i,j,k) - F_nf(i,j,k) &
             + Ver_gama_8(k) * ( (GP(i,j,k+1)-GP(i,j,k))*Ver_idz_8%t(k) &
-                                     + Dcst_cappa_8 * Pbar ) )
+                                     + cappa_8 * Pbar ) )
          end do
          end do
       end do
@@ -158,7 +158,7 @@
             w4 = one/(one+Ver_wp_8%t(k)*Ver_wpstar_8(k)*Ver_dz_8%t(k))
             w3 = half*Ver_wp_8%t(k)*Ver_wmstar_8(k)*Ver_dz_8%t(k)*w4
             w2 = (one-(Ver_wm_8%t(k)+half*Ver_wp_8%t(k)*Ver_wmstar_8(k))*Ver_dz_8%t(k))*w4
-            w1 = Ver_dz_8%t(k)/Dcst_grav_8*w4
+            w1 = Ver_dz_8%t(k)/grav_8*w4
 !$omp do
             do j= j0, jn
             do i= i0, in
@@ -193,7 +193,7 @@
 
 !     Compute s
 !     ~~~~~~~~~
-      w1 = one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk+1))
+      w1 = one/(Rgasd_8*Ver_Tstar_8%m(l_nk+1))
 !$omp do
       do j= j0, jn
       do i= i0, in
@@ -235,7 +235,7 @@
 !$omp do
       do k=k0t,l_nk
          km=max(k-1,1)
-         w1=Dcst_Rgasd_8*Ver_Tstar_8%m(k)
+         w1=Rgasd_8*Ver_Tstar_8%m(k)
          do j= j0, jn
          do i= i0, in
             GP(i,j,k)=GP(i,j,k)-w1*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
@@ -273,7 +273,7 @@
          enddo
          enddo
          call vrec ( ytmp_8, xtmp_8, nij )
-         w1=Ver_idz_8%t(k)/Dcst_rgasd_8
+         w1=Ver_idz_8%t(k)/rgasd_8
          do j= j0, jn
             do i= i0, in
                F_t(i,j,k)=ytmp_8(i,j)*(Ver_Tstar_8%t(k)-w1*(GP(i,j,k+1)-GP(i,j,k)))

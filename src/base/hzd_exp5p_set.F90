@@ -19,6 +19,7 @@
       use hzd_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -31,7 +32,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
 
@@ -50,9 +50,9 @@
          nutop_8 = 1./4. * Hzd_lnR**(2./Hzd_pwr)
          Hzd_Niter= max(int(8.d0*nutop_8+0.9999999),1)
          coef_8= nutop_8/max(1.,float(HZD_niter))* &
-                                  ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+                                  ((rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8(G_nk))
-         Hzd_coef_8(1:G_nk) = coef_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8(1:G_nk) = coef_8/(rayt_8**2)*Cstv_dt_8
       endif
 
       !for Theta
@@ -60,9 +60,9 @@
          nutop_8 = 1./4. * Hzd_lnR_theta**(2./Hzd_pwr_theta)
          Hzd_Niter_theta = max(int(8.d0*nutop_8+0.9999999),1)
          coef_theta_8=nutop_8/max(1.,float(hzd_niter_theta))* &
-                                  ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+                                  ((rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_theta(G_nk))
-         Hzd_coef_8_theta(1:G_nk) = coef_theta_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8_theta(1:G_nk) = coef_theta_8/(rayt_8**2)*Cstv_dt_8
       endif
 
       !for Tracers
@@ -70,9 +70,9 @@
          nutop_8 = 1./4. * Hzd_lnR_tr**(2./Hzd_pwr_tr)
          Hzd_Niter_tr = max(int(8.d0*nutop_8+0.9999999),1)
          coef_tr_8=nutop_8/max(1.,float(hzd_niter_tr))* &
-                                  ((Dcst_rayt_8*c_8)**2)/Cstv_dt_8
+                                  ((rayt_8*c_8)**2)/Cstv_dt_8
          allocate( Hzd_coef_8_tr(G_nk))
-         Hzd_coef_8_tr(1:G_nk) = coef_tr_8/(Dcst_rayt_8**2)*Cstv_dt_8
+         Hzd_coef_8_tr(1:G_nk) = coef_tr_8/(rayt_8**2)*Cstv_dt_8
       endif
 
       if (Lun_out.gt.0) then

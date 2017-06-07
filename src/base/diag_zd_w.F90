@@ -21,6 +21,7 @@
                              Minx,Maxx,Miny,Maxy, Nk, F_zd_L, F_w_L )
       use gmm_geof
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -57,7 +58,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
 
@@ -178,7 +178,7 @@
          do k=1,Nk
             do j=j0,jn
             do i=i0,in
-               div(i,j,k) = div(i,j,k) * (tanh(2.*lapse(i,j,k)/Dcst_pi_8)+1.)/2.
+               div(i,j,k) = div(i,j,k) * (tanh(2.*lapse(i,j,k)/pi_8)+1.)/2.
             enddo
             enddo
          enddo
@@ -220,7 +220,7 @@
 
 !        Compute W=-omega/(g*ro)      ro=p/RT
 
-         RoverG=Dcst_rgasd_8/Dcst_grav_8
+         RoverG=rgasd_8/grav_8
          do k=1,Nk
             kp=min(k+1,Nk)
             do j=j0,jn

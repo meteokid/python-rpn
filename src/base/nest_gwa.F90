@@ -30,7 +30,6 @@
 ! v4_05 - Lepine M.       - VMM replacement with GMM
 ! v4_40 - Lee V.          - no blending for Yin-Yang
 
-#include "theo.cdk"
 #include "theo_dif.cdk"
 
 !

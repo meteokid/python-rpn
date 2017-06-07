@@ -19,6 +19,7 @@
       use step_options
       use gmm_geof
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -41,7 +42,6 @@
 #include "gmm.hf"
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "rstr.cdk"
 #include "cstv.cdk"
@@ -56,10 +56,10 @@
 
       allocate (Init_dfco(0:Init_halfspan))
 
-      promegc = (2.0 * Dcst_pi_8) / Init_dfpl_8
-      prwin1  = Dcst_pi_8 / real(Init_halfspan + 1)
+      promegc = (2.0 * pi_8) / Init_dfpl_8
+      prwin1  = pi_8 / real(Init_halfspan + 1)
 
-      Init_dfco(0) = promegc * Cstv_dt_8 / Dcst_pi_8
+      Init_dfco(0) = promegc * Cstv_dt_8 / pi_8
       prsum        = Init_dfco(0)
 
       do n=1,Init_halfspan
@@ -72,7 +72,7 @@
          endif
 
          Init_dfco(n) = prwin2 *dsin(prn * promegc * Cstv_dt_8) /  &
-                        (prn * Dcst_pi_8)
+                        (prn * pi_8)
          prsum     = prsum + 2.0 * Init_dfco(n)
       end do
 

@@ -19,6 +19,7 @@
       use iso_c_binding
       use step_options
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
 !
 #include "component.cdk"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "cst_lis.cdk"
 #include "lun.cdk"
 #include "path.cdk"
@@ -40,7 +40,6 @@
       include "rpn_comm.inc"
 
       external init_ndoms, pe_zero_topo
-      logical, external :: set_dcst_8
       integer, external :: model_timeout_alarm
 
       character(len=50 ) :: DSTP,dummy,name_S,arch_S,compil_S
@@ -101,9 +100,6 @@
       call pe_all_topo
 
       ierr= 0
-      if ( .not. set_dcst_8 ( Dcst_cpd_8,liste_S,cnbre, &
-                              Lun_out,Ptopo_numproc ) ) ierr= -1
-      call gem_error (ierr, 'init_component', 'set_dcst_8')
 
       G_periodx= .false.  ;  G_periody= .false.
 

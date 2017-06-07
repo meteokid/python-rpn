@@ -20,6 +20,7 @@
       use grid_options
       use grdc_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -35,7 +36,6 @@
 ! v4_03 - Lee/Desgagne - ISST
 !
 
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 #include "rstr.cdk"
@@ -52,7 +52,7 @@
 !
 !---------------------------------------------------------------------
 !
-      rad2deg_8 = 180.0d0/Dcst_pi_8
+      rad2deg_8 = 180.0d0/pi_8
       xpx = xp * rad2deg_8
       ypx = yp * rad2deg_8
 !

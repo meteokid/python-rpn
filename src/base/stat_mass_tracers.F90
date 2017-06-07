@@ -78,7 +78,7 @@
 
       if (Lun_out>0.and.Ptopo_couleur==0) write(Lun_out,1002) 'TRACERS: ',type_S,time_S,' C= ',tracer_8/KEEP_tracer_8(n),Tr3d_name_S(n)(1:4),F_comment_S
 
-      call canonical_terminator_2 (air_mass,tracer_8,count,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0,Lun_out,type_S,time_S,F_comment_S)
+      call canonical_terminator_2 (air_mass,tracer_8,count,l_minx,l_maxx,l_miny,l_maxy,l_nk,k0,Lun_out,Ptopo_couleur,type_S,time_S,F_comment_S)
 
    enddo
 

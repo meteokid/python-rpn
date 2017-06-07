@@ -16,6 +16,7 @@
       subroutine out_liebman ( ttx, htx, vt, gz, fis0, wlao,&
                                Minx,Maxx,Miny,Maxy,nkund,nk )
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -30,7 +31,6 @@
 !     Michel Desgagne - Fall 2011
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "out3.cdk"
 
       integer i,j,k,kk,kgrnd
@@ -47,7 +47,7 @@
          do i=1,l_ni
 
 !           Store fictitious height level in htx
-            htx(i,j,k) = Out3_lieb_levels(k) * Dcst_grav_8
+            htx(i,j,k) = Out3_lieb_levels(k) * grav_8
 
 !           Determine if fictitious level is above or below ground
             ttx(i,j,k) = fis0(i,j) - htx(i,j,k)
@@ -58,10 +58,10 @@
 !           temperature is obtained by linear EXTrapolation
 !           identify under ground grid point
 
-               if ( abs( wlao(i,j)*180./Dcst_pi_8 ) .ge. 49. ) then
+               if ( abs( wlao(i,j)*180./pi_8 ) .ge. 49. ) then
                    ttx(i,j,k) = vt(i,j,Nk) +       .0005 * ttx(i,j,k)
                else
-                   ttx(i,j,k) = vt(i,j,Nk) + Dcst_stlo_8 * ttx(i,j,k)
+                   ttx(i,j,k) = vt(i,j,Nk) + stlo_8 * ttx(i,j,k)
                endif
                w2(i,j,k) = 1.0
 

@@ -21,6 +21,7 @@
       use ens_options
       use gem_options
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -41,13 +42,11 @@
 
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 
 
       integer  E_nk
       integer i, j, k, i0, j0, in, jn
-      real    pi, err, deltax, cpdi, dummy
-      real*8  dpi
+      real    err, deltax, cpdi, dummy
       real  , dimension(:,:,:), allocatable  :: dsp_local
       real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
       real  , dimension(l_ni,l_nj)  :: fgem
@@ -61,10 +60,10 @@
       E_nk = Nk
 
 !cpdi --  specific heat
-      cpdi=1./real(Dcst_cpd_8)
+      cpdi=1./real(cpd_8)
 
 ! Deltax -- typical model gridlength
-      deltax= 0.5d0 * (Geomg_hx_8 + Geomg_hy_8)*Dcst_rayt_8
+      deltax= 0.5d0 * (Geomg_hx_8 + Geomg_hy_8)*rayt_8
 
 !
 !     Get needed fields in memory

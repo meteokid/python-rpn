@@ -28,9 +28,9 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 #include "psadj.cdk"
 #include "cstv.cdk"
+#include "rstr.cdk"
 
       integer err,i,j,istat
       logical, save :: done = .false.
@@ -41,48 +41,63 @@
 !
 !     ---------------------------------------------------------------
 !
-      if ( Schm_psadj == 0 ) then
-         if ( Schm_psadj_print_L ) goto 999
-         return
-      endif
+      if ((Schm_psadj == 0) .or. (Cstv_dt_8*F_kount <= Iau_period)) goto 999
 
-      if ( Schm_psadj <= 2 ) then
-         if ( Cstv_dt_8*F_kount <= Iau_period ) goto 999
-         if ( ( Schm_psadj == 1 ) .and. done )  goto 999
-      endif
+      if (.not. done) then
 
-      done= .true.
+         allocate (Psadj_masktopo(l_ni,l_nj))
+
+         istat = gmm_get(gmmk_fis0_s,fis0)
 
       !Estimate area
       !-------------
-      istat = gmm_get(gmmk_fis0_s,fis0)
-      l_avg_8 = 0.0d0
-      x_avg_8 = 0.0d0
-      do j=1+pil_s,l_nj-pil_n
-      do i=1+pil_w,l_ni-pil_e
-         l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-         if(fis0(i,j).gt.1.) &
+
+         l_avg_8= 0.0d0
+         x_avg_8= 0.0d0
+         do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+            if(fis0(i,j).gt.1.) &
             x_avg_8 = x_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-      enddo
-      enddo
+         enddo
+         enddo
+         
+         communicate_S = "GRID"
+         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+         
+         call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
+           "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      communicate_S = "GRID"
-      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
+         call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8, 1, &
+           "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
-        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+         PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
+         PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
+         PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
+         
+         do j=1+pil_s,l_nj-pil_n
+         do i=1+pil_w,l_ni-pil_e
+            if(fis0(i,j).gt.1.) then
+               Psadj_masktopo(i,j) = PSADJ_fact_8
+            else
+               Psadj_masktopo(i,j) = Cstv_psadj_8
+            endif
+         end do
+         end do
 
-      call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8, 1, &
-        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      endif
 
-      PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
-      PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
-      PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
-
-      istat = gmm_get(gmmk_st1_s,st1)
+      if (Schm_psadj == 1) then
+         if (done .or. Rstri_rstn_L) then
+            done = .true.
+            goto 999
+         endif
+      endif
 
       !Obtain pressure levels
       !----------------------
+      istat = gmm_get(gmmk_st1_s , st1)
+
       call calc_pressure_8 ( pr_m_8, pr_t_8, pr_p0_1_8, st1, &
                              l_minx,l_maxx,l_miny,l_maxy,l_nk )
 
@@ -116,6 +131,7 @@
 
       PSADJ_g_avg_ps_initial_8 = PSADJ_g_avg_ps_initial_8 &
                                * PSADJ_scale_8
+      done = .true.
 
   999 continue
 

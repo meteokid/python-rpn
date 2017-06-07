@@ -24,6 +24,7 @@
       use gmm_geof
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 #include "gmm.hf"
 !#include "hybdim.cdk"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "geomn.cdk"
 #include "out.cdk"
 #include "out3.cdk"
@@ -75,7 +75,7 @@
       real ,dimension(:,:,:), allocatable:: px_pres,hu_pres,td_pres    ,&
                                             tt_pres,vt_pres,w5,w6,cible,&
                                             gzm,gzt,ttx,htx,ffwe       ,&
-                                            px_ta,px_m,th,t8,omega
+                                            px_ta,px_m,th,t8,myomega
       real, dimension(:,:  ), allocatable:: wlao
       real ,dimension(:    ), allocatable:: prprlvl,rf
       real, dimension(:    ), pointer    :: hybm,hybt,hybt_w
@@ -125,7 +125,7 @@
 
       if (psum.eq.0) return
 
-      if (pnww.ne.0) allocate ( omega(l_minx:l_maxx,l_miny:l_maxy,G_nk  ) ) 
+      if (pnww.ne.0) allocate ( myomega(l_minx:l_maxx,l_miny:l_maxy,G_nk  ) ) 
       if (pnth.ne.0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
@@ -299,14 +299,14 @@
       endif
 
       if (pnww.ne.0) then
-         call calomeg_w2(omega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
+         call calomeg_w2(myomega,st1,sls,wt1,tt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
       endif
 
       if (pnth.ne.0) then
          do k= 1, nk_src
             do j= 1,l_nj
             do i= 1,l_ni
-               th(i,j,k)= tt(i,j,k)*(theta_p0/exp(wlnph_ta(i,j,k)))**Dcst_cappa_8
+               th(i,j,k)= tt(i,j,k)*(theta_p0/exp(wlnph_ta(i,j,k)))**cappa_8
             enddo
             enddo
          enddo
@@ -420,7 +420,7 @@
          if (pntw.ne.0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
              call mthtaw4 (t8,hu,tt, px_ta,satues_l, &
-                           .true.,Dcst_trpl_8,l_ninj,nk_src,l_ninj)
+                           .true.,trpl_8,l_ninj,nk_src,l_ninj)
              call out_fstecr3(t8,l_minx,l_maxx,l_miny,l_maxy,hybt, &
                   'TW  ',Outd_convmult(pntw,set),Outd_convadd(pntw,set), &
                   kind,-1,G_nk+1, indo, nko, Outd_nbit(pntw,set),.false. )
@@ -504,7 +504,7 @@
          endif
 
          if (pnww.ne.0) then
-            call out_fstecr3(omega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
+            call out_fstecr3(myomega,l_minx,l_maxx,l_miny,l_maxy,hybt_w, &
                  'WW  ',Outd_convmult(pnww,set),Outd_convadd(pnww,set),&
                  kind,-1,G_nk,indo,nko,Outd_nbit(pnww,set),.false. )
          endif
@@ -644,7 +644,7 @@
             call out_padbuf(w6,l_minx,l_maxx,l_miny,l_maxy,nko)
             call mthtaw4 (w5,hu_pres,w6, &
                            px_pres,satues_l, &
-                           .true.,Dcst_trpl_8,l_ninj,nko,l_ninj)
+                           .true.,trpl_8,l_ninj,nko,l_ninj)
             if (Outd_filtpass(pntw,set).gt.0) &
                 call filter2( w5,Outd_filtpass(pntw,set),Outd_filtcoef(pntw,set), &
                               l_minx,l_maxx,l_miny,l_maxy,nko )
@@ -746,7 +746,7 @@
         endif
 
         if (pnww.ne.0) then
-            call vertint2 ( w5,cible,nko, omega,wlnph_ta,G_nk         ,&
+            call vertint2 ( w5,cible,nko, myomega,wlnph_ta,G_nk         ,&
                             l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj,&
                             inttype=Out3_vinterp_type_S )
             if (Outd_filtpass(pnww,set).gt.0) &
@@ -761,7 +761,7 @@
         deallocate(w5,w6,px_pres,hu_pres,td_pres,tt_pres,vt_pres)
       endif
 
-      if (pnww.ne.0) deallocate (omega)
+      if (pnww.ne.0) deallocate (myomega)
       if (pnth.ne.0) deallocate (th)
 !
 !-------------------------------------------------------------------

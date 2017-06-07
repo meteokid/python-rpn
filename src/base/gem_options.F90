@@ -398,6 +398,11 @@ module gem_options
    namelist /gem_cfgs  / Out3_lieb_maxite
    namelist /gem_cfgs_p/ Out3_lieb_maxite
 
+   !# number of iterations to exchange halo for the Liebman procedure
+   integer :: Out3_liebxch_iter = 4
+   namelist /gem_cfgs  / Out3_liebxch_iter
+   namelist /gem_cfgs_p/ Out3_liebxch_iter
+
    !# Precision criteria for the Liebman procedure
    real :: Out3_lieb_conv = 0.1
    namelist /gem_cfgs  / Out3_lieb_conv
@@ -557,11 +562,6 @@ module gem_options
    logical :: Schm_trapeze_L = .true.
    namelist /gem_cfgs  / Schm_trapeze_L
    namelist /gem_cfgs_p/ Schm_trapeze_L
-
-   !# True-> 
-   logical :: Schm_wlint_L = .true.
-   namelist /gem_cfgs  / Schm_wlint_L
-   namelist /gem_cfgs_p/ Schm_wlint_L
 
   !Sol
 

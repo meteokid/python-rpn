@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,7 @@
 !**s/r gem_run - Performs the integration of the model
 
       subroutine gem_run (F_rstrt_L)
+      use dynkernel_options
       use step_options
       use gmm_vt1
       use grid_options
@@ -40,12 +41,20 @@
       logical, external :: gem_muststop
       integer, external :: model_timeout_alarm
       character*16 datev
-      integer stepf,last_step,seconds_since,istat
+      integer stepf,last_step,seconds_since,istat,print_label
       real*8 dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
 !
 !     ---------------------------------------------------------------
 !
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         assign 1001 to print_label
+      else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_H') then
+         assign 1002 to print_label
+      else
+         assign 1003 to print_label
+      end if
+
       dayfrac = dble(Step_kount) * Cstv_dt_8 / sec_in_day
       call incdatsd (datev,Step_runstrt_S,dayfrac)
 
@@ -76,7 +85,7 @@
          seconds_since= model_timeout_alarm(Step_alarm)
 
          Lctl_step= Lctl_step + 1  ;  Step_kount= Step_kount + 1
-         if (Lun_out.gt.0) write (Lun_out,1001) Lctl_step,last_step
+         if (Lun_out.gt.0) write (Lun_out,print_label) Lctl_step,last_step
 
          call out_outdir
 
@@ -113,7 +122,7 @@
          if (Lun_out.gt.0) write(Lun_out,3000) Lctl_step
 
          call save_restart
-         
+
          F_rstrt_L= gem_muststop (stepf)
 
          if (F_rstrt_L) exit
@@ -125,7 +134,11 @@
       if (Lun_out.gt.0) write(Lun_out,4000) Lctl_step
 
  900  format (/'STARTING THE INTEGRATION WITH THE FOLLOWING DATA: VALID ',a)
- 1001 format(/,'DYNAMICS: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
+ 1001 format(/,'EXPO: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
+             /,'=========================================================')
+ 1002 format(/,'FISL-H: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
+             /,'=========================================================')
+ 1003 format(/,'DYNAMICS: PERFORMING TIMESTEP #',I9,' OUT OF ',I9, &
              /,'=========================================================')
  3000 format(/,'THE TIME STEP ',I8,' IS COMPLETED')
  4000 format(/,'GEM_RUN: END OF THE TIME LOOP AT TIMESTEP',I8, &

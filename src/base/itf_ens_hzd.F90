@@ -22,6 +22,7 @@
       use ens_gmm_var
       use ens_options
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -43,7 +44,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
-#include "dcst.cdk"
 
       character*4, save :: mode= "SAVE"
       integer i,j,k,istat

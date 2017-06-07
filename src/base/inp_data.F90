@@ -29,6 +29,7 @@
       use inp_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -48,7 +49,6 @@
 #include <rmnlib_basics.hf>
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "tr3d.cdk"
 #include "lun.cdk"
 #include "ver.cdk"

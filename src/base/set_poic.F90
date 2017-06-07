@@ -18,6 +18,7 @@
       subroutine set_poic2 ( F_eval_8, F_evec_8, F_xp0_8, F_xp2_8, &
                              F_npts, NSTOR, F_eigen_filename_S )
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -36,7 +37,6 @@
 ! F_npts       I    - number of points to operate on
 !
 
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
 

@@ -22,6 +22,7 @@
       use gmm_vt1
       use gmm_pw
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "out3.cdk"
 #include "out.cdk"
 #include "outp.cdk"

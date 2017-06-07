@@ -17,10 +17,10 @@
 
       subroutine set_params
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
-#include "dcst.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 
@@ -59,11 +59,11 @@
          Cstv_dtzD_8 = 0.d0
       endif
 
-      Ver_igt_8    = Cstv_invT_8/Dcst_grav_8
-      Ver_ikt_8    = Cstv_invT_m_8/Dcst_cappa_8
+      Ver_igt_8    = Cstv_invT_8/grav_8
+      Ver_ikt_8    = Cstv_invT_m_8/cappa_8
       if(Schm_hydro_L) Ver_igt_8=zero
       ! Modified epsilon
-      Ver_igt2_8   = Cstv_rE_8*Ver_igt_8*(Cstv_invT_nh_8/Dcst_grav_8)
+      Ver_igt2_8   = Cstv_rE_8*Ver_igt_8*(Cstv_invT_nh_8/grav_8)
       Ver_igt_8    = Cstv_rE_8*Ver_igt_8 ! Modified epsilon
 !
 !     ---------------------------------------------------------------

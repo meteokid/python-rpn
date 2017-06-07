@@ -16,6 +16,7 @@
 !**s/r itf_fft_set
 !
       subroutine itf_fft_set ( F_dim, F_type_S, F_pri_8 )
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,7 +30,6 @@
 !revision
 ! v4_50 - Desgagne M.       - initial version
 
-#include "dcst.cdk"
 #include "fft.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
@@ -44,7 +44,7 @@
       select case (trim(F_type_S))
          case ('PERIODIC')
             npts    = F_dim
-            F_pri_8 = dble(npts) / ( two * Dcst_pi_8 )
+            F_pri_8 = dble(npts) / ( two * pi_8 )
          case ('SIN')
             npts    = F_dim + 1
             F_pri_8 = dble(npts)/(G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w-1))

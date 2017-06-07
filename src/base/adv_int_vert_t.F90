@@ -65,7 +65,7 @@
       real*8, dimension(2:F_nk-2) :: w1, w2, w3, w4
       real*8, dimension(i0:in,F_nk) :: wdt
       real*8 :: lag3, hh, x, x1, x2, x3, x4, ww, wp, wm
-      real :: ztop_bound, zbot_bound
+      real :: zmin_bound, zmax_bound, z_bottom
       real :: minposx,maxposx,minposy,maxposy
       real :: prct
       parameter (two = 2.0, half=0.5, EPS_8 = 1.D-5)
@@ -83,10 +83,11 @@
 !***********************************************************************
 !
 
-      ztop_bound=Ver_z_8%m(0)
-      zbot_bound=Ver_z_8%m(F_nk+1)
+      zmin_bound = Ver_zmin_8
+      zmax_bound = Ver_zmax_8
+      z_bottom   = Ver_z_8%m(F_nk+1)
 
-       BCS_BASE= 4
+      BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
       minposx = adv_xx_8(adv_lminx+1) + EPS_8
       if (l_west)  minposx = adv_xx_8(1+BCS_BASE) + EPS_8
@@ -178,8 +179,8 @@ nc = 0
 
             F_zt(i,j,k)=Ver_z_8%t(k) - Cstv_dtzD_8*  wdt(i,  k) &
                                      - Cstv_dtzA_8*F_wat(i,j,k)
-            F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)
-            F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
+            F_zt(i,j,k)=max(F_zt(i,j,k),zmin_bound)
+            F_zt(i,j,k)=min(F_zt(i,j,k),zmax_bound)
          enddo
       enddo
  
@@ -196,9 +197,8 @@ nc = 0
            nc=nc+min(1,max(0,ceiling(abs(F_xt(i,j,F_nk)-xpos)+abs(F_yt(i,j,F_nk)-ypos))))
 
            !vertical position
-           F_zt(i,j,F_nk)=zbot_bound
-          enddo
-
+           F_zt(i,j,F_nk)= z_bottom
+          enddo   
           !for the last level when half way between surface and last momentum level
            ww=Ver_wmstar_8(F_nk)
            wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
@@ -212,8 +212,9 @@ nc = 0
 
            !interpolating vertical positions     
            F_ztn(i,j)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
-                                       +Cstv_dtA_8*F_wat(i,j,F_nk-1))
-           F_ztn(i,j)= min(F_ztn(i,j),zbot_bound)
+                                         +Cstv_dtA_8*F_wat(i,j,F_nk-1))
+ 
+           F_ztn(i,j)= min(F_ztn(i,j),zmax_bound)
           enddo
      
    else     
@@ -232,8 +233,8 @@ nc = 0
                   F_zt(i,j,k) = (F_zm(i,j,k)+F_zm(i,j,k+1))*half
                endif
                ! Must stay in domain
-               F_zt(i,j,k)=max(F_zt(i,j,k),ztop_bound)
-               F_zt(i,j,k)=min(F_zt(i,j,k),zbot_bound)
+               F_zt(i,j,k)=max(F_zt(i,j,k),zmin_bound)
+               F_zt(i,j,k)=min(F_zt(i,j,k),zmax_bound)
             end do
          end do
       ! For last thermodynamic level, positions in the horizontal are those  
@@ -243,10 +244,10 @@ nc = 0
           do i=i0,in
              F_xt(i,j,F_nk) = F_xm(i,j,F_nk)
              F_yt(i,j,F_nk) = F_ym(i,j,F_nk)
-             F_zt(i,j,F_nk) = zbot_bound
+             F_zt(i,j,F_nk) = z_bottom
              F_xtn(i,j) = F_xm(i,j,F_nk)
              F_ytn(i,j) = F_ym(i,j,F_nk)
-             F_ztn(i,j) = zbot_bound
+             F_ztn(i,j) = z_bottom
           enddo
 
    endif

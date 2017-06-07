@@ -17,6 +17,7 @@
 
    subroutine image_to_real_winds( F_u,F_v,Minx,Maxx,Miny,Maxy,F_nk )
 
+      use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -25,7 +26,6 @@
 
 #include "glb_ld.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 
    ! Local variables
    integer :: i,j,k
@@ -35,7 +35,7 @@
 !$omp do
    do k = 1, F_nk
       do j = 1, l_nj
-         c1 = Dcst_rayt_8 / Geomg_cy_8(j)
+         c1 = rayt_8 / Geomg_cy_8(j)
          do i = 1, l_niu
             F_u(i,j,k) = c1 * F_u(i,j,k)
          enddo
@@ -45,7 +45,7 @@
 !$omp do
    do k = 1, F_nk
       do j = 1, l_njv
-         c1 = Dcst_rayt_8 / Geomg_cyv_8(j)
+         c1 = rayt_8 / Geomg_cyv_8(j)
          do i = 1, l_ni
             F_v(i,j,k) = c1 * F_v(i,j,k)
          enddo

@@ -19,6 +19,7 @@
       subroutine  mat_vecs3D ( Sol, Rhs, Minx, Maxx, Miny, Maxy,nil, &
                      njl,minx1, maxx1, minx2, maxx2,Nk,minx3,maxx3 )   
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,7 +39,6 @@
 #include "sol.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
-#include "dcst.cdk"
 
       integer j,i,k,ii,jj,halox,haloy
       real*8  stencil1,stencil2,stencil3,stencil4,stencil5,cst,di_8

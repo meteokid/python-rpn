@@ -19,6 +19,7 @@
       use spn_work_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 ! v4_80 - Baek - clarification
 
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "glb_pil.cdk"
 
       integer i,j
@@ -42,8 +42,8 @@
 !
 !----------------------------------------------------------------------
 !
-      DX = Grd_dx*Dcst_pi_8*Dcst_rayt_8/(180.*1000.)
-      DY = Grd_dy*Dcst_pi_8*Dcst_rayt_8/(180.*1000.)
+      DX = Grd_dx*pi_8*rayt_8/(180.*1000.)
+      DY = Grd_dy*pi_8*rayt_8/(180.*1000.)
       WXL= Spn_cutoff_scale_large
       WXS= Spn_cutoff_scale_small
 
@@ -78,7 +78,7 @@
             else if ( nkx > 1.0 ) then
 
                fxy(i+Lam_pil_w+1,j+Lam_pil_s+1) = &
-               (cos( (Dcst_pi_8/2.0) * ((nkx-1.)/(nk_cut-1.)) ))**2
+               (cos( (pi_8/2.0) * ((nkx-1.)/(nk_cut-1.)) ))**2
 
             else
 

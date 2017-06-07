@@ -19,6 +19,7 @@
       use gmm_vt1
       use ens_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -40,7 +41,6 @@
 #include "lun.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 
 !
 
@@ -61,7 +61,7 @@
       integer ix,iy,iz,iz_local,kx,ky,kz
       integer ierr
       integer i, j, k, i0, j0, in, jn, nij, inn
-      real    pi, err, deltax, min_local, min_global
+      real    err, deltax, min_local, min_global
       real*8  dpi, aaa2, bfact, lambda, sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
@@ -108,7 +108,7 @@
 !     apply the Gaussian bell
 !
       do j=1,l_nj
-         trx=1.d0/(2*dpi*Dcst_rayt_8*geomg_cy_8(j))**2
+         trx=1.d0/(2*dpi*rayt_8*geomg_cy_8(j))**2
          do i=0,G_ni+1,2
            freqx(j,i+1:i+2)=-2.0d0*trx*(dpi*sigma*dble(i/2))**2
          enddo
@@ -135,7 +135,7 @@
            *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), -1 )
       enddo
 !     Apply the Gaussian bell
-      try=1.d0/(dpi*Dcst_rayt_8)**2
+      try=1.d0/(dpi*rayt_8)**2
         do j=0,G_nj+1,2
           freqy(j+1:j+2)=-2.d0*try*(dpi*sigma*dble(j/2))**2
         enddo

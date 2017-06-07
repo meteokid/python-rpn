@@ -17,13 +17,13 @@
 
       subroutine set_oprz2 (F_errcode)
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
       integer F_errcode
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "opr.cdk"
 #include "ver.cdk"
@@ -161,9 +161,9 @@
 !
 !     multiplying by 1-cappa
       do k = k0, G_nk
-         Opr_opszpm_8(AA+k) = Opr_opszpm_8(AA+k)*(one-Dcst_cappa_8)
-         Opr_opszpm_8(BB+k) = Opr_opszpm_8(BB+k)*(one-Dcst_cappa_8)
-         Opr_opszpm_8(CC+k) = Opr_opszpm_8(CC+k)*(one-Dcst_cappa_8)
+         Opr_opszpm_8(AA+k) = Opr_opszpm_8(AA+k)*(one-cappa_8)
+         Opr_opszpm_8(BB+k) = Opr_opszpm_8(BB+k)*(one-cappa_8)
+         Opr_opszpm_8(CC+k) = Opr_opszpm_8(CC+k)*(one-cappa_8)
       end do
 
 !     ---------------------------------------------------

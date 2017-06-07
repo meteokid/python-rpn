@@ -23,6 +23,7 @@ subroutine iau_apply2 (F_kount)
       use gmm_pw
       use grid_options
       use gem_options
+      use tdpack
    implicit none
    !@params
    integer, intent(in) :: F_kount !step_kound
@@ -39,7 +40,6 @@ subroutine iau_apply2 (F_kount)
 #include <clib_interface_mu.hf>
 #include <gmm.hf>
 #include <msg.h>
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "path.cdk"
 #include "var_gmm.cdk"
@@ -162,9 +162,9 @@ subroutine iau_apply2 (F_kount)
             if (i == 0) then
                weight(j) = 2.*Cstv_dt_8/(Iau_cutoff*3600.)
             else
-               weight(j) = sin(i*Dcst_pi_8/(n+1)) / (i*Dcst_pi_8/(n+1)) * &
-                    sin(i*(2.*Dcst_pi_8*Cstv_dt_8/(Iau_cutoff*3600.))) / &
-                    (i*Dcst_pi_8)
+               weight(j) = sin(i*pi_8/(n+1)) / (i*pi_8/(n+1)) * &
+                    sin(i*(2.*pi_8*Cstv_dt_8/(Iau_cutoff*3600.))) / &
+                    (i*pi_8)
             endif
          enddo
          weight = weight/sum(weight(1:size(weight)-add))
@@ -261,8 +261,8 @@ subroutine iau_apply2 (F_kount)
          !# Adapt units and horizontal positioning
          lijk = lbound(data0) ; uijk = ubound(data0)
          if (iname0_S == 'uu') then
-            data0 = data0 * Dcst_knams_8
-            data1 = data1 * Dcst_knams_8
+            data0 = data0 * knams_8
+            data1 = data1 * knams_8
          endif
          if (iname0_S == 'p0') data0 = 100.*data0
 

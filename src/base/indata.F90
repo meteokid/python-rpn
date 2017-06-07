@@ -24,6 +24,7 @@
       use inp_mod
       use gem_options
       use grid_options
+      use theo_options
       implicit none
 #include <arch_specific.hf>
 
@@ -58,8 +59,8 @@
       zdt1=0. ; wt1=0. ; qt1= 0.
 
       if ( Schm_theoc_L ) then
-         call theo_3D ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
-                        zdt1,st1,qt1,fis0,'TR/',':P') 
+         call theo_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
+                          zdt1,st1,qt1,fis0,'TR/',':P') 
       elseif ( Schm_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&

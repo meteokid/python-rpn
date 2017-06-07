@@ -19,6 +19,7 @@
 
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 
       !Arguments
@@ -41,7 +42,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "tracers.cdk"
 #include "cstv.cdk"
 
@@ -86,7 +86,7 @@
 
          if (.NOT.LAM_L) then
 
-            gc_area_8 = QUATRO_8 * Dcst_pi_8
+            gc_area_8 = QUATRO_8 * pi_8
 
          else
 
@@ -137,9 +137,9 @@
 
       if (Tr_scaling==0.or.Tr_scaling==2.or.Schm_testcases_adv_L) then
          gc_mass_8 = gc_mass_8 / gc_area_8
-         if (Schm_autobar_L) gc_mass_8 = gc_mass_8 / (Cstv_pref_8-Cstv_ptop_8) * Dcst_grav_8
+         if (Schm_autobar_L) gc_mass_8 = gc_mass_8 / (Cstv_pref_8-Cstv_ptop_8) * grav_8
       elseif (Tr_scaling==1) then
-         gc_mass_8 = gc_mass_8*Dcst_rayt_8*Dcst_rayt_8
+         gc_mass_8 = gc_mass_8*rayt_8*rayt_8
       endif
 
       if (Tr_scaling==0.or.Schm_testcases_adv_L) then

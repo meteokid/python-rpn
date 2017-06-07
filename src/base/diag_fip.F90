@@ -18,6 +18,7 @@
       subroutine diag_fip( F_fip, F_s, F_sl, F_t, F_q, F_fis, &
                            Minx,Maxx,Miny,Maxy, Nk, i0,in,j0,jn )
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
     
@@ -41,7 +42,6 @@
 ! F_fis        I    - surface geopotential
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
  
@@ -66,7 +66,7 @@
 !$omp do 
       do j=j0,jn
          do k= G_nk,1,-1
-            w1= Dcst_rgasd_8*Ver_dz_8%t(k)
+            w1= rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
                F_fip(i,j,k)= F_fip(i,j,k+1)+w1*(F_t(i,j,k)*(one &
                             +Ver_dbdz_8%t(k)*(F_s(i,j) +Cstv_Sstar_8) &
@@ -82,7 +82,7 @@
       do j=j0,jn
          do k= G_nk,1,-1
             km= max(1,k-1)
-            w1= Dcst_rgasd_8*Ver_dz_8%t(k)
+            w1= rgasd_8*Ver_dz_8%t(k)
             do i= i0,in
                qbar=Ver_wpstar_8(k)*F_q(i,j,k+1)+Ver_wmstar_8(k)*half*(F_q(i,j,k)+F_q(i,j,km))
                qbar=Ver_wp_8%t(k)*qbar+Ver_wm_8%t(k)*F_q(i,j,k)*Ver_onezero(k)

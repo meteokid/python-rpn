@@ -24,6 +24,7 @@
       use grid_options
       use gem_options
       use grdc_options
+      use tdpack
       implicit none
 
 #include <arch_specific.hf>
@@ -31,7 +32,6 @@
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "out3.cdk"
-#include "dcst.cdk"
 #include "level.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -59,6 +59,12 @@
          return
       endif
 
+      if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') &
+                               .and. (.not. Lam_ctebcs_L ) ) then
+         if (Lun_out.gt.0) write(Lun_out,*)  &
+                    ' Fcst_nesdt_S must be specified in namelist &step'
+         return
+      endif
       if (.not.Step_leapyears_L) then
          call Ignore_LeapYear ()
          call mu_set_leap_year (MU_JDATE_LEAP_IGNORED)
@@ -103,7 +109,7 @@
          Lam_blend_T = 0
       endif
 
-      deg_2_rad = Dcst_pi_8/180.
+      deg_2_rad = pi_8/180.
 
       P_lmvd_high_lat = min(90.,abs(P_lmvd_high_lat))
       P_lmvd_low_lat  = min(P_lmvd_high_lat,abs(P_lmvd_low_lat))

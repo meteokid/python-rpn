@@ -13,21 +13,20 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 !**s/r set_geom - initialize model geometry
-!
+
       subroutine set_geom
       use hgrid_wb, only: hgrid_wb_put
       use gmm_geof
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-!#include "hybdim.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "geomn.cdk"
 #include "geomg.cdk"
 #include "hgc.cdk"
@@ -57,7 +56,7 @@
 !
       if (Lun_out.gt.0) write (Lun_out,1000)
 
-      rad2deg_8 = CLXXX_8/Dcst_pi_8
+      rad2deg_8 = CLXXX_8/pi_8
       deg2rad_8 = acos( -ONE_8 )/CLXXX_8
 
       Geomn_minx= west
@@ -65,8 +64,7 @@
       Geomn_maxx= l_ni + 1 - east 
       Geomn_maxy= l_nj + 1 - north
 
-      allocate (G_xg_8(1-G_ni:2*G_ni) , G_yg_8(1-G_nj:2*G_nj) )
-!      allocate (G_xg_8(1-G_halox:G_ni+G_halox+1) , G_yg_8(1-G_haloy:G_nj+G_haloy+1) )
+      allocate (G_xg_8(1-G_halox:G_ni+G_halox+1) , G_yg_8(1-G_haloy:G_nj+G_haloy+1) )
       allocate (Geomn_latrx(l_ni,l_nj), Geomn_lonrx(l_ni,l_nj))
       allocate (Geomn_lonQ(1-G_halox:G_ni+G_halox), Geomn_latQ(1-G_haloy:G_nj+G_haloy),&
                 Geomn_lonF(1-G_halox:G_ni+G_halox), Geomn_latF(1-G_haloy:G_nj+G_haloy) )
@@ -77,10 +75,11 @@
 
       ni= Grd_ni + 2*G_halox + 1
       nj= Grd_nj + 2*G_haloy + 1
-      x0= Grd_x0_8 - G_halox*Grd_dx
-      y0= Grd_y0_8 - G_haloy*Grd_dy
-      xl= Grd_xl_8 + (G_halox+1)*Grd_dx
-      yl= Grd_yl_8 + (G_haloy+1)*Grd_dy
+      x0= Grd_x0_8 - dble(G_halox)  *dble(Grd_dx)
+      y0= Grd_y0_8 - dble(G_haloy)  *dble(Grd_dy)
+      xl= Grd_xl_8 + dble(G_halox+1)*dble(Grd_dx)
+      yl= Grd_yl_8 + dble(G_haloy+1)*dble(Grd_dy)
+
       call set_gemHgrid4 ( posx_8, posy_8, ni, nj, &
                            Grd_dx, Grd_dy, x0,xl,y0,yl, Grd_yinyang_L )
 
@@ -146,7 +145,7 @@
       Geomg_hx_8 = Del_xg   
       Geomg_hy_8 = Del_yg
       
-      Geomg_invDY_8  = ONE_8 / ( Dcst_rayt_8 * Del_yg )
+      Geomg_invDY_8  = ONE_8 / ( rayt_8 * Del_yg )
 
       do i=1-G_halox, l_ni+G_halox
          indx = offi + i
@@ -183,13 +182,13 @@
       end do
  
       do j=1-G_haloy, l_nj+G_haloy
-         Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/Dcst_rayt_8
-         Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/Dcst_rayt_8
+         Geomg_tyoa_8(j) =tan(Geomg_y_8 (j))/rayt_8
+         Geomg_tyoav_8(j)=tan(Geomg_yv_8(j))/rayt_8
       enddo
 
       do j=1-G_haloy, l_nj+G_haloy
-         scale_factor   = Dcst_rayt_8 * Geomg_cy_8(j)
-         scale_factor_v = Dcst_rayt_8 * Geomg_cyv_8(j)
+         scale_factor   = rayt_8 * Geomg_cy_8(j)
+         scale_factor_v = rayt_8 * Geomg_cyv_8(j)
          Geomg_invDX_8  (j) = ONE_8/(scale_factor   * Del_xg )
          Geomg_invDXv_8(j)  = ONE_8/(scale_factor_v * Del_xg )
          Geomg_invDXM_8 (j) = Geomg_invDX_8(j)
@@ -269,7 +268,7 @@
  1005 format (/'STAGGERED VERTICAL LAYERING ON',I4,' MOMENTUM HYBRID LEVELS WITH ', &
                'Grd_rcoef= ',2f7.2,':'/ &
                2x,'level',10x,'HYB',8x,'~HEIGHTS',5x,'~DELTA_Z',7x,'IP1')
- 1006 format (1x,i4,3x,es16.4,2(6x,f6.0),4x,i10)
+ 1006 format (1x,i4,3x,es15.5,2(6x,f6.0),4x,i10)
 !
 !     ---------------------------------------------------------------
 !

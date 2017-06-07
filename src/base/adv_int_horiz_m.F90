@@ -19,6 +19,7 @@
                                    F_xm , F_ym , F_zm , &
                                    F_ni,F_nj, F_nk,F_k0,i0,in,j0,jn)
       use grid_options
+      use gem_options
       implicit none
 #include <arch_specific.hf>
 
@@ -61,7 +62,7 @@
       real*8 aa, bb, cc, dd
       real, pointer, dimension(:,:,:) :: pxh,pyh,pzh
       logical,save :: done = .false.
-      real :: ztop_bound, zbot_bound
+      real :: zmin_bound, zmax_bound
       real ::posxu,posyu,posxv,posyv, minposx,maxposx,minposy,maxposy 
       integer :: BCS_BASE ,n,cnt_u, cnt_v ,ncu, ncv, sum_cnt_u   
 
@@ -71,9 +72,8 @@
 !---------------------------------------------------------------------
 !   
       
-
-      ztop_bound=Ver_z_8%m(0)
-      zbot_bound=Ver_z_8%m(F_nk+1)
+      zmin_bound=Ver_zmin_8
+      zmax_bound=Ver_zmax_8
 
       BCS_BASE= 4
       if (Grd_yinyang_L) BCS_BASE = 3
@@ -139,7 +139,7 @@
                         + bb*(pzh(i  ,j,k)+pzh(i+1,j,k))
           F_xmu(i,j,k) = min(max(posxu,minposx),maxposx)
           F_ymu(i,j,k) = min(max(posyu,minposy),maxposy)
-          F_zmu(i,j,k) = min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
+          F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
           ncu=ncu+min(1,max(0,ceiling(abs(F_xmu(i,j,k)-posxu)+abs(F_ymu(i,j,k)-posyu))))
       end do
       end do
@@ -155,8 +155,8 @@
                         + bb*(pzh(i,j  ,k)+pzh(i,j+1,k))
           F_xmv(i,j,k) = min(max(posxv,minposx),maxposx)
           F_ymv(i,j,k) = min(max(posyv,minposy),maxposy)
-          F_zmu(i,j,k) = min(zbot_bound,max(F_zmu(i,j,k),ztop_bound))
-          F_zmv(i,j,k) = min(zbot_bound,max(F_zmv(i,j,k),ztop_bound)) 
+          F_zmu(i,j,k) = min(zmax_bound,max(F_zmu(i,j,k),zmin_bound))
+          F_zmv(i,j,k) = min(zmax_bound,max(F_zmv(i,j,k),zmin_bound)) 
 
          ncv=ncv+min(1,max(0,ceiling(abs(F_xmv(i,j,k)-posxv)+abs(F_ymv(i,j,k)-posyv))))
       enddo

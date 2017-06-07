@@ -25,6 +25,7 @@
       use gmm_vt1
       use gmm_nest
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -67,7 +68,6 @@
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
 
       external ffft8, rpn_comm_transpose
@@ -93,7 +93,7 @@
       spn_wt = 1.0
 
       if (Spn_weight_L) then
-        spn_wt = sqrt((cos(Dcst_pi_8*(float(Lctl_step)/float(no_steps))))**2)**Spn_wt_pwr
+        spn_wt = sqrt((cos(pi_8*(float(Lctl_step)/float(no_steps))))**2)**Spn_wt_pwr
       endif
 
       if (Fld_S.eq.'t') then

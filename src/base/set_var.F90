@@ -18,6 +18,7 @@
       integer function set_var (F_argc,F_argv_S,F_cmdtyp_S,F_v1,F_v2)
 
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -94,7 +95,6 @@
 #include "outc.cdk"
 #include "grid.cdk"
 #include "level.cdk"
-#include "dcst.cdk"
 #include "timestep.cdk"
 
       character*5 stuff_S
@@ -230,18 +230,18 @@
              if (Outd_var_S(jj,j)(1:4).eq.'LA  ') Outd_nbit(jj,j)= 32
              if (Outd_var_S(jj,j)(1:4).eq.'LO  ') Outd_nbit(jj,j)= 32
 
-             if (Outd_var_S(jj,j)(1:4).eq.'GZ  ') Outd_convmult(jj,j)=0.1 / Dcst_grav_8
-             if (Outd_var_S(jj,j)(1:4).eq.'ME  ') Outd_convmult(jj,j)=1.0 / Dcst_grav_8
+             if (Outd_var_S(jj,j)(1:4).eq.'GZ  ') Outd_convmult(jj,j)=0.1 / grav_8
+             if (Outd_var_S(jj,j)(1:4).eq.'ME  ') Outd_convmult(jj,j)=1.0 / grav_8
              if (Outd_var_S(jj,j)(1:4).eq.'PX  '.or. &
                  Outd_var_S(jj,j)(1:4).eq.'P0  '.or. &
                  Outd_var_S(jj,j)(1:4).eq.'PT  '.or. &
                  Outd_var_S(jj,j)(1:4).eq.'PN  ') Outd_convmult(jj,j)= .01
              if (Outd_var_S(jj,j)(1:4).eq.'VT  '.or. &
                  Outd_var_S(jj,j)(1:4).eq.'TT  '.or. &
-                 Outd_var_S(jj,j)(1:4).eq.'TD  ') Outd_convadd (jj,j)= -Dcst_tcdk_8
+                 Outd_var_S(jj,j)(1:4).eq.'TD  ') Outd_convadd (jj,j)= -tcdk_8
              if (Outd_var_S(jj,j)(1:4).eq.'UU  '.or. &
                  Outd_var_S(jj,j)(1:4).eq.'VV  '.or. &
-                 Outd_var_S(jj,j)(1:4).eq.'UV  ') Outd_convmult(jj,j)=1.0 / Dcst_knams_8
+                 Outd_var_S(jj,j)(1:4).eq.'UV  ') Outd_convmult(jj,j)=1.0 / knams_8
           enddo
 
           if (jj.gt.0) then
@@ -274,11 +274,11 @@
              Outp_convadd (jj,j)= 0.0
              if (Outp_varnm_S(jj,j)(1:4).eq.'LA') then
                  Outp_nbit(jj,j)= 32
-                 Outp_convmult(jj,j)=180./Dcst_pi_8
+                 Outp_convmult(jj,j)=180./pi_8
              endif
              if (Outp_varnm_S(jj,j)(1:4).eq.'LO') then
                  Outp_nbit(jj,j)= 32
-                 Outp_convmult(jj,j)=180./Dcst_pi_8
+                 Outp_convmult(jj,j)=180./pi_8
              endif
              if (Outp_varnm_S(jj,j)(1:4).eq.'SD') Outp_convmult(jj,j)=100.
           enddo

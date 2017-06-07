@@ -18,6 +18,7 @@
    use nest_blending, only: nest_blend
       use gmm_geof
       use gem_options
+      use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "geomn.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
 
    logical :: nest_it
@@ -78,7 +78,7 @@
       do j = 1,l_nj
          do i = 1,l_ni
              wrk1(i,j) = geomg_hx_8*geomg_hy_8*     &
-                  Dcst_rayt_8*Dcst_rayt_8*geomg_cy_8(j)
+                  rayt_8*rayt_8*geomg_cy_8(j)
          end do
       end do
    else

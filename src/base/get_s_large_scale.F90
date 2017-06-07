@@ -19,6 +19,7 @@
       use gmm_pw
       use gmm_geof
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -32,7 +33,6 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
 #include "lun.cdk"
 
@@ -67,7 +67,7 @@
 
       if (Lun_debug_L) write (Lun_out,1000)
 
-      oneoRT=1.d0/(Dcst_rgasd_8*Dcst_Tcdk_8)
+      oneoRT=1.d0/(rgasd_8*Tcdk_8)
 
       sls(1:l_ni,1:l_nj)= -F_topo_ls(1:l_ni,1:l_nj) * oneoRT
 

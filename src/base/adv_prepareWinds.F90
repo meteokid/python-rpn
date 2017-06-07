@@ -19,6 +19,7 @@
       use gmm_vt2
       use gmm_pw
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 
       real, dimension(:,:,:), allocatable :: uh,vh,wm,wh
       real ::  beta, err
@@ -43,7 +43,7 @@
 !
 !     ---------------------------------------------------------------
 !      
-    inv_rayt_8 = 1.D0 / Dcst_rayt_8
+    inv_rayt_8 = 1.D0 / rayt_8
 
       allocate ( uh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
                  vh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &

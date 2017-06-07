@@ -24,12 +24,12 @@
       use gmm_geof
       use grdc_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "outp.cdk"
@@ -78,7 +78,7 @@
                                      Grdc_gjd, Grdc_gjf, 1 )
       call out_vref  ( etiket=Out3_etik_S )
 
-      conv= -Dcst_tcdk_8
+      conv= -tcdk_8
       call out_fstecr3 ( pw_tt_plus,l_minx,l_maxx,l_miny,l_maxy,hybt,'TT  ' ,1., &
                          conv,5,-1,G_nk,indo,G_nk,32,.false. )
       if (Out3_sfcdiag_L) &           
@@ -114,7 +114,7 @@
          endif
       end do
      
-      conv= 1.0 / Dcst_knams_8
+      conv= 1.0 / knams_8
       call out_fstecr3 ( pw_uu_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'UU  ' ,&
                          conv, 0., 5,-1,G_nk,indo,G_nk,32,.false. )
       call out_fstecr3 ( pw_vv_plus, l_minx,l_maxx,l_miny,l_maxy,hybm,'VV  ' ,&

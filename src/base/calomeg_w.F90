@@ -22,6 +22,7 @@
       subroutine calomeg_w2 (F_ww,F_st1,F_sl,F_wt1,F_tt1,Minx,Maxx,Miny,Maxy,Nk)
 !
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -55,7 +56,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
@@ -76,8 +76,8 @@
          call vsexp(t2,t1,l_ni*l_nj)
          do j=1,l_nj
             do i=1,l_ni
-               F_ww (i,j,k) = -Dcst_grav_8 *F_wt1(i,j,k)*t2(i,j)/ &
-                              (Dcst_rgasd_8*F_tt1(i,j,k))
+               F_ww (i,j,k) = -grav_8 *F_wt1(i,j,k)*t2(i,j)/ &
+                              (rgasd_8*F_tt1(i,j,k))
             end do
          end do
       end do

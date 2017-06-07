@@ -19,13 +19,13 @@
       use hzd_ctrl
       use gmm_pw
       use gmm_vt1
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 
       integer istat,k
       real, parameter :: p_naught=100000., eps=1.0e-5
@@ -41,15 +41,15 @@
       do k=1,G_nk
          pres_t(1:l_ni,1:l_nj,k) = p_naught/pw_pt_plus(1:l_ni,1:l_nj,k)
          call vspown1 (pres_t(1,1,k),pres_t(1,1,k), &
-                       real(Dcst_cappa_8),l_ni*l_nj)
+                       real(cappa_8),l_ni*l_nj)
          th(1:l_ni,1:l_nj,k) = tt1   (1:l_ni,1:l_nj,k) * &
                                pres_t(1:l_ni,1:l_nj,k)
 !NOTE, zeroing in halo regions in order to avoid float error when dble(X)
 !  under yyg_xchng: IF EVER we remove dble in yyg_xchng, we do not need this.
-         th(l_minx:0     ,:     ,k) = Dcst_tcdk_8
-         th(l_ni+1:l_maxx,:     ,k) = Dcst_tcdk_8
-         th(1:l_ni,l_miny:0     ,k) = Dcst_tcdk_8
-         th(1:l_ni,l_nj+1:l_maxy,k) = Dcst_tcdk_8
+         th(l_minx:0     ,:     ,k) = tcdk_8
+         th(l_ni+1:l_maxx,:     ,k) = tcdk_8
+         th(1:l_ni,l_miny:0     ,k) = tcdk_8
+         th(1:l_ni,l_nj+1:l_maxy,k) = tcdk_8
       end do
 !$omp enddo
 !$omp end parallel

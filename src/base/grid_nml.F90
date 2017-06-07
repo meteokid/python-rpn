@@ -58,8 +58,12 @@
          goto 9000
       endif
 
- 9120 if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
-      goto 9999
+ 9120 if (.not.Schm_theoc_L) then
+        if (Lun_out.ge.0) write (Lun_out, 7060) trim( F_namelistf_S )
+        goto 9999
+      else
+        goto 9000
+      endif
  9130 if (Lun_out.ge.0) write (Lun_out, 7070) trim( F_namelistf_S )
       goto 9999
 
@@ -208,13 +212,23 @@
 !!$         endif
 
          Grd_iref = Grd_ni / 2 + Grd_extension
+         if (mod(Grd_ni,2)==0) then
+            Grd_lonr = dble(Grd_lonr) - dble(Grd_dx)/2.d0
+         else
+            Grd_iref = Grd_iref + 1
+         endif
          Grd_jref = Grd_nj / 2 + Grd_extension
+         if (mod(Grd_nj,2)==0) then
+            Grd_latr = dble(Grd_latr) - dble(Grd_dy)/2.d0
+         else
+            Grd_jref = Grd_nj / 2 + Grd_extension + 1
+         endif
          Grd_ni   = Grd_ni   + 2*Grd_extension
          Grd_nj   = Grd_nj   + 2*Grd_extension
-         Grd_x0_8 = Grd_lonr - (Grd_iref-1) * Grd_dx
-         Grd_y0_8 = Grd_latr - (Grd_jref-1) * Grd_dy
-         Grd_xl_8 = Grd_x0_8 + (Grd_ni  -1) * Grd_dx
-         Grd_yl_8 = Grd_y0_8 + (Grd_nj  -1) * Grd_dy
+         Grd_x0_8 = dble(Grd_lonr) - dble(Grd_iref-1) * dble(Grd_dx)
+         Grd_y0_8 = dble(Grd_latr) - dble(Grd_jref-1) * dble(Grd_dy)
+         Grd_xl_8 = Grd_x0_8 + dble(Grd_ni  -1) * dble(Grd_dx)
+         Grd_yl_8 = Grd_y0_8 + dble(Grd_nj  -1) * dble(Grd_dy)
          if (Grd_x0_8.lt.0.) Grd_x0_8=Grd_x0_8+360.
          if (Grd_xl_8.lt.0.) Grd_xl_8=Grd_xl_8+360.
          if ( (Grd_x0_8.lt.  0.).or.(Grd_y0_8.lt.-90.).or. &

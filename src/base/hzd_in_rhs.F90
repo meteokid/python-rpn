@@ -21,6 +21,7 @@
       use hzd_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -33,7 +34,6 @@
 !   Claude Girard
 !
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
 
@@ -103,7 +103,7 @@
 
          !theta=t/pi; pi=(p/p0)**cappa; p=exp(a+b*s); p0=1.
          do k=1,Nk
-            ppinv(:,:,k)=exp(-Dcst_cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(:,:)))
+            ppinv(:,:,k)=exp(-cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(:,:)))
          enddo
          u0=F_t*ppinv
 

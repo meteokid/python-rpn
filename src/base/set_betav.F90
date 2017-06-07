@@ -19,6 +19,8 @@
 
       use grid_options
       use gem_options
+      use theo_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -26,12 +28,10 @@
 
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "mtn.cdk"
 #include "cstv.cdk"
-#include "theo.cdk"
 
       real betav_m(Minx:Maxx,Miny:Maxy,Nk),betav_t(Minx:Maxx,Miny:Maxy,Nk)
       real F_s(Minx:Maxx,Miny:Maxy),F_sl(Minx:Maxx,Miny:Maxy)
@@ -46,7 +46,7 @@
       zblen_top=Cstv_ztop_8
       fact=1.d0
       if(Theo_case_S .eq. 'MTN_SCHAR' ) then
-         fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(Dcst_rayt_8*Dcst_pi_8/180.))
+         fact=sqrt(2.0*mtn_flo*Cstv_dt_8/Grd_dx/(rayt_8*pi_8/180.))
       endif
 
       i0 = 1

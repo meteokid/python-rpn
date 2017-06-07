@@ -16,8 +16,10 @@
 !**s/r set_opr - initialize the commons containing model operators
 
       subroutine set_opr2 (F_eigen_filename_S)
+      use dynkernel_options
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
       character*(*) F_eigen_filename_S
@@ -37,7 +39,6 @@
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "dcst.cdk"
 #include "fft.cdk"
 #include "lun.cdk"
 #include "opr.cdk"
@@ -49,15 +50,12 @@
       parameter( ONE_8  = 1.0 )
       parameter( HALF_8 = 0.5 )
 
-      integer i, j, k, k0, l, dim, err,Gni,Gnj,NSTOR,jj
-      real*8  sc_8, gdx_8, aab_8, wk(G_nk)
+      integer i, j, dim, Gni,Gnj,jj
+      real*8  sc_8, gdx_8, aab_8
       real*8, dimension(:)  ,allocatable :: wk_8, wk2_8
 !
 !     ---------------------------------------------------------------
 !
-      dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
-      allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))
-
       if (Lun_out.gt.0) write(Lun_out,1000)
 
 !     Initialize projection operators to ZERO_8
@@ -149,36 +147,49 @@
 
       deallocate ( wk_8, wk2_8 )
 
-!     Compute eigenvalues and eigenvector for the generalized
-!     eigenvalue problem in East-West direction
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
 
-      if ( .not. Fft_fast_L ) then
+         dim = (trp_12smax-trp_12smin+1)*(trp_22max-trp_22min+1)*G_nj
+         allocate (Sol_ai_8(dim),Sol_bi_8(dim),Sol_ci_8(dim))
 
-         call set_poic2 (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
-                         Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+   !     Allocate memory for eigenvectors
 
-      else
+         if ( .not. Fft_fast_L ) allocate (Opr_xevec_8(G_ni*G_ni))
+         allocate (Opr_xeval_8(G_ni), Opr_zevec_8 (G_nk*G_nk), &
+                   Opr_zeval_8(G_nk), Opr_lzevec_8(G_nk*G_nk))
 
-         sc_8 = Dcst_pi_8 / dble( Gni )
-         gdx_8 = (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )/dble(Gni)
-         if (Lun_debug_L) print *,'gdx=',gdx_8
-         do i=1,1+Lam_pil_w
-            Opr_xeval_8(i)    = ZERO_8
-         enddo
-         do i=G_ni-Lam_pil_e+1,G_ni
-            Opr_xeval_8(i)    = ZERO_8
-         enddo
-         do i = 2+Lam_pil_w, G_ni-Lam_pil_e
-            Opr_xeval_8(i) = - (2*sin(float(i-Lam_pil_w-1)*sc_8/2)/&
-                                gdx_8)**2
-         enddo
-         if (Grd_yinyang_L) then
-            allocate (Opr_xevec_8(G_ni*G_ni))
-            call set_poic2  (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,&
-                             Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+   !     Compute eigenvalues and eigenvector for the generalized
+   !     eigenvalue problem in East-West direction
+
+         if ( .not. Fft_fast_L ) then
+
+            call set_poic2 (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8, &
+                            Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+
+         else
+
+            sc_8 = pi_8 / dble( Gni )
+            gdx_8 = (G_xg_8(G_ni-Lam_pil_e)-G_xg_8(Lam_pil_w) )/dble(Gni)
+            if (Lun_debug_L) print *,'gdx=',gdx_8
+            do i=1,1+Lam_pil_w
+               Opr_xeval_8(i)    = ZERO_8
+            enddo
+            do i=G_ni-Lam_pil_e+1,G_ni
+               Opr_xeval_8(i)    = ZERO_8
+            enddo
+            do i = 2+Lam_pil_w, G_ni-Lam_pil_e
+               Opr_xeval_8(i) = - (2*sin(float(i-Lam_pil_w-1)*sc_8/2)/&
+                                   gdx_8)**2
+            enddo
+            if (Grd_yinyang_L) then
+               allocate (Opr_xevec_8(G_ni*G_ni))
+               call set_poic2  (Opr_xeval_8, Opr_xevec_8 , Opr_opsxp0_8,&
+                                Opr_opsxp2_8, Gni, G_ni, F_eigen_filename_S)
+            endif
+
          endif
-         
-      endif
+
+      end if
 
  1000 format(/,'INITIALIZATING MODEL OPERATORS    (S/R SET_OPR)', &
              /,'=============================================')

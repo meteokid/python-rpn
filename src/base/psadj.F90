@@ -18,7 +18,6 @@
       subroutine psadj (F_kount)
       use gmm_vt1
       use gmm_vt0
-      use gmm_geof
       use grid_options
       use gem_options
       implicit none
@@ -26,22 +25,11 @@
 
       integer, intent(in) :: F_kount
 
-!author
-!     Andre Plante from hzd_main      
-!
-!revision
-! v4_05 - Lepine M.         - VMM replacement with GMM
-! v4_50 - Qaddouri-PLante   - YY version
-! v4_70 - Tanguay M.        - dry air pressure conservation
-! v4_80 - Tanguay M.        - REAL*8 with iterations and psadj LAM 
-!	
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
-#include "tr3d.cdk"
-#include "dcst.cdk"
 #include "psadj.cdk"
 #include "rstr.cdk"
 #include "cstv.cdk"
@@ -74,7 +62,6 @@
       communicate_S = "GRID"
       if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-      istat = gmm_get(gmmk_fis0_s,fis0)
       istat = gmm_get(gmmk_st0_s,st0,mymeta)
 
       MAX_iteration = 3
@@ -101,8 +88,8 @@
          endif
 
          l_avg_8 = 0.0d0
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
+         do j= 1+pil_s,l_nj-pil_n
+         do i= 1+pil_w,l_ni-pil_e
             l_avg_8 = l_avg_8 + pr_p0_w_0_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
          enddo
          enddo
@@ -114,15 +101,10 @@
 
          !Correct surface pressure in order to preserve air mass    
          !------------------------------------------------------
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            if(fis0(i,j).gt.1.) then
-               pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                 (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*PSADJ_fact_8
-            else
-               pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
-                 (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*Cstv_psadj_8
-            endif
+         do j= 1+pil_s, l_nj-pil_n
+         do i= 1+pil_w, l_ni-pil_e
+            pr_p0_0_8(i,j) = pr_p0_0_8(i,j) + &
+            (PSADJ_g_avg_ps_initial_8 - g_avg_ps_0_8)*Psadj_masktopo(i,j)
             st0(i,j) = log(pr_p0_0_8(i,j)/Cstv_pref_8)
          end do
          end do

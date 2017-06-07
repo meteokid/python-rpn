@@ -112,9 +112,7 @@
 !
 #include <WhiteBoard.hf>
 #include "glb_ld.cdk"
-!#include "hybdim.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "ver.cdk"
 #include "dimout.cdk"
 #include "cstv.cdk"
@@ -154,6 +152,7 @@
                Ver_wpstar_8(G_nk  ),    Ver_wmstar_8(G_nk  ), &
                   Ver_wpA_8(G_nk  ),       Ver_wmA_8(G_nk  ), &
                   Ver_wpM_8(G_nk  ),       Ver_wmM_8(G_nk  ), &
+                  Ver_wpC_8(G_nk  ),       Ver_wmC_8(G_nk  ), &
                  Ver_czz_8(G_nk  ))
 
       Cstv_pref_8 = 100000.d0
@@ -171,6 +170,8 @@
       Cstv_Zsrf_8 = log(Cstv_pSref_8)
       Cstv_Ztop_8 = log(Cstv_ptop_8)
       Cstv_Sstar_8 = log(Cstv_pref_8/Cstv_pSref_8)
+      Ver_zmin_8 = Cstv_Ztop_8
+      Ver_zmax_8 = Cstv_Zsrf_8
 
       call handle_error_l(istat==VGD_OK,'set_zeta','coordinate construction failed')
 
@@ -275,67 +276,30 @@
          endif
       enddo
 
-!     -------------------------------------------------------
-!     Compute AVERGING WEIGHTS FROM THERMO TO MOMENTUM LEVELS 
-!     -------------------------------------------------------
-
-      do k=1,G_nk
-         if(k.eq.G_nk) then
-            Ver_wm_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
-         elseif(k.eq.1) then
-            Ver_wm_8%m(k) = zero
-         else
-            Ver_wm_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
-         endif
-         Ver_wp_8%m(k) = one-Ver_wm_8%m(k)
-         Ver_wpM_8(k)= Ver_wp_8%m(k)
-         Ver_wmM_8(k)= Ver_wm_8%m(k)
-
-         Ver_wpA_8(k)= Ver_wp_8%m(k)
-         Ver_wmA_8(k)= Ver_wm_8%m(k)
-      enddo
-
-      if(.not.Schm_wlint_L) then
-         do k=1,G_nk
-            if(k.eq.G_nk) then
-               Ver_wp_8%m(k) = Ver_dz_8%t(k)*Ver_idz_8%m(k)
-            else
-               Ver_wp_8%m(k) = Ver_dz_8%t(k)*half*Ver_idz_8%m(k)
-            endif
-            Ver_wm_8%m(k) = one-Ver_wp_8%m(k)
-
-            if(k.eq.1) then
-               Ver_wmM_8(k) = zero
-            else
-               Ver_wmM_8(k) = (Ver_z_8%t(k)-Ver_z_8%m(k))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
-            endif
-            Ver_wpM_8(k) = one - Ver_wmM_8(k)
-
-            Ver_wpA_8(k)= Ver_wp_8%m(k)
-            Ver_wmA_8(k)= Ver_wm_8%m(k)
-
-            if(k.eq.1) then
-               Ver_dbdz_8%m(1) = Ver_wp_8%m(1)*Ver_dbdz_8%t(1)     &
-                               + Ver_wm_8%m(1)*(Ver_b_8%m(1)-zero) &
-                                             /(Ver_z_8%m(1)-Cstv_Ztop_8)
-               Ver_dcdz_8%m(1) = Ver_wp_8%m(1)*Ver_dcdz_8%t(1)     &
-                               + Ver_wm_8%m(1)*(Ver_c_8%m(1)-zero) &
-                                             /(Ver_z_8%m(1)-Cstv_Ztop_8)
-            else
-               Ver_dbdz_8%m(k) = Ver_wp_8%m(k) * Ver_dbdz_8%t(k)  &
-                               + Ver_wm_8%m(k) * Ver_dbdz_8%t(k-1)
-               Ver_dcdz_8%m(k) = Ver_wp_8%m(k) * Ver_dcdz_8%t(k)  &
-                               + Ver_wm_8%m(k) * Ver_dcdz_8%t(k-1)
-            endif
-         enddo
-      endif
-
       if(Schm_autobar_L) then
          do k=1,G_nk
             Ver_dbdz_8%m(k) = one/(Cstv_Zsrf_8-Ver_z_8%m(1))
             Ver_dcdz_8%m(k) = one/(Cstv_Zsrf_8-Ver_z_8%m(1))
          enddo
       endif
+
+!     -------------------------------------------------------
+!     Compute AVERGING WEIGHTS FROM THERMO TO MOMENTUM LEVELS 
+!     -------------------------------------------------------
+
+      do k=1,G_nk
+         Ver_wmM_8(k) = (Ver_z_8%t(k)-Ver_z_8%m(k))/(Ver_z_8%t(k)-Ver_z_8%t(k-1))
+         Ver_wpM_8(k) = one - Ver_wmM_8(k)
+
+         Ver_wmC_8(k) = (Ver_z_8%x(k)-Ver_z_8%m(k))/(Ver_z_8%x(k)-Ver_z_8%x(k-1))
+         Ver_wpC_8(k) = one - Ver_wmC_8(k)
+
+         Ver_wmA_8(k) = (Ver_z_8%m(k)-Ver_z_8%x(k-1))/(Ver_z_8%x(k)-Ver_z_8%x(k-1))
+         Ver_wpA_8(k) = one - Ver_wmA_8(k)
+
+         Ver_wm_8%m(k)= Ver_wmA_8(k)
+         Ver_wp_8%m(k)= Ver_wpA_8(k)
+      enddo
 
 !     -------------------------------------------------------
 !     Compute AVERGING WEIGHTS FROM MOMENTUM TO THERMO LEVELS 
@@ -356,12 +320,8 @@
       if(.not.Schm_autobar_L) then
          Ver_wmstar_8(G_nk)=half*Ver_dz_8%t(G_nk)/Ver_dz_8%m(G_nk)
          Ver_wpstar_8(G_nk)=one-Ver_wmstar_8(G_nk)
-      endif
-
-      if(Schm_wlint_L) then
-        !redefine last special weight
-         Ver_wpA_8(G_nk) = Ver_wp_8%m(G_nk)/Ver_wpstar_8(G_nk)
-         Ver_wmA_8(G_nk) = one - Ver_wpA_8(G_nk)
+         Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wpA_8(G_nk)
+         Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
       endif
 !     -------------------------------------------------------
 !     Compute VERTICAL AVERGING OF B from thermo to momentum
@@ -385,26 +345,7 @@
                          + Ver_wm_8%m(k)*Ver_c_8%t(k-1)
          endif
       enddo
-      if(.not.Schm_wlint_L) then
-        !redefine last momentum weight
-         Ver_wp_8%m(G_nk) = Ver_wpstar_8(G_nk) * Ver_wp_8%m(G_nk)
-         Ver_wm_8%m(G_nk) = one - Ver_wp_8%m(G_nk)
-        !recalculate bzz
-         Ver_bzz_8(1) = Ver_wp_8%m(1)*(Ver_wp_8%t(1)*Ver_b_8%m(2)  &
-                       +Ver_wm_8%t(1)*Ver_b_8%m(1))
-         Ver_czz_8(1) = Ver_wp_8%m(1)*(Ver_wp_8%t(1)*Ver_c_8%m(2)  &
-                       +Ver_wm_8%t(1)*Ver_c_8%m(1))
-         do k=2,G_nk
-            Ver_bzz_8(k)  = Ver_wp_8%m(k)*(Ver_wp_8%t(k  )*Ver_b_8%m(k+1)  &
-                                          +Ver_wm_8%t(k  )*Ver_b_8%m(k  )) &
-                           +Ver_wm_8%m(k)*(Ver_wp_8%t(k-1)*Ver_b_8%m(k  )  &
-                                          +Ver_wm_8%t(k-1)*Ver_b_8%m(k-1))
-            Ver_czz_8(k) = Ver_wp_8%m(k)*(Ver_wp_8%t(k  )*Ver_c_8%m(k+1)  &
-                                          +Ver_wm_8%t(k  )*Ver_c_8%m(k  )) &
-                           +Ver_wm_8%m(k)*(Ver_wp_8%t(k-1)*Ver_c_8%m(k  )  &
-                                          +Ver_wm_8%t(k-1)*Ver_c_8%m(k-1))
-         enddo
-      endif
+
 !     -------------------------------------------------------
 !     Initialize Ver_onezero
 !     -------------------------------------------------------

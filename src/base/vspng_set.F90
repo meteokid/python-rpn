@@ -18,11 +18,11 @@
       subroutine vspng_set
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
@@ -41,7 +41,7 @@
       if (Lun_out.gt.0) write (Lun_out,1001)
 
       Vspng_nk = min(G_nk,Vspng_nk)
-      pis2_8   = Dcst_pi_8/2.0d0
+      pis2_8   = pi_8/2.0d0
 
       pbot_8 = exp(Ver_z_8%m(Vspng_nk+1))
       delp_8 = pbot_8 - exp(Ver_z_8%m(1))
@@ -55,7 +55,7 @@
       j=G_nj/2
       c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
-      nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
+      nutop = Vspng_coeftop*Cstv_dt_8/(rayt_8*c_8)**2
       Vspng_niter = int(8.d0*nutop+0.9999999)
 
       if (Lun_out.gt.0) then
@@ -69,10 +69,10 @@
          Vspng_coef_8(k) = weigh(k) * nutop
          if (Lun_out.gt.0) write (Lun_out,2005) &
                        Vspng_coef_8(k)      ,&
-                       Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
+                       Vspng_coef_8(k)*Cstv_dt_8/(rayt_8*c_8)**2,&
                        exp(Ver_z_8%m(k)),k
          Vspng_coef_8(k)= Vspng_coef_8(k) * & 
-                          Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
+                          Cstv_dt_8/(rayt_8*rayt_8)
       end do
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &

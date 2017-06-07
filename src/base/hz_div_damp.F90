@@ -19,6 +19,7 @@
                               i0u,inu,j0u,jnu,i0v,inv,j0v,jnv, &
                               i0,in,j0,jn,Minx,Maxx,Miny,Maxy,Nk )
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -30,7 +31,6 @@
 !   Claude Girard
 !
 #include "geomg.cdk"
-#include "dcst.cdk"
 #include "cstv.cdk"
 
       integer i,j,k
@@ -39,7 +39,7 @@
 !
 !     ---------------------------------------------------------------
 !
-      kdiv_damp_max=0.25*(Dcst_rayt_8*Geomg_hx_8)**2/Cstv_dt_8
+      kdiv_damp_max=0.25*(rayt_8*Geomg_hx_8)**2/Cstv_dt_8
       kdiv_damp=Hzd_div_damp*kdiv_damp_max/Cstv_bA_m_8
 
       do k=1,Nk

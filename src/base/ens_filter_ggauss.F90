@@ -20,6 +20,7 @@
       use step_options
       use gmm_vt1
       use ens_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -49,7 +50,6 @@
 #include "lun.cdk"
 #include "glb_pil.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 
   integer i, j, k, ierr
   real    err, min_local, min_global
@@ -67,7 +67,7 @@
 !
 !     Determine sigma
 !
-  dpi=Dcst_pi_8
+  dpi=pi_8
   sigma=lambda*sqrt(-2.d0*log(bfact))/(2*dpi);
 
 
@@ -82,8 +82,8 @@
 ! x-axis
   do k=1,l_nk
     do j=1,l_nj
-!      fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hxu_8(1)*geomg_cy_8(j);fg(3)=-fg(5)
-      fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hx_8*geomg_cy_8(j);fg(3)=-fg(5)
+!      fg(4)=0.;fg(5)=rayt_8*geomg_hxu_8(1)*geomg_cy_8(j);fg(3)=-fg(5)
+      fg(4)=0.;fg(5)=rayt_8*geomg_hx_8*geomg_cy_8(j);fg(3)=-fg(5)
       fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
       fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
       fg=fg/sum(fg)
@@ -96,8 +96,8 @@
                G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
   psi_local=dsp_local
 !y-axis
-!  fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hyv_8(1);fg(3)=-fg(5)
-   fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hy_8;fg(3)=-fg(5)
+!  fg(4)=0.;fg(5)=rayt_8*geomg_hyv_8(1);fg(3)=-fg(5)
+   fg(4)=0.;fg(5)=rayt_8*geomg_hy_8;fg(3)=-fg(5)
   fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
   fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
   fg=fg/sum(fg)
@@ -113,8 +113,8 @@
      allocate(f2(l_ni,l_nj),wk2(G_ni,G_nj))
      f2=1.0;wk2=2.0
      do j=1,l_nj
-!        f2(4,j)=0.;f2(5,j)=Dcst_rayt_8*geomg_hxu_8(1)*geomg_cy_8(j)
-        f2(4,j)=0.;f2(5,j)=Dcst_rayt_8*geomg_hx_8*geomg_cy_8(j)
+!        f2(4,j)=0.;f2(5,j)=rayt_8*geomg_hxu_8(1)*geomg_cy_8(j)
+        f2(4,j)=0.;f2(5,j)=rayt_8*geomg_hx_8*geomg_cy_8(j)
         f2(3,j)=-f2(5,j)
         f2(2,j)=2*f2(3,j);f2(1,j)=3*f2(3,j)
         f2(6,j)=2*f2(5,j);f2(7,j)=3*f2(5,j)
@@ -124,8 +124,8 @@
         f2(8,j)=180.d0*geomg_y_8(j)/dpi
      enddo
      call glbcolc(wk2,G_ni,G_nj,f2,1,l_ni,1,l_nj,1)
-!     fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hyv_8(1);fg(3)=-fg(5)
-     fg(4)=0.;fg(5)=Dcst_rayt_8*geomg_hy_8;fg(3)=-fg(5)
+!     fg(4)=0.;fg(5)=rayt_8*geomg_hyv_8(1);fg(3)=-fg(5)
+     fg(4)=0.;fg(5)=rayt_8*geomg_hy_8;fg(3)=-fg(5)
      fg(2)=2*fg(3);fg(1)=3*fg(3);fg(6)=2*fg(5);fg(7)=3*fg(5)
      fg=1/(sigma*sqrt(2*dpi))*exp(-fg*fg/(2*sigma*sigma))
      fg=fg/sum(fg)

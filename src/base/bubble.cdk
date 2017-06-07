@@ -1,5 +1,0 @@
-      real bubble_theta,bubble_domain_top
-      integer bubble_ictr,bubble_kctr,bubble_rad
-
-      common /bubble_r/ bubble_theta,bubble_domain_top
-      common /bubble_i/ bubble_ictr,bubble_kctr,bubble_rad

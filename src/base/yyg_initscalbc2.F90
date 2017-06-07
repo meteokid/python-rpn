@@ -18,6 +18,7 @@
 
 
       Subroutine yyg_initscalbc2()
+       use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -35,18 +36,50 @@
       integer kkproc
       integer, dimension (:), pointer :: recv_len,send_len
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
+      real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
+      real*8 TWO_8
+      parameter( TWO_8   = 2.0d0 )
 !
-!     Take a global copy of xg,yg
+!     Localise could get point way outside of the actual grid in search
+!     So extend all global arrays: xg_8,yg_8
+
+      do i=1,G_ni
+         xg_8(i) = G_xg_8(i)
+      end do
+      do j=1,G_nj
+         yg_8(j) = G_yg_8(j)
+      enddo
+
+      do i=-G_ni+1,0
+         xg_8(i) = xg_8(i+G_ni) - TWO_8*pi_8
+      end do
+      do i=G_ni+1,2*G_ni
+         xg_8(i) = xg_8(i-G_ni) + TWO_8*pi_8
+      end do
+
+      yg_8( 0    ) = -(yg_8(1) + pi_8)
+      yg_8(-1    ) = -TWO_8*pi_8 -  &
+           (yg_8(0)+yg_8(1)+yg_8(2))
+      yg_8(G_nj+1) =  pi_8 - yg_8(G_nj)
+      yg_8(G_nj+2) =  TWO_8*pi_8 - &
+           (yg_8(G_nj+1)+yg_8(G_nj)+yg_8(G_nj-1))
+      do j=-2,-G_nj+1,-1
+         yg_8(j) = 1.01*yg_8(j+1)
+      end do
+      do j=G_nj+3,2*G_nj
+         yg_8(j) = 1.01*yg_8(j-1)
+      end do
+
       do j=1,G_nj
       do i=1,G_ni
-         xx_8(i,j)=G_xg_8(i)
+         xx_8(i,j)=xg_8(i)
       enddo
       enddo
       do j=1,G_nj
       do i=1,G_ni
-         yy_8(i,j)=G_yg_8(j)
+         yy_8(i,j)=yg_8(j)
       enddo
       enddo
 
@@ -54,8 +87,8 @@
 !h1, h2 used in this routine is ok as it is a close estimate for
 !creating YY pattern exchange and it works on the global tile
 
-      h1=G_xg_8(2)-G_xg_8(1)
-      h2=G_yg_8(2)-G_yg_8(1)
+      h1=xg_8(2)-xg_8(1)
+      h2=yg_8(2)-yg_8(1)
 !
 !
 
@@ -79,7 +112,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -115,7 +148,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -151,7 +184,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -187,7 +220,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 
@@ -327,7 +360,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -377,7 +410,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -427,7 +460,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 ! check to collect from who
@@ -477,7 +510,7 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise(imx,imy,x_a,y_a, &
-                          G_xg_8(1),G_yg_8(1),h1,h2,1,1)
+                          xg_8(1),yg_8(1),h1,h2,1,1)
          imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
          imy = min(max(imy-1,glb_pil_s+1),G_nj-glb_pil_n-3)
 

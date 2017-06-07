@@ -1,2 +1,4 @@
       real*8 PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
       common /psdaj/ PSADJ_g_avg_ps_initial_8,PSADJ_scale_8,PSADJ_fact_8
+      real*8, dimension(:,:), pointer :: Psadj_masktopo
+      common /psdaj_p/ Psadj_masktopo

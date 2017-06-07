@@ -58,19 +58,6 @@
 
 ! Defaults values for ptopo namelist variables
 
-!!$      Step_runstrt_S = 'NIL'
-!!$      Fcst_start_S   = ''
-!!$      Fcst_end_S     = ''
-!!$      Fcst_nesdt_S   = ''
-!!$      Fcst_gstat_S   = ''
-!!$      Fcst_rstrt_S   = ''
-!!$      Fcst_bkup_S    = 'NIL'
-!!$      Fcst_bkup_additional_S = 'NIL'
-!!$      Fcst_spinphy_S = ''
-!!$      Step_alarm     = 600
-!!$      Step_dt          = -1.0
-!!$      Step_leapyears_L = .true.
-
       if (F_namelistf_S .ne. '') then
          unf = 0
          if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
@@ -103,6 +90,7 @@
 ! transforming the Step_total into actual number of timesteps
       Step_total= Step_total - Step_initial
 
+! Fcst_nesdt_S is transformed into a number of secondes (into Step_nesdt)
       nesdt= 1.d0
       err= min( timestr2step (nsteps, Fcst_nesdt_S, nesdt), err)
       Step_nesdt= dble(nsteps)
@@ -146,12 +134,6 @@
       Step_delay= Step_initial
 
       if (.not.Rstri_rstn_L) Lctl_step= Step_initial
-
-      if ( (Step_nesdt .le. 0) .and. (Grd_typ_S(1:1).eq.'L') ) then
-         if (Lun_out.gt.0) write(Lun_out,*)  &
-                    ' Step_nesdt must be specified in namelist &step'
-         goto 9999
-      endif
 
       step_nml = 1
 

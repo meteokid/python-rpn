@@ -21,6 +21,7 @@
                          F_vtund, F_gzund,  F_nundr, &
                          F_cubzt_L, F_linbot, &
                          Minx,Maxx,Miny,Maxy, F_Nk)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
       real    F_vtund(Minx:Maxx,Miny:Maxy,F_nundr), F_gzund(Minx:Maxx,Miny:Maxy,F_nundr)
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 
       integer i, j, k, kk, pnk, pnkm, pnindex(l_ni), pnund,   pn1
       real    prlprso
@@ -85,7 +85,7 @@
                                  * (F_vtin(i,j,1)-F_vtin(i,j,2)) &
                                 / (F_wlnph(i,j,1)-F_wlnph(i,j,2))
 
-                  F_gzout(i,j,kk) = F_gzin(i,j,1) - prd * Dcst_rgasd_8 &
+                  F_gzout(i,j,kk) = F_gzin(i,j,1) - prd * rgasd_8 &
                                  * (F_vtin(i,j,1) + F_vtout(i,j,kk)) * 0.5
 !
 !******************************************************************************
@@ -180,18 +180,18 @@
                      prfibot = F_gzund (i,j,pn1)
 
                      if ( abs(prvtbot-prvttop) .le. prsmall ) then
-                        prlpbot = prlptop + (prfitop-prfibot)/(Dcst_rgasd_8*prvttop)
+                        prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
                         if ( prlpbot .ge. prlprso ) then
                            F_vtout(i,j,kk) = prvttop
-                           F_gzout(i,j,kk) = prfitop + Dcst_rgasd_8*prvttop*(prlptop-prlpbot)
+                           F_gzout(i,j,kk) = prfitop + rgasd_8*prvttop*(prlptop-prlpbot)
                            go to 300
                         endif
                      else
                         prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
-                        prlpbot = prlptop + (log(prvtbot/prvttop)) / (Dcst_rgasd_8*prl)
+                        prlpbot = prlptop + (log(prvtbot/prvttop)) / (rgasd_8*prl)
                         if ( prlpbot .ge. prlprso ) then
                            F_vtout(i,j,kk) = prvttop * &
-                           exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
+                           exp ( rgasd_8 * prl * (prlprso-prlptop))
                            F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
                            go to 300
                         endif
@@ -202,10 +202,10 @@
                      prfitop = prfibot
                   end do
                   
-                  prl = Dcst_stlo_8
-                  if ( abs (F_la(i,j)*180./Dcst_pi_8) .ge. 49.0 ) prl = .0005
+                  prl = stlo_8
+                  if ( abs (F_la(i,j)*180./pi_8) .ge. 49.0 ) prl = .0005
                   F_vtout(i,j,kk) = prvttop * &
-                     exp ( Dcst_rgasd_8 * prl * (prlprso-prlptop))
+                     exp ( rgasd_8 * prl * (prlprso-prlptop))
                   F_gzout(i,j,kk) = prfitop + (prvttop-F_vtout(i,j,kk)) / prl
                   
 !******************************************************************************
@@ -236,14 +236,14 @@
                      prr = 0.125 * prd * prd - 0.5 * pre * pre
                      prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
                      prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd
-                     prfm2 = - Dcst_rgasd_8 &
+                     prfm2 = - rgasd_8 &
                              * ( F_vtin(i,j,pnk) - F_vtin(i,j,pnkm) ) * invprd
-                     prfm3 = - Dcst_rgasd_8 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
+                     prfm3 = - rgasd_8 * ( F_vtin(i,j,pnk) + F_vtin(i,j,pnkm) )
                      prfm3 = ( prfm3 - prfm1 - prfm1 ) * invprd * invprd
                      prfl2 = prfm2 + 2.0 * pre * prfm3
                      F_gzout(i,j,kk) = prfm0 + pre * prfm1 - prr * prfl2
                      F_vtout(i,j,kk) = prfm1 + pre * prfl2 - 2.0 * prr * prfm3
-                     F_vtout(i,j,kk) = - F_vtout(i,j,kk) / Dcst_rgasd_8
+                     F_vtout(i,j,kk) = - F_vtout(i,j,kk) / rgasd_8
                   else
                      prfm0 = 0.5 * ( F_gzin(i,j,pnk) + F_gzin(i,j,pnkm) )
                      prfm1 = ( F_gzin(i,j,pnk) - F_gzin(i,j,pnkm) ) * invprd

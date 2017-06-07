@@ -16,13 +16,14 @@
 !**s/r yyg_xchng_all - Exchanges all Yin-Yang boundary conditions
 
       subroutine yyg_xchng_all
+      use dynkernel_options
       use gmm_vt1
       use gmm_pw
       use gem_options
       implicit none
 #include <arch_specific.hf>
 
-!author 
+!author
 !     Michel Desgagne   - Spring 2014
 !revision
 ! v4_70 - Desgagne M.   - Initial version
@@ -37,6 +38,10 @@
 !
 !----------------------------------------------------------------------
 !
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         return
+      end if
+
       do n= 1, Tr3d_ntr
          tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
          istat = gmm_get(tr_name, tr1)
@@ -55,7 +60,7 @@
          call yyg_scaluv( pw_uu_plus,pw_vv_plus, &
                           l_minx,l_maxx,l_miny,l_maxy, G_nk)
       else
-         call canonical_cases ("XCHNG") 
+         call canonical_cases ("XCHNG")
       endif
 
       call yyg_xchng ( pw_tt_plus, l_minx,l_maxx,l_miny,l_maxy, G_nk,&

@@ -21,6 +21,7 @@
       use hzd_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 ! v5_0 - Husain S.    - added vertically variable background diffusion      
 
 #include "gmm.hf"
-#include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
 #include "ver.cdk"
@@ -47,7 +47,7 @@
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
-      real, dimension(lminx:lmaxx,lminy:lmaxy) :: pi, th
+      real, dimension(lminx:lmaxx,lminy:lmaxy) :: mypi, th
       real, pointer, dimension (:,:,:) :: hu
       real, dimension(nk) :: base_coefM, base_coefT      
       real :: cdelta2, tension_z, shear, tension_u, shear_u, tension_v, shear_v
@@ -64,8 +64,8 @@
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0.)
       switch_on_fric_heat = (Hzd_smago_fric_heat > 0.)
 
-      cdelta2 = (smagparam * Dcst_rayt_8 * Geomg_hy_8)**2
-      crit_coef = 0.25*(Dcst_rayt_8*Geomg_hy_8)**2/Cstv_dt_8
+      cdelta2 = (smagparam * rayt_8 * Geomg_hy_8)**2
+      crit_coef = 0.25*(rayt_8*Geomg_hy_8)**2/Cstv_dt_8
 
       i0  = 1    + pil_w
       in  = l_ni - pil_e
@@ -81,7 +81,7 @@
 
 !$omp parallel private(tension_z,shear,tension_u,shear_u,&
 !$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, pi, th)                           
+!$omp tension_v, shear_v, smagcoef_z, mypi, th)                           
 
 !$omp do   
       do k=1,nk
@@ -180,8 +180,8 @@
 
             do j=j0-1, jn+1
             do i=i0-1, in+1
-               pi(i,j)=exp(Dcst_cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)))
-               th(i,j)=F_t(i,j,k)/pi(i,j)
+               mypi(i,j)=exp(cappa_8*(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)))
+               th(i,j)=F_t(i,j,k)/mypi(i,j)
             end do
             end do
 
@@ -223,7 +223,7 @@
 !$omp enddo
 
       if (switch_on_fric_heat) then
-         fact=0.5d0*Cstv_dt_8*Cstv_invT_8/cdelta2**2/Dcst_cpd_8
+         fact=0.5d0*Cstv_dt_8*Cstv_invT_8/cdelta2**2/cpd_8
 !$omp do
          do k=1, nk
             if(k.ne.nk) then

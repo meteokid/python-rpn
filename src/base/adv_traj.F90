@@ -55,7 +55,7 @@
       real, dimension(F_ni, F_nj, F_nk) :: ud , vd ,wd
       integer ::  iter,  num , nind
       integer :: BCS_BASE ,n,cnt,nc, sum_cnt,totaln,err  ! BCS points for Yin-Yang, normal LAM
-      real :: ztop_bound, zbot_bound
+      real :: zmin_bound, zmax_bound
       real*8 :: inv_cy_8
       real, dimension(1,1,1), target :: no_conserv, no_slice, no_flux
       real,   dimension(:,:,:), pointer :: dummy3d 
@@ -67,8 +67,8 @@
       num=F_ni*F_nj*F_nk
       nind=(in-i0+1)*(jn-j0+1)*(F_nk-k0m+1)
 
-      ztop_bound=Ver_z_8%m(0)
-      zbot_bound=Ver_z_8%m(F_nk+1)
+      zmin_bound=Ver_zmin_8
+      zmax_bound=Ver_zmax_8
 
 !Horizontal  Clipping  to processor  boundaries
        BCS_BASE= 4
@@ -192,7 +192,8 @@
                do i = i0,in
                   F_zth(i,j,k) = Ver_z_8%m(k) - Cstv_dtzD_8*  wd(i,j,k) &
                                               - Cstv_dtzA_8*F_wa(i,j,k)
-                  F_zth(i,j,k) = min(zbot_bound,max(F_zth(i,j,k),ztop_bound))
+                  F_zth(i,j,k) = min(zmax_bound,max(F_zth(i,j,k),zmin_bound))
+                
                enddo
             enddo
          enddo
@@ -204,7 +205,7 @@
             do j = j0,jn
                do i = i0,in
                   F_zth(i,j,k) =Ver_z_8%m(k)  - Cstv_dt_8* wd(i,j,k)
-                  F_zth(i,j,k) = min(zbot_bound,max(F_zth(i,j,k),ztop_bound))
+                  F_zth(i,j,k) = min(zmax_bound,max(F_zth(i,j,k),zmin_bound))
                   F_zth(i,j,k) = 0.5D0*(F_zth(i,j,k) + Ver_z_8%m(k))
                enddo
             enddo
@@ -240,7 +241,7 @@
                pzm(i,j,k) = Ver_z_8%m(k) + 2.0 * pzm(i,j,k)
 	       pxm(i,j,k) = min(max(xpos,minposx),maxposx)
                pym(i,j,k) = min(max(ypos,minposy),maxposy)
-               pzm(i,j,k) = min(zbot_bound,max(pzm(i,j,k),ztop_bound))
+               pzm(i,j,k) = min(zmax_bound,max(pzm(i,j,k),zmin_bound))
              
               ! Horizontal positions trunc stat
                nc=nc+min(1,max(0,ceiling(abs(pxm(i,j,k)-xpos)+abs(pym(i,j,k)-ypos))))

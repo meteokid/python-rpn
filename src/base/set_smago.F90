@@ -20,6 +20,7 @@
       use hzd_mod
       use grid_options
       use gem_options
+      use tdpack
       implicit none      
 #include <arch_specific.hf>
 
@@ -29,7 +30,6 @@
 !
 !revision
 ! v5_0 - Husain S.    - initial version based on hzd_smago
-#include "dcst.cdk"
 #include "geomg.cdk"
 #include "glb_ld.cdk"
 #include "ver.cdk"

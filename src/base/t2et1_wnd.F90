@@ -22,7 +22,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "geomg.cdk"
    
    type(gmm_metadata) :: dummy_gmm_meta

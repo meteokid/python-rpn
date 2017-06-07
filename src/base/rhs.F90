@@ -21,6 +21,7 @@
                        F_hu,  F_sl,  F_fis, Minx,Maxx,Miny,Maxy, Nk )
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -54,7 +55,6 @@
 
 #include "glb_ld.cdk"
 #include "cori.cdk"
-#include "dcst.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
@@ -68,7 +68,7 @@
       integer :: i, j, k, km, kq, nij, jext
       real*8  tdiv, BsPqbarz, fipbarz, dlnTstr_8, barz, barzp, &
               u_interp, v_interp, t_interp, mu_interp, zdot, &
-              w1, w2, w3, delta_8
+              w1, w2, w3, mydelta_8
       real*8  xtmp_8(l_ni,l_nj), ytmp_8(l_ni,l_nj)
       real, dimension(:,:,:), pointer :: BsPq, FI, MU
       real*8, dimension(:,:,:), pointer :: Afis      
@@ -94,8 +94,8 @@
 
       jext = Grd_bsc_ext1 + 1
 
-      delta_8 = zero
-      if(Schm_capa_var_L) delta_8 = 0.233d0
+      mydelta_8 = zero
+      if(Schm_capa_var_L) mydelta_8 = 0.233d0
 
 !     Exchanging halos for derivatives & interpolation
 !     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -216,7 +216,7 @@
          v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
          F_oru(i,j,k) = Cstv_invT_m_8  * F_u(i,j,k) - Cstv_Beta_m_8 * ( &
-                        Dcst_rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXMu_8(j)  &
+                        rgasd_8 * t_interp * ( BsPq(i+1,j,k) - BsPq(i,j,k) ) * geomg_invDXMu_8(j)  &
                             + ( one + mu_interp)* (   FI(i+1,j,k) -   FI(i,j,k) ) * geomg_invDXMu_8(j)  &
                                    - ( Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp )
       end do
@@ -242,7 +242,7 @@
          u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
          F_orv(i,j,k) = Cstv_invT_m_8  * F_v(i,j,k) - Cstv_Beta_m_8 * ( &
-                        Dcst_rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomg_invDYMv_8(j) &
+                        rgasd_8 * t_interp * ( BsPq(i,j+1,k) - BsPq(i,j,k) ) * geomg_invDYMv_8(j) &
                             + ( one + mu_interp)* (   FI(i,j+1,k) -   FI(i,j,k) ) * geomg_invDYMv_8(j) &
                                     + ( Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp )
       end do
@@ -265,8 +265,8 @@
       do i= i0, in
          w1=Ver_wpstar_8(k)*BsPq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPq(i,j,k)+BsPq(i,j,km))
          BsPqbarz = Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*BsPq(i,j,k)
-         F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * Dcst_cappa_8 * BsPqbarz ) &
-                      + Cstv_Beta_8 * Dcst_cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))
+         F_ort(i,j,k) = Cstv_invT_8 * ( ytmp_8(i,j) - Cstv_bar1_8 * cappa_8 * BsPqbarz ) &
+                      + Cstv_Beta_8 * cappa_8 *(Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km))
       end do
       end do
 
@@ -283,7 +283,7 @@
          tdiv = (F_u (i,j,k)-F_u (i-1,j,k))*geomg_invDXM_8(j) &
               + (F_v (i,j,k)*geomg_cyM_8(j)-F_v (i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j) &
               + (F_zd(i,j,k)-Ver_onezero(k)*F_zd(i,j,km))*Ver_idz_8%m(k) &
-              + Ver_wpM_8(k) * F_zd(i,j,k) + Ver_wmM_8(k) * Ver_onezero(k) * F_zd(i,j,km)
+              + Ver_wpC_8(k) * F_zd(i,j,k) + Ver_wmC_8(k) * Ver_onezero(k) * F_zd(i,j,km)
          F_orc (i,j,k) = Cstv_invT_8 * ( Cstv_bar1_8*(Ver_b_8%m(k)*(F_s(i,j) +Cstv_Sstar_8) &
                                                      +Ver_c_8%m(k)*(F_sl(i,j)+Cstv_Sstar_8)) + ytmp_8(i,j) ) &
                        - Cstv_Beta_8 * tdiv
@@ -291,7 +291,7 @@
       end do
 
       if(Schm_eulmtn_L) then
-         w1=one/(Dcst_Rgasd_8*Ver_Tstar_8%m(l_nk))
+         w1=one/(Rgasd_8*Ver_Tstar_8%m(l_nk))
          do j = j0, jn
          do i = i0, in
             F_orc(i,j,k) = F_orc(i,j,k) + Cstv_invT_8 * w1 * F_fis(i,j) +  &
@@ -310,7 +310,7 @@
          do j= j0, jn
          do i= i0, in
             F_orw(i,j,k) = Cstv_invT_nh_8 * F_w(i,j,k) &
-                         + Cstv_Beta_nh_8 * Dcst_grav_8 * MU(i,j,k)
+                         + Cstv_Beta_nh_8 * grav_8 * MU(i,j,k)
          end do
          end do
       endif
@@ -319,8 +319,8 @@
          w1=Ver_wpstar_8(k)*FI(i,j,k+1)+Ver_wmstar_8(k)*half*(FI(i,j,k)+FI(i,j,km))
          w2=Ver_wpstar_8(k)*F_zd(i,j,k)+Ver_wmstar_8(k)*F_zd(i,j,km)
          F_orf(i,j,k) = Cstv_invT_8 * ( Ver_wp_8%t(k)*w1+Ver_wm_8%t(k)*FI(i,j,k) )  &
-                      + Cstv_Beta_8 * Dcst_Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
-                      + Cstv_Beta_8 * Dcst_grav_8 * F_w(i,j,k)
+                      + Cstv_Beta_8 * Rgasd_8 * Ver_Tstar_8%t(k) * w2 &
+                      + Cstv_Beta_8 * grav_8 * F_w(i,j,k)
       end do
       end do
 

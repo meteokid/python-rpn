@@ -28,6 +28,7 @@
       use gmm_nest
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -57,7 +58,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
@@ -131,8 +131,8 @@
 !        Compute Rt" & Rf"
 !        ~~~~~~~~~~~~~~~~~
 
-         w1 = Dcst_cappa_8 /( Dcst_Rgasd_8 * Ver_Tstar_8%t(k) )
-         w2 = Cstv_invT_m_8 / ( Dcst_cappa_8 + Ver_epsi_8(k) )
+         w1 = cappa_8 /( Rgasd_8 * Ver_Tstar_8%t(k) )
+         w2 = Cstv_invT_m_8 / ( cappa_8 + Ver_epsi_8(k) )
          do j= j0, jn
          do i= i0, in
 !           Combine Rt and Rw
@@ -205,7 +205,7 @@
 
 !     Apply lower boundary conditions
 !
-      w1 = Cstv_invT_8*Cstv_invT_m_8 / ( Dcst_Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
+      w1 = Cstv_invT_8*Cstv_invT_m_8 / ( Rgasd_8 * Ver_Tstar_8%m(l_nk+1) )
 !$omp do
       do j= j0, jn
       do i= i0, in

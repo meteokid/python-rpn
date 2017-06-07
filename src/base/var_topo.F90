@@ -19,6 +19,7 @@
       subroutine var_topo2 (F_topo, F_step, Minx,Maxx,Miny,Maxy)
       use gmm_geof
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +28,6 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 
       integer i,j, gmmstat
       real*8, parameter :: one = 1.0d0
@@ -44,7 +44,7 @@
       endif
 
       lt  = Vtopo_ndt
-      pio2= Dcst_pi_8 / two
+      pio2= pi_8 / two
 
       f= max(0.,min(F_step-Vtopo_start,real(Vtopo_ndt)))
 

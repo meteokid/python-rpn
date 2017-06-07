@@ -20,6 +20,7 @@
       use gmm_vt1
       use gmm_geof
       use gem_options
+      use theo_options
       implicit none
 #include <arch_specific.hf>
 !author 
@@ -29,9 +30,7 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "mtn.cdk"
-#include "theo.cdk"
 
       type(gmm_metadata) :: mymeta
       integer err,i,j,k
@@ -113,13 +112,14 @@
 
 
       subroutine apply_tt(tt,betav_t, F_s, F_sl,Minx,Maxx,Miny,Maxy, Nk)
+      use mtn_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
       integer  Minx,Maxx,Miny,Maxy, Nk 
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "mtn.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
@@ -133,8 +133,8 @@
 
       integer i,j,k,i0,in,j0,jn 
 
-      a00 = mtn_nstar * mtn_nstar/Dcst_grav_8
-      capc1 = Dcst_grav_8*Dcst_grav_8/(mtn_nstar*mtn_nstar*Dcst_cpd_8*mtn_tzero)
+      a00 = mtn_nstar * mtn_nstar/grav_8
+      capc1 = grav_8*grav_8/(mtn_nstar*mtn_nstar*cpd_8*mtn_tzero)
 
       i0 = 1
       in = l_ni
@@ -149,7 +149,7 @@
          do j=j0,jn
             do i=i0,in
                tempo = exp(Ver_a_8%t(k)+Ver_b_8%t(k)*F_s(i,j)+Ver_c_8%t(k)*F_sl(i,j))
-               a02 = (tempo/Cstv_pref_8)**Dcst_cappa_8
+               a02 = (tempo/Cstv_pref_8)**cappa_8
                hauteur=-log((capc1-1.+a02)/capc1)/a00
                my_tt=mtn_tzero*((1.-capc1)*exp(a00*hauteur)+capc1)
                tt(i,j,k)=(1.-betav_t(i,j,k))*tt(i,j,k)+ &

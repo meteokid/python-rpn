@@ -47,7 +47,7 @@ use iso_c_binding
             ier = fnom (Lun_rstrt,'gem_restart','SEQ+UNF',0)
 
             write(Lun_rstrt) Lctl_step,Step_kount,Init_mode_L
-            write(Lun_rstrt) PSADJ_g_avg_ps_initial_8,PSADJ_scale_8
+            write(Lun_rstrt) PSADJ_g_avg_ps_initial_8
 
             ier = fclos(Lun_rstrt)  
 

@@ -19,6 +19,7 @@ subroutine itf_phy_diag ()
       use gmm_pw
       use grid_options
       use gem_options
+      use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -35,7 +36,6 @@ subroutine itf_phy_diag ()
 #include "glb_ld.cdk"
 #include "dimout.cdk"
 #include "outp.cdk"
-#include "dcst.cdk"
 
    logical, save :: init_L = .false., dodiag_L = .true.
 
@@ -106,7 +106,7 @@ subroutine itf_phy_diag ()
 !!$   istat = gmm_get(gmmk_pw_me_moins_s,me)
 !!$
 !!$   hghtm = ( gz(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn,G_nk) - &
-!!$        me(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn) ) / Dcst_grav_8
+!!$        me(Grd_lphy_i0:Grd_lphy_in,Grd_lphy_j0:Grd_lphy_jn) ) / grav_8
 !!$   hghtt = hghtm * .5
 !!$
 !!$

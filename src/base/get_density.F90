@@ -20,6 +20,7 @@
       use gmm_vt1
       use gmm_vt0
       use gem_options
+      use tdpack
       implicit none
 
       !Arguments
@@ -41,7 +42,6 @@
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "ver.cdk"
-#include "dcst.cdk"
 
       !-----------------------------------------------------------------------------
 
@@ -97,7 +97,7 @@
          do k=F_k0,F_nk
             do j=1,l_nj
             do i=1,l_ni
-               F_density(i,j,k) = +(pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k) / Dcst_grav_8
+               F_density(i,j,k) = +(pr_m(i,j,k+1) - pr_m(i,j,k)) * (1.-sumq(i,j,k)) * Ver_idz_8%t(k) / grav_8
             end do
             end do
          end do
@@ -109,7 +109,7 @@
          do k=F_k0,F_nk
             do j=1,l_nj
             do i=1,l_ni
-               F_density(i,j,k) = +pr_t(i,j,k) * (1.0 + Ver_dbdz_8%t(k) * w2d(i,j)) / Dcst_grav_8
+               F_density(i,j,k) = +pr_t(i,j,k) * (1.0 + Ver_dbdz_8%t(k) * w2d(i,j)) / grav_8
             end do
             end do
          end do

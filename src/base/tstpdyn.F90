@@ -24,6 +24,7 @@
       use gmm_geof
       use gem_options
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 #include "nl.cdk"
 
 !TODO : remove the following when removing GU
-#include "dcst.cdk"
 #include "geomg.cdk"
 
       integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j, icln

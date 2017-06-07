@@ -20,6 +20,7 @@
       use gmm_vt1
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 
 !author M.Tanguay
@@ -32,7 +33,6 @@
 #include "geomg.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
-#include "dcst.cdk"
 #include "tr3d.cdk"
 #include "tracers.cdk"
 #include "cstv.cdk"
@@ -105,7 +105,7 @@
 
       if (.NOT.LAM_L) then
 
-         gc_area_8 = QUATRO_8 * Dcst_pi_8
+         gc_area_8 = QUATRO_8 * pi_8
 
           s_area_8 = 0.0d0
          gs_area_8 = 0.0d0

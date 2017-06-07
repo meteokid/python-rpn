@@ -19,6 +19,7 @@
                           Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
                           F_i0,F_in,F_j0,F_jn )
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -37,7 +38,6 @@
 ! Nk           I    - number of levels from the pressure analyse
 
 #include "lun.cdk"
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "geomg.cdk"
 #include "cstv.cdk"
@@ -54,8 +54,8 @@
          F_topo = 0.
          do j=1,l_nj
          do i=1,l_ni
-            F_ps(i,j) =  (Dcst_grav_8*F_gz(i,j,1)-F_topo(i,j)) &
-                        /(Dcst_Rgasd_8*Cstv_Tstr_8) &
+            F_ps(i,j) =  (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
+                        /(Rgasd_8*Cstv_Tstr_8) &
                         +Ver_z_8%m(1)-Cstv_Zsrf_8
             F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8 
          enddo
@@ -66,7 +66,7 @@
       if (Nk < 2) &
       call gem_error(-1,'gz2p0','Impossible to proceed: NK < 2')
 
-      acc = .1 * Dcst_grav_8
+      acc = .1 * grav_8
       conv = alog(100.)
 !     Convert millibar to log of pascal unit - Pressure Analysis
       do k=1,Nk
@@ -92,7 +92,7 @@
          do j=F_j0,F_jn
          do i=F_i0,F_in
             m=m+1
-            zcol(m,k) = Dcst_grav_8*F_gz(i,j,k)
+            zcol(m,k) = grav_8*F_gz(i,j,k)
          enddo
          enddo
       enddo
@@ -124,7 +124,7 @@
 
 !     Compute pressure at the surface (PS)
       do i=1,NN
-         guess(i) = lna(Nk)-topo(i)/(Dcst_rgasd_8*250.)
+         guess(i) = lna(Nk)-topo(i)/(rgasd_8*250.)
       enddo
 
       call vterp1 (guess,topo,zcol,tcol,lna,acc,NN,Nk)

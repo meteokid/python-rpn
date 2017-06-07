@@ -21,6 +21,7 @@
                          F_vtund, F_fiund, F_und, &
                          Minx,Maxx,Miny,Maxy, Nk)
 !
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -139,7 +140,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 !
 
 !     none
@@ -159,7 +159,7 @@
 !        calculation of critical temperature
 !                       --------------------
 !
-         prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * Dcst_pi_8) )
+         prvtc = 301.75 - abs( (F_la(i,j) * 180.) / ( 4. * pi_8) )
 !
 !
          do pnund=1,F_und+1
@@ -184,10 +184,10 @@
             prfibot  = F_fiund (i,j,pn1)
 !
             if ( abs(prvtbot-prvttop) .le. prsmall ) then
-               prlpbot = prlptop + (prfitop-prfibot)/(Dcst_rgasd_8*prvttop)
+               prlpbot = prlptop + (prfitop-prfibot)/(rgasd_8*prvttop)
             else
                prl     = - ( prvttop - prvtbot ) / ( prfitop - prfibot )
-               prlpbot = prlptop + (log(prvtbot/prvttop)) / (Dcst_rgasd_8*prl)
+               prlpbot = prlptop + (log(prvtbot/prvttop)) / (rgasd_8*prl)
             endif
 !
             prlptop = prlpbot
@@ -197,7 +197,7 @@
  40      continue
 !
          if ( prvttop .le. prvtc ) then
-              prvtbot = min( 1.0d0*prvttop + Dcst_stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
+              prvtbot = min( 1.0d0*prvttop + stlo_8 * 1.0d0*prfitop,  1.0d0*prvtc)
          else
               prvtbot = prvtc - 0.005 * ( prvttop - prvtc ) **2
          endif
@@ -206,10 +206,10 @@
 !                       ------------
 !
          if ((abs(prvtbot-prvttop).le.prsmall) .or. (prfitop.le.0.0)) then
-              F_pnm(i,j) = exp (prlptop+prfitop/(Dcst_rgasd_8*prvttop))
+              F_pnm(i,j) = exp (prlptop+prfitop/(rgasd_8*prvttop))
          else
               prl = - ( prvttop - prvtbot ) / ( prfitop )
-              F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(Dcst_rgasd_8*prl))
+              F_pnm(i,j)=exp (prlptop+(log(prvtbot/prvttop))/(rgasd_8*prl))
          endif
 !
  100  continue

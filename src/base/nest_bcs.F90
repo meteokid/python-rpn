@@ -31,7 +31,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "cstv.cdk"
-#include "theo.cdk"
 
       integer i,j,k,gmmstat
 !

@@ -18,13 +18,13 @@
       subroutine hzd_exp_set
       use hzd_mod
       use gem_options
+      use tdpack
       implicit none
 #include "cstv.cdk"
 #include <arch_specific.hf>
 
 
 #include "glb_ld.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "ver.cdk"
 

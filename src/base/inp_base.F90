@@ -20,12 +20,12 @@ module inp_base
   use gem_options
 
       use inp_mod
+      use tdpack
   implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "dcst.cdk"
 #include "geomn.cdk"
 #include "hgc.cdk"
 #include "ver.cdk"
@@ -154,7 +154,7 @@ contains
             if (Inp_kind == 105) nomvar= 'FIS0'
             if ( nomvar == 'GZ' ) ip1= 93423264
             if (( nomvar == 'GZ' ) .and. (Inp_kind == 1  )) ip1= 12000
-            if ( nomvar == 'GZ' ) mult= 10.d0 * Dcst_grav_8
+            if ( nomvar == 'GZ' ) mult= 10.d0 * grav_8
          case ('SFCPRES')
             if (Inp_kind == 2  ) nomvar= '@NUL'
             if (Inp_kind == 1  ) nomvar= 'P0'
@@ -166,7 +166,7 @@ contains
             if (Inp_kind == 1  ) nomvar= 'TT'
             if (Inp_kind == 5  ) nomvar= 'TT'
             if (Inp_kind == 105) nomvar= 'TT1'
-            if ( nomvar == 'TT' ) add= Dcst_tcdk_8
+            if ( nomvar == 'TT' ) add= tcdk_8
          case ('GEOPOTENTIAL')
             if (Inp_kind == 2  ) nomvar= 'GZ'
             if (Inp_kind == 1  ) nomvar= '@NUL'
@@ -174,9 +174,9 @@ contains
             if (Inp_kind == 105) nomvar= '@NUL'
             if ( nomvar == 'GZ' ) mult= 10.d0
          case ('UU')
-            mult= Dcst_knams_8
+            mult= knams_8
          case ('VV')
-            mult= Dcst_knams_8
+            mult= knams_8
       end select
 
       datev= Inp_cmcdate
@@ -560,8 +560,8 @@ contains
 
          deallocate (uhr,vhr,zlist,zlist_o)
 
-         F_u(1:l_ni,1:l_nj,:) = F_u(1:l_ni,1:l_nj,:) * Dcst_knams_8
-         F_v(1:l_ni,1:l_nj,:) = F_v(1:l_ni,1:l_nj,:) * Dcst_knams_8
+         F_u(1:l_ni,1:l_nj,:) = F_u(1:l_ni,1:l_nj,:) * knams_8
+         F_v(1:l_ni,1:l_nj,:) = F_v(1:l_ni,1:l_nj,:) * knams_8
 
       else
 

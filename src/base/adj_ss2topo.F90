@@ -18,6 +18,7 @@
 
       subroutine adj_ss2topo2 (F_ssq0, F_newtopo, F_pres, F_oldtopo, F_vt,&
                                Minx,Maxx,Miny,Maxy,nk,F_i0,F_in,F_j0,F_jn)
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -101,7 +102,6 @@
 ! NK            I         number of levels to look through
 !----------------------------------------------------------------------
 
-#include "dcst.cdk"
 
       integer i,j,k,ik
       real*8 difgz, lapse, ttop, tbot, cons, con, &
@@ -116,7 +116,7 @@
 !$omp         difgz,lapse,ttop,tbot,cons      ) &
 !$omp          shared (vma, vmb, vmc)
 
-      con = -Dcst_rgasd_8
+      con = -rgasd_8
 
 !$omp do
       do j= F_j0, F_jn
@@ -196,7 +196,7 @@
 !          we assume SCHUMAN-NEWELL Lapse rate under ground to obtain
 !          an estimates of the temperature at the target grid surface
 
-               lapse = Dcst_stlo_8
+               lapse = stlo_8
                k     = nk
 
             else
@@ -218,9 +218,9 @@
             tbot = ttop + lapse * difgz
 
             if ( abs(lapse) .lt. 1E-10 ) then
-               F_ssq0(i,j) = F_pres(i,j,k) * exp ( difgz/(Dcst_rgasd_8*ttop) ) 
+               F_ssq0(i,j) = F_pres(i,j,k) * exp ( difgz/(rgasd_8*ttop) ) 
             else          
-               cons = 1. / ( Dcst_rgasd_8 * lapse )
+               cons = 1. / ( rgasd_8 * lapse )
                F_ssq0(i,j) = F_pres(i,j,k) * ( tbot/ttop ) ** cons
             endif
          enddo

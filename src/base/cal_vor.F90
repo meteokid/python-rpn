@@ -18,6 +18,8 @@
       subroutine cal_vor ( F_QR,F_QQ, F_uu,F_vv          , &
                            F_filtqq, F_coefqq, F_absvor_L, &
                            Minx,Maxx,Miny,Maxy,Nk )
+      use dynkernel_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -36,13 +38,19 @@
 #include "glb_ld.cdk"
 #include "geomn.cdk"
 #include "geomg.cdk"
-#include "dcst.cdk"
 
       integer i, j, k, i0, in, j0, jn
       real deg2rad
 !
 !----------------------------------------------------------------------
 !
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         call exp_cal_vor(F_QR,F_QQ, F_uu,F_vv,            &
+                           F_filtqq, F_coefqq, F_absvor_L, &
+                           Minx,Maxx,Miny,Maxy,Nk )
+         return
+      end if
+
       i0 = 1
       in = l_niu
       j0 = 1
@@ -63,14 +71,14 @@
       end do
 
       if (F_filtqq.gt.0) call filter2 ( F_QR, F_filtqq,F_coefqq, &
-                                  l_minx,l_maxx,l_miny,l_maxy,Nk )      
+                                  l_minx,l_maxx,l_miny,l_maxy,Nk )
 
       if (F_absvor_L)then
          deg2rad= acos( -1.0)/180.
          do k =  1, Nk
             do j = j0, jn
             do i = i0, in
-               F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*Dcst_omega_8 &
+               F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*omega_8 &
                            * sin(Geomn_latrx(i,j)*deg2rad)
             end do
             end do

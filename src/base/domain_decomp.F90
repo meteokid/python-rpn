@@ -28,17 +28,21 @@
 #include "lun.cdk"
 
       logical, external :: decomp3
+      integer err, g_err, status
 
 !-------------------------------------------------------------------
 !
-      domain_decomp3= -1
+      err=-1
       if (Lun_out.gt.0) write (Lun_out,1000) G_ni,F_npex,G_nj,F_npey
-
+      
       if (decomp3 (G_ni,l_minx,l_maxx,l_ni,G_lnimax,G_halox,l_i0,.true. ,.true.,&
                    F_npex, (Grd_extension+1), F_checkparti_L, 0 ) .and.         &
           decomp3 (G_nj,l_miny,l_maxy,l_nj,G_lnjmax,G_haloy,l_j0,.false.,.true.,&
                    F_npey, (Grd_extension+1), F_checkparti_L, 0 ))              &
-      domain_decomp3= 0
+          err=0
+
+      call rpn_comm_Allreduce (err,g_err,1,"MPI_INTEGER","MPI_MIN","GRID",status)
+      domain_decomp3= g_err
 
       if (domain_decomp3.lt.0)  then
          if  (Lun_out.gt.0) &

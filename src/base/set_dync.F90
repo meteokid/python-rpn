@@ -16,10 +16,12 @@
 !**   s/r set_dync - initialize the dynamics model configuration
 
       subroutine set_dync (F_check_and_stop_L, F_errcode)
+      use dynkernel_options
       use matvec_mod, only: matvec_init
       use gmm_vt1
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -27,7 +29,6 @@
       integer F_errcode
 
 #include "gmm.hf"
-#include "dcst.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "opr.cdk"
@@ -35,12 +36,16 @@
 #include "cstv.cdk"
 #include "ver.cdk"
 
-      integer k,err,istat,k0,i,j
+      integer k,err,k0
       real tmean(G_nk)
-      real*8  w1, w2, w3, w4
+      real*8  w1, w2
       real*8, parameter :: zero=0.d0, one=1.d0, half=.5d0
 !
 !     ---------------------------------------------------------------
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         return
+      end if
 
       if( Cstv_Tstr_8 .lt. 0. ) then
          ! TSTAR variable in the vertical
@@ -63,16 +68,16 @@
       Ver_fistr_8(G_nk+1)= 0.d0
       do k = G_nk, 1, -1
          Ver_fistr_8(k) = Ver_fistr_8(k+1) - &
-           Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Ver_z_8%m(k)-Ver_z_8%m(k+1))
+           Rgasd_8*Ver_Tstar_8%t(k)*(Ver_z_8%m(k)-Ver_z_8%m(k+1))
       enddo
 
       do k=1,G_nk
-         Ver_epsi_8(k)=Dcst_Rgasd_8*Ver_Tstar_8%t(k)*Ver_igt2_8
+         Ver_epsi_8(k)=Rgasd_8*Ver_Tstar_8%t(k)*Ver_igt2_8
          Ver_gama_8(k)=Cstv_invT_8*Cstv_invT_m_8/ &
-             (Dcst_Rgasd_8*Ver_Tstar_8%t(k)*(Dcst_cappa_8+Ver_epsi_8(k)))
+             (Rgasd_8*Ver_Tstar_8%t(k)*(cappa_8+Ver_epsi_8(k)))
       enddo
 
-      Cstv_hco0_8 = Dcst_rayt_8**2
+      Cstv_hco0_8 = rayt_8**2
       Cstv_hco1_8 = zero
       Cstv_hco2_8 = one
 
@@ -85,7 +90,7 @@
          w1 = Ver_idz_8%t(k0-1)* &
                (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one+Ver_epsi_8(k0-1))) &
             + half*Ver_epsi_8(k0-1)* &
-               (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one-Dcst_cappa_8))
+               (Ver_idz_8%m(k0)-Ver_wm_8%m(k0)*(one-cappa_8))
          w2 = one/(Ver_idz_8%t(k0-1)+Ver_epsi_8(k0-1)*half)
          Ver_alfat_8 = (Ver_idz_8%t(k0-1) - Ver_epsi_8(k0-1)*half) * w2
          Ver_cst_8   =                      one / Ver_gama_8(k0-1) * w2
@@ -93,7 +98,7 @@
       endif
 
       Ver_css_8   = one/Ver_gama_8(G_nk) &
-                   /(Ver_idz_8%t(G_nk)+Dcst_cappa_8*Ver_wpstar_8(G_nk))
+                   /(Ver_idz_8%t(G_nk)+cappa_8*Ver_wpstar_8(G_nk))
       w1= Ver_wmstar_8(G_nk)*half*(Ver_gama_8(G_nk  )*Ver_epsi_8(G_nk) &
                                   -Ver_gama_8(G_nk-1)*Ver_epsi_8(G_nk-1))
       w2 = Ver_wmstar_8(G_nk)*Ver_gama_8(G_nk-1)*Ver_idz_8%t(G_nk-1)
@@ -102,7 +107,7 @@
       Ver_betas_8 = Ver_css_8 * ( w1 - w2 )
       w1=Ver_gama_8(G_nk)*Ver_idz_8%t(G_nk)*(Ver_idz_8%m(G_nk) + &
          Ver_wp_8%m(G_nk))/Ver_wpstar_8(G_nk)
-      w2=((one-Dcst_cappa_8)*Ver_wp_8%m(G_nk) + Ver_idz_8%m(G_nk) - &
+      w2=((one-cappa_8)*Ver_wp_8%m(G_nk) + Ver_idz_8%m(G_nk) - &
          Ver_wpA_8(G_nk)*Ver_idz_8%t(G_nk)) &
         *Ver_gama_8(G_nk)*Ver_epsi_8(G_nk)
       Ver_cssp_8  = Ver_css_8 * ( w1 - w2 )

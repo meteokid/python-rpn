@@ -18,6 +18,7 @@
       subroutine get_topo3 ( F_topo, F_topo_ls, Minx,Maxx,Miny,Maxy, i0,in,j0,jn)
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -34,7 +35,6 @@
 #include "glb_ld.cdk"
 #include "ptopo.cdk"
 #include "path.cdk"
-#include "dcst.cdk"
 
       character*8    inttyp
       character*1024 fn
@@ -63,7 +63,7 @@
       endif
       call handle_error (status,'GET_TOPO','Topography "ME" NOT specified')
       call glbdist (topo_destination,G_ni,G_nj,F_topo,Minx,Maxx,Miny,Maxy,1,0,0)
-      F_topo(i0:in,j0:jn) = F_topo(i0:in,j0:jn) * Dcst_grav_8
+      F_topo(i0:in,j0:jn) = F_topo(i0:in,j0:jn) * grav_8
 
       if(Schm_sleve_L)then
          If (Ptopo_myproc==0) Then
@@ -72,7 +72,7 @@
          endif
          call handle_error (status,'GET_TOPO','Topography large scale "MESL" NOT specified')
          call glbdist (topo_destination,G_ni,G_nj,F_topo_ls,Minx,Maxx,Miny,Maxy,1,0,0)
-         F_topo_ls(i0:in,j0:jn) = F_topo_ls(i0:in,j0:jn) * Dcst_grav_8
+         F_topo_ls(i0:in,j0:jn) = F_topo_ls(i0:in,j0:jn) * grav_8
       else
          F_topo_ls = 0.0
       endif

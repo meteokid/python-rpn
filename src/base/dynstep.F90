@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,6 +16,7 @@
 !**s/r dynstep -  Control of the dynamical timestep of the model
 
       subroutine dynstep
+      use dynkernel_options
       use step_options
       use gmm_vt1
       use gmm_orh
@@ -36,6 +37,12 @@
 !
 !     ---------------------------------------------------------------
 !
+
+      if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
+         call exp_dynstep
+         return
+      end if
+
       if (Lun_debug_L) write(Lun_out,1000)
       call timing_start2 ( 10, 'DYNSTEP', 1 )
 
@@ -57,24 +64,24 @@
             itraj = max( 5, Schm_itraj )
          endif
       endif
-    
+
       if (Lun_debug_L) write(Lun_out,1005) Schm_itcn-1
 
       call psadj_init ( Step_kount )
 
       do Orh_icn = 1,Schm_itcn-1
-    
+
          call tstpdyn (itraj)
          itraj = Schm_itraj
-         
+
          call hzd_momentum
-         
+
       end do
-      
+
       if (Lun_debug_L) write(Lun_out,1006)
-  
+
       Orh_icn=Schm_itcn
- 
+
       call tstpdyn ( Schm_itraj )
 
       call tracers_step (.true. )

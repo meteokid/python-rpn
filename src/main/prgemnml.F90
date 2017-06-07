@@ -62,9 +62,10 @@ subroutine nml_theo()
    use gem_options
    use grid_options
    use step_options
+   use theo_options
    implicit none
-#include "theonml.cdk"
    write(FILEID, nml=theo_cfgs)
+   write(FILEID, nml=bubble_cfgs)
    write(FILEID, nml=mtn_cfgs)
    return
 end subroutine nml_theo

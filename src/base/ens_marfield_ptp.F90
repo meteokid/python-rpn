@@ -25,6 +25,7 @@
       use ens_options
       use grid_options
       use gem_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -38,7 +39,6 @@
 #include <rmnlib_basics.hf>
 #include "gmm.hf"
 #include "ens_gmm_dim.cdk"
-#include "dcst.cdk"
 #include "lun.cdk"
 #include "mem.cdk"
 #include "glb_ld.cdk"
@@ -77,7 +77,7 @@
 ! dt   Pas de temps du modèle (secondes)
 ! tau  Temps de décorrélation du champ aléatoire f(i,j) (secondes)
 ! eps  EXP(-dt/tau/2.146)
-      real*8    :: pi, dt, eps  
+      real*8    :: dt, eps  
       real*8    :: fmax, fmin , fmean 
       real*8,    dimension(:), allocatable :: pspectrum , fact1, fact1n
       real*8,    dimension(:), allocatable  :: wrk1
@@ -91,8 +91,7 @@
 !
 
       dt=real(Cstv_dt_8)
-      pi=real(Dcst_pi_8)
-      rad2deg_8=180.0d0/Dcst_pi_8
+      rad2deg_8=180.0d0/pi_8
 !
 !     Look for the spectral coefficients
 !
@@ -147,7 +146,7 @@
          pspectrum=pspectrum/sumsp
 
          do l=lmin,lmax
-          fact1(l)=fstd*SQRT(4.*pi/real((2*l+1))*pspectrum(l))
+          fact1(l)=fstd*SQRT(4.*pi_8/real((2*l+1))*pspectrum(l))
          enddo
          
          dumdum(:,nc)=0
@@ -216,7 +215,7 @@
          paidum=> dumdum(36,nc)
  
        do l=lmin,lmax      
-          fact1n(l)=fstd*SQRT(4.*pi/real((2*l+1)) &
+          fact1n(l)=fstd*SQRT(4.*pi_8/real((2*l+1)) &
                    *pspectrum(l))*SQRT((1.-eps*eps)) 
                 
           br_p(lmax-l+1,1,nc) = eps*br_p(lmax-l+1,1,nc)  &
@@ -243,7 +242,7 @@ allocate(sig(lmax-lmin+1, 0:lmax))
 ! Associated Legendre polynomials
        p=0.D0
        do l=lmin,lmax
-          fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi))
+          fact=DSQRT((2.D0*DBLE(l)+1.D0)/(4.D0*pi_8))
           do m=0,l
             sig(lmax-l+1,m)=(-1.D0)**(l+m)
             do j=1,nlat/2
@@ -373,9 +372,8 @@ contains
         stop 
       end if
 
-      pi=real(Dcst_pi_8)
-      lat=(-90.D0+90.D0/DBLE(nlat)+DBLE(jlat-1)*180.D0/DBLE(nlat))*pi/180.D0
-      theta=pi/2.D0-lat
+      lat=(-90.D0+90.D0/DBLE(nlat)+DBLE(jlat-1)*180.D0/DBLE(nlat))*pi_8/180.D0
+      theta=pi_8/2.D0-lat
       x=DCOS(theta)
 
       pl=ZERO

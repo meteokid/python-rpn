@@ -19,6 +19,7 @@
                             F_xu_8, F_yv_8, F_rot_8, Minx,Maxx,Miny,Maxy)
       use gem_options
       use grid_options
+      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -41,7 +42,6 @@
 
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "dcst.cdk"
 
       real*8 ZERO, ONE, TWO
       parameter( ZERO = 0.0 )
@@ -79,8 +79,8 @@
 !       ____________________________________
 
       do j=1-G_haloy,l_nj+G_haloy
-         sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_yv_8(j))
-         ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_yv_8(j))
+         sa = ( TWO * omega_8 ) * s0 * sin(F_yv_8(j))
+         ca = ( TWO * omega_8 ) * c0 * cos(F_yv_8(j))
          do i=1-G_halox,l_ni+G_halox
             F_v_8(i,j) = ca * cos(F_x_8(i)-ang) + sa
          enddo
@@ -90,8 +90,8 @@
 !       ____________________________________
 
       do j=1-G_haloy,l_nj+G_haloy
-         sa = ( TWO * Dcst_omega_8 ) * s0 * sin(F_y_8(j))
-         ca = ( TWO * Dcst_omega_8 ) * c0 * cos(F_y_8(j))
+         sa = ( TWO * omega_8 ) * s0 * sin(F_y_8(j))
+         ca = ( TWO * omega_8 ) * c0 * cos(F_y_8(j))
          do i=1-G_halox,l_ni+G_halox
             F_u_8(i,j) = ca * cos(F_xu_8(i) - ang) + sa
          enddo

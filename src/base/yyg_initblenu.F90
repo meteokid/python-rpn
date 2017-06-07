@@ -15,6 +15,7 @@
 !***s/r yyg_initblenu - to initialize communication pattern for U field 
 !
       Subroutine yyg_initblenu()
+       use tdpack
       implicit none
 #include <arch_specific.hf>
 !
@@ -38,25 +39,54 @@
       integer kkproc,adr
       integer, dimension (:), pointer :: recv_len, send_len
       real*8  xx_8(G_niu,G_nj),yy_8(G_niu,G_nj)
+      real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
       real*8  x_d,y_d,x_a,y_a   
+      real*8 TWO_8
+      parameter( TWO_8   = 2.0d0 )
 !
-!     The orig alloc of (G_xg_8(1-G_ni:2*G_ni) , G_yg_8(1-G_nj:2*G_nj) )
-!     Localise could get point way outside of the actual grid in blend
-!     So get global xgu,ygv,xx,yy
+!     Localise could get point way outside of the actual grid in search
+!     So extend all global arrays: xg_8,yg_8, xgu_8,ygv_8
 
-       do i=1-G_ni,2*G_ni-1
-       xgu_8(i)=0.5D0 *(G_xg_8(i+1)+G_xg_8(i))
-       enddo
-       do j=1-G_nj,2*G_nj-1
-       ygv_8(j)= 0.5D0*(G_yg_8(j+1)+G_yg_8(j))
-       enddo
+      do i=1,G_ni
+         xg_8(i) = G_xg_8(i)
+      end do
+      do j=1,G_nj
+         yg_8(j) = G_yg_8(j)
+      enddo
+
+      do i=-G_ni+1,0
+         xg_8(i) = xg_8(i+G_ni) - TWO_8*pi_8
+      end do
+      do i=G_ni+1,2*G_ni
+         xg_8(i) = xg_8(i-G_ni) + TWO_8*pi_8
+      end do
+
+      yg_8( 0    ) = -(yg_8(1) + pi_8)
+      yg_8(-1    ) = -TWO_8*pi_8 -  &
+           (yg_8(0)+yg_8(1)+yg_8(2))
+      yg_8(G_nj+1) =  pi_8 - yg_8(G_nj)
+      yg_8(G_nj+2) =  TWO_8*pi_8 - &
+           (yg_8(G_nj+1)+yg_8(G_nj)+yg_8(G_nj-1))
+      do j=-2,-G_nj+1,-1
+         yg_8(j) = 1.01*yg_8(j+1)
+      end do
+      do j=G_nj+3,2*G_nj
+         yg_8(j) = 1.01*yg_8(j-1)
+      end do
+
+      do i=1-G_ni,2*G_ni-1
+      xgu_8(i)=0.5D0 *(xg_8(i+1)+xg_8(i))
+      enddo
+      do j=1-G_nj,2*G_nj-1
+      ygv_8(j)= 0.5D0*(yg_8(j+1)+yg_8(j))
+      enddo
 !
       do j=1,G_nj
       do i=1,G_niu
          xx_8(i,j)=xgu_8(i)
-         yy_8(i,j)=G_yg_8(j)
+         yy_8(i,j)=yg_8(j)
       enddo
       enddo
       xmin=1-G_ni
@@ -70,8 +100,8 @@
 !h1, h2 used in this routine is ok as it is a close estimate for
 !creating YY pattern exchange and it works on the global tile
 
-      h1=G_xg_8(2)-G_xg_8(1)
-      h2=G_yg_8(2)-G_yg_8(1)
+      h1=xg_8(2)-xg_8(1)
+      h2=yg_8(2)-yg_8(1)
 !
 ! And allocate temp vectors needed for counting for each processor
 !
@@ -96,9 +126,9 @@
          x_a=x_a+(acos(-1.D0))
 
          call localise_blend(imx1,imy1,x_a,y_a, &
-                          xgu_8,G_yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
+                          xgu_8,yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
          call localise_blend(imx2,imy2,x_a,y_a, &
-                          G_xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
+                          xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
 
 
 ! check if this point can be found in the other grid
@@ -260,9 +290,9 @@
          call smat(s,x_a,y_a,x_d,y_d)
          x_a=x_a+(acos(-1.D0))
          call localise_blend(imx1,imy1,x_a,y_a, &
-                          xgu_8,G_yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
+                          xgu_8,yg_8,xmin,xmaxu,ymin,ymax,h1,h2)
          call localise_blend(imx2,imy2,x_a,y_a, &
-                          G_xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
+                          xg_8,ygv_8,xmin,xmax,ymin,ymaxv,h1,h2)
 
 ! check if this point can be found in the other grid
 ! It is important to do this check before min-max
