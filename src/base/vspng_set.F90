@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -26,9 +26,10 @@
 #include "lun.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 #include "ptopo.cdk"
 
-      integer i,j,k,istat,err
+      integer i,j,k
       real*8, dimension(:), allocatable :: weigh
       real*8 pis2_8,pbot_8,delp_8,c_8,nutop
 !
@@ -55,12 +56,12 @@
       j=G_nj/2
       c_8 = min ( G_xg_8(i+1) - G_xg_8(i), G_yg_8(j+1) - G_yg_8(j) )
 
-      nutop = Vspng_coeftop*Cstv_dt_8/(rayt_8*c_8)**2
+      nutop = Vspng_coeftop*Cstv_dt_8/(Dcst_rayt_8*c_8)**2
       Vspng_niter = int(8.d0*nutop+0.9999999)
 
       if (Lun_out.gt.0) then
          write (Lun_out,2002) Vspng_coeftop,Vspng_nk,nutop,Vspng_niter
-         write (Lun_out,3001) 
+         write (Lun_out,3001)
       endif
 
       nutop = dble(Vspng_coeftop)/max(1.d0,dble(Vspng_niter))
@@ -69,10 +70,10 @@
          Vspng_coef_8(k) = weigh(k) * nutop
          if (Lun_out.gt.0) write (Lun_out,2005) &
                        Vspng_coef_8(k)      ,&
-                       Vspng_coef_8(k)*Cstv_dt_8/(rayt_8*c_8)**2,&
+                       Vspng_coef_8(k)*Cstv_dt_8/(Dcst_rayt_8*c_8)**2,&
                        exp(Ver_z_8%m(k)),k
-         Vspng_coef_8(k)= Vspng_coef_8(k) * & 
-                          Cstv_dt_8/(rayt_8*rayt_8)
+         Vspng_coef_8(k)= Vspng_coef_8(k) * &
+                          Cstv_dt_8/(Dcst_rayt_8*Dcst_rayt_8)
       end do
 
  1001 format(/,'INITIALIZATING SPONGE LAYER PROFILE ',  &

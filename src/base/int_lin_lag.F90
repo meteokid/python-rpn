@@ -12,9 +12,11 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r int_lin_lag - to do YY linear interpolation for scalar 
+!**s/r int_lin_lag - to do YY linear interpolation for scalar
        subroutine int_lin_lag3(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Nk,Xi,Yi,NLEN)
 
+
+       use geomh
        implicit none
 #include <arch_specific.hf>
 
@@ -30,9 +32,6 @@
 !revision
 !  v4_8    V.Lee correction in interpolation (MPI precision sensitive)
 !
-
-#include "geomg.cdk"
-
        integer i,j,k,Im, Jm
        real*8 FF_8,betax,betax1,betay,betay1
 
@@ -45,9 +44,9 @@
 
        Im = Imx(i)
        Jm = Imy(i)
-       betax= (Xi(i)-Geomgx(Im))/Geomg_hx_8
+       betax= (Xi(i)-Geomgx(Im))/geomh_hx_8
        betax1= (1.0d0-betax)
-       betay=(Yi(i)-Geomgy(Jm))/Geomg_hy_8
+       betay=(Yi(i)-Geomgy(Jm))/geomh_hy_8
        betay1=1.0d0-betay
    Do 300 k=1,Nk
        FF_8 = betay1*(betax1*F(Im,Jm,k)+betax*F(Im+1,Jm,k))+ &
@@ -59,8 +58,10 @@
 !$omp end parallel
       return
       end
-       subroutine int_lin_lag2(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Xi,Yi)
 
+      subroutine int_lin_lag2(FF,F,Imx,Imy,Geomgx,Geomgy,minx,maxx,miny,maxy,Xi,Yi)
+
+       use geomh
        implicit none
 #include <arch_specific.hf>
 !
@@ -70,7 +71,6 @@
 !  v4_8    V.Lee correction in interpolation (MPI precision sensitive)
 !
 
-#include "geomg.cdk"
        integer Imx,Imy,minx,miny,maxx,maxy
        integer Im, Jm
        real*8 F(minx:maxx,miny:maxy),geomgx(Minx:Maxx),geomgy(Miny:Maxy)
@@ -79,44 +79,44 @@
 
        Im = Imx
        Jm = Imy
-	   betax= (Xi-Geomgx(Im))/Geomg_hx_8
+           betax= (Xi-Geomgx(Im))/geomh_hx_8
            betax1= (1.0-betax)
-           betay=(Yi-Geomgy(Jm))/Geomg_hy_8
+           betay=(Yi-Geomgy(Jm))/geomh_hy_8
            betay1=1.0-betay
            FF= betay1*(betax1*F(Im,Jm)+betax*F(Im+1,Jm))+ &
                     betay*(betax1*F(Im,Jm+1)+betax*F(Im+1,Jm+1))
       return
-      end 
-       subroutine int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi, &
-                                            Yi,x,y,h1,h2) 
+      end
 
+      subroutine int_lin_lag(FF,F,Imx,Imy,Ni,Nj,Nx,Ny,Xi, &
+                                            Yi,x,y)
+
+       use geomh
        implicit none
 !
 !author
 !           Abdessamad Qaddouri - October 2009
 !
-#include "geomg.cdk"
 
        integer Ni,Nj,Imx(Ni,Nj),Imy(Ni,Nj),Nx,Ny
-       integer k,i,j,Mx(Ni,Nj),My(Ni,Nj)
-       real*8  W1,W2,W3,W4,X1,XX,X2,X3,X4 
+       integer i,j
        integer Im, Jm
-       real*8 YY,y1,y2,y3,y4,FF(Ni,Nj),Fi(Ni*Nj)
+       real*8 FF(Ni,Nj)
        real*8 F(Nx,Ny),x(*),y(*)
-       real*8 Xi(Ni,Nj),Yi(Ni,Nj),h1,h2
+       real*8 Xi(Ni,Nj),Yi(Ni,Nj)
        real*8 betax,betax1,betay,betay1
 
-       Do j=1, Nj
-	Do i = 1, Ni
-	   Im = imx(i,j)
-	   Jm = imy(i,j)
-	   betax= ( Xi(i,j)-x(Im))/Geomg_hx_8
+       do j=1, Nj
+        do i = 1, Ni
+           Im = imx(i,j)
+           Jm = imy(i,j)
+           betax= ( Xi(i,j)-x(Im))/geomh_hx_8
            betax1= (1.0-betax)
-           betay=(Yi(i,j)-y(Jm))/Geomg_hy_8
+           betay=(Yi(i,j)-y(Jm))/geomh_hy_8
            betay1=1.0-betay
            FF(i,j)= betay1*(betax1*F(Im,Jm)+betax*F(Im+1,Jm))+ &
                     betay*(betax1*F(Im,Jm+1)+betax*F(Im+1,Jm+1))
-	Enddo
+        enddo
       enddo
       return
-      end 
+      end

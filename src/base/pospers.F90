@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,6 +20,7 @@
       subroutine pospers
 !
       use gmm_vth
+      use geomh
       implicit none
 #include <arch_specific.hf>
 !
@@ -31,14 +32,13 @@
 ! V4_10 - Plante A.         - Thermo upstream positions
 !
 !object
-!	
+!
 !arguments
 !     none
 !
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 !
@@ -61,11 +61,11 @@
 !
 !
       do k = 1, l_nk
-      do j = 1, l_nj 
+      do j = 1, l_nj
       do i = 1, l_ni
          ijk=(k-1)*nij+(j-1)*l_ni+i
-         xth(ijk)  = Geomg_x_8(i)
-         yth(ijk)  = Geomg_y_8(j)
+         xth(ijk)  = geomh_x_8(i)
+         yth(ijk)  = geomh_y_8(j)
          zth(ijk)  = Ver_z_8%m(k)
       enddo
       enddo

@@ -28,7 +28,7 @@
       implicit none
 #include <arch_specific.hf>
 
-      integer, intent(IN) ::  F_fnitraj ! number of iterations to 
+      integer, intent(IN) ::  F_fnitraj ! number of iterations to
 !                                         compute upstream positions
 
 #include "gmm.hf"
@@ -37,10 +37,7 @@
 #include "lun.cdk"
 #include "nl.cdk"
 
-!TODO : remove the following when removing GU
-#include "geomg.cdk"
-
-      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, j, icln
+      integer i0, in, j0, jn, k0, ni, nj, iln, gmmstat, icln
       real*8, dimension (:,:,:), allocatable :: rhs_sol, lhs_sol
       real, pointer, dimension(:,:,:)  :: hut1, hut0
 !
@@ -107,7 +104,7 @@
 !        Compute the right-hand sides of the governing equations
          call rhs ( orhsu, orhsv, orhsc, orhst, orhsw, orhsf,&
                     ut1, vt1, wt1               ,&
-                    tt1, st1, zdt1, qt1, hut1,sls, fis0     ,&
+                    tt1, st1, zdt1, qt1, sls, fis0     ,&
                     l_minx,l_maxx,l_miny,l_maxy, l_nk )
 
          call timing_stop (20)
@@ -121,14 +118,14 @@
       endif
 
 !     Perform Semi-Lagrangian advection
-      
+
       call timing_start2 (21, 'ADV_MAIN', 10)
       call  adv_main ( F_fnitraj, Orh_icn               ,&
                        ut0, vt0 , zdt0, ut1, vt1 , zdt1 ,&
                        orhsu, rhsu, orhsv, rhsv, orhsc  ,&
                        rhsc, orhst,  rhst, orhsf, rhsf  ,&
                        orhsw, rhsw                      ,&
-                        l_minx,l_maxx,l_miny,l_maxy,l_nk )        
+                        l_minx,l_maxx,l_miny,l_maxy,l_nk )
       call timing_stop(21)
 
       call timing_start2 (22, 'PRE', 10)

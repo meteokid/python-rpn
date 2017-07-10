@@ -13,12 +13,13 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p psadj_LAM - Adjust surface pressure for conservation when LAM using Flux calculations based on Aranami et al. (2015)  
+!**s/p psadj_LAM - Adjust surface pressure for conservation when LAM using Flux calculations based on Aranami et al. (2015)
 
       subroutine psadj_LAM (F_cub_o,F_cub_i,Minx,Maxx,Miny,Maxy,F_nk,k0)
 
       use gmm_vt1
       use gmm_vt0
+      use geomh
       implicit none
 
 #include <arch_specific.hf>
@@ -28,8 +29,8 @@
       integer,           intent(in) :: Minx,Maxx,Miny,Maxy                !I, Dimension H
       integer,           intent(in) :: k0                                 !I, Scope of operator
       integer,           intent(in) :: F_nk                               !I, Number of vertical levels
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)   :: F_cub_o !I: High-order SL solution FLUX_out 
-      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)   :: F_cub_i !I: High-order SL solution FLUX_in 
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)   :: F_cub_o !I: High-order SL solution FLUX_out
+      real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(in)   :: F_cub_i !I: High-order SL solution FLUX_in
 
 !Author Monique Tanguay
 !
@@ -39,7 +40,6 @@
 !**/
 #include "glb_ld.cdk"
 #include "gmm.hf"
-#include "geomg.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
 #include "psadj.cdk"
@@ -60,7 +60,7 @@
       if (Lun_out>0) write(Lun_out,*) 'PSADJ LAM is done for DRY AIR (REAL*8)'
       if (Lun_out>0) write(Lun_out,*) '--------------------------------------'
 
-      iteration = 1 
+      iteration = 1
 
       communicate_S = "GRID"
 
@@ -83,7 +83,7 @@
 !$omp parallel shared(sumq,tr,pr_p0_dry_8)
 !$omp do
          do k=k0,l_nk
-            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k) 
+            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
          end do
 !$omp end do
 
@@ -111,7 +111,7 @@
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
 
-            l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+            l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
          enddo
          enddo
@@ -141,7 +141,7 @@
 !$omp parallel shared(sumq,tr,pr_p0_dry_8,pr_fl_dry_8)
 !$omp do
          do k=k0,l_nk
-            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k) 
+            sumq(1:l_ni,1:l_nj,k) = sumq(1:l_ni,1:l_nj,k) + tr(1:l_ni,1:l_nj,k)
          end do
 !$omp end do
 
@@ -167,7 +167,7 @@
             do k=k0,l_nk-1
             do i=1,l_ni
                pr_fl_dry_8(i,j)= pr_fl_dry_8(i,j) + &
-                    (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))*(F_cub_i(i,j,k) - F_cub_o(i,j,k)) 
+                    (1.-sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))*(F_cub_i(i,j,k) - F_cub_o(i,j,k))
             enddo
             end do
             do i=1,l_ni
@@ -185,7 +185,7 @@
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
 
-            l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+            l_avg_8(1) = l_avg_8(1) + pr_p0_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
          enddo
          enddo
@@ -197,7 +197,7 @@
          do j=1,l_nj
          do i=1,l_ni
 
-            l_avg_8(2) = l_avg_8(2) + pr_fl_dry_8(i,j) * Geomg_area_8(i,j) * Geomg_mask_8(i,j)
+            l_avg_8(2) = l_avg_8(2) + pr_fl_dry_8(i,j) * geomh_area_8(i,j) * geomh_mask_8(i,j)
 
          enddo
          enddo
@@ -207,7 +207,7 @@
          g_avg_ps_dry_0_8 = g_avg_8(1) * PSADJ_scale_8
          g_avg_fl_dry_0_8 = g_avg_8(2) * PSADJ_scale_8
 
-         !Correct surface pressure in order to preserve dry air mass on CORE when taking mass FLUX into account   
+         !Correct surface pressure in order to preserve dry air mass on CORE when taking mass FLUX into account
          !-----------------------------------------------------------------------------------------------------
          pr_p0_0_8 = pr_p0_0_8 + (g_avg_ps_dry_1_8 - g_avg_ps_dry_0_8) + g_avg_fl_dry_0_8
 
@@ -237,4 +237,4 @@
 
 1004 format(1X,A13,E19.12,A3,E19.12)
 
-      end subroutine psadj_LAM 
+      end subroutine psadj_LAM

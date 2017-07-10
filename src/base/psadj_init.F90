@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,10 +16,13 @@
 !**s/r psadj_init - Estimate area and air mass at initial time
 
       subroutine psadj_init (F_kount)
+
+      use gem_options
       use gmm_vt1
       use gmm_geof
       use grid_options
-      use gem_options
+      use geomh
+
       implicit none
 #include <arch_specific.hf>
 
@@ -27,83 +30,66 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "psadj.cdk"
 #include "cstv.cdk"
-#include "rstr.cdk"
 
       integer err,i,j,istat
       logical, save :: done = .false.
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8 
-      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_w_1_8 
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk):: pr_m_8,pr_t_8
+      real*8,dimension(l_minx:l_maxx,l_miny:l_maxy)       :: pr_p0_1_8,pr_p0_w_1_8
       real*8 l_avg_8,x_avg_8
       character(len= 9) communicate_S
 !
 !     ---------------------------------------------------------------
 !
-      if ((Schm_psadj == 0) .or. (Cstv_dt_8*F_kount <= Iau_period)) goto 999
+      if ( Schm_psadj == 0 ) then
+         if ( Schm_psadj_print_L ) goto 999
+         return
+      endif
 
-      if (.not. done) then
+      if ( Schm_psadj <= 2 ) then
+         if ( Cstv_dt_8*F_kount <= Iau_period ) goto 999
+         if ( ( Schm_psadj == 1 ) .and. done )  goto 999
+      endif
 
-         allocate (Psadj_masktopo(l_ni,l_nj))
-
-         istat = gmm_get(gmmk_fis0_s,fis0)
+      done= .true.
 
       !Estimate area
       !-------------
+      istat = gmm_get(gmmk_fis0_s,fis0)
+      l_avg_8 = 0.0d0
+      x_avg_8 = 0.0d0
+      do j=1+pil_s,l_nj-pil_n
+      do i=1+pil_w,l_ni-pil_e
+         l_avg_8 = l_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
+         if(fis0(i,j).gt.1.) &
+            x_avg_8 = x_avg_8 + geomh_area_8(i,j) * geomh_mask_8(i,j)
+      enddo
+      enddo
 
-         l_avg_8= 0.0d0
-         x_avg_8= 0.0d0
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            l_avg_8 = l_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-            if(fis0(i,j).gt.1.) &
-            x_avg_8 = x_avg_8 + Geomg_area_8(i,j) * Geomg_mask_8(i,j)
-         enddo
-         enddo
-         
-         communicate_S = "GRID"
-         if (Grd_yinyang_L) communicate_S = "MULTIGRID"
-         
-         call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
-           "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      communicate_S = "GRID"
+      if (Grd_yinyang_L) communicate_S = "MULTIGRID"
 
-         call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8, 1, &
-           "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
+      call RPN_COMM_allreduce (l_avg_8, PSADJ_scale_8, 1, &
+        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-         PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
-         PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
-         PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
-         
-         do j=1+pil_s,l_nj-pil_n
-         do i=1+pil_w,l_ni-pil_e
-            if(fis0(i,j).gt.1.) then
-               Psadj_masktopo(i,j) = PSADJ_fact_8
-            else
-               Psadj_masktopo(i,j) = Cstv_psadj_8
-            endif
-         end do
-         end do
+      call RPN_COMM_allreduce (x_avg_8, PSADJ_fact_8, 1, &
+        "MPI_DOUBLE_PRECISION","MPI_SUM",communicate_S,err)
 
-      endif
+      PSADJ_fact_8  = PSADJ_fact_8/PSADJ_scale_8
+      PSADJ_scale_8 = 1.0d0/PSADJ_scale_8
+      PSADJ_fact_8  =(1.0d0-(1.0d0-PSADJ_fact_8)*Cstv_psadj_8)/PSADJ_fact_8
 
-      if (Schm_psadj == 1) then
-         if (done .or. Rstri_rstn_L) then
-            done = .true.
-            goto 999
-         endif
-      endif
+      istat = gmm_get(gmmk_st1_s,st1)
 
       !Obtain pressure levels
       !----------------------
-      istat = gmm_get(gmmk_st1_s , st1)
-
       call calc_pressure_8 ( pr_m_8, pr_t_8, pr_p0_1_8, st1, &
                              l_minx,l_maxx,l_miny,l_maxy,l_nk )
 
       !Compute dry surface pressure at initial time (- Cstv_pref_8)
       !------------------------------------------------------------
-      if (Schm_psadj==2) then
+      if (Schm_psadj>=2) then
 
          call dry_sfc_pressure_8 ( pr_p0_w_1_8, pr_m_8, pr_p0_1_8, &
                                    l_minx,l_maxx,l_miny,l_maxy,l_nk,'P' )
@@ -121,8 +107,8 @@
       l_avg_8 = 0.0d0
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
-         l_avg_8 = l_avg_8 + pr_p0_w_1_8(i,j) * Geomg_area_8(i,j) &
-                                                 * Geomg_mask_8(i,j) 
+         l_avg_8 = l_avg_8 + pr_p0_w_1_8(i,j) * geomh_area_8(i,j) &
+                                                 * geomh_mask_8(i,j)
       enddo
       enddo
 
@@ -131,11 +117,10 @@
 
       PSADJ_g_avg_ps_initial_8 = PSADJ_g_avg_ps_initial_8 &
                                * PSADJ_scale_8
-      done = .true.
 
   999 continue
 
-      if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP") 
+      if (Schm_psadj_print_L) call stat_psadj (1,"BEFORE DYNSTEP")
 !
 !     ---------------------------------------------------------------
 !

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -14,19 +14,19 @@
 !---------------------------------- LICENCE END ---------------------------------
 
 module inp_base
-  use iso_c_binding
-  use vertical_interpolation, only: vertint2
-  use vGrid_Descriptors
-  use gem_options
+   use iso_c_binding
+   use vertical_interpolation, only: vertint2
+   use vGrid_Descriptors
+   use gem_options
+   use geomh
+   use inp_mod
+   use tdpack
 
-      use inp_mod
-      use tdpack
   implicit none
 #include <arch_specific.hf>
 #include <rmnlib_basics.hf>
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "geomn.cdk"
 #include "hgc.cdk"
 #include "ver.cdk"
 
@@ -34,7 +34,7 @@ module inp_base
 
 contains
 
-!**s/r inp_get - Read variable F_var_S valid at F_datev, perform hor. 
+!**s/r inp_get - Read variable F_var_S valid at F_datev, perform hor.
 !                interpolation to F_hgrid_S hor. grid and perform
 !                vertical interpolation to F_vgrid_S vertical grid
 
@@ -114,18 +114,16 @@ contains
 !     local variables
       integer, external :: RPN_COMM_shuf_ezdist, &
                            samegrid_gid, samegrid_rot, inp_is_real_wind
-      character*1 typ,grd
-      character*4 nomvar,var
-      character*12 lab,interp_S
-      character*54 vcode_S
-      logical diag_lvl_L
+      character(len=1) typ,grd
+      character(len=4) nomvar,var
+      character(len=12) lab,interp_S
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer i,err, nz, n1,n2,n3, nrec, liste(nlis),lislon,cnt
       ! Remove the following line by 2021
       integer ni_dest,nj_dest,ut1_is_urt1
       integer subid,nicore,njcore,datev
-      integer mpx,local_nk,irest,kstart, src_gid, vcode, nkk, ip1
+      integer mpx,local_nk,irest,kstart, src_gid, vcode, ip1
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
@@ -246,20 +244,20 @@ contains
          if (local_nk.gt.0) then
 
             if (F_hgrid_S == 'Q') then
-               posx => Geomn_lonQ
-               posy => Geomn_latQ
+               posx => geomh_lonQ
+               posy => geomh_latQ
             endif
             if (F_hgrid_S == 'U') then
-               posx => Geomn_lonF
-               posy => Geomn_latQ
+               posx => geomh_lonF
+               posy => geomh_latQ
             endif
             if (F_hgrid_S == 'V') then
-               posx => Geomn_lonQ
-               posy => Geomn_latF
+               posx => geomh_lonQ
+               posy => geomh_latF
             endif
             if (F_hgrid_S == 'F') then
-               posx => Geomn_lonF
-               posy => Geomn_latF
+               posx => geomh_lonF
+               posy => geomh_latF
             endif
 
             dstf_gid = ezgdef_fmem (ni_dest, nj_dest, 'Z', 'E', &
@@ -308,7 +306,7 @@ contains
  999  call rpn_comm_bcast ( lislon, 2, "MPI_INTEGER", Inp_iobcast, &
                             "grid", err ) !NOTE: bcas listlon AND nz
       F_nka= lislon
-      ! Remove the following line by 2021 
+      ! Remove the following line by 2021
       call rpn_comm_allreduce ( ut1_is_urt1, Inp_ut1_is_urt1, 1, &
                                 "MPI_INTEGER", "MPI_MAX", "grid", err )
 
@@ -357,26 +355,26 @@ contains
       end function inp_read
 
 !**s/r inp_read_uv - Read horizontal winds UU,VV F valid at F_datev
-!                    and perform vectorial horizontal interpolation 
+!                    and perform vectorial horizontal interpolation
 !                    on proper Arakawa grid u and v respectively
 
       subroutine inp_read_uv ( F_u, F_v, F_target_S, F_ip1, F_nka )
 
-      character*(*)                     , intent(IN)  :: F_target_S
-      integer                           , intent(OUT) :: F_nka
-      integer, dimension(:    ), pointer, intent(OUT) :: F_ip1
-      real   , dimension(:,:,:), pointer, intent(OUT) :: F_u, F_v
+      character*(*)                     , intent(in)  :: F_target_S
+      integer                           , intent(out) :: F_nka
+      integer, dimension(:    ), pointer, intent(out) :: F_ip1
+      real   , dimension(:,:,:), pointer, intent(out) :: F_u, F_v
 
 !     local variables
       integer, external :: RPN_COMM_shuf_ezdist, samegrid_rot
-      character*1 typ,grd
-      character*4 var
-      character*12 lab
+      character(len=1) typ,grd
+      character(len=4) var
+      character(len=12) lab
       logical, dimension (:), allocatable :: zlist_o
       integer, parameter :: nlis = 1024
       integer liste_u(nlis),liste_v(nlis),lislon
       integer i,err, nz, n1,n2,n3, nrec, cnt, same_rot, ni_dest, nj_dest
-      integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode, nkk
+      integer mpx,local_nk,irest,kstart, src_gid, dst_gid, vcode
       integer dte, det, ipas, p1, p2, p3, g1, g2, g3, g4, bit, &
               dty, swa, lng, dlf, ubc, ex1, ex2, ex3
       integer, dimension(:  ), allocatable :: zlist
@@ -403,7 +401,7 @@ contains
          err= fstprm (liste_u(1), DTE, DET, IPAS, n1, n2, n3,&
                   BIT, DTY, P1, P2, P3, TYP, VAR, LAB, GRD,&
                   G1,G2,G3,G4,SWA,LNG,DLF,UBC,EX1,EX2,EX3)
-                  
+
          src_gid = ezqkdef (n1, n2, GRD, g1, g2, g3, g4, Inp_handle)
 !         same_rot= samegrid_rot ( src_gid, &
 !                        Hgc_ig1ro,Hgc_ig2ro,Hgc_ig3ro,Hgc_ig4ro)
@@ -448,10 +446,10 @@ contains
 
             if (trim(F_target_S) == 'UV') then
 
-               posxu => Geomn_lonF
-               posyu => Geomn_latQ
-               posxv => Geomn_lonQ
-               posyv => Geomn_latF
+               posxu => geomh_lonF
+               posyu => geomh_latQ
+               posxv => geomh_lonQ
+               posyv => geomh_latF
 
                write(6,1001) 'Interpolating: UU, nka= ',&
                              lislon,', valid: ',Inp_datev,' on U grid'
@@ -491,8 +489,8 @@ contains
 
             else
 
-               posxu => Geomn_lonQ
-               posyu => Geomn_latQ
+               posxu => geomh_lonQ
+               posyu => geomh_latQ
 
                write(6,1001) 'Interpolating: UV, nka= ',&
                               lislon,', valid: ',Inp_datev,' on Q grid'

@@ -19,7 +19,7 @@
                            F_filtqq, F_coefqq, F_absvor_L, &
                            Minx,Maxx,Miny,Maxy,Nk )
       use dynkernel_options
-      use tdpack
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -36,8 +36,7 @@
 ! v4_80 - Desgagne M.       - initial version
 
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
+#include "dcst.cdk"
 
       integer i, j, k, i0, in, j0, jn
       real deg2rad
@@ -60,10 +59,10 @@
          do j = j0, jn
          do i = i0, in
             F_QR(i,j,k) = &
-            ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomg_invDXv_8(j)) &
-          - ( (F_uu(i,j+1,k)*geomg_cy_8(j+1)  &
-             - F_uu(i,j  ,k)*geomg_cy_8(j  )) &
-             * geomg_invDY_8 * geomg_invcyv_8(j))
+            ((F_vv(i+1,j,k) - F_vv(i,j,k)) * geomh_invDXv_8(j)) &
+          - ( (F_uu(i,j+1,k)*geomh_cy_8(j+1)  &
+             - F_uu(i,j  ,k)*geomh_cy_8(j  )) &
+             * geomh_invDY_8 * geomh_invcyv_8(j))
          end do
          end do
          F_QR(1:i0-1,:,k) = 0. ; F_QR(in+1:l_ni,:,k)= 0.
@@ -78,8 +77,8 @@
          do k =  1, Nk
             do j = j0, jn
             do i = i0, in
-               F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*omega_8 &
-                           * sin(Geomn_latrx(i,j)*deg2rad)
+               F_QQ(i,j,k)= F_QR(i,j,k) + 2.0*Dcst_omega_8 &
+                           * sin(geomh_latrx(i,j)*deg2rad)
             end do
             end do
             F_QQ(1:i0-1,:,k) = 0. ; F_QQ(in+1:l_ni,:,k)= 0.

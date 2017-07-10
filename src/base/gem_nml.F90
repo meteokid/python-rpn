@@ -29,7 +29,7 @@
       integer, external :: fnom, canonical_nml
       character*64 dumc_S
       logical dum_L
-      integer i,k,nrec,err,unf
+      integer err,unf
 !
 !-------------------------------------------------------------------
 !
@@ -48,7 +48,7 @@
       if (F_namelistf_S .ne. '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110 
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
          rewind(unf)
          read (unf, nml=gem_cfgs, end = 9120, err=9120)
          rewind(unf)

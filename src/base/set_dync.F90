@@ -34,6 +34,7 @@
 #include "opr.cdk"
 #include "sol.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 #include "ver.cdk"
 
       integer k,err,k0
@@ -77,7 +78,7 @@
              (Rgasd_8*Ver_Tstar_8%t(k)*(cappa_8+Ver_epsi_8(k)))
       enddo
 
-      Cstv_hco0_8 = rayt_8**2
+      Cstv_hco0_8 = Dcst_rayt_8**2
       Cstv_hco1_8 = zero
       Cstv_hco2_8 = one
 

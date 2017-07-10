@@ -16,6 +16,7 @@
 !
       subroutine yyg_nestuv (F_u, F_v, Minx,Maxx,Miny,Maxy, Nk )
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
       integer  Minx,Maxx,Miny,Maxy, Nk
@@ -37,7 +38,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 !
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
@@ -81,7 +81,7 @@
 
  1001 format(3X,'NEST YY Boundary ConditionS: (S/R yyg_nestuv)')
 
-      call timing_stop (6)  
+      call timing_stop (6)
 !
 !----------------------------------------------------------------------
 !

@@ -28,7 +28,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "glb_pil.cdk"
 #include "yyg_pil0.cdk"
 
@@ -38,7 +37,7 @@
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  t,p,s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a   
+      real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
@@ -136,7 +135,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk)) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -147,10 +146,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 ! East section
@@ -172,7 +171,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -183,10 +182,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! South section
       do j=1,Glb_pil_s
@@ -208,7 +207,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -219,10 +218,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! North section
       do j=G_nj-Glb_pil_n+1,G_nj
@@ -245,7 +244,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -256,19 +255,19 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! Obtain sum of elements to send and receive for each processor
 ! and the total memory needed to store and receive for each processor
 !
-     Pil0_send_all=0 
-     Pil0_recv_all=0 
+     Pil0_send_all=0
+     Pil0_recv_all=0
      Pil0_sendmaxproc=0
      Pil0_recvmaxproc=0
-     
+
      do kk=1,Ptopo_numproc
         Pil0_send_all=send_len(kk)+Pil0_send_all
         Pil0_recv_all=recv_len(kk)+Pil0_recv_all
@@ -291,7 +290,7 @@
       Pil0_send_adr(:) = 0
 
 !    print*,'Pil0_sendmaxproc=',Pil0_sendmaxproc,'recvmaxproc=',Pil0_recvmaxproc
-       
+
      ksend=0
      krecv=0
      Pil0_send_all=0
@@ -316,7 +315,7 @@
             Pil0_recv_adr(krecv)= Pil0_recv_all
             Pil0_recv_all= Pil0_recv_all + Pil0_recv_len(krecv)
         endif
-            
+
      enddo
 !    print *,'krecv=',krecv,'Pil0_recvmaxproc=',Pil0_recvmaxproc
 !    print *,'ksend=',ksend,'Pil0_sendmaxproc=',Pil0_sendmaxproc
@@ -389,7 +388,7 @@
                     Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
                     Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -409,10 +408,10 @@
                     Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
                     Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 ! East section
@@ -439,7 +438,7 @@
                     Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
                     Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -459,10 +458,10 @@
                     Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
                     Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! South section
       do j=1,Glb_pil_s
@@ -489,7 +488,7 @@
                     Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
                     Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -509,10 +508,10 @@
                     Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
                     Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! North section
       do j=G_nj-Glb_pil_n+1,G_nj
@@ -540,7 +539,7 @@
                     Pil0_recv_i(Pil0_recv_adr(kk)+recv_len(kk))=ii
                     Pil0_recv_j(Pil0_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -560,10 +559,10 @@
                     Pil0_send_s3(Pil0_send_adr(kk)+send_len(kk))=s(2,1)
                     Pil0_send_s4(Pil0_send_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !Check receive lengths from each processor
 !     do ki=1,Pil0_recvmaxproc
 !        kk=Pil0_recvproc(ki)
@@ -589,7 +588,7 @@
 
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
-       
+
 
 !
       return

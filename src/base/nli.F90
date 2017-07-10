@@ -21,8 +21,10 @@
                        F_u  , F_v  , F_t    , F_s  , F_zd , F_q   , &
                        F_rhs, F_rc , F_sl   , F_fis, F_nb , F_hu  , &
                        Minx,Maxx,Miny,Maxy, Nk , ni,nj, i0,j0,in,jn,k0, icln )
+      use coriolis
       use grid_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -58,11 +60,10 @@
 !                           - Explicit integration of metric terms (optional)
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "cori.cdk"
 #include "ptopo.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 #include "lun.cdk"
 
       logical, save :: done=.false.
@@ -72,7 +73,7 @@
               t_interp, mu_interp, u_interp, v_interp, mydelta_8
       real*8 , dimension(i0:in,j0:jn) :: xtmp_8, ytmp_8
       real*8, parameter :: one=1.d0, half=0.5d0, &
-                           alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0  
+                           alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
       real, dimension(:,:,:), pointer :: BsPq, BsPrq, FI, MU
       real*8, dimension(:,:,:), pointer :: Afis
       save MU
@@ -105,17 +106,17 @@
                       G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
       endif
 
-      c1 = rayt_8**2
+      c1 = Dcst_rayt_8**2
 
       mydelta_8 = 0.d0
-      if(Schm_capa_var_L) mydelta_8 = 0.233d0
+      if (Schm_capa_var_L) mydelta_8 = 0.233d0
 
       k0t=k0
-      if(Schm_opentop_L) k0t=k0-1
+      if (Schm_opentop_L) k0t=k0-1
       nij = (in - i0 +1)*(jn - j0 +1)
 
       onept= 0
-      if(Grd_yinyang_L) onept=1
+      if (Grd_yinyang_L) onept=1
 !
 !***********************************************************
 ! The nonlinear deviation of horizontal momentum equations *
@@ -156,16 +157,16 @@
                   Afis(i,j,k)= (alpha1*F_u(i-2,j,k) + alpha2*F_u(i-1,j,k) +     &
                                 alpha2*F_u(i,j,k)   + alpha1*F_u(i+1,j,k) ) *     &
                               (  F_fis(i-2,j)/12.0d0        - 2.0d0*F_fis(i-1,j)/3.0d0                    &
-                               + 2.0d0*F_fis(i+1,j)/3.0d0   - F_fis(i+2,j)/12.0d0 ) * geomg_invDXMu_8(j)  &
+                               + 2.0d0*F_fis(i+1,j)/3.0d0   - F_fis(i+2,j)/12.0d0 ) * geomh_invDXMu_8(j)  &
                             +  (alpha1*F_v(i,j-2,k) + alpha2*F_v(i,j-1,k)   +     &
                                 alpha2*F_v(i,j  ,k) + alpha1*F_v(i,j+1,k))  *     &
                               (  F_fis(i,j-2)/12.0d0        - 2.0d0*F_fis(i,j-1)/3.0d0                    &
-                               + 2.0d0*F_fis(i,j+1)/3.0d0   - F_fis(i,j+2)/12.0d0 ) * geomg_invDYMv_8(j)  
+                               + 2.0d0*F_fis(i,j+1)/3.0d0   - F_fis(i,j+2)/12.0d0 ) * geomh_invDYMv_8(j)
             enddo
             enddo
          enddo
 !$omp enddo
-      endif        
+      endif
 
 !$omp do
        do k=1,l_nk+1
@@ -190,7 +191,7 @@
 
 !     V barY stored in wk2
 !     ~~~~~~~~~~~~~~~~~~~~
-      
+
       do j= j0, jn
       do i= i0u, inu
 
@@ -201,27 +202,27 @@
          mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and mu terms: RT barXZ * dBsPq/dX + mu barXZ * dfi'/dX
-!                                        - RTstr barZ * dBsPrq/dX         
+!                                        - RTstr barZ * dBsPrq/dX
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          barz  = Ver_wpM_8(k)*(F_t(i  ,j,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i  ,j,km)-Ver_Tstar_8%t(km))
          barzp = Ver_wpM_8(k)*(F_t(i+1,j,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i+1,j,km)-Ver_Tstar_8%t(km))
-         t_interp = (barz+barzp)*half 
+         t_interp = (barz+barzp)*half
 
          barz  = Ver_wpM_8(k)*Ver_Tstar_8%t(k)+Ver_wmM_8(k)*Ver_Tstar_8%t(km)
 
-         w1 = ( BsPq(i+1,j,k)  - BsPq(i,j,k)  ) * Geomg_invDXMu_8(j)
-         w2 = (   FI(i+1,j,k)  -   FI(i,j,k)  ) * Geomg_invDXMu_8(j)
-         w3 = (  F_q(i+1,j,k)  -  F_q(i,j,k)  ) * Geomg_invDXMu_8(j)
+         w1 = ( BsPq(i+1,j,k)  - BsPq(i,j,k)  ) * geomh_invDXMu_8(j)
+         w2 = (   FI(i+1,j,k)  -   FI(i,j,k)  ) * geomh_invDXMu_8(j)
+         w3 = (  F_q(i+1,j,k)  -  F_q(i,j,k)  ) * geomh_invDXMu_8(j)
 
          F_nu(i,j,k) = rgasd_8 * t_interp * w1 + mu_interp * w2 &
                      + (one-Cstv_rE_8)*rgasd_8 * barz * w3
-         
+
 
 !        Coriolis term & metric terms: - (f + tan(phi)/a * U ) * V barXY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          v_interp = 0.25d0*(F_v(i,j,k)+F_v(i,j-1,k)+F_v(i+1,j,k)+F_v(i+1,j-1,k))
 
-         F_nu(i,j,k) = F_nu(i,j,k) - ( Cori_fcoru_8(i,j) + geomg_tyoa_8(j) * F_u(i,j,k) ) * v_interp
+         F_nu(i,j,k) = F_nu(i,j,k) - ( Cori_fcoru_8(i,j) + geomh_tyoa_8(j) * F_u(i,j,k) ) * v_interp
 
       end do
       end do
@@ -238,7 +239,7 @@
          mu_interp = (barz+barzp)*half
 
 !        Pressure gradient and Mu term: RT' barYZ * dBsPq/dY + mu barYZ * dfi'/dY
-!                                     - RTstr barZ * dBsPrq/dY        
+!                                     - RTstr barZ * dBsPrq/dY
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          barz  = Ver_wpM_8(k)*(F_t(i,j  ,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i,j  ,km)-Ver_Tstar_8%t(km))
          barzp = Ver_wpM_8(k)*(F_t(i,j+1,k)-Ver_Tstar_8%t(k))+Ver_wmM_8(k)*(F_t(i,j+1,km)-Ver_Tstar_8%t(km))
@@ -246,9 +247,9 @@
 
          barz  = Ver_wpM_8(k)*Ver_Tstar_8%t(k)+Ver_wmM_8(k)*Ver_Tstar_8%t(km)
 
-         w1 = (  BsPq(i,j+1,k) -  BsPq(i,j,k) ) * Geomg_invDYMv_8(j)
-         w2 = (    FI(i,j+1,k) -    FI(i,j,k) ) * Geomg_invDYMv_8(j)
-         w3 = (   F_q(i,j+1,k) -   F_q(i,j,k) ) * Geomg_invDYMv_8(j)
+         w1 = (  BsPq(i,j+1,k) -  BsPq(i,j,k) ) * geomh_invDYMv_8(j)
+         w2 = (    FI(i,j+1,k) -    FI(i,j,k) ) * geomh_invDYMv_8(j)
+         w3 = (   F_q(i,j+1,k) -   F_q(i,j,k) ) * geomh_invDYMv_8(j)
 
          F_nv(i,j,k) = rgasd_8 * t_interp * w1 + mu_interp * w2 &
                      + (one-Cstv_rE_8)*rgasd_8 * barz * w3
@@ -257,7 +258,7 @@
 !        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
          u_interp = 0.25d0*(F_u(i,j,k)+F_u(i-1,j,k)+F_u(i,j+1,k)+F_u(i-1,j+1,k))
 
-         F_nv(i,j,k) = F_nv(i,j,k) + ( Cori_fcorv_8(i,j) + geomg_tyoav_8(j) * u_interp ) * u_interp
+         F_nv(i,j,k) = F_nv(i,j,k) + ( Cori_fcorv_8(i,j) + geomh_tyoav_8(j) * u_interp ) * u_interp
 
       end do
       end do
@@ -358,8 +359,8 @@
          end do
          end do
 
-         if(Cstv_Tstr_8.lt.0.) then        
-            dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k) 
+         if(Cstv_Tstr_8.lt.0.) then
+            dlnTstr_8=(Ver_Tstar_8%m(k+1)-Ver_Tstar_8%m(k))*Ver_idz_8%t(k)/Ver_Tstar_8%t(k)
             do j= j0, jn
             do i= i0, in
                w2=Ver_wpstar_8(k)*BsPrq(i,j,k+1)+Ver_wmstar_8(k)*half*(BsPrq(i,j,k)+BsPrq(i,j,km))
@@ -427,7 +428,7 @@
                               - Cstv_invT_8*F_fis(i,j))
             end do
             end do
-         endif 
+         endif
 
       end do
 !$omp enddo
@@ -442,8 +443,8 @@
          w2=Ver_igt_8*Ver_wmA_8(k)*Ver_onezero(k)
          do j = j0, jn
          do i = i0, in
-            ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomg_invDXM_8(j) &
-               + (F_nv(i,j,k)*geomg_cyM_8(j)-F_nv(i,j-1,k)*geomg_cyM_8(j-1))*Geomg_invDYM_8(j)
+            ndiv = (F_nu(i,j,k)-F_nu(i-1,j,k)) * geomh_invDXM_8(j) &
+               + (F_nv(i,j,k)*geomh_cyM_8(j)-F_nv(i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j)
             F_nc(i,j,k) = ndiv  - Cstv_invT_m_8 * ( F_nc(i,j,k) - w1*F_nw(i,j,k) - w2*F_nw(i,j,km) )
          end do
          end do

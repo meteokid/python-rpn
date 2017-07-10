@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!***s/r yyg_initvecbc2 - to initialize communication pattern for V field 
+!***s/r yyg_initvecbc2 - to initialize communication pattern for V field
 !       -vectorial interpolation (use U,V of other grid to find V value here)
 !
 
@@ -30,7 +30,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "glb_pil.cdk"
 #include "yyg_pilv.cdk"
 
@@ -43,7 +42,7 @@
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a   
+      real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
@@ -142,8 +141,8 @@
                     max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
-              
+             enddo
+
          endif
 
 ! check to send to who
@@ -156,10 +155,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 ! East section
@@ -189,7 +188,7 @@
                     max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -202,10 +201,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! South section
       do j=1,glb_pil_s
@@ -234,7 +233,7 @@
                     max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -247,10 +246,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! North section
       do j=G_njv-glb_pil_n+1,G_njv
@@ -280,7 +279,7 @@
                     max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -293,10 +292,10 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! Obtain sum of elements to send and receive for each processor
 ! and the total memory needed to store and receive for each processor
@@ -435,7 +434,7 @@
                     Pil_vrecv_i(Pil_vrecv_adr(kk)+recv_len(kk))=ii
                     Pil_vrecv_j(Pil_vrecv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -457,10 +456,10 @@
                     Pil_vsend_s1(Pil_vsend_adr(kk)+send_len(kk))=s(2,1)
                     Pil_vsend_s2(Pil_vsend_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 ! East section
@@ -495,7 +494,7 @@
                     Pil_vrecv_i(Pil_vrecv_adr(kk)+recv_len(kk))=ii
                     Pil_vrecv_j(Pil_vrecv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -517,10 +516,10 @@
                     Pil_vsend_s1(Pil_vsend_adr(kk)+send_len(kk))=s(2,1)
                     Pil_vsend_s2(Pil_vsend_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! South section
       do j=1,glb_pil_s
@@ -554,7 +553,7 @@
                     Pil_vrecv_i(Pil_vrecv_adr(kk)+recv_len(kk))=ii
                     Pil_vrecv_j(Pil_vrecv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -576,10 +575,10 @@
                     Pil_vsend_s1(Pil_vsend_adr(kk)+send_len(kk))=s(2,1)
                     Pil_vsend_s2(Pil_vsend_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 ! North section
       do j=G_njv-glb_pil_n+1,G_njv
@@ -614,7 +613,7 @@
                     Pil_vrecv_i(Pil_vrecv_adr(kk)+recv_len(kk))=ii
                     Pil_vrecv_j(Pil_vrecv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -636,10 +635,10 @@
                     Pil_vsend_s1(Pil_vsend_adr(kk)+send_len(kk))=s(2,1)
                     Pil_vsend_s2(Pil_vsend_adr(kk)+send_len(kk))=s(2,2)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !Check receive lengths from each processor
 !     do ki=1,Pil_vrecvmaxproc
 !        kk=Pil_vrecvproc(ki)
@@ -666,7 +665,7 @@
 
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
-       
+
 !
       return
       end

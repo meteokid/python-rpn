@@ -36,9 +36,9 @@
 #define lag3(xx, x1, x2, x3, x4)  ((((xx) - (x2)) * ((xx) - (x3)) * ((xx) - (x4)))/( ((x1) - (x2)) * ((x1) - (x3)) * ((x1) - (x4))))
 !
 !     ---------------------------------------------------------------
-!      
+!
 !$omp parallel private(i0,in,j0,jn,xx,x1,x2,x3,x4,&
-!$omp                  i,j,k,w1,w2,w3,w4)
+!$omp                  i,j,k,km2,w1,w2,w3,w4)
       i0 = 1
       in = F_ni
       j0 = 1
@@ -105,8 +105,8 @@
 !$omp enddo
 
 !$omp end parallel
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_thermo2mom

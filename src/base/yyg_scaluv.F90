@@ -16,6 +16,7 @@
 !
       Subroutine yyg_scaluv(tabu_src,tabv_src,Minx,Maxx,Miny,Maxy,NK)
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 !
@@ -29,8 +30,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "yyg_pil.cdk"
 
@@ -50,7 +49,7 @@
       integer tag2,recvlen,sendlen,tag1,ireq
       tag2=14
       tag1=13
-      
+
       sendlen=0
       recvlen=0
       ireq=0
@@ -60,7 +59,7 @@
       do kk=1,Pil_recvmaxproc
          recvlen=max(recvlen,Pil_recv_len(kk))
       enddo
-      
+
 !     Will not assume rpn_comm_xch_halo is already done on tab_src
       call rpn_comm_xch_halo(tabu_src,l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,Nk, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
@@ -74,7 +73,7 @@
       if (recvlen.gt.0) then
           allocate(recv_pil(recvlen*NK*2,Pil_recvmaxproc))
       endif
- 
+
 !
       do 100 kk=1,Pil_sendmaxproc
 !
@@ -93,7 +92,7 @@
 
              call int_cubuv_lag(send_pil(1,KK),tabu_src_8,tabv_src_8,  &
                   Pil_send_imx(adr),Pil_send_imy(adr),                 &
-                  Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,NK,  &
+                  geomh_x_8,geomh_y_8,l_minx,l_maxx,l_miny,l_maxy,NK,  &
                   Pil_send_xxr(adr),Pil_send_yyr(adr),Pil_send_len(kk),&
                   Pil_send_s1(adr),Pil_send_s2(adr),                   &
                   Pil_send_s3(adr),Pil_send_s4(adr)            )
@@ -155,7 +154,7 @@
              enddo
  300  continue
 
-       
+
       endif
       if (recvlen.gt.0) deallocate(recv_pil)
       if (sendlen.gt.0) deallocate(send_pil)

@@ -12,17 +12,18 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!**s/r grid_area_mask - Evaluate area and mask 
+!**s/r grid_area_mask - Evaluate area and mask
 
-      subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj) 
+      subroutine grid_area_mask (F_area_8,F_mask_8,Ni,Nj)
       use grid_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
-      integer,                   intent(in)  :: Ni,Nj   
+      integer,                   intent(in)  :: Ni,Nj
       real*8 , dimension(Ni,Nj), intent(out) :: F_area_8
       real*8 , dimension(Ni,Nj), intent(out) :: F_mask_8
- 
+
 !author
 !     Author Qaddouri/Tanguay -- Summer 2014
 !
@@ -32,11 +33,10 @@
 
 #include "glb_ld.cdk"
 #include "glb_pil.cdk"
-#include "geomg.cdk"
 #include "ptopo.cdk"
 
       real*8, external :: yyg_weight
-      integer i,j,k,np_subd,ierr
+      integer i,j,np_subd,ierr
       real*8, parameter :: HALF_8 = 0.5
       real*8 poids(l_ni,l_nj), area_4(l_ni,l_nj), &
              dx,dy,x_a_4,y_a_4,sf(2),sp(2)
@@ -45,9 +45,9 @@
 !
       do j = 1,l_nj
          do i = 1,l_ni
-            F_area_8(i,j)= ( Geomg_x_8(i+1)-Geomg_x_8(i-1) )   * HALF_8 * &
-                           (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8)- &
-                            sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
+            F_area_8(i,j)= ( geomh_x_8(i+1)-geomh_x_8(i-1) )   * HALF_8 * &
+                           (sin((geomh_y_8(j+1)+geomh_y_8(j  ))* HALF_8)- &
+                            sin((geomh_y_8(j  )+geomh_y_8(j-1))* HALF_8))
          enddo
       enddo
 
@@ -57,7 +57,7 @@
       if (.not.Grd_yinyang_L) F_mask_8 = 1.0d0
 
       !-------------
-      !Yin-Yang grid 
+      !Yin-Yang grid
       !-------------
       if (Grd_yinyang_L) then
 
@@ -71,14 +71,14 @@
 
          do j = 1+pil_s, l_nj-pil_n
 
-            y_a_4 = Geomg_y_8(j)
+            y_a_4 = geomh_y_8(j)
 
             do i = 1+pil_w, l_ni-pil_e
 
-               x_a_4 = Geomg_x_8(i)-acos(-1.d0)
-               dx    = ( Geomg_x_8(i+1)-Geomg_x_8(i-1) ) * HALF_8
-               dy    = (sin((Geomg_y_8(j+1)+Geomg_y_8(j  ))* HALF_8) -  &
-                        sin((Geomg_y_8(j  )+Geomg_y_8(j-1))* HALF_8))
+               x_a_4 = geomh_x_8(i)-acos(-1.d0)
+               dx    = ( geomh_x_8(i+1)-geomh_x_8(i-1) ) * HALF_8
+               dy    = (sin((geomh_y_8(j+1)+geomh_y_8(j  ))* HALF_8) -  &
+                        sin((geomh_y_8(j  )+geomh_y_8(j-1))* HALF_8))
 
                area_4(i,j) = dx*dy
                poids (i,j) = yyg_weight (x_a_4,y_a_4,dx,dy,np_subd)
@@ -131,7 +131,7 @@
             if (poids(i,j)*(1.d0-poids(i,j)) .gt. 0.d0) then
                 poids(i,j) = min( 1.d0, x_a_4 )
             endif
- 
+
          enddo
          enddo
 

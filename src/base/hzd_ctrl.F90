@@ -15,6 +15,7 @@
 
 module hzd_ctrl
   use hzd_exp
+  use gem_options
   implicit none
 #include <arch_specific.hf>
   private
@@ -40,8 +41,13 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
+      if (Hzd_pwr.gt.2) then
+          call hzd_exp_visco2 (F_f2hzd, F_type_S, l_minx,l_maxx,l_miny,l_maxy,&
+                               Nk)
+      else
+          call hzd_exp_deln ( F_f2hzd, 'M', l_minx,l_maxx,l_miny,l_maxy,&
                           Nk, F_type_S=F_type_S )
+      endif
 !
 !-------------------------------------------------------------------
 !
@@ -58,8 +64,15 @@ contains
 !
 !-------------------------------------------------------------------
 !
-      call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
+      if (Hzd_pwr.gt.2) then
+         call hzd_exp_visco2( F_u, 'U', &
+                     l_minx,l_maxx,l_miny,l_maxy, Nk )
+         call hzd_exp_visco2( F_v, 'V', &
+                     l_minx,l_maxx,l_miny,l_maxy, Nk )
+      else
+          call hzd_exp_deln ( F_u, 'U', l_minx,l_maxx,l_miny,l_maxy, &
                           Nk, F_VV=F_v )
+      endif
 !
 !-------------------------------------------------------------------
 !

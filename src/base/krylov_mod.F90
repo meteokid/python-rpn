@@ -298,7 +298,7 @@ contains
       ! Preconditioner
       character(len=*), intent(in) :: precond_S
 
-      integer :: initer, outiter, nextit, stat, i, j, k, it, ierr
+      integer :: initer, outiter, nextit, i, j, k, it, ierr
       real*8 :: relative_tolerance, norm_residual, nu, dotprod, r0
 
       real*8, dimension(maxinner+1, maxinner) :: hessenberg

@@ -22,7 +22,6 @@
       use gmm_vt1
       use gmm_pw
       use gem_options
-      use tdpack
       implicit none
 #include <arch_specific.hf>
 
@@ -98,7 +97,7 @@
          if ( (pnuu.ne.0) .or. (pnvv.ne.0) ) then
             call out_fstecr3(pw_uu_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
                    'UU  ',Outd_convmult(pnuu,set),Outd_convadd(pnuu,set),&
-                   kind,-1,G_nk, indo, nko,Outd_nbit(pnuu,set),.false. ) 
+                   kind,-1,G_nk, indo, nko,Outd_nbit(pnuu,set),.false. )
             call out_fstecr3(pw_vv_plus,l_minx,l_maxx,l_miny,l_maxy,hybm,&
                    'VV  ',Outd_convmult(pnvv,set),Outd_convadd(pnvv,set),&
                    kind,-1,G_nk, indo, nko,Outd_nbit(pnvv,set),.false. )

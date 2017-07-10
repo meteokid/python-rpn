@@ -21,6 +21,7 @@
                              Minx,Maxx,Miny,Maxy, Nk, F_zd_L, F_w_L )
       use gmm_geof
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -56,7 +57,6 @@
 !
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "ver.cdk"
 #include "lun.cdk"
 #include "cstv.cdk"
@@ -144,7 +144,7 @@
          do i=i0,in
             lnpi=Ver_z_8%m(k)+Ver_b_8%m(k)*sbY(i,j)+Ver_c_8%m(k)*slbY(i,j)
              pbY=exp(lnpi)
-            VdpY(i,j)=F_v(i,j,k)*geomg_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j)+Ver_dcdz_8%m(k)*slbY(i,j))
+            VdpY(i,j)=F_v(i,j,k)*geomh_cyv_8(j)*pbY*(1.d0+Ver_dbdz_8%m(k)*sbY(i,j)+Ver_dcdz_8%m(k)*slbY(i,j))
          end do
          end do
 
@@ -152,8 +152,8 @@
 
          do j=j0,jn
          do i=i0,in
-            div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomg_invDX_8(j) &
-                       + (VdpY(i,j)-VdpY(i,j-1))*geomg_invcy_8(j)*geomg_invDY_8
+            div(i,j,k) = (UdpX(i,j)-UdpX(i-1,j))*geomh_invDX_8(j) &
+                       + (VdpY(i,j)-VdpY(i,j-1))*geomh_invcy_8(j)*geomh_invDY_8
          enddo
          enddo
 
@@ -224,20 +224,20 @@
          do k=1,Nk
             kp=min(k+1,Nk)
             do j=j0,jn
-            c1=geomg_cyv_8(j  ) ! pgi optimizer is bugged without those 2 lines
-            c2=geomg_cyv_8(j-1)
+            c1=geomh_cyv_8(j  ) ! pgi optimizer is bugged without those 2 lines
+            c2=geomh_cyv_8(j-1)
             do i=i0,in
               !ADV = V*grad(s) = DIV(s*Vbarz)-s*DIV(Vbarz)
-                adv= 0.5 * ( geomg_invDX_8(j) *  &
+                adv= 0.5 * ( geomh_invDX_8(j) *  &
                     ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(sbX(i  ,j)-(F_s(i,j)+Cstv_Sstar_8))   &
                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(sbX(i-1,j)-(F_s(i,j)+Cstv_Sstar_8)) ) &
-                  + geomg_invcy_8(j) * geomg_invDY_8 *  &
+                  + geomh_invcy_8(j) * geomh_invDY_8 *  &
                     ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(sbY(i,j  )-(F_s(i,j)+Cstv_Sstar_8))   &
                      -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(sbY(i,j-1)-(F_s(i,j)+Cstv_Sstar_8)) ) )
-                advl= 0.5 * ( geomg_invDX_8(j) *  &
+                advl= 0.5 * ( geomh_invDX_8(j) *  &
                     ( (F_u(i  ,j,kp)+F_u(i  ,j,k))*(slbX(i  ,j)-(sls(i,j)+Cstv_Sstar_8))   &
                      -(F_u(i-1,j,kp)+F_u(i-1,j,k))*(slbX(i-1,j)-(sls(i,j)+Cstv_Sstar_8)) ) &
-                  + geomg_invcy_8(j) * geomg_invDY_8 *  &
+                  + geomh_invcy_8(j) * geomh_invDY_8 *  &
                     ( (F_v(i,j  ,kp)+F_v(i,j  ,k))*c1*(slbY(i,j  )-(sls(i,j)+Cstv_Sstar_8))   &
                      -(F_v(i,j-1,kp)+F_v(i,j-1,k))*c2*(slbY(i,j-1)-(sls(i,j)+Cstv_Sstar_8)) ) )
               !pidot=omega

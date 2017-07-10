@@ -12,7 +12,7 @@
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
-!***s/r yyg_initblenu - to initialize communication pattern for U field 
+!***s/r yyg_initblenu - to initialize communication pattern for U field
 !
       Subroutine yyg_initblenu()
        use tdpack
@@ -28,7 +28,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "glb_pil.cdk"
 #include "yyg_blnu.cdk"
 
@@ -42,7 +41,7 @@
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  xgu_8(1-G_ni:2*G_ni-1),ygv_8(1-G_nj:2*G_nj-1)
       real*8  t,p,s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a   
+      real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
@@ -157,8 +156,8 @@
                         max(imy1,imy2).le.Ptopo_gindx(4,kk) ) then
                         recv_len(kk)=recv_len(kk)+1
                     endif
-                 enddo       
-              
+                 enddo
+
              endif
 
 ! check to send to who
@@ -173,11 +172,11 @@
                         j  .le.Ptopo_gindx(4,kk)     )then
                         send_len(kk)=send_len(kk)+1
                     endif
-                 enddo       
+                 enddo
              endif
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 !
@@ -326,7 +325,7 @@
                         Bln_urecv_i(adr)=ii
                         Bln_urecv_j(adr)=jj
                     endif
-                 enddo       
+                 enddo
              endif
 
 ! check to send to who
@@ -351,11 +350,11 @@
                         Bln_usend_s1(adr)=s(1,1)
                         Bln_usend_s2(adr)=s(1,2)
                     endif
-                 enddo       
+                 enddo
              endif
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 
 !
 !
@@ -391,7 +390,7 @@
 
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
-       
+
 !
       return
       end

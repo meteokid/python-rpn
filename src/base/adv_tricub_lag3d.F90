@@ -14,12 +14,12 @@
 !---------------------------------- LICENCE END ---------------------------------
 
       subroutine adv_tricub_lag3d (F_cub, F_mono, F_lin, F_min, F_max,         &
-                                   F_in, F_in_rho, F_conserv_local,            & 
-                                   F_cub_o, F_in_o, F_cub_i, F_in_i, F_flux_n, & 
-                                   F_x, F_y, F_z,                              & 
+                                   F_in, F_in_rho, F_conserv_local,            &
+                                   F_cub_o, F_in_o, F_cub_i, F_in_i, F_flux_n, &
+                                   F_x, F_y, F_z,                              &
                                    F_x_usm, F_y_usm, F_z_usm,                  &
-                                   F_x_svm, F_y_svm, F_z_svm,                  &                                               
-                                   F_num, F_nind, ii, F_k0, F_nk,              & 
+                                   F_x_svm, F_y_svm, F_z_svm,                  &
+                                   F_num, F_nind, ii, F_k0, F_nk,              &
                                    F_mono_L,  F_conserv_L, F_lev)
       implicit none
 #include <arch_specific.hf>
@@ -45,9 +45,9 @@
       real,dimension(F_num), intent(out) :: F_max ! MAX over cell
       real,dimension(F_num), intent(out) :: F_cub_o ! High-order SL solution FLUX_out
       real,dimension(F_num), intent(out) :: F_cub_i ! High-order SL solution FLUX_in
-		integer , intent(in) :: F_nind
+      integer , intent(in) :: F_nind
       integer , dimension(F_nind*4), intent(in)  :: ii            ! pre-computed indices to be used in: adv_tricub_lag3d_loop
-      
+
    !@revisions
    !  2012-05,  Stephane Gaudreault: code optimization
    !  2016-01,  Monique Tanguay    : GEM4 Mass-Conservation
@@ -62,19 +62,19 @@
       logical :: zcubic_L
       integer :: n0, nx, ny, nz, m1, o1, o2, o3, o4 , &
                  kkmax, n, id
-  
+
       real*8  :: a1, a2, a3, a4, b1, b2, b3, b4, &
               c1, c2, c3, c4, d1, d2, d3, d4, &
               p1, p2, p3, p4
       real*8  :: rri,rrj,rrk,ra,rb,rc,rd
       real*8  :: prf1,prf2,capx,capy,capz
-      real    :: prmin,prmax
+      real    :: prmin,prmax,za
       real*8, dimension(:),pointer :: p_bsz_8, p_zbc_8, p_zabcd_8
       real*8, dimension(:),pointer :: p_zbacd_8, p_zcabd_8, p_zdabc_8
 
-      real*8 :: triprd,za,zb,zc,zd
+      real*8 :: triprd,zb,zc,zd
       triprd(za,zb,zc,zd)=(za-zb)*(za-zc)*(za-zd)
-!     
+!
 !---------------------------------------------------------------------
 !
       if ( trim(Adv_component_S) == 'TRAJ' ) then
@@ -85,15 +85,15 @@
          call timing_start2 (39, 'ADV_LAG3D', 27)
       endif
 
-      kkmax   = F_nk - 1  
-    if (F_lev == 'm') then       
+      kkmax   = F_nk - 1
+    if (F_lev == 'm') then
       p_bsz_8   => adv_bsz_8%m
       p_zabcd_8 => adv_zabcd_8%m
       p_zbacd_8 => adv_zbacd_8%m
       p_zcabd_8 => adv_zcabd_8%m
       p_zdabc_8 => adv_zdabc_8%m
       p_zbc_8   => adv_zbc_8%m
-    else if (F_lev  == 't') then    
+    else if (F_lev  == 't') then
       p_bsz_8   => adv_bsz_8%t
       p_zabcd_8 => adv_zabcd_8%t
       p_zbacd_8 => adv_zbacd_8%t
@@ -107,10 +107,10 @@
       p_zcabd_8 => adv_zcabd_8%x
       p_zdabc_8 => adv_zdabc_8%x
       p_zbc_8   => adv_zbc_8%x
-     endif 
+     endif
 
 
-      if (F_flux_n == 2) goto 10 
+      if (F_flux_n == 2) goto 10
 
       if (.NOT.F_conserv_L) then
 
@@ -130,7 +130,7 @@
 
       else
 
-         !No local conservation: Standard cubic interpolation with MIN/MAX/LIN for Bermejo-Conde/ILMC 
+         !No local conservation: Standard cubic interpolation with MIN/MAX/LIN for Bermejo-Conde/ILMC
          !-------------------------------------------------------------------------------------------
          if (F_conserv_local==0) then
 #define ADV_CONSERV
@@ -156,9 +156,9 @@
    10 continue
 
       !-------------------------
-      !Estimate FLUX_out/FLUX_in   
+      !Estimate FLUX_out/FLUX_in
       !-------------------------
-      if (F_flux_n>0) call adv_tricub_lag3d_flux (F_cub_o, F_in_o, F_cub_i, F_in_i, & 
+      if (F_flux_n>0) call adv_tricub_lag3d_flux (F_cub_o, F_in_o, F_cub_i, F_in_i, &
                                                   F_x, F_y, F_z, F_num, F_k0, F_nk, F_lev)   ! todo:  optimiser
 
       if ( trim(Adv_component_S) == 'TRAJ' ) then
@@ -168,8 +168,8 @@
       else
          call timing_stop (39)
       endif
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_tricub_lag3d

@@ -57,11 +57,11 @@
 
       if ((Hzd_lnr.le.0.).and.(Hzd_lnr_theta.le.0.)  &
                          .and.(Hzd_lnr_tr   .le.0.)) then
-         if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr.eq.0.)) then
+         if((Hzd_smago_param.le.0.).and.(Hzd_smago_lnr(2).eq.0.)) then
             if (Lun_out.gt.0) write(Lun_out,1003)
          else
             if (Lun_out.gt.0) write(Lun_out,1004) &
-                              Hzd_smago_param,100*Hzd_smago_lnr
+                              Hzd_smago_param,100*Hzd_smago_lnr(2)
          endif
       endif
 

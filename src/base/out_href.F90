@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,7 @@
                                          F_y0, F_y1, F_stridey )
       use grid_options
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -26,7 +27,6 @@
       integer,        intent(in ) :: F_x0,F_x1,F_stridex,&
                                      F_y0,F_y1,F_stridey
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "hgc.cdk"
 #include "out.cdk"
 #include "out3.cdk"
@@ -58,25 +58,25 @@
       jn = min( G_nj, F_y1)
 
       if (F_arakawa_S =='Mass_point') then
-         posx => Geomn_longs
-         posy => Geomn_latgs
+         posx => geomh_longs
+         posy => geomh_latgs
          Out_ig3  = 1
       endif
       if (F_arakawa_S =='U_point') then
-         posx => Geomn_longu
-         posy => Geomn_latgs
+         posx => geomh_longu
+         posy => geomh_latgs
          Out_ig3  = 2
          in = min( G_ni-1, F_x1)
       endif
       if (F_arakawa_S =='V_point') then
-         posx => Geomn_longs
-         posy => Geomn_latgv
+         posx => geomh_longs
+         posy => geomh_latgv
          Out_ig3  = 3
          jn = min( G_nj-1, F_y1)
       endif
       if (F_arakawa_S =='F_point') then
-         posx => Geomn_longu
-         posy => Geomn_latgv
+         posx => geomh_longu
+         posy => geomh_latgv
          Out_ig3  = 4
          in = min( G_ni-1, F_x1)
          jn = min( G_nj-1, F_y1)
@@ -221,7 +221,7 @@
 !!$         identity_vec(6)= F_stridey
 !!$
 !!$         crc= f_crc32 (0., identity_vec(1:6), 24)
-!!$         
+!!$
 !!$         if ( any (id_ara_S == trim(F_arakawa_S)) .and. &
 !!$              any (id_crc == crc) ) then
 !!$            out_samegrd= .true.

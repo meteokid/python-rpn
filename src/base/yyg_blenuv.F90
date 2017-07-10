@@ -24,7 +24,7 @@
 !
       real     F_u  (Minx:Maxx,Miny:Maxy,  Nk)  ,  F_v (Minx:Maxx,Miny:Maxy,  Nk)
 !
-!author 
+!author
 !     Michel Desgagne   - Spring 2006
 !
 !revision
@@ -40,7 +40,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 !
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name

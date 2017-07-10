@@ -13,7 +13,7 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/p adv_tricub_lag3d_slice: Conservative Semi-Lagrangian advection based on SLICE Zerroukat et al.(2002) 
+!**s/p adv_tricub_lag3d_slice: Conservative Semi-Lagrangian advection based on SLICE Zerroukat et al.(2002)
 
       subroutine adv_tricub_lag3d_slice (F_cub_rho,F_in_rho,      &
                                          F_x_usm,F_y_usm,F_z_usm, & !POSITIONS USM
@@ -22,6 +22,7 @@
 
       use grid_options
       use gem_options
+      use geomh
       implicit none
 
 #include <arch_specific.hf>
@@ -46,7 +47,6 @@
 #include "tracers.cdk"
 #include "adv_slice_storage.cdk"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
 #include "lun.cdk"
@@ -57,15 +57,15 @@
 
       integer :: n,i,j,k,ii,jj,kk,kkmax,idxk,idxjk,o1,o2,o3,o4, &
                  i0_e,in_e,j0_e,jn_e,i0_c,in_c,j0_c,jn_c
-      real*8 :: p_z00_8 
+      real*8 :: p_z00_8
 
       real*8 :: mass_of_area_8
-      external  mass_of_area_8 
+      external  mass_of_area_8
 
       logical slice_old_L
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       if (Grd_yinyang_L)       call handle_error (-1,'ADV_TRICUB_LAG3D_SLICE','SLICE not available for GY')
       if (.NOT.Schm_autobar_L) call handle_error (-1,'ADV_TRICUB_LAG3D_SLICE','SLICE not available for BAROCLINE')
 
@@ -76,11 +76,11 @@
       if (.NOT.slice_old_L.and.Tr_SLICE_rebuild<3) call handle_error(-1,'ADV_TRICUB_LAG3D_SLICE','SLICE VERSION 2: Tr_SLICE_rebuild not available')
 
       if (Lun_out>0.and.slice_old_L) then
-         write(Lun_out,901) 
-      elseif(Lun_out>0) then  
-         write(Lun_out,902) 
+         write(Lun_out,901)
+      elseif(Lun_out>0) then
+         write(Lun_out,902)
       endif
- 
+
       kkmax   = l_nk - 1
       p_z00_8 = Ver_z_8%m(0)
       if (F_lev_S == 'm') then
@@ -118,9 +118,9 @@
       !------------------------------------------------
       call adv_get_ij0n_ext (i0_e,in_e,j0_e,jn_e)
 
-      !------------------------------------- 
-      if (Tr_do_only_once_each_timestep_L) then 
-      !------------------------------------- 
+      !-------------------------------------
+      if (Tr_do_only_once_each_timestep_L) then
+      !-------------------------------------
 
          allocate(  x_LEFT_iecv_8(0:l_ni,1:l_nj,k0:F_nk),  z_LEFT_iecv_8(0:l_ni,1:l_nj,k0:F_nk), &
                   x_CENTRE_iecv_8(1:l_ni,0:l_nj,k0:F_nk),z_CENTRE_iecv_8(1:l_ni,0:l_nj,k0:F_nk))
@@ -132,7 +132,7 @@
          allocate (x_usm_8(0:l_ni,1:l_nj  ,k0:F_nk),y_usm_8(0:l_ni,1:l_nj,k0:F_nk),z_usm_8(0:l_ni,1:l_nj,k0:F_nk), &
                    x_svm_8(1:l_ni,0:l_nj  ,k0:F_nk),y_svm_8(1:l_ni,0:l_nj,k0:F_nk),z_svm_8(1:l_ni,0:l_nj,k0:F_nk))
 
-         if (Lctl_step==1) &  
+         if (Lctl_step==1) &
          allocate (z_bve_8(0:l_ni,0:l_nj+1,k0:F_nk+1))
 
          allocate (i_bw(l_nj),i_be(l_nj),j_ps_(k0:F_nk),j_pn_(k0:F_nk))
@@ -153,7 +153,7 @@
 
          endif
 
-         if (Lctl_step==1) then 
+         if (Lctl_step==1) then
 
             allocate (c1_s(l_ni,k0:F_nk),c1_n(l_ni,k0:F_nk))
 
@@ -167,9 +167,9 @@
 
          deallocate (j_ps_,j_pn_,c1_w,c1_e)
 
-      !-------------------------------------- 
+      !--------------------------------------
       endif !END do_only_once_each_timestep_L
-      !-------------------------------------- 
+      !--------------------------------------
 
       Tr_do_only_once_each_timestep_L = .FALSE.
 
@@ -188,9 +188,9 @@
       deallocate (m_ijk_8,m_ecv_8,m_iecv_8,m_lcv_8)
 
       call timing_stop (86)
-!     
+!
 !---------------------------------------------------------------------
-!     
+!
       return
 
 910 format(2X,A34,E20.12)

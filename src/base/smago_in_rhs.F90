@@ -21,6 +21,7 @@
       use hzd_mod
       use grid_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -35,27 +36,27 @@
 !
 !revision
 ! v5_0 - Girard C.    - initial version based on hzd_smago by S. Gaudreault
-! v5_0 - Husain S.    - added vertically variable background diffusion      
+! v5_0 - Husain S.    - added vertically variable background diffusion
 
 #include "gmm.hf"
-#include "geomg.cdk"
 #include "glb_ld.cdk"
 #include "ver.cdk"
 #include "tr3d.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 
       integer :: i, j, k, istat, i0, in, j0, jn
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: tension, shear_z, kt, kz
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: smagcoef_z, smagcoef_u, smagcoef_v
       real, dimension(lminx:lmaxx,lminy:lmaxy) :: mypi, th
       real, pointer, dimension (:,:,:) :: hu
-      real, dimension(nk) :: base_coefM, base_coefT      
+      real, dimension(nk) :: base_coefM, base_coefT
       real :: cdelta2, tension_z, shear, tension_u, shear_u, tension_v, shear_v
       real :: fact, smagparam, ismagprandtl, ismagprandtl_hu
       real :: max_coef, crit_coef
       logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
 
-      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr <=0.) ) return
+      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
 
       smagparam= hzd_smago_param
       ismagprandtl    = 1./Hzd_smago_prandtl
@@ -64,8 +65,8 @@
       switch_on_hu    = (Hzd_smago_prandtl_hu > 0.)
       switch_on_fric_heat = (Hzd_smago_fric_heat > 0.)
 
-      cdelta2 = (smagparam * rayt_8 * Geomg_hy_8)**2
-      crit_coef = 0.25*(rayt_8*Geomg_hy_8)**2/Cstv_dt_8
+      cdelta2 = (smagparam * Dcst_rayt_8 * geomh_hy_8)**2
+      crit_coef = 0.25*(Dcst_rayt_8*geomh_hy_8)**2/Cstv_dt_8
 
       i0  = 1    + pil_w
       in  = l_ni - pil_e
@@ -81,28 +82,28 @@
 
 !$omp parallel private(tension_z,shear,tension_u,shear_u,&
 !$omp tension, shear_z, smagcoef_u, smagcoef_v, kt, kz, &
-!$omp tension_v, shear_v, smagcoef_z, mypi, th)                           
+!$omp tension_v, shear_v, smagcoef_z, mypi, th)
 
-!$omp do   
+!$omp do
       do k=1,nk
          base_coefM(k)=Hzd_smago_lnrM_8(k)*crit_coef
          base_coefT(k)=Hzd_smago_lnrT_8(k)*crit_coef
       end do
 !$omp enddo
 
-!$omp do  
+!$omp do
       do k=1,nk
 
          do j=j0-2, jn+2
          do i=i0-2, in+2
 
-            tension(i,j) = ((F_u(i,j,k) - F_u(i-1,j,k)) * Geomg_invDX_8(j)) &
-                         - ((F_v(i,j,k) * geomg_invcyv_8(j) - F_v(i,j-1,k) * geomg_invcyv_8(j-1)) &
-                              * geomg_invDY_8 * Geomg_cy_8(j))
+            tension(i,j) = ((F_u(i,j,k) - F_u(i-1,j,k)) * geomh_invDX_8(j)) &
+                         - ((F_v(i,j,k) * geomh_invcyv_8(j) - F_v(i,j-1,k) * geomh_invcyv_8(j-1)) &
+                              * geomh_invDY_8 * geomh_cy_8(j))
 
-            shear_z(i,j) = ((F_v(i+1,j,k) - F_v(i,j,k)) * Geomg_invDXv_8(j)) &
-                         + ((F_u(i,j+1,k) * geomg_invcy_8(j+1) - F_u(i,j,k) * geomg_invcy_8(j)) &
-                              * geomg_invDY_8 * Geomg_cyv_8(j))
+            shear_z(i,j) = ((F_v(i+1,j,k) - F_v(i,j,k)) * geomh_invDXv_8(j)) &
+                         + ((F_u(i,j+1,k) * geomh_invcy_8(j+1) - F_u(i,j,k) * geomh_invcy_8(j)) &
+                              * geomh_invDY_8 * geomh_cyv_8(j))
          end do
          end do
 
@@ -110,11 +111,11 @@
             do j=j0-1, jn+1
             do i=i0-1, in+1
 
-               smagcoef_u(i,j) = base_coefM(k) * geomg_invDX_8(j)
-               smagcoef_v(i,j) = base_coefM(k) * geomg_cyv_8(j) * geomg_invDY_8
+               smagcoef_u(i,j) = base_coefM(k) * geomh_invDX_8(j)
+               smagcoef_v(i,j) = base_coefM(k) * geomh_cyv_8(j) * geomh_invDY_8
 
-               kt(i,j) = geomg_cy2_8(j)  * base_coefM(k) * tension(i,j)
-               kz(i,j) = geomg_cyv2_8(j) * base_coefM(k) * shear_z(i,j)
+               kt(i,j) = geomh_cy2_8(j)  * base_coefM(k) * tension(i,j)
+               kz(i,j) = geomh_cyv2_8(j) * base_coefM(k) * shear_z(i,j)
 
             end do
             end do
@@ -134,11 +135,11 @@
                smagcoef_u(i,j) = min(cdelta2 * sqrt(tension_u**2 + shear_u**2) + base_coefT(k), crit_coef)
                smagcoef_v(i,j) = min(cdelta2 * sqrt(tension_v**2 + shear_v**2) + base_coefT(k), crit_coef)
 
-               smagcoef_u(i,j) = smagcoef_u(i,j) * geomg_invDX_8(j)
-               smagcoef_v(i,j) = smagcoef_v(i,j) * geomg_cyv_8(j) * geomg_invDY_8
+               smagcoef_u(i,j) = smagcoef_u(i,j) * geomh_invDX_8(j)
+               smagcoef_v(i,j) = smagcoef_v(i,j) * geomh_cyv_8(j) * geomh_invDY_8
 
-               kt(i,j) = geomg_cy2_8(j)  * smag(i,j,k) * tension(i,j)
-               kz(i,j) = geomg_cyv2_8(j) * smagcoef_z(i,j) * shear_z(i,j)
+               kt(i,j) = geomh_cy2_8(j)  * smag(i,j,k) * tension(i,j)
+               kz(i,j) = geomh_cyv2_8(j) * smagcoef_z(i,j) * shear_z(i,j)
 
             end do
             end do
@@ -148,13 +149,13 @@
          do j=j0, jn
          do i=i0, in
 
-            F_du(i,j,k) = F_du(i,j,k) + fact * geomg_invcy2_8(j) * ( &
-                     ( kt(i+1,j) - kt(i,j) ) * geomg_invDX_8(j) &
-                   + ( kz(i,j) - kz(i,j-1) ) * geomg_invDY_8 )
+            F_du(i,j,k) = F_du(i,j,k) + fact * geomh_invcy2_8(j) * ( &
+                     ( kt(i+1,j) - kt(i,j) ) * geomh_invDX_8(j) &
+                   + ( kz(i,j) - kz(i,j-1) ) * geomh_invDY_8 )
 
-            F_dv(i,j,k) = F_dv(i,j,k) + fact * geomg_invcyv2_8(j) * ( &
-                     ( kz(i,j) - kz(i-1,j) ) * Geomg_invDXv_8(j) &
-                   - ( kt(i,j+1) - kt(i,j) ) * geomg_invDY_8 )
+            F_dv(i,j,k) = F_dv(i,j,k) + fact * geomh_invcyv2_8(j) * ( &
+                     ( kz(i,j) - kz(i-1,j) ) * geomh_invDXv_8(j) &
+                   - ( kt(i,j+1) - kt(i,j) ) * geomh_invDY_8 )
 
          end do
          end do
@@ -166,9 +167,9 @@
             do i=i0, in
 
                F_dw(i,j,k) = F_dw(i,j,k) + fact * ( &
-                    geomg_invDXMu_8(j)*((smagcoef_u(i,j)   * (F_w(i+1,j,k) - F_w(i,j,k))) - &
+                    geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (F_w(i+1,j,k) - F_w(i,j,k))) - &
                                         (smagcoef_u(i-1,j) * (F_w(i,j,k) - F_w(i-1,j,k))) ) &
-                  + geomg_invcy_8(j)*Geomg_invDYMv_8(j) &
+                  + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
                                       *((smagcoef_v(i,j)   * (F_w(i,j+1,k) - F_w(i,j,k))) - &
                                         (smagcoef_v(i,j-1) * (F_w(i,j,k) - F_w(i,j-1,k))) ) )
             end do
@@ -190,9 +191,9 @@
             do i=i0, in
 
                F_dlth(i,j,k) = F_dlth(i,j,k) + fact / th(i,j) * ( &
-                    geomg_invDXMu_8(j)*((smagcoef_u(i,j)   * (th(i+1,j) - th(i,j))) - &
+                    geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (th(i+1,j) - th(i,j))) - &
                                         (smagcoef_u(i-1,j) * (th(i,j) - th(i-1,j))) ) &
-                  + geomg_invcy_8(j)*Geomg_invDYMv_8(j) &
+                  + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
                                       *((smagcoef_v(i,j)   * (th(i,j+1) - th(i,j))) - &
                                         (smagcoef_v(i,j-1) * (th(i,j) - th(i,j-1))) ) )
             end do
@@ -201,13 +202,13 @@
          end if
 
          if (switch_on_hu) then
-            fact=Cstv_dt_8*ismagprandtl_hu        
+            fact=Cstv_dt_8*ismagprandtl_hu
             do j=j0, jn
             do i=i0, in
             th(i,j)=fact * ( &
-                    geomg_invDXMu_8(j)*((smagcoef_u(i,j)   * (hu(i+1,j,k) - hu(i,j,k))) - &
+                    geomh_invDXMu_8(j)*((smagcoef_u(i,j)   * (hu(i+1,j,k) - hu(i,j,k))) - &
                                         (smagcoef_u(i-1,j) * (hu(i,j,k) - hu(i-1,j,k))) ) &
-                  + geomg_invcy_8(j)*Geomg_invDYMv_8(j) &
+                  + geomh_invcy_8(j)*geomh_invDYMv_8(j) &
                                       *((smagcoef_v(i,j)   * (hu(i,j+1,k) - hu(i,j,k))) - &
                                         (smagcoef_v(i,j-1) * (hu(i,j,k) - hu(i,j-1,k))) ) )
             end do

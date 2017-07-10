@@ -2,6 +2,7 @@
       use step_options
       use iso_c_binding
       use grid_options
+      use geomh
       implicit none
 
 #include <clib_interface_mu.hf>
@@ -13,26 +14,25 @@
       include "rpn_comm.inc"
 
       external dummy_checkdm
-      logical, external :: set_dcst_8
       integer, external :: domain_decomp3,sol_transpose2   , &
                            fnom, set_fft, exfin, grid_nml3 , &
                            gem_nml , gemdm_config, step_nml
 
-      character*16 ndomains_S,npex_S,npey_S
-      character*2048 cdm_eigen_S,fn
+      character(len=16) ndomains_S,npex_S,npey_S
+      character(len=2048) cdm_eigen_S,fn
       logical cdm_grid_L
-      integer cdm_npex(2), cdm_npey(2), unf, nrec, cnt, k
+      integer cdm_npex(2), cdm_npey(2), unf, cnt
       integer pe_xcoord(1000), pe_ycoord(1000)
-      integer err,ierr(4),Pelocal,Petotal,npex,npey,i,max_io_pes
+      integer err,ierr(4),npex,npey,i,max_io_pes
 
       namelist /cdm_cfgs/ cdm_npex,cdm_npey,cdm_grid_L,cdm_eigen_S
 !
 !-------------------------------------------------------------------
-!      
+!
       call init_component
 
       if (Ptopo_couleur.eq.0) then
-         call  open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
+         call open_status_file3 (trim(Path_input_S)//'/../checkdmpart_status.dot')
          call write_status_file3 ('checkdmpart_status=ABORT')
       endif
 
@@ -48,7 +48,7 @@
       Lun_out=6
 
       unf = 0
-      if (fnom (unf,'./checkdm.nml', 'SEQ+OLD', nrec) .ne. 0) goto 9110
+      if (fnom (unf,'./checkdm.nml', 'SEQ+OLD', 0) .ne. 0) goto 9110
       rewind(unf)
       read (unf, nml=cdm_cfgs, end = 9120, err = 9120)
       call fclos (unf) ; goto 8888
@@ -101,7 +101,7 @@
          end do
          call gemtim4 ( Lun_out, 'AFTER domain_decomp', .false. )
       endif
-      
+
       if (cnt == 1) then
          npex= cdm_npex(1) ; npey=cdm_npey(1)
          max_io_pes=npex*npey
@@ -122,7 +122,8 @@
          err= domain_decomp3 ( 1, 1, .false. )
          err= sol_transpose2 ( 1, 1, .false. )
          call glbpos
-         call set_geom
+         call set_geomh
+         call set_ver_geom
          err= set_fft ()
          call gemtim4 ( Lun_out, 'AFTER set_fft', .false. )
          if (Ptopo_couleur.eq.0) then
@@ -171,11 +172,10 @@
  9150 format (/,' NAMELIST ',A,' INVALID IN FILE: ',A/)
 !
 !-------------------------------------------------------------------
-!      
+!
       return
       end
 
 subroutine dummy_checkdm
 return
 end
-

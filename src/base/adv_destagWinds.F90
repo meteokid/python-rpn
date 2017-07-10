@@ -29,6 +29,7 @@
       !@objective unstagger wind components (Interpolate to geopotential grid)
 
 #include "glb_ld.cdk"
+#include "dcst.cdk"
 
       !- CUBIC LAGRANGE INTERPOLATION COEFFICIENTS from AND to U and V grids
       !      real*8 inuvl_wxux3_8(l_minx:l_maxx,4) ! coef for U to PHI-grid
@@ -41,7 +42,7 @@
 !     
 !---------------------------------------------------------------------
 ! 
-      inv_rayt_8 = 1.D0 / rayt_8
+      inv_rayt_8 = 1.D0 / Dcst_rayt_8
 
       call rpn_comm_xch_halo(F_uth,l_minx,l_maxx,l_miny,l_maxy,&
            l_niu,l_nj,l_nk,G_halox,G_haloy,G_periodx,G_periody,G_niu,0)

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -28,7 +28,7 @@
 !revision
 ! v4_12 - Spacek L.          - called from itf_ens_init
 ! v_4.1.3 - N. Gagnon      - add vertical envelope parameters for PTP and change name of most parameters in the NAMELIST
-! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP, 
+! v_4.2.0 - N. Gagnon      - add the parameter Ens_ptp_env_hor_f for latitudinal enveloppe that control PTP,
 !           L. Spacek      - remove limitation of use when in mode LAM (only SKEB is now unavailable)
 ! v_4.4.0 - N. Gagnon      - remove Ens_ptp_env_hor_f not use anymore
 !                          - add ens_ptp_cape and ens_ptp_tlc keys
@@ -51,7 +51,7 @@
 
       integer, external :: fnom,wkoffit
       logical found_namelist_ok, stochphy_L
-      integer i, ier,err,err_open,unf,nrec,ios,ncha
+      integer i, ier,err,err_open,unf,ios
 !
 !--------------------------------------------------------------------
 !
@@ -68,7 +68,7 @@
       found_namelist_ok = .false.
       err = wkoffit (F_namelist_S)
       if (err.ge.-1) then
-         err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', nrec)
+         err_open  = fnom (unf,F_namelist_S, 'SEQ+OLD', 0)
          if (err_open.eq.0) then
             read (unf, nml=ensembles, end = 1000, err=999, iostat=ios)
             found_namelist_ok = .true.
@@ -90,12 +90,12 @@
             if(F_unout.ge.0)write(F_unout,*)'You have to provide a positive integer as seed see Ens_mc_seed in NAMELIST'
             ens_nml = -1
           endif
-         
+
             if (Ens_skeb_nlon .ne. 2*Ens_skeb_nlat)then
               if(F_unout.ge.0)write(F_unout,*)' Nlon must equal 2*nlat'
               ens_nml = -1
             endif
-  
+
          if (Ens_ptp_ncha.gt.MAX2DC) then
             if(F_unout.ge.0)write(F_unout,*)'Ens_ptp_ncha must be <=9'
             ens_nml = -1
@@ -119,7 +119,7 @@
          Ens_ptp_lmax   =  maxval(Ens_ptp_l)
          Ens_ptp_m      =  Ens_ptp_trnh+1
          Ens_ptp_mmax   =  maxval(Ens_ptp_m)
-         
+
          stochphy_L  = Ens_ptp_conf.and.Ens_conf
 
          if(F_unout.ge.0)then
@@ -131,7 +131,7 @@
             write(F_unout,'(a,i5)' )'Ens_ptp_lmax = ',Ens_ptp_lmax
             write(F_unout,'(a,10i5)')'Ens_ptp_m     = ',Ens_ptp_m
             write(F_unout,'(a,i5)' )'Ens_ptp_mmax = ',Ens_ptp_mmax
-	         write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
+            write(F_unout,'(a,10i5)')'Ens_skeb_l     = ',Ens_skeb_l
             write(F_unout,'(a,10i5)')'Ens_skeb_m     = ',Ens_skeb_m
             write(F_unout,'(a,l5)' )'Ens_stochphy_L = ',stochphy_L
             write(F_unout,'(a,i5)' )'Ens_imrkv2     = ',Ens_ptp_ncha

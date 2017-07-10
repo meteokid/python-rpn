@@ -1,0 +1,18 @@
+
+      !-------------------------------------------------------------------------------------------------------
+      !Variables used in dcmip_vrd (DCMIP vertical diffusion)
+      !-------------------------------------------------------------------------------------------------------
+      logical dcmip_wd_L,dcmip_th_L,dcmip_tr_L
+
+      common / dcmip_vrd_L  / dcmip_wd_L,dcmip_th_L,dcmip_tr_L 
+
+      real dcmip_ref_wd,dcmip_ref_th,dcmip_ref_tr
+
+      common / dcmip_vrd_ra / dcmip_ref_wd,dcmip_ref_th,dcmip_ref_tr
+
+      real, dimension(:  ), pointer :: dcmip_coef_m,dcmip_cm_wd_m,dcmip_cp_wd_m,dcmip_cm_tr_t,dcmip_cp_tr_t, & 
+                                       dcmip_coef_t,dcmip_cm_wd_t,dcmip_cp_wd_t,dcmip_cm_th_t,dcmip_cp_th_t
+
+      common / dcmip_vrd_rb / dcmip_coef_m, dcmip_cm_wd_m,dcmip_cp_wd_m,dcmip_cm_tr_t,dcmip_cp_tr_t, &  
+                              dcmip_coef_t, dcmip_cm_wd_t,dcmip_cp_wd_t,dcmip_cm_th_t,dcmip_cp_th_t
+      !-------------------------------------------------------------------------------------------------------

@@ -2,18 +2,18 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r indata - Read and process the input data at 
+!**s/r indata - Read and process the input data at
 !               beginning of integration
 
       subroutine indata
@@ -33,7 +33,7 @@
 #include "lun.cdk"
 #include "tr3d.cdk"
 
-      integer i,j,k,istat,dim,err
+      integer k,istat,dim,err
       real, dimension(:,:), pointer :: topo_large_scale
       real, dimension(:,:,:), pointer :: plus,minus
 !
@@ -60,7 +60,7 @@
 
       if ( Schm_theoc_L ) then
          call theo_data ( pw_uu_plus,pw_vv_plus,wt1,pw_tt_plus, &
-                          zdt1,st1,qt1,fis0,'TR/',':P') 
+                          zdt1,st1,qt1,fis0,'TR/',':P')
       elseif ( Schm_canonical_williamson_L ) then
          call init_bar ( ut1,vt1,wt1,tt1,zdt1,st1,qt1,fis0,&
                           l_minx,l_maxx,l_miny,l_maxy,G_nk,&
@@ -76,7 +76,7 @@
          allocate(topo_large_scale(l_minx:l_maxx,l_miny:l_maxy))
          call get_topo3 ( topo_high, topo_large_scale, &
                           l_minx,l_maxx,l_miny,l_maxy, 1,l_ni,1,l_nj )
-         
+
          call get_s_large_scale (topo_large_scale,l_minx,l_maxx,l_miny,l_maxy)
 
          topo_low(1:l_ni,1:l_nj) = topo_high(1:l_ni,1:l_nj)
@@ -157,20 +157,31 @@
       subroutine bitflip (u,v,t,nbits,npts,n)
       implicit none
 
-      integer n,nbits,npts
-      integer u(n),v(n),t(n)
+      integer, intent(in) :: n,nbits,npts
+      real, dimension(n), intent(inout) :: u, v, t
 
       integer stride,i
+      integer, dimension(n) :: u_bits, v_bits, t_bits
 !
 ! ---------------------------------------------------------------------
 !
+      u_bits  = transfer(u, u_bits)
+      v_bits  = transfer(v, v_bits)
+      t_bits  = transfer(t, t_bits)
+
       if (nbits .lt. 1) return
+
       stride = min(max(1,npts),n)
+
       do i=1,n,stride
-         u(i) = xor(u(i),nbits)
-         v(i) = xor(v(i),nbits)
-         t(i) = xor(t(i),nbits)
+         u_bits(i) = xor(u_bits(i), nbits)
+         v_bits(i) = xor(v_bits(i), nbits)
+         t_bits(i) = xor(t_bits(i), nbits)
       end do
+
+      u = transfer(u_bits, u)
+      v = transfer(v_bits, v)
+      t = transfer(t_bits, t)
 !
 ! ---------------------------------------------------------------------
 !

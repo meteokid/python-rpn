@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,7 @@
                           Mminx,Mmaxx,Mminy,Mmaxy,Nk,&
                           F_i0,F_in,F_j0,F_jn )
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -37,9 +38,7 @@
 ! F_rna        I    - pressure levels from pressure analyse
 ! Nk           I    - number of levels from the pressure analyse
 
-#include "lun.cdk"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 
@@ -57,7 +56,7 @@
             F_ps(i,j) =  (grav_8*F_gz(i,j,1)-F_topo(i,j)) &
                         /(Rgasd_8*Cstv_Tstr_8) &
                         +Ver_z_8%m(1)-Cstv_Zsrf_8
-            F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8 
+            F_ps(i,j) = exp(F_ps(i,j)) * Cstv_pref_8
          enddo
          enddo
          return

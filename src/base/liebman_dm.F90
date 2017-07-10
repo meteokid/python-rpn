@@ -105,7 +105,7 @@
          if ( count.eq.Nk ) exit
 
 !$omp single
-         if (mod(ite,4).eq.0) &
+         if (mod(ite,Out3_liebxch_iter).eq.0) &
          call rpn_comm_xch_halo( F_field, Minx,Maxx,Miny,Maxy,l_ni,l_nj,Nk, &
                                  G_halox,G_haloy,G_periodx,G_periody,l_ni,0)
 !$omp end single

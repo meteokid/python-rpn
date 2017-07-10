@@ -27,7 +27,7 @@
       integer, intent(in) :: F_ni,F_nj                      ! horizontal dims of position fields
       integer, intent(in) :: F_nk                           ! nb of winds vertical levels
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in) :: ut0, vt0 , zdt0
-      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in) :: ut1, vt1 , zdt1 
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(in) :: ut1, vt1 , zdt1
       real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk),intent(out) :: F_ud, F_vd, F_wd    ! model un-staggered departure winds
       real, dimension(F_ni,F_nj,F_nk), intent(out):: F_ua,F_va,F_wa,F_wat                  ! arrival unstaggered  winds
 
@@ -35,41 +35,35 @@
 
 #include "gmm.hf"
 #include "glb_ld.cdk"
+#include "dcst.cdk"
 
-      real, dimension(:,:,:), allocatable :: uh,vh,wm,wh
-      real ::  beta, err
+      real, dimension(F_minx:F_maxx,F_miny:F_maxy,F_nk) :: uh,vh,wm,wh
+      real :: err
       integer :: i,j,k
       real*8  :: inv_rayt_8
 !
 !     ---------------------------------------------------------------
-!      
-    inv_rayt_8 = 1.D0 / rayt_8
-
-      allocate ( uh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
-                 vh(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
-                 wm(F_minx:F_maxx,F_miny:F_maxy,F_nk), &
-                 wh(F_minx:F_maxx,F_miny:F_maxy,F_nk) )
+!
+      inv_rayt_8 = 1.D0 / Dcst_rayt_8
 
       if(Schm_trapeze_L) then
-        
+
          uh = ut0
          vh = vt0
-  
+
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
-         
          wm = 0.
-         
 
          call adv_thermo2mom  (wm,zdt0,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
-       
+
 !     Unstaggered arrival winds
          F_ua = uh(1:F_ni,1:F_nj,1:F_nk)
          F_va = vh(1:F_ni,1:F_nj,1:F_nk)
          F_wa = wm(1:F_ni,1:F_nj,1:F_nk)
          F_wat= zdt0(1:F_ni,1:F_nj,1:F_nk)
 
-! DEPARTURE WINDS: NO DESTAGRING         
+! DEPARTURE WINDS: NO DESTAGRING
          err = gmm_get (gmmk_pw_uu_moins_s, pw_uu_moins)
          err = gmm_get (gmmk_pw_vv_moins_s, pw_vv_moins)
 
@@ -93,17 +87,16 @@
          call adv_destagWinds (uh,vh,F_minx,F_maxx,F_miny,F_maxy,F_nk)
 
       endif
-  
+
       call adv_thermo2mom  (wm,wh,F_ni,F_nj,F_nk,F_minx,F_maxx,F_miny,F_maxy)
 
 !     Destag departure winds
       F_ud=uh
       F_vd=vh
       F_wd=wm
-      
-      deallocate(uh,vh,wm,wh)
-!     
+
+!
 !     ---------------------------------------------------------------
-!     
+!
       return
       end subroutine adv_prepareWinds

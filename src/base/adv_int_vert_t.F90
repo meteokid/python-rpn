@@ -69,14 +69,14 @@
       real :: minposx,maxposx,minposy,maxposy
       real :: prct
       parameter (two = 2.0, half=0.5, EPS_8 = 1.D-5)
-     
+
       lag3( x, x1, x2, x3, x4 ) = &
         ( ( x  - x2 ) * ( x  - x3 ) * ( x  - x4 ) )/ &
         ( ( x1 - x2 ) * ( x1 - x3 ) * ( x1 - x4 ) )
- 
-!     
+
+!
 !---------------------------------------------------------------------
-!     
+!
 !***********************************************************************
 ! Note : extra computation are done in the pilot zone if
 !        (Lam_gbpil_t != 0) for coding simplicity
@@ -110,12 +110,12 @@
          w3(k) = lag3( hh, x3, x1, x2, x4 )
          w4(k) = lag3( hh, x4, x1, x2, x3 )
       enddo
-      
+
       k00=max(F_k0-1,1)
 
 cnt=0
 
-!$omp parallel private(i,j,k,wdt,ww,wp,wm,nc,nc1,nc2)  
+!$omp parallel private(i,j,k,wdt,ww,wp,wm,nc,nc1,nc2,xpos,ypos)
 nc = 0
 !$omp do
     do j=j0,jn
@@ -130,7 +130,7 @@ nc = 0
          end do
       enddo
 
-      do k=k00,F_nk-1 
+      do k=k00,F_nk-1
          if(F_cubic_L.and.k.ge.2.and.k.le.F_nk-2)then
            !Cubic
             do i=i0,in
@@ -159,11 +159,11 @@ nc = 0
             enddo
          endif
       enddo
-  
+
    if(Schm_trapeze_L) then
          !working with displacements for the vertical position
- 
-       do k=k00,F_nk-1            
+
+       do k=k00,F_nk-1
          do i=i0,in
            if(k.ge.2.and.k.le.F_nk-2)then
                   !Cubic
@@ -183,7 +183,7 @@ nc = 0
             F_zt(i,j,k)=min(F_zt(i,j,k),zmax_bound)
          enddo
       enddo
- 
+
         !for the last level when at the surface
          wp=(Ver_z_8%m(F_nk+1)-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
          wm=1.d0-wp
@@ -198,7 +198,7 @@ nc = 0
 
            !vertical position
            F_zt(i,j,F_nk)= z_bottom
-          enddo   
+          enddo
           !for the last level when half way between surface and last momentum level
            ww=Ver_wmstar_8(F_nk)
            wp=(Ver_z_8%t(F_nk  )-Ver_z_8%m(F_nk-1))*Ver_idz_8%t(F_nk-1)
@@ -210,14 +210,14 @@ nc = 0
            F_xtn(i,j) = min(max(F_xtn(i,j),minposx),maxposx)
            F_ytn(i,j) = min(max(F_ytn(i,j),minposy),maxposy)
 
-           !interpolating vertical positions     
+           !interpolating vertical positions
            F_ztn(i,j)= Ver_z_8%t(F_nk)-ww*(Cstv_dtD_8*  wdt(i,  F_nk-1) &
                                          +Cstv_dtA_8*F_wat(i,j,F_nk-1))
- 
+
            F_ztn(i,j)= min(F_ztn(i,j),zmax_bound)
           enddo
-     
-   else     
+
+   else
         !working directly with positions
          do k=k00,F_nk-1
             do i=i0,in
@@ -237,10 +237,10 @@ nc = 0
                F_zt(i,j,k)=min(F_zt(i,j,k),zmax_bound)
             end do
          end do
-      ! For last thermodynamic level, positions in the horizontal are those  
-      ! of the momentum levels; no displacement allowed in the vertical      
-      ! at bottum. At top vertical displacement is obtian from linear inter. 
-      ! and is bound to first thermo level.                                  
+      ! For last thermodynamic level, positions in the horizontal are those
+      ! of the momentum levels; no displacement allowed in the vertical
+      ! at bottum. At top vertical displacement is obtian from linear inter.
+      ! and is bound to first thermo level.
           do i=i0,in
              F_xt(i,j,F_nk) = F_xm(i,j,F_nk)
              F_yt(i,j,F_nk) = F_ym(i,j,F_nk)
@@ -257,8 +257,8 @@ enddo
 !$omp atomic
 cnt=cnt+nc
 !$omp end parallel
-     
-! Trajectory Clipping stat   
+
+! Trajectory Clipping stat
   call adv_print_cliptrj_s (cnt,F_ni,F_nj,F_nk,k00,'INTERP '//trim('t'))
 
 

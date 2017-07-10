@@ -31,7 +31,7 @@
 #include "tr3d.cdk"
 
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      logical first_L, yyblend
+      logical first_L
       integer itraj, n, istat, keep_itcn
       real, pointer, dimension(:,:,:) :: tr1
 !
@@ -105,12 +105,9 @@
             call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
                             .true., 'CUBIC')
          end do
-         istat = gmm_get(gmmk_wt1_s , wt1)
-         call yyg_xchng (wt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
-                         .true., 'CUBIC')
-         yyblend= (Schm_nblendyy .gt. 0)
-         if (yyblend) &
-         call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
+         !yyblend= (Schm_nblendyy .gt. 0)
+         !if (yyblend) &
+         !call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
       else
          call nest_gwa
          call spn_main

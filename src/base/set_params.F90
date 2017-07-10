@@ -45,10 +45,15 @@
          Cstv_dtA_8  = Cstv_dt_8 * 0.5d0
          Cstv_dtzA_8 = Cstv_dt_8 * 0.5d0 
       endif
-      if (Schm_advec.eq.2) then ! consistant advection
+      if (Schm_advec.eq.2) then ! consistent advection
          Cstv_dtA_8  = Cstv_tau_m_8
          Cstv_dtzA_8 = Cstv_tau_8
       endif
+      if (Schm_advec.eq.3) then ! reversed advection
+         Cstv_dtA_8  = (one-Cstv_bA_m_8)*Cstv_dt_8
+         Cstv_dtzA_8 = (one-Cstv_bA_8)*Cstv_dt_8
+      endif
+
       Cstv_dtD_8  = Cstv_dt_8 - Cstv_dtA_8
       Cstv_dtzD_8 = Cstv_dt_8 - Cstv_dtzA_8
 

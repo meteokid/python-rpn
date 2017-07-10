@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -17,6 +17,7 @@
 
    subroutine image_to_real_winds( F_u,F_v,Minx,Maxx,Miny,Maxy,F_nk )
 
+      use geomh
       use tdpack
    implicit none
 #include <arch_specific.hf>
@@ -25,7 +26,7 @@
    real, dimension(Minx:Maxx,Miny:Maxy,F_nk), intent(IN OUT) :: F_u, F_v
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
+#include "dcst.cdk"
 
    ! Local variables
    integer :: i,j,k
@@ -35,7 +36,7 @@
 !$omp do
    do k = 1, F_nk
       do j = 1, l_nj
-         c1 = rayt_8 / Geomg_cy_8(j)
+         c1 = Dcst_rayt_8 / geomh_cy_8(j)
          do i = 1, l_niu
             F_u(i,j,k) = c1 * F_u(i,j,k)
          enddo
@@ -45,7 +46,7 @@
 !$omp do
    do k = 1, F_nk
       do j = 1, l_njv
-         c1 = rayt_8 / Geomg_cyv_8(j)
+         c1 = Dcst_rayt_8 / geomh_cyv_8(j)
          do i = 1, l_ni
             F_v(i,j,k) = c1 * F_v(i,j,k)
          enddo

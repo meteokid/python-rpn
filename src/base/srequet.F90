@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -25,7 +25,7 @@
       implicit none
 #include <arch_specific.hf>
 !
-!author 
+!author
 !     J. Caveen - rpn - decembre 1994
 !
 !revision
@@ -37,15 +37,15 @@
 !object
 !    This function uses the ARMNLIB RPN functions
 !    RPN_FORTRAN_CALLBACK and PROCESS_F_CALLBACK
-!    to process the directives for output listed in a file 
+!    to process the directives for output listed in a file
 !    specified in the call "process_f_callback". This is
 !    used instead of the conventional FORTRAN namelist.
 !
 !notes
-!    There are four key functions written to handle the 
+!    There are four key functions written to handle the
 !    directives from the specified input file:
 !
-!    set_grid, set_level, set_step, set_var 
+!    set_grid, set_level, set_step, set_var
 !
 !    which are associated by their
 !    respective keywords "grid","levels","steps","sortie". The directives
@@ -80,7 +80,6 @@
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "out3.cdk"
-#include "geomn.cdk"
 #include "grid.cdk"
 #include "timestep.cdk"
 #include "hgc.cdk"
