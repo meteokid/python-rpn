@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -20,17 +20,17 @@
       use gmm_vt1
       use grid_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 
 !author M.Tanguay
 
 !revision
-! v4_80 - Tanguay M.        - initial MPI version 
- 
+! v4_80 - Tanguay M.        - initial MPI version
+
 #include "gmm.hf"
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
 #include "tr3d.cdk"
@@ -41,7 +41,7 @@
       type(gmm_metadata) :: mymeta
       integer err, i, j, istat, n, k
       real, pointer, dimension(:,:,:)                        :: tr
-      real,   dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)    :: sumq 
+      real,   dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)    :: sumq
       real*8, dimension(l_minx:l_maxx,l_miny:l_maxy)         :: pr_p0_8
       real*8, dimension(l_minx:l_maxx,l_miny:l_maxy,1:l_nk+1):: pr_m_8,pr_t_8
       real*8 :: l_avg_8(4),gc_avg_8(2),gp_avg_8(2),gs_avg_8(2),c_area_8,gc_area_8,s_area_8,gs_area_8
@@ -78,8 +78,8 @@
       do j=1+pil_s,l_nj-pil_n
       do i=1+pil_w,l_ni-pil_e
          do k=1,l_nk
-            l_avg_8(1) = l_avg_8(1) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)                      *(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
-            l_avg_8(2) = l_avg_8(2) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)*(1.0d0 - sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
+            l_avg_8(1) = l_avg_8(1) + geomh_area_8(i,j)*geomh_mask_8(i,j)                      *(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
+            l_avg_8(2) = l_avg_8(2) + geomh_area_8(i,j)*geomh_mask_8(i,j)*(1.0d0 - sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
          enddo
       enddo
       enddo
@@ -89,8 +89,8 @@
          do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
          do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
             do k=1,l_nk
-               l_avg_8(3) = l_avg_8(3) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)                      *(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
-               l_avg_8(4) = l_avg_8(4) + Geomg_area_8(i,j)*Geomg_mask_8(i,j)*(1.0d0 - sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
+               l_avg_8(3) = l_avg_8(3) + geomh_area_8(i,j)*geomh_mask_8(i,j)                      *(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
+               l_avg_8(4) = l_avg_8(4) + geomh_area_8(i,j)*geomh_mask_8(i,j)*(1.0d0 - sumq(i,j,k))*(pr_m_8(i,j,k+1) - pr_m_8(i,j,k))
             enddo
          enddo
          enddo
@@ -114,7 +114,7 @@
 
          do j=1+Tr_pil_sub_s,l_nj-Tr_pil_sub_n
          do i=1+Tr_pil_sub_w,l_ni-Tr_pil_sub_e
-            s_area_8 = s_area_8 + Geomg_area_8(i,j)
+            s_area_8 = s_area_8 + geomh_area_8(i,j)
          enddo
          enddo
 
@@ -129,7 +129,7 @@
 
          do j=1+pil_s,l_nj-pil_n
          do i=1+pil_w,l_ni-pil_e
-            c_area_8 = c_area_8 + Geomg_area_8(i,j)
+            c_area_8 = c_area_8 + geomh_area_8(i,j)
          enddo
          enddo
 
@@ -137,7 +137,7 @@
 
       endif
 
-      gc_avg_8(1:2) = gc_avg_8(1:2) / gc_area_8 
+      gc_avg_8(1:2) = gc_avg_8(1:2) / gc_area_8
 
       if (Grd_yinyang_L) then
           gp_avg_8(1:2) = gp_avg_8(1:2) / gc_area_8 * 2.0d0

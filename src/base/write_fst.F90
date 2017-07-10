@@ -2,31 +2,32 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r write_fst 
+!**s/r write_fst
 !
 
 !
       SUBROUTINE write_fst (buf,nx,ny,nz,varname,maxrange, &
                               ig1,ig2,ig3,grdtype,filename)
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 !
       character* (*) varname, filename, grdtype
       integer nx,ny,nz,ig1,ig2,ig3
       real buf(nx,ny,nz),maxrange
-!author 
+!author
 !     Michel Desgagne - Summer 2006
 !
 !revision
@@ -37,7 +38,6 @@
 !
 
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "hgc.cdk"
@@ -74,11 +74,11 @@
 !
       if ((list_x.lt.1).or.(list_y.lt.1).or. &
           (nipos.ne.nx).or.(njpos.ne.ny)) then
-         err= fstecr(Geomn_longs(Ptopo_gindx(1,Ptopo_myproc+1)),wk3, &
+         err= fstecr(Geomh_longs(Ptopo_gindx(1,Ptopo_myproc+1)),wk3, &
                      -32,unf,0,0,0,nx,1,1,ig1,ig2,ig3,'X', '>>', &
                      Out3_etik_S,Hgc_gxtyp_s,Hgc_ig1ro,Hgc_ig2ro, &
                      Hgc_ig3ro,Hgc_ig4ro, 5, .true.)
-         err= fstecr(Geomn_latgs(Ptopo_gindx(3,Ptopo_myproc+1)),wk3, &
+         err= fstecr(Geomh_latgs(Ptopo_gindx(3,Ptopo_myproc+1)),wk3, &
                      -32,unf,0,0,0,1,ny,1,ig1,ig2,ig3,'X', '^^', &
                      Out3_etik_S,Hgc_gxtyp_s,Hgc_ig1ro,Hgc_ig2ro, &
                      Hgc_ig3ro,Hgc_ig4ro, 5, .true.)

@@ -19,6 +19,7 @@
       Subroutine yyg_rhs_scalbc(rhs_dst1,sol_src1,minx,maxx,miny,maxy, &
                                 NK,iter,Linfini)
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -28,8 +29,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "sol.cdk"
 #include "yyg_rhs.cdk"
@@ -51,7 +50,7 @@
       integer tag1,tag2,recvlen,sendlen,ireq
       tag2=14
       tag1=13
-      
+
 
       tab_src=0.
       linfini=0.0
@@ -73,7 +72,7 @@
       do kk=1,Rhsx_recvmaxproc
          recvlen=max(recvlen,Rhsx_recv_len(kk))
       enddo
-      
+
       call rpn_comm_xch_halo(tab_src, l_minx,l_maxx,l_miny,l_maxy,l_ni,l_nj,NK, &
                   G_halox,G_haloy,G_periodx,G_periody,l_ni,0 )
 
@@ -88,7 +87,7 @@
       if (recvlen.gt.0) then
           allocate(recv_pil(recvlen*NK,Rhsx_recvmaxproc))
       endif
- 
+
 !
       do 100 kk=1,Rhsx_sendmaxproc
 !
@@ -106,7 +105,7 @@
              adr=Rhsx_send_adr(kk)+1
              call int_cub_lag8(send_Rhsx_8,tab_src_8,              &
                              Rhsx_send_imx(adr),Rhsx_send_imy(adr), &
-                             Geomg_x_8,Geomg_y_8,l_minx,            &
+                             geomh_x_8,geomh_y_8,l_minx,            &
                              l_maxx,l_miny,l_maxy, NK,              &
                              Rhsx_send_xxr(adr),Rhsx_send_yyr(adr), &
                              Rhsx_send_len(kk))
@@ -171,7 +170,7 @@
             l2 =max(l2,abs(Sol_rhs(i,1,kk)))
          enddo
       enddo
-!     call mpi_allreduce(L2,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)        
+!     call mpi_allreduce(L2,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)
       call RPN_COMM_allreduce(L2,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(2)=L1
       L2   =L1
@@ -181,7 +180,7 @@
       if (sendlen.gt.0) deallocate(send_pil,send_Rhsx_8)
 
 !     Check the precision
-!     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr) 
+!     call mpi_allreduce(Linfini,L1,1,MPI_REAL,MPI_MAX,Ptopo_intracomm,ierr)
       call RPN_COMM_allreduce(Linfini,L1,1,"MPI_REAL","MPI_MAX","grid",ierr)
       L3(1)=L1
       L4=0.

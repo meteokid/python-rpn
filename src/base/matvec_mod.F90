@@ -7,8 +7,8 @@ module matvec_mod
    ! Revision
    !     v4_70 - Gaudreault/Qaddouri      - initial version
    !
-      use gem_options
-      use tdpack
+   use gem_options
+   use tdpack
    implicit none
    private
 
@@ -30,11 +30,13 @@ contains
 
    subroutine matvec_init()
 
+      use geomh
+      implicit none
+
       real*8  :: di_8
       real*8  :: xxx, yyy
       integer :: i, j, k, jj, ii
 #include "cstv.cdk"
-#include "geomg.cdk"
 
       allocate (matrix(7,ldnh_minx:ldnh_maxx, ldnh_miny:ldnh_maxy, l_nk))
 
@@ -46,7 +48,7 @@ contains
       do k=1, l_nk
          do j=1+sol_pil_s, l_nj-sol_pil_n
             jj=j+l_j0-1
-            di_8 = Opr_opsyp0_8(G_nj+jj) * Geomg_invcy2_8(j)
+            di_8 = Opr_opsyp0_8(G_nj+jj) * geomh_invcy2_8(j)
             do i=1+sol_pil_w, l_ni-sol_pil_e
                ii=i+l_i0-1
 

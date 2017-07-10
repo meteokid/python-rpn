@@ -46,7 +46,7 @@ contains
 
       integer, external :: fnom
       character*64 dumc_S
-      integer unf, nrec
+      integer unf
 !
 !-------------------------------------------------------------------
 !
@@ -61,7 +61,7 @@ contains
       if (F_namelistf_S .ne. '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110 
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110 
          rewind(unf)
          read (unf, nml=theo_cfgs, end= 1000, err=9130)
  1000    call fclos (unf)

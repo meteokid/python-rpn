@@ -53,7 +53,7 @@ module bubble_options
    !#
    integer :: bubble_kctr = -1
    namelist /bubble_cfgs/ bubble_kctr
-   
+
 contains
 
       integer function bubble_nml (F_namelistf_S)
@@ -61,11 +61,11 @@ contains
 
       character* (*) F_namelistf_S
 
+#include "dcst.cdk"
 #include "lun.cdk"
 
       integer, external :: fnom
-      integer unf, err, nrec
-      real*8 myrayt_8
+      integer unf, err
 !
 !-------------------------------------------------------------------
 !
@@ -80,7 +80,7 @@ contains
       if (F_namelistf_S .ne. '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110 
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
          rewind(unf)
          read (unf, nml=bubble_cfgs, end= 1000, err=9130)
 
@@ -89,10 +89,10 @@ contains
  1000 bubble_nml = 0
 
       ! establish horizontal grid configuration
-      myrayt_8= rayt_8*0.1d0 ! an accuracy problem
+      Dcst_rayt_8= Dcst_rayt_8*0.1d0 ! an accuracy problem
       Grd_typ_S='LU'
       Grd_ni = bubble_ni ; Grd_nj = bubble_nj
-      Grd_dx = (bubble_dx/rayt_8)*(180./pi_8)
+      Grd_dx = (bubble_dx/Dcst_rayt_8)*(180./pi_8)
       Grd_dy = Grd_dx
       Grd_latr = 0.
       Grd_lonr = (bubble_ni/2 + 20) * Grd_dx
@@ -166,7 +166,7 @@ contains
 
       endif
 
-      if (bubble_ictr < 0) bubble_ictr = (Grd_ni-1)/2 + Grd_extension
+      if (bubble_ictr < 0) bubble_ictr = int(float(Grd_ni-1)*0.5)+1
       if (bubble_kctr < 0) bubble_kctr = G_nk - bubble_rad - 1
 
       return
@@ -182,6 +182,7 @@ contains
                                F_q, pref_tr, suff_tr                ,&
                                Mminx,Mmaxx,Mminy,Mmaxy,nk )
       use gmm_geof
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -201,7 +202,6 @@ contains
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "geomg.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
 #include "type.cdk"
@@ -210,7 +210,7 @@ contains
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer i,j,k,err,istat,ii
+      integer i,j,k,istat,ii
       real*8 pp, pi,theta
       real, pointer, dimension(:,:,:) :: tr
 !
@@ -245,7 +245,7 @@ contains
                F_t(i,j,k)=theta*pi
             enddo
          enddo
-      enddo        
+      enddo
 !
 !-----------------------------------------------------------------------
 !     create tracers (humidity and MTN)

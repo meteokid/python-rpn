@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -16,9 +16,10 @@
    subroutine itf_phy_geom4 (F_istat)
    use iso_c_binding
    use nest_blending, only: nest_blend
-      use gmm_geof
-      use gem_options
-      use tdpack
+   use gmm_geof
+   use gem_options
+   use geomh
+   use tdpack
    implicit none
 #include <arch_specific.hf>
 
@@ -28,13 +29,12 @@
 #include <gmm.hf>
 #include <msg.h>
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-#include "geomn.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 
    logical :: nest_it
    integer :: i,j,istat
-   real,pointer :: wrk1(:,:) 
+   real,pointer :: wrk1(:,:)
    real(kind=8) :: deg2rad_8
    real :: w1(l_minx:l_maxx,l_miny:l_maxy,2),&
            w2(l_minx:l_maxx,l_miny:l_maxy,2)
@@ -49,11 +49,11 @@
    mymeta%l(2) = gmm_layout(1,l_nj,0,0,l_nj)
 
    deg2rad_8 = acos(-1.D0)/180.D0
-  
+
    nullify(wrk1)
    istat = gmm_create('DLAT',wrk1,mymeta)
    if (RMN_IS_OK(istat)) then
-      wrk1 = deg2rad_8*Geomn_latrx
+      wrk1 = deg2rad_8*geomh_latrx
    else
       F_istat = RMN_ERR
       call msg(MSG_ERROR,'(itf_phy_geom) Problem creating DLAT')
@@ -62,10 +62,10 @@
    nullify(wrk1)
    istat = gmm_create('DLON',wrk1,mymeta)
    if (RMN_IS_OK(istat)) then
-      where(Geomn_lonrx >= 0)
-         wrk1 = deg2rad_8*Geomn_lonrx
+      where(geomh_lonrx >= 0)
+         wrk1 = deg2rad_8*geomh_lonrx
       elsewhere
-         wrk1 = deg2rad_8*(Geomn_lonrx+360.)
+         wrk1 = deg2rad_8*(geomh_lonrx+360.)
       endwhere
    else
       F_istat = RMN_ERR
@@ -77,8 +77,8 @@
    if (RMN_IS_OK(istat)) then
       do j = 1,l_nj
          do i = 1,l_ni
-             wrk1(i,j) = geomg_hx_8*geomg_hy_8*     &
-                  rayt_8*rayt_8*geomg_cy_8(j)
+             wrk1(i,j) = geomh_hx_8*geomh_hy_8*     &
+                  Dcst_rayt_8*Dcst_rayt_8*geomh_cy_8(j)
          end do
       end do
    else

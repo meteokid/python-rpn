@@ -13,12 +13,12 @@
             n = idxjk + i
 
             x_usm_8(i,j,k) = F_x_usm(n)
-            y_usm_8(i,j,k) = F_y_usm(n) 
-            z_usm_8(i,j,k) = F_z_usm(n) 
+            y_usm_8(i,j,k) = F_y_usm(n)
+            z_usm_8(i,j,k) = F_z_usm(n)
 
-         enddo 
-      enddo 
-   enddo 
+         enddo
+      enddo
+   enddo
 
    call timing_stop (51)
 
@@ -56,7 +56,7 @@
 
       !Find SOUTH limits for y_usm_8(j0_c-ext): Interval [yv(j-1),yv(j)]: Compute location of y_usm_8(:,j0_c-ext) grid amongst Yv
       !--------------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),j0_c-ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
+      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),j0_c-ext,k),Geomh_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
 
       do i=(i0_c-ext)-1,(in_c+ext)
          j_ps_(k) = min(b_sn_location(i),j_ps_(k))
@@ -64,7 +64,7 @@
 
       !Find NORTH limits for y_usm_8(jn_c+ext): Interval [yv(j-1),yv(j)]: Compute location of y_usm_8(:,jn_c+ext) grid amongst Yv
       !--------------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),jn_c+ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
+      call adv_Fast_Loc_1D (y_usm_8((i0_c-ext)-1:(in_c+ext),jn_c+ext,k),Geomh_yv_8(0:l_nj),(in_c+ext)-((i0_c-ext)-1),l_nj,b_sn_location((i0_c-ext)-1:(in_c+ext)),1)
 
       do i=(i0_c-ext)-1,(in_c+ext)
          j_pn_(k) = max(b_sn_location(i),j_pn_(k))
@@ -72,7 +72,7 @@
 
       !Find SOUTH limits for y_svm_8((j0_c-ext)-1): Interval [yv(j-1),yv(j)]: Compute location of y_svm_8(:,(j0_c-ext)-1) grid amongst Yv
       !----------------------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),(j0_c-ext)-1,k),Geomg_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_s((i0_c-ext):(in_c+ext),k),1)
+      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),(j0_c-ext)-1,k),Geomh_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_s((i0_c-ext):(in_c+ext),k),1)
 
       do i=(i0_c-ext),(in_c+ext)
          j_ps_(k) = min(c1_s(i,k),j_ps_(k))
@@ -80,7 +80,7 @@
 
       !Find NORTH limits for y_svm_8(jn_c+ext): Interval [yv(j-1),yv(j)]: Compute location of y_svm_8(:,jn_c+ext) grid amongst Yv
       !--------------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),jn_c+ext,k),Geomg_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_n((i0_c-ext):(in_c+ext),k),1)
+      call adv_Fast_Loc_1D (y_svm_8((i0_c-ext):(in_c+ext),jn_c+ext,k),Geomh_yv_8(0:l_nj),(in_c+ext)-(i0_c-ext),l_nj,c1_n((i0_c-ext):(in_c+ext),k),1)
 
       do i=(i0_c-ext),(in_c+ext)
          j_pn_(k) = max(c1_n(i,k),j_pn_(k))
@@ -107,9 +107,9 @@
 
       do i=i0_e-1,in_e
 
-         !Compute location of Ys grid amongst Y_USM 
+         !Compute location of Ys grid amongst Y_USM
          !-----------------------------------------
-         call adv_Fast_Loc_1D (Geomg_y_8(j_ps:j_pn),y_usm_8(i,j0_e:jn_e,k),j_pn-j_ps,jn_e-j0_e,ys_location(j_ps:j_pn),j0_e)
+         call adv_Fast_Loc_1D (Geomh_y_8(j_ps:j_pn),y_usm_8(i,j0_e:jn_e,k),j_pn-j_ps,jn_e-j0_e,ys_location(j_ps:j_pn),j0_e)
 
          do j=j_ps,j_pn
 
@@ -120,19 +120,19 @@
 
             if ( dabs(slope_8) <= epsilon(slope_8) ) Then
                  slope_8  = 0.5d0
-            else 
-                 slope_8 = ( Geomg_y_8(j) - y_usm_8(i,jm,k) ) / slope_8 
-            endif 
+            else
+                 slope_8 = ( Geomh_y_8(j) - y_usm_8(i,jm,k) ) / slope_8
+            endif
 
-            x_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * x_usm_8(i,jm,k) + & 
+            x_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * x_usm_8(i,jm,k) + &
                                             slope_8   * x_usm_8(i,jp,k)
 
-            z_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * z_usm_8(i,jm,k) + & 
+            z_LEFT_iecv_8 (i,j,k) = (1.d0 - slope_8 ) * z_usm_8(i,jm,k) + &
                                             slope_8   * z_usm_8(i,jp,k)
 
-         enddo 
+         enddo
 
-      enddo    
+      enddo
 
    enddo
 
@@ -141,24 +141,24 @@
    call timing_start2 (52, 'LIMITS', 86)
 
    !------------------------------------------------------------------------
-   !Find East/West limits of ADVECTED EXTENDED domain based on x_LEFT_iecv_8 
+   !Find East/West limits of ADVECTED EXTENDED domain based on x_LEFT_iecv_8
    !------------------------------------------------------------------------
    do k=k0,F_nk
 
       !Find WEST limits for x_LEFT_iecv_8(i0_e-1): Interval [xu(i-1),xu(i)]: Compute location of x_LEFT_iecv_8(i0_e-1) amongst Xu
       !--------------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (x_LEFT_iecv_8(i0_e-1,j_ps:j_pn,k),Geomg_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_w(j_ps:j_pn,k),1)
+      call adv_Fast_Loc_1D (x_LEFT_iecv_8(i0_e-1,j_ps:j_pn,k),Geomh_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_w(j_ps:j_pn,k),1)
 
       !Find EAST limits for x_LEFT_iecv_8(in_e): Interval [xu(i-1),xu(i)]: Compute location of x_LEFT_iecv_8(in_e) amongst Xu
       !----------------------------------------------------------------------------------------------------------------------
-      call adv_Fast_Loc_1D (x_LEFT_iecv_8(in_e,j_ps:j_pn,k),Geomg_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_e(j_ps:j_pn,k),1)
+      call adv_Fast_Loc_1D (x_LEFT_iecv_8(in_e,j_ps:j_pn,k),Geomh_xu_8(0:l_ni),j_pn-j_ps,l_ni,c1_e(j_ps:j_pn,k),1)
 
    enddo
 
    do j=j_ps,j_pn
 
-      i_bw(j) = 1 
-      i_be(j) = F_ni 
+      i_bw(j) = 1
+      i_be(j) = F_ni
 
       do k=k0,F_nk
          i_bw(j) = max(i_bw(j),c1_w(j,k)) !MAXIMUM (restriction over vertical)
@@ -217,7 +217,7 @@
          !-------------------------------------------------
          do i=i_bw(j)-1,i_be(j)
 
-            dist_LEFT_ecv_8(i,j,k) = Geomg_xu_8(i)
+            dist_LEFT_ecv_8(i,j,k) = Geomh_xu_8(i)
 
          enddo
 
@@ -247,9 +247,9 @@
          !-------------------------------------------------
          do j=c1_s(i,k)-1,c1_n(i,k)
 
-            dist_LEFT_ilcv_8(i,j,k) = Geomg_yv_8(j) 
+            dist_LEFT_ilcv_8(i,j,k) = Geomh_yv_8(j)
 
-         enddo 
+         enddo
 
       enddo
 

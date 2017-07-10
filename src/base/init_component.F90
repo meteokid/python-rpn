@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -32,7 +32,7 @@
 #include "component.cdk"
 #include "glb_ld.cdk"
 #include "cst_lis.cdk"
-#include "lun.cdk"
+#include "dcst.cdk"
 #include "path.cdk"
 #include "ptopo.cdk"
 #include "version.cdk"
@@ -96,6 +96,9 @@
 !      call RPN_COMM_size ( RPN_COMM_GRIDPEERS, Ptopo_nodes, ierr )
 
       call msg_set_can_write (Ptopo_myproc == 0)
+
+      Dcst_rayt_8  = rayt_8
+      Dcst_omega_8 = omega_8
 
       call pe_all_topo
 

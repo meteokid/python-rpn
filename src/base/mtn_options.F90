@@ -65,9 +65,10 @@ contains
       character* (*) F_namelistf_S
 
 #include "lun.cdk"
+#include "dcst.cdk"
 
       integer, external :: fnom
-      integer unf, err, nrec
+      integer unf
 !
 !-------------------------------------------------------------------
 !
@@ -82,7 +83,7 @@ contains
       if (F_namelistf_S .ne. '') then
 
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) goto 9110 
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) goto 9110
          rewind(unf)
          read (unf, nml=mtn_cfgs, end= 1000, err=9130)
  1000    call fclos (unf)
@@ -93,7 +94,7 @@ contains
       ! establish horizontal grid configuration
       Grd_typ_S='LU'
       Grd_ni = mtn_ni ; Grd_nj = mtn_nj
-      Grd_dx = (mtn_dx/rayt_8)*(180./pi_8)
+      Grd_dx = (mtn_dx/Dcst_rayt_8)*(180./pi_8)
       Grd_dy = Grd_dx
       Grd_latr = 0.
       Grd_lonr = (mtn_ni/2 + 20) * Grd_dx
@@ -182,6 +183,7 @@ contains
                             Mminx,Mmaxx,Mminy,Mmaxy,F_theocase_S )
       use gmm_vt1
       use gmm_geof
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -201,17 +203,16 @@ contains
 #include "glb_ld.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
-#include "geomg.cdk"
 #include "out3.cdk"
 #include "tr3d.cdk"
-#include "mtn.cdk"
 #include "type.cdk"
 #include "ver.cdk"
 #include "cstv.cdk"
+#include "dcst.cdk"
 
       type(gmm_metadata) :: mymeta
       character(len=GMM_MAXNAMELENGTH) :: tr_name
-      integer i,j,k,l,i00,err,istat
+      integer i,j,k,i00,err,istat
       real a00, a01, a02, xcntr, zdi, zfac, zfac1, capc1
       real, allocatable, dimension(:,:) :: psurf, topo_ls
       real hauteur, tempo, dx, slp, slpmax
@@ -226,7 +227,7 @@ contains
 !---------------------------------------------------------------------
 !     Initialize orography
 !---------------------------------------------------------------------
-      
+
       xcntr = int(float(Grd_ni-1)*0.5)+1
       do j=1,l_nj
       do i=1,l_ni
@@ -311,7 +312,7 @@ contains
                F_t(i,j,k)=Ver_wp_8%t(k)*temp2+Ver_wm_8%t(k)*temp1
             enddo
          enddo
-      enddo        
+      enddo
 !
       else   ! MTN_PINTY or MTN_PINTY2 or NOFLOW
 !-----------------------------------------------------------------------
@@ -340,15 +341,15 @@ contains
       do i=1,l_ni
          psurf(i,j) = Cstv_pref_8 *  &
                       exp( -grav_8 * F_topo(i,j)/ &
-                           (Rgasd_8 * mtn_tzero ) )	
+                           (Rgasd_8 * mtn_tzero ) )
          F_s(i,j) = log(psurf(i,j)/Cstv_pref_8)
       enddo
-      enddo         
+      enddo
 
 !     calculate maximum mountain slope
 
       slpmax=0
-      dx=rayt_8*Grd_dx*pi_8/180.
+      dx=Dcst_rayt_8*Grd_dx*pi_8/180.
       do j=1,l_nj
       do i=1,l_ni
       slp=abs(F_topo(i,j)-F_topo(i-1,j))/dx

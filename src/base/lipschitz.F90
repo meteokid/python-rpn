@@ -17,6 +17,8 @@
 
       subroutine lipschitz(F_u, F_v, F_w, Minx,Maxx,Miny,Maxy, Nk, &
                                       F_i0,F_in,F_j0,F_jn)
+
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -48,7 +50,6 @@
 ! F_jn         I    - ending point of calculation on N-S axis
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 #include "type.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
@@ -80,14 +81,14 @@
          km=max(k-1,1)
          do j= j0, F_jn
          do i= i0, F_in
-            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomg_invcy_8(j)*geomg_invDX_8(j)
+            dudx=abs(F_u(i,j,k)-F_u(i-1,j,k))*geomh_invcy_8(j)*geomh_invDX_8(j)
             if(dudx.gt.LipNOu) then
                iu=i
                ju=j
                ku=k
                LipNOu=dudx
             endif
-            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomg_invcy_8(j)*geomg_invDY_8
+            dvdy=abs(F_v(i,j,k)-F_v(i,j-1,k))*geomh_invcy_8(j)*geomh_invDY_8
             if(dvdy.gt.LipNOv) then
                iv=i
                jv=j

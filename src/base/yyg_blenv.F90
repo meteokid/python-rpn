@@ -17,6 +17,8 @@
 
 
       Subroutine yyg_blenv(tab_dst,tabv_src,tabu_src,Minx,Maxx,Miny,Maxy,NK)
+
+      use geomh
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,8 +28,6 @@
 !     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "yyg_blnv.cdk"
 
@@ -47,7 +47,7 @@
       integer tag2,recvlen,sendlen,tag1,ireq
       tag2=14
       tag1=13
-      
+
       sendlen=0
       recvlen=0
       ireq=0
@@ -57,7 +57,7 @@
       do kk=1,Bln_vrecvmaxproc
          recvlen=max(recvlen,Bln_vrecv_len(kk))
       enddo
-      
+
 
 !     print *,'sendlen=',sendlen,' recvlen=',recvlen
       if (sendlen.gt.0) then
@@ -69,7 +69,7 @@
       if (recvlen.gt.0) then
           allocate(recv_pil(recvlen*NK,Bln_vrecvmaxproc))
       endif
- 
+
 !
       do 100 kk=1,Bln_vsendmaxproc
 !
@@ -89,8 +89,8 @@
              call int_cubvec_lag(send_pil(1,KK),tabu_src_8,tabv_src_8, &
                              Bln_vsend_imx1(adr),Bln_vsend_imy1(adr),  &
                              Bln_vsend_imx2(adr),Bln_vsend_imy2(adr),  &
-                             Geomg_xu_8,Geomg_y_8,Geomg_x_8,Geomg_yv_8,&
-                             l_minx,l_maxx,l_miny,l_maxy, Nk,          & 
+                             geomh_xu_8,geomh_y_8,geomh_x_8,geomh_yv_8,&
+                             l_minx,l_maxx,l_miny,l_maxy, Nk,          &
                              Bln_vsend_xxr(adr),Bln_vsend_yyr(adr),    &
                              Bln_vsend_len(kk) ,                       &
                              Bln_vsend_s1(adr) ,Bln_vsend_s2(adr) )
@@ -152,7 +152,7 @@
 
  300  continue
 
-       
+
       endif
       if (recvlen.gt.0)deallocate(recv_pil)
       if (sendlen.gt.0) deallocate(send_pil)

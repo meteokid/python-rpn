@@ -37,7 +37,7 @@
 
       integer,external :: fnom
 
-      integer nrec,unf
+      integer unf
 !
 !-------------------------------------------------------------------
 !
@@ -58,7 +58,7 @@
       Ptopo_bind_L = .false.
 
       unf=0
-      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , nrec) .eq. 0) then
+      if (fnom (unf, F_namelistf_S, 'SEQ+OLD' , 0) .eq. 0) then
          rewind(unf)
          read (unf, nml=resources, end=7110, err=9110)
  7110    call fclos (unf)

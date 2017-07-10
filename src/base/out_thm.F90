@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,6 +19,7 @@
       use vertical_interpolation, only: vertint2
       use vGrid_Descriptors, only: vgrid_descriptor,vgd_get,VGD_OK,VGD_ERROR
       use vgrid_wb, only: vgrid_wb_get
+      use geomh
       use gmm_vt1
       use gmm_pw
       use gmm_geof
@@ -31,9 +32,7 @@
       integer levset,set
 
 #include "gmm.hf"
-!#include "hybdim.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "out.cdk"
 #include "out3.cdk"
 #include "level.cdk"
@@ -125,7 +124,7 @@
 
       if (psum.eq.0) return
 
-      if (pnww.ne.0) allocate ( myomega(l_minx:l_maxx,l_miny:l_maxy,G_nk  ) ) 
+      if (pnww.ne.0) allocate ( myomega(l_minx:l_maxx,l_miny:l_maxy,G_nk  ) )
       if (pnth.ne.0) allocate ( th   (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
 !     Obtain humidity HUT1 and other GMM variables
@@ -155,7 +154,7 @@
       call out_padbuf(hu,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 !
 !     Store temperature TT (in tt)
-!         
+!
       tt(1:l_ni,1:l_nj,1:G_nk) = pw_tt_plus(1:l_ni,1:l_nj,1:G_nk)
       tt(:,:,G_nk+1)= tdiag
       call out_padbuf(tt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
@@ -168,7 +167,7 @@
       if (Out3_sfcdiag_L) then
          call mfotvt (vt(l_minx,l_miny,nk_src),tt(l_minx,l_miny,nk_src),&
                       hu(l_minx,l_miny,nk_src),l_ninj,1,l_ninj)
-      endif 
+      endif
       call out_padbuf(vt,l_minx,l_maxx,l_miny,l_maxy,l_nk+1)
 
 !     Store PTOP and p0
@@ -178,11 +177,11 @@
 
 !_________________________________________________________________
 !
-!     2.0    Output 2D variables 
+!     2.0    Output 2D variables
 !_________________________________________________________________
 !     output 2D fields on 0mb (pressure)
       kind=2
- 
+
       if (pnme.ne.0)then
             call out_fstecr3(fis0,l_minx,l_maxx,l_miny,l_maxy,0.0, &
               'ME  ',Outd_convmult(pnme,set),Outd_convadd(pnme,set),&
@@ -198,16 +197,16 @@
               'PT  ',Outd_convmult(pnpt,set),Outd_convadd(pnpt,set),&
               kind,-1,1, 1, 1, Outd_nbit(pnpt,set),.false. )
       if (pnla.ne.0) &
-          call out_fstecr3(Geomn_latrx,1,l_ni,1,l_nj,0.0, &
+          call out_fstecr3(geomh_latrx,1,l_ni,1,l_nj,0.0, &
               'LA  ',Outd_convmult(pnla,set),Outd_convadd(pnla,set),&
               kind,-1,1, 1, 1, Outd_nbit(pnla,set),.false. )
       if (pnlo.ne.0) &
-          call out_fstecr3(Geomn_lonrx,1,l_ni,1,l_nj,0.0, &
+          call out_fstecr3(geomh_lonrx,1,l_ni,1,l_nj,0.0, &
               'LO  ',Outd_convmult(pnlo,set),Outd_convadd(pnlo,set),&
               kind,-1,1, 1, 1, Outd_nbit(pnlo,set),.false. )
 !_______________________________________________________________________
 !
-!     3.0    Precomputations for output over pressure levels or PN or 
+!     3.0    Precomputations for output over pressure levels or PN or
 !            GZ on thermo levels
 !
 !        The underground extrapolation can use precalculated
@@ -230,7 +229,7 @@
           deg2rad= acos( -1.0)/180.
           do j=1,l_nj
           do i=1,l_ni
-             wlao (i,j) = Geomn_latrx(i,j) * deg2rad
+             wlao (i,j) = geomh_latrx(i,j) * deg2rad
           end do
           end do
       endif
@@ -250,7 +249,7 @@
                         l_minx,l_maxx,l_miny,l_maxy,1,l_ni,1,l_nj )
          call out_liebman (ttx, htx, vt, gzt, fis0, wlao, &
                         l_minx,l_maxx,l_miny,l_maxy,Out3_lieb_nk,nk_src)
-         
+
       endif
 
       lastdt = Lctl_step
@@ -267,8 +266,8 @@
               'PN  ',Outd_convmult(pnpn,set),Outd_convadd(pnpn,set), &
               kind,-1,1, 1, 1, Outd_nbit(pnpn,set),.false. )
       endif
-      
-!     Calculate P0      
+
+!     Calculate P0
       if (pnp0.ne.0) then
          do j=l_miny,l_maxy
          do i=l_minx,l_maxx
@@ -280,7 +279,7 @@
                        l_minx,l_maxx,l_miny,l_maxy,1)
          call out_fstecr3 (w1,l_minx,l_maxx,l_miny,l_maxy,0.0,&
               'P0  ',Outd_convmult(pnp0,set),Outd_convadd(pnp0,set), &
-              kind,-1,1, 1, 1, Outd_nbit(pnp0,set),.false.) 
+              kind,-1,1, 1, 1, Outd_nbit(pnp0,set),.false.)
          if(Schm_sleve_L)then
             ! This is constant during the integration. This could be done just once and saved, is it worthwile??
             istat = gmm_get (gmmk_sls_s ,sls )
@@ -314,7 +313,7 @@
 
       if (Level_typ_S(levset) .eq. 'M') then  ! Output on model levels
 
-!       Setup the indexing for output 
+!       Setup the indexing for output
          kind= Level_kind_ip1
          allocate ( indo(G_nk+1) )
          call out_slev2 ( Level(1,levset), Level_max(levset), &
@@ -332,7 +331,7 @@
             ! For vertical motion quantities, we place level NK at the surface
             hybt_w(1:G_nk)= hybt(1:G_nk)
          endif
-          
+
          if (pngz.ne.0)then
             call out_fstecr3(gzm,l_minx,l_maxx,l_miny,l_maxy,hybm, &
                'GZ  ',Outd_convmult(pngz,set),Outd_convadd(pngz,set),&
@@ -415,7 +414,7 @@
          endif
 
          if (pnes.ne.0.or.pntw.ne.0.or.pntd.ne.0.or.pnhr.ne.0) &
-               allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )                     
+               allocate (t8 (l_minx:l_maxx,l_miny:l_maxy,G_nk+1) )
 
          if (pntw.ne.0) then
 !        Calculate THETAW TW (t8=TW) (px=PX)
@@ -514,16 +513,16 @@
          ! Compute WE (Normalized velocity in eta) maily used by EER Lagrangian Dispertion Model
          !
          ! ZETA = ZETAs + ln(hyb)
-         ! 
+         !
          ! Taking the total time derivative
          !  .      .
          ! ZETA = hyb/hyb
          !  .     .
          ! hyb = ZETA*hyb
-         ! 
+         !
          ! Normalizing by domain height
          !       .
-         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )     
+         ! WE = ZETA*hyb/( hyb(s) - hyb(t) )
          !
          ! Note: put WE=0 at first thermo level to close the domain
          !       Do not write we for thermo level nk+3/4 since zdt is at surface
@@ -566,7 +565,7 @@
                     vt_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     tt_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     td_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
-                    px_pres(l_minx:l_maxx,l_miny:l_maxy,nko), & 
+                    px_pres(l_minx:l_maxx,l_miny:l_maxy,nko), &
                     w5     (l_minx:l_maxx,l_miny:l_maxy,nko), &
                     w6     (l_minx:l_maxx,l_miny:l_maxy,nko), &
                     cible  (l_minx:l_maxx,l_miny:l_maxy,nko), &
@@ -717,7 +716,7 @@
                 'HR  ',Outd_convmult(pnhr,set),Outd_convadd(pnhr,set), &
                 kind,-1,nko, indo, nko, Outd_nbit(pnhr,set),.false. )
         endif
-        
+
         if (pnvt.ne.0) then
             if (Outd_filtpass(pnvt,set).gt.0) &
                 call filter2( vt_pres,Outd_filtpass(pnvt,set),Outd_filtcoef(pnvt,set), &

@@ -39,7 +39,7 @@
 #include "lun.cdk"
 #include "rstr.cdk"
 
-      integer nrec,unf,err
+      integer unf,err
       real :: sec
       real*8 nesdt,nsteps
 !
@@ -60,7 +60,7 @@
 
       if (F_namelistf_S .ne. '') then
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) then
             if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
             goto 9999
          endif

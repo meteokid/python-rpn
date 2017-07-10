@@ -39,10 +39,8 @@
 #include "ptopo.cdk"
 #include "rstr.cdk"
 
-      character*16  dumc_S, datev
-      character*256 fln_S
-      logical wronghyb
-      integer i, k, nrec, ipcode, ipkind, istat, err
+      character(len=16)  dumc_S, datev
+      integer i, k, ipcode, ipkind, err
       real    pcode,deg_2_rad,sec
       real*8  dayfrac, sec_in_day
       parameter (sec_in_day=86400.0d0)
@@ -221,8 +219,8 @@
       end if
 
       if (Hzd_smago_param > 0. .or. Hzd_smago_lnr > 0.) then
-         if (Hzd_smago_min_lnr > Hzd_smago_lnr .or. Hzd_smago_min_lnr<0.) &
-            Hzd_smago_min_lnr=Hzd_smago_lnr
+         if (Hzd_smago_min_lnr > Hzd_smago_lnr .or. Hzd_smago_min_lnr<0.) Hzd_smago_min_lnr=Hzd_smago_lnr
+         if (Hzd_smago_max_lnr < Hzd_smago_lnr .or. Hzd_smago_max_lnr<0.) Hzd_smago_max_lnr=Hzd_smago_lnr
       endif
 
       G_ni  = Grd_ni
@@ -233,19 +231,15 @@
 
       G_niu= G_ni - 1
 
-      if ( Schm_psadj<0 .and. Schm_psadj>2 ) then
+      if ( Schm_psadj<0 .or. Schm_psadj>2 ) then
          if (lun_out>0) write (Lun_out, 9700)
          return
       endif
-      if (Schm_psadj==2.and..not.Schm_source_ps_L) then
-         if (lun_out>0) write (Lun_out, 9701)
-         return
-      endif
 
-! Additional temporary check for Schm_psadj>0 in ordinary LAM config. 
+! Additional temporary check for Schm_psadj>0 in ordinary LAM config.
       if ( .not.(Grd_yinyang_L) .and. Schm_psadj>0 .and. &
            .not.(Schm_psadj_lam_L) ) then
-         if (lun_out>0) write (Lun_out, 6700) 
+         if (lun_out>0) write (Lun_out, 6700)
          return
       endif
 
@@ -295,7 +289,7 @@
          Schm_hydro_L = .true.
          call wil_set (Schm_topo_L,Schm_testcases_adv_L,Lun_out,err)
          if (err.lt.0) return
-         if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L 
+         if (Lun_out>0) write (Lun_out, 6100) Schm_topo_L
       endif
 
       err= 0
@@ -381,7 +375,6 @@
  9680 format (/,'ABORT: ',a,' cannot be less than 1.0 for T*<0'/)
  9681 format (/,'ABORT: ',a,' cannot be less than 1.0 for OPEN_TOP scheme'/)
  9700 format (/,'ABORT: Schm_psadj not valid'/)
- 9701 format (/,'ABORT: Schm_psadj=2 should be combined with Schm_source_ps_L=T'/)
 !
 !-------------------------------------------------------------------
 !

@@ -17,18 +17,18 @@
 
       subroutine set_dyn_opr
       use grid_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
 #include "glb_ld.cdk"
-#include "geomg.cdk"
 !
 !     ---------------------------------------------------------------
 !
       call adv_check_tracers
 
       if (Grd_yinyang_L) then
-         call yyg_initstencils  
+         call yyg_initstencils
          call yyg_rhs_initscalbc
       endif
 
@@ -49,9 +49,9 @@
       call eqspng_set
 
       call adv_setgrid
-      call adv_param 
+      call adv_param
 
-      call grid_area_mask (Geomg_area_8, Geomg_mask_8, l_ni,l_nj)
+      call grid_area_mask (geomh_area_8, geomh_mask_8, l_ni,l_nj)
 !
 !     ---------------------------------------------------------------
 !

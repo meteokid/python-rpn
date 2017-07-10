@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -19,17 +19,18 @@
       use gmm_vt1
       use ens_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
 !
-!author 
+!author
 !     Lubos Spacek - rpn - oct 2005
 !
 !revision
 !
 !object
-!	
+!
 !arguments
 !	none
 !
@@ -38,9 +39,9 @@
 #include "glb_ld.cdk"
 #include "trp.cdk"
 #include "ldnh.cdk"
+#include "dcst.cdk"
 #include "lun.cdk"
 #include "glb_pil.cdk"
-#include "geomg.cdk"
 
 !
 
@@ -58,11 +59,10 @@
 !     lambda  wavelength
 !     sigma
 
-      integer ix,iy,iz,iz_local,kx,ky,kz
-      integer ierr
-      integer i, j, k, i0, j0, in, jn, nij, inn
-      real    err, deltax, min_local, min_global
-      real*8  dpi, aaa2, bfact, lambda, sigma, trx, try, pri8
+      integer kx,kz
+      integer i, j, k
+      real    err, min_local, min_global
+      real*8  dpi, bfact, lambda, sigma, trx, try, pri8
 !     Arrays
       integer,dimension(:),     allocatable  :: i1,j1
       real  , dimension(l_minx:l_maxx,l_miny:l_maxy,l_nk)  :: dsp_local
@@ -108,7 +108,7 @@
 !     apply the Gaussian bell
 !
       do j=1,l_nj
-         trx=1.d0/(2*dpi*rayt_8*geomg_cy_8(j))**2
+         trx=1.d0/(2*dpi*Dcst_rayt_8*geomh_cy_8(j))**2
          do i=0,G_ni+1,2
            freqx(j,i+1:i+2)=-2.0d0*trx*(dpi*sigma*dble(i/2))**2
          enddo
@@ -135,7 +135,7 @@
            *(Trp_22max-Trp_22min+1),1, (Trp_12dmax-Trp_12dmin+1), -1 )
       enddo
 !     Apply the Gaussian bell
-      try=1.d0/(dpi*rayt_8)**2
+      try=1.d0/(dpi*Dcst_rayt_8)**2
         do j=0,G_nj+1,2
           freqy(j+1:j+2)=-2.d0*try*(dpi*sigma*dble(j/2))**2
         enddo
@@ -194,9 +194,9 @@
             j1(1)=3 ;j1(2)=G_nj/4 ;j1(3)=G_nj/2 ;j1(4)=3*G_nj/4 ;j1(5)=G_nj
             write(Lun_out,1010)(i1(j)/2,j=1,5)
             do i=1,l_nj
-              write(Lun_out,1011)180.d0*geomg_y_8(i)/dpi,(freqx(i,i1(j)),j=1,5)
+              write(Lun_out,1011)180.d0*geomh_y_8(i)/dpi,(freqx(i,i1(j)),j=1,5)
             enddo
-            write(Lun_out,1012)(j1(j)/2,j=1,5),geomg_x_8(1), &
+            write(Lun_out,1012)(j1(j)/2,j=1,5),geomh_x_8(1), &
                                               (freqy(j1(j)),j=1,5)
             deallocate(i1,j1)
          endif

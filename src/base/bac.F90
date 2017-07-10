@@ -26,6 +26,7 @@
                        Minx,Maxx,Miny,Maxy, ni,nj,Nk, i0, j0, k0, in, jn )
       use grid_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -47,7 +48,6 @@
 #include "glb_pil.cdk"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 #include "ver.cdk"
 #include "ptopo.cdk"
 #include "cstv.cdk"
@@ -179,13 +179,13 @@
       do k=k0,l_nk
          do j= j0, jn
          do i= i0, l_niu-pil_e
-            F_u(i,j,k) = Cstv_tau_m_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomg_invDXMu_8(j))
+            F_u(i,j,k) = Cstv_tau_m_8*(F_ru(i,j,k)-F_nu(i,j,k) - (GP(i+1,j,k)-GP(i,j,k))*geomh_invDXMu_8(j))
          end do
          end do
 
          do j= j0, l_njv-pil_n
          do i= i0, in
-            F_v(i,j,k) = Cstv_tau_m_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomg_invDYMv_8(j))
+            F_v(i,j,k) = Cstv_tau_m_8*(F_rv(i,j,k)-F_nv(i,j,k) - (GP(i,j+1,k)-GP(i,j,k))*geomh_invDYMv_8(j))
          end do
          end do
       enddo
@@ -228,7 +228,7 @@
       enddo
 !$omp enddo
 
-    
+
 !     Compute FI' (into GP)
 !     ~~~~~~~~~~~
 

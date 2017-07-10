@@ -33,6 +33,7 @@
 ! v4_80 - Baek - clarification
 
 #include "lun.cdk"
+#include "dcst.cdk"
 #include "glb_pil.cdk"
 
       integer i,j
@@ -42,8 +43,8 @@
 !
 !----------------------------------------------------------------------
 !
-      DX = Grd_dx*pi_8*rayt_8/(180.*1000.)
-      DY = Grd_dy*pi_8*rayt_8/(180.*1000.)
+      DX = Grd_dx*pi_8*Dcst_rayt_8/(180.*1000.)
+      DY = Grd_dy*pi_8*Dcst_rayt_8/(180.*1000.)
       WXL= Spn_cutoff_scale_large
       WXS= Spn_cutoff_scale_small
 

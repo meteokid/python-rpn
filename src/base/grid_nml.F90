@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -32,7 +32,7 @@
       integer, external ::  fnom, yyg_checkrot
 
       character*120 dumc
-      integer unf,nrec,npts,next_down,lcl_ni,maxcfl,err,ni
+      integer unf
       real*8 epsilon,a_8,b_8,c_8,d_8,xyz1_8(3),xyz2_8(3), delta_8
       real*8 yan_xlat1_8, yan_xlon1_8, yan_xlat2_8, yan_xlon2_8
       parameter (epsilon = 1.0d-5)
@@ -43,13 +43,13 @@
 
       if ((F_namelistf_S.eq.'print').or.(F_namelistf_S.eq.'PRINT')) then
          grid_nml3 = 0
-         if (Lun_out.gt.0) write (Lun_out  ,nml=grid) 
+         if (Lun_out.gt.0) write (Lun_out  ,nml=grid)
          return
       endif
 
       if (F_namelistf_S .ne. '') then
          unf = 0
-         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', nrec) .ne. 0) then
+         if (fnom (unf,F_namelistf_S, 'SEQ+OLD', 0) .ne. 0) then
             if (Lun_out.ge.0) write (Lun_out, 7050) trim( F_namelistf_S )
             goto 9999
          endif
@@ -82,7 +82,7 @@
 
       Glb_pil_n = Grd_extension
       Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
-      
+
       pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
       if (l_west ) pil_w= Glb_pil_w
       if (l_north) pil_n= Glb_pil_n
@@ -148,7 +148,7 @@
          case ('U')             ! Uniform
             if (Lun_out.gt.0) write(Lun_out,*)  &
                            'GU grid configuration NO LONGER supported'
-            goto 9999            
+            goto 9999
 
          case ('Y')             ! Yin-Yang
             if (yyg_checkrot().lt.0) goto 9999
@@ -243,13 +243,13 @@
 ! imposing local fft will be done later
 !!$      Glb_pil_n = Grd_extension
 !!$      Glb_pil_s=Glb_pil_n ; Glb_pil_w=Glb_pil_n ; Glb_pil_e=Glb_pil_n
-!!$      
+!!$
 !!$      pil_w= 0 ; pil_n= 0 ; pil_e= 0 ; pil_s= 0
 !!$      if (l_west ) pil_w= Glb_pil_w
 !!$      if (l_north) pil_n= Glb_pil_n
 !!$      if (l_east ) pil_e= Glb_pil_e
 !!$      if (l_south) pil_s= Glb_pil_s
-      
+
       Lam_pil_w= Glb_pil_w
       Lam_pil_n= Glb_pil_n
       Lam_pil_e= Glb_pil_e

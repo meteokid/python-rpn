@@ -28,6 +28,7 @@
       use gmm_nest
       use grid_options
       use gem_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -38,7 +39,7 @@
            F_rw    (Minx:Maxx,Miny:Maxy,Nk)  ,F_rf    (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_oru   (Minx:Maxx,Miny:Maxy,Nk)  ,F_orv   (Minx:Maxx,Miny:Maxy,Nk)  , &
            F_rb    (Minx:Maxx,Miny:Maxy)     ,F_nest_t(Minx:Maxx,Miny:Maxy,Nk)  , &
-           F_fis   (Minx:Maxx,Miny:Maxy)                                        
+           F_fis   (Minx:Maxx,Miny:Maxy)
 
 !author
 !     Alain Patoine
@@ -58,7 +59,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "lun.cdk"
-#include "geomg.cdk"
 #include "cstv.cdk"
 #include "ver.cdk"
 
@@ -71,7 +71,7 @@
                            alpha1=-1.d0/16.d0 , alpha2=9.d0/16.d0
 !
 !     ---------------------------------------------------------------
-!  
+!
       if (Lun_debug_L) write (Lun_out,1000)
 
       k0t= k0
@@ -102,8 +102,8 @@
 
 !           Compute the divergence of the RHS of momentum equations
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            rdiv  = (F_ru(i,j,k)-F_ru(i-1,j,k))*geomg_invDXM_8(j) &
-                  + (F_rv(i,j,k)*geomg_cyM_8(j)-F_rv(i,j-1,k)*geomg_cyM_8(j-1))*geomg_invDYM_8(j)
+            rdiv  = (F_ru(i,j,k)-F_ru(i-1,j,k))*geomh_invDXM_8(j) &
+                  + (F_rv(i,j,k)*geomh_cyM_8(j)-F_rv(i,j-1,k)*geomh_cyM_8(j-1))*geomh_invDYM_8(j)
 
 !           Combine divergence & continuity equations : Rc"
 !           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,6 +220,6 @@
 1000  format(3X,'UPDATE  THE RIGHT-HAND-SIDES: (S/R PRE)')
 !
 !     ---------------------------------------------------------------
-!  
+!
       return
       end

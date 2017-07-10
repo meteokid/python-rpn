@@ -26,7 +26,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "glb_pil.cdk"
 #include "yyg_bln.cdk"
 
@@ -36,7 +35,7 @@
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  t,p,s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a   
+      real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
@@ -118,7 +117,7 @@
 !        if (imx.ge.1+glb_pil_w .and. imx.le.G_ni-glb_pil_e .and. &
 !            imy.ge.1+glb_pil_s .and. imy.le.G_nj-glb_pil_n) then
 ! It is important to do this check before min-max
-!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj) 
+!   (Imx,Imy )could be zero or negatif or 1<(Imx,Imy )<(G_ni,G_nj)
          if (imx.gt.1+glb_pil_w .and. imx.lt.G_ni-glb_pil_e .and. &
              imy.gt.1+glb_pil_s .and. imy.lt.G_nj-glb_pil_n) then
              imx = min(max(imx-1,glb_pil_w+1),G_ni-glb_pil_e-3)
@@ -134,7 +133,7 @@
                         imy.le.Ptopo_gindx(4,kk)) then
                         recv_len(kk)=recv_len(kk)+1
                     endif
-                 enddo       
+                 enddo
              endif
 
 ! check to send to who
@@ -147,21 +146,21 @@
                         j  .le.Ptopo_gindx(4,kk)     )then
                         send_len(kk)=send_len(kk)+1
                     endif
-                 enddo       
+                 enddo
              endif
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 ! Obtain sum of elements to send and receive for each processor
 ! and the total memory needed to store and receive for each processor
 !
-      Bln_send_all=0 
-      Bln_recv_all=0 
+      Bln_send_all=0
+      Bln_recv_all=0
       Bln_sendmaxproc=0
       Bln_recvmaxproc=0
-     
+
       do kk=1,Ptopo_numproc
          Bln_send_all=send_len(kk)+Bln_send_all
          Bln_recv_all=recv_len(kk)+Bln_recv_all
@@ -183,7 +182,7 @@
       Bln_send_adr(:) = 0
 
 !     print*,'Bln_sendmaxproc=',Bln_sendmaxproc,'recvmaxproc=',Bln_recvmaxproc
-       
+
       ksend=0
       krecv=0
       Bln_send_all=0
@@ -208,7 +207,7 @@
              Bln_recv_adr(krecv)= Bln_recv_all
              Bln_recv_all= Bln_recv_all + Bln_recv_len(krecv)
          endif
-            
+
       enddo
 !     print *,'krecv=',krecv,'Bln_recvmaxproc=',Bln_recvmaxproc
 !     print *,'ksend=',ksend,'Bln_sendmaxproc=',Bln_sendmaxproc
@@ -292,7 +291,7 @@
                         Bln_recv_i(Bln_recv_adr(kk)+recv_len(kk))=ii
                         Bln_recv_j(Bln_recv_adr(kk)+recv_len(kk))=jj
                     endif
-                 enddo       
+                 enddo
              endif
 
 ! check to send to who
@@ -314,11 +313,11 @@
                         Bln_send_s3(Bln_send_adr(kk)+send_len(kk))=s(2,1)
                         Bln_send_s4(Bln_send_adr(kk)+send_len(kk))=s(2,2)
                     endif
-                 enddo       
+                 enddo
              endif
          endif
-      enddo   
-      enddo   
+      enddo
+      enddo
 !
 !
 !Check receive lengths from each processor
@@ -346,7 +345,7 @@
 
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
-       
+
 
 !
       return

@@ -17,6 +17,8 @@
 
 
       Subroutine yyg_blenbc2(tab_dst,tab_src,Minx,Maxx,Miny,Maxy,NK)
+
+      use geomh
       implicit none
 #include <arch_specific.hf>
 !
@@ -26,8 +28,6 @@
 !     include 'mpif.h'
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "yyg_bln.cdk"
 
@@ -48,7 +48,7 @@
       character*32 interp_S
       tag2=14
       tag1=13
-      
+
       interp_S='CUBIC'
       mono_L = .false.
       sendlen=0
@@ -60,7 +60,7 @@
       do kk=1,Bln_recvmaxproc
          recvlen=max(recvlen,Bln_recv_len(kk))
       enddo
-      
+
 
 !     print *,'sendlen=',sendlen,' recvlen=',recvlen
       if (sendlen.gt.0) then
@@ -71,12 +71,12 @@
       if (recvlen.gt.0) then
           allocate(recv_pil(recvlen*NK,Bln_recvmaxproc))
       endif
- 
+
 !
       do 100 kk=1,Bln_sendmaxproc
 !
 !        For each processor (in other colour)
-      
+
          if (Ptopo_couleur.eq.0) then
              kk_proc = Bln_sendproc(kk)+Ptopo_numproc-1
          else
@@ -91,7 +91,7 @@
 
              call yyg_interp1(send_pil(1,KK),tab_src_8, &
                       Bln_send_imx(adr),Bln_send_imy(adr), &
-                      Geomg_x_8,Geomg_y_8,l_minx,l_maxx,l_miny,l_maxy,NK, &
+                      geomh_x_8,geomh_y_8,l_minx,l_maxx,l_miny,l_maxy,NK, &
                       Bln_send_xxr(adr),Bln_send_yyr(adr),Bln_send_len(kk),&
                       mono_L,interp_S)
 
@@ -110,7 +110,7 @@
 !
       do 200 kk=1,Bln_recvmaxproc
 !        For each processor (in other colour)
-      
+
          if (Ptopo_couleur.eq.0) then
              kk_proc = Bln_recvproc(kk)+Ptopo_numproc-1
          else
@@ -152,7 +152,7 @@
 
  300  continue
 
-       
+
       endif
       if (recvlen.gt.0)deallocate(recv_pil)
       if (sendlen.gt.0) deallocate(send_pil)

@@ -2,11 +2,11 @@
 ! GEM - Library of kernel routines for the GEM numerical atmospheric model
 ! Copyright (C) 1990-2010 - Division de Recherche en Prevision Numerique
 !                       Environnement Canada
-! This library is free software; you can redistribute it and/or modify it 
+! This library is free software; you can redistribute it and/or modify it
 ! under the terms of the GNU Lesser General Public License as published by
 ! the Free Software Foundation, version 2.1 of the License. This library is
 ! distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A 
+! without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 ! PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this library; if not, write to the Free Software Foundation, Inc.,
@@ -30,22 +30,22 @@ module gem_options
 
    !# SL off-centering parameter for the momentum equations
    real*8 :: Cstv_bA_m_8 = 0.6
-   namelist /gem_cfgs  / Cstv_bA_m_8      
+   namelist /gem_cfgs  / Cstv_bA_m_8
    namelist /gem_cfgs_p/ Cstv_bA_m_8
 
    !# SL off-centering parameter for nonhydrostatic
    real*8 :: Cstv_bA_nh_8 = 0.5
-   namelist /gem_cfgs  / Cstv_bA_nh_8      
+   namelist /gem_cfgs  / Cstv_bA_nh_8
    namelist /gem_cfgs_p/ Cstv_bA_nh_8
 
-   !# T* basic state temperature (K) 
+   !# T* basic state temperature (K)
    real*8 :: Cstv_Tstr_8 = 240.0
    namelist /gem_cfgs  / Cstv_tstr_8
    namelist /gem_cfgs_p/ Cstv_tstr_8
 
    !# Parameter controlling modified epsilon (Ver_epsi_8) [nonhydrostatic part]
    real*8 :: Cstv_rE_8 = 1.d0
-   namelist /gem_cfgs  / Cstv_rE_8   
+   namelist /gem_cfgs  / Cstv_rE_8
    namelist /gem_cfgs_p/ Cstv_rE_8
 
    !# another reference pressure
@@ -73,12 +73,12 @@ module gem_options
    namelist /gem_cfgs  / Heap_nk
    namelist /gem_cfgs_p/ Heap_nk
 
-   !# array of model levels ,  0.0 < HYB < 1.0 
+   !# array of model levels ,  0.0 < HYB < 1.0
    real, dimension(MAXHLEV) :: hyb = -1
    namelist /gem_cfgs/ Hyb
 
-   !# pair of coefficients (min,max) to control the flattenning of the 
-   !# vertical coordinate 
+   !# pair of coefficients (min,max) to control the flattenning of the
+   !# vertical coordinate
    real, dimension(2):: Hyb_rcoef = (/1., 1./)
    namelist /gem_cfgs  / Hyb_rcoef
    namelist /gem_cfgs_p/ Hyb_rcoef
@@ -96,7 +96,7 @@ module gem_options
    namelist /gem_cfgs  / Hzd_lnr
    namelist /gem_cfgs_p/ Hzd_lnr
 
-   !# Theta 2 delta-x removal ratio - range(0.0-1.0). 
+   !# Theta 2 delta-x removal ratio - range(0.0-1.0).
    real :: Hzd_lnr_theta = -1.
    namelist /gem_cfgs  / Hzd_lnr_theta
    namelist /gem_cfgs_p/ Hzd_lnr_theta
@@ -113,22 +113,22 @@ module gem_options
    namelist /gem_cfgs_p/ Hzd_pwr
 
    !# Order of the background diffusion operator on theta
-   !# 2, 4, 6, 8 
-   integer :: Hzd_pwr_theta = -1.
+   !# 2, 4, 6, 8
+   integer :: Hzd_pwr_theta = -1
    namelist /gem_cfgs  / Hzd_pwr_theta
    namelist /gem_cfgs_p/ Hzd_pwr_theta
 
    !# Order of the background diffusion operator on tracers
-   integer :: Hzd_pwr_tr = -1.
+   integer :: Hzd_pwr_tr = -1
    namelist /gem_cfgs  / Hzd_pwr_tr
    namelist /gem_cfgs_p/ Hzd_pwr_tr
 
    !# Fraction of the maximum divergence damping - range(0.0-1.0)
-   integer :: Hzd_div_damp = -1.
+   integer :: Hzd_div_damp = -1
    namelist /gem_cfgs  / Hzd_div_damp
    namelist /gem_cfgs_p/ Hzd_div_damp
 
-   !# Main Smagorinsky control parameter
+   !# Main Smagorinsky control parameter (usual range 0.1-0.3)
    real :: Hzd_smago_param= -1.
    namelist /gem_cfgs  / Hzd_smago_param
    namelist /gem_cfgs_p/ Hzd_smago_param
@@ -143,33 +143,49 @@ module gem_options
    namelist /gem_cfgs  / Hzd_smago_prandtl_hu
    namelist /gem_cfgs_p/ Hzd_smago_prandtl_hu
 
-   !# 
+   !# Coefficient of background diffusion added to the coefficient computed using the
+   !# Smagorinsky approach.
    real :: Hzd_smago_lnr = 0.
    namelist /gem_cfgs  / Hzd_smago_lnr
    namelist /gem_cfgs_p/ Hzd_smago_lnr
-   !# 
+
+   !# The constant value of background diffusion coefficient below Hzd_smago_bot_lev if a
+   !# vertically varying background diffusion is required.
    real :: Hzd_smago_min_lnr = -1.
    namelist /gem_cfgs  / Hzd_smago_min_lnr
    namelist /gem_cfgs_p/ Hzd_smago_min_lnr
-   !# 
+
+   !# The maximum background coefficient at the model lid. A COS^2-type ramp is applied between
+   !# Hzd_smago_lnr (at Hzd_smago_top_lev) and Hzd_smago_max_lnr (at the model lid).
+   real :: Hzd_smago_max_lnr = -1.
+   namelist /gem_cfgs  / Hzd_smago_max_lnr
+   namelist /gem_cfgs_p/ Hzd_smago_max_lnr
+
+   !# The top level in the hybrid coordinate where the background diffusion coefficient
+   !# reaches the value defined by Hzd_smago_lnr. A COS^2-type ramp is applied between
+   !# Hzd_smago_min_lnr (at Hzd_smago_bot_lev) and Hzd_smago_lnr (at Hzd_smago_top_lev).
    real :: Hzd_smago_bot_lev = 0.7
    namelist /gem_cfgs  / Hzd_smago_bot_lev
    namelist /gem_cfgs_p/ Hzd_smago_bot_lev
-   !# 
+
+   !# The bottom level in the hybrid coordinate below which the background diff. coefficient
+   !# is constant with a value defined by Hzd_smago_min_lnr.
    real :: Hzd_smago_top_lev = 0.4
    namelist /gem_cfgs  / Hzd_smago_top_lev
    namelist /gem_cfgs_p/ Hzd_smago_top_lev
-   !# 
+
+   !# If TRUE then no background diffusion is applied to THETA and HU.
    logical :: Hzd_smago_theta_nobase_L = .false.
    namelist /gem_cfgs  / Hzd_smago_theta_nobase_L
    namelist /gem_cfgs_p/ Hzd_smago_theta_nobase_L
-   !# 
+
+   !# Frictional heating is considered when Hzd_smago_fric_heat>0.
    real :: Hzd_smago_fric_heat = 0.
    namelist /gem_cfgs  / Hzd_smago_fric_heat
    namelist /gem_cfgs_p/ Hzd_smago_fric_heat
 
-   !# Coefficients that multiply KM to simulate sponge layer near the top 
-   !# of the model. Warning! if this parameter is used, the EPONGE in the 
+   !# Coefficients that multiply KM to simulate sponge layer near the top
+   !# of the model. Warning! if this parameter is used, the EPONGE in the
    !# physics namelist should be removed.
    real, dimension(1000) :: Eq_sponge = 0.
    namelist /gem_cfgs/ Eq_sponge
@@ -181,7 +197,7 @@ module gem_options
 
    !# The following variables are to help compute latitudinal modulation of
    !# vertical diffusion coefficient on momentum by fitting a cubic btwn
-   !# values P_lmvd_weigh_low_lat and P_lmvd_weigh_high_lat at latitudes 
+   !# values P_lmvd_weigh_low_lat and P_lmvd_weigh_high_lat at latitudes
    !# P_lmvd_low_lat and P_lmvd_high_lat
 
    !# Multiplication factor of P_pbl_spng at latitude P_lmvd_high_lat
@@ -216,8 +232,8 @@ module gem_options
    namelist /gem_cfgs/ Iau_interval
    namelist /gem_cfgs_p/ Iau_interval
 
-   !# The number of seconds over which IAU will be  will be run 
-   !# (typically the length of the assimilation window).  
+   !# The number of seconds over which IAU will be  will be run
+   !# (typically the length of the assimilation window).
    !# Default < 0 means that no IAUs are applied.
    real :: Iau_period = -1.
    namelist /gem_cfgs/ Iau_period
@@ -313,7 +329,7 @@ module gem_options
    namelist /gem_cfgs  / Lam_ctebcs_L
    namelist /gem_cfgs_p/ Lam_ctebcs_L
 
-   !# Type of horizontal interpolation to model grid 
+   !# Type of horizontal interpolation to model grid
    !# * 'CUB_LAG'
    !# * 'LINEAR'
    !# * 'NEAREST'
@@ -321,7 +337,7 @@ module gem_options
    namelist /gem_cfgs  / Lam_hint_S
    namelist /gem_cfgs_p/ Lam_hint_S
 
-   !# True-> The plane of the top temperature layer is completely 
+   !# True-> The plane of the top temperature layer is completely
    !# overwritten from the 2D pilot data
    logical :: Lam_toptt_L = .false.
    namelist /gem_cfgs  / Lam_toptt_L
@@ -346,7 +362,7 @@ module gem_options
 
    !Out3
 
-   !# True-> to clip humidity variables on output 
+   !# True-> to clip humidity variables on output
    logical :: Out3_cliph_L = .false.
    namelist /gem_cfgs  / Out3_cliph_L
    namelist /gem_cfgs_p/ Out3_cliph_L
@@ -366,19 +382,19 @@ module gem_options
    namelist /gem_cfgs  / Out3_vinterp_type_S
    namelist /gem_cfgs_p/ Out3_vinterp_type_S
 
-   !# Default value for IP3 is 0, -1 for IP3 to contain step number, 
+   !# Default value for IP3 is 0, -1 for IP3 to contain step number,
    !# >0 for given IP3
    integer :: Out3_ip3 = 0
    namelist /gem_cfgs  / Out3_ip3
    namelist /gem_cfgs_p/ Out3_ip3
 
-   !# Number of layers close to the bottom of the model within which a 
+   !# Number of layers close to the bottom of the model within which a
    !# linear interpolation of GZ will be performed
    integer :: Out3_linbot = 0
    namelist /gem_cfgs  / Out3_linbot
    namelist /gem_cfgs_p/ Out3_linbot
 
-   !# Packing factor used for all variables except for those defined in 
+   !# Packing factor used for all variables except for those defined in
    !# Out_xnbits_s
    integer :: Out3_nbitg = 16
    namelist /gem_cfgs  / Out3_nbitg
@@ -486,15 +502,10 @@ module gem_options
 
    !# * 0 -> No conservation of surface pressure
    !# * 1 -> Conservation of Total air mass Pressure
-   !# * 2 -> Conservation of Dry air mass Pressure with forced Schm_source_ps_L=.true.
+   !# * 2 -> Conservation of Dry air mass Pressure
    integer :: Schm_psadj = 0
    namelist /gem_cfgs  / Schm_psadj
    namelist /gem_cfgs_p/ Schm_psadj
-
-   !# correction at each timestep due to sources and sinks of specific humidity
-   logical :: Schm_source_ps_L = .false.
-   namelist /gem_cfgs  / Schm_source_ps_L
-   namelist /gem_cfgs_p/ Schm_source_ps_L
 
    !# True-> print dry/wet air masses
    logical :: Schm_psadj_print_L = .false.
@@ -506,7 +517,7 @@ module gem_options
    namelist /gem_cfgs  / Schm_psadj_lam_L
    namelist /gem_cfgs_p/ Schm_psadj_lam_L
 
-   !# True-> 
+   !# True->
    logical :: Schm_dry_mixing_ratio_L = .false.
    namelist /gem_cfgs  / Schm_dry_mixing_ratio_L
    namelist /gem_cfgs_P/ Schm_dry_mixing_ratio_L
@@ -533,17 +544,18 @@ module gem_options
 
    !# * 0   ->          NO advection
    !# * 1   -> traditional advection
-   !# * 2   -> consistant advection with respect to off-centering
+   !# * 2   -> consistent advection with respect to off-centering
+   !# * 3   -> reversed advection with respect to off-centering
    integer :: Schm_advec = 1
    namelist /gem_cfgs  / Schm_advec
    namelist /gem_cfgs_p/ Schm_advec
 
-   !# True-> Eulerian treatment of mountains in the continuity equation 
+   !# True-> Eulerian treatment of mountains in the continuity equation
    logical :: Schm_eulmtn_L = .false.
    namelist /gem_cfgs  / Schm_eulmtn_L
    namelist /gem_cfgs_p/ Schm_eulmtn_L
 
-   !# True-> Modify slightly code behaviour to ensure bitpattern 
+   !# True-> Modify slightly code behaviour to ensure bitpattern
    !# reproduction in restart mode using FST file
    logical :: Schm_bitpattern_L = .false.
    namelist /gem_cfgs/ Schm_bitpattern_L
@@ -620,12 +632,12 @@ module gem_options
 
    !Spn
 
-   !# Spectral nudging list of variables (eg. 'UVT' or 'UV') 
+   !# Spectral nudging list of variables (eg. 'UVT' or 'UV')
    character(len=16) :: Spn_nudging_S = ' '
    namelist /gem_cfgs  / Spn_nudging_S
    namelist /gem_cfgs_p/ Spn_nudging_S
 
-   !# Nudging profile lower end in hyb level (eg. 1.0 or 0.8) 
+   !# Nudging profile lower end in hyb level (eg. 1.0 or 0.8)
    !# If use 0.8, the profile will be set zero when hyb > 0.8
    real :: Spn_start_lev = 1.0
    namelist /gem_cfgs  / Spn_start_lev
@@ -643,7 +655,7 @@ module gem_options
    namelist /gem_cfgs  / Spn_trans_shape_S
    namelist /gem_cfgs_p/ Spn_trans_shape_S
 
-   !# Nudging relaxation timescale (eg. 10 hours ) 
+   !# Nudging relaxation timescale (eg. 10 hours )
    real :: Spn_relax_hours = 10.
    namelist /gem_cfgs  / Spn_relax_hours
    namelist /gem_cfgs_p/ Spn_relax_hours
@@ -653,36 +665,36 @@ module gem_options
    namelist /gem_cfgs  / Spn_cutoff_scale_large
    namelist /gem_cfgs_p/ Spn_cutoff_scale_large
 
-   !# The filter will be set 1.0 for larger scales (in km) between 
-   !# Spn_cutoff_scale_small and Spn_cutoff_scale_large, 
+   !# The filter will be set 1.0 for larger scales (in km) between
+   !# Spn_cutoff_scale_small and Spn_cutoff_scale_large,
    !# the filter will have a COS2 transition.
    real :: Spn_cutoff_scale_small = 100.
    namelist /gem_cfgs  / Spn_cutoff_scale_small
    namelist /gem_cfgs_p/ Spn_cutoff_scale_small
 
-   !# Nudging interval in seconds (eg. 1800, means nudging is performed 
-   !# every every 30 minutes) 
+   !# Nudging interval in seconds (eg. 1800, means nudging is performed
+   !# every every 30 minutes)
    integer :: Spn_step = 21600
    namelist /gem_cfgs  / Spn_step
    namelist /gem_cfgs_p/ Spn_step
 
-   !# Nudging weight in temporal space (.true. or .false.). 
-   !# If the driving fields are available every 6 hours and Spn_step is 
-   !# set to 30 minutes then nudging will have more weight every six hours 
+   !# Nudging weight in temporal space (.true. or .false.).
+   !# If the driving fields are available every 6 hours and Spn_step is
+   !# set to 30 minutes then nudging will have more weight every six hours
    !# when the driving fields are available
    logical :: Spn_weight_L = .false.
    namelist /gem_cfgs  / Spn_weight_L
    namelist /gem_cfgs_p/ Spn_weight_L
 
-   !# The weight factor when Spn_weight_L=.true. 
-   !# (The weigh factor is COS2**(Spn_wt_pwr), Spn_wt_pwr could  be set as 
+   !# The weight factor when Spn_weight_L=.true.
+   !# (The weigh factor is COS2**(Spn_wt_pwr), Spn_wt_pwr could  be set as
    !# 0, 2, 4, 6. If Spn_wt_pwr = 2, weight factor is COS2)
    integer :: Spn_wt_pwr = 2
    namelist /gem_cfgs  / Spn_wt_pwr
    namelist /gem_cfgs_p/ Spn_wt_pwr
 
-   !# list of variables to do blocstat. 
-   !# Any gmm variable name, or predefine lists : 
+   !# list of variables to do blocstat.
+   !# Any gmm variable name, or predefine lists :
    !# * 'ALL'
    !# * 'ALL_DYN_T0'
    !# * 'ALL_DYN_T1'
@@ -704,8 +716,8 @@ module gem_options
    namelist /gem_cfgs  / Tr3d_anydate_L
    namelist /gem_cfgs_p/ Tr3d_anydate_L
 
-   !# Vspng: 
-   !# Vertical sponge if activated, will be applied to the following 
+   !# Vspng:
+   !# Vertical sponge if activated, will be applied to the following
    !# variables: Horizontal Wind,  Temperature (Top level), Zdot, W
 
    !# Top coefficient for del-2 diffusion (m2/s)
@@ -713,7 +725,7 @@ module gem_options
    namelist /gem_cfgs  / Vspng_coeftop
    namelist /gem_cfgs_p/ Vspng_coeftop
 
-   !# Number of levels from the top of the model 
+   !# Number of levels from the top of the model
    integer :: Vspng_nk = 0
    namelist /gem_cfgs  / Vspng_nk
    namelist /gem_cfgs_p/ Vspng_nk
@@ -737,8 +749,8 @@ module gem_options
 
    !# True-> apply vertical sponge to momentum, and divergence
    logical :: Zblen_L = .false.
-   namelist /gem_cfgs  / Zblen_L  
-   namelist /gem_cfgs_p/ Zblen_L  
+   namelist /gem_cfgs  / Zblen_L
+   namelist /gem_cfgs_p/ Zblen_L
 
    !# True-> apply vertical sponge also to temperature
    logical :: Zblen_spngtt_L = .false.
@@ -778,14 +790,14 @@ module gem_options
 contains
 
    function gem_options_init() result(F_istat)
-      implicit none 
+      implicit none
       integer :: F_istat
 #include <rmnlib_basics.hf>
       logical, save :: init_L = .false.
       F_istat = RMN_OK
       if (init_L) return
       init_L = .true.
-      
+
       return
    end function gem_options_init
 

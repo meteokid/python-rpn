@@ -1,0 +1,2 @@
+      real*8 Dcst_rayt_8, Dcst_omega_8
+      common / Dcst_r8 / Dcst_rayt_8, Dcst_omega_8

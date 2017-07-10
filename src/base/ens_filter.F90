@@ -21,6 +21,7 @@
       use ens_options
       use gem_options
       use grid_options
+      use geomh
       use tdpack
       implicit none
 #include <arch_specific.hf>
@@ -39,14 +40,13 @@
 
 #include "gmm.hf"
 #include "var_gmm.cdk"
-
 #include "glb_ld.cdk"
-#include "geomg.cdk"
-
+#include "dcst.cdk"
 
       integer  E_nk
       integer i, j, k, i0, j0, in, jn
-      real    err, deltax, cpdi, dummy
+      real    deltax, cpdi, dummy
+      real  , dimension(Minx:Maxx,Miny:Maxy,Nk) :: dummy_tab
       real  , dimension(:,:,:), allocatable  :: dsp_local
       real  , dimension(:,:,:), allocatable  :: dsp_dif, dsp_gwd
       real  , dimension(l_ni,l_nj)  :: fgem
@@ -63,7 +63,7 @@
       cpdi=1./real(cpd_8)
 
 ! Deltax -- typical model gridlength
-      deltax= 0.5d0 * (Geomg_hx_8 + Geomg_hy_8)*rayt_8
+      deltax= 0.5d0 * (geomh_hx_8 + geomh_hy_8)*Dcst_rayt_8
 
 !
 !     Get needed fields in memory
@@ -77,17 +77,17 @@
     call ens_marfield_ptp
 
      if (Ens_skeb_conf) then
-       
+
         call ens_marfield_skeb (fgem)
 
         do k=1,E_nk
          mcsph1(:,:,k)=fgem(:,:)
         enddo
 
-     else 
+     else
        return
      endif
-  
+
 
       allocate( dsp_local(l_minx:l_maxx,l_miny:l_maxy,E_nk))
       allocate( dsp_dif(l_minx:l_maxx,l_miny:l_maxy,E_nk))
@@ -156,9 +156,9 @@
 !
       dsp_gwd=0.0
       if(Ens_skeb_gwd)then
-       
+
          F_difut1=F_ut1*F_ugwdt1 ; F_difvt1=F_vt1*F_vgwdt1
-      
+
          do k= 1, E_nk
          do j= 0, l_nj
          do i= 0, l_ni
@@ -191,7 +191,7 @@
 !
 !     Apply 2D Gaussian filter
 !     ===================================================================
-         
+
       call ens_filter_ggauss(dble(Ens_skeb_bfc),dble(Ens_skeb_lam),dsp_local)
 
 
@@ -233,7 +233,7 @@
          do j= j0, jn
             do i= i0, l_ni
                F_difut1(i,j,k) = (dsp_local(i,j,k)-dsp_local(i-1,j,k))* &
-                                  Geomg_invDXv_8(j)
+                                  geomh_invDXv_8(j)
                F_difut1(i,j,k) = Ens_skeb_alph*deltax*F_difut1(i,j,k)
                F_vt1(i,j,k)    = F_vt1(i,j,k)+F_difut1(i,j,k)
             enddo
@@ -242,7 +242,7 @@
          do j= j0, l_nj !-pil_n
             do i= i0, in
                F_difvt1(i,j,k) = (dsp_local(i,j,k) - dsp_local(i,j-1,k)) * &
-                                  Geomg_invDY_8
+                                  geomh_invDY_8
                F_difvt1(i,j,k)= -Ens_skeb_alph*deltax*F_difvt1(i,j,k)
                F_ut1(i,j,k) = F_ut1(i,j,k)+F_difvt1(i,j,k)
             enddo
@@ -284,7 +284,7 @@
 
       call cal_div ( ensdiv, F_difut1, F_difvt1, 0, dummy,&
                      l_minx,l_maxx,l_miny,l_maxy, E_nk )
-      call cal_vor ( ensvor, dummy, F_difut1, F_difvt1, 0, dummy, .false., &
+      call cal_vor ( ensvor, dummy_tab, F_difut1, F_difvt1, 0, dummy, .false., &
                      l_minx,l_maxx,l_miny,l_maxy, E_nk )
 
      ! call gem_error(-1,'ens_filter','Must check calls to cal_div and cal_vor')

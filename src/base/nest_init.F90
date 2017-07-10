@@ -20,6 +20,7 @@
       use gmm_nest
       use gmm_geof
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -28,7 +29,6 @@
 #include "gmm.hf"
 #include "glb_ld.cdk"
 #include "tr3d.cdk"
-#include "geomg.cdk"
 #include "lun.cdk"
 #include "ptopo.cdk"
 

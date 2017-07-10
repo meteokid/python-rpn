@@ -28,7 +28,6 @@
 !
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
 #include "glb_pil.cdk"
 #include "yyg_rhs.cdk"
 #include "sol.cdk"
@@ -40,14 +39,14 @@
       real*8  xg_8(1-G_ni:2*G_ni),yg_8(1-G_nj:2*G_nj)
       real*8  xx_8(G_ni,G_nj),yy_8(G_ni,G_nj)
       real*8  t,p,s(2,2),h1,h2
-      real*8  x_d,y_d,x_a,y_a   
+      real*8  x_d,y_d,x_a,y_a
       real*8 TWO_8
       parameter( TWO_8   = 2.0d0 )
 !
 !     Localise could get point way outside of the actual grid in search
 !     So extend all global arrays: xg_8,yg_8
 !
-      
+
       do i=1,G_ni
          xg_8(i) = G_xg_8(i)
       end do
@@ -126,7 +125,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -137,9 +136,9 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 !
 ! East section
@@ -161,7 +160,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -172,9 +171,9 @@
                     j  .ge.Ptopo_gindx(3,kk).and.j  .le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 ! South section
       j=glb_pil_s
@@ -196,7 +195,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -207,9 +206,9 @@
                     j+1.ge.Ptopo_gindx(3,kk).and.j+1.le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 ! North section
       j=G_nj-glb_pil_n+1
@@ -232,7 +231,7 @@
                     imy.ge.Ptopo_gindx(3,kk).and.imy.le.Ptopo_gindx(4,kk))then
                     recv_len(kk)=recv_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -243,9 +242,9 @@
                     j-1.ge.Ptopo_gindx(3,kk).and.j-1.le.Ptopo_gindx(4,kk))then
                     send_len(kk)=send_len(kk)+1
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 ! Obtain sum of elements to send and receive for each processor
 ! and the total memory needed to store and receive for each processor
@@ -260,7 +259,7 @@
         maxsendlen_per_proc = max(maxsendlen_per_proc,send_len(kk) )
         Rhsx_send_all=send_len(kk)+Rhsx_send_all
         Rhsx_recv_all=recv_len(kk)+Rhsx_recv_all
-      
+
         if (send_len(kk).gt.0) Rhsx_sendmaxproc=Rhsx_sendmaxproc+1
         if (recv_len(kk).gt.0) Rhsx_recvmaxproc=Rhsx_recvmaxproc+1
      enddo
@@ -376,7 +375,7 @@
                     Rhsx_recv_i(Rhsx_recv_adr(kk)+recv_len(kk))=ii
                     Rhsx_recv_j(Rhsx_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -393,9 +392,9 @@
                     Rhsx_send_yyr(Rhsx_send_adr(kk)+send_len(kk))=y_a
                     Rhsx_send_sten(Rhsx_send_adr(kk)+send_len(kk))=Sol_stencil2_8(stencil)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 !
 ! East section
@@ -424,7 +423,7 @@
                     Rhsx_recv_i(Rhsx_recv_adr(kk)+recv_len(kk))=ii
                     Rhsx_recv_j(Rhsx_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -441,9 +440,9 @@
                     Rhsx_send_yyr(Rhsx_send_adr(kk)+send_len(kk))=y_a
                     Rhsx_send_sten(Rhsx_send_adr(kk)+send_len(kk))=Sol_stencil3_8(stencil)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 ! South section
       j=glb_pil_s
@@ -472,7 +471,7 @@
                     Rhsx_recv_i(Rhsx_recv_adr(kk)+recv_len(kk))=ii
                     Rhsx_recv_j(Rhsx_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -489,9 +488,9 @@
                     Rhsx_send_yyr(Rhsx_send_adr(kk)+send_len(kk))=y_a
                     Rhsx_send_sten(Rhsx_send_adr(kk)+send_len(kk))=Sol_stencil4_8(stencil)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !
 ! North section
       j=G_nj-glb_pil_n+1
@@ -521,7 +520,7 @@
                     Rhsx_recv_i(Rhsx_recv_adr(kk)+recv_len(kk))=ii
                     Rhsx_recv_j(Rhsx_recv_adr(kk)+recv_len(kk))=jj
                 endif
-             enddo       
+             enddo
          endif
 
 ! check to send to who
@@ -538,9 +537,9 @@
                     Rhsx_send_yyr(Rhsx_send_adr(kk)+send_len(kk))=y_a
                     Rhsx_send_sten(Rhsx_send_adr(kk)+send_len(kk))=Sol_stencil5_8(stencil)
                 endif
-             enddo       
+             enddo
          endif
-      enddo   
+      enddo
 !Check receive lengths from each processor
 !     do ki=1,Rhsx_recvmaxproc
 !        kk=Rhsx_recvproc(ki)
@@ -568,7 +567,7 @@
  1000 format(a15,i3,'=',i5,'bytes, addr=',i5)
  1001 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3)
  1002 format(a15,i3,'=',i4,'bytes   i:', i3,' j:',i3,'sten=',i3)
-       
+
       return
       end
 

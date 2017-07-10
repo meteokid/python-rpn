@@ -17,13 +17,17 @@
 
       subroutine set_world_view
       use iso_c_binding
-      use out_collector, only: block_collect_set, Bloc_me
-      use step_options
-      use inp_mod
+
+      use coriolis
+      use dynkernel_options
       use gem_options
       use grid_options
+      use geomh
+      use inp_mod
+      use out_collector, only: block_collect_set, Bloc_me
+      use step_options
       use theo_options
-      use dynkernel_options
+
       implicit none
 #include <arch_specific.hf>
 
@@ -31,8 +35,6 @@
 #include "lun.cdk"
 #include "ptopo.cdk"
 #include "grid.cdk"
-#include "geomg.cdk"
-#include "cori.cdk"
 #include "glb_ld.cdk"
 #include "path.cdk"
 #include "out3.cdk"
@@ -75,8 +77,8 @@
          err(7) = gem_nml (Path_nml_S)
          err(8) = adv_nml (Path_nml_S)
       else if (trim(Dynamics_Kernel_S) == 'DYNAMICS_EXPO_H') then
-         err(6) = gem_nml (Path_nml_S) ! TODO : avoid reading FISL stuff
-         err(7) = exp_nml (Path_nml_S)
+         err(7) = gem_nml (Path_nml_S) ! TODO : avoid reading FISL stuff
+         err(8) = exp_nml (Path_nml_S)
       else
          if (lun_out.gt.0) &
          write (lun_out,1010) trim(Dynamics_Kernel_S)
@@ -98,6 +100,7 @@
 ! Establish final configuration
 
       err(1) = gemdm_config ()
+      call set_ver_geom
 
       call gem_error(err(1),'set_world_view','gemdm_config')
 
@@ -193,7 +196,7 @@
 
 ! Initialize geometry of the model
 
-      call set_geom
+      call set_geomh
 
       if (trim(Dynamics_Kernel_S) == 'DYNAMICS_FISL_P') then
          err(1)= sol_transpose2 ( Ptopo_npex, Ptopo_npey, .false. )
@@ -203,12 +206,8 @@
          err= set_fft ()
       end if
 
-      allocate (cori_fcoru_8(l_minx:l_maxx,l_miny:l_maxy),&
-                cori_fcorv_8(l_minx:l_maxx,l_miny:l_maxy))
-
-      call coriolis ( cori_fcoru_8, cori_fcorv_8, geomg_x_8, geomg_y_8,&
-                      geomg_xu_8, geomg_yv_8, Grd_rot_8, &
-                      l_minx,l_maxx,l_miny,l_maxy)
+      call set_coriolis ( geomh_x_8, geomh_y_8, geomh_xu_8, geomh_yv_8, Grd_rot_8, &
+                          l_minx,l_maxx,l_miny,l_maxy)
 
       call set_opr2 (' ')
 

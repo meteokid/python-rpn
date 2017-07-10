@@ -13,11 +13,12 @@
 ! 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 !---------------------------------- LICENCE END ---------------------------------
 
-!**s/r yyg_xchng - Interpolate and exchange scalars 
+!**s/r yyg_xchng - Interpolate and exchange scalars
 
       subroutine yyg_xchng ( F_src, Minx,Maxx,Miny,Maxy, Nk, &
                              mono_L, F_interpo_S )
       use gem_options
+      use geomh
       implicit none
 #include <arch_specific.hf>
 
@@ -34,8 +35,6 @@
 
 #include "ptopo.cdk"
 #include "glb_ld.cdk"
-#include "geomn.cdk"
-#include "geomg.cdk"
 #include "glb_pil.cdk"
 #include "yyg_pil.cdk"
 #include "yyg_pil0.cdk"
@@ -119,7 +118,7 @@
       do 100 kk= 1, sendmaxproc
 
 !        For each processor (in other colour)
-      
+
          if (Ptopo_couleur.eq.0) then
             kk_proc = sendproc(kk)+Ptopo_numproc-1
          else
@@ -133,7 +132,7 @@
              adr=send_adr(kk)+1
 
              call yyg_interp1( send_pil(1,KK), wrk1, &
-                       send_imx(adr), send_imy(adr), Geomg_x_8,Geomg_y_8,&
+                       send_imx(adr), send_imy(adr), geomh_x_8,geomh_y_8,&
                        Minx,Maxx,Miny,Maxy,Nk,&
                        send_xxr(adr),send_yyr(adr),send_len(KK),&
                        mono_l,F_interpo_S )
@@ -150,7 +149,7 @@
 !
       do 200 kk= 1, recvmaxproc
 !        For each processor (in other colour)
-      
+
          if (Ptopo_couleur.eq.0) then
              kk_proc = recvproc(kk)+Ptopo_numproc-1
          else
@@ -185,14 +184,14 @@
                  F_src(recv_i(adr),recv_j(adr),k) = recv_pil(mm,KK)
               enddo
            enddo
-            
+
  300     continue
-       
+
       endif
 
       if (recvlen.gt.0) deallocate(recv_pil)
       if (sendlen.gt.0) deallocate(send_pil)
-      call timing_stop (6)  
+      call timing_stop (6)
 !
 !----------------------------------------------------------------------
 !
