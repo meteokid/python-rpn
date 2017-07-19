@@ -63,7 +63,8 @@
 !For sorting the output
       integer istat, iverb
       character(len=32) :: varname_S,outname_S,bus0_S,refp0_S,refp0ls_S
-      integer pnerror,i,k,j,ibus,multxmosaic
+      character(len=32) :: varlist_S(MAXELEM*MAXSET)
+      integer pnerror,i,k,j,n,ibus,multxmosaic
       type(phymeta) :: pmeta
 !
 !     ---------------------------------------------------------------
@@ -92,6 +93,24 @@
       if (.not.Schm_phyms_L) return
 
       if (Lun_out.gt.0) write(Lun_out,1000)
+
+! Collect the list of potentialy requested output physics vars
+      n = 0
+      varlist_S(:) = ' '
+      do k = 1, Outp_sets
+         do j = 1, Outp_var_max(k)
+            varname_S = Outp_varnm_S(j,k)
+            istat = clib_tolower(varname_S)
+            if (.not.any(varname_S == varlist_S(1:n))) then
+               n = n + 1
+               varlist_S(n) = varname_S
+            endif
+         enddo
+      enddo
+      !#TODO: trim the output list to the ones actually requested within the run
+      if (n > 0) then
+         err = wb_put('itf_phy/PHYOUT', varlist_S(1:n), WB_REWRITE_AT_RESTART)
+      endif
 
 ! We put mandatory variables in the WhiteBoard
 

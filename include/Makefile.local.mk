@@ -10,7 +10,7 @@ endif
 #    $(error Not found: $(gemdyn)/VERSION)
 # endif
 # GEMDYN_VERSION0  = $(shell cat $(gemdyn)/VERSION | sed 's|x/||')
-GEMDYN_VERSION0  = x/5.0.a7
+GEMDYN_VERSION0  = x/5.0.a8
 GEMDYN_VERSION   = $(notdir $(GEMDYN_VERSION0))
 GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 
@@ -19,11 +19,11 @@ GEMDYN_VERSION_X = $(dir $(GEMDYN_VERSION0))
 GEMDYN_LIBS_DEP = $(RPNPHY_LIBS_V) $(MODELUTILS_LIBS_V) $(MODELUTILS_LIBS_DEP)
 GEMDYN_LIBS_SHARED_DEP = $(RPNPHY_LIBS_SHARED_V) $(MODELUTILS_LIBS_SHARED_V) $(MODELUTILS_LIBS_DEP)
 
-LIBCPLPATH  = 
+LIBCPLPATH  =
 LIBCPL      =
-LIBCANONICAL = gemdyn_stubs_canonical
+LIBCANONICAL =
 
-GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base
+GEMDYN_LIBS_MERGED_0 = gemdyn_main gemdyn_base gemdyn_canonical
 GEMDYN_LIBS_OTHER_0  = $(LIBCPL) $(LIBCANONICAL)
 
 GEMDYN_SFX=$(RDE_BUILDDIR_SFX)
@@ -34,22 +34,22 @@ GEMDYN_LIBS_ALL_0  = $(GEMDYN_LIBS_MERGED_0) $(GEMDYN_LIBS_OTHER_0)
 GEMDYN_LIBS_ALL    = $(GEMDYN_LIBS_MERGED) $(GEMDYN_LIBS_OTHER)
 
 GEMDYN_LIBS_0      = gemdyn$(GEMDYN_SFX)
-GEMDYN_LIBS        = $(GEMDYN_LIBS_0) $(GEMDYN_LIBS_OTHER) 
-GEMDYN_LIBS_V      = $(GEMDYN_LIBS_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
+GEMDYN_LIBS        = $(GEMDYN_LIBS_0) $(GEMDYN_LIBS_OTHER)
+GEMDYN_LIBS_V      = $(GEMDYN_LIBS_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER)
 
 ifeq (,$(MAKE_NO_LIBSO))
 GEMDYN_LIBS_SHARED_ALL = $(foreach item,$(GEMDYN_LIBS_ALL),$(item)-shared)
 GEMDYN_LIBS_SHARED_0   = $(GEMDYN_LIBS_0)-shared
-GEMDYN_LIBS_SHARED     = $(GEMDYN_LIBS_SHARED_0) $(GEMDYN_LIBS_OTHER) 
-GEMDYN_LIBS_SHARED_V   = $(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER) 
+GEMDYN_LIBS_SHARED     = $(GEMDYN_LIBS_SHARED_0) $(GEMDYN_LIBS_OTHER)
+GEMDYN_LIBS_SHARED_V   = $(GEMDYN_LIBS_SHARED_0)_$(GEMDYN_VERSION) $(GEMDYN_LIBS_OTHER)
 endif
 
-GEMDYN_LIBS_OTHER_FILES = $(foreach item,$(GEMDYN_LIBS_OTHER),$(LIBDIR)/lib$(item).a) 
+GEMDYN_LIBS_OTHER_FILES = $(foreach item,$(GEMDYN_LIBS_OTHER),$(LIBDIR)/lib$(item).a)
 GEMDYN_LIBS_ALL_FILES   = $(foreach item,$(GEMDYN_LIBS_ALL),$(LIBDIR)/lib$(item).a)
 ifeq (,$(MAKE_NO_LIBSO))
 GEMDYN_LIBS_SHARED_FILES   = $(LIBDIR)/lib$(GEMDYN_LIBS_SHARED_0).so
 endif
-GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIBS_0).a $(GEMDYN_LIBS_SHARED_FILES) $(GEMDYN_LIBS_ALL_FILES) 
+GEMDYN_LIBS_ALL_FILES_PLUS = $(LIBDIR)/lib$(GEMDYN_LIBS_0).a $(GEMDYN_LIBS_SHARED_FILES) $(GEMDYN_LIBS_ALL_FILES)
 
 OBJECTS_MERGED_gemdyn = $(foreach item,$(GEMDYN_LIBS_MERGED_0),$(OBJECTS_$(item)))
 
@@ -143,7 +143,7 @@ $(BINDIR)/toc2nml: | $(GEMDYN_VFILES)
 
 gem_monitor_end: $(BINDIR)/gem_monitor_end
 	ls -lL $(BINDIR)/$@
-gem_monitor_end.c: 
+gem_monitor_end.c:
 	if [[ ! -f $@ ]] ; then rdeco $@ || true ; fi
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
@@ -155,7 +155,7 @@ $(BINDIR)/gem_monitor_end: gem_monitor_end.c
 
 gem_monitor_output: $(BINDIR)/gem_monitor_output
 	ls -lL $(BINDIR)/$@
-gem_monitor_output.c: 
+gem_monitor_output.c:
 	if [[ ! -f $@ ]] ; then rdeco $@ || true ; fi
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/src/main/$@ $@ || true ; fi
 	if [[ ! -f $@ ]] ; then cp $(gemdyn)/main/$@ $@ || true ; fi
