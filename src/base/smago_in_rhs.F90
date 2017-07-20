@@ -56,7 +56,7 @@
       real :: max_coef, crit_coef
       logical :: switch_on_THETA, switch_on_hu, switch_on_fric_heat
 
-      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr <=0.) ) return
+      if( (hzd_smago_param <= 0.) .and. (hzd_smago_lnr(2) <=0.) ) return
 
       smagparam= hzd_smago_param
       ismagprandtl    = 1./Hzd_smago_prandtl

@@ -19,7 +19,10 @@
       use hzd_ctrl
       use hzd_exp
       use gmm_vt1
+      use step_options
+      use grid_options
       use gem_options
+      use ens_options
       implicit none
 #include <arch_specific.hf>
 
@@ -28,9 +31,13 @@
 #include "lun.cdk"
 #include "tr3d.cdk"
 
+      character(len=GMM_MAXNAMELENGTH) :: tr_name
+      logical yyblend
+      real, pointer, dimension(:,:,:) :: tr1
       logical switch_on_UVW, switch_on_TR, switch_on_vrtspng_UVT    , &
               switch_on_vrtspng_W, switch_on_eqspng, switch_on_THETA
-      integer i,j,k,istat
+      logical xch_UV,xch_TT,xch_TR,xch_WZD
+      integer i,j,k,istat,n
       integer, save :: depth
       real*8 pis2,fract
       real, dimension(:)    , pointer, save :: weight=> null()
@@ -41,6 +48,14 @@
       if (Lun_debug_L) write (Lun_out,1000)
 
       call timing_start2 ( 60, 'HZD_main', 1 )
+      xch_UV = .false.
+      xch_TT = .false.
+      xch_TR = .false.
+      xch_WZD= .false.
+      if (ens_conf) then
+          xch_UV = .true.
+          xch_TT = .true.
+      endif
       switch_on_UVW         = Hzd_lnr       > 0.
       switch_on_TR          =(Hzd_lnr_tr    > 0.).and.any(Tr3d_hzd)
       switch_on_THETA       = Hzd_lnr_theta > 0.
@@ -65,6 +80,7 @@
 
       if ( switch_on_THETA ) then
          call timing_start2 ( 61, 'HZD_theta', 60 )
+         xch_TT = .true.
          call pw_update_GPW
          call hzd_theta
          call timing_stop  ( 61 )
@@ -76,6 +92,7 @@
 
       if ( switch_on_TR ) then
          call timing_start2 ( 62, 'HZD_tracers', 60 )
+         xch_TR = .true.
          do i=1, Tr3d_ntr
             if (Tr3d_hzd(i)) then
                nullify (tr)
@@ -93,6 +110,9 @@
 
       if ( switch_on_UVW ) then
          call timing_start2 ( 64, 'HZD_bkgrnd', 60 )
+         xch_UV = .true.
+         xch_TT = .true.
+         xch_WZD= .true.
          call hzd_ctrl4 ( ut1, vt1, l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 (zdt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call hzd_ctrl4 ( wt1, 'S', l_minx,l_maxx,l_miny,l_maxy,G_nk)
@@ -105,6 +125,8 @@
 
       if ( switch_on_vrtspng_UVT ) then
          call timing_start2 ( 65, 'V_SPNG', 60 )
+         xch_UV = .true.
+         xch_TT = .true.
          call hzd_exp_deln ( ut1,  'U', l_minx,l_maxx,l_miny,l_maxy,&
                              Vspng_nk, F_VV=vt1, F_type_S='VSPNG' )
          call hzd_exp_deln ( tt1, 'M', l_minx,l_maxx,l_miny,l_maxy,&
@@ -113,6 +135,7 @@
       endif
       if ( switch_on_vrtspng_W ) then
          call timing_start2 ( 65, 'V_SPNG', 60 )
+         xch_WZD= .true.
          if (Vspng_riley_L) then
             if (.not. associated(weight)) then
                pis2 = acos(0.0d0)
@@ -147,11 +170,40 @@
 
       if ( switch_on_eqspng ) then
          call timing_start2 ( 67, 'EQUA_SPNG', 60)
+         xch_UV= .true.
          call eqspng_drv (ut1,vt1,l_minx,l_maxx,l_miny,l_maxy,G_nk)
          call timing_stop ( 67 )
       endif
 
       call itf_ens_hzd ( ut1,vt1,tt1, l_minx,l_maxx,l_miny,l_maxy, G_nk )
+
+!*********************************************************
+!  Yin-Yang exchange pilot zones, blend wind overlap zones before physics*
+!*********************************************************
+      if (Grd_yinyang_L) then
+         if (xch_UV) call yyg_nestuv(ut1,vt1, l_minx,l_maxx,l_miny,l_maxy, G_nk)
+         if (xch_TT) call yyg_xchng (tt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+         if (xch_WZD) then
+            call yyg_xchng (zdt1, l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+            call yyg_xchng (wt1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .false., 'CUBIC')
+         endif
+         if (xch_TR) then
+            do n= 1, Tr3d_ntr
+               tr_name = 'TR/'//trim(Tr3d_name_S(n))//':P'
+               istat = gmm_get(tr_name, tr1)
+               call yyg_xchng (tr1 , l_minx,l_maxx,l_miny,l_maxy, G_nk,&
+                            .true., 'CUBIC')
+            end do
+          endif
+
+         yyblend= (Schm_nblendyy .gt. 0)
+         if (yyblend) &
+         call yyg_blend (mod(Step_kount,Schm_nblendyy).eq.0)
+
+      endif
 
       call timing_stop ( 60 )
 

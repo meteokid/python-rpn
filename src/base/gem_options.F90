@@ -144,40 +144,25 @@ module gem_options
    namelist /gem_cfgs_p/ Hzd_smago_prandtl_hu
 
    !# Coefficient of background diffusion added to the coefficient computed using the
-   !# Smagorinsky approach.
-   real :: Hzd_smago_lnr = 0.
+   !# Smagorinsky approach. The first element of the array determines the constant value
+   !# of background diffusion coeff. below Hzd_smago_lev(1). The second element represents
+   !# the value at Hzd_smago_lev(2). The third element determines the maximum coefficient
+   !# at the model top. Two ramps of COS^2-type are used between Hzd_smago_lev(1) and
+   !# Hzd_smago_lev (2), and between Hzd_smago_lev(2) and the model lid.
+   real, dimension(3):: Hzd_smago_lnr = (/-1., 0., -1./)
    namelist /gem_cfgs  / Hzd_smago_lnr
    namelist /gem_cfgs_p/ Hzd_smago_lnr
 
-   !# The constant value of background diffusion coefficient below Hzd_smago_bot_lev if a
-   !# vertically varying background diffusion is required.
-   real :: Hzd_smago_min_lnr = -1.
-   namelist /gem_cfgs  / Hzd_smago_min_lnr
-   namelist /gem_cfgs_p/ Hzd_smago_min_lnr
+   !# The levels (bot,top) in the hybrid coordinate where the background diffusion
+   !# coefficient varies between the value defined by Hzd_smago_lnr(1) and Hzd_smago_lnr(2).
+   real, dimension(2):: Hzd_smago_lev = (/0.7, 0.4/)
+   namelist /gem_cfgs  / Hzd_smago_lev
+   namelist /gem_cfgs_p/ Hzd_smago_lev
 
-   !# The maximum background coefficient at the model lid. A COS^2-type ramp is applied between
-   !# Hzd_smago_lnr (at Hzd_smago_top_lev) and Hzd_smago_max_lnr (at the model lid).
-   real :: Hzd_smago_max_lnr = -1.
-   namelist /gem_cfgs  / Hzd_smago_max_lnr
-   namelist /gem_cfgs_p/ Hzd_smago_max_lnr
-
-   !# The top level in the hybrid coordinate where the background diffusion coefficient
-   !# reaches the value defined by Hzd_smago_lnr. A COS^2-type ramp is applied between
-   !# Hzd_smago_min_lnr (at Hzd_smago_bot_lev) and Hzd_smago_lnr (at Hzd_smago_top_lev).
-   real :: Hzd_smago_bot_lev = 0.7
-   namelist /gem_cfgs  / Hzd_smago_bot_lev
-   namelist /gem_cfgs_p/ Hzd_smago_bot_lev
-
-   !# The bottom level in the hybrid coordinate below which the background diff. coefficient
-   !# is constant with a value defined by Hzd_smago_min_lnr.
-   real :: Hzd_smago_top_lev = 0.4
-   namelist /gem_cfgs  / Hzd_smago_top_lev
-   namelist /gem_cfgs_p/ Hzd_smago_top_lev
-
-   !# If TRUE then no background diffusion is applied to THETA and HU.
-   logical :: Hzd_smago_theta_nobase_L = .false.
-   namelist /gem_cfgs  / Hzd_smago_theta_nobase_L
-   namelist /gem_cfgs_p/ Hzd_smago_theta_nobase_L
+   !# If TRUE then background diffusion is applied to THETA and HU.
+   logical :: Hzd_smago_theta_base_L = .true.
+   namelist /gem_cfgs  / Hzd_smago_theta_base_L
+   namelist /gem_cfgs_p/ Hzd_smago_theta_base_L
 
    !# Frictional heating is considered when Hzd_smago_fric_heat>0.
    real :: Hzd_smago_fric_heat = 0.

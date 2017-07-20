@@ -37,9 +37,18 @@
 
       integer k
       real*8 top_m, bot_m, top_t, bot_t, pi2
+      real*8 Hzd_smago_bot_lev, Hzd_smago_top_lev
+      real*8 Hzd_smago_min_lnr, Hzd_smago_mean_lnr, Hzd_smago_max_lnr
 !
 
       pi2=pi_8/2.d0
+
+      Hzd_smago_bot_lev=Hzd_smago_lev(1)
+      Hzd_smago_top_lev=Hzd_smago_lev(2)
+
+      Hzd_smago_min_lnr=Hzd_smago_lnr(1)
+      Hzd_smago_mean_lnr=Hzd_smago_lnr(2)
+      Hzd_smago_max_lnr=Hzd_smago_lnr(3)
 
       top_m= max( Hzd_smago_top_lev, Ver_hyb%m(  1 ) )
       bot_m= min( Hzd_smago_bot_lev, Ver_hyb%m(G_nk) )
@@ -49,10 +58,10 @@
 
       allocate( Hzd_smago_lnrM_8(G_nk), Hzd_smago_lnrT_8(G_nk))
 
-      if ( Hzd_smago_min_lnr < 0. .or. abs( Hzd_smago_lnr - Hzd_smago_min_lnr)<1.e-5) then
+      if ( Hzd_smago_min_lnr < 0. .or. abs( Hzd_smago_mean_lnr - Hzd_smago_min_lnr)<1.e-5) then
          do k=1,G_nk
-            Hzd_smago_lnrM_8(k)= hzd_smago_lnr
-            Hzd_smago_lnrT_8(k)= hzd_smago_lnr
+            Hzd_smago_lnrM_8(k)= Hzd_smago_mean_lnr
+            Hzd_smago_lnrT_8(k)= Hzd_smago_mean_lnr
          end do
 
       else
@@ -60,36 +69,36 @@
             ! For momentum levels
             if (Ver_hyb%m(k) <= bot_m .and. Ver_hyb%m(k) >= top_m) then
                Hzd_smago_lnrM_8(k) = cos(pi2-pi2*(bot_m - Ver_hyb%m(k))/(bot_m-top_m))
-               Hzd_smago_lnrM_8(k) = hzd_smago_min_lnr + &
+               Hzd_smago_lnrM_8(k) = Hzd_smago_min_lnr + &
                                      Hzd_smago_lnrM_8(k)*Hzd_smago_lnrM_8(k)* &
-                                     (hzd_smago_lnr - hzd_smago_min_lnr)
+                                     (Hzd_smago_mean_lnr - Hzd_smago_min_lnr)
             elseif (Ver_hyb%m(k) < top_m) then
                Hzd_smago_lnrM_8(k) = cos(pi2-pi2*(top_m - Ver_hyb%m(k))/(top_m- Ver_hyb%m(1)))
-               Hzd_smago_lnrM_8(k) = hzd_smago_lnr + &
+               Hzd_smago_lnrM_8(k) = Hzd_smago_mean_lnr + &
                                      Hzd_smago_lnrM_8(k)*Hzd_smago_lnrM_8(k)* &
-                                     (hzd_smago_max_lnr - hzd_smago_lnr)
+                                     (Hzd_smago_max_lnr - Hzd_smago_mean_lnr)
             else
-               Hzd_smago_lnrM_8(k)= hzd_smago_min_lnr
+               Hzd_smago_lnrM_8(k)= Hzd_smago_min_lnr
             endif
 
             ! For thermodynamic levels
             if (Ver_hyb%t(k) <= bot_t .and. Ver_hyb%t(k) >= top_t) then
                Hzd_smago_lnrT_8(k) = cos(pi2-pi2*(bot_t - Ver_hyb%t(k))/(bot_t-top_t))
-               Hzd_smago_lnrT_8(k) = hzd_smago_min_lnr + &
+               Hzd_smago_lnrT_8(k) = Hzd_smago_min_lnr + &
                                      Hzd_smago_lnrT_8(k)*Hzd_smago_lnrT_8(k)* &
-                                     (hzd_smago_lnr - hzd_smago_min_lnr)
+                                     (Hzd_smago_mean_lnr - Hzd_smago_min_lnr)
             elseif (Ver_hyb%t(k) < top_t) then
                Hzd_smago_lnrT_8(k) = cos(pi2-pi2*(top_t - Ver_hyb%t(k))/(top_t-Ver_hyb%t(1)))
-               Hzd_smago_lnrT_8(k) = hzd_smago_lnr + &
+               Hzd_smago_lnrT_8(k) = Hzd_smago_mean_lnr + &
                                      Hzd_smago_lnrT_8(k)*Hzd_smago_lnrT_8(k)* &
-                                     (hzd_smago_max_lnr - hzd_smago_lnr)
+                                     (Hzd_smago_max_lnr - Hzd_smago_mean_lnr)
             else
-               Hzd_smago_lnrT_8(k)= hzd_smago_min_lnr
+               Hzd_smago_lnrT_8(k)= Hzd_smago_min_lnr
             endif
          enddo
       endif
 
-      if (Hzd_smago_theta_nobase_L) Hzd_smago_lnrT_8(1:G_nk)=0.
+      if (.not. Hzd_smago_theta_base_L) Hzd_smago_lnrT_8(1:G_nk)=0.
 
 !
       return

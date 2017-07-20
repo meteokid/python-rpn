@@ -218,9 +218,9 @@
          return
       end if
 
-      if (Hzd_smago_param > 0. .or. Hzd_smago_lnr > 0.) then
-         if (Hzd_smago_min_lnr > Hzd_smago_lnr .or. Hzd_smago_min_lnr<0.) Hzd_smago_min_lnr=Hzd_smago_lnr
-         if (Hzd_smago_max_lnr < Hzd_smago_lnr .or. Hzd_smago_max_lnr<0.) Hzd_smago_max_lnr=Hzd_smago_lnr
+      if (Hzd_smago_param > 0. .or. Hzd_smago_lnr(2) > 0.) then
+         if (Hzd_smago_lnr(1) > Hzd_smago_lnr(2) .or. Hzd_smago_lnr(1)<0.) Hzd_smago_lnr(1)=Hzd_smago_lnr(2)
+         if (Hzd_smago_lnr(3) < Hzd_smago_lnr(2) .or. Hzd_smago_lnr(3)<0.) Hzd_smago_lnr(3)=Hzd_smago_lnr(2)
       endif
 
       G_ni  = Grd_ni

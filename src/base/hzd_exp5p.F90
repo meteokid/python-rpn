@@ -62,7 +62,9 @@
       end select
 
       if (mm.eq.1) then
-          F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
+          F_champ(:,:,1:NK) = F_temp(:,:,1:NK)
+      else if (mm.eq.2) then
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
       else
           F_temp(:,:,1:NK) = F_champ(:,:,1:NK) - F_temp(:,:,1:NK)
       endif
@@ -98,6 +100,7 @@
           enddo
 !$omp end do
 !$omp end parallel
+          F_temp(:,:,1:NK) = F_champ(:,:,1:NK)
 
       else
 !$omp parallel private(i,j) shared(wk_8) 
