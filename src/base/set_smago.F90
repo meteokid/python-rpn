@@ -50,11 +50,11 @@
       Hzd_smago_mean_lnr=Hzd_smago_lnr(2)
       Hzd_smago_max_lnr=Hzd_smago_lnr(3)
 
-      top_m= max( Hzd_smago_top_lev, Ver_hyb%m(  1 ) )
-      bot_m= min( Hzd_smago_bot_lev, Ver_hyb%m(G_nk) )
+      top_m= max( Hzd_smago_top_lev, dble(Ver_hyb%m(  1 ) ))
+      bot_m= min( Hzd_smago_bot_lev, dble(Ver_hyb%m(G_nk) ))
 
-      top_t= max( Hzd_smago_top_lev, Ver_hyb%t(  1 ) )
-      bot_t= min( Hzd_smago_bot_lev, Ver_hyb%t(G_nk) )
+      top_t= max( Hzd_smago_top_lev, dble(Ver_hyb%t(  1 ) ))
+      bot_t= min( Hzd_smago_bot_lev, dble(Ver_hyb%t(G_nk) ))
 
       allocate( Hzd_smago_lnrM_8(G_nk), Hzd_smago_lnrT_8(G_nk))
 
